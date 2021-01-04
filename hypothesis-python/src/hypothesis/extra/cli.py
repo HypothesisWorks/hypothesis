@@ -30,6 +30,7 @@ hypothesis[cli]
       -h, --help  Show this message and exit.
 
     Commands:
+      codemod  `hypothesis codemod` refactors deprecated or inefficient code.
       fuzz     [hypofuzz] runs tests with an adaptive coverage-guided fuzzer.
       write    `hypothesis write` writes property-based tests for you!
 
@@ -43,6 +44,8 @@ import builtins
 import importlib
 import sys
 from difflib import get_close_matches
+from functools import partial
+from multiprocessing import Pool
 
 MESSAGE = """
 The Hypothesis command-line interface requires the `{}` package,
@@ -103,6 +106,68 @@ else:
                 f"{funcname!r} attribute."
                 + (f"  Closest matches: {matches!r}" if matches else "")
             )
+
+    def _refactor(func, fname):
+        try:
+            with open(fname) as f:
+                oldcode = f.read()
+        except (OSError, UnicodeError) as err:
+            # Permissions or encoding issue, or file deleted, etc.
+            return f"skipping {fname!r} due to {err}"
+        newcode = func(oldcode)
+        if newcode != oldcode:
+            with open(fname, mode="w") as f:
+                f.write(newcode)
+
+    @main.command()  # type: ignore  # Click adds the .command attribute
+    @click.argument("path", type=str, required=True, nargs=-1)
+    def codemod(path):
+        """`hypothesis codemod` refactors deprecated or inefficient code.
+
+        It adapts `python -m libcst.tool`, removing many features and config options
+        which are rarely relevant for this purpose.  If you need more control, we
+        encourage you to use the libcst CLI directly; if not this one is easier.
+
+        PATH is the file(s) or directories of files to format in place, or
+        "-" to read from stdin and write to stdout.
+        """
+        try:
+            from libcst.codemod import gather_files
+
+            from hypothesis.extra import codemods
+        except ImportError:
+            sys.stderr.write(
+                "You are missing required dependencies for this option.  Run:\n\n"
+                "    python -m pip install --upgrade hypothesis[codemods]\n\n"
+                "and try again."
+            )
+            sys.exit(1)
+
+        # Special case for stdin/stdout usage
+        if "-" in path:
+            if len(path) > 1:
+                raise Exception(
+                    "Cannot specify multiple paths when reading from stdin!"
+                )
+            print("Codemodding from stdin", file=sys.stderr)
+            print(codemods.refactor(sys.stdin.read()))
+            return 0
+
+        # Find all the files to refactor, and then codemod them
+        files = gather_files(path)
+        errors = set()
+        if len(files) <= 1:
+            errors.add(_refactor(codemods.refactor, *files))
+        else:
+            with Pool() as pool:
+                for msg in pool.imap_unordered(
+                    partial(_refactor, codemods.refactor), files
+                ):
+                    errors.add(msg)
+        errors.discard(None)
+        for msg in errors:
+            print(msg, file=sys.stderr)
+        return 1 if errors else 0
 
     @main.command()  # type: ignore  # Click adds the .command attribute
     @click.argument("func", type=obj_name, required=True, nargs=-1)

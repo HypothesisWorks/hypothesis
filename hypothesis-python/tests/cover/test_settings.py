@@ -470,7 +470,7 @@ def test_show_changed():
 
 def test_note_deprecation_checks_date():
     with pytest.warns(None) as rec:
-        note_deprecation("This is bad", since="RELEASEDAY")
+        note_deprecation("This is bad", since="RELEASEDAY", has_codemod=False)
     assert len(rec) == 1
     with pytest.raises(AssertionError):
-        note_deprecation("This is way too old", since="1999-12-31")
+        note_deprecation("This is way too old", since="1999-12-31", has_codemod=False)

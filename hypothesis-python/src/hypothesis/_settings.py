@@ -639,10 +639,15 @@ The default is ``True`` if the ``CI`` or ``TF_BUILD`` env vars are set, ``False`
 settings.lock_further_definitions()
 
 
-def note_deprecation(message: str, *, since: str) -> None:
+def note_deprecation(message: str, *, since: str, has_codemod: bool) -> None:
     if since != "RELEASEDAY":
         date = datetime.datetime.strptime(since, "%Y-%m-%d").date()
         assert datetime.date(2016, 1, 1) <= date
+    if has_codemod:
+        message += (
+            "\n    The `hypothesis codemod` command-line tool can automatically "
+            "refactor your code to fix this warning."
+        )
     warnings.warn(HypothesisDeprecationWarning(message), stacklevel=2)
 
 

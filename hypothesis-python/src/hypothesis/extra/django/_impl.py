@@ -96,6 +96,7 @@ def from_model(
             note_deprecation(
                 "The `model` argument will be positional-only in a future version",
                 since="2020-03-18",
+                has_codemod=False,
             )
 
     if not issubclass(m_type, dm.Model):

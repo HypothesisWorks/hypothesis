@@ -1235,6 +1235,7 @@ def randoms(
             want the new behaviour (which will become the default in future),
             set use_true_random=False.""",
             since="2020-06-30",
+            has_codemod=False,
         )
         use_true_random = True
 
@@ -2220,6 +2221,7 @@ def register_type_strategy(
             "%s will be registered for any type arguments."
             % (custom_type, origin, strategy_repr),
             since="2020-08-17",
+            has_codemod=False,
         )
         if origin in types._global_type_lookup:
             raise InvalidArgument(

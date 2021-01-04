@@ -649,6 +649,7 @@ def deprecated_posargs(func: C) -> C:
                 "keyword-only argument in a future version."
                 % (qualname(func), param.name, pos),
                 since="2020-02-07",
+                has_codemod=True,
             )
             bound.arguments[param.name] = pos
         return func(*bound.args, **bound.kwargs)
