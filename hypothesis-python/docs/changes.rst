@@ -18,6 +18,16 @@ Hypothesis 5.x
 
     .. include:: ../RELEASE.rst
 
+.. _v5.45.0:
+
+-------------------
+5.45.0 - 2021-01-04
+-------------------
+
+This release adds the :ref:`codemods` extra, which you can use to
+check for and automatically fix issues such as use of deprecated
+Hypothesis APIs (:issue:`2705`).
+
 .. _v5.44.0:
 
 -------------------
