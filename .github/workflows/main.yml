@@ -42,11 +42,13 @@ jobs:
       uses: actions/cache@v2
       with:
         path: |
-          $HOME/.cache/pip
-          $HOME/wheelhouse
-          $HOME/.local
+          ~/.cache/pip
+          ~/wheelhouse
+          ~/.local
           vendor/bundle
-        key: deps-ubuntu-${{ matrix.python-version }}-${{ hashFiles('requirements/tools.txt') }}
+        key: deps-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('requirements/tools.txt') }}-${{ matrix.task }}
+        restore-keys: |
+          deps-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('requirements/tools.txt') }}
     - name: Run tests
       run: TASK=${{ matrix.task }} ./build.sh
 
@@ -82,7 +84,9 @@ jobs:
           $HOME/wheelhouse
           $HOME/.local
           vendor/bundle
-        key: deps-win-${{ matrix.python-version }}-${{ matrix.python-architecture }}-${{ hashFiles('requirements/tools.txt') }}
+        key: deps-${{ runner.os }}-${{ matrix.python-version }}-${{ matrix.python-architecture }}-${{ hashFiles('requirements/tools.txt') }}-${{ matrix.task }}
+        restore-keys: |
+          deps-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('requirements/tools.txt') }}
     - name: Install dependencies
       run: |
         pip install --upgrade setuptools pip wheel
@@ -116,7 +120,9 @@ jobs:
           $HOME/wheelhouse
           $HOME/.local
           vendor/bundle
-        key: deps-osx-${{ matrix.python-version }}-${{ hashFiles('requirements/tools.txt') }}
+        key: deps-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('requirements/tools.txt') }}-${{ matrix.task }}
+        restore-keys: |
+          deps-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('requirements/tools.txt') }}
     - name: Run tests
       run: TASK=${{ matrix.task }} ./build.sh
 
@@ -148,11 +154,13 @@ jobs:
       uses: actions/cache@v2
       with:
         path: |
-          $HOME/.cache/pip
-          $HOME/wheelhouse
-          $HOME/.local
+          ~/.cache/pip
+          ~/wheelhouse
+          ~/.local
           vendor/bundle
-        key: deps-ubuntu-${{ matrix.python-version }}-${{ hashFiles('requirements/tools.txt') }}
+        key: deps-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('requirements/tools.txt') }}-${{ matrix.task }}
+        restore-keys: |
+          deps-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('requirements/tools.txt') }}
     - name: Run tests
       run: TASK=${{ matrix.task }} ./build.sh
 
@@ -175,6 +183,17 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
+    - name: Restore cache
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cache/pip
+          ~/wheelhouse
+          ~/.local
+          vendor/bundle
+        key: deps-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('requirements/tools.txt') }}-${{ matrix.task }}
+        restore-keys: |
+          deps-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('requirements/tools.txt') }}
     - name: Deploy package
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
