@@ -17,6 +17,7 @@ from inspect import signature
 from typing import List, get_type_hints
 
 from hypothesis import given, strategies as st
+from tests.common.debug import find_any
 
 
 def use_this_signature(self, a: int, b: bool = None, *, x: float, y: str):
@@ -42,9 +43,21 @@ def test_builds_uses_signature_attribute(val):
     assert isinstance(val, Model)
 
 
-@given(st.from_type(Model))
+class ModelForFromType(Model):
+    def __init__(self, **kwargs):
+        assert set(kwargs) == {"a", "b", "x", "y"}
+        self.b = kwargs["b"]
+        assert self.b is None or isinstance(self.b, bool)
+
+
+@given(st.from_type(ModelForFromType))
 def test_from_type_uses_signature_attribute(val):
-    assert isinstance(val, Model)
+    assert isinstance(val, ModelForFromType)
+
+
+def test_from_type_can_be_default_or_annotation():
+    find_any(st.from_type(ModelForFromType), lambda m: m.b is None)
+    find_any(st.from_type(ModelForFromType), lambda m: isinstance(m.b, bool))
 
 
 def use_annotations(
@@ -93,3 +106,14 @@ class ModelWithBadAliasSignature:
 @given(st.builds(ModelWithBadAliasSignature))
 def test_build_with_non_types_in_signature(val):
     assert isinstance(val, ModelWithBadAliasSignature)
+
+
+class UnconventionalSignature:
+    def __init__(x: int = 0, self: bool = True):
+        assert not isinstance(x, int)
+        x.self = self
+
+
+def test_build_in_from_type_with_self_named_something_else():
+    find_any(st.from_type(UnconventionalSignature), lambda x: x.self is True)
+    find_any(st.from_type(UnconventionalSignature), lambda x: x.self is False)

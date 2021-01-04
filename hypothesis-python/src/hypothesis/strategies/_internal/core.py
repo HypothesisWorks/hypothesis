@@ -1593,9 +1593,29 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
             "Could not resolve %r to a strategy; consider "
             "using register_type_strategy" % (thing,)
         )
-    # Finally, try to build an instance by calling the type object
+    # Finally, try to build an instance by calling the type object.  Unlike builds(),
+    # this block *does* try to infer strategies for arguments with default values.
+    # That's because of the semantic different; builds() -> "call this with ..."
+    # so we only infer when *not* doing so would be an error; from_type() -> "give
+    # me arbitrary instances" so the greater variety is acceptable.
+    # And if it's *too* varied, express your opinions with register_type_strategy()
     if not isabstract(thing):
-        return builds(thing)
+        try:
+            hints = get_type_hints(thing)
+            params = signature(thing).parameters
+        except Exception:
+            return builds(thing)
+        kwargs = {}
+        for k, p in params.items():
+            if (
+                k in hints
+                and k != "return"
+                and p.default is not Parameter.empty
+                and p.kind in (Parameter.POSITIONAL_OR_KEYWORD, Parameter.KEYWORD_ONLY)
+            ):
+                kwargs[k] = just(p.default) | _from_type(hints[k])
+        return builds(thing, **kwargs)
+    # And if it's an abstract type, we'll resolve to a union of subclasses instead.
     subclasses = thing.__subclasses__()
     if not subclasses:
         raise ResolutionFailed(

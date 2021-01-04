@@ -793,3 +793,13 @@ class AnnotatedConstructorWithSignature(typing.Generic[_ValueType]):
 def test_signature_is_the_most_important_source(data):
     """Signature types should take precedence over all other annotations."""
     data.draw(st.builds(AnnotatedConstructorWithSignature))
+
+
+class AnnotatedAndDefault:
+    def __init__(self, foo: bool = None):
+        self.foo = foo
+
+
+def test_from_type_can_be_default_or_annotation():
+    find_any(st.from_type(AnnotatedAndDefault), lambda x: x.foo is None)
+    find_any(st.from_type(AnnotatedAndDefault), lambda x: isinstance(x.foo, bool))
