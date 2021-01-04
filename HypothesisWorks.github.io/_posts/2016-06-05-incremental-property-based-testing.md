@@ -251,7 +251,10 @@ We stopped there, but we need not have. Just as the test should have held for
 any branch, it should also hold for any repository. We were just creating an
 empty repository because it was convenient for us.
 
-If we were to continue, the test would have looked something like this:
+If we were to continue, the next step would be to [write a `repositories()`
+function to generate repositories]({% post_url 2016-05-11-generating-the-right-data %})
+with more varied contents, commit histories, and existing branches.
+The test might then look something like this:
 
 ```python
     @given(repo=repositories(), branch_name=valid_branch_names())
