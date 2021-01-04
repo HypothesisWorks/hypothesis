@@ -324,6 +324,9 @@ def _valid_syntax_repr(strategy):
         return "nothing()"
 
 
+# When we ghostwrite for a module, we want to treat that as the __module__ for
+# each function, rather than whichever internal file it was actually defined in.
+KNOWN_FUNCTION_LOCATIONS: Dict[object, str] = {}
 # (g)ufuncs do not have a __module__ attribute, so we simply look for them in
 # any of the following modules which are found in sys.modules.  The order of
 # these entries doesn't matter, because we check identity of the found object.
@@ -331,6 +334,8 @@ LOOK_FOR_UFUNCS_IN_MODULES = ("numpy", "astropy", "erfa", "dask", "numba")
 
 
 def _get_module(obj):
+    if obj in KNOWN_FUNCTION_LOCATIONS:
+        return KNOWN_FUNCTION_LOCATIONS[obj]
     try:
         return obj.__module__
     except AttributeError:
@@ -526,6 +531,8 @@ def magic(
                 try:
                     if (not is_mock(f)) and callable(f) and _get_params(f):
                         functions.add(f)
+                        if getattr(thing, "__name__", None):
+                            KNOWN_FUNCTION_LOCATIONS[f] = thing.__name__
                 except (TypeError, ValueError):
                     pass
         else:
