@@ -529,7 +529,12 @@ def magic(
                 ]
             for f in funcs:
                 try:
-                    if (not is_mock(f)) and callable(f) and _get_params(f):
+                    if (
+                        (not is_mock(f))
+                        and callable(f)
+                        and _get_params(f)
+                        and not isinstance(f, enum.EnumMeta)
+                    ):
                         functions.add(f)
                         if getattr(thing, "__name__", None):
                             KNOWN_FUNCTION_LOCATIONS[f] = thing.__name__
