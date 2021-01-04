@@ -24,7 +24,7 @@ It features:
 To use Hypothesis for Python, simply add the *hypothesis* package to your requirements,
 or *pip install hypothesis* directly.
 
-The code is [available on Github](https://github.com/HypothesisWorks/hypothesis-python)
+The code is [available on GitHub](https://github.com/HypothesisWorks/hypothesis-python)
 and documentation is available [on readthedocs](https://hypothesis.readthedocs.io/).
 
 ### Hypothesis Legacy Support
@@ -61,7 +61,7 @@ to provide parallel testing of your code, but it's not there yet.
 
 The current prototype is released under the AGPL3 (this is not the intended
 license for the full version, which will most likely be Apache licensed) and
-is [available on Github](https://github.com/HypothesisWorks/hypothesis-java).
+is [available on GitHub](https://github.com/HypothesisWorks/hypothesis-java).
 
 Email us at [hello@hypothesis.works](mailto:hello@hypothesis.works) if you want
 to know more about Hypothesis for Java or want to discuss being an early customer
