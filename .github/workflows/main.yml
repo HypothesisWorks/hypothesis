@@ -79,6 +79,7 @@ jobs:
       with:
         # I am pretty sure, that's not how Windows works :(
         # But, I have no experiences with it. Please, send help!
+        # triggering cache
         path: |
           $HOME/.cache/pip
           $HOME/wheelhouse
