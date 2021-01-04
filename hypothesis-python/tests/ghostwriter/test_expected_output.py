@@ -24,17 +24,27 @@ import base64
 import operator
 import pathlib
 import re
+import sys
 from typing import Sequence
 
 import numpy
 import pytest
 
+import hypothesis
 from hypothesis.extra import ghostwriter
+from hypothesis.utils.conventions import not_set
 
 
 @pytest.fixture
 def update_recorded_outputs(request):
     return request.config.getoption("--hypothesis-update-outputs")
+
+
+def get_recorded(name, actual=""):
+    file_ = pathlib.Path(__file__).parent / "recorded" / f"{name}.txt"
+    if actual:
+        file_.write_text(actual)
+    return file_.read_text()
 
 
 def timsort(seq: Sequence[int]) -> Sequence[int]:
@@ -101,9 +111,16 @@ def add(a: float, b: float) -> float:
 )
 def test_ghostwriter_example_outputs(update_recorded_outputs, data):
     name, actual = data
-    file_ = pathlib.Path(__file__).parent / "recorded" / f"{name}.txt"
-    if update_recorded_outputs:
-        file_.write_text(actual)
-    expected = file_.read_text()
+    expected = get_recorded(name, actual * update_recorded_outputs)
     assert actual == expected  # We got the expected source code
     exec(expected, {})  # and there are no SyntaxError or NameErrors
+
+
+def test_ghostwriter_on_hypothesis(update_recorded_outputs):
+    actual = ghostwriter.magic(hypothesis).replace("Strategy[+Ex]", "Strategy")
+    expected = get_recorded("hypothesis_module_magic", actual * update_recorded_outputs)
+    # The py36 typing module has some different handling of generics (SearchStrategy)
+    # and contents (collections.abc vs typing), but we can still check the code works.
+    if sys.version_info[:2] > (3, 6):
+        assert actual == expected
+    exec(expected, {"not_set": not_set})

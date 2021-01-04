@@ -27,7 +27,8 @@ import pytest
 
 from hypothesis.errors import InvalidArgument, MultipleFailures, Unsatisfiable
 from hypothesis.extra import ghostwriter
-from hypothesis.strategies import from_type, just
+from hypothesis.strategies import builds, from_type, just
+from hypothesis.strategies._internal.lazy import LazyStrategy
 
 varied_excepts = pytest.mark.parametrize("ex", [(), ValueError, (TypeError, re.error)])
 
@@ -71,7 +72,7 @@ def test_strategies_with_invalid_syntax_repr_as_nothing():
 
     s = just(NoRepr())
     assert repr(s) == f"just({msg})"
-    assert ghostwriter._valid_syntax_repr(s) == "nothing()"
+    assert ghostwriter._valid_syntax_repr(s)[1] == "nothing()"
 
 
 class AnEnum(enum.Enum):
@@ -119,7 +120,7 @@ def non_resolvable_arg(x: NotResolvable):
 def test_flattens_one_of_repr():
     strat = from_type(Union[int, Sequence[int]])
     assert repr(strat).count("one_of(") > 1
-    assert ghostwriter._valid_syntax_repr(strat).count("one_of(") == 1
+    assert ghostwriter._valid_syntax_repr(strat)[1].count("one_of(") == 1
 
 
 @varied_excepts
@@ -290,3 +291,39 @@ def test_unrepr_identity_elem():
     # and also works with explicit identity element
     source_code = ghostwriter.binary_operation(compose_types, identity=type)
     exec(source_code, {})
+
+
+@pytest.mark.parametrize(
+    "strategy, imports",
+    # The specifics don't matter much here; we're just demonstrating that
+    # we can walk the strategy and collect all the objects to import.
+    [
+        # Lazy from_type() is handled without being unwrapped
+        (LazyStrategy(from_type, (enum.Enum,), {}), {("enum", "Enum")}),
+        # Mapped, filtered, and flatmapped check both sides of the method
+        (
+            builds(enum.Enum).map(Decimal),
+            {("enum", "Enum"), ("decimal", "Decimal")},
+        ),
+        (
+            builds(enum.Enum).flatmap(Decimal),
+            {("enum", "Enum"), ("decimal", "Decimal")},
+        ),
+        (
+            builds(enum.Enum).filter(Decimal).filter(re.compile),
+            {("enum", "Enum"), ("decimal", "Decimal"), ("re", "compile")},
+        ),
+        # one_of() strategies recurse into all the branches
+        (
+            builds(enum.Enum) | builds(Decimal) | builds(re.compile),
+            {("enum", "Enum"), ("decimal", "Decimal"), ("re", "compile")},
+        ),
+        # and builds() checks the arguments as well as the target
+        (
+            builds(enum.Enum, builds(Decimal), kw=builds(re.compile)),
+            {("enum", "Enum"), ("decimal", "Decimal"), ("re", "compile")},
+        ),
+    ],
+)
+def test_get_imports_for_strategy(strategy, imports):
+    assert ghostwriter._imports_for_strategy(strategy) == imports
