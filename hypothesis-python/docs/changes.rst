@@ -18,6 +18,16 @@ Hypothesis 5.x
 
     .. include:: ../RELEASE.rst
 
+.. _v5.47.0:
+
+-------------------
+5.47.0 - 2021-01-05
+-------------------
+
+This release upgrades the import logic for :doc:`ghostwritten tests <ghostwriter>`,
+handling many cases where imports would previously be missing or from unexpected
+locations.
+
 .. _v5.46.0:
 
 -------------------
