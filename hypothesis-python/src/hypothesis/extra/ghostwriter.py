@@ -94,11 +94,18 @@ from typing import (
 import black
 
 from hypothesis import find, strategies as st
-from hypothesis.errors import InvalidArgument, ResolutionFailed
+from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import get_type_hints
 from hypothesis.internal.reflection import is_mock
 from hypothesis.internal.validation import check_type
-from hypothesis.strategies._internal.strategies import OneOfStrategy
+from hypothesis.strategies._internal.core import BuildsStrategy
+from hypothesis.strategies._internal.flatmapped import FlatMapStrategy
+from hypothesis.strategies._internal.lazy import LazyStrategy, unwrap_strategies
+from hypothesis.strategies._internal.strategies import (
+    FilteredStrategy,
+    MappedSearchStrategy,
+    OneOfStrategy,
+)
 from hypothesis.strategies._internal.types import _global_type_lookup
 from hypothesis.utils.conventions import InferType, infer
 
@@ -106,7 +113,7 @@ IMPORT_SECTION = """
 # This test code was written by the `hypothesis.extra.ghostwriter` module
 # and is provided under the Creative Commons Zero public domain dedication.
 
-{imports}from hypothesis import given, {reject}strategies as st
+{imports}
 """
 
 TEMPLATE = """
@@ -271,11 +278,13 @@ def _get_strategies(
         with _with_any_registered():
             strat = st.builds(f, **builder_args).wrapped_strategy  # type: ignore
 
-        args, kwargs = strat.mapped_strategy.wrapped_strategy.element_strategies
-        if args.element_strategies:
+        if strat.args:
             raise NotImplementedError("Expected to pass everything as kwargs")
 
-        for k, v in zip(kwargs.keys, kwargs.mapped_strategy.element_strategies):
+        for k, v in strat.kwargs.items():
+            if _valid_syntax_repr(v)[1] == "nothing()" and k in hints:
+                # e.g. from_type(Hashable) is OK but the unwrapped repr is not
+                v = LazyStrategy(st.from_type, (hints[k],), {})
             if k in given_strategies:
                 given_strategies[k] |= v
             else:
@@ -297,10 +306,58 @@ def _assert_eq(style, a, b):
     return f"assert {a} == {b}"
 
 
+def _imports_for_object(obj):
+    """Return the imports for `obj`, which may be empty for e.g. lambdas"""
+    try:
+        if (not callable(obj)) or obj.__name__ == "<lambda>":
+            return set()
+        name = _get_qualname(obj).split(".")[0]
+        return {(_get_module(obj), name)}
+    except Exception:
+        return set()
+
+
+def _imports_for_strategy(strategy):
+    # If we have a lazy from_type strategy, because unwrapping it gives us an
+    # error or invalid syntax, import that type and we're done.
+    if isinstance(strategy, LazyStrategy) and strategy.function is st.from_type:
+        return _imports_for_object(strategy._LazyStrategy__args[0])
+
+    imports = set()
+    strategy = unwrap_strategies(strategy)
+
+    # Get imports for s.map(f), s.filter(f), s.flatmap(f), including both s and f
+    if isinstance(strategy, MappedSearchStrategy):
+        imports |= _imports_for_strategy(strategy.mapped_strategy)
+        imports |= _imports_for_object(strategy.pack)
+    if isinstance(strategy, FilteredStrategy):
+        imports |= _imports_for_strategy(strategy.filtered_strategy)
+        for f in strategy.flat_conditions:
+            imports |= _imports_for_object(f)
+    if isinstance(strategy, FlatMapStrategy):
+        imports |= _imports_for_strategy(strategy.flatmapped_strategy)
+        imports |= _imports_for_object(strategy.expand)
+
+    # recurse through one_of to handle e.g. from_type(Optional[Foo])
+    if isinstance(strategy, OneOfStrategy):
+        for s in strategy.element_strategies:
+            imports |= _imports_for_strategy(s)
+
+    # get imports for the target of builds(), and recurse into the argument strategies
+    if isinstance(strategy, BuildsStrategy):
+        imports |= _imports_for_object(strategy.target)
+        for s in strategy.args:
+            imports |= _imports_for_strategy(s)
+        for s in strategy.kwargs.values():
+            imports |= _imports_for_strategy(s)
+
+    return imports
+
+
 def _valid_syntax_repr(strategy):
     # For binary_op, we pass a variable name - so pass it right back again.
     if isinstance(strategy, str):
-        return strategy
+        return set(), strategy
     # Flatten and de-duplicate any one_of strategies, whether that's from resolving
     # a Union type or combining inputs to multiple functions.
     try:
@@ -314,17 +371,25 @@ def _valid_syntax_repr(strategy):
             strategy = st.one_of(elems or st.nothing())
         # Trivial special case because the wrapped repr for text() is terrible.
         if strategy == st.text().wrapped_strategy:
-            return "text()"
+            return set(), "text()"
         # Return a syntactically-valid strategy repr, including fixing some
         # strategy reprs and replacing invalid syntax reprs with `"nothing()"`.
         # String-replace to hide the special case in from_type() for Decimal('snan')
         r = repr(strategy).replace(".filter(_can_hash)", "")
+        # Replace <unknown> with ... in confusing lambdas
+        r = re.sub(r"(lambda.*?: )(<unknown>)([,)])", r"\1...\3", r)
         compile(r, "<string>", "eval")
-        return r
-    except (SyntaxError, ResolutionFailed):
-        return "nothing()"
+        # Finally, try to work out the imports we need for builds(), .map(),
+        # .filter(), and .flatmap() to work without NameError
+        imports = {i for i in _imports_for_strategy(strategy) if i[1] in r}
+        return imports, r
+    except (SyntaxError, InvalidArgument):
+        return set(), "nothing()"
 
 
+# When we ghostwrite for a module, we want to treat that as the __module__ for
+# each function, rather than whichever internal file it was actually defined in.
+KNOWN_FUNCTION_LOCATIONS: Dict[object, str] = {}
 # (g)ufuncs do not have a __module__ attribute, so we simply look for them in
 # any of the following modules which are found in sys.modules.  The order of
 # these entries doesn't matter, because we check identity of the found object.
@@ -332,6 +397,8 @@ LOOK_FOR_UFUNCS_IN_MODULES = ("numpy", "astropy", "erfa", "dask", "numba")
 
 
 def _get_module(obj):
+    if obj in KNOWN_FUNCTION_LOCATIONS:
+        return KNOWN_FUNCTION_LOCATIONS[obj]
     try:
         return obj.__module__
     except AttributeError:
@@ -374,22 +441,22 @@ def _make_test_body(
     except_: Tuple[Type[Exception], ...],
     style: str,
     given_strategies: Optional[Mapping[str, Union[str, st.SearchStrategy]]] = None,
-) -> Tuple[Set[str], str]:
+) -> Tuple[Set[Union[str, Tuple[str, str]]], str]:
+    # A set of modules to import - we might add to this later.  The import code
+    # is written later, so we can have one import section for multiple magic()
+    # test functions.
+    imports = {_get_module(f) for f in funcs}
+
     # Get strategies for all the arguments to each function we're testing.
     with _with_any_registered():
         given_strategies = given_strategies or _get_strategies(
             *funcs, pass_result_to_next_func=ghost in ("idempotent", "roundtrip")
         )
-        given_args = ", ".join(
-            f"{k}={_valid_syntax_repr(v)}" for k, v in given_strategies.items()
-        )
+        reprs = [((k,) + _valid_syntax_repr(v)) for k, v in given_strategies.items()]
+        imports = imports.union(*(imp for _, imp, _ in reprs))
+        given_args = ", ".join(f"{k}={v}" for k, _, v in reprs)
     for name in st.__all__:
         given_args = given_args.replace(f"{name}(", f"st.{name}(")
-
-    # A set of modules to import - we might add to this later.  The import code
-    # is written later, so we can have one import section for multiple magic()
-    # test functions.
-    imports = {_get_module(f) for f in funcs}
 
     if except_:
         # This is reminiscent of de-duplication logic I wrote for flake8-bugbear,
@@ -438,18 +505,27 @@ def _make_test_body(
     return imports, body
 
 
-def _make_test(imports: Set[str], body: str) -> str:
+def _make_test(imports: Set[Union[str, Tuple[str, str]]], body: str) -> str:
     # Discarding "builtins." and "__main__" probably isn't particularly useful
     # for user code, but important for making a good impression in demos.
     body = body.replace("builtins.", "").replace("__main__.", "")
-    imports.discard("builtins")
-    imports.discard("__main__")
     if "st.from_type(typing." in body:
         imports.add("typing")
-    header = IMPORT_SECTION.format(
-        imports="".join(f"import {imp}\n" for imp in sorted(imports)),
-        reject="reject, " if "        reject()\n" in body else "",
-    )
+    imports |= {("hypothesis", "given"), ("hypothesis", "strategies as st")}
+    if "        reject()\n" in body:
+        imports.add(("hypothesis", "reject"))
+
+    do_not_import = {"builtins", "__main__"}
+    direct = {f"import {i}" for i in imports - do_not_import if isinstance(i, str)}
+    from_imports = defaultdict(set)
+    for module, name in {i for i in imports if isinstance(i, tuple)}:
+        from_imports[module].add(name)
+    from_ = {
+        "from {} import {}".format(module, ", ".join(sorted(names)))
+        for module, names in from_imports.items()
+        if module not in do_not_import
+    }
+    header = IMPORT_SECTION.format(imports="\n".join(sorted(direct) + sorted(from_)))
     nothings = body.count("st.nothing()")
     if nothings == 1:
         header += "# TODO: replace st.nothing() with an appropriate strategy\n\n"
@@ -525,8 +601,15 @@ def magic(
                 ]
             for f in funcs:
                 try:
-                    if (not is_mock(f)) and callable(f) and _get_params(f):
+                    if (
+                        (not is_mock(f))
+                        and callable(f)
+                        and _get_params(f)
+                        and not isinstance(f, enum.EnumMeta)
+                    ):
                         functions.add(f)
+                        if getattr(thing, "__name__", None):
+                            KNOWN_FUNCTION_LOCATIONS[f] = thing.__name__
                 except (TypeError, ValueError):
                     pass
         else:
@@ -866,7 +949,7 @@ def _make_binop_body(
     distributes_over: Optional[Callable[[X, X], X]] = None,
     except_: Tuple[Type[Exception], ...],
     style: str,
-) -> Tuple[Set[str], str]:
+) -> Tuple[Set[Union[str, Tuple[str, str]]], str]:
     # TODO: collapse togther first two strategies, keep any others (for flags etc.)
     # assign this as a global variable, which will be prepended to the test bodies
     strategies = _get_strategies(func)
@@ -951,7 +1034,7 @@ def _make_binop_body(
             _write_call(func, "a", _write_call(distributes_over, "b", "c")),
         )
 
-    operands_repr = _valid_syntax_repr(operands)
+    _, operands_repr = _valid_syntax_repr(operands)
     for name in st.__all__:
         operands_repr = operands_repr.replace(f"{name}(", f"st.{name}(")
     classdef = ""

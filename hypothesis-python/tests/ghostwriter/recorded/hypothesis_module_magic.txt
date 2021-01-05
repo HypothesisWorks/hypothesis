@@ -1,0 +1,100 @@
+# This test code was written by the `hypothesis.extra.ghostwriter` module
+# and is provided under the Creative Commons Zero public domain dedication.
+
+import hypothesis
+import typing
+from hypothesis import given, settings, strategies as st
+from random import Random
+
+
+@given(condition=st.from_type(object))
+def test_fuzz_assume(condition):
+    hypothesis.assume(condition=condition)
+
+
+@given(value=st.text())
+def test_fuzz_event(value):
+    hypothesis.event(value=value)
+
+
+@given(
+    specifier=st.from_type(hypothesis.strategies.SearchStrategy),
+    condition=st.functions(like=lambda *a: ..., returns=st.booleans()),
+    settings=st.one_of(st.none(), st.builds(settings)),
+    random=st.one_of(st.none(), st.builds(Random)),
+    database_key=st.one_of(st.none(), st.binary()),
+)
+def test_fuzz_find(specifier, condition, settings, random, database_key):
+    hypothesis.find(
+        specifier=specifier,
+        condition=condition,
+        settings=settings,
+        random=random,
+        database_key=database_key,
+    )
+
+
+@given(value=st.text())
+def test_fuzz_note(value):
+    hypothesis.note(value=value)
+
+
+@given(r=st.builds(Random))
+def test_fuzz_register_random(r):
+    hypothesis.register_random(r=r)
+
+
+@given(version=st.text(), blob=st.binary())
+def test_fuzz_reproduce_failure(version, blob):
+    hypothesis.reproduce_failure(version=version, blob=blob)
+
+
+@given(seed=st.from_type(typing.Hashable))
+def test_fuzz_seed(seed):
+    hypothesis.seed(seed=seed)
+
+
+@given(
+    parent=st.none(),
+    max_examples=st.just(not_set),
+    derandomize=st.just(not_set),
+    database=st.just(not_set),
+    verbosity=st.just(not_set),
+    phases=st.just(not_set),
+    stateful_step_count=st.just(not_set),
+    report_multiple_bugs=st.just(not_set),
+    suppress_health_check=st.just(not_set),
+    deadline=st.just(not_set),
+    print_blob=st.just(not_set),
+)
+def test_fuzz_settings(
+    parent,
+    max_examples,
+    derandomize,
+    database,
+    verbosity,
+    phases,
+    stateful_step_count,
+    report_multiple_bugs,
+    suppress_health_check,
+    deadline,
+    print_blob,
+):
+    hypothesis.settings(
+        parent=parent,
+        max_examples=max_examples,
+        derandomize=derandomize,
+        database=database,
+        verbosity=verbosity,
+        phases=phases,
+        stateful_step_count=stateful_step_count,
+        report_multiple_bugs=report_multiple_bugs,
+        suppress_health_check=suppress_health_check,
+        deadline=deadline,
+        print_blob=print_blob,
+    )
+
+
+@given(observation=st.one_of(st.floats(), st.integers()), label=st.text())
+def test_fuzz_target(observation, label):
+    hypothesis.target(observation=observation, label=label)
