@@ -1,6 +1,6 @@
 autoflake
 black
-blacken-docs
+blacken-docs !=1.9.0, !=1.9.1
 coverage
 django
 dpcontracts
