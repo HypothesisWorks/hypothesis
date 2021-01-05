@@ -15,7 +15,6 @@
 
 import os
 import re
-import shlex
 import subprocess
 import sys
 from datetime import datetime
@@ -282,14 +281,8 @@ def upgrade_requirements():
 
 
 def is_pyup_branch():
-    if os.environ.get("TRAVIS_EVENT_TYPE") == "pull_request" and os.environ.get(
-        "TRAVIS_PULL_REQUEST_BRANCH", ""
-    ).startswith("pyup-scheduled-update"):
-        return True
-    return (
-        os.environ.get("Build.SourceBranchName", "").startswith("pyup-scheduled-update")
-        and os.environ.get("System.PullRequest.IsFork") == "False"
-        and os.environ.get("Build.Reason") == "PullRequest"
+    return tools.IS_PULL_REQUEST and os.environ.get("GITHUB_HEAD_REF", "").startswith(
+        "pyup-scheduled-update"
     )
 
 
@@ -306,26 +299,13 @@ def push_pyup_requirements_commit():
     """
     if is_pyup_branch():
         print("Pushing new requirements, as this is a pyup pull request")
-
-        print("Decrypting secrets")
-        tools.decrypt_secrets()
-        tools.configure_git()
-
         print("Creating commit")
+        tools.configure_git()
         tools.git("add", "--update", "requirements")
         tools.git("commit", "-m", "Bump requirements for pyup pull request")
 
         print("Pushing to GitHub")
-        subprocess.check_call(
-            [
-                "ssh-agent",
-                "sh",
-                "-c",
-                "ssh-add %s && " % (shlex.quote(tools.DEPLOY_KEY),)
-                + "git push ssh-origin HEAD:%s"
-                % (os.environ["TRAVIS_PULL_REQUEST_BRANCH"],),
-            ]
-        )
+        tools.git("push", "origin", f"HEAD:{os.environ['GITHUB_HEAD_REF']}")
 
 
 @task()
