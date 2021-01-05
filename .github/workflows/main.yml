@@ -42,7 +42,7 @@ jobs:
       uses: actions/cache@v2
       with:
         path: |
-          ~/.cache/pip
+          ~/.cache
           ~/wheelhouse
           ~/.local
           vendor/bundle
@@ -77,14 +77,9 @@ jobs:
     - name: Restore cache
       uses: actions/cache@v2
       with:
-        # I am pretty sure, that's not how Windows works :(
-        # But, I have no experiences with it. Please, send help!
-        # triggering cache
         path: |
-          $HOME/.cache/pip
-          $HOME/wheelhouse
-          $HOME/.local
-          vendor/bundle
+          C:\pip\Cache
+          vendor\bundle
         key: deps-${{ runner.os }}-${{ matrix.python-version }}-${{ matrix.python-architecture }}-${{ hashFiles('requirements/tools.txt') }}-${{ matrix.task }}
         restore-keys: |
           deps-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('requirements/tools.txt') }}
@@ -117,7 +112,7 @@ jobs:
       uses: actions/cache@v2
       with:
         path: |
-          $HOME/.cache/pip
+          $HOME/.cache
           $HOME/wheelhouse
           $HOME/.local
           vendor/bundle
@@ -188,7 +183,7 @@ jobs:
       uses: actions/cache@v2
       with:
         path: |
-          ~/.cache/pip
+          ~/.cache
           ~/wheelhouse
           ~/.local
           vendor/bundle
