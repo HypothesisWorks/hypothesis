@@ -4,12 +4,25 @@
 #
 #    pip-compile --output-file=requirements/coverage.txt hypothesis-python/setup.py requirements/coverage.in
 #
-attrs==20.3.0             # via hypothesis (hypothesis-python/setup.py)
-coverage==5.3             # via -r requirements/coverage.in
-lark-parser==0.11.1       # via -r requirements/coverage.in
-numpy==1.19.4             # via -r requirements/coverage.in, pandas
-pandas==1.1.5             # via -r requirements/coverage.in
-python-dateutil==2.8.1    # via pandas
-pytz==2020.4              # via -r requirements/coverage.in, pandas
-six==1.15.0               # via python-dateutil
-sortedcontainers==2.3.0   # via hypothesis (hypothesis-python/setup.py)
+attrs==20.3.0
+    # via hypothesis (hypothesis-python/setup.py)
+coverage==5.3.1
+    # via -r requirements/coverage.in
+lark-parser==0.11.1
+    # via -r requirements/coverage.in
+numpy==1.19.4
+    # via
+    #   -r requirements/coverage.in
+    #   pandas
+pandas==1.2.0
+    # via -r requirements/coverage.in
+python-dateutil==2.8.1
+    # via pandas
+pytz==2020.5
+    # via
+    #   -r requirements/coverage.in
+    #   pandas
+six==1.15.0
+    # via python-dateutil
+sortedcontainers==2.3.0
+    # via hypothesis (hypothesis-python/setup.py)
