@@ -112,9 +112,9 @@ jobs:
       uses: actions/cache@v2
       with:
         path: |
-          $HOME/.cache
-          $HOME/wheelhouse
-          $HOME/.local
+          ~/.cache
+          ~/wheelhouse
+          ~/.local
           vendor/bundle
         key: deps-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('requirements/tools.txt') }}-${{ matrix.task }}
         restore-keys: |
@@ -150,7 +150,7 @@ jobs:
       uses: actions/cache@v2
       with:
         path: |
-          ~/.cache/pip
+          ~/.cache
           ~/wheelhouse
           ~/.local
           vendor/bundle
