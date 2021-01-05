@@ -41,7 +41,6 @@ if ! "$TOOL_PYTHON" -m hypothesistooling check-installed ; then
   "$PYTHON" -m pip install --upgrade virtualenv
   "$PYTHON" -m virtualenv "$TOOL_VIRTUALENV"
   "$TOOL_PYTHON" -m pip install --no-warn-script-location -r requirements/tools.txt
-  "$TOOL_PYTHON" -m pip install --no-warn-script-location hypothesis-python/
 fi
 
 "$TOOL_PYTHON" -m hypothesistooling "$@"
