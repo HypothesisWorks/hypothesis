@@ -45,6 +45,18 @@ def assume(condition: object) -> bool:
 _current_build_context = DynamicVariable(None)
 
 
+def currently_in_test_context() -> bool:
+    """Return ``True`` if the calling code is currently running inside an
+    :func:`@given <hypothesis.given>` or :doc:`stateful <stateful>` test,
+    ``False`` otherwise.
+
+    This is useful for third-party integrations and assertion helpers which
+    may be called from traditional or property-based tests, but can only use
+    :func:`~hypothesis.assume` or :func:`~hypothesis.target` in the latter case.
+    """
+    return _current_build_context.value is not None
+
+
 def current_build_context():
     context = _current_build_context.value
     if context is None:

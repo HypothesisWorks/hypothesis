@@ -22,7 +22,14 @@ failing examples it finds.
 
 import hypothesis._error_if_old  # noqa  # imported for side-effect of nice error
 from hypothesis._settings import HealthCheck, Phase, Verbosity, settings
-from hypothesis.control import assume, event, note, reject, target
+from hypothesis.control import (
+    assume,
+    currently_in_test_context,
+    event,
+    note,
+    reject,
+    target,
+)
 from hypothesis.core import example, find, given, reproduce_failure, seed
 from hypothesis.entry_points import run
 from hypothesis.internal.entropy import register_random
@@ -30,21 +37,22 @@ from hypothesis.utils.conventions import infer
 from hypothesis.version import __version__, __version_info__
 
 __all__ = [
-    "settings",
-    "Verbosity",
     "HealthCheck",
     "Phase",
+    "Verbosity",
     "assume",
-    "reject",
-    "seed",
-    "given",
-    "reproduce_failure",
-    "find",
-    "example",
-    "note",
+    "currently_in_test_context",
     "event",
+    "example",
+    "find",
+    "given",
     "infer",
+    "note",
     "register_random",
+    "reject",
+    "reproduce_failure",
+    "seed",
+    "settings",
     "target",
     "__version__",
     "__version_info__",

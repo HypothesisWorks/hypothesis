@@ -21,11 +21,13 @@ from hypothesis.control import (
     _current_build_context,
     cleanup,
     current_build_context,
+    currently_in_test_context,
     event,
     note,
 )
 from hypothesis.errors import CleanupFailed, InvalidArgument
 from hypothesis.internal.conjecture.data import ConjectureData as TD
+from hypothesis.stateful import RuleBasedStateMachine, rule
 from hypothesis.strategies import integers
 from tests.common.utils import capture_out
 
@@ -156,3 +158,21 @@ def test_prints_all_notes_in_verbose_mode():
     v = out.getvalue()
     for x in sorted(messages):
         assert x in v
+
+
+def test_not_currently_in_hypothesis():
+    assert currently_in_test_context() is False
+
+
+@given(integers())
+def test_currently_in_hypothesis(_):
+    assert currently_in_test_context() is True
+
+
+class ContextMachine(RuleBasedStateMachine):
+    @rule()
+    def step(self):
+        assert currently_in_test_context() is True
+
+
+test_currently_in_stateful_test = ContextMachine.TestCase
