@@ -78,11 +78,11 @@ jobs:
       uses: actions/cache@v2
       with:
         path: |
-          с:\users\runneradmin\appdata\local\pip\cache
+          ~\appdata\local\pip\cache
           vendor\bundle
         key: deps-${{ runner.os }}-${{ matrix.python-version }}-${{ matrix.python-architecture }}-${{ hashFiles('requirements/tools.txt') }}-${{ matrix.task }}
         restore-keys: |
-          deps-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('requirements/tools.txt') }}
+          deps-${{ runner.os }}-${{ matrix.python-version }}-${{ matrix.python-architecture }}-${{ hashFiles('requirements/tools.txt') }}
     - name: Install dependencies
       run: |
         pip install --upgrade setuptools pip wheel
