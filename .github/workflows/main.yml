@@ -49,6 +49,7 @@ jobs:
         key: deps-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('requirements/tools.txt') }}-${{ matrix.task }}
         restore-keys: |
           deps-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('requirements/tools.txt') }}
+          deps-${{ runner.os }}-${{ matrix.python-version }}
     - name: Run tests
       run: TASK=${{ matrix.task }} ./build.sh
 
@@ -83,6 +84,7 @@ jobs:
         key: deps-${{ runner.os }}-${{ matrix.python-version }}-${{ matrix.python-architecture }}-${{ hashFiles('requirements/tools.txt') }}-${{ matrix.task }}
         restore-keys: |
           deps-${{ runner.os }}-${{ matrix.python-version }}-${{ matrix.python-architecture }}-${{ hashFiles('requirements/tools.txt') }}
+          deps-${{ runner.os }}-${{ matrix.python-version }}-${{ matrix.python-architecture }}
     - name: Install dependencies
       run: |
         pip install --upgrade setuptools pip wheel
@@ -146,6 +148,7 @@ jobs:
         key: deps-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('requirements/tools.txt') }}-${{ matrix.task }}
         restore-keys: |
           deps-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('requirements/tools.txt') }}
+          deps-${{ runner.os }}-${{ matrix.python-version }}
     - name: Run tests
       run: TASK=${{ matrix.task }} ./build.sh
 
@@ -179,6 +182,7 @@ jobs:
         key: deps-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('requirements/tools.txt') }}-${{ matrix.task }}
         restore-keys: |
           deps-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('requirements/tools.txt') }}
+          deps-${{ runner.os }}-${{ matrix.python-version }}
     - name: Deploy package
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
