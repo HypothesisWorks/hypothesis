@@ -101,7 +101,12 @@ features (if you need them) and better long-term guarantees about maintenance.
 We particularly encourage pull requests for new composable primitives that
 make implementing other strategies easier, or for widely used types in the
 standard library. Strategies for other things are also welcome; anything with
-external dependencies just goes in hypothesis.extra.
+external dependencies just goes in ``hypothesis.extra``.
+
+Tools such as assertion helpers may also need to check whether the current
+test is using Hypothesis:
+
+.. autofunction:: hypothesis.currently_in_test_context
 
 
 .. _entry-points:
