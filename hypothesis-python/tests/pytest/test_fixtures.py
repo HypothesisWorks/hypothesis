@@ -148,13 +148,18 @@ def test_fails_health_check(capsys, x):
 @given(x=st.integers())
 def test_suppresses_health_check(capsys, x):
     pass
+
+@given(x=st.integers())
+@settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
+def test_suppresses_health_check_2(capsys, x):
+    pass
 """
 
 
 def test_suppress_health_check_function_scoped_fixture(testdir):
     script = testdir.makepyfile(TESTSCRIPT_SUPPRESS_FIXTURE)
-    testdir.runpytest(script).assert_outcomes(passed=2)
-    testdir.runpytest(script, "-Werror").assert_outcomes(passed=1, failed=1)
+    testdir.runpytest(script).assert_outcomes(passed=3)
+    testdir.runpytest(script, "-Werror").assert_outcomes(passed=2, failed=1)
 
 
 TESTSCRIPT_OVERRIDE_FIXTURE = """
