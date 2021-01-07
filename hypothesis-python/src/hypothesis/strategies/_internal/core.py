@@ -73,7 +73,6 @@ from hypothesis.internal.floats import (
 )
 from hypothesis.internal.reflection import (
     define_function_signature,
-    deprecated_posargs,
     get_pretty_function_description,
     is_typed_named_tuple,
     nicerepr,
@@ -424,7 +423,6 @@ def booleans() -> SearchStrategy[bool]:
 
 @cacheable
 @defines_strategy(force_reusable_values=True)
-@deprecated_posargs
 def floats(
     min_value: Optional[Real] = None,
     max_value: Optional[Real] = None,
@@ -703,7 +701,6 @@ def identity(x):
 
 @cacheable
 @defines_strategy()
-@deprecated_posargs
 def lists(
     elements: SearchStrategy[Ex],
     *,
@@ -823,7 +820,6 @@ def lists(
 
 @cacheable
 @defines_strategy()
-@deprecated_posargs
 def sets(
     elements: SearchStrategy[Ex],
     *,
@@ -846,7 +842,6 @@ def sets(
 
 @cacheable
 @defines_strategy()
-@deprecated_posargs
 def frozensets(
     elements: SearchStrategy[Ex],
     *,
@@ -876,7 +871,6 @@ class PrettyIter:
 
 
 @defines_strategy()
-@deprecated_posargs
 def iterables(
     elements: SearchStrategy[Ex],
     *,
@@ -944,7 +938,6 @@ def fixed_dictionaries(
 
 @cacheable
 @defines_strategy()
-@deprecated_posargs
 def dictionaries(
     keys: SearchStrategy[Ex],
     values: SearchStrategy[T],
@@ -980,7 +973,6 @@ def dictionaries(
 
 @cacheable
 @defines_strategy(force_reusable_values=True)
-@deprecated_posargs
 def characters(
     *,
     whitelist_categories: Optional[Sequence[str]] = None,
@@ -1087,7 +1079,6 @@ def characters(
 
 @cacheable
 @defines_strategy(force_reusable_values=True)
-@deprecated_posargs
 def text(
     alphabet: Union[Sequence[str], SearchStrategy[str]] = characters(
         blacklist_categories=("Cs",)
@@ -1143,7 +1134,6 @@ def text(
 
 @cacheable
 @defines_strategy()
-@deprecated_posargs
 def from_regex(
     regex: Union[AnyStr, Pattern[AnyStr]], *, fullmatch: bool = False
 ) -> SearchStrategy[AnyStr]:
@@ -1184,7 +1174,6 @@ def from_regex(
 
 @cacheable
 @defines_strategy(force_reusable_values=True)
-@deprecated_posargs
 def binary(
     *,
     min_size: int = 0,
@@ -1630,7 +1619,6 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
 
 @cacheable
 @defines_strategy(force_reusable_values=True)
-@deprecated_posargs
 def fractions(
     min_value: Optional[Union[Real, str]] = None,
     max_value: Optional[Union[Real, str]] = None,
@@ -1740,7 +1728,6 @@ def _as_finite_decimal(
 
 @cacheable
 @defines_strategy(force_reusable_values=True)
-@deprecated_posargs
 def decimals(
     min_value: Optional[Union[Real, str]] = None,
     max_value: Optional[Union[Real, str]] = None,
@@ -1828,7 +1815,6 @@ def decimals(
     return strat | (sampled_from(special) if special else nothing())
 
 
-@deprecated_posargs
 def recursive(
     base: SearchStrategy[Ex],
     extend: Callable[[SearchStrategy[Any]], SearchStrategy[T]],
@@ -1951,7 +1937,6 @@ def composite(f: Callable[..., Ex]) -> Callable[..., SearchStrategy[Ex]]:
 
 @defines_strategy(force_reusable_values=True)
 @cacheable
-@deprecated_posargs
 def complex_numbers(
     *,
     min_magnitude: Real = 0,
@@ -2035,7 +2020,6 @@ def complex_numbers(
     return constrained_complex()
 
 
-@deprecated_posargs
 def shared(
     base: SearchStrategy[Ex],
     *,
@@ -2062,7 +2046,6 @@ def shared(
 
 @cacheable
 @defines_strategy(force_reusable_values=True)
-@deprecated_posargs
 def uuids(*, version: Optional[int] = None) -> SearchStrategy[UUID]:
     """Returns a strategy that generates :class:`UUIDs <uuid.UUID>`.
 
@@ -2107,7 +2090,6 @@ class RunnerStrategy(SearchStrategy):
 
 
 @defines_strategy(force_reusable_values=True)
-@deprecated_posargs
 def runner(*, default: Any = not_set) -> SearchStrategy[Any]:
     """A strategy for getting "the current test runner", whatever that may be.
     The exact meaning depends on the entry point, but it will usually be the
@@ -2295,7 +2277,6 @@ def emails() -> SearchStrategy[str]:
 
 
 @defines_strategy()
-@deprecated_posargs
 def functions(
     *,
     like: Callable[..., Any] = lambda: None,

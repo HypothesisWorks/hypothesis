@@ -43,7 +43,6 @@ from lark.grammar import NonTerminal, Terminal
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture.utils import calc_label_from_name
-from hypothesis.internal.reflection import deprecated_posargs
 from hypothesis.internal.validation import check_type
 from hypothesis.strategies._internal import SearchStrategy, core as st
 
@@ -201,7 +200,6 @@ def check_explicit(name):
 
 @st.cacheable
 @st.defines_strategy(force_reusable_values=True)
-@deprecated_posargs
 def from_lark(
     grammar: lark.lark.Lark,
     *,

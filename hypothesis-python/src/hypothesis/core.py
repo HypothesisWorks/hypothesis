@@ -77,7 +77,6 @@ from hypothesis.internal.reflection import (
     arg_string,
     convert_positional_arguments,
     define_function_signature,
-    deprecated_posargs,
     function_digest,
     get_pretty_function_description,
     impersonate,
@@ -1247,7 +1246,6 @@ def given(
     return run_test_as_given
 
 
-@deprecated_posargs
 def find(
     specifier: SearchStrategy[Ex],
     condition: Callable[[Any], bool],

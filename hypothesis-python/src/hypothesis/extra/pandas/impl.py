@@ -26,7 +26,6 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.extra import numpy as npst
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.coverage import check, check_function
-from hypothesis.internal.reflection import deprecated_posargs
 from hypothesis.internal.validation import (
     check_type,
     check_valid_interval,
@@ -176,7 +175,6 @@ def range_indexes(
 
 @st.cacheable
 @st.defines_strategy()
-@deprecated_posargs
 def indexes(
     *,
     elements: Optional[st.SearchStrategy[Ex]] = None,
@@ -217,7 +215,6 @@ def indexes(
 
 
 @st.defines_strategy()
-@deprecated_posargs
 def series(
     *,
     elements: Optional[st.SearchStrategy[Ex]] = None,
@@ -333,7 +330,6 @@ class column:
     unique = attr.ib(default=False)
 
 
-@deprecated_posargs
 def columns(
     names_or_number: Union[int, Sequence[str]],
     *,
@@ -361,7 +357,6 @@ def columns(
     ]
 
 
-@deprecated_posargs
 @st.defines_strategy()
 def data_frames(
     columns: Optional[Sequence[column]] = None,

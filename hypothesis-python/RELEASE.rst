@@ -12,6 +12,8 @@ Hypothesis deprecation warnings*, this will be a very boring upgrade.
 
 Changes
 ~~~~~~~
+- Many functions now use :pep:`3102` keyword-only arguments where passing positional
+  arguments :ref:`was deprecated since 5.5 <v5.5.0>`.
 - :func:`hypothesis.extra.django.from_model` no longer accepts ``model`` as a
   keyword argument, where it could conflict with fields named "model".
 - :func:`~hypothesis.strategies.randoms` now defaults to ``use_true_random=False``.
@@ -22,3 +24,8 @@ Changes
 - :func:`~hypothesis.strategies.register_type_strategy` no longer accepts generic
   types with type arguments, which were always pretty badly broken.
 - Using function-scoped pytest fixtures is now a health-check error, instead of a warning.
+
+.. tip::
+    The :command:`hypothesis codemod` command can automatically refactor your code,
+    particularly to convert positional to keyword arguments where those are now
+    required.

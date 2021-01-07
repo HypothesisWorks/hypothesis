@@ -28,7 +28,6 @@ import string
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import utils as cu
-from hypothesis.internal.reflection import deprecated_posargs
 from hypothesis.strategies._internal import core as st
 from hypothesis.strategies._internal.strategies import SearchStrategy
 
@@ -133,7 +132,6 @@ class DomainNameStrategy(SearchStrategy):
 
 
 @st.defines_strategy(force_reusable_values=True)
-@deprecated_posargs
 def domains(
     *, max_length: int = 255, max_element_length: int = 63
 ) -> SearchStrategy[str]:

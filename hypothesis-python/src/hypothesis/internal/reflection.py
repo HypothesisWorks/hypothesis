@@ -25,7 +25,7 @@ import types
 from functools import wraps
 from tokenize import detect_encoding
 from types import ModuleType
-from typing import Any, Callable, TypeVar
+from typing import Callable, TypeVar
 
 from hypothesis.internal.compat import (
     is_typed_named_tuple,
@@ -218,11 +218,7 @@ def convert_positional_arguments(function, args, kwargs):
         else:
             new_kwargs[name] = arg
 
-    deprecated_posargs = getattr(function, "__deprecated_posargs", ())
-    for param, val in zip(deprecated_posargs, args[len(argspec.args) :]):
-        new_kwargs[param.name] = val
-
-    return (tuple(args[len(argspec.args) + len(deprecated_posargs) :]), new_kwargs)
+    return (tuple(args[len(argspec.args) :]), new_kwargs)
 
 
 def extract_all_lambdas(tree):
@@ -587,74 +583,4 @@ def proxies(target):
             )
         )
 
-    return accept
-
-
-def deprecated_posargs(func: C) -> C:
-    """Insert a `*__deprecated_posargs,` shim in place of the `*,` for kwonly args.
-
-    This turns out to be fairly tricky to get right with our preferred style of
-    error handling (exhaustive) and various function-rewriting wrappers.
-    """
-    if READTHEDOCS:  # pragma: no cover
-        # Documentation should show the new signatures without deprecation helpers.
-        return func
-
-    signature = inspect.signature(func)
-    parameters = list(signature.parameters.values())
-    vararg = inspect.Parameter(
-        name="__deprecated_posargs",
-        kind=inspect.Parameter.VAR_POSITIONAL,
-        annotation=Any,
-    )
-
-    # If we're passed any VAR_POSITIONAL args, we'll use this sequence of
-    # params to match them up with the correct KEYWORD_ONLY argument after
-    # checking that it has its default value - if you're passing by name,
-    # can't have also been passing positionally before we deprecated that.
-    deprecated = []
-    for i, arg in enumerate(tuple(parameters)):
-        if arg.kind == inspect.Parameter.KEYWORD_ONLY:
-            if not deprecated:
-                parameters.insert(i, vararg)
-            deprecated.append(arg)
-
-    func.__signature__ = signature.replace(parameters=parameters)
-
-    @proxies(func)
-    def accept(*args, **kwargs):
-        bound = func.__signature__.bind_partial(*args, **kwargs)
-        bad_posargs = bound.arguments.pop("__deprecated_posargs", None) or ()
-        if len(bad_posargs) > len(deprecated):
-            # We have more positional arguments than the wrapped func has parameters,
-            # so there's no way this ever worked.  We know that this bind will fail
-            # but attempting it will raise a nice descriptive TypeError.
-            signature.bind_partial(*args, **kwargs)
-        for param, pos in zip(deprecated, bad_posargs):
-            # Unfortunately, another layer of our function-wrapping logic passes in
-            # all the default arguments as explicit arguments.  This means that if
-            # someone explicitly passes some value for a parameter as a positional
-            # argument and *the default value* as a keyword argument, we'll emit a
-            # deprecation warning but not an immediate error.  Ah well...
-            if bound.arguments.get(param.name, param.default) != param.default:
-                raise TypeError(
-                    "Cannot pass {name}={p} positionally and {name}={n} by name!".format(
-                        name=param.name, p=pos, n=bound.arguments[param.name]
-                    )
-                )
-            from hypothesis._settings import note_deprecation
-
-            note_deprecation(
-                "%s was passed %s=%r as a positional argument, which will be a "
-                "keyword-only argument in a future version."
-                % (qualname(func), param.name, pos),
-                since="2020-02-07",
-                has_codemod=True,
-            )
-            bound.arguments[param.name] = pos
-        return func(*bound.args, **bound.kwargs)
-
-    # We use these in convert_positional_arguments, to ensure that the LazyStrategy
-    # repr of strategy objects look sensible (and will work without this shim).
-    accept.__deprecated_posargs = tuple(deprecated)
     return accept

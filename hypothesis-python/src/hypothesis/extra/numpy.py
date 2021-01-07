@@ -23,7 +23,7 @@ from hypothesis import assume
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.coverage import check_function
-from hypothesis.internal.reflection import deprecated_posargs, proxies
+from hypothesis.internal.reflection import proxies
 from hypothesis.internal.validation import check_type, check_valid_interval
 from hypothesis.strategies._internal import SearchStrategy, check_strategy, core as st
 from hypothesis.strategies._internal.strategies import T
@@ -346,7 +346,6 @@ def fill_for(elements, unique, fill, name=""):
 
 
 @st.defines_strategy(force_reusable_values=True)
-@deprecated_posargs
 def arrays(
     dtype: Any,
     shape: Union[int, Shape, st.SearchStrategy[Shape]],
@@ -464,7 +463,6 @@ def arrays(
 
 
 @st.defines_strategy()
-@deprecated_posargs
 def array_shapes(
     *,
     min_dims: int = 1,
@@ -557,7 +555,6 @@ def dtype_factory(kind, sizes, valid_sizes, endianness):
 
 
 @defines_dtype_strategy
-@deprecated_posargs
 def unsigned_integer_dtypes(
     *, endianness: str = "?", sizes: Sequence[int] = (8, 16, 32, 64)
 ) -> st.SearchStrategy[np.dtype]:
@@ -574,7 +571,6 @@ def unsigned_integer_dtypes(
 
 
 @defines_dtype_strategy
-@deprecated_posargs
 def integer_dtypes(
     *, endianness: str = "?", sizes: Sequence[int] = (8, 16, 32, 64)
 ) -> st.SearchStrategy[np.dtype]:
@@ -587,7 +583,6 @@ def integer_dtypes(
 
 
 @defines_dtype_strategy
-@deprecated_posargs
 def floating_dtypes(
     *, endianness: str = "?", sizes: Sequence[int] = (16, 32, 64)
 ) -> st.SearchStrategy[np.dtype]:
@@ -604,7 +599,6 @@ def floating_dtypes(
 
 
 @defines_dtype_strategy
-@deprecated_posargs
 def complex_number_dtypes(
     *, endianness: str = "?", sizes: Sequence[int] = (64, 128)
 ) -> st.SearchStrategy[np.dtype]:
@@ -644,7 +638,6 @@ def validate_time_slice(max_period, min_period):
 
 
 @defines_dtype_strategy
-@deprecated_posargs
 def datetime64_dtypes(
     *, max_period: str = "Y", min_period: str = "ns", endianness: str = "?"
 ) -> st.SearchStrategy[np.dtype]:
@@ -659,7 +652,6 @@ def datetime64_dtypes(
 
 
 @defines_dtype_strategy
-@deprecated_posargs
 def timedelta64_dtypes(
     *, max_period: str = "Y", min_period: str = "ns", endianness: str = "?"
 ) -> st.SearchStrategy[np.dtype]:
@@ -674,7 +666,6 @@ def timedelta64_dtypes(
 
 
 @defines_dtype_strategy
-@deprecated_posargs
 def byte_string_dtypes(
     *, endianness: str = "?", min_len: int = 1, max_len: int = 16
 ) -> st.SearchStrategy[np.dtype]:
@@ -690,7 +681,6 @@ def byte_string_dtypes(
 
 
 @defines_dtype_strategy
-@deprecated_posargs
 def unicode_string_dtypes(
     *, endianness: str = "?", min_len: int = 1, max_len: int = 16
 ) -> st.SearchStrategy[np.dtype]:
@@ -718,7 +708,6 @@ def _no_title_is_name_of_a_titled_field(ls):
 
 
 @defines_dtype_strategy
-@deprecated_posargs
 def array_dtypes(
     subtype_strategy: st.SearchStrategy[np.dtype] = scalar_dtypes(),
     *,
@@ -755,7 +744,6 @@ def array_dtypes(
 
 
 @st.defines_strategy()
-@deprecated_posargs
 def nested_dtypes(
     subtype_strategy: st.SearchStrategy[np.dtype] = scalar_dtypes(),
     *,
@@ -778,7 +766,6 @@ def nested_dtypes(
 
 
 @st.defines_strategy()
-@deprecated_posargs
 def valid_tuple_axes(
     ndim: int,
     *,
@@ -830,7 +817,6 @@ def valid_tuple_axes(
 
 
 @st.defines_strategy()
-@deprecated_posargs
 def broadcastable_shapes(
     shape: Shape,
     *,
@@ -1442,7 +1428,6 @@ def basic_indices(
 
 
 @st.defines_strategy()
-@deprecated_posargs
 def integer_array_indices(
     shape: Shape,
     *,
