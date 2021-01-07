@@ -19,3 +19,5 @@ Changes
   ``min_magnitude=None``; either use ``min_magnitude=0`` or just omit the argument.
 - ``hypothesis.provisional.ip4_addr_strings`` and ``ip6_addr_strings`` are removed
   in favor of :func:`ip_addresses(v=...).map(str) <hypothesis.strategies.ip_addresses>`.
+- :func:`~hypothesis.strategies.register_type_strategy` no longer accepts generic
+  types with type arguments, which were always pretty badly broken.

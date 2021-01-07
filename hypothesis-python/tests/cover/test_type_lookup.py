@@ -29,7 +29,7 @@ from hypothesis.strategies._internal import types
 from hypothesis.strategies._internal.core import _strategies
 from hypothesis.strategies._internal.types import _global_type_lookup
 from tests.common.debug import assert_all_examples, find_any
-from tests.common.utils import checks_deprecated_behaviour, fails_with, temp_registered
+from tests.common.utils import fails_with, temp_registered
 
 # Build a set of all types output by core strategies
 blacklist = [
@@ -246,21 +246,10 @@ _skip_callables_mark = pytest.mark.skipif(sys.version_info[:2] < (3, 7), reason=
     ids=repr,
 )
 @pytest.mark.parametrize("strategy", [st.none(), lambda _: st.none()])
-@checks_deprecated_behaviour
 def test_generic_origin_with_type_args(generic, strategy):
-    try:
-        # Registering a generic type with args is deprecated
+    with pytest.raises(InvalidArgument):
         st.register_type_strategy(generic, strategy)
-        assert generic not in types._global_type_lookup
-        assert generic.__origin__ in types._global_type_lookup
-        # But trying to register another strategy does, since that could be
-        # a symptom of trying multiple registrations for different args
-        with pytest.raises(InvalidArgument):
-            st.register_type_strategy(generic, strategy)
-    finally:
-        st.from_type.__clear_cache()
-        for x in (generic, generic.__origin__):
-            types._global_type_lookup.pop(x, None)
+    assert generic not in types._global_type_lookup
 
 
 @pytest.mark.parametrize(

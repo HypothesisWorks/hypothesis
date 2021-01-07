@@ -50,7 +50,6 @@ from uuid import UUID
 
 import attr
 
-from hypothesis._settings import note_deprecation
 from hypothesis.control import cleanup, note, reject
 from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.internal.cache import LRUReusedCache
@@ -2231,26 +2230,12 @@ def register_type_strategy(
         raise InvalidArgument("strategy=%r must not be empty")
     elif types.has_type_arguments(custom_type):
         origin = getattr(custom_type, "__origin__", None)
-        if callable(strategy):
-            strategy_repr = get_pretty_function_description(strategy)
-        else:
-            strategy_repr = repr(strategy)
-        note_deprecation(
-            "Registering a generic type with arguments (%r) is deprecated, and "
-            "will be an error in future, because the resolution logic is badly "
-            "broken.  Instead, register a function for the origin type (%r) "
-            "which can inspect specific type objects and return a strategy.  "
-            "%s will be registered for any type arguments."
-            % (custom_type, origin, strategy_repr),
-            since="2020-08-17",
-            has_codemod=False,
+        raise InvalidArgument(
+            f"Cannot register generic type {custom_type!r}, because it has type "
+            "arguments which would not be handled.  Instead, register a function "
+            f"for {origin!r} which can inspect specific type objects and return a "
+            "strategy."
         )
-        if origin in types._global_type_lookup:
-            raise InvalidArgument(
-                "Cannot register %r, because the without-arguments form %r already "
-                "has a registered strategy %s" % (custom_type, origin, strategy_repr)
-            )
-        custom_type = origin
 
     types._global_type_lookup[custom_type] = strategy
     from_type.__clear_cache()  # type: ignore
