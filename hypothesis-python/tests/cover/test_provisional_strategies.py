@@ -13,7 +13,6 @@
 #
 # END HEADER
 
-import ipaddress
 import re
 import string
 
@@ -21,9 +20,8 @@ import pytest
 
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
-from hypothesis.provisional import domains, ip4_addr_strings, ip6_addr_strings, urls
+from hypothesis.provisional import domains, urls
 from tests.common.debug import find_any
-from tests.common.utils import checks_deprecated_behaviour
 
 
 @given(urls())
@@ -35,22 +33,6 @@ def test_is_URL(url):
     assert all(
         re.match("^[0-9A-Fa-f]{2}", after_perc) for after_perc in path.split("%")[1:]
     )
-
-
-@checks_deprecated_behaviour
-@given(ip4_addr_strings())
-def test_is_IP4_addr(address):
-    as_num = [int(n) for n in address.split(".")]
-    assert len(as_num) == 4
-    assert all(0 <= n <= 255 for n in as_num)
-
-
-@checks_deprecated_behaviour
-@given(ip6_addr_strings())
-def test_is_IP6_addr(address):
-    # The IPv6Address constructor does all the validation we could need
-    assert isinstance(address, str)
-    ipaddress.IPv6Address(address)
 
 
 @pytest.mark.parametrize("max_length", [-1, 0, 3, 4.0, 256])

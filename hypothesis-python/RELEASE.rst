@@ -17,3 +17,5 @@ Changes
 - :func:`~hypothesis.strategies.randoms` now defaults to ``use_true_random=False``.
 - :func:`~hypothesis.strategies.complex_numbers` no longer accepts
   ``min_magnitude=None``; either use ``min_magnitude=0`` or just omit the argument.
+- ``hypothesis.provisional.ip4_addr_strings`` and ``ip6_addr_strings`` are removed
+  in favor of :func:`ip_addresses(v=...).map(str) <hypothesis.strategies.ip_addresses>`.
