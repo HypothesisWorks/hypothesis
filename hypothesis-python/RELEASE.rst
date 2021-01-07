@@ -12,3 +12,5 @@ Hypothesis deprecation warnings*, this will be a very boring upgrade.
 
 Changes
 ~~~~~~~
+- :func:`hypothesis.extra.django.from_model` no longer accepts ``model`` as a
+  keyword argument, where it could conflict with fields named "model".

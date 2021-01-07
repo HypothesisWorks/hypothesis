@@ -21,11 +21,7 @@ from django.contrib.auth.models import User
 
 from hypothesis import HealthCheck, assume, given, infer, settings
 from hypothesis.control import reject
-from hypothesis.errors import (
-    HypothesisDeprecationWarning,
-    HypothesisException,
-    InvalidArgument,
-)
+from hypothesis.errors import HypothesisException, InvalidArgument
 from hypothesis.extra.django import (
     TestCase,
     TransactionTestCase,
@@ -202,6 +198,4 @@ class TestPosOnlyArg(TestCase):
     def test_from_model_argspec(self):
         self.assertRaises(TypeError, from_model().example)
         self.assertRaises(TypeError, from_model(Car, None).example)
-        self.assertWarns(
-            HypothesisDeprecationWarning, from_model(model=Customer).example
-        )
+        self.assertRaises(TypeError, from_model(model=Customer).example)
