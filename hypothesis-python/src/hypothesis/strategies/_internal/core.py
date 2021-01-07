@@ -1986,8 +1986,6 @@ def complex_numbers(
     check_valid_magnitude(min_magnitude, "min_magnitude")
     check_valid_magnitude(max_magnitude, "max_magnitude")
     check_valid_interval(min_magnitude, max_magnitude, "min_magnitude", "max_magnitude")
-    if min_magnitude is None:
-        min_magnitude = 0
     if max_magnitude == math.inf:
         max_magnitude = None
 

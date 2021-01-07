@@ -78,15 +78,8 @@ def check_valid_magnitude(value, name):
     check_valid_bound(value, name)
     if value is not None and value < 0:
         raise InvalidArgument("%s=%r must not be negative." % (name, value))
-    if value is None and name == "min_magnitude":
-        from hypothesis._settings import note_deprecation
-
-        note_deprecation(
-            "min_magnitude=None is deprecated; use min_magnitude=0 "
-            "or omit the argument entirely.",
-            since="2020-05-13",
-            has_codemod=True,
-        )
+    elif value is None and name == "min_magnitude":
+        raise InvalidArgument("Use min_magnitude=0 or omit the argument entirely.")
 
 
 @check_function

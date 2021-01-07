@@ -138,6 +138,7 @@ def fn_ktest(*fnkwargs):
     (ds.floats, {"min_value": 0.0, "max_value": 1.0, "allow_infinity": True}),
     (ds.floats, {"min_value": math.inf, "allow_infinity": False}),
     (ds.floats, {"max_value": -math.inf, "allow_infinity": False}),
+    (ds.complex_numbers, {"min_magnitude": None}),
     (ds.complex_numbers, {"min_magnitude": math.nan}),
     (ds.complex_numbers, {"max_magnitude": math.nan}),
     (ds.complex_numbers, {"max_magnitude": complex(1, 2)}),
