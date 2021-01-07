@@ -99,6 +99,11 @@ def test_requests_function_scoped_fixture_percent_parametrized(capsys, x, percen
     # See https://github.com/HypothesisWorks/hypothesis/issues/2469
     pass
 
+class TestClass:
+    @given(x=st.integers())
+    def test_requests_method_scoped_fixture(capsys, x):
+        pass
+
 @given(x=st.integers())
 def test_autouse_function_scoped_fixture(x):
     pass
@@ -107,8 +112,54 @@ def test_autouse_function_scoped_fixture(x):
 
 def test_given_plus_function_scoped_non_autouse_fixtures_are_deprecated(testdir):
     script = testdir.makepyfile(TESTSUITE)
-    testdir.runpytest(script).assert_outcomes(passed=4)
-    testdir.runpytest(script, "-Werror").assert_outcomes(passed=1, failed=3)
+    testdir.runpytest(script).assert_outcomes(passed=5)
+    testdir.runpytest(script, "-Werror").assert_outcomes(passed=1, failed=4)
+
+
+CONFTEST_SUPPRESS = """
+from hypothesis import HealthCheck, settings
+
+settings.register_profile(
+    "suppress",
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+)
+"""
+
+
+def test_suppress_fixture_health_check_via_profile(testdir):
+    script = testdir.makepyfile(TESTSUITE)
+    testdir.makeconftest(CONFTEST_SUPPRESS)
+
+    testdir.runpytest(script, "-Werror").assert_outcomes(passed=1, failed=4)
+    testdir.runpytest(
+        script, "-Werror", "--hypothesis-profile=suppress"
+    ).assert_outcomes(passed=5)
+
+
+TESTSCRIPT_SUPPRESS_FIXTURE = """
+import pytest
+from hypothesis import HealthCheck, given, settings, strategies as st
+
+@given(x=st.integers())
+def test_fails_health_check(capsys, x):
+    pass
+
+@settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
+@given(x=st.integers())
+def test_suppresses_health_check(capsys, x):
+    pass
+
+@given(x=st.integers())
+@settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
+def test_suppresses_health_check_2(capsys, x):
+    pass
+"""
+
+
+def test_suppress_health_check_function_scoped_fixture(testdir):
+    script = testdir.makepyfile(TESTSCRIPT_SUPPRESS_FIXTURE)
+    testdir.runpytest(script).assert_outcomes(passed=3)
+    testdir.runpytest(script, "-Werror").assert_outcomes(passed=2, failed=1)
 
 
 TESTSCRIPT_OVERRIDE_FIXTURE = """
