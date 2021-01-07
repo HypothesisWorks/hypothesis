@@ -112,8 +112,7 @@ def test_autouse_function_scoped_fixture(x):
 
 def test_given_plus_function_scoped_non_autouse_fixtures_are_deprecated(testdir):
     script = testdir.makepyfile(TESTSUITE)
-    testdir.runpytest(script).assert_outcomes(passed=5)
-    testdir.runpytest(script, "-Werror").assert_outcomes(passed=1, failed=4)
+    testdir.runpytest(script).assert_outcomes(passed=1, failed=4)
 
 
 CONFTEST_SUPPRESS = """
@@ -130,10 +129,8 @@ def test_suppress_fixture_health_check_via_profile(testdir):
     script = testdir.makepyfile(TESTSUITE)
     testdir.makeconftest(CONFTEST_SUPPRESS)
 
-    testdir.runpytest(script, "-Werror").assert_outcomes(passed=1, failed=4)
-    testdir.runpytest(
-        script, "-Werror", "--hypothesis-profile=suppress"
-    ).assert_outcomes(passed=5)
+    testdir.runpytest(script).assert_outcomes(passed=1, failed=4)
+    testdir.runpytest(script, "--hypothesis-profile=suppress").assert_outcomes(passed=5)
 
 
 TESTSCRIPT_SUPPRESS_FIXTURE = """
@@ -158,8 +155,7 @@ def test_suppresses_health_check_2(capsys, x):
 
 def test_suppress_health_check_function_scoped_fixture(testdir):
     script = testdir.makepyfile(TESTSCRIPT_SUPPRESS_FIXTURE)
-    testdir.runpytest(script).assert_outcomes(passed=3)
-    testdir.runpytest(script, "-Werror").assert_outcomes(passed=2, failed=1)
+    testdir.runpytest(script).assert_outcomes(passed=2, failed=1)
 
 
 TESTSCRIPT_OVERRIDE_FIXTURE = """

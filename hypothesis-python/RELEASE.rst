@@ -21,3 +21,4 @@ Changes
   in favor of :func:`ip_addresses(v=...).map(str) <hypothesis.strategies.ip_addresses>`.
 - :func:`~hypothesis.strategies.register_type_strategy` no longer accepts generic
   types with type arguments, which were always pretty badly broken.
+- Using function-scoped pytest fixtures is now a health-check error, instead of a warning.
