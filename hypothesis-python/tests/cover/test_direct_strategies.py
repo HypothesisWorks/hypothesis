@@ -183,6 +183,8 @@ def fn_ktest(*fnkwargs):
     (ds.ip_addresses, {"v": 6, "network": "127.0.0.0/8"}),
     (ds.ip_addresses, {"network": b"127.0.0.0/8"}),  # only unicode strings are valid
     (ds.ip_addresses, {"network": b"::/64"}),
+    (ds.randoms, {"use_true_random": "False"}),
+    (ds.randoms, {"note_method_calls": "True"}),
 )
 def test_validates_keyword_arguments(fn, kwargs):
     with pytest.raises(InvalidArgument):

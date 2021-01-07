@@ -1212,7 +1212,7 @@ def binary(
 def randoms(
     *,
     note_method_calls: bool = False,
-    use_true_random: Optional[bool] = None,
+    use_true_random: bool = False,
 ) -> SearchStrategy[random.Random]:
     """Generates instances of ``random.Random``. The generated Random instances
     are of a special HypothesisRandom subclass.
@@ -1228,16 +1228,8 @@ def randoms(
       flag should only be set to True when your code relies on the distribution
       of values for correctness.
     """
-    if use_true_random is None:
-        note_deprecation(
-            """Defaulting to old behaviour of use_true_random=True. If you want
-            to keep that behaviour, set use_true_random=True explicitly. If you
-            want the new behaviour (which will become the default in future),
-            set use_true_random=False.""",
-            since="2020-06-30",
-            has_codemod=False,
-        )
-        use_true_random = True
+    check_type(bool, note_method_calls, "note_method_calls")
+    check_type(bool, use_true_random, "use_true_random")
 
     from hypothesis.strategies._internal.random import RandomStrategy
 

@@ -14,3 +14,4 @@ Changes
 ~~~~~~~
 - :func:`hypothesis.extra.django.from_model` no longer accepts ``model`` as a
   keyword argument, where it could conflict with fields named "model".
+- :func:`~hypothesis.strategies.randoms` now defaults to ``use_true_random=False``.
