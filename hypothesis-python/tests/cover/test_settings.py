@@ -30,7 +30,11 @@ from hypothesis._settings import (
     settings,
 )
 from hypothesis.database import ExampleDatabase
-from hypothesis.errors import InvalidArgument, InvalidState
+from hypothesis.errors import (
+    HypothesisDeprecationWarning,
+    InvalidArgument,
+    InvalidState,
+)
 from hypothesis.stateful import RuleBasedStateMachine, rule
 from hypothesis.utils.conventions import not_set
 from tests.common.utils import counts_calls, fails_with
@@ -474,3 +478,11 @@ def test_note_deprecation_checks_date():
     assert len(rec) == 1
     with pytest.raises(AssertionError):
         note_deprecation("This is way too old", since="1999-12-31", has_codemod=False)
+
+
+def test_note_deprecation_checks_has_codemod():
+    with pytest.warns(
+        HypothesisDeprecationWarning,
+        match="The `hypothesis codemod` command-line tool",
+    ):
+        note_deprecation("This is bad", since="2021-01-01", has_codemod=True)
