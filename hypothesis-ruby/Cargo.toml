@@ -1,12 +1,14 @@
 [package]
 name = "hypothesis-ruby"
 version = "0.1.0"
-authors = ["David R. MacIver <david@drmaciver.com>"]
+authors = ["David R. MacIver <david@drmaciver.com>", "Alex Wiesberger <alex.m.weisberger@gmail.com>"]
 
 [lib]
+name="hypothesis_ruby_core"
 crate-type = ["cdylib"]
 
 [dependencies]
-helix = '0.7.5'
+rutie = {version="0.8.1"}
+lazy_static = "1.4.0"
 rand = '0.3'
 conjecture = { path = '../conjecture-rust' }

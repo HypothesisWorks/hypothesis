@@ -169,6 +169,8 @@ IS_PULL_REQUEST = os.environ.get("GITHUB_REF", "").startswith("refs/pull/")
 
 
 def all_projects():
-    from hypothesistooling.projects import conjecturerust as cr, hypothesispython as hp
+    import hypothesistooling.projects.conjecturerust as cr
+    import hypothesistooling.projects.hypothesispython as hp
+    import hypothesistooling.projects.hypothesisruby as hr
 
-    return [cr, hp]
+    return [cr, hp, hr]

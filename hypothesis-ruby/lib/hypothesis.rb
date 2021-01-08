@@ -19,6 +19,23 @@ require_relative 'hypothesis/world'
 module Hypothesis
   # @!visibility private
   HYPOTHESIS_LOCATION = File.dirname(__FILE__)
+  # rubocop:disable ClassVars
+  @@setup_called = false
+  # rubocop:enable RuleByName
+
+  def self.setup_called
+    @@setup_called == true
+  end
+
+  def self.included(*)
+    if setup_called == false
+      Rutie.new(:hypothesis_ruby_core).init(
+        'Init_rutie_hypothesis_core',
+        __dir__
+      )
+    end
+    @@setup_called = true
+  end
 
   # @!visibility private
   def hypothesis_stable_identifier
@@ -188,6 +205,7 @@ module Hypothesis
     unless World.current_engine.nil?
       raise UsageError, 'Cannot nest hypothesis calls'
     end
+
     begin
       World.current_engine = Engine.new(
         hypothesis_stable_identifier,

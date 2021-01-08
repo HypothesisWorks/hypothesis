@@ -23,8 +23,10 @@ from glob import glob
 from coverage.config import CoverageConfig
 
 import hypothesistooling as tools
+import hypothesistooling.projects.conjecturerust as cr
+import hypothesistooling.projects.hypothesispython as hp
+import hypothesistooling.projects.hypothesisruby as hr
 from hypothesistooling import installers as install, releasemanagement as rm
-from hypothesistooling.projects import conjecturerust as cr, hypothesispython as hp
 from hypothesistooling.scripts import pip_tool
 
 TASKS = {}
@@ -452,9 +454,28 @@ def shell():
     IPython.start_ipython([])
 
 
+def ruby_task(fn):
+    return task(if_changed=(hr.HYPOTHESIS_RUBY,))(fn)
+
+
+@ruby_task
+def lint_ruby():
+    hr.rake_task("checkformat")
+
+
+@ruby_task
+def check_ruby_tests():
+    hr.rake_task("test")
+
+
 @task()
 def python(*args):
     os.execv(sys.executable, (sys.executable,) + args)
+
+
+@task()
+def bundle(*args):
+    hr.bundle(*args)
 
 
 rust_task = task(if_changed=(cr.BASE_DIR,))
