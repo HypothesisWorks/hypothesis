@@ -21,6 +21,8 @@ jobs:
           - check-conjecture-coverage
           - check-py38
           - check-quality
+          - lint-ruby
+          - check-ruby-tests
         python-version: ["3.8"]
         include:
           - task: check-py36
