@@ -31,13 +31,7 @@ resources to do so, so our porting efforts are mostly prototypes.
 The two prototype implementations of Hypothesis for other languages are:
 
 * `Hypothesis for Ruby <hypothesis-ruby>`_
-  is a reasonable start on a port of Hypothesis to Ruby. It worked pretty well,
-  but used a core Rust implementation that is unfortunately not compatible with
-  recent versions of Rust, due to its dependency on Helix (which now seems to
-  be mostly unmaintained). As a result it is currently unsupported pending a
-  rewrite of the bridging code between Rust and Ruby. We don't at present have
-  the time or funding for this project, but it is likely not a massive undertaking
-  if anyone would like to provide either of these.
+  is a reasonable start on a port of Hypothesis to Ruby.
 * `Hypothesis for Java <https://github.com/HypothesisWorks/hypothesis-java>`_
   is a prototype written some time ago. It's far from feature complete and is
   not under active development, but was intended to prove the viability of the
