@@ -1,3 +1,9 @@
+# Hypothesis for Ruby 0.3.0 (2021-01-08)
+
+This release converts Hypothesis for Ruby to use [RuTie](https://github.com/danielpclark/rutie)
+instead of the deprecated [Helix](https://github.com/tildeio/helix), restoring compatibility
+with recent versions of Rust.  Thanks to Alex Weisberger for taking this on!
+
 # Hypothesis for Ruby 0.2.0 (2018-10-24)
 
 This release adds an example database to Hypothesis for Ruby. This means that when a test fails,
