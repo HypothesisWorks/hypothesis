@@ -18,7 +18,7 @@ import subprocess
 
 import hypothesistooling as tools
 from hypothesistooling import installers as install, releasemanagement as rm
-from hypothesistooling.junkdrawer import in_dir, unlink_if_present, unquote_string
+from hypothesistooling.junkdrawer import in_dir, unquote_string
 
 PACKAGE_NAME = "conjecture-rust"
 
@@ -98,16 +98,6 @@ CARGO_CREDENTIALS = os.path.expanduser("~/.cargo/credentials")
 def upload_distribution():
     """Upload the built package to crates.io."""
     tools.assert_can_release()
-
-    # Yes, cargo really will only look in this file. Yes this is terrible.
-    # This only runs in CI, so we may be assumed to own it, but still.
-    unlink_if_present(CARGO_CREDENTIALS)
-
-    # symlink so that the actual secret credentials can't be leaked via the
-    # cache.
-    os.symlink(tools.CARGO_API_KEY, CARGO_CREDENTIALS)
-
-    # Give the key the right permissions.
-    os.chmod(CARGO_CREDENTIALS, int("0600", 8))
-
+    # Credentials are supplied by the CARGO_REGISTRY_TOKEN envvar, which in turn
+    # is set from the repository secrets by GitHub Actions.
     cargo("publish")

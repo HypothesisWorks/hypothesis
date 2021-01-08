@@ -21,7 +21,7 @@ import hypothesistooling as tools
 import hypothesistooling.installers as install
 import hypothesistooling.projects.conjecturerust as cr
 import hypothesistooling.releasemanagement as rm
-from hypothesistooling.junkdrawer import in_dir, once, unlink_if_present
+from hypothesistooling.junkdrawer import in_dir, once
 
 PACKAGE_NAME = "hypothesis-ruby"
 
@@ -157,18 +157,8 @@ RUBYGEMS_CREDENTIALS = os.path.expanduser("~/.gem/credentials")
 def upload_distribution():
     """Upload the built package to rubygems."""
     tools.assert_can_release()
-
-    # Yes, rubygems really will only look in this file. Yes this is terrible.
-    # This only runs on Travis, so we may be assumed to own it, but still.
-    unlink_if_present(RUBYGEMS_CREDENTIALS)
-
-    # symlink so that the actual secret credentials can't be leaked via the
-    # cache.
-    os.symlink(tools.RUBYGEMS_API_KEY, RUBYGEMS_CREDENTIALS)
-
-    # Give the key the right permissions.
-    os.chmod(RUBYGEMS_CREDENTIALS, int("0600", 8))
-
+    # Credentials are supplied by the GEM_HOST_API_KEY envvar, which in turn
+    # is set from the repository secrets by GitHub Actions.
     subprocess.check_call(
         [install.GEM_EXECUTABLE, "push", *glob("hypothesis-specs-*.gem")]
     )
