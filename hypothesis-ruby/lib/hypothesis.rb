@@ -19,7 +19,9 @@ require_relative 'hypothesis/world'
 module Hypothesis
   # @!visibility private
   HYPOTHESIS_LOCATION = File.dirname(__FILE__)
+  # rubocop:disable ClassVars
   @@setup_called = false
+  # rubocop:enable RuleByName
 
   def self.setup_called
     @@setup_called == true
@@ -27,7 +29,10 @@ module Hypothesis
 
   def self.included(*)
     if setup_called == false
-      Rutie.new(:hypothesis_ruby_core).init 'Init_rutie_hypothesis_core', "#{__dir__}"
+      Rutie.new(:hypothesis_ruby_core).init(
+        'Init_rutie_hypothesis_core',
+        __dir__
+      )
     end
     @@setup_called = true
   end
