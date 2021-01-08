@@ -172,4 +172,5 @@ def all_projects():
     import hypothesistooling.projects.conjecturerust as cr
     import hypothesistooling.projects.hypothesispython as hp
     import hypothesistooling.projects.hypothesisruby as hr
+
     return [cr, hp, hr]

@@ -23,10 +23,10 @@ from glob import glob
 from coverage.config import CoverageConfig
 
 import hypothesistooling as tools
-from hypothesistooling import installers as install, releasemanagement as rm
 import hypothesistooling.projects.conjecturerust as cr
 import hypothesistooling.projects.hypothesispython as hp
 import hypothesistooling.projects.hypothesisruby as hr
+from hypothesistooling import installers as install, releasemanagement as rm
 from hypothesistooling.scripts import pip_tool
 
 TASKS = {}
