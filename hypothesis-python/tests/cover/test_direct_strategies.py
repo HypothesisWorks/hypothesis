@@ -138,6 +138,7 @@ def fn_ktest(*fnkwargs):
     (ds.floats, {"min_value": 0.0, "max_value": 1.0, "allow_infinity": True}),
     (ds.floats, {"min_value": math.inf, "allow_infinity": False}),
     (ds.floats, {"max_value": -math.inf, "allow_infinity": False}),
+    (ds.complex_numbers, {"min_magnitude": None}),
     (ds.complex_numbers, {"min_magnitude": math.nan}),
     (ds.complex_numbers, {"max_magnitude": math.nan}),
     (ds.complex_numbers, {"max_magnitude": complex(1, 2)}),
@@ -183,6 +184,8 @@ def fn_ktest(*fnkwargs):
     (ds.ip_addresses, {"v": 6, "network": "127.0.0.0/8"}),
     (ds.ip_addresses, {"network": b"127.0.0.0/8"}),  # only unicode strings are valid
     (ds.ip_addresses, {"network": b"::/64"}),
+    (ds.randoms, {"use_true_random": "False"}),
+    (ds.randoms, {"note_method_calls": "True"}),
 )
 def test_validates_keyword_arguments(fn, kwargs):
     with pytest.raises(InvalidArgument):

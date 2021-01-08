@@ -202,14 +202,6 @@ class HypothesisFixPositionalKeywonlyArgs(VisitorBasedCodemodCommand):
             return updated_node
 
         # Create new arg nodes with the newly required keywords
-        params = [
-            p
-            for p in signature(func).parameters.values()
-            if p.kind is not Parameter.VAR_POSITIONAL
-        ]
-        # params comprehension is only useful after @deprecated_posargs applied
-        # once removed we can use paramaters.values(); if never applied why codemod?
-        assert len(params) < len(signature(func).parameters.values())
         assign_nospace = cst.AssignEqual(
             whitespace_before=cst.SimpleWhitespace(""),
             whitespace_after=cst.SimpleWhitespace(""),
@@ -218,6 +210,6 @@ class HypothesisFixPositionalKeywonlyArgs(VisitorBasedCodemodCommand):
             arg
             if arg.keyword or arg.star or p.kind is not Parameter.KEYWORD_ONLY
             else arg.with_changes(keyword=cst.Name(p.name), equal=assign_nospace)
-            for p, arg in zip(params, updated_node.args)
+            for p, arg in zip(signature(func).parameters.values(), updated_node.args)
         ]
         return updated_node.with_changes(args=newargs)

@@ -24,7 +24,6 @@ from django.core.exceptions import ValidationError
 from django.db import IntegrityError, models as dm
 
 from hypothesis import reject
-from hypothesis._settings import note_deprecation
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.django._fields import from_field
 from hypothesis.strategies._internal import core as st
@@ -88,16 +87,7 @@ def from_model(
     elif len(model) > 1:
         raise TypeError("Too many positional arguments")
     else:
-        try:
-            m_type = field_strategies.pop("model")  # type: ignore
-        except KeyError:
-            raise TypeError("Missing required positional argument `model`") from None
-        else:
-            note_deprecation(
-                "The `model` argument will be positional-only in a future version",
-                since="2020-03-18",
-                has_codemod=False,
-            )
+        raise TypeError("Missing required positional argument `model`")
 
     if not issubclass(m_type, dm.Model):
         raise InvalidArgument("model=%r must be a subtype of Model" % (model,))

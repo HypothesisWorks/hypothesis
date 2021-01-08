@@ -29,7 +29,7 @@ from hypothesis.strategies._internal.random import (
     normalize_zero,
 )
 from tests.common.debug import find_any
-from tests.common.utils import capture_out, checks_deprecated_behaviour
+from tests.common.utils import capture_out
 
 
 def test_implements_all_random_methods():
@@ -219,10 +219,9 @@ def test_state_is_consistent(r1, r2):
     assert r1.getstate() == r2.getstate()
 
 
-@checks_deprecated_behaviour
 @given(st.randoms())
 def test_does_not_use_true_random_by_default(rnd):
-    assert isinstance(rnd, TrueRandom)
+    assert not isinstance(rnd, TrueRandom)
 
 
 @given(st.randoms(use_true_random=False))

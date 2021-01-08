@@ -26,12 +26,9 @@ definitions it links to.  If not, report the bug!
 import os.path
 import string
 
-from hypothesis._settings import note_deprecation
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import utils as cu
-from hypothesis.internal.reflection import deprecated_posargs
 from hypothesis.strategies._internal import core as st
-from hypothesis.strategies._internal.ipaddress import ip_addresses
 from hypothesis.strategies._internal.strategies import SearchStrategy
 
 URL_SAFE_CHARACTERS = frozenset(string.ascii_letters + string.digits + "$-_.+!*'(),~")
@@ -135,7 +132,6 @@ class DomainNameStrategy(SearchStrategy):
 
 
 @st.defines_strategy(force_reusable_values=True)
-@deprecated_posargs
 def domains(
     *, max_length: int = 255, max_element_length: int = 63
 ) -> SearchStrategy[str]:
@@ -159,25 +155,3 @@ def urls() -> SearchStrategy[str]:
     return st.builds(
         "{}://{}{}/{}".format, schemes, domains(), st.just("") | ports, paths
     )
-
-
-@st.defines_strategy(force_reusable_values=True)
-def ip4_addr_strings() -> SearchStrategy[str]:
-    note_deprecation(
-        "Use `ip_addresses(v=4).map(str)` instead of `ip4_addr_strings()`; "
-        "the provisional strategy is less flexible and will be removed.",
-        since="2020-01-21",
-        has_codemod=False,
-    )
-    return ip_addresses(v=4).map(str)
-
-
-@st.defines_strategy(force_reusable_values=True)
-def ip6_addr_strings() -> SearchStrategy[str]:
-    note_deprecation(
-        "Use `ip_addresses(v=6).map(str)` instead of `ip6_addr_strings()`; "
-        "the provisional strategy is less flexible and will be removed.",
-        since="2020-01-21",
-        has_codemod=False,
-    )
-    return ip_addresses(v=6).map(str)

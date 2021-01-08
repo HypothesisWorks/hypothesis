@@ -24,7 +24,6 @@ from hypothesis.internal.conjecture import utils
 from hypothesis.internal.validation import check_type, check_valid_interval
 from hypothesis.strategies._internal.core import (
     defines_strategy,
-    deprecated_posargs,
     just,
     none,
     sampled_from,
@@ -176,7 +175,6 @@ class DatetimeStrategy(SearchStrategy):
 
 
 @defines_strategy(force_reusable_values=True)
-@deprecated_posargs
 def datetimes(
     min_value: dt.datetime = dt.datetime.min,
     max_value: dt.datetime = dt.datetime.max,
@@ -246,7 +244,6 @@ class TimeStrategy(SearchStrategy):
 
 
 @defines_strategy(force_reusable_values=True)
-@deprecated_posargs
 def times(
     min_value: dt.time = dt.time.min,
     max_value: dt.time = dt.time.max,

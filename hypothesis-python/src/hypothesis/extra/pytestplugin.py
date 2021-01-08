@@ -18,9 +18,9 @@ from inspect import signature
 import pytest
 
 from hypothesis import HealthCheck, Verbosity, core, settings
-from hypothesis._settings import note_deprecation
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.detection import is_hypothesis_test
+from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.reporting import default as default_reporter, with_reporter
 from hypothesis.statistics import collector, describe_statistics
 
@@ -181,10 +181,10 @@ else:
                         if fx.argname in argnames:
                             active_fx = item._request._get_active_fixturedef(fx.argname)
                             if active_fx.scope == "function":
-                                note_deprecation(
+                                fail_health_check(
+                                    settings,
                                     msg % (item.nodeid, fx.argname),
-                                    since="2020-02-29",
-                                    has_codemod=False,
+                                    HealthCheck.function_scoped_fixture,
                                 )
 
             if item.get_closest_marker("parametrize") is not None:
