@@ -361,6 +361,7 @@ PY37 = "3.7.9"
 PY38 = "3.8.6"
 PY39 = "3.9.0"
 PYPY36 = "pypy3.6-7.3.1"
+PYPY37 = "pypy3.7-7.3.2"
 
 
 @task()
@@ -369,7 +370,7 @@ def install_core():
 
 
 # ALIASES are the executable names for each Python version
-ALIASES = {PYPY36: "pypy3"}
+ALIASES = {PYPY36: "pypy3", PYPY37: "pypy3"}
 
 for n in [PY36, PY37, PY38, PY39]:
     major, minor, patch = n.replace("-dev", ".").split(".")
@@ -408,6 +409,11 @@ def check_py39():
 @python_tests
 def check_pypy36():
     run_tox("pypy3-full", PYPY36)
+
+
+@python_tests
+def check_pypy37():
+    run_tox("pypy3-full", PYPY37)
 
 
 def standard_tox_task(name):

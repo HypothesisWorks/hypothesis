@@ -20,6 +20,8 @@ jobs:
           - check-coverage
           - check-conjecture-coverage
           - check-py38
+          - check-pypy36
+          - check-pypy37
           - check-quality
           - lint-ruby
           - check-ruby-tests
