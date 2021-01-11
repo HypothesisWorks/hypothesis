@@ -326,7 +326,7 @@ typing-inspect==0.6.0
     # via libcst
 urllib3==1.26.2
     # via requests
-virtualenv==20.2.2
+virtualenv==20.3.0
     # via tox
 wcwidth==0.2.5
     # via prompt-toolkit
