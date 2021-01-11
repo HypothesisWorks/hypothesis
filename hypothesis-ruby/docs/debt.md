@@ -29,17 +29,6 @@ The goals of this documentation are:
 
 ## Awful Hacks
 
-### Panicky Clones
-
-Engine is currently set up to implement Clone but to panic when
-you call it.
-
-This is because [Helix seems to needlessly derive the Clone
-trait](https://github.com/tildeio/helix/issues/143).
-
-Can be removed when: That issue is fixed, or an alternative
-workaround is suggested.
-
 ### Threads as a Control Flow Mechanism
 
 Rather than attempt to encode the generation state machine
