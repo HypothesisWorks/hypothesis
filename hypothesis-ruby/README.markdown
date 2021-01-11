@@ -71,7 +71,7 @@ Right now this is really more to allow you to try it out and provide feedback th
 The more feedback we get, the sooner it will get there!
 
 Note that in order to use Hypothesis for Ruby, you will need a rust toolchain installed.
-Please go to [https://www.rustup.rs](https://www.rustup.rs) and follow the instructions if you do not already have one.
+Please go to [https://www.rustup.rs](https://www.rustup.rs) and follow the instructions if you do not already have one. You will most likely need to compile your Ruby executable with the `--enable-shared` option. See [here](https://github.com/danielpclark/rutie#dynamic-vs-static-builds).
 
 ## Project Status
 
