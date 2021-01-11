@@ -199,7 +199,7 @@ pygments==2.7.3
     #   ipython
     #   readme-renderer
     #   sphinx
-pyjwt==1.7.1
+pyjwt==2.0.0
     # via pygithub
 pyparsing==2.4.7
     # via packaging
