@@ -5,7 +5,7 @@ require 'date'
 require 'open3'
 
 task :build do
-  system('cargo build --release')
+  sh('cargo build --release')
 end
 
 begin
@@ -20,7 +20,23 @@ begin
   end
 
   task test: %i[build spec minitests]
+  task rspec: %i[build spec]
+  task minitest: %i[build without_rspec] do
+    begin
+      Rake::Task['minitests'].execute
+    ensure
+      Rake::Task['with_rspec'].execute
+    end
+  end
 rescue LoadError
+end
+
+task :without_rspec do
+  sh('bundle config set without rspec')
+end
+
+task :with_rspec do
+  sh('bundle config unset without')
 end
 
 def rubocop(fix:)
