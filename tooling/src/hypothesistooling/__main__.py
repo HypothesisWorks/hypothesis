@@ -471,7 +471,8 @@ def lint_ruby():
 
 @ruby_task
 def check_ruby_tests():
-    hr.rake_task("test")
+    hr.rake_task("rspec")
+    hr.rake_task("minitest")
 
 
 @task()

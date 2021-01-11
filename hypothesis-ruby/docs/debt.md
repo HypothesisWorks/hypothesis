@@ -84,17 +84,6 @@ Can be removed when one of:
   threading bugs (but fearless concurrency, David!) outweighs
   my desire to not use nightly.
 
-
-### Monkey-patching Helix for our Build
-
-I was very very bored of Helix's build support [not actually failing
-the rake task when the build fails](https://github.com/tildeio/helix/issues/133),
-so I've monkey-patched their build system in our Rakefile in order
-to make it error properly in this case.
-
-Can be removed when: The linked issue is fixed.
-
-
 ### Stable identifiers from RSpec
 
 Another "I did terrible things to RSpec" entry, sorry. RSpec's

@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    hypothesis-specs (0.2.0)
+    hypothesis-specs (0.3.0)
       rake (>= 10.0, < 13.0)
       rutie (~> 0.0.3)
 
