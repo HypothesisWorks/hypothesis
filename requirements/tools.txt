@@ -306,7 +306,7 @@ tqdm==4.56.0
     # via
     #   pyupio
     #   twine
-traitlets==4.3.3
+traitlets==5.0.5
     # via
     #   -r requirements/tools.in
     #   ipython
