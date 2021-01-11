@@ -143,7 +143,7 @@ mypy-extensions==0.4.3
     #   typing-inspect
 mypy==0.790
     # via -r requirements/tools.in
-numpy==1.19.4
+numpy==1.19.5
     # via -r requirements/tools.in
 packaging==20.8
     # via
