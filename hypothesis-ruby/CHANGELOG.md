@@ -1,3 +1,7 @@
+# Hypothesis for Ruby 0.4.0 (2021-01-12)
+
+This removes hypothesis-ruby's dependence on RSpec. Now, it can be used with any Ruby test runner.
+
 # Hypothesis for Ruby 0.3.0 (2021-01-08)
 
 This release converts Hypothesis for Ruby to use [RuTie](https://github.com/danielpclark/rutie)
