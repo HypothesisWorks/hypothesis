@@ -553,12 +553,6 @@ pub struct Engine {
     sender: SyncSender<TestResult>,
 }
 
-impl Clone for Engine {
-    fn clone(&self) -> Engine {
-        panic!("BUG: The Engine was unexpectedly cloned");
-    }
-}
-
 fn bytes_to_u64s(bytes: &[u8]) -> Vec<u64>{
     let mut reader = io::Cursor::new(bytes);
     let mut result = Vec::new();
