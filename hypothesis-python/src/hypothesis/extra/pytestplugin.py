@@ -13,6 +13,7 @@
 #
 # END HEADER
 
+import base64
 from inspect import signature
 
 import pytest
@@ -196,7 +197,9 @@ else:
 
             def note_statistics(stats):
                 stats["nodeid"] = item.nodeid
-                item.hypothesis_statistics = describe_statistics(stats)
+                item.hypothesis_statistics = base64.b64encode(
+                    describe_statistics(stats).encode()
+                ).decode()
 
             with collector.with_value(note_statistics):
                 with with_reporter(store):
@@ -212,20 +215,39 @@ else:
                 ("Hypothesis", "\n".join(item.hypothesis_report_information))
             )
         if hasattr(item, "hypothesis_statistics") and report.when == "teardown":
-            val = ("hypothesis-stats", item.hypothesis_statistics)
-            report.user_properties.append(val)
+            name = "hypothesis-statistics-" + item.nodeid
+            try:
+                item.config._xml.add_global_property(name, item.hypothesis_statistics)
+            except AttributeError:
+                # --junitxml not passed, or Pytest 4.5 (before add_global_property)
+                # We'll fail xunit2 xml schema checks, upgrade pytest if you care.
+                report.user_properties.append((name, item.hypothesis_statistics))
 
     def pytest_terminal_summary(terminalreporter):
         if not terminalreporter.config.getoption(PRINT_STATISTICS_OPTION):
             return
         terminalreporter.section("Hypothesis Statistics")
-        # terminalreporter.stats is a dict, where the empty string appears to
-        # always be the key for a list of _pytest.reports.TestReport objects
-        # (where we stored the statistics data in pytest_runtest_makereport above)
-        for test_report in terminalreporter.stats.get("", []):
-            for name, value in test_report.user_properties:
-                if name == "hypothesis-stats" and test_report.when == "teardown":
-                    terminalreporter.write_line(value + "\n\n")
+
+        def report(properties):
+            for name, value in properties:
+                if name.startswith("hypothesis-statistics-"):
+                    if hasattr(value, "uniobj"):
+                        # Under old versions of pytest, `value` was a `py.xml.raw`
+                        # rather than a string, so we get the (unicode) string off it.
+                        value = value.uniobj
+                    line = base64.b64decode(value.encode()).decode() + "\n\n"
+                    terminalreporter.write_line(line)
+
+        try:
+            global_properties = terminalreporter.config._xml.global_properties
+        except AttributeError:
+            # terminalreporter.stats is a dict, where the empty string appears to
+            # always be the key for a list of _pytest.reports.TestReport objects
+            for test_report in terminalreporter.stats.get("", []):
+                if test_report.when == "teardown":
+                    report(test_report.user_properties)
+        else:
+            report(global_properties)
 
     def pytest_collection_modifyitems(items):
         for item in items:
