@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.0.1:
+
+------------------
+6.0.1 - 2021-01-13
+------------------
+
+This patch fixes an interaction where our :ref:`test statistics <statistics>`
+handling made Pytest's ``--junit-xml`` output fail to validate against the
+strict ``xunit2`` schema (:issue:`1975`).
+
 .. _v6.0.0:
 
 ------------------
