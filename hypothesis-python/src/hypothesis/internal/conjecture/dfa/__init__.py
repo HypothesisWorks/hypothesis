@@ -590,7 +590,7 @@ class ConcreteDFA(DFA):
           (in which case they map characters to other states) or lists. If they
           are a list they may contain tuples of length 2 or 3. A tuple ``(c, j)``
           indicates that this state transitions to state ``j`` given ``c``. A
-          tuple ``(u, v, j)`` indicates this state transitiosn to state ``j``
+          tuple ``(u, v, j)`` indicates this state transitions to state ``j``
           given any ``c`` with ``u <= c <= v``.
         * ``accepting`` is a set containing the integer labels of accepting
           states.

@@ -89,6 +89,13 @@ def dfas(draw):
 
 @settings(max_examples=20)
 @given(dfas(), st.booleans())
+@example(
+    ConcreteDFA(
+        transitions=[[(0, 2), (1, 255, 1)], [(0, 2), (1, 255, 0)], []],
+        accepting={2},
+    ),
+    False,
+)
 def test_canonicalised_matches_same_strings(dfa, via_repr):
     canon = dfa.canonicalise()
     note(canon)
