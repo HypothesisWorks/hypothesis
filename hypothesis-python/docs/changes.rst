@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.0.2:
+
+------------------
+6.0.2 - 2021-01-14
+------------------
+
+This release makes some small improvements to how filtered strategies work. It should improve the performance of shrinking filtered strategies,
+and may under some (probably rare) circumstances improve the diversity of generated examples.
+
 .. _v6.0.1:
 
 ------------------
