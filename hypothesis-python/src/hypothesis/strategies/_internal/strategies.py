@@ -48,6 +48,10 @@ MAPPED_SEARCH_STRATEGY_DO_DRAW_LABEL = calc_label_from_name(
     "another attempted draw in MappedSearchStrategy"
 )
 
+FILTERED_SEARCH_STRATEGY_DO_DRAW_LABEL = calc_label_from_name(
+    "single loop iteration in FilteredStrategy"
+)
+
 
 def one_of_strategies(xs):
     """Helper function for unioning multiple strategies."""
@@ -773,10 +777,13 @@ class FilteredStrategy(SearchStrategy):
     def default_do_filtered_draw(self, data):
         for i in range(3):
             start_index = data.index
+            data.start_example(FILTERED_SEARCH_STRATEGY_DO_DRAW_LABEL)
             value = data.draw(self.filtered_strategy)
             if self.condition(value):
+                data.stop_example()
                 return value
             else:
+                data.stop_example(discard=True)
                 if i == 0:
                     self.note_retried(data)
                 # This is to guard against the case where we consume no data.
