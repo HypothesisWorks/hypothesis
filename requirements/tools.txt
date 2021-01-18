@@ -194,7 +194,7 @@ pyflakes==2.2.0
     #   flake8
 pygithub==1.54.1
     # via pyupio
-pygments==2.7.3
+pygments==2.7.4
     # via
     #   ipython
     #   readme-renderer
