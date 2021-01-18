@@ -271,7 +271,7 @@ sphinx-rtd-theme==0.5.1
     # via -r requirements/tools.in
 sphinx-selective-exclude==1.0.3
     # via -r requirements/tools.in
-sphinx==3.4.2
+sphinx==3.4.3
     # via
     #   -r requirements/tools.in
     #   sphinx-rtd-theme
