@@ -217,11 +217,14 @@ else:
         if hasattr(item, "hypothesis_statistics") and report.when == "teardown":
             name = "hypothesis-statistics-" + item.nodeid
             try:
-                item.config._xml.add_global_property(name, item.hypothesis_statistics)
-            except AttributeError:
+                # Try to access fixture to write xunit2 family compliant result file.
+                record_testsuite_property = item.funcargs['record_testsuite_property']
+            except KeyError:
                 # --junitxml not passed, or Pytest 4.5 (before add_global_property)
                 # We'll fail xunit2 xml schema checks, upgrade pytest if you care.
                 report.user_properties.append((name, item.hypothesis_statistics))
+            else:
+                record_testsuite_property(name, item.hypothesis_statistics)
 
     def pytest_terminal_summary(terminalreporter):
         if not terminalreporter.config.getoption(PRINT_STATISTICS_OPTION):
@@ -253,6 +256,8 @@ else:
         for item in items:
             if isinstance(item, pytest.Function) and is_hypothesis_test(item.obj):
                 item.add_marker("hypothesis")
+                if item.config.getoption('xmlpath', None):
+                    item.fixturenames.append('record_testsuite_property')
 
 
 def load():
