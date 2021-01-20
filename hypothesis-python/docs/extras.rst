@@ -28,6 +28,11 @@ There are separate pages for :doc:`django` and :doc:`numpy`.
 .. automodule:: hypothesis.extra.dpcontracts
    :members:
 
+    .. tip::
+
+        For new projects, we recommend using :pypi:`icontract` and
+        :pypi:`icontract-hypothesis` over :pypi:`dpcontracts`.
+
 .. automodule:: hypothesis.extra.lark
    :members:
 
