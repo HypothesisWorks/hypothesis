@@ -9,19 +9,19 @@ pub type Key = str;
 
 
 pub trait Database: Debug + Send {
-    fn save(&mut self, key: &Key, value: &[u8]) -> ();
-    fn delete(&mut self, key: &Key, value: &[u8]) -> ();
+    fn save(&mut self, key: &Key, value: &[u8]);
+    fn delete(&mut self, key: &Key, value: &[u8]);
     fn fetch(&mut self, key: &Key) -> Vec<Vec<u8>>;
 }
 
-pub type BoxedDatabase = Box<Database>;
+pub type BoxedDatabase = Box<dyn Database>;
 
 #[derive(Debug)]
 pub struct NoDatabase;
 
 impl Database for NoDatabase {
-    fn save(&mut self, _key: &Key, _value: &[u8]) -> () {}
-    fn delete(&mut self, _key: &Key, _value: &[u8]) -> () {}
+    fn save(&mut self, _key: &Key, _value: &[u8]) {}
+    fn delete(&mut self, _key: &Key, _value: &[u8]) {}
     fn fetch(&mut self, _key: &Key) -> Vec<Vec<u8>> {
         vec![]
     }
@@ -69,13 +69,13 @@ impl DirectoryDatabase {
 }
 
 impl Database for DirectoryDatabase {
-    fn save(&mut self, key: &Key, value: &[u8]) -> () {
+    fn save(&mut self, key: &Key, value: &[u8]) {
         let mut target = fs::File::create(self.path_for_entry(key, &value)).unwrap();
         target.write_all(value).unwrap();
         target.sync_all().unwrap();
     }
 
-    fn delete(&mut self, key: &Key, value: &[u8]) -> () {
+    fn delete(&mut self, key: &Key, value: &[u8]) {
         let target = self.path_for_entry(key, &value);
         expect_io_error(io::ErrorKind::NotFound, fs::remove_file(target));
     }
@@ -109,16 +109,16 @@ mod tests {
         pub fn new() -> TestDatabase {
             let dir = TempDir::new("test-db").unwrap();
             let db = DirectoryDatabase::new(dir.path());
-            TestDatabase { _temp: dir, db: db }
+            TestDatabase { _temp: dir, db }
         }
     }
 
     impl Database for TestDatabase {
-        fn save(&mut self, key: &Key, value: &[u8]) -> () {
+        fn save(&mut self, key: &Key, value: &[u8]) {
             self.db.save(key, value)
         }
 
-        fn delete(&mut self, key: &Key, value: &[u8]) -> () {
+        fn delete(&mut self, key: &Key, value: &[u8]) {
             self.db.delete(key, value)
         }
 
@@ -148,6 +148,6 @@ mod tests {
         db.save("foo", b"bar");
         db.delete("foo", b"bar");
         let results = db.fetch("foo");
-        assert!(results.len() == 0);
+        assert!(results.is_empty());
     }
 }
