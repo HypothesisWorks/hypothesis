@@ -20,6 +20,7 @@ import time as time_module
 
 import pytest
 
+import tests.common.debug as helpers
 from hypothesis.internal.detection import is_hypothesis_test
 from tests.common import TIME_INCREMENT
 from tests.common.setup import run
@@ -35,13 +36,15 @@ if sys.version_info < (3, 8):
     collect_ignore_glob.append("cover/*py38*")
 
 
-def pytest_configure(config):
-    config.addinivalue_line("markers", "slow: pandas expects this marker to exist.")
-
-
 def pytest_addoption(parser):
     parser.addoption("--hypothesis-update-outputs", action="store_true")
     parser.addoption("--hypothesis-learn-to-normalize", action="store_true")
+
+
+def pytest_configure(config):
+    config.addinivalue_line("markers", "slow: pandas expects this marker to exist.")
+    if config.getoption("--hypothesis-learn-to-normalize"):
+        helpers.LEARN_TO_NORMALIZE = True
 
 
 @pytest.fixture(scope="function", autouse=True)

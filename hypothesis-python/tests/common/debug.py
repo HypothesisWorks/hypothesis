@@ -22,10 +22,14 @@ from hypothesis import (
 )
 from hypothesis.errors import Found, NoSuchExample, Unsatisfiable
 from hypothesis.internal.conjecture.data import ConjectureData, StopTest
+from hypothesis.internal.conjecture.shrinking import dfas
 from hypothesis.internal.reflection import get_pretty_function_description
 from tests.common.utils import no_shrink
 
 TIME_INCREMENT = 0.01
+
+
+LEARN_TO_NORMALIZE = False
 
 
 class Timeout(BaseException):
@@ -33,6 +37,20 @@ class Timeout(BaseException):
 
 
 def minimal(definition, condition=lambda x: True, settings=None, timeout_after=10):
+    if LEARN_TO_NORMALIZE:
+
+        def test_function(data):
+            result = data.draw(definition)
+            if condition(result):
+                data.mark_interesting()
+
+        dfas.normalize(
+            repr(definition),
+            test_function,
+            required_successes=1000,
+            allowed_to_update=True,
+        )
+
     def wrapped_condition(x):
         if timeout_after is not None:
             if runtime:
