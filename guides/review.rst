@@ -244,8 +244,7 @@ Engine Changes
 
 Engine changes are anything that change a "fundamental" of how Hypothesis
 works. A good rule of thumb is that an engine change is anything that touches
-a file in hypothesis.internal.conjecture (Python version) or Rust code (Ruby
-version).
+a file in hypothesis.internal.conjecture (Python version).
 
 All such changes should:
 

@@ -1,6 +1,5 @@
 # Engine changes need to be approved by DRMacIver, as per
 # https://github.com/HypothesisWorks/hypothesis/blob/master/guides/review.rst#engine-changes
-/conjecture-rust/ @DRMacIver
 /hypothesis-python/src/hypothesis/internal/conjecture/ @DRMacIver
 
 # Changes to the paper also need to be approved by DRMacIver
