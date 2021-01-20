@@ -122,7 +122,7 @@ impl MainGenerationLoop {
           }
         }
 
-        return Err(LoopExitReason::Complete);
+        Err(LoopExitReason::Complete)
     }
 
     fn generate_examples(&mut self) -> Result<TestResult, LoopExitReason> {
@@ -131,12 +131,11 @@ impl MainGenerationLoop {
         {
             let r = self.random.gen();
             let result = self.execute(DataSource::from_random(r))?;
-            match result.status {
-              Status::Interesting(_) => return Ok(result),
-              _ => (),
+            if let Status::Interesting(_) = result.status {
+                return Ok(result);
             }
         }
-        return Err(LoopExitReason::MaxExamples);
+        Err(LoopExitReason::MaxExamples)
     }
 
     fn execute(&mut self, source: DataSource) -> Result<TestResult, LoopExitReason> {
@@ -154,8 +153,8 @@ impl MainGenerationLoop {
             Status::Interesting(n) => {
                 self.best_example = Some(result.clone());
                 let mut changed = false;
-                let mut minimized_examples = &mut self.minimized_examples;
-                let mut database = &mut self.database;
+                let minimized_examples = &mut self.minimized_examples;
+                let database = &mut self.database;
                 let name = &self.name;
 
                 minimized_examples.entry(n).or_insert_with(|| {result.clone()}); 
@@ -197,9 +196,9 @@ where
     ) -> Shrinker<'owner, Predicate> {
         assert!(predicate(&shrink_target));
         Shrinker {
-            main_loop: main_loop,
+            main_loop,
             _predicate: predicate,
-            shrink_target: shrink_target,
+            shrink_target,
             changes: 0,
             expensive_passes_enabled: false,
         }
@@ -311,14 +310,14 @@ where
             let m = target.draws[j].start;
             let n = target.draws[j].end;
             assert!(m < n);
-            if m < n && (stack.len() == 0 || stack[stack.len() - 1].1 <= m) {
+            if m < n && (stack.is_empty() || stack[stack.len() - 1].1 <= m) {
                 stack.push((m, n))
             }
             j += 1;
         }
 
         let mut attempt = target.record.clone();
-        while stack.len() > 0 {
+        while !stack.is_empty() {
             let (m, n) = stack.pop().unwrap();
             attempt.drain(m..n);
         }
@@ -386,7 +385,7 @@ where
             // next example to be undeletable.
             i += 1;
         }
-        return Ok(());
+        Ok(())
     }
 
     fn delete_all_ranges(&mut self) -> StepResult {
@@ -487,7 +486,7 @@ where
             let max_target = *target.iter().max().unwrap();
 
             i += 1;
-            assert!(target.len() > 0);
+            assert!(!target.is_empty());
             let v = self.shrink_target.record[target[0]];
 
             let w = minimize_integer(v, |t| {
@@ -577,8 +576,8 @@ impl Engine {
 
         let main_loop = MainGenerationLoop {
             database: db,
-            name: name,
-            max_examples: max_examples,
+            name,
+            max_examples,
             random: ChaChaRng::from_seed(seed),
             sender: send_remote,
             receiver: recv_remote,
@@ -606,7 +605,7 @@ impl Engine {
         }
     }
 
-    pub fn mark_finished(&mut self, source: DataSource, status: Status) -> () {
+    pub fn mark_finished(&mut self, source: DataSource, status: Status) {
         self.consume_test_result(source.to_result(status))
     }
 
@@ -620,18 +619,18 @@ impl Engine {
         mem::swap(&mut local_result, &mut self.loop_response);
 
         match local_result {
-            Some(LoopCommand::RunThis(source)) => return Some(source),
+            Some(LoopCommand::RunThis(source)) => Some(source),
             None => panic!("BUG: Loop response should not be empty at this point"),
             _ => {
                 self.loop_response = local_result;
-                return None;
+                None
             }
         }
     }
 
     pub fn list_minimized_examples(&self) -> Vec<TestResult> {
-        match &self.loop_response {
-            &Some(LoopCommand::Finished(
+        match self.loop_response {
+            Some(LoopCommand::Finished(
                 _,
                 MainGenerationLoop {
                     ref minimized_examples,
@@ -647,8 +646,8 @@ impl Engine {
     }
 
     pub fn best_source(&self) -> Option<DataSource> {
-        match &self.loop_response {
-            &Some(LoopCommand::Finished(
+        match self.loop_response {
+            Some(LoopCommand::Finished(
                 _,
                 MainGenerationLoop {
                     best_example: Some(ref result),
@@ -660,12 +659,12 @@ impl Engine {
     }
 
 
-    fn consume_test_result(&mut self, result: TestResult) -> () {
+    fn consume_test_result(&mut self, result: TestResult) {
         assert!(self.state == EngineState::AwaitingCompletion);
         self.state = EngineState::ReadyToProvide;
 
         if self.has_shutdown() {
-            return ();
+            return;
         }
 
         // NB: Deliberately not matching on result. If this fails,
@@ -675,8 +674,8 @@ impl Engine {
     }
 
     pub fn was_unsatisfiable(&self) -> bool {
-        match &self.loop_response {
-            &Some(LoopCommand::Finished(_, ref main_loop)) => {
+        match self.loop_response {
+            Some(LoopCommand::Finished(_, ref main_loop)) => {
                 main_loop.interesting_examples == 0 && main_loop.valid_examples == 0
             }
             _ => false,
@@ -684,10 +683,7 @@ impl Engine {
     }
 
     fn has_shutdown(&mut self) -> bool {
-        match &self.loop_response {
-            &Some(LoopCommand::Finished(..)) => true,
-            _ => false,
-        }
+        matches!(self.loop_response, Some(LoopCommand::Finished(..)))
     }
 
     fn await_thread_termination(&mut self) {
@@ -712,7 +708,7 @@ impl Engine {
         }
     }
 
-    fn await_loop_response(&mut self) -> () {
+    fn await_loop_response(&mut self) {
         if self.loop_response.is_none() {
             match self.receiver.recv() {
                 Ok(response) => {
