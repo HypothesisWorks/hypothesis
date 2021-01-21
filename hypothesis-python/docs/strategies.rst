@@ -77,6 +77,11 @@ fail - by trying all kinds of inputs and reporting whatever happens.
 implement functor, applicative, monad, and other laws; allowing a declarative
 approach to be combined with traditional pythonic code.
 
+:pypi:`icontract-hypothesis` infers the Hypothesis strategies based on the
+contracts (specified using :pypi:`icontract`) so that the code can be
+automatically tested.
+It also supports a ghostwriter for test files and IDE integrations such as
+:pypi:`icontract-hypothesis-vim` and :pypi:`icontract-hypothesis-pycharm`.
 
 --------------------
 Writing an extension
