@@ -1,12 +1,11 @@
 use crypto_hash::{hex_digest, Algorithm};
+use std::fmt::Debug;
 use std::fs;
 use std::io;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
-use std::fmt::Debug;
 
 pub type Key = str;
-
 
 pub trait Database: Debug + Send {
     fn save(&mut self, key: &Key, value: &[u8]);

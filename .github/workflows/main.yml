@@ -25,6 +25,7 @@ jobs:
           - check-quality
           - lint-ruby
           - check-ruby-tests
+          - check-conjecture-rust-format
         python-version: ["3.8"]
         include:
           - task: check-py36
