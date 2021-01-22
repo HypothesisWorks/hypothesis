@@ -20,7 +20,6 @@ import pytest
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import booleans, integers, just, tuples
-from hypothesis.strategies._internal.strategies import one_of_strategies
 from tests.common.debug import assert_no_examples
 
 
@@ -28,11 +27,6 @@ def test_or_errors_when_given_non_strategy():
     bools = tuples(booleans())
     with pytest.raises(ValueError):
         bools | "foo"
-
-
-def test_joining_zero_strategies_fails():
-    with pytest.raises(ValueError):
-        one_of_strategies(())
 
 
 SomeNamedTuple = namedtuple("SomeNamedTuple", ("a", "b"))

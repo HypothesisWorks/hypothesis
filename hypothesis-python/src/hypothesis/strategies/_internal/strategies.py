@@ -53,14 +53,6 @@ FILTERED_SEARCH_STRATEGY_DO_DRAW_LABEL = calc_label_from_name(
 )
 
 
-def one_of_strategies(xs):
-    """Helper function for unioning multiple strategies."""
-    xs = tuple(xs)
-    if not xs:
-        raise ValueError("Cannot join an empty list of strategies")
-    return OneOfStrategy(xs)
-
-
 def recursive_property(name, default):
     """Handle properties which may be mutually recursive among a set of
     strategies.
@@ -368,7 +360,7 @@ class SearchStrategy(Generic[Ex]):
         """
         if not isinstance(other, SearchStrategy):
             raise ValueError("Cannot | a SearchStrategy with %r" % (other,))
-        return one_of_strategies((self, other))
+        return OneOfStrategy((self, other))
 
     def validate(self) -> None:
         """Throw an exception if the strategy is not valid.
