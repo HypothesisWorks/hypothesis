@@ -2,8 +2,8 @@
 // needs.
 
 use rand::{ChaChaRng, Rng};
-use std::collections::HashSet;
 use std::cmp::Ordering;
+use std::collections::HashSet;
 
 pub type DataStream = Vec<u64>;
 
@@ -102,11 +102,13 @@ impl DataSource {
         self.sizes.push(n_bits);
         let mut result = match self.bitgenerator {
             BitGenerator::Random(ref mut random) => random.next_u64(),
-            BitGenerator::Recorded(ref mut v) => if self.record.len() >= v.len() {
-                return Err(FailedDraw);
-            } else {
-                v[self.record.len()]
-            },
+            BitGenerator::Recorded(ref mut v) => {
+                if self.record.len() >= v.len() {
+                    return Err(FailedDraw);
+                } else {
+                    v[self.record.len()]
+                }
+            }
         };
 
         if n_bits < 64 {
@@ -125,21 +127,15 @@ impl DataSource {
             status,
             written_indices: self.written_indices,
             sizes: self.sizes,
-            draws: self.draws
+            draws: self
+                .draws
                 .drain(..)
                 .filter_map(|d| match d {
                     DrawInProgress {
                         depth,
                         start,
                         end: Some(end),
-                    } if start < end =>
-                    {
-                        Some(Draw {
-                            start,
-                            end,
-                            depth,
-                        })
-                    }
+                    } if start < end => Some(Draw { start, end, depth }),
                     DrawInProgress { end: None, .. } => {
                         assert!(status == Status::Invalid || status == Status::Overflow);
                         None
@@ -184,11 +180,12 @@ pub struct TestResult {
     pub written_indices: HashSet<usize>,
 }
 
-
 impl Ord for TestResult {
     fn cmp(&self, other: &TestResult) -> Ordering {
-      self.record.len().cmp(&other.record.len()).
-      then(self.record.cmp(&other.record))
+        self.record
+            .len()
+            .cmp(&other.record.len())
+            .then(self.record.cmp(&other.record))
     }
 }
 
@@ -204,4 +201,4 @@ impl PartialEq for TestResult {
     }
 }
 
-impl Eq for TestResult { }
+impl Eq for TestResult {}

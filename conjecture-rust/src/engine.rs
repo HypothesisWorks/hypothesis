@@ -1,15 +1,15 @@
 // Core module that provides a main execution loop and
 // the API that can be used to get test data from it.
 
-use rand::{ChaChaRng, Rng, SeedableRng};
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
+use rand::{ChaChaRng, Rng, SeedableRng};
 
 use std::cmp::Reverse;
 use std::collections::{HashMap, HashSet};
+use std::io;
 use std::mem;
 use std::sync::mpsc::{sync_channel, Receiver, SyncSender};
 use std::thread;
-use std::io;
 
 use data::{DataSource, DataStream, Status, TestResult};
 use database::BoxedDatabase;
@@ -65,20 +65,17 @@ impl MainGenerationLoop {
         }
     }
 
-    fn run_previous_examples(&mut self) -> Result<(), LoopExitReason>{
+    fn run_previous_examples(&mut self) -> Result<(), LoopExitReason> {
         for v in self.database.fetch(&self.name) {
             let result = self.execute(DataSource::from_vec(bytes_to_u64s(&v)))?;
             let should_delete = match &result.status {
-                Status::Interesting(_) => 
-                    u64s_to_bytes(&result.record) != v
-                ,
-                _ => true
+                Status::Interesting(_) => u64s_to_bytes(&result.record) != v,
+                _ => true,
             };
             if should_delete {
                 println!("Deleting!");
                 self.database.delete(&self.name, v.as_slice());
             }
-
         }
         Ok(())
     }
@@ -103,23 +100,21 @@ impl MainGenerationLoop {
         //    unfinished again if when shrinking another label, as when trying
         //    to shrink one label we might accidentally find an improved shrink
         //    for another.
-        // 
+        //
         // In principle this might cause us to loop for a very long time before
         // eventually settling on a fixed point, but when that happens we
         // should hit limits on shrinking (which we haven't implemented yet).
         while self.minimized_examples.len() > self.fully_minimized.len() {
-          let keys: Vec<u64> = self.minimized_examples.keys().map(|i| *i).collect();
-          for label in keys.iter() {
-            if self.fully_minimized.insert(*label) {
-              let target = self.minimized_examples[label].clone();
-              let mut shrinker = Shrinker::new(
-                self, target, |r| {
-                  r.status == Status::Interesting(*label)
-              });
+            let keys: Vec<u64> = self.minimized_examples.keys().map(|i| *i).collect();
+            for label in keys.iter() {
+                if self.fully_minimized.insert(*label) {
+                    let target = self.minimized_examples[label].clone();
+                    let mut shrinker =
+                        Shrinker::new(self, target, |r| r.status == Status::Interesting(*label));
 
-              shrinker.run()?;
+                    shrinker.run()?;
+                }
             }
-          }
         }
 
         Err(LoopExitReason::Complete)
@@ -157,16 +152,18 @@ impl MainGenerationLoop {
                 let database = &mut self.database;
                 let name = &self.name;
 
-                minimized_examples.entry(n).or_insert_with(|| {result.clone()}); 
+                minimized_examples
+                    .entry(n)
+                    .or_insert_with(|| result.clone());
                 minimized_examples.entry(n).and_modify(|e| {
-                  if result < *e {
-                    changed = true;
-                    database.delete(name, &u64s_to_bytes(&(*e.record)));
-                    *e = result.clone()
-                  }; 
+                    if result < *e {
+                        changed = true;
+                        database.delete(name, &u64s_to_bytes(&(*e.record)));
+                        *e = result.clone()
+                    };
                 });
                 if changed {
-                  self.fully_minimized.remove(&n);
+                    self.fully_minimized.remove(&n);
                 }
                 self.interesting_examples += 1;
                 database.save(&self.name, &u64s_to_bytes(result.record.as_slice()));
@@ -208,14 +205,14 @@ where
         let succeeded = (self._predicate)(result);
         if succeeded
             && (
-          // In the presence of writes it may be the case that we thought
-          // we were going to shrink this but didn't actually succeed because
-          // the written value was used.
-          result.record.len() < self.shrink_target.record.len() || (
-            result.record.len() == self.shrink_target.record.len()  &&
-            result.record < self.shrink_target.record
-          )
-        ) {
+                // In the presence of writes it may be the case that we thought
+                // we were going to shrink this but didn't actually succeed because
+                // the written value was used.
+                result.record.len() < self.shrink_target.record.len()
+                    || (result.record.len() == self.shrink_target.record.len()
+                        && result.record < self.shrink_target.record)
+            )
+        {
             self.changes += 1;
             self.shrink_target = result.clone();
         }
@@ -449,7 +446,8 @@ where
     fn calc_duplicates(&self) -> Vec<Vec<usize>> {
         assert!(self.shrink_target.record.len() == self.shrink_target.sizes.len());
         let mut duplicates: HashMap<(u64, u64), Vec<usize>> = HashMap::new();
-        for (i, (u, v)) in self.shrink_target
+        for (i, (u, v)) in self
+            .shrink_target
             .record
             .iter()
             .zip(self.shrink_target.sizes.iter())
@@ -491,7 +489,7 @@ where
 
             let w = minimize_integer(v, |t| {
                 if max_target >= self.shrink_target.record.len() {
-                  return Ok(false);
+                    return Ok(false);
                 }
                 let mut attempt = self.shrink_target.record.clone();
                 for i in &target {
@@ -552,7 +550,7 @@ pub struct Engine {
     sender: SyncSender<TestResult>,
 }
 
-fn bytes_to_u64s(bytes: &[u8]) -> Vec<u64>{
+fn bytes_to_u64s(bytes: &[u8]) -> Vec<u64> {
     let mut reader = io::Cursor::new(bytes);
     let mut result = Vec::new();
     while let Ok(n) = reader.read_u64::<BigEndian>() {
@@ -561,7 +559,7 @@ fn bytes_to_u64s(bytes: &[u8]) -> Vec<u64>{
     result
 }
 
-fn u64s_to_bytes(ints: &[u64]) -> Vec<u8>{
+fn u64s_to_bytes(ints: &[u64]) -> Vec<u8> {
     let mut result = Vec::new();
     for n in ints {
         result.write_u64::<BigEndian>(*n).unwrap();
@@ -637,10 +635,11 @@ impl Engine {
                     ..
                 },
             )) => {
-              let mut results: Vec<TestResult> = minimized_examples.values().map(|v| v.clone()).collect();
-              results.sort();
-              results
-            },
+                let mut results: Vec<TestResult> =
+                    minimized_examples.values().map(|v| v.clone()).collect();
+                results.sort();
+                results
+            }
             _ => Vec::new(),
         }
     }
@@ -657,7 +656,6 @@ impl Engine {
             _ => None,
         }
     }
-
 
     fn consume_test_result(&mut self, result: TestResult) {
         assert!(self.state == EngineState::AwaitingCompletion);
@@ -726,43 +724,46 @@ impl Engine {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
-  use super::*;
-  use data::FailedDraw;
-  use database::NoDatabase;
+    use super::*;
+    use data::FailedDraw;
+    use database::NoDatabase;
 
-  fn run_to_results<F>(mut f: F) -> Vec<TestResult>
-    where F: FnMut(&mut DataSource) -> Result<Status, FailedDraw> {
-    let seed: [u32; 2] = [0, 0];
-    let mut engine = Engine::new(
-        "run_to_results".to_string(), 1000, &seed,
-        Box::new(NoDatabase),
-    );
-    while let Some(mut source) = engine.next_source() {
-      if let Ok(status) = f(&mut source) {
-        engine.mark_finished(source, status);
-      } else {
-        engine.mark_finished(source, Status::Overflow);
-      }
+    fn run_to_results<F>(mut f: F) -> Vec<TestResult>
+    where
+        F: FnMut(&mut DataSource) -> Result<Status, FailedDraw>,
+    {
+        let seed: [u32; 2] = [0, 0];
+        let mut engine = Engine::new(
+            "run_to_results".to_string(),
+            1000,
+            &seed,
+            Box::new(NoDatabase),
+        );
+        while let Some(mut source) = engine.next_source() {
+            if let Ok(status) = f(&mut source) {
+                engine.mark_finished(source, status);
+            } else {
+                engine.mark_finished(source, Status::Overflow);
+            }
+        }
+        engine.list_minimized_examples()
     }
-    engine.list_minimized_examples()
-  }
 
-  #[test]
-  fn minimizes_all_examples(){
-    let results = run_to_results(|source| {
-      let n = source.bits(64)?;
-      if n >= 100 {
-        Ok(Status::Interesting(n % 2))
-      } else {
-        Ok(Status::Valid)
-      }
-    });
+    #[test]
+    fn minimizes_all_examples() {
+        let results = run_to_results(|source| {
+            let n = source.bits(64)?;
+            if n >= 100 {
+                Ok(Status::Interesting(n % 2))
+            } else {
+                Ok(Status::Valid)
+            }
+        });
 
-    assert!(results.len() == 2);
-    assert_eq!(results[0].record[0], 100);
-    assert_eq!(results[1].record[0], 101);
-  }
+        assert!(results.len() == 2);
+        assert_eq!(results[0].record[0], 100);
+        assert_eq!(results[1].record[0], 101);
+    }
 }
