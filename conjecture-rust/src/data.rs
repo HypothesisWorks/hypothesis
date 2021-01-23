@@ -6,6 +6,7 @@ use std::cmp::Ordering;
 use std::collections::HashSet;
 
 pub type DataStream = Vec<u64>;
+pub type DataStreamSlice = [u64];
 
 #[derive(Debug, Clone)]
 pub struct FailedDraw;
@@ -121,7 +122,7 @@ impl DataSource {
         Ok(result)
     }
 
-    pub fn to_result(mut self, status: Status) -> TestResult {
+    pub fn into_result(self, status: Status) -> TestResult {
         TestResult {
             record: self.record,
             status,
@@ -129,7 +130,7 @@ impl DataSource {
             sizes: self.sizes,
             draws: self
                 .draws
-                .drain(..)
+                .into_iter()
                 .filter_map(|d| match d {
                     DrawInProgress {
                         depth,

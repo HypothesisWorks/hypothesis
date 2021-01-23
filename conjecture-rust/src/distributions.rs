@@ -151,7 +151,7 @@ impl Sampler {
         for (i, w) in weights.iter().enumerate() {
             let scaled = n * w / total;
             scaled_probabilities.push(scaled);
-            if scaled == 1.0 {
+            if (scaled - 1.0).abs() < f32::EPSILON {
                 table.push(SamplerEntry::single(i))
             } else if scaled > 1.0 {
                 large.push(Reverse(i));
