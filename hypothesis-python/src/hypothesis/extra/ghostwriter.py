@@ -188,6 +188,7 @@ def _strategy_for(param: inspect.Parameter) -> Union[st.SearchStrategy, InferTyp
         return st.text()
     for strategy, names in _GUESS_STRATEGIES_BY_NAME:
         if param.name in names:
+            assert isinstance(strategy, st.SearchStrategy)
             return strategy
     # And if all that failed, we'll return nothing() - the user will have to
     # fill this in by hand, and we'll leave a comment to that effect later.

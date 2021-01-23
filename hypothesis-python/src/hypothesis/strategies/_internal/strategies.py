@@ -17,7 +17,7 @@ import sys
 import warnings
 from collections import defaultdict
 from random import choice as random_choice
-from typing import Any, Callable, Generic, List, TypeVar
+from typing import Any, Callable, Generic, List, TypeVar, Union
 
 from hypothesis._settings import HealthCheck, Phase, Verbosity, settings
 from hypothesis.control import _current_build_context, assume
@@ -51,14 +51,6 @@ MAPPED_SEARCH_STRATEGY_DO_DRAW_LABEL = calc_label_from_name(
 FILTERED_SEARCH_STRATEGY_DO_DRAW_LABEL = calc_label_from_name(
     "single loop iteration in FilteredStrategy"
 )
-
-
-def one_of_strategies(xs):
-    """Helper function for unioning multiple strategies."""
-    xs = tuple(xs)
-    if not xs:
-        raise ValueError("Cannot join an empty list of strategies")
-    return OneOfStrategy(xs)
 
 
 def recursive_property(name, default):
@@ -360,7 +352,7 @@ class SearchStrategy(Generic[Ex]):
     def branches(self) -> List["SearchStrategy[Ex]"]:
         return [self]
 
-    def __or__(self, other):
+    def __or__(self, other: "SearchStrategy[T]") -> "SearchStrategy[Union[Ex, T]]":
         """Return a strategy which produces values by randomly drawing from one
         of this strategy or the other strategy.
 
@@ -368,7 +360,7 @@ class SearchStrategy(Generic[Ex]):
         """
         if not isinstance(other, SearchStrategy):
             raise ValueError("Cannot | a SearchStrategy with %r" % (other,))
-        return one_of_strategies((self, other))
+        return OneOfStrategy((self, other))
 
     def validate(self) -> None:
         """Throw an exception if the strategy is not valid.

@@ -59,11 +59,20 @@ def get_mypy_analysed_type(fname, val):
         ("lists(none())", "list[None]"),
         ("dictionaries(integers(), datetimes())", "dict[int, datetime.datetime]"),
         ("data()", "hypothesis.strategies._internal.core.DataObject"),
+        ("none() | integers()", "Union[None, int]"),
         # Ex`-1 stands for recursion in the whole type, i.e. Ex`0 == Union[...]
         ("recursive(integers(), lists)", "Union[list[Ex`-1], int]"),
-        # See https://github.com/python/mypy/issues/5269 - fix the hints on
-        # `one_of` and document the minimum Mypy version when the issue is fixed.
-        ("one_of(integers(), text())", "Any"),
+        # We have overloads for up to five types, then fall back to Any.
+        # (why five?  JSON atoms are None|bool|int|float|str and we do that a lot)
+        ("one_of(integers(), text())", "Union[int, str]"),
+        (
+            "one_of(integers(), text(), none(), binary(), builds(list))",
+            "Union[int, str, None, bytes, list[_T`1]]",
+        ),
+        (
+            "one_of(integers(), text(), none(), binary(), builds(list), builds(dict))",
+            "Any",
+        ),
     ],
 )
 def test_revealed_types(tmpdir, val, expect):
