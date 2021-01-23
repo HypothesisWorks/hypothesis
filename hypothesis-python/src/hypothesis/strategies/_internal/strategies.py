@@ -17,7 +17,7 @@ import sys
 import warnings
 from collections import defaultdict
 from random import choice as random_choice
-from typing import Any, Callable, Generic, List, TypeVar
+from typing import Any, Callable, Generic, List, TypeVar, Union
 
 from hypothesis._settings import HealthCheck, Phase, Verbosity, settings
 from hypothesis.control import _current_build_context, assume
@@ -352,7 +352,7 @@ class SearchStrategy(Generic[Ex]):
     def branches(self) -> List["SearchStrategy[Ex]"]:
         return [self]
 
-    def __or__(self, other):
+    def __or__(self, other: "SearchStrategy[T]") -> "SearchStrategy[Union[Ex, T]]":
         """Return a strategy which produces values by randomly drawing from one
         of this strategy or the other strategy.
 

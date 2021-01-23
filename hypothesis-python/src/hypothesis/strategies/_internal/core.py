@@ -296,8 +296,52 @@ def none() -> SearchStrategy[None]:
     return just(None)
 
 
+T4 = TypeVar("T4")
+T5 = TypeVar("T5")
+
+
 @overload
 def one_of(args: Sequence[SearchStrategy[Any]]) -> SearchStrategy[Any]:
+    raise NotImplementedError
+
+
+@overload  # noqa: F811
+def one_of(a1: SearchStrategy[Ex]) -> SearchStrategy[Ex]:
+    raise NotImplementedError
+
+
+@overload  # noqa: F811
+def one_of(
+    a1: SearchStrategy[Ex], a2: SearchStrategy[K]
+) -> SearchStrategy[Union[Ex, K]]:
+    raise NotImplementedError
+
+
+@overload  # noqa: F811
+def one_of(
+    a1: SearchStrategy[Ex], a2: SearchStrategy[K], a3: SearchStrategy[V]
+) -> SearchStrategy[Union[Ex, K, V]]:
+    raise NotImplementedError
+
+
+@overload  # noqa: F811
+def one_of(
+    a1: SearchStrategy[Ex],
+    a2: SearchStrategy[K],
+    a3: SearchStrategy[V],
+    a4: SearchStrategy[T4],
+) -> SearchStrategy[Union[Ex, K, V, T4]]:
+    raise NotImplementedError
+
+
+@overload  # noqa: F811
+def one_of(
+    a1: SearchStrategy[Ex],
+    a2: SearchStrategy[K],
+    a3: SearchStrategy[V],
+    a4: SearchStrategy[T4],
+    a5: SearchStrategy[T5],
+) -> SearchStrategy[Union[Ex, K, V, T4, T5]]:
     raise NotImplementedError
 
 
