@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.0.3:
+
+------------------
+6.0.3 - 2021-01-23
+------------------
+
+This patch improves the type annotations for :func:`~hypothesis.strategies.one_of`,
+by adding overloads to handle up to five distinct arguments as
+:class:`~python:typing.Union` before falling back to :class:`~python:typing.Any`,
+as well as annotating the ``|`` (``__or__``) operator for strategies (:issue:`2765`).
+
 .. _v6.0.2:
 
 ------------------
