@@ -26,6 +26,7 @@ jobs:
           - lint-ruby
           - check-ruby-tests
           - check-conjecture-rust-format
+          - check-rust-tests
           - lint-conjecture-rust
         python-version: ["3.8"]
         include:
