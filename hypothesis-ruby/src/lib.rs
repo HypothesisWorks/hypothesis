@@ -4,9 +4,10 @@ extern crate rutie;
 extern crate lazy_static;
 extern crate conjecture;
 
+use std::convert::TryFrom;
 use std::mem;
 
-use rutie::{AnyException, AnyObject, Array, Boolean, Class, Float, Integer, NilClass, Object, RString, Symbol, VM};
+use rutie::{AnyException, AnyObject, Array, Boolean, Class, Exception, Float, Integer, NilClass, Object, RString, Symbol, VM};
 
 use conjecture::data::{DataSource, Status, TestResult};
 use conjecture::database::{BoxedDatabase, DirectoryDatabase, NoDatabase};
@@ -77,7 +78,7 @@ impl HypothesisCoreEngineStruct {
         database_path: Option<String>,
         seed: u64,
         max_examples: u64,
-        skip_phases: Vec<Phase>,
+        phases: Vec<Phase>,
     ) -> HypothesisCoreEngineStruct {
         let xs: [u32; 2] = [seed as u32, (seed >> 32) as u32];
         let db: BoxedDatabase = match database_path {
@@ -86,7 +87,7 @@ impl HypothesisCoreEngineStruct {
         };
 
         HypothesisCoreEngineStruct {
-            engine: Engine::new(name, max_examples, skip_phases, &xs, db),
+            engine: Engine::new(name, max_examples, phases, &xs, db),
             pending: None,
             interesting_examples: Vec::new(),
         }
@@ -153,15 +154,15 @@ methods!(
         database_path: RString,
         seed: Integer,
         max_example: Integer,
-        skip_phases: Array
+        phases: Array
     ) -> AnyObject {
-        let rust_skip_phases = safe_access(skip_phases).into_iter().filter_map(|ruby_phase| {
+        let rust_phases = safe_access(phases).into_iter().map(|ruby_phase| {
             let phase_sym = safe_access(ruby_phase.try_convert_to::<Symbol>());
-            if let "shrink" = phase_sym.to_str() {
-                Some(Phase::Shrink)
-            } else {
-                None
-            }
+            let phase = Phase::try_from(phase_sym.to_str()).map_err(|e|
+                AnyException::new("ArgumentError", Some(&e))
+            );
+
+            safe_access(phase)
         }).collect();
 
         let core_engine = HypothesisCoreEngineStruct::new(
@@ -169,7 +170,7 @@ methods!(
             database_path.ok().map(|p| p.to_string()),
             safe_access(seed).to_u64(),
             safe_access(max_example).to_u64(),
-            rust_skip_phases,
+            rust_phases,
         );
 
         Class::from_existing("HypothesisCoreEngine")

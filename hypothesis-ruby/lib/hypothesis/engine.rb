@@ -23,7 +23,7 @@ module Hypothesis
         database,
         seed,
         options.fetch(:max_examples),
-        options.fetch(:skip_phases)
+        options.fetch(:phases)
       )
 
       @exceptions_to_tags = Hash.new { |h, k| h[k] = h.size }

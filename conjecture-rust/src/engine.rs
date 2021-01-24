@@ -6,6 +6,7 @@ use rand::{ChaChaRng, Rng, SeedableRng};
 
 use std::cmp::Reverse;
 use std::collections::{HashMap, HashSet};
+use std::convert::TryFrom;
 use std::io;
 use std::mem;
 use std::sync::mpsc::{sync_channel, Receiver, SyncSender};
@@ -18,6 +19,17 @@ use intminimize::minimize_integer;
 #[derive(Debug, PartialEq)]
 pub enum Phase {
     Shrink,
+}
+
+impl TryFrom<&str> for Phase {
+    type Error = String;
+
+    fn try_from(value: &str) -> Result<Self, String> {
+        match value {
+            "shrink" => Ok(Phase::Shrink),
+            _ => Err(format!("Cannot convert to Phase: {} is not a valid Phase", value))
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -41,7 +53,7 @@ struct MainGenerationLoop {
     sender: SyncSender<LoopCommand>,
     max_examples: u64,
     random: ChaChaRng,
-    skip_phases: Vec<Phase>,
+    phases: Vec<Phase>,
 
     best_example: Option<TestResult>,
     minimized_examples: HashMap<u64, TestResult>,
@@ -93,7 +105,7 @@ impl MainGenerationLoop {
             self.generate_examples()?;
         }
 
-        if self.skip_phases.contains(&Phase::Shrink) {
+        if !self.phases.contains(&Phase::Shrink) {
             return Err(LoopExitReason::Complete);
         }
         // At the start of this loop we usually only have one example in
@@ -577,7 +589,7 @@ impl Engine {
     pub fn new(
         name: String,
         max_examples: u64,
-        skip_phases: Vec<Phase>,
+        phases: Vec<Phase>,
         seed: &[u32],
         db: BoxedDatabase,
     ) -> Engine {
@@ -588,7 +600,7 @@ impl Engine {
             database: db,
             name,
             max_examples,
-            skip_phases,
+            phases,
             random: ChaChaRng::from_seed(seed),
             sender: send_remote,
             receiver: recv_remote,

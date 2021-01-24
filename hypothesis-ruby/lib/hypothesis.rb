@@ -7,6 +7,20 @@ require_relative 'hypothesis/testcase'
 require_relative 'hypothesis/engine'
 require_relative 'hypothesis/world'
 
+module Phase
+  SHRINK = :shrink
+
+  module_function
+
+  def all
+    [SHRINK]
+  end
+
+  def excluding(phase)
+    all - Array(phase)
+  end
+end
+
 # This is the main module for using Hypothesis.
 # It is expected that you will include this in your
 # tests, but its methods are also available on the
@@ -203,7 +217,7 @@ module Hypothesis
   #   May also be set to false to disable the database functionality.
   def hypothesis(
     max_valid_test_cases: 200,
-    skip_phases: [],
+    phases: Phase.all,
     database: nil,
     &block
   )
@@ -215,7 +229,7 @@ module Hypothesis
       World.current_engine = Engine.new(
         hypothesis_stable_identifier,
         max_examples: max_valid_test_cases,
-        skip_phases: skip_phases,
+        phases: phases,
         database: database
       )
       World.current_engine.run(&block)

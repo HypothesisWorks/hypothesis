@@ -8,18 +8,8 @@ RSpec.describe 'shrinking' do
   it 'finds lower bounds on integers' do
     n, = find { any(integers) >= 10 }
     expect(n).to eq(10)
-  end
-
-  it 'does not shrink when shrinking is skipped' do
-    n = 0
-    10.times do
-      n, = find(skip_phases: [:shrink]) { any(integers) >= 10 }
-      break if n != 10
-    end
-
-    expect(n).to_not eq(10)
-  end
-
+  end  
+  
   it 'iterates to a fixed point' do
     @original = nil
 
