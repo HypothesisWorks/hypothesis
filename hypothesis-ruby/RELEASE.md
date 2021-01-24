@@ -5,7 +5,7 @@ Adds support for skipping shrinking. While shrinking is extremely helpful and im
 Usage:
 
 ```
-hypothesis(skip_phases: [:shrink]) do
+hypothesis(phases: Phase.excluding(:shrink)) do
   # Failures here will be displayed directly and shrinking will be avoided
 end
 ```
