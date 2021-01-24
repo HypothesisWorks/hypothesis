@@ -6,7 +6,7 @@ module Hypothesis
   DEFAULT_DATABASE_PATH = File.join(Dir.pwd, '.hypothesis', 'examples')
 
   class Engine
-    attr_reader :current_source, :skip_phases
+    attr_reader :current_source
     attr_accessor :is_find
 
     def initialize(name, options)
