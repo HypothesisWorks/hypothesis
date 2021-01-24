@@ -6,7 +6,7 @@ module Hypothesis
   DEFAULT_DATABASE_PATH = File.join(Dir.pwd, '.hypothesis', 'examples')
 
   class Engine
-    attr_reader :current_source
+    attr_reader :current_source, :skip_phases
     attr_accessor :is_find
 
     def initialize(name, options)
@@ -19,7 +19,11 @@ module Hypothesis
       database = nil if database == false
 
       @core_engine = HypothesisCoreEngine.new(
-        name, database, seed, options.fetch(:max_examples)
+        name,
+        database,
+        seed,
+        options.fetch(:max_examples),
+        options.fetch(:skip_phases)
       )
 
       @exceptions_to_tags = Hash.new { |h, k| h[k] = h.size }

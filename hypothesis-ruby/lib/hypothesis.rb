@@ -201,7 +201,12 @@ module Hypothesis
   #   should store previously failing test cases. If it is nil, Hypothesis
   #   will use a default of .hypothesis/examples in the current directory.
   #   May also be set to false to disable the database functionality.
-  def hypothesis(max_valid_test_cases: 200, database: nil, &block)
+  def hypothesis(
+    max_valid_test_cases: 200,
+    skip_phases: [],
+    database: nil,
+    &block
+  )
     unless World.current_engine.nil?
       raise UsageError, 'Cannot nest hypothesis calls'
     end
@@ -210,6 +215,7 @@ module Hypothesis
       World.current_engine = Engine.new(
         hypothesis_stable_identifier,
         max_examples: max_valid_test_cases,
+        skip_phases: skip_phases,
         database: database
       )
       World.current_engine.run(&block)

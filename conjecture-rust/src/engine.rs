@@ -15,6 +15,11 @@ use data::{DataSource, DataStreamSlice, Status, TestResult};
 use database::BoxedDatabase;
 use intminimize::minimize_integer;
 
+#[derive(Debug, PartialEq)]
+pub enum Phase {
+    Shrink,
+}
+
 #[derive(Debug, Clone)]
 enum LoopExitReason {
     Complete,
@@ -36,6 +41,7 @@ struct MainGenerationLoop {
     sender: SyncSender<LoopCommand>,
     max_examples: u64,
     random: ChaChaRng,
+    skip_phases: Vec<Phase>,
 
     best_example: Option<TestResult>,
     minimized_examples: HashMap<u64, TestResult>,
@@ -87,6 +93,9 @@ impl MainGenerationLoop {
             self.generate_examples()?;
         }
 
+        if self.skip_phases.contains(&Phase::Shrink) {
+            return Err(LoopExitReason::Complete);
+        }
         // At the start of this loop we usually only have one example in
         // self.minimized_examples, but as we shrink we may find other ones.
         // Additionally, we may have multiple different failing examples from
@@ -565,7 +574,13 @@ fn u64s_to_bytes(ints: &[u64]) -> Vec<u8> {
 }
 
 impl Engine {
-    pub fn new(name: String, max_examples: u64, seed: &[u32], db: BoxedDatabase) -> Engine {
+    pub fn new(
+        name: String,
+        max_examples: u64,
+        skip_phases: Vec<Phase>,
+        seed: &[u32],
+        db: BoxedDatabase,
+    ) -> Engine {
         let (send_local, recv_remote) = sync_channel(1);
         let (send_remote, recv_local) = sync_channel(1);
 
@@ -573,6 +588,7 @@ impl Engine {
             database: db,
             name,
             max_examples,
+            skip_phases,
             random: ChaChaRng::from_seed(seed),
             sender: send_remote,
             receiver: recv_remote,
@@ -734,6 +750,7 @@ mod tests {
         let mut engine = Engine::new(
             "run_to_results".to_string(),
             1000,
+            vec![],
             &seed,
             Box::new(NoDatabase),
         );
