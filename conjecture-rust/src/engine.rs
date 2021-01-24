@@ -11,7 +11,7 @@ use std::mem;
 use std::sync::mpsc::{sync_channel, Receiver, SyncSender};
 use std::thread;
 
-use data::{DataSource, DataStream, Status, TestResult};
+use data::{DataSource, DataStreamSlice, Status, TestResult};
 use database::BoxedDatabase;
 use intminimize::minimize_integer;
 
@@ -105,8 +105,8 @@ impl MainGenerationLoop {
         // eventually settling on a fixed point, but when that happens we
         // should hit limits on shrinking (which we haven't implemented yet).
         while self.minimized_examples.len() > self.fully_minimized.len() {
-            let keys: Vec<u64> = self.minimized_examples.keys().map(|i| *i).collect();
-            for label in keys.iter() {
+            let keys: Vec<u64> = self.minimized_examples.keys().copied().collect();
+            for label in &keys {
                 if self.fully_minimized.insert(*label) {
                     let target = self.minimized_examples[label].clone();
                     let mut shrinker =
@@ -454,10 +454,7 @@ where
             .enumerate()
         {
             if !self.shrink_target.written_indices.contains(&i) {
-                duplicates
-                    .entry((*u, *v))
-                    .or_insert_with(|| Vec::new())
-                    .push(i);
+                duplicates.entry((*u, *v)).or_insert_with(Vec::new).push(i);
             }
         }
 
@@ -504,13 +501,13 @@ where
         Ok(())
     }
 
-    fn execute(&mut self, buf: &DataStream) -> Result<(bool, TestResult), LoopExitReason> {
+    fn execute(&mut self, buf: &DataStreamSlice) -> Result<(bool, TestResult), LoopExitReason> {
         // TODO: Later there will be caching here
-        let result = self.main_loop.execute(DataSource::from_vec(buf.clone()))?;
+        let result = self.main_loop.execute(DataSource::from_vec(buf.to_vec()))?;
         Ok((self.predicate(&result), result))
     }
 
-    fn incorporate(&mut self, buf: &DataStream) -> Result<bool, LoopExitReason> {
+    fn incorporate(&mut self, buf: &DataStreamSlice) -> Result<bool, LoopExitReason> {
         assert!(
             buf.len() <= self.shrink_target.record.len(),
             "Expected incorporate to not increase length, but buf.len() = {} \
@@ -604,7 +601,7 @@ impl Engine {
     }
 
     pub fn mark_finished(&mut self, source: DataSource, status: Status) {
-        self.consume_test_result(source.to_result(status))
+        self.consume_test_result(source.into_result(status))
     }
 
     pub fn next_source(&mut self) -> Option<DataSource> {
@@ -635,8 +632,7 @@ impl Engine {
                     ..
                 },
             )) => {
-                let mut results: Vec<TestResult> =
-                    minimized_examples.values().map(|v| v.clone()).collect();
+                let mut results: Vec<TestResult> = minimized_examples.values().cloned().collect();
                 results.sort();
                 results
             }
