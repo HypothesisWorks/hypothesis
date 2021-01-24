@@ -16,8 +16,11 @@ module Phase
     [SHRINK]
   end
 
-  def excluding(phase)
-    all - Array(phase)
+  def excluding(*phases)
+    unknown_phases = phases.select { |phase| !Phase.all.include?(phase) }
+    raise ArgumentError.new("Attempting to exclude unknown phases: #{unknown_phases}") unless unknown_phases.empty?
+    
+    all - phases
   end
 end
 
