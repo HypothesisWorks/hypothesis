@@ -17,9 +17,14 @@ module Phase
   end
 
   def excluding(*phases)
-    unknown_phases = phases.select { |phase| !Phase.all.include?(phase) }
-    raise ArgumentError.new("Attempting to exclude unknown phases: #{unknown_phases}") unless unknown_phases.empty?
-    
+    unknown_phases = phases.reject { |phase| Phase.all.include?(phase) }
+    unless unknown_phases.empty?
+      raise(
+        ArgumentError,
+        "Attempting to exclude unknown phases: #{unknown_phases}"
+      )
+    end
+
     all - phases
   end
 end

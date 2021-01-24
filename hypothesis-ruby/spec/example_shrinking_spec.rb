@@ -8,8 +8,8 @@ RSpec.describe 'shrinking' do
   it 'finds lower bounds on integers' do
     n, = find { any(integers) >= 10 }
     expect(n).to eq(10)
-  end  
-  
+  end
+
   it 'iterates to a fixed point' do
     @original = nil
 
