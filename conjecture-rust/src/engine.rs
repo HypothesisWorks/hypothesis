@@ -27,7 +27,10 @@ impl TryFrom<&str> for Phase {
     fn try_from(value: &str) -> Result<Self, String> {
         match value {
             "shrink" => Ok(Phase::Shrink),
-            _ => Err(format!("Cannot convert to Phase: {} is not a valid Phase", value))
+            _ => Err(format!(
+                "Cannot convert to Phase: {} is not a valid Phase",
+                value
+            )),
         }
     }
 }

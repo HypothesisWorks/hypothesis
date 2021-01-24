@@ -7,7 +7,10 @@ extern crate conjecture;
 use std::convert::TryFrom;
 use std::mem;
 
-use rutie::{AnyException, AnyObject, Array, Boolean, Class, Exception, Float, Integer, NilClass, Object, RString, Symbol, VM};
+use rutie::{
+    AnyException, AnyObject, Array, Boolean, Class, Exception, Float, Integer, NilClass, Object,
+    RString, Symbol, VM,
+};
 
 use conjecture::data::{DataSource, Status, TestResult};
 use conjecture::database::{BoxedDatabase, DirectoryDatabase, NoDatabase};
@@ -156,14 +159,16 @@ methods!(
         max_example: Integer,
         phases: Array
     ) -> AnyObject {
-        let rust_phases = safe_access(phases).into_iter().map(|ruby_phase| {
-            let phase_sym = safe_access(ruby_phase.try_convert_to::<Symbol>());
-            let phase = Phase::try_from(phase_sym.to_str()).map_err(|e|
-                AnyException::new("ArgumentError", Some(&e))
-            );
+        let rust_phases = safe_access(phases)
+            .into_iter()
+            .map(|ruby_phase| {
+                let phase_sym = safe_access(ruby_phase.try_convert_to::<Symbol>());
+                let phase = Phase::try_from(phase_sym.to_str())
+                    .map_err(|e| AnyException::new("ArgumentError", Some(&e)));
 
-            safe_access(phase)
-        }).collect();
+                safe_access(phase)
+            })
+            .collect();
 
         let core_engine = HypothesisCoreEngineStruct::new(
             safe_access(name).to_string(),
@@ -478,5 +483,5 @@ fn mark_child_status(
 }
 
 fn safe_access<T>(value: Result<T, AnyException>) -> T {
-  value.map_err(VM::raise_ex).unwrap()
+    value.map_err(VM::raise_ex).unwrap()
 }
