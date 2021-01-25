@@ -1,4 +1,5 @@
 #![allow(clippy::many_single_char_names)]
+#![warn(clippy::cargo)]
 extern crate byteorder;
 extern crate core;
 extern crate crypto_hash;
