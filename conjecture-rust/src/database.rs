@@ -96,7 +96,7 @@ impl Database for DirectoryDatabase {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempdir::TempDir;
+    use tempfile::TempDir;
 
     #[derive(Debug)]
     struct TestDatabase {
@@ -106,7 +106,7 @@ mod tests {
 
     impl TestDatabase {
         pub fn new() -> TestDatabase {
-            let dir = TempDir::new("test-db").unwrap();
+            let dir = TempDir::new().unwrap();
             let db = DirectoryDatabase::new(dir.path());
             TestDatabase { _temp: dir, db }
         }

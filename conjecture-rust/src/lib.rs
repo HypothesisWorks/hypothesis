@@ -5,7 +5,7 @@ extern crate crypto_hash;
 extern crate rand;
 
 #[cfg(test)]
-extern crate tempdir;
+extern crate tempfile;
 
 pub mod data;
 pub mod database;
