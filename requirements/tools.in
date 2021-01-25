@@ -16,7 +16,6 @@ isort
 lark-parser
 libcst
 mypy
-numpy
 pip-tools
 pytest
 python-dateutil
