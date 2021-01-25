@@ -81,7 +81,17 @@ approach to be combined with traditional pythonic code.
 contracts (specified using :pypi:`icontract`) so that the code can be
 automatically tested.
 It also supports a ghostwriter for test files and IDE integrations such as
-:pypi:`icontract-hypothesis-vim` and :pypi:`icontract-hypothesis-pycharm`.
+`icontract-hypothesis-vim <https://github.com/mristin/icontract-hypothesis-vim>`_,
+`icontract-hypothesis-pycharm <https://github.com/mristin/icontract-hypothesis-pycharm>`_,
+and
+`icontract-hypothesis-vscode <https://github.com/mristin/icontract-hypothesis-vscode>`_.
+
+Even if you do not use any contracts in your code at all, you can use
+:pypi:`icontract-hypothesis` to run smoke tests as it will automatically infer
+the inputs to the functions based on :func:`~hypothesis.strategies.from_type`.
+This is particularly handy if you use :pypi:`icontract-hypothesis` from within
+your IDE so that you can repeatedly run a smoke test of a function during the
+development with only a couple of key strokes.
 
 --------------------
 Writing an extension
