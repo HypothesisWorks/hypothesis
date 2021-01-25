@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    hypothesis-specs (0.3.0)
+    hypothesis-specs (0.4.0)
       rake (>= 10.0, < 13.0)
       rutie (~> 0.0.3)
 
@@ -65,4 +65,4 @@ DEPENDENCIES
   yard (~> 0.9.12)
 
 BUNDLED WITH
-   2.1.4
+   2.2.6
