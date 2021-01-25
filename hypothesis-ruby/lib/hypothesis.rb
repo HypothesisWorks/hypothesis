@@ -7,6 +7,28 @@ require_relative 'hypothesis/testcase'
 require_relative 'hypothesis/engine'
 require_relative 'hypothesis/world'
 
+module Phase
+  SHRINK = :shrink
+
+  module_function
+
+  def all
+    [SHRINK]
+  end
+
+  def excluding(*phases)
+    unknown_phases = phases.reject { |phase| Phase.all.include?(phase) }
+    unless unknown_phases.empty?
+      raise(
+        ArgumentError,
+        "Attempting to exclude unknown phases: #{unknown_phases}"
+      )
+    end
+
+    all - phases
+  end
+end
+
 # This is the main module for using Hypothesis.
 # It is expected that you will include this in your
 # tests, but its methods are also available on the
@@ -201,7 +223,12 @@ module Hypothesis
   #   should store previously failing test cases. If it is nil, Hypothesis
   #   will use a default of .hypothesis/examples in the current directory.
   #   May also be set to false to disable the database functionality.
-  def hypothesis(max_valid_test_cases: 200, database: nil, &block)
+  def hypothesis(
+    max_valid_test_cases: 200,
+    phases: Phase.all,
+    database: nil,
+    &block
+  )
     unless World.current_engine.nil?
       raise UsageError, 'Cannot nest hypothesis calls'
     end
@@ -210,6 +237,7 @@ module Hypothesis
       World.current_engine = Engine.new(
         hypothesis_stable_identifier,
         max_examples: max_valid_test_cases,
+        phases: phases,
         database: database
       )
       World.current_engine.run(&block)

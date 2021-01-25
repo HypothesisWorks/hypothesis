@@ -19,7 +19,11 @@ module Hypothesis
       database = nil if database == false
 
       @core_engine = HypothesisCoreEngine.new(
-        name, database, seed, options.fetch(:max_examples)
+        name,
+        database,
+        seed,
+        options.fetch(:max_examples),
+        options.fetch(:phases)
       )
 
       @exceptions_to_tags = Hash.new { |h, k| h[k] = h.size }

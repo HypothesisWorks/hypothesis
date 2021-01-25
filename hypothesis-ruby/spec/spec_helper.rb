@@ -63,7 +63,9 @@ module Hypothesis
       end
       begin
         Hypothesis::World.current_engine = Hypothesis::Engine.new(
-          'find', max_examples: options.fetch(:max_examples, 1000)
+          'find',
+          max_examples: options.fetch(:max_examples, 1000),
+          phases: options.fetch(:phases, Phase.all)
         )
         Hypothesis::World.current_engine.is_find = true
         Hypothesis::World.current_engine.run(&block)

@@ -4,15 +4,19 @@ extern crate rutie;
 extern crate lazy_static;
 extern crate conjecture;
 
+use std::convert::TryFrom;
 use std::mem;
 
-use rutie::{AnyException, AnyObject, Boolean, Class, Float, Integer, NilClass, Object, RString, VM};
+use rutie::{
+    AnyException, AnyObject, Array, Boolean, Class, Exception, Float, Integer, NilClass, Object,
+    RString, Symbol, VM,
+};
 
 use conjecture::data::{DataSource, Status, TestResult};
 use conjecture::database::{BoxedDatabase, DirectoryDatabase, NoDatabase};
 use conjecture::distributions;
 use conjecture::distributions::Repeat;
-use conjecture::engine::Engine;
+use conjecture::engine::{Engine, Phase};
 
 pub struct HypothesisCoreDataSourceStruct {
     source: Option<DataSource>,
@@ -77,6 +81,7 @@ impl HypothesisCoreEngineStruct {
         database_path: Option<String>,
         seed: u64,
         max_examples: u64,
+        phases: Vec<Phase>,
     ) -> HypothesisCoreEngineStruct {
         let xs: [u32; 2] = [seed as u32, (seed >> 32) as u32];
         let db: BoxedDatabase = match database_path {
@@ -85,7 +90,7 @@ impl HypothesisCoreEngineStruct {
         };
 
         HypothesisCoreEngineStruct {
-            engine: Engine::new(name, max_examples, &xs, db),
+            engine: Engine::new(name, max_examples, phases, &xs, db),
             pending: None,
             interesting_examples: Vec::new(),
         }
@@ -151,13 +156,26 @@ methods!(
         name: RString,
         database_path: RString,
         seed: Integer,
-        max_example: Integer
+        max_example: Integer,
+        phases: Array
     ) -> AnyObject {
+        let rust_phases = safe_access(phases)
+            .into_iter()
+            .map(|ruby_phase| {
+                let phase_sym = safe_access(ruby_phase.try_convert_to::<Symbol>());
+                let phase = Phase::try_from(phase_sym.to_str())
+                    .map_err(|e| AnyException::new("ArgumentError", Some(&e)));
+
+                safe_access(phase)
+            })
+            .collect();
+
         let core_engine = HypothesisCoreEngineStruct::new(
             safe_access(name).to_string(),
             database_path.ok().map(|p| p.to_string()),
             safe_access(seed).to_u64(),
             safe_access(max_example).to_u64(),
+            rust_phases,
         );
 
         Class::from_existing("HypothesisCoreEngine")
@@ -465,5 +483,5 @@ fn mark_child_status(
 }
 
 fn safe_access<T>(value: Result<T, AnyException>) -> T {
-  value.map_err(VM::raise_ex).unwrap()
+    value.map_err(VM::raise_ex).unwrap()
 }
