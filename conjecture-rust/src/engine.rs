@@ -21,6 +21,12 @@ pub enum Phase {
     Shrink,
 }
 
+impl Phase {
+    pub fn all() -> Vec<Self> {
+        vec![Phase::Shrink]
+    }
+}
+
 impl TryFrom<&str> for Phase {
     type Error = String;
 
@@ -765,7 +771,7 @@ mod tests {
         let mut engine = Engine::new(
             "run_to_results".to_string(),
             1000,
-            vec![],
+            Phase::all(),
             &seed,
             Box::new(NoDatabase),
         );
