@@ -1,13 +1,5 @@
 #![allow(clippy::many_single_char_names)]
-#![warn(clippy::cargo)]
-extern crate byteorder;
-extern crate core;
-extern crate crypto_hash;
-extern crate rand;
-
-#[cfg(test)]
-extern crate tempfile;
-
+#![warn(clippy::cargo, rust_2018_idioms, rust_2018_compatibility)]
 pub mod data;
 pub mod database;
 pub mod distributions;

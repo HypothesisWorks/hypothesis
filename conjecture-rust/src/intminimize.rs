@@ -2,7 +2,7 @@ use std::cmp::min;
 
 const SMALL: u64 = 5;
 
-struct Minimizer<'a, F: 'a> {
+struct Minimizer<'a, F> {
     criterion: &'a mut F,
     best: u64,
 }

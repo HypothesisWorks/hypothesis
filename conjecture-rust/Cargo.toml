@@ -12,6 +12,7 @@ description = "Core engine for Hypothesis implementations"
 
 readme = "README.md"
 license = "MPL-2.0"
+edition = "2018"
 
 [dependencies]
 
