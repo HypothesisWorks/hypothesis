@@ -100,7 +100,7 @@ or help with some of the tricky details. Don't be afraid to ask for help.
 In order to get merged, a pull request will have to have a green build (naturally) and
 to be approved by a Hypothesis maintainer (and, depending on what it is, possibly specifically
 by DRMacIver).  Most pull requests will also need to `write a changelog entry in
-``hypothesis-python/RELEASE.rst`` <guides/documentation.rst#changelog-entries>`__.
+hypothesis-python/RELEASE.rst <guides/documentation.rst#changelog-entries>`_.
 
 The review process is the same one that all changes to Hypothesis go through, regardless of
 whether you're an established maintainer or entirely new to the project. It's very much
