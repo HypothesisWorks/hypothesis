@@ -27,6 +27,7 @@ jobs:
           - check-ruby-tests
           - check-rust-in-ruby-format
           - lint-rust-in-ruby
+          - audit-rust-in-ruby
           - check-conjecture-rust-format
           - check-rust-tests
           - audit-conjecture-rust

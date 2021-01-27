@@ -490,6 +490,12 @@ def lint_rust_in_ruby():
     hr.cargo("clippy")
 
 
+@ruby_task
+def audit_rust_in_ruby():
+    hr.cargo("install", "cargo-audit")
+    hr.cargo("audit")
+
+
 @task()
 def python(*args):
     os.execv(sys.executable, (sys.executable,) + args)
