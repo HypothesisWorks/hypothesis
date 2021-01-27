@@ -13,6 +13,7 @@
 #
 # END HEADER
 
+import threading
 from contextlib import contextmanager
 
 from hypothesis.errors import InvalidArgument
@@ -29,8 +30,23 @@ class LimitedStrategy(SearchStrategy):
     def __init__(self, strategy):
         super().__init__()
         self.base_strategy = strategy
-        self.marker = 0
-        self.currently_capped = False
+        self._threadlocal = threading.local()
+
+    @property
+    def marker(self):
+        return getattr(self._threadlocal, "marker", 0)
+
+    @marker.setter
+    def marker(self, value):
+        self._threadlocal.marker = value
+
+    @property
+    def currently_capped(self):
+        return getattr(self._threadlocal, "currently_capped", False)
+
+    @currently_capped.setter
+    def currently_capped(self, value):
+        self._threadlocal.currently_capped = value
 
     def __repr__(self):
         return "LimitedStrategy(%r)" % (self.base_strategy,)
