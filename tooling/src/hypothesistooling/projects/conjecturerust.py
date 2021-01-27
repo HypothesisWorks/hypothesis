@@ -33,7 +33,7 @@ CHANGELOG_FILE = os.path.join(BASE_DIR, "CHANGELOG.md")
 
 CARGO_FILE = os.path.join(BASE_DIR, "Cargo.toml")
 
-SRC = os.path.join(BASE_DIR, "lib")
+SRC = os.path.join(BASE_DIR, "src")
 
 
 def has_release():

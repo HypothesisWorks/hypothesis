@@ -38,7 +38,7 @@ CARGO_FILE = os.path.join(BASE_DIR, "Cargo.toml")
 GEMFILE_LOCK_FILE = os.path.join(BASE_DIR, "Gemfile.lock")
 CONJECTURE_CARGO_FILE = cr.CARGO_FILE
 
-RUST_SRC = os.path.join(BASE_DIR, "src")
+RUST_SRC = cr.SRC
 RUBY_SRC = os.path.join(BASE_DIR, "lib")
 
 
