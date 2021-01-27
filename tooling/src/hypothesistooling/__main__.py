@@ -475,6 +475,16 @@ def check_ruby_tests():
     hr.rake_task("minitest")
 
 
+@ruby_task
+def format_rust_in_ruby():
+    hr.cargo("fmt")
+
+
+@ruby_task
+def check_rust_in_ruby_format():
+    hr.cargo("fmt", "--", "--check")
+
+
 @task()
 def python(*args):
     os.execv(sys.executable, (sys.executable,) + args)
