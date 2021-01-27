@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.0.4:
+
+------------------
+6.0.4 - 2021-01-27
+------------------
+
+This release prevents a race condition inside :func:`~hypothesis.strategies.recursive` strategies.
+The race condition occurs when the same :func:`~hypothesis.strategies.recursive` strategy is shared among tests
+that are running in multiple threads (:issue:`2717`).
+
 .. _v6.0.3:
 
 ------------------
