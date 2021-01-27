@@ -56,8 +56,6 @@ def update_changelog_and_version():
         version=version,
         entry=release_contents,
     )
-#    os.unlink(RELEASE_FILE)
-
 
 def cargo(*args):
     install.ensure_rustup()
@@ -74,6 +72,8 @@ def build_distribution():
         cargo("package", "--allow-dirty")
     else:
         cargo("package")
+
+    os.unlink(RELEASE_FILE)
 
 
 def tag_name():
