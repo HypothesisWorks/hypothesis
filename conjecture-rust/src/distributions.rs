@@ -131,7 +131,7 @@ pub struct Sampler {
 }
 
 impl Sampler {
-    pub fn new(weights: Vec<f32>) -> Sampler {
+    pub fn new(weights: &[f32]) -> Sampler {
         // FIXME: The correct thing to do here is to allow this,
         // return early, and make this reject the data, but we don't
         // currently have the status built into our data properly...
@@ -216,7 +216,7 @@ impl Sampler {
 }
 
 pub fn good_bitlengths() -> Sampler {
-    let weights = vec![
+    let weights = [
         4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, // 1 byte
         2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, // 2 bytes
         1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, // 3 bytes
@@ -227,7 +227,7 @@ pub fn good_bitlengths() -> Sampler {
         0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, // 8 bytes (last bit spare for sign)
     ];
     assert!(weights.len() == 63);
-    Sampler::new(weights)
+    Sampler::new(&weights)
 }
 
 pub fn integer_from_bitlengths(source: &mut DataSource, bitlengths: &Sampler) -> Draw<i64> {
