@@ -35,6 +35,7 @@ CARGO_FILE = os.path.join(BASE_DIR, "Cargo.toml")
 
 SRC = os.path.join(BASE_DIR, "src")
 
+
 def has_release():
     """Is there a version of this package ready to release?"""
     return os.path.exists(RELEASE_FILE)
@@ -56,6 +57,7 @@ def update_changelog_and_version():
         version=version,
         entry=release_contents,
     )
+
 
 def cargo(*args):
     install.ensure_rustup()
