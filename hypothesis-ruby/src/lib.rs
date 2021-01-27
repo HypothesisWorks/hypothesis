@@ -50,6 +50,7 @@ wrappable_struct!(
 
 class!(HypothesisCoreDataSource);
 
+#[rustfmt::skip]
 methods!(
     HypothesisCoreDataSource,
     itself,
@@ -149,6 +150,7 @@ wrappable_struct!(
 
 class!(HypothesisCoreEngine);
 
+#[rustfmt::skip]
 methods!(
     HypothesisCoreEngine,
     itself,
@@ -277,6 +279,7 @@ wrappable_struct!(
 
 class!(HypothesisCoreIntegers);
 
+#[rustfmt::skip]
 methods!(
     HypothesisCoreIntegers,
     itself,
@@ -333,6 +336,7 @@ wrappable_struct!(
 
 class!(HypothesisCoreRepeatValues);
 
+#[rustfmt::skip]
 methods!(
     HypothesisCoreRepeatValues,
     itself,
@@ -394,6 +398,7 @@ wrappable_struct!(
 
 class!(HypothesisCoreBoundedIntegers);
 
+#[rustfmt::skip]
 methods!(
     HypothesisCoreBoundedIntegers,
     itself,
