@@ -13,7 +13,9 @@
 #
 # END HEADER
 
-from hypothesis import settings, strategies as st
+import threading
+
+from hypothesis import given, settings, strategies as st
 from tests.common.debug import find_any, minimal
 from tests.common.utils import flaky
 
@@ -127,3 +129,29 @@ def test_can_form_sets_of_recursive_data():
     )
     xs = minimal(trees, lambda x: len(x) >= size, timeout_after=None)
     assert len(xs) == size
+
+
+def test_drawing_from_recursive_strategy_is_thread_safe():
+    shared_strategy = st.recursive(st.integers(), lambda s: st.lists(s, max_size=3))
+
+    errors = []
+
+    @given(data=st.data())
+    def test(data):
+        try:
+            data.draw(shared_strategy)
+        except Exception as exc:
+            errors.append(exc)
+
+    threads = []
+
+    for _ in range(4):
+        threads.append(threading.Thread(target=test))
+
+    for thread in threads:
+        thread.start()
+
+    for thread in threads:
+        thread.join()
+
+    assert not errors
