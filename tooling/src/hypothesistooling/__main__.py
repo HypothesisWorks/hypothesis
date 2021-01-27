@@ -508,6 +508,12 @@ def lint_conjecture_rust():
     cr.cargo("clippy")
 
 
+@rust_task
+def audit_conjecture_rust():
+    cr.cargo("install", "cargo-audit")
+    cr.cargo("audit")
+
+
 @task()
 def tasks():
     """Print a list of all task names supported by the build system."""
