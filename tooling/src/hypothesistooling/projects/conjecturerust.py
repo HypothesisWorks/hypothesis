@@ -75,8 +75,6 @@ def build_distribution():
     else:
         cargo("package")
 
-    os.unlink(RELEASE_FILE)
-
 
 def tag_name():
     """The tag name for the upcoming release."""
