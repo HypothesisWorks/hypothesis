@@ -485,6 +485,11 @@ def check_rust_in_ruby_format():
     hr.cargo("fmt", "--", "--check")
 
 
+@ruby_task
+def lint_rust_in_ruby():
+    hr.cargo("clippy")
+
+
 @task()
 def python(*args):
     os.execv(sys.executable, (sys.executable,) + args)
