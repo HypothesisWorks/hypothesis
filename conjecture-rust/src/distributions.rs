@@ -1,4 +1,4 @@
-use data::{DataSource, FailedDraw};
+use crate::data::{DataSource, FailedDraw};
 
 use std::cmp::{Ord, Ordering, PartialOrd, Reverse};
 use std::collections::BinaryHeap;

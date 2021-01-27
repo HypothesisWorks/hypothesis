@@ -12,9 +12,9 @@ use std::mem;
 use std::sync::mpsc::{sync_channel, Receiver, SyncSender};
 use std::thread;
 
-use data::{DataSource, DataStreamSlice, Status, TestResult};
-use database::BoxedDatabase;
-use intminimize::minimize_integer;
+use crate::data::{DataSource, DataStreamSlice, Status, TestResult};
+use crate::database::BoxedDatabase;
+use crate::intminimize::minimize_integer;
 
 #[derive(Debug, PartialEq)]
 pub enum Phase {
@@ -760,8 +760,8 @@ impl Engine {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use data::FailedDraw;
-    use database::NoDatabase;
+    use crate::data::FailedDraw;
+    use crate::database::NoDatabase;
 
     fn run_to_results<F>(mut f: F) -> Vec<TestResult>
     where

@@ -33,7 +33,7 @@ CHANGELOG_FILE = os.path.join(BASE_DIR, "CHANGELOG.md")
 
 CARGO_FILE = os.path.join(BASE_DIR, "Cargo.toml")
 
-SRC = os.path.join(BASE_DIR, "lib")
+SRC = os.path.join(BASE_DIR, "src")
 
 
 def has_release():
@@ -57,7 +57,6 @@ def update_changelog_and_version():
         version=version,
         entry=release_contents,
     )
-    os.unlink(RELEASE_FILE)
 
 
 def cargo(*args):
@@ -75,6 +74,8 @@ def build_distribution():
         cargo("package", "--allow-dirty")
     else:
         cargo("package")
+
+    os.unlink(RELEASE_FILE)
 
 
 def tag_name():

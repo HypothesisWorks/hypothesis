@@ -1,7 +1,7 @@
 [package]
 name = "hypothesis-ruby"
 version = "0.1.0"
-authors = ["David R. MacIver <david@drmaciver.com>", "Alex Wiesberger <alex.m.weisberger@gmail.com>"]
+authors = ["David R. MacIver <david@drmaciver.com>", "Alex Weisberger <alex.m.weisberger@gmail.com>"]
 
 [lib]
 name="hypothesis_ruby_core"
