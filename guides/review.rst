@@ -185,7 +185,8 @@ Public API changes must satisfy the following:
 7. Functionality should be limited to that which is easy to support in the
    long-term. In particular functionality which is very tied to the
    current Hypothesis internals should be avoided.
-8. `DRMacIver <https://github.com/DRMacIver>`_ must approve the changes
+8. `DRMacIver <https://github.com/DRMacIver>`_ or
+   `Zac-HD <https://github.com/Zac-HD>`_ must approve the changes
    though other maintainers are welcome and likely to chip in to review as
    well.
 9. We have a separate guide for `house API style <api-style.rst>`_ which should
@@ -244,11 +245,11 @@ Engine Changes
 
 Engine changes are anything that change a "fundamental" of how Hypothesis
 works. A good rule of thumb is that an engine change is anything that touches
-a file in hypothesis.internal.conjecture (Python version).
+a file in ``hypothesis.internal.conjecture`` (Python version).
 
 All such changes should:
 
-1. Be approved (or authored) by DRMacIver.
+1. Be approved (or authored) by DRMacIver or Zac-HD.
 2. Be approved (or authored) by someone who *isn't* DRMacIver (a major problem
    with this section of the code is that there is too much that only DRMacIver
    understands properly and we want to fix this).
@@ -256,6 +257,10 @@ All such changes should:
    examples that were previously hard to discover.
 4. If appropriate, come with a test in test_shrink_quality.py showing how they
    improve the shrinker.
+
+Note that the same rules will apply to the Ruby and Rust packages from version
+1.0, but are more relaxed in practice while we are catching up with features
+that are already well proven in Python.
 
 ~~~~~~~~~~~~~~~~~~~~~~
 Non-Blocking Questions

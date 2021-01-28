@@ -56,9 +56,9 @@ where every pull request that touches ``./src`` results in a new release.
 That means every contributor gets to write their changelog!
 
 A changelog entry should be written in a new ``RELEASE.rst`` file in
-the `hypothesis-python` directory (other projects will have a release file
-in their corresponding directory, but the system is currently not functioning for `hypothesis-ruby`,
-which is the only other such project at the moment).
+the `hypothesis-python` directory, or ``RELEASE.md`` for the Ruby and Rust
+versions.  Note that any change to ``conjecture-rust`` is automatically also
+and change for our Ruby package, and therefore requires *two* release files!
 
 The first line of the file specifies the component
 of the version number that will be updated, according to our
