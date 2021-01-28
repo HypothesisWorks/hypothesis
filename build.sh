@@ -22,8 +22,9 @@ if [ -n "${GITHUB_ACTIONS-}" ] ; then
     PYTHON=$(command -v python)
 else
     # Otherwise, we install it from scratch
-    "$SCRIPTS/ensure-python.sh" 3.8.5
-    PYTHON=$(pythonloc 3.8.5)/bin/python
+    # NOTE: keep this version in sync with PYMAIN in tooling
+    "$SCRIPTS/ensure-python.sh" 3.8.7
+    PYTHON=$(pythonloc 3.8.7)/bin/python
 fi
 
 TOOL_REQUIREMENTS="$ROOT/requirements/tools.txt"
