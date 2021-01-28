@@ -358,15 +358,10 @@ def run_tox(task, version):
 # Via https://github.com/pyenv/pyenv/tree/master/plugins/python-build/share/python-build
 PY36 = "3.6.12"
 PY37 = "3.7.9"
-PY38 = "3.8.6"
-PY39 = "3.9.0"
+PY38 = PYMAIN = "3.8.7"  # Note: keep this in sync with build.sh
+PY39 = "3.9.1"
 PYPY36 = "pypy3.6-7.3.1"
 PYPY37 = "pypy3.7-7.3.2"
-
-
-@task()
-def install_core():
-    install.python_executable(PY36)
 
 
 # ALIASES are the executable names for each Python version
@@ -417,7 +412,7 @@ def check_pypy37():
 
 
 def standard_tox_task(name):
-    TASKS["check-" + name] = python_tests(lambda: run_tox(name, PY36))
+    TASKS["check-" + name] = python_tests(lambda: run_tox(name, PYMAIN))
 
 
 standard_tox_task("nose")
@@ -434,17 +429,12 @@ standard_tox_task("conjecture-coverage")
 
 @task()
 def check_quality():
-    run_tox("quality", PY36)
+    run_tox("quality", PYMAIN)
 
 
-examples_task = task(
-    if_changed=(hp.PYTHON_SRC, os.path.join(hp.HYPOTHESIS_PYTHON, "examples"))
-)
-
-
-@examples_task
+@task(if_changed=(hp.PYTHON_SRC, os.path.join(hp.HYPOTHESIS_PYTHON, "examples")))
 def check_examples3():
-    run_tox("examples3", PY36)
+    run_tox("examples3", PYMAIN)
 
 
 @task()

@@ -11,6 +11,8 @@
 # generic build components
 
 .runtimes
+/hypothesis-python/branch-check
+/pythonpython3.*
 
 # python
 

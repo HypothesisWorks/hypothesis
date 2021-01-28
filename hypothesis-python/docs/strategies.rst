@@ -80,12 +80,11 @@ approach to be combined with traditional pythonic code.
 :pypi:`icontract-hypothesis` infers the Hypothesis strategies based on the
 contracts (specified using :pypi:`icontract`) so that the code can be
 automatically tested.
-It also supports a ghostwriter for test files and IDE integrations such as
+It also supports a :doc:`ghostwriter <ghostwriter>` for test files and IDE integrations such as
 `icontract-hypothesis-vim <https://github.com/mristin/icontract-hypothesis-vim>`_,
 `icontract-hypothesis-pycharm <https://github.com/mristin/icontract-hypothesis-pycharm>`_,
 and
 `icontract-hypothesis-vscode <https://github.com/mristin/icontract-hypothesis-vscode>`_.
-
 Even if you do not use any contracts in your code at all, you can use
 :pypi:`icontract-hypothesis` to run smoke tests as it will automatically infer
 the inputs to the functions based on :func:`~hypothesis.strategies.from_type`.

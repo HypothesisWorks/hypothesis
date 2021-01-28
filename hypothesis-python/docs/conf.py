@@ -83,7 +83,7 @@ intersphinx_mapping = {
     "attrs": ("https://www.attrs.org/en/stable/", None),
 }
 
-autodoc_mock_imports = ["pandas", "redis"]
+autodoc_mock_imports = ["numpy", "pandas", "redis"]
 
 # This config value must be a dictionary of external sites, mapping unique
 # short alias names to a base URL and a prefix.
