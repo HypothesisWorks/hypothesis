@@ -19,6 +19,7 @@ from hypothesis import Phase, assume, given, settings, strategies as st
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.errors import Flaky, MultipleFailures
 from hypothesis.internal.conjecture.engine import MIN_TEST_CALLS
+
 from tests.common.utils import (
     assert_output_contains_failure,
     capture_out,

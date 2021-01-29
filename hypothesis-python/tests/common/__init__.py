@@ -39,6 +39,7 @@ from hypothesis.strategies import (
     text,
     tuples,
 )
+
 from tests.common.debug import TIME_INCREMENT
 
 __all__ = ["standard_types", "OrderedPair", "TIME_INCREMENT"]

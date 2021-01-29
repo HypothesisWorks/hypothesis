@@ -19,6 +19,7 @@ from hypothesis.internal.compat import int_from_bytes
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.shrinker import Shrinker, block_program
+
 from tests.common.utils import counts_calls, non_covering_examples
 from tests.conjecture.common import run_to_buffer, shrinking_from
 

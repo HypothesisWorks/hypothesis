@@ -20,6 +20,7 @@ import pytest
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import booleans, integers, just, tuples
+
 from tests.common.debug import assert_no_examples
 
 

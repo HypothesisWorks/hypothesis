@@ -38,6 +38,7 @@ from hypothesis.internal.reflection import (
     source_exec_as_module,
     unbind_method,
 )
+
 from tests.common.utils import raises
 
 

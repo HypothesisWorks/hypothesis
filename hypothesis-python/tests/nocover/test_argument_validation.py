@@ -19,6 +19,7 @@ import pytest
 
 from hypothesis import strategies as st
 from hypothesis.strategies._internal.core import _strategies
+
 from tests.common.arguments import argument_validation_test, e
 
 BAD_ARGS = []

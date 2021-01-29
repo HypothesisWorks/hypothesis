@@ -19,6 +19,7 @@ import pytest
 
 from hypothesis import given, strategies as st
 from hypothesis.errors import InvalidArgument
+
 from tests.common.debug import assert_no_examples
 
 

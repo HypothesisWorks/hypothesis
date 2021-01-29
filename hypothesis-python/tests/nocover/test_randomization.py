@@ -18,6 +18,7 @@ import random
 from pytest import raises
 
 from hypothesis import Verbosity, find, given, settings, strategies as st
+
 from tests.common.utils import no_shrink
 
 

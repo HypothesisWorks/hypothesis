@@ -23,6 +23,7 @@ import pytest
 from hypothesis import HealthCheck, assume, given, note, settings, strategies as st
 from hypothesis.errors import InvalidArgument, Unsatisfiable
 from hypothesis.extra import numpy as nps
+
 from tests.common.debug import find_any, minimal
 from tests.common.utils import fails_with, flaky
 

@@ -21,6 +21,7 @@ import pytest
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
 from hypothesis.provisional import domains, urls
+
 from tests.common.debug import find_any
 
 

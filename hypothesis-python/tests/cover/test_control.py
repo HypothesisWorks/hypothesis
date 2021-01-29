@@ -29,6 +29,7 @@ from hypothesis.errors import CleanupFailed, InvalidArgument
 from hypothesis.internal.conjecture.data import ConjectureData as TD
 from hypothesis.stateful import RuleBasedStateMachine, rule
 from hypothesis.strategies import integers
+
 from tests.common.utils import capture_out
 
 

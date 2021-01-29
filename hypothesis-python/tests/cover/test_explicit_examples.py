@@ -35,6 +35,7 @@ from hypothesis.errors import (
     MultipleFailures,
 )
 from hypothesis.strategies import floats, integers, nothing, text
+
 from tests.common.utils import assert_falsifying_output, capture_out
 
 

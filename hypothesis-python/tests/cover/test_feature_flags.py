@@ -15,6 +15,7 @@
 
 from hypothesis import given, strategies as st
 from hypothesis.strategies._internal.featureflags import FeatureFlags, FeatureStrategy
+
 from tests.common.debug import find_any, minimal
 
 STRAT = FeatureStrategy()

@@ -20,6 +20,7 @@ import pytest
 from hypothesis import given
 from hypothesis.core import skip_exceptions_to_reraise
 from hypothesis.strategies import integers
+
 from tests.common.utils import capture_out
 
 

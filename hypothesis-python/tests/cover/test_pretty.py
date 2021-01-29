@@ -60,6 +60,7 @@ import pytest
 
 from hypothesis.internal.compat import PYPY
 from hypothesis.vendor import pretty
+
 from tests.common.utils import capture_out
 
 

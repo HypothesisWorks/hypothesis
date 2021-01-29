@@ -16,6 +16,7 @@
 import pytest
 
 from hypothesis import given, settings, strategies as st
+
 from tests.common.debug import assert_all_examples, find_any, minimal
 
 use_several_sizes = pytest.mark.parametrize("size", [1, 2, 5, 10, 100, 1000])

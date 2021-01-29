@@ -18,6 +18,7 @@ import pytest
 from hypothesis import assume, given, infer, reject, settings
 from hypothesis.errors import InvalidArgument, Unsatisfiable
 from hypothesis.strategies import booleans, integers
+
 from tests.common.utils import fails_with
 
 

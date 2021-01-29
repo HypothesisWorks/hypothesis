@@ -19,6 +19,7 @@ import pandas as pd
 
 from hypothesis import given, strategies as st
 from hypothesis.extra import pandas as pdst
+
 from tests.common.arguments import argument_validation_test, e
 
 BAD_ARGS = [

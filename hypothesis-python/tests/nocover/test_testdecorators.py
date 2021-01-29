@@ -16,6 +16,7 @@
 from hypothesis import HealthCheck, given, reject, settings
 from hypothesis.errors import InvalidArgument, Unsatisfiable
 from hypothesis.strategies import integers
+
 from tests.common.utils import raises
 
 

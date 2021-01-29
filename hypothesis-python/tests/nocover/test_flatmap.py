@@ -29,6 +29,7 @@ from hypothesis.strategies import (
     text,
     tuples,
 )
+
 from tests.common.debug import minimal
 
 ConstantLists = integers().flatmap(lambda i: lists(just(i)))

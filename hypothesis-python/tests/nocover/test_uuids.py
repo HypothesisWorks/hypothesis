@@ -16,6 +16,7 @@
 import pytest
 
 from hypothesis import given, strategies as st
+
 from tests.common.debug import minimal
 
 

@@ -31,6 +31,7 @@ from hypothesis.strategies._internal.regex import (
     UNICODE_WORD_CATEGORIES,
     base_regex_strategy,
 )
+
 from tests.common.debug import assert_all_examples, assert_no_examples, find_any
 
 

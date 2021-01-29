@@ -35,6 +35,7 @@ from hypothesis.stateful import (
     run_state_machine_as_test,
 )
 from hypothesis.strategies import binary, booleans, data, integers, just, lists
+
 from tests.common.utils import capture_out, raises
 
 NO_BLOB_SETTINGS = Settings(print_blob=False)

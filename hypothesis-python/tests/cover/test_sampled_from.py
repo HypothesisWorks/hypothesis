@@ -32,6 +32,7 @@ from hypothesis.strategies._internal.strategies import (
     FilteredStrategy,
     filter_not_satisfied,
 )
+
 from tests.common.utils import fails_with
 
 an_enum = enum.Enum("A", "a b c")

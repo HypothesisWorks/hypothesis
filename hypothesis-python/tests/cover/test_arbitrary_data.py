@@ -17,6 +17,7 @@ import pytest
 
 from hypothesis import find, given, reporting, strategies as st
 from hypothesis.errors import InvalidArgument
+
 from tests.common.utils import capture_out, raises
 
 

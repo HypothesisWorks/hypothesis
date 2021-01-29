@@ -15,6 +15,7 @@
 
 from hypothesis import given
 from hypothesis.strategies import binary, characters, text, tuples
+
 from tests.common.debug import minimal
 from tests.common.utils import fails_with
 

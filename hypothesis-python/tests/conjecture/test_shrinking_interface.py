@@ -16,6 +16,7 @@
 from random import Random
 
 from hypothesis.internal.conjecture.shrinking import Integer
+
 from tests.common.utils import capture_out
 
 

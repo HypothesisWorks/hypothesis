@@ -43,6 +43,7 @@ from hypothesis.strategies import (
     text,
     tuples,
 )
+
 from tests.common.utils import no_shrink
 
 RUNS = 100

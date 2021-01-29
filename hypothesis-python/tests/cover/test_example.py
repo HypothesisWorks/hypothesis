@@ -27,6 +27,7 @@ from hypothesis.errors import (
     Unsatisfiable,
 )
 from hypothesis.internal.compat import WINDOWS
+
 from tests.common.utils import fails_with
 
 

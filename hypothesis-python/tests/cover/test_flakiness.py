@@ -19,6 +19,7 @@ from hypothesis import HealthCheck, Verbosity, assume, example, given, reject, s
 from hypothesis.errors import Flaky, Unsatisfiable, UnsatisfiedAssumption
 from hypothesis.internal.conjecture.engine import MIN_TEST_CALLS
 from hypothesis.strategies import booleans, composite, integers, lists, random_module
+
 from tests.common.utils import no_shrink
 
 

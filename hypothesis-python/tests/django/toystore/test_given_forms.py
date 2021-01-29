@@ -16,6 +16,7 @@
 from hypothesis import given
 from hypothesis.extra.django import TestCase, from_form, register_field_strategy
 from hypothesis.strategies import booleans, sampled_from
+
 from tests.django.toystore.forms import (
     BasicFieldForm,
     BroadBooleanField,

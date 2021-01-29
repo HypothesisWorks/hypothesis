@@ -23,6 +23,7 @@ from hypothesis import (
 from hypothesis.errors import Found, NoSuchExample, Unsatisfiable
 from hypothesis.internal.conjecture.data import ConjectureData, StopTest
 from hypothesis.internal.reflection import get_pretty_function_description
+
 from tests.common.utils import no_shrink
 
 TIME_INCREMENT = 0.01

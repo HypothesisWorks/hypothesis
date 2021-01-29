@@ -26,6 +26,7 @@ import pytest
 from hypothesis import given, settings, strategies as ds
 from hypothesis.errors import InvalidArgument
 from hypothesis.vendor.pretty import pretty
+
 from tests.common.debug import minimal
 
 # Use `pretty` instead of `repr` for building test names, so that set and dict
