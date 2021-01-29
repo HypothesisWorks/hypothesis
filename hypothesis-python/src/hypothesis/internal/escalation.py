@@ -81,14 +81,17 @@ def escalate_hypothesis_internal_error():
         raise
 
 
-def get_trimmed_traceback():
+def get_trimmed_traceback(exception=None):
     """Return the current traceback, minus any frames added by Hypothesis."""
-    error_type, _, tb = sys.exc_info()
+    if exception is None:
+        _, exception, tb = sys.exc_info()
+    else:
+        tb = exception.__traceback__
     # Avoid trimming the traceback if we're in verbose mode, or the error
     # was raised inside Hypothesis (and is not a MultipleFailures)
     if hypothesis.settings.default.verbosity >= hypothesis.Verbosity.debug or (
         is_hypothesis_file(traceback.extract_tb(tb)[-1][0])
-        and not isinstance(error_type, MultipleFailures)
+        and not isinstance(exception, MultipleFailures)
     ):
         return tb
     while tb is not None and (
@@ -100,3 +103,22 @@ def get_trimmed_traceback():
     ):
         tb = tb.tb_next
     return tb
+
+
+def get_interesting_origin(exception):
+    # The `interesting_origin` is how Hypothesis distinguishes between multiple
+    # failures, for reporting and also to replay from the example database (even
+    # if report_multiple_bugs=False).  We traditionally use the exception type and
+    # location, but have extracted this logic in order to see through `except ...:`
+    # blocks and understand the __cause__ (`raise x from y`) or __context__ that
+    # first raised an exception.
+    tb = get_trimmed_traceback(exception)
+    filename, lineno, *_ = traceback.extract_tb(tb)[-1]
+    return (
+        type(exception),
+        filename,
+        lineno,
+        # Note that if __cause__ is set it is always equal to __context__, explicitly
+        # to support introspection when debugging, so we can use that unconditionally.
+        get_interesting_origin(exception.__context__) if exception.__context__ else (),
+    )

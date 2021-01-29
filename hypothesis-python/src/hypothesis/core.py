@@ -70,6 +70,7 @@ from hypothesis.internal.conjecture.engine import ConjectureRunner, sort_key
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.internal.escalation import (
     escalate_hypothesis_internal_error,
+    get_interesting_origin,
     get_trimmed_traceback,
 )
 from hypothesis.internal.healthcheck import fail_health_check
@@ -721,10 +722,7 @@ class StateForActualGivenExecution:
                 info.__expected_exception = e
                 verbose_report(info.__expected_traceback)
 
-                origin = traceback.extract_tb(tb)[-1]
-                filename = origin[0]
-                lineno = origin[1]
-                data.mark_interesting((type(e), filename, lineno))
+                data.mark_interesting(get_interesting_origin(e))
 
     def run_engine(self):
         """Run the test function many times, on database input and generated
