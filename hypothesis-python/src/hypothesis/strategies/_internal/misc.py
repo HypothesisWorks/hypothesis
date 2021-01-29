@@ -41,7 +41,7 @@ class JustStrategy(SampledFromStrategy):
     def __repr__(self):
         if self.value is None:
             return "none()"
-        return "just(%r)" % (self.value,)
+        return f"just({self.value!r})"
 
     def calc_has_reusable_values(self, recur):
         return True
@@ -52,7 +52,7 @@ class JustStrategy(SampledFromStrategy):
     def do_draw(self, data):
         result = self._transform(self.value)
         if result is filter_not_satisfied:
-            data.note_event("Aborted test because unable to satisfy %r" % (self,))
+            data.note_event(f"Aborted test because unable to satisfy {self!r}")
             data.mark_invalid()
         return result
 

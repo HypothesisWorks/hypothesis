@@ -78,7 +78,7 @@ class DeferredStrategy(SearchStrategy):
     def __repr__(self):
         if self.__wrapped_strategy is not None:
             if self.__in_repr:
-                return "(deferred@%r)" % (id(self),)
+                return "(deferred@{!r})".format(id(self))
             try:
                 self.__in_repr = True
                 return repr(self.__wrapped_strategy)

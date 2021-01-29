@@ -73,7 +73,7 @@ class settingsProperty:
         obj.__dict__[self.name] = value
 
     def __delete__(self, obj):
-        raise AttributeError("Cannot delete attribute %s" % (self.name,))
+        raise AttributeError(f"Cannot delete attribute {self.name}")
 
     @property
     def __doc__(self):
@@ -83,7 +83,7 @@ class settingsProperty:
             if self.show_default
             else "(dynamically calculated)"
         )
-        return "%s\n\ndefault value: ``%s``" % (description, default)
+        return f"{description}\n\ndefault value: ``{default}``"
 
 
 default_variable = DynamicVariable(None)
@@ -139,7 +139,7 @@ class settings(metaclass=settingsMeta):
         if name in all_settings:
             return all_settings[name].default
         else:
-            raise AttributeError("settings has no attribute %s" % (name,))
+            raise AttributeError(f"settings has no attribute {name}")
 
     def __init__(
         self,
@@ -279,7 +279,7 @@ class settings(metaclass=settingsMeta):
         raise AttributeError("settings objects are immutable")
 
     def __repr__(self):
-        bits = ("%s=%r" % (name, getattr(self, name)) for name in all_settings)
+        bits = ("{}={!r}".format(name, getattr(self, name)) for name in all_settings)
         return "settings(%s)" % ", ".join(sorted(bits))
 
     def show_changed(self):
@@ -287,7 +287,7 @@ class settings(metaclass=settingsMeta):
         for name, setting in all_settings.items():
             value = getattr(self, name)
             if value != setting.default:
-                bits.append("%s=%r" % (name, value))
+                bits.append(f"{name}={value!r}")
         return ", ".join(sorted(bits, key=len))
 
     @staticmethod
@@ -437,7 +437,7 @@ class Phase(IntEnum):
     shrink = 4
 
     def __repr__(self):
-        return "Phase.%s" % (self.name,)
+        return f"Phase.{self.name}"
 
 
 @unique
@@ -448,7 +448,7 @@ class HealthCheck(Enum):
     """
 
     def __repr__(self):
-        return "%s.%s" % (self.__class__.__name__, self.name)
+        return f"{self.__class__.__name__}.{self.name}"
 
     @classmethod
     def all(cls) -> List["HealthCheck"]:
@@ -505,7 +505,7 @@ class Verbosity(IntEnum):
     debug = 3
 
     def __repr__(self):
-        return "Verbosity.%s" % (self.name,)
+        return f"Verbosity.{self.name}"
 
 
 settings._define_setting(
@@ -520,7 +520,7 @@ def _validate_phases(phases):
     phases = tuple(phases)
     for a in phases:
         if not isinstance(a, Phase):
-            raise InvalidArgument("%r is not a valid phase" % (a,))
+            raise InvalidArgument(f"{a!r} is not a valid phase")
     return tuple(p for p in list(Phase) if p in phases)
 
 
@@ -538,7 +538,7 @@ settings._define_setting(
 def _validate_stateful_step_count(x):
     check_type(int, x, name="stateful_step_count")
     if x < 1:
-        raise InvalidArgument("stateful_step_count=%r must be at least one." % (x,))
+        raise InvalidArgument(f"stateful_step_count={x!r} must be at least one.")
     return x
 
 
@@ -588,7 +588,7 @@ class duration(datetime.timedelta):
 
     def __repr__(self):
         ms = self.total_seconds() * 1000
-        return "timedelta(milliseconds=%r)" % (int(ms) if ms == int(ms) else ms,)
+        return "timedelta(milliseconds={!r})".format(int(ms) if ms == int(ms) else ms)
 
 
 def _validate_deadline(x):

@@ -55,7 +55,7 @@ class IntervalSet:
         return r
 
     def __repr__(self):
-        return "IntervalSet(%r)" % (self.intervals,)
+        return f"IntervalSet({self.intervals!r})"
 
     def index(self, value):
         for offset, (u, v) in zip(self.offsets, self.intervals):

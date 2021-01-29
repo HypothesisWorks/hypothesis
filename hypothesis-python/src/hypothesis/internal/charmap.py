@@ -146,7 +146,7 @@ def as_general_categories(cats, name="cats"):
             out.update(x for x in cs if x.startswith(c))
         elif c not in cs:
             raise InvalidArgument(
-                "In %s=%r, %r is not a valid Unicode category." % (name, cats, c)
+                f"In {name}={cats!r}, {c!r} is not a valid Unicode category."
             )
     return tuple(c for c in cs if c in out)
 

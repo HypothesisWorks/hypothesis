@@ -84,7 +84,7 @@ def get_line_num(token, result, skip_n=0):
                 return i
             else:
                 skipped += 1
-    assert False, "Token %r not found (skipped %r of planned %r skips)" % (
+    assert False, "Token {!r} not found (skipped {!r} of planned {!r} skips)".format(
         token,
         skipped,
         skip_n,

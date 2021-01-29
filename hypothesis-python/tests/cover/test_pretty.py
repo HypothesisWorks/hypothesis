@@ -85,7 +85,7 @@ def skip_without(mod):
         __import__(mod)
         return lambda f: f
     except ImportError:
-        return pytest.mark.skipif(True, reason="Missing %s" % (mod,))
+        return pytest.mark.skipif(True, reason=f"Missing {mod}")
 
 
 assert_raises = pytest.raises

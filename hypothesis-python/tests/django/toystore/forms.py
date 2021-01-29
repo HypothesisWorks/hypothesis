@@ -34,12 +34,12 @@ from tests.django.toystore.models import (
 class ReprModelForm(forms.ModelForm):
     def __repr__(self):
         """I recommend putting this in your form to show the failed cases."""
-        return "%r\n%r" % (self.data, self.errors)
+        return f"{self.data!r}\n{self.errors!r}"
 
 
 class ReprForm(forms.Form):
     def __repr__(self):
-        return "%r\n%r" % (self.data, self.errors)
+        return f"{self.data!r}\n{self.errors!r}"
 
 
 class CouldBeCharmingForm(ReprModelForm):

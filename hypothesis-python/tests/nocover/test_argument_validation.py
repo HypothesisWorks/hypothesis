@@ -61,4 +61,4 @@ def test_consistent_with_api_guide_on_kwonly_args(name):
             or arg.kind != Parameter.POSITIONAL_OR_KEYWORD
             or arg.name in ("min_value", "max_value", "subtype_strategy", "columns")
             or name in ("text", "range_indexes", "badly_draw_lists", "write_pattern")
-        ), "need kwonly args in %s" % (name,)
+        ), f"need kwonly args in {name}"

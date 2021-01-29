@@ -22,7 +22,7 @@ from hypothesis.extra import numpy as nps
 
 
 def e(a, **kwargs):
-    rep = "%s(%s)" % (a.__name__, ", ".join("%s=%r" % it for it in kwargs.items()))
+    rep = "{}({})".format(a.__name__, ", ".join("%s=%r" % it for it in kwargs.items()))
     return pytest.param(a, kwargs, id=rep)
 
 

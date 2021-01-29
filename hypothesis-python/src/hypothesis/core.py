@@ -192,7 +192,7 @@ def decode_failure(blob):
     try:
         buffer = base64.b64decode(blob)
     except Exception:
-        raise InvalidArgument("Invalid base64 encoded string: %r" % (blob,))
+        raise InvalidArgument(f"Invalid base64 encoded string: {blob!r}")
     prefix = buffer[:1]
     if prefix == b"\0":
         return buffer[1:]
@@ -200,10 +200,10 @@ def decode_failure(blob):
         try:
             return zlib.decompress(buffer[1:])
         except zlib.error:
-            raise InvalidArgument("Invalid zlib compression for blob %r" % (blob,))
+            raise InvalidArgument(f"Invalid zlib compression for blob {blob!r}")
     else:
         raise InvalidArgument(
-            "Could not decode blob %r: Invalid start byte %r" % (blob, prefix)
+            f"Could not decode blob {blob!r}: Invalid start byte {prefix!r}"
         )
 
 
@@ -218,7 +218,7 @@ class WithRunner(MappedSearchStrategy):
         return self.mapped_strategy.do_draw(data)
 
     def __repr__(self):
-        return "WithRunner(%r, runner=%r)" % (self.mapped_strategy, self.runner)
+        return f"WithRunner({self.mapped_strategy!r}, runner={self.runner!r})"
 
 
 def is_invalid_test(name, original_argspec, given_arguments, given_kwargs):

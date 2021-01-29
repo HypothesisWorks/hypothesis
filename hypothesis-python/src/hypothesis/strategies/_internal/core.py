@@ -548,9 +548,9 @@ def floats(
         )
 
     if exclude_min and (min_value is None or min_value == math.inf):
-        raise InvalidArgument("Cannot exclude min_value=%r" % (min_value,))
+        raise InvalidArgument(f"Cannot exclude min_value={min_value!r}")
     if exclude_max and (max_value is None or max_value == -math.inf):
-        raise InvalidArgument("Cannot exclude max_value=%r" % (max_value,))
+        raise InvalidArgument(f"Cannot exclude max_value={max_value!r}")
 
     if min_value is not None and (
         exclude_min or (min_arg is not None and min_value < min_arg)
@@ -593,7 +593,7 @@ def floats(
             "and max_value=%r" % (width, min_arg, max_arg)
         )
         if exclude_min or exclude_max:
-            msg += ", exclude_min=%r and exclude_max=%r" % (exclude_min, exclude_max)
+            msg += f", exclude_min={exclude_min!r} and exclude_max={exclude_max!r}"
         raise InvalidArgument(msg)
 
     if allow_infinity is None:
@@ -725,9 +725,9 @@ def sampled_from(elements):
     if len(values) == 1:
         return just(values[0])
     if isinstance(elements, type) and issubclass(elements, enum.Enum):
-        repr_ = "sampled_from(%s.%s)" % (elements.__module__, elements.__name__)
+        repr_ = f"sampled_from({elements.__module__}.{elements.__name__})"
     else:
-        repr_ = "sampled_from(%r)" % (elements,)
+        repr_ = f"sampled_from({elements!r})"
     if isclass(elements) and issubclass(elements, enum.Flag):
         # Combinations of enum.Flag members are also members.  We generate
         # these dynamically, because static allocation takes O(2^n) memory.
@@ -961,11 +961,11 @@ def fixed_dictionaries(
     """
     check_type(dict, mapping, "mapping")
     for k, v in mapping.items():
-        check_strategy(v, "mapping[%r]" % (k,))
+        check_strategy(v, f"mapping[{k!r}]")
     if optional is not None:
         check_type(dict, optional, "optional")
         for k, v in optional.items():
-            check_strategy(v, "optional[%r]" % (k,))
+            check_strategy(v, f"optional[{k!r}]")
         if type(mapping) != type(optional):
             raise InvalidArgument(
                 "Got arguments of different types: mapping=%s, optional=%s"
@@ -1275,7 +1275,7 @@ class RandomSeeder:
         self.seed = seed
 
     def __repr__(self):
-        return "RandomSeeder(%r)" % (self.seed,)
+        return f"RandomSeeder({self.seed!r})"
 
 
 class RandomModule(SearchStrategy):
@@ -1489,7 +1489,7 @@ def from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
             lambda thing: deferred(lambda: _from_type(thing)),
             (thing,),
             {},
-            force_repr="from_type(%r)" % (thing,),
+            force_repr=f"from_type({thing!r})",
         )
 
 
@@ -1537,7 +1537,7 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
                 % (thing, nicerepr(strat_or_callable), strategy)
             )
         if strategy.is_empty:
-            raise ResolutionFailed("Error: %r resolved to an empty strategy" % (thing,))
+            raise ResolutionFailed(f"Error: {thing!r} resolved to an empty strategy")
         return strategy
 
     if not isinstance(thing, type):
@@ -1568,7 +1568,7 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
                 else:
                     literals.append(arg)
             return sampled_from(literals)
-        raise InvalidArgument("thing=%s must be a type" % (thing,))
+        raise InvalidArgument(f"thing={thing} must be a type")
     # Now that we know `thing` is a type, the first step is to check for an
     # explicitly registered strategy.  This is the best (and hopefully most
     # common) way to resolve a type to a strategy.  Note that the value in the
@@ -1764,10 +1764,10 @@ def _as_finite_decimal(
         if allow_infinity or allow_infinity is None:
             return None
         raise InvalidArgument(
-            "allow_infinity=%r, but %s=%r" % (allow_infinity, name, value)
+            f"allow_infinity={allow_infinity!r}, but {name}={value!r}"
         )
     # This could be infinity, quiet NaN, or signalling NaN
-    raise InvalidArgument("Invalid %s=%r" % (name, value))
+    raise InvalidArgument(f"Invalid {name}={value!r}")
 
 
 @cacheable

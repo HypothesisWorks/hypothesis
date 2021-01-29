@@ -341,7 +341,7 @@ def fill_for(elements, unique, fill, name=""):
         else:
             fill = elements
     else:
-        st.check_strategy(fill, "%s.fill" % (name,) if name else "fill")
+        st.check_strategy(fill, f"{name}.fill" if name else "fill")
     return fill
 
 
@@ -1098,7 +1098,7 @@ def _hypothesis_parse_gufunc_signature(signature, all_checks=True):
                 "contains shapes with more than 32 dimensions and is thus invalid."
                 % (signature,)
             )
-        raise InvalidArgument("%r is not a valid gufunc signature" % (signature,))
+        raise InvalidArgument(f"{signature!r} is not a valid gufunc signature")
     input_shapes, output_shapes = (
         tuple(tuple(re.findall(_DIMENSION, a)) for a in re.findall(_SHAPE, arg_list))
         for arg_list in signature.split("->")
@@ -1412,11 +1412,11 @@ def basic_indices(
     order_check("dims", 0, min_dims, max_dims)
     check_argument(
         max_dims <= 32,
-        "max_dims=%r, but numpy arrays have at most 32 dimensions" % (max_dims,),
+        f"max_dims={max_dims!r}, but numpy arrays have at most 32 dimensions",
     )
     check_argument(
         all(isinstance(x, int) and x >= 0 for x in shape),
-        "shape=%r, but all dimensions must be of integer size >= 0" % (shape,),
+        f"shape={shape!r}, but all dimensions must be of integer size >= 0",
     )
     return BasicIndexStrategy(
         shape,
@@ -1476,11 +1476,11 @@ def integer_array_indices(
     check_type(tuple, shape, "shape")
     check_argument(
         shape and all(isinstance(x, int) and x > 0 for x in shape),
-        "shape=%r must be a non-empty tuple of integers > 0" % (shape,),
+        f"shape={shape!r} must be a non-empty tuple of integers > 0",
     )
     check_strategy(result_shape, "result_shape")
     check_argument(
-        np.issubdtype(dtype, np.integer), "dtype=%r must be an integer dtype" % (dtype,)
+        np.issubdtype(dtype, np.integer), f"dtype={dtype!r} must be an integer dtype"
     )
     signed = np.issubdtype(dtype, np.signedinteger)
 

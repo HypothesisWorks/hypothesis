@@ -33,8 +33,8 @@ class ExtraInformation:
     be added to the final ``ConjectureResult``."""
 
     def __repr__(self):
-        return "ExtraInformation(%s)" % (
-            ", ".join(["%s=%r" % (k, v) for k, v in self.__dict__.items()]),
+        return "ExtraInformation({})".format(
+            ", ".join([f"{k}={v!r}" for k, v in self.__dict__.items()]),
         )
 
     def has_information(self):
@@ -48,7 +48,7 @@ class Status(IntEnum):
     INTERESTING = 3
 
     def __repr__(self):
-        return "Status.%s" % (self.name,)
+        return f"Status.{self.name}"
 
 
 @attr.s(frozen=True, slots=True)
@@ -661,7 +661,7 @@ class Blocks:
                 parts.append("...")
             else:
                 parts.append(repr(b))
-        return "Block([%s])" % (", ".join(parts),)
+        return "Block([{}])".format(", ".join(parts))
 
 
 class _Overrun:
@@ -841,7 +841,7 @@ class ConjectureData:
 
     def __assert_not_frozen(self, name):
         if self.frozen:
-            raise Frozen("Cannot call %s on frozen ConjectureData" % (name,))
+            raise Frozen(f"Cannot call {name} on frozen ConjectureData")
 
     def note(self, value):
         self.__assert_not_frozen("note")

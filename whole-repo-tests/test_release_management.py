@@ -75,12 +75,12 @@ def test_invalid_release():
 
 
 TEST_CHANGELOG = """
-# A test project 1.2.3 (%s)
+# A test project 1.2.3 ({})
 
 some stuff happened
 
 # some previous log entry
-""" % (
+""".format(
     release_date_string(),
 )
 

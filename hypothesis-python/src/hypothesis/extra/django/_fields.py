@@ -262,9 +262,7 @@ def register_field_strategy(
     ``strategy`` must be a :class:`~hypothesis.strategies.SearchStrategy`.
     """
     if not issubclass(field_type, (dm.Field, df.Field)):
-        raise InvalidArgument(
-            "field_type=%r must be a subtype of Field" % (field_type,)
-        )
+        raise InvalidArgument(f"field_type={field_type!r} must be a subtype of Field")
     check_type(st.SearchStrategy, strategy, "strategy")
     if field_type in _global_field_lookup:
         raise InvalidArgument(

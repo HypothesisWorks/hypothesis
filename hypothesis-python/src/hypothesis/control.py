@@ -183,7 +183,7 @@ def target(observation: Union[int, float], *, label: str = "") -> None:
     context = _current_build_context.value
     if context is None:
         raise InvalidArgument("Calling target() outside of a test is invalid.")
-    verbose_report("Saw target(observation=%r, label=%r)" % (observation, label))
+    verbose_report(f"Saw target(observation={observation!r}, label={label!r})")
 
     if label in context.data.target_observations:
         raise InvalidArgument(

@@ -114,7 +114,7 @@ class LazyStrategy(SearchStrategy):
 
     def do_validate(self):
         w = self.wrapped_strategy
-        assert isinstance(w, SearchStrategy), "%r returned non-strategy %r" % (self, w)
+        assert isinstance(w, SearchStrategy), f"{self!r} returned non-strategy {w!r}"
         w.validate()
 
     def __repr__(self):
@@ -140,7 +140,7 @@ class LazyStrategy(SearchStrategy):
             for k, v in defaults.items():
                 if k in kwargs_for_repr and kwargs_for_repr[k] is v:
                     del kwargs_for_repr[k]
-            self.__representation = "%s(%s)" % (
+            self.__representation = "{}({})".format(
                 self.function.__name__,
                 arg_string(self.function, _args, kwargs_for_repr, reorder=False),
             )

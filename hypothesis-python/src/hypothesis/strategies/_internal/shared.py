@@ -29,9 +29,9 @@ class SharedStrategy(SearchStrategy):
 
     def __repr__(self):
         if self.key is not None:
-            return "shared(%r, key=%r)" % (self.base, self.key)
+            return f"shared({self.base!r}, key={self.key!r})"
         else:
-            return "shared(%r)" % (self.base,)
+            return f"shared({self.base!r})"
 
     def do_draw(self, data):
         if not hasattr(data, SHARED_STRATEGY_ATTRIBUTE):

@@ -1330,13 +1330,13 @@ class Shrinker:
                 elif d == "X":
                     del attempt[u:v]
                 else:  # pragma: no cover
-                    raise AssertionError("Unrecognised command %r" % (d,))
+                    raise AssertionError(f"Unrecognised command {d!r}")
         return self.incorporate_new_buffer(attempt)
 
 
 def shrink_pass_family(f):
     def accept(*args):
-        name = "%s(%s)" % (f.__name__, ", ".join(map(repr, args)))
+        name = "{}({})".format(f.__name__, ", ".join(map(repr, args)))
         if name not in SHRINK_PASS_DEFINITIONS:
 
             def run(self, chooser):

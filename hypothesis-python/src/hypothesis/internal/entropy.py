@@ -48,7 +48,7 @@ def register_random(r: random.Random) -> None:
     choose to use the :func:`~hypothesis.strategies.random_module` strategy.
     """
     if not (hasattr(r, "seed") and hasattr(r, "getstate") and hasattr(r, "setstate")):
-        raise InvalidArgument("r=%r does not have all the required methods" % (r,))
+        raise InvalidArgument(f"r={r!r} does not have all the required methods")
     if r not in RANDOMS_TO_MANAGE:
         RANDOMS_TO_MANAGE.append(r)
 

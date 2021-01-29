@@ -48,11 +48,11 @@ if __name__ == "__main__":
         print("The following were always True:")
         print()
         for c in always_true:
-            print("  * %s" % (c,))
+            print(f"  * {c}")
     if always_false:
         print("The following were always False:")
         print()
         for c in always_false:
-            print("  * %s" % (c,))
+            print(f"  * {c}")
     if failure:
         sys.exit(1)

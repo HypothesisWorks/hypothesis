@@ -52,7 +52,7 @@ class LimitedStrategy(SearchStrategy):
         self._threadlocal.currently_capped = value
 
     def __repr__(self):
-        return "LimitedStrategy(%r)" % (self.base_strategy,)
+        return f"LimitedStrategy({self.base_strategy!r})"
 
     def do_validate(self):
         self.base_strategy.validate()

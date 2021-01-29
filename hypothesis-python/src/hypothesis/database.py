@@ -150,7 +150,7 @@ class InMemoryExampleDatabase(ExampleDatabase):
         self.data = {}
 
     def __repr__(self) -> str:
-        return "InMemoryExampleDatabase(%r)" % (self.data,)
+        return f"InMemoryExampleDatabase({self.data!r})"
 
     def fetch(self, key: bytes) -> Iterable[bytes]:
         yield from self.data.get(key, ())
@@ -190,7 +190,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
         self.keypaths = {}  # type: dict
 
     def __repr__(self) -> str:
-        return "DirectoryBasedExampleDatabase(%r)" % (self.path,)
+        return f"DirectoryBasedExampleDatabase({self.path!r})"
 
     def _key_path(self, key):
         try:

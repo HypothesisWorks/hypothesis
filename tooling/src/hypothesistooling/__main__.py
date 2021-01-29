@@ -85,7 +85,7 @@ MASTER = tools.hash_for_name("origin/master")
 
 def do_release(package):
     if not package.has_release():
-        print("No release for %s" % (package.__name__,))
+        print(f"No release for {package.__name__}")
         return
 
     os.chdir(package.BASE_DIR)
@@ -103,7 +103,7 @@ def do_release(package):
 
     tag_name = package.tag_name()
 
-    print("Creating tag %s" % (tag_name,))
+    print(f"Creating tag {tag_name}")
 
     tools.create_tag(tag_name)
     tools.push_tag(tag_name)
@@ -228,7 +228,7 @@ def format():
         "--remove-unused-variables",
         *files_to_format,
     )
-    pip_tool("pyupgrade", "--keep-percent-format", "--py36-plus", *files_to_format)
+    pip_tool("pyupgrade", "--py36-plus", *files_to_format)
     pip_tool("isort", *files_to_format)
     pip_tool("black", "--target-version=py36", *files_to_format)
 
@@ -247,7 +247,7 @@ def check_format():
         with open(f, encoding="utf-8") as i:
             start = i.read(n)
             if not any(start.startswith(s) for s in VALID_STARTS):
-                print("%s has incorrect start %r" % (f, start), file=sys.stderr)
+                print(f"{f} has incorrect start {start!r}", file=sys.stderr)
                 bad = True
     assert not bad
     check_not_changed()
@@ -369,7 +369,7 @@ ALIASES = {PYPY36: "pypy3", PYPY37: "pypy3"}
 
 for n in [PY36, PY37, PY38, PY39]:
     major, minor, patch = n.replace("-dev", ".").split(".")
-    ALIASES[n] = "python%s.%s" % (major, minor)
+    ALIASES[n] = f"python{major}.{minor}"
 
 
 python_tests = task(

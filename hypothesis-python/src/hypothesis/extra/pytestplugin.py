@@ -95,7 +95,7 @@ else:
         settings_str = settings.get_profile(profile).show_changed()
         if settings_str != "":
             settings_str = " -> %s" % (settings_str)
-        return "hypothesis profile %r%s" % (profile, settings_str)
+        return f"hypothesis profile {profile!r}{settings_str}"
 
     def pytest_configure(config):
         core.running_under_pytest = True
@@ -105,7 +105,7 @@ else:
         verbosity_name = config.getoption(VERBOSITY_OPTION)
         if verbosity_name:
             verbosity_value = Verbosity[verbosity_name]
-            profile_name = "%s-with-%s-verbosity" % (
+            profile_name = "{}-with-{}-verbosity".format(
                 settings._current_profile,
                 verbosity_name,
             )

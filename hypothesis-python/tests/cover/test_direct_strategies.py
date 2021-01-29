@@ -40,7 +40,7 @@ def fn_test(*fnkwargs):
         ("fn", "args"),
         fnkwargs,
         ids=[
-            "%s(%s)" % (fn.__name__, ", ".join(map(pretty, args)))
+            "{}({})".format(fn.__name__, ", ".join(map(pretty, args)))
             for fn, args in fnkwargs
         ],
     )
@@ -51,7 +51,7 @@ def fn_ktest(*fnkwargs):
     return pytest.mark.parametrize(
         ("fn", "kwargs"),
         fnkwargs,
-        ids=["%s(**%s)" % (fn.__name__, pretty(kwargs)) for fn, kwargs in fnkwargs],
+        ids=["{}(**{})".format(fn.__name__, pretty(kwargs)) for fn, kwargs in fnkwargs],
     )
 
 

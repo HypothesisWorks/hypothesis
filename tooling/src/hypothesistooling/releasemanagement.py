@@ -48,7 +48,7 @@ def assignment_matcher(name):
     i.e. group 1 is the assignment, group 2 is the value. In the above
     example group 1 would be "  foo = " and group 2 would be "1"
     """
-    return re.compile(r"\A(\s*%s\s*=\s*)(.+)\Z" % (re.escape(name),))
+    return re.compile(r"\A(\s*{}\s*=\s*)(.+)\Z".format(re.escape(name)))
 
 
 def extract_assignment_from_string(contents, name):
@@ -61,7 +61,7 @@ def extract_assignment_from_string(contents, name):
         if match is not None:
             return match[2].strip()
 
-    raise ValueError("Key %s not found in %s" % (name, contents))
+    raise ValueError(f"Key {name} not found in {contents}")
 
 
 def extract_assignment(filename, name):
@@ -83,7 +83,7 @@ def replace_assignment_in_string(contents, name, value):
             lines[i] = match[1] + value
 
     if count == 0:
-        raise ValueError("Key %s not found in %s" % (name, contents))
+        raise ValueError(f"Key {name} not found in {contents}")
     if count > 1:
         raise ValueError("Key %s found %d times in %s" % (name, count, contents))
 
@@ -128,7 +128,7 @@ def parse_release_file_contents(release_contents, filename):
     if m is not None:
         release_type = m.group(1)
         if release_type not in VALID_RELEASE_TYPES:
-            raise ValueError("Unrecognised release type %r" % (release_type,))
+            raise ValueError(f"Unrecognised release type {release_type!r}")
         del release_lines[0]
         release_contents = "\n".join(release_lines).strip()
     else:
@@ -158,11 +158,11 @@ def update_markdown_changelog(changelog, name, version, entry):
     with open(changelog) as i:
         prev_contents = i.read()
 
-    title = "# %(name)s %(version)s (%(date)s)\n\n" % {
-        "name": name,
-        "version": version,
-        "date": release_date_string(),
-    }
+    title = "# {name} {version} ({date})\n\n".format(
+        name=name,
+        version=version,
+        date=release_date_string(),
+    )
 
     with open(changelog, "w") as o:
         o.write(title)

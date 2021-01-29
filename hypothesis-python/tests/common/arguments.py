@@ -26,8 +26,8 @@ def e(a, *args, **kwargs):
 def e_to_str(elt):
     f, args, kwargs = elt
     bits = list(map(repr, args))
-    bits.extend(sorted("%s=%r" % (k, v) for k, v in kwargs.items()))
-    return "%s(%s)" % (f.__name__, ", ".join(bits))
+    bits.extend(sorted(f"{k}={v!r}" for k, v in kwargs.items()))
+    return "{}({})".format(f.__name__, ", ".join(bits))
 
 
 def argument_validation_test(bad_args):

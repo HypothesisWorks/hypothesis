@@ -45,7 +45,7 @@ def test_just_strategy_uses_repr():
         def __repr__(self):
             return "ABCDEFG"
 
-    assert repr(just(WeirdRepr())) == "just(%r)" % (WeirdRepr(),)
+    assert repr(just(WeirdRepr())) == f"just({WeirdRepr()!r})"
 
 
 def test_can_map():
