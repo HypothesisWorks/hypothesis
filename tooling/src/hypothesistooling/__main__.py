@@ -20,12 +20,11 @@ import sys
 from datetime import datetime
 from glob import glob
 
-from coverage.config import CoverageConfig
-
 import hypothesistooling as tools
 import hypothesistooling.projects.conjecturerust as cr
 import hypothesistooling.projects.hypothesispython as hp
 import hypothesistooling.projects.hypothesisruby as hr
+from coverage.config import CoverageConfig
 from hypothesistooling import installers as install, releasemanagement as rm
 from hypothesistooling.scripts import pip_tool
 
@@ -218,19 +217,7 @@ def format():
                 o.write(source)
             o.write("\n")
 
-    pip_tool(
-        "autoflake",
-        "--recursive",
-        "--in-place",
-        "--exclude=compat.py",
-        "--remove-all-unused-imports",
-        "--remove-duplicate-keys",
-        "--remove-unused-variables",
-        *files_to_format,
-    )
-    pip_tool("pyupgrade", "--py36-plus", *files_to_format)
-    pip_tool("isort", *files_to_format)
-    pip_tool("black", "--target-version=py36", *files_to_format)
+    pip_tool("shed", *files_to_format, *doc_files_to_format)
 
 
 VALID_STARTS = (HEADER.split()[0], "#!/usr/bin/env python")

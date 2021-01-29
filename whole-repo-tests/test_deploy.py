@@ -15,9 +15,8 @@
 
 import os
 
-import pytest
-
 import hypothesistooling as tools
+import pytest
 from hypothesistooling import __main__ as main, releasemanagement as rm
 
 

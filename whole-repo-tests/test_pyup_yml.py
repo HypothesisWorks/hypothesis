@@ -13,10 +13,9 @@
 #
 # END HEADER
 
+import hypothesistooling as tools
 import yaml
 from pyup.config import Config
-
-import hypothesistooling as tools
 
 
 def test_pyup_yml_is_valid():

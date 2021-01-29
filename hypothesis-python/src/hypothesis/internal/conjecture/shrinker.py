@@ -193,8 +193,7 @@ class Shrinker:
         i = 0
         while i < len(self.shrink_target.buffer):
             if not self.incorporate_new_buffer(
-                self.shrink_target.buffer[: i] +
-                self.shrink_target.buffer[i + 1 :]
+                self.shrink_target.buffer[:i] + self.shrink_target.buffer[i + 1 :]
             ):
                 i += 1
 
@@ -1265,6 +1264,7 @@ class Shrinker:
 
             import hypothesis.strategies as st
             from hypothesis import given
+
 
             @given(st.text(), st.text())
             def test_not_equal(x, y):

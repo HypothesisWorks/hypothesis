@@ -1466,7 +1466,8 @@ def from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
 
         def everything_except(excluded_types):
             return (
-                from_type(type).flatmap(from_type)
+                from_type(type)
+                .flatmap(from_type)
                 .filter(lambda x: not isinstance(x, excluded_types))
             )
 

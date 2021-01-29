@@ -14,7 +14,6 @@
 # END HEADER
 
 import pytest
-
 from hypothesistooling.releasemanagement import (
     bump_version_info,
     parse_release_file_contents,

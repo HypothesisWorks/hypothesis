@@ -13,9 +13,8 @@
 #
 # END HEADER
 
-import pytest
-
 import hypothesistooling as tools
+import pytest
 from hypothesistooling import releasemanagement as rm
 
 

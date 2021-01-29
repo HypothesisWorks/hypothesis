@@ -102,7 +102,7 @@ explicitly by using the :func:`@example <hypothesis.example>` decorator:
 
 .. code:: python
 
-  from hypothesis import given, example
+  from hypothesis import example, given
   from hypothesis.strategies import text
 
 
@@ -234,8 +234,8 @@ Here are some other examples of how you could use that:
 
 .. code:: python
 
-    from hypothesis import given
     import hypothesis.strategies as st
+    from hypothesis import given
 
 
     @given(st.integers(), st.integers())

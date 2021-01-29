@@ -18,7 +18,7 @@ attrs==20.3.0
     #   hypothesis (hypothesis-python/setup.py)
     #   pytest
 autoflake==1.4
-    # via -r requirements/tools.in
+    # via shed
 babel==2.9.0
     # via sphinx
 backcall==0.2.0
@@ -27,8 +27,8 @@ bandit==1.7.0
     # via flake8-bandit
 black==20.8b1
     # via
-    #   -r requirements/tools.in
     #   blacken-docs
+    #   shed
 blacken-docs==1.8.0
     # via -r requirements/tools.in
 bleach==3.2.1
@@ -43,10 +43,14 @@ click==7.1.2
     # via
     #   black
     #   pip-tools
+    #   pybetter
+    #   pyemojify
     #   pyupio
     #   safety
 colorama==0.4.4
     # via twine
+com2ann==0.1.1
+    # via shed
 coverage==5.3.1
     # via -r requirements/tools.in
 cryptography==3.3.1
@@ -115,7 +119,7 @@ ipython-genutils==0.2.0
 ipython==7.16.1
     # via -r requirements/tools.in
 isort==5.7.0
-    # via -r requirements/tools.in
+    # via shed
 jedi==0.18.0
     # via ipython
 jeepney==0.6.0
@@ -131,7 +135,10 @@ keyring==21.8.0
 lark-parser==0.11.1
     # via -r requirements/tools.in
 libcst==0.3.16
-    # via -r requirements/tools.in
+    # via
+    #   -r requirements/tools.in
+    #   pybetter
+    #   shed
 markupsafe==1.1.1
     # via jinja2
 mccabe==0.6.1
@@ -178,6 +185,8 @@ py==1.10.0
     # via
     #   pytest
     #   tox
+pybetter==0.3.6.1
+    # via shed
 pycodestyle==2.6.0
     # via
     #   flake8
@@ -186,6 +195,8 @@ pycparser==2.20
     # via cffi
 pydocstyle==5.1.1
     # via flake8-docstrings
+pyemojify==0.2.0
+    # via pybetter
 pyflakes==2.2.0
     # via
     #   autoflake
@@ -195,6 +206,7 @@ pygithub==1.54.1
 pygments==2.7.3
     # via
     #   ipython
+    #   pybetter
     #   readme-renderer
     #   sphinx
 pyjwt==1.7.1
@@ -212,7 +224,7 @@ pytz==2020.5
     #   babel
     #   django
 pyupgrade==2.7.4
-    # via -r requirements/tools.in
+    # via shed
 pyupio==1.1.1
     # via -r requirements/tools.in
 pyyaml==5.3.1
@@ -245,6 +257,8 @@ safety==1.10.1
     # via pyupio
 secretstorage==3.3.0
     # via keyring
+shed==0.3.1
+    # via -r requirements/tools.in
 six==1.15.0
     # via
     #   bandit
