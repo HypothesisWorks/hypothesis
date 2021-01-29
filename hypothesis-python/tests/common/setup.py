@@ -73,14 +73,10 @@ def run():
 
     for s in settings_module.all_settings.values():
         v = getattr(x, s.name)
-        # Check if it has a dynamically defined default and if so skip
-        # comparison.
+        # Check if it has a dynamically defined default and if so skip comparison.
         if getattr(settings, s.name).show_default:
-            assert v == s.default, "%r == x.%s != s.%s == %r" % (
-                v,
-                s.name,
-                s.name,
-                s.default,
+            assert v == s.default, "({!r} == x.{}) != (s.{} == {!r})".format(
+                v, s.name, s.name, s.default
             )
 
     settings.register_profile(

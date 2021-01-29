@@ -615,14 +615,8 @@ class ConcreteDFA(DFA):
                     table[-1][1] = c
             transitions.append([(u, j) if u == v else (u, v, j) for u, v, j in table])
 
-        if self.__start != 0:
-            return "ConcreteDFA(%r, %r, start=%r)" % (
-                transitions,
-                self.__accepting,
-                self.__start,
-            )
-        else:
-            return "ConcreteDFA(%r, %r)" % (transitions, self.__accepting)
+        start = "" if self.__start == 0 else f", start={self.__start!r}"
+        return f"ConcreteDFA({transitions!r}, {self.__accepting!r}{start})"
 
     @property
     def start(self):

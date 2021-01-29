@@ -54,7 +54,7 @@ def test_decoding_may_fail(t):
     except InvalidArgument:
         pass
     except Exception as e:
-        assert False, "decoding failed with %r, not InvalidArgument" % (e,)
+        raise AssertionError("Expected an InvalidArgument exception") from e
 
 
 def test_invalid_base_64_gives_invalid_argument():

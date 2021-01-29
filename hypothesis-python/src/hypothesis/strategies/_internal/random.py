@@ -54,19 +54,10 @@ class HypothesisRandom(Random):
             return
 
         args, kwargs = convert_kwargs(method, kwargs)
-
-        report(
-            "%r.%s(%s) -> %r"
-            % (
-                self,
-                method,
-                ", ".join(
-                    list(map(repr, args))
-                    + ["%s=%r" % (k, v) for k, v in kwargs.items()]
-                ),
-                result,
-            )
+        argstr = ", ".join(
+            list(map(repr, args)) + [f"{k}={v!r}" for k, v in kwargs.items()]
         )
+        report(f"{self!r}.{method}({argstr}) -> {result!r}")
 
     def _hypothesis_do_random(self, method, kwargs):
         raise NotImplementedError()

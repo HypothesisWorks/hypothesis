@@ -164,8 +164,9 @@ def assert_falsifying_output(
         with raises(expected_exception):
             test()
 
-    assert "%s example:" % (example_type,)
-    assert_output_contains_failure(out.getvalue(), test, **kwargs)
+    output = out.getvalue()
+    assert f"{example_type} example:" in output
+    assert_output_contains_failure(output, test, **kwargs)
 
 
 @contextlib.contextmanager

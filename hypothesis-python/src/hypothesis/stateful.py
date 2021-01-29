@@ -338,11 +338,10 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
             n_output_vars = len(result.values)
         else:
             n_output_vars = 1
-        output_assignment = (
-            "%s = " % (", ".join(self._last_names(n_output_vars)),)
-            if rule.targets and n_output_vars >= 1
-            else ""
-        )
+        if rule.targets and n_output_vars >= 1:
+            output_assignment = ", ".join(self._last_names(n_output_vars)) + " = "
+        else:
+            output_assignment = ""
         report(
             "%sstate.%s(%s)"
             % (

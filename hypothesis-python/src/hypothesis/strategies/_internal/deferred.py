@@ -43,14 +43,7 @@ class DeferredStrategy(SearchStrategy):
             result = self.__definition()
             if result is self:
                 raise InvalidArgument("Cannot define a deferred strategy to be itself")
-            if not isinstance(result, SearchStrategy):
-                raise InvalidArgument(
-                    (
-                        "Expected definition to return a SearchStrategy but "
-                        "returned %r of type %s"
-                    )
-                    % (result, type(result).__name__)
-                )
+            check_strategy(result, "definition()")
             self.__wrapped_strategy = result
             self.__definition = None
         return self.__wrapped_strategy
