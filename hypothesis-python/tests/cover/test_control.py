@@ -147,7 +147,7 @@ def test_prints_all_notes_in_verbose_mode():
     @settings(verbosity=Verbosity.debug, database=None)
     @given(integers(1, 10))
     def test(x):
-        msg = "x -> %d" % (x,)
+        msg = f"x -> {x}"
         note(msg)
         messages.add(msg)
         assert x < 5

@@ -72,11 +72,7 @@ def elements_and_dtype(elements, dtype, source=None):
         with check("dtype is not None"):
             if dtype is None:
                 raise InvalidArgument(
-                    (
-                        "At least one of %(prefix)selements or %(prefix)sdtype "
-                        "must be provided."
-                    )
-                    % {"prefix": prefix}
+                    f"At least one of {prefix}elements or {prefix}dtype must be provided."
                 )
 
     with check("is_categorical_dtype"):
@@ -506,11 +502,11 @@ def data_frames(
     column_names = set()  # type: Set[str]
 
     for i, c in enumerate(cols):
-        check_type(column, c, "columns[%d]" % (i,))
+        check_type(column, c, f"columns[{i}]")
 
         c = copy(c)
         if c.name is None:
-            label = "columns[%d]" % (i,)
+            label = f"columns[{i}]"
             c.name = i
         else:
             label = c.name

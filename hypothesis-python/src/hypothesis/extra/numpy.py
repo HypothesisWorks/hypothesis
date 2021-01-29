@@ -189,8 +189,8 @@ class ArrayStrategy(SearchStrategy):
             result[idx] = val
         except TypeError as err:
             raise InvalidArgument(
-                "Could not add element=%r of %r to array of %r - possible mismatch "
-                "of time units in dtypes?" % (val, val.dtype, result.dtype)
+                f"Could not add element={val!r} of {val.dtype!r} to array of "
+                f"{result.dtype!r} - possible mismatch of time units in dtypes?"
             ) from err
         if self._check_elements and val != result[idx] and val == val:
             raise InvalidArgument(
@@ -308,8 +308,7 @@ class ArrayStrategy(SearchStrategy):
 
                     if not is_nan:
                         raise InvalidArgument(
-                            "Cannot fill unique array with non-NaN "
-                            "value %r" % (fill_value,)
+                            f"Cannot fill unique array with non-NaN value {fill_value!r}"
                         )
 
                 np.putmask(result, needs_fill, one_element)
@@ -1090,13 +1089,12 @@ def _hypothesis_parse_gufunc_signature(signature, all_checks=True):
                 "Hypothesis does not yet support generalised ufunc signatures "
                 "with multiple output arrays - mostly because we don't know of "
                 "anyone who uses them!  Please get in touch with us to fix that."
-                "\n (signature=%r)" % (signature,)
+                f"\n (signature={signature!r})"
             )
         if re.match(np.lib.function_base._SIGNATURE, signature):
             raise InvalidArgument(
-                "signature=%r matches Numpy's regex for gufunc signatures, but "
-                "contains shapes with more than 32 dimensions and is thus invalid."
-                % (signature,)
+                f"signature={signature!r} matches Numpy's regex for gufunc signatures, "
+                "but contains shapes with more than 32 dimensions and is thus invalid."
             )
         raise InvalidArgument(f"{signature!r} is not a valid gufunc signature")
     input_shapes, output_shapes = (
@@ -1265,8 +1263,8 @@ def mutually_broadcastable_shapes(
         if sig_dims == 0:
             raise InvalidArgument("max_dims cannot exceed 32")
         raise InvalidArgument(
-            "max_dims=%r would exceed the 32-dimension limit given signature=%r"
-            % (signature, parsed_signature)
+            f"max_dims={signature!r} would exceed the 32-dimension limit given "
+            f"signature={parsed_signature!r}"
         )
 
     dims, bnd_name = (max_dims, "max_dims") if strict_check else (min_dims, "min_dims")

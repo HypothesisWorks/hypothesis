@@ -110,8 +110,7 @@ def validate_deprecation():
         warnings.simplefilter("error", HypothesisDeprecationWarning)
         if not any(e.category == HypothesisDeprecationWarning for e in w):
             raise NotDeprecated(
-                "Expected to get a deprecation warning but got %r"
-                % ([e.category for e in w],)
+                f"Expected a deprecation warning but got {[e.category for e in w]!r}"
             )
 
 

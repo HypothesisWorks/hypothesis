@@ -193,7 +193,7 @@ def test_examples_are_tried_in_order():
     @settings(phases=[Phase.explicit])
     @example(x=3)
     def test(x):
-        print("x -> %d" % (x,))
+        print(f"x -> {x}")
 
     with capture_out() as out:
         with reporting.with_reporter(reporting.default):
@@ -207,7 +207,7 @@ def test_prints_note_in_failing_example():
     @example(x=43)
     @given(integers())
     def test(x):
-        note("x -> %d" % (x,))
+        note(f"x -> {x}")
         assert x == 42
 
     with capture_out() as out:

@@ -73,15 +73,13 @@ def test_invalid_release():
         parse_release("")
 
 
-TEST_CHANGELOG = """
-# A test project 1.2.3 ({})
+TEST_CHANGELOG = f"""
+# A test project 1.2.3 ({release_date_string()})
 
 some stuff happened
 
 # some previous log entry
-""".format(
-    release_date_string(),
-)
+"""
 
 
 def test_update_changelog(tmpdir):

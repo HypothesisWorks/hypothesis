@@ -127,8 +127,8 @@ class LarkStrategy(SearchStrategy):
         if unknown_explicit:
             raise InvalidArgument(
                 "The following arguments were passed as explicit_strategies, "
-                "but there is no such terminal production in this grammar: %r"
-                % (sorted(unknown_explicit),)
+                "but there is no such terminal production in this grammar: "
+                + repr(sorted(unknown_explicit))
             )
         self.terminal_strategies.update(explicit)
 

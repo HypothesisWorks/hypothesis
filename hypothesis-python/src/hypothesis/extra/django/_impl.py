@@ -194,7 +194,7 @@ def from_form(
             # decomposing the individual sub-fields into the names that
             # the form validation process expects
             for i, _field in enumerate(field.fields):
-                fields_by_name["%s_%d" % (name, i)] = _field
+                fields_by_name[f"{name}_{i}"] = _field
         else:
             fields_by_name[name] = field
     for name, value in sorted(field_strategies.items()):

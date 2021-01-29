@@ -51,7 +51,7 @@ class BoundedIntStrategy(SearchStrategy):
         self.end = end
 
     def __repr__(self):
-        return "BoundedIntStrategy(%d, %d)" % (self.start, self.end)
+        return f"BoundedIntStrategy({self.start}, {self.end})"
 
     def do_draw(self, data):
         return d.integer_range(data, self.start, self.end)
@@ -162,9 +162,7 @@ class FixedBoundedFloatStrategy(SearchStrategy):
 
     def __repr__(self):
         return "FixedBoundedFloatStrategy({}, {}, {})".format(
-            self.lower_bound,
-            self.upper_bound,
-            self.width,
+            self.lower_bound, self.upper_bound, self.width
         )
 
     def do_draw(self, data):

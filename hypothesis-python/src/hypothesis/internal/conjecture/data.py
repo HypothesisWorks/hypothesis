@@ -117,7 +117,7 @@ class Example:
         return (self.owner is not other.owner) or (self.index != other.index)
 
     def __repr__(self):
-        return "examples[%d]" % (self.index,)
+        return f"examples[{self.index}]"
 
     @property
     def label(self):
@@ -450,7 +450,7 @@ class Examples:
         assert isinstance(i, int)
         n = len(self)
         if i < -n or i >= n:
-            raise IndexError("Index %d out of range [-%d, %d)" % (i, n, n))
+            raise IndexError(f"Index {i} out of range [-{n}, {n})")
         if i < 0:
             i += n
         return Example(self, i)
@@ -582,7 +582,7 @@ class Blocks:
     def _check_index(self, i):
         n = len(self)
         if i < -n or i >= n:
-            raise IndexError("Index %d out of range [-%d, %d)" % (i, n, n))
+            raise IndexError(f"Index {i} out of range [-{n}, {n})")
         if i < 0:
             i += n
         return i

@@ -196,24 +196,22 @@ def convert_positional_arguments(function, args, kwargs):
     if len(args) < len(argspec.args):
         for i in range(len(args), len(argspec.args) - len(argspec.defaults or ())):
             if argspec.args[i] not in kwargs:
-                raise TypeError(
-                    "No value provided for argument {}".format(argspec.args[i])
-                )
+                raise TypeError(f"No value provided for argument {argspec.args[i]}")
     for kw in argspec.kwonlyargs:
         if kw not in new_kwargs:
-            raise TypeError("No value provided for argument %s" % kw)
+            raise TypeError(f"No value provided for argument {kw}")
 
     if len(args) > len(argspec.args) and not argspec.varargs:
         raise TypeError(
-            "%s() takes at most %d positional arguments (%d given)"
-            % (function.__name__, len(argspec.args), len(args))
+            "{}() takes at most {} positional arguments ({} given)".format(
+                function.__name__, len(argspec.args), len(args)
+            )
         )
 
     for arg, name in zip(args, argspec.args):
         if name in new_kwargs:
             raise TypeError(
-                "%s() got multiple values for keyword argument %r"
-                % (function.__name__, name)
+                f"{function.__name__}() got multiple values for keyword argument {name!r}"
             )
         else:
             new_kwargs[name] = arg
@@ -522,7 +520,7 @@ def define_function_signature(name, docstring, argspec):
             parts.append("**" + argspec.varkw)
             invocation_parts.append("**" + argspec.varkw)
 
-        candidate_names = ["f"] + ["f_%d" % (i,) for i in range(1, len(used_names) + 2)]
+        candidate_names = ["f"] + [f"f_{i}" for i in range(1, len(used_names) + 2)]
 
         for funcname in candidate_names:  # pragma: no branch
             if funcname not in used_names:

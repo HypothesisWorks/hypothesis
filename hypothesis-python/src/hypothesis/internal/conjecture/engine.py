@@ -487,9 +487,7 @@ class ConjectureRunner:
         if data.status == Status.INTERESTING:
             status = f"{status} ({data.interesting_origin!r})"
 
-        self.debug(
-            "%d bytes %r -> %s, %s" % (data.index, stack[0], status, data.output)
-        )
+        self.debug(f"{data.index} bytes {stack[0]!r} -> {status}, {data.output}")
 
     def run(self):
         with local_settings(self.settings):

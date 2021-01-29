@@ -43,20 +43,15 @@ def task(if_changed=()):
         def wrapped(*args, **kwargs):
             if if_changed and tools.IS_PULL_REQUEST:
                 if not tools.has_changes(if_changed + BUILD_FILES):
-                    print(
-                        "Skipping task due to no changes in %s"
-                        % (", ".join(if_changed),)
-                    )
+                    changed = ", ".join(if_changed)
+                    print(f"Skipping task due to no changes in {changed}")
                     return
             fn(*args, **kwargs)
 
         wrapped.__name__ = fn.__name__
-
         name = fn.__name__.replace("_", "-")
-
         if name != "<lambda>":
             TASKS[name] = wrapped
-
         return wrapped
 
     return accept
@@ -406,9 +401,9 @@ standard_tox_task("nose")
 standard_tox_task("pytest43")
 
 for n in [22, 30, 31]:
-    standard_tox_task("django%d" % (n,))
+    standard_tox_task(f"django{n}")
 for n in [25, 100, 111]:
-    standard_tox_task("pandas%d" % (n,))
+    standard_tox_task(f"pandas{n}")
 
 standard_tox_task("coverage")
 standard_tox_task("conjecture-coverage")

@@ -177,7 +177,7 @@ def target(observation: Union[int, float], *, label: str = "") -> None:
     """
     check_type((int, float), observation, "observation")
     if not math.isfinite(observation):
-        raise InvalidArgument("observation=%r must be a finite float." % observation)
+        raise InvalidArgument(f"observation={observation!r} must be a finite float.")
     check_type(str, label, "label")
 
     context = _current_build_context.value

@@ -538,13 +538,13 @@ def floats(
 
     if min_value != min_arg:
         raise InvalidArgument(
-            "min_value=%r cannot be exactly represented as a float of width "
-            "%d - use min_value=%r instead." % (min_arg, width, min_value)
+            f"min_value={min_arg!r} cannot be exactly represented as a float "
+            f"of width {width} - use min_value={min_value!r} instead."
         )
     if max_value != max_arg:
         raise InvalidArgument(
-            "max_value=%r cannot be exactly represented as a float of width "
-            "%d - use max_value=%r instead" % (max_arg, width, max_value)
+            f"max_value={max_arg!r} cannot be exactly represented as a float "
+            f"of width {width} - use max_value={max_value!r} instead."
         )
 
     if exclude_min and (min_value is None or min_value == math.inf):
@@ -834,9 +834,9 @@ def lists(
             element_count = len(elements.elements)
             if min_size > element_count:
                 raise InvalidArgument(
-                    "Cannot create a collection of min_size=%r unique elements with "
-                    "values drawn from only %d distinct elements"
-                    % (min_size, element_count)
+                    f"Cannot create a collection of min_size={min_size!r} unique "
+                    f"elements with values drawn from only {element_count} distinct "
+                    "elements"
                 )
 
             if max_size is not None:
@@ -1833,8 +1833,8 @@ def decimals(
             max_num = floor(ctx(max_value).divide(max_value, factor))
         if min_num is not None and max_num is not None and min_num > max_num:
             raise InvalidArgument(
-                "There are no decimals with %d places between min_value=%r "
-                "and max_value=%r " % (places, min_value, max_value)
+                f"There are no decimals with {places} places between "
+                f"min_value={min_value!r} and max_value={max_value!r}"
             )
         strat = integers(min_num, max_num).map(int_to_decimal)
     else:
@@ -2168,9 +2168,9 @@ class DataObject:
         result = self.conjecture_data.draw(strategy)
         self.count += 1
         if label is not None:
-            note("Draw %d (%s): %r" % (self.count, label, result))
+            note(f"Draw {self.count} ({label}): {result!r}")
         else:
-            note("Draw %d: %r" % (self.count, result))
+            note(f"Draw {self.count}: {result!r}")
         return result
 
 

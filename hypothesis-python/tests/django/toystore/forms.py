@@ -76,7 +76,7 @@ class DynamicForm(ReprForm):
     def __init__(self, field_count=5, **kwargs):
         super().__init__(**kwargs)
         for i in range(field_count):
-            field_name = "field-%d" % (i,)
+            field_name = f"field-{i}"
             self.fields[field_name] = forms.CharField(required=False)
 
 

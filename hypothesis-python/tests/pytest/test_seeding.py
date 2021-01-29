@@ -82,7 +82,7 @@ def test_failure(i):
     if target is None:
         assume(i not in seen)
     else:
-        target.write("%s\\n" % (i,))
+        target.write(f"{i}\\n")
         reject()
 """
 

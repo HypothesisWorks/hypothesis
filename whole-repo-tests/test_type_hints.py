@@ -83,9 +83,7 @@ def test_revealed_types(tmpdir, val, expect):
         "reveal_type(s)\n".format(val)
     )
     typ = get_mypy_analysed_type(str(f.realpath()), val)
-    assert (
-        typ == "hypothesis.strategies._internal.strategies.SearchStrategy[%s]" % expect
-    )
+    assert typ == f"hypothesis.strategies._internal.strategies.SearchStrategy[{expect}]"
 
 
 def test_data_object_type_tracing(tmpdir):

@@ -114,10 +114,10 @@ class settingsMeta(type):
             )
         elif not (isinstance(value, settingsProperty) or name.startswith("_")):
             raise AttributeError(
-                "Cannot assign hypothesis.settings.%s=%r - the settings "
+                f"Cannot assign hypothesis.settings.{name}={value!r} - the settings "
                 "class is immutable.  You can change the global default "
                 "settings with settings.load_profile, or use @settings(...) "
-                "to decorate your test instead." % (name, value)
+                "to decorate your test instead."
             )
         return type.__setattr__(self, name, value)
 
@@ -189,7 +189,7 @@ class settings(metaclass=settingsMeta):
         if not callable(test):
             raise InvalidArgument(
                 "settings objects can be called as a decorator with @given, "
-                "but decorated test=%r is not callable." % (test,)
+                f"but decorated test={test!r} is not callable."
             )
         if inspect.isclass(test):
             from hypothesis.stateful import RuleBasedStateMachine
@@ -213,14 +213,11 @@ class settings(metaclass=settingsMeta):
         if hasattr(test, "_hypothesis_internal_settings_applied"):
             # Can't use _hypothesis_internal_use_settings as an indicator that
             # @settings was applied, because @given also assigns that attribute.
+            descr = get_pretty_function_description(test)
             raise InvalidArgument(
-                "%s has already been decorated with a settings object."
-                "\n    Previous:  %r\n    This:  %r"
-                % (
-                    get_pretty_function_description(test),
-                    test._hypothesis_internal_use_settings,
-                    self,
-                )
+                f"{descr} has already been decorated with a settings object.\n"
+                f"    Previous:  {test._hypothesis_internal_use_settings!r}\n"
+                f"    This:  {self!r}"
             )
 
         test._hypothesis_internal_use_settings = self
@@ -279,8 +276,8 @@ class settings(metaclass=settingsMeta):
         raise AttributeError("settings objects are immutable")
 
     def __repr__(self):
-        bits = ("{}={!r}".format(name, getattr(self, name)) for name in all_settings)
-        return "settings(%s)" % ", ".join(sorted(bits))
+        bits = sorted(f"{name}={getattr(self, name)!r}" for name in all_settings)
+        return "settings({})".format(", ".join(bits))
 
     def show_changed(self):
         bits = []
@@ -352,8 +349,8 @@ def _max_examples_validator(x):
     check_type(int, x, name="max_examples")
     if x < 1:
         raise InvalidArgument(
-            "max_examples=%r should be at least one. You can disable example "
-            "generation with the `phases` setting instead." % (x,)
+            f"max_examples={x!r} should be at least one. You can disable "
+            "example generation with the `phases` setting instead."
         )
     return x
 
@@ -406,9 +403,9 @@ def _validate_database(db):
         return db
     raise InvalidArgument(
         "Arguments to the database setting must be None or an instance of "
-        "ExampleDatabase.  Try passing database=ExampleDatabase(%r), or "
+        f"ExampleDatabase.  Try passing database=ExampleDatabase({db!r}), or "
         "construct and use one of the specific subclasses in "
-        "hypothesis.database" % (db,)
+        "hypothesis.database"
     )
 
 
@@ -569,8 +566,8 @@ def validate_health_check_suppressions(suppressions):
     for s in suppressions:
         if not isinstance(s, HealthCheck):
             raise InvalidArgument(
-                "Non-HealthCheck value %r of type %s is invalid in suppress_health_check."
-                % (s, type(s).__name__)
+                f"Non-HealthCheck value {s!r} of type {type(s).__name__} "
+                "is invalid in suppress_health_check."
             )
     return suppressions
 
@@ -595,9 +592,9 @@ def _validate_deadline(x):
     if x is None:
         return x
     invalid_deadline_error = InvalidArgument(
-        "deadline=%r (type %s) must be a timedelta object, an integer or float "
-        "number of milliseconds, or None to disable the per-test-case deadline."
-        % (x, type(x).__name__)
+        f"deadline={x!r} (type {type(x).__name__}) must be a timedelta object, "
+        "an integer or float number of milliseconds, or None to disable the "
+        "per-test-case deadline."
     )
     if isinstance(x, (int, float)):
         if isinstance(x, bool):
@@ -606,14 +603,14 @@ def _validate_deadline(x):
             x = duration(milliseconds=x)
         except OverflowError:
             raise InvalidArgument(
-                "deadline=%r is invalid, because it is too large to represent "
-                "as a timedelta. Use deadline=None to disable deadlines." % (x,)
+                f"deadline={x!r} is invalid, because it is too large to represent "
+                "as a timedelta. Use deadline=None to disable deadlines."
             ) from None
     if isinstance(x, datetime.timedelta):
         if x <= datetime.timedelta(0):
             raise InvalidArgument(
-                "deadline=%r is invalid, because it is impossible to meet a "
-                "deadline <= 0. Use deadline=None to disable deadlines." % (x,)
+                f"deadline={x!r} is invalid, because it is impossible to meet a "
+                "deadline <= 0. Use deadline=None to disable deadlines."
             )
         return duration(seconds=x.total_seconds())
     raise invalid_deadline_error

@@ -159,7 +159,7 @@ class GenericCache:
         self.__pinned_entry_count = 0
 
     def __repr__(self):
-        return "{{{}}}".format(", ".join(f"{e.key!r}: {e.value!r}" for e in self.data))
+        return "{" + ", ".join(f"{e.key!r}: {e.value!r}" for e in self.data) + "}"
 
     def new_entry(self, key, value):
         """Called when a key is written that does not currently appear in the

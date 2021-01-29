@@ -224,9 +224,7 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
 
     def __init__(self):
         if not self.rules():
-            raise InvalidDefinition(
-                "Type {} defines no rules".format(type(self).__name__)
-            )
+            raise InvalidDefinition(f"Type {type(self).__name__} defines no rules")
         self.bundles = {}  # type: Dict[str, list]
         self.name_counter = 1
         self.names_to_values = {}  # type: Dict[str, Any]
@@ -251,14 +249,14 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         return "{}({})".format(type(self).__name__, nicerepr(self.bundles))
 
     def _new_name(self):
-        result = "v%d" % (self.name_counter,)
+        result = f"v{self.name_counter}"
         self.name_counter += 1
         return result
 
     def _last_names(self, n):
         assert self.name_counter > n
         count = self.name_counter
-        return ["v%d" % (i,) for i in range(count - n, count)]
+        return [f"v{i}" for i in range(count - n, count)]
 
     def bundle(self, name):
         return self.bundles.setdefault(name, [])
@@ -345,8 +343,7 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         else:
             output_assignment = ""
         report(
-            "%sstate.%s(%s)"
-            % (
+            "{}state.{}({})".format(
                 output_assignment,
                 rule.function.__name__,
                 ", ".join("%s=%s" % kv for kv in data.items()),

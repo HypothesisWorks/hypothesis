@@ -848,16 +848,12 @@ class StateForActualGivenExecution:
 
         if flaky > 0:
             raise Flaky(
-                (
-                    "Hypothesis found %d distinct failures, but %d of them "
-                    "exhibited some sort of flaky behaviour."
-                )
-                % (len(self.falsifying_examples), flaky)
+                f"Hypothesis found {len(self.falsifying_examples)} distinct failures, "
+                f"but {flaky} of them exhibited some sort of flaky behaviour."
             )
         else:
             raise MultipleFailures(
-                ("Hypothesis found %d distinct failures.")
-                % (len(self.falsifying_examples))
+                f"Hypothesis found {len(self.falsifying_examples)} distinct failures."
             )
 
     def __flaky(self, message):
@@ -1101,8 +1097,9 @@ def given(
                             type(err), err, err.__traceback__
                         )
                         report("".join(tb_lines))
-                    msg = "Hypothesis found %d failures in explicit examples."
-                    raise MultipleFailures(msg % (len(errors)))
+                    raise MultipleFailures(
+                        f"Hypothesis found {len(errors)} failures in explicit examples."
+                    )
                 elif errors:
                     fragments, the_error_hypothesis_found = errors[0]
                     for f in fragments:
@@ -1144,8 +1141,8 @@ def given(
                             )
                         else:
                             report(
-                                "You can add @seed(%d) to this test to "
-                                "reproduce this failure." % (generated_seed,)
+                                f"You can add @seed({generated_seed}) to this test to "
+                                "reproduce this failure."
                             )
                     # The dance here is to avoid showing users long tracebacks
                     # full of Hypothesis internals they don't care about.

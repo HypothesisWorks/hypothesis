@@ -45,7 +45,7 @@ class TupleStrategy(SearchStrategy):
 
     def __repr__(self):
         if len(self.element_strategies) == 1:
-            tuple_string = "{},".format(repr(self.element_strategies[0]))
+            tuple_string = f"{self.element_strategies[0]!r},"
         else:
             tuple_string = ", ".join(map(repr, self.element_strategies))
         return f"TupleStrategy(({tuple_string}))"
@@ -119,10 +119,7 @@ class ListStrategy(SearchStrategy):
 
     def __repr__(self):
         return "{}({!r}, min_size={!r}, max_size={!r})".format(
-            self.__class__.__name__,
-            self.element_strategy,
-            self.min_size,
-            self.max_size,
+            self.__class__.__name__, self.element_strategy, self.min_size, self.max_size
         )
 
 
@@ -258,10 +255,7 @@ class FixedAndOptionalKeysDictStrategy(SearchStrategy):
         return recur(self.fixed)
 
     def __repr__(self):
-        return "FixedAndOptionalKeysDictStrategy({!r}, {!r})".format(
-            self.required,
-            self.optional,
-        )
+        return f"FixedAndOptionalKeysDictStrategy({self.required!r}, {self.optional!r})"
 
     def do_draw(self, data):
         result = data.draw(self.fixed)

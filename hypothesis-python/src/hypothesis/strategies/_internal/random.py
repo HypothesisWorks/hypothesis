@@ -256,9 +256,7 @@ class ArtificialRandom(HypothesisRandom):
 
             step = kwargs["step"]
             if start == stop:
-                raise ValueError(
-                    "empty range for randrange(%d, %d, %d)" % (start, stop, step)
-                )
+                raise ValueError(f"empty range for randrange({start}, {stop}, {step})")
 
             if step != 1:
                 endpoint = (stop - start) // step
@@ -289,7 +287,7 @@ class ArtificialRandom(HypothesisRandom):
 
             if k > len(seq) or k < 0:
                 raise ValueError(
-                    "Sample size %d not in expected range 0 <= k <= %d" % (k, len(seq))
+                    f"Sample size {k} not in expected range 0 <= k <= {len(seq)}"
                 )
 
             result = self.__data.draw(

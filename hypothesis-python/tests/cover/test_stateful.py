@@ -527,7 +527,7 @@ class RequiresInit(RuleBasedStateMachine):
     @rule(value=integers())
     def action(self, value):
         if value > self.threshold:
-            raise ValueError("%d is too high" % (value,))
+            raise ValueError(f"{value} is too high")
 
 
 def test_can_use_factory_for_tests():
@@ -921,7 +921,7 @@ def test_initialize_rule_populate_bundle():
 
         @initialize(target=a, dep=just("dep"))
         def initialize_a(self, dep):
-            return "a v1 with (%s)" % dep
+            return f"a v1 with ({dep})"
 
         @rule(param=a)
         def fail_fast(self, param):

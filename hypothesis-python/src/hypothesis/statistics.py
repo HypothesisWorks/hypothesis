@@ -75,9 +75,9 @@ def describe_statistics(stats_dict):
         if upper == 0:
             ms = "< 1ms"
         elif lower == upper:
-            ms = "~ %dms" % (lower,)
+            ms = f"~ {lower}ms"
         else:
-            ms = "%d-%d ms" % (lower, upper)
+            ms = f"{lower}-{upper} ms"
         drawtime_percent = 100 * statistics.mean(
             t["drawtime"] / t["runtime"] if t["runtime"] > 0 else 0 for t in cases
         )
