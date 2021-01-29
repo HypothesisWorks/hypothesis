@@ -40,6 +40,8 @@ jobs:
             python-version: "3.7"
           - task: check-py39
             python-version: "3.9"
+          - task: check-py310
+            python-version: "3.10-dev"
       fail-fast: false
     steps:
     - uses: actions/checkout@v2
