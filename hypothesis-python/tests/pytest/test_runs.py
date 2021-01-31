@@ -15,6 +15,7 @@
 
 from hypothesis import given
 from hypothesis.strategies import integers
+
 from tests.common.utils import fails
 
 

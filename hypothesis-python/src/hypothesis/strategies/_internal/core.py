@@ -538,19 +538,19 @@ def floats(
 
     if min_value != min_arg:
         raise InvalidArgument(
-            "min_value=%r cannot be exactly represented as a float of width "
-            "%d - use min_value=%r instead." % (min_arg, width, min_value)
+            f"min_value={min_arg!r} cannot be exactly represented as a float "
+            f"of width {width} - use min_value={min_value!r} instead."
         )
     if max_value != max_arg:
         raise InvalidArgument(
-            "max_value=%r cannot be exactly represented as a float of width "
-            "%d - use max_value=%r instead" % (max_arg, width, max_value)
+            f"max_value={max_arg!r} cannot be exactly represented as a float "
+            f"of width {width} - use max_value={max_value!r} instead."
         )
 
     if exclude_min and (min_value is None or min_value == math.inf):
-        raise InvalidArgument("Cannot exclude min_value=%r" % (min_value,))
+        raise InvalidArgument(f"Cannot exclude min_value={min_value!r}")
     if exclude_max and (max_value is None or max_value == -math.inf):
-        raise InvalidArgument("Cannot exclude max_value=%r" % (max_value,))
+        raise InvalidArgument(f"Cannot exclude max_value={max_value!r}")
 
     if min_value is not None and (
         exclude_min or (min_arg is not None and min_value < min_arg)
@@ -593,7 +593,7 @@ def floats(
             "and max_value=%r" % (width, min_arg, max_arg)
         )
         if exclude_min or exclude_max:
-            msg += ", exclude_min=%r and exclude_max=%r" % (exclude_min, exclude_max)
+            msg += f", exclude_min={exclude_min!r} and exclude_max={exclude_max!r}"
         raise InvalidArgument(msg)
 
     if allow_infinity is None:
@@ -725,9 +725,9 @@ def sampled_from(elements):
     if len(values) == 1:
         return just(values[0])
     if isinstance(elements, type) and issubclass(elements, enum.Enum):
-        repr_ = "sampled_from(%s.%s)" % (elements.__module__, elements.__name__)
+        repr_ = f"sampled_from({elements.__module__}.{elements.__name__})"
     else:
-        repr_ = "sampled_from(%r)" % (elements,)
+        repr_ = f"sampled_from({elements!r})"
     if isclass(elements) and issubclass(elements, enum.Flag):
         # Combinations of enum.Flag members are also members.  We generate
         # these dynamically, because static allocation takes O(2^n) memory.
@@ -834,9 +834,9 @@ def lists(
             element_count = len(elements.elements)
             if min_size > element_count:
                 raise InvalidArgument(
-                    "Cannot create a collection of min_size=%r unique elements with "
-                    "values drawn from only %d distinct elements"
-                    % (min_size, element_count)
+                    f"Cannot create a collection of min_size={min_size!r} unique "
+                    f"elements with values drawn from only {element_count} distinct "
+                    "elements"
                 )
 
             if max_size is not None:
@@ -961,11 +961,11 @@ def fixed_dictionaries(
     """
     check_type(dict, mapping, "mapping")
     for k, v in mapping.items():
-        check_strategy(v, "mapping[%r]" % (k,))
+        check_strategy(v, f"mapping[{k!r}]")
     if optional is not None:
         check_type(dict, optional, "optional")
         for k, v in optional.items():
-            check_strategy(v, "optional[%r]" % (k,))
+            check_strategy(v, f"optional[{k!r}]")
         if type(mapping) != type(optional):
             raise InvalidArgument(
                 "Got arguments of different types: mapping=%s, optional=%s"
@@ -1074,9 +1074,9 @@ def characters(
     ):
         raise InvalidArgument(
             "Nothing is excluded by other arguments, so passing only "
-            "whitelist_characters=%(chars)r would have no effect.  Also pass "
-            "whitelist_categories=(), or use sampled_from(%(chars)r) instead."
-            % {"chars": whitelist_characters}
+            f"whitelist_characters={whitelist_characters!r} would have no effect.  "
+            "Also pass whitelist_categories=(), or use "
+            f"sampled_from({whitelist_characters!r}) instead."
         )
     blacklist_characters = blacklist_characters or ""
     whitelist_characters = whitelist_characters or ""
@@ -1275,7 +1275,7 @@ class RandomSeeder:
         self.seed = seed
 
     def __repr__(self):
-        return "RandomSeeder(%r)" % (self.seed,)
+        return f"RandomSeeder({self.seed!r})"
 
 
 class RandomModule(SearchStrategy):
@@ -1466,7 +1466,8 @@ def from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
 
         def everything_except(excluded_types):
             return (
-                from_type(type).flatmap(from_type)
+                from_type(type)
+                .flatmap(from_type)
                 .filter(lambda x: not isinstance(x, excluded_types))
             )
 
@@ -1489,7 +1490,7 @@ def from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
             lambda thing: deferred(lambda: _from_type(thing)),
             (thing,),
             {},
-            force_repr="from_type(%r)" % (thing,),
+            force_repr=f"from_type({thing!r})",
         )
 
 
@@ -1537,7 +1538,7 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
                 % (thing, nicerepr(strat_or_callable), strategy)
             )
         if strategy.is_empty:
-            raise ResolutionFailed("Error: %r resolved to an empty strategy" % (thing,))
+            raise ResolutionFailed(f"Error: {thing!r} resolved to an empty strategy")
         return strategy
 
     if not isinstance(thing, type):
@@ -1568,7 +1569,7 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
                 else:
                     literals.append(arg)
             return sampled_from(literals)
-        raise InvalidArgument("thing=%s must be a type" % (thing,))
+        raise InvalidArgument(f"thing={thing} must be a type")
     # Now that we know `thing` is a type, the first step is to check for an
     # explicitly registered strategy.  This is the best (and hopefully most
     # common) way to resolve a type to a strategy.  Note that the value in the
@@ -1764,10 +1765,10 @@ def _as_finite_decimal(
         if allow_infinity or allow_infinity is None:
             return None
         raise InvalidArgument(
-            "allow_infinity=%r, but %s=%r" % (allow_infinity, name, value)
+            f"allow_infinity={allow_infinity!r}, but {name}={value!r}"
         )
     # This could be infinity, quiet NaN, or signalling NaN
-    raise InvalidArgument("Invalid %s=%r" % (name, value))
+    raise InvalidArgument(f"Invalid {name}={value!r}")
 
 
 @cacheable
@@ -1832,8 +1833,8 @@ def decimals(
             max_num = floor(ctx(max_value).divide(max_value, factor))
         if min_num is not None and max_num is not None and min_num > max_num:
             raise InvalidArgument(
-                "There are no decimals with %d places between min_value=%r "
-                "and max_value=%r " % (places, min_value, max_value)
+                f"There are no decimals with {places} places between "
+                f"min_value={min_value!r} and max_value={max_value!r}"
             )
         strat = integers(min_num, max_num).map(int_to_decimal)
     else:
@@ -2167,9 +2168,9 @@ class DataObject:
         result = self.conjecture_data.draw(strategy)
         self.count += 1
         if label is not None:
-            note("Draw %d (%s): %r" % (self.count, label, result))
+            note(f"Draw {self.count} ({label}): {result!r}")
         else:
-            note("Draw %d: %r" % (self.count, result))
+            note(f"Draw {self.count}: {result!r}")
         return result
 
 

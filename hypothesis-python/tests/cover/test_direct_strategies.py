@@ -26,6 +26,7 @@ import pytest
 from hypothesis import given, settings, strategies as ds
 from hypothesis.errors import InvalidArgument
 from hypothesis.vendor.pretty import pretty
+
 from tests.common.debug import minimal
 
 # Use `pretty` instead of `repr` for building test names, so that set and dict
@@ -39,7 +40,7 @@ def fn_test(*fnkwargs):
         ("fn", "args"),
         fnkwargs,
         ids=[
-            "%s(%s)" % (fn.__name__, ", ".join(map(pretty, args)))
+            "{}({})".format(fn.__name__, ", ".join(map(pretty, args)))
             for fn, args in fnkwargs
         ],
     )
@@ -50,7 +51,7 @@ def fn_ktest(*fnkwargs):
     return pytest.mark.parametrize(
         ("fn", "kwargs"),
         fnkwargs,
-        ids=["%s(**%s)" % (fn.__name__, pretty(kwargs)) for fn, kwargs in fnkwargs],
+        ids=["{}(**{})".format(fn.__name__, pretty(kwargs)) for fn, kwargs in fnkwargs],
     )
 
 

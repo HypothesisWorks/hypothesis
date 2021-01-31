@@ -31,6 +31,7 @@ from hypothesis.strategies._internal.regex import (
     UNICODE_WORD_CATEGORIES,
     base_regex_strategy,
 )
+
 from tests.common.debug import assert_all_examples, assert_no_examples, find_any
 
 
@@ -211,7 +212,7 @@ def test_groups(pattern, is_unicode, invert):
         def group_pred(s):
             return not _p(s)
 
-    pattern = "^%s\\Z" % (pattern,)
+    pattern = f"^{pattern}\\Z"
 
     compiler = unicode_regex if is_unicode else ascii_regex
     strategy = st.from_regex(compiler(pattern))

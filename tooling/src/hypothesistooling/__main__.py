@@ -20,12 +20,11 @@ import sys
 from datetime import datetime
 from glob import glob
 
-from coverage.config import CoverageConfig
-
 import hypothesistooling as tools
 import hypothesistooling.projects.conjecturerust as cr
 import hypothesistooling.projects.hypothesispython as hp
 import hypothesistooling.projects.hypothesisruby as hr
+from coverage.config import CoverageConfig
 from hypothesistooling import installers as install, releasemanagement as rm
 from hypothesistooling.scripts import pip_tool
 
@@ -44,20 +43,15 @@ def task(if_changed=()):
         def wrapped(*args, **kwargs):
             if if_changed and tools.IS_PULL_REQUEST:
                 if not tools.has_changes(if_changed + BUILD_FILES):
-                    print(
-                        "Skipping task due to no changes in %s"
-                        % (", ".join(if_changed),)
-                    )
+                    changed = ", ".join(if_changed)
+                    print(f"Skipping task due to no changes in {changed}")
                     return
             fn(*args, **kwargs)
 
         wrapped.__name__ = fn.__name__
-
         name = fn.__name__.replace("_", "-")
-
         if name != "<lambda>":
             TASKS[name] = wrapped
-
         return wrapped
 
     return accept
@@ -85,7 +79,7 @@ MASTER = tools.hash_for_name("origin/master")
 
 def do_release(package):
     if not package.has_release():
-        print("No release for %s" % (package.__name__,))
+        print(f"No release for {package.__name__}")
         return
 
     os.chdir(package.BASE_DIR)
@@ -103,7 +97,7 @@ def do_release(package):
 
     tag_name = package.tag_name()
 
-    print("Creating tag %s" % (tag_name,))
+    print(f"Creating tag {tag_name}")
 
     tools.create_tag(tag_name)
     tools.push_tag(tag_name)
@@ -136,11 +130,11 @@ def deploy():
 CURRENT_YEAR = datetime.utcnow().year
 
 
-HEADER = """
+HEADER = f"""
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-%(year)s David R. MacIver
+# Most of this work is copyright (C) 2013-{CURRENT_YEAR} David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -150,9 +144,7 @@ HEADER = """
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 #
-# END HEADER""".strip() % {
-    "year": CURRENT_YEAR
-}
+# END HEADER""".strip()
 
 
 @task()
@@ -218,19 +210,7 @@ def format():
                 o.write(source)
             o.write("\n")
 
-    pip_tool(
-        "autoflake",
-        "--recursive",
-        "--in-place",
-        "--exclude=compat.py",
-        "--remove-all-unused-imports",
-        "--remove-duplicate-keys",
-        "--remove-unused-variables",
-        *files_to_format,
-    )
-    pip_tool("pyupgrade", "--keep-percent-format", "--py36-plus", *files_to_format)
-    pip_tool("isort", *files_to_format)
-    pip_tool("black", "--target-version=py36", *files_to_format)
+    pip_tool("shed", *files_to_format, *doc_files_to_format)
 
 
 VALID_STARTS = (HEADER.split()[0], "#!/usr/bin/env python")
@@ -247,7 +227,7 @@ def check_format():
         with open(f, encoding="utf-8") as i:
             start = i.read(n)
             if not any(start.startswith(s) for s in VALID_STARTS):
-                print("%s has incorrect start %r" % (f, start), file=sys.stderr)
+                print(f"{f} has incorrect start {start!r}", file=sys.stderr)
                 bad = True
     assert not bad
     check_not_changed()
@@ -369,7 +349,7 @@ ALIASES = {PYPY36: "pypy3", PYPY37: "pypy3"}
 
 for n in [PY36, PY37, PY38, PY39]:
     major, minor, patch = n.replace("-dev", ".").split(".")
-    ALIASES[n] = "python%s.%s" % (major, minor)
+    ALIASES[n] = f"python{major}.{minor}"
 
 
 python_tests = task(
@@ -419,9 +399,9 @@ standard_tox_task("nose")
 standard_tox_task("pytest43")
 
 for n in [22, 30, 31]:
-    standard_tox_task("django%d" % (n,))
+    standard_tox_task(f"django{n}")
 for n in [25, 100, 111]:
-    standard_tox_task("pandas%d" % (n,))
+    standard_tox_task(f"pandas{n}")
 
 standard_tox_task("coverage")
 standard_tox_task("conjecture-coverage")

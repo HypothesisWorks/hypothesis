@@ -43,6 +43,7 @@ from hypothesis.strategies import (
     text,
     tuples,
 )
+
 from tests.common.utils import no_shrink
 
 RUNS = 100
@@ -108,14 +109,10 @@ def define_test(specifier, predicate, condition=None, p=0.5, suppress_health_che
             event += "|"
             event += condition_string
 
-        description = ("P(%s) ~ %d / %d = %.2f < %.2f") % (
-            event,
-            successes,
-            RUNS,
-            successes / RUNS,
-            (required_runs / RUNS),
+        raise HypothesisFalsified(
+            f"P({event}) ~ {successes} / {RUNS} = {successes / RUNS:.2f} < "
+            f"{required_runs / RUNS:.2f} rejected"
         )
-        raise HypothesisFalsified(description + " rejected")
 
     return run_test
 
@@ -256,10 +253,9 @@ one_of_nested_strategy = one_of(
 
 for i in range(8):
     exec(
-        """test_one_of_flattens_branches_%d = define_test(
-        one_of_nested_strategy, lambda x: x == %d
+        f"""test_one_of_flattens_branches_{i} = define_test(
+        one_of_nested_strategy, lambda x: x == {i}
     )"""
-        % (i, i)
     )
 
 
@@ -269,10 +265,9 @@ xor_nested_strategy = just(0) | (
 
 for i in range(8):
     exec(
-        """test_xor_flattens_branches_%d = define_test(
-        xor_nested_strategy, lambda x: x == %d
+        f"""test_xor_flattens_branches_{i} = define_test(
+        xor_nested_strategy, lambda x: x == {i}
     )"""
-        % (i, i)
     )
 
 
@@ -295,10 +290,9 @@ one_of_nested_strategy_with_map = one_of(
 
 for i in (1, 4, 6, 16, 20, 24, 28, 32):
     exec(
-        """test_one_of_flattens_map_branches_%d = define_test(
-        one_of_nested_strategy_with_map, lambda x: x == %d
+        f"""test_one_of_flattens_map_branches_{i} = define_test(
+        one_of_nested_strategy_with_map, lambda x: x == {i}
     )"""
-        % (i, i)
     )
 
 
@@ -318,10 +312,9 @@ one_of_nested_strategy_with_flatmap = just(None).flatmap(
 
 for i in range(8):
     exec(
-        """test_one_of_flattens_flatmap_branches_%d = define_test(
-        one_of_nested_strategy_with_flatmap, lambda x: len(x) == %d
+        f"""test_one_of_flattens_flatmap_branches_{i} = define_test(
+        one_of_nested_strategy_with_flatmap, lambda x: len(x) == {i}
     )"""
-        % (i, i)
     )
 
 
@@ -339,10 +332,9 @@ xor_nested_strategy_with_flatmap = just(None).flatmap(
 
 for i in range(8):
     exec(
-        """test_xor_flattens_flatmap_branches_%d = define_test(
-        xor_nested_strategy_with_flatmap, lambda x: len(x) == %d
+        f"""test_xor_flattens_flatmap_branches_{i} = define_test(
+        xor_nested_strategy_with_flatmap, lambda x: len(x) == {i}
     )"""
-        % (i, i)
     )
 
 
@@ -356,10 +348,9 @@ one_of_nested_strategy_with_filter = one_of(
 
 for i in range(4):
     exec(
-        """test_one_of_flattens_filter_branches_%d = define_test(
-        one_of_nested_strategy_with_filter, lambda x: x == 2 * %d
+        f"""test_one_of_flattens_filter_branches_{i} = define_test(
+        one_of_nested_strategy_with_filter, lambda x: x == 2 * {i}
     )"""
-        % (i, i)
     )
 
 

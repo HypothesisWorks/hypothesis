@@ -20,6 +20,7 @@ import pytest
 from hypothesis import strategies as st
 from hypothesis.errors import UnsatisfiedAssumption
 from hypothesis.internal.conjecture.shrinking import dfas
+
 from tests.quality.test_shrinking_order import iter_values
 
 

@@ -447,7 +447,7 @@ class IntegerNormalizer:
         self.__cache = {}
 
     def __repr__(self):
-        return "IntegerNormalizer(%r)" % (list(self.__values),)
+        return f"IntegerNormalizer({list(self.__values)!r})"
 
     def __copy__(self):
         result = IntegerNormalizer()

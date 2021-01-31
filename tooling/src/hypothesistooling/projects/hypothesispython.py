@@ -19,9 +19,8 @@ import shutil
 import subprocess
 import sys
 
-import requests
-
 import hypothesistooling as tools
+import requests
 from hypothesistooling import releasemanagement as rm
 
 PACKAGE_NAME = "hypothesis-python"
@@ -127,7 +126,7 @@ def update_changelog_and_version():
     new_changelog_parts = [
         beginning.strip(),
         "",
-        ".. _v%s:" % (new_version_string),
+        f".. _v{new_version_string}:",
         "",
         border_for_new_version,
         heading_for_new_version,
@@ -193,10 +192,10 @@ def upload_distribution():
     with open(textfile) as f:
         lines = f.readlines()
     entries = [i for i, l in enumerate(lines) if CHANGELOG_HEADER.match(l)]
+    anchor = current_version().replace(".", "-")
     changelog_body = "".join(lines[entries[0] + 2 : entries[1]]).strip() + (
         "\n\n*[The canonical version of these notes (with links) is on readthedocs.]"
-        "(https://hypothesis.readthedocs.io/en/latest/changes.html#v%s)*"
-        % (current_version().replace(".", "-"),)
+        f"(https://hypothesis.readthedocs.io/en/latest/changes.html#v{anchor})*"
     )
 
     # Create a GitHub release, to trigger Zenodo DOI minting.  See

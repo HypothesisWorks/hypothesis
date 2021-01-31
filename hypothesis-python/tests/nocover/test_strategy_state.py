@@ -46,7 +46,7 @@ def clamp(lower, value, upper):
     """Given a value and optional lower/upper bounds, 'clamp' the value so that
     it satisfies lower <= value <= upper."""
     if (lower is not None) and (upper is not None) and (lower > upper):
-        raise ValueError("Cannot clamp with lower > upper: %r > %r" % (lower, upper))
+        raise ValueError(f"Cannot clamp with lower > upper: {lower!r} > {upper!r}")
     if lower is not None:
         value = max(lower, value)
     if upper is not None:

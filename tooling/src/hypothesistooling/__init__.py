@@ -136,8 +136,7 @@ def modified_files():
         diff_output = subprocess.check_output(command).decode("ascii")
         for l in diff_output.split("\n"):
             filepath = l.strip()
-            if filepath:
-                assert os.path.exists(filepath), filepath
+            if filepath and os.path.exists(filepath):
                 files.add(filepath)
     return files
 

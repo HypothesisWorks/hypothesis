@@ -20,6 +20,7 @@ import sys
 
 from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.strategies import data, floats, lists
+
 from tests.common.utils import fails
 
 TRY_HARDER = settings(

@@ -90,7 +90,7 @@ def from_model(
         raise TypeError("Missing required positional argument `model`")
 
     if not issubclass(m_type, dm.Model):
-        raise InvalidArgument("model=%r must be a subtype of Model" % (model,))
+        raise InvalidArgument(f"model={model!r} must be a subtype of Model")
 
     fields_by_name = {f.name: f for f in m_type._meta.concrete_fields}
     for name, value in sorted(field_strategies.items()):
@@ -172,7 +172,7 @@ def from_form(
     # ImageField
     form_kwargs = form_kwargs or {}
     if not issubclass(form, df.BaseForm):
-        raise InvalidArgument("form=%r must be a subtype of Form" % (form,))
+        raise InvalidArgument(f"form={form!r} must be a subtype of Form")
 
     # Forms are a little bit different from models. Model classes have
     # all their fields defined, whereas forms may have different fields
@@ -194,7 +194,7 @@ def from_form(
             # decomposing the individual sub-fields into the names that
             # the form validation process expects
             for i, _field in enumerate(field.fields):
-                fields_by_name["%s_%d" % (name, i)] = _field
+                fields_by_name[f"{name}_{i}"] = _field
         else:
             fields_by_name[name] = field
     for name, value in sorted(field_strategies.items()):

@@ -36,6 +36,7 @@ from hypothesis.internal.conjecture.pareto import DominanceRelation, dominance
 from hypothesis.internal.conjecture.shrinker import Shrinker, block_program
 from hypothesis.internal.conjecture.utils import integer_range
 from hypothesis.internal.entropy import deterministic_PRNG
+
 from tests.common.strategies import SLOW, HardToShrink
 from tests.common.utils import no_shrink
 from tests.conjecture.common import (

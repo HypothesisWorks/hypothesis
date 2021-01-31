@@ -84,7 +84,7 @@ class Foo:
         seen.append(self)
         global counter
         counter += 1
-        return "COUNTER %d" % (counter,)
+        return f"COUNTER {counter}"
 
 
 def test_formats_are_evaluated_only_once():

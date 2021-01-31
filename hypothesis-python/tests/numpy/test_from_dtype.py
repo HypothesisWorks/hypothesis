@@ -20,6 +20,7 @@ from hypothesis import assume, given, settings, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra import numpy as nps
 from hypothesis.strategies._internal import SearchStrategy
+
 from tests.common.debug import find_any
 
 STANDARD_TYPES = [

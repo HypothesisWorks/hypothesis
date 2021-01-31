@@ -23,6 +23,7 @@ import pytest
 from hypothesis import HealthCheck, assume, given, note, settings, strategies as st
 from hypothesis.errors import InvalidArgument, Unsatisfiable
 from hypothesis.extra import numpy as nps
+
 from tests.common.debug import find_any, minimal
 from tests.common.utils import fails_with, flaky
 
@@ -567,7 +568,7 @@ def _broadcast_two_shapes(shape_a: nps.Shape, shape_b: nps.Shape) -> nps.Shape:
     for a, b in zip_longest(reversed(shape_a), reversed(shape_b), fillvalue=1):
         if a != b and (a != 1) and (b != 1):
             raise ValueError(
-                "shapes %r and %r are not broadcast-compatible" % (shape_a, shape_b)
+                f"shapes {shape_a!r} and {shape_b!r} are not broadcast-compatible"
             )
         result.append(a if a != 1 else b)
     return tuple(reversed(result))

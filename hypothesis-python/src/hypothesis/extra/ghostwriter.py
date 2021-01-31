@@ -706,6 +706,7 @@ def fuzz(func: Callable, *, except_: Except = (), style: str = "pytest") -> str:
     .. code-block:: python
 
         from re import compile, error
+
         from hypothesis.extra import ghostwriter
 
         ghostwriter.fuzz(compile, except_=error)
@@ -717,9 +718,11 @@ def fuzz(func: Callable, *, except_: Except = (), style: str = "pytest") -> str:
         # This test code was written by the `hypothesis.extra.ghostwriter` module
         # and is provided under the Creative Commons Zero public domain dedication.
         import re
+
         from hypothesis import given, reject, strategies as st
 
         # TODO: replace st.nothing() with an appropriate strategy
+
 
         @given(pattern=st.nothing(), flags=st.just(0))
         def test_fuzz_compile(pattern, flags):
@@ -753,10 +756,13 @@ def idempotent(func: Callable, *, except_: Except = (), style: str = "pytest") -
     .. code-block:: python
 
         from typing import Sequence
+
         from hypothesis.extra import ghostwriter
+
 
         def timsort(seq: Sequence[int]) -> Sequence[int]:
             return sorted(seq)
+
 
         ghostwriter.idempotent(timsort)
 
@@ -768,6 +774,7 @@ def idempotent(func: Callable, *, except_: Except = (), style: str = "pytest") -
         # and is provided under the Creative Commons Zero public domain dedication.
 
         from hypothesis import given, strategies as st
+
 
         @given(seq=st.one_of(st.binary(), st.binary().map(bytearray), st.lists(st.integers())))
         def test_idempotent_timsort(seq):

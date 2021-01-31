@@ -21,6 +21,7 @@ import pytest
 from hypothesis import given, strategies as st
 from hypothesis.errors import ResolutionFailed
 from hypothesis.internal.compat import ForwardRef
+
 from tests.common import utils
 
 skip_before_python37 = pytest.mark.skipif(

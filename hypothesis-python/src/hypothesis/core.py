@@ -192,7 +192,7 @@ def decode_failure(blob):
     try:
         buffer = base64.b64decode(blob)
     except Exception:
-        raise InvalidArgument("Invalid base64 encoded string: %r" % (blob,))
+        raise InvalidArgument(f"Invalid base64 encoded string: {blob!r}")
     prefix = buffer[:1]
     if prefix == b"\0":
         return buffer[1:]
@@ -200,10 +200,10 @@ def decode_failure(blob):
         try:
             return zlib.decompress(buffer[1:])
         except zlib.error:
-            raise InvalidArgument("Invalid zlib compression for blob %r" % (blob,))
+            raise InvalidArgument(f"Invalid zlib compression for blob {blob!r}")
     else:
         raise InvalidArgument(
-            "Could not decode blob %r: Invalid start byte %r" % (blob, prefix)
+            f"Could not decode blob {blob!r}: Invalid start byte {prefix!r}"
         )
 
 
@@ -218,7 +218,7 @@ class WithRunner(MappedSearchStrategy):
         return self.mapped_strategy.do_draw(data)
 
     def __repr__(self):
-        return "WithRunner(%r, runner=%r)" % (self.mapped_strategy, self.runner)
+        return f"WithRunner({self.mapped_strategy!r}, runner={self.runner!r})"
 
 
 def is_invalid_test(name, original_argspec, given_arguments, given_kwargs):
@@ -848,16 +848,12 @@ class StateForActualGivenExecution:
 
         if flaky > 0:
             raise Flaky(
-                (
-                    "Hypothesis found %d distinct failures, but %d of them "
-                    "exhibited some sort of flaky behaviour."
-                )
-                % (len(self.falsifying_examples), flaky)
+                f"Hypothesis found {len(self.falsifying_examples)} distinct failures, "
+                f"but {flaky} of them exhibited some sort of flaky behaviour."
             )
         else:
             raise MultipleFailures(
-                ("Hypothesis found %d distinct failures.")
-                % (len(self.falsifying_examples))
+                f"Hypothesis found {len(self.falsifying_examples)} distinct failures."
             )
 
     def __flaky(self, message):
@@ -1101,8 +1097,9 @@ def given(
                             type(err), err, err.__traceback__
                         )
                         report("".join(tb_lines))
-                    msg = "Hypothesis found %d failures in explicit examples."
-                    raise MultipleFailures(msg % (len(errors)))
+                    raise MultipleFailures(
+                        f"Hypothesis found {len(errors)} failures in explicit examples."
+                    )
                 elif errors:
                     fragments, the_error_hypothesis_found = errors[0]
                     for f in fragments:
@@ -1138,14 +1135,14 @@ def given(
                     if not (state.failed_normally or generated_seed is None):
                         if running_under_pytest:
                             report(
-                                "You can add @seed(%(seed)d) to this test or "
-                                "run pytest with --hypothesis-seed=%(seed)d "
-                                "to reproduce this failure." % {"seed": generated_seed}
+                                f"You can add @seed({generated_seed}) to this test or "
+                                f"run pytest with --hypothesis-seed={generated_seed} "
+                                "to reproduce this failure."
                             )
                         else:
                             report(
-                                "You can add @seed(%d) to this test to "
-                                "reproduce this failure." % (generated_seed,)
+                                f"You can add @seed({generated_seed}) to this test to "
+                                "reproduce this failure."
                             )
                     # The dance here is to avoid showing users long tracebacks
                     # full of Hypothesis internals they don't care about.

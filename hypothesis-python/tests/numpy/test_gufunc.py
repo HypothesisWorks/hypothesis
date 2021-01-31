@@ -20,6 +20,7 @@ from pytest import param
 from hypothesis import example, given, note, settings, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra import numpy as nps
+
 from tests.common.debug import find_any, minimal
 
 

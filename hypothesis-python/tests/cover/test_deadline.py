@@ -19,6 +19,7 @@ import pytest
 
 from hypothesis import given, settings, strategies as st
 from hypothesis.errors import DeadlineExceeded, Flaky, InvalidArgument
+
 from tests.common.utils import assert_falsifying_output, capture_out, fails_with
 
 

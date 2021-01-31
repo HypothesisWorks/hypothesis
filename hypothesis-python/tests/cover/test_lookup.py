@@ -33,6 +33,7 @@ from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.internal.compat import PYPY, get_type_hints, typing_root_type
 from hypothesis.strategies import from_type
 from hypothesis.strategies._internal import types
+
 from tests.common.debug import assert_all_examples, find_any, minimal
 from tests.common.utils import fails_with, temp_registered
 

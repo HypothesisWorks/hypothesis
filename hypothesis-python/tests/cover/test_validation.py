@@ -36,6 +36,7 @@ from hypothesis.strategies import (
     text,
 )
 from hypothesis.strategies._internal.strategies import check_strategy
+
 from tests.common.utils import fails_with
 
 

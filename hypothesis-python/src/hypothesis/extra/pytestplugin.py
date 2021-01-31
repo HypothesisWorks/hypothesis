@@ -94,8 +94,8 @@ else:
             profile = settings._current_profile
         settings_str = settings.get_profile(profile).show_changed()
         if settings_str != "":
-            settings_str = " -> %s" % (settings_str)
-        return "hypothesis profile %r%s" % (profile, settings_str)
+            settings_str = f" -> {settings_str}"
+        return f"hypothesis profile {profile!r}{settings_str}"
 
     def pytest_configure(config):
         core.running_under_pytest = True
@@ -105,14 +105,11 @@ else:
         verbosity_name = config.getoption(VERBOSITY_OPTION)
         if verbosity_name:
             verbosity_value = Verbosity[verbosity_name]
-            profile_name = "%s-with-%s-verbosity" % (
-                settings._current_profile,
-                verbosity_name,
-            )
+            name = f"{settings._current_profile}-with-{verbosity_name}-verbosity"
             # register_profile creates a new profile, exactly like the current one,
             # with the extra values given (in this case 'verbosity')
-            settings.register_profile(profile_name, verbosity=verbosity_value)
-            settings.load_profile(profile_name)
+            settings.register_profile(name, verbosity=verbosity_value)
+            settings.load_profile(name)
         seed = config.getoption(SEED_OPTION)
         if seed is not None:
             try:

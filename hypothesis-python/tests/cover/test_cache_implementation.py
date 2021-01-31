@@ -127,7 +127,7 @@ def test_always_evicts_the_lowest_scoring_value(writes, data):
     evicted = set()
 
     def new_score(key):
-        scores[key] = data.draw(st.integers(0, 1000), label="scores[%r]" % (key,))
+        scores[key] = data.draw(st.integers(0, 1000), label=f"scores[{key!r}]")
         return scores[key]
 
     last_entry = [None]
@@ -144,7 +144,7 @@ def test_always_evicts_the_lowest_scoring_value(writes, data):
             return new_score(key)
 
         def on_evict(self, key, value, score):
-            note("Evicted %r" % (key,))
+            note(f"Evicted {key!r}")
             assert score == scores[key]
             del scores[key]
             if len(scores) > 1:

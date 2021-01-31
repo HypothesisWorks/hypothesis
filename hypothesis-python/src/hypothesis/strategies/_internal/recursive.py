@@ -16,10 +16,13 @@
 import threading
 from contextlib import contextmanager
 
-from hypothesis.errors import InvalidArgument
 from hypothesis.internal.lazyformat import lazyformat
 from hypothesis.internal.reflection import get_pretty_function_description
-from hypothesis.strategies._internal.strategies import OneOfStrategy, SearchStrategy
+from hypothesis.strategies._internal.strategies import (
+    OneOfStrategy,
+    SearchStrategy,
+    check_strategy,
+)
 
 
 class LimitReached(BaseException):
@@ -49,7 +52,7 @@ class LimitedStrategy(SearchStrategy):
         self._threadlocal.currently_capped = value
 
     def __repr__(self):
-        return "LimitedStrategy(%r)" % (self.base_strategy,)
+        return f"LimitedStrategy({self.base_strategy!r})"
 
     def do_validate(self):
         self.base_strategy.validate()
@@ -94,18 +97,11 @@ class RecursiveStrategy(SearchStrategy):
         return self._cached_repr
 
     def do_validate(self):
-        if not isinstance(self.base, SearchStrategy):
-            raise InvalidArgument(
-                "Expected base to be SearchStrategy but got %r" % (self.base,)
-            )
+        check_strategy(self.base, "base")
         extended = self.extend(self.limited_base)
-        if not isinstance(extended, SearchStrategy):
-            raise InvalidArgument(
-                "Expected extend(%r) to be a SearchStrategy but got %r"
-                % (self.limited_base, extended)
-            )
+        check_strategy(extended, f"extend({self.limited_base!r})")
         self.limited_base.validate()
-        self.extend(self.limited_base).validate()
+        extended.validate()
 
     def do_draw(self, data):
         count = 0

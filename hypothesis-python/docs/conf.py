@@ -43,8 +43,8 @@ master_doc = "index"
 
 # General information about the project.
 project = "Hypothesis"
-copyright = "2013-%s, David R. MacIver" % datetime.datetime.utcnow().year
 author = "David R. MacIver"
+copyright = f"2013-{datetime.datetime.utcnow().year}, {author}"
 
 _d = {}
 with open(

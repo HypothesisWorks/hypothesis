@@ -20,13 +20,13 @@ Suppose we've got the following type:
 
 .. code:: python
 
-    class Node(object):
+    class Node:
         def __init__(self, label, value):
             self.label = label
             self.value = tuple(value)
 
         def __repr__(self):
-            return "Node(%r, %r)" % (self.label, self.value)
+            return f"Node({self.label!r}, {self.value!r})"
 
         def sorts_before(self, other):
             if len(self.value) >= len(other.value):
@@ -52,7 +52,7 @@ define the following code:
 
 
     @total_ordering
-    class TopoKey(object):
+    class TopoKey:
         def __init__(self, node):
             self.value = node
 
@@ -94,10 +94,9 @@ First we need to define a strategy for Node:
 
 .. code:: python
 
-  from hypothesis import settings, strategies
-  import hypothesis.strategies as s
+  import hypothesis.strategies as st
 
-  NodeStrategy = s.builds(Node, s.integers(), s.lists(s.booleans(), max_size=10))
+  NodeStrategy = st.builds(Node, st.integers(), st.lists(st.booleans(), max_size=10))
 
 We want to generate *short* lists of values so that there's a decent chance of
 one being a prefix of the other (this is also why the choice of bool as the
@@ -111,7 +110,7 @@ We can now write a test:
   from hypothesis import given
 
 
-  @given(s.lists(NodeStrategy))
+  @given(st.lists(NodeStrategy))
   def test_sorting_nodes_is_prefix_sorted(xs):
       sort_nodes(xs)
       assert is_prefix_sorted(xs)
@@ -141,7 +140,7 @@ for lists of nodes to give us a strategy for lists of nodes with unique labels:
 
 .. code:: python
 
-    @given(s.lists(NodeStrategy).map(deduplicate_nodes_by_label))
+    @given(st.lists(NodeStrategy).map(deduplicate_nodes_by_label))
     def test_sorting_nodes_is_prefix_sorted(xs):
         sort_nodes(xs)
         assert is_prefix_sorted(xs)
@@ -189,51 +188,47 @@ conversions behave as you would expect them to. These tests should all pass,
 and are mostly a demonstration of some useful sorts of thing to test with
 Hypothesis, and how the :func:`~hypothesis.strategies.datetimes` strategy works.
 
-.. code-block:: pycon
+.. code-block:: python
 
-    >>> from datetime import timedelta
-    >>> from hypothesis.extra.pytz import timezones
-    >>> from hypothesis.strategies import datetimes
+    from datetime import timedelta
 
-    >>> # The datetimes strategy is naive by default, so tell it to use timezones
-    >>> aware_datetimes = datetimes(timezones=timezones())
+    # The datetimes strategy is naive by default, so tell it to use timezones
+    aware_datetimes = st.datetimes(timezones=st.timezones())
 
-    >>> @given(aware_datetimes, timezones(), timezones())
-    ... def test_convert_via_intermediary(dt, tz1, tz2):
-    ...     """Test that converting between timezones is not affected
-    ...     by a detour via another timezone.
-    ...     """
-    ...     assert dt.astimezone(tz1).astimezone(tz2) == dt.astimezone(tz2)
 
-    >>> @given(aware_datetimes, timezones())
-    ... def test_convert_to_and_fro(dt, tz2):
-    ...     """If we convert to a new timezone and back to the old one
-    ...     this should leave the result unchanged.
-    ...     """
-    ...     tz1 = dt.tzinfo
-    ...     assert dt == dt.astimezone(tz2).astimezone(tz1)
+    @given(aware_datetimes, st.timezones(), st.timezones())
+    def test_convert_via_intermediary(dt, tz1, tz2):
+        """Test that converting between timezones is not affected
+        by a detour via another timezone.
+        """
+        assert dt.astimezone(tz1).astimezone(tz2) == dt.astimezone(tz2)
 
-    >>> @given(aware_datetimes, timezones())
-    ... def test_adding_an_hour_commutes(dt, tz):
-    ...     """When converting between timezones it shouldn't matter
-    ...     if we add an hour here or add an hour there.
-    ...     """
-    ...     an_hour = timedelta(hours=1)
-    ...     assert (dt + an_hour).astimezone(tz) == dt.astimezone(tz) + an_hour
 
-    >>> @given(aware_datetimes, timezones())
-    ... def test_adding_a_day_commutes(dt, tz):
-    ...     """When converting between timezones it shouldn't matter
-    ...     if we add a day here or add a day there.
-    ...     """
-    ...     a_day = timedelta(days=1)
-    ...     assert (dt + a_day).astimezone(tz) == dt.astimezone(tz) + a_day
+    @given(aware_datetimes, st.timezones())
+    def test_convert_to_and_fro(dt, tz2):
+        """If we convert to a new timezone and back to the old one
+        this should leave the result unchanged.
+        """
+        tz1 = dt.tzinfo
+        assert dt == dt.astimezone(tz2).astimezone(tz1)
 
-    >>> # And we can check that our tests pass
-    >>> test_convert_via_intermediary()
-    >>> test_convert_to_and_fro()
-    >>> test_adding_an_hour_commutes()
-    >>> test_adding_a_day_commutes()
+
+    @given(aware_datetimes, st.timezones())
+    def test_adding_an_hour_commutes(dt, tz):
+        """When converting between timezones it shouldn't matter
+        if we add an hour here or add an hour there.
+        """
+        an_hour = timedelta(hours=1)
+        assert (dt + an_hour).astimezone(tz) == dt.astimezone(tz) + an_hour
+
+
+    @given(aware_datetimes, st.timezones())
+    def test_adding_a_day_commutes(dt, tz):
+        """When converting between timezones it shouldn't matter
+        if we add a day here or add a day there.
+        """
+        a_day = timedelta(days=1)
+        assert (dt + a_day).astimezone(tz) == dt.astimezone(tz) + a_day
 
 -------------------
 Condorcet's paradox
@@ -254,9 +249,11 @@ Without further ado, here is the code:
 
 .. code:: python
 
-    from hypothesis import given, assume
-    from hypothesis.strategies import lists, permutations
     from collections import Counter
+
+    from hypothesis import given
+    from hypothesis.strategies import lists, permutations
+
 
     # We need at least three candidates and at least three voters to have a
     # paradox; anything less can only lead to victories or at worst ties.
@@ -314,19 +311,20 @@ hammer their API without their permission).
 All this does is use Hypothesis to generate arbitrary JSON data matching the
 format their API asks for and check for 500 errors. More advanced tests which
 then use the result and go on to do other things are definitely also possible.
-The :pypi:`swagger-conformance` package provides an excellent example of this!
+The :pypi:`schemathesis` package provides an excellent example of this!
 
 .. code:: python
 
-    import unittest
-    from hypothesis import given, assume, settings, strategies as st
-    from collections import namedtuple
-    import requests
+    import math
     import os
     import random
     import time
-    import math
+    import unittest
+    from collections import namedtuple
 
+    import requests
+
+    from hypothesis import assume, given, strategies as st
 
     Goal = namedtuple("Goal", ("slug",))
 

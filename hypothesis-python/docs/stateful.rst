@@ -82,8 +82,8 @@ in their behaviour.
 
   import shutil
   import tempfile
-
   from collections import defaultdict
+
   import hypothesis.strategies as st
   from hypothesis.database import DirectoryBasedExampleDatabase
   from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
@@ -91,7 +91,7 @@ in their behaviour.
 
   class DatabaseComparison(RuleBasedStateMachine):
       def __init__(self):
-          super(DatabaseComparison, self).__init__()
+          super().__init__()
           self.tempd = tempfile.mkdtemp()
           self.database = DirectoryBasedExampleDatabase(self.tempd)
           self.model = defaultdict(set)
@@ -220,7 +220,7 @@ Initializes are typically useful to populate bundles:
 .. code:: python
 
     import hypothesis.strategies as st
-    from hypothesis.stateful import RuleBasedStateMachine, Bundle, rule, initialize
+    from hypothesis.stateful import Bundle, RuleBasedStateMachine, initialize, rule
 
     name_strategy = st.text(min_size=1).filter(lambda x: "/" not in x)
 
@@ -236,11 +236,11 @@ Initializes are typically useful to populate bundles:
 
         @rule(target=folders, name=name_strategy)
         def create_folder(self, parent, name):
-            return "%s/%s" % (parent, name)
+            return f"{parent}/{name}"
 
         @rule(target=files, name=name_strategy)
         def create_file(self, parent, name):
-            return "%s/%s" % (parent, name)
+            return f"{parent}/{name}"
 
 
 -------------
@@ -258,7 +258,7 @@ that returns True or False based on the RuleBasedStateMachine instance.
 
 .. code:: python
 
-    from hypothesis.stateful import RuleBasedStateMachine, rule, precondition
+    from hypothesis.stateful import RuleBasedStateMachine, precondition, rule
 
 
     class NumberModifier(RuleBasedStateMachine):
@@ -295,7 +295,7 @@ decorator that marks a function to be run after every step.
 
 .. code:: python
 
-    from hypothesis.stateful import RuleBasedStateMachine, rule, invariant
+    from hypothesis.stateful import RuleBasedStateMachine, invariant, rule
 
 
     class NumberModifier(RuleBasedStateMachine):

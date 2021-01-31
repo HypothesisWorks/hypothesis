@@ -33,7 +33,7 @@ class IntervalSet:
         if i < 0:
             i = self.size + i
         if i < 0 or i >= self.size:
-            raise IndexError("Invalid index %d for [0, %d)" % (i, self.size))
+            raise IndexError(f"Invalid index {i} for [0, {self.size})")
         # Want j = maximal such that offsets[j] <= i
 
         j = len(self.intervals) - 1
@@ -55,17 +55,17 @@ class IntervalSet:
         return r
 
     def __repr__(self):
-        return "IntervalSet(%r)" % (self.intervals,)
+        return f"IntervalSet({self.intervals!r})"
 
     def index(self, value):
         for offset, (u, v) in zip(self.offsets, self.intervals):
             if u == value:
                 return offset
             elif u > value:
-                raise ValueError("%d is not in list" % (value,))
+                raise ValueError(f"{value} is not in list")
             if value <= v:
                 return offset + (value - u)
-        raise ValueError("%d is not in list" % (value,))
+        raise ValueError(f"{value} is not in list")
 
     def index_above(self, value):
         for offset, (u, v) in zip(self.offsets, self.intervals):

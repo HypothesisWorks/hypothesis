@@ -45,8 +45,7 @@ def fulfill(contract_func):
     """
     if not hasattr(contract_func, "__contract_wrapped_func__"):
         raise InvalidArgument(
-            "There are no dpcontracts preconditions associated with %s"
-            % (contract_func.__name__,)
+            f"{contract_func.__name__} has no dpcontracts preconditions"
         )
 
     @proxies(contract_func)

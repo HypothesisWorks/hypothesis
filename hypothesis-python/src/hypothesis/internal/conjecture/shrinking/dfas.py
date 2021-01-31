@@ -57,7 +57,7 @@ def update_learned_dfas():
     lines.append("")
 
     for k, v in sorted(SHRINKING_DFAS.items()):
-        lines.append("SHRINKING_DFAS[%r] = %r  # noqa: E501" % (k, v))
+        lines.append(f"SHRINKING_DFAS[{k!r}] = {v!r}  # noqa: E501")
 
     lines.append("")
     lines.append("# fmt: on")

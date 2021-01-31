@@ -48,7 +48,7 @@ def assignment_matcher(name):
     i.e. group 1 is the assignment, group 2 is the value. In the above
     example group 1 would be "  foo = " and group 2 would be "1"
     """
-    return re.compile(r"\A(\s*%s\s*=\s*)(.+)\Z" % (re.escape(name),))
+    return re.compile(r"\A(\s*{}\s*=\s*)(.+)\Z".format(re.escape(name)))
 
 
 def extract_assignment_from_string(contents, name):
@@ -61,7 +61,7 @@ def extract_assignment_from_string(contents, name):
         if match is not None:
             return match[2].strip()
 
-    raise ValueError("Key %s not found in %s" % (name, contents))
+    raise ValueError(f"Key {name} not found in {contents}")
 
 
 def extract_assignment(filename, name):
@@ -83,9 +83,9 @@ def replace_assignment_in_string(contents, name, value):
             lines[i] = match[1] + value
 
     if count == 0:
-        raise ValueError("Key %s not found in %s" % (name, contents))
+        raise ValueError(f"Key {name} not found in {contents}")
     if count > 1:
-        raise ValueError("Key %s found %d times in %s" % (name, count, contents))
+        raise ValueError(f"Key {name} found {count} times in {contents}")
 
     return "\n".join(lines)
 
@@ -128,16 +128,16 @@ def parse_release_file_contents(release_contents, filename):
     if m is not None:
         release_type = m.group(1)
         if release_type not in VALID_RELEASE_TYPES:
-            raise ValueError("Unrecognised release type %r" % (release_type,))
+            raise ValueError(f"Unrecognised release type {release_type!r}")
         del release_lines[0]
         release_contents = "\n".join(release_lines).strip()
     else:
         raise ValueError(
-            "%s does not start by specifying release type. The first "
+            f"{filename} does not start by specifying release type. The first "
             "line of the file should be RELEASE_TYPE: followed by one of "
             "major, minor, or patch, to specify the type of release that "
             "this is (i.e. which version number to increment). Instead the "
-            "first line was %r" % (filename, release_lines[0])
+            f"first line was {release_lines[0]!r}"
         )
 
     return release_type, release_contents
@@ -158,11 +158,7 @@ def update_markdown_changelog(changelog, name, version, entry):
     with open(changelog) as i:
         prev_contents = i.read()
 
-    title = "# %(name)s %(version)s (%(date)s)\n\n" % {
-        "name": name,
-        "version": version,
-        "date": release_date_string(),
-    }
+    title = f"# {name} {version} ({release_date_string()})\n\n"
 
     with open(changelog, "w") as o:
         o.write(title)
@@ -183,6 +179,6 @@ def commit_pending_release(project):
     tools.git(
         "commit",
         "-m",
-        "Bump %s version to %s and update changelog"
-        "\n\n[skip ci]" % (project.PACKAGE_NAME, project.current_version()),
+        f"Bump {project.PACKAGE_NAME} version to {project.current_version()} "
+        + "and update changelog\n\n[skip ci]",
     )

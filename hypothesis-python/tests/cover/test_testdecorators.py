@@ -33,6 +33,7 @@ from hypothesis.strategies import (
     sets,
     text,
 )
+
 from tests.common.utils import (
     assert_falsifying_output,
     capture_out,
@@ -82,7 +83,7 @@ def test_still_minimizes_on_non_assertion_failures():
     @given(integers())
     def is_not_too_large(x):
         if x >= 10:
-            raise ValueError("No, %s is just too large. Sorry" % x)
+            raise ValueError(f"No, {x} is just too large. Sorry")
 
     with raises(ValueError) as exinfo:
         is_not_too_large()

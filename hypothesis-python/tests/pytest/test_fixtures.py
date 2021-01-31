@@ -19,6 +19,7 @@ import pytest
 
 from hypothesis import example, given
 from hypothesis.strategies import integers
+
 from tests.common.utils import fails
 
 pytest_plugins = "pytester"

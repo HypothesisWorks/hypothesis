@@ -51,7 +51,7 @@ def belongs_to(package):
         cache[ftype][filepath] = result
         return result
 
-    accept.__name__ = "is_%s_file" % (package.__name__,)
+    accept.__name__ = f"is_{package.__name__}_file"
     return accept
 
 

@@ -28,7 +28,7 @@ class FlatMapStrategy(SearchStrategy):
 
     def __repr__(self):
         if not hasattr(self, "_cached_repr"):
-            self._cached_repr = "%r.flatmap(%s)" % (
+            self._cached_repr = "{!r}.flatmap({})".format(
                 self.flatmapped_strategy,
                 get_pretty_function_description(self.expand),
             )

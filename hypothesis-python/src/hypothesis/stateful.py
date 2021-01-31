@@ -94,7 +94,7 @@ def run_state_machine_as_test(state_machine_factory, *, settings=None):
         )
         try:
             if print_steps:
-                report("state = %s()" % (machine.__class__.__name__,))
+                report(f"state = {machine.__class__.__name__}()")
             machine.check_invariants()
             max_steps = settings.stateful_step_count
             steps_run = 0
@@ -224,7 +224,7 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
 
     def __init__(self):
         if not self.rules():
-            raise InvalidDefinition("Type %s defines no rules" % (type(self).__name__,))
+            raise InvalidDefinition(f"Type {type(self).__name__} defines no rules")
         self.bundles = {}  # type: Dict[str, list]
         self.name_counter = 1
         self.names_to_values = {}  # type: Dict[str, Any]
@@ -246,17 +246,17 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         return self.__stream.getvalue()
 
     def __repr__(self):
-        return "%s(%s)" % (type(self).__name__, nicerepr(self.bundles))
+        return "{}({})".format(type(self).__name__, nicerepr(self.bundles))
 
     def _new_name(self):
-        result = "v%d" % (self.name_counter,)
+        result = f"v{self.name_counter}"
         self.name_counter += 1
         return result
 
     def _last_names(self, n):
         assert self.name_counter > n
         count = self.name_counter
-        return ["v%d" % (i,) for i in range(count - n, count)]
+        return [f"v{i}" for i in range(count - n, count)]
 
     def bundle(self, name):
         return self.bundles.setdefault(name, [])
@@ -338,14 +338,12 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
             n_output_vars = len(result.values)
         else:
             n_output_vars = 1
-        output_assignment = (
-            "%s = " % (", ".join(self._last_names(n_output_vars)),)
-            if rule.targets and n_output_vars >= 1
-            else ""
-        )
+        if rule.targets and n_output_vars >= 1:
+            output_assignment = ", ".join(self._last_names(n_output_vars)) + " = "
+        else:
+            output_assignment = ""
         report(
-            "%sstate.%s(%s)"
-            % (
+            "{}state.{}({})".format(
                 output_assignment,
                 rule.function.__name__,
                 ", ".join("%s=%s" % kv for kv in data.items()),
@@ -451,8 +449,8 @@ class Bundle(SearchStrategy):
     def __repr__(self):
         consume = self.__reference_strategy.consume
         if consume is False:
-            return "Bundle(name=%r)" % (self.name,)
-        return "Bundle(name=%r, consume=%r)" % (self.name, consume)
+            return f"Bundle(name={self.name!r})"
+        return f"Bundle(name={self.name!r}, consume={consume!r})"
 
     def calc_is_empty(self, recur):
         # We assume that a bundle will grow over time
@@ -761,14 +759,14 @@ class RuleStrategy(SearchStrategy):
         )
 
     def __repr__(self):
-        return "%s(machine=%s({...}))" % (
+        return "{}(machine={}({{...}}))".format(
             self.__class__.__name__,
             self.machine.__class__.__name__,
         )
 
     def do_draw(self, data):
         if not any(self.is_valid(rule) for rule in self.rules):
-            msg = "No progress can be made from state %r" % (self.machine,)
+            msg = f"No progress can be made from state {self.machine!r}"
             raise InvalidDefinition(msg) from None
 
         feature_flags = data.draw(self.enabled_rules_strategy)

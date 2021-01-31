@@ -21,6 +21,7 @@ import time as time_module
 import pytest
 
 from hypothesis.internal.detection import is_hypothesis_test
+
 from tests.common import TIME_INCREMENT
 from tests.common.setup import run
 
@@ -104,8 +105,8 @@ def pytest_runtest_call(item):
         if before != after:
             if after in random_states_after_tests:
                 raise Exception(
-                    "%r and %r both used the `random` module, and finished with the "
+                    f"{item.nodeid!r} and {random_states_after_tests[after]!r} "
+                    "both used the `random` module, and finished with the "
                     "same global `random.getstate()`; this is probably a nasty bug!"
-                    % (item.nodeid, random_states_after_tests[after])
                 )
             random_states_after_tests[after] = item.nodeid

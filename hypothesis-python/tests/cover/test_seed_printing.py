@@ -20,6 +20,7 @@ import pytest
 from hypothesis import Verbosity, assume, core, given, settings, strategies as st
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.errors import FailedHealthCheck
+
 from tests.common.utils import all_values, capture_out
 
 
@@ -57,12 +58,12 @@ def test_prints_seed_only_on_healthcheck(
     seed = test._hypothesis_internal_use_generated_seed
     assert seed is not None
     if fail_healthcheck and verbosity != Verbosity.quiet:
-        assert "@seed(%d)" % (seed,) in output
-        contains_pytest_instruction = ("--hypothesis-seed=%d" % (seed,)) in output
+        assert f"@seed({seed})" in output
+        contains_pytest_instruction = (f"--hypothesis-seed={seed}") in output
         assert contains_pytest_instruction == in_pytest
     else:
         assert "@seed" not in output
-        assert "--hypothesis-seed=%d" % (seed,) not in output
+        assert f"--hypothesis-seed={seed}" not in output
 
 
 def test_uses_global_force(monkeypatch):

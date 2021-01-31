@@ -19,6 +19,7 @@ import pytest
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import characters
+
 from tests.common.debug import assert_no_examples, find_any, minimal
 from tests.common.utils import fails_with
 

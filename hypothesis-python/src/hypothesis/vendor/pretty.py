@@ -636,7 +636,7 @@ def _dict_pprinter_factory(start, end, basetype=None):
             p.pretty(obj[key])
         p.end_group(1, end)
 
-    inner.__name__ = "_dict_pprinter_factory(%r, %r, %r)" % (start, end, basetype)
+    inner.__name__ = f"_dict_pprinter_factory({start!r}, {end!r}, {basetype!r})"
     return inner
 
 
@@ -744,7 +744,7 @@ def _exception_pprint(obj, p, cycle):
     """Base pprint for all exceptions."""
     name = getattr(obj.__class__, "__qualname__", obj.__class__.__name__)
     if obj.__class__.__module__ not in ("exceptions", "builtins"):
-        name = "%s.%s" % (obj.__class__.__module__, name)
+        name = f"{obj.__class__.__module__}.{name}"
     step = len(name) + 1
     p.begin_group(step, name + "(")
     for idx, arg in enumerate(getattr(obj, "args", ())):

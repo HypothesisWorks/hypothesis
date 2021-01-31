@@ -19,6 +19,7 @@ import pytest
 
 from hypothesis import given, strategies as st
 from hypothesis.errors import InvalidArgument
+
 from tests.common.utils import counts_calls, fails_with
 
 

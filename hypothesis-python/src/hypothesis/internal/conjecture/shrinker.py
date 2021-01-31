@@ -193,8 +193,7 @@ class Shrinker:
         i = 0
         while i < len(self.shrink_target.buffer):
             if not self.incorporate_new_buffer(
-                self.shrink_target.buffer[: i] +
-                self.shrink_target.buffer[i + 1 :]
+                self.shrink_target.buffer[:i] + self.shrink_target.buffer[i + 1 :]
             ):
                 i += 1
 
@@ -1266,6 +1265,7 @@ class Shrinker:
             import hypothesis.strategies as st
             from hypothesis import given
 
+
             @given(st.text(), st.text())
             def test_not_equal(x, y):
                 assert x != y
@@ -1330,13 +1330,13 @@ class Shrinker:
                 elif d == "X":
                     del attempt[u:v]
                 else:  # pragma: no cover
-                    raise AssertionError("Unrecognised command %r" % (d,))
+                    raise AssertionError(f"Unrecognised command {d!r}")
         return self.incorporate_new_buffer(attempt)
 
 
 def shrink_pass_family(f):
     def accept(*args):
-        name = "%s(%s)" % (f.__name__, ", ".join(map(repr, args)))
+        name = "{}({})".format(f.__name__, ", ".join(map(repr, args)))
         if name not in SHRINK_PASS_DEFINITIONS:
 
             def run(self, chooser):

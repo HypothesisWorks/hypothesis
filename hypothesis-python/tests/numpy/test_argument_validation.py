@@ -22,8 +22,8 @@ from hypothesis.extra import numpy as nps
 
 
 def e(a, **kwargs):
-    rep = "%s(%s)" % (a.__name__, ", ".join("%s=%r" % it for it in kwargs.items()))
-    return pytest.param(a, kwargs, id=rep)
+    kw = ", ".join(f"{k}={v!r}" for k, v in kwargs.items())
+    return pytest.param(a, kwargs, id=f"{a.__name__}({kw})")
 
 
 @pytest.mark.parametrize(

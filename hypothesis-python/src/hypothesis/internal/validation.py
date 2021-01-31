@@ -63,9 +63,9 @@ def check_valid_bound(value, name):
     if value is None or isinstance(value, (int, Rational)):
         return
     if not isinstance(value, (Real, decimal.Decimal)):
-        raise InvalidArgument("%s=%r must be a real number." % (name, value))
+        raise InvalidArgument(f"{name}={value!r} must be a real number.")
     if math.isnan(value):
-        raise InvalidArgument("Invalid end point %s=%r" % (name, value))
+        raise InvalidArgument(f"Invalid end point {name}={value!r}")
 
 
 @check_function
@@ -77,7 +77,7 @@ def check_valid_magnitude(value, name):
     """
     check_valid_bound(value, name)
     if value is not None and value < 0:
-        raise InvalidArgument("%s=%r must not be negative." % (name, value))
+        raise InvalidArgument(f"{name}={value!r} must not be negative.")
     elif value is None and name == "min_magnitude":
         raise InvalidArgument("Use min_magnitude=0 or omit the argument entirely.")
 
@@ -108,7 +108,7 @@ def check_valid_size(value, name):
         return
     check_type(int, value, name)
     if value < 0:
-        raise InvalidArgument("Invalid size %s=%r < 0" % (name, value))
+        raise InvalidArgument(f"Invalid size {name}={value!r} < 0")
 
 
 @check_function

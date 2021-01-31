@@ -1,5 +1,3 @@
-autoflake
-black
 blacken-docs
 coverage
 django
@@ -12,17 +10,16 @@ flake8-comprehensions
 flake8-docstrings
 flake8-mutable
 ipython < 7.17  # drops support for Python 3.6
-isort
 lark-parser
 libcst
 mypy
 pip-tools
 pytest
 python-dateutil
-pyupgrade
 pyupio
 requests
 restructuredtext-lint
+shed
 sphinx
 sphinx-hoverxref
 sphinx-rtd-theme

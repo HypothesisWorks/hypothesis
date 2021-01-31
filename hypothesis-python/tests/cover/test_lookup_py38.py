@@ -20,6 +20,7 @@ import pytest
 
 from hypothesis import given, strategies as st
 from hypothesis.strategies import from_type
+
 from tests.common.debug import find_any
 
 

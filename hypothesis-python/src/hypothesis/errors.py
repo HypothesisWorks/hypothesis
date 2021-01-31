@@ -37,9 +37,7 @@ class NoSuchExample(HypothesisException):
     """
 
     def __init__(self, condition_string, extra=""):
-        super().__init__(
-            "No examples found of condition %s%s" % (condition_string, extra)
-        )
+        super().__init__(f"No examples found of condition {condition_string}{extra}")
 
 
 class Unsatisfiable(HypothesisException):

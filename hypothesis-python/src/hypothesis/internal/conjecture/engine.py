@@ -73,7 +73,7 @@ class ExitReason(Enum):
         "settings.max_examples={s.max_examples}, "
         "but < 10% of examples satisfied assumptions"
     )
-    max_shrinks = "shrunk example %s times" % (MAX_SHRINKS,)
+    max_shrinks = f"shrunk example {MAX_SHRINKS} times"
     finished = "nothing left to do"
     flaky = "test was flaky"
     very_slow_shrinking = "shrinking was very slow"
@@ -485,11 +485,9 @@ class ConjectureRunner:
         status = repr(data.status)
 
         if data.status == Status.INTERESTING:
-            status = "%s (%r)" % (status, data.interesting_origin)
+            status = f"{status} ({data.interesting_origin!r})"
 
-        self.debug(
-            "%d bytes %r -> %s, %s" % (data.index, stack[0], status, data.output)
-        )
+        self.debug(f"{data.index} bytes {stack[0]!r} -> {status}, {data.output}")
 
     def run(self):
         with local_settings(self.settings):
@@ -584,7 +582,7 @@ class ConjectureRunner:
         self.statistics["stopped-because"] = reason.describe(self.settings)
         if self.best_observed_targets:
             self.statistics["targets"] = dict(self.best_observed_targets)
-        self.debug("exit_with(%s)" % (reason.name,))
+        self.debug(f"exit_with({reason.name})")
         self.exit_reason = reason
         raise RunIsComplete()
 
@@ -955,7 +953,7 @@ class ConjectureRunner:
                 ),
                 key=lambda kv: (sort_key(kv[1].buffer), sort_key(repr(kv[0]))),
             )
-            self.debug("Shrinking %r" % (target,))
+            self.debug(f"Shrinking {target!r}")
 
             if not self.settings.report_multiple_bugs:
                 # If multi-bug reporting is disabled, we shrink our currently-minimal

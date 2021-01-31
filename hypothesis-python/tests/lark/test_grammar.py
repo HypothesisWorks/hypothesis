@@ -22,6 +22,7 @@ from hypothesis import given
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.lark import from_lark
 from hypothesis.strategies import data, just
+
 from tests.common.debug import find_any
 
 # Adapted from the official Lark tutorial, with modifications to ensure

@@ -70,5 +70,5 @@ def test_chained_filters_repr(base):
 
     filtered = base.filter(foo)
     chained = filtered.filter(bar)
-    assert repr(chained) == "%r.filter(foo).filter(bar)" % (base,)
-    assert repr(filtered) == "%r.filter(foo)" % (base,)
+    assert repr(chained) == f"{base!r}.filter(foo).filter(bar)"
+    assert repr(filtered) == f"{base!r}.filter(foo)"

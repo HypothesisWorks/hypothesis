@@ -54,19 +54,10 @@ class HypothesisRandom(Random):
             return
 
         args, kwargs = convert_kwargs(method, kwargs)
-
-        report(
-            "%r.%s(%s) -> %r"
-            % (
-                self,
-                method,
-                ", ".join(
-                    list(map(repr, args))
-                    + ["%s=%r" % (k, v) for k, v in kwargs.items()]
-                ),
-                result,
-            )
+        argstr = ", ".join(
+            list(map(repr, args)) + [f"{k}={v!r}" for k, v in kwargs.items()]
         )
+        report(f"{self!r}.{method}({argstr}) -> {result!r}")
 
     def _hypothesis_do_random(self, method, kwargs):
         raise NotImplementedError()
@@ -265,9 +256,7 @@ class ArtificialRandom(HypothesisRandom):
 
             step = kwargs["step"]
             if start == stop:
-                raise ValueError(
-                    "empty range for randrange(%d, %d, %d)" % (start, stop, step)
-                )
+                raise ValueError(f"empty range for randrange({start}, {stop}, {step})")
 
             if step != 1:
                 endpoint = (stop - start) // step
@@ -298,7 +287,7 @@ class ArtificialRandom(HypothesisRandom):
 
             if k > len(seq) or k < 0:
                 raise ValueError(
-                    "Sample size %d not in expected range 0 <= k <= %d" % (k, len(seq))
+                    f"Sample size {k} not in expected range 0 <= k <= {len(seq)}"
                 )
 
             result = self.__data.draw(
@@ -419,7 +408,7 @@ class TrueRandom(HypothesisRandom):
         return result
 
     def __repr__(self):
-        return "Random(%r)" % (self.__seed,)
+        return f"Random({self.__seed!r})"
 
     def seed(self, seed):
         self.__random.seed(seed)

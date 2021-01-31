@@ -196,24 +196,22 @@ def convert_positional_arguments(function, args, kwargs):
     if len(args) < len(argspec.args):
         for i in range(len(args), len(argspec.args) - len(argspec.defaults or ())):
             if argspec.args[i] not in kwargs:
-                raise TypeError(
-                    "No value provided for argument %s" % (argspec.args[i],)
-                )
+                raise TypeError(f"No value provided for argument {argspec.args[i]}")
     for kw in argspec.kwonlyargs:
         if kw not in new_kwargs:
-            raise TypeError("No value provided for argument %s" % kw)
+            raise TypeError(f"No value provided for argument {kw}")
 
     if len(args) > len(argspec.args) and not argspec.varargs:
         raise TypeError(
-            "%s() takes at most %d positional arguments (%d given)"
-            % (function.__name__, len(argspec.args), len(args))
+            "{}() takes at most {} positional arguments ({} given)".format(
+                function.__name__, len(argspec.args), len(args)
+            )
         )
 
     for arg, name in zip(args, argspec.args):
         if name in new_kwargs:
             raise TypeError(
-                "%s() got multiple values for keyword argument %r"
-                % (function.__name__, name)
+                f"{function.__name__}() got multiple values for keyword argument {name!r}"
             )
         else:
             new_kwargs[name] = arg
@@ -268,7 +266,7 @@ def extract_lambda_source(f):
             arg_strings.append(a)
 
     if arg_strings:
-        if_confused = "lambda %s: <unknown>" % (", ".join(arg_strings),)
+        if_confused = "lambda {}: <unknown>".format(", ".join(arg_strings))
     else:
         if_confused = "lambda: <unknown>"
     try:
@@ -397,7 +395,7 @@ def get_pretty_function_description(f):
         # Some objects, like `builtins.abs` are of BuiltinMethodType but have
         # their module as __self__.  This might include c-extensions generally?
         if not (self is None or inspect.isclass(self) or inspect.ismodule(self)):
-            return "%r.%s" % (self, name)
+            return f"{self!r}.{name}"
     return name
 
 
@@ -420,10 +418,10 @@ def arg_string(f, args, kwargs, reorder=True):
 
     for a in argspec.args:
         if a in kwargs:
-            bits.append("%s=%s" % (a, nicerepr(kwargs.pop(a))))
+            bits.append("{}={}".format(a, nicerepr(kwargs.pop(a))))
     if kwargs:
         for a in sorted(kwargs):
-            bits.append("%s=%s" % (a, nicerepr(kwargs[a])))
+            bits.append("{}={}".format(a, nicerepr(kwargs[a])))
 
     return ", ".join([nicerepr(x) for x in args] + bits)
 
@@ -436,7 +434,7 @@ def unbind_method(f):
 
 def check_valid_identifier(identifier):
     if not identifier.isidentifier():
-        raise ValueError("%r is not a valid python identifier" % (identifier,))
+        raise ValueError(f"{identifier!r} is not a valid python identifier")
 
 
 eval_cache = {}  # type: dict
@@ -484,7 +482,7 @@ def define_function_signature(name, docstring, argspec):
         for a in argspec.args[:-n_defaults]:
             parts.append(a)
         for a in argspec.args[-n_defaults:]:
-            parts.append("%s=not_set" % (a,))
+            parts.append(f"{a}=not_set")
     else:
         parts = list(argspec.args)
     used_names = list(argspec.args) + list(argspec.kwonlyargs)
@@ -509,12 +507,12 @@ def define_function_signature(name, docstring, argspec):
         elif argspec.kwonlyargs:
             parts.append("*")
         for k in must_pass_as_kwargs:
-            invocation_parts.append("%(k)s=%(k)s" % {"k": k})
+            invocation_parts.append(f"{k}={k}")
 
         for k in argspec.kwonlyargs:
-            invocation_parts.append("%(k)s=%(k)s" % {"k": k})
+            invocation_parts.append(f"{k}={k}")
             if k in (argspec.kwonlydefaults or []):
-                parts.append("%(k)s=not_set" % {"k": k})
+                parts.append(f"{k}=not_set")
             else:
                 parts.append(k)
         if argspec.varkw:
@@ -522,7 +520,7 @@ def define_function_signature(name, docstring, argspec):
             parts.append("**" + argspec.varkw)
             invocation_parts.append("**" + argspec.varkw)
 
-        candidate_names = ["f"] + ["f_%d" % (i,) for i in range(1, len(used_names) + 2)]
+        candidate_names = ["f"] + [f"f_{i}" for i in range(1, len(used_names) + 2)]
 
         for funcname in candidate_names:  # pragma: no branch
             if funcname not in used_names:

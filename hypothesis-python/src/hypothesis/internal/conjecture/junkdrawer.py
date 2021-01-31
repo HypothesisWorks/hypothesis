@@ -68,11 +68,11 @@ class IntList:
             except OverflowError:
                 pass
         else:  # pragma: no cover
-            raise AssertionError("Could not create storage for %r" % (values,))
+            raise AssertionError(f"Could not create storage for {values!r}")
         if isinstance(self.__underlying, list):
             for v in self.__underlying:
                 if v < 0 or not isinstance(v, int):
-                    raise ValueError("Could not create IntList for %r" % (values,))
+                    raise ValueError(f"Could not create IntList for {values!r}")
 
     @classmethod
     def of_length(self, n):
@@ -82,7 +82,7 @@ class IntList:
         return self.__underlying.count(n)
 
     def __repr__(self):
-        return "IntList(%r)" % (list(self),)
+        return f"IntList({list(self)!r})"
 
     def __len__(self):
         return len(self.__underlying)
@@ -202,7 +202,7 @@ class LazySequenceCopy:
     def __check_index(self, i):
         n = len(self)
         if i < -n or i >= n:
-            raise IndexError("Index %d out of range [0, %d)" % (i, n))
+            raise IndexError(f"Index {i} out of range [0, {n})")
         if i < 0:
             i += n
         assert 0 <= i < n
@@ -309,7 +309,7 @@ class SelfOrganisingList:
         self.__values = list(values)
 
     def __repr__(self):
-        return "SelfOrganisingList(%r)" % (self.__values,)
+        return f"SelfOrganisingList({self.__values!r})"
 
     def add(self, value):
         """Add a value to this list."""

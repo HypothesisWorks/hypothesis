@@ -102,11 +102,10 @@ explicitly by using the :func:`@example <hypothesis.example>` decorator:
 
 .. code:: python
 
-  from hypothesis import given, example
-  from hypothesis.strategies import text
+  from hypothesis import example, given, strategies as st
 
 
-  @given(text())
+  @given(st.text())
   @example("")
   def test_decode_inverts_encode(s):
       assert decode(encode(s)) == s
@@ -122,7 +121,7 @@ well as positional. The following would have worked just as well:
 
 .. code:: python
 
-  @given(s=text())
+  @given(s=st.text())
   @example(s="")
   def test_decode_inverts_encode(s):
       assert decode(encode(s)) == s
@@ -234,8 +233,7 @@ Here are some other examples of how you could use that:
 
 .. code:: python
 
-    from hypothesis import given
-    import hypothesis.strategies as st
+    from hypothesis import given, strategies as st
 
 
     @given(st.integers(), st.integers())

@@ -219,9 +219,9 @@ def datetimes(
     check_type(dt.datetime, min_value, "min_value")
     check_type(dt.datetime, max_value, "max_value")
     if min_value.tzinfo is not None:
-        raise InvalidArgument("min_value=%r must not have tzinfo" % (min_value,))
+        raise InvalidArgument(f"min_value={min_value!r} must not have tzinfo")
     if max_value.tzinfo is not None:
-        raise InvalidArgument("max_value=%r must not have tzinfo" % (max_value,))
+        raise InvalidArgument(f"max_value={max_value!r} must not have tzinfo")
     check_valid_interval(min_value, max_value, "min_value", "max_value")
     if not isinstance(timezones, SearchStrategy):
         raise InvalidArgument(

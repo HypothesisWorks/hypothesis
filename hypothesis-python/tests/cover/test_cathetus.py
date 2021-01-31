@@ -35,21 +35,21 @@ def test_cathetus_simple_underflow():
     a = sys.float_info.min
     h = a * math.sqrt(2)
     b = cathetus(h, a)
-    assert b > 0, "expecting positive cathetus(%g, %g), got %g" % (h, a, b)
+    assert b > 0, f"expecting positive cathetus({h:g}, {a:g}), got {b:g}"
 
 
 def test_cathetus_huge_no_overflow():
     h = sys.float_info.max
     a = h / math.sqrt(2)
     b = cathetus(h, a)
-    assert math.isfinite(b), "expecting finite cathetus(%g, %g), got %g" % (h, a, b)
+    assert math.isfinite(b), f"expecting finite cathetus({h:g}, {a:g}), got {b:g}"
 
 
 def test_cathetus_large_no_overflow():
     h = sys.float_info.max / 3
     a = h / math.sqrt(2)
     b = cathetus(h, a)
-    assert math.isfinite(b), "expecting finite cathetus(%g, %g), got %g" % (h, a, b)
+    assert math.isfinite(b), f"expecting finite cathetus({h:g}, {a:g}), got {b:g}"
 
 
 @pytest.mark.parametrize(

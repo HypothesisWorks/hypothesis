@@ -18,6 +18,7 @@ import sys
 
 from hypothesis import given, reject, strategies as st
 from hypothesis.strategies import complex_numbers
+
 from tests.common.debug import minimal
 
 

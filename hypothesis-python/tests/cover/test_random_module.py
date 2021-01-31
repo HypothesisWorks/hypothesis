@@ -21,6 +21,7 @@ from hypothesis import find, given, register_random, reporting, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal import entropy
 from hypothesis.internal.entropy import deterministic_PRNG
+
 from tests.common.utils import capture_out
 
 

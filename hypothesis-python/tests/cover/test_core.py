@@ -74,7 +74,7 @@ def test_given_shrinks_pytest_helper_errors():
     def inner(x):
         final_value[0] = x
         if x > 100:
-            pytest.fail("x=%r is too big!" % x)
+            pytest.fail(f"x={x!r} is too big!")
 
     with pytest.raises(Failed):
         inner()
@@ -89,7 +89,7 @@ def test_pytest_skip_skips_shrinking():
     def inner(x):
         values.append(x)
         if x > 100:
-            pytest.skip("x=%r is too big!" % x)
+            pytest.skip(f"x={x!r} is too big!")
 
     with pytest.raises(Skipped):
         inner()

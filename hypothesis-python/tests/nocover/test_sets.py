@@ -15,6 +15,7 @@
 
 from hypothesis import given, settings
 from hypothesis.strategies import floats, integers, sets
+
 from tests.common.debug import find_any
 
 

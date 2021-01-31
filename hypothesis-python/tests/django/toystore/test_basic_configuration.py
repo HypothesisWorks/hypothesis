@@ -24,6 +24,7 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.extra.django import TestCase, TransactionTestCase
 from hypothesis.internal.compat import PYPY
 from hypothesis.strategies import integers
+
 from tests.django.toystore.models import Company
 
 

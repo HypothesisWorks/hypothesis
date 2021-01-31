@@ -36,7 +36,7 @@ def test_charmap_has_right_categories():
         for u, v in intervals:
             for i in range(u, v + 1):
                 real = unicodedata.category(chr(i))
-                assert real == cat, "%d is %s but reported in %s" % (i, real, cat)
+                assert real == cat, f"{i} is {real} but reported in {cat}"
 
 
 def assert_valid_range_list(ls):

@@ -62,7 +62,7 @@ except ImportError:
 def type_sorting_key(t):
     """Minimise to None, then non-container types, then container types."""
     if not is_a_type(t):  # This branch is for Python < 3.8
-        raise InvalidArgument("thing=%s must be a type" % (t,))  # pragma: no cover
+        raise InvalidArgument(f"thing={t} must be a type")  # pragma: no cover
     if t is None or t is type(None):  # noqa: E721
         return (-1, repr(t))
     if not isinstance(t, type):  # pragma: no cover
@@ -201,7 +201,7 @@ def from_typing_type(thing):
     if sys.version_info[:2] < (3, 9) and not isinstance(
         thing, typing_root_type
     ):  # pragma: no cover
-        raise ResolutionFailed("Cannot resolve %s to a strategy" % (thing,))
+        raise ResolutionFailed(f"Cannot resolve {thing} to a strategy")
 
     # Some "generic" classes are not generic *in* anything - for example both
     # Hashable and Sized have `__args__ == ()` on Python 3.7 or later.
@@ -655,7 +655,7 @@ def resolve_Callable(thing):
 
 @register(typing.TypeVar)
 def resolve_TypeVar(thing):
-    type_var_key = "typevar=%r" % (thing,)
+    type_var_key = f"typevar={thing!r}"
 
     if getattr(thing, "__bound__", None) is not None:
         bound = thing.__bound__

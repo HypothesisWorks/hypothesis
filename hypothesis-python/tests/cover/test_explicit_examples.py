@@ -35,6 +35,7 @@ from hypothesis.errors import (
     MultipleFailures,
 )
 from hypothesis.strategies import floats, integers, nothing, text
+
 from tests.common.utils import assert_falsifying_output, capture_out
 
 
@@ -162,7 +163,7 @@ def test_prints_output_for_explicit_examples():
     def test_positive(x):
         assert x > 0
 
-    assert_falsifying_output(test_positive, x=-1)
+    assert_falsifying_output(test_positive, "Falsifying explicit", x=-1)
 
 
 def test_prints_verbose_output_for_explicit_examples():
@@ -172,9 +173,7 @@ def test_prints_verbose_output_for_explicit_examples():
     def test_always_passes(x):
         pass
 
-    assert_falsifying_output(
-        test_always_passes, x="NOT AN INTEGER", example_type="Trying"
-    )
+    assert_falsifying_output(test_always_passes, "Trying explicit", x="NOT AN INTEGER")
 
 
 def test_captures_original_repr_of_example():
@@ -184,7 +183,7 @@ def test_captures_original_repr_of_example():
         x.append(1)
         assert not x
 
-    assert_falsifying_output(test_mutation, x=[])
+    assert_falsifying_output(test_mutation, "Falsifying explicit", x=[])
 
 
 def test_examples_are_tried_in_order():
@@ -194,7 +193,7 @@ def test_examples_are_tried_in_order():
     @settings(phases=[Phase.explicit])
     @example(x=3)
     def test(x):
-        print("x -> %d" % (x,))
+        print(f"x -> {x}")
 
     with capture_out() as out:
         with reporting.with_reporter(reporting.default):
@@ -208,7 +207,7 @@ def test_prints_note_in_failing_example():
     @example(x=43)
     @given(integers())
     def test(x):
-        note("x -> %d" % (x,))
+        note(f"x -> {x}")
         assert x == 42
 
     with capture_out() as out:

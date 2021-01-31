@@ -83,10 +83,9 @@ def build_distribution():
     current_dependency = rm.extract_assignment(CARGO_FILE, "conjecture")
 
     assert current_dependency == LOCAL_PATH_DEPENDENCY, (
-        "Cargo file in a bad state. Expected conjecture dependency to be %s "
-        "but it was instead %s"
-    ) % (LOCAL_PATH_DEPENDENCY, current_dependency)
-
+        "Cargo file in a bad state. Expected conjecture dependency to be "
+        f"{LOCAL_PATH_DEPENDENCY} but it was instead {current_dependency}"
+    )
     conjecture_version = cr.current_version()
 
     # Update to use latest version of conjecture-rust.
@@ -146,14 +145,12 @@ def cargo(*args):
         subprocess.check_call(("cargo",) + args)
 
 
-RUBY_TO_PRINT_VERSION = """
+RUBY_TO_PRINT_VERSION = f"""
 require 'rubygems'
-spec = Gem::Specification::load(%r)
+spec = Gem::Specification::load({GEMSPEC_FILE!r})
 puts spec.version
 """.strip().replace(
     "\n", "; "
-) % (
-    GEMSPEC_FILE,
 )
 
 

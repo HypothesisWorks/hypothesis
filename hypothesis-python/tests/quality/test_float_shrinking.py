@@ -25,6 +25,7 @@ from hypothesis import (
     strategies as st,
 )
 from hypothesis.internal.compat import ceil
+
 from tests.common.debug import minimal
 
 

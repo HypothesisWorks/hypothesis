@@ -41,9 +41,9 @@ class Shrinker:
         return len(self.__seen)
 
     def __repr__(self):
-        return "%s(%sinitial=%r, current=%r)" % (
+        return "{}({}initial={!r}, current={!r})".format(
             type(self).__name__,
-            "" if self.name is None else "%r, " % (self.name,),
+            "" if self.name is None else f"{self.name!r}, ",
             self.initial,
             self.current,
         )
@@ -116,14 +116,14 @@ class Shrinker:
         if not self.left_is_better(value, self.current):
             if value != self.current and (value == value):
                 self.debug(
-                    "Rejected %r as worse than self.current=%r" % (value, self.current)
+                    f"Rejected {value!r} as worse than self.current={self.current!r}"
                 )
             return False
         if value in self.__seen:
             return False
         self.__seen.add(value)
         if self.__predicate(value):
-            self.debug("shrinking to %r" % (value,))
+            self.debug(f"shrinking to {value!r}")
             self.changes += 1
             self.current = value
             return True

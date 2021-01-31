@@ -17,6 +17,7 @@ from hypothesis import given
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra import numpy as npst
 from hypothesis.strategies import data, sampled_from
+
 from tests.common.utils import fails_with
 
 

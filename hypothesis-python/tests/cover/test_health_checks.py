@@ -26,6 +26,7 @@ from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.strategies._internal.lazy import LazyStrategy
 from hypothesis.strategies._internal.strategies import SearchStrategy
+
 from tests.common.utils import no_shrink
 
 HEALTH_CHECK_SETTINGS = settings(max_examples=11, database=None)

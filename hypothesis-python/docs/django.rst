@@ -123,7 +123,7 @@ the *flatmap* function as follows:
 
 .. code:: python
 
-  from hypothesis.strategies import lists, just
+  from hypothesis.strategies import just, lists
 
 
   def generate_with_shops(company):

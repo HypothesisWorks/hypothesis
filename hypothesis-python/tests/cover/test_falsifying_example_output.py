@@ -16,6 +16,7 @@
 import pytest
 
 from hypothesis import example, given, strategies as st
+
 from tests.common.utils import capture_out
 
 OUTPUT_NO_LINE_BREAK = """

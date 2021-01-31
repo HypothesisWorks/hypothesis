@@ -27,6 +27,7 @@ from hypothesis.errors import (
     Unsatisfiable,
 )
 from hypothesis.internal.compat import WINDOWS
+
 from tests.common.utils import fails_with
 
 
@@ -77,7 +78,7 @@ def test_non_interactive_example_emits_warning():
 @pytest.mark.skipif(WINDOWS, reason="pexpect.spawn not supported on Windows")
 def test_interactive_example_does_not_emit_warning():
     try:
-        child = pexpect.spawn("%s -Werror" % (sys.executable,))
+        child = pexpect.spawn(f"{sys.executable} -Werror")
         child.expect(">>> ", timeout=1)
     except pexpect.exceptions.EOF:
         pytest.skip(

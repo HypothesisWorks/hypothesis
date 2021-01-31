@@ -23,6 +23,7 @@ from hypothesis import (
 from hypothesis.errors import Found, NoSuchExample, Unsatisfiable
 from hypothesis.internal.conjecture.data import ConjectureData, StopTest
 from hypothesis.internal.reflection import get_pretty_function_description
+
 from tests.common.utils import no_shrink
 
 TIME_INCREMENT = 0.01
@@ -92,7 +93,7 @@ def find_any(definition, condition=lambda _: True, settings=None):
 def assert_no_examples(strategy, condition=lambda _: True):
     try:
         result = find_any(strategy, condition)
-        assert False, "Expected no results but found %r" % (result,)
+        assert False, f"Expected no results but found {result!r}"
     except (Unsatisfiable, NoSuchExample):
         pass
 
@@ -106,7 +107,7 @@ def assert_all_examples(strategy, predicate):
 
     @given(strategy)
     def assert_examples(s):
-        msg = "Found %r using strategy %s which does not match" % (s, strategy)
+        msg = f"Found {s!r} using strategy {strategy} which does not match"
         assert predicate(s), msg
 
     assert_examples()

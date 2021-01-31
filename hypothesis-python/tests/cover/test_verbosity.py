@@ -19,6 +19,7 @@ from hypothesis import example, find, given
 from hypothesis._settings import Verbosity, settings
 from hypothesis.reporting import default as default_reporter, with_reporter
 from hypothesis.strategies import booleans, integers, lists
+
 from tests.common.debug import minimal
 from tests.common.utils import capture_out, fails
 

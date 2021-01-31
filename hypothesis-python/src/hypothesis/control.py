@@ -177,13 +177,13 @@ def target(observation: Union[int, float], *, label: str = "") -> None:
     """
     check_type((int, float), observation, "observation")
     if not math.isfinite(observation):
-        raise InvalidArgument("observation=%r must be a finite float." % observation)
+        raise InvalidArgument(f"observation={observation!r} must be a finite float.")
     check_type(str, label, "label")
 
     context = _current_build_context.value
     if context is None:
         raise InvalidArgument("Calling target() outside of a test is invalid.")
-    verbose_report("Saw target(observation=%r, label=%r)" % (observation, label))
+    verbose_report(f"Saw target(observation={observation!r}, label={label!r})")
 
     if label in context.data.target_observations:
         raise InvalidArgument(

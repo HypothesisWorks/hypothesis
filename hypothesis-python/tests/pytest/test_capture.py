@@ -84,10 +84,8 @@ def get_line_num(token, result, skip_n=0):
                 return i
             else:
                 skipped += 1
-    assert False, "Token %r not found (skipped %r of planned %r skips)" % (
-        token,
-        skipped,
-        skip_n,
+    raise AssertionError(
+        f"Token {token!r} not found (skipped {skipped} of planned {skip_n} skips)"
     )
 
 

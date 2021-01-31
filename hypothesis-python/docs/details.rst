@@ -114,7 +114,7 @@ You can also mark custom events in a test using the ``event`` function:
 
 .. code:: python
 
-  from hypothesis import given, event, strategies as st
+  from hypothesis import event, given, strategies as st
 
 
   @given(st.integers().filter(lambda x: x % 2 == 0))

@@ -30,6 +30,7 @@ from hypothesis.extra.django import (
 )
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.strategies import binary, just, lists
+
 from tests.django.toystore.models import (
     Car,
     Company,

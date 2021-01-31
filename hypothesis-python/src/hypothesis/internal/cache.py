@@ -141,7 +141,7 @@ class GenericCache:
         i = self.keys_to_indices[key]
         entry = self.data[i]
         if entry.pins == 0:
-            raise ValueError("Key %r has not been pinned" % (key,))
+            raise ValueError(f"Key {key!r} has not been pinned")
         entry.pins -= 1
         if entry.pins == 0:
             self.__pinned_entry_count -= 1
@@ -159,7 +159,7 @@ class GenericCache:
         self.__pinned_entry_count = 0
 
     def __repr__(self):
-        return "{%s}" % (", ".join("%r: %r" % (e.key, e.value) for e in self.data),)
+        return "{" + ", ".join(f"{e.key!r}: {e.value!r}" for e in self.data) + "}"
 
     def new_entry(self, key, value):
         """Called when a key is written that does not currently appear in the

@@ -45,10 +45,10 @@ class TupleStrategy(SearchStrategy):
 
     def __repr__(self):
         if len(self.element_strategies) == 1:
-            tuple_string = "%s," % (repr(self.element_strategies[0]),)
+            tuple_string = f"{self.element_strategies[0]!r},"
         else:
             tuple_string = ", ".join(map(repr, self.element_strategies))
-        return "TupleStrategy((%s))" % (tuple_string,)
+        return f"TupleStrategy(({tuple_string}))"
 
     def calc_has_reusable_values(self, recur):
         return all(recur(e) for e in self.element_strategies)
@@ -118,11 +118,8 @@ class ListStrategy(SearchStrategy):
         return result
 
     def __repr__(self):
-        return "%s(%r, min_size=%r, max_size=%r)" % (
-            self.__class__.__name__,
-            self.element_strategy,
-            self.min_size,
-            self.max_size,
+        return "{}({!r}, min_size={!r}, max_size={!r})".format(
+            self.__class__.__name__, self.element_strategy, self.min_size, self.max_size
         )
 
 
@@ -227,7 +224,7 @@ class FixedKeysDictStrategy(MappedSearchStrategy):
         return recur(self.mapped_strategy)
 
     def __repr__(self):
-        return "FixedKeysDictStrategy(%r, %r)" % (self.keys, self.mapped_strategy)
+        return f"FixedKeysDictStrategy({self.keys!r}, {self.mapped_strategy!r})"
 
     def pack(self, value):
         return self.dict_type(zip(self.keys, value))
@@ -258,10 +255,7 @@ class FixedAndOptionalKeysDictStrategy(SearchStrategy):
         return recur(self.fixed)
 
     def __repr__(self):
-        return "FixedAndOptionalKeysDictStrategy(%r, %r)" % (
-            self.required,
-            self.optional,
-        )
+        return f"FixedAndOptionalKeysDictStrategy({self.required!r}, {self.optional!r})"
 
     def do_draw(self, data):
         result = data.draw(self.fixed)

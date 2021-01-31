@@ -28,6 +28,7 @@ from hypothesis.internal.conjecture.shrinker import (
 )
 from hypothesis.internal.conjecture.shrinking import Float
 from hypothesis.internal.conjecture.utils import Sampler
+
 from tests.conjecture.common import SOME_LABEL, run_to_buffer, shrinking_from
 
 

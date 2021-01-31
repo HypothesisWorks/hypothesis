@@ -127,8 +127,8 @@ class LarkStrategy(SearchStrategy):
         if unknown_explicit:
             raise InvalidArgument(
                 "The following arguments were passed as explicit_strategies, "
-                "but there is no such terminal production in this grammar: %r"
-                % (sorted(unknown_explicit),)
+                "but there is no such terminal production in this grammar: "
+                + repr(sorted(unknown_explicit))
             )
         self.terminal_strategies.update(explicit)
 
@@ -157,7 +157,7 @@ class LarkStrategy(SearchStrategy):
             return self.__rule_labels[name]
         except KeyError:
             return self.__rule_labels.setdefault(
-                name, calc_label_from_name("LARK:%s" % (name,))
+                name, calc_label_from_name(f"LARK:{name}")
             )
 
     def draw_symbol(self, data, symbol, draw_state):
@@ -235,7 +235,7 @@ def from_lark(
     else:
         check_type(dict, explicit, "explicit")
         explicit = {
-            k: v.map(check_explicit("explicit[%r]=%r" % (k, v)))
+            k: v.map(check_explicit(f"explicit[{k!r}]={v!r}"))
             for k, v in explicit.items()
         }
     return LarkStrategy(grammar, start, explicit)

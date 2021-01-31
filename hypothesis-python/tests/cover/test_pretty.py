@@ -60,6 +60,7 @@ import pytest
 
 from hypothesis.internal.compat import PYPY
 from hypothesis.vendor import pretty
+
 from tests.common.utils import capture_out
 
 
@@ -84,7 +85,7 @@ def skip_without(mod):
         __import__(mod)
         return lambda f: f
     except ImportError:
-        return pytest.mark.skipif(True, reason="Missing %s" % (mod,))
+        return pytest.mark.skipif(True, reason=f"Missing {mod}")
 
 
 assert_raises = pytest.raises
@@ -205,7 +206,7 @@ def test_indentation():
     """Test correct indentation in groups."""
     count = 40
     gotoutput = pretty.pretty(MyList(range(count)))
-    expectedoutput = "MyList(\n" + ",\n".join("   %d" % i for i in range(count)) + ")"
+    expectedoutput = "MyList(\n" + ",\n".join(f"   {i}" for i in range(count)) + ")"
 
     assert_equal(gotoutput, expectedoutput)
 
@@ -389,7 +390,7 @@ class MetaClass(type):
         return type.__new__(cls, name, (object,), {"name": name})
 
     def __repr__(self):
-        return "[CUSTOM REPR FOR CLASS %s]" % self.name
+        return f"[CUSTOM REPR FOR CLASS {self.name}]"
 
 
 ClassWithMeta = MetaClass("ClassWithMeta")
@@ -412,7 +413,7 @@ def test_unicode_repr():
     p = pretty.pretty(c)
     assert_equal(p, u)
     p = pretty.pretty([c])
-    assert_equal(p, "[%s]" % u)
+    assert_equal(p, f"[{u}]")
 
 
 def test_basic_class():
@@ -430,7 +431,7 @@ def test_basic_class():
     printer.flush()
     output = stream.getvalue()
 
-    assert_equal(output, "%s.MyObj" % __name__)
+    assert_equal(output, f"{__name__}.MyObj")
     assert_true(type_pprint_wrapper.called)
 
 

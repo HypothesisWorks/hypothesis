@@ -64,25 +64,21 @@ def elements_and_dtype(elements, dtype, source=None):
     if source is None:
         prefix = ""
     else:
-        prefix = "%s." % (source,)
+        prefix = f"{source}."
 
     if elements is not None:
-        st.check_strategy(elements, "%selements" % (prefix,))
+        st.check_strategy(elements, f"{prefix}elements")
     else:
         with check("dtype is not None"):
             if dtype is None:
                 raise InvalidArgument(
-                    (
-                        "At least one of %(prefix)selements or %(prefix)sdtype "
-                        "must be provided."
-                    )
-                    % {"prefix": prefix}
+                    f"At least one of {prefix}elements or {prefix}dtype must be provided."
                 )
 
     with check("is_categorical_dtype"):
         if is_categorical_dtype(dtype):
             raise InvalidArgument(
-                "%sdtype is categorical, which is currently unsupported" % (prefix,)
+                f"{prefix}dtype is categorical, which is currently unsupported"
             )
 
     dtype = try_convert(np.dtype, dtype, "dtype")
@@ -92,7 +88,7 @@ def elements_and_dtype(elements, dtype, source=None):
     elif dtype is not None:
 
         def convert_element(value):
-            name = "draw(%selements)" % (prefix,)
+            name = f"draw({prefix}elements)"
             try:
                 return np.array([value], dtype=dtype)[0]
             except TypeError:
@@ -102,7 +98,7 @@ def elements_and_dtype(elements, dtype, source=None):
                 )
             except ValueError:
                 raise InvalidArgument(
-                    "Cannot convert %s=%r to type %s" % (name, value, dtype.str)
+                    f"Cannot convert {name}={value!r} to type {dtype.str}"
                 )
 
         elements = elements.map(convert_element)
@@ -506,11 +502,11 @@ def data_frames(
     column_names = set()  # type: Set[str]
 
     for i, c in enumerate(cols):
-        check_type(column, c, "columns[%d]" % (i,))
+        check_type(column, c, f"columns[{i}]")
 
         c = copy(c)
         if c.name is None:
-            label = "columns[%d]" % (i,)
+            label = f"columns[{i}]"
             c.name = i
         else:
             label = c.name
@@ -524,7 +520,7 @@ def data_frames(
                 )
 
         if c.name in column_names:
-            raise InvalidArgument("duplicate definition of column name %r" % (c.name,))
+            raise InvalidArgument(f"duplicate definition of column name {c.name!r}")
 
         column_names.add(c.name)
 

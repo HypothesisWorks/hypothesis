@@ -32,9 +32,7 @@ def test_just_frosty():
 
 
 def test_sampling_snowmen():
-    assert repr(st.sampled_from((Frosty, "hi"))) == "sampled_from((☃, %s))" % (
-        repr("hi"),
-    )
+    assert repr(st.sampled_from((Frosty, "hi"))) == "sampled_from((☃, 'hi'))"
 
 
 def varargs(*args, **kwargs):

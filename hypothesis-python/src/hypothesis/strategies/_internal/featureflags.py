@@ -101,7 +101,7 @@ class FeatureFlags:
                 disabled.append(name)
             else:
                 enabled.append(name)
-        return "FeatureFlags(enabled=%r, disabled=%r)" % (enabled, disabled)
+        return f"FeatureFlags(enabled={enabled!r}, disabled={disabled!r})"
 
 
 class FeatureStrategy(SearchStrategy):

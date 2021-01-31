@@ -37,6 +37,7 @@ from hypothesis.errors import (
 )
 from hypothesis.stateful import RuleBasedStateMachine, rule
 from hypothesis.utils.conventions import not_set
+
 from tests.common.utils import counts_calls, fails_with
 
 

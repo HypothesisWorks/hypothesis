@@ -359,7 +359,7 @@ class SearchStrategy(Generic[Ex]):
         This method is part of the public API.
         """
         if not isinstance(other, SearchStrategy):
-            raise ValueError("Cannot | a SearchStrategy with %r" % (other,))
+            raise ValueError(f"Cannot | a SearchStrategy with {other!r}")
         return OneOfStrategy((self, other))
 
     def validate(self) -> None:
@@ -407,7 +407,7 @@ class SearchStrategy(Generic[Ex]):
         pass
 
     def do_draw(self, data: ConjectureData) -> Ex:
-        raise NotImplementedError("%s.do_draw" % (type(self).__name__,))
+        raise NotImplementedError(f"{type(self).__name__}.do_draw")
 
     def __init__(self):
         pass
@@ -477,7 +477,7 @@ class SampledFromStrategy(SearchStrategy):
     def do_draw(self, data):
         result = self.do_filtered_draw(data, self)
         if result is filter_not_satisfied:
-            data.note_event("Aborted test because unable to satisfy %r" % (self,))
+            data.note_event(f"Aborted test because unable to satisfy {self!r}")
             data.mark_invalid()
         return result
 
@@ -661,7 +661,7 @@ class MappedSearchStrategy(SearchStrategy):
 
     def __repr__(self):
         if not hasattr(self, "_cached_repr"):
-            self._cached_repr = "%r.map(%s)" % (
+            self._cached_repr = "{!r}.map({})".format(
                 self.mapped_strategy,
                 get_pretty_function_description(self.pack),
             )
@@ -726,7 +726,7 @@ class FilteredStrategy(SearchStrategy):
 
     def __repr__(self):
         if not hasattr(self, "_cached_repr"):
-            self._cached_repr = "%r%s" % (
+            self._cached_repr = "{!r}{}".format(
                 self.filtered_strategy,
                 "".join(
                     ".filter(%s)" % get_pretty_function_description(cond)
@@ -759,7 +759,7 @@ class FilteredStrategy(SearchStrategy):
         if result is not filter_not_satisfied:
             return result
 
-        data.note_event("Aborted test because unable to satisfy %r" % (self,))
+        data.note_event(f"Aborted test because unable to satisfy {self!r}")
         data.mark_invalid()
         raise NotImplementedError("Unreachable, for Mypy")
 

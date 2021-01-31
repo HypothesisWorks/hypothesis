@@ -110,8 +110,7 @@ def validate_deprecation():
         warnings.simplefilter("error", HypothesisDeprecationWarning)
         if not any(e.category == HypothesisDeprecationWarning for e in w):
             raise NotDeprecated(
-                "Expected to get a deprecation warning but got %r"
-                % ([e.category for e in w],)
+                f"Expected a deprecation warning but got {[e.category for e in w]!r}"
             )
 
 
@@ -154,7 +153,7 @@ def counts_calls(func):
 def assert_output_contains_failure(output, test, **kwargs):
     assert test.__name__ + "(" in output
     for k, v in kwargs.items():
-        assert ("%s=%r" % (k, v)) in output
+        assert (f"{k}={v!r}") in output
 
 
 def assert_falsifying_output(
@@ -164,8 +163,9 @@ def assert_falsifying_output(
         with raises(expected_exception):
             test()
 
-    assert "%s example:" % (example_type,)
-    assert_output_contains_failure(out.getvalue(), test, **kwargs)
+    output = out.getvalue()
+    assert f"{example_type} example:" in output
+    assert_output_contains_failure(output, test, **kwargs)
 
 
 @contextlib.contextmanager

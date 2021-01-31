@@ -16,6 +16,7 @@
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import permutations
+
 from tests.common.debug import minimal
 from tests.common.utils import fails_with
 

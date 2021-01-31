@@ -14,6 +14,7 @@
 # END HEADER
 
 from hypothesis import given, strategies as st
+
 from tests.common.debug import find_any, minimal
 
 x = st.shared(st.integers())
