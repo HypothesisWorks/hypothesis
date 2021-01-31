@@ -1135,9 +1135,9 @@ def given(
                     if not (state.failed_normally or generated_seed is None):
                         if running_under_pytest:
                             report(
-                                "You can add @seed(%(seed)d) to this test or "
-                                "run pytest with --hypothesis-seed=%(seed)d "
-                                "to reproduce this failure." % {"seed": generated_seed}
+                                f"You can add @seed({generated_seed}) to this test or "
+                                f"run pytest with --hypothesis-seed={generated_seed} "
+                                "to reproduce this failure."
                             )
                         else:
                             report(

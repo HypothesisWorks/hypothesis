@@ -507,10 +507,10 @@ def define_function_signature(name, docstring, argspec):
         elif argspec.kwonlyargs:
             parts.append("*")
         for k in must_pass_as_kwargs:
-            invocation_parts.append("{k}={k}".format(k=k))
+            invocation_parts.append(f"{k}={k}")
 
         for k in argspec.kwonlyargs:
-            invocation_parts.append("{k}={k}".format(k=k))
+            invocation_parts.append(f"{k}={k}")
             if k in (argspec.kwonlydefaults or []):
                 parts.append(f"{k}=not_set")
             else:

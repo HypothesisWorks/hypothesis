@@ -1074,9 +1074,9 @@ def characters(
     ):
         raise InvalidArgument(
             "Nothing is excluded by other arguments, so passing only "
-            "whitelist_characters=%(chars)r would have no effect.  Also pass "
-            "whitelist_categories=(), or use sampled_from(%(chars)r) instead."
-            % {"chars": whitelist_characters}
+            f"whitelist_characters={whitelist_characters!r} would have no effect.  "
+            "Also pass whitelist_categories=(), or use "
+            f"sampled_from({whitelist_characters!r}) instead."
         )
     blacklist_characters = blacklist_characters or ""
     whitelist_characters = whitelist_characters or ""
