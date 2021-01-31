@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.1.1:
+
+------------------
+6.1.1 - 2021-01-31
+------------------
+
+This patch updates our automatic code formatting to use :pypi:`shed`,
+which includes :pypi:`autoflake`, :pypi:`black`, :pypi:`isort`, and
+:pypi:`pyupgrade` (:issue:`2780`).
+
 .. _v6.1.0:
 
 ------------------
