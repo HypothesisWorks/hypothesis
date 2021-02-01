@@ -1,3 +1,8 @@
+# Conjecture for Rust 0.7.0 (2021-02-01)
+
+This release improves flexibility and performance of `distributions::Sampler::new` by allowing it to accept `&[f32]` instead of a `Vec`.
+It also positively affects `distributions::good_bitlengths` as it does not have to allocate a vector anymore.
+
 # Conjecture for Rust 0.6.0 (2021-01-27)
 
 This release is required following an unsuccesful deploy of 0.5.0 due to usage of a cargo keyword that was too long.
