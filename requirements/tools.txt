@@ -240,7 +240,7 @@ six==1.15.0
     #   tox
     #   traitlets
     #   virtualenv
-smmap==3.0.4
+smmap==4.0.0
     # via gitdb
 snowballstemmer==2.0.0
     # via
