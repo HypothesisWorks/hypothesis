@@ -138,7 +138,7 @@ mypy-extensions==0.4.3
     #   black
     #   mypy
     #   typing-inspect
-mypy==0.790
+mypy==0.800
     # via -r requirements/tools.in
 packaging==20.8
     # via
