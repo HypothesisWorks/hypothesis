@@ -29,7 +29,7 @@ black==20.8b1
     # via
     #   blacken-docs
     #   shed
-blacken-docs==1.8.0
+blacken-docs==1.9.2
     # via -r requirements/tools.in
 bleach==3.2.1
     # via readme-renderer
