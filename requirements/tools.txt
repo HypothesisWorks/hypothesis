@@ -164,7 +164,7 @@ pluggy==0.13.1
     # via
     #   pytest
     #   tox
-prompt-toolkit==3.0.9
+prompt-toolkit==3.0.14
     # via ipython
 ptyprocess==0.7.0
     # via pexpect
