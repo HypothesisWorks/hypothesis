@@ -11,8 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
       - name: Set up Python 3.8
         uses: actions/setup-python@v2
         with:
@@ -20,8 +18,7 @@ jobs:
       - name: Update pinned dependencies
         uses: technote-space/create-pr-action@v2
         with:
-          EXECUTE_COMMANDS: |
-            ./build.sh upgrade-requirements
+          EXECUTE_COMMANDS: ./build.sh upgrade-requirements
           COMMIT_MESSAGE: 'Update pinned dependencies'
           COMMIT_NAME: '"CI on behalf of the Hypothesis team'
           COMMIT_EMAIL: 'david@drmaciver.com'
