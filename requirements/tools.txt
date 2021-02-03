@@ -158,7 +158,7 @@ pickleshare==0.7.5
     # via ipython
 pip-tools==5.5.0
     # via -r requirements/tools.in
-pkginfo==1.6.1
+pkginfo==1.7.0
     # via twine
 pluggy==0.13.1
     # via
