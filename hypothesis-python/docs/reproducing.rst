@@ -138,6 +138,7 @@ as follows:
     ...     test()
     ... except AssertionError:
     ...     pass
+    ...
     Falsifying example: test(f=nan)
     <BLANKLINE>
     You can reproduce this example by temporarily adding @reproduce_failure(..., b'AAAA//AAAAAAAAEA') as a decorator on your test case

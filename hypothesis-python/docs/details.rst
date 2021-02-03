@@ -37,7 +37,8 @@ intermediate steps of your test. That's where the ``note`` function comes in:
     >>> try:
     ...     test_shuffle_is_noop()
     ... except AssertionError:
-    ...     print('ls != ls2')
+    ...     print("ls != ls2")
+    ...
     Falsifying example: test_shuffle_is_noop(ls=[0, 1], r=RandomWithSeed(1))
     Shuffle: [1, 0]
     ls != ls2
@@ -565,6 +566,7 @@ argument, to force this inference for arguments with a default value.
 
     >>> def func(a: int, b: str):
     ...     return [a, b]
+    ...
     >>> builds(func).example()
     [-6993, '']
 
