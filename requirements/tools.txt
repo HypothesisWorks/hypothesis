@@ -204,7 +204,7 @@ pytz==2020.5
     # via
     #   babel
     #   django
-pyupgrade==2.7.4
+pyupgrade==2.9.0
     # via shed
 pyyaml==5.3.1
     # via
