@@ -16,7 +16,6 @@ mypy
 pip-tools
 pytest
 python-dateutil
-pyupio
 requests
 restructuredtext-lint
 shed

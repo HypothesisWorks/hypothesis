@@ -1,14 +1,3 @@
-requirements:
-  - requirements/tools.txt:
-      updates: all
-      pin: True
-  - requirements/test.txt:
-      updates: all
-      pin: True
-  - requirements/coverage.txt:
-      updates: all
-      pin: True
-
-schedule: "every week on monday"
-search: False
-label_prs: "tests/build/CI"
+# Disable pyup.io spam until we can turn it off upstream
+update: False
+schedule: "every month"
