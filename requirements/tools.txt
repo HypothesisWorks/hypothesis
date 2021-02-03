@@ -31,7 +31,7 @@ black==20.8b1
     #   shed
 blacken-docs==1.8.0
     # via -r requirements/tools.in
-bleach==3.2.1
+bleach==3.3.0
     # via readme-renderer
 certifi==2020.12.5
     # via requests
