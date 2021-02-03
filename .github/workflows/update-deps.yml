@@ -16,15 +16,15 @@ jobs:
         with:
           python-version: '3.8'
       - name: Update pinned dependencies
-        uses: technote-space/create-pr-action@v2
+        run: ./build.sh upgrade-requirements
+      - name: Open pull request
+        uses: peter-evans/create-pull-request@v3
         with:
-          EXECUTE_COMMANDS: |
-            git fetch origin
-            git reset --hard origin/master
-            ./build.sh upgrade-requirements
-          COMMIT_MESSAGE: 'Update pinned dependencies'
-          COMMIT_NAME: '"CI on behalf of the Hypothesis team'
-          COMMIT_EMAIL: 'david@drmaciver.com'
-          PR_BRANCH_NAME: 'update-pinned-deps-${PR_ID}'
-          PR_TITLE: 'Update pinned dependencies'
-          GITHUB_TOKEN: ${{secrets.GH_TOKEN}}
+          token: ${{secrets.GH_TOKEN}}
+          delete-branch: true
+          title: Update pinned dependencies
+          body: |
+            Automatically update pinned dependencies
+          commit-message: 'Update pinned dependencies'
+          committer: 'CI on behalf of the Hypothesis team <david@drmaciver.com>'
+          author: 'CI on behalf of the Hypothesis team <david@drmaciver.com>'
