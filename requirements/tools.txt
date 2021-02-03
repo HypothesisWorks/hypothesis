@@ -286,7 +286,7 @@ tox==3.20.1
     # via -r requirements/tools.in
 tqdm==4.55.1
     # via twine
-traitlets==4.3.3
+traitlets==5.0.5
     # via
     #   -r requirements/tools.in
     #   ipython
