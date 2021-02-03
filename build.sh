@@ -41,7 +41,19 @@ if ! "$TOOL_PYTHON" -m hypothesistooling check-installed ; then
   "$PYTHON" -m pip install --upgrade pip
   "$PYTHON" -m pip install --upgrade virtualenv
   "$PYTHON" -m virtualenv "$TOOL_VIRTUALENV"
-  "$TOOL_PYTHON" -m pip install --no-warn-script-location -r requirements/tools.txt
+  # We install from the pinned tool dependencies, but if that fails AND we're running
+  # the whole-repo tests to update pinned dependencies, install from unpinned.
+  # (because pyup will cheerfully "upgrade" to an incompatible set of pins)
+  # TODO: remove this logic once we have a better automatic update system.
+  {
+    "$TOOL_PYTHON" -m pip install --no-warn-script-location -r requirements/tools.txt
+  } || {
+      if [ "$TASK" == "check-whole-repo-tests" ]; then
+        "$TOOL_PYTHON" -m pip install --no-warn-script-location -r requirements/tools.in
+      else
+        exit 1
+      fi
+  }
 fi
 
 "$TOOL_PYTHON" -m hypothesistooling "$@"
