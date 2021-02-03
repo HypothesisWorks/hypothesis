@@ -108,7 +108,7 @@ iniconfig==1.1.1
     # via pytest
 ipython-genutils==0.2.0
     # via traitlets
-ipython==7.16.1
+ipython==7.20.0
     # via -r requirements/tools.in
 isort==5.7.0
     # via shed
