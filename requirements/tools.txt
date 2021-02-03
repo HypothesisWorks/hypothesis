@@ -284,7 +284,7 @@ toml==0.10.2
     #   tox
 tox==3.20.1
     # via -r requirements/tools.in
-tqdm==4.55.1
+tqdm==4.56.0
     # via twine
 traitlets==4.3.3
     # via
