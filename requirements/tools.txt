@@ -282,7 +282,7 @@ toml==0.10.2
     #   black
     #   pytest
     #   tox
-tox==3.20.1
+tox==3.21.3
     # via -r requirements/tools.in
 tqdm==4.55.1
     # via twine
