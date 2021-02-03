@@ -120,7 +120,7 @@ jeepney==0.6.0
     #   secretstorage
 jinja2==2.11.2
     # via sphinx
-keyring==21.8.0
+keyring==22.0.1
     # via twine
 lark-parser==0.11.1
     # via -r requirements/tools.in
