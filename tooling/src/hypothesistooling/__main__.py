@@ -26,7 +26,7 @@ import hypothesistooling.projects.hypothesispython as hp
 import hypothesistooling.projects.hypothesisruby as hr
 from coverage.config import CoverageConfig
 from hypothesistooling import installers as install, releasemanagement as rm
-from hypothesistooling.scripts import pip_tool
+from hypothesistooling.scripts import pip_tool, tool_path
 
 TASKS = {}
 BUILD_FILES = tuple(
@@ -265,6 +265,14 @@ def upgrade_requirements():
 @task()
 def check_requirements():
     compile_requirements(upgrade=False)
+    subprocess.check_call([tool_path("pip"), "install", "-r", "requirements/tools.txt"])
+    format()
+    if tools.has_changes(hp.HYPOTHESIS_PYTHON) and not os.path.isfile(hp.RELEASE_FILE):
+        with open(hp.RELEASE_FILE, mode="w") as f:
+            f.write(
+                "RELEASE_TYPE: patch\n\nThis patch updates our autoformatting "
+                "tools, improving our code style without any API changes."
+            )
 
 
 @task(if_changed=hp.HYPOTHESIS_PYTHON)
