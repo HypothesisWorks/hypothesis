@@ -49,7 +49,7 @@ colorama==0.4.4
     # via twine
 com2ann==0.1.1
     # via shed
-coverage==5.3.1
+coverage==5.4
     # via -r requirements/tools.in
 cryptography==3.3.1
     # via secretstorage
