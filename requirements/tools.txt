@@ -242,7 +242,7 @@ six==1.15.0
     #   virtualenv
 smmap==3.0.4
     # via gitdb
-snowballstemmer==2.0.0
+snowballstemmer==2.1.0
     # via
     #   pydocstyle
     #   sphinx
