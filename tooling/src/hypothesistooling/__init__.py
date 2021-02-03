@@ -45,8 +45,6 @@ ROOT = (
 
 REPO_TESTS = os.path.join(ROOT, "whole-repo-tests")
 
-PYUP_FILE = os.path.join(ROOT, ".pyup.yml")
-
 
 def hash_for_name(name):
     return subprocess.check_output(["git", "rev-parse", name]).decode("ascii").strip()
