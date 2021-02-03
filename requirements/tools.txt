@@ -228,7 +228,7 @@ rfc3986==1.4.0
     # via twine
 secretstorage==3.3.0
     # via keyring
-shed==0.3.1
+shed==0.3.2
     # via -r requirements/tools.in
 six==1.15.0
     # via
