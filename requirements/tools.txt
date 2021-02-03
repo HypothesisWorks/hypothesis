@@ -188,7 +188,7 @@ pyflakes==2.2.0
     # via
     #   autoflake
     #   flake8
-pygments==2.7.3
+pygments==2.7.4
     # via
     #   ipython
     #   pybetter
