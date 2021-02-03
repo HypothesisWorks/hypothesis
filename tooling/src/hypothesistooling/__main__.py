@@ -262,44 +262,9 @@ def upgrade_requirements():
     compile_requirements(upgrade=True)
 
 
-def is_pyup_branch():
-    return tools.IS_PULL_REQUEST and os.environ.get("GITHUB_HEAD_REF", "").startswith(
-        "pyup-scheduled-update"
-    )
-
-
-def push_pyup_requirements_commit():
-    """Because pyup updates each package individually, it can create a
-    requirements.txt with an incompatible set of versions.
-
-    Depending on the changes, pyup might also have introduced
-    whitespace errors.
-
-    If we've recompiled requirements.txt in Travis and made changes,
-    and this is a PR where pyup is running, push a consistent set of
-    versions as a new commit to the PR.
-    """
-    if is_pyup_branch():
-        print("Pushing new requirements, as this is a pyup pull request")
-        print("Creating commit")
-        tools.configure_git()
-        tools.git("add", "--update", "requirements")
-        tools.git("commit", "-m", "Bump requirements for pyup pull request")
-
-        print("Pushing to GitHub")
-        tools.git("push", "origin", f"HEAD:{os.environ['GITHUB_HEAD_REF']}")
-
-
 @task()
 def check_requirements():
-    if is_pyup_branch() and tools.last_committer() != tools.TOOLING_COMMITER_NAME:
-        # Recompile to fix broken formatting etc., but ensure there can't be a loop.
-        compile_requirements(upgrade=True)
-        if tools.has_uncommitted_changes("requirements"):
-            push_pyup_requirements_commit()
-            raise RuntimeError("Pushed new requirements; check next build.")
-    else:
-        compile_requirements(upgrade=False)
+    compile_requirements(upgrade=False)
 
 
 @task(if_changed=hp.HYPOTHESIS_PYTHON)
