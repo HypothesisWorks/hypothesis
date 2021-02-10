@@ -9,7 +9,6 @@ on:
 
 jobs:
   test:
-    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -65,7 +64,6 @@ jobs:
       run: TASK=${{ matrix.task }} ./build.sh
 
   test-win:
-    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     runs-on: windows-latest
     strategy:
       matrix:
@@ -105,7 +103,6 @@ jobs:
       run: python -m pytest --numprocesses auto hypothesis-python/tests/
 
   test-osx:
-    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     runs-on: macos-latest
     strategy:
       matrix:
@@ -125,7 +122,6 @@ jobs:
       run: TASK=${{ matrix.task }} ./build.sh
 
   specific-deps:
-    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -164,7 +160,7 @@ jobs:
       run: TASK=${{ matrix.task }} ./build.sh
 
   deploy:
-    if: "github.event_name == 'push' && github.repository == 'HypothesisWorks/hypothesis' && !contains(github.event.head_commit.message, '[skip ci]')"
+    if: "github.event_name == 'push' && github.repository == 'HypothesisWorks/hypothesis'"
     runs-on: ubuntu-latest
     needs: [test, test-win, test-osx, specific-deps]
     strategy:
