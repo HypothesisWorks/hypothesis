@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.2.0:
+
+------------------
+6.2.0 - 2021-02-12
+------------------
+
+If you use :pypi:`pytest-html`, Hypothesis now includes the
+:ref:`summary statistics for each test <statistics>` in the HTML report,
+whether or not the ``--hypothesis-show-statistics`` argument was passed
+to show them in the command-line output.
+
 .. _v6.1.1:
 
 ------------------
