@@ -219,6 +219,13 @@ else:
                 # --junitxml not passed, or Pytest 4.5 (before add_global_property)
                 # We'll fail xunit2 xml schema checks, upgrade pytest if you care.
                 report.user_properties.append((name, item.hypothesis_statistics))
+            # If there's an HTML report, include our summary stats for each test
+            stats = base64.b64decode(item.hypothesis_statistics.encode()).decode()
+            pytest_html = item.config.pluginmanager.getplugin("html")
+            if pytest_html is not None:  # pragma: no cover
+                report.extra = getattr(report, "extra", []) + [
+                    pytest_html.extras.text(stats, name="Hypothesis stats")
+                ]
 
     def pytest_terminal_summary(terminalreporter):
         if not terminalreporter.config.getoption(PRINT_STATISTICS_OPTION):

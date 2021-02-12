@@ -392,6 +392,9 @@ def check_examples3():
 @task()
 def check_whole_repo_tests():
     install.ensure_shellcheck()
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS_PYTHON]
+    )
     subprocess.check_call([sys.executable, "-m", "pytest", tools.REPO_TESTS])
 
 

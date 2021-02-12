@@ -718,6 +718,10 @@ def sampled_from(elements):
     the list. So e.g. ``sampled_from([10, 1])`` will shrink by trying to replace
     1 values with 10, and ``sampled_from([1, 10])`` will shrink by trying to
     replace 10 values with 1.
+
+    It is an error to sample from an empty sequence, because returning :func:`nothing`
+    makes it too easy to silently drop parts of compound strategies.  If you need
+    that behaviour, use ``sampled_from(seq) if seq else nothing()``.
     """
     values = check_sample(elements, "sampled_from")
     if not values:

@@ -42,6 +42,15 @@ Others provide a function to infer a strategy from some other schema:
 * :pypi:`hypothesis-pb` - infer strategies from `Protocol Buffer
   <https://developers.google.com/protocol-buffers/>`_ schemas.
 
+Or some other custom integration, such as a :ref:`"hypothesis" entry point <entry-points>`:
+
+* :pypi:`deal` is a design-by-contract library with built-in Hypothesis support.
+* :pypi:`icontract-hypothesis` infers strategies from :pypi:`icontract` code contracts.
+* :pypi:`Pandera` schemas all have a ``.strategy()`` method, which returns a strategy for
+  matching :class:`~pandas:pandas.DataFrame`\ s.
+* :pypi:`Pydantic` automatically registers constrained types - so
+  :func:`~hypothesis.strategies.builds` and :func:`~hypothesis.strategies.from_type`
+  "just work" regardless of the underlying implementation.
 
 -----------------
 Other cool things
@@ -77,20 +86,13 @@ fail - by trying all kinds of inputs and reporting whatever happens.
 implement functor, applicative, monad, and other laws; allowing a declarative
 approach to be combined with traditional pythonic code.
 
-:pypi:`icontract-hypothesis` infers the Hypothesis strategies based on the
-contracts (specified using :pypi:`icontract`) so that the code can be
-automatically tested.
-It also supports a :doc:`ghostwriter <ghostwriter>` for test files and IDE integrations such as
-`icontract-hypothesis-vim <https://github.com/mristin/icontract-hypothesis-vim>`_,
+:pypi:`icontract-hypothesis` includes a :doc:`ghostwriter <ghostwriter>` for test files
+and IDE integrations such as `icontract-hypothesis-vim <https://github.com/mristin/icontract-hypothesis-vim>`_,
 `icontract-hypothesis-pycharm <https://github.com/mristin/icontract-hypothesis-pycharm>`_,
 and
-`icontract-hypothesis-vscode <https://github.com/mristin/icontract-hypothesis-vscode>`_.
-Even if you do not use any contracts in your code at all, you can use
-:pypi:`icontract-hypothesis` to run smoke tests as it will automatically infer
-the inputs to the functions based on :func:`~hypothesis.strategies.from_type`.
-This is particularly handy if you use :pypi:`icontract-hypothesis` from within
-your IDE so that you can repeatedly run a smoke test of a function during the
-development with only a couple of key strokes.
+`icontract-hypothesis-vscode <https://github.com/mristin/icontract-hypothesis-vscode>`_ -
+you can run a quick 'smoke test' with only a few keystrokes for any type-annotated
+function, even if it doesn't have any contracts!
 
 --------------------
 Writing an extension
