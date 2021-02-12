@@ -15,8 +15,10 @@
 
 import pytest
 
-from hypothesis import given, strategies as st
+from hypothesis import given, settings, strategies as st
 from hypothesis.errors import MultipleFailures
+
+from tests.common.utils import flaky
 
 
 def go_wrong_naive(a, b):
@@ -53,9 +55,10 @@ def go_wrong_coverup(a, b):
     [go_wrong_naive, go_wrong_with_cause, go_wrong_coverup],
     ids=lambda f: f.__name__,
 )
+@flaky(max_runs=3, min_passes=1)
 def test_can_generate_specified_version(function):
     try:
-        given(st.integers(), st.integers())(function)()
+        given(st.integers(), st.integers())(settings(database=None)(function))()
     except MultipleFailures:
         pass
     else:
