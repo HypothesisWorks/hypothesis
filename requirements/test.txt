@@ -30,7 +30,7 @@ pyparsing==2.4.7
     # via packaging
 pytest-forked==1.3.0
     # via pytest-xdist
-pytest-xdist==2.2.0
+pytest-xdist==2.2.1
     # via -r requirements/test.in
 pytest==6.2.2
     # via
