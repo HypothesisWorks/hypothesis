@@ -10,11 +10,11 @@ coverage==5.4
     # via -r requirements/coverage.in
 lark-parser==0.11.1
     # via -r requirements/coverage.in
-numpy==1.20.0
+numpy==1.20.1
     # via
     #   -r requirements/coverage.in
     #   pandas
-pandas==1.2.1
+pandas==1.2.2
     # via -r requirements/coverage.in
 python-dateutil==2.8.1
     # via pandas
