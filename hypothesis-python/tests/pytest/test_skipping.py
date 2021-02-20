@@ -39,6 +39,8 @@ def test_no_falsifying_example_if_pytest_skip(testdir):
     continue running the test and shrink process, nor should it print anything
     about falsifying examples."""
     script = testdir.makepyfile(PYTEST_TESTSUITE)
-    result = testdir.runpytest(script, "--verbose", "--strict", "-m", "hypothesis")
+    result = testdir.runpytest(
+        script, "--verbose", "--strict-markers", "-m", "hypothesis"
+    )
     out = "\n".join(result.stdout.lines)
     assert "Falsifying example" not in out
