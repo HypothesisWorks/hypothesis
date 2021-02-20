@@ -65,7 +65,7 @@ extras = {
     "lark": ["lark-parser>=0.6.5"],
     "numpy": ["numpy>=1.9.0"],
     "pandas": ["pandas>=0.25"],
-    "pytest": ["pytest>=4.3"],
+    "pytest": ["pytest>=4.6"],
     "dpcontracts": ["dpcontracts>=0.4"],
     "redis": ["redis>=3.0.0"],
     # zoneinfo is an odd one: every dependency is conditional, because they're

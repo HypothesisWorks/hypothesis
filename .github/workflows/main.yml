@@ -127,7 +127,7 @@ jobs:
       matrix:
         task:
           - check-nose
-          - check-pytest43
+          - check-pytest46
           - check-django31
           - check-django30
           - check-django22

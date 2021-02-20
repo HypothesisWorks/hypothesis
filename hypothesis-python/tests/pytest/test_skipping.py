@@ -13,8 +13,6 @@
 #
 # END HEADER
 
-import pytest
-
 pytest_plugins = "pytester"
 
 
@@ -36,10 +34,6 @@ def test_to_be_skipped(xs):
 """
 
 
-@pytest.mark.skipif(
-    pytest.__version__.startswith("3.0"),
-    reason="Pytest 3.0 predates a Skipped exception type, so we can't hook into it.",
-)
 def test_no_falsifying_example_if_pytest_skip(testdir):
     """If ``pytest.skip() is called during a test, Hypothesis should not
     continue running the test and shrink process, nor should it print anything

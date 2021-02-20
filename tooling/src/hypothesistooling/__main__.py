@@ -368,7 +368,7 @@ def standard_tox_task(name):
 
 
 standard_tox_task("nose")
-standard_tox_task("pytest43")
+standard_tox_task("pytest46")
 
 for n in [22, 30, 31]:
     standard_tox_task(f"django{n}")
