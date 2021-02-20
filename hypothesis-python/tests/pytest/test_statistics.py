@@ -76,7 +76,7 @@ def test_prints_statistics_given_option_with_junitxml(testdir):
     assert "< 10% of examples satisfied assumptions" in out
 
 
-@pytest.mark.skipif(LooseVersion(pytest.__version__) < "4.6", reason="too old")
+@pytest.mark.skipif(LooseVersion(pytest.__version__) < "5.4.0", reason="too old")
 def test_prints_statistics_given_option_under_xdist_with_junitxml(testdir):
     out = get_output(
         testdir, TESTSUITE, PRINT_STATISTICS_OPTION, "-n", "2", "--junit-xml=out.xml"

@@ -46,15 +46,15 @@ class StoringReporter:
 
 # Avoiding distutils.version.LooseVersion due to
 # https://github.com/HypothesisWorks/hypothesis/issues/2490
-if tuple(map(int, pytest.__version__.split(".")[:2])) < (4, 3):  # pragma: no cover
+if tuple(map(int, pytest.__version__.split(".")[:2])) < (4, 6):  # pragma: no cover
     import warnings
 
     from hypothesis.errors import HypothesisWarning
 
     PYTEST_TOO_OLD_MESSAGE = """
-        You are using Pytest version %s.  Hypothesis tests work with any test
-        runner, but our Pytest plugin requires Pytest  4.3 or newer.
-        Note that the Pytest developers no longer support this version either!
+        You are using pytest version %s. Hypothesis tests work with any test
+        runner, but our pytest plugin requires pytest 4.6 or newer.
+        Note that the pytest developers no longer support your version either!
         Disabling the Hypothesis pytest plugin...
     """
     warnings.warn(PYTEST_TOO_OLD_MESSAGE % (pytest.__version__,), HypothesisWarning)
