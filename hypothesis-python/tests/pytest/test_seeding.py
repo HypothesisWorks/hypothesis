@@ -48,7 +48,7 @@ def test_runs_repeatably_when_seed_is_set(seed, testdir):
 
     results = [
         testdir.runpytest(
-            script, "--verbose", "--strict", "--hypothesis-seed", str(seed)
+            script, "--verbose", "--strict-markers", "--hypothesis-seed", str(seed)
         )
         for _ in range(2)
     ]
@@ -94,7 +94,7 @@ def test_repeats_healthcheck_when_following_seed_instruction(testdir, tmpdir):
 
     script = testdir.makepyfile(health_check_test)
 
-    initial = testdir.runpytest(script, "--verbose", "--strict")
+    initial = testdir.runpytest(script, "--verbose", "--strict-markers")
 
     match = CONTAINS_SEED_INSTRUCTION.search("\n".join(initial.stdout.lines))
     initial_output = "\n".join(initial.stdout.lines)
@@ -102,12 +102,14 @@ def test_repeats_healthcheck_when_following_seed_instruction(testdir, tmpdir):
     match = CONTAINS_SEED_INSTRUCTION.search(initial_output)
     assert match is not None
 
-    rerun = testdir.runpytest(script, "--verbose", "--strict", match.group(0))
+    rerun = testdir.runpytest(script, "--verbose", "--strict-markers", match.group(0))
     rerun_output = "\n".join(rerun.stdout.lines)
 
     assert "FailedHealthCheck" in rerun_output
     assert "--hypothesis-seed" not in rerun_output
 
-    rerun2 = testdir.runpytest(script, "--verbose", "--strict", "--hypothesis-seed=10")
+    rerun2 = testdir.runpytest(
+        script, "--verbose", "--strict-markers", "--hypothesis-seed=10"
+    )
     rerun2_output = "\n".join(rerun2.stdout.lines)
     assert "FailedHealthCheck" not in rerun2_output
