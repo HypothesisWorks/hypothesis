@@ -52,7 +52,7 @@ Available settings
 Controlling what runs
 ~~~~~~~~~~~~~~~~~~~~~
 
-Hypothesis divides tests into five logically distinct phases:
+Hypothesis divides tests into logically distinct phases:
 
 1. Running explicit examples :ref:`provided with the @example decorator <providing-explicit-examples>`.
 2. Rerunning a selection of previously failing examples to reproduce a previously seen error
@@ -60,6 +60,11 @@ Hypothesis divides tests into five logically distinct phases:
 4. Mutating examples for :ref:`targeted property-based testing <targeted-search>`.
 5. Attempting to shrink an example found in previous phases (other than phase 1 - explicit examples cannot be shrunk).
    This turns potentially large and complicated examples which may be hard to read into smaller and simpler ones.
+6. Attempting to explain the cause of the failure, by identifying suspicious lines of code
+   (e.g. the earliest lines which are never run on passing inputs, and always run on failures).
+   This relies on :func:`python:sys.settrace`, and is therefore automatically disabled on
+   PyPy or if you are using :pypi:`coverage` or a debugger.  If there are no clearly
+   suspicious lines of code, :pep:`we refuse the temptation to guess <20>`.
 
 The phases setting provides you with fine grained control over which of these run,
 with each phase corresponding to a value on the :class:`~hypothesis.Phase` enum:
@@ -71,7 +76,7 @@ with each phase corresponding to a value on the :class:`~hypothesis.Phase` enum:
 3. ``Phase.generate`` controls whether new examples will be generated.
 4. ``Phase.target`` controls whether examples will be mutated for targeting.
 5. ``Phase.shrink`` controls whether examples will be shrunk.
-
+6. ``Phase.explain`` controls whether Hypothesis attempts to explain test failures.
 
 The phases argument accepts a collection with any subset of these. e.g.
 ``settings(phases=[Phase.generate, Phase.shrink])`` will generate new examples
