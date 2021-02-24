@@ -113,3 +113,8 @@ class Node:
 @given(st.builds(Node))
 def test_can_resolve_recursive_dataclass(val):
     assert isinstance(val, Node)
+
+
+def test_can_register_new_type_for_typeddicts():
+    st.register_type_strategy(C, st.just("David Turner"))
+    assert st.from_type(C).example() == "David Turner"
