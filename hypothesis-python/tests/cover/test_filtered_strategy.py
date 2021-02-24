@@ -38,7 +38,7 @@ def test_filter_conditions_may_be_empty():
     s.condition(0)
 
 
-def test_flattens_nested_filteredstrategy():
+def test_nested_filteredstrategy_flattens_conditions():
     s = FilteredStrategy(
         FilteredStrategy(st.text(), conditions=(bool,)),
         conditions=(len,),

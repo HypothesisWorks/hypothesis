@@ -32,30 +32,41 @@ import operator
 from decimal import Decimal
 from fractions import Fraction
 from functools import partial
-from typing import Any, Callable, Mapping, Optional, Tuple, TypeVar
+from typing import Any, Callable, Dict, NamedTuple, Optional, TypeVar
 
 from hypothesis.internal.compat import ceil, floor
 
 Ex = TypeVar("Ex")
 Predicate = Callable[[Ex], bool]
 
-ConstructivePredicate = Tuple[Mapping[str, Any], Optional[Predicate]]
-"""Return kwargs to the appropriate strategy, and the predicate if needed.
 
-For example::
+class ConstructivePredicate(NamedTuple):
+    """Return kwargs to the appropriate strategy, and the predicate if needed.
 
-    integers().filter(lambda x: x >= 0)
-    -> {"min_value": 0"}, None
+    For example::
 
-    integers().filter(lambda x: x >= 0 and x % 7)
-    -> {"min_value": 0"}, lambda x: x % 7
+        integers().filter(lambda x: x >= 0)
+        -> {"min_value": 0"}, None
 
-At least in principle - for now we usually return the predicate unchanged
-if needed.
+        integers().filter(lambda x: x >= 0 and x % 7)
+        -> {"min_value": 0"}, lambda x: x % 7
 
-We have a separate get-predicate frontend for each "group" of strategies; e.g.
-for each numeric type, for strings, for bytes, for collection sizes, etc.
-"""
+    At least in principle - for now we usually return the predicate unchanged
+    if needed.
+
+    We have a separate get-predicate frontend for each "group" of strategies; e.g.
+    for each numeric type, for strings, for bytes, for collection sizes, etc.
+    """
+
+    kwargs: Dict[str, Any]
+    predicate: Optional[Predicate]
+
+    @classmethod
+    def unchanged(cls, predicate):
+        return cls({}, predicate)
+
+
+UNSATISFIABLE = ConstructivePredicate.unchanged(lambda _: False)
 
 
 def get_numeric_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
@@ -74,7 +85,7 @@ def get_numeric_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
         if (isinstance(arg, Decimal) and Decimal.is_snan(arg)) or not isinstance(
             arg, (int, float, Fraction, Decimal)
         ):
-            return {}, predicate
+            return ConstructivePredicate.unchanged(predicate)
         options = {
             # We're talking about op(arg, x) - the reverse of our usual intuition!
             operator.lt: {"min_value": arg, "exclude_min": True},  # lambda x: arg < x
@@ -84,11 +95,11 @@ def get_numeric_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
             operator.gt: {"max_value": arg, "exclude_max": True},  # lambda x: arg > x
         }
         if predicate.func in options:
-            return options[predicate.func], None
+            return ConstructivePredicate(options[predicate.func], None)
 
     # TODO: handle lambdas by AST analysis
 
-    return {}, predicate
+    return ConstructivePredicate.unchanged(predicate)
 
 
 def get_integer_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
@@ -98,7 +109,7 @@ def get_integer_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
         if kwargs["min_value"] == -math.inf:
             del kwargs["min_value"]
         elif math.isinf(kwargs["min_value"]):
-            return {}, lambda _: False
+            return UNSATISFIABLE
         elif kwargs["min_value"] != int(kwargs["min_value"]):
             kwargs["min_value"] = ceil(kwargs["min_value"])
         elif kwargs.get("exclude_min", False):
@@ -108,11 +119,11 @@ def get_integer_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
         if kwargs["max_value"] == math.inf:
             del kwargs["max_value"]
         elif math.isinf(kwargs["max_value"]):
-            return {}, lambda _: False
+            return UNSATISFIABLE
         elif kwargs["max_value"] != int(kwargs["max_value"]):
             kwargs["max_value"] = floor(kwargs["max_value"])
         elif kwargs.get("exclude_max", False):
             kwargs["max_value"] = int(kwargs["max_value"]) - 1
 
     kwargs = {k: v for k, v in kwargs.items() if k in {"min_value", "max_value"}}
-    return kwargs, predicate
+    return ConstructivePredicate(kwargs, predicate)
