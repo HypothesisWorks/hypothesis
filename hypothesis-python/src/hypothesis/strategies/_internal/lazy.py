@@ -20,6 +20,7 @@ from hypothesis.internal.reflection import (
     arg_string,
     convert_keyword_arguments,
     convert_positional_arguments,
+    get_pretty_function_description,
 )
 from hypothesis.strategies._internal.strategies import SearchStrategy
 
@@ -63,6 +64,10 @@ def unwrap_strategies(s):
         assert unwrap_depth >= 0
 
 
+def _repr_filter(condition):
+    return f".filter({get_pretty_function_description(condition)})"
+
+
 class LazyStrategy(SearchStrategy):
     """A strategy which is defined purely by conversion to and from another
     strategy.
@@ -70,13 +75,14 @@ class LazyStrategy(SearchStrategy):
     Its parameter and distribution come from that other strategy.
     """
 
-    def __init__(self, function, args, kwargs, *, force_repr=None):
+    def __init__(self, function, args, kwargs, filters=(), *, force_repr=None):
         SearchStrategy.__init__(self)
         self.__wrapped_strategy = None
         self.__representation = force_repr
         self.function = function
         self.__args = args
         self.__kwargs = kwargs
+        self.__filters = filters
 
     @property
     def supports_find(self):
@@ -110,7 +116,18 @@ class LazyStrategy(SearchStrategy):
                 self.__wrapped_strategy = self.function(
                     *unwrapped_args, **unwrapped_kwargs
                 )
+            for f in self.__filters:
+                self.__wrapped_strategy = self.__wrapped_strategy.filter(f)
         return self.__wrapped_strategy
+
+    def filter(self, condition):
+        return LazyStrategy(
+            self.function,
+            self.__args,
+            self.__kwargs,
+            self.__filters + (condition,),
+            force_repr=f"{self!r}{_repr_filter(condition)}",
+        )
 
     def do_validate(self):
         w = self.wrapped_strategy
@@ -140,9 +157,10 @@ class LazyStrategy(SearchStrategy):
             for k, v in defaults.items():
                 if k in kwargs_for_repr and kwargs_for_repr[k] is v:
                     del kwargs_for_repr[k]
-            self.__representation = "{}({})".format(
+            self.__representation = "{}({}){}".format(
                 self.function.__name__,
                 arg_string(self.function, _args, kwargs_for_repr, reorder=False),
+                "".join(map(_repr_filter, self.__filters)),
             )
         return self.__representation
 

@@ -704,19 +704,18 @@ class FilteredStrategy(SearchStrategy):
     def __init__(self, strategy, conditions):
         super().__init__()
         if isinstance(strategy, FilteredStrategy):
-            # Flatten chained filters into a single filter with multiple
-            # conditions.
+            # Flatten chained filters into a single filter with multiple conditions.
             self.flat_conditions = strategy.flat_conditions + conditions
             self.filtered_strategy = strategy.filtered_strategy
         else:
             self.flat_conditions = conditions
             self.filtered_strategy = strategy
 
-        assert self.flat_conditions
         assert isinstance(self.flat_conditions, tuple)
         assert not isinstance(self.filtered_strategy, FilteredStrategy)
 
         self.__condition = None
+        self.__validated = False
 
     def calc_is_empty(self, recur):
         return recur(self.filtered_strategy)
@@ -737,15 +736,34 @@ class FilteredStrategy(SearchStrategy):
 
     def do_validate(self):
         self.filtered_strategy.validate()
+        fresh = self.filtered_strategy
+        for cond in self.flat_conditions:
+            fresh = fresh.filter(cond)
+        if isinstance(fresh, FilteredStrategy):
+            FilteredStrategy.__init__(
+                self, fresh.filtered_strategy, fresh.flat_conditions
+            )
+        else:
+            FilteredStrategy.__init__(self, fresh, ())
+
+    def filter(self, condition):
+        # Allow strategy rewriting to 'see through' an unhandled predicate.
+        out = self.filtered_strategy.filter(condition)
+        if isinstance(out, FilteredStrategy):
+            return FilteredStrategy(
+                out.filtered_strategy, self.flat_conditions + out.flat_conditions
+            )
+        return FilteredStrategy(out, self.flat_conditions)
 
     @property
     def condition(self):
         if self.__condition is None:
-            assert self.flat_conditions
             if len(self.flat_conditions) == 1:
-                # Avoid an extra indirection in the common case of only one
-                # condition.
+                # Avoid an extra indirection in the common case of only one condition.
                 self.__condition = self.flat_conditions[0]
+            elif len(self.flat_conditions) == 0:
+                # Possible, if unlikely, due to filter predicate rewriting
+                self.__condition = lambda _: True
             else:
                 self.__condition = lambda x: all(
                     cond(x) for cond in self.flat_conditions
