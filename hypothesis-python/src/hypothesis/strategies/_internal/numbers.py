@@ -18,6 +18,7 @@ import math
 from hypothesis.control import assume, reject
 from hypothesis.internal.conjecture import floats as flt, utils as d
 from hypothesis.internal.conjecture.utils import calc_label_from_name
+from hypothesis.internal.filtering import get_integer_predicate_bounds
 from hypothesis.internal.floats import float_of
 from hypothesis.strategies._internal.strategies import SearchStrategy
 
@@ -51,10 +52,24 @@ class BoundedIntStrategy(SearchStrategy):
         self.end = end
 
     def __repr__(self):
-        return f"BoundedIntStrategy({self.start}, {self.end})"
+        return f"integers({self.start}, {self.end})"
 
     def do_draw(self, data):
         return d.integer_range(data, self.start, self.end)
+
+    def filter(self, condition):
+        kwargs, pred = get_integer_predicate_bounds(condition)
+        start = max(self.start, kwargs.get("min_value", self.start))
+        end = min(self.end, kwargs.get("max_value", self.end))
+        if start > self.start or end < self.end:
+            if start > end:
+                from hypothesis.strategies._internal.core import nothing
+
+                return nothing()
+            self = type(self)(start, end)
+        if pred is None:
+            return self
+        return super().filter(pred)
 
 
 NASTY_FLOATS = sorted(

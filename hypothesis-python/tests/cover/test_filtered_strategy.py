@@ -15,6 +15,7 @@
 
 import hypothesis.strategies as st
 from hypothesis.internal.conjecture.data import ConjectureData
+from hypothesis.strategies._internal.strategies import FilteredStrategy
 
 
 def test_filter_iterations_are_marked_as_discarded():
@@ -25,3 +26,22 @@ def test_filter_iterations_are_marked_as_discarded():
     assert data.draw(x) == 0
 
     assert data.has_discards
+
+
+def test_filtered_branches_are_all_filtered():
+    s = FilteredStrategy(st.integers() | st.text(), (bool,))
+    assert all(isinstance(x, FilteredStrategy) for x in s.branches)
+
+
+def test_filter_conditions_may_be_empty():
+    s = FilteredStrategy(st.integers(), conditions=())
+    s.condition(0)
+
+
+def test_nested_filteredstrategy_flattens_conditions():
+    s = FilteredStrategy(
+        FilteredStrategy(st.text(), conditions=(bool,)),
+        conditions=(len,),
+    )
+    assert s.filtered_strategy is st.text()
+    assert s.flat_conditions == (bool, len)

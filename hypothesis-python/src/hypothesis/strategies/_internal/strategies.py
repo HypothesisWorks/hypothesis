@@ -704,15 +704,13 @@ class FilteredStrategy(SearchStrategy):
     def __init__(self, strategy, conditions):
         super().__init__()
         if isinstance(strategy, FilteredStrategy):
-            # Flatten chained filters into a single filter with multiple
-            # conditions.
+            # Flatten chained filters into a single filter with multiple conditions.
             self.flat_conditions = strategy.flat_conditions + conditions
             self.filtered_strategy = strategy.filtered_strategy
         else:
             self.flat_conditions = conditions
             self.filtered_strategy = strategy
 
-        assert self.flat_conditions
         assert isinstance(self.flat_conditions, tuple)
         assert not isinstance(self.filtered_strategy, FilteredStrategy)
 
@@ -736,16 +734,51 @@ class FilteredStrategy(SearchStrategy):
         return self._cached_repr
 
     def do_validate(self):
+        # Start by validating our inner filtered_strategy.  If this was a LazyStrategy,
+        # validation also reifies it so that subsequent calls to e.g. `.filter()` will
+        # be passed through.
         self.filtered_strategy.validate()
+        # So now we have a reified inner strategy, we'll replay all our saved
+        # predicates in case some or all of them can be rewritten.  Note that this
+        # replaces the `fresh` strategy too!
+        fresh = self.filtered_strategy
+        for cond in self.flat_conditions:
+            fresh = fresh.filter(cond)
+        if isinstance(fresh, FilteredStrategy):
+            # In this case we have at least some non-rewritten filter predicates,
+            # so we just re-initialize the strategy.
+            FilteredStrategy.__init__(
+                self, fresh.filtered_strategy, fresh.flat_conditions
+            )
+        else:
+            # But if *all* the predicates were rewritten... well, do_validate() is
+            # an in-place method so we still just re-initialize the strategy!
+            FilteredStrategy.__init__(self, fresh, ())
+
+    def filter(self, condition):
+        # If we can, it's more efficient to rewrite our strategy to satisfy the
+        # condition.  We therefore exploit the fact that the order of predicates
+        # doesn't matter (`f(x) and g(x) == g(x) and f(x)`) by attempting to apply
+        # condition directly to our filtered strategy as the inner-most filter.
+        out = self.filtered_strategy.filter(condition)
+        # If it couldn't be rewritten, we'll get a new FilteredStrategy - and then
+        # combine the conditions of each in our expected newest=last order.
+        if isinstance(out, FilteredStrategy):
+            return FilteredStrategy(
+                out.filtered_strategy, self.flat_conditions + out.flat_conditions
+            )
+        # But if it *could* be rewritten, we can return the more efficient form!
+        return FilteredStrategy(out, self.flat_conditions)
 
     @property
     def condition(self):
         if self.__condition is None:
-            assert self.flat_conditions
             if len(self.flat_conditions) == 1:
-                # Avoid an extra indirection in the common case of only one
-                # condition.
+                # Avoid an extra indirection in the common case of only one condition.
                 self.__condition = self.flat_conditions[0]
+            elif len(self.flat_conditions) == 0:
+                # Possible, if unlikely, due to filter predicate rewriting
+                self.__condition = lambda _: True
             else:
                 self.__condition = lambda x: all(
                     cond(x) for cond in self.flat_conditions

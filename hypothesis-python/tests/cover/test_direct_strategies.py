@@ -484,7 +484,7 @@ def test_chained_filter(x):
 
 def test_chained_filter_tracks_all_conditions():
     s = ds.integers().filter(bool).filter(lambda x: x % 3)
-    assert len(s.flat_conditions) == 2
+    assert len(s.wrapped_strategy.flat_conditions) == 2
 
 
 @pytest.mark.parametrize("version", [4, 6])
