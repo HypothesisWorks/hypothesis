@@ -18,6 +18,18 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.3.2:
+
+------------------
+6.3.2 - 2021-02-25
+------------------
+
+This patch enables :func:`~hypothesis.strategies.register_type_strategy` for subclasses of
+:class:`python:typing.TypedDict`.  Previously, :func:`~hypothesis.strategies.from_type`
+would ignore the registered strategy (:issue:`2872`).
+
+Thanks to Ilya Lebedev for identifying and fixing this bug!
+
 .. _v6.3.1:
 
 ------------------
