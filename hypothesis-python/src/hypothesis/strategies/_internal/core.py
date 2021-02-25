@@ -1503,22 +1503,6 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
     # refactoring it's hard to do without creating circular imports.
     from hypothesis.strategies._internal import types
 
-    if (
-        hasattr(typing, "_TypedDictMeta")
-        and type(thing) is typing._TypedDictMeta  # type: ignore
-        or hasattr(types.typing_extensions, "_TypedDictMeta")
-        and type(thing) is types.typing_extensions._TypedDictMeta  # type: ignore
-    ):  # pragma: no cover
-        # The __optional_keys__ attribute may or may not be present, but if there's no
-        # way to tell and we just have to assume that everything is required.
-        # See https://github.com/python/cpython/pull/17214 for details.
-        optional = getattr(thing, "__optional_keys__", ())
-        anns = {k: from_type(v) for k, v in thing.__annotations__.items()}
-        return fixed_dictionaries(  # type: ignore
-            mapping={k: v for k, v in anns.items() if k not in optional},
-            optional={k: v for k, v in anns.items() if k in optional},
-        )
-
     def as_strategy(strat_or_callable, thing, final=True):
         # User-provided strategies need some validation, and callables even more
         # of it.  We do this in three places, hence the helper function
@@ -1587,6 +1571,21 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
         # typing.Callable[[], foo] has __args__ = (foo,) but collections.abc.Callable
         # has __args__ = ([], foo); and as a result is non-hashable.
         pass
+    if (
+        hasattr(typing, "_TypedDictMeta")
+        and type(thing) is typing._TypedDictMeta  # type: ignore
+        or hasattr(types.typing_extensions, "_TypedDictMeta")
+        and type(thing) is types.typing_extensions._TypedDictMeta  # type: ignore
+    ):  # pragma: no cover
+        # The __optional_keys__ attribute may or may not be present, but if there's no
+        # way to tell and we just have to assume that everything is required.
+        # See https://github.com/python/cpython/pull/17214 for details.
+        optional = getattr(thing, "__optional_keys__", ())
+        anns = {k: from_type(v) for k, v in thing.__annotations__.items()}
+        return fixed_dictionaries(  # type: ignore
+            mapping={k: v for k, v in anns.items() if k not in optional},
+            optional={k: v for k, v in anns.items() if k in optional},
+        )
     # We also have a special case for TypeVars.
     # They are represented as instances like `~T` when they come here.
     # We need to work with their type instead.
