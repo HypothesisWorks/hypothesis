@@ -22,6 +22,7 @@ from hypothesis import given, strategies as st
 from hypothesis.strategies import from_type
 
 from tests.common.debug import find_any
+from tests.common.utils import temp_registered
 
 
 @given(st.data())
@@ -116,5 +117,6 @@ def test_can_resolve_recursive_dataclass(val):
 
 
 def test_can_register_new_type_for_typeddicts():
-    st.register_type_strategy(C, st.just("David Turner"))
-    assert st.from_type(C).example() == "David Turner"
+    sentinel = object()
+    with temp_registered(C, st.just(sentinel)):
+        assert st.from_type(C).example() is sentinel

@@ -1,6 +1,7 @@
 RELEASE_TYPE: patch
 
-This patch reorder typed dicts processing in `hypothesis.strategies._internal.core._from_type`
-to make typed-dict based classes available for registering default stategy via `register_type_strategy`.
+This patch enables :func:`~hypothesis.strategies.register_type_strategy` for subclasses of
+:class:`python:typing.TypedDict`.  Previously, :func:`~hypothesis.strategies.from_type`
+would ignore the registered strategy (:issue:`2872`).
 
-There is no change to the public API or behaviour.
+Thanks to Ilya Lebedev for identifying and fixing this bug!
