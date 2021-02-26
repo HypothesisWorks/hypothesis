@@ -16,7 +16,6 @@
 from hypothesis.strategies._internal import SearchStrategy
 from hypothesis.strategies._internal.core import (
     DataObject,
-    _strategies,
     binary,
     booleans,
     builds,
@@ -65,6 +64,7 @@ from hypothesis.strategies._internal.datetime import (
     timezones,
 )
 from hypothesis.strategies._internal.ipaddress import ip_addresses
+from hypothesis.strategies._internal.utils import _strategies
 
 # The implementation of all of these lives in `_strategies.py`, but we
 # re-export them via this module to avoid exposing implementation details

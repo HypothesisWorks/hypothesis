@@ -20,7 +20,6 @@ import random
 import re
 import string
 import sys
-import threading
 import typing
 from decimal import Context, Decimal, localcontext
 from fractions import Fraction
@@ -52,7 +51,6 @@ import attr
 
 from hypothesis.control import cleanup, note, reject
 from hypothesis.errors import InvalidArgument, ResolutionFailed
-from hypothesis.internal.cache import LRUReusedCache
 from hypothesis.internal.cathetus import cathetus
 from hypothesis.internal.charmap import as_general_categories
 from hypothesis.internal.compat import ceil, floor, get_type_hints, typing_root_type
@@ -76,7 +74,6 @@ from hypothesis.internal.reflection import (
     get_pretty_function_description,
     is_typed_named_tuple,
     nicerepr,
-    proxies,
     required_args,
 )
 from hypothesis.internal.validation import (
@@ -120,6 +117,7 @@ from hypothesis.strategies._internal.strings import (
     FixedSizeBytes,
     OneCharStringStrategy,
 )
+from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 from hypothesis.utils.conventions import InferType, infer, not_set
 
 K = TypeVar("K")
@@ -127,111 +125,6 @@ V = TypeVar("V")
 UniqueBy = Union[Callable[[Ex], Hashable], Tuple[Callable[[Ex], Hashable], ...]]
 # See https://github.com/python/mypy/issues/3186 - numbers.Real is wrong!
 Real = Union[int, float, Fraction, Decimal]
-
-_strategies = {}  # type: Dict[str, Callable[..., SearchStrategy]]
-
-
-class FloatKey:
-    def __init__(self, f):
-        self.value = float_to_int(f)
-
-    def __eq__(self, other):
-        return isinstance(other, FloatKey) and (other.value == self.value)
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __hash__(self):
-        return hash(self.value)
-
-
-def convert_value(v):
-    if isinstance(v, float):
-        return FloatKey(v)
-    return (type(v), v)
-
-
-_CACHE = threading.local()
-
-
-def get_cache() -> LRUReusedCache:
-    try:
-        return _CACHE.STRATEGY_CACHE
-    except AttributeError:
-        _CACHE.STRATEGY_CACHE = LRUReusedCache(1024)
-        return _CACHE.STRATEGY_CACHE
-
-
-def clear_cache() -> None:
-    cache = get_cache()
-    cache.clear()
-
-
-def cacheable(fn: T) -> T:
-    @proxies(fn)
-    def cached_strategy(*args, **kwargs):
-        try:
-            kwargs_cache_key = {(k, convert_value(v)) for k, v in kwargs.items()}
-        except TypeError:
-            return fn(*args, **kwargs)
-        cache_key = (fn, tuple(map(convert_value, args)), frozenset(kwargs_cache_key))
-        cache = get_cache()
-        try:
-            if cache_key in cache:
-                return cache[cache_key]
-        except TypeError:
-            return fn(*args, **kwargs)
-        else:
-            result = fn(*args, **kwargs)
-            if not isinstance(result, SearchStrategy) or result.is_cacheable:
-                cache[cache_key] = result
-            return result
-
-    cached_strategy.__clear_cache = clear_cache
-    return cached_strategy
-
-
-def defines_strategy(
-    *, force_reusable_values: bool = False, try_non_lazy: bool = False
-) -> Callable[[T], T]:
-    """Returns a decorator for strategy functions.
-
-    If force_reusable is True, the generated values are assumed to be
-    reusable, i.e. immutable and safe to cache, across multiple test
-    invocations.
-
-    If try_non_lazy is True, attempt to execute the strategy definition
-    function immediately, so that a LazyStrategy is only returned if this
-    raises an exception.
-    """
-
-    def decorator(strategy_definition):
-        """A decorator that registers the function as a strategy and makes it
-        lazily evaluated."""
-        _strategies[strategy_definition.__name__] = signature(strategy_definition)
-
-        @proxies(strategy_definition)
-        def accept(*args, **kwargs):
-            if try_non_lazy:
-                # Why not try this unconditionally?  Because we'd end up with very
-                # deep nesting of recursive strategies - better to be lazy unless we
-                # *know* that eager evaluation is the right choice.
-                try:
-                    return strategy_definition(*args, **kwargs)
-                except Exception:
-                    # If invoking the strategy definition raises an exception,
-                    # wrap that up in a LazyStrategy so it happens again later.
-                    pass
-            result = LazyStrategy(strategy_definition, args, kwargs)
-            if force_reusable_values:
-                result.force_has_reusable_values = True
-                assert result.has_reusable_values
-            return result
-
-        accept.is_hypothesis_strategy_function = True
-        return accept
-
-    return decorator
 
 
 class Nothing(SearchStrategy):
