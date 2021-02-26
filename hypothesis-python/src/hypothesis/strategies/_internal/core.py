@@ -20,7 +20,6 @@ import random
 import re
 import string
 import sys
-import threading
 import typing
 from decimal import Context, Decimal, localcontext
 from fractions import Fraction
@@ -50,9 +49,8 @@ from uuid import UUID
 
 import attr
 
-from hypothesis.control import cleanup, note, reject
+from hypothesis.control import cleanup, note
 from hypothesis.errors import InvalidArgument, ResolutionFailed
-from hypothesis.internal.cache import LRUReusedCache
 from hypothesis.internal.cathetus import cathetus
 from hypothesis.internal.charmap import as_general_categories
 from hypothesis.internal.compat import ceil, floor, get_type_hints, typing_root_type
@@ -62,26 +60,15 @@ from hypothesis.internal.conjecture.utils import (
     integer_range,
 )
 from hypothesis.internal.entropy import get_seeder_and_restorer
-from hypothesis.internal.floats import (
-    count_between_floats,
-    float_of,
-    float_to_int,
-    int_to_float,
-    is_negative,
-    next_down,
-    next_up,
-)
 from hypothesis.internal.reflection import (
     define_function_signature,
     get_pretty_function_description,
     is_typed_named_tuple,
     nicerepr,
-    proxies,
     required_args,
 )
 from hypothesis.internal.validation import (
     check_type,
-    check_valid_bound,
     check_valid_integer,
     check_valid_interval,
     check_valid_magnitude,
@@ -97,361 +84,29 @@ from hypothesis.strategies._internal.collections import (
     TupleStrategy,
     UniqueListStrategy,
     UniqueSampledListStrategy,
+    tuples,
 )
 from hypothesis.strategies._internal.deferred import DeferredStrategy
 from hypothesis.strategies._internal.functions import FunctionStrategy
 from hypothesis.strategies._internal.lazy import LazyStrategy
-from hypothesis.strategies._internal.misc import JustStrategy
-from hypothesis.strategies._internal.numbers import (
-    BoundedIntStrategy,
-    FixedBoundedFloatStrategy,
-    FloatStrategy,
-    WideRangeIntStrategy,
-)
+from hypothesis.strategies._internal.misc import just, none, nothing
+from hypothesis.strategies._internal.numbers import Real, floats, integers
 from hypothesis.strategies._internal.recursive import RecursiveStrategy
 from hypothesis.strategies._internal.shared import SharedStrategy
 from hypothesis.strategies._internal.strategies import (
     Ex,
-    OneOfStrategy,
     SampledFromStrategy,
     T,
+    one_of,
 )
 from hypothesis.strategies._internal.strings import (
     FixedSizeBytes,
     OneCharStringStrategy,
 )
+from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 from hypothesis.utils.conventions import InferType, infer, not_set
 
-K = TypeVar("K")
-V = TypeVar("V")
 UniqueBy = Union[Callable[[Ex], Hashable], Tuple[Callable[[Ex], Hashable], ...]]
-# See https://github.com/python/mypy/issues/3186 - numbers.Real is wrong!
-Real = Union[int, float, Fraction, Decimal]
-
-_strategies = {}  # type: Dict[str, Callable[..., SearchStrategy]]
-
-
-class FloatKey:
-    def __init__(self, f):
-        self.value = float_to_int(f)
-
-    def __eq__(self, other):
-        return isinstance(other, FloatKey) and (other.value == self.value)
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __hash__(self):
-        return hash(self.value)
-
-
-def convert_value(v):
-    if isinstance(v, float):
-        return FloatKey(v)
-    return (type(v), v)
-
-
-_CACHE = threading.local()
-
-
-def get_cache() -> LRUReusedCache:
-    try:
-        return _CACHE.STRATEGY_CACHE
-    except AttributeError:
-        _CACHE.STRATEGY_CACHE = LRUReusedCache(1024)
-        return _CACHE.STRATEGY_CACHE
-
-
-def clear_cache() -> None:
-    cache = get_cache()
-    cache.clear()
-
-
-def cacheable(fn: T) -> T:
-    @proxies(fn)
-    def cached_strategy(*args, **kwargs):
-        try:
-            kwargs_cache_key = {(k, convert_value(v)) for k, v in kwargs.items()}
-        except TypeError:
-            return fn(*args, **kwargs)
-        cache_key = (fn, tuple(map(convert_value, args)), frozenset(kwargs_cache_key))
-        cache = get_cache()
-        try:
-            if cache_key in cache:
-                return cache[cache_key]
-        except TypeError:
-            return fn(*args, **kwargs)
-        else:
-            result = fn(*args, **kwargs)
-            if not isinstance(result, SearchStrategy) or result.is_cacheable:
-                cache[cache_key] = result
-            return result
-
-    cached_strategy.__clear_cache = clear_cache
-    return cached_strategy
-
-
-def defines_strategy(
-    *, force_reusable_values: bool = False, try_non_lazy: bool = False
-) -> Callable[[T], T]:
-    """Returns a decorator for strategy functions.
-
-    If force_reusable is True, the generated values are assumed to be
-    reusable, i.e. immutable and safe to cache, across multiple test
-    invocations.
-
-    If try_non_lazy is True, attempt to execute the strategy definition
-    function immediately, so that a LazyStrategy is only returned if this
-    raises an exception.
-    """
-
-    def decorator(strategy_definition):
-        """A decorator that registers the function as a strategy and makes it
-        lazily evaluated."""
-        _strategies[strategy_definition.__name__] = signature(strategy_definition)
-
-        @proxies(strategy_definition)
-        def accept(*args, **kwargs):
-            if try_non_lazy:
-                # Why not try this unconditionally?  Because we'd end up with very
-                # deep nesting of recursive strategies - better to be lazy unless we
-                # *know* that eager evaluation is the right choice.
-                try:
-                    return strategy_definition(*args, **kwargs)
-                except Exception:
-                    # If invoking the strategy definition raises an exception,
-                    # wrap that up in a LazyStrategy so it happens again later.
-                    pass
-            result = LazyStrategy(strategy_definition, args, kwargs)
-            if force_reusable_values:
-                result.force_has_reusable_values = True
-                assert result.has_reusable_values
-            return result
-
-        accept.is_hypothesis_strategy_function = True
-        return accept
-
-    return decorator
-
-
-class Nothing(SearchStrategy):
-    def calc_is_empty(self, recur):
-        return True
-
-    def do_draw(self, data):
-        # This method should never be called because draw() will mark the
-        # data as invalid immediately because is_empty is True.
-        raise NotImplementedError("This should never happen")
-
-    def calc_has_reusable_values(self, recur):
-        return True
-
-    def __repr__(self):
-        return "nothing()"
-
-    def map(self, f):
-        return self
-
-    def filter(self, f):
-        return self
-
-    def flatmap(self, f):
-        return self
-
-
-NOTHING = Nothing()
-
-
-@cacheable
-def nothing() -> SearchStrategy:
-    """This strategy never successfully draws a value and will always reject on
-    an attempt to draw.
-
-    Examples from this strategy do not shrink (because there are none).
-    """
-    return NOTHING
-
-
-def just(value: T) -> SearchStrategy[T]:
-    """Return a strategy which only generates ``value``.
-
-    Note: ``value`` is not copied. Be wary of using mutable values.
-
-    If ``value`` is the result of a callable, you can use
-    :func:`builds(callable) <hypothesis.strategies.builds>` instead
-    of ``just(callable())`` to get a fresh value each time.
-
-    Examples from this strategy do not shrink (because there is only one).
-    """
-    return JustStrategy([value])
-
-
-@defines_strategy(force_reusable_values=True)
-def none() -> SearchStrategy[None]:
-    """Return a strategy which only generates None.
-
-    Examples from this strategy do not shrink (because there is only
-    one).
-    """
-    return just(None)
-
-
-T4 = TypeVar("T4")
-T5 = TypeVar("T5")
-
-
-@overload
-def one_of(args: Sequence[SearchStrategy[Any]]) -> SearchStrategy[Any]:
-    raise NotImplementedError
-
-
-@overload  # noqa: F811
-def one_of(a1: SearchStrategy[Ex]) -> SearchStrategy[Ex]:
-    raise NotImplementedError
-
-
-@overload  # noqa: F811
-def one_of(
-    a1: SearchStrategy[Ex], a2: SearchStrategy[K]
-) -> SearchStrategy[Union[Ex, K]]:
-    raise NotImplementedError
-
-
-@overload  # noqa: F811
-def one_of(
-    a1: SearchStrategy[Ex], a2: SearchStrategy[K], a3: SearchStrategy[V]
-) -> SearchStrategy[Union[Ex, K, V]]:
-    raise NotImplementedError
-
-
-@overload  # noqa: F811
-def one_of(
-    a1: SearchStrategy[Ex],
-    a2: SearchStrategy[K],
-    a3: SearchStrategy[V],
-    a4: SearchStrategy[T4],
-) -> SearchStrategy[Union[Ex, K, V, T4]]:
-    raise NotImplementedError
-
-
-@overload  # noqa: F811
-def one_of(
-    a1: SearchStrategy[Ex],
-    a2: SearchStrategy[K],
-    a3: SearchStrategy[V],
-    a4: SearchStrategy[T4],
-    a5: SearchStrategy[T5],
-) -> SearchStrategy[Union[Ex, K, V, T4, T5]]:
-    raise NotImplementedError
-
-
-@overload  # noqa: F811
-def one_of(*args: SearchStrategy[Any]) -> SearchStrategy[Any]:
-    raise NotImplementedError
-
-
-def one_of(*args):  # noqa: F811
-    # Mypy workaround alert:  Any is too loose above; the return parameter
-    # should be the union of the input parameters.  Unfortunately, Mypy <=0.600
-    # raises errors due to incompatible inputs instead.  See #1270 for links.
-    # v0.610 doesn't error; it gets inference wrong for 2+ arguments instead.
-    """Return a strategy which generates values from any of the argument
-    strategies.
-
-    This may be called with one iterable argument instead of multiple
-    strategy arguments, in which case ``one_of(x)`` and ``one_of(*x)`` are
-    equivalent.
-
-    Examples from this strategy will generally shrink to ones that come from
-    strategies earlier in the list, then shrink according to behaviour of the
-    strategy that produced them. In order to get good shrinking behaviour,
-    try to put simpler strategies first. e.g. ``one_of(none(), text())`` is
-    better than ``one_of(text(), none())``.
-
-    This is especially important when using recursive strategies. e.g.
-    ``x = st.deferred(lambda: st.none() | st.tuples(x, x))`` will shrink well,
-    but ``x = st.deferred(lambda: st.tuples(x, x) | st.none())`` will shrink
-    very badly indeed.
-    """
-    if len(args) == 1 and not isinstance(args[0], SearchStrategy):
-        try:
-            args = tuple(args[0])
-        except TypeError:
-            pass
-    if len(args) == 1 and isinstance(args[0], SearchStrategy):
-        # This special-case means that we can one_of over lists of any size
-        # without incurring any performance overhead when there is only one
-        # strategy, and keeps our reprs simple.
-        return args[0]
-    if args and not any(isinstance(a, SearchStrategy) for a in args):
-        # And this special case is to give a more-specific error message if it
-        # seems that the user has confused `one_of()` for  `sampled_from()`;
-        # the remaining validation is left to OneOfStrategy.  See PR #2627.
-        raise InvalidArgument(
-            f"Did you mean st.sampled_from({list(args)!r})?  st.one_of() is used "
-            "to combine strategies, but all of the arguments were of other types."
-        )
-    return OneOfStrategy(args)
-
-
-@cacheable
-@defines_strategy(force_reusable_values=True)
-def integers(
-    min_value: Optional[int] = None,
-    max_value: Optional[int] = None,
-) -> SearchStrategy[int]:
-    """Returns a strategy which generates integers.
-
-    If min_value is not None then all values will be >= min_value. If
-    max_value is not None then all values will be <= max_value
-
-    Examples from this strategy will shrink towards zero, and negative values
-    will also shrink towards positive (i.e. -n may be replaced by +n).
-    """
-
-    check_valid_bound(min_value, "min_value")
-    check_valid_bound(max_value, "max_value")
-    check_valid_interval(min_value, max_value, "min_value", "max_value")
-
-    if min_value is not None:
-        if min_value != int(min_value):
-            raise InvalidArgument(
-                "min_value=%r of type %r cannot be exactly represented as an integer."
-                % (min_value, type(min_value))
-            )
-        min_value = int(min_value)
-    if max_value is not None:
-        if max_value != int(max_value):
-            raise InvalidArgument(
-                "max_value=%r of type %r cannot be exactly represented as an integer."
-                % (max_value, type(max_value))
-            )
-        max_value = int(max_value)
-
-    if min_value is None:
-        if max_value is None:
-            return WideRangeIntStrategy()
-        else:
-            if max_value > 0:
-                return WideRangeIntStrategy().filter(lambda x: x <= max_value)
-            return WideRangeIntStrategy().map(lambda x: max_value - abs(x))
-    else:
-        if max_value is None:
-            if min_value < 0:
-                return WideRangeIntStrategy().filter(lambda x: x >= min_value)
-            return WideRangeIntStrategy().map(lambda x: min_value + abs(x))
-        else:
-            assert min_value <= max_value
-            if min_value == max_value:
-                return just(min_value)
-            elif min_value >= 0:
-                return BoundedIntStrategy(min_value, max_value)
-            elif max_value <= 0:
-                return BoundedIntStrategy(-max_value, -min_value).map(lambda t: -t)
-            else:
-                return integers(min_value=0, max_value=max_value) | integers(
-                    min_value=min_value, max_value=0
-                )
 
 
 @cacheable
@@ -463,233 +118,6 @@ def booleans() -> SearchStrategy[bool]:
     shrinking will replace ``True`` with ``False`` where possible).
     """
     return SampledFromStrategy([False, True], repr_="booleans()")
-
-
-@cacheable
-@defines_strategy(force_reusable_values=True)
-def floats(
-    min_value: Optional[Real] = None,
-    max_value: Optional[Real] = None,
-    *,
-    allow_nan: Optional[bool] = None,
-    allow_infinity: Optional[bool] = None,
-    width: int = 64,
-    exclude_min: bool = False,
-    exclude_max: bool = False,
-) -> SearchStrategy[float]:
-    """Returns a strategy which generates floats.
-
-    - If min_value is not None, all values will be ``>= min_value``
-      (or ``> min_value`` if ``exclude_min``).
-    - If max_value is not None, all values will be ``<= max_value``
-      (or ``< max_value`` if ``exclude_max``).
-    - If min_value or max_value is not None, it is an error to enable
-      allow_nan.
-    - If both min_value and max_value are not None, it is an error to enable
-      allow_infinity.
-
-    Where not explicitly ruled out by the bounds, all of infinity, -infinity
-    and NaN are possible values generated by this strategy.
-
-    The width argument specifies the maximum number of bits of precision
-    required to represent the generated float. Valid values are 16, 32, or 64.
-    Passing ``width=32`` will still use the builtin 64-bit ``float`` class,
-    but always for values which can be exactly represented as a 32-bit float.
-
-    The exclude_min and exclude_max argument can be used to generate numbers
-    from open or half-open intervals, by excluding the respective endpoints.
-    Excluding either signed zero will also exclude the other.
-    Attempting to exclude an endpoint which is None will raise an error;
-    use ``allow_infinity=False`` to generate finite floats.  You can however
-    use e.g. ``min_value=-math.inf, exclude_min=True`` to exclude only
-    one infinite endpoint.
-
-    Examples from this strategy have a complicated and hard to explain
-    shrinking behaviour, but it tries to improve "human readability". Finite
-    numbers will be preferred to infinity and infinity will be preferred to
-    NaN.
-    """
-    check_type(bool, exclude_min, "exclude_min")
-    check_type(bool, exclude_max, "exclude_max")
-
-    if allow_nan is None:
-        allow_nan = bool(min_value is None and max_value is None)
-    elif allow_nan and (min_value is not None or max_value is not None):
-        raise InvalidArgument(
-            "Cannot have allow_nan=%r, with min_value or max_value" % (allow_nan)
-        )
-
-    if width not in (16, 32, 64):
-        raise InvalidArgument(
-            "Got width=%r, but the only valid values are the integers 16, "
-            "32, and 64." % (width,)
-        )
-
-    check_valid_bound(min_value, "min_value")
-    check_valid_bound(max_value, "max_value")
-
-    min_arg, max_arg = min_value, max_value
-    if min_value is not None:
-        min_value = float_of(min_value, width)
-        assert isinstance(min_value, float)
-    if max_value is not None:
-        max_value = float_of(max_value, width)
-        assert isinstance(max_value, float)
-
-    if min_value != min_arg:
-        raise InvalidArgument(
-            f"min_value={min_arg!r} cannot be exactly represented as a float "
-            f"of width {width} - use min_value={min_value!r} instead."
-        )
-    if max_value != max_arg:
-        raise InvalidArgument(
-            f"max_value={max_arg!r} cannot be exactly represented as a float "
-            f"of width {width} - use max_value={max_value!r} instead."
-        )
-
-    if exclude_min and (min_value is None or min_value == math.inf):
-        raise InvalidArgument(f"Cannot exclude min_value={min_value!r}")
-    if exclude_max and (max_value is None or max_value == -math.inf):
-        raise InvalidArgument(f"Cannot exclude max_value={max_value!r}")
-
-    if min_value is not None and (
-        exclude_min or (min_arg is not None and min_value < min_arg)
-    ):
-        min_value = next_up(min_value, width)
-        if min_value == min_arg:
-            assert min_value == min_arg == 0
-            assert is_negative(min_arg) and not is_negative(min_value)
-            min_value = next_up(min_value, width)
-        assert min_value > min_arg  # type: ignore
-    if max_value is not None and (
-        exclude_max or (max_arg is not None and max_value > max_arg)
-    ):
-        max_value = next_down(max_value, width)
-        if max_value == max_arg:
-            assert max_value == max_arg == 0
-            assert is_negative(max_value) and not is_negative(max_arg)
-            max_value = next_down(max_value, width)
-        assert max_value < max_arg  # type: ignore
-
-    if min_value == -math.inf:
-        min_value = None
-    if max_value == math.inf:
-        max_value = None
-
-    bad_zero_bounds = (
-        min_value == max_value == 0
-        and is_negative(max_value)
-        and not is_negative(min_value)
-    )
-    if (
-        min_value is not None
-        and max_value is not None
-        and (min_value > max_value or bad_zero_bounds)
-    ):
-        # This is a custom alternative to check_valid_interval, because we want
-        # to include the bit-width and exclusion information in the message.
-        msg = (
-            "There are no %s-bit floating-point values between min_value=%r "
-            "and max_value=%r" % (width, min_arg, max_arg)
-        )
-        if exclude_min or exclude_max:
-            msg += f", exclude_min={exclude_min!r} and exclude_max={exclude_max!r}"
-        raise InvalidArgument(msg)
-
-    if allow_infinity is None:
-        allow_infinity = bool(min_value is None or max_value is None)
-    elif allow_infinity:
-        if min_value is not None and max_value is not None:
-            raise InvalidArgument(
-                "Cannot have allow_infinity=%r, with both min_value and "
-                "max_value" % (allow_infinity)
-            )
-    elif min_value == math.inf:
-        raise InvalidArgument("allow_infinity=False excludes min_value=inf")
-    elif max_value == -math.inf:
-        raise InvalidArgument("allow_infinity=False excludes max_value=-inf")
-
-    unbounded_floats = FloatStrategy(
-        allow_infinity=allow_infinity, allow_nan=allow_nan, width=width
-    )
-
-    if min_value is None and max_value is None:
-        return unbounded_floats
-    elif min_value is not None and max_value is not None:
-        if min_value == max_value:
-            assert isinstance(min_value, float)
-            result = just(min_value)
-        elif is_negative(min_value):
-            if is_negative(max_value):
-                return floats(
-                    min_value=-max_value, max_value=-min_value, width=width
-                ).map(operator.neg)
-            else:
-                return one_of(
-                    floats(min_value=0.0, max_value=max_value, width=width),
-                    floats(min_value=0.0, max_value=-min_value, width=width).map(
-                        operator.neg
-                    ),
-                )
-        elif count_between_floats(min_value, max_value) > 1000:
-            return FixedBoundedFloatStrategy(
-                lower_bound=min_value, upper_bound=max_value, width=width
-            )
-        else:
-            ub_int = float_to_int(max_value, width)
-            lb_int = float_to_int(min_value, width)
-            assert lb_int <= ub_int
-            result = integers(min_value=lb_int, max_value=ub_int).map(
-                lambda x: int_to_float(x, width)
-            )
-    elif min_value is not None:
-        assert isinstance(min_value, float)
-        if is_negative(min_value):
-            return one_of(
-                unbounded_floats.map(abs),
-                floats(min_value=min_value, max_value=-0.0, width=width),
-            )
-        else:
-            result = unbounded_floats.map(lambda x: min_value + abs(x))
-    else:
-        assert isinstance(max_value, float)
-        if not is_negative(max_value):
-            return one_of(
-                floats(min_value=0.0, max_value=max_value, width=width),
-                unbounded_floats.map(lambda x: -abs(x)),
-            )
-        else:
-            result = unbounded_floats.map(lambda x: max_value - abs(x))
-
-    if width < 64:
-
-        def downcast(x):
-            try:
-                return float_of(x, width)
-            except OverflowError:  # pragma: no cover
-                reject()
-
-        result = result.map(downcast)
-    if not allow_infinity:
-        result = result.filter(lambda x: not math.isinf(x))
-    return result
-
-
-@cacheable
-@defines_strategy()
-def tuples(*args: SearchStrategy) -> SearchStrategy[tuple]:
-    """Return a strategy which generates a tuple of the same length as args by
-    generating the value at index i from args[i].
-
-    e.g. tuples(integers(), integers()) would generate a tuple of length
-    two with both values an integer.
-
-    Examples from this strategy shrink by shrinking their component parts.
-    """
-    for arg in args:
-        check_strategy(arg)
-
-    return TupleStrategy(args)
 
 
 @overload
@@ -1516,7 +944,7 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
                 strategy = strat_or_callable(thing)
             except Exception:  # pragma: no cover
                 if not final:
-                    return NOTHING
+                    return nothing()
                 raise
         else:
             strategy = strat_or_callable

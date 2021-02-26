@@ -26,8 +26,8 @@ from hypothesis.errors import (
     ResolutionFailed,
 )
 from hypothesis.strategies._internal import types
-from hypothesis.strategies._internal.core import _strategies
 from hypothesis.strategies._internal.types import _global_type_lookup
+from hypothesis.strategies._internal.utils import _strategies
 
 from tests.common.debug import assert_all_examples, find_any
 from tests.common.utils import fails_with, temp_registered
