@@ -16,9 +16,12 @@
 from hypothesis.strategies._internal.strategies import (
     FilteredStrategy,
     SampledFromStrategy,
+    SearchStrategy,
+    T,
     filter_not_satisfied,
     is_simple_data,
 )
+from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 
 
 class JustStrategy(SampledFromStrategy):
@@ -60,3 +63,65 @@ class JustStrategy(SampledFromStrategy):
         if isinstance(filter_strategy, FilteredStrategy):
             return self._transform(self.value, filter_strategy.flat_conditions)
         return self._transform(self.value)
+
+
+def just(value: T) -> SearchStrategy[T]:
+    """Return a strategy which only generates ``value``.
+
+    Note: ``value`` is not copied. Be wary of using mutable values.
+
+    If ``value`` is the result of a callable, you can use
+    :func:`builds(callable) <hypothesis.strategies.builds>` instead
+    of ``just(callable())`` to get a fresh value each time.
+
+    Examples from this strategy do not shrink (because there is only one).
+    """
+    return JustStrategy([value])
+
+
+@defines_strategy(force_reusable_values=True)
+def none() -> SearchStrategy[None]:
+    """Return a strategy which only generates None.
+
+    Examples from this strategy do not shrink (because there is only
+    one).
+    """
+    return just(None)
+
+
+class Nothing(SearchStrategy):
+    def calc_is_empty(self, recur):
+        return True
+
+    def do_draw(self, data):
+        # This method should never be called because draw() will mark the
+        # data as invalid immediately because is_empty is True.
+        raise NotImplementedError("This should never happen")
+
+    def calc_has_reusable_values(self, recur):
+        return True
+
+    def __repr__(self):
+        return "nothing()"
+
+    def map(self, f):
+        return self
+
+    def filter(self, f):
+        return self
+
+    def flatmap(self, f):
+        return self
+
+
+NOTHING = Nothing()
+
+
+@cacheable
+def nothing() -> SearchStrategy:
+    """This strategy never successfully draws a value and will always reject on
+    an attempt to draw.
+
+    Examples from this strategy do not shrink (because there are none).
+    """
+    return NOTHING

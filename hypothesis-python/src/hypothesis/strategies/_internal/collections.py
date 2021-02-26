@@ -22,8 +22,10 @@ from hypothesis.internal.conjecture.utils import combine_labels
 from hypothesis.strategies._internal.strategies import (
     MappedSearchStrategy,
     SearchStrategy,
+    check_strategy,
     filter_not_satisfied,
 )
+from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 
 
 class TupleStrategy(SearchStrategy):
@@ -58,6 +60,23 @@ class TupleStrategy(SearchStrategy):
 
     def calc_is_empty(self, recur):
         return any(recur(e) for e in self.element_strategies)
+
+
+@cacheable
+@defines_strategy()
+def tuples(*args: SearchStrategy) -> SearchStrategy[tuple]:
+    """Return a strategy which generates a tuple of the same length as args by
+    generating the value at index i from args[i].
+
+    e.g. tuples(integers(), integers()) would generate a tuple of length
+    two with both values an integer.
+
+    Examples from this strategy shrink by shrinking their component parts.
+    """
+    for arg in args:
+        check_strategy(arg)
+
+    return TupleStrategy(args)
 
 
 class ListStrategy(SearchStrategy):

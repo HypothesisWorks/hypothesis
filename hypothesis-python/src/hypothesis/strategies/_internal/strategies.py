@@ -17,7 +17,7 @@ import sys
 import warnings
 from collections import defaultdict
 from random import choice as random_choice
-from typing import Any, Callable, Generic, List, TypeVar, Union
+from typing import Any, Callable, Generic, List, Sequence, TypeVar, Union, overload
 
 from hypothesis._settings import HealthCheck, Phase, Verbosity, settings
 from hypothesis.control import _current_build_context, assume
@@ -41,6 +41,9 @@ from hypothesis.utils.conventions import UniqueIdentifier
 
 Ex = TypeVar("Ex", covariant=True)
 T = TypeVar("T")
+T3 = TypeVar("T3")
+T4 = TypeVar("T4")
+T5 = TypeVar("T5")
 
 calculating = UniqueIdentifier("calculating")
 
@@ -638,6 +641,100 @@ class OneOfStrategy(SearchStrategy):
                 self.__in_branches = False
         else:
             return [self]
+
+
+@overload
+def one_of(args: Sequence[SearchStrategy[Any]]) -> SearchStrategy[Any]:
+    raise NotImplementedError
+
+
+@overload  # noqa: F811
+def one_of(a1: SearchStrategy[Ex]) -> SearchStrategy[Ex]:
+    raise NotImplementedError
+
+
+@overload  # noqa: F811
+def one_of(
+    a1: SearchStrategy[Ex], a2: SearchStrategy[T]
+) -> SearchStrategy[Union[Ex, T]]:
+    raise NotImplementedError
+
+
+@overload  # noqa: F811
+def one_of(
+    a1: SearchStrategy[Ex], a2: SearchStrategy[T], a3: SearchStrategy[T3]
+) -> SearchStrategy[Union[Ex, T, T3]]:
+    raise NotImplementedError
+
+
+@overload  # noqa: F811
+def one_of(
+    a1: SearchStrategy[Ex],
+    a2: SearchStrategy[T],
+    a3: SearchStrategy[T3],
+    a4: SearchStrategy[T4],
+) -> SearchStrategy[Union[Ex, T, T3, T4]]:
+    raise NotImplementedError
+
+
+@overload  # noqa: F811
+def one_of(
+    a1: SearchStrategy[Ex],
+    a2: SearchStrategy[T],
+    a3: SearchStrategy[T3],
+    a4: SearchStrategy[T4],
+    a5: SearchStrategy[T5],
+) -> SearchStrategy[Union[Ex, T, T3, T4, T5]]:
+    raise NotImplementedError
+
+
+@overload  # noqa: F811
+def one_of(*args: SearchStrategy[Any]) -> SearchStrategy[Any]:
+    raise NotImplementedError
+
+
+def one_of(*args):  # noqa: F811
+    # Mypy workaround alert:  Any is too loose above; the return parameter
+    # should be the union of the input parameters.  Unfortunately, Mypy <=0.600
+    # raises errors due to incompatible inputs instead.  See #1270 for links.
+    # v0.610 doesn't error; it gets inference wrong for 2+ arguments instead.
+    """Return a strategy which generates values from any of the argument
+    strategies.
+
+    This may be called with one iterable argument instead of multiple
+    strategy arguments, in which case ``one_of(x)`` and ``one_of(*x)`` are
+    equivalent.
+
+    Examples from this strategy will generally shrink to ones that come from
+    strategies earlier in the list, then shrink according to behaviour of the
+    strategy that produced them. In order to get good shrinking behaviour,
+    try to put simpler strategies first. e.g. ``one_of(none(), text())`` is
+    better than ``one_of(text(), none())``.
+
+    This is especially important when using recursive strategies. e.g.
+    ``x = st.deferred(lambda: st.none() | st.tuples(x, x))`` will shrink well,
+    but ``x = st.deferred(lambda: st.tuples(x, x) | st.none())`` will shrink
+    very badly indeed.
+    """
+    if len(args) == 1 and not isinstance(args[0], SearchStrategy):
+        try:
+            args = tuple(args[0])
+        except TypeError:
+            pass
+    if len(args) == 1 and isinstance(args[0], SearchStrategy):
+        # This special-case means that we can one_of over lists of any size
+        # without incurring any performance overhead when there is only one
+        # strategy, and keeps our reprs simple.
+        return args[0]
+    if args and not any(isinstance(a, SearchStrategy) for a in args):
+        # And this special case is to give a more-specific error message if it
+        # seems that the user has confused `one_of()` for  `sampled_from()`;
+        # the remaining validation is left to OneOfStrategy.  See PR #2627.
+        raise InvalidArgument(
+            f"Did you mean st.sampled_from({list(args)!r})?  st.one_of() is used "
+            "to combine strategies, but all of the arguments were of other types."
+        )
+    return OneOfStrategy(args)
 
 
 class MappedSearchStrategy(SearchStrategy):
