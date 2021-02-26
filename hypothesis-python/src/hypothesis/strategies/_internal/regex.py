@@ -161,7 +161,7 @@ class CharactersBuilder:
             self._categories |= UNICODE_CATEGORIES - UNICODE_WORD_CATEGORIES
             self._blacklist_chars.add("_")
         else:
-            raise NotImplementedError("Unknown character category: %s" % category)
+            raise NotImplementedError(f"Unknown character category: {category}")
 
     def add_char(self, char):
         """Add given char to the whitelist."""
@@ -414,7 +414,7 @@ def _strategy(codes, context, is_unicode):
                 else:
                     # Currently there are no known code points other than
                     # handled here. This code is just future proofing
-                    raise NotImplementedError("Unknown charset code: %s" % charset_code)
+                    raise NotImplementedError(f"Unknown charset code: {charset_code}")
             return builder.strategy
 
         elif code == sre.ANY:
@@ -488,4 +488,4 @@ def _strategy(codes, context, is_unicode):
         else:
             # Currently there are no known code points other than handled here.
             # This code is just future proofing
-            raise NotImplementedError("Unknown code point: %s" % repr(code))
+            raise NotImplementedError(f"Unknown code point: {code!r}")
