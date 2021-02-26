@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.3.3:
+
+------------------
+6.3.3 - 2021-02-26
+------------------
+
+This patch moves some internal code, so that future work can avoid
+creating import cycles.  There is no user-visible change.
+
 .. _v6.3.2:
 
 ------------------
