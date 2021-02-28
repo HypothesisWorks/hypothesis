@@ -65,10 +65,10 @@ Hypothesis without affecting your system packages.
 Codespaces
 ----------
 
-We support `GitHub Codespaces <https://github.com/features/codespaces>`_. 
+We support `GitHub Codespaces <https://github.com/features/codespaces>`_.
 It really helps us to make the contribution process easier.
 
-It is pre-configured to install all the requirements for you. 
+It is pre-configured to install all the requirements for you.
 The only thing left for a contributor is to press "Open with Codespaces" button.
 
 -----------------------
