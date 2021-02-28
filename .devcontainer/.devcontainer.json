@@ -2,10 +2,11 @@
   "name": "HypothesisWorks/hypothesis",
   "image": "python:3.8-slim-buster",
 
-  // Set *default* container specific settings.json values on container create.
   "settings": {
-    // Environment:
     "python.pythonPath": "${workspaceFolder}/.venv/bin/python3",
   },
+
+  // After conatainer is created, we install all the requirments,
+  // and show what commands there are in our own tooling:
   "postCreateCommand": "bash build.sh tasks",
 }
