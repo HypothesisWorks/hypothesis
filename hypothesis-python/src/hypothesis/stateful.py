@@ -592,10 +592,10 @@ def rule(*, targets=(), target=None, **kwargs):
 def initialize(*, targets=(), target=None, **kwargs):
     """Decorator for RuleBasedStateMachine.
 
-    An initialize decorator behaves like a rule, but the decorated
-    method is called at most once in a run. All initialize decorated
-    methods will be called before any rule decorated methods, in an
-    arbitrary order.
+    An initialize decorator behaves like a rule, but all ``@initialize()`` decorated
+    methods will be called before any ``@rule()`` decorated methods, in an arbitrary
+    order.  Each ``@initialize()`` method will be called exactly once per run, unless
+    one raises an exception - after which only the ``.teardown()`` method will be run.
     """
     converted_targets = _convert_targets(targets, target)
     for k, v in kwargs.items():
