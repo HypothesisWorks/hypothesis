@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.3.4:
+
+------------------
+6.3.4 - 2021-02-28
+------------------
+
+This patch refactors some internals of :class:`~hypothesis.stateful.RuleBasedStateMachine`.
+There is no change to the public API or behaviour.
+
 .. _v6.3.3:
 
 ------------------
