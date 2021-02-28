@@ -125,6 +125,14 @@ class PreconditionMachine(RuleBasedStateMachine):
         self.num = num / self.num
 
 
+TestPrecondition = PreconditionMachine.TestCase
+TestPrecondition.settings = Settings(TestPrecondition.settings, max_examples=10)
+
+
+def test_picks_up_settings_at_first_use_of_testcase():
+    assert TestPrecondition.settings.max_examples == 10
+
+
 class RoseTreeStateMachine(RuleBasedStateMachine):
     nodes = Bundle("nodes")
 
@@ -450,53 +458,6 @@ def test_machine_with_no_terminals_is_invalid():
 
     with raises(InvalidDefinition):
         NonTerminalMachine.TestCase().runTest()
-
-
-class DynamicMachine(RuleBasedStateMachine):
-    @rule(value=Bundle("hi"))
-    def test_stuff(x):
-        pass
-
-
-DynamicMachine.define_rule(targets=(), function=lambda self: 1, arguments={})
-
-
-class IntAdder(RuleBasedStateMachine):
-    pass
-
-
-IntAdder.define_rule(
-    targets=("ints",), function=lambda self, x: x, arguments={"x": integers()}
-)
-
-IntAdder.define_rule(
-    targets=("ints",),
-    function=lambda self, x, y: x,
-    arguments={"x": integers(), "y": Bundle("ints")},
-)
-
-
-TestDynamicMachine = DynamicMachine.TestCase
-TestIntAdder = IntAdder.TestCase
-TestPrecondition = PreconditionMachine.TestCase
-
-
-for test_case in (TestDynamicMachine, TestIntAdder, TestPrecondition):
-    test_case.settings = Settings(test_case.settings, max_examples=10)
-
-
-def test_picks_up_settings_at_first_use_of_testcase():
-    assert TestDynamicMachine.settings.max_examples == 10
-
-
-def test_new_rules_are_picked_up_before_and_after_rules_call():
-    class Foo(RuleBasedStateMachine):
-        pass
-
-    Foo.define_rule(targets=(), function=lambda self: 1, arguments={})
-    assert len(Foo.rules()) == 1
-    Foo.define_rule(targets=(), function=lambda self: 2, arguments={})
-    assert len(Foo.rules()) == 2
 
 
 def test_minimizes_errors_in_teardown():
@@ -1053,16 +1014,6 @@ state.fail_eventually()
 state.teardown()
 """
     )
-
-
-def test_new_initialize_rules_are_picked_up_before_and_after_rules_call():
-    class Foo(RuleBasedStateMachine):
-        pass
-
-    Foo.define_initialize_rule(targets=(), function=lambda self: 1, arguments={})
-    assert len(Foo.initialize_rules()) == 1
-    Foo.define_initialize_rule(targets=(), function=lambda self: 2, arguments={})
-    assert len(Foo.initialize_rules()) == 2
 
 
 def test_steps_printed_despite_pytest_fail(capsys):

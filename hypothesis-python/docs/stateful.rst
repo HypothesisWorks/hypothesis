@@ -9,6 +9,14 @@ not just data but entire tests. You specify a number of primitive
 actions that can be combined together, and then Hypothesis will
 try to find sequences of those actions that result in a failure.
 
+.. tip::
+
+    Before reading this reference documentation, we recommend reading
+    `How not to Die Hard with Hypothesis <https://hypothesis.works/articles/how-not-to-die-hard-with-hypothesis/>`__
+    and `An Introduction to Rule-Based Stateful Testing <https://hypothesis.works/articles/rule-based-stateful-testing/>`__,
+    in that order. The implementation details will make more sense once you've seen
+    them used in practice, and know *why* each method or decorator is available.
+
 .. note::
 
   This style of testing is often called *model-based testing*, but in Hypothesis

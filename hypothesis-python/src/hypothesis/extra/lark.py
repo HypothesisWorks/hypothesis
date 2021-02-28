@@ -39,7 +39,7 @@ from typing import Dict, Optional
 
 import attr
 import lark
-from lark.grammar import NonTerminal, Terminal
+from lark.grammar import NonTerminal, Terminal  # type: ignore
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture.utils import calc_label_from_name

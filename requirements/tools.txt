@@ -51,7 +51,7 @@ com2ann==0.1.1
     # via shed
 coverage==5.4
     # via -r requirements/tools.in
-cryptography==3.4.5
+cryptography==3.4.6
     # via secretstorage
 decorator==4.4.2
     # via
@@ -59,7 +59,7 @@ decorator==4.4.2
     #   traitlets
 distlib==0.3.1
     # via virtualenv
-django==3.1.6
+django==3.1.7
     # via -r requirements/tools.in
 docutils==0.16
     # via
@@ -120,9 +120,9 @@ jeepney==0.6.0
     #   secretstorage
 jinja2==2.11.3
     # via sphinx
-keyring==22.0.1
+keyring==22.3.0
     # via twine
-lark-parser==0.11.1
+lark-parser==0.11.2
     # via -r requirements/tools.in
 libcst==0.3.17
     # via
@@ -138,7 +138,7 @@ mypy-extensions==0.4.3
     #   black
     #   mypy
     #   typing-inspect
-mypy==0.800
+mypy==0.812
     # via -r requirements/tools.in
 packaging==20.9
     # via
@@ -188,7 +188,7 @@ pyflakes==2.2.0
     # via
     #   autoflake
     #   flake8
-pygments==2.7.4
+pygments==2.8.0
     # via
     #   ipython
     #   pybetter
@@ -210,7 +210,7 @@ pyyaml==5.4.1
     # via
     #   bandit
     #   libcst
-readme-renderer==28.0
+readme-renderer==29.0
     # via twine
 regex==2020.11.13
     # via black
@@ -253,7 +253,7 @@ sphinx-rtd-theme==0.5.1
     # via -r requirements/tools.in
 sphinx-selective-exclude==1.0.3
     # via -r requirements/tools.in
-sphinx==3.4.3
+sphinx==3.5.1
     # via
     #   -r requirements/tools.in
     #   sphinx-rtd-theme
@@ -281,9 +281,9 @@ toml==0.10.2
     #   black
     #   pytest
     #   tox
-tox==3.21.4
+tox==3.22.0
     # via -r requirements/tools.in
-tqdm==4.56.2
+tqdm==4.58.0
     # via twine
 traitlets==4.3.3
     # via

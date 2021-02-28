@@ -216,11 +216,9 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
     executed.
     """
 
-    _rules_per_class = {}  # type: Dict[type, List[classmethod]]
-    _invariants_per_class = {}  # type: Dict[type, List[classmethod]]
-    _base_rules_per_class = {}  # type: Dict[type, List[classmethod]]
-    _initializers_per_class = {}  # type: Dict[type, List[classmethod]]
-    _base_initializers_per_class = {}  # type: Dict[type, List[classmethod]]
+    _rules_per_class: Dict[type, List[classmethod]] = {}
+    _invariants_per_class: Dict[type, List[classmethod]] = {}
+    _initializers_per_class: Dict[type, List[classmethod]] = {}
 
     def __init__(self):
         if not self.rules():
@@ -268,13 +266,11 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         except KeyError:
             pass
 
+        cls._initializers_per_class[cls] = []
         for _, v in inspect.getmembers(cls):
             r = getattr(v, INITIALIZE_RULE_MARKER, None)
             if r is not None:
-                cls.define_initialize_rule(
-                    r.targets, r.function, r.arguments, r.precondition
-                )
-        cls._initializers_per_class[cls] = cls._base_initializers_per_class.pop(cls, [])
+                cls._initializers_per_class[cls].append(r)
         return cls._initializers_per_class[cls]
 
     @classmethod
@@ -284,11 +280,11 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         except KeyError:
             pass
 
+        cls._rules_per_class[cls] = []
         for _, v in inspect.getmembers(cls):
             r = getattr(v, RULE_MARKER, None)
             if r is not None:
-                cls.define_rule(r.targets, r.function, r.arguments, r.precondition)
-        cls._rules_per_class[cls] = cls._base_rules_per_class.pop(cls, [])
+                cls._rules_per_class[cls].append(r)
         return cls._rules_per_class[cls]
 
     @classmethod
@@ -305,30 +301,6 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
                 target.append(i)
         cls._invariants_per_class[cls] = target
         return cls._invariants_per_class[cls]
-
-    @classmethod
-    def define_initialize_rule(cls, targets, function, arguments, precondition=None):
-        converted_arguments = {}
-        for k, v in arguments.items():
-            converted_arguments[k] = v
-        if cls in cls._initializers_per_class:
-            target = cls._initializers_per_class[cls]
-        else:
-            target = cls._base_initializers_per_class.setdefault(cls, [])
-
-        return target.append(Rule(targets, function, converted_arguments, precondition))
-
-    @classmethod
-    def define_rule(cls, targets, function, arguments, precondition=None):
-        converted_arguments = {}
-        for k, v in arguments.items():
-            converted_arguments[k] = v
-        if cls in cls._rules_per_class:
-            target = cls._rules_per_class[cls]
-        else:
-            target = cls._base_rules_per_class.setdefault(cls, [])
-
-        return target.append(Rule(targets, function, converted_arguments, precondition))
 
     def _print_step(self, rule, data, result):
         self.step_count = getattr(self, "step_count", 0) + 1
@@ -592,10 +564,10 @@ def rule(*, targets=(), target=None, **kwargs):
 def initialize(*, targets=(), target=None, **kwargs):
     """Decorator for RuleBasedStateMachine.
 
-    An initialize decorator behaves like a rule, but the decorated
-    method is called at most once in a run. All initialize decorated
-    methods will be called before any rule decorated methods, in an
-    arbitrary order.
+    An initialize decorator behaves like a rule, but all ``@initialize()`` decorated
+    methods will be called before any ``@rule()`` decorated methods, in an arbitrary
+    order.  Each ``@initialize()`` method will be called exactly once per run, unless
+    one raises an exception - after which only the ``.teardown()`` method will be run.
     """
     converted_targets = _convert_targets(targets, target)
     for k, v in kwargs.items():

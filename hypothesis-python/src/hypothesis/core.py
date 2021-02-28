@@ -677,11 +677,8 @@ class StateForActualGivenExecution:
             if result is not None:
                 fail_health_check(
                     self.settings,
-                    (
-                        "Tests run under @given should return None, but "
-                        "%s returned %r instead."
-                    )
-                    % (self.test.__name__, result),
+                    "Tests run under @given should return None, but "
+                    f"{self.test.__name__} returned {result!r} instead.",
                     HealthCheck.return_value,
                 )
         except UnsatisfiedAssumption:
