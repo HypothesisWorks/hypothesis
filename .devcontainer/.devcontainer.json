@@ -8,5 +8,5 @@
 
   // After conatainer is created, we install all the requirments,
   // and show what commands there are in our own tooling:
-  "postCreateCommand": "bash build.sh tasks",
+  "postCreateCommand": "make check-installed",
 }
