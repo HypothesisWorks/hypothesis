@@ -8,5 +8,5 @@
 
   // After conatainer is created, we install all the requirments,
   // and show what commands there are in our own tooling:
-  "postCreateCommand": "sudo apt update && sudo apt install -y python-is-python3 shellcheck && make check-installed",
+  "postCreateCommand": "apt update && apt install -y python-is-python3 shellcheck && make check-installed",
 }
