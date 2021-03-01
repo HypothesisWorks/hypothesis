@@ -19,7 +19,7 @@ import sys
 
 from hypothesis.errors import InvalidArgument
 
-RANDOMS_TO_MANAGE = [random]  # type: list
+RANDOMS_TO_MANAGE: list = [random]
 
 
 class NumpyRandomWrapper:
@@ -64,7 +64,7 @@ def get_seeder_and_restorer(seed=0):
     using the global random state.  See e.g. #1709.
     """
     assert isinstance(seed, int) and 0 <= seed < 2 ** 32
-    states = []  # type: list
+    states: list = []
 
     if "numpy" in sys.modules and not any(
         isinstance(x, NumpyRandomWrapper) for x in RANDOMS_TO_MANAGE

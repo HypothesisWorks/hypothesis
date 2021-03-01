@@ -19,7 +19,7 @@ import os
 import sys
 import warnings
 from hashlib import sha384
-from typing import Iterable
+from typing import Dict, Iterable
 
 from hypothesis.configuration import mkdir_p, storage_directory
 from hypothesis.errors import HypothesisException, HypothesisWarning
@@ -187,7 +187,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
 
     def __init__(self, path: str) -> None:
         self.path = path
-        self.keypaths = {}  # type: dict
+        self.keypaths: Dict[str, str] = {}
 
     def __repr__(self) -> str:
         return f"DirectoryBasedExampleDatabase({self.path!r})"

@@ -21,6 +21,7 @@ import attr
 import numpy as np
 import pandas
 
+from hypothesis import strategies as st
 from hypothesis.control import reject
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra import numpy as npst
@@ -32,8 +33,8 @@ from hypothesis.internal.validation import (
     check_valid_size,
     try_convert,
 )
-from hypothesis.strategies._internal import core as st
-from hypothesis.strategies._internal.strategies import Ex
+from hypothesis.strategies._internal.strategies import Ex, check_strategy
+from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 
 try:
     from pandas.api.types import is_categorical_dtype
@@ -67,7 +68,7 @@ def elements_and_dtype(elements, dtype, source=None):
         prefix = f"{source}."
 
     if elements is not None:
-        st.check_strategy(elements, f"{prefix}elements")
+        check_strategy(elements, f"{prefix}elements")
     else:
         with check("dtype is not None"):
             if dtype is None:
@@ -146,8 +147,8 @@ class ValueIndexStrategy(st.SearchStrategy):
 DEFAULT_MAX_SIZE = 10
 
 
-@st.cacheable
-@st.defines_strategy()
+@cacheable
+@defines_strategy()
 def range_indexes(
     min_size: int = 0,
     max_size: Optional[int] = None,
@@ -169,8 +170,8 @@ def range_indexes(
     return st.integers(min_size, max_size).map(pandas.RangeIndex)
 
 
-@st.cacheable
-@st.defines_strategy()
+@cacheable
+@defines_strategy()
 def indexes(
     *,
     elements: Optional[st.SearchStrategy[Ex]] = None,
@@ -210,7 +211,7 @@ def indexes(
     return ValueIndexStrategy(elements, dtype, min_size, max_size, unique)
 
 
-@st.defines_strategy()
+@defines_strategy()
 def series(
     *,
     elements: Optional[st.SearchStrategy[Ex]] = None,
@@ -255,7 +256,7 @@ def series(
     if index is None:
         index = range_indexes()
     else:
-        st.check_strategy(index, "index")
+        check_strategy(index, "index")
 
     elements, dtype = elements_and_dtype(elements, dtype)
     index_strategy = index
@@ -344,7 +345,7 @@ def columns(
     create the columns.
     """
     if isinstance(names_or_number, (int, float)):
-        names = [None] * names_or_number  # type: list
+        names: List[Union[int, str, None]] = [None] * names_or_number
     else:
         names = list(names_or_number)
     return [
@@ -353,7 +354,7 @@ def columns(
     ]
 
 
-@st.defines_strategy()
+@defines_strategy()
 def data_frames(
     columns: Optional[Sequence[column]] = None,
     *,
@@ -465,7 +466,7 @@ def data_frames(
     if index is None:
         index = range_indexes()
     else:
-        st.check_strategy(index, "index")
+        check_strategy(index, "index")
 
     index_strategy = index
 
@@ -496,10 +497,10 @@ def data_frames(
             return rows_only()
 
     assert columns is not None
-    cols = try_convert(tuple, columns, "columns")  # type: Sequence[column]
+    cols = try_convert(tuple, columns, "columns")
 
     rewritten_columns = []
-    column_names = set()  # type: Set[str]
+    column_names: Set[str] = set()
 
     for i, c in enumerate(cols):
         check_type(column, c, f"columns[{i}]")

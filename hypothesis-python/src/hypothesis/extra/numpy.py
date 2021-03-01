@@ -19,14 +19,14 @@ from typing import Any, Mapping, NamedTuple, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
-from hypothesis import assume
+from hypothesis import assume, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.reflection import proxies
 from hypothesis.internal.validation import check_type, check_valid_interval
-from hypothesis.strategies._internal import SearchStrategy, check_strategy, core as st
-from hypothesis.strategies._internal.strategies import T
+from hypothesis.strategies._internal.strategies import T, check_strategy
+from hypothesis.strategies._internal.utils import defines_strategy
 from hypothesis.utils.conventions import UniqueIdentifier, not_set
 
 Shape = Tuple[int, ...]
@@ -40,7 +40,7 @@ class BroadcastableShapes(NamedTuple):
     result_shape: Shape
 
 
-@st.defines_strategy(force_reusable_values=True)
+@defines_strategy(force_reusable_values=True)
 def from_dtype(
     dtype: np.dtype,
     *,
@@ -93,7 +93,7 @@ def from_dtype(
 
     # Scalar datatypes
     if dtype.kind == "b":
-        result = st.booleans()  # type: SearchStrategy[Any]
+        result: st.SearchStrategy[Any] = st.booleans()
     elif dtype.kind == "f":
         result = st.floats(
             width=8 * dtype.itemsize,
@@ -172,7 +172,7 @@ def order_check(name, floor, small, large):
     )
 
 
-class ArrayStrategy(SearchStrategy):
+class ArrayStrategy(st.SearchStrategy):
     def __init__(self, element_strategy, shape, dtype, fill, unique):
         self.shape = tuple(shape)
         self.fill = fill
@@ -340,16 +340,16 @@ def fill_for(elements, unique, fill, name=""):
         else:
             fill = elements
     else:
-        st.check_strategy(fill, f"{name}.fill" if name else "fill")
+        check_strategy(fill, f"{name}.fill" if name else "fill")
     return fill
 
 
-@st.defines_strategy(force_reusable_values=True)
+@defines_strategy(force_reusable_values=True)
 def arrays(
     dtype: Any,
     shape: Union[int, Shape, st.SearchStrategy[Shape]],
     *,
-    elements: Optional[Union[SearchStrategy, Mapping[str, Any]]] = None,
+    elements: Optional[Union[st.SearchStrategy, Mapping[str, Any]]] = None,
     fill: Optional[st.SearchStrategy[Any]] = None,
     unique: bool = False,
 ) -> st.SearchStrategy[np.ndarray]:
@@ -426,11 +426,11 @@ def arrays(
     # strategy (i.e. repeated argument handling and validation) when it's not
     # needed.  So we get the best of both worlds by recursing with flatmap,
     # but only when it's actually needed.
-    if isinstance(dtype, SearchStrategy):
+    if isinstance(dtype, st.SearchStrategy):
         return dtype.flatmap(
             lambda d: arrays(d, shape, elements=elements, fill=fill, unique=unique)
         )
-    if isinstance(shape, SearchStrategy):
+    if isinstance(shape, st.SearchStrategy):
         return shape.flatmap(
             lambda s: arrays(dtype, s, elements=elements, fill=fill, unique=unique)
         )
@@ -461,7 +461,7 @@ def arrays(
     return ArrayStrategy(elements, shape, dtype, fill, unique)
 
 
-@st.defines_strategy()
+@defines_strategy()
 def array_shapes(
     *,
     min_dims: int = 1,
@@ -496,7 +496,7 @@ def array_shapes(
     ).map(tuple)
 
 
-@st.defines_strategy()
+@defines_strategy()
 def scalar_dtypes() -> st.SearchStrategy[np.dtype]:
     """Return a strategy that can return any non-flexible scalar dtype."""
     return st.one_of(
@@ -511,7 +511,7 @@ def scalar_dtypes() -> st.SearchStrategy[np.dtype]:
 
 
 def defines_dtype_strategy(strat: T) -> T:
-    @st.defines_strategy()
+    @defines_strategy()
     @proxies(strat)
     def inner(*args, **kwargs):
         return strat(*args, **kwargs).map(np.dtype)
@@ -742,7 +742,7 @@ def array_dtypes(
     ).filter(_no_title_is_name_of_a_titled_field)
 
 
-@st.defines_strategy()
+@defines_strategy()
 def nested_dtypes(
     subtype_strategy: st.SearchStrategy[np.dtype] = scalar_dtypes(),
     *,
@@ -764,7 +764,7 @@ def nested_dtypes(
     ).filter(lambda d: max_itemsize is None or d.itemsize <= max_itemsize)
 
 
-@st.defines_strategy()
+@defines_strategy()
 def valid_tuple_axes(
     ndim: int,
     *,
@@ -815,7 +815,7 @@ def valid_tuple_axes(
     ).map(tuple)
 
 
-@st.defines_strategy()
+@defines_strategy()
 def broadcastable_shapes(
     shape: Shape,
     *,
@@ -908,7 +908,7 @@ def broadcastable_shapes(
     ).map(lambda x: x.input_shapes[0])
 
 
-class MutuallyBroadcastableShapesStrategy(SearchStrategy):
+class MutuallyBroadcastableShapesStrategy(st.SearchStrategy):
     def __init__(
         self,
         num_shapes,
@@ -921,7 +921,7 @@ class MutuallyBroadcastableShapesStrategy(SearchStrategy):
     ):
         assert 0 <= min_side <= max_side
         assert 0 <= min_dims <= max_dims <= 32
-        SearchStrategy.__init__(self)
+        st.SearchStrategy.__init__(self)
         self.base_shape = base_shape
         self.side_strat = st.integers(min_side, max_side)
         self.num_shapes = num_shapes
@@ -1134,7 +1134,7 @@ def _hypothesis_parse_gufunc_signature(signature, all_checks=True):
     return _GUfuncSig(input_shapes=input_shapes, result_shape=result_shape)
 
 
-@st.defines_strategy()
+@defines_strategy()
 def mutually_broadcastable_shapes(
     *,
     num_shapes: Union[UniqueIdentifier, int] = not_set,
@@ -1308,10 +1308,10 @@ def mutually_broadcastable_shapes(
     )
 
 
-class BasicIndexStrategy(SearchStrategy):
+class BasicIndexStrategy(st.SearchStrategy):
     def __init__(self, shape, min_dims, max_dims, allow_ellipsis, allow_newaxis):
         assert 0 <= min_dims <= max_dims <= 32
-        SearchStrategy.__init__(self)
+        st.SearchStrategy.__init__(self)
         self.shape = shape
         self.min_dims = min_dims
         self.max_dims = max_dims
@@ -1360,7 +1360,7 @@ class BasicIndexStrategy(SearchStrategy):
         return tuple(result)
 
 
-@st.defines_strategy()
+@defines_strategy()
 def basic_indices(
     shape: Shape,
     *,
@@ -1425,11 +1425,11 @@ def basic_indices(
     )
 
 
-@st.defines_strategy()
+@defines_strategy()
 def integer_array_indices(
     shape: Shape,
     *,
-    result_shape: SearchStrategy[Shape] = array_shapes(),
+    result_shape: st.SearchStrategy[Shape] = array_shapes(),
     dtype: np.dtype = "int",
 ) -> st.SearchStrategy[Tuple[np.ndarray, ...]]:
     """Return a search strategy for tuples of integer-arrays that, when used

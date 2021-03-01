@@ -77,7 +77,7 @@ def get_numeric_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
     so that the strategy validation doesn't complain.
     """
     if (
-        type(predicate) is partial
+        isinstance(predicate, partial)
         and len(predicate.args) == 1
         and not predicate.keywords
     ):
@@ -103,7 +103,7 @@ def get_numeric_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
 
 
 def get_integer_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
-    kwargs, predicate = get_numeric_predicate_bounds(predicate)
+    kwargs, predicate = get_numeric_predicate_bounds(predicate)  # type: ignore
 
     if "min_value" in kwargs:
         if kwargs["min_value"] == -math.inf:

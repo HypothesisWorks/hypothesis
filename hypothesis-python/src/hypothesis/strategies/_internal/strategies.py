@@ -17,7 +17,17 @@ import sys
 import warnings
 from collections import defaultdict
 from random import choice as random_choice
-from typing import Any, Callable, Generic, List, Sequence, TypeVar, Union, overload
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    List,
+    Sequence,
+    TypeVar,
+    Union,
+    overload,
+)
 
 from hypothesis._settings import HealthCheck, Phase, Verbosity, settings
 from hypothesis.control import _current_build_context, assume
@@ -310,7 +320,7 @@ class SearchStrategy(Generic[Ex]):
         def example_generating_inner_function(ex):
             examples.append(ex)
 
-        examples = []  # type: List[Ex]
+        examples: List[Ex] = []
         example_generating_inner_function()
         return random_choice(examples)
 
@@ -381,7 +391,7 @@ class SearchStrategy(Generic[Ex]):
             self.validate_called = False
             raise
 
-    LABELS = {}  # type: dict
+    LABELS: Dict[type, int] = {}
 
     @property
     def class_label(self):

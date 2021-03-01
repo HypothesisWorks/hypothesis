@@ -57,7 +57,7 @@ def belongs_to(package):
 
 PREVENT_ESCALATION = os.getenv("HYPOTHESIS_DO_NOT_ESCALATE") == "true"
 
-FILE_CACHE = {}  # type: Dict[bytes, bool]
+FILE_CACHE: Dict[bytes, bool] = {}
 
 
 is_hypothesis_file = belongs_to(hypothesis)

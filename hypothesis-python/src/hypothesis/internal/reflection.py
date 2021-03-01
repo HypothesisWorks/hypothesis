@@ -437,7 +437,7 @@ def check_valid_identifier(identifier):
         raise ValueError(f"{identifier!r} is not a valid python identifier")
 
 
-eval_cache = {}  # type: dict
+eval_cache: dict = {}
 
 
 def source_exec_as_module(source):

@@ -41,10 +41,11 @@ import attr
 import lark
 from lark.grammar import NonTerminal, Terminal  # type: ignore
 
+from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.validation import check_type
-from hypothesis.strategies._internal import SearchStrategy, core as st
+from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 
 __all__ = ["from_lark"]
 
@@ -77,7 +78,7 @@ def get_terminal_names(terminals, rules, ignore_names):
     return names
 
 
-class LarkStrategy(SearchStrategy):
+class LarkStrategy(st.SearchStrategy):
     """Low-level strategy implementation wrapping a Lark grammar.
 
     See ``from_lark`` for details.
@@ -198,8 +199,8 @@ def check_explicit(name):
     return inner
 
 
-@st.cacheable
-@st.defines_strategy(force_reusable_values=True)
+@cacheable
+@defines_strategy(force_reusable_values=True)
 def from_lark(
     grammar: lark.lark.Lark,
     *,

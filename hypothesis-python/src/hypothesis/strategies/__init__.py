@@ -14,6 +14,7 @@
 # END HEADER
 
 from hypothesis.strategies._internal import SearchStrategy
+from hypothesis.strategies._internal.collections import tuples
 from hypothesis.strategies._internal.core import (
     DataObject,
     binary,
@@ -28,19 +29,13 @@ from hypothesis.strategies._internal.core import (
     dictionaries,
     emails,
     fixed_dictionaries,
-    floats,
     fractions,
     from_regex,
     from_type,
     frozensets,
     functions,
-    integers,
     iterables,
-    just,
     lists,
-    none,
-    nothing,
-    one_of,
     permutations,
     random_module,
     randoms,
@@ -52,7 +47,6 @@ from hypothesis.strategies._internal.core import (
     shared,
     slices,
     text,
-    tuples,
     uuids,
 )
 from hypothesis.strategies._internal.datetime import (
@@ -64,6 +58,9 @@ from hypothesis.strategies._internal.datetime import (
     timezones,
 )
 from hypothesis.strategies._internal.ipaddress import ip_addresses
+from hypothesis.strategies._internal.misc import just, none, nothing
+from hypothesis.strategies._internal.numbers import floats, integers
+from hypothesis.strategies._internal.strategies import one_of
 from hypothesis.strategies._internal.utils import _strategies
 
 # The implementation of all of these lives in `_strategies.py`, but we

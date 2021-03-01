@@ -58,7 +58,11 @@ def integers_for_field(min_value, max_value):
 
 
 # Mapping of field types, to strategy objects or functions of (type) -> strategy
-_global_field_lookup = {
+_FieldLookUpType = Dict[
+    Type[AnyField],
+    Union[st.SearchStrategy, Callable[[Any], st.SearchStrategy]],
+]
+_global_field_lookup: _FieldLookUpType = {
     dm.SmallIntegerField: integers_for_field(-32768, 32767),
     dm.IntegerField: integers_for_field(-2147483648, 2147483647),
     dm.BigIntegerField: integers_for_field(-9223372036854775808, 9223372036854775807),
@@ -81,7 +85,7 @@ _global_field_lookup = {
     df.NullBooleanField: st.one_of(st.none(), st.booleans()),
     df.URLField: urls(),
     df.UUIDField: st.uuids(),
-}  # type: Dict[Type[AnyField], Union[st.SearchStrategy, Callable[[Any], st.SearchStrategy]]]
+}
 
 _ipv6_strings = st.one_of(
     st.ip_addresses(v=6).map(str),

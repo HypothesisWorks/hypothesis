@@ -15,8 +15,9 @@
 
 from hypothesis.internal.compat import int_from_bytes, int_to_bytes
 from hypothesis.internal.conjecture.data import Status
-from hypothesis.internal.conjecture.engine import BUFFER_SIZE, NO_SCORE
+from hypothesis.internal.conjecture.engine import BUFFER_SIZE
 from hypothesis.internal.conjecture.junkdrawer import find_integer
+from hypothesis.internal.conjecture.pareto import NO_SCORE
 
 
 class Optimiser:

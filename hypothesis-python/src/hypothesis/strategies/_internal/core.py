@@ -53,7 +53,13 @@ from hypothesis.control import cleanup, note
 from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.internal.cathetus import cathetus
 from hypothesis.internal.charmap import as_general_categories
-from hypothesis.internal.compat import ceil, floor, get_type_hints, typing_root_type
+from hypothesis.internal.compat import (
+    ceil,
+    floor,
+    get_type_hints,
+    is_typed_named_tuple,
+    typing_root_type,
+)
 from hypothesis.internal.conjecture.utils import (
     calc_label_from_cls,
     check_sample,
@@ -63,7 +69,6 @@ from hypothesis.internal.entropy import get_seeder_and_restorer
 from hypothesis.internal.reflection import (
     define_function_signature,
     get_pretty_function_description,
-    is_typed_named_tuple,
     nicerepr,
     required_args,
 )
@@ -1002,7 +1007,7 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
     if (
         hasattr(typing, "_TypedDictMeta")
         and type(thing) is typing._TypedDictMeta  # type: ignore
-        or hasattr(types.typing_extensions, "_TypedDictMeta")
+        or hasattr(types.typing_extensions, "_TypedDictMeta")  # type: ignore
         and type(thing) is types.typing_extensions._TypedDictMeta  # type: ignore
     ):  # pragma: no cover
         # The __optional_keys__ attribute may or may not be present, but if there's no
@@ -1281,7 +1286,7 @@ def decimals(
 
         strat = fractions(min_value, max_value).map(fraction_to_decimal)
     # Compose with sampled_from for infinities and NaNs as appropriate
-    special = []  # type: List[Decimal]
+    special: List[Decimal] = []
     if allow_nan or (allow_nan is None and (None in (min_value, max_value))):
         special.extend(map(Decimal, ("NaN", "-NaN", "sNaN", "-sNaN")))
     if allow_infinity or (allow_infinity is max_value is None):

@@ -267,7 +267,7 @@ def _get_strategies(
 
     This dict is used to construct our call to the `@given(...)` decorator.
     """
-    given_strategies = {}  # type: Dict[str, st.SearchStrategy]
+    given_strategies: Dict[str, st.SearchStrategy] = {}
     for i, f in enumerate(funcs):
         params = _get_params(f)
         if pass_result_to_next_func and i >= 1:
