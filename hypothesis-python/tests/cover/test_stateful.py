@@ -654,6 +654,32 @@ def test_invariant_precondition():
     run_state_machine_as_test(Invariant)
 
 
+@pytest.mark.parametrize(
+    "decorators",
+    [
+        (invariant(), rule()),
+        (rule(), invariant()),
+        (invariant(), initialize()),
+        (initialize(), invariant()),
+        (invariant(), precondition(lambda self: True), rule()),
+        (rule(), precondition(lambda self: True), invariant()),
+        (precondition(lambda self: True), invariant(), rule()),
+        (precondition(lambda self: True), rule(), invariant()),
+    ],
+    ids=lambda x: "-".join(f.__qualname__.split(".")[0] for f in x),
+)
+def test_invariant_and_rule_are_incompatible(decorators):
+    """It's an error to apply @invariant and @rule to the same method."""
+
+    def method(self):
+        pass
+
+    for d in decorators[:-1]:
+        method = d(method)
+    with pytest.raises(InvalidDefinition):
+        decorators[-1](method)
+
+
 def test_invalid_rule_argument():
     """Rule kwargs that are not a Strategy are expected to raise an InvalidArgument error."""
     with pytest.raises(InvalidArgument):
