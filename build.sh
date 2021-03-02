@@ -17,8 +17,8 @@ SCRIPTS="$ROOT/tooling/scripts"
 # shellcheck source=tooling/scripts/common.sh
 source "$SCRIPTS/common.sh"
 
-if [ -n "${GITHUB_ACTIONS-}" ] ; then
-    # We're on GitHub Actions and already set up a suitable Python
+if [ -n "${GITHUB_ACTIONS-}" ] || [ -n "${CODESPACES-}" ] ; then
+    # We're on GitHub Actions or Codespaces and already set up a suitable Python
     PYTHON=$(command -v python)
 else
     # Otherwise, we install it from scratch

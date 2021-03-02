@@ -1,0 +1,12 @@
+{ 
+  "name": "HypothesisWorks/hypothesis",
+  "image": "python:3.8-slim-buster",
+
+  "settings": {
+    "python.pythonPath": "${workspaceFolder}/.venv/bin/python3",
+  },
+
+  // After container is created, we install all the requirements,
+  // and show what commands there are in our own tooling:
+  "postCreateCommand": "apt-get update && apt-get install -y make shellcheck && make check-installed",
+}
