@@ -78,3 +78,7 @@ def test_defaultdict(ex):
     assume(ex)
     assert all(isinstance(elem, int) for elem in ex)
     assert all(isinstance(elem, int) for elem in ex.values())
+
+
+def test_union_of_Literals():
+    assert from_type(Union[Literal["hamster"], Literal["bunny"]]).example() in ("hamster", "bunny")
