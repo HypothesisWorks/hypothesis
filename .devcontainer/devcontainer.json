@@ -6,7 +6,7 @@
     "python.pythonPath": "${workspaceFolder}/.venv/bin/python3",
   },
 
-  // After conatainer is created, we install all the requirments,
+  // After container is created, we install all the requirements,
   // and show what commands there are in our own tooling:
   "postCreateCommand": "apt-get update && apt-get install -y shellcheck && make check-installed",
 }
