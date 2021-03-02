@@ -333,7 +333,7 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
 
     def check_invariants(self):
         for invar in self.invariants():
-            if invar.precondition and not invar.precondition(self):
+            if not all(precond(self) for precond in invar.preconditions):
                 continue
             invar.function(self)
 
@@ -367,7 +367,7 @@ class Rule:
     targets = attr.ib()
     function = attr.ib(repr=qualname)
     arguments = attr.ib()
-    precondition = attr.ib()
+    preconditions = attr.ib()
     bundles = attr.ib(init=False)
 
     def __attrs_post_init__(self):
@@ -508,7 +508,7 @@ def _convert_targets(targets, target):
 
 RULE_MARKER = "hypothesis_stateful_rule"
 INITIALIZE_RULE_MARKER = "hypothesis_stateful_initialize_rule"
-PRECONDITION_MARKER = "hypothesis_stateful_precondition"
+PRECONDITIONS_MARKER = "hypothesis_stateful_preconditions"
 INVARIANT_MARKER = "hypothesis_stateful_invariant"
 
 
@@ -543,12 +543,12 @@ def rule(*, targets=(), target=None, **kwargs):
             raise InvalidDefinition(
                 "A function cannot be used for two distinct rules. ", Settings.default
             )
-        precondition = getattr(f, PRECONDITION_MARKER, None)
+        preconditions = getattr(f, PRECONDITIONS_MARKER, ())
         rule = Rule(
             targets=converted_targets,
             arguments=kwargs,
             function=f,
-            precondition=precondition,
+            preconditions=preconditions,
         )
 
         @proxies(f)
@@ -568,6 +568,7 @@ def initialize(*, targets=(), target=None, **kwargs):
     methods will be called before any ``@rule()`` decorated methods, in an arbitrary
     order.  Each ``@initialize()`` method will be called exactly once per run, unless
     one raises an exception - after which only the ``.teardown()`` method will be run.
+    ``@initialize()`` methods may not have preconditions.
     """
     converted_targets = _convert_targets(targets, target)
     for k, v in kwargs.items():
@@ -580,8 +581,8 @@ def initialize(*, targets=(), target=None, **kwargs):
             raise InvalidDefinition(
                 "A function cannot be used for two distinct rules. ", Settings.default
             )
-        precondition = getattr(f, PRECONDITION_MARKER, None)
-        if precondition:
+        preconditions = getattr(f, PRECONDITIONS_MARKER, ())
+        if preconditions:
             raise InvalidDefinition(
                 "An initialization rule cannot have a precondition. ", Settings.default
             )
@@ -589,7 +590,7 @@ def initialize(*, targets=(), target=None, **kwargs):
             targets=converted_targets,
             arguments=kwargs,
             function=f,
-            precondition=precondition,
+            preconditions=preconditions,
         )
 
         @proxies(f)
@@ -610,7 +611,8 @@ class VarReference:
 def precondition(precond):
     """Decorator to apply a precondition for rules in a RuleBasedStateMachine.
     Specifies a precondition for a rule to be considered as a valid step in the
-    state machine. The given function will be called with the instance of
+    state machine, which is more efficient than using :func:`~hypothesis.assume`
+    within the rule.  The ``precond`` function will be called with the instance of
     RuleBasedStateMachine and should return True or False. Usually it will need
     to look at attributes on that instance.
 
@@ -624,8 +626,9 @@ def precondition(precond):
             def divide_with(self, numerator):
                 self.state = numerator / self.state
 
-    This is better than using assume in your rule since more valid rules
-    should be able to be run.
+    If multiple preconditions are applied to a single rule, it is only considered
+    a valid step when all of them return True.  Preconditions may be applied to
+    invariants as well as rules.
     """
 
     def decorator(f):
@@ -640,21 +643,23 @@ def precondition(precond):
             )
 
         rule = getattr(f, RULE_MARKER, None)
-        if rule is None:
-            setattr(precondition_wrapper, PRECONDITION_MARKER, precond)
-        else:
-            new_rule = Rule(
-                targets=rule.targets,
-                arguments=rule.arguments,
-                function=rule.function,
-                precondition=precond,
-            )
-            setattr(precondition_wrapper, RULE_MARKER, new_rule)
-
         invariant = getattr(f, INVARIANT_MARKER, None)
-        if invariant is not None:
-            new_invariant = Invariant(function=invariant.function, precondition=precond)
+        if rule is not None:
+            assert invariant is None
+            new_rule = attr.evolve(rule, preconditions=rule.preconditions + (precond,))
+            setattr(precondition_wrapper, RULE_MARKER, new_rule)
+        elif invariant is not None:
+            assert rule is None
+            new_invariant = attr.evolve(
+                invariant, preconditions=invariant.preconditions + (precond,)
+            )
             setattr(precondition_wrapper, INVARIANT_MARKER, new_invariant)
+        else:
+            setattr(
+                precondition_wrapper,
+                PRECONDITIONS_MARKER,
+                getattr(f, PRECONDITIONS_MARKER, ()) + (precond,),
+            )
 
         return precondition_wrapper
 
@@ -664,7 +669,7 @@ def precondition(precond):
 @attr.s()
 class Invariant:
     function = attr.ib()
-    precondition = attr.ib()
+    preconditions = attr.ib()
 
 
 def invariant():
@@ -689,8 +694,8 @@ def invariant():
                 "A function cannot be used for two distinct invariants.",
                 Settings.default,
             )
-        precondition = getattr(f, PRECONDITION_MARKER, None)
-        rule = Invariant(function=f, precondition=precondition)
+        preconditions = getattr(f, PRECONDITIONS_MARKER, ())
+        rule = Invariant(function=f, preconditions=preconditions)
 
         @proxies(f)
         def invariant_wrapper(*args, **kwargs):
@@ -758,7 +763,7 @@ class RuleStrategy(SearchStrategy):
         return (rule, data.draw(rule.arguments_strategy))
 
     def is_valid(self, rule):
-        if rule.precondition and not rule.precondition(self.machine):
+        if not all(precond(self.machine) for precond in rule.preconditions):
             return False
 
         for b in rule.bundles:
