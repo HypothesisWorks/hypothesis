@@ -81,4 +81,7 @@ def test_defaultdict(ex):
 
 
 def test_union_of_Literals():
-    assert from_type(Union[Literal["hamster"], Literal["bunny"]]).example() in ("hamster", "bunny")
+    assert from_type(Union[Literal["hamster"], Literal["bunny"]]).example() in (
+        "hamster",
+        "bunny",
+    )
