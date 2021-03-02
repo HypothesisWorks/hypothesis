@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.4.0:
+
+------------------
+6.4.0 - 2021-03-02
+------------------
+
+This release fixes :doc:`stateful testing methods <stateful>` with multiple
+:func:`~hypothesis.stateful.precondition` decorators.  Previously, only the
+outer-most precondition was checked (:issue:`2681`).
+
 .. _v6.3.4:
 
 ------------------
