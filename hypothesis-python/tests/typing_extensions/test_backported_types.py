@@ -80,8 +80,7 @@ def test_defaultdict(ex):
     assert all(isinstance(elem, int) for elem in ex.values())
 
 
-def test_union_of_Literals():
-    assert from_type(Union[Literal["hamster"], Literal["bunny"]]).example() in (
-        "hamster",
-        "bunny",
-    )
+@given(from_type(Union[Literal["hamster"], Literal["bunny"]]))
+def test_union_of_Literals(pet):
+    # See https://github.com/HypothesisWorks/hypothesis/pull/2886
+    assert pet in ("hamster", "bunny")
