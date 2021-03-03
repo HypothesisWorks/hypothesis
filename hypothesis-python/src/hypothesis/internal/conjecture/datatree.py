@@ -398,7 +398,7 @@ class TreeRecordingObserver(DataObserver):
         if i < len(node.values) or isinstance(node.transition, Branch):
             inconsistent_generation()
 
-        new_transition = conclusion(status, interesting_origin)
+        new_transition = Conclusion(status, interesting_origin)
 
         if node.transition is not None and node.transition != new_transition:
             # As an, I'm afraid, horrible bodge, we deliberately ignore flakiness
