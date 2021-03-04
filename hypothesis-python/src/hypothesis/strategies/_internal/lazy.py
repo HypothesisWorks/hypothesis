@@ -24,7 +24,7 @@ from hypothesis.internal.reflection import (
 )
 from hypothesis.strategies._internal.strategies import SearchStrategy
 
-unwrap_cache = {}  # type: Dict[SearchStrategy, SearchStrategy]
+unwrap_cache: Dict[SearchStrategy, SearchStrategy] = {}
 unwrap_depth = 0
 
 

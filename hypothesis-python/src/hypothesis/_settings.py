@@ -44,7 +44,7 @@ if TYPE_CHECKING:
 
 __all__ = ["settings"]
 
-all_settings = {}  # type: Dict[str, Setting]
+all_settings: Dict[str, "Setting"] = {}
 
 
 class settingsProperty:
@@ -132,7 +132,7 @@ class settings(metaclass=settingsMeta):
     """
 
     __definitions_are_locked = False
-    _profiles = {}  # type: dict
+    _profiles: Dict[str, "settings"] = {}
     __module__ = "hypothesis"
 
     def __getattr__(self, name):

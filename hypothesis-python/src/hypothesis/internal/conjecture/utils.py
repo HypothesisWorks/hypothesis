@@ -33,16 +33,16 @@ from hypothesis.internal.floats import int_to_float
 LABEL_MASK = 2 ** 64 - 1
 
 
-def calc_label_from_name(name):
+def calc_label_from_name(name: str) -> int:
     hashed = hashlib.sha384(str_to_bytes(name)).digest()
     return int_from_bytes(hashed[:8])
 
 
-def calc_label_from_cls(cls):
+def calc_label_from_cls(cls: type) -> int:
     return calc_label_from_name(qualname(cls))
 
 
-def combine_labels(*labels):
+def combine_labels(*labels: int) -> int:
     label = 0
     for l in labels:
         label = (label << 1) & LABEL_MASK

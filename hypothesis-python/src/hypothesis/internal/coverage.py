@@ -34,7 +34,7 @@ When not running with a magic environment variable set, this module disables
 itself and has essentially no overhead.
 """
 
-pretty_file_name_cache = {}  # type: Dict[str, str]
+pretty_file_name_cache: Dict[str, str] = {}
 
 
 def pretty_file_name(f):
@@ -58,7 +58,7 @@ if IN_COVERAGE_TESTS:
     # By this point, "branch-check" should have already been deleted by the
     # tox config. We can't delete it here because of #1718.
 
-    written = set()  # type: Set[Tuple[str, bool]]
+    written: Set[Tuple[str, bool]] = set()
 
     def record_branch(name, value):
         key = (name, value)
@@ -112,7 +112,6 @@ else:
     def check_function(f):
         return f
 
-    # Mypy bug: https://github.com/python/mypy/issues/4117
-    @contextmanager  # type: ignore
+    @contextmanager
     def check(name):
         yield

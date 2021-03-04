@@ -55,6 +55,7 @@ from hypothesis.errors import (
     InvalidArgument,
     MultipleFailures,
     NoSuchExample,
+    StopTest,
     Unsatisfiable,
     UnsatisfiedAssumption,
 )
@@ -65,8 +66,9 @@ from hypothesis.internal.compat import (
     int_from_bytes,
     qualname,
 )
-from hypothesis.internal.conjecture.data import ConjectureData, StopTest
-from hypothesis.internal.conjecture.engine import ConjectureRunner, sort_key
+from hypothesis.internal.conjecture.data import ConjectureData
+from hypothesis.internal.conjecture.engine import ConjectureRunner
+from hypothesis.internal.conjecture.shrinker import sort_key
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.internal.escalation import (
     escalate_hypothesis_internal_error,
@@ -1264,7 +1266,7 @@ def find(
         )
     specifier.validate()
 
-    last = []  # type: List[Ex]
+    last: List[Ex] = []
 
     @settings
     @given(specifier)

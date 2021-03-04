@@ -36,8 +36,9 @@ from hypothesis._settings import HealthCheck, Verbosity, settings as Settings
 from hypothesis.control import current_build_context
 from hypothesis.core import given
 from hypothesis.errors import InvalidArgument, InvalidDefinition
+from hypothesis.internal.compat import qualname
 from hypothesis.internal.conjecture import utils as cu
-from hypothesis.internal.reflection import function_digest, nicerepr, proxies, qualname
+from hypothesis.internal.reflection import function_digest, nicerepr, proxies
 from hypothesis.internal.validation import check_type
 from hypothesis.reporting import current_verbosity, report
 from hypothesis.strategies._internal.featureflags import FeatureStrategy
@@ -223,9 +224,9 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
     def __init__(self):
         if not self.rules():
             raise InvalidDefinition(f"Type {type(self).__name__} defines no rules")
-        self.bundles = {}  # type: Dict[str, list]
+        self.bundles: Dict[str, list] = {}
         self.name_counter = 1
-        self.names_to_values = {}  # type: Dict[str, Any]
+        self.names_to_values: Dict[str, Any] = {}
         self.__stream = StringIO()
         self.__printer = RepresentationPrinter(self.__stream)
         self._initialize_rules_to_run = copy(self.initialize_rules())

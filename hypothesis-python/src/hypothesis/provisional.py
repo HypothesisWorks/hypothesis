@@ -26,10 +26,10 @@ definitions it links to.  If not, report the bug!
 import os.path
 import string
 
+from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import utils as cu
-from hypothesis.strategies._internal import core as st
-from hypothesis.strategies._internal.strategies import SearchStrategy
+from hypothesis.strategies._internal.utils import defines_strategy
 
 URL_SAFE_CHARACTERS = frozenset(string.ascii_letters + string.digits + "$-_.+!*'(),~")
 
@@ -50,7 +50,7 @@ assert _tlds[0].startswith("#")
 TOP_LEVEL_DOMAINS = ["COM"] + sorted(_tlds[1:], key=len)
 
 
-class DomainNameStrategy(SearchStrategy):
+class DomainNameStrategy(st.SearchStrategy):
     @staticmethod
     def clean_inputs(minimum, maximum, value, variable_name):
         if value is None:
@@ -131,18 +131,18 @@ class DomainNameStrategy(SearchStrategy):
         return domain
 
 
-@st.defines_strategy(force_reusable_values=True)
+@defines_strategy(force_reusable_values=True)
 def domains(
     *, max_length: int = 255, max_element_length: int = 63
-) -> SearchStrategy[str]:
+) -> st.SearchStrategy[str]:
     """Generate :rfc:`1035` compliant fully qualified domain names."""
     return DomainNameStrategy(
         max_length=max_length, max_element_length=max_element_length
     )
 
 
-@st.defines_strategy(force_reusable_values=True)
-def urls() -> SearchStrategy[str]:
+@defines_strategy(force_reusable_values=True)
+def urls() -> st.SearchStrategy[str]:
     """A strategy for :rfc:`3986`, generating http/https URLs."""
 
     def url_encode(s):

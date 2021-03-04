@@ -16,6 +16,7 @@
 import time
 from collections import defaultdict
 from enum import IntEnum
+from typing import Dict
 
 import attr
 
@@ -51,15 +52,15 @@ class Status(IntEnum):
         return f"Status.{self.name}"
 
 
-@attr.s(frozen=True, slots=True)
+@attr.s(frozen=True, slots=True, auto_attribs=True)
 class StructuralCoverageTag:
-    label = attr.ib()
+    label: int
 
 
-STRUCTURAL_COVERAGE_CACHE = {}
+STRUCTURAL_COVERAGE_CACHE: Dict[int, StructuralCoverageTag] = {}
 
 
-def structural_coverage(label):
+def structural_coverage(label: int) -> StructuralCoverageTag:
     try:
         return STRUCTURAL_COVERAGE_CACHE[label]
     except KeyError:

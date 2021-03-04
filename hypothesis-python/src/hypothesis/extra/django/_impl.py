@@ -23,10 +23,10 @@ from django import forms as df, test as dt
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, models as dm
 
-from hypothesis import reject
+from hypothesis import reject, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.django._fields import from_field
-from hypothesis.strategies._internal import core as st
+from hypothesis.strategies._internal.utils import defines_strategy
 from hypothesis.utils.conventions import InferType, infer
 
 
@@ -53,7 +53,7 @@ class TransactionTestCase(HypothesisTestCase, dt.TransactionTestCase):
     pass
 
 
-@st.defines_strategy()
+@defines_strategy()
 def from_model(
     *model: Type[dm.Model], **field_strategies: Union[st.SearchStrategy, InferType]
 ) -> st.SearchStrategy:
@@ -137,7 +137,7 @@ def _models_impl(draw, strat):
         reject()
 
 
-@st.defines_strategy()
+@defines_strategy()
 def from_form(
     form: Type[df.Form],
     form_kwargs: Optional[dict] = None,

@@ -15,13 +15,12 @@
 
 import attr
 
-from hypothesis.errors import Flaky, HypothesisException
+from hypothesis.errors import Flaky, HypothesisException, StopTest
 from hypothesis.internal.compat import int_to_bytes
 from hypothesis.internal.conjecture.data import (
     ConjectureData,
     DataObserver,
     Status,
-    StopTest,
     bits_to_bytes,
 )
 from hypothesis.internal.conjecture.junkdrawer import IntList
@@ -39,7 +38,7 @@ def inconsistent_generation():
     )
 
 
-EMPTY = frozenset()
+EMPTY: frozenset = frozenset()
 
 
 @attr.s(slots=True)
@@ -71,14 +70,6 @@ class Conclusion:
 
     status = attr.ib()
     interesting_origin = attr.ib()
-
-
-CONCLUSIONS = {}
-
-
-def conclusion(status, interesting_origin):
-    result = Conclusion(status, interesting_origin)
-    return CONCLUSIONS.setdefault(result, result)
 
 
 @attr.s(slots=True)
@@ -407,7 +398,7 @@ class TreeRecordingObserver(DataObserver):
         if i < len(node.values) or isinstance(node.transition, Branch):
             inconsistent_generation()
 
-        new_transition = conclusion(status, interesting_origin)
+        new_transition = Conclusion(status, interesting_origin)
 
         if node.transition is not None and node.transition != new_transition:
             # As an, I'm afraid, horrible bodge, we deliberately ignore flakiness

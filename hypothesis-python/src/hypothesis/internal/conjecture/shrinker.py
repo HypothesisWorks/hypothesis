@@ -14,6 +14,7 @@
 # END HEADER
 
 from collections import defaultdict
+from typing import Dict
 
 import attr
 
@@ -35,7 +36,7 @@ from hypothesis.internal.conjecture.junkdrawer import (
     replace_all,
 )
 from hypothesis.internal.conjecture.shrinking import Float, Integer, Lexical, Ordering
-from hypothesis.internal.conjecture.shrinking.dfas import SHRINKING_DFAS
+from hypothesis.internal.conjecture.shrinking.learned_dfas import SHRINKING_DFAS
 
 if False:
     from typing import Dict  # noqa
@@ -67,7 +68,7 @@ def sort_key(buffer):
     return (len(buffer), buffer)
 
 
-SHRINK_PASS_DEFINITIONS = {}  # type: Dict[str, ShrinkPassDefinition]
+SHRINK_PASS_DEFINITIONS: Dict[str, "ShrinkPassDefinition"] = {}
 
 
 @attr.s()
@@ -304,7 +305,7 @@ class Shrinker:
         # testing and learning purposes.
         self.extra_dfas = {}
 
-    @derived_value
+    @derived_value  # type: ignore
     def cached_calculations(self):
         return {}
 
@@ -340,7 +341,7 @@ class Shrinker:
             self.add_new_pass(name)
         return self.passes_by_name[name]
 
-    @derived_value
+    @derived_value  # type: ignore
     def match_cache(self):
         return {}
 
@@ -532,7 +533,7 @@ class Shrinker:
             + [dfa_replacement(n) for n in SHRINKING_DFAS]
         )
 
-    @derived_value
+    @derived_value  # type: ignore
     def shrink_pass_choice_trees(self):
         return defaultdict(ChoiceTree)
 
@@ -647,7 +648,7 @@ class Shrinker:
     def all_block_bounds(self):
         return self.shrink_target.blocks.all_bounds()
 
-    @derived_value
+    @derived_value  # type: ignore
     def examples_by_label(self):
         """An index of all examples grouped by their label, with
         the examples stored in their normal index order."""
@@ -657,7 +658,7 @@ class Shrinker:
             examples_by_label[ex.label].append(ex)
         return dict(examples_by_label)
 
-    @derived_value
+    @derived_value  # type: ignore
     def distinct_labels(self):
         return sorted(self.examples_by_label, key=str)
 
@@ -1009,7 +1010,7 @@ class Shrinker:
                 return False
         return True
 
-    @derived_value
+    @derived_value  # type: ignore
     def blocks_by_non_zero_suffix(self):
         """Returns a list of blocks grouped by their non-zero suffix,
         as a list of (suffix, indices) pairs, skipping all groupings
@@ -1024,7 +1025,7 @@ class Shrinker:
             )
         return duplicates
 
-    @derived_value
+    @derived_value  # type: ignore
     def duplicated_block_suffixes(self):
         return sorted(self.blocks_by_non_zero_suffix)
 

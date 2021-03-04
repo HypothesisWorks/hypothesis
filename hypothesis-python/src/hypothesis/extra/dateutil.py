@@ -28,7 +28,8 @@ import datetime as dt
 
 from dateutil import tz, zoneinfo  # type: ignore
 
-from hypothesis.strategies._internal import core as st
+from hypothesis import strategies as st
+from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 
 __all__ = ["timezones"]
 
@@ -43,8 +44,8 @@ def __zone_sort_key(zone):
     return (abs(offset), -offset, str(zone))
 
 
-@st.cacheable
-@st.defines_strategy()
+@cacheable
+@defines_strategy()
 def timezones() -> st.SearchStrategy[dt.tzinfo]:
     """Any timezone from :pypi:`dateutil <python-dateutil>`.
 

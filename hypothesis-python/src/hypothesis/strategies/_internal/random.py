@@ -16,6 +16,7 @@
 import inspect
 import math
 from random import Random
+from typing import Dict
 
 import attr
 
@@ -23,7 +24,13 @@ from hypothesis.control import should_note
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.reflection import define_function_signature
 from hypothesis.reporting import report
-from hypothesis.strategies._internal import core as st
+from hypothesis.strategies._internal.core import (
+    binary,
+    lists,
+    permutations,
+    sampled_from,
+)
+from hypothesis.strategies._internal.numbers import floats, integers
 from hypothesis.strategies._internal.strategies import SearchStrategy
 
 
@@ -93,22 +100,22 @@ RANDOM_METHODS = [
 
 
 # Fake shims to get a good signature
-def getrandbits(self, n: int) -> int:
+def getrandbits(self, n: int) -> int:  # type: ignore
     raise NotImplementedError()
 
 
-def random(self) -> float:
+def random(self) -> float:  # type: ignore
     raise NotImplementedError()
 
 
-def _randbelow(self, n: int) -> int:
+def _randbelow(self, n: int) -> int:  # type: ignore
     raise NotImplementedError()
 
 
 STUBS = {f.__name__: f for f in [getrandbits, random, _randbelow]}
 
 
-SIGNATURES = {}
+SIGNATURES: Dict[str, inspect.Signature] = {}
 
 
 def sig_of(name):
@@ -169,10 +176,10 @@ def state_for_seed(data, seed):
     return state
 
 
-UNIFORM = st.floats(0, 1)
+UNIFORM = floats(0, 1)
 
 
-def normalize_zero(f):
+def normalize_zero(f: float) -> float:
     if f == 0.0:
         return 0.0
     else:
@@ -236,16 +243,16 @@ class ArtificialRandom(HypothesisRandom):
         elif method == "uniform":
             a = normalize_zero(kwargs["a"])
             b = normalize_zero(kwargs["b"])
-            result = self.__data.draw(st.floats(a, b))
+            result = self.__data.draw(floats(a, b))
         elif method in ("weibullvariate", "gammavariate"):
-            result = self.__data.draw(st.floats(min_value=0.0, allow_infinity=False))
+            result = self.__data.draw(floats(min_value=0.0, allow_infinity=False))
         elif method in ("gauss", "normalvariate"):
             mu = kwargs["mu"]
             result = mu + self.__data.draw(
-                st.floats(allow_nan=False, allow_infinity=False)
+                floats(allow_nan=False, allow_infinity=False)
             )
         elif method == "vonmisesvariate":
-            result = self.__data.draw(st.floats(0, 2 * math.pi))
+            result = self.__data.draw(floats(0, 2 * math.pi))
         elif method == "randrange":
             if kwargs["stop"] is None:
                 stop = kwargs["start"]
@@ -275,8 +282,8 @@ class ArtificialRandom(HypothesisRandom):
         elif method == "choices":
             k = kwargs["k"]
             result = self.__data.draw(
-                st.lists(
-                    st.integers(0, len(kwargs["population"]) - 1),
+                lists(
+                    integers(0, len(kwargs["population"]) - 1),
                     min_size=k,
                     max_size=k,
                 )
@@ -291,8 +298,8 @@ class ArtificialRandom(HypothesisRandom):
                 )
 
             result = self.__data.draw(
-                st.lists(
-                    st.sampled_from(range(len(seq))),
+                lists(
+                    sampled_from(range(len(seq))),
                     min_size=k,
                     max_size=k,
                     unique=True,
@@ -306,19 +313,19 @@ class ArtificialRandom(HypothesisRandom):
             high = normalize_zero(kwargs["high"])
             mode = normalize_zero(kwargs["mode"])
             if mode is None:
-                result = self.__data.draw(st.floats(low, high))
+                result = self.__data.draw(floats(low, high))
             elif self.__data.draw_bits(1):
-                result = self.__data.draw(st.floats(mode, high))
+                result = self.__data.draw(floats(mode, high))
             else:
-                result = self.__data.draw(st.floats(low, mode))
+                result = self.__data.draw(floats(low, mode))
         elif method in ("paretovariate", "expovariate", "lognormvariate"):
-            result = self.__data.draw(st.floats(min_value=0.0))
+            result = self.__data.draw(floats(min_value=0.0))
         elif method == "shuffle":
-            result = self.__data.draw(st.permutations(range(len(kwargs["x"]))))
+            result = self.__data.draw(permutations(range(len(kwargs["x"]))))
         # This is tested for but only appears in 3.9 so doesn't appear in coverage.
         elif method == "randbytes":  # pragma: no cover
             n = kwargs["n"]
-            result = self.__data.draw(st.binary(min_size=n, max_size=n))
+            result = self.__data.draw(binary(min_size=n, max_size=n))
         else:
             raise NotImplementedError(method)
 

@@ -26,6 +26,7 @@ import attr
 
 from hypothesis import HealthCheck, Phase, Verbosity, settings as Settings
 from hypothesis._settings import local_settings
+from hypothesis.errors import StopTest
 from hypothesis.internal.cache import LRUReusedCache
 from hypothesis.internal.compat import ceil, int_from_bytes
 from hypothesis.internal.conjecture.data import (
@@ -34,7 +35,6 @@ from hypothesis.internal.conjecture.data import (
     DataObserver,
     Overrun,
     Status,
-    StopTest,
 )
 from hypothesis.internal.conjecture.datatree import (
     DataTree,

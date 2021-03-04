@@ -18,13 +18,10 @@ from typing import Optional, Union
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.validation import check_type
-from hypothesis.strategies._internal.core import (
-    SearchStrategy,
-    binary,
-    defines_strategy,
-    integers,
-    sampled_from,
-)
+from hypothesis.strategies._internal.core import binary, sampled_from
+from hypothesis.strategies._internal.numbers import integers
+from hypothesis.strategies._internal.strategies import SearchStrategy
+from hypothesis.strategies._internal.utils import defines_strategy
 
 # See https://www.iana.org/assignments/iana-ipv4-special-registry/
 SPECIAL_IPv4_RANGES = (
