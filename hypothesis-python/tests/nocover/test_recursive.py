@@ -156,3 +156,15 @@ def test_drawing_from_recursive_strategy_is_thread_safe():
         thread.join()
 
     assert not errors
+
+
+SELF_REF = st.recursive(
+    st.deferred(lambda: st.booleans() | SELF_REF),
+    lambda s: st.lists(s, min_size=1),
+)
+
+
+@given(SELF_REF)
+def test_self_ref_regression(_):
+    # See https://github.com/HypothesisWorks/hypothesis/issues/2794
+    pass

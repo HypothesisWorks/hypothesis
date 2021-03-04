@@ -66,13 +66,13 @@ class LimitedStrategy(SearchStrategy):
 
     @contextmanager
     def capped(self, max_templates):
-        assert not self.currently_capped
         try:
+            was_capped = self.currently_capped
             self.currently_capped = True
             self.marker = max_templates
             yield
         finally:
-            self.currently_capped = False
+            self.currently_capped = was_capped
 
 
 class RecursiveStrategy(SearchStrategy):
