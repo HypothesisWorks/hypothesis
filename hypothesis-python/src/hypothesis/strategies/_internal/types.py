@@ -61,7 +61,7 @@ except ImportError:
 
 def type_sorting_key(t):
     """Minimise to None, then non-container types, then container types."""
-    if not is_a_type(t):  # This branch is for Python < 3.8
+    if not (is_a_type(t) or is_typing_literal(t)):  # This branch is for Python < 3.8
         raise InvalidArgument(f"thing={t} must be a type")  # pragma: no cover
     if t is None or t is type(None):  # noqa: E721
         return (-1, repr(t))
