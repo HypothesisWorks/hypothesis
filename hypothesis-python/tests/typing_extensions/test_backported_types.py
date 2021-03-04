@@ -38,6 +38,9 @@ def test_typing_extensions_Literal_nested(data):
         (lit[lit[1], 2], {1, 2}),
         (lit[1, lit[2], 3], {1, 2, 3}),
         (lit[lit[lit[1], lit[2]], lit[lit[3], lit[4]]], {1, 2, 3, 4}),
+        # See https://github.com/HypothesisWorks/hypothesis/pull/2886
+        (Union[Literal["hamster"], Literal["bunny"]], {"hamster", "bunny"}),
+        (Union[lit[lit[1], lit[2]], lit[lit[3], lit[4]]], {1, 2, 3, 4}),
     ]
     literal_type, flattened_literals = data.draw(st.sampled_from(values))
     assert data.draw(st.from_type(literal_type)) in flattened_literals
@@ -78,9 +81,3 @@ def test_defaultdict(ex):
     assume(ex)
     assert all(isinstance(elem, int) for elem in ex)
     assert all(isinstance(elem, int) for elem in ex.values())
-
-
-@given(from_type(Union[Literal["hamster"], Literal["bunny"]]))
-def test_union_of_Literals(pet):
-    # See https://github.com/HypothesisWorks/hypothesis/pull/2886
-    assert pet in ("hamster", "bunny")
