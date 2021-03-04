@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.4.1:
+
+------------------
+6.4.1 - 2021-03-04
+------------------
+
+This patch fixes an exception that occurs when using type unions of
+the :pypi:`typing_extensions` ``Literal`` backport on Python 3.6.
+
+Thanks to Ben Anhalt for identifying and fixing this bug.
+
 .. _v6.4.0:
 
 ------------------
