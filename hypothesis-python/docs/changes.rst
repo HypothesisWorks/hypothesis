@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.4.3:
+
+------------------
+6.4.3 - 2021-03-04
+------------------
+
+This patch fixes :issue:`2794`, where nesting :func:`~hypothesis.strategies.deferred`
+strategies within :func:`~hypothesis.strategies.recursive` strategies could
+trigger an internal assertion.  While it was always possible to get the same
+results from a more sensible strategy, the convoluted form now works too.
+
 .. _v6.4.2:
 
 ------------------
