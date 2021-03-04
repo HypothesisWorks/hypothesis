@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.4.2:
+
+------------------
+6.4.2 - 2021-03-04
+------------------
+
+This patch fixes several problems with ``mypy`` when `--no-implicit-reexport <https://mypy.readthedocs.io/en/stable/command_line.html#cmdoption-mypy-no-implicit-reexport>`_ was activated in user projects.
+
+Thanks to Nikita Sobolev for fixing :issue:`2884`!
+
 .. _v6.4.1:
 
 ------------------
