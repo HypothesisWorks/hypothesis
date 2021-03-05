@@ -23,8 +23,8 @@ if [ -n "${GITHUB_ACTIONS-}" ] || [ -n "${CODESPACES-}" ] ; then
 else
     # Otherwise, we install it from scratch
     # NOTE: keep this version in sync with PYMAIN in tooling
-    "$SCRIPTS/ensure-python.sh" 3.8.7
-    PYTHON=$(pythonloc 3.8.7)/bin/python
+    "$SCRIPTS/ensure-python.sh" 3.8.8
+    PYTHON=$(pythonloc 3.8.8)/bin/python
 fi
 
 TOOL_REQUIREMENTS="$ROOT/requirements/tools.txt"

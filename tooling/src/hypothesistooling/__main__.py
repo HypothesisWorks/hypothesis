@@ -308,10 +308,10 @@ def run_tox(task, version):
 
 
 # Via https://github.com/pyenv/pyenv/tree/master/plugins/python-build/share/python-build
-PY36 = "3.6.12"
-PY37 = "3.7.9"
-PY38 = PYMAIN = "3.8.7"  # Note: keep this in sync with build.sh
-PY39 = "3.9.1"
+PY36 = "3.6.13"
+PY37 = "3.7.10"
+PY38 = PYMAIN = "3.8.8"  # Note: keep this in sync with build.sh
+PY39 = "3.9.2"
 PYPY36 = "pypy3.6-7.3.1"
 PYPY37 = "pypy3.7-7.3.2"
 
