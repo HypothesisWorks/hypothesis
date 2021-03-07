@@ -18,6 +18,18 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.6.0:
+
+------------------
+6.6.0 - 2021-03-07
+------------------
+
+This release makes it an explicit error to apply :func:`~hypothesis.stateful.invariant`
+to a :func:`~hypothesis.stateful.rule` or :func:`~hypothesis.stateful.initialize` rule
+in :doc:`stateful testing <stateful>`.  Such a combination had unclear semantics,
+especially in combination with :func:`~hypothesis.stateful.precondition`, and was never
+meant to be allowed (:issue:`2681`).
+
 .. _v6.5.0:
 
 ------------------
