@@ -432,6 +432,7 @@ class Phase(IntEnum):
     generate = 2
     target = 3
     shrink = 4
+    explain = 5
 
     def __repr__(self):
         return f"Phase.{self.name}"
@@ -523,7 +524,9 @@ def _validate_phases(phases):
 
 settings._define_setting(
     "phases",
-    default=tuple(Phase),
+    # We leave the `explain` phase disabled by default, for speed and brevity
+    # TODO: consider default-enabling this in CI?
+    default=_validate_phases(set(Phase) - {Phase.explain}),
     description=(
         "Control which phases should be run. "
         "See :ref:`the full documentation for more details <phases>`"

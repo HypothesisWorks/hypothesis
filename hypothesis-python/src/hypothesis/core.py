@@ -27,6 +27,7 @@ import traceback
 import types
 import warnings
 import zlib
+from collections import defaultdict
 from inspect import getfullargspec
 from io import StringIO
 from random import Random
@@ -61,12 +62,13 @@ from hypothesis.errors import (
 )
 from hypothesis.executors import new_style_executor
 from hypothesis.internal.compat import (
+    PYPY,
     bad_django_TestCase,
     get_type_hints,
     int_from_bytes,
     qualname,
 )
-from hypothesis.internal.conjecture.data import ConjectureData
+from hypothesis.internal.conjecture.data import ConjectureData, Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.shrinker import sort_key
 from hypothesis.internal.entropy import deterministic_PRNG
@@ -86,6 +88,7 @@ from hypothesis.internal.reflection import (
     is_mock,
     proxies,
 )
+from hypothesis.internal.scrutineer import Tracer, explanatory_lines
 from hypothesis.reporting import (
     current_verbosity,
     report,
@@ -523,6 +526,8 @@ class StateForActualGivenExecution:
         self.files_to_propagate = set()
         self.failed_normally = False
 
+        self.explain_traces = defaultdict(set)
+
     def execute_once(
         self, data, print_example=False, is_final=False, expected_failure=None
     ):
@@ -675,7 +680,26 @@ class StateForActualGivenExecution:
         ``StopTest`` must be a fatal error, and should stop the entire engine.
         """
         try:
-            result = self.execute_once(data)
+            trace = frozenset()
+            if (
+                self.failed_normally
+                and Phase.explain in self.settings.phases
+                and sys.gettrace() is None
+                and not PYPY
+            ):  # pragma: no cover
+                # This is in fact covered by our *non-coverage* tests, but due to the
+                # settrace() contention *not* by our coverage tests.  Ah well.
+                tracer = Tracer()
+                try:
+                    sys.settrace(tracer.trace)
+                    result = self.execute_once(data)
+                    if data.status == Status.VALID:
+                        self.explain_traces[None].add(frozenset(tracer.branches))
+                finally:
+                    sys.settrace(None)
+                    trace = frozenset(tracer.branches)
+            else:
+                result = self.execute_once(data)
             if result is not None:
                 fail_health_check(
                     self.settings,
@@ -721,7 +745,13 @@ class StateForActualGivenExecution:
                 info.__expected_exception = e
                 verbose_report(info.__expected_traceback)
 
-                data.mark_interesting(get_interesting_origin(e))
+                self.failed_normally = True
+
+                interesting_origin = get_interesting_origin(e)
+                if trace:  # pragma: no cover
+                    # Trace collection is explicitly disabled under coverage.
+                    self.explain_traces[interesting_origin].add(trace)
+                data.mark_interesting(interesting_origin)
 
     def run_engine(self):
         """Run the test function many times, on database input and generated
@@ -772,8 +802,6 @@ class StateForActualGivenExecution:
         # The engine found one or more failures, so we need to reproduce and
         # report them.
 
-        self.failed_normally = True
-
         flaky = 0
 
         if runner.best_observed_targets:
@@ -781,6 +809,7 @@ class StateForActualGivenExecution:
                 report(line)
             report("")
 
+        explanations = explanatory_lines(self.explain_traces, self.settings)
         for falsifying_example in self.falsifying_examples:
             info = falsifying_example.extra_information
 
@@ -804,6 +833,10 @@ class StateForActualGivenExecution:
                     "assumptions on the first run now fails it."
                 )
             except BaseException as e:
+                # If we have anything for explain-mode, this is the time to report.
+                for line in explanations[falsifying_example.interesting_origin]:
+                    report(line)
+
                 if len(self.falsifying_examples) <= 1:
                     # There is only one failure, so we can report it by raising
                     # it directly.

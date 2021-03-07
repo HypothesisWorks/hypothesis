@@ -687,6 +687,8 @@ providing extra information and convenient access to config options.
   :ref:`override the current verbosity level <verbose-output>`.
 - ``pytest --hypothesis-seed=<an int>`` can be used to
   :ref:`reproduce a failure with a particular seed <reproducing-with-seed>`.
+- ``pytest --hypothesis-explain`` can be used to
+  :ref:`temporarily enable the explain phase <phases>`.
 
 Finally, all tests that are defined with Hypothesis automatically have
 ``@pytest.mark.hypothesis`` applied to them.  See :ref:`here for information

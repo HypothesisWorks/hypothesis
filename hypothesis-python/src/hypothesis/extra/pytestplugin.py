@@ -18,7 +18,7 @@ from inspect import signature
 
 import pytest
 
-from hypothesis import HealthCheck, Verbosity, core, settings
+from hypothesis import HealthCheck, Phase, Verbosity, core, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.detection import is_hypothesis_test
 from hypothesis.internal.healthcheck import fail_health_check
@@ -29,6 +29,7 @@ LOAD_PROFILE_OPTION = "--hypothesis-profile"
 VERBOSITY_OPTION = "--hypothesis-verbosity"
 PRINT_STATISTICS_OPTION = "--hypothesis-show-statistics"
 SEED_OPTION = "--hypothesis-seed"
+EXPLAIN_OPTION = "--hypothesis-explain"
 
 
 class StoringReporter:
@@ -85,6 +86,12 @@ else:
             action="store",
             help="Set a seed to use for all Hypothesis tests",
         )
+        group.addoption(
+            EXPLAIN_OPTION,
+            action="store_true",
+            help="Enable the `explain` phase for failing Hypothesis tests",
+            default=False,
+        )
 
     def pytest_report_header(config):
         if config.option.verbose < 1 and settings.default.verbosity < Verbosity.verbose:
@@ -103,13 +110,22 @@ else:
         if profile:
             settings.load_profile(profile)
         verbosity_name = config.getoption(VERBOSITY_OPTION)
-        if verbosity_name:
+        if verbosity_name and verbosity_name != settings.default.verbosity.name:
             verbosity_value = Verbosity[verbosity_name]
             name = f"{settings._current_profile}-with-{verbosity_name}-verbosity"
             # register_profile creates a new profile, exactly like the current one,
             # with the extra values given (in this case 'verbosity')
             settings.register_profile(name, verbosity=verbosity_value)
             settings.load_profile(name)
+        if (
+            config.getoption(EXPLAIN_OPTION)
+            and Phase.explain not in settings.default.phases
+        ):
+            name = f"{settings._current_profile}-with-explain-phase"
+            phases = settings.default.phases + (Phase.explain,)
+            settings.register_profile(name, phases=phases)
+            settings.load_profile(name)
+
         seed = config.getoption(SEED_OPTION)
         if seed is not None:
             try:
