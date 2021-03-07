@@ -18,6 +18,18 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.5.0:
+
+------------------
+6.5.0 - 2021-03-07
+------------------
+
+This release adds :ref:`the explain phase <phases>`, in which Hypothesis
+attempts to explain *why* your test failed by pointing to suspicious lines
+of code (i.e. those which were always, and only, run on failing inputs).
+We plan to include "generalising" failing examples in this phase in a
+future release (:issue:`2192`).
+
 .. _v6.4.3:
 
 ------------------
