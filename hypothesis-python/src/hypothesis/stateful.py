@@ -538,6 +538,11 @@ def rule(*, targets=(), target=None, **kwargs):
         check_strategy(v, name=k)
 
     def accept(f):
+        if getattr(f, INVARIANT_MARKER, None):
+            raise InvalidDefinition(
+                "A function cannot be used for both a rule and an invariant.",
+                Settings.default,
+            )
         existing_rule = getattr(f, RULE_MARKER, None)
         existing_initialize_rule = getattr(f, INITIALIZE_RULE_MARKER, None)
         if existing_rule is not None or existing_initialize_rule is not None:
@@ -576,6 +581,11 @@ def initialize(*, targets=(), target=None, **kwargs):
         check_strategy(v, name=k)
 
     def accept(f):
+        if getattr(f, INVARIANT_MARKER, None):
+            raise InvalidDefinition(
+                "A function cannot be used for both a rule and an invariant.",
+                Settings.default,
+            )
         existing_rule = getattr(f, RULE_MARKER, None)
         existing_initialize_rule = getattr(f, INITIALIZE_RULE_MARKER, None)
         if existing_rule is not None or existing_initialize_rule is not None:
@@ -689,6 +699,11 @@ def invariant():
     """
 
     def accept(f):
+        if getattr(f, RULE_MARKER, None) or getattr(f, INITIALIZE_RULE_MARKER, None):
+            raise InvalidDefinition(
+                "A function cannot be used for both a rule and an invariant.",
+                Settings.default,
+            )
         existing_invariant = getattr(f, INVARIANT_MARKER, None)
         if existing_invariant is not None:
             raise InvalidDefinition(
