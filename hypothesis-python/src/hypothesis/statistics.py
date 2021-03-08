@@ -32,7 +32,7 @@ def describe_targets(best_targets):
     """Return a list of lines describing the results of `target`, if any."""
     # These lines are included in the general statistics description below,
     # but also printed immediately below failing examples to alleviate the
-    # "threshold problem" where shrinking can make severe bug look trival.
+    # "threshold problem" where shrinking can make severe bug look trivial.
     # See https://github.com/HypothesisWorks/hypothesis/issues/2180
     if not best_targets:
         return []

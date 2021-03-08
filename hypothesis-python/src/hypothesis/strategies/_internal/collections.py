@@ -29,7 +29,7 @@ from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 
 
 class TupleStrategy(SearchStrategy):
-    """A strategy responsible for fixed length tuples based on heterogenous
+    """A strategy responsible for fixed length tuples based on heterogeneous
     strategies for each of their elements."""
 
     def __init__(self, strategies):

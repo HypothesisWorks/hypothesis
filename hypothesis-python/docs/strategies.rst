@@ -72,7 +72,7 @@ concurrent programs.
 :pypi:`pymtl3` is "an open-source Python-based hardware generation, simulation,
 and verification framework with multi-level hardware modeling support", which
 ships with Hypothesis integrations to check that all of those levels are
-eqivalent, from function-level to register-transfer level and even to hardware.
+equivalent, from function-level to register-transfer level and even to hardware.
 
 :pypi:`libarchimedes` makes it easy to use Hypothesis in
 `the Hy language <https://github.com/hylang/hy>`_, a Lisp embedded in Python.

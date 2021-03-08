@@ -766,7 +766,7 @@ replay, shrink, deduplicate, and report whatever errors were discovered.
 
 - The :obj:`~hypothesis.settings.database` setting *is* used by fuzzing mode -
   adding failures to the database to be replayed when you next run your tests
-  is our preferred reporting mechanism and reponse to
+  is our preferred reporting mechanism and response to
   `the 'fuzzer taming' problem <https://blog.regehr.org/archives/925>`__.
 - The :obj:`~hypothesis.settings.verbosity` and
   :obj:`~hypothesis.settings.stateful_step_count` settings work as usual.

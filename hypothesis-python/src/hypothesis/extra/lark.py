@@ -31,7 +31,7 @@ your own at all.
 Note that as Lark is at version 0.x, this module *may* break API compatibility
 in minor releases if supporting the latest version of Lark would otherwise be
 infeasible.  We may also be quite aggressive in bumping the minimum version of
-Lark, unless someone volunteers to either fund or do the maintainence.
+Lark, unless someone volunteers to either fund or do the maintenance.
 """
 
 from inspect import getfullargspec

@@ -958,7 +958,7 @@ def _make_binop_body(
     except_: Tuple[Type[Exception], ...],
     style: str,
 ) -> Tuple[Set[Union[str, Tuple[str, str]]], str]:
-    # TODO: collapse togther first two strategies, keep any others (for flags etc.)
+    # TODO: collapse together first two strategies, keep any others (for flags etc.)
     # assign this as a global variable, which will be prepended to the test bodies
     strategies = _get_strategies(func)
     operands, b = [strategies.pop(p) for p in list(_get_params(func))[:2]]
@@ -1016,7 +1016,7 @@ def _make_binop_body(
                 identity = "identity element here"  # type: ignore
         # If the repr of this element is invalid Python, stringify it - this
         # can't be executed as-is, but at least makes it clear what should
-        # happpen.  E.g. type(None) -> <class 'NoneType'> -> quoted.
+        # happen.  E.g. type(None) -> <class 'NoneType'> -> quoted.
         try:
             # We don't actually execute this code object; we're just compiling
             # to check that the repr is syntatically valid.  HOWEVER, we're

@@ -74,7 +74,7 @@ def test_bound_correct_forward_ref(built):
 )
 def test_bound_correct_forward_ref_python36():
     """
-    Very special case for ``python3.6`` where we have this feature partially suported.
+    Very special case for ``python3.6`` where we have this feature partially supported.
 
     Due to ``TypeVar`` module definition bug.
     """

@@ -69,7 +69,7 @@ module Hypothesis
     # the previous examples.
 
     # Note that essentially any answer to this method is
-    # "fine" in that the failure mode is that sometiems we
+    # "fine" in that the failure mode is that sometimes we
     # just won't run the same test, but it's nice to keep
     # this as stable as possible if the code isn't changing.
 

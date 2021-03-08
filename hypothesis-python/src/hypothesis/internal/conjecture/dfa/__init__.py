@@ -496,7 +496,7 @@ class DFA:
         """Checks whether this DFA and other match precisely the same
         language.
 
-        Uses the classic algorith of Hopcroft and Karp (more or less):
+        Uses the classic algorithm of Hopcroft and Karp (more or less):
         Hopcroft, John E. A linear algorithm for testing equivalence
         of finite automata. Vol. 114. Defense Technical Information Center, 1971.
         """
