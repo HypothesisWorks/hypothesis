@@ -68,7 +68,7 @@ def codespell(*files):
         "codespell",
         "--check-hidden",
         "--check-filenames",
-        "--ignore-words-list='crate,nd,ned,nin,strat,tread'",
+        '--ignore-words-list="crate,nd,ned,nin,strat,tread"',
         *files,
     )
 
@@ -81,7 +81,7 @@ def lint():
         "--config",
         os.path.join(tools.ROOT, ".flake8"),
     )
-    codespell(*[f for f in tools.all_files() if not f.endswith("domains.txt")])
+    codespell(*[f for f in tools.all_files() if not f.endswith("by-domain.txt")])
 
 
 HEAD = tools.hash_for_name("HEAD")
