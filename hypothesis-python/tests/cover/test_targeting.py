@@ -68,7 +68,7 @@ def test_respects_max_pool_size(observations):
 
 
 def everything_except(type_):
-    # Note: we would usually stick to fater traditional or parametrized
+    # Note: we would usually stick to faster traditional or parametrized
     # tests to check that invalid inputs are rejected, but for `target()`
     # we need to use `@given` (to validate arguments instead of context)
     # so we might as well apply this neat recipe.

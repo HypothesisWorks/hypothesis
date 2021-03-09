@@ -45,6 +45,8 @@ click==7.1.2
     #   pip-tools
     #   pybetter
     #   pyemojify
+codespell==2.0.0
+    # via -r requirements/tools.in
 colorama==0.4.4
     # via twine
 com2ann==0.1.1
