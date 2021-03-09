@@ -603,6 +603,12 @@ def test_cannot_resolve_abstract_class_with_no_concrete_subclass(instance):
     assert False, "test body unreachable as strategy cannot resolve"
 
 
+@fails_with(ResolutionFailed)
+@given(st.from_type(typing.Type["ConcreteFoo"]))
+def test_cannot_resolve_type_with_forwardref(instance):
+    assert False, "test body unreachable as strategy cannot resolve"
+
+
 @pytest.mark.parametrize("typ", [typing.Hashable, typing.Sized])
 @given(data=st.data())
 def test_inference_on_generic_collections_abc_aliases(typ, data):
