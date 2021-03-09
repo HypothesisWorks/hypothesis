@@ -127,7 +127,7 @@ def has_type_arguments(type_):
 def is_generic_type(type_):
     """Decides whethere a given type is generic or not."""
     # The ugly truth is that `MyClass`, `MyClass[T]`, and `MyClass[int]` are very different.
-    # In different python versions the might have the same type (3.6)
+    # In different python versions they might have the same type (3.6)
     # or it can be regular type vs `_GenericAlias` (3.7+)
     # We check for `MyClass[T]` and `MyClass[int]` with the first condition,
     # while the second condition is for `MyClass` in `python3.7+`.
@@ -480,12 +480,11 @@ def resolve_Type(thing):
     if getattr(args[0], "__origin__", None) is typing.Union:
         args = args[0].__args__
     # Duplicate check from from_type here - only paying when needed.
-    for a in args:  # pragma: no cover  # only on Python 3.6
+    for a in args:
         if type(a) == ForwardRef:
             raise ResolutionFailed(
-                "thing=%s cannot be resolved.  Upgrading to "
-                "python>=3.6 may fix this problem via improvements "
-                "to the typing module." % (thing,)
+                f"Cannot find the type referenced by {thing} - try using "
+                f"st.register_type_strategy({thing}, st.from_type(...))"
             )
     return st.sampled_from(sorted(args, key=type_sorting_key))
 

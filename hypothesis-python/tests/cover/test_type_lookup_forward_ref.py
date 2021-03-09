@@ -19,7 +19,7 @@ We need these test to make sure ``TypeVar('X', bound='MyType')`` works correctly
 There was a problem previously that ``bound='MyType'`` was resolved as ``ForwardRef('MyType')``
 which is not a real type. And ``hypothesis`` was not able to generate any meaningful values out of it.
 
-Right here we test different possible outcomes for different Python versions (excluding ``3.5``):
+Right here we test different possible outcomes for different Python versions:
 - Regular case, when ``'MyType'`` can be imported
 - Alias case, when we use type aliases for ``'MyType'``
 - ``if TYPE_CHECKING:`` case, when ``'MyType'`` only exists during type checking and is not importable at all
