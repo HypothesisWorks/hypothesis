@@ -334,6 +334,8 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
 
     def check_invariants(self):
         for invar in self.invariants():
+            if self._initialize_rules_to_run and not invar.check_during_init:
+                continue
             if not all(precond(self) for precond in invar.preconditions):
                 continue
             invar.function(self)
@@ -681,9 +683,10 @@ def precondition(precond):
 class Invariant:
     function = attr.ib()
     preconditions = attr.ib()
+    check_during_init = attr.ib()
 
 
-def invariant():
+def invariant(*, check_during_init=False):
     """Decorator to apply an invariant for rules in a RuleBasedStateMachine.
     The decorated function will be run after every rule and can raise an
     exception to indicate failed invariants.
@@ -696,7 +699,13 @@ def invariant():
             @invariant()
             def is_nonzero(self):
                 assert self.state != 0
+
+    By default, invariants are only checked after all
+    :func:`@initialize() <hypothesis.stateful.initialize>` rules have been run.
+    Pass ``check_during_init=True`` for invariants which can also be checked
+    during initialization.
     """
+    check_type(bool, check_during_init, "check_during_init")
 
     def accept(f):
         if getattr(f, RULE_MARKER, None) or getattr(f, INITIALIZE_RULE_MARKER, None):
@@ -711,13 +720,17 @@ def invariant():
                 Settings.default,
             )
         preconditions = getattr(f, PRECONDITIONS_MARKER, ())
-        rule = Invariant(function=f, preconditions=preconditions)
+        invar = Invariant(
+            function=f,
+            preconditions=preconditions,
+            check_during_init=check_during_init,
+        )
 
         @proxies(f)
         def invariant_wrapper(*args, **kwargs):
             return f(*args, **kwargs)
 
-        setattr(invariant_wrapper, INVARIANT_MARKER, rule)
+        setattr(invariant_wrapper, INVARIANT_MARKER, invar)
         return invariant_wrapper
 
     return accept

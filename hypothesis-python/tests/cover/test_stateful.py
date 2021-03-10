@@ -746,7 +746,7 @@ def test_explicit_invariant_call_with_precondition():
         run_state_machine_as_test(BadPrecondition)
 
 
-def test_invariant_checks_initial_state():
+def test_invariant_checks_initial_state_if_no_initialize_rules():
     """Invariants are checked before any rules run."""
 
     class BadPrecondition(RuleBasedStateMachine):
@@ -1216,3 +1216,41 @@ def test_multiple_precondition_bug():
             raise AssertionError("This invariant runs, even though it shouldn't.")
 
     run_state_machine_as_test(MultiplePreconditionMachine)
+
+
+class TrickyInitMachine(RuleBasedStateMachine):
+    @initialize()
+    def init_a(self):
+        self.a = 0
+
+    @rule()
+    def inc(self):
+        self.a += 1
+
+    @invariant()
+    def check_a_positive(self):
+        # This will fail if run before the init_a method, but without
+        # @invariant(check_during_init=True) it will only run afterwards.
+        assert self.a >= 0
+
+
+def test_invariants_are_checked_after_init_steps():
+    run_state_machine_as_test(TrickyInitMachine)
+
+
+def test_invariants_can_be_checked_during_init_steps():
+    class UndefinedMachine(TrickyInitMachine):
+        @invariant(check_during_init=True)
+        def check_a_defined(self):
+            # This will fail because `a` is undefined before the init rule.
+            self.a
+
+    with pytest.raises(AttributeError):
+        run_state_machine_as_test(UndefinedMachine)
+
+
+def test_check_during_init_must_be_boolean():
+    invariant(check_during_init=False)
+    invariant(check_during_init=True)
+    with pytest.raises(InvalidArgument):
+        invariant(check_during_init="not a bool")
