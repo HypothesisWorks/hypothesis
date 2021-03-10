@@ -18,6 +18,21 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.7.0:
+
+------------------
+6.7.0 - 2021-03-10
+------------------
+
+This release teaches :class:`~hypothesis.stateful.RuleBasedStateMachine` to avoid
+checking :func:`~hypothesis.stateful.invariant`\ s until all
+:func:`~hypothesis.stateful.initialize` rules have been run.  You can enable checking
+of specific invariants for incompletely initialized machines by using
+``@invariant(check_during_init=True)`` (:issue:`2868`).
+
+In previous versions, it was possible if awkward to implement this behaviour
+using :func:`~hypothesis.stateful.precondition` and an auxiliary variable.
+
 .. _v6.6.1:
 
 ------------------
