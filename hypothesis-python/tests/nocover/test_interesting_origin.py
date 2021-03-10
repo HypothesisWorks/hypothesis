@@ -57,8 +57,14 @@ def go_wrong_coverup(a, b):
 )
 @flaky(max_runs=3, min_passes=1)
 def test_can_generate_specified_version(function):
+    @given(st.integers(), st.integers())
+    @settings(database=None)
+    def test_fn(x, y):
+        # Indirection to fix https://github.com/HypothesisWorks/hypothesis/issues/2888
+        return function(x, y)
+
     try:
-        given(st.integers(), st.integers())(settings(database=None)(function))()
+        test_fn()
     except MultipleFailures:
         pass
     else:
