@@ -822,7 +822,7 @@ def builds(
             "infer was passed as a positional argument to "
             "builds(), but is only allowed as a keyword arg"
         )
-    required = required_args(target, args, kwargs) or set()
+    required = required_args(target, args, kwargs)
     to_infer = {k for k, v in kwargs.items() if v is infer}
     if required or to_infer:
         if isinstance(target, type) and attr.has(target):
@@ -1054,13 +1054,10 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
         return sampled_from(thing)
     # If we know that builds(thing) will fail, give a better error message
     required = required_args(thing)
-    if required and not any(
-        [
-            required.issubset(get_type_hints(thing)),
-            attr.has(thing),
-            # NamedTuples are weird enough that we need a specific check for them.
-            is_typed_named_tuple(thing),
-        ]
+    if required and not (
+        required.issubset(get_type_hints(thing))
+        or attr.has(thing)
+        or is_typed_named_tuple(thing)  # weird enough that we have a specific check
     ):
         raise ResolutionFailed(
             "Could not resolve %r to a strategy; consider "

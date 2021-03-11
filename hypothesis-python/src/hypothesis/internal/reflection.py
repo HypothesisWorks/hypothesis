@@ -116,7 +116,7 @@ def required_args(target, args=(), kwargs=()):
             else target
         )
     except TypeError:  # pragma: no cover
-        return None
+        return set()
     # self appears in the argspec of __init__ and bound methods, but it's an
     # error to explicitly supply it - so we might skip the first argument.
     skip_self = int(inspect.isclass(target) or inspect.ismethod(target))
