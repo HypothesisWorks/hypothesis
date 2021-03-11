@@ -20,5 +20,6 @@ exclude_lines =
     def __copy__
     def __deepcopy__
     except ImportError:
+    if PYPY:
     if TYPE_CHECKING:
     assert all\(.+\)

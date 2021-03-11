@@ -13,6 +13,7 @@
 #
 # END HEADER
 
+import builtins
 import collections
 import datetime
 import decimal
@@ -32,7 +33,7 @@ from types import FunctionType
 
 from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument, ResolutionFailed
-from hypothesis.internal.compat import ForwardRef, typing_root_type
+from hypothesis.internal.compat import PYPY, ForwardRef, typing_root_type
 from hypothesis.internal.conjecture.utils import many as conjecture_utils_many
 from hypothesis.strategies._internal.datetime import zoneinfo  # type: ignore
 from hypothesis.strategies._internal.ipaddress import (
@@ -253,6 +254,12 @@ def from_typing_type(thing):
             for T in list(union_elems) + [elem_type]
         ):
             mapping.pop(typing.ByteString, None)
+    elif (
+        (not mapping)
+        and isinstance(thing, ForwardRef)
+        and thing.__forward_arg__ in vars(builtins)
+    ):
+        return st.from_type(getattr(builtins, thing.__forward_arg__))
     strategies = [
         v if isinstance(v, st.SearchStrategy) else v(thing)
         for k, v in mapping.items()
@@ -294,7 +301,9 @@ utc_offsets = st.builds(
 # As a general rule, we try to limit this to scalars because from_type()
 # would have to decide on arbitrary collection elements, and we'd rather
 # not (with typing module generic types and some builtins as exceptions).
-_global_type_lookup = {
+_global_type_lookup: typing.Dict[
+    type, typing.Union[st.SearchStrategy, typing.Callable[[type], st.SearchStrategy]]
+] = {
     type(None): st.none(),
     bool: st.booleans(),
     int: st.integers(),
@@ -351,10 +360,38 @@ _global_type_lookup = {
         st.sampled_from(SPECIAL_IPv6_RANGES).map(ipaddress.IPv6Network),
     ),
     os.PathLike: st.builds(PurePath, st.text()),
+    UnicodeDecodeError: st.builds(
+        UnicodeDecodeError,
+        st.just("unknown encoding"),
+        st.just(b""),
+        st.just(0),
+        st.just(0),
+        st.just("reason"),
+    ),
+    UnicodeEncodeError: st.builds(
+        UnicodeEncodeError,
+        st.just("unknown encoding"),
+        st.text(),
+        st.just(0),
+        st.just(0),
+        st.just("reason"),
+    ),
+    UnicodeTranslateError: st.builds(
+        UnicodeTranslateError, st.text(), st.just(0), st.just(0), st.just("reason")
+    ),
+    enumerate: st.builds(enumerate, st.just(())),
+    filter: st.builds(filter, st.just(lambda _: None), st.just(())),  # type: ignore
+    map: st.builds(map, st.just(lambda _: None), st.just(())),  # type: ignore
+    reversed: st.builds(reversed, st.just(())),  # type: ignore
+    classmethod: st.builds(classmethod, st.just(lambda self: self)),
+    staticmethod: st.builds(staticmethod, st.just(lambda self: self)),
+    super: st.builds(super, st.from_type(type)),
     # Pull requests with more types welcome!
 }
 if zoneinfo is not None:  # pragma: no branch
     _global_type_lookup[zoneinfo.ZoneInfo] = st.timezones()
+if PYPY:
+    _global_type_lookup[builtins.sequenceiterator] = st.builds(iter, st.tuples())  # type: ignore
 
 _global_type_lookup[type] = st.sampled_from(
     [type(None)] + sorted(_global_type_lookup, key=str)
@@ -480,12 +517,16 @@ def resolve_Type(thing):
     if getattr(args[0], "__origin__", None) is typing.Union:
         args = args[0].__args__
     # Duplicate check from from_type here - only paying when needed.
-    for a in args:
+    args = list(args)
+    for i, a in enumerate(args):
         if type(a) == ForwardRef:
-            raise ResolutionFailed(
-                f"Cannot find the type referenced by {thing} - try using "
-                f"st.register_type_strategy({thing}, st.from_type(...))"
-            )
+            try:
+                args[i] = getattr(builtins, a.__forward_arg__)
+            except AttributeError:
+                raise ResolutionFailed(
+                    f"Cannot find the type referenced by {thing} - try using "
+                    f"st.register_type_strategy({thing}, st.from_type(...))"
+                ) from None
     return st.sampled_from(sorted(args, key=type_sorting_key))
 
 
