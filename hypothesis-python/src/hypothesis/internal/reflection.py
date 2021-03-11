@@ -160,7 +160,7 @@ def convert_keyword_arguments(function, args, kwargs):
             elif arg_name in defaults:
                 new_args.append(defaults[arg_name])
             else:
-                raise TypeError("No value provided for argument %r" % (arg_name))
+                raise TypeError(f"No value provided for argument {arg_name!r}")
 
     if kwargs and not (argspec.varkw or argspec.kwonlyargs):
         if len(kwargs) > 1:

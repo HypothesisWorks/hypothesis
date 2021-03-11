@@ -233,7 +233,7 @@ def lists(
     if unique_by is not None:
         if not (callable(unique_by) or isinstance(unique_by, tuple)):
             raise InvalidArgument(
-                "unique_by=%r is not a callable or tuple of callables" % (unique_by)
+                f"unique_by={unique_by!r} is not a callable or tuple of callables"
             )
         if callable(unique_by):
             unique_by = (unique_by,)
@@ -241,7 +241,7 @@ def lists(
             raise InvalidArgument("unique_by is empty")
         for i, f in enumerate(unique_by):
             if not callable(f):
-                raise InvalidArgument("unique_by[%i]=%r is not a callable" % (i, f))
+                raise InvalidArgument(f"unique_by[{i}]={f!r} is not a callable")
         # Note that lazy strategies automatically unwrap when passed to a defines_strategy
         # function.
         tuple_suffixes = None
@@ -1060,8 +1060,8 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
         or is_typed_named_tuple(thing)  # weird enough that we have a specific check
     ):
         raise ResolutionFailed(
-            "Could not resolve %r to a strategy; consider "
-            "using register_type_strategy" % (thing,)
+            f"Could not resolve {thing!r} to a strategy; consider "
+            "using register_type_strategy"
         )
     # Finally, try to build an instance by calling the type object.  Unlike builds(),
     # this block *does* try to infer strategies for arguments with default values.
@@ -1089,8 +1089,8 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
     subclasses = thing.__subclasses__()
     if not subclasses:
         raise ResolutionFailed(
-            "Could not resolve %r to a strategy, because it is an abstract type "
-            "without any subclasses. Consider using register_type_strategy" % (thing,)
+            f"Could not resolve {thing!r} to a strategy, because it is an abstract "
+            "type without any subclasses. Consider using register_type_strategy"
         )
     return sampled_from(subclasses).flatmap(from_type)
 
