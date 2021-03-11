@@ -780,7 +780,7 @@ class MappedSearchStrategy(SearchStrategy):
     def pack(self, x):
         """Take a value produced by the underlying mapped_strategy and turn it
         into a value suitable for outputting from this strategy."""
-        raise NotImplementedError("%s.pack()" % (self.__class__.__name__))
+        raise NotImplementedError(f"{self.__class__.__name__}.pack()")
 
     def do_draw(self, data: ConjectureData) -> Ex:
         for _ in range(3):

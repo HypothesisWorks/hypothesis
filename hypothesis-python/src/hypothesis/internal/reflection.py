@@ -116,7 +116,7 @@ def required_args(target, args=(), kwargs=()):
             else target
         )
     except TypeError:  # pragma: no cover
-        return None
+        return set()
     # self appears in the argspec of __init__ and bound methods, but it's an
     # error to explicitly supply it - so we might skip the first argument.
     skip_self = int(inspect.isclass(target) or inspect.ismethod(target))
@@ -160,7 +160,7 @@ def convert_keyword_arguments(function, args, kwargs):
             elif arg_name in defaults:
                 new_args.append(defaults[arg_name])
             else:
-                raise TypeError("No value provided for argument %r" % (arg_name))
+                raise TypeError(f"No value provided for argument {arg_name!r}")
 
     if kwargs and not (argspec.varkw or argspec.kwonlyargs):
         if len(kwargs) > 1:

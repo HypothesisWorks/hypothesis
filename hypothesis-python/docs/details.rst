@@ -31,7 +31,7 @@ intermediate steps of your test. That's where the ``note`` function comes in:
     ... def test_shuffle_is_noop(ls, r):
     ...     ls2 = list(ls)
     ...     r.shuffle(ls2)
-    ...     note("Shuffle: %r" % (ls2))
+    ...     note(f"Shuffle: {ls2!r}")
     ...     assert ls == ls2
     ...
     >>> try:
@@ -120,7 +120,7 @@ You can also mark custom events in a test using the ``event`` function:
 
   @given(st.integers().filter(lambda x: x % 2 == 0))
   def test_even_integers(i):
-      event("i mod 3 = %d" % (i % 3,))
+      event(f"i mod 3 = {i%3}")
 
 
 You will then see output like:

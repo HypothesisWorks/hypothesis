@@ -233,7 +233,7 @@ def lists(
     if unique_by is not None:
         if not (callable(unique_by) or isinstance(unique_by, tuple)):
             raise InvalidArgument(
-                "unique_by=%r is not a callable or tuple of callables" % (unique_by)
+                f"unique_by={unique_by!r} is not a callable or tuple of callables"
             )
         if callable(unique_by):
             unique_by = (unique_by,)
@@ -241,7 +241,7 @@ def lists(
             raise InvalidArgument("unique_by is empty")
         for i, f in enumerate(unique_by):
             if not callable(f):
-                raise InvalidArgument("unique_by[%i]=%r is not a callable" % (i, f))
+                raise InvalidArgument(f"unique_by[{i}]={f!r} is not a callable")
         # Note that lazy strategies automatically unwrap when passed to a defines_strategy
         # function.
         tuple_suffixes = None
@@ -822,7 +822,7 @@ def builds(
             "infer was passed as a positional argument to "
             "builds(), but is only allowed as a keyword arg"
         )
-    required = required_args(target, args, kwargs) or set()
+    required = required_args(target, args, kwargs)
     to_infer = {k for k, v in kwargs.items() if v is infer}
     if required or to_infer:
         if isinstance(target, type) and attr.has(target):
@@ -1054,17 +1054,14 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
         return sampled_from(thing)
     # If we know that builds(thing) will fail, give a better error message
     required = required_args(thing)
-    if required and not any(
-        [
-            required.issubset(get_type_hints(thing)),
-            attr.has(thing),
-            # NamedTuples are weird enough that we need a specific check for them.
-            is_typed_named_tuple(thing),
-        ]
+    if required and not (
+        required.issubset(get_type_hints(thing))
+        or attr.has(thing)
+        or is_typed_named_tuple(thing)  # weird enough that we have a specific check
     ):
         raise ResolutionFailed(
-            "Could not resolve %r to a strategy; consider "
-            "using register_type_strategy" % (thing,)
+            f"Could not resolve {thing!r} to a strategy; consider "
+            "using register_type_strategy"
         )
     # Finally, try to build an instance by calling the type object.  Unlike builds(),
     # this block *does* try to infer strategies for arguments with default values.
@@ -1092,8 +1089,8 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
     subclasses = thing.__subclasses__()
     if not subclasses:
         raise ResolutionFailed(
-            "Could not resolve %r to a strategy, because it is an abstract type "
-            "without any subclasses. Consider using register_type_strategy" % (thing,)
+            f"Could not resolve {thing!r} to a strategy, because it is an abstract "
+            "type without any subclasses. Consider using register_type_strategy"
         )
     return sampled_from(subclasses).flatmap(from_type)
 

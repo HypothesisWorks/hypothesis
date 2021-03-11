@@ -324,13 +324,13 @@ def floats(
         allow_nan = bool(min_value is None and max_value is None)
     elif allow_nan and (min_value is not None or max_value is not None):
         raise InvalidArgument(
-            "Cannot have allow_nan=%r, with min_value or max_value" % (allow_nan)
+            f"Cannot have allow_nan={allow_nan!r}, with min_value or max_value"
         )
 
     if width not in (16, 32, 64):
         raise InvalidArgument(
-            "Got width=%r, but the only valid values are the integers 16, "
-            "32, and 64." % (width,)
+            f"Got width={width!r}, but the only valid values "
+            "are the integers 16, 32, and 64."
         )
 
     check_valid_bound(min_value, "min_value")
@@ -409,8 +409,8 @@ def floats(
     elif allow_infinity:
         if min_value is not None and max_value is not None:
             raise InvalidArgument(
-                "Cannot have allow_infinity=%r, with both min_value and "
-                "max_value" % (allow_infinity)
+                f"Cannot have allow_infinity={allow_infinity!r}, "
+                "with both min_value and max_value"
             )
     elif min_value == math.inf:
         raise InvalidArgument("allow_infinity=False excludes min_value=inf")

@@ -14,6 +14,7 @@
 # END HEADER
 
 import abc
+import builtins
 import collections
 import datetime
 import enum
@@ -38,6 +39,11 @@ from tests.common.debug import assert_all_examples, find_any, minimal
 from tests.common.utils import fails_with, temp_registered
 
 sentinel = object()
+BUILTIN_TYPES = tuple(
+    v
+    for v in vars(builtins).values()
+    if isinstance(v, type) and v.__name__ != "BuiltinImporter"
+)
 generics = sorted(
     (
         t
@@ -522,7 +528,7 @@ def test_override_args_for_namedtuple(thing):
 @pytest.mark.parametrize("thing", [typing.Optional, typing.List, typing.Type])
 def test_cannot_resolve_bare_forward_reference(thing):
     with pytest.raises(InvalidArgument):
-        t = thing["int"]
+        t = thing["ConcreteFoo"]
         st.from_type(t).example()
 
 
@@ -810,3 +816,27 @@ class AnnotatedAndDefault:
 def test_from_type_can_be_default_or_annotation():
     find_any(st.from_type(AnnotatedAndDefault), lambda x: x.foo is None)
     find_any(st.from_type(AnnotatedAndDefault), lambda x: isinstance(x.foo, bool))
+
+
+@pytest.mark.parametrize("t", BUILTIN_TYPES, ids=lambda t: t.__name__)
+def test_resolves_builtin_types(t):
+    v = st.from_type(t).example()
+    assert isinstance(v, t)
+
+
+@pytest.mark.skipif(sys.version_info[:2] == (3, 6), reason="no ForwardRef type")
+@pytest.mark.parametrize("t", BUILTIN_TYPES, ids=lambda t: t.__name__)
+def test_resolves_forwardrefs_to_builtin_types(t):
+    v = st.from_type(typing.ForwardRef(t.__name__)).example()
+    assert isinstance(v, t)
+
+
+@pytest.mark.parametrize("t", BUILTIN_TYPES, ids=lambda t: t.__name__)
+def test_resolves_type_of_builtin_types(t):
+    v = st.from_type(typing.Type[t.__name__]).example()
+    assert v is t
+
+
+@given(st.from_type(typing.Type[typing.Union["str", "int"]]))
+def test_resolves_type_of_union_of_forwardrefs_to_builtins(x):
+    assert x in (str, int)
