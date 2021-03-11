@@ -200,8 +200,13 @@ def test_uninspectable_from_type():
         st.from_type(BrokenClass).example()
 
 
+def _check_instances(t):
+    # See https://github.com/samuelcolvin/pydantic/discussions/2508
+    return t.__module__ != "typing" and not t.__module__.startswith("pydantic")
+
+
 @pytest.mark.parametrize(
-    "typ", sorted((x for x in _global_type_lookup if x.__module__ != "typing"), key=str)
+    "typ", sorted((x for x in _global_type_lookup if _check_instances(x)), key=str)
 )
 @given(data=st.data())
 def test_can_generate_from_all_registered_types(data, typ):
