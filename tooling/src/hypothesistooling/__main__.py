@@ -312,6 +312,7 @@ PY36 = "3.6.13"
 PY37 = "3.7.10"
 PY38 = PYMAIN = "3.8.8"  # Note: keep this in sync with build.sh and GH Actions main.yml
 PY39 = "3.9.2"
+PY310 = "3.10-dev"
 PYPY36 = "pypy3.6-7.3.1"
 PYPY37 = "pypy3.7-7.3.2"
 
@@ -319,7 +320,7 @@ PYPY37 = "pypy3.7-7.3.2"
 # ALIASES are the executable names for each Python version
 ALIASES = {PYPY36: "pypy3", PYPY37: "pypy3"}
 
-for n in [PY36, PY37, PY38, PY39]:
+for n in [PY36, PY37, PY38, PY39, PY310]:
     major, minor, patch = n.replace("-dev", ".").split(".")
     ALIASES[n] = f"python{major}.{minor}"
 
@@ -351,6 +352,11 @@ def check_py38():
 @python_tests
 def check_py39():
     run_tox("py39-full", PY39)
+
+
+@python_tests
+def check_py310():
+    run_tox("py310-full", PY310)
 
 
 @python_tests

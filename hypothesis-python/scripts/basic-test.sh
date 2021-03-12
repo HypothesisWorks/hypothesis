@@ -44,7 +44,7 @@ pip install lark-parser==0.7.1
 $PYTEST tests/lark/
 pip uninstall -y lark-parser
 
-if [ "$(python -c 'import platform; print(platform.python_implementation() != "PyPy")')" = "True" ] ; then
+if [ "$(python -c $'import platform, sys; print(sys.version_info.releaselevel == \'final\' and platform.python_implementation() != "PyPy")')" = "True" ] ; then
   pip install ".[codemods,cli]"
   $PYTEST tests/codemods/
   pip uninstall -y libcst click

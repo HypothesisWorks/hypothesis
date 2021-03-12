@@ -14,6 +14,7 @@
 # END HEADER
 
 import dataclasses
+import sys
 import typing
 
 import pytest
@@ -96,6 +97,18 @@ def test_typeddict_with_optional_then_required_again(value):
     if "b" in value:
         assert isinstance(value["b"], bool)
     assert isinstance(value["c"], str)
+
+
+class NestedDict(typing.TypedDict):
+    inner: A
+
+
+@pytest.mark.skipif(sys.version_info[:2] >= (3, 10), reason="see issue #2897")
+@given(from_type(NestedDict))
+def test_typeddict_with_nested_value(value):
+    assert type(value) == dict
+    assert set(value) == {"inner"}
+    assert isinstance(value["inner"]["a"], int)
 
 
 @pytest.mark.xfail

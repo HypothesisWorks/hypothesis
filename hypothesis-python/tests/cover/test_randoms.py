@@ -15,6 +15,7 @@
 
 import inspect
 import math
+import sys
 from copy import copy
 
 import pytest
@@ -97,7 +98,7 @@ def any_call_of_method(draw, method):
         b = draw(INT64)
         assume(a != b)
         a, b = sorted((a, b))
-        if a == 0 and draw(st.booleans()):
+        if a == 0 and sys.version_info[:2] < (3, 10) and draw(st.booleans()):
             start = b
             stop = None
         else:

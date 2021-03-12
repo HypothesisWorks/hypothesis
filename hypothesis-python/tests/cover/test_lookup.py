@@ -337,15 +337,16 @@ def test_distinct_typevars_distinct_type():
     )
 
 
-@given(st.data())
-def test_same_typevars_same_type(data):
+A = typing.TypeVar("A")
+
+
+def same_type_args(a: A, b: A):
+    assert type(a) == type(b)
+
+
+@given(st.builds(same_type_args))
+def test_same_typevars_same_type(_):
     """Ensures that single type argument will always have the same type in a single context."""
-    A = typing.TypeVar("A")
-
-    def same_type_args(a: A, b: A):
-        assert type(a) == type(b)
-
-    data.draw(st.builds(same_type_args))
 
 
 def test_typevars_can_be_redefined():
@@ -755,7 +756,12 @@ def test_compat_get_type_hints_aware_of_None_default():
     find_any(strategy, lambda x: x.a is not None)
 
     assert typing.get_type_hints(constructor)["a"] == typing.Optional[str]
-    assert inspect.signature(constructor).parameters["a"].annotation == str
+    annotation = inspect.signature(constructor).parameters["a"].annotation
+    assert annotation == str or (
+        # See https://bugs.python.org/issue43006
+        annotation == typing.Optional[str]
+        and sys.version_info[:2] >= (3, 10)
+    )
 
 
 _ValueType = typing.TypeVar("_ValueType")
