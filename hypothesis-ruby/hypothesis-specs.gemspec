@@ -18,5 +18,4 @@ DESCRIPTION
   s.license     = 'MPL-2.0'
   s.extensions = Dir['ext/extconf.rb']
   s.add_dependency 'rutie', '~> 0.0.3'
-  s.add_runtime_dependency 'rake', '>= 10.0', '< 13.0'
 end
