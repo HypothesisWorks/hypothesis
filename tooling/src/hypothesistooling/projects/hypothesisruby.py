@@ -103,7 +103,7 @@ def tag_name():
 
 def has_source_changes():
     """Returns True if any source files have changed."""
-    return tools.has_changes([RUST_SRC, RUBY_SRC]) or cr.has_release()
+    return tools.has_changes([RUST_SRC, RUBY_SRC, GEMSPEC_FILE]) or cr.has_release()
 
 
 def current_version():
