@@ -28,7 +28,7 @@ from hypothesis import (
 )
 from hypothesis.internal.conjecture.data import ConjectureData, Status, StopTest
 from hypothesis.internal.conjecture.engine import ConjectureRunner
-from hypothesis.strategies._internal.numbers import WideRangeIntStrategy
+from hypothesis.internal.conjecture.utils import INT_SIZES
 
 
 @st.composite
@@ -112,7 +112,7 @@ def test_always_reduces_integers_to_smallest_suitable_sizes(problem):
     #   have power of two sizes, so it may be up to a factor of two more than
     #   that.
     bits_needed = 1 + n.bit_length()
-    actual_bits_needed = min(s for s in WideRangeIntStrategy.sizes if s >= bits_needed)
+    actual_bits_needed = min(s for s in INT_SIZES if s >= bits_needed)
     bytes_needed = actual_bits_needed // 8
     # 3 extra bytes: two for the sampler, one for the capping value.
     assert len(v.buffer) == 3 + bytes_needed

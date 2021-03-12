@@ -23,7 +23,7 @@ import pytest
 from hypothesis import given, strategies as st
 from hypothesis.errors import Unsatisfiable
 from hypothesis.strategies._internal.lazy import LazyStrategy
-from hypothesis.strategies._internal.numbers import BoundedIntStrategy
+from hypothesis.strategies._internal.numbers import IntegersStrategy
 from hypothesis.strategies._internal.strategies import FilteredStrategy
 
 from tests.common.utils import fails_with
@@ -45,13 +45,24 @@ from tests.common.utils import fails_with
         (st.integers(1, 5), partial(operator.gt, 3.5), 1, 3),
         (st.integers(1, 5), partial(operator.lt, -math.inf), 1, 5),
         (st.integers(1, 5), partial(operator.gt, math.inf), 1, 5),
+        # Integers with only one bound
+        (st.integers(min_value=1), partial(operator.lt, 3), 4, None),
+        (st.integers(min_value=1), partial(operator.le, 3), 3, None),
+        (st.integers(max_value=5), partial(operator.ge, 3), None, 3),
+        (st.integers(max_value=5), partial(operator.gt, 3), None, 2),
+        # Unbounded integers
+        (st.integers(), partial(operator.lt, 3), 4, None),
+        (st.integers(), partial(operator.le, 3), 3, None),
+        (st.integers(), partial(operator.eq, 3), 3, 3),
+        (st.integers(), partial(operator.ge, 3), None, 3),
+        (st.integers(), partial(operator.gt, 3), None, 2),
     ],
 )
 @given(data=st.data())
 def test_filter_rewriting(data, strategy, predicate, start, end):
     s = strategy.filter(predicate)
     assert isinstance(s, LazyStrategy)
-    assert isinstance(s.wrapped_strategy, BoundedIntStrategy)
+    assert isinstance(s.wrapped_strategy, IntegersStrategy)
     assert s.wrapped_strategy.start == start
     assert s.wrapped_strategy.end == end
     value = data.draw(s)
@@ -87,6 +98,19 @@ def test_rewriting_does_not_compare_decimal_snan():
         s.example()
 
 
+@pytest.mark.parametrize(
+    "strategy, lo, hi",
+    [
+        (st.integers(0, 1), -1, 2),
+    ],
+    ids=repr,
+)
+def test_applying_noop_filter_returns_self(strategy, lo, hi):
+    s = strategy.wrapped_strategy
+    s2 = s.filter(partial(operator.le, -1)).filter(partial(operator.ge, 2))
+    assert s is s2
+
+
 def mod2(x):
     return x % 2
 
@@ -117,5 +141,5 @@ def test_rewrite_filter_chains_with_some_unhandled(data, predicates):
     # No matter the order of the filters, we get the same resulting structure
     unwrapped = s.wrapped_strategy
     assert isinstance(unwrapped, FilteredStrategy)
-    assert isinstance(unwrapped.filtered_strategy, BoundedIntStrategy)
+    assert isinstance(unwrapped.filtered_strategy, IntegersStrategy)
     assert unwrapped.flat_conditions == (mod2,)

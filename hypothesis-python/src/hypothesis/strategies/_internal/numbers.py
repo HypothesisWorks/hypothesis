@@ -44,48 +44,65 @@ from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 
 # See https://github.com/python/mypy/issues/3186 - numbers.Real is wrong!
 Real = Union[int, float, Fraction, Decimal]
+ONE_BOUND_INTEGERS_LABEL = d.calc_label_from_name("trying a one-bound int allowing 0")
 
 
-class WideRangeIntStrategy(SearchStrategy):
-
-    distribution = d.Sampler([4.0, 8.0, 1.0, 1.0, 0.5])
-
-    sizes = [8, 16, 32, 64, 128]
-
-    def __repr__(self):
-        return "WideRangeIntStrategy()"
-
-    def do_draw(self, data):
-        size = self.sizes[self.distribution.sample(data)]
-        r = data.draw_bits(size)
-        sign = r & 1
-        r >>= 1
-        if sign:
-            r = -r
-        return int(r)
-
-
-class BoundedIntStrategy(SearchStrategy):
-    """A strategy for providing integers in some interval with inclusive
-    endpoints."""
-
+class IntegersStrategy(SearchStrategy):
     def __init__(self, start, end):
-        SearchStrategy.__init__(self)
+        assert isinstance(start, int) or start is None
+        assert isinstance(end, int) or end is None
+        assert start is None or end is None or start <= end
         self.start = start
         self.end = end
 
     def __repr__(self):
+        if self.start is None and self.end is None:
+            return "integers()"
+        if self.end is None:
+            return f"integers(min_value={self.start})"
+        if self.start is None:
+            return f"integers(max_value={self.end})"
         return f"integers({self.start}, {self.end})"
 
     def do_draw(self, data):
-        return d.integer_range(data, self.start, self.end)
+        if self.start is None and self.end is None:
+            return d.unbounded_integers(data)
+
+        if self.start is None:
+            if self.end <= 0:
+                return self.end - abs(d.unbounded_integers(data))
+            else:
+                probe = self.end + 1
+                while self.end < probe:
+                    data.start_example(ONE_BOUND_INTEGERS_LABEL)
+                    probe = d.unbounded_integers(data)
+                    data.stop_example(discard=self.end < probe)
+                return probe
+
+        if self.end is None:
+            if self.start >= 0:
+                return self.start + abs(d.unbounded_integers(data))
+            else:
+                probe = self.start - 1
+                while probe < self.start:
+                    data.start_example(ONE_BOUND_INTEGERS_LABEL)
+                    probe = d.unbounded_integers(data)
+                    data.stop_example(discard=probe < self.start)
+                return probe
+
+        return d.integer_range(data, self.start, self.end, center=0)
 
     def filter(self, condition):
         kwargs, pred = get_integer_predicate_bounds(condition)
-        start = max(self.start, kwargs.get("min_value", self.start))
-        end = min(self.end, kwargs.get("max_value", self.end))
-        if start > self.start or end < self.end:
-            if start > end:
+
+        start, end = self.start, self.end
+        if "min_value" in kwargs:
+            start = max(kwargs["min_value"], -math.inf if start is None else start)
+        if "max_value" in kwargs:
+            end = min(kwargs["max_value"], math.inf if end is None else end)
+
+        if start != self.start or end != self.end:
+            if start is not None and end is not None and start > end:
                 return nothing()
             self = type(self)(start, end)
         if pred is None:
@@ -126,30 +143,7 @@ def integers(
             )
         max_value = int(max_value)
 
-    if min_value is None:
-        if max_value is None:
-            return WideRangeIntStrategy()
-        else:
-            if max_value > 0:
-                return WideRangeIntStrategy().filter(lambda x: x <= max_value)
-            return WideRangeIntStrategy().map(lambda x: max_value - abs(x))
-    else:
-        if max_value is None:
-            if min_value < 0:
-                return WideRangeIntStrategy().filter(lambda x: x >= min_value)
-            return WideRangeIntStrategy().map(lambda x: min_value + abs(x))
-        else:
-            assert min_value <= max_value
-            if min_value == max_value:
-                return just(min_value)
-            elif min_value >= 0:
-                return BoundedIntStrategy(min_value, max_value)
-            elif max_value <= 0:
-                return BoundedIntStrategy(-max_value, -min_value).map(lambda t: -t)
-            else:
-                return integers(min_value=0, max_value=max_value) | integers(
-                    min_value=min_value, max_value=0
-                )
+    return IntegersStrategy(min_value, max_value)
 
 
 NASTY_FLOATS = sorted(
