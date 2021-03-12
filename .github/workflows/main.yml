@@ -18,9 +18,12 @@ jobs:
           - check-format
           - check-coverage
           - check-conjecture-coverage
-          - check-py38
+          - check-py36
           - check-pypy36
+          - check-py37
           - check-pypy37
+          - check-py38
+          - check-py39
           - check-quality
           - lint-ruby
           - check-ruby-tests
@@ -31,23 +34,15 @@ jobs:
           - check-rust-tests
           - audit-conjecture-rust
           - lint-conjecture-rust
-        python-version: ["3.8"]
-        include:
-          - task: check-py36
-            python-version: "3.6"
-          - task: check-py37
-            python-version: "3.7"
-          - task: check-py39
-            python-version: "3.9"
       fail-fast: false
     steps:
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python 3.8
       uses: actions/setup-python@v2
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: "3.8"
     - name: Restore cache
       uses: actions/cache@v2
       with:
@@ -56,10 +51,10 @@ jobs:
           ~/wheelhouse
           ~/.local
           vendor/bundle
-        key: deps-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('requirements/tools.txt') }}-${{ matrix.task }}
+        key: deps-${{ runner.os }}-${{ hashFiles('requirements/tools.txt') }}-${{ matrix.task }}
         restore-keys: |
-          deps-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('requirements/tools.txt') }}
-          deps-${{ runner.os }}-${{ matrix.python-version }}
+          deps-${{ runner.os }}-${{ hashFiles('requirements/tools.txt') }}
+          deps-${{ runner.os }}
     - name: Run tests
       run: TASK=${{ matrix.task }} ./build.sh
 
@@ -69,20 +64,18 @@ jobs:
       matrix:
         include:
           - task: check-py38-x64
-            python.version: "3.8"
             python.architecture: "x64"
           - task: check-py38-x86
-            python.version: "3.8"
             python.architecture: "x86"
       fail-fast: false
     steps:
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python 3.8
       uses: actions/setup-python@v2
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: "3.8"
         architecture: ${{ matrix.python-architecture }}
     - name: Restore cache
       uses: actions/cache@v2
@@ -90,10 +83,10 @@ jobs:
         path: |
           ~\appdata\local\pip\cache
           vendor\bundle
-        key: deps-${{ runner.os }}-${{ matrix.python-version }}-${{ matrix.python-architecture }}-${{ hashFiles('requirements/tools.txt') }}-${{ matrix.task }}
+        key: deps-${{ runner.os }}-${{ matrix.python-architecture }}-${{ hashFiles('requirements/tools.txt') }}-${{ matrix.task }}
         restore-keys: |
-          deps-${{ runner.os }}-${{ matrix.python-version }}-${{ matrix.python-architecture }}-${{ hashFiles('requirements/tools.txt') }}
-          deps-${{ runner.os }}-${{ matrix.python-version }}-${{ matrix.python-architecture }}
+          deps-${{ runner.os }}-${{ matrix.python-architecture }}-${{ hashFiles('requirements/tools.txt') }}
+          deps-${{ runner.os }}-${{ matrix.python-architecture }}
     - name: Install dependencies
       run: |
         pip install --upgrade setuptools pip wheel
@@ -108,16 +101,15 @@ jobs:
       matrix:
         task:
           - check-py38
-        python-version: ["3.8"]
       fail-fast: false
     steps:
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python 3.8
       uses: actions/setup-python@v2
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: "3.8"
     - name: Run tests
       run: TASK=${{ matrix.task }} ./build.sh
 
@@ -134,16 +126,15 @@ jobs:
           - check-pandas111
           - check-pandas100
           - check-pandas25
-        python-version: ["3.8"]
       fail-fast: false
     steps:
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python 3.8
       uses: actions/setup-python@v2
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: "3.8"
     - name: Restore cache
       uses: actions/cache@v2
       with:
@@ -152,10 +143,10 @@ jobs:
           ~/wheelhouse
           ~/.local
           vendor/bundle
-        key: deps-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('requirements/tools.txt') }}-${{ matrix.task }}
+        key: deps-${{ runner.os }}-${{ hashFiles('requirements/tools.txt') }}-${{ matrix.task }}
         restore-keys: |
-          deps-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('requirements/tools.txt') }}
-          deps-${{ runner.os }}-${{ matrix.python-version }}
+          deps-${{ runner.os }}-${{ hashFiles('requirements/tools.txt') }}
+          deps-${{ runner.os }}
     - name: Run tests
       run: TASK=${{ matrix.task }} ./build.sh
 
@@ -167,17 +158,16 @@ jobs:
       matrix:
         task:
           - deploy
-        python-version: ["3.8"]
       fail-fast: false
     steps:
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
         token: ${{ secrets.GH_TOKEN }}
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python 3.8
       uses: actions/setup-python@v2
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: "3.8"
     - name: Restore cache
       uses: actions/cache@v2
       with:
@@ -186,10 +176,10 @@ jobs:
           ~/wheelhouse
           ~/.local
           vendor/bundle
-        key: deps-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('requirements/tools.txt') }}-${{ matrix.task }}
+        key: deps-${{ runner.os }}-${{ hashFiles('requirements/tools.txt') }}-${{ matrix.task }}
         restore-keys: |
-          deps-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('requirements/tools.txt') }}
-          deps-${{ runner.os }}-${{ matrix.python-version }}
+          deps-${{ runner.os }}-${{ hashFiles('requirements/tools.txt') }}
+          deps-${{ runner.os }}
     - name: Deploy package
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
