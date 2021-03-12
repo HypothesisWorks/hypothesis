@@ -64,33 +64,6 @@ from hypothesis.vendor import pretty
 from tests.common.utils import capture_out
 
 
-def unicode_to_str(x, encoding=None):
-    return x
-
-
-def assert_equal(x, y):
-    assert x == y
-
-
-def assert_true(x):
-    assert x
-
-
-def assert_in(x, xs):
-    assert x in xs
-
-
-def skip_without(mod):
-    try:
-        __import__(mod)
-        return lambda f: f
-    except ImportError:
-        return pytest.mark.skipif(True, reason=f"Missing {mod}")
-
-
-assert_raises = pytest.raises
-
-
 class MyList:
     def __init__(self, content):
         self.content = content
@@ -208,7 +181,7 @@ def test_indentation():
     gotoutput = pretty.pretty(MyList(range(count)))
     expectedoutput = "MyList(\n" + ",\n".join(f"   {i}" for i in range(count)) + ")"
 
-    assert_equal(gotoutput, expectedoutput)
+    assert gotoutput == expectedoutput
 
 
 def test_dispatch():
@@ -217,7 +190,7 @@ def test_dispatch():
     gotoutput = pretty.pretty(MyDict())
     expectedoutput = "MyDict(...)"
 
-    assert_equal(gotoutput, expectedoutput)
+    assert gotoutput == expectedoutput
 
 
 def test_callability_checking():
@@ -226,7 +199,7 @@ def test_callability_checking():
     gotoutput = pretty.pretty(Dummy2())
     expectedoutput = "Dummy1(...)"
 
-    assert_equal(gotoutput, expectedoutput)
+    assert gotoutput == expectedoutput
 
 
 def test_sets():
@@ -251,7 +224,7 @@ def test_sets():
     ]
     for obj, expected_output in zip(objects, expected):
         got_output = pretty.pretty(obj)
-        assert_equal(got_output, expected_output)
+        assert got_output == expected_output
 
 
 def test_unsortable_set():
@@ -268,38 +241,29 @@ def test_unsortable_dict():
         assert pretty.pretty(x) in p
 
 
-@skip_without("xxlimited")
-def test_pprint_heap_allocated_type():
-    """Test that pprint works for heap allocated types."""
-    import xxlimited
-
-    output = pretty.pretty(xxlimited.Null)
-    assert_equal(output, "xxlimited.Null")
-
-
 def test_pprint_nomod():
     """Test that pprint works for classes with no __module__."""
     output = pretty.pretty(NoModule)
-    assert_equal(output, "NoModule")
+    assert output == "NoModule"
 
 
 def test_pprint_break():
     """Test that p.break_ produces expected output."""
     output = pretty.pretty(Breaking())
     expected = "TG: Breaking(\n    ):"
-    assert_equal(output, expected)
+    assert output == expected
 
 
 def test_pprint_break_repr():
     """Test that p.break_ is used in repr."""
     output = pretty.pretty(BreakingReprParent())
     expected = "TG: Breaking(\n    ):"
-    assert_equal(output, expected)
+    assert output == expected
 
 
 def test_bad_repr():
     """Don't catch bad repr errors."""
-    with assert_raises(ZeroDivisionError):
+    with pytest.raises(ZeroDivisionError):
         pretty.pretty(BadRepr())
 
 
@@ -320,7 +284,7 @@ class ReallyBadRepr:
 
 
 def test_really_bad_repr():
-    with assert_raises(BadException):
+    with pytest.raises(BadException):
         pretty.pretty(ReallyBadRepr())
 
 
@@ -337,11 +301,11 @@ try:
 
     def test_super_repr():
         output = pretty.pretty(super(SA))
-        assert_in("SA", output)
+        assert "SA" in output
 
         sb = SB()
         output = pretty.pretty(super(SA, sb))
-        assert_in("SA", output)
+        assert "SA" in output
 
 
 except AttributeError:
@@ -356,33 +320,33 @@ def test_long_list():
     lis = list(range(10000))
     p = pretty.pretty(lis)
     last2 = p.rsplit("\n", 2)[-2:]
-    assert_equal(last2, [" 999,", " ...]"])
+    assert last2 == [" 999,", " ...]"]
 
 
 def test_long_set():
     s = set(range(10000))
     p = pretty.pretty(s)
     last2 = p.rsplit("\n", 2)[-2:]
-    assert_equal(last2, [" 999,", " ...}"])
+    assert last2 == [" 999,", " ...}"]
 
 
 def test_long_tuple():
     tup = tuple(range(10000))
     p = pretty.pretty(tup)
     last2 = p.rsplit("\n", 2)[-2:]
-    assert_equal(last2, [" 999,", " ...)"])
+    assert last2 == [" 999,", " ...)"]
 
 
 def test_long_dict():
     d = {n: n for n in range(10000)}
     p = pretty.pretty(d)
     last2 = p.rsplit("\n", 2)[-2:]
-    assert_equal(last2, [" 999: 999,", " ...}"])
+    assert last2 == [" 999: 999,", " ...}"]
 
 
 def test_unbound_method():
     output = pretty.pretty(MyObj.somemethod)
-    assert_in("MyObj.somemethod", output)
+    assert "MyObj.somemethod" in output
 
 
 class MetaClass(type):
@@ -398,22 +362,21 @@ ClassWithMeta = MetaClass("ClassWithMeta")
 
 def test_metaclass_repr():
     output = pretty.pretty(ClassWithMeta)
-    assert_equal(output, "[CUSTOM REPR FOR CLASS ClassWithMeta]")
+    assert output == "[CUSTOM REPR FOR CLASS ClassWithMeta]"
 
 
 def test_unicode_repr():
     u = "üniçodé"
-    ustr = unicode_to_str(u)
 
     class C:
         def __repr__(self):
-            return ustr
+            return u
 
     c = C()
     p = pretty.pretty(c)
-    assert_equal(p, u)
+    assert p == u
     p = pretty.pretty([c])
-    assert_equal(p, f"[{u}]")
+    assert p == f"[{u}]"
 
 
 def test_basic_class():
@@ -431,8 +394,8 @@ def test_basic_class():
     printer.flush()
     output = stream.getvalue()
 
-    assert_equal(output, f"{__name__}.MyObj")
-    assert_true(type_pprint_wrapper.called)
+    assert output == f"{__name__}.MyObj"
+    assert type_pprint_wrapper.called
 
 
 def test_collections_defaultdict():
@@ -455,7 +418,7 @@ def test_collections_defaultdict():
         (b, "defaultdict(list, {'key': defaultdict(...)})"),
     ]
     for obj, expected in cases:
-        assert_equal(pretty.pretty(obj), expected)
+        assert pretty.pretty(obj) == expected
 
 
 @pytest.mark.skipif(PYPY, reason="slightly different on PyPy3")
@@ -482,7 +445,7 @@ def test_collections_ordereddict():
         (a, "OrderedDict([('key', OrderedDict(...))])"),
     ]
     for obj, expected in cases:
-        assert_equal(pretty.pretty(obj), expected)
+        assert pretty.pretty(obj) == expected
 
 
 def test_collections_deque():
@@ -518,7 +481,7 @@ def test_collections_deque():
         (a, "deque([deque(...)])"),
     ]
     for obj, expected in cases:
-        assert_equal(pretty.pretty(obj), expected)
+        assert pretty.pretty(obj) == expected
 
 
 def test_collections_counter():
@@ -531,7 +494,7 @@ def test_collections_counter():
         (MyCounter(a=1), "MyCounter({'a': 1})"),
     ]
     for obj, expected in cases:
-        assert_equal(pretty.pretty(obj), expected)
+        assert pretty.pretty(obj) == expected
 
 
 def test_cyclic_list():
