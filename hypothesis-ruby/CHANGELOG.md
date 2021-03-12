@@ -1,3 +1,7 @@
+# Hypothesis for Ruby 0.7.0 (2021-03-12)
+
+Moves rake from being a a runtime dependency to being a development dependency. Rake is used to run tests but is not required for consumers of hypothesis-ruby.
+
 # Hypothesis for Ruby 0.6.1 (2021-02-01)
 
 This patch contains minor performance improvements for `HypothesisCoreIntegers` class instantiation.
