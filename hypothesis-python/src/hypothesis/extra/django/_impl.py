@@ -104,7 +104,7 @@ def from_model(
         ):
             field_strategies[name] = from_field(field)
 
-    for field in field_strategies:
+    for field in field_strategies.copy():
         if m_type._meta.get_field(field).primary_key:
             # The primary key is generated as part of the strategy. We
             # want to find any existing row with this primary key and

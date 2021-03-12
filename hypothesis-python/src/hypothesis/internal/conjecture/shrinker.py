@@ -39,7 +39,7 @@ from hypothesis.internal.conjecture.shrinking import Float, Integer, Lexical, Or
 from hypothesis.internal.conjecture.shrinking.learned_dfas import SHRINKING_DFAS
 
 if False:
-    from typing import Dict  # noqa
+    pass
 
 
 def sort_key(buffer):

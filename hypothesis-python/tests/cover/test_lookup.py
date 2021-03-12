@@ -584,7 +584,7 @@ def test_resolves_ellipses_callable_to_function(f):
 class AbstractFoo(abc.ABC):
     @abc.abstractmethod
     def foo(self):
-        pass
+        raise NotImplementedError
 
 
 class ConcreteFoo(AbstractFoo):
@@ -601,7 +601,7 @@ def test_can_resolve_abstract_class(instance):
 class AbstractBar(abc.ABC):
     @abc.abstractmethod
     def bar(self):
-        pass
+        raise NotImplementedError
 
 
 @fails_with(ResolutionFailed)
