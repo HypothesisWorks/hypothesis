@@ -35,6 +35,14 @@ jobs:
           - check-rust-tests
           - audit-conjecture-rust
           - lint-conjecture-rust
+          - check-nose
+          - check-pytest46
+          - check-django31
+          - check-django30
+          - check-django22
+          - check-pandas111
+          - check-pandas100
+          - check-pandas25
       fail-fast: false
     steps:
     - uses: actions/checkout@v2
@@ -114,47 +122,10 @@ jobs:
     - name: Run tests
       run: TASK=${{ matrix.task }} ./build.sh
 
-  specific-deps:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        task:
-          - check-nose
-          - check-pytest46
-          - check-django31
-          - check-django30
-          - check-django22
-          - check-pandas111
-          - check-pandas100
-          - check-pandas25
-      fail-fast: false
-    steps:
-    - uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
-    - name: Set up Python 3.8
-      uses: actions/setup-python@v2
-      with:
-        python-version: "3.8"
-    - name: Restore cache
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/.cache
-          ~/wheelhouse
-          ~/.local
-          vendor/bundle
-        key: deps-${{ runner.os }}-${{ hashFiles('requirements/tools.txt') }}-${{ matrix.task }}
-        restore-keys: |
-          deps-${{ runner.os }}-${{ hashFiles('requirements/tools.txt') }}
-          deps-${{ runner.os }}
-    - name: Run tests
-      run: TASK=${{ matrix.task }} ./build.sh
-
   deploy:
     if: "github.event_name == 'push' && github.repository == 'HypothesisWorks/hypothesis'"
     runs-on: ubuntu-latest
-    needs: [test, test-win, test-osx, specific-deps]
+    needs: [test, test-win, test-osx]
     strategy:
       matrix:
         task:
