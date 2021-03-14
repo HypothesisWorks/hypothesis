@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.8.1:
+
+------------------
+6.8.1 - 2021-03-14
+------------------
+
+This patch lays more groundwork for filter rewriting (:issue:`2701`).
+There is no user-visible change... yet.
+
 .. _v6.8.0:
 
 ------------------
