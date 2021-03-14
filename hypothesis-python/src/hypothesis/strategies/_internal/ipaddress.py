@@ -97,7 +97,7 @@ def ip_addresses(
     """
     if v is not None:
         check_type(int, v, "v")
-        if v != 4 and v != 6:
+        if v not in (4, 6):
             raise InvalidArgument(f"v={v!r}, but only v=4 or v=6 are valid")
     if network is None:
         # We use the reserved-address registries to boost the chance

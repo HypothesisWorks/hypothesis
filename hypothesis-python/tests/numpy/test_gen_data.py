@@ -579,7 +579,7 @@ def _broadcast_shapes(*shapes):
     input shapes together.
 
     Raises ValueError if the shapes are not broadcast-compatible"""
-    assert len(shapes)
+    assert shapes, "Must pass >=1 shapes to broadcast"
     return reduce(_broadcast_two_shapes, shapes, ())
 
 

@@ -652,6 +652,12 @@ class OneOfStrategy(SearchStrategy):
         else:
             return [self]
 
+    def filter(self, condition):
+        return FilteredStrategy(
+            OneOfStrategy([s.filter(condition) for s in self.original_strategies]),
+            conditions=(),
+        )
+
 
 @overload
 def one_of(args: Sequence[SearchStrategy[Any]]) -> SearchStrategy[Any]:

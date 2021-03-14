@@ -38,9 +38,6 @@ from hypothesis.internal.conjecture.junkdrawer import (
 from hypothesis.internal.conjecture.shrinking import Float, Integer, Lexical, Ordering
 from hypothesis.internal.conjecture.shrinking.learned_dfas import SHRINKING_DFAS
 
-if False:
-    from typing import Dict  # noqa
-
 
 def sort_key(buffer):
     """Returns a sort key such that "simpler" buffers are smaller than

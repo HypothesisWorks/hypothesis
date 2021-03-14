@@ -82,8 +82,10 @@ def get_numeric_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
         and not predicate.keywords
     ):
         arg = predicate.args[0]
-        if (isinstance(arg, Decimal) and Decimal.is_snan(arg)) or not isinstance(
-            arg, (int, float, Fraction, Decimal)
+        if (
+            (isinstance(arg, Decimal) and Decimal.is_snan(arg))
+            or not isinstance(arg, (int, float, Fraction, Decimal))
+            or math.isnan(arg)
         ):
             return ConstructivePredicate.unchanged(predicate)
         options = {
