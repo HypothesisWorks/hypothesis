@@ -29,7 +29,7 @@ black==20.8b1
     # via
     #   blacken-docs
     #   shed
-blacken-docs==1.9.2
+blacken-docs==1.10.0
     # via -r requirements/tools.in
 bleach==3.3.0
     # via readme-renderer
@@ -49,7 +49,7 @@ colorama==0.4.4
     # via twine
 com2ann==0.1.1
     # via shed
-coverage==5.4
+coverage==5.5
     # via -r requirements/tools.in
 cryptography==3.4.6
     # via secretstorage
@@ -76,7 +76,7 @@ flake8-2020==1.6.0
     # via -r requirements/tools.in
 flake8-bandit==2.1.2
     # via -r requirements/tools.in
-flake8-bugbear==20.11.1
+flake8-bugbear==21.3.2
     # via -r requirements/tools.in
 flake8-comprehensions==3.3.1
     # via -r requirements/tools.in
@@ -98,7 +98,7 @@ flake8==3.8.4
     #   flake8-polyfill
 gitdb==4.0.5
     # via gitpython
-gitpython==3.1.13
+gitpython==3.1.14
     # via bandit
 idna==2.10
     # via requests
@@ -156,7 +156,7 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pip-tools==5.5.0
+pip-tools==6.0.0
     # via -r requirements/tools.in
 pkginfo==1.7.0
     # via twine
@@ -164,7 +164,7 @@ pluggy==0.13.1
     # via
     #   pytest
     #   tox
-prompt-toolkit==3.0.16
+prompt-toolkit==3.0.17
     # via ipython
 ptyprocess==0.7.0
     # via pexpect
@@ -188,7 +188,7 @@ pyflakes==2.2.0
     # via
     #   autoflake
     #   flake8
-pygments==2.8.0
+pygments==2.8.1
     # via
     #   ipython
     #   pybetter
@@ -253,7 +253,7 @@ sphinx-rtd-theme==0.5.1
     # via -r requirements/tools.in
 sphinx-selective-exclude==1.0.3
     # via -r requirements/tools.in
-sphinx==3.5.1
+sphinx==3.5.2
     # via
     #   -r requirements/tools.in
     #   sphinx-rtd-theme
@@ -281,9 +281,9 @@ toml==0.10.2
     #   black
     #   pytest
     #   tox
-tox==3.22.0
+tox==3.23.0
     # via -r requirements/tools.in
-tqdm==4.58.0
+tqdm==4.59.0
     # via twine
 traitlets==4.3.3
     # via
