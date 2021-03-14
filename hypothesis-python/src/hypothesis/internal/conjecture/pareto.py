@@ -54,7 +54,7 @@ def dominance(left, right):
         return DominanceRelation.EQUAL
 
     if sort_key(right.buffer) < sort_key(left.buffer):
-        result = dominance(right, left)
+        result = dominance(left=right, right=left)
         if result == DominanceRelation.LEFT_DOMINATES:
             return DominanceRelation.RIGHT_DOMINATES
         else:

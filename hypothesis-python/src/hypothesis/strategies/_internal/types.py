@@ -87,10 +87,7 @@ def is_a_new_type(thing):
     # than an actual type, but we can check whether that thing matches.
     return (
         hasattr(thing, "__supertype__")
-        and (
-            getattr(thing, "__module__", None) == "typing"
-            or getattr(thing, "__module__", None) == "typing_extensions"
-        )
+        and getattr(thing, "__module__", None) in ("typing", "typing_extensions")
         and inspect.isfunction(thing)
     )
 

@@ -363,15 +363,13 @@ def test_decimal_is_in_bounds(x):
 
 
 def test_float_can_find_max_value_inf():
-    assert minimal(ds.floats(max_value=math.inf), lambda x: math.isinf(x)) == float(
-        "inf"
-    )
-    assert minimal(ds.floats(min_value=0.0), lambda x: math.isinf(x)) == math.inf
+    assert minimal(ds.floats(max_value=math.inf), math.isinf) == float("inf")
+    assert minimal(ds.floats(min_value=0.0), math.isinf) == math.inf
 
 
 def test_float_can_find_min_value_inf():
     minimal(ds.floats(), lambda x: x < 0 and math.isinf(x))
-    minimal(ds.floats(min_value=-math.inf, max_value=0.0), lambda x: math.isinf(x))
+    minimal(ds.floats(min_value=-math.inf, max_value=0.0), math.isinf)
 
 
 def test_can_find_none_list():
