@@ -104,7 +104,7 @@ def test_bound_alias_forward_ref(built):
 # Dot access:
 
 _CorrectDotAccess = TypeVar("_CorrectDotAccess", bound="utils.ExcInfo")
-_WrongDotAccess = TypeVar("_WrongDotAccess", bound="wrong.ExcInfo")
+_WrongDotAccess = TypeVar("_WrongDotAccess", bound="wrong.ExcInfo")  # noqa
 _MissingDotAccess = TypeVar("_MissingDotAccess", bound="utils.MissingType")
 
 
@@ -137,7 +137,7 @@ def test_bound_missing_dot_access_forward_ref(function):
 
 # Missing:
 
-_Missing = TypeVar("_Missing", bound="MissingType")
+_Missing = TypeVar("_Missing", bound="MissingType")  # noqa
 
 
 def missing_fun(thing: _Missing) -> int:

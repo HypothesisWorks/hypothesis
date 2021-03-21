@@ -10,7 +10,7 @@ ignore =
     # ambiguous variable name, e.g. 'l'
     E741,
     # Various codes from flake8-docstrings we don't care for
-    D1,D205,D209,D213,D400,D401,D402,D412,D413,D999,D202,
+    D1,D205,D209,D213,D301,D400,D401,D402,D412,D413,D999,D202,
     # flake8-bugbear options we disagree with
     B008,B011,
     # flake8-bandit security warnings we disagree with or don't mind
