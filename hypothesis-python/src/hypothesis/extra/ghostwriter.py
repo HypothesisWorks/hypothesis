@@ -71,6 +71,7 @@ import builtins
 import contextlib
 import enum
 import inspect
+import os
 import re
 import sys
 import types
@@ -105,6 +106,7 @@ from hypothesis.strategies._internal.strategies import (
     FilteredStrategy,
     MappedSearchStrategy,
     OneOfStrategy,
+    SampledFromStrategy,
 )
 from hypothesis.strategies._internal.types import _global_type_lookup
 from hypothesis.utils.conventions import InferType, infer
@@ -130,6 +132,7 @@ except {exceptions}:
 """
 
 Except = Union[Type[Exception], Tuple[Type[Exception], ...]]
+RE_TYPES = (type(re.compile(".")), type(re.match(".", "abc")))
 
 
 def _check_except(except_: Except) -> Tuple[Type[Exception], ...]:
@@ -310,20 +313,28 @@ def _assert_eq(style, a, b):
 
 def _imports_for_object(obj):
     """Return the imports for `obj`, which may be empty for e.g. lambdas"""
+    if isinstance(obj, RE_TYPES):
+        return {"re"}
     try:
         if (not callable(obj)) or obj.__name__ == "<lambda>":
             return set()
         name = _get_qualname(obj).split(".")[0]
         return {(_get_module(obj), name)}
     except Exception:
+        with contextlib.suppress(AttributeError):
+            if obj.__module__ == "typing":  # only on CPython 3.6
+                return {("typing", getattr(obj, "__name__", obj.name))}
         return set()
 
 
 def _imports_for_strategy(strategy):
     # If we have a lazy from_type strategy, because unwrapping it gives us an
     # error or invalid syntax, import that type and we're done.
-    if isinstance(strategy, LazyStrategy) and strategy.function is st.from_type:
-        return _imports_for_object(strategy._LazyStrategy__args[0])
+    if isinstance(strategy, LazyStrategy):
+        if strategy.function is st.from_type:
+            return _imports_for_object(strategy._LazyStrategy__args[0])
+        elif _get_module(strategy.function).startswith("hypothesis.extra."):
+            return {(_get_module(strategy.function), strategy.function.__name__)}
 
     imports = set()
     strategy = unwrap_strategies(strategy)
@@ -353,6 +364,10 @@ def _imports_for_strategy(strategy):
         for s in strategy.kwargs.values():
             imports |= _imports_for_strategy(s)
 
+    if isinstance(strategy, SampledFromStrategy):
+        for obj in strategy.elements:
+            imports |= _imports_for_object(obj)
+
     return imports
 
 
@@ -367,6 +382,8 @@ def _valid_syntax_repr(strategy):
             seen = set()
             elems = []
             for s in strategy.element_strategies:
+                if isinstance(s, SampledFromStrategy) and s.elements == (os.environ,):
+                    continue
                 if repr(s) not in seen:
                     elems.append(s)
                     seen.add(repr(s))
@@ -436,6 +453,16 @@ def _write_call(func: Callable, *pass_variables: str) -> str:
     return f"{_get_qualname(func, include_module=True)}({args})"
 
 
+def _st_strategy_names(s: str) -> str:
+    """Replace strategy name() with st.name().
+
+    Uses a tricky re.sub() to avoid problems with frozensets() matching
+    sets() too.
+    """
+    names = "|".join(sorted(st.__all__, key=len, reverse=True))
+    return re.sub(pattern=rf"\b(?:{names})\(", repl=r"st.\g<0>", string=s)
+
+
 def _make_test_body(
     *funcs: Callable,
     ghost: str,
@@ -457,8 +484,7 @@ def _make_test_body(
         reprs = [((k,) + _valid_syntax_repr(v)) for k, v in given_strategies.items()]
         imports = imports.union(*(imp for _, imp, _ in reprs))
         given_args = ", ".join(f"{k}={v}" for k, _, v in reprs)
-    for name in st.__all__:
-        given_args = given_args.replace(f"{name}(", f"st.{name}(")
+    given_args = _st_strategy_names(given_args)
 
     if except_:
         # This is reminiscent of de-duplication logic I wrote for flake8-bugbear,
@@ -596,10 +622,13 @@ def magic(
             if hasattr(thing, "__all__"):
                 funcs = [getattr(thing, name, None) for name in thing.__all__]  # type: ignore
             else:
+                pkg = thing.__package__
                 funcs = [
                     v
                     for k, v in vars(thing).items()
-                    if callable(v) and not k.startswith("_")
+                    if callable(v)
+                    and (getattr(v, "__module__", pkg) == pkg or not pkg)
+                    and not k.startswith("_")
                 ]
             for f in funcs:
                 try:
@@ -1044,8 +1073,7 @@ def _make_binop_body(
         )
 
     _, operands_repr = _valid_syntax_repr(operands)
-    for name in st.__all__:
-        operands_repr = operands_repr.replace(f"{name}(", f"st.{name}(")
+    operands_repr = _st_strategy_names(operands_repr)
     classdef = ""
     if style == "unittest":
         classdef = f"class TestBinaryOperation{func.__name__}(unittest.TestCase):\n    "
@@ -1100,7 +1128,7 @@ def _make_ufunc_body(func, *, except_, style):
         type_assert=_assert_eq(style, "result.dtype.char", "expected_dtype"),
     )
 
-    imports, body = _make_test_body(
+    return _make_test_body(
         func,
         test_body=dedent(body).strip(),
         except_=except_,
@@ -1113,6 +1141,3 @@ def _make_ufunc_body(func, *, except_, style):
             ".filter(lambda sig: 'O' not in sig)",
         },
     )
-    imports.add("hypothesis.extra.numpy as npst")
-    body = body.replace("mutually_broadcastable", "npst.mutually_broadcastable")
-    return imports, body

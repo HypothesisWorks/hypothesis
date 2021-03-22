@@ -340,7 +340,7 @@ _global_type_lookup: typing.Dict[
         st.none() | st.integers(),
     ),
     range: st.one_of(
-        st.integers(min_value=0).map(range),
+        st.builds(range, st.integers(min_value=0)),
         st.builds(range, st.integers(), st.integers()),
         st.builds(range, st.integers(), st.integers(), st.integers().filter(bool)),
     ),

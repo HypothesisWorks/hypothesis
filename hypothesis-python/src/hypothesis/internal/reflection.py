@@ -396,6 +396,9 @@ def get_pretty_function_description(f):
         # their module as __self__.  This might include c-extensions generally?
         if not (self is None or inspect.isclass(self) or inspect.ismodule(self)):
             return f"{self!r}.{name}"
+    elif getattr(dict, name, object()) is f:
+        # special case for keys/values views in from_type() / ghostwriter output
+        return f"dict.{name}"
     return name
 
 
