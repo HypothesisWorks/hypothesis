@@ -69,8 +69,8 @@ def codespell(*files):
         "codespell",
         "--check-hidden",
         "--check-filenames",
-        '--ignore-words=./tooling/ignore-list.txt',
-        '--skip=__pycache__,_build,.mypy_cache,.venv,.git,tlds-alpha-by-domain.txt',
+        "--ignore-words=./tooling/ignore-list.txt",
+        "--skip=__pycache__,_build,.mypy_cache,.venv,.git,tlds-alpha-by-domain.txt",
         *files,
     )
 
