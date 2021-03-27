@@ -102,7 +102,7 @@ def test_case_insensitive_not_literal_never_constructs_multichar_match(data):
     for _ in range(5):
         s = data.draw(strategy)
         assert pattern.fullmatch(s) is not None
-        # And to be on the safe side, we implment this stronger property:
+        # And to be on the safe side, we implement this stronger property:
         assert set(s).isdisjoint(I_WITH_DOT.swapcase())
 
 

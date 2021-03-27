@@ -1433,7 +1433,7 @@ def complex_numbers(
     is an error to enable ``allow_nan``.  If ``max_magnitude`` is finite,
     it is an error to enable ``allow_infinity``.
 
-    The magnitude contraints are respected up to a relative error
+    The magnitude constraints are respected up to a relative error
     of (around) floating-point epsilon, due to implementation via
     the system ``sqrt`` function.
 

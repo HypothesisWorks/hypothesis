@@ -85,7 +85,7 @@ def test_can_generate_ignored_tokens():
     %ignore WS
     """
     strategy = from_lark(Lark(list_grammar, start="list"))
-    # A JSON list of strings in canoncial form which does not round-trip,
+    # A JSON list of strings in canonical form which does not round-trip,
     # must contain ignorable whitespace in the initial string.
     find_any(strategy, lambda s: "\t" in s)
 

@@ -215,7 +215,7 @@ def slow_init_integers(*args, **kwargs):
 def test_lazy_slow_initialization_issue_2108_regression(data):
     # Slow init in strategies wrapped in a LazyStrategy, inside an interactive draw,
     # should be attributed to drawing from the strategy (not the test function).
-    # Specificially, this used to fail with a DeadlineExceeded error.
+    # Specifically, this used to fail with a DeadlineExceeded error.
     data.draw(LazyStrategy(slow_init_integers, (), {}))
 
 

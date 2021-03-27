@@ -220,7 +220,7 @@ class Shrinker:
     The two easiest ways to do this are:
 
     * Just run the N steps in random order. As long as a
-      reasonably large proportion of the operations suceed, this
+      reasonably large proportion of the operations succeed, this
       guarantees the expected stall length is quite short. The
       book keeping for making sure this does the right thing when
       it succeeds can be quite annoying.

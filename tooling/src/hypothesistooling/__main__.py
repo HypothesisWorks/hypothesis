@@ -64,6 +64,17 @@ def check_installed():
     don't fail to run if a previous install failed midway)."""
 
 
+def codespell(*files):
+    pip_tool(
+        "codespell",
+        "--check-hidden",
+        "--check-filenames",
+        "--ignore-words=./tooling/ignore-list.txt",
+        "--skip=__pycache__,.mypy_cache,.venv,.git,tlds-alpha-by-domain.txt",
+        *files,
+    )
+
+
 @task()
 def lint():
     pip_tool(
@@ -72,6 +83,7 @@ def lint():
         "--config",
         os.path.join(tools.ROOT, ".flake8"),
     )
+    codespell(*[f for f in tools.all_files() if not f.endswith("by-domain.txt")])
 
 
 HEAD = tools.hash_for_name("HEAD")
@@ -211,6 +223,7 @@ def format():
                 o.write(source)
             o.write("\n")
 
+    codespell("--write-changes", *files_to_format, *doc_files_to_format)
     pip_tool("shed", *files_to_format, *doc_files_to_format)
 
 

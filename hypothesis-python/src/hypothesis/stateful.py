@@ -481,7 +481,7 @@ def multiple(*args):
 
 
 def _convert_targets(targets, target):
-    """Single validator and convertor for target arguments."""
+    """Single validator and converter for target arguments."""
     if target is not None:
         if targets:
             raise InvalidArgument(

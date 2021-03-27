@@ -5,7 +5,7 @@ It also positively affects `distributions::good_bitlengths` as it does not have 
 
 # Conjecture for Rust 0.6.0 (2021-01-27)
 
-This release is required following an unsuccesful deploy of 0.5.0 due to usage of a cargo keyword that was too long.
+This release is required following an unsuccessful deploy of 0.5.0 due to usage of a cargo keyword that was too long.
 
 # Conjecture for Rust 0.5.0 (2021-01-27)
 

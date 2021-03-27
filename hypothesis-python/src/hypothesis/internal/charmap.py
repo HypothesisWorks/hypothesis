@@ -330,7 +330,7 @@ def query(
     exclude_characters="",
 ):
     """Return a tuple of intervals covering the codepoints for all characters
-    that meet the critera (min_codepoint <= codepoint(c) <= max_codepoint and
+    that meet the criteria (min_codepoint <= codepoint(c) <= max_codepoint and
     any(cat in include_categories for cat in categories(c)) and all(cat not in
     exclude_categories for cat in categories(c)) or (c in include_characters)
 

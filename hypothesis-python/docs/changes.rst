@@ -888,7 +888,7 @@ Previously :func:`python:typing.get_type_hints`, was used by default.
 If argument names varied between the ``__annotations__`` and ``__signature__``,
 they would not be supplied to the target.
 
-This was particularily an issue for :pypi:`pydantic` models which use an
+This was particularly an issue for :pypi:`pydantic` models which use an
 `alias generator <https://pydantic-docs.helpmanual.io/usage/model_config/#alias-generator>`__.
 
 .. _v5.30.1:
@@ -4011,7 +4011,7 @@ so you probably won't see much effect specifically from that.
 
 This patch removes some overhead from :func:`~hypothesis.extra.numpy.arrays`
 with a constant shape and dtype.  The resulting performance improvement is
-modest, but worthwile for small arrays.
+modest, but worthwhile for small arrays.
 
 .. _v4.7.17:
 
@@ -5606,7 +5606,7 @@ This is a docs-only patch, fixing some typos and formatting issues.
 
 This change fixes a small bug in how the core engine caches the results of
 previously-tried inputs. The effect is unlikely to be noticeable, but it might
-avoid unnecesary work in some cases.
+avoid unnecessary work in some cases.
 
 .. _v3.68.1:
 
