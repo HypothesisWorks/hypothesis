@@ -1,3 +1,7 @@
+# Hypothesis for Ruby 0.7.1 (2021-03-27)
+
+This patch fixes some internal typos.  There is no user-visible change.
+
 # Hypothesis for Ruby 0.7.0 (2021-03-12)
 
 Moves rake from being a a runtime dependency to being a development dependency. Rake is used to run tests but is not required for consumers of hypothesis-ruby.

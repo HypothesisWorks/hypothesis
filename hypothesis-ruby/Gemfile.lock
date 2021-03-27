@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    hypothesis-specs (0.6.1)
+    hypothesis-specs (0.7.0)
       rutie (~> 0.0.3)
 
 GEM
@@ -65,4 +65,4 @@ DEPENDENCIES
   yard (~> 0.9.12)
 
 BUNDLED WITH
-   2.2.7
+   2.2.15
