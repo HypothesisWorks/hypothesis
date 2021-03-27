@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.8.2:
+
+------------------
+6.8.2 - 2021-03-27
+------------------
+
+This patch fixes some internal typos.  There is no user-visible change.
+
 .. _v6.8.1:
 
 ------------------
