@@ -63,14 +63,13 @@ def check_installed():
     don't fail to run if a previous install failed midway)."""
 
 
-@task()
 def codespell(*files):
     pip_tool(
         "codespell",
         "--check-hidden",
         "--check-filenames",
         "--ignore-words=./tooling/ignore-list.txt",
-        "--skip=__pycache__,_build,.mypy_cache,.venv,.git,tlds-alpha-by-domain.txt",
+        "--skip=__pycache__,.mypy_cache,.venv,.git,tlds-alpha-by-domain.txt",
         *files,
     )
 
