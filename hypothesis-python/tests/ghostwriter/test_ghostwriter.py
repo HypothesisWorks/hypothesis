@@ -21,7 +21,19 @@ import unittest
 import unittest.mock
 from decimal import Decimal
 from types import ModuleType
-from typing import Any, List, Sequence, Set, Union
+from typing import (
+    Any,
+    FrozenSet,
+    KeysView,
+    List,
+    Match,
+    Pattern,
+    Sequence,
+    Set,
+    Sized,
+    Union,
+    ValuesView,
+)
 
 import pytest
 
@@ -38,7 +50,11 @@ def get_test_function(source_code):
     # Note that this also tests that the module is syntatically-valid,
     # AND free from undefined names, import problems, and so on.
     namespace = {}
-    exec(source_code, namespace)
+    try:
+        exec(source_code, namespace)
+    except Exception:
+        print(f"************\n{source_code}\n************")
+        raise
     tests = [
         v
         for k, v in namespace.items()
@@ -123,6 +139,30 @@ def test_flattens_one_of_repr():
     assert ghostwriter._valid_syntax_repr(strat)[1].count("one_of(") == 1
 
 
+def takes_keys(x: KeysView[int]) -> None:
+    pass
+
+
+def takes_values(x: ValuesView[int]) -> None:
+    pass
+
+
+def takes_match(x: Match[bytes]) -> None:
+    pass
+
+
+def takes_pattern(x: Pattern[str]) -> None:
+    pass
+
+
+def takes_sized(x: Sized) -> None:
+    pass
+
+
+def takes_frozensets(a: FrozenSet[int], b: FrozenSet[int]) -> None:
+    pass
+
+
 @varied_excepts
 @pytest.mark.parametrize(
     "func",
@@ -136,11 +176,24 @@ def test_flattens_one_of_repr():
         annotated_any,
         space_in_name,
         non_resolvable_arg,
+        takes_keys,
+        takes_values,
+        takes_match,
+        takes_pattern,
+        takes_sized,
+        takes_frozensets,
     ],
 )
 def test_ghostwriter_fuzz(func, ex):
     source_code = ghostwriter.fuzz(func, except_=ex)
     get_test_function(source_code)
+
+
+def test_binary_op_also_handles_frozensets():
+    # Using str.replace in a loop would convert `frozensets()` into
+    # `st.frozenst.sets()` instead of `st.frozensets()`; fixed with re.sub.
+    source_code = ghostwriter.binary_operation(takes_frozensets)
+    exec(source_code, {})
 
 
 @varied_excepts

@@ -1,14 +1,14 @@
 # This test code was written by the `hypothesis.extra.ghostwriter` module
 # and is provided under the Creative Commons Zero public domain dedication.
 
-import hypothesis.extra.numpy as npst
 import numpy
 from hypothesis import given, strategies as st
+from hypothesis.extra.numpy import mutually_broadcastable_shapes
 
 
 @given(
     data=st.data(),
-    shapes=npst.mutually_broadcastable_shapes(signature="(n?,k),(k,m?)->(n?,m?)"),
+    shapes=mutually_broadcastable_shapes(signature="(n?,k),(k,m?)->(n?,m?)"),
     types=st.sampled_from(numpy.matmul.types).filter(lambda sig: "O" not in sig),
 )
 def test_gufunc_matmul(data, shapes, types):
