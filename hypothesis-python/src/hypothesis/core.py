@@ -971,10 +971,8 @@ def given(
         # positional arguments into keyword arguments for simplicity.
         if given_arguments:
             assert not given_kwargs
-            for name, strategy in zip(
-                reversed(original_argspec.args), reversed(given_arguments)
-            ):
-                given_kwargs[name] = strategy
+            nargs = len(given_arguments)
+            given_kwargs.update(zip(original_argspec.args[-nargs:], given_arguments))
         # These have been converted, so delete them to prevent accidental use.
         del given_arguments
 

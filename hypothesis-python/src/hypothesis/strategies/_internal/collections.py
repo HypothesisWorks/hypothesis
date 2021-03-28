@@ -13,8 +13,6 @@
 #
 # END HEADER
 
-from collections import OrderedDict
-
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.junkdrawer import LazySequenceCopy
@@ -229,14 +227,7 @@ class FixedKeysDictStrategy(MappedSearchStrategy):
 
     def __init__(self, strategy_dict):
         self.dict_type = type(strategy_dict)
-
-        if isinstance(strategy_dict, OrderedDict):
-            self.keys = tuple(strategy_dict.keys())
-        else:
-            try:
-                self.keys = tuple(sorted(strategy_dict.keys()))
-            except TypeError:
-                self.keys = tuple(sorted(strategy_dict.keys(), key=repr))
+        self.keys = tuple(strategy_dict.keys())
         super().__init__(strategy=TupleStrategy(strategy_dict[k] for k in self.keys))
 
     def calc_is_empty(self, recur):
@@ -262,14 +253,6 @@ class FixedAndOptionalKeysDictStrategy(SearchStrategy):
         self.fixed = FixedKeysDictStrategy(strategy_dict)
         self.optional = optional
 
-        if isinstance(self.optional, OrderedDict):
-            self.optional_keys = tuple(self.optional.keys())
-        else:
-            try:
-                self.optional_keys = tuple(sorted(self.optional.keys()))
-            except TypeError:
-                self.optional_keys = tuple(sorted(self.optional.keys(), key=repr))
-
     def calc_is_empty(self, recur):
         return recur(self.fixed)
 
@@ -278,7 +261,7 @@ class FixedAndOptionalKeysDictStrategy(SearchStrategy):
 
     def do_draw(self, data):
         result = data.draw(self.fixed)
-        remaining = [k for k in self.optional_keys if not self.optional[k].is_empty]
+        remaining = [k for k, v in self.optional.items() if not v.is_empty]
         should_draw = cu.many(
             data, min_size=0, max_size=len(remaining), average_size=len(remaining) / 2
         )
