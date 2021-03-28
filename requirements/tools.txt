@@ -53,7 +53,7 @@ com2ann==0.1.1
     # via shed
 coverage==5.5
     # via -r requirements/tools.in
-cryptography==3.4.6
+cryptography==3.4.7
     # via secretstorage
 decorator==4.4.2
     # via
@@ -98,7 +98,7 @@ flake8==3.9.0
     #   flake8-docstrings
     #   flake8-mutable
     #   flake8-polyfill
-gitdb==4.0.5
+gitdb==4.0.7
     # via gitpython
 gitpython==3.1.14
     # via bandit
@@ -106,7 +106,7 @@ idna==2.10
     # via requests
 imagesize==1.2.0
     # via sphinx
-importlib-metadata==3.7.3
+importlib-metadata==3.8.1
     # via
     #   keyring
     #   twine
@@ -116,7 +116,7 @@ ipython-genutils==0.2.0
     # via traitlets
 ipython==7.16.1
     # via -r requirements/tools.in
-isort==5.7.0
+isort==5.8.0
     # via shed
 jedi==0.18.0
     # via ipython
@@ -126,7 +126,7 @@ jeepney==0.6.0
     #   secretstorage
 jinja2==2.11.3
     # via sphinx
-keyring==23.0.0
+keyring==23.0.1
     # via twine
 lark-parser==0.11.2
     # via -r requirements/tools.in
@@ -172,7 +172,7 @@ pluggy==0.13.1
     # via
     #   pytest
     #   tox
-prompt-toolkit==3.0.17
+prompt-toolkit==3.0.18
     # via ipython
 ptyprocess==0.7.0
     # via pexpect
@@ -192,7 +192,7 @@ pydocstyle==6.0.0
     # via flake8-docstrings
 pyemojify==0.2.0
     # via pybetter
-pyflakes==2.3.0
+pyflakes==2.3.1
     # via
     #   autoflake
     #   flake8
@@ -247,7 +247,7 @@ six==1.15.0
     #   tox
     #   traitlets
     #   virtualenv
-smmap==3.0.5
+smmap==4.0.0
     # via gitdb
 snowballstemmer==2.1.0
     # via
