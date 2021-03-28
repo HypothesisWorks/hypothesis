@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.8.3:
+
+------------------
+6.8.3 - 2021-03-28
+------------------
+
+This patch improves the :doc:`Ghostwriter's <ghostwriter>` handling
+of strategies to generate various fiddly types including frozensets,
+keysviews, valuesviews, regex matches and patterns, and so on.
+
 .. _v6.8.2:
 
 ------------------
