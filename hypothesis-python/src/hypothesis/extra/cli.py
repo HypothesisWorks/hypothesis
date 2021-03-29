@@ -47,6 +47,11 @@ from difflib import get_close_matches
 from functools import partial
 from multiprocessing import Pool
 
+try:
+    import pytest
+except ImportError:
+    pytest = None  # type: ignore
+
 MESSAGE = """
 The Hypothesis command-line interface requires the `{}` package,
 which you do not have installed.  Run:
@@ -190,7 +195,7 @@ else:
     @click.option(
         "--style",
         type=click.Choice(["pytest", "unittest"]),
-        default="pytest",
+        default="pytest" if pytest else "unittest",
         help="pytest-style function, or unittest-style method?",
     )
     @click.option(
