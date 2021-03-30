@@ -25,7 +25,7 @@ import inspect
 import os
 import warnings
 from enum import Enum, IntEnum, unique
-from typing import TYPE_CHECKING, Any, Collection, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Collection, Dict, List, Optional, TypeVar, Union
 
 import attr
 
@@ -45,6 +45,8 @@ if TYPE_CHECKING:
 __all__ = ["settings"]
 
 all_settings: Dict[str, "Setting"] = {}
+
+T = TypeVar("T")
 
 
 class settingsProperty:
@@ -181,7 +183,7 @@ class settings(metaclass=settingsMeta):
                 else:
                     object.__setattr__(self, setting.name, setting.validator(value))
 
-    def __call__(self, test):
+    def __call__(self, test: T) -> T:
         """Make the settings object (self) an attribute of the test.
 
         The settings are later discovered by looking them up on the test itself.
