@@ -188,15 +188,22 @@ class settings(metaclass=settingsMeta):
 
         The settings are later discovered by looking them up on the test itself.
         """
-        if not callable(test):
+        # Aliasing as Any avoids mypy errors (attr-defined) when accessing and
+        # setting custom attributes on the decorated function or class.
+        _test: Any = test
+
+        # Using the alias here avoids a mypy error (return-value) later when
+        # ``test`` is returned, because this check results in type refinement.
+        if not callable(_test):
             raise InvalidArgument(
                 "settings objects can be called as a decorator with @given, "
                 f"but decorated test={test!r} is not callable."
             )
+
         if inspect.isclass(test):
             from hypothesis.stateful import RuleBasedStateMachine
 
-            if issubclass(test, RuleBasedStateMachine):
+            if issubclass(_test, RuleBasedStateMachine):
                 attr_name = "_hypothesis_internal_settings_applied"
                 if getattr(test, attr_name, False):
                     raise InvalidArgument(
@@ -205,25 +212,25 @@ class settings(metaclass=settingsMeta):
                         "instead."
                     )
                 setattr(test, attr_name, True)
-                test.TestCase.settings = self
+                _test.TestCase.settings = self
                 return test
             else:
                 raise InvalidArgument(
                     "@settings(...) can only be used as a decorator on "
                     "functions, or on subclasses of RuleBasedStateMachine."
                 )
-        if hasattr(test, "_hypothesis_internal_settings_applied"):
+        if hasattr(_test, "_hypothesis_internal_settings_applied"):
             # Can't use _hypothesis_internal_use_settings as an indicator that
             # @settings was applied, because @given also assigns that attribute.
             descr = get_pretty_function_description(test)
             raise InvalidArgument(
                 f"{descr} has already been decorated with a settings object.\n"
-                f"    Previous:  {test._hypothesis_internal_use_settings!r}\n"
+                f"    Previous:  {_test._hypothesis_internal_use_settings!r}\n"
                 f"    This:  {self!r}"
             )
 
-        test._hypothesis_internal_use_settings = self
-        test._hypothesis_internal_settings_applied = True
+        _test._hypothesis_internal_use_settings = self
+        _test._hypothesis_internal_settings_applied = True
         return test
 
     @classmethod
