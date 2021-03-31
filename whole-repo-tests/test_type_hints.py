@@ -96,3 +96,16 @@ def test_data_object_type_tracing(tmpdir):
     )
     got = get_mypy_analysed_type(str(f.realpath()), "data().draw(integers())")
     assert got == "int"
+
+
+def test_settings_preserves_type(tmpdir):
+    f = tmpdir.join("check_mypy_on_settings.py")
+    f.write(
+        "from hypothesis import settings\n"
+        "@settings(max_examples=10)\n"
+        "def f(x: int) -> int:\n"
+        "    return x\n"
+        "reveal_type(f)\n"
+    )
+    got = get_mypy_analysed_type(str(f.realpath()), ...)
+    assert got == "def (x: int) -> int"
