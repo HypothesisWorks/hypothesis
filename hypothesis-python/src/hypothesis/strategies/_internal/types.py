@@ -418,7 +418,6 @@ if sys.version_info[:2] >= (3, 9):  # pragma: no cover
 
 try:  # pragma: no cover
     import numpy as np
-
     from hypothesis.extra.numpy import array_dtypes, array_shapes, arrays, scalar_dtypes
 
     _global_type_lookup[np.dtype] = array_dtypes()

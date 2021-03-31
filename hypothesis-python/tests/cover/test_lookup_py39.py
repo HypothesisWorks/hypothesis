@@ -16,7 +16,6 @@
 import typing
 
 import pytest
-
 from hypothesis import strategies as st
 
 
@@ -27,7 +26,9 @@ from hypothesis import strategies as st
         (typing.Annotated[typing.List[float], "foo"], st.lists(st.floats())),
         (typing.Annotated[typing.Annotated[str, "foo"], "bar"], st.text()),
         (
-            typing.Annotated[typing.Annotated[typing.List[typing.Dict[str, bool]], "foo"], "bar"],
+            typing.Annotated[
+                typing.Annotated[typing.List[typing.Dict[str, bool]], "foo"], "bar"
+            ],
             st.lists(st.dictionaries(keys=st.text(), values=st.booleans())),
         ),
     ],

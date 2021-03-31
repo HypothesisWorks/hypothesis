@@ -17,10 +17,9 @@ import collections
 from typing import Dict, List, Union
 
 import pytest
-from typing_extensions import Annotated, DefaultDict, Literal, NewType, Type, TypedDict
-
 from hypothesis import assume, given, strategies as st
 from hypothesis.strategies import from_type
+from typing_extensions import Annotated, DefaultDict, Literal, NewType, Type, TypedDict
 
 
 @pytest.mark.parametrize("value", ["dog", b"goldfish", 42, 63.4, -80.5, False])
