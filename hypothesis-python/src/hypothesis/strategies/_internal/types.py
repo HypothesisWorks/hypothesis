@@ -110,6 +110,13 @@ def is_typing_literal(thing):
     )
 
 
+def is_annotated_type(thing):
+    return (
+        type(thing).__name__ in {"AnnotatedMeta", "_AnnotatedAlias"}
+        and getattr(thing, "__args__", None) is not None
+    )
+
+
 def has_type_arguments(type_):
     """Decides whethere or not this type has applied type arguments."""
     args = getattr(type_, "__args__", None)
@@ -195,6 +202,10 @@ def from_typing_type(thing):
             else:
                 literals.append(arg)
         return st.sampled_from(literals)
+    if is_annotated_type(thing):
+        args = thing.__args__
+        annotated_type = args[0]
+        return st.from_type(annotated_type)
     # Now, confirm that we're dealing with a generic type as we expected
     if sys.version_info[:2] < (3, 9) and not isinstance(
         thing, typing_root_type
