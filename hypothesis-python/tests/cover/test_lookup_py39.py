@@ -33,4 +33,4 @@ from hypothesis import strategies as st
     ],
 )
 def test_typing_Annotated(annotated_type, expected_strategy):
-    assert st.from_type(annotated_type) == expected_strategy
+    assert repr(st.from_type(annotated_type)) == repr(expected_strategy)

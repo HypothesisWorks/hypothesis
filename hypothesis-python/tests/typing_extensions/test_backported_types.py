@@ -96,4 +96,4 @@ def test_defaultdict(ex):
     ],
 )
 def test_typing_extensions_Annotated(annotated_type, expected_strategy):
-    assert st.from_type(annotated_type) == expected_strategy
+    assert repr(st.from_type(annotated_type)) == repr(expected_strategy)
