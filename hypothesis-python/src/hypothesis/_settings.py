@@ -199,7 +199,6 @@ class settings(metaclass=settingsMeta):
                 "settings objects can be called as a decorator with @given, "
                 f"but decorated test={test!r} is not callable."
             )
-
         if inspect.isclass(test):
             from hypothesis.stateful import RuleBasedStateMachine
 
