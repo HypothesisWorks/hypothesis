@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.8.4:
+
+------------------
+6.8.4 - 2021-04-01
+------------------
+
+This patch adds type annotations for the :class:`~hypothesis.settings` decorator,
+to avoid an error when running mypy in strict mode.
+
 .. _v6.8.3:
 
 ------------------
