@@ -1292,8 +1292,11 @@ def find(
     if random is not None:
         test = seed(random.getrandbits(64))(test)
 
-    test._hypothesis_internal_is_find = True
-    test._hypothesis_internal_database_key = database_key
+    # Aliasing as Any avoids mypy errors (attr-defined) when accessing and
+    # setting custom attributes on the decorated function or class.
+    _test: Any = test
+    _test._hypothesis_internal_is_find = True
+    _test._hypothesis_internal_database_key = database_key
 
     try:
         test()
