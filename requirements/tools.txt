@@ -55,7 +55,7 @@ coverage==5.5
     # via -r requirements/tools.in
 cryptography==3.4.7
     # via secretstorage
-decorator==4.4.2
+decorator==5.0.4
     # via
     #   ipython
     #   traitlets
@@ -63,7 +63,7 @@ distlib==0.3.1
     # via virtualenv
 django==3.1.7
     # via -r requirements/tools.in
-docutils==0.16
+docutils==0.17
     # via
     #   readme-renderer
     #   restructuredtext-lint
@@ -78,7 +78,7 @@ flake8-2020==1.6.0
     # via -r requirements/tools.in
 flake8-bandit==2.1.2
     # via -r requirements/tools.in
-flake8-bugbear==21.3.2
+flake8-bugbear==21.4.3
     # via -r requirements/tools.in
 flake8-comprehensions==3.4.0
     # via -r requirements/tools.in
@@ -106,7 +106,7 @@ idna==2.10
     # via requests
 imagesize==1.2.0
     # via sphinx
-importlib-metadata==3.8.1
+importlib-metadata==3.10.0
     # via
     #   keyring
     #   twine
@@ -130,7 +130,7 @@ keyring==23.0.1
     # via twine
 lark-parser==0.11.2
     # via -r requirements/tools.in
-libcst==0.3.17
+libcst==0.3.18
     # via
     #   -r requirements/tools.in
     #   pybetter
@@ -152,7 +152,7 @@ packaging==20.9
     #   pytest
     #   sphinx
     #   tox
-parso==0.8.1
+parso==0.8.2
     # via jedi
 pathspec==0.8.1
     # via black
@@ -204,7 +204,7 @@ pygments==2.8.1
     #   sphinx
 pyparsing==2.4.7
     # via packaging
-pytest==6.2.2
+pytest==6.2.3
     # via -r requirements/tools.in
 python-dateutil==2.8.1
     # via -r requirements/tools.in
