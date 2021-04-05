@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.8.5:
+
+------------------
+6.8.5 - 2021-04-05
+------------------
+
+This patch teaches :command:`hypothesis write` to default to ghostwriting
+tests with ``--style=pytest`` only if :pypi:`pytest` is installed, or
+``--style=unittest`` otherwise.
+
 .. _v6.8.4:
 
 ------------------
