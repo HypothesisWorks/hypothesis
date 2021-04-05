@@ -648,6 +648,12 @@ def magic(
 
     imports = set()
     parts = []
+
+    def make_(how, *args, **kwargs):
+        imp, body = how(*args, **kwargs, except_=except_, style=style)
+        imports.update(imp)
+        parts.append(body)
+
     by_name = {}
     for f in functions:
         try:
@@ -669,13 +675,7 @@ def magic(
                 for other in sorted(
                     n for n in by_name if n.split(".")[-1] == inverse_name
                 )[:1]:
-                    imp, body = _make_roundtrip_body(
-                        (by_name.pop(name), by_name.pop(other)),
-                        except_=except_,
-                        style=style,
-                    )
-                    imports |= imp
-                    parts.append(body)
+                    make_(_make_roundtrip_body, (by_name.pop(name), by_name.pop(other)))
 
     # Look for equivalent functions: same name, all required arguments of any can
     # be found in all signatures, and if all have return-type annotations they match.
@@ -687,9 +687,7 @@ def magic(
             sentinel = object()
             returns = {get_type_hints(f).get("return", sentinel) for f in group}
             if len(returns - {sentinel}) <= 1:
-                imp, body = _make_equiv_body(group, except_=except_, style=style)
-                imports |= imp
-                parts.append(body)
+                make_(_make_equiv_body, group)
                 for f in group:
                     by_name.pop(_get_qualname(f, include_module=True))
 
@@ -703,29 +701,21 @@ def magic(
             a, b = hints.values()
             arg1, arg2 = params
             if a == b and len(arg1) == len(arg2) <= 3:
-                imp, body = _make_binop_body(func, except_=except_, style=style)
-                imports |= imp
-                parts.append(body)
+                make_(_make_binop_body, func)
                 del by_name[name]
 
     # Look for Numpy ufuncs or gufuncs, and write array-oriented tests for them.
     if "numpy" in sys.modules:
         for name, func in sorted(by_name.items()):
             if _is_probably_ufunc(func):
-                imp, body = _make_ufunc_body(func, except_=except_, style=style)
-                imports |= imp
-                parts.append(body)
+                make_(_make_ufunc_body, func)
                 del by_name[name]
 
     # For all remaining callables, just write a fuzz-test.  In principle we could
     # guess at equivalence or idempotence; but it doesn't seem accurate enough to
     # be worth the trouble when it's so easy for the user to specify themselves.
     for _, f in sorted(by_name.items()):
-        imp, body = _make_test_body(
-            f, test_body=_write_call(f), except_=except_, ghost="fuzz", style=style
-        )
-        imports |= imp
-        parts.append(body)
+        make_(_make_test_body, f, test_body=_write_call(f), ghost="fuzz")
     return _make_test(imports, "\n".join(parts))
 
 
