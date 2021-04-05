@@ -588,6 +588,11 @@ ROUNDTRIP_PAIRS = (
     (r"(.+)2(.+?)(_.+)?", "{1}2{0}{2}"),
     # Common in e.g. the colorsys module
     (r"(.+)_to_(.+)", "{1}_to_{0}"),
+    # Sockets patterns
+    (r"(inet|if)_(.+)to(.+)", "{0}_{2}to{1}"),
+    (r"(\w)to(\w)(.+)", "{1}to{0}{2}"),
+    (r"send(.+)", "recv{}"),
+    (r"send(.+)", "receive{}"),
 )
 
 
@@ -657,9 +662,12 @@ def magic(
     by_name = {}
     for f in functions:
         try:
+            _get_params(f)
             by_name[_get_qualname(f, include_module=True)] = f
         except Exception:
-            pass  # e.g. Pandas 'CallableDynamicDoc' object has no attribute '__name__'
+            # usually inspect.signature on C code such as socket.inet_aton, sometimes
+            # e.g. Pandas 'CallableDynamicDoc' object has no attribute '__name__'
+            pass
     if not by_name:
         return (
             f"# Found no testable functions in\n"
