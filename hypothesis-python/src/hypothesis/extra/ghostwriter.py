@@ -698,9 +698,11 @@ def magic(
     for name, func in sorted(by_name.items()):
         hints = get_type_hints(func)
         hints.pop("return", None)
-        if len(hints) == len(_get_params(func)) == 2:
+        params = _get_params(func)
+        if len(hints) == len(params) == 2:
             a, b = hints.values()
-            if a == b:
+            arg1, arg2 = params
+            if a == b and len(arg1) == len(arg2) <= 3:
                 imp, body = _make_binop_body(func, except_=except_, style=style)
                 imports |= imp
                 parts.append(body)
