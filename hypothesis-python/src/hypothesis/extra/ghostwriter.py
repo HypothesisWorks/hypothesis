@@ -682,8 +682,20 @@ def magic(
                 inverse_name = readname.format(*match.groups())
                 for other in sorted(
                     n for n in by_name if n.split(".")[-1] == inverse_name
-                )[:1]:
+                ):
                     make_(_make_roundtrip_body, (by_name.pop(name), by_name.pop(other)))
+                    break
+                else:
+                    try:
+                        other_func = getattr(
+                            sys.modules[_get_module(by_name[name])],
+                            inverse_name,
+                        )
+                        _get_params(other_func)  # we want to skip if this fails
+                    except Exception:
+                        pass
+                    else:
+                        make_(_make_roundtrip_body, (by_name.pop(name), other_func))
 
     # Look for equivalent functions: same name, all required arguments of any can
     # be found in all signatures, and if all have return-type annotations they match.
