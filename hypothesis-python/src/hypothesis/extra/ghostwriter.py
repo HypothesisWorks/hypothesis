@@ -1140,6 +1140,7 @@ def _make_ufunc_body(func, *, except_, style):
         type_assert=_assert_eq(style, "result.dtype.char", "expected_dtype"),
     )
 
+    qname = _get_qualname(func, include_module=True)
     return _make_test_body(
         func,
         test_body=dedent(body).strip(),
@@ -1149,7 +1150,6 @@ def _make_ufunc_body(func, *, except_, style):
         given_strategies={
             "data": st.data(),
             "shapes": shapes,
-            "types": f"sampled_from({_get_qualname(func, include_module=True)}.types)"
-            ".filter(lambda sig: 'O' not in sig)",
+            "types": f"sampled_from([sig for sig in {qname}.types if 'O' not in sig])",
         },
     )
