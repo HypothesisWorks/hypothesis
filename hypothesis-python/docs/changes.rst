@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.8.6:
+
+------------------
+6.8.6 - 2021-04-06
+------------------
+
+The :func:`~hypothesis.strategies.fixed_dictionaries` strategy now preserves
+dict iteration order instead of sorting the keys.  This also affects the
+pretty-printing of keyword arguments to :func:`@given() <hypothesis.given>`
+(:issue:`2913`).
+
 .. _v6.8.5:
 
 ------------------
