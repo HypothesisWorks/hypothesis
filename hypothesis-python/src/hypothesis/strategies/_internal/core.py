@@ -1062,17 +1062,7 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
     # may be able to fall back on type annotations.
     if issubclass(thing, enum.Enum):
         return sampled_from(thing)
-    # If we know that builds(thing) will fail, give a better error message
-    required = required_args(thing)
-    if required and not (
-        required.issubset(get_type_hints(thing))
-        or attr.has(thing)
-        or is_typed_named_tuple(thing)  # weird enough that we have a specific check
-    ):
-        raise ResolutionFailed(
-            f"Could not resolve {thing!r} to a strategy; consider "
-            "using register_type_strategy"
-        )
+
     # Finally, try to build an instance by calling the type object.  Unlike builds(),
     # this block *does* try to infer strategies for arguments with default values.
     # That's because of the semantic different; builds() -> "call this with ..."
@@ -1080,6 +1070,17 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
     # me arbitrary instances" so the greater variety is acceptable.
     # And if it's *too* varied, express your opinions with register_type_strategy()
     if not isabstract(thing):
+        # If we know that builds(thing) will fail, give a better error message
+        required = required_args(thing)
+        if required and not (
+            required.issubset(get_type_hints(thing))
+            or attr.has(thing)
+            or is_typed_named_tuple(thing)  # weird enough that we have a specific check
+        ):
+            raise ResolutionFailed(
+                f"Could not resolve {thing!r} to a strategy; consider "
+                "using register_type_strategy"
+            )
         try:
             hints = get_type_hints(thing)
             params = signature(thing).parameters
@@ -1102,7 +1103,17 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
             f"Could not resolve {thing!r} to a strategy, because it is an abstract "
             "type without any subclasses. Consider using register_type_strategy"
         )
-    return sampled_from(subclasses).flatmap(from_type)
+    subclass_strategies = nothing()
+    for sc in subclasses:
+        try:
+            subclass_strategies |= _from_type(sc)
+        except Exception:
+            pass
+    if subclass_strategies.is_empty:
+        # We're unable to resolve subclasses now, but we might be able to later -
+        # so we'll just go back to the mixed distribution.
+        return sampled_from(subclasses).flatmap(from_type)
+    return subclass_strategies
 
 
 @cacheable
