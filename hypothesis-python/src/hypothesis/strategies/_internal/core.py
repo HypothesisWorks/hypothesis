@@ -158,6 +158,17 @@ def sampled_from(elements):
     """
     values = check_sample(elements, "sampled_from")
     if not values:
+        if (
+            isinstance(elements, type)
+            and issubclass(elements, enum.Enum)
+            and vars(elements).get("__annotations__")
+        ):
+            # See https://github.com/HypothesisWorks/hypothesis/issues/2923
+            raise InvalidArgument(
+                f"Cannot sample from {elements.__module__}.{elements.__name__} "
+                "because it contains no elements.  It does however have annotations, "
+                "so maybe you tried to write an enum as if it was a dataclass?"
+            )
         raise InvalidArgument("Cannot sample from a length-zero sequence.")
     if len(values) == 1:
         return just(values[0])
