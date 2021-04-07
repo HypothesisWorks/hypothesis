@@ -17,6 +17,7 @@ import ast
 import enum
 import json
 import re
+import socket
 import unittest
 import unittest.mock
 from decimal import Decimal
@@ -187,6 +188,11 @@ def takes_frozensets(a: FrozenSet[int], b: FrozenSet[int]) -> None:
 def test_ghostwriter_fuzz(func, ex):
     source_code = ghostwriter.fuzz(func, except_=ex)
     get_test_function(source_code)
+
+
+def test_socket_module():
+    source_code = ghostwriter.magic(socket)
+    exec(source_code, {})
 
 
 def test_binary_op_also_handles_frozensets():

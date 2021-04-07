@@ -70,6 +70,7 @@ def add(a: float, b: float) -> float:
         ("fuzz_classmethod", ghostwriter.fuzz(A_Class.a_classmethod)),
         ("fuzz_ufunc", ghostwriter.fuzz(numpy.add)),
         ("magic_gufunc", ghostwriter.magic(numpy.matmul)),
+        ("magic_base64_roundtrip", ghostwriter.magic(base64.b64encode)),
         ("re_compile", ghostwriter.fuzz(re.compile)),
         (
             "re_compile_except",

@@ -1,0 +1,14 @@
+# This test code was written by the `hypothesis.extra.ghostwriter` module
+# and is provided under the Creative Commons Zero public domain dedication.
+
+import base64
+from hypothesis import given, strategies as st
+
+# TODO: replace st.nothing() with an appropriate strategy
+
+
+@given(altchars=st.none(), s=st.nothing(), validate=st.booleans())
+def test_roundtrip_b64encode_b64decode(altchars, s, validate):
+    value0 = base64.b64encode(s=s, altchars=altchars)
+    value1 = base64.b64decode(s=value0, altchars=altchars, validate=validate)
+    assert s == value1, (s, value1)

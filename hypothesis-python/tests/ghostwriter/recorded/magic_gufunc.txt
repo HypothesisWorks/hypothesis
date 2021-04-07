@@ -9,7 +9,7 @@ from hypothesis.extra.numpy import mutually_broadcastable_shapes
 @given(
     data=st.data(),
     shapes=mutually_broadcastable_shapes(signature="(n?,k),(k,m?)->(n?,m?)"),
-    types=st.sampled_from(numpy.matmul.types).filter(lambda sig: "O" not in sig),
+    types=st.sampled_from([sig for sig in numpy.matmul.types if "O" not in sig]),
 )
 def test_gufunc_matmul(data, shapes, types):
     input_shapes, expected_shape = shapes
