@@ -13,6 +13,7 @@
 #
 # END HEADER
 
+import abc
 import enum
 import sys
 from typing import Callable, Generic, List, Sequence, TypeVar, Union
@@ -26,6 +27,7 @@ from hypothesis.errors import (
     ResolutionFailed,
 )
 from hypothesis.strategies._internal import types
+from hypothesis.strategies._internal.core import _from_type
 from hypothesis.strategies._internal.types import _global_type_lookup
 from hypothesis.strategies._internal.utils import _strategies
 
@@ -291,3 +293,66 @@ def test_generic_origin_concrete_builds():
         assert_all_examples(
             st.builds(using_generic), lambda example: isinstance(example, int)
         )
+
+
+class AbstractFoo(abc.ABC):
+    def __init__(self, x):
+        pass
+
+    @abc.abstractmethod
+    def qux(self):
+        pass
+
+
+class ConcreteFoo1(AbstractFoo):
+    # Can't resolve this one due to unannotated `x` param
+    def qux(self):
+        pass
+
+
+class ConcreteFoo2(AbstractFoo):
+    def __init__(self, x: int):
+        pass
+
+    def qux(self):
+        pass
+
+
+@given(st.from_type(AbstractFoo))
+def test_gen_abstract(foo):
+    # This requires that we correctly checked which of the subclasses
+    # could be resolved, rather than unconditionally using all of them.
+    assert isinstance(foo, ConcreteFoo2)
+
+
+class AbstractBar(abc.ABC):
+    def __init__(self, x):
+        pass
+
+    @abc.abstractmethod
+    def qux(self):
+        pass
+
+
+class ConcreteBar(AbstractBar):
+    def qux(self):
+        pass
+
+
+def test_abstract_resolver_fallback():
+    # We create our distinct strategies for abstract and concrete types
+    gen_abstractbar = _from_type(AbstractBar)
+    gen_concretebar = st.builds(ConcreteBar, x=st.none())
+    assert gen_abstractbar != gen_concretebar
+
+    # And trying to generate an instance of the abstract type fails,
+    # UNLESS the concrete type is currently resolvable
+    with pytest.raises(ResolutionFailed):
+        gen_abstractbar.example()
+    with temp_registered(ConcreteBar, gen_concretebar):
+        gen = gen_abstractbar.example()
+    with pytest.raises(ResolutionFailed):
+        gen_abstractbar.example()
+
+    # which in turn means we resolve to the concrete subtype.
+    assert isinstance(gen, ConcreteBar)
