@@ -186,3 +186,12 @@ def test_mutability_2(data):
     assert data.draw(s) != 2
     x.append(2)
     assert data.draw(s) != 2
+
+
+class AnnotationsInsteadOfElements(enum.Enum):
+    a: "a"
+
+
+def test_suggests_elements_instead_of_annotations():
+    with pytest.raises(InvalidArgument, match="Cannot sample.*annotations.*dataclass"):
+        st.sampled_from(AnnotationsInsteadOfElements).example()
