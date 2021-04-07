@@ -18,6 +18,18 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.8.9:
+
+------------------
+6.8.9 - 2021-04-07
+------------------
+
+This patch fixes :func:`~hypothesis.strategies.from_type` with
+:mod:`abstract types <python:abc>` which have either required but
+non-type-annotated arguments to ``__init__``, or where
+:func:`~hypothesis.strategies.from_type` can handle some concrete
+subclasses but not others.
+
 .. _v6.8.8:
 
 ------------------
