@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.8.7:
+
+------------------
+6.8.7 - 2021-04-07
+------------------
+
+This patch adds a more helpful error message if you try to call
+:func:`~hypothesis.strategies.sampled_from` on an :class:`~python:enum.Enum`
+which has no members, but *does* have :func:`~python:dataclasses.dataclass`-style
+annotations (:issue:`2923`).
+
 .. _v6.8.6:
 
 ------------------
