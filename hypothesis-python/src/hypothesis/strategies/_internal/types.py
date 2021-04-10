@@ -204,6 +204,7 @@ def from_typing_type(thing):
         return st.sampled_from(literals)
     if is_annotated_type(thing):
         args = thing.__args__
+        assert args, "it's impossible to make an annotated type with no args"
         annotated_type = args[0]
         return st.from_type(annotated_type)
     # Now, confirm that we're dealing with a generic type as we expected
