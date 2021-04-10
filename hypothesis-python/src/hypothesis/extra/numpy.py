@@ -347,7 +347,7 @@ def fill_for(elements, unique, fill, name=""):
 @defines_strategy(force_reusable_values=True)
 def arrays(
     dtype: Any,
-    shape: Union[int, Shape, st.SearchStrategy[Shape]],
+    shape: Union[int, st.SearchStrategy[int], Shape, st.SearchStrategy[Shape]],
     *,
     elements: Optional[Union[st.SearchStrategy, Mapping[str, Any]]] = None,
     fill: Optional[st.SearchStrategy[Any]] = None,
@@ -954,7 +954,7 @@ class MutuallyBroadcastableShapesStrategy(st.SearchStrategy):
             return tuple(x for x in (loop + core)[-32:] if x is not None)
 
         return BroadcastableShapes(
-            input_shapes=tuple(add_shape(l, c) for l, c in zip(loop_in, core_in)),
+            input_shapes=tuple(add_shape(l_in, c) for l_in, c in zip(loop_in, core_in)),
             result_shape=add_shape(loop_res, core_res),
         )
 
