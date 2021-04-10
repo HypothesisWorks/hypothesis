@@ -60,7 +60,7 @@ except ImportError:
     _GenericAlias = ()
 
 try:
-    from typing import _AnnotatedAlias
+    from typing import _AnnotatedAlias  # type: ignore
 except ImportError:
     try:
         from typing_extensions import _AnnotatedAlias
