@@ -67,7 +67,7 @@ except ImportError:
     except ImportError:
         try:
             from typing_extensions import (  # type: ignore
-                AnnotatedMeta as _AnnotatedAlias
+                AnnotatedMeta as _AnnotatedAlias,
             )
 
             assert sys.version_info[:2] == (3, 6)
