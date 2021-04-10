@@ -16,9 +16,9 @@
 import dataclasses
 import sys
 import typing
-import typing_extensions
 
 import pytest
+import typing_extensions
 
 from hypothesis import given, strategies as st
 from hypothesis.strategies import from_type
