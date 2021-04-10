@@ -60,19 +60,17 @@ except ImportError:
     _GenericAlias = ()
 
 try:
-    from typing_extensions import _AnnotatedAlias
+    from typing import _AnnotatedAlias
 except ImportError:
     try:
-        from typing_extensions import AnnotatedMeta as _AnnotatedAlias  # type: ignore
-
-        assert sys.version_info[:2] == (3, 6)
+        from typing_extensions import _AnnotatedAlias
     except ImportError:
-        _AnnotatedAlias = ()
+        try:
+            from typing_extensions import AnnotatedMeta as _AnnotatedAlias  # type: ignore
 
-
-def is_annotated_instance(thing):
-    # TODO: this should handle `typing.Annotated` too, for when `typing_extensions` is not installed.
-    return isinstance(thing, _AnnotatedAlias)
+            assert sys.version_info[:2] == (3, 6)
+        except ImportError:
+            _AnnotatedAlias = ()
 
 
 def type_sorting_key(t):
@@ -126,7 +124,10 @@ def is_typing_literal(thing):
 
 
 def is_annotated_type(thing):
-    return is_annotated_instance(thing) and getattr(thing, "__args__", None) is not None
+    return (
+        isinstance(thing, _AnnotatedAlias)
+        and getattr(thing, "__args__", None) is not None
+    )
 
 
 def has_type_arguments(type_):
