@@ -239,4 +239,14 @@ else:
             sys.stderr.write(MESSAGE.format("black"))
             sys.exit(1)
 
-        print(getattr(ghostwriter, writer)(*func, except_=except_ or (), style=style))
+        code = getattr(ghostwriter, writer)(*func, except_=except_ or (), style=style)
+        try:
+            from rich.console import Console
+            from rich.syntax import Syntax
+        except ImportError:
+            print(code)
+        else:
+            Console().print(
+                Syntax(code, lexer_name="python", background_color="default"),
+                soft_wrap=True,
+            )
