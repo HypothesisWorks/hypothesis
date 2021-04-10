@@ -846,3 +846,16 @@ def test_resolves_type_of_builtin_types(t):
 @given(st.from_type(typing.Type[typing.Union["str", "int"]]))
 def test_resolves_type_of_union_of_forwardrefs_to_builtins(x):
     assert x in (str, int)
+
+
+@pytest.mark.parametrize("type_", [typing.List[int], typing.Optional[int]])
+def test_builds_suggests_from_type(type_):
+    with pytest.raises(
+        InvalidArgument, match=re.escape(f"try using from_type({type_!r})")
+    ):
+        st.builds(type_).example()
+    try:
+        st.builds(type_, st.just("has an argument")).example()
+        raise AssertionError("Expected strategy to raise an error")
+    except TypeError as err:
+        assert not isinstance(err, InvalidArgument)

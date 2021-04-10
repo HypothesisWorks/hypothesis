@@ -776,6 +776,15 @@ class BuildsStrategy(SearchStrategy):
                     f"Calling {name} with no arguments raised an error - "
                     f"try using sampled_from({name}) instead of builds({name})"
                 ) from err
+            if not (self.args or self.kwargs):
+                from .types import is_a_new_type, is_generic_type
+
+                if is_a_new_type(self.target) or is_generic_type(self.target):
+                    raise InvalidArgument(
+                        f"Calling {self.target!r} with no arguments raised an "
+                        f"error - try using from_type({self.target!r}) instead "
+                        f"of builds({self.target!r})"
+                    ) from err
             raise
 
     def validate(self):
