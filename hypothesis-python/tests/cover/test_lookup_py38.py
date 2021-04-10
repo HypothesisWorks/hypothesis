@@ -18,7 +18,6 @@ import sys
 import typing
 
 import pytest
-import typing_extensions
 
 from hypothesis import given, strategies as st
 from hypothesis.strategies import from_type
@@ -31,28 +30,6 @@ from tests.common.utils import temp_registered
 def test_typing_Final(data):
     value = data.draw(from_type(typing.Final[int]))
     assert isinstance(value, int)
-
-
-@pytest.mark.parametrize(
-    "annotated_type,expected_strategy_repr",
-    [
-        (typing_extensions.Annotated[int, "foo"], "integers()"),
-        (typing_extensions.Annotated[typing.List[float], "foo"], "lists(floats())"),
-        (
-            typing_extensions.Annotated[typing_extensions.Annotated[str, "foo"], "bar"],
-            "text()",
-        ),
-        (
-            typing_extensions.Annotated[
-                typing_extensions.Annotated[typing.List[typing.Dict[str, bool]], "foo"],
-                "bar",
-            ],
-            "lists(dictionaries(keys=text(), values=booleans()))",
-        ),
-    ],
-)
-def test_typing_Annotated(annotated_type, expected_strategy_repr):
-    assert repr(st.from_type(annotated_type)) == expected_strategy_repr
 
 
 @pytest.mark.parametrize("value", ["dog", b"goldfish", 42, 63.4, -80.5, False])
