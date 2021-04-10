@@ -64,10 +64,11 @@ try:
 except ImportError:
     try:
         from typing_extensions import AnnotatedMeta as _AnnotatedAlias  # type: ignore
-        
+
         assert sys.version_info[:2] == (3, 6)
     except ImportError:
         _AnnotatedAlias = ()  # type: ignore
+
 
 def is_annotated_instance(thing):
     # TODO: this should handle `typing.Annotated` too, for when `typing_extensions` is not installed.
