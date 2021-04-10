@@ -217,7 +217,8 @@ def from_typing_type(thing):
             else:
                 literals.append(arg)
         return st.sampled_from(literals)
-    if is_annotated_type(thing):
+    if is_annotated_type(thing):  # pragma: no cover
+        # This requires Python 3.9+ or the typing_extensions package
         args = thing.__args__
         assert args, "it's impossible to make an annotated type with no args"
         annotated_type = args[0]
