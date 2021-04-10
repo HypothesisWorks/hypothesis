@@ -37,8 +37,8 @@ jobs:
           - lint-conjecture-rust
           - check-nose
           - check-pytest46
+          - check-django32
           - check-django31
-          - check-django30
           - check-django22
           - check-pandas111
           - check-pandas100
