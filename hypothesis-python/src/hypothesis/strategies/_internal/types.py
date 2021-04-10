@@ -60,7 +60,7 @@ except ImportError:
     _GenericAlias = ()
 
 try:
-    from typing_extensions import _AnnotatedAlias
+    from typing_extensions import _AnnotatedAlias  # type: ignore
 
     def is_annotated_instance(thing):
         return isinstance(thing, _AnnotatedAlias)
@@ -68,7 +68,7 @@ try:
 
 except ImportError:
     try:
-        from typing_extensions import AnnotatedMeta
+        from typing_extensions import AnnotatedMeta  # type: ignore
 
         def is_annotated_instance(thing):
             return isinstance(thing, AnnotatedMeta)
