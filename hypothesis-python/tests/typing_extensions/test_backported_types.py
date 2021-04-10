@@ -84,16 +84,16 @@ def test_defaultdict(ex):
 
 
 @pytest.mark.parametrize(
-    "annotated_type,expected_strategy",
+    "annotated_type,expected_strategy_repr",
     [
-        (Annotated[int, "foo"], st.integers()),
-        (Annotated[List[float], "foo"], st.lists(st.floats())),
-        (Annotated[Annotated[str, "foo"], "bar"], st.text()),
+        (Annotated[int, "foo"], "integers()"),
+        (Annotated[List[float], "foo"], "lists(floats())"),
+        (Annotated[Annotated[str, "foo"], "bar"], "text()"),
         (
             Annotated[Annotated[List[Dict[str, bool]], "foo"], "bar"],
-            st.lists(st.dictionaries(keys=st.text(), values=st.booleans())),
+            "lists(dictionaries(keys=text(), values=booleans()))",
         ),
     ],
 )
-def test_typing_extensions_Annotated(annotated_type, expected_strategy):
-    assert st.from_type(annotated_type) == expected_strategy
+def test_typing_extensions_Annotated(annotated_type, expected_strategy_repr):
+    assert repr(st.from_type(annotated_type)) == expected_strategy_repr

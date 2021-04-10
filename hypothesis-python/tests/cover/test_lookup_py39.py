@@ -21,18 +21,18 @@ from hypothesis import strategies as st
 
 
 @pytest.mark.parametrize(
-    "annotated_type,expected_strategy",
+    "annotated_type,expected_strategy_repr",
     [
-        (typing.Annotated[int, "foo"], st.integers()),
-        (typing.Annotated[typing.List[float], "foo"], st.lists(st.floats())),
-        (typing.Annotated[typing.Annotated[str, "foo"], "bar"], st.text()),
+        (typing.Annotated[int, "foo"], "integers()"),
+        (typing.Annotated[typing.List[float], "foo"], "lists(floats())"),
+        (typing.Annotated[typing.Annotated[str, "foo"], "bar"], "text()"),
         (
             typing.Annotated[
                 typing.Annotated[typing.List[typing.Dict[str, bool]], "foo"], "bar"
             ],
-            st.lists(st.dictionaries(keys=st.text(), values=st.booleans())),
+            "lists(dictionaries(keys=text(), values=booleans()))",
         ),
     ],
 )
-def test_typing_Annotated(annotated_type, expected_strategy):
-    assert st.from_type(annotated_type) == expected_strategy
+def test_typing_Annotated(annotated_type, expected_strategy_repr):
+    assert repr(st.from_type(annotated_type)) == expected_strategy_repr
