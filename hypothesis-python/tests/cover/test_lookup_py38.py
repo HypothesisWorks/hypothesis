@@ -16,6 +16,7 @@
 import dataclasses
 import sys
 import typing
+import typing_extensions
 
 import pytest
 
@@ -30,6 +31,28 @@ from tests.common.utils import temp_registered
 def test_typing_Final(data):
     value = data.draw(from_type(typing.Final[int]))
     assert isinstance(value, int)
+
+
+@pytest.mark.parametrize(
+    "annotated_type,expected_strategy",
+    [
+        (typing_extensions.Annotated[int, "foo"], st.integers()),
+        (typing_extensions.Annotated[typing.List[float], "foo"], st.lists(st.floats())),
+        (
+            typing_extensions.Annotated[typing_extensions.Annotated[str, "foo"], "bar"],
+            st.text(),
+        ),
+        (
+            typing_extensions.Annotated[
+                typing_extensions.Annotated[typing.List[typing.Dict[str, bool]], "foo"],
+                "bar",
+            ],
+            st.lists(st.dictionaries(keys=st.text(), values=st.booleans())),
+        ),
+    ],
+)
+def test_typing_Annotated(annotated_type, expected_strategy):
+    assert st.from_type(annotated_type) == expected_strategy
 
 
 @pytest.mark.parametrize("value", ["dog", b"goldfish", 42, 63.4, -80.5, False])
