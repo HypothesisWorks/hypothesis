@@ -59,6 +59,22 @@ try:
 except ImportError:
     _GenericAlias = ()
 
+try:
+    from typing_extensions import _AnnotatedAlias
+
+    def is_annotated_instance(thing):
+        return isinstance(thing, _AnnotatedAlias)
+
+except ImportError:
+    try:
+        from typing_extensions import AnnotatedMeta
+
+        def is_annotated_instance(thing):
+            return isinstance(thing, AnnotatedMeta)
+    except ImportError:
+        def is_annotated_instance(thing):
+            return False
+
 
 def type_sorting_key(t):
     """Minimise to None, then non-container types, then container types."""
@@ -112,7 +128,7 @@ def is_typing_literal(thing):
 
 def is_annotated_type(thing):
     return (
-        type(thing).__name__ in {"AnnotatedMeta", "_AnnotatedAlias"}
+        is_annotated_instance(thing)
         and getattr(thing, "__args__", None) is not None
     )
 
