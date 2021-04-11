@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.8.11:
+
+-------------------
+6.8.11 - 2021-04-11
+-------------------
+
+This patch improves an error message from :func:`~hypothesis.strategies.from_type`
+when :func:`~hypothesis.strategies.builds` would be more suitable (:issue:`2930`).
+
 .. _v6.8.10:
 
 -------------------
