@@ -272,6 +272,7 @@ def compile_requirements(upgrade=False):
 
 
 def update_python_versions():
+    install.ensure_python(PYMAIN)  # ensures pyenv is installed
     pyenv_dir = os.path.expanduser("~/.cache/hypothesis-build-runtimes/pyenv")
     subprocess.run("git pull", shell=True, cwd=pyenv_dir)
     result = subprocess.run(
