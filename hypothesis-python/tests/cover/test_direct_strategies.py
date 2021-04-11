@@ -51,7 +51,7 @@ def fn_ktest(*fnkwargs):
     return pytest.mark.parametrize(
         ("fn", "kwargs"),
         fnkwargs,
-        ids=["{}(**{})".format(fn.__name__, pretty(kwargs)) for fn, kwargs in fnkwargs],
+        ids=[f"{fn.__name__}(**{pretty(kwargs)})" for fn, kwargs in fnkwargs],
     )
 
 

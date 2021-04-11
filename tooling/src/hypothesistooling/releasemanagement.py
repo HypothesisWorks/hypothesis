@@ -48,7 +48,7 @@ def assignment_matcher(name):
     i.e. group 1 is the assignment, group 2 is the value. In the above
     example group 1 would be "  foo = " and group 2 would be "1"
     """
-    return re.compile(r"\A(\s*{}\s*=\s*)(.+)\Z".format(re.escape(name)))
+    return re.compile(fr"\A(\s*{re.escape(name)}\s*=\s*)(.+)\Z")
 
 
 def extract_assignment_from_string(contents, name):

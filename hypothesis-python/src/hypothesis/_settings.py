@@ -596,7 +596,7 @@ class duration(datetime.timedelta):
 
     def __repr__(self):
         ms = self.total_seconds() * 1000
-        return "timedelta(milliseconds={!r})".format(int(ms) if ms == int(ms) else ms)
+        return f"timedelta(milliseconds={int(ms) if ms == int(ms) else ms!r})"
 
 
 def _validate_deadline(x):

@@ -245,7 +245,7 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         return self.__stream.getvalue()
 
     def __repr__(self):
-        return "{}({})".format(type(self).__name__, nicerepr(self.bundles))
+        return f"{type(self).__name__}({nicerepr(self.bundles)})"
 
     def _new_name(self):
         result = f"v{self.name_counter}"

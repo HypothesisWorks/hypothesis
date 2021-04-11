@@ -110,7 +110,7 @@ def describe_statistics(stats_dict):
             if events:
                 lines.append("    - Events:")
                 lines += [
-                    "      * {:.2f}%, {}".format(100 * v / len(cases), k)
+                    f"      * {100 * v / len(cases):.2f}%, {k}"
                     for k, v in sorted(events.items(), key=lambda x: (-x[1], x[0]))
                 ]
         # Some additional details on the shrinking phase

@@ -161,7 +161,7 @@ def test_matmul_sig_shrinks_as_documented(min_dims, min_side, n_fixed, data):
             max_dims=max_dims,
         )
     )
-    note("(smallest_shapes, result): {}".format((smallest_shapes, result)))
+    note(f"(smallest_shapes, result): {(smallest_shapes, result)}")
 
     # if min_dims >= 1 then core dims are never excluded
     # otherwise, should shrink towards excluding all optional dims
