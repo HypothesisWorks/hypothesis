@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.8.10:
+
+-------------------
+6.8.10 - 2021-04-11
+-------------------
+
+This patch updates the type annotations for :func:`~hypothesis.extra.numpy.arrays` to reflect that
+``shape: SearchStrategy[int]`` is supported.
+
 .. _v6.8.9:
 
 ------------------
