@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.8.12:
+
+-------------------
+6.8.12 - 2021-04-11
+-------------------
+
+If :pypi:`rich` is installed, the :command:`hypothesis write` command
+will use it to syntax-highlight the :doc:`Ghostwritten <ghostwriter>`
+code.
+
 .. _v6.8.11:
 
 -------------------
