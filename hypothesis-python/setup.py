@@ -57,7 +57,7 @@ assert __version__ is not None
 
 
 extras = {
-    "cli": ["click>=7.0", "black>=19.10b0"],
+    "cli": ["click>=7.0", "black>=19.10b0", "rich>=9.0.0"],
     "codemods": ["libcst>=0.3.16"],
     "ghostwriter": ["black>=19.10b0"],
     "pytz": ["pytz>=2014.1"],
