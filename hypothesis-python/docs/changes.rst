@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.9.0:
+
+------------------
+6.9.0 - 2021-04-11
+------------------
+
+This release teaches :func:`~hypothesis.strategies.from_type` how to see
+through :obj:`python:typing.Annotated`.  Thanks to Vytautas Strimaitis
+for reporting and fixing :issue:`2919`!
+
 .. _v6.8.12:
 
 -------------------
