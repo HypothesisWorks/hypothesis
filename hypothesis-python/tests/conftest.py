@@ -34,6 +34,8 @@ if sys.version_info < (3, 7):
     collect_ignore_glob.append("cover/*py37*")
 if sys.version_info < (3, 8):
     collect_ignore_glob.append("cover/*py38*")
+if sys.version_info < (3, 9):
+    collect_ignore_glob.append("cover/*py39*")
 
 
 def pytest_configure(config):

@@ -59,6 +59,21 @@ try:
 except ImportError:
     _GenericAlias = ()
 
+try:
+    from typing import _AnnotatedAlias  # type: ignore
+except ImportError:
+    try:
+        from typing_extensions import _AnnotatedAlias
+    except ImportError:
+        try:
+            from typing_extensions import (  # type: ignore
+                AnnotatedMeta as _AnnotatedAlias,
+            )
+
+            assert sys.version_info[:2] == (3, 6)
+        except ImportError:
+            _AnnotatedAlias = ()
+
 
 def type_sorting_key(t):
     """Minimise to None, then non-container types, then container types."""
@@ -107,6 +122,13 @@ def is_typing_literal(thing):
             or sys.version_info[:2] == (3, 6)
             and isinstance(thing, type(typing_extensions.Literal[None]))
         )
+    )
+
+
+def is_annotated_type(thing):
+    return (
+        isinstance(thing, _AnnotatedAlias)
+        and getattr(thing, "__args__", None) is not None
     )
 
 
@@ -195,6 +217,12 @@ def from_typing_type(thing):
             else:
                 literals.append(arg)
         return st.sampled_from(literals)
+    if is_annotated_type(thing):  # pragma: no cover
+        # This requires Python 3.9+ or the typing_extensions package
+        args = thing.__args__
+        assert args, "it's impossible to make an annotated type with no args"
+        annotated_type = args[0]
+        return st.from_type(annotated_type)
     # Now, confirm that we're dealing with a generic type as we expected
     if sys.version_info[:2] < (3, 9) and not isinstance(
         thing, typing_root_type

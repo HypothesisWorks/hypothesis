@@ -14,10 +14,10 @@
 # END HEADER
 
 import collections
-from typing import Union
+from typing import Dict, List, Union
 
 import pytest
-from typing_extensions import DefaultDict, Literal, NewType, Type, TypedDict
+from typing_extensions import Annotated, DefaultDict, Literal, NewType, Type, TypedDict
 
 from hypothesis import assume, given, strategies as st
 from hypothesis.strategies import from_type
@@ -81,3 +81,19 @@ def test_defaultdict(ex):
     assume(ex)
     assert all(isinstance(elem, int) for elem in ex)
     assert all(isinstance(elem, int) for elem in ex.values())
+
+
+@pytest.mark.parametrize(
+    "annotated_type,expected_strategy_repr",
+    [
+        (Annotated[int, "foo"], "integers()"),
+        (Annotated[List[float], "foo"], "lists(floats())"),
+        (Annotated[Annotated[str, "foo"], "bar"], "text()"),
+        (
+            Annotated[Annotated[List[Dict[str, bool]], "foo"], "bar"],
+            "lists(dictionaries(keys=text(), values=booleans()))",
+        ),
+    ],
+)
+def test_typing_extensions_Annotated(annotated_type, expected_strategy_repr):
+    assert repr(st.from_type(annotated_type)) == expected_strategy_repr
