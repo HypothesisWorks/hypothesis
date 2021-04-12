@@ -421,10 +421,10 @@ def arg_string(f, args, kwargs, reorder=True):
 
     for a in argspec.args:
         if a in kwargs:
-            bits.append("{}={}".format(a, nicerepr(kwargs.pop(a))))
+            bits.append(f"{a}={nicerepr(kwargs.pop(a))}")
     if kwargs:
         for a in sorted(kwargs):
-            bits.append("{}={}".format(a, nicerepr(kwargs[a])))
+            bits.append(f"{a}={nicerepr(kwargs[a])}")
 
     return ", ".join([nicerepr(x) for x in args] + bits)
 
