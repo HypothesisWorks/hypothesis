@@ -724,7 +724,7 @@ def test_minimize_mutually_broadcastable_shape(num_shapes, min_dims, base_shape,
         # shrinking gets a little bit hairy when we have empty axes
         # and multiple num_shapes
         assume(min_side > 0)
-    note("(min_side, max_side): {}".format((min_side, max_side)))
+    note(f"(min_side, max_side): {(min_side, max_side)}")
     smallest_shapes, result = minimal(
         nps.mutually_broadcastable_shapes(
             num_shapes=num_shapes,
@@ -735,7 +735,7 @@ def test_minimize_mutually_broadcastable_shape(num_shapes, min_dims, base_shape,
             max_dims=max_dims,
         )
     )
-    note("(smallest_shapes, result): {}".format((smallest_shapes, result)))
+    note(f"(smallest_shapes, result): {(smallest_shapes, result)}")
     assert len(smallest_shapes) == num_shapes
     assert result == _broadcast_shapes(base_shape, *smallest_shapes)
     for smallest in smallest_shapes:
@@ -855,7 +855,7 @@ def test_mutually_broadcastable_shapes_shrinking_with_singleton_out_of_bounds(
             max_dims=max_dims,
         )
     )
-    note("(smallest_shapes, result): {}".format((smallest_shapes, result)))
+    note(f"(smallest_shapes, result): {(smallest_shapes, result)}")
     assert len(smallest_shapes) == num_shapes
     assert result == _broadcast_shapes(base_shape, *smallest_shapes)
     for smallest in smallest_shapes:

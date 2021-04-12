@@ -10,7 +10,7 @@ appdirs==1.4.4
     # via
     #   black
     #   virtualenv
-asgiref==3.3.1
+asgiref==3.3.4
     # via django
 attrs==20.3.0
     # via
@@ -55,19 +55,20 @@ coverage==5.5
     # via -r requirements/tools.in
 cryptography==3.4.7
     # via secretstorage
-decorator==5.0.4
+decorator==5.0.6
     # via
     #   ipython
     #   traitlets
 distlib==0.3.1
     # via virtualenv
-django==3.1.7
+django==3.2
     # via -r requirements/tools.in
-docutils==0.17
+docutils==0.16
     # via
     #   readme-renderer
     #   restructuredtext-lint
     #   sphinx
+    #   sphinx-rtd-theme
 dpcontracts==0.6.0
     # via -r requirements/tools.in
 filelock==3.0.12
@@ -212,7 +213,7 @@ pytz==2021.1
     # via
     #   babel
     #   django
-pyupgrade==2.11.0
+pyupgrade==2.12.0
     # via shed
 pyyaml==5.4.1
     # via
@@ -220,7 +221,7 @@ pyyaml==5.4.1
     #   libcst
 readme-renderer==29.0
     # via twine
-regex==2021.3.17
+regex==2021.4.4
     # via black
 requests-toolbelt==0.9.1
     # via twine
@@ -257,11 +258,11 @@ sortedcontainers==2.3.0
     # via hypothesis (hypothesis-python/setup.py)
 sphinx-hoverxref==0.5b1
     # via -r requirements/tools.in
-sphinx-rtd-theme==0.5.1
+sphinx-rtd-theme==0.5.2
     # via -r requirements/tools.in
 sphinx-selective-exclude==1.0.3
     # via -r requirements/tools.in
-sphinx==3.5.3
+sphinx==3.5.4
     # via
     #   -r requirements/tools.in
     #   sphinx-rtd-theme
@@ -292,7 +293,7 @@ toml==0.10.2
     #   tox
 tox==3.23.0
     # via -r requirements/tools.in
-tqdm==4.59.0
+tqdm==4.60.0
     # via twine
 traitlets==4.3.3
     # via
@@ -300,7 +301,7 @@ traitlets==4.3.3
     #   ipython
 twine==3.4.1
     # via -r requirements/tools.in
-typed-ast==1.4.2
+typed-ast==1.4.3
     # via
     #   black
     #   mypy
