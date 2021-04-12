@@ -272,11 +272,9 @@ def compile_requirements(upgrade=False):
 
 
 def update_python_versions():
-    pyenv_dir = os.path.expanduser("~/.cache/hypothesis-build-runtimes/pyenv")
-    subprocess.run("git pull", shell=True, cwd=pyenv_dir)
-    result = subprocess.run(
-        pyenv_dir + "/bin/pyenv install --list", shell=True, stdout=subprocess.PIPE
-    ).stdout.decode()
+    install.ensure_python(PYMAIN)  # ensures pyenv is installed and up to date
+    cmd = "~/.cache/hypothesis-build-runtimes/pyenv/bin/pyenv install --list"
+    result = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE).stdout.decode()
     # pyenv reports available versions in chronological order, so we keep the newest
     # *unless* our current ends with a digit (is stable) and the candidate does not.
     digits = tuple("0123456789")
@@ -301,13 +299,15 @@ def update_python_versions():
 def upgrade_requirements():
     compile_requirements(upgrade=True)
     subprocess.call(["./build.sh", "format"], cwd=tools.ROOT)  # exits 1 if changed
-    if hp.has_source_changes() and not os.path.isfile(hp.RELEASE_FILE):
+    diff = ["git", "diff", "--no-patch", "--exit-code", "--", hp.PYTHON_SRC]
+    if subprocess.call(diff) != 0 and not os.path.isfile(hp.RELEASE_FILE):
         with open(hp.RELEASE_FILE, mode="w") as f:
             f.write(
                 "RELEASE_TYPE: patch\n\nThis patch updates our autoformatting "
                 "tools, improving our code style without any API changes.\n"
             )
     update_python_versions()
+    subprocess.call(["git", "add", "."], cwd=tools.ROOT)
 
 
 @task()
