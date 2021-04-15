@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.9.2:
+
+------------------
+6.9.2 - 2021-04-15
+------------------
+
+This release improves the :doc:`Ghostwriter's <ghostwriter>` handling
+of exceptions, by reading ``:raises ...:`` entries in function docstrings
+and ensuring that we don't suppresss the error raised by test assertions.
+
 .. _v6.9.1:
 
 ------------------
