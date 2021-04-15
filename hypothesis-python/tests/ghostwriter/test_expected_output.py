@@ -90,6 +90,10 @@ def divide(a: int, b: int) -> float:
         ("base64_magic", ghostwriter.magic(base64)),
         ("sorted_idempotent", ghostwriter.idempotent(sorted)),
         ("timsort_idempotent", ghostwriter.idempotent(timsort)),
+        (
+            "timsort_idempotent_asserts",
+            ghostwriter.idempotent(timsort, except_=AssertionError),
+        ),
         ("eval_equivalent", ghostwriter.equivalent(eval, ast.literal_eval)),
         ("sorted_self_equivalent", ghostwriter.equivalent(sorted, sorted, sorted)),
         ("addition_op_magic", ghostwriter.magic(add)),

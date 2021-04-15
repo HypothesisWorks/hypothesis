@@ -331,7 +331,7 @@ def _get_strategies(
     return dict(sorted(given_strategies.items()))
 
 
-def _assert_eq(style, a, b):
+def _assert_eq(style: str, a: str, b: str) -> str:
     if style == "unittest":
         return f"self.assertEqual({a}, {b})"
     assert style == "pytest"
@@ -516,6 +516,7 @@ def _make_test_body(
     ghost: str,
     test_body: str,
     except_: Tuple[Type[Exception], ...],
+    assertions: str = "",
     style: str,
     given_strategies: Optional[Mapping[str, Union[str, st.SearchStrategy]]] = None,
 ) -> Tuple[Set[Union[str, Tuple[str, str]]], str]:
@@ -551,6 +552,9 @@ def _make_test_body(
             if len(exceptions) > 1
             else exceptions[0],
         )
+
+    if assertions:
+        test_body = f"{test_body}\n{assertions}"
 
     # Indent our test code to form the body of a function or method.
     argnames = (["self"] if style == "unittest" else []) + list(given_strategies)
@@ -876,14 +880,16 @@ def idempotent(func: Callable, *, except_: Except = (), style: str = "pytest") -
     except_ = _check_except(except_)
     _check_style(style)
 
-    test_body = "result = {}\nrepeat = {}\n{}".format(
-        _write_call(func, except_=except_),
-        _write_call(func, "result", except_=except_),
-        _assert_eq(style, "result", "repeat"),
-    )
-
     imports, body = _make_test_body(
-        func, test_body=test_body, except_=except_, ghost="idempotent", style=style
+        func,
+        test_body="result = {}\nrepeat = {}".format(
+            _write_call(func, except_=except_),
+            _write_call(func, "result", except_=except_),
+        ),
+        except_=except_,
+        assertions=_assert_eq(style, "result", "repeat"),
+        ghost="idempotent",
+        style=style,
     )
     return _make_test(imports, body)
 
@@ -896,12 +902,12 @@ def _make_roundtrip_body(funcs, except_, style):
             _write_call(f, f"value{i}", assign=f"value{i + 1}", except_=except_)
             for i, f in enumerate(funcs[1:])
         ),
-        _assert_eq(style, first_param, f"value{len(funcs) - 1}"),
     ]
     return _make_test_body(
         *funcs,
         test_body="\n".join(test_lines),
         except_=except_,
+        assertions=_assert_eq(style, first_param, f"value{len(funcs) - 1}"),
         ghost="roundtrip",
         style=style,
     )
@@ -938,12 +944,16 @@ def _make_equiv_body(funcs, except_, style):
     test_lines = [
         _write_call(f, assign=vname, except_=except_)
         for vname, f in zip(var_names, funcs)
-    ] + [_assert_eq(style, var_names[0], vname) for vname in var_names[1:]]
+    ]
+    assertions = "\n".join(
+        _assert_eq(style, var_names[0], vname) for vname in var_names[1:]
+    )
 
     return _make_test_body(
         *funcs,
         test_body="\n".join(test_lines),
         except_=except_,
+        assertions=assertions,
         ghost="equivalent",
         style=style,
     )
@@ -1063,13 +1073,17 @@ def _make_binop_body(
         body: str,
         right: Optional[str] = None,
     ) -> None:
-        if right is not None:
-            body = f"{body}\n{right}\n" + _assert_eq(style, "left", "right")
+        if right is None:
+            assertions = ""
+        else:
+            body = f"{body}\n{right}"
+            assertions = _assert_eq(style, "left", "right")
         imports, body = _make_test_body(
             func,
             test_body=body,
             ghost=sub_property + "_binary_operation",
             except_=except_,
+            assertions=assertions,
             style=style,
             given_strategies={**strategies, **{n: operands_name for n in args}},
         )
@@ -1200,12 +1214,11 @@ def _make_ufunc_body(func, *, except_, style):
 
     {array_names} = data.draw(st.tuples(*array_st))
     result = {call}
-
-    {shape_assert}
-    {type_assert}
     """.format(
         array_names=", ".join(ascii_lowercase[: func.nin]),
         call=_write_call(func, *ascii_lowercase[: func.nin], except_=except_),
+    )
+    assertions = "\n{shape_assert}\n{type_assert}".format(
         shape_assert=_assert_eq(style, "result.shape", "expected_shape"),
         type_assert=_assert_eq(style, "result.dtype.char", "expected_dtype"),
     )
@@ -1215,6 +1228,7 @@ def _make_ufunc_body(func, *, except_, style):
         func,
         test_body=dedent(body).strip(),
         except_=except_,
+        assertions=assertions,
         ghost="ufunc" if func.signature is None else "gufunc",
         style=style,
         given_strategies={
