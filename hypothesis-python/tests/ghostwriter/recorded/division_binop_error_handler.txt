@@ -1,0 +1,26 @@
+# This test code was written by the `hypothesis.extra.ghostwriter` module
+# and is provided under the Creative Commons Zero public domain dedication.
+
+import test_expected_output
+from hypothesis import given, strategies as st
+
+divide_operands = st.integers()
+
+
+@given(a=divide_operands, b=divide_operands, c=divide_operands)
+def test_associative_binary_operation_divide(a, b, c):
+    left = test_expected_output.divide(a=a, b=test_expected_output.divide(a=b, b=c))
+    right = test_expected_output.divide(a=test_expected_output.divide(a=a, b=b), b=c)
+    assert left == right, (left, right)
+
+
+@given(a=divide_operands, b=divide_operands)
+def test_commutative_binary_operation_divide(a, b):
+    left = test_expected_output.divide(a=a, b=b)
+    right = test_expected_output.divide(a=b, b=a)
+    assert left == right, (left, right)
+
+
+@given(a=divide_operands)
+def test_identity_binary_operation_divide(a):
+    assert a == test_expected_output.divide(a=a, b=1)

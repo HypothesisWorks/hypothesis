@@ -129,10 +129,21 @@ try:
 {test_body}
 except {exceptions}:
     reject()
-"""
+""".rstrip()
 
 Except = Union[Type[Exception], Tuple[Type[Exception], ...]]
 RE_TYPES = (type(re.compile(".")), type(re.match(".", "abc")))
+
+
+def _dedupe_exceptions(exc: Tuple[Type[Exception], ...]) -> Tuple[Type[Exception], ...]:
+    # This is reminiscent of de-duplication logic I wrote for flake8-bugbear,
+    # but with access to the actual objects we can just check for subclasses.
+    # This lets us print e.g. `Exception` instead of `(Exception, OSError)`.
+    uniques = list(exc)
+    for a, b in permutations(exc, 2):
+        if a in uniques and issubclass(a, b):
+            uniques.remove(a)
+    return tuple(sorted(uniques, key=lambda e: e.__name__))
 
 
 def _check_except(except_: Except) -> Tuple[Type[Exception], ...]:
@@ -155,6 +166,24 @@ def _check_except(except_: Except) -> Tuple[Type[Exception], ...]:
 def _check_style(style: str) -> None:
     if style not in ("pytest", "unittest"):
         raise InvalidArgument(f"Valid styles are 'pytest' or 'unittest', got {style!r}")
+
+
+def _exceptions_from_docstring(doc: str) -> Tuple[Type[Exception], ...]:
+    """Return a tuple of exceptions that the docstring says may be raised.
+
+    Note that we ignore non-builtin exception types for simplicity, as this is
+    used directly in _write_call() and passing import sets around would be really
+    really annoying.
+    """
+    # TODO: it would be great to handle Google- and Numpy-style docstrings
+    #       (e.g. by using the Napoleon Sphinx extension)
+    assert isinstance(doc, str), doc
+    raises = []
+    for excname in re.compile(r"\:raises\s+(\w+)\:", re.MULTILINE).findall(doc):
+        exc_type = getattr(builtins, excname, None)
+        if isinstance(exc_type, type) and issubclass(exc_type, Exception):
+            raises.append(exc_type)
+    return tuple(_dedupe_exceptions(tuple(raises)))
 
 
 # Simple strategies to guess for common argument names - we wouldn't do this in
@@ -438,11 +467,20 @@ def _get_qualname(obj, include_module=False):
     return qname
 
 
-def _write_call(func: Callable, *pass_variables: str) -> str:
+def _write_call(
+    func: Callable, *pass_variables: str, except_: Except, assign: str = ""
+) -> str:
     """Write a call to `func` with explicit and implicit arguments.
 
     >>> _write_call(sorted, "my_seq", "func")
     "builtins.sorted(my_seq, key=func, reverse=reverse)"
+
+    >>> write_call(f, assign="var1")
+    "var1 = f()"
+
+    The fancy part is that we'll check the docstring for any known exceptions
+    which `func` might raise, and catch-and-reject on them... *unless* they're
+    subtypes of `except_`, which will be handled in an outer try-except block.
     """
     args = ", ".join(
         (v or p.name)
@@ -450,7 +488,17 @@ def _write_call(func: Callable, *pass_variables: str) -> str:
         else f"{p.name}={v or p.name}"
         for v, p in zip_longest(pass_variables, _get_params(func).values())
     )
-    return f"{_get_qualname(func, include_module=True)}({args})"
+    call = f"{_get_qualname(func, include_module=True)}({args})"
+    if assign:
+        call = f"{assign} = {call}"
+    raises = _exceptions_from_docstring(getattr(func, "__doc__", "") or "")
+    exnames = [ex.__name__ for ex in raises if not issubclass(ex, except_)]
+    if not exnames:
+        return call
+    return SUPPRESS_BLOCK.format(
+        test_body=indent(call, prefix="    "),
+        exceptions="(" + ", ".join(exnames) + ")" if len(exnames) > 1 else exnames[0],
+    )
 
 
 def _st_strategy_names(s: str) -> str:
@@ -487,16 +535,9 @@ def _make_test_body(
     given_args = _st_strategy_names(given_args)
 
     if except_:
-        # This is reminiscent of de-duplication logic I wrote for flake8-bugbear,
-        # but with access to the actual objects we can just check for subclasses.
-        # This lets us print e.g. `Exception` instead of `(Exception, OSError)`.
-        uniques = list(except_)
-        for a, b in permutations(except_, 2):
-            if a in uniques and issubclass(a, b):
-                uniques.remove(a)
-        # Then convert to strings, either builtin names or qualified names.
+        # Convert to strings, either builtin names or qualified names.
         exceptions = []
-        for ex in uniques:
+        for ex in _dedupe_exceptions(except_):
             if ex.__qualname__ in dir(builtins):
                 exceptions.append(ex.__qualname__)
             else:
@@ -735,7 +776,9 @@ def magic(
     # guess at equivalence or idempotence; but it doesn't seem accurate enough to
     # be worth the trouble when it's so easy for the user to specify themselves.
     for _, f in sorted(by_name.items()):
-        make_(_make_test_body, f, test_body=_write_call(f), ghost="fuzz")
+        make_(
+            _make_test_body, f, test_body=_write_call(f, except_=except_), ghost="fuzz"
+        )
     return _make_test(imports, "\n".join(parts))
 
 
@@ -784,7 +827,11 @@ def fuzz(func: Callable, *, except_: Except = (), style: str = "pytest") -> str:
     _check_style(style)
 
     imports, body = _make_test_body(
-        func, test_body=_write_call(func), except_=except_, ghost="fuzz", style=style
+        func,
+        test_body=_write_call(func, except_=except_),
+        except_=except_,
+        ghost="fuzz",
+        style=style,
     )
     return _make_test(imports, body)
 
@@ -830,8 +877,8 @@ def idempotent(func: Callable, *, except_: Except = (), style: str = "pytest") -
     _check_style(style)
 
     test_body = "result = {}\nrepeat = {}\n{}".format(
-        _write_call(func),
-        _write_call(func, "result"),
+        _write_call(func, except_=except_),
+        _write_call(func, "result", except_=except_),
         _assert_eq(style, "result", "repeat"),
     )
 
@@ -844,9 +891,9 @@ def idempotent(func: Callable, *, except_: Except = (), style: str = "pytest") -
 def _make_roundtrip_body(funcs, except_, style):
     first_param = next(iter(_get_params(funcs[0])))
     test_lines = [
-        "value0 = " + _write_call(funcs[0]),
+        _write_call(funcs[0], assign="value0", except_=except_),
         *(
-            f"value{i + 1} = " + _write_call(f, f"value{i}")
+            _write_call(f, f"value{i}", assign=f"value{i + 1}", except_=except_)
             for i, f in enumerate(funcs[1:])
         ),
         _assert_eq(style, first_param, f"value{len(funcs) - 1}"),
@@ -889,7 +936,8 @@ def _make_equiv_body(funcs, except_, style):
     if len(set(var_names)) < len(var_names):
         var_names = [f"result_{i}_{ f.__name__}" for i, f in enumerate(funcs)]
     test_lines = [
-        vname + " = " + _write_call(f) for vname, f in zip(var_names, funcs)
+        _write_call(f, assign=vname, except_=except_)
+        for vname, f in zip(var_names, funcs)
     ] + [_assert_eq(style, var_names[0], vname) for vname in var_names[1:]]
 
     return _make_test_body(
@@ -1000,8 +1048,6 @@ def _make_binop_body(
     except_: Tuple[Type[Exception], ...],
     style: str,
 ) -> Tuple[Set[Union[str, Tuple[str, str]]], str]:
-    # TODO: collapse together first two strategies, keep any others (for flags etc.)
-    # assign this as a global variable, which will be prepended to the test bodies
     strategies = _get_strategies(func)
     operands, b = [strategies.pop(p) for p in list(_get_params(func))[:2]]
     if repr(operands) != repr(b):
@@ -1018,7 +1064,7 @@ def _make_binop_body(
         right: Optional[str] = None,
     ) -> None:
         if right is not None:
-            body = f"left={body}\nright={right}\n" + _assert_eq(style, "left", "right")
+            body = f"{body}\n{right}\n" + _assert_eq(style, "left", "right")
         imports, body = _make_test_body(
             func,
             test_body=body,
@@ -1037,15 +1083,27 @@ def _make_binop_body(
         maker(
             "associative",
             "abc",
-            _write_call(func, "a", _write_call(func, "b", "c")),
-            _write_call(func, _write_call(func, "a", "b"), "c"),
+            _write_call(
+                func,
+                "a",
+                _write_call(func, "b", "c", except_=Exception),
+                except_=Exception,
+                assign="left",
+            ),
+            _write_call(
+                func,
+                _write_call(func, "a", "b", except_=Exception),
+                "c",
+                except_=Exception,
+                assign="right",
+            ),
         )
     if commutative:
         maker(
             "commutative",
             "ab",
-            _write_call(func, "a", "b"),
-            _write_call(func, "b", "a"),
+            _write_call(func, "a", "b", except_=Exception, assign="left"),
+            _write_call(func, "b", "a", except_=Exception, assign="right"),
         )
     if identity is not None:
         # Guess that the identity element is the minimal example from our operands
@@ -1070,7 +1128,11 @@ def _make_binop_body(
         maker(
             "identity",
             "a",
-            _assert_eq(style, "a", _write_call(func, "a", repr(identity))),
+            _assert_eq(
+                style,
+                "a",
+                _write_call(func, "a", repr(identity), except_=Exception),
+            ),
         )
     if distributes_over:
         maker(
@@ -1078,10 +1140,18 @@ def _make_binop_body(
             "abc",
             _write_call(
                 distributes_over,
-                _write_call(func, "a", "b"),
-                _write_call(func, "a", "c"),
+                _write_call(func, "a", "b", except_=Exception),
+                _write_call(func, "a", "c", except_=Exception),
+                except_=Exception,
+                assign="left",
             ),
-            _write_call(func, "a", _write_call(distributes_over, "b", "c")),
+            _write_call(
+                func,
+                "a",
+                _write_call(distributes_over, "b", "c", except_=Exception),
+                except_=Exception,
+                assign="right",
+            ),
         )
 
     _, operands_repr = _valid_syntax_repr(operands)
@@ -1135,7 +1205,7 @@ def _make_ufunc_body(func, *, except_, style):
     {type_assert}
     """.format(
         array_names=", ".join(ascii_lowercase[: func.nin]),
-        call=_write_call(func, *ascii_lowercase[: func.nin]),
+        call=_write_call(func, *ascii_lowercase[: func.nin], except_=except_),
         shape_assert=_assert_eq(style, "result.shape", "expected_shape"),
         type_assert=_assert_eq(style, "result.dtype.char", "expected_dtype"),
     )
