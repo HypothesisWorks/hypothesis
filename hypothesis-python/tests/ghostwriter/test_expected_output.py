@@ -61,6 +61,14 @@ def add(a: float, b: float) -> float:
     return a + b
 
 
+def divide(a: int, b: int) -> float:
+    """This is a RST-style docstring for `divide`.
+
+    :raises ZeroDivisionError: if b == 0
+    """
+    return a / b
+
+
 # Note: for some of the `expected` outputs, we replace away some small
 #       parts which vary between minor versions of Python.
 @pytest.mark.parametrize(
@@ -82,10 +90,31 @@ def add(a: float, b: float) -> float:
         ("base64_magic", ghostwriter.magic(base64)),
         ("sorted_idempotent", ghostwriter.idempotent(sorted)),
         ("timsort_idempotent", ghostwriter.idempotent(timsort)),
+        (
+            "timsort_idempotent_asserts",
+            ghostwriter.idempotent(timsort, except_=AssertionError),
+        ),
         ("eval_equivalent", ghostwriter.equivalent(eval, ast.literal_eval)),
         ("sorted_self_equivalent", ghostwriter.equivalent(sorted, sorted, sorted)),
         ("addition_op_magic", ghostwriter.magic(add)),
         ("addition_op_multimagic", ghostwriter.magic(add, operator.add, numpy.add)),
+        ("division_fuzz_error_handler", ghostwriter.fuzz(divide)),
+        (
+            "division_binop_error_handler",
+            ghostwriter.binary_operation(divide, identity=1),
+        ),
+        (
+            "division_roundtrip_error_handler",
+            ghostwriter.roundtrip(divide, operator.mul),
+        ),
+        (
+            "division_roundtrip_arithmeticerror_handler",
+            ghostwriter.roundtrip(divide, operator.mul, except_=ArithmeticError),
+        ),
+        (
+            "division_roundtrip_typeerror_handler",
+            ghostwriter.roundtrip(divide, operator.mul, except_=TypeError),
+        ),
         (
             "division_operator",
             ghostwriter.binary_operation(

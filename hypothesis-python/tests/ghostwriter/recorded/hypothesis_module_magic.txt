@@ -4,6 +4,7 @@
 import hypothesis
 import typing
 from hypothesis import given, settings, strategies as st
+from hypothesis.strategies._internal.strategies import Ex
 from random import Random
 
 
