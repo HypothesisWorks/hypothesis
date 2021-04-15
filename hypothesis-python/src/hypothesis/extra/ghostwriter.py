@@ -108,7 +108,7 @@ from hypothesis.strategies._internal.strategies import (
     OneOfStrategy,
     SampledFromStrategy,
 )
-from hypothesis.strategies._internal.types import _global_type_lookup
+from hypothesis.strategies._internal.types import _global_type_lookup, is_generic_type
 from hypothesis.utils.conventions import InferType, infer
 
 IMPORT_SECTION = """
@@ -345,6 +345,11 @@ def _imports_for_object(obj):
     if isinstance(obj, RE_TYPES):
         return {"re"}
     try:
+        if is_generic_type(obj):
+            if isinstance(obj, TypeVar):
+                return {(obj.__module__, obj.__name__)}
+            with contextlib.suppress(Exception):
+                return set().union(*map(_imports_for_object, obj.__args__))
         if (not callable(obj)) or obj.__name__ == "<lambda>":
             return set()
         name = _get_qualname(obj).split(".")[0]

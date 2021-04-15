@@ -408,7 +408,8 @@ def nicerepr(v):
     elif isinstance(v, type):
         return v.__name__
     else:
-        return pretty(v)
+        # With TypeVar T, show List[T] instead of TypeError on List[~T]
+        return re.sub(r"(\[)~([A-Z][a-z]*\])", r"\g<1>\g<2>", pretty(v))
 
 
 def arg_string(f, args, kwargs, reorder=True):
