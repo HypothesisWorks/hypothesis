@@ -200,6 +200,7 @@ _GUESS_STRATEGIES_BY_NAME = (
     (st.text(), ["name", "filename", "fname"]),
     (st.floats(), ["real", "imag"]),
     (st.functions(), ["function", "func", "f"]),
+    (st.functions(returns=st.booleans(), pure=True), ["pred", "predicate"]),
     (st.iterables(st.integers()) | st.iterables(st.text()), ["iterable"]),
 )
 
@@ -603,7 +604,7 @@ def _make_test(imports: Set[Union[str, Tuple[str, str]]], body: str) -> str:
     from_ = {
         "from {} import {}".format(module, ", ".join(sorted(names)))
         for module, names in from_imports.items()
-        if module not in do_not_import
+        if isinstance(module, str) and module not in do_not_import
     }
     header = IMPORT_SECTION.format(imports="\n".join(sorted(direct) + sorted(from_)))
     nothings = body.count("st.nothing()")
