@@ -195,6 +195,8 @@ def _exceptions_from_docstring(doc: str) -> Tuple[Type[Exception], ...]:
 # on analysis of type-annotated code to detect arguments which almost always
 # take values of a particular type.
 _GUESS_STRATEGIES_BY_NAME = (
+    (st.integers(0, 32), ["ndims"]),
+    (st.booleans(), ["keepdims"]),
     (st.text(), ["name", "filename", "fname"]),
     (st.floats(), ["real", "imag"]),
     (st.functions(), ["function", "func", "f"]),
@@ -1229,6 +1231,12 @@ def _make_ufunc_body(func, *, except_, style):
     )
 
     qname = _get_qualname(func, include_module=True)
+    obj_sigs = ["O" in sig for sig in func.types]
+    if all(obj_sigs) or not any(obj_sigs):
+        types = f"sampled_from({qname}.types)"
+    else:
+        types = f"sampled_from([sig for sig in {qname}.types if 'O' not in sig])"
+
     return _make_test_body(
         func,
         test_body=dedent(body).strip(),
@@ -1236,9 +1244,5 @@ def _make_ufunc_body(func, *, except_, style):
         assertions=assertions,
         ghost="ufunc" if func.signature is None else "gufunc",
         style=style,
-        given_strategies={
-            "data": st.data(),
-            "shapes": shapes,
-            "types": f"sampled_from([sig for sig in {qname}.types if 'O' not in sig])",
-        },
+        given_strategies={"data": st.data(), "shapes": shapes, "types": types},
     )
