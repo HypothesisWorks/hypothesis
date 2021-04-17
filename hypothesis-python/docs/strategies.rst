@@ -21,7 +21,7 @@ External strategies
 Some packages provide strategies directly:
 
 * :pypi:`hypothesis-fspaths` - strategy to generate filesystem paths.
-* :pypi:`hypothesis-geojson` - strategy to generate `GeoJson <http://geojson.org/>`_.
+* :pypi:`hypothesis-geojson` - strategy to generate `GeoJson <https://geojson.org/>`_.
 * :pypi:`hypothesis-geometry` - strategies to generate geometric objects.
 * :pypi:`hs-dbus-signature` - strategy to generate arbitrary
   `D-Bus signatures <https://dbus.freedesktop.org>`_.

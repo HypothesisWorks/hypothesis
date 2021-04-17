@@ -1049,7 +1049,7 @@ class MutuallyBroadcastableShapesStrategy(st.SearchStrategy):
         )
 
 
-# See https://docs.scipy.org/doc/numpy/reference/c-api.generalized-ufuncs.html
+# See https://numpy.org/doc/stable/reference/c-api/generalized-ufuncs.html
 # Implementation based on numpy.lib.function_base._parse_gufunc_signature
 # with minor upgrades to handle numeric and optional dimensions.  Examples:
 #
@@ -1189,7 +1189,7 @@ def mutually_broadcastable_shapes(
     A :np-ref:`universal function <ufuncs.html>` (or ufunc for short) is a function
     that operates on ndarrays in an element-by-element fashion, supporting array
     broadcasting, type casting, and several other standard features.
-    A :np-ref:`generalised ufunc <c-api.generalized-ufuncs.html>` operates on
+    A :np-ref:`generalised ufunc <c-api/generalized-ufuncs.html>` operates on
     sub-arrays rather than elements, based on the "signature" of the function.
     Compare e.g. :obj:`numpy:numpy.add` (ufunc) to :obj:`numpy:numpy.matmul` (gufunc).
 
@@ -1370,9 +1370,8 @@ def basic_indices(
     allow_ellipsis: bool = True,
 ) -> st.SearchStrategy[BasicIndex]:
     """
-    The ``basic_indices`` strategy generates `basic indexes
-    <https://docs.scipy.org/doc/numpy/reference/arrays.indexing.html>`__  for
-    arrays of the specified shape, which may include dimensions of size zero.
+    The ``basic_indices`` strategy generates :np-ref:`basic indexes <arrays.indexing.html>`
+    for arrays of the specified shape, which may include dimensions of size zero.
 
     It generates tuples containing some mix of integers, :obj:`python:slice` objects,
     ``...`` (Ellipsis), and :obj:`numpy:numpy.newaxis`; which when used to index a

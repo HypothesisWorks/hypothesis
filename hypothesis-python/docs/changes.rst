@@ -1865,7 +1865,7 @@ scoped fixture is overridden with a higher scoped fixture.
 
 This release allows the :func:`~hypothesis.extra.numpy.array_dtypes` strategy
 to generate Numpy dtypes which have `field titles in addition to field names
-<https://docs.scipy.org/doc/numpy/user/basics.rec.html#field-titles>`__.
+<https://numpy.org/doc/stable/user/basics.rec.html#field-titles>`__.
 We expect this to expose latent bugs where code expects that
 ``set(dtype.names) == set(dtype.fields)``, though the latter may include titles.
 
@@ -2919,7 +2919,7 @@ chooses for ``max_dims`` is always valid (at most 32), even if you pass ``min_di
 
 This patch ensures that we only add profile information to the pytest header
 if running either pytest or Hypothesis in verbose mode, matching the
-`builtin cache plugin <https://docs.pytest.org/en/latest/cache.html>`__
+`builtin cache plugin <https://docs.pytest.org/en/latest/how-to/cache.html>`__
 (:issue:`2155`).
 
 .. _v4.42.7:
@@ -3134,7 +3134,7 @@ is not a strategy, Hypothesis now tells you which one.
 -------------------
 
 This release adds the :func:`~hypothesis.extra.numpy.basic_indices` strategy,
-to generate `basic indexes <https://docs.scipy.org/doc/numpy/reference/arrays.indexing.html>`__
+to generate `basic indexes <https://numpy.org/doc/stable/reference/arrays.indexing.html>`__
 for arrays of the specified shape (:issue:`1930`).
 
 It generates tuples containing some mix of integers, :obj:`python:slice` objects,
@@ -7177,7 +7177,7 @@ that have previously been missed.
 --------------------
 
 This patch avoids creating debug statements when debugging is disabled.
-Profiling suggests this is a 5-10% performance improvement (:pull:`1040`).
+Profiling suggests this is a 5-10% performance improvement (:issue:`1040`).
 
 .. _v3.44.9:
 
@@ -7245,7 +7245,7 @@ the copyright headers in our source to include 2018.
 3.44.4 - 2017-12-23
 -------------------
 
-This release fixes :issue:`1044`, which slowed tests by up to 6%
+This release fixes :issue:`1041`, which slowed tests by up to 6%
 due to broken caching.
 
 .. _v3.44.3:

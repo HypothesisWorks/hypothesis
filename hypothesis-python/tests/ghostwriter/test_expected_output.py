@@ -51,6 +51,19 @@ def timsort(seq: Sequence[int]) -> Sequence[int]:
     return sorted(seq)
 
 
+def with_docstring(a, b, c, d=int, e=lambda x: f"xx{x}xx") -> None:
+    """Demonstrates parsing params from the docstring
+
+    :param a: sphinx docstring style
+    :type a: sequence of integers
+
+    b (list, tuple, or None): Google docstring style
+
+    c : {"foo", "bar", or None}
+        Numpy docstring style
+    """
+
+
 class A_Class:
     @classmethod
     def a_classmethod(cls, arg: int):
@@ -75,6 +88,7 @@ def divide(a: int, b: int) -> float:
     "data",
     [
         ("fuzz_sorted", ghostwriter.fuzz(sorted)),
+        ("fuzz_with_docstring", ghostwriter.fuzz(with_docstring)),
         ("fuzz_classmethod", ghostwriter.fuzz(A_Class.a_classmethod)),
         ("fuzz_ufunc", ghostwriter.fuzz(numpy.add)),
         ("magic_gufunc", ghostwriter.magic(numpy.matmul)),

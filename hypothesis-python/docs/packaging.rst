@@ -67,7 +67,7 @@ If you want to test Hypothesis as part of your packaging you will probably not w
 Hypothesis itself uses for running its tests, because it has a lot of logic for installing and testing against
 different versions of Python.
 
-The tests must be run with fairly recent tooling; check the :gh-file:`requirements/`
+The tests must be run with fairly recent tooling; check the :gh-link:`tree/master/requirements/`
 directory for details.
 
 The organisation of the tests is described in the :gh-file:`hypothesis-python/tests/README.rst`.
@@ -76,6 +76,6 @@ The organisation of the tests is described in the :gh-file:`hypothesis-python/te
 Examples
 --------
 
-* `arch linux <https://www.archlinux.org/packages/community/any/python-hypothesis/>`_
+* `arch linux <https://archlinux.org/packages/community/any/python-hypothesis/>`_
 * `fedora <https://src.fedoraproject.org/rpms/python-hypothesis>`_
 * `gentoo <https://packages.gentoo.org/packages/dev-python/hypothesis>`_

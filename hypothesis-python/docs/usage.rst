@@ -11,18 +11,18 @@ You can find hundreds more from `the Hypothesis page at libraries.io
 <https://libraries.io/pypi/hypothesis>`_, and `thousands on GitHub
 <https://github.com/HypothesisWorks/hypothesis/network/dependents>`_.
 Hypothesis has `over 100,000 downloads per week <https://pypistats.org/packages/hypothesis>`__,
-and was used by `more than 4% of Python users surveyed by the PSF in 2018
-<https://jetbrains.com/research/python-developers-survey-2018>`__.
+and was used by `more than 4% of Python users surveyed by the PSF in 2020
+<https://www.jetbrains.com/lp/python-developers-survey-2020/>`__.
 
 * `aur <https://github.com/cdown/aur>`_
-* `argon2_cffi <https://github.com/hynek/argon2_cffi>`_
+* `argon2_cffi <https://github.com/hynek/argon2-cffi>`_
 * `attrs <https://github.com/python-attrs/attrs>`_
 * `axelrod <https://github.com/Axelrod-Python/Axelrod>`_
 * `bidict <https://github.com/jab/bidict>`_
-* `binaryornot <https://github.com/audreyr/binaryornot>`_
-* `brotlipy <https://github.com/python-hyper/brotlipy>`_
+* `binaryornot <https://github.com/audreyfeldroy/binaryornot>`_
+* `brotlicffi <https://github.com/python-hyper/brotlicffi>`_
 * :pypi:`chardet`
-* `cmph-cffi <https://github.com/URXtech/cmph-cffi>`_
+* :pypi:`cmph-cffi`
 * `cryptography <https://github.com/pyca/cryptography>`_
 * `dbus-signature-pyparsing <https://github.com/stratis-storage/dbus-signature-pyparsing>`_
 * `dry-python/returns <https://github.com/dry-python/returns>`_
@@ -31,7 +31,7 @@ and was used by `more than 4% of Python users surveyed by the PSF in 2018
 * `flownetpy <https://github.com/debsankha/flownetpy>`_
 * `funsize <https://github.com/mozilla-releng/funsize>`_
 * `fusion-index <https://github.com/fusionapp/fusion-index>`_
-* `hyper-h2 <https://github.com/python-hyper/hyper-h2>`_
+* `hyper-h2 <https://github.com/python-hyper/h2>`_
 * `into-dbus-python <https://github.com/stratis-storage/into-dbus-python>`_
 * `justbases <https://github.com/mulkieran/justbases>`_
 * `justbytes <https://github.com/mulkieran/justbytes>`_
@@ -43,7 +43,7 @@ and was used by `more than 4% of Python users surveyed by the PSF in 2018
 * `pretext <https://github.com/moreati/b-prefix-all-the-doctests>`_
 * `priority <https://github.com/python-hyper/priority>`_
 * `PyCEbox <https://github.com/AustinRochford/PyCEbox>`_
-* `PyPy <https://pypy.org/>`_
+* `PyPy <https://www.pypy.org/>`_
 * `pyrsistent <https://github.com/tobgu/pyrsistent>`_
 * `python-humble-utils <https://github.com/webyneter/python-humble-utils>`_
 * `pyudev <https://github.com/pyudev/pyudev>`_

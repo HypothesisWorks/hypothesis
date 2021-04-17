@@ -13,6 +13,7 @@
 #
 # END HEADER
 
+from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies._internal.strategies import (
     FilteredStrategy,
     SampledFromStrategy,
@@ -44,7 +45,7 @@ class JustStrategy(SampledFromStrategy):
     def __repr__(self):
         if self.value is None:
             return "none()"
-        return f"just({self.value!r})"
+        return f"just({get_pretty_function_description(self.value)})"
 
     def calc_has_reusable_values(self, recur):
         return True

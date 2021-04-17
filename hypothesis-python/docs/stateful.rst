@@ -22,7 +22,7 @@ try to find sequences of those actions that result in a failure.
   This style of testing is often called *model-based testing*, but in Hypothesis
   is called *stateful testing* (mostly for historical reasons - the original
   implementation of this idea in Hypothesis was more closely based on
-  `ScalaCheck's stateful testing <https://github.com/rickynils/scalacheck/blob/master/doc/UserGuide.md#stateful-testing>`_
+  `ScalaCheck's stateful testing <https://github.com/typelevel/scalacheck/blob/main/doc/UserGuide.md#stateful-testing>`_
   where the name is more apt).
   Both of these names are somewhat misleading: You don't really need any sort of
   formal model of your code to use this, and it can be just as useful for pure APIs

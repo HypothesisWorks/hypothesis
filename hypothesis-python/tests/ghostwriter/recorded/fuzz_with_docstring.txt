@@ -1,0 +1,16 @@
+# This test code was written by the `hypothesis.extra.ghostwriter` module
+# and is provided under the Creative Commons Zero public domain dedication.
+
+import test_expected_output
+from hypothesis import given, strategies as st
+
+
+@given(
+    a=st.lists(st.integers()),
+    b=st.one_of(st.none(), st.builds(list), st.builds(tuple)),
+    c=st.sampled_from(["foo", "bar", None]),
+    d=st.just(int),
+    e=st.just(lambda x: f"xx{x}xx"),
+)
+def test_fuzz_with_docstring(a, b, c, d, e):
+    test_expected_output.with_docstring(a=a, b=b, c=c, d=d, e=e)
