@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.10.0:
+
+-------------------
+6.10.0 - 2021-04-17
+-------------------
+
+This release teaches the :doc:`Ghostwriter <ghostwriter>` to read parameter
+types from Sphinx, Google, or Numpy-style structured docstrings, and improves
+some related heuristics about how to test scientific and numerical programs.
+
 .. _v6.9.2:
 
 ------------------
