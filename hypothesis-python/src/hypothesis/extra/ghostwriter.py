@@ -438,7 +438,7 @@ def _valid_syntax_repr(strategy):
         # .filter(), and .flatmap() to work without NameError
         imports = {i for i in _imports_for_strategy(strategy) if i[1] in r}
         return imports, r
-    except (SyntaxError, InvalidArgument):
+    except (SyntaxError, RecursionError, InvalidArgument):
         return set(), "nothing()"
 
 
@@ -684,9 +684,12 @@ def magic(
                     v
                     for k, v in vars(thing).items()
                     if callable(v)
-                    and (getattr(v, "__module__", pkg) == pkg or not pkg)
+                    and not is_mock(v)
+                    and ((not pkg) or getattr(v, "__module__", pkg).startswith(pkg))
                     and not k.startswith("_")
                 ]
+                if pkg and any(getattr(f, "__module__", pkg) == pkg for f in funcs):
+                    funcs = [f for f in funcs if getattr(f, "__module__", pkg) == pkg]
             for f in funcs:
                 try:
                     if (
