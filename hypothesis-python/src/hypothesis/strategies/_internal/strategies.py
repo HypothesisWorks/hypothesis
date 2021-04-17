@@ -465,7 +465,12 @@ class SampledFromStrategy(SearchStrategy):
         )
 
     def __repr__(self):
-        return (self.repr_ or f"sampled_from({list(self.elements)!r})") + "".join(
+        return (
+            self.repr_
+            or "sampled_from(["
+            + ", ".join(map(get_pretty_function_description, self.elements))
+            + "])"
+        ) + "".join(
             f".{name}({get_pretty_function_description(f)})"
             for name, f in self._transformations
         )
