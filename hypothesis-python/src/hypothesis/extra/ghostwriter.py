@@ -67,6 +67,7 @@ generally do their best to write you a useful test.  You can also use
     public domain dedication, so you can use it without any restrictions.
 """
 
+import ast
 import builtins
 import contextlib
 import enum
@@ -83,6 +84,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    List,
     Mapping,
     Optional,
     Set,
@@ -205,7 +207,88 @@ _GUESS_STRATEGIES_BY_NAME = (
 )
 
 
-def _strategy_for(param: inspect.Parameter) -> Union[st.SearchStrategy, InferType]:
+def _type_from_doc_fragment(token: str) -> Optional[type]:
+    # Special cases for "integer" and for numpy array-like and dtype
+    if token == "integer":
+        return int
+    if "numpy" in sys.modules:
+        if re.fullmatch(r"[Aa]rray[-_ ]?like", token):
+            return sys.modules["numpy"].ndarray  # type: ignore
+        elif token == "dtype":
+            return sys.modules["numpy"].dtype  # type: ignore
+    # Natural-language syntax, e.g. "sequence of integers"
+    coll_match = re.fullmatch(r"(\w+) of (\w+)", token)
+    if coll_match is not None:
+        coll_token, elem_token = coll_match.groups()
+        elems = _type_from_doc_fragment(elem_token)
+        if elems is None and elem_token.endswith("s"):
+            elems = _type_from_doc_fragment(elem_token[:-1])
+        if elems is not None and coll_token in ("list", "sequence", "collection"):
+            return List[elems]  # type: ignore
+        # This might be e.g. "array-like of float"; arrays is better than nothing
+        # even if we can't conveniently pass a generic type around.
+        return _type_from_doc_fragment(coll_token)
+    # Check either builtins, or the module for a dotted name
+    if "." not in token:
+        return getattr(builtins, token, None)
+    mod, name = token.rsplit(".", maxsplit=1)
+    return getattr(sys.modules.get(mod, None), name, None)
+
+
+def _strategy_for(
+    param: inspect.Parameter,
+    docstring: str,
+) -> Union[st.SearchStrategy, InferType]:
+    # Example types in docstrings:
+    # - `:type a: sequence of integers`
+    # - `b (list, tuple, or None): ...`
+    # - `c : {"foo", "bar", or None}`
+    for pattern in (
+        fr"^\s*\:type\s+{param.name}\:\s+(.+)",  # RST-style
+        fr"^\s*{param.name} \((.+)\):",  # Google-style
+        fr"^\s*{param.name} \: (.+)",  # Numpy-style
+    ):
+        match = re.search(pattern, docstring, flags=re.MULTILINE)
+        if match is None:
+            continue
+        doc_type = match.group(1)
+        if doc_type.endswith(", optional"):
+            # Convention to describe "argument may be omitted"
+            doc_type = doc_type[: -len(", optional")]
+        doc_type = doc_type.strip("}{")
+        elements = []
+        types = []
+        for token in re.split(r",? +or +| *, *", doc_type):
+            for prefix in ("default ", "python "):
+                # `str or None, default "auto"`; `python int or numpy.int64`
+                if token.startswith(prefix):
+                    token = token[len(prefix) :]
+            if not token:
+                continue
+            try:
+                # Elements of `{"inner", "outer"}` etc.
+                elements.append(ast.literal_eval(token))
+                continue
+            except (ValueError, SyntaxError):
+                t = _type_from_doc_fragment(token)
+                if isinstance(t, type) or is_generic_type(t):
+                    assert t is not None
+                    types.append(t)
+        if (
+            param.default is not inspect.Parameter.empty
+            and param.default not in elements
+            and not isinstance(
+                param.default, tuple(t for t in types if isinstance(t, type))
+            )
+        ):
+            with contextlib.suppress(SyntaxError):
+                compile(repr(st.just(param.default)), "<string>", "eval")
+                elements.insert(0, param.default)
+        if elements or types:
+            return (st.sampled_from(elements) if elements else st.nothing()) | (
+                st.one_of(*map(st.from_type, types)) if types else st.nothing()
+            )
+
     # If our default value is an Enum or a boolean, we assume that any value
     # of that type is acceptable.  Otherwise, we only generate the default.
     if isinstance(param.default, bool):
@@ -309,8 +392,10 @@ def _get_strategies(
         if pass_result_to_next_func and i >= 1:
             del params[next(iter(params))]
         hints = get_type_hints(f)
+        docstring = getattr(f, "__doc__", None) or ""
         builder_args = {
-            k: infer if k in hints else _strategy_for(v) for k, v in params.items()
+            k: infer if k in hints else _strategy_for(v, docstring)
+            for k, v in params.items()
         }
         with _with_any_registered():
             strat = st.builds(f, **builder_args).wrapped_strategy  # type: ignore

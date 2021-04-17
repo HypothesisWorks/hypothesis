@@ -145,7 +145,7 @@ def has_type_arguments(type_):
 
 
 def is_generic_type(type_):
-    """Decides whethere a given type is generic or not."""
+    """Decides whether a given type is generic or not."""
     # The ugly truth is that `MyClass`, `MyClass[T]`, and `MyClass[int]` are very different.
     # In different python versions they might have the same type (3.6)
     # or it can be regular type vs `_GenericAlias` (3.7+)
