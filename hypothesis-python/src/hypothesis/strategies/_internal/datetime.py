@@ -398,7 +398,8 @@ def timezone_keys(
     On Windows, you may need to access IANA timezone data via the :pypi:`tzdata`
     package.  For non-IANA timezones, such as Windows-native names or GNU TZ
     strings, we recommend using :func:`~hypothesis.strategies.sampled_from` with
-    the :pypi:`dateutil` package, e.g. :meth:`dateutil:dateutil.tz.tzwin.list`.
+    the :pypi:`dateutil <python-dateutil>` package, e.g.
+    :meth:`dateutil:dateutil.tz.tzwin.list`.
     """
     # check_type(bool, allow_alias, "allow_alias")
     # check_type(bool, allow_deprecated, "allow_deprecated")

@@ -95,7 +95,7 @@ extlinks = {
     "gh-link": (_repo + "%s", ""),
     "issue": (_repo + "issues/%s", "issue #"),
     "pull": (_repo + "pull/%s", "pull request #"),
-    "pypi": ("https://pypi.org/project/%s", ""),
+    "pypi": ("https://pypi.org/project/%s/", ""),
     "bpo": ("https://bugs.python.org/issue%s", "bpo-"),
     "np-ref": ("https://numpy.org/doc/stable/reference/%s", ""),
     "wikipedia": ("https://en.wikipedia.org/wiki/%s", ""),
