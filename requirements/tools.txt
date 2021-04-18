@@ -55,7 +55,7 @@ coverage==5.5
     # via -r requirements/tools.in
 cryptography==3.4.7
     # via secretstorage
-decorator==5.0.6
+decorator==5.0.7
     # via
     #   ipython
     #   traitlets
@@ -89,7 +89,7 @@ flake8-mutable==1.2.0
     # via -r requirements/tools.in
 flake8-polyfill==1.0.2
     # via flake8-bandit
-flake8==3.9.0
+flake8==3.9.1
     # via
     #   -r requirements/tools.in
     #   flake8-2020
@@ -107,7 +107,7 @@ idna==2.10
     # via requests
 imagesize==1.2.0
     # via sphinx
-importlib-metadata==3.10.0
+importlib-metadata==3.10.1
     # via
     #   keyring
     #   twine
@@ -165,7 +165,7 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pip-tools==6.0.1
+pip-tools==6.1.0
     # via -r requirements/tools.in
 pkginfo==1.7.0
     # via twine
@@ -237,7 +237,7 @@ rfc3986==1.4.0
     # via twine
 secretstorage==3.3.1
     # via keyring
-shed==0.3.3
+shed==0.3.4
     # via -r requirements/tools.in
 six==1.15.0
     # via

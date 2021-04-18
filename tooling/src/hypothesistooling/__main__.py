@@ -355,7 +355,7 @@ PY38 = PYMAIN = "3.8.9"  # Note: keep this in sync with build.sh and GH Actions 
 PY39 = "3.9.4"
 PY310 = "3.10-dev"
 PYPY36 = "pypy3.6-7.3.3"
-PYPY37 = "pypy3.7-7.3.3"
+PYPY37 = "pypy3.7-7.3.4"
 
 
 # ALIASES are the executable names for each Python version
