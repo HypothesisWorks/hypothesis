@@ -29,7 +29,14 @@ try:
         import importlib_metadata  # type: ignore  # mypy thinks this is a redefinition
 
     def get_entry_points():
-        yield from importlib_metadata.entry_points().get("hypothesis", [])
+        try:
+            eps = importlib_metadata.entry_points(group="hypothesis")
+        except TypeError:
+            # Load-time selection requires Python >= 3.10 or importlib_metadata >= 3.6,
+            # so we'll retain this fallback logic for some time to come.  See also
+            # https://importlib-metadata.readthedocs.io/en/latest/using.html
+            eps = importlib_metadata.entry_points().get("hypothesis", [])
+        yield from eps
 
 
 except ImportError:

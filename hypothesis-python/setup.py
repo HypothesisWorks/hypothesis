@@ -81,7 +81,7 @@ extras = {
 }
 
 extras["all"] = sorted(
-    set(sum(extras.values(), ["importlib_metadata ; python_version<'3.8'"]))
+    set(sum(extras.values(), ["importlib_metadata>=3.6; python_version<'3.8'"]))
 )
 
 
