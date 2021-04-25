@@ -107,7 +107,7 @@ idna==2.10
     # via requests
 imagesize==1.2.0
     # via sphinx
-importlib-metadata==3.10.1
+importlib-metadata==4.0.1
     # via
     #   keyring
     #   twine
@@ -213,7 +213,7 @@ pytz==2021.1
     # via
     #   babel
     #   django
-pyupgrade==2.12.0
+pyupgrade==2.13.0
     # via shed
 pyyaml==5.4.1
     # via
@@ -315,7 +315,7 @@ typing-inspect==0.6.0
     # via libcst
 urllib3==1.26.4
     # via requests
-virtualenv==20.4.3
+virtualenv==20.4.4
     # via tox
 wcwidth==0.2.5
     # via prompt-toolkit
