@@ -19,7 +19,8 @@ from hypothesis.strategies._internal.strategies import FilteredStrategy
 
 
 def test_filter_iterations_are_marked_as_discarded():
-    x = st.integers(0, 255).filter(lambda x: x == 0)
+    variable_equal_to_zero = 0  # non-local references disables filter-rewriting
+    x = st.integers(0, 255).filter(lambda x: x == variable_equal_to_zero)
 
     data = ConjectureData.for_buffer([2, 1, 0])
 
