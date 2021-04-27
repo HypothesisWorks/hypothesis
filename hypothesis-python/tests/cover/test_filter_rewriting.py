@@ -56,6 +56,20 @@ from tests.common.utils import fails_with
         (st.integers(), partial(operator.eq, 3), 3, 3),
         (st.integers(), partial(operator.ge, 3), None, 3),
         (st.integers(), partial(operator.gt, 3), None, 2),
+        # Simple lambdas
+        (st.integers(), lambda x: x < 3, None, 2),
+        (st.integers(), lambda x: x <= 3, None, 3),
+        (st.integers(), lambda x: x == 3, 3, 3),
+        (st.integers(), lambda x: x >= 3, 3, None),
+        (st.integers(), lambda x: x > 3, 4, None),
+        # Simple lambdas, reverse comparison
+        (st.integers(), lambda x: 3 > x, None, 2),
+        (st.integers(), lambda x: 3 >= x, None, 3),
+        (st.integers(), lambda x: 3 == x, 3, 3),
+        (st.integers(), lambda x: 3 <= x, 3, None),
+        (st.integers(), lambda x: 3 < x, 4, None),
+        # More complicated lambdas
+        (st.integers(), lambda x: 0 < x < 5, 1, 4),
     ],
 )
 @given(data=st.data())
@@ -115,6 +129,9 @@ def mod2(x):
     return x % 2
 
 
+Y = 2 ** 20
+
+
 @given(
     data=st.data(),
     predicates=st.permutations(
@@ -124,6 +141,8 @@ def mod2(x):
             partial(operator.ge, 4),
             partial(operator.gt, 5),
             mod2,
+            lambda x: x > 2 or x % 7,
+            lambda x: 0 < x <= Y,
         ]
     ),
 )
@@ -142,4 +161,29 @@ def test_rewrite_filter_chains_with_some_unhandled(data, predicates):
     unwrapped = s.wrapped_strategy
     assert isinstance(unwrapped, FilteredStrategy)
     assert isinstance(unwrapped.filtered_strategy, IntegersStrategy)
-    assert unwrapped.flat_conditions == (mod2,)
+    for pred in unwrapped.flat_conditions:
+        assert pred is mod2 or pred.__name__ == "<lambda>"
+
+
+@pytest.mark.parametrize(
+    "start, end, predicate",
+    [
+        (1, 4, lambda x: 0 < x < 5 and x % 7),
+        (1, None, lambda x: 0 < x <= Y),
+        (None, None, lambda x: x == x),
+        (None, None, lambda x: 1 == 1),
+        (None, None, lambda x: 1 <= 2),
+    ],
+)
+@given(data=st.data())
+def test_rewriting_partially_understood_filters(data, start, end, predicate):
+    s = st.integers().filter(predicate).wrapped_strategy
+
+    assert isinstance(s, FilteredStrategy)
+    assert isinstance(s.filtered_strategy, IntegersStrategy)
+    assert s.filtered_strategy.start == start
+    assert s.filtered_strategy.end == end
+    assert s.flat_conditions == (predicate,)
+
+    value = data.draw(s)
+    assert predicate(value)

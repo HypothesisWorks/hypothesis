@@ -72,7 +72,7 @@ class ConstructivePredicate(NamedTuple):
 ARG = object()
 
 
-def convert(node, argname):
+def convert(node: ast.AST, argname: str) -> object:
     if isinstance(node, ast.Name):
         if node.id != argname:
             raise ValueError("Non-local variable")
@@ -80,13 +80,15 @@ def convert(node, argname):
     return ast.literal_eval(node)
 
 
-def comp_to_kwargs(a, op, b, *, argname=None):
-    """ """
-    if isinstance(a, ast.Name) == isinstance(b, ast.Name):
+def comp_to_kwargs(x: ast.AST, op: ast.AST, y: ast.AST, *, argname: str) -> dict:
+    a = convert(x, argname)
+    b = convert(y, argname)
+    num = (int, float)
+    if not (a is ARG and isinstance(b, num)) and not (isinstance(a, num) and b is ARG):
+        # It would be possible to work out if comparisons between two literals
+        # are always true or false, but it's too rare to be worth the complexity.
+        # (and we can't even do `arg == arg`, because what if it's NaN?)
         raise ValueError("Can't analyse this comparison")
-    a = convert(a, argname)
-    b = convert(b, argname)
-    assert (a is ARG) != (b is ARG)
 
     if isinstance(op, ast.Lt):
         if a is ARG:
@@ -111,26 +113,18 @@ def comp_to_kwargs(a, op, b, *, argname=None):
     raise ValueError("Unhandled comparison operator")
 
 
-def tidy(kwargs):
-    if not kwargs["exclude_min"]:
-        del kwargs["exclude_min"]
-        if kwargs["min_value"] == -math.inf:
-            del kwargs["min_value"]
-    if not kwargs["exclude_max"]:
-        del kwargs["exclude_max"]
-        if kwargs["max_value"] == math.inf:
-            del kwargs["max_value"]
-    return kwargs
-
-
-def merge_kwargs(*rest):
+def merge_preds(*con_predicates: ConstructivePredicate) -> ConstructivePredicate:
+    # This function is just kinda messy.  Unfortunately the neatest way
+    # to do this is just to roll out each case and handle them in turn.
     base = {
         "min_value": -math.inf,
         "max_value": math.inf,
         "exclude_min": False,
         "exclude_max": False,
     }
-    for kw in rest:
+    predicate = None
+    for kw, p in con_predicates:
+        predicate = p or predicate
         if "min_value" in kw:
             if kw["min_value"] > base["min_value"]:
                 base["exclude_min"] = kw.get("exclude_min", False)
@@ -147,35 +141,34 @@ def merge_kwargs(*rest):
                 base["exclude_max"] |= kw.get("exclude_max", False)
             else:
                 base["exclude_max"] = False
-    return tidy(base)
+
+    if not base["exclude_min"]:
+        del base["exclude_min"]
+        if base["min_value"] == -math.inf:
+            del base["min_value"]
+    if not base["exclude_max"]:
+        del base["exclude_max"]
+        if base["max_value"] == math.inf:
+            del base["max_value"]
+    return ConstructivePredicate(base, predicate)
 
 
-def numeric_bounds_from_ast(tree, *, argname=None):
-    """Take an AST; return a dict of bounds or None.
+def numeric_bounds_from_ast(
+    tree: ast.AST, argname: str, fallback: ConstructivePredicate
+) -> ConstructivePredicate:
+    """Take an AST; return a ConstructivePredicate.
 
     >>> lambda x: x >= 0
-    {"min_value": 0}
+    {"min_value": 0}, None
     >>> lambda x: x < 10
-    {"max_value": 10, "exclude_max": True}
+    {"max_value": 10, "exclude_max": True}, None
     >>> lambda x: x >= y
-    None
+    {}, lambda x: x >= y
+
+    See also https://greentreesnakes.readthedocs.io/en/latest/
     """
-    while isinstance(tree, ast.Module) and len(tree.body) == 1:
-        tree = tree.body[0]
-    if isinstance(tree, ast.Expr):
+    while isinstance(tree, ast.Expr):
         tree = tree.value
-
-    if isinstance(tree, ast.Lambda) and len(tree.args.args) == 1:
-        assert argname is None
-        return numeric_bounds_from_ast(tree.body, argname=tree.args.args[0].arg)
-
-    if isinstance(tree, ast.FunctionDef) and len(tree.args.args) == 1:
-        assert argname is None
-        if len(tree.body) != 1 or not isinstance(tree.body[0], ast.Return):
-            return None
-        return numeric_bounds_from_ast(
-            tree.body[0].value, argname=tree.args.args[0].arg
-        )
 
     if isinstance(tree, ast.Compare):
         ops = tree.ops
@@ -183,19 +176,21 @@ def numeric_bounds_from_ast(tree, *, argname=None):
         comparisons = [(tree.left, ops[0], vals[0])]
         for i, (op, val) in enumerate(zip(ops[1:], vals[1:]), start=1):
             comparisons.append((vals[i - 1], op, val))
-        try:
-            bounds = [comp_to_kwargs(*x, argname=argname) for x in comparisons]
-        except ValueError:
-            return None
-        return merge_kwargs(*bounds)
+        bounds = []
+        for comp in comparisons:
+            try:
+                kwargs = comp_to_kwargs(*comp, argname=argname)
+                bounds.append(ConstructivePredicate(kwargs, None))
+            except ValueError:
+                bounds.append(fallback)
+        return merge_preds(*bounds)
 
     if isinstance(tree, ast.BoolOp) and isinstance(tree.op, ast.And):
-        bounds = [
-            numeric_bounds_from_ast(node, argname=argname) for node in tree.values
-        ]
-        return merge_kwargs(*bounds)
+        return merge_preds(
+            *[numeric_bounds_from_ast(node, argname, fallback) for node in tree.values]
+        )
 
-    return None
+    return fallback
 
 
 UNSATISFIABLE = ConstructivePredicate.unchanged(lambda _: False)
@@ -208,6 +203,7 @@ def get_numeric_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
     all the values are representable in the types that we're planning to generate
     so that the strategy validation doesn't complain.
     """
+    unchanged = ConstructivePredicate.unchanged(predicate)
     if (
         isinstance(predicate, partial)
         and len(predicate.args) == 1
@@ -219,7 +215,7 @@ def get_numeric_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
             or not isinstance(arg, (int, float, Fraction, Decimal))
             or math.isnan(arg)
         ):
-            return ConstructivePredicate.unchanged(predicate)
+            return unchanged
         options = {
             # We're talking about op(arg, x) - the reverse of our usual intuition!
             operator.lt: {"min_value": arg, "exclude_min": True},  # lambda x: arg < x
@@ -231,19 +227,38 @@ def get_numeric_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
         if predicate.func in options:
             return ConstructivePredicate(options[predicate.func], None)
 
+    # This section is a little complicated, but stepping through with comments should
+    # help to clarify it.  We start by finding the source code for our predicate and
+    # parsing it to an abstract syntax tree; if this fails for any reason we bail out
+    # and fall back to standard rejection sampling (a running theme).
     try:
         if predicate.__name__ == "<lambda>":
             source = extract_lambda_source(predicate)
         else:
             source = inspect.getsource(predicate)
-        kwargs = numeric_bounds_from_ast(ast.parse(source))
-    except Exception:
-        pass
-    else:
-        if kwargs is not None:
-            return ConstructivePredicate(kwargs, None)
+        tree: ast.AST = ast.parse(source)
+    except Exception:  # pragma: no cover
+        return unchanged
 
-    return ConstructivePredicate.unchanged(predicate)
+    # Dig down to the relevant subtree - our tree is probably a Module containing
+    # either a FunctionDef, or an Expr which in turn contains a lambda definition.
+    while isinstance(tree, ast.Module) and len(tree.body) == 1:
+        tree = tree.body[0]
+    while isinstance(tree, ast.Expr):
+        tree = tree.value
+
+    if isinstance(tree, ast.Lambda) and len(tree.args.args) == 1:
+        return numeric_bounds_from_ast(tree.body, tree.args.args[0].arg, unchanged)
+    elif isinstance(tree, ast.FunctionDef) and len(tree.args.args) == 1:
+        if len(tree.body) != 1 or not isinstance(tree.body[0], ast.Return):
+            # If the body of the function is anything but `return <expr>`,
+            # i.e. as simple as a lambda, we can't process it (yet).
+            return unchanged
+        argname = tree.args.args[0].arg
+        body = tree.body[0].value
+        assert isinstance(body, ast.AST)
+        return numeric_bounds_from_ast(body, argname, unchanged)
+    return unchanged
 
 
 def get_integer_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
