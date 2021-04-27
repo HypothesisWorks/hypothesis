@@ -110,7 +110,7 @@ def comp_to_kwargs(x: ast.AST, op: ast.AST, y: ast.AST, *, argname: str) -> dict
         if a is ARG:
             return {"min_value": b, "exclude_min": True}
         return {"max_value": a, "exclude_max": True}
-    raise ValueError("Unhandled comparison operator")
+    raise ValueError("Unhandled comparison operator")  # e.g. ast.Ne
 
 
 def merge_preds(*con_predicates: ConstructivePredicate) -> ConstructivePredicate:
@@ -131,16 +131,12 @@ def merge_preds(*con_predicates: ConstructivePredicate) -> ConstructivePredicate
                 base["min_value"] = kw["min_value"]
             elif kw["min_value"] == base["min_value"]:
                 base["exclude_min"] |= kw.get("exclude_min", False)
-            else:
-                base["exclude_min"] = False
         if "max_value" in kw:
             if kw["max_value"] < base["max_value"]:
                 base["exclude_max"] = kw.get("exclude_max", False)
                 base["max_value"] = kw["max_value"]
             elif kw["max_value"] == base["max_value"]:
                 base["exclude_max"] |= kw.get("exclude_max", False)
-            else:
-                base["exclude_max"] = False
 
     if not base["exclude_min"]:
         del base["exclude_min"]
@@ -167,9 +163,6 @@ def numeric_bounds_from_ast(
 
     See also https://greentreesnakes.readthedocs.io/en/latest/
     """
-    while isinstance(tree, ast.Expr):
-        tree = tree.value
-
     if isinstance(tree, ast.Compare):
         ops = tree.ops
         vals = tree.comparators
@@ -237,7 +230,7 @@ def get_numeric_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
         else:
             source = inspect.getsource(predicate)
         tree: ast.AST = ast.parse(source)
-    except Exception:  # pragma: no cover
+    except Exception:
         return unchanged
 
     # Dig down to the relevant subtree - our tree is probably a Module containing

@@ -22,6 +22,7 @@ import pytest
 
 from hypothesis import given, strategies as st
 from hypothesis.errors import Unsatisfiable
+from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies._internal.lazy import LazyStrategy
 from hypothesis.strategies._internal.numbers import IntegersStrategy
 from hypothesis.strategies._internal.strategies import FilteredStrategy
@@ -70,7 +71,14 @@ from tests.common.utils import fails_with
         (st.integers(), lambda x: 3 < x, 4, None),
         # More complicated lambdas
         (st.integers(), lambda x: 0 < x < 5, 1, 4),
+        (st.integers(), lambda x: 0 < x >= 1, 1, None),
+        (st.integers(), lambda x: 1 > x <= 0, None, 0),
+        (st.integers(), lambda x: x > 0 and x > 0, 1, None),
+        (st.integers(), lambda x: x < 1 and x < 1, None, 0),
+        (st.integers(), lambda x: x > 1 and x > 0, 2, None),
+        (st.integers(), lambda x: x < 1 and x < 2, None, 0),
     ],
+    ids=get_pretty_function_description,
 )
 @given(data=st.data())
 def test_filter_rewriting(data, strategy, predicate, start, end):
@@ -165,14 +173,27 @@ def test_rewrite_filter_chains_with_some_unhandled(data, predicates):
         assert pred is mod2 or pred.__name__ == "<lambda>"
 
 
+class NotAFunction:
+    def __call__(self, bar):
+        return True
+
+
+lambda_without_source = eval("lambda x: x > 2", {}, {})
+
+
 @pytest.mark.parametrize(
     "start, end, predicate",
     [
         (1, 4, lambda x: 0 < x < 5 and x % 7),
+        (0, 9, lambda x: 0 <= x < 10 and x % 3),
         (1, None, lambda x: 0 < x <= Y),
         (None, None, lambda x: x == x),
         (None, None, lambda x: 1 == 1),
         (None, None, lambda x: 1 <= 2),
+        (None, None, lambda x: x != 0),
+        (None, None, NotAFunction()),
+        (None, None, lambda_without_source),
+        (None, None, lambda x, y=2: x >= 0),
     ],
 )
 @given(data=st.data())
