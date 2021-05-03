@@ -2,6 +2,10 @@
 Hypothesis
 ==========
 
+.. image:: https://readthedocs.org/projects/hypothesis/badge/?version=latest
+  :target: https://hypothesis.readthedocs.io/en/latest/?badge=latest
+  :alt: Documentation Status
+
 Hypothesis is a family of testing libraries which let you write tests parametrized
 by a source of examples. A Hypothesis implementation then generates simple and
 comprehensible examples that make your tests fail.
