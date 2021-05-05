@@ -2,10 +2,12 @@
 Ongoing Hypothesis development
 ==============================
 
-Hypothesis development is managed by me, `David R. MacIver <https://www.drmaciver.com>`_.
-I am the primary author of Hypothesis.
+Hypothesis development is managed by `David R. MacIver <https://www.drmaciver.com>`_
+and `Zac Hatfield-Dodds <https://zhd.dev>`_, respectively the first author and lead
+maintainer.
 
-*However*, I no longer do unpaid feature development on Hypothesis. My roles as leader of the project are:
+*However*, these roles don't include unpaid feature development on Hypothesis.
+Our roles as leaders of the project are:
 
 1. Helping other people do feature development on Hypothesis
 2. Fixing bugs and other code health issues
@@ -17,7 +19,8 @@ I am the primary author of Hypothesis.
 So all new features must either be sponsored or implemented by someone else.
 That being said, the maintenance team takes an active role in shepherding pull requests and
 helping people write a new feature (see :gh-file:`CONTRIBUTING.rst` for
-details and :pull:`154` for an example of how the process goes). This isn't
+details and :gh-link:`these examples of how the process goes
+<pulls?q=is%3Apr+is%3Amerged+mentored>`). This isn't
 "patches welcome", it's "we will help you write a patch".
 
 
