@@ -88,14 +88,15 @@ extras["all"] = sorted(
 setuptools.setup(
     name="hypothesis",
     version=__version__,
-    author="David R. MacIver",
+    author="David R. MacIver and Zac Hatfield-Dodds",
     author_email="david@drmaciver.com",
     packages=setuptools.find_packages(SOURCE),
     package_dir={"": SOURCE},
     package_data={"hypothesis": ["py.typed", "vendor/tlds-alpha-by-domain.txt"]},
-    url="https://github.com/HypothesisWorks/hypothesis/tree/master/hypothesis-python",
+    url="https://hypothesis.works",
     project_urls={
-        "Website": "https://hypothesis.works",
+        "Source": "https://github.com/HypothesisWorks/hypothesis/tree/master/hypothesis-python",
+        "Changelog": "https://hypothesis.readthedocs.io/en/latest/changes.html",
         "Documentation": "https://hypothesis.readthedocs.io",
         "Issues": "https://github.com/HypothesisWorks/hypothesis/issues",
     },
