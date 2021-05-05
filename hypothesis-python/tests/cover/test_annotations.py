@@ -13,7 +13,6 @@
 #
 # END HEADER
 
-import sys
 from inspect import getfullargspec
 
 import attr
@@ -116,8 +115,7 @@ def test_composite_edits_annotations():
 @pytest.mark.parametrize("nargs", [1, 2, 3])
 def test_given_edits_annotations(nargs):
     spec_given = getfullargspec(given(*(nargs * [st.none()]))(pointless_composite))
-    expected = None if sys.version_info[:2] < (3, 10) else type(None)
-    assert spec_given.annotations.pop("return") == expected
+    assert spec_given.annotations.pop("return") is None
     assert len(spec_given.annotations) == 3 - nargs
 
 

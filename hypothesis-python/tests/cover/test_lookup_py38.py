@@ -14,7 +14,6 @@
 # END HEADER
 
 import dataclasses
-import sys
 import typing
 
 import pytest
@@ -103,7 +102,6 @@ class NestedDict(typing.TypedDict):
     inner: A
 
 
-@pytest.mark.skipif(sys.version_info[:2] >= (3, 10), reason="see issue #2897")
 @given(from_type(NestedDict))
 def test_typeddict_with_nested_value(value):
     assert type(value) == dict

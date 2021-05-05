@@ -280,7 +280,7 @@ def update_python_versions():
     digits = tuple("0123456789")
     best = {}
     for line in map(str.strip, result.splitlines()):
-        m = re.match(r"(?:pypy)?3\.\d+", line)
+        m = re.match(r"(?:pypy)?3\.(?:[6-9]|\d\d)", line)
         if m:
             key = m.group()
             if key.endswith(digits) or not best.get(key, key).endswith(digits):
@@ -293,6 +293,15 @@ def update_python_versions():
         after = re.sub(rf'({var} = .*?"){key}[^"]+', rf"\g<1>{version}", after)
     if before != after:
         thisfile.write_text(after)
+
+    # Automatically sync PYMAIN with the version in build.sh
+    build_sh = pathlib.Path(tools.ROOT) / "build.sh"
+    sh_before = build_sh.read_text()
+    new_pymain = re.search(r'PYMAIN = "(3\.\d\d?\.\d\d?)"', after).group(1)
+    sh_after = re.sub(r"3\.\d\d?\.\d\d?", new_pymain, sh_before)
+    if sh_before != sh_after:
+        build_sh.unlink()  # so bash doesn't reload a modified file
+        build_sh.write_text(sh_after)
 
 
 @task()
@@ -351,8 +360,8 @@ def run_tox(task, version):
 # See update_python_versions() above
 PY36 = "3.6.13"
 PY37 = "3.7.10"
-PY38 = PYMAIN = "3.8.9"  # Note: keep this in sync with build.sh and GH Actions main.yml
-PY39 = "3.9.4"
+PY38 = PYMAIN = "3.8.10"  # Sync PYMAIN minor version with GH Actions main.yml
+PY39 = "3.9.5"
 PY310 = "3.10-dev"
 PYPY36 = "pypy3.6-7.3.3"
 PYPY37 = "pypy3.7-7.3.4"

@@ -10,7 +10,8 @@ sees them.
 
 For bugs and enhancements, please file an issue on the :issue:`GitHub issue tracker <>`.
 Note that as per the :doc:`development policy <development>`, enhancements will probably not get
-implemented unless you're willing to pay for development or implement them yourself (with assistance from me). Bugs
+implemented unless you're willing to pay for development or implement them yourself
+(with assistance from the maintainers). Bugs
 will tend to get fixed reasonably promptly, though it is of course on a best effort basis.
 
 To see the versions of Python, optional dependencies, test runners, and operating systems Hypothesis

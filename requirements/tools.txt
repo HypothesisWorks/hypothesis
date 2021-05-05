@@ -19,13 +19,13 @@ attrs==20.3.0
     #   pytest
 autoflake==1.4
     # via shed
-babel==2.9.0
+babel==2.9.1
     # via sphinx
 backcall==0.2.0
     # via ipython
 bandit==1.7.0
     # via flake8-bandit
-black==20.8b1
+black==21.5b0
     # via
     #   blacken-docs
     #   shed
@@ -61,7 +61,7 @@ decorator==5.0.7
     #   traitlets
 distlib==0.3.1
     # via virtualenv
-django==3.2
+django==3.2.1
     # via -r requirements/tools.in
 docutils==0.16
     # via
@@ -129,7 +129,7 @@ jinja2==2.11.3
     # via sphinx
 keyring==23.0.1
     # via twine
-lark-parser==0.11.2
+lark-parser==0.11.3
     # via -r requirements/tools.in
 libcst==0.3.18
     # via
@@ -157,7 +157,7 @@ parso==0.8.2
     # via jedi
 pathspec==0.8.1
     # via black
-pbr==5.5.1
+pbr==5.6.0
     # via stevedore
 pep517==0.10.0
     # via pip-tools
@@ -197,7 +197,7 @@ pyflakes==2.3.1
     # via
     #   autoflake
     #   flake8
-pygments==2.8.1
+pygments==2.9.0
     # via
     #   ipython
     #   pybetter
@@ -205,7 +205,7 @@ pygments==2.8.1
     #   sphinx
 pyparsing==2.4.7
     # via packaging
-pytest==6.2.3
+pytest==6.2.4
     # via -r requirements/tools.in
 python-dateutil==2.8.1
     # via -r requirements/tools.in
@@ -213,7 +213,7 @@ pytz==2021.1
     # via
     #   babel
     #   django
-pyupgrade==2.13.0
+pyupgrade==2.14.0
     # via shed
 pyyaml==5.4.1
     # via
@@ -237,7 +237,7 @@ rfc3986==1.4.0
     # via twine
 secretstorage==3.3.1
     # via keyring
-shed==0.3.4
+shed==0.3.5
     # via -r requirements/tools.in
 six==1.15.0
     # via
@@ -302,12 +302,9 @@ traitlets==4.3.3
 twine==3.4.1
     # via -r requirements/tools.in
 typed-ast==1.4.3
+    # via mypy
+typing-extensions==3.10.0.0
     # via
-    #   black
-    #   mypy
-typing-extensions==3.7.4.3
-    # via
-    #   black
     #   libcst
     #   mypy
     #   typing-inspect

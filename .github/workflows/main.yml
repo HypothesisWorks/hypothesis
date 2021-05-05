@@ -24,7 +24,7 @@ jobs:
           - check-pypy37
           - check-py38
           - check-py39
-          # - check-py310  # pending https://github.com/pytest-dev/pytest/issues/8539
+          - check-py310
           - check-quality
           - lint-ruby
           - check-ruby-tests

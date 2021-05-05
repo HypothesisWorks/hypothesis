@@ -756,12 +756,7 @@ def test_compat_get_type_hints_aware_of_None_default():
     find_any(strategy, lambda x: x.a is not None)
 
     assert typing.get_type_hints(constructor)["a"] == typing.Optional[str]
-    annotation = inspect.signature(constructor).parameters["a"].annotation
-    assert annotation == str or (
-        # See https://bugs.python.org/issue43006
-        annotation == typing.Optional[str]
-        and sys.version_info[:2] >= (3, 10)
-    )
+    assert inspect.signature(constructor).parameters["a"].annotation == str
 
 
 _ValueType = typing.TypeVar("_ValueType")
