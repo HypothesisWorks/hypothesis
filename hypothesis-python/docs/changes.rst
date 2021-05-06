@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.11.0:
+
+-------------------
+6.11.0 - 2021-05-06
+-------------------
+
+:func:`hypothesis.target` now returns the ``observation`` value,
+allowing it to be conveniently used inline in expressions such as
+``assert target(abs(a - b)) < 0.1``.
+
 .. _v6.10.1:
 
 -------------------
