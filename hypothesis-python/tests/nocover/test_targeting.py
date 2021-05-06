@@ -54,3 +54,10 @@ def test_targeting_increases_max_length():
 
     with pytest.raises(AssertionError):
         test_with_targeting()
+
+
+@given(st.integers(), st.integers())
+def test_target_returns_value(a, b):
+    difference = target(abs(a - b))
+    assert difference == abs(a - b)
+    assert isinstance(difference, int)

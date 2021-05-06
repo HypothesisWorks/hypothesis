@@ -135,7 +135,7 @@ def event(value: str) -> None:
     context.data.note_event(value)
 
 
-def target(observation: Union[int, float], *, label: str = "") -> None:
+def target(observation: Union[int, float], *, label: str = "") -> Union[int, float]:
     """Calling this function with an ``int`` or ``float`` observation gives it feedback
     with which to guide our search for inputs that will cause an error, in
     addition to all the usual heuristics.  Observations must always be finite.
@@ -165,11 +165,6 @@ def target(observation: Union[int, float], *, label: str = "") -> None:
         and immediately obvious by around ten thousand examples
         *per label* used by your test.
 
-    .. note::
-        ``hypothesis.target`` is considered experimental, and may be radically
-        changed or even removed in a future version.  If you find it useful,
-        please let us know so we can share and build on that success!
-
     :ref:`statistics` include the best score seen for each label,
     which can help avoid `the threshold problem
     <https://hypothesis.works/articles/threshold-problem/>`__ when the minimal
@@ -182,7 +177,10 @@ def target(observation: Union[int, float], *, label: str = "") -> None:
 
     context = _current_build_context.value
     if context is None:
-        raise InvalidArgument("Calling target() outside of a test is invalid.")
+        raise InvalidArgument(
+            "Calling target() outside of a test is invalid.  "
+            "Consider guarding this call with `if currently_in_test_context(): ...`"
+        )
     verbose_report(f"Saw target(observation={observation!r}, label={label!r})")
 
     if label in context.data.target_observations:
@@ -192,3 +190,5 @@ def target(observation: Union[int, float], *, label: str = "") -> None:
         )
     else:
         context.data.target_observations[label] = observation
+
+    return observation
