@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/coverage.txt hypothesis-python/setup.py requirements/coverage.in
 #
-attrs==20.3.0
+attrs==21.2.0
     # via hypothesis (hypothesis-python/setup.py)
 coverage==5.5
     # via -r requirements/coverage.in
@@ -22,7 +22,7 @@ pytz==2021.1
     # via
     #   -r requirements/coverage.in
     #   pandas
-six==1.15.0
+six==1.16.0
     # via python-dateutil
 sortedcontainers==2.3.0
     # via hypothesis (hypothesis-python/setup.py)

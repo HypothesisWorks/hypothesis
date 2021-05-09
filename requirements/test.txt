@@ -6,7 +6,7 @@
 #
 apipkg==1.5
     # via execnet
-attrs==20.3.0
+attrs==21.2.0
     # via
     #   hypothesis (hypothesis-python/setup.py)
     #   pytest
