@@ -148,12 +148,20 @@ def urls() -> st.SearchStrategy[str]:
     def url_encode(s):
         return "".join(c if c in URL_SAFE_CHARACTERS else "%%%02X" % ord(c) for c in s)
 
+    def url_fragment_encode(s):
+        FRAGMENT_SAFE_CHARACTERS = URL_SAFE_CHARACTERS | {"?", "/"}
+        return "".join(
+            c if c in FRAGMENT_SAFE_CHARACTERS else "%%%02X" % ord(c)
+            for c in s
+        )
+
     schemes = st.sampled_from(["http", "https"])
     ports = st.integers(min_value=0, max_value=2 ** 16 - 1).map(":{}".format)
     paths = st.lists(st.text(string.printable).map(url_encode)).map("/".join)
 
-    # TODO Allow non-encoded "?" and "/"
-    fragments = st.text(string.printable, min_size=1).map(url_encode).map("#{}".format)
+    fragments = st.text(string.printable, min_size=1).map(url_fragment_encode).map(
+        "#{}".format
+    )
 
     return st.builds(
         "{}://{}{}/{}{}".format,
