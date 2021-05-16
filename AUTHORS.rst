@@ -103,6 +103,7 @@ their individual contributions.
 * `Paul Kehrer <https://github.com/reaperhulk>`_
 * `Paul Lorett Amazona <https://github.com/whatevergeek>`_
 * `Paul Stiverson <https://github.com/thismatters>`_
+* `Pax (R. Margret) W. <https://github.com/paxcodes>`_
 * `Peadar Coyle <https://github.com/springcoil>`_ (peadarcoyle@gmail.com)
 * `Petr Viktorin <https://github.com/encukou>`_
 * `Pierre-Jean Campigotto <https://github.com/PJCampi>`_
