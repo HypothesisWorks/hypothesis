@@ -152,6 +152,14 @@ def urls() -> st.SearchStrategy[str]:
     ports = st.integers(min_value=0, max_value=2 ** 16 - 1).map(":{}".format)
     paths = st.lists(st.text(string.printable).map(url_encode)).map("/".join)
 
+    # TODO Allow non-encoded "?" and "/"
+    fragments = st.text(string.printable, min_size=1).map(url_encode).map("#{}".format)
+
     return st.builds(
-        "{}://{}{}/{}".format, schemes, domains(), st.just("") | ports, paths
+        "{}://{}{}/{}{}".format,
+        schemes,
+        domains(),
+        st.just("") | ports,
+        paths,
+        st.just("") | fragments,
     )
