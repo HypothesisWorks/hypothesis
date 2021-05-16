@@ -25,7 +25,7 @@ backcall==0.2.0
     # via ipython
 bandit==1.7.0
     # via flake8-bandit
-black==21.5b0
+black==21.5b1
     # via
     #   blacken-docs
     #   shed
@@ -55,13 +55,13 @@ coverage==5.5
     # via -r requirements/tools.in
 cryptography==3.4.7
     # via secretstorage
-decorator==5.0.7
+decorator==5.0.8
     # via
     #   ipython
     #   traitlets
 distlib==0.3.1
     # via virtualenv
-django==3.2.2
+django==3.2.3
     # via -r requirements/tools.in
 docutils==0.16
     # via
@@ -81,7 +81,7 @@ flake8-bandit==2.1.2
     # via -r requirements/tools.in
 flake8-bugbear==21.4.3
     # via -r requirements/tools.in
-flake8-comprehensions==3.4.0
+flake8-comprehensions==3.5.0
     # via -r requirements/tools.in
 flake8-docstrings==1.6.0
     # via -r requirements/tools.in
@@ -101,7 +101,7 @@ flake8==3.9.2
     #   flake8-polyfill
 gitdb==4.0.7
     # via gitpython
-gitpython==3.1.14
+gitpython==3.1.17
     # via bandit
 idna==2.10
     # via requests
@@ -131,13 +131,15 @@ keyring==23.0.1
     # via twine
 lark-parser==0.11.3
     # via -r requirements/tools.in
-libcst==0.3.18
+libcst==0.3.19
     # via
     #   -r requirements/tools.in
     #   pybetter
     #   shed
 markupsafe==1.1.1
-    # via jinja2
+    # via
+    #   jinja2
+    #   sphinx
 mccabe==0.6.1
     # via flake8
 mypy-extensions==0.4.3
@@ -213,7 +215,7 @@ pytz==2021.1
     # via
     #   babel
     #   django
-pyupgrade==2.15.0
+pyupgrade==2.16.0
     # via shed
 pyyaml==5.4.1
     # via
@@ -262,7 +264,7 @@ sphinx-rtd-theme==0.5.2
     # via -r requirements/tools.in
 sphinx-selective-exclude==1.0.3
     # via -r requirements/tools.in
-sphinx==3.5.4
+sphinx==4.0.1
     # via
     #   -r requirements/tools.in
     #   sphinx-rtd-theme
