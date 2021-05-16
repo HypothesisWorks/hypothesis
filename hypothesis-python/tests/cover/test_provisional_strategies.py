@@ -41,6 +41,10 @@ def test_is_URL(url):
     fragment = components[1] if "#" in url_schemeless else ""
     fragment_allowed_chars = allowed_chars | {"?"}
     assert all(c in fragment_allowed_chars for c in fragment)
+    assert all(
+        re.match("^[0-9A-Fa-f]{2}", after_perc)
+        for after_perc in fragment.split("%")[1:]
+    )
 
 
 @pytest.mark.parametrize("max_length", [-1, 0, 3, 4.0, 256])
