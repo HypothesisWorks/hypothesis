@@ -15,6 +15,8 @@
 
 from collections import OrderedDict
 
+import pytest
+
 from hypothesis import given, strategies as st
 from hypothesis.control import reject
 from hypothesis.errors import HypothesisDeprecationWarning, InvalidArgument
@@ -105,3 +107,15 @@ def test_repr_evals_to_thing_with_same_repr(strategy):
     via_eval = eval(r, strategy_globals)
     r2 = repr(via_eval)
     assert r == r2
+
+
+@pytest.mark.parametrize(
+    "r",
+    [
+        "none().filter(foo).map(bar)",
+        "just(1).filter(foo).map(bar)",
+        "sampled_from([1, 2, 3]).filter(foo).map(bar)",
+    ],
+)
+def test_sampled_transform_reprs(r):
+    assert repr(eval(r, strategy_globals)) == r

@@ -43,9 +43,13 @@ class JustStrategy(SampledFromStrategy):
         return self.elements[0]
 
     def __repr__(self):
+        suffix = "".join(
+            f".{name}({get_pretty_function_description(f)})"
+            for name, f in self._transformations
+        )
         if self.value is None:
-            return "none()"
-        return f"just({get_pretty_function_description(self.value)})"
+            return "none()" + suffix
+        return f"just({get_pretty_function_description(self.value)}){suffix}"
 
     def calc_has_reusable_values(self, recur):
         return True
