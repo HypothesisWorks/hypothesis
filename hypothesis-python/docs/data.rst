@@ -84,7 +84,8 @@ e.g.:
     [-25527, -24245, -23118, -93, -70, -7, 0, 39, 40, 65, 88, 112, 6189, 9480, 19469, 27256, 32526, 1566924430]
 
 Note that many things that you might use mapping for can also be done with
-:func:`~hypothesis.strategies.builds`.
+:func:`~hypothesis.strategies.builds`, and if you find yourself indexing
+into a tuple within ``.map()`` it's probably time to use that instead.
 
 .. _filtering:
 
