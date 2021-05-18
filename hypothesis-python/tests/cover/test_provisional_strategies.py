@@ -29,10 +29,21 @@ from tests.common.debug import find_any
 def test_is_URL(url):
     allowed_chars = set(string.ascii_letters + string.digits + "$-_.+!*'(),~%/")
     url_schemeless = url.split("://", 1)[1]
-    path = url_schemeless.split("/", 1)[1] if "/" in url_schemeless else ""
+    components = url_schemeless.split("#", 1)
+
+    domain_path = components[0]
+    path = domain_path.split("/", 1)[1] if "/" in domain_path else ""
     assert all(c in allowed_chars for c in path)
     assert all(
         re.match("^[0-9A-Fa-f]{2}", after_perc) for after_perc in path.split("%")[1:]
+    )
+
+    fragment = components[1] if "#" in url_schemeless else ""
+    fragment_allowed_chars = allowed_chars | {"?"}
+    assert all(c in fragment_allowed_chars for c in fragment)
+    assert all(
+        re.match("^[0-9A-Fa-f]{2}", after_perc)
+        for after_perc in fragment.split("%")[1:]
     )
 
 
