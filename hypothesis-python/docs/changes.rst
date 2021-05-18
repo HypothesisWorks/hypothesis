@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.13.0:
+
+-------------------
+6.13.0 - 2021-05-18
+-------------------
+
+This release adds URL fragment generation to the :func:`~hypothesis.provisional.urls`
+strategy (:issue:`2908`). Thanks to Pax (R. Margret) for contributing this patch at the
+`PyCon US Mentored Sprints <https://us.pycon.org/2021/summits/mentored-sprints/>`__!
+
 .. _v6.12.1:
 
 -------------------
