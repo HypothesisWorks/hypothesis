@@ -32,6 +32,7 @@ from hypothesis.internal.conjecture import utils as cu
 from hypothesis.strategies._internal.utils import defines_strategy
 
 URL_SAFE_CHARACTERS = frozenset(string.ascii_letters + string.digits + "$-_.+!*'(),~")
+FRAGMENT_SAFE_CHARACTERS = URL_SAFE_CHARACTERS | {"?", "/"}
 
 
 # This file is sourced from http://data.iana.org/TLD/tlds-alpha-by-domain.txt
@@ -148,19 +149,22 @@ def urls() -> st.SearchStrategy[str]:
     def url_encode(s):
         return "".join(c if c in URL_SAFE_CHARACTERS else "%%%02X" % ord(c) for c in s)
 
-    def url_fragment_encode(s):
-        FRAGMENT_SAFE_CHARACTERS = URL_SAFE_CHARACTERS | {"?", "/"}
-        return "".join(
-            c if c in FRAGMENT_SAFE_CHARACTERS else "%%%02X" % ord(c)
-            for c in s
-        )
-
     schemes = st.sampled_from(["http", "https"])
     ports = st.integers(min_value=0, max_value=2 ** 16 - 1).map(":{}".format)
     paths = st.lists(st.text(string.printable).map(url_encode)).map("/".join)
-
-    fragments = st.text(string.printable, min_size=1).map(url_fragment_encode).map(
-        "#{}".format
+    fragments = (
+        st.lists(
+            st.builds(
+                lambda char, encode: f"%{ord(char):02X}"
+                if (encode or char not in FRAGMENT_SAFE_CHARACTERS)
+                else char,
+                st.characters(min_codepoint=0, max_codepoint=255),
+                st.booleans(),
+            ),
+            min_size=1,
+        )
+        .map("".join)
+        .map("#{}".format)
     )
 
     return st.builds(
