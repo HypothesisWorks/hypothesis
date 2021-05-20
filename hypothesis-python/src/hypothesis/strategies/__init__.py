@@ -120,12 +120,20 @@ __all__ = [
 
 
 def _check_exports(_public):
-    assert set(_strategies).issubset(__all__), (
-        set(_strategies) - set(__all__),
-        set(__all__) - set(_strategies),
-    )
-
     assert set(__all__) == _public, (set(__all__) - _public, _public - set(__all__))
+
+    # Verify that all exported strategy functions were registered with
+    # @declares_strategy.
+    exported_strategies = set(__all__) - {
+        "DataObject",
+        "SearchStrategy",
+        "composite",
+        "register_type_strategy",
+    }
+    assert set(_strategies) == exported_strategies, (
+        set(_strategies) - exported_strategies,
+        exported_strategies - set(_strategies),
+    )
 
 
 _check_exports({n for n in dir() if n[0] not in "_@"})

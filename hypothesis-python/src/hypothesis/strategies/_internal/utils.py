@@ -90,7 +90,10 @@ def cacheable(fn: "T") -> "T":
 
 
 def defines_strategy(
-    *, force_reusable_values: bool = False, try_non_lazy: bool = False
+    *,
+    force_reusable_values: bool = False,
+    try_non_lazy: bool = False,
+    never_lazy: bool = False,
 ) -> Callable[["T"], "T"]:
     """Returns a decorator for strategy functions.
 
@@ -101,12 +104,23 @@ def defines_strategy(
     If try_non_lazy is True, attempt to execute the strategy definition
     function immediately, so that a LazyStrategy is only returned if this
     raises an exception.
+
+    If never_lazy is True, the decorator performs no lazy-wrapping at all,
+    and instead returns the original function.
     """
 
     def decorator(strategy_definition):
         """A decorator that registers the function as a strategy and makes it
         lazily evaluated."""
         _strategies[strategy_definition.__name__] = signature(strategy_definition)
+
+        if never_lazy:
+            assert not try_non_lazy
+            # We could potentially support never_lazy + force_reusable_values
+            # with a suitable wrapper, but currently there are no callers that
+            # request this combination.
+            assert not force_reusable_values
+            return strategy_definition
 
         from hypothesis.strategies._internal.lazy import LazyStrategy
 

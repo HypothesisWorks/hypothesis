@@ -35,25 +35,33 @@ from tests.common.debug import assert_all_examples, find_any
 from tests.common.utils import fails_with, temp_registered
 
 # Build a set of all types output by core strategies
-blacklist = [
+blocklist = {
     "builds",
+    "data",
+    "deferred",
     "from_regex",
     "from_type",
     "ip_addresses",
     "iterables",
+    "just",
+    "nothing",
+    "one_of",
     "permutations",
     "random_module",
     "randoms",
+    "recursive",
     "runner",
     "sampled_from",
+    "shared",
     "timezone_keys",
     "timezones",
-]
+}
+assert set(_strategies).issuperset(blocklist), blocklist.difference(_strategies)
 types_with_core_strat = set()
 for thing in (
     getattr(st, name)
     for name in sorted(_strategies)
-    if name in dir(st) and name not in blacklist
+    if name in dir(st) and name not in blocklist
 ):
     for n in range(3):
         try:
