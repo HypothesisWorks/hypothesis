@@ -883,6 +883,7 @@ if sys.version_info[:2] >= (3, 8):  # pragma: no cover
 
 
 @cacheable
+@defines_strategy(never_lazy=True)
 def from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
     """Looks up the appropriate search strategy for the given type.
 
@@ -1323,6 +1324,7 @@ def decimals(
     return strat | (sampled_from(special) if special else nothing())
 
 
+@defines_strategy(never_lazy=True)
 def recursive(
     base: SearchStrategy[Ex],
     extend: Callable[[SearchStrategy[Any]], SearchStrategy[T]],
@@ -1528,6 +1530,7 @@ def complex_numbers(
     return constrained_complex()
 
 
+@defines_strategy(never_lazy=True)
 def shared(
     base: SearchStrategy[Ex],
     *,
@@ -1668,6 +1671,7 @@ class DataStrategy(SearchStrategy):
 
 
 @cacheable
+@defines_strategy(never_lazy=True)
 def data() -> SearchStrategy[DataObject]:
     """This isn't really a normal strategy, but instead gives you an object
     which can be used to draw data interactively from other strategies.
@@ -1732,6 +1736,7 @@ def register_type_strategy(
 
 
 @cacheable
+@defines_strategy(never_lazy=True)
 def deferred(definition: Callable[[], SearchStrategy[Ex]]) -> SearchStrategy[Ex]:
     """A deferred strategy allows you to write a strategy that references other
     strategies that have not yet been defined. This allows for the easy

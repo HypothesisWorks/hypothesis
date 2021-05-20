@@ -47,6 +47,7 @@ from hypothesis.internal.conjecture.utils import (
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.lazyformat import lazyformat
 from hypothesis.internal.reflection import get_pretty_function_description
+from hypothesis.strategies._internal.utils import defines_strategy
 from hypothesis.utils.conventions import UniqueIdentifier
 
 Ex = TypeVar("Ex", covariant=True)
@@ -714,6 +715,7 @@ def one_of(*args: SearchStrategy[Any]) -> SearchStrategy[Any]:
     raise NotImplementedError
 
 
+@defines_strategy(never_lazy=True)
 def one_of(*args):  # noqa: F811
     # Mypy workaround alert:  Any is too loose above; the return parameter
     # should be the union of the input parameters.  Unfortunately, Mypy <=0.600
