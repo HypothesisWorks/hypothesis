@@ -15,15 +15,16 @@
 
 import threading
 from inspect import signature
-from typing import Callable, Dict
+from typing import TYPE_CHECKING, Callable, Dict
 
 from hypothesis.internal.cache import LRUReusedCache
 from hypothesis.internal.floats import float_to_int
 from hypothesis.internal.reflection import proxies
-from hypothesis.strategies._internal.lazy import LazyStrategy
-from hypothesis.strategies._internal.strategies import SearchStrategy, T
 
-_strategies: Dict[str, Callable[..., SearchStrategy]] = {}
+if TYPE_CHECKING:
+    from hypothesis.strategies._internal.strategies import SearchStrategy, T
+
+_strategies: Dict[str, Callable[..., "SearchStrategy"]] = {}
 
 
 class FloatKey:
@@ -62,7 +63,9 @@ def clear_cache() -> None:
     cache.clear()
 
 
-def cacheable(fn: T) -> T:
+def cacheable(fn: "T") -> "T":
+    from hypothesis.strategies._internal.strategies import SearchStrategy
+
     @proxies(fn)
     def cached_strategy(*args, **kwargs):
         try:
@@ -88,7 +91,7 @@ def cacheable(fn: T) -> T:
 
 def defines_strategy(
     *, force_reusable_values: bool = False, try_non_lazy: bool = False
-) -> Callable[[T], T]:
+) -> Callable[["T"], "T"]:
     """Returns a decorator for strategy functions.
 
     If force_reusable is True, the generated values are assumed to be
@@ -104,6 +107,8 @@ def defines_strategy(
         """A decorator that registers the function as a strategy and makes it
         lazily evaluated."""
         _strategies[strategy_definition.__name__] = signature(strategy_definition)
+
+        from hypothesis.strategies._internal.lazy import LazyStrategy
 
         @proxies(strategy_definition)
         def accept(*args, **kwargs):
