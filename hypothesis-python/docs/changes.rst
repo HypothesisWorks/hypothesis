@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.13.1:
+
+-------------------
+6.13.1 - 2021-05-20
+-------------------
+
+This patch strengthens some internal import-time consistency checks for the
+built-in strategies.
+
+There is no user-visible change.
+
 .. _v6.13.0:
 
 -------------------
