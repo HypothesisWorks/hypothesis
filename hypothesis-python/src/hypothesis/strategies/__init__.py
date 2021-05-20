@@ -118,10 +118,15 @@ __all__ = [
     "SearchStrategy",
 ]
 
-assert set(_strategies).issubset(__all__), (
-    set(_strategies) - set(__all__),
-    set(__all__) - set(_strategies),
-)
-_public = {n for n in dir() if n[0] not in "_@"}
-assert set(__all__) == _public, (set(__all__) - _public, _public - set(__all__))
-del _public
+
+def _check_exports(_public):
+    assert set(_strategies).issubset(__all__), (
+        set(_strategies) - set(__all__),
+        set(__all__) - set(_strategies),
+    )
+
+    assert set(__all__) == _public, (set(__all__) - _public, _public - set(__all__))
+
+
+_check_exports({n for n in dir() if n[0] not in "_@"})
+del _check_exports
