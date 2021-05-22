@@ -239,7 +239,19 @@ def is_invalid_test(name, original_argspec, given_arguments, given_kwargs):
         def wrapped_test(*arguments, **kwargs):
             raise InvalidArgument(message)
 
+        def _get_fuzz_target() -> Callable[
+            [Union[bytes, bytearray, memoryview, BinaryIO]], Optional[bytes]
+        ]:
+            def fuzz_one_input(
+                buffer: Union[bytes, bytearray, memoryview, BinaryIO]
+            ) -> Optional[bytes]:
+                return None
+
+            fuzz_one_input.__doc__ = HypothesisHandle.fuzz_one_input.__doc__
+            return fuzz_one_input
+
         wrapped_test.is_hypothesis_test = True
+        wrapped_test.hypothesis = HypothesisHandle(wrapped_test, _get_fuzz_target, given_kwargs)
         return wrapped_test
 
     if not (given_arguments or given_kwargs):
