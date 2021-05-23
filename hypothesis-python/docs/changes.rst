@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.13.3:
+
+-------------------
+6.13.3 - 2021-05-23
+-------------------
+
+This patch adds a ``.hypothesis`` property to invalid test functions, bringing
+them inline with valid tests and fixing a bug where :pypi:`pytest-asyncio` would
+swallow the real error message and mistakenly raise a version incompatibility
+error.
+
 .. _v6.13.2:
 
 -------------------
