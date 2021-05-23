@@ -51,9 +51,6 @@ class JustStrategy(SampledFromStrategy):
             return "none()" + suffix
         return f"just({get_pretty_function_description(self.value)}){suffix}"
 
-    def calc_has_reusable_values(self, recur):
-        return True
-
     def calc_is_cacheable(self, recur):
         return is_simple_data(self.value)
 

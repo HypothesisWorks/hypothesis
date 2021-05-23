@@ -477,7 +477,11 @@ class SampledFromStrategy(SearchStrategy):
         )
 
     def calc_has_reusable_values(self, recur):
-        return True
+        # Because our custom .map/.filter implementations skip the normal
+        # wrapper strategies (which would automatically return False for us),
+        # we need to manually return False here if any transformations have
+        # been applied.
+        return not self._transformations
 
     def calc_is_cacheable(self, recur):
         return is_simple_data(self.elements)

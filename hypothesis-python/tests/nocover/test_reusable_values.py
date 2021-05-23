@@ -15,8 +15,14 @@
 
 import pytest
 
-from hypothesis import example, given, reject, strategies as st
-from hypothesis.errors import HypothesisDeprecationWarning, InvalidArgument
+from hypothesis import example, given, strategies as st
+from hypothesis.errors import InvalidArgument
+
+# Be aware that tests in this file pass strategies as arguments to @example.
+# That's normally a mistake, but for these tests it's intended.
+# If one of these tests fails, Hypothesis will complain about the
+# @example/strategy interaction, but it should be safe to ignore that
+# error message and focus on the underlying failure instead.
 
 base_reusable_strategies = (
     st.text(),
@@ -31,17 +37,29 @@ base_reusable_strategies = (
     st.integers(),
     st.integers(1, 10),
     st.integers(1),
+    # Note that `just` and `sampled_from` count as "reusable" even if their
+    # values are mutable, because the user has implicitly promised that they
+    # don't care about the same mutable value being returned by separate draws.
+    st.just([]),
+    st.sampled_from([[]]),
+    st.tuples(st.integers()),
 )
 
 
 @st.deferred
 def reusable():
+    """Meta-strategy that produces strategies that should have
+    ``.has_reusable_values == True``."""
     return st.one_of(
+        # This looks like it should be `one_of`, but `sampled_from` is correct
+        # because we want this meta-strategy to yield strategies as its values.
         st.sampled_from(base_reusable_strategies),
+        # This sometimes produces invalid combinations of arguments, which
+        # we filter out further down with an explicit validation check.
         st.builds(
             st.floats,
-            min_value=st.none() | st.floats(),
-            max_value=st.none() | st.floats(),
+            min_value=st.none() | st.floats(allow_nan=False),
+            max_value=st.none() | st.floats(allow_nan=False),
             allow_infinity=st.booleans(),
             allow_nan=st.booleans(),
         ),
@@ -52,35 +70,84 @@ def reusable():
     )
 
 
+def is_valid(s):
+    try:
+        s.validate()
+        return True
+    except InvalidArgument:
+        return False
+
+
+reusable = reusable.filter(is_valid)
+
 assert not reusable.is_empty
 
 
-@example(st.integers(min_value=1))
+def many_examples(examples):
+    """Helper decorator to apply the ``@example`` decorator multiple times,
+    once for each given example."""
+
+    def accept(f):
+        for e in examples:
+            f = example(e)(f)
+        return f
+
+    return accept
+
+
+@many_examples(base_reusable_strategies)
+@many_examples(st.tuples(s) for s in base_reusable_strategies)
 @given(reusable)
 def test_reusable_strategies_are_all_reusable(s):
-    try:
-        s.validate()
-    except (InvalidArgument, HypothesisDeprecationWarning):
-        reject()
-
     assert s.has_reusable_values
 
 
-for s in base_reusable_strategies:
-    test_reusable_strategies_are_all_reusable = example(s)(
-        test_reusable_strategies_are_all_reusable
-    )
-    test_reusable_strategies_are_all_reusable = example(st.tuples(s))(
-        test_reusable_strategies_are_all_reusable
-    )
+@many_examples(base_reusable_strategies)
+@given(reusable)
+def test_filter_breaks_reusability(s):
+    cond = True
 
+    def nontrivial_filter(x):
+        """Non-trivial filtering function, intended to remain opaque even if
+        some strategies introspect their filters."""
+        return cond
 
-def test_composing_breaks_reusability():
-    s = st.integers()
     assert s.has_reusable_values
-    assert not s.filter(lambda x: True).has_reusable_values
-    assert not s.map(lambda x: x).has_reusable_values
-    assert not s.flatmap(lambda x: st.just(x)).has_reusable_values
+    assert not s.filter(nontrivial_filter).has_reusable_values
+
+
+@many_examples(base_reusable_strategies)
+@given(reusable)
+def test_map_breaks_reusability(s):
+    cond = True
+
+    def nontrivial_map(x):
+        """Non-trivial mapping function, intended to remain opaque even if
+        some strategies introspect their mappings."""
+        if cond:
+            return x
+        else:
+            return None
+
+    assert s.has_reusable_values
+    assert not s.map(nontrivial_map).has_reusable_values
+
+
+@many_examples(base_reusable_strategies)
+@given(reusable)
+def test_flatmap_breaks_reusability(s):
+    cond = True
+
+    def nontrivial_flatmap(x):
+        """Non-trivial flat-mapping function, intended to remain opaque even
+        if some strategies introspect their flat-mappings."""
+        if cond:
+            return st.just(x)
+        else:
+            return st.none()
+
+    assert s.has_reusable_values
+    assert not s.flatmap(nontrivial_flatmap).has_reusable_values
 
 
 @pytest.mark.parametrize(
