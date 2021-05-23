@@ -97,15 +97,16 @@ def defines_strategy(
 ) -> Callable[["T"], "T"]:
     """Returns a decorator for strategy functions.
 
-    If force_reusable is True, the generated values are assumed to be
-    reusable, i.e. immutable and safe to cache, across multiple test
-    invocations.
+    If ``force_reusable_values`` is True, the returned strategy will be marked
+    with ``.has_reusable_values == True`` even if it uses maps/filters or
+    non-reusable strategies internally. This tells our numpy/pandas strategies
+    that they can implicitly use such strategies as background values.
 
-    If try_non_lazy is True, attempt to execute the strategy definition
+    If ``try_non_lazy`` is True, attempt to execute the strategy definition
     function immediately, so that a LazyStrategy is only returned if this
     raises an exception.
 
-    If never_lazy is True, the decorator performs no lazy-wrapping at all,
+    If ``never_lazy`` is True, the decorator performs no lazy-wrapping at all,
     and instead returns the original function.
     """
 
@@ -138,6 +139,8 @@ def defines_strategy(
                     pass
             result = LazyStrategy(strategy_definition, args, kwargs)
             if force_reusable_values:
+                # Setting `force_has_reusable_values` here causes the recursive
+                # property code to set `.has_reusable_values == True`.
                 result.force_has_reusable_values = True
                 assert result.has_reusable_values
             return result
