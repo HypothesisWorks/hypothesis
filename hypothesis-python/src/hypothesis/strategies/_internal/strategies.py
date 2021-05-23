@@ -243,6 +243,12 @@ class SearchStrategy(Generic[Ex]):
 
     # Returns True if values from this strategy can safely be reused without
     # this causing unexpected behaviour.
+
+    # True if values from this strategy can be implicitly reused (e.g. as
+    # background values in a numpy array) without causing surprising
+    # user-visible behaviour. Should be false for built-in strategies that
+    # produce mutable values, and for strategies that have been mapped/filtered
+    # by arbitrary user-provided functions.
     has_reusable_values = recursive_property("has_reusable_values", True)
 
     # Whether this strategy is suitable for holding onto in a cache.
