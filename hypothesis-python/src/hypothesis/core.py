@@ -226,7 +226,7 @@ class WithRunner(MappedSearchStrategy):
         return f"WithRunner({self.mapped_strategy!r}, runner={self.runner!r})"
 
 
-def is_invalid_test(name, original_argspec, given_arguments, given_kwargs):
+def is_invalid_test(test, original_argspec, given_arguments, given_kwargs):
     """Check the arguments to ``@given`` for basic usage constraints.
 
     Most errors are not raised immediately; instead we return a dummy test
@@ -239,23 +239,8 @@ def is_invalid_test(name, original_argspec, given_arguments, given_kwargs):
         def wrapped_test(*arguments, **kwargs):
             raise InvalidArgument(message)
 
-        def _get_fuzz_target() -> Callable[
-            [Union[bytes, bytearray, memoryview, BinaryIO]], Optional[bytes]
-        ]:
-            def fuzz_one_input(
-                buffer: Union[bytes, bytearray, memoryview, BinaryIO]
-            ) -> Optional[bytes]:
-                return None
-
-            fuzz_one_input.__doc__ = HypothesisHandle.fuzz_one_input.__doc__
-            return fuzz_one_input
-
         wrapped_test.is_hypothesis_test = True
-        wrapped_test.hypothesis = HypothesisHandle(
-            wrapped_test, 
-            _get_fuzz_target, 
-            given_kwargs,
-        )
+        wrapped_test.hypothesis = HypothesisHandle(test, wrapped_test, given_kwargs)
         return wrapped_test
 
     if not (given_arguments or given_kwargs):
@@ -274,7 +259,7 @@ def is_invalid_test(name, original_argspec, given_arguments, given_kwargs):
         return invalid(
             "Too many positional arguments for %s() were passed to @given "
             "- expected at most %d arguments, but got %d %r"
-            % (name, len(original_argspec.args), len(args), args)
+            % (test.__name__, len(original_argspec.args), len(args), args)
         )
 
     if infer in given_arguments:
@@ -294,7 +279,7 @@ def is_invalid_test(name, original_argspec, given_arguments, given_kwargs):
         arg = extra_kwargs[0]
         return invalid(
             "%s() got an unexpected keyword argument %r, from `%s=%r` in @given"
-            % (name, arg, arg, given_kwargs[arg])
+            % (test.__name__, arg, arg, given_kwargs[arg])
         )
     if original_argspec.defaults or original_argspec.kwonlydefaults:
         return invalid("Cannot apply @given to a function with defaults.")
@@ -975,7 +960,7 @@ def given(
         original_argspec = getfullargspec(test)
 
         check_invalid = is_invalid_test(
-            test.__name__, original_argspec, given_arguments, given_kwargs
+            test, original_argspec, given_arguments, given_kwargs
         )
 
         # If the argument check found problems, return a dummy test function
