@@ -240,7 +240,11 @@ def is_invalid_test(test, original_argspec, given_arguments, given_kwargs):
             raise InvalidArgument(message)
 
         wrapped_test.is_hypothesis_test = True
-        wrapped_test.hypothesis = HypothesisHandle(test, wrapped_test, given_kwargs)
+        wrapped_test.hypothesis = HypothesisHandle(
+            inner_test=test,
+            get_fuzz_target=wrapped_test,
+            given_kwargs=given_kwargs,
+        )
         return wrapped_test
 
     if not (given_arguments or given_kwargs):

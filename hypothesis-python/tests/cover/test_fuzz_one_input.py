@@ -24,8 +24,6 @@ from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture.shrinker import sort_key
 
-from tests.common.utils import raises
-
 
 @pytest.mark.parametrize(
     "buffer_type",
@@ -166,7 +164,6 @@ def test_fuzzing_invalid_test_raises_error():
     def invalid_test(s):
         pass
 
-    with raises(InvalidArgument) as e:
-        invalid_test.hypothesis.fuzz_one_input(b"abc")
-
-    assert "Too many positional arguments" in e.value.args[0]
+    with pytest.raises(InvalidArgument, match="Too many positional arguments"):
+        # access the property to check error happens during setup
+        invalid_test.hypothesis.fuzz_one_input
