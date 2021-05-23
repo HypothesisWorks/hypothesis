@@ -18,6 +18,7 @@ from functools import wraps
 import pytest
 
 from hypothesis import given, strategies as st
+from hypothesis.errors import InvalidArgument
 
 
 def always_passes(*args, **kwargs):
@@ -62,3 +63,36 @@ def test_can_replace_when_parametrized(x, y):
 
 
 test_can_replace_when_parametrized.hypothesis.inner_test = always_passes
+
+
+def test_can_replace_when_original_is_invalid():
+    # Invalid: @given with too many positional arguments
+    @given(st.integers(), st.integers())
+    def invalid_test(x):
+        assert False
+
+    invalid_test.hypothesis.inner_test = always_passes
+
+    # Even after replacing the inner test, calling the wrapper should still
+    # fail.
+    with pytest.raises(InvalidArgument, match="Too many positional arguments"):
+        invalid_test()
+
+
+def test_inner_is_original_even_when_invalid():
+    def invalid_test(x):
+        assert False
+
+    original = invalid_test
+
+    # Invalid: @given with no arguments
+    invalid_test = given()(invalid_test)
+
+    # Verify that the test is actually invalid
+    with pytest.raises(
+        InvalidArgument,
+        match="given must be called with at least one argument",
+    ):
+        invalid_test()
+
+    assert invalid_test.hypothesis.inner_test == original

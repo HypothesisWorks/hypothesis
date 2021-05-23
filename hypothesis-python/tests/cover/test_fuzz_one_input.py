@@ -21,6 +21,7 @@ import pytest
 
 from hypothesis import Phase, given, settings, strategies as st
 from hypothesis.database import InMemoryExampleDatabase
+from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture.shrinker import sort_key
 
 
@@ -155,3 +156,14 @@ def test_fuzz_one_input_does_not_add_redundant_entries_to_database(buffers, db_s
     (saved_examples,) = db.data.values()
     assert seen == buffers
     assert len(saved_examples) == db_size
+
+
+def test_fuzzing_invalid_test_raises_error():
+    # Invalid: @given with too many positional arguments
+    @given(st.integers(), st.integers())
+    def invalid_test(s):
+        pass
+
+    with pytest.raises(InvalidArgument, match="Too many positional arguments"):
+        # access the property to check error happens during setup
+        invalid_test.hypothesis.fuzz_one_input

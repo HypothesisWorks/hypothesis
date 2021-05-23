@@ -36,6 +36,7 @@ their individual contributions.
 * `Cristi Cobzarenco <https://github.com/cristicbz>`_ (cristi@reinfer.io)
 * `Damon Francisco <https://github.com/dtfrancisco>`_ (damontfrancisco@yahoo.com)
 * `Daniel J. West <https://github.com/danieljwest>`_
+* `Daniel Knell <https://github.com/danielknell>`_ (contact@danielknell.co.uk)
 * `David Bonner <https://github.com/rascalking>`_ (dbonner@gmail.com)
 * `David Chudzicki <https://github.com/dchudz>`_ (dchudz@gmail.com)
 * `David Mascharka <https://github.com/davidmascharka>`_
