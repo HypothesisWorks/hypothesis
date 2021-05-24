@@ -96,7 +96,7 @@ from typing import (
 
 import black
 
-from hypothesis import find, strategies as st
+from hypothesis import Verbosity, find, settings, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import get_type_hints
 from hypothesis.internal.reflection import is_mock
@@ -135,6 +135,12 @@ except {exceptions}:
 
 Except = Union[Type[Exception], Tuple[Type[Exception], ...]]
 RE_TYPES = (type(re.compile(".")), type(re.match(".", "abc")))
+_quietly_settings = settings(
+    database=None,
+    deadline=None,
+    derandomize=True,
+    verbosity=Verbosity.quiet,
+)
 
 
 def _dedupe_exceptions(exc: Tuple[Type[Exception], ...]) -> Tuple[Type[Exception], ...]:
@@ -1221,7 +1227,7 @@ def _make_binop_body(
         # that it's a good starting point to edit much of the rest.
         if identity is infer:
             try:
-                identity = find(operands, lambda x: True)
+                identity = find(operands, lambda x: True, settings=_quietly_settings)
             except Exception:
                 identity = "identity element here"  # type: ignore
         # If the repr of this element is invalid Python, stringify it - this

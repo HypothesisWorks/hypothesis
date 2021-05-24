@@ -15,13 +15,20 @@
 
 import ast
 import json
+import operator
 import re
 import subprocess
 
 import pytest
 
 from hypothesis.errors import StopTest
-from hypothesis.extra.ghostwriter import equivalent, fuzz, idempotent, roundtrip
+from hypothesis.extra.ghostwriter import (
+    binary_operation,
+    equivalent,
+    fuzz,
+    idempotent,
+    roundtrip,
+)
 
 
 @pytest.mark.parametrize(
@@ -41,6 +48,8 @@ from hypothesis.extra.ghostwriter import equivalent, fuzz, idempotent, roundtrip
         ),
         # Imports submodule (importlib.import_module passes; __import__ fails)
         ("hypothesis.errors.StopTest", lambda: fuzz(StopTest)),
+        # Search for identity element does not print e.g. "You can use @seed ..."
+        ("--binary-op operator.add", lambda: binary_operation(operator.add)),
     ],
 )
 def test_cli_python_equivalence(cli, code):
