@@ -1155,7 +1155,7 @@ def _make_binop_body(
     style: str,
 ) -> Tuple[Set[Union[str, Tuple[str, str]]], str]:
     strategies = _get_strategies(func)
-    operands, b = [strategies.pop(p) for p in list(_get_params(func))[:2]]
+    operands, b = (strategies.pop(p) for p in list(_get_params(func))[:2])
     if repr(operands) != repr(b):
         operands |= b
     operands_name = func.__name__ + "_operands"

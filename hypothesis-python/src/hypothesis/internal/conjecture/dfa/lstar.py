@@ -280,7 +280,7 @@ class LStar:
         # First we make sure that normalization is not the source of the
         # failure to match.
         while True:
-            normalized = bytes([self.normalizer.normalize(c) for c in string])
+            normalized = bytes(self.normalizer.normalize(c) for c in string)
             # We can correctly replace the string with its normalized version
             # so normalization is not the problem here.
             if self.member(normalized) == correct_outcome:
@@ -293,7 +293,7 @@ class LStar:
                 def replace(b):
                     if a == b:
                         return target
-                    return bytes([b if c == a else c for c in target])
+                    return bytes(b if c == a else c for c in target)
 
                 self.normalizer.distinguish(a, lambda x: self.member(replace(x)))
                 target = replace(self.normalizer.normalize(a))

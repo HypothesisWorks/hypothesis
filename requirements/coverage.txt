@@ -24,5 +24,5 @@ pytz==2021.1
     #   pandas
 six==1.16.0
     # via python-dateutil
-sortedcontainers==2.3.0
+sortedcontainers==2.4.0
     # via hypothesis (hypothesis-python/setup.py)
