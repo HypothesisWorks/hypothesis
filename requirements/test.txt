@@ -37,7 +37,7 @@ pytest==6.2.4
     #   -r requirements/test.in
     #   pytest-forked
     #   pytest-xdist
-sortedcontainers==2.3.0
+sortedcontainers==2.4.0
     # via hypothesis (hypothesis-python/setup.py)
 toml==0.10.2
     # via pytest

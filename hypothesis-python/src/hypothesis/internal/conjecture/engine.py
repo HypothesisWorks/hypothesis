@@ -799,9 +799,9 @@ class ConjectureRunner:
 
                 group = self.random.choice(groups)
 
-                ex1, ex2 = [
+                ex1, ex2 = (
                     data.examples[i] for i in sorted(self.random.sample(group, 2))
-                ]
+                )
                 assert ex1.end <= ex2.start
 
                 replacements = [data.buffer[e.start : e.end] for e in [ex1, ex2]]

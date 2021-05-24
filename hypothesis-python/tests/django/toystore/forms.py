@@ -206,7 +206,7 @@ class MultiBooleanField(forms.MultiValueField):
         super().__init__(fields=subfields, widget=widget)
 
     def compress(self, values):
-        return "::".join([str(x) for x in values])
+        return "::".join(str(x) for x in values)
 
 
 class ManyMultiValueForm(ReprForm):

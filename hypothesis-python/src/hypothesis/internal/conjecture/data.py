@@ -35,7 +35,7 @@ class ExtraInformation:
 
     def __repr__(self):
         return "ExtraInformation({})".format(
-            ", ".join([f"{k}={v!r}" for k, v in self.__dict__.items()]),
+            ", ".join(f"{k}={v!r}" for k, v in self.__dict__.items()),
         )
 
     def has_information(self):
