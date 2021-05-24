@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.13.5:
+
+-------------------
+6.13.5 - 2021-05-24
+-------------------
+
+This patch fixes rare cases where ``hypothesis write --binary-op`` could
+print :doc:`reproducing instructions <reproducing>` from the internal
+search for an identity element.
+
 .. _v6.13.4:
 
 -------------------
