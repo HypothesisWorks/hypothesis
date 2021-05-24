@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.13.4:
+
+-------------------
+6.13.4 - 2021-05-24
+-------------------
+
+This patch removes some unnecessary intermediate list-comprehensions,
+using the latest versions of :pypi:`pyupgrade` and :pypi:`shed`.
+
 .. _v6.13.3:
 
 -------------------
