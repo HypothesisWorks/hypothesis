@@ -17,7 +17,6 @@ from hypothesis import given
 from hypothesis.strategies import binary, characters, text, tuples
 
 from tests.common.debug import minimal
-from tests.common.utils import fails_with
 
 
 def test_can_minimize_up_to_zero():
@@ -58,12 +57,6 @@ def test_minimisation_consistent_with_characters():
 
 def test_finds_single_element_strings():
     assert minimal(text(), bool) == "0"
-
-
-@fails_with(AssertionError)
-@given(binary())
-def test_binary_generates_large_examples(x):
-    assert len(x) <= 20
 
 
 @given(binary(max_size=5))

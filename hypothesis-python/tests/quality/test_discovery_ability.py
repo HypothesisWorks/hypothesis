@@ -32,6 +32,7 @@ from hypothesis.errors import UnsatisfiedAssumption
 from hypothesis.internal import reflection
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.strategies import (
+    binary,
     booleans,
     floats,
     integers,
@@ -146,6 +147,8 @@ test_can_produce_long_strings_with_no_ascii = define_test(
 test_can_produce_short_strings_with_some_non_ascii = define_test(
     text(), lambda x: any(ord(c) > 127 for c in x), condition=lambda x: len(x) <= 3
 )
+
+test_can_produce_large_binary_strings = define_test(binary(), lambda x: len(x) > 20)
 
 test_can_produce_positive_infinity = define_test(floats(), lambda x: x == math.inf)
 

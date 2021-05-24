@@ -21,6 +21,7 @@ from inspect import FullArgSpec, getfullargspec
 from unittest.mock import MagicMock, Mock, NonCallableMagicMock, NonCallableMock
 
 import pytest
+from pytest import raises
 
 from hypothesis import strategies as st
 from hypothesis.internal import reflection
@@ -38,8 +39,6 @@ from hypothesis.internal.reflection import (
     source_exec_as_module,
     unbind_method,
 )
-
-from tests.common.utils import raises
 
 
 def do_conversion_test(f, args, kwargs):
@@ -126,22 +125,19 @@ def test_errors_on_extra_kwargs():
     def foo(a):
         pass
 
-    with raises(TypeError) as e:
+    with raises(TypeError, match="keyword"):
         convert_keyword_arguments(foo, (1,), {"b": 1})
-    assert "keyword" in e.value.args[0]
 
-    with raises(TypeError) as e2:
+    with raises(TypeError, match="keyword"):
         convert_keyword_arguments(foo, (1,), {"b": 1, "c": 2})
-    assert "keyword" in e2.value.args[0]
 
 
 def test_positional_errors_if_too_many_args():
     def foo(a):
         pass
 
-    with raises(TypeError) as e:
+    with raises(TypeError, match="2 given"):
         convert_positional_arguments(foo, (1, 2), {})
-    assert "2 given" in e.value.args[0]
 
 
 def test_positional_errors_if_too_few_args():
@@ -163,18 +159,16 @@ def test_positional_errors_if_given_bad_kwargs():
     def foo(a):
         pass
 
-    with raises(TypeError) as e:
+    with raises(TypeError, match="unexpected keyword argument"):
         convert_positional_arguments(foo, (), {"b": 1})
-    assert "unexpected keyword argument" in e.value.args[0]
 
 
 def test_positional_errors_if_given_duplicate_kwargs():
     def foo(a):
         pass
 
-    with raises(TypeError) as e:
+    with raises(TypeError, match="multiple values"):
         convert_positional_arguments(foo, (2,), {"a": 1})
-    assert "multiple values" in e.value.args[0]
 
 
 def test_names_of_functions_are_pretty():

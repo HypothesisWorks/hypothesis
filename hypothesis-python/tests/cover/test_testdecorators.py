@@ -43,6 +43,10 @@ from tests.common.utils import (
     raises,
 )
 
+# This particular test file is run under both pytest and nose, so it can't
+# rely on pytest-specific helpers like `pytest.raises` unless we define a
+# fallback in tests.common.utils.
+
 
 @given(integers(), integers())
 def test_int_addition_is_commutative(x, y):
@@ -85,10 +89,8 @@ def test_still_minimizes_on_non_assertion_failures():
         if x >= 10:
             raise ValueError(f"No, {x} is just too large. Sorry")
 
-    with raises(ValueError) as exinfo:
+    with raises(ValueError, match=" 10 "):
         is_not_too_large()
-
-    assert " 10 " in exinfo.value.args[0]
 
 
 @given(integers())
@@ -297,6 +299,7 @@ def test_is_not_ascii(x):
 
 @fails
 @given(text())
+@settings(max_examples=100, derandomize=True)
 def test_can_find_string_with_duplicates(s):
     assert len(set(s)) == len(s)
 

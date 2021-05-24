@@ -15,7 +15,6 @@
 
 import contextlib
 import sys
-import traceback
 from io import StringIO
 
 from hypothesis._settings import Phase
@@ -24,6 +23,30 @@ from hypothesis.internal.reflection import proxies
 from hypothesis.reporting import default, with_reporter
 from hypothesis.strategies._internal.core import from_type, register_type_strategy
 from hypothesis.strategies._internal.types import _global_type_lookup
+
+try:
+    from pytest import raises
+except ModuleNotFoundError:
+    # We are currently running under a test framework other than pytest,
+    # so use our own simplified implementation of `pytest.raises`.
+
+    @contextlib.contextmanager
+    def raises(expected_exception, match=None):
+        try:
+            yield
+        except expected_exception as e:
+            if match is not None:
+                import re
+
+                assert re.search(match, e.args[0])
+            # Return so that we don't hit the failure assertion below.
+            return
+        # This needs to be outside the try/except, so that the helper doesn't
+        # trick itself into thinking that an AssertionError was thrown.
+        assert (
+            False
+        ), f"Expected to raise an exception ({expected_exception!r}) but didn't"
+
 
 no_shrink = tuple(set(Phase) - {Phase.shrink})
 
@@ -65,18 +88,6 @@ def capture_out():
 
 class ExcInfo:
     pass
-
-
-@contextlib.contextmanager
-def raises(exctype):
-    e = ExcInfo()
-    try:
-        yield e
-        assert False, "Expected to raise an exception but didn't"
-    except exctype as err:
-        traceback.print_exc()
-        e.value = err
-        return
 
 
 def fails_with(e):
@@ -160,8 +171,12 @@ def assert_falsifying_output(
     test, example_type="Falsifying", expected_exception=AssertionError, **kwargs
 ):
     with capture_out() as out:
-        with raises(expected_exception):
+        if expected_exception is None:
+            # Some tests want to check the output of non-failing runs.
             test()
+        else:
+            with raises(expected_exception):
+                test()
 
     output = out.getvalue()
     assert f"{example_type} example:" in output

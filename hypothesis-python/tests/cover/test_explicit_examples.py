@@ -173,7 +173,12 @@ def test_prints_verbose_output_for_explicit_examples():
     def test_always_passes(x):
         pass
 
-    assert_falsifying_output(test_always_passes, "Trying explicit", x="NOT AN INTEGER")
+    assert_falsifying_output(
+        test_always_passes,
+        expected_exception=None,
+        example_type="Trying explicit",
+        x="NOT AN INTEGER",
+    )
 
 
 def test_captures_original_repr_of_example():

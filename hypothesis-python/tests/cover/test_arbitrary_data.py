@@ -14,11 +14,12 @@
 # END HEADER
 
 import pytest
+from pytest import raises
 
 from hypothesis import find, given, reporting, strategies as st
 from hypothesis.errors import InvalidArgument
 
-from tests.common.utils import capture_out, raises
+from tests.common.utils import capture_out
 
 
 @given(st.integers(), st.data())

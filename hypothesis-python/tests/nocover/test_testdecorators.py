@@ -13,10 +13,12 @@
 #
 # END HEADER
 
+import re
+
+import pytest
+
 from hypothesis import HealthCheck, given, reject, settings, strategies as st
 from hypothesis.errors import InvalidArgument, Unsatisfiable
-
-from tests.common.utils import raises
 
 
 def test_contains_the_test_function_name_in_the_exception_string():
@@ -27,9 +29,10 @@ def test_contains_the_test_function_name_in_the_exception_string():
     def this_has_a_totally_unique_name(x):
         reject()
 
-    with raises(Unsatisfiable) as e:
+    with pytest.raises(
+        Unsatisfiable, match=re.escape(this_has_a_totally_unique_name.__name__)
+    ):
         this_has_a_totally_unique_name()
-    assert this_has_a_totally_unique_name.__name__ in e.value.args[0]
 
     class Foo:
         @given(st.integers())
@@ -37,9 +40,11 @@ def test_contains_the_test_function_name_in_the_exception_string():
         def this_has_a_unique_name_and_lives_on_a_class(self, x):
             reject()
 
-    with raises(Unsatisfiable) as e:
+    with pytest.raises(
+        Unsatisfiable,
+        match=re.escape(Foo.this_has_a_unique_name_and_lives_on_a_class.__name__),
+    ):
         Foo().this_has_a_unique_name_and_lives_on_a_class()
-    assert (Foo.this_has_a_unique_name_and_lives_on_a_class.__name__) in e.value.args[0]
 
 
 def test_signature_mismatch_error_message():
