@@ -74,24 +74,35 @@ def test_clears_out_database_as_things_get_boring():
 def test_trashes_invalid_examples():
     key = b"a database key"
     database = InMemoryExampleDatabase()
-    finicky = False
+
+    invalid = set()
 
     def stuff():
         try:
-            find(
-                st.binary(min_size=100),
-                lambda x: assume(not finicky) and has_a_non_zero_byte(x),
+
+            def condition(x):
+                assume(x not in invalid)
+                return not invalid and has_a_non_zero_byte(x)
+
+            return find(
+                st.binary(min_size=5),
+                condition,
                 settings=settings(database=database),
                 database_key=key,
             )
-        except Unsatisfiable:
+        except (Unsatisfiable, NoSuchExample):
             pass
 
-    stuff()
+    with deterministic_PRNG():
+        value = stuff()
+
     original = len(all_values(database))
     assert original > 1
-    finicky = True
-    stuff()
+
+    invalid.add(value)
+    with deterministic_PRNG():
+        stuff()
+
     assert len(all_values(database)) < original
 
 
