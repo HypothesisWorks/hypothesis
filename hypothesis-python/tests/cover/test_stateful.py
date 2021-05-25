@@ -18,6 +18,7 @@ from collections import defaultdict, namedtuple
 
 import pytest
 from _pytest.outcomes import Failed, Skipped
+from pytest import raises
 
 from hypothesis import __version__, reproduce_failure, seed, settings as Settings
 from hypothesis.control import current_build_context
@@ -36,7 +37,7 @@ from hypothesis.stateful import (
 )
 from hypothesis.strategies import binary, booleans, data, integers, just, lists
 
-from tests.common.utils import capture_out, raises
+from tests.common.utils import capture_out
 
 NO_BLOB_SETTINGS = Settings(print_blob=False)
 
