@@ -33,15 +33,20 @@ class interval(SearchStrategy):
         return integer_range(data, self.lower, self.upper, center=self.center)
 
 
-@pytest.mark.parametrize("inter", [(0, 5, 10), (-10, 10, 10), (0, 1, 1), (1, 1, 2)])
-def test_intervals_shrink_to_center(inter):
-    lower, center, upper = inter
+@pytest.mark.parametrize(
+    "lower_center_upper",
+    [(0, 5, 10), (-10, 10, 10), (0, 1, 1), (1, 1, 2), (-10, 0, 10), (-10, 5, 10)],
+    ids=repr,
+)
+def test_intervals_shrink_to_center(lower_center_upper):
+    lower, center, upper = lower_center_upper
     s = interval(lower, upper, center)
     assert minimal(s, lambda x: True) == center
     if lower < center:
         assert minimal(s, lambda x: x < center) == center - 1
     if center < upper:
         assert minimal(s, lambda x: x > center) == center + 1
+        assert minimal(s, lambda x: x != center) == center + 1
 
 
 def test_bounded_integers_distribution_of_bit_width_issue_1387_regression():

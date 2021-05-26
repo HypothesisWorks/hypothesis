@@ -46,6 +46,19 @@ def test_integers_from_minimizes_leftwards():
     assert minimal(integers(min_value=101)) == 101
 
 
+def test_minimize_bounded_integers_to_zero():
+    assert minimal(integers(-10, 10)) == 0
+
+
+def test_minimize_bounded_integers_to_positive():
+    zero = 0
+
+    def not_zero(x):
+        return x != zero
+
+    assert minimal(integers(-10, 10).filter(not_zero)) == 1
+
+
 def test_minimal_fractions_1():
     assert minimal(fractions()) == Fraction(0)
 
