@@ -298,14 +298,15 @@ def test_is_not_ascii(x):
 
 
 @fails
-@given(text())
+@given(text(min_size=2))
 @settings(max_examples=100, derandomize=True)
 def test_can_find_string_with_duplicates(s):
     assert len(set(s)) == len(s)
 
 
 @fails
-@given(text())
+@given(text(min_size=1))
+@settings(derandomize=True)
 def test_has_ascii(x):
     if not x:
         return

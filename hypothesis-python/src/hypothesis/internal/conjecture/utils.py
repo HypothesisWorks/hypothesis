@@ -89,7 +89,7 @@ def integer_range(data, lower, upper, center=None):
     elif center == lower:
         above = True
     else:
-        above = boolean(data)
+        above = not boolean(data)
 
     if above:
         gap = upper - center
