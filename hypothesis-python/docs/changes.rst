@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.13.6:
+
+-------------------
+6.13.6 - 2021-05-26
+-------------------
+
+This patch fixes a bug that caused :func:`~hypothesis.strategies.integers`
+to shrink towards negative values instead of positive values in some cases.
+
 .. _v6.13.5:
 
 -------------------
