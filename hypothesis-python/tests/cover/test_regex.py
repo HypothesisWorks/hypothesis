@@ -432,6 +432,10 @@ def test_fullmatch_generates_example(pattern, matching_str):
 @pytest.mark.parametrize(
     "pattern,eqiv_pattern",
     [
+        (r"", r"\A\Z"),
+        (b"", br"\A\Z"),
+        (r"(?#comment)", r"\A\Z"),
+        (br"(?#comment)", br"\A\Z"),
         ("a", "\\Aa\\Z"),
         ("[Aa]", "\\A[Aa]\\Z"),
         ("[ab]*", "\\A[ab]*\\Z"),

@@ -226,6 +226,11 @@ def regex_strategy(regex, fullmatch):
 
     parsed = sre_parse.parse(regex.pattern, flags=regex.flags)
 
+    if fullmatch:
+        if not parsed:
+            return st.just("" if is_unicode else b"")
+        return base_regex_strategy(regex, parsed).filter(regex.fullmatch)
+
     if not parsed:
         if is_unicode:
             return st.text()
@@ -244,9 +249,7 @@ def regex_strategy(regex, fullmatch):
     right_pad = base_padding_strategy
     left_pad = base_padding_strategy
 
-    if fullmatch:
-        right_pad = empty
-    elif parsed[-1][0] == sre.AT:
+    if parsed[-1][0] == sre.AT:
         if parsed[-1][1] == sre.AT_END_STRING:
             right_pad = empty
         elif parsed[-1][1] == sre.AT_END:
@@ -256,9 +259,7 @@ def regex_strategy(regex, fullmatch):
                 )
             else:
                 right_pad = st.one_of(empty, newline)
-    if fullmatch:
-        left_pad = empty
-    elif parsed[0][0] == sre.AT:
+    if parsed[0][0] == sre.AT:
         if parsed[0][1] == sre.AT_BEGINNING_STRING:
             left_pad = empty
         elif parsed[0][1] == sre.AT_BEGINNING:
