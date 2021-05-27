@@ -35,8 +35,8 @@ skip_before_python37 = pytest.mark.skipif(
 @given(st.data())
 def test_mutually_recursive_types_with_typevar(data):
     # The previously-failing example from the issue
-    A = Dict[str, "B"]  # noqa: F821 - an undefined name is the whole point!
-    B = Union[List[str], A]
+    A = Dict[bool, "B"]  # noqa: F821 - an undefined name is the whole point!
+    B = Union[List[bool], A]
 
     with pytest.raises(ResolutionFailed, match=r"Could not resolve ForwardRef\('B'\)"):
         data.draw(st.from_type(A))
@@ -55,8 +55,8 @@ def test_mutually_recursive_types_with_typevar(data):
 def test_mutually_recursive_types_with_typevar_alternate(data):
     # It's not particularly clear why this version passed when the previous
     # test failed, but different behaviour means we add both to the suite.
-    C = Union[List[str], "D"]  # noqa: F821 - an undefined name is the whole point!
-    D = Dict[str, C]
+    C = Union[List[bool], "D"]  # noqa: F821 - an undefined name is the whole point!
+    D = Dict[bool, C]
 
     with pytest.raises(ResolutionFailed, match=r"Could not resolve ForwardRef\('D'\)"):
         data.draw(st.from_type(C))
