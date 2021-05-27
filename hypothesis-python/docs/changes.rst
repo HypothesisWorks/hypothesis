@@ -18,6 +18,19 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.13.7:
+
+-------------------
+6.13.7 - 2021-05-27
+-------------------
+
+This patch fixes a bug in :func:`~hypothesis.strategies.from_regex` that
+caused ``from_regex("", fullmatch=True)`` to unintentionally generate non-empty
+strings (:issue:`4982`).
+
+The only strings that completely match an empty regex pattern are empty
+strings.
+
 .. _v6.13.6:
 
 -------------------
