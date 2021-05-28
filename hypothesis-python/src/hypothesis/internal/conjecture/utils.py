@@ -56,12 +56,9 @@ BIASED_COIN_INNER_LABEL = calc_label_from_name("inside biased_coin()")
 SAMPLE_IN_SAMPLER_LABLE = calc_label_from_name("a sample() in Sampler")
 ONE_FROM_MANY_LABEL = calc_label_from_name("one more from many()")
 
-INT_SIZES = (8, 16, 32, 64, 128)
-INT_WEIGHTS = (4.0, 8.0, 1.0, 1.0, 0.5)
-
 
 def unbounded_integers(data):
-    size = INT_SIZES[Sampler(INT_WEIGHTS).sample(data)]
+    size = INT_SIZES[INT_SIZES_SAMPLER.sample(data)]
     r = data.draw_bits(size)
     sign = r & 1
     r >>= 1
@@ -105,7 +102,7 @@ def integer_range(data, lower, upper, center=None):
         # For large ranges, we combine the uniform random distribution from draw_bits
         # with a weighting scheme with moderate chance.  Cutoff at 2 ** 24 so that our
         # choice of unicode characters is uniform but the 32bit distribution is not.
-        idx = Sampler(INT_WEIGHTS).sample(data)
+        idx = INT_SIZES_SAMPLER.sample(data)
         bits = min(bits, INT_SIZES[idx])
 
     while probe > gap:
@@ -380,6 +377,10 @@ class Sampler:
             return alternate
         else:
             return base
+
+
+INT_SIZES = (8, 16, 32, 64, 128)
+INT_SIZES_SAMPLER = Sampler((4.0, 8.0, 1.0, 1.0, 0.5))
 
 
 class many:
