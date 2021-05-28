@@ -53,7 +53,7 @@ def combine_labels(*labels: int) -> int:
 INTEGER_RANGE_DRAW_LABEL = calc_label_from_name("another draw in integer_range()")
 BIASED_COIN_LABEL = calc_label_from_name("biased_coin()")
 BIASED_COIN_INNER_LABEL = calc_label_from_name("inside biased_coin()")
-SAMPLE_IN_SAMPLER_LABLE = calc_label_from_name("a sample() in Sampler")
+SAMPLE_IN_SAMPLER_LABEL = calc_label_from_name("a sample() in Sampler")
 ONE_FROM_MANY_LABEL = calc_label_from_name("one more from many()")
 
 
@@ -368,7 +368,7 @@ class Sampler:
         self.table.sort()
 
     def sample(self, data):
-        data.start_example(SAMPLE_IN_SAMPLER_LABLE)
+        data.start_example(SAMPLE_IN_SAMPLER_LABEL)
         i = integer_range(data, 0, len(self.table) - 1)
         base, alternate, alternate_chance = self.table[i]
         use_alternate = biased_coin(data, alternate_chance)
