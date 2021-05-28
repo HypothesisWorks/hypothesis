@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.13.8:
+
+-------------------
+6.13.8 - 2021-05-28
+-------------------
+
+This patch slightly improves the performance of some internal code for
+generating integers.
+
 .. _v6.13.7:
 
 -------------------
