@@ -362,11 +362,17 @@ class SearchStrategy(Generic[Ex]):
         """
         return FilteredStrategy(conditions=(condition,), strategy=self)
 
-    def do_filtered_draw(self, data, filter_strategy):
-        # Hook for strategies that want to override the behaviour of
-        # FilteredStrategy. Most strategies don't, so by default we delegate
-        # straight back to the default filtered-draw implementation.
-        return filter_strategy.default_do_filtered_draw(data)
+    def _filter_for_filtered_draw(self, condition):
+        # Hook for parent strategies that want to perform fallible filtering
+        # on one of their internal strategies (e.g. UniqueListStrategy).
+        # The returned object must have a `.do_filtered_draw(data)` method
+        # that behaves like `do_draw`, but returns the sentinel object
+        # `filter_not_satisfied` if the condition could not be satisfied.
+
+        # This is separate from the main `filter` method so that strategies
+        # can override `filter` without having to also guarantee a
+        # `do_filtered_draw` method.
+        return FilteredStrategy(conditions=(condition,), strategy=self)
 
     @property
     def branches(self) -> List["SearchStrategy[Ex]"]:
@@ -492,9 +498,9 @@ class SampledFromStrategy(SearchStrategy):
     def calc_is_cacheable(self, recur):
         return is_simple_data(self.elements)
 
-    def _transform(self, element, conditions=()):
+    def _transform(self, element):
         # Used in UniqueSampledListStrategy
-        for name, f in self._transformations + tuple(("filter", c) for c in conditions):
+        for name, f in self._transformations:
             if name == "map":
                 element = f(element)
             else:
@@ -504,33 +510,26 @@ class SampledFromStrategy(SearchStrategy):
         return element
 
     def do_draw(self, data):
-        result = self.do_filtered_draw(data, self)
+        result = self.do_filtered_draw(data)
         if result is filter_not_satisfied:
             data.note_event(f"Aborted test because unable to satisfy {self!r}")
             data.mark_invalid()
         return result
 
-    def get_element(self, i, conditions=()):
-        return self._transform(self.elements[i], conditions=conditions)
+    def get_element(self, i):
+        return self._transform(self.elements[i])
 
-    def do_filtered_draw(self, data, filter_strategy):
+    def do_filtered_draw(self, data):
         # Set of indices that have been tried so far, so that we never test
         # the same element twice during a draw.
         known_bad_indices = set()
-
-        # If we're being called via FilteredStrategy, the filter_strategy argument
-        # might have additional conditions we have to fulfill.
-        if isinstance(filter_strategy, FilteredStrategy):
-            conditions = filter_strategy.flat_conditions
-        else:
-            conditions = ()
 
         # Start with ordinary rejection sampling. It's fast if it works, and
         # if it doesn't work then it was only a small amount of overhead.
         for _ in range(3):
             i = cu.integer_range(data, 0, len(self.elements) - 1)
             if i not in known_bad_indices:
-                element = self.get_element(i, conditions=conditions)
+                element = self.get_element(i)
                 if element is not filter_not_satisfied:
                     return element
                 if not known_bad_indices:
@@ -563,7 +562,7 @@ class SampledFromStrategy(SearchStrategy):
         allowed = []
         for i in range(min(len(self.elements), cutoff)):
             if i not in known_bad_indices:
-                element = self.get_element(i, conditions=conditions)
+                element = self.get_element(i)
                 if element is not filter_not_satisfied:
                     allowed.append((i, element))
                     if len(allowed) > speculative_index:
@@ -916,9 +915,7 @@ class FilteredStrategy(SearchStrategy):
         return self.__condition
 
     def do_draw(self, data: ConjectureData) -> Ex:
-        result = self.filtered_strategy.do_filtered_draw(
-            data=data, filter_strategy=self
-        )
+        result = self.do_filtered_draw(data)
         if result is not filter_not_satisfied:
             return result
 
@@ -929,7 +926,7 @@ class FilteredStrategy(SearchStrategy):
     def note_retried(self, data):
         data.note_event(lazyformat("Retried draw from %r to satisfy filter", self))
 
-    def default_do_filtered_draw(self, data):
+    def do_filtered_draw(self, data):
         for i in range(3):
             start_index = data.index
             data.start_example(FILTERED_SEARCH_STRATEGY_DO_DRAW_LABEL)

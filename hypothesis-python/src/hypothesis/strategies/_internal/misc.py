@@ -15,11 +15,9 @@
 
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies._internal.strategies import (
-    FilteredStrategy,
     SampledFromStrategy,
     SearchStrategy,
     T,
-    filter_not_satisfied,
     is_simple_data,
 )
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
@@ -54,16 +52,10 @@ class JustStrategy(SampledFromStrategy):
     def calc_is_cacheable(self, recur):
         return is_simple_data(self.value)
 
-    def do_draw(self, data):
-        result = self._transform(self.value)
-        if result is filter_not_satisfied:
-            data.note_event(f"Aborted test because unable to satisfy {self!r}")
-            data.mark_invalid()
-        return result
-
-    def do_filtered_draw(self, data, filter_strategy):
-        if isinstance(filter_strategy, FilteredStrategy):
-            return self._transform(self.value, filter_strategy.flat_conditions)
+    def do_filtered_draw(self, data):
+        # The parent class's `do_draw` implementation delegates directly to
+        # `do_filtered_draw`, which we can greatly simplify in this case since
+        # we have exactly one value. (This also avoids drawing any data.)
         return self._transform(self.value)
 
 

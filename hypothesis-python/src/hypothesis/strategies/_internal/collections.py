@@ -166,11 +166,11 @@ class UniqueListStrategy(ListStrategy):
         def not_yet_in_unique_list(val):
             return all(key(val) not in seen for key, seen in zip(self.keys, seen_sets))
 
-        filtered = self.element_strategy.filter(not_yet_in_unique_list)
+        filtered = self.element_strategy._filter_for_filtered_draw(
+            not_yet_in_unique_list
+        )
         while elements.more():
-            value = filtered.filtered_strategy.do_filtered_draw(
-                data=data, filter_strategy=filtered
-            )
+            value = filtered.do_filtered_draw(data)
             if value is filter_not_satisfied:
                 elements.reject()
             else:

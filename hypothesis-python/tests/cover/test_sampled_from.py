@@ -132,8 +132,8 @@ def stupid_sampled_sets(draw):
 
 @given(stupid_sampled_sets())
 def test_efficient_sets_of_samples_with_chained_transformations_slow_path(x):
-    # This exercises the standard .do_filtered_draw method, rather than the
-    # special logic in UniqueSampledListStrategy, to the same if slower effect.
+    # This deliberately exercises the standard filtering logic without going
+    # through the special-case handling of UniqueSampledListStrategy.
     assert x == {x * 2 for x in range(20) if x % 3}
 
 
@@ -155,7 +155,7 @@ def test_transformed_just_strategy():
     assert s.do_draw(data) == 2
     sf = s.filter(lambda x: False)
     assert isinstance(sf, JustStrategy)
-    assert sf.do_filtered_draw(data, sf) == filter_not_satisfied
+    assert sf.do_filtered_draw(data) == filter_not_satisfied
     with pytest.raises(StopTest):
         sf.do_draw(data)
 

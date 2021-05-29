@@ -167,11 +167,6 @@ class LazyStrategy(SearchStrategy):
     def do_draw(self, data):
         return data.draw(self.wrapped_strategy)
 
-    def do_filtered_draw(self, data, filter_strategy):
-        return self.wrapped_strategy.do_filtered_draw(
-            data=data, filter_strategy=filter_strategy
-        )
-
     @property
     def label(self):
         return self.wrapped_strategy.label
