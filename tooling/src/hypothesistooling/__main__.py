@@ -79,11 +79,11 @@ def codespell(*files):
 def lint():
     pip_tool(
         "flake8",
-        *[f for f in tools.all_files() if f.endswith(".py")],
+        *(f for f in tools.all_files() if f.endswith(".py")),
         "--config",
         os.path.join(tools.ROOT, ".flake8"),
     )
-    codespell(*[f for f in tools.all_files() if not f.endswith("by-domain.txt")])
+    codespell(*(f for f in tools.all_files() if not f.endswith("by-domain.txt")))
 
 
 HEAD = tools.hash_for_name("HEAD")
@@ -364,7 +364,7 @@ PY38 = PYMAIN = "3.8.10"  # Sync PYMAIN minor version with GH Actions main.yml
 PY39 = "3.9.5"
 PY310 = "3.10-dev"
 PYPY36 = "pypy3.6-7.3.3"
-PYPY37 = "pypy3.7-7.3.4"
+PYPY37 = "pypy3.7-7.3.5"
 
 
 # ALIASES are the executable names for each Python version

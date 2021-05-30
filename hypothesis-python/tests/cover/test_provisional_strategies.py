@@ -18,9 +18,14 @@ import string
 
 import pytest
 
-from hypothesis import given
+from hypothesis import given, settings
 from hypothesis.errors import InvalidArgument
-from hypothesis.provisional import domains, urls
+from hypothesis.provisional import (
+    FRAGMENT_SAFE_CHARACTERS,
+    _url_fragments_strategy,
+    domains,
+    urls,
+)
 
 from tests.common.debug import find_any
 
@@ -63,3 +68,18 @@ def test_valid_domains_arguments(max_length, max_element_length):
 @pytest.mark.parametrize("strategy", [domains(), urls()])
 def test_find_any_non_empty(strategy):
     find_any(strategy, lambda s: len(s) > 0)
+
+
+@given(_url_fragments_strategy)
+# There's a lambda in the implementation that only gets run if we generate at
+# least one percent-escape sequence, so we derandomize to ensure that coverage
+# isn't flaky.
+@settings(derandomize=True)
+def test_url_fragments_contain_legal_chars(fragment):
+    assert fragment.startswith("#")
+
+    # Strip all legal escape sequences. Any remaining % characters were not
+    # part of a legal escape sequence.
+    without_escapes = re.sub(r"(?ai)%[0-9a-f][0-9a-f]", "", fragment[1:])
+
+    assert set(without_escapes).issubset(FRAGMENT_SAFE_CHARACTERS)

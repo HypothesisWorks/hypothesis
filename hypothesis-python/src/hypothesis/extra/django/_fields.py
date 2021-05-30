@@ -233,7 +233,7 @@ def _for_text(field):
         # Not maximally efficient, but it makes pathological cases rarer.
         # If you want a challenge: extend https://qntm.org/greenery to
         # compute intersections of the full Python regex language.
-        return st.one_of(*[st.from_regex(r) for r in regexes])
+        return st.one_of(*(st.from_regex(r) for r in regexes))
     # If there are no (usable) regexes, we use a standard text strategy.
     min_size, max_size = length_bounds_from_validators(field)
     strategy = st.text(

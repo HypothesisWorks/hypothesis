@@ -112,7 +112,7 @@ class DomainNameStrategy(st.SearchStrategy):
             .filter(lambda tld: len(tld) + 2 <= self.max_length)
             .flatmap(
                 lambda tld: st.tuples(
-                    *[st.sampled_from([c.lower(), c.upper()]) for c in tld]
+                    *(st.sampled_from([c.lower(), c.upper()]) for c in tld)
                 ).map("".join)
             )
         )
@@ -142,6 +142,25 @@ def domains(
     )
 
 
+# The `urls()` strategy uses this to generate URL fragments (e.g. "#foo").
+# It has been extracted to top-level so that we can test it independently
+# of `urls()`, which helps with getting non-flaky coverage of the lambda.
+_url_fragments_strategy = (
+    st.lists(
+        st.builds(
+            lambda char, encode: f"%{ord(char):02X}"
+            if (encode or char not in FRAGMENT_SAFE_CHARACTERS)
+            else char,
+            st.characters(min_codepoint=0, max_codepoint=255),
+            st.booleans(),
+        ),
+        min_size=1,
+    )
+    .map("".join)
+    .map("#{}".format)
+)
+
+
 @defines_strategy(force_reusable_values=True)
 def urls() -> st.SearchStrategy[str]:
     """A strategy for :rfc:`3986`, generating http/https URLs."""
@@ -152,20 +171,6 @@ def urls() -> st.SearchStrategy[str]:
     schemes = st.sampled_from(["http", "https"])
     ports = st.integers(min_value=0, max_value=2 ** 16 - 1).map(":{}".format)
     paths = st.lists(st.text(string.printable).map(url_encode)).map("/".join)
-    fragments = (
-        st.lists(
-            st.builds(
-                lambda char, encode: f"%{ord(char):02X}"
-                if (encode or char not in FRAGMENT_SAFE_CHARACTERS)
-                else char,
-                st.characters(min_codepoint=0, max_codepoint=255),
-                st.booleans(),
-            ),
-            min_size=1,
-        )
-        .map("".join)
-        .map("#{}".format)
-    )
 
     return st.builds(
         "{}://{}{}/{}{}".format,
@@ -173,5 +178,5 @@ def urls() -> st.SearchStrategy[str]:
         domains(),
         st.just("") | ports,
         paths,
-        st.just("") | fragments,
+        st.just("") | _url_fragments_strategy,
     )

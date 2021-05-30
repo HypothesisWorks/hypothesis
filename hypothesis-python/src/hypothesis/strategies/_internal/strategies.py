@@ -638,7 +638,7 @@ class OneOfStrategy(SearchStrategy):
 
     def calc_label(self):
         return combine_labels(
-            self.class_label, *[p.label for p in self.original_strategies]
+            self.class_label, *(p.label for p in self.original_strategies)
         )
 
     def do_draw(self, data: ConjectureData) -> Ex:
