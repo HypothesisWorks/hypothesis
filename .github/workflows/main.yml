@@ -80,7 +80,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       with:
-        fetch-depth: 0
+        fetch-depth: 1
     - name: Set up Python 3.8
       uses: actions/setup-python@v2
       with:
@@ -114,7 +114,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       with:
-        fetch-depth: 0
+        fetch-depth: 1
     - name: Set up Python 3.8
       uses: actions/setup-python@v2
       with:
