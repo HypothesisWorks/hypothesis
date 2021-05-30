@@ -10,7 +10,7 @@ attrs==21.2.0
     # via
     #   hypothesis (hypothesis-python/setup.py)
     #   pytest
-execnet==1.8.0
+execnet==1.8.1
     # via pytest-xdist
 iniconfig==1.1.1
     # via pytest

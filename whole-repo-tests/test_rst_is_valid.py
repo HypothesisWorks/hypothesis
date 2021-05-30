@@ -33,7 +33,7 @@ ALL_RST = [
 
 
 def test_passes_rst_lint():
-    pip_tool("rst-lint", *[f for f in ALL_RST if not is_sphinx(f)])
+    pip_tool("rst-lint", *(f for f in ALL_RST if not is_sphinx(f)))
 
 
 def test_passes_flake8():

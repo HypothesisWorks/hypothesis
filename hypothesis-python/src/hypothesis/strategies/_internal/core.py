@@ -762,7 +762,7 @@ class BuildsStrategy(SearchStrategy):
     def do_draw(self, data):
         try:
             return self.target(
-                *[data.draw(a) for a in self.args],
+                *(data.draw(a) for a in self.args),
                 **{k: data.draw(v) for k, v in self.kwargs.items()},
             )
         except TypeError as err:

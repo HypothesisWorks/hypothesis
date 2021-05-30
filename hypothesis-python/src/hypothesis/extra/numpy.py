@@ -1489,5 +1489,5 @@ def integer_array_indices(
         )
 
     return result_shape.flatmap(
-        lambda index_shape: st.tuples(*[array_for(index_shape, size) for size in shape])
+        lambda index_shape: st.tuples(*(array_for(index_shape, size) for size in shape))
     )

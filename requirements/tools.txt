@@ -59,7 +59,7 @@ decorator==5.0.9
     # via
     #   ipython
     #   traitlets
-distlib==0.3.1
+distlib==0.3.2
     # via virtualenv
 django==3.2.3
     # via -r requirements/tools.in
@@ -107,7 +107,7 @@ idna==2.10
     # via requests
 imagesize==1.2.0
     # via sphinx
-importlib-metadata==4.0.1
+importlib-metadata==4.3.1
     # via
     #   keyring
     #   twine
@@ -213,7 +213,7 @@ pytz==2021.1
     # via
     #   babel
     #   django
-pyupgrade==2.18.1
+pyupgrade==2.19.0
     # via shed
 pyyaml==5.4.1
     # via
@@ -293,7 +293,7 @@ toml==0.10.2
     #   tox
 tox==3.23.1
     # via -r requirements/tools.in
-tqdm==4.60.0
+tqdm==4.61.0
     # via twine
 traitlets==4.3.3
     # via
@@ -310,9 +310,9 @@ typing-extensions==3.10.0.0
     #   typing-inspect
 typing-inspect==0.6.0
     # via libcst
-urllib3==1.26.4
+urllib3==1.26.5
     # via requests
-virtualenv==20.4.6
+virtualenv==20.4.7
     # via tox
 wcwidth==0.2.5
     # via prompt-toolkit

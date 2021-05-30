@@ -180,7 +180,7 @@ def numeric_bounds_from_ast(
 
     if isinstance(tree, ast.BoolOp) and isinstance(tree.op, ast.And):
         return merge_preds(
-            *[numeric_bounds_from_ast(node, argname, fallback) for node in tree.values]
+            *(numeric_bounds_from_ast(node, argname, fallback) for node in tree.values)
         )
 
     return fallback
