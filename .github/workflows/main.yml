@@ -102,7 +102,7 @@ jobs:
         pip install -r requirements/test.txt fakeredis typing-extensions
         pip install hypothesis-python/[all]
     - name: Run tests
-      run: python -m pytest --numprocesses auto hypothesis-python/tests/
+      run: python -m pytest --numprocesses auto hypothesis-python/tests/ --ignore-glob=hypothesis-python/tests/quality/*.py
 
   test-osx:
     runs-on: macos-latest
