@@ -40,7 +40,7 @@ class TupleStrategy(SearchStrategy):
 
     def calc_label(self):
         return combine_labels(
-            self.class_label, *[s.label for s in self.element_strategies]
+            self.class_label, *(s.label for s in self.element_strategies)
         )
 
     def __repr__(self):

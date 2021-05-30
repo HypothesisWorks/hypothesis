@@ -112,7 +112,7 @@ class DomainNameStrategy(st.SearchStrategy):
             .filter(lambda tld: len(tld) + 2 <= self.max_length)
             .flatmap(
                 lambda tld: st.tuples(
-                    *[st.sampled_from([c.lower(), c.upper()]) for c in tld]
+                    *(st.sampled_from([c.lower(), c.upper()]) for c in tld)
                 ).map("".join)
             )
         )
