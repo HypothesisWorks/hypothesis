@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.13.9:
+
+-------------------
+6.13.9 - 2021-05-30
+-------------------
+
+This patch cleans up some internal code related to filtering strategies.
+
+There is no user-visible change.
+
 .. _v6.13.8:
 
 -------------------
