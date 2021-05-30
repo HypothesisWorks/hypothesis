@@ -19,6 +19,7 @@ from io import StringIO
 
 from hypothesis._settings import Phase
 from hypothesis.errors import HypothesisDeprecationWarning
+from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.internal.reflection import proxies
 from hypothesis.reporting import default, with_reporter
 from hypothesis.strategies._internal.core import from_type, register_type_strategy
@@ -94,8 +95,13 @@ def fails_with(e):
     def accepts(f):
         @proxies(f)
         def inverted_test(*arguments, **kwargs):
-            with raises(e):
-                f(*arguments, **kwargs)
+            # Most of these expected-failure tests are non-deterministic, so
+            # we rig the PRNG to avoid occasional flakiness. We do this outside
+            # the `raises` context manager so that any problems in rigging the
+            # PRNG don't accidentally count as the expected failure.
+            with deterministic_PRNG():
+                with raises(e):
+                    f(*arguments, **kwargs)
 
         return inverted_test
 
