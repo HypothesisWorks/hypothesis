@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.13.10:
+
+--------------------
+6.13.10 - 2021-05-30
+--------------------
+
+This release adjusts some internal code to help make our test suite more
+reliable.
+
+There is no user-visible change.
+
 .. _v6.13.9:
 
 -------------------
