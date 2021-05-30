@@ -21,8 +21,10 @@ does).
 """
 
 import os
+import platform
 import shutil
 import subprocess
+import sys
 
 from hypothesistooling import git, scripts
 from hypothesistooling.junkdrawer import once
@@ -45,8 +47,16 @@ PYTHONS = set()
 def ensure_python(version):
     if version in PYTHONS:
         return
-    scripts.run_script("ensure-python.sh", version)
+
     target = __python_executable(version)
+
+    if "GITHUB_ACTIONS" in os.environ and version == platform.python_version():
+        if not os.path.exists(target):
+            os.makedirs(os.path.dirname(target))
+            os.symlink(sys.executable, target)
+    else:
+        scripts.run_script("ensure-python.sh", version)
+
     assert os.path.exists(target), target
     PYTHONS.add(version)
 
