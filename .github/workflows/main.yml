@@ -124,6 +124,7 @@ jobs:
       with:
         path: |
           ~/.cache
+          ~/Library/Caches/pip
         key: deps-${{ runner.os }}-${{ hashFiles('requirements/tools.txt') }}-${{ matrix.task }}
     - name: Run tests
       run: TASK=${{ matrix.task }} ./build.sh
