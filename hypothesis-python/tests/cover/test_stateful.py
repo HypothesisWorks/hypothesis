@@ -24,6 +24,7 @@ from hypothesis import __version__, reproduce_failure, seed, settings as Setting
 from hypothesis.control import current_build_context
 from hypothesis.database import ExampleDatabase
 from hypothesis.errors import DidNotReproduce, Flaky, InvalidArgument, InvalidDefinition
+from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.stateful import (
     Bundle,
     RuleBasedStateMachine,
@@ -384,8 +385,9 @@ def test_saves_failing_example_in_database():
 
 
 def test_can_run_with_no_db():
-    with raises(AssertionError):
-        run_state_machine_as_test(DepthMachine, settings=Settings(database=None))
+    with deterministic_PRNG():
+        with raises(AssertionError):
+            run_state_machine_as_test(DepthMachine, settings=Settings(database=None))
 
 
 def test_stateful_double_rule_is_forbidden(recwarn):

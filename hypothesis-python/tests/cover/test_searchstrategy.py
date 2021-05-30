@@ -19,7 +19,8 @@ from collections import namedtuple
 import pytest
 
 from hypothesis.errors import InvalidArgument
-from hypothesis.strategies import booleans, integers, just, tuples
+from hypothesis.internal.conjecture.data import ConjectureData
+from hypothesis.strategies import booleans, integers, just, none, tuples
 
 from tests.common.debug import assert_no_examples
 
@@ -46,6 +47,18 @@ def test_just_strategy_uses_repr():
             return "ABCDEFG"
 
     assert repr(just(WeirdRepr())) == f"just({WeirdRepr()!r})"
+
+
+def test_just_strategy_does_not_draw():
+    data = ConjectureData.for_buffer(b"")
+    s = just("hello")
+    assert s.do_draw(data) == "hello"
+
+
+def test_none_strategy_does_not_draw():
+    data = ConjectureData.for_buffer(b"")
+    s = none()
+    assert s.do_draw(data) is None
 
 
 def test_can_map():
