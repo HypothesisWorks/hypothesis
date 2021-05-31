@@ -88,7 +88,8 @@ def define_test(specifier, predicate, condition=None, p=0.5, suppress_health_che
                 data.mark_interesting()
 
         successes = 0
-        for _ in range(RUNS):
+        actual_runs = 0
+        for actual_runs in range(1, RUNS + 1):
             # We choose the max_examples a bit larger than default so that we
             # run at least 100 examples outside of the small example generation
             # part of the generation phase.
@@ -105,14 +106,22 @@ def define_test(specifier, predicate, condition=None, p=0.5, suppress_health_che
                 successes += 1
                 if successes >= required_runs:
                     return
+
+            # If we reach a point where it's impossible to hit our target even
+            # if every remaining attempt were to succeed, give up early and
+            # report failure.
+            if (required_runs - successes) > (RUNS - actual_runs):
+                break
+
         event = reflection.get_pretty_function_description(predicate)
         if condition is not None:
             event += "|"
             event += condition_string
 
         raise HypothesisFalsified(
-            f"P({event}) ~ {successes} / {RUNS} = {successes / RUNS:.2f} < "
-            f"{required_runs / RUNS:.2f} rejected"
+            f"P({event}) ~ {successes} / {actual_runs} = "
+            f"{successes / actual_runs:.2f} < {required_runs / RUNS:.2f}; "
+            "rejected"
         )
 
     return run_test
