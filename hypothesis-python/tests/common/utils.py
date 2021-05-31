@@ -17,7 +17,7 @@ import contextlib
 import sys
 from io import StringIO
 
-from hypothesis._settings import Phase
+from hypothesis import Phase, settings
 from hypothesis.errors import HypothesisDeprecationWarning
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.internal.reflection import proxies
@@ -49,7 +49,7 @@ except ModuleNotFoundError:
         ), f"Expected to raise an exception ({expected_exception!r}) but didn't"
 
 
-no_shrink = tuple(set(Phase) - {Phase.shrink})
+no_shrink = tuple(set(settings.default.phases) - {Phase.shrink})
 
 
 def flaky(max_runs, min_passes):

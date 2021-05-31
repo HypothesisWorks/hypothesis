@@ -75,6 +75,12 @@ branches = st.builds(Branch, bits=st.integers(1, 64))
 writes = st.builds(Write, value=st.binary(min_size=1), child=nodes)
 
 
+# Remember what the default phases are with no test running, so that we can
+# run an outer test with non-default phases and then restore the defaults for
+# the inner test.
+_default_phases = settings.default.phases
+
+
 def run_language_test_for(root, data, seed):
     random.seed(seed)
 
@@ -106,7 +112,9 @@ def run_language_test_for(root, data, seed):
             database=None,
             suppress_health_check=HealthCheck.all(),
             verbosity=Verbosity.quiet,
-            phases=list(Phase),
+            # Restore the global default phases, so that we don't inherit the
+            # phases setting from the outer test.
+            phases=_default_phases,
         ),
     )
     try:
@@ -120,7 +128,7 @@ def run_language_test_for(root, data, seed):
 @settings(
     suppress_health_check=HealthCheck.all(),
     deadline=None,
-    phases=set(Phase) - {Phase.shrink},
+    phases=set(settings.default.phases) - {Phase.shrink},
 )
 @given(st.data())
 def test_explore_an_arbitrary_language(data):

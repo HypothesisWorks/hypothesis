@@ -29,7 +29,7 @@ def byte_order(draw):
 @given(st.sets(st.integers(0, 255)), byte_order())
 # This test doesn't even use targeting at all, but for some reason the
 # pareto optimizer makes it much slower.
-@settings(phases=set(Phase) - {Phase.target})
+@settings(phases=set(settings.default.phases) - {Phase.target})
 def test_learning_always_changes_generation(chars, order):
     learner = LStar(lambda s: len(s) == 1 and s[0] in chars)
     for c in order:
