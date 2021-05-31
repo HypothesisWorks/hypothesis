@@ -37,11 +37,13 @@ TOOL_PYTHON="$TOOL_VIRTUALENV/bin/python"
 export PYTHONPATH="$ROOT/tooling/src"
 
 if ! "$TOOL_PYTHON" -m hypothesistooling check-installed ; then
+  echo "::group::build.sh  # install tooling"
   rm -rf "$TOOL_VIRTUALENV"
   "$PYTHON" -m pip install --upgrade pip
   "$PYTHON" -m pip install --upgrade virtualenv
   "$PYTHON" -m virtualenv "$TOOL_VIRTUALENV"
   "$TOOL_PYTHON" -m pip install --no-warn-script-location -r requirements/tools.txt
+  echo "::endgroup::"
 fi
 
 "$TOOL_PYTHON" -m hypothesistooling "$@"

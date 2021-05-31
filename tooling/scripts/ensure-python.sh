@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+echo "::group::ensure-python.sh $*"
+
 set -o errexit
 set -o nounset
 set -x
@@ -23,7 +25,8 @@ source "$HERE/common.sh"
 VERSION="$1"
 TARGET=$(pythonloc "$VERSION")
 
-if [ ! -e "$TARGET/bin/python" ] ; then 
+if [ ! -e "$TARGET/bin/python" ] ; then
+    echo "::warning::Installing Python $VERSION"
     mkdir -p "$BASE"
 
     LOCKFILE="$BASE/.install-lockfile"
@@ -64,3 +67,5 @@ if [ ! -e "$TARGET/bin/python" ] ; then
         sleep $(( ( RANDOM % 10 )  + 1 )).$(( RANDOM % 100 ))s
     done
 fi
+
+echo "::endgroup::"
