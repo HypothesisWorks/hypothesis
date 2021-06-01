@@ -24,10 +24,6 @@ PYPY = platform.python_implementation() == "PyPy"
 WINDOWS = platform.system() == "Windows"
 
 
-def str_to_bytes(s):
-    return s.encode(a_good_encoding())
-
-
 def escape_unicode_characters(s):
     return codecs.encode(s, "unicode_escape").decode("ascii")
 
@@ -42,17 +38,6 @@ def int_to_bytes(i, size):
 
 def int_to_byte(i):
     return bytes([i])
-
-
-def a_good_encoding():
-    return "utf-8"
-
-
-def to_unicode(x):
-    if isinstance(x, str):
-        return x
-    else:
-        return x.decode(a_good_encoding())
 
 
 def qualname(f):
@@ -184,12 +169,6 @@ def update_code_location(code, newfile, newlineno):
     unpacked[CODE_FIELD_ORDER.index("co_filename")] = newfile
     unpacked[CODE_FIELD_ORDER.index("co_firstlineno")] = newlineno
     return type(code)(*unpacked)
-
-
-def cast_unicode(s, encoding=None):
-    if isinstance(s, bytes):
-        return s.decode(encoding or a_good_encoding(), "replace")
-    return s
 
 
 def get_stream_enc(stream, default=None):

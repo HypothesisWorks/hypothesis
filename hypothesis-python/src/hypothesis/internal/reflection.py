@@ -30,8 +30,6 @@ from typing import Callable, TypeVar
 from hypothesis.internal.compat import (
     is_typed_named_tuple,
     qualname,
-    str_to_bytes,
-    to_unicode,
     update_code_location,
 )
 from hypothesis.vendor.pretty import pretty
@@ -70,11 +68,11 @@ def function_digest(function):
     """
     hasher = hashlib.sha384()
     try:
-        hasher.update(to_unicode(inspect.getsource(function)).encode("utf-8"))
+        hasher.update(inspect.getsource(function).encode("utf-8"))
     except (OSError, TypeError):
         pass
     try:
-        hasher.update(str_to_bytes(function.__name__))
+        hasher.update(function.__name__.encode("utf-8"))
     except AttributeError:
         pass
     try:
@@ -82,7 +80,7 @@ def function_digest(function):
     except AttributeError:
         pass
     try:
-        hasher.update(str_to_bytes(repr(inspect.getfullargspec(function))))
+        hasher.update(repr(inspect.getfullargspec(function)).encode("utf-8"))
     except TypeError:
         pass
     try:
@@ -452,7 +450,7 @@ def source_exec_as_module(source):
 
     result = ModuleType(
         "hypothesis_temporary_module_%s"
-        % (hashlib.sha384(str_to_bytes(source)).hexdigest(),)
+        % (hashlib.sha384(source.encode("utf-8")).hexdigest(),)
     )
     assert isinstance(source, str)
     exec(source, result.__dict__)
