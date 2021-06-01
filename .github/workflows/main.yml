@@ -71,6 +71,16 @@ jobs:
           deps-${{ runner.os }}
     - name: Run tests
       run: TASK=${{ matrix.task }} ./build.sh
+    - name: Upload coverage data
+      uses: actions/upload-artifact@v2
+      # Invoke the magic `always` function to run on both success and failure.
+      if: ${{ always() && endsWith(matrix.task, '-coverage') }}
+      with:
+        name: ${{ matrix.task }}-data
+        path: |
+          hypothesis-python/.coverage*
+          !hypothesis-python/.coveragerc
+          hypothesis-python/branch-check
 
   test-win:
     runs-on: windows-latest
