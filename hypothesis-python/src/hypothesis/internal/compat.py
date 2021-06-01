@@ -171,10 +171,6 @@ def update_code_location(code, newfile, newlineno):
     return type(code)(*unpacked)
 
 
-def get_stream_enc(stream, default=None):
-    return getattr(stream, "encoding", None) or default
-
-
 # Under Python 2, math.floor and math.ceil returned floats, which cannot
 # represent large integers - eg `float(2**53) == float(2**53 + 1)`.
 # We therefore implement them entirely in (long) integer operations.
