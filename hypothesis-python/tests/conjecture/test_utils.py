@@ -124,7 +124,7 @@ def test_too_small_to_be_useful_coin():
 @settings(
     deadline=None,
     suppress_health_check=HealthCheck.all(),
-    phases=[Phase.explicit] if IN_COVERAGE_TESTS else tuple(Phase),
+    phases=[Phase.explicit] if IN_COVERAGE_TESTS else settings.default.phases,
 )
 @given(st.lists(st.fractions(min_value=0, max_value=1), min_size=1))
 def test_sampler_distribution(weights):

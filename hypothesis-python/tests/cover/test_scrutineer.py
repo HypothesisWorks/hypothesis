@@ -13,6 +13,7 @@
 #
 # END HEADER
 
+import re
 import sys
 
 import pytest
@@ -72,3 +73,29 @@ def test_explanations(code, testdir):
     assert len(expected) == code.count(BUG_MARKER)
     for report in expected:
         assert report in pytest_stdout
+
+
+@pytest.mark.skipif(PYPY, reason="Tracing is slow under PyPy")
+def test_cannot_explain_message(testdir):
+    # Most of the explanation-related code can't be run under coverage, but
+    # what we can cover is the code that prints a message when the explanation
+    # tracer couldn't be installed.
+
+    no_tracer = sys.gettrace() is None
+    try:
+        if no_tracer:
+            sys.settrace(lambda frame, event, arg: None)
+
+        code = PRELUDE + TRIVIAL
+        test_file = testdir.makepyfile(code)
+        result = testdir.runpytest_inprocess(test_file, "--tb=native")
+        result.stdout.re_match_lines(
+            [
+                r"Explanation:",
+                fr"""\s*{re.escape("We didn't try to explain this, because sys.gettrace()=")}.*""",
+            ],
+            consecutive=True,
+        )
+    finally:
+        if no_tracer:
+            sys.settrace(None)
