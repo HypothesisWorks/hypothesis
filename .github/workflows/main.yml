@@ -1,5 +1,10 @@
 name: Hypothesis CI
 
+env:
+  # Tell pytest and other tools to produce coloured terminal output.
+  # Make sure this is also in the "passenv" section of the tox config.
+  PY_COLORS: 1
+
 on:
   push:
     branches: [ master ]
