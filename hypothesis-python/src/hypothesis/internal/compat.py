@@ -24,10 +24,6 @@ PYPY = platform.python_implementation() == "PyPy"
 WINDOWS = platform.system() == "Windows"
 
 
-def bit_length(n):
-    return n.bit_length()
-
-
 def str_to_bytes(s):
     return s.encode(a_good_encoding())
 
