@@ -14,7 +14,6 @@
 # END HEADER
 
 import codecs
-import importlib
 import inspect
 import platform
 import sys
@@ -124,9 +123,6 @@ def get_type_hints(thing):
         pass
 
     return hints
-
-
-importlib_invalidate_caches = getattr(importlib, "invalidate_caches", lambda: ())
 
 
 def update_code_location(code, newfile, newlineno):
