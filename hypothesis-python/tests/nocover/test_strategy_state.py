@@ -109,11 +109,8 @@ class HypothesisSpec(RuleBasedStateMachine):
     @rule(target=strategies, source=strategies, level=integers(1, 10), mixer=text())
     def filtered_strategy(s, source, level, mixer):
         def is_good(x):
-            return bool(
-                Random(hashlib.sha384((mixer + repr(x)).encode()).digest()).randint(
-                    0, level
-                )
-            )
+            seed = hashlib.sha384((mixer + repr(x)).encode()).digest()
+            return bool(Random(seed).randint(0, level))
 
         return source.filter(is_good)
 
