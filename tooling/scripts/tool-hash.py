@@ -19,4 +19,4 @@ import hashlib
 import sys
 
 if __name__ == "__main__":
-    print(hashlib.sha384(sys.stdin.read().encode("utf-8")).hexdigest()[:10])
+    print(hashlib.sha384(sys.stdin.read().encode()).hexdigest()[:10])

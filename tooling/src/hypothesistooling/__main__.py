@@ -192,6 +192,7 @@ def format():
     config.from_file(os.path.join(hp.BASE_DIR, ".coveragerc"), our_file=True)
     pattern = "|".join(l for l in config.exclude_list if "pragma" not in l)
     unused_pragma_pattern = re.compile(f"({pattern}).*# pragma: no cover")
+    utf8_encoding_pattern = re.compile(r'\.(en|de)code\("utf-8"\)')
 
     for f in files_to_format:
         lines = []
@@ -208,10 +209,10 @@ def format():
                 if "END HEADER" in l and not header_done:
                     lines = []
                     header_done = True
-                elif unused_pragma_pattern.search(l) is not None:
-                    lines.append(l.replace("# pragma: no cover", ""))
                 else:
-                    lines.append(l)
+                    if unused_pragma_pattern.search(l) is not None:
+                        lines.append(l.replace("# pragma: no cover", ""))
+                    lines.append(utf8_encoding_pattern.sub(r".\1code()", l))
         source = "".join(lines).strip()
         with open(f, "w", encoding="utf-8") as o:
             if shebang is not None:

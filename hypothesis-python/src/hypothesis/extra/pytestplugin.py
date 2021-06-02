@@ -204,7 +204,7 @@ else:
 
             if item.get_closest_marker("parametrize") is not None:
                 # Give every parametrized test invocation a unique database key
-                key = item.nodeid.encode("utf-8")
+                key = item.nodeid.encode()
                 item.obj.hypothesis.inner_test._hypothesis_internal_add_digest = key
 
             store = StoringReporter(item.config)

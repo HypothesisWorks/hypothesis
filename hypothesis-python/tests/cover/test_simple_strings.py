@@ -86,7 +86,7 @@ def test_respects_alphabet_if_string(xs):
 
 @given(text())
 def test_can_encode_as_utf8(s):
-    s.encode("utf-8")
+    s.encode()
 
 
 @given(text(characters(blacklist_characters="\n")))

@@ -110,9 +110,9 @@ class HypothesisSpec(RuleBasedStateMachine):
     def filtered_strategy(s, source, level, mixer):
         def is_good(x):
             return bool(
-                Random(
-                    hashlib.sha384((mixer + repr(x)).encode("utf-8")).digest()
-                ).randint(0, level)
+                Random(hashlib.sha384((mixer + repr(x)).encode()).digest()).randint(
+                    0, level
+                )
             )
 
         return source.filter(is_good)
@@ -155,7 +155,7 @@ class HypothesisSpec(RuleBasedStateMachine):
 
         def do_map(value):
             rep = repr(value)
-            random = Random(hashlib.sha384((mixer + rep).encode("utf-8")).digest())
+            random = Random(hashlib.sha384((mixer + rep).encode()).digest())
             if random.random() <= p:
                 return result1
             else:

@@ -28,7 +28,7 @@ LABEL_MASK = 2 ** 64 - 1
 
 
 def calc_label_from_name(name: str) -> int:
-    hashed = hashlib.sha384(name.encode("utf-8")).digest()
+    hashed = hashlib.sha384(name.encode()).digest()
     return int_from_bytes(hashed[:8])
 
 

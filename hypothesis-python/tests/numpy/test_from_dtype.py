@@ -108,7 +108,7 @@ def test_can_unicode_strings_without_decode_error(arr):
 def test_unicode_string_dtypes_need_not_be_utf8():
     def cannot_encode(string):
         try:
-            string.encode("utf-8")
+            string.encode()
             return False
         except UnicodeEncodeError:
             return True

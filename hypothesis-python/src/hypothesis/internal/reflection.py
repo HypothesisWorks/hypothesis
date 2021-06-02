@@ -68,19 +68,19 @@ def function_digest(function):
     """
     hasher = hashlib.sha384()
     try:
-        hasher.update(inspect.getsource(function).encode("utf-8"))
+        hasher.update(inspect.getsource(function).encode())
     except (OSError, TypeError):
         pass
     try:
-        hasher.update(function.__name__.encode("utf-8"))
+        hasher.update(function.__name__.encode())
     except AttributeError:
         pass
     try:
-        hasher.update(function.__module__.__name__.encode("utf-8"))
+        hasher.update(function.__module__.__name__.encode())
     except AttributeError:
         pass
     try:
-        hasher.update(repr(inspect.getfullargspec(function)).encode("utf-8"))
+        hasher.update(repr(inspect.getfullargspec(function)).encode())
     except TypeError:
         pass
     try:
@@ -450,7 +450,7 @@ def source_exec_as_module(source):
 
     result = ModuleType(
         "hypothesis_temporary_module_%s"
-        % (hashlib.sha384(source.encode("utf-8")).hexdigest(),)
+        % (hashlib.sha384(source.encode()).hexdigest(),)
     )
     assert isinstance(source, str)
     exec(source, result.__dict__)
