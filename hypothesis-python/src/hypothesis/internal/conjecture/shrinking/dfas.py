@@ -326,11 +326,7 @@ def normalize(
             runner, previous.buffer, current.buffer, shrinking_predicate
         )
 
-        name = (
-            base_name
-            + "-"
-            + hashlib.sha256(repr(new_dfa).encode("utf-8")).hexdigest()[:10]
-        )
+        name = base_name + "-" + hashlib.sha256(repr(new_dfa).encode()).hexdigest()[:10]
 
         # If there is a name collision this DFA should already be being
         # used for shrinking, so we should have already been able to shrink

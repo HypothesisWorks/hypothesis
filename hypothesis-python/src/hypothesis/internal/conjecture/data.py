@@ -21,7 +21,7 @@ from typing import Dict
 import attr
 
 from hypothesis.errors import Frozen, InvalidArgument, StopTest
-from hypothesis.internal.compat import bit_length, int_from_bytes, int_to_bytes
+from hypothesis.internal.compat import int_from_bytes, int_to_bytes
 from hypothesis.internal.conjecture.junkdrawer import IntList, uniform
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 
@@ -1024,7 +1024,7 @@ class ConjectureData:
 
         self.blocks.add_endpoint(self.index)
 
-        assert bit_length(result) <= n
+        assert result.bit_length() <= n
         return result
 
     def draw_bytes(self, n):

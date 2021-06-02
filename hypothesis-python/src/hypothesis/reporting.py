@@ -50,7 +50,7 @@ def to_text(textish):
     if inspect.isfunction(textish):
         textish = textish()
     if isinstance(textish, bytes):
-        textish = textish.decode("utf-8")
+        textish = textish.decode()
     return textish
 
 

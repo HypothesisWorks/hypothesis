@@ -56,9 +56,9 @@ def conservative_regex(draw):
 
 
 CONSERVATIVE_REGEX = conservative_regex()
-FLAGS = st.sets(st.sampled_from([getattr(re, "A", 0), re.I, re.M, re.S])).map(
-    lambda flag_set: reduce(int.__or__, flag_set, 0)
-)
+FLAGS = st.sets(
+    st.sampled_from([re.ASCII, re.IGNORECASE, re.MULTILINE, re.DOTALL])
+).map(lambda flag_set: reduce(int.__or__, flag_set, 0))
 
 
 @given(st.data())
