@@ -380,6 +380,7 @@ python_tests = task(
     if_changed=(
         hp.PYTHON_SRC,
         hp.PYTHON_TESTS,
+        os.path.join(tools.ROOT, "pytest.ini"),
         os.path.join(hp.HYPOTHESIS_PYTHON, "scripts"),
     )
 )
