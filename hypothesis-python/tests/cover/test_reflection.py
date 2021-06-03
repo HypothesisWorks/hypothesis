@@ -30,7 +30,6 @@ from hypothesis.internal.reflection import (
     convert_keyword_arguments,
     convert_positional_arguments,
     define_function_signature,
-    fully_qualified_name,
     function_digest,
     get_pretty_function_description,
     is_mock,
@@ -512,29 +511,6 @@ def test_define_function_signature_validates_function_name():
 class Container:
     def funcy(self):
         pass
-
-
-def test_fully_qualified_name():
-    assert (
-        fully_qualified_name(test_copying_preserves_argspec)
-        == "tests.cover.test_reflection.test_copying_preserves_argspec"
-    )
-    assert (
-        fully_qualified_name(Container.funcy)
-        == "tests.cover.test_reflection.Container.funcy"
-    )
-    assert (
-        fully_qualified_name(fully_qualified_name)
-        == "hypothesis.internal.reflection.fully_qualified_name"
-    )
-
-
-def test_qualname_of_function_with_none_module_is_name():
-    def f():
-        pass
-
-    f.__module__ = None
-    assert fully_qualified_name(f)[-1] == "f"
 
 
 def test_can_proxy_functions_with_mixed_args_and_varargs():

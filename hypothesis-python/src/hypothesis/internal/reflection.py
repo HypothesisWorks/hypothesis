@@ -27,24 +27,11 @@ from tokenize import detect_encoding
 from types import ModuleType
 from typing import Callable, TypeVar
 
-from hypothesis.internal.compat import (
-    is_typed_named_tuple,
-    qualname,
-    update_code_location,
-)
+from hypothesis.internal.compat import is_typed_named_tuple, update_code_location
 from hypothesis.vendor.pretty import pretty
 
 C = TypeVar("C", bound=Callable)
 READTHEDOCS = os.environ.get("READTHEDOCS", None) == "True"
-
-
-def fully_qualified_name(f):
-    """Returns a unique identifier for f pointing to the module it was defined
-    on, and an containing functions."""
-    if f.__module__ is not None:
-        return f.__module__ + "." + qualname(f)
-    else:
-        return qualname(f)
 
 
 def is_mock(obj):

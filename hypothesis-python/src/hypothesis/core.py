@@ -66,7 +66,6 @@ from hypothesis.internal.compat import (
     bad_django_TestCase,
     get_type_hints,
     int_from_bytes,
-    qualname,
 )
 from hypothesis.internal.conjecture.data import ConjectureData, Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner
@@ -1045,11 +1044,12 @@ def given(
             if bad_django_TestCase(runner):  # pragma: no cover
                 # Covered by the Django tests, but not the pytest coverage task
                 raise InvalidArgument(
-                    "You have applied @given to a method on %s, but this "
+                    "You have applied @given to a method on "
+                    f"{type(runner).__qualname__}, but this "
                     "class does not inherit from the supported versions in "
                     "`hypothesis.extra.django`.  Use the Hypothesis variants "
                     "to ensure that each example is run in a separate "
-                    "database transaction." % qualname(type(runner))
+                    "database transaction."
                 )
 
             state = StateForActualGivenExecution(

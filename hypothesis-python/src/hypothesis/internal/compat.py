@@ -39,15 +39,6 @@ def int_to_byte(i):
     return bytes([i])
 
 
-def qualname(f):
-    try:
-        return f.__qualname__
-    except AttributeError:  # pragma: no cover
-        # It's unclear whether this fallback is actually needed by anything,
-        # but it probably doesn't hurt either.
-        return f.__name__
-
-
 try:
     # These types are new in Python 3.7, but also (partially) backported to the
     # typing backport on PyPI.  Use if possible; or fall back to older names.

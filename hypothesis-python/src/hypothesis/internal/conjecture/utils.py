@@ -21,7 +21,7 @@ import sys
 from collections import OrderedDict, abc
 
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import floor, int_from_bytes, qualname
+from hypothesis.internal.compat import floor, int_from_bytes
 from hypothesis.internal.floats import int_to_float
 
 LABEL_MASK = 2 ** 64 - 1
@@ -33,7 +33,7 @@ def calc_label_from_name(name: str) -> int:
 
 
 def calc_label_from_cls(cls: type) -> int:
-    return calc_label_from_name(qualname(cls))
+    return calc_label_from_name(cls.__qualname__)
 
 
 def combine_labels(*labels: int) -> int:
