@@ -26,6 +26,10 @@ if __name__ == "__main__":
     for d in data:
         checks[d["name"]].add(d["value"])
 
+    if not checks:
+        print("No branches found in the branch-check file?")
+        sys.exit(1)
+
     always_true = []
     always_false = []
 
@@ -42,17 +46,20 @@ if __name__ == "__main__":
 
     if failure:
         print("Some branches were not properly covered.")
-        print()
 
     if always_true:
-        print("The following were always True:")
         print()
+        print("The following were always True:")
         for c in always_true:
             print(f"  * {c}")
     if always_false:
-        print("The following were always False:")
         print()
+        print("The following were always False:")
         for c in always_false:
             print(f"  * {c}")
     if failure:
         sys.exit(1)
+
+    print(
+        f"""Successfully validated {len(checks)} branch{"es" if len(checks) > 1 else ""}."""
+    )
