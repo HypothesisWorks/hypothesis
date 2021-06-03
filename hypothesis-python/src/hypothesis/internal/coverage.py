@@ -44,7 +44,7 @@ def pretty_file_name(f):
         pass
 
     parts = f.split(os.path.sep)
-    if "hypothesis" in parts:
+    if "hypothesis" in parts:  # pragma: no branch
         parts = parts[-parts[::-1].index("hypothesis") :]
     result = os.path.sep.join(parts)
     pretty_file_name_cache[f] = result
@@ -107,7 +107,7 @@ if IN_COVERAGE_TESTS:
         return accept
 
 
-else:
+else:  # pragma: no cover
 
     def check_function(f):
         return f

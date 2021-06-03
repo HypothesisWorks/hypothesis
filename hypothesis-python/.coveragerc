@@ -6,7 +6,6 @@ include =
 omit =
     **/pytestplugin.py
     **/scrutineer.py
-    **/.tox/*/lib/*/site-packages/hypothesis/internal/coverage.py
 
 [report]
 exclude_lines =
