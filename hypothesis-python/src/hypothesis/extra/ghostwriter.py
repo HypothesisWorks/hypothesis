@@ -537,10 +537,6 @@ def _valid_syntax_repr(strategy):
 # When we ghostwrite for a module, we want to treat that as the __module__ for
 # each function, rather than whichever internal file it was actually defined in.
 KNOWN_FUNCTION_LOCATIONS: Dict[object, str] = {}
-# (g)ufuncs do not have a __module__ attribute, so we simply look for them in
-# any of the following modules which are found in sys.modules.  The order of
-# these entries doesn't matter, because we check identity of the found object.
-LOOK_FOR_UFUNCS_IN_MODULES = ("numpy", "astropy", "erfa", "dask", "numba")
 
 
 def _get_module(obj):
@@ -551,8 +547,9 @@ def _get_module(obj):
     except AttributeError:
         if not _is_probably_ufunc(obj):
             raise
-    for module_name in LOOK_FOR_UFUNCS_IN_MODULES:
-        if obj is getattr(sys.modules.get(module_name), obj.__name__, None):
+    for module_name in sorted(sys.modules, key=lambda n: tuple(n.split("."))):
+        if obj is getattr(sys.modules[module_name], obj.__name__, None):
+            KNOWN_FUNCTION_LOCATIONS[obj] = module_name
             return module_name
     raise RuntimeError(f"Could not find module for ufunc {obj.__name__} ({obj!r}")
 
@@ -726,7 +723,7 @@ ROUNDTRIP_PAIRS = (
     (r"(.*)en(.+)", "{}de{}"),
     # Shared postfix, prefix only on "inverse" function
     (r"(.+)", "de{}"),
-    (r"(.+)", "un{}"),
+    (r"(?!safe)(.+)", "un{}"),  # safe_load / unsafe_load isn't a roundtrip
     # a2b_postfix and b2a_postfix.  Not a fan of this pattern, but it's pretty
     # common in code imitating an C API - see e.g. the stdlib binascii module.
     (r"(.+)2(.+?)(_.+)?", "{1}2{0}{2}"),
