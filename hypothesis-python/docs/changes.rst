@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.13.12:
+
+--------------------
+6.13.12 - 2021-06-03
+--------------------
+
+This patch reduces the amount of internal code excluded from our test suite's
+code coverage checks.
+
+There is no user-visible change.
+
 .. _v6.13.11:
 
 --------------------
