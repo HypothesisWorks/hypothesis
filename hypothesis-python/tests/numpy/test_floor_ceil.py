@@ -1,0 +1,53 @@
+# This file is part of Hypothesis, which may be found at
+# https://github.com/HypothesisWorks/hypothesis/
+#
+# Most of this work is copyright (C) 2013-2021 David R. MacIver
+# (david@drmaciver.com), but it contains contributions by others. See
+# CONTRIBUTING.rst for a full list of people who may hold copyright, and
+# consult the git log if you need to determine who owns an individual
+# contribution.
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v. 2.0. If a copy of the MPL was not distributed with this file, You can
+# obtain one at https://mozilla.org/MPL/2.0/.
+#
+# END HEADER
+
+import math
+
+import numpy as np
+import pytest
+
+from hypothesis.internal.compat import ceil, floor
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        # These are strings so that the test names are easier to read.
+        "2**64+1",
+        "2**64-1",
+        "2**63+1",
+        "2**53+1",
+        "-2**53-1",
+        "-2**63+1",
+        "-2**63-1",
+        "-2**64+1",
+        "-2**64-1",
+    ],
+)
+def test_our_floor_and_ceil_avoid_numpy_rounding(value):
+    a = np.array([eval(value)])
+
+    f = floor(a)
+    c = ceil(a)
+
+    assert type(f) == int
+    assert type(c) == int
+
+    # Using math.floor or math.ceil for these values would give an incorrect
+    # result.
+    assert (math.floor(a) > a) or (math.ceil(a) < a)
+
+    assert f <= a <= c
+    assert f + 1 > a > c - 1
