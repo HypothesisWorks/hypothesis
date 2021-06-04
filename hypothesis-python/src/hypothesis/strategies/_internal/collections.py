@@ -13,13 +13,20 @@
 #
 # END HEADER
 
+from typing import Any, Tuple, overload
+
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.junkdrawer import LazySequenceCopy
 from hypothesis.internal.conjecture.utils import combine_labels
 from hypothesis.strategies._internal.strategies import (
+    T3,
+    T4,
+    T5,
+    Ex,
     MappedSearchStrategy,
     SearchStrategy,
+    T,
     check_strategy,
     filter_not_satisfied,
 )
@@ -44,10 +51,7 @@ class TupleStrategy(SearchStrategy):
         )
 
     def __repr__(self):
-        if len(self.element_strategies) == 1:
-            tuple_string = f"{self.element_strategies[0]!r},"
-        else:
-            tuple_string = ", ".join(map(repr, self.element_strategies))
+        tuple_string = ", ".join(map(repr, self.element_strategies))
         return f"TupleStrategy(({tuple_string}))"
 
     def calc_has_reusable_values(self, recur):
@@ -60,9 +64,59 @@ class TupleStrategy(SearchStrategy):
         return any(recur(e) for e in self.element_strategies)
 
 
+@overload
+def tuples() -> SearchStrategy[Tuple[()]]:
+    raise NotImplementedError
+
+
+@overload  # noqa: F811
+def tuples(a1: SearchStrategy[Ex]) -> SearchStrategy[Tuple[Ex]]:
+    raise NotImplementedError
+
+
+@overload  # noqa: F811
+def tuples(
+    a1: SearchStrategy[Ex], a2: SearchStrategy[T]
+) -> SearchStrategy[Tuple[Ex, T]]:
+    raise NotImplementedError
+
+
+@overload  # noqa: F811
+def tuples(
+    a1: SearchStrategy[Ex], a2: SearchStrategy[T], a3: SearchStrategy[T3]
+) -> SearchStrategy[Tuple[Ex, T, T3]]:
+    raise NotImplementedError
+
+
+@overload  # noqa: F811
+def tuples(
+    a1: SearchStrategy[Ex],
+    a2: SearchStrategy[T],
+    a3: SearchStrategy[T3],
+    a4: SearchStrategy[T4],
+) -> SearchStrategy[Tuple[Ex, T, T3, T4]]:
+    raise NotImplementedError
+
+
+@overload  # noqa: F811
+def tuples(
+    a1: SearchStrategy[Ex],
+    a2: SearchStrategy[T],
+    a3: SearchStrategy[T3],
+    a4: SearchStrategy[T4],
+    a5: SearchStrategy[T5],
+) -> SearchStrategy[Tuple[Ex, T, T3, T4, T5]]:
+    raise NotImplementedError
+
+
+@overload  # noqa: F811
+def tuples(*args: SearchStrategy[Any]) -> SearchStrategy[Tuple]:
+    raise NotImplementedError
+
+
 @cacheable
 @defines_strategy()
-def tuples(*args: SearchStrategy) -> SearchStrategy[tuple]:
+def tuples(*args):  # noqa: F811
     """Return a strategy which generates a tuple of the same length as args by
     generating the value at index i from args[i].
 

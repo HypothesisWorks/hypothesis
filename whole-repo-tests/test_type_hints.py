@@ -72,6 +72,17 @@ def get_mypy_analysed_type(fname, val):
             "one_of(integers(), text(), none(), binary(), builds(list), builds(dict))",
             "Any",
         ),
+        ("tuples()", "Tuple[]"),  # Should be `Tuple[()]`, but this is what mypy prints
+        ("tuples(integers())", "Tuple[int]"),
+        ("tuples(integers(), text())", "Tuple[int, str]"),
+        (
+            "tuples(integers(), text(), integers(), text(), integers())",
+            "Tuple[int, str, int, str, int]",
+        ),
+        (
+            "tuples(text(), text(), text(), text(), text(), text())",
+            "tuple[Any]",  # note lower-case; this is the arbitrary-length *args case
+        ),
     ],
 )
 def test_revealed_types(tmpdir, val, expect):
