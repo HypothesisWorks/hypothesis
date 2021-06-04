@@ -16,24 +16,7 @@
 import math
 
 from hypothesis import given, strategies as st
-from hypothesis.internal.compat import (
-    ceil,
-    floor,
-    int_from_bytes,
-    int_to_bytes,
-    qualname,
-)
-
-
-class Foo:
-    def bar(self):
-        pass
-
-
-def test_qualname():
-    assert qualname(Foo.bar) == "Foo.bar"
-    assert qualname(Foo().bar) == "Foo.bar"
-    assert qualname(qualname) == "qualname"
+from hypothesis.internal.compat import ceil, floor, int_from_bytes, int_to_bytes
 
 
 @given(st.binary())

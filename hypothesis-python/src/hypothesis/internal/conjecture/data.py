@@ -271,7 +271,7 @@ def calculated_example_property(cls):
         return result
 
     lazy_calculate.__name__ = cls.__name__
-    lazy_calculate.__qualname__ = getattr(cls, "__qualname__", cls.__name__)
+    lazy_calculate.__qualname__ = cls.__qualname__
     return property(lazy_calculate)
 
 

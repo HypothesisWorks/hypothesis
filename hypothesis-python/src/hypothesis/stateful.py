@@ -26,6 +26,7 @@ from collections.abc import Iterable
 from copy import copy
 from functools import lru_cache
 from io import StringIO
+from operator import attrgetter
 from typing import Any, Dict, List
 from unittest import TestCase
 
@@ -36,7 +37,6 @@ from hypothesis._settings import HealthCheck, Verbosity, settings as Settings
 from hypothesis.control import current_build_context
 from hypothesis.core import given
 from hypothesis.errors import InvalidArgument, InvalidDefinition
-from hypothesis.internal.compat import qualname
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.reflection import function_digest, nicerepr, proxies
 from hypothesis.internal.validation import check_type
@@ -361,14 +361,16 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
             runTest.is_hypothesis_test = True
 
         StateMachineTestCase.__name__ = state_machine_class.__name__ + ".TestCase"
-        StateMachineTestCase.__qualname__ = qualname(state_machine_class) + ".TestCase"
+        StateMachineTestCase.__qualname__ = (
+            state_machine_class.__qualname__ + ".TestCase"
+        )
         return StateMachineTestCase
 
 
 @attr.s()
 class Rule:
     targets = attr.ib()
-    function = attr.ib(repr=qualname)
+    function = attr.ib(repr=attrgetter("__qualname__"))
     arguments = attr.ib()
     preconditions = attr.ib()
     bundles = attr.ib(init=False)
