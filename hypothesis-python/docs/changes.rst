@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.13.13:
+
+--------------------
+6.13.13 - 2021-06-04
+--------------------
+
+This patch teaches :doc:`the Ghostwriter <ghostwriter>` how to find
+:np-ref:`custom ufuncs <ufuncs.html>` from *any* module that defines them,
+and that ``yaml.unsafe_load()`` does not undo ``yaml.safe_load()``.
+
 .. _v6.13.12:
 
 --------------------
