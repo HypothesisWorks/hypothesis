@@ -25,7 +25,7 @@ backcall==0.2.0
     # via ipython
 bandit==1.7.0
     # via flake8-bandit
-black==21.5b1
+black==21.5b2
     # via
     #   blacken-docs
     #   shed
@@ -33,7 +33,7 @@ blacken-docs==1.10.0
     # via -r requirements/tools.in
 bleach==3.3.0
     # via readme-renderer
-certifi==2020.12.5
+certifi==2021.5.30
     # via requests
 cffi==1.14.5
     # via cryptography
@@ -61,7 +61,7 @@ decorator==5.0.9
     #   traitlets
 distlib==0.3.2
     # via virtualenv
-django==3.2.3
+django==3.2.4
     # via -r requirements/tools.in
 docutils==0.16
     # via
@@ -107,7 +107,7 @@ idna==2.10
     # via requests
 imagesize==1.2.0
     # via sphinx
-importlib-metadata==4.3.1
+importlib-metadata==4.5.0
     # via
     #   keyring
     #   twine
@@ -181,7 +181,7 @@ py==1.10.0
     # via
     #   pytest
     #   tox
-pybetter==0.3.6.1
+pybetter==0.3.7
     # via shed
 pycodestyle==2.7.0
     # via
@@ -213,7 +213,7 @@ pytz==2021.1
     # via
     #   babel
     #   django
-pyupgrade==2.19.0
+pyupgrade==2.19.1
     # via shed
 pyyaml==5.4.1
     # via
@@ -308,7 +308,7 @@ typing-extensions==3.10.0.0
     #   libcst
     #   mypy
     #   typing-inspect
-typing-inspect==0.6.0
+typing-inspect==0.7.0
     # via libcst
 urllib3==1.26.5
     # via requests
