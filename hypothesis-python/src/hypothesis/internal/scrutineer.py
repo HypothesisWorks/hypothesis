@@ -31,11 +31,13 @@ def should_trace_file(fname):
 
 
 class Tracer:
-    """A super-simple line coverage tracer."""
+    """A super-simple branch coverage tracer."""
+
+    __slots__ = ("branches", "_previous_location")
 
     def __init__(self):
         self.branches = set()
-        self.prev = None
+        self._previous_location = None
 
     def trace(self, frame, event, arg):
         if event == "call":
@@ -43,8 +45,9 @@ class Tracer:
         elif event == "line":
             fname = frame.f_code.co_filename
             if should_trace_file(fname):
-                self.branches.add((self.prev, (fname, frame.f_lineno)))
-                self.prev = (fname, frame.f_lineno)
+                current_location = (fname, frame.f_lineno)
+                self.branches.add((self._previous_location, current_location))
+                self._previous_location = current_location
 
 
 def get_explaining_locations(traces):
@@ -94,6 +97,7 @@ EXPLANATION_STUB = (
     "Explanation:",
     "    These lines were always and only run by failing examples:",
 )
+HAD_TRACE = "    We didn't try to explain this, because sys.gettrace()="
 
 
 def make_report(explanations, cap_lines_at=5):
@@ -114,8 +118,9 @@ def make_report(explanations, cap_lines_at=5):
 
 def explanatory_lines(traces, settings):
     if Phase.explain in settings.phases and sys.gettrace() and not traces:
-        msg = "    We didn't try to explain this, because sys.gettrace()="
-        return defaultdict(lambda: [EXPLANATION_STUB[0], msg + repr(sys.gettrace())])
+        return defaultdict(
+            lambda: [EXPLANATION_STUB[0], HAD_TRACE + repr(sys.gettrace())]
+        )
     # Return human-readable report lines summarising the traces
     explanations = get_explaining_locations(traces)
     max_lines = 5 if settings.verbosity <= Verbosity.normal else 100

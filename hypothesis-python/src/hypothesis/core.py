@@ -529,6 +529,7 @@ class StateForActualGivenExecution:
 
         self.files_to_propagate = set()
         self.failed_normally = False
+        self.failed_due_to_deadline = False
 
         self.explain_traces = defaultdict(set)
 
@@ -668,6 +669,8 @@ class StateForActualGivenExecution:
             trace = frozenset()
             if (
                 self.failed_normally
+                and not self.failed_due_to_deadline
+                and Phase.shrink in self.settings.phases
                 and Phase.explain in self.settings.phases
                 and sys.gettrace() is None
                 and not PYPY
@@ -736,6 +739,9 @@ class StateForActualGivenExecution:
                 if trace:  # pragma: no cover
                     # Trace collection is explicitly disabled under coverage.
                     self.explain_traces[interesting_origin].add(trace)
+                if interesting_origin[0] == DeadlineExceeded:
+                    self.failed_due_to_deadline = True
+                    self.explain_traces.clear()
                 data.mark_interesting(interesting_origin)
 
     def run_engine(self):
