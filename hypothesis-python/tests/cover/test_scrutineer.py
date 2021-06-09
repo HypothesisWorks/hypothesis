@@ -19,7 +19,7 @@ import sys
 import pytest
 
 from hypothesis.internal.compat import PYPY
-from hypothesis.internal.scrutineer import make_report
+from hypothesis.internal.scrutineer import HAD_TRACE, make_report
 
 BUG_MARKER = "# BUG"
 PRELUDE = """
@@ -88,13 +88,8 @@ def test_cannot_explain_message(testdir):
 
         code = PRELUDE + TRIVIAL
         test_file = testdir.makepyfile(code)
-        result = testdir.runpytest_inprocess(test_file, "--tb=native")
-        result.stdout.re_match_lines(
-            [
-                r"Explanation:",
-                fr"""\s*{re.escape("We didn't try to explain this, because sys.gettrace()=")}.*""",
-            ],
-            consecutive=True,
+        testdir.runpytest_inprocess(test_file, "--tb=native").stdout.re_match_lines(
+            [r"Explanation:", re.escape(HAD_TRACE)], consecutive=True
         )
     finally:
         if no_tracer:

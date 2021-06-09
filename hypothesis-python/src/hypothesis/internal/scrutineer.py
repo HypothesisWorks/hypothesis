@@ -94,6 +94,7 @@ EXPLANATION_STUB = (
     "Explanation:",
     "    These lines were always and only run by failing examples:",
 )
+HAD_TRACE = "    We didn't try to explain this, because sys.gettrace()="
 
 
 def make_report(explanations, cap_lines_at=5):
@@ -114,8 +115,9 @@ def make_report(explanations, cap_lines_at=5):
 
 def explanatory_lines(traces, settings):
     if Phase.explain in settings.phases and sys.gettrace() and not traces:
-        msg = "    We didn't try to explain this, because sys.gettrace()="
-        return defaultdict(lambda: [EXPLANATION_STUB[0], msg + repr(sys.gettrace())])
+        return defaultdict(
+            lambda: [EXPLANATION_STUB[0], HAD_TRACE + repr(sys.gettrace())]
+        )
     # Return human-readable report lines summarising the traces
     explanations = get_explaining_locations(traces)
     max_lines = 5 if settings.verbosity <= Verbosity.normal else 100
