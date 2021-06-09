@@ -670,6 +670,7 @@ class StateForActualGivenExecution:
             if (
                 self.failed_normally
                 and not self.failed_due_to_deadline
+                and Phase.shrink in self.settings.phases
                 and Phase.explain in self.settings.phases
                 and sys.gettrace() is None
                 and not PYPY
