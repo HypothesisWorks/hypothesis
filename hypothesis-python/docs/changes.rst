@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.14.0:
+
+-------------------
+6.14.0 - 2021-06-09
+-------------------
+
+The :ref:`explain phase <phases>` now requires shrinking to be enabled,
+and will be automatically skipped for deadline-exceeded errors.
+
 .. _v6.13.14:
 
 --------------------
