@@ -25,6 +25,10 @@ from hypothesis.internal.scrutineer import make_report
 pytestmark = pytest.mark.skipif(PYPY or sys.gettrace(), reason="See comment")
 
 BUG_MARKER = "# BUG"
+DEADLINE_PRELUDE = """
+from datetime import timedelta
+from hypothesis.errors import DeadlineExceeded
+"""
 PRELUDE = """
 from hypothesis import Phase, given, settings, strategies as st
 
@@ -70,3 +74,10 @@ def test_explanations(code, testdir):
     assert len(expected) == code.count(BUG_MARKER)
     for report in expected:
         assert report in pytest_stdout
+
+
+@pytest.mark.parametrize("code", FRAGMENTS)
+def test_no_explanations_if_deadline_exceeded(code, testdir):
+    code = code.replace("AssertionError", "DeadlineExceeded(timedelta(), timedelta())")
+    pytest_stdout, _ = get_reports(DEADLINE_PRELUDE + PRELUDE + code, testdir=testdir)
+    assert "Explanation:" not in pytest_stdout
