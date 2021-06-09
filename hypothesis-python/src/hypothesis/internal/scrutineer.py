@@ -31,11 +31,13 @@ def should_trace_file(fname):
 
 
 class Tracer:
-    """A super-simple line coverage tracer."""
+    """A super-simple branch coverage tracer."""
+
+    __slots__ = ("branches", "_previous_location")
 
     def __init__(self):
         self.branches = set()
-        self.prev = None
+        self._previous_location = None
 
     def trace(self, frame, event, arg):
         if event == "call":
@@ -43,8 +45,9 @@ class Tracer:
         elif event == "line":
             fname = frame.f_code.co_filename
             if should_trace_file(fname):
-                self.branches.add((self.prev, (fname, frame.f_lineno)))
-                self.prev = (fname, frame.f_lineno)
+                current_location = (fname, frame.f_lineno)
+                self.branches.add((self._previous_location, current_location))
+                self._previous_location = current_location
 
 
 def get_explaining_locations(traces):
