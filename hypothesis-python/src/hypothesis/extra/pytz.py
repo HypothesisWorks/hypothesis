@@ -28,7 +28,7 @@ You can use this strategy to make
 import datetime as dt
 
 import pytz
-from pytz.tzfile import StaticTzInfo
+from pytz.tzinfo import StaticTzInfo  # type: ignore  # incomplete stubs
 
 from hypothesis import strategies as st
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy

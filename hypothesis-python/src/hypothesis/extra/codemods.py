@@ -103,7 +103,7 @@ class HypothesisFixComplexMinMagnitude(VisitorBasedCodemodCommand):
     METADATA_DEPENDENCIES = (cst.metadata.QualifiedNameProvider,)
 
     @m.call_if_inside(
-        m.Call(metadata=match_qualname("hypothesis.strategies.complex_numbers"))
+        m.Call(metadata=match_qualname("hypothesis.strategies.complex_numbers"))  # type: ignore
     )
     def leave_Arg(self, original_node, updated_node):
         if m.matches(
