@@ -405,9 +405,9 @@ _global_type_lookup: typing.Dict[
         UnicodeTranslateError, st.text(), st.just(0), st.just(0), st.just("reason")
     ),
     enumerate: st.builds(enumerate, st.just(())),
-    filter: st.builds(filter, st.just(lambda _: None), st.just(())),  # type: ignore
-    map: st.builds(map, st.just(lambda _: None), st.just(())),  # type: ignore
-    reversed: st.builds(reversed, st.just(())),  # type: ignore
+    filter: st.builds(filter, st.just(lambda _: None), st.just(())),
+    map: st.builds(map, st.just(lambda _: None), st.just(())),
+    reversed: st.builds(reversed, st.just(())),
     classmethod: st.builds(classmethod, st.just(lambda self: self)),
     staticmethod: st.builds(staticmethod, st.just(lambda self: self)),
     super: st.builds(super, st.from_type(type)),

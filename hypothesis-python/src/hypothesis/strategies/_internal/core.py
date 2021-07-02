@@ -265,7 +265,7 @@ def lists(
             and len(unique_by) == 1
             and (
                 # Introspection for either `itemgetter(0)`, or `lambda x: x[0]`
-                isinstance(unique_by[0], operator.itemgetter)  # type: ignore
+                isinstance(unique_by[0], operator.itemgetter)
                 and repr(unique_by[0]) == "operator.itemgetter(0)"
                 or isinstance(unique_by[0], FunctionType)
                 and re.fullmatch(
@@ -858,9 +858,6 @@ def builds(
             )
         for kw in set(hints) & (required | to_infer):
             kwargs[kw] = from_type(hints[kw])
-
-    # Mypy doesn't realise that `infer` is gone from kwargs now
-    # and thinks that target and args have the same (union) type.
     return BuildsStrategy(target, args, kwargs)
 
 

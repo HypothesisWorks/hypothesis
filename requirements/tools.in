@@ -28,3 +28,7 @@ toml
 tox
 traitlets < 5.0   # drops support for Python 3.6
 twine
+types-click
+types-pkg_resources
+types-pytz
+types-redis
