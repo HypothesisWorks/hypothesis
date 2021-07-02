@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.14.1:
+
+-------------------
+6.14.1 - 2021-07-02
+-------------------
+
+This patch updates some internal type annotations.
+There is no user-visible change.
+
 .. _v6.14.0:
 
 -------------------
