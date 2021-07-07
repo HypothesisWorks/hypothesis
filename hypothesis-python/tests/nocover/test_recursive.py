@@ -137,6 +137,7 @@ def test_drawing_from_recursive_strategy_is_thread_safe():
 
     errors = []
 
+    @settings(database=None)
     @given(data=st.data())
     def test(data):
         try:
