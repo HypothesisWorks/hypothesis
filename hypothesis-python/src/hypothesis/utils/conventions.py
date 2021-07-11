@@ -13,7 +13,6 @@
 #
 # END HEADER
 
-
 class UniqueIdentifier:
     """A factory for sentinel objects with nice reprs."""
 
