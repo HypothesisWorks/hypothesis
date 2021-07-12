@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.14.2:
+
+-------------------
+6.14.2 - 2021-07-12
+-------------------
+
+This patch ensures that we shorten tracebacks for tests which fail due
+to inconsistent data generation between runs (i.e. raise ``Flaky``).
+
 .. _v6.14.1:
 
 -------------------
