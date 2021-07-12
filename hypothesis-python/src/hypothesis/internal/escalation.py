@@ -23,6 +23,7 @@ from typing import Dict
 import hypothesis
 from hypothesis.errors import (
     DeadlineExceeded,
+    Flaky,
     HypothesisException,
     MultipleFailures,
     StopTest,
@@ -91,7 +92,7 @@ def get_trimmed_traceback(exception=None):
     # was raised inside Hypothesis (and is not a MultipleFailures)
     if hypothesis.settings.default.verbosity >= hypothesis.Verbosity.debug or (
         is_hypothesis_file(traceback.extract_tb(tb)[-1][0])
-        and not isinstance(exception, MultipleFailures)
+        and not isinstance(exception, (Flaky, MultipleFailures))
     ):
         return tb
     while tb is not None and (

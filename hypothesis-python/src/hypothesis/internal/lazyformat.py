@@ -13,7 +13,6 @@
 #
 # END HEADER
 
-
 class lazyformat:
     """A format string that isn't evaluated until it's needed."""
 

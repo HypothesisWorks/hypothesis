@@ -13,7 +13,6 @@
 #
 # END HEADER
 
-
 def default_executor(function):  # pragma: nocover
     raise NotImplementedError()  # We don't actually use this any more
 
