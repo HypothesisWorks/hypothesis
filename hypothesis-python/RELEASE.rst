@@ -1,3 +1,4 @@
 RELEASE_TYPE: patch
 
-This patch updates our autoformatting tools, improving our code style without any API changes.
+This patch ensures that we shorten tracebacks for tests which fail due
+to inconsistent data generation between runs (i.e. raise ``Flaky``).
