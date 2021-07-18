@@ -16,7 +16,7 @@ numpy==1.21.0
     #   pandas
 pandas==1.3.0
     # via -r requirements/coverage.in
-python-dateutil==2.8.1
+python-dateutil==2.8.2
     # via pandas
 pytz==2021.1
     # via

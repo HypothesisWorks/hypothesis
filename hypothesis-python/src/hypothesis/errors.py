@@ -13,6 +13,7 @@
 #
 # END HEADER
 
+
 class HypothesisException(Exception):
     """Generic parent class for exceptions thrown by Hypothesis."""
 

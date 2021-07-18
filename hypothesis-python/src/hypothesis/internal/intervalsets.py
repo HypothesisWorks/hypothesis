@@ -13,6 +13,7 @@
 #
 # END HEADER
 
+
 class IntervalSet:
     def __init__(self, intervals):
         self.intervals = tuple(intervals)
