@@ -461,8 +461,9 @@ class HealthCheck(Enum):
         return list(HealthCheck)
 
     data_too_large = 1
-    """Check for when the typical size of the examples you are generating
-    exceeds the maximum allowed size too often."""
+    """Check for when the typical size of the examples you are generating too
+    often exceed the maximum amount of random data hypothesis is able to
+    generate."""
 
     filter_too_much = 2
     """Check for when the test is filtering out too many examples, either
