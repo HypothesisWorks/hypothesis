@@ -10,7 +10,7 @@ coverage==5.5
     # via -r requirements/coverage.in
 lark-parser==0.11.3
     # via -r requirements/coverage.in
-numpy==1.21.0
+numpy==1.21.1
     # via
     #   -r requirements/coverage.in
     #   pandas
