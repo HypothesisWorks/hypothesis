@@ -461,8 +461,14 @@ class HealthCheck(Enum):
         return list(HealthCheck)
 
     data_too_large = 1
-    """Check for when the typical size of the examples you are generating
-    exceeds the maximum allowed size too often."""
+    """Checks if too many examples are aborted for being too large.
+
+    This is measured by the number of random choices that Hypothesis makes
+    in order to generate something, not the size of the generated object.
+    For example, choosing a 100MB object from a predefined list would take
+    only a few bits, while generating 10KB of JSON from scratch might trigger
+    this health check.
+    """
 
     filter_too_much = 2
     """Check for when the test is filtering out too many examples, either

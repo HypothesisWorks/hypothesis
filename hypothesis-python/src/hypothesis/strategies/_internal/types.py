@@ -98,13 +98,17 @@ def try_issubclass(thing, superclass):
 
 
 def is_a_new_type(thing):
-    # At runtime, `typing.NewType` returns an identity function rather
-    # than an actual type, but we can check whether that thing matches.
-    return (
-        hasattr(thing, "__supertype__")
-        and getattr(thing, "__module__", None) in ("typing", "typing_extensions")
-        and inspect.isfunction(thing)
-    )
+    if sys.version_info[:2] < (3, 10):
+        # At runtime, `typing.NewType` returns an identity function rather
+        # than an actual type, but we can check whether that thing matches.
+        return (
+            hasattr(thing, "__supertype__")
+            and getattr(thing, "__module__", None) in ("typing", "typing_extensions")
+            and inspect.isfunction(thing)
+        )
+    # In 3.10 and later, NewType is actually a class - which simplifies things.
+    # See https://bugs.python.org/issue44353 for links to the various patches.
+    return isinstance(thing, typing.NewType)  # pragma: no cover  # on 3.8, anyway
 
 
 def is_a_type(thing):

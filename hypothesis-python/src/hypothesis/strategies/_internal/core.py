@@ -1711,7 +1711,7 @@ def register_type_strategy(
     from hypothesis.strategies._internal import types
 
     if not types.is_a_type(custom_type):
-        raise InvalidArgument("custom_type=%r must be a type")
+        raise InvalidArgument(f"custom_type={custom_type!r} must be a type")
     elif not (isinstance(strategy, SearchStrategy) or callable(strategy)):
         raise InvalidArgument(
             "strategy=%r must be a SearchStrategy, or a function that takes "
