@@ -98,7 +98,7 @@ def try_issubclass(thing, superclass):
 
 
 def is_a_new_type(thing):
-    if sys.version_info[:2] < (3, 10):
+    if not isinstance(typing.NewType, type):
         # At runtime, `typing.NewType` returns an identity function rather
         # than an actual type, but we can check whether that thing matches.
         return (
