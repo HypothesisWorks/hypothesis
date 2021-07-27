@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.14.5:
+
+-------------------
+6.14.5 - 2021-07-27
+-------------------
+
+This patch fixes ``hypothesis.strategies._internal.types.is_a_new_type``.
+It was failing on Python ``3.10.0b4``, where ``NewType`` is a function.
+
 .. _v6.14.4:
 
 -------------------
