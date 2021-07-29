@@ -195,8 +195,7 @@ for your data type, returns a new strategy for it. So for example:
     ... from pprint import pprint
     >>> json = recursive(
     ...     none() | booleans() | floats() | text(printable),
-    ...     lambda children: lists(children, 1)
-    ...     | dictionaries(text(printable), children, min_size=1),
+    ...     lambda children: lists(children) | dictionaries(text(printable), children),
     ... )
     >>> pprint(json.example())
     [[1.175494351e-38, ']', 1.9, True, False, '.M}Xl', ''], True]
