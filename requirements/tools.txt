@@ -37,7 +37,7 @@ certifi==2021.5.30
     # via requests
 cffi==1.14.6
     # via cryptography
-charset-normalizer==2.0.3
+charset-normalizer==2.0.4
     # via requests
 click==7.1.2
     # via
@@ -107,7 +107,7 @@ idna==3.2
     # via requests
 imagesize==1.2.0
     # via sphinx
-importlib-metadata==4.6.1
+importlib-metadata==4.6.3
     # via
     #   keyring
     #   twine
@@ -117,11 +117,11 @@ ipython==7.16.1
     # via -r requirements/tools.in
 ipython-genutils==0.2.0
     # via traitlets
-isort==5.9.2
+isort==5.9.3
     # via shed
 jedi==0.18.0
     # via ipython
-jeepney==0.7.0
+jeepney==0.7.1
     # via
     #   keyring
     #   secretstorage
@@ -169,7 +169,7 @@ pip-tools==6.2.0
     # via -r requirements/tools.in
 pkginfo==1.7.1
     # via twine
-platformdirs==2.0.2
+platformdirs==2.2.0
     # via virtualenv
 pluggy==0.13.1
     # via
@@ -215,7 +215,7 @@ pytz==2021.1
     # via
     #   babel
     #   django
-pyupgrade==2.22.0
+pyupgrade==2.23.1
     # via shed
 pyyaml==5.4.1
     # via
@@ -258,7 +258,7 @@ snowballstemmer==2.1.0
     #   sphinx
 sortedcontainers==2.4.0
     # via hypothesis (hypothesis-python/setup.py)
-sphinx==4.1.1
+sphinx==4.1.2
     # via
     #   -r requirements/tools.in
     #   sphinx-rtd-theme
@@ -292,13 +292,13 @@ toml==0.10.2
     #   mypy
     #   pytest
     #   tox
-tomli==1.1.0
+tomli==1.2.0
     # via
     #   black
     #   pep517
-tox==3.24.0
+tox==3.24.1
     # via -r requirements/tools.in
-tqdm==4.61.2
+tqdm==4.62.0
     # via twine
 traitlets==4.3.3
     # via
@@ -323,7 +323,7 @@ typing-inspect==0.7.1
     # via libcst
 urllib3==1.26.6
     # via requests
-virtualenv==20.6.0
+virtualenv==20.7.0
     # via tox
 wcwidth==0.2.5
     # via prompt-toolkit
