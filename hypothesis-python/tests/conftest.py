@@ -20,6 +20,7 @@ import time as time_module
 
 import pytest
 
+from hypothesis._settings import is_in_ci
 from hypothesis.internal.detection import is_hypothesis_test
 
 from tests.common import TIME_INCREMENT
@@ -95,6 +96,12 @@ def pytest_runtest_call(item):
     # This hookwrapper checks for PRNG state leaks from Hypothesis tests.
     # See: https://github.com/HypothesisWorks/hypothesis/issues/1919
     if not (hasattr(item, "obj") and is_hypothesis_test(item.obj)):
+        yield
+    elif "pytest_randomly" in sys.modules:
+        # See https://github.com/HypothesisWorks/hypothesis/issues/3041 - this
+        # branch exists to make it easier on external contributors, but should
+        # never run in our CI (because that would disable the check entirely).
+        assert not is_in_ci()
         yield
     else:
         # We start by peturbing the state of the PRNG, because repeatedly
