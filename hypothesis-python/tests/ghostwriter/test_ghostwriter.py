@@ -36,6 +36,7 @@ from typing import (
     ValuesView,
 )
 
+import attr
 import pytest
 
 from hypothesis.errors import InvalidArgument, MultipleFailures, Unsatisfiable
@@ -164,6 +165,15 @@ def takes_frozensets(a: FrozenSet[int], b: FrozenSet[int]) -> None:
     pass
 
 
+@attr.s()
+class Foo:
+    foo: str = attr.ib()
+
+
+def takes_attrs_class(x: Foo) -> None:
+    pass
+
+
 @varied_excepts
 @pytest.mark.parametrize(
     "func",
@@ -183,6 +193,7 @@ def takes_frozensets(a: FrozenSet[int], b: FrozenSet[int]) -> None:
         takes_pattern,
         takes_sized,
         takes_frozensets,
+        takes_attrs_class,
     ],
 )
 def test_ghostwriter_fuzz(func, ex):
