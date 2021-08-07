@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.14.6:
+
+-------------------
+6.14.6 - 2021-08-07
+-------------------
+
+This patch improves the error message for :issue:`3016`, where :pep:`585`
+builtin generics with self-referential forward-reference strings cannot be
+resolved to a strategy by :func:`~hypothesis.strategies.from_type`.
+
 .. _v6.14.5:
 
 -------------------
