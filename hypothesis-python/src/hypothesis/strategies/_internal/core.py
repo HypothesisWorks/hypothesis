@@ -1007,7 +1007,15 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
                 else:
                     literals.append(arg)
             return sampled_from(literals)
-        raise InvalidArgument(f"thing={thing} must be a type")
+        if isinstance(thing, str):
+            # See https://github.com/HypothesisWorks/hypothesis/issues/3016
+            raise InvalidArgument(
+                f"Got {thing!r} as a type annotation, but the forward-reference "
+                "could not be resolved from a string to a type.  Consider using "
+                "`from __future__ import annotations` instead of forward-reference "
+                "strings."
+            )
+        raise InvalidArgument(f"thing={thing!r} must be a type")  # pragma: no cover
     # Now that we know `thing` is a type, the first step is to check for an
     # explicitly registered strategy.  This is the best (and hopefully most
     # common) way to resolve a type to a strategy.  Note that the value in the
