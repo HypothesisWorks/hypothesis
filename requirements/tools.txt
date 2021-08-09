@@ -31,7 +31,7 @@ black==21.7b0
     #   shed
 blacken-docs==1.10.0
     # via -r requirements/tools.in
-bleach==3.3.1
+bleach==4.0.0
     # via readme-renderer
 certifi==2021.5.30
     # via requests
@@ -61,7 +61,7 @@ decorator==5.0.9
     #   traitlets
 distlib==0.3.2
     # via virtualenv
-django==3.2.5
+django==3.2.6
     # via -r requirements/tools.in
 docutils==0.16
     # via
@@ -215,7 +215,7 @@ pytz==2021.1
     # via
     #   babel
     #   django
-pyupgrade==2.23.1
+pyupgrade==2.23.3
     # via shed
 pyyaml==5.4.1
     # via
@@ -223,7 +223,7 @@ pyyaml==5.4.1
     #   libcst
 readme-renderer==29.0
     # via twine
-regex==2021.7.6
+regex==2021.8.3
     # via black
 requests==2.26.0
     # via
@@ -292,7 +292,7 @@ toml==0.10.2
     #   mypy
     #   pytest
     #   tox
-tomli==1.2.0
+tomli==1.2.1
     # via
     #   black
     #   pep517
