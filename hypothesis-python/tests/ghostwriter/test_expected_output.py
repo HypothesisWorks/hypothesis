@@ -101,7 +101,10 @@ def divide(a: int, b: int) -> float:
             .replace("import sre_constants\n", "").replace("sre_constants.", "re."),
         ),
         ("re_compile_unittest", ghostwriter.fuzz(re.compile, style="unittest")),
-        ("base64_magic", ghostwriter.magic(base64)),
+        pytest.param(
+            ("base64_magic", ghostwriter.magic(base64)),
+            marks=pytest.mark.skipif("sys.version_info[:2] >= (3, 10)"),
+        ),
         ("sorted_idempotent", ghostwriter.idempotent(sorted)),
         ("timsort_idempotent", ghostwriter.idempotent(timsort)),
         (

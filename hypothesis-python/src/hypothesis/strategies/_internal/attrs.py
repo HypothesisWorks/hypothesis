@@ -21,6 +21,7 @@ import attr
 from hypothesis import strategies as st
 from hypothesis.errors import ResolutionFailed
 from hypothesis.internal.compat import get_type_hints
+from hypothesis.strategies._internal.core import BuildsStrategy
 from hypothesis.strategies._internal.types import is_a_type, type_sorting_key
 from hypothesis.utils.conventions import infer
 
@@ -34,9 +35,7 @@ def from_attrs(target, args, kwargs, to_infer):
     # We might make this strategy more efficient if we added a layer here that
     # retries drawing if validation fails, for improved composition.
     # The treatment of timezones in datetimes() provides a precedent.
-    return st.tuples(st.tuples(*args), st.fixed_dictionaries(kwargs)).map(
-        lambda value: target(*value[0], **value[1])
-    )
+    return BuildsStrategy(target, args, kwargs)
 
 
 def from_attrs_attribute(attrib, target):
