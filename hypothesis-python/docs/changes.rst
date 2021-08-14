@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.14.7:
+
+-------------------
+6.14.7 - 2021-08-14
+-------------------
+
+This patch fixes :issue:`3050`, where :pypi:`attrs` classes could
+cause an internal error in the :doc:`ghostwriter <ghostwriter>`.
+
 .. _v6.14.6:
 
 -------------------
