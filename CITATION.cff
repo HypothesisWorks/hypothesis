@@ -1,0 +1,65 @@
+cff-version: 1.2.0
+message: |
+  If you use Hypothesis as part of a published research project,
+  please cite our paper in the Journal of Open Source Software:
+
+  Text:
+
+  MacIver et al., (2019). Hypothesis: A new approach to property-based testing.
+  Journal of Open Source Software, 4(43), 1891, https://doi.org/10.21105/joss.01891
+
+  BibTeX:
+
+  @article{MacIver2019Hypothesis,
+    journal = {Journal of Open Source Software},
+    doi = {10.21105/joss.01891},
+    issn = {2475-9066},
+    number = {43},
+    publisher = {The Open Journal},
+    title = {Hypothesis: A new approach to property-based testing},
+    url = {http://dx.doi.org/10.21105/joss.01891},
+    volume = {4},
+    author = {MacIver, David and Hatfield-Dodds, Zac and Contributors, Many},
+    pages = {1891},
+    date = {2019-11-21},
+    year = {2019},
+    month = {11},
+    day = {21},
+  }
+
+  To reference a particular version of Hypothesis as a software artifact,
+  you can use the version-specific DOIs we create for each release under
+  https://doi.org/10.5281/zenodo.1412597
+
+
+preferred-citation:
+  title: 'Hypothesis: A new approach to property-based testing'
+  date-released: 2019-11-21
+  type: article
+  doi: 10.21105/joss.01891
+  authors:
+    - family-names: MacIver
+      given-names: David R.
+      orcid: https://orcid.org/0000-0002-8635-3223
+      affiliation: Imperial College London
+    - family-names: Hatfield-Dodds
+      given-names: Zac
+      orcid: https://orcid.org/0000-0002-8646-8362
+      affiliation: Australian National University
+    - name: "many other contributors"
+
+# Citation metadata for the software itself, as required by the CFF spec
+doi: 10.5281/zenodo.1412597  # Version-independent DOI for the software archive
+title: 'Hypothesis: Property-Based Testing for Python'
+repository-code: https://github.com/HypothesisWorks/hypothesis
+license: MPL-2.0
+authors:
+  - family-names: MacIver
+    given-names: David R.
+    orcid: https://orcid.org/0000-0002-8635-3223
+    affiliation: Imperial College London
+  - family-names: Hatfield-Dodds
+    given-names: Zac
+    orcid: https://orcid.org/0000-0002-8646-8362
+    affiliation: Australian National University
+  - name: "many other contributors"
