@@ -74,3 +74,16 @@ def test_given_is_not_a_class_decorator():
     class test_given_is_not_a_class_decorator:
         def __init__(self, i):
             pass
+
+
+def test_specific_error_for_coroutine_functions():
+    @settings(database=None)
+    @given(booleans())
+    async def foo(x):
+        pass
+
+    with pytest.raises(
+        InvalidArgument,
+        match="Hypothesis doesn't know how to run async test functions",
+    ):
+        foo()

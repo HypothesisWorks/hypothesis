@@ -60,7 +60,7 @@ from hypothesis.errors import (
     Unsatisfiable,
     UnsatisfiedAssumption,
 )
-from hypothesis.executors import new_style_executor
+from hypothesis.executors import default_new_style_executor, new_style_executor
 from hypothesis.internal.compat import (
     PYPY,
     bad_django_TestCase,
@@ -1035,6 +1035,22 @@ def given(
                 wrapped_test, arguments, kwargs, given_kwargs, argspec
             )
             arguments, kwargs, test_runner, search_strategy = processed_args
+
+            if (
+                inspect.iscoroutinefunction(test)
+                and test_runner is default_new_style_executor
+            ):
+                # See https://github.com/HypothesisWorks/hypothesis/issues/3054
+                # If our custom executor doesn't handle coroutines, or we return an
+                # awaitable from a non-async-def function, we just rely on the
+                # return_value health check.  This catches most user errors though.
+                raise InvalidArgument(
+                    "Hypothesis doesn't know how to run async test functions like "
+                    f"{test.__name__}.  You'll need to write a custom executor, "
+                    "or use a library like pytest-asyncio or pytest-trio which can "
+                    "handle the translation for you.\n    See https://hypothesis."
+                    "readthedocs.io/en/latest/details.html#custom-function-execution"
+                )
 
             runner = getattr(search_strategy, "runner", None)
             if isinstance(runner, TestCase) and test.__name__ in dir(TestCase):
