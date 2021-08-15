@@ -16,7 +16,7 @@
 import abc
 import enum
 import sys
-from typing import Callable, Generic, List, Sequence, TypeVar, Union
+from typing import Callable, Dict, Generic, List, Sequence, TypeVar, Union
 
 import pytest
 
@@ -26,6 +26,7 @@ from hypothesis.errors import (
     InvalidArgument,
     ResolutionFailed,
 )
+from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies._internal import types
 from hypothesis.strategies._internal.core import _from_type
 from hypothesis.strategies._internal.types import _global_type_lookup
@@ -232,6 +233,18 @@ class MyGeneric(Generic[T]):
         self.arg = arg
 
 
+class Lines(Sequence[str]):
+    """Represent a sequence of text lines.
+
+    It turns out that resolving a class which inherits from a parametrised generic
+    type is... tricky.  See https://github.com/HypothesisWorks/hypothesis/issues/2951
+    """
+
+
+class SpecificDict(Dict[int, int]):
+    pass
+
+
 def using_generic(instance: MyGeneric[T]) -> T:
     return instance.arg
 
@@ -246,6 +259,26 @@ def test_generic_origin_empty():
 
 
 _skip_callables_mark = pytest.mark.skipif(sys.version_info[:2] < (3, 7), reason="old")
+
+
+@_skip_callables_mark
+def test_issue_2951_regression():
+    lines_strat = st.builds(Lines, lines=st.lists(st.text()))
+    with temp_registered(Lines, lines_strat):
+        assert st.from_type(Lines) == lines_strat
+        # Now let's test that the strategy for ``Sequence[int]`` did not
+        # change just because we registered a strategy for ``Lines``:
+        expected = "one_of(binary(), lists(integers()))"
+        assert repr(st.from_type(Sequence[int])) == expected
+
+
+@_skip_callables_mark
+def test_issue_2951_regression_two_params():
+    map_strat = st.builds(SpecificDict, st.dictionaries(st.integers(), st.integers()))
+    expected = repr(st.from_type(Dict[int, int]))
+    with temp_registered(SpecificDict, map_strat):
+        assert st.from_type(SpecificDict) == map_strat
+        assert expected == repr(st.from_type(Dict[int, int]))
 
 
 @pytest.mark.parametrize(
@@ -287,13 +320,20 @@ def test_generic_origin_without_type_args(generic):
         pass
 
 
-def test_generic_origin_from_type():
+@pytest.mark.parametrize(
+    "strat, type_",
+    [
+        (st.from_type, MyGeneric[T]),
+        (st.from_type, MyGeneric[int]),
+        (st.from_type, MyGeneric),
+        (st.builds, using_generic),
+        (st.builds, using_concrete_generic),
+    ],
+    ids=get_pretty_function_description,
+)
+def test_generic_origin_from_type(strat, type_):
     with temp_registered(MyGeneric, st.builds(MyGeneric)):
-        find_any(st.from_type(MyGeneric[T]))
-        find_any(st.from_type(MyGeneric[int]))
-        find_any(st.from_type(MyGeneric))
-        find_any(st.builds(using_generic))
-        find_any(st.builds(using_concrete_generic))
+        find_any(strat(type_))
 
 
 def test_generic_origin_concrete_builds():

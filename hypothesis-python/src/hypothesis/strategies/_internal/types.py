@@ -88,10 +88,45 @@ def type_sorting_key(t):
 
 
 def try_issubclass(thing, superclass):
-    thing = getattr(thing, "__origin__", None) or thing
-    superclass = getattr(superclass, "__origin__", None) or superclass
     try:
-        return issubclass(thing, superclass)
+        # In this case we're looking at two distinct classes - which might be generics.
+        # That brings in some complications:
+        if issubclass(
+            getattr(thing, "__origin__", None) or thing,
+            getattr(superclass, "__origin__", None) or superclass,
+        ):
+            superclass_args = getattr(superclass, "__args__", None)
+            if sys.version_info[:2] == (3, 6) or not superclass_args:
+                # Python 3.6 doesn't have PEP-560 semantics or __orig_bases__,
+                # so there's no point continuing; we therefore stop early.
+                # The superclass is not generic, so we're definitely a subclass.
+                return True
+            # Sadly this is just some really fiddly logic to handle all the cases
+            # of user-defined generic types, types inheriting from parametrised
+            # generics, and so on.  If you need to change this code, read PEP-560
+            # and Hypothesis issue #2951 closely first, and good luck.  The tests
+            # will help you, I hope - good luck.
+            thing_args = getattr(thing, "__args__", None)
+            thing_orig_bases = getattr(thing, "__orig_bases__", None) or [None]
+            if thing_args is None and len(thing_orig_bases) != 1:  # pragma: no cover
+                raise ResolutionFailed(
+                    f"It looks like you're trying to resolve {thing!r} which "
+                    "inherits from more than one generic type, which isn't supported. "
+                    "Try using register_type_strategy()."
+                )
+            thing_orig_bases_args = getattr(thing_orig_bases[0], "__args__", None)
+            if thing_args is None and thing_orig_bases_args is not None:
+                return len(thing_orig_bases_args) == len(superclass_args) and all(
+                    # "a==b or either is a typevar" is a hacky approximation, but it's
+                    # good enough for all the cases that I've seen so far and has the
+                    # substantial virtue of (relative) simplicity.
+                    a == b
+                    or isinstance(a, typing.TypeVar)
+                    or isinstance(b, typing.TypeVar)
+                    for a, b in zip(thing_orig_bases_args, superclass_args)
+                )
+            return True
+        return False
     except (AttributeError, TypeError):
         # Some types can't be the subject or object of an instance or subclass check
         return False
@@ -297,8 +332,8 @@ def from_typing_type(thing):
     empty = ", ".join(repr(s) for s in strategies if s.is_empty)
     if empty or not strategies:
         raise ResolutionFailed(
-            "Could not resolve %s to a strategy; consider using "
-            "register_type_strategy" % (empty or thing,)
+            f"Could not resolve {empty or thing} to a strategy; "
+            "consider using register_type_strategy"
         )
     return st.one_of(strategies)
 
