@@ -1,5 +1,20 @@
+# This file is part of Hypothesis, which may be found at
+# https://github.com/HypothesisWorks/hypothesis/
+#
+# Most of this work is copyright (C) 2013-2021 David R. MacIver
+# (david@drmaciver.com), but it contains contributions by others. See
+# CONTRIBUTING.rst for a full list of people who may hold copyright, and
+# consult the git log if you need to determine who owns an individual
+# contribution.
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v. 2.0. If a copy of the MPL was not distributed with this file, You can
+# obtain one at https://mozilla.org/MPL/2.0/.
+#
+# END HEADER
+
 from abc import abstractmethod
-from typing import Generic, NoReturn, TypeVar
+from typing import Generic, TypeVar
 
 import pytest
 from hypothesis.errors import ResolutionFailed
@@ -13,21 +28,15 @@ from hypothesis import strategies as st
 
 _InstanceType = TypeVar("_InstanceType", covariant=True)
 _TypeArgType1 = TypeVar("_TypeArgType1", covariant=True)
-_TypeArgType2 = TypeVar("_TypeArgType2", covariant=True)
-_TypeArgType3 = TypeVar("_TypeArgType3", covariant=True)
 
 
 class KindN(
-    Generic[_InstanceType, _TypeArgType1, _TypeArgType2, _TypeArgType3],
+    Generic[_InstanceType, _TypeArgType1],
 ):
     pass
 
 
 _FirstType = TypeVar("_FirstType")
-_SecondType = TypeVar("_SecondType")
-_ThirdType = TypeVar("_ThirdType")
-_UpdatedType = TypeVar("_UpdatedType")
-
 _LawType = TypeVar("_LawType")
 
 
@@ -36,8 +45,9 @@ class Lawful(Generic[_LawType]):
 
 
 class MappableN(
-    Generic[_FirstType, _SecondType, _ThirdType],
-    Lawful["MappableN[_FirstType, _SecondType, _ThirdType]"],
+    Generic[_FirstType],
+    # NOTE: Here's the problematic part for issue-3060:
+    Lawful["MappableN[_FirstType]"],
 ):
     """Behaves like a functor."""
 
@@ -46,12 +56,11 @@ class MappableN(
 # ===============
 
 _ValueType = TypeVar("_ValueType")
-_NewValueType = TypeVar("_NewValueType")
 
 
 class MyFunctor(
-    KindN["MyFunctor", _ValueType, NoReturn, NoReturn],
-    MappableN[_ValueType, NoReturn, NoReturn],
+    KindN["MyFunctor", _ValueType],
+    MappableN[_ValueType],
 ):
     def __init__(self, inner_value: _ValueType) -> None:
         self.inner_value = inner_value
@@ -62,7 +71,7 @@ class MyFunctor(
 
 
 def target_func(
-    mappable: "MappableN[_FirstType, _SecondType, _ThirdType]",
+    mappable: "MappableN[_FirstType]",
 ) -> bool:
     return isinstance(mappable, MappableN)
 
