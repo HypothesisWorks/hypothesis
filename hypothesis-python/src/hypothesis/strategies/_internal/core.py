@@ -1054,6 +1054,7 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
     # We'll start by checking if thing is from from the typing module,
     # because there are several special cases that don't play well with
     # subclass and instance checks.
+    print(thing, type(thing), typing_root_type, isinstance(thing, typing_root_type))
     if isinstance(thing, typing_root_type) or (
         sys.version_info[:2] >= (3, 9)
         and isinstance(getattr(thing, "__origin__", None), type)
