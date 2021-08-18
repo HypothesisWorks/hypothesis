@@ -82,7 +82,7 @@ def test_my_mappable(source: st.DataObject) -> None:
     Regression to https://github.com/HypothesisWorks/hypothesis/issues/3060
     """
     # In `returns` we register all types in `__mro__`
-    # to be this exact type at the moment. But here, we ony need `Mappable`.
+    # to be this exact type at the moment. But here, we only need `Mappable`.
     # Current `__mro__` is `MyFunctor / Kind / Mappable`:
     assert MyFunctor.__mro__[2] is MappableN
     with temp_registered(
