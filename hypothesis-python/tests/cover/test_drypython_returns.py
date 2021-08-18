@@ -13,7 +13,6 @@
 #
 # END HEADER
 
-from abc import abstractmethod
 from typing import Generic, TypeVar
 
 import pytest
@@ -28,16 +27,12 @@ from hypothesis import strategies as st
 
 _InstanceType = TypeVar("_InstanceType", covariant=True)
 _TypeArgType1 = TypeVar("_TypeArgType1", covariant=True)
-
-
-class KindN(
-    Generic[_InstanceType, _TypeArgType1],
-):
-    pass
-
-
 _FirstType = TypeVar("_FirstType")
 _LawType = TypeVar("_LawType")
+
+
+class KindN(Generic[_InstanceType, _TypeArgType1],):
+    pass
 
 
 class Lawful(Generic[_LawType]):
