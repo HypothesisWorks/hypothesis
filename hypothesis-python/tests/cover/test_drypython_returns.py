@@ -1,12 +1,46 @@
-from typing import Callable, TypeVar
+from abc import abstractmethod
+from typing import Generic, NoReturn, TypeVar
 
 import pytest
 from hypothesis.errors import ResolutionFailed
-from tests.common.dry_python_fixture import Mappable1, SupportsKind1
 from tests.common.utils import temp_registered
 
 from hypothesis import given
 from hypothesis import strategies as st
+
+# Primitives:
+# ===========
+
+_InstanceType = TypeVar("_InstanceType", covariant=True)
+_TypeArgType1 = TypeVar("_TypeArgType1", covariant=True)
+_TypeArgType2 = TypeVar("_TypeArgType2", covariant=True)
+_TypeArgType3 = TypeVar("_TypeArgType3", covariant=True)
+
+
+class KindN(
+    Generic[_InstanceType, _TypeArgType1, _TypeArgType2, _TypeArgType3],
+):
+    pass
+
+
+_FirstType = TypeVar("_FirstType")
+_SecondType = TypeVar("_SecondType")
+_ThirdType = TypeVar("_ThirdType")
+_UpdatedType = TypeVar("_UpdatedType")
+
+_LawType = TypeVar("_LawType")
+
+
+class Lawful(Generic[_LawType]):
+    """This type defines law-related operations."""
+
+
+class MappableN(
+    Generic[_FirstType, _SecondType, _ThirdType],
+    Lawful["MappableN[_FirstType, _SecondType, _ThirdType]"],
+):
+    """Behaves like a functor."""
+
 
 # End definition:
 # ===============
@@ -15,34 +49,22 @@ _ValueType = TypeVar("_ValueType")
 _NewValueType = TypeVar("_NewValueType")
 
 
-class MyFunctor(SupportsKind1["MyFunctor", _ValueType], Mappable1[_ValueType]):
+class MyFunctor(
+    KindN["MyFunctor", _ValueType, NoReturn, NoReturn],
+    MappableN[_ValueType, NoReturn, NoReturn],
+):
     def __init__(self, inner_value: _ValueType) -> None:
         self.inner_value = inner_value
-
-    def __eq__(self, other: object) -> bool:
-        return isinstance(other, MyFunctor) and self.inner_value == other.inner_value
-
-    def map(
-        self,
-        function: Callable[[_ValueType], _NewValueType],
-    ) -> "My[_NewValueType]":
-        return MyFunctor(function(self.inner_value))
 
 
 # Testing part:
 # =============
 
-# The same logic we have in:
-# returns/contrib/hypothesis/laws.py#L97
-def typevar_factory(thing):
-    from hypothesis.strategies._internal import types
 
-    type_strategies = [
-        types.resolve_TypeVar(thing),
-    ]
-    return st.one_of(type_strategies).filter(
-        lambda inner: inner == inner,
-    )
+def target_func(
+    mappable: "MappableN[_FirstType, _SecondType, _ThirdType]",
+) -> bool:
+    return isinstance(mappable, MappableN)
 
 
 @pytest.mark.xfail(raises=ResolutionFailed)
@@ -53,16 +75,11 @@ def test_my_mappable(source: st.DataObject) -> None:
 
     Regression to https://github.com/HypothesisWorks/hypothesis/issues/3060
     """
-    # In `returns` we register all types in `mro`
-    # to be this exact type at the moment.
-    # Current `__mro__` is `MyFunctor / SupportsKind / Kind / Mappable`:
-    with temp_registered(TypeVar, typevar_factory):
-        with temp_registered(
-            MyFunctor.__mro__[0], st.builds(MyFunctor)
-        ), temp_registered(MyFunctor.__mro__[1], st.builds(MyFunctor)), temp_registered(
-            MyFunctor.__mro__[2],
-            st.builds(MyFunctor),
-        ), temp_registered(
-            MyFunctor.__mro__[3], st.builds(MyFunctor)
-        ):
-            source.draw(st.builds(MyFunctor.laws[0]))
+    # In `returns` we register all types in `__mro__`
+    # to be this exact type at the moment. But here, we ony need `Mappable`.
+    # Current `__mro__` is `MyFunctor / Kind / Mappable`:
+    with temp_registered(
+        MyFunctor.__mro__[2],
+        st.builds(MyFunctor),
+    ):
+        assert source.draw(st.builds(target_func)) is True
