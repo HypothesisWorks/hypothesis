@@ -16,11 +16,11 @@
 from typing import Generic, TypeVar
 
 import pytest
-from hypothesis.errors import ResolutionFailed
-from tests.common.utils import temp_registered
 
-from hypothesis import given
-from hypothesis import strategies as st
+from hypothesis import given, strategies as st
+from hypothesis.errors import ResolutionFailed
+
+from tests.common.utils import temp_registered
 
 # Primitives:
 # ===========
