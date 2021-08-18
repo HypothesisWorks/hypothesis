@@ -31,7 +31,9 @@ _FirstType = TypeVar("_FirstType")
 _LawType = TypeVar("_LawType")
 
 
-class KindN(Generic[_InstanceType, _TypeArgType1],):
+class KindN(
+    Generic[_InstanceType, _TypeArgType1],
+):
     pass
 
 
@@ -75,13 +77,14 @@ def target_func(
 @given(st.data())
 def test_my_mappable(source: st.DataObject) -> None:
     """
-    Checks that complex
+    Checks that complex types with multiple inheritance levels and strings are fine.
 
     Regression to https://github.com/HypothesisWorks/hypothesis/issues/3060
     """
     # In `returns` we register all types in `__mro__`
     # to be this exact type at the moment. But here, we ony need `Mappable`.
     # Current `__mro__` is `MyFunctor / Kind / Mappable`:
+    assert MyFunctor.__mro__[2] is MappableN
     with temp_registered(
         MyFunctor.__mro__[2],
         st.builds(MyFunctor),
