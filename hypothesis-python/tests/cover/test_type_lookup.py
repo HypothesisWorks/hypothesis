@@ -19,6 +19,8 @@ import sys
 from typing import Callable, Dict, Generic, List, Sequence, TypeVar, Union
 
 import pytest
+
+from hypothesis import given, infer, strategies as st
 from hypothesis.errors import (
     HypothesisDeprecationWarning,
     InvalidArgument,
@@ -30,11 +32,9 @@ from hypothesis.strategies._internal import types
 from hypothesis.strategies._internal.core import _from_type
 from hypothesis.strategies._internal.types import _global_type_lookup
 from hypothesis.strategies._internal.utils import _strategies
+
 from tests.common.debug import assert_all_examples, find_any
 from tests.common.utils import fails_with, temp_registered
-
-from hypothesis import given, infer
-from hypothesis import strategies as st
 
 # Build a set of all types output by core strategies
 blocklist = {
