@@ -406,11 +406,10 @@ def test_abstract_resolver_fallback():
     assert isinstance(gen, ConcreteBar)
 
 
-
-A = TypeVar('A')
-B = TypeVar('B')
-C = TypeVar('C')
-D = TypeVar('D')
+A = TypeVar("A")
+B = TypeVar("B")
+C = TypeVar("C")
+D = TypeVar("D")
 
 
 class _FirstBase(Generic[A, B]):
@@ -422,6 +421,7 @@ class _SecondBase(Generic[C, D]):
 
 
 # To be tested:
+
 
 class TwoGenericBases1(_FirstBase[A, B], _SecondBase[C, D]):
     pass
@@ -451,21 +451,88 @@ class AllConcrete(_FirstBase[int, str], _SecondBase[float, bool]):
     pass
 
 
-@pytest.mark.parametrize(
-    "type_",
-    [
-        TwoGenericBases1,
-        TwoGenericBases2,
-        OneGenericOneConrete1,
-        OneGenericOneConrete2,
-        MixedGenerics1,
-        MixedGenerics2,
-        AllConcrete,
-    ],
+_generic_test_types = (
+    TwoGenericBases1,
+    TwoGenericBases2,
+    OneGenericOneConrete1,
+    OneGenericOneConrete2,
+    MixedGenerics1,
+    MixedGenerics2,
+    AllConcrete,
 )
+
+
+@pytest.mark.parametrize("type_", _generic_test_types)
 def test_several_generic_bases(type_):
     with temp_registered(_FirstBase, st.builds(type_)):
         find_any(st.builds(_FirstBase))
 
     with temp_registered(_SecondBase, st.builds(type_)):
         find_any(st.builds(_SecondBase))
+
+
+def var_generic_func1(obj: _FirstBase[A, B]):
+    pass
+
+
+def var_generic_func2(obj: _SecondBase[A, B]):
+    pass
+
+
+def concrete_generic_func1(obj: _FirstBase[int, str]):
+    pass
+
+
+def concrete_generic_func2(obj: _SecondBase[float, bool]):
+    pass
+
+
+def mixed_generic_func1(obj: _FirstBase[A, str]):
+    pass
+
+
+def mixed_generic_func2(obj: _SecondBase[float, D]):
+    pass
+
+
+@pytest.mark.parametrize("type_", _generic_test_types)
+@pytest.mark.parametrize(
+    "func",
+    [
+        var_generic_func1,
+        var_generic_func2,
+        concrete_generic_func1,
+        concrete_generic_func2,
+        mixed_generic_func1,
+        mixed_generic_func2,
+    ],
+)
+def test_several_generic_bases_functions(type_, func):
+    with temp_registered(_FirstBase, st.builds(type_)), temp_registered(
+        _SecondBase, st.builds(type_)
+    ):
+        find_any(st.builds(func))
+
+    with temp_registered(type_, st.builds(type_)):
+        find_any(st.builds(func))
+
+
+def wrong_generic_func1(obj: _FirstBase[A, None]):
+    pass
+
+
+def wrong_generic_func2(obj: _SecondBase[None, bool]):
+    pass
+
+
+@pytest.mark.parametrize(
+    "func",
+    [
+        wrong_generic_func1,
+        wrong_generic_func2,
+    ],
+)
+def test_several_generic_bases_wrong_functions(func):
+    with temp_registered(AllConcrete, st.builds(AllConcrete)):
+        with pytest.raises(ResolutionFailed):
+            st.builds(func).example()
