@@ -124,9 +124,8 @@ def try_issubclass(thing, superclass):
                 return True
             for orig_base in getattr(thing, "__orig_bases__", None) or [None]:
                 args = getattr(orig_base, "__args__", None)
-                if not _compatible_args(args, superclass_args):
-                    return False
-            return True
+                if _compatible_args(args, superclass_args):
+                    return True
         return False
     except (AttributeError, TypeError):
         # Some types can't be the subject or object of an instance or subclass check

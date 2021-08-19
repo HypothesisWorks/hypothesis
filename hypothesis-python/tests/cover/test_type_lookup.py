@@ -404,3 +404,68 @@ def test_abstract_resolver_fallback():
 
     # which in turn means we resolve to the concrete subtype.
     assert isinstance(gen, ConcreteBar)
+
+
+
+A = TypeVar('A')
+B = TypeVar('B')
+C = TypeVar('C')
+D = TypeVar('D')
+
+
+class _FirstBase(Generic[A, B]):
+    pass
+
+
+class _SecondBase(Generic[C, D]):
+    pass
+
+
+# To be tested:
+
+class TwoGenericBases1(_FirstBase[A, B], _SecondBase[C, D]):
+    pass
+
+
+class TwoGenericBases2(_FirstBase[C, D], _SecondBase[A, B]):
+    pass
+
+
+class OneGenericOneConrete1(_FirstBase[int, str], _SecondBase[A, B]):
+    pass
+
+
+class OneGenericOneConrete2(_FirstBase[A, B], _SecondBase[float, bool]):
+    pass
+
+
+class MixedGenerics1(_FirstBase[int, B], _SecondBase[C, bool]):
+    pass
+
+
+class MixedGenerics2(_FirstBase[A, str], _SecondBase[float, D]):
+    pass
+
+
+class AllConcrete(_FirstBase[int, str], _SecondBase[float, bool]):
+    pass
+
+
+@pytest.mark.parametrize(
+    "type_",
+    [
+        TwoGenericBases1,
+        TwoGenericBases2,
+        OneGenericOneConrete1,
+        OneGenericOneConrete2,
+        MixedGenerics1,
+        MixedGenerics2,
+        AllConcrete,
+    ],
+)
+def test_several_generic_bases(type_):
+    with temp_registered(_FirstBase, st.builds(type_)):
+        find_any(st.builds(_FirstBase))
+
+    with temp_registered(_SecondBase, st.builds(type_)):
+        find_any(st.builds(_SecondBase))
