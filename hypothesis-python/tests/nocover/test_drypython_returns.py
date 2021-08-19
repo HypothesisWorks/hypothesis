@@ -15,10 +15,7 @@
 
 from typing import Generic, TypeVar
 
-import pytest
-
 from hypothesis import given, strategies as st
-from hypothesis.errors import ResolutionFailed
 
 from tests.common.utils import temp_registered
 
@@ -73,7 +70,6 @@ def target_func(
     return isinstance(mappable, MappableN)
 
 
-@pytest.mark.xfail(raises=ResolutionFailed)
 @given(st.data())
 def test_my_mappable(source: st.DataObject) -> None:
     """
