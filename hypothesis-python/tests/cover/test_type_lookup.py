@@ -525,6 +525,7 @@ def wrong_generic_func2(obj: _SecondBase[None, bool]):
     pass
 
 
+@_skip_callables_mark
 @pytest.mark.parametrize(
     "func",
     [
