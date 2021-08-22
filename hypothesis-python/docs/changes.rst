@@ -18,6 +18,19 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.15.0:
+
+-------------------
+6.15.0 - 2021-08-22
+-------------------
+
+This release emits a more useful error message when :func:`@given() <hypothesis.given>`
+is applied to a coroutine function, i.e. one defined using ``async def`` (:issue:`3054`).
+
+This was previously only handled by the generic :obj:`~hypothesis.HealthCheck.return_value`
+health check, which doesn't direct you to use either :ref:`a custom executor <custom-function-execution>`
+or a library such as :pypi:`pytest-trio` or :pypi:`pytest-asyncio` to handle it for you.
+
 .. _v6.14.9:
 
 -------------------
