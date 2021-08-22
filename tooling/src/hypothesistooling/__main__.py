@@ -543,7 +543,7 @@ def audit_conjecture_rust():
 def tasks():
     """Print a list of all task names supported by the build system."""
     for task_name in sorted(TASKS.keys()):
-        print(task_name)
+        print("    " + task_name)
 
 
 if __name__ == "__main__":
@@ -567,6 +567,11 @@ if __name__ == "__main__":
             "argument or as an environment variable TASK. "
             '(Use "./build.sh tasks" to list all supported task names.)'
         )
+        sys.exit(1)
+
+    if task_to_run not in TASKS:
+        print(f"\nUnknown task {task_to_run!r}.  Available tasks are:")
+        tasks()
         sys.exit(1)
 
     try:

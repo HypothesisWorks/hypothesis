@@ -60,7 +60,7 @@ from hypothesis.errors import (
     Unsatisfiable,
     UnsatisfiedAssumption,
 )
-from hypothesis.executors import new_style_executor
+from hypothesis.executors import default_new_style_executor, new_style_executor
 from hypothesis.internal.compat import (
     PYPY,
     bad_django_TestCase,
@@ -1019,15 +1019,12 @@ def given(
 
             if getattr(test, "is_hypothesis_test", False):
                 raise InvalidArgument(
-                    (
-                        "You have applied @given to the test %s more than once, which "
-                        "wraps the test several times and is extremely slow. A "
-                        "similar effect can be gained by combining the arguments "
-                        "of the two calls to given. For example, instead of "
-                        "@given(booleans()) @given(integers()), you could write "
-                        "@given(booleans(), integers())"
-                    )
-                    % (test.__name__,)
+                    f"You have applied @given to the test {test.__name__} more than "
+                    "once, which wraps the test several times and is extremely slow. "
+                    "A similar effect can be gained by combining the arguments "
+                    "of the two calls to given. For example, instead of "
+                    "@given(booleans()) @given(integers()), you could write "
+                    "@given(booleans(), integers())"
                 )
 
             settings = wrapped_test._hypothesis_internal_use_settings
@@ -1039,12 +1036,28 @@ def given(
             )
             arguments, kwargs, test_runner, search_strategy = processed_args
 
+            if (
+                inspect.iscoroutinefunction(test)
+                and test_runner is default_new_style_executor
+            ):
+                # See https://github.com/HypothesisWorks/hypothesis/issues/3054
+                # If our custom executor doesn't handle coroutines, or we return an
+                # awaitable from a non-async-def function, we just rely on the
+                # return_value health check.  This catches most user errors though.
+                raise InvalidArgument(
+                    "Hypothesis doesn't know how to run async test functions like "
+                    f"{test.__name__}.  You'll need to write a custom executor, "
+                    "or use a library like pytest-asyncio or pytest-trio which can "
+                    "handle the translation for you.\n    See https://hypothesis."
+                    "readthedocs.io/en/latest/details.html#custom-function-execution"
+                )
+
             runner = getattr(search_strategy, "runner", None)
             if isinstance(runner, TestCase) and test.__name__ in dir(TestCase):
                 msg = (
-                    "You have applied @given to the method %s, which is "
+                    f"You have applied @given to the method {test.__name__}, which is "
                     "used by the unittest runner but is not itself a test."
-                    "  This is not useful in any way." % test.__name__
+                    "  This is not useful in any way."
                 )
                 fail_health_check(settings, msg, HealthCheck.not_a_test_method)
             if bad_django_TestCase(runner):  # pragma: no cover
