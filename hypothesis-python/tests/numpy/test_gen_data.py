@@ -1053,8 +1053,8 @@ def test_advanced_integer_index_can_generate_any_pattern(shape, data):
     [
         lambda ix: Ellipsis in ix,
         lambda ix: Ellipsis not in ix,
-        lambda ix: np.newaxis in ix,
-        lambda ix: np.newaxis not in ix,
+        lambda ix: None in ix,
+        lambda ix: None not in ix,
     ],
 )
 def test_basic_indices_options(condition):
@@ -1121,7 +1121,7 @@ def test_basic_indices_generate_valid_indexers(
             assert 0 <= len(indexer) <= len(shape) + int(allow_ellipsis)
         else:
             assert 1 <= len(shape) + int(allow_ellipsis)
-        assert np.newaxis not in shape
+        assert None not in shape
     if not allow_ellipsis:
         assert Ellipsis not in shape
 
