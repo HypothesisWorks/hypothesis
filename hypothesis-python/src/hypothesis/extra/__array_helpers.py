@@ -27,6 +27,7 @@ __all__ = [
 ]
 
 Shape = Tuple[int, ...]
+# We silence flake8 here because it disagrees with mypy about `ellipsis` (`type(...)`)
 BasicIndex = Tuple[Union[int, slice, None, "ellipsis"], ...]  # noqa: F821
 
 
