@@ -17,6 +17,7 @@ from hypothesis.strategies._internal import SearchStrategy
 from hypothesis.strategies._internal.collections import tuples
 from hypothesis.strategies._internal.core import (
     DataObject,
+    DrawFn,
     binary,
     booleans,
     builds,
@@ -82,6 +83,7 @@ __all__ = [
     "decimals",
     "deferred",
     "dictionaries",
+    "DrawFn",
     "emails",
     "fixed_dictionaries",
     "floats",
@@ -126,6 +128,7 @@ def _check_exports(_public):
     # @declares_strategy.
     exported_strategies = set(__all__) - {
         "DataObject",
+        "DrawFn",
         "SearchStrategy",
         "composite",
         "register_type_strategy",

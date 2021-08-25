@@ -1404,6 +1404,37 @@ class CompositeStrategy(SearchStrategy):
         return calc_label_from_cls(self.definition)
 
 
+class DrawFn:
+    """This type only exists so that you can write type hints for functions
+    decorated with :func:`@composite <hypothesis.strategies.composite>`. Do not
+    use it directly!
+
+    Example usage:
+
+    .. code-block:: python
+
+        @composite
+        def list_and_index(draw: DrawFn) -> Tuple[int, str]:
+            i = draw(integers())  # type inferred as 'int'
+            s = draw(text())  # type inferred as 'str'
+
+    """
+
+    # This should be a Protocol, but they were only introduced in Python 3.8.
+    # However, we don't truly need this to be a protocol, we just need this
+    # type to describe to the caller that they can call it with a SearchStrategy
+    # of Ex and get an Ex back. We never actually have to check that the actual
+    # callable we provide, matches this type.
+    #
+    # Just defining this as a type alias of a generic callable would require
+    # providing explicit type arguments anywhere it is used, which is both
+    # cumbersome and limited. Defining it as an alias of a non-generic callable
+    # would miss out on a lot of type information that could be inferred by a
+    # type checker.
+    def __call__(self, strategy: SearchStrategy[Ex], label: Any = None) -> Ex:
+        raise NotImplementedError
+
+
 @cacheable
 def composite(f: Callable[..., Ex]) -> Callable[..., SearchStrategy[Ex]]:
     """Defines a strategy that is built out of potentially arbitrarily many
