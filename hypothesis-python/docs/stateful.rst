@@ -78,6 +78,15 @@ the corresponding variables and using that value, and
 If you can replace use of Bundles with instance attributes of the class that
 is often simpler, but often Bundles are strictly more powerful.
 
+.. note::
+
+  Since values can be added to Bundles in addition to being drawn from them,
+  bundles are mutable collections. Therefore, contrary to most other
+  :class:`SearchStrategies <hypothesis.strategies.SearchStrategy>`, Bundles are
+  invariant in the type of examples it stores and produces. Thus,
+  ``Bundle[Dog]`` is neither a subtype nor a supertype of ``Bundle[Animal]``,
+  regardless of whether ``Dog`` is a subtype of ``Animal``.
+
 The following rule based state machine example is a simplified version of a
 test for Hypothesis's example database implementation. An example database
 maps keys to sets of values, and in this test we compare one implementation of

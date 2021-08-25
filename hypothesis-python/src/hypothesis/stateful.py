@@ -27,7 +27,7 @@ from copy import copy
 from functools import lru_cache
 from io import StringIO
 from operator import attrgetter
-from typing import Any, Dict, List
+from typing import Any, Callable, Dict, Generic, List, Optional, Tuple, Union, overload
 from unittest import TestCase
 
 import attr
@@ -35,7 +35,7 @@ import attr
 from hypothesis import strategies as st
 from hypothesis._settings import HealthCheck, Verbosity, settings as Settings
 from hypothesis.control import current_build_context
-from hypothesis.core import given
+from hypothesis.core import TestFunc, given
 from hypothesis.errors import InvalidArgument, InvalidDefinition
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.reflection import function_digest, nicerepr, proxies
@@ -43,6 +43,7 @@ from hypothesis.internal.validation import check_type
 from hypothesis.reporting import current_verbosity, report
 from hypothesis.strategies._internal.featureflags import FeatureStrategy
 from hypothesis.strategies._internal.strategies import (
+    Ex_Inv,
     OneOfStrategy,
     SearchStrategy,
     check_strategy,
@@ -413,8 +414,8 @@ class BundleReferenceStrategy(SearchStrategy):
             return bundle[position]
 
 
-class Bundle(SearchStrategy):
-    def __init__(self, name, consume=False):
+class Bundle(SearchStrategy[Ex_Inv]):
+    def __init__(self, name: str, consume: bool = False) -> None:
         self.name = name
         self.__reference_strategy = BundleReferenceStrategy(name, consume)
 
@@ -441,12 +442,12 @@ class Bundle(SearchStrategy):
         return bool(machine.bundle(self.name))
 
 
-class BundleConsumer(Bundle):
-    def __init__(self, bundle):
+class BundleConsumer(Bundle[Ex_Inv]):
+    def __init__(self, bundle: Bundle[Ex_Inv]) -> None:
         super().__init__(bundle.name, consume=True)
 
 
-def consumes(bundle):
+def consumes(bundle: Bundle[Ex_Inv]) -> BundleConsumer[Ex_Inv]:
     """When introducing a rule in a RuleBasedStateMachine, this function can
     be used to mark bundles from which each value used in a step with the
     given rule should be removed. This function returns a strategy object
@@ -465,14 +466,14 @@ def consumes(bundle):
 
 
 @attr.s()
-class MultipleResults(Iterable):
+class MultipleResults(Generic[Ex_Inv], Iterable):
     values = attr.ib()
 
     def __iter__(self):
         return iter(self.values)
 
 
-def multiple(*args):
+def multiple(*args: Ex_Inv) -> MultipleResults[Ex_Inv]:
     """This function can be used to pass multiple results to the target(s) of
     a rule. Just use ``return multiple(result1, result2, ...)`` in your rule.
 
@@ -517,7 +518,40 @@ PRECONDITIONS_MARKER = "hypothesis_stateful_preconditions"
 INVARIANT_MARKER = "hypothesis_stateful_invariant"
 
 
-def rule(*, targets=(), target=None, **kwargs):
+_RuleType = Callable[..., Union[MultipleResults[Ex_Inv], Ex_Inv]]
+_RuleWrapper = Callable[[_RuleType[Ex_Inv]], _RuleType[Ex_Inv]]
+
+
+@overload
+def rule(
+    *,
+    targets: Tuple[Bundle[Ex_Inv]],
+    target: Optional[Bundle[Ex_Inv]] = ...,
+    **kwargs: SearchStrategy,
+) -> _RuleWrapper[Ex_Inv]:
+    raise NotImplementedError
+
+
+@overload
+def rule(
+    *, target: Bundle[Ex_Inv], targets: Tuple[()] = ..., **kwargs: SearchStrategy
+) -> _RuleWrapper[Ex_Inv]:
+    raise NotImplementedError
+
+
+@overload
+def rule(
+    *, target: None = ..., targets: Tuple[()] = ..., **kwargs: SearchStrategy
+) -> Callable[[Callable[..., None]], Callable[..., None]]:
+    raise NotImplementedError
+
+
+def rule(
+    *,
+    targets: Union[Tuple[Bundle[Ex_Inv]], Tuple[()]] = (),
+    target: Optional[Bundle[Ex_Inv]] = None,
+    **kwargs: SearchStrategy,
+) -> Union[_RuleWrapper[Ex_Inv], Callable[[Callable[..., None]], Callable[..., None]]]:
     """Decorator for RuleBasedStateMachine. Any name present in target or
     targets will define where the end result of this function should go. If
     both are empty then the end result will be discarded.
@@ -571,7 +605,36 @@ def rule(*, targets=(), target=None, **kwargs):
     return accept
 
 
-def initialize(*, targets=(), target=None, **kwargs):
+@overload
+def initialize(
+    *,
+    targets: Tuple[Bundle[Ex_Inv]],
+    target: Optional[Bundle[Ex_Inv]] = ...,
+    **kwargs: SearchStrategy,
+) -> _RuleWrapper[Ex_Inv]:
+    raise NotImplementedError
+
+
+@overload
+def initialize(
+    *, target: Bundle[Ex_Inv], targets: Tuple[()] = ..., **kwargs: SearchStrategy
+) -> _RuleWrapper[Ex_Inv]:
+    raise NotImplementedError
+
+
+@overload
+def initialize(
+    *, target: None = ..., targets: Tuple[()] = ..., **kwargs: SearchStrategy
+) -> Callable[[Callable[..., None]], Callable[..., None]]:
+    raise NotImplementedError
+
+
+def initialize(
+    *,
+    targets: Union[Tuple[Bundle[Ex_Inv]], Tuple[()]] = (),
+    target: Optional[Bundle[Ex_Inv]] = None,
+    **kwargs: SearchStrategy,
+) -> Union[_RuleWrapper[Ex_Inv], Callable[[Callable[..., None]], Callable[..., None]]]:
     """Decorator for RuleBasedStateMachine.
 
     An initialize decorator behaves like a rule, but all ``@initialize()`` decorated
@@ -623,7 +686,7 @@ class VarReference:
     name = attr.ib()
 
 
-def precondition(precond):
+def precondition(precond: Callable[..., bool]) -> Callable[[TestFunc], TestFunc]:
     """Decorator to apply a precondition for rules in a RuleBasedStateMachine.
     Specifies a precondition for a rule to be considered as a valid step in the
     state machine, which is more efficient than using :func:`~hypothesis.assume`
@@ -688,7 +751,7 @@ class Invariant:
     check_during_init = attr.ib()
 
 
-def invariant(*, check_during_init=False):
+def invariant(*, check_during_init: bool = False) -> Callable[[TestFunc], TestFunc]:
     """Decorator to apply an invariant for rules in a RuleBasedStateMachine.
     The decorated function will be run after every rule and can raise an
     exception to indicate failed invariants.
