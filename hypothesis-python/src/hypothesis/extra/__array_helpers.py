@@ -200,7 +200,7 @@ class BasicIndexStrategy(st.SearchStrategy):
             and (result_dims < self.min_dims or data.draw(st.booleans()))
         ):
             i = data.draw(st.integers(0, len(result)))
-            result.insert(i, None)
+            result.insert(i, None)  # Note that `np.newaxis is None`
             result_dims += 1
         # Check that we'll have the right number of dimensions; reject if not.
         # It's easy to do this by construction if you don't care about shrinking,
