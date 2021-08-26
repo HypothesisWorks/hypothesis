@@ -1411,10 +1411,7 @@ class CompositeStrategy(SearchStrategy):
 
 class DrawFn(Protocol):
     """This type only exists so that you can write type hints for functions
-    decorated with :func:`@composite <hypothesis.strategies.composite>`. Do not
-    use it directly!
-
-    Example usage:
+    decorated with :func:`@composite <hypothesis.strategies.composite>`.
 
     .. code-block:: python
 
