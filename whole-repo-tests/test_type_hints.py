@@ -251,7 +251,7 @@ def test_stateful_no_target_params_return_type(tmpdir, decorator):
 @pytest.mark.parametrize("decorator", ["rule", "initialize"])
 @pytest.mark.parametrize("use_multi", [True, False])
 def test_stateful_bundle_variance(tmpdir, decorator, use_multi):
-    f = tmpdir.join("check_mypy_on_stateful_rule.py")
+    f = tmpdir.join("check_mypy_on_stateful_bundle.py")
     if use_multi:
         return_type = "MultipleResults[Dog]"
         return_expr = "multiple(dog, dog)"
@@ -265,9 +265,71 @@ def test_stateful_bundle_variance(tmpdir, decorator, use_multi):
         "class Dog(Animal): pass\n"
         "a: Bundle[Animal] = Bundle('animal')\n"
         "d: Bundle[Dog] = Bundle('dog')\n"
-
         "@{}(target=a, dog=d)\n"
         "def my_rule(dog: Dog) -> {}:\n"
         "    return {}\n".format(decorator, return_type, return_expr)
     )
     assert not get_mypy_errors(str(f.realpath()))
+
+
+@pytest.mark.parametrize("decorator", ["rule", "initialize"])
+def test_stateful_multiple_return(tmpdir, decorator):
+    f = tmpdir.join("check_mypy_on_stateful_multiple.py")
+    f.write(
+        "from hypothesis.stateful import *\n"
+        "b: Bundle[int] = Bundle('b')\n"
+        "@{}(target=b)\n"
+        "def my_rule() -> MultipleResults[int]:\n"
+        "    return multiple(1, 2, 3)\n".format(decorator)
+    )
+    assert not get_mypy_errors(str(f.realpath()))
+
+
+@pytest.mark.parametrize("decorator", ["rule", "initialize"])
+def test_stateful_multiple_return_invalid(tmpdir, decorator):
+    f = tmpdir.join("check_mypy_on_stateful_multiple.py")
+    f.write(
+        "from hypothesis.stateful import *\n"
+        "b: Bundle[str] = Bundle('b')\n"
+        "@{}(target=b)\n"
+        "def my_rule() -> MultipleResults[int]:\n"
+        "    return multiple(1, 2, 3)\n".format(decorator)
+    )
+    got = get_mypy_errors(str(f.realpath()))
+    assert got == {(3, "arg-type")}
+
+
+@pytest.mark.parametrize(
+    "wrapper,expected",
+    [
+        ("{}", "int"),
+        ("st.lists({})", "list[int]"),
+    ],
+)
+def test_stateful_consumes_type_tracing(tmpdir, wrapper, expected):
+    f = tmpdir.join("check_mypy_on_stateful_rule.py")
+    wrapped = wrapper.format("consumes(b)")
+    f.write(
+        "from hypothesis.stateful import *\n"
+        "from hypothesis import strategies as st\n"
+        "b: Bundle[int] = Bundle('b')\n"
+        "s = {}\n"
+        "reveal_type(s.example())\n".format(wrapped)
+    )
+    got = get_mypy_analysed_type(str(f.realpath()), ...)
+    assert got == expected
+
+
+@pytest.mark.parametrize(
+    "return_val,errors",
+    [("True", set()), ("0", {(2, "arg-type"), (2, "return-value")})],
+)
+def test_stateful_precondition_requires_predicate(tmpdir, return_val, errors):
+    f = tmpdir.join("check_mypy_on_stateful_precondition.py")
+    f.write(
+        "from hypothesis.stateful import *\n"
+        "@precondition(lambda self: {})\n"
+        "def my_rule() -> None: ...\n".format(return_val)
+    )
+    got = get_mypy_errors(str(f.realpath()))
+    assert got == errors
