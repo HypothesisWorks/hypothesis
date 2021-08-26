@@ -111,6 +111,11 @@ from hypothesis.strategies._internal.strings import (
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 from hypothesis.utils.conventions import InferType, infer, not_set
 
+try:
+    from typing import Protocol
+except ImportError:  # < py3.8
+    Protocol = object  # type: ignore[assignment]
+
 UniqueBy = Union[Callable[[Ex], Hashable], Tuple[Callable[[Ex], Hashable], ...]]
 
 
@@ -1404,7 +1409,7 @@ class CompositeStrategy(SearchStrategy):
         return calc_label_from_cls(self.definition)
 
 
-class DrawFn:
+class DrawFn(Protocol):
     """This type only exists so that you can write type hints for functions
     decorated with :func:`@composite <hypothesis.strategies.composite>`. Do not
     use it directly!
@@ -1420,17 +1425,9 @@ class DrawFn:
 
     """
 
-    # This should be a Protocol, but they were only introduced in Python 3.8.
-    # However, we don't truly need this to be a protocol, we just need this
-    # type to describe to the caller that they can call it with a SearchStrategy
-    # of Ex and get an Ex back. We never actually have to check that the actual
-    # callable we provide, matches this type.
-    #
-    # Just defining this as a type alias of a generic callable would require
-    # providing explicit type arguments anywhere it is used, which is both
-    # cumbersome and limited. Defining it as an alias of a non-generic callable
-    # would miss out on a lot of type information that could be inferred by a
-    # type checker.
+    # We define this as a callback protocol because a simple typing.Callable is
+    # insufficient to fully represent the interface, due to the optional `label`
+    # parameter.
     def __call__(self, strategy: SearchStrategy[Ex], label: Any = None) -> Ex:
         raise NotImplementedError
 
