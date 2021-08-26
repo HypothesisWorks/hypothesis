@@ -27,7 +27,18 @@ from copy import copy
 from functools import lru_cache
 from io import StringIO
 from operator import attrgetter
-from typing import Any, Callable, Dict, Generic, List, Optional, Tuple, Union, overload
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    overload,
+)
 from unittest import TestCase
 
 import attr
@@ -52,6 +63,10 @@ from hypothesis.vendor.pretty import RepresentationPrinter
 
 STATE_MACHINE_RUN_LABEL = cu.calc_label_from_name("another state machine step")
 SHOULD_CONTINUE_LABEL = cu.calc_label_from_name("should we continue drawing")
+
+
+class _Sentinel:
+    """Sentinel class to prevent overlapping overloads in type hints."""
 
 
 class TestCaseProperty:  # pragma: no cover
@@ -525,8 +540,8 @@ _RuleWrapper = Callable[[_RuleType[Ex_Inv]], _RuleType[Ex_Inv]]
 @overload
 def rule(
     *,
-    targets: Tuple[Bundle[Ex_Inv]],
-    target: Optional[Bundle[Ex_Inv]] = ...,
+    targets: Sequence[Bundle[Ex_Inv]],
+    target: None = ...,
     **kwargs: SearchStrategy,
 ) -> _RuleWrapper[Ex_Inv]:
     raise NotImplementedError
@@ -534,21 +549,24 @@ def rule(
 
 @overload
 def rule(
-    *, target: Bundle[Ex_Inv], targets: Tuple[()] = ..., **kwargs: SearchStrategy
+    *, target: Bundle[Ex_Inv], targets: _Sentinel = ..., **kwargs: SearchStrategy
 ) -> _RuleWrapper[Ex_Inv]:
     raise NotImplementedError
 
 
 @overload
 def rule(
-    *, target: None = ..., targets: Tuple[()] = ..., **kwargs: SearchStrategy
+    *,
+    target: None = ...,
+    targets: _Sentinel = ...,
+    **kwargs: SearchStrategy,
 ) -> Callable[[Callable[..., None]], Callable[..., None]]:
     raise NotImplementedError
 
 
 def rule(
     *,
-    targets: Union[Tuple[Bundle[Ex_Inv]], Tuple[()]] = (),
+    targets: Union[Sequence[Bundle[Ex_Inv]], _Sentinel] = (),
     target: Optional[Bundle[Ex_Inv]] = None,
     **kwargs: SearchStrategy,
 ) -> Union[_RuleWrapper[Ex_Inv], Callable[[Callable[..., None]], Callable[..., None]]]:
@@ -608,8 +626,8 @@ def rule(
 @overload
 def initialize(
     *,
-    targets: Tuple[Bundle[Ex_Inv]],
-    target: Optional[Bundle[Ex_Inv]] = ...,
+    targets: Sequence[Bundle[Ex_Inv]],
+    target: None = ...,
     **kwargs: SearchStrategy,
 ) -> _RuleWrapper[Ex_Inv]:
     raise NotImplementedError
@@ -617,21 +635,24 @@ def initialize(
 
 @overload
 def initialize(
-    *, target: Bundle[Ex_Inv], targets: Tuple[()] = ..., **kwargs: SearchStrategy
+    *, target: Bundle[Ex_Inv], targets: _Sentinel = ..., **kwargs: SearchStrategy
 ) -> _RuleWrapper[Ex_Inv]:
     raise NotImplementedError
 
 
 @overload
 def initialize(
-    *, target: None = ..., targets: Tuple[()] = ..., **kwargs: SearchStrategy
+    *,
+    target: None = ...,
+    targets: _Sentinel = ...,
+    **kwargs: SearchStrategy,
 ) -> Callable[[Callable[..., None]], Callable[..., None]]:
     raise NotImplementedError
 
 
 def initialize(
     *,
-    targets: Union[Tuple[Bundle[Ex_Inv]], Tuple[()]] = (),
+    targets: Union[Sequence[Bundle[Ex_Inv]], _Sentinel] = (),
     target: Optional[Bundle[Ex_Inv]] = None,
     **kwargs: SearchStrategy,
 ) -> Union[_RuleWrapper[Ex_Inv], Callable[[Callable[..., None]], Callable[..., None]]]:
