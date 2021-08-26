@@ -22,7 +22,6 @@ execution to date.
 """
 
 import inspect
-from collections.abc import Iterable
 from copy import copy
 from functools import lru_cache
 from io import StringIO
@@ -31,7 +30,7 @@ from typing import (
     Any,
     Callable,
     Dict,
-    Generic,
+    Iterable,
     List,
     Optional,
     Sequence,
@@ -482,7 +481,7 @@ def consumes(bundle: Bundle[Ex]) -> BundleConsumer[Ex]:
 
 
 @attr.s()
-class MultipleResults(Generic[Ex], Iterable):
+class MultipleResults(Iterable[Ex]):
     values = attr.ib()
 
     def __iter__(self):
