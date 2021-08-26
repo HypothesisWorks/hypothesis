@@ -158,21 +158,6 @@ def test_stateful_bundle_generic_type(tmpdir):
     assert got == "int"
 
 
-def test_stateful_bundle_invariant(tmpdir):
-    f = tmpdir.join("check_mypy_on_stateful_bundle.py")
-    f.write(
-        "from hypothesis.stateful import Bundle\n"
-        "class Animal: ...\n"
-        "class Dog(Animal): ...\n"
-        "ba: Bundle[Animal] = Bundle('Animal')\n"
-        "bd: Bundle[Dog] = Bundle('Dog')\n"
-        "bcov: Bundle[Animal] = bd\n"
-        "bcontra: Bundle[Dog] = ba\n"
-    )
-    got = get_mypy_errors(str(f.realpath()))
-    assert got == {(6, "assignment"), (7, "assignment")}
-
-
 @pytest.mark.parametrize("decorator", ["rule", "initialize"])
 @pytest.mark.parametrize(
     "target_args",
@@ -261,3 +246,28 @@ def test_stateful_no_target_params_return_type(tmpdir, decorator):
     )
     got = get_mypy_errors(str(f.realpath()))
     assert got == {(2, "arg-type")}
+
+
+@pytest.mark.parametrize("decorator", ["rule", "initialize"])
+@pytest.mark.parametrize("use_multi", [True, False])
+def test_stateful_bundle_variance(tmpdir, decorator, use_multi):
+    f = tmpdir.join("check_mypy_on_stateful_rule.py")
+    if use_multi:
+        return_type = "MultipleResults[Dog]"
+        return_expr = "multiple(dog, dog)"
+    else:
+        return_type = "Dog"
+        return_expr = "dog"
+
+    f.write(
+        "from hypothesis.stateful import *\n"
+        "class Animal: pass\n"
+        "class Dog(Animal): pass\n"
+        "a: Bundle[Animal] = Bundle('animal')\n"
+        "d: Bundle[Dog] = Bundle('dog')\n"
+
+        "@{}(target=a, dog=d)\n"
+        "def my_rule(dog: Dog) -> {}:\n"
+        "    return {}\n".format(decorator, return_type, return_expr)
+    )
+    assert not get_mypy_errors(str(f.realpath()))

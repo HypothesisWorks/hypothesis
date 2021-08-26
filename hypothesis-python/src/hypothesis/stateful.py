@@ -35,7 +35,6 @@ from typing import (
     List,
     Optional,
     Sequence,
-    Tuple,
     Union,
     overload,
 )
@@ -54,6 +53,7 @@ from hypothesis.internal.validation import check_type
 from hypothesis.reporting import current_verbosity, report
 from hypothesis.strategies._internal.featureflags import FeatureStrategy
 from hypothesis.strategies._internal.strategies import (
+    Ex,
     Ex_Inv,
     OneOfStrategy,
     SearchStrategy,
@@ -430,7 +430,7 @@ class BundleReferenceStrategy(SearchStrategy):
             return bundle[position]
 
 
-class Bundle(SearchStrategy[Ex_Inv]):
+class Bundle(SearchStrategy[Ex]):
     def __init__(self, name: str, consume: bool = False) -> None:
         self.name = name
         self.__reference_strategy = BundleReferenceStrategy(name, consume)
@@ -458,12 +458,12 @@ class Bundle(SearchStrategy[Ex_Inv]):
         return bool(machine.bundle(self.name))
 
 
-class BundleConsumer(Bundle[Ex_Inv]):
-    def __init__(self, bundle: Bundle[Ex_Inv]) -> None:
+class BundleConsumer(Bundle[Ex]):
+    def __init__(self, bundle: Bundle[Ex]) -> None:
         super().__init__(bundle.name, consume=True)
 
 
-def consumes(bundle: Bundle[Ex_Inv]) -> BundleConsumer[Ex_Inv]:
+def consumes(bundle: Bundle[Ex]) -> BundleConsumer[Ex]:
     """When introducing a rule in a RuleBasedStateMachine, this function can
     be used to mark bundles from which each value used in a step with the
     given rule should be removed. This function returns a strategy object
@@ -482,13 +482,15 @@ def consumes(bundle: Bundle[Ex_Inv]) -> BundleConsumer[Ex_Inv]:
 
 
 @attr.s()
-class MultipleResults(Generic[Ex_Inv], Iterable):
+class MultipleResults(Generic[Ex], Iterable):
     values = attr.ib()
 
     def __iter__(self):
         return iter(self.values)
 
 
+# We need to use an invariant typevar here to avoid a mypy error, as covariant
+# typevars cannot be used as parameters.
 def multiple(*args: Ex_Inv) -> MultipleResults[Ex_Inv]:
     """This function can be used to pass multiple results to the target(s) of
     a rule. Just use ``return multiple(result1, result2, ...)`` in your rule.
@@ -534,8 +536,8 @@ PRECONDITIONS_MARKER = "hypothesis_stateful_preconditions"
 INVARIANT_MARKER = "hypothesis_stateful_invariant"
 
 
-_RuleType = Callable[..., Union[MultipleResults[Ex_Inv], Ex_Inv]]
-_RuleWrapper = Callable[[_RuleType[Ex_Inv]], _RuleType[Ex_Inv]]
+_RuleType = Callable[..., Union[MultipleResults[Ex], Ex]]
+_RuleWrapper = Callable[[_RuleType[Ex]], _RuleType[Ex]]
 
 
 # We cannot exclude `target` or `targets` from any of these signatures because
@@ -566,17 +568,17 @@ _RuleWrapper = Callable[[_RuleType[Ex_Inv]], _RuleType[Ex_Inv]]
 @overload
 def rule(
     *,
-    targets: Sequence[Bundle[Ex_Inv]],
+    targets: Sequence[Bundle[Ex]],
     target: None = ...,
     **kwargs: SearchStrategy,
-) -> _RuleWrapper[Ex_Inv]:
+) -> _RuleWrapper[Ex]:
     raise NotImplementedError
 
 
 @overload
 def rule(
-    *, target: Bundle[Ex_Inv], targets: _Sentinel = ..., **kwargs: SearchStrategy
-) -> _RuleWrapper[Ex_Inv]:
+    *, target: Bundle[Ex], targets: _Sentinel = ..., **kwargs: SearchStrategy
+) -> _RuleWrapper[Ex]:
     raise NotImplementedError
 
 
@@ -592,10 +594,10 @@ def rule(
 
 def rule(
     *,
-    targets: Union[Sequence[Bundle[Ex_Inv]], _Sentinel] = (),
-    target: Optional[Bundle[Ex_Inv]] = None,
+    targets: Union[Sequence[Bundle[Ex]], _Sentinel] = (),
+    target: Optional[Bundle[Ex]] = None,
     **kwargs: SearchStrategy,
-) -> Union[_RuleWrapper[Ex_Inv], Callable[[Callable[..., None]], Callable[..., None]]]:
+) -> Union[_RuleWrapper[Ex], Callable[[Callable[..., None]], Callable[..., None]]]:
     """Decorator for RuleBasedStateMachine. Any name present in target or
     targets will define where the end result of this function should go. If
     both are empty then the end result will be discarded.
@@ -653,17 +655,17 @@ def rule(
 @overload
 def initialize(
     *,
-    targets: Sequence[Bundle[Ex_Inv]],
+    targets: Sequence[Bundle[Ex]],
     target: None = ...,
     **kwargs: SearchStrategy,
-) -> _RuleWrapper[Ex_Inv]:
+) -> _RuleWrapper[Ex]:
     raise NotImplementedError
 
 
 @overload
 def initialize(
-    *, target: Bundle[Ex_Inv], targets: _Sentinel = ..., **kwargs: SearchStrategy
-) -> _RuleWrapper[Ex_Inv]:
+    *, target: Bundle[Ex], targets: _Sentinel = ..., **kwargs: SearchStrategy
+) -> _RuleWrapper[Ex]:
     raise NotImplementedError
 
 
@@ -679,10 +681,10 @@ def initialize(
 
 def initialize(
     *,
-    targets: Union[Sequence[Bundle[Ex_Inv]], _Sentinel] = (),
-    target: Optional[Bundle[Ex_Inv]] = None,
+    targets: Union[Sequence[Bundle[Ex]], _Sentinel] = (),
+    target: Optional[Bundle[Ex]] = None,
     **kwargs: SearchStrategy,
-) -> Union[_RuleWrapper[Ex_Inv], Callable[[Callable[..., None]], Callable[..., None]]]:
+) -> Union[_RuleWrapper[Ex], Callable[[Callable[..., None]], Callable[..., None]]]:
     """Decorator for RuleBasedStateMachine.
 
     An initialize decorator behaves like a rule, but all ``@initialize()`` decorated
