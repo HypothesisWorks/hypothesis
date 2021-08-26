@@ -1428,7 +1428,7 @@ class DrawFn(Protocol):
     # We define this as a callback protocol because a simple typing.Callable is
     # insufficient to fully represent the interface, due to the optional `label`
     # parameter.
-    def __call__(self, strategy: SearchStrategy[Ex], label: Any = None) -> Ex:
+    def __call__(self, strategy: SearchStrategy[Ex], label: object = None) -> Ex:
         raise NotImplementedError
 
 
