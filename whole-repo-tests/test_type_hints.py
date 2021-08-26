@@ -59,9 +59,14 @@ def get_mypy_errors(fname):
 
     def convert_lines():
         for error_line in out.splitlines():
-            col = int(error_line.split(":")[1])
+            col, category = error_line.split(":")[1:3]
+            if category.strip() != "error":
+                # mypy outputs "note" messages for overload problems, even with
+                # --hide-error-context. Don't include these
+                continue
+
             error_code = error_line.split("[")[-1].rstrip("]")
-            yield (col, error_code)
+            yield (int(col), error_code)
 
     return list(convert_lines())
 
@@ -164,3 +169,93 @@ def test_stateful_bundle_invariant(tmpdir):
     )
     got = get_mypy_errors(str(f.realpath()))
     assert got == [(6, "assignment"), (7, "assignment")]
+
+
+@pytest.mark.parametrize("decorator", ["rule", "initialize"])
+@pytest.mark.parametrize(
+    "target_args",
+    [
+        "target=b1",
+        "targets=(b1,)",
+        "targets=(b1, b2)",
+    ],
+)
+@pytest.mark.parametrize("returns", ["int", "MultipleResults[int]"])
+def test_stateful_rule_targets(tmpdir, decorator, target_args, returns):
+    f = tmpdir.join("check_mypy_on_stateful_rule.py")
+    f.write(
+        "from hypothesis.stateful import *\n"
+        "b1: Bundle[int] = Bundle('b1')\n"
+        "b2: Bundle[int] = Bundle('b2')\n"
+        "@{}({})\n"
+        "def my_rule() -> {}:\n"
+        "    ...\n".format(decorator, target_args, returns)
+    )
+    assert not get_mypy_errors(str(f.realpath()))
+
+
+@pytest.mark.parametrize("decorator", ["rule", "initialize"])
+def test_stateful_rule_no_targets(tmpdir, decorator):
+    f = tmpdir.join("check_mypy_on_stateful_rule.py")
+    f.write(
+        "from hypothesis.stateful import *\n"
+        "@{}()\n"
+        "def my_rule() -> None:\n"
+        "    ...\n".format(decorator)
+    )
+    assert not get_mypy_errors(str(f.realpath()))
+
+
+@pytest.mark.parametrize("decorator", ["rule", "initialize"])
+def test_stateful_target_params_mutually_exclusive(tmpdir, decorator):
+    f = tmpdir.join("check_mypy_on_stateful_rule.py")
+    f.write(
+        "from hypothesis.stateful import *\n"
+        "b1: Bundle[int] = Bundle('b1')\n"
+        "@{}(target=b1, targets=(b1,))\n"
+        "def my_rule() -> int:\n"
+        "    ...\n".format(decorator)
+    )
+    got = get_mypy_errors(str(f.realpath()))
+    # Also outputs "misc" error "Untyped decorator makes function "my_rule"
+    # untyped, due to the inability to resolve to an appropriate overloaded
+    # variant
+    assert got == [(3, "call-overload"), (3, "misc")]
+
+
+@pytest.mark.parametrize("decorator", ["rule", "initialize"])
+@pytest.mark.parametrize(
+    "target_args",
+    [
+        "target=b1",
+        "targets=(b1,)",
+        "targets=(b1, b2)",
+        "",
+    ],
+)
+@pytest.mark.parametrize("returns", ["int", "MultipleResults[int]"])
+def test_stateful_target_params_return_type(tmpdir, decorator, target_args, returns):
+    f = tmpdir.join("check_mypy_on_stateful_rule.py")
+    f.write(
+        "from hypothesis.stateful import *\n"
+        "b1: Bundle[str] = Bundle('b1')\n"
+        "b2: Bundle[str] = Bundle('b2')\n"
+        "@{}({})\n"
+        "def my_rule() -> {}:\n"
+        "    ...\n".format(decorator, target_args, returns)
+    )
+    got = get_mypy_errors(str(f.realpath()))
+    assert got == [(4, "arg-type")]
+
+
+@pytest.mark.parametrize("decorator", ["rule", "initialize"])
+def test_stateful_no_target_params_return_type(tmpdir, decorator):
+    f = tmpdir.join("check_mypy_on_stateful_rule.py")
+    f.write(
+        "from hypothesis.stateful import *\n"
+        "@{}()\n"
+        "def my_rule() -> int:\n"
+        "    ...\n".format(decorator)
+    )
+    got = get_mypy_errors(str(f.realpath()))
+    assert got == [(2, "arg-type")]
