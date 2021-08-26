@@ -24,7 +24,7 @@ import typing
 from decimal import Context, Decimal, localcontext
 from fractions import Fraction
 from functools import reduce
-from inspect import Parameter, getfullargspec, isabstract, isclass, signature
+from inspect import Parameter, Signature, getfullargspec, isabstract, isclass, signature
 from types import FunctionType
 from typing import (
     Any,
@@ -1421,12 +1421,14 @@ class DrawFn(Protocol):
             s = draw(text())  # type inferred as 'str'
 
     """
+
     def __init__(self):
-        raise TypeError('Protocols cannot be instantiated')
+        raise TypeError("Protocols cannot be instantiated")
 
     # On Python 3.8+, Protocol overrides our signature for __init__,
     # so we override it right back to make the docs look nice.
-    __signature__ = inspect.Signature(parameters=[])
+    __signature__: Signature = Signature(parameters=[])
+
     # We define this as a callback protocol because a simple typing.Callable is
     # insufficient to fully represent the interface, due to the optional `label`
     # parameter.
