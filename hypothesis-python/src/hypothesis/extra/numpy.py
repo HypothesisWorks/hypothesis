@@ -24,10 +24,10 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.extra.__array_helpers import (
     BroadcastableShapes,
     Shape,
-    array_shapes,
-    basic_indices,
-    broadcastable_shapes,
-    mutually_broadcastable_shapes as _mutually_broadcastable_shapes,
+    make_array_shapes,
+    make_basic_indices,
+    make_broadcastable_shapes,
+    make_mutually_broadcastable_shapes,
     order_check,
     valid_tuple_axes,
 )
@@ -469,6 +469,9 @@ def arrays(
     return ArrayStrategy(elements, shape, dtype, fill, unique)
 
 
+array_shapes = make_array_shapes("numpy")
+
+
 @defines_strategy()
 def scalar_dtypes() -> st.SearchStrategy[np.dtype]:
     """Return a strategy that can return any non-flexible scalar dtype."""
@@ -831,6 +834,12 @@ def _hypothesis_parse_gufunc_signature(signature, all_checks=True):
     return _GUfuncSig(input_shapes=input_shapes, result_shape=result_shape)
 
 
+broadcastable_shapes = make_broadcastable_shapes("numpy")
+
+
+_mutually_broadcastable_shapes = make_mutually_broadcastable_shapes("numpy")
+
+
 @defines_strategy()
 def mutually_broadcastable_shapes(
     *,
@@ -849,7 +858,6 @@ def mutually_broadcastable_shapes(
         assert isinstance(num_shapes, int)  # for mypy
         check_argument(num_shapes >= 1, "num_shapes={} must be at least 1", num_shapes)
         parsed_signature = None
-        sig_dims = 0
     else:
         check_argument(signature is not not_set, arg_msg)
         if signature is None:
@@ -859,9 +867,6 @@ def mutually_broadcastable_shapes(
             )
         check_type(str, signature, "signature")
         parsed_signature = _hypothesis_parse_gufunc_signature(signature)
-        sig_dims = min(
-            map(len, parsed_signature.input_shapes + (parsed_signature.result_shape,))
-        )
         num_shapes = len(parsed_signature.input_shapes)
         assert num_shapes >= 1
 
@@ -915,14 +920,14 @@ mutually_broadcastable_shapes.__doc__ = f"""
 
     """
 
-
+basic_indices = make_basic_indices("numpy", allow_0d_index=True)
 basic_indices.__doc__ = f"""
     Return a strategy for :np-ref:`basic indexes <arrays.indexing.html>` of
     arrays with the specified shape, which may include dimensions of size zero.
 
     {basic_indices.__doc__}
 
-    Note if ``min_dims == 0``, zero-dimensional arrays are allowed.
+    Note if ``min_dims == 0``, indices for zero-dimensional arrays are generated.
     """
 
 
