@@ -176,3 +176,8 @@ def test_applying_composite_decorator_to_methods(data):
         x = data.draw(strategy)
         assert isinstance(x, int)
         assert 0 <= x <= 10
+
+
+def test_drawfn_cannot_be_instantiated():
+    with pytest.raises(TypeError):
+        st.DrawFn()

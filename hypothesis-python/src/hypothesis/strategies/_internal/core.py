@@ -1423,7 +1423,7 @@ class DrawFn(Protocol):
     """
 
     def __init__(self):
-        raise TypeError("Protocols cannot be instantiated")
+        raise TypeError("Protocols cannot be instantiated")  # pragma: no cover
 
     # On Python 3.8+, Protocol overrides our signature for __init__,
     # so we override it right back to make the docs look nice.
