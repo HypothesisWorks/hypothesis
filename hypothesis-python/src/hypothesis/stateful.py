@@ -66,7 +66,8 @@ SHOULD_CONTINUE_LABEL = cu.calc_label_from_name("should we continue drawing")
 
 
 class _Sentinel:
-    """Sentinel class to prevent overlapping overloads in type hints."""
+    """Sentinel class to prevent overlapping overloads in type hints. See comments
+    above the overloads of @rule."""
 
 
 class TestCaseProperty:  # pragma: no cover
@@ -537,6 +538,31 @@ _RuleType = Callable[..., Union[MultipleResults[Ex_Inv], Ex_Inv]]
 _RuleWrapper = Callable[[_RuleType[Ex_Inv]], _RuleType[Ex_Inv]]
 
 
+# We cannot exclude `target` or `targets` from any of these signatures because
+# otherwise they would be matched against the `kwargs`, either leading to
+# overlapping overloads of incompatible return types, or a concrete
+# implementation that does not accept all overloaded variant signatures.
+# Although it is possible to reorder the variants to fix the former, it will
+# always lead to the latter, as then the omitted parameter could be typed as
+# a `SearchStrategy`, which the concrete implementation does not accept.
+#
+# Omitted `targets` parameters, where the default value is used, are typed with
+# a special `_Sentinel` type. We cannot type them as `Tuple[()]`, because
+# `Tuple[()]` is a subtype of `Sequence[Bundle[Ex]]`, leading to signature
+# overlaps with incompatible return types. The `_Sentinel` type will never be
+# encountered at runtime, and exists solely to annotate the default of `targets`.
+# PEP 661 (Sentinel Values) might provide a more elegant alternative in the future.
+#
+# We could've also annotated `targets` as `Tuple[_Sentinel]`, but then when both
+# `target` and `targets` are provided, mypy describes the type error as an
+# invalid argument type for `targets` (expected `Tuple[_Sentinel]`, got ...).
+# By annotating it as a bare `_Sentinel` type, mypy's error will warn that there
+# is no overloaded signature matching the call, which is more descriptive.
+#
+# When `target` xor `targets` is provided, the function to decorate must return
+# a value whose type matches the one stored in the bundle. When neither are
+# provided, the function to decorate must return nothing. There is no variant
+# for providing `target` and `targets`, as these parameters are mutually exclusive.
 @overload
 def rule(
     *,
@@ -623,6 +649,7 @@ def rule(
     return accept
 
 
+# See also comments of `rule`'s overloads.
 @overload
 def initialize(
     *,
