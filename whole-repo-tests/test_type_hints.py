@@ -25,9 +25,9 @@ def test_mypy_passes_on_hypothesis():
     pip_tool("mypy", PYTHON_SRC)
 
 
-def get_mypy_analysed_type(fname, val):
-    out = subprocess.Popen(
-        [tool_path("mypy"), fname],
+def get_mypy_output(fname, *extra_args):
+    return subprocess.Popen(
+        [tool_path("mypy"), *extra_args, fname],
         stdout=subprocess.PIPE,
         encoding="utf-8",
         universal_newlines=True,
@@ -35,6 +35,10 @@ def get_mypy_analysed_type(fname, val):
         # working in CI as of mypy==0.730 - hopefully a temporary workaround.
         env=dict(os.environ, MYPYPATH=PYTHON_SRC),
     ).stdout.read()
+
+
+def get_mypy_analysed_type(fname, val):
+    out = get_mypy_output(fname)
     assert len(out.splitlines()) == 1
     # See https://mypy.readthedocs.io/en/latest/common_issues.html#reveal-type
     # The shell output for `reveal_type([1, 2, 3])` looks like a literal:
@@ -46,6 +50,20 @@ def get_mypy_analysed_type(fname, val):
         .replace("builtins.", "")
         .replace("*", "")
     )
+
+
+def get_mypy_errors(fname):
+    out = get_mypy_output(fname, "--no-error-summary", "--show-error-codes")
+    # Shell output looks like:
+    # file.py:2: error: Incompatible types in assignment ... [assignment]
+
+    def convert_lines():
+        for error_line in out.splitlines():
+            col = int(error_line.split(":")[1])
+            error_code = error_line.split("[")[-1].rstrip("]")
+            yield (col, error_code)
+
+    return list(convert_lines())
 
 
 @pytest.mark.parametrize(
@@ -120,3 +138,29 @@ def test_settings_preserves_type(tmpdir):
     )
     got = get_mypy_analysed_type(str(f.realpath()), ...)
     assert got == "def (x: int) -> int"
+
+
+def test_stateful_bundle_generic_type(tmpdir):
+    f = tmpdir.join("check_mypy_on_stateful_bundle.py")
+    f.write(
+        "from hypothesis.stateful import Bundle\n"
+        "b: Bundle[int] = Bundle('test')\n"
+        "reveal_type(b.example())\n"
+    )
+    got = get_mypy_analysed_type(str(f.realpath()), ...)
+    assert got == "int"
+
+
+def test_stateful_bundle_invariant(tmpdir):
+    f = tmpdir.join("check_mypy_on_stateful_bundle.py")
+    f.write(
+        "from hypothesis.stateful import Bundle\n"
+        "class Animal: ...\n"
+        "class Dog(Animal): ...\n"
+        "ba: Bundle[Animal] = Bundle('Animal')\n"
+        "bd: Bundle[Dog] = Bundle('Dog')\n"
+        "bcov: Bundle[Animal] = bd\n"
+        "bcontra: Bundle[Dog] = ba\n"
+    )
+    got = get_mypy_errors(str(f.realpath()))
+    assert got == [(6, "assignment"), (7, "assignment")]
