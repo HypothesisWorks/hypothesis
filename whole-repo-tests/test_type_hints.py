@@ -65,10 +65,12 @@ def get_mypy_errors(fname):
                 # --hide-error-context. Don't include these
                 continue
 
+            # Intentional print so we can check mypy's output if a test fails
+            print(error_line)
             error_code = error_line.split("[")[-1].rstrip("]")
             yield (int(col), error_code)
 
-    return list(convert_lines())
+    return set(convert_lines())
 
 
 @pytest.mark.parametrize(
@@ -168,7 +170,7 @@ def test_stateful_bundle_invariant(tmpdir):
         "bcontra: Bundle[Dog] = ba\n"
     )
     got = get_mypy_errors(str(f.realpath()))
-    assert got == [(6, "assignment"), (7, "assignment")]
+    assert got == {(6, "assignment"), (7, "assignment")}
 
 
 @pytest.mark.parametrize("decorator", ["rule", "initialize"])
@@ -220,7 +222,7 @@ def test_stateful_target_params_mutually_exclusive(tmpdir, decorator):
     # Also outputs "misc" error "Untyped decorator makes function "my_rule"
     # untyped, due to the inability to resolve to an appropriate overloaded
     # variant
-    assert got == [(3, "call-overload"), (3, "misc")]
+    assert got == {(3, "call-overload"), (3, "misc")}
 
 
 @pytest.mark.parametrize("decorator", ["rule", "initialize"])
@@ -245,7 +247,7 @@ def test_stateful_target_params_return_type(tmpdir, decorator, target_args, retu
         "    ...\n".format(decorator, target_args, returns)
     )
     got = get_mypy_errors(str(f.realpath()))
-    assert got == [(4, "arg-type")]
+    assert got == {(4, "arg-type")}
 
 
 @pytest.mark.parametrize("decorator", ["rule", "initialize"])
@@ -258,4 +260,4 @@ def test_stateful_no_target_params_return_type(tmpdir, decorator):
         "    ...\n".format(decorator)
     )
     got = get_mypy_errors(str(f.realpath()))
-    assert got == [(2, "arg-type")]
+    assert got == {(2, "arg-type")}
