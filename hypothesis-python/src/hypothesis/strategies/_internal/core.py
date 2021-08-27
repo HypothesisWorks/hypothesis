@@ -24,7 +24,7 @@ import typing
 from decimal import Context, Decimal, localcontext
 from fractions import Fraction
 from functools import reduce
-from inspect import Parameter, getfullargspec, isabstract, isclass, signature
+from inspect import Parameter, Signature, getfullargspec, isabstract, isclass, signature
 from types import FunctionType
 from typing import (
     Any,
@@ -110,6 +110,11 @@ from hypothesis.strategies._internal.strings import (
 )
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 from hypothesis.utils.conventions import InferType, infer, not_set
+
+try:
+    from typing import Protocol
+except ImportError:  # < py3.8
+    Protocol = object  # type: ignore[assignment]
 
 UniqueBy = Union[Callable[[Ex], Hashable], Tuple[Callable[[Ex], Hashable], ...]]
 
@@ -1402,6 +1407,33 @@ class CompositeStrategy(SearchStrategy):
 
     def calc_label(self):
         return calc_label_from_cls(self.definition)
+
+
+class DrawFn(Protocol):
+    """This type only exists so that you can write type hints for functions
+    decorated with :func:`@composite <hypothesis.strategies.composite>`.
+
+    .. code-block:: python
+
+        @composite
+        def list_and_index(draw: DrawFn) -> Tuple[int, str]:
+            i = draw(integers())  # type inferred as 'int'
+            s = draw(text())  # type inferred as 'str'
+
+    """
+
+    def __init__(self):
+        raise TypeError("Protocols cannot be instantiated")  # pragma: no cover
+
+    # On Python 3.8+, Protocol overrides our signature for __init__,
+    # so we override it right back to make the docs look nice.
+    __signature__: Signature = Signature(parameters=[])
+
+    # We define this as a callback protocol because a simple typing.Callable is
+    # insufficient to fully represent the interface, due to the optional `label`
+    # parameter.
+    def __call__(self, strategy: SearchStrategy[Ex], label: object = None) -> Ex:
+        raise NotImplementedError
 
 
 @cacheable

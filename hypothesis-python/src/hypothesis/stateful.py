@@ -597,8 +597,8 @@ def rule(
     target: Optional[Bundle[Ex]] = None,
     **kwargs: SearchStrategy,
 ) -> Union[_RuleWrapper[Ex], Callable[[Callable[..., None]], Callable[..., None]]]:
-    """Decorator for RuleBasedStateMachine. Any name present in target or
-    targets will define where the end result of this function should go. If
+    """Decorator for RuleBasedStateMachine. Any Bundle present in ``target`` or
+    ``targets`` will define where the end result of this function should go. If
     both are empty then the end result will be discarded.
 
     ``target`` must be a Bundle, or if the result should go to multiple
