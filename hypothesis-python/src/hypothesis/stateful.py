@@ -64,7 +64,7 @@ STATE_MACHINE_RUN_LABEL = cu.calc_label_from_name("another state machine step")
 SHOULD_CONTINUE_LABEL = cu.calc_label_from_name("should we continue drawing")
 
 
-class _Sentinel:
+class _OmittedArgument:
     """Sentinel class to prevent overlapping overloads in type hints. See comments
     above the overloads of @rule."""
 
@@ -548,17 +548,17 @@ _RuleWrapper = Callable[[_RuleType[Ex]], _RuleType[Ex]]
 # a `SearchStrategy`, which the concrete implementation does not accept.
 #
 # Omitted `targets` parameters, where the default value is used, are typed with
-# a special `_Sentinel` type. We cannot type them as `Tuple[()]`, because
+# a special `_OmittedArgument` type. We cannot type them as `Tuple[()]`, because
 # `Tuple[()]` is a subtype of `Sequence[Bundle[Ex]]`, leading to signature
-# overlaps with incompatible return types. The `_Sentinel` type will never be
+# overlaps with incompatible return types. The `_OmittedArgument` type will never be
 # encountered at runtime, and exists solely to annotate the default of `targets`.
 # PEP 661 (Sentinel Values) might provide a more elegant alternative in the future.
 #
-# We could've also annotated `targets` as `Tuple[_Sentinel]`, but then when both
-# `target` and `targets` are provided, mypy describes the type error as an
-# invalid argument type for `targets` (expected `Tuple[_Sentinel]`, got ...).
-# By annotating it as a bare `_Sentinel` type, mypy's error will warn that there
-# is no overloaded signature matching the call, which is more descriptive.
+# We could've also annotated `targets` as `Tuple[_OmittedArgument]`, but then when
+# both `target` and `targets` are provided, mypy describes the type error as an
+# invalid argument type for `targets` (expected `Tuple[_OmittedArgument]`, got ...).
+# By annotating it as a bare `_OmittedArgument` type, mypy's error will warn that
+# there is no overloaded signature matching the call, which is more descriptive.
 #
 # When `target` xor `targets` is provided, the function to decorate must return
 # a value whose type matches the one stored in the bundle. When neither are
@@ -576,7 +576,7 @@ def rule(
 
 @overload
 def rule(
-    *, target: Bundle[Ex], targets: _Sentinel = ..., **kwargs: SearchStrategy
+    *, target: Bundle[Ex], targets: _OmittedArgument = ..., **kwargs: SearchStrategy
 ) -> _RuleWrapper[Ex]:
     raise NotImplementedError
 
@@ -585,7 +585,7 @@ def rule(
 def rule(
     *,
     target: None = ...,
-    targets: _Sentinel = ...,
+    targets: _OmittedArgument = ...,
     **kwargs: SearchStrategy,
 ) -> Callable[[Callable[..., None]], Callable[..., None]]:
     raise NotImplementedError
@@ -593,7 +593,7 @@ def rule(
 
 def rule(
     *,
-    targets: Union[Sequence[Bundle[Ex]], _Sentinel] = (),
+    targets: Union[Sequence[Bundle[Ex]], _OmittedArgument] = (),
     target: Optional[Bundle[Ex]] = None,
     **kwargs: SearchStrategy,
 ) -> Union[_RuleWrapper[Ex], Callable[[Callable[..., None]], Callable[..., None]]]:
@@ -663,7 +663,7 @@ def initialize(
 
 @overload
 def initialize(
-    *, target: Bundle[Ex], targets: _Sentinel = ..., **kwargs: SearchStrategy
+    *, target: Bundle[Ex], targets: _OmittedArgument = ..., **kwargs: SearchStrategy
 ) -> _RuleWrapper[Ex]:
     raise NotImplementedError
 
@@ -672,7 +672,7 @@ def initialize(
 def initialize(
     *,
     target: None = ...,
-    targets: _Sentinel = ...,
+    targets: _OmittedArgument = ...,
     **kwargs: SearchStrategy,
 ) -> Callable[[Callable[..., None]], Callable[..., None]]:
     raise NotImplementedError
@@ -680,7 +680,7 @@ def initialize(
 
 def initialize(
     *,
-    targets: Union[Sequence[Bundle[Ex]], _Sentinel] = (),
+    targets: Union[Sequence[Bundle[Ex]], _OmittedArgument] = (),
     target: Optional[Bundle[Ex]] = None,
     **kwargs: SearchStrategy,
 ) -> Union[_RuleWrapper[Ex], Callable[[Callable[..., None]], Callable[..., None]]]:
