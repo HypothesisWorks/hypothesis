@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.17.0:
+
+-------------------
+6.17.0 - 2021-08-27
+-------------------
+
+This release adds type annotations to the :doc:`stateful testing <stateful>` API.
+
+Thanks to Ruben Opdebeeck for this contribution!
+
 .. _v6.16.0:
 
 -------------------
