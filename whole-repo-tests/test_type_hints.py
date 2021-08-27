@@ -115,8 +115,8 @@ def test_revealed_types(tmpdir, val, expect):
     f = tmpdir.join(expect + ".py")
     f.write(
         "from hypothesis.strategies import *\n"
-        "s = {}\n"
-        "reveal_type(s)\n".format(val)
+        f"s = {val}\n"
+        "reveal_type(s)\n"
     )
     typ = get_mypy_analysed_type(str(f.realpath()), val)
     assert typ == f"hypothesis.strategies._internal.strategies.SearchStrategy[{expect}]"
@@ -187,9 +187,9 @@ def test_stateful_rule_targets(tmpdir, decorator, target_args, returns):
         "from hypothesis.stateful import *\n"
         "b1: Bundle[int] = Bundle('b1')\n"
         "b2: Bundle[int] = Bundle('b2')\n"
-        "@{}({})\n"
-        "def my_rule() -> {}:\n"
-        "    ...\n".format(decorator, target_args, returns)
+        f"@{decorator}({target_args})\n"
+        f"def my_rule() -> {returns}:\n"
+        "    ...\n"
     )
     assert_mypy_errors(str(f.realpath()), [])
 
@@ -199,9 +199,9 @@ def test_stateful_rule_no_targets(tmpdir, decorator):
     f = tmpdir.join("check_mypy_on_stateful_rule.py")
     f.write(
         "from hypothesis.stateful import *\n"
-        "@{}()\n"
+        f"@{decorator}()\n"
         "def my_rule() -> None:\n"
-        "    ...\n".format(decorator)
+        "    ...\n"
     )
     assert_mypy_errors(str(f.realpath()), [])
 
@@ -212,9 +212,9 @@ def test_stateful_target_params_mutually_exclusive(tmpdir, decorator):
     f.write(
         "from hypothesis.stateful import *\n"
         "b1: Bundle[int] = Bundle('b1')\n"
-        "@{}(target=b1, targets=(b1,))\n"
+        f"@{decorator}(target=b1, targets=(b1,))\n"
         "def my_rule() -> int:\n"
-        "    ...\n".format(decorator)
+        "    ...\n"
     )
     # Also outputs "misc" error "Untyped decorator makes function "my_rule"
     # untyped, due to the inability to resolve to an appropriate overloaded
@@ -239,9 +239,9 @@ def test_stateful_target_params_return_type(tmpdir, decorator, target_args, retu
         "from hypothesis.stateful import *\n"
         "b1: Bundle[str] = Bundle('b1')\n"
         "b2: Bundle[str] = Bundle('b2')\n"
-        "@{}({})\n"
-        "def my_rule() -> {}:\n"
-        "    ...\n".format(decorator, target_args, returns)
+        f"@{decorator}({target_args})\n"
+        f"def my_rule() -> {returns}:\n"
+        "    ...\n"
     )
     assert_mypy_errors(str(f.realpath()), [(4, "arg-type")])
 
@@ -251,9 +251,9 @@ def test_stateful_no_target_params_return_type(tmpdir, decorator):
     f = tmpdir.join("check_mypy_on_stateful_rule.py")
     f.write(
         "from hypothesis.stateful import *\n"
-        "@{}()\n"
+        f"@{decorator}()\n"
         "def my_rule() -> int:\n"
-        "    ...\n".format(decorator)
+        "    ...\n"
     )
     assert_mypy_errors(str(f.realpath()), [(2, "arg-type")])
 
@@ -275,9 +275,9 @@ def test_stateful_bundle_variance(tmpdir, decorator, use_multi):
         "class Dog(Animal): pass\n"
         "a: Bundle[Animal] = Bundle('animal')\n"
         "d: Bundle[Dog] = Bundle('dog')\n"
-        "@{}(target=a, dog=d)\n"
-        "def my_rule(dog: Dog) -> {}:\n"
-        "    return {}\n".format(decorator, return_type, return_expr)
+        f"@{decorator}(target=a, dog=d)\n"
+        f"def my_rule(dog: Dog) -> {return_type}:\n"
+        f"    return {return_expr}\n"
     )
     assert_mypy_errors(str(f.realpath()), [])
 
@@ -288,9 +288,9 @@ def test_stateful_multiple_return(tmpdir, decorator):
     f.write(
         "from hypothesis.stateful import *\n"
         "b: Bundle[int] = Bundle('b')\n"
-        "@{}(target=b)\n"
+        f"@{decorator}(target=b)\n"
         "def my_rule() -> MultipleResults[int]:\n"
-        "    return multiple(1, 2, 3)\n".format(decorator)
+        "    return multiple(1, 2, 3)\n"
     )
     assert_mypy_errors(str(f.realpath()), [])
 
@@ -301,9 +301,9 @@ def test_stateful_multiple_return_invalid(tmpdir, decorator):
     f.write(
         "from hypothesis.stateful import *\n"
         "b: Bundle[str] = Bundle('b')\n"
-        "@{}(target=b)\n"
+        f"@{decorator}(target=b)\n"
         "def my_rule() -> MultipleResults[int]:\n"
-        "    return multiple(1, 2, 3)\n".format(decorator)
+        "    return multiple(1, 2, 3)\n"
     )
     assert_mypy_errors(str(f.realpath()), [(3, "arg-type")])
 
@@ -322,8 +322,8 @@ def test_stateful_consumes_type_tracing(tmpdir, wrapper, expected):
         "from hypothesis.stateful import *\n"
         "from hypothesis import strategies as st\n"
         "b: Bundle[int] = Bundle('b')\n"
-        "s = {}\n"
-        "reveal_type(s.example())\n".format(wrapped)
+        f"s = {wrapped}\n"
+        "reveal_type(s.example())\n"
     )
     got = get_mypy_analysed_type(str(f.realpath()), ...)
     assert got == expected
@@ -347,8 +347,8 @@ def test_stateful_precondition_requires_predicate(tmpdir, return_val, errors):
     f = tmpdir.join("check_mypy_on_stateful_precondition.py")
     f.write(
         "from hypothesis.stateful import *\n"
-        "@precondition(lambda self: {})\n"
-        "def my_rule() -> None: ...\n".format(return_val)
+        f"@precondition(lambda self: {return_val})\n"
+        "def my_rule() -> None: ...\n"
     )
     assert_mypy_errors(str(f.realpath()), errors)
 
