@@ -52,7 +52,7 @@ def get_mypy_analysed_type(fname, val):
     )
 
 
-def get_mypy_errors(fname):
+def assert_mypy_errors(fname, expected):
     out = get_mypy_output(fname, "--no-error-summary", "--show-error-codes")
     # Shell output looks like:
     # file.py:2: error: Incompatible types in assignment ... [assignment]
@@ -70,7 +70,7 @@ def get_mypy_errors(fname):
             error_code = error_line.split("[")[-1].rstrip("]")
             yield (int(col), error_code)
 
-    return set(convert_lines())
+    return sorted(convert_lines()) == sorted(expected)
 
 
 @pytest.mark.parametrize(
@@ -178,7 +178,7 @@ def test_stateful_rule_targets(tmpdir, decorator, target_args, returns):
         "def my_rule() -> {}:\n"
         "    ...\n".format(decorator, target_args, returns)
     )
-    assert not get_mypy_errors(str(f.realpath()))
+    assert_mypy_errors(str(f.realpath()), [])
 
 
 @pytest.mark.parametrize("decorator", ["rule", "initialize"])
@@ -190,7 +190,7 @@ def test_stateful_rule_no_targets(tmpdir, decorator):
         "def my_rule() -> None:\n"
         "    ...\n".format(decorator)
     )
-    assert not get_mypy_errors(str(f.realpath()))
+    assert_mypy_errors(str(f.realpath()), [])
 
 
 @pytest.mark.parametrize("decorator", ["rule", "initialize"])
@@ -203,11 +203,10 @@ def test_stateful_target_params_mutually_exclusive(tmpdir, decorator):
         "def my_rule() -> int:\n"
         "    ...\n".format(decorator)
     )
-    got = get_mypy_errors(str(f.realpath()))
     # Also outputs "misc" error "Untyped decorator makes function "my_rule"
     # untyped, due to the inability to resolve to an appropriate overloaded
     # variant
-    assert got == {(3, "call-overload"), (3, "misc")}
+    assert_mypy_errors(str(f.realpath()), [(3, "call-overload"), (3, "misc")])
 
 
 @pytest.mark.parametrize("decorator", ["rule", "initialize"])
@@ -231,8 +230,7 @@ def test_stateful_target_params_return_type(tmpdir, decorator, target_args, retu
         "def my_rule() -> {}:\n"
         "    ...\n".format(decorator, target_args, returns)
     )
-    got = get_mypy_errors(str(f.realpath()))
-    assert got == {(4, "arg-type")}
+    assert_mypy_errors(str(f.realpath()), [(4, "arg-type")])
 
 
 @pytest.mark.parametrize("decorator", ["rule", "initialize"])
@@ -244,8 +242,7 @@ def test_stateful_no_target_params_return_type(tmpdir, decorator):
         "def my_rule() -> int:\n"
         "    ...\n".format(decorator)
     )
-    got = get_mypy_errors(str(f.realpath()))
-    assert got == {(2, "arg-type")}
+    assert_mypy_errors(str(f.realpath()), [(2, "arg-type")])
 
 
 @pytest.mark.parametrize("decorator", ["rule", "initialize"])
@@ -269,7 +266,7 @@ def test_stateful_bundle_variance(tmpdir, decorator, use_multi):
         "def my_rule(dog: Dog) -> {}:\n"
         "    return {}\n".format(decorator, return_type, return_expr)
     )
-    assert not get_mypy_errors(str(f.realpath()))
+    assert_mypy_errors(str(f.realpath()), [])
 
 
 @pytest.mark.parametrize("decorator", ["rule", "initialize"])
@@ -282,7 +279,7 @@ def test_stateful_multiple_return(tmpdir, decorator):
         "def my_rule() -> MultipleResults[int]:\n"
         "    return multiple(1, 2, 3)\n".format(decorator)
     )
-    assert not get_mypy_errors(str(f.realpath()))
+    assert_mypy_errors(str(f.realpath()), [])
 
 
 @pytest.mark.parametrize("decorator", ["rule", "initialize"])
@@ -295,8 +292,7 @@ def test_stateful_multiple_return_invalid(tmpdir, decorator):
         "def my_rule() -> MultipleResults[int]:\n"
         "    return multiple(1, 2, 3)\n".format(decorator)
     )
-    got = get_mypy_errors(str(f.realpath()))
-    assert got == {(3, "arg-type")}
+    assert_mypy_errors(str(f.realpath()), [(3, "arg-type")])
 
 
 @pytest.mark.parametrize(
@@ -322,7 +318,7 @@ def test_stateful_consumes_type_tracing(tmpdir, wrapper, expected):
 
 @pytest.mark.parametrize(
     "return_val,errors",
-    [("True", set()), ("0", {(2, "arg-type"), (2, "return-value")})],
+    [("True", []), ("0", [(2, "arg-type"), (2, "return-value")])],
 )
 def test_stateful_precondition_requires_predicate(tmpdir, return_val, errors):
     f = tmpdir.join("check_mypy_on_stateful_precondition.py")
@@ -331,8 +327,7 @@ def test_stateful_precondition_requires_predicate(tmpdir, return_val, errors):
         "@precondition(lambda self: {})\n"
         "def my_rule() -> None: ...\n".format(return_val)
     )
-    got = get_mypy_errors(str(f.realpath()))
-    assert got == errors
+    assert_mypy_errors(str(f.realpath()), errors)
 
 
 def test_stateful_precondition_lambda(tmpdir):
@@ -347,7 +342,7 @@ def test_stateful_precondition_lambda(tmpdir):
     )
     # Note that this doesn't fully check the code because of the `Any` parameter
     # type. `lambda self: self.invalid` would unfortunately pass too
-    assert not get_mypy_errors(str(f.realpath()))
+    assert_mypy_errors(str(f.realpath()), [])
 
 
 def test_stateful_precondition_instance_method(tmpdir):
@@ -362,7 +357,7 @@ def test_stateful_precondition_instance_method(tmpdir):
         "  @rule()\n"
         "  def my_rule(self) -> None: ...\n"
     )
-    assert not get_mypy_errors(str(f.realpath()))
+    assert_mypy_errors(str(f.realpath()), [])
 
 
 def test_stateful_precondition_precond_requires_one_arg(tmpdir):
@@ -372,6 +367,5 @@ def test_stateful_precondition_precond_requires_one_arg(tmpdir):
         "precondition(lambda: True)\n"
         "precondition(lambda a, b: True)\n"
     )
-    got = get_mypy_errors(str(f.realpath()))
     # Additional "Cannot infer type of lambda" errors
-    assert got == {(2, "arg-type"), (2, "misc"), (3, "arg-type"), (3, "misc")}
+    assert_mypy_errors(str(f.realpath()), [(2, "arg-type"), (2, "misc"), (3, "arg-type"), (3, "misc")])
