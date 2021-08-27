@@ -14,7 +14,7 @@
 # END HEADER
 
 import re
-from typing import Callable, NamedTuple, Optional, Tuple, Union
+from typing import NamedTuple, Optional, Tuple, Union
 
 from hypothesis import assume, strategies as st
 from hypothesis.errors import InvalidArgument
@@ -25,16 +25,19 @@ from hypothesis.strategies._internal.utils import defines_strategy
 from hypothesis.utils.conventions import UniqueIdentifier, not_set
 
 __all__ = [
+    "NDIM_MAX",
     "Shape",
     "BroadcastableShapes",
     "BasicIndex",
     "check_argument",
     "order_check",
+    "check_valid_dims",
     "array_shapes",
     "valid_tuple_axes",
     "broadcastable_shapes",
     "mutually_broadcastable_shapes",
-    "make_basic_indices",
+    "MutuallyBroadcastableShapesStrategy",
+    "BasicIndexStrategy",
 ]
 
 
@@ -479,81 +482,6 @@ def mutually_broadcastable_shapes(
         min_side=min_side,
         max_side=max_side,
     )
-
-
-def make_basic_indices(allow_0d_index: bool) -> Callable:
-    if allow_0d_index:
-        min_index_dim = 0
-        min_dims_note = (
-            "When ``min_dims == 0``, indices for zero-dimensional arrays are generated."
-        )
-    else:
-        min_index_dim = 1
-        min_dims_note = (
-            "Indices for zero-dimensional arrays cannot be generated, "
-            "so ``min_dims`` must be greater than zero."
-        )
-
-    @defines_strategy()
-    def basic_indices(
-        shape: Shape,
-        *,
-        min_dims: int = min_index_dim,
-        max_dims: Optional[int] = None,
-        allow_newaxis: bool = False,
-        allow_ellipsis: bool = True,
-    ) -> st.SearchStrategy[BasicIndex]:
-        # Arguments to exclude scalars, zero-dim arrays, and dims of size zero were
-        # all considered and rejected.  We want users to explicitly consider those
-        # cases if they're dealing in general indexers, and while it's fiddly we can
-        # back-compatibly add them later (hence using kwonlyargs).
-        check_type(tuple, shape, "shape")
-        if not allow_0d_index and len(shape) == 0:
-            raise InvalidArgument("Indices for 0-dimensional arrays are not allowed")
-        check_type(bool, allow_ellipsis, "allow_ellipsis")
-        check_type(bool, allow_newaxis, "allow_newaxis")
-        check_type(int, min_dims, "min_dims")
-        check_valid_dims(min_dims, "min_dims")
-
-        if max_dims is None:
-            max_dims = min(max(len(shape), min_dims) + 2, NDIM_MAX)
-        check_type(int, max_dims, "max_dims")
-        check_valid_dims(max_dims, "max_dims")
-
-        order_check("dims", min_index_dim, min_dims, max_dims)
-
-        if not all(isinstance(x, int) and x >= 0 for x in shape):
-            raise InvalidArgument(
-                f"shape={shape!r}, but all dimensions must be of integer size >= 0"
-            )
-
-        return BasicIndexStrategy(
-            shape,
-            min_dims=min_dims,
-            max_dims=max_dims,
-            allow_ellipsis=allow_ellipsis,
-            allow_newaxis=allow_newaxis,
-        )
-
-    basic_indices.__doc__ = f"""
-    It generates tuples containing some mix of integers, :obj:`python:slice`
-    objects, ``...`` (an ``Ellipsis``), and ``None``. When a length-one tuple
-    would be generated, this strategy may instead return the element which will
-    index the first axis, e.g. ``5`` instead of ``(5,)``.
-
-    * ``shape`` is the shape of the array that will be indexed, as a tuple of
-      positive integers. This must be at least two-dimensional for a tuple to be a
-      valid index; for one-dimensional arrays use
-      :func:`~hypothesis.strategies.slices` instead.
-    * ``min_dims`` is the minimum dimensionality of the resulting array from use of
-      the generated index. {min_dims_note}
-    * ``max_dims`` is the the maximum dimensionality of the resulting array,
-      defaulting to ``max(len(shape), min_dims) + 2``.
-    * ``allow_newaxis`` specifies whether ``None`` is allowed in the index.
-    * ``allow_ellipsis`` specifies whether ``...`` is allowed in the index.
-    """
-
-    return basic_indices
 
 
 class MutuallyBroadcastableShapesStrategy(st.SearchStrategy):

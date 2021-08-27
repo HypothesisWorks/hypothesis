@@ -23,7 +23,9 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.extra import _array_helpers
 from hypothesis.extra._array_helpers import (
     BasicIndex,
+    BasicIndexStrategy,
     BroadcastableShapes,
+    MutuallyBroadcastableShapesStrategy,
     Shape,
     check_argument,
     order_check,
@@ -58,7 +60,9 @@ __all__ = [
     "valid_tuple_axes",
     "broadcastable_shapes",
     "mutually_broadcastable_shapes",
+    "MutuallyBroadcastableShapesStrategy",
     "basic_indices",
+    "BasicIndexStrategy",
     "integer_array_indices",
 ]
 
@@ -786,13 +790,65 @@ mutually_broadcastable_shapes.__doc__ = f"""
 
     """
 
-basic_indices = _array_helpers.make_basic_indices(allow_0d_index=True)
-basic_indices.__doc__ = f"""
-    Return a strategy for :np-ref:`basic indexes <arrays.indexing.html>` of
+
+@defines_strategy()
+def basic_indices(
+    shape: Shape,
+    *,
+    min_dims: int = 0,
+    max_dims: Optional[int] = None,
+    allow_newaxis: bool = False,
+    allow_ellipsis: bool = True,
+) -> st.SearchStrategy[BasicIndex]:
+    """Return a strategy for :np-ref:`basic indexes <arrays.indexing.html>` of
     arrays with the specified shape, which may include dimensions of size zero.
 
-    {basic_indices.__doc__}
+    It generates tuples containing some mix of integers, :obj:`python:slice`
+    objects, ``...`` (an ``Ellipsis``), and ``None``. When a length-one tuple
+    would be generated, this strategy may instead return the element which will
+    index the first axis, e.g. ``5`` instead of ``(5,)``.
+
+    * ``shape`` is the shape of the array that will be indexed, as a tuple of
+      positive integers. This must be at least two-dimensional for a tuple to be
+      a valid index; for one-dimensional arrays use
+      :func:`~hypothesis.strategies.slices` instead.
+    * ``min_dims`` is the minimum dimensionality of the resulting array from use
+      of the generated index. When ``min_dims == 0``, indices for zero-dimensional
+      arrays are generated.
+    * ``max_dims`` is the the maximum dimensionality of the resulting array,
+      defaulting to ``max(len(shape), min_dims) + 2``.
+    * ``allow_newaxis`` specifies whether ``None`` is allowed in the index.
+    * ``allow_ellipsis`` specifies whether ``...`` is allowed in the index.
     """
+    # Arguments to exclude scalars, zero-dim arrays, and dims of size zero were
+    # all considered and rejected.  We want users to explicitly consider those
+    # cases if they're dealing in general indexers, and while it's fiddly we can
+    # back-compatibly add them later (hence using kwonlyargs).
+    check_type(tuple, shape, "shape")
+    check_type(bool, allow_ellipsis, "allow_ellipsis")
+    check_type(bool, allow_newaxis, "allow_newaxis")
+    check_type(int, min_dims, "min_dims")
+    _array_helpers.check_valid_dims(min_dims, "min_dims")
+
+    if max_dims is None:
+        max_dims = min(max(len(shape), min_dims) + 2, _array_helpers.NDIM_MAX)
+    check_type(int, max_dims, "max_dims")
+    _array_helpers.check_valid_dims(max_dims, "max_dims")
+
+    order_check("dims", 0, min_dims, max_dims)
+
+    if not all(isinstance(x, int) and x >= 0 for x in shape):
+        raise InvalidArgument(
+            f"shape={shape!r}, but all dimensions must be of integer size >= 0"
+        )
+
+    return BasicIndexStrategy(
+        shape,
+        min_dims=min_dims,
+        max_dims=max_dims,
+        allow_ellipsis=allow_ellipsis,
+        allow_newaxis=allow_newaxis,
+    )
 
 
 @defines_strategy()
