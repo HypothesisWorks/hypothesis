@@ -391,4 +391,6 @@ def test_stateful_precondition_precond_requires_one_arg(tmpdir):
         "precondition(lambda a, b: True)\n"
     )
     # Additional "Cannot infer type of lambda" errors
-    assert_mypy_errors(str(f.realpath()), [(2, "arg-type"), (2, "misc"), (3, "arg-type"), (3, "misc")])
+    assert_mypy_errors(
+        str(f.realpath()), [(2, "arg-type"), (2, "misc"), (3, "arg-type"), (3, "misc")]
+    )
