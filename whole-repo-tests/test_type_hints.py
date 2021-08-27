@@ -116,7 +116,7 @@ def test_revealed_types(tmpdir, val, expect):
     f.write(
         "from hypothesis.strategies import *\n"
         f"s = {val}\n"
-        "reveal_type(s)\n"
+        "reveal_type(s)\n"  # fmt: skip
     )
     typ = get_mypy_analysed_type(str(f.realpath()), val)
     assert typ == f"hypothesis.strategies._internal.strategies.SearchStrategy[{expect}]"
@@ -341,7 +341,10 @@ def test_stateful_consumed_bundle_cannot_be_target(tmpdir):
 
 @pytest.mark.parametrize(
     "return_val,errors",
-    [("True", []), ("0", [(2, "arg-type"), (2, "return-value")])],
+    [
+        ("True", []),
+        ("0", [(2, "arg-type"), (2, "return-value")]),
+    ],
 )
 def test_stateful_precondition_requires_predicate(tmpdir, return_val, errors):
     f = tmpdir.join("check_mypy_on_stateful_precondition.py")
@@ -392,5 +395,6 @@ def test_stateful_precondition_precond_requires_one_arg(tmpdir):
     )
     # Additional "Cannot infer type of lambda" errors
     assert_mypy_errors(
-        str(f.realpath()), [(2, "arg-type"), (2, "misc"), (3, "arg-type"), (3, "misc")]
+        str(f.realpath()),
+        [(2, "arg-type"), (2, "misc"), (3, "arg-type"), (3, "misc")],
     )
