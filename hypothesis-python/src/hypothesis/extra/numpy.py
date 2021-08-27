@@ -21,7 +21,13 @@ import numpy as np
 from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra import _array_helpers
-from hypothesis.extra._array_helpers import Shape, check_argument, order_check
+from hypothesis.extra._array_helpers import (
+    BasicIndex,
+    BroadcastableShapes,
+    Shape,
+    check_argument,
+    order_check,
+)
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.reflection import proxies
@@ -30,6 +36,10 @@ from hypothesis.strategies._internal.strategies import T, check_strategy
 from hypothesis.strategies._internal.utils import defines_strategy
 
 __all__ = [
+    "Shape",
+    "BroadcastableShapes",
+    "BasicIndex",
+    "TIME_RESOLUTIONS",
     "from_dtype",
     "arrays",
     "array_shapes",
