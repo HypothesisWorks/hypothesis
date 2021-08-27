@@ -51,6 +51,7 @@ from hypothesis.strategies._internal.utils import defines_strategy
 from hypothesis.utils.conventions import UniqueIdentifier
 
 Ex = TypeVar("Ex", covariant=True)
+Ex_Inv = TypeVar("Ex_Inv")
 T = TypeVar("T")
 T3 = TypeVar("T3")
 T4 = TypeVar("T4")
