@@ -109,6 +109,19 @@ def test_data_object_type_tracing(tmpdir):
     assert got == "int"
 
 
+def test_drawfn_type_tracing(tmpdir):
+    f = tmpdir.join("check_mypy_on_st_drawfn.py")
+    f.write(
+        "from hypothesis.strategies import DrawFn, text\n"
+        "def comp(draw: DrawFn) -> str:\n"
+        "    s = draw(text(), 123)\n"
+        "    reveal_type(s)\n"
+        "    return s\n"
+    )
+    got = get_mypy_analysed_type(str(f.realpath()), ...)
+    assert got == "str"
+
+
 def test_settings_preserves_type(tmpdir):
     f = tmpdir.join("check_mypy_on_settings.py")
     f.write(

@@ -518,8 +518,8 @@ INVARIANT_MARKER = "hypothesis_stateful_invariant"
 
 
 def rule(*, targets=(), target=None, **kwargs):
-    """Decorator for RuleBasedStateMachine. Any name present in target or
-    targets will define where the end result of this function should go. If
+    """Decorator for RuleBasedStateMachine. Any Bundle present in ``target`` or
+    ``targets`` will define where the end result of this function should go. If
     both are empty then the end result will be discarded.
 
     ``target`` must be a Bundle, or if the result should go to multiple
