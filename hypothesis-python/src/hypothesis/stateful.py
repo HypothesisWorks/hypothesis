@@ -462,7 +462,7 @@ class BundleConsumer(Bundle[Ex]):
         super().__init__(bundle.name, consume=True)
 
 
-def consumes(bundle: Bundle[Ex]) -> BundleConsumer[Ex]:
+def consumes(bundle: Bundle[Ex]) -> SearchStrategy[Ex]:
     """When introducing a rule in a RuleBasedStateMachine, this function can
     be used to mark bundles from which each value used in a step with the
     given rule should be removed. This function returns a strategy object

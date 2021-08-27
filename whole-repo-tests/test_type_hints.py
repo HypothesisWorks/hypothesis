@@ -329,6 +329,16 @@ def test_stateful_consumes_type_tracing(tmpdir, wrapper, expected):
     assert got == expected
 
 
+def test_stateful_consumed_bundle_cannot_be_target(tmpdir):
+    f = tmpdir.join("check_mypy_on_stateful_rule.py")
+    f.write(
+        "from hypothesis.stateful import *\n"
+        "b: Bundle[int] = Bundle('b')\n"
+        "rule(target=consumes(b))\n"
+    )
+    assert_mypy_errors(str(f.realpath()), [(3, "call-overload")])
+
+
 @pytest.mark.parametrize(
     "return_val,errors",
     [("True", []), ("0", [(2, "arg-type"), (2, "return-value")])],
