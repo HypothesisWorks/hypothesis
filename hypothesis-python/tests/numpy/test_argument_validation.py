@@ -267,6 +267,7 @@ def e(a, **kwargs):
         e(nps.basic_indices, shape=(0, 0), max_dims=-1),
         e(nps.basic_indices, shape=(0, 0), max_dims=1.0),
         e(nps.basic_indices, shape=(0, 0), min_dims=2, max_dims=1),
+        e(nps.basic_indices, shape=(0, 0), min_dims=50),
         e(nps.basic_indices, shape=(0, 0), max_dims=50),
         e(nps.integer_array_indices, shape=()),
         e(nps.integer_array_indices, shape=(2, 0)),

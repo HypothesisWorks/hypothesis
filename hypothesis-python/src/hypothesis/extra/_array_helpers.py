@@ -13,6 +13,7 @@
 #
 # END HEADER
 
+import re
 from typing import Callable, NamedTuple, Optional, Tuple, Union
 
 from hypothesis import assume, strategies as st
@@ -21,11 +22,13 @@ from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.validation import check_type, check_valid_interval
 from hypothesis.strategies._internal.utils import defines_strategy
+from hypothesis.utils.conventions import UniqueIdentifier, not_set
 
 __all__ = [
     "Shape",
     "BroadcastableShapes",
     "BasicIndex",
+    "check_argument",
     "order_check",
     "array_shapes",
     "valid_tuple_axes",
@@ -43,6 +46,12 @@ BasicIndex = Tuple[Union[int, slice, None, "ellipsis"], ...]  # noqa: F821
 class BroadcastableShapes(NamedTuple):
     input_shapes: Tuple[Shape, ...]
     result_shape: Shape
+
+
+@check_function
+def check_argument(condition, fail_message, *f_args, **f_kwargs):
+    if not condition:
+        raise InvalidArgument(fail_message.format(*f_args, **f_kwargs))
 
 
 @check_function
@@ -247,11 +256,95 @@ def broadcastable_shapes(
     ).map(lambda x: x.input_shapes[0])
 
 
+# See https://numpy.org/doc/stable/reference/c-api/generalized-ufuncs.html
+# Implementation based on numpy.lib.function_base._parse_gufunc_signature
+# with minor upgrades to handle numeric and optional dimensions.  Examples:
+#
+#     add       (),()->()                   binary ufunc
+#     sum1d     (i)->()                     reduction
+#     inner1d   (i),(i)->()                 vector-vector multiplication
+#     matmat    (m,n),(n,p)->(m,p)          matrix multiplication
+#     vecmat    (n),(n,p)->(p)              vector-matrix multiplication
+#     matvec    (m,n),(n)->(m)              matrix-vector multiplication
+#     matmul    (m?,n),(n,p?)->(m?,p?)      combination of the four above
+#     cross1d   (3),(3)->(3)                cross product with frozen dimensions
+#
+# Note that while no examples of such usage are given, Numpy does allow
+# generalised ufuncs that have *multiple output arrays*.  This is not
+# currently supported by Hypothesis - please contact us if you would use it!
+#
+# We are unsure if gufuncs allow frozen dimensions to be optional, but it's
+# easy enough to support here - and so we will unless we learn otherwise.
+_DIMENSION = r"\w+\??"  # Note that \w permits digits too!
+_SHAPE = r"\((?:{0}(?:,{0})".format(_DIMENSION) + r"{0,31})?\)"
+_ARGUMENT_LIST = "{0}(?:,{0})*".format(_SHAPE)
+_SIGNATURE = fr"^{_ARGUMENT_LIST}->{_SHAPE}$"
+_SIGNATURE_MULTIPLE_OUTPUT = r"^{0}->{0}$".format(_ARGUMENT_LIST)
+
+
+class _GUfuncSig(NamedTuple):
+    input_shapes: Tuple[Shape, ...]
+    result_shape: Shape
+
+
+def _hypothesis_parse_gufunc_signature(signature, all_checks=True):
+    # Disable all_checks to better match the Numpy version, for testing
+    if not re.match(_SIGNATURE, signature):
+        if re.match(_SIGNATURE_MULTIPLE_OUTPUT, signature):
+            raise InvalidArgument(
+                "Hypothesis does not yet support generalised ufunc signatures "
+                "with multiple output arrays - mostly because we don't know of "
+                "anyone who uses them!  Please get in touch with us to fix that."
+                f"\n (signature={signature!r})"
+            )
+        if re.match("^{0:}->{0:}$".format(_ARGUMENT_LIST), signature):
+            raise InvalidArgument(
+                f"signature={signature!r} matches Numpy's regex for gufunc signatures, "
+                "but contains shapes with more than 32 dimensions and is thus invalid."
+            )
+        raise InvalidArgument(f"{signature!r} is not a valid gufunc signature")
+    input_shapes, output_shapes = (
+        tuple(tuple(re.findall(_DIMENSION, a)) for a in re.findall(_SHAPE, arg_list))
+        for arg_list in signature.split("->")
+    )
+    assert len(output_shapes) == 1
+    result_shape = output_shapes[0]
+    if all_checks:
+        # Check that there are no names in output shape that do not appear in inputs.
+        # (kept out of parser function for easier generation of test values)
+        # We also disallow frozen optional dimensions - this is ambiguous as there is
+        # no way to share an un-named dimension between shapes.  Maybe just padding?
+        # Anyway, we disallow it pending clarification from upstream.
+        frozen_optional_err = (
+            "Got dimension %r, but handling of frozen optional dimensions "
+            "is ambiguous.  If you known how this should work, please "
+            "contact us to get this fixed and documented (signature=%r)."
+        )
+        only_out_err = (
+            "The %r dimension only appears in the output shape, and is "
+            "not frozen, so the size is not determined (signature=%r)."
+        )
+        names_in = {n.strip("?") for shp in input_shapes for n in shp}
+        names_out = {n.strip("?") for n in result_shape}
+        for shape in input_shapes + (result_shape,):
+            for name in shape:
+                try:
+                    int(name.strip("?"))
+                    if "?" in name:
+                        raise InvalidArgument(frozen_optional_err % (name, signature))
+                except ValueError:
+                    if name.strip("?") in (names_out - names_in):
+                        raise InvalidArgument(
+                            only_out_err % (name, signature)
+                        ) from None
+    return _GUfuncSig(input_shapes=input_shapes, result_shape=result_shape)
+
+
 @defines_strategy()
 def mutually_broadcastable_shapes(
-    num_shapes: int,
     *,
-    signature: Optional[BroadcastableShapes] = None,
+    num_shapes: Union[UniqueIdentifier, int] = not_set,
+    signature: Union[UniqueIdentifier, str] = not_set,
     base_shape: Shape = (),
     min_dims: int = 0,
     max_dims: Optional[int] = None,
@@ -294,14 +387,26 @@ def mutually_broadcastable_shapes(
         BroadcastableShapes(input_shapes=((1, 2, 3), (3,), ()), result_shape=(1, 2, 3))
 
     """
-
-    if signature is None:
+    arg_msg = "Pass either the `num_shapes` or the `signature` argument, but not both."
+    if num_shapes is not not_set:
+        check_argument(signature is not_set, arg_msg)
+        check_type(int, num_shapes, "num_shapes")
+        assert isinstance(num_shapes, int)  # for mypy
+        parsed_signature = None
         sig_dims = 0
     else:
-        all_shapes = signature.input_shapes + (signature.result_shape,)
+        check_argument(signature is not not_set, arg_msg)
+        if signature is None:
+            raise InvalidArgument(
+                "Expected a string, but got invalid signature=None.  "
+                "(maybe .signature attribute of an element-wise ufunc?)"
+            )
+        check_type(str, signature, "signature")
+        parsed_signature = _hypothesis_parse_gufunc_signature(signature)
+        all_shapes = parsed_signature.input_shapes + (parsed_signature.result_shape,)
         sig_dims = min(len(s) for s in all_shapes)
+        num_shapes = len(parsed_signature.input_shapes)
 
-    check_type(int, num_shapes, "num_shapes")
     if num_shapes < 1:
         raise InvalidArgument(f"num_shapes={num_shapes} must be at least 1")
 
@@ -326,10 +431,9 @@ def mutually_broadcastable_shapes(
 
     if signature is not None and max_dims > NDIM_MAX - sig_dims:
         raise InvalidArgument(
-            f"max_dims={max_dims} would exceed the {NDIM_MAX}-dimension "
-            "limit Hypothesis imposes on array shapes, given signature="
-            f"(input_shapes={signature.input_shapes},"
-            f" result_shape={signature.result_shape})"
+            f"max_dims={signature!r} would exceed the {NDIM_MAX}-dimension"
+            "limit Hypothesis imposes on array shapes, "
+            f"given signature={parsed_signature!r}"
         )
 
     if strict_check:
@@ -368,7 +472,7 @@ def mutually_broadcastable_shapes(
 
     return MutuallyBroadcastableShapesStrategy(
         num_shapes=num_shapes,
-        signature=signature,
+        signature=parsed_signature,
         base_shape=base_shape,
         min_dims=min_dims,
         max_dims=max_dims,
