@@ -21,16 +21,8 @@ import numpy as np
 
 from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument
-from hypothesis.extra.__array_helpers import (
-    BroadcastableShapes,
-    Shape,
-    array_shapes,
-    broadcastable_shapes,
-    make_basic_indices,
-    mutually_broadcastable_shapes as _mutually_broadcastable_shapes,
-    order_check,
-    valid_tuple_axes,
-)
+from hypothesis.extra import _array_helpers
+from hypothesis.extra._array_helpers import BroadcastableShapes, Shape, order_check
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.reflection import proxies
@@ -468,6 +460,9 @@ def arrays(
     return ArrayStrategy(elements, shape, dtype, fill, unique)
 
 
+array_shapes = _array_helpers.array_shapes
+
+
 @defines_strategy()
 def scalar_dtypes() -> st.SearchStrategy[np.dtype]:
     """Return a strategy that can return any non-flexible scalar dtype."""
@@ -736,6 +731,7 @@ def nested_dtypes(
     ).filter(lambda d: max_itemsize is None or d.itemsize <= max_itemsize)
 
 
+valid_tuple_axes = _array_helpers.valid_tuple_axes
 valid_tuple_axes.__doc__ = f"""
     Return a strategy for generating permissible tuple-values for the
     ``axis`` argument for a numpy sequential function (e.g.
@@ -744,6 +740,9 @@ valid_tuple_axes.__doc__ = f"""
 
     {valid_tuple_axes.__doc__}
     """
+
+
+broadcastable_shapes = _array_helpers.broadcastable_shapes
 
 # See https://numpy.org/doc/stable/reference/c-api/generalized-ufuncs.html
 # Implementation based on numpy.lib.function_base._parse_gufunc_signature
@@ -860,7 +859,7 @@ def mutually_broadcastable_shapes(
         num_shapes = len(parsed_signature.input_shapes)
         assert num_shapes >= 1
 
-    return _mutually_broadcastable_shapes(
+    return _array_helpers.mutually_broadcastable_shapes(
         num_shapes=num_shapes,
         signature=parsed_signature,
         base_shape=base_shape,
@@ -872,7 +871,7 @@ def mutually_broadcastable_shapes(
 
 
 mutually_broadcastable_shapes.__doc__ = f"""
-    {_mutually_broadcastable_shapes.__doc__}
+    {_array_helpers.mutually_broadcastable_shapes.__doc__}
 
     **Use with Generalised Universal Function signatures**
 
@@ -910,7 +909,7 @@ mutually_broadcastable_shapes.__doc__ = f"""
 
     """
 
-basic_indices = make_basic_indices(allow_0d_index=True)
+basic_indices = _array_helpers.make_basic_indices(allow_0d_index=True)
 basic_indices.__doc__ = f"""
     Return a strategy for :np-ref:`basic indexes <arrays.indexing.html>` of
     arrays with the specified shape, which may include dimensions of size zero.
