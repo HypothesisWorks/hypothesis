@@ -70,7 +70,7 @@ def assert_mypy_errors(fname, expected):
             error_code = error_line.split("[")[-1].rstrip("]")
             yield (int(col), error_code)
 
-    return sorted(convert_lines()) == sorted(expected)
+    assert sorted(convert_lines()) == sorted(expected)
 
 
 @pytest.mark.parametrize(
