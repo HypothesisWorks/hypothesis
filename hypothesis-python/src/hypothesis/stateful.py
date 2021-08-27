@@ -735,7 +735,9 @@ class VarReference:
     name = attr.ib()
 
 
-def precondition(precond: Callable[..., bool]) -> Callable[[TestFunc], TestFunc]:
+# There are multiple alternatives for annotating the `precond` type, all of them
+# have drawbacks. See https://github.com/HypothesisWorks/hypothesis/pull/3068#issuecomment-906642371
+def precondition(precond: Callable[[Any], bool]) -> Callable[[TestFunc], TestFunc]:
     """Decorator to apply a precondition for rules in a RuleBasedStateMachine.
     Specifies a precondition for a rule to be considered as a valid step in the
     state machine, which is more efficient than using :func:`~hypothesis.assume`

@@ -333,3 +333,45 @@ def test_stateful_precondition_requires_predicate(tmpdir, return_val, errors):
     )
     got = get_mypy_errors(str(f.realpath()))
     assert got == errors
+
+
+def test_stateful_precondition_lambda(tmpdir):
+    f = tmpdir.join("check_mypy_on_stateful_precondition.py")
+    f.write(
+        "from hypothesis.stateful import *\n"
+        "class MyMachine(RuleBasedStateMachine):\n"
+        "  valid: bool\n"
+        "  @precondition(lambda self: self.valid)\n"
+        "  @rule()\n"
+        "  def my_rule(self) -> None: ...\n"
+    )
+    # Note that this doesn't fully check the code because of the `Any` parameter
+    # type. `lambda self: self.invalid` would unfortunately pass too
+    assert not get_mypy_errors(str(f.realpath()))
+
+
+def test_stateful_precondition_instance_method(tmpdir):
+    f = tmpdir.join("check_mypy_on_stateful_precondition.py")
+    f.write(
+        "from hypothesis.stateful import *\n"
+        "class MyMachine(RuleBasedStateMachine):\n"
+        "  valid: bool\n"
+        "  def check(self) -> bool:\n"
+        "    return self.valid\n"
+        "  @precondition(check)\n"
+        "  @rule()\n"
+        "  def my_rule(self) -> None: ...\n"
+    )
+    assert not get_mypy_errors(str(f.realpath()))
+
+
+def test_stateful_precondition_precond_requires_one_arg(tmpdir):
+    f = tmpdir.join("check_mypy_on_stateful_precondition.py")
+    f.write(
+        "from hypothesis.stateful import *\n"
+        "precondition(lambda: True)\n"
+        "precondition(lambda a, b: True)\n"
+    )
+    got = get_mypy_errors(str(f.realpath()))
+    # Additional "Cannot infer type of lambda" errors
+    assert got == {(2, "arg-type"), (2, "misc"), (3, "arg-type"), (3, "misc")}
