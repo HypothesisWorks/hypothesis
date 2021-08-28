@@ -14,21 +14,25 @@
 # END HEADER
 
 import math
+from copy import deepcopy
 from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
 from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument
-from hypothesis.extra import _array_helpers
 from hypothesis.extra._array_helpers import (
+    NDIM_MAX,
     BasicIndex,
     BasicIndexStrategy,
-    BroadcastableShapes,
-    MutuallyBroadcastableShapesStrategy,
     Shape,
+    array_shapes,
+    broadcastable_shapes,
     check_argument,
+    check_valid_dims,
+    mutually_broadcastable_shapes,
     order_check,
+    valid_tuple_axes,
 )
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.coverage import check_function
@@ -38,10 +42,6 @@ from hypothesis.strategies._internal.strategies import T, check_strategy
 from hypothesis.strategies._internal.utils import defines_strategy
 
 __all__ = [
-    "Shape",
-    "BroadcastableShapes",
-    "BasicIndex",
-    "TIME_RESOLUTIONS",
     "from_dtype",
     "arrays",
     "array_shapes",
@@ -60,9 +60,7 @@ __all__ = [
     "valid_tuple_axes",
     "broadcastable_shapes",
     "mutually_broadcastable_shapes",
-    "MutuallyBroadcastableShapesStrategy",
     "basic_indices",
-    "BasicIndexStrategy",
     "integer_array_indices",
 ]
 
@@ -466,9 +464,6 @@ def arrays(
     return ArrayStrategy(elements, shape, dtype, fill, unique)
 
 
-array_shapes = _array_helpers.array_shapes
-
-
 @defines_strategy()
 def scalar_dtypes() -> st.SearchStrategy[np.dtype]:
     """Return a strategy that can return any non-flexible scalar dtype."""
@@ -737,7 +732,7 @@ def nested_dtypes(
     ).filter(lambda d: max_itemsize is None or d.itemsize <= max_itemsize)
 
 
-valid_tuple_axes = _array_helpers.valid_tuple_axes
+valid_tuple_axes = deepcopy(valid_tuple_axes)
 valid_tuple_axes.__doc__ = f"""
     Return a strategy for generating permissible tuple-values for the
     ``axis`` argument for a numpy sequential function (e.g.
@@ -748,9 +743,7 @@ valid_tuple_axes.__doc__ = f"""
     """
 
 
-broadcastable_shapes = _array_helpers.broadcastable_shapes
-
-mutually_broadcastable_shapes = _array_helpers.mutually_broadcastable_shapes
+mutually_broadcastable_shapes = deepcopy(mutually_broadcastable_shapes)
 mutually_broadcastable_shapes.__doc__ = f"""
     {mutually_broadcastable_shapes.__doc__}
 
@@ -828,12 +821,12 @@ def basic_indices(
     check_type(bool, allow_ellipsis, "allow_ellipsis")
     check_type(bool, allow_newaxis, "allow_newaxis")
     check_type(int, min_dims, "min_dims")
-    _array_helpers.check_valid_dims(min_dims, "min_dims")
+    check_valid_dims(min_dims, "min_dims")
 
     if max_dims is None:
-        max_dims = min(max(len(shape), min_dims) + 2, _array_helpers.NDIM_MAX)
+        max_dims = min(max(len(shape), min_dims) + 2, NDIM_MAX)
     check_type(int, max_dims, "max_dims")
-    _array_helpers.check_valid_dims(max_dims, "max_dims")
+    check_valid_dims(max_dims, "max_dims")
 
     order_check("dims", 0, min_dims, max_dims)
 
