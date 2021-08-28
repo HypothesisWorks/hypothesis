@@ -303,8 +303,8 @@ def _hypothesis_parse_gufunc_signature(signature, all_checks=True):
         if re.match(
             (
                 # Taken from np.lib.function_base._SIGNATURE
-                r"^\\((?:\\w+(?:,\\w+)*)?\\)(?:,\\((?:\\w+(?:,\\w+)*)?\\))*->"
-                r"\\((?:\\w+(?:,\\w+)*)?\\)(?:,\\((?:\\w+(?:,\\w+)*)?\\))*$"
+                r"^\((?:\w+(?:,\w+)*)?\)(?:,\((?:\w+(?:,\w+)*)?\))*->"
+                r"\((?:\w+(?:,\w+)*)?\)(?:,\((?:\w+(?:,\w+)*)?\))*$"
             ),
             signature,
         ):
