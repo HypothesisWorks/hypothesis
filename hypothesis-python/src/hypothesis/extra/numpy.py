@@ -30,9 +30,9 @@ from hypothesis.extra._array_helpers import (
     broadcastable_shapes,
     check_argument,
     check_valid_dims,
-    mutually_broadcastable_shapes,
+    mutually_broadcastable_shapes as _mutually_broadcastable_shapes,
     order_check,
-    valid_tuple_axes,
+    valid_tuple_axes as _valid_tuple_axes,
 )
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.coverage import check_function
@@ -732,20 +732,20 @@ def nested_dtypes(
     ).filter(lambda d: max_itemsize is None or d.itemsize <= max_itemsize)
 
 
-valid_tuple_axes = deepcopy(valid_tuple_axes)
+valid_tuple_axes = deepcopy(_valid_tuple_axes)
 valid_tuple_axes.__doc__ = f"""
     Return a strategy for generating permissible tuple-values for the
     ``axis`` argument for a numpy sequential function (e.g.
     :func:`numpy:numpy.sum`), given an array of the specified
     dimensionality.
 
-    {valid_tuple_axes.__doc__}
+    {_valid_tuple_axes.__doc__}
     """
 
 
-mutually_broadcastable_shapes = deepcopy(mutually_broadcastable_shapes)
+mutually_broadcastable_shapes = deepcopy(_mutually_broadcastable_shapes)
 mutually_broadcastable_shapes.__doc__ = f"""
-    {mutually_broadcastable_shapes.__doc__}
+    {_mutually_broadcastable_shapes.__doc__}
 
     **Use with Generalised Universal Function signatures**
 
