@@ -43,9 +43,7 @@ from hypothesis.strategies._internal.strategies import T, check_strategy
 from hypothesis.strategies._internal.utils import defines_strategy
 
 __all__ = [
-    "Shape",
     "BroadcastableShapes",
-    "BasicIndex",
     "from_dtype",
     "arrays",
     "array_shapes",
