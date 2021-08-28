@@ -27,3 +27,17 @@ def test_hypothesis_is_not_the_first_to_import_numpy(testdir):
     # We only import numpy if the user did so first.
     result = testdir.runpytest(testdir.makepyfile(SHOULD_NOT_IMPORT_NUMPY))
     result.assert_outcomes(passed=1, failed=0)
+
+
+# We check the wildcard import works on the module level because that's the only
+# place Python actually allows us to use them.
+try:
+    from hypothesis.extra.numpy import *  # noqa: F401, F403
+
+    star_import_works = True
+except AttributeError:
+    star_import_works = False
+
+
+def test_wildcard_import():
+    assert star_import_works
