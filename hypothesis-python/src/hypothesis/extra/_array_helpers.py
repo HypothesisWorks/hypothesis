@@ -300,10 +300,17 @@ def _hypothesis_parse_gufunc_signature(signature, all_checks=True):
                 "anyone who uses them!  Please get in touch with us to fix that."
                 f"\n (signature={signature!r})"
             )
-        if re.match("^{0:}->{0:}$".format(_ARGUMENT_LIST), signature):
+        if re.match(
+            (
+                # Taken from np.lib.function_base._SIGNATURE
+                r"^\\((?:\\w+(?:,\\w+)*)?\\)(?:,\\((?:\\w+(?:,\\w+)*)?\\))*->"
+                r"\\((?:\\w+(?:,\\w+)*)?\\)(?:,\\((?:\\w+(?:,\\w+)*)?\\))*$"
+            ),
+            signature,
+        ):
             raise InvalidArgument(
                 f"signature={signature!r} matches Numpy's regex for gufunc signatures, "
-                "but contains shapes with more than 32 dimensions and is thus invalid."
+                f"but contains shapes with more than {NDIM_MAX} dimensions and is thus invalid."
             )
         raise InvalidArgument(f"{signature!r} is not a valid gufunc signature")
     input_shapes, output_shapes = (
