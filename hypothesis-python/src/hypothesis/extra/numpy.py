@@ -25,6 +25,7 @@ from hypothesis.extra._array_helpers import (
     NDIM_MAX,
     BasicIndex,
     BasicIndexStrategy,
+    BroadcastableShapes,
     Shape,
     array_shapes,
     broadcastable_shapes,
@@ -42,6 +43,9 @@ from hypothesis.strategies._internal.strategies import T, check_strategy
 from hypothesis.strategies._internal.utils import defines_strategy
 
 __all__ = [
+    "Shape",
+    "BroadcastableShapes",
+    "BasicIndex",
     "from_dtype",
     "arrays",
     "array_shapes",
