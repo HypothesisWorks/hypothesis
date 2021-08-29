@@ -21,7 +21,7 @@ import numpy as np
 import pytest
 
 from hypothesis import HealthCheck, assume, given, note, settings, strategies as st
-from hypothesis.errors import InvalidArgument, Unsatisfiable
+from hypothesis.errors import InvalidArgument
 from hypothesis.extra import numpy as nps
 
 from tests.common.debug import find_any, minimal
@@ -251,7 +251,7 @@ def test_array_values_are_unique(arr):
 
 def test_cannot_generate_unique_array_of_too_many_elements():
     strat = nps.arrays(dtype=int, elements=st.integers(0, 5), shape=10, unique=True)
-    with pytest.raises(Unsatisfiable):
+    with pytest.raises(InvalidArgument):
         strat.example()
 
 
@@ -272,6 +272,23 @@ def test_array_values_are_unique_high_collision(arr):
 def test_generates_all_values_for_unique_array(arr):
     # Ensures that the "reject already-seen element" branch is covered
     assert len(set(arr)) == len(arr)
+
+
+@given(nps.arrays(dtype="int8", shape=255, unique=True))
+def test_efficiently_generates_all_unique_array(arr):
+    # Avoids the birthday paradox with UniqueSampledListStrategy
+    assert len(set(arr)) == len(arr)
+
+
+@given(st.data(), st.integers(-100, 100), st.integers(1, 100))
+def test_array_element_rewriting(data, start, size):
+    arr = nps.arrays(
+        dtype=np.dtype("int64"),
+        shape=size,
+        elements=st.integers(start, start + size - 1),
+        unique=True,
+    )
+    assert set(data.draw(arr)) == set(range(start, start + size))
 
 
 def test_may_fill_with_nan_when_unique_is_set():
