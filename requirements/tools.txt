@@ -29,9 +29,9 @@ black==21.7b0
     # via
     #   blacken-docs
     #   shed
-blacken-docs==1.10.0
+blacken-docs==1.11.0
     # via -r requirements/tools.in
-bleach==4.0.0
+bleach==4.1.0
     # via readme-renderer
 certifi==2021.5.30
     # via requests
@@ -53,7 +53,7 @@ com2ann==0.3.0
     # via shed
 coverage==5.5
     # via -r requirements/tools.in
-cryptography==3.4.7
+cryptography==3.4.8
     # via secretstorage
 decorator==5.0.9
     # via
@@ -107,7 +107,7 @@ idna==3.2
     # via requests
 imagesize==1.2.0
     # via sphinx
-importlib-metadata==4.6.4
+importlib-metadata==4.7.1
     # via
     #   keyring
     #   twine
@@ -215,7 +215,7 @@ pytz==2021.1
     # via
     #   babel
     #   django
-pyupgrade==2.24.0
+pyupgrade==2.25.0
     # via shed
 pyyaml==5.4.1
     # via
@@ -223,7 +223,7 @@ pyyaml==5.4.1
     #   libcst
 readme-renderer==29.0
     # via twine
-regex==2021.8.21
+regex==2021.8.28
     # via black
 requests==2.26.0
     # via
@@ -298,7 +298,7 @@ tomli==1.2.1
     #   pep517
 tox==3.24.3
     # via -r requirements/tools.in
-tqdm==4.62.1
+tqdm==4.62.2
     # via twine
 traitlets==4.3.3
     # via
