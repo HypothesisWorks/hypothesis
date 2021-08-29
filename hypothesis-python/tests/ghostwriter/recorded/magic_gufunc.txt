@@ -3,7 +3,7 @@
 
 import numpy
 from hypothesis import given, strategies as st
-from hypothesis.extra.numpy import mutually_broadcastable_shapes
+from hypothesis.extra._array_helpers import mutually_broadcastable_shapes
 
 
 @given(

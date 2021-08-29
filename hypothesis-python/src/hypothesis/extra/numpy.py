@@ -14,30 +14,59 @@
 # END HEADER
 
 import math
-import re
-from typing import Any, Mapping, NamedTuple, Optional, Sequence, Tuple, Union
+from copy import deepcopy
+from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
-from hypothesis import assume, strategies as st
+from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument
+from hypothesis.extra._array_helpers import (
+    NDIM_MAX,
+    BasicIndex,
+    BasicIndexStrategy,
+    BroadcastableShapes,
+    Shape,
+    array_shapes,
+    broadcastable_shapes,
+    check_argument,
+    check_valid_dims,
+    mutually_broadcastable_shapes as _mutually_broadcastable_shapes,
+    order_check,
+    valid_tuple_axes as _valid_tuple_axes,
+)
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.reflection import proxies
-from hypothesis.internal.validation import check_type, check_valid_interval
+from hypothesis.internal.validation import check_type
 from hypothesis.strategies._internal.strategies import T, check_strategy
 from hypothesis.strategies._internal.utils import defines_strategy
-from hypothesis.utils.conventions import UniqueIdentifier, not_set
 
-Shape = Tuple[int, ...]
-# flake8 and mypy disagree about `ellipsis` (the type of `...`), and hence:
-BasicIndex = Tuple[Union[int, slice, "ellipsis", np.newaxis], ...]  # noqa: F821
+__all__ = [
+    "BroadcastableShapes",
+    "from_dtype",
+    "arrays",
+    "array_shapes",
+    "scalar_dtypes",
+    "boolean_dtypes",
+    "unsigned_integer_dtypes",
+    "integer_dtypes",
+    "floating_dtypes",
+    "complex_number_dtypes",
+    "datetime64_dtypes",
+    "timedelta64_dtypes",
+    "byte_string_dtypes",
+    "unicode_string_dtypes",
+    "array_dtypes",
+    "nested_dtypes",
+    "valid_tuple_axes",
+    "broadcastable_shapes",
+    "mutually_broadcastable_shapes",
+    "basic_indices",
+    "integer_array_indices",
+]
+
 TIME_RESOLUTIONS = tuple("Y  M  D  h  m  s  ms  us  ns  ps  fs  as".split())
-
-
-class BroadcastableShapes(NamedTuple):
-    input_shapes: Tuple[Shape, ...]
-    result_shape: Shape
 
 
 @defines_strategy(force_reusable_values=True)
@@ -146,30 +175,6 @@ def from_dtype(
     else:
         raise InvalidArgument(f"No strategy inference for {dtype}")
     return result.map(dtype.type)
-
-
-@check_function
-def check_argument(condition, fail_message, *f_args, **f_kwargs):
-    if not condition:
-        raise InvalidArgument(fail_message.format(*f_args, **f_kwargs))
-
-
-@check_function
-def order_check(name, floor, small, large):
-    check_argument(
-        floor <= small,
-        "min_{name} must be at least {} but was {}",
-        floor,
-        small,
-        name=name,
-    )
-    check_argument(
-        small <= large,
-        "min_{name}={} is larger than max_{name}={}",
-        small,
-        large,
-        name=name,
-    )
 
 
 class ArrayStrategy(st.SearchStrategy):
@@ -462,41 +467,6 @@ def arrays(
 
 
 @defines_strategy()
-def array_shapes(
-    *,
-    min_dims: int = 1,
-    max_dims: Optional[int] = None,
-    min_side: int = 1,
-    max_side: Optional[int] = None,
-) -> st.SearchStrategy[Shape]:
-    """Return a strategy for array shapes (tuples of int >= 1)."""
-    check_type(int, min_dims, "min_dims")
-    check_type(int, min_side, "min_side")
-    if min_dims > 32:
-        raise InvalidArgument(
-            "Got min_dims=%r, but numpy does not support arrays greater than 32 dimensions"
-            % min_dims
-        )
-    if max_dims is None:
-        max_dims = min(min_dims + 2, 32)
-    check_type(int, max_dims, "max_dims")
-    if max_dims > 32:
-        raise InvalidArgument(
-            "Got max_dims=%r, but numpy does not support arrays greater than 32 dimensions"
-            % max_dims
-        )
-    if max_side is None:
-        max_side = min_side + 5
-    check_type(int, max_side, "max_side")
-    order_check("dims", 0, min_dims, max_dims)
-    order_check("side", 0, min_side, max_side)
-
-    return st.lists(
-        st.integers(min_side, max_side), min_size=min_dims, max_size=max_dims
-    ).map(tuple)
-
-
-@defines_strategy()
 def scalar_dtypes() -> st.SearchStrategy[np.dtype]:
     """Return a strategy that can return any non-flexible scalar dtype."""
     return st.one_of(
@@ -764,425 +734,20 @@ def nested_dtypes(
     ).filter(lambda d: max_itemsize is None or d.itemsize <= max_itemsize)
 
 
-@defines_strategy()
-def valid_tuple_axes(
-    ndim: int,
-    *,
-    min_size: int = 0,
-    max_size: Optional[int] = None,
-) -> st.SearchStrategy[Shape]:
-    """Return a strategy for generating permissible tuple-values for the
+valid_tuple_axes = deepcopy(_valid_tuple_axes)
+valid_tuple_axes.__doc__ = f"""
+    Return a strategy for generating permissible tuple-values for the
     ``axis`` argument for a numpy sequential function (e.g.
     :func:`numpy:numpy.sum`), given an array of the specified
     dimensionality.
 
-    All tuples will have an length >= min_size and <= max_size. The default
-    value for max_size is ``ndim``.
-
-    Examples from this strategy shrink towards an empty tuple, which render
-    most sequential functions as no-ops.
-
-    The following are some examples drawn from this strategy.
-
-    .. code-block:: pycon
-
-        >>> [valid_tuple_axes(3).example() for i in range(4)]
-        [(-3, 1), (0, 1, -1), (0, 2), (0, -2, 2)]
-
-    ``valid_tuple_axes`` can be joined with other strategies to generate
-    any type of valid axis object, i.e. integers, tuples, and ``None``:
-
-    .. code-block:: pycon
-
-        any_axis_strategy = none() | integers(-ndim, ndim - 1) | valid_tuple_axes(ndim)
-
+    {_valid_tuple_axes.__doc__}
     """
-    if max_size is None:
-        max_size = ndim
-
-    check_type(int, ndim, "ndim")
-    check_type(int, min_size, "min_size")
-    check_type(int, max_size, "max_size")
-    order_check("size", 0, min_size, max_size)
-    check_valid_interval(max_size, ndim, "max_size", "ndim")
-
-    # shrink axis values from negative to positive
-    axes = st.integers(0, max(0, 2 * ndim - 1)).map(
-        lambda x: x if x < ndim else x - 2 * ndim
-    )
-    return st.lists(
-        axes, min_size=min_size, max_size=max_size, unique_by=lambda x: x % ndim
-    ).map(tuple)
 
 
-@defines_strategy()
-def broadcastable_shapes(
-    shape: Shape,
-    *,
-    min_dims: int = 0,
-    max_dims: Optional[int] = None,
-    min_side: int = 1,
-    max_side: Optional[int] = None,
-) -> st.SearchStrategy[Shape]:
-    """Return a strategy for generating shapes that are broadcast-compatible
-    with the provided shape.
-
-    Examples from this strategy shrink towards a shape with length ``min_dims``.
-    The size of an aligned dimension shrinks towards size ``1``. The
-    size of an unaligned dimension shrink towards ``min_side``.
-
-    * ``shape`` a tuple of integers
-    * ``min_dims`` The smallest length that the generated shape can possess.
-    * ``max_dims`` The largest length that the generated shape can possess.
-      The default-value for ``max_dims`` is ``min(32, max(len(shape), min_dims) + 2)``.
-    * ``min_side`` The smallest size that an unaligned dimension can possess.
-    * ``max_side`` The largest size that an unaligned dimension can possess.
-      The default value is 2 + 'size-of-largest-aligned-dimension'.
-
-    The following are some examples drawn from this strategy.
-
-    .. code-block:: pycon
-
-        >>> [broadcastable_shapes(shape=(2, 3)).example() for i in range(5)]
-        [(1, 3), (), (2, 3), (2, 1), (4, 1, 3), (3, )]
-
-    """
-    check_type(tuple, shape, "shape")
-    strict_check = max_side is None or max_dims is None
-    check_type(int, min_side, "min_side")
-    check_type(int, min_dims, "min_dims")
-
-    if max_dims is None:
-        max_dims = min(32, max(len(shape), min_dims) + 2)
-    else:
-        check_type(int, max_dims, "max_dims")
-
-    if max_side is None:
-        max_side = max(tuple(shape[-max_dims:]) + (min_side,)) + 2
-    else:
-        check_type(int, max_side, "max_side")
-
-    order_check("dims", 0, min_dims, max_dims)
-    order_check("side", 0, min_side, max_side)
-
-    if 32 < max_dims:
-        raise InvalidArgument("max_dims cannot exceed 32")
-
-    dims, bnd_name = (max_dims, "max_dims") if strict_check else (min_dims, "min_dims")
-
-    # check for unsatisfiable min_side
-    if not all(min_side <= s for s in shape[::-1][:dims] if s != 1):
-        raise InvalidArgument(
-            "Given shape=%r, there are no broadcast-compatible "
-            "shapes that satisfy: %s=%s and min_side=%s"
-            % (shape, bnd_name, dims, min_side)
-        )
-
-    # check for unsatisfiable [min_side, max_side]
-    if not (
-        min_side <= 1 <= max_side or all(s <= max_side for s in shape[::-1][:dims])
-    ):
-        raise InvalidArgument(
-            "Given shape=%r, there are no broadcast-compatible shapes "
-            "that satisfy: %s=%s and [min_side=%s, max_side=%s]"
-            % (shape, bnd_name, dims, min_side, max_side)
-        )
-
-    if not strict_check:
-        # reduce max_dims to exclude unsatisfiable dimensions
-        for n, s in zip(range(max_dims), reversed(shape)):
-            if s < min_side and s != 1:
-                max_dims = n
-                break
-            elif not (min_side <= 1 <= max_side or s <= max_side):
-                max_dims = n
-                break
-
-    return MutuallyBroadcastableShapesStrategy(
-        num_shapes=1,
-        base_shape=shape,
-        min_dims=min_dims,
-        max_dims=max_dims,
-        min_side=min_side,
-        max_side=max_side,
-    ).map(lambda x: x.input_shapes[0])
-
-
-class MutuallyBroadcastableShapesStrategy(st.SearchStrategy):
-    def __init__(
-        self,
-        num_shapes,
-        signature=None,
-        base_shape=(),
-        min_dims=0,
-        max_dims=None,
-        min_side=1,
-        max_side=None,
-    ):
-        assert 0 <= min_side <= max_side
-        assert 0 <= min_dims <= max_dims <= 32
-        st.SearchStrategy.__init__(self)
-        self.base_shape = base_shape
-        self.side_strat = st.integers(min_side, max_side)
-        self.num_shapes = num_shapes
-        self.signature = signature
-        self.min_dims = min_dims
-        self.max_dims = max_dims
-        self.min_side = min_side
-        self.max_side = max_side
-
-        self.size_one_allowed = self.min_side <= 1 <= self.max_side
-
-    def do_draw(self, data):
-        # We don't usually have a gufunc signature; do the common case first & fast.
-        if self.signature is None:
-            return self._draw_loop_dimensions(data)
-
-        # When we *do*, draw the core dims, then draw loop dims, and finally combine.
-        core_in, core_res = self._draw_core_dimensions(data)
-
-        # If some core shape has omitted optional dimensions, it's an error to add
-        # loop dimensions to it.  We never omit core dims if min_dims >= 1.
-        # This ensures that we respect Numpy's gufunc broadcasting semantics and user
-        # constraints without needing to check whether the loop dims will be
-        # interpreted as an invalid substitute for the omitted core dims.
-        # We may implement this check later!
-        use = [None not in shp for shp in core_in]
-        loop_in, loop_res = self._draw_loop_dimensions(data, use=use)
-
-        def add_shape(loop, core):
-            return tuple(x for x in (loop + core)[-32:] if x is not None)
-
-        return BroadcastableShapes(
-            input_shapes=tuple(add_shape(l_in, c) for l_in, c in zip(loop_in, core_in)),
-            result_shape=add_shape(loop_res, core_res),
-        )
-
-    def _draw_core_dimensions(self, data):
-        # Draw gufunc core dimensions, with None standing for optional dimensions
-        # that will not be present in the final shape.  We track omitted dims so
-        # that we can do an accurate per-shape length cap.
-        dims = {}
-        shapes = []
-        for shape in self.signature.input_shapes + (self.signature.result_shape,):
-            shapes.append([])
-            for name in shape:
-                if name.isdigit():
-                    shapes[-1].append(int(name))
-                    continue
-                if name not in dims:
-                    dim = name.strip("?")
-                    dims[dim] = data.draw(self.side_strat)
-                    if self.min_dims == 0 and not data.draw_bits(3):
-                        dims[dim + "?"] = None
-                    else:
-                        dims[dim + "?"] = dims[dim]
-                shapes[-1].append(dims[name])
-        return tuple(tuple(s) for s in shapes[:-1]), tuple(shapes[-1])
-
-    def _draw_loop_dimensions(self, data, use=None):
-        # All shapes are handled in column-major order; i.e. they are reversed
-        base_shape = self.base_shape[::-1]
-        result_shape = list(base_shape)
-        shapes = [[] for _ in range(self.num_shapes)]
-        if use is None:
-            use = [True for _ in range(self.num_shapes)]
-        else:
-            assert len(use) == self.num_shapes
-            assert all(isinstance(x, bool) for x in use)
-
-        for dim_count in range(1, self.max_dims + 1):
-            dim = dim_count - 1
-
-            # We begin by drawing a valid dimension-size for the given
-            # dimension. This restricts the variability across the shapes
-            # at this dimension such that they can only choose between
-            # this size and a singleton dimension.
-            if len(base_shape) < dim_count or base_shape[dim] == 1:
-                # dim is unrestricted by the base-shape: shrink to min_side
-                dim_side = data.draw(self.side_strat)
-            elif base_shape[dim] <= self.max_side:
-                # dim is aligned with non-singleton base-dim
-                dim_side = base_shape[dim]
-            else:
-                # only a singleton is valid in alignment with the base-dim
-                dim_side = 1
-
-            for shape_id, shape in enumerate(shapes):
-                # Populating this dimension-size for each shape, either
-                # the drawn size is used or, if permitted, a singleton
-                # dimension.
-                if dim_count <= len(base_shape) and self.size_one_allowed:
-                    # aligned: shrink towards size 1
-                    side = data.draw(st.sampled_from([1, dim_side]))
-                else:
-                    side = dim_side
-
-                # Use a trick where where a biased coin is queried to see
-                # if the given shape-tuple will continue to be grown. All
-                # of the relevant draws will still be made for the given
-                # shape-tuple even if it is no longer being added to.
-                # This helps to ensure more stable shrinking behavior.
-                if self.min_dims < dim_count:
-                    use[shape_id] &= cu.biased_coin(
-                        data, 1 - 1 / (1 + self.max_dims - dim)
-                    )
-
-                if use[shape_id]:
-                    shape.append(side)
-                    if len(result_shape) < len(shape):
-                        result_shape.append(shape[-1])
-                    elif shape[-1] != 1 and result_shape[dim] == 1:
-                        result_shape[dim] = shape[-1]
-            if not any(use):
-                break
-
-        result_shape = result_shape[: max(map(len, [self.base_shape] + shapes))]
-
-        assert len(shapes) == self.num_shapes
-        assert all(self.min_dims <= len(s) <= self.max_dims for s in shapes)
-        assert all(self.min_side <= s <= self.max_side for side in shapes for s in side)
-
-        return BroadcastableShapes(
-            input_shapes=tuple(tuple(reversed(shape)) for shape in shapes),
-            result_shape=tuple(reversed(result_shape)),
-        )
-
-
-# See https://numpy.org/doc/stable/reference/c-api/generalized-ufuncs.html
-# Implementation based on numpy.lib.function_base._parse_gufunc_signature
-# with minor upgrades to handle numeric and optional dimensions.  Examples:
-#
-#     add       (),()->()                   binary ufunc
-#     sum1d     (i)->()                     reduction
-#     inner1d   (i),(i)->()                 vector-vector multiplication
-#     matmat    (m,n),(n,p)->(m,p)          matrix multiplication
-#     vecmat    (n),(n,p)->(p)              vector-matrix multiplication
-#     matvec    (m,n),(n)->(m)              matrix-vector multiplication
-#     matmul    (m?,n),(n,p?)->(m?,p?)      combination of the four above
-#     cross1d   (3),(3)->(3)                cross product with frozen dimensions
-#
-# Note that while no examples of such usage are given, Numpy does allow
-# generalised ufuncs that have *multiple output arrays*.  This is not
-# currently supported by Hypothesis - please contact us if you would use it!
-#
-# We are unsure if gufuncs allow frozen dimensions to be optional, but it's
-# easy enough to support here - and so we will unless we learn otherwise.
-#
-_DIMENSION = r"\w+\??"  # Note that \w permits digits too!
-_SHAPE = r"\((?:{0}(?:,{0})".format(_DIMENSION) + r"{0,31})?\)"
-_ARGUMENT_LIST = "{0}(?:,{0})*".format(_SHAPE)
-_SIGNATURE = fr"^{_ARGUMENT_LIST}->{_SHAPE}$"
-_SIGNATURE_MULTIPLE_OUTPUT = r"^{0}->{0}$".format(_ARGUMENT_LIST)
-
-
-class _GUfuncSig(NamedTuple):
-    input_shapes: Tuple[Shape, ...]
-    result_shape: Shape
-
-
-def _hypothesis_parse_gufunc_signature(signature, all_checks=True):
-    # Disable all_checks to better match the Numpy version, for testing
-    if not re.match(_SIGNATURE, signature):
-        if re.match(_SIGNATURE_MULTIPLE_OUTPUT, signature):
-            raise InvalidArgument(
-                "Hypothesis does not yet support generalised ufunc signatures "
-                "with multiple output arrays - mostly because we don't know of "
-                "anyone who uses them!  Please get in touch with us to fix that."
-                f"\n (signature={signature!r})"
-            )
-        if re.match(np.lib.function_base._SIGNATURE, signature):
-            raise InvalidArgument(
-                f"signature={signature!r} matches Numpy's regex for gufunc signatures, "
-                "but contains shapes with more than 32 dimensions and is thus invalid."
-            )
-        raise InvalidArgument(f"{signature!r} is not a valid gufunc signature")
-    input_shapes, output_shapes = (
-        tuple(tuple(re.findall(_DIMENSION, a)) for a in re.findall(_SHAPE, arg_list))
-        for arg_list in signature.split("->")
-    )
-    assert len(output_shapes) == 1
-    result_shape = output_shapes[0]
-    if all_checks:
-        # Check that there are no names in output shape that do not appear in inputs.
-        # (kept out of parser function for easier generation of test values)
-        # We also disallow frozen optional dimensions - this is ambiguous as there is
-        # no way to share an un-named dimension between shapes.  Maybe just padding?
-        # Anyway, we disallow it pending clarification from upstream.
-        frozen_optional_err = (
-            "Got dimension %r, but handling of frozen optional dimensions "
-            "is ambiguous.  If you known how this should work, please "
-            "contact us to get this fixed and documented (signature=%r)."
-        )
-        only_out_err = (
-            "The %r dimension only appears in the output shape, and is "
-            "not frozen, so the size is not determined (signature=%r)."
-        )
-        names_in = {n.strip("?") for shp in input_shapes for n in shp}
-        names_out = {n.strip("?") for n in result_shape}
-        for shape in input_shapes + (result_shape,):
-            for name in shape:
-                try:
-                    int(name.strip("?"))
-                    if "?" in name:
-                        raise InvalidArgument(frozen_optional_err % (name, signature))
-                except ValueError:
-                    if name.strip("?") in (names_out - names_in):
-                        raise InvalidArgument(
-                            only_out_err % (name, signature)
-                        ) from None
-    return _GUfuncSig(input_shapes=input_shapes, result_shape=result_shape)
-
-
-@defines_strategy()
-def mutually_broadcastable_shapes(
-    *,
-    num_shapes: Union[UniqueIdentifier, int] = not_set,
-    signature: Union[UniqueIdentifier, str] = not_set,
-    base_shape: Shape = (),
-    min_dims: int = 0,
-    max_dims: Optional[int] = None,
-    min_side: int = 1,
-    max_side: Optional[int] = None,
-) -> st.SearchStrategy[BroadcastableShapes]:
-    """Return a strategy for generating a specified number of shapes, N, that are
-    mutually-broadcastable with one another and with the provided "base-shape".
-
-    The strategy will generate a named-tuple of:
-
-    * input_shapes: the N generated shapes
-    * result_shape: the resulting shape, produced by broadcasting the
-      N shapes with the base-shape
-
-    Each shape produced from this strategy shrinks towards a shape with length
-    ``min_dims``. The size of an aligned dimension shrinks towards being having
-    a size of 1. The size of an unaligned dimension shrink towards ``min_side``.
-
-    * ``num_shapes`` The number of mutually broadcast-compatible shapes to generate.
-    * ``base-shape`` The shape against which all generated shapes can broadcast.
-      The default shape is empty, which corresponds to a scalar and thus does not
-      constrain broadcasting at all.
-    * ``min_dims`` The smallest length that any generated shape can possess.
-    * ``max_dims`` The largest length that any generated shape can possess.
-      It cannot exceed 32, which is the greatest supported dimensionality for a
-      numpy array. The default-value for ``max_dims`` is
-      ``2 + max(len(shape), min_dims)``, capped at 32.
-    * ``min_side`` The smallest size that an unaligned dimension can possess.
-    * ``max_side`` The largest size that an unaligned dimension can possess.
-      The default value is 2 + 'size-of-largest-aligned-dimension'.
-
-    The following are some examples drawn from this strategy.
-
-    .. code-block:: pycon
-
-        >>> # Draw three shapes, and each shape is broadcast-compatible with `(2, 3)`
-        >>> for _ in range(5):
-        ...     mutually_broadcastable_shapes(num_shapes=3, base_shape=(2, 3)).example()
-        BroadcastableShapes(input_shapes=((4, 1, 3), (4, 2, 3), ()), result_shape=(4, 2, 3))
-        BroadcastableShapes(input_shapes=((3,), (1,), (2, 1)), result_shape=(2, 3))
-        BroadcastableShapes(input_shapes=((3,), (1, 3), (2, 3)), result_shape=(2, 3))
-        BroadcastableShapes(input_shapes=((), (), ()), result_shape=(2, 3))
-        BroadcastableShapes(input_shapes=((3,), (), (3,)), result_shape=(2, 3))
+mutually_broadcastable_shapes = deepcopy(_mutually_broadcastable_shapes)
+mutually_broadcastable_shapes.__doc__ = f"""
+    {_mutually_broadcastable_shapes.__doc__}
 
     **Use with Generalised Universal Function signatures**
 
@@ -1217,147 +782,8 @@ def mutually_broadcastable_shapes(
         BroadcastableShapes(input_shapes=((2,), (2,)), result_shape=())
         BroadcastableShapes(input_shapes=((3, 4, 2), (1, 2)), result_shape=(3, 4))
         BroadcastableShapes(input_shapes=((4, 2), (1, 2, 3)), result_shape=(4, 3))
+
     """
-    arg_msg = "Pass either the `num_shapes` or the `signature` argument, but not both."
-    if num_shapes is not not_set:
-        check_argument(signature is not_set, arg_msg)
-        check_type(int, num_shapes, "num_shapes")
-        assert isinstance(num_shapes, int)  # for mypy
-        check_argument(num_shapes >= 1, "num_shapes={} must be at least 1", num_shapes)
-        parsed_signature = None
-        sig_dims = 0
-    else:
-        check_argument(signature is not not_set, arg_msg)
-        if signature is None:
-            raise InvalidArgument(
-                "Expected a string, but got invalid signature=None.  "
-                "(maybe .signature attribute of an element-wise ufunc?)"
-            )
-        check_type(str, signature, "signature")
-        parsed_signature = _hypothesis_parse_gufunc_signature(signature)
-        sig_dims = min(
-            map(len, parsed_signature.input_shapes + (parsed_signature.result_shape,))
-        )
-        num_shapes = len(parsed_signature.input_shapes)
-        assert num_shapes >= 1
-
-    check_type(tuple, base_shape, "base_shape")
-    strict_check = max_dims is not None
-    check_type(int, min_side, "min_side")
-    check_type(int, min_dims, "min_dims")
-
-    if max_dims is None:
-        max_dims = min(32 - sig_dims, max(len(base_shape), min_dims) + 2)
-    else:
-        check_type(int, max_dims, "max_dims")
-
-    if max_side is None:
-        max_side = max(tuple(base_shape[-max_dims:]) + (min_side,)) + 2
-    else:
-        check_type(int, max_side, "max_side")
-
-    order_check("dims", 0, min_dims, max_dims)
-    order_check("side", 0, min_side, max_side)
-
-    if 32 - sig_dims < max_dims:
-        if sig_dims == 0:
-            raise InvalidArgument("max_dims cannot exceed 32")
-        raise InvalidArgument(
-            f"max_dims={signature!r} would exceed the 32-dimension limit given "
-            f"signature={parsed_signature!r}"
-        )
-
-    dims, bnd_name = (max_dims, "max_dims") if strict_check else (min_dims, "min_dims")
-
-    # check for unsatisfiable min_side
-    if not all(min_side <= s for s in base_shape[::-1][:dims] if s != 1):
-        raise InvalidArgument(
-            "Given base_shape=%r, there are no broadcast-compatible "
-            "shapes that satisfy: %s=%s and min_side=%s"
-            % (base_shape, bnd_name, dims, min_side)
-        )
-
-    # check for unsatisfiable [min_side, max_side]
-    if not (
-        min_side <= 1 <= max_side or all(s <= max_side for s in base_shape[::-1][:dims])
-    ):
-        raise InvalidArgument(
-            "Given base_shape=%r, there are no broadcast-compatible shapes "
-            "that satisfy all of %s=%s, min_side=%s, and max_side=%s"
-            % (base_shape, bnd_name, dims, min_side, max_side)
-        )
-
-    if not strict_check:
-        # reduce max_dims to exclude unsatisfiable dimensions
-        for n, s in zip(range(max_dims), reversed(base_shape)):
-            if s < min_side and s != 1:
-                max_dims = n
-                break
-            elif not (min_side <= 1 <= max_side or s <= max_side):
-                max_dims = n
-                break
-
-    return MutuallyBroadcastableShapesStrategy(
-        num_shapes=num_shapes,
-        signature=parsed_signature,
-        base_shape=base_shape,
-        min_dims=min_dims,
-        max_dims=max_dims,
-        min_side=min_side,
-        max_side=max_side,
-    )
-
-
-class BasicIndexStrategy(st.SearchStrategy):
-    def __init__(self, shape, min_dims, max_dims, allow_ellipsis, allow_newaxis):
-        assert 0 <= min_dims <= max_dims <= 32
-        st.SearchStrategy.__init__(self)
-        self.shape = shape
-        self.min_dims = min_dims
-        self.max_dims = max_dims
-        self.allow_ellipsis = allow_ellipsis
-        self.allow_newaxis = allow_newaxis
-
-    def do_draw(self, data):
-        # General plan: determine the actual selection up front with a straightforward
-        # approach that shrinks well, then complicate it by inserting other things.
-        result = []
-        for dim_size in self.shape:
-            if dim_size == 0:
-                result.append(slice(None))
-                continue
-            strategy = st.integers(-dim_size, dim_size - 1) | st.slices(dim_size)
-            result.append(data.draw(strategy))
-        # Insert some number of new size-one dimensions if allowed
-        result_dims = sum(isinstance(idx, slice) for idx in result)
-        while (
-            self.allow_newaxis
-            and result_dims < self.max_dims
-            and (result_dims < self.min_dims or data.draw(st.booleans()))
-        ):
-            result.insert(data.draw(st.integers(0, len(result))), np.newaxis)
-            result_dims += 1
-        # Check that we'll have the right number of dimensions; reject if not.
-        # It's easy to do this by construction iff you don't care about shrinking,
-        # which is really important for array shapes.  So we filter instead.
-        assume(self.min_dims <= result_dims <= self.max_dims)
-        # This is a quick-and-dirty way to insert ..., xor shorten the indexer,
-        # but it means we don't have to do any structural analysis.
-        if self.allow_ellipsis and data.draw(st.booleans()):
-            # Choose an index; then replace all adjacent whole-dimension slices.
-            i = j = data.draw(st.integers(0, len(result)))
-            while i > 0 and result[i - 1] == slice(None):
-                i -= 1
-            while j < len(result) and result[j] == slice(None):
-                j += 1
-            result[i:j] = [Ellipsis]
-        else:
-            while result[-1:] == [slice(None, None)] and data.draw(st.integers(0, 7)):
-                result.pop()
-        if len(result) == 1 and data.draw(st.booleans()):
-            # Sometimes generate bare element equivalent to a length-one tuple
-            return result[0]
-        return tuple(result)
 
 
 @defines_strategy()
@@ -1369,30 +795,25 @@ def basic_indices(
     allow_newaxis: bool = False,
     allow_ellipsis: bool = True,
 ) -> st.SearchStrategy[BasicIndex]:
-    """
-    The ``basic_indices`` strategy generates :np-ref:`basic indexes <arrays.indexing.html>`
-    for arrays of the specified shape, which may include dimensions of size zero.
+    """Return a strategy for :np-ref:`basic indexes <arrays.indexing.html>` of
+    arrays with the specified shape, which may include dimensions of size zero.
 
-    It generates tuples containing some mix of integers, :obj:`python:slice` objects,
-    ``...`` (Ellipsis), and :obj:`numpy:numpy.newaxis`; which when used to index a
-    ``shape``-shaped array will produce either a scalar or a shared-memory view.
-    When a length-one tuple would be generated, this strategy may instead return
-    the element which will index the first axis, e.g. ``5`` instead of ``(5,)``.
+    It generates tuples containing some mix of integers, :obj:`python:slice`
+    objects, ``...`` (an ``Ellipsis``), and ``None``. When a length-one tuple
+    would be generated, this strategy may instead return the element which will
+    index the first axis, e.g. ``5`` instead of ``(5,)``.
 
-    * ``shape``: the array shape that will be indexed, as a tuple of integers >= 0.
-      This must be at least two-dimensional for a tuple to be a valid basic index;
-      for one-dimensional arrays use :func:`~hypothesis.strategies.slices` instead.
-    * ``min_dims``: the minimum dimensionality of the resulting view from use of
-      the generated index.  When ``min_dims == 0``, scalars and zero-dimensional
-      arrays are both allowed.
-    * ``max_dims``: the maximum dimensionality of the resulting view.
-      If not specified, it defaults to ``max(len(shape), min_dims) + 2``.
-    * ``allow_ellipsis``: whether ``...``` is allowed in the index.
-    * ``allow_newaxis``: whether :obj:`numpy:numpy.newaxis` is allowed in the index.
-
-    Note that the length of the generated tuple may be anywhere between zero
-    and ``min_dims``.  It may not match the length of ``shape``, or even the
-    dimensionality of the array view resulting from its use!
+    * ``shape`` is the shape of the array that will be indexed, as a tuple of
+      positive integers. This must be at least two-dimensional for a tuple to be
+      a valid index; for one-dimensional arrays use
+      :func:`~hypothesis.strategies.slices` instead.
+    * ``min_dims`` is the minimum dimensionality of the resulting array from use
+      of the generated index. When ``min_dims == 0``, indices for zero-dimensional
+      arrays are generated.
+    * ``max_dims`` is the the maximum dimensionality of the resulting array,
+      defaulting to ``max(len(shape), min_dims) + 2``.
+    * ``allow_newaxis`` specifies whether ``None`` is allowed in the index.
+    * ``allow_ellipsis`` specifies whether ``...`` is allowed in the index.
     """
     # Arguments to exclude scalars, zero-dim arrays, and dims of size zero were
     # all considered and rejected.  We want users to explicitly consider those
@@ -1402,19 +823,20 @@ def basic_indices(
     check_type(bool, allow_ellipsis, "allow_ellipsis")
     check_type(bool, allow_newaxis, "allow_newaxis")
     check_type(int, min_dims, "min_dims")
+    check_valid_dims(min_dims, "min_dims")
+
     if max_dims is None:
-        max_dims = min(max(len(shape), min_dims) + 2, 32)
-    else:
-        check_type(int, max_dims, "max_dims")
+        max_dims = min(max(len(shape), min_dims) + 2, NDIM_MAX)
+    check_type(int, max_dims, "max_dims")
+    check_valid_dims(max_dims, "max_dims")
+
     order_check("dims", 0, min_dims, max_dims)
-    check_argument(
-        max_dims <= 32,
-        f"max_dims={max_dims!r}, but numpy arrays have at most 32 dimensions",
-    )
-    check_argument(
-        all(isinstance(x, int) and x >= 0 for x in shape),
-        f"shape={shape!r}, but all dimensions must be of integer size >= 0",
-    )
+
+    if not all(isinstance(x, int) and x >= 0 for x in shape):
+        raise InvalidArgument(
+            f"shape={shape!r}, but all dimensions must be of integer size >= 0"
+        )
+
     return BasicIndexStrategy(
         shape,
         min_dims=min_dims,
