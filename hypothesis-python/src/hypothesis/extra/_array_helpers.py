@@ -78,7 +78,7 @@ def check_valid_dims(dims, name):
     if dims > NDIM_MAX:
         raise InvalidArgument(
             f"{name}={dims}, but Hypothesis does not support arrays with "
-            f"dimensions greater than {NDIM_MAX}"
+            f"more than {NDIM_MAX} dimensions"
         )
 
 
