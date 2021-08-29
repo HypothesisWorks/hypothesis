@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.17.1:
+
+-------------------
+6.17.1 - 2021-08-29
+-------------------
+
+This patch moves some internal helper code in preparation for :issue:`3065`.
+There is no user-visible change, unless you depended on undocumented internals.
+
 .. _v6.17.0:
 
 -------------------
