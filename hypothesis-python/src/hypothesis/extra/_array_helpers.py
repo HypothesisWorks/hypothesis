@@ -82,6 +82,7 @@ def check_valid_dims(dims, name):
         )
 
 
+@defines_strategy()
 def array_shapes(
     *,
     min_dims: int = 1,
