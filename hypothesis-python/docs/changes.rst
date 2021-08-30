@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.17.3:
+
+-------------------
+6.17.3 - 2021-08-30
+-------------------
+
+This patch fixes the repr of :func:`~hypothesis.extra.numpy.array_shapes`.
+
 .. _v6.17.2:
 
 -------------------
