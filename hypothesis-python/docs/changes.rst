@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.17.2:
+
+-------------------
+6.17.2 - 2021-08-30
+-------------------
+
+This patch wraps some internal helper code in our proxies decorator to prevent
+mutations of method docstrings carrying over to other instances of the respective
+methods.
+
 .. _v6.17.1:
 
 -------------------
