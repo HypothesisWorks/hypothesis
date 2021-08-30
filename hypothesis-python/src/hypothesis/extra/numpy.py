@@ -14,7 +14,6 @@
 # END HEADER
 
 import math
-from copy import deepcopy
 from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 
 import numpy as np
@@ -734,7 +733,11 @@ def nested_dtypes(
     ).filter(lambda d: max_itemsize is None or d.itemsize <= max_itemsize)
 
 
-valid_tuple_axes = deepcopy(_valid_tuple_axes)
+@proxies(_valid_tuple_axes)
+def valid_tuple_axes(*args, **kwargs):
+    return _valid_tuple_axes(*args, **kwargs)
+
+
 valid_tuple_axes.__doc__ = f"""
     Return a strategy for generating permissible tuple-values for the
     ``axis`` argument for a numpy sequential function (e.g.
@@ -745,7 +748,11 @@ valid_tuple_axes.__doc__ = f"""
     """
 
 
-mutually_broadcastable_shapes = deepcopy(_mutually_broadcastable_shapes)
+@proxies(_mutually_broadcastable_shapes)
+def mutually_broadcastable_shapes(*args, **kwargs):
+    return _mutually_broadcastable_shapes(*args, **kwargs)
+
+
 mutually_broadcastable_shapes.__doc__ = f"""
     {_mutually_broadcastable_shapes.__doc__}
 
