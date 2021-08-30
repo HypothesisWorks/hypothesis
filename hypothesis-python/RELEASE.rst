@@ -1,4 +1,3 @@
 RELEASE_TYPE: patch
 
-This patch wraps the `array_shapes` NumPy strategy in `@defines_strategy()` so that
-the strategy has a pretty repr.
+This patch fixes the repr of :func:`~hypothesis.extra.numpy.array_shapes`.
