@@ -31,7 +31,7 @@ pip install fakeredis
 $PYTEST tests/redis/
 pip uninstall -y redis fakeredis
 
-pip install typing_extensions
+pip install 'typing_extensions!=3.10.0.1'
 $PYTEST tests/typing_extensions/
 if [ "$(python -c 'import sys; print(sys.version_info[:2] <= (3, 7))')" = "False" ] ; then
   # Required by importlib_metadata backport, which we don't want to break
