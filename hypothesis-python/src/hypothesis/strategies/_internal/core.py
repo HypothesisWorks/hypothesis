@@ -95,7 +95,12 @@ from hypothesis.strategies._internal.deferred import DeferredStrategy
 from hypothesis.strategies._internal.functions import FunctionStrategy
 from hypothesis.strategies._internal.lazy import LazyStrategy
 from hypothesis.strategies._internal.misc import just, none, nothing
-from hypothesis.strategies._internal.numbers import Real, floats, integers
+from hypothesis.strategies._internal.numbers import (
+    IntegersStrategy,
+    Real,
+    floats,
+    integers,
+)
 from hypothesis.strategies._internal.recursive import RecursiveStrategy
 from hypothesis.strategies._internal.shared import SharedStrategy
 from hypothesis.strategies._internal.strategies import (
@@ -282,6 +287,20 @@ def lists(
             unique_by = (identity,)
             tuple_suffixes = TupleStrategy(elements.element_strategies[1:])
             elements = elements.element_strategies[0]
+
+        # UniqueSampledListStrategy offers a substantial performance improvement for
+        # unique arrays with few possible elements, e.g. of eight-bit integer types.
+        if (
+            isinstance(elements, IntegersStrategy)
+            and None not in (elements.start, elements.end)
+            and (elements.end - elements.start) <= 255
+        ):
+            elements = SampledFromStrategy(
+                sorted(range(elements.start, elements.end + 1), key=abs)
+                if elements.end < 0 or elements.start > 0
+                else list(range(0, elements.end + 1))
+                + list(range(-1, elements.start - 1, -1))
+            )
 
         if isinstance(elements, SampledFromStrategy):
             element_count = len(elements.elements)

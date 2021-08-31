@@ -186,9 +186,7 @@ class ArrayStrategy(st.SearchStrategy):
         self.unique = unique
         self._check_elements = dtype.kind not in ("O", "V")
 
-    def set_element(self, data, result, idx, strategy=None):
-        strategy = strategy or self.element_strategy
-        val = data.draw(strategy)
+    def set_element(self, val, result, idx, *, fill=False):
         try:
             result[idx] = val
         except TypeError as err:
@@ -197,6 +195,7 @@ class ArrayStrategy(st.SearchStrategy):
                 f"{result.dtype!r} - possible mismatch of time units in dtypes?"
             ) from err
         if self._check_elements and val != result[idx] and val == val:
+            strategy = self.fill if fill else self.element_strategy
             raise InvalidArgument(
                 "Generated array element %r from %r cannot be represented as "
                 "dtype %r - instead it becomes %r (type %r).  Consider using a more "
@@ -229,28 +228,17 @@ class ArrayStrategy(st.SearchStrategy):
             # generate a fully dense array with a freshly drawn value for each
             # entry.
             if self.unique:
-                seen = set()
-                elements = cu.many(
-                    data,
+                elems = st.lists(
+                    self.element_strategy,
                     min_size=self.array_size,
                     max_size=self.array_size,
-                    average_size=self.array_size,
+                    unique=True,
                 )
-                i = 0
-                while elements.more():
-                    # We assign first because this means we check for
-                    # uniqueness after numpy has converted it to the relevant
-                    # type for us. Because we don't increment the counter on
-                    # a duplicate we will overwrite it on the next draw.
-                    self.set_element(data, result, i)
-                    if result[i] not in seen:
-                        seen.add(result[i])
-                        i += 1
-                    else:
-                        elements.reject()
+                for i, v in enumerate(data.draw(elems)):
+                    self.set_element(v, result, i)
             else:
                 for i in range(len(result)):
-                    self.set_element(data, result, i)
+                    self.set_element(data.draw(self.element_strategy), result, i)
         else:
             # We draw numpy arrays as "sparse with an offset". We draw a
             # collection of index assignments within the array and assign
@@ -277,7 +265,7 @@ class ArrayStrategy(st.SearchStrategy):
                 if not needs_fill[i]:
                     elements.reject()
                     continue
-                self.set_element(data, result, i)
+                self.set_element(data.draw(self.element_strategy), result, i)
                 if self.unique:
                     if result[i] in seen:
                         elements.reject()
@@ -300,7 +288,7 @@ class ArrayStrategy(st.SearchStrategy):
                 one_element = np.zeros(
                     shape=1, dtype=object if unsized_string_dtype else self.dtype
                 )
-                self.set_element(data, one_element, 0, self.fill)
+                self.set_element(data.draw(self.fill), one_element, 0, fill=True)
                 if unsized_string_dtype:
                     one_element = one_element.astype(self.dtype)
                 fill_value = one_element[0]
