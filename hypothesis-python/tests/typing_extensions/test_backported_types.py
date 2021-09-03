@@ -17,6 +17,7 @@ import collections
 from typing import Dict, List, Union
 
 import pytest
+from typing import Union
 from typing_extensions import Annotated, DefaultDict, Literal, NewType, Type, TypedDict
 
 from hypothesis import assume, given, strategies as st
@@ -64,6 +65,11 @@ def test_typing_extensions_Type_int():
 @given(from_type(Type[Union[str, list]]))
 def test_typing_extensions_Type_Union(ex):
     assert ex in (str, list)
+
+@pytest.mark.parametrize("type_", [Union[list[str], str]])
+def test_generic_aliases_are_handled(type_):
+    # previously raised `TypeError`
+    assert isinstance(from_type(type_).example(), (list, str)) 
 
 
 def test_resolves_NewType():

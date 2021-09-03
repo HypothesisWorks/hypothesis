@@ -29,7 +29,7 @@ import sys
 import typing
 import uuid
 from pathlib import PurePath
-from types import FunctionType
+from types import FunctionType, GenericAlias
 
 from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument, ResolutionFailed
@@ -81,7 +81,7 @@ def type_sorting_key(t):
         raise InvalidArgument(f"thing={t} must be a type")  # pragma: no cover
     if t is None or t is type(None):  # noqa: E721
         return (-1, repr(t))
-    if not isinstance(t, type):  # pragma: no cover
+    if isinstance(t, GenericAlias):  # pragma: no cover
         # Some generics in the typing module are not actually types in 3.7
         return (2, repr(t))
     return (int(issubclass(t, collections.abc.Container)), repr(t))
