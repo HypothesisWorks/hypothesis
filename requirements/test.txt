@@ -16,7 +16,7 @@ packaging==21.0
     # via pytest
 pexpect==4.8.0
     # via -r requirements/test.in
-pluggy==0.13.1
+pluggy==1.0.0
     # via pytest
 ptyprocess==0.7.0
     # via pexpect
@@ -26,7 +26,7 @@ py==1.10.0
     #   pytest-forked
 pyparsing==2.4.7
     # via packaging
-pytest==6.2.4
+pytest==6.2.5
     # via
     #   -r requirements/test.in
     #   pytest-forked
