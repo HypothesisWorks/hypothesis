@@ -8,7 +8,7 @@ attrs==21.2.0
     # via hypothesis (hypothesis-python/setup.py)
 coverage==5.5
     # via -r requirements/coverage.in
-lark-parser==0.11.3
+lark-parser==0.12.0
     # via -r requirements/coverage.in
 numpy==1.21.2
     # via
