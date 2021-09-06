@@ -97,3 +97,37 @@ def test_defaultdict(ex):
 )
 def test_typing_extensions_Annotated(annotated_type, expected_strategy_repr):
     assert repr(st.from_type(annotated_type)) == expected_strategy_repr
+
+
+PositiveInt = Annotated[int, st.integers(min_value=1)]
+MoreThenTenInt = Annotated[PositiveInt, st.integers(min_value=10 + 1)]
+WithTwoStrategies = Annotated[int, st.integers(), st.none()]
+ExtraAnnotationNoStrategy = Annotated[PositiveInt, "metadata"]
+
+
+def arg_positive(x: PositiveInt):
+    assert x > 0
+
+
+def arg_more_than_ten(x: MoreThenTenInt):
+    assert x > 10
+
+
+@given(st.data())
+def test_annotated_positive_int(data):
+    data.draw(st.builds(arg_positive))
+
+
+@given(st.data())
+def test_annotated_more_than_ten(data):
+    data.draw(st.builds(arg_more_than_ten))
+
+
+@given(st.data())
+def test_annotated_with_two_strategies(data):
+    assert data.draw(st.from_type(WithTwoStrategies)) is None
+
+
+@given(st.data())
+def test_annotated_extra_metadata(data):
+    assert data.draw(st.from_type(ExtraAnnotationNoStrategy)) > 0

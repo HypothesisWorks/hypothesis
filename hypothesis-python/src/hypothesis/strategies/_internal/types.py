@@ -171,6 +171,21 @@ def is_annotated_type(thing):
     )
 
 
+def find_annotated_strategy(annotated_type):  # pragma: no cover
+    flattened_meta = []
+
+    all_args = (
+        *getattr(annotated_type, "__args__", ()),
+        *getattr(annotated_type, "__metadata__", ()),
+    )
+    for arg in all_args:
+        if is_annotated_type(arg):
+            flattened_meta.append(find_annotated_strategy(arg))
+        if isinstance(arg, st.SearchStrategy):
+            flattened_meta.append(arg)
+    return flattened_meta[-1] if flattened_meta else None
+
+
 def has_type_arguments(type_):
     """Decides whethere or not this type has applied type arguments."""
     args = getattr(type_, "__args__", None)
@@ -258,6 +273,9 @@ def from_typing_type(thing):
         return st.sampled_from(literals)
     if is_annotated_type(thing):  # pragma: no cover
         # This requires Python 3.9+ or the typing_extensions package
+        annotated_strategy = find_annotated_strategy(thing)
+        if annotated_strategy is not None:
+            return annotated_strategy
         args = thing.__args__
         assert args, "it's impossible to make an annotated type with no args"
         annotated_type = args[0]
