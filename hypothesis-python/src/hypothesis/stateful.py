@@ -524,6 +524,13 @@ def _convert_targets(targets, target):
                 )
             raise InvalidArgument(msg % (t, type(t)))
         while isinstance(t, Bundle):
+            if isinstance(t, BundleConsumer):
+                note_deprecation(
+                    f"Using consumes({t.name}) doesn't makes sense in this context.  "
+                    "This will be an error in a future version of Hypothesis.",
+                    since="RELEASEDAY",
+                    has_codemod=False,
+                )
             t = t.name
         converted_targets.append(t)
     return tuple(converted_targets)
