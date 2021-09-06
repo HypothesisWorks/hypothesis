@@ -42,11 +42,17 @@ from unittest import TestCase
 import attr
 
 from hypothesis import strategies as st
-from hypothesis._settings import HealthCheck, Verbosity, settings as Settings
+from hypothesis._settings import (
+    HealthCheck,
+    Verbosity,
+    note_deprecation,
+    settings as Settings,
+)
 from hypothesis.control import current_build_context
 from hypothesis.core import TestFunc, given
 from hypothesis.errors import InvalidArgument, InvalidDefinition
 from hypothesis.internal.conjecture import utils as cu
+from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.internal.reflection import function_digest, nicerepr, proxies
 from hypothesis.internal.validation import check_type
 from hypothesis.reporting import current_verbosity, report
@@ -112,7 +118,7 @@ def run_state_machine_as_test(state_machine_factory, *, settings=None):
         try:
             if print_steps:
                 report(f"state = {machine.__class__.__name__}()")
-            machine.check_invariants()
+            machine.check_invariants(settings)
             max_steps = settings.stateful_step_count
             steps_run = 0
 
@@ -181,13 +187,20 @@ def run_state_machine_as_test(state_machine_factory, *, settings=None):
                                 )
                         else:
                             machine._add_result_to_targets(rule.targets, result)
+                    elif result is not None:
+                        fail_health_check(
+                            settings,
+                            "Rules should return None if they have no target bundle, "
+                            f"but {rule.function.__qualname__} returned {result!r}",
+                            HealthCheck.return_value,
+                        )
                 finally:
                     if print_steps:
                         # 'result' is only used if the step has target bundles.
                         # If it does, and the result is a 'MultipleResult',
                         # then 'print_step' prints a multi-variable assignment.
                         machine._print_step(rule, data_to_print, result)
-                machine.check_invariants()
+                machine.check_invariants(settings)
                 cd.stop_example()
         finally:
             if print_steps:
@@ -348,13 +361,21 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         for target in targets:
             self.bundles.setdefault(target, []).append(VarReference(name))
 
-    def check_invariants(self):
+    def check_invariants(self, settings):
         for invar in self.invariants():
             if self._initialize_rules_to_run and not invar.check_during_init:
                 continue
             if not all(precond(self) for precond in invar.preconditions):
                 continue
-            invar.function(self)
+            result = invar.function(self)
+            if result is not None:
+                fail_health_check(
+                    settings,
+                    "The return value of an @invariant is always ignored, but "
+                    f"{invar.function.__qualname__} returned {result!r} "
+                    "instead of None",
+                    HealthCheck.return_value,
+                )
 
     def teardown(self):
         """Called after a run has finished executing to clean up any necessary

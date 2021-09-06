@@ -846,11 +846,11 @@ def test_can_manually_call_initialize_rule():
         @initialize()
         def initialize(self):
             self.initialize_called_counter += 1
-            return self.initialize_called_counter
 
         @rule()
         def fail_eventually(self):
-            assert self.initialize() <= 2
+            self.initialize()
+            assert self.initialize_called_counter <= 2
 
     StateMachine.TestCase.settings = NO_BLOB_SETTINGS
     with capture_out() as o:
