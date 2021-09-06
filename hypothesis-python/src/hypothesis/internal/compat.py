@@ -81,8 +81,10 @@ def get_type_hints(thing):
     Never errors: instead of raising TypeError for uninspectable objects, or
     NameError for unresolvable forward references, just return an empty dict.
     """
+    kwargs = {} if sys.version_info[:2] < (3, 9) else {"include_extras": True}
+
     try:
-        hints = typing.get_type_hints(thing)
+        hints = typing.get_type_hints(thing, **kwargs)
     except (AttributeError, TypeError, NameError):
         hints = {}
 
@@ -90,7 +92,7 @@ def get_type_hints(thing):
         return hints
 
     try:
-        hints.update(typing.get_type_hints(thing.__init__))
+        hints.update(typing.get_type_hints(thing.__init__, **kwargs))
     except (TypeError, NameError, AttributeError):
         pass
 
@@ -98,11 +100,6 @@ def get_type_hints(thing):
         if hasattr(thing, "__signature__"):
             # It is possible for the signature and annotations attributes to
             # differ on an object due to renamed arguments.
-            # To prevent missing arguments we use the signature to provide any type
-            # hints it has and then override any common names with the more
-            # comprehensive type information from get_type_hints
-            # See https://github.com/HypothesisWorks/hypothesis/pull/2580
-            # for more details.
             from hypothesis.strategies._internal.types import is_a_type
 
             vkinds = (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
@@ -112,8 +109,6 @@ def get_type_hints(thing):
                         hints[p.name] = typing.Optional[p.annotation]
                     else:
                         hints[p.name] = p.annotation
-                else:  # pragma: no cover
-                    pass
     except (AttributeError, TypeError, NameError):  # pragma: no cover
         pass
 

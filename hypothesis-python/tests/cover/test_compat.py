@@ -14,10 +14,11 @@
 # END HEADER
 
 import math
+from inspect import Parameter, Signature
 
 import pytest
 
-from hypothesis.internal.compat import ceil, floor
+from hypothesis.internal.compat import ceil, floor, get_type_hints
 
 floor_ceil_values = [
     -10.7,
@@ -39,3 +40,13 @@ def test_our_floor_agrees_with_math_floor(value):
 @pytest.mark.parametrize("value", floor_ceil_values)
 def test_our_ceil_agrees_with_math_ceil(value):
     assert ceil(value) == math.ceil(value)
+
+
+class WeirdSig:
+    __signature__ = Signature(
+        parameters=[Parameter(name="args", kind=Parameter.VAR_POSITIONAL)]
+    )
+
+
+def test_no_type_hints():
+    assert get_type_hints(WeirdSig) == {}
