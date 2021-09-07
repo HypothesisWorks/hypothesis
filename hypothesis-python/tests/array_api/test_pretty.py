@@ -45,6 +45,10 @@ def test_namespaced_methods_meta(name):
     func = getattr(xps, name)
     assert func.__name__ == name
     assert func.__doc__ is not None
+    # The (private) top-level strategy methods may expose a xp argument in their
+    # function signatures. make_strategies_namespace() exists to wrap these
+    # top-level methods by binding the passed xp argument, and so the namespace
+    # it returns should not expose xp in any of its function signatures.
     assert "xp" not in signature(func).parameters.keys()
 
 
