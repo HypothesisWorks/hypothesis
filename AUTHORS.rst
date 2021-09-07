@@ -8,6 +8,7 @@ their individual contributions.
 
 .. NOTE - this list is in alphabetical order by first name (or handle).
 
+* `Aaron Meurer <https://github.com/asmeurer>`_
 * `Adam Johnson <https://github.com/adamchainz>`_
 * `Adam Sven Johnson <https://www.github.com/pkqk>`_
 * `Afrida Tabassum <https://github.com/oxfordhalfblood>`_ (afrida@gmail.com)

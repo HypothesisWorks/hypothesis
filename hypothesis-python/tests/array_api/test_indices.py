@@ -33,8 +33,10 @@ pytestmark = [pytest.mark.mockable_xp]
     ],
 )
 def test_indices_options(condition):
-    indexers = xps.array_shapes(min_dims=1, max_dims=32).flatmap(
-        lambda shape: xps.indices(shape)
+    indexers = (
+        xps.array_shapes(min_dims=1, max_dims=32)
+        .flatmap(lambda shape: xps.indices(shape))
+        .map(lambda idx: idx if isinstance(idx, tuple) else (idx,))
     )
     find_any(indexers, condition)
 
@@ -68,15 +70,18 @@ def test_indices_replaces_whole_axis_slices_with_ellipsis(idx):
     assert slice(None) not in idx
 
 
-@given(
-    shape=xps.array_shapes(min_dims=1, max_side=4)
-    | xps.array_shapes(min_dims=1, min_side=0, max_side=10),
-    min_dims=st.integers(1, 5),
-    allow_ellipsis=st.booleans(),
-    data=st.data(),
-)
-def test_indices_generate_valid_indexers(shape, min_dims, allow_ellipsis, data):
-    max_dims = data.draw(st.none() | st.integers(min_dims, 32), label="max_dims")
+# TODO: remove this comment
+# from hypothesis import settings, HealthCheck
+# @settings(suppress_health_check=[HealthCheck.too_slow])
+@given(st.data())
+def test_indices_generate_valid_indexers(data):
+    shape = data.draw(
+        xps.array_shapes(min_dims=1, max_side=4)
+        | xps.array_shapes(min_dims=1, min_side=0, max_side=10)
+    )
+    min_dims = data.draw(st.integers(1, len(shape)))
+    max_dims = data.draw(st.integers(min_dims, len(shape)))
+    allow_ellipsis = data.draw(st.booleans())
     indexer = data.draw(
         xps.indices(
             shape,

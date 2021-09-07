@@ -33,10 +33,9 @@ from typing import (
 )
 from warnings import warn
 
-from hypothesis import strategies as st
+from hypothesis import assume, strategies as st
 from hypothesis.errors import HypothesisWarning, InvalidArgument
 from hypothesis.extra._array_helpers import (
-    NDIM_MAX,
     BasicIndex,
     BasicIndexStrategy,
     BroadcastableShapes,
@@ -648,6 +647,36 @@ def mutually_broadcastable_shapes(
 mutually_broadcastable_shapes.__doc__ = _mutually_broadcastable_shapes.__doc__
 
 
+@st.composite
+def strict_slices(draw, size):
+    # The spec does not specify out of bounds behavior.
+    max_step_size = draw(st.integers(1, max(1, size)))
+    step = draw(
+        st.one_of(
+            st.integers(-max_step_size, -1), st.integers(1, max_step_size), st.none()
+        )
+    )
+    start = draw(st.one_of(st.integers(-size, max(0, size - 1)), st.none()))
+    if step is None or step > 0:
+        stop = draw(st.one_of(st.integers(-size, size)), st.none())
+    else:
+        stop = draw(st.one_of(st.integers(-size - 1, size - 1)), st.none())
+    s = slice(start, stop, step)
+    l = list(range(size))
+    sliced_list = l[s]
+    if (
+        sliced_list == []
+        and size != 0
+        and start is not None
+        and stop is not None
+        and stop != start
+    ):
+        # The spec does not specify behavior for out-of-bounds slices, except
+        # for the case where stop == start.
+        assume(False)
+    return s
+
+
 @defines_strategy()
 def indices(
     shape: Shape,
@@ -671,7 +700,7 @@ def indices(
     * ``min_dims`` is the minimum dimensionality of the resulting array from use of
       the generated index.
     * ``max_dims`` is the the maximum dimensionality of the resulting array,
-      defaulting to ``max(len(shape), min_dims) + 2``.
+      defaulting to ``len(shape)``.
     * ``allow_ellipsis`` specifies whether ``...`` is allowed in the index.
     """
     check_type(tuple, shape, "shape")
@@ -685,11 +714,20 @@ def indices(
     )
     check_type(bool, allow_ellipsis, "allow_ellipsis")
     check_type(int, min_dims, "min_dims")
+    check_argument(
+        min_dims <= len(shape),
+        f"min_dims {min_dims} cannot be greater than dimensions of shape {shape!r}",
+    )
     check_valid_dims(min_dims, "min_dims")
 
     if max_dims is None:
-        max_dims = min(max(len(shape), min_dims) + 2, NDIM_MAX)
+        max_dims = len(shape)
     check_type(int, max_dims, "max_dims")
+    assert isinstance(max_dims, int)
+    check_argument(
+        max_dims <= len(shape),
+        f"max_dims {max_dims} cannot be greater than dimensions of shape {shape!r}",
+    )
     check_valid_dims(max_dims, "max_dims")
 
     order_check("dims", 1, min_dims, max_dims)
@@ -700,6 +738,7 @@ def indices(
         max_dims=max_dims,
         allow_ellipsis=allow_ellipsis,
         allow_newaxis=False,
+        slices=strict_slices,
     )
 
 

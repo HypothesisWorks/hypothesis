@@ -207,6 +207,8 @@ def e(a, **kwargs):
         e(xps.indices, shape=(0, 0), min_dims=2, max_dims=1),
         e(xps.indices, shape=()),
         e(xps.indices, shape=5, min_dims=0),
+        e(xps.indices, shape=(5,), min_dims=2),
+        e(xps.indices, shape=(5,), max_dims=2),
     ],
 )
 def test_raise_invalid_argument(function, kwargs):
