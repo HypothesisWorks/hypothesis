@@ -655,15 +655,14 @@ def indices(
     min_dims: int = 1,
     max_dims: Optional[int] = None,
     allow_ellipsis: bool = True,
-    allow_newaxis: bool = False,
 ) -> st.SearchStrategy[BasicIndex]:
     """Return a strategy for :xp-ref:`valid indices <indexing.html>` of
     arrays with the specified shape.
 
     It generates tuples containing some mix of integers, :obj:`python:slice`
-    objects, ``...`` (an ``Ellipsis``), and ``None``. When a length-one tuple
-    would be generated, this strategy may instead return the element which will
-    index the first axis, e.g. ``5`` instead of ``(5,)``.
+    objects, and ``...`` (an ``Ellipsis``). When a length-one tuple would be
+    generated, this strategy may instead return the element which will index the
+    first axis, e.g. ``5`` instead of ``(5,)``.
 
     * ``shape`` is the shape of the array that will be indexed, as a tuple of
       integers >= 0. This must be at least two-dimensional for a tuple to be a
@@ -674,7 +673,6 @@ def indices(
     * ``max_dims`` is the the maximum dimensionality of the resulting array,
       defaulting to ``max(len(shape), min_dims) + 2``.
     * ``allow_ellipsis`` specifies whether ``...`` is allowed in the index.
-    * ``allow_newaxis`` specifies whether ``None`` is allowed in the index.
     """
     check_type(tuple, shape, "shape")
     check_argument(
@@ -686,7 +684,6 @@ def indices(
         "No valid indices for zero-dimensional arrays",
     )
     check_type(bool, allow_ellipsis, "allow_ellipsis")
-    check_type(bool, allow_newaxis, "allow_newaxis")
     check_type(int, min_dims, "min_dims")
     check_valid_dims(min_dims, "min_dims")
 
@@ -702,7 +699,7 @@ def indices(
         min_dims=min_dims,
         max_dims=max_dims,
         allow_ellipsis=allow_ellipsis,
-        allow_newaxis=allow_newaxis,
+        allow_newaxis=False,
     )
 
 

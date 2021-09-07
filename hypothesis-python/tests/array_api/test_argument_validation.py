@@ -199,7 +199,6 @@ def e(a, **kwargs):
         e(xps.indices, shape=0),
         e(xps.indices, shape=("1", "2")),
         e(xps.indices, shape=(0, -1)),
-        e(xps.indices, shape=(0, 0), allow_newaxis=None),
         e(xps.indices, shape=(0, 0), allow_ellipsis=None),
         e(xps.indices, shape=(0, 0), min_dims=-1),
         e(xps.indices, shape=(0, 0), min_dims=1.0),

@@ -30,13 +30,11 @@ pytestmark = [pytest.mark.mockable_xp]
     [
         lambda ix: Ellipsis in ix,
         lambda ix: Ellipsis not in ix,
-        lambda ix: None in ix,
-        lambda ix: None not in ix,
     ],
 )
 def test_indices_options(condition):
     indexers = xps.array_shapes(min_dims=1, max_dims=32).flatmap(
-        lambda shape: xps.indices(shape, allow_newaxis=True)
+        lambda shape: xps.indices(shape)
     )
     find_any(indexers, condition)
 
@@ -75,12 +73,9 @@ def test_indices_replaces_whole_axis_slices_with_ellipsis(idx):
     | xps.array_shapes(min_dims=1, min_side=0, max_side=10),
     min_dims=st.integers(1, 5),
     allow_ellipsis=st.booleans(),
-    allow_newaxis=st.booleans(),
     data=st.data(),
 )
-def test_indices_generate_valid_indexers(
-    shape, min_dims, allow_ellipsis, allow_newaxis, data
-):
+def test_indices_generate_valid_indexers(shape, min_dims, allow_ellipsis, data):
     max_dims = data.draw(st.none() | st.integers(min_dims, 32), label="max_dims")
     indexer = data.draw(
         xps.indices(
@@ -88,17 +83,16 @@ def test_indices_generate_valid_indexers(
             min_dims=min_dims,
             max_dims=max_dims,
             allow_ellipsis=allow_ellipsis,
-            allow_newaxis=allow_newaxis,
         ),
         label="indexer",
     )
+
     # Check that disallowed things are indeed absent
-    if not allow_newaxis:
-        if isinstance(indexer, tuple):
-            assert 0 <= len(indexer) <= len(shape) + int(allow_ellipsis)
-        else:
-            assert 1 <= len(shape) + int(allow_ellipsis)
-        assert None not in shape
+    if isinstance(indexer, tuple):
+        assert 0 <= len(indexer) <= len(shape) + int(allow_ellipsis)
+    else:
+        assert 1 <= len(shape) + int(allow_ellipsis)
+    assert None not in shape
     if not allow_ellipsis:
         assert Ellipsis not in shape
 
@@ -112,5 +106,6 @@ def test_indices_generate_valid_indexers(
     else:
         # We can't cheat on this one, so just try another.
         assume(False)
+
     # Finally, check that we can use our indexer without error
     array[indexer]
