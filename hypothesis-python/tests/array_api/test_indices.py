@@ -112,3 +112,5 @@ def test_indices_generate_valid_indexers(
     else:
         # We can't cheat on this one, so just try another.
         assume(False)
+    # Finally, check that we can use our indexer without error
+    array[indexer]
