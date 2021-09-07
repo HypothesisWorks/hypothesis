@@ -76,39 +76,18 @@ DTYPE_NAMES = ["bool"] + NUMERIC_NAMES
 DataType = TypeVar("DataType")
 
 
-class PrettyArrayModule:
-    """Wrapper for array modules so that they may have nice reprs."""
-
-    def __init__(self, xp):
-        self._xp = xp
-        if hasattr(xp, "_xp"):
-            raise NotImplementedError(f"Array module {xp} cannot have attribute _xp")
-
-    def __getattr__(self, name):
-        return getattr(self._xp, name)
-
-    def __repr__(self):
-        try:
-            return self._xp.__name__
-        except AttributeError:
-            return repr(self._xp)
-
-    def __str__(self):
-        return repr(self)
-
-
 @check_function  # type: ignore
-def check_xp_attributes(xp: PrettyArrayModule, attributes: List[str]) -> None:
+def check_xp_attributes(xp: Any, attributes: List[str]) -> None:
     missing_attrs = [attr for attr in attributes if not hasattr(xp, attr)]
     if len(missing_attrs) > 0:
         f_attrs = ", ".join(missing_attrs)
         raise InvalidArgument(
-            f"Array module {xp} does not have required attributes: {f_attrs}"
+            f"Array module {xp.__name__} does not have required attributes: {f_attrs}"
         )
 
 
 def partition_attributes_and_stubs(
-    xp: PrettyArrayModule, attributes: Iterable[str]
+    xp: Any, attributes: Iterable[str]
 ) -> Tuple[List[Any], List[str]]:
     non_stubs = []
     stubs = []
@@ -121,17 +100,17 @@ def partition_attributes_and_stubs(
     return non_stubs, stubs
 
 
-def warn_on_missing_dtypes(xp: PrettyArrayModule, stubs: List[str]) -> None:
+def warn_on_missing_dtypes(xp: Any, stubs: List[str]) -> None:
     f_stubs = ", ".join(stubs)
     warn(
-        f"Array module {xp} does not have the following "
+        f"Array module {xp.__name__} does not have the following "
         f"dtypes in its namespace: {f_stubs}",
         HypothesisWarning,
     )
 
 
 def find_castable_builtin_for_dtype(
-    xp: PrettyArrayModule, dtype: DataType
+    xp: Any, dtype: DataType
 ) -> Type[Union[bool, int, float]]:
     """Returns builtin type which can have values that are castable to the given
     dtype, according to :xp-ref:`type promotion rules <type_promotion.html>`.
@@ -159,17 +138,17 @@ def find_castable_builtin_for_dtype(
     stubs.extend(float_stubs)
     if len(stubs) > 0:
         warn_on_missing_dtypes(xp, stubs)
-    raise InvalidArgument("dtype {dtype} not recognised in {xp}")
+    raise InvalidArgument("dtype {dtype} not recognised in {xp.__name__}")
 
 
 @check_function  # type: ignore
-def dtype_from_name(xp: PrettyArrayModule, name: str) -> DataType:
+def dtype_from_name(xp: Any, name: str) -> DataType:
     if name in DTYPE_NAMES:
         try:
             return getattr(xp, name)
         except AttributeError as e:
             raise InvalidArgument(
-                f"Array module {xp} does not have dtype {name} in its namespace"
+                f"Array module {xp.__name__} does not have dtype {name} in its namespace"
             ) from e
     else:
         f_valid_dtypes = ", ".join(DTYPE_NAMES)
@@ -180,7 +159,7 @@ def dtype_from_name(xp: PrettyArrayModule, name: str) -> DataType:
 
 
 def _from_dtype(
-    xp: PrettyArrayModule,
+    xp: Any,
     dtype: Union[DataType, str],
     *,
     min_value: Optional[Union[int, float]] = None,
@@ -399,7 +378,7 @@ class ArrayStrategy(st.SearchStrategy):
 
 
 def _arrays(
-    xp: PrettyArrayModule,
+    xp: Any,
     dtype: Union[DataType, str, st.SearchStrategy[DataType], st.SearchStrategy[str]],
     shape: Union[int, Shape, st.SearchStrategy[Shape]],
     *,
@@ -517,35 +496,33 @@ def _arrays(
 
 
 @check_function  # type: ignore
-def check_dtypes(
-    xp: PrettyArrayModule, dtypes: List[DataType], stubs: List[str]
-) -> None:
+def check_dtypes(xp: Any, dtypes: List[DataType], stubs: List[str]) -> None:
     if len(dtypes) == 0:
         f_stubs = ", ".join(stubs)
         raise InvalidArgument(
-            f"Array module {xp} does not have the following "
+            f"Array module {xp.__name__} does not have the following "
             f"required dtypes in its namespace: {f_stubs}"
         )
     elif len(stubs) > 0:
         warn_on_missing_dtypes(xp, stubs)
 
 
-def _scalar_dtypes(xp: PrettyArrayModule) -> st.SearchStrategy[DataType]:
+def _scalar_dtypes(xp: Any) -> st.SearchStrategy[DataType]:
     """Return a strategy for all :xp-ref:`valid dtype <data_types.html>` objects."""
     return st.one_of(_boolean_dtypes(xp), _numeric_dtypes(xp))
 
 
-def _boolean_dtypes(xp: PrettyArrayModule) -> st.SearchStrategy[DataType]:
+def _boolean_dtypes(xp: Any) -> st.SearchStrategy[DataType]:
     """Return a strategy for just the boolean dtype object."""
     try:
         return st.just(xp.bool)
     except AttributeError:
         raise InvalidArgument(
-            f"Array module {xp} does not have a bool dtype in its namespace"
+            f"Array module {xp.__name__} does not have a bool dtype in its namespace"
         ) from None
 
 
-def _numeric_dtypes(xp: PrettyArrayModule) -> st.SearchStrategy[DataType]:
+def _numeric_dtypes(xp: Any) -> st.SearchStrategy[DataType]:
     """Return a strategy for all numeric dtype objects."""
     return st.one_of(
         _integer_dtypes(xp),
@@ -577,7 +554,7 @@ def numeric_dtype_names(base_name: str, sizes: Sequence[int]) -> Iterator[str]:
 
 
 def _integer_dtypes(
-    xp: PrettyArrayModule, *, sizes: Union[int, Sequence[int]] = (8, 16, 32, 64)
+    xp: Any, *, sizes: Union[int, Sequence[int]] = (8, 16, 32, 64)
 ) -> st.SearchStrategy[DataType]:
     """Return a strategy for signed integer dtype objects.
 
@@ -595,7 +572,7 @@ def _integer_dtypes(
 
 
 def _unsigned_integer_dtypes(
-    xp: PrettyArrayModule, *, sizes: Union[int, Sequence[int]] = (8, 16, 32, 64)
+    xp: Any, *, sizes: Union[int, Sequence[int]] = (8, 16, 32, 64)
 ) -> st.SearchStrategy[DataType]:
     """Return a strategy for unsigned integer dtype objects.
 
@@ -616,7 +593,7 @@ def _unsigned_integer_dtypes(
 
 
 def _floating_dtypes(
-    xp: PrettyArrayModule, *, sizes: Union[int, Sequence[int]] = (32, 64)
+    xp: Any, *, sizes: Union[int, Sequence[int]] = (32, 64)
 ) -> st.SearchStrategy[DataType]:
     """Return a strategy for floating-point dtype objects.
 
@@ -751,14 +728,12 @@ def make_strategies_namespace(xp: Any) -> SimpleNamespace:
       True
 
     """
-    xp = PrettyArrayModule(xp)
-
     try:
         array = xp.zeros(1)
         array.__array_namespace__()
     except Exception:
         warn(
-            f"Could not determine whether module {xp} is an Array API library",
+            f"Could not determine whether module {xp.__name__} is an Array API library",
             HypothesisWarning,
         )
 
