@@ -648,7 +648,9 @@ mutually_broadcastable_shapes.__doc__ = _mutually_broadcastable_shapes.__doc__
 
 
 @st.composite
-def strict_slices(draw, size):
+def slices(draw, size):
+    """Generates :xp-ref:`valid slices <indexing.html>` that will select indices
+    up to the supplied ``size``."""
     # The spec does not specify out of bounds behavior.
     max_step_size = draw(st.integers(1, max(1, size)))
     step = draw(
@@ -662,7 +664,8 @@ def strict_slices(draw, size):
     else:
         stop = draw(st.one_of(st.integers(-size - 1, size - 1)), st.none())
     s = slice(start, stop, step)
-    l = list(range(size))
+
+    l = [0 for _ in range(size)]
     sliced_list = l[s]
     if (
         sliced_list == []
@@ -674,6 +677,7 @@ def strict_slices(draw, size):
         # The spec does not specify behavior for out-of-bounds slices, except
         # for the case where stop == start.
         assume(False)
+
     return s
 
 
@@ -681,7 +685,7 @@ def strict_slices(draw, size):
 def indices(
     shape: Shape,
     *,
-    min_dims: int = 1,
+    min_dims: int = 0,
     max_dims: Optional[int] = None,
     allow_ellipsis: bool = True,
 ) -> st.SearchStrategy[BasicIndex]:
@@ -695,12 +699,11 @@ def indices(
 
     * ``shape`` is the shape of the array that will be indexed, as a tuple of
       integers >= 0. This must be at least two-dimensional for a tuple to be a
-      valid index; for one-dimensional arrays use
-      :func:`~hypothesis.strategies.slices` instead.
-    * ``min_dims`` is the minimum dimensionality of the resulting array from use of
-      the generated index.
+      valid index;  for one-dimensional arrays use ``xps.slices()`` instead.
+    * ``min_dims`` is the minimum dimensionality of the resulting array from use
+      of the generated index.
     * ``max_dims`` is the the maximum dimensionality of the resulting array,
-      defaulting to ``len(shape)``.
+      defaulting to ``min(min_dims + 2, len(shape))``.
     * ``allow_ellipsis`` specifies whether ``...`` is allowed in the index.
     """
     check_type(tuple, shape, "shape")
@@ -721,7 +724,7 @@ def indices(
     check_valid_dims(min_dims, "min_dims")
 
     if max_dims is None:
-        max_dims = len(shape)
+        max_dims = min(min_dims + 2, len(shape))
     check_type(int, max_dims, "max_dims")
     assert isinstance(max_dims, int)
     check_argument(
@@ -730,7 +733,7 @@ def indices(
     )
     check_valid_dims(max_dims, "max_dims")
 
-    order_check("dims", 1, min_dims, max_dims)
+    order_check("dims", 0, min_dims, max_dims)
 
     return BasicIndexStrategy(
         shape,
@@ -738,7 +741,7 @@ def indices(
         max_dims=max_dims,
         allow_ellipsis=allow_ellipsis,
         allow_newaxis=False,
-        slices=strict_slices,
+        slices=slices,
     )
 
 
@@ -867,6 +870,7 @@ def make_strategies_namespace(xp: Any) -> SimpleNamespace:
         valid_tuple_axes=valid_tuple_axes,
         broadcastable_shapes=broadcastable_shapes,
         mutually_broadcastable_shapes=mutually_broadcastable_shapes,
+        slices=slices,
         indices=indices,
     )
 

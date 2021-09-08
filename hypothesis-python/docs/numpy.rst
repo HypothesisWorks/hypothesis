@@ -89,4 +89,5 @@ standard semantics and returning objects from the ``xp`` module:
         valid_tuple_axes,
         broadcastable_shapes,
         mutually_broadcastable_shapes,
+        slices,
         indices,

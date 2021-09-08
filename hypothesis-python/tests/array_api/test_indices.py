@@ -70,16 +70,13 @@ def test_indices_replaces_whole_axis_slices_with_ellipsis(idx):
     assert slice(None) not in idx
 
 
-# TODO: remove this comment
-# from hypothesis import settings, HealthCheck
-# @settings(suppress_health_check=[HealthCheck.too_slow])
 @given(st.data())
 def test_indices_generate_valid_indexers(data):
     shape = data.draw(
         xps.array_shapes(min_dims=1, max_side=4)
         | xps.array_shapes(min_dims=1, min_side=0, max_side=10)
     )
-    min_dims = data.draw(st.integers(1, len(shape)))
+    min_dims = data.draw(st.integers(0, len(shape)))
     max_dims = data.draw(st.integers(min_dims, len(shape)))
     allow_ellipsis = data.draw(st.booleans())
     indexer = data.draw(
