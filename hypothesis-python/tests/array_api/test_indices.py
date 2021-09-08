@@ -55,13 +55,13 @@ def test_indices_can_generate_non_tuples():
 def test_indices_can_generate_long_ellipsis():
     # Runs of slice(None) - such as [0,:,:,:,0] - can be replaced by e.g. [0,...,0]
     find_any(
-        xps.indices(shape=(1, 0, 0, 0, 1), allow_ellipsis=True),
+        xps.indices(shape=(1, 0, 0, 0, 1), max_dims=3, allow_ellipsis=True),
         lambda ix: len(ix) == 3 and ix[1] == Ellipsis,
     )
 
 
 @given(
-    xps.indices(shape=(0, 0, 0, 0, 0)).filter(
+    xps.indices(shape=(0, 0, 0, 0, 0), max_dims=5).filter(
         lambda idx: isinstance(idx, tuple) and Ellipsis in idx
     )
 )
@@ -70,14 +70,29 @@ def test_indices_replaces_whole_axis_slices_with_ellipsis(idx):
     assert slice(None) not in idx
 
 
+@given(
+    xps.indices(
+        (
+            3,
+            3,
+            3,
+            3,
+            3,
+        )
+    )
+)
+def test_indices_effeciently_generate_indexers(_):
+    """Generation is not too slow."""
+
+
 @given(st.data())
 def test_indices_generate_valid_indexers(data):
     shape = data.draw(
         xps.array_shapes(min_dims=1, max_side=4)
-        | xps.array_shapes(min_dims=1, min_side=0, max_side=10)
+        | xps.array_shapes(min_dims=1, min_side=1, max_side=10)
     )
     min_dims = data.draw(st.integers(0, len(shape)))
-    max_dims = data.draw(st.integers(min_dims, len(shape)))
+    max_dims = data.draw(st.none() | st.integers(min_dims, len(shape)))
     allow_ellipsis = data.draw(st.booleans())
     indexer = data.draw(
         xps.indices(

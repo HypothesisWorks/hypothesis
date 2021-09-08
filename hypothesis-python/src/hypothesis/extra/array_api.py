@@ -36,6 +36,7 @@ from warnings import warn
 from hypothesis import assume, strategies as st
 from hypothesis.errors import HypothesisWarning, InvalidArgument
 from hypothesis.extra._array_helpers import (
+    NDIM_MAX,
     BasicIndex,
     BasicIndexStrategy,
     BroadcastableShapes,
@@ -665,17 +666,16 @@ def slices(draw, size):
         stop = draw(st.one_of(st.integers(-size - 1, size - 1)), st.none())
     s = slice(start, stop, step)
 
-    l = [0 for _ in range(size)]
-    sliced_list = l[s]
+    # The spec does not specify behavior for out-of-bounds slices, except for
+    # the case where stop == start.
+    test_list = [0 for _ in range(size)]
     if (
-        sliced_list == []
+        test_list[s] == []
         and size != 0
         and start is not None
         and stop is not None
         and stop != start
     ):
-        # The spec does not specify behavior for out-of-bounds slices, except
-        # for the case where stop == start.
         assume(False)
 
     return s
@@ -708,12 +708,12 @@ def indices(
     """
     check_type(tuple, shape, "shape")
     check_argument(
-        all(isinstance(x, int) and x >= 0 for x in shape),
-        f"shape={shape!r}, but all dimensions must be of integer size >= 0",
-    )
-    check_argument(
         len(shape) != 0,
         "No valid indices for zero-dimensional arrays",
+    )
+    check_argument(
+        all(isinstance(x, int) and x >= 0 for x in shape),
+        f"shape={shape!r}, but all dimensions must be of integer size >= 0",
     )
     check_type(bool, allow_ellipsis, "allow_ellipsis")
     check_type(int, min_dims, "min_dims")
@@ -724,7 +724,7 @@ def indices(
     check_valid_dims(min_dims, "min_dims")
 
     if max_dims is None:
-        max_dims = min(min_dims + 2, len(shape))
+        max_dims = min(min_dims + 2, len(shape), NDIM_MAX)
     check_type(int, max_dims, "max_dims")
     assert isinstance(max_dims, int)
     check_argument(
