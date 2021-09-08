@@ -89,7 +89,7 @@ def from_attrs_attribute(attrib, target):
     if strat.is_empty:
         raise ResolutionFailed(
             "Cannot infer a strategy from the default, validator, type, or "
-            "converter for attribute=%r of class=%r" % (attrib, target)
+            f"converter for attribute={attrib!r} of class={target!r}"
         )
     return strat
 

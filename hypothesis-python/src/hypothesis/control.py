@@ -185,8 +185,8 @@ def target(observation: Union[int, float], *, label: str = "") -> Union[int, flo
 
     if label in context.data.target_observations:
         raise InvalidArgument(
-            "Calling target(%r, label=%r) would overwrite target(%r, label=%r)"
-            % (observation, label, context.data.target_observations[label], label)
+            f"Calling target({observation!r}, label={label!r}) would overwrite "
+            f"target({context.data.target_observations[label]!r}, label={label!r})"
         )
     else:
         context.data.target_observations[label] = observation

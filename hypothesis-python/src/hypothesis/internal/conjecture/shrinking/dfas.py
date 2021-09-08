@@ -310,14 +310,14 @@ def normalize(
 
         if not allowed_to_update:
             raise FailedToNormalise(
-                "Shrinker failed to normalize %r to %r and we are not allowed to learn new DFAs."
-                % (previous.buffer, current.buffer)
+                f"Shrinker failed to normalize {previous.buffer!r} to "
+                f"{current.buffer!r} and we are not allowed to learn new DFAs."
             )
 
         if dfas_added >= max_dfas:
             raise FailedToNormalise(
-                "Test function is too hard to learn: Added %d DFAs and still not done."
-                % (dfas_added,)
+                f"Test function is too hard to learn: Added {dfas_added} "
+                "DFAs and still not done."
             )
 
         dfas_added += 1

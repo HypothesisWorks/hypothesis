@@ -117,28 +117,24 @@ def check_sample(values, strategy_name):
     if "numpy" in sys.modules and isinstance(values, sys.modules["numpy"].ndarray):
         if values.ndim != 1:
             raise InvalidArgument(
-                (
-                    "Only one-dimensional arrays are supported for sampling, "
-                    "and the given value has {ndim} dimensions (shape "
-                    "{shape}).  This array would give samples of array slices "
-                    "instead of elements!  Use np.ravel(values) to convert "
-                    "to a one-dimensional array, or tuple(values) if you "
-                    "want to sample slices."
-                ).format(ndim=values.ndim, shape=values.shape)
+                "Only one-dimensional arrays are supported for sampling, "
+                f"and the given value has {values.ndim} dimensions (shape "
+                f"{values.shape}).  This array would give samples of array slices "
+                "instead of elements!  Use np.ravel(values) to convert "
+                "to a one-dimensional array, or tuple(values) if you "
+                "want to sample slices."
             )
     elif not isinstance(values, (OrderedDict, abc.Sequence, enum.EnumMeta)):
         raise InvalidArgument(
-            "Cannot sample from {values}, not an ordered collection. "
-            "Hypothesis goes to some length to ensure that the {strategy} "
+            f"Cannot sample from {values!r}, not an ordered collection. "
+            f"Hypothesis goes to some length to ensure that the {strategy_name} "
             "strategy has stable results between runs. To replay a saved "
             "example, the sampled values must have the same iteration order "
             "on every run - ruling out sets, dicts, etc due to hash "
             "randomisation. Most cases can simply use `sorted(values)`, but "
             "mixed types or special values such as math.nan require careful "
             "handling - and note that when simplifying an example, "
-            "Hypothesis treats earlier values as simpler.".format(
-                values=repr(values), strategy=strategy_name
-            )
+            "Hypothesis treats earlier values as simpler."
         )
     if isinstance(values, range):
         return values

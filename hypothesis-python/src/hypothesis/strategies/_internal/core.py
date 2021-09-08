@@ -445,7 +445,7 @@ def fixed_dictionaries(
         if set(mapping) & set(optional):
             raise InvalidArgument(
                 "The following keys were in both mapping and optional, "
-                "which is invalid: %r" % (set(mapping) & set(optional))
+                f"which is invalid: {set(mapping) & set(optional)!r}"
             )
         return FixedAndOptionalKeysDictStrategy(mapping, optional)
     return FixedKeysDictStrategy(mapping)
@@ -554,9 +554,9 @@ def characters(
     overlap = set(blacklist_characters).intersection(whitelist_characters)
     if overlap:
         raise InvalidArgument(
-            "Characters %r are present in both whitelist_characters=%r, and "
-            "blacklist_characters=%r"
-            % (sorted(overlap), whitelist_characters, blacklist_characters)
+            f"Characters {sorted(overlap)!r} are present in both "
+            f"whitelist_characters={whitelist_characters!r}, and "
+            f"blacklist_characters={blacklist_characters!r}"
         )
     blacklist_categories = as_general_categories(
         blacklist_categories, "blacklist_categories"
@@ -577,9 +577,9 @@ def characters(
     both_cats = set(blacklist_categories or ()).intersection(whitelist_categories or ())
     if both_cats:
         raise InvalidArgument(
-            "Categories %r are present in both whitelist_categories=%r, and "
-            "blacklist_categories=%r"
-            % (sorted(both_cats), whitelist_categories, blacklist_categories)
+            f"Categories {sorted(both_cats)!r} are present in both "
+            f"whitelist_categories={whitelist_categories!r}, and "
+            f"blacklist_categories={blacklist_categories!r}"
         )
 
     return OneCharStringStrategy(
@@ -628,14 +628,13 @@ def text(
         if non_string:
             raise InvalidArgument(
                 "The following elements in alphabet are not unicode "
-                "strings:  %r" % (non_string,)
+                f"strings:  {non_string!r}"
             )
         not_one_char = [c for c in alphabet if len(c) != 1]
         if not_one_char:
             raise InvalidArgument(
-                "The following elements in alphabet are not of length "
-                "one, which leads to violation of size constraints:  %r"
-                % (not_one_char,)
+                "The following elements in alphabet are not of length one, "
+                f"which leads to violation of size constraints:  {not_one_char!r}"
             )
         char_strategy = (
             characters(whitelist_categories=(), whitelist_characters=alphabet)
@@ -996,8 +995,8 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
             strategy = strat_or_callable
         if not isinstance(strategy, SearchStrategy):
             raise ResolutionFailed(
-                "Error: %s was registered for %r, but returned non-strategy %r"
-                % (thing, nicerepr(strat_or_callable), strategy)
+                f"Error: {thing} was registered for {nicerepr(strat_or_callable)}, "
+                f"but returned non-strategy {strategy!r}"
             )
         if strategy.is_empty:
             raise ResolutionFailed(f"Error: {thing!r} resolved to an empty strategy")
@@ -1188,16 +1187,16 @@ def fractions(
 
     if max_denominator is not None:
         if max_denominator < 1:
-            raise InvalidArgument("max_denominator=%r must be >= 1" % max_denominator)
+            raise InvalidArgument(f"max_denominator={max_denominator!r} must be >= 1")
         if min_value is not None and min_value.denominator > max_denominator:
             raise InvalidArgument(
-                "The min_value=%r has a denominator greater than the "
-                "max_denominator=%r" % (min_value, max_denominator)
+                f"The min_value={min_value!r} has a denominator greater than the "
+                f"max_denominator={max_denominator!r}"
             )
         if max_value is not None and max_value.denominator > max_denominator:
             raise InvalidArgument(
-                "The max_value=%r has a denominator greater than the "
-                "max_denominator=%r" % (max_value, max_denominator)
+                f"The max_value={max_value!r} has a denominator greater than the "
+                f"max_denominator={max_denominator!r}"
             )
 
     if min_value is not None and min_value == max_value:
@@ -1297,7 +1296,7 @@ def decimals(
     # Convert min_value and max_value to Decimal values, and validate args
     check_valid_integer(places, "places")
     if places is not None and places < 0:
-        raise InvalidArgument("places=%r may not be negative" % places)
+        raise InvalidArgument(f"places={places!r} may not be negative")
     min_value = _as_finite_decimal(min_value, "min_value", allow_infinity)
     max_value = _as_finite_decimal(max_value, "max_value", allow_infinity)
     check_valid_interval(min_value, max_value, "min_value", "max_value")
@@ -1543,15 +1542,15 @@ def complex_numbers(
         allow_infinity = bool(max_magnitude is None)
     elif allow_infinity and max_magnitude is not None:
         raise InvalidArgument(
-            "Cannot have allow_infinity=%r with max_magnitude=%r"
-            % (allow_infinity, max_magnitude)
+            f"Cannot have allow_infinity={allow_infinity!r} with "
+            f"max_magnitude={max_magnitude!r}"
         )
     if allow_nan is None:
         allow_nan = bool(min_magnitude == 0 and max_magnitude is None)
     elif allow_nan and not (min_magnitude == 0 and max_magnitude is None):
         raise InvalidArgument(
-            "Cannot have allow_nan=%r, min_magnitude=%r max_magnitude=%r"
-            % (allow_nan, min_magnitude, max_magnitude)
+            f"Cannot have allow_nan={allow_nan!r}, min_magnitude={min_magnitude!r} "
+            f"max_magnitude={max_magnitude!r}"
         )
     allow_kw = {"allow_nan": allow_nan, "allow_infinity": allow_infinity}
 
@@ -1721,8 +1720,8 @@ class DataStrategy(SearchStrategy):
 
     def __not_a_first_class_strategy(self, name):
         raise InvalidArgument(
-            "Cannot call %s on a DataStrategy. You should probably be using "
-            "@composite for whatever it is you're trying to do." % (name,)
+            f"Cannot call {name} on a DataStrategy. You should probably "
+            "be using @composite for whatever it is you're trying to do."
         )
 
 
@@ -1877,7 +1876,7 @@ def functions(
     if not callable(like):
         raise InvalidArgument(
             "The first argument to functions() must be a callable to imitate, "
-            "but got non-callable like=%r" % (nicerepr(like),)
+            f"but got non-callable like={nicerepr(like)!r}"
         )
 
     if returns is None:

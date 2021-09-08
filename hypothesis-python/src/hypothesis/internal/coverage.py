@@ -76,11 +76,8 @@ if IN_COVERAGE_TESTS:
         # function, one for our actual caller, so we want to go two extra
         # stack frames up.
         caller = sys._getframe(depth + 2)
-        local_description = "%s at %s:%d" % (
-            name,
-            pretty_file_name(caller.f_code.co_filename),
-            caller.f_lineno,
-        )
+        fname = pretty_file_name(caller.f_code.co_filename)
+        local_description = f"{name} at {fname}:{caller.f_lineno}"
         try:
             description_stack.append(local_description)
             description = " in ".join(reversed(description_stack)) + " passed"
