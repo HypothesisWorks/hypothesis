@@ -70,17 +70,7 @@ def test_indices_replaces_whole_axis_slices_with_ellipsis(idx):
     assert slice(None) not in idx
 
 
-@given(
-    xps.indices(
-        (
-            3,
-            3,
-            3,
-            3,
-            3,
-        )
-    )
-)
+@given(xps.indices((3, 3, 3, 3, 3)))
 def test_indices_effeciently_generate_indexers(_):
     """Generation is not too slow."""
 
