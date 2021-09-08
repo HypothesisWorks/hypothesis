@@ -18,6 +18,10 @@ class HypothesisException(Exception):
     """Generic parent class for exceptions thrown by Hypothesis."""
 
 
+class _Trimmable(HypothesisException):
+    """Hypothesis can trim these tracebacks even if they're raised internally."""
+
+
 class CleanupFailed(HypothesisException):
     """At least one cleanup task failed and no other exception was raised."""
 
@@ -40,7 +44,7 @@ class NoSuchExample(HypothesisException):
         super().__init__(f"No examples found of condition {condition_string}{extra}")
 
 
-class Unsatisfiable(HypothesisException):
+class Unsatisfiable(_Trimmable):
     """We ran out of time or examples before we could find enough examples
     which satisfy the assumptions of this hypothesis.
 
@@ -53,7 +57,7 @@ class Unsatisfiable(HypothesisException):
     """
 
 
-class Flaky(HypothesisException):
+class Flaky(_Trimmable):
     """This function appears to fail non-deterministically: We have seen it
     fail when passed this example at least once, but a subsequent invocation
     did not fail.
@@ -70,7 +74,7 @@ class Flaky(HypothesisException):
     """
 
 
-class InvalidArgument(HypothesisException, TypeError):
+class InvalidArgument(_Trimmable, TypeError):
     """Used to indicate that the arguments to a Hypothesis function were in
     some manner incorrect."""
 
@@ -88,7 +92,7 @@ class InvalidState(HypothesisException):
     """The system is not in a state where you were allowed to do that."""
 
 
-class InvalidDefinition(HypothesisException, TypeError):
+class InvalidDefinition(_Trimmable, TypeError):
     """Used to indicate that a class definition was not well put together and
     has something wrong with it."""
 
@@ -97,7 +101,7 @@ class HypothesisWarning(HypothesisException, Warning):
     """A generic warning issued by Hypothesis."""
 
 
-class FailedHealthCheck(HypothesisWarning):
+class FailedHealthCheck(_Trimmable):
     """Raised when a test fails a preliminary healthcheck that occurs before
     execution."""
 
@@ -129,12 +133,12 @@ class Frozen(HypothesisException):
     after freeze() has been called."""
 
 
-class MultipleFailures(HypothesisException):
+class MultipleFailures(_Trimmable):
     """Indicates that Hypothesis found more than one distinct bug when testing
     your code."""
 
 
-class DeadlineExceeded(HypothesisException):
+class DeadlineExceeded(_Trimmable):
     """Raised when an individual test body has taken too long to run."""
 
     def __init__(self, runtime, deadline):

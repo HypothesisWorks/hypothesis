@@ -161,9 +161,9 @@ class ListStrategy(SearchStrategy):
             )
         if self.element_strategy.is_empty and 0 < self.max_size < float("inf"):
             raise InvalidArgument(
-                "Cannot create a collection of max_size=%r, because no "
-                "elements can be drawn from the element strategy %r"
-                % (self.max_size, self.element_strategy)
+                f"Cannot create a collection of max_size={self.max_size!r}, "
+                "because no elements can be drawn from the element strategy "
+                f"{self.element_strategy!r}"
             )
 
     def calc_is_empty(self, recur):

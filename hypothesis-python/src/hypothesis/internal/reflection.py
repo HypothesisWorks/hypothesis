@@ -156,8 +156,7 @@ def convert_keyword_arguments(function, args, kwargs):
         else:
             bad_kwarg = next(iter(kwargs))
             raise TypeError(
-                "%s() got an unexpected keyword argument %r"
-                % (function.__name__, bad_kwarg)
+                f"{function.__name__}() got an unexpected keyword argument {bad_kwarg!r}"
             )
     return tuple(new_args), kwargs
 
@@ -175,8 +174,7 @@ def convert_positional_arguments(function, args, kwargs):
         for k in new_kwargs.keys():
             if k not in argspec.args and k not in argspec.kwonlyargs:
                 raise TypeError(
-                    "%s() got an unexpected keyword argument %r"
-                    % (function.__name__, k)
+                    f"{function.__name__}() got an unexpected keyword argument {k!r}"
                 )
     if len(args) < len(argspec.args):
         for i in range(len(args), len(argspec.args) - len(argspec.defaults or ())):
@@ -188,9 +186,8 @@ def convert_positional_arguments(function, args, kwargs):
 
     if len(args) > len(argspec.args) and not argspec.varargs:
         raise TypeError(
-            "{}() takes at most {} positional arguments ({} given)".format(
-                function.__name__, len(argspec.args), len(args)
-            )
+            f"{function.__name__}() takes at most {len(argspec.args)} "
+            f"positional arguments ({len(args)} given)"
         )
 
     for arg, name in zip(args, argspec.args):
@@ -435,10 +432,8 @@ def source_exec_as_module(source):
     except KeyError:
         pass
 
-    result = ModuleType(
-        "hypothesis_temporary_module_%s"
-        % (hashlib.sha384(source.encode()).hexdigest(),)
-    )
+    hexdigest = hashlib.sha384(source.encode()).hexdigest()
+    result = ModuleType("hypothesis_temporary_module_" + hexdigest)
     assert isinstance(source, str)
     exec(source, result.__dict__)
     eval_cache[source] = result

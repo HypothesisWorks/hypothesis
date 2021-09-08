@@ -144,10 +144,10 @@ else:
             # decorators were applied, and raise an error if they were.
             if getattr(item.obj, "is_hypothesis_strategy_function", False):
                 raise InvalidArgument(
-                    "%s is a function that returns a Hypothesis strategy, but pytest "
-                    "has collected it as a test function.  This is useless as the "
-                    "function body will never be executed.  To define a test "
-                    "function, use @given instead of @composite." % (item.nodeid,)
+                    f"{item.nodeid} is a function that returns a Hypothesis strategy, "
+                    "but pytest has collected it as a test function.  This is useless "
+                    "as the function body will never be executed.  To define a test "
+                    "function, use @given instead of @composite."
                 )
             message = "Using `@%s` on a test without `@given` is completely pointless."
             for name, attribute in [

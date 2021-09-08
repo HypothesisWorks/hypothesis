@@ -38,7 +38,7 @@ from hypothesis.stateful import (
 )
 from hypothesis.strategies import binary, data, integers, just, lists
 
-from tests.common.utils import capture_out
+from tests.common.utils import capture_out, validate_deprecation
 from tests.nocover.test_stateful import DepthMachine
 
 NO_BLOB_SETTINGS = Settings(print_blob=False)
@@ -846,11 +846,11 @@ def test_can_manually_call_initialize_rule():
         @initialize()
         def initialize(self):
             self.initialize_called_counter += 1
-            return self.initialize_called_counter
 
         @rule()
         def fail_eventually(self):
-            assert self.initialize() <= 2
+            self.initialize()
+            assert self.initialize_called_counter <= 2
 
     StateMachine.TestCase.settings = NO_BLOB_SETTINGS
     with capture_out() as o:
@@ -1083,3 +1083,11 @@ def test_check_during_init_must_be_boolean():
     invariant(check_during_init=True)
     with pytest.raises(InvalidArgument):
         invariant(check_during_init="not a bool")
+
+
+def test_deprecated_target_consumes_bundle():
+    # It would be nicer to raise this error at runtime, but the internals make
+    # this sadly impractical.  Most InvalidDefinition errors happen at, well,
+    # definition-time already anyway, so it's not *worse* than the status quo.
+    with validate_deprecation():
+        rule(target=consumes(Bundle("b")))

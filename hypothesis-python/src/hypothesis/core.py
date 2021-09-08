@@ -260,9 +260,9 @@ def is_invalid_test(test, original_argspec, given_arguments, given_kwargs):
     if len(given_arguments) > len(original_argspec.args):
         args = tuple(given_arguments)
         return invalid(
-            "Too many positional arguments for %s() were passed to @given "
-            "- expected at most %d arguments, but got %d %r"
-            % (test.__name__, len(original_argspec.args), len(args), args)
+            f"Too many positional arguments for {test.__name__}() were passed to "
+            f"@given - expected at most {int(len(original_argspec.args))} "
+            f"arguments, but got {int(len(args))} {args!r}"
         )
 
     if infer in given_arguments:
@@ -281,8 +281,8 @@ def is_invalid_test(test, original_argspec, given_arguments, given_kwargs):
     if extra_kwargs and not original_argspec.varkw:
         arg = extra_kwargs[0]
         return invalid(
-            "%s() got an unexpected keyword argument %r, from `%s=%r` in @given"
-            % (test.__name__, arg, arg, given_kwargs[arg])
+            f"{test.__name__}() got an unexpected keyword argument {arg!r}, "
+            f"from `{arg}={given_kwargs[arg]!r}` in @given"
         )
     if original_argspec.defaults or original_argspec.kwonlydefaults:
         return invalid("Cannot apply @given to a function with defaults.")
@@ -329,9 +329,8 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs):
         if example.args:
             if len(example.args) > len(original_argspec.args):
                 raise InvalidArgument(
-                    "example has too many arguments for test. "
-                    "Expected at most %d but got %d"
-                    % (len(original_argspec.args), len(example.args))
+                    "example has too many arguments for test. Expected at most "
+                    f"{len(original_argspec.args)} but got {len(example.args)}"
                 )
             example_kwargs.update(
                 dict(zip(original_argspec.args[-len(example.args) :], example.args))
@@ -779,10 +778,8 @@ class StateForActualGivenExecution:
             )
         else:
             if runner.valid_examples == 0:
-                raise Unsatisfiable(
-                    "Unable to satisfy assumptions of hypothesis %s."
-                    % (get_pretty_function_description(self.test),)
-                )
+                rep = get_pretty_function_description(self.test)
+                raise Unsatisfiable(f"Unable to satisfy assumptions of {rep}")
 
         if not self.falsifying_examples:
             return
@@ -1001,8 +998,8 @@ def given(
                 def wrapped_test(*arguments, **kwargs):
                     __tracebackhide__ = True
                     raise InvalidArgument(
-                        "passed %s=infer for %s, but %s has no type annotation"
-                        % (name, test.__name__, name)
+                        f"passed {name}=infer for {test.__name__}, but {name} has "
+                        "no type annotation"
                     )
 
                 return wrapped_test
@@ -1297,8 +1294,8 @@ def find(
 
     if not isinstance(specifier, SearchStrategy):
         raise InvalidArgument(
-            "Expected SearchStrategy but got %r of type %s"
-            % (specifier, type(specifier).__name__)
+            f"Expected SearchStrategy but got {specifier!r} of "
+            f"type {type(specifier).__name__}"
         )
     specifier.validate()
 

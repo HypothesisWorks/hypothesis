@@ -409,8 +409,8 @@ class TreeRecordingObserver(DataObserver):
                 or new_transition.status != Status.VALID
             ):
                 raise Flaky(
-                    "Inconsistent test results! Test case was %r on first run but %r on second"
-                    % (node.transition, new_transition)
+                    f"Inconsistent test results! Test case was {node.transition!r} "
+                    f"on first run but {new_transition!r} on second"
                 )
         else:
             node.transition = new_transition

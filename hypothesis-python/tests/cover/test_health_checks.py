@@ -24,6 +24,13 @@ from hypothesis.errors import FailedHealthCheck, InvalidArgument
 from hypothesis.internal.compat import int_from_bytes
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.entropy import deterministic_PRNG
+from hypothesis.stateful import (
+    RuleBasedStateMachine,
+    initialize,
+    invariant,
+    rule,
+    run_state_machine_as_test,
+)
 from hypothesis.strategies._internal.lazy import LazyStrategy
 from hypothesis.strategies._internal.strategies import SearchStrategy
 
@@ -260,3 +267,33 @@ def test_does_not_trigger_health_check_when_most_examples_are_small(monkeypatch)
                 pass
 
             test()
+
+
+class ReturningRuleMachine(RuleBasedStateMachine):
+    @rule()
+    def r(self):
+        return "any non-None value"
+
+
+class ReturningInitializeMachine(RuleBasedStateMachine):
+    _ = rule()(lambda self: None)
+
+    @initialize()
+    def r(self):
+        return "any non-None value"
+
+
+class ReturningInvariantMachine(RuleBasedStateMachine):
+    _ = rule()(lambda self: None)
+
+    @invariant(check_during_init=True)
+    def r(self):
+        return "any non-None value"
+
+
+@pytest.mark.parametrize(
+    "cls", [ReturningRuleMachine, ReturningInitializeMachine, ReturningInvariantMachine]
+)
+def test_stateful_returnvalue_healthcheck(cls):
+    with pytest.raises(FailedHealthCheck):
+        run_state_machine_as_test(cls, settings=settings())

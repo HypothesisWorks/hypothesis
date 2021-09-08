@@ -58,13 +58,11 @@ class DomainNameStrategy(st.SearchStrategy):
             value = maximum
         elif not isinstance(value, int):
             raise InvalidArgument(
-                "Expected integer but %s is a %s"
-                % (variable_name, type(value).__name__)
+                f"Expected integer but {variable_name} is a {type(value).__name__}"
             )
         elif not minimum <= value <= maximum:
             raise InvalidArgument(
-                "Invalid value %r < %s=%r < %r"
-                % (minimum, variable_name, value, maximum)
+                f"Invalid value {minimum!r} < {variable_name}={value!r} < {maximum!r}"
             )
         return value
 

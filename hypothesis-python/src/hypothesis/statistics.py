@@ -82,17 +82,10 @@ def describe_statistics(stats_dict):
             t["drawtime"] / t["runtime"] if t["runtime"] > 0 else 0 for t in cases
         )
         lines.append(
-            "  - during {} phase ({:.2f} seconds):\n"
-            "    - Typical runtimes: {}, ~ {:.0f}% in data generation\n"
-            "    - {} passing examples, {} failing examples, {} invalid examples".format(
-                phase,
-                d["duration-seconds"],
-                ms,
-                drawtime_percent,
-                statuses["valid"],
-                statuses["interesting"],
-                statuses["invalid"] + statuses["overrun"],
-            )
+            f"  - during {phase} phase ({d['duration-seconds']:.2f} seconds):\n"
+            f"    - Typical runtimes: {ms}, ~ {drawtime_percent:.0f}% in data generation\n"
+            f"    - {statuses['valid']} passing examples, {statuses['interesting']} "
+            f"failing examples, {statuses['invalid'] + statuses['overrun']} invalid examples"
         )
         # If we've found new distinct failures in this phase, report them
         distinct_failures = d["distinct-failures"] - prev_failures

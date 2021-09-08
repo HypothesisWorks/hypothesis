@@ -38,8 +38,7 @@ def check_type(typ, arg, name):
                 assert typ is not SearchStrategy, "use check_strategy instead"
 
         raise InvalidArgument(
-            "Expected %s but got %s=%r (type=%s)"
-            % (typ_string, name, arg, type(arg).__name__)
+            f"Expected {typ_string} but got {name}={arg!r} (type={type(arg).__name__})"
         )
 
 
@@ -92,8 +91,8 @@ def try_convert(typ, value, name):
         return typ(value)
     except (TypeError, ValueError, ArithmeticError):
         raise InvalidArgument(
-            "Cannot convert %s=%r of type %s to type %s"
-            % (name, value, type(value).__name__, typ.__name__)
+            f"Cannot convert {name}={value!r} of type "
+            f"{type(value).__name__} to type {typ.__name__}"
         )
 
 
@@ -122,8 +121,7 @@ def check_valid_interval(lower_bound, upper_bound, lower_name, upper_name):
         return
     if upper_bound < lower_bound:
         raise InvalidArgument(
-            "Cannot have %s=%r < %s=%r"
-            % (upper_name, upper_bound, lower_name, lower_bound)
+            f"Cannot have {upper_name}={upper_bound!r} < {lower_name}={lower_bound!r}"
         )
 
 
