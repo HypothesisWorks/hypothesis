@@ -549,7 +549,7 @@ def _convert_targets(targets, target):
                 note_deprecation(
                     f"Using consumes({t.name}) doesn't makes sense in this context.  "
                     "This will be an error in a future version of Hypothesis.",
-                    since="RELEASEDAY",
+                    since="2021-09-08",
                     has_codemod=False,
                 )
             t = t.name
