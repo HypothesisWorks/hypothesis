@@ -10,7 +10,7 @@ flake8-bugbear
 flake8-comprehensions
 flake8-docstrings
 flake8-mutable
-ipython < 7.17  # drops support for Python 3.6
+ipython
 lark-parser
 libcst
 mypy
@@ -26,7 +26,6 @@ sphinx-rtd-theme
 sphinx-selective-exclude
 toml
 tox
-traitlets < 5.0   # drops support for Python 3.6
 twine
 types-click
 types-pkg_resources
