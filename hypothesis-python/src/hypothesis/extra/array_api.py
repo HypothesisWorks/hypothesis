@@ -713,7 +713,7 @@ def indices(
     )
     check_argument(
         all(isinstance(x, int) and x >= 0 for x in shape),
-        f"shape={shape!r}, but all dimensions must be of integer size >= 0",
+        f"shape={shape!r}, but all dimensions must be non-negative integers.",
     )
     check_type(bool, allow_ellipsis, "allow_ellipsis")
     check_type(int, min_dims, "min_dims")
