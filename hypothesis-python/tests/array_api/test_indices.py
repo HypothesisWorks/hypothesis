@@ -83,7 +83,9 @@ def test_indices_generate_valid_indexers(data):
         label="shape",
     )
     min_dims = data.draw(st.integers(0, len(shape)), label="min_dims")
-    max_dims = data.draw(st.none() | st.integers(min_dims, len(shape)), label="max_dims")
+    max_dims = data.draw(
+        st.none() | st.integers(min_dims, len(shape)), label="max_dims"
+    )
     allow_ellipsis = data.draw(st.booleans(), "allow_ellipsis")
     indexer = data.draw(
         xps.indices(
