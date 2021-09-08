@@ -47,11 +47,6 @@ from hypothesis.internal.conjecture.shrinker import Shrinker, sort_key
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.reporting import base_report, report
 
-# Tell pytest to omit the body of this module from tracebacks
-# https://docs.pytest.org/en/latest/example/simple.html#writing-well-integrated-assertion-helpers
-__tracebackhide__ = True
-
-
 MAX_SHRINKS = 500
 CACHE_SIZE = 10000
 MUTATION_POOL_SIZE = 100
