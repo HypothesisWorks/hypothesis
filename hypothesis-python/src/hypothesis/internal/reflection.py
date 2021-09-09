@@ -46,6 +46,13 @@ def is_mock(obj):
     return hasattr(obj, "hypothesis_internal_is_this_a_mock_check")
 
 
+def getfullargspec_except_self(target):
+    spec = inspect.getfullargspec(target)
+    if inspect.ismethod(target):
+        del spec.args[0]
+    return spec
+
+
 def function_digest(function):
     """Returns a string that is stable across multiple invocations across
     multiple processes and is prone to changing significantly in response to
@@ -67,7 +74,7 @@ def function_digest(function):
     except AttributeError:
         pass
     try:
-        hasher.update(repr(inspect.getfullargspec(function)).encode())
+        hasher.update(repr(getfullargspec_except_self(function)).encode())
     except TypeError:
         pass
     try:
@@ -90,7 +97,7 @@ def required_args(target, args=(), kwargs=()):
     if inspect.isclass(target) and is_typed_named_tuple(target):
         provided = set(kwargs) | set(target._fields[: len(args)])
         return set(target._fields) - provided
-    # Then we try to do the right thing with inspect.getfullargspec
+    # Then we try to do the right thing with getfullargspec_except_self
     # Note that for classes we inspect the __init__ method, *unless* the class
     # has an explicit __signature__ attribute.  This allows us to support
     # runtime-generated constraints on **kwargs, as for e.g. Pydantic models.
@@ -121,7 +128,7 @@ def convert_keyword_arguments(function, args, kwargs):
     passed as positional and keyword args to the function. Unless function has
     kwonlyargs or **kwargs the dictionary will always be empty.
     """
-    argspec = inspect.getfullargspec(function)
+    argspec = getfullargspec_except_self(function)
     new_args = []
     kwargs = dict(kwargs)
 
@@ -167,7 +174,7 @@ def convert_positional_arguments(function, args, kwargs):
 
     new_args will only be non-empty if function has a variadic argument.
     """
-    argspec = inspect.getfullargspec(function)
+    argspec = getfullargspec_except_self(function)
     new_kwargs = dict(argspec.kwonlydefaults or {})
     new_kwargs.update(kwargs)
     if not argspec.varkw:
@@ -398,7 +405,7 @@ def arg_string(f, args, kwargs, reorder=True):
     if reorder:
         args, kwargs = convert_positional_arguments(f, args, kwargs)
 
-    argspec = inspect.getfullargspec(f)
+    argspec = getfullargspec_except_self(f)
 
     bits = []
 
@@ -476,7 +483,7 @@ def define_function_signature(name, docstring, argspec):
         check_valid_identifier(a)
 
     def accept(f):
-        fargspec = inspect.getfullargspec(f)
+        fargspec = getfullargspec_except_self(f)
         must_pass_as_kwargs = []
         invocation_parts = []
         for a in argspec.args:
@@ -560,7 +567,7 @@ def proxies(target):
                 define_function_signature(
                     target.__name__.replace("<lambda>", "_lambda_"),
                     target.__doc__,
-                    inspect.getfullargspec(target),
+                    getfullargspec_except_self(target),
                 )(proxy)
             )
         )

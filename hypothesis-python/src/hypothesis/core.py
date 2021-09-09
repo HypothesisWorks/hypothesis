@@ -28,7 +28,6 @@ import types
 import warnings
 import zlib
 from collections import defaultdict
-from inspect import getfullargspec
 from io import StringIO
 from random import Random
 from typing import Any, BinaryIO, Callable, Hashable, List, Optional, TypeVar, Union
@@ -83,6 +82,7 @@ from hypothesis.internal.reflection import (
     define_function_signature,
     function_digest,
     get_pretty_function_description,
+    getfullargspec_except_self as getfullargspec,
     impersonate,
     is_mock,
     proxies,
