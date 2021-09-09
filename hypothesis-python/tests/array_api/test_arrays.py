@@ -161,11 +161,8 @@ def test_minimize_large_uint_arrays():
         timeout_after=60,
     )
     assert xp.all(xp.logical_or(smallest == 0, smallest == 1))
-    if hasattr(xp, "nonzero"):
-        idx = xp.nonzero(smallest)[0]
-        assert idx.size in (1, smallest.size - 1)
-    else:
-        pytest.skip()
+    idx = xp.nonzero(smallest)[0]
+    assert idx.size in (1, smallest.size - 1)
 
 
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
