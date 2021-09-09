@@ -195,11 +195,11 @@ def _from_dtype(
         check_valid_bound(val, name)
         check_argument(
             val >= info_obj.min,
-            f"dtype {dtype} requires {name}={val} to be at least {info_obj.min}",
+            f"dtype={dtype} requires {name}={val} to be at least {info_obj.min}",
         )
         check_argument(
             val <= info_obj.max,
-            f"dtype {dtype} requires {name}={val} to be at most {info_obj.max}",
+            f"dtype={dtype} requires {name}={val} to be at most {info_obj.max}",
         )
 
     if builtin is bool:
@@ -332,7 +332,7 @@ class ArrayStrategy(st.SearchStrategy):
                 result = self.xp.full(self.array_size, fill_val, dtype=self.dtype)
             except Exception as e:
                 raise InvalidArgument(
-                    f"Could not create full array of dtype {self.dtype} "
+                    f"Could not create full array of dtype={self.dtype} "
                     f"with fill value {fill_val!r}"
                 ) from e
             sample = result[0]
@@ -474,8 +474,8 @@ def _arrays(
     if isinstance(shape, int):
         shape = (shape,)
     check_argument(
-        all(isinstance(s, int) for s in shape),
-        f"Array shape must be integer in each dimension, provided shape was {shape}",
+        all(isinstance(x, int) and x >= 0 for x in shape),
+        f"shape={shape!r}, but all dimensions must be non-negative integers.",
     )
 
     if elements is None:
@@ -544,7 +544,7 @@ def check_valid_sizes(
     check_argument(
         len(invalid_sizes) == 0,
         f"The following sizes are not valid for {category} dtypes: "
-        f"{f_invalid_sizes} (valid sizes: {f_valid_sizes})"
+        f"{f_invalid_sizes} (valid sizes: {f_valid_sizes})",
     )
 
 
@@ -687,7 +687,7 @@ def indices(
     check_type(int, min_dims, "min_dims")
     check_argument(
         min_dims <= len(shape),
-        f"min_dims {min_dims} cannot be greater than dimensions of shape {shape!r}",
+        f"min_dims={min_dims} cannot be greater than dimensions of shape={shape!r}",
     )
     check_valid_dims(min_dims, "min_dims")
 
@@ -697,7 +697,7 @@ def indices(
     assert isinstance(max_dims, int)
     check_argument(
         max_dims <= len(shape),
-        f"max_dims {max_dims} cannot be greater than dimensions of shape {shape!r}",
+        f"max_dims={max_dims} cannot be greater than dimensions of shape={shape!r}",
     )
     check_valid_dims(max_dims, "max_dims")
 
