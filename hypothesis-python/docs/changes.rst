@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.20.0:
+
+-------------------
+6.20.0 - 2021-09-09
+-------------------
+
+This release allows :func:`~hypothesis.strategies.slices` to generate ``step=None``,
+and fixes an off-by-one error where the ``start`` index could be equal to ``size``.
+This works fine for all Python sequences and Numpy arrays, but is undefined behaviour
+in the `Array API standard <https://data-apis.org/>`__ (see :pull:`3065`).
+
 .. _v6.19.0:
 
 -------------------
