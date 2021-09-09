@@ -181,7 +181,7 @@ def _from_dtype(
     Compatible ``**kwargs`` are passed to the inferred strategy function for
     integers and floats.  This allows you to customise the min and max values,
     and exclude non-finite numbers. This is particularly useful when kwargs are
-    passed through from ``xps.arrays()``, as it seamlessly handles the ``width``
+    passed through from :func:`arrays()`, as it seamlessly handles the ``width``
     or other representable bounds for you.
     """
     check_xp_attributes(xp, ["iinfo", "finfo"])
@@ -395,7 +395,7 @@ def _arrays(
     * ``elements`` is a strategy for values to put in the array. If ``None``
       then a suitable value will be inferred based on the dtype, which may give
       any legal value (including e.g. NaN for floats). If a mapping, it will be
-      passed as ``**kwargs`` to ``from_dtype()`` when inferring based on the dtype.
+      passed as ``**kwargs`` to :func:`from_dtype()` when inferring based on the dtype.
     * ``fill`` is a strategy that may be used to generate a single background
       value for the array. If ``None``, a suitable default will be inferred
       based on the other arguments. If set to
@@ -666,7 +666,8 @@ def indices(
 
     * ``shape`` is the shape of the array that will be indexed, as a tuple of
       integers >= 0. This must be at least two-dimensional for a tuple to be a
-      valid index;  for one-dimensional arrays use ``xps.slices()`` instead.
+      valid index;  for one-dimensional arrays use
+      :func:`~hypothesis.strategies.slices` instead.
     * ``min_dims`` is the minimum dimensionality of the resulting array from use
       of the generated index.
     * ``max_dims`` is the the maximum dimensionality of the resulting array,
