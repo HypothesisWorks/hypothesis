@@ -632,15 +632,12 @@ class MutuallyBroadcastableShapesStrategy(st.SearchStrategy):
 
 
 class BasicIndexStrategy(st.SearchStrategy):
-    def __init__(
-        self, shape, min_dims, max_dims, allow_ellipsis, allow_newaxis, slices=st.slices
-    ):
+    def __init__(self, shape, min_dims, max_dims, allow_ellipsis, allow_newaxis):
         self.shape = shape
         self.min_dims = min_dims
         self.max_dims = max_dims
         self.allow_ellipsis = allow_ellipsis
         self.allow_newaxis = allow_newaxis
-        self.slices = slices
 
     def do_draw(self, data):
         # General plan: determine the actual selection up front with a straightforward
@@ -650,7 +647,7 @@ class BasicIndexStrategy(st.SearchStrategy):
             if dim_size == 0:
                 result.append(slice(None))
                 continue
-            strategy = st.integers(-dim_size, dim_size - 1) | self.slices(dim_size)
+            strategy = st.integers(-dim_size, dim_size - 1) | st.slices(dim_size)
             result.append(data.draw(strategy))
         # Insert some number of new size-one dimensions if allowed
         result_dims = sum(isinstance(idx, slice) for idx in result)

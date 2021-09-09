@@ -33,7 +33,7 @@ from typing import (
 )
 from warnings import warn
 
-from hypothesis import assume, strategies as st
+from hypothesis import strategies as st
 from hypothesis.errors import HypothesisWarning, InvalidArgument
 from hypothesis.extra._array_helpers import (
     NDIM_MAX,
@@ -648,39 +648,6 @@ def mutually_broadcastable_shapes(
 mutually_broadcastable_shapes.__doc__ = _mutually_broadcastable_shapes.__doc__
 
 
-@st.composite
-def slices(draw, size):
-    """Generates :xp-ref:`valid slices <indexing.html>` that will select indices
-    up to the supplied ``size``."""
-    # The spec does not specify out of bounds behavior.
-    max_step_size = draw(st.integers(1, max(1, size)))
-    step = draw(
-        st.one_of(
-            st.integers(-max_step_size, -1), st.integers(1, max_step_size), st.none()
-        )
-    )
-    start = draw(st.one_of(st.integers(-size, max(0, size - 1)), st.none()))
-    if step is None or step > 0:
-        stop = draw(st.one_of(st.integers(-size, size)), st.none())
-    else:
-        stop = draw(st.one_of(st.integers(-size - 1, size - 1)), st.none())
-    s = slice(start, stop, step)
-
-    # The spec does not specify behavior for out-of-bounds slices, except for
-    # the case where stop == start.
-    test_list = [0 for _ in range(size)]
-    if (
-        test_list[s] == []
-        and size != 0
-        and start is not None
-        and stop is not None
-        and stop != start
-    ):
-        assume(False)
-
-    return s
-
-
 @defines_strategy()
 def indices(
     shape: Shape,
@@ -741,7 +708,6 @@ def indices(
         max_dims=max_dims,
         allow_ellipsis=allow_ellipsis,
         allow_newaxis=False,
-        slices=slices,
     )
 
 
@@ -870,7 +836,6 @@ def make_strategies_namespace(xp: Any) -> SimpleNamespace:
         valid_tuple_axes=valid_tuple_axes,
         broadcastable_shapes=broadcastable_shapes,
         mutually_broadcastable_shapes=mutually_broadcastable_shapes,
-        slices=slices,
         indices=indices,
     )
 
