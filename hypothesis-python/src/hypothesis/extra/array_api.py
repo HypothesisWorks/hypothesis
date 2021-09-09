@@ -498,6 +498,7 @@ def _arrays(
 @check_function  # type: ignore
 def check_dtypes(xp: Any, dtypes: List[DataType], stubs: List[str]) -> None:
     if len(dtypes) == 0:
+        assert len(stubs) > 0, "No dtypes passed but stubs is empty"
         f_stubs = ", ".join(stubs)
         raise InvalidArgument(
             f"Array module {xp.__name__} does not have the following "
@@ -535,17 +536,16 @@ def _numeric_dtypes(xp: Any) -> st.SearchStrategy[DataType]:
 def check_valid_sizes(
     category: str, sizes: Sequence[int], valid_sizes: Sequence[int]
 ) -> None:
-    invalid_sizes = []
-    for size in sizes:
-        if size not in valid_sizes:
-            invalid_sizes.append(size)
-    if len(invalid_sizes) > 0:
-        f_valid_sizes = ", ".join(str(s) for s in valid_sizes)
-        f_invalid_sizes = ", ".join(str(s) for s in invalid_sizes)
-        raise InvalidArgument(
-            f"The following sizes are not valid for {category} dtypes: "
-            f"{f_invalid_sizes} (valid sizes: {f_valid_sizes})"
-        )
+    check_argument(len(sizes) > 0, "No sizes passed")
+
+    invalid_sizes = [s for s in sizes if s not in valid_sizes]
+    f_valid_sizes = ", ".join(str(s) for s in valid_sizes)
+    f_invalid_sizes = ", ".join(str(s) for s in invalid_sizes)
+    check_argument(
+        len(invalid_sizes) == 0,
+        f"The following sizes are not valid for {category} dtypes: "
+        f"{f_invalid_sizes} (valid sizes: {f_valid_sizes})"
+    )
 
 
 def numeric_dtype_names(base_name: str, sizes: Sequence[int]) -> Iterator[str]:
