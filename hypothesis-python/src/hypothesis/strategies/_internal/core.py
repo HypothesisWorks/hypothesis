@@ -1904,7 +1904,6 @@ def slices(draw: Any, size: int) -> slice:
 
     min_start = min_stop = 0
     max_start = max_stop = size
-    min_step = 1
     # For slices start is inclusive and stop is exclusive
     start = draw(integers(min_start, max_start) | none())
     stop = draw(integers(min_stop, max_stop) | none())
@@ -1919,14 +1918,16 @@ def slices(draw: Any, size: int) -> slice:
     else:
         max_step = abs(start - stop)
 
-    step = draw(integers(min_step, max_step or 1))
+    step = draw(integers(1, max_step or 1))
 
-    if (stop or 0) < (start or 0):
+    if (draw(booleans()) and start == stop) or (stop or 0) < (start or 0):
         step *= -1
 
     if draw(booleans()) and start is not None:
         start -= size
     if draw(booleans()) and stop is not None:
         stop -= size
+    if (not draw(booleans())) and step == 1:
+        step = None
 
     return slice(start, stop, step)

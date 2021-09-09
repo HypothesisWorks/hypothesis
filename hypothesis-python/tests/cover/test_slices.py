@@ -64,19 +64,21 @@ def test_slices_will_shrink(size):
     sliced = minimal(st.slices(size))
     assert sliced.start == 0 or sliced.start is None
     assert sliced.stop == 0 or sliced.stop is None
-    assert sliced.step == 1
+    assert sliced.step is None
 
 
 @given(st.integers(1, 1000))
 @settings(deadline=None)
 def test_step_will_be_negative(size):
-    find_any(st.slices(size), lambda x: x.step < 0, settings(max_examples=10 ** 6))
+    find_any(
+        st.slices(size), lambda x: (x.step or 1) < 0, settings(max_examples=10 ** 6)
+    )
 
 
 @given(st.integers(1, 1000))
 @settings(deadline=None)
 def test_step_will_be_positive(size):
-    find_any(st.slices(size), lambda x: x.step > 0)
+    find_any(st.slices(size), lambda x: (x.step or 1) > 0)
 
 
 @pytest.mark.parametrize("size", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
