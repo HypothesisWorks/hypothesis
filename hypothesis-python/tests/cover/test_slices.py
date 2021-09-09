@@ -33,8 +33,8 @@ def test_stop_stays_within_bounds(size):
 @use_several_sizes
 def test_start_stay_within_bounds(size):
     assert_all_examples(
-        st.slices(size),
-        lambda x: x.start is None or (x.start >= -size and x.start <= size),
+        st.slices(size).filter(lambda x: x.start is not None),
+        lambda x: range(size)[x.start] or True,  # no IndexError raised
     )
 
 
