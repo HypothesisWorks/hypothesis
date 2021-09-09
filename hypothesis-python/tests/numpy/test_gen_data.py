@@ -1092,6 +1092,15 @@ def test_basic_indices_can_generate_non_tuples():
     )
 
 
+def test_basic_indices_can_generate_indices_with_not_only_ellipsis():
+    find_any(
+        nps.basic_indices(shape=(0, 0, 0, 0, 0)).filter(
+            lambda idx: isinstance(idx, tuple) and Ellipsis in idx
+        ),
+        lambda idx: len(idx) > 1,
+    )
+
+
 def test_basic_indices_can_generate_long_ellipsis():
     # Runs of slice(None) - such as [0,:,:,:,0] - can be replaced by e.g. [0,...,0]
     find_any(
