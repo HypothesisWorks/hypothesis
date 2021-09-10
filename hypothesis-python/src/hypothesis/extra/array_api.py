@@ -66,12 +66,12 @@ __all__ = [
 ]
 
 
-INT_NAMES = ["int8", "int16", "int32", "int64"]
-UINT_NAMES = ["uint8", "uint16", "uint32", "uint64"]
+INT_NAMES = ("int8", "int16", "int32", "int64")
+UINT_NAMES = ("uint8", "uint16", "uint32", "uint64")
 ALL_INT_NAMES = INT_NAMES + UINT_NAMES
-FLOAT_NAMES = ["float32", "float64"]
+FLOAT_NAMES = ("float32", "float64")
 NUMERIC_NAMES = ALL_INT_NAMES + FLOAT_NAMES
-DTYPE_NAMES = ["bool"] + NUMERIC_NAMES
+DTYPE_NAMES = ("bool",) + NUMERIC_NAMES
 
 DataType = TypeVar("DataType")
 
