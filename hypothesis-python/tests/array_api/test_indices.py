@@ -66,8 +66,9 @@ def test_indices_can_generate_long_ellipsis():
     )
 )
 def test_indices_replaces_whole_axis_slices_with_ellipsis(idx):
-    # When a shape's dimension sizes are 0, ... in indices replaces all slice
-    # and integer entries in the index.
+    # `slice(None)` (aka `:`) is the only valid index for an axis of size
+    # zero, so if all dimensions are 0 then a `...` will replace all the
+    # slices because we generate `...` for entire contiguous runs of `:`
     assert slice(None) not in idx
 
 
