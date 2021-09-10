@@ -23,7 +23,7 @@ from unittest.mock import MagicMock, Mock, NonCallableMagicMock, NonCallableMock
 import pytest
 from pytest import raises
 
-from hypothesis import strategies as st
+from hypothesis import given, strategies as st
 from hypothesis.internal import reflection
 from hypothesis.internal.reflection import (
     arg_string,
@@ -676,3 +676,14 @@ def test_too_many_posargs_fails():
 def test_overlapping_posarg_kwarg_fails():
     with pytest.raises(TypeError):
         st.times(time.min, time.max, st.none(), timezones=st.just(None)).validate()
+
+
+def test_inline_given_handles_self():
+    # Regression test for https://github.com/HypothesisWorks/hypothesis/issues/961
+    class Cls:
+        def method(self, **kwargs):
+            assert isinstance(self, Cls)
+            assert kwargs["k"] is sentinel
+
+    sentinel = object()
+    given(k=st.just(sentinel))(Cls().method)()
