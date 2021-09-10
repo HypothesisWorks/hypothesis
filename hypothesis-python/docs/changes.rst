@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.20.1:
+
+-------------------
+6.20.1 - 2021-09-10
+-------------------
+
+This patch fixes :issue:`961`, where calling ``given()`` inline on a
+bound method would fail to handle the ``self`` argument correctly.
+
 .. _v6.20.0:
 
 -------------------
