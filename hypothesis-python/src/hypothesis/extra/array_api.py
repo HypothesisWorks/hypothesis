@@ -402,9 +402,10 @@ def _arrays(
       :func:`~hypothesis.strategies.nothing` then filling behaviour will be
       disabled entirely and every element will be generated independently.
     * ``unique`` specifies if the elements of the array should all be distinct
-      from one another. Note that in this case multiple NaN values may still be
-      allowed. If fill is also set, the only valid values for fill to return are
-      NaN values.
+      from one another; if fill is also set, the only valid values for fill to
+      return are NaN values.  Note that Hypothesis always allows multiple NaN
+      values, even though `xp.unique() might only return a single NaN.
+      <https://data-apis.org/array-api/latest/API_specification/set_functions.html#objects-in-api>`__
 
     Arrays of specified ``dtype`` and ``shape`` are generated for example
     like this:
