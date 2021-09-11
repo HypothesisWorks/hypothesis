@@ -76,7 +76,7 @@ DTYPE_NAMES = ("bool",) + NUMERIC_NAMES
 DataType = TypeVar("DataType")
 
 
-@check_function  # type: ignore
+@check_function
 def check_xp_attributes(xp: Any, attributes: List[str]) -> None:
     missing_attrs = [attr for attr in attributes if not hasattr(xp, attr)]
     if len(missing_attrs) > 0:
@@ -141,7 +141,7 @@ def find_castable_builtin_for_dtype(
     raise InvalidArgument("dtype {dtype} not recognised in {xp.__name__}")
 
 
-@check_function  # type: ignore
+@check_function
 def dtype_from_name(xp: Any, name: str) -> DataType:
     if name in DTYPE_NAMES:
         try:
@@ -496,7 +496,7 @@ def _arrays(
     return ArrayStrategy(xp, elements, dtype, shape, fill, unique)
 
 
-@check_function  # type: ignore
+@check_function
 def check_dtypes(xp: Any, dtypes: List[DataType], stubs: List[str]) -> None:
     if len(dtypes) == 0:
         assert len(stubs) > 0, "No dtypes passed but stubs is empty"
@@ -533,7 +533,7 @@ def _numeric_dtypes(xp: Any) -> st.SearchStrategy[DataType]:
     )
 
 
-@check_function  # type: ignore
+@check_function
 def check_valid_sizes(
     category: str, sizes: Sequence[int], valid_sizes: Sequence[int]
 ) -> None:
