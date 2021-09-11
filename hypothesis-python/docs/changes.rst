@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.21.0:
+
+-------------------
+6.21.0 - 2021-09-11
+-------------------
+
+This release introduces strategies for array/tensor libraries adopting the
+`Array API standard <https://data-apis.org/>`__ (:issue:`3037`).
+They are available in :ref:`the hypothesis.extra.array_api extra <array-api>`,
+and work much like the existing :doc:`strategies for NumPy <numpy>`.
+
 .. _v6.20.1:
 
 -------------------
