@@ -72,6 +72,6 @@ def test_namespaced_methods_meta(name):
 )
 def test_namespaced_strategies_repr(name, strat):
     """Namespaced strategies have good repr."""
-    assert repr(strat).startswith(name), f"{name} not in strat repr"
+    assert repr(strat).startswith(name + "("), f"{name} not in strat repr {strat!r}"
     assert len(repr(strat)) < 100, "strat repr looks too long"
     assert xp.__name__ not in repr(strat), f"{xp.__name__} in strat repr"

@@ -86,11 +86,7 @@ def test_passing_inferred_strategies_in_arrays(dtype):
         ),
         (xp.float32, {"allow_nan": False}, lambda x: not math.isnan(x)),
         (xp.float32, {"allow_infinity": False}, lambda x: not math.isinf(x)),
-        (
-            xp.float32,
-            {"allow_nan": False, "allow_infinity": False},
-            lambda x: not math.isnan(x) and not math.isinf(x),
-        ),
+        (xp.float32, {"allow_nan": False, "allow_infinity": False}, math.isfinite),
         # Integer bounds, limited to the representable range
         (xp.int8, {"min_value": -1, "max_value": 1}, lambda x: -1 <= x <= 1),
         (xp.uint8, {"min_value": 1, "max_value": 2}, lambda x: 1 <= x <= 2),

@@ -25,20 +25,14 @@ from tests.common.debug import find_any
 pytestmark = [pytest.mark.mockable_xp]
 
 
-@pytest.mark.parametrize(
-    "condition",
-    [
-        lambda ix: Ellipsis in ix,
-        lambda ix: Ellipsis not in ix,
-    ],
-)
-def test_indices_options(condition):
+def test_indices_options():
     indexers = (
         xps.array_shapes(min_dims=1, max_dims=32)
-        .flatmap(lambda shape: xps.indices(shape))
+        .flatmap(xps.indices)
         .map(lambda idx: idx if isinstance(idx, tuple) else (idx,))
     )
-    find_any(indexers, condition)
+    find_any(indexers, lambda ix: Ellipsis in ix)
+    find_any(indexers, lambda ix: Ellipsis not in ix)
 
 
 def test_indices_can_generate_empty_tuple():
