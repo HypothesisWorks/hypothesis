@@ -15,7 +15,6 @@
 
 import math
 import sys
-from collections import defaultdict
 from numbers import Real
 from types import SimpleNamespace
 from typing import (
@@ -354,12 +353,12 @@ class ArrayStrategy(st.SearchStrategy):
                 average_size=math.sqrt(self.array_size),
             )
 
-            index_set = defaultdict(bool)
+            assigned = set()
             seen = set()
 
             while elements.more():
                 i = cu.integer_range(data, 0, self.array_size - 1)
-                if index_set[i]:
+                if i in assigned:
                     elements.reject()
                     continue
                 val = data.draw(self.elements_strategy)
@@ -370,7 +369,7 @@ class ArrayStrategy(st.SearchStrategy):
                     else:
                         seen.add(val)
                 self.set_value(result, i, val)
-                index_set[i] = True
+                assigned.add(i)
 
         result = self.xp.reshape(result, self.shape)
 
