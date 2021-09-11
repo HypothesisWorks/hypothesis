@@ -827,10 +827,10 @@ def basic_indices(
 
     order_check("dims", 0, min_dims, max_dims)
 
-    if not all(isinstance(x, int) and x >= 0 for x in shape):
-        raise InvalidArgument(
-            f"shape={shape!r}, but all dimensions must be of integer size >= 0"
-        )
+    check_argument(
+        all(isinstance(x, int) and x >= 0 for x in shape),
+        f"shape={shape!r}, but all dimensions must be non-negative integers.",
+    )
 
     return BasicIndexStrategy(
         shape,

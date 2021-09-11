@@ -1106,7 +1106,9 @@ def test_basic_indices_can_generate_long_ellipsis():
     )
 )
 def test_basic_indices_replaces_whole_axis_slices_with_ellipsis(idx):
-    # If ... is in the slice, it replaces all ,:, entries for this shape.
+    # `slice(None)` (aka `:`) is the only valid index for an axis of size
+    # zero, so if all dimensions are 0 then a `...` will replace all the
+    # slices because we generate `...` for entire contiguous runs of `:`
     assert slice(None) not in idx
 
 

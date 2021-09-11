@@ -16,6 +16,7 @@
 import datetime
 import os
 import sys
+import types
 
 import sphinx_rtd_theme
 
@@ -59,6 +60,14 @@ def setup(app):
     if os.path.isfile(os.path.join(os.path.dirname(__file__), "..", "RELEASE.rst")):
         app.tags.add("has_release_file")
 
+    # patch in mock array_api namespace so we can autodoc it
+    from hypothesis.extra.array_api import make_strategies_namespace, mock_xp
+
+    mod = types.ModuleType("xps")
+    mod.__dict__.update(make_strategies_namespace(mock_xp).__dict__)
+    assert "xps" not in sys.modules
+    sys.modules["xps"] = mod
+
 
 language = None
 
@@ -98,6 +107,7 @@ extlinks = {
     "pypi": ("https://pypi.org/project/%s/", ""),
     "bpo": ("https://bugs.python.org/issue%s", "bpo-"),
     "np-ref": ("https://numpy.org/doc/stable/reference/%s", ""),
+    "xp-ref": ("https://data-apis.org/array-api/latest/API_specification/%s", ""),
     "wikipedia": ("https://en.wikipedia.org/wiki/%s", ""),
 }
 

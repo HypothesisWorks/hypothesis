@@ -17,7 +17,7 @@ import json
 import os
 import sys
 from contextlib import contextmanager
-from typing import Dict, Set, Tuple
+from typing import Callable, Dict, Set, Tuple, TypeVar
 
 from hypothesis.internal.reflection import proxies
 
@@ -34,6 +34,7 @@ When not running with a magic environment variable set, this module disables
 itself and has essentially no overhead.
 """
 
+Func = TypeVar("Func", bound=Callable)
 pretty_file_name_cache: Dict[str, str] = {}
 
 
@@ -94,7 +95,7 @@ if IN_COVERAGE_TESTS:
         with check_block(name, 2):
             yield
 
-    def check_function(f):
+    def check_function(f: Func) -> Func:
         @proxies(f)
         def accept(*args, **kwargs):
             # depth of 2 because of the proxy function calling us.
@@ -106,7 +107,7 @@ if IN_COVERAGE_TESTS:
 
 else:  # pragma: no cover
 
-    def check_function(f):
+    def check_function(f: Func) -> Func:
         return f
 
     @contextmanager
