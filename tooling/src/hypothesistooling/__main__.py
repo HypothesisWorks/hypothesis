@@ -360,8 +360,8 @@ def run_tox(task, version):
 
 
 # See update_python_versions() above
-PY36 = "3.6.14"
-PY37 = "3.7.11"
+PY36 = "3.6.15"
+PY37 = "3.7.12"
 PY38 = PYMAIN = "3.8.12"  # Sync PYMAIN minor version with GH Actions main.yml
 PY39 = "3.9.7"
 PY310 = "3.10-dev"
