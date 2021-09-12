@@ -53,7 +53,7 @@ coverage==5.5
     # via -r requirements/tools.in
 cryptography==3.4.8
     # via secretstorage
-decorator==5.0.9
+decorator==5.1.0
     # via ipython
 distlib==0.3.2
     # via virtualenv
@@ -121,7 +121,7 @@ jeepney==0.7.1
     #   secretstorage
 jinja2==3.0.1
     # via sphinx
-keyring==23.1.0
+keyring==23.2.0
     # via twine
 lark-parser==0.12.0
     # via -r requirements/tools.in
@@ -213,7 +213,7 @@ pytz==2021.1
     # via
     #   babel
     #   django
-pyupgrade==2.25.0
+pyupgrade==2.25.1
     # via shed
 pyyaml==5.4.1
     # via
@@ -277,7 +277,7 @@ sphinxcontrib-qthelp==1.0.3
     # via sphinx
 sphinxcontrib-serializinghtml==1.1.5
     # via sphinx
-sqlparse==0.4.1
+sqlparse==0.4.2
     # via django
 stevedore==3.4.0
     # via bandit
@@ -309,7 +309,7 @@ types-pkg-resources==0.1.3
     # via -r requirements/tools.in
 types-pytz==2021.1.2
     # via -r requirements/tools.in
-types-redis==3.5.7
+types-redis==3.5.8
     # via -r requirements/tools.in
 typing-extensions==3.10.0.2
     # via
