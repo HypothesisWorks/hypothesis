@@ -529,8 +529,7 @@ def data_frames(
 
         if c.dtype is None and rows is not None:
             raise InvalidArgument(
-                "Must specify a dtype for all columns when combining rows with"
-                " columns."
+                "Must specify a dtype for all columns when combining rows with columns."
             )
 
         c.fill = npst.fill_for(
@@ -669,11 +668,8 @@ def data_frames(
 
                     if len(row) > len(rewritten_columns):
                         raise InvalidArgument(
-                            (
-                                "Row %r contains too many entries. Has %d but "
-                                "expected at most %d"
-                            )
-                            % (original_row, len(row), len(rewritten_columns))
+                            f"Row {original_row!r} contains too many entries. Has "
+                            f"{len(row)} but expected at most {len(rewritten_columns)}"
                         )
                     while len(row) < len(rewritten_columns):
                         c = rewritten_columns[len(row)]

@@ -193,7 +193,7 @@ def gufunc_sig_to_einsum_sig(gufunc_sig):
 
 
 @pytest.mark.parametrize(
-    ("gufunc_sig"),
+    "gufunc_sig",
     [
         param("()->()", id="unary sum"),
         param("(),()->()", id="binary sum"),

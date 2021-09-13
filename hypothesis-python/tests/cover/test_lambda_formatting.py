@@ -26,7 +26,7 @@ def test_no_whitespace_before_colon_with_no_args():
 
 def test_can_have_unicode_in_lambda_sources():
     t = lambda x: "é" not in x
-    assert get_pretty_function_description(t) == ('lambda x: "é" not in x')
+    assert get_pretty_function_description(t) == 'lambda x: "é" not in x'
 
 
 # fmt: off

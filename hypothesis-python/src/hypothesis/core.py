@@ -631,14 +631,12 @@ class StateForActualGivenExecution:
                 and self.__test_runtime is not None
             ):
                 report(
-                    (
-                        "Unreliable test timings! On an initial run, this "
-                        "test took %.2fms, which exceeded the deadline of "
-                        "%.2fms, but on a subsequent run it took %.2f ms, "
-                        "which did not. If you expect this sort of "
-                        "variability in your test timings, consider turning "
-                        "deadlines off for this test by setting deadline=None."
-                    )
+                    "Unreliable test timings! On an initial run, this "
+                    "test took %.2fms, which exceeded the deadline of "
+                    "%.2fms, but on a subsequent run it took %.2f ms, "
+                    "which did not. If you expect this sort of "
+                    "variability in your test timings, consider turning "
+                    "deadlines off for this test by setting deadline=None."
                     % (
                         exception.runtime.total_seconds() * 1000,
                         self.settings.deadline.total_seconds() * 1000,
@@ -648,10 +646,8 @@ class StateForActualGivenExecution:
             else:
                 report("Failed to reproduce exception. Expected: \n" + traceback)
             self.__flaky(
-                (
-                    "Hypothesis %s(%s) produces unreliable results: Falsified"
-                    " on the first call but did not on a subsequent one"
-                )
+                "Hypothesis %s(%s) produces unreliable results: Falsified"
+                " on the first call but did not on a subsequent one"
                 % (test.__name__, text_repr[0])
             )
         return result
@@ -852,11 +848,8 @@ class StateForActualGivenExecution:
                 # See https://bitbucket.org/ned/coveragepy/issues/623/
                 if self.settings.print_blob:
                     report(
-                        (
-                            "\nYou can reproduce this example by temporarily "
-                            "adding @reproduce_failure(%r, %r) as a decorator "
-                            "on your test case"
-                        )
+                        "\nYou can reproduce this example by temporarily adding "
+                        "@reproduce_failure(%r, %r) as a decorator on your test case"
                         % (__version__, encode_failure(falsifying_example.buffer))
                     )
             if self.__was_flaky:
@@ -1081,12 +1074,10 @@ def given(
                 expected_version, failure = reproduce_failure
                 if expected_version != __version__:
                     raise InvalidArgument(
-                        (
-                            "Attempting to reproduce a failure from a different "
-                            "version of Hypothesis. This failure is from %s, but "
-                            "you are currently running %r. Please change your "
-                            "Hypothesis version to a matching one."
-                        )
+                        "Attempting to reproduce a failure from a different "
+                        "version of Hypothesis. This failure is from %s, but "
+                        "you are currently running %r. Please change your "
+                        "Hypothesis version to a matching one."
                         % (expected_version, __version__)
                     )
                 try:

@@ -193,8 +193,9 @@ def upload_distribution():
         lines = f.readlines()
     entries = [i for i, l in enumerate(lines) if CHANGELOG_HEADER.match(l)]
     anchor = current_version().replace(".", "-")
-    changelog_body = "".join(lines[entries[0] + 2 : entries[1]]).strip() + (
-        "\n\n*[The canonical version of these notes (with links) is on readthedocs.]"
+    changelog_body = (
+        "".join(lines[entries[0] + 2 : entries[1]]).strip()
+        + "\n\n*[The canonical version of these notes (with links) is on readthedocs.]"
         f"(https://hypothesis.readthedocs.io/en/latest/changes.html#v{anchor})*"
     )
 

@@ -875,9 +875,9 @@ def builds(
         # Otherwise, try using type hints
         hints = get_type_hints(target)
         if to_infer - set(hints):
+            badargs = ", ".join(sorted(to_infer - set(hints)))
             raise InvalidArgument(
-                "passed infer for %s, but there is no type annotation"
-                % (", ".join(sorted(to_infer - set(hints))))
+                f"passed infer for {badargs}, but there is no type annotation"
             )
         for kw in set(hints) & (required | to_infer):
             kwargs[kw] = from_type(hints[kw])
@@ -1626,11 +1626,8 @@ def uuids(*, version: Optional[int] = None) -> SearchStrategy[UUID]:
     """
     if version not in (None, 1, 2, 3, 4, 5):
         raise InvalidArgument(
-            (
-                "version=%r, but version must be in (None, 1, 2, 3, 4, 5) "
-                "to pass to the uuid.UUID constructor."
-            )
-            % (version,)
+            f"version={version!r}, but version must be in "
+            "(None, 1, 2, 3, 4, 5) to pass to the uuid.UUID constructor."
         )
     return shared(
         randoms(use_true_random=True), key="hypothesis.strategies.uuids.generator"

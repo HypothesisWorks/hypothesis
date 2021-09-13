@@ -26,7 +26,7 @@ def check_type(typ, arg, name):
     if not isinstance(arg, typ):
         if isinstance(typ, tuple):
             assert len(typ) >= 2, "Use bare type instead of len-1 tuple"
-            typ_string = "one of %s" % (", ".join(t.__name__ for t in typ))
+            typ_string = "one of " + ", ".join(t.__name__ for t in typ)
         else:
             typ_string = typ.__name__
 
