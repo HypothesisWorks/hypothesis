@@ -17,6 +17,7 @@ import re
 from typing import NamedTuple, Optional, Tuple, Union
 
 from hypothesis import assume, strategies as st
+from hypothesis._settings import note_deprecation
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.coverage import check_function
@@ -36,8 +37,7 @@ __all__ = [
     "valid_tuple_axes",
     "broadcastable_shapes",
     "mutually_broadcastable_shapes",
-    "MutuallyBroadcastableShapesStrategy",
-    "BasicIndexStrategy",
+    "basic_indices",
 ]
 
 
@@ -629,6 +629,80 @@ class MutuallyBroadcastableShapesStrategy(st.SearchStrategy):
             input_shapes=tuple(tuple(reversed(shape)) for shape in shapes),
             result_shape=tuple(reversed(result_shape)),
         )
+
+
+def basic_indices(
+    shape: Shape,
+    allow_0d: bool,
+    allow_deprecated_dims: bool,
+    *,
+    min_dims: int = 0,
+    max_dims: Optional[int] = None,
+    allow_newaxis: bool = False,
+    allow_ellipsis: bool = True,
+) -> st.SearchStrategy[BasicIndex]:
+    # Arguments to exclude scalars, zero-dim arrays, and dims of size zero were
+    # all considered and rejected.  We want users to explicitly consider those
+    # cases if they're dealing in general indexers, and while it's fiddly we can
+    # back-compatibly add them later (hence using kwonlyargs).
+    check_type(tuple, shape, "shape")
+    if not allow_0d:
+        check_argument(
+            len(shape) != 0,
+            "No valid indices for zero-dimensional arrays",
+        )
+    check_argument(
+        all(isinstance(x, int) and x >= 0 for x in shape),
+        f"shape={shape!r}, but all dimensions must be non-negative integers.",
+    )
+    check_type(bool, allow_ellipsis, "allow_ellipsis")
+    check_type(bool, allow_newaxis, "allow_newaxis")
+    check_type(int, min_dims, "min_dims")
+    if not allow_newaxis:
+        check_argument(
+            min_dims <= len(shape),
+            f"min_dims={min_dims} is larger than len(shape)={len(shape)}, "
+            f"but allow_newaxis=False makes it impossible for an indexing "
+            "operation to add dimensions.",
+        )
+    check_valid_dims(min_dims, "min_dims")
+
+    if max_dims is None:
+        if allow_newaxis:
+            max_dims = min(max(len(shape), min_dims) + 2, NDIM_MAX)
+        else:
+            max_dims = min(len(shape), NDIM_MAX)
+    else:
+        check_type(int, max_dims, "max_dims")
+        if allow_deprecated_dims and max_dims > len(shape) and not allow_newaxis:
+            # TODO: The allow_deprecated_dims argument for this internal
+            # basic_indices() method should be removed once this deprecation
+            # becomes an error.
+            note_deprecation(
+                f"max_dims={max_dims} is larger than len(shape)={len(shape)}, "
+                f"but allow_newaxis=False makes it impossible for an indexing "
+                "operation to add dimensions.",
+                since="RELEASEDAY",
+                has_codemod=False,
+            )
+        elif not allow_deprecated_dims and not allow_newaxis:
+            check_argument(
+                max_dims <= len(shape),
+                f"max_dims={max_dims} is larger than len(shape)={len(shape)}, "
+                f"but allow_newaxis=False makes it impossible for an indexing "
+                "operation to add dimensions.",
+            )
+    check_valid_dims(max_dims, "max_dims")
+
+    order_check("dims", 0, min_dims, max_dims)
+
+    return BasicIndexStrategy(
+        shape,
+        min_dims=min_dims,
+        max_dims=max_dims,
+        allow_ellipsis=allow_ellipsis,
+        allow_newaxis=allow_newaxis,
+    )
 
 
 class BasicIndexStrategy(st.SearchStrategy):

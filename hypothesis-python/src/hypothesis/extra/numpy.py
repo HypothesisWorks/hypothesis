@@ -21,15 +21,13 @@ import numpy as np
 from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra._array_helpers import (
-    NDIM_MAX,
     BasicIndex,
-    BasicIndexStrategy,
     BroadcastableShapes,
     Shape,
     array_shapes,
+    basic_indices as _basic_indices,
     broadcastable_shapes,
     check_argument,
-    check_valid_dims,
     mutually_broadcastable_shapes as _mutually_broadcastable_shapes,
     order_check,
     valid_tuple_axes as _valid_tuple_axes,
@@ -803,41 +801,22 @@ def basic_indices(
       a valid index; for one-dimensional arrays use
       :func:`~hypothesis.strategies.slices` instead.
     * ``min_dims`` is the minimum dimensionality of the resulting array from use
-      of the generated index. When ``min_dims == 0``, indices for zero-dimensional
-      arrays are generated.
+      of the generated index. When ``min_dims == 0``, indices that would produce
+      zero-dimensional arrays are generated.
     * ``max_dims`` is the the maximum dimensionality of the resulting array,
-      defaulting to ``max(len(shape), min_dims) + 2``.
+      defaulting to ``max(len(shape), min_dims) + 2`` when ``allow_newaxis ==
+      True``, otherwise defaulting to ``len(shape)``.
     * ``allow_newaxis`` specifies whether ``None`` is allowed in the index.
     * ``allow_ellipsis`` specifies whether ``...`` is allowed in the index.
     """
-    # Arguments to exclude scalars, zero-dim arrays, and dims of size zero were
-    # all considered and rejected.  We want users to explicitly consider those
-    # cases if they're dealing in general indexers, and while it's fiddly we can
-    # back-compatibly add them later (hence using kwonlyargs).
-    check_type(tuple, shape, "shape")
-    check_type(bool, allow_ellipsis, "allow_ellipsis")
-    check_type(bool, allow_newaxis, "allow_newaxis")
-    check_type(int, min_dims, "min_dims")
-    check_valid_dims(min_dims, "min_dims")
-
-    if max_dims is None:
-        max_dims = min(max(len(shape), min_dims) + 2, NDIM_MAX)
-    check_type(int, max_dims, "max_dims")
-    check_valid_dims(max_dims, "max_dims")
-
-    order_check("dims", 0, min_dims, max_dims)
-
-    check_argument(
-        all(isinstance(x, int) and x >= 0 for x in shape),
-        f"shape={shape!r}, but all dimensions must be non-negative integers.",
-    )
-
-    return BasicIndexStrategy(
+    return _basic_indices(
         shape,
+        allow_0d=True,
+        allow_deprecated_dims=True,
         min_dims=min_dims,
         max_dims=max_dims,
-        allow_ellipsis=allow_ellipsis,
         allow_newaxis=allow_newaxis,
+        allow_ellipsis=allow_ellipsis,
     )
 
 

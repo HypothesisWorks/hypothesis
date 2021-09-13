@@ -35,24 +35,20 @@ from warnings import warn
 from hypothesis import strategies as st
 from hypothesis.errors import HypothesisWarning, InvalidArgument
 from hypothesis.extra._array_helpers import (
-    NDIM_MAX,
     BasicIndex,
-    BasicIndexStrategy,
     BroadcastableShapes,
     Shape,
     array_shapes,
+    basic_indices,
     broadcastable_shapes,
     check_argument,
-    check_valid_dims,
     mutually_broadcastable_shapes as _mutually_broadcastable_shapes,
-    order_check,
     valid_tuple_axes as _valid_tuple_axes,
 )
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.reflection import proxies
 from hypothesis.internal.validation import (
-    check_type,
     check_valid_bound,
     check_valid_integer,
     check_valid_interval,
@@ -668,42 +664,16 @@ def indices(
       valid index;  for one-dimensional arrays use
       :func:`~hypothesis.strategies.slices` instead.
     * ``min_dims`` is the minimum dimensionality of the resulting array from use
-      of the generated index.
+      of the generated index. When ``min_dims == 0``, indices that would produce
+      zero-dimensional arrays are generated.
     * ``max_dims`` is the the maximum dimensionality of the resulting array,
-      defaulting to ``min(min_dims + 2, len(shape))``.
+      defaulting to ``len(shape)``.
     * ``allow_ellipsis`` specifies whether ``...`` is allowed in the index.
     """
-    check_type(tuple, shape, "shape")
-    check_argument(
-        len(shape) != 0,
-        "No valid indices for zero-dimensional arrays",
-    )
-    check_argument(
-        all(isinstance(x, int) and x >= 0 for x in shape),
-        f"shape={shape!r}, but all dimensions must be non-negative integers.",
-    )
-    check_type(bool, allow_ellipsis, "allow_ellipsis")
-    check_type(int, min_dims, "min_dims")
-    check_argument(
-        min_dims <= len(shape),
-        f"min_dims={min_dims} cannot be greater than dimensions of shape={shape!r}",
-    )
-    check_valid_dims(min_dims, "min_dims")
-
-    if max_dims is None:
-        max_dims = min(len(shape), NDIM_MAX)
-    check_type(int, max_dims, "max_dims")
-    assert isinstance(max_dims, int)
-    check_argument(
-        max_dims <= len(shape),
-        f"max_dims={max_dims} cannot be greater than dimensions of shape={shape!r}",
-    )
-    check_valid_dims(max_dims, "max_dims")
-
-    order_check("dims", 0, min_dims, max_dims)
-
-    return BasicIndexStrategy(
+    return basic_indices(
         shape,
+        allow_0d=False,
+        allow_deprecated_dims=False,
         min_dims=min_dims,
         max_dims=max_dims,
         allow_ellipsis=allow_ellipsis,
