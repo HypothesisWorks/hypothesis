@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.21.1:
+
+-------------------
+6.21.1 - 2021-09-13
+-------------------
+
+This release improves the behaviour of :func:`~hypothesis.strategies.builds`
+and :func:`~hypothesis.strategies.from_type` in certain situations involving
+decorators (:issue:`2495` and :issue:`3029`).
+
 .. _v6.21.0:
 
 -------------------
