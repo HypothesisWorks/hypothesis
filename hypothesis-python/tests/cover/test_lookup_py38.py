@@ -19,6 +19,7 @@ import typing
 import pytest
 
 from hypothesis import given, strategies as st
+from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies import from_type
 
 from tests.common.debug import find_any
@@ -131,3 +132,15 @@ def test_can_register_new_type_for_typeddicts():
     sentinel = object()
     with temp_registered(C, st.just(sentinel)):
         assert st.from_type(C).example() is sentinel
+
+
+@pytest.mark.parametrize(
+    "lam,source",
+    [
+        ((lambda a, /, b: a), "lambda a, /, b: a"),
+        ((lambda a=None, /, b=None: a), "lambda a=None, /, b=None: a"),
+    ],
+)
+def test_posonly_lambda_formatting(lam, source):
+    # Testing posonly lambdas, with and without default values
+    assert get_pretty_function_description(lam) == source

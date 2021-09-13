@@ -231,20 +231,34 @@ def convert_positional_arguments(function, args, kwargs):
     return (tuple(args[len(argspec.args) :]), new_kwargs)
 
 
-def extract_all_lambdas(tree):
+def ast_arguments_matches_signature(args, sig):
+    assert isinstance(args, ast.arguments)
+    assert isinstance(sig, inspect.Signature)
+    expected = []
+    for node in getattr(args, "posonlyargs", ()):  # New in Python 3.8
+        expected.append((node.arg, inspect.Parameter.POSITIONAL_ONLY))
+    for node in args.args:
+        expected.append((node.arg, inspect.Parameter.POSITIONAL_OR_KEYWORD))
+    if args.vararg is not None:
+        expected.append((args.vararg.arg, inspect.Parameter.VAR_POSITIONAL))
+    for node in args.kwonlyargs:
+        expected.append((node.arg, inspect.Parameter.KEYWORD_ONLY))
+    if args.kwarg is not None:
+        expected.append((args.kwarg.arg, inspect.Parameter.VAR_KEYWORD))
+    return expected == [(p.name, p.kind) for p in sig.parameters.values()]
+
+
+def extract_all_lambdas(tree, matching_signature):
     lambdas = []
 
     class Visitor(ast.NodeVisitor):
         def visit_Lambda(self, node):
-            lambdas.append(node)
+            if ast_arguments_matches_signature(node.args, matching_signature):
+                lambdas.append(node)
 
     Visitor().visit(tree)
 
     return lambdas
-
-
-def args_for_lambda_ast(l):
-    return [n.arg for n in l.args.args]
 
 
 LINE_CONTINUATION = re.compile(r"\\\n")
@@ -261,24 +275,10 @@ def extract_lambda_source(f):
     This is not a good function and I am sorry for it. Forgive me my
     sins, oh lord
     """
-    argspec = inspect.getfullargspec(f)
-    arg_strings = []
-    for a in argspec.args:
-        assert isinstance(a, str)
-        arg_strings.append(a)
-    if argspec.varargs:
-        arg_strings.append("*" + argspec.varargs)
-    elif argspec.kwonlyargs:
-        arg_strings.append("*")
-    for a in argspec.kwonlyargs or []:
-        default = (argspec.kwonlydefaults or {}).get(a)
-        if default:
-            arg_strings.append(f"{a}={default}")
-        else:
-            arg_strings.append(a)
-
-    if arg_strings:
-        if_confused = "lambda {}: <unknown>".format(", ".join(arg_strings))
+    sig = inspect.signature(f)
+    assert sig.return_annotation is inspect.Parameter.empty
+    if sig.parameters:
+        if_confused = f"lambda {str(sig)[1:-1]}: <unknown>"
     else:
         if_confused = "lambda: <unknown>"
     try:
@@ -326,8 +326,7 @@ def extract_lambda_source(f):
     if tree is None:
         return if_confused
 
-    all_lambdas = extract_all_lambdas(tree)
-    aligned_lambdas = [l for l in all_lambdas if args_for_lambda_ast(l) == argspec.args]
+    aligned_lambdas = extract_all_lambdas(tree, matching_signature=sig)
     if len(aligned_lambdas) != 1:
         return if_confused
     lambda_ast = aligned_lambdas[0]
@@ -428,18 +427,16 @@ def arg_string(f, args, kwargs, reorder=True):
     if reorder:
         args, kwargs = convert_positional_arguments(f, args, kwargs)
 
-    argspec = getfullargspec_except_self(f)
+    bits = [nicerepr(x) for x in args]
 
-    bits = []
-
-    for a in argspec.args:
-        if a in kwargs:
-            bits.append(f"{a}={nicerepr(kwargs.pop(a))}")
+    for p in get_signature(f).parameters.values():
+        if p.name in kwargs and not p.kind.name.startswith("VAR_"):
+            bits.append(f"{p.name}={nicerepr(kwargs.pop(p.name))}")
     if kwargs:
         for a in sorted(kwargs):
             bits.append(f"{a}={nicerepr(kwargs[a])}")
 
-    return ", ".join([nicerepr(x) for x in args] + bits)
+    return ", ".join(bits)
 
 
 def check_valid_identifier(identifier):
