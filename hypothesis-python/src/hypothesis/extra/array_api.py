@@ -152,8 +152,7 @@ def dtype_from_name(xp: Any, name: str) -> DataType:
     else:
         f_valid_dtypes = ", ".join(DTYPE_NAMES)
         raise InvalidArgument(
-            f"{name} is not a valid Array API data type "
-            f"(pick from: {f_valid_dtypes})"
+            f"{name} is not a valid Array API data type (pick from: {f_valid_dtypes})"
         )
 
 

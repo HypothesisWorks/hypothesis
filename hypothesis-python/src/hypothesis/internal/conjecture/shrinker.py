@@ -459,10 +459,8 @@ class Shrinker:
                 self.debug("")
                 calls = self.engine.call_count - self.initial_calls
                 self.debug(
-                    (
-                        "Shrinking made a total of %d call%s "
-                        "of which %d shrank. This deleted %d byte%s out of %d."
-                    )
+                    "Shrinking made a total of %d call%s "
+                    "of which %d shrank. This deleted %d byte%s out of %d."
                     % (
                         calls,
                         s(calls),
@@ -488,10 +486,8 @@ class Shrinker:
                             continue
 
                         self.debug(
-                            (
-                                "  * %s made %d call%s of which "
-                                "%d shrank, deleting %d byte%s."
-                            )
+                            "  * %s made %d call%s of which "
+                            "%d shrank, deleting %d byte%s."
                             % (
                                 p.name,
                                 p.calls,

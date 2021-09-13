@@ -33,7 +33,7 @@ setuptools.setup(
     author_email="david@drmaciver.com",
     packages=setuptools.find_packages(SOURCE),
     package_dir={"": SOURCE},
-    url=("https://github.com/HypothesisWorks/hypothesis-python/tree/master/tooling"),
+    url="https://github.com/HypothesisWorks/hypothesis-python/tree/master/tooling",
     license="MPL v2",
     description="A library for property-based testing",
     python_requires=">=3.6",

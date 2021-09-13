@@ -61,6 +61,7 @@ def test_copying_preserves_argspec(f):
         ((lambda *z, a=1: a), "lambda *z, a=1: a"),
         ((lambda *, a: a), "lambda *, a: a"),
         ((lambda *, a=1: a), "lambda *, a=1: a"),
+        ((lambda **kw: kw), "lambda **kw: kw"),
     ],
 )
 def test_kwonly_lambda_formatting(lam, source):

@@ -293,12 +293,12 @@ class ConjectureRunner:
         ):
             # See https://github.com/HypothesisWorks/hypothesis/issues/2340
             report(
-                "WARNING: Hypothesis has spent more than five minutes working to shrink "
-                "a failing example, and stopped because it is making very slow "
-                "progress.  When you re-run your tests, shrinking will resume and "
-                "may take this long before aborting again.\n"
-                "PLEASE REPORT THIS if you can provide a reproducing example, so that "
-                "we can improve shrinking performance for everyone."
+                "WARNING: Hypothesis has spent more than five minutes working to shrink"
+                " a failing example, and stopped because it is making very slow"
+                " progress.  When you re-run your tests, shrinking will resume and may"
+                " take this long before aborting again.\nPLEASE REPORT THIS if you can"
+                " provide a reproducing example, so that we can improve shrinking"
+                " performance for everyone."
             )
             self.exit_with(ExitReason.very_slow_shrinking)
 
@@ -369,30 +369,23 @@ class ConjectureRunner:
         if state.overrun_examples == max_overrun_draws:
             fail_health_check(
                 self.settings,
-                (
-                    "Examples routinely exceeded the max allowable size. "
-                    "(%d examples overran while generating %d valid ones)"
-                    ". Generating examples this large will usually lead to"
-                    " bad results. You could try setting max_size parameters "
-                    "on your collections and turning "
-                    "max_leaves down on recursive() calls."
-                )
-                % (state.overrun_examples, state.valid_examples),
+                "Examples routinely exceeded the max allowable size. "
+                f"({state.overrun_examples} examples overran while generating "
+                f"{state.valid_examples} valid ones). Generating examples this large "
+                "will usually lead to bad results. You could try setting max_size "
+                "parameters on your collections and turning max_leaves down on "
+                "recursive() calls.",
                 HealthCheck.data_too_large,
             )
         if state.invalid_examples == max_invalid_draws:
             fail_health_check(
                 self.settings,
-                (
-                    "It looks like your strategy is filtering out a lot "
-                    "of data. Health check found %d filtered examples but "
-                    "only %d good ones. This will make your tests much "
-                    "slower, and also will probably distort the data "
-                    "generation quite a lot. You should adapt your "
-                    "strategy to filter less. This can also be caused by "
-                    "a low max_leaves parameter in recursive() calls"
-                )
-                % (state.invalid_examples, state.valid_examples),
+                "It looks like your strategy is filtering out a lot of data. Health "
+                f"check found {state.invalid_examples} filtered examples but only "
+                f"{state.valid_examples} good ones. This will make your tests much "
+                "slower, and also will probably distort the data generation quite a "
+                "lot. You should adapt your strategy to filter less. This can also "
+                "be caused by a low max_leaves parameter in recursive() calls",
                 HealthCheck.filter_too_much,
             )
 
@@ -401,19 +394,11 @@ class ConjectureRunner:
         if draw_time > 1.0:
             fail_health_check(
                 self.settings,
-                (
-                    "Data generation is extremely slow: Only produced "
-                    "%d valid examples in %.2f seconds (%d invalid ones "
-                    "and %d exceeded maximum size). Try decreasing "
-                    "size of the data you're generating (with e.g."
-                    "max_size or max_leaves parameters)."
-                )
-                % (
-                    state.valid_examples,
-                    draw_time,
-                    state.invalid_examples,
-                    state.overrun_examples,
-                ),
+                "Data generation is extremely slow: Only produced "
+                f"{state.valid_examples} valid examples in {draw_time:.2f} seconds "
+                f"({state.invalid_examples} invalid ones and {state.overrun_examples} "
+                "exceeded maximum size). Try decreasing size of the data you're "
+                "generating (with e.g. max_size or max_leaves parameters).",
                 HealthCheck.too_slow,
             )
 

@@ -803,10 +803,33 @@ class AnnotatedConstructorWithSignature(typing.Generic[_ValueType]):
         assert isinstance(value, str)
 
 
-@given(st.data())
-def test_signature_is_the_most_important_source(data):
+def selfless_signature(value: str) -> None:
+    ...
+
+
+class AnnotatedConstructorWithSelflessSignature(AnnotatedConstructorWithSignature):
+    __signature__ = signature(selfless_signature)
+
+
+def really_takes_str(value: int) -> None:
+    """By this example we show, that ``__signature__`` is the most important source."""
+    assert isinstance(value, str)
+
+
+really_takes_str.__signature__ = signature(selfless_signature)
+
+
+@pytest.mark.parametrize(
+    "thing",
+    [
+        AnnotatedConstructorWithSignature,
+        AnnotatedConstructorWithSelflessSignature,
+        really_takes_str,
+    ],
+)
+def test_signature_is_the_most_important_source(thing):
     """Signature types should take precedence over all other annotations."""
-    data.draw(st.builds(AnnotatedConstructorWithSignature))
+    find_any(st.builds(thing))
 
 
 class AnnotatedAndDefault:

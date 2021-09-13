@@ -853,11 +853,8 @@ class ConjectureData:
     def draw(self, strategy, label=None):
         if self.is_find and not strategy.supports_find:
             raise InvalidArgument(
-                (
-                    "Cannot use strategy %r within a call to find (presumably "
-                    "because it would be invalid after the call had ended)."
-                )
-                % (strategy,)
+                f"Cannot use strategy {strategy!r} within a call to find "
+                "(presumably because it would be invalid after the call had ended)."
             )
 
         at_top_level = self.depth == 0

@@ -61,7 +61,7 @@ def test_emits_unicode():
 
 @pytest.mark.xfail(
     WINDOWS,
-    reason=("Encoding issues in running the subprocess, possibly pytest's fault"),
+    reason="Encoding issues in running the subprocess, possibly pytest's fault",
 )
 def test_output_emitting_unicode(testdir, monkeypatch):
     monkeypatch.setenv("LC_ALL", "C")

@@ -16,7 +16,7 @@
 import sys
 from copy import deepcopy
 from datetime import time
-from functools import partial
+from functools import partial, wraps
 from inspect import FullArgSpec, getfullargspec
 from unittest.mock import MagicMock, Mock, NonCallableMagicMock, NonCallableMock
 
@@ -36,7 +36,6 @@ from hypothesis.internal.reflection import (
     proxies,
     required_args,
     source_exec_as_module,
-    unbind_method,
 )
 
 
@@ -282,35 +281,6 @@ def test_arg_string_does_not_include_unprovided_defaults():
         pass
 
     assert arg_string(foo, (1,), {"b": 1, "d": 11}) == "a=1, b=1, d=11"
-
-
-class A:
-    def f(self):
-        pass
-
-    def g(self):
-        pass
-
-
-class B(A):
-    pass
-
-
-class C(A):
-    def f(self):
-        pass
-
-
-def test_unbind_gives_parent_class_function():
-    assert unbind_method(B().f) == unbind_method(A.f)
-
-
-def test_unbind_distinguishes_different_functions():
-    assert unbind_method(A.f) != unbind_method(A.g)
-
-
-def test_unbind_distinguishes_overridden_functions():
-    assert unbind_method(C().f) != unbind_method(A.f)
 
 
 def universal_acceptor(*args, **kwargs):
@@ -687,3 +657,23 @@ def test_inline_given_handles_self():
 
     sentinel = object()
     given(k=st.just(sentinel))(Cls().method)()
+
+
+def logged(f):
+    @wraps(f)
+    def wrapper(*a, **kw):
+        print("I was called")
+        return f(*a, **kw)
+
+    return wrapper
+
+
+class Bar:
+    @logged
+    def __init__(self, i: int):
+        pass
+
+
+@given(st.builds(Bar))
+def test_issue_2495_regression(_):
+    """See https://github.com/HypothesisWorks/hypothesis/issues/2495"""

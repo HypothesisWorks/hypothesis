@@ -153,11 +153,8 @@ class ListStrategy(SearchStrategy):
         self.element_strategy.validate()
         if self.is_empty:
             raise InvalidArgument(
-                (
-                    "Cannot create non-empty lists with elements drawn from "
-                    "strategy %r because it has no values."
-                )
-                % (self.element_strategy,)
+                "Cannot create non-empty lists with elements drawn from "
+                f"strategy {self.element_strategy!r} because it has no values."
             )
         if self.element_strategy.is_empty and 0 < self.max_size < float("inf"):
             raise InvalidArgument(

@@ -21,6 +21,7 @@ import hashlib
 import inspect
 import os
 import re
+import sys
 import types
 from functools import wraps
 from tokenize import detect_encoding
@@ -84,6 +85,42 @@ def function_digest(function):
     return hasher.digest()
 
 
+def get_signature(target):
+    if isinstance(getattr(target, "__signature__", None), inspect.Signature):
+        # This special case covers unusual codegen like Pydantic models
+        sig = target.__signature__
+        # And *this* much more complicated block ignores the `self` argument
+        # if that's been (incorrectly) included in the custom signature.
+        if sig.parameters and (inspect.isclass(target) or inspect.ismethod(target)):
+            selfy = next(iter(sig.parameters.values()))
+            if (
+                selfy.name == "self"
+                and selfy.default is inspect.Parameter.empty
+                and selfy.kind.name.startswith("POSITIONAL_")
+            ):
+                return sig.replace(
+                    parameters=[v for k, v in sig.parameters.items() if k != "self"]
+                )
+        return sig
+    if sys.version_info[:2] <= (3, 8) and inspect.isclass(target):
+        # Workaround for subclasses of typing.Generic on Python <= 3.8
+        from hypothesis.strategies._internal.types import is_generic_type
+
+        if is_generic_type(target):
+            sig = inspect.signature(target.__init__)
+            return sig.replace(
+                parameters=[v for k, v in sig.parameters.items() if k != "self"]
+            )
+    return inspect.signature(target)
+
+
+def arg_is_required(param):
+    return param.default is inspect.Parameter.empty and param.kind in (
+        inspect.Parameter.POSITIONAL_OR_KEYWORD,
+        inspect.Parameter.KEYWORD_ONLY,
+    )
+
+
 def required_args(target, args=(), kwargs=()):
     """Return a set of names of required args to target that were not supplied
     in args or kwargs.
@@ -97,30 +134,16 @@ def required_args(target, args=(), kwargs=()):
     if inspect.isclass(target) and is_typed_named_tuple(target):
         provided = set(kwargs) | set(target._fields[: len(args)])
         return set(target._fields) - provided
-    # Then we try to do the right thing with getfullargspec_except_self
-    # Note that for classes we inspect the __init__ method, *unless* the class
-    # has an explicit __signature__ attribute.  This allows us to support
-    # runtime-generated constraints on **kwargs, as for e.g. Pydantic models.
+    # Then we try to do the right thing with inspect.signature
     try:
-        spec = inspect.getfullargspec(
-            getattr(target, "__init__", target)
-            if inspect.isclass(target) and not hasattr(target, "__signature__")
-            else target
-        )
-    except TypeError:  # pragma: no cover
+        sig = get_signature(target)
+    except (ValueError, TypeError):
         return set()
-    # self appears in the argspec of __init__ and bound methods, but it's an
-    # error to explicitly supply it - so we might skip the first argument.
-    skip_self = int(inspect.isclass(target) or inspect.ismethod(target))
-    # Start with the args that were not supplied and all kwonly arguments,
-    # then remove all positional arguments with default values, and finally
-    # remove kwonly defaults and any supplied keyword arguments
-    return (
-        set(spec.args[skip_self + len(args) :] + spec.kwonlyargs)
-        - set(spec.args[len(spec.args) - len(spec.defaults or ()) :])
-        - set(spec.kwonlydefaults or ())
-        - set(kwargs)
-    )
+    return {
+        name
+        for name, param in list(sig.parameters.items())[len(args) :]
+        if arg_is_required(param) and name not in kwargs
+    }
 
 
 def convert_keyword_arguments(function, args, kwargs):
@@ -208,20 +231,34 @@ def convert_positional_arguments(function, args, kwargs):
     return (tuple(args[len(argspec.args) :]), new_kwargs)
 
 
-def extract_all_lambdas(tree):
+def ast_arguments_matches_signature(args, sig):
+    assert isinstance(args, ast.arguments)
+    assert isinstance(sig, inspect.Signature)
+    expected = []
+    for node in getattr(args, "posonlyargs", ()):  # New in Python 3.8
+        expected.append((node.arg, inspect.Parameter.POSITIONAL_ONLY))
+    for node in args.args:
+        expected.append((node.arg, inspect.Parameter.POSITIONAL_OR_KEYWORD))
+    if args.vararg is not None:
+        expected.append((args.vararg.arg, inspect.Parameter.VAR_POSITIONAL))
+    for node in args.kwonlyargs:
+        expected.append((node.arg, inspect.Parameter.KEYWORD_ONLY))
+    if args.kwarg is not None:
+        expected.append((args.kwarg.arg, inspect.Parameter.VAR_KEYWORD))
+    return expected == [(p.name, p.kind) for p in sig.parameters.values()]
+
+
+def extract_all_lambdas(tree, matching_signature):
     lambdas = []
 
     class Visitor(ast.NodeVisitor):
         def visit_Lambda(self, node):
-            lambdas.append(node)
+            if ast_arguments_matches_signature(node.args, matching_signature):
+                lambdas.append(node)
 
     Visitor().visit(tree)
 
     return lambdas
-
-
-def args_for_lambda_ast(l):
-    return [n.arg for n in l.args.args]
 
 
 LINE_CONTINUATION = re.compile(r"\\\n")
@@ -238,24 +275,10 @@ def extract_lambda_source(f):
     This is not a good function and I am sorry for it. Forgive me my
     sins, oh lord
     """
-    argspec = inspect.getfullargspec(f)
-    arg_strings = []
-    for a in argspec.args:
-        assert isinstance(a, str)
-        arg_strings.append(a)
-    if argspec.varargs:
-        arg_strings.append("*" + argspec.varargs)
-    elif argspec.kwonlyargs:
-        arg_strings.append("*")
-    for a in argspec.kwonlyargs or []:
-        default = (argspec.kwonlydefaults or {}).get(a)
-        if default:
-            arg_strings.append(f"{a}={default}")
-        else:
-            arg_strings.append(a)
-
-    if arg_strings:
-        if_confused = "lambda {}: <unknown>".format(", ".join(arg_strings))
+    sig = inspect.signature(f)
+    assert sig.return_annotation is inspect.Parameter.empty
+    if sig.parameters:
+        if_confused = f"lambda {str(sig)[1:-1]}: <unknown>"
     else:
         if_confused = "lambda: <unknown>"
     try:
@@ -303,8 +326,7 @@ def extract_lambda_source(f):
     if tree is None:
         return if_confused
 
-    all_lambdas = extract_all_lambdas(tree)
-    aligned_lambdas = [l for l in all_lambdas if args_for_lambda_ast(l) == argspec.args]
+    aligned_lambdas = extract_all_lambdas(tree, matching_signature=sig)
     if len(aligned_lambdas) != 1:
         return if_confused
     lambda_ast = aligned_lambdas[0]
@@ -405,24 +427,16 @@ def arg_string(f, args, kwargs, reorder=True):
     if reorder:
         args, kwargs = convert_positional_arguments(f, args, kwargs)
 
-    argspec = getfullargspec_except_self(f)
+    bits = [nicerepr(x) for x in args]
 
-    bits = []
-
-    for a in argspec.args:
-        if a in kwargs:
-            bits.append(f"{a}={nicerepr(kwargs.pop(a))}")
+    for p in get_signature(f).parameters.values():
+        if p.name in kwargs and not p.kind.name.startswith("VAR_"):
+            bits.append(f"{p.name}={nicerepr(kwargs.pop(p.name))}")
     if kwargs:
         for a in sorted(kwargs):
             bits.append(f"{a}={nicerepr(kwargs[a])}")
 
-    return ", ".join([nicerepr(x) for x in args] + bits)
-
-
-def unbind_method(f):
-    """Take something that might be a method or a function and return the
-    underlying function."""
-    return getattr(f, "im_func", getattr(f, "__func__", f))
+    return ", ".join(bits)
 
 
 def check_valid_identifier(identifier):
@@ -450,10 +464,10 @@ def source_exec_as_module(source):
 COPY_ARGSPEC_SCRIPT = """
 from hypothesis.utils.conventions import not_set
 
-def accept(%(funcname)s):
-    def %(name)s(%(argspec)s):
-        return %(funcname)s(%(invocation)s)
-    return %(name)s
+def accept({funcname}):
+    def {name}({argspec}):
+        return {funcname}({invocation})
+    return {name}
 """.lstrip()
 
 
@@ -517,17 +531,13 @@ def define_function_signature(name, docstring, argspec):
             if funcname not in used_names:
                 break
 
-        base_accept = source_exec_as_module(
-            COPY_ARGSPEC_SCRIPT
-            % {
-                "name": name,
-                "funcname": funcname,
-                "argspec": ", ".join(parts),
-                "invocation": ", ".join(invocation_parts),
-            }
-        ).accept
-
-        result = base_accept(f)
+        source = COPY_ARGSPEC_SCRIPT.format(
+            name=name,
+            funcname=funcname,
+            argspec=", ".join(parts),
+            invocation=", ".join(invocation_parts),
+        )
+        result = source_exec_as_module(source).accept(f)
         result.__doc__ = docstring
         result.__defaults__ = argspec.defaults
         if argspec.kwonlydefaults:
@@ -561,15 +571,13 @@ def impersonate(target):
 
 
 def proxies(target):
+    replace_sig = define_function_signature(
+        target.__name__.replace("<lambda>", "_lambda_"),
+        target.__doc__,
+        getfullargspec_except_self(target),
+    )
+
     def accept(proxy):
-        return impersonate(target)(
-            wraps(target)(
-                define_function_signature(
-                    target.__name__.replace("<lambda>", "_lambda_"),
-                    target.__doc__,
-                    getfullargspec_except_self(target),
-                )(proxy)
-            )
-        )
+        return impersonate(target)(wraps(target)(replace_sig(proxy)))
 
     return accept

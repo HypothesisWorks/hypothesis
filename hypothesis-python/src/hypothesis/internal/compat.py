@@ -88,13 +88,11 @@ def get_type_hints(thing):
     except (AttributeError, TypeError, NameError):
         hints = {}
 
-    if not inspect.isclass(thing):
-        return hints
-
-    try:
-        hints.update(typing.get_type_hints(thing.__init__, **kwargs))
-    except (TypeError, NameError, AttributeError):
-        pass
+    if inspect.isclass(thing):
+        try:
+            hints.update(typing.get_type_hints(thing.__init__, **kwargs))
+        except (TypeError, NameError, AttributeError):
+            pass
 
     try:
         if hasattr(thing, "__signature__"):

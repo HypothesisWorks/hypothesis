@@ -59,7 +59,7 @@ def test_prints_seed_only_on_healthcheck(
     assert seed is not None
     if fail_healthcheck and verbosity != Verbosity.quiet:
         assert f"@seed({seed})" in output
-        contains_pytest_instruction = (f"--hypothesis-seed={seed}") in output
+        contains_pytest_instruction = f"--hypothesis-seed={seed}" in output
         assert contains_pytest_instruction == in_pytest
     else:
         assert "@seed" not in output
