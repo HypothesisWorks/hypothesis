@@ -442,12 +442,6 @@ def arg_string(f, args, kwargs, reorder=True):
     return ", ".join([nicerepr(x) for x in args] + bits)
 
 
-def unbind_method(f):
-    """Take something that might be a method or a function and return the
-    underlying function."""
-    return getattr(f, "im_func", getattr(f, "__func__", f))
-
-
 def check_valid_identifier(identifier):
     if not identifier.isidentifier():
         raise ValueError(f"{identifier!r} is not a valid python identifier")
