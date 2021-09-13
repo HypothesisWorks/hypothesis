@@ -467,10 +467,10 @@ def source_exec_as_module(source):
 COPY_ARGSPEC_SCRIPT = """
 from hypothesis.utils.conventions import not_set
 
-def accept(%(funcname)s):
-    def %(name)s(%(argspec)s):
-        return %(funcname)s(%(invocation)s)
-    return %(name)s
+def accept({funcname}):
+    def {name}({argspec}):
+        return {funcname}({invocation})
+    return {name}
 """.lstrip()
 
 
@@ -534,17 +534,13 @@ def define_function_signature(name, docstring, argspec):
             if funcname not in used_names:
                 break
 
-        base_accept = source_exec_as_module(
-            COPY_ARGSPEC_SCRIPT
-            % {
-                "name": name,
-                "funcname": funcname,
-                "argspec": ", ".join(parts),
-                "invocation": ", ".join(invocation_parts),
-            }
-        ).accept
-
-        result = base_accept(f)
+        source = COPY_ARGSPEC_SCRIPT.format(
+            name=name,
+            funcname=funcname,
+            argspec=", ".join(parts),
+            invocation=", ".join(invocation_parts),
+        )
+        result = source_exec_as_module(source).accept(f)
         result.__doc__ = docstring
         result.__defaults__ = argspec.defaults
         if argspec.kwonlydefaults:
@@ -578,15 +574,13 @@ def impersonate(target):
 
 
 def proxies(target):
+    replace_sig = define_function_signature(
+        target.__name__.replace("<lambda>", "_lambda_"),
+        target.__doc__,
+        getfullargspec_except_self(target),
+    )
+
     def accept(proxy):
-        return impersonate(target)(
-            wraps(target)(
-                define_function_signature(
-                    target.__name__.replace("<lambda>", "_lambda_"),
-                    target.__doc__,
-                    getfullargspec_except_self(target),
-                )(proxy)
-            )
-        )
+        return impersonate(target)(wraps(target)(replace_sig(proxy)))
 
     return accept
