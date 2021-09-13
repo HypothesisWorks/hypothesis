@@ -16,7 +16,7 @@
 import sys
 from copy import deepcopy
 from datetime import time
-from functools import partial
+from functools import partial, wraps
 from inspect import FullArgSpec, getfullargspec
 from unittest.mock import MagicMock, Mock, NonCallableMagicMock, NonCallableMock
 
@@ -687,3 +687,23 @@ def test_inline_given_handles_self():
 
     sentinel = object()
     given(k=st.just(sentinel))(Cls().method)()
+
+
+def logged(f):
+    @wraps(f)
+    def wrapper(*a, **kw):
+        print("I was called")
+        return f(*a, **kw)
+
+    return wrapper
+
+
+class Bar:
+    @logged
+    def __init__(self, i: int):
+        pass
+
+
+@given(st.builds(Bar))
+def test_issue_2495_regression(_):
+    """See https://github.com/HypothesisWorks/hypothesis/issues/2495"""

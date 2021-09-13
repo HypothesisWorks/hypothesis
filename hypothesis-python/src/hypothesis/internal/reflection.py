@@ -21,6 +21,7 @@ import hashlib
 import inspect
 import os
 import re
+import sys
 import types
 from functools import wraps
 from tokenize import detect_encoding
@@ -84,6 +85,42 @@ def function_digest(function):
     return hasher.digest()
 
 
+def get_signature(target):
+    if isinstance(getattr(target, "__signature__", None), inspect.Signature):
+        # This special case covers unusual codegen like Pydantic models
+        sig = target.__signature__
+        # And *this* much more complicated block ignores the `self` argument
+        # if that's been (incorrectly) included in the custom signature.
+        if sig.parameters and (inspect.isclass(target) or inspect.ismethod(target)):
+            selfy = next(iter(sig.parameters.values()))
+            if (
+                selfy.name == "self"
+                and selfy.default is inspect.Parameter.empty
+                and selfy.kind.name.startswith("POSITIONAL_")
+            ):
+                return sig.replace(
+                    parameters=[v for k, v in sig.parameters.items() if k != "self"]
+                )
+        return sig
+    if sys.version_info[:2] <= (3, 8) and inspect.isclass(target):
+        # Workaround for subclasses of typing.Generic on Python <= 3.8
+        from hypothesis.strategies._internal.types import is_generic_type
+
+        if is_generic_type(target):
+            sig = inspect.signature(target.__init__)
+            return sig.replace(
+                parameters=[v for k, v in sig.parameters.items() if k != "self"]
+            )
+    return inspect.signature(target)
+
+
+def arg_is_required(param):
+    return param.default is inspect.Parameter.empty and param.kind in (
+        inspect.Parameter.POSITIONAL_OR_KEYWORD,
+        inspect.Parameter.KEYWORD_ONLY,
+    )
+
+
 def required_args(target, args=(), kwargs=()):
     """Return a set of names of required args to target that were not supplied
     in args or kwargs.
@@ -97,30 +134,16 @@ def required_args(target, args=(), kwargs=()):
     if inspect.isclass(target) and is_typed_named_tuple(target):
         provided = set(kwargs) | set(target._fields[: len(args)])
         return set(target._fields) - provided
-    # Then we try to do the right thing with getfullargspec_except_self
-    # Note that for classes we inspect the __init__ method, *unless* the class
-    # has an explicit __signature__ attribute.  This allows us to support
-    # runtime-generated constraints on **kwargs, as for e.g. Pydantic models.
+    # Then we try to do the right thing with inspect.signature
     try:
-        spec = inspect.getfullargspec(
-            getattr(target, "__init__", target)
-            if inspect.isclass(target) and not hasattr(target, "__signature__")
-            else target
-        )
-    except TypeError:  # pragma: no cover
+        sig = get_signature(target)
+    except (ValueError, TypeError):
         return set()
-    # self appears in the argspec of __init__ and bound methods, but it's an
-    # error to explicitly supply it - so we might skip the first argument.
-    skip_self = int(inspect.isclass(target) or inspect.ismethod(target))
-    # Start with the args that were not supplied and all kwonly arguments,
-    # then remove all positional arguments with default values, and finally
-    # remove kwonly defaults and any supplied keyword arguments
-    return (
-        set(spec.args[skip_self + len(args) :] + spec.kwonlyargs)
-        - set(spec.args[len(spec.args) - len(spec.defaults or ()) :])
-        - set(spec.kwonlydefaults or ())
-        - set(kwargs)
-    )
+    return {
+        name
+        for name, param in list(sig.parameters.items())[len(args) :]
+        if arg_is_required(param) and name not in kwargs
+    }
 
 
 def convert_keyword_arguments(function, args, kwargs):

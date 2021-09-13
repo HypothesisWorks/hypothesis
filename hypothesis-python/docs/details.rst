@@ -555,7 +555,7 @@ This is based on introspection, *not* magic, and therefore has well-defined
 limits.
 
 :func:`~hypothesis.strategies.builds` will check the signature of the
-``target`` (using :func:`~python:inspect.getfullargspec`).
+``target`` (using :func:`~python:inspect.signature`).
 If there are required arguments with type annotations and
 no strategy was passed to :func:`~hypothesis.strategies.builds`,
 :func:`~hypothesis.strategies.from_type` is used to fill them in.
