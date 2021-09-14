@@ -841,7 +841,6 @@ def basic_indices(
                 since="RELEASEDAY",
                 has_codemod=False,
             )
-    check_type(int, max_dims, "max_dims")
     check_valid_dims(max_dims, "max_dims")
 
     order_check("dims", 0, min_dims, max_dims)
