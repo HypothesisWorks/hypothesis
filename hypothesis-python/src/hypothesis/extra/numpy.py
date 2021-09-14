@@ -831,15 +831,16 @@ def basic_indices(
             max_dims = min(max(len(shape), min_dims) + 2, NDIM_MAX)
         else:
             max_dims = min(len(shape), NDIM_MAX)
-    elif max_dims > len(shape) and not allow_newaxis:
+    else:
         check_type(int, max_dims, "max_dims")
-        note_deprecation(
-            f"max_dims={max_dims} is larger than len(shape)={len(shape)}, "
-            "but allow_newaxis=False makes it impossible for an indexing "
-            "operation to add dimensions.",
-            since="RELEASEDAY",
-            has_codemod=False,
-        )
+        if max_dims > len(shape) and not allow_newaxis:
+            note_deprecation(
+                f"max_dims={max_dims} is larger than len(shape)={len(shape)}, "
+                "but allow_newaxis=False makes it impossible for an indexing "
+                "operation to add dimensions.",
+                since="RELEASEDAY",
+                has_codemod=False,
+            )
     check_type(int, max_dims, "max_dims")
     check_valid_dims(max_dims, "max_dims")
 
