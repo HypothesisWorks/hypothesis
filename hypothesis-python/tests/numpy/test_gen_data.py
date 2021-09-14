@@ -1112,18 +1112,22 @@ def test_basic_indices_replaces_whole_axis_slices_with_ellipsis(idx):
     assert slice(None) not in idx
 
 
-@given(
-    shape=nps.array_shapes(min_dims=0, max_side=4)
-    | nps.array_shapes(min_dims=0, min_side=0, max_side=10),
-    min_dims=st.integers(0, 5),
-    allow_ellipsis=st.booleans(),
-    allow_newaxis=st.booleans(),
-    data=st.data(),
-)
-def test_basic_indices_generate_valid_indexers(
-    shape, min_dims, allow_ellipsis, allow_newaxis, data
-):
-    max_dims = data.draw(st.none() | st.integers(min_dims, 32), label="max_dims")
+@given(st.data())
+def test_basic_indices_generate_valid_indexers(data):
+    shape = data.draw(
+        nps.array_shapes(min_dims=0, max_side=4)
+        | nps.array_shapes(min_dims=0, min_side=0, max_side=10),
+        label="shape",
+    )
+    allow_newaxis = data.draw(st.booleans(), "allow_newaxis")
+    allow_ellipsis = data.draw(st.booleans(), "allow_ellipsis")
+    min_dims = data.draw(
+        st.integers(0, 5 if allow_newaxis else len(shape)), label="min_dims"
+    )
+    max_dims = data.draw(
+        st.none() | st.integers(min_dims, 32 if allow_newaxis else len(shape)),
+        label="max_dims",
+    )
     indexer = data.draw(
         nps.basic_indices(
             shape,
@@ -1134,6 +1138,7 @@ def test_basic_indices_generate_valid_indexers(
         ),
         label="indexer",
     )
+
     # Check that disallowed things are indeed absent
     if not allow_newaxis:
         if isinstance(indexer, tuple):
