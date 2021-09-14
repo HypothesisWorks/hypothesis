@@ -72,7 +72,7 @@ or just ``numpy.array_api`` - this is the extension for you!
 .. autofunction:: hypothesis.extra.array_api.make_strategies_namespace
 
 The resulting namespace contains all our familiar strategies like
-:func:`~xps.arrays` and :func:`~xps.from_dtype`, but based on the array-API
+:func:`~xps.arrays` and :func:`~xps.from_dtype`, but based on the Array API
 standard semantics and returning objects from the ``xp`` module:
 
 .. automodule:: xps
