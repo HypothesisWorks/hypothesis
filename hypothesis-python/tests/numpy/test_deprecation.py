@@ -13,6 +13,8 @@
 #
 # END HEADER
 
+from warnings import catch_warnings
+
 import pytest
 
 from hypothesis.errors import HypothesisDeprecationWarning
@@ -22,3 +24,10 @@ from hypothesis.extra import numpy as nps
 def test_basic_indices_bad_max_dims_warns():
     with pytest.warns(HypothesisDeprecationWarning):
         nps.basic_indices((3, 3, 3), max_dims=4).example()
+
+
+def test_basic_indices_default_max_dims_does_not_warn():
+    with catch_warnings(record=True) as record:
+        nps.basic_indices((3, 3, 3)).example()
+        nps.basic_indices((3, 3, 3), allow_newaxis=True).example()
+        assert len(record) == 0
