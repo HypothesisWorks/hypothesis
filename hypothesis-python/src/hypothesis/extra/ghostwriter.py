@@ -203,13 +203,15 @@ def _exceptions_from_docstring(doc: str) -> Tuple[Type[Exception], ...]:
 # on analysis of type-annotated code to detect arguments which almost always
 # take values of a particular type.
 _GUESS_STRATEGIES_BY_NAME = (
-    (st.integers(0, 32), ["ndims"]),
+    (st.integers(0, 32), ["ndims", "ndigits"]),
     (st.booleans(), ["keepdims"]),
     (st.text(), ["name", "filename", "fname"]),
     (st.floats(), ["real", "imag"]),
     (st.functions(), ["function", "func", "f"]),
     (st.functions(returns=st.booleans(), pure=True), ["pred", "predicate"]),
     (st.iterables(st.integers()) | st.iterables(st.text()), ["iterable"]),
+    (st.builds(object), ["object"]),
+    (st.integers() | st.floats() | st.fractions(), ["number"]),
 )
 
 
@@ -698,7 +700,8 @@ def _make_test(imports: Set[Union[str, Tuple[str, str]]], body: str) -> str:
     direct = {f"import {i}" for i in imports - do_not_import if isinstance(i, str)}
     from_imports = defaultdict(set)
     for module, name in {i for i in imports if isinstance(i, tuple)}:
-        from_imports[module].add(name)
+        if not (module.startswith("hypothesis.strategies") and name in st.__all__):
+            from_imports[module].add(name)
     from_ = {
         "from {} import {}".format(module, ", ".join(sorted(names)))
         for module, names in from_imports.items()

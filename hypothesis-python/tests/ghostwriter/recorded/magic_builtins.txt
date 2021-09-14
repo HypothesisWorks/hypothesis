@@ -26,7 +26,7 @@ def test_fuzz_ascii(obj):
     ascii(obj)
 
 
-@given(number=st.nothing())
+@given(number=st.one_of(st.integers(), st.floats(), st.fractions()))
 def test_fuzz_bin(number):
     bin(number)
 
@@ -74,7 +74,7 @@ def test_fuzz_delattr(obj, name):
     delattr(obj, name)
 
 
-@given(object=st.nothing())
+@given(object=st.builds(object))
 def test_fuzz_dir(object):
     dir(object)
 
@@ -112,7 +112,7 @@ def test_fuzz_format(value, format_spec):
     format(value, format_spec)
 
 
-@given(object=st.nothing(), name=st.nothing(), default=st.nothing())
+@given(object=st.builds(object), name=st.nothing(), default=st.nothing())
 def test_fuzz_getattr(object, name, default):
     getattr(object, name, default)
 
@@ -127,7 +127,7 @@ def test_fuzz_hash(obj):
     hash(obj)
 
 
-@given(number=st.nothing())
+@given(number=st.one_of(st.integers(), st.floats(), st.fractions()))
 def test_fuzz_hex(number):
     hex(number)
 
@@ -176,7 +176,7 @@ def test_fuzz_max(iterable, default, key):
     max(iterable, default=default, key=key)
 
 
-@given(object=st.nothing())
+@given(object=st.builds(object))
 def test_fuzz_memoryview(object):
     memoryview(object=object)
 
@@ -195,7 +195,7 @@ def test_fuzz_next(iterator, default):
     next(iterator, default)
 
 
-@given(number=st.nothing())
+@given(number=st.one_of(st.integers(), st.floats(), st.fractions()))
 def test_fuzz_oct(number):
     oct(number)
 
@@ -248,7 +248,7 @@ def test_fuzz_reversed(sequence):
     reversed(sequence)
 
 
-@given(number=st.nothing(), ndigits=st.none())
+@given(number=st.one_of(st.integers(), st.floats(), st.fractions()), ndigits=st.none())
 def test_fuzz_round(number, ndigits):
     round(number=number, ndigits=ndigits)
 
@@ -280,6 +280,6 @@ def test_fuzz_tuple(iterable):
     tuple(iterable)
 
 
-@given(object=st.nothing())
+@given(object=st.builds(object))
 def test_fuzz_vars(object):
     vars(object)
