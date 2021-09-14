@@ -333,16 +333,26 @@ def _get_params(func: Callable) -> Dict[str, inspect.Parameter]:
             # inspect.signature doesn't work on all builtin functions or methods.
             # In such cases, including the operator module on Python 3.6, we can try
             # to reconstruct simple signatures from the docstring.
-            pattern = rf"^{func.__name__}\(([a-z]+(, [a-z]+)*)(, \\)?\)"
-            args = re.match(pattern, func.__doc__)
-            if args is None:
+            match = re.match(rf"^{func.__name__}\((.+?)\)", func.__doc__)
+            if match is None:
                 raise
-            params = [
-                # Note that we assume that the args are positional-only regardless of
-                # whether the signature shows a `/`, because this is often the case.
-                inspect.Parameter(name=name, kind=inspect.Parameter.POSITIONAL_ONLY)
-                for name in args.group(1).split(", ")
-            ]
+            args = match.group(1).replace("[", "").replace("]", "")
+            params = []
+            # Even if the signature doesn't contain a /, we assume that arguments
+            # are positional-only until shown otherwise - the / is often omitted.
+            kind: inspect._ParameterKind = inspect.Parameter.POSITIONAL_ONLY
+            for arg in args.split(", "):
+                arg, *_ = arg.partition("=")
+                if arg == "/":
+                    kind = inspect.Parameter.POSITIONAL_OR_KEYWORD
+                    continue
+                if arg.startswith("*"):
+                    kind = inspect.Parameter.KEYWORD_ONLY
+                    continue  # we omit *varargs, if there are any
+                if arg.startswith("**"):
+                    break  # and likewise omit **varkw
+                params.append(inspect.Parameter(name=arg, kind=kind))
+
         elif _is_probably_ufunc(func):
             # `inspect.signature` doesn't work on ufunc objects, but we can work out
             # what the required parameters would look like if it did.

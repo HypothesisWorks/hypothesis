@@ -74,6 +74,11 @@ def test_fuzz_delattr(obj, name):
     delattr(obj, name)
 
 
+@given(object=st.nothing())
+def test_fuzz_dir(object):
+    dir(object)
+
+
 @given(x=st.nothing(), y=st.nothing())
 def test_fuzz_divmod(x, y):
     divmod(x, y)
@@ -105,6 +110,11 @@ def test_fuzz_float(x):
 @given(value=st.nothing(), format_spec=st.just(""))
 def test_fuzz_format(value, format_spec):
     format(value, format_spec)
+
+
+@given(object=st.nothing(), name=st.nothing(), default=st.nothing())
+def test_fuzz_getattr(object, name, default):
+    getattr(object, name, default)
 
 
 @given(obj=st.nothing(), name=st.nothing())
@@ -157,9 +167,32 @@ def test_fuzz_list(iterable):
     list(iterable)
 
 
+@given(
+    iterable=st.one_of(st.iterables(st.integers()), st.iterables(st.text())),
+    default=st.nothing(),
+    key=st.nothing(),
+)
+def test_fuzz_max(iterable, default, key):
+    max(iterable, default=default, key=key)
+
+
 @given(object=st.nothing())
 def test_fuzz_memoryview(object):
     memoryview(object=object)
+
+
+@given(
+    iterable=st.one_of(st.iterables(st.integers()), st.iterables(st.text())),
+    default=st.nothing(),
+    key=st.nothing(),
+)
+def test_fuzz_min(iterable, default, key):
+    min(iterable, default=default, key=key)
+
+
+@given(iterator=st.nothing(), default=st.nothing())
+def test_fuzz_next(iterator, default):
+    next(iterator, default)
 
 
 @given(number=st.nothing())
@@ -245,3 +278,8 @@ def test_fuzz_sum(iterable, start):
 @given(iterable=st.just(()))
 def test_fuzz_tuple(iterable):
     tuple(iterable)
+
+
+@given(object=st.nothing())
+def test_fuzz_vars(object):
+    vars(object)
