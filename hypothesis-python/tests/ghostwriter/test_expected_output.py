@@ -21,6 +21,7 @@ To update the recorded outputs, run `pytest --hypothesis-update-outputs ...`.
 
 import ast
 import base64
+import builtins
 import operator
 import pathlib
 import re
@@ -152,6 +153,11 @@ def divide(a: int, b: int) -> float:
                 distributes_over=operator.add,
                 style="unittest",
             ),
+        ),
+        pytest.param(
+            ("magic_builtins", ghostwriter.magic(builtins)),
+            # Signature of builtins.compile() changed in 3.8 and we use that version.
+            marks=[pytest.mark.skipif(sys.version_info[:2] <= (3, 7), reason="")],
         ),
     ],
     ids=lambda x: x[0],
