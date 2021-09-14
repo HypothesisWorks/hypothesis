@@ -31,7 +31,7 @@ from hypothesis.extra.array_api import (
     mock_xp,
 )
 
-from tests.array_api.common import MOCK_WARN_MSG
+MOCK_WARN_MSG = f"determine.*{mock_xp.__name__}.*Array API"
 
 
 @lru_cache()
@@ -69,7 +69,6 @@ with pytest.warns(HypothesisWarning):
     dtypeless_xps = make_strategies_namespace(dtypeless_xp)
 
 
-@pytest.mark.filterwarnings(f"ignore:.*{MOCK_WARN_MSG}.*")
 @pytest.mark.parametrize(
     "stratname",
     [

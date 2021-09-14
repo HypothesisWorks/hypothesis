@@ -19,8 +19,6 @@ import pytest
 
 from tests.array_api.common import xp, xps
 
-pytestmark = [pytest.mark.mockable_xp]
-
 
 @pytest.mark.parametrize(
     "name",

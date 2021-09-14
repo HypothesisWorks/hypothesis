@@ -21,8 +21,6 @@ from hypothesis.extra.array_api import DTYPE_NAMES, INT_NAMES, NUMERIC_NAMES, UI
 from tests.array_api.common import xp, xps
 from tests.common.debug import minimal
 
-pytestmark = [pytest.mark.mockable_xp]
-
 
 @given(xps.scalar_dtypes())
 def test_can_generate_scalar_dtypes(dtype):

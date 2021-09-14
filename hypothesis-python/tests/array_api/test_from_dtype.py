@@ -23,8 +23,6 @@ from hypothesis.extra.array_api import DTYPE_NAMES, find_castable_builtin_for_dt
 from tests.array_api.common import xp, xps
 from tests.common.debug import minimal
 
-pytestmark = [pytest.mark.mockable_xp]
-
 
 @given(xps.scalar_dtypes())
 def test_strategies_have_reusable_values(dtype):

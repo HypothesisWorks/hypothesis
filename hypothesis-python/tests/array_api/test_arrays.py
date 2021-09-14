@@ -23,8 +23,6 @@ from tests.array_api.common import COMPLIANT_XP, xp, xps
 from tests.common.debug import find_any, minimal
 from tests.common.utils import fails_with, flaky
 
-pytestmark = [pytest.mark.mockable_xp]
-
 needs_xp_unique = pytest.mark.skipif(not hasattr(xp, "unique"), reason="optional API")
 
 
