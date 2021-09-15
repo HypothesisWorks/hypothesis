@@ -34,12 +34,12 @@ from typing import (
     Any,
     BinaryIO,
     Callable,
+    Coroutine,
     Hashable,
     List,
     Optional,
     TypeVar,
     Union,
-    Coroutine,
 )
 from unittest import TestCase
 
