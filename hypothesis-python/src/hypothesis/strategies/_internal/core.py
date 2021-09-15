@@ -814,6 +814,12 @@ class BuildsStrategy(SearchStrategy):
         tuples(*self.args).validate()
         fixed_dictionaries(self.kwargs).validate()
 
+    def __repr__(self):
+        bits = [get_pretty_function_description(self.target)]
+        bits.extend(map(repr, self.args))
+        bits.extend(f"{k}={v!r}" for k, v in self.kwargs.items())
+        return f"builds({', '.join(bits)})"
+
 
 # The ideal signature builds(target, /, *args, **kwargs) is unfortunately a
 # SyntaxError before Python 3.8 so we emulate it with manual argument unpacking.

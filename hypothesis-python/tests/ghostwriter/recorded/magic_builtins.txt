@@ -1,0 +1,285 @@
+# This test code was written by the `hypothesis.extra.ghostwriter` module
+# and is provided under the Creative Commons Zero public domain dedication.
+
+from hypothesis import given, strategies as st
+
+# TODO: replace st.nothing() with appropriate strategies
+
+
+@given(x=st.nothing())
+def test_fuzz_abs(x):
+    abs(x)
+
+
+@given(iterable=st.one_of(st.iterables(st.integers()), st.iterables(st.text())))
+def test_fuzz_all(iterable):
+    all(iterable)
+
+
+@given(iterable=st.one_of(st.iterables(st.integers()), st.iterables(st.text())))
+def test_fuzz_any(iterable):
+    any(iterable)
+
+
+@given(obj=st.nothing())
+def test_fuzz_ascii(obj):
+    ascii(obj)
+
+
+@given(number=st.one_of(st.integers(), st.floats(), st.fractions()))
+def test_fuzz_bin(number):
+    bin(number)
+
+
+@given(obj=st.nothing())
+def test_fuzz_callable(obj):
+    callable(obj)
+
+
+@given(i=st.nothing())
+def test_fuzz_chr(i):
+    chr(i)
+
+
+@given(
+    source=st.nothing(),
+    filename=st.nothing(),
+    mode=st.nothing(),
+    flags=st.just(0),
+    dont_inherit=st.booleans(),
+    optimize=st.just(-1),
+    _feature_version=st.just(-1),
+)
+def test_fuzz_compile(
+    source, filename, mode, flags, dont_inherit, optimize, _feature_version
+):
+    compile(
+        source=source,
+        filename=filename,
+        mode=mode,
+        flags=flags,
+        dont_inherit=dont_inherit,
+        optimize=optimize,
+        _feature_version=_feature_version,
+    )
+
+
+@given(real=st.just(0), imag=st.just(0))
+def test_fuzz_complex(real, imag):
+    complex(real=real, imag=imag)
+
+
+@given(obj=st.nothing(), name=st.nothing())
+def test_fuzz_delattr(obj, name):
+    delattr(obj, name)
+
+
+@given(object=st.builds(object))
+def test_fuzz_dir(object):
+    dir(object)
+
+
+@given(x=st.nothing(), y=st.nothing())
+def test_fuzz_divmod(x, y):
+    divmod(x, y)
+
+
+@given(
+    iterable=st.one_of(st.iterables(st.integers()), st.iterables(st.text())),
+    start=st.just(0),
+)
+def test_fuzz_enumerate(iterable, start):
+    enumerate(iterable=iterable, start=start)
+
+
+@given(source=st.nothing(), globals=st.none(), locals=st.none())
+def test_fuzz_eval(source, globals, locals):
+    eval(source, globals, locals)
+
+
+@given(source=st.nothing(), globals=st.none(), locals=st.none())
+def test_fuzz_exec(source, globals, locals):
+    exec(source, globals, locals)
+
+
+@given(x=st.just(0))
+def test_fuzz_float(x):
+    float(x)
+
+
+@given(value=st.nothing(), format_spec=st.just(""))
+def test_fuzz_format(value, format_spec):
+    format(value, format_spec)
+
+
+@given(object=st.builds(object), name=st.nothing(), default=st.nothing())
+def test_fuzz_getattr(object, name, default):
+    getattr(object, name, default)
+
+
+@given(obj=st.nothing(), name=st.nothing())
+def test_fuzz_hasattr(obj, name):
+    hasattr(obj, name)
+
+
+@given(obj=st.nothing())
+def test_fuzz_hash(obj):
+    hash(obj)
+
+
+@given(number=st.one_of(st.integers(), st.floats(), st.fractions()))
+def test_fuzz_hex(number):
+    hex(number)
+
+
+@given(obj=st.nothing())
+def test_fuzz_id(obj):
+    id(obj)
+
+
+@given(prompt=st.none())
+def test_fuzz_input(prompt):
+    input(prompt)
+
+
+@given(obj=st.nothing(), class_or_tuple=st.nothing())
+def test_fuzz_isinstance(obj, class_or_tuple):
+    isinstance(obj, class_or_tuple)
+
+
+@given(cls=st.nothing(), class_or_tuple=st.nothing())
+def test_fuzz_issubclass(cls, class_or_tuple):
+    issubclass(cls, class_or_tuple)
+
+
+@given(iterable=st.one_of(st.iterables(st.integers()), st.iterables(st.text())))
+def test_fuzz_iter(iterable):
+    iter(iterable)
+
+
+@given(obj=st.nothing())
+def test_fuzz_len(obj):
+    len(obj)
+
+
+@given(iterable=st.just(()))
+def test_fuzz_list(iterable):
+    list(iterable)
+
+
+@given(
+    iterable=st.one_of(st.iterables(st.integers()), st.iterables(st.text())),
+    default=st.nothing(),
+    key=st.nothing(),
+)
+def test_fuzz_max(iterable, default, key):
+    max(iterable, default=default, key=key)
+
+
+@given(object=st.builds(object))
+def test_fuzz_memoryview(object):
+    memoryview(object=object)
+
+
+@given(
+    iterable=st.one_of(st.iterables(st.integers()), st.iterables(st.text())),
+    default=st.nothing(),
+    key=st.nothing(),
+)
+def test_fuzz_min(iterable, default, key):
+    min(iterable, default=default, key=key)
+
+
+@given(iterator=st.nothing(), default=st.nothing())
+def test_fuzz_next(iterator, default):
+    next(iterator, default)
+
+
+@given(number=st.one_of(st.integers(), st.floats(), st.fractions()))
+def test_fuzz_oct(number):
+    oct(number)
+
+
+@given(
+    file=st.nothing(),
+    mode=st.just("r"),
+    buffering=st.just(-1),
+    encoding=st.none(),
+    errors=st.none(),
+    newline=st.none(),
+    closefd=st.booleans(),
+    opener=st.none(),
+)
+def test_fuzz_open(file, mode, buffering, encoding, errors, newline, closefd, opener):
+    open(
+        file=file,
+        mode=mode,
+        buffering=buffering,
+        encoding=encoding,
+        errors=errors,
+        newline=newline,
+        closefd=closefd,
+        opener=opener,
+    )
+
+
+@given(c=st.nothing())
+def test_fuzz_ord(c):
+    ord(c)
+
+
+@given(base=st.nothing(), exp=st.nothing(), mod=st.none())
+def test_fuzz_pow(base, exp, mod):
+    pow(base=base, exp=exp, mod=mod)
+
+
+@given(fget=st.none(), fset=st.none(), fdel=st.none(), doc=st.none())
+def test_fuzz_property(fget, fset, fdel, doc):
+    property(fget=fget, fset=fset, fdel=fdel, doc=doc)
+
+
+@given(obj=st.nothing())
+def test_fuzz_repr(obj):
+    repr(obj)
+
+
+@given(sequence=st.nothing())
+def test_fuzz_reversed(sequence):
+    reversed(sequence)
+
+
+@given(number=st.one_of(st.integers(), st.floats(), st.fractions()), ndigits=st.none())
+def test_fuzz_round(number, ndigits):
+    round(number=number, ndigits=ndigits)
+
+
+@given(obj=st.nothing(), name=st.nothing(), value=st.nothing())
+def test_fuzz_setattr(obj, name, value):
+    setattr(obj, name, value)
+
+
+@given(
+    iterable=st.one_of(st.iterables(st.integers()), st.iterables(st.text())),
+    key=st.none(),
+    reverse=st.booleans(),
+)
+def test_fuzz_sorted(iterable, key, reverse):
+    sorted(iterable, key=key, reverse=reverse)
+
+
+@given(
+    iterable=st.one_of(st.iterables(st.integers()), st.iterables(st.text())),
+    start=st.just(0),
+)
+def test_fuzz_sum(iterable, start):
+    sum(iterable, start=start)
+
+
+@given(iterable=st.just(()))
+def test_fuzz_tuple(iterable):
+    tuple(iterable)
+
+
+@given(object=st.builds(object))
+def test_fuzz_vars(object):
+    vars(object)
