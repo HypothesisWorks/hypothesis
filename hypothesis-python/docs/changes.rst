@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.21.3:
+
+-------------------
+6.21.3 - 2021-09-15
+-------------------
+
+This release improves Ghostwritten tests for builtins (:issue:`2977`).
+
 .. _v6.21.2:
 
 -------------------
