@@ -829,7 +829,7 @@ def basic_indices(
             f"min_dims={min_dims} is larger than len(shape)={len(shape)}, "
             "but allow_newaxis=False makes it impossible for an indexing "
             "operation to add dimensions.",
-            since="RELEASEDAY",
+            since="2021-09-15",
             has_codemod=False,
         )
     check_valid_dims(min_dims, "min_dims")
@@ -846,7 +846,7 @@ def basic_indices(
                 f"max_dims={max_dims} is larger than len(shape)={len(shape)}, "
                 "but allow_newaxis=False makes it impossible for an indexing "
                 "operation to add dimensions.",
-                since="RELEASEDAY",
+                since="2021-09-15",
                 has_codemod=False,
             )
     check_valid_dims(max_dims, "max_dims")
