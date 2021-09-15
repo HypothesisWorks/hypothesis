@@ -17,8 +17,14 @@ from warnings import catch_warnings
 
 import pytest
 
-from hypothesis.errors import HypothesisDeprecationWarning
+from hypothesis.errors import HypothesisDeprecationWarning, InvalidArgument
 from hypothesis.extra import numpy as nps
+
+
+def test_basic_indices_bad_min_dims_warns():
+    with pytest.warns(HypothesisDeprecationWarning):
+        with pytest.raises(InvalidArgument):
+            nps.basic_indices((3, 3, 3), min_dims=4).example()
 
 
 def test_basic_indices_bad_max_dims_warns():

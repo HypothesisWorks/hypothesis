@@ -824,6 +824,14 @@ def basic_indices(
     check_type(bool, allow_ellipsis, "allow_ellipsis")
     check_type(bool, allow_newaxis, "allow_newaxis")
     check_type(int, min_dims, "min_dims")
+    if min_dims > len(shape) and not allow_newaxis:
+        note_deprecation(
+            f"min_dims={min_dims} is larger than len(shape)={len(shape)}, "
+            "but allow_newaxis=False makes it impossible for an indexing "
+            "operation to add dimensions.",
+            since="RELEASEDAY",
+            has_codemod=False,
+        )
     check_valid_dims(min_dims, "min_dims")
 
     if max_dims is None:
