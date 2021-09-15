@@ -670,7 +670,7 @@ def indices(
     * ``min_dims`` is the minimum dimensionality of the resulting array from use
       of the generated index.
     * ``max_dims`` is the the maximum dimensionality of the resulting array,
-      defaulting to ``min(min_dims + 2, len(shape))``.
+      defaulting to ``len(shape)``.
     * ``allow_ellipsis`` specifies whether ``...`` is allowed in the index.
     """
     check_type(tuple, shape, "shape")
@@ -686,7 +686,8 @@ def indices(
     check_type(int, min_dims, "min_dims")
     check_argument(
         min_dims <= len(shape),
-        f"min_dims={min_dims} cannot be greater than dimensions of shape={shape!r}",
+        f"min_dims={min_dims} is larger than len(shape)={len(shape)}, "
+        "but it is impossible for an indexing operation to add dimensions.",
     )
     check_valid_dims(min_dims, "min_dims")
 
@@ -696,7 +697,8 @@ def indices(
     assert isinstance(max_dims, int)
     check_argument(
         max_dims <= len(shape),
-        f"max_dims={max_dims} cannot be greater than dimensions of shape={shape!r}",
+        f"max_dims={max_dims} is larger than len(shape)={len(shape)}, "
+        "but it is impossible for an indexing operation to add dimensions.",
     )
     check_valid_dims(max_dims, "max_dims")
 

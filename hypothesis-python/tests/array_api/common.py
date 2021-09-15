@@ -21,12 +21,9 @@ from hypothesis.extra.array_api import make_strategies_namespace, mock_xp
 __all__ = [
     "xp",
     "xps",
-    "MOCK_WARN_MSG",
     "COMPLIANT_XP",
 ]
 
-
-MOCK_WARN_MSG = f"determine.*{mock_xp.__name__}.*Array API"
 
 # We try importing the Array API namespace from NumPy first, which modern
 # versions should include. If not available we default to our own mocked module,

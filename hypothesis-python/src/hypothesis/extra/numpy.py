@@ -19,6 +19,7 @@ from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 import numpy as np
 
 from hypothesis import strategies as st
+from hypothesis._settings import note_deprecation
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra._array_helpers import (
     NDIM_MAX,
@@ -803,10 +804,11 @@ def basic_indices(
       a valid index; for one-dimensional arrays use
       :func:`~hypothesis.strategies.slices` instead.
     * ``min_dims`` is the minimum dimensionality of the resulting array from use
-      of the generated index. When ``min_dims == 0``, indices for zero-dimensional
-      arrays are generated.
+      of the generated index. When ``min_dims == 0``, scalars and zero-dimensional
+      arrays are both allowed.
     * ``max_dims`` is the the maximum dimensionality of the resulting array,
-      defaulting to ``max(len(shape), min_dims) + 2``.
+      defaulting to ``len(shape) if not allow_newaxis else
+      max(len(shape), min_dims) + 2``.
     * ``allow_newaxis`` specifies whether ``None`` is allowed in the index.
     * ``allow_ellipsis`` specifies whether ``...`` is allowed in the index.
     """
@@ -815,22 +817,41 @@ def basic_indices(
     # cases if they're dealing in general indexers, and while it's fiddly we can
     # back-compatibly add them later (hence using kwonlyargs).
     check_type(tuple, shape, "shape")
-    check_type(bool, allow_ellipsis, "allow_ellipsis")
-    check_type(bool, allow_newaxis, "allow_newaxis")
-    check_type(int, min_dims, "min_dims")
-    check_valid_dims(min_dims, "min_dims")
-
-    if max_dims is None:
-        max_dims = min(max(len(shape), min_dims) + 2, NDIM_MAX)
-    check_type(int, max_dims, "max_dims")
-    check_valid_dims(max_dims, "max_dims")
-
-    order_check("dims", 0, min_dims, max_dims)
-
     check_argument(
         all(isinstance(x, int) and x >= 0 for x in shape),
         f"shape={shape!r}, but all dimensions must be non-negative integers.",
     )
+    check_type(bool, allow_ellipsis, "allow_ellipsis")
+    check_type(bool, allow_newaxis, "allow_newaxis")
+    check_type(int, min_dims, "min_dims")
+    if min_dims > len(shape) and not allow_newaxis:
+        note_deprecation(
+            f"min_dims={min_dims} is larger than len(shape)={len(shape)}, "
+            "but allow_newaxis=False makes it impossible for an indexing "
+            "operation to add dimensions.",
+            since="RELEASEDAY",
+            has_codemod=False,
+        )
+    check_valid_dims(min_dims, "min_dims")
+
+    if max_dims is None:
+        if allow_newaxis:
+            max_dims = min(max(len(shape), min_dims) + 2, NDIM_MAX)
+        else:
+            max_dims = min(len(shape), NDIM_MAX)
+    else:
+        check_type(int, max_dims, "max_dims")
+        if max_dims > len(shape) and not allow_newaxis:
+            note_deprecation(
+                f"max_dims={max_dims} is larger than len(shape)={len(shape)}, "
+                "but allow_newaxis=False makes it impossible for an indexing "
+                "operation to add dimensions.",
+                since="RELEASEDAY",
+                has_codemod=False,
+            )
+    check_valid_dims(max_dims, "max_dims")
+
+    order_check("dims", 0, min_dims, max_dims)
 
     return BasicIndexStrategy(
         shape,
