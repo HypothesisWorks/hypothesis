@@ -67,18 +67,17 @@ def test_indices_effeciently_generate_indexers(_):
     """Generation is not too slow."""
 
 
-@given(st.data())
-def test_indices_generate_valid_indexers(data):
-    shape = data.draw(
-        xps.array_shapes(min_dims=1, max_side=4)
-        | xps.array_shapes(min_dims=1, min_side=0, max_side=10),
-        label="shape",
-    )
+@given(
+    xps.array_shapes(min_dims=1, max_side=4)
+    | xps.array_shapes(min_dims=1, min_side=0, max_side=10),
+    st.booleans(),
+    st.data(),
+)
+def test_indices_generate_valid_indexers(shape, allow_ellipsis, data):
     min_dims = data.draw(st.integers(0, len(shape)), label="min_dims")
     max_dims = data.draw(
         st.none() | st.integers(min_dims, len(shape)), label="max_dims"
     )
-    allow_ellipsis = data.draw(st.booleans(), "allow_ellipsis")
     indexer = data.draw(
         xps.indices(
             shape,

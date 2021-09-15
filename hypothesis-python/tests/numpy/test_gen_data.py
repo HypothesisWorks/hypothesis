@@ -1112,15 +1112,16 @@ def test_basic_indices_replaces_whole_axis_slices_with_ellipsis(idx):
     assert slice(None) not in idx
 
 
-@given(st.data())
-def test_basic_indices_generate_valid_indexers(data):
-    shape = data.draw(
-        nps.array_shapes(min_dims=0, max_side=4)
-        | nps.array_shapes(min_dims=0, min_side=0, max_side=10),
-        label="shape",
-    )
-    allow_newaxis = data.draw(st.booleans(), "allow_newaxis")
-    allow_ellipsis = data.draw(st.booleans(), "allow_ellipsis")
+@given(
+    nps.array_shapes(min_dims=0, max_side=4)
+    | nps.array_shapes(min_dims=0, min_side=0, max_side=10),
+    st.booleans(),
+    st.booleans(),
+    st.data(),
+)
+def test_basic_indices_generate_valid_indexers(
+    shape, allow_newaxis, allow_ellipsis, data
+):
     min_dims = data.draw(
         st.integers(0, 5 if allow_newaxis else len(shape)), label="min_dims"
     )
