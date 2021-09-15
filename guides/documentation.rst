@@ -88,4 +88,4 @@ which should:
 - finish with a note of thanks from the maintainers:
   "Thanks to <your name> for this bug fix / feature / contribution"
   (depending on which it is).  If this is your first contribution,
-  don't forget to add yourself to contributors.rst!
+  don't forget to add yourself to AUTHORS.rst!
