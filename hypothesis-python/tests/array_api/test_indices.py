@@ -68,10 +68,10 @@ def test_indices_effeciently_generate_indexers(_):
 
 
 @given(
-    xps.array_shapes(min_dims=1, max_side=4)
+    shape=xps.array_shapes(min_dims=1, max_side=4)
     | xps.array_shapes(min_dims=1, min_side=0, max_side=10),
-    st.booleans(),
-    st.data(),
+    allow_ellipsis=st.booleans(),
+    data=st.data(),
 )
 def test_indices_generate_valid_indexers(shape, allow_ellipsis, data):
     min_dims = data.draw(st.integers(0, len(shape)), label="min_dims")

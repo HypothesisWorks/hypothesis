@@ -1113,11 +1113,11 @@ def test_basic_indices_replaces_whole_axis_slices_with_ellipsis(idx):
 
 
 @given(
-    nps.array_shapes(min_dims=0, max_side=4)
+    shape=nps.array_shapes(min_dims=0, max_side=4)
     | nps.array_shapes(min_dims=0, min_side=0, max_side=10),
-    st.booleans(),
-    st.booleans(),
-    st.data(),
+    allow_newaxis=st.booleans(),
+    allow_ellipsis=st.booleans(),
+    data=st.data(),
 )
 def test_basic_indices_generate_valid_indexers(
     shape, allow_newaxis, allow_ellipsis, data
