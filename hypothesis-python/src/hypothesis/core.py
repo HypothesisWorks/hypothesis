@@ -30,7 +30,17 @@ import zlib
 from collections import defaultdict
 from io import StringIO
 from random import Random
-from typing import Any, BinaryIO, Callable, Hashable, List, Optional, TypeVar, Union
+from typing import (
+    Any,
+    BinaryIO,
+    Callable,
+    Coroutine,
+    Hashable,
+    List,
+    Optional,
+    TypeVar,
+    Union,
+)
 from unittest import TestCase
 
 import attr
@@ -941,7 +951,9 @@ class HypothesisHandle:
 def given(
     *_given_arguments: Union[SearchStrategy, InferType],
     **_given_kwargs: Union[SearchStrategy, InferType],
-) -> Callable[[Callable[..., None]], Callable[..., None]]:
+) -> Callable[
+    [Callable[..., Union[None, Coroutine[Any, Any, None]]]], Callable[..., None]
+]:
     """A decorator for turning a test function that accepts arguments into a
     randomized test.
 

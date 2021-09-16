@@ -58,6 +58,7 @@ their individual contributions.
 * `Gregory Petrosyan <https://github.com/flyingmutant>`_
 * `Grigorios Giannakopoulos <https://github.com/grigoriosgiann>`_
 * `Hugo van Kemenade <https://github.com/hugovk>`_
+* `Humberto Rocha <https://github.com/humrochagf>`_
 * `Ilya Lebedev <https://github.com/melevir>`_ (melevir@gmail.com)
 * `Israel Fruchter <https://github.com/fruch>`_
 * `Jack Massey <https://github.com/massey101>`_
