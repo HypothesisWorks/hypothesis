@@ -141,7 +141,7 @@ def find_castable_builtin_for_dtype(
     stubs.extend(float_stubs)
     if len(stubs) > 0:
         warn_on_missing_dtypes(xp, stubs)
-    raise InvalidArgument("dtype {dtype} not recognised in {xp.__name__}")
+    raise InvalidArgument(f"dtype={dtype} not recognised in {xp.__name__}")
 
 
 @check_function
