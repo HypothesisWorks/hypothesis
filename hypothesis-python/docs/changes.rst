@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.21.4:
+
+-------------------
+6.21.4 - 2021-09-16
+-------------------
+
+This release fixes the type hint for the
+:func:`@given() <hypothesis.given>` decorator
+when decorating an ``async`` function (:issue:`3099`).
+
 .. _v6.21.3:
 
 -------------------
