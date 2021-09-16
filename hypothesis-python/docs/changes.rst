@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.21.5:
+
+-------------------
+6.21.5 - 2021-09-16
+-------------------
+
+This release fixes ``None`` being inferred as the float64 dtype in
+:func:`~xps.from_dtype()` and :func:`~xps.arrays()` from the
+:ref:`Array API extra <array-api>`.
+
 .. _v6.21.4:
 
 -------------------
