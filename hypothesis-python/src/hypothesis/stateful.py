@@ -175,18 +175,22 @@ def run_state_machine_as_test(state_machine_factory, *, settings=None):
                 result = multiple()
                 try:
                     data = dict(data)
+                    links = []
                     for k, v in list(data.items()):
                         if isinstance(v, VarReference):
+                            links.append(v)
                             data[k] = machine.names_to_values[v.name]
                     result = rule.function(machine, **data)
                     if rule.targets:
                         if isinstance(result, MultipleResults):
                             for single_result in result.values:
                                 machine._add_result_to_targets(
-                                    rule.targets, single_result
+                                    rule.targets, single_result, links
                                 )
                         else:
-                            machine._add_result_to_targets(rule.targets, result)
+                            machine._add_result_to_targets(
+                                rule.targets, result, links
+                            )
                     elif result is not None:
                         fail_health_check(
                             settings,
@@ -352,14 +356,17 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
             )
         )
 
-    def _add_result_to_targets(self, targets, result):
+    def _add_result_to_targets(self, targets, result, links):
         name = self._new_name()
         self.__printer.singleton_pprinters.setdefault(
             id(result), lambda obj, p, cycle: p.text(name)
         )
         self.names_to_values[name] = result
         for target in targets:
-            self.bundles.setdefault(target, []).append(VarReference(name))
+            varref = VarReference(name)
+            for parent in links:
+                parent.links.append(VarLink(varref, target))
+            self.bundles.setdefault(target, []).append(varref)
 
     def check_invariants(self, settings):
         for invar in self.invariants():
@@ -445,7 +452,14 @@ class BundleReferenceStrategy(SearchStrategy):
         # end there can be a lot of hard to remove padding.
         position = cu.integer_range(data, 0, len(bundle) - 1, center=len(bundle))
         if self.consume:
-            return bundle.pop(position)
+            varref = bundle.pop(position)
+            for link in varref.links:
+                target_bundle = machine.bundle(link.bundle)
+                try:
+                    target_bundle.remove(link.varref)
+                except ValueError:
+                    pass
+            return varref
         else:
             return bundle[position]
 
@@ -761,7 +775,13 @@ def initialize(
 @attr.s()
 class VarReference:
     name = attr.ib()
+    links = attr.ib(factory=list)
 
+
+@attr.s()
+class VarLink:
+    varref = attr.ib()
+    bundle = attr.ib()
 
 # There are multiple alternatives for annotating the `precond` type, all of them
 # have drawbacks. See https://github.com/HypothesisWorks/hypothesis/pull/3068#issuecomment-906642371
