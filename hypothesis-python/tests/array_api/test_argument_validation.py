@@ -28,6 +28,8 @@ def e(a, **kwargs):
 @pytest.mark.parametrize(
     ("function", "kwargs"),
     [
+        e(xps.arrays, dtype=1, shape=5),
+        e(xps.arrays, dtype=None, shape=5),
         e(xps.arrays, dtype=xp.int8, shape=(0.5,)),
         e(xps.arrays, dtype=xp.int8, shape=1, fill=3),
         e(xps.arrays, dtype=xp.int8, shape=1, elements="not a strategy"),
@@ -40,6 +42,7 @@ def e(a, **kwargs):
         e(xps.array_shapes, min_dims="not an int"),
         e(xps.array_shapes, max_dims="not an int"),
         e(xps.from_dtype, dtype=1),
+        e(xps.from_dtype, dtype=None),
         e(xps.from_dtype, dtype=xp.int8, min_value="not an int"),
         e(xps.from_dtype, dtype=xp.int8, max_value="not an int"),
         e(xps.from_dtype, dtype=xp.float32, min_value="not a float"),

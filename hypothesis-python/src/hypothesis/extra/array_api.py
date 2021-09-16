@@ -130,14 +130,18 @@ def find_castable_builtin_for_dtype(
         return int
 
     float_dtypes, float_stubs = partition_attributes_and_stubs(xp, FLOAT_NAMES)
-    if dtype in float_dtypes:
+    # None equals NumPy's xp.float64 object, so we specifically skip it here to
+    # ensure that InvalidArgument is still raised. xp.float64 is in fact an
+    # alias of np.dtype('float64'), and its equality with None is meant to be
+    # deprecated at some point - see https://github.com/numpy/numpy/issues/18434.
+    if dtype is not None and dtype in float_dtypes:
         return float
 
     stubs.extend(int_stubs)
     stubs.extend(float_stubs)
     if len(stubs) > 0:
         warn_on_missing_dtypes(xp, stubs)
-    raise InvalidArgument("dtype {dtype} not recognised in {xp.__name__}")
+    raise InvalidArgument(f"dtype={dtype} not recognised in {xp.__name__}")
 
 
 @check_function
