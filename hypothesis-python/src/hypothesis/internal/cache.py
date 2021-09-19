@@ -94,7 +94,7 @@ class GenericCache:
             if self.max_size == self.__pinned_entry_count:
                 raise ValueError(
                     "Cannot increase size of cache where all keys have been pinned."
-                )
+                ) from None
             entry = Entry(key, value, self.new_entry(key, value))
             if len(self.data) >= self.max_size:
                 evicted = self.data[0]

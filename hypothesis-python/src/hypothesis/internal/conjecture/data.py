@@ -744,10 +744,8 @@ BYTE_MASKS[0] = 255
 
 class ConjectureData:
     @classmethod
-    def for_buffer(self, buffer, observer=None):
-        return ConjectureData(
-            prefix=buffer, max_length=len(buffer), random=None, observer=observer
-        )
+    def for_buffer(cls, buffer, observer=None):
+        return cls(len(buffer), buffer, random=None, observer=observer)
 
     def __init__(self, max_length, prefix, random, observer=None):
         if observer is None:

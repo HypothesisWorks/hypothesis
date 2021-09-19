@@ -75,8 +75,8 @@ class IntList:
                     raise ValueError(f"Could not create IntList for {values!r}")
 
     @classmethod
-    def of_length(self, n):
-        return IntList(array_or_list("B", [0]) * n)
+    def of_length(cls, n):
+        return cls(array_or_list("B", [0]) * n)
 
     def count(self, n):
         return self.__underlying.count(n)

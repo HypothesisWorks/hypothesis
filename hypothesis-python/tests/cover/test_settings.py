@@ -423,7 +423,7 @@ def test_assigning_to_settings_attribute_on_state_machine_raises_error():
 
         class StateMachine(RuleBasedStateMachine):
             @rule(x=st.none())
-            def a_rule(x):
+            def a_rule(self, x):
                 assert x is None
 
         StateMachine.settings = settings()

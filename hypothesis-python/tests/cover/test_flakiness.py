@@ -126,4 +126,4 @@ def test_failure_sequence_inducing(building, testing, rnd):
     except (Nope, Unsatisfiable, Flaky):
         pass
     except UnsatisfiedAssumption:
-        raise SatisfyMe()
+        raise SatisfyMe() from None

@@ -663,7 +663,7 @@ def test_supportsop_types_support_protocol(protocol, data):
     [
         (typing.SupportsFloat, float),
         (typing.SupportsInt, int),
-        (typing.SupportsBytes, bytes),  # noqa: B1
+        (typing.SupportsBytes, bytes),
         (typing.SupportsComplex, complex),
     ],
 )

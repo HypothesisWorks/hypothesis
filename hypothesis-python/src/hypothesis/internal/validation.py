@@ -89,11 +89,11 @@ def try_convert(typ, value, name):
         return value
     try:
         return typ(value)
-    except (TypeError, ValueError, ArithmeticError):
+    except (TypeError, ValueError, ArithmeticError) as err:
         raise InvalidArgument(
             f"Cannot convert {name}={value!r} of type "
             f"{type(value).__name__} to type {typ.__name__}"
-        )
+        ) from err
 
 
 @check_function

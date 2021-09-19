@@ -92,11 +92,11 @@ default_variable = DynamicVariable(None)
 
 
 class settingsMeta(type):
-    def __init__(self, *args, **kwargs):
+    def __init__(cls, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     @property
-    def default(self):
+    def default(cls):
         v = default_variable.value
         if v is not None:
             return v
@@ -105,10 +105,10 @@ class settingsMeta(type):
             assert default_variable.value is not None
         return default_variable.value
 
-    def _assign_default_internal(self, value):
+    def _assign_default_internal(cls, value):
         default_variable.value = value
 
-    def __setattr__(self, name, value):
+    def __setattr__(cls, name, value):
         if name == "default":
             raise AttributeError(
                 "Cannot assign to the property settings.default - "
@@ -121,7 +121,7 @@ class settingsMeta(type):
                 "settings with settings.load_profile, or use @settings(...) "
                 "to decorate your test instead."
             )
-        return type.__setattr__(self, name, value)
+        return type.__setattr__(cls, name, value)
 
 
 class settings(metaclass=settingsMeta):

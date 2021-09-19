@@ -28,7 +28,7 @@ def go_wrong_naive(a, b):
     except Exception:
         # Hiding the actual problem is terrible, but this pattern can make sense
         # if you're raising a library-specific or semantically meaningful error.
-        raise ValueError("Something went wrong")
+        raise ValueError("Something went wrong") from None
 
 
 def go_wrong_with_cause(a, b):

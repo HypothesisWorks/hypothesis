@@ -171,7 +171,7 @@ class LarkStrategy(st.SearchStrategy):
                     "use of %%declare unless you pass `explicit`, a dict of "
                     'names-to-strategies, such as `{%r: st.just("")}`'
                     % (symbol.name, symbol.name)
-                )
+                ) from None
             draw_state.result.append(data.draw(strategy))
         else:
             assert isinstance(symbol, NonTerminal)

@@ -298,8 +298,8 @@ class DataTree:
                     v = data.draw_bits(node.transition.bit_length)
                     try:
                         node = node.transition.children[v]
-                    except KeyError:
-                        raise PreviouslyUnseenBehaviour()
+                    except KeyError as err:
+                        raise PreviouslyUnseenBehaviour() from err
                 else:
                     assert isinstance(node.transition, Killed)
                     data.observer.kill_branch()
