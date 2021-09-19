@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.21.6:
+
+-------------------
+6.21.6 - 2021-09-19
+-------------------
+
+This patch fixes some new linter warnings such as :pypi:`flake8-bugbear`'s
+``B904`` for explicit exception chaining, so tracebacks might be a bit nicer.
+
 .. _v6.21.5:
 
 -------------------
