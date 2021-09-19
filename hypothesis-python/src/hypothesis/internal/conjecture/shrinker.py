@@ -246,7 +246,7 @@ class Shrinker:
 
     """
 
-    def derived_value(fn):
+    def derived_value(fn):  # noqa: B902
         """It's useful during shrinking to have access to derived values of
         the current shrink target.
 

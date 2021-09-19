@@ -350,11 +350,11 @@ def test_unbound_method():
 
 
 class MetaClass(type):
-    def __new__(cls, name):
-        return type.__new__(cls, name, (object,), {"name": name})
+    def __new__(metacls, name):
+        return type.__new__(metacls, name, (object,), {"name": name})
 
-    def __repr__(self):
-        return f"[CUSTOM REPR FOR CLASS {self.name}]"
+    def __repr__(cls):
+        return f"[CUSTOM REPR FOR CLASS {cls.name}]"
 
 
 ClassWithMeta = MetaClass("ClassWithMeta")

@@ -206,15 +206,17 @@ def decode_failure(blob):
     try:
         buffer = base64.b64decode(blob)
     except Exception:
-        raise InvalidArgument(f"Invalid base64 encoded string: {blob!r}")
+        raise InvalidArgument(f"Invalid base64 encoded string: {blob!r}") from None
     prefix = buffer[:1]
     if prefix == b"\0":
         return buffer[1:]
     elif prefix == b"\1":
         try:
             return zlib.decompress(buffer[1:])
-        except zlib.error:
-            raise InvalidArgument(f"Invalid zlib compression for blob {blob!r}")
+        except zlib.error as err:
+            raise InvalidArgument(
+                f"Invalid zlib compression for blob {blob!r}"
+            ) from err
     else:
         raise InvalidArgument(
             f"Could not decode blob {blob!r}: Invalid start byte {prefix!r}"
@@ -724,7 +726,7 @@ class StateForActualGivenExecution:
                 # This can happen if an error occurred in a finally
                 # block somewhere, suppressing our original StopTest.
                 # We raise a new one here to resume normal operation.
-                raise StopTest(data.testcounter)
+                raise StopTest(data.testcounter) from e
             else:
                 # The test failed by raising an exception, so we inform the
                 # engine that this test run was interesting. This is the normal
@@ -1107,13 +1109,13 @@ def given(
                         "The shape of the test data has changed in some way "
                         "from where this blob was defined. Are you sure "
                         "you're running the same test?"
-                    )
+                    ) from None
                 except UnsatisfiedAssumption:
                     raise DidNotReproduce(
                         "The test data failed to satisfy an assumption in the "
                         "test. Have you added it since this blob was "
                         "generated?"
-                    )
+                    ) from None
 
             # There was no @reproduce_failure, so start by running any explicit
             # examples from @example decorators.

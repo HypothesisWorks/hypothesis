@@ -110,7 +110,7 @@ def test_build_with_non_types_in_signature(val):
 
 
 class UnconventionalSignature:
-    def __init__(x: int = 0, self: bool = True):
+    def __init__(x: int = 0, self: bool = True):  # noqa: B902
         assert not isinstance(x, int)
         x.self = self
 

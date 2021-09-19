@@ -37,7 +37,7 @@ class SomeGivens:
         pass
 
     @given(text())
-    def give_me_a_string(myself, x):
+    def give_me_a_string(self, x):
         pass
 
     @given(integers())

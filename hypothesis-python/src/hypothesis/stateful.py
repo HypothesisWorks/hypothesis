@@ -224,16 +224,16 @@ def run_state_machine_as_test(state_machine_factory, *, settings=None):
 
 
 class StateMachineMeta(type):
-    def __setattr__(self, name, value):
+    def __setattr__(cls, name, value):
         if name == "settings" and isinstance(value, Settings):
             raise AttributeError(
                 (
                     "Assigning {cls}.settings = {value} does nothing. Assign "
                     "to {cls}.TestCase.settings, or use @{value} as a decorator "
                     "on the {cls} class."
-                ).format(cls=self.__name__, value=value)
+                ).format(cls=cls.__name__, value=value)
             )
-        return type.__setattr__(self, name, value)
+        return type.__setattr__(cls, name, value)
 
 
 class RuleBasedStateMachine(metaclass=StateMachineMeta):
@@ -388,19 +388,17 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
 
     @classmethod
     @lru_cache()
-    def _to_test_case(state_machine_class):
+    def _to_test_case(cls):
         class StateMachineTestCase(TestCase):
             settings = Settings(deadline=None, suppress_health_check=HealthCheck.all())
 
             def runTest(self):
-                run_state_machine_as_test(state_machine_class)
+                run_state_machine_as_test(cls)
 
             runTest.is_hypothesis_test = True
 
-        StateMachineTestCase.__name__ = state_machine_class.__name__ + ".TestCase"
-        StateMachineTestCase.__qualname__ = (
-            state_machine_class.__qualname__ + ".TestCase"
-        )
+        StateMachineTestCase.__name__ = cls.__name__ + ".TestCase"
+        StateMachineTestCase.__qualname__ = cls.__qualname__ + ".TestCase"
         return StateMachineTestCase
 
 

@@ -96,21 +96,21 @@ else:
             modulename, funcname = s.rsplit(".", 1)
             try:
                 module = importlib.import_module(modulename)
-            except ImportError:
+            except ImportError as err:
                 raise click.UsageError(
                     f"Failed to import the {modulename} module for introspection.  "
                     "Check spelling and your Python import path, or use the Python API?"
-                )
+                ) from err
         try:
             return getattr(module, funcname)
-        except AttributeError:
+        except AttributeError as err:
             public_names = [name for name in vars(module) if not name.startswith("_")]
             matches = get_close_matches(funcname, public_names)
             raise click.UsageError(
                 f"Found the {modulename!r} module, but it doesn't have a "
                 f"{funcname!r} attribute."
                 + (f"  Closest matches: {matches!r}" if matches else "")
-            )
+            ) from err
 
     def _refactor(func, fname):
         try:

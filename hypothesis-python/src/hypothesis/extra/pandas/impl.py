@@ -96,11 +96,11 @@ def elements_and_dtype(elements, dtype, source=None):
                 raise InvalidArgument(
                     "Cannot convert %s=%r of type %s to dtype %s"
                     % (name, value, type(value).__name__, dtype.str)
-                )
+                ) from None
             except ValueError:
                 raise InvalidArgument(
                     f"Cannot convert {name}={value!r} to type {dtype.str}"
-                )
+                ) from None
 
         elements = elements.map(convert_element)
     assert elements is not None
@@ -518,7 +518,7 @@ def data_frames(
                     "Column names must be hashable, but columns[%d].name was "
                     "%r of type %s, which cannot be hashed."
                     % (i, c.name, type(c.name).__name__)
-                )
+                ) from None
 
         if c.name in column_names:
             raise InvalidArgument(f"duplicate definition of column name {c.name!r}")

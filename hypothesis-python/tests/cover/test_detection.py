@@ -28,7 +28,7 @@ def test_functions_default_to_not_tests():
 
 def test_methods_default_to_not_tests():
     class Foo:
-        def foo():
+        def foo(self):
             pass
 
     assert not is_hypothesis_test(Foo().foo)
