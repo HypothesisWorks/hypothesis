@@ -201,7 +201,7 @@ def count_unique(x):
     # TODO: The Array API makes boolean indexing optional, so in the future this
     # will need to be reworked if we want to test libraries other than NumPy.
     # If not possible, errors should be caught and the test skipped.
-    # See https://github.com/data-apis/array-api/issues/249.
+    # See https://github.com/data-apis/array-api/issues/249
     filtered_x = x[~nan_index]
     unique_x = xp.unique(filtered_x)
     n_unique += unique_x.size
