@@ -317,7 +317,9 @@ class ArrayStrategy(st.SearchStrategy):
                     f_elems = str(elems)
                 else:
                     f_elems = f"[{elems[0]}, {elems[1]}, ..., {elems[-2]}, {elems[-1]}]"
-                types = tuple({type(e) for e in elems})
+                types = tuple(
+                    sorted({type(e) for e in elems}, key=lambda t: t.__name__)
+                )
                 f_types = f"type {types[0]}" if len(types) == 1 else f"types {types}"
                 raise InvalidArgument(
                     f"Generated elements {f_elems} from strategy "
