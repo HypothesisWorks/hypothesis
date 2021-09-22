@@ -265,6 +265,11 @@ class ArrayStrategy(st.SearchStrategy):
         self.unique = unique
         self.array_size = math.prod(shape)
         self.builtin = find_castable_builtin_for_dtype(xp, dtype)
+        # Checking value assignment to arrays is slightly expensive due to us
+        # casting 0d arrays to builtin objects, so we cache these values in
+        # check_hist to skip redundant checks. Any new value will be checked
+        # *before* being added to the cache, meaning we do not store disallowed
+        # elements. See https://github.com/HypothesisWorks/hypothesis/pull/3105
         self.check_hist = set()
 
     def check_set_value(self, val, val_0d, strategy):
@@ -285,6 +290,11 @@ class ArrayStrategy(st.SearchStrategy):
     def do_draw(self, data):
         if 0 in self.shape:
             return self.xp.zeros(self.shape, dtype=self.dtype)
+
+        # We reset check_hist when it reaches an arbitrarily large size to
+        # prevent unbounded memory usage.
+        if len(self.check_hist) >= 100_000:
+            self.check_hist = set()
 
         if self.fill.is_empty:
             # We have no fill value (either because the user explicitly

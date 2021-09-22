@@ -15,9 +15,9 @@
 
 import pytest
 
-from hypothesis import assume, given, strategies as st
+from hypothesis import assume, given, settings, strategies as st
 from hypothesis.errors import InvalidArgument
-from hypothesis.extra.array_api import DTYPE_NAMES, NUMERIC_NAMES
+from hypothesis.extra.array_api import DTYPE_NAMES, NUMERIC_NAMES, ArrayStrategy
 
 from tests.array_api.common import COMPLIANT_XP, xp, xps
 from tests.common.debug import find_any, minimal
@@ -483,3 +483,53 @@ def test_may_reuse_distinct_integers_if_asked():
         ),
         lambda x: count_unique(x) < x.size,
     )
+
+
+def test_check_hist_not_shared_between_test_cases():
+    """Strategy does not share its cache of checked values between test cases."""
+
+    @given(xps.arrays(dtype=xp.uint16, shape=5, elements=st.just(300)))
+    def valid_test_case(_):
+        pass
+
+    valid_test_case()
+
+    @given(xps.arrays(dtype=xp.uint8, shape=5, elements=st.just(300)))
+    @settings(max_examples=1)
+    def overflow_test_case(_):
+        pass
+
+    with pytest.raises(InvalidArgument):
+        overflow_test_case()
+
+
+@given(st.data())
+@settings(max_examples=1)
+def test_check_hist_resets(data):
+    """Strategy resets its cache of checked values once it gets too large.
+
+    At the start of a draw, xps.arrays() should check the size of the cache.
+    If it contains 100_000 or more values, it should be completely reset.
+    """
+    # Our elements/fill strategy generates values >=100_000  so that it won't
+    # collide with our mocked cached values later.
+    elements = xps.from_dtype(xp.uint64, min_value=100_000)
+    # We test with the private ArrayStrategy, as xps.arrays() returns a wrapped
+    # strategy which would make injection of our mocked cache tricky.
+    strat = ArrayStrategy(
+        xp=xp,
+        elements_strategy=elements,
+        dtype=xp.uint64,
+        shape=(5,),
+        fill=elements,
+        unique=False,
+    )
+    # We inject the mocked cache containing all positive integers below 100_000.
+    strat.check_hist = set(range(99_999))
+    # We then call the strategy's do_draw() method.
+    data.draw(strat)
+    # The cache should *not* reset here, as the check is done at the start of a draw.
+    assert len(strat.check_hist) >= 100_000
+    # But another call of do_draw() should reset the cache.
+    data.draw(strat)
+    assert 1 <= len(strat.check_hist) <= 5
