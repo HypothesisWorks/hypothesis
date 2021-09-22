@@ -487,13 +487,19 @@ def test_may_reuse_distinct_integers_if_asked():
 
 def test_check_hist_not_shared_between_test_cases():
     """Strategy does not share its cache of checked values between test cases."""
-
+    # The element 300 is valid for uint16 arrays, so it will pass its check to
+    # subsequently be cached in check_hist.
     @given(xps.arrays(dtype=xp.uint16, shape=5, elements=st.just(300)))
     def valid_test_case(_):
         pass
 
     valid_test_case()
 
+    # This should raise InvalidArgument, as the element 300 is too large for a
+    # uint8. If the cache from running valid_test_case above was shared to
+    # this test case, either no error would raise, or an array library would
+    # raise their own when assigning 300 to an array - overflow behaviour is
+    # outside the Array API spec but something we want to always prevent.
     @given(xps.arrays(dtype=xp.uint8, shape=5, elements=st.just(300)))
     @settings(max_examples=1)
     def overflow_test_case(_):
@@ -505,7 +511,7 @@ def test_check_hist_not_shared_between_test_cases():
 
 @given(st.data())
 @settings(max_examples=1)
-def test_check_hist_resets(data):
+def test_check_hist_resets_when_too_large(data):
     """Strategy resets its cache of checked values once it gets too large.
 
     At the start of a draw, xps.arrays() should check the size of the cache.
