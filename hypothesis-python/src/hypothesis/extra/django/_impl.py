@@ -20,6 +20,7 @@ from inspect import Parameter, signature
 from typing import Optional, Type, Union
 
 from django import forms as df, test as dt
+from django.contrib.staticfiles import testing as dst
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, models as dm
 
@@ -50,6 +51,14 @@ class TestCase(HypothesisTestCase, dt.TestCase):
 
 
 class TransactionTestCase(HypothesisTestCase, dt.TransactionTestCase):
+    pass
+
+
+class LiveServerTestCase(HypothesisTestCase, dt.LiveServerTestCase):
+    pass
+
+
+class StaticLiveServerTestCase(HypothesisTestCase, dst.StaticLiveServerTestCase):
     pass
 
 
