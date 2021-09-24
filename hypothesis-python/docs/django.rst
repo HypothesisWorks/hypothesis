@@ -13,7 +13,9 @@ if you're still getting security patches, you can test with Hypothesis.
 
 Using it is quite straightforward: All you need to do is subclass
 :class:`hypothesis.extra.django.TestCase` or
-:class:`hypothesis.extra.django.TransactionTestCase`
+:class:`hypothesis.extra.django.TransactionTestCase` or
+:class:`~hypothesis.extra.django.LiveServerTestCase` or
+:class:`~hypothesis.extra.django.StaticLiveServerTestCase`
 and you can use :func:`@given <hypothesis.given>` as normal,
 and the transactions will be per example
 rather than per test function as they would be if you used :func:`@given <hypothesis.given>` with a normal
@@ -23,6 +25,8 @@ on these classes that do not use
 :func:`@given <hypothesis.given>` will be run as normal.
 
 .. class:: hypothesis.extra.django.TransactionTestCase
+.. class:: hypothesis.extra.django.LiveServerTestCase
+.. class:: hypothesis.extra.django.StaticLiveServerTestCase
 
 We recommend avoiding :class:`~hypothesis.extra.django.TransactionTestCase`
 unless you really have to run each test case in a database transaction.
