@@ -48,9 +48,7 @@ def test_exception_propagates_fine_from_strategy(e):
         test_do_nothing()
 
 
-@pytest.mark.parametrize(
-    "e", [KeyboardInterrupt, SystemExit, GeneratorExit, ValueError]
-)
+@pytest.mark.parametrize("e", [KeyboardInterrupt, ValueError])
 def test_baseexception_no_rerun_no_flaky(e):
     runs = [0]
     interrupt = 3
@@ -100,3 +98,31 @@ def test_baseexception_in_strategy_no_rerun_no_flaky(e):
         # Now SystemExit and GeneratorExit are caught like other exceptions
         with pytest.raises(Flaky):
             test_do_nothing()
+
+
+TEMPLATE = """
+from hypothesis import given, note, strategies as st
+
+@st.composite
+def things(draw):
+    raise {exception}
+
+
+@given(st.data(), st.integers())
+def test(data, x):
+    if x > 100:
+        data.draw({strategy})
+        raise {exception}
+"""
+
+
+@pytest.mark.parametrize("exc_name", ["SystemExit", "GeneratorExit"])
+@pytest.mark.parametrize("use_composite", [True, False])
+def test_explanations(testdir, exc_name, use_composite):
+    code = TEMPLATE.format(
+        exception=exc_name, strategy="things()" if use_composite else "st.none()"
+    )
+    test_file = str(testdir.makepyfile(code))
+    pytest_stdout = str(testdir.runpytest_inprocess(test_file, "--tb=native").stdout)
+    assert "x=101" in pytest_stdout
+    assert exc_name in pytest_stdout
