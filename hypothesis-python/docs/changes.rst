@@ -18,6 +18,20 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.23.0:
+
+-------------------
+6.23.0 - 2021-09-26
+-------------------
+
+This release follows :pypi:`pytest` in considering :class:`SystemExit` and
+:class:`GeneratorExit` exceptions to be test failures, meaning that we will
+shink to minimal examples and check for flakiness even though they subclass
+:class:`BaseException` directly (:issue:`2223`).
+
+:class:`KeyboardInterrupt` continues to interrupt everything, and will be
+re-raised immediately.
+
 .. _v6.22.0:
 
 -------------------
