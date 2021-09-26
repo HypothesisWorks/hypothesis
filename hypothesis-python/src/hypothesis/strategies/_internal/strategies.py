@@ -458,7 +458,7 @@ class SampledFromStrategy(SearchStrategy):
     """
 
     def __init__(self, elements, repr_=None, transformations=()):
-        SearchStrategy.__init__(self)
+        super().__init__()
         self.elements = cu.check_sample(elements, "sampled_from")
         assert self.elements
         self.repr_ = repr_
@@ -592,7 +592,7 @@ class OneOfStrategy(SearchStrategy):
     """
 
     def __init__(self, strategies):
-        SearchStrategy.__init__(self)
+        super().__init__()
         strategies = tuple(strategies)
         self.original_strategies = list(strategies)
         self.__element_strategies = None
@@ -778,7 +778,7 @@ class MappedSearchStrategy(SearchStrategy):
     """
 
     def __init__(self, strategy, pack=None):
-        SearchStrategy.__init__(self)
+        super().__init__()
         self.mapped_strategy = strategy
         if pack is not None:
             self.pack = pack

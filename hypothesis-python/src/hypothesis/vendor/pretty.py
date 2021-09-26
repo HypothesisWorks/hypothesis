@@ -333,9 +333,7 @@ class RepresentationPrinter(PrettyPrinter):
         max_seq_length=MAX_SEQ_LENGTH,
     ):
 
-        PrettyPrinter.__init__(
-            self, output, max_width, newline, max_seq_length=max_seq_length
-        )
+        super().__init__(output, max_width, newline, max_seq_length=max_seq_length)
         self.verbose = verbose
         self.stack = []
         if singleton_pprinters is None:

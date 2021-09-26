@@ -121,7 +121,7 @@ class settingsMeta(type):
                 "settings with settings.load_profile, or use @settings(...) "
                 "to decorate your test instead."
             )
-        return type.__setattr__(cls, name, value)
+        return super().__setattr__(name, value)
 
 
 class settings(metaclass=settingsMeta):

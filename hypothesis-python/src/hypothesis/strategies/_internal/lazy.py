@@ -76,7 +76,7 @@ class LazyStrategy(SearchStrategy):
     """
 
     def __init__(self, function, args, kwargs, filters=(), *, force_repr=None):
-        SearchStrategy.__init__(self)
+        super().__init__()
         self.__wrapped_strategy = None
         self.__representation = force_repr
         self.function = function

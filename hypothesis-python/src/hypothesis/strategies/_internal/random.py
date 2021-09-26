@@ -190,7 +190,7 @@ class ArtificialRandom(HypothesisRandom):
     VERSION = 10 ** 6
 
     def __init__(self, note_method_calls, data):
-        HypothesisRandom.__init__(self, note_method_calls=note_method_calls)
+        super().__init__(note_method_calls=note_method_calls)
         self.__data = data
         self.__state = RandomState()
 
@@ -397,7 +397,7 @@ def convert_kwargs(name, kwargs):
 
 class TrueRandom(HypothesisRandom):
     def __init__(self, seed, note_method_calls):
-        HypothesisRandom.__init__(self, note_method_calls)
+        super().__init__(note_method_calls)
         self.__seed = seed
         self.__random = Random(seed)
 

@@ -226,7 +226,7 @@ def decode_failure(blob):
 class WithRunner(MappedSearchStrategy):
     def __init__(self, base, runner):
         assert runner is not None
-        MappedSearchStrategy.__init__(self, base)
+        super().__init__(base)
         self.runner = runner
 
     def do_draw(self, data):

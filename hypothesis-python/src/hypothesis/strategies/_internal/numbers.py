@@ -181,7 +181,7 @@ class FloatStrategy(SearchStrategy):
     """Generic superclass for strategies which produce floats."""
 
     def __init__(self, allow_infinity, allow_nan, width):
-        SearchStrategy.__init__(self)
+        super().__init__()
         assert isinstance(allow_infinity, bool)
         assert isinstance(allow_nan, bool)
         assert width in (16, 32, 64)
@@ -239,7 +239,7 @@ class FixedBoundedFloatStrategy(SearchStrategy):
     """
 
     def __init__(self, lower_bound, upper_bound, width):
-        SearchStrategy.__init__(self)
+        super().__init__()
         assert isinstance(lower_bound, float)
         assert isinstance(upper_bound, float)
         assert 0 <= lower_bound < upper_bound
