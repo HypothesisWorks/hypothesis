@@ -233,7 +233,7 @@ class StateMachineMeta(type):
                     "on the {cls} class."
                 ).format(cls=cls.__name__, value=value)
             )
-        return type.__setattr__(cls, name, value)
+        return super().__setattr__(name, value)
 
 
 class RuleBasedStateMachine(metaclass=StateMachineMeta):
@@ -883,7 +883,7 @@ LOOP_LABEL = cu.calc_label_from_name("RuleStrategy loop iteration")
 
 class RuleStrategy(SearchStrategy):
     def __init__(self, machine):
-        SearchStrategy.__init__(self)
+        super().__init__()
         self.machine = machine
         self.rules = list(machine.rules())
 

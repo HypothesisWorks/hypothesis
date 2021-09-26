@@ -35,7 +35,7 @@ class PoisonedTree(SearchStrategy):
     """
 
     def __init__(self, p):
-        SearchStrategy.__init__(self)
+        super().__init__()
         self.__p = p
 
     def do_draw(self, data):

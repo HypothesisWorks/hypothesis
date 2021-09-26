@@ -55,7 +55,7 @@ cryptography==3.4.8
     # via secretstorage
 decorator==5.1.0
     # via ipython
-distlib==0.3.2
+distlib==0.3.3
     # via virtualenv
 django==3.2.7
     # via -r requirements/tools.in
@@ -109,7 +109,7 @@ importlib-metadata==4.8.1
     #   twine
 iniconfig==1.1.1
     # via pytest
-ipython==7.27.0
+ipython==7.28.0
     # via -r requirements/tools.in
 isort==5.9.3
     # via shed
@@ -125,7 +125,7 @@ keyring==23.2.1
     # via twine
 lark-parser==0.12.0
     # via -r requirements/tools.in
-libcst==0.3.20
+libcst==0.3.21
     # via
     #   -r requirements/tools.in
     #   pybetter
@@ -161,11 +161,11 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pip-tools==6.2.0
+pip-tools==6.3.0
     # via -r requirements/tools.in
 pkginfo==1.7.1
     # via twine
-platformdirs==2.3.0
+platformdirs==2.4.0
     # via
     #   black
     #   virtualenv
@@ -213,7 +213,7 @@ pytz==2021.1
     # via
     #   babel
     #   django
-pyupgrade==2.26.0.post1
+pyupgrade==2.28.0
     # via shed
 pyyaml==5.4.1
     # via
@@ -221,7 +221,7 @@ pyyaml==5.4.1
     #   libcst
 readme-renderer==29.0
     # via twine
-regex==2021.8.28
+regex==2021.9.24
     # via black
 requests==2.26.0
     # via
@@ -295,7 +295,7 @@ tomli==1.2.1
     #   pep517
 tox==3.24.4
     # via -r requirements/tools.in
-tqdm==4.62.2
+tqdm==4.62.3
     # via twine
 traitlets==5.1.0
     # via
@@ -320,9 +320,9 @@ typing-extensions==3.10.0.2
     #   typing-inspect
 typing-inspect==0.7.1
     # via libcst
-urllib3==1.26.6
+urllib3==1.26.7
     # via requests
-virtualenv==20.8.0
+virtualenv==20.8.1
     # via tox
 wcwidth==0.2.5
     # via prompt-toolkit

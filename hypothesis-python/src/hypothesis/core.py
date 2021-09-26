@@ -226,7 +226,7 @@ def decode_failure(blob):
 class WithRunner(MappedSearchStrategy):
     def __init__(self, base, runner):
         assert runner is not None
-        MappedSearchStrategy.__init__(self, base)
+        super().__init__(base)
         self.runner = runner
 
     def do_draw(self, data):
@@ -493,7 +493,11 @@ def failure_exceptions_to_catch():
     This is intended to cover most common test runners; if you would
     like another to be added please open an issue or pull request.
     """
-    exceptions = [Exception]
+    # While SystemExit and GeneratorExit are instances of BaseException, we also
+    # expect them to be deterministic - unlike KeyboardInterrupt - and so we treat
+    # them as standard exceptions, check for flakiness, etc.
+    # See https://github.com/HypothesisWorks/hypothesis/issues/2223 for details.
+    exceptions = [Exception, SystemExit, GeneratorExit]
     if "_pytest" in sys.modules:  # pragma: no branch
         exceptions.append(sys.modules["_pytest"].outcomes.Failed)
     return tuple(exceptions)

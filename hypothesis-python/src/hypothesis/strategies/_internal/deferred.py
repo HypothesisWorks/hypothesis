@@ -24,7 +24,7 @@ class DeferredStrategy(SearchStrategy):
     """A strategy which may be used before it is fully defined."""
 
     def __init__(self, definition):
-        SearchStrategy.__init__(self)
+        super().__init__()
         self.__wrapped_strategy = None
         self.__in_repr = False
         self.__definition = definition
