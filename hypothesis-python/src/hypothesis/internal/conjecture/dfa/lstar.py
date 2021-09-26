@@ -389,7 +389,7 @@ class LearnedDFA(DFA):
     distinguished by a membership test and a set of experiments."""
 
     def __init__(self, lstar):
-        DFA.__init__(self)
+        super().__init__()
         self.__lstar = lstar
         self.__generation = lstar.generation
 

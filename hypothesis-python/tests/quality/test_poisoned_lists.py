@@ -28,7 +28,7 @@ POISON = "POISON"
 
 class Poisoned(SearchStrategy):
     def __init__(self, poison_chance):
-        SearchStrategy.__init__(self)
+        super().__init__()
         self.__poison_chance = poison_chance
         self.__ints = st.integers(0, 10)
 
@@ -41,7 +41,7 @@ class Poisoned(SearchStrategy):
 
 class LinearLists(SearchStrategy):
     def __init__(self, elements, size):
-        SearchStrategy.__init__(self)
+        super().__init__()
         self.__length = st.integers(0, size)
         self.__elements = elements
 
@@ -51,7 +51,7 @@ class LinearLists(SearchStrategy):
 
 class Matrices(SearchStrategy):
     def __init__(self, elements, size):
-        SearchStrategy.__init__(self)
+        super().__init__()
         self.__length = st.integers(0, ceil(size ** 0.5))
         self.__elements = elements
 

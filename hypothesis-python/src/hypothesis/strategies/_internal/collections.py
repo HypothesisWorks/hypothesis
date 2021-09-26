@@ -38,7 +38,7 @@ class TupleStrategy(SearchStrategy):
     strategies for each of their elements."""
 
     def __init__(self, strategies):
-        SearchStrategy.__init__(self)
+        super().__init__()
         self.element_strategies = tuple(strategies)
 
     def do_validate(self):
@@ -136,7 +136,7 @@ class ListStrategy(SearchStrategy):
     allowed lengths, and generates lists with the correct size and contents."""
 
     def __init__(self, elements, min_size=0, max_size=float("inf")):
-        SearchStrategy.__init__(self)
+        super().__init__()
         self.min_size = min_size or 0
         self.max_size = max_size if max_size is not None else float("inf")
         assert 0 <= self.min_size <= self.max_size

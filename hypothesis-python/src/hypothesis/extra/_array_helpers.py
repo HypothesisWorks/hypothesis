@@ -503,7 +503,7 @@ class MutuallyBroadcastableShapesStrategy(st.SearchStrategy):
         min_side=1,
         max_side=None,
     ):
-        st.SearchStrategy.__init__(self)
+        super().__init__()
         self.base_shape = base_shape
         self.side_strat = st.integers(min_side, max_side)
         self.num_shapes = num_shapes
