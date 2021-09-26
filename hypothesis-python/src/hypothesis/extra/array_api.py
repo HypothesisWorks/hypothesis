@@ -15,10 +15,12 @@
 
 import math
 import sys
+from collections import defaultdict
 from numbers import Real
 from types import SimpleNamespace
 from typing import (
     Any,
+    DefaultDict,
     Iterable,
     Iterator,
     List,
@@ -256,6 +258,13 @@ def _from_dtype(
 
 
 class ArrayStrategy(st.SearchStrategy):
+    # Checking value assignment to arrays is slightly expensive due to us
+    # casting 0d arrays to builtin objects, so we cache these values in
+    # check_hist to skip redundant checks. Any new value will be checked
+    # *before* being added to the cache, meaning we do not store disallowed
+    # elements. See https://github.com/HypothesisWorks/hypothesis/pull/3105
+    check_hist: DefaultDict[DataType, set] = defaultdict(set)
+
     def __init__(self, xp, elements_strategy, dtype, shape, fill, unique):
         self.xp = xp
         self.elements_strategy = elements_strategy
@@ -265,15 +274,9 @@ class ArrayStrategy(st.SearchStrategy):
         self.unique = unique
         self.array_size = math.prod(shape)
         self.builtin = find_castable_builtin_for_dtype(xp, dtype)
-        # Checking value assignment to arrays is slightly expensive due to us
-        # casting 0d arrays to builtin objects, so we cache these values in
-        # check_hist to skip redundant checks. Any new value will be checked
-        # *before* being added to the cache, meaning we do not store disallowed
-        # elements. See https://github.com/HypothesisWorks/hypothesis/pull/3105
-        self.check_hist = set()
 
     def check_set_value(self, val, val_0d, strategy):
-        if val in self.check_hist:
+        if val in self.check_hist[self.dtype]:
             return
         finite = self.builtin is bool or self.xp.isfinite(val_0d)
         if finite and self.builtin(val_0d) != val:
@@ -285,7 +288,7 @@ class ArrayStrategy(st.SearchStrategy):
                 "Consider using a more precise elements strategy, "
                 "for example passing the width argument to floats()."
             )
-        self.check_hist.add(val)
+        self.check_hist[self.dtype].add(val)
 
     def do_draw(self, data):
         if 0 in self.shape:
@@ -293,8 +296,8 @@ class ArrayStrategy(st.SearchStrategy):
 
         # We reset check_hist when it reaches an arbitrarily large size to
         # prevent unbounded memory usage.
-        if len(self.check_hist) >= 100_000:
-            self.check_hist = set()
+        if len(self.check_hist[self.dtype]) >= 100_000:
+            self.check_hist[self.dtype] = set()
 
         if self.fill.is_empty:
             # We have no fill value (either because the user explicitly

@@ -13,9 +13,11 @@
 #
 # END HEADER
 
+from copy import copy
+
 import pytest
 
-from hypothesis import assume, given, settings, strategies as st
+from hypothesis import HealthCheck, assume, given, settings, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.array_api import DTYPE_NAMES, NUMERIC_NAMES, ArrayStrategy
 
@@ -485,22 +487,75 @@ def test_may_reuse_distinct_integers_if_asked():
     )
 
 
-def test_check_hist_not_shared_between_test_cases():
-    """Strategy does not share its cache of checked values between test cases."""
+def arrays_lite(dtype, shape, elements=None):
+    """Bare minimum imitation of xps.arrays, used in fresh_arrays fixture."""
+    if isinstance(shape, int):
+        shape = (shape,)
+    elements = elements or xps.from_dtype(dtype)
+    if isinstance(elements, dict):
+        elements = xps.from_dtype(dtype, **elements)
+    return ArrayStrategy(xp, elements, dtype, shape, elements, False)
+
+
+@pytest.fixture
+def fresh_arrays():
+    """Empties cache and then yields an imitated strategy.
+
+    We use this because:
+    * xps.arrays returns a wrapped strategy, which makes accessing our cache
+      tricky.
+    * We still want to write tests like we were using xps.arrays, as opposed to
+      just using ArrayStrategy.
+    * We want to clear the cache at the start of tests, but also keep the cache
+      around so our test suite can still reap the performance gains.
+    """
+    check_hist = copy(ArrayStrategy.check_hist)
+    ArrayStrategy.check_hist.clear()
+    yield arrays_lite
+    ArrayStrategy.check_hist = check_hist
+
+
+def test_check_hist_shared_between_instances(fresh_arrays):
+    """Different instances of the strategy share the same cache of checked
+    values."""
+    first_strat = fresh_arrays(dtype=xp.uint8, shape=5)
+
+    @given(first_strat)
+    def first_test_case(_):
+        pass
+
+    first_test_case()
+    assert len(first_strat.check_hist[xp.uint8]) > 0
+    old_hist = copy(first_strat.check_hist[xp.uint8])
+
+    second_strat = fresh_arrays(dtype=xp.uint8, shape=5)
+
+    @given(second_strat)
+    def second_test_case(_):
+        pass
+
+    second_test_case()
+    assert len(second_strat.check_hist[xp.uint8]) > 0
+    assert old_hist.issubset(second_strat.check_hist[xp.uint8])
+
+
+def test_check_hist_not_shared_between_different_dtypes(fresh_arrays):
+    """Strategy does not share its cache of checked values between test cases
+    using different dtypes."""
     # The element 300 is valid for uint16 arrays, so it will pass its check to
     # subsequently be cached in check_hist.
-    @given(xps.arrays(dtype=xp.uint16, shape=5, elements=st.just(300)))
+    @given(fresh_arrays(dtype=xp.uint16, shape=5, elements=st.just(300)))
     def valid_test_case(_):
         pass
 
     valid_test_case()
 
     # This should raise InvalidArgument, as the element 300 is too large for a
-    # uint8. If the cache from running valid_test_case above was shared to
-    # this test case, either no error would raise, or an array library would
-    # raise their own when assigning 300 to an array - overflow behaviour is
-    # outside the Array API spec but something we want to always prevent.
-    @given(xps.arrays(dtype=xp.uint8, shape=5, elements=st.just(300)))
+    # uint8. If the cache from running valid_test_case above was used in this
+    # test case, either no error would raise, or an array library would raise
+    # their own when assigning 300 to an array - overflow behaviour is outside
+    # the Array API spec but something we want to always prevent.
+    @given(fresh_arrays(dtype=xp.uint8, shape=5, elements=st.just(300)))
     @settings(max_examples=1)
     def overflow_test_case(_):
         pass
@@ -510,8 +565,8 @@ def test_check_hist_not_shared_between_test_cases():
 
 
 @given(st.data())
-@settings(max_examples=1)
-def test_check_hist_resets_when_too_large(data):
+@settings(max_examples=1, suppress_health_check=(HealthCheck.function_scoped_fixture,))
+def test_check_hist_resets_when_too_large(fresh_arrays, data):
     """Strategy resets its cache of checked values once it gets too large.
 
     At the start of a draw, xps.arrays() should check the size of the cache.
@@ -519,23 +574,13 @@ def test_check_hist_resets_when_too_large(data):
     """
     # Our elements/fill strategy generates values >=100_000  so that it won't
     # collide with our mocked cached values later.
-    elements = xps.from_dtype(xp.uint64, min_value=100_000)
-    # We test with the private ArrayStrategy, as xps.arrays() returns a wrapped
-    # strategy which would make injection of our mocked cache tricky.
-    strat = ArrayStrategy(
-        xp=xp,
-        elements_strategy=elements,
-        dtype=xp.uint64,
-        shape=(5,),
-        fill=elements,
-        unique=False,
-    )
+    strat = fresh_arrays(dtype=xp.uint64, shape=5, elements={"min_value": 100_000})
     # We inject the mocked cache containing all positive integers below 100_000.
-    strat.check_hist = set(range(99_999))
+    strat.check_hist[xp.uint64] = set(range(99_999))
     # We then call the strategy's do_draw() method.
     data.draw(strat)
     # The cache should *not* reset here, as the check is done at the start of a draw.
-    assert len(strat.check_hist) >= 100_000
+    assert len(strat.check_hist[xp.uint64]) >= 100_000
     # But another call of do_draw() should reset the cache.
     data.draw(strat)
-    assert 1 <= len(strat.check_hist) <= 5
+    assert 1 <= len(strat.check_hist[xp.uint64]) <= 5
