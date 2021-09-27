@@ -294,9 +294,10 @@ class ArrayStrategy(st.SearchStrategy):
         if 0 in self.shape:
             return self.xp.zeros(self.shape, dtype=self.dtype)
 
-        # We reset check_hist when it reaches an arbitrarily large size to
-        # prevent unbounded memory usage.
-        if len(self.check_hist[self.dtype]) >= 100_000:
+        # We reset a dtype's cache when it reaches a certain size to prevent
+        # unbounded memory usage. The limit 75_000 is under a set's reallocation
+        # size of 78_642, but is other chosen as an arbitrarily large number.
+        if len(self.check_hist[self.dtype]) >= 75_000:
             self.check_hist[self.dtype] = set()
 
         if self.fill.is_empty:

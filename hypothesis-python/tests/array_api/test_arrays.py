@@ -570,17 +570,17 @@ def test_check_hist_resets_when_too_large(fresh_arrays, data):
     """Strategy resets its cache of checked values once it gets too large.
 
     At the start of a draw, xps.arrays() should check the size of the cache.
-    If it contains 100_000 or more values, it should be completely reset.
+    If it contains 75_000 or more values, it should be completely reset.
     """
-    # Our elements/fill strategy generates values >=100_000  so that it won't
+    # Our elements/fill strategy generates values >=75_000  so that it won't
     # collide with our mocked cached values later.
-    strat = fresh_arrays(dtype=xp.uint64, shape=5, elements={"min_value": 100_000})
-    # We inject the mocked cache containing all positive integers below 100_000.
-    strat.check_hist[xp.uint64] = set(range(99_999))
+    strat = fresh_arrays(dtype=xp.uint64, shape=5, elements={"min_value": 75_000})
+    # We inject the mocked cache containing all positive integers below 75_000.
+    strat.check_hist[xp.uint64] = set(range(74_999))
     # We then call the strategy's do_draw() method.
     data.draw(strat)
     # The cache should *not* reset here, as the check is done at the start of a draw.
-    assert len(strat.check_hist[xp.uint64]) >= 100_000
+    assert len(strat.check_hist[xp.uint64]) >= 75_000
     # But another call of do_draw() should reset the cache.
     data.draw(strat)
     assert 1 <= len(strat.check_hist[xp.uint64]) <= 5
