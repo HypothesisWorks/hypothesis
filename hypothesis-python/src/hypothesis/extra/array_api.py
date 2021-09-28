@@ -276,7 +276,7 @@ class ArrayStrategy(st.SearchStrategy):
         self.builtin = find_castable_builtin_for_dtype(xp, dtype)
 
     def check_set_value(self, val, val_0d, strategy):
-        if val in self.check_hist[self.dtype]:
+        if val in ArrayStrategy.check_hist[self.dtype]:
             return
         finite = self.builtin is bool or self.xp.isfinite(val_0d)
         if finite and self.builtin(val_0d) != val:
@@ -288,7 +288,7 @@ class ArrayStrategy(st.SearchStrategy):
                 "Consider using a more precise elements strategy, "
                 "for example passing the width argument to floats()."
             )
-        self.check_hist[self.dtype].add(val)
+        ArrayStrategy.check_hist[self.dtype].add(val)
 
     def do_draw(self, data):
         if 0 in self.shape:
@@ -297,8 +297,8 @@ class ArrayStrategy(st.SearchStrategy):
         # We reset a dtype's cache when it reaches a certain size to prevent
         # unbounded memory usage. The limit 75_000 is under a set's reallocation
         # size of 78_642, but is other chosen as an arbitrarily large number.
-        if len(self.check_hist[self.dtype]) >= 75_000:
-            self.check_hist[self.dtype] = set()
+        if len(ArrayStrategy.check_hist[self.dtype]) >= 75_000:
+            ArrayStrategy.check_hist[self.dtype] = set()
 
         if self.fill.is_empty:
             # We have no fill value (either because the user explicitly
