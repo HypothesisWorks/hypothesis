@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.23.1:
+
+-------------------
+6.23.1 - 2021-09-29
+-------------------
+
+This patch cleans up internal logic for :func:`xps.arrays()`. There is no
+user-visible change.
+
 .. _v6.23.0:
 
 -------------------
