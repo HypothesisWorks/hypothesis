@@ -126,6 +126,19 @@ def test_generate_arrays_from_unsigned_ints(x):
     assert_array_namespace(x)
 
 
+@given(
+    xps.arrays(
+        dtype=xp.uint8,
+        shape=(5, 5),
+        elements=xps.from_dtype(xp.uint8).map(lambda e: xp.asarray(e, dtype=xp.uint8)),
+    )
+)
+def test_generate_arrays_from_0d_arrays(x):
+    """Generate arrays from 0d array elements."""
+    assert x.shape == (5, 5)
+    assert_array_namespace(x)
+
+
 def test_minimize_arrays_with_default_dtype_shape_strategies():
     """Strategy with default scalar_dtypes and array_shapes strategies minimize
     to a boolean 1-dimensional array of size 1."""
@@ -201,6 +214,7 @@ def count_unique(x):
     # TODO: The Array API makes boolean indexing optional, so in the future this
     # will need to be reworked if we want to test libraries other than NumPy.
     # If not possible, errors should be caught and the test skipped.
+    # See https://github.com/data-apis/array-api/issues/249
     filtered_x = x[~nan_index]
     unique_x = xp.unique(filtered_x)
     n_unique += unique_x.size
@@ -228,19 +242,17 @@ def test_generate_unique_arrays(x):
     assert count_unique(x) == x.size
 
 
-def test_cannot_draw_unique_arrays_with_too_small_elements():
+@fails_with(InvalidArgument)
+@given(xps.arrays(xp.int8, 10, elements=st.integers(0, 5), unique=True))
+def test_cannot_draw_unique_arrays_with_too_small_elements(_):
     """Unique strategy with elements strategy range smaller than its size raises
     helpful error."""
-    strat = xps.arrays(xp.int8, 10, elements=st.integers(0, 5), unique=True)
-    with pytest.raises(InvalidArgument):
-        strat.example()
 
 
+@fails_with(InvalidArgument)
+@given(xps.arrays(xp.int8, 10, fill=st.just("not a castable value")))
 def test_cannot_fill_arrays_with_non_castable_value():
     """Strategy with fill not castable to dtype raises helpful error."""
-    strat = xps.arrays(xp.int8, 10, fill=st.just("not a castable value"))
-    with pytest.raises(InvalidArgument):
-        strat.example()
 
 
 @given(

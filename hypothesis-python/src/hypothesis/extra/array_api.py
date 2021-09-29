@@ -133,7 +133,7 @@ def find_castable_builtin_for_dtype(
     # None equals NumPy's xp.float64 object, so we specifically skip it here to
     # ensure that InvalidArgument is still raised. xp.float64 is in fact an
     # alias of np.dtype('float64'), and its equality with None is meant to be
-    # deprecated at some point - see https://github.com/numpy/numpy/issues/18434.
+    # deprecated at some point. See https://github.com/numpy/numpy/issues/18434
     if dtype is not None and dtype in float_dtypes:
         return float
 
@@ -266,28 +266,14 @@ class ArrayStrategy(st.SearchStrategy):
         self.array_size = math.prod(shape)
         self.builtin = find_castable_builtin_for_dtype(xp, dtype)
 
-    def set_value(self, result, i, val, strategy=None):
-        strategy = strategy or self.elements_strategy
-        try:
-            result[i] = val
-        except TypeError as e:
-            raise InvalidArgument(
-                f"Could not add generated array element {val!r} "
-                f"of dtype {type(val)} to array of dtype {result.dtype}."
-            ) from e
-        self.check_set_value(val, result[i], strategy)
-
     def check_set_value(self, val, val_0d, strategy):
-        if self.builtin is bool:
-            finite = True
-        else:
-            finite = self.xp.isfinite(val_0d)
+        finite = self.builtin is bool or self.xp.isfinite(val_0d)
         if finite and self.builtin(val_0d) != val:
             raise InvalidArgument(
                 f"Generated array element {val!r} from strategy {strategy} "
-                f"cannot be represented as dtype {self.dtype}. "
+                f"cannot be represented with dtype {self.dtype}. "
                 f"Array module {self.xp.__name__} instead "
-                f"represents the element as {val_0d!r}. "
+                f"represents the element as {val_0d}. "
                 "Consider using a more precise elements strategy, "
                 "for example passing the width argument to floats()."
             )
@@ -302,26 +288,34 @@ class ArrayStrategy(st.SearchStrategy):
             # elements strategy does not produce reusable values), so we must
             # generate a fully dense array with a freshly drawn value for each
             # entry.
-
-            # This could legitimately be a xp.empty, but the performance gains
-            # for that are likely marginal, so there's really not much point
-            # risking undefined behaviour shenanigans.
-            result = self.xp.zeros(self.array_size, dtype=self.dtype)
-
-            if self.unique:
-                seen = set()
-                elems = st.lists(
+            elems = data.draw(
+                st.lists(
                     self.elements_strategy,
                     min_size=self.array_size,
                     max_size=self.array_size,
-                    unique=True,
+                    unique=self.unique,
                 )
-                for i, v in enumerate(data.draw(elems)):
-                    self.set_value(result, i, v)
-            else:
-                for i in range(self.array_size):
-                    val = data.draw(self.elements_strategy)
-                    self.set_value(result, i, val)
+            )
+            try:
+                result = self.xp.asarray(elems, dtype=self.dtype)
+            except Exception as e:
+                if len(elems) <= 6:
+                    f_elems = str(elems)
+                else:
+                    f_elems = f"[{elems[0]}, {elems[1]}, ..., {elems[-2]}, {elems[-1]}]"
+                types = tuple(
+                    sorted({type(e) for e in elems}, key=lambda t: t.__name__)
+                )
+                f_types = f"type {types[0]}" if len(types) == 1 else f"types {types}"
+                raise InvalidArgument(
+                    f"Generated elements {f_elems} from strategy "
+                    f"{self.elements_strategy} could not be converted "
+                    f"to array of dtype {self.dtype}. "
+                    f"Consider if elements of {f_types} "
+                    f"are compatible with {self.dtype}."
+                ) from e
+            for i in range(self.array_size):
+                self.check_set_value(elems[i], result[i], self.elements_strategy)
         else:
             # We draw arrays as "sparse with an offset". We assume not every
             # element will be assigned and so first draw a single value from our
@@ -338,7 +332,7 @@ class ArrayStrategy(st.SearchStrategy):
                     f"with fill value {fill_val!r}"
                 ) from e
             sample = result[0]
-            self.check_set_value(fill_val, sample, strategy=self.fill)
+            self.check_set_value(fill_val, sample, self.fill)
             if self.unique and not self.xp.all(self.xp.isnan(result)):
                 raise InvalidArgument(
                     f"Array module {self.xp.__name__} did not recognise fill "
@@ -371,7 +365,14 @@ class ArrayStrategy(st.SearchStrategy):
                         continue
                     else:
                         seen.add(val)
-                self.set_value(result, i, val)
+                try:
+                    result[i] = val
+                except Exception as e:
+                    raise InvalidArgument(
+                        f"Could not add generated array element {val!r} "
+                        f"of type {type(val)} to array of dtype {result.dtype}."
+                    ) from e
+                self.check_set_value(val, result[i], self.elements_strategy)
                 assigned.add(i)
 
         result = self.xp.reshape(result, self.shape)
@@ -459,8 +460,9 @@ def _arrays(
     hundreds or more elements, having a fill value is essential if you want
     your tests to run in reasonable time.
     """
-
-    check_xp_attributes(xp, ["zeros", "full", "all", "isnan", "isfinite", "reshape"])
+    check_xp_attributes(
+        xp, ["asarray", "zeros", "full", "all", "isnan", "isfinite", "reshape"]
+    )
 
     if isinstance(dtype, st.SearchStrategy):
         return dtype.flatmap(
