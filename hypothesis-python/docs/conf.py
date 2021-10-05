@@ -32,6 +32,7 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
     "hoverxref.extension",
+    "sphinx_codeautolink",
     "sphinx_selective_exclude.eager_only",
 ]
 
@@ -93,6 +94,13 @@ intersphinx_mapping = {
 }
 
 autodoc_mock_imports = ["numpy", "pandas", "redis"]
+
+codeautolink_autodoc_inject = False
+codeautolink_global_preface = """
+from hypothesis import *
+import hypothesis.strategies as st
+from hypothesis.strategies import *
+"""
 
 # This config value must be a dictionary of external sites, mapping unique
 # short alias names to a base URL and a prefix.
