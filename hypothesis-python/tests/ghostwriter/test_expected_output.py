@@ -156,8 +156,12 @@ def divide(a: int, b: int) -> float:
         ),
         pytest.param(
             ("magic_builtins", ghostwriter.magic(builtins)),
-            # Signature of builtins.compile() changed in 3.8 and we use that version.
-            marks=[pytest.mark.skipif(sys.version_info[:2] <= (3, 7), reason="")],
+            marks=[
+                pytest.mark.skipif(
+                    sys.version_info[:2] not in [(3, 8), (3, 9)],
+                    reason="compile arg new in 3.8, aiter and anext new in 3.10",
+                )
+            ],
         ),
     ],
     ids=lambda x: x[0],
@@ -174,6 +178,6 @@ def test_ghostwriter_on_hypothesis(update_recorded_outputs):
     expected = get_recorded("hypothesis_module_magic", actual * update_recorded_outputs)
     # The py36 typing module has some different handling of generics (SearchStrategy)
     # and contents (collections.abc vs typing), but we can still check the code works.
-    if sys.version_info[:2] > (3, 6):
+    if (3, 6) < sys.version_info[:2] < (3, 10):
         assert actual == expected
     exec(expected, {"not_set": not_set})

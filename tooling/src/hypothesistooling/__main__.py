@@ -364,7 +364,7 @@ PY36 = "3.6.15"
 PY37 = "3.7.12"
 PY38 = PYMAIN = "3.8.12"  # Sync PYMAIN minor version with GH Actions main.yml
 PY39 = "3.9.7"
-PY310 = "3.10-dev"
+PY310 = "3.10.0"
 PYPY36 = "pypy3.6-7.3.3"
 PYPY37 = "pypy3.7-7.3.5"
 

@@ -21,6 +21,7 @@ requests
 restructuredtext-lint
 shed
 sphinx
+sphinx-codeautolink
 sphinx-hoverxref
 sphinx-rtd-theme
 sphinx-selective-exclude

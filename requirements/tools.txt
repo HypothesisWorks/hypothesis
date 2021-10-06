@@ -23,6 +23,8 @@ backports.entry-points-selectable==1.1.0
     # via virtualenv
 bandit==1.7.0
     # via flake8-bandit
+beautifulsoup4==4.10.0
+    # via sphinx-codeautolink
 black==21.9b0
     # via
     #   blacken-docs
@@ -254,10 +256,15 @@ snowballstemmer==2.1.0
     #   sphinx
 sortedcontainers==2.4.0
     # via hypothesis (hypothesis-python/setup.py)
+soupsieve==2.2.1
+    # via beautifulsoup4
 sphinx==4.2.0
     # via
     #   -r requirements/tools.in
+    #   sphinx-codeautolink
     #   sphinx-rtd-theme
+sphinx-codeautolink==0.3.0
+    # via -r requirements/tools.in
 sphinx-hoverxref==0.7b1
     # via -r requirements/tools.in
 sphinx-rtd-theme==1.0.0
