@@ -584,7 +584,6 @@ def _unsigned_integer_dtypes(
     ``sizes`` contains the unsigned integer sizes in bits, defaulting to
     ``(8, 16, 32, 64)`` which covers all valid sizes.
     """
-
     if isinstance(sizes, int):
         sizes = (sizes,)
     check_valid_sizes("int", sizes, (8, 16, 32, 64))
@@ -605,7 +604,6 @@ def _floating_dtypes(
     ``sizes`` contains the floating-point sizes in bits, defaulting to
     ``(32, 64)`` which covers all valid sizes.
     """
-
     if isinstance(sizes, int):
         sizes = (sizes,)
     check_valid_sizes("int", sizes, (32, 64))
@@ -662,7 +660,7 @@ def indices(
     allow_ellipsis: bool = True,
 ) -> st.SearchStrategy[BasicIndex]:
     """Return a strategy for :xp-ref:`valid indices <indexing.html>` of
-    arrays with the specified shape.
+    arrays with the specified shape, which may include dimensions of size zero.
 
     It generates tuples containing some mix of integers, :obj:`python:slice`
     objects, and ``...`` (an ``Ellipsis``). When a length-one tuple would be
