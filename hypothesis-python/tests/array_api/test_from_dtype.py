@@ -101,4 +101,4 @@ def test_from_dtype_with_kwargs(data, dtype, kwargs, predicate):
 def test_can_minimize_floats():
     """Inferred float strategy minimizes to a good example."""
     smallest = minimal(xps.from_dtype(xp.float32), lambda n: n >= 1.0)
-    assert smallest in (1, 50)
+    assert smallest == 1
