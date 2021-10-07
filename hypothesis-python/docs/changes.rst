@@ -366,7 +366,7 @@ to :pep:`646` is released, hopefully in Python 3.11.
 --------------------
 
 This patch teaches :doc:`the Ghostwriter <ghostwriter>` how to find
-:np-ref:`custom ufuncs <ufuncs.html>` from *any* module that defines them,
+:doc:`custom ufuncs <numpy:reference/ufuncs>` from *any* module that defines them,
 and that ``yaml.unsafe_load()`` does not undo ``yaml.safe_load()``.
 
 .. _v6.13.12:
@@ -1685,8 +1685,8 @@ Thanks to Zac Hatfield-Dodds and Nikita Sobolev for this feature!
 
 This patch adds two new :doc:`ghostwriters <ghostwriter>` to test
 :wikipedia:`binary operations <Binary_operation>`, like :func:`python:operator.add`,
-and Numpy :np-ref:`ufuncs <ufuncs.html>` and :np-ref:`gufuncs
-<c-api/generalized-ufuncs.html>` like :obj:`np.matmul() <numpy:numpy.matmul>`.
+and Numpy :doc:`ufuncs <reference/ufuncs>` and :doc:`gufuncs
+<numpy:reference/c-api/generalized-ufuncs>` like :data:`np.matmul() <numpy:numpy.matmul>`.
 
 .. _v5.26.1:
 
@@ -3330,7 +3330,7 @@ a ``__file__``, such as a :mod:`python:zipapp` (:issue:`2196`).
 This release adds a ``signature`` argument to
 :func:`~hypothesis.extra.numpy.mutually_broadcastable_shapes` (:issue:`2174`),
 which allows us to generate shapes which are valid for functions like
-:obj:`numpy:numpy.matmul` that require shapes which are not simply broadcastable.
+:data:`np.matmul() <numpy:numpy.matmul>` that require shapes which are not simply broadcastable.
 
 Thanks to everyone who has contributed to this feature over the last year,
 and a particular shout-out to Zac Hatfield-Dodds and Ryan Soklaski for
@@ -8319,7 +8319,7 @@ unnoticeable. Previously it was large and became much larger in :ref:`3.30.4 <v3
 -------------------
 
 :func:`~hypothesis.strategies.from_type` failed with a very confusing error
-if passed a :func:`~python:typing.NewType` (:issue:`901`).  These psudeo-types
+if passed a :obj:`~typing.NewType` (:issue:`901`).  These pseudo-types
 are now unwrapped correctly, and strategy inference works as expected.
 
 .. _v3.31.3:
