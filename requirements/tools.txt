@@ -33,7 +33,7 @@ blacken-docs==1.11.0
     # via -r requirements/tools.in
 bleach==4.1.0
     # via readme-renderer
-certifi==2021.5.30
+certifi==2021.10.8
     # via requests
 cffi==1.14.6
     # via cryptography
@@ -43,8 +43,6 @@ click==7.1.2
     # via
     #   black
     #   pip-tools
-    #   pybetter
-    #   pyemojify
 codespell==2.1.0
     # via -r requirements/tools.in
 colorama==0.4.4
@@ -59,7 +57,7 @@ decorator==5.1.0
     # via ipython
 distlib==0.3.3
     # via virtualenv
-django==3.2.7
+django==3.2.8
     # via -r requirements/tools.in
 docutils==0.17.1
     # via
@@ -69,7 +67,7 @@ docutils==0.17.1
     #   sphinx-rtd-theme
 dpcontracts==0.6.0
     # via -r requirements/tools.in
-filelock==3.2.1
+filelock==3.3.0
     # via
     #   tox
     #   virtualenv
@@ -121,7 +119,7 @@ jeepney==0.7.1
     # via
     #   keyring
     #   secretstorage
-jinja2==3.0.1
+jinja2==3.0.2
     # via sphinx
 keyring==23.2.1
     # via twine
@@ -130,7 +128,6 @@ lark-parser==0.12.0
 libcst==0.3.21
     # via
     #   -r requirements/tools.in
-    #   pybetter
     #   shed
 markupsafe==2.0.1
     # via jinja2
@@ -163,7 +160,7 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pip-tools==6.3.0
+pip-tools==6.3.1
     # via -r requirements/tools.in
 pkginfo==1.7.1
     # via twine
@@ -183,8 +180,6 @@ py==1.10.0
     # via
     #   pytest
     #   tox
-pybetter==0.3.7
-    # via shed
 pycodestyle==2.7.0
     # via
     #   flake8
@@ -193,8 +188,6 @@ pycparser==2.20
     # via cffi
 pydocstyle==6.1.1
     # via flake8-docstrings
-pyemojify==0.2.0
-    # via pybetter
 pyflakes==2.3.1
     # via
     #   autoflake
@@ -202,7 +195,6 @@ pyflakes==2.3.1
 pygments==2.10.0
     # via
     #   ipython
-    #   pybetter
     #   readme-renderer
     #   sphinx
 pyparsing==2.4.7
@@ -239,7 +231,7 @@ rfc3986==1.5.0
     # via twine
 secretstorage==3.3.1
     # via keyring
-shed==0.4.2
+shed==0.5.1
     # via -r requirements/tools.in
 six==1.16.0
     # via
@@ -263,7 +255,7 @@ sphinx==4.2.0
     #   -r requirements/tools.in
     #   sphinx-codeautolink
     #   sphinx-rtd-theme
-sphinx-codeautolink==0.3.0
+sphinx-codeautolink==0.4.0
     # via -r requirements/tools.in
 sphinx-hoverxref==0.7b1
     # via -r requirements/tools.in
