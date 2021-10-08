@@ -747,12 +747,13 @@ mutually_broadcastable_shapes.__doc__ = f"""
 
     **Use with Generalised Universal Function signatures**
 
-    A :np-ref:`universal function <ufuncs.html>` (or ufunc for short) is a function
+    A :doc:`universal function <numpy:reference/ufuncs>` (or ufunc for short) is a function
     that operates on ndarrays in an element-by-element fashion, supporting array
     broadcasting, type casting, and several other standard features.
-    A :np-ref:`generalised ufunc <c-api/generalized-ufuncs.html>` operates on
+    A :doc:`generalised ufunc <numpy:reference/c-api/generalized-ufuncs>` operates on
     sub-arrays rather than elements, based on the "signature" of the function.
-    Compare e.g. :obj:`numpy:numpy.add` (ufunc) to :obj:`numpy:numpy.matmul` (gufunc).
+    Compare e.g. :obj:`numpy.add() <numpy:numpy.add>` (ufunc) to
+    :obj:`numpy.matmul() <numpy:numpy.matmul>` (gufunc).
 
     To generate shapes for a gufunc, you can pass the ``signature`` argument instead of
     ``num_shapes``.  This must be a gufunc signature string; which you can write by
@@ -791,7 +792,7 @@ def basic_indices(
     allow_newaxis: bool = False,
     allow_ellipsis: bool = True,
 ) -> st.SearchStrategy[BasicIndex]:
-    """Return a strategy for :np-ref:`basic indexes <arrays.indexing.html>` of
+    """Return a strategy for :doc:`basic indexes <numpy:reference/arrays.indexing>` of
     arrays with the specified shape, which may include dimensions of size zero.
 
     It generates tuples containing some mix of integers, :obj:`python:slice`

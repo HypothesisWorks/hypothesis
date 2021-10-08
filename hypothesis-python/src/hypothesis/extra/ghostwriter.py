@@ -1292,10 +1292,10 @@ def _make_binop_body(
 
 
 def ufunc(func: Callable, *, except_: Except = (), style: str = "pytest") -> str:
-    """Write a property-based test for the :np-ref:`array unfunc <ufuncs.html>` ``func``.
+    """Write a property-based test for the :doc:`array ufunc <numpy:reference/ufuncs>` ``func``.
 
-    The resulting test checks that your ufunc or :np-ref:`gufunc
-    <c-api/generalized-ufuncs.html>` has the expected broadcasting and dtype casting
+    The resulting test checks that your ufunc or :doc:`gufunc
+    <numpy:reference/c-api/generalized-ufuncs>` has the expected broadcasting and dtype casting
     behaviour.  You will probably want to add extra assertions, but as with the other
     ghostwriters this gives you a great place to start.
 

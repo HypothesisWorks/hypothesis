@@ -91,6 +91,7 @@ intersphinx_mapping = {
     "dateutil": ("https://dateutil.readthedocs.io/en/stable/", None),
     "redis": ("https://redis-py.readthedocs.io/en/stable/", None),
     "attrs": ("https://www.attrs.org/en/stable/", None),
+    "sphinx": ("https://www.sphinx-doc.org/en/master/", None),
 }
 
 autodoc_mock_imports = ["numpy", "pandas", "redis"]
@@ -114,7 +115,6 @@ extlinks = {
     "pull": (_repo + "pull/%s", "pull request #"),
     "pypi": ("https://pypi.org/project/%s/", ""),
     "bpo": ("https://bugs.python.org/issue%s", "bpo-"),
-    "np-ref": ("https://numpy.org/doc/stable/reference/%s", ""),
     "xp-ref": ("https://data-apis.org/array-api/latest/API_specification/%s", ""),
     "wikipedia": ("https://en.wikipedia.org/wiki/%s", ""),
 }
