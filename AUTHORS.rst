@@ -104,6 +104,7 @@ their individual contributions.
 * `Nicholas Chammas <https://www.github.com/nchammas>`_
 * `Nick Anyos <https://www.github.com/NickAnyos>`_
 * `Nikita Sobolev <https://github.com/sobolevn>`_ (mail@sobolevn.me)
+* `Oleg Höfling <https://github.com/hoefling>`_ (oleg.hoefling@gmail.com)
 * `Paul Ganssle <https://ganssle.io>`_ (paul@ganssle.io)
 * `Paul Kehrer <https://github.com/reaperhulk>`_
 * `Paul Lorett Amazona <https://github.com/whatevergeek>`_

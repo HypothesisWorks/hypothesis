@@ -91,6 +91,7 @@ intersphinx_mapping = {
     "dateutil": ("https://dateutil.readthedocs.io/en/stable/", None),
     "redis": ("https://redis-py.readthedocs.io/en/stable/", None),
     "attrs": ("https://www.attrs.org/en/stable/", None),
+    "sphinx": ("https://www.sphinx-doc.org/en/master/", None),
 }
 
 autodoc_mock_imports = ["numpy", "pandas", "redis"]
