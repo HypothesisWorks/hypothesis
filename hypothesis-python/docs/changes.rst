@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.23.2:
+
+-------------------
+6.23.2 - 2021-10-08
+-------------------
+
+This patch replaces external links to :doc:`NumPy <numpy:index>` API docs
+with :mod:`sphinx.ext.intersphinx` cross-references. It is purely a documentation improvement.
+
 .. _v6.23.1:
 
 -------------------
