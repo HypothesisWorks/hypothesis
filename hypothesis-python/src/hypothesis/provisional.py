@@ -45,7 +45,7 @@ except ImportError:
     f = os.path.join(os.path.dirname(__file__), "vendor", "tlds-alpha-by-domain.txt")
     with open(f) as tld_file:
         _tlds = tld_file.read().splitlines()
-else:  # pragma: no cover  # new in Python 3.7
+else:
     _tlds = read_text("hypothesis.vendor", "tlds-alpha-by-domain.txt").splitlines()
 assert _tlds[0].startswith("#")
 TOP_LEVEL_DOMAINS = ["COM"] + sorted(_tlds[1:], key=len)

@@ -182,7 +182,7 @@ def recursive_property(name, default):
             # Note: This is actually covered, by test_very_deep_deferral
             # in tests/cover/test_deferred_strategies.py. Unfortunately it
             # runs into a coverage bug. See
-            # https://bitbucket.org/ned/coveragepy/issues/605/
+            # https://github.com/nedbat/coveragepy/issues/605
             # for details.
             if count > 50:  # pragma: no cover
                 key = frozenset(mapping.items())

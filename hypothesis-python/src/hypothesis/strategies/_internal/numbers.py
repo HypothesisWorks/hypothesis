@@ -210,7 +210,7 @@ class FloatStrategy(SearchStrategy):
             try:
                 float_of(f, self.width)
                 return True
-            except OverflowError:  # pragma: no cover
+            except OverflowError:
                 return False
         return True
 
@@ -259,10 +259,7 @@ class FixedBoundedFloatStrategy(SearchStrategy):
             self.upper_bound - self.lower_bound
         ) * d.fractional_float(data)
         if self.width < 64:
-            try:
-                f = float_of(f, self.width)
-            except OverflowError:  # pragma: no cover
-                reject()
+            f = float_of(f, self.width)
         assume(self.lower_bound <= f <= self.upper_bound)
         return f
 

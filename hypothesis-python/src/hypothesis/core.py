@@ -478,11 +478,11 @@ def skip_exceptions_to_reraise():
     # and more importantly it avoids possible side-effects :-)
     if "unittest" in sys.modules:
         exceptions.add(sys.modules["unittest"].SkipTest)
-    if "unittest2" in sys.modules:  # pragma: no cover
+    if "unittest2" in sys.modules:
         exceptions.add(sys.modules["unittest2"].SkipTest)
-    if "nose" in sys.modules:  # pragma: no cover
+    if "nose" in sys.modules:
         exceptions.add(sys.modules["nose"].SkipTest)
-    if "_pytest" in sys.modules:  # pragma: no branch
+    if "_pytest" in sys.modules:
         exceptions.add(sys.modules["_pytest"].outcomes.Skipped)
     return tuple(sorted(exceptions, key=str))
 
@@ -498,7 +498,7 @@ def failure_exceptions_to_catch():
     # them as standard exceptions, check for flakiness, etc.
     # See https://github.com/HypothesisWorks/hypothesis/issues/2223 for details.
     exceptions = [Exception, SystemExit, GeneratorExit]
-    if "_pytest" in sys.modules:  # pragma: no branch
+    if "_pytest" in sys.modules:
         exceptions.append(sys.modules["_pytest"].outcomes.Failed)
     return tuple(exceptions)
 
@@ -861,7 +861,7 @@ class StateForActualGivenExecution:
                 # branch to verify this and see it fail - and additionally the
                 # second branch still complains about lack of coverage even if
                 # you add a pragma: no cover to it!
-                # See https://bitbucket.org/ned/coveragepy/issues/623/
+                # See https://github.com/nedbat/coveragepy/issues/623
                 if self.settings.print_blob:
                     report(
                         "\nYou can reproduce this example by temporarily adding "

@@ -128,7 +128,7 @@ def from_model(
     return _models_impl(st.builds(m_type.objects.get_or_create, **field_strategies))
 
 
-if sys.version_info[:2] >= (3, 8):  # pragma: no cover
+if sys.version_info[:2] >= (3, 8):  # pragma: no branch
     # See notes above definition of st.builds() - this signature is compatible
     # and better matches the semantics of the function.  Great for documentation!
     sig = signature(from_model)

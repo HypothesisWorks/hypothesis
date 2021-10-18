@@ -188,11 +188,13 @@ def format():
 
     # .coveragerc lists several regex patterns to treat as nocover pragmas, and
     # we want to find (and delete) cases where # pragma: no cover is redundant.
+    def warn(msg):
+        raise Exception(msg)
+
     config = CoverageConfig()
-    config.from_file(os.path.join(hp.BASE_DIR, ".coveragerc"), our_file=True)
+    config.from_file(os.path.join(hp.BASE_DIR, ".coveragerc"), warn=warn, our_file=True)
     pattern = "|".join(l for l in config.exclude_list if "pragma" not in l)
-    unused_pragma_pattern = re.compile(f"({pattern}).*# pragma: no cover")
-    utf8_encoding_pattern = re.compile(r'\.(en|de)code\("utf-8"\)')
+    unused_pragma_pattern = re.compile(f"(({pattern}).*)  # pragma: no (branch|cover)")
 
     for f in files_to_format:
         lines = []
@@ -210,9 +212,7 @@ def format():
                     lines = []
                     header_done = True
                 else:
-                    if unused_pragma_pattern.search(l) is not None:
-                        lines.append(l.replace("# pragma: no cover", ""))
-                    lines.append(utf8_encoding_pattern.sub(r".\1code()", l))
+                    lines.append(unused_pragma_pattern.sub(r"\1", l))
         source = "".join(lines).strip()
         with open(f, "w", encoding="utf-8") as o:
             if shebang is not None:
