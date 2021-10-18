@@ -127,4 +127,4 @@ def test_datetimes_can_exclude_imaginary():
 def test_non_imaginary_datetimes_at_boundary(val):
     # This is expected to fail because Australia/Sydney is UTC+10,
     # and the filter logic overflows when checking for round-trips.
-    assert False
+    raise AssertionError

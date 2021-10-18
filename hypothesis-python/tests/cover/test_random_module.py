@@ -32,7 +32,7 @@ def test_can_seed_random():
 
                 @given(st.random_module())
                 def test(r):
-                    assert False
+                    raise AssertionError
 
                 test()
     assert "RandomSeeder(0)" in out.getvalue()

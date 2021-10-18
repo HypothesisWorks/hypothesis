@@ -64,7 +64,7 @@ def test_flatmap_retrieve_from_db():
     def record_and_test_size(xs):
         if sum(xs) >= 1:
             track.append(xs)
-            assert False
+            raise AssertionError
 
     with pytest.raises(AssertionError):
         record_and_test_size()

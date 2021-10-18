@@ -130,7 +130,7 @@ class FlakyRatchettingMachine(RuleBasedStateMachine):
         FlakyRatchettingMachine.ratchet += 1
         n = FlakyRatchettingMachine.ratchet
         d.draw(lists(integers(), min_size=n, max_size=n))
-        assert False
+        raise AssertionError
 
 
 class MachineWithConsumingRule(RuleBasedStateMachine):
@@ -209,7 +209,7 @@ def test_multiple_variables_printed():
 
         @rule()
         def fail_fast(self):
-            assert False
+            raise AssertionError
 
     with capture_out() as o:
         # The state machine must raise an exception for the
@@ -243,7 +243,7 @@ def test_no_variables_printed():
 
         @rule()
         def fail_fast(self):
-            assert False
+            raise AssertionError
 
     with capture_out() as o:
         # The state machine must raise an exception for the
@@ -679,7 +679,7 @@ def test_prints_equal_values_with_correct_variable_name():
 
         @rule(source=b2)
         def fail(self, source):
-            assert False
+            raise AssertionError
 
     with capture_out() as o:
         with pytest.raises(AssertionError):
@@ -712,7 +712,7 @@ def test_initialize_rule():
 
         @rule()
         def fail_fast(self):
-            assert False
+            raise AssertionError
 
     with capture_out() as o:
         with pytest.raises(AssertionError):
@@ -741,7 +741,7 @@ def test_initialize_rule_populate_bundle():
 
         @rule(param=a)
         def fail_fast(self, param):
-            assert False
+            raise AssertionError
 
     WithInitializeBundleRules.TestCase.settings = NO_BLOB_SETTINGS
     with capture_out() as o:
@@ -824,7 +824,7 @@ def test_initialize_rule_in_state_machine_with_inheritance():
 
         @rule()
         def fail_fast(self):
-            assert False
+            raise AssertionError
 
     with capture_out() as o:
         with pytest.raises(AssertionError):
@@ -933,7 +933,7 @@ def test_uses_seed(capsys):
     class TrivialMachine(RuleBasedStateMachine):
         @rule()
         def oops(self):
-            assert False
+            raise AssertionError
 
     with pytest.raises(AssertionError):
         run_state_machine_as_test(TrivialMachine)
@@ -946,7 +946,7 @@ def test_reproduce_failure_works():
     class TrivialMachine(RuleBasedStateMachine):
         @rule()
         def oops(self):
-            assert False
+            raise AssertionError
 
     with pytest.raises(AssertionError):
         run_state_machine_as_test(TrivialMachine, settings=Settings(print_blob=True))
@@ -957,7 +957,7 @@ def test_reproduce_failure_fails_if_no_error():
     class TrivialMachine(RuleBasedStateMachine):
         @rule()
         def ok(self):
-            assert True
+            pass
 
     with pytest.raises(DidNotReproduce):
         run_state_machine_as_test(TrivialMachine, settings=Settings(print_blob=True))

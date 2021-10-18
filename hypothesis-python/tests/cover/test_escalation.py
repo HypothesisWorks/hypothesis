@@ -23,7 +23,7 @@ from hypothesis.internal import escalation as esc
 
 def test_does_not_escalate_errors_in_non_hypothesis_file():
     try:
-        assert False
+        raise AssertionError
     except AssertionError:
         esc.escalate_hypothesis_internal_error()
 
@@ -33,7 +33,7 @@ def test_does_escalate_errors_in_hypothesis_file(monkeypatch):
 
     with pytest.raises(AssertionError):
         try:
-            assert False
+            raise AssertionError
         except AssertionError:
             esc.escalate_hypothesis_internal_error()
 
@@ -43,7 +43,7 @@ def test_does_not_escalate_errors_in_hypothesis_file_if_disabled(monkeypatch):
     monkeypatch.setattr(esc, "PREVENT_ESCALATION", True)
 
     try:
-        assert False
+        raise AssertionError
     except AssertionError:
         esc.escalate_hypothesis_internal_error()
 

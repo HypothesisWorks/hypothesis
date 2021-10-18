@@ -86,7 +86,7 @@ class _EDMeta(abc.ABCMeta):
 # This code only runs if Sphinx has already been imported; and it would live in our
 # docs/conf.py except that we would also like it to work for anyone documenting
 # downstream ExampleDatabase subclasses too.
-if "sphinx" in sys.modules:  # pragma: no cover
+if "sphinx" in sys.modules:
     try:
         from sphinx.ext.autodoc import _METACLASS_CALL_BLACKLIST
 

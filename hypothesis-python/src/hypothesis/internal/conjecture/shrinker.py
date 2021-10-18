@@ -101,8 +101,8 @@ def defines_shrink_pass():
     def accept(run_step):
         ShrinkPassDefinition(run_with_chooser=run_step)
 
-        def run(self):  # pragma: no cover
-            raise AssertionError("Shrink passes should not be run directly")
+        def run(self):
+            raise NotImplementedError("Shrink passes should not be run directly")
 
         run.__name__ = run_step.__name__
         run.is_shrink_pass = True
@@ -1323,8 +1323,8 @@ class Shrinker:
                         attempt[u:v] = int_to_bytes(value - 1, v - u)
                 elif d == "X":
                     del attempt[u:v]
-                else:  # pragma: no cover
-                    raise AssertionError(f"Unrecognised command {d!r}")
+                else:
+                    raise NotImplementedError(f"Unrecognised command {d!r}")
         return self.incorporate_new_buffer(attempt)
 
 

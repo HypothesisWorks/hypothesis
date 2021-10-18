@@ -31,4 +31,4 @@ def kwonlyargs_composites(draw, *, kwarg1=None):
     )
 )
 def test_composite_with_keyword_only_args(a):
-    assert True
+    pass

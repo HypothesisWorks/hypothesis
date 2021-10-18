@@ -247,7 +247,7 @@ def test_outputs_random_calls(use_true_random):
     @given(st.randoms(use_true_random=use_true_random, note_method_calls=True))
     def test(rnd):
         rnd.uniform(0.1, 0.5)
-        assert False
+        raise AssertionError
 
     with capture_out() as out:
         with pytest.raises(AssertionError):
@@ -264,7 +264,7 @@ def test_converts_kwargs_correctly_in_output(use_true_random):
     @given(st.randoms(use_true_random=use_true_random, note_method_calls=True))
     def test(rnd):
         rnd.choices([1, 2, 3, 4], k=2)
-        assert False
+        raise AssertionError
 
     with capture_out() as out:
         with pytest.raises(AssertionError):

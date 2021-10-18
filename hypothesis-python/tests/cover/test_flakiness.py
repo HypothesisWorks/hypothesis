@@ -48,7 +48,7 @@ def test_gives_flaky_error_if_assumption_is_flaky():
     def oops(s):
         assume(s not in seen)
         seen.add(s)
-        assert False
+        raise AssertionError
 
     with pytest.raises(Flaky):
         oops()

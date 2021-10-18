@@ -31,7 +31,7 @@ def always_passes(*args, **kwargs):
 
 @given(st.integers())
 def test_can_replace_inner_test(x):
-    assert False, "This should be replaced"
+    raise AssertionError("This should be replaced")
 
 
 test_can_replace_inner_test.hypothesis.inner_test = always_passes
@@ -50,7 +50,7 @@ def decorator(func):
 @decorator
 @given(st.integers())
 def test_can_replace_when_decorated(x):
-    assert False, "This should be replaced"
+    raise AssertionError("This should be replaced")
 
 
 test_can_replace_when_decorated.hypothesis.inner_test = always_passes
@@ -59,7 +59,7 @@ test_can_replace_when_decorated.hypothesis.inner_test = always_passes
 @pytest.mark.parametrize("x", [1, 2])
 @given(y=st.integers())
 def test_can_replace_when_parametrized(x, y):
-    assert False, "This should be replaced"
+    raise AssertionError("This should be replaced")
 
 
 test_can_replace_when_parametrized.hypothesis.inner_test = always_passes
@@ -69,7 +69,7 @@ def test_can_replace_when_original_is_invalid():
     # Invalid: @given with too many positional arguments
     @given(st.integers(), st.integers())
     def invalid_test(x):
-        assert False
+        raise AssertionError
 
     invalid_test.hypothesis.inner_test = always_passes
 
@@ -81,7 +81,7 @@ def test_can_replace_when_original_is_invalid():
 
 def test_inner_is_original_even_when_invalid():
     def invalid_test(x):
-        assert False
+        raise AssertionError
 
     original = invalid_test
 

@@ -292,7 +292,7 @@ def test_is_ascii(x):
 def test_is_not_ascii(x):
     try:
         x.encode("ascii")
-        assert False
+        raise AssertionError
     except UnicodeEncodeError:
         pass
 
@@ -338,7 +338,7 @@ def test_can_run_without_database():
     @given(integers())
     @settings(database=None)
     def test_blah(x):
-        assert False
+        raise AssertionError
 
     with raises(AssertionError):
         test_blah()
@@ -418,7 +418,7 @@ def test_when_set_to_no_simplifies_runs_failing_example_twice():
         if x > 11:
             note("Lo")
             failing.append(x)
-            assert False
+            raise AssertionError
 
     with raises(AssertionError):
         with capture_out() as out:

@@ -68,7 +68,7 @@ def test_clears_out_database_as_things_get_boring():
         if not keys:
             break
     else:
-        assert False
+        raise AssertionError
 
 
 def test_trashes_invalid_examples():

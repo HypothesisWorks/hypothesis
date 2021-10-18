@@ -73,7 +73,7 @@ def test_can_inject_mock_via_fixture(mock_fixture, xs):
     succeeds. If this test fails, then we know we've run the test body instead
     of the mock.
     """
-    assert False
+    raise AssertionError
 
 
 @given(integers())

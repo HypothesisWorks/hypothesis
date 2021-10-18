@@ -92,7 +92,7 @@ def describe_statistics(stats_dict):
         if distinct_failures:
             plural = distinct_failures > 1
             lines.append(
-                "    - Found {}{} failing example{} in this phase".format(
+                "    - Found {}{} distinct error{} in this phase".format(
                     distinct_failures, " more" * bool(prev_failures), "s" * plural
                 )
             )

@@ -61,7 +61,7 @@ def test_can_sample_enums(member):
 @fails_with(FailedHealthCheck)
 @given(sampled_from(range(10)).filter(lambda x: x < 0))
 def test_unsat_filtered_sampling(x):
-    assert False
+    raise AssertionError
 
 
 @fails_with(Unsatisfiable)
@@ -69,7 +69,7 @@ def test_unsat_filtered_sampling(x):
 def test_unsat_filtered_sampling_in_rejection_stage(x):
     # Rejecting all possible indices before we calculate the allowed indices
     # takes an early exit path, so we need this test to cover that branch.
-    assert False
+    raise AssertionError
 
 
 def test_easy_filtered_sampling():

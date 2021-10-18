@@ -1,11 +1,12 @@
 [run]
 branch = True
-include =
-    **/.tox/*/lib/*/site-packages/hypothesis/*.py
-    **/.tox/*/lib/*/site-packages/hypothesis/**/*.py
 omit =
     **/pytestplugin.py
     **/scrutineer.py
+    **/extra/array_api.py
+    **/extra/cli.py
+    **/extra/django/*.py
+    **/extra/ghostwriter.py
 
 [report]
 exclude_lines =
@@ -18,4 +19,5 @@ exclude_lines =
     except ImportError:
     if PYPY:
     if TYPE_CHECKING:
+    if "\w+" in sys\.modules:
     assert all\(.+\)

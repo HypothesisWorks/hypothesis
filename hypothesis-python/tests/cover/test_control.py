@@ -73,7 +73,7 @@ def test_can_nest_build_context():
 def test_does_not_suppress_exceptions():
     with pytest.raises(AssertionError):
         with bc():
-            assert False
+            raise AssertionError
     assert _current_build_context.value is None
 
 
@@ -86,7 +86,7 @@ def test_suppresses_exceptions_in_teardown():
                     raise ValueError()
 
                 cleanup(foo)
-                assert False
+                raise AssertionError
 
     assert "ValueError" in o.getvalue()
     assert _current_build_context.value is None
@@ -107,7 +107,7 @@ def test_runs_multiple_cleanup_with_teardown():
 
                 cleanup(foo)
                 cleanup(bar)
-                assert False
+                raise AssertionError
 
     assert "ValueError" in o.getvalue()
     assert "TypeError" in o.getvalue()

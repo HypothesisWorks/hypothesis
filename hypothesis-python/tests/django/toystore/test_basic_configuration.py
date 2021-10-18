@@ -81,7 +81,7 @@ class TestWorkflow(VanillaTestCase):
         class LocalTest(DjangoTestCase):
             @given(integers())
             def tst(self, i):
-                assert False, "InvalidArgument should be raised in @given"
+                raise AssertionError("InvalidArgument should be raised in @given")
 
         with pytest.raises(InvalidArgument):
             LocalTest("tst").tst()
