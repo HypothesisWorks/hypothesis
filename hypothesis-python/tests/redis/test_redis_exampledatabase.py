@@ -13,12 +13,27 @@
 #
 # END HEADER
 
+import pytest
 from fakeredis import FakeRedis
 
 from hypothesis import strategies as st
 from hypothesis.database import InMemoryExampleDatabase
+from hypothesis.errors import InvalidArgument
 from hypothesis.extra.redis import RedisExampleDatabase
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
+
+
+@pytest.mark.parametrize(
+    "kw",
+    [
+        {"redis": "not a redis instance"},
+        {"redis": FakeRedis(), "expire_after": 10},  # not a timedelta
+        {"redis": FakeRedis(), "key_prefix": "not a bytestring"},
+    ],
+)
+def test_invalid_args_raise(kw):
+    with pytest.raises(InvalidArgument):
+        RedisExampleDatabase(**kw)
 
 
 class DatabaseComparison(RuleBasedStateMachine):

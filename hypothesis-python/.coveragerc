@@ -3,6 +3,10 @@ branch = True
 omit =
     **/pytestplugin.py
     **/scrutineer.py
+    **/extra/array_api.py
+    **/extra/cli.py
+    **/extra/django/*.py
+    **/extra/ghostwriter.py
 
 [report]
 exclude_lines =

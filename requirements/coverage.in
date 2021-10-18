@@ -1,5 +1,12 @@
+backports.zoneinfo
+black
+click
 coverage
+dpcontracts
+fakeredis
 lark-parser
+libcst
 numpy
 pandas
+python-dateutil
 pytz
