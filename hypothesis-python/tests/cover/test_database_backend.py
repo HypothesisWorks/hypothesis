@@ -78,9 +78,8 @@ def test_does_not_error_when_fetching_when_not_exist(tmpdir):
 def exampledatabase(request, tmpdir):
     if request.param == "memory":
         return ExampleDatabase()
-    if request.param == "directory":
-        return DirectoryBasedExampleDatabase(str(tmpdir.join("examples")))
-    assert False
+    assert request.param == "directory"
+    return DirectoryBasedExampleDatabase(str(tmpdir.join("examples")))
 
 
 def test_can_delete_a_key_that_is_not_present(exampledatabase):

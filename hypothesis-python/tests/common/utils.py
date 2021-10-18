@@ -40,13 +40,12 @@ except ModuleNotFoundError:
                 import re
 
                 assert re.search(match, e.args[0])
-            # Return so that we don't hit the failure assertion below.
-            return
-        # This needs to be outside the try/except, so that the helper doesn't
-        # trick itself into thinking that an AssertionError was thrown.
-        assert (
-            False
-        ), f"Expected to raise an exception ({expected_exception!r}) but didn't"
+        else:
+            # This needs to be outside the try/except, so that the helper doesn't
+            # trick itself into thinking that an AssertionError was thrown.
+            raise AssertionError(
+                f"Expected to raise an exception ({expected_exception!r}) but didn't"
+            ) from None
 
 
 no_shrink = tuple(set(settings.default.phases) - {Phase.shrink})

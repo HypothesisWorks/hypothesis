@@ -173,7 +173,7 @@ def test_shrinks_both_failures():
     def test(i):
         if i >= 10000:
             first_has_failed[0] = True
-            assert False
+            raise AssertionError
         assert i < 10000
         if first_has_failed[0]:
             if second_target[0] is None:
@@ -279,7 +279,7 @@ def test_stops_immediately_if_not_report_multiple_bugs():
     @given(st.integers())
     def test(x):
         seen.add(x)
-        assert False
+        raise AssertionError
 
     with pytest.raises(AssertionError):
         test()

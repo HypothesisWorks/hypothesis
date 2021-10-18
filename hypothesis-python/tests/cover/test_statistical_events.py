@@ -142,7 +142,7 @@ def test_flaky_exit():
             if first[0]:
                 first[0] = False
                 print("Hi")
-                assert False
+                raise AssertionError
 
     stats = call_for_statistics(test)
     assert stats["stopped-because"] == "test was flaky"

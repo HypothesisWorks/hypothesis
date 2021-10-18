@@ -50,7 +50,7 @@ def test_does_not_log_in_quiet_mode():
         @settings(verbosity=Verbosity.quiet, print_blob=False)
         @given(integers())
         def test_foo(x):
-            assert False
+            raise AssertionError
 
         test_foo()
     assert not o.getvalue()

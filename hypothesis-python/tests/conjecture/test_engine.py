@@ -460,7 +460,7 @@ def test_can_shrink_variable_draws(n_large):
 
 def test_run_nothing():
     def f(data):
-        assert False
+        raise AssertionError
 
     runner = ConjectureRunner(f, settings=settings(phases=()))
     runner.run()

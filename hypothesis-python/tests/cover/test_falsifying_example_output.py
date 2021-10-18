@@ -57,7 +57,7 @@ def test_inserts_line_breaks_only_at_appropriate_lengths(line_break, input):
 def test_vararg_output():
     @given(foo=st.text())
     def test(*args, foo):
-        assert False
+        raise AssertionError
 
     with capture_out() as cap:
         with pytest.raises(AssertionError):

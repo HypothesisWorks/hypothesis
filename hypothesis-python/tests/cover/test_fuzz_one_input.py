@@ -79,7 +79,7 @@ def test_can_fuzz_with_database_eq_None():
     @given(st.none())
     @settings(database=None)
     def test(s):
-        assert False
+        raise AssertionError
 
     with pytest.raises(AssertionError):
         test.hypothesis.fuzz_one_input(b"\x00\x00")

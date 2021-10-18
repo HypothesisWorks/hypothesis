@@ -395,8 +395,8 @@ class DFA:
                         states.append(j)
                         path.append(c)
                         break
-                else:  # pragma: no cover
-                    assert False
+                else:
+                    raise NotImplementedError("Should be unreachable")
             assert self.is_accepting(states[-1])
             assert len(states) == len(path) + 1
             yield bytes(path)

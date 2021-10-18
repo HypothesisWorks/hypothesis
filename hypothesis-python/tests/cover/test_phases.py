@@ -37,7 +37,7 @@ def test_does_not_use_explicit_examples(i):
 @settings(phases=(Phase.reuse, Phase.shrink))
 @given(st.booleans())
 def test_this_would_fail_if_you_ran_it(b):
-    assert False
+    raise AssertionError
 
 
 @pytest.mark.parametrize(

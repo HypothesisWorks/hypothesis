@@ -64,7 +64,7 @@ def test_chained_filters_find_rare_value(x):
 @fails_with(InvalidArgument)
 @given(st.sets(st.sampled_from(range(10)), min_size=11))
 def test_unsat_sets_of_samples(x):
-    assert False
+    raise AssertionError
 
 
 @given(st.sets(st.sampled_from(range(50)), min_size=50))

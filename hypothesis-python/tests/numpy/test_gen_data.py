@@ -21,7 +21,7 @@ import numpy as np
 import pytest
 
 from hypothesis import HealthCheck, assume, given, note, settings, strategies as st
-from hypothesis.errors import InvalidArgument
+from hypothesis.errors import InvalidArgument, UnsatisfiedAssumption
 from hypothesis.extra import numpy as nps
 
 from tests.common.debug import find_any, minimal
@@ -502,8 +502,7 @@ def test_broadcastable_shape_bounds_are_satisfied(shape, data):
             label="bshape",
         )
     except InvalidArgument:
-        assume(False)
-        assert False, "unreachable"
+        raise UnsatisfiedAssumption from None
 
     if max_dims is None:
         max_dims = max(len(shape), min_dims) + 2
@@ -542,8 +541,7 @@ def test_mutually_broadcastable_shape_bounds_are_satisfied(
             label="shapes, result",
         )
     except InvalidArgument:
-        assume(False)
-        assert False, "unreachable"
+        raise UnsatisfiedAssumption from None
 
     if max_dims is None:
         max_dims = max(len(base_shape), min_dims) + 2

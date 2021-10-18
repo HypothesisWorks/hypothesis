@@ -69,7 +69,7 @@ class Valueless:
 
     @given(integers())
     def test_boom(self, x):
-        assert False
+        raise AssertionError
 
 
 def test_boom():

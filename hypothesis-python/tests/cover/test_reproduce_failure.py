@@ -151,7 +151,7 @@ def test_does_not_print_reproduction_for_simple_examples_by_default():
     @settings(print_blob=False)
     @given(st.integers())
     def test(i):
-        assert False
+        raise AssertionError
 
     with capture_out() as o:
         with pytest.raises(AssertionError):
@@ -164,7 +164,7 @@ def test_does_not_print_reproduction_for_simple_data_examples_by_default():
     @given(st.data())
     def test(data):
         data.draw(st.integers())
-        assert False
+        raise AssertionError
 
     with capture_out() as o:
         with pytest.raises(AssertionError):

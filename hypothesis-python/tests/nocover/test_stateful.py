@@ -128,7 +128,7 @@ class PopulateMultipleTargets(RuleBasedStateMachine):
 
     @rule(x=b1, y=b2)
     def fail(self, x, y):
-        assert False
+        raise AssertionError
 
 
 class CanSwarm(RuleBasedStateMachine):

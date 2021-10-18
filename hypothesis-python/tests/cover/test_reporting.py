@@ -29,7 +29,7 @@ from tests.common.utils import capture_out
 def test_can_suppress_output():
     @given(integers())
     def test_int(x):
-        assert False
+        raise AssertionError
 
     with capture_out() as o:
         with reporting.with_reporter(reporting.silent):
@@ -48,7 +48,7 @@ def test_can_print_bytes():
 def test_prints_output_by_default():
     @given(integers())
     def test_int(x):
-        assert False
+        raise AssertionError
 
     with capture_out() as o:
         with reporting.with_reporter(reporting.default):

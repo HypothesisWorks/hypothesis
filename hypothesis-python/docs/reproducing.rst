@@ -57,7 +57,7 @@ styles will work as expected:
   @example("Hello world")
   @example(x="Some very long string")
   def test_some_code(x):
-      assert True
+      pass
 
 
   from unittest import TestCase
@@ -68,7 +68,7 @@ styles will work as expected:
       @example("Hello world")
       @example(x="Some very long string")
       def test_some_code(self, x):
-          assert True
+          pass
 
 As with ``@given``, it is not permitted for a single example to be a mix of
 positional and keyword arguments.

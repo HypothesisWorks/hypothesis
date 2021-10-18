@@ -93,7 +93,7 @@ def find_any(definition, condition=lambda _: True, settings=None):
 def assert_no_examples(strategy, condition=lambda _: True):
     try:
         result = find_any(strategy, condition)
-        assert False, f"Expected no results but found {result!r}"
+        raise AssertionError(f"Expected no results but found {result!r}")
     except (Unsatisfiable, NoSuchExample):
         pass
 

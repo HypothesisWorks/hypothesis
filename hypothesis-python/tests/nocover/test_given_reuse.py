@@ -36,7 +36,7 @@ given_named_booleans = given(z=st.text())
 def test_fail_independently():
     @given_named_booleans
     def test_z1(z):
-        assert False
+        raise AssertionError
 
     @given_named_booleans
     def test_z2(z):
