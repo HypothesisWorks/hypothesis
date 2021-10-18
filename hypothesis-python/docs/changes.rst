@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.23.3:
+
+-------------------
+6.23.3 - 2021-10-18
+-------------------
+
+This patch updates our formatting with :pypi:`shed`.
+
 .. _v6.23.2:
 
 -------------------
