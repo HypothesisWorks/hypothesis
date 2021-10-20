@@ -360,21 +360,26 @@ def run_tox(task, version):
 
 
 # See update_python_versions() above
+# When adding or removing a version, also update the env lists in tox.ini and
+# workflows/main.yml, and the corresponding @python_tests function below.
 PY36 = "3.6.15"
 PY37 = "3.7.12"
 PY38 = PYMAIN = "3.8.12"  # Sync PYMAIN minor version with GH Actions main.yml
 PY39 = "3.9.7"
 PY310 = "3.10.0"
 PYPY36 = "pypy3.6-7.3.3"
-PYPY37 = "pypy3.7-7.3.5"
+PYPY37 = "pypy3.7-7.3.6"
+PYPY38 = "pypy3.8-7.3.6"
 
 
 # ALIASES are the executable names for each Python version
-ALIASES = {PYPY36: "pypy3", PYPY37: "pypy3"}
-
-for n in [PY36, PY37, PY38, PY39, PY310]:
-    major, minor, patch = n.replace("-dev", ".").split(".")
-    ALIASES[n] = f"python{major}.{minor}"
+ALIASES = {}
+for name, value in list(globals().items()):
+    if name.startswith("PYPY"):
+        ALIASES[value] = "pypy3"
+    elif name.startswith("PY"):
+        major, minor, patch = value.replace("-dev", ".").split(".")
+        ALIASES[value] = f"python{major}.{minor}"
 
 
 python_tests = task(
@@ -420,6 +425,11 @@ def check_pypy36():
 @python_tests
 def check_pypy37():
     run_tox("pypy3-full", PYPY37)
+
+
+@python_tests
+def check_pypy38():
+    run_tox("pypy3-full", PYPY38)
 
 
 def standard_tox_task(name):

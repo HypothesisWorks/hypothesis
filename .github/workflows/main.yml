@@ -28,6 +28,7 @@ jobs:
           - check-py37
           - check-pypy37
           - check-py38
+          - check-pypy38
           - check-py39
           - check-py310
           - check-quality
