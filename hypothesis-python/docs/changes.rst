@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.23.4:
+
+-------------------
+6.23.4 - 2021-10-20
+-------------------
+
+This patch adds an error for when ``shapes`` in :func:`xps.arrays()` is not
+passed as either a valid shape or strategy.
+
 .. _v6.23.3:
 
 -------------------
