@@ -33,6 +33,7 @@ def e(a, **kwargs):
         e(xps.arrays, dtype=xp.int8, shape=(0.5,)),
         e(xps.arrays, dtype=xp.int8, shape=1, fill=3),
         e(xps.arrays, dtype=xp.int8, shape=1, elements="not a strategy"),
+        e(xps.arrays, dtype=xp.int8, shape="not a shape or strategy"),
         e(xps.array_shapes, min_side=2, max_side=1),
         e(xps.array_shapes, min_dims=3, max_dims=2),
         e(xps.array_shapes, min_dims=-1),

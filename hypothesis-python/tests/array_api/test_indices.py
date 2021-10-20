@@ -21,32 +21,41 @@ from tests.array_api.common import xp, xps
 from tests.common.debug import find_any
 
 
-def test_indices_options():
-    indexers = (
+def test_generate_indices_with_and_without_ellipsis():
+    """Strategy can generate indices with and without Ellipsis."""
+    strat = (
         xps.array_shapes(min_dims=1, max_dims=32)
         .flatmap(xps.indices)
         .map(lambda idx: idx if isinstance(idx, tuple) else (idx,))
     )
-    find_any(indexers, lambda ix: Ellipsis in ix)
-    find_any(indexers, lambda ix: Ellipsis not in ix)
+    find_any(strat, lambda ix: Ellipsis in ix)
+    find_any(strat, lambda ix: Ellipsis not in ix)
 
 
-def test_indices_can_generate_empty_tuple():
+def test_generate_empty_tuple():
+    """Strategy generates empty tuples as indices."""
     find_any(xps.indices(shape=(0, 0), allow_ellipsis=True), lambda ix: ix == ())
 
 
-def test_indices_can_generate_non_tuples():
+def test_generate_non_tuples():
+    """Strategy generates non-tuples as indices."""
     find_any(
         xps.indices(shape=(0, 0), allow_ellipsis=True),
         lambda ix: not isinstance(ix, tuple),
     )
 
 
-def test_indices_can_generate_long_ellipsis():
-    # Runs of slice(None) - such as [0,:,:,:,0] - can be replaced by e.g. [0,...,0]
+def test_generate_long_ellipsis():
+    """Strategy can replace runs of slice(None) with Ellipsis.
+
+    We specifically test if [0,...,0] is generated alongside [0,:,:,:,0]
+    """
+    strat = xps.indices(shape=(1, 0, 0, 0, 1), max_dims=3, allow_ellipsis=True)
+    find_any(strat, lambda ix: len(ix) == 3 and ix[1] == Ellipsis)
     find_any(
-        xps.indices(shape=(1, 0, 0, 0, 1), max_dims=3, allow_ellipsis=True),
-        lambda ix: len(ix) == 3 and ix[1] == Ellipsis,
+        strat,
+        lambda ix: len(ix) == 5
+        and all(isinstance(key, slice) and key == slice(None) for key in ix[1:3]),
     )
 
 
@@ -74,6 +83,7 @@ def test_indices_effeciently_generate_indexers(_):
     data=st.data(),
 )
 def test_indices_generate_valid_indexers(shape, allow_ellipsis, data):
+    """Strategy generates valid indices."""
     min_dims = data.draw(st.integers(0, len(shape)), label="min_dims")
     max_dims = data.draw(
         st.none() | st.integers(min_dims, len(shape)), label="max_dims"

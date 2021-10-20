@@ -468,16 +468,17 @@ def _arrays(
         return dtype.flatmap(
             lambda d: _arrays(xp, d, shape, elements=elements, fill=fill, unique=unique)
         )
+    elif isinstance(dtype, str):
+        dtype = dtype_from_name(xp, dtype)
+
     if isinstance(shape, st.SearchStrategy):
         return shape.flatmap(
             lambda s: _arrays(xp, dtype, s, elements=elements, fill=fill, unique=unique)
         )
-
-    if isinstance(dtype, str):
-        dtype = dtype_from_name(xp, dtype)
-
-    if isinstance(shape, int):
+    elif isinstance(shape, int):
         shape = (shape,)
+    elif not isinstance(shape, tuple):
+        raise InvalidArgument(f"shape={shape} is not a valid shape or strategy")
     check_argument(
         all(isinstance(x, int) and x >= 0 for x in shape),
         f"shape={shape!r}, but all dimensions must be non-negative integers.",
@@ -584,7 +585,6 @@ def _unsigned_integer_dtypes(
     ``sizes`` contains the unsigned integer sizes in bits, defaulting to
     ``(8, 16, 32, 64)`` which covers all valid sizes.
     """
-
     if isinstance(sizes, int):
         sizes = (sizes,)
     check_valid_sizes("int", sizes, (8, 16, 32, 64))
@@ -605,7 +605,6 @@ def _floating_dtypes(
     ``sizes`` contains the floating-point sizes in bits, defaulting to
     ``(32, 64)`` which covers all valid sizes.
     """
-
     if isinstance(sizes, int):
         sizes = (sizes,)
     check_valid_sizes("int", sizes, (32, 64))
@@ -662,7 +661,7 @@ def indices(
     allow_ellipsis: bool = True,
 ) -> st.SearchStrategy[BasicIndex]:
     """Return a strategy for :xp-ref:`valid indices <indexing.html>` of
-    arrays with the specified shape.
+    arrays with the specified shape, which may include dimensions of size zero.
 
     It generates tuples containing some mix of integers, :obj:`python:slice`
     objects, and ``...`` (an ``Ellipsis``). When a length-one tuple would be
