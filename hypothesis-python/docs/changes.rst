@@ -18,6 +18,19 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.24.0:
+
+-------------------
+6.24.0 - 2021-10-23
+-------------------
+
+This patch updates our vendored `list of top-level domains
+<https://data.iana.org/TLD/tlds-alpha-by-domain.txt>`__, which is used
+by the provisional :func:`~hypothesis.provisional.domains` strategy.
+
+(did you know that gTLDs can be both `added <https://newgtlds.icann.org/en/>`__
+and `removed <https://www.icann.org/resources/pages/gtld-registry-agreement-termination-2015-10-09-en>`__?)
+
 .. _v6.23.4:
 
 -------------------
