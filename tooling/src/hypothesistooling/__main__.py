@@ -20,6 +20,8 @@ import subprocess
 import sys
 from datetime import datetime
 from glob import glob
+from urllib.parse import urlparse
+from urllib.request import urlretrieve
 
 import hypothesistooling as tools
 import hypothesistooling.projects.conjecturerust as cr
@@ -306,8 +308,18 @@ def update_python_versions():
         build_sh.chmod(0o755)
 
 
+def update_vendored_files():
+    for url in [
+        # Turns out that as well as adding new gTLDs, IANA can *terminate* old ones
+        "http://data.iana.org/TLD/tlds-alpha-by-domain.txt",
+    ]:
+        fname = urlparse(url).path.split("/")[-1]
+        urlretrieve(url, os.path.join(hp.PYTHON_SRC, "hypothesis", "vendor", fname))
+
+
 @task()
 def upgrade_requirements():
+    update_vendored_files()
     compile_requirements(upgrade=True)
     subprocess.call(["./build.sh", "format"], cwd=tools.ROOT)  # exits 1 if changed
     diff = ["git", "diff", "--no-patch", "--exit-code", "--", hp.PYTHON_SRC]

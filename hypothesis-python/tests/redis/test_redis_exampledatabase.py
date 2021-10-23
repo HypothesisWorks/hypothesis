@@ -36,6 +36,18 @@ def test_invalid_args_raise(kw):
         RedisExampleDatabase(**kw)
 
 
+def test_all_methods():
+    db = RedisExampleDatabase(FakeRedis())
+    db.save(b"key1", b"value")
+    assert list(db.fetch(b"key1")) == [b"value"]
+    db.move(b"key1", b"key2", b"value")
+    assert list(db.fetch(b"key1")) == []
+    assert list(db.fetch(b"key2")) == [b"value"]
+    db.delete(b"key2", b"value")
+    assert list(db.fetch(b"key2")) == []
+    db.delete(b"key2", b"unknown value")
+
+
 class DatabaseComparison(RuleBasedStateMachine):
     def __init__(self):
         super().__init__()
