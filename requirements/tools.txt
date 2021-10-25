@@ -8,6 +8,8 @@ alabaster==0.7.12
     # via sphinx
 asgiref==3.4.1
     # via django
+astor==0.8.1
+    # via flake8-simplify
 attrs==21.2.0
     # via
     #   flake8-bugbear
@@ -78,9 +80,14 @@ flake8==4.0.1
     #   flake8-bandit
     #   flake8-bugbear
     #   flake8-comprehensions
+    #   flake8-datetimez
     #   flake8-docstrings
+    #   flake8-helper
     #   flake8-mutable
+    #   flake8-noqa
     #   flake8-polyfill
+    #   flake8-simplify
+    #   flake8-strftime
 flake8-2020==1.6.0
     # via -r requirements/tools.in
 flake8-bandit==2.1.2
@@ -89,12 +96,22 @@ flake8-bugbear==21.9.2
     # via -r requirements/tools.in
 flake8-comprehensions==3.7.0
     # via -r requirements/tools.in
+flake8-datetimez==20.10.0
+    # via -r requirements/tools.in
 flake8-docstrings==1.6.0
     # via -r requirements/tools.in
+flake8-helper==0.1.1
+    # via flake8-strftime
 flake8-mutable==1.2.0
+    # via -r requirements/tools.in
+flake8-noqa==1.2.0
     # via -r requirements/tools.in
 flake8-polyfill==1.0.2
     # via flake8-bandit
+flake8-simplify==0.14.2
+    # via -r requirements/tools.in
+flake8-strftime==0.3.2
+    # via -r requirements/tools.in
 gitdb==4.0.9
     # via gitpython
 gitpython==3.1.24
@@ -312,6 +329,7 @@ types-redis==3.5.15
 typing-extensions==3.10.0.2
     # via
     #   black
+    #   flake8-noqa
     #   gitpython
     #   libcst
     #   mypy
