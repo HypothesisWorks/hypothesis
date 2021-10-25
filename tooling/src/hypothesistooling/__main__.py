@@ -21,12 +21,12 @@ import sys
 from datetime import datetime
 from glob import glob
 from urllib.parse import urlparse
-from urllib.request import urlretrieve
 
 import hypothesistooling as tools
 import hypothesistooling.projects.conjecturerust as cr
 import hypothesistooling.projects.hypothesispython as hp
 import hypothesistooling.projects.hypothesisruby as hr
+import requests
 from coverage.config import CoverageConfig
 from hypothesistooling import installers as install, releasemanagement as rm
 from hypothesistooling.scripts import pip_tool
@@ -309,12 +309,15 @@ def update_python_versions():
 
 
 def update_vendored_files():
-    for url in [
-        # Turns out that as well as adding new gTLDs, IANA can *terminate* old ones
-        "http://data.iana.org/TLD/tlds-alpha-by-domain.txt",
-    ]:
-        fname = urlparse(url).path.split("/")[-1]
-        urlretrieve(url, os.path.join(hp.PYTHON_SRC, "hypothesis", "vendor", fname))
+    vendor = pathlib.Path(hp.PYTHON_SRC) / "hypothesis" / "vendor"
+
+    # Turns out that as well as adding new gTLDs, IANA can *terminate* old ones
+    url = "http://data.iana.org/TLD/tlds-alpha-by-domain.txt"
+    fname = vendor / urlparse(url).path.split("/")[-1]
+    new = requests.get(url).content
+    # If only the timestamp in the header comment has changed, skip the update.
+    if fname.read_bytes().splitlines()[1:] != new.splitlines()[1:]:
+        fname.write_bytes(new)
 
 
 @task()
