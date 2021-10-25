@@ -8,6 +8,8 @@ alabaster==0.7.12
     # via sphinx
 asgiref==3.4.1
     # via django
+astor==0.8.1
+    # via flake8-simplify
 attrs==21.2.0
     # via
     #   flake8-bugbear
@@ -78,9 +80,14 @@ flake8==4.0.1
     #   flake8-bandit
     #   flake8-bugbear
     #   flake8-comprehensions
+    #   flake8-datetimez
     #   flake8-docstrings
+    #   flake8-helper
     #   flake8-mutable
+    #   flake8-noqa
     #   flake8-polyfill
+    #   flake8-simplify
+    #   flake8-strftime
 flake8-2020==1.6.0
     # via -r requirements/tools.in
 flake8-bandit==2.1.2
@@ -89,13 +96,23 @@ flake8-bugbear==21.9.2
     # via -r requirements/tools.in
 flake8-comprehensions==3.7.0
     # via -r requirements/tools.in
+flake8-datetimez==20.10.0
+    # via -r requirements/tools.in
 flake8-docstrings==1.6.0
     # via -r requirements/tools.in
+flake8-helper==0.1.1
+    # via flake8-strftime
 flake8-mutable==1.2.0
+    # via -r requirements/tools.in
+flake8-noqa==1.2.0
     # via -r requirements/tools.in
 flake8-polyfill==1.0.2
     # via flake8-bandit
-gitdb==4.0.7
+flake8-simplify==0.14.2
+    # via -r requirements/tools.in
+flake8-strftime==0.3.2
+    # via -r requirements/tools.in
+gitdb==4.0.9
     # via gitpython
 gitpython==3.1.24
     # via bandit
@@ -154,7 +171,7 @@ pathspec==0.9.0
     # via black
 pbr==5.6.0
     # via stevedore
-pep517==0.11.1
+pep517==0.12.0
     # via pip-tools
 pexpect==4.8.0
     # via ipython
@@ -172,7 +189,7 @@ pluggy==1.0.0
     # via
     #   pytest
     #   tox
-prompt-toolkit==3.0.20
+prompt-toolkit==3.0.21
     # via ipython
 ptyprocess==0.7.0
     # via pexpect
@@ -197,7 +214,7 @@ pygments==2.10.0
     #   ipython
     #   readme-renderer
     #   sphinx
-pyparsing==2.4.7
+pyparsing==3.0.1
     # via packaging
 pytest==6.2.5
     # via -r requirements/tools.in
@@ -215,7 +232,7 @@ pyyaml==6.0
     #   libcst
 readme-renderer==30.0
     # via twine
-regex==2021.10.8
+regex==2021.10.23
     # via black
 requests==2.26.0
     # via
@@ -240,7 +257,7 @@ six==1.16.0
     #   python-dateutil
     #   tox
     #   virtualenv
-smmap==4.0.0
+smmap==5.0.0
     # via gitdb
 snowballstemmer==2.1.0
     # via
@@ -257,7 +274,7 @@ sphinx==4.2.0
     #   sphinx-rtd-theme
 sphinx-codeautolink==0.4.0
     # via -r requirements/tools.in
-sphinx-hoverxref==0.7b1
+sphinx-hoverxref==0.8b1
     # via -r requirements/tools.in
 sphinx-rtd-theme==1.0.0
     # via -r requirements/tools.in
@@ -277,9 +294,9 @@ sphinxcontrib-serializinghtml==1.1.5
     # via sphinx
 sqlparse==0.4.2
     # via django
-stevedore==3.4.0
+stevedore==3.5.0
     # via bandit
-tokenize-rt==4.1.0
+tokenize-rt==4.2.1
     # via pyupgrade
 toml==0.10.2
     # via
@@ -312,6 +329,7 @@ types-redis==3.5.15
 typing-extensions==3.10.0.2
     # via
     #   black
+    #   flake8-noqa
     #   gitpython
     #   libcst
     #   mypy
@@ -320,7 +338,7 @@ typing-inspect==0.7.1
     # via libcst
 urllib3==1.26.7
     # via requests
-virtualenv==20.8.1
+virtualenv==20.9.0
     # via tox
 wcwidth==0.2.5
     # via prompt-toolkit
