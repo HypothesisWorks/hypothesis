@@ -280,13 +280,12 @@ def update_python_versions():
     result = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE).stdout.decode()
     # pyenv reports available versions in chronological order, so we keep the newest
     # *unless* our current ends with a digit (is stable) and the candidate does not.
-    digits = tuple("0123456789")
+    stable = re.compile(r".*3\.\d+.\d+$")
     best = {}
     for line in map(str.strip, result.splitlines()):
-        m = re.match(r"(?:pypy)?3\.(?:[6-9]|\d\d)", line)
-        if m:
+        if m := re.match(r"(?:pypy)?3\.(?:[6-9]|\d\d)", line):
             key = m.group()
-            if key.endswith(digits) or not best.get(key, key).endswith(digits):
+            if stable.match(line) or not stable.match(best.get(key, line)):
                 best[key] = line
     print(best)
     thisfile = pathlib.Path(__file__)
