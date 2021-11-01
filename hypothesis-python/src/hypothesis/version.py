@@ -13,5 +13,5 @@
 #
 # END HEADER
 
-__version_info__ = (6, 24, 0)
+__version_info__ = (6, 24, 1)
 __version__ = ".".join(map(str, __version_info__))
