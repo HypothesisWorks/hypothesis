@@ -27,7 +27,7 @@ bandit==1.7.0
     # via flake8-bandit
 beautifulsoup4==4.10.0
     # via sphinx-codeautolink
-black==21.9b0
+black==21.10b0
     # via
     #   blacken-docs
     #   shed
@@ -51,7 +51,7 @@ colorama==0.4.4
     # via twine
 com2ann==0.3.0
     # via shed
-coverage==6.0.2
+coverage==6.1.1
     # via -r requirements/tools.in
 cryptography==35.0.0
     # via secretstorage
@@ -69,7 +69,7 @@ docutils==0.17.1
     #   sphinx-rtd-theme
 dpcontracts==0.6.0
     # via -r requirements/tools.in
-filelock==3.3.1
+filelock==3.3.2
     # via
     #   tox
     #   virtualenv
@@ -126,7 +126,7 @@ importlib-metadata==4.8.1
     #   twine
 iniconfig==1.1.1
     # via pytest
-ipython==7.28.0
+ipython==7.29.0
     # via -r requirements/tools.in
 isort==5.9.3
     # via shed
@@ -159,7 +159,7 @@ mypy-extensions==0.4.3
     #   black
     #   mypy
     #   typing-inspect
-packaging==21.0
+packaging==21.2
     # via
     #   bleach
     #   pytest
@@ -214,7 +214,7 @@ pygments==2.10.0
     #   ipython
     #   readme-renderer
     #   sphinx
-pyparsing==3.0.1
+pyparsing==2.4.7
     # via packaging
 pytest==6.2.5
     # via -r requirements/tools.in
@@ -304,7 +304,7 @@ toml==0.10.2
     #   mypy
     #   pytest
     #   tox
-tomli==1.2.1
+tomli==1.2.2
     # via
     #   black
     #   pep517
@@ -312,7 +312,7 @@ tox==3.24.4
     # via -r requirements/tools.in
 tqdm==4.62.3
     # via twine
-traitlets==5.1.0
+traitlets==5.1.1
     # via
     #   ipython
     #   matplotlib-inline
