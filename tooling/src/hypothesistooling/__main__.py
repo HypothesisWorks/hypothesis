@@ -319,18 +319,27 @@ def update_vendored_files():
         fname.write_bytes(new)
 
 
+def has_diff(file_or_directory):
+    diff = ["git", "diff", "--no-patch", "--exit-code", "--", file_or_directory]
+    return subprocess.call(diff) != 0
+
+
 @task()
 def upgrade_requirements():
     update_vendored_files()
     compile_requirements(upgrade=True)
     subprocess.call(["./build.sh", "format"], cwd=tools.ROOT)  # exits 1 if changed
-    diff = ["git", "diff", "--no-patch", "--exit-code", "--", hp.PYTHON_SRC]
-    if subprocess.call(diff) != 0 and not os.path.isfile(hp.RELEASE_FILE):
-        with open(hp.RELEASE_FILE, mode="w") as f:
-            f.write(
-                "RELEASE_TYPE: patch\n\nThis patch updates our autoformatting "
-                "tools, improving our code style without any API changes.\n"
+    if has_diff(hp.PYTHON_SRC) and not os.path.isfile(hp.RELEASE_FILE):
+        if has_diff(f"{hp.PYTHON_SRC}/hypothesis/vendor/tlds-alpha-by-domain.txt"):
+            msg = (
+                "our vendored `list of top-level domains "
+                "<https://www.iana.org/domains/root/db>`__,\nwhich is used by the "
+                "provisional :func:`~hypothesis.provisional.domains` strategy."
             )
+        else:
+            msg = "our autoformatting tools, improving our code style without any API changes."
+        with open(hp.RELEASE_FILE, mode="w") as f:
+            f.write(f"RELEASE_TYPE: patch\n\nThis patch updates {msg}\n")
     update_python_versions()
     subprocess.call(["git", "add", "."], cwd=tools.ROOT)
 
