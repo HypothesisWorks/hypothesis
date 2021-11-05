@@ -406,9 +406,7 @@ def _arrays(
       disabled entirely and every element will be generated independently.
     * ``unique`` specifies if the elements of the array should all be distinct
       from one another; if fill is also set, the only valid values for fill to
-      return are NaN values.  Note that Hypothesis always allows multiple NaN
-      values, even though `xp.unique() might only return a single NaN.
-      <https://data-apis.org/array-api/latest/API_specification/set_functions.html#objects-in-api>`__
+      return are NaN values.
 
     Arrays of specified ``dtype`` and ``shape`` are generated for example
     like this:
@@ -875,6 +873,7 @@ if np is not None:
         # Constants
         nan=np.nan,
         # Data type functions
+        astype=lambda x, d: x.astype(d),
         iinfo=np.iinfo,
         finfo=np.finfo,
         broadcast_arrays=np.broadcast_arrays,
@@ -899,7 +898,7 @@ if np is not None:
         # Sorting functions
         sort=np.sort,
         # Set functions
-        unique=np.unique,
+        unique_values=np.unique,
         # Utility functions
         any=np.any,
         all=np.all,
