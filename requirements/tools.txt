@@ -59,7 +59,7 @@ decorator==5.1.0
     # via ipython
 distlib==0.3.3
     # via virtualenv
-django==3.2.8
+django==3.2.9
     # via -r requirements/tools.in
 docutils==0.17.1
     # via
@@ -100,7 +100,7 @@ flake8-datetimez==20.10.0
     # via -r requirements/tools.in
 flake8-docstrings==1.6.0
     # via -r requirements/tools.in
-flake8-helper==0.1.1
+flake8-helper==0.2.0
     # via flake8-strftime
 flake8-mutable==1.2.0
     # via -r requirements/tools.in
@@ -128,7 +128,7 @@ iniconfig==1.1.1
     # via pytest
 ipython==7.29.0
     # via -r requirements/tools.in
-isort==5.9.3
+isort==5.10.0
     # via shed
 jedi==0.18.0
     # via ipython
@@ -169,7 +169,7 @@ parso==0.8.2
     # via jedi
 pathspec==0.9.0
     # via black
-pbr==5.6.0
+pbr==5.7.0
     # via stevedore
 pep517==0.12.0
     # via pip-tools
@@ -189,11 +189,11 @@ pluggy==1.0.0
     # via
     #   pytest
     #   tox
-prompt-toolkit==3.0.21
+prompt-toolkit==3.0.22
     # via ipython
 ptyprocess==0.7.0
     # via pexpect
-py==1.10.0
+py==1.11.0
     # via
     #   pytest
     #   tox
@@ -201,7 +201,7 @@ pycodestyle==2.8.0
     # via
     #   flake8
     #   flake8-bandit
-pycparser==2.20
+pycparser==2.21
     # via cffi
 pydocstyle==6.1.1
     # via flake8-docstrings
@@ -232,7 +232,7 @@ pyyaml==6.0
     #   libcst
 readme-renderer==30.0
     # via twine
-regex==2021.10.23
+regex==2021.11.2
     # via black
 requests==2.26.0
     # via
@@ -265,7 +265,7 @@ snowballstemmer==2.1.0
     #   sphinx
 sortedcontainers==2.4.0
     # via hypothesis (hypothesis-python/setup.py)
-soupsieve==2.2.1
+soupsieve==2.3
     # via beautifulsoup4
 sphinx==4.2.0
     # via
@@ -316,7 +316,7 @@ traitlets==5.1.1
     # via
     #   ipython
     #   matplotlib-inline
-twine==3.4.2
+twine==3.5.0
     # via -r requirements/tools.in
 types-click==7.1.7
     # via -r requirements/tools.in
@@ -338,7 +338,7 @@ typing-inspect==0.7.1
     # via libcst
 urllib3==1.26.7
     # via requests
-virtualenv==20.9.0
+virtualenv==20.10.0
     # via tox
 wcwidth==0.2.5
     # via prompt-toolkit

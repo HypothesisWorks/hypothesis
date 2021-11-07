@@ -28,7 +28,7 @@ mypy-extensions==0.4.3
     # via
     #   black
     #   typing-inspect
-numpy==1.21.3
+numpy==1.21.4
     # via
     #   -r requirements/coverage.in
     #   pandas
@@ -54,7 +54,7 @@ pyyaml==6.0
     # via libcst
 redis==3.5.3
     # via fakeredis
-regex==2021.10.23
+regex==2021.11.2
     # via black
 six==1.16.0
     # via
