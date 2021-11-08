@@ -23,8 +23,7 @@ The argument for this parameter is a list with elements drawn from any of
 the class-level attributes of the HealthCheck class.
 Using a value of ``HealthCheck.all()`` will disable all health checks.
 
-.. module:: hypothesis
-.. autoclass:: HealthCheck
+.. autoclass:: hypothesis.HealthCheck
    :undoc-members:
    :inherited-members:
    :exclude-members: all
