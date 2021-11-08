@@ -13,20 +13,18 @@
 #
 # END HEADER
 
-import random
-
 from pytest import raises
 
-from hypothesis import Verbosity, find, given, settings, strategies as st
+from hypothesis import Verbosity, core, find, given, settings, strategies as st
 
 from tests.common.utils import no_shrink
 
 
-def test_seeds_off_random():
+def test_seeds_off_internal_random():
     s = settings(phases=no_shrink, database=None)
-    r = random.getstate()
+    r = core._hypothesis_global_random.getstate()
     x = find(st.integers(), lambda x: True, settings=s)
-    random.setstate(r)
+    core._hypothesis_global_random.setstate(r)
     y = find(st.integers(), lambda x: True, settings=s)
     assert x == y
 

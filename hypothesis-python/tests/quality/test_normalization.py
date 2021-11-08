@@ -14,6 +14,7 @@
 # END HEADER
 
 from itertools import islice
+from random import Random
 
 import pytest
 
@@ -56,10 +57,6 @@ def test_common_strategies_normalize_small_values(strategy, n, normalize_kwargs)
 
 @pytest.mark.parametrize("strategy", [st.emails(), st.complex_numbers()], ids=repr)
 def test_harder_strategies_normalize_to_minimal(strategy, normalize_kwargs):
-    import random
-
-    random.seed(0)
-
     def test_function(data):
         try:
             v = data.draw(strategy)
@@ -68,4 +65,4 @@ def test_harder_strategies_normalize_to_minimal(strategy, normalize_kwargs):
         data.output = repr(v)
         data.mark_interesting()
 
-    dfas.normalize(repr(strategy), test_function, **normalize_kwargs)
+    dfas.normalize(repr(strategy), test_function, random=Random(0), **normalize_kwargs)

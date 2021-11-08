@@ -20,7 +20,6 @@ import contextlib
 import datetime
 import inspect
 import io
-import random as rnd_module
 import sys
 import time
 import traceback
@@ -120,6 +119,7 @@ TestFunc = TypeVar("TestFunc", bound=Callable)
 
 running_under_pytest = False
 global_force_seed = None
+_hypothesis_global_random = None
 
 
 @attr.s()
@@ -419,7 +419,10 @@ def get_random_for_wrapped_test(test, wrapped_test):
     elif global_force_seed is not None:
         return Random(global_force_seed)
     else:
-        seed = rnd_module.getrandbits(128)
+        global _hypothesis_global_random
+        if _hypothesis_global_random is None:
+            _hypothesis_global_random = Random()
+        seed = _hypothesis_global_random.getrandbits(128)
         wrapped_test._hypothesis_internal_use_generated_seed = seed
         return Random(seed)
 

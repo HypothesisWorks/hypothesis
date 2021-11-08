@@ -13,8 +13,8 @@
 #
 # END HEADER
 
-import random
 from math import log
+from random import Random
 
 from hypothesis import (
     HealthCheck,
@@ -77,8 +77,6 @@ base_settings = settings(
 def test_avoids_zig_zag_trap(p):
     b, marker, lower_bound = p
 
-    random.seed(0)
-
     n_bits = 8 * (len(b) + 1)
 
     def test_function(data):
@@ -95,6 +93,7 @@ def test_avoids_zig_zag_trap(p):
         test_function,
         database_key=None,
         settings=settings(base_settings, phases=(Phase.generate, Phase.shrink)),
+        random=Random(0),
     )
 
     runner.cached_test_function(b + bytes([0]) + b + bytes([1]) + marker)

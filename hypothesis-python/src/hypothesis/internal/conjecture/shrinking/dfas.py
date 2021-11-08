@@ -238,6 +238,7 @@ def normalize(
     required_successes=100,
     allowed_to_update=False,
     max_dfas=10,
+    random=None,
 ):
     """Attempt to ensure that this test function successfully normalizes - i.e.
     whenever it declares a test case to be interesting, we are able
@@ -267,6 +268,7 @@ def normalize(
         test_function,
         settings=settings(database=None, suppress_health_check=HealthCheck.all()),
         ignore_limits=True,
+        random=random,
     )
 
     seen = set()
