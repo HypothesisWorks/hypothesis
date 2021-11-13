@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.24.3:
+
+-------------------
+6.24.3 - 2021-11-13
+-------------------
+
+This patch updates documentation of :func:`~hypothesis.note`
+(:issue:`3147`).
+
 .. _v6.24.2:
 
 -------------------
