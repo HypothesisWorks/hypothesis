@@ -116,7 +116,7 @@ def should_note():
 
 
 def note(value: str) -> None:
-    """Report this value in the final execution."""
+    """Report this value for the minimal failing example."""
     if should_note():
         report(value)
 

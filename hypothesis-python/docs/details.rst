@@ -43,7 +43,7 @@ intermediate steps of your test. That's where the ``note`` function comes in:
     Shuffle: [1, 0]
     ls != ls2
 
-The note is printed in the final run of the test in order to include any
+The note is printed for the minimal failing example of the test in order to include any
 additional information you might need in your test.
 
 
