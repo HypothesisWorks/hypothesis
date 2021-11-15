@@ -14,7 +14,7 @@ click==8.0.3
     # via
     #   -r requirements/coverage.in
     #   black
-coverage==6.1.1
+coverage==6.1.2
     # via -r requirements/coverage.in
 dpcontracts==0.6.0
     # via -r requirements/coverage.in
@@ -54,7 +54,7 @@ pyyaml==6.0
     # via libcst
 redis==3.5.3
     # via fakeredis
-regex==2021.11.2
+regex==2021.11.10
     # via black
 six==1.16.0
     # via
