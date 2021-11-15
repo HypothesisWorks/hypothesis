@@ -1020,7 +1020,7 @@ that are running in multiple threads (:issue:`2717`).
 
 This patch improves the type annotations for :func:`~hypothesis.strategies.one_of`,
 by adding overloads to handle up to five distinct arguments as
-:class:`~python:typing.Union` before falling back to :class:`~python:typing.Any`,
+:obj:`~python:typing.Union` before falling back to :obj:`~python:typing.Any`,
 as well as annotating the ``|`` (``__or__``) operator for strategies (:issue:`2765`).
 
 .. _v6.0.2:
@@ -1395,7 +1395,7 @@ parameterized standard collection types, which are new in Python 3.9
 -------------------
 
 This patch fixes :func:`~hypothesis.strategies.builds`, so that when passed
-:obj:`~hypothesis.infer` for an argument with a non-:class:`~python:typing.Optional`
+:obj:`~hypothesis.infer` for an argument with a non-:obj:`~python:typing.Optional`
 type annotation and a default value of ``None`` to build a class which defines
 an explicit ``__signature__`` attribute, either ``None`` or that type may be
 generated.
@@ -1577,7 +1577,7 @@ The :func:`~hypothesis.target` function now accepts integers as well as floats.
 5.34.1 - 2020-09-11
 -------------------
 
-This patch adds explicit :class:`~python:typing.Optional` annotations to our public API,
+This patch adds explicit :obj:`~python:typing.Optional` annotations to our public API,
 to better support users who run :pypi:`mypy` with ``--strict`` or ``no_implicit_optional=True``.
 
 Thanks to Krzysztof Przybyła for bringing this to our attention and writing the patch!
