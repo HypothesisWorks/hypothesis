@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.24.4:
+
+-------------------
+6.24.4 - 2021-11-15
+-------------------
+
+This patch gives Hypothesis it's own internal :class:`~random.Random` instance,
+ensuring that test suites which reset the global random state don't induce
+weird correlations between property-based tests (:issue:`2135`).
+
 .. _v6.24.3:
 
 -------------------
