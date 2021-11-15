@@ -122,3 +122,8 @@ def get_interesting_origin(exception):
         # to support introspection when debugging, so we can use that unconditionally.
         get_interesting_origin(exception.__context__) if exception.__context__ else (),
     )
+
+
+def format_exception(err, tb):
+    # If all else fails, use the standard-library formatting tools
+    return "".join(traceback.format_exception(type(err), err, tb))
