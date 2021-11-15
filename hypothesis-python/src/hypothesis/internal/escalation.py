@@ -28,6 +28,7 @@ from hypothesis.errors import (
     UnsatisfiedAssumption,
     _Trimmable,
 )
+from hypothesis.utils.dynamicvariables import DynamicVariable
 
 
 def belongs_to(package):
@@ -124,6 +125,15 @@ def get_interesting_origin(exception):
     )
 
 
+current_pytest_item = DynamicVariable(None)
+
+
 def format_exception(err, tb):
+    # Try using Pytest to match the currently configured traceback style
+    if current_pytest_item.value is not None and "_pytest._code" in sys.modules:
+        item = current_pytest_item.value
+        ExceptionInfo = sys.modules["_pytest._code"].ExceptionInfo
+        return str(item.repr_failure(ExceptionInfo((type(err), err, tb)))) + "\n"
+
     # If all else fails, use the standard-library formatting tools
     return "".join(traceback.format_exception(type(err), err, tb))
