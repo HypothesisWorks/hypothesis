@@ -135,5 +135,11 @@ def format_exception(err, tb):
         ExceptionInfo = sys.modules["_pytest._code"].ExceptionInfo
         return str(item.repr_failure(ExceptionInfo((type(err), err, tb)))) + "\n"
 
+    # Or use better_exceptions, if that's installed and enabled
+    if "better_exceptions" in sys.modules:
+        better_exceptions = sys.modules["better_exceptions"]
+        if sys.excepthook is better_exceptions.excepthook:
+            return "".join(better_exceptions.format_exception(type(err), err, tb))
+
     # If all else fails, use the standard-library formatting tools
     return "".join(traceback.format_exception(type(err), err, tb))
