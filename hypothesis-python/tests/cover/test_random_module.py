@@ -17,7 +17,7 @@ import random
 
 import pytest
 
-from hypothesis import find, given, register_random, reporting, strategies as st
+from hypothesis import core, find, given, register_random, reporting, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal import entropy
 from hypothesis.internal.entropy import deterministic_PRNG
@@ -120,11 +120,14 @@ def test_given_does_not_pollute_state():
 
         test()
         state_a = random.getstate()
+        state_a2 = core._hypothesis_global_random.getstate()
 
         test()
         state_b = random.getstate()
+        state_b2 = core._hypothesis_global_random.getstate()
 
-        assert state_a != state_b
+        assert state_a == state_b
+        assert state_a2 != state_b2
 
 
 def test_find_does_not_pollute_state():
@@ -132,8 +135,11 @@ def test_find_does_not_pollute_state():
 
         find(st.random_module(), lambda r: True)
         state_a = random.getstate()
+        state_a2 = core._hypothesis_global_random.getstate()
 
         find(st.random_module(), lambda r: True)
         state_b = random.getstate()
+        state_b2 = core._hypothesis_global_random.getstate()
 
-        assert state_a != state_b
+        assert state_a == state_b
+        assert state_a2 != state_b2
