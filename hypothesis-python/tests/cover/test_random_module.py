@@ -13,6 +13,7 @@
 #
 # END HEADER
 
+import gc
 import random
 
 import pytest
@@ -20,9 +21,19 @@ import pytest
 from hypothesis import core, find, given, register_random, reporting, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal import entropy
+from hypothesis.internal.compat import PYPY
 from hypothesis.internal.entropy import deterministic_PRNG
 
 from tests.common.utils import capture_out
+
+
+def gc_on_pypy():
+    # CPython uses reference counting, so objects (without circular refs)
+    # are collected immediately on `del`, breaking weak references.
+    # PyPy doesn't, so we use this function in tests before counting the
+    # surviving references to ensure that they're deterministic.
+    if PYPY:
+        gc.collect()
 
 
 def test_can_seed_random():
@@ -54,11 +65,15 @@ def test_cannot_register_non_Random():
 
 
 def test_registering_a_Random_is_idempotent():
+    gc_on_pypy()
+    n_registered = len(entropy.RANDOMS_TO_MANAGE)
     r = random.Random()
     register_random(r)
     register_random(r)
-    assert entropy.RANDOMS_TO_MANAGE.pop() is r
-    assert r not in entropy.RANDOMS_TO_MANAGE
+    assert len(entropy.RANDOMS_TO_MANAGE) == n_registered + 1
+    del r
+    gc_on_pypy()
+    assert len(entropy.RANDOMS_TO_MANAGE) == n_registered
 
 
 def test_manages_registered_Random_instance():
@@ -78,9 +93,6 @@ def test_manages_registered_Random_instance():
     inner()
     assert state == r.getstate()
 
-    entropy.RANDOMS_TO_MANAGE.remove(r)
-    assert r not in entropy.RANDOMS_TO_MANAGE
-
 
 def test_registered_Random_is_seeded_by_random_module_strategy():
     r = random.Random()
@@ -97,9 +109,6 @@ def test_registered_Random_is_seeded_by_random_module_strategy():
     inner()
     assert count[0] > len(results) * 0.9, "too few unique random numbers"
     assert state == r.getstate()
-
-    entropy.RANDOMS_TO_MANAGE.remove(r)
-    assert r not in entropy.RANDOMS_TO_MANAGE
 
 
 @given(st.random_module())
@@ -143,3 +152,33 @@ def test_find_does_not_pollute_state():
 
         assert state_a == state_b
         assert state_a2 != state_b2
+
+
+def test_evil_prng_registration_nonsense():
+    gc_on_pypy()
+    n_registered = len(entropy.RANDOMS_TO_MANAGE)
+    r1, r2, r3 = random.Random(1), random.Random(2), random.Random(3)
+    s2 = r2.getstate()
+
+    # We're going to be totally evil here: register two randoms, then
+    # drop one and add another, and finally check that we reset only
+    # the states that we collected before we started
+    register_random(r1)
+    k = max(entropy.RANDOMS_TO_MANAGE)  # get a handle to check if r1 still exists
+    register_random(r2)
+    assert len(entropy.RANDOMS_TO_MANAGE) == n_registered + 2
+
+    with deterministic_PRNG(0):
+        del r1
+        gc_on_pypy()
+        assert k not in entropy.RANDOMS_TO_MANAGE, "r1 has been garbage-collected"
+        assert len(entropy.RANDOMS_TO_MANAGE) == n_registered + 1
+
+        r2.seed(4)
+        register_random(r3)
+        r3.seed(4)
+        s4 = r3.getstate()
+
+    # Implicit check, no exception was raised in __exit__
+    assert r2.getstate() == s2, "reset previously registered random state"
+    assert r3.getstate() == s4, "retained state when registered within the context"
