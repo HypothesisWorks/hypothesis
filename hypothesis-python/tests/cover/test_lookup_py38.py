@@ -14,11 +14,13 @@
 # END HEADER
 
 import dataclasses
+import sys
 import typing
 
 import pytest
 
 from hypothesis import given, strategies as st
+from hypothesis.errors import Unsatisfiable
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies import from_type
 
@@ -77,7 +79,15 @@ def test_typeddict_with_optional(value):
         assert isinstance(value["b"], bool)
 
 
-@pytest.mark.xfail
+if sys.version_info[:2] < (3, 9):
+    xfail_on_38 = pytest.mark.xfail(raises=Unsatisfiable)
+else:
+
+    def xfail_on_38(f):
+        return f
+
+
+@xfail_on_38
 def test_simple_optional_key_is_optional():
     # Optional keys are not currently supported, as PEP-589 leaves no traces
     # at runtime.  See https://github.com/python/cpython/pull/17214
@@ -110,7 +120,7 @@ def test_typeddict_with_nested_value(value):
     assert isinstance(value["inner"]["a"], int)
 
 
-@pytest.mark.xfail
+@xfail_on_38
 def test_layered_optional_key_is_optional():
     # Optional keys are not currently supported, as PEP-589 leaves no traces
     # at runtime.  See https://github.com/python/cpython/pull/17214
