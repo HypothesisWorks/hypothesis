@@ -34,7 +34,7 @@ from hypothesis import assume, given, infer
 
 if sys.version_info < (3, 9):
     pytestmark = pytest.mark.xfail(
-        raises=Exception, strict=True, reason="Requires Python 3.9 (PEP 585) or later."
+        raises=Exception, reason="Requires Python 3.9 (PEP 585) or later."
     )
 
 

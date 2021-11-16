@@ -32,6 +32,7 @@ import pytest
 from hypothesis import HealthCheck, assume, given, infer, settings, strategies as st
 from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.internal.compat import PYPY, get_type_hints, typing_root_type
+from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies import from_type
 from hypothesis.strategies._internal import types
 
@@ -53,7 +54,6 @@ generics = sorted(
     ),
     key=str,
 )
-xfail_on_39 = () if sys.version_info[:2] < (3, 9) else pytest.mark.xfail
 
 
 @pytest.mark.parametrize("typ", generics, ids=repr)
@@ -263,7 +263,7 @@ def if_available(name):
 @pytest.mark.parametrize(
     "typ",
     [
-        pytest.param(typing.Sequence, marks=xfail_on_39),
+        typing.Sequence,
         typing.Container,
         typing.Mapping,
         typing.Reversible,
@@ -275,6 +275,7 @@ def if_available(name):
         typing.SupportsRound,
         if_available("SupportsIndex"),
     ],
+    ids=get_pretty_function_description,
 )
 def test_resolves_weird_types(typ):
     from_type(typ).example()

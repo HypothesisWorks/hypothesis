@@ -17,6 +17,7 @@ import contextlib
 import random
 import sys
 
+import hypothesis.core
 from hypothesis.errors import InvalidArgument
 
 RANDOMS_TO_MANAGE: list = [random]
@@ -95,6 +96,10 @@ def deterministic_PRNG(seed=0):
     bad idea in principle, and breaks all kinds of independence assumptions
     in practice.
     """
+    if hypothesis.core._hypothesis_global_random is None:  # pragma: no cover
+        hypothesis.core._hypothesis_global_random = random.Random()
+        register_random(hypothesis.core._hypothesis_global_random)
+
     seed_all, restore_all = get_seeder_and_restorer(seed)
     seed_all()
     try:

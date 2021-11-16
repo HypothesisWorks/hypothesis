@@ -97,6 +97,13 @@ def datetime_does_not_exist(value):
         # meaningless before ~1900 and subject to a lot of change by
         # 9999, so it should be a very small fraction of possible values.
         return True
+
+    if value.tzinfo.utcoffset != roundtrip.tzinfo.utcoffset:
+        # This only ever occurs during imaginary (i.e. nonexistent) datetimes,
+        # and only for pytz timezones which do not follow PEP-495 semantics.
+        # (may exclude a few other edge cases, but you should use zoneinfo anyway)
+        return True
+
     assert value.tzinfo is roundtrip.tzinfo, "so only the naive portions are compared"
     return value != roundtrip
 
@@ -196,9 +203,6 @@ def datetimes(
     which did not (or will not) occur due to daylight savings, leap seconds,
     timezone and calendar adjustments, etc.  Imaginary datetimes are allowed
     by default, because malformed timestamps are a common source of bugs.
-    Note that because :pypi:`pytz` predates :pep:`495`, this does not work
-    correctly with timezones that use a negative DST offset (such as
-    ``"Europe/Dublin"``).
 
     Examples from this strategy shrink towards midnight on January 1st 2000,
     local time.
