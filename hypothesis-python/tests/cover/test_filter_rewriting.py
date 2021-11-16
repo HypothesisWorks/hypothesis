@@ -179,6 +179,7 @@ class NotAFunction:
 
 
 lambda_without_source = eval("lambda x: x > 2", {}, {})
+assert get_pretty_function_description(lambda_without_source) == "lambda x: <unknown>"
 
 
 @pytest.mark.parametrize(
