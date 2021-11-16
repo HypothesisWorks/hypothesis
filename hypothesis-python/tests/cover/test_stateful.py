@@ -385,9 +385,10 @@ def test_saves_failing_example_in_database():
 
 
 def test_can_run_with_no_db():
-    with deterministic_PRNG():
-        with raises(AssertionError):
-            run_state_machine_as_test(DepthMachine, settings=Settings(database=None))
+    with deterministic_PRNG(), raises(AssertionError):
+        run_state_machine_as_test(
+            DepthMachine, settings=Settings(database=None, max_examples=10_000)
+        )
 
 
 def test_stateful_double_rule_is_forbidden(recwarn):
