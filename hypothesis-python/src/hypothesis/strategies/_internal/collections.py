@@ -13,12 +13,14 @@
 #
 # END HEADER
 
+import copy
 from typing import Any, Tuple, overload
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.junkdrawer import LazySequenceCopy
 from hypothesis.internal.conjecture.utils import combine_labels
+from hypothesis.internal.reflection import is_identity_function
 from hypothesis.strategies._internal.strategies import (
     T3,
     T4,
@@ -135,6 +137,8 @@ class ListStrategy(SearchStrategy):
     """A strategy for lists which takes a strategy for its elements and the
     allowed lengths, and generates lists with the correct size and contents."""
 
+    _nonempty_filters: tuple = (bool, len, tuple, list)
+
     def __init__(self, elements, min_size=0, max_size=float("inf")):
         super().__init__()
         self.min_size = min_size or 0
@@ -189,6 +193,16 @@ class ListStrategy(SearchStrategy):
         return "{}({!r}, min_size={!r}, max_size={!r})".format(
             self.__class__.__name__, self.element_strategy, self.min_size, self.max_size
         )
+
+    def filter(self, condition):
+        if condition in self._nonempty_filters or is_identity_function(condition):
+            assert self.max_size >= 1, "Always-empty is special cased in st.lists()"
+            if self.min_size >= 1:
+                return self
+            new = copy.copy(self)
+            new.min_size = 1
+            return new
+        return super().filter(condition)
 
 
 class UniqueListStrategy(ListStrategy):

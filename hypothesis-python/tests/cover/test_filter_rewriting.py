@@ -23,7 +23,7 @@ import pytest
 from hypothesis import given, strategies as st
 from hypothesis.errors import Unsatisfiable
 from hypothesis.internal.reflection import get_pretty_function_description
-from hypothesis.strategies._internal.lazy import LazyStrategy
+from hypothesis.strategies._internal.lazy import LazyStrategy, unwrap_strategies
 from hypothesis.strategies._internal.numbers import IntegersStrategy
 from hypothesis.strategies._internal.strategies import FilteredStrategy
 
@@ -209,3 +209,25 @@ def test_rewriting_partially_understood_filters(data, start, end, predicate):
 
     value = data.draw(s)
     assert predicate(value)
+
+
+@pytest.mark.parametrize(
+    "strategy",
+    [
+        st.lists(st.none()),
+        st.lists(st.none(), min_size=2),
+    ],
+)
+@pytest.mark.parametrize(
+    "predicate",
+    [bool, len, tuple, list, lambda x: x],
+    ids=get_pretty_function_description,
+)
+def test_sequence_filter_rewriting(strategy, predicate):
+    s = unwrap_strategies(strategy)
+    fs = s.filter(predicate)
+    assert not isinstance(fs, FilteredStrategy)
+    if s.min_size > 0:
+        assert fs is s
+    else:
+        assert fs.min_size == 1
