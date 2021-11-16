@@ -21,6 +21,7 @@ import sys
 import pytest
 
 from hypothesis import HealthCheck, assume, given, settings
+from hypothesis.internal.floats import next_down
 from hypothesis.strategies import data, floats, lists
 
 from tests.common.utils import fails
@@ -105,35 +106,34 @@ def test_is_in_exact_int_range(x):
 
 
 # Tests whether we can represent subnormal floating point numbers.
-# This is essentially a function of how the python interpreter
-# was compiled.
+# IEE-754 requires subnormal support, but it's often disabled anyway by unsafe
+# compiler options like `-ffast-math`.  On most hardware that's even a global
+# config option, so *linking against* something built this way can break us.
 # Everything is terrible
-if math.ldexp(0.25, -1022) > 0:
-    REALLY_SMALL_FLOAT = sys.float_info.min
-else:
-    REALLY_SMALL_FLOAT = sys.float_info.min * 2
+FLUSH_SUBNORMALS_TO_ZERO = next_down(sys.float_info.min) == 0.0
 
 
-# These two tests have been failing for an unknown amount of time, but that
-# failure was previously being masked by a bug in our `@fails` decorator.
+def test_compiled_with_sane_math_options():
+    # Checks that we're not unexpectedly skipping the subnormal tests below.
+    assert not FLUSH_SUBNORMALS_TO_ZERO
 
 
-@pytest.mark.xfail
+@pytest.mark.skipif(FLUSH_SUBNORMALS_TO_ZERO, reason="broken by unsafe compiler flags")
 @fails
 @given(floats())
 @TRY_HARDER
 def test_can_generate_really_small_positive_floats(x):
     assume(x > 0)
-    assert x >= REALLY_SMALL_FLOAT
+    assert x >= sys.float_info.min
 
 
-@pytest.mark.xfail
+@pytest.mark.skipif(FLUSH_SUBNORMALS_TO_ZERO, reason="broken by unsafe compiler flags")
 @fails
 @given(floats())
 @TRY_HARDER
 def test_can_generate_really_small_negative_floats(x):
     assume(x < 0)
-    assert x <= -REALLY_SMALL_FLOAT
+    assert x <= -sys.float_info.min
 
 
 @fails
