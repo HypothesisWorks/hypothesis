@@ -112,6 +112,7 @@ from hypothesis.strategies._internal.strategies import (
 from hypothesis.strategies._internal.strings import (
     FixedSizeBytes,
     OneCharStringStrategy,
+    TextStrategy,
 )
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 from hypothesis.utils.conventions import InferType, infer, not_set
@@ -643,7 +644,7 @@ def text(
         )
     if (max_size == 0 or char_strategy.is_empty) and not min_size:
         return just("")
-    return lists(char_strategy, min_size=min_size, max_size=max_size).map("".join)
+    return TextStrategy(char_strategy, min_size=min_size, max_size=max_size)
 
 
 @cacheable

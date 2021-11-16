@@ -13,10 +13,14 @@
 #
 # END HEADER
 
-from hypothesis.errors import InvalidArgument
+import copy
+import warnings
+
+from hypothesis.errors import HypothesisWarning, InvalidArgument
 from hypothesis.internal import charmap
 from hypothesis.internal.conjecture.utils import biased_coin, integer_range
 from hypothesis.internal.intervalsets import IntervalSet
+from hypothesis.strategies._internal.collections import ListStrategy
 from hypothesis.strategies._internal.strategies import SearchStrategy
 
 
@@ -97,6 +101,60 @@ class OneCharStringStrategy(SearchStrategy):
                 assert i < self.zero_point
             assert 0 <= i <= self.Z_point
         return i
+
+
+class TextStrategy(ListStrategy):
+    def do_draw(self, data):
+        return "".join(super().do_draw(data))
+
+    # See https://docs.python.org/3/library/stdtypes.html#string-methods
+    # These methods always return Truthy values for any nonempty string.
+    _nonempty_filters = ListStrategy._nonempty_filters + (
+        str.capitalize,
+        str.casefold,
+        str.expandtabs,
+        str.join,
+        str.lower,
+        str.split,
+        str.splitlines,
+        str.swapcase,
+        str.title,
+        str.upper,
+    )
+    _nonempty_and_content_filters = (
+        str.isidentifier,
+        str.islower,
+        str.isupper,
+        str.isalnum,
+        str.isalpha,
+        # str.isascii,  # new in Python 3.7
+        str.isdecimal,
+        str.isdigit,
+        str.isnumeric,
+        str.isspace,
+        str.istitle,
+    )
+
+    def filter(self, condition):
+        if condition in (str.lower, str.title, str.upper):
+            warnings.warn(
+                f"You applied str.{condition.__name__} as a filter, but this allows "
+                f"all nonempty strings!  Did you mean str.is{condition.__name__}?",
+                HypothesisWarning,
+            )
+        # We use ListStrategy filter logic for the conditions that *only* imply
+        # the string is nonempty.  Here, we increment the min_size but still apply
+        # the filter for conditions that imply nonempty *and specific contents*.
+        #
+        # TODO: we may eventually rewrite the elements_strategy for some of these,
+        #       avoiding rejection sampling and making them much more efficient.
+        if condition in self._nonempty_and_content_filters:
+            assert self.max_size >= 1, "Always-empty is special cased in st.text()"
+            self = copy.copy(self)
+            self.min_size = max(1, self.min_size)
+            return ListStrategy.filter(self, condition)
+
+        return super().filter(condition)
 
 
 class FixedSizeBytes(SearchStrategy):
