@@ -17,6 +17,7 @@ import math
 import operator
 from decimal import Decimal
 from fractions import Fraction
+from sys import float_info
 from typing import Optional, Union
 
 from hypothesis.control import assume, reject
@@ -157,8 +158,9 @@ NASTY_FLOATS = sorted(
         10e6,
         10e-6,
         1.175494351e-38,
-        2.2250738585072014e-308,
-        1.7976931348623157e308,
+        next_up(0.0),
+        float_info.min,
+        float_info.max,
         3.402823466e38,
         9007199254740992,
         1 - 10e-6,
@@ -166,6 +168,8 @@ NASTY_FLOATS = sorted(
         1.192092896e-07,
         2.2204460492503131e-016,
     ]
+    + [2.0 ** -n for n in (24, 14, 149, 126)]  # minimum (sub)normals for float16,32
+    + [float_info.min / n for n in (2, 10, 1000, 100_000)]  # subnormal in float64
     + [math.inf, math.nan] * 5,
     key=flt.float_to_lex,
 )
