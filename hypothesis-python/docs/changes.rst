@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.25.0:
+
+-------------------
+6.25.0 - 2021-11-19
+-------------------
+
+This release adds special filtering logic to make a few special cases
+like ``s.map(lambda x: x)`` and ``lists().filter(len)`` more efficient
+(:issue:`2701`).
+
 .. _v6.24.6:
 
 -------------------
