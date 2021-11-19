@@ -21,9 +21,9 @@ from functools import partial
 import pytest
 
 from hypothesis import given, strategies as st
-from hypothesis.errors import Unsatisfiable
+from hypothesis.errors import HypothesisWarning, Unsatisfiable
 from hypothesis.internal.reflection import get_pretty_function_description
-from hypothesis.strategies._internal.lazy import LazyStrategy
+from hypothesis.strategies._internal.lazy import LazyStrategy, unwrap_strategies
 from hypothesis.strategies._internal.numbers import IntegersStrategy
 from hypothesis.strategies._internal.strategies import FilteredStrategy
 
@@ -179,6 +179,7 @@ class NotAFunction:
 
 
 lambda_without_source = eval("lambda x: x > 2", {}, {})
+assert get_pretty_function_description(lambda_without_source) == "lambda x: <unknown>"
 
 
 @pytest.mark.parametrize(
@@ -208,3 +209,45 @@ def test_rewriting_partially_understood_filters(data, start, end, predicate):
 
     value = data.draw(s)
     assert predicate(value)
+
+
+@pytest.mark.parametrize(
+    "strategy",
+    [
+        st.text(),
+        st.text(min_size=2),
+        st.lists(st.none()),
+        st.lists(st.none(), min_size=2),
+    ],
+)
+@pytest.mark.parametrize(
+    "predicate",
+    [bool, len, tuple, list, lambda x: x],
+    ids=get_pretty_function_description,
+)
+def test_sequence_filter_rewriting(strategy, predicate):
+    s = unwrap_strategies(strategy)
+    fs = s.filter(predicate)
+    assert not isinstance(fs, FilteredStrategy)
+    if s.min_size > 0:
+        assert fs is s
+    else:
+        assert fs.min_size == 1
+
+
+@pytest.mark.parametrize("method", [str.lower, str.title, str.upper])
+def test_warns_on_suspicious_string_methods(method):
+    s = unwrap_strategies(st.text())
+    with pytest.warns(
+        HypothesisWarning, match="this allows all nonempty strings!  Did you mean"
+    ):
+        fs = s.filter(method)
+    assert fs.min_size == 1
+
+
+@pytest.mark.parametrize("method", [str.isidentifier, str.isalnum])
+def test_bumps_min_size_and_filters_for_content_str_methods(method):
+    s = unwrap_strategies(st.text())
+    fs = s.filter(method)
+    assert fs.filtered_strategy.min_size == 1
+    assert fs.flat_conditions == (method,)

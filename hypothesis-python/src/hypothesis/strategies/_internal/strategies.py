@@ -46,7 +46,10 @@ from hypothesis.internal.conjecture.utils import (
 )
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.lazyformat import lazyformat
-from hypothesis.internal.reflection import get_pretty_function_description
+from hypothesis.internal.reflection import (
+    get_pretty_function_description,
+    is_identity_function,
+)
 from hypothesis.strategies._internal.utils import defines_strategy
 from hypothesis.utils.conventions import UniqueIdentifier
 
@@ -338,6 +341,8 @@ class SearchStrategy(Generic[Ex]):
 
         This method is part of the public API.
         """
+        if is_identity_function(pack):
+            return self  # type: ignore  # Mypy has no way to know that `Ex == T`
         return MappedSearchStrategy(pack=pack, strategy=self)
 
     def flatmap(

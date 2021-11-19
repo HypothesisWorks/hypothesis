@@ -581,3 +581,8 @@ def proxies(target):
         return impersonate(target)(wraps(target)(replace_sig(proxy)))
 
     return accept
+
+
+def is_identity_function(f):
+    # TODO: pattern-match the AST to handle `def ...` identity functions too
+    return bool(re.fullmatch(r"lambda (\w+): \1", get_pretty_function_description(f)))

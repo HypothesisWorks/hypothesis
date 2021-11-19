@@ -338,7 +338,7 @@ def test_will_mark_too_deep_examples_as_invalid():
 
     s = st.none()
     for _ in range(MAX_DEPTH + 1):
-        s = s.map(lambda x: x)
+        s = s.map(lambda x: None)
 
     with pytest.raises(StopTest):
         d.draw(s)
