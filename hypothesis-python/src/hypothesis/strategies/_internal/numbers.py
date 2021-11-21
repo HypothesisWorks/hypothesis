@@ -147,6 +147,9 @@ def integers(
     return IntegersStrategy(min_value, max_value)
 
 
+SIGNALING_NAN = int_to_float(0x7FF8_0000_0000_0001)  # nonzero mantissa
+assert math.isnan(SIGNALING_NAN) and math.copysign(1, SIGNALING_NAN) == 1
+
 NASTY_FLOATS = sorted(
     [
         0.0,
@@ -170,7 +173,8 @@ NASTY_FLOATS = sorted(
     ]
     + [2.0 ** -n for n in (24, 14, 149, 126)]  # minimum (sub)normals for float16,32
     + [float_info.min / n for n in (2, 10, 1000, 100_000)]  # subnormal in float64
-    + [math.inf, math.nan] * 5,
+    + [math.inf, math.nan] * 5
+    + [SIGNALING_NAN],
     key=flt.float_to_lex,
 )
 NASTY_FLOATS = list(map(float, NASTY_FLOATS))

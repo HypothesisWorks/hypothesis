@@ -70,10 +70,12 @@ Inheritance diagram:
 import datetime
 import platform
 import re
+import struct
 import types
 from collections import deque
 from contextlib import contextmanager
 from io import StringIO
+from math import copysign, isnan
 
 __all__ = [
     "pretty",
@@ -160,6 +162,8 @@ class PrettyPrinter(_PrettyPrinterBase):
         self.group_stack = [root_group]
         self.group_queue = GroupQueue(root_group)
         self.indentation = 0
+
+        self.snans = 0
 
     def _break_outer_groups(self):
         while self.max_width < self.output_width + self.buffer_width:
@@ -266,6 +270,12 @@ class PrettyPrinter(_PrettyPrinterBase):
 
     def flush(self):
         """Flush data that is left in the buffer."""
+        if self.snans:
+            # Reset self.snans *before* calling breakable(), which might flush()
+            snans = self.snans
+            self.snans = 0
+            self.breakable("  ")
+            self.text(f"# Saw {snans} signaling NaN" + "s" * (snans > 1))
         for data in self.buffer:
             self.output_width += data.output(self.output, self.output_width)
         self.buffer.clear()
@@ -735,10 +745,20 @@ def _exception_pprint(obj, p, cycle):
     p.end_group(step, ")")
 
 
+def _repr_float_counting_nans(obj, p, cycle):
+    if isnan(obj) and hasattr(p, "snans"):
+        if struct.pack("!d", abs(obj)) != struct.pack("!d", float("nan")):
+            p.snans += 1
+        if copysign(1.0, obj) == -1.0:
+            p.text("-nan")
+            return
+    p.text(repr(obj))
+
+
 #: printers for builtin types
 _type_pprinters = {
     int: _repr_pprint,
-    float: _repr_pprint,
+    float: _repr_float_counting_nans,
     str: _repr_pprint,
     tuple: _seq_pprinter_factory("(", ")", tuple),
     list: _seq_pprinter_factory("[", "]", list),

@@ -59,6 +59,7 @@ from io import StringIO
 import pytest
 
 from hypothesis.internal.compat import PYPY
+from hypothesis.strategies._internal.numbers import SIGNALING_NAN
 from hypothesis.vendor import pretty
 
 
@@ -622,3 +623,17 @@ def test_empty_printer():
 
 def test_breakable_at_group_boundary():
     assert "\n" in pretty.pretty([[], "000000"], max_width=5)
+
+
+@pytest.mark.parametrize(
+    "obj, rep",
+    [
+        (float("nan"), "nan"),
+        (-float("nan"), "-nan"),
+        (SIGNALING_NAN, "nan  # Saw 1 signaling NaN"),
+        (-SIGNALING_NAN, "-nan  # Saw 1 signaling NaN"),
+        ((SIGNALING_NAN, SIGNALING_NAN), "(nan, nan)  # Saw 2 signaling NaNs"),
+    ],
+)
+def test_nan_reprs(obj, rep):
+    assert pretty.pretty(obj) == rep
