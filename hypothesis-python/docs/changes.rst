@@ -34,7 +34,7 @@ like ``s.map(lambda x: x)`` and ``lists().filter(len)`` more efficient
 6.24.6 - 2021-11-18
 -------------------
 
-This patch makes :func:`hypothesis.strategies.floats` generate
+This patch makes :func:`~hypothesis.strategies.floats` generate
 :wikipedia:`"subnormal" floating point numbers <Subnormal_number>`
 more often, as these rare values can have strange interactions with
 `unsafe compiler optimisations like -ffast-math
@@ -47,7 +47,7 @@ more often, as these rare values can have strange interactions with
 6.24.5 - 2021-11-16
 -------------------
 
-This patch fixes a rare internal error in the :func:`hypothesis.strategies.datetimes`
+This patch fixes a rare internal error in the :func:`~hypothesis.strategies.datetimes`
 strategy, where the implementation of ``allow_imaginary=False`` crashed when checking
 a time during the skipped hour of a DST transition *if* the DST offset is negative -
 only true of ``Europe/Dublin``, who we presume have their reasons - and the ``tzinfo``

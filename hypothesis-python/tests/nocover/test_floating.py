@@ -21,9 +21,10 @@ import sys
 import pytest
 
 from hypothesis import HealthCheck, assume, given, settings
-from hypothesis.internal.floats import next_down
+from hypothesis.internal.floats import float_to_int, next_down
 from hypothesis.strategies import data, floats, lists
 
+from tests.common.debug import find_any
 from tests.common.utils import fails
 
 TRY_HARDER = settings(
@@ -161,3 +162,16 @@ def test_floats_are_in_range(x, y, data):
 
     t = data.draw(floats(x, y))
     assert x <= t <= y
+
+
+@pytest.mark.parametrize("neg", [False, True])
+@pytest.mark.parametrize("snan", [False, True])
+def test_can_find_negative_and_signaling_nans(neg, snan):
+    find_any(
+        floats().filter(math.isnan),
+        lambda x: (
+            snan is (float_to_int(abs(x)) != float_to_int(float("nan")))
+            and neg is (math.copysign(1, x) == -1)
+        ),
+        settings=TRY_HARDER,
+    )

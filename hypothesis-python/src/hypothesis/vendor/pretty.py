@@ -20,9 +20,6 @@ to provide their own pretty print callbacks.
 This module is based on ruby's `prettyprint.rb` library by `Tanaka Akira`.
 Example Usage
 -------------
-To directly print the representation of an object use `pprint`::
-    from pretty import pprint
-    pprint(complex_object)
 To get a string of the output use `pretty`::
     from pretty import pretty
     string = pretty(complex_object)
@@ -73,15 +70,15 @@ Inheritance diagram:
 import datetime
 import platform
 import re
-import sys
+import struct
 import types
 from collections import deque
 from contextlib import contextmanager
 from io import StringIO
+from math import copysign, isnan
 
 __all__ = [
     "pretty",
-    "pprint",
     "PrettyPrinter",
     "RepresentationPrinter",
     "for_type_by_name",
@@ -118,19 +115,6 @@ def pretty(
     printer.pretty(obj)
     printer.flush()
     return stream.getvalue()
-
-
-def pprint(
-    obj, verbose=False, max_width=79, newline="\n", max_seq_length=MAX_SEQ_LENGTH
-):
-    """Like `pretty` but print to stdout."""
-    printer = RepresentationPrinter(
-        sys.stdout, verbose, max_width, newline, max_seq_length=max_seq_length
-    )
-    printer.pretty(obj)
-    printer.flush()
-    sys.stdout.write(newline)
-    sys.stdout.flush()
 
 
 class _PrettyPrinterBase:
@@ -178,6 +162,8 @@ class PrettyPrinter(_PrettyPrinterBase):
         self.group_stack = [root_group]
         self.group_queue = GroupQueue(root_group)
         self.indentation = 0
+
+        self.snans = 0
 
     def _break_outer_groups(self):
         while self.max_width < self.output_width + self.buffer_width:
@@ -284,6 +270,12 @@ class PrettyPrinter(_PrettyPrinterBase):
 
     def flush(self):
         """Flush data that is left in the buffer."""
+        if self.snans:
+            # Reset self.snans *before* calling breakable(), which might flush()
+            snans = self.snans
+            self.snans = 0
+            self.breakable("  ")
+            self.text(f"# Saw {snans} signaling NaN" + "s" * (snans > 1))
         for data in self.buffer:
             self.output_width += data.output(self.output, self.output_width)
         self.buffer.clear()
@@ -753,10 +745,20 @@ def _exception_pprint(obj, p, cycle):
     p.end_group(step, ")")
 
 
+def _repr_float_counting_nans(obj, p, cycle):
+    if isnan(obj) and hasattr(p, "snans"):
+        if struct.pack("!d", abs(obj)) != struct.pack("!d", float("nan")):
+            p.snans += 1
+        if copysign(1.0, obj) == -1.0:
+            p.text("-nan")
+            return
+    p.text(repr(obj))
+
+
 #: printers for builtin types
 _type_pprinters = {
     int: _repr_pprint,
-    float: _repr_pprint,
+    float: _repr_float_counting_nans,
     str: _repr_pprint,
     tuple: _seq_pprinter_factory("(", ")", tuple),
     list: _seq_pprinter_factory("[", "]", list),

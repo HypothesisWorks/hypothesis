@@ -59,9 +59,8 @@ from io import StringIO
 import pytest
 
 from hypothesis.internal.compat import PYPY
+from hypothesis.strategies._internal.numbers import SIGNALING_NAN
 from hypothesis.vendor import pretty
-
-from tests.common.utils import capture_out
 
 
 class MyList:
@@ -546,13 +545,6 @@ def test_cyclic_set():
     assert pretty.pretty(x) == "{{...}}"
 
 
-def test_pprint():
-    t = {"hi": 1}
-    with capture_out() as o:
-        pretty.pprint(t)
-    assert o.getvalue().strip() == pretty.pretty(t)
-
-
 class BigList(list):
     def _repr_pretty_(self, printer, cycle):
         if cycle:
@@ -631,3 +623,17 @@ def test_empty_printer():
 
 def test_breakable_at_group_boundary():
     assert "\n" in pretty.pretty([[], "000000"], max_width=5)
+
+
+@pytest.mark.parametrize(
+    "obj, rep",
+    [
+        (float("nan"), "nan"),
+        (-float("nan"), "-nan"),
+        (SIGNALING_NAN, "nan  # Saw 1 signaling NaN"),
+        (-SIGNALING_NAN, "-nan  # Saw 1 signaling NaN"),
+        ((SIGNALING_NAN, SIGNALING_NAN), "(nan, nan)  # Saw 2 signaling NaNs"),
+    ],
+)
+def test_nan_reprs(obj, rep):
+    assert pretty.pretty(obj) == rep
