@@ -12,7 +12,7 @@ execnet==1.9.0
     # via pytest-xdist
 iniconfig==1.1.1
     # via pytest
-packaging==21.2
+packaging==21.3
     # via pytest
 pexpect==4.8.0
     # via -r requirements/test.in
@@ -24,7 +24,7 @@ py==1.11.0
     # via
     #   pytest
     #   pytest-forked
-pyparsing==2.4.7
+pyparsing==3.0.6
     # via packaging
 pytest==6.2.5
     # via
