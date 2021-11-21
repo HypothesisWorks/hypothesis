@@ -20,9 +20,6 @@ to provide their own pretty print callbacks.
 This module is based on ruby's `prettyprint.rb` library by `Tanaka Akira`.
 Example Usage
 -------------
-To directly print the representation of an object use `pprint`::
-    from pretty import pprint
-    pprint(complex_object)
 To get a string of the output use `pretty`::
     from pretty import pretty
     string = pretty(complex_object)
@@ -73,7 +70,6 @@ Inheritance diagram:
 import datetime
 import platform
 import re
-import sys
 import types
 from collections import deque
 from contextlib import contextmanager
@@ -81,7 +77,6 @@ from io import StringIO
 
 __all__ = [
     "pretty",
-    "pprint",
     "PrettyPrinter",
     "RepresentationPrinter",
     "for_type_by_name",
@@ -118,19 +113,6 @@ def pretty(
     printer.pretty(obj)
     printer.flush()
     return stream.getvalue()
-
-
-def pprint(
-    obj, verbose=False, max_width=79, newline="\n", max_seq_length=MAX_SEQ_LENGTH
-):
-    """Like `pretty` but print to stdout."""
-    printer = RepresentationPrinter(
-        sys.stdout, verbose, max_width, newline, max_seq_length=max_seq_length
-    )
-    printer.pretty(obj)
-    printer.flush()
-    sys.stdout.write(newline)
-    sys.stdout.flush()
 
 
 class _PrettyPrinterBase:

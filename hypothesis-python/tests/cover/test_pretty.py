@@ -61,8 +61,6 @@ import pytest
 from hypothesis.internal.compat import PYPY
 from hypothesis.vendor import pretty
 
-from tests.common.utils import capture_out
-
 
 class MyList:
     def __init__(self, content):
@@ -544,13 +542,6 @@ def test_cyclic_set():
     x = set()
     x.add(HashItAnyway(x))
     assert pretty.pretty(x) == "{{...}}"
-
-
-def test_pprint():
-    t = {"hi": 1}
-    with capture_out() as o:
-        pretty.pprint(t)
-    assert o.getvalue().strip() == pretty.pretty(t)
 
 
 class BigList(list):
