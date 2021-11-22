@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.27.1:
+
+-------------------
+6.27.1 - 2021-11-22
+-------------------
+
+This patch changes the backing datastructures of :func:`~hypothesis.register_random`
+and a few internal caches to use :class:`weakref.WeakKeyDictionary`.  This reduces
+memory usage and may improve performance when registered :class:`~random.Random`
+instances are only used for a subset of your tests (:issue:`3131`).
+
 .. _v6.27.0:
 
 -------------------
