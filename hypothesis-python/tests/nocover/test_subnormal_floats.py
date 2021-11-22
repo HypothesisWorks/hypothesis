@@ -39,11 +39,6 @@ pytestmark = [
 ]
 
 
-def test_compiled_with_sane_math_options():
-    # Checks that we're not unexpectedly skipping the subnormal tests below.
-    assert not FLUSH_SUBNORMALS_TO_ZERO
-
-
 def test_can_generate_subnormals():
     find_any(floats().filter(lambda x: x > 0), lambda x: x < float_info.min)
     find_any(floats().filter(lambda x: x > 0), lambda x: x < float_info.min)
