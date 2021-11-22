@@ -17,11 +17,12 @@ import math
 from sys import float_info
 
 import pytest
-from tests.common.debug import assert_all_examples, assert_no_examples, find_any
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.floats import next_down, next_up
 from hypothesis.strategies import floats
+
+from tests.common.debug import assert_all_examples, assert_no_examples, find_any
 
 # Tests whether we can represent subnormal floating point numbers.
 # IEE-754 requires subnormal support, but it's often disabled anyway by unsafe

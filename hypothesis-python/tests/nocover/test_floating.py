@@ -19,12 +19,13 @@ import math
 from sys import float_info
 
 import pytest
-from tests.common.debug import find_any
-from tests.common.utils import fails
 
 from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.internal.floats import float_to_int
 from hypothesis.strategies import data, floats, lists
+
+from tests.common.debug import find_any
+from tests.common.utils import fails
 
 TRY_HARDER = settings(
     max_examples=1000, suppress_health_check=[HealthCheck.filter_too_much]

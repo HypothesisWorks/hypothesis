@@ -40,7 +40,7 @@ from hypothesis.internal.validation import (
     check_valid_interval,
 )
 from hypothesis.strategies._internal.misc import just, nothing
-from hypothesis.strategies._internal.strategies import SearchStrategy, one_of
+from hypothesis.strategies._internal.strategies import SearchStrategy
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 
 # See https://github.com/python/mypy/issues/3186 - numbers.Real is wrong!
