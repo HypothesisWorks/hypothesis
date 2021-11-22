@@ -16,11 +16,17 @@
 import contextlib
 import random
 import sys
+from itertools import count
+from weakref import WeakValueDictionary
 
 import hypothesis.core
 from hypothesis.errors import InvalidArgument
 
-RANDOMS_TO_MANAGE: list = [random]
+# This is effectively a WeakSet, which allows us to associate the saved states
+# with their respective Random instances even as new ones are registered and old
+# ones go out of scope and get garbage collected.  Keys are ascending integers.
+_RKEY = count()
+RANDOMS_TO_MANAGE: WeakValueDictionary = WeakValueDictionary({next(_RKEY): random})
 
 
 class NumpyRandomWrapper:
@@ -33,6 +39,9 @@ class NumpyRandomWrapper:
         self.seed = numpy.random.seed
         self.getstate = numpy.random.get_state
         self.setstate = numpy.random.set_state
+
+
+NP_RANDOM = None
 
 
 def register_random(r: random.Random) -> None:
@@ -50,8 +59,8 @@ def register_random(r: random.Random) -> None:
     """
     if not (hasattr(r, "seed") and hasattr(r, "getstate") and hasattr(r, "setstate")):
         raise InvalidArgument(f"r={r!r} does not have all the required methods")
-    if r not in RANDOMS_TO_MANAGE:
-        RANDOMS_TO_MANAGE.append(r)
+    if r not in RANDOMS_TO_MANAGE.values():
+        RANDOMS_TO_MANAGE[next(_RKEY)] = r
 
 
 def get_seeder_and_restorer(seed=0):
@@ -65,24 +74,26 @@ def get_seeder_and_restorer(seed=0):
     using the global random state.  See e.g. #1709.
     """
     assert isinstance(seed, int) and 0 <= seed < 2 ** 32
-    states: list = []
+    states: dict = {}
 
-    if "numpy" in sys.modules and not any(
-        isinstance(x, NumpyRandomWrapper) for x in RANDOMS_TO_MANAGE
-    ):
-        RANDOMS_TO_MANAGE.append(NumpyRandomWrapper())
+    if "numpy" in sys.modules:
+        global NP_RANDOM
+        if NP_RANDOM is None:
+            # Protect this from garbage-collection by adding it to global scope
+            NP_RANDOM = RANDOMS_TO_MANAGE[next(_RKEY)] = NumpyRandomWrapper()
 
     def seed_all():
         assert not states
-        for r in RANDOMS_TO_MANAGE:
-            states.append(r.getstate())
+        for k, r in RANDOMS_TO_MANAGE.items():
+            states[k] = r.getstate()
             r.seed(seed)
 
     def restore_all():
-        assert len(states) == len(RANDOMS_TO_MANAGE)
-        for r, state in zip(RANDOMS_TO_MANAGE, states):
-            r.setstate(state)
-        del states[:]
+        for k, state in states.items():
+            r = RANDOMS_TO_MANAGE.get(k)
+            if r is not None:  # i.e., hasn't been garbage-collected
+                r.setstate(state)
+        states.clear()
 
     return seed_all, restore_all
 

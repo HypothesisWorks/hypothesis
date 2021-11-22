@@ -14,7 +14,8 @@
 # END HEADER
 
 from inspect import getfullargspec
-from typing import Dict
+from typing import MutableMapping
+from weakref import WeakKeyDictionary
 
 from hypothesis.internal.reflection import (
     arg_string,
@@ -24,7 +25,7 @@ from hypothesis.internal.reflection import (
 )
 from hypothesis.strategies._internal.strategies import SearchStrategy
 
-unwrap_cache: Dict[SearchStrategy, SearchStrategy] = {}
+unwrap_cache: MutableMapping[SearchStrategy, SearchStrategy] = WeakKeyDictionary()
 unwrap_depth = 0
 
 
