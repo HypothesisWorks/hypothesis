@@ -21,6 +21,7 @@ import pytest
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.floats import next_down, next_up
 from hypothesis.strategies import floats
+from hypothesis.strategies._internal.numbers import next_down_normal, next_up_normal
 
 from tests.common.debug import assert_all_examples, assert_no_examples, find_any
 
@@ -41,7 +42,7 @@ pytestmark = [
 
 def test_can_generate_subnormals():
     find_any(floats().filter(lambda x: x > 0), lambda x: x < float_info.min)
-    find_any(floats().filter(lambda x: x > 0), lambda x: x < float_info.min)
+    find_any(floats().filter(lambda x: x < 0), lambda x: x > -float_info.min)
 
 
 @pytest.mark.parametrize(
@@ -135,3 +136,16 @@ def test_allow_subnormal_defaults_correctly(kwargs):
         find_any(strat, lambda x: -float_info.min < x < float_info.min)
     else:
         assert_no_examples(strat, lambda x: -float_info.min < x < float_info.min)
+
+
+@pytest.mark.parametrize(
+    "func, val, expected",
+    [
+        (next_up_normal, -float_info.min, -0.0),
+        (next_up_normal, +0.0, float_info.min),
+        (next_down_normal, float_info.min, +0.0),
+        (next_down_normal, -0.0, -float_info.min),
+    ],
+)
+def test_next_float_normal(func, val, expected):
+    assert func(value=val, width=64, allow_subnormal=False) == expected
