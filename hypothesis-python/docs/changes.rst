@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.27.0:
+
+-------------------
+6.27.0 - 2021-11-22
+-------------------
+
+This release teaches Hypothesis' multiple-error reporting to format tracebacks
+using :pypi:`pytest` or :pypi:`better-exceptions`, if they are installed and
+enabled (:issue:`3116`).
+
 .. _v6.26.0:
 
 -------------------
