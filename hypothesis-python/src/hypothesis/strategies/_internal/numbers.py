@@ -189,10 +189,11 @@ FLOAT_STRATEGY_DO_DRAW_LABEL = calc_label_from_name(
 # IEEE-754 float, calculated with the width's associated minimum exponent.
 # Values from https://en.wikipedia.org/wiki/IEEE_754#Basic_and_interchange_formats
 width_smallest_normals = {
-    16: 2 ** -14,
-    32: 2 ** -126,
-    64: 2 ** -1022,
+    16: 2 ** -(2 ** (5 - 1) - 2),
+    32: 2 ** -(2 ** (8 - 1) - 2),
+    64: 2 ** -(2 ** (11 - 1) - 2),
 }
+assert width_smallest_normals[64] == float_info.min
 
 
 class FloatStrategy(SearchStrategy):
