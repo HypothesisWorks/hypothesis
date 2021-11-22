@@ -40,7 +40,7 @@ from hypothesis.internal.validation import (
     check_valid_interval,
 )
 from hypothesis.strategies._internal.misc import just, nothing
-from hypothesis.strategies._internal.strategies import SearchStrategy
+from hypothesis.strategies._internal.strategies import SearchStrategy, one_of
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 
 # See https://github.com/python/mypy/issues/3186 - numbers.Real is wrong!
@@ -475,9 +475,11 @@ def floats(
             f"excludes values above smallest negative normal {-smallest_normal}"
         )
 
-    strat_kw = {"allow_subnormal": allow_subnormal, "width": width}
     unbounded_floats = FloatStrategy(
-        allow_infinity=allow_infinity, allow_nan=allow_nan, **strat_kw
+        allow_infinity=allow_infinity,
+        allow_nan=allow_nan,
+        allow_subnormal=allow_subnormal,
+        width=width,
     )
     if min_value is None and max_value is None:
         return unbounded_floats
@@ -488,18 +490,35 @@ def floats(
         elif is_negative(min_value):
             if is_negative(max_value):
                 return floats(
-                    min_value=-max_value, max_value=-min_value, **strat_kw
+                    min_value=-max_value,
+                    max_value=-min_value,
+                    allow_subnormal=allow_subnormal,
+                    width=width,
                 ).map(operator.neg)
             else:
-                return floats(min_value=0.0, max_value=max_value, **strat_kw) | floats(
-                    min_value=0.0, max_value=-min_value, **strat_kw
-                ).map(operator.neg)
+                return one_of(
+                    floats(
+                        min_value=0.0,
+                        max_value=max_value,
+                        allow_subnormal=allow_subnormal,
+                        width=width,
+                    ),
+                    floats(
+                        min_value=0.0,
+                        max_value=-min_value,
+                        allow_subnormal=allow_subnormal,
+                        width=width,
+                    ).map(operator.neg),
+                )
         elif (
             count_between_floats(min_value, max_value, width) > 1000
             or not allow_subnormal
         ):
             return FixedBoundedFloatStrategy(
-                lower_bound=min_value, upper_bound=max_value, **strat_kw
+                lower_bound=min_value,
+                upper_bound=max_value,
+                allow_subnormal=allow_subnormal,
+                width=width,
             )
         else:
             ub_int = float_to_int(max_value, width)
@@ -511,18 +530,29 @@ def floats(
     elif min_value is not None:
         assert isinstance(min_value, float)
         if is_negative(min_value):
-            # Ignore known bug https://github.com/python/mypy/issues/6697
-            return unbounded_floats.map(abs) | floats(  # type: ignore
-                min_value=min_value, max_value=-0.0, **strat_kw
+            return one_of(
+                unbounded_floats.map(abs),
+                floats(
+                    min_value=min_value,
+                    max_value=-0.0,
+                    allow_subnormal=allow_subnormal,
+                    width=width,
+                ),
             )
         else:
             result = unbounded_floats.map(lambda x: min_value + abs(x))
     else:
         assert isinstance(max_value, float)
         if not is_negative(max_value):
-            return floats(
-                min_value=0.0, max_value=max_value, **strat_kw
-            ) | unbounded_floats.map(lambda x: -abs(x))
+            return one_of(
+                floats(
+                    min_value=0.0,
+                    max_value=max_value,
+                    allow_subnormal=allow_subnormal,
+                    width=width,
+                ),
+                unbounded_floats.map(lambda x: -abs(x)),
+            )
         else:
             result = unbounded_floats.map(lambda x: max_value - abs(x))
 
