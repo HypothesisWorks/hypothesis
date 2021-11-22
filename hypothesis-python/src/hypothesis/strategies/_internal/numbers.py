@@ -289,19 +289,15 @@ class FixedBoundedFloatStrategy(SearchStrategy):
         return f
 
 
-def safe_next_down(value, width, allow_subnormal):
-    smallest_normal = width_smallest_normals[width]
-    if allow_subnormal or value <= -smallest_normal or value > smallest_normal:
-        return next_down(value, width)
-    else:
-        if 0.0 < value <= smallest_normal:
-            return 0.0
-        else:
-            return -smallest_normal
+def next_down_normal(value, width, allow_subnormal):
+    value = next_down(value, width)
+    if (not allow_subnormal) and 0 < abs(value) < width_smallest_normals[width]:
+        return 0.0 if value > 0 else -width_smallest_normals[width]
+    return value
 
 
-def safe_next_up(value, width, allow_subnormal):
-    return -safe_next_down(-value, width, allow_subnormal)
+def next_up_normal(value, width, allow_subnormal):
+    return -next_down_normal(-value, width, allow_subnormal)
 
 
 @cacheable
@@ -398,20 +394,20 @@ def floats(
     if min_value is not None and (
         exclude_min or (min_arg is not None and min_value < min_arg)
     ):
-        min_value = safe_next_up(min_value, width, assumed_allow_subnormal)
+        min_value = next_up_normal(min_value, width, assumed_allow_subnormal)
         if min_value == min_arg:
             assert min_value == min_arg == 0
             assert is_negative(min_arg) and not is_negative(min_value)
-            min_value = safe_next_up(min_value, width, assumed_allow_subnormal)
+            min_value = next_up_normal(min_value, width, assumed_allow_subnormal)
         assert min_value > min_arg  # type: ignore
     if max_value is not None and (
         exclude_max or (max_arg is not None and max_value > max_arg)
     ):
-        max_value = safe_next_down(max_value, width, assumed_allow_subnormal)
+        max_value = next_down_normal(max_value, width, assumed_allow_subnormal)
         if max_value == max_arg:
             assert max_value == max_arg == 0
             assert is_negative(max_value) and not is_negative(max_arg)
-            max_value = safe_next_down(max_value, width, assumed_allow_subnormal)
+            max_value = next_down_normal(max_value, width, assumed_allow_subnormal)
         assert max_value < max_arg  # type: ignore
 
     if min_value == -math.inf:
