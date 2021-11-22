@@ -303,21 +303,6 @@ def safe_next_up(value, width, allow_subnormal):
     return -safe_next_down(-value, width, allow_subnormal)
 
 
-def safe_count_between_floats(x, y, width, allow_subnormal):
-    smallest_normal = width_smallest_normals[width]
-    if allow_subnormal or y <= -smallest_normal or x >= smallest_normal:
-        return count_between_floats(x, y, width)
-    else:
-        count = 0
-        if x <= -smallest_normal:
-            count += count_between_floats(x, -smallest_normal, width)
-        if y >= smallest_normal:
-            count += count_between_floats(smallest_normal, y, width)
-        if x < 0 and y > 0:
-            count += 1
-        return count
-
-
 @cacheable
 @defines_strategy(force_reusable_values=True)
 def floats(
@@ -512,8 +497,8 @@ def floats(
                     min_value=0.0, max_value=-min_value, **strat_kw
                 ).map(operator.neg)
         elif (
-            safe_count_between_floats(min_value, max_value, width, allow_subnormal)
-            > 1000
+            count_between_floats(min_value, max_value, width) > 1000
+            or not allow_subnormal
         ):
             return FixedBoundedFloatStrategy(
                 lower_bound=min_value, upper_bound=max_value, **strat_kw
@@ -522,23 +507,9 @@ def floats(
             ub_int = float_to_int(max_value, width)
             lb_int = float_to_int(min_value, width)
             assert lb_int <= ub_int
-            if allow_subnormal:
-                result = integers(min_value=lb_int, max_value=ub_int)
-            else:
-                strats = []
-                if min_value <= -smallest_normal:
-                    strats.append(
-                        integers(lb_int, float_to_int(-smallest_normal, width))
-                    )
-                if max_value >= smallest_normal:
-                    strats.append(
-                        integers(float_to_int(smallest_normal, width), ub_int)
-                    )
-                if min_value < 0 and max_value > 0:
-                    strats.append(just(float_to_int(0, width)))
-                assert len(strats) > 0
-                result = one_of(strats)
-            result = result.map(lambda x: int_to_float(x, width))
+            result = integers(min_value=lb_int, max_value=ub_int).map(
+                lambda x: int_to_float(x, width)
+            )
     elif min_value is not None:
         assert isinstance(min_value, float)
         if is_negative(min_value):
@@ -551,11 +522,9 @@ def floats(
     else:
         assert isinstance(max_value, float)
         if not is_negative(max_value):
-            return (
-                floats(
-                    min_value=0.0, max_value=max_value, **strat_kw
-                ) | unbounded_floats.map(lambda x: -abs(x))
-            )
+            return floats(
+                min_value=0.0, max_value=max_value, **strat_kw
+            ) | unbounded_floats.map(lambda x: -abs(x))
         else:
             result = unbounded_floats.map(lambda x: max_value - abs(x))
 
