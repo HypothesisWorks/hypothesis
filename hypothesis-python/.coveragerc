@@ -1,12 +1,13 @@
 [run]
 branch = True
 omit =
-    **/pytestplugin.py
-    **/scrutineer.py
+    **/extra/pytestplugin.py
     **/extra/array_api.py
     **/extra/cli.py
     **/extra/django/*.py
     **/extra/ghostwriter.py
+    **/internal/scrutineer.py
+    **/utils/terminal.py
 
 [report]
 exclude_lines =

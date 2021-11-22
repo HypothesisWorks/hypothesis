@@ -243,10 +243,15 @@ else:
         try:
             from rich.console import Console
             from rich.syntax import Syntax
+
+            from hypothesis.utils.terminal import guess_background_color
         except ImportError:
             print(code)
         else:
-            Console().print(
-                Syntax(code, lexer_name="python", background_color="default"),
-                soft_wrap=True,
+            code = Syntax(
+                code,
+                lexer_name="python",
+                background_color="default",
+                theme="default" if guess_background_color() == "light" else "monokai",
             )
+            Console().print(code, soft_wrap=True)

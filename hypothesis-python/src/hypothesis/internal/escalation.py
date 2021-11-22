@@ -28,6 +28,7 @@ from hypothesis.errors import (
     UnsatisfiedAssumption,
     _Trimmable,
 )
+from hypothesis.utils.dynamicvariables import DynamicVariable
 
 
 def belongs_to(package):
@@ -122,3 +123,23 @@ def get_interesting_origin(exception):
         # to support introspection when debugging, so we can use that unconditionally.
         get_interesting_origin(exception.__context__) if exception.__context__ else (),
     )
+
+
+current_pytest_item = DynamicVariable(None)
+
+
+def format_exception(err, tb):
+    # Try using Pytest to match the currently configured traceback style
+    if current_pytest_item.value is not None and "_pytest._code" in sys.modules:
+        item = current_pytest_item.value
+        ExceptionInfo = sys.modules["_pytest._code"].ExceptionInfo
+        return str(item.repr_failure(ExceptionInfo((type(err), err, tb)))) + "\n"
+
+    # Or use better_exceptions, if that's installed and enabled
+    if "better_exceptions" in sys.modules:
+        better_exceptions = sys.modules["better_exceptions"]
+        if sys.excepthook is better_exceptions.excepthook:
+            return "".join(better_exceptions.format_exception(type(err), err, tb))
+
+    # If all else fails, use the standard-library formatting tools
+    return "".join(traceback.format_exception(type(err), err, tb))

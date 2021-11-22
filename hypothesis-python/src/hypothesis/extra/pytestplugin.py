@@ -21,6 +21,7 @@ import pytest
 from hypothesis import HealthCheck, Phase, Verbosity, core, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.detection import is_hypothesis_test
+from hypothesis.internal.escalation import current_pytest_item
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.reporting import default as default_reporter, with_reporter
 from hypothesis.statistics import collector, describe_statistics
@@ -217,7 +218,8 @@ else:
 
             with collector.with_value(note_statistics):
                 with with_reporter(store):
-                    yield
+                    with current_pytest_item.with_value(item):
+                        yield
             if store.results:
                 item.hypothesis_report_information = list(store.results)
 

@@ -22,7 +22,6 @@ import inspect
 import io
 import sys
 import time
-import traceback
 import types
 import warnings
 import zlib
@@ -81,6 +80,7 @@ from hypothesis.internal.conjecture.shrinker import sort_key
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.internal.escalation import (
     escalate_hypothesis_internal_error,
+    format_exception,
     get_interesting_origin,
     get_trimmed_traceback,
 )
@@ -741,9 +741,7 @@ class StateForActualGivenExecution:
 
                 tb = get_trimmed_traceback()
                 info = data.extra_information
-                info.__expected_traceback = "".join(
-                    traceback.format_exception(type(e), e, tb)
-                )
+                info.__expected_traceback = format_exception(e, tb)
                 info.__expected_exception = e
                 verbose_report(info.__expected_traceback)
 
@@ -829,8 +827,8 @@ class StateForActualGivenExecution:
                         info.__expected_traceback,
                     ),
                 )
-            except (UnsatisfiedAssumption, StopTest):
-                report(traceback.format_exc())
+            except (UnsatisfiedAssumption, StopTest) as e:
+                report(format_exception(e, e.__traceback__))
                 self.__flaky(
                     "Unreliable assumption: An example which satisfied "
                     "assumptions on the first run now fails it."
@@ -848,7 +846,7 @@ class StateForActualGivenExecution:
                 # We are reporting multiple failures, so we need to manually
                 # print each exception's stack trace and information.
                 tb = get_trimmed_traceback()
-                report("".join(traceback.format_exception(type(e), e, tb)))
+                report(format_exception(e, tb))
 
             finally:  # pragma: no cover
                 # Mostly useful for ``find`` and ensuring that objects that
@@ -1137,10 +1135,7 @@ def given(
                     for fragments, err in errors:
                         for f in fragments:
                             report(f)
-                        tb_lines = traceback.format_exception(
-                            type(err), err, err.__traceback__
-                        )
-                        report("".join(tb_lines))
+                        report(format_exception(err, err.__traceback__))
                     raise MultipleFailures(
                         f"Hypothesis found {len(errors)} failures in explicit examples."
                     )
