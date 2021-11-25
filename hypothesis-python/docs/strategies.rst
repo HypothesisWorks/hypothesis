@@ -128,13 +128,14 @@ test is using Hypothesis:
 .. _entry-points:
 
 --------------------------------------------------
-Registering strategies via setuptools entry points
+Hypothesis integration via setuptools entry points
 --------------------------------------------------
 
 If you would like to ship Hypothesis strategies for a custom type - either as
 part of the upstream library, or as a third-party extension, there's a catch:
 :func:`~hypothesis.strategies.from_type` only works after the corresponding
-call to :func:`~hypothesis.strategies.register_type_strategy`.  This means that
+call to :func:`~hypothesis.strategies.register_type_strategy`, and you'll have
+the same problem with :func:`~hypothesis.register_random`.  This means that
 either
 
 - you have to try importing Hypothesis to register the strategy when *your*
@@ -188,6 +189,8 @@ And that's all it takes!
     package to be installed.
 
 
+.. _disabling-pytest-plugin:
+
 Interaction with :pypi:`pytest-cov`
 -----------------------------------
 
@@ -201,5 +204,5 @@ opting out of the pytest plugin entirely.  Alternatively, you can ensure that Hy
 is loaded after coverage measurement is started by disabling the entrypoint, and
 loading our pytest plugin from your ``conftest.py`` instead::
 
-    echo "pytest_plugins = ['hypothesis.extra.pytestplugin']\n" > tests/conftest.py
+    echo "pytest_plugins = ['_hypothesis_pytestplugin']\n" > tests/conftest.py
     pytest -p "no:hypothesispytest" ...

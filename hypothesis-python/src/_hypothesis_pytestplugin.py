@@ -13,18 +13,22 @@
 #
 # END HEADER
 
+"""
+The pytest plugin for Hypothesis.
+
+We move this from the old location at `hypothesis.extra.pytestplugin` so that it
+can be loaded by Pytest without importing Hypothesis.  In turn, this means that
+Hypothesis will not load our own third-party plugins (with associated side-effects)
+unless and until the user explicitly runs `import hypothesis`.
+
+See https://github.com/HypothesisWorks/hypothesis/issues/3140 for details.
+"""
+
 import base64
+import sys
 from inspect import signature
 
 import pytest
-
-from hypothesis import HealthCheck, Phase, Verbosity, core, settings
-from hypothesis.errors import InvalidArgument
-from hypothesis.internal.detection import is_hypothesis_test
-from hypothesis.internal.escalation import current_pytest_item
-from hypothesis.internal.healthcheck import fail_health_check
-from hypothesis.reporting import default as default_reporter, with_reporter
-from hypothesis.statistics import collector, describe_statistics
 
 LOAD_PROFILE_OPTION = "--hypothesis-profile"
 VERBOSITY_OPTION = "--hypothesis-verbosity"
@@ -32,15 +36,28 @@ PRINT_STATISTICS_OPTION = "--hypothesis-show-statistics"
 SEED_OPTION = "--hypothesis-seed"
 EXPLAIN_OPTION = "--hypothesis-explain"
 
+_VERBOSITY_NAMES = ["quiet", "normal", "verbose", "debug"]
+_ALL_OPTIONS = [
+    LOAD_PROFILE_OPTION,
+    VERBOSITY_OPTION,
+    PRINT_STATISTICS_OPTION,
+    SEED_OPTION,
+    EXPLAIN_OPTION,
+]
+
 
 class StoringReporter:
     def __init__(self, config):
+        assert "hypothesis" in sys.modules
+        from hypothesis.reporting import default
+
+        self.report = default
         self.config = config
         self.results = []
 
     def __call__(self, msg):
         if self.config.getoption("capture", "fd") == "no":
-            default_reporter(msg)
+            self.report(msg)
         if not isinstance(msg, str):
             msg = repr(msg)
         self.results.append(msg)
@@ -51,15 +68,13 @@ class StoringReporter:
 if tuple(map(int, pytest.__version__.split(".")[:2])) < (4, 6):  # pragma: no cover
     import warnings
 
-    from hypothesis.errors import HypothesisWarning
-
     PYTEST_TOO_OLD_MESSAGE = """
         You are using pytest version %s. Hypothesis tests work with any test
         runner, but our pytest plugin requires pytest 4.6 or newer.
         Note that the pytest developers no longer support your version either!
         Disabling the Hypothesis pytest plugin...
     """
-    warnings.warn(PYTEST_TOO_OLD_MESSAGE % (pytest.__version__,), HypothesisWarning)
+    warnings.warn(PYTEST_TOO_OLD_MESSAGE % (pytest.__version__,))
 
 else:
 
@@ -73,7 +88,7 @@ else:
         group.addoption(
             VERBOSITY_OPTION,
             action="store",
-            choices=[opt.name for opt in Verbosity],
+            choices=_VERBOSITY_NAMES,
             help="Override profile with verbosity setting specified",
         )
         group.addoption(
@@ -94,19 +109,32 @@ else:
             default=False,
         )
 
+    def _any_hypothesis_option(config):
+        return bool(any(config.getoption(opt) for opt in _ALL_OPTIONS))
+
     def pytest_report_header(config):
+        if not (
+            config.option.verbose >= 1
+            or "hypothesis" in sys.modules
+            or _any_hypothesis_option(config)
+        ):
+            return None
+
+        from hypothesis import Verbosity, settings
+
         if config.option.verbose < 1 and settings.default.verbosity < Verbosity.verbose:
             return None
-        profile = config.getoption(LOAD_PROFILE_OPTION)
-        if not profile:
-            profile = settings._current_profile
-        settings_str = settings.get_profile(profile).show_changed()
+        settings_str = settings.default.show_changed()
         if settings_str != "":
             settings_str = f" -> {settings_str}"
-        return f"hypothesis profile {profile!r}{settings_str}"
+        return f"hypothesis profile {settings._current_profile!r}{settings_str}"
 
     def pytest_configure(config):
-        core.running_under_pytest = True
+        config.addinivalue_line("markers", "hypothesis: Tests which use hypothesis.")
+        if not _any_hypothesis_option(config):
+            return
+        from hypothesis import Phase, Verbosity, core, settings
+
         profile = config.getoption(LOAD_PROFILE_OPTION)
         if profile:
             settings.load_profile(profile)
@@ -134,16 +162,24 @@ else:
             except ValueError:
                 pass
             core.global_force_seed = seed
-        config.addinivalue_line("markers", "hypothesis: Tests which use hypothesis.")
 
     @pytest.hookimpl(hookwrapper=True)
     def pytest_runtest_call(item):
-        if not hasattr(item, "obj"):
+        if not (hasattr(item, "obj") and "hypothesis" in sys.modules):
             yield
-        elif not is_hypothesis_test(item.obj):
+            return
+
+        from hypothesis import core
+        from hypothesis.internal.detection import is_hypothesis_test
+
+        core.running_under_pytest = True
+
+        if not is_hypothesis_test(item.obj):
             # If @given was not applied, check whether other hypothesis
             # decorators were applied, and raise an error if they were.
             if getattr(item.obj, "is_hypothesis_strategy_function", False):
+                from hypothesis.errors import InvalidArgument
+
                 raise InvalidArgument(
                     f"{item.nodeid} is a function that returns a Hypothesis strategy, "
                     "but pytest has collected it as a test function.  This is useless "
@@ -158,9 +194,17 @@ else:
                 ("reproduce_example", "_hypothesis_internal_use_reproduce_failure"),
             ]:
                 if hasattr(item.obj, attribute):
+                    from hypothesis.errors import InvalidArgument
+
                     raise InvalidArgument(message % (name,))
             yield
         else:
+            from hypothesis import HealthCheck, settings
+            from hypothesis.internal.escalation import current_pytest_item
+            from hypothesis.internal.healthcheck import fail_health_check
+            from hypothesis.reporting import with_reporter
+            from hypothesis.statistics import collector, describe_statistics
+
             # Retrieve the settings for this test from the test object, which
             # is normally a Hypothesis wrapped_test wrapper. If this doesn't
             # work, the test object is probably something weird
@@ -273,6 +317,11 @@ else:
             report(global_properties)
 
     def pytest_collection_modifyitems(items):
+        if "hypothesis" not in sys.modules:
+            return
+
+        from hypothesis.internal.detection import is_hypothesis_test
+
         for item in items:
             if isinstance(item, pytest.Function) and is_hypothesis_test(item.obj):
                 item.add_marker("hypothesis")

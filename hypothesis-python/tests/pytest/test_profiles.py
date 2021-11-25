@@ -14,8 +14,8 @@
 # END HEADER
 
 import pytest
+from _hypothesis_pytestplugin import LOAD_PROFILE_OPTION
 
-from hypothesis.extra.pytestplugin import LOAD_PROFILE_OPTION
 from hypothesis.version import __version__
 
 pytest_plugins = "pytester"
