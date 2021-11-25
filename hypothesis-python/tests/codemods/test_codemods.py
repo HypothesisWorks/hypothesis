@@ -64,16 +64,24 @@ class TestFixPositionalKeywonlyArgs(CodemodTest):
         before = """
             import hypothesis.strategies as st
 
-            st.floats(0, 1, False, False, True, 32)
+            st.floats(0, 1, False, False, 32)
             st.fractions(0, 1, 9)
         """
         after = """
             import hypothesis.strategies as st
 
-            st.floats(0, 1, allow_nan=False, allow_infinity=False, allow_subnormal=True, width=32)
+            st.floats(0, 1, allow_nan=False, allow_infinity=False, width=32)
             st.fractions(0, 1, max_denominator=9)
         """
         self.assertCodemod(before=before, after=after)
+
+    def test_noop_with_new_floats_kw(self) -> None:
+        before = """
+            import hypothesis.strategies as st
+
+            st.floats(0, 1, False, False, True, 32, True, True)  # allow_subnormal=True
+        """
+        self.assertCodemod(before=before, after=before)
 
     def test_noop_if_unsure(self) -> None:
         before = """

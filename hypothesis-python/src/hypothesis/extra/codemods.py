@@ -206,6 +206,12 @@ class HypothesisFixPositionalKeywonlyArgs(VisitorBasedCodemodCommand):
         if len(updated_node.args) > len(params):
             return updated_node
 
+        # st.floats() has a new allow_subnormal kwonly argument not at the end,
+        # so we do a bit more of a dance here.
+        params = signature(func).parameters.values()
+        if qualnames == {"hypothesis.strategies.floats"}:
+            params = [p for p in params if p.name != "allow_subnormal"]
+
         # Create new arg nodes with the newly required keywords
         assign_nospace = cst.AssignEqual(
             whitespace_before=cst.SimpleWhitespace(""),
