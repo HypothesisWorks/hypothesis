@@ -27,6 +27,7 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.extra import numpy as npst
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.coverage import check, check_function
+from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.internal.validation import (
     check_type,
     check_valid_interval,
@@ -322,7 +323,7 @@ class column:
 
     name = attr.ib(default=None)
     elements = attr.ib(default=None)
-    dtype = attr.ib(default=None)
+    dtype = attr.ib(default=None, repr=get_pretty_function_description)
     fill = attr.ib(default=None)
     unique = attr.ib(default=False)
 
