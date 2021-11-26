@@ -50,6 +50,7 @@ at the cost of additional configuration (adding ``'hypothesis.extra'`` to the
 .. autofunction:: refactor
 """
 
+import functools
 import importlib
 from inspect import Parameter, signature
 from typing import List
@@ -111,6 +112,12 @@ class HypothesisFixComplexMinMagnitude(VisitorBasedCodemodCommand):
         ):
             return updated_node.with_changes(value=cst.Integer("0"))
         return updated_node
+
+
+@functools.lru_cache()
+def get_fn(import_path):
+    mod, fn = import_path.rsplit(".", 1)
+    return getattr(importlib.import_module(mod), fn)
 
 
 class HypothesisFixPositionalKeywonlyArgs(VisitorBasedCodemodCommand):
@@ -195,10 +202,8 @@ class HypothesisFixPositionalKeywonlyArgs(VisitorBasedCodemodCommand):
         # Get the actual function object so that we can inspect the signature.
         # This does e.g. incur a dependency on Numpy to fix Numpy-dependent code,
         # but having a single source of truth about the signatures is worth it.
-        mod, fn = list(qualnames.intersection(self.kwonly_functions))[0].rsplit(".", 1)
-        try:
-            func = getattr(importlib.import_module(mod), fn)
-        except ImportError:
+        params = signature(get_fn(*qualnames)).parameters.values()
+        if len(updated_node.args) > len(params):
             return updated_node
 
         # Create new arg nodes with the newly required keywords
@@ -210,6 +215,6 @@ class HypothesisFixPositionalKeywonlyArgs(VisitorBasedCodemodCommand):
             arg
             if arg.keyword or arg.star or p.kind is not Parameter.KEYWORD_ONLY
             else arg.with_changes(keyword=cst.Name(p.name), equal=assign_nospace)
-            for p, arg in zip(signature(func).parameters.values(), updated_node.args)
+            for p, arg in zip(params, updated_node.args)
         ]
         return updated_node.with_changes(args=newargs)

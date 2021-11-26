@@ -118,3 +118,13 @@ class TestFixPositionalKeywonlyArgs(CodemodTest):
             target(**kwargs)
         """
         self.assertCodemod(before=before, after=before)
+
+    def test_noop_with_too_many_arguments_passed(self) -> None:
+        # If there are too many arguments, we should leave this alone to raise
+        # TypeError on older versions instead of deleting the additional args.
+        before = """
+            import hypothesis.strategies as st
+
+            st.sets(st.integers(), 0, 1, True)
+        """
+        self.assertCodemod(before=before, after=before)

@@ -25,7 +25,6 @@ import inspect
 from copy import copy
 from functools import lru_cache
 from io import StringIO
-from operator import attrgetter
 from typing import (
     Any,
     Callable,
@@ -53,7 +52,12 @@ from hypothesis.core import TestFunc, given
 from hypothesis.errors import InvalidArgument, InvalidDefinition
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.healthcheck import fail_health_check
-from hypothesis.internal.reflection import function_digest, nicerepr, proxies
+from hypothesis.internal.reflection import (
+    function_digest,
+    get_pretty_function_description,
+    nicerepr,
+    proxies,
+)
 from hypothesis.internal.validation import check_type
 from hypothesis.reporting import current_verbosity, report
 from hypothesis.strategies._internal.featureflags import FeatureStrategy
@@ -405,7 +409,7 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
 @attr.s()
 class Rule:
     targets = attr.ib()
-    function = attr.ib(repr=attrgetter("__qualname__"))
+    function = attr.ib(repr=get_pretty_function_description)
     arguments = attr.ib()
     preconditions = attr.ib()
     bundles = attr.ib(init=False)
@@ -823,7 +827,7 @@ def precondition(precond: Callable[[Any], bool]) -> Callable[[TestFunc], TestFun
 
 @attr.s()
 class Invariant:
-    function = attr.ib()
+    function = attr.ib(repr=get_pretty_function_description)
     preconditions = attr.ib()
     check_during_init = attr.ib()
 
