@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.27.2:
+
+-------------------
+6.27.2 - 2021-11-26
+-------------------
+
+This patch makes the :command:`hypothesis codemod`
+:ref:`command <hypothesis-cli>` somewhat faster.
+
 .. _v6.27.1:
 
 -------------------
