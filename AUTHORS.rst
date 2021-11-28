@@ -115,6 +115,7 @@ their individual contributions.
 * `Pierre-Jean Campigotto <https://github.com/PJCampi>`_
 * `Przemek Konopko <https://github.com/soutys>`_
 * `Richard Boulton <https://www.github.com/rboulton>`_ (richard@tartarus.org)
+* `Robert Howlett <https://github.com/jebob>`_
 * `Robert Knight <https://github.com/robertknight>`_ (robertknight@gmail.com)
 * `Rónán Carrigan <https://www.github.com/rcarriga>`_ (rcarriga@tcd.ie)
 * `Ruben Opdebeeck <https://github.com/ROpdebee>`_

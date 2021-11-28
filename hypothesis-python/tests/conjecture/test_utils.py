@@ -320,3 +320,7 @@ def test_can_draw_arbitrary_fractions(p, b):
 def test_samples_from_a_range_directly():
     s = cu.check_sample(range(10 ** 1000), "")
     assert isinstance(s, range)
+
+
+def test_p_continue_to_average_saturates():
+    assert cu._p_continue_to_avg(1.1, 100) == 100
