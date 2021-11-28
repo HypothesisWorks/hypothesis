@@ -14,15 +14,17 @@ click==8.0.3
     # via
     #   -r requirements/coverage.in
     #   black
-coverage==6.1.2
+coverage==6.2
     # via -r requirements/coverage.in
+deprecated==1.2.13
+    # via redis
 dpcontracts==0.6.0
     # via -r requirements/coverage.in
-fakeredis==1.6.1
+fakeredis==1.7.0
     # via -r requirements/coverage.in
 lark-parser==0.12.0
     # via -r requirements/coverage.in
-libcst==0.3.21
+libcst==0.3.23
     # via -r requirements/coverage.in
 mypy-extensions==0.4.3
     # via
@@ -52,7 +54,7 @@ pytz==2021.3
     #   pandas
 pyyaml==6.0
     # via libcst
-redis==3.5.3
+redis==4.0.2
     # via fakeredis
 regex==2021.11.10
     # via black
@@ -73,3 +75,5 @@ typing-extensions==4.0.0
     #   typing-inspect
 typing-inspect==0.7.1
     # via libcst
+wrapt==1.13.3
+    # via deprecated
