@@ -255,7 +255,10 @@ class ArrayStrategy(st.SearchStrategy):
                 # sqrt isn't chosen for any particularly principled reason. It
                 # just grows reasonably quickly but sublinearly, and for small
                 # arrays it represents a decent fraction of the array size.
-                average_size=math.sqrt(self.array_size),
+                average_size=min(
+                    0.9 * self.array_size,  # ensure small arrays sometimes use fill
+                    max(10, math.sqrt(self.array_size)),  # ...but *only* sometimes
+                ),
             )
 
             needs_fill = np.full(self.array_size, True)
@@ -312,7 +315,7 @@ class ArrayStrategy(st.SearchStrategy):
             if mismatch.any():
                 raise InvalidArgument(
                     "Array elements %r cannot be represented as dtype %r - instead "
-                    "they becomes %r.  Use a more precise strategy, e.g. without "
+                    "they become %r.  Use a more precise strategy, e.g. without "
                     "trailing null bytes, as this will be an error future versions."
                     % (result[mismatch], self.dtype, out[mismatch])
                 )

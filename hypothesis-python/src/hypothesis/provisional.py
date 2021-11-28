@@ -119,7 +119,7 @@ class DomainNameStrategy(st.SearchStrategy):
         # with a max of 255, that leaves 3 characters for a TLD.
         # Allowing any more subdomains would not leave enough
         # characters for even the shortest possible TLDs.
-        elements = cu.many(data, min_size=1, average_size=1, max_size=126)
+        elements = cu.many(data, min_size=1, average_size=3, max_size=126)
         while elements.more():
             # Generate a new valid subdomain using the regex strategy.
             sub_domain = data.draw(st.from_regex(self.label_regex, fullmatch=True))

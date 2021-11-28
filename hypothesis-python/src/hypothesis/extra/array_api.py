@@ -347,7 +347,10 @@ class ArrayStrategy(st.SearchStrategy):
                 # sqrt isn't chosen for any particularly principled reason. It
                 # just grows reasonably quickly but sublinearly, and for small
                 # arrays it represents a decent fraction of the array size.
-                average_size=math.sqrt(self.array_size),
+                average_size=min(
+                    0.9 * self.array_size,  # ensure small arrays sometimes use fill
+                    max(10, math.sqrt(self.array_size)),  # ...but *only* sometimes
+                ),
             )
 
             assigned = set()
