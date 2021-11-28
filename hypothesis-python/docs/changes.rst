@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.28.1:
+
+-------------------
+6.28.1 - 2021-11-28
+-------------------
+
+This release fixes some internal calculations related to collection sizes (:issue:`3143`).
+
 .. _v6.28.0:
 
 -------------------
