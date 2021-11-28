@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.27.3:
+
+-------------------
+6.27.3 - 2021-11-28
+-------------------
+
+This release fixes :issue:`3080`, where :func:`~hypothesis.strategies.from_type`
+failed on unions containing :pep:`585` builtin generic types (like ``list[int]``)
+in Python 3.9 and later.
+
 .. _v6.27.2:
 
 -------------------
