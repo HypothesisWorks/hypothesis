@@ -413,8 +413,10 @@ high confidence in the system being tested than random PBT.
 (`Löscher and Sagonas <http://proper.softlab.ntua.gr/Publications.html>`__)
 
 This is not *always* a good idea - for example calculating the search metric
-might take time better spent running more uniformly-random test cases - but
-Hypothesis has **experimental** support for targeted PBT you may wish to try.
+might take time better spent running more uniformly-random test cases, or your
+target metric might accidentally lead Hypothesis *away* from bugs - but if
+there is a natural metric like "floating-point error", "load factor" or
+"queue length", we encourage you to experiment with targeted testing.
 
 .. autofunction:: hypothesis.target
 
