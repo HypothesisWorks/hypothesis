@@ -21,6 +21,8 @@ import pytest
 from hypothesis import given, strategies as st
 from hypothesis.errors import InvalidArgument
 
+from tests.common.debug import find_any
+
 
 @pytest.mark.parametrize(
     "annotated_type,expected_strategy_repr",
@@ -85,3 +87,10 @@ def test_string_forward_ref_message():
     s = st.builds(User)
     with pytest.raises(InvalidArgument, match="`from __future__ import annotations`"):
         s.example()
+
+
+def test_issue_3080():
+    # Check for https://github.com/HypothesisWorks/hypothesis/issues/3080
+    s = st.from_type(typing.Union[list[int], int])
+    find_any(s, lambda x: isinstance(x, int))
+    find_any(s, lambda x: isinstance(x, list))
