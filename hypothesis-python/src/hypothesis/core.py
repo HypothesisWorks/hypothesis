@@ -941,8 +941,6 @@ class HypothesisHandle:
 
         Returns None if buffer invalid for the strategy, canonical pruned
         bytes if the buffer was valid, and leaves raised exceptions alone.
-
-        Note: this feature is experimental and may change or be removed.
         """
         # Note: most users, if they care about fuzzer performance, will access the
         # property and assign it to a local variable to move the attribute lookup
