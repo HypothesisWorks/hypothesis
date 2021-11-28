@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.28.0:
+
+-------------------
+6.28.0 - 2021-11-28
+-------------------
+
+This release modifies our :pypi:`pytest` plugin, to avoid importing Hypothesis
+and therefore triggering :ref:`Hypothesis' entry points <entry-points>` for
+test suites where Hypothesis is installed but not actually used (:issue:`3140`).
+
 .. _v6.27.3:
 
 -------------------
