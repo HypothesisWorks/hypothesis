@@ -129,8 +129,9 @@ setuptools.setup(
         "Topic :: Software Development :: Testing",
         "Typing :: Typed",
     ],
+    py_modules=["_hypothesis_pytestplugin"],
     entry_points={
-        "pytest11": ["hypothesispytest = hypothesis.extra.pytestplugin"],
+        "pytest11": ["hypothesispytest = _hypothesis_pytestplugin"],
         "console_scripts": ["hypothesis = hypothesis.extra.cli:main"],
     },
     long_description=open(README).read(),

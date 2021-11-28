@@ -16,8 +16,7 @@
 from distutils.version import LooseVersion
 
 import pytest
-
-from hypothesis.extra.pytestplugin import PRINT_STATISTICS_OPTION
+from _hypothesis_pytestplugin import PRINT_STATISTICS_OPTION
 
 pytest_plugins = "pytester"
 

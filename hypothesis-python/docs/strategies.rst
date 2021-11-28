@@ -128,13 +128,14 @@ test is using Hypothesis:
 .. _entry-points:
 
 --------------------------------------------------
-Registering strategies via setuptools entry points
+Hypothesis integration via setuptools entry points
 --------------------------------------------------
 
 If you would like to ship Hypothesis strategies for a custom type - either as
 part of the upstream library, or as a third-party extension, there's a catch:
 :func:`~hypothesis.strategies.from_type` only works after the corresponding
-call to :func:`~hypothesis.strategies.register_type_strategy`.  This means that
+call to :func:`~hypothesis.strategies.register_type_strategy`, and you'll have
+the same problem with :func:`~hypothesis.register_random`.  This means that
 either
 
 - you have to try importing Hypothesis to register the strategy when *your*

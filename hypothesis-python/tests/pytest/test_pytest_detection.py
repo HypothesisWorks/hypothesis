@@ -33,3 +33,16 @@ def test_is_not_running_under_pytest(tmpdir):
     pyfile = tmpdir.join("test.py")
     pyfile.write(FILE_TO_RUN)
     subprocess.check_call([sys.executable, str(pyfile)])
+
+
+DOES_NOT_IMPORT_HYPOTHESIS = """
+import sys
+
+def test_pytest_plugin_does_not_import_hypothesis():
+    assert "hypothesis" not in sys.modules
+"""
+
+
+def test_plugin_does_not_import_pytest(testdir):
+    testdir.makepyfile(DOES_NOT_IMPORT_HYPOTHESIS)
+    testdir.runpytest_subprocess().assert_outcomes(passed=1)

@@ -1,11 +1,12 @@
 [run]
 branch = True
 omit =
-    **/extra/pytestplugin.py
+    **/_hypothesis_pytestplugin.py
     **/extra/array_api.py
     **/extra/cli.py
     **/extra/django/*.py
     **/extra/ghostwriter.py
+    **/extra/pytestplugin.py
     **/internal/scrutineer.py
     **/utils/terminal.py
 
