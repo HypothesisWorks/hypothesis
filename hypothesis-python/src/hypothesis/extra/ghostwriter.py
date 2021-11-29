@@ -53,6 +53,11 @@ generally do their best to write you a useful test.  You can also use
       -e, --except OBJ_NAME      dotted name of exception(s) to ignore
       -h, --help                 Show this message and exit.
 
+.. tip::
+
+    Using a light theme?  Hypothesis respects `NO_COLOR <https://no-color.org/>`__
+    and :envvar:`DJANGO_COLORS=light <django:DJANGO_COLORS>`.
+
 .. note::
 
     The ghostwriter requires :pypi:`black`, but the generated code only
