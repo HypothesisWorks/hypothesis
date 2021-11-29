@@ -547,6 +547,24 @@ def test_resolving_recursive_type():
     assert isinstance(st.builds(Tree).example(), Tree)
 
 
+class SomeClass:
+    def __init__(self, value: int, next_node: typing.Optional["SomeClass"]) -> None:
+        assert value > 0
+        self.value = value
+        self.next_node = next_node
+
+    def __repr__(self) -> str:
+        return f"SomeClass({self.value}, next_node={self.next_node})"
+
+
+def test_resolving_recursive_type_with_registered_constraint():
+    with temp_registered(
+        SomeClass, st.builds(SomeClass, value=st.integers(min_value=1))
+    ):
+        find_any(st.from_type(SomeClass), lambda s: s.next_node is None)
+        find_any(st.from_type(SomeClass), lambda s: s.next_node is not None)
+
+
 @given(from_type(typing.Tuple[()]))
 def test_resolves_empty_Tuple_issue_1583_regression(ex):
     # See e.g. https://github.com/python/mypy/commit/71332d58
