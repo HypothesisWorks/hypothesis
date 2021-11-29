@@ -202,7 +202,8 @@ class HypothesisFixPositionalKeywonlyArgs(VisitorBasedCodemodCommand):
         # Get the actual function object so that we can inspect the signature.
         # This does e.g. incur a dependency on Numpy to fix Numpy-dependent code,
         # but having a single source of truth about the signatures is worth it.
-        params = signature(get_fn(*qualnames)).parameters.values()
+        func = get_fn(*qualnames)
+        params = signature(func).parameters.values()
         if len(updated_node.args) > len(params):
             return updated_node
 
@@ -211,6 +212,9 @@ class HypothesisFixPositionalKeywonlyArgs(VisitorBasedCodemodCommand):
         params = signature(func).parameters.values()
         if qualnames == {"hypothesis.strategies.floats"}:
             params = [p for p in params if p.name != "allow_subnormal"]
+
+        if len(updated_node.args) > len(params):
+            return updated_node
 
         # Create new arg nodes with the newly required keywords
         assign_nospace = cst.AssignEqual(
