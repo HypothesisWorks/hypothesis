@@ -33,6 +33,7 @@ from hypothesis.internal.floats import (
     is_negative,
     next_down,
     next_up,
+    width_smallest_normals,
 )
 from hypothesis.internal.validation import (
     check_type,
@@ -183,17 +184,6 @@ NASTY_FLOATS.extend([-x for x in NASTY_FLOATS])
 FLOAT_STRATEGY_DO_DRAW_LABEL = calc_label_from_name(
     "getting another float in FloatStrategy"
 )
-
-
-# Smallest positive non-zero numbers that is fully representable by an
-# IEEE-754 float, calculated with the width's associated minimum exponent.
-# Values from https://en.wikipedia.org/wiki/IEEE_754#Basic_and_interchange_formats
-width_smallest_normals = {
-    16: 2 ** -(2 ** (5 - 1) - 2),
-    32: 2 ** -(2 ** (8 - 1) - 2),
-    64: 2 ** -(2 ** (11 - 1) - 2),
-}
-assert width_smallest_normals[64] == float_info.min
 
 
 class FloatStrategy(SearchStrategy):

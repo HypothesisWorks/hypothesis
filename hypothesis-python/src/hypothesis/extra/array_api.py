@@ -50,6 +50,7 @@ from hypothesis.extra._array_helpers import (
 )
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.coverage import check_function
+from hypothesis.internal.floats import next_down, width_smallest_normals
 from hypothesis.internal.reflection import proxies
 from hypothesis.internal.validation import (
     check_type,
@@ -168,6 +169,7 @@ def _from_dtype(
     max_value: Optional[Union[int, float]] = None,
     allow_nan: Optional[bool] = None,
     allow_infinity: Optional[bool] = None,
+    allow_subnormal: Optional[bool] = None,
     exclude_min: Optional[bool] = None,
     exclude_max: Optional[bool] = None,
 ) -> st.SearchStrategy[Union[bool, int, float]]:
@@ -247,6 +249,8 @@ def _from_dtype(
             kw["allow_nan"] = allow_nan
         if allow_infinity is not None:
             kw["allow_infinity"] = allow_infinity
+        if allow_subnormal is not None:
+            kw["allow_subnormal"] = allow_subnormal
         if exclude_min is not None:
             kw["exclude_min"] = exclude_min
         if exclude_max is not None:
@@ -750,6 +754,25 @@ def make_strategies_namespace(xp: Any) -> SimpleNamespace:
             HypothesisWarning,
         )
 
+    # We infer whether an array module is built to flush subnormals to zero
+    # (e.g. `-ftz=true` for CuPy), so that we can default the allow_subnormal
+    # kwarg for xps.float_dtype() appropriately.
+    try:
+        # We test with float32 as opposed to float64, as FTZ builds for CuPy
+        # might have limited support for float64 subnormals - probably by
+        # relying on Python's own float64 behaviour.
+        subnormal = next_down(width_smallest_normals[32], width=32)
+        ftz = bool(xp.asarray(subnormal, dtype=xp.float32) == 0)
+    except Exception:
+        warn(
+            (
+                f"Could not determine whether build of module {xp.__name__} "
+                "flushes subnormals to zero - we will assume it does"
+            ),
+            HypothesisWarning,
+        )
+        ftz = True
+
     @defines_strategy(force_reusable_values=True)
     def from_dtype(
         dtype: Union[DataType, str],
@@ -758,9 +781,32 @@ def make_strategies_namespace(xp: Any) -> SimpleNamespace:
         max_value: Optional[Union[int, float]] = None,
         allow_nan: Optional[bool] = None,
         allow_infinity: Optional[bool] = None,
+        allow_subnormal: Optional[bool] = None,
         exclude_min: Optional[bool] = None,
         exclude_max: Optional[bool] = None,
     ) -> st.SearchStrategy[Union[bool, int, float]]:
+        # Disable subnormals for FTZ builds when they'd otherwise be generated
+        if (
+            ftz
+            and allow_subnormal is None
+            and find_castable_builtin_for_dtype(xp, dtype) is float
+        ):
+            # floats() only accepts None for allow_subnormal when subnormals are
+            # out of range, so we only default allow_subnormal to False when
+            # subnormals are in range.
+            if min_value is None and max_value is None:
+                allow_subnormal = False
+            else:
+                _min_value = min_value if min_value is not None else 0.0
+                _max_value = min_value if min_value is not None else 0.0
+                if dtype == xp.float32:
+                    width = 32
+                else:
+                    width = 64
+                smallest_normal = width_smallest_normals[width]
+                if _min_value > -smallest_normal or _max_value < smallest_normal:
+                    allow_subnormal = False
+
         return _from_dtype(
             xp,
             dtype,
@@ -768,6 +814,7 @@ def make_strategies_namespace(xp: Any) -> SimpleNamespace:
             max_value=max_value,
             allow_nan=allow_nan,
             allow_infinity=allow_infinity,
+            allow_subnormal=allow_subnormal,
             exclude_min=exclude_min,
             exclude_max=exclude_max,
         )

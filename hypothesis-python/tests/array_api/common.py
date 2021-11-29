@@ -17,11 +17,13 @@ import pytest
 
 from hypothesis.errors import HypothesisWarning
 from hypothesis.extra.array_api import make_strategies_namespace, mock_xp
+from hypothesis.internal.floats import next_down, width_smallest_normals
 
 __all__ = [
     "xp",
     "xps",
     "COMPLIANT_XP",
+    "FTZ_XP",
 ]
 
 
@@ -39,3 +41,7 @@ except ImportError:
     with pytest.warns(HypothesisWarning):
         xps = make_strategies_namespace(xp)
     COMPLIANT_XP = False
+
+# Infer whether build of array module flushes subnormals to zero
+subnormal = next_down(width_smallest_normals[32], width=32)
+FTZ_XP = bool(xp.asarray(subnormal, dtype=xp.float32) == 0)
