@@ -145,6 +145,13 @@ def find_castable_builtin_for_dtype(
     raise InvalidArgument(f"dtype={dtype} not recognised in {xp.__name__}")
 
 
+def get_width(xp: Any, dtype: DataType) -> int:
+    for name in NUMERIC_NAMES:
+        if dtype == getattr(xp, name):
+            return int(name[-2:])
+    raise InvalidArgument(f"dtype={dtype} not recognised in {xp.__name__}")
+
+
 @check_function
 def dtype_from_name(xp: Any, name: str) -> DataType:
     if name in DTYPE_NAMES:
@@ -273,6 +280,23 @@ class ArrayStrategy(st.SearchStrategy):
     def check_set_value(self, val, val_0d, strategy):
         finite = self.builtin is bool or self.xp.isfinite(val_0d)
         if finite and self.builtin(val_0d) != val:
+            if self.builtin is float:
+                width = get_width(self.xp, self.dtype)
+                smallest_normal = width_smallest_normals[width]
+                try:
+                    is_subnormal = 0 < abs(val) < smallest_normal
+                except Exception:
+                    # val may be a non-float that does not support the
+                    # operations __lt__ and __abs__
+                    is_subnormal = False
+                if is_subnormal:
+                    raise InvalidArgument(
+                        f"Generated subnormal float {val} from strategy "
+                        f"{strategy} resulted in {val_0d!r}, probably "
+                        f"as a result of array module {self.xp.__name__} "
+                        "being built with flush-to-zero compiler options. "
+                        "Consider passing allow_subnormal=False."
+                    )
             raise InvalidArgument(
                 f"Generated array element {val!r} from strategy {strategy} "
                 f"cannot be represented with dtype {self.dtype}. "
@@ -799,10 +823,7 @@ def make_strategies_namespace(xp: Any) -> SimpleNamespace:
             else:
                 _min_value = min_value if min_value is not None else 0.0
                 _max_value = min_value if min_value is not None else 0.0
-                if dtype == xp.float32:
-                    width = 32
-                else:
-                    width = 64
+                width = get_width(xp, dtype)
                 smallest_normal = width_smallest_normals[width]
                 if _min_value > -smallest_normal or _max_value < smallest_normal:
                     allow_subnormal = False
