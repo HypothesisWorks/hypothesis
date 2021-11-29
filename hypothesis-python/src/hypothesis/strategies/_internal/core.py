@@ -886,8 +886,21 @@ def builds(
             raise InvalidArgument(
                 f"passed infer for {badargs}, but there is no type annotation"
             )
-        for kw in set(hints) & (required | to_infer):
-            kwargs[kw] = from_type(hints[kw])
+        infer_for = {k: v for k, v in hints.items() if k in (required | to_infer)}
+        if infer_for:
+            from hypothesis.strategies._internal.types import _global_type_lookup
+
+            for kw, t in infer_for.items():
+                if (
+                    getattr(t, "__module__", None) in ("builtins", "typing")
+                    or t in _global_type_lookup
+                ):
+                    kwargs[kw] = from_type(t)
+                else:
+                    # We defer resolution of these type annotations so that the obvious
+                    # approach to registering recursive types just works.  See
+                    # https://github.com/HypothesisWorks/hypothesis/issues/3026
+                    kwargs[kw] = deferred(lambda t=t: from_type(t))  # type: ignore
     return BuildsStrategy(target, args, kwargs)
 
 
