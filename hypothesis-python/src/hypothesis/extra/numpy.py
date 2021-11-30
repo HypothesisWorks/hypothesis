@@ -80,6 +80,7 @@ def from_dtype(
     max_value: Union[int, float, None] = None,
     allow_nan: Optional[bool] = None,
     allow_infinity: Optional[bool] = None,
+    allow_subnormal: Optional[bool] = None,
     exclude_min: Optional[bool] = None,
     exclude_max: Optional[bool] = None,
 ) -> st.SearchStrategy[Any]:
@@ -131,6 +132,7 @@ def from_dtype(
                 "max_value",
                 "allow_nan",
                 "allow_infinity",
+                "allow_subnormal",
                 "exclude_min",
                 "exclude_max",
             ),
@@ -139,6 +141,11 @@ def from_dtype(
         # If anyone wants to add a `width` argument to `complex_numbers()`, we would
         # accept a pull request and add passthrough support for magnitude bounds,
         # but it's a low priority otherwise.
+        if allow_subnormal is not None:
+            raise NotImplementedError(
+                f"dtype={dtype} and allow_subnormal={allow_subnormal}, "
+                "but passing allow_subnormal with complex dtype is not implemented"
+            )
         if dtype.itemsize == 8:
             float32 = st.floats(width=32, **compat_kw("allow_nan", "allow_infinity"))
             result = st.builds(complex, float32, float32)
