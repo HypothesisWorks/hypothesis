@@ -21,7 +21,7 @@ from hypothesis import given, strategies as st
 from hypothesis.extra.array_api import DTYPE_NAMES, find_castable_builtin_for_dtype
 from hypothesis.internal.floats import width_smallest_normals
 
-from tests.array_api.common import FTZ_FLOAT32, xp, xps
+from tests.array_api.common import WIDTHS_FTZ, xp, xps
 from tests.common.debug import assert_no_examples, find_any, minimal
 
 
@@ -122,7 +122,7 @@ smallest_normal = width_smallest_normals[32]
 
 
 @pytest.mark.skipif(
-    FTZ_FLOAT32, reason="Subnormals should not be generated for FTZ builds"
+    WIDTHS_FTZ[32], reason="Subnormals should not be generated for FTZ builds"
 )
 @pytest.mark.parametrize("strat", subnormal_strats)
 def test_generate_subnormals_for_non_ftz_float32(strat):
@@ -132,7 +132,7 @@ def test_generate_subnormals_for_non_ftz_float32(strat):
 
 
 @pytest.mark.skipif(
-    not FTZ_FLOAT32, reason="Subnormals should be generated for non-FTZ builds"
+    not WIDTHS_FTZ[32], reason="Subnormals should be generated for non-FTZ builds"
 )
 @pytest.mark.parametrize("strat", subnormal_strats)
 def test_does_not_generate_subnormals_for_ftz_float32(strat):

@@ -20,7 +20,7 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.extra.array_api import DTYPE_NAMES, NUMERIC_NAMES
 from hypothesis.internal.floats import width_smallest_normals
 
-from tests.array_api.common import COMPLIANT_XP, FTZ_FLOAT32, xp, xps
+from tests.array_api.common import COMPLIANT_XP, WIDTHS_FTZ, xp, xps
 from tests.common.debug import find_any, minimal
 from tests.common.utils import fails_with, flaky
 
@@ -474,7 +474,9 @@ def test_may_reuse_distinct_integers_if_asked():
     )
 
 
-@pytest.mark.skipif(not FTZ_FLOAT32, reason="Subnormals are valid for non-FTZ builds")
+@pytest.mark.skipif(
+    not WIDTHS_FTZ[32], reason="Subnormals are valid for non-FTZ builds"
+)
 def test_cannot_draw_subnormals_for_ftz_float32():
     """For FTZ builds of array modules, strategy with subnormal elements
     strategy raises helpful error."""
