@@ -79,7 +79,7 @@ class TestFixPositionalKeywonlyArgs(CodemodTest):
         before = """
             import hypothesis.strategies as st
 
-            st.floats(0, 1, False, False, True, 32, True, True)  # allow_subnormal=True
+            st.floats(0, 1, False, False, True, 32, False, False)  # allow_subnormal=True
         """
         self.assertCodemod(before=before, after=before)
 

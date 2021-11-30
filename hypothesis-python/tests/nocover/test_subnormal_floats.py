@@ -63,5 +63,5 @@ def test_does_not_generate_subnormals_when_disallowed(
         allow_subnormal=False,
         width=width,
     )
-    strat = strat.filter(lambda x: x != 0.0 and not math.isnan(x) and not math.isinf(x))
+    strat = strat.filter(lambda x: x != 0.0 and math.isfinite(x))
     assert_all_examples(strat, lambda x: x <= -smallest_normal or x >= smallest_normal)

@@ -222,7 +222,8 @@ class FloatStrategy(SearchStrategy):
                 float_of(f, self.width)
             except OverflowError:
                 return False
-        if not self.allow_subnormal and 0 < abs(f) < width_smallest_normals[self.width]:
+        smallest_normal = width_smallest_normals[self.width]
+        if (not self.allow_subnormal) and 0 < abs(f) < smallest_normal:
             return False
         return True
 
@@ -275,7 +276,7 @@ class FixedBoundedFloatStrategy(SearchStrategy):
             f = float_of(f, self.width)
         assume(self.lower_bound <= f <= self.upper_bound)
         if not self.allow_subnormal:
-            assume(f == 0 or abs(f) > width_smallest_normals[self.width])
+            assume(f == 0 or abs(f) >= width_smallest_normals[self.width])
         return f
 
 
