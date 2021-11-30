@@ -15,10 +15,12 @@
 
 import math
 import sys
+from collections import defaultdict
 from numbers import Real
 from types import SimpleNamespace
 from typing import (
     Any,
+    Dict,
     Iterable,
     Iterator,
     List,
@@ -50,7 +52,7 @@ from hypothesis.extra._array_helpers import (
 )
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.coverage import check_function
-from hypothesis.internal.floats import next_down, width_smallest_normals
+from hypothesis.internal.floats import next_down
 from hypothesis.internal.reflection import proxies
 from hypothesis.internal.validation import (
     check_type,
@@ -145,13 +147,6 @@ def find_castable_builtin_for_dtype(
     raise InvalidArgument(f"dtype={dtype} not recognised in {xp.__name__}")
 
 
-def get_width(xp: Any, dtype: DataType) -> int:
-    for name in NUMERIC_NAMES:
-        if dtype == getattr(xp, name):
-            return int(name[-2:])
-    raise InvalidArgument(f"dtype={dtype} not recognised in {xp.__name__}")
-
-
 @check_function
 def dtype_from_name(xp: Any, name: str) -> DataType:
     if name in DTYPE_NAMES:
@@ -170,6 +165,7 @@ def dtype_from_name(xp: Any, name: str) -> DataType:
 
 def _from_dtype(
     xp: Any,
+    widths_ftz: Dict[int, bool],
     dtype: Union[DataType, str],
     *,
     min_value: Optional[Union[int, float]] = None,
@@ -252,12 +248,30 @@ def _from_dtype(
                 check_valid_interval(min_value, max_value, "min_value", "max_value")
             kw["max_value"] = max_value
 
+        # By default, floats() will generate subnormals if they are in the
+        # inferred values range. If we have detected that xp flushes to zero for
+        # the passed dtype, we ensure floats() will not generate subnormals
+        # unless allow_subnormal=True is passed.
+        if allow_subnormal is not None:
+            kw["allow_subnormal"] = allow_subnormal
+        elif widths_ftz[finfo.bits]:
+            # floats() does not accept allow_subnormal=False when subnormals are
+            # out of range, so we only pass False when in range.
+            if min_value is None and max_value is None:
+                kw["allow_subnormal"] = False
+            else:
+                inferred_min = min_value or 0
+                inferred_max = max_value or 0
+                if (
+                    inferred_min > -finfo.smallest_normal
+                    or inferred_max < finfo.smallest_normal
+                ):
+                    kw["allow_subnormal"] = False
+
         if allow_nan is not None:
             kw["allow_nan"] = allow_nan
         if allow_infinity is not None:
             kw["allow_infinity"] = allow_infinity
-        if allow_subnormal is not None:
-            kw["allow_subnormal"] = allow_subnormal
         if exclude_min is not None:
             kw["exclude_min"] = exclude_min
         if exclude_max is not None:
@@ -276,15 +290,15 @@ class ArrayStrategy(st.SearchStrategy):
         self.unique = unique
         self.array_size = math.prod(shape)
         self.builtin = find_castable_builtin_for_dtype(xp, dtype)
+        self.finfo = None if self.builtin is not float else xp.finfo(self.dtype)
 
     def check_set_value(self, val, val_0d, strategy):
         finite = self.builtin is bool or self.xp.isfinite(val_0d)
         if finite and self.builtin(val_0d) != val:
             if self.builtin is float:
-                width = get_width(self.xp, self.dtype)
-                smallest_normal = width_smallest_normals[width]
+                assert self.finfo is not None  # for mypy
                 try:
-                    is_subnormal = 0 < abs(val) < smallest_normal
+                    is_subnormal = 0 < abs(val) < self.finfo.smallest_normal
                 except Exception:
                     # val may be a non-float that does not support the
                     # operations __lt__ and __abs__
@@ -413,6 +427,7 @@ class ArrayStrategy(st.SearchStrategy):
 
 def _arrays(
     xp: Any,
+    widths_ftz: Dict[int, bool],
     dtype: Union[DataType, str, st.SearchStrategy[DataType], st.SearchStrategy[str]],
     shape: Union[int, Shape, st.SearchStrategy[Shape]],
     *,
@@ -490,19 +505,23 @@ def _arrays(
     your tests to run in reasonable time.
     """
     check_xp_attributes(
-        xp, ["asarray", "zeros", "full", "all", "isnan", "isfinite", "reshape"]
+        xp, ["finfo", "asarray", "zeros", "full", "all", "isnan", "isfinite", "reshape"]
     )
 
     if isinstance(dtype, st.SearchStrategy):
         return dtype.flatmap(
-            lambda d: _arrays(xp, d, shape, elements=elements, fill=fill, unique=unique)
+            lambda d: _arrays(
+                xp, widths_ftz, d, shape, elements=elements, fill=fill, unique=unique
+            )
         )
     elif isinstance(dtype, str):
         dtype = dtype_from_name(xp, dtype)
 
     if isinstance(shape, st.SearchStrategy):
         return shape.flatmap(
-            lambda s: _arrays(xp, dtype, s, elements=elements, fill=fill, unique=unique)
+            lambda s: _arrays(
+                xp, widths_ftz, dtype, s, elements=elements, fill=fill, unique=unique
+            )
         )
     elif isinstance(shape, int):
         shape = (shape,)
@@ -514,9 +533,9 @@ def _arrays(
     )
 
     if elements is None:
-        elements = _from_dtype(xp, dtype)
+        elements = _from_dtype(xp, widths_ftz, dtype)
     elif isinstance(elements, Mapping):
-        elements = _from_dtype(xp, dtype, **elements)
+        elements = _from_dtype(xp, widths_ftz, dtype, **elements)
     check_strategy(elements, "elements")
 
     if fill is None:
@@ -778,15 +797,18 @@ def make_strategies_namespace(xp: Any) -> SimpleNamespace:
             HypothesisWarning,
         )
 
-    # We infer whether an array module is built to flush subnormals to zero
-    # (e.g. `-ftz=true` for CuPy), so that we can default the allow_subnormal
-    # kwarg for xps.float_dtype() appropriately.
+    # We infer whether an array module will flush subnormals to zero, as may be
+    # the case when libraries are built with compiler options that violate
+    # IEEE-754 (e.g. -ffast-math and -ftz=true). Note we do this for each float
+    # dtype, as compilers may end up flushing subnormals for one float but
+    # supporting subnormals for the other.
+    floats, _ = partition_attributes_and_stubs(xp, FLOAT_NAMES)
     try:
-        # We test with float32 as opposed to float64, as FTZ builds for CuPy
-        # might have limited support for float64 subnormals - probably by
-        # relying on Python's own float64 behaviour.
-        subnormal = next_down(width_smallest_normals[32], width=32)
-        ftz = bool(xp.asarray(subnormal, dtype=xp.float32) == 0)
+        widths_ftz = {}
+        for dtype in floats:
+            finfo = xp.finfo(dtype)
+            subnormal = next_down(finfo.smallest_normal, width=finfo.bits)
+            widths_ftz[finfo.bits] = bool(xp.asarray(subnormal, dtype=dtype) == 0)
     except Exception:
         warn(
             (
@@ -795,7 +817,7 @@ def make_strategies_namespace(xp: Any) -> SimpleNamespace:
             ),
             HypothesisWarning,
         )
-        ftz = True
+        widths_ftz = defaultdict(lambda: True)
 
     @defines_strategy(force_reusable_values=True)
     def from_dtype(
@@ -809,27 +831,9 @@ def make_strategies_namespace(xp: Any) -> SimpleNamespace:
         exclude_min: Optional[bool] = None,
         exclude_max: Optional[bool] = None,
     ) -> st.SearchStrategy[Union[bool, int, float]]:
-        # Disable subnormals for FTZ builds when they'd otherwise be generated
-        if (
-            ftz
-            and allow_subnormal is None
-            and find_castable_builtin_for_dtype(xp, dtype) is float
-        ):
-            # floats() only accepts None for allow_subnormal when subnormals are
-            # out of range, so we only default allow_subnormal to False when
-            # subnormals are in range.
-            if min_value is None and max_value is None:
-                allow_subnormal = False
-            else:
-                _min_value = min_value if min_value is not None else 0.0
-                _max_value = min_value if min_value is not None else 0.0
-                width = get_width(xp, dtype)
-                smallest_normal = width_smallest_normals[width]
-                if _min_value > -smallest_normal or _max_value < smallest_normal:
-                    allow_subnormal = False
-
         return _from_dtype(
             xp,
+            widths_ftz,
             dtype,
             min_value=min_value,
             max_value=max_value,
@@ -853,6 +857,7 @@ def make_strategies_namespace(xp: Any) -> SimpleNamespace:
     ) -> st.SearchStrategy:
         return _arrays(
             xp,
+            widths_ftz,
             dtype,
             shape,
             elements=elements,

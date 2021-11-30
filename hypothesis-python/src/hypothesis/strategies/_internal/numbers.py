@@ -468,7 +468,7 @@ def floats(
             f"smallest negative normal {-smallest_normal}"
         )
 
-    # Any type hint silences MyPy when we unpack these parameters
+    # Any type hint silences mypy when we unpack these parameters
     kw: Any = {"allow_subnormal": allow_subnormal, "width": width}
     unbounded_floats = FloatStrategy(
         allow_infinity=allow_infinity, allow_nan=allow_nan, **kw

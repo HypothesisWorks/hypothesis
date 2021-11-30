@@ -23,7 +23,7 @@ __all__ = [
     "xp",
     "xps",
     "COMPLIANT_XP",
-    "FTZ_XP",
+    "FTZ_FLOAT32",
 ]
 
 
@@ -42,6 +42,8 @@ except ImportError:
         xps = make_strategies_namespace(xp)
     COMPLIANT_XP = False
 
-# Infer whether build of array module flushes subnormals to zero
+# Infer whether build of array module has float32s flush subnormals to zero. We
+# only test with float32 as it simplifies our test suite, and we currently can't
+# easily test FTZ float64s anyway.
 subnormal = next_down(width_smallest_normals[32], width=32)
-FTZ_XP = bool(xp.asarray(subnormal, dtype=xp.float32) == 0)
+FTZ_FLOAT32 = bool(xp.asarray(subnormal, dtype=xp.float32) == 0)
