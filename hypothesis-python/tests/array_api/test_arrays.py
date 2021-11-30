@@ -403,7 +403,6 @@ def test_efficiently_generate_unique_arrays_using_all_elements(x):
 
 
 @needs_xp_unique_values
-@assumes_distinct_nans
 @given(st.data(), st.integers(-100, 100), st.integers(1, 100))
 def test_array_element_rewriting(data, start, size):
     """Unique strategy generates arrays with expected elements."""
@@ -416,7 +415,7 @@ def test_array_element_rewriting(data, start, size):
         )
     )
     x_set_expect = xp.linspace(start, start + size - 1, size, dtype=xp.int64)
-    x_set = xp.sort(xp.unique(x))
+    x_set = xp.sort(xp.unique_values(x))
     assert xp.all(x_set == x_set_expect)
 
 
