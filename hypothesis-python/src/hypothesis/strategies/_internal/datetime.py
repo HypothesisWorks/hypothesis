@@ -396,6 +396,9 @@ def timezone_keys(
         to install the :pypi:`backports.zoneinfo` module on earlier versions, and
         the :pypi:`importlib_resources` backport on Python 3.6.
 
+        `On Windows, you will also need to install the tzdata package
+        <https://docs.python.org/3/library/zoneinfo.html#data-sources>`__.
+
         ``pip install hypothesis[zoneinfo]`` will install these conditional
         dependencies if and only if they are needed.
 
@@ -453,6 +456,9 @@ def timezones(*, no_cache: bool = False) -> SearchStrategy["zoneinfo.ZoneInfo"]:
         The :mod:`python:zoneinfo` module is new in Python 3.9, so you will need
         to install the :pypi:`backports.zoneinfo` module on earlier versions, and
         the :pypi:`importlib_resources` backport on Python 3.6.
+
+        `On Windows, you will also need to install the tzdata package
+        <https://docs.python.org/3/library/zoneinfo.html#data-sources>`__.
 
         ``pip install hypothesis[zoneinfo]`` will install these conditional
         dependencies if and only if they are needed.
