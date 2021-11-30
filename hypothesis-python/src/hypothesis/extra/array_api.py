@@ -932,6 +932,18 @@ except ImportError:
     else:
         np = None
 if np is not None:
+
+    def mock_finfo(dtype):
+        """Returns a finfo object compliant with the Array API
+
+        Ensures the finfo obj has the smallest_normal attribute. NumPy only
+        introduced it in v1.21.1, so we monkey patch it in with the equivalent
+        tiny attribute so mocking with older versions still works.
+        """
+        finfo = np.finfo(dtype)
+        finfo.smallest_normal = finfo.tiny
+        return finfo
+
     mock_xp = SimpleNamespace(
         __name__="mockpy",
         # Data types
@@ -951,7 +963,7 @@ if np is not None:
         # Data type functions
         astype=lambda x, d: x.astype(d),
         iinfo=np.iinfo,
-        finfo=np.finfo,
+        finfo=mock_finfo,
         broadcast_arrays=np.broadcast_arrays,
         # Creation functions
         arange=np.arange,
