@@ -16,7 +16,7 @@
 """Tests for being able to generate weird and wonderful floating point numbers."""
 
 import math
-from sys import float_info
+import sys
 
 import pytest
 
@@ -47,7 +47,7 @@ def test_inversion_is_imperfect(x):
     assert x * y == 1.0
 
 
-@given(floats(-float_info.max, float_info.max))
+@given(floats(-sys.float_info.max, sys.float_info.max))
 def test_largest_range(x):
     assert not math.isinf(x)
 
