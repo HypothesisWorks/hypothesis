@@ -458,12 +458,14 @@ def floats(
     if allow_subnormal and min_value is not None and min_value >= smallest_normal:
         raise InvalidArgument(
             f"allow_subnormal=True, but minimum value {min_value} "
-            f"excludes values below smallest positive normal {smallest_normal}"
+            f"excludes values below float{width}'s "
+            f"smallest positive normal {smallest_normal}"
         )
     if allow_subnormal and max_value is not None and max_value <= -smallest_normal:
         raise InvalidArgument(
             f"allow_subnormal=True, but maximum value {max_value} "
-            f"excludes values above smallest negative normal {-smallest_normal}"
+            f"excludes values above float{width}'s "
+            f"smallest negative normal {-smallest_normal}"
         )
 
     # Any type hint silences MyPy when we unpack these parameters
