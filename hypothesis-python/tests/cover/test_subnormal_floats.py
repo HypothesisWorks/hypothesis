@@ -92,8 +92,7 @@ def test_subnormal_validation(kwargs):
     ],
 )
 def test_allow_subnormal_defaults_correctly(kwargs):
-    allow_subnormal = kwargs["allow_subnormal"]
-    del kwargs["allow_subnormal"]
+    allow_subnormal = kwargs.pop("allow_subnormal")
     strat = floats(**kwargs).filter(lambda x: x != 0)
     if allow_subnormal:
         find_any(strat, lambda x: -float_info.min < x < float_info.min)
