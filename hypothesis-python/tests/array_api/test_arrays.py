@@ -258,7 +258,7 @@ def test_may_fill_unique_arrays_with_nan():
         xps.arrays(
             dtype=xp.float32,
             shape=10,
-            elements=st.floats(allow_nan=False),
+            elements={"allow_nan": False},
             unique=True,
             fill=st.just(xp.nan),
         ),
@@ -271,7 +271,7 @@ def test_may_fill_unique_arrays_with_nan():
     xps.arrays(
         dtype=xp.float32,
         shape=10,
-        elements=st.floats(allow_nan=False),
+        elements={"allow_nan": False},
         unique=True,
         fill=st.just(0.0),
     )
@@ -350,7 +350,7 @@ def test_floats_can_be_constrained_excluding_endpoints(x):
 @given(
     xps.arrays(
         dtype=xp.float32,
-        elements=st.floats(allow_nan=False, width=32),
+        elements={"allow_nan": False},
         shape=10,
         unique=True,
         fill=st.just(xp.nan),
