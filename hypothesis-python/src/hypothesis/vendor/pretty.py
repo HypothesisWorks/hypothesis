@@ -837,14 +837,16 @@ def _counter_pprint(obj, p, cycle):
             p.pretty(dict(obj))
 
 
+def _repr_dataframe(obj, p, cycle):  # pragma: no cover
+    with p.indent(4):
+        p.break_()
+        _repr_pprint(obj, p, cycle)
+    p.break_()
+
+
 for_type_by_name("collections", "defaultdict", _defaultdict_pprint)
 for_type_by_name("collections", "OrderedDict", _ordereddict_pprint)
 for_type_by_name("ordereddict", "OrderedDict", _ordereddict_pprint)
 for_type_by_name("collections", "deque", _deque_pprint)
 for_type_by_name("collections", "Counter", _counter_pprint)
-for_type_by_name("counter", "Counter", _counter_pprint)
-
-for_type_by_name("_collections", "defaultdict", _defaultdict_pprint)
-for_type_by_name("_collections", "OrderedDict", _ordereddict_pprint)
-for_type_by_name("_collections", "deque", _deque_pprint)
-for_type_by_name("_collections", "Counter", _counter_pprint)
+for_type_by_name("pandas.core.frame", "DataFrame", _repr_dataframe)
