@@ -52,7 +52,7 @@ from hypothesis.extra._array_helpers import (
 )
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.coverage import check_function
-from hypothesis.internal.floats import next_down, next_up
+from hypothesis.internal.floats import next_down
 from hypothesis.internal.reflection import proxies
 from hypothesis.internal.validation import (
     check_type,
@@ -255,27 +255,7 @@ def _from_dtype(
         if allow_subnormal is not None:
             kw["allow_subnormal"] = allow_subnormal
         elif widths_ftz[finfo.bits]:
-            # floats() does not accept allow_subnormal=False when subnormals are
-            # out of range, so we only pass False when in range.
-            if min_value is None and max_value is None:
-                kw["allow_subnormal"] = False
-            else:
-                # We ensure the min/max values are floats so they can be used in
-                # the next down/up utils.
-                #
-                # Note we don't raise a helpful error when non-existent min/max
-                # values are excluded, and instead rely on flaots() to do so.
-                inferred_min = 0.0 if min_value is None else float(min_value)
-                if exclude_min:
-                    inferred_min = next_up(inferred_min, width=finfo.bits)
-                inferred_max = 0.0 if max_value is None else float(max_value)
-                if exclude_max:
-                    inferred_min = next_down(inferred_max, width=finfo.bits)
-                if (
-                    inferred_min < finfo.smallest_normal
-                    or inferred_max > -finfo.smallest_normal
-                ):
-                    kw["allow_subnormal"] = False
+            kw["allow_subnormal"] = False
 
         if allow_nan is not None:
             kw["allow_nan"] = allow_nan
