@@ -222,8 +222,7 @@ class FloatStrategy(SearchStrategy):
                 float_of(f, self.width)
             except OverflowError:
                 return False
-        smallest_normal = width_smallest_normals[self.width]
-        if (not self.allow_subnormal) and 0 < abs(f) < smallest_normal:
+        if not self.allow_subnormal and 0 < abs(f) < width_smallest_normals[self.width]:
             return False
         return True
 
