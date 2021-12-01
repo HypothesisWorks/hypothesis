@@ -15,12 +15,10 @@
 
 import math
 import sys
-from collections import defaultdict
 from numbers import Real
 from types import SimpleNamespace
 from typing import (
     Any,
-    Dict,
     Iterable,
     Iterator,
     List,
@@ -165,7 +163,6 @@ def dtype_from_name(xp: Any, name: str) -> DataType:
 
 def _from_dtype(
     xp: Any,
-    widths_ftz: Dict[int, bool],
     dtype: Union[DataType, str],
     *,
     min_value: Optional[Union[int, float]] = None,
@@ -248,14 +245,23 @@ def _from_dtype(
                 check_valid_interval(min_value, max_value, "min_value", "max_value")
             kw["max_value"] = max_value
 
+        # We infer whether an array module will flush subnormals to zero, as may
+        # be the case when libraries are built with compiler options that
+        # violate IEEE-754 (e.g. -ffast-math and -ftz=true). Note we do this for
+        # the specific dtype, as compilers may end up flushing subnormals for
+        # one float but supporting subnormals for the other.
+        #
         # By default, floats() will generate subnormals if they are in the
         # inferred values range. If we have detected that xp flushes to zero for
-        # the passed dtype, we ensure floats() will not generate subnormals
-        # unless allow_subnormal=True is passed.
+        # the passed dtype, we ensure from_dtype() will not generate subnormals
+        # by default.
         if allow_subnormal is not None:
             kw["allow_subnormal"] = allow_subnormal
-        elif widths_ftz[finfo.bits]:
-            kw["allow_subnormal"] = False
+        else:
+            subnormal = next_down(finfo.smallest_normal, width=finfo.bits)
+            ftz = bool(xp.asarray(subnormal, dtype=dtype) == 0)
+            if ftz:
+                kw["allow_subnormal"] = False
 
         if allow_nan is not None:
             kw["allow_nan"] = allow_nan
@@ -416,7 +422,6 @@ class ArrayStrategy(st.SearchStrategy):
 
 def _arrays(
     xp: Any,
-    widths_ftz: Dict[int, bool],
     dtype: Union[DataType, str, st.SearchStrategy[DataType], st.SearchStrategy[str]],
     shape: Union[int, Shape, st.SearchStrategy[Shape]],
     *,
@@ -499,18 +504,14 @@ def _arrays(
 
     if isinstance(dtype, st.SearchStrategy):
         return dtype.flatmap(
-            lambda d: _arrays(
-                xp, widths_ftz, d, shape, elements=elements, fill=fill, unique=unique
-            )
+            lambda d: _arrays(xp, d, shape, elements=elements, fill=fill, unique=unique)
         )
     elif isinstance(dtype, str):
         dtype = dtype_from_name(xp, dtype)
 
     if isinstance(shape, st.SearchStrategy):
         return shape.flatmap(
-            lambda s: _arrays(
-                xp, widths_ftz, dtype, s, elements=elements, fill=fill, unique=unique
-            )
+            lambda s: _arrays(xp, dtype, s, elements=elements, fill=fill, unique=unique)
         )
     elif isinstance(shape, int):
         shape = (shape,)
@@ -522,9 +523,9 @@ def _arrays(
     )
 
     if elements is None:
-        elements = _from_dtype(xp, widths_ftz, dtype)
+        elements = _from_dtype(xp, dtype)
     elif isinstance(elements, Mapping):
-        elements = _from_dtype(xp, widths_ftz, dtype, **elements)
+        elements = _from_dtype(xp, dtype, **elements)
     check_strategy(elements, "elements")
 
     if fill is None:
@@ -786,28 +787,6 @@ def make_strategies_namespace(xp: Any) -> SimpleNamespace:
             HypothesisWarning,
         )
 
-    # We infer whether an array module will flush subnormals to zero, as may be
-    # the case when libraries are built with compiler options that violate
-    # IEEE-754 (e.g. -ffast-math and -ftz=true). Note we do this for each float
-    # dtype, as compilers may end up flushing subnormals for one float but
-    # supporting subnormals for the other.
-    floats, _ = partition_attributes_and_stubs(xp, FLOAT_NAMES)
-    try:
-        widths_ftz = {}
-        for dtype in floats:
-            finfo = xp.finfo(dtype)
-            subnormal = next_down(finfo.smallest_normal, width=finfo.bits)
-            widths_ftz[finfo.bits] = bool(xp.asarray(subnormal, dtype=dtype) == 0)
-    except Exception:
-        warn(
-            (
-                f"Could not determine whether build of module {xp.__name__} "
-                "flushes subnormals to zero - we will assume it does"
-            ),
-            HypothesisWarning,
-        )
-        widths_ftz = defaultdict(lambda: True)
-
     @defines_strategy(force_reusable_values=True)
     def from_dtype(
         dtype: Union[DataType, str],
@@ -822,7 +801,6 @@ def make_strategies_namespace(xp: Any) -> SimpleNamespace:
     ) -> st.SearchStrategy[Union[bool, int, float]]:
         return _from_dtype(
             xp,
-            widths_ftz,
             dtype,
             min_value=min_value,
             max_value=max_value,
@@ -846,7 +824,6 @@ def make_strategies_namespace(xp: Any) -> SimpleNamespace:
     ) -> st.SearchStrategy:
         return _arrays(
             xp,
-            widths_ftz,
             dtype,
             shape,
             elements=elements,
