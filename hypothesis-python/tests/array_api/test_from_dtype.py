@@ -105,9 +105,11 @@ def test_can_minimize_floats():
     assert smallest == 1
 
 
+smallest_normal = width_smallest_normals[32]
 subnormal_strats = [
     xps.from_dtype(xp.float32),
     xps.from_dtype(xp.float32, min_value=-1),
+    xps.from_dtype(xp.float32, max_value=1),
     xps.from_dtype(xp.float32, max_value=1),
     pytest.param(
         xps.from_dtype(xp.float32, min_value=-1, max_value=1),
@@ -116,9 +118,6 @@ subnormal_strats = [
         ),
     ),
 ]
-
-
-smallest_normal = width_smallest_normals[32]
 
 
 @pytest.mark.skipif(
