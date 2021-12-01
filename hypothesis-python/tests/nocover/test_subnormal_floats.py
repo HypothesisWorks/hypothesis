@@ -18,7 +18,7 @@ from sys import float_info
 
 import pytest
 
-from hypothesis.internal.floats import next_down
+from hypothesis.internal.floats import next_down, width_smallest_normals
 from hypothesis.strategies import floats
 
 from tests.common.debug import assert_all_examples, find_any
@@ -46,17 +46,8 @@ def test_can_generate_subnormals():
 @pytest.mark.parametrize(
     "min_value, max_value", [(None, None), (-1, 0), (0, 1), (-1, 1)]
 )
-@pytest.mark.parametrize(
-    "width, smallest_normal",
-    [(16, 2 ** -14), (32, 2 ** -126), (64, 2 ** -1022)],
-    ids=["16", "32", "64"],
-)
-def test_does_not_generate_subnormals_when_disallowed(
-    width,
-    smallest_normal,
-    min_value,
-    max_value,
-):
+@pytest.mark.parametrize("width", [16, 32, 64])
+def test_does_not_generate_subnormals_when_disallowed(width, min_value, max_value):
     strat = floats(
         min_value=min_value,
         max_value=max_value,
@@ -64,4 +55,5 @@ def test_does_not_generate_subnormals_when_disallowed(
         width=width,
     )
     strat = strat.filter(lambda x: x != 0.0 and math.isfinite(x))
+    smallest_normal = width_smallest_normals[width]
     assert_all_examples(strat, lambda x: x <= -smallest_normal or x >= smallest_normal)
