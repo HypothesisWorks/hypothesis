@@ -19,13 +19,15 @@ from decimal import Decimal
 from fractions import Fraction
 from sys import float_info
 from typing import Any, Optional, Union
+from warnings import warn
 
 from hypothesis.control import assume, reject
-from hypothesis.errors import InvalidArgument
+from hypothesis.errors import HypothesisWarning, InvalidArgument
 from hypothesis.internal.conjecture import floats as flt, utils as d
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.filtering import get_integer_predicate_bounds
 from hypothesis.internal.floats import (
+    PYTHON_FTZ,
     count_between_floats,
     float_of,
     float_to_int,
@@ -441,7 +443,9 @@ def floats(
 
     smallest_normal = width_smallest_normals[width]
     if allow_subnormal is None:
-        if min_value is not None and max_value is not None:
+        if PYTHON_FTZ:
+            allow_subnormal = False  # pragma: no cover
+        elif min_value is not None and max_value is not None:
             if min_value == max_value:
                 allow_subnormal = -smallest_normal < min_value < smallest_normal
             else:
@@ -454,18 +458,27 @@ def floats(
             allow_subnormal = max_value > -smallest_normal
         else:
             allow_subnormal = True
-    if allow_subnormal and min_value is not None and min_value >= smallest_normal:
-        raise InvalidArgument(
-            f"allow_subnormal=True, but minimum value {min_value} "
-            f"excludes values below float{width}'s "
-            f"smallest positive normal {smallest_normal}"
-        )
-    if allow_subnormal and max_value is not None and max_value <= -smallest_normal:
-        raise InvalidArgument(
-            f"allow_subnormal=True, but maximum value {max_value} "
-            f"excludes values above float{width}'s "
-            f"smallest negative normal {-smallest_normal}"
-        )
+    if allow_subnormal:
+        if min_value is not None and min_value >= smallest_normal:
+            raise InvalidArgument(
+                f"allow_subnormal=True, but minimum value {min_value} "
+                f"excludes values below float{width}'s "
+                f"smallest positive normal {smallest_normal}"
+            )
+        if max_value is not None and max_value <= -smallest_normal:
+            raise InvalidArgument(
+                f"allow_subnormal=True, but maximum value {max_value} "
+                f"excludes values above float{width}'s "
+                f"smallest negative normal {-smallest_normal}"
+            )
+        if PYTHON_FTZ:
+            warn(  # pragma: no cover
+                (
+                    "allow_subnormal=True, but build of Python seems to flush-to-zero "
+                    "- generated subnormals will probably end up as zeros"
+                ),
+                HypothesisWarning,
+            )
 
     # Any type hint silences mypy when we unpack these parameters
     kw: Any = {"allow_subnormal": allow_subnormal, "width": width}

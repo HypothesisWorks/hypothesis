@@ -18,24 +18,12 @@ from sys import float_info
 
 import pytest
 
-from hypothesis.internal.floats import next_down, width_smallest_normals
+from hypothesis.internal.floats import PYTHON_FTZ, width_smallest_normals
 from hypothesis.strategies import floats
 
 from tests.common.debug import assert_all_examples, find_any
 
-# Tests whether we can represent subnormal floating point numbers.
-# IEE-754 requires subnormal support, but it's often disabled anyway by unsafe
-# compiler options like `-ffast-math`.  On most hardware that's even a global
-# config option, so *linking against* something built this way can break us.
-# Everything is terrible
-FLUSH_SUBNORMALS_TO_ZERO = next_down(float_info.min) == 0.0
-
-
-pytestmark = [
-    pytest.mark.skipif(
-        FLUSH_SUBNORMALS_TO_ZERO, reason="broken by unsafe compiler flags"
-    )
-]
+pytestmark = [pytest.mark.skipif(PYTHON_FTZ, reason="broken by unsafe compiler flags")]
 
 
 def test_can_generate_subnormals():

@@ -18,18 +18,13 @@ from sys import float_info
 import pytest
 
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.floats import next_down, next_up
+from hypothesis.internal.floats import PYTHON_FTZ, next_down, next_up
 from hypothesis.strategies import floats
 from hypothesis.strategies._internal.numbers import next_down_normal, next_up_normal
 
 from tests.common.debug import assert_no_examples, find_any
 
-# See tests/nocover/test_subnormal_floats.py for my background
-pytestmark = [
-    pytest.mark.skipif(
-        next_down(float_info.min) == 0.0, reason="broken by unsafe compiler flags"
-    )
-]
+pytestmark = [pytest.mark.skipif(PYTHON_FTZ, reason="broken by unsafe compiler flags")]
 
 
 def kw(marks=(), **kwargs):
