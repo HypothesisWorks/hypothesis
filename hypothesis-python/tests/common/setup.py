@@ -17,6 +17,11 @@ import os
 from tempfile import mkdtemp
 from warnings import filterwarnings
 
+if os.getenv("HYPOTHESIS_PYJION") == "true":
+    import pyjion
+
+    pyjion.enable()
+
 from hypothesis import Verbosity, settings
 from hypothesis._settings import not_set
 from hypothesis.configuration import set_hypothesis_home_dir
