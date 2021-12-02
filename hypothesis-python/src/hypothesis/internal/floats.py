@@ -111,11 +111,3 @@ width_smallest_normals = {
     64: 2 ** -(2 ** (11 - 1) - 2),
 }
 assert width_smallest_normals[64] == float_info.min
-
-
-# Specifies whether we can represent subnormal floating point numbers.
-# IEE-754 requires subnormal support, but it's often disabled anyway by unsafe
-# compiler options like `-ffast-math`.  On most hardware that's even a global
-# config option, so *linking against* something built this way can break us.
-# Everything is terrible
-PYTHON_FTZ = next_down(float_info.min) == 0.0
