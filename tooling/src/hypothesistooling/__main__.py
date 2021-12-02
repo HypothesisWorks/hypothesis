@@ -449,6 +449,11 @@ def check_py310():
 
 
 @python_tests
+def check_py310_pyjion():
+    run_tox("py310-pyjion", PY310)
+
+
+@python_tests
 def check_pypy36():
     run_tox("pypy3-full", PYPY36)
 
@@ -472,7 +477,7 @@ standard_tox_task("pytest46")
 
 for n in [22, 31, 32]:
     standard_tox_task(f"django{n}")
-for n in [25, 100, 111]:
+for n in [25, 10, 11, 12, 13]:
     standard_tox_task(f"pandas{n}")
 
 standard_tox_task("coverage")
