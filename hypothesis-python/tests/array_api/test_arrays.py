@@ -258,7 +258,7 @@ def test_may_fill_unique_arrays_with_nan():
         xps.arrays(
             dtype=xp.float32,
             shape=10,
-            elements=st.floats(allow_nan=False),
+            elements={"allow_nan": False},
             unique=True,
             fill=st.just(xp.nan),
         ),
@@ -271,7 +271,7 @@ def test_may_fill_unique_arrays_with_nan():
     xps.arrays(
         dtype=xp.float32,
         shape=10,
-        elements=st.floats(allow_nan=False),
+        elements={"allow_nan": False},
         unique=True,
         fill=st.just(0.0),
     )
@@ -350,7 +350,7 @@ def test_floats_can_be_constrained_excluding_endpoints(x):
 @given(
     xps.arrays(
         dtype=xp.float32,
-        elements=st.floats(allow_nan=False, width=32),
+        elements={"allow_nan": False},
         shape=10,
         unique=True,
         fill=st.just(xp.nan),
@@ -403,7 +403,6 @@ def test_efficiently_generate_unique_arrays_using_all_elements(x):
 
 
 @needs_xp_unique_values
-@assumes_distinct_nans
 @given(st.data(), st.integers(-100, 100), st.integers(1, 100))
 def test_array_element_rewriting(data, start, size):
     """Unique strategy generates arrays with expected elements."""
@@ -416,7 +415,7 @@ def test_array_element_rewriting(data, start, size):
         )
     )
     x_set_expect = xp.linspace(start, start + size - 1, size, dtype=xp.int64)
-    x_set = xp.sort(xp.unique(x))
+    x_set = xp.sort(xp.unique_values(x))
     assert xp.all(x_set == x_set_expect)
 
 

@@ -388,7 +388,7 @@ def _arrays(
     dtype: Union[DataType, str, st.SearchStrategy[DataType], st.SearchStrategy[str]],
     shape: Union[int, Shape, st.SearchStrategy[Shape]],
     *,
-    elements: Optional[st.SearchStrategy] = None,
+    elements: Optional[Union[Mapping[str, Any], st.SearchStrategy]] = None,
     fill: Optional[st.SearchStrategy[Any]] = None,
     unique: bool = False,
 ) -> st.SearchStrategy:
@@ -779,7 +779,7 @@ def make_strategies_namespace(xp: Any) -> SimpleNamespace:
         ],
         shape: Union[int, Shape, st.SearchStrategy[Shape]],
         *,
-        elements: Optional[st.SearchStrategy] = None,
+        elements: Optional[Union[Mapping[str, Any], st.SearchStrategy]] = None,
         fill: Optional[st.SearchStrategy[Any]] = None,
         unique: bool = False,
     ) -> st.SearchStrategy:

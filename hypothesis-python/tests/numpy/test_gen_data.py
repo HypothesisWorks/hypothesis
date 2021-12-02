@@ -698,30 +698,6 @@ def test_mutually_broadcastable_shape_can_broadcast(
     assert result == _broadcast_shapes(base_shape, *shapes)
 
 
-@settings(deadline=None, max_examples=10)
-@given(min_dims=st.integers(0, 32), shape=ANY_SHAPE, data=st.data())
-def test_minimize_broadcastable_shape(min_dims, shape, data):
-    # Ensure aligned dimensions of broadcastable shape minimizes to `(1,) * min_dims`
-    max_dims = data.draw(st.none() | st.integers(min_dims, 32), label="max_dims")
-    min_side, max_side = _draw_valid_bounds(data, shape, max_dims, permit_none=False)
-    smallest = minimal(
-        nps.broadcastable_shapes(
-            shape,
-            min_side=min_side,
-            max_side=max_side,
-            min_dims=min_dims,
-            max_dims=max_dims,
-        )
-    )
-    note(f"(smallest): {smallest}")
-    n_leading = max(len(smallest) - len(shape), 0)
-    n_aligned = max(len(smallest) - n_leading, 0)
-    expected = [min_side] * n_leading + [
-        1 if min_side <= 1 <= max_side else i for i in shape[len(shape) - n_aligned :]
-    ]
-    assert tuple(expected) == smallest
-
-
 @settings(deadline=None, max_examples=50)
 @given(
     num_shapes=st.integers(1, 3),
@@ -740,7 +716,7 @@ def test_minimize_mutually_broadcastable_shape(num_shapes, min_dims, base_shape,
         # shrinking gets a little bit hairy when we have empty axes
         # and multiple num_shapes
         assume(min_side > 0)
-    note(f"(min_side, max_side): {(min_side, max_side)}")
+
     smallest_shapes, result = minimal(
         nps.mutually_broadcastable_shapes(
             num_shapes=num_shapes,
@@ -751,15 +727,18 @@ def test_minimize_mutually_broadcastable_shape(num_shapes, min_dims, base_shape,
             max_dims=max_dims,
         )
     )
-    note(f"(smallest_shapes, result): {(smallest_shapes, result)}")
+    note(f"smallest_shapes: {smallest_shapes}")
+    note(f"result: {result}")
     assert len(smallest_shapes) == num_shapes
     assert result == _broadcast_shapes(base_shape, *smallest_shapes)
     for smallest in smallest_shapes:
         n_leading = max(len(smallest) - len(base_shape), 0)
         n_aligned = max(len(smallest) - n_leading, 0)
+        note(f"n_leading: {n_leading}")
+        note(f"n_aligned: {n_aligned} {base_shape[-n_aligned:]}")
         expected = [min_side] * n_leading + [
-            1 if min_side <= 1 <= max_side else i
-            for i in base_shape[len(base_shape) - n_aligned :]
+            (min(1, i) if i != 1 else min_side) if min_side <= 1 <= max_side else i
+            for i in (base_shape[-n_aligned:] if n_aligned else ())
         ]
         assert tuple(expected) == smallest
 
@@ -962,6 +941,45 @@ def test_mutually_broadcastable_shapes_can_generate_arbitrary_ndims(
         ),
         lambda x: {len(s) for s in x.input_shapes} == set(desired_ndims),
         settings(max_examples=10 ** 6),
+    )
+
+
+@settings(deadline=None)
+@given(
+    base_shape=nps.array_shapes(min_dims=0, max_dims=3, min_side=0, max_side=2),
+    max_dims=st.integers(1, 4),
+)
+def test_mutually_broadcastable_shapes_can_generate_interesting_singletons(
+    base_shape, max_dims
+):
+
+    find_any(
+        nps.mutually_broadcastable_shapes(
+            num_shapes=2,
+            base_shape=base_shape,
+            min_side=0,
+            max_dims=max_dims,
+        ),
+        lambda x: any(a != b for a, b in zip(*(s[::-1] for s in x.input_shapes))),  # type: ignore
+    )
+
+
+@pytest.mark.parametrize("base_shape", [(), (0,), (1,), (2,), (1, 2), (2, 1), (2, 2)])
+def test_mutually_broadcastable_shapes_can_generate_mirrored_singletons(base_shape):
+    def f(shapes: nps.BroadcastableShapes):
+        x, y = shapes.input_shapes
+        return x.count(1) == 1 and y.count(1) == 1 and x[::-1] == y
+
+    find_any(
+        nps.mutually_broadcastable_shapes(
+            num_shapes=2,
+            base_shape=base_shape,
+            min_side=0,
+            max_side=3,
+            min_dims=2,
+            max_dims=2,
+        ),
+        f,
     )
 
 
