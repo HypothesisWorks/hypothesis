@@ -18,6 +18,7 @@ from tempfile import mkdtemp
 from warnings import filterwarnings
 
 if os.getenv("HYPOTHESIS_PYJION") == "true":
+    # Hacky workaround for upstream bug; see comment in tox.ini
     import pyjion
 
     pyjion.enable()
