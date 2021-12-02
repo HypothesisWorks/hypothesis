@@ -98,7 +98,10 @@ def datetime_does_not_exist(value):
         # 9999, so it should be a very small fraction of possible values.
         return True
 
-    if value.tzinfo.utcoffset != roundtrip.tzinfo.utcoffset:
+    if (
+        value.tzinfo is not roundtrip.tzinfo
+        and value.utcoffset() != roundtrip.utcoffset()
+    ):
         # This only ever occurs during imaginary (i.e. nonexistent) datetimes,
         # and only for pytz timezones which do not follow PEP-495 semantics.
         # (may exclude a few other edge cases, but you should use zoneinfo anyway)
