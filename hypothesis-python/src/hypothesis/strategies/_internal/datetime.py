@@ -98,7 +98,10 @@ def datetime_does_not_exist(value):
         # 9999, so it should be a very small fraction of possible values.
         return True
 
-    if value.tzinfo.utcoffset != roundtrip.tzinfo.utcoffset:
+    if (
+        value.tzinfo is not roundtrip.tzinfo
+        and value.utcoffset() != roundtrip.utcoffset()
+    ):
         # This only ever occurs during imaginary (i.e. nonexistent) datetimes,
         # and only for pytz timezones which do not follow PEP-495 semantics.
         # (may exclude a few other edge cases, but you should use zoneinfo anyway)
@@ -396,6 +399,9 @@ def timezone_keys(
         to install the :pypi:`backports.zoneinfo` module on earlier versions, and
         the :pypi:`importlib_resources` backport on Python 3.6.
 
+        `On Windows, you will also need to install the tzdata package
+        <https://docs.python.org/3/library/zoneinfo.html#data-sources>`__.
+
         ``pip install hypothesis[zoneinfo]`` will install these conditional
         dependencies if and only if they are needed.
 
@@ -453,6 +459,9 @@ def timezones(*, no_cache: bool = False) -> SearchStrategy["zoneinfo.ZoneInfo"]:
         The :mod:`python:zoneinfo` module is new in Python 3.9, so you will need
         to install the :pypi:`backports.zoneinfo` module on earlier versions, and
         the :pypi:`importlib_resources` backport on Python 3.6.
+
+        `On Windows, you will also need to install the tzdata package
+        <https://docs.python.org/3/library/zoneinfo.html#data-sources>`__.
 
         ``pip install hypothesis[zoneinfo]`` will install these conditional
         dependencies if and only if they are needed.

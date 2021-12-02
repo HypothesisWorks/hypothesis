@@ -369,7 +369,6 @@ def mutually_broadcastable_shapes(
     * ``base_shape`` is the shape against which all generated shapes can broadcast.
       The default shape is empty, which corresponds to a scalar and thus does
       not constrain broadcasting at all.
-    * ``shape`` is a tuple of integers.
     * ``min_dims`` is the smallest length that the generated shape can possess.
     * ``max_dims`` is the largest length that the generated shape can possess,
       defaulting to ``max(len(shape), min_dims) + 2``.

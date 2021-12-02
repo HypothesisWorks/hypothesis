@@ -71,7 +71,7 @@ extras = {
     # zoneinfo is an odd one: every dependency is conditional, because they're
     # only necessary on old versions of Python or Windows systems.
     "zoneinfo": [
-        "tzdata>=2020.4 ; sys_platform == 'win32'",
+        "tzdata>=2021.5 ; sys_platform == 'win32'",
         "backports.zoneinfo>=0.2.1 ; python_version<'3.9'",
         "importlib_resources>=3.3.0 ; python_version<'3.7'",
     ],
