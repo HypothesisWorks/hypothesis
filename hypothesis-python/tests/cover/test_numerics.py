@@ -19,8 +19,8 @@ from math import copysign, inf
 import pytest
 
 from hypothesis import assume, given, reject, settings
-from hypothesis.errors import HypothesisDeprecationWarning, InvalidArgument
-from hypothesis.internal.floats import next_down
+from hypothesis.errors import InvalidArgument
+from hypothesis.internal.floats import next_down, next_up
 from hypothesis.strategies import (
     booleans,
     data,
@@ -29,6 +29,7 @@ from hypothesis.strategies import (
     fractions,
     integers,
     none,
+    sampled_from,
     tuples,
 )
 
@@ -37,28 +38,28 @@ from tests.common.debug import find_any
 
 @given(data())
 def test_fuzz_floats_bounds(data):
-    bound = none() | floats(allow_nan=False)
+    width = data.draw(sampled_from([64, 32, 16]))
+    bound = none() | floats(allow_nan=False, width=width)
     low, high = data.draw(tuples(bound, bound), label="low, high")
+    if low is not None and high is not None and low > high:
+        low, high = high, low
     if low is not None and high is not None and low > high:
         low, high = high, low
     exmin = low is not None and low != inf and data.draw(booleans(), label="ex_min")
     exmax = high is not None and high != -inf and data.draw(booleans(), label="ex_max")
-    try:
-        val = data.draw(
-            floats(low, high, exclude_min=exmin, exclude_max=exmax), label="value"
-        )
-        assume(val)  # positive/negative zero is an issue
-    except (InvalidArgument, HypothesisDeprecationWarning):
-        assert (
-            (exmin and exmax and low == next_down(high))
-            or (low == high and (exmin or exmax))
-            or (
-                low == high == 0
-                and copysign(1.0, low) == 1
-                and copysign(1.0, high) == -1
-            )
-        )
-        reject()  # no floats in required range
+
+    if low is not None and high is not None:
+        lo = next_up(low, width) if exmin else low
+        hi = next_down(high, width) if exmax else high
+        # There must actually be floats between these bounds
+        assume(lo <= hi)
+        if lo == hi == 0:
+            assume(not exmin and not exmax and copysign(1.0, lo) <= copysign(1.0, hi))
+
+    s = floats(low, high, exclude_min=exmin, exclude_max=exmax, width=width)
+    val = data.draw(s, label="value")
+    assume(val)  # positive/negative zero is an issue
+
     if low is not None:
         assert low <= val
     if high is not None:
