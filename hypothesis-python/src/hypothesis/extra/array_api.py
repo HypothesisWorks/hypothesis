@@ -23,6 +23,7 @@ from typing import (
     Iterator,
     List,
     Mapping,
+    NamedTuple,
     Optional,
     Sequence,
     Tuple,
@@ -258,7 +259,7 @@ def _from_dtype(
         if allow_subnormal is not None:
             kw["allow_subnormal"] = allow_subnormal
         else:
-            subnormal = next_down(float(finfo.smallest_normal), width=finfo.bits)
+            subnormal = next_down(finfo.smallest_normal, width=finfo.bits)
             ftz = bool(xp.asarray(subnormal, dtype=dtype) == 0)
             if ftz:
                 kw["allow_subnormal"] = False
@@ -899,16 +900,32 @@ except ImportError:
         np = None
 if np is not None:
 
-    def mock_finfo(dtype):
+    class FloatInfo(NamedTuple):
+        bits: int
+        eps: float
+        max: float
+        min: float
+        smallest_normal: float
+
+    def mock_finfo(dtype: DataType) -> FloatInfo:
         """Returns a finfo object compliant with the Array API
 
-        Ensures the finfo obj has the smallest_normal attribute. NumPy only
-        introduced it in v1.21.1, so we monkey patch it in with the equivalent
-        tiny attribute so mocking with older versions still works.
+        Ensures all attributes are Python scalars and not NumPy scalars. This
+        lets us ignore corner cases with how NumPy scalars operate, such as
+        NumPy floats breaking our next_down() util.
+
+        Also ensures the finfo obj has the smallest_normal attribute. NumPy only
+        introduced it in v1.21.1, so we just use the equivalent tiny attribute
+        to keep mocking with older versions working.
         """
-        finfo = np.finfo(dtype)
-        finfo.smallest_normal = finfo.tiny
-        return finfo
+        _finfo = np.finfo(dtype)
+        return FloatInfo(
+            int(_finfo.bits),
+            float(_finfo.eps),
+            float(_finfo.max),
+            float(_finfo.min),
+            float(_finfo.tiny),
+        )
 
     mock_xp = SimpleNamespace(
         __name__="mockpy",
