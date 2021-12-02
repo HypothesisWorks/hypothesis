@@ -258,7 +258,7 @@ def _from_dtype(
         if allow_subnormal is not None:
             kw["allow_subnormal"] = allow_subnormal
         else:
-            subnormal = next_down(finfo.smallest_normal, width=finfo.bits)
+            subnormal = next_down(float(finfo.smallest_normal), width=finfo.bits)
             ftz = bool(xp.asarray(subnormal, dtype=dtype) == 0)
             if ftz:
                 kw["allow_subnormal"] = False
