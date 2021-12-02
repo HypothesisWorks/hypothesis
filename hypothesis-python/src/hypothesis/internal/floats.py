@@ -102,6 +102,17 @@ def next_down(value, width=64):
     return -next_up(-value, width)
 
 
+def next_down_normal(value, width, allow_subnormal):
+    value = next_down(value, width)
+    if (not allow_subnormal) and 0 < abs(value) < width_smallest_normals[width]:
+        return 0.0 if value > 0 else -width_smallest_normals[width]
+    return value
+
+
+def next_up_normal(value, width, allow_subnormal):
+    return -next_down_normal(-value, width, allow_subnormal)
+
+
 # Smallest positive non-zero numbers that is fully representable by an
 # IEEE-754 float, calculated with the width's associated minimum exponent.
 # Values from https://en.wikipedia.org/wiki/IEEE_754#Basic_and_interchange_formats

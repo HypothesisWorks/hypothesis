@@ -31,8 +31,9 @@ from hypothesis.internal.floats import (
     float_to_int,
     int_to_float,
     is_negative,
-    next_down,
+    next_down_normal,
     next_up,
+    next_up_normal,
     width_smallest_normals,
 )
 from hypothesis.internal.validation import (
@@ -277,17 +278,6 @@ class FixedBoundedFloatStrategy(SearchStrategy):
         if not self.allow_subnormal:
             assume(f == 0 or abs(f) >= width_smallest_normals[self.width])
         return f
-
-
-def next_down_normal(value, width, allow_subnormal):
-    value = next_down(value, width)
-    if (not allow_subnormal) and 0 < abs(value) < width_smallest_normals[width]:
-        return 0.0 if value > 0 else -width_smallest_normals[width]
-    return value
-
-
-def next_up_normal(value, width, allow_subnormal):
-    return -next_down_normal(-value, width, allow_subnormal)
 
 
 @cacheable
