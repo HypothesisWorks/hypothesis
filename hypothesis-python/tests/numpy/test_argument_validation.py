@@ -20,6 +20,8 @@ from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra import numpy as nps
 
+from tests.common.utils import checks_deprecated_behaviour
+
 
 def e(a, **kwargs):
     kw = ", ".join(f"{k}={v!r}" for k, v in kwargs.items())
@@ -267,8 +269,6 @@ def e(a, **kwargs):
         e(nps.basic_indices, shape=(0, 0), max_dims=-1),
         e(nps.basic_indices, shape=(0, 0), max_dims=1.0),
         e(nps.basic_indices, shape=(0, 0), min_dims=2, max_dims=1),
-        e(nps.basic_indices, shape=(0, 0), min_dims=50),
-        e(nps.basic_indices, shape=(0, 0), max_dims=50),
         e(nps.basic_indices, shape=(3, 3, 3), max_dims="not an int"),
         e(nps.integer_array_indices, shape=()),
         e(nps.integer_array_indices, shape=(2, 0)),
@@ -278,5 +278,18 @@ def e(a, **kwargs):
     ],
 )
 def test_raise_invalid_argument(function, kwargs):
+    with pytest.raises(InvalidArgument):
+        function(**kwargs).example()
+
+
+@pytest.mark.parametrize(
+    ("function", "kwargs"),
+    [
+        e(nps.basic_indices, shape=(0, 0), min_dims=50),
+        e(nps.basic_indices, shape=(0, 0), max_dims=50),
+    ],
+)
+@checks_deprecated_behaviour
+def test_raise_invalid_argument_deprecated(function, kwargs):
     with pytest.raises(InvalidArgument):
         function(**kwargs).example()
