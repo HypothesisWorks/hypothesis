@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.29.2:
+
+-------------------
+6.29.2 - 2021-12-02
+-------------------
+
+This patch clarifies our pretty-printing of DataFrames (:issue:`3114`).
+
 .. _v6.29.1:
 
 -------------------
