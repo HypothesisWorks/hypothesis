@@ -23,14 +23,27 @@ from hypothesis.strategies import floats
 
 from tests.common.debug import assert_all_examples, find_any
 
-pytestmark = [pytest.mark.skipif(PYTHON_FTZ, reason="broken by unsafe compiler flags")]
+
+def test_python_compiled_with_sane_math_options():
+    """Python does not flush-to-zero, which violates IEEE-754
+
+    The other tests that rely on subnormals are skipped when Python is FTZ
+    (otherwise pytest will be very noisy), so this meta test ensures CI jobs
+    still fail as we currently don't care to support such builds of Python.
+    """
+    assert not PYTHON_FTZ
 
 
+skipif_ftz = pytest.mark.skipif(PYTHON_FTZ, reason="broken by unsafe compiler flags")
+
+
+@skipif_ftz
 def test_can_generate_subnormals():
     find_any(floats().filter(lambda x: x > 0), lambda x: x < float_info.min)
     find_any(floats().filter(lambda x: x < 0), lambda x: x > -float_info.min)
 
 
+@skipif_ftz
 @pytest.mark.parametrize(
     "min_value, max_value", [(None, None), (-1, 0), (0, 1), (-1, 1)]
 )

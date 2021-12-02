@@ -19,10 +19,9 @@ from decimal import Decimal
 from fractions import Fraction
 from sys import float_info
 from typing import Any, Optional, Union
-from warnings import warn
 
 from hypothesis.control import assume, reject
-from hypothesis.errors import HypothesisWarning, InvalidArgument
+from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import floats as flt, utils as d
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.filtering import get_integer_predicate_bounds
