@@ -20,8 +20,8 @@ from io import StringIO
 from hypothesis import Phase, settings
 from hypothesis.errors import HypothesisDeprecationWarning
 from hypothesis.internal.entropy import deterministic_PRNG
-from hypothesis.internal.reflection import proxies
 from hypothesis.internal.floats import next_down
+from hypothesis.internal.reflection import proxies
 from hypothesis.reporting import default, with_reporter
 from hypothesis.strategies._internal.core import from_type, register_type_strategy
 from hypothesis.strategies._internal.types import _global_type_lookup
@@ -205,8 +205,6 @@ def temp_registered(type_, strat_or_factory):
         from_type.__clear_cache()
         if prev is not None:
             register_type_strategy(type_, prev)
-
-
 
 
 # Specifies whether we can represent subnormal floating point numbers.
