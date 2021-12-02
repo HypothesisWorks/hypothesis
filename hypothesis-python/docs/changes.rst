@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.29.3:
+
+-------------------
+6.29.3 - 2021-12-02
+-------------------
+
+This patch fixes a bug in :func:`~hypothesis.extra.numpy.mutually_broadcastable_shapes`,
+which restricted the patterns of singleton dimensions that could be generated for
+dimensions that extended beyond ``base_shape`` (:issue:`3170`).
+
 .. _v6.29.2:
 
 -------------------
