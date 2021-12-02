@@ -81,7 +81,7 @@ def next_up(value, width=64):
 
     From https://stackoverflow.com/a/10426033, with thanks to Mark Dickinson.
     """
-    assert isinstance(value, float)
+    assert isinstance(value, float), f"{value!r} of type {type(value)}"
     if math.isnan(value) or (math.isinf(value) and value > 0):
         return value
     if value == 0.0 and is_negative(value):
