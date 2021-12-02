@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.29.1:
+
+-------------------
+6.29.1 - 2021-12-02
+-------------------
+
+This patch documents :func:`~hypothesis.strategies.timezones`
+`Windows-only requirement <https://docs.python.org/3/library/zoneinfo.html#data-sources>`__
+for the :pypi:`tzdata` package, and ensures that
+``pip install hypothesis[zoneinfo]`` will install the latest version.
+
 .. _v6.29.0:
 
 -------------------
