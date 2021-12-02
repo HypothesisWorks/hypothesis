@@ -589,13 +589,14 @@ class MutuallyBroadcastableShapesStrategy(st.SearchStrategy):
                 # only a singleton is valid in alignment with the base-dim
                 dim_side = 1
 
+            allowed_sides = sorted([1, dim_side])  # shrink to 0 when available
             for shape_id, shape in enumerate(shapes):
                 # Populating this dimension-size for each shape, either
                 # the drawn size is used or, if permitted, a singleton
                 # dimension.
-                if dim_count <= len(base_shape) and self.size_one_allowed:
+                if dim <= len(result_shape) and self.size_one_allowed:
                     # aligned: shrink towards size 1
-                    side = data.draw(st.sampled_from([1, dim_side]))
+                    side = data.draw(st.sampled_from(allowed_sides))
                 else:
                     side = dim_side
 
