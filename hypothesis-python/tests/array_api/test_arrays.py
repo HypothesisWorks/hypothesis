@@ -18,8 +18,9 @@ import pytest
 from hypothesis import assume, given, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.array_api import DTYPE_NAMES, NUMERIC_NAMES
+from hypothesis.internal.floats import width_smallest_normals
 
-from tests.array_api.common import COMPLIANT_XP, xp, xps
+from tests.array_api.common import COMPLIANT_XP, WIDTHS_FTZ, xp, xps
 from tests.common.debug import find_any, minimal
 from tests.common.utils import fails_with, flaky
 
@@ -471,3 +472,24 @@ def test_may_reuse_distinct_integers_if_asked():
         ),
         lambda x: xp.unique_values(x).size < x.size,
     )
+
+
+@pytest.mark.skipif(
+    not WIDTHS_FTZ[32], reason="Subnormals are valid for non-FTZ builds"
+)
+def test_cannot_draw_subnormals_for_ftz_float32():
+    """For FTZ builds of array modules, strategy with subnormal elements
+    strategy raises helpful error."""
+    strat = xps.arrays(
+        xp.float32,
+        10,
+        elements={
+            "min_value": 0.0,
+            "max_value": width_smallest_normals[32],
+            "exclude_min": True,
+            "exclude_max": True,
+            "allow_subnormal": True,
+        },
+    )
+    with pytest.raises(InvalidArgument, match="Generated subnormal float"):
+        strat.example()

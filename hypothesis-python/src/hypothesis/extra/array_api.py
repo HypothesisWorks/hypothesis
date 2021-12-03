@@ -23,6 +23,7 @@ from typing import (
     Iterator,
     List,
     Mapping,
+    NamedTuple,
     Optional,
     Sequence,
     Tuple,
@@ -50,6 +51,7 @@ from hypothesis.extra._array_helpers import (
 )
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.coverage import check_function
+from hypothesis.internal.floats import next_down
 from hypothesis.internal.reflection import proxies
 from hypothesis.internal.validation import (
     check_type,
@@ -168,6 +170,7 @@ def _from_dtype(
     max_value: Optional[Union[int, float]] = None,
     allow_nan: Optional[bool] = None,
     allow_infinity: Optional[bool] = None,
+    allow_subnormal: Optional[bool] = None,
     exclude_min: Optional[bool] = None,
     exclude_max: Optional[bool] = None,
 ) -> st.SearchStrategy[Union[bool, int, float]]:
@@ -243,6 +246,24 @@ def _from_dtype(
                 check_valid_interval(min_value, max_value, "min_value", "max_value")
             kw["max_value"] = max_value
 
+        # We infer whether an array module will flush subnormals to zero, as may
+        # be the case when libraries are built with compiler options that
+        # violate IEEE-754 (e.g. -ffast-math and -ftz=true). Note we do this for
+        # the specific dtype, as compilers may end up flushing subnormals for
+        # one float but supporting subnormals for the other.
+        #
+        # By default, floats() will generate subnormals if they are in the
+        # inferred values range. If we have detected that xp flushes to zero for
+        # the passed dtype, we ensure from_dtype() will not generate subnormals
+        # by default.
+        if allow_subnormal is not None:
+            kw["allow_subnormal"] = allow_subnormal
+        else:
+            subnormal = next_down(finfo.smallest_normal, width=finfo.bits)
+            ftz = bool(xp.asarray(subnormal, dtype=dtype) == 0)
+            if ftz:
+                kw["allow_subnormal"] = False
+
         if allow_nan is not None:
             kw["allow_nan"] = allow_nan
         if allow_infinity is not None:
@@ -265,10 +286,27 @@ class ArrayStrategy(st.SearchStrategy):
         self.unique = unique
         self.array_size = math.prod(shape)
         self.builtin = find_castable_builtin_for_dtype(xp, dtype)
+        self.finfo = None if self.builtin is not float else xp.finfo(self.dtype)
 
     def check_set_value(self, val, val_0d, strategy):
         finite = self.builtin is bool or self.xp.isfinite(val_0d)
         if finite and self.builtin(val_0d) != val:
+            if self.builtin is float:
+                assert self.finfo is not None  # for mypy
+                try:
+                    is_subnormal = 0 < abs(val) < self.finfo.smallest_normal
+                except Exception:
+                    # val may be a non-float that does not support the
+                    # operations __lt__ and __abs__
+                    is_subnormal = False
+                if is_subnormal:
+                    raise InvalidArgument(
+                        f"Generated subnormal float {val} from strategy "
+                        f"{strategy} resulted in {val_0d!r}, probably "
+                        f"as a result of array module {self.xp.__name__} "
+                        "being built with flush-to-zero compiler options. "
+                        "Consider passing allow_subnormal=False."
+                    )
             raise InvalidArgument(
                 f"Generated array element {val!r} from strategy {strategy} "
                 f"cannot be represented with dtype {self.dtype}. "
@@ -462,7 +500,7 @@ def _arrays(
     your tests to run in reasonable time.
     """
     check_xp_attributes(
-        xp, ["asarray", "zeros", "full", "all", "isnan", "isfinite", "reshape"]
+        xp, ["finfo", "asarray", "zeros", "full", "all", "isnan", "isfinite", "reshape"]
     )
 
     if isinstance(dtype, st.SearchStrategy):
@@ -758,6 +796,7 @@ def make_strategies_namespace(xp: Any) -> SimpleNamespace:
         max_value: Optional[Union[int, float]] = None,
         allow_nan: Optional[bool] = None,
         allow_infinity: Optional[bool] = None,
+        allow_subnormal: Optional[bool] = None,
         exclude_min: Optional[bool] = None,
         exclude_max: Optional[bool] = None,
     ) -> st.SearchStrategy[Union[bool, int, float]]:
@@ -768,6 +807,7 @@ def make_strategies_namespace(xp: Any) -> SimpleNamespace:
             max_value=max_value,
             allow_nan=allow_nan,
             allow_infinity=allow_infinity,
+            allow_subnormal=allow_subnormal,
             exclude_min=exclude_min,
             exclude_max=exclude_max,
         )
@@ -859,6 +899,34 @@ except ImportError:
     else:
         np = None
 if np is not None:
+
+    class FloatInfo(NamedTuple):
+        bits: int
+        eps: float
+        max: float
+        min: float
+        smallest_normal: float
+
+    def mock_finfo(dtype: DataType) -> FloatInfo:
+        """Returns a finfo object compliant with the Array API
+
+        Ensures all attributes are Python scalars and not NumPy scalars. This
+        lets us ignore corner cases with how NumPy scalars operate, such as
+        NumPy floats breaking our next_down() util.
+
+        Also ensures the finfo obj has the smallest_normal attribute. NumPy only
+        introduced it in v1.21.1, so we just use the equivalent tiny attribute
+        to keep mocking with older versions working.
+        """
+        _finfo = np.finfo(dtype)
+        return FloatInfo(
+            int(_finfo.bits),
+            float(_finfo.eps),
+            float(_finfo.max),
+            float(_finfo.min),
+            float(_finfo.tiny),
+        )
+
     mock_xp = SimpleNamespace(
         __name__="mockpy",
         # Data types
@@ -878,7 +946,7 @@ if np is not None:
         # Data type functions
         astype=lambda x, d: x.astype(d),
         iinfo=np.iinfo,
-        finfo=np.finfo,
+        finfo=mock_finfo,
         broadcast_arrays=np.broadcast_arrays,
         # Creation functions
         arange=np.arange,

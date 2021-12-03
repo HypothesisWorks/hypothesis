@@ -19,9 +19,10 @@ import pytest
 
 from hypothesis import given, strategies as st
 from hypothesis.extra.array_api import DTYPE_NAMES, find_castable_builtin_for_dtype
+from hypothesis.internal.floats import width_smallest_normals
 
-from tests.array_api.common import xp, xps
-from tests.common.debug import minimal
+from tests.array_api.common import WIDTHS_FTZ, xp, xps
+from tests.common.debug import assert_no_examples, find_any, minimal
 
 
 @given(xps.scalar_dtypes())
@@ -102,3 +103,38 @@ def test_can_minimize_floats():
     """Inferred float strategy minimizes to a good example."""
     smallest = minimal(xps.from_dtype(xp.float32), lambda n: n >= 1.0)
     assert smallest == 1
+
+
+smallest_normal = width_smallest_normals[32]
+subnormal_strats = [
+    xps.from_dtype(xp.float32),
+    xps.from_dtype(xp.float32, min_value=-1),
+    xps.from_dtype(xp.float32, max_value=1),
+    xps.from_dtype(xp.float32, max_value=1),
+    pytest.param(
+        xps.from_dtype(xp.float32, min_value=-1, max_value=1),
+        marks=pytest.mark.skip(
+            reason="FixedBoundFloatStrategy(0, 1) rarely generates subnormals"
+        ),
+    ),
+]
+
+
+@pytest.mark.skipif(
+    WIDTHS_FTZ[32], reason="Subnormals should not be generated for FTZ builds"
+)
+@pytest.mark.parametrize("strat", subnormal_strats)
+def test_generate_subnormals_for_non_ftz_float32(strat):
+    find_any(
+        strat.filter(lambda n: n != 0), lambda n: -smallest_normal < n < smallest_normal
+    )
+
+
+@pytest.mark.skipif(
+    not WIDTHS_FTZ[32], reason="Subnormals should be generated for non-FTZ builds"
+)
+@pytest.mark.parametrize("strat", subnormal_strats)
+def test_does_not_generate_subnormals_for_ftz_float32(strat):
+    assert_no_examples(
+        strat.filter(lambda n: n != 0), lambda n: -smallest_normal < n < smallest_normal
+    )

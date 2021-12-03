@@ -80,6 +80,7 @@ def from_dtype(
     max_value: Union[int, float, None] = None,
     allow_nan: Optional[bool] = None,
     allow_infinity: Optional[bool] = None,
+    allow_subnormal: Optional[bool] = None,
     exclude_min: Optional[bool] = None,
     exclude_max: Optional[bool] = None,
 ) -> st.SearchStrategy[Any]:
@@ -131,6 +132,7 @@ def from_dtype(
                 "max_value",
                 "allow_nan",
                 "allow_infinity",
+                "allow_subnormal",
                 "exclude_min",
                 "exclude_max",
             ),
@@ -197,6 +199,21 @@ class ArrayStrategy(st.SearchStrategy):
             ) from err
         if self._check_elements and val != result[idx] and val == val:
             strategy = self.fill if fill else self.element_strategy
+            if self.dtype.kind == "f":
+                try:
+                    is_subnormal = 0 < abs(val) < np.finfo(self.dtype).tiny
+                except Exception:  # pragma: no cover
+                    # val may be a non-float that does not support the
+                    # operations __lt__ and __abs__
+                    is_subnormal = False  # pragma: no cover
+                if is_subnormal:
+                    raise InvalidArgument(  # pragma: no cover
+                        f"Generated subnormal float {val} from strategy "
+                        f"{strategy} resulted in {result[idx]!r}, probably "
+                        "as a result of NumPy being built with flush-to-zero "
+                        "compiler options. Consider passing "
+                        "allow_subnormal=False."
+                    )
             raise InvalidArgument(
                 "Generated array element %r from %r cannot be represented as "
                 "dtype %r - instead it becomes %r (type %r).  Consider using a more "

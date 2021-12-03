@@ -75,6 +75,14 @@ class TestFixPositionalKeywonlyArgs(CodemodTest):
         """
         self.assertCodemod(before=before, after=after)
 
+    def test_noop_with_new_floats_kw(self) -> None:
+        before = """
+            import hypothesis.strategies as st
+
+            st.floats(0, 1, False, False, True, 32, False, False)  # allow_subnormal=True
+        """
+        self.assertCodemod(before=before, after=before)
+
     def test_noop_if_unsure(self) -> None:
         before = """
             import random

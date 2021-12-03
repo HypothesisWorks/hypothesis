@@ -15,6 +15,7 @@
 
 import math
 import struct
+from sys import float_info
 
 # Format codes for (int, float) sized types, used for byte-wise casts.
 # See https://docs.python.org/3/library/struct.html#format-characters
@@ -99,3 +100,25 @@ def next_up(value, width=64):
 
 def next_down(value, width=64):
     return -next_up(-value, width)
+
+
+def next_down_normal(value, width, allow_subnormal):
+    value = next_down(value, width)
+    if (not allow_subnormal) and 0 < abs(value) < width_smallest_normals[width]:
+        return 0.0 if value > 0 else -width_smallest_normals[width]
+    return value
+
+
+def next_up_normal(value, width, allow_subnormal):
+    return -next_down_normal(-value, width, allow_subnormal)
+
+
+# Smallest positive non-zero numbers that is fully representable by an
+# IEEE-754 float, calculated with the width's associated minimum exponent.
+# Values from https://en.wikipedia.org/wiki/IEEE_754#Basic_and_interchange_formats
+width_smallest_normals = {
+    16: 2 ** -(2 ** (5 - 1) - 2),
+    32: 2 ** -(2 ** (8 - 1) - 2),
+    64: 2 ** -(2 ** (11 - 1) - 2),
+}
+assert width_smallest_normals[64] == float_info.min

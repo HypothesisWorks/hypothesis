@@ -203,6 +203,12 @@ class HypothesisFixPositionalKeywonlyArgs(VisitorBasedCodemodCommand):
         # This does e.g. incur a dependency on Numpy to fix Numpy-dependent code,
         # but having a single source of truth about the signatures is worth it.
         params = signature(get_fn(*qualnames)).parameters.values()
+
+        # st.floats() has a new allow_subnormal kwonly argument not at the end,
+        # so we do a bit more of a dance here.
+        if qualnames == {"hypothesis.strategies.floats"}:
+            params = [p for p in params if p.name != "allow_subnormal"]
+
         if len(updated_node.args) > len(params):
             return updated_node
 
