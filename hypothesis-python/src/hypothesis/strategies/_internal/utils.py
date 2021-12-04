@@ -15,16 +15,21 @@
 
 import threading
 from inspect import signature
-from typing import TYPE_CHECKING, Callable, Dict
+from typing import TYPE_CHECKING, Callable, Dict, TypeVar
 
 from hypothesis.internal.cache import LRUReusedCache
 from hypothesis.internal.floats import float_to_int
 from hypothesis.internal.reflection import proxies
 
 if TYPE_CHECKING:
-    from hypothesis.strategies._internal.strategies import SearchStrategy, T
+    from hypothesis.strategies._internal.strategies import (
+        SearchStrategy,
+        T,
+    )  # noqa: F401
 
 _strategies: Dict[str, Callable[..., "SearchStrategy"]] = {}
+
+C = TypeVar("C", bound=Callable)
 
 
 class FloatKey:
@@ -63,7 +68,7 @@ def clear_cache() -> None:
     cache.clear()
 
 
-def cacheable(fn: "T") -> "T":
+def cacheable(fn: C) -> C:
     from hypothesis.strategies._internal.strategies import SearchStrategy
 
     @proxies(fn)
