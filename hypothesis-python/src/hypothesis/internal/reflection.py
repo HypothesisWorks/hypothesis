@@ -570,7 +570,7 @@ def impersonate(target):
     return accept
 
 
-def proxies(target):
+def proxies(target: C) -> Callable[[Callable], C]:
     replace_sig = define_function_signature(
         target.__name__.replace("<lambda>", "_lambda_"),
         target.__doc__,
