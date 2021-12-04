@@ -85,7 +85,7 @@ def cacheable(fn: "T") -> "T":
                 cache[cache_key] = result
             return result
 
-    cached_strategy.__clear_cache = clear_cache
+    cached_strategy.__clear_cache = clear_cache  # type: ignore
     return cached_strategy
 
 
