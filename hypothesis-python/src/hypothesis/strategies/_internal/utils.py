@@ -22,10 +22,7 @@ from hypothesis.internal.floats import float_to_int
 from hypothesis.internal.reflection import proxies
 
 if TYPE_CHECKING:
-    from hypothesis.strategies._internal.strategies import (
-        SearchStrategy,
-        T,
-    )  # noqa: F401
+    from hypothesis.strategies._internal.strategies import SearchStrategy, T
 
 _strategies: Dict[str, Callable[..., "SearchStrategy"]] = {}
 
