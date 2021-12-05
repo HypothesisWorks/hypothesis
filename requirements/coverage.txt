@@ -68,7 +68,7 @@ sortedcontainers==2.4.0
     #   hypothesis (hypothesis-python/setup.py)
 tomli==1.2.2
     # via black
-typing-extensions==4.0.0
+typing-extensions==4.0.1
     # via
     #   black
     #   libcst

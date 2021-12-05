@@ -27,9 +27,8 @@ Python versions
 
 Hypothesis is supported and tested on CPython 3.6+, i.e.
 `all versions of CPython with upstream support <https://devguide.python.org/#status-of-python-branches>`_,
-
-Hypothesis also supports the latest PyPy for Python 3.6.
-32-bit builds of CPython also work, though they are currently only tested on Windows.
+along with PyPy for the same versions.
+32-bit builds of CPython also work, though we only test them on Windows.
 
 In general Hypothesis does not officially support anything except the latest
 patch release of any version of Python it supports. Earlier releases should work
