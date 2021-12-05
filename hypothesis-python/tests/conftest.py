@@ -34,6 +34,7 @@ collect_ignore_glob = ["django/*"]
 if sys.version_info < (3, 7):
     collect_ignore_glob.append("cover/*py37*")
 if sys.version_info < (3, 8):
+    collect_ignore_glob.append("array_api")
     collect_ignore_glob.append("cover/*py38*")
 if sys.version_info < (3, 9):
     collect_ignore_glob.append("cover/*py39*")
