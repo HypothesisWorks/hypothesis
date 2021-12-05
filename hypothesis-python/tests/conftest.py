@@ -39,6 +39,9 @@ if sys.version_info < (3, 8):
 if sys.version_info < (3, 9):
     collect_ignore_glob.append("cover/*py39*")
 
+if sys.version_info >= (3, 11):
+    collect_ignore_glob.append("cover/test_asyncio.py")  # @asyncio.coroutine removed
+
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "slow: pandas expects this marker to exist.")

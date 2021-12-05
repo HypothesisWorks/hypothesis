@@ -15,6 +15,7 @@
 
 import asyncio
 import sys
+import warnings
 from unittest import TestCase
 
 import pytest
@@ -25,7 +26,11 @@ from hypothesis.internal.compat import PYPY
 if sys.version_info < (3, 8):
     coro_decorator = asyncio.coroutine
 else:
-    coro_decorator = pytest.mark.skip
+
+    def coro_decorator(f):
+        with warnings.catch_warnings():
+            warnings.simplefilter(action="ignore", category=DeprecationWarning)
+            return asyncio.coroutine(f)
 
 
 class TestAsyncio(TestCase):
@@ -51,14 +56,14 @@ class TestAsyncio(TestCase):
             except BaseException as e:
                 error = e
 
-        coro = asyncio.coroutine(g)
+        coro = coro_decorator(g)
         future = asyncio.wait_for(coro(), timeout=self.timeout)
         self.loop.run_until_complete(future)
         if error is not None:
             raise error
 
     @pytest.mark.skipif(PYPY, reason="Error in asyncio.new_event_loop()")
-    @given(st.text())
+    @given(x=st.text())
     @coro_decorator
     def test_foo(self, x):
         assume(x)
@@ -67,14 +72,11 @@ class TestAsyncio(TestCase):
 
 
 class TestAsyncioRun(TestCase):
-
-    timeout = 5
-
     def execute_example(self, f):
         asyncio.run(f())
 
     @pytest.mark.skipif(sys.version_info[:2] < (3, 7), reason="asyncio.run() is new")
-    @given(st.text())
+    @given(x=st.text())
     @coro_decorator
     def test_foo(self, x):
         assume(x)
