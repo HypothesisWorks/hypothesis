@@ -32,17 +32,18 @@ def test_generate_indices_with_and_without_ellipsis():
     find_any(strat, lambda ix: Ellipsis not in ix)
 
 
-def test_generate_empty_tuple():
-    """Strategy generates empty tuples as indices."""
-    find_any(xps.indices(shape=(0, 0), allow_ellipsis=True), lambda ix: ix == ())
+@given(xps.indices(shape=(), allow_ellipsis=True))
+def test_generate_indices_for_0d_shape(idx):
+    """Strategy only generates empty tuples or Ellipsis as indices for an empty
+    shape."""
+    assert idx in [(), Ellipsis, (Ellipsis,)]
 
 
-def test_generate_non_tuples():
-    """Strategy generates non-tuples as indices."""
-    find_any(
-        xps.indices(shape=(0, 0), allow_ellipsis=True),
-        lambda ix: not isinstance(ix, tuple),
-    )
+def test_generate_tuples_and_non_tuples_for_1d_shape():
+    """Strategy can generate tuple and non-tuple indices with a 1-dimensional shape."""
+    strat = xps.indices(shape=(1,), allow_ellipsis=True)
+    find_any(strat, lambda ix: isinstance(ix, tuple))
+    find_any(strat, lambda ix: not isinstance(ix, tuple))
 
 
 def test_generate_long_ellipsis():
@@ -72,7 +73,7 @@ def test_indices_replaces_whole_axis_slices_with_ellipsis(idx):
 
 
 @given(xps.indices((3, 3, 3, 3, 3)))
-def test_indices_effeciently_generate_indexers(_):
+def test_effeciently_generate_indexers(_):
     """Generation is not too slow."""
 
 
