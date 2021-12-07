@@ -83,41 +83,48 @@ def test_effeciently_generate_indexers(_):
     allow_ellipsis=st.booleans(),
     data=st.data(),
 )
-def test_indices_generate_valid_indexers(shape, allow_ellipsis, data):
+def test_generate_valid_indices(shape, allow_ellipsis, data):
     """Strategy generates valid indices."""
     min_dims = data.draw(st.integers(0, len(shape)), label="min_dims")
     max_dims = data.draw(
         st.none() | st.integers(min_dims, len(shape)), label="max_dims"
     )
-    indexer = data.draw(
+    idx = data.draw(
         xps.indices(
             shape,
             min_dims=min_dims,
             max_dims=max_dims,
             allow_ellipsis=allow_ellipsis,
         ),
-        label="indexer",
+        label="idx",
     )
 
+    _idx = idx if isinstance(idx, tuple) else (idx,)
     # Check that disallowed things are indeed absent
-    if isinstance(indexer, tuple):
-        assert 0 <= len(indexer) <= len(shape) + int(allow_ellipsis)
-    else:
-        assert 1 <= len(shape) + int(allow_ellipsis)
-    assert None not in shape
     if not allow_ellipsis:
-        assert Ellipsis not in shape
+        assert Ellipsis not in _idx
+    assert None not in _idx  # i.e. np.newaxis
+    # Check index is composed of valid objects
+    for i in _idx:
+        assert isinstance(i, int) or isinstance(i, slice) or i == Ellipsis
+    # Check idx does not flat index. Libraries such as NumPy proper support
+    # indexing a single-axis of a higher-dimensional array, but that is
+    # out-of-scope for the Array API.
+    if Ellipsis in _idx:
+        assert sum(i == Ellipsis for i in _idx) == 1
+        assert len(_idx) <= len(shape) + 1  # Ellipsis can index 0 axes
+    else:
+        assert len(_idx) == len(shape)
 
     if 0 in shape:
         # If there's a zero in the shape, the array will have no elements.
         array = xp.zeros(shape)
-        assert array.size == 0
+        assert array.size == 0  # sanity check
     elif math.prod(shape) <= 10 ** 5:
         # If it's small enough to instantiate, do so with distinct elements.
         array = xp.reshape(xp.arange(math.prod(shape)), shape)
     else:
         # We can't cheat on this one, so just try another.
         assume(False)
-
     # Finally, check that we can use our indexer without error
-    array[indexer]
+    array[idx]
