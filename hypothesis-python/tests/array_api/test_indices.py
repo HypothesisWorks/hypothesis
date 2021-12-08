@@ -107,9 +107,7 @@ def test_generate_valid_indices(shape, allow_ellipsis, data):
     # Check index is composed of valid objects
     for i in _idx:
         assert isinstance(i, int) or isinstance(i, slice) or i == Ellipsis
-    # Check idx does not flat index. Libraries such as NumPy proper support
-    # indexing a single-axis of a higher-dimensional array, but that is
-    # out-of-scope for the Array API.
+    # Check idx does not flat index
     if Ellipsis in _idx:
         assert sum(i == Ellipsis for i in _idx) == 1
         assert len(_idx) <= len(shape) + 1  # Ellipsis can index 0 axes
