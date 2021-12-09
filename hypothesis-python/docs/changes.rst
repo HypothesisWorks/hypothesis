@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.31.0:
+
+-------------------
+6.31.0 - 2021-12-09
+-------------------
+
+This release makes us compatible with :pypi:`Django` 4.0, in particular by adding
+support for use of :mod:`zoneinfo` timezones (though we respect the new
+``USE_DEPRECATED_PYTZ`` setting if you need it).
+
 .. _v6.30.1:
 
 -------------------
