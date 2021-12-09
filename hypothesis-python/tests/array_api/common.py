@@ -13,10 +13,16 @@
 #
 # END HEADER
 
+from warnings import catch_warnings
+
 import pytest
 
 from hypothesis.errors import HypothesisWarning
-from hypothesis.extra.array_api import make_strategies_namespace, mock_xp
+from hypothesis.extra.array_api import (
+    installed_array_modules,
+    make_strategies_namespace,
+    mock_xp,
+)
 from hypothesis.internal.floats import next_up
 
 __all__ = [
@@ -32,11 +38,12 @@ __all__ = [
 # which should allow our test suite to still work. A constant is set accordingly
 # to inform our test suite of whether the array module here is a mock or not.
 try:
-    with pytest.warns(UserWarning):
-        from numpy import array_api as xp  # type: ignore
+    with catch_warnings():  # libraries might warn on importing their namespace
+        modules = installed_array_modules()
+    xp = modules["numpy"]
     xps = make_strategies_namespace(xp)
     COMPLIANT_XP = True
-except ImportError:
+except KeyError:
     xp = mock_xp
     with pytest.warns(HypothesisWarning):
         xps = make_strategies_namespace(xp)

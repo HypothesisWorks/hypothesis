@@ -15,10 +15,12 @@
 
 import math
 import sys
+from importlib.metadata import entry_points
 from numbers import Real
 from types import SimpleNamespace
 from typing import (
     Any,
+    Dict,
     Iterable,
     Iterator,
     List,
@@ -62,9 +64,7 @@ from hypothesis.internal.validation import (
 from hypothesis.strategies._internal.strategies import check_strategy
 from hypothesis.strategies._internal.utils import defines_strategy
 
-__all__ = [
-    "make_strategies_namespace",
-]
+__all__ = ["make_strategies_namespace"]
 
 
 INT_NAMES = ("int8", "int16", "int32", "int64")
@@ -974,3 +974,21 @@ if np is not None:
         any=np.any,
         all=np.all,
     )
+
+
+def installed_array_modules() -> Dict[str, Any]:
+    """Returns list of array modules
+
+    A convenience wrapper for importlib.metadata.entry_points(). It has the
+    added benefit of working with both the original dict interface and the new
+    select interface, so this can be used warning-free in all modern Python
+    versions.
+    """
+    try:
+        eps = entry_points(group="array_api")
+    except TypeError:
+        # The select interface for entry_points was introduced in py3.10,
+        # supplanting its dict interface. We fallback to the dict interface so
+        # we can still find entry points in py3.8 and py3.9.
+        eps = entry_points()["array_api"]
+    return {ep.name: ep.load() for ep in eps}
