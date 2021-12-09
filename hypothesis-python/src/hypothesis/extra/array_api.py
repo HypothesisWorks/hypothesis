@@ -731,13 +731,12 @@ def indices(
     )
     check_valid_dims(min_dims, "min_dims")
 
-    ndim = len(shape)
     if max_dims is None:
-        max_dims = min(ndim, NDIM_MAX)
+        max_dims = min(len(shape), NDIM_MAX)
     check_type(int, max_dims, "max_dims")
     assert isinstance(max_dims, int)
     check_argument(
-        max_dims <= ndim,
+        max_dims <= len(shape),
         f"max_dims={max_dims} is larger than len(shape)={len(shape)}, "
         "but it is impossible for an indexing operation to add dimensions.",
     )

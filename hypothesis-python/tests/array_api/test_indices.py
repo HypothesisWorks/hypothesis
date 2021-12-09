@@ -73,7 +73,7 @@ def test_indices_replaces_whole_axis_slices_with_ellipsis(idx):
 
 
 @given(xps.indices((3, 3, 3, 3, 3)))
-def test_effeciently_generate_indexers(_):
+def test_efficiently_generate_indexers(_):
     """Generation is not too slow."""
 
 
@@ -89,30 +89,30 @@ def test_generate_valid_indices(shape, allow_ellipsis, data):
     max_dims = data.draw(
         st.none() | st.integers(min_dims, len(shape)), label="max_dims"
     )
-    idx = data.draw(
+    indexer = data.draw(
         xps.indices(
             shape,
             min_dims=min_dims,
             max_dims=max_dims,
             allow_ellipsis=allow_ellipsis,
         ),
-        label="idx",
+        label="indexer",
     )
 
-    _idx = idx if isinstance(idx, tuple) else (idx,)
+    _indexer = indexer if isinstance(indexer, tuple) else (indexer,)
     # Check that disallowed things are indeed absent
     if not allow_ellipsis:
-        assert Ellipsis not in _idx
-    assert None not in _idx  # i.e. np.newaxis
+        assert Ellipsis not in _indexer
+    assert None not in _indexer  # i.e. np.newaxis
     # Check index is composed of valid objects
-    for i in _idx:
+    for i in _indexer:
         assert isinstance(i, int) or isinstance(i, slice) or i == Ellipsis
-    # Check idx does not flat index
-    if Ellipsis in _idx:
-        assert sum(i == Ellipsis for i in _idx) == 1
-        assert len(_idx) <= len(shape) + 1  # Ellipsis can index 0 axes
+    # Check indexer does not flat index
+    if Ellipsis in _indexer:
+        assert sum(i == Ellipsis for i in _indexer) == 1
+        assert len(_indexer) <= len(shape) + 1  # Ellipsis can index 0 axes
     else:
-        assert len(_idx) == len(shape)
+        assert len(_indexer) == len(shape)
 
     if 0 in shape:
         # If there's a zero in the shape, the array will have no elements.
@@ -125,4 +125,4 @@ def test_generate_valid_indices(shape, allow_ellipsis, data):
         # We can't cheat on this one, so just try another.
         assume(False)
     # Finally, check that we can use our indexer without error
-    array[idx]
+    array[indexer]
