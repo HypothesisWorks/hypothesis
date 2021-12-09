@@ -10,3 +10,4 @@ numpy
 pandas
 python-dateutil
 pytz
+-r test.in

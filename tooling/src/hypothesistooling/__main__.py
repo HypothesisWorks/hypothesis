@@ -398,6 +398,7 @@ PY37 = "3.7.12"
 PY38 = PYMAIN = "3.8.12"  # Sync PYMAIN minor version with GH Actions main.yml
 PY39 = "3.9.9"
 PY310 = "3.10.0"
+PY311 = "3.11-dev"
 PYPY36 = "pypy3.6-7.3.3"
 PYPY37 = "pypy3.7-7.3.7"
 PYPY38 = "pypy3.8-7.3.7"
@@ -449,6 +450,11 @@ def check_py310():
 
 
 @python_tests
+def check_py311():
+    run_tox("py311-full", PY311)
+
+
+@python_tests
 def check_py310_pyjion():
     run_tox("py310-pyjion", PY310)
 
@@ -475,7 +481,7 @@ def standard_tox_task(name):
 standard_tox_task("nose")
 standard_tox_task("pytest46")
 
-for n in [22, 31, 32]:
+for n in [22, 32, 40]:
     standard_tox_task(f"django{n}")
 for n in [25, 10, 11, 12, 13]:
     standard_tox_task(f"pandas{n}")

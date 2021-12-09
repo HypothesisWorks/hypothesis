@@ -32,6 +32,7 @@ jobs:
           - check-py39
           - check-py310
           # - check-py310-pyjion  # see notes in tox.ini
+          - check-py311
           - check-quality
           - lint-ruby
           - check-ruby-tests
@@ -44,8 +45,8 @@ jobs:
           - lint-conjecture-rust
           - check-nose
           - check-pytest46
+          - check-django40
           - check-django32
-          - check-django31
           - check-django22
           - check-pandas13
           - check-pandas12

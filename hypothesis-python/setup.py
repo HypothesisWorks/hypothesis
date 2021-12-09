@@ -77,7 +77,9 @@ extras = {
     ],
     # We only support Django versions with upstream support - see
     # https://www.djangoproject.com/download/#supported-versions
-    "django": ["pytz>=2014.1", "django>=2.2"],
+    # We also leave the choice of timezone library to the user, since it
+    # might be zoneinfo or pytz depending on version and configuration.
+    "django": ["django>=2.2"],
 }
 
 extras["all"] = sorted(
