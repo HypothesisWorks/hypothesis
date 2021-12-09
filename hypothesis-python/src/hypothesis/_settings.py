@@ -491,12 +491,12 @@ class HealthCheck(Enum):
     method defined by :class:`python:unittest.TestCase` (i.e. not a test)."""
 
     function_scoped_fixture = 9
-    """Check if :func:`@given <hypothesis.given>` has been applied to a test
+    """Checks if :func:`@given <hypothesis.given>` has been applied to a test
     with a pytest function-scoped fixture. Function-scoped fixtures run once
     for the whole function, not once per example, and this is usually not what
     you want.
 
-    Because of this limitation, tests that need to need to set up or reset
+    Because of this limitation, tests that need to set up or reset
     state for every example need to do so manually within the test itself,
     typically using an appropriate context manager.
 
