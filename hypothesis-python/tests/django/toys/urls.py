@@ -13,8 +13,8 @@
 #
 # END HEADER
 
-from django.conf.urls import include, re_path
 from django.contrib import admin
+from django.urls import include, re_path
 
 patterns, namespace, name = admin.site.urls
 

@@ -17,6 +17,7 @@ import re
 import string
 from datetime import timedelta
 from decimal import Decimal
+from functools import lru_cache
 from typing import Any, Callable, Dict, Type, TypeVar, Union
 
 import django
@@ -30,7 +31,6 @@ from django.db import models as dm
 
 from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument, ResolutionFailed
-from hypothesis.extra.pytz import timezones
 from hypothesis.internal.validation import check_type
 from hypothesis.provisional import urls
 from hypothesis.strategies import emails
@@ -55,6 +55,18 @@ def integers_for_field(min_value, max_value):
         return st.integers(*numeric_bounds_from_validators(field, min_value, max_value))
 
     return inner
+
+
+@lru_cache()
+def timezones():
+    # From Django 4.0, the default is to use zoneinfo instead of pytz.
+    assert getattr(django.conf.settings, "USE_TZ", False)
+    if getattr(django.conf.settings, "USE_DEPRECATED_PYTZ", True):
+        from hypothesis.extra.pytz import timezones
+    else:
+        from hypothesis.strategies import timezones
+
+    return timezones()
 
 
 # Mapping of field types, to strategy objects or functions of (type) -> strategy

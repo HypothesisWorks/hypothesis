@@ -38,4 +38,11 @@ if __name__ == "__main__":
         warnings.simplefilter("ignore", category=DeprecationWarning)
         from django.core.management import execute_from_command_line
 
-    execute_from_command_line(sys.argv)
+    try:
+        from django.utils.deprecation import RemovedInDjango50Warning
+    except ImportError:
+        RemovedInDjango50Warning = ()
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=RemovedInDjango50Warning)
+        execute_from_command_line(sys.argv)
