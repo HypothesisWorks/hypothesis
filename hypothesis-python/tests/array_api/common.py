@@ -45,7 +45,7 @@ def installed_array_modules() -> Dict[str, EntryPoint]:
         # The select interface for entry_points was introduced in py3.10,
         # supplanting its dict interface. We fallback to the dict interface so
         # we can still find entry points in py3.8 and py3.9.
-        eps = entry_points()["array_api"]
+        eps = entry_points().get("array_api", [])
     return {ep.name: ep for ep in eps}
 
 
