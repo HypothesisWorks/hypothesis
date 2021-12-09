@@ -1128,6 +1128,18 @@ def test_basic_indices_replaces_whole_axis_slices_with_ellipsis(idx):
     assert slice(None) not in idx
 
 
+def test_basic_indices_can_generate_indices_not_covering_all_dims():
+    # These "flat indices" are skippable in the underlying BasicIndexStrategy,
+    # so we ensure we're definitely generating them for nps.basic_indices().
+    find_any(
+        nps.basic_indices(shape=(3, 3, 3)),
+        lambda ix: (
+            (not isinstance(ix, tuple) and ix != Ellipsis)
+            or (isinstance(ix, tuple) and Ellipsis not in ix and len(ix) < 3)
+        ),
+    )
+
+
 @given(
     shape=nps.array_shapes(min_dims=0, max_side=4)
     | nps.array_shapes(min_dims=0, min_side=0, max_side=10),
