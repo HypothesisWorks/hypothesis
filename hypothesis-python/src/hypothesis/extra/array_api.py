@@ -750,7 +750,7 @@ def indices(
         max_dims=max_dims,
         allow_ellipsis=allow_ellipsis,
         allow_newaxis=False,
-        flat_index=False,
+        allow_fewer_indices_than_dims=False,
     )
 
 

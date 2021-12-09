@@ -633,14 +633,23 @@ class MutuallyBroadcastableShapesStrategy(st.SearchStrategy):
 
 class BasicIndexStrategy(st.SearchStrategy):
     def __init__(
-        self, shape, min_dims, max_dims, allow_ellipsis, allow_newaxis, flat_index
+        self,
+        shape,
+        min_dims,
+        max_dims,
+        allow_ellipsis,
+        allow_newaxis,
+        allow_fewer_indices_than_dims,
     ):
         self.shape = shape
         self.min_dims = min_dims
         self.max_dims = max_dims
         self.allow_ellipsis = allow_ellipsis
         self.allow_newaxis = allow_newaxis
-        self.flat_index = flat_index
+        # allow_fewer_indices_than_dims=False will disable generating indices
+        # that don't cover all axes, i.e. indices that will flat index arrays.
+        # This is necessary for the Array API as such indices are not supported.
+        self.allow_fewer_indices_than_dims = allow_fewer_indices_than_dims
 
     def do_draw(self, data):
         # General plan: determine the actual selection up front with a straightforward
@@ -667,10 +676,7 @@ class BasicIndexStrategy(st.SearchStrategy):
         # which is really important for array shapes.  So we filter instead.
         assume(self.min_dims <= result_dims <= self.max_dims)
         # This is a quick-and-dirty way to insert ..., xor shorten the indexer,
-        # but it means we don't have to do any structural analysis. We only
-        # shorten the indexer when flat_index=True i.e. for nps.basic_indices(),
-        # so we can disable them for xps.indices() - such indices will flat
-        # index arrays, which is out-of-scope for the Array API.
+        # but it means we don't have to do any structural analysis.
         if self.allow_ellipsis and data.draw(st.booleans()):
             # Choose an index; then replace all adjacent whole-dimension slices.
             i = j = data.draw(st.integers(0, len(result)))
@@ -679,7 +685,7 @@ class BasicIndexStrategy(st.SearchStrategy):
             while j < len(result) and result[j] == slice(None):
                 j += 1
             result[i:j] = [Ellipsis]
-        elif self.flat_index:
+        elif self.allow_fewer_indices_than_dims:
             while result[-1:] == [slice(None, None)] and data.draw(st.integers(0, 7)):
                 result.pop()
         if len(result) == 1 and data.draw(st.booleans()):
