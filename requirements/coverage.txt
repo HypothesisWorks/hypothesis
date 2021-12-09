@@ -5,10 +5,12 @@
 #    pip-compile --output-file=requirements/coverage.txt hypothesis-python/setup.py requirements/coverage.in
 #
 attrs==21.2.0
-    # via hypothesis (hypothesis-python/setup.py)
+    # via
+    #   hypothesis (hypothesis-python/setup.py)
+    #   pytest
 backports.zoneinfo==0.2.1
     # via -r requirements/coverage.in
-black==21.11b1
+black==21.12b0
     # via -r requirements/coverage.in
 click==8.0.3
     # via
@@ -20,8 +22,12 @@ deprecated==1.2.13
     # via redis
 dpcontracts==0.6.0
     # via -r requirements/coverage.in
+execnet==1.9.0
+    # via pytest-xdist
 fakeredis==1.7.0
     # via -r requirements/coverage.in
+iniconfig==1.1.1
+    # via pytest
 lark-parser==0.12.0
     # via -r requirements/coverage.in
 libcst==0.3.23
@@ -35,15 +41,36 @@ numpy==1.21.4
     #   -r requirements/coverage.in
     #   pandas
 packaging==21.3
-    # via fakeredis
+    # via
+    #   fakeredis
+    #   pytest
 pandas==1.3.4
     # via -r requirements/coverage.in
 pathspec==0.9.0
     # via black
+pexpect==4.8.0
+    # via -r requirements/test.in
 platformdirs==2.4.0
     # via black
+pluggy==1.0.0
+    # via pytest
+ptyprocess==0.7.0
+    # via pexpect
+py==1.11.0
+    # via
+    #   pytest
+    #   pytest-forked
 pyparsing==3.0.6
     # via packaging
+pytest==6.2.5
+    # via
+    #   -r requirements/test.in
+    #   pytest-forked
+    #   pytest-xdist
+pytest-forked==1.3.0
+    # via pytest-xdist
+pytest-xdist==2.4.0
+    # via -r requirements/test.in
 python-dateutil==2.8.2
     # via
     #   -r requirements/coverage.in
@@ -56,8 +83,6 @@ pyyaml==6.0
     # via libcst
 redis==4.0.2
     # via fakeredis
-regex==2021.11.10
-    # via black
 six==1.16.0
     # via
     #   fakeredis
@@ -66,6 +91,8 @@ sortedcontainers==2.4.0
     # via
     #   fakeredis
     #   hypothesis (hypothesis-python/setup.py)
+toml==0.10.2
+    # via pytest
 tomli==1.2.2
     # via black
 typing-extensions==4.0.1
