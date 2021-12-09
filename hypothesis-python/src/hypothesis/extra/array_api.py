@@ -62,7 +62,9 @@ from hypothesis.internal.validation import (
 from hypothesis.strategies._internal.strategies import check_strategy
 from hypothesis.strategies._internal.utils import defines_strategy
 
-__all__ = ["make_strategies_namespace"]
+__all__ = [
+    "make_strategies_namespace",
+]
 
 
 INT_NAMES = ("int8", "int16", "int32", "int64")
