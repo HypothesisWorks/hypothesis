@@ -16,7 +16,7 @@
 import sys
 import warnings
 from collections import defaultdict
-from random import choice as random_choice
+from random import shuffle
 from typing import (
     Any,
     Callable,
@@ -315,6 +315,11 @@ class SearchStrategy(Generic[Ex]):
                     "#drawing-interactively-in-tests for more details."
                 )
 
+        try:
+            return self.__examples.pop()
+        except (AttributeError, IndexError):
+            self.__examples: List[Ex] = []
+
         from hypothesis.core import given
 
         # Note: this function has a weird name because it might appear in
@@ -322,18 +327,18 @@ class SearchStrategy(Generic[Ex]):
         @given(self)
         @settings(
             database=None,
-            max_examples=10,
+            max_examples=100,
             deadline=None,
             verbosity=Verbosity.quiet,
             phases=(Phase.generate,),
             suppress_health_check=HealthCheck.all(),
         )
         def example_generating_inner_function(ex):
-            examples.append(ex)
+            self.__examples.append(ex)
 
-        examples: List[Ex] = []
         example_generating_inner_function()
-        return random_choice(examples)
+        shuffle(self.__examples)
+        return self.__examples.pop()
 
     def map(self, pack: Callable[[Ex], T]) -> "SearchStrategy[T]":
         """Returns a new strategy that generates values by generating a value
