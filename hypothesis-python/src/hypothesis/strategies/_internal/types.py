@@ -475,6 +475,22 @@ if zoneinfo is not None:  # pragma: no branch
     _global_type_lookup[zoneinfo.ZoneInfo] = st.timezones()
 if PYPY:
     _global_type_lookup[builtins.sequenceiterator] = st.builds(iter, st.tuples())  # type: ignore
+try:
+    BaseExceptionGroup  # type: ignore # noqa
+except NameError:
+    pass
+else:  # pragma: no cover
+    _global_type_lookup[BaseExceptionGroup] = st.builds(  # type: ignore
+        BaseExceptionGroup,  # type: ignore
+        st.text(),
+        st.lists(st.from_type(BaseException), min_size=1),
+    )
+    _global_type_lookup[ExceptionGroup] = st.builds(  # type: ignore
+        ExceptionGroup,  # type: ignore
+        st.text(),
+        st.lists(st.from_type(Exception), min_size=1),
+    )
+
 
 _global_type_lookup[type] = st.sampled_from(
     [type(None)] + sorted(_global_type_lookup, key=str)

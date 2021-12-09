@@ -32,6 +32,7 @@ jobs:
           - check-py39
           - check-py310
           # - check-py310-pyjion  # see notes in tox.ini
+          - check-py311
           - check-quality
           - lint-ruby
           - check-ruby-tests

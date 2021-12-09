@@ -42,6 +42,11 @@ if sys.version_info < (3, 9):
 if sys.version_info >= (3, 11):
     collect_ignore_glob.append("cover/test_asyncio.py")  # @asyncio.coroutine removed
 
+    # TEMP: importlib.resources seems broken at the moment!
+    assert sys.version_info.releaselevel == "alpha"
+    collect_ignore_glob.append("cover/test_type_lookup.py")
+    collect_ignore_glob.append("cover/test_provisional_strategies.py")
+
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "slow: pandas expects this marker to exist.")
