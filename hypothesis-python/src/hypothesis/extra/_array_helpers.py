@@ -632,12 +632,15 @@ class MutuallyBroadcastableShapesStrategy(st.SearchStrategy):
 
 
 class BasicIndexStrategy(st.SearchStrategy):
-    def __init__(self, shape, min_dims, max_dims, allow_ellipsis, allow_newaxis):
+    def __init__(
+        self, shape, min_dims, max_dims, allow_ellipsis, allow_newaxis, flat_index
+    ):
         self.shape = shape
         self.min_dims = min_dims
         self.max_dims = max_dims
         self.allow_ellipsis = allow_ellipsis
         self.allow_newaxis = allow_newaxis
+        self.flat_index = flat_index
 
     def do_draw(self, data):
         # General plan: determine the actual selection up front with a straightforward
@@ -664,7 +667,10 @@ class BasicIndexStrategy(st.SearchStrategy):
         # which is really important for array shapes.  So we filter instead.
         assume(self.min_dims <= result_dims <= self.max_dims)
         # This is a quick-and-dirty way to insert ..., xor shorten the indexer,
-        # but it means we don't have to do any structural analysis.
+        # but it means we don't have to do any structural analysis. We only
+        # shorten the indexer when flat_index=True i.e. for nps.basic_indices(),
+        # so we can disable them for xps.indices() - such indices will flat
+        # index arrays, which is out-of-scope for the Array API.
         if self.allow_ellipsis and data.draw(st.booleans()):
             # Choose an index; then replace all adjacent whole-dimension slices.
             i = j = data.draw(st.integers(0, len(result)))
@@ -673,7 +679,7 @@ class BasicIndexStrategy(st.SearchStrategy):
             while j < len(result) and result[j] == slice(None):
                 j += 1
             result[i:j] = [Ellipsis]
-        else:
+        elif self.flat_index:
             while result[-1:] == [slice(None, None)] and data.draw(st.integers(0, 7)):
                 result.pop()
         if len(result) == 1 and data.draw(st.booleans()):

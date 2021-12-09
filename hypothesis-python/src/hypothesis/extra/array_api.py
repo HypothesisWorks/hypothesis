@@ -745,25 +745,14 @@ def indices(
 
     order_check("dims", 0, min_dims, max_dims)
 
-    def not_flat_index(idx):
-        """Check idx would not flat index an array
-
-        Libraries such as NumPy proper support indexing a single-axis of a
-        higher-dimensional array, but that is out-of-scope for the Array API.
-        """
-        _idx = idx if isinstance(idx, tuple) else (idx,)
-        if Ellipsis in _idx:
-            return True
-        else:
-            return len(_idx) == ndim
-
     return BasicIndexStrategy(
         shape,
         min_dims=min_dims,
         max_dims=max_dims,
         allow_ellipsis=allow_ellipsis,
         allow_newaxis=False,
-    ).filter(not_flat_index)
+        flat_index=False,
+    )
 
 
 def make_strategies_namespace(xp: Any) -> SimpleNamespace:
