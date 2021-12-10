@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.31.2:
+
+-------------------
+6.31.2 - 2021-12-10
+-------------------
+
+This patch fix invariants display in stateful falsifying examples (:issue:`3185`).
+
 .. _v6.31.1:
 
 -------------------
