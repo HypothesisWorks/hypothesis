@@ -26,12 +26,14 @@ import types
 from functools import wraps
 from tokenize import detect_encoding
 from types import ModuleType
-from typing import Callable, TypeVar
+from typing import TYPE_CHECKING, Callable
 
 from hypothesis.internal.compat import is_typed_named_tuple, update_code_location
 from hypothesis.vendor.pretty import pretty
 
-C = TypeVar("C", bound=Callable)
+if TYPE_CHECKING:
+    from hypothesis.strategies._internal.strategies import T
+
 READTHEDOCS = os.environ.get("READTHEDOCS", None) == "True"
 
 
@@ -570,9 +572,9 @@ def impersonate(target):
     return accept
 
 
-def proxies(target):
+def proxies(target: "T") -> Callable[[Callable], "T"]:
     replace_sig = define_function_signature(
-        target.__name__.replace("<lambda>", "_lambda_"),
+        target.__name__.replace("<lambda>", "_lambda_"),  # type: ignore
         target.__doc__,
         getfullargspec_except_self(target),
     )
