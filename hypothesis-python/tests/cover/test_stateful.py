@@ -597,6 +597,92 @@ def test_invariant_checks_initial_state_if_no_initialize_rules():
         run_state_machine_as_test(BadPrecondition)
 
 
+def test_invariant_failling_present_in_falsifying_example():
+    @Settings(print_blob=False)
+    class BadInvariant(RuleBasedStateMachine):
+        @initialize()
+        def initialize_1(self):
+            pass
+
+        @invariant()
+        def invariant_1(self):
+            raise ValueError()
+
+        @rule()
+        def rule_1(self):
+            pass
+
+    with capture_out() as o:
+        with pytest.raises(ValueError):
+            run_state_machine_as_test(BadInvariant)
+
+    result = o.getvalue()
+    assert (
+        result
+        == """\
+Falsifying example:
+state = BadInvariant()
+state.initialize_1()
+state.invariant_1()
+state.teardown()
+"""
+    )
+
+
+def test_invariant_present_in_falsifying_example():
+    @Settings(print_blob=False)
+    class BadRuleWithGoodInvariants(RuleBasedStateMachine):
+        def __init__(self):
+            super().__init__()
+            self.num = 0
+
+        @initialize()
+        def initialize_1(self):
+            pass
+
+        @invariant(check_during_init=True)
+        def invariant_1(self):
+            pass
+
+        @invariant(check_during_init=False)
+        def invariant_2(self):
+            pass
+
+        @precondition(lambda self: self.num > 0)
+        @invariant()
+        def invariant_3(self):
+            pass
+
+        @rule()
+        def rule_1(self):
+            self.num += 1
+            if self.num == 2:
+                raise ValueError()
+
+    with capture_out() as o:
+        with pytest.raises(ValueError):
+            run_state_machine_as_test(BadRuleWithGoodInvariants)
+
+    result = o.getvalue()
+    assert (
+        result
+        == """\
+Falsifying example:
+state = BadRuleWithGoodInvariants()
+state.invariant_1()
+state.initialize_1()
+state.invariant_1()
+state.invariant_2()
+state.rule_1()
+state.invariant_1()
+state.invariant_2()
+state.invariant_3()
+state.rule_1()
+state.teardown()
+"""
+    )
+
+
 def test_always_runs_at_least_one_step():
     class CountSteps(RuleBasedStateMachine):
         def __init__(self):

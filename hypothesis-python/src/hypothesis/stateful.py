@@ -371,6 +371,11 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
                 continue
             if not all(precond(self) for precond in invar.preconditions):
                 continue
+            if (
+                current_build_context().is_final
+                or settings.verbosity >= Verbosity.debug
+            ):
+                report(f"state.{invar.function.__name__}()")
             result = invar.function(self)
             if result is not None:
                 fail_health_check(
