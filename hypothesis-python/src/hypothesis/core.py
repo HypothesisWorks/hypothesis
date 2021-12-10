@@ -803,50 +803,47 @@ class StateForActualGivenExecution:
         # The engine found one or more failures, so we need to reproduce and
         # report them.
 
+        errors_to_report = []
         flaky = 0
 
-        if runner.best_observed_targets:
-            for line in describe_targets(runner.best_observed_targets):
-                report(line)
-            report("")
+        report_lines = describe_targets(runner.best_observed_targets)
+        if report_lines:
+            report_lines.append("")
 
         explanations = explanatory_lines(self.explain_traces, self.settings)
         for falsifying_example in self.falsifying_examples:
             info = falsifying_example.extra_information
+            fragments = []
 
             ran_example = ConjectureData.for_buffer(falsifying_example.buffer)
             self.__was_flaky = False
             assert info.__expected_exception is not None
             try:
-                self.execute_once(
-                    ran_example,
-                    print_example=not self.is_find,
-                    is_final=True,
-                    expected_failure=(
-                        info.__expected_exception,
-                        info.__expected_traceback,
-                    ),
-                )
+                with with_reporter(fragments.append):
+                    self.execute_once(
+                        ran_example,
+                        print_example=not self.is_find,
+                        is_final=True,
+                        expected_failure=(
+                            info.__expected_exception,
+                            info.__expected_traceback,
+                        ),
+                    )
             except (UnsatisfiedAssumption, StopTest) as e:
-                report(format_exception(e, e.__traceback__))
-                self.__flaky(
+                err = Flaky(
                     "Unreliable assumption: An example which satisfied "
                     "assumptions on the first run now fails it."
                 )
+                err.__cause__ = err.__context__ = e
+                fragments.append(format_exception(e, e.__traceback__))
+                errors_to_report.append((fragments, err))
             except BaseException as e:
                 # If we have anything for explain-mode, this is the time to report.
                 for line in explanations[falsifying_example.interesting_origin]:
-                    report(line)
-
-                if len(self.falsifying_examples) <= 1:
-                    # There is only one failure, so we can report it by raising
-                    # it directly.
-                    raise
-
-                # We are reporting multiple failures, so we need to manually
-                # print each exception's stack trace and information.
-                tb = get_trimmed_traceback()
-                report(format_exception(e, tb))
+                    fragments.append(line)
+                errors_to_report.append(
+                    (fragments, e.with_traceback(get_trimmed_traceback()))
+                )
 
             finally:  # pragma: no cover
                 # Mostly useful for ``find`` and ensuring that objects that
@@ -864,27 +861,14 @@ class StateForActualGivenExecution:
                 # you add a pragma: no cover to it!
                 # See https://github.com/nedbat/coveragepy/issues/623
                 if self.settings.print_blob:
-                    report(
+                    fragments.append(
                         "\nYou can reproduce this example by temporarily adding "
                         "@reproduce_failure(%r, %r) as a decorator on your test case"
                         % (__version__, encode_failure(falsifying_example.buffer))
                     )
             if self.__was_flaky:
                 flaky += 1
-
-        # If we only have one example then we should have raised an error or
-        # flaky prior to this point.
-        assert len(self.falsifying_examples) > 1
-
-        if flaky > 0:
-            raise Flaky(
-                f"Hypothesis found {len(self.falsifying_examples)} distinct failures, "
-                f"but {flaky} of them exhibited some sort of flaky behaviour."
-            )
-        else:
-            raise MultipleFailures(
-                f"Hypothesis found {len(self.falsifying_examples)} distinct failures."
-            )
+        _raise_to_user(errors_to_report, self.settings, report_lines, flaky=flaky)
 
     def __flaky(self, message):
         if len(self.falsifying_examples) <= 1:
@@ -892,6 +876,45 @@ class StateForActualGivenExecution:
         else:
             self.__was_flaky = True
             report("Flaky example! " + message)
+
+
+def _raise_to_user(errors_to_report, settings, target_lines, trailer="", flaky=None):
+    assert errors_to_report
+    if len(errors_to_report) == 1:
+        fragments, the_error_hypothesis_found = errors_to_report[0]
+        for line in target_lines + fragments:
+            report(line)
+        if flaky:
+            raise Flaky() from the_error_hypothesis_found
+        raise the_error_hypothesis_found
+
+    if not hasattr(Exception, "__note__"):  # pragma: no branch  # Python 3.11+
+        for line in target_lines:
+            report(line)
+
+    for fragments, err in errors_to_report:
+        if hasattr(err, "__note__"):  # pragma: no cover  # Python 3.11+
+            if fragments and settings.verbosity >= Verbosity.normal:
+                err.__note__ = (err.__note__ or "") + "\n" + "\n".join(fragments)
+        else:
+            with local_settings(settings):
+                for line in fragments:
+                    report(line)
+                report(format_exception(err, err.__traceback__))
+
+    if flaky:  # pragma: no cover  # required for Python 3.11+
+        raise Flaky(
+            f"Hypothesis found {len(errors_to_report)} distinct failures, "
+            f"but {flaky} of them exhibited some sort of flaky behaviour."
+        )
+    error = MultipleFailures(
+        f"Hypothesis found {len(errors_to_report)} distinct failures{trailer}.",
+        [e for _, e in errors_to_report],
+    )
+    if hasattr(error, "__note__"):  # pragma: no cover  # Python 3.11+
+        if target_lines and settings.verbosity >= Verbosity.normal:
+            error.__note__ = (error.__note__ or "") + "\n" + "\n".join(target_lines)
+    raise error
 
 
 @contextlib.contextmanager
@@ -1130,18 +1153,8 @@ def given(
                     # If we're not going to report multiple bugs, we would have
                     # stopped running explicit examples at the first failure.
                     assert state.settings.report_multiple_bugs
-                    for fragments, err in errors:
-                        for f in fragments:
-                            report(f)
-                        report(format_exception(err, err.__traceback__))
-                    raise MultipleFailures(
-                        f"Hypothesis found {len(errors)} failures in explicit examples."
-                    )
-                elif errors:
-                    fragments, the_error_hypothesis_found = errors[0]
-                    for f in fragments:
-                        report(f)
-                    raise the_error_hypothesis_found
+                if errors:
+                    _raise_to_user(errors, state.settings, [], " in explicit examples")
 
             # If there were any explicit examples, they all ran successfully.
             # The next step is to use the Conjecture engine to run the test on
@@ -1190,7 +1203,9 @@ def given(
                     # which will actually appear in tracebacks is as clear as
                     # possible - "raise the_error_hypothesis_found".
                     the_error_hypothesis_found = e.with_traceback(
-                        get_trimmed_traceback()
+                        None
+                        if isinstance(e, MultipleFailures)
+                        else get_trimmed_traceback()
                     )
                     raise the_error_hypothesis_found
 

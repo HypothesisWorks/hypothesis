@@ -15,7 +15,7 @@
 
 import pytest
 
-from hypothesis import Phase, assume, given, settings, strategies as st
+from hypothesis import Phase, assume, given, settings, strategies as st, target
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.errors import Flaky, MultipleFailures
 from hypothesis.internal.conjecture.engine import MIN_TEST_CALLS
@@ -25,6 +25,17 @@ from tests.common.utils import (
     capture_out,
     non_covering_examples,
 )
+
+
+def capture_reports(test):
+    with capture_out() as o, pytest.raises(MultipleFailures) as err:
+        test()
+
+    if hasattr(Exception, "__note__"):
+        return "\n\n".join(
+            f"{e!r}\n{e.__note__ or ''}" for e in (err.value,) + err.value.exceptions
+        )
+    return o.getvalue()
 
 
 def test_raises_multiple_failures_with_varying_type():
@@ -43,12 +54,20 @@ def test_raises_multiple_failures_with_varying_type():
         exc_class = TypeError if target[0] == i else ValueError
         raise exc_class()
 
-    with capture_out() as o:
-        with pytest.raises(MultipleFailures):
-            test()
+    output = capture_reports(test)
+    assert "TypeError" in output
+    assert "ValueError" in output
 
-    assert "TypeError" in o.getvalue()
-    assert "ValueError" in o.getvalue()
+
+def test_shows_target_scores_with_multiple_failures():
+    @settings(database=None, max_examples=100)
+    @given(st.integers())
+    def test(i):
+        target(i)
+        assert i > 0
+        assert i < 0
+
+    assert "Highest target score:" in capture_reports(test)
 
 
 def test_raises_multiple_failures_when_position_varies():
@@ -66,11 +85,9 @@ def test_raises_multiple_failures_when_position_varies():
         else:
             raise ValueError("loc 2")
 
-    with capture_out() as o:
-        with pytest.raises(MultipleFailures):
-            test()
-    assert "loc 1" in o.getvalue()
-    assert "loc 2" in o.getvalue()
+    output = capture_reports(test)
+    assert "loc 1" in output
+    assert "loc 2" in output
 
 
 def test_replays_both_failing_values():
@@ -185,11 +202,7 @@ def test_shrinks_both_failures():
         else:
             duds.add(i)
 
-    with capture_out() as o:
-        with pytest.raises(MultipleFailures):
-            test()
-
-    output = o.getvalue()
+    output = capture_reports(test)
     assert_output_contains_failure(output, test, i=10000)
     assert_output_contains_failure(output, test, i=second_target[0])
 

@@ -133,9 +133,20 @@ class Frozen(HypothesisException):
     after freeze() has been called."""
 
 
-class MultipleFailures(_Trimmable):
-    """Indicates that Hypothesis found more than one distinct bug when testing
-    your code."""
+try:
+    MultipleFailures = ExceptionGroup  # type: ignore
+except NameError:  # pragma: no branch
+
+    class MultipleFailures(_Trimmable):  # type: ignore
+        """Indicates that Hypothesis found more than one distinct bug when testing
+        your code.
+
+        In Python 3.11+, this is an alias for the builtin ExceptionGroup type.
+        """
+
+        def __init__(self, message, exceptions):
+            super().__init__(message)
+            self.exceptions = tuple(exceptions)
 
 
 class DeadlineExceeded(_Trimmable):
