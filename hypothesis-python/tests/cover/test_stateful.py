@@ -598,6 +598,7 @@ def test_invariant_checks_initial_state_if_no_initialize_rules():
 
 
 def test_invariant_failling_present_in_falsifying_example():
+    @Settings(print_blob=False)
     class BadInvariant(RuleBasedStateMachine):
         @initialize()
         def initialize_1(self):
@@ -629,6 +630,7 @@ state.teardown()
 
 
 def test_invariant_present_in_falsifying_example():
+    @Settings(print_blob=False)
     class BadRuleWithGoodInvariants(RuleBasedStateMachine):
         def __init__(self):
             super().__init__()
