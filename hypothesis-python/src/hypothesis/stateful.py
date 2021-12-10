@@ -122,11 +122,7 @@ def run_state_machine_as_test(state_machine_factory, *, settings=None):
         try:
             if print_steps:
                 report(f"state = {machine.__class__.__name__}()")
-            try:
-                machine.check_invariants(settings)
-            finally:
-                if print_steps:
-                    machine._print_invariants()
+            machine.check_invariants(settings)
             max_steps = settings.stateful_step_count
             steps_run = 0
 
@@ -208,11 +204,7 @@ def run_state_machine_as_test(state_machine_factory, *, settings=None):
                         # If it does, and the result is a 'MultipleResult',
                         # then 'print_step' prints a multi-variable assignment.
                         machine._print_step(rule, data_to_print, result)
-                try:
-                    machine.check_invariants(settings)
-                finally:
-                    if print_steps:
-                        machine._print_invariants()
+                machine.check_invariants(settings)
                 cd.stop_example()
         finally:
             if print_steps:
@@ -364,15 +356,6 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
             )
         )
 
-    def _print_invariants(self):
-        for invar in self.invariants():
-            if self._initialize_rules_to_run and not invar.check_during_init:
-                continue
-            if not all(precond(self) for precond in invar.preconditions):
-                continue
-            report("state.{}()".format(invar.function.__name__)
-            )
-
     def _add_result_to_targets(self, targets, result):
         name = self._new_name()
         self.__printer.singleton_pprinters.setdefault(
@@ -388,6 +371,11 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
                 continue
             if not all(precond(self) for precond in invar.preconditions):
                 continue
+            if (
+                current_build_context().is_final
+                or settings.verbosity >= Verbosity.debug
+            ):
+                report(f"state.{invar.function.__name__}()")
             result = invar.function(self)
             if result is not None:
                 fail_health_check(
