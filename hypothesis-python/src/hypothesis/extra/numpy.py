@@ -880,6 +880,7 @@ def basic_indices(
         max_dims=max_dims,
         allow_ellipsis=allow_ellipsis,
         allow_newaxis=allow_newaxis,
+        allow_fewer_indices_than_dims=True,
     )
 
 

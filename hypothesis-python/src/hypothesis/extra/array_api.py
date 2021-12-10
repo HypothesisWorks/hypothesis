@@ -719,10 +719,6 @@ def indices(
     """
     check_type(tuple, shape, "shape")
     check_argument(
-        len(shape) != 0,
-        "No valid indices for zero-dimensional arrays",
-    )
-    check_argument(
         all(isinstance(x, int) and x >= 0 for x in shape),
         f"shape={shape!r}, but all dimensions must be non-negative integers.",
     )
@@ -754,6 +750,7 @@ def indices(
         max_dims=max_dims,
         allow_ellipsis=allow_ellipsis,
         allow_newaxis=False,
+        allow_fewer_indices_than_dims=False,
     )
 
 

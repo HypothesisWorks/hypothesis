@@ -32,17 +32,18 @@ def test_generate_indices_with_and_without_ellipsis():
     find_any(strat, lambda ix: Ellipsis not in ix)
 
 
-def test_generate_empty_tuple():
-    """Strategy generates empty tuples as indices."""
-    find_any(xps.indices(shape=(0, 0), allow_ellipsis=True), lambda ix: ix == ())
+@given(xps.indices(shape=(), allow_ellipsis=True))
+def test_generate_indices_for_0d_shape(idx):
+    """Strategy only generates empty tuples or Ellipsis as indices for an empty
+    shape."""
+    assert idx in [(), Ellipsis, (Ellipsis,)]
 
 
-def test_generate_non_tuples():
-    """Strategy generates non-tuples as indices."""
-    find_any(
-        xps.indices(shape=(0, 0), allow_ellipsis=True),
-        lambda ix: not isinstance(ix, tuple),
-    )
+def test_generate_tuples_and_non_tuples_for_1d_shape():
+    """Strategy can generate tuple and non-tuple indices with a 1-dimensional shape."""
+    strat = xps.indices(shape=(1,), allow_ellipsis=True)
+    find_any(strat, lambda ix: isinstance(ix, tuple))
+    find_any(strat, lambda ix: not isinstance(ix, tuple))
 
 
 def test_generate_long_ellipsis():
@@ -72,7 +73,7 @@ def test_indices_replaces_whole_axis_slices_with_ellipsis(idx):
 
 
 @given(xps.indices((3, 3, 3, 3, 3)))
-def test_indices_effeciently_generate_indexers(_):
+def test_efficiently_generate_indexers(_):
     """Generation is not too slow."""
 
 
@@ -82,7 +83,7 @@ def test_indices_effeciently_generate_indexers(_):
     allow_ellipsis=st.booleans(),
     data=st.data(),
 )
-def test_indices_generate_valid_indexers(shape, allow_ellipsis, data):
+def test_generate_valid_indices(shape, allow_ellipsis, data):
     """Strategy generates valid indices."""
     min_dims = data.draw(st.integers(0, len(shape)), label="min_dims")
     max_dims = data.draw(
@@ -98,25 +99,30 @@ def test_indices_generate_valid_indexers(shape, allow_ellipsis, data):
         label="indexer",
     )
 
+    _indexer = indexer if isinstance(indexer, tuple) else (indexer,)
     # Check that disallowed things are indeed absent
-    if isinstance(indexer, tuple):
-        assert 0 <= len(indexer) <= len(shape) + int(allow_ellipsis)
-    else:
-        assert 1 <= len(shape) + int(allow_ellipsis)
-    assert None not in shape
     if not allow_ellipsis:
-        assert Ellipsis not in shape
+        assert Ellipsis not in _indexer
+    assert None not in _indexer  # i.e. np.newaxis
+    # Check index is composed of valid objects
+    for i in _indexer:
+        assert isinstance(i, int) or isinstance(i, slice) or i == Ellipsis
+    # Check indexer does not flat index
+    if Ellipsis in _indexer:
+        assert sum(i == Ellipsis for i in _indexer) == 1
+        assert len(_indexer) <= len(shape) + 1  # Ellipsis can index 0 axes
+    else:
+        assert len(_indexer) == len(shape)
 
     if 0 in shape:
         # If there's a zero in the shape, the array will have no elements.
         array = xp.zeros(shape)
-        assert array.size == 0
+        assert array.size == 0  # sanity check
     elif math.prod(shape) <= 10 ** 5:
         # If it's small enough to instantiate, do so with distinct elements.
         array = xp.reshape(xp.arange(math.prod(shape)), shape)
     else:
         # We can't cheat on this one, so just try another.
         assume(False)
-
     # Finally, check that we can use our indexer without error
     array[indexer]

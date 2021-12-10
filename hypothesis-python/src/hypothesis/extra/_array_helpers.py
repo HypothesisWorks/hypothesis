@@ -632,12 +632,24 @@ class MutuallyBroadcastableShapesStrategy(st.SearchStrategy):
 
 
 class BasicIndexStrategy(st.SearchStrategy):
-    def __init__(self, shape, min_dims, max_dims, allow_ellipsis, allow_newaxis):
+    def __init__(
+        self,
+        shape,
+        min_dims,
+        max_dims,
+        allow_ellipsis,
+        allow_newaxis,
+        allow_fewer_indices_than_dims,
+    ):
         self.shape = shape
         self.min_dims = min_dims
         self.max_dims = max_dims
         self.allow_ellipsis = allow_ellipsis
         self.allow_newaxis = allow_newaxis
+        # allow_fewer_indices_than_dims=False will disable generating indices
+        # that don't cover all axes, i.e. indices that will flat index arrays.
+        # This is necessary for the Array API as such indices are not supported.
+        self.allow_fewer_indices_than_dims = allow_fewer_indices_than_dims
 
     def do_draw(self, data):
         # General plan: determine the actual selection up front with a straightforward
@@ -673,7 +685,7 @@ class BasicIndexStrategy(st.SearchStrategy):
             while j < len(result) and result[j] == slice(None):
                 j += 1
             result[i:j] = [Ellipsis]
-        else:
+        elif self.allow_fewer_indices_than_dims:  # pragma: no cover
             while result[-1:] == [slice(None, None)] and data.draw(st.integers(0, 7)):
                 result.pop()
         if len(result) == 1 and data.draw(st.booleans()):
