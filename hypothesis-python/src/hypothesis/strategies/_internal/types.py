@@ -264,8 +264,7 @@ def from_typing_type(thing):
     # Hashable and Sized have `__args__ == ()` on Python 3.7 or later.
     origin = getattr(thing, "__origin__", thing)
     if (
-        typing.Hashable is not collections.abc.Hashable
-        and origin in vars(collections.abc).values()
+        origin in vars(collections.abc).values()
         and len(getattr(thing, "__args__", None) or []) == 0
     ):
         return st.from_type(origin)
