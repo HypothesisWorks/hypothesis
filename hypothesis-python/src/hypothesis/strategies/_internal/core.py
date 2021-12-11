@@ -1020,6 +1020,10 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
             if thing in types._global_type_lookup:
                 return as_strategy(types._global_type_lookup[thing], thing)
             return from_type(thing.__supertype__)
+        # Unions are not instances of `type` - but we still want to resolve them!
+        if getattr(thing, "__origin__", None) is typing.Union:
+            args = sorted(thing.__args__, key=types.type_sorting_key)
+            return one_of([from_type(t) for t in args])
     if not types.is_a_type(thing):
         if isinstance(thing, str):
             # See https://github.com/HypothesisWorks/hypothesis/issues/3016
