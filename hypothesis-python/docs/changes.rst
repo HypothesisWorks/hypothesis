@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.31.4:
+
+-------------------
+6.31.4 - 2021-12-11
+-------------------
+
+This patch makes the ``.example()`` method more representative of
+test-time data generation, albeit often at a substantial cost to
+readability (:issue:`3182`).
+
 .. _v6.31.3:
 
 -------------------
