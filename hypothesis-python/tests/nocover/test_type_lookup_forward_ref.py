@@ -13,7 +13,6 @@
 #
 # END HEADER
 
-import sys
 from typing import Dict, List, Union
 
 import pytest
@@ -23,10 +22,6 @@ from hypothesis.errors import ResolutionFailed
 from hypothesis.internal.compat import ForwardRef
 
 from tests.common import utils
-
-skip_before_python37 = pytest.mark.skipif(
-    sys.version_info[:2] < (3, 7), reason="typing module was broken"
-)
 
 # Mutually-recursive types
 # See https://github.com/HypothesisWorks/hypothesis/issues/2722

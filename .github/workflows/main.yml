@@ -23,8 +23,6 @@ jobs:
           - check-format
           - check-coverage
           - check-conjecture-coverage
-          - check-py36
-          - check-pypy36
           - check-py37
           - check-pypy37
           - check-py38

@@ -50,11 +50,6 @@ except ImportError:
     typing_extensions = None  # type: ignore
 
 try:
-    from typing import GenericMeta as _GenericMeta  # python < 3.7
-except ImportError:
-    _GenericMeta = ()  # type: ignore
-
-try:
     from typing import _GenericAlias  # type: ignore  # python >= 3.7
 except ImportError:
     _GenericAlias = ()
@@ -62,17 +57,7 @@ except ImportError:
 try:
     from typing import _AnnotatedAlias  # type: ignore
 except ImportError:
-    try:
-        from typing_extensions import _AnnotatedAlias
-    except ImportError:
-        try:
-            from typing_extensions import (  # type: ignore
-                AnnotatedMeta as _AnnotatedAlias,
-            )
-
-            assert sys.version_info[:2] == (3, 6)
-        except ImportError:
-            _AnnotatedAlias = ()
+    from typing_extensions import _AnnotatedAlias
 
 
 def type_sorting_key(t):
@@ -111,9 +96,7 @@ def try_issubclass(thing, superclass):
             getattr(superclass, "__origin__", None) or superclass,
         ):
             superclass_args = getattr(superclass, "__args__", None)
-            if sys.version_info[:2] == (3, 6) or not superclass_args:
-                # Python 3.6 doesn't have PEP-560 semantics or __orig_bases__,
-                # so there's no point continuing; we therefore stop early.
+            if not superclass_args:
                 # The superclass is not generic, so we're definitely a subclass.
                 return True
             # Sadly this is just some really fiddly logic to handle all the cases
@@ -157,11 +140,7 @@ def is_typing_literal(thing):
         hasattr(typing, "Literal")
         and getattr(thing, "__origin__", None) == typing.Literal
         or hasattr(typing_extensions, "Literal")
-        and (
-            getattr(thing, "__origin__", None) == typing_extensions.Literal
-            or sys.version_info[:2] == (3, 6)
-            and isinstance(thing, type(typing_extensions.Literal[None]))
-        )
+        and getattr(thing, "__origin__", None) == typing_extensions.Literal
     )
 
 
@@ -190,7 +169,7 @@ def find_annotated_strategy(annotated_type):  # pragma: no cover
 def has_type_arguments(type_):
     """Decides whethere or not this type has applied type arguments."""
     args = getattr(type_, "__args__", None)
-    if args and isinstance(type_, (_GenericAlias, _GenericMeta)):
+    if args and isinstance(type_, _GenericAlias):
         # There are some cases when declared types do already have type arguments
         # Like `Sequence`, that is `_GenericAlias(abc.Sequence[T])[T]`
         parameters = getattr(type_, "__parameters__", None)
@@ -202,8 +181,7 @@ def has_type_arguments(type_):
 def is_generic_type(type_):
     """Decides whether a given type is generic or not."""
     # The ugly truth is that `MyClass`, `MyClass[T]`, and `MyClass[int]` are very different.
-    # In different python versions they might have the same type (3.6)
-    # or it can be regular type vs `_GenericAlias` (3.7+)
+    # In different python versions it can be regular type vs `_GenericAlias` (3.7+)
     # We check for `MyClass[T]` and `MyClass[int]` with the first condition,
     # while the second condition is for `MyClass` in `python3.7+`.
     return isinstance(type_, typing_root_type) or (
@@ -222,14 +200,6 @@ def _try_import_forward_ref(thing, bound):  # pragma: no cover
     try:
         return typing._eval_type(bound, vars(sys.modules[thing.__module__]), None)
     except (KeyError, AttributeError, NameError):
-        if (
-            isinstance(thing, typing.TypeVar)
-            and getattr(thing, "__module__", None) == "typing"
-        ):
-            raise ResolutionFailed(
-                "It looks like you're using a TypeVar bound to a ForwardRef on Python "
-                "3.6, which is not supported - try ugrading to Python 3.7 or later."
-            ) from None
         # We fallback to `ForwardRef` instance, you can register it as a type as well:
         # >>> from typing import ForwardRef
         # >>> from hypothesis import strategies as st
@@ -289,7 +259,6 @@ def from_typing_type(thing):
 
     # Some "generic" classes are not generic *in* anything - for example both
     # Hashable and Sized have `__args__ == ()` on Python 3.7 or later.
-    # (In 3.6 they're just aliases for the collections.abc classes)
     origin = getattr(thing, "__origin__", thing)
     if (
         typing.Hashable is not collections.abc.Hashable
@@ -310,9 +279,6 @@ def from_typing_type(thing):
         # ItemsView can cause test_lookup.py::test_specialised_collection_types
         # to fail, due to weird isinstance behaviour around the elements.
         mapping.pop(typing.ItemsView, None)
-        if sys.version_info[:2] == (3, 6):  # pragma: no cover
-            # `isinstance(dict().values(), Container) is False` on py36 only -_-
-            mapping.pop(typing.ValuesView, None)
     if typing.Deque in mapping and len(mapping) > 1:
         # Resolving generic sequences to include a deque is more trouble for e.g.
         # the ghostwriter than it's worth, via undefined names in the repr.
@@ -495,12 +461,10 @@ else:  # pragma: no cover
 _global_type_lookup[type] = st.sampled_from(
     [type(None)] + sorted(_global_type_lookup, key=str)
 )
-
-if sys.version_info[:2] >= (3, 7):  # pragma: no branch
-    _global_type_lookup[re.Match] = (
-        st.text().map(lambda c: re.match(".", c, flags=re.DOTALL)).filter(bool)
-    )
-    _global_type_lookup[re.Pattern] = st.builds(re.compile, st.sampled_from(["", b""]))
+_global_type_lookup[re.Match] = (
+    st.text().map(lambda c: re.match(".", c, flags=re.DOTALL)).filter(bool)
+)
+_global_type_lookup[re.Pattern] = st.builds(re.compile, st.sampled_from(["", b""]))
 if sys.version_info[:2] >= (3, 9):  # pragma: no cover
     # subclass of MutableMapping, and in Python 3.9 we resolve to a union
     # which includes this... but we don't actually ever want to build one.

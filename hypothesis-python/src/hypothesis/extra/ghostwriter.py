@@ -329,52 +329,7 @@ def _strategy_for(
 def _get_params(func: Callable) -> Dict[str, inspect.Parameter]:
     """Get non-vararg parameters of `func` as an ordered dict."""
     var_param_kinds = (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
-    try:
-        params = list(inspect.signature(func).parameters.values())
-    except Exception:
-        if (
-            isinstance(func, (types.BuiltinFunctionType, types.BuiltinMethodType))
-            and hasattr(func, "__doc__")
-            and isinstance(func.__doc__, str)
-        ):
-            # inspect.signature doesn't work on all builtin functions or methods.
-            # In such cases, including the operator module on Python 3.6, we can try
-            # to reconstruct simple signatures from the docstring.
-            match = re.match(rf"^{func.__name__}\((.+?)\)", func.__doc__)
-            if match is None:
-                raise
-            args = match.group(1).replace("[", "").replace("]", "")
-            params = []
-            # Even if the signature doesn't contain a /, we assume that arguments
-            # are positional-only until shown otherwise - the / is often omitted.
-            kind: inspect._ParameterKind = inspect.Parameter.POSITIONAL_ONLY
-            for arg in args.split(", "):
-                arg, *_ = arg.partition("=")
-                if arg == "/":
-                    kind = inspect.Parameter.POSITIONAL_OR_KEYWORD
-                    continue
-                if arg.startswith("*"):
-                    kind = inspect.Parameter.KEYWORD_ONLY
-                    continue  # we omit *varargs, if there are any
-                if arg.startswith("**"):
-                    break  # and likewise omit **varkw
-                params.append(inspect.Parameter(name=arg, kind=kind))
-
-        elif _is_probably_ufunc(func):
-            # `inspect.signature` doesn't work on ufunc objects, but we can work out
-            # what the required parameters would look like if it did.
-            # Note that we use args named a, b, c... to match the `operator` module,
-            # rather than x1, x2, x3... like the Numpy docs.  Because they're pos-only
-            # this doesn't make a runtime difference, and it's much nicer for use-cases
-            # like `equivalent(numpy.add, operator.add)`.
-            params = [
-                inspect.Parameter(name=name, kind=inspect.Parameter.POSITIONAL_ONLY)
-                for name in ascii_lowercase[: func.nin]  # type: ignore
-            ]
-        else:
-            # If we haven't managed to recover a signature through the tricks above,
-            # we're out of ideas and should just re-raise the exception.
-            raise
+    params = list(inspect.signature(func).parameters.values())
     return OrderedDict((p.name, p) for p in params if p.kind not in var_param_kinds)
 
 
@@ -466,9 +421,6 @@ def _imports_for_object(obj):
         name = _get_qualname(obj).split(".")[0]
         return {(_get_module(obj), name)}
     except Exception:
-        with contextlib.suppress(AttributeError):
-            if obj.__module__ == "typing":  # only on CPython 3.6
-                return {("typing", getattr(obj, "__name__", obj.name))}
         return set()
 
 

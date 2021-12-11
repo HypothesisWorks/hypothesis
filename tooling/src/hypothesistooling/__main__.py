@@ -393,13 +393,11 @@ def run_tox(task, version):
 # When adding or removing a version, also update the env lists in tox.ini and
 # workflows/main.yml, the `Programming Language ::` declaration(s) in setup.py,
 # and the corresponding @python_tests function below.
-PY36 = "3.6.15"
 PY37 = "3.7.12"
 PY38 = PYMAIN = "3.8.12"  # Sync PYMAIN minor version with GH Actions main.yml
 PY39 = "3.9.9"
 PY310 = "3.10.0"
 PY311 = "3.11-dev"
-PYPY36 = "pypy3.6-7.3.3"
 PYPY37 = "pypy3.7-7.3.7"
 PYPY38 = "pypy3.8-7.3.7"
 
@@ -422,11 +420,6 @@ python_tests = task(
         os.path.join(hp.HYPOTHESIS_PYTHON, "scripts"),
     )
 )
-
-
-@python_tests
-def check_py36():
-    run_tox("py36-full", PY36)
 
 
 @python_tests
@@ -457,11 +450,6 @@ def check_py311():
 @python_tests
 def check_py310_pyjion():
     run_tox("py310-pyjion", PY310)
-
-
-@python_tests
-def check_pypy36():
-    run_tox("pypy3-full", PYPY36)
 
 
 @python_tests
