@@ -57,7 +57,10 @@ except ImportError:
 try:
     from typing import _AnnotatedAlias  # type: ignore
 except ImportError:
-    from typing_extensions import _AnnotatedAlias
+    try:
+        from typing_extensions import _AnnotatedAlias
+    except ImportError:
+        _AnnotatedAlias = ()
 
 
 def type_sorting_key(t):
