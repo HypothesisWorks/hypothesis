@@ -15,7 +15,6 @@
 
 import abc
 import enum
-import sys
 from typing import Callable, Dict, Generic, List, Sequence, TypeVar, Union
 
 import pytest
