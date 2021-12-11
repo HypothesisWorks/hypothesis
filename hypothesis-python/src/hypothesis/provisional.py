@@ -38,7 +38,7 @@ FRAGMENT_SAFE_CHARACTERS = URL_SAFE_CHARACTERS | {"?", "/"}
 # This file is sourced from http://data.iana.org/TLD/tlds-alpha-by-domain.txt
 # The file contains additional information about the date that it was last updated.
 try:
-    from importlib.resources import read_text  # type: ignore
+    from importlib.resources import read_text
 except ImportError:
     # If we don't have importlib.resources (Python 3.7+) or the importlib_resources
     # backport available, fall back to __file__ and hope we're on a filesystem.

@@ -43,7 +43,7 @@ try:
     # These types are new in Python 3.7, but also (partially) backported to the
     # typing backport on PyPI.  Use if possible; or fall back to older names.
     typing_root_type = (typing._Final, typing._GenericAlias)  # type: ignore
-    ForwardRef = typing.ForwardRef  # type: ignore
+    ForwardRef = typing.ForwardRef
 except AttributeError:  # pragma: no cover
     typing_root_type = (typing.TypingMeta, typing.TypeVar)  # type: ignore
     try:
