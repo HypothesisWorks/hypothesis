@@ -20,6 +20,7 @@ libcst
 mypy
 pip-tools
 pytest
+pytest-xdist
 python-dateutil
 requests
 restructuredtext-lint

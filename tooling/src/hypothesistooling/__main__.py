@@ -395,8 +395,8 @@ def run_tox(task, version):
 # and the corresponding @python_tests function below.
 PY36 = "3.6.15"
 PY37 = "3.7.12"
-PY38 = PYMAIN = "3.8.12"  # Sync PYMAIN minor version with GH Actions main.yml
-PY39 = "3.9.9"
+PY38 = "3.8.12"
+PY39 = PYMAIN = "3.9.9"  # Sync PYMAIN minor version with GH Actions main.yml
 PY310 = "3.10.1"
 PY311 = "3.11-dev"
 PYPY36 = "pypy3.6-7.3.3"
@@ -506,7 +506,9 @@ def check_whole_repo_tests():
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS_PYTHON]
     )
-    subprocess.check_call([sys.executable, "-m", "pytest", tools.REPO_TESTS])
+    subprocess.check_call(
+        [sys.executable, "-m", "pytest", "-n", "auto", tools.REPO_TESTS]
+    )
 
 
 @task()
