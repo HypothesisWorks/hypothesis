@@ -108,7 +108,6 @@ from hypothesis.strategies._internal.strings import (
     OneCharStringStrategy,
     TextStrategy,
 )
-from hypothesis.strategies._internal.types import typing_root_type
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 from hypothesis.utils.conventions import InferType, infer, not_set
 
@@ -1067,7 +1066,7 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
     # We'll start by checking if thing is from from the typing module,
     # because there are several special cases that don't play well with
     # subclass and instance checks.
-    if isinstance(thing, typing_root_type) or (
+    if isinstance(thing, types.typing_root_type) or (
         sys.version_info[:2] >= (3, 9)
         and isinstance(getattr(thing, "__origin__", None), type)
         and getattr(thing, "__args__", None)
