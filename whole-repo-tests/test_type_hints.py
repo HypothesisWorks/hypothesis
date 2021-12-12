@@ -39,7 +39,7 @@ def get_mypy_output(fname, *extra_args):
 
 def get_mypy_analysed_type(fname, val):
     out = get_mypy_output(fname)
-    assert len(out.splitlines()) == 1
+    assert len(out.splitlines()) == 1, out
     # See https://mypy.readthedocs.io/en/latest/common_issues.html#reveal-type
     # The shell output for `reveal_type([1, 2, 3])` looks like a literal:
     # file.py:2: error: Revealed type is 'builtins.list[builtins.int*]'
