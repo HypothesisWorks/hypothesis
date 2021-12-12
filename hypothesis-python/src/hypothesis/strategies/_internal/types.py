@@ -64,7 +64,7 @@ except ImportError:
 
 
 # We use this variable to be sure that we are working with a type from `typing`:
-typing_root_type = (typing._Final, typing._GenericAlias)
+typing_root_type = (typing._Final, typing._GenericAlias)  # type: ignore
 
 
 def type_sorting_key(t):
