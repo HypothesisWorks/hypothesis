@@ -27,7 +27,6 @@ Right here we test different possible outcomes for different Python versions:
 - Missing case, when there's no ``'MyType'`` at all
 """
 
-import sys
 from typing import TYPE_CHECKING, TypeVar
 
 import pytest
@@ -57,7 +56,7 @@ class CustomType:
 
 @given(st.builds(correct_fun))
 def test_bound_correct_forward_ref(built):
-    """Correct resolution of existing type in ``python3.7+`` codebase."""
+    """Correct resolution of existing type codebase."""
     assert isinstance(built, int)
 
 
@@ -75,7 +74,7 @@ OurAlias = CustomType
 
 @given(st.builds(alias_fun))
 def test_bound_alias_forward_ref(built):
-    """Correct resolution of type aliases in ``python3.7+``."""
+    """Correct resolution of type aliases."""
     assert isinstance(built, int)
 
 
@@ -100,13 +99,13 @@ def missing_dot_access_fun(thing: _MissingDotAccess) -> int:
 
 @given(st.builds(correct_dot_access_fun))
 def test_bound_correct_dot_access_forward_ref(built):
-    """Correct resolution of dot access types in ``python3.7+``."""
+    """Correct resolution of dot access types."""
     assert isinstance(built, int)
 
 
 @pytest.mark.parametrize("function", [wrong_dot_access_fun, missing_dot_access_fun])
 def test_bound_missing_dot_access_forward_ref(function):
-    """Resolution of missing type in dot access in ``python3.7+``."""
+    """Resolution of missing type in dot access."""
     with pytest.raises(ResolutionFailed):
         st.builds(function).example()
 
@@ -120,7 +119,6 @@ def missing_fun(thing: _Missing) -> int:
     return 1
 
 
-@pytest.mark.skipif(sys.version_info[:2] < (3, 6), reason="typing module was strange")
 def test_bound_missing_forward_ref():
     """We should raise proper errors on missing types."""
     with pytest.raises(ResolutionFailed):
