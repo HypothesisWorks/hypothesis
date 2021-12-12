@@ -306,7 +306,6 @@ try:
         output = pretty.pretty(super(SA, sb))
         assert "SA" in output
 
-
 except AttributeError:
 
     def test_super_repr():

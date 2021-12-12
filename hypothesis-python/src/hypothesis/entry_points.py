@@ -38,7 +38,6 @@ try:
             eps = importlib_metadata.entry_points().get("hypothesis", [])
         yield from eps
 
-
 except ImportError:
     # But if we're not on Python >= 3.8 and the importlib_metadata backport
     # is not installed, we fall back to pkg_resources anyway.
