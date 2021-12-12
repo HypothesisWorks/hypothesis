@@ -14,6 +14,7 @@
 # END HEADER
 
 import datetime as dt
+import importlib.resources as importlib_resources
 import os.path
 from calendar import monthrange
 from functools import lru_cache
@@ -32,13 +33,6 @@ from hypothesis.strategies._internal.utils import defines_strategy
 # We therefore try to import them here, but only raise errors recommending
 # `pip install hypothesis[zoneinfo]` to install the backports (if needed)
 # when those strategies are actually used.
-try:
-    import importlib.resources as importlib_resources
-except ImportError:
-    try:
-        import importlib_resources  # type: ignore
-    except ImportError:
-        importlib_resources = None  # type: ignore
 try:
     import zoneinfo
 except ImportError:

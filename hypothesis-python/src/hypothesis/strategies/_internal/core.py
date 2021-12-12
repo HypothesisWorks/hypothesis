@@ -53,13 +53,7 @@ from hypothesis.control import cleanup, note
 from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.internal.cathetus import cathetus
 from hypothesis.internal.charmap import as_general_categories
-from hypothesis.internal.compat import (
-    ceil,
-    floor,
-    get_type_hints,
-    is_typed_named_tuple,
-    typing_root_type,
-)
+from hypothesis.internal.compat import ceil, floor, get_type_hints, is_typed_named_tuple
 from hypothesis.internal.conjecture.utils import (
     calc_label_from_cls,
     check_sample,
@@ -114,6 +108,7 @@ from hypothesis.strategies._internal.strings import (
     OneCharStringStrategy,
     TextStrategy,
 )
+from hypothesis.strategies._internal.types import typing_root_type
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 from hypothesis.utils.conventions import InferType, infer, not_set
 

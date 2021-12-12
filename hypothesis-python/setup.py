@@ -73,7 +73,6 @@ extras = {
     "zoneinfo": [
         "tzdata>=2021.5 ; sys_platform == 'win32'",
         "backports.zoneinfo>=0.2.1 ; python_version<'3.9'",
-        "importlib_resources>=3.3.0 ; python_version<'3.7'",
     ],
     # We only support Django versions with upstream support - see
     # https://www.djangoproject.com/download/#supported-versions

@@ -601,8 +601,8 @@ Hypothesis does not inspect :pep:`484` type comments at runtime.  While
 will only work if you manually create the ``__annotations__`` attribute
 (e.g. by using ``@annotations(...)`` and ``@returns(...)`` decorators).
 
-The :mod:`python:typing` module is provisional and has a number of internal
-changes between different Python releases, including at minor versions.  These
+The :mod:`python:typing` module changes between different Python releases,
+including at minor versions.  These
 are all supported on a best-effort basis,
 but you may encounter problems.  Please report them to us, and consider
 updating to a newer version of Python as a workaround.

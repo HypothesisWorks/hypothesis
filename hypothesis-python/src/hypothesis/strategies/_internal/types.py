@@ -33,7 +33,7 @@ from types import FunctionType
 
 from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument, ResolutionFailed
-from hypothesis.internal.compat import PYPY, ForwardRef, typing_root_type
+from hypothesis.internal.compat import PYPY
 from hypothesis.internal.conjecture.utils import many as conjecture_utils_many
 from hypothesis.strategies._internal.datetime import zoneinfo  # type: ignore
 from hypothesis.strategies._internal.ipaddress import (
@@ -61,6 +61,10 @@ except ImportError:
         from typing_extensions import _AnnotatedAlias
     except ImportError:
         _AnnotatedAlias = ()
+
+
+# We use this variable to be sure that we are working with a type from `typing`:
+typing_root_type = (typing._Final, typing._GenericAlias)
 
 
 def type_sorting_key(t):
@@ -184,9 +188,8 @@ def has_type_arguments(type_):
 def is_generic_type(type_):
     """Decides whether a given type is generic or not."""
     # The ugly truth is that `MyClass`, `MyClass[T]`, and `MyClass[int]` are very different.
-    # In different python versions it can be regular type vs `_GenericAlias` (3.7+)
     # We check for `MyClass[T]` and `MyClass[int]` with the first condition,
-    # while the second condition is for `MyClass` in `python3.7+`.
+    # while the second condition is for `MyClass`.
     return isinstance(type_, typing_root_type) or (
         isinstance(type_, type) and typing.Generic in type_.__mro__
     )
@@ -307,7 +310,7 @@ def from_typing_type(thing):
             mapping.pop(typing.ByteString, None)
     elif (
         (not mapping)
-        and isinstance(thing, ForwardRef)
+        and isinstance(thing, typing.ForwardRef)
         and thing.__forward_arg__ in vars(builtins)
     ):
         return st.from_type(getattr(builtins, thing.__forward_arg__))
@@ -437,6 +440,8 @@ _global_type_lookup: typing.Dict[
     classmethod: st.builds(classmethod, st.just(lambda self: self)),
     staticmethod: st.builds(staticmethod, st.just(lambda self: self)),
     super: st.builds(super, st.from_type(type)),
+    re.Match: st.text().map(lambda c: re.match(".", c, flags=re.DOTALL)).filter(bool),
+    re.Pattern: st.builds(re.compile, st.sampled_from(["", b""])),
     # Pull requests with more types welcome!
 }
 if zoneinfo is not None:  # pragma: no branch
@@ -463,10 +468,6 @@ else:  # pragma: no cover
 _global_type_lookup[type] = st.sampled_from(
     [type(None)] + sorted(_global_type_lookup, key=str)
 )
-_global_type_lookup[re.Match] = (
-    st.text().map(lambda c: re.match(".", c, flags=re.DOTALL)).filter(bool)
-)
-_global_type_lookup[re.Pattern] = st.builds(re.compile, st.sampled_from(["", b""]))
 if sys.version_info[:2] >= (3, 9):  # pragma: no cover
     # subclass of MutableMapping, and in Python 3.9 we resolve to a union
     # which includes this... but we don't actually ever want to build one.
@@ -584,7 +585,7 @@ def resolve_Type(thing):
     # Duplicate check from from_type here - only paying when needed.
     args = list(args)
     for i, a in enumerate(args):
-        if type(a) == ForwardRef:
+        if type(a) == typing.ForwardRef:
             try:
                 args[i] = getattr(builtins, a.__forward_arg__)
             except AttributeError:
@@ -764,7 +765,7 @@ def resolve_TypeVar(thing):
 
     if getattr(thing, "__bound__", None) is not None:
         bound = thing.__bound__
-        if isinstance(bound, ForwardRef):
+        if isinstance(bound, typing.ForwardRef):
             bound = _try_import_forward_ref(thing, bound)
         strat = unwrap_strategies(st.from_type(bound))
         if not isinstance(strat, OneOfStrategy):

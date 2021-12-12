@@ -27,13 +27,12 @@ Right here we test different possible outcomes for different Python versions:
 - Missing case, when there's no ``'MyType'`` at all
 """
 
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, ForwardRef, TypeVar
 
 import pytest
 
 from hypothesis import given, strategies as st
 from hypothesis.errors import ResolutionFailed
-from hypothesis.internal.compat import ForwardRef
 
 from tests.common import utils
 

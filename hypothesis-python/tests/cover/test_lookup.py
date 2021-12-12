@@ -30,7 +30,7 @@ import pytest
 
 from hypothesis import HealthCheck, assume, given, infer, settings, strategies as st
 from hypothesis.errors import InvalidArgument, ResolutionFailed
-from hypothesis.internal.compat import get_type_hints, typing_root_type
+from hypothesis.internal.compat import get_type_hints
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies import from_type
 from hypothesis.strategies._internal import types
@@ -49,7 +49,7 @@ generics = sorted(
         t
         for t in types._global_type_lookup
         # We ignore TypeVar, because it is not a Generic type:
-        if isinstance(t, typing_root_type) and t != typing.TypeVar
+        if isinstance(t, types.typing_root_type) and t != typing.TypeVar
     ),
     key=str,
 )
