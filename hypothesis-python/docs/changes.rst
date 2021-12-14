@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.31.5:
+
+-------------------
+6.31.5 - 2021-12-14
+-------------------
+
+This release updates our copyright headers to `use a general authorship statement and omit the year
+<https://www.linuxfoundation.org/blog/copyright-notices-in-open-source-software-projects/>`__.
+
 .. _v6.31.4:
 
 -------------------
