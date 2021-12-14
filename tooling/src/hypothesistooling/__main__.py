@@ -1,24 +1,18 @@
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2021 David R. MacIver
-# (david@drmaciver.com), but it contains contributions by others. See
-# CONTRIBUTING.rst for a full list of people who may hold copyright, and
-# consult the git log if you need to determine who owns an individual
-# contribution.
+# Copyright the Hypothesis Authors.
+# Individual contributors are listed in AUTHORS.rst and the git log.
 #
 # This Source Code Form is subject to the terms of the Mozilla Public License,
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
-#
-# END HEADER
 
 import os
 import pathlib
 import re
 import subprocess
 import sys
-from datetime import datetime
 from glob import glob
 from urllib.parse import urlparse
 
@@ -142,24 +136,18 @@ def deploy():
     sys.exit(0)
 
 
-CURRENT_YEAR = datetime.utcnow().year
-
-
-HEADER = f"""
+# See https://www.linuxfoundation.org/blog/copyright-notices-in-open-source-software-projects/
+HEADER = """
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-{CURRENT_YEAR} David R. MacIver
-# (david@drmaciver.com), but it contains contributions by others. See
-# CONTRIBUTING.rst for a full list of people who may hold copyright, and
-# consult the git log if you need to determine who owns an individual
-# contribution.
+# Copyright the Hypothesis Authors.
+# Individual contributors are listed in AUTHORS.rst and the git log.
 #
 # This Source Code Form is subject to the terms of the Mozilla Public License,
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
-#
-# END HEADER""".strip()
+""".strip()
 
 
 @task()
@@ -197,22 +185,23 @@ def format():
     config.from_file(os.path.join(hp.BASE_DIR, ".coveragerc"), warn=warn, our_file=True)
     pattern = "|".join(l for l in config.exclude_list if "pragma" not in l)
     unused_pragma_pattern = re.compile(f"(({pattern}).*)  # pragma: no (branch|cover)")
+    last_header_line = HEADER.splitlines()[-1].rstrip()
 
     for f in files_to_format:
         lines = []
         with open(f, encoding="utf-8") as o:
             shebang = None
             first = True
-            header_done = False
+            in_header = True
             for l in o.readlines():
                 if first:
                     first = False
                     if l[:2] == "#!":
                         shebang = l
                         continue
-                if "END HEADER" in l and not header_done:
+                elif in_header and l.rstrip() == last_header_line:
+                    in_header = False
                     lines = []
-                    header_done = True
                 else:
                     lines.append(unused_pragma_pattern.sub(r"\1", l))
         source = "".join(lines).strip()
