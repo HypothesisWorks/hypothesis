@@ -25,6 +25,7 @@ from hypothesis.strategies._internal.regex import (
     UNICODE_SPACE_CHARS,
     UNICODE_WORD_CATEGORIES,
     base_regex_strategy,
+    regex_strategy,
 )
 
 from tests.common.debug import assert_all_examples, assert_no_examples, find_any
@@ -461,4 +462,13 @@ def test_sets_allow_multichar_output_in_ignorecase_mode():
     find_any(
         st.from_regex(re.compile("[\u0130_]", re.IGNORECASE)),
         lambda s: len(s) > 1,
+    )
+
+
+def test_internals_can_disable_newline_from_dollar_for_jsonschema():
+    pattern = "^abc$"
+    find_any(st.from_regex(pattern), lambda s: s == "abc\n")
+    assert_all_examples(
+        regex_strategy(pattern, False, _temp_jsonschema_hack_no_end_newline=True),
+        lambda s: s == "abc",
     )

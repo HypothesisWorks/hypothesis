@@ -213,7 +213,7 @@ def base_regex_strategy(regex, parsed=None):
     )
 
 
-def regex_strategy(regex, fullmatch):
+def regex_strategy(regex, fullmatch, *, _temp_jsonschema_hack_no_end_newline=False):
     if not hasattr(regex, "pattern"):
         regex = re.compile(regex)
 
@@ -254,6 +254,15 @@ def regex_strategy(regex, fullmatch):
                 )
             else:
                 right_pad = st.one_of(empty, newline)
+
+            # This will be removed when a regex-syntax-translation library exists.
+            # It's a pretty nasty hack, but means that we can match the semantics
+            # of JSONschema's compatible subset of ECMA regex, which is important
+            # for hypothesis-jsonschema and Schemathesis. See e.g.
+            # https://github.com/schemathesis/schemathesis/issues/1241
+            if _temp_jsonschema_hack_no_end_newline:
+                right_pad = empty
+
     if parsed[0][0] == sre.AT:
         if parsed[0][1] == sre.AT_BEGINNING_STRING:
             left_pad = empty
