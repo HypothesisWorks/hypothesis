@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.31.6:
+
+-------------------
+6.31.6 - 2021-12-15
+-------------------
+
+This patch adds a temporary hook for a downstream tool,
+which is not part of the public API.
+
 .. _v6.31.5:
 
 -------------------
