@@ -20,8 +20,7 @@ import pytest
 
 from hypothesis import assume, given, infer
 
-# This test file is skippped on Python <= 3.6, where `list[Elem]` is always a
-# SyntaxError.  On Python 3.7 and 3.8, `from __future__ import annotations` means
+# On Python 3.7 and 3.8, `from __future__ import annotations` means
 # that the syntax is supported; but the feature fails at runtime.  On Python
 # 3.9 and later, it should all work.
 #

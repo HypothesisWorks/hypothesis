@@ -34,20 +34,6 @@ def int_to_byte(i):
     return bytes([i])
 
 
-try:
-    # These types are new in Python 3.7, but also (partially) backported to the
-    # typing backport on PyPI.  Use if possible; or fall back to older names.
-    typing_root_type = (typing._Final, typing._GenericAlias)  # type: ignore
-    ForwardRef = typing.ForwardRef  # type: ignore
-except AttributeError:  # pragma: no cover
-    typing_root_type = (typing.TypingMeta, typing.TypeVar)  # type: ignore
-    try:
-        typing_root_type += (typing._Union,)  # type: ignore
-    except AttributeError:
-        pass
-    ForwardRef = typing._ForwardRef  # type: ignore
-
-
 def is_typed_named_tuple(cls):
     """Return True if cls is probably a subtype of `typing.NamedTuple`.
 

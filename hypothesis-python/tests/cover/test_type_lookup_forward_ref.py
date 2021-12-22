@@ -20,28 +20,19 @@ Right here we test different possible outcomes for different Python versions:
 - ``if TYPE_CHECKING:`` case, when ``'MyType'`` only exists during type checking and is not importable at all
 - Dot access case, like ``'module.MyType'``
 - Missing case, when there's no ``'MyType'`` at all
-
-We also separate how ``3.6`` works, because it has its limitations.
-Basically, ``TypeVar`` has no information about the module it was defined at.
 """
 
-import sys
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, ForwardRef, TypeVar
 
 import pytest
 
 from hypothesis import given, strategies as st
 from hypothesis.errors import ResolutionFailed
-from hypothesis.internal.compat import ForwardRef
 
 from tests.common import utils
 
 if TYPE_CHECKING:
     from tests.common.utils import ExcInfo  # we just need any type  # noqa: F401
-
-skip_before_python37 = pytest.mark.skipif(
-    sys.version_info[:2] < (3, 7), reason="typing module was broken"
-)
 
 # Correct:
 
@@ -57,24 +48,10 @@ class CustomType:
         self.arg = arg
 
 
-@skip_before_python37
 @given(st.builds(correct_fun))
 def test_bound_correct_forward_ref(built):
-    """Correct resolution of existing type in ``python3.7+`` codebase."""
+    """Correct resolution of existing type codebase."""
     assert isinstance(built, int)
-
-
-@pytest.mark.skipif(
-    sys.version_info[:2] != (3, 6), reason="typing in python3.6 is partially working"
-)
-def test_bound_correct_forward_ref_python36():
-    """
-    Very special case for ``python3.6`` where we have this feature partially supported.
-
-    Due to ``TypeVar`` module definition bug.
-    """
-    with pytest.raises(ResolutionFailed):
-        st.builds(correct_fun).example()
 
 
 # Alises:
@@ -89,10 +66,9 @@ def alias_fun(thing: _Alias) -> int:
 OurAlias = CustomType
 
 
-@skip_before_python37
 @given(st.builds(alias_fun))
 def test_bound_alias_forward_ref(built):
-    """Correct resolution of type aliases in ``python3.7+``."""
+    """Correct resolution of type aliases."""
     assert isinstance(built, int)
 
 
@@ -115,17 +91,15 @@ def missing_dot_access_fun(thing: _MissingDotAccess) -> int:
     return 1
 
 
-@skip_before_python37
 @given(st.builds(correct_dot_access_fun))
 def test_bound_correct_dot_access_forward_ref(built):
-    """Correct resolution of dot access types in ``python3.7+``."""
+    """Correct resolution of dot access types."""
     assert isinstance(built, int)
 
 
-@skip_before_python37
 @pytest.mark.parametrize("function", [wrong_dot_access_fun, missing_dot_access_fun])
 def test_bound_missing_dot_access_forward_ref(function):
-    """Resolution of missing type in dot access in ``python3.7+``."""
+    """Resolution of missing type in dot access."""
     with pytest.raises(ResolutionFailed):
         st.builds(function).example()
 
@@ -139,7 +113,6 @@ def missing_fun(thing: _Missing) -> int:
     return 1
 
 
-@pytest.mark.skipif(sys.version_info[:2] < (3, 6), reason="typing module was strange")
 def test_bound_missing_forward_ref():
     """We should raise proper errors on missing types."""
     with pytest.raises(ResolutionFailed):
@@ -155,14 +128,12 @@ def typechecking_only_fun(thing: _TypeChecking) -> int:
     return 1
 
 
-@skip_before_python37
 def test_bound_type_cheking_only_forward_ref():
     """We should fallback to registering explicit ``ForwardRef`` when we have to."""
     with utils.temp_registered(ForwardRef("ExcInfo"), st.just(1)):
         st.builds(typechecking_only_fun).example()
 
 
-@skip_before_python37
 def test_bound_type_cheking_only_forward_ref_wrong_type():
     """We should check ``ForwardRef`` parameter name correctly."""
     with utils.temp_registered(ForwardRef("WrongType"), st.just(1)):

@@ -10,7 +10,6 @@
 
 import abc
 import enum
-import sys
 from typing import Callable, Dict, Generic, List, Sequence, TypeVar, Union
 
 import pytest
@@ -253,10 +252,6 @@ def test_generic_origin_empty():
         find_any(st.builds(using_generic))
 
 
-_skip_callables_mark = pytest.mark.skipif(sys.version_info[:2] < (3, 7), reason="old")
-
-
-@_skip_callables_mark
 def test_issue_2951_regression():
     lines_strat = st.builds(Lines, lines=st.lists(st.text()))
     with temp_registered(Lines, lines_strat):
@@ -267,7 +262,6 @@ def test_issue_2951_regression():
         assert repr(st.from_type(Sequence[int])) == expected
 
 
-@_skip_callables_mark
 def test_issue_2951_regression_two_params():
     map_strat = st.builds(SpecificDict, st.dictionaries(st.integers(), st.integers()))
     expected = repr(st.from_type(Dict[int, int]))
@@ -282,10 +276,8 @@ def test_issue_2951_regression_two_params():
         Union[str, int],
         Sequence[Sequence[int]],
         MyGeneric[str],
-        # On Python <= 3.6, we always trigger the multi-registration guard clause
-        # and raise InvalidArgument on the first attempted registration.
-        pytest.param(Callable[..., str], marks=_skip_callables_mark),
-        pytest.param(Callable[[int], str], marks=_skip_callables_mark),
+        Callable[..., str],
+        Callable[[int], str],
     ),
     ids=repr,
 )

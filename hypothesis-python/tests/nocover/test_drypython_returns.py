@@ -8,14 +8,12 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import sys
 from typing import Generic, TypeVar
 
 import pytest
 
 from hypothesis import given, strategies as st
 from hypothesis.errors import ResolutionFailed
-from hypothesis.internal.compat import PYPY
 
 from tests.common.debug import find_any
 from tests.common.utils import temp_registered
@@ -197,7 +195,6 @@ def wrong_generic_func2(obj: _SecondBase[None, bool]):
     pass
 
 
-@pytest.mark.skipif(PYPY or sys.version_info[:2] == (3, 6), reason="not supported")
 @pytest.mark.parametrize("func", [wrong_generic_func1, wrong_generic_func2])
 def test_several_generic_bases_wrong_functions(func):
     with temp_registered(AllConcrete, st.builds(AllConcrete)):

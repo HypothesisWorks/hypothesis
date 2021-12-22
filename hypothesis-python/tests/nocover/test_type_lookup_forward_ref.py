@@ -8,20 +8,14 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import sys
-from typing import Dict, List, Union
+from typing import Dict, ForwardRef, List, Union
 
 import pytest
 
 from hypothesis import given, strategies as st
 from hypothesis.errors import ResolutionFailed
-from hypothesis.internal.compat import ForwardRef
 
 from tests.common import utils
-
-skip_before_python37 = pytest.mark.skipif(
-    sys.version_info[:2] < (3, 7), reason="typing module was broken"
-)
 
 # Mutually-recursive types
 # See https://github.com/HypothesisWorks/hypothesis/issues/2722

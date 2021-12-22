@@ -138,7 +138,7 @@ class TextStrategy(ListStrategy):
         str.isupper,
         str.isalnum,
         str.isalpha,
-        # str.isascii,  # new in Python 3.7
+        str.isascii,
         str.isdecimal,
         str.isdigit,
         str.isnumeric,

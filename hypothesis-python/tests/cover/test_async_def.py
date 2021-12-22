@@ -9,10 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import asyncio
-import sys
 from unittest import TestCase
-
-import pytest
 
 from hypothesis import assume, given, strategies as st
 
@@ -24,7 +21,6 @@ class TestAsyncioRun(TestCase):
     def execute_example(self, f):
         asyncio.run(f())
 
-    @pytest.mark.skipif(sys.version_info[:2] < (3, 7), reason="asyncio.run() is new")
     @given(st.text())
     async def test_foo(self, x):
         assume(x)

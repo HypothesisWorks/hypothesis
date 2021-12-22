@@ -333,8 +333,7 @@ def _get_params(func: Callable) -> Dict[str, inspect.Parameter]:
             and isinstance(func.__doc__, str)
         ):
             # inspect.signature doesn't work on all builtin functions or methods.
-            # In such cases, including the operator module on Python 3.6, we can try
-            # to reconstruct simple signatures from the docstring.
+            # In such cases, we can try to reconstruct simple signatures from the docstring.
             match = re.match(rf"^{func.__name__}\((.+?)\)", func.__doc__)
             if match is None:
                 raise
@@ -461,9 +460,6 @@ def _imports_for_object(obj):
         name = _get_qualname(obj).split(".")[0]
         return {(_get_module(obj), name)}
     except Exception:
-        with contextlib.suppress(AttributeError):
-            if obj.__module__ == "typing":  # only on CPython 3.6
-                return {("typing", getattr(obj, "__name__", obj.name))}
         return set()
 
 

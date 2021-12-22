@@ -13,7 +13,6 @@ import datetime as dt
 import pytest
 
 from hypothesis import given, settings
-from hypothesis.internal.compat import PYPY
 from hypothesis.strategies import dates, datetimes, timedeltas, times
 
 from tests.common.debug import find_any, minimal
@@ -134,13 +133,10 @@ def test_naive_times_are_naive(dt):
     assert dt.tzinfo is None
 
 
-# pypy3.6 seems to canonicalise fold to 0 for non-ambiguous times?
-@pytest.mark.skipif(PYPY, reason="see comment")
 def test_can_generate_datetime_with_fold_1():
     find_any(datetimes(), lambda d: d.fold)
 
 
-@pytest.mark.skipif(PYPY, reason="see comment")
 def test_can_generate_time_with_fold_1():
     find_any(times(), lambda d: d.fold)
 

@@ -18,8 +18,8 @@ definitions it links to.  If not, report the bug!
 """
 # https://tools.ietf.org/html/rfc3696
 
-import os.path
 import string
+from importlib.resources import read_text
 
 from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument
@@ -32,16 +32,7 @@ FRAGMENT_SAFE_CHARACTERS = URL_SAFE_CHARACTERS | {"?", "/"}
 
 # This file is sourced from http://data.iana.org/TLD/tlds-alpha-by-domain.txt
 # The file contains additional information about the date that it was last updated.
-try:
-    from importlib.resources import read_text  # type: ignore
-except ImportError:
-    # If we don't have importlib.resources (Python 3.7+) or the importlib_resources
-    # backport available, fall back to __file__ and hope we're on a filesystem.
-    f = os.path.join(os.path.dirname(__file__), "vendor", "tlds-alpha-by-domain.txt")
-    with open(f) as tld_file:
-        _tlds = tld_file.read().splitlines()
-else:
-    _tlds = read_text("hypothesis.vendor", "tlds-alpha-by-domain.txt").splitlines()
+_tlds = read_text("hypothesis.vendor", "tlds-alpha-by-domain.txt").splitlines()
 assert _tlds[0].startswith("#")
 TOP_LEVEL_DOMAINS = ["COM"] + sorted(_tlds[1:], key=len)
 

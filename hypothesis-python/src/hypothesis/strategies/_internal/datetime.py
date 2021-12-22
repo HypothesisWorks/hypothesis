@@ -12,6 +12,7 @@ import datetime as dt
 import os.path
 from calendar import monthrange
 from functools import lru_cache
+from importlib.resources import is_resource
 from typing import Optional
 
 from hypothesis.errors import InvalidArgument
@@ -22,24 +23,16 @@ from hypothesis.strategies._internal.misc import just, none
 from hypothesis.strategies._internal.strategies import SearchStrategy
 from hypothesis.strategies._internal.utils import defines_strategy
 
-# These standard-library modules are required for the timezones() and
-# timezone_keys() strategies, but not present in older versions of Python.
-# We therefore try to import them here, but only raise errors recommending
-# `pip install hypothesis[zoneinfo]` to install the backports (if needed)
-# when those strategies are actually used.
-try:
-    import importlib.resources as importlib_resources
-except ImportError:
-    try:
-        import importlib_resources  # type: ignore
-    except ImportError:
-        importlib_resources = None  # type: ignore
+# The zoneinfo module, required for the timezones() and timezone_keys()
+# strategies, is new in Python 3.9 and the backport might be missing.
 try:
     import zoneinfo
 except ImportError:
     try:
         from backports import zoneinfo  # type: ignore
     except ImportError:
+        # We raise an error recommending `pip install hypothesis[zoneinfo]`
+        # when timezones() or timezone_keys() strategies are actually used.
         zoneinfo = None
 
 DATENAMES = ("year", "month", "day")
@@ -352,15 +345,10 @@ def _valid_key_cacheable(tzpath, key):
         # This branch is only taken for names which are known to zoneinfo
         # but not present on the filesystem, i.e. on Windows with tzdata,
         # and so is never executed by our coverage tests.
-        if importlib_resources is None:
-            raise ImportError(
-                "The importlib_resources module is required, but could not be "
-                "imported.  Run `pip install hypothesis[zoneinfo]` and try again."
-            )
         *package_loc, resource_name = key.split("/")
         package = "tzdata.zoneinfo." + ".".join(package_loc)
         try:
-            return importlib_resources.is_resource(package, resource_name)
+            return is_resource(package, resource_name)
         except ModuleNotFoundError:
             return False
 
@@ -391,8 +379,7 @@ def timezone_keys(
     .. note::
 
         The :mod:`python:zoneinfo` module is new in Python 3.9, so you will need
-        to install the :pypi:`backports.zoneinfo` module on earlier versions, and
-        the :pypi:`importlib_resources` backport on Python 3.6.
+        to install the :pypi:`backports.zoneinfo` module on earlier versions.
 
         `On Windows, you will also need to install the tzdata package
         <https://docs.python.org/3/library/zoneinfo.html#data-sources>`__.
@@ -452,8 +439,7 @@ def timezones(*, no_cache: bool = False) -> SearchStrategy["zoneinfo.ZoneInfo"]:
     .. note::
 
         The :mod:`python:zoneinfo` module is new in Python 3.9, so you will need
-        to install the :pypi:`backports.zoneinfo` module on earlier versions, and
-        the :pypi:`importlib_resources` backport on Python 3.6.
+        to install the :pypi:`backports.zoneinfo` module on earlier versions.
 
         `On Windows, you will also need to install the tzdata package
         <https://docs.python.org/3/library/zoneinfo.html#data-sources>`__.

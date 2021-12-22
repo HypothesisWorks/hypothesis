@@ -70,7 +70,6 @@ class TestAsyncioRun(TestCase):
     def execute_example(self, f):
         asyncio.run(f())
 
-    @pytest.mark.skipif(sys.version_info[:2] < (3, 7), reason="asyncio.run() is new")
     @given(x=st.text())
     @coro_decorator
     def test_foo(self, x):

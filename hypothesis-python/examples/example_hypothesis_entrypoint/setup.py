@@ -20,7 +20,7 @@ setuptools.setup(
     description="Minimal setup.py to register an entrypoint.",
     packages=setuptools.find_packages(),
     install_requires=["hypothesis"],
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     entry_points={
         "hypothesis": ["_ = example_hypothesis_entrypoint:_hypothesis_setup_hook"]
     },

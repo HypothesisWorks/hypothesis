@@ -171,8 +171,6 @@ def test_ghostwriter_example_outputs(update_recorded_outputs, data):
 def test_ghostwriter_on_hypothesis(update_recorded_outputs):
     actual = ghostwriter.magic(hypothesis).replace("Strategy[+Ex]", "Strategy")
     expected = get_recorded("hypothesis_module_magic", actual * update_recorded_outputs)
-    # The py36 typing module has some different handling of generics (SearchStrategy)
-    # and contents (collections.abc vs typing), but we can still check the code works.
-    if (3, 6) < sys.version_info[:2] < (3, 10):
+    if sys.version_info[:2] < (3, 10):
         assert actual == expected
     exec(expected, {"not_set": not_set})

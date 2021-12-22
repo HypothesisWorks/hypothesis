@@ -48,13 +48,7 @@ from hypothesis.control import cleanup, note
 from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.internal.cathetus import cathetus
 from hypothesis.internal.charmap import as_general_categories
-from hypothesis.internal.compat import (
-    ceil,
-    floor,
-    get_type_hints,
-    is_typed_named_tuple,
-    typing_root_type,
-)
+from hypothesis.internal.compat import ceil, floor, get_type_hints, is_typed_named_tuple
 from hypothesis.internal.conjecture.utils import (
     calc_label_from_cls,
     check_sample,
@@ -996,16 +990,7 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
         # of it.  We do this in three places, hence the helper function
         if not isinstance(strat_or_callable, SearchStrategy):
             assert callable(strat_or_callable)  # Validated in register_type_strategy
-            try:
-                # On Python 3.6, typing.Hashable is just an alias for abc.Hashable,
-                # and the resolver function for Type throws an AttributeError because
-                # Hashable has no __args__.  We discard such errors when attempting
-                # to resolve subclasses, because the function was passed a weird arg.
-                strategy = strat_or_callable(thing)
-            except Exception:  # pragma: no cover
-                if not final:
-                    return nothing()
-                raise
+            strategy = strat_or_callable(thing)
         else:
             strategy = strat_or_callable
         if not isinstance(strategy, SearchStrategy):
@@ -1024,27 +1009,11 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
             if thing in types._global_type_lookup:
                 return as_strategy(types._global_type_lookup[thing], thing)
             return from_type(thing.__supertype__)
-        # Under Python 3.6, Unions are not instances of `type` - but we
-        # still want to resolve them!
+        # Unions are not instances of `type` - but we still want to resolve them!
         if getattr(thing, "__origin__", None) is typing.Union:
             args = sorted(thing.__args__, key=types.type_sorting_key)
             return one_of([from_type(t) for t in args])
     if not types.is_a_type(thing):
-        # The implementation of typing_extensions.Literal under Python 3.6 is
-        # *very strange*.  Notably, `type(Literal[x]) != Literal` so we have to
-        # use the first form directly, and because it uses __values__ instead of
-        # __args__ we inline the relevant logic here until the end of life date.
-        if types.is_typing_literal(thing):  # pragma: no cover
-            assert sys.version_info[:2] == (3, 6)
-            args_dfs_stack = list(thing.__values__)  # type: ignore
-            literals = []
-            while args_dfs_stack:
-                arg = args_dfs_stack.pop()
-                if types.is_typing_literal(arg):
-                    args_dfs_stack.extend(reversed(arg.__values__))
-                else:
-                    literals.append(arg)
-            return sampled_from(literals)
         if isinstance(thing, str):
             # See https://github.com/HypothesisWorks/hypothesis/issues/3016
             raise InvalidArgument(
@@ -1055,7 +1024,7 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
             )
         raise InvalidArgument(f"thing={thing!r} must be a type")  # pragma: no cover
     # Now that we know `thing` is a type, the first step is to check for an
-    # explicitly registered strategy.  This is the best (and hopefully most
+    # explicitly registered strategy. This is the best (and hopefully most
     # common) way to resolve a type to a strategy.  Note that the value in the
     # lookup may be a strategy or a function from type -> strategy; and we
     # convert empty results into an explicit error.
@@ -1092,7 +1061,7 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
     # We'll start by checking if thing is from from the typing module,
     # because there are several special cases that don't play well with
     # subclass and instance checks.
-    if isinstance(thing, typing_root_type) or (
+    if isinstance(thing, types.typing_root_type) or (
         sys.version_info[:2] >= (3, 9)
         and isinstance(getattr(thing, "__origin__", None), type)
         and getattr(thing, "__args__", None)

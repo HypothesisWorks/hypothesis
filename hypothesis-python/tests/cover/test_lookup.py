@@ -17,7 +17,6 @@ import inspect
 import io
 import re
 import string
-import sys
 import typing
 from inspect import signature
 from numbers import Real
@@ -26,7 +25,7 @@ import pytest
 
 from hypothesis import HealthCheck, assume, given, infer, settings, strategies as st
 from hypothesis.errors import InvalidArgument, ResolutionFailed
-from hypothesis.internal.compat import PYPY, get_type_hints, typing_root_type
+from hypothesis.internal.compat import get_type_hints
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies import from_type
 from hypothesis.strategies._internal import types
@@ -45,7 +44,7 @@ generics = sorted(
         t
         for t in types._global_type_lookup
         # We ignore TypeVar, because it is not a Generic type:
-        if isinstance(t, typing_root_type) and t != typing.TypeVar
+        if isinstance(t, types.typing_root_type) and t != typing.TypeVar
     ),
     key=str,
 )
@@ -99,11 +98,10 @@ def test_typing_Type_Union(ex):
     "typ",
     [
         collections.abc.ByteString,
-        # These are nonexistent or exist-but-are-not-types on Python 3.6
-        typing.Match if sys.version_info[:2] >= (3, 7) else int,
-        typing.Pattern if sys.version_info[:2] >= (3, 7) else int,
-        getattr(re, "Match", int),
-        getattr(re, "Pattern", int),
+        typing.Match,
+        typing.Pattern,
+        re.Match,
+        re.Pattern,
     ],
     ids=repr,
 )
@@ -183,7 +181,6 @@ def test_ItemsView(ex):
     assert all(all(isinstance(e, Elem) for e in elem) for elem in ex)
 
 
-@pytest.mark.skipif(sys.version_info[:2] == (3, 6), reason="not a type on py36")
 @pytest.mark.parametrize("generic", [typing.Match, typing.Pattern])
 @pytest.mark.parametrize("typ", [bytes, str])
 @given(data=st.data())
@@ -744,7 +741,6 @@ class TreeForwardRefs(typing.NamedTuple):
     r: typing.Optional["TreeForwardRefs"]
 
 
-@pytest.mark.skipif(PYPY, reason="pypy36 does not resolve the forward refs")
 @given(st.builds(TreeForwardRefs))
 def test_resolves_forward_references_outside_annotations(t):
     assert isinstance(t, TreeForwardRefs)
@@ -862,7 +858,6 @@ def test_resolves_builtin_types(t):
     assert isinstance(v, t)
 
 
-@pytest.mark.skipif(sys.version_info[:2] == (3, 6), reason="no ForwardRef type")
 @pytest.mark.parametrize("t", BUILTIN_TYPES, ids=lambda t: t.__name__)
 def test_resolves_forwardrefs_to_builtin_types(t):
     v = st.from_type(typing.ForwardRef(t.__name__)).example()
