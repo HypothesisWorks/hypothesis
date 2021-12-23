@@ -221,9 +221,9 @@ def _type_from_doc_fragment(token: str) -> Optional[type]:
         return int
     if "numpy" in sys.modules:
         if re.fullmatch(r"[Aa]rray[-_ ]?like", token):
-            return sys.modules["numpy"].ndarray  # type: ignore
+            return sys.modules["numpy"].ndarray
         elif token == "dtype":
-            return sys.modules["numpy"].dtype  # type: ignore
+            return sys.modules["numpy"].dtype
     # Natural-language syntax, e.g. "sequence of integers"
     coll_match = re.fullmatch(r"(\w+) of (\w+)", token)
     if coll_match is not None:
@@ -775,7 +775,7 @@ def magic(
             functions.add(thing)
         elif isinstance(thing, types.ModuleType):
             if hasattr(thing, "__all__"):
-                funcs = [getattr(thing, name, None) for name in thing.__all__]  # type: ignore
+                funcs = [getattr(thing, name, None) for name in thing.__all__]
             else:
                 pkg = thing.__package__
                 funcs = [

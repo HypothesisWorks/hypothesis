@@ -29,7 +29,7 @@ try:
     import zoneinfo
 except ImportError:
     try:
-        from backports import zoneinfo  # type: ignore
+        from backports import zoneinfo
     except ImportError:
         # We raise an error recommending `pip install hypothesis[zoneinfo]`
         # when timezones() or timezone_keys() strategies are actually used.

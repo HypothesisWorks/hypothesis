@@ -50,10 +50,9 @@ def write_for(mod):
         subprocess.run(
             ["hypothesis", "write", mod],
             check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             timeout=10,
-            universal_newlines=True,
+            text=True,
         )
     except subprocess.SubprocessError as e:
         # Only report the error if we could load _but not process_ the module
