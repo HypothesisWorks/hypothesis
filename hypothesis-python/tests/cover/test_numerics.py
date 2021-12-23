@@ -13,7 +13,7 @@ from math import copysign, inf
 
 import pytest
 
-from hypothesis import assume, given, reject, settings
+from hypothesis import HealthCheck, assume, given, reject, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.floats import next_down, next_up
 from hypothesis.strategies import (
@@ -31,6 +31,7 @@ from hypothesis.strategies import (
 from tests.common.debug import find_any
 
 
+@settings(suppress_health_check=HealthCheck.all())
 @given(data())
 def test_fuzz_floats_bounds(data):
     width = data.draw(sampled_from([64, 32, 16]))
