@@ -50,10 +50,9 @@ from hypothesis.extra.ghostwriter import (
 def test_cli_python_equivalence(cli, code):
     result = subprocess.run(
         "hypothesis write " + cli,
-        stderr=subprocess.PIPE,
-        stdout=subprocess.PIPE,
+        capture_output=True,
         shell=True,
-        universal_newlines=True,
+        text=True,
     )
     cli_output = result.stdout.strip()
     assert not result.stderr
@@ -87,10 +86,9 @@ def test_cli_too_many_functions(cli, err_msg):
     # Supplying multiple functions to writers that only cope with one
     result = subprocess.run(
         "hypothesis write " + cli,
-        stderr=subprocess.PIPE,
-        stdout=subprocess.PIPE,
+        capture_output=True,
         shell=True,
-        universal_newlines=True,
+        text=True,
     )
     assert result.returncode == 2
     assert "Error: " + err_msg in result.stderr
@@ -109,10 +107,9 @@ def test_can_import_from_scripts_in_working_dir(tmpdir):
     (tmpdir / "mycode.py").write(CODE_TO_TEST)
     result = subprocess.run(
         "hypothesis write mycode.sorter",
-        stderr=subprocess.PIPE,
-        stdout=subprocess.PIPE,
+        capture_output=True,
         shell=True,
-        universal_newlines=True,
+        text=True,
         cwd=tmpdir,
     )
     assert result.returncode == 0
@@ -123,10 +120,9 @@ def test_empty_module_is_not_error(tmpdir):
     (tmpdir / "mycode.py").write("# Nothing to see here\n")
     result = subprocess.run(
         "hypothesis write mycode",
-        stderr=subprocess.PIPE,
-        stdout=subprocess.PIPE,
+        capture_output=True,
         shell=True,
-        universal_newlines=True,
+        text=True,
         cwd=tmpdir,
     )
     assert result.returncode == 0

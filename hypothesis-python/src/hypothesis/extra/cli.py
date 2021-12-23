@@ -65,7 +65,6 @@ except ImportError:
         sys.stderr.write(MESSAGE.format("click"))
         sys.exit(1)
 
-
 else:
     # Ensure that Python scripts in the current working directory are importable,
     # on the principle that Ghostwriter should 'just work' for novice users.  Note

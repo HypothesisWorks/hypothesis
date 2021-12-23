@@ -19,7 +19,7 @@ try:
     # We prefer to use importlib.metadata, or the backport on Python <= 3.7,
     # because it's much faster than pkg_resources (200ms import time speedup).
     try:
-        from importlib import metadata as importlib_metadata
+        from importlib import metadata as importlib_metadata  # type: ignore
     except ImportError:
         import importlib_metadata  # type: ignore  # mypy thinks this is a redefinition
 
@@ -32,7 +32,6 @@ try:
             # https://importlib-metadata.readthedocs.io/en/latest/using.html
             eps = importlib_metadata.entry_points().get("hypothesis", [])
         yield from eps
-
 
 except ImportError:
     # But if we're not on Python >= 3.8 and the importlib_metadata backport

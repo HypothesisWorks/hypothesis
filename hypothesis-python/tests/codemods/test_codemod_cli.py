@@ -36,10 +36,9 @@ def run(command, tmpdir=None, input=None):
     return subprocess.run(
         command,
         input=input,
-        stderr=subprocess.PIPE,
-        stdout=subprocess.PIPE,
+        capture_output=True,
         shell=True,
-        universal_newlines=True,
+        text=True,
         cwd=tmpdir,
     )
 
