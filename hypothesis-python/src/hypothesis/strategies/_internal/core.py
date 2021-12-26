@@ -1023,6 +1023,9 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
                 "strings."
             )
         raise InvalidArgument(f"thing={thing!r} must be a type")  # pragma: no cover
+    if types.is_forbidden_to_dispatch(thing):
+        # Code like `st.from_type(TypeAlias)` does not make sense.
+        raise InvalidArgument(f"thing={thing!r} does not make sense as a strategy")
     # Now that we know `thing` is a type, the first step is to check for an
     # explicitly registered strategy. This is the best (and hopefully most
     # common) way to resolve a type to a strategy.  Note that the value in the
@@ -1751,6 +1754,10 @@ def register_type_strategy(
 
     if not types.is_a_type(custom_type):
         raise InvalidArgument(f"custom_type={custom_type!r} must be a type")
+    elif types.is_forbidden_to_register(custom_type):
+        raise InvalidArgument(
+            f"custom_type={custom_type!r} is not allowed to be registered"
+        )
     elif not (isinstance(strategy, SearchStrategy) or callable(strategy)):
         raise InvalidArgument(
             "strategy=%r must be a SearchStrategy, or a function that takes "

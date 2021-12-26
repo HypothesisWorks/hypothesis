@@ -57,6 +57,14 @@ except ImportError:
     except ImportError:
         _AnnotatedAlias = ()
 
+try:
+    from typing import TypeAlias  # type: ignore
+except ImportError:
+    try:
+        from typing_extensions import TypeAlias
+    except ImportError:
+        TypeAlias = object()  # It must be a singleton
+
 
 # We use this variable to be sure that we are working with a type from `typing`:
 typing_root_type = (typing._Final, typing._GenericAlias)  # type: ignore
@@ -188,6 +196,26 @@ def is_generic_type(type_):
     return isinstance(type_, typing_root_type) or (
         isinstance(type_, type) and typing.Generic in type_.__mro__
     )
+
+
+def is_forbidden_to_register(type_):
+    """Some types does not make sense to be registered as a type strategy."""
+    if type_ is TypeAlias:  # TypeAlias is only useful for assignments.
+        return True
+    return False  # TODO: add more types like `TypeGuard` / `ParamSpec` / etc
+
+
+def is_forbidden_to_dispatch(type_):
+    """
+    Some types does not make sense to be registered as a type strategy.
+
+    It is separated from :func:`is_forbidden_to_register`,
+    because in the future might be non-symetric types
+    in terms of registration / dispatching.
+    """
+    if type_ is TypeAlias:  # TypeAlias is only useful for assignments.
+        return True
+    return False
 
 
 def _try_import_forward_ref(thing, bound):  # pragma: no cover
