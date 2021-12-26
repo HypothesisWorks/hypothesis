@@ -198,14 +198,14 @@ def is_generic_type(type_):
     )
 
 
-def is_forbidden_to_register(type_):
+def is_forbidden_to_register(type_):  # pragma: no cover
     """Some types does not make sense to be registered as a type strategy."""
     if type_ is TypeAlias:  # TypeAlias is only useful for assignments.
         return True
     return False  # TODO: add more types like `TypeGuard` / `ParamSpec` / etc
 
 
-def is_forbidden_to_dispatch(type_):
+def is_forbidden_to_dispatch(type_):  # pragma: no cover
     """
     Some types does not make sense to be registered as a type strategy.
 

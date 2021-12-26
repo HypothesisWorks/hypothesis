@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import collections
+import sys
 from typing import Dict, List, Union
 
 import pytest
@@ -126,3 +127,24 @@ def test_annotated_with_two_strategies(data):
 @given(st.data())
 def test_annotated_extra_metadata(data):
     assert data.draw(st.from_type(ExtraAnnotationNoStrategy)) > 0
+
+
+@pytest.mark.parametrize(
+    "type_alias_type",
+    [
+        ExtensionsTypeAlias,
+        pytest.param(
+            getattr(typing, "TypeAlias", None),
+            marks=pytest.mark.skipif(
+                sys.version_info < (3, 10), reason="TypeAlias was added in 3.10"
+            ),
+        ),
+    ],
+)
+def test_type_alias_from_typing(type_alias_type):
+    strategy = st.from_type(type_alias_type)
+    with pytest.raises(InvalidArgument, match="does not make sense as a strategy"):
+        strategy.example()
+
+    with pytest.raises(InvalidArgument, match="is not allowed to be registered"):
+        st.register_type_strategy(type_alias_type, st.none())

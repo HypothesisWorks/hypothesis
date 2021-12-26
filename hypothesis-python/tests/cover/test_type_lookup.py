@@ -10,12 +10,9 @@
 
 import abc
 import enum
-import sys
-import typing
 from typing import Callable, Dict, Generic, List, Sequence, TypeVar, Union
 
 import pytest
-from typing_extensions import TypeAlias as ExtensionsTypeAlias
 
 from hypothesis import given, infer, strategies as st
 from hypothesis.errors import (
@@ -394,24 +391,3 @@ def test_abstract_resolver_fallback():
 
     # which in turn means we resolve to the concrete subtype.
     assert isinstance(gen, ConcreteBar)
-
-
-@pytest.mark.parametrize(
-    "type_alias_type",
-    [
-        ExtensionsTypeAlias,
-        pytest.param(
-            getattr(typing, "TypeAlias", None),
-            marks=pytest.mark.skipif(
-                sys.version_info < (3, 10), reason="TypeAlias was added in 3.10"
-            ),
-        ),
-    ],
-)
-def test_type_alias_from_typing(type_alias_type):
-    strategy = st.from_type(type_alias_type)
-    with pytest.raises(InvalidArgument, match="does not make sense as a strategy"):
-        strategy.example()
-
-    with pytest.raises(InvalidArgument, match="is not allowed to be registered"):
-        st.register_type_strategy(type_alias_type, st.none())
