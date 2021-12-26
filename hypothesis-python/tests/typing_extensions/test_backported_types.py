@@ -132,7 +132,7 @@ def test_annotated_extra_metadata(data):
 @pytest.mark.parametrize(
     "type_alias_type",
     [
-        ExtensionsTypeAlias,
+        TypeAlias,  # It is always available from `typing_extensions`
         pytest.param(
             getattr(typing, "TypeAlias", None),
             marks=pytest.mark.skipif(
@@ -141,7 +141,7 @@ def test_annotated_extra_metadata(data):
         ),
     ],
 )
-def test_type_alias_from_typing(type_alias_type):
+def test_type_alias_type(type_alias_type):
     strategy = st.from_type(type_alias_type)
     with pytest.raises(InvalidArgument, match="does not make sense as a strategy"):
         strategy.example()
