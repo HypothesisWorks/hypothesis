@@ -10,12 +10,22 @@
 
 import collections
 import sys
+import typing
 from typing import Dict, List, Union
 
 import pytest
-from typing_extensions import Annotated, DefaultDict, Literal, NewType, Type, TypedDict
+from typing_extensions import (
+    Annotated,
+    DefaultDict,
+    Literal,
+    NewType,
+    Type,
+    TypeAlias,
+    TypedDict,
+)
 
 from hypothesis import assume, given, strategies as st
+from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import from_type
 
 
