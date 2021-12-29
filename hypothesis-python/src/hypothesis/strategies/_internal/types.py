@@ -59,17 +59,13 @@ except ImportError:
 
 TypeAliasTypes: tuple = ()
 try:
-    from typing import TypeAlias as TypingTypeAlias  # type: ignore
-except ImportError:
+    TypeAliasTypes += (typing.TypeAlias,)  # type: ignore
+except AttributeError:
     pass  # Is missing for `python<3.10`
-else:  # pragma: no cover
-    TypeAliasTypes += (TypingTypeAlias,)
 try:
-    from typing_extensions import TypeAlias as ExtensionsTypeAlias
-except ImportError:
+    TypeAliasTypes += (typing_extensions.TypeAlias,)
+except AttributeError:
     pass  # Is missing for `typing_extensions<3.10`
-else:  # pragma: no cover
-    TypeAliasTypes += (ExtensionsTypeAlias,)
 
 
 # We use this variable to be sure that we are working with a type from `typing`:

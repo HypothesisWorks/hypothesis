@@ -1025,7 +1025,10 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
         raise InvalidArgument(f"thing={thing!r} must be a type")  # pragma: no cover
     if thing in types.TypeAliasTypes:  # pragma: no cover
         # Code like `st.from_type(TypeAlias)` does not make sense.
-        raise InvalidArgument(f"thing={thing!r} does not make sense as a strategy")
+        raise InvalidArgument(
+            "Cannot resolve TypeAlias to a strategy, "
+            "because there are no instances of it at runtime"
+        )
     # Now that we know `thing` is a type, the first step is to check for an
     # explicitly registered strategy. This is the best (and hopefully most
     # common) way to resolve a type to a strategy.  Note that the value in the
@@ -1756,7 +1759,8 @@ def register_type_strategy(
         raise InvalidArgument(f"custom_type={custom_type!r} must be a type")
     elif custom_type in types.TypeAliasTypes:  # pragma: no cover
         raise InvalidArgument(
-            f"custom_type={custom_type!r} is not allowed to be registered"
+            f"custom_type={custom_type!r} is not allowed to be registered, "
+            "because there is no such thing as a runtime instance of TypeAlias"
         )
     elif not (isinstance(strategy, SearchStrategy) or callable(strategy)):
         raise InvalidArgument(
