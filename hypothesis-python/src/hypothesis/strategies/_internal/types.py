@@ -62,13 +62,13 @@ try:
     from typing import TypeAlias as TypingTypeAlias  # type: ignore
 except ImportError:
     pass  # Is missing for `python<3.10`
-else:
+else:  # pragma: no cover
     TypeAliasTypes += (TypingTypeAlias,)
 try:
     from typing_extensions import TypeAlias as ExtensionsTypeAlias
 except ImportError:
     pass  # Is missing for `typing_extensions<3.10`
-else:
+else:  # pragma: no cover
     TypeAliasTypes += (ExtensionsTypeAlias,)
 
 
