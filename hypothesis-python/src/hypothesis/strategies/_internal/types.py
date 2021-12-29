@@ -62,9 +62,9 @@ try:
     TypeAliasTypes += (typing.TypeAlias,)  # type: ignore
 except AttributeError:
     pass  # Is missing for `python<3.10`
-try:  # pragma: no cover
+try:
     TypeAliasTypes += (typing_extensions.TypeAlias,)
-except AttributeError:
+except AttributeError:  # pragma: no cover
     pass  # Is missing for `typing_extensions<3.10`
 
 
