@@ -57,7 +57,7 @@ except ImportError:
     except ImportError:
         _AnnotatedAlias = ()
 
-TypeAliasTypes = ()
+TypeAliasTypes: tuple = ()
 try:
     from typing import TypeAlias as TypingTypeAlias  # type: ignore
 except ImportError:
