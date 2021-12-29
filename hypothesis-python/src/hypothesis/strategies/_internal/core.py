@@ -1023,7 +1023,7 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
                 "strings."
             )
         raise InvalidArgument(f"thing={thing!r} must be a type")  # pragma: no cover
-    if types.is_forbidden_to_dispatch(thing):  # pragma: no cover
+    if thing in types.TypeAliasTypes:  # pragma: no cover
         # Code like `st.from_type(TypeAlias)` does not make sense.
         raise InvalidArgument(f"thing={thing!r} does not make sense as a strategy")
     # Now that we know `thing` is a type, the first step is to check for an
@@ -1754,7 +1754,7 @@ def register_type_strategy(
 
     if not types.is_a_type(custom_type):
         raise InvalidArgument(f"custom_type={custom_type!r} must be a type")
-    elif types.is_forbidden_to_register(custom_type):  # pragma: no cover
+    elif custom_type in types.TypeAliasTypes:  # pragma: no cover
         raise InvalidArgument(
             f"custom_type={custom_type!r} is not allowed to be registered"
         )
