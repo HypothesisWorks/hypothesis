@@ -262,3 +262,16 @@ class LRUReusedCache(GenericCache):
         score[0] = 2
         score[1] = self.tick()
         return score
+
+    def pin(self, key):
+        try:
+            super().pin(key)
+        except KeyError:
+            # The whole point of an LRU cache is that it might drop things for you
+            assert key not in self.keys_to_indices
+
+    def unpin(self, key):
+        try:
+            super().unpin(key)
+        except KeyError:
+            assert key not in self.keys_to_indices
