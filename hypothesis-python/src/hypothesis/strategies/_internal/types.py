@@ -57,6 +57,16 @@ except ImportError:
     except ImportError:
         _AnnotatedAlias = ()
 
+TypeAliasTypes: tuple = ()
+try:
+    TypeAliasTypes += (typing.TypeAlias,)  # type: ignore
+except AttributeError:
+    pass  # Is missing for `python<3.10`
+try:
+    TypeAliasTypes += (typing_extensions.TypeAlias,)
+except AttributeError:  # pragma: no cover
+    pass  # Is missing for `typing_extensions<3.10`
+
 
 # We use this variable to be sure that we are working with a type from `typing`:
 typing_root_type = (typing._Final, typing._GenericAlias)  # type: ignore

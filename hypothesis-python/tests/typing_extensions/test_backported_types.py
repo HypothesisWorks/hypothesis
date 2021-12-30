@@ -9,12 +9,23 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import collections
+import sys
+import typing
 from typing import Dict, List, Union
 
 import pytest
-from typing_extensions import Annotated, DefaultDict, Literal, NewType, Type, TypedDict
+from typing_extensions import (
+    Annotated,
+    DefaultDict,
+    Literal,
+    NewType,
+    Type,
+    TypeAlias,
+    TypedDict,
+)
 
 from hypothesis import assume, given, strategies as st
+from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import from_type
 
 
@@ -126,3 +137,24 @@ def test_annotated_with_two_strategies(data):
 @given(st.data())
 def test_annotated_extra_metadata(data):
     assert data.draw(st.from_type(ExtraAnnotationNoStrategy)) > 0
+
+
+@pytest.mark.parametrize(
+    "type_alias_type",
+    [
+        TypeAlias,  # It is always available from recent versions of `typing_extensions`
+        pytest.param(
+            getattr(typing, "TypeAlias", None),
+            marks=pytest.mark.skipif(
+                sys.version_info < (3, 10), reason="TypeAlias was added in 3.10"
+            ),
+        ),
+    ],
+)
+def test_type_alias_type(type_alias_type):
+    strategy = st.from_type(type_alias_type)
+    with pytest.raises(InvalidArgument, match="Cannot resolve TypeAlias to a strategy"):
+        strategy.example()
+
+    with pytest.raises(InvalidArgument, match="is not allowed to be registered"):
+        st.register_type_strategy(type_alias_type, st.none())
