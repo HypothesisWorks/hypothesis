@@ -19,7 +19,8 @@ from hypothesis.internal.validation import check_type
 
 
 class RedisExampleDatabase(ExampleDatabase):
-    """Store Hypothesis examples as sets in the given :class:`redis.Redis` datastore.
+    """Store Hypothesis examples as sets in the given :class:`~redis.client.Redis`
+    datastore.
 
     This is particularly useful for shared databases, as per the recipe
     for a :class:`~hypothesis.database.MultiplexedDatabase`.
