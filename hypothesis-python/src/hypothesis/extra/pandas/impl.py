@@ -10,6 +10,7 @@
 
 from collections import OrderedDict, abc
 from copy import copy
+from datetime import datetime, timedelta
 from typing import Any, List, Optional, Sequence, Set, Union
 
 import attr
@@ -17,6 +18,7 @@ import numpy as np
 import pandas
 
 from hypothesis import strategies as st
+from hypothesis._settings import note_deprecation
 from hypothesis.control import reject
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra import numpy as npst
@@ -77,6 +79,14 @@ def elements_and_dtype(elements, dtype, source=None):
             raise InvalidArgument(
                 f"{prefix}dtype is categorical, which is currently unsupported"
             )
+
+    if isinstance(dtype, type) and np.dtype(dtype).kind == "O" and dtype is not object:
+        note_deprecation(
+            f"Passed dtype={dtype!r} is not a valid Pandas dtype.  We'll treat it as "
+            "dtype=object for now, but this will be an error in a future version.",
+            since="RELEASEDAY",
+            has_codemod=False,
+        )
 
     dtype = try_convert(np.dtype, dtype, "dtype")
 
@@ -577,7 +587,19 @@ def data_frames(
                                 reject()
                         else:
                             value = draw(c.elements)
-                        data[c.name][i] = value
+                        try:
+                            data[c.name][i] = value
+                        except ValueError as err:
+                            if c.dtype is None and not isinstance(
+                                value, (float, int, str, bool, datetime, timedelta)
+                            ):
+                                raise ValueError(
+                                    f"Failed to add value={value!r} to column "
+                                    f"{c.name} with dtype=None.  Maybe passing "
+                                    "dtype=object would help?"
+                                ) from err
+                            # Unclear how this could happen, but users find a way...
+                            raise  # pragma: no cover
 
             for c in rewritten_columns:
                 if not c.fill.is_empty:

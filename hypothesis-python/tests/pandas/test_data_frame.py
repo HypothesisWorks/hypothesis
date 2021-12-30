@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import numpy as np
+import pytest
 
 from hypothesis import HealthCheck, given, reject, settings, strategies as st
 from hypothesis.extra import numpy as npst, pandas as pdst
@@ -238,3 +239,20 @@ def test_will_fill_missing_columns_in_tuple_row(df):
 )
 def test_can_generate_unique_columns(df):
     assert set(df[0]) == set(range(10))
+
+
+@pytest.mark.parametrize("dtype", [None, object])
+def test_expected_failure_from_omitted_object_dtype(dtype):
+    # See https://github.com/HypothesisWorks/hypothesis/issues/3133
+    col = pdst.column(elements=st.sets(st.text(), min_size=1), dtype=dtype)
+
+    @given(pdst.data_frames(columns=[col]))
+    def works_with_object_dtype(df):
+        pass
+
+    if dtype is object:
+        works_with_object_dtype()
+    else:
+        assert dtype is None
+        with pytest.raises(ValueError, match="Maybe passing dtype=object would help"):
+            works_with_object_dtype()
