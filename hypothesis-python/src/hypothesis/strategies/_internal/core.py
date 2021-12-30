@@ -1023,7 +1023,7 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
                 "strings."
             )
         raise InvalidArgument(f"thing={thing!r} must be a type")  # pragma: no cover
-    if thing in types.TypeAliasTypes:  # pragma: no cover
+    if thing in types.TypeAliasTypes:
         # Code like `st.from_type(TypeAlias)` does not make sense.
         raise InvalidArgument(
             "Cannot resolve TypeAlias to a strategy, "
@@ -1757,7 +1757,7 @@ def register_type_strategy(
 
     if not types.is_a_type(custom_type):
         raise InvalidArgument(f"custom_type={custom_type!r} must be a type")
-    elif custom_type in types.TypeAliasTypes:  # pragma: no cover
+    elif custom_type in types.TypeAliasTypes:
         raise InvalidArgument(
             f"custom_type={custom_type!r} is not allowed to be registered, "
             "because there is no such thing as a runtime instance of TypeAlias"

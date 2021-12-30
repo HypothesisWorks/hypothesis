@@ -97,6 +97,7 @@ tomli==1.2.3
     # via black
 typing-extensions==4.0.1
     # via
+    #   -r requirements/coverage.in
     #   black
     #   libcst
     #   typing-inspect

@@ -10,4 +10,5 @@ numpy
 pandas
 python-dateutil
 pytz
+typing-extensions
 -r test.in
