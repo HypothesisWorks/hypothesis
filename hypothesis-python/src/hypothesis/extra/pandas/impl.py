@@ -84,7 +84,7 @@ def elements_and_dtype(elements, dtype, source=None):
         note_deprecation(
             f"Passed dtype={dtype!r} is not a valid Pandas dtype.  We'll treat it as "
             "dtype=object for now, but this will be an error in a future version.",
-            since="RELEASEDAY",
+            since="2021-12-31",
             has_codemod=False,
         )
 

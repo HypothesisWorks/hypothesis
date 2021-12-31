@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.34.0:
+
+-------------------
+6.34.0 - 2021-12-31
+-------------------
+
+This release fixes :issue:`3133` and :issue:`3144`, where attempting
+to generate Pandas series of lists or sets would fail with confusing
+errors if you did not specify ``dtype=object``.
+
 .. _v6.33.0:
 
 -------------------
