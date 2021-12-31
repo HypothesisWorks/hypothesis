@@ -16,6 +16,7 @@ from hypothesis import given, strategies as st
 from hypothesis.extra import pandas as pdst
 
 from tests.common.arguments import argument_validation_test, e
+from tests.common.utils import checks_deprecated_behaviour
 
 BAD_ARGS = [
     e(pdst.data_frames),
@@ -91,3 +92,8 @@ def test_timestamp_as_datetime_bounds(dt):
     assert isinstance(dt, datetime)
     assert lo <= dt <= hi
     assert not isinstance(dt, pd.Timestamp)
+
+
+@checks_deprecated_behaviour
+def test_confusing_object_dtype_aliases():
+    pdst.series(elements=st.tuples(st.integers()), dtype=tuple).example()
