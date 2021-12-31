@@ -316,3 +316,19 @@ def test_cache_is_threadsafe_issue_2433_regression():
         worker.join()
 
     assert not errors
+
+
+def test_pin_and_unpin_are_noops_if_dropped():
+    # See https://github.com/HypothesisWorks/hypothesis/issues/3169
+    cache = LRUReusedCache(max_size=10)
+    cache[30] = True
+    assert 30 in cache
+
+    for i in range(20):
+        cache[i] = False
+
+    assert 30 not in cache
+    cache.pin(30)
+    assert 30 not in cache
+    cache.unpin(30)
+    assert 30 not in cache
