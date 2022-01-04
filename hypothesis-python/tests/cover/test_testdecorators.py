@@ -55,8 +55,11 @@ def test_str_addition_is_commutative(x, y):
 
 
 @fails
-@given(binary(), binary())
+@given(binary(min_size=1), binary(min_size=1))
 def test_bytes_addition_is_commutative(x, y):
+    # We enforce min_size=1 here to avoid a rare flakiness, where the
+    # test passes if x and/or y are b"" for every generated example.
+    # (the internal implementation makes this less rare for bytes)
     assert x + y == y + x
 
 
