@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/coverage.txt hypothesis-python/setup.py requirements/coverage.in
 #
-attrs==21.2.0
+attrs==21.4.0
     # via
     #   hypothesis (hypothesis-python/setup.py)
     #   pytest
@@ -36,7 +36,7 @@ mypy-extensions==0.4.3
     # via
     #   black
     #   typing-inspect
-numpy==1.21.5
+numpy==1.22.0
     # via
     #   -r requirements/coverage.in
     #   pandas
@@ -50,7 +50,7 @@ pathspec==0.9.0
     # via black
 pexpect==4.8.0
     # via -r requirements/test.in
-platformdirs==2.4.0
+platformdirs==2.4.1
     # via black
 pluggy==1.0.0
     # via pytest
