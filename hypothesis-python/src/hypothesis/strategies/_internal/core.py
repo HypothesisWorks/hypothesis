@@ -689,6 +689,9 @@ def binary(
 
     The generated :class:`python:bytes` will have a length of at least ``min_size``
     and at most ``max_size``.  If ``max_size`` is None there is no upper limit.
+    
+    To control the byte range specify a lower and upper range using ``min_value``
+    and ``max_value``.  The default range is from 0 to 255.
 
     Examples from this strategy shrink towards smaller strings and lower byte
     values.
