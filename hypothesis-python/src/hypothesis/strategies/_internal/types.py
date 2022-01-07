@@ -70,7 +70,7 @@ except AttributeError:  # pragma: no cover
 ClassVarTypes: tuple = (typing.ClassVar,)
 try:
     ClassVarTypes += (typing_extensions.ClassVar,)  # type: ignore
-except AttributeError:
+except AttributeError:  # pragma: no cover
     pass  # `typing_extensions` might not be installed
 
 
