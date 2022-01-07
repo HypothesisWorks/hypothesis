@@ -1029,6 +1029,12 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
             "Cannot resolve TypeAlias to a strategy, "
             "because there are no instances of it at runtime"
         )
+    if thing in types.ClassVarTypes:
+        # Code like `st.from_type(ClassVar)` does not make sense.
+        raise InvalidArgument(
+            "Cannot resolve ClassVar to a strategy, "
+            "because there are no instances of it at runtime"
+        )
     # Now that we know `thing` is a type, the first step is to check for an
     # explicitly registered strategy. This is the best (and hopefully most
     # common) way to resolve a type to a strategy.  Note that the value in the
@@ -1761,6 +1767,11 @@ def register_type_strategy(
         raise InvalidArgument(
             f"custom_type={custom_type!r} is not allowed to be registered, "
             "because there is no such thing as a runtime instance of TypeAlias"
+        )
+    elif custom_type in types.ClassVarTypes:
+        raise InvalidArgument(
+            f"custom_type={custom_type!r} is not allowed to be registered, "
+            "because there is no such thing as a runtime instance of ClassVar"
         )
     elif not (isinstance(strategy, SearchStrategy) or callable(strategy)):
         raise InvalidArgument(
