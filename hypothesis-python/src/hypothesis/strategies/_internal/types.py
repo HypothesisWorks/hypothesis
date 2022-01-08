@@ -67,6 +67,12 @@ try:
 except AttributeError:  # pragma: no cover
     pass  # Is missing for `typing_extensions<3.10`
 
+ClassVarTypes: tuple = (typing.ClassVar,)
+try:
+    ClassVarTypes += (typing_extensions.ClassVar,)
+except AttributeError:  # pragma: no cover
+    pass  # `typing_extensions` might not be installed
+
 
 # We use this variable to be sure that we are working with a type from `typing`:
 typing_root_type = (typing._Final, typing._GenericAlias)  # type: ignore

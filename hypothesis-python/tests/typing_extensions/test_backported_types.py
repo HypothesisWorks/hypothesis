@@ -16,6 +16,7 @@ from typing import Dict, List, Union
 import pytest
 from typing_extensions import (
     Annotated,
+    ClassVar,
     DefaultDict,
     Literal,
     NewType,
@@ -158,3 +159,19 @@ def test_type_alias_type(type_alias_type):
 
     with pytest.raises(InvalidArgument, match="is not allowed to be registered"):
         st.register_type_strategy(type_alias_type, st.none())
+
+
+@pytest.mark.parametrize(
+    "class_var_type",
+    [
+        ClassVar,
+        typing.ClassVar,
+    ],
+)
+def test_class_var_type(class_var_type):
+    strategy = st.from_type(class_var_type)
+    with pytest.raises(InvalidArgument, match="Cannot resolve ClassVar to a strategy"):
+        strategy.example()
+
+    with pytest.raises(InvalidArgument, match="is not allowed to be registered"):
+        st.register_type_strategy(class_var_type, st.none())
