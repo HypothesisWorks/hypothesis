@@ -18,6 +18,22 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.35.0:
+
+-------------------
+6.35.0 - 2022-01-08
+-------------------
+
+This release disallows using :obj:`python:typing.ClassVar`
+with :func:`~hypothesis.strategies.from_type`
+and :func:`~hypothesis.strategies.register_type_strategy`.
+
+Why?
+Because ``ClassVar`` can only be used during ``class`` definition.
+We don't generate class attributes.
+
+It also does not make sense as a runtime type on its own.
+
 .. _v6.34.2:
 
 -------------------
