@@ -75,7 +75,7 @@ except AttributeError:  # pragma: no cover
 
 FinalTypes: tuple = ()
 try:
-    FinalTypes += (typing.Final,)
+    FinalTypes += (typing.Final,)  # type: ignore
 except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.8`
 try:
