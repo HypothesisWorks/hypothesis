@@ -73,7 +73,11 @@ try:
 except AttributeError:  # pragma: no cover
     pass  # `typing_extensions` might not be installed
 
-FinalTypes: tuple = (typing.Final,)
+FinalTypes: tuple = ()
+try:
+    FinalTypes += (typing.Final,)
+except AttributeError:  # pragma: no cover
+    pass  # Is missing for `python<3.8`
 try:
     FinalTypes += (typing_extensions.Final,)
 except AttributeError:  # pragma: no cover
