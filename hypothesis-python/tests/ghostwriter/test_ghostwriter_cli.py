@@ -112,7 +112,7 @@ def test_can_import_from_scripts_in_working_dir(tmpdir):
         text=True,
         cwd=tmpdir,
     )
-    assert result.returncode == 0
+    assert result.returncode == 0, (result.stdout, result.stderr)
     assert "Error: " not in result.stderr
 
 
