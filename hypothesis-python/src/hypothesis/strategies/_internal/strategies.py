@@ -24,6 +24,8 @@ from typing import (
     overload,
 )
 
+from typing_extensions import ParamSpec
+
 from hypothesis._settings import HealthCheck, Phase, Verbosity, settings
 from hypothesis.control import _current_build_context, assume
 from hypothesis.errors import (
@@ -54,6 +56,7 @@ T = TypeVar("T")
 T3 = TypeVar("T3")
 T4 = TypeVar("T4")
 T5 = TypeVar("T5")
+P = ParamSpec("P")
 
 calculating = UniqueIdentifier("calculating")
 

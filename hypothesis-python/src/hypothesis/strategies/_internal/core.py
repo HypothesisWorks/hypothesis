@@ -43,7 +43,7 @@ from typing import (
 from uuid import UUID
 
 import attr
-from typing_extensions import Concatenate, ParamSpec
+from typing_extensions import Concatenate
 
 from hypothesis.control import cleanup, note
 from hypothesis.errors import InvalidArgument, ResolutionFailed
@@ -95,6 +95,7 @@ from hypothesis.strategies._internal.recursive import RecursiveStrategy
 from hypothesis.strategies._internal.shared import SharedStrategy
 from hypothesis.strategies._internal.strategies import (
     Ex,
+    P,
     SampledFromStrategy,
     T,
     one_of,
@@ -1451,9 +1452,6 @@ class DrawFn(Protocol):
         raise NotImplementedError
 
 
-P = ParamSpec("P")
-
-
 @cacheable
 def composite(
     f: Callable[Concatenate[DrawFn, P], Ex]
@@ -1851,10 +1849,6 @@ def emails() -> SearchStrategy[str]:
     return builds("{}@{}".format, local_part, domains()).filter(
         lambda addr: len(addr) <= 254
     )
-
-
-P = ParamSpec("P")
-T = TypeVar("T")
 
 
 @defines_strategy()
