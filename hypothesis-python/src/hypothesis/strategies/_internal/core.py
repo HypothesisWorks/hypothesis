@@ -1854,10 +1854,10 @@ def emails() -> SearchStrategy[str]:
 @defines_strategy()
 def functions(
     *,
-    like: Callable[P, T] = lambda: None,
-    returns: Optional[SearchStrategy[T]] = None,
+    like: Callable[P, Any] = lambda: None,
+    returns: Optional[SearchStrategy[Any]] = None,
     pure: bool = False,
-) -> SearchStrategy[Callable[P, T]]:
+) -> SearchStrategy[Callable[P, Any]]:
     # The proper type signature of `functions()` would have T instead of Any, but mypy
     # disallows default args for generics: https://github.com/python/mypy/issues/3737
     """functions(*, like=lambda: None, returns=none(), pure=False)
