@@ -142,11 +142,51 @@ def test_drawfn_type_tracing(tmpdir):
     assert got == "str"
 
 
+def test_composite_type_tracing(tmpdir):
+    f = tmpdir.join("check_mypy_on_st_composite.py")
+    f.write(
+        "from hypothesis.strategies import composite, DrawFn\n"
+        "@composite"
+        "def comp(draw: DrawFn, x: int) -> int:\n"
+        "    return x\n"
+        "reveal_type(comp)"
+    )
+    got = get_mypy_analysed_type(str(f.realpath()), ...)
+    assert got == "def (x: int) -> int"
+
+
+def test_functions_type_tracing(tmpdir):
+    f = tmpdir.join("check_mypy_on_st_functions.py")
+    f.write(
+        "from hypothesis.strategies import functions\n"
+        "def like(x: int, y: str) -> str:"
+        "    return str(x) + y"
+        "st = functions(like)"
+        "reveal_type(st)"
+    )
+    got = get_mypy_analysed_type(str(f.realpath()), ...)
+    assert got == "SearchStrategy[Callable[[int, str], str]]"
+
+
 def test_settings_preserves_type(tmpdir):
     f = tmpdir.join("check_mypy_on_settings.py")
     f.write(
         "from hypothesis import settings\n"
         "@settings(max_examples=10)\n"
+        "def f(x: int) -> int:\n"
+        "    return x\n"
+        "reveal_type(f)\n"
+    )
+    got = get_mypy_analysed_type(str(f.realpath()), ...)
+    assert got == "def (x: int) -> int"
+
+
+def test_given_preserves_type(tmpdir):
+    f = tmpdir.join("check_mypy_on_given.py")
+    f.write(
+        "from hypothesis import given\n"
+        "from hypothesis.strategies import integers\n"
+        "@given(integers())\n"
         "def f(x: int) -> int:\n"
         "    return x\n"
         "reveal_type(f)\n"
