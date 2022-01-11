@@ -43,6 +43,7 @@ from typing import (
 from uuid import UUID
 
 import attr
+from typing_extensions import Concatenate, ParamSpec
 
 from hypothesis.control import cleanup, note
 from hypothesis.errors import InvalidArgument, ResolutionFailed
@@ -1450,8 +1451,13 @@ class DrawFn(Protocol):
         raise NotImplementedError
 
 
+P = ParamSpec("P")
+
+
 @cacheable
-def composite(f: Callable[..., Ex]) -> Callable[..., SearchStrategy[Ex]]:
+def composite(
+    f: Callable[Concatenate[DrawFn, P], Ex]
+) -> Callable[P, SearchStrategy[Ex]]:
     """Defines a strategy that is built out of potentially arbitrarily many
     other strategies.
 
@@ -1847,13 +1853,14 @@ def emails() -> SearchStrategy[str]:
     )
 
 
+P = ParamSpec("P")
 @defines_strategy()
 def functions(
     *,
-    like: Callable[..., Any] = lambda: None,
+    like: Callable[P, Any] = lambda: None,
     returns: Optional[SearchStrategy[Any]] = None,
     pure: bool = False,
-) -> SearchStrategy[Callable[..., Any]]:
+) -> SearchStrategy[Callable[P, Any]]:
     # The proper type signature of `functions()` would have T instead of Any, but mypy
     # disallows default args for generics: https://github.com/python/mypy/issues/3737
     """functions(*, like=lambda: None, returns=none(), pure=False)
