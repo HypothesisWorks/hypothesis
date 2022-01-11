@@ -37,7 +37,6 @@ from typing import (
 from unittest import TestCase
 
 import attr
-from typing_extensions import ParamSpec
 
 from hypothesis import strategies as st
 from hypothesis._settings import (
@@ -949,13 +948,10 @@ class HypothesisHandle:
             return self.__cached_target
 
 
-P = ParamSpec("P")
-
-
 def given(
     *_given_arguments: Union[SearchStrategy, InferType],
     **_given_kwargs: Union[SearchStrategy, InferType],
-) -> Callable[[Callable[P, Union[None, Coroutine[Any, Any, None]]]], Callable[P, None]]:
+) -> Callable[[Callable[..., Union[None, Coroutine[Any, Any, None]]]], Callable[..., None]]:
     """A decorator for turning a test function that accepts arguments into a
     randomized test.
 

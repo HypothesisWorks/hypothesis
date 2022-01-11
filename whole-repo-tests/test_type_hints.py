@@ -181,20 +181,6 @@ def test_settings_preserves_type(tmpdir):
     assert got == "def (x: int) -> int"
 
 
-def test_given_preserves_type(tmpdir):
-    f = tmpdir.join("check_mypy_on_given.py")
-    f.write(
-        "from hypothesis import given\n"
-        "from hypothesis.strategies import integers\n"
-        "@given(integers())\n"
-        "def f(x: int) -> int:\n"
-        "    return x\n"
-        "reveal_type(f)\n"
-    )
-    got = get_mypy_analysed_type(str(f.realpath()), ...)
-    assert got == "def (x: int) -> int"
-
-
 def test_stateful_bundle_generic_type(tmpdir):
     f = tmpdir.join("check_mypy_on_stateful_bundle.py")
     f.write(
