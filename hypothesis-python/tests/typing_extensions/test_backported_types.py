@@ -18,6 +18,7 @@ from typing_extensions import (
     Annotated,
     ClassVar,
     DefaultDict,
+    Final,
     Literal,
     NewType,
     Type,
@@ -175,3 +176,24 @@ def test_class_var_type(class_var_type):
 
     with pytest.raises(InvalidArgument, match="is not allowed to be registered"):
         st.register_type_strategy(class_var_type, st.none())
+
+
+@pytest.mark.parametrize(
+    "final_var_type",
+    [
+        Final,
+        pytest.param(
+            getattr(typing, "Final", None),
+            marks=pytest.mark.skipif(
+                sys.version_info < (3, 8), reason="Final was added in 3.8"
+            ),
+        ),
+    ],
+)
+def test_final_type(final_var_type):
+    strategy = st.from_type(final_var_type)
+    with pytest.raises(InvalidArgument, match="Cannot resolve Final to a strategy"):
+        strategy.example()
+
+    with pytest.raises(InvalidArgument, match="is not allowed to be registered"):
+        st.register_type_strategy(final_var_type, st.none())

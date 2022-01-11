@@ -1023,18 +1023,14 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
                 "strings."
             )
         raise InvalidArgument(f"thing={thing!r} must be a type")  # pragma: no cover
-    if thing in types.TypeAliasTypes:
-        # Code like `st.from_type(TypeAlias)` does not make sense.
-        raise InvalidArgument(
-            "Cannot resolve TypeAlias to a strategy, "
-            "because there are no instances of it at runtime"
-        )
-    if thing in types.ClassVarTypes:
-        # Code like `st.from_type(ClassVar)` does not make sense.
-        raise InvalidArgument(
-            "Cannot resolve ClassVar to a strategy, "
-            "because there are no instances of it at runtime"
-        )
+    for type_name, type_aliases in types.NON_RUNTIME_TYPES.items():
+        if thing in type_aliases:
+            # Some code like `st.from_type(TypeAlias)` does not make sense.
+            # Because there are types in python that do not exist in runtime.
+            raise InvalidArgument(
+                f"Cannot resolve {type_name} to a strategy, "
+                "because there are no instances of it at runtime"
+            )
     # Now that we know `thing` is a type, the first step is to check for an
     # explicitly registered strategy. This is the best (and hopefully most
     # common) way to resolve a type to a strategy.  Note that the value in the
@@ -1763,17 +1759,13 @@ def register_type_strategy(
 
     if not types.is_a_type(custom_type):
         raise InvalidArgument(f"custom_type={custom_type!r} must be a type")
-    elif custom_type in types.TypeAliasTypes:
-        raise InvalidArgument(
-            f"custom_type={custom_type!r} is not allowed to be registered, "
-            "because there is no such thing as a runtime instance of TypeAlias"
-        )
-    elif custom_type in types.ClassVarTypes:
-        raise InvalidArgument(
-            f"custom_type={custom_type!r} is not allowed to be registered, "
-            "because there is no such thing as a runtime instance of ClassVar"
-        )
-    elif not (isinstance(strategy, SearchStrategy) or callable(strategy)):
+    for type_name, type_aliases in types.NON_RUNTIME_TYPES.items():
+        if custom_type in type_aliases:
+            raise InvalidArgument(
+                f"custom_type={custom_type!r} is not allowed to be registered, "
+                f"because there is no such thing as a runtime instance of {type_name}"
+            )
+    if not (isinstance(strategy, SearchStrategy) or callable(strategy)):
         raise InvalidArgument(
             "strategy=%r must be a SearchStrategy, or a function that takes "
             "a generic type and returns a specific SearchStrategy"
