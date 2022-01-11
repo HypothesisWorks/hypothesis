@@ -146,10 +146,10 @@ def test_composite_type_tracing(tmpdir):
     f = tmpdir.join("check_mypy_on_st_composite.py")
     f.write(
         "from hypothesis.strategies import composite, DrawFn\n"
-        "@composite"
+        "@composite\n"
         "def comp(draw: DrawFn, x: int) -> int:\n"
         "    return x\n"
-        "reveal_type(comp)"
+        "reveal_type(comp)\n"
     )
     got = get_mypy_analysed_type(str(f.realpath()), ...)
     assert got == "def (x: int) -> int"
@@ -159,10 +159,10 @@ def test_functions_type_tracing(tmpdir):
     f = tmpdir.join("check_mypy_on_st_functions.py")
     f.write(
         "from hypothesis.strategies import functions\n"
-        "def like(x: int, y: str) -> str:"
-        "    return str(x) + y"
-        "st = functions(like)"
-        "reveal_type(st)"
+        "def like(x: int, y: str) -> str:\n"
+        "    return str(x) + y\n"
+        "st = functions(like)\n"
+        "reveal_type(st)\n"
     )
     got = get_mypy_analysed_type(str(f.realpath()), ...)
     assert got == "SearchStrategy[Callable[[int, str], str]]"
