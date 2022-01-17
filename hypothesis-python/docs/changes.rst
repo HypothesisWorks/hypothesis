@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.35.1:
+
+-------------------
+6.35.1 - 2022-01-17
+-------------------
+
+This patch fixes ``hypothesis write`` output highlighting with :pypi:`rich`
+version 12.0 and later.
+
 .. _v6.35.0:
 
 -------------------
