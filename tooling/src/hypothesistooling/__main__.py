@@ -384,8 +384,8 @@ def run_tox(task, version):
 # and the corresponding @python_tests function below.
 PY37 = "3.7.12"
 PY38 = PYMAIN = "3.8.12"  # Sync PYMAIN minor version with GH Actions main.yml
-PY39 = "3.9.9"
-PY310 = "3.10.1"
+PY39 = "3.9.10"
+PY310 = "3.10.2"
 PY311 = "3.11-dev"
 PYPY37 = "pypy3.7-7.3.7"
 PYPY38 = "pypy3.8-7.3.7"
