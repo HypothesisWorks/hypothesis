@@ -49,7 +49,7 @@ def test_int_addition_is_commutative(x, y):
 
 
 @fails
-@given(text(), text())
+@given(text(min_size=1), text(min_size=1))
 def test_str_addition_is_commutative(x, y):
     assert x + y == y + x
 
@@ -145,18 +145,6 @@ def test_one_of_produces_different_values(x, y):
 @given(just(42))
 def test_is_the_answer(x):
     assert x == 42
-
-
-@fails
-@given(text(), text())
-def test_text_addition_is_not_commutative(x, y):
-    assert x + y == y + x
-
-
-@fails
-@given(binary(), binary())
-def test_binary_addition_is_not_commutative(x, y):
-    assert x + y == y + x
 
 
 @given(integers(1, 10))
