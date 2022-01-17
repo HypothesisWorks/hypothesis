@@ -68,9 +68,9 @@ jobs:
           ~/wheelhouse
           ~/.local
           vendor/bundle
-        key: deps-${{ runner.os }}-${{ hashFiles('requirements/tools.txt') }}-${{ matrix.task }}
+        key: deps-${{ runner.os }}-${{ hashFiles('requirements/*.txt') }}-${{ matrix.task }}
         restore-keys: |
-          deps-${{ runner.os }}-${{ hashFiles('requirements/tools.txt') }}
+          deps-${{ runner.os }}-${{ hashFiles('requirements/*.txt') }}
           deps-${{ runner.os }}
     - name: Install dotnet6 for Pyjion
       if: ${{ endsWith(matrix.task, '-pyjion') }}
@@ -120,9 +120,9 @@ jobs:
         path: |
           ~\appdata\local\pip\cache
           vendor\bundle
-        key: deps-${{ runner.os }}-${{ matrix.python-architecture }}-${{ hashFiles('requirements/tools.txt') }}-${{ matrix.task }}
+        key: deps-${{ runner.os }}-${{ matrix.python-architecture }}-${{ hashFiles('requirements/*.txt') }}-${{ matrix.task }}
         restore-keys: |
-          deps-${{ runner.os }}-${{ matrix.python-architecture }}-${{ hashFiles('requirements/tools.txt') }}
+          deps-${{ runner.os }}-${{ matrix.python-architecture }}-${{ hashFiles('requirements/*.txt') }}
           deps-${{ runner.os }}-${{ matrix.python-architecture }}
     - name: Install dependencies
       run: |
@@ -153,7 +153,7 @@ jobs:
         path: |
           ~/.cache
           ~/Library/Caches/pip
-        key: deps-${{ runner.os }}-${{ hashFiles('requirements/tools.txt') }}-${{ matrix.task }}
+        key: deps-${{ runner.os }}-${{ hashFiles('requirements/*.txt') }}-${{ matrix.task }}
     - name: Run tests
       run: TASK=${{ matrix.task }} ./build.sh
 
@@ -183,9 +183,9 @@ jobs:
           ~/wheelhouse
           ~/.local
           vendor/bundle
-        key: deps-${{ runner.os }}-${{ hashFiles('requirements/tools.txt') }}-${{ matrix.task }}
+        key: deps-${{ runner.os }}-${{ hashFiles('requirements/*.txt') }}-${{ matrix.task }}
         restore-keys: |
-          deps-${{ runner.os }}-${{ hashFiles('requirements/tools.txt') }}
+          deps-${{ runner.os }}-${{ hashFiles('requirements/*.txt') }}
           deps-${{ runner.os }}
     - name: Deploy package
       env:
