@@ -142,6 +142,19 @@ def test_drawfn_type_tracing(tmpdir):
     assert got == "str"
 
 
+def test_composite_type_tracing(tmpdir):
+    f = tmpdir.join("check_mypy_on_st_composite.py")
+    f.write(
+        "from hypothesis.strategies import composite, DrawFn\n"
+        "@composite\n"
+        "def comp(draw: DrawFn, x: int) -> int:\n"
+        "    return x\n"
+        "reveal_type(comp)\n"
+    )
+    got = get_mypy_analysed_type(str(f.realpath()), ...)
+    assert got == "def (x: int) -> int"
+
+
 def test_settings_preserves_type(tmpdir):
     f = tmpdir.join("check_mypy_on_settings.py")
     f.write(

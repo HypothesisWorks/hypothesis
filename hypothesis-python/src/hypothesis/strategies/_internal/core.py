@@ -111,6 +111,14 @@ try:
 except ImportError:  # < py3.8
     Protocol = object  # type: ignore[assignment]
 
+try:
+    from typing import Concatenate, ParamSpec
+except ImportError:
+    try:
+        from typing_extensions import Concatenate, ParamSpec
+    except ImportError:
+        ParamSpec = None
+
 UniqueBy = Union[Callable[[Ex], Hashable], Tuple[Callable[[Ex], Hashable], ...]]
 
 
@@ -1494,6 +1502,16 @@ def composite(f: Callable[..., Ex]) -> Callable[..., SearchStrategy[Ex]]:
     if special_method is not None:
         return special_method(accept)
     return accept
+
+
+if typing.TYPE_CHECKING or ParamSpec is not None:
+    P = ParamSpec("P")
+    _composite = composite
+
+    def composite(
+        f: Callable[Concatenate[DrawFn, P], Ex]
+    ) -> Callable[P, SearchStrategy[Ex]]:
+        return _composite(f)
 
 
 @defines_strategy(force_reusable_values=True)
