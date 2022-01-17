@@ -112,7 +112,7 @@ except ImportError:  # < py3.8
     Protocol = object  # type: ignore[assignment]
 
 try:
-    from typing import Concatenate, ParamSpec
+    from typing import Concatenate, ParamSpec  # type: ignore
 except ImportError:
     try:
         from typing_extensions import Concatenate, ParamSpec
@@ -1458,18 +1458,8 @@ class DrawFn(Protocol):
         raise NotImplementedError
 
 
-@cacheable
-def composite(f: Callable[..., Ex]) -> Callable[..., SearchStrategy[Ex]]:
-    """Defines a strategy that is built out of potentially arbitrarily many
-    other strategies.
-
-    This is intended to be used as a decorator. See
-    :ref:`the full documentation for more details <composite-strategies>`
-    about how to use this function.
-
-    Examples from this strategy shrink by shrinking the output of each draw
-    call.
-    """
+def _composite(f):
+    # Wrapped below, using ParamSpec if available
     if isinstance(f, (classmethod, staticmethod)):
         special_method = type(f)
         f = f.__func__
@@ -1506,11 +1496,36 @@ def composite(f: Callable[..., Ex]) -> Callable[..., SearchStrategy[Ex]]:
 
 if typing.TYPE_CHECKING or ParamSpec is not None:
     P = ParamSpec("P")
-    _composite = composite
 
     def composite(
         f: Callable[Concatenate[DrawFn, P], Ex]
     ) -> Callable[P, SearchStrategy[Ex]]:
+        """Defines a strategy that is built out of potentially arbitrarily many
+        other strategies.
+
+        This is intended to be used as a decorator. See
+        :ref:`the full documentation for more details <composite-strategies>`
+        about how to use this function.
+
+        Examples from this strategy shrink by shrinking the output of each draw
+        call.
+        """
+        return _composite(f)
+
+else:
+
+    @cacheable
+    def composite(f: Callable[..., Ex]) -> Callable[..., SearchStrategy[Ex]]:
+        """Defines a strategy that is built out of potentially arbitrarily many
+        other strategies.
+
+        This is intended to be used as a decorator. See
+        :ref:`the full documentation for more details <composite-strategies>`
+        about how to use this function.
+
+        Examples from this strategy shrink by shrinking the output of each draw
+        call.
+        """
         return _composite(f)
 
 
