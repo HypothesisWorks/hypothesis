@@ -91,11 +91,13 @@ typing_root_type = (typing._Final, typing._GenericAlias)  # type: ignore
 # and are just added for more fancy type annotations.
 # `Final` is a great example: it just indicates
 # that this value can't be reassigned.
-NON_RUNTIME_TYPES = {
-    "ClassVar": ClassVarTypes,
-    "TypeAlias": TypeAliasTypes,
-    "Final": FinalTypes,
-}
+NON_RUNTIME_TYPES = frozenset(
+    (
+        *ClassVarTypes,
+        *TypeAliasTypes,
+        *FinalTypes,
+    )
+)
 
 
 def type_sorting_key(t):

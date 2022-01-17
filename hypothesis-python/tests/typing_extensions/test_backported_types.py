@@ -155,10 +155,14 @@ def test_annotated_extra_metadata(data):
 )
 def test_type_alias_type(type_alias_type):
     strategy = st.from_type(type_alias_type)
-    with pytest.raises(InvalidArgument, match="Cannot resolve TypeAlias to a strategy"):
+    with pytest.raises(
+        InvalidArgument, match=r"Could not resolve .*TypeAlias to a strategy"
+    ):
         strategy.example()
 
-    with pytest.raises(InvalidArgument, match="is not allowed to be registered"):
+    with pytest.raises(
+        InvalidArgument, match="TypeAlias is not allowed to be registered"
+    ):
         st.register_type_strategy(type_alias_type, st.none())
 
 
@@ -171,10 +175,14 @@ def test_type_alias_type(type_alias_type):
 )
 def test_class_var_type(class_var_type):
     strategy = st.from_type(class_var_type)
-    with pytest.raises(InvalidArgument, match="Cannot resolve ClassVar to a strategy"):
+    with pytest.raises(
+        InvalidArgument, match=r"Could not resolve .*ClassVar to a strategy"
+    ):
         strategy.example()
 
-    with pytest.raises(InvalidArgument, match="is not allowed to be registered"):
+    with pytest.raises(
+        InvalidArgument, match="ClassVar is not allowed to be registered"
+    ):
         st.register_type_strategy(class_var_type, st.none())
 
 
@@ -192,8 +200,10 @@ def test_class_var_type(class_var_type):
 )
 def test_final_type(final_var_type):
     strategy = st.from_type(final_var_type)
-    with pytest.raises(InvalidArgument, match="Cannot resolve Final to a strategy"):
+    with pytest.raises(
+        InvalidArgument, match=r"Could not resolve .*Final to a strategy"
+    ):
         strategy.example()
 
-    with pytest.raises(InvalidArgument, match="is not allowed to be registered"):
+    with pytest.raises(InvalidArgument, match="Final is not allowed to be registered"):
         st.register_type_strategy(final_var_type, st.none())
