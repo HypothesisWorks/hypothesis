@@ -244,7 +244,7 @@ else:
         else:
             code = Syntax(
                 code,
-                lexer_name="python",
+                "python",
                 background_color="default",
                 theme="default" if guess_background_color() == "light" else "monokai",
             )
