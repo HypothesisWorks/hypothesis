@@ -27,11 +27,11 @@ pip install ".[dpcontracts]"
 $PYTEST tests/dpcontracts/
 pip uninstall -y dpcontracts
 
-pip install fakeredis
+pip install "$(grep 'fakeredis==' ../requirements/coverage.txt)"
 $PYTEST tests/redis/
 pip uninstall -y redis fakeredis
 
-pip install 'typing_extensions>=4.0.0'
+pip install "$(grep 'typing-extensions==' ../requirements/coverage.txt)"
 $PYTEST tests/typing_extensions/
 if [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 7))')" = "False" ] ; then
   # Required by importlib_metadata backport, which we don't want to break
@@ -40,7 +40,7 @@ fi
 
 pip install ".[lark]"
 $PYTEST tests/lark/
-pip install lark-parser==0.7.1
+pip install "$(grep 'lark-parser==' ../requirements/coverage.txt)"
 $PYTEST tests/lark/
 pip uninstall -y lark-parser
 
@@ -49,7 +49,14 @@ if [ "$(python -c $'import platform, sys; print(sys.version_info.releaselevel ==
   $PYTEST tests/codemods/
   pip uninstall -y libcst click
 
-  pip install black numpy
+  if [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 7))')" = "True" ] ; then
+    # Per NEP-29, this is the last version to support Python 3.7
+    pip install numpy==1.21.5
+  else
+    pip install "$(grep 'numpy==' ../requirements/coverage.txt)"
+  fi
+
+  pip install "$(grep 'black==' ../requirements/coverage.txt)"
   $PYTEST tests/ghostwriter/
   pip uninstall -y black numpy
 fi
@@ -70,9 +77,9 @@ if [ "$(python -c 'import platform; print(platform.python_implementation())')" !
   HYPOTHESIS_DJANGO_USETZ=FALSE python -m tests.django.manage test tests.django
   pip uninstall -y django pytz
 
-  pip install numpy
+  pip install "$(grep 'numpy==' ../requirements/coverage.txt)"
   $PYTEST tests/numpy
 
-  pip install pandas
+  pip install "$(grep 'pandas==' ../requirements/coverage.txt)"
   $PYTEST tests/pandas
 fi
