@@ -1028,7 +1028,7 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
         # Because there are types in python that do not exist in runtime.
         raise InvalidArgument(
             f"Could not resolve {thing!r} to a strategy, "
-            "because there is no such thing as a runtime instance of it"
+            f"because there is no such thing as a runtime instance of {custom_type.__name__}"
         )
     # Now that we know `thing` is a type, the first step is to check for an
     # explicitly registered strategy. This is the best (and hopefully most
@@ -1761,9 +1761,9 @@ def register_type_strategy(
     if custom_type in types.NON_RUNTIME_TYPES:
         raise InvalidArgument(
             f"custom_type={custom_type!r} is not allowed to be registered, "
-            f"because there is no such thing as a runtime instance of it"
+            f"because there is no such thing as a runtime instance of {custom_type.__name__}"
         )
-    if not (isinstance(strategy, SearchStrategy) or callable(strategy)):
+    elif not (isinstance(strategy, SearchStrategy) or callable(strategy)):
         raise InvalidArgument(
             "strategy=%r must be a SearchStrategy, or a function that takes "
             "a generic type and returns a specific SearchStrategy"
