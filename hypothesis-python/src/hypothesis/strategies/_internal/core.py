@@ -1023,17 +1023,12 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
                 "strings."
             )
         raise InvalidArgument(f"thing={thing!r} must be a type")  # pragma: no cover
-    if thing in types.TypeAliasTypes:
-        # Code like `st.from_type(TypeAlias)` does not make sense.
+    if thing in types.NON_RUNTIME_TYPES:
+        # Some code like `st.from_type(TypeAlias)` does not make sense.
+        # Because there are types in python that do not exist in runtime.
         raise InvalidArgument(
-            "Cannot resolve TypeAlias to a strategy, "
-            "because there are no instances of it at runtime"
-        )
-    if thing in types.ClassVarTypes:
-        # Code like `st.from_type(ClassVar)` does not make sense.
-        raise InvalidArgument(
-            "Cannot resolve ClassVar to a strategy, "
-            "because there are no instances of it at runtime"
+            f"Could not resolve {thing!r} to a strategy, "
+            f"because there is no such thing as a runtime instance of {thing!r}"
         )
     # Now that we know `thing` is a type, the first step is to check for an
     # explicitly registered strategy. This is the best (and hopefully most
@@ -1763,15 +1758,10 @@ def register_type_strategy(
 
     if not types.is_a_type(custom_type):
         raise InvalidArgument(f"custom_type={custom_type!r} must be a type")
-    elif custom_type in types.TypeAliasTypes:
+    if custom_type in types.NON_RUNTIME_TYPES:
         raise InvalidArgument(
             f"custom_type={custom_type!r} is not allowed to be registered, "
-            "because there is no such thing as a runtime instance of TypeAlias"
-        )
-    elif custom_type in types.ClassVarTypes:
-        raise InvalidArgument(
-            f"custom_type={custom_type!r} is not allowed to be registered, "
-            "because there is no such thing as a runtime instance of ClassVar"
+            f"because there is no such thing as a runtime instance of {custom_type!r}"
         )
     elif not (isinstance(strategy, SearchStrategy) or callable(strategy)):
         raise InvalidArgument(

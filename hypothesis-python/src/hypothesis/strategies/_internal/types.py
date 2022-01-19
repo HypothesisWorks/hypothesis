@@ -73,9 +73,31 @@ try:
 except AttributeError:  # pragma: no cover
     pass  # `typing_extensions` might not be installed
 
+FinalTypes: tuple = ()
+try:
+    FinalTypes += (typing.Final,)  # type: ignore
+except AttributeError:  # pragma: no cover
+    pass  # Is missing for `python<3.8`
+try:
+    FinalTypes += (typing_extensions.Final,)
+except AttributeError:  # pragma: no cover
+    pass  # `typing_extensions` might not be installed
 
 # We use this variable to be sure that we are working with a type from `typing`:
 typing_root_type = (typing._Final, typing._GenericAlias)  # type: ignore
+
+# We use this to disallow all non-runtime types from being registered and resolved.
+# By "non-runtime" we mean: types that do not really exist in python's
+# and are just added for more fancy type annotations.
+# `Final` is a great example: it just indicates
+# that this value can't be reassigned.
+NON_RUNTIME_TYPES = frozenset(
+    (
+        *ClassVarTypes,
+        *TypeAliasTypes,
+        *FinalTypes,
+    )
+)
 
 
 def type_sorting_key(t):
