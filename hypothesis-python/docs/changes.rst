@@ -18,6 +18,22 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.36.0:
+
+-------------------
+6.36.0 - 2022-01-19
+-------------------
+
+This release disallows using :obj:`python:typing.Final`
+with :func:`~hypothesis.strategies.from_type`
+and :func:`~hypothesis.strategies.register_type_strategy`.
+
+Why?
+Because ``Final`` can only be used during ``class`` definition.
+We don't generate class attributes.
+
+It also does not make sense as a runtime type on its own.
+
 .. _v6.35.1:
 
 -------------------
