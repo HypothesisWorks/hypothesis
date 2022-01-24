@@ -125,10 +125,18 @@ current_pytest_item = DynamicVariable(None)
 
 def format_exception(err, tb):
     # Try using Pytest to match the currently configured traceback style
-    if current_pytest_item.value is not None and "_pytest._code" in sys.modules:
-        item = current_pytest_item.value
-        ExceptionInfo = sys.modules["_pytest._code"].ExceptionInfo
-        return str(item.repr_failure(ExceptionInfo((type(err), err, tb)))) + "\n"
+    if current_pytest_item.value is not None:
+        if "pytest" in sys.modules or "_pytest._code" in sys.modules:
+            try:
+                ExceptionInfo = sys.modules["pytest"].ExceptionInfo
+            except (AttributeError, KeyError):
+                # AttributeError - `ExceptionInfo` is in `pytest` namespace
+                #   since >=7.0.0
+                # KeyError - `_pytest` is imported but not `pytest` itself
+                ExceptionInfo = sys.modules["_pytest._code"].ExceptionInfo
+
+            item = current_pytest_item.value
+            return str(item.repr_failure(ExceptionInfo((type(err), err, tb)))) + "\n"
 
     # Or use better_exceptions, if that's installed and enabled
     if "better_exceptions" in sys.modules:
