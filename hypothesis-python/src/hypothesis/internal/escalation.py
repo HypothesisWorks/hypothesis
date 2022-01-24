@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import contextlib
 import os
 import sys
 import traceback
@@ -123,11 +124,19 @@ def get_interesting_origin(exception):
 current_pytest_item = DynamicVariable(None)
 
 
+def _get_exceptioninfo():
+    # ExceptionInfo was moved to the top-level namespace in Pytest 7.0
+    for module in ["pytest", "_pytest._code"]:
+        with contextlib.suppress(Exception):
+            return sys.modules[module].ExceptionInfo
+    return None  # pragma: no cover  # coverage tests always use pytest
+
+
 def format_exception(err, tb):
     # Try using Pytest to match the currently configured traceback style
-    if current_pytest_item.value is not None and "_pytest._code" in sys.modules:
+    ExceptionInfo = _get_exceptioninfo()
+    if current_pytest_item.value is not None and ExceptionInfo is not None:
         item = current_pytest_item.value
-        ExceptionInfo = sys.modules["_pytest._code"].ExceptionInfo
         return str(item.repr_failure(ExceptionInfo((type(err), err, tb)))) + "\n"
 
     # Or use better_exceptions, if that's installed and enabled

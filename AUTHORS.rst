@@ -86,6 +86,7 @@ their individual contributions.
 * `Lampros Mountrakis <https://www.github.com/lmount>`_
 * `Lea Provenzano <https://github.com/leaprovenzano>`_
 * `Lee Begg <https://www.github.com/llnz2>`_
+* `Libor Martínek <https://github.com/bibajz>`_
 * `Lisa Goeller <https://www.github.com/lgoeller>`_
 * `Louis Taylor <https://github.com/kragniz>`_
 * `Luke Barone-Adesi <https://github.com/baluke>`_
