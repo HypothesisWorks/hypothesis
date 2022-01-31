@@ -31,11 +31,8 @@ beautifulsoup4==4.10.0
     # via sphinx-codeautolink
 black==22.1.0
     # via
-    #   blacken-docs
     #   ipython
     #   shed
-blacken-docs==1.12.0
-    # via -r requirements/tools.in
 bleach==4.1.0
     # via readme-renderer
 certifi==2021.10.8
