@@ -19,7 +19,7 @@ try:
     # We prefer to use importlib.metadata, or the backport on Python <= 3.7,
     # because it's much faster than pkg_resources (200ms import time speedup).
     try:
-        from importlib import metadata as importlib_metadata  # type: ignore
+        from importlib import metadata as importlib_metadata
     except ImportError:
         import importlib_metadata  # type: ignore  # mypy thinks this is a redefinition
 
