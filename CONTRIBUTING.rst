@@ -61,16 +61,6 @@ You may wish to do all of this in a
 Will create an isolated environment where you can install and try out
 Hypothesis without affecting your system packages.
 
-----------
-Codespaces
-----------
-
-We support `GitHub Codespaces <https://github.com/features/codespaces>`_.
-It really helps us to make the contribution process easier.
-
-It is pre-configured to install all the requirements for you.
-The only thing left for a contributor is to press "Open with Codespaces" button.
-
 -----------------------
 Copyright and Licensing
 -----------------------
