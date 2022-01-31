@@ -9,9 +9,8 @@ Hypothesis.
 An example
 ----------
 
-Suppose we've written a `run length encoding
-<https://en.wikipedia.org/wiki/Run-length_encoding>`_ system and we want to test
-it out.
+Suppose we've written a :wikipedia:`run length encoding <Run-length_encoding>`
+system and we want to test it out.
 
 We have the following code which I took straight from the
 `Rosetta Code <https://rosettacode.org/wiki/Run-length_encoding>`_ wiki (OK, I

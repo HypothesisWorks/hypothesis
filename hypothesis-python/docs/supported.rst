@@ -98,6 +98,6 @@ Regularly verifying this
 ------------------------
 
 Everything mentioned above as explicitly supported is checked on every commit
-with `GitHub Actions <https://github.com/HypothesisWorks/hypothesis/actions>`__.
+with :gh-file:`GitHub Actions <actions>`.
 Our continuous delivery pipeline runs all of these checks before publishing
 each release, so when we say they're supported we really mean it.

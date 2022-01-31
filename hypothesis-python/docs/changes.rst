@@ -4,7 +4,7 @@ Changelog
 
 This is a record of all past Hypothesis releases and what went into them,
 in reverse chronological order. All previous releases should still be available
-on `PyPI <https://pypi.org/project/hypothesis/>`__.
+:pypi:`on PyPI <hypothesis>`.
 
 
 Hypothesis 6.x
@@ -5468,7 +5468,7 @@ This patch updates some docstrings, but has no runtime changes.
 
 This release adds ``exclude_min`` and ``exclude_max`` arguments to
 :func:`~hypothesis.strategies.floats`, so that you can easily generate values from
-`open or half-open intervals <https://en.wikipedia.org/wiki/Interval_(mathematics)>`_
+:wikipedia:`open or half-open intervals <Interval_(mathematics)>`
 (:issue:`1622`).
 
 .. _v4.4.6:

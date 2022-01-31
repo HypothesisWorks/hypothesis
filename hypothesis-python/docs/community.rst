@@ -13,7 +13,7 @@ Feel free to use these to ask for help, provide feedback, or discuss anything re
 Hypothesis related at all.  If you post a question on Stack Overflow, please use the
 `python-hypothesis <https://stackoverflow.com/questions/tagged/python-hypothesis>`__ tag!
 
-Please note that `the Hypothesis code of conduct <https://github.com/HypothesisWorks/hypothesis/blob/master/CODE_OF_CONDUCT.rst>`_
+Please note that :gh-file:`the Hypothesis code of conduct <CODE_OF_CONDUCT.rst>`
 applies in all Hypothesis community spaces.
 
 If you would like to cite Hypothesis, please consider :gh-file:`our suggested citation <CITATION.cff>`.
