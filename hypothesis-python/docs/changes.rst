@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.36.1:
+
+-------------------
+6.36.1 - 2022-01-31
+-------------------
+
+This patch fixes some deprecation warnings from :pypi:`pytest` 7.0,
+along with some code formatting and docs updates.
+
 .. _v6.36.0:
 
 -------------------
