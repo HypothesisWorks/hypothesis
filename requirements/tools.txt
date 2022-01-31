@@ -6,7 +6,7 @@
 #
 alabaster==0.7.12
     # via sphinx
-asgiref==3.4.1
+asgiref==3.5.0
     # via django
 astor==0.8.1
     # via flake8-simplify
@@ -25,17 +25,14 @@ backcall==0.2.0
     # via ipython
 backports.zoneinfo==0.2.1
     # via django
-bandit==1.7.1
+bandit==1.7.2
     # via flake8-bandit
 beautifulsoup4==4.10.0
     # via sphinx-codeautolink
-black==21.12b0
+black==22.1.0
     # via
-    #   blacken-docs
     #   ipython
     #   shed
-blacken-docs==1.12.0
-    # via -r requirements/tools.in
 bleach==4.1.0
     # via readme-renderer
 certifi==2021.10.8
@@ -54,7 +51,7 @@ colorama==0.4.4
     # via twine
 com2ann==0.3.0
     # via shed
-coverage==6.2
+coverage==6.3
     # via -r requirements/tools.in
 cryptography==36.0.1
     # via secretstorage
@@ -113,7 +110,7 @@ flake8-noqa==1.2.1
     # via -r requirements/tools.in
 flake8-polyfill==1.0.2
     # via flake8-bandit
-flake8-simplify==0.14.5
+flake8-simplify==0.15.1
     # via -r requirements/tools.in
 flake8-strftime==0.3.2
     # via -r requirements/tools.in
@@ -125,13 +122,14 @@ idna==3.3
     # via requests
 imagesize==1.3.0
     # via sphinx
-importlib-metadata==4.10.0
+importlib-metadata==4.10.1
     # via
     #   keyring
+    #   sphinx
     #   twine
 iniconfig==1.1.1
     # via pytest
-ipython==8.0.0
+ipython==8.0.1
     # via -r requirements/tools.in
 isort==5.10.1
     # via shed
@@ -147,7 +145,7 @@ keyring==23.5.0
     # via twine
 lark-parser==0.12.0
     # via -r requirements/tools.in
-libcst==0.4.0
+libcst==0.4.1
     # via
     #   -r requirements/tools.in
     #   shed
@@ -194,11 +192,11 @@ pluggy==1.0.0
     # via
     #   pytest
     #   tox
-prompt-toolkit==3.0.24
+prompt-toolkit==3.0.26
     # via ipython
 ptyprocess==0.7.0
     # via pexpect
-pure-eval==0.2.1
+pure-eval==0.2.2
     # via stack-data
 py==1.11.0
     # via
@@ -221,7 +219,7 @@ pygments==2.11.2
     #   ipython
     #   readme-renderer
     #   sphinx
-pyparsing==3.0.6
+pyparsing==3.0.7
     # via packaging
 pytest==6.2.5
     # via -r requirements/tools.in
@@ -251,7 +249,7 @@ rfc3986==2.0.0
     # via twine
 secretstorage==3.3.1
     # via keyring
-shed==0.7.0
+shed==0.8.0
     # via -r requirements/tools.in
 six==1.16.0
     # via
@@ -270,14 +268,14 @@ sortedcontainers==2.4.0
     # via hypothesis (hypothesis-python/setup.py)
 soupsieve==2.3.1
     # via beautifulsoup4
-sphinx==4.3.2
+sphinx==4.4.0
     # via
     #   -r requirements/tools.in
     #   sphinx-codeautolink
     #   sphinx-rtd-theme
-sphinx-codeautolink==0.9.0
+sphinx-codeautolink==0.10.0
     # via -r requirements/tools.in
-sphinx-hoverxref==1.0.0
+sphinx-hoverxref==1.0.1
     # via -r requirements/tools.in
 sphinx-rtd-theme==1.0.0
     # via -r requirements/tools.in
@@ -308,7 +306,7 @@ toml==0.10.2
     #   -r requirements/tools.in
     #   pytest
     #   tox
-tomli==1.2.3
+tomli==2.0.0
     # via
     #   black
     #   mypy
@@ -329,7 +327,7 @@ types-pkg-resources==0.1.3
     # via -r requirements/tools.in
 types-pytz==2021.3.4
     # via -r requirements/tools.in
-types-redis==4.1.8
+types-redis==4.1.11
     # via -r requirements/tools.in
 typing-extensions==4.0.1
     # via

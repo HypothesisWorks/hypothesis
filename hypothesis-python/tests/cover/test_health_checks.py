@@ -122,7 +122,7 @@ def test_filtering_most_things_fails_a_health_check():
 
 
 def test_large_data_will_fail_a_health_check():
-    @given(st.none() | st.binary(min_size=10 ** 5, max_size=10 ** 5))
+    @given(st.none() | st.binary(min_size=10**5, max_size=10**5))
     @settings(database=None)
     def test(x):
         pass

@@ -147,7 +147,7 @@ def _for_form_time(field):
 def _for_duration(field):
     # SQLite stores timedeltas as six bytes of microseconds
     if using_sqlite():
-        delta = timedelta(microseconds=2 ** 47 - 1)
+        delta = timedelta(microseconds=2**47 - 1)
         return st.timedeltas(-delta, delta)
     return st.timedeltas()
 
@@ -192,7 +192,7 @@ def _for_form_ip(field):
 @register_for(df.DecimalField)
 def _for_decimal(field):
     min_value, max_value = numeric_bounds_from_validators(field)
-    bound = Decimal(10 ** field.max_digits - 1) / (10 ** field.decimal_places)
+    bound = Decimal(10**field.max_digits - 1) / (10**field.decimal_places)
     return st.decimals(
         min_value=max(min_value, -bound),
         max_value=min(max_value, bound),

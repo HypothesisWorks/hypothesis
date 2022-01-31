@@ -251,7 +251,7 @@ def test_stops_after_max_examples_when_generating_more_bugs(examples):
     def f(data):
         seen.append(data.draw_bits(32))
         # Rare, potentially multi-error conditions
-        if seen[-1] > 2 ** 31:
+        if seen[-1] > 2**31:
             bad[0] = True
             raise ValueError
         bad[1] = True
@@ -420,14 +420,14 @@ def test_fails_health_check_for_all_invalid():
 def test_fails_health_check_for_large_base():
     @fails_health_check(HealthCheck.large_base_example)
     def _(data):
-        data.draw_bytes(10 ** 6)
+        data.draw_bytes(10**6)
 
 
 def test_fails_health_check_for_large_non_base():
     @fails_health_check(HealthCheck.data_too_large)
     def _(data):
         if data.draw_bits(8):
-            data.draw_bytes(10 ** 6)
+            data.draw_bytes(10**6)
 
 
 def test_fails_health_check_for_slow_draws():
@@ -807,7 +807,7 @@ def test_exit_because_shrink_phase_timeout(monkeypatch):
         return val[0]
 
     def f(data):
-        if data.draw_bits(64) > 2 ** 33:
+        if data.draw_bits(64) > 2**33:
             data.mark_interesting()
 
     monkeypatch.setattr(time, "perf_counter", fast_time)
@@ -1227,7 +1227,7 @@ def test_populates_the_pareto_front():
 
         runner.run()
 
-        assert len(runner.pareto_front) == 2 ** 4
+        assert len(runner.pareto_front) == 2**4
 
 
 def test_pareto_front_contains_smallest_valid_when_not_targeting():
@@ -1269,7 +1269,7 @@ def test_pareto_front_contains_different_interesting_reasons():
 
         runner.run()
 
-        assert len(runner.pareto_front) == 2 ** 4
+        assert len(runner.pareto_front) == 2**4
 
 
 def test_database_contains_only_pareto_front():
@@ -1449,7 +1449,7 @@ def test_runs_optimisation_even_if_not_generating():
 
         runner.run()
 
-        assert runner.best_observed_targets["n"] == (2 ** 16) - 1
+        assert runner.best_observed_targets["n"] == (2**16) - 1
 
 
 def test_runs_optimisation_once_when_generating():

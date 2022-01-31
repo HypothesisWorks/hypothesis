@@ -13,7 +13,7 @@ import pytest
 from hypothesis import assume, given, strategies as st
 from hypothesis.internal.conjecture.junkdrawer import IntList
 
-non_neg_lists = st.lists(st.integers(min_value=0, max_value=2 ** 63 - 1))
+non_neg_lists = st.lists(st.integers(min_value=0, max_value=2**63 - 1))
 
 
 @given(non_neg_lists)
@@ -45,6 +45,6 @@ def test_error_on_invalid_value():
 
 def test_extend_by_too_large():
     x = IntList()
-    ls = [1, 10 ** 6]
+    ls = [1, 10**6]
     x.extend(ls)
     assert list(x) == ls

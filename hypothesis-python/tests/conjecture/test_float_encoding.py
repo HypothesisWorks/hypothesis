@@ -20,7 +20,7 @@ from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.floats import float_to_int
 
 EXPONENTS = list(range(0, flt.MAX_EXPONENT + 1))
-assert len(EXPONENTS) == 2 ** 11
+assert len(EXPONENTS) == 2**11
 
 
 def assert_reordered_exponents(res):
@@ -52,12 +52,12 @@ def test_encode_decode():
 @given(st.data())
 def test_double_reverse_bounded(data):
     n = data.draw(st.integers(1, 64))
-    i = data.draw(st.integers(0, 2 ** n - 1))
+    i = data.draw(st.integers(0, 2**n - 1))
     j = flt.reverse_bits(i, n)
     assert flt.reverse_bits(j, n) == i
 
 
-@given(st.integers(0, 2 ** 64 - 1))
+@given(st.integers(0, 2**64 - 1))
 def test_double_reverse(i):
     j = flt.reverse64(i)
     assert flt.reverse64(j) == i
@@ -98,7 +98,7 @@ def test_floats_round_trip(f):
 
 
 @example(1, 0.5)
-@given(st.integers(1, 2 ** 53), st.floats(0, 1).filter(lambda x: x not in (0, 1)))
+@given(st.integers(1, 2**53), st.floats(0, 1).filter(lambda x: x not in (0, 1)))
 def test_floats_order_worse_than_their_integral_part(n, g):
     f = n + g
     assume(int(f) != f)

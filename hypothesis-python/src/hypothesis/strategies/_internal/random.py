@@ -182,7 +182,7 @@ def normalize_zero(f: float) -> float:
 
 
 class ArtificialRandom(HypothesisRandom):
-    VERSION = 10 ** 6
+    VERSION = 10**6
 
     def __init__(self, note_method_calls, data):
         super().__init__(note_method_calls=note_method_calls)

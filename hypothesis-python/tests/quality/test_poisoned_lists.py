@@ -47,7 +47,7 @@ class LinearLists(SearchStrategy):
 class Matrices(SearchStrategy):
     def __init__(self, elements, size):
         super().__init__()
-        self.__length = st.integers(0, ceil(size ** 0.5))
+        self.__length = st.integers(0, ceil(size**0.5))
         self.__elements = elements
 
     def do_draw(self, data):
@@ -57,7 +57,7 @@ class Matrices(SearchStrategy):
         return [data.draw(self.__elements) for _ in range(n * m)]
 
 
-LOTS = 10 ** 6
+LOTS = 10**6
 
 TRIAL_SETTINGS = settings(max_examples=LOTS, database=None)
 

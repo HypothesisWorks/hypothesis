@@ -107,7 +107,7 @@ def test_drawing_an_exact_fraction_coin():
 
 
 def test_too_small_to_be_useful_coin():
-    assert not cu.biased_coin(ConjectureData.for_buffer([1]), 0.5 ** 65)
+    assert not cu.biased_coin(ConjectureData.for_buffer([1]), 0.5**65)
 
 
 @example([Fraction(1, 3), Fraction(1, 3), Fraction(1, 3)])
@@ -195,7 +195,7 @@ def test_center_in_middle_above():
 def test_restricted_bits():
     assert (
         cu.integer_range(
-            ConjectureData.for_buffer([1, 0, 0, 0, 0]), lower=0, upper=2 ** 64 - 1
+            ConjectureData.for_buffer([1, 0, 0, 0, 0]), lower=0, upper=2**64 - 1
         )
         == 0
     )
@@ -313,7 +313,7 @@ def test_can_draw_arbitrary_fractions(p, b):
 
 
 def test_samples_from_a_range_directly():
-    s = cu.check_sample(range(10 ** 1000), "")
+    s = cu.check_sample(range(10**1000), "")
     assert isinstance(s, range)
 
 

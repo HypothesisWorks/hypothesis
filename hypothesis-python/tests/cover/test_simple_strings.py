@@ -106,6 +106,6 @@ def test_fixed_size_bytes_just_draw_bytes():
     assert x.draw(binary(min_size=3, max_size=3)) == b"foo"
 
 
-@given(text(max_size=10 ** 6))
+@given(text(max_size=10**6))
 def test_can_set_max_size_large(s):
     pass

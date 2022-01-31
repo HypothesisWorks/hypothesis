@@ -18,7 +18,7 @@ from hypothesis.errors import InvalidArgument
 from tests.common.utils import counts_calls, fails_with
 
 
-@pytest.mark.parametrize("n", [100, 10 ** 5, 10 ** 6, 2 ** 25])
+@pytest.mark.parametrize("n", [100, 10**5, 10**6, 2**25])
 def test_filter_large_lists(n):
     filter_limit = 100 * 10000
 

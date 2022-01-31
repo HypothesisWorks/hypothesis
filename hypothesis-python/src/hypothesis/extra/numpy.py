@@ -168,7 +168,7 @@ def from_dtype(
             # it here because we'd have to guard against equivalents in arrays()
             # regardless and drawing scalars is a valid use-case.
             res = st.sampled_from(TIME_RESOLUTIONS)
-        result = st.builds(dtype.type, st.integers(-(2 ** 63), 2 ** 63 - 1), res)
+        result = st.builds(dtype.type, st.integers(-(2**63), 2**63 - 1), res)
     else:
         raise InvalidArgument(f"No strategy inference for {dtype}")
     return result.map(dtype.type)

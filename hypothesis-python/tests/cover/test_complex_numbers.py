@@ -45,7 +45,7 @@ def test_minimal_quadrant4():
     assert minimal(complex_numbers(), lambda x: x.imag < 0 and x.real > 0) == 1 - 1j
 
 
-@given(st.data(), st.integers(-5, 5).map(lambda x: 10 ** x))
+@given(st.data(), st.integers(-5, 5).map(lambda x: 10**x))
 def test_max_magnitude_respected(data, mag):
     c = data.draw(complex_numbers(max_magnitude=mag))
     assert abs(c) <= mag * (1 + sys.float_info.epsilon)
@@ -56,7 +56,7 @@ def test_max_magnitude_zero(val):
     assert val == 0
 
 
-@given(st.data(), st.integers(-5, 5).map(lambda x: 10 ** x))
+@given(st.data(), st.integers(-5, 5).map(lambda x: 10**x))
 def test_min_magnitude_respected(data, mag):
     c = data.draw(complex_numbers(min_magnitude=mag))
     assert (

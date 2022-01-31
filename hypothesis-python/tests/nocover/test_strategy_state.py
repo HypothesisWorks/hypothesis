@@ -123,7 +123,7 @@ class HypothesisSpec(RuleBasedStateMachine):
 
     @rule(target=varied_floats, source=varied_floats, offset=integers(-100, 100))
     def adjust_float(self, source, offset):
-        return int_to_float(clamp(0, float_to_int(source) + offset, 2 ** 64 - 1))
+        return int_to_float(clamp(0, float_to_int(source) + offset, 2**64 - 1))
 
     @rule(target=strategies, left=varied_floats, right=varied_floats)
     def float_range(self, left, right):

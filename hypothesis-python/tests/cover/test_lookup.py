@@ -719,7 +719,7 @@ def test_hashable_type_unhashable_value():
     find_any(
         from_type(typing.Hashable),
         lambda x: not types._can_hash(x),
-        settings(max_examples=10 ** 5),
+        settings(max_examples=10**5),
     )
 
 

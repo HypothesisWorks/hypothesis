@@ -14,7 +14,10 @@
 import math
 from unittest import mock
 
-from _pytest.config import Config
+try:
+    from pytest import Config
+except ImportError:  # pytest<7.0.0
+    from _pytest.config import Config
 
 from hypothesis import given, strategies as st
 

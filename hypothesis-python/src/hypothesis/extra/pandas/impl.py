@@ -171,7 +171,7 @@ def range_indexes(
     check_valid_size(min_size, "min_size")
     check_valid_size(max_size, "max_size")
     if max_size is None:
-        max_size = min([min_size + DEFAULT_MAX_SIZE, 2 ** 63 - 1])
+        max_size = min([min_size + DEFAULT_MAX_SIZE, 2**63 - 1])
     check_valid_interval(min_size, max_size, "min_size", "max_size")
     return st.integers(min_size, max_size).map(pandas.RangeIndex)
 
@@ -589,7 +589,9 @@ def data_frames(
                             value = draw(c.elements)
                         try:
                             data[c.name][i] = value
-                        except ValueError as err:
+                        except ValueError as err:  # pragma: no cover
+                            # This just works in Pandas 1.4 and later, but gives
+                            # a confusing error on previous versions.
                             if c.dtype is None and not isinstance(
                                 value, (float, int, str, bool, datetime, timedelta)
                             ):
@@ -599,7 +601,7 @@ def data_frames(
                                     "dtype=object would help?"
                                 ) from err
                             # Unclear how this could happen, but users find a way...
-                            raise  # pragma: no cover
+                            raise
 
             for c in rewritten_columns:
                 if not c.fill.is_empty:

@@ -173,20 +173,20 @@ def test_dictionary(dict_class):
 
 
 def test_minimize_single_element_in_silly_large_int_range():
-    ir = integers(-(2 ** 256), 2 ** 256)
-    assert minimal(ir, lambda x: x >= -(2 ** 255)) == 0
+    ir = integers(-(2**256), 2**256)
+    assert minimal(ir, lambda x: x >= -(2**255)) == 0
 
 
 def test_minimize_multiple_elements_in_silly_large_int_range():
     desired_result = [0] * 20
 
-    ir = integers(-(2 ** 256), 2 ** 256)
+    ir = integers(-(2**256), 2**256)
     x = minimal(lists(ir), lambda x: len(x) >= 20, timeout_after=20)
     assert x == desired_result
 
 
 def test_minimize_multiple_elements_in_silly_large_int_range_min_is_not_dupe():
-    ir = integers(0, 2 ** 256)
+    ir = integers(0, 2**256)
     target = list(range(20))
 
     x = minimal(

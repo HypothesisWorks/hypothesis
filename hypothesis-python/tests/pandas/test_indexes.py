@@ -24,7 +24,7 @@ def test_gets_right_dtype_for_empty_indices(ix):
     assert ix.dtype == np.dtype("int64")
 
 
-@given(pdst.indexes(elements=st.integers(0, 2 ** 63 - 1), max_size=0))
+@given(pdst.indexes(elements=st.integers(0, 2**63 - 1), max_size=0))
 def test_gets_right_dtype_for_empty_indices_with_elements(ix):
     assert ix.dtype == np.dtype("int64")
 
@@ -47,7 +47,7 @@ def test_unique_indexes_of_many_small_values(ix):
 
 
 # Sizes that fit into an int64 without overflow
-range_sizes = st.integers(0, 2 ** 63 - 1)
+range_sizes = st.integers(0, 2**63 - 1)
 
 
 @given(range_sizes, range_sizes | st.none(), st.data())

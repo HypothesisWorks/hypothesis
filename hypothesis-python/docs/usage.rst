@@ -8,8 +8,7 @@ The only inclusion criterion right now is that if it's a Python library
 then it should be available on PyPI.
 
 You can find hundreds more from `the Hypothesis page at libraries.io
-<https://libraries.io/pypi/hypothesis>`_, and `thousands on GitHub
-<https://github.com/HypothesisWorks/hypothesis/network/dependents>`_.
+<https://libraries.io/pypi/hypothesis>`_, and :gh-file:`thousands on GitHub <network/dependents>`.
 Hypothesis has `over 100,000 downloads per week <https://pypistats.org/packages/hypothesis>`__,
 and was used by `more than 4% of Python users surveyed by the PSF in 2020
 <https://www.jetbrains.com/lp/python-developers-survey-2020/>`__.

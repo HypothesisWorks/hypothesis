@@ -740,7 +740,7 @@ class RandomSeeder:
 
 class RandomModule(SearchStrategy):
     def do_draw(self, data):
-        seed = data.draw(integers(0, 2 ** 32 - 1))
+        seed = data.draw(integers(0, 2**32 - 1))
         seed_all, restore_all = get_seeder_and_restorer(seed)
         seed_all()
         cleanup(restore_all)
@@ -1841,19 +1841,20 @@ def emails() -> SearchStrategy[str]:
 def functions(
     *,
     like: Callable[..., Any] = lambda: None,
-    returns: Optional[SearchStrategy[Any]] = None,
+    returns: Union[SearchStrategy[Any], InferType] = infer,
     pure: bool = False,
 ) -> SearchStrategy[Callable[..., Any]]:
     # The proper type signature of `functions()` would have T instead of Any, but mypy
     # disallows default args for generics: https://github.com/python/mypy/issues/3737
-    """functions(*, like=lambda: None, returns=none(), pure=False)
+    """functions(*, like=lambda: None, returns=infer, pure=False)
 
     A strategy for functions, which can be used in callbacks.
 
     The generated functions will mimic the interface of ``like``, which must
     be a callable (including a class, method, or function).  The return value
     for the function is drawn from the ``returns`` argument, which must be a
-    strategy.
+    strategy.  If ``returns`` is not passed, we attempt to infer a strategy
+    from the return-type annotation if present, falling back to :func:`~none`.
 
     If ``pure=True``, all arguments passed to the generated function must be
     hashable, and if passed identical arguments the original return value will
@@ -1872,7 +1873,9 @@ def functions(
             f"but got non-callable like={nicerepr(like)!r}"
         )
 
-    if returns is None:
+    if returns is None or returns is infer:
+        # Passing `None` has never been *documented* as working, but it still
+        # did from May 2020 to Jan 2022 so we'll avoid breaking it without cause.
         hints = get_type_hints(like)
         returns = from_type(hints.get("return", type(None)))
 

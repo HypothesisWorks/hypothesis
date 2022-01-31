@@ -252,9 +252,9 @@ def _strategy_for(
     # - `b (list, tuple, or None): ...`
     # - `c : {"foo", "bar", or None}`
     for pattern in (
-        fr"^\s*\:type\s+{param.name}\:\s+(.+)",  # RST-style
-        fr"^\s*{param.name} \((.+)\):",  # Google-style
-        fr"^\s*{param.name} \: (.+)",  # Numpy-style
+        rf"^\s*\:type\s+{param.name}\:\s+(.+)",  # RST-style
+        rf"^\s*{param.name} \((.+)\):",  # Google-style
+        rf"^\s*{param.name} \: (.+)",  # Numpy-style
     ):
         match = re.search(pattern, docstring, flags=re.MULTILINE)
         if match is None:

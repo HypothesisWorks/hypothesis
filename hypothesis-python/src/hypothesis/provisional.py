@@ -153,7 +153,7 @@ def urls() -> st.SearchStrategy[str]:
         return "".join(c if c in URL_SAFE_CHARACTERS else "%%%02X" % ord(c) for c in s)
 
     schemes = st.sampled_from(["http", "https"])
-    ports = st.integers(min_value=0, max_value=2 ** 16 - 1).map(":{}".format)
+    ports = st.integers(min_value=0, max_value=2**16 - 1).map(":{}".format)
     paths = st.lists(st.text(string.printable).map(url_encode)).map("/".join)
 
     return st.builds(

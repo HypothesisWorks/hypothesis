@@ -209,7 +209,7 @@ test_mostly_largish_floats = define_test(
 )
 
 test_ints_can_occasionally_be_really_large = define_test(
-    integers(), lambda t: t >= 2 ** 63
+    integers(), lambda t: t >= 2**63
 )
 
 test_mixing_is_sometimes_distorted = define_test(

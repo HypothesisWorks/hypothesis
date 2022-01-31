@@ -169,11 +169,9 @@ def format():
     files = tools.all_files() if format_all else changed
 
     doc_files_to_format = [f for f in sorted(files) if should_format_doc_file(f)]
-    pip_tool("blacken-docs", *doc_files_to_format)
-
     files_to_format = [f for f in sorted(files) if should_format_file(f)]
 
-    if not files_to_format:
+    if not (files_to_format or doc_files_to_format):
         return
 
     # .coveragerc lists several regex patterns to treat as nocover pragmas, and

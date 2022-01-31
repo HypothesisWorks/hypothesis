@@ -348,10 +348,10 @@ def test_overflowing_integers_are_deprecated(fill, data):
     "dtype,strat",
     [
         ("float16", st.floats(min_value=65520, allow_infinity=False)),
-        ("float32", st.floats(min_value=10 ** 40, allow_infinity=False)),
+        ("float32", st.floats(min_value=10**40, allow_infinity=False)),
         (
             "complex64",
-            st.complex_numbers(min_magnitude=10 ** 300, allow_infinity=False),
+            st.complex_numbers(min_magnitude=10**300, allow_infinity=False),
         ),
         ("U1", st.text(min_size=2, max_size=2)),
         ("S1", st.binary(min_size=2, max_size=2)),
@@ -902,7 +902,7 @@ def test_broadcastable_shape_can_generate_arbitrary_ndims(shape, max_dims, data)
     find_any(
         nps.broadcastable_shapes(shape, min_side=0, max_dims=max_dims, **kwargs),
         lambda x: len(x) == desired_ndim,
-        settings(max_examples=10 ** 6),
+        settings(max_examples=10**6),
     )
 
 
@@ -935,7 +935,7 @@ def test_mutually_broadcastable_shapes_can_generate_arbitrary_ndims(
             **kwargs,
         ),
         lambda x: {len(s) for s in x.input_shapes} == set(desired_ndims),
-        settings(max_examples=10 ** 6),
+        settings(max_examples=10**6),
     )
 
 
@@ -1072,7 +1072,7 @@ def test_advanced_integer_index_can_generate_any_pattern(shape, data):
             shape, result_shape=st.just(target.shape), dtype=np.dtype("int8")
         ),
         lambda index: np.all(target == x[index]),
-        settings(max_examples=10 ** 6),
+        settings(max_examples=10**6),
     )
 
 
@@ -1177,7 +1177,7 @@ def test_basic_indices_generate_valid_indexers(
         # If there's a zero in the shape, the array will have no elements.
         array = np.zeros(shape)
         assert array.size == 0
-    elif np.prod(shape) <= 10 ** 5:
+    elif np.prod(shape) <= 10**5:
         # If it's small enough to instantiate, do so with distinct elements.
         array = np.arange(np.prod(shape)).reshape(shape)
     else:

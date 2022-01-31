@@ -175,14 +175,14 @@ def test_any_doesnt_generate_newline():
 @pytest.mark.parametrize("pattern", [re.compile("\\A.\\Z", re.DOTALL), "(?s)\\A.\\Z"])
 def test_any_with_dotall_generate_newline(pattern):
     find_any(
-        st.from_regex(pattern), lambda s: s == "\n", settings(max_examples=10 ** 6)
+        st.from_regex(pattern), lambda s: s == "\n", settings(max_examples=10**6)
     )
 
 
 @pytest.mark.parametrize("pattern", [re.compile(b"\\A.\\Z", re.DOTALL), b"(?s)\\A.\\Z"])
 def test_any_with_dotall_generate_newline_binary(pattern):
     find_any(
-        st.from_regex(pattern), lambda s: s == b"\n", settings(max_examples=10 ** 6)
+        st.from_regex(pattern), lambda s: s == b"\n", settings(max_examples=10**6)
     )
 
 
@@ -421,7 +421,7 @@ def test_fullmatch_generates_example(pattern, matching_str):
     find_any(
         st.from_regex(pattern, fullmatch=True),
         lambda s: s == matching_str,
-        settings(max_examples=10 ** 6),
+        settings(max_examples=10**6),
     )
 
 
@@ -429,16 +429,16 @@ def test_fullmatch_generates_example(pattern, matching_str):
     "pattern,eqiv_pattern",
     [
         (r"", r"\A\Z"),
-        (b"", br"\A\Z"),
+        (b"", rb"\A\Z"),
         (r"(?#comment)", r"\A\Z"),
-        (br"(?#comment)", br"\A\Z"),
+        (rb"(?#comment)", rb"\A\Z"),
         ("a", "\\Aa\\Z"),
         ("[Aa]", "\\A[Aa]\\Z"),
         ("[ab]*", "\\A[ab]*\\Z"),
-        (b"[Aa]", br"\A[Aa]\Z"),
-        (b"[ab]*", br"\A[ab]*\Z"),
+        (b"[Aa]", rb"\A[Aa]\Z"),
+        (b"[ab]*", rb"\A[ab]*\Z"),
         (re.compile("[ab]*", re.IGNORECASE), re.compile("\\A[ab]*\\Z", re.IGNORECASE)),
-        (re.compile(br"[ab]", re.IGNORECASE), re.compile(br"\A[ab]\Z", re.IGNORECASE)),
+        (re.compile(rb"[ab]", re.IGNORECASE), re.compile(rb"\A[ab]\Z", re.IGNORECASE)),
     ],
 )
 def test_fullmatch_matches(pattern, eqiv_pattern):

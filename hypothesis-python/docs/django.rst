@@ -41,8 +41,8 @@ a strategy for Django models:
 
 .. autofunction:: hypothesis.extra.django.from_model
 
-For example, using `the trivial django project we have for testing
-<https://github.com/HypothesisWorks/hypothesis/blob/master/hypothesis-python/tests/django/toystore/models.py>`_:
+For example, using :gh-file:`the trivial django project we have for testing
+<hypothesis-python/tests/django/toystore/models.py>`:
 
 .. code-block:: pycon
 

@@ -12,7 +12,7 @@ from hypothesis import strategies as st
 from hypothesis.internal.conjecture.junkdrawer import IntList
 from hypothesis.stateful import RuleBasedStateMachine, initialize, invariant, rule
 
-INTEGERS = st.integers(0, 2 ** 68)
+INTEGERS = st.integers(0, 2**68)
 
 
 @st.composite

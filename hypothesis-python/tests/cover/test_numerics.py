@@ -127,7 +127,7 @@ def test_decimals_include_nan():
 
 
 def test_decimals_include_inf():
-    find_any(decimals(), lambda x: x.is_infinite(), settings(max_examples=10 ** 6))
+    find_any(decimals(), lambda x: x.is_infinite(), settings(max_examples=10**6))
 
 
 @given(decimals(allow_nan=False))

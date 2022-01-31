@@ -101,7 +101,7 @@ def test_can_optimise_last_with_following_empty():
         assert runner.best_observed_targets[""] == 255
 
 
-@pytest.mark.parametrize("lower, upper", [(0, 1000), (13, 100), (1000, 2 ** 16 - 1)])
+@pytest.mark.parametrize("lower, upper", [(0, 1000), (13, 100), (1000, 2**16 - 1)])
 @pytest.mark.parametrize("score_up", [False, True])
 def test_can_find_endpoints_of_a_range(lower, upper, score_up):
     with deterministic_PRNG():

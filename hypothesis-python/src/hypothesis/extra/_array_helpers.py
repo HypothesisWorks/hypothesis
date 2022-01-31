@@ -277,7 +277,7 @@ def broadcastable_shapes(
 _DIMENSION = r"\w+\??"  # Note that \w permits digits too!
 _SHAPE = r"\((?:{0}(?:,{0})".format(_DIMENSION) + r"{0,31})?\)"
 _ARGUMENT_LIST = "{0}(?:,{0})*".format(_SHAPE)
-_SIGNATURE = fr"^{_ARGUMENT_LIST}->{_SHAPE}$"
+_SIGNATURE = rf"^{_ARGUMENT_LIST}->{_SHAPE}$"
 _SIGNATURE_MULTIPLE_OUTPUT = r"^{0}->{0}$".format(_ARGUMENT_LIST)
 
 

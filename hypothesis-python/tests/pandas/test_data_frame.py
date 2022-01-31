@@ -241,6 +241,7 @@ def test_can_generate_unique_columns(df):
     assert set(df[0]) == set(range(10))
 
 
+@pytest.mark.skip(reason="Just works on Pandas 1.4, though the changelog is silent")
 @pytest.mark.parametrize("dtype", [None, object])
 def test_expected_failure_from_omitted_object_dtype(dtype):
     # See https://github.com/HypothesisWorks/hypothesis/issues/3133

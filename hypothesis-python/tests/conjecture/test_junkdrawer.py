@@ -117,7 +117,7 @@ def test_int_list_cannot_contain_negative():
 
 
 def test_int_list_can_contain_arbitrary_size():
-    n = 2 ** 65
+    n = 2**65
     assert list(IntList([n])) == [n]
 
 
@@ -139,7 +139,7 @@ def test_int_list_equality():
 
 def test_int_list_extend():
     x = IntList.of_length(3)
-    n = 2 ** 64 - 1
+    n = 2**64 - 1
     x.extend([n])
     assert list(x) == [0, 0, 0, n]
 
