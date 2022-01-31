@@ -19,7 +19,7 @@ from hypothesis.strategies._internal import SearchStrategy
 
 POISON = "POISON"
 
-MAX_INT = 2 ** 32 - 1
+MAX_INT = 2**32 - 1
 
 
 class PoisonedTree(SearchStrategy):
@@ -48,7 +48,7 @@ class PoisonedTree(SearchStrategy):
                 return (None,)
 
 
-LOTS = 10 ** 6
+LOTS = 10**6
 
 
 TEST_SETTINGS = settings(

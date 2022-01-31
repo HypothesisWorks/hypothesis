@@ -66,7 +66,7 @@ def test_slices_will_shrink(size):
 @settings(deadline=None)
 def test_step_will_be_negative(size):
     find_any(
-        st.slices(size), lambda x: (x.step or 1) < 0, settings(max_examples=10 ** 6)
+        st.slices(size), lambda x: (x.step or 1) < 0, settings(max_examples=10**6)
     )
 
 
@@ -78,13 +78,13 @@ def test_step_will_be_positive(size):
 
 @pytest.mark.parametrize("size", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 def test_stop_will_equal_size(size):
-    find_any(st.slices(size), lambda x: x.stop == size, settings(max_examples=10 ** 6))
+    find_any(st.slices(size), lambda x: x.stop == size, settings(max_examples=10**6))
 
 
 @pytest.mark.parametrize("size", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 def test_start_will_equal_size(size):
     find_any(
-        st.slices(size), lambda x: x.start == size - 1, settings(max_examples=10 ** 6)
+        st.slices(size), lambda x: x.start == size - 1, settings(max_examples=10**6)
     )
 
 

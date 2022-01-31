@@ -569,7 +569,7 @@ def test_re_evals():
     for r in [
         re.compile(r"hi"),
         re.compile(r"b\nc", re.MULTILINE),
-        re.compile(br"hi", 0),
+        re.compile(rb"hi", 0),
         re.compile("foo", re.MULTILINE | re.UNICODE),
     ]:
         r2 = eval(pretty.pretty(r), globals())

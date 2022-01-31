@@ -19,7 +19,7 @@ def test_includes_non_default_args_in_repr():
 
 
 def test_sampled_repr_leaves_range_as_range():
-    huge = 10 ** 100
+    huge = 10**100
     assert repr(st.sampled_from(range(huge))) == f"sampled_from(range(0, {huge}))"
 
 

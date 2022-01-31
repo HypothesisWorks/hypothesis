@@ -32,10 +32,10 @@ def test_positive_negative_int():
 boundaries = pytest.mark.parametrize(
     "boundary",
     sorted(
-        [2 ** i for i in range(10)]
-        + [2 ** i - 1 for i in range(10)]
-        + [2 ** i + 1 for i in range(10)]
-        + [10 ** i for i in range(6)]
+        [2**i for i in range(10)]
+        + [2**i - 1 for i in range(10)]
+        + [2**i + 1 for i in range(10)]
+        + [10**i for i in range(6)]
     ),
 )
 
@@ -75,7 +75,7 @@ def test_single_integer_range_is_range():
 
 
 def test_minimal_small_number_in_large_range():
-    assert minimal(integers((-(2 ** 32)), 2 ** 32), lambda x: x >= 101) == 101
+    assert minimal(integers((-(2**32)), 2**32), lambda x: x >= 101) == 101
 
 
 def test_minimal_small_sum_float_list():
@@ -133,7 +133,7 @@ def is_integral(value):
 
 
 def test_can_minimal_float_far_from_integral():
-    minimal(floats(), lambda x: math.isfinite(x) and not is_integral(x * (2 ** 32)))
+    minimal(floats(), lambda x: math.isfinite(x) and not is_integral(x * (2**32)))
 
 
 def test_list_of_fractional_float():
@@ -178,7 +178,7 @@ def test_bounds_are_respected():
 
 @pytest.mark.parametrize("k", range(10))
 def test_floats_from_zero_have_reasonable_range(k):
-    n = 10 ** k
+    n = 10**k
     assert minimal(floats(min_value=0.0), lambda x: x >= n) == float(n)
     assert minimal(floats(max_value=0.0), lambda x: x <= -n) == float(-n)
 
@@ -207,10 +207,10 @@ class TestFloatsAreFloats:
     def test_unbounded(self, arg):
         assert isinstance(arg, float)
 
-    @given(floats(min_value=0, max_value=float(2 ** 64 - 1)))
+    @given(floats(min_value=0, max_value=float(2**64 - 1)))
     def test_int_float(self, arg):
         assert isinstance(arg, float)
 
-    @given(floats(min_value=float(0), max_value=float(2 ** 64 - 1)))
+    @given(floats(min_value=float(0), max_value=float(2**64 - 1)))
     def test_float_float(self, arg):
         assert isinstance(arg, float)

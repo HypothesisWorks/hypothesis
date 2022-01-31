@@ -168,7 +168,7 @@ NASTY_FLOATS = sorted(
         1.192092896e-07,
         2.2204460492503131e-016,
     ]
-    + [2.0 ** -n for n in (24, 14, 149, 126)]  # minimum (sub)normals for float16,32
+    + [2.0**-n for n in (24, 14, 149, 126)]  # minimum (sub)normals for float16,32
     + [float_info.min / n for n in (2, 10, 1000, 100_000)]  # subnormal in float64
     + [math.inf, math.nan] * 5
     + [SIGNALING_NAN],

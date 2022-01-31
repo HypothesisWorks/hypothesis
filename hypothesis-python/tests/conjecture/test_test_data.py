@@ -106,7 +106,7 @@ def test_closes_interval_on_error_in_strategy():
 
 class BigStrategy(SearchStrategy):
     def do_draw(self, data):
-        data.draw_bytes(10 ** 6)
+        data.draw_bytes(10**6)
 
 
 def test_does_not_double_freeze_in_interval_close():

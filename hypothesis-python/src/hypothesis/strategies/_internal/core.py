@@ -740,7 +740,7 @@ class RandomSeeder:
 
 class RandomModule(SearchStrategy):
     def do_draw(self, data):
-        seed = data.draw(integers(0, 2 ** 32 - 1))
+        seed = data.draw(integers(0, 2**32 - 1))
         seed_all, restore_all = get_seeder_and_restorer(seed)
         seed_all()
         cleanup(restore_all)

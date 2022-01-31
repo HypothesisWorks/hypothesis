@@ -128,7 +128,7 @@ def run_language_test_for(root, data, seed):
 @given(st.data())
 def test_explore_an_arbitrary_language(data):
     root = data.draw(writes | branches)
-    seed = data.draw(st.integers(0, 2 ** 64 - 1))
+    seed = data.draw(st.integers(0, 2**64 - 1))
     run_language_test_for(root, data, seed)
 
 

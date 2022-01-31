@@ -29,7 +29,7 @@ def test_to_int_in_big_endian_order(x, y):
     assert 0 <= int_from_bytes(x) <= int_from_bytes(y)
 
 
-ints8 = st.integers(min_value=0, max_value=2 ** 63 - 1)
+ints8 = st.integers(min_value=0, max_value=2**63 - 1)
 
 
 @given(ints8, ints8)

@@ -296,8 +296,8 @@ def test_may_not_use_overflowing_integers(kwargs, data):
 @pytest.mark.parametrize(
     "dtype, strat",
     [
-        (xp.float32, st.floats(min_value=10 ** 40, allow_infinity=False)),
-        (xp.float64, st.floats(min_value=10 ** 40, allow_infinity=False)),
+        (xp.float32, st.floats(min_value=10**40, allow_infinity=False)),
+        (xp.float64, st.floats(min_value=10**40, allow_infinity=False)),
     ],
 )
 @fails_with(InvalidArgument)
@@ -444,7 +444,7 @@ def test_excluded_min_in_float_arrays(dtype, low, data):
 @st.composite
 def distinct_integers(draw):
     used = draw(st.shared(st.builds(set), key="distinct_integers.used"))
-    i = draw(st.integers(0, 2 ** 64 - 1).filter(lambda x: x not in used))
+    i = draw(st.integers(0, 2**64 - 1).filter(lambda x: x not in used))
     used.add(i)
     return i
 

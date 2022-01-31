@@ -215,7 +215,7 @@ def varint(draw):
     result.append(draw(st.integers(1, 255)))
     n = result[0] & 15
     assume(n > 0)
-    value = draw(st.integers(10, 256 ** n - 1))
+    value = draw(st.integers(10, 256**n - 1))
     result.extend(value.to_bytes(n, "big"))
     return bytes(result)
 

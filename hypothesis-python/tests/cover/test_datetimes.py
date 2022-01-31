@@ -24,7 +24,7 @@ def test_can_find_positive_delta():
 
 def test_can_find_negative_delta():
     assert minimal(
-        timedeltas(max_value=dt.timedelta(10 ** 6)), lambda x: x.days < 0
+        timedeltas(max_value=dt.timedelta(10**6)), lambda x: x.days < 0
     ) == dt.timedelta(-1)
 
 
@@ -87,7 +87,7 @@ def test_can_find_before_the_year_2000():
 
 @pytest.mark.parametrize("month", range(1, 13))
 def test_can_find_each_month(month):
-    find_any(dates(), lambda x: x.month == month, settings(max_examples=10 ** 6))
+    find_any(dates(), lambda x: x.month == month, settings(max_examples=10**6))
 
 
 def test_min_year_is_respected():

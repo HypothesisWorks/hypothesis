@@ -132,7 +132,7 @@ def mod2(x):
     return x % 2
 
 
-Y = 2 ** 20
+Y = 2**20
 
 
 @given(

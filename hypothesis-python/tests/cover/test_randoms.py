@@ -56,7 +56,7 @@ define_method_strategy("weibullvariate", alpha=beta_param, beta=beta_param)
 define_method_strategy("choice", seq=seq_param)
 define_method_strategy("choices", population=seq_param, k=st.integers(1, 100))
 define_method_strategy("expovariate", lambd=beta_param)
-define_method_strategy("_randbelow", n=st.integers(1, 2 ** 64))
+define_method_strategy("_randbelow", n=st.integers(1, 2**64))
 define_method_strategy("random")
 define_method_strategy("getrandbits", n=st.integers(1, 128))
 define_method_strategy("gauss", mu=st.floats(-1000, 1000), sigma=beta_param)
@@ -74,7 +74,7 @@ define_method_strategy("shuffle", x=st.lists(st.integers()))
 define_method_strategy("randbytes", n=st.integers(0, 100))
 
 
-INT64 = st.integers(-(2 ** 63), 2 ** 63 - 1)
+INT64 = st.integers(-(2**63), 2**63 - 1)
 
 
 @st.composite
@@ -334,11 +334,11 @@ def test_randbytes_have_right_length(rnd, n):
 
 @given(any_random)
 def test_can_manage_very_long_ranges_with_step(rnd):
-    i = rnd.randrange(0, 2 ** 256, 3)
+    i = rnd.randrange(0, 2**256, 3)
 
     assert i % 3 == 0
-    assert 0 <= i < 2 ** 256
-    assert i in range(0, 2 ** 256, 3)
+    assert 0 <= i < 2**256
+    assert i in range(0, 2**256, 3)
 
 
 @given(any_random, st.data())

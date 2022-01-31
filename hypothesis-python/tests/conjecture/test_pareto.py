@@ -36,7 +36,7 @@ def test_pareto_front_contains_different_interesting_reasons():
 
         runner.run()
 
-        assert len(runner.pareto_front) == 2 ** 4
+        assert len(runner.pareto_front) == 2**4
 
 
 def test_database_contains_only_pareto_front():
@@ -231,7 +231,7 @@ def test_does_not_optimise_the_pareto_front_if_interesting():
 
 
 def test_stops_optimising_once_interesting():
-    hi = 2 ** 16 - 1
+    hi = 2**16 - 1
 
     def test(data):
         n = data.draw_bits(16)

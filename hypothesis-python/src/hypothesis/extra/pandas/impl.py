@@ -171,7 +171,7 @@ def range_indexes(
     check_valid_size(min_size, "min_size")
     check_valid_size(max_size, "max_size")
     if max_size is None:
-        max_size = min([min_size + DEFAULT_MAX_SIZE, 2 ** 63 - 1])
+        max_size = min([min_size + DEFAULT_MAX_SIZE, 2**63 - 1])
     check_valid_interval(min_size, max_size, "min_size", "max_size")
     return st.integers(min_size, max_size).map(pandas.RangeIndex)
 

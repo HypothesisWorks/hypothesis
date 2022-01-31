@@ -113,7 +113,7 @@ def test_generate_valid_indices(shape, allow_ellipsis, data):
         # If there's a zero in the shape, the array will have no elements.
         array = xp.zeros(shape)
         assert array.size == 0  # sanity check
-    elif math.prod(shape) <= 10 ** 5:
+    elif math.prod(shape) <= 10**5:
         # If it's small enough to instantiate, do so with distinct elements.
         array = xp.reshape(xp.arange(math.prod(shape)), shape)
     else:

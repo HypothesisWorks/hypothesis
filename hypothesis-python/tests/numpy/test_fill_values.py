@@ -22,7 +22,7 @@ def test_generated_lists_are_distinct(ls):
 @st.composite
 def distinct_integers(draw):
     used = draw(st.shared(st.builds(set), key="distinct_integers.used"))
-    i = draw(st.integers(0, 2 ** 64 - 1).filter(lambda x: x not in used))
+    i = draw(st.integers(0, 2**64 - 1).filter(lambda x: x not in used))
     used.add(i)
     return i
 

@@ -68,7 +68,7 @@ def get_seeder_and_restorer(seed=0):
     to force determinism on simulation or scheduling frameworks which avoid
     using the global random state.  See e.g. #1709.
     """
-    assert isinstance(seed, int) and 0 <= seed < 2 ** 32
+    assert isinstance(seed, int) and 0 <= seed < 2**32
     states: dict = {}
 
     if "numpy" in sys.modules:

@@ -371,7 +371,7 @@ def can_cast(type, value):
 
 
 def _networks(bits):
-    return st.tuples(st.integers(0, 2 ** bits - 1), st.integers(-bits, 0).map(abs))
+    return st.tuples(st.integers(0, 2**bits - 1), st.integers(-bits, 0).map(abs))
 
 
 utc_offsets = st.builds(

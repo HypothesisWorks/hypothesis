@@ -29,12 +29,12 @@ def test_gives_the_correct_probabilities():
     counts = [0] * len(weights)
 
     i = 0
-    while i < 2 ** 16:
+    while i < 2**16:
         data = ConjectureData.for_buffer(int_to_bytes(i, 2))
         try:
             c = sampler.sample(data)
             counts[c] += 1
-            assert probabilities[c] >= Fraction(counts[c], 2 ** 16)
+            assert probabilities[c] >= Fraction(counts[c], 2**16)
         except StopTest:
             pass
         if 1 in data.forced_indices:

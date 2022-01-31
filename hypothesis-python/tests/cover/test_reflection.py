@@ -504,7 +504,7 @@ def test_can_delegate_to_a_function_with_no_positional_args():
     "func,args,expected",
     [
         (lambda: None, (), None),
-        (lambda a: a ** 2, (2,), 4),
+        (lambda a: a**2, (2,), 4),
         (lambda *a: a, [1, 2, 3], (1, 2, 3)),
     ],
 )

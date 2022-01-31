@@ -128,7 +128,7 @@ def test_matmul_signature_can_exercise_all_combination_of_optional_dims(
             signature="(m?,n),(n,p?)->(m?,p?)", max_dims=0
         ),
         lambda shapes: shapes == target_shapes,
-        settings(max_examples=10 ** 6),
+        settings(max_examples=10**6),
     )
 
 

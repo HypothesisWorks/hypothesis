@@ -172,14 +172,14 @@ def test_float16_can_exclude_infinity(x):
 @pytest.mark.parametrize(
     "kwargs",
     [
-        {"min_value": 10 ** 5, "width": 16},
-        {"max_value": 10 ** 5, "width": 16},
-        {"min_value": 10 ** 40, "width": 32},
-        {"max_value": 10 ** 40, "width": 32},
-        {"min_value": 10 ** 400, "width": 64},
-        {"max_value": 10 ** 400, "width": 64},
-        {"min_value": 10 ** 400},
-        {"max_value": 10 ** 400},
+        {"min_value": 10**5, "width": 16},
+        {"max_value": 10**5, "width": 16},
+        {"min_value": 10**40, "width": 32},
+        {"max_value": 10**40, "width": 32},
+        {"min_value": 10**400, "width": 64},
+        {"max_value": 10**400, "width": 64},
+        {"min_value": 10**400},
+        {"max_value": 10**400},
     ],
 )
 def test_out_of_range(kwargs):
@@ -193,7 +193,7 @@ def test_disallowed_width():
 
 
 def test_no_single_floats_in_range():
-    low = 2.0 ** 25 + 1
+    low = 2.0**25 + 1
     high = low + 2
     st.floats(low, high).validate()  # Note: OK for 64bit floats
     with pytest.raises(InvalidArgument):
