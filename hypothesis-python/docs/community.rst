@@ -7,7 +7,6 @@ who can answer your questions and help you out. Please do join us.
 The two major places for community discussion are:
 
 * `The mailing list <https://groups.google.com/forum/#!forum/hypothesis-users>`_.
-* An IRC channel, #hypothesis on freenode, which is more active than the mailing list.
 
 Feel free to use these to ask for help, provide feedback, or discuss anything remotely
 Hypothesis related at all.  If you post a question on Stack Overflow, please use the
