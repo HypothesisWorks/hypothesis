@@ -28,8 +28,7 @@ Resolution of Violations
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 David R. MacIver (the project lead) acts as the main point of contact and enforcer for code of conduct violations.
-You can email him at david@drmaciver.com, message him as DRMacIver on irc.freenode.net, or for violations on GitHub
-that you want to draw his attention to you can also mention him as @DRMacIver.
+You can email him at david@drmaciver.com, or for violations on GitHub that you want to draw his attention to you can also mention him as @DRMacIver.
 
 Other people (especially Hypothesis team members) should feel free to call people on code of conduct violations when they see them,
 and it is appreciated but not required (especially if doing so would make you feel uncomfortable or unsafe).

@@ -87,7 +87,7 @@ The actual contribution
 OK, so you want to make a contribution and have sorted out the legalese. What now?
 
 First off: If you're planning on implementing a new feature, talk to us
-first! Come `join us on IRC <https://hypothesis.readthedocs.io/en/latest/community.html#community>`_,
+first! Come `join us on the mailing list <https://hypothesis.readthedocs.io/en/latest/community.html#community>`_,
 or open an issue. If it's really small feel free to open a work in progress pull request sketching
 out the idea, but it's best to get feedback from the Hypothesis maintainers
 before sinking a bunch of work into it.
