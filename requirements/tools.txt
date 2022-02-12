@@ -180,7 +180,7 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pip-tools==6.4.0
+pip-tools==6.5.1
     # via -r requirements/tools.in
 pkginfo==1.8.2
     # via twine
