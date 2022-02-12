@@ -82,10 +82,6 @@ def lint():
     codespell(*(f for f in tools.all_files() if not f.endswith("by-domain.txt")))
 
 
-HEAD = tools.hash_for_name("HEAD")
-MASTER = tools.hash_for_name("origin/master")
-
-
 def do_release(package):
     if not package.has_release():
         print(f"No release for {package.__name__}")
@@ -117,6 +113,9 @@ def do_release(package):
 
 @task()
 def deploy():
+    HEAD = tools.hash_for_name("HEAD")
+    MASTER = tools.hash_for_name("origin/master")
+
     print("Current head:  ", HEAD)
     print("Current master:", MASTER)
 
