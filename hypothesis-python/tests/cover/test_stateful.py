@@ -167,7 +167,7 @@ def test_multiple():
     none = multiple()
     some = multiple(1, 2.01, "3", b"4", 5)
     assert len(none.values) == 0 and len(some.values) == 5
-    assert all(value in some.values for value in (1, 2.01, "3", b"4", 5))
+    assert set(some.values) == {1, 2.01, "3", b"4", 5}
 
 
 class MachineUsingMultiple(RuleBasedStateMachine):

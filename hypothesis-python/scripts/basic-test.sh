@@ -13,7 +13,7 @@ for k, v in sorted(dict(os.environ).items()):
 pip install .
 
 
-PYTEST="python -m pytest -nauto"
+PYTEST="python -bb -X dev -m pytest -nauto"
 
 # Run all the no-extra-dependency tests for this version (except slow nocover tests)
 $PYTEST tests/cover tests/pytest
