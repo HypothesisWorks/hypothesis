@@ -30,7 +30,8 @@ jobs:
           - check-py39
           - check-py310
           # - check-py310-pyjion  # see notes in tox.ini
-          - check-py311
+          # - check-py311  # because setuptools uses wrapt, and which is lagging:
+          #                  https://github.com/GrahamDumpleton/wrapt/issues/196
           - check-quality
           - lint-ruby
           - check-ruby-tests
