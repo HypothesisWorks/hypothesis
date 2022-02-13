@@ -2895,7 +2895,7 @@ with a field literally named "model" (:issue:`2369`).
 
 This release adds an explicit warning for tests that are both decorated with
 :func:`@given(...) <hypothesis.given>` and request a
-:doc:`function-scoped pytest fixture <pytest:fixture>`, because such fixtures
+:doc:`function-scoped pytest fixture <pytest:how-to/fixtures>`, because such fixtures
 are only executed once for *all* Hypothesis test cases and that often causes
 trouble (:issue:`377`).
 
