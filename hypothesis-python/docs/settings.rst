@@ -126,7 +126,7 @@ falsifying example. debug is basically verbose but a bit more so. You probably
 don't want it.
 
 If you are using :pypi:`pytest`, you may also need to
-:doc:`disable output capturing for passing tests <pytest:capture>`.
+:doc:`disable output capturing for passing tests <pytest:how-to/capture-stdout-stderr>`.
 
 -------------------------
 Building settings objects
