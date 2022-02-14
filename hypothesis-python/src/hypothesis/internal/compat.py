@@ -18,7 +18,7 @@ try:
     BaseExceptionGroup = BaseExceptionGroup
 except NameError:  # pragma: no cover
     try:
-        from exceptiongroup import BaseExceptionGroup
+        from exceptiongroup import BaseExceptionGroup as BaseExceptionGroup  # for mypy
     except ImportError:
         BaseExceptionGroup = ()  # valid in isinstance and except clauses!
 
