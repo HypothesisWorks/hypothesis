@@ -14,7 +14,7 @@ import sys
 import traceback
 from inspect import getframeinfo
 from pathlib import Path
-from typing import Dict
+from typing import Dict, NamedTuple, Optional, Tuple, Type
 
 import hypothesis
 from hypothesis.errors import (
@@ -24,6 +24,7 @@ from hypothesis.errors import (
     UnsatisfiedAssumption,
     _Trimmable,
 )
+from hypothesis.internal.compat import BaseExceptionGroup
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
 
@@ -102,23 +103,35 @@ def get_trimmed_traceback(exception=None):
     return tb
 
 
-def get_interesting_origin(exception):
+class InterestingOrigin(NamedTuple):
     # The `interesting_origin` is how Hypothesis distinguishes between multiple
     # failures, for reporting and also to replay from the example database (even
     # if report_multiple_bugs=False).  We traditionally use the exception type and
     # location, but have extracted this logic in order to see through `except ...:`
     # blocks and understand the __cause__ (`raise x from y`) or __context__ that
-    # first raised an exception.
-    tb = get_trimmed_traceback(exception)
-    filename, lineno, *_ = traceback.extract_tb(tb)[-1]
-    return (
-        type(exception),
-        filename,
-        lineno,
+    # first raised an exception as well as PEP-654 exception groups.
+    type_: Type[BaseException]
+    filename: str
+    lineno: int
+    context: "Optional[InterestingOrigin]"
+    exceptiongroup_contents: "Optional[Tuple[InterestingOrigin, ...]]"
+
+    @classmethod
+    def from_exception(cls, exception: BaseException) -> "InterestingOrigin":
+        tb = get_trimmed_traceback(exception)
+        filename, lineno, *_ = traceback.extract_tb(tb)[-1]
         # Note that if __cause__ is set it is always equal to __context__, explicitly
         # to support introspection when debugging, so we can use that unconditionally.
-        get_interesting_origin(exception.__context__) if exception.__context__ else (),
-    )
+        chained_from = exception.__context__
+        return cls(
+            type(exception),
+            filename,
+            lineno,
+            cls.from_exception(chained_from) if chained_from else None,
+            tuple(map(cls.from_exception, exception.exceptions))
+            if isinstance(exception, BaseExceptionGroup)
+            else None,
+        )
 
 
 current_pytest_item = DynamicVariable(None)
