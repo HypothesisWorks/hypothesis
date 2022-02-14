@@ -14,7 +14,7 @@ import sys
 import traceback
 from inspect import getframeinfo
 from pathlib import Path
-from typing import Dict, NamedTuple, Optional, Tuple, Type
+from typing import Dict
 
 import hypothesis
 from hypothesis.errors import (
@@ -103,35 +103,29 @@ def get_trimmed_traceback(exception=None):
     return tb
 
 
-class InterestingOrigin(NamedTuple):
+def get_interesting_origin(exception):
     # The `interesting_origin` is how Hypothesis distinguishes between multiple
     # failures, for reporting and also to replay from the example database (even
     # if report_multiple_bugs=False).  We traditionally use the exception type and
     # location, but have extracted this logic in order to see through `except ...:`
     # blocks and understand the __cause__ (`raise x from y`) or __context__ that
     # first raised an exception as well as PEP-654 exception groups.
-    type_: Type[BaseException]
-    filename: str
-    lineno: int
-    context: "Optional[InterestingOrigin]"
-    exceptiongroup_contents: "Optional[Tuple[InterestingOrigin, ...]]"
-
-    @classmethod
-    def from_exception(cls, exception: BaseException) -> "InterestingOrigin":
-        tb = get_trimmed_traceback(exception)
-        filename, lineno, *_ = traceback.extract_tb(tb)[-1]
+    tb = get_trimmed_traceback(exception)
+    filename, lineno, *_ = traceback.extract_tb(tb)[-1]
+    return (
+        type(exception),
+        filename,
+        lineno,
         # Note that if __cause__ is set it is always equal to __context__, explicitly
         # to support introspection when debugging, so we can use that unconditionally.
-        chained_from = exception.__context__
-        return cls(
-            type(exception),
-            filename,
-            lineno,
-            cls.from_exception(chained_from) if chained_from else None,
-            tuple(map(cls.from_exception, exception.exceptions))
+        get_interesting_origin(exception.__context__) if exception.__context__ else (),
+        # We distinguish exception groups by the inner exceptions, as for __context__
+        tuple(
+            map(get_interesting_origin, exception.exceptions)
             if isinstance(exception, BaseExceptionGroup)
-            else None,
-        )
+            else []
+        ),
+    )
 
 
 current_pytest_item = DynamicVariable(None)
