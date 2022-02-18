@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.37.0:
+
+-------------------
+6.37.0 - 2022-02-18
+-------------------
+
+When distinguishing multiple errors, Hypothesis now looks at the inner
+exceptions of :pep:`654` ``ExceptionGroup``\ s.
+
 .. _v6.36.2:
 
 -------------------
