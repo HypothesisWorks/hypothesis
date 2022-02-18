@@ -24,6 +24,7 @@ from hypothesis.errors import (
     UnsatisfiedAssumption,
     _Trimmable,
 )
+from hypothesis.internal.compat import BaseExceptionGroup
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
 
@@ -108,7 +109,7 @@ def get_interesting_origin(exception):
     # if report_multiple_bugs=False).  We traditionally use the exception type and
     # location, but have extracted this logic in order to see through `except ...:`
     # blocks and understand the __cause__ (`raise x from y`) or __context__ that
-    # first raised an exception.
+    # first raised an exception as well as PEP-654 exception groups.
     tb = get_trimmed_traceback(exception)
     filename, lineno, *_ = traceback.extract_tb(tb)[-1]
     return (
@@ -118,6 +119,12 @@ def get_interesting_origin(exception):
         # Note that if __cause__ is set it is always equal to __context__, explicitly
         # to support introspection when debugging, so we can use that unconditionally.
         get_interesting_origin(exception.__context__) if exception.__context__ else (),
+        # We distinguish exception groups by the inner exceptions, as for __context__
+        tuple(
+            map(get_interesting_origin, exception.exceptions)
+            if isinstance(exception, BaseExceptionGroup)
+            else []
+        ),
     )
 
 

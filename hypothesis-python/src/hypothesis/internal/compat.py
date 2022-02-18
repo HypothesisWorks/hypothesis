@@ -14,6 +14,14 @@ import platform
 import sys
 import typing
 
+try:
+    BaseExceptionGroup = BaseExceptionGroup
+except NameError:  # pragma: no cover
+    try:
+        from exceptiongroup import BaseExceptionGroup as BaseExceptionGroup  # for mypy
+    except ImportError:
+        BaseExceptionGroup = ()  # valid in isinstance and except clauses!
+
 PYPY = platform.python_implementation() == "PyPy"
 WINDOWS = platform.system() == "Windows"
 
