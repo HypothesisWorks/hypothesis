@@ -14,8 +14,9 @@ import shutil
 import subprocess
 import sys
 
-import hypothesistooling as tools
 import requests
+
+import hypothesistooling as tools
 from hypothesistooling import releasemanagement as rm
 
 PACKAGE_NAME = "hypothesis-python"

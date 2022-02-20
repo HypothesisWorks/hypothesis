@@ -16,12 +16,13 @@ import sys
 from glob import glob
 from urllib.parse import urlparse
 
+import requests
+from coverage.config import CoverageConfig
+
 import hypothesistooling as tools
 import hypothesistooling.projects.conjecturerust as cr
 import hypothesistooling.projects.hypothesispython as hp
 import hypothesistooling.projects.hypothesisruby as hr
-import requests
-from coverage.config import CoverageConfig
 from hypothesistooling import installers as install, releasemanagement as rm
 from hypothesistooling.scripts import pip_tool
 
