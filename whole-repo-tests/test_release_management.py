@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import pytest
+
 from hypothesistooling.releasemanagement import (
     bump_version_info,
     parse_release_file_contents,
