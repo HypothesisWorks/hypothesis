@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.37.2:
+
+-------------------
+6.37.2 - 2022-02-21
+-------------------
+
+This patch fixes a bug in stateful testing, where returning a single value
+wrapped in :func:`~hypothesis.stateful.multiple` would be printed such that
+the assigned variable was a tuple rather than the single element
+(:issue:`3236`).
+
 .. _v6.37.1:
 
 -------------------
