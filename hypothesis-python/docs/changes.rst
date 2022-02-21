@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.37.1:
+
+-------------------
+6.37.1 - 2022-02-21
+-------------------
+
+This patch fixes a warning under :pypi:`pytest` 7 relating to our
+rich traceback display logic (:issue:`3223`).
+
 .. _v6.37.0:
 
 -------------------
