@@ -228,6 +228,32 @@ def test_multiple_variables_printed():
         state.fail_fast()
 
 
+def test_multiple_variables_printed_single_element():
+    # https://github.com/HypothesisWorks/hypothesis/issues/3236
+    class ProducesMultiple(RuleBasedStateMachine):
+        b = Bundle("b")
+
+        @initialize(target=b)
+        def populate_bundle(self):
+            return multiple(1)
+
+        @rule(b=b)
+        def fail_fast(self, b):
+            assert b != 1
+
+    with capture_out() as o, raises(AssertionError):
+        run_state_machine_as_test(ProducesMultiple)
+
+    assignment_line = o.getvalue().split("\n")[2]
+    assert assignment_line == "(v1,) = state.populate_bundle()"
+
+    state = ProducesMultiple()
+    (v1,) = state.populate_bundle()
+    state.fail_fast((v1,))  # passes if tuple not unpacked
+    with raises(AssertionError):
+        state.fail_fast(v1)
+
+
 def test_no_variables_printed():
     class ProducesNoVariables(RuleBasedStateMachine):
         b = Bundle("b")

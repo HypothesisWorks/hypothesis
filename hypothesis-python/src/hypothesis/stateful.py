@@ -333,16 +333,16 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
 
     def _print_step(self, rule, data, result):
         self.step_count = getattr(self, "step_count", 0) + 1
-        # If the step has target bundles, and the result is a MultipleResults
-        # then we want to assign to multiple variables.
-        if isinstance(result, MultipleResults):
-            n_output_vars = len(result.values)
-        else:
-            n_output_vars = 1
-        if rule.targets and n_output_vars >= 1:
-            output_assignment = ", ".join(self._last_names(n_output_vars)) + " = "
-        else:
-            output_assignment = ""
+        output_assignment = ""
+        if rule.targets:
+            if isinstance(result, MultipleResults):
+                if len(result.values) == 1:
+                    output_assignment = f"({self._last_names(1)[0]},) = "
+                elif result.values:
+                    output_names = self._last_names(len(result.values))
+                    output_assignment = ", ".join(output_names) + " = "
+            else:
+                output_assignment = self._last_names(1)[0] + " = "
         report(
             "{}state.{}({})".format(
                 output_assignment,
