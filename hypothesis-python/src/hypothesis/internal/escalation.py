@@ -133,9 +133,13 @@ current_pytest_item = DynamicVariable(None)
 
 def _get_exceptioninfo():
     # ExceptionInfo was moved to the top-level namespace in Pytest 7.0
-    for module in ["pytest", "_pytest._code"]:
+    if "pytest" in sys.modules:
         with contextlib.suppress(Exception):
-            return sys.modules[module].ExceptionInfo
+            # From Pytest 7, __init__ warns on direct calls.
+            return sys.modules["pytest"].ExceptionInfo.from_exc_info
+    if "_pytest._code" in sys.modules:  # pragma: no cover  # old versions only
+        with contextlib.suppress(Exception):
+            return sys.modules["_pytest._code"].ExceptionInfo
     return None  # pragma: no cover  # coverage tests always use pytest
 
 

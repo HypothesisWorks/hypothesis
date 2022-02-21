@@ -12,7 +12,7 @@ backports-zoneinfo==0.2.1
     # via -r requirements/coverage.in
 black==22.1.0
     # via -r requirements/coverage.in
-click==8.0.3
+click==8.0.4
     # via
     #   -r requirements/coverage.in
     #   black
@@ -24,7 +24,7 @@ dpcontracts==0.6.0
     # via -r requirements/coverage.in
 execnet==1.9.0
     # via pytest-xdist
-fakeredis==1.7.0
+fakeredis==1.7.1
     # via -r requirements/coverage.in
 iniconfig==1.1.1
     # via pytest
@@ -44,13 +44,14 @@ packaging==21.3
     # via
     #   fakeredis
     #   pytest
+    #   redis
 pandas==1.4.1
     # via -r requirements/coverage.in
 pathspec==0.9.0
     # via black
 pexpect==4.8.0
     # via -r requirements/test.in
-platformdirs==2.5.0
+platformdirs==2.5.1
     # via black
 pluggy==1.0.0
     # via pytest
@@ -81,7 +82,7 @@ pytz==2021.3
     #   pandas
 pyyaml==6.0
     # via libcst
-redis==4.0.2
+redis==4.1.4
     # via fakeredis
 six==1.16.0
     # via
@@ -95,7 +96,7 @@ tomli==2.0.1
     # via
     #   black
     #   pytest
-typing-extensions==4.1.0
+typing-extensions==4.1.1
     # via
     #   -r requirements/coverage.in
     #   black
