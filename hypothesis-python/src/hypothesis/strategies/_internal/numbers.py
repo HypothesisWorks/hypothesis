@@ -342,6 +342,22 @@ def floats(
     check_valid_bound(min_value, "min_value")
     check_valid_bound(max_value, "max_value")
 
+    if allow_subnormal and next_up(0.0, width=width) == 0:  # pragma: no cover
+        # Not worth having separate CI envs and dependencies just to cover this branch;
+        # discussion in https://github.com/HypothesisWorks/hypothesis/issues/3092
+        #
+        # Erroring out here ensures that the database contents are interpreted
+        # consistently - which matters for such a foundational strategy, even if it's
+        # not always true for all user-composed strategies further up the stack.
+        raise FloatingPointError(
+            f"Got allow_subnormal={allow_subnormal!r}, but we can't represent "
+            f"subnormal floats right now, in violation of the IEEE-754 floating-point "
+            f"specification.  This is usually because something was compiled with "
+            f"-ffast-math or a similar option, which sets global processor state.  "
+            f"See https://simonbyrne.github.io/notes/fastmath/ for a more detailed "
+            f"writeup - and good luck!"
+        )
+
     min_arg, max_arg = min_value, max_value
     if min_value is not None:
         min_value = float_of(min_value, width)
