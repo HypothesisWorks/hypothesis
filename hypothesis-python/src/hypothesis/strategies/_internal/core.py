@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import enum
+import inspect
 import math
 import operator
 import random
@@ -19,7 +20,7 @@ import typing
 from decimal import Context, Decimal, localcontext
 from fractions import Fraction
 from functools import reduce
-from inspect import Parameter, Signature, getfullargspec, isabstract, isclass, signature
+from inspect import Parameter, Signature, isabstract, isclass, signature
 from types import FunctionType
 from typing import (
     Any,
@@ -57,6 +58,7 @@ from hypothesis.internal.conjecture.utils import (
 from hypothesis.internal.entropy import get_seeder_and_restorer
 from hypothesis.internal.reflection import (
     define_function_signature,
+    define_function_signature_from_signature,
     get_pretty_function_description,
     nicerepr,
     required_args,
@@ -1463,29 +1465,32 @@ def composite(f: Callable[..., Ex]) -> Callable[..., SearchStrategy[Ex]]:
     else:
         special_method = None
 
-    argspec = getfullargspec(f)
+    sig = signature(f)
+    params = tuple(sig.parameters.values())
 
-    if argspec.defaults is not None and len(argspec.defaults) == len(argspec.args):
-        raise InvalidArgument("A default value for initial argument will never be used")
-    if len(argspec.args) == 0 and not argspec.varargs:
+    if not (params and "POSITIONAL" in params[0].kind.name):
         raise InvalidArgument(
             "Functions wrapped with composite must take at least one "
             "positional argument."
         )
-
-    annots = {
-        k: v
-        for k, v in argspec.annotations.items()
-        if k in (argspec.args + argspec.kwonlyargs + ["return"])
-    }
-    new_argspec = argspec._replace(args=argspec.args[1:], annotations=annots)
+    if params[0].default is not sig.empty:
+        raise InvalidArgument("A default value for initial argument will never be used")
+    if params[0].kind.name != "VAR_POSITIONAL":
+        params = params[1:]
+    newsig = sig.replace(
+        parameters=params,
+        return_annotation=SearchStrategy
+        if sig.return_annotation is sig.empty
+        else SearchStrategy[sig.return_annotation],  # type: ignore
+    )
 
     @defines_strategy()
-    @define_function_signature(f.__name__, f.__doc__, new_argspec)
+    @define_function_signature_from_signature(f.__name__, f.__doc__, newsig)
     def accept(*args, **kwargs):
         return CompositeStrategy(f, args, kwargs)
 
     accept.__module__ = f.__module__
+    accept.__signature__ = newsig
     if special_method is not None:
         return special_method(accept)
     return accept
