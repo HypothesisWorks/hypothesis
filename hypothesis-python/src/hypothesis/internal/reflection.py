@@ -22,8 +22,10 @@ from functools import wraps
 from tokenize import detect_encoding
 from types import ModuleType
 from typing import TYPE_CHECKING, Callable
+from unittest.mock import _patch as PatchType
 
 from hypothesis.internal.compat import is_typed_named_tuple, update_code_location
+from hypothesis.utils.conventions import not_set
 from hypothesis.vendor.pretty import pretty
 
 if TYPE_CHECKING:
@@ -83,6 +85,15 @@ def function_digest(function):
 
 
 def get_signature(target):
+    # Special case for use of `@unittest.mock.patch` decorator, mimicking the
+    # behaviour of getfullargspec instead of reporting unusable arguments.
+    patches = getattr(target, "patchings", None)
+    if isinstance(patches, list) and all(isinstance(p, PatchType) for p in patches):
+        P = inspect.Parameter
+        return inspect.Signature(
+            [P("args", P.VAR_POSITIONAL), P("keywargs", P.VAR_KEYWORD)]
+        )
+
     if isinstance(getattr(target, "__signature__", None), inspect.Signature):
         # This special case covers unusual codegen like Pydantic models
         sig = target.__signature__
@@ -499,7 +510,7 @@ def define_function_signature(name, docstring, argspec):
         invocation_parts = []
         for a in argspec.args:
             if a not in fargspec.args and not fargspec.varargs:
-                must_pass_as_kwargs.append(a)
+                must_pass_as_kwargs.append(a)  # pragma: no cover
             else:
                 invocation_parts.append(a)
         if argspec.varargs:
@@ -509,7 +520,7 @@ def define_function_signature(name, docstring, argspec):
         elif argspec.kwonlyargs:
             parts.append("*")
         for k in must_pass_as_kwargs:
-            invocation_parts.append(f"{k}={k}")
+            invocation_parts.append(f"{k}={k}")  # pragma: no cover
 
         for k in argspec.kwonlyargs:
             invocation_parts.append(f"{k}={k}")
@@ -546,6 +557,111 @@ def define_function_signature(name, docstring, argspec):
     return accept
 
 
+COPY_SIGNATURE_SCRIPT = """
+from hypothesis.utils.conventions import not_set
+
+def accept({funcname}):
+    def {name}{signature}:
+        return {funcname}({invocation})
+    return {name}
+""".lstrip()
+
+
+def get_varargs(sig, kind=inspect.Parameter.VAR_POSITIONAL):
+    for p in sig.parameters.values():
+        if p.kind is kind:
+            return p
+    return None
+
+
+def define_function_signature_from_signature(name, docstring, signature):
+    """A decorator which sets the name, argspec and docstring of the function
+    passed into it."""
+    # TODO: we will (eventually...) replace the last few uses of getfullargspec
+    # with this version, and then delete the one above.  For now though, this
+    # works for @proxies() and @given() is under stricter constraints anyway.
+
+    check_valid_identifier(name)
+    for a in signature.parameters:
+        check_valid_identifier(a)
+
+    used_names = list(signature.parameters) + [name]
+
+    newsig = signature.replace(
+        parameters=[
+            p if p.default is signature.empty else p.replace(default=not_set)
+            for p in (
+                p.replace(annotation=signature.empty)
+                for p in signature.parameters.values()
+            )
+        ],
+        return_annotation=signature.empty,
+    )
+
+    pos_args = [
+        p
+        for p in signature.parameters.values()
+        if p.kind.name.startswith("POSITIONAL_")
+    ]
+
+    def accept(f):
+        fsig = inspect.signature(f)
+        must_pass_as_kwargs = []
+        invocation_parts = []
+        for p in pos_args:
+            if p.name not in fsig.parameters and get_varargs(fsig) is None:
+                must_pass_as_kwargs.append(p.name)
+            else:
+                invocation_parts.append(p.name)
+        if get_varargs(signature) is not None:
+            invocation_parts.append("*" + get_varargs(signature).name)
+        for k in must_pass_as_kwargs:
+            invocation_parts.append(f"{k}={k}")
+        for p in signature.parameters.values():
+            if p.kind is p.KEYWORD_ONLY:
+                invocation_parts.append(f"{p.name}={p.name}")
+        varkw = get_varargs(signature, kind=inspect.Parameter.VAR_KEYWORD)
+        if varkw:
+            invocation_parts.append("**" + varkw.name)
+
+        candidate_names = ["f"] + [f"f_{i}" for i in range(1, len(used_names) + 2)]
+
+        for funcname in candidate_names:  # pragma: no branch
+            if funcname not in used_names:
+                break
+
+        source = COPY_SIGNATURE_SCRIPT.format(
+            name=name,
+            funcname=funcname,
+            signature=str(newsig),
+            invocation=", ".join(invocation_parts),
+        )
+        result = source_exec_as_module(source).accept(f)
+        result.__doc__ = docstring
+        result.__defaults__ = tuple(
+            p.default
+            for p in signature.parameters.values()
+            if p.default is not signature.empty and "POSITIONAL" in p.kind.name
+        )
+        kwdefaults = {
+            p.name: p.default
+            for p in signature.parameters.values()
+            if p.default is not signature.empty and p.kind is p.KEYWORD_ONLY
+        }
+        if kwdefaults:
+            result.__kwdefaults__ = kwdefaults
+        annotations = {
+            p.name: p.annotation
+            for p in signature.parameters.values()
+            if p.annotation is not signature.empty
+        }
+        if annotations:
+            result.__annotations__ = annotations
+        return result
+
+    return accept
+
+
 def impersonate(target):
     """Decorator to update the attributes of a function so that to external
     introspectors it will appear to be the target function.
@@ -568,10 +684,10 @@ def impersonate(target):
 
 
 def proxies(target: "T") -> Callable[[Callable], "T"]:
-    replace_sig = define_function_signature(
+    replace_sig = define_function_signature_from_signature(
         target.__name__.replace("<lambda>", "_lambda_"),  # type: ignore
         target.__doc__,
-        getfullargspec_except_self(target),
+        get_signature(target),
     )
 
     def accept(proxy):

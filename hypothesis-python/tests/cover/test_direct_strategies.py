@@ -293,13 +293,13 @@ def test_build_class_with_target_kwarg():
 
 
 def test_builds_raises_with_no_target():
-    with pytest.raises(InvalidArgument):
+    with pytest.raises(TypeError):
         ds.builds().example()
 
 
 @pytest.mark.parametrize("non_callable", [1, "abc", ds.integers()])
 def test_builds_raises_if_non_callable_as_target_kwarg(non_callable):
-    with pytest.raises(InvalidArgument):
+    with pytest.raises(TypeError):
         ds.builds(target=non_callable).example()
 
 

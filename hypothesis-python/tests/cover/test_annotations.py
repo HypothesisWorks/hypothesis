@@ -103,7 +103,7 @@ def first_annot(draw: None):
 
 def test_composite_edits_annotations():
     spec_comp = getfullargspec(st.composite(pointless_composite))
-    assert spec_comp.annotations["return"] == int
+    assert spec_comp.annotations["return"] == st.SearchStrategy[int]
     assert "nothing" in spec_comp.annotations
     assert "draw" not in spec_comp.annotations
 

@@ -8,7 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from inspect import getfullargspec
+from inspect import signature
 from typing import MutableMapping
 from weakref import WeakKeyDictionary
 
@@ -132,27 +132,21 @@ class LazyStrategy(SearchStrategy):
 
     def __repr__(self):
         if self.__representation is None:
-            _args = self.__args
-            _kwargs = self.__kwargs
-            argspec = getfullargspec(self.function)
-            defaults = dict(argspec.kwonlydefaults or {})
-            if argspec.defaults is not None:
-                for name, value in zip(
-                    reversed(argspec.args), reversed(argspec.defaults)
-                ):
-                    defaults[name] = value
-            if len(argspec.args) > 1 or argspec.defaults:
+            sig = signature(self.function)
+            pos = [p for p in sig.parameters.values() if "POSITIONAL" in p.kind.name]
+            if len(pos) > 1 or any(p.default is not sig.empty for p in pos):
                 _args, _kwargs = convert_positional_arguments(
-                    self.function, _args, _kwargs
+                    self.function, self.__args, self.__kwargs
                 )
             else:
                 _args, _kwargs = convert_keyword_arguments(
-                    self.function, _args, _kwargs
+                    self.function, self.__args, self.__kwargs
                 )
-            kwargs_for_repr = dict(_kwargs)
-            for k, v in defaults.items():
-                if k in kwargs_for_repr and kwargs_for_repr[k] is v:
-                    del kwargs_for_repr[k]
+            kwargs_for_repr = {
+                k: v
+                for k, v in _kwargs.items()
+                if k not in sig.parameters or v is not sig.parameters[k].default
+            }
             self.__representation = "{}({}){}".format(
                 self.function.__name__,
                 arg_string(self.function, _args, kwargs_for_repr, reorder=False),
