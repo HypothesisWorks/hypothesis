@@ -29,7 +29,7 @@ infeasible.  We may also be quite aggressive in bumping the minimum version of
 Lark, unless someone volunteers to either fund or do the maintenance.
 """
 
-from inspect import getfullargspec
+from inspect import signature
 from typing import Dict, Optional
 
 import attr
@@ -90,7 +90,7 @@ class LarkStrategy(st.SearchStrategy):
         # This is a total hack, but working around the changes is a nicer user
         # experience than breaking for anyone who doesn't instantly update their
         # installation of Lark alongside Hypothesis.
-        compile_args = getfullargspec(grammar.grammar.compile).args
+        compile_args = signature(grammar.grammar.compile).parameters
         if "terminals_to_keep" in compile_args:
             terminals, rules, ignore_names = grammar.grammar.compile(start, ())
         elif "start" in compile_args:  # pragma: no cover
