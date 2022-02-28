@@ -9,7 +9,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import enum
-import inspect
 import math
 import operator
 import random
@@ -57,7 +56,6 @@ from hypothesis.internal.conjecture.utils import (
 )
 from hypothesis.internal.entropy import get_seeder_and_restorer
 from hypothesis.internal.reflection import (
-    define_function_signature,
     define_function_signature_from_signature,
     get_pretty_function_description,
     nicerepr,
@@ -845,7 +843,7 @@ def builds(
     the callable.
     """
     if not callable_and_args:
-        raise InvalidArgument(
+        raise InvalidArgument(  # pragma: no cover
             "builds() must be passed a callable as the first positional "
             "argument, but no positional arguments were given."
         )
@@ -900,17 +898,21 @@ if sys.version_info[:2] >= (3, 8):  # pragma: no branch
     # matches the semantics of the function.  Great for documentation!
     sig = signature(builds)
     args, kwargs = sig.parameters.values()
-    builds.__signature__ = sig.replace(
-        parameters=[
-            Parameter(
-                name="target",
-                kind=Parameter.POSITIONAL_ONLY,
-                annotation=Callable[..., Ex],
-            ),
-            args.replace(name="args", annotation=SearchStrategy[Any]),
-            kwargs,
-        ]
-    )
+    builds = define_function_signature_from_signature(
+        name=builds.__name__,
+        docstring=builds.__doc__,
+        signature=sig.replace(
+            parameters=[
+                Parameter(
+                    name="target",
+                    kind=Parameter.POSITIONAL_ONLY,
+                    annotation=Callable[..., Ex],
+                ),
+                args.replace(name="args", annotation=SearchStrategy[Any]),
+                kwargs,
+            ]
+        ),
+    )(builds)
 
 
 @cacheable

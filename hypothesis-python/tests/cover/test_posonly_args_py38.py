@@ -27,3 +27,8 @@ def test_composite_with_posonly_args(data, min_value):
 def test_preserves_signature():
     with pytest.raises(TypeError):
         strat(x=1)
+
+
+def test_builds_real_pos_only():
+    with pytest.raises(TypeError):
+        st.builds()  # requires a target!
