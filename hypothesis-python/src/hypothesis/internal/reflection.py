@@ -84,7 +84,7 @@ def function_digest(function):
     return hasher.digest()
 
 
-def get_signature(target):
+def get_signature(target, *, follow_wrapped=True):
     # Special case for use of `@unittest.mock.patch` decorator, mimicking the
     # behaviour of getfullargspec instead of reporting unusable arguments.
     patches = getattr(target, "patchings", None)
@@ -119,7 +119,7 @@ def get_signature(target):
             return sig.replace(
                 parameters=[v for k, v in sig.parameters.items() if k != "self"]
             )
-    return inspect.signature(target)
+    return inspect.signature(target, follow_wrapped=follow_wrapped)
 
 
 def arg_is_required(param):
@@ -605,7 +605,7 @@ def define_function_signature_from_signature(name, docstring, signature):
     ]
 
     def accept(f):
-        fsig = inspect.signature(f)
+        fsig = inspect.signature(f, follow_wrapped=False)
         must_pass_as_kwargs = []
         invocation_parts = []
         for p in pos_args:
@@ -687,7 +687,7 @@ def proxies(target: "T") -> Callable[[Callable], "T"]:
     replace_sig = define_function_signature_from_signature(
         target.__name__.replace("<lambda>", "_lambda_"),  # type: ignore
         target.__doc__,
-        get_signature(target),
+        get_signature(target, follow_wrapped=False),
     )
 
     def accept(proxy):
