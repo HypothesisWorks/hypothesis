@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.39.1:
+
+-------------------
+6.39.1 - 2022-03-03
+-------------------
+
+This patch fixes a regression where the bound inner function
+(``your_test.hypothesis.inner_test``) would be invoked with positional
+arguments rather than passing them by name, which broke
+:pypi:`pytest-asyncio` (:issue:`3245`).
+
 .. _v6.39.0:
 
 -------------------
