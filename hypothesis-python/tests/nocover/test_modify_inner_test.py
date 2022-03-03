@@ -91,3 +91,14 @@ def test_inner_is_original_even_when_invalid():
         invalid_test()
 
     assert invalid_test.hypothesis.inner_test == original
+
+
+def test_invokes_inner_function_with_args_by_name():
+    # Regression test for https://github.com/HypothesisWorks/hypothesis/issues/3245
+    @given(st.integers())
+    def test(x):
+        pass
+
+    f = test.hypothesis.inner_test
+    test.hypothesis.inner_test = wraps(f)(lambda **kw: f(**kw))
+    test()
