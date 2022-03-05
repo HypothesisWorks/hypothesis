@@ -172,13 +172,14 @@ def test_pulic_interface_works():
         fails.example()
 
 
-def test_given_can_infer_from_manual_annotations():
+@pytest.mark.parametrize("infer_token", [infer, ...])
+def test_given_can_infer_from_manual_annotations(infer_token):
     # Editing annotations before decorating is hilariously awkward, but works!
     def inner(a):
-        pass
+        assert isinstance(a, int)
 
     inner.__annotations__ = {"a": int}
-    given(a=infer)(inner)()
+    given(a=infer_token)(inner)()
 
 
 class EmptyEnum(enum.Enum):
