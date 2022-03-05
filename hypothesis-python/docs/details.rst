@@ -581,7 +581,7 @@ used as a keyword argument to explicitly fill in an argument from its type annot
 
 .. code:: python
 
-    @given(a=...)
+    @given(a=...)  # or @given(a=infer)
     def test(a: int):
         pass
 
