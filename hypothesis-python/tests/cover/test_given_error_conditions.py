@@ -10,7 +10,7 @@
 
 import pytest
 
-from hypothesis import assume, given, infer, reject, settings
+from hypothesis import assume, given, reject, settings
 from hypothesis.errors import InvalidArgument, Unsatisfiable
 from hypothesis.strategies import booleans, integers
 
@@ -35,7 +35,16 @@ def test_does_not_raise_unsatisfiable_if_some_false_in_finite_set():
 
 
 def test_error_if_has_no_hints():
-    @given(a=infer)
+    @given(a=...)
+    def inner(a):
+        pass
+
+    with pytest.raises(InvalidArgument):
+        inner()
+
+
+def test_error_if_infer_all_and_has_no_hints():
+    @given(...)
     def inner(a):
         pass
 
@@ -44,8 +53,17 @@ def test_error_if_has_no_hints():
 
 
 def test_error_if_infer_is_posarg():
-    @given(infer)
-    def inner(ex):
+    @given(..., ...)
+    def inner(ex1: int, ex2: int):
+        pass
+
+    with pytest.raises(InvalidArgument):
+        inner()
+
+
+def test_error_if_infer_is_posarg_mixed_with_kwarg():
+    @given(..., ex2=...)
+    def inner(ex1: int, ex2: int):
         pass
 
     with pytest.raises(InvalidArgument):
