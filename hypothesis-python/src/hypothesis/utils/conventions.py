@@ -19,9 +19,7 @@ class UniqueIdentifier:
         return self.identifier
 
 
-class InferType(UniqueIdentifier):
-    """We have a subclass for `infer` so we can type-hint public APIs."""
 
-
-infer = InferType("infer")
+infer = ...
+InferType = type(Ellipsis)
 not_set = UniqueIdentifier("not_set")
