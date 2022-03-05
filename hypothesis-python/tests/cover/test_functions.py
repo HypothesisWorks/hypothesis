@@ -12,7 +12,7 @@ from inspect import getfullargspec
 
 import pytest
 
-from hypothesis import assume, given, infer
+from hypothesis import assume, given
 from hypothesis.errors import InvalidArgument, InvalidState
 from hypothesis.strategies import booleans, functions, integers
 
@@ -112,7 +112,7 @@ def test_can_call_default_like_arg():
     # branch for calling it otherwise and alternative workarounds are worse.
     defaults = getfullargspec(functions).kwonlydefaults
     assert defaults["like"]() is None
-    assert defaults["returns"] is infer
+    assert defaults["returns"] is ...
 
 
 def func(arg, *, kwonly_arg):
