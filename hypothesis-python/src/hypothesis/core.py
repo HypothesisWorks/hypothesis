@@ -275,8 +275,9 @@ def is_invalid_test(test, original_argspec, given_arguments, given_kwargs):
 
     if infer in given_arguments:
         return invalid(
-            "infer was passed as a positional argument to @given, "
-            "but may only be passed as a keyword argument"
+            "... was passed as a positional argument to @given, "
+            "but may only be passed as a keyword argument or as "
+            "the sole argument of @given"
         )
 
     if given_arguments and given_kwargs:
@@ -1012,7 +1013,7 @@ def given(
                 def wrapped_test(*arguments, **kwargs):
                     __tracebackhide__ = True
                     raise InvalidArgument(
-                        f"passed {name}=infer for {test.__name__}, but {name} has "
+                        f"passed {name}=... for {test.__name__}, but {name} has "
                         "no type annotation"
                     )
 
