@@ -15,7 +15,7 @@ from uuid import UUID
 from django.conf import settings as django_settings
 from django.contrib.auth.models import User
 
-from hypothesis import HealthCheck, assume, given, infer, settings
+from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.control import reject
 from hypothesis.errors import HypothesisException, InvalidArgument
 from hypothesis.extra.django import (
@@ -111,11 +111,11 @@ class TestGetsBasicModels(TestCase):
         mc = from_model(MandatoryComputed, company=from_model(Company))
         self.assertRaises(RuntimeError, mc.example)
 
-    @given(from_model(CustomishDefault, customish=infer))
+    @given(from_model(CustomishDefault, customish=...))
     def test_customish_default_overridden_by_infer(self, x):
         assert x.customish == "a"
 
-    @given(from_model(CustomishDefault, customish=infer))
+    @given(from_model(CustomishDefault, customish=...))
     def test_customish_infer_uses_registered_instead_of_default(self, x):
         assert x.customish == "a"
 
