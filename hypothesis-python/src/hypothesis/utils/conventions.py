@@ -19,7 +19,6 @@ class UniqueIdentifier:
         return self.identifier
 
 
-
 infer = ...
 InferType = type(Ellipsis)
 not_set = UniqueIdentifier("not_set")
