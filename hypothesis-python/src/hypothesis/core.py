@@ -22,6 +22,7 @@ import warnings
 import zlib
 from collections import defaultdict
 from io import StringIO
+from itertools import chain
 from random import Random
 from typing import (
     Any,
@@ -969,6 +970,14 @@ def given(
         given_kwargs = dict(_given_kwargs)
 
         original_argspec = getfullargspec(test)
+
+        if given_arguments == (Ellipsis,) and not given_kwargs:
+            # user indicated that they want to infer all arguments
+            given_kwargs.update(
+                (name, Ellipsis)
+                for name in chain(original_argspec.args, original_argspec.kwonlyargs)
+            )
+            given_arguments = ()
 
         check_invalid = is_invalid_test(
             test, original_argspec, given_arguments, given_kwargs
