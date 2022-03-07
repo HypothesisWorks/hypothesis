@@ -798,6 +798,13 @@ class BuildsStrategy(SearchStrategy):
                         f"error - try using from_type({self.target!r}) instead "
                         f"of builds({self.target!r})"
                     ) from err
+            if getattr(self.target, "__no_type_check__", None) is True:
+                # Note: could use PEP-678 __notes__ here.  Migrate over once we're
+                # using an `exceptiongroup` backport with support for that.
+                raise TypeError(
+                    "This might be because the @no_type_check decorator prevented "
+                    "Hypothesis from inferring a strategy for some required arguments."
+                ) from err
             raise
 
     def validate(self):
