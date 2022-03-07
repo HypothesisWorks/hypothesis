@@ -302,7 +302,7 @@ def test_phases_can_disable_shrinking():
         f, settings=settings(database=None, phases=(Phase.reuse, Phase.generate))
     )
     runner.run()
-    assert len(seen) == MIN_TEST_CALLS
+    assert len(seen) == 1
 
 
 def test_reuse_phase_runs_for_max_examples_if_generation_is_disabled():

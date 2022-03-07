@@ -577,8 +577,12 @@ class ConjectureRunner:
         # the run.
         if not self.interesting_examples:
             return True
+        # Users who disable shrinking probably want to exit as fast as possible.
         # If we've found a bug and won't report more than one, stop looking.
-        elif not self.settings.report_multiple_bugs:
+        elif (
+            Phase.shrink not in self.settings.phases
+            or not self.settings.report_multiple_bugs
+        ):
             return False
         assert self.first_bug_found_at <= self.last_bug_found_at <= self.call_count
         # Otherwise, keep searching for between ten and 'a heuristic' calls.
