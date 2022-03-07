@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.39.3:
+
+-------------------
+6.39.3 - 2022-03-07
+-------------------
+
+If the :obj:`~hypothesis.Phase.shrink` phase is disabled, we now stop the
+:obj:`~hypothesis.Phase.generate` phase as soon as an error is found regardless
+of the value of the ``report_multiple_examples`` setting, since that's
+probably what you wanted (:issue:`3244`).
+
 .. _v6.39.2:
 
 -------------------
