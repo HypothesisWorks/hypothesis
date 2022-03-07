@@ -3404,8 +3404,8 @@ provided in the standard-library :mod:`python:warnings` module.
 -------------------
 
 This release improves Hypothesis's management of the set of test cases it
-tracks between runs. It will only do anything if you have ``Phase.target``
-enabled and an example database set.
+tracks between runs. It will only do anything if you have the
+:obj:`~hypothesis.Phase.target` phase enabled and an example database set.
 In those circumstances it should result in a more thorough and faster set of examples
 that are tried on each run.
 
@@ -9512,7 +9512,7 @@ This release documents :ref:`the previously undocumented phases feature <phases>
 making it part of the public API. It also updates how the example
 database is used. Principally:
 
-* A ``Phases.reuse`` argument will now correctly control whether examples
+* The :obj:`~hypothesis.Phase.reuse` phase will now correctly control whether examples
   from the database are run (it previously did exactly the wrong thing and
   controlled whether examples would be *saved*).
 * Hypothesis will no longer try to rerun *all* previously failing examples.

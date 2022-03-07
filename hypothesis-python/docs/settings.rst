@@ -69,14 +69,8 @@ Hypothesis divides tests into logically distinct phases:
 The phases setting provides you with fine grained control over which of these run,
 with each phase corresponding to a value on the :class:`~hypothesis.Phase` enum:
 
-.. class:: hypothesis.Phase
-
-1. ``Phase.explicit`` controls whether explicit examples are run.
-2. ``Phase.reuse`` controls whether previous examples will be reused.
-3. ``Phase.generate`` controls whether new examples will be generated.
-4. ``Phase.target`` controls whether examples will be mutated for targeting.
-5. ``Phase.shrink`` controls whether examples will be shrunk.
-6. ``Phase.explain`` controls whether Hypothesis attempts to explain test failures.
+.. autoclass:: hypothesis.Phase
+   :members:
 
 The phases argument accepts a collection with any subset of these. e.g.
 ``settings(phases=[Phase.generate, Phase.shrink])`` will generate new examples
