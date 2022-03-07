@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.39.2:
+
+-------------------
+6.39.2 - 2022-03-07
+-------------------
+
+This patch clarifies rare error messages in
+:func:`~hypothesis.strategies.builds` (:issue:`3225`) and
+:func:`~hypothesis.strategies.floats` (:issue:`3207`).
+
 .. _v6.39.1:
 
 -------------------
