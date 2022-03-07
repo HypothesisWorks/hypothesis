@@ -430,12 +430,12 @@ example database implementations, and how to define custom implementations.
 
 @unique
 class Phase(IntEnum):
-    explicit = 0
-    reuse = 1
-    generate = 2
-    target = 3
-    shrink = 4
-    explain = 5
+    explicit = 0  #: controls whether explicit examples are run.
+    reuse = 1  #: controls whether previous examples will be reused.
+    generate = 2  #: controls whether new examples will be generated.
+    target = 3  #: controls whether examples will be mutated for targeting.
+    shrink = 4  #: controls whether examples will be shrunk.
+    explain = 5  #: controls whether Hypothesis attempts to explain test failures.
 
     def __repr__(self):
         return f"Phase.{self.name}"
