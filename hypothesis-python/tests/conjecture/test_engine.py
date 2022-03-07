@@ -150,17 +150,17 @@ def test_detects_flakiness():
 
 
 def recur(i, data):
-    try:
-        if i >= 1:
-            recur(i - 1, data)
-    except RecursionError:
-        data.mark_interesting()
+    if i >= 1:
+        recur(i - 1, data)
 
 
 def test_recursion_error_is_not_flaky():
     def tf(data):
         i = data.draw_bits(16)
-        recur(i, data)
+        try:
+            recur(i, data)
+        except RecursionError:
+            data.mark_interesting()
 
     runner = ConjectureRunner(tf)
     runner.run()
