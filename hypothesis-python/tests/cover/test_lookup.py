@@ -886,3 +886,13 @@ def test_builds_suggests_from_type(type_):
         raise AssertionError("Expected strategy to raise an error")
     except TypeError as err:
         assert not isinstance(err, InvalidArgument)
+
+
+def test_builds_mentions_no_type_check():
+    @typing.no_type_check
+    def f(x: int):
+        pass
+
+    msg = "@no_type_check decorator prevented Hypothesis from inferring a strategy"
+    with pytest.raises(TypeError, match=msg):
+        st.builds(f).example()
