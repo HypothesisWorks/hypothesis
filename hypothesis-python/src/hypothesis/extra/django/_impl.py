@@ -27,9 +27,8 @@ from hypothesis.strategies._internal.utils import defines_strategy
 from hypothesis.utils.conventions import infer
 
 if sys.version_info >= (3, 10):  # pragma: no cover
-    from types import EllipsisType
+    from types import EllipsisType as InferType
 
-    InferType = EllipsisType
 else:
     InferType = type(Ellipsis)
 
