@@ -115,7 +115,7 @@ if sys.version_info >= (3, 10):  # pragma: no cover
 
     InferType = EllipsisType
 else:
-    InferType = type(Ellipsis)
+    EllipsisType = type(Ellipsis)
 
 
 TestFunc = TypeVar("TestFunc", bound=Callable)

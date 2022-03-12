@@ -114,9 +114,8 @@ from hypothesis.strategies._internal.types import _global_type_lookup, is_generi
 from hypothesis.utils.conventions import infer
 
 if sys.version_info >= (3, 10):  # pragma: no cover
-    from types import EllipsisType
+    from types import EllipsisType as InferType
 
-    InferType = EllipsisType
 else:
     InferType = type(Ellipsis)
 
