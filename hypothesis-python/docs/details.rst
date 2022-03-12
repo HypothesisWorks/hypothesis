@@ -576,8 +576,9 @@ argument, to force this inference for arguments with a default value.
 
 :func:`@given <hypothesis.given>` does not perform any implicit inference
 for required arguments, as this would break compatibility with pytest fixtures.
-:const:`~hypothesis.infer`, which is an alias of ``...`` (``Ellipsis``), can be 
-used as a keyword argument to explicitly fill in an argument from its type annotation.
+:const:`~hypothesis.infer`, which is an alias of ``...`` (:obj:`python:Ellipsis`), can 
+be used as a keyword argument to explicitly fill in an argument from its type 
+annotation.
 
 .. code:: python
 
@@ -587,7 +588,7 @@ used as a keyword argument to explicitly fill in an argument from its type annot
 
 
     # is equivalent to
-    @given(a=integers())
+    @given(a=from_type(int))
     def test(a):
         pass
 
@@ -602,7 +603,7 @@ used as a keyword argument to explicitly fill in an argument from its type annot
 
 
     # is equivalent to
-    @given(a=integers(), b=text())
+    @given(a=..., b=...)
     def test(a, b):
         pass
 
