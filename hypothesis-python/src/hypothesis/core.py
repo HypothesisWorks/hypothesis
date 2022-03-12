@@ -106,9 +106,17 @@ from hypothesis.strategies._internal.strategies import (
     MappedSearchStrategy,
     SearchStrategy,
 )
-from hypothesis.utils.conventions import InferType, infer
+from hypothesis.utils.conventions import infer
 from hypothesis.vendor.pretty import RepresentationPrinter
 from hypothesis.version import __version__
+
+if sys.version_info >= (3, 10):  # pragma: no cover
+    from types import EllipsisType
+
+    InferType = EllipsisType
+else:
+    InferType = type(Ellipsis)
+
 
 TestFunc = TypeVar("TestFunc", bound=Callable)
 
