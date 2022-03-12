@@ -91,7 +91,7 @@ def from_model(
         shop_strategy = from_model(Shop, company=from_model(Company))
 
     Like for :func:`~hypothesis.strategies.builds`, you can pass
-    `...` (`Ellipsis`) as a keyword argument to infer a strategy for
+    ``...`` (:obj:`python:Ellipsis`) as a keyword argument to infer a strategy for
     a field which has a default value instead of using the default.
     """
     if len(model) == 1:
