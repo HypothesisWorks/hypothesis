@@ -24,7 +24,14 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.extra.django._fields import from_field
 from hypothesis.internal.reflection import define_function_signature_from_signature
 from hypothesis.strategies._internal.utils import defines_strategy
-from hypothesis.utils.conventions import InferType, infer
+from hypothesis.utils.conventions import infer
+
+if sys.version_info >= (3, 10):  # pragma: no cover
+    from types import EllipsisType
+
+    InferType = EllipsisType
+else:
+    InferType = type(Ellipsis)
 
 
 class HypothesisTestCase:

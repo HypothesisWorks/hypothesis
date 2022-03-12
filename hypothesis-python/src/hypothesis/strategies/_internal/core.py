@@ -104,7 +104,15 @@ from hypothesis.strategies._internal.strings import (
     TextStrategy,
 )
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
-from hypothesis.utils.conventions import InferType, infer, not_set
+from hypothesis.utils.conventions import infer, not_set
+
+if sys.version_info >= (3, 10):  # pragma: no cover
+    from types import EllipsisType
+
+    InferType = EllipsisType
+else:
+    InferType = type(Ellipsis)
+
 
 try:
     from typing import Protocol

@@ -20,5 +20,4 @@ class UniqueIdentifier:
 
 
 infer = ...
-InferType = type(Ellipsis)
 not_set = UniqueIdentifier("not_set")
