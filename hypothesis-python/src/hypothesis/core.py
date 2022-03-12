@@ -111,11 +111,10 @@ from hypothesis.vendor.pretty import RepresentationPrinter
 from hypothesis.version import __version__
 
 if sys.version_info >= (3, 10):  # pragma: no cover
-    from types import EllipsisType
+    from types import EllipsisType as InferType
 
-    InferType = EllipsisType
 else:
-    EllipsisType = type(Ellipsis)
+    InferType = type(Ellipsis)
 
 
 TestFunc = TypeVar("TestFunc", bound=Callable)
