@@ -102,7 +102,7 @@ def assert_mypy_errors(fname, expected):
         ),
         (
             "tuples(text(), text(), text(), text(), text(), text())",
-            "tuple[Any]",  # note lower-case; this is the arbitrary-length *args case
+            "tuple[Any, ...]",
         ),
     ],
 )
