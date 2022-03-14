@@ -36,7 +36,7 @@ mypy-extensions==0.4.3
     # via
     #   black
     #   typing-inspect
-numpy==1.22.2
+numpy==1.22.3
     # via
     #   -r requirements/coverage.in
     #   pandas
@@ -63,7 +63,7 @@ py==1.11.0
     #   pytest-forked
 pyparsing==3.0.7
     # via packaging
-pytest==7.0.1
+pytest==7.1.0
     # via
     #   -r requirements/test.in
     #   pytest-forked
@@ -104,5 +104,5 @@ typing-extensions==4.1.1
     #   typing-inspect
 typing-inspect==0.7.1
     # via libcst
-wrapt==1.13.3
+wrapt==1.14.0
     # via deprecated
