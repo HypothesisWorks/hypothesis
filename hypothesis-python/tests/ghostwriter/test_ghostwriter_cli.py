@@ -54,11 +54,11 @@ def test_cli_python_equivalence(cli, code):
         shell=True,
         text=True,
     )
+    result.check_returncode()
     cli_output = result.stdout.strip()
     assert not result.stderr
     code_output = code().strip()
     assert code_output == cli_output
-    result.check_returncode()
 
 
 @pytest.mark.parametrize(
