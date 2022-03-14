@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import dataclasses
+import sys
 import typing
 
 import pytest
@@ -77,6 +78,7 @@ class User:
     following: list["User"]  # works with typing.List
 
 
+@pytest.mark.skipif(sys.version_info[:2] >= (3, 11), reason="works in new Pythons")
 def test_string_forward_ref_message():
     # See https://github.com/HypothesisWorks/hypothesis/issues/3016
     s = st.builds(User)
