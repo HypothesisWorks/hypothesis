@@ -1,4 +1,3 @@
-bandit==1.7.2  # https://github.com/tylerwince/flake8-bandit/issues/21
 codespell
 coverage
 django
