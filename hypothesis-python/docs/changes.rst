@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.39.4:
+
+-------------------
+6.39.4 - 2022-03-17
+-------------------
+
+This patch tweaks some internal formatting.  There is no user-visible change.
+
 .. _v6.39.3:
 
 -------------------
