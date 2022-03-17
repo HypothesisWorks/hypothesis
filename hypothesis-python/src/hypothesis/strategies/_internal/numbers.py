@@ -498,7 +498,9 @@ def floats(
             else:
                 return floats(min_value=0.0, max_value=max_value, **kw) | floats(
                     min_value=0.0, max_value=-min_value, **kw
-                ).map(operator.neg)
+                ).map(
+                    operator.neg  # type: ignore
+                )
         elif (
             count_between_floats(min_value, max_value, width) > 1000
             or not allow_subnormal
