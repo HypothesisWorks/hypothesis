@@ -380,13 +380,13 @@ def run_tox(task, version):
 # When adding or removing a version, also update the env lists in tox.ini and
 # workflows/main.yml, the `Programming Language ::` declaration(s) in setup.py,
 # and the corresponding @python_tests function below.
-PY37 = "3.7.12"
-PY38 = PYMAIN = "3.8.12"  # Sync PYMAIN minor version with GH Actions main.yml
-PY39 = "3.9.10"
-PY310 = "3.10.2"
+PY37 = "3.7.13"
+PY38 = PYMAIN = "3.8.13"  # Sync PYMAIN minor version with GH Actions main.yml
+PY39 = "3.9.11"
+PY310 = "3.10.3"
 PY311 = "3.11-dev"
-PYPY37 = "pypy3.7-7.3.7"
-PYPY38 = "pypy3.8-7.3.7"
+PYPY37 = "pypy3.7-7.3.8"
+PYPY38 = "pypy3.8-7.3.8"
 
 
 # ALIASES are the executable names for each Python version
