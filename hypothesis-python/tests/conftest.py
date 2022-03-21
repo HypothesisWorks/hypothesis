@@ -43,6 +43,10 @@ if sys.version_info >= (3, 11):
     collect_ignore_glob.append("cover/test_lookup.py")
     collect_ignore_glob.append("cover/test_lookup_py37.py")
 
+if "pyjion" in sys.modules:
+    # Temp ignores to narrow down the failures
+    collect_ignore_glob.append("cover/test_feature_flags.py")
+
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "slow: pandas expects this marker to exist.")
