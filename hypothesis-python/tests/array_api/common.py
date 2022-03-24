@@ -21,7 +21,6 @@ from hypothesis.internal.floats import next_up
 __all__ = [
     "xp",
     "xps",
-    "COMPLIANT_XP",
     "WIDTHS_FTZ",
 ]
 
@@ -46,20 +45,16 @@ def installed_array_modules() -> Dict[str, EntryPoint]:
 
 # We try importing the Array API namespace from NumPy first, which modern
 # versions should include. If not available we default to our own mocked module,
-# which should allow our test suite to still work. A constant is set accordingly
-# to inform our test suite of whether the array module here is a mock or not.
+# which should allow our test suite to still work.
 modules = installed_array_modules()
 try:
     with catch_warnings():  # NumPy currently warns on import
         xp = modules["numpy"].load()
+    xps = make_strategies_namespace(xp)
 except KeyError:
     xp = mock_xp
     with pytest.warns(HypothesisWarning):
         xps = make_strategies_namespace(xp)
-    COMPLIANT_XP = False
-else:
-    xps = make_strategies_namespace(xp)
-    COMPLIANT_XP = True
 
 # Infer whether build of array module has its float flush subnormals to zero
 WIDTHS_FTZ = {

@@ -15,7 +15,7 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.extra.array_api import DTYPE_NAMES, NUMERIC_NAMES
 from hypothesis.internal.floats import width_smallest_normals
 
-from tests.array_api.common import COMPLIANT_XP, WIDTHS_FTZ, xp, xps
+from tests.array_api.common import WIDTHS_FTZ, xp, xps
 from tests.common.debug import find_any, minimal
 from tests.common.utils import fails_with, flaky
 
@@ -35,21 +35,11 @@ assumes_distinct_nans = pytest.mark.xfail(
 )
 
 
-def assert_array_namespace(x):
-    """Check array has __array_namespace__() and it returns the correct module.
-
-    This check is skipped if a mock array module is being used.
-    """
-    if COMPLIANT_XP:
-        assert x.__array_namespace__() is xp
-
-
 @given(xps.scalar_dtypes(), st.data())
 def test_draw_arrays_from_dtype(dtype, data):
     """Draw arrays from dtypes."""
     x = data.draw(xps.arrays(dtype, ()))
     assert x.dtype == dtype
-    assert_array_namespace(x)
 
 
 @given(st.sampled_from(DTYPE_NAMES), st.data())
@@ -57,7 +47,6 @@ def test_draw_arrays_from_scalar_names(name, data):
     """Draw arrays from dtype names."""
     x = data.draw(xps.arrays(name, ()))
     assert x.dtype == getattr(xp, name)
-    assert_array_namespace(x)
 
 
 @given(xps.array_shapes(), st.data())
@@ -66,7 +55,6 @@ def test_draw_arrays_from_shapes(shape, data):
     x = data.draw(xps.arrays(xp.int8, shape))
     assert x.ndim == len(shape)
     assert x.shape == shape
-    assert_array_namespace(x)
 
 
 @given(st.integers(0, 10), st.data())
@@ -74,7 +62,6 @@ def test_draw_arrays_from_int_shapes(size, data):
     """Draw arrays from integers as shapes."""
     x = data.draw(xps.arrays(xp.int8, size))
     assert x.shape == (size,)
-    assert_array_namespace(x)
 
 
 @pytest.mark.parametrize(
@@ -91,7 +78,6 @@ def test_draw_arrays_from_int_shapes(size, data):
 def test_draw_arrays_from_dtype_strategies(strat, data):
     """Draw arrays from dtype strategies."""
     x = data.draw(xps.arrays(strat, ()))
-    assert_array_namespace(x)
 
 
 @given(st.lists(st.sampled_from(DTYPE_NAMES), min_size=1, unique=True), st.data())
@@ -99,40 +85,34 @@ def test_draw_arrays_from_dtype_name_strategies(names, data):
     """Draw arrays from dtype name strategies."""
     names_strategy = st.sampled_from(names)
     x = data.draw(xps.arrays(names_strategy, ()))
-    assert_array_namespace(x)
 
 
 @given(xps.arrays(xp.int8, xps.array_shapes()))
 def test_generate_arrays_from_shapes_strategy(x):
     """Generate arrays from shapes strategy."""
-    assert_array_namespace(x)
 
 
 @given(xps.arrays(xp.int8, st.integers(0, 100)))
 def test_generate_arrays_from_integers_strategy_as_shape(x):
     """Generate arrays from integers strategy as shapes strategy."""
-    assert_array_namespace(x)
 
 
 @given(xps.arrays(xp.int8, ()))
 def test_generate_arrays_from_zero_dimensions(x):
     """Generate arrays from empty shape."""
     assert x.shape == ()
-    assert_array_namespace(x)
 
 
 @given(xps.arrays(xp.int8, (1, 0, 1)))
 def test_handle_zero_dimensions(x):
     """Generate arrays from empty shape."""
     assert x.shape == (1, 0, 1)
-    assert_array_namespace(x)
 
 
 @given(xps.arrays(xp.uint32, (5, 5)))
 def test_generate_arrays_from_unsigned_ints(x):
     """Generate arrays from unsigned integer dtype."""
     assert xp.all(x >= 0)
-    assert_array_namespace(x)
 
 
 @given(
@@ -145,7 +125,6 @@ def test_generate_arrays_from_unsigned_ints(x):
 def test_generate_arrays_from_0d_arrays(x):
     """Generate arrays from 0d array elements."""
     assert x.shape == (5, 5)
-    assert_array_namespace(x)
 
 
 def test_minimize_arrays_with_default_dtype_shape_strategies():
