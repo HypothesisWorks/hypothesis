@@ -242,10 +242,10 @@ else:
         except ImportError:
             print(code)
         else:
-            code = Syntax(
-                code,
-                "python",
-                background_color="default",
-                theme="default" if guess_background_color() == "light" else "monokai",
-            )
-            Console().print(code, soft_wrap=True)
+            try:
+                theme = "default" if guess_background_color() == "light" else "monokai"
+                code = Syntax(code, "python", background_color="default", theme=theme)
+                Console().print(code, soft_wrap=True)
+            except Exception:
+                print("# Error while syntax-highlighting code", file=sys.stderr)
+                print(code)
