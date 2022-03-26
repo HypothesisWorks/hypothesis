@@ -18,6 +18,18 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.39.5:
+
+-------------------
+6.39.5 - 2022-03-26
+-------------------
+
+This patch improves our error detection and message when Hypothesis is run
+on a Python implementation without support for ``-0.0``, which is required
+for the :func:`~hypothesis.strategies.floats` strategy but can be disabled by
+`unsafe compiler options <https://simonbyrne.github.io/notes/fastmath/>`__
+(:issue:`3265`).
+
 .. _v6.39.4:
 
 -------------------
