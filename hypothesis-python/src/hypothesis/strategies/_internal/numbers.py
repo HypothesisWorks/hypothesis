@@ -342,6 +342,13 @@ def floats(
     check_valid_bound(min_value, "min_value")
     check_valid_bound(max_value, "max_value")
 
+    if math.copysign(1.0, -0.0) == 1.0:  # pragma: no cover
+        raise FloatingPointError(
+            "You Python install can't represent -0.0, which is required by the "
+            "IEEE-754 floating-point specification.  This is probably because it was "
+            "compiled with an unsafe option like -ffast-math; for a more detailed "
+            "explanation see https://simonbyrne.github.io/notes/fastmath/"
+        )
     if allow_subnormal and next_up(0.0, width=width) == 0:  # pragma: no cover
         # Not worth having separate CI envs and dependencies just to cover this branch;
         # discussion in https://github.com/HypothesisWorks/hypothesis/issues/3092
