@@ -205,7 +205,7 @@ def _exceptions_from_docstring(doc: str) -> Tuple[Type[Exception], ...]:
 _GUESS_STRATEGIES_BY_NAME = (
     (st.integers(0, 32), ["ndims", "ndigits"]),
     (st.booleans(), ["keepdims"]),
-    (st.text(), ["name", "filename", "fname"]),
+    (st.text(), ["name", "filename", "fname", "text"]),
     (st.floats(), ["real", "imag"]),
     (st.functions(), ["function", "func", "f"]),
     (st.functions(returns=st.booleans(), pure=True), ["pred", "predicate"]),

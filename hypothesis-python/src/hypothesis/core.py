@@ -100,6 +100,7 @@ from hypothesis.reporting import (
 )
 from hypothesis.statistics import describe_targets, note_statistics
 from hypothesis.strategies._internal.collections import TupleStrategy
+from hypothesis.strategies._internal.misc import NOTHING
 from hypothesis.strategies._internal.strategies import (
     Ex,
     MappedSearchStrategy,
@@ -241,9 +242,9 @@ def is_invalid_test(test, original_argspec, given_arguments, given_kwargs):
     only be reported for tests that actually ran.
     """
 
-    def invalid(message):
+    def invalid(message, *, exc=InvalidArgument):
         def wrapped_test(*arguments, **kwargs):
-            raise InvalidArgument(message)
+            raise exc(message)
 
         wrapped_test.is_hypothesis_test = True
         wrapped_test.hypothesis = HypothesisHandle(
@@ -299,6 +300,18 @@ def is_invalid_test(test, original_argspec, given_arguments, given_kwargs):
             "Missing required kwarg{}: {}".format(
                 "s" if len(missing) > 1 else "", ", ".join(missing)
             )
+        )
+
+    # This case would raise Unsatisfiable *anyway*, but by detecting it here we can
+    # provide a much more helpful error message for people e.g. using the Ghostwriter.
+    empty = [
+        f"{s!r} (arg {idx})" for idx, s in enumerate(given_arguments) if s is NOTHING
+    ] + [f"{name}={s!r}" for name, s in given_kwargs.items() if s is NOTHING]
+    if empty:
+        strats = "strategies" if len(empty) > 1 else "strategy"
+        return invalid(
+            f"Cannot generate examples from empty {strats}: " + ", ".join(empty),
+            exc=Unsatisfiable,
         )
 
 

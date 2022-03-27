@@ -12,7 +12,7 @@ import pytest
 
 from hypothesis import assume, given, infer, reject, settings
 from hypothesis.errors import InvalidArgument, Unsatisfiable
-from hypothesis.strategies import booleans, integers
+from hypothesis.strategies import booleans, integers, nothing
 
 from tests.common.utils import fails_with
 
@@ -32,6 +32,18 @@ def test_does_not_raise_unsatisfiable_if_some_false_in_finite_set():
         assume(x)
 
     test_assume_x()
+
+
+def test_raises_unsatisfiable_if_passed_explicit_nothing():
+    @given(x=nothing())
+    def test_never_runs(x):
+        raise Exception("Can't ever execute this")
+
+    with pytest.raises(
+        Unsatisfiable,
+        match=r"Cannot generate examples from empty strategy: x=nothing\(\)",
+    ):
+        test_never_runs()
 
 
 def test_error_if_has_no_hints():
