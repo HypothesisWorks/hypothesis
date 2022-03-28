@@ -126,14 +126,15 @@ def test_{test_kind}_{func_name}({arg_names}):
 {test_body}
 """
 
-SUPPRESS_BLOCK = """\
+SUPPRESS_BLOCK = """
 try:
 {test_body}
 except {exceptions}:
     reject()
-""".rstrip()
+""".strip()
 
 Except = Union[Type[Exception], Tuple[Type[Exception], ...]]
+ImportSet = Set[Union[str, Tuple[str, str]]]
 RE_TYPES = (type(re.compile(".")), type(re.match(".", "abc")))
 _quietly_settings = settings(
     database=None,
@@ -169,6 +170,22 @@ def _check_except(except_: Except) -> Tuple[Type[Exception], ...]:
             f"{except_!r} (type={_get_qualname(type(except_))})"
         )
     return (except_,)
+
+
+def _exception_string(except_: Tuple[Type[Exception], ...]) -> Tuple[ImportSet, str]:
+    if not except_:
+        return set(), ""
+    exceptions = []
+    imports: ImportSet = set()
+    for ex in _dedupe_exceptions(except_):
+        if ex.__qualname__ in dir(builtins):
+            exceptions.append(ex.__qualname__)
+        else:
+            imports.add(ex.__module__)
+            exceptions.append(_get_qualname(ex, include_module=True))
+    return imports, (
+        "(" + ", ".join(exceptions) + ")" if len(exceptions) > 1 else exceptions[0]
+    )
 
 
 def _check_style(style: str) -> None:
@@ -623,7 +640,7 @@ def _make_test_body(
     assertions: str = "",
     style: str,
     given_strategies: Optional[Mapping[str, Union[str, st.SearchStrategy]]] = None,
-) -> Tuple[Set[Union[str, Tuple[str, str]]], str]:
+) -> Tuple[ImportSet, str]:
     # A set of modules to import - we might add to this later.  The import code
     # is written later, so we can have one import section for multiple magic()
     # test functions.
@@ -641,20 +658,13 @@ def _make_test_body(
 
     if except_:
         # Convert to strings, either builtin names or qualified names.
-        exceptions = []
-        for ex in _dedupe_exceptions(except_):
-            if ex.__qualname__ in dir(builtins):
-                exceptions.append(ex.__qualname__)
-            else:
-                imports.add(ex.__module__)
-                exceptions.append(_get_qualname(ex, include_module=True))
+        imp, exc_string = _exception_string(except_)
+        imports.update(imp)
         # And finally indent the existing test body into a try-except block
         # which catches these exceptions and calls `hypothesis.reject()`.
         test_body = SUPPRESS_BLOCK.format(
             test_body=indent(test_body, prefix="    "),
-            exceptions="(" + ", ".join(exceptions) + ")"
-            if len(exceptions) > 1
-            else exceptions[0],
+            exceptions=exc_string,
         )
 
     if assertions:
@@ -682,7 +692,7 @@ def _make_test_body(
     return imports, body
 
 
-def _make_test(imports: Set[Union[str, Tuple[str, str]]], body: str) -> str:
+def _make_test(imports: ImportSet, body: str) -> str:
     # Discarding "builtins." and "__main__" probably isn't particularly useful
     # for user code, but important for making a good impression in demos.
     body = body.replace("builtins.", "").replace("__main__.", "")
@@ -1165,7 +1175,7 @@ def _make_binop_body(
     distributes_over: Optional[Callable[[X, X], X]] = None,
     except_: Tuple[Type[Exception], ...],
     style: str,
-) -> Tuple[Set[Union[str, Tuple[str, str]]], str]:
+) -> Tuple[ImportSet, str]:
     strategies = _get_strategies(func)
     operands, b = (strategies.pop(p) for p in list(_get_params(func))[:2])
     if repr(operands) != repr(b):
