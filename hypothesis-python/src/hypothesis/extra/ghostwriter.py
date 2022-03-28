@@ -42,8 +42,8 @@ generally do their best to write you a useful test.  You can also use
     Options:
       --roundtrip                start by testing write/read or encode/decode!
       --equivalent               very useful when optimising or refactoring code
-      --idempotent
-      --binary-op
+      --idempotent               check that f(x) == f(f(x))
+      --binary-op                associativity, commutativity, identity element
       --style [pytest|unittest]  pytest-style function, or unittest-style method?
       -e, --except OBJ_NAME      dotted name of exception(s) to ignore
       -h, --help                 Show this message and exit.

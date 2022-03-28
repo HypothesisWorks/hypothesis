@@ -182,8 +182,18 @@ else:
         flag_value="equivalent",
         help="very useful when optimising or refactoring code",
     )
-    @click.option("--idempotent", "writer", flag_value="idempotent")
-    @click.option("--binary-op", "writer", flag_value="binary_operation")
+    @click.option(
+        "--idempotent",
+        "writer",
+        flag_value="idempotent",
+        help="check that f(x) == f(f(x))",
+    )
+    @click.option(
+        "--binary-op",
+        "writer",
+        flag_value="binary_operation",
+        help="associativity, commutativity, identity element",
+    )
     # Note: we deliberately omit a --ufunc flag, because the magic()
     # detection of ufuncs is both precise and complete.
     @click.option(
