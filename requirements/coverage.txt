@@ -10,9 +10,9 @@ attrs==21.4.0
     #   pytest
 backports-zoneinfo==0.2.1
     # via -r requirements/coverage.in
-black==22.1.0
+black==22.3.0
     # via -r requirements/coverage.in
-click==8.0.4
+click==8.1.0
     # via
     #   -r requirements/coverage.in
     #   black
