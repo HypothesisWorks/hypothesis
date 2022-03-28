@@ -42,6 +42,7 @@ generally do their best to write you a useful test.  You can also use
     Options:
       --roundtrip                start by testing write/read or encode/decode!
       --equivalent               very useful when optimising or refactoring code
+      --errors-equivalent        --equivalent, but also allows consistent errors
       --idempotent               check that f(x) == f(f(x))
       --binary-op                associativity, commutativity, identity element
       --style [pytest|unittest]  pytest-style function, or unittest-style method?
@@ -1077,11 +1078,72 @@ def _make_equiv_body(funcs, except_, style):
     )
 
 
-def equivalent(*funcs: Callable, except_: Except = (), style: str = "pytest") -> str:
+EQUIV_FIRST_BLOCK = """
+try:
+{}
+    exc_type = None
+    target(1, label="input was valid")
+{}except Exception as exc:
+    exc_type = type(exc)
+""".strip()
+
+EQUIV_CHECK_BLOCK = """
+if exc_type:
+    with {ctx}(exc_type):
+{check_raises}
+else:
+{call}
+{compare}
+""".rstrip()
+
+
+def _make_equiv_errors_body(funcs, except_, style):
+    var_names = [f"result_{f.__name__}" for f in funcs]
+    if len(set(var_names)) < len(var_names):
+        var_names = [f"result_{i}_{ f.__name__}" for i, f in enumerate(funcs)]
+
+    first, *rest = funcs
+    first_call = _write_call(first, assign=var_names[0], except_=except_)
+    extra_imports, suppress = _exception_string(except_)
+    extra_imports.add(("hypothesis", "target"))
+    catch = f"except {suppress}:\n    reject()\n" if suppress else ""
+    test_lines = [EQUIV_FIRST_BLOCK.format(indent(first_call, prefix="    "), catch)]
+
+    for vname, f in zip(var_names[1:], rest):
+        if style == "pytest":
+            ctx = "pytest.raises"
+            extra_imports.add("pytest")
+        else:
+            assert style == "unittest"
+            ctx = "self.assertRaises"
+        block = EQUIV_CHECK_BLOCK.format(
+            ctx=ctx,
+            check_raises=indent(_write_call(f, except_=()), "        "),
+            call=indent(_write_call(f, assign=vname, except_=()), "    "),
+            compare=indent(_assert_eq(style, var_names[0], vname), "    "),
+        )
+        test_lines.append(block)
+
+    imports, source_code = _make_test_body(
+        *funcs,
+        test_body="\n".join(test_lines),
+        except_=(),
+        ghost="equivalent",
+        style=style,
+    )
+    return imports | extra_imports, source_code
+
+
+def equivalent(
+    *funcs: Callable,
+    allow_same_errors: bool = False,
+    except_: Except = (),
+    style: str = "pytest",
+) -> str:
     """Write source code for a property-based test of ``funcs``.
 
-    The resulting test checks that calling each of the functions gives
-    the same result.  This can be used as a classic 'oracle', such as testing
+    The resulting test checks that calling each of the functions returns
+    an equal value.  This can be used as a classic 'oracle', such as testing
     a fast sorting algorithm against the :func:`python:sorted` builtin, or
     for differential testing where none of the compared functions are fully
     trusted but any difference indicates a bug (e.g. running a function on
@@ -1090,15 +1152,25 @@ def equivalent(*funcs: Callable, except_: Except = (), style: str = "pytest") ->
     The functions should have reasonably similar signatures, as only the
     common parameters will be passed the same arguments - any other parameters
     will be allowed to vary.
+
+    If allow_same_errors is True, then the test will pass if calling each of
+    the functions returns an equal value, *or* if the first function raises an
+    exception and each of the others raises an exception of the same type.
+    This relaxed mode can be useful for code synthesis projects.
     """
     if len(funcs) < 2:
         raise InvalidArgument("Need at least two functions to compare.")
     for i, f in enumerate(funcs):
         if not callable(f):
             raise InvalidArgument(f"Got non-callable funcs[{i}]={f!r}")
+    check_type(bool, allow_same_errors, "allow_same_errors")
     except_ = _check_except(except_)
     _check_style(style)
-    return _make_test(*_make_equiv_body(funcs, except_, style))
+    if allow_same_errors and not any(issubclass(Exception, ex) for ex in except_):
+        imports, source_code = _make_equiv_errors_body(funcs, except_, style)
+    else:
+        imports, source_code = _make_equiv_body(funcs, except_, style)
+    return _make_test(imports, source_code)
 
 
 X = TypeVar("X")
