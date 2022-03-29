@@ -38,26 +38,24 @@ def xfail_on_indiscint_nans(xp):
         pytest.xfail("NaNs not distinct")
 
 
-def test_draw_arrays_from_dtype(xp, xps):
+@pytest.mark.parametrize("dtype_name", DTYPE_NAMES)
+def test_draw_arrays_from_dtype(xp, xps, dtype_name):
     """Draw arrays from dtypes."""
-
-    @given(xps.scalar_dtypes(), st.data())
-    def test(dtype, data):
-        x = data.draw(xps.arrays(dtype, ()))
-        assert x.dtype == dtype
-
-    test()
+    try:
+        dtype = getattr(xp, dtype_name)
+    except AttributeError:
+        pytest.skip(f"dtype {dtype_name} not supported")
+    assert_all_examples(xps.arrays(dtype, ()), lambda x: x.dtype == dtype)
 
 
-def test_draw_arrays_from_scalar_names(xp, xps):
+@pytest.mark.parametrize("dtype_name", DTYPE_NAMES)
+def test_draw_arrays_from_scalar_names(xp, xps, dtype_name):
     """Draw arrays from dtype names."""
-
-    @given(st.sampled_from(DTYPE_NAMES), st.data())
-    def test(name, data):
-        x = data.draw(xps.arrays(name, ()))
-        assert x.dtype == getattr(xp, name)
-
-    test()
+    try:
+        dtype = getattr(xp, dtype_name)
+    except AttributeError:
+        pytest.skip(f"dtype {dtype_name} not supported")
+    assert_all_examples(xps.arrays(dtype_name, ()), lambda x: x.dtype == dtype)
 
 
 def test_draw_arrays_from_shapes(xp, xps):
@@ -107,6 +105,7 @@ def test_draw_arrays_from_dtype_strategies(xp, xps, strat_name):
 )
 def test_draw_arrays_from_dtype_name_strategies(xp, xps, strat):
     """Draw arrays from dtype name strategies."""
+    # TODO: do not generate/filter unsupported dtypes
     find_any(xps.arrays(strat, ()))
 
 
@@ -125,14 +124,11 @@ def test_generate_arrays_from_zero_dimensions(xp, xps):
     assert_all_examples(xps.arrays(xp.int8, ()), lambda x: x.shape == ())
 
 
-def test_generate_arrays_from_zero_sided_shapes(xp, xps):
+@given(data=st.data())
+def test_generate_arrays_from_zero_sided_shapes(xp, xps, data):
     """Generate arrays from shapes with at least one 0-sized dimension."""
-
-    @given(xps.array_shapes(min_side=0).filter(lambda s: 0 in s))
-    def test(shape):
-        assert_all_examples(xps.arrays(xp.int8, shape), lambda x: x.shape == shape)
-
-    test()
+    shape = data.draw(xps.array_shapes(min_side=0).filter(lambda s: 0 in s))
+    assert_all_examples(xps.arrays(xp.int8, shape), lambda x: x.shape == shape)
 
 
 def test_generate_arrays_from_unsigned_ints(xp, xps):
