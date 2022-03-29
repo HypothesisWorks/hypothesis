@@ -572,13 +572,10 @@ argument, to force this inference for arguments with a default value.
     >>> builds(func).example()
     [-6993, '']
 
-.. data:: hypothesis.infer
-
 :func:`@given <hypothesis.given>` does not perform any implicit inference
 for required arguments, as this would break compatibility with pytest fixtures.
-:const:`~hypothesis.infer`, which is an alias of ``...`` (:obj:`python:Ellipsis`), can 
-be used as a keyword argument to explicitly fill in an argument from its type 
-annotation.
+``...`` (:obj:`python:Ellipsis`), can be used as a keyword argument to explicitly fill 
+in an argument from its type annotation.
 
 .. code:: python
 
