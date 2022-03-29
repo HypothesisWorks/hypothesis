@@ -19,42 +19,48 @@ from hypothesis.extra.array_api import make_strategies_namespace, mock_xp
 
 from tests.array_api.common import installed_array_modules
 
-testing_mode = getenv("HYPOTHESIS_TEST_ARRAY_API", "default")
-name_to_entry_point = installed_array_modules()
 with pytest.warns(HypothesisWarning):
     mock_xps = make_strategies_namespace(mock_xp)
+
+# See README.md in regards to the HYPOTHESIS_TEST_ARRAY_API env variable
+test_xp_option = getenv("HYPOTHESIS_TEST_ARRAY_API", "default")
+name_to_entry_point = installed_array_modules()
 with warnings.catch_warnings():
+    # We ignore all warnings here as many array modules warn on import
     warnings.simplefilter("ignore")
-    if testing_mode == "default":
-        params = []
+    # We go through the steps described in README.md to define `params`, which
+    # contains the array module(s) to be ran against the test suite.
+    # Specifically `params` is a list of pytest parameters, with each parameter
+    # containing the array module and its respective strategies namespace.
+    if test_xp_option == "default":
         try:
             xp = name_to_entry_point["numpy"].load()
             xps = make_strategies_namespace(xp)
             params = [pytest.param(xp, xps, id="numpy")]
         except KeyError:
             params = [pytest.param(mock_xp, mock_xps, id="mock")]
-    elif testing_mode == "all":
+    elif test_xp_option == "all":
         params = [pytest.param(mock_xp, mock_xps, id="mock")]
         for name, ep in name_to_entry_point.items():
             xp = ep.load()
             xps = make_strategies_namespace(xp)
             params.append(pytest.param(xp, xps, id=name))
+    elif test_xp_option in name_to_entry_point.keys():
+        ep = name_to_entry_point[test_xp_option]
+        xp = ep.load()
+        xps = make_strategies_namespace(xp)
+        params = [pytest.param(xp, xps, id=test_xp_option)]
     else:
-        if testing_mode in name_to_entry_point.keys():
-            xp = name_to_entry_point[testing_mode].load()
+        try:
+            xp = import_module(test_xp_option)
             xps = make_strategies_namespace(xp)
-            params = [pytest.param(xp, xps, id=testing_mode)]
-        else:
-            try:
-                xp = import_module(testing_mode)
-                xps = make_strategies_namespace(xp)
-                params = [pytest.param(xp, xps, id=testing_mode)]
-            except ImportError:
-                raise ValueError(
-                    f"HYPOTHESIS_TEST_ARRAY_API='{testing_mode}' is not a mode "
-                    "(i.e. 'default' or 'all'), name of an available entry point, "
-                    "or a valid import path."
-                )
+            params = [pytest.param(xp, xps, id=test_xp_option)]
+        except ImportError as e:
+            raise ValueError(
+                f"HYPOTHESIS_TEST_ARRAY_API='{test_xp_option}' is not a valid "
+                "option ('default' or 'all'), name of an available entry point, "
+                "or a valid import path."
+            ) from e
 
 
 def pytest_generate_tests(metafunc):
