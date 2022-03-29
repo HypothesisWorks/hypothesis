@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.40.0:
+
+-------------------
+6.40.0 - 2022-03-29
+-------------------
+
+:doc:`The Ghostwriter <ghostwriter>` can now write tests which check that
+two or more functions are equivalent on valid inputs, *or* raise the same
+type of exception for invalid inputs (:issue:`3267`).
+
 .. _v6.39.6:
 
 -------------------
