@@ -79,7 +79,7 @@ class ResolutionFailed(InvalidArgument):
 
     Type inference is best-effort, so this only happens when an
     annotation exists but could not be resolved for a required argument
-    to the target of ``builds()``, or where the user passed ``infer``.
+    to the target of ``builds()``, or where the user passed ``...``.
     """
 
 

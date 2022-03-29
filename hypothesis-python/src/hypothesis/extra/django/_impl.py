@@ -177,7 +177,7 @@ def from_form(
         shop_strategy = from_form(Shop, form_kwargs={"company_id": 5})
 
     Like for :func:`~hypothesis.strategies.builds`, you can pass
-    :obj:`~hypothesis.infer` as a keyword argument to infer a strategy for
+    ``...`` (:obj:`python:Ellipsis`) as a keyword argument to infer a strategy for
     a field which has a default value instead of using the default.
     """
     # currently unsupported:

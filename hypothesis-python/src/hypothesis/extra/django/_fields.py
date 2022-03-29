@@ -290,7 +290,8 @@ def from_field(field: F) -> st.SearchStrategy[Union[F, None]]:
 
     This function is used by :func:`~hypothesis.extra.django.from_form` and
     :func:`~hypothesis.extra.django.from_model` for any fields that require
-    a value, or for which you passed :obj:`hypothesis.infer`.
+    a value, or for which you passed ``...`` (:obj:`python:Ellipsis`) to infer
+    a strategy from an annotation.
 
     It's pretty similar to the core :func:`~hypothesis.strategies.from_type`
     function, with a subtle but important difference: ``from_field`` takes a
