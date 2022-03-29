@@ -182,8 +182,24 @@ else:
         flag_value="equivalent",
         help="very useful when optimising or refactoring code",
     )
-    @click.option("--idempotent", "writer", flag_value="idempotent")
-    @click.option("--binary-op", "writer", flag_value="binary_operation")
+    @click.option(
+        "--errors-equivalent",
+        "writer",
+        flag_value="errors-equivalent",
+        help="--equivalent, but also allows consistent errors",
+    )
+    @click.option(
+        "--idempotent",
+        "writer",
+        flag_value="idempotent",
+        help="check that f(x) == f(f(x))",
+    )
+    @click.option(
+        "--binary-op",
+        "writer",
+        flag_value="binary_operation",
+        help="associativity, commutativity, identity element",
+    )
     # Note: we deliberately omit a --ufunc flag, because the magic()
     # detection of ufuncs is both precise and complete.
     @click.option(
@@ -218,14 +234,18 @@ else:
         # NOTE: if you want to call this function from Python, look instead at the
         # ``hypothesis.extra.ghostwriter`` module.  Click-decorated functions have
         # a different calling convention, and raise SystemExit instead of returning.
+        kwargs = {"except_": except_ or (), "style": style}
         if writer is None:
             writer = "magic"
         elif writer == "idempotent" and len(func) > 1:
             raise click.UsageError("Test functions for idempotence one at a time.")
         elif writer == "roundtrip" and len(func) == 1:
             writer = "idempotent"
-        elif writer == "equivalent" and len(func) == 1:
+        elif "equivalent" in writer and len(func) == 1:
             writer = "fuzz"
+        if writer == "errors-equivalent":
+            writer = "equivalent"
+            kwargs["allow_same_errors"] = True
 
         try:
             from hypothesis.extra import ghostwriter
@@ -233,7 +253,7 @@ else:
             sys.stderr.write(MESSAGE.format("black"))
             sys.exit(1)
 
-        code = getattr(ghostwriter, writer)(*func, except_=except_ or (), style=style)
+        code = getattr(ghostwriter, writer)(*func, **kwargs)
         try:
             from rich.console import Console
             from rich.syntax import Syntax

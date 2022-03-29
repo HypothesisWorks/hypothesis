@@ -149,6 +149,33 @@ def divide(a: int, b: int) -> float:
                 style="unittest",
             ),
         ),
+        (
+            "sorted_self_error_equivalent_simple",
+            ghostwriter.equivalent(sorted, sorted, allow_same_errors=True),
+        ),
+        (
+            "sorted_self_error_equivalent_threefuncs",
+            ghostwriter.equivalent(sorted, sorted, sorted, allow_same_errors=True),
+        ),
+        (
+            "sorted_self_error_equivalent_1error",
+            ghostwriter.equivalent(
+                sorted,
+                sorted,
+                allow_same_errors=True,
+                except_=ValueError,
+            ),
+        ),
+        (
+            "sorted_self_error_equivalent_2error_unittest",
+            ghostwriter.equivalent(
+                sorted,
+                sorted,
+                allow_same_errors=True,
+                except_=(TypeError, ValueError),
+                style="unittest",
+            ),
+        ),
         pytest.param(
             ("magic_builtins", ghostwriter.magic(builtins)),
             marks=[

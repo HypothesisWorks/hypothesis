@@ -42,8 +42,9 @@ generally do their best to write you a useful test.  You can also use
     Options:
       --roundtrip                start by testing write/read or encode/decode!
       --equivalent               very useful when optimising or refactoring code
-      --idempotent
-      --binary-op
+      --errors-equivalent        --equivalent, but also allows consistent errors
+      --idempotent               check that f(x) == f(f(x))
+      --binary-op                associativity, commutativity, identity element
       --style [pytest|unittest]  pytest-style function, or unittest-style method?
       -e, --except OBJ_NAME      dotted name of exception(s) to ignore
       -h, --help                 Show this message and exit.
@@ -126,14 +127,15 @@ def test_{test_kind}_{func_name}({arg_names}):
 {test_body}
 """
 
-SUPPRESS_BLOCK = """\
+SUPPRESS_BLOCK = """
 try:
 {test_body}
 except {exceptions}:
     reject()
-""".rstrip()
+""".strip()
 
 Except = Union[Type[Exception], Tuple[Type[Exception], ...]]
+ImportSet = Set[Union[str, Tuple[str, str]]]
 RE_TYPES = (type(re.compile(".")), type(re.match(".", "abc")))
 _quietly_settings = settings(
     database=None,
@@ -169,6 +171,22 @@ def _check_except(except_: Except) -> Tuple[Type[Exception], ...]:
             f"{except_!r} (type={_get_qualname(type(except_))})"
         )
     return (except_,)
+
+
+def _exception_string(except_: Tuple[Type[Exception], ...]) -> Tuple[ImportSet, str]:
+    if not except_:
+        return set(), ""
+    exceptions = []
+    imports: ImportSet = set()
+    for ex in _dedupe_exceptions(except_):
+        if ex.__qualname__ in dir(builtins):
+            exceptions.append(ex.__qualname__)
+        else:
+            imports.add(ex.__module__)
+            exceptions.append(_get_qualname(ex, include_module=True))
+    return imports, (
+        "(" + ", ".join(exceptions) + ")" if len(exceptions) > 1 else exceptions[0]
+    )
 
 
 def _check_style(style: str) -> None:
@@ -623,7 +641,7 @@ def _make_test_body(
     assertions: str = "",
     style: str,
     given_strategies: Optional[Mapping[str, Union[str, st.SearchStrategy]]] = None,
-) -> Tuple[Set[Union[str, Tuple[str, str]]], str]:
+) -> Tuple[ImportSet, str]:
     # A set of modules to import - we might add to this later.  The import code
     # is written later, so we can have one import section for multiple magic()
     # test functions.
@@ -641,20 +659,13 @@ def _make_test_body(
 
     if except_:
         # Convert to strings, either builtin names or qualified names.
-        exceptions = []
-        for ex in _dedupe_exceptions(except_):
-            if ex.__qualname__ in dir(builtins):
-                exceptions.append(ex.__qualname__)
-            else:
-                imports.add(ex.__module__)
-                exceptions.append(_get_qualname(ex, include_module=True))
+        imp, exc_string = _exception_string(except_)
+        imports.update(imp)
         # And finally indent the existing test body into a try-except block
         # which catches these exceptions and calls `hypothesis.reject()`.
         test_body = SUPPRESS_BLOCK.format(
             test_body=indent(test_body, prefix="    "),
-            exceptions="(" + ", ".join(exceptions) + ")"
-            if len(exceptions) > 1
-            else exceptions[0],
+            exceptions=exc_string,
         )
 
     if assertions:
@@ -682,7 +693,7 @@ def _make_test_body(
     return imports, body
 
 
-def _make_test(imports: Set[Union[str, Tuple[str, str]]], body: str) -> str:
+def _make_test(imports: ImportSet, body: str) -> str:
     # Discarding "builtins." and "__main__" probably isn't particularly useful
     # for user code, but important for making a good impression in demos.
     body = body.replace("builtins.", "").replace("__main__.", "")
@@ -1067,11 +1078,72 @@ def _make_equiv_body(funcs, except_, style):
     )
 
 
-def equivalent(*funcs: Callable, except_: Except = (), style: str = "pytest") -> str:
+EQUIV_FIRST_BLOCK = """
+try:
+{}
+    exc_type = None
+    target(1, label="input was valid")
+{}except Exception as exc:
+    exc_type = type(exc)
+""".strip()
+
+EQUIV_CHECK_BLOCK = """
+if exc_type:
+    with {ctx}(exc_type):
+{check_raises}
+else:
+{call}
+{compare}
+""".rstrip()
+
+
+def _make_equiv_errors_body(funcs, except_, style):
+    var_names = [f"result_{f.__name__}" for f in funcs]
+    if len(set(var_names)) < len(var_names):
+        var_names = [f"result_{i}_{ f.__name__}" for i, f in enumerate(funcs)]
+
+    first, *rest = funcs
+    first_call = _write_call(first, assign=var_names[0], except_=except_)
+    extra_imports, suppress = _exception_string(except_)
+    extra_imports.add(("hypothesis", "target"))
+    catch = f"except {suppress}:\n    reject()\n" if suppress else ""
+    test_lines = [EQUIV_FIRST_BLOCK.format(indent(first_call, prefix="    "), catch)]
+
+    for vname, f in zip(var_names[1:], rest):
+        if style == "pytest":
+            ctx = "pytest.raises"
+            extra_imports.add("pytest")
+        else:
+            assert style == "unittest"
+            ctx = "self.assertRaises"
+        block = EQUIV_CHECK_BLOCK.format(
+            ctx=ctx,
+            check_raises=indent(_write_call(f, except_=()), "        "),
+            call=indent(_write_call(f, assign=vname, except_=()), "    "),
+            compare=indent(_assert_eq(style, var_names[0], vname), "    "),
+        )
+        test_lines.append(block)
+
+    imports, source_code = _make_test_body(
+        *funcs,
+        test_body="\n".join(test_lines),
+        except_=(),
+        ghost="equivalent",
+        style=style,
+    )
+    return imports | extra_imports, source_code
+
+
+def equivalent(
+    *funcs: Callable,
+    allow_same_errors: bool = False,
+    except_: Except = (),
+    style: str = "pytest",
+) -> str:
     """Write source code for a property-based test of ``funcs``.
 
-    The resulting test checks that calling each of the functions gives
-    the same result.  This can be used as a classic 'oracle', such as testing
+    The resulting test checks that calling each of the functions returns
+    an equal value.  This can be used as a classic 'oracle', such as testing
     a fast sorting algorithm against the :func:`python:sorted` builtin, or
     for differential testing where none of the compared functions are fully
     trusted but any difference indicates a bug (e.g. running a function on
@@ -1080,15 +1152,25 @@ def equivalent(*funcs: Callable, except_: Except = (), style: str = "pytest") ->
     The functions should have reasonably similar signatures, as only the
     common parameters will be passed the same arguments - any other parameters
     will be allowed to vary.
+
+    If allow_same_errors is True, then the test will pass if calling each of
+    the functions returns an equal value, *or* if the first function raises an
+    exception and each of the others raises an exception of the same type.
+    This relaxed mode can be useful for code synthesis projects.
     """
     if len(funcs) < 2:
         raise InvalidArgument("Need at least two functions to compare.")
     for i, f in enumerate(funcs):
         if not callable(f):
             raise InvalidArgument(f"Got non-callable funcs[{i}]={f!r}")
+    check_type(bool, allow_same_errors, "allow_same_errors")
     except_ = _check_except(except_)
     _check_style(style)
-    return _make_test(*_make_equiv_body(funcs, except_, style))
+    if allow_same_errors and not any(issubclass(Exception, ex) for ex in except_):
+        imports, source_code = _make_equiv_errors_body(funcs, except_, style)
+    else:
+        imports, source_code = _make_equiv_body(funcs, except_, style)
+    return _make_test(imports, source_code)
 
 
 X = TypeVar("X")
@@ -1165,7 +1247,7 @@ def _make_binop_body(
     distributes_over: Optional[Callable[[X, X], X]] = None,
     except_: Tuple[Type[Exception], ...],
     style: str,
-) -> Tuple[Set[Union[str, Tuple[str, str]]], str]:
+) -> Tuple[ImportSet, str]:
     strategies = _get_strategies(func)
     operands, b = (strategies.pop(p) for p in list(_get_params(func))[:2])
     if repr(operands) != repr(b):
