@@ -25,6 +25,11 @@ from inspect import signature
 
 import pytest
 
+try:
+    from _pytest.junitxml import xml_key
+except ImportError:
+    xml_key = "_xml"  # type: ignore
+
 LOAD_PROFILE_OPTION = "--hypothesis-profile"
 VERBOSITY_OPTION = "--hypothesis-verbosity"
 PRINT_STATISTICS_OPTION = "--hypothesis-show-statistics"
@@ -264,6 +269,16 @@ else:
             if store.results:
                 item.hypothesis_report_information = list(store.results)
 
+    def _stash_get(config, key, default):
+        if hasattr(config, "stash"):
+            # pytest 7
+            return config.stash.get(key, default)
+        elif hasattr(config, "_store"):
+            # pytest 5.4
+            return config._store.get(key, default)
+        else:
+            return getattr(config, key, default)
+
     @pytest.hookimpl(hookwrapper=True)
     def pytest_runtest_makereport(item, call):
         report = (yield).get_result()
@@ -276,12 +291,22 @@ else:
             stats_base64 = base64.b64encode(stats.encode()).decode()
 
             name = "hypothesis-statistics-" + item.nodeid
-            try:
-                item.config._xml.add_global_property(name, stats_base64)
-            except AttributeError:
-                # --junitxml not passed, or Pytest 4.5 (before add_global_property)
-                # We'll fail xunit2 xml schema checks, upgrade pytest if you care.
-                report.user_properties.append((name, stats_base64))
+
+            # Include hypothesis information to the junit XML report.
+            #
+            # Note that when `pytest-xdist` is enabled, `xml_key` is not present in the
+            # stash, so we don't add anything to the junit XML report in that scenario.
+            # https://github.com/pytest-dev/pytest/issues/7767#issuecomment-1082436256
+            xml = _stash_get(item.config, xml_key, None)
+            if xml:
+                try:
+                    xml.add_global_property(name, stats_base64)
+                except AttributeError:
+                    # If the pytest version is too old (before add_global_property was
+                    # added), we'll just add to user_properties. This fails xunit2 xml
+                    # schema checks, however, so you should probably upgrade pytest if
+                    # that matters.
+                    report.user_properties.append((name, stats_base64))
 
             # If there's an HTML report, include our summary stats for each test
             pytest_html = item.config.pluginmanager.getplugin("html")

@@ -23,6 +23,7 @@ their individual contributions.
 * `Benjamin Palmer <https://github.com/benjpalmer>`_
 * `Bex Dunn <https://github.com/BexDunn>`_ (bex.dunn@gmail.com)
 * `Bill Tucker <https://github.com/imbilltucker>`_ (imbilltucker@gmail.com)
+* `Brandon Chinn <https://github.com/brandonchinn178>`_
 * `Bryant Eisenbach <https://github.com/fubuloubu>`_
 * `Buck Evan, copyright Google LLC <https://github.com/bukzor>`_
 * `Cameron McGill <https://www.github.com/Cameron-JM>`_
