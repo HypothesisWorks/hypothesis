@@ -10,58 +10,44 @@
 
 import pytest
 
-from hypothesis import given
-from hypothesis.extra.array_api import DTYPE_NAMES, INT_NAMES, NUMERIC_NAMES, UINT_NAMES
+from hypothesis.extra.array_api import (
+    DTYPE_NAMES,
+    FLOAT_NAMES,
+    INT_NAMES,
+    NUMERIC_NAMES,
+    UINT_NAMES,
+)
 
-from tests.common.debug import minimal
+from tests.common.debug import assert_all_examples, find_any, minimal
 
 
 def test_can_generate_scalar_dtypes(xp, xps):
-    @given(xps.scalar_dtypes())
-    def test(dtype):
-        assert dtype in (getattr(xp, name) for name in DTYPE_NAMES)
-
-    test()
+    dtypes = [getattr(xp, name) for name in DTYPE_NAMES]
+    assert_all_examples(xps.scalar_dtypes(), lambda dtype: dtype in dtypes)
 
 
 def test_can_generate_boolean_dtypes(xp, xps):
-    @given(xps.boolean_dtypes())
-    def test(dtype):
-        assert dtype == xp.bool
-
-    test()
+    assert_all_examples(xps.boolean_dtypes(), lambda dtype: dtype == xp.bool)
 
 
 def test_can_generate_numeric_dtypes(xp, xps):
-    @given(xps.numeric_dtypes())
-    def test(dtype):
-        assert dtype in (getattr(xp, name) for name in NUMERIC_NAMES)
-
-    test()
+    numeric_dtypes = [getattr(xp, name) for name in NUMERIC_NAMES]
+    assert_all_examples(xps.numeric_dtypes(), lambda dtype: dtype in numeric_dtypes)
 
 
 def test_can_generate_integer_dtypes(xp, xps):
-    @given(xps.integer_dtypes())
-    def test(dtype):
-        assert dtype in (getattr(xp, name) for name in INT_NAMES)
-
-    test()
+    int_dtypes = [getattr(xp, name) for name in INT_NAMES]
+    assert_all_examples(xps.int_dtypes(), lambda dtype: dtype in int_dtypes)
 
 
 def test_can_generate_unsigned_integer_dtypes(xp, xps):
-    @given(xps.unsigned_integer_dtypes())
-    def test(dtype):
-        assert dtype in (getattr(xp, name) for name in UINT_NAMES)
-
-    test()
+    uint_dtypes = [getattr(xp, name) for name in UINT_NAMES]
+    assert_all_examples(xps.uint_dtypes(), lambda dtype: dtype in uint_dtypes)
 
 
 def test_can_generate_floating_dtypes(xp, xps):
-    @given(xps.floating_dtypes())
-    def test(dtype):
-        assert dtype in (getattr(xp, name) for name in DTYPE_NAMES)
-
-    test()
+    float_dtypes = [getattr(xp, name) for name in FLOAT_NAMES]
+    assert_all_examples(xps.float_dtypes(), lambda dtype: dtype in float_dtypes)
 
 
 def test_minimise_scalar_dtypes(xp, xps):
@@ -78,4 +64,5 @@ def test_minimise_scalar_dtypes(xp, xps):
 )
 def test_can_specify_sizes_as_an_int(xp, xps, strat_name, sizes):
     strat_func = getattr(xps, strat_name)
-    strat_func(sizes=sizes).example()
+    strat = strat_func(sizes=sizes)
+    find_any(strat)
