@@ -436,9 +436,19 @@ def floats(
                 "with both min_value and max_value"
             )
     elif min_value == math.inf:
-        raise InvalidArgument("allow_infinity=False excludes min_value=inf")
+        if min_arg == math.inf:
+            raise InvalidArgument("allow_infinity=False excludes min_value=inf")
+        raise InvalidArgument(
+            f"exclude_min=True turns min_value={min_arg!r} into inf, "
+            "but allow_infinity=False"
+        )
     elif max_value == -math.inf:
-        raise InvalidArgument("allow_infinity=False excludes max_value=-inf")
+        if max_arg == -math.inf:
+            raise InvalidArgument("allow_infinity=False excludes max_value=-inf")
+        raise InvalidArgument(
+            f"exclude_max=True turns max_value={max_arg!r} into -inf, "
+            "but allow_infinity=False"
+        )
 
     smallest_normal = width_smallest_normals[width]
     if allow_subnormal is None:
@@ -488,7 +498,9 @@ def floats(
             else:
                 return floats(min_value=0.0, max_value=max_value, **kw) | floats(
                     min_value=0.0, max_value=-min_value, **kw
-                ).map(operator.neg)
+                ).map(
+                    operator.neg  # type: ignore
+                )
         elif (
             count_between_floats(min_value, max_value, width) > 1000
             or not allow_subnormal

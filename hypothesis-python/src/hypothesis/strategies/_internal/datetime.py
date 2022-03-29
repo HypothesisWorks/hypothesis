@@ -29,11 +29,11 @@ try:
     import zoneinfo
 except ImportError:
     try:
-        from backports import zoneinfo
+        from backports import zoneinfo  # type: ignore
     except ImportError:
         # We raise an error recommending `pip install hypothesis[zoneinfo]`
         # when timezones() or timezone_keys() strategies are actually used.
-        zoneinfo = None
+        zoneinfo = None  # type: ignore
 
 DATENAMES = ("year", "month", "day")
 TIMENAMES = ("hour", "minute", "second", "microsecond")

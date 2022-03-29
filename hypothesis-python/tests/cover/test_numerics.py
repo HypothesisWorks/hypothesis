@@ -172,3 +172,30 @@ def test_consistent_decimal_error():
         with decimal.localcontext(decimal.Context(traps=[])):
             decimals(bad).example()
     assert str(excinfo.value) == str(excinfo2.value)
+
+
+@pytest.mark.parametrize(
+    "s, msg",
+    [
+        (
+            floats(min_value=inf, allow_infinity=False),
+            "allow_infinity=False excludes min_value=inf",
+        ),
+        (
+            floats(min_value=next_down(inf), exclude_min=True, allow_infinity=False),
+            "exclude_min=True turns min_value=.+? into inf, but allow_infinity=False",
+        ),
+        (
+            floats(max_value=-inf, allow_infinity=False),
+            "allow_infinity=False excludes max_value=-inf",
+        ),
+        (
+            floats(max_value=next_up(-inf), exclude_max=True, allow_infinity=False),
+            "exclude_max=True turns max_value=.+? into -inf, but allow_infinity=False",
+        ),
+    ],
+)
+def test_floats_message(s, msg):
+    # https://github.com/HypothesisWorks/hypothesis/issues/3207
+    with pytest.raises(InvalidArgument, match=msg):
+        s.validate()

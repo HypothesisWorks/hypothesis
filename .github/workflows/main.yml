@@ -30,8 +30,7 @@ jobs:
           - check-py39
           - check-py310
           # - check-py310-pyjion  # see notes in tox.ini
-          # - check-py311  # because setuptools uses wrapt, and which is lagging:
-          #                  https://github.com/GrahamDumpleton/wrapt/issues/196
+          - check-py311
           - check-quality
           - lint-ruby
           - check-ruby-tests
@@ -131,7 +130,7 @@ jobs:
         pip install -r requirements/test.txt fakeredis typing-extensions
         pip install hypothesis-python/[all]
     - name: Run tests
-      run: python -m pytest --numprocesses auto hypothesis-python/tests/ --ignore-glob=hypothesis-python/tests/quality/*.py
+      run: python -m pytest --numprocesses auto hypothesis-python/tests/ --ignore=hypothesis-python/tests/quality/ --ignore=hypothesis-python/tests/ghostwriter/
 
   test-osx:
     runs-on: macos-latest

@@ -18,6 +18,35 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.39.4:
+
+-------------------
+6.39.4 - 2022-03-17
+-------------------
+
+This patch tweaks some internal formatting.  There is no user-visible change.
+
+.. _v6.39.3:
+
+-------------------
+6.39.3 - 2022-03-07
+-------------------
+
+If the :obj:`~hypothesis.Phase.shrink` phase is disabled, we now stop the
+:obj:`~hypothesis.Phase.generate` phase as soon as an error is found regardless
+of the value of the ``report_multiple_examples`` setting, since that's
+probably what you wanted (:issue:`3244`).
+
+.. _v6.39.2:
+
+-------------------
+6.39.2 - 2022-03-07
+-------------------
+
+This patch clarifies rare error messages in
+:func:`~hypothesis.strategies.builds` (:issue:`3225`) and
+:func:`~hypothesis.strategies.floats` (:issue:`3207`).
+
 .. _v6.39.1:
 
 -------------------
@@ -3394,8 +3423,8 @@ provided in the standard-library :mod:`python:warnings` module.
 -------------------
 
 This release improves Hypothesis's management of the set of test cases it
-tracks between runs. It will only do anything if you have ``Phase.target``
-enabled and an example database set.
+tracks between runs. It will only do anything if you have the
+:obj:`~hypothesis.Phase.target` phase enabled and an example database set.
 In those circumstances it should result in a more thorough and faster set of examples
 that are tried on each run.
 
@@ -9502,7 +9531,7 @@ This release documents :ref:`the previously undocumented phases feature <phases>
 making it part of the public API. It also updates how the example
 database is used. Principally:
 
-* A ``Phases.reuse`` argument will now correctly control whether examples
+* The :obj:`~hypothesis.Phase.reuse` phase will now correctly control whether examples
   from the database are run (it previously did exactly the wrong thing and
   controlled whether examples would be *saved*).
 * Hypothesis will no longer try to rerun *all* previously failing examples.
