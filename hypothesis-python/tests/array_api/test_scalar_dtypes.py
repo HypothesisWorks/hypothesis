@@ -37,17 +37,17 @@ def test_can_generate_numeric_dtypes(xp, xps):
 
 def test_can_generate_integer_dtypes(xp, xps):
     int_dtypes = [getattr(xp, name) for name in INT_NAMES]
-    assert_all_examples(xps.int_dtypes(), lambda dtype: dtype in int_dtypes)
+    assert_all_examples(xps.integer_dtypes(), lambda dtype: dtype in int_dtypes)
 
 
 def test_can_generate_unsigned_integer_dtypes(xp, xps):
     uint_dtypes = [getattr(xp, name) for name in UINT_NAMES]
-    assert_all_examples(xps.uint_dtypes(), lambda dtype: dtype in uint_dtypes)
+    assert_all_examples(xps.unsigned_integer_dtypes(), lambda dtype: dtype in uint_dtypes)
 
 
 def test_can_generate_floating_dtypes(xp, xps):
     float_dtypes = [getattr(xp, name) for name in FLOAT_NAMES]
-    assert_all_examples(xps.float_dtypes(), lambda dtype: dtype in float_dtypes)
+    assert_all_examples(xps.floating_dtypes(), lambda dtype: dtype in float_dtypes)
 
 
 def test_minimise_scalar_dtypes(xp, xps):
