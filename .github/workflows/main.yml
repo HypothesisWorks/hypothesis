@@ -42,7 +42,10 @@ jobs:
           - audit-conjecture-rust
           - lint-conjecture-rust
           - check-nose
-          - check-pytest46
+          - check-pytest4
+          - check-pytest5
+          - check-pytest6
+          - check-pytest7
           - check-django40
           - check-django32
           - check-django22
