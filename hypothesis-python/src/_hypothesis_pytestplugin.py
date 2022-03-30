@@ -301,14 +301,7 @@ else:
             # https://github.com/pytest-dev/pytest/issues/7767#issuecomment-1082436256
             xml = _stash_get(item.config, xml_key, None)
             if xml:
-                try:
-                    xml.add_global_property(name, stats_base64)
-                except AttributeError:
-                    # If the pytest version is too old (before add_global_property was
-                    # added), we'll just add to user_properties. This fails xunit2 xml
-                    # schema checks, however, so you should probably upgrade pytest if
-                    # that matters.
-                    report.user_properties.append((name, stats_base64))
+                xml.add_global_property(name, stats_base64)
 
             # If there's a terminal report, include our summary stats for each test
             terminalreporter = item.config.pluginmanager.getplugin("terminalreporter")
