@@ -165,7 +165,7 @@ Some notable commands:
 ``./build.sh check-coverage`` will verify 100% code coverage by running a
 curated subset of the test suite.
 
-``./build.sh check-py36`` (etc.) will run most of the test suite against a
+``./build.sh check-py37`` (etc.) will run most of the test suite against a
 particular python version.
 
 ``./build.sh format`` will reformat your code according to the Hypothesis coding style. You should use this before each
@@ -180,3 +180,53 @@ Run ``./build.sh tasks`` for a list of all supported build task names.
 Note: The build requires a lot of different versions of python, so rather than have you install them yourself,
 the build system will install them itself in a local directory. This means that the first time you run a task you
 may have to wait a while as the build downloads and installs the right version of python for you.
+
+~~~~~~~~~~~~~
+Running Tests
+~~~~~~~~~~~~~
+
+The tasks described above will run all of the tests (e.g. ``check-py37``). But
+the ``tox`` task will give finer-grained control over the test runner. At a
+high level, the task takes the form:
+
+.. code-block::
+
+    ./build.sh tox py37-custom 3.7.13 [tox args] -- [pytest args]
+
+Namely, first provide the tox environment (see ``tox.ini``), then the python
+version to test with, then any ``tox`` or ``pytest`` args as needed. For
+example, to run all of the tests in the file
+``tests/nocover/test_conjecture_engine.py`` with python 3.8:
+
+.. code-block::
+
+    ./build.sh tox py38-custom 3.8.13 -- tests/nocover/test_conjecture_engine.py
+
+See the ``tox`` docs and ``pytest`` docs for more information:
+* https://docs.pytest.org/en/latest/how-to/usage.html
+* https://tox.wiki/en/latest/config.html#cli
+
+^^^^^^^^^^^
+Test Layout
+^^^^^^^^^^^
+
+See ``hypothesis-python/tests/README.rst``
+
+^^^^^^^^^^^^^^^^
+Useful Arguments
+^^^^^^^^^^^^^^^^
+
+Some useful arguments to pytest include:
+
+* You can pass ``-n 0`` to turn off ``pytest-xdist``'s parallel test execution.
+  Sometimes for running just a small number of tests its startup time is longer
+  than the time it saves (this will vary from system to system), so this can
+  be helpful if you find yourself waiting on test runners to start a lot.
+* You can use ``-k`` to select a subset of tests to run. This matches on substrings
+  of the test names. For example ``-kfoo`` will only run tests that have "foo" as
+  a substring of their name. You can also use composite expressions here.
+  e.g. ``-k'foo and not bar'`` will run anything containing foo that doesn't
+  also contain bar.  `More information on how to select tests to run can be found
+  in the pytest documentation <https://docs.pytest.org/en/latest/usage.html#specifying-tests-selecting-tests>`__.
+
+
