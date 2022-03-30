@@ -58,27 +58,21 @@ def test_draw_arrays_from_scalar_names(xp, xps, dtype_name):
     assert_all_examples(xps.arrays(dtype_name, ()), lambda x: x.dtype == dtype)
 
 
-def test_draw_arrays_from_shapes(xp, xps):
+@given(data=st.data())
+def test_draw_arrays_from_shapes(xp, xps, data):
     """Draw arrays from shapes."""
-
-    @given(xps.array_shapes(), st.data())
-    def test(shape, data):
-        x = data.draw(xps.arrays(xp.int8, shape))
-        assert x.ndim == len(shape)
-        assert x.shape == shape
-
-    test()
+    shape = data.draw(xps.array_shapes())
+    x = data.draw(xps.arrays(xp.int8, shape))
+    assert x.ndim == len(shape)
+    assert x.shape == shape
 
 
-def test_draw_arrays_from_int_shapes(xp, xps):
+@given(data=st.data())
+def test_draw_arrays_from_int_shapes(xp, xps, data):
     """Draw arrays from integers as shapes."""
-
-    @given(st.integers(0, 10), st.data())
-    def test(size, data):
-        x = data.draw(xps.arrays(xp.int8, size))
-        assert x.shape == (size,)
-
-    test()
+    size = data.draw(st.integers(0, 10))
+    x = data.draw(xps.arrays(xp.int8, size))
+    assert x.shape == (size,)
 
 
 @pytest.mark.parametrize(
