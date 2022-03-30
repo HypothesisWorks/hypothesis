@@ -255,9 +255,7 @@ else:
 
             def note_statistics(stats):
                 stats["nodeid"] = item.nodeid
-                item.hypothesis_statistics = base64.b64encode(
-                    describe_statistics(stats).encode()
-                ).decode()
+                item.hypothesis_statistics = describe_statistics(stats)
 
             with collector.with_value(note_statistics):
                 with with_reporter(store):
@@ -274,15 +272,18 @@ else:
                 ("Hypothesis", "\n".join(item.hypothesis_report_information))
             )
         if hasattr(item, "hypothesis_statistics") and report.when == "teardown":
+            stats = item.hypothesis_statistics
+            stats_base64 = base64.b64encode(stats.encode()).decode()
+
             name = "hypothesis-statistics-" + item.nodeid
             try:
-                item.config._xml.add_global_property(name, item.hypothesis_statistics)
+                item.config._xml.add_global_property(name, stats_base64)
             except AttributeError:
                 # --junitxml not passed, or Pytest 4.5 (before add_global_property)
                 # We'll fail xunit2 xml schema checks, upgrade pytest if you care.
-                report.user_properties.append((name, item.hypothesis_statistics))
+                report.user_properties.append((name, stats_base64))
+
             # If there's an HTML report, include our summary stats for each test
-            stats = base64.b64decode(item.hypothesis_statistics.encode()).decode()
             pytest_html = item.config.pluginmanager.getplugin("html")
             if pytest_html is not None:  # pragma: no cover
                 report.extra = getattr(report, "extra", []) + [
