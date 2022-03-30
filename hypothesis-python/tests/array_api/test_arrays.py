@@ -25,7 +25,7 @@ def skip_on_missing_unique_values(xp):
         pytest.mark.skip("optional API")
 
 
-def xfail_on_indiscint_nans(xp):
+def xfail_on_indistinct_nans(xp):
     """
     xp.unique_value() should return distinct NaNs - if not, tests that (rightly)
     assume such behaviour will likely fail. This mark namely addresses mocking
@@ -350,7 +350,7 @@ def test_floats_can_be_constrained_excluding_endpoints(xp, xps):
 def test_is_still_unique_with_nan_fill(xp, xps):
     """Unique strategy with NaN fill generates unique arrays."""
     skip_on_missing_unique_values(xp)
-    xfail_on_indiscint_nans(xp)
+    xfail_on_indistinct_nans(xp)
     assert_all_examples(
         xps.arrays(
             dtype=xp.float32,
@@ -367,7 +367,7 @@ def test_unique_array_with_fill_can_use_all_elements(xp, xps):
     """Unique strategy with elements range equivalent to its size and NaN fill
     can generate arrays with all possible values."""
     skip_on_missing_unique_values(xp)
-    xfail_on_indiscint_nans(xp)
+    xfail_on_indistinct_nans(xp)
     find_any(
         xps.arrays(
             dtype=xp.float32,
