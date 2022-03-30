@@ -13,9 +13,9 @@ import pytest
 from hypothesis.errors import InvalidArgument
 
 
-def e(a, **kwargs):
+def e(name, **kwargs):
     kw = ", ".join(f"{k}={v!r}" for k, v in kwargs.items())
-    return pytest.param(a, kwargs, id=f"{a.__name__}({kw})")
+    return pytest.param(name, kwargs, id=f"{name}({kw})")
 
 
 @pytest.mark.parametrize(
