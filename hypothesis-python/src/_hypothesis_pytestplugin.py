@@ -58,6 +58,8 @@ fixture is not reset between generated examples, you can suppress this health
 check to assure Hypothesis that you understand what you are doing.
 """
 
+STATS_KEY = "_hypothesis_stats"
+
 
 class StoringReporter:
     def __init__(self, config):
@@ -308,6 +310,13 @@ else:
                     # that matters.
                     report.user_properties.append((name, stats_base64))
 
+            # If there's a terminal report, include our summary stats for each test
+            terminalreporter = item.config.pluginmanager.getplugin("terminalreporter")
+            if terminalreporter is not None:
+                # ideally, we would store this on terminalreporter.config.stash, but
+                # pytest-xdist doesn't copy that back to the controller
+                report.__dict__[STATS_KEY] = stats
+
             # If there's an HTML report, include our summary stats for each test
             pytest_html = item.config.pluginmanager.getplugin("html")
             if pytest_html is not None:  # pragma: no cover
@@ -316,30 +325,13 @@ else:
                 ]
 
     def pytest_terminal_summary(terminalreporter):
-        if not terminalreporter.config.getoption(PRINT_STATISTICS_OPTION):
-            return
-        terminalreporter.section("Hypothesis Statistics")
-
-        def report(properties):
-            for name, value in properties:
-                if name.startswith("hypothesis-statistics-"):
-                    if hasattr(value, "uniobj"):
-                        # Under old versions of pytest, `value` was a `py.xml.raw`
-                        # rather than a string, so we get the (unicode) string off it.
-                        value = value.uniobj
-                    line = base64.b64decode(value.encode()).decode() + "\n\n"
-                    terminalreporter.write_line(line)
-
-        try:
-            global_properties = terminalreporter.config._xml.global_properties
-        except AttributeError:
-            # terminalreporter.stats is a dict, where the empty string appears to
-            # always be the key for a list of _pytest.reports.TestReport objects
-            for test_report in terminalreporter.stats.get("", []):
-                if test_report.when == "teardown":
-                    report(test_report.user_properties)
-        else:
-            report(global_properties)
+        if terminalreporter.config.getoption(PRINT_STATISTICS_OPTION):
+            terminalreporter.section("Hypothesis Statistics")
+            for reports in terminalreporter.stats.values():
+                for report in reports:
+                    stats = report.__dict__.get(STATS_KEY)
+                    if stats:
+                        terminalreporter.write_line(stats + "\n\n")
 
     def pytest_collection_modifyitems(items):
         if "hypothesis" not in sys.modules:
