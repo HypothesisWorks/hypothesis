@@ -15,7 +15,7 @@ import pytest
 from hypothesis.extra.array_api import DTYPE_NAMES, find_castable_builtin_for_dtype
 from hypothesis.internal.floats import width_smallest_normals
 
-from tests.array_api.common import flushes_to_zero
+from tests.array_api.common import flushes_to_zero, skip_on_unsupported_dtype
 from tests.common.debug import (
     assert_all_examples,
     assert_no_examples,
@@ -29,6 +29,7 @@ from tests.common.debug import (
 @pytest.mark.parametrize("dtype_name", DTYPE_NAMES)
 def test_strategies_have_reusable_values(xp, xps, dtype_name):
     """Inferred strategies have reusable values."""
+    skip_on_unsupported_dtype(xp, dtype_name)
     strat = xps.from_dtype(dtype_name)
     assert strat.has_reusable_values
 
@@ -37,6 +38,7 @@ def test_strategies_have_reusable_values(xp, xps, dtype_name):
 def test_produces_castable_instances_from_dtype(xp, xps, dtype_name):
     """Strategies inferred by dtype generate values of a builtin type castable
     to the dtype."""
+    skip_on_unsupported_dtype(xp, dtype_name)
     dtype = getattr(xp, dtype_name)
     builtin = find_castable_builtin_for_dtype(xp, dtype)
     assert_all_examples(xps.from_dtype(dtype), lambda v: isinstance(v, builtin))
@@ -46,6 +48,7 @@ def test_produces_castable_instances_from_dtype(xp, xps, dtype_name):
 def test_produces_castable_instances_from_name(xp, xps, dtype_name):
     """Strategies inferred by dtype name generate values of a builtin type
     castable to the dtype."""
+    skip_on_unsupported_dtype(xp, dtype_name)
     dtype = getattr(xp, dtype_name)
     builtin = find_castable_builtin_for_dtype(xp, dtype)
     assert_all_examples(xps.from_dtype(dtype_name), lambda v: isinstance(v, builtin))
@@ -54,6 +57,7 @@ def test_produces_castable_instances_from_name(xp, xps, dtype_name):
 @pytest.mark.parametrize("dtype_name", DTYPE_NAMES)
 def test_passing_inferred_strategies_in_arrays(xp, xps, dtype_name):
     """Inferred strategies usable in arrays strategy."""
+    skip_on_unsupported_dtype(xp, dtype_name)
     elements = xps.from_dtype(dtype_name)
     find_any(xps.arrays(dtype_name, 10, elements=elements))
 
@@ -78,6 +82,7 @@ def test_passing_inferred_strategies_in_arrays(xp, xps, dtype_name):
 )
 def test_from_dtype_with_kwargs(xp, xps, dtype, kwargs, predicate):
     """Strategies inferred with kwargs generate values in bounds."""
+    skip_on_unsupported_dtype(xp, dtype)
     strat = xps.from_dtype(dtype, **kwargs)
     assert_all_examples(strat, predicate)
 

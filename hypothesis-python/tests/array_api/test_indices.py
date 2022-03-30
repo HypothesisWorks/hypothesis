@@ -10,7 +10,7 @@
 
 import math
 
-from hypothesis import assume, given, strategies as st
+from hypothesis import assume, given, note, strategies as st
 
 from tests.common.debug import assert_all_examples, find_any
 
@@ -121,4 +121,5 @@ def test_generate_valid_indices(xp, xps, allow_ellipsis, data):
         # We can't cheat on this one, so just try another.
         assume(False)
     # Finally, check that we can use our indexer without error
+    note(f"{array=}")
     array[indexer]

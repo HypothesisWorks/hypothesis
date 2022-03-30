@@ -16,38 +16,39 @@ from hypothesis.extra.array_api import (
     INT_NAMES,
     NUMERIC_NAMES,
     UINT_NAMES,
+    partition_attributes_and_stubs,
 )
 
 from tests.common.debug import assert_all_examples, find_any, minimal
 
 
 def test_can_generate_scalar_dtypes(xp, xps):
-    dtypes = [getattr(xp, name) for name in DTYPE_NAMES]
-    assert_all_examples(xps.scalar_dtypes(), lambda dtype: dtype in dtypes)
+    dtypes, _ = partition_attributes_and_stubs(xp, DTYPE_NAMES)
+    assert_all_examples(xps.scalar_dtypes(), lambda d: d in dtypes)
 
 
 def test_can_generate_boolean_dtypes(xp, xps):
-    assert_all_examples(xps.boolean_dtypes(), lambda dtype: dtype == xp.bool)
+    assert_all_examples(xps.boolean_dtypes(), lambda d: d == xp.bool)
 
 
 def test_can_generate_numeric_dtypes(xp, xps):
-    numeric_dtypes = [getattr(xp, name) for name in NUMERIC_NAMES]
-    assert_all_examples(xps.numeric_dtypes(), lambda dtype: dtype in numeric_dtypes)
+    numeric_dtypes, _ = partition_attributes_and_stubs(xp, NUMERIC_NAMES)
+    assert_all_examples(xps.numeric_dtypes(), lambda d: d in numeric_dtypes)
 
 
 def test_can_generate_integer_dtypes(xp, xps):
-    int_dtypes = [getattr(xp, name) for name in INT_NAMES]
-    assert_all_examples(xps.integer_dtypes(), lambda dtype: dtype in int_dtypes)
+    int_dtypes, _ = partition_attributes_and_stubs(xp, INT_NAMES)
+    assert_all_examples(xps.integer_dtypes(), lambda d: d in int_dtypes)
 
 
 def test_can_generate_unsigned_integer_dtypes(xp, xps):
-    uint_dtypes = [getattr(xp, name) for name in UINT_NAMES]
-    assert_all_examples(xps.unsigned_integer_dtypes(), lambda dtype: dtype in uint_dtypes)
+    uint_dtypes, _ = partition_attributes_and_stubs(xp, UINT_NAMES)
+    assert_all_examples(xps.unsigned_integer_dtypes(), lambda d: d in uint_dtypes)
 
 
 def test_can_generate_floating_dtypes(xp, xps):
     float_dtypes = [getattr(xp, name) for name in FLOAT_NAMES]
-    assert_all_examples(xps.floating_dtypes(), lambda dtype: dtype in float_dtypes)
+    assert_all_examples(xps.floating_dtypes(), lambda d: d in float_dtypes)
 
 
 def test_minimise_scalar_dtypes(xp, xps):

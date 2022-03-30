@@ -11,11 +11,14 @@
 from importlib.metadata import EntryPoint, entry_points  # type: ignore
 from typing import Dict
 
+import pytest
+
 from hypothesis.internal.floats import next_up
 
 __all__ = [
     "installed_array_modules",
     "flushes_to_zero",
+    "skip_on_unsupported_dtype",
 ]
 
 
@@ -38,13 +41,17 @@ def installed_array_modules() -> Dict[str, EntryPoint]:
 
 
 def flushes_to_zero(xp, width: int) -> bool:
-    """Infer whether build of array module has its float dtype of the specified
-    width flush subnormals to zero
-
-    We do this per-width because compilers might FTZ for one dtype but allow
-    subnormals in the other.
+    """
+    Infer whether build of array module has its float dtype of the specified
+    width flush subnormals to zero. We do this per-width because compilers might
+    flush-to-zero for one dtype but allow subnormals in the other.
     """
     if width not in [32, 64]:
         raise ValueError(f"{width=}, but should be either 32 or 64")
     dtype = getattr(xp, f"float{width}")
     return bool(xp.asarray(next_up(0.0, width=width), dtype=dtype) == 0)
+
+
+def skip_on_unsupported_dtype(xp, dtype_name: str):
+    if not hasattr(xp, dtype_name):
+        pytest.skip(f"{dtype_name} not found in the namespace of {xp.__name__}")
