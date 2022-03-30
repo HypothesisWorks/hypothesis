@@ -40,6 +40,10 @@ with warnings.catch_warnings():
         except KeyError:
             params = [pytest.param(mock_xp, mock_xps, id="mock")]
     elif test_xp_option == "all":
+        if len(name_to_entry_point) == 0:
+            raise ValueError(
+                "HYPOTHESIS_TEST_ARRAY_API='all', but no entry points where found"
+            )
         params = [pytest.param(mock_xp, mock_xps, id="mock")]
         for name, ep in name_to_entry_point.items():
             xp = ep.load()
