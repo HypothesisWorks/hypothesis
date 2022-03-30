@@ -128,6 +128,9 @@ def test_generate_arrays_from_zero_sided_shapes(xp, xps, data):
 def test_generate_arrays_from_unsigned_ints(xp, xps):
     """Generate arrays from unsigned integer dtype."""
     assert_all_examples(xps.arrays(xp.uint32, (5, 5)), lambda x: xp.all(x >= 0))
+    # Ensure we're not just picking non-negative signed integers
+    signed_max = xp.iinfo(xp.int32).max
+    find_any(xps.arrays(xp.uint32, (5, 5)), lambda x: xp.any(x > signed_max))
 
 
 def test_generate_arrays_from_0d_arrays(xp, xps):
