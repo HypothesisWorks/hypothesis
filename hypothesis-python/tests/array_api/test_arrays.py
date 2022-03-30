@@ -480,16 +480,13 @@ def test_cannot_draw_subnormals_for_ftz_float32(xp, xps):
     strategy raises helpful error."""
     if not flushes_to_zero(xp, width=32):
         pytest.skip("Subnormals are valid for non-FTZ builds")
+    elements = {
+        "min_value": 0.0,
+        "max_value": width_smallest_normals[32],
+        "exclude_min": True,
+        "exclude_max": True,
+        "allow_subnormal": True,
+    }
+    strat = xps.arrays(xp.float32, 10, elements=elements)
     with pytest.raises(InvalidArgument, match="Generated subnormal float"):
-        strat = xps.arrays(
-            xp.float32,
-            10,
-            elements={
-                "min_value": 0.0,
-                "max_value": width_smallest_normals[32],
-                "exclude_min": True,
-                "exclude_max": True,
-                "allow_subnormal": True,
-            },
-        )
         strat.example()
