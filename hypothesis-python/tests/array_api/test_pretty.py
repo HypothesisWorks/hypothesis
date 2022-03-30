@@ -46,8 +46,8 @@ def test_namespaced_methods_meta(xp, xps, name):
 @pytest.mark.parametrize(
     "name, valid_args",
     [
-        ("from_dtype", [xp.int8]),
-        ("arrays", [xp.int8, 5]),
+        ("from_dtype", ["int8"]),
+        ("arrays", ["int8", 5]),
         ("array_shapes", []),
         ("scalar_dtypes", []),
         ("boolean_dtypes", []),
