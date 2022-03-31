@@ -487,11 +487,13 @@ def test_may_reuse_distinct_integers_if_asked(xp, xps):
     )
 
 
-def test_cannot_draw_subnormals_for_ftz_float32(xp, xps):
-    """For FTZ builds of array modules, strategy with subnormal elements
-    strategy raises helpful error."""
-    if not flushes_to_zero(xp, width=32):
-        pytest.skip("Subnormals are valid for non-FTZ builds")
+def test_subnormal_elements_validation(xp, xps):
+    """Strategy with subnormal elements strategy is correctly validated.
+
+    For FTZ builds of array modules, a helpful error should raise. Conversely,
+    for builds of array modules which support subnormals, the strategy should
+    generate arrays without raising.
+    """
     elements = {
         "min_value": 0.0,
         "max_value": width_smallest_normals[32],
@@ -500,5 +502,8 @@ def test_cannot_draw_subnormals_for_ftz_float32(xp, xps):
         "allow_subnormal": True,
     }
     strat = xps.arrays(xp.float32, 10, elements=elements)
-    with pytest.raises(InvalidArgument, match="Generated subnormal float"):
+    if flushes_to_zero(xp, width=32):
+        with pytest.raises(InvalidArgument, match="Generated subnormal float"):
+            strat.example()
+    else:
         strat.example()
