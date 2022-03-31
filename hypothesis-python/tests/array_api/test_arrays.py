@@ -22,7 +22,7 @@ from tests.common.utils import flaky
 
 def skip_on_missing_unique_values(xp):
     if not hasattr(xp, "unique_values"):
-        pytest.mark.skip("optional API")
+        pytest.mark.skip("xp.unique_values() is not required to exist")
 
 
 def xfail_on_indistinct_nans(xp):
