@@ -12,10 +12,10 @@ import pytest
 
 from hypothesis import given, strategies as st
 from hypothesis.errors import InvalidArgument
-from hypothesis.extra.array_api import DTYPE_NAMES, NUMERIC_NAMES, UINT_NAMES
+from hypothesis.extra.array_api import DTYPE_NAMES, NUMERIC_NAMES
 from hypothesis.internal.floats import width_smallest_normals
 
-from tests.array_api.common import flushes_to_zero, skip_on_unsupported_dtype
+from tests.array_api.common import flushes_to_zero
 from tests.common.debug import assert_all_examples, find_any, minimal
 from tests.common.utils import flaky
 
@@ -41,20 +41,14 @@ def xfail_on_indistinct_nans(xp):
 @pytest.mark.parametrize("dtype_name", DTYPE_NAMES)
 def test_draw_arrays_from_dtype(xp, xps, dtype_name):
     """Draw arrays from dtypes."""
-    try:
-        dtype = getattr(xp, dtype_name)
-    except AttributeError:
-        pytest.skip(f"dtype {dtype_name} not supported")
+    dtype = getattr(xp, dtype_name)
     assert_all_examples(xps.arrays(dtype, ()), lambda x: x.dtype == dtype)
 
 
 @pytest.mark.parametrize("dtype_name", DTYPE_NAMES)
 def test_draw_arrays_from_scalar_names(xp, xps, dtype_name):
     """Draw arrays from dtype names."""
-    try:
-        dtype = getattr(xp, dtype_name)
-    except AttributeError:
-        pytest.skip(f"dtype {dtype_name} not supported")
+    dtype = getattr(xp, dtype_name)
     assert_all_examples(xps.arrays(dtype_name, ()), lambda x: x.dtype == dtype)
 
 
@@ -92,15 +86,13 @@ def test_draw_arrays_from_dtype_strategies(xp, xps, strat_name):
     find_any(xps.arrays(strat, ()))
 
 
-@given(data=st.data())
-def test_draw_arrays_from_dtype_name_strategies(xp, xps, data):
-    """Draw arrays from dtype name strategies."""
-    supported_dtype_names = [name for name in DTYPE_NAMES if hasattr(xp, name)]
-    strat = data.draw(
-        st.lists(
-            st.sampled_from(supported_dtype_names), min_size=1, unique=True
-        ).flatmap(st.sampled_from)
+@given(
+    strat=st.lists(st.sampled_from(DTYPE_NAMES), min_size=1, unique=True).flatmap(
+        st.sampled_from
     )
+)
+def test_draw_arrays_from_dtype_name_strategies(xp, xps, strat):
+    """Draw arrays from dtype name strategies."""
     find_any(xps.arrays(strat, ()))
 
 
@@ -126,15 +118,12 @@ def test_generate_arrays_from_zero_sided_shapes(xp, xps, data):
     assert_all_examples(xps.arrays(xp.int8, shape), lambda x: x.shape == shape)
 
 
-@pytest.mark.parametrize("uint_name", UINT_NAMES)
-def test_generate_arrays_from_unsigned_ints(xp, xps, uint_name):
+def test_generate_arrays_from_unsigned_ints(xp, xps):
     """Generate arrays from unsigned integer dtype."""
-    skip_on_unsupported_dtype(xp, uint_name)
-    assert_all_examples(xps.arrays(uint_name, (5, 5)), lambda x: xp.all(x >= 0))
+    assert_all_examples(xps.arrays(xp.uint32, (5, 5)), lambda x: xp.all(x >= 0))
     # Ensure we're not just picking non-negative signed integers
-    equisized_int = getattr(xp, f"int{uint_name[4:]}")
-    signed_max = xp.iinfo(equisized_int).max
-    find_any(xps.arrays(uint_name, (5, 5)), lambda x: xp.any(x > signed_max))
+    signed_max = xp.iinfo(xp.int32).max
+    find_any(xps.arrays(xp.uint32, (5, 5)), lambda x: xp.any(x > signed_max))
 
 
 def test_generate_arrays_from_0d_arrays(xp, xps):
@@ -170,7 +159,6 @@ def test_minimize_arrays_with_0d_shape_strategy(xp, xps):
 @pytest.mark.parametrize("dtype", NUMERIC_NAMES)
 def test_minimizes_numeric_arrays(xp, xps, dtype):
     """Strategies with numeric dtypes minimize to zero-filled arrays."""
-    skip_on_unsupported_dtype(xp, dtype)
     smallest = minimal(xps.arrays(dtype, (2, 2)))
     assert xp.all(smallest == 0)
 
