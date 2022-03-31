@@ -28,8 +28,8 @@ def skip_on_missing_unique_values(xp):
 def xfail_on_indistinct_nans(xp):
     """
     xp.unique_value() should return distinct NaNs - if not, tests that (rightly)
-    assume such behaviour will likely fail. This mark namely addresses mocking
-    the array module with NumPy 1.21, which treats NaNs as not distinct.
+    assume such behaviour will likely fail. For example, NumPy 1.22 treats NaNs
+    as indistinct, so tests that use this function will be marked as xfail.
     See https://mail.python.org/pipermail/numpy-discussion/2021-August/081995.html
     """
     skip_on_missing_unique_values(xp)
