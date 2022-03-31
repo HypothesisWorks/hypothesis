@@ -94,34 +94,26 @@ def test_can_minimize_floats(xp, xps):
 
 
 smallest_normal = width_smallest_normals[32]
-subnormal_from_dtype_kwargs = [
-    {},
-    {"min_value": -1},
-    {"max_value": 1},
-    pytest.param(
-        {"min_value": -1, "max_value": 1},
-        marks=pytest.mark.skip(
-            reason="FixedBoundFloatStrategy(0, 1) rarely generates subnormals"
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {},
+        {"min_value": -1},
+        {"max_value": 1},
+        pytest.param(
+            {"min_value": -1, "max_value": 1},
+            marks=pytest.mark.skip(
+                reason="FixedBoundFloatStrategy(0, 1) rarely generates subnormals"
+            ),
         ),
-    ),
-]
-
-
-@pytest.mark.parametrize("kwargs", subnormal_from_dtype_kwargs)
-def test_generate_subnormals_for_non_ftz_float32(xp, xps, kwargs):
+    ],
+)
+def test_subnormal_generation(xp, xps, kwargs):
+    """Generation of subnormals is dependent on FTZ behaviour of array module."""
+    strat = xps.from_dtype(xp.float32, **kwargs).filter(lambda n: n != 0)
     if flushes_to_zero(xp, width=32):
-        pytest.skip("Subnormals should not be generated for FTZ builds")
-    strat = xps.from_dtype(xp.float32, **kwargs)
-    find_any(
-        strat.filter(lambda n: n != 0), lambda n: -smallest_normal < n < smallest_normal
-    )
-
-
-@pytest.mark.parametrize("kwargs", subnormal_from_dtype_kwargs)
-def test_does_not_generate_subnormals_for_ftz_float32(xp, xps, kwargs):
-    if not flushes_to_zero(xp, width=32):
-        pytest.skip("Subnormals should be generated for non-FTZ builds")
-    strat = xps.from_dtype(xp.float32, **kwargs)
-    assert_no_examples(
-        strat.filter(lambda n: n != 0), lambda n: -smallest_normal < n < smallest_normal
-    )
+        assert_no_examples(strat, lambda n: -smallest_normal < n < smallest_normal)
+    else:
+        find_any(strat, lambda n: -smallest_normal < n < smallest_normal)
