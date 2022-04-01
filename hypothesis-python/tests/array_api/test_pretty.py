@@ -68,3 +68,10 @@ def test_namespaced_strategies_repr(xp, xps, name, valid_args):
     assert repr(strat).startswith(name + "("), f"{name} not in strat repr {strat!r}"
     assert len(repr(strat)) < 100, "strat repr looks too long"
     assert xp.__name__ not in repr(strat), f"{xp.__name__} in strat repr"
+
+
+def test_strategies_namespace_repr(xp, xps):
+    """Strategies namespace has good repr."""
+    expected = f"make_strategies_namespace({xp.__name__})"
+    assert repr(xps) == expected
+    assert str(xps) == expected
