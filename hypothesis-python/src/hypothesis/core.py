@@ -22,6 +22,7 @@ import warnings
 import zlib
 from collections import defaultdict
 from io import StringIO
+from itertools import chain
 from random import Random
 from typing import (
     Any,
@@ -106,9 +107,16 @@ from hypothesis.strategies._internal.strategies import (
     MappedSearchStrategy,
     SearchStrategy,
 )
-from hypothesis.utils.conventions import InferType, infer
+from hypothesis.utils.conventions import infer
 from hypothesis.vendor.pretty import RepresentationPrinter
 from hypothesis.version import __version__
+
+if sys.version_info >= (3, 10):  # pragma: no cover
+    from types import EllipsisType as InferType
+
+else:
+    InferType = type(Ellipsis)
+
 
 TestFunc = TypeVar("TestFunc", bound=Callable)
 
@@ -275,8 +283,9 @@ def is_invalid_test(test, original_argspec, given_arguments, given_kwargs):
 
     if infer in given_arguments:
         return invalid(
-            "infer was passed as a positional argument to @given, "
-            "but may only be passed as a keyword argument"
+            "... was passed as a positional argument to @given, "
+            "but may only be passed as a keyword argument or as "
+            "the sole argument of @given"
         )
 
     if given_arguments and given_kwargs:
@@ -983,6 +992,14 @@ def given(
 
         original_argspec = getfullargspec(test)
 
+        if given_arguments == (Ellipsis,) and not given_kwargs:
+            # user indicated that they want to infer all arguments
+            given_kwargs.update(
+                (name, Ellipsis)
+                for name in chain(original_argspec.args, original_argspec.kwonlyargs)
+            )
+            given_arguments = ()
+
         check_invalid = is_invalid_test(
             test, original_argspec, given_arguments, given_kwargs
         )
@@ -1016,7 +1033,7 @@ def given(
                 def wrapped_test(*arguments, **kwargs):
                     __tracebackhide__ = True
                     raise InvalidArgument(
-                        f"passed {name}=infer for {test.__name__}, but {name} has "
+                        f"passed {name}=... for {test.__name__}, but {name} has "
                         "no type annotation"
                     )
 

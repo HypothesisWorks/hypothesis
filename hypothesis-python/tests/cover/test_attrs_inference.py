@@ -13,7 +13,7 @@ import typing
 import attr
 import pytest
 
-from hypothesis import given, infer, strategies as st
+from hypothesis import given, strategies as st
 from hypothesis.errors import ResolutionFailed
 
 
@@ -70,7 +70,7 @@ class UnhelpfulConverter:
     a = attr.ib(converter=lambda x: x)
 
 
-@given(st.builds(Inferrables, has_default=infer, has_default_factory=infer))
+@given(st.builds(Inferrables, has_default=..., has_default_factory=...))
 def test_attrs_inference_builds(c):
     pass
 
@@ -88,4 +88,4 @@ def test_cannot_infer(c):
 
 def test_cannot_infer_takes_self():
     with pytest.raises(ResolutionFailed):
-        st.builds(Inferrables, has_default_factory_takes_self=infer).example()
+        st.builds(Inferrables, has_default_factory_takes_self=...).example()

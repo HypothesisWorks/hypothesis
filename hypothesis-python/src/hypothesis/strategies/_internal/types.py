@@ -39,9 +39,10 @@ from hypothesis.strategies._internal.ipaddress import (
 from hypothesis.strategies._internal.lazy import unwrap_strategies
 from hypothesis.strategies._internal.strategies import OneOfStrategy
 
+UnionType: typing.Any
 try:
     # The type of PEP-604 unions (`int | str`), added in Python 3.10
-    from types import UnionType  # type: ignore
+    from types import UnionType
 except ImportError:
     UnionType = ()
 
@@ -65,7 +66,7 @@ except ImportError:
 
 TypeAliasTypes: tuple = ()
 try:
-    TypeAliasTypes += (typing.TypeAlias,)  # type: ignore
+    TypeAliasTypes += (typing.TypeAlias,)
 except AttributeError:
     pass  # Is missing for `python<3.10`
 try:
@@ -81,7 +82,7 @@ except AttributeError:  # pragma: no cover
 
 FinalTypes: tuple = ()
 try:
-    FinalTypes += (typing.Final,)  # type: ignore
+    FinalTypes += (typing.Final,)
 except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.8`
 try:
@@ -590,7 +591,7 @@ _global_type_lookup.update(
     }
 )
 if hasattr(typing, "SupportsIndex"):  # pragma: no branch  # new in Python 3.8
-    _global_type_lookup[typing.SupportsIndex] = st.integers() | st.booleans()  # type: ignore
+    _global_type_lookup[typing.SupportsIndex] = st.integers() | st.booleans()
 
 
 def register(type_, fallback=None, *, module=typing):

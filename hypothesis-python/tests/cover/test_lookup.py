@@ -23,7 +23,7 @@ from numbers import Real
 
 import pytest
 
-from hypothesis import HealthCheck, assume, given, infer, settings, strategies as st
+from hypothesis import HealthCheck, assume, given, settings, strategies as st
 from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.internal.compat import get_type_hints
 from hypothesis.internal.reflection import get_pretty_function_description
@@ -189,7 +189,7 @@ def test_regex_types(data, generic, typ):
     assert isinstance(x[0] if generic is typing.Match else x.pattern, typ)
 
 
-@given(x=infer)
+@given(x=...)
 def test_Generator(x: typing.Generator[Elem, None, ElemValue]):
     assert isinstance(x, typing.Generator)
     try:
@@ -383,7 +383,7 @@ def test_force_builds_to_infer_strategies_for_default_args():
     # By default, leaves args with defaults and minimises to 2+4=6
     assert minimal(st.builds(annotated_func), lambda ex: True) == 6
     # Inferring integers() for args makes it minimise to zero
-    assert minimal(st.builds(annotated_func, b=infer, d=infer), lambda ex: True) == 0
+    assert minimal(st.builds(annotated_func, b=..., d=...), lambda ex: True) == 0
 
 
 def non_annotated_func(a, b=2, *, c, d=4):
@@ -392,14 +392,14 @@ def non_annotated_func(a, b=2, *, c, d=4):
 
 def test_cannot_pass_infer_as_posarg():
     with pytest.raises(InvalidArgument):
-        st.builds(annotated_func, infer).example()
+        st.builds(annotated_func, ...).example()
 
 
 def test_cannot_force_inference_for_unannotated_arg():
     with pytest.raises(InvalidArgument):
-        st.builds(non_annotated_func, a=infer, c=st.none()).example()
+        st.builds(non_annotated_func, a=..., c=st.none()).example()
     with pytest.raises(InvalidArgument):
-        st.builds(non_annotated_func, a=st.none(), c=infer).example()
+        st.builds(non_annotated_func, a=st.none(), c=...).example()
 
 
 class UnknownType:
@@ -425,16 +425,16 @@ def test_raises_for_arg_with_unresolvable_annotation():
     with pytest.raises(ResolutionFailed):
         st.builds(unknown_annotated_func).example()
     with pytest.raises(ResolutionFailed):
-        st.builds(unknown_annotated_func, a=st.none(), c=infer).example()
+        st.builds(unknown_annotated_func, a=st.none(), c=...).example()
 
 
-@given(a=infer, b=infer)
+@given(a=..., b=...)
 def test_can_use_type_hints(a: int, b: float):
     assert isinstance(a, int) and isinstance(b, float)
 
 
 def test_error_if_has_unresolvable_hints():
-    @given(a=infer)
+    @given(a=...)
     def inner(a: UnknownType):
         pass
 
@@ -761,7 +761,7 @@ class WithOptionalInSignature:
 
 def test_compat_get_type_hints_aware_of_None_default():
     # Regression test for https://github.com/HypothesisWorks/hypothesis/issues/2648
-    strategy = st.builds(WithOptionalInSignature, a=infer)
+    strategy = st.builds(WithOptionalInSignature, a=...)
     find_any(strategy, lambda x: x.a is None)
     find_any(strategy, lambda x: x.a is not None)
 

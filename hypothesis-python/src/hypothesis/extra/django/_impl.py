@@ -24,7 +24,13 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.extra.django._fields import from_field
 from hypothesis.internal.reflection import define_function_signature_from_signature
 from hypothesis.strategies._internal.utils import defines_strategy
-from hypothesis.utils.conventions import InferType, infer
+from hypothesis.utils.conventions import infer
+
+if sys.version_info >= (3, 10):  # pragma: no cover
+    from types import EllipsisType as InferType
+
+else:
+    InferType = type(Ellipsis)
 
 
 class HypothesisTestCase:
@@ -84,7 +90,7 @@ def from_model(
         shop_strategy = from_model(Shop, company=from_model(Company))
 
     Like for :func:`~hypothesis.strategies.builds`, you can pass
-    :obj:`~hypothesis.infer` as a keyword argument to infer a strategy for
+    ``...`` (:obj:`python:Ellipsis`) as a keyword argument to infer a strategy for
     a field which has a default value instead of using the default.
     """
     if len(model) == 1:
@@ -171,7 +177,7 @@ def from_form(
         shop_strategy = from_form(Shop, form_kwargs={"company_id": 5})
 
     Like for :func:`~hypothesis.strategies.builds`, you can pass
-    :obj:`~hypothesis.infer` as a keyword argument to infer a strategy for
+    ``...`` (:obj:`python:Ellipsis`) as a keyword argument to infer a strategy for
     a field which has a default value instead of using the default.
     """
     # currently unsupported:

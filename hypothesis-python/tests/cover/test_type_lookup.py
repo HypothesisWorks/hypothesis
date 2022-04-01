@@ -14,7 +14,7 @@ from typing import Callable, Dict, Generic, List, Sequence, TypeVar, Union
 
 import pytest
 
-from hypothesis import given, infer, strategies as st
+from hypothesis import given, infer, settings, strategies as st
 from hypothesis.errors import (
     HypothesisDeprecationWarning,
     InvalidArgument,
@@ -172,13 +172,14 @@ def test_pulic_interface_works():
         fails.example()
 
 
-def test_given_can_infer_from_manual_annotations():
+@pytest.mark.parametrize("infer_token", [infer, ...])
+def test_given_can_infer_from_manual_annotations(infer_token):
     # Editing annotations before decorating is hilariously awkward, but works!
     def inner(a):
-        pass
+        assert isinstance(a, int)
 
     inner.__annotations__ = {"a": int}
-    given(a=infer)(inner)()
+    given(a=infer_token)(inner)()
 
 
 class EmptyEnum(enum.Enum):
@@ -391,3 +392,27 @@ def test_abstract_resolver_fallback():
 
     # which in turn means we resolve to the concrete subtype.
     assert isinstance(gen, ConcreteBar)
+
+
+def _one_arg(x: int):
+    assert isinstance(x, int)
+
+
+def _multi_arg(x: int, y: str):
+    assert isinstance(x, int)
+    assert isinstance(y, str)
+
+
+def _kwd_only(*, y: str):
+    assert isinstance(y, str)
+
+
+def _pos_and_kwd_only(x: int, *, y: str):
+    assert isinstance(x, int)
+    assert isinstance(y, str)
+
+
+@pytest.mark.parametrize("func", [_one_arg, _multi_arg, _kwd_only, _pos_and_kwd_only])
+def test_infer_all(func):
+    # tests @given(...) against various signatures
+    settings(max_examples=1)(given(...))(func)()

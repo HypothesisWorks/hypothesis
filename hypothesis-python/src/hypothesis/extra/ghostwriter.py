@@ -112,7 +112,14 @@ from hypothesis.strategies._internal.strategies import (
     SampledFromStrategy,
 )
 from hypothesis.strategies._internal.types import _global_type_lookup, is_generic_type
-from hypothesis.utils.conventions import InferType, infer
+from hypothesis.utils.conventions import infer
+
+if sys.version_info >= (3, 10):  # pragma: no cover
+    from types import EllipsisType as InferType
+
+else:
+    InferType = type(Ellipsis)
+
 
 IMPORT_SECTION = """
 # This test code was written by the `hypothesis.extra.ghostwriter` module

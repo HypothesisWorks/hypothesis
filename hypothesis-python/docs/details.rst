@@ -561,7 +561,7 @@ limits.
 If there are required arguments with type annotations and
 no strategy was passed to :func:`~hypothesis.strategies.builds`,
 :func:`~hypothesis.strategies.from_type` is used to fill them in.
-You can also pass the special value :const:`hypothesis.infer` as a keyword
+You can also pass the value ``...`` (``Ellipsis``) as a keyword
 argument, to force this inference for arguments with a default value.
 
 .. code-block:: pycon
@@ -576,20 +576,37 @@ argument, to force this inference for arguments with a default value.
 
 :func:`@given <hypothesis.given>` does not perform any implicit inference
 for required arguments, as this would break compatibility with pytest fixtures.
-:const:`~hypothesis.infer` can be used as a keyword argument to explicitly
-fill in an argument from its type annotation.
+``...`` (:obj:`python:Ellipsis`), can be used as a keyword argument to explicitly fill
+in an argument from its type annotation.  You can also use the ``hypothesis.infer``
+alias if writing a literal ``...`` seems too weird.
 
 .. code:: python
 
-    @given(a=infer)
+    @given(a=...)  # or @given(a=infer)
     def test(a: int):
         pass
 
 
     # is equivalent to
-    @given(a=integers())
+    @given(a=from_type(int))
     def test(a):
         pass
+
+
+``@given(...)`` can also be specified to fill all arguments from their type annotations.
+
+.. code:: python
+
+    @given(...)
+    def test(a: int, b: str):
+        pass
+
+
+    # is equivalent to
+    @given(a=..., b=...)
+    def test(a, b):
+        pass
+
 
 ~~~~~~~~~~~
 Limitations

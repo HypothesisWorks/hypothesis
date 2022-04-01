@@ -104,7 +104,14 @@ from hypothesis.strategies._internal.strings import (
     TextStrategy,
 )
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
-from hypothesis.utils.conventions import InferType, infer, not_set
+from hypothesis.utils.conventions import infer, not_set
+
+if sys.version_info >= (3, 10):  # pragma: no cover
+    from types import EllipsisType as InferType
+
+else:
+    InferType = type(Ellipsis)
+
 
 try:
     from typing import Protocol
@@ -841,9 +848,9 @@ def builds(
 
     If the callable has type annotations, they will be used to infer a strategy
     for required arguments that were not passed to builds.  You can also tell
-    builds to infer a strategy for an optional argument by passing the special
-    value :const:`hypothesis.infer` as a keyword argument to
-    builds, instead of a strategy for that argument to the callable.
+    builds to infer a strategy for an optional argument by passing ``...``
+    (:obj:`python:Ellipsis`) as a keyword argument to builds, instead of a strategy for
+    that argument to the callable.
 
     If the callable is a class defined with :pypi:`attrs`, missing required
     arguments will be inferred from the attribute on a best-effort basis,
@@ -868,7 +875,7 @@ def builds(
     if infer in args:
         # Avoid an implementation nightmare juggling tuples and worse things
         raise InvalidArgument(
-            "infer was passed as a positional argument to "
+            "... was passed as a positional argument to "
             "builds(), but is only allowed as a keyword arg"
         )
     required = required_args(target, args, kwargs)
@@ -884,7 +891,8 @@ def builds(
         if to_infer - set(hints):
             badargs = ", ".join(sorted(to_infer - set(hints)))
             raise InvalidArgument(
-                f"passed infer for {badargs}, but there is no type annotation"
+                f"passed ... for {badargs}, but we cannot infer a strategy "
+                "because these arguments have no type annotation"
             )
         infer_for = {k: v for k, v in hints.items() if k in (required | to_infer)}
         if infer_for:
@@ -1864,7 +1872,7 @@ def functions(
 ) -> SearchStrategy[Callable[..., Any]]:
     # The proper type signature of `functions()` would have T instead of Any, but mypy
     # disallows default args for generics: https://github.com/python/mypy/issues/3737
-    """functions(*, like=lambda: None, returns=infer, pure=False)
+    """functions(*, like=lambda: None, returns=..., pure=False)
 
     A strategy for functions, which can be used in callbacks.
 
