@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.40.1:
+
+-------------------
+6.40.1 - 2022-04-01
+-------------------
+
+Fixed an internal error when ``given()`` was passed a lambda.
+
 .. _v6.40.0:
 
 -------------------
