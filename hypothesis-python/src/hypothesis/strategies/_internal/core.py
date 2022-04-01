@@ -740,6 +740,10 @@ class RandomSeeder:
 
 class RandomModule(SearchStrategy):
     def do_draw(self, data):
+        # It would be unsafe to do run this method more than once per test case,
+        # because cleanup() runs tasks in FIFO order (at time of writing!).
+        # Fortunately, the random_module() strategy wraps us in shared(), so
+        # it's cached for all but the first of any number of calls.
         seed = data.draw(integers(0, 2**32 - 1))
         seed_all, restore_all = get_seeder_and_restorer(seed)
         seed_all()
