@@ -863,7 +863,11 @@ def make_strategies_namespace(xp: Any) -> SimpleNamespace:
     unsigned_integer_dtypes.__doc__ = _unsigned_integer_dtypes.__doc__
     floating_dtypes.__doc__ = _floating_dtypes.__doc__
 
-    return SimpleNamespace(
+    class PrettySimpleNamespace(SimpleNamespace):
+        def __repr__(self):
+            return f"make_strategies_namespace({xp.__name__})"
+
+    return PrettySimpleNamespace(
         from_dtype=from_dtype,
         arrays=arrays,
         array_shapes=array_shapes,

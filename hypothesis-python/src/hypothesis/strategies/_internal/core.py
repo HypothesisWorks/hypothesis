@@ -747,6 +747,10 @@ class RandomSeeder:
 
 class RandomModule(SearchStrategy):
     def do_draw(self, data):
+        # It would be unsafe to do run this method more than once per test case,
+        # because cleanup() runs tasks in FIFO order (at time of writing!).
+        # Fortunately, the random_module() strategy wraps us in shared(), so
+        # it's cached for all but the first of any number of calls.
         seed = data.draw(integers(0, 2**32 - 1))
         seed_all, restore_all = get_seeder_and_restorer(seed)
         seed_all()
@@ -1028,7 +1032,7 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
                 return as_strategy(types._global_type_lookup[thing], thing)
             return from_type(thing.__supertype__)
         # Unions are not instances of `type` - but we still want to resolve them!
-        if getattr(thing, "__origin__", None) is typing.Union:
+        if types.is_a_union(thing):
             args = sorted(thing.__args__, key=types.type_sorting_key)
             return one_of([from_type(t) for t in args])
     if not types.is_a_type(thing):

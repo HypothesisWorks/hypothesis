@@ -8,5 +8,12 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-__version_info__ = (6, 40, 3)
-__version__ = ".".join(map(str, __version_info__))
+from hypothesis import strategies as st
+
+from tests.common.debug import find_any
+
+
+def test_native_unions():
+    s = st.from_type(int | list[str])
+    find_any(s, lambda x: isinstance(x, int))
+    find_any(s, lambda x: isinstance(x, list))

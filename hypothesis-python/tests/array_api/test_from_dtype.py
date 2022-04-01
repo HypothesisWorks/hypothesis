@@ -12,124 +12,101 @@ import math
 
 import pytest
 
-from hypothesis import given, strategies as st
 from hypothesis.extra.array_api import DTYPE_NAMES, find_castable_builtin_for_dtype
 from hypothesis.internal.floats import width_smallest_normals
 
-from tests.array_api.common import WIDTHS_FTZ, xp, xps
-from tests.common.debug import assert_no_examples, find_any, minimal
+from tests.array_api.common import flushes_to_zero
+from tests.common.debug import (
+    assert_all_examples,
+    assert_no_examples,
+    find_any,
+    minimal,
+)
 
 
-@given(xps.scalar_dtypes())
-def test_strategies_have_reusable_values(dtype):
+@pytest.mark.parametrize("dtype_name", DTYPE_NAMES)
+def test_strategies_have_reusable_values(xp, xps, dtype_name):
     """Inferred strategies have reusable values."""
-    strat = xps.from_dtype(dtype)
+    strat = xps.from_dtype(dtype_name)
     assert strat.has_reusable_values
 
 
-DTYPES = [getattr(xp, name) for name in DTYPE_NAMES]
-
-
-@pytest.mark.parametrize("dtype", DTYPES)
-def test_produces_castable_instances_from_dtype(dtype):
+@pytest.mark.parametrize("dtype_name", DTYPE_NAMES)
+def test_produces_castable_instances_from_dtype(xp, xps, dtype_name):
     """Strategies inferred by dtype generate values of a builtin type castable
     to the dtype."""
+    dtype = getattr(xp, dtype_name)
     builtin = find_castable_builtin_for_dtype(xp, dtype)
-
-    @given(xps.from_dtype(dtype))
-    def test_is_builtin(value):
-        assert isinstance(value, builtin)
-
-    test_is_builtin()
+    assert_all_examples(xps.from_dtype(dtype), lambda v: isinstance(v, builtin))
 
 
-@pytest.mark.parametrize("name", DTYPE_NAMES)
-def test_produces_castable_instances_from_name(name):
+@pytest.mark.parametrize("dtype_name", DTYPE_NAMES)
+def test_produces_castable_instances_from_name(xp, xps, dtype_name):
     """Strategies inferred by dtype name generate values of a builtin type
     castable to the dtype."""
-    builtin = find_castable_builtin_for_dtype(xp, getattr(xp, name))
-
-    @given(xps.from_dtype(name))
-    def test_is_builtin(value):
-        assert isinstance(value, builtin)
-
-    test_is_builtin()
+    dtype = getattr(xp, dtype_name)
+    builtin = find_castable_builtin_for_dtype(xp, dtype)
+    assert_all_examples(xps.from_dtype(dtype_name), lambda v: isinstance(v, builtin))
 
 
-@pytest.mark.parametrize("dtype", DTYPES)
-def test_passing_inferred_strategies_in_arrays(dtype):
+@pytest.mark.parametrize("dtype_name", DTYPE_NAMES)
+def test_passing_inferred_strategies_in_arrays(xp, xps, dtype_name):
     """Inferred strategies usable in arrays strategy."""
-    elements = xps.from_dtype(dtype)
-
-    @given(xps.arrays(dtype, 10, elements=elements))
-    def smoke_test(_):
-        pass
-
-    smoke_test()
+    elements = xps.from_dtype(dtype_name)
+    find_any(xps.arrays(dtype_name, 10, elements=elements))
 
 
 @pytest.mark.parametrize(
     "dtype, kwargs, predicate",
     [
         # Floating point: bounds, exclusive bounds, and excluding nonfinites
-        (xp.float32, {"min_value": 1, "max_value": 2}, lambda x: 1 <= x <= 2),
+        ("float32", {"min_value": 1, "max_value": 2}, lambda x: 1 <= x <= 2),
         (
-            xp.float32,
+            "float32",
             {"min_value": 1, "max_value": 2, "exclude_min": True, "exclude_max": True},
             lambda x: 1 < x < 2,
         ),
-        (xp.float32, {"allow_nan": False}, lambda x: not math.isnan(x)),
-        (xp.float32, {"allow_infinity": False}, lambda x: not math.isinf(x)),
-        (xp.float32, {"allow_nan": False, "allow_infinity": False}, math.isfinite),
+        ("float32", {"allow_nan": False}, lambda x: not math.isnan(x)),
+        ("float32", {"allow_infinity": False}, lambda x: not math.isinf(x)),
+        ("float32", {"allow_nan": False, "allow_infinity": False}, math.isfinite),
         # Integer bounds, limited to the representable range
-        (xp.int8, {"min_value": -1, "max_value": 1}, lambda x: -1 <= x <= 1),
-        (xp.uint8, {"min_value": 1, "max_value": 2}, lambda x: 1 <= x <= 2),
+        ("int8", {"min_value": -1, "max_value": 1}, lambda x: -1 <= x <= 1),
+        ("uint8", {"min_value": 1, "max_value": 2}, lambda x: 1 <= x <= 2),
     ],
 )
-@given(data=st.data())
-def test_from_dtype_with_kwargs(data, dtype, kwargs, predicate):
+def test_from_dtype_with_kwargs(xp, xps, dtype, kwargs, predicate):
     """Strategies inferred with kwargs generate values in bounds."""
     strat = xps.from_dtype(dtype, **kwargs)
-    value = data.draw(strat)
-    assert predicate(value)
+    assert_all_examples(strat, predicate)
 
 
-def test_can_minimize_floats():
+def test_can_minimize_floats(xp, xps):
     """Inferred float strategy minimizes to a good example."""
     smallest = minimal(xps.from_dtype(xp.float32), lambda n: n >= 1.0)
     assert smallest == 1
 
 
 smallest_normal = width_smallest_normals[32]
-subnormal_strats = [
-    xps.from_dtype(xp.float32),
-    xps.from_dtype(xp.float32, min_value=-1),
-    xps.from_dtype(xp.float32, max_value=1),
-    xps.from_dtype(xp.float32, max_value=1),
-    pytest.param(
-        xps.from_dtype(xp.float32, min_value=-1, max_value=1),
-        marks=pytest.mark.skip(
-            reason="FixedBoundFloatStrategy(0, 1) rarely generates subnormals"
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {},
+        {"min_value": -1},
+        {"max_value": 1},
+        pytest.param(
+            {"min_value": -1, "max_value": 1},
+            marks=pytest.mark.skip(
+                reason="FixedBoundFloatStrategy(0, 1) rarely generates subnormals"
+            ),
         ),
-    ),
-]
-
-
-@pytest.mark.skipif(
-    WIDTHS_FTZ[32], reason="Subnormals should not be generated for FTZ builds"
+    ],
 )
-@pytest.mark.parametrize("strat", subnormal_strats)
-def test_generate_subnormals_for_non_ftz_float32(strat):
-    find_any(
-        strat.filter(lambda n: n != 0), lambda n: -smallest_normal < n < smallest_normal
-    )
-
-
-@pytest.mark.skipif(
-    not WIDTHS_FTZ[32], reason="Subnormals should be generated for non-FTZ builds"
-)
-@pytest.mark.parametrize("strat", subnormal_strats)
-def test_does_not_generate_subnormals_for_ftz_float32(strat):
-    assert_no_examples(
-        strat.filter(lambda n: n != 0), lambda n: -smallest_normal < n < smallest_normal
-    )
+def test_subnormal_generation(xp, xps, kwargs):
+    """Generation of subnormals is dependent on FTZ behaviour of array module."""
+    strat = xps.from_dtype(xp.float32, **kwargs).filter(lambda n: n != 0)
+    if flushes_to_zero(xp, width=32):
+        assert_no_examples(strat, lambda n: -smallest_normal < n < smallest_normal)
+    else:
+        find_any(strat, lambda n: -smallest_normal < n < smallest_normal)

@@ -18,6 +18,74 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.40.3:
+
+-------------------
+6.40.3 - 2022-04-01
+-------------------
+
+This patch simplifies the repr of the strategies namespace returned in
+:func:`~hypothesis.extra.array_api.make_strategies_namespace`, e.g.
+
+.. code-block:: pycon
+
+    >>> from hypothesis.extra.array_api import make_strategies_namespace
+    >>> from numpy import array_api as xp
+    >>> xps = make_strategies_namespace(xp)
+    >>> xps
+    make_strategies_namespace(numpy.array_api)
+
+.. _v6.40.2:
+
+-------------------
+6.40.2 - 2022-04-01
+-------------------
+
+Fixed :func:`~hypothesis.strategies.from_type` support for
+:pep:`604` union types, like ``int | None`` (:issue:`3255`).
+
+.. _v6.40.1:
+
+-------------------
+6.40.1 - 2022-04-01
+-------------------
+
+Fixed an internal error when ``given()`` was passed a lambda.
+
+.. _v6.40.0:
+
+-------------------
+6.40.0 - 2022-03-29
+-------------------
+
+:doc:`The Ghostwriter <ghostwriter>` can now write tests which check that
+two or more functions are equivalent on valid inputs, *or* raise the same
+type of exception for invalid inputs (:issue:`3267`).
+
+.. _v6.39.6:
+
+-------------------
+6.39.6 - 2022-03-27
+-------------------
+
+This patch makes some quality-of-life improvements to the
+:doc:`Ghostwriter <ghostwriter>`: we guess the :func:`~hypothesis.strategies.text`
+strategy for arguments named ``text`` (...obvious in hindsight, eh?);
+and improved the error message if you accidentally left in a
+:func:`~hypothesis.strategies.nothing` or broke your :pypi:`rich` install.
+
+.. _v6.39.5:
+
+-------------------
+6.39.5 - 2022-03-26
+-------------------
+
+This patch improves our error detection and message when Hypothesis is run
+on a Python implementation without support for ``-0.0``, which is required
+for the :func:`~hypothesis.strategies.floats` strategy but can be disabled by
+`unsafe compiler options <https://simonbyrne.github.io/notes/fastmath/>`__
+(:issue:`3265`).
+
 .. _v6.39.4:
 
 -------------------

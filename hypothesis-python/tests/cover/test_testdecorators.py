@@ -477,3 +477,9 @@ def test_prints_notes_once_on_failure():
 @given(lists(integers(), max_size=0))
 def test_empty_lists(xs):
     assert xs == []
+
+
+def test_given_usable_inline_on_lambdas():
+    xs = []
+    given(booleans())(lambda x: xs.append(x))()
+    assert len(xs) == 2 and set(xs) == {False, True}

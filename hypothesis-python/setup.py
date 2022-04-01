@@ -96,7 +96,7 @@ setuptools.setup(
         "Documentation": "https://hypothesis.readthedocs.io",
         "Issues": "https://github.com/HypothesisWorks/hypothesis/issues",
     },
-    license="MPL v2",
+    license="MPL-2.0",
     description="A library for property-based testing",
     zip_safe=False,
     extras_require=extras,

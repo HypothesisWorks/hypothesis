@@ -10,13 +10,12 @@
 
 import math
 
-from hypothesis import assume, given, strategies as st
+from hypothesis import assume, given, note, strategies as st
 
-from tests.array_api.common import xp, xps
-from tests.common.debug import find_any
+from tests.common.debug import assert_all_examples, find_any
 
 
-def test_generate_indices_with_and_without_ellipsis():
+def test_generate_indices_with_and_without_ellipsis(xp, xps):
     """Strategy can generate indices with and without Ellipsis."""
     strat = (
         xps.array_shapes(min_dims=1, max_dims=32)
@@ -27,21 +26,23 @@ def test_generate_indices_with_and_without_ellipsis():
     find_any(strat, lambda ix: Ellipsis not in ix)
 
 
-@given(xps.indices(shape=(), allow_ellipsis=True))
-def test_generate_indices_for_0d_shape(idx):
+def test_generate_indices_for_0d_shape(xp, xps):
     """Strategy only generates empty tuples or Ellipsis as indices for an empty
     shape."""
-    assert idx in [(), Ellipsis, (Ellipsis,)]
+    assert_all_examples(
+        xps.indices(shape=(), allow_ellipsis=True),
+        lambda idx: idx in [(), Ellipsis, (Ellipsis,)],
+    )
 
 
-def test_generate_tuples_and_non_tuples_for_1d_shape():
+def test_generate_tuples_and_non_tuples_for_1d_shape(xp, xps):
     """Strategy can generate tuple and non-tuple indices with a 1-dimensional shape."""
     strat = xps.indices(shape=(1,), allow_ellipsis=True)
     find_any(strat, lambda ix: isinstance(ix, tuple))
     find_any(strat, lambda ix: not isinstance(ix, tuple))
 
 
-def test_generate_long_ellipsis():
+def test_generate_long_ellipsis(xp, xps):
     """Strategy can replace runs of slice(None) with Ellipsis.
 
     We specifically test if [0,...,0] is generated alongside [0,:,:,:,0]
@@ -55,31 +56,31 @@ def test_generate_long_ellipsis():
     )
 
 
-@given(
-    xps.indices(shape=(0, 0, 0, 0, 0), max_dims=5).filter(
-        lambda idx: isinstance(idx, tuple) and Ellipsis in idx
-    )
-)
-def test_indices_replaces_whole_axis_slices_with_ellipsis(idx):
+def test_indices_replaces_whole_axis_slices_with_ellipsis(xp, xps):
     # `slice(None)` (aka `:`) is the only valid index for an axis of size
     # zero, so if all dimensions are 0 then a `...` will replace all the
     # slices because we generate `...` for entire contiguous runs of `:`
-    assert slice(None) not in idx
+    assert_all_examples(
+        xps.indices(shape=(0, 0, 0, 0, 0), max_dims=5).filter(
+            lambda idx: isinstance(idx, tuple) and Ellipsis in idx
+        ),
+        lambda idx: slice(None) not in idx,
+    )
 
 
-@given(xps.indices((3, 3, 3, 3, 3)))
-def test_efficiently_generate_indexers(_):
+def test_efficiently_generate_indexers(xp, xps):
     """Generation is not too slow."""
+    find_any(xps.indices((3, 3, 3, 3, 3)))
 
 
-@given(
-    shape=xps.array_shapes(min_dims=1, max_side=4)
-    | xps.array_shapes(min_dims=1, min_side=0, max_side=10),
-    allow_ellipsis=st.booleans(),
-    data=st.data(),
-)
-def test_generate_valid_indices(shape, allow_ellipsis, data):
+@given(allow_ellipsis=st.booleans(), data=st.data())
+def test_generate_valid_indices(xp, xps, allow_ellipsis, data):
     """Strategy generates valid indices."""
+    shape = data.draw(
+        xps.array_shapes(min_dims=1, max_side=4)
+        | xps.array_shapes(min_dims=1, min_side=0, max_side=10),
+        label="shape",
+    )
     min_dims = data.draw(st.integers(0, len(shape)), label="min_dims")
     max_dims = data.draw(
         st.none() | st.integers(min_dims, len(shape)), label="max_dims"
@@ -120,4 +121,5 @@ def test_generate_valid_indices(shape, allow_ellipsis, data):
         # We can't cheat on this one, so just try another.
         assume(False)
     # Finally, check that we can use our indexer without error
+    note(f"{array=}")
     array[indexer]

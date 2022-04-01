@@ -29,7 +29,7 @@ from hypothesis.errors import (
     InvalidArgument,
     MultipleFailures,
 )
-from hypothesis.strategies import floats, integers, nothing, text
+from hypothesis.strategies import floats, integers, text
 
 from tests.common.utils import assert_falsifying_output, capture_out
 
@@ -233,7 +233,7 @@ def test_must_agree_with_number_of_arguments():
 def test_runs_deadline_for_examples():
     @example(10)
     @settings(phases=[Phase.explicit])
-    @given(nothing())
+    @given(integers())
     def test(x):
         time.sleep(10)
 
