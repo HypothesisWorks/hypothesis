@@ -482,6 +482,8 @@ def accept({funcname}):
 def define_function_signature(name, docstring, argspec):
     """A decorator which sets the name, argspec and docstring of the function
     passed into it."""
+    if name == "<lambda>":
+        name = "_lambda_"
     check_valid_identifier(name)
     for a in argspec.args:
         check_valid_identifier(a)
