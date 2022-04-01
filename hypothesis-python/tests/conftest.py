@@ -31,6 +31,8 @@ if sys.version_info < (3, 8):
     collect_ignore_glob.append("cover/*py38*")
 if sys.version_info < (3, 9):
     collect_ignore_glob.append("cover/*py39*")
+if sys.version_info < (3, 10):
+    collect_ignore_glob.append("cover/*py310*")
 
 if sys.version_info >= (3, 11):
     collect_ignore_glob.append("cover/test_asyncio.py")  # @asyncio.coroutine removed
