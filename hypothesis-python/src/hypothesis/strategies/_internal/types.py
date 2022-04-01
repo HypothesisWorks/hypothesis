@@ -39,9 +39,10 @@ from hypothesis.strategies._internal.ipaddress import (
 from hypothesis.strategies._internal.lazy import unwrap_strategies
 from hypothesis.strategies._internal.strategies import OneOfStrategy
 
+UnionType: typing.Any
 try:
     # The type of PEP-604 unions (`int | str`), added in Python 3.10
-    from types import UnionType  # type: ignore
+    from types import UnionType
 except ImportError:
     UnionType = ()
 
