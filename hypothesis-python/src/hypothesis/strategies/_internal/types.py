@@ -40,6 +40,12 @@ from hypothesis.strategies._internal.lazy import unwrap_strategies
 from hypothesis.strategies._internal.strategies import OneOfStrategy
 
 try:
+    # The type of PEP-604 unions (`int | str`), added in Python 3.10
+    from types import UnionType  # type: ignore
+except ImportError:
+    UnionType = ()
+
+try:
     import typing_extensions
 except ImportError:
     typing_extensions = None  # type: ignore
@@ -170,6 +176,14 @@ def is_a_new_type(thing):
     return isinstance(thing, typing.NewType)  # pragma: no cover  # on 3.8, anyway
 
 
+def is_a_union(thing):
+    """Return True if thing is a typing.Union or types.UnionType (in py310)."""
+    return (
+        isinstance(thing, UnionType)
+        or getattr(thing, "__origin__", None) is typing.Union
+    )
+
+
 def is_a_type(thing):
     """Return True if thing is a type or a generic type like thing."""
     return isinstance(thing, type) or is_generic_type(thing) or is_a_new_type(thing)
@@ -247,9 +261,8 @@ def _try_import_forward_ref(thing, bound):  # pragma: no cover
 
 
 def from_typing_type(thing):
-    # We start with special-case support for Union and Tuple - the latter
-    # isn't actually a generic type. Then we handle Literal since it doesn't
-    # support `isinstance`.
+    # We start with special-case support for Tuple, which isn't actually a generic
+    # type; then Final, Literal, and Annotated since they don't support `isinstance`.
     #
     # We then explicitly error on non-Generic types, which don't carry enough
     # information to sensibly resolve to strategies at runtime.
@@ -332,7 +345,7 @@ def from_typing_type(thing):
         # if there is more than one allowed type, and the element type is
         # not either `int` or a Union with `int` as one of its elements.
         elem_type = (getattr(thing, "__args__", None) or ["not int"])[0]
-        if getattr(elem_type, "__origin__", None) is typing.Union:
+        if is_a_union(elem_type):
             union_elems = elem_type.__args__
         else:
             union_elems = ()
@@ -613,7 +626,7 @@ def resolve_Type(thing):
         # This branch is for Python < 3.8, when __args__ was not always tracked
         return st.just(type)  # pragma: no cover
     args = (thing.__args__[0],)
-    if getattr(args[0], "__origin__", None) is typing.Union:
+    if is_a_union(args[0]):
         args = args[0].__args__
     # Duplicate check from from_type here - only paying when needed.
     args = list(args)
