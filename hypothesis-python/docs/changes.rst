@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.41.0:
+
+-------------------
+6.41.0 - 2022-04-01
+-------------------
+
+This release changes the implementation of :const:`~hypothesis.infer` to be an alias
+for :obj:`python:Ellipsis`. E.g. ``@given(a=infer)`` is now equivalent to ``@given(a=...)``. Furthermore, ``@given(...)`` can now be specified so that
+:func:`@given <hypothesis.given>` will infer the strategies for *all* arguments of the
+decorated function based on its annotations.
+
 .. _v6.40.3:
 
 -------------------
