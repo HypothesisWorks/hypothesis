@@ -891,7 +891,8 @@ def builds(
         if to_infer - set(hints):
             badargs = ", ".join(sorted(to_infer - set(hints)))
             raise InvalidArgument(
-                f"passed ... for {badargs}, but there is no type annotation"
+                f"passed ... for {badargs}, but we cannot infer a strategy "
+                "because these arguments have no type annotation"
             )
         infer_for = {k: v for k, v in hints.items() if k in (required | to_infer)}
         if infer_for:
