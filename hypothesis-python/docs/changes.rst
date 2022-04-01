@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.40.2:
+
+-------------------
+6.40.2 - 2022-04-01
+-------------------
+
+Fixed :func:`~hypothesis.strategies.from_type` support for
+:pep:`604` union types, like ``int | None`` (:issue:`3255`).
+
 .. _v6.40.1:
 
 -------------------
