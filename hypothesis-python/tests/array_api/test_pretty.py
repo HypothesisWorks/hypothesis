@@ -12,8 +12,6 @@ from inspect import signature
 
 import pytest
 
-from tests.array_api.common import xp, xps
-
 
 @pytest.mark.parametrize(
     "name",
@@ -33,7 +31,7 @@ from tests.array_api.common import xp, xps
         "indices",
     ],
 )
-def test_namespaced_methods_meta(name):
+def test_namespaced_methods_meta(xp, xps, name):
     """Namespaced method objects have good meta attributes."""
     func = getattr(xps, name)
     assert func.__name__ == name
@@ -46,25 +44,34 @@ def test_namespaced_methods_meta(name):
 
 
 @pytest.mark.parametrize(
-    "name, strat",
+    "name, valid_args",
     [
-        ("from_dtype", xps.from_dtype(xp.int8)),
-        ("arrays", xps.arrays(xp.int8, 5)),
-        ("array_shapes", xps.array_shapes()),
-        ("scalar_dtypes", xps.scalar_dtypes()),
-        ("boolean_dtypes", xps.boolean_dtypes()),
-        ("numeric_dtypes", xps.numeric_dtypes()),
-        ("integer_dtypes", xps.integer_dtypes()),
-        ("unsigned_integer_dtypes", xps.unsigned_integer_dtypes()),
-        ("floating_dtypes", xps.floating_dtypes()),
-        ("valid_tuple_axes", xps.valid_tuple_axes(0)),
-        ("broadcastable_shapes", xps.broadcastable_shapes(())),
-        ("mutually_broadcastable_shapes", xps.mutually_broadcastable_shapes(3)),
-        ("indices", xps.indices((5,))),
+        ("from_dtype", ["int8"]),
+        ("arrays", ["int8", 5]),
+        ("array_shapes", []),
+        ("scalar_dtypes", []),
+        ("boolean_dtypes", []),
+        ("numeric_dtypes", []),
+        ("integer_dtypes", []),
+        ("unsigned_integer_dtypes", []),
+        ("floating_dtypes", []),
+        ("valid_tuple_axes", [0]),
+        ("broadcastable_shapes", [()]),
+        ("mutually_broadcastable_shapes", [3]),
+        ("indices", [(5,)]),
     ],
 )
-def test_namespaced_strategies_repr(name, strat):
+def test_namespaced_strategies_repr(xp, xps, name, valid_args):
     """Namespaced strategies have good repr."""
+    func = getattr(xps, name)
+    strat = func(*valid_args)
     assert repr(strat).startswith(name + "("), f"{name} not in strat repr {strat!r}"
     assert len(repr(strat)) < 100, "strat repr looks too long"
     assert xp.__name__ not in repr(strat), f"{xp.__name__} in strat repr"
+
+
+def test_strategies_namespace_repr(xp, xps):
+    """Strategies namespace has good repr."""
+    expected = f"make_strategies_namespace({xp.__name__})"
+    assert repr(xps) == expected
+    assert str(xps) == expected
