@@ -385,8 +385,8 @@ PY38 = PYMAIN = "3.8.13"  # Sync PYMAIN minor version with GH Actions main.yml
 PY39 = "3.9.12"
 PY310 = "3.10.4"
 PY311 = "3.11-dev"
-PYPY37 = "pypy3.7-7.3.8"
-PYPY38 = "pypy3.8-7.3.8"
+PYPY37 = "pypy3.7-7.3.9"
+PYPY38 = "pypy3.8-7.3.9"
 
 
 # ALIASES are the executable names for each Python version
