@@ -8,15 +8,16 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+from weakref import WeakKeyDictionary
+
 from hypothesis.control import note
 from hypothesis.errors import InvalidState
 from hypothesis.internal.reflection import (
-    arg_string,
     convert_positional_arguments,
     nicerepr,
     proxies,
+    repr_call,
 )
-from hypothesis.strategies._internal.shared import SharedStrategy
 from hypothesis.strategies._internal.strategies import SearchStrategy
 
 
@@ -28,6 +29,9 @@ class FunctionStrategy(SearchStrategy):
         self.like = like
         self.returns = returns
         self.pure = pure
+        # Using wekrefs-to-generated-functions means that the cache can be
+        # garbage-collected at the end of each example, reducing memory use.
+        self._cache = WeakKeyDictionary()
 
     def calc_is_empty(self, recur):
         return recur(self.returns)
@@ -37,19 +41,22 @@ class FunctionStrategy(SearchStrategy):
         def inner(*args, **kwargs):
             if data.frozen:
                 raise InvalidState(
-                    "This generated %s function can only be called within the "
-                    "scope of the @given that created it." % (nicerepr(self.like),)
+                    f"This generated {nicerepr(self.like)} function can only "
+                    "be called within the scope of the @given that created it."
                 )
             if self.pure:
                 args, kwargs = convert_positional_arguments(self.like, args, kwargs)
-                key = (inner, args, frozenset(kwargs.items()))
-                val = data.draw(SharedStrategy(base=self.returns, key=key))
+                key = (args, frozenset(kwargs.items()))
+                cache = self._cache.setdefault(inner, {})
+                if key not in cache:
+                    cache[key] = data.draw(self.returns)
+                    rep = repr_call(self.like, args, kwargs, reorder=False)
+                    note(f"Called function: {rep} -> {cache[key]!r}")
+                return cache[key]
             else:
                 val = data.draw(self.returns)
-            note(
-                "Called function: %s(%s) -> %r"
-                % (nicerepr(self.like), arg_string(self.like, args, kwargs), val)
-            )
-            return val
+                rep = repr_call(self.like, args, kwargs, reorder=False)
+                note(f"Called function: {rep} -> {val!r}")
+                return val
 
         return inner
