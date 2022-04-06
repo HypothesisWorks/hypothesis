@@ -13,10 +13,10 @@ from typing import MutableMapping
 from weakref import WeakKeyDictionary
 
 from hypothesis.internal.reflection import (
-    arg_string,
     convert_keyword_arguments,
     convert_positional_arguments,
     get_pretty_function_description,
+    repr_call,
 )
 from hypothesis.strategies._internal.strategies import SearchStrategy
 
@@ -147,11 +147,9 @@ class LazyStrategy(SearchStrategy):
                 for k, v in _kwargs.items()
                 if k not in sig.parameters or v is not sig.parameters[k].default
             }
-            self.__representation = "{}({}){}".format(
-                self.function.__name__,
-                arg_string(self.function, _args, kwargs_for_repr, reorder=False),
-                "".join(map(_repr_filter, self.__filters)),
-            )
+            self.__representation = repr_call(
+                self.function, _args, kwargs_for_repr, reorder=False
+            ) + "".join(map(_repr_filter, self.__filters))
         return self.__representation
 
     def do_draw(self, data):

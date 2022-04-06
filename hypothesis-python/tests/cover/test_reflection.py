@@ -21,7 +21,6 @@ from pytest import raises
 from hypothesis import given, strategies as st
 from hypothesis.internal import reflection
 from hypothesis.internal.reflection import (
-    arg_string,
     convert_keyword_arguments,
     convert_positional_arguments,
     define_function_signature,
@@ -29,6 +28,7 @@ from hypothesis.internal.reflection import (
     get_pretty_function_description,
     is_mock,
     proxies,
+    repr_call,
     required_args,
     source_exec_as_module,
 )
@@ -241,9 +241,10 @@ def test_arg_string_is_in_order():
     def foo(c, a, b, f, a1):
         pass
 
-    assert arg_string(foo, (1, 2, 3, 4, 5), {}) == "c=1, a=2, b=3, f=4, a1=5"
+    assert repr_call(foo, (1, 2, 3, 4, 5), {}) == "foo(c=1, a=2, b=3, f=4, a1=5)"
     assert (
-        arg_string(foo, (1, 2), {"b": 3, "f": 4, "a1": 5}) == "c=1, a=2, b=3, f=4, a1=5"
+        repr_call(foo, (1, 2), {"b": 3, "f": 4, "a1": 5})
+        == "foo(c=1, a=2, b=3, f=4, a1=5)"
     )
 
 
@@ -252,8 +253,8 @@ def test_varkwargs_are_sorted_and_after_real_kwargs():
         pass
 
     assert (
-        arg_string(foo, (), {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6})
-        == "d=4, e=5, f=6, a=1, b=2, c=3"
+        repr_call(foo, (), {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6})
+        == "foo(d=4, e=5, f=6, a=1, b=2, c=3)"
     )
 
 
@@ -261,21 +262,21 @@ def test_varargs_come_without_equals():
     def foo(a, *args):
         pass
 
-    assert arg_string(foo, (1, 2, 3, 4), {}) == "2, 3, 4, a=1"
+    assert repr_call(foo, (1, 2, 3, 4), {}) == "foo(2, 3, 4, a=1)"
 
 
 def test_can_mix_varargs_and_varkwargs():
     def foo(*args, **kwargs):
         pass
 
-    assert arg_string(foo, (1, 2, 3), {"c": 7}) == "1, 2, 3, c=7"
+    assert repr_call(foo, (1, 2, 3), {"c": 7}) == "foo(1, 2, 3, c=7)"
 
 
 def test_arg_string_does_not_include_unprovided_defaults():
     def foo(a, b, c=9, d=10):
         pass
 
-    assert arg_string(foo, (1,), {"b": 1, "d": 11}) == "a=1, b=1, d=11"
+    assert repr_call(foo, (1,), {"b": 1, "d": 11}) == "foo(a=1, b=1, d=11)"
 
 
 def universal_acceptor(*args, **kwargs):
@@ -531,8 +532,8 @@ def test_can_handle_unicode_repr():
     def foo(x):
         pass
 
-    assert arg_string(foo, [Snowman()], {}) == "x=☃"
-    assert arg_string(foo, [], {"x": Snowman()}) == "x=☃"
+    assert repr_call(foo, [Snowman()], {}) == "foo(x=☃)"
+    assert repr_call(foo, [], {"x": Snowman()}) == "foo(x=☃)"
 
 
 class NoRepr:
@@ -543,23 +544,23 @@ def test_can_handle_repr_on_type():
     def foo(x):
         pass
 
-    assert arg_string(foo, [Snowman], {}) == "x=Snowman"
-    assert arg_string(foo, [NoRepr], {}) == "x=NoRepr"
+    assert repr_call(foo, [Snowman], {}) == "foo(x=Snowman)"
+    assert repr_call(foo, [NoRepr], {}) == "foo(x=NoRepr)"
 
 
 def test_can_handle_repr_of_none():
     def foo(x):
         pass
 
-    assert arg_string(foo, [None], {}) == "x=None"
-    assert arg_string(foo, [], {"x": None}) == "x=None"
+    assert repr_call(foo, [None], {}) == "foo(x=None)"
+    assert repr_call(foo, [], {"x": None}) == "foo(x=None)"
 
 
 def test_kwargs_appear_in_arg_string():
     def varargs(*args, **kwargs):
         pass
 
-    assert "x=1" in arg_string(varargs, (), {"x": 1})
+    assert "x=1" in repr_call(varargs, (), {"x": 1})
 
 
 def test_is_mock_with_negative_cases():

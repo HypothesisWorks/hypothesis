@@ -431,7 +431,7 @@ def nicerepr(v):
         return re.sub(r"(\[)~([A-Z][a-z]*\])", r"\g<1>\g<2>", pretty(v))
 
 
-def arg_string(f, args, kwargs, reorder=True):
+def repr_call(f, args, kwargs, reorder=True):
     if reorder:
         args, kwargs = convert_positional_arguments(f, args, kwargs)
 
@@ -444,7 +444,10 @@ def arg_string(f, args, kwargs, reorder=True):
         for a in sorted(kwargs):
             bits.append(f"{a}={nicerepr(kwargs[a])}")
 
-    return ", ".join(bits)
+    rep = nicerepr(f)
+    if rep.startswith("lambda") and ":" in rep:
+        rep = f"({rep})"
+    return rep + "(" + ", ".join(bits) + ")"
 
 
 def check_valid_identifier(identifier):
