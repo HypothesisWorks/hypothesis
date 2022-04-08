@@ -56,3 +56,4 @@ and was used by `more than 4% of Python users surveyed by the PSF in 2020
 * `wcag-contrast-ratio <https://github.com/gsnedders/wcag-contrast-ratio>`_
 * `yacluster <https://github.com/KrzysiekJ/yacluster>`_
 * `yturl <https://github.com/cdown/yturl>`_
+* `zenml <https://github.com/zenml-io/zenml>`_
