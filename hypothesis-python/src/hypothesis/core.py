@@ -971,8 +971,8 @@ class HypothesisHandle:
 
 
 def given(
-    *_given_arguments: Union[SearchStrategy, InferType],
-    **_given_kwargs: Union[SearchStrategy, InferType],
+    *_given_arguments: Union[SearchStrategy[Ex], InferType],
+    **_given_kwargs: Union[SearchStrategy[Ex], InferType],
 ) -> Callable[
     [Callable[..., Union[None, Coroutine[Any, Any, None]]]], Callable[..., None]
 ]:
