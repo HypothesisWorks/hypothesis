@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.42.0:
+
+-------------------
+6.42.0 - 2022-04-09
+-------------------
+
+This release makes ``st.functions(pure=True)`` less noisy (:issue:`3253`),
+and generally improves pretty-printing of functions.
+
 .. _v6.41.0:
 
 -------------------
