@@ -338,8 +338,7 @@ def test_long_dict():
 
 
 def test_unbound_method():
-    output = pretty.pretty(MyObj.somemethod)
-    assert "MyObj.somemethod" in output
+    assert pretty.pretty(MyObj.somemethod) == "somemethod"
 
 
 class MetaClass(type):
@@ -597,11 +596,11 @@ def test_custom():
 
 
 def test_print_builtin_function():
-    assert pretty.pretty(abs) == "<function abs>"
+    assert pretty.pretty(abs) == "abs"
 
 
 def test_pretty_function():
-    assert "." in pretty.pretty(test_pretty_function)
+    assert pretty.pretty(test_pretty_function) == "test_pretty_function"
 
 
 def test_empty_printer():

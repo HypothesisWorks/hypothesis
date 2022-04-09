@@ -82,7 +82,6 @@ from hypothesis.internal.escalation import (
 )
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.internal.reflection import (
-    arg_string,
     convert_positional_arguments,
     define_function_signature,
     function_digest,
@@ -91,6 +90,7 @@ from hypothesis.internal.reflection import (
     impersonate,
     is_mock,
     proxies,
+    repr_call,
 )
 from hypothesis.internal.scrutineer import Tracer, explanatory_lines
 from hypothesis.reporting import (
@@ -584,7 +584,7 @@ class StateForActualGivenExecution:
 
         data.is_find = self.is_find
 
-        text_repr = [None]
+        text_repr = None
         if self.settings.deadline is None:
             test = self.test
         else:
@@ -617,7 +617,8 @@ class StateForActualGivenExecution:
                         # Generate all arguments to the test function.
                         args, kwargs = data.draw(self.search_strategy)
                         if expected_failure is not None:
-                            text_repr[0] = arg_string(test, args, kwargs)
+                            nonlocal text_repr
+                            text_repr = repr_call(test, args, kwargs)
 
                         if print_example or current_verbosity() >= Verbosity.verbose:
                             output = StringIO()
@@ -682,9 +683,8 @@ class StateForActualGivenExecution:
             else:
                 report("Failed to reproduce exception. Expected: \n" + traceback)
             self.__flaky(
-                "Hypothesis %s(%s) produces unreliable results: Falsified"
+                f"Hypothesis {text_repr} produces unreliable results: Falsified"
                 " on the first call but did not on a subsequent one"
-                % (test.__name__, text_repr[0])
             )
         return result
 

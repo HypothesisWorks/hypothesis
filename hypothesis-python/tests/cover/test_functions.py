@@ -12,8 +12,9 @@ from inspect import getfullargspec
 
 import pytest
 
-from hypothesis import assume, given
+from hypothesis import Verbosity, assume, given, settings
 from hypothesis.errors import InvalidArgument, InvalidState
+from hypothesis.reporting import with_reporter
 from hypothesis.strategies import booleans, functions, integers
 
 
@@ -179,3 +180,23 @@ def test_functions_pure_two_functions_same_args_different_result(f1, f2, arg1, a
     r2 = f2(arg1, arg2)
     assume(r1 != r2)
     # If this is never true, the test will fail with Unsatisfiable
+
+
+@settings(verbosity=Verbosity.verbose)
+@given(functions(pure=False))
+def test_functions_note_all_calls_to_impure_functions(f):
+    ls = []
+    with with_reporter(ls.append):
+        f()
+        f()
+    assert len(ls) == 2
+
+
+@settings(verbosity=Verbosity.verbose)
+@given(functions(pure=True))
+def test_functions_note_only_first_to_pure_functions(f):
+    ls = []
+    with with_reporter(ls.append):
+        f()
+        f()
+    assert len(ls) == 1

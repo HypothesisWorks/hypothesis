@@ -718,11 +718,9 @@ def _repr_pprint(obj, p, cycle):
 
 def _function_pprint(obj, p, cycle):
     """Base pprint for all functions and builtin functions."""
-    name = _safe_getattr(obj, "__qualname__", obj.__name__)
-    mod = obj.__module__
-    if mod and mod not in ("__builtin__", "builtins", "exceptions"):
-        name = mod + "." + name
-    p.text(f"<function {name}>")
+    from hypothesis.internal.reflection import get_pretty_function_description
+
+    p.text(get_pretty_function_description(obj))
 
 
 def _exception_pprint(obj, p, cycle):

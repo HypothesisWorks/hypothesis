@@ -862,7 +862,7 @@ class FilteredStrategy(SearchStrategy):
             self._cached_repr = "{!r}{}".format(
                 self.filtered_strategy,
                 "".join(
-                    ".filter(%s)" % get_pretty_function_description(cond)
+                    f".filter({get_pretty_function_description(cond)})"
                     for cond in self.flat_conditions
                 ),
             )
