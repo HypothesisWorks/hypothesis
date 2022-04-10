@@ -669,7 +669,7 @@ def _re_pattern_pprint(obj, p, cycle):
             "VERBOSE",
             "DEBUG",
         ):
-            if obj.flags & getattr(re, flag):
+            if obj.flags & getattr(re, flag, 0):
                 if done_one:
                     p.text("|")
                 p.text("re." + flag)

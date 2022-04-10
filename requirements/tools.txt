@@ -27,11 +27,11 @@ backports-zoneinfo==0.2.1
     # via django
 bandit==1.7.4
     # via flake8-bandit
-beautifulsoup4==4.10.0
+beautifulsoup4==4.11.1
     # via sphinx-codeautolink
 black==22.3.0
     # via shed
-bleach==4.1.0
+bleach==5.0.0
     # via readme-renderer
 certifi==2021.10.8
     # via requests
@@ -146,7 +146,7 @@ isort==5.10.1
     # via shed
 jedi==0.18.1
     # via ipython
-jeepney==0.7.1
+jeepney==0.8.0
     # via
     #   keyring
     #   secretstorage
@@ -175,7 +175,6 @@ mypy-extensions==0.4.3
     #   typing-inspect
 packaging==21.3
     # via
-    #   bleach
     #   pytest
     #   sphinx
     #   tox
@@ -191,7 +190,7 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pip-tools==6.5.1
+pip-tools==6.6.0
     # via -r requirements/tools.in
 pkginfo==1.8.2
     # via twine
@@ -203,7 +202,7 @@ pluggy==1.0.0
     # via
     #   pytest
     #   tox
-prompt-toolkit==3.0.28
+prompt-toolkit==3.0.29
     # via ipython
 ptyprocess==0.7.0
     # via pexpect
@@ -239,7 +238,7 @@ python-dateutil==2.8.2
     # via -r requirements/tools.in
 pytz==2022.1
     # via babel
-pyupgrade==2.31.1
+pyupgrade==2.32.0
     # via shed
 pyyaml==6.0
     # via
@@ -259,7 +258,7 @@ restructuredtext-lint==1.4.0
     # via -r requirements/tools.in
 rfc3986==2.0.0
     # via twine
-rich==12.0.1
+rich==12.2.0
     # via twine
 secretstorage==3.3.1
     # via keyring
@@ -280,7 +279,7 @@ snowballstemmer==2.2.0
     #   sphinx
 sortedcontainers==2.4.0
     # via hypothesis (hypothesis-python/setup.py)
-soupsieve==2.3.1
+soupsieve==2.3.2
     # via beautifulsoup4
 sphinx==4.5.0
     # via
@@ -348,6 +347,7 @@ typing-extensions==4.1.1
     #   flake8-pie
     #   libcst
     #   mypy
+    #   rich
     #   typing-inspect
 typing-inspect==0.7.1
     # via libcst
@@ -363,7 +363,7 @@ webencodings==0.5.1
     # via bleach
 wheel==0.37.1
     # via pip-tools
-zipp==3.7.0
+zipp==3.8.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
