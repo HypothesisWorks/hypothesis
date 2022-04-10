@@ -175,3 +175,19 @@ def test_override_fixture(event_loop, x):
 def test_given_plus_overridden_fixture(testdir):
     script = testdir.makepyfile(TESTSCRIPT_OVERRIDE_FIXTURE)
     testdir.runpytest(script, "-Werror").assert_outcomes(passed=1, failed=0)
+
+
+TESTSCRIPT_FIXTURE_THEN_GIVEN = """
+import pytest
+from hypothesis import given, strategies as st
+
+@given(x=st.integers())
+@pytest.fixture()
+def test(x):
+    pass
+"""
+
+
+def test_given_fails_if_already_decorated_with_fixture(testdir):
+    script = testdir.makepyfile(TESTSCRIPT_FIXTURE_THEN_GIVEN)
+    testdir.runpytest(script).assert_outcomes(failed=1)
