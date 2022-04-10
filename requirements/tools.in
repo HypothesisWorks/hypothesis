@@ -22,6 +22,7 @@ lark-parser
 libcst
 mypy
 pip-tools
+pyright
 pytest
 python-dateutil
 requests
