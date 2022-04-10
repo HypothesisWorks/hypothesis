@@ -12,22 +12,37 @@ from __future__ import annotations
 
 from typing import TypedDict, Union
 
+import pytest
+
 from hypothesis import given, strategies as st
+from hypothesis.errors import InvalidArgument
+
+alias = Union[int, str]
 
 
-@given(st.data())
-def test_complex_forward_ref_in_typed_dict(data):
-    alias = Union[int, bool]
+class A(TypedDict):
+    a: int
 
-    class A(TypedDict):
-        a: int
 
-    class B(TypedDict):
-        a: A
-        b: alias
+class B(TypedDict):
+    a: A
+    b: alias
 
-    b_strategy = st.from_type(B)
-    d = data.draw(b_strategy)
+
+@given(st.from_type(B))
+def test_complex_forward_ref_in_typed_dict(d):
     assert isinstance(d["a"], dict)
     assert isinstance(d["a"]["a"], int)
-    assert isinstance(d["b"], (int, bool))
+    assert isinstance(d["b"], (int, str))
+
+
+def test_complex_forward_ref_in_typed_dict_local():
+    local_alias = Union[int, str]
+
+    class C(TypedDict):
+        a: A
+        b: local_alias
+
+    c_strategy = st.from_type(C)
+    with pytest.raises(InvalidArgument):
+        c_strategy.example()
