@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.42.1:
+
+-------------------
+6.42.1 - 2022-04-10
+-------------------
+
+This patch fixes pretty-printing of regular expressions in Python 3.11.0a7, and
+updates our vendored `list of top-level domains <https://www.iana.org/domains/root/db>`__,.
+
 .. _v6.42.0:
 
 -------------------
