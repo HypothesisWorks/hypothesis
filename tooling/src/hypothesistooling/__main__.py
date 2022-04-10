@@ -451,7 +451,7 @@ def check_pypy38():
 
 @task()
 def tox(*args):
-    if len(args) == 0:
+    if len(args) < 2:
         print("Usage: ./build.sh tox TOX_ENV PY_VERSION [tox args]")
         sys.exit(1)
     run_tox(args[0], args[1], *args[2:])
@@ -462,10 +462,9 @@ def standard_tox_task(name):
 
 
 standard_tox_task("nose")
-standard_tox_task("pytest4")
-standard_tox_task("pytest5")
-standard_tox_task("pytest6")
-standard_tox_task("pytest7")
+standard_tox_task("pytest46")
+standard_tox_task("pytest54")
+standard_tox_task("pytest62")
 
 for n in [22, 32, 40]:
     standard_tox_task(f"django{n}")
