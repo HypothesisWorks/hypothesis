@@ -25,6 +25,11 @@ from inspect import signature
 
 import pytest
 
+try:
+    from _pytest.junitxml import xml_key
+except ImportError:
+    xml_key = "_xml"  # type: ignore
+
 LOAD_PROFILE_OPTION = "--hypothesis-profile"
 VERBOSITY_OPTION = "--hypothesis-verbosity"
 PRINT_STATISTICS_OPTION = "--hypothesis-show-statistics"
@@ -52,6 +57,8 @@ If you are confident that your test will work correctly even though the
 fixture is not reset between generated examples, you can suppress this health
 check to assure Hypothesis that you understand what you are doing.
 """
+
+STATS_KEY = "_hypothesis_stats"
 
 
 class StoringReporter:
@@ -255,9 +262,7 @@ else:
 
             def note_statistics(stats):
                 stats["nodeid"] = item.nodeid
-                item.hypothesis_statistics = base64.b64encode(
-                    describe_statistics(stats).encode()
-                ).decode()
+                item.hypothesis_statistics = describe_statistics(stats)
 
             with collector.with_value(note_statistics):
                 with with_reporter(store):
@@ -265,6 +270,16 @@ else:
                         yield
             if store.results:
                 item.hypothesis_report_information = list(store.results)
+
+    def _stash_get(config, key, default):
+        if hasattr(config, "stash"):
+            # pytest 7
+            return config.stash.get(key, default)
+        elif hasattr(config, "_store"):
+            # pytest 5.4
+            return config._store.get(key, default)
+        else:
+            return getattr(config, key, default)
 
     @pytest.hookimpl(hookwrapper=True)
     def pytest_runtest_makereport(item, call):
@@ -274,15 +289,28 @@ else:
                 ("Hypothesis", "\n".join(item.hypothesis_report_information))
             )
         if hasattr(item, "hypothesis_statistics") and report.when == "teardown":
+            stats = item.hypothesis_statistics
+            stats_base64 = base64.b64encode(stats.encode()).decode()
+
             name = "hypothesis-statistics-" + item.nodeid
-            try:
-                item.config._xml.add_global_property(name, item.hypothesis_statistics)
-            except AttributeError:
-                # --junitxml not passed, or Pytest 4.5 (before add_global_property)
-                # We'll fail xunit2 xml schema checks, upgrade pytest if you care.
-                report.user_properties.append((name, item.hypothesis_statistics))
+
+            # Include hypothesis information to the junit XML report.
+            #
+            # Note that when `pytest-xdist` is enabled, `xml_key` is not present in the
+            # stash, so we don't add anything to the junit XML report in that scenario.
+            # https://github.com/pytest-dev/pytest/issues/7767#issuecomment-1082436256
+            xml = _stash_get(item.config, xml_key, None)
+            if xml:
+                xml.add_global_property(name, stats_base64)
+
+            # If there's a terminal report, include our summary stats for each test
+            terminalreporter = item.config.pluginmanager.getplugin("terminalreporter")
+            if terminalreporter is not None:
+                # ideally, we would store this on terminalreporter.config.stash, but
+                # pytest-xdist doesn't copy that back to the controller
+                report.__dict__[STATS_KEY] = stats
+
             # If there's an HTML report, include our summary stats for each test
-            stats = base64.b64decode(item.hypothesis_statistics.encode()).decode()
             pytest_html = item.config.pluginmanager.getplugin("html")
             if pytest_html is not None:  # pragma: no cover
                 report.extra = getattr(report, "extra", []) + [
@@ -290,30 +318,13 @@ else:
                 ]
 
     def pytest_terminal_summary(terminalreporter):
-        if not terminalreporter.config.getoption(PRINT_STATISTICS_OPTION):
-            return
-        terminalreporter.section("Hypothesis Statistics")
-
-        def report(properties):
-            for name, value in properties:
-                if name.startswith("hypothesis-statistics-"):
-                    if hasattr(value, "uniobj"):
-                        # Under old versions of pytest, `value` was a `py.xml.raw`
-                        # rather than a string, so we get the (unicode) string off it.
-                        value = value.uniobj
-                    line = base64.b64decode(value.encode()).decode() + "\n\n"
-                    terminalreporter.write_line(line)
-
-        try:
-            global_properties = terminalreporter.config._xml.global_properties
-        except AttributeError:
-            # terminalreporter.stats is a dict, where the empty string appears to
-            # always be the key for a list of _pytest.reports.TestReport objects
-            for test_report in terminalreporter.stats.get("", []):
-                if test_report.when == "teardown":
-                    report(test_report.user_properties)
-        else:
-            report(global_properties)
+        if terminalreporter.config.getoption(PRINT_STATISTICS_OPTION):
+            terminalreporter.section("Hypothesis Statistics")
+            for reports in terminalreporter.stats.values():
+                for report in reports:
+                    stats = report.__dict__.get(STATS_KEY)
+                    if stats:
+                        terminalreporter.write_line(stats + "\n\n")
 
     def pytest_collection_modifyitems(items):
         if "hypothesis" not in sys.modules:

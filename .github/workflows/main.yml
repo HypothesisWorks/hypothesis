@@ -43,6 +43,8 @@ jobs:
           - lint-conjecture-rust
           - check-nose
           - check-pytest46
+          - check-pytest54
+          - check-pytest62
           - check-django40
           - check-django32
           - check-django22

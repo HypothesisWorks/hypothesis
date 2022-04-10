@@ -356,7 +356,7 @@ def documentation():
         )
 
 
-def run_tox(task, version):
+def run_tox(task, version, *args):
     python = install.python_executable(version)
 
     # Create a version of the name that tox will pick up for the correct
@@ -373,7 +373,7 @@ def run_tox(task, version):
     env["PATH"] = os.path.dirname(python) + ":" + env["PATH"]
     print(env["PATH"])
 
-    pip_tool("tox", "-e", task, env=env, cwd=hp.HYPOTHESIS_PYTHON)
+    pip_tool("tox", "-e", task, *args, env=env, cwd=hp.HYPOTHESIS_PYTHON)
 
 
 # See update_python_versions() above
@@ -449,12 +449,22 @@ def check_pypy38():
     run_tox("pypy3-full", PYPY38)
 
 
+@task()
+def tox(*args):
+    if len(args) < 2:
+        print("Usage: ./build.sh tox TOX_ENV PY_VERSION [tox args]")
+        sys.exit(1)
+    run_tox(args[0], args[1], *args[2:])
+
+
 def standard_tox_task(name):
     TASKS["check-" + name] = python_tests(lambda: run_tox(name, PYMAIN))
 
 
 standard_tox_task("nose")
 standard_tox_task("pytest46")
+standard_tox_task("pytest54")
+standard_tox_task("pytest62")
 
 for n in [22, 32, 40]:
     standard_tox_task(f"django{n}")
