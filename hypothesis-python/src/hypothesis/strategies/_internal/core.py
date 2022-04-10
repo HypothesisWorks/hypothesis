@@ -1076,7 +1076,13 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
         # way to tell and we just have to assume that everything is required.
         # See https://github.com/python/cpython/pull/17214 for details.
         optional = getattr(thing, "__optional_keys__", ())
-        anns = {k: from_type(v) for k, v in thing.__annotations__.items()}
+        anns = {k: from_type(v) for k, v in get_type_hints(thing).items()}
+        if (
+            (not anns)
+            and thing.__annotations__
+            and ".<locals>." in getattr(thing, "__qualname__", "")
+        ):
+            raise InvalidArgument("Failed to retrieve type annotations for local type")
         return fixed_dictionaries(  # type: ignore
             mapping={k: v for k, v in anns.items() if k not in optional},
             optional={k: v for k, v in anns.items() if k in optional},

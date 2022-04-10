@@ -10,7 +10,7 @@
 
 import sys
 import warnings
-from collections import defaultdict
+from collections import abc, defaultdict
 from random import shuffle
 from typing import (
     Any,
@@ -811,17 +811,22 @@ class MappedSearchStrategy(SearchStrategy):
         raise NotImplementedError(f"{self.__class__.__name__}.pack()")
 
     def do_draw(self, data: ConjectureData) -> Ex:
-        for _ in range(3):
-            i = data.index
-            try:
-                data.start_example(MAPPED_SEARCH_STRATEGY_DO_DRAW_LABEL)
-                result = self.pack(data.draw(self.mapped_strategy))
-                data.stop_example()
-                return result
-            except UnsatisfiedAssumption:
-                data.stop_example(discard=True)
-                if data.index == i:
-                    raise
+        with warnings.catch_warnings():
+            if isinstance(self.pack, type) and issubclass(
+                self.pack, (abc.Mapping, abc.Set)
+            ):
+                warnings.simplefilter("ignore", BytesWarning)
+            for _ in range(3):
+                i = data.index
+                try:
+                    data.start_example(MAPPED_SEARCH_STRATEGY_DO_DRAW_LABEL)
+                    result = self.pack(data.draw(self.mapped_strategy))
+                    data.stop_example()
+                    return result
+                except UnsatisfiedAssumption:
+                    data.stop_example(discard=True)
+                    if data.index == i:
+                        raise
         raise UnsatisfiedAssumption()
 
     @property

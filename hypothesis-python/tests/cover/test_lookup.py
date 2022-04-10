@@ -713,6 +713,11 @@ def test_generic_collections_only_use_hashable_elements(typ, data):
     data.draw(from_type(typ))
 
 
+@given(st.sets(st.integers() | st.binary(), min_size=2))
+def test_no_byteswarning(_):
+    pass
+
+
 def test_hashable_type_unhashable_value():
     # Decimal("snan") is not hashable; we should be able to generate it.
     # See https://github.com/HypothesisWorks/hypothesis/issues/2320
