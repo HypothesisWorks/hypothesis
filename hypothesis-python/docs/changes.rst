@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.42.3:
+
+-------------------
+6.42.3 - 2022-04-10
+-------------------
+
+This patch fixes :func:`~hypothesis.strategies.from_type` on a :class:`~python:typing.TypedDict`
+with complex annotations, defined in a file using ``from __future__ import annotations``.
+Thanks to Katelyn Gigante for identifying and fixing this bug!
+
 .. _v6.42.2:
 
 -------------------
