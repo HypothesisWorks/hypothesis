@@ -16,14 +16,15 @@ import textwrap
 from pathlib import Path
 from typing import Any
 
+import pytest
+
 from hypothesistooling.projects.hypothesispython import HYPOTHESIS_PYTHON, PYTHON_SRC
 from hypothesistooling.scripts import pip_tool, tool_path
 
 
-# TODO: re-enable when hypothesis fixes pyright errors?
-#       should probably add hypothesis-python/pyrightconfig.json
-# def test_pyright_passes_on_hypothesis():
-#     pip_tool("pyright", "--project", HYPOTHESIS_PYTHON)
+@pytest.mark.xfail
+def test_pyright_passes_on_hypothesis():
+    pip_tool("pyright", "--project", HYPOTHESIS_PYTHON)
 
 
 def test_pyright_passes_on_basic_test(tmp_path: Path):
