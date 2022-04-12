@@ -336,6 +336,26 @@ else:
             if isinstance(item, pytest.Function) and is_hypothesis_test(item.obj):
                 item.add_marker("hypothesis")
 
+    # Monkeypatch some internals to prevent applying @pytest.fixture() to a
+    # function which has already been decorated with @hypothesis.given().
+    # (the reverse case is already an explicit error in Hypothesis)
+    # We do this here so that it catches people on old Pytest versions too.
+    from _pytest import fixtures
+
+    def _ban_given_call(self, function):
+        if "hypothesis" in sys.modules:
+            from hypothesis.internal.detection import is_hypothesis_test
+
+            if is_hypothesis_test(function):
+                raise RuntimeError(
+                    f"Can't apply @pytest.fixture() to {function.__name__} because "
+                    "it is already decorated with @hypothesis.given()"
+                )
+        return _orig_call(self, function)
+
+    _orig_call = fixtures.FixtureFunctionMarker.__call__
+    fixtures.FixtureFunctionMarker.__call__ = _ban_given_call  # type: ignore
+
 
 def load():
     """Required for `pluggy` to load a plugin from setuptools entrypoints."""
