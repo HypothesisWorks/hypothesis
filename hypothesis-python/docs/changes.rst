@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.43.0:
+
+-------------------
+6.43.0 - 2022-04-12
+-------------------
+
+This release makes it an explicit error to apply
+:func:`@pytest.fixture <pytest:pytest.fixture>` to a function which has
+already been decorated with :func:`@given() <hypothesis.given>`.  Previously,
+``pytest`` would convert your test to a fixture, and then never run it.
+
 .. _v6.42.3:
 
 -------------------
