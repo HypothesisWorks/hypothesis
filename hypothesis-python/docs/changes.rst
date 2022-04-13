@@ -18,6 +18,19 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.43.1:
+
+-------------------
+6.43.1 - 2022-04-13
+-------------------
+
+This patch makes it an explicit error to call
+:func:`~hypothesis.strategies.register_type_strategy` with a
+`Pydantic GenericModel <https://pydantic-docs.helpmanual.io/usage/models/#generic-models>`__
+and a callable, because ``GenericModel`` isn't actually a generic type at
+runtime and so you have to register each of the "parametrized versions"
+(actually subclasses!) manually.  See :issue:`2940` for more details.
+
 .. _v6.43.0:
 
 -------------------
