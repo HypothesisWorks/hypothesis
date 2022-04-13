@@ -1810,6 +1810,19 @@ def register_type_strategy(
             f"for {origin!r} which can inspect specific type objects and return a "
             "strategy."
         )
+    if (
+        "pydantic.generics" in sys.modules
+        and issubclass(custom_type, sys.modules["pydantic.generics"].GenericModel)
+        and not re.search(r"[A-Za-z_]+\[.+\]", repr(custom_type))
+        and callable(strategy)
+    ):  # pragma: no cover
+        # See https://github.com/HypothesisWorks/hypothesis/issues/2940
+        raise InvalidArgument(
+            f"Cannot register a function for {custom_type!r}, because parametrized "
+            "`pydantic.generics.GenericModel` subclasses aren't actually generic "
+            "types at runtime.  In this case, you should register a strategy "
+            "directly for each parametrized form that you anticipate using."
+        )
 
     types._global_type_lookup[custom_type] = strategy
     from_type.__clear_cache()  # type: ignore
