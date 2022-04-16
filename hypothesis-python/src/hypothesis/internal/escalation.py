@@ -94,7 +94,7 @@ def get_trimmed_traceback(exception=None):
         return tb
     while tb.tb_next is not None and (
         # If the frame is from one of our files, it's been added by Hypothesis.
-        is_hypothesis_file(getframeinfo(tb.tb_frame)[0])
+        is_hypothesis_file(getframeinfo(tb.tb_frame).filename)
         # But our `@proxies` decorator overrides the source location,
         # so we check for an attribute it injects into the frame too.
         or tb.tb_frame.f_globals.get("__hypothesistracebackhide__") is True

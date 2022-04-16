@@ -17,6 +17,7 @@ import inspect
 import io
 import re
 import string
+import sys
 import typing
 from inspect import signature
 from numbers import Real
@@ -770,7 +771,11 @@ def test_compat_get_type_hints_aware_of_None_default():
     find_any(strategy, lambda x: x.a is None)
     find_any(strategy, lambda x: x.a is not None)
 
-    assert typing.get_type_hints(constructor)["a"] == typing.Optional[str]
+    if sys.version_info[:2] >= (3, 11):
+        # https://docs.python.org/3.11/library/typing.html#typing.get_type_hints
+        assert typing.get_type_hints(constructor)["a"] == str
+    else:
+        assert typing.get_type_hints(constructor)["a"] == typing.Optional[str]
     assert inspect.signature(constructor).parameters["a"].annotation == str
 
 
