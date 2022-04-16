@@ -1,3 +1,3 @@
 RELEASE_TYPE: patch
 
-Fixed one instance where ``pyright`` on strict typechecking mode.
+Fixed a type annotation for ``pyright --strict`` (:issue:`3287`).

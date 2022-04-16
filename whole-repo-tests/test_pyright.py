@@ -22,7 +22,10 @@ from hypothesistooling.projects.hypothesispython import HYPOTHESIS_PYTHON, PYTHO
 from hypothesistooling.scripts import pip_tool, tool_path
 
 
-@pytest.mark.xfail
+@pytest.mark.skip(
+    reason="Hypothesis type-annotates the public API as a convenience for users, "
+    "but strict checks for our internals would be a net drag on productivity."
+)
 def test_pyright_passes_on_hypothesis():
     pip_tool("pyright", "--project", HYPOTHESIS_PYTHON)
 
@@ -48,7 +51,7 @@ def test_pyright_passes_on_basic_test(tmp_path: Path):
             """
         )
     )
-    _write_config(tmp_path, { "typeCheckingMode": "strict" })
+    _write_config(tmp_path, {"typeCheckingMode": "strict"})
     assert _get_pyright_errors(file) == []
 
 
@@ -71,9 +74,5 @@ def _get_pyright_errors(file: Path) -> list[dict[str, Any]]:
 
 
 def _write_config(config_dir: Path, data: dict[str, Any] | None = None):
-    (config_dir / "pyrightconfig.json").write_text(
-        json.dumps({
-            "extraPaths": [PYTHON_SRC],
-            **(data or {}),
-        })
-    )
+    config = {"extraPaths": [PYTHON_SRC], **(data or {})}
+    (config_dir / "pyrightconfig.json").write_text(json.dumps(config))
