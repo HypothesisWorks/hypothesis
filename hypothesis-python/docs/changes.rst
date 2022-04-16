@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.43.2:
+
+-------------------
+6.43.2 - 2022-04-16
+-------------------
+
+Fixed a type annotation for ``pyright --strict`` (:issue:`3287`).
+
 .. _v6.43.1:
 
 -------------------
