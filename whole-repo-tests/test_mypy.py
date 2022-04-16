@@ -21,6 +21,14 @@ def test_mypy_passes_on_hypothesis():
     pip_tool("mypy", PYTHON_SRC)
 
 
+@pytest.mark.skip(
+    reason="Hypothesis type-annotates the public API as a convenience for users, "
+    "but strict checks for our internals would be a net drag on productivity."
+)
+def test_mypy_passes_on_hypothesis_strict():
+    pip_tool("mypy", "--strict", PYTHON_SRC)
+
+
 def get_mypy_output(fname, *extra_args):
     return subprocess.Popen(
         [tool_path("mypy"), *extra_args, fname],

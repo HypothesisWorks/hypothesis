@@ -76,8 +76,6 @@ off the higher powers of 2 in the fraction first.
 
 MAX_EXPONENT = 0x7FF
 
-SPECIAL_EXPONENTS = (0, MAX_EXPONENT)
-
 BIAS = 1023
 MAX_POSITIVE_EXPONENT = MAX_EXPONENT - 1 - BIAS
 
