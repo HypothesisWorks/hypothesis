@@ -63,7 +63,7 @@ def _get_pyright_output(file: Path) -> dict[str, Any]:
         [tool_path("pyright"), "--outputjson"],
         cwd=file.parent,
         encoding="utf-8",
-        universal_newlines=True,
+        text=True,
         capture_output=True,
     )
     return json.loads(proc.stdout)
