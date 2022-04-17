@@ -34,6 +34,7 @@ from typing import (
     Optional,
     TypeVar,
     Union,
+    overload,
 )
 from unittest import TestCase
 
@@ -970,9 +971,27 @@ class HypothesisHandle:
             return self.__cached_target
 
 
+@overload
 def given(
-    *_given_arguments: Union[SearchStrategy[Ex], InferType],
-    **_given_kwargs: Union[SearchStrategy[Ex], InferType],
+    *_given_arguments: Union[SearchStrategy[Any], InferType],
+) -> Callable[
+    [Callable[..., Union[None, Coroutine[Any, Any, None]]]], Callable[..., None]
+]:  # pragma: no cover
+    ...
+
+
+@overload
+def given(
+    **_given_kwargs: Union[SearchStrategy[Any], InferType],
+) -> Callable[
+    [Callable[..., Union[None, Coroutine[Any, Any, None]]]], Callable[..., None]
+]:  # pragma: no cover
+    ...
+
+
+def given(
+    *_given_arguments: Union[SearchStrategy[Any], InferType],
+    **_given_kwargs: Union[SearchStrategy[Any], InferType],
 ) -> Callable[
     [Callable[..., Union[None, Coroutine[Any, Any, None]]]], Callable[..., None]
 ]:
