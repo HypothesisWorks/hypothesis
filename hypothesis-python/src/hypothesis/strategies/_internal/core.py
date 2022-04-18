@@ -118,8 +118,6 @@ try:
 except ImportError:  # < py3.8
     Protocol = object  # type: ignore[assignment]
 
-UniqueBy = Union[Callable[[Ex], Hashable], Tuple[Callable[[Ex], Hashable], ...]]
-
 
 @cacheable
 @defines_strategy()
@@ -205,7 +203,11 @@ def lists(
     *,
     min_size: int = 0,
     max_size: Optional[int] = None,
-    unique_by: Optional[UniqueBy] = None,
+    unique_by: Union[
+        None,
+        Callable[[Ex], Hashable],
+        Tuple[Callable[[Ex], Hashable], ...],
+    ] = None,
     unique: bool = False,
 ) -> SearchStrategy[List[Ex]]:
     """Returns a list containing values drawn from elements with length in the
@@ -389,7 +391,11 @@ def iterables(
     *,
     min_size: int = 0,
     max_size: Optional[int] = None,
-    unique_by: Optional[UniqueBy] = None,
+    unique_by: Union[
+        None,
+        Callable[[Ex], Hashable],
+        Tuple[Callable[[Ex], Hashable], ...],
+    ] = None,
     unique: bool = False,
 ) -> SearchStrategy[Iterable[Ex]]:
     """This has the same behaviour as lists, but returns iterables instead.
