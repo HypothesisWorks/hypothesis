@@ -62,7 +62,7 @@ def test_pyright_issue_3296(tmp_path: Path):
             """
             from hypothesis.strategies import lists, integers
 
-            reveal_type(lists(integers()).map(sorted), expected_text="SearchStrategy[list[int]]")
+            lists(integers()).map(sorted)
             """
         )
     )

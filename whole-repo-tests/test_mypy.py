@@ -352,7 +352,7 @@ def test_raises_for_mixed_pos_kwargs_in_given(tmpdir):
             from hypothesis import given
             from hypothesis.strategies import text
 
-            @given(text(), x=text())  # type: ignore
+            @given(text(), x=text())
             def test_bar(x):
                 ...
             """
