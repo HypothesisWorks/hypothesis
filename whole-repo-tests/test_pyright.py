@@ -78,20 +78,17 @@ def test_pyright_raises_for_mixed_pos_kwargs_in_given(tmp_path: Path):
             from hypothesis import given
             from hypothesis.strategies import text
 
-            @given(text(), x=text())  # type: ignore
-            def test_bar(x):
-                ...
+            @given(text(), x=text())
+            def test_bar(x: str):
+                pass
             """
         )
     )
-    _write_config(
-        tmp_path,
-        {
-            "typeCheckingMode": "strict",
-            "reportUnnecessaryTypeIgnoreComment": "true",
-        },
+    _write_config(tmp_path, {"typeCheckingMode": "strict"})
+    assert any(
+        e["message"].startswith('No overloads for "given" match the provided arguments')
+        for e in _get_pyright_errors(file)
     )
-    assert _get_pyright_errors(file) == []
 
 
 # ---------- Helpers for running pyright ---------- #
@@ -105,7 +102,11 @@ def _get_pyright_output(file: Path) -> dict[str, Any]:
         text=True,
         capture_output=True,
     )
-    return json.loads(proc.stdout)
+    try:
+        return json.loads(proc.stdout)
+    except Exception:
+        print(proc.stdout)
+        raise
 
 
 def _get_pyright_errors(file: Path) -> list[dict[str, Any]]:

@@ -1,4 +1,5 @@
 RELEASE_TYPE: patch
 
-Updated the type annotations for :func:`@given <hypothesis.given>` so that 
-type-checkers will raise on mixed positional and keyword arguments.
+This patch updates the type annotations for :func:`@given <hypothesis.given>`
+so that type-checkers will warn on mixed positional and keyword arguments,
+as well as fixing :issue:`3296`.
