@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.43.3:
+
+-------------------
+6.43.3 - 2022-04-18
+-------------------
+
+This patch updates the type annotations for :func:`@given <hypothesis.given>`
+so that type-checkers will warn on mixed positional and keyword arguments,
+as well as fixing :issue:`3296`.
+
 .. _v6.43.2:
 
 -------------------
