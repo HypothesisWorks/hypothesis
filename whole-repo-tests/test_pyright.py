@@ -55,6 +55,45 @@ def test_pyright_passes_on_basic_test(tmp_path: Path):
     assert _get_pyright_errors(file) == []
 
 
+def test_pyright_issue_3296(tmp_path: Path):
+    file = tmp_path / "test.py"
+    file.write_text(
+        textwrap.dedent(
+            """
+            from hypothesis.strategies import lists, integers
+
+            reveal_type(lists(integers()).map(sorted), expected_text="SearchStrategy[list[int]]")
+            """
+        )
+    )
+    _write_config(tmp_path, {"typeCheckingMode": "strict"})
+    assert _get_pyright_errors(file) == []
+
+
+def test_pyright_raises_for_mixed_pos_kwargs_in_given(tmp_path: Path):
+    file = tmp_path / "test.py"
+    file.write_text(
+        textwrap.dedent(
+            """
+            from hypothesis import given
+            from hypothesis.strategies import text
+
+            @given(text(), x=text())  # type: ignore
+            def test_bar(x):
+                ...
+            """
+        )
+    )
+    _write_config(
+        tmp_path,
+        {
+            "typeCheckingMode": "strict",
+            "reportUnnecessaryTypeIgnoreComment": "true",
+        },
+    )
+    assert _get_pyright_errors(file) == []
+
+
 # ---------- Helpers for running pyright ---------- #
 
 
@@ -63,7 +102,7 @@ def _get_pyright_output(file: Path) -> dict[str, Any]:
         [tool_path("pyright"), "--outputjson"],
         cwd=file.parent,
         encoding="utf-8",
-        universal_newlines=True,
+        text=True,
         capture_output=True,
     )
     return json.loads(proc.stdout)
