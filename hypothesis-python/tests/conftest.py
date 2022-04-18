@@ -38,12 +38,9 @@ if sys.version_info >= (3, 11):
     collect_ignore_glob.append("cover/test_asyncio.py")  # @asyncio.coroutine removed
 
     assert sys.version_info.releaselevel == "alpha"
-    # These seem to fail due to traceback rendering failures, TODO fix the tests
+    # TODO: our traceback elision doesn't work with Python 3.11's nice new format yet
     collect_ignore_glob.append("cover/test_traceback_elision.py")
     collect_ignore_glob.append("pytest/test_capture.py")
-    # Changes to type-annotation inspection, TODO fix during the beta phase
-    collect_ignore_glob.append("cover/test_lookup.py")
-    collect_ignore_glob.append("cover/test_lookup_py37.py")
 
 
 def pytest_configure(config):

@@ -10,6 +10,7 @@
 
 import os
 import subprocess
+import textwrap
 
 import pytest
 
@@ -341,6 +342,23 @@ def test_stateful_consumed_bundle_cannot_be_target(tmpdir):
         "rule(target=consumes(b))\n"
     )
     assert_mypy_errors(str(f.realpath()), [(3, "call-overload")])
+
+
+def test_raises_for_mixed_pos_kwargs_in_given(tmpdir):
+    f = tmpdir.join("raises_for_mixed_pos_kwargs_in_given")
+    f.write(
+        textwrap.dedent(
+            """
+            from hypothesis import given
+            from hypothesis.strategies import text
+
+            @given(text(), x=text())
+            def test_bar(x):
+                ...
+            """
+        )
+    )
+    assert_mypy_errors(str(f.realpath()), [(5, "call-overload")])
 
 
 @pytest.mark.parametrize(

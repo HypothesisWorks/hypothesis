@@ -100,6 +100,7 @@ typing_root_type = (typing._Final, typing._GenericAlias)  # type: ignore
 # that this value can't be reassigned.
 NON_RUNTIME_TYPES = frozenset(
     (
+        typing.Any,
         *ClassVarTypes,
         *TypeAliasTypes,
         *FinalTypes,
