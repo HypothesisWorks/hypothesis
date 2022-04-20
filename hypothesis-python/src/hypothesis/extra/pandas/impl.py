@@ -122,6 +122,7 @@ class ValueIndexStrategy(st.SearchStrategy):
         self.min_size = min_size
         self.max_size = max_size
         self.unique = unique
+        self.name = name
 
     def do_draw(self, data):
         result = []
@@ -147,7 +148,7 @@ class ValueIndexStrategy(st.SearchStrategy):
         dtype = infer_dtype_if_necessary(
             dtype=self.dtype, values=result, elements=self.elements, draw=data.draw
         )
-        return pandas.Index(result, dtype=dtype, tupleize_cols=False, name=name)
+        return pandas.Index(result, dtype=dtype, tupleize_cols=False, name=self.name)
 
 
 DEFAULT_MAX_SIZE = 10
