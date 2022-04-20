@@ -309,7 +309,7 @@ def series(
                 dtype=dtype
                 if dtype is not None
                 else draw(dtype_for_elements_strategy(elements)),
-                name=name
+                name=name,
             )
 
     return result()
