@@ -228,6 +228,7 @@ def series(
     index: Optional[st.SearchStrategy[Union[Sequence, pandas.Index]]] = None,
     fill: Optional[st.SearchStrategy[Ex]] = None,
     unique: bool = False,
+    name: Optional[str] = None,
 ) -> st.SearchStrategy[pandas.Series]:
     """Provides a strategy for producing a :class:`pandas.Series`.
 
@@ -253,6 +254,8 @@ def series(
       :func:`~hypothesis.extra.pandas.indexes` or
       :func:`~hypothesis.extra.pandas.range_indexes` function to produce
       values for this argument.
+
+    * name: passed to the pandas.Series constructor.
 
     Usage:
 
@@ -298,7 +301,7 @@ def series(
                     )
                 )
 
-            return pandas.Series(result_data, index=index, dtype=dtype)
+            return pandas.Series(result_data, index=index, dtype=dtype, name=name)
         else:
             return pandas.Series(
                 (),
@@ -306,6 +309,7 @@ def series(
                 dtype=dtype
                 if dtype is not None
                 else draw(dtype_for_elements_strategy(elements)),
+                name=name
             )
 
     return result()
