@@ -115,7 +115,7 @@ def elements_and_dtype(elements, dtype, source=None):
 
 
 class ValueIndexStrategy(st.SearchStrategy):
-    def __init__(self, elements, dtype, min_size, max_size, unique):
+    def __init__(self, elements, dtype, min_size, max_size, unique, name):
         super().__init__()
         self.elements = elements
         self.dtype = dtype
@@ -147,7 +147,7 @@ class ValueIndexStrategy(st.SearchStrategy):
         dtype = infer_dtype_if_necessary(
             dtype=self.dtype, values=result, elements=self.elements, draw=data.draw
         )
-        return pandas.Index(result, dtype=dtype, tupleize_cols=False)
+        return pandas.Index(result, dtype=dtype, tupleize_cols=False, name=name)
 
 
 DEFAULT_MAX_SIZE = 10
@@ -185,6 +185,7 @@ def indexes(
     min_size: int = 0,
     max_size: Optional[int] = None,
     unique: bool = True,
+    name: Optional[str] = None,
 ) -> st.SearchStrategy[pandas.Index]:
     """Provides a strategy for producing a :class:`pandas.Index`.
 
@@ -204,6 +205,7 @@ def indexes(
       should pass a max_size explicitly.
     * unique specifies whether all of the elements in the resulting index
       should be distinct.
+    * name is passed to the pandas.Index constructor.
     """
     check_valid_size(min_size, "min_size")
     check_valid_size(max_size, "max_size")
@@ -214,7 +216,7 @@ def indexes(
 
     if max_size is None:
         max_size = min_size + DEFAULT_MAX_SIZE
-    return ValueIndexStrategy(elements, dtype, min_size, max_size, unique)
+    return ValueIndexStrategy(elements, dtype, min_size, max_size, unique, name)
 
 
 @defines_strategy()
