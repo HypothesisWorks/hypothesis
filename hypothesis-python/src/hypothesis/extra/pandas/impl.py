@@ -115,13 +115,14 @@ def elements_and_dtype(elements, dtype, source=None):
 
 
 class ValueIndexStrategy(st.SearchStrategy):
-    def __init__(self, elements, dtype, min_size, max_size, unique):
+    def __init__(self, elements, dtype, min_size, max_size, unique, name):
         super().__init__()
         self.elements = elements
         self.dtype = dtype
         self.min_size = min_size
         self.max_size = max_size
         self.unique = unique
+        self.name = name
 
     def do_draw(self, data):
         result = []
@@ -147,7 +148,9 @@ class ValueIndexStrategy(st.SearchStrategy):
         dtype = infer_dtype_if_necessary(
             dtype=self.dtype, values=result, elements=self.elements, draw=data.draw
         )
-        return pandas.Index(result, dtype=dtype, tupleize_cols=False)
+        return pandas.Index(
+            result, dtype=dtype, tupleize_cols=False, name=data.draw(self.name)
+        )
 
 
 DEFAULT_MAX_SIZE = 10
@@ -185,6 +188,7 @@ def indexes(
     min_size: int = 0,
     max_size: Optional[int] = None,
     unique: bool = True,
+    name: st.SearchStrategy[Optional[str]] = st.none(),
 ) -> st.SearchStrategy[pandas.Index]:
     """Provides a strategy for producing a :class:`pandas.Index`.
 
@@ -204,6 +208,8 @@ def indexes(
       should pass a max_size explicitly.
     * unique specifies whether all of the elements in the resulting index
       should be distinct.
+    * name is a strategy for strings or ``None``, which will be passed to
+      the :class:`pandas.Index` constructor.
     """
     check_valid_size(min_size, "min_size")
     check_valid_size(max_size, "max_size")
@@ -214,7 +220,7 @@ def indexes(
 
     if max_size is None:
         max_size = min_size + DEFAULT_MAX_SIZE
-    return ValueIndexStrategy(elements, dtype, min_size, max_size, unique)
+    return ValueIndexStrategy(elements, dtype, min_size, max_size, unique, name)
 
 
 @defines_strategy()
@@ -225,6 +231,7 @@ def series(
     index: Optional[st.SearchStrategy[Union[Sequence, pandas.Index]]] = None,
     fill: Optional[st.SearchStrategy[Ex]] = None,
     unique: bool = False,
+    name: st.SearchStrategy[Optional[str]] = st.none(),
 ) -> st.SearchStrategy[pandas.Series]:
     """Provides a strategy for producing a :class:`pandas.Series`.
 
@@ -250,6 +257,9 @@ def series(
       :func:`~hypothesis.extra.pandas.indexes` or
       :func:`~hypothesis.extra.pandas.range_indexes` function to produce
       values for this argument.
+
+    * name: is a strategy for strings or ``None``, which will be passed to
+      the :class:`pandas.Series` constructor.
 
     Usage:
 
@@ -295,7 +305,7 @@ def series(
                     )
                 )
 
-            return pandas.Series(result_data, index=index, dtype=dtype)
+            return pandas.Series(result_data, index=index, dtype=dtype, name=draw(name))
         else:
             return pandas.Series(
                 (),
@@ -303,6 +313,7 @@ def series(
                 dtype=dtype
                 if dtype is not None
                 else draw(dtype_for_elements_strategy(elements)),
+                name=draw(name),
             )
 
     return result()
