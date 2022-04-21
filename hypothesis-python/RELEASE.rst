@@ -1,3 +1,5 @@
 RELEASE_TYPE: minor
 
-**This is a placeholder to check if the location for this file is correct**
+This release adds names to:
+    * :class:`pandas.Index` created via :func:`~hypothesis.extra.pandas.indexes`
+    * :class:`pandas.Series` created via :func:`~hypothesis.extra.pandas.series`
