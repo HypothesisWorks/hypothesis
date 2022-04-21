@@ -18,6 +18,18 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.44.0:
+
+-------------------
+6.44.0 - 2022-04-21
+-------------------
+
+This release adds the option to pass strategies for generating names for:
+    * :class:`pandas.Index` created via :func:`~hypothesis.extra.pandas.indexes`
+    * :class:`pandas.Series` created via :func:`~hypothesis.extra.pandas.series`
+
+Hacked together by Sam Watts :)
+
 .. _v6.43.3:
 
 -------------------
