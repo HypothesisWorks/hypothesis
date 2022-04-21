@@ -148,7 +148,9 @@ class ValueIndexStrategy(st.SearchStrategy):
         dtype = infer_dtype_if_necessary(
             dtype=self.dtype, values=result, elements=self.elements, draw=data.draw
         )
-        return pandas.Index(result, dtype=dtype, tupleize_cols=False, name=data.draw(self.name))
+        return pandas.Index(
+            result, dtype=dtype, tupleize_cols=False, name=data.draw(self.name)
+        )
 
 
 DEFAULT_MAX_SIZE = 10
