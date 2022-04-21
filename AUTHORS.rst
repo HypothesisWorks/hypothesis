@@ -126,6 +126,7 @@ their individual contributions.
 * `Ryan Turner <https://github.com/rdturnermtl>`_ (ryan.turner@uber.com)
 * `Sam Bishop (TechDragon) <https://github.com/techdragon>`_ (sam@techdragon.io)
 * `Sam Hames <https://www.github.com/SamHames>`_
+* `Sam Watts <https://www.github.com/sam-watts>`_
 * `Sangarshanan <https://www.github.com/sangarshanan>`_ (sangarshanan1998@gmail.com)
 * `Sanyam Khurana <https://github.com/CuriousLearner>`_
 * `Saul Shanabrook <https://www.github.com/saulshanabrook>`_ (s.shanabrook@gmail.com)
