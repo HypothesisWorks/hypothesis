@@ -186,7 +186,7 @@ def indexes(
     min_size: int = 0,
     max_size: Optional[int] = None,
     unique: bool = True,
-    name: Optional[str] = None,
+    name: st.SearchStrategy[Optional[str]] = st.none(),
 ) -> st.SearchStrategy[pandas.Index]:
     """Provides a strategy for producing a :class:`pandas.Index`.
 
@@ -228,7 +228,7 @@ def series(
     index: Optional[st.SearchStrategy[Union[Sequence, pandas.Index]]] = None,
     fill: Optional[st.SearchStrategy[Ex]] = None,
     unique: bool = False,
-    name: Optional[str] = None,
+    name: st.SearchStrategy[Optional[str]] = st.none(),
 ) -> st.SearchStrategy[pandas.Series]:
     """Provides a strategy for producing a :class:`pandas.Series`.
 
