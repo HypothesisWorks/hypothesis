@@ -56,3 +56,8 @@ def test_will_use_a_provided_elements_strategy(s):
 @given(pdst.series(dtype="int8", unique=True))
 def test_unique_series_are_unique(s):
     assert len(s) == len(set(s))
+
+
+@given(pdst.series(dtype="int8", name=st.just("test_name")))
+def test_name_passed_on(s):
+    assert s.name == "test_name"

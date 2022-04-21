@@ -46,6 +46,11 @@ def test_unique_indexes_of_many_small_values(ix):
     assert len(set(ix)) == len(ix)
 
 
+@given(pdst.indexes(dtype="int8", name=st.just("test_name")))
+def test_name_passed_on(s):
+    assert s.name == "test_name"
+
+
 # Sizes that fit into an int64 without overflow
 range_sizes = st.integers(0, 2**63 - 1)
 
