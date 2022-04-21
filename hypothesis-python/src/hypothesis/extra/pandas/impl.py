@@ -148,7 +148,7 @@ class ValueIndexStrategy(st.SearchStrategy):
         dtype = infer_dtype_if_necessary(
             dtype=self.dtype, values=result, elements=self.elements, draw=data.draw
         )
-        return pandas.Index(result, dtype=dtype, tupleize_cols=False, name=self.name)
+        return pandas.Index(result, dtype=dtype, tupleize_cols=False, name=data.draw(self.name))
 
 
 DEFAULT_MAX_SIZE = 10
@@ -206,7 +206,8 @@ def indexes(
       should pass a max_size explicitly.
     * unique specifies whether all of the elements in the resulting index
       should be distinct.
-    * name is passed to the pandas.Index constructor.
+    * name is a strategy for strings or ``None``, which will be passed to
+      the :class:`pandas.Index` constructor.
     """
     check_valid_size(min_size, "min_size")
     check_valid_size(max_size, "max_size")
@@ -255,7 +256,8 @@ def series(
       :func:`~hypothesis.extra.pandas.range_indexes` function to produce
       values for this argument.
 
-    * name: passed to the pandas.Series constructor.
+    * name: is a strategy for strings or ``None``, which will be passed to
+      the :class:`pandas.Series` constructor.
 
     Usage:
 
@@ -301,7 +303,7 @@ def series(
                     )
                 )
 
-            return pandas.Series(result_data, index=index, dtype=dtype, name=name)
+            return pandas.Series(result_data, index=index, dtype=dtype, name=draw(name))
         else:
             return pandas.Series(
                 (),
@@ -309,7 +311,7 @@ def series(
                 dtype=dtype
                 if dtype is not None
                 else draw(dtype_for_elements_strategy(elements)),
-                name=name,
+                name=draw(name),
             )
 
     return result()
