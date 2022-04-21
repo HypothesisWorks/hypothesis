@@ -92,6 +92,16 @@ def test_efficiently_generate_indexers(xp, xps):
 @given(allow_newaxis=st.booleans(), allow_ellipsis=st.booleans(), data=st.data())
 def test_generate_valid_indices(xp, xps, allow_newaxis, allow_ellipsis, data):
     """Strategy generates valid indices."""
+    try:
+        from numpy import array_api as nxp
+
+        if xp == nxp:
+            pytest.xfail(
+                "numpy.array_api arrays do not currently support newaxis indexing"
+            )
+    except ImportError:
+        pass
+
     shape = data.draw(
         xps.array_shapes(min_dims=1, max_side=4)
         | xps.array_shapes(min_dims=1, min_side=0, max_side=10),
