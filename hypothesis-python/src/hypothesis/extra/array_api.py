@@ -692,15 +692,16 @@ def indices(
     *,
     min_dims: int = 0,
     max_dims: Optional[int] = None,
+    allow_newaxis: bool = False,
     allow_ellipsis: bool = True,
 ) -> st.SearchStrategy[BasicIndex]:
     """Return a strategy for :xp-ref:`valid indices <indexing.html>` of
     arrays with the specified shape, which may include dimensions of size zero.
 
     It generates tuples containing some mix of integers, :obj:`python:slice`
-    objects, and ``...`` (an ``Ellipsis``). When a length-one tuple would be
-    generated, this strategy may instead return the element which will index the
-    first axis, e.g. ``5`` instead of ``(5,)``.
+    objects, ``...`` (an ``Ellipsis``), and ``None``. When a length-one tuple
+    would be generated, this strategy may instead return the element which will
+    index the first axis, e.g. ``5`` instead of ``(5,)``.
 
     * ``shape`` is the shape of the array that will be indexed, as a tuple of
       integers >= 0. This must be at least two-dimensional for a tuple to be a
@@ -709,7 +710,9 @@ def indices(
     * ``min_dims`` is the minimum dimensionality of the resulting array from use
       of the generated index.
     * ``max_dims`` is the the maximum dimensionality of the resulting array,
-      defaulting to ``len(shape)``.
+      defaulting to ``len(shape) if not allow_newaxis else
+      max(len(shape), min_dims) + 2``.
+    * ``allow_ellipsis`` specifies whether ``None`` is allowed in the index.
     * ``allow_ellipsis`` specifies whether ``...`` is allowed in the index.
     """
     check_type(tuple, shape, "shape")
@@ -717,24 +720,32 @@ def indices(
         all(isinstance(x, int) and x >= 0 for x in shape),
         f"shape={shape!r}, but all dimensions must be non-negative integers.",
     )
+    check_type(bool, allow_newaxis, "allow_newaxis")
     check_type(bool, allow_ellipsis, "allow_ellipsis")
     check_type(int, min_dims, "min_dims")
-    check_argument(
-        min_dims <= len(shape),
-        f"min_dims={min_dims} is larger than len(shape)={len(shape)}, "
-        "but it is impossible for an indexing operation to add dimensions.",
-    )
+    if not allow_newaxis:
+        check_argument(
+            min_dims <= len(shape),
+            f"min_dims={min_dims} is larger than len(shape)={len(shape)}, "
+            "but it is impossible for an indexing operation to add dimensions ",
+            "when allow_newaxis=False.",
+        )
     check_valid_dims(min_dims, "min_dims")
 
     if max_dims is None:
-        max_dims = min(len(shape), NDIM_MAX)
+        if allow_newaxis:
+            max_dims = min(max(len(shape), min_dims) + 2, NDIM_MAX)
+        else:
+            max_dims = min(len(shape), NDIM_MAX)
     check_type(int, max_dims, "max_dims")
     assert isinstance(max_dims, int)
-    check_argument(
-        max_dims <= len(shape),
-        f"max_dims={max_dims} is larger than len(shape)={len(shape)}, "
-        "but it is impossible for an indexing operation to add dimensions.",
-    )
+    if not allow_newaxis:
+        check_argument(
+            max_dims <= len(shape),
+            f"max_dims={max_dims} is larger than len(shape)={len(shape)}, "
+            "but it is impossible for an indexing operation to add dimensions ",
+            "when allow_newaxis=False.",
+        )
     check_valid_dims(max_dims, "max_dims")
 
     order_check("dims", 0, min_dims, max_dims)
@@ -744,7 +755,7 @@ def indices(
         min_dims=min_dims,
         max_dims=max_dims,
         allow_ellipsis=allow_ellipsis,
-        allow_newaxis=False,
+        allow_newaxis=allow_newaxis,
         allow_fewer_indices_than_dims=False,
     )
 

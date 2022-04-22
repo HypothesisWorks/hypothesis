@@ -10,20 +10,36 @@
 
 import math
 
+import pytest
+
 from hypothesis import assume, given, note, strategies as st
+from hypothesis.extra._array_helpers import NDIM_MAX
 
 from tests.common.debug import assert_all_examples, find_any
 
 
-def test_generate_indices_with_and_without_ellipsis(xp, xps):
-    """Strategy can generate indices with and without Ellipsis."""
+@pytest.mark.parametrize(
+    "condition",
+    [
+        lambda ix: Ellipsis in ix,
+        lambda ix: Ellipsis not in ix,
+        lambda ix: None in ix,
+        lambda ix: None not in ix,
+    ],
+)
+def test_generate_optional_indices(xp, xps, condition):
+    """Strategy can generate indices with optional values."""
     strat = (
         xps.array_shapes(min_dims=1, max_dims=32)
-        .flatmap(xps.indices)
+        .flatmap(lambda s: xps.indices(s, allow_newaxis=True))
         .map(lambda idx: idx if isinstance(idx, tuple) else (idx,))
     )
-    find_any(strat, lambda ix: Ellipsis in ix)
-    find_any(strat, lambda ix: Ellipsis not in ix)
+    find_any(strat, condition)
+
+
+def test_cannot_generate_newaxis_when_disabled(xp, xps):
+    """Strategy does not generate newaxis when disabled (i.e. the default)."""
+    assert_all_examples(xps.indices((3, 3, 3)), lambda idx: None not in idx)
 
 
 def test_generate_indices_for_0d_shape(xp, xps):
@@ -73,23 +89,48 @@ def test_efficiently_generate_indexers(xp, xps):
     find_any(xps.indices((3, 3, 3, 3, 3)))
 
 
-@given(allow_ellipsis=st.booleans(), data=st.data())
-def test_generate_valid_indices(xp, xps, allow_ellipsis, data):
+@given(allow_newaxis=st.booleans(), allow_ellipsis=st.booleans(), data=st.data())
+def test_generate_valid_indices(xp, xps, allow_newaxis, allow_ellipsis, data):
     """Strategy generates valid indices."""
+    try:
+        import numpy.array_api
+    except ImportError:
+        pass
+    else:
+        if allow_newaxis and xp is numpy.array_api:
+            # Special case NumPy due to https://github.com/numpy/numpy/issues/21373
+            x = xp.ones(5)
+            try:
+                x[None, :]
+            except IndexError:
+                note("Forcing `allow_newaxis=False` for np.array_api")
+                allow_newaxis = False
+            else:
+                raise AssertionError(
+                    "numpy.array_api looks to now support newaxis indexing, "
+                    "so this try/except/else special case should be removed."
+                )
+
     shape = data.draw(
         xps.array_shapes(min_dims=1, max_side=4)
         | xps.array_shapes(min_dims=1, min_side=0, max_side=10),
         label="shape",
     )
-    min_dims = data.draw(st.integers(0, len(shape)), label="min_dims")
+    min_dims = data.draw(
+        st.integers(0, len(shape) if not allow_newaxis else len(shape) + 2),
+        label="min_dims",
+    )
     max_dims = data.draw(
-        st.none() | st.integers(min_dims, len(shape)), label="max_dims"
+        st.none()
+        | st.integers(min_dims, len(shape) if not allow_newaxis else NDIM_MAX),
+        label="max_dims",
     )
     indexer = data.draw(
         xps.indices(
             shape,
             min_dims=min_dims,
             max_dims=max_dims,
+            allow_newaxis=allow_newaxis,
             allow_ellipsis=allow_ellipsis,
         ),
         label="indexer",
@@ -99,16 +140,19 @@ def test_generate_valid_indices(xp, xps, allow_ellipsis, data):
     # Check that disallowed things are indeed absent
     if not allow_ellipsis:
         assert Ellipsis not in _indexer
-    assert None not in _indexer  # i.e. np.newaxis
+    if not allow_newaxis:
+        assert None not in _indexer  # i.e. xp.newaxis
     # Check index is composed of valid objects
     for i in _indexer:
-        assert isinstance(i, int) or isinstance(i, slice) or i == Ellipsis
+        assert isinstance(i, int) or isinstance(i, slice) or i is None or i == Ellipsis
     # Check indexer does not flat index
+    nonexpanding_indexer = [i for i in _indexer if i is not None]
     if Ellipsis in _indexer:
         assert sum(i == Ellipsis for i in _indexer) == 1
-        assert len(_indexer) <= len(shape) + 1  # Ellipsis can index 0 axes
+        # Note ellipsis can index 0 axes
+        assert len(nonexpanding_indexer) <= len(shape) + 1
     else:
-        assert len(_indexer) == len(shape)
+        assert len(nonexpanding_indexer) == len(shape)
 
     if 0 in shape:
         # If there's a zero in the shape, the array will have no elements.
