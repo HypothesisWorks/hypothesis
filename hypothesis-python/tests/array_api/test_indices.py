@@ -97,20 +97,19 @@ def test_generate_valid_indices(xp, xps, allow_newaxis, allow_ellipsis, data):
     except ImportError:
         pass
     else:
-        if xp is numpy.array_api:
+        if allow_newaxis and xp is numpy.array_api:
             # Special case NumPy due to https://github.com/numpy/numpy/issues/21373
             x = xp.ones(5)
             try:
                 x[None, :]
             except IndexError:
-                pass
+                note("Forcing `allow_newaxis=False` for np.array_api")
+                allow_newaxis = False
             else:
                 raise AssertionError(
                     "numpy.array_api looks to now support newaxis indexing, "
-                    "so this special case should be removed."
+                    "so this try/except/else special case should be removed."
                 )
-            allow_newaxis = False
-            note(f"{allow_newaxis=}")
 
     shape = data.draw(
         xps.array_shapes(min_dims=1, max_side=4)
