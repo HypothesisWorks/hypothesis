@@ -51,7 +51,7 @@ pathspec==0.9.0
     # via black
 pexpect==4.8.0
     # via -r requirements/test.in
-platformdirs==2.5.1
+platformdirs==2.5.2
     # via black
 pluggy==1.0.0
     # via pytest
@@ -63,7 +63,7 @@ py==1.11.0
     #   pytest-forked
 pyparsing==3.0.8
     # via packaging
-pytest==7.1.1
+pytest==7.1.2
     # via
     #   -r requirements/test.in
     #   pytest-forked
@@ -96,7 +96,7 @@ tomli==2.0.1
     # via
     #   black
     #   pytest
-typing-extensions==4.1.1
+typing-extensions==4.2.0
     # via
     #   -r requirements/coverage.in
     #   black
