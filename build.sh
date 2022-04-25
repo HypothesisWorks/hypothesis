@@ -22,7 +22,7 @@ if [ -n "${GITHUB_ACTIONS-}" ] || [ -n "${CODESPACES-}" ] ; then
     PYTHON=$(command -v python)
 else
     # Otherwise, we install it from scratch
-    # NOTE: tooling keeps this version in sync with PYMAIN in tooling
+    # NOTE: tooling keeps this version in sync with ci_version in tooling
     "$SCRIPTS/ensure-python.sh" 3.8.13
     PYTHON=$(pythonloc 3.8.13)/bin/python
 fi
