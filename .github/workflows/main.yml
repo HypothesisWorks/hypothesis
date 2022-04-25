@@ -28,6 +28,7 @@ jobs:
           - check-py38
           - check-pypy38
           - check-py39
+          - check-pypy39
           - check-py310
           # - check-py310-pyjion  # see notes in tox.ini
           - check-py311

@@ -14,7 +14,6 @@ import re
 import subprocess
 import sys
 from glob import glob
-from urllib.parse import urlparse
 
 import requests
 from coverage.config import CoverageConfig
@@ -262,7 +261,7 @@ def compile_requirements(upgrade=False):
 
 
 def update_python_versions():
-    install.ensure_python(PYMAIN)  # ensures pyenv is installed and up to date
+    install.ensure_python(PYTHONS[ci_version])
     cmd = "~/.cache/hypothesis-build-runtimes/pyenv/bin/pyenv install --list"
     result = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE).stdout.decode()
     # pyenv reports available versions in chronological order, so we keep the newest
@@ -270,24 +269,25 @@ def update_python_versions():
     stable = re.compile(r".*3\.\d+.\d+$")
     best = {}
     for line in map(str.strip, result.splitlines()):
-        if m := re.match(r"(?:pypy)?3\.(?:[6-9]|\d\d)", line):
+        if m := re.match(r"(?:pypy)?3\.(?:[789]|\d\d)", line):
             key = m.group()
             if stable.match(line) or not stable.match(best.get(key, line)):
                 best[key] = line
-    print(best)
-    thisfile = pathlib.Path(__file__)
-    before = after = thisfile.read_text()
-    for key, version in best.items():
-        var = key.upper().replace(".", "")
-        after = re.sub(rf'({var} = .*?"){key}[^"]+', rf"\g<1>{version}", after)
-    if before != after:
-        thisfile.write_text(after)
 
-    # Automatically sync PYMAIN with the version in build.sh
+    if best == PYTHONS:
+        return
+
+    # Write the new mapping back to this file
+    thisfile = pathlib.Path(__file__)
+    before = thisfile.read_text()
+    after = re.sub(r"\nPYTHONS = \{[^{}]+\}", f"\nPYTHONS = {best}", before)
+    thisfile.write_text(after)
+    pip_tool("shed", str(thisfile))
+
+    # Automatically sync ci_version with the version in build.sh
     build_sh = pathlib.Path(tools.ROOT) / "build.sh"
     sh_before = build_sh.read_text()
-    new_pymain = re.search(r'PYMAIN = "(3\.\d\d?\.\d\d?)"', after).group(1)
-    sh_after = re.sub(r"3\.\d\d?\.\d\d?", new_pymain, sh_before)
+    sh_after = re.sub(r"3\.\d\d?\.\d\d?", best[ci_version], sh_before)
     if sh_before != sh_after:
         build_sh.unlink()  # so bash doesn't reload a modified file
         build_sh.write_text(sh_after)
@@ -299,7 +299,7 @@ def update_vendored_files():
 
     # Turns out that as well as adding new gTLDs, IANA can *terminate* old ones
     url = "http://data.iana.org/TLD/tlds-alpha-by-domain.txt"
-    fname = vendor / urlparse(url).path.split("/")[-1]
+    fname = vendor / url.split("/")[-1]
     new = requests.get(url).content
     # If only the timestamp in the header comment has changed, skip the update.
     if fname.read_bytes().splitlines()[1:] != new.splitlines()[1:]:
@@ -376,28 +376,20 @@ def run_tox(task, version, *args):
     pip_tool("tox", "-e", task, *args, env=env, cwd=hp.HYPOTHESIS_PYTHON)
 
 
-# See update_python_versions() above
-# When adding or removing a version, also update the env lists in tox.ini and
-# workflows/main.yml, the `Programming Language ::` declaration(s) in setup.py,
-# and the corresponding @python_tests function below.
-PY37 = "3.7.13"
-PY38 = PYMAIN = "3.8.13"  # Sync PYMAIN minor version with GH Actions main.yml
-PY39 = "3.9.12"
-PY310 = "3.10.4"
-PY311 = "3.11-dev"
-PYPY37 = "pypy3.7-7.3.9"
-PYPY38 = "pypy3.8-7.3.9"
-
-
-# ALIASES are the executable names for each Python version
-ALIASES = {}
-for name, value in list(globals().items()):
-    if name.startswith("PYPY"):
-        ALIASES[value] = "pypy3"
-    elif name.startswith("PY"):
-        major, minor, patch = value.replace("-dev", ".").split(".")
-        ALIASES[value] = f"python{major}.{minor}"
-
+# update_python_versions(), above, keeps the contents of this dict up to date.
+# When a version is added or removed, manually update the env lists in tox.ini and
+# workflows/main.yml, and the `Programming Language ::` specifiers in setup.py
+PYTHONS = {
+    "3.7": "3.7.13",
+    "3.8": "3.8.13",
+    "3.9": "3.9.12",
+    "3.10": "3.10.4",
+    "3.11": "3.11-dev",
+    "pypy3.7": "pypy3.7-7.3.9",
+    "pypy3.8": "pypy3.8-7.3.9",
+    "pypy3.9": "pypy3.9-7.3.9",
+}
+ci_version = "3.8"  # Keep this in sync with GH Actions main.yml
 
 python_tests = task(
     if_changed=(
@@ -409,44 +401,23 @@ python_tests = task(
 )
 
 
-@python_tests
-def check_py37():
-    run_tox("py37-full", PY37)
-
-
-@python_tests
-def check_py38():
-    run_tox("py38-full", PY38)
-
-
-@python_tests
-def check_py39():
-    run_tox("py39-full", PY39)
-
-
-@python_tests
-def check_py310():
-    run_tox("py310-full", PY310)
-
-
-@python_tests
-def check_py311():
-    run_tox("py311-full", PY311)
+# ALIASES are the executable names for each Python version
+ALIASES = {}
+for key, version in PYTHONS.items():
+    if key.startswith("pypy"):
+        ALIASES[version] = "pypy3"
+        name = key.replace(".", "")
+    else:
+        ALIASES[version] = f"python{key}"
+        name = f"py3{key[2:]}"
+    TASKS[f"check-{name}"] = python_tests(
+        lambda n=f"{name}-full", v=version: run_tox(n, v)
+    )
 
 
 @python_tests
 def check_py310_pyjion():
-    run_tox("py310-pyjion", PY310)
-
-
-@python_tests
-def check_pypy37():
-    run_tox("pypy3-full", PYPY37)
-
-
-@python_tests
-def check_pypy38():
-    run_tox("pypy3-full", PYPY38)
+    run_tox("py310-pyjion", PYTHONS["3.10"])
 
 
 @task()
@@ -458,7 +429,7 @@ def tox(*args):
 
 
 def standard_tox_task(name):
-    TASKS["check-" + name] = python_tests(lambda: run_tox(name, PYMAIN))
+    TASKS["check-" + name] = python_tests(lambda: run_tox(name, PYTHONS[ci_version]))
 
 
 standard_tox_task("nose")
@@ -477,12 +448,12 @@ standard_tox_task("conjecture-coverage")
 
 @task()
 def check_quality():
-    run_tox("quality", PYMAIN)
+    run_tox("quality", PYTHONS[ci_version])
 
 
 @task(if_changed=(hp.PYTHON_SRC, os.path.join(hp.HYPOTHESIS_PYTHON, "examples")))
 def check_examples3():
-    run_tox("examples3", PYMAIN)
+    run_tox("examples3", PYTHONS[ci_version])
 
 
 @task()
