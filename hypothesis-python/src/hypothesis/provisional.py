@@ -19,7 +19,7 @@ definitions it links to.  If not, report the bug!
 # https://tools.ietf.org/html/rfc3696
 
 import string
-from importlib.resources import read_text
+from importlib import resources
 
 from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument
@@ -32,7 +32,14 @@ FRAGMENT_SAFE_CHARACTERS = URL_SAFE_CHARACTERS | {"?", "/"}
 
 # This file is sourced from http://data.iana.org/TLD/tlds-alpha-by-domain.txt
 # The file contains additional information about the date that it was last updated.
-_tlds = read_text("hypothesis.vendor", "tlds-alpha-by-domain.txt").splitlines()
+try:  # pragma: no cover
+    traversable = resources.files("hypothesis.vendor") / "tlds-alpha-by-domain.txt"
+    _tlds = traversable.read_text().splitlines()
+except AttributeError:  # .files() was added in Python 3.9
+    _tlds = resources.read_text(
+        "hypothesis.vendor", "tlds-alpha-by-domain.txt"
+    ).splitlines()
+
 assert _tlds[0].startswith("#")
 TOP_LEVEL_DOMAINS = ["COM"] + sorted(_tlds[1:], key=len)
 
