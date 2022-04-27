@@ -36,9 +36,6 @@ def get_mypy_output(fname, *extra_args):
         encoding="utf-8",
         capture_output=True,
         text=True,
-        # We set the MYPYPATH explicitly, because PEP561 discovery wasn't
-        # working in CI as of mypy==0.730 - hopefully a temporary workaround.
-        env=dict(os.environ, MYPYPATH=PYTHON_SRC),
     ).stdout
 
 
