@@ -12,7 +12,7 @@ import datetime as dt
 import os.path
 from calendar import monthrange
 from functools import lru_cache
-from importlib.resources import is_resource
+from importlib import resources
 from typing import Optional
 
 from hypothesis.errors import InvalidArgument
@@ -348,7 +348,12 @@ def _valid_key_cacheable(tzpath, key):
         *package_loc, resource_name = key.split("/")
         package = "tzdata.zoneinfo." + ".".join(package_loc)
         try:
-            return is_resource(package, resource_name)
+            try:
+                traversable = resources.files(package) / resource_name
+                return traversable.exists()
+            except AttributeError:
+                # .files() was added in Python 3.9
+                return resources.is_resource(package, resource_name)
         except ModuleNotFoundError:
             return False
 

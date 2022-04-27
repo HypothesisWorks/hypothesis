@@ -69,7 +69,10 @@ $PYTEST tests/nocover/
 
 # Run some tests without docstrings or assertions, to catch bugs
 # like issue #822 in one of the test decorators.  See also #1541.
-PYTHONOPTIMIZE=2 $PYTEST tests/cover/test_testdecorators.py
+PYTHONOPTIMIZE=2 $PYTEST \
+    -W'ignore:assertions not in test modules or plugins will be ignored because assert statements are not executed by the underlying Python interpreter:pytest.PytestConfigWarning' \
+    -W'ignore:Module already imported so cannot be rewritten:pytest.PytestAssertRewriteWarning' \
+    tests/cover/test_testdecorators.py
 
 if [ "$(python -c 'import platform; print(platform.python_implementation())')" != "PyPy" ]; then
   pip install .[django]

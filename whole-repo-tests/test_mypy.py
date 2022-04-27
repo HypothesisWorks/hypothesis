@@ -8,7 +8,6 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import os
 import subprocess
 import textwrap
 
@@ -31,15 +30,12 @@ def test_mypy_passes_on_hypothesis_strict():
 
 
 def get_mypy_output(fname, *extra_args):
-    return subprocess.Popen(
+    return subprocess.run(
         [tool_path("mypy"), *extra_args, fname],
-        stdout=subprocess.PIPE,
         encoding="utf-8",
-        universal_newlines=True,
-        # We set the MYPYPATH explicitly, because PEP561 discovery wasn't
-        # working in CI as of mypy==0.730 - hopefully a temporary workaround.
-        env=dict(os.environ, MYPYPATH=PYTHON_SRC),
-    ).stdout.read()
+        capture_output=True,
+        text=True,
+    ).stdout
 
 
 def get_mypy_analysed_type(fname, val):

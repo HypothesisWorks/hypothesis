@@ -10,7 +10,7 @@
 
 import threading
 
-from hypothesis import given, settings, strategies as st
+from hypothesis import HealthCheck, given, settings, strategies as st
 
 from tests.common.debug import find_any, minimal
 from tests.common.utils import flaky
@@ -128,11 +128,15 @@ def test_can_form_sets_of_recursive_data():
 
 
 def test_drawing_from_recursive_strategy_is_thread_safe():
-    shared_strategy = st.recursive(st.integers(), lambda s: st.lists(s, max_size=3))
+    shared_strategy = st.recursive(
+        st.integers(), lambda s: st.lists(s, max_size=2), max_leaves=20
+    )
 
     errors = []
 
-    @settings(database=None)
+    @settings(
+        database=None, deadline=None, suppress_health_check=[HealthCheck.too_slow]
+    )
     @given(data=st.data())
     def test(data):
         try:

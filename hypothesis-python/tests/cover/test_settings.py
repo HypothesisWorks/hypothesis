@@ -469,7 +469,7 @@ def test_show_changed():
 
 
 def test_note_deprecation_checks_date():
-    with pytest.warns(None) as rec:
+    with pytest.warns(HypothesisDeprecationWarning) as rec:
         note_deprecation("This is bad", since="RELEASEDAY", has_codemod=False)
     assert len(rec) == 1
     with pytest.raises(AssertionError):
