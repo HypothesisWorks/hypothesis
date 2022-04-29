@@ -18,6 +18,19 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.45.2:
+
+-------------------
+6.45.2 - 2022-04-29
+-------------------
+
+This patch fixes :issue:`3314`, where Hypothesis would raise an internal
+error from :func:`~hypothesis.provisional.domains` or (only on Windows)
+from :func:`~hypothesis.strategies.timezones` in some rare circumstances
+where the installation was subtly broken.
+
+Thanks to Munir Abdinur for this contribution.
+
 .. _v6.45.1:
 
 -------------------
