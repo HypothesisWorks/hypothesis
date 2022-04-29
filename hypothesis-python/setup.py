@@ -41,8 +41,7 @@ if setuptools_version < (36, 2):
     )
 
 
-# Assignment to placate pyflakes. The actual version is from the exec that
-# follows.
+# Assignment to placate pyflakes. The actual version is from the exec that follows.
 __version__ = None
 
 with open(local_file("src/hypothesis/version.py")) as o:
