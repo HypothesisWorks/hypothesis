@@ -24,9 +24,8 @@ Hypothesis 6.x
 6.45.1 - 2022-04-27
 -------------------
 
-This release fixes deprecation warnings about ``sre_compile`` / ``sre_parse`` imports and ``importlib.resources`` usage when running Hypothesis on Python 3.11.
-
-It also ensures that Hypothesis' test suite runs with warnings turned into errors, so that such issues will be discovered earlier in the future. This uncovered a couple of formerly hidden minor issues with the testsuite, which are now fixed as well.
+This release fixes deprecation warnings about ``sre_compile`` and ``sre_parse``
+imports and ``importlib.resources`` usage when running Hypothesis on Python 3.11.
 
 Thanks to Florian Bruhin for this contribution.
 
@@ -49,11 +48,11 @@ expand dimensions via indexing (`data-apis/array-api#408
 6.44.0 - 2022-04-21
 -------------------
 
-This release adds the option to pass strategies for generating names for:
-    * :class:`pandas.Index` created via :func:`~hypothesis.extra.pandas.indexes`
-    * :class:`pandas.Series` created via :func:`~hypothesis.extra.pandas.series`
+This release adds a ``names`` argument to :func:`~hypothesis.extra.pandas.indexes`
+and :func:`~hypothesis.extra.pandas.series`, so that you can create Pandas
+objects with specific or varied names.
 
-Hacked together by Sam Watts :)
+Contributed by Sam Watts.
 
 .. _v6.43.3:
 

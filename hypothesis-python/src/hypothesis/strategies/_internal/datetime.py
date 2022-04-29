@@ -351,7 +351,7 @@ def _valid_key_cacheable(tzpath, key):
             try:
                 traversable = resources.files(package) / resource_name
                 return traversable.exists()
-            except AttributeError:
+            except (AttributeError, ValueError):
                 # .files() was added in Python 3.9
                 return resources.is_resource(package, resource_name)
         except ModuleNotFoundError:
