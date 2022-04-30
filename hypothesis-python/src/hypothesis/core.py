@@ -45,6 +45,7 @@ from hypothesis._settings import (
     HealthCheck,
     Phase,
     Verbosity,
+    is_in_ci,
     local_settings,
     settings as Settings,
 )
@@ -1208,7 +1209,11 @@ def given(
 
                 generated_seed = wrapped_test._hypothesis_internal_use_generated_seed
                 with local_settings(settings):
-                    if not (state.failed_normally or generated_seed is None):
+                    if (
+                        current_verbosity() >= Verbosity.verbose
+                        or is_in_ci()
+                        or not (state.failed_normally or generated_seed is None)
+                    ):
                         if running_under_pytest:
                             report(
                                 f"You can add @seed({generated_seed}) to this test or "
