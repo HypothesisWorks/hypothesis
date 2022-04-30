@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.45.3:
+
+-------------------
+6.45.3 - 2022-04-30
+-------------------
+
+This patch teaches :doc:`the Ghostwriter <ghostwriter>` to recognize
+many more common argument names (:issue:`3311`).
+
 .. _v6.45.2:
 
 -------------------
