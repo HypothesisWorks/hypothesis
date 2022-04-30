@@ -101,7 +101,7 @@ def test_repeats_healthcheck_when_following_seed_instruction(testdir, tmpdir):
     rerun_output = "\n".join(rerun.stdout.lines)
 
     assert "FailedHealthCheck" in rerun_output
-    assert "--hypothesis-seed" not in rerun_output
+    assert "--hypothesis-seed" in rerun_output
 
     rerun2 = testdir.runpytest(
         script, "--verbose", "--strict-markers", "--hypothesis-seed=10"
