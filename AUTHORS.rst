@@ -102,6 +102,7 @@ their individual contributions.
 * `Matthew Barber <https://www.github.com/honno>`_ (quitesimplymatt@gmail.com)
 * `Max Nordlund <https://www.github.com/maxnordlund>`_ (max.nordlund@gmail.com)
 * `Maxim Kulkin <https://www.github.com/maximkulkin>`_ (maxim.kulkin@gmail.com)
+* `Mel Seto <https://github.com/mel-seto>`_
 * `Michel Alexandre Salim <https://github.com/michel-slm>`_ (michel@michel-slm.name)
 * `mulkieran <https://www.github.com/mulkieran>`_
 * `Munir Abdinur <https://www.github.com/mabdinur>`_
