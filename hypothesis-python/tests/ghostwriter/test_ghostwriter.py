@@ -36,7 +36,7 @@ import pytest
 
 from hypothesis.errors import InvalidArgument, MultipleFailures, Unsatisfiable
 from hypothesis.extra import ghostwriter
-from hypothesis.strategies import builds, from_type, just
+from hypothesis.strategies import builds, from_type, just, lists
 from hypothesis.strategies._internal.lazy import LazyStrategy
 
 varied_excepts = pytest.mark.parametrize("ex", [(), ValueError, (TypeError, re.error)])
@@ -387,6 +387,11 @@ def test_unrepr_identity_elem():
         (
             builds(enum.Enum, builds(Decimal), kw=builds(re.compile)),
             {("enum", "Enum"), ("decimal", "Decimal"), ("re", "compile")},
+        ),
+        # lists recurse on imports
+        (
+            lists(builds(Decimal)),
+            {("decimal", "Decimal")},
         ),
     ],
 )
