@@ -4,10 +4,8 @@
 import re
 from hypothesis import given, reject, strategies as st
 
-# TODO: replace st.nothing() with an appropriate strategy
 
-
-@given(pattern=st.nothing(), flags=st.just(0))
+@given(pattern=st.text(), flags=st.just(0))
 def test_fuzz_compile(pattern, flags):
     try:
         re.compile(pattern=pattern, flags=flags)
