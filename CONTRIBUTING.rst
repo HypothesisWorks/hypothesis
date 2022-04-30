@@ -4,6 +4,17 @@ Contributing
 
 First off: It's great that you want to contribute to Hypothesis! Thanks!
 
+---------------------------------------
+Just tell me how to make a pull request
+---------------------------------------
+
+1. Make you change and ensure it has adequate tests
+2. Create ``hypothesis-python/RELEASE.rst`` with ``RELEASE_TYPE: patch``
+   for small bugfixes, or ``minor`` for new features.  See recent PRs for examples.
+3. Add yourself to the list in ``AUTHORS.rst`` and open a PR!
+
+For more detail, read on; for even more, continue to the ``guides/`` directory!
+
 ------------------
 Ways to Contribute
 ------------------
