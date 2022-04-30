@@ -131,6 +131,7 @@ their individual contributions.
 * `Sangarshanan <https://www.github.com/sangarshanan>`_ (sangarshanan1998@gmail.com)
 * `Sanyam Khurana <https://github.com/CuriousLearner>`_
 * `Saul Shanabrook <https://www.github.com/saulshanabrook>`_ (s.shanabrook@gmail.com)
+* `Shlok Gandhi <https://github.com/shlok57>`_ (shlok.gandhi@gmail.com)
 * `Stuart Cook <https://www.github.com/Zalathar>`_
 * `SuperStormer <https://github.com/SuperStormer>`_
 * `Sushobhit <https://github.com/sushobhit27>`_ (sushobhitsolanki@gmail.com)
