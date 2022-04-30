@@ -102,6 +102,7 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import get_type_hints
 from hypothesis.internal.reflection import is_mock
 from hypothesis.internal.validation import check_type
+from hypothesis.provisional import domains
 from hypothesis.strategies._internal.core import BuildsStrategy
 from hypothesis.strategies._internal.flatmapped import FlatMapStrategy
 from hypothesis.strategies._internal.lazy import LazyStrategy, unwrap_strategies
@@ -219,27 +220,6 @@ def _exceptions_from_docstring(doc: str) -> Tuple[Type[Exception], ...]:
     return tuple(_dedupe_exceptions(tuple(raises)))
 
 
-# Simple strategies to guess for common argument names - we wouldn't do this in
-# builds() where strict correctness is required, but we only use these guesses
-# when the alternative is nothing() to force user edits anyway.
-#
-# This table was constructed manually after skimming through the documentation
-# for the builtins and a few stdlib modules.  Future enhancements could be based
-# on analysis of type-annotated code to detect arguments which almost always
-# take values of a particular type.
-_GUESS_STRATEGIES_BY_NAME = (
-    (st.integers(0, 32), ["ndims", "ndigits"]),
-    (st.booleans(), ["keepdims"]),
-    (st.text(), ["name", "filename", "fname", "text"]),
-    (st.floats(), ["real", "imag"]),
-    (st.functions(), ["function", "func", "f"]),
-    (st.functions(returns=st.booleans(), pure=True), ["pred", "predicate"]),
-    (st.iterables(st.integers()) | st.iterables(st.text()), ["iterable"]),
-    (st.builds(object), ["object"]),
-    (st.integers() | st.floats() | st.fractions(), ["number"]),
-)
-
-
 def _type_from_doc_fragment(token: str) -> Optional[type]:
     # Special cases for "integer" and for numpy array-like and dtype
     if token == "integer":
@@ -333,14 +313,124 @@ def _strategy_for(
         # failures in cases like the `flags` argument to regex functions.
         # Better in to keep it simple, and let the user elaborate if desired.
         return st.just(param.default)
-    # If there's no annotation and no default value, we check against a table
-    # of guesses of simple strategies for common argument names.
-    if "string" in param.name and "as" not in param.name:
+    return _guess_strategy_by_argname(name=param.name.lower())
+
+
+# fmt: off
+BOOL_NAMES = (
+    "keepdims", "verbose", "debug", "force", "train", "training", "trainable", "bias",
+    "shuffle", "show", "load", "pretrained", "save", "overwrite", "normalize",
+    "reverse", "success", "enabled", "strict", "copy", "quiet", "required", "inplace",
+    "recursive", "enable", "active", "create", "validate", "refresh", "use_bias",
+)
+POSITIVE_INTEGER_NAMES = (
+    "width", "size", "length", "limit", "idx", "stride", "epoch", "epochs", "depth",
+    "pid", "steps", "iteration", "iterations", "vocab_size", "ttl", "count",
+)
+FLOAT_NAMES = (
+    "real", "imag", "alpha", "theta", "beta", "sigma", "gamma", "angle", "reward",
+    "tau", "temperature",
+)
+STRING_NAMES = (
+    "text", "txt", "password", "label", "prefix", "suffix", "desc", "description",
+    "str", "pattern", "subject", "reason", "comment", "prompt", "sentence", "sep",
+)
+# fmt: on
+
+
+def _guess_strategy_by_argname(name: str) -> st.SearchStrategy:
+    """
+    If all else fails, we try guessing a strategy based on common argument names.
+
+    We wouldn't do this in builds() where strict correctness is required, but for
+    the ghostwriter we accept "good guesses" since the user would otherwise have
+    to change the strategy anyway - from `nothing()` - if we refused to guess.
+
+    A "good guess" is _usually correct_, and _a reasonable mistake_ if not.
+    The logic below is therefore based on a manual reading of the builtins and
+    some standard-library docs, plus the analysis of about three hundred million
+    arguments in https://github.com/HypothesisWorks/hypothesis/issues/3311
+    """
+    # Special-cased names
+    if name in ("function", "func", "f"):
+        return st.functions()
+    if name in ("pred", "predicate"):
+        return st.functions(returns=st.booleans(), pure=True)
+    if name in ("iterable",):
+        return st.iterables(st.integers()) | st.iterables(st.text())
+    if name in ("list", "lst", "ls"):
+        return st.lists(st.nothing())
+    if name in ("object",):
+        return st.builds(object)
+    if "uuid" in name:
+        return st.uuids().map(str)
+
+    # Names which imply the value is a boolean
+    if name.startswith("is_") or name in BOOL_NAMES:
+        return st.booleans()
+
+    # Names which imply that the value is a number, perhaps in a particular range
+    if name in ("amount", "threshold", "number", "num"):
+        return st.integers() | st.floats()
+
+    if name in ("port",):
+        return st.integers(0, 2**16 - 1)
+    if (
+        name.endswith("_size")
+        or (name.endswith("size") and "_" not in name)
+        or re.fullmatch(r"n(um)?_[a-z_]*s", name)
+        or name in POSITIVE_INTEGER_NAMES
+    ):
+        return st.integers(min_value=0)
+    if name in ("offset", "seed", "dim", "total", "priority"):
+        return st.integers()
+
+    if name in ("learning_rate", "dropout", "dropout_rate", "epsilon", "eps", "prob"):
+        return st.floats(0, 1)
+    if name in ("lat", "latitude"):
+        return st.floats(-90, 90)
+    if name in ("lon", "longitude"):
+        return st.floats(-180, 180)
+    if name in ("radius", "tol", "tolerance", "rate"):
+        return st.floats(min_value=0)
+    if name in FLOAT_NAMES:
+        return st.floats()
+
+    # Names which imply that the value is a string
+    if name in ("host", "hostname"):
+        return domains()
+    if name in ("email",):
+        return st.emails()
+    if name in ("word", "slug", "api_key"):
+        return st.from_regex(r"\w+", fullmatch=True)
+    if name in ("char", "character"):
+        return st.characters()
+
+    if (
+        "file" in name
+        or "path" in name
+        or name.endswith("_dir")
+        or name in ("fname", "dir", "dirname", "directory", "folder")
+    ):
+        # Common names for filesystem paths: these are usually strings, but we
+        # don't want to make strings more convenient than pathlib.Path.
+        return st.nothing()
+
+    if (
+        name.endswith("_name")
+        or (name.endswith("name") and "_" not in name)
+        or ("string" in name and "as" not in name)
+        or name.endswith("label")
+        or name in STRING_NAMES
+    ):
         return st.text()
-    for strategy, names in _GUESS_STRATEGIES_BY_NAME:
-        if param.name in names:
-            assert isinstance(strategy, st.SearchStrategy)
-            return strategy
+
+    # Last clever idea: maybe we're looking a plural, and know the singular:
+    if re.fullmatch(r"\w*[^s]s", name):
+        elems = _guess_strategy_by_argname(name[:-1])
+        if not elems.is_empty:
+            return st.lists(elems)
+
     # And if all that failed, we'll return nothing() - the user will have to
     # fill this in by hand, and we'll leave a comment to that effect later.
     return st.nothing()

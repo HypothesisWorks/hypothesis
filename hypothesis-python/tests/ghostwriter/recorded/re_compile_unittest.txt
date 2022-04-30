@@ -5,10 +5,8 @@ import re
 import unittest
 from hypothesis import given, strategies as st
 
-# TODO: replace st.nothing() with an appropriate strategy
-
 
 class TestFuzzCompile(unittest.TestCase):
-    @given(pattern=st.nothing(), flags=st.just(0))
+    @given(pattern=st.text(), flags=st.just(0))
     def test_fuzz_compile(self, pattern, flags):
         re.compile(pattern=pattern, flags=flags)

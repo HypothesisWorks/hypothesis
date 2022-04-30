@@ -685,7 +685,8 @@ class StateForActualGivenExecution:
                 report("Failed to reproduce exception. Expected: \n" + traceback)
             self.__flaky(
                 f"Hypothesis {text_repr} produces unreliable results: Falsified"
-                " on the first call but did not on a subsequent one"
+                " on the first call but did not on a subsequent one",
+                cause=exception,
             )
         return result
 
@@ -849,7 +850,8 @@ class StateForActualGivenExecution:
                 report(format_exception(e, e.__traceback__))
                 self.__flaky(
                     "Unreliable assumption: An example which satisfied "
-                    "assumptions on the first run now fails it."
+                    "assumptions on the first run now fails it.",
+                    cause=e,
                 )
             except BaseException as e:
                 # If we have anything for explain-mode, this is the time to report.
@@ -866,27 +868,20 @@ class StateForActualGivenExecution:
                 tb = get_trimmed_traceback()
                 report(format_exception(e, tb))
 
-            finally:  # pragma: no cover
-                # Mostly useful for ``find`` and ensuring that objects that
-                # hold on to a reference to ``data`` know that it's now been
-                # finished and they shouldn't attempt to draw more data from
-                # it.
-                ran_example.freeze()
-
-                # This section is in fact entirely covered by the tests in
-                # test_reproduce_failure, but it seems to trigger a lovely set
-                # of coverage bugs: The branches show up as uncovered (despite
-                # definitely being covered - you can add an assert False else
-                # branch to verify this and see it fail - and additionally the
-                # second branch still complains about lack of coverage even if
-                # you add a pragma: no cover to it!
-                # See https://github.com/nedbat/coveragepy/issues/623
+            finally:
+                # Whether or not replay actually raised the exception again, we want
+                # to print the reproduce_failure decorator for the failing example.
                 if self.settings.print_blob:
                     report(
                         "\nYou can reproduce this example by temporarily adding "
                         "@reproduce_failure(%r, %r) as a decorator on your test case"
                         % (__version__, encode_failure(falsifying_example.buffer))
                     )
+                # Mostly useful for ``find`` and ensuring that objects that
+                # hold on to a reference to ``data`` know that it's now been
+                # finished and they can't draw more data from it.
+                ran_example.freeze()
+
             if self.__was_flaky:
                 flaky += 1
 
@@ -904,9 +899,9 @@ class StateForActualGivenExecution:
                 f"Hypothesis found {len(self.falsifying_examples)} distinct failures."
             )
 
-    def __flaky(self, message):
+    def __flaky(self, message, *, cause):
         if len(self.falsifying_examples) <= 1:
-            raise Flaky(message)
+            raise Flaky(message) from cause
         else:
             self.__was_flaky = True
             report("Flaky example! " + message)
