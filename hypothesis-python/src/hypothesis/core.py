@@ -685,7 +685,8 @@ class StateForActualGivenExecution:
                 report("Failed to reproduce exception. Expected: \n" + traceback)
             self.__flaky(
                 f"Hypothesis {text_repr} produces unreliable results: Falsified"
-                " on the first call but did not on a subsequent one"
+                " on the first call but did not on a subsequent one",
+                cause=exception,
             )
         return result
 
@@ -849,7 +850,8 @@ class StateForActualGivenExecution:
                 report(format_exception(e, e.__traceback__))
                 self.__flaky(
                     "Unreliable assumption: An example which satisfied "
-                    "assumptions on the first run now fails it."
+                    "assumptions on the first run now fails it.",
+                    cause=e,
                 )
             except BaseException as e:
                 # If we have anything for explain-mode, this is the time to report.
@@ -904,9 +906,9 @@ class StateForActualGivenExecution:
                 f"Hypothesis found {len(self.falsifying_examples)} distinct failures."
             )
 
-    def __flaky(self, message):
+    def __flaky(self, message, *, cause):
         if len(self.falsifying_examples) <= 1:
-            raise Flaky(message)
+            raise Flaky(message) from cause
         else:
             self.__was_flaky = True
             report("Flaky example! " + message)
