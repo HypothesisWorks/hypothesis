@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.46.0:
+
+-------------------
+6.46.0 - 2022-05-01
+-------------------
+
+This release adds an ``allow_nil`` argument to :func:`~hypothesis.strategies.uuids`,
+which you can use to... generate the nil UUID.  Thanks to Shlok Gandhi for the patch!
+
 .. _v6.45.4:
 
 -------------------
