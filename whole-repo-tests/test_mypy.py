@@ -39,7 +39,10 @@ def get_mypy_output(fname, *extra_args):
 
 
 def get_mypy_analysed_type(fname, val):
-    out = get_mypy_output(fname)
+    out = get_mypy_output(fname).rstrip()
+    msg = "Success: no issues found in 1 source file"
+    if out.endswith(msg):
+        out = out[: -len(msg)]
     assert len(out.splitlines()) == 1
     # See https://mypy.readthedocs.io/en/latest/common_issues.html#reveal-type
     # The shell output for `reveal_type([1, 2, 3])` looks like a literal:

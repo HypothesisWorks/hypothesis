@@ -121,6 +121,9 @@ def _check_exports(_public):
 
     # Verify that all exported strategy functions were registered with
     # @declares_strategy.
+
+    existing_strategies = set(_strategies) - {"_maybe_nil_uuids"}
+
     exported_strategies = set(__all__) - {
         "DataObject",
         "DrawFn",
@@ -128,9 +131,9 @@ def _check_exports(_public):
         "composite",
         "register_type_strategy",
     }
-    assert set(_strategies) == exported_strategies, (
-        set(_strategies) - exported_strategies,
-        exported_strategies - set(_strategies),
+    assert existing_strategies == exported_strategies, (
+        existing_strategies - exported_strategies,
+        exported_strategies - existing_strategies,
     )
 
 

@@ -1639,28 +1639,46 @@ def shared(
     return SharedStrategy(base, key)
 
 
+@composite
+def _maybe_nil_uuids(draw, uuid):
+    # Equivalent to `random_uuids | just(...)`, with a stronger bias to the former.
+    if draw(data()).conjecture_data.draw_bits(6) == 63:
+        return UUID("00000000-0000-0000-0000-000000000000")
+    return uuid
+
+
 @cacheable
 @defines_strategy(force_reusable_values=True)
-def uuids(*, version: Optional[int] = None) -> SearchStrategy[UUID]:
+def uuids(
+    *, version: Optional[int] = None, allow_nil: bool = False
+) -> SearchStrategy[UUID]:
     """Returns a strategy that generates :class:`UUIDs <uuid.UUID>`.
 
     If the optional version argument is given, value is passed through
     to :class:`~python:uuid.UUID` and only UUIDs of that version will
     be generated.
 
-    All returned values from this will be unique, so e.g. if you do
+    If ``allow_nil` is True, generate the nil UUID much more often.
+    Otherwise, all returned values from this will be unique, so e.g. if you do
     ``lists(uuids())`` the resulting list will never contain duplicates.
 
     Examples from this strategy don't have any meaningful shrink order.
     """
+    check_type(bool, allow_nil, "allow_nil")
     if version not in (None, 1, 2, 3, 4, 5):
         raise InvalidArgument(
             f"version={version!r}, but version must be in "
             "(None, 1, 2, 3, 4, 5) to pass to the uuid.UUID constructor."
         )
-    return shared(
+    random_uuids = shared(
         randoms(use_true_random=True), key="hypothesis.strategies.uuids.generator"
     ).map(lambda r: UUID(version=version, int=r.getrandbits(128)))
+
+    if allow_nil:
+        if version is not None:
+            raise InvalidArgument("The nil UUID is not of any version")
+        return random_uuids.flatmap(_maybe_nil_uuids)
+    return random_uuids
 
 
 class RunnerStrategy(SearchStrategy):
