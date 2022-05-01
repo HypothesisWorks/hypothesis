@@ -103,6 +103,7 @@ from hypothesis.internal.compat import get_type_hints
 from hypothesis.internal.reflection import is_mock
 from hypothesis.internal.validation import check_type
 from hypothesis.provisional import domains
+from hypothesis.strategies._internal.collections import ListStrategy
 from hypothesis.strategies._internal.core import BuildsStrategy
 from hypothesis.strategies._internal.flatmapped import FlatMapStrategy
 from hypothesis.strategies._internal.lazy import LazyStrategy, unwrap_strategies
@@ -618,6 +619,9 @@ def _imports_for_strategy(strategy):
     if isinstance(strategy, SampledFromStrategy):
         for obj in strategy.elements:
             imports |= _imports_for_object(obj)
+
+    if isinstance(strategy, ListStrategy):
+        imports |= _imports_for_strategy(strategy.element_strategy)
 
     return imports
 
