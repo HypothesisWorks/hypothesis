@@ -59,6 +59,7 @@ FILE_CACHE: Dict[bytes, bool] = {}
 
 
 is_hypothesis_file = belongs_to(hypothesis)
+is_contextlib_file = belongs_to(contextlib)
 
 HYPOTHESIS_CONTROL_EXCEPTIONS = (DeadlineExceeded, StopTest, UnsatisfiedAssumption)
 
@@ -98,6 +99,11 @@ def get_trimmed_traceback(exception=None):
         # But our `@proxies` decorator overrides the source location,
         # so we check for an attribute it injects into the frame too.
         or tb.tb_frame.f_globals.get("__hypothesistracebackhide__") is True
+        # trim frames from contextlib in python 3.11
+        or (
+            sys.version_info[:2] == (3, 11)
+            and is_contextlib_file(getframeinfo(tb.tb_frame).filename)
+        )
     ):
         tb = tb.tb_next
     return tb
