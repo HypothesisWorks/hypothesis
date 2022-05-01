@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.46.1:
+
+-------------------
+6.46.1 - 2022-05-01
+-------------------
+
+This patch fixes a rare bug where we could incorrectly treat
+:obj:`~python:inspect.Parameter.empty` as a type annotation,
+if the callable had an explicitly assigned ``__signature__``.
+
 .. _v6.46.0:
 
 -------------------
