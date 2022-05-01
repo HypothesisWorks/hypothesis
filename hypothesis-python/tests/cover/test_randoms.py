@@ -16,7 +16,7 @@ from copy import copy
 import pytest
 
 from hypothesis import assume, given, strategies as st
-from hypothesis.errors import MultipleFailures
+from hypothesis.internal.compat import ExceptionGroup
 from hypothesis.strategies._internal.random import (
     RANDOM_METHODS,
     HypothesisRandom,
@@ -26,7 +26,6 @@ from hypothesis.strategies._internal.random import (
 )
 
 from tests.common.debug import find_any
-from tests.common.utils import capture_out
 
 
 def test_implements_all_random_methods():
@@ -242,10 +241,9 @@ def test_outputs_random_calls(use_true_random):
         rnd.uniform(0.1, 0.5)
         raise AssertionError
 
-    with capture_out() as out:
-        with pytest.raises(AssertionError):
-            test()
-    assert ".uniform(0.1, 0.5)" in out.getvalue()
+    with pytest.raises(AssertionError) as err:
+        test()
+    assert ".uniform(0.1, 0.5)" in "\n".join(err.value.__notes__)
 
 
 @pytest.mark.skipif(
@@ -259,10 +257,9 @@ def test_converts_kwargs_correctly_in_output(use_true_random):
         rnd.choices([1, 2, 3, 4], k=2)
         raise AssertionError
 
-    with capture_out() as out:
-        with pytest.raises(AssertionError):
-            test()
-    assert ".choices([1, 2, 3, 4], k=2)" in out.getvalue()
+    with pytest.raises(AssertionError) as err:
+        test()
+    assert ".choices([1, 2, 3, 4], k=2)" in "\n".join(err.value.__notes__)
 
 
 @given(st.randoms(use_true_random=False))
@@ -298,7 +295,7 @@ def test_triangular_modes():
         assert x < 0.5
         assert x > 0.5
 
-    with pytest.raises(MultipleFailures):
+    with pytest.raises(ExceptionGroup):
         test()
 
 

@@ -12,8 +12,6 @@ import pytest
 
 from hypothesis import given, strategies as st
 
-from tests.common.utils import capture_out
-
 
 def test_error_is_in_finally():
     @given(st.data())
@@ -23,8 +21,7 @@ def test_error_is_in_finally():
         finally:
             raise ValueError()
 
-    with capture_out() as o:
-        with pytest.raises(ValueError):
-            test()
+    with pytest.raises(ValueError) as err:
+        test()
 
-    assert "[0, 1, -1]" in o.getvalue()
+    assert "[0, 1, -1]" in "\n".join(err.value.__notes__)
