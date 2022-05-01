@@ -1,5 +1,4 @@
 RELEASE_TYPE: minor
 
-This release updates :func:`hypothesis.strategies.uuids` by introducing an
-``allow_nil`` argument, defaulting to ``False``. If ``allow_nil=True``, 
-nil UUID would be generated more often
+This release adds an ``allow_nil`` argument to :func:`~hypothesis.strategies.uuids`,
+which you can use to... generate the nil UUID.  Thanks to Shlok Gandhi for the patch!
