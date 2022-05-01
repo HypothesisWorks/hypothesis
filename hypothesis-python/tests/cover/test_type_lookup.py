@@ -10,6 +10,7 @@
 
 import abc
 import enum
+from inspect import Parameter as P, Signature
 from typing import Callable, Dict, Generic, List, Sequence, TypeVar, Union
 
 import pytest
@@ -20,6 +21,7 @@ from hypothesis.errors import (
     InvalidArgument,
     ResolutionFailed,
 )
+from hypothesis.internal.compat import get_type_hints
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies._internal import types
 from hypothesis.strategies._internal.core import _from_type
@@ -416,3 +418,11 @@ def _pos_and_kwd_only(x: int, *, y: str):
 def test_infer_all(func):
     # tests @given(...) against various signatures
     settings(max_examples=1)(given(...))(func)()
+
+
+def test_does_not_add_param_empty_to_type_hints():
+    def f(x):
+        pass
+
+    f.__signature__ = Signature([P("y", P.KEYWORD_ONLY)], return_annotation=None)
+    assert get_type_hints(f) == {}

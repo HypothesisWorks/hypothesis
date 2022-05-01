@@ -91,7 +91,11 @@ def get_type_hints(thing):
 
             vkinds = (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
             for p in inspect.signature(thing).parameters.values():
-                if p.kind not in vkinds and is_a_type(p.annotation):
+                if (
+                    p.kind not in vkinds
+                    and is_a_type(p.annotation)
+                    and p.annotation is not p.empty
+                ):
                     if p.default is None:
                         hints[p.name] = typing.Optional[p.annotation]
                     else:
