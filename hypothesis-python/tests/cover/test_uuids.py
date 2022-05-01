@@ -30,3 +30,5 @@ def test_can_only_allow_nil_uuid_with_none_version():
     st.uuids(version=None, allow_nil=True).example()
     with pytest.raises(InvalidArgument):
         st.uuids(version=4, allow_nil=True).example()
+    with pytest.raises(InvalidArgument):
+        st.uuids(version=None, allow_nil="not a bool").example()
