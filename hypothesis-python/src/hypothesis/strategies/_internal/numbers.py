@@ -15,7 +15,7 @@ from fractions import Fraction
 from sys import float_info
 from typing import Any, Optional, Tuple, Union
 
-from hypothesis.control import assume, reject
+from hypothesis.control import reject
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import floats as flt, utils as d
 from hypothesis.internal.conjecture.utils import calc_label_from_name
@@ -205,8 +205,6 @@ class FloatStrategy(SearchStrategy):
         self.bounds = bounds
         if bounds:
             (lower_bound, upper_bound) = bounds
-            assert isinstance(lower_bound, float)
-            assert isinstance(upper_bound, float)
             assert 0 <= lower_bound < upper_bound
             assert math.copysign(1, lower_bound) == 1, "lower bound may not be -0.0"
             self.nasty_floats = None
@@ -507,6 +505,8 @@ def floats(
         ):
             assert not allow_infinity
             assert not allow_nan
+            assert isinstance(min_value, float)
+            assert isinstance(max_value, float)
             return FloatStrategy(
                 allow_infinity=False,
                 allow_nan=False,
