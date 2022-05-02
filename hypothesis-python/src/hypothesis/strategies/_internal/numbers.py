@@ -227,15 +227,12 @@ class FloatStrategy(SearchStrategy):
 
     def permitted(self, f):
         assert isinstance(f, float)
-        if math.isfinite(f):
-            if self.bounds is not None:
-                if not (self.bounds[0] <= f <= self.bounds[1]):
-                    return False
-        else:
-            if not self.allow_infinity and math.isinf(f):
-                return False
-            if not self.allow_nan and math.isnan(f):
-                return False
+        # NOTE: We don't bother checking self.bounds because the draw logic is known
+        # to stay in-bounds.
+        if not self.allow_infinity and math.isinf(f):
+            return False
+        if not self.allow_nan and math.isnan(f):
+            return False
         if self.width < 64:
             try:
                 float_of(f, self.width)
