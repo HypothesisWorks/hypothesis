@@ -112,10 +112,9 @@ def test_repeats_healthcheck_when_following_seed_instruction(testdir, tmpdir):
 SIMPLE_SEEDING_TEST = """
 import os
 
-from hypothesis import given, strategies as st, settings, Verbosity
+from hypothesis import given, strategies as st
 
 @given(st.integers())
-@settings(verbosity=Verbosity.verbose)
 def test_seed(i):
     assert i < 1000
 """
@@ -123,16 +122,29 @@ def test_seed(i):
 
 def test_seed_shows_in_verbose_mode(testdir, tmpdir):
     script = testdir.makepyfile(SIMPLE_SEEDING_TEST)
+    verbosity_args = "--hypothesis-verbosity=verbose"
 
-    initial = testdir.runpytest(script, "--strict-markers")
+    initial = testdir.runpytest(script, verbosity_args, "--strict-markers")
 
     initial_output = "\n".join(initial.stdout.lines)
 
     match = CONTAINS_SEED_INSTRUCTION.search(initial_output)
     assert match is not None
 
-    rerun = testdir.runpytest(script, "--verbose", "--strict-markers", match.group(0))
+    rerun = testdir.runpytest(script, verbosity_args, "--strict-markers", match.group(0))
     rerun_output = "\n".join(rerun.stdout.lines)
 
     assert "--hypothesis-seed" in rerun_output
+
+
+def test_seed_is_hidden_when_not_in_verbose_mode(testdir, tmpdir):
+    script = testdir.makepyfile(SIMPLE_SEEDING_TEST)
+    verbosity_args = "--hypothesis-verbosity=normal"
+
+    initial = testdir.runpytest(script, verbosity_args, "--strict-markers")
+
+    initial_output = "\n".join(initial.stdout.lines)
+
+    match = CONTAINS_SEED_INSTRUCTION.search(initial_output)
+    assert match is None
 
