@@ -11,16 +11,19 @@
 import collections
 import sys
 import typing
+from collections.abc import Callable
 from typing import Dict, List, Union
 
 import pytest
 from typing_extensions import (
     Annotated,
     ClassVar,
+    Concatenate,
     DefaultDict,
     Final,
     Literal,
     NewType,
+    ParamSpec,
     Type,
     TypeAlias,
     TypedDict,
@@ -225,3 +228,13 @@ def test_non_runtime_type_cannot_be_registered(non_runtime_type):
         InvalidArgument, match="there is no such thing as a runtime instance"
     ):
         st.register_type_strategy(non_runtime_type, st.none())
+
+
+@pytest.mark.parametrize("non_runtime_type", [Concatenate, ParamSpec])
+def test_callable_with_non_runtime_type(non_runtime_type):
+    strategy = st.from_type(Callable[non_runtime_type])
+    with pytest.raises(InvalidArgument, match="cannot be resolved in Callables."):
+        strategy.example()
+
+    with pytest.raises(InvalidArgument, match="cannot be resolved in Callables."):
+        st.register_type_strategy(Callable[non_runtime_type], st.none())

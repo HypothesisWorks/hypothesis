@@ -930,6 +930,12 @@ def resolve_Callable(thing):
     # use of keyword arguments and we'd rather not force positional-only.
     if not thing.__args__:  # pragma: no cover  # varies by minor version
         return st.functions()
+    # Concatenate and ParamSpec can never be registered or resolved
+    NOT_ALLOW = frozenset(*ConcatenateTypes, *ParamSpecTypes)
+
+    for stuff in thing.__args__:
+        if stuff in NOT_ALLOW:
+            raise InvalidArgument(f"{stuff} cannot be resolved in Callables.")
     # Note that a list can only appear in __args__ under Python 3.9 with the
     # collections.abc version; see https://bugs.python.org/issue42195
     return st.functions(
