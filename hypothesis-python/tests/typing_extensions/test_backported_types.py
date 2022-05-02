@@ -27,6 +27,7 @@ from typing_extensions import (
     Type,
     TypeAlias,
     TypedDict,
+    TypeGuard
 )
 
 from hypothesis import assume, given, strategies as st
@@ -238,3 +239,12 @@ def test_callable_with_non_runtime_type(non_runtime_type):
 
     with pytest.raises(InvalidArgument, match="cannot be resolved in Callables."):
         st.register_type_strategy(Callable[non_runtime_type], st.none())
+
+
+def test_callable_return_typegard_type():
+    strategy = st.from_type(Callable[[],TypeGuard])
+    with pytest.raises(InvalidArgument, match="Return type of Callables cannot be"):
+        strategy.example()
+
+    with pytest.raises(InvalidArgument, match="Return type of Callables cannot be"):
+        st.register_type_strategy(Callable[[],TypeGuard], st.none())
