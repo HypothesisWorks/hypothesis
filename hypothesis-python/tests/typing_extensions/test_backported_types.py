@@ -29,6 +29,7 @@ from typing_extensions import (
 from hypothesis import assume, given, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import from_type
+from hypothesis.strategies._internal.types import NON_RUNTIME_TYPES
 
 
 @pytest.mark.parametrize("value", ["dog", b"goldfish", 42, 63.4, -80.5, False])
@@ -207,3 +208,13 @@ def test_final_type(final_var_type):
 
     with pytest.raises(InvalidArgument, match="Final is not allowed to be registered"):
         st.register_type_strategy(final_var_type, st.none())
+
+
+@pytest.mark.parametrize(
+    "non_runtime_type",
+    NON_RUNTIME_TYPES,
+)
+def test_non_runtime_type_cannot_be_resolved(non_runtime_type):
+    strategy = st.from_type(non_runtime_type)
+    with pytest.raises(InvalidArgument, match="there is no such thing as a runtime instance"):
+        strategy.example()

@@ -90,6 +90,117 @@ try:
 except AttributeError:  # pragma: no cover
     pass  # `typing_extensions` might not be installed
 
+AnotatedTypes: tuple = ()
+try:
+    AnotatedTypes += (typing.Anotated,)
+except AttributeError:  # pragma: no cover
+    pass  # Is missing for `python<3.8`
+try:
+    AnotatedTypes += (typing_extensions.Anotated,)
+except AttributeError:  # pragma: no cover
+    pass  # `typing_extensions` might not be installed
+
+ConcatenateTypes: tuple = ()
+try:
+    ConcatenateTypes += (typing.Concatenate,)
+except AttributeError:  # pragma: no cover
+    pass  # Is missing for `python<3.8`
+try:
+    ConcatenateTypes += (typing_extensions.Concatenate,)
+except AttributeError:  # pragma: no cover
+    pass  # `typing_extensions` might not be installed
+
+ParamSpecTypes: tuple = ()
+try:
+    ParamSpecTypes += (typing.ParamSpec,)
+except AttributeError:  # pragma: no cover
+    pass  # Is missing for `python<3.8`
+try:
+    ParamSpecTypes += (typing_extensions.ParamSpec,)
+except AttributeError:  # pragma: no cover
+    pass  # `typing_extensions` might not be installed
+
+TypeGuardTypes: tuple = ()
+try:
+    TypeGuardTypes += (typing.TypeGuard,)
+except AttributeError:  # pragma: no cover
+    pass  # Is missing for `python<3.8`
+try:
+    TypeGuardTypes += (typing_extensions.TypeGuard,)
+except AttributeError:  # pragma: no cover
+    pass  # `typing_extensions` might not be installed
+
+SelfTypes: tuple = ()
+try:
+    SelfTypes += (typing.Self,)
+except AttributeError:  # pragma: no cover
+    pass  # Is missing for `python<3.11`
+try:
+    SelfTypes += (typing_extensions.Self,)
+except AttributeError:  # pragma: no cover
+    pass  # `typing_extensions` might not be installed
+
+RequiredTypes: tuple = ()
+try:
+    RequiredTypes += (typing.Required,)
+except AttributeError:  # pragma: no cover
+    pass  # Is missing for `python<3.11`
+try:
+    RequiredTypes += (typing_extensions.Required,)
+except AttributeError:  # pragma: no cover
+    pass  # `typing_extensions` might not be installed
+
+NotRequiredTypes: tuple = ()
+try:
+    NotRequiredTypes += (typing.NotRequired,)
+except AttributeError:  # pragma: no cover
+    pass  # Is missing for `python<3.11`
+try:
+    NotRequiredTypes += (typing_extensions.NotRequired,)
+except AttributeError:  # pragma: no cover
+    pass  # `typing_extensions` might not be installed
+
+NeverTypes: tuple = ()
+try:
+    NeverTypes += (typing.Never,)
+except AttributeError:  # pragma: no cover
+    pass  # Is missing for `python<3.11`
+try:
+    NeverTypes += (typing_extensions.Never,)
+except AttributeError:  # pragma: no cover
+    pass  # `typing_extensions` might not be installed
+
+TypeVarTupleTypes: tuple = ()
+try:
+    TypeVarTupleTypes += (typing.TypeVarTuple,)
+except AttributeError:  # pragma: no cover
+    pass  # Is missing for `python<3.11`
+try:
+    TypeVarTupleTypes += (typing_extensions.TypeVarTuple,)
+except AttributeError:  # pragma: no cover
+    pass  # `typing_extensions` might not be installed
+
+UnpackTypes: tuple = ()
+try:
+    UnpackTypes += (typing.Unpack,)
+except AttributeError:  # pragma: no cover
+    pass  # Is missing for `python<3.11`
+try:
+    UnpackTypes += (typing_extensions.Unpack,)
+except AttributeError:  # pragma: no cover
+    pass  # `typing_extensions` might not be installed
+
+# banned for now; revisit later
+LiteralStringTypes: tuple = ()
+try:
+    LiteralStringTypes += (typing.LiteralString,)
+except AttributeError:  # pragma: no cover
+    pass  # Is missing for `python<3.11`
+try:
+    LiteralStringTypes += (typing_extensions.LiteralString,)
+except AttributeError:  # pragma: no cover
+    pass  # `typing_extensions` might not be installed
+
 # We use this variable to be sure that we are working with a type from `typing`:
 typing_root_type = (typing._Final, typing._GenericAlias)  # type: ignore
 
@@ -104,6 +215,17 @@ NON_RUNTIME_TYPES = frozenset(
         *ClassVarTypes,
         *TypeAliasTypes,
         *FinalTypes,
+        *AnotatedTypes,
+        *ConcatenateTypes,
+        *ParamSpecTypes,
+        *TypeGuardTypes,
+        *SelfTypes,
+        *RequiredTypes,
+        *NotRequiredTypes,
+        *NeverTypes,
+        *TypeVarTupleTypes,
+        *UnpackTypes,
+        *LiteralStringTypes,  # banned for now; revisit later
     )
 )
 
