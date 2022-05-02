@@ -147,6 +147,7 @@ their individual contributions.
 * `Tom Milligan <https://www.github.com/tommilligan>`_ (code@tommilligan.net)
 * `Tyler Gibbons <https://www.github.com/kavec>`_ (tyler.gibbons@flexport.com)
 * `Tyler Nickerson <https://www.github.com/nmbrgts>`_
+* `Vic Kumar <https://www.github.com/vickumar1981>`_ (vickumar@gmail.com)
 * `Vidya Rani <https://www.github.com/vidyarani-dg>`_ (vidyarani.d.g@gmail.com)
 * `Vincent Michel <https://www.github.com/vxgmichel>`_ (vxgmichel@gmail.com)
 * `Vytautas Strimaitis <https://www.github.com/vstrimaitis>`_
