@@ -224,4 +224,4 @@ def test_non_runtime_type_cannot_be_registered(non_runtime_type):
     with pytest.raises(
         InvalidArgument, match="there is no such thing as a runtime instance"
     ):
-        st.register_type_strategy(non_runtime_type)
+        st.register_type_strategy(non_runtime_type, st.none())

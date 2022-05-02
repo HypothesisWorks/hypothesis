@@ -90,13 +90,13 @@ try:
 except AttributeError:  # pragma: no cover
     pass  # `typing_extensions` might not be installed
 
-AnotatedTypes: tuple = ()
+AnnotatedTypes: tuple = ()
 try:
-    AnotatedTypes += (typing.Anotated,)
+    AnnotatedTypes += (typing.Annotated,)
 except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.8`
 try:
-    AnotatedTypes += (typing_extensions.Anotated,)
+    AnnotatedTypes += (typing_extensions.Annotated,)
 except AttributeError:  # pragma: no cover
     pass  # `typing_extensions` might not be installed
 
@@ -142,7 +142,7 @@ except AttributeError:  # pragma: no cover
 
 SelfTypes: tuple = ()
 try:
-    SelfTypes += (typing.Self,)
+    SelfTypes += (typing.Self,)  # type: ignore
 except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.11`
 try:
@@ -152,7 +152,7 @@ except AttributeError:  # pragma: no cover
 
 RequiredTypes: tuple = ()
 try:
-    RequiredTypes += (typing.Required,)
+    RequiredTypes += (typing.Required,)  # type: ignore
 except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.11`
 try:
@@ -162,7 +162,7 @@ except AttributeError:  # pragma: no cover
 
 NotRequiredTypes: tuple = ()
 try:
-    NotRequiredTypes += (typing.NotRequired,)
+    NotRequiredTypes += (typing.NotRequired,)  # type: ignore
 except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.11`
 try:
@@ -172,7 +172,7 @@ except AttributeError:  # pragma: no cover
 
 NeverTypes: tuple = ()
 try:
-    NeverTypes += (typing.Never,)
+    NeverTypes += (typing.Never,)  # type: ignore
 except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.11`
 try:
@@ -182,7 +182,7 @@ except AttributeError:  # pragma: no cover
 
 TypeVarTupleTypes: tuple = ()
 try:
-    TypeVarTupleTypes += (typing.TypeVarTuple,)
+    TypeVarTupleTypes += (typing.TypeVarTuple,)  # type: ignore
 except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.11`
 try:
@@ -192,7 +192,7 @@ except AttributeError:  # pragma: no cover
 
 UnpackTypes: tuple = ()
 try:
-    UnpackTypes += (typing.Unpack,)
+    UnpackTypes += (typing.Unpack,)  # type: ignore
 except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.11`
 try:
@@ -203,7 +203,7 @@ except AttributeError:  # pragma: no cover
 # banned for now; revisit later
 LiteralStringTypes: tuple = ()
 try:
-    LiteralStringTypes += (typing.LiteralString,)
+    LiteralStringTypes += (typing.LiteralString,)  # type: ignore
 except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.11`
 try:
@@ -225,7 +225,7 @@ NON_RUNTIME_TYPES = frozenset(
         *ClassVarTypes,
         *TypeAliasTypes,
         *FinalTypes,
-        *AnotatedTypes,
+        *AnnotatedTypes,
         *ConcatenateTypes,
         *ParamSpecTypes,
         *TypeGuardTypes,
