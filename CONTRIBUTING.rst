@@ -53,8 +53,8 @@ make changes and install the changed version) you can do this with:
 
 .. code:: bash
 
-  pip install -r requirements/test.txt
-  pip install -r requirements/tools.txt
+  pip install -r requirements/test.in
+  pip install -r requirements/tools.in
   pip install -e hypothesis-python/
 
   # You don't need to run the tests, but here's the command:
