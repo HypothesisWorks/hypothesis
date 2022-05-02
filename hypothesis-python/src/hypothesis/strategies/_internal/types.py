@@ -130,6 +130,16 @@ try:
 except AttributeError:  # pragma: no cover
     pass  # `typing_extensions` might not be installed
 
+NoReturnTypes: tuple = ()
+try:
+    NoReturnTypes += (typing.NoReturn,)
+except AttributeError:  # pragma: no cover
+    pass  # Is missing for `python<3.8`
+try:
+    NoReturnTypes += (typing_extensions.NoReturn,)
+except AttributeError:  # pragma: no cover
+    pass  # `typing_extensions` might not be installed
+
 SelfTypes: tuple = ()
 try:
     SelfTypes += (typing.Self,)
@@ -219,6 +229,7 @@ NON_RUNTIME_TYPES = frozenset(
         *ConcatenateTypes,
         *ParamSpecTypes,
         *TypeGuardTypes,
+        *NoReturnTypes,
         *SelfTypes,
         *RequiredTypes,
         *NotRequiredTypes,
