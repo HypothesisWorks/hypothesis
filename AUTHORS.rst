@@ -30,6 +30,7 @@ their individual contributions.
 * `Charles O'Farrell <https://www.github.com/charleso>`_
 * `Charlie Tanksley <https://www.github.com/charlietanksley>`_
 * `Chase Garner <https://www.github.com/chasegarner>`_ (chase@garner.red)
+* `Cheuk Ting Ho <https://github.com/Cheukting>`_
 * `Chris Down  <https://chrisdown.name>`_
 * `Christopher Martin <https://www.github.com/chris-martin>`_ (ch.martin@gmail.com)
 * `Claudio Jolowicz <https://github.com/cjolowicz>`_
