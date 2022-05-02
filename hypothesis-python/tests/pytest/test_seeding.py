@@ -91,7 +91,6 @@ def test_repeats_healthcheck_when_following_seed_instruction(testdir, tmpdir):
 
     initial = testdir.runpytest(script, "--verbose", "--strict-markers")
 
-    match = CONTAINS_SEED_INSTRUCTION.search("\n".join(initial.stdout.lines))
     initial_output = "\n".join(initial.stdout.lines)
 
     match = CONTAINS_SEED_INSTRUCTION.search(initial_output)
@@ -101,10 +100,39 @@ def test_repeats_healthcheck_when_following_seed_instruction(testdir, tmpdir):
     rerun_output = "\n".join(rerun.stdout.lines)
 
     assert "FailedHealthCheck" in rerun_output
-    assert "--hypothesis-seed" in rerun_output
+    assert "--hypothesis-seed" not in rerun_output
 
     rerun2 = testdir.runpytest(
         script, "--verbose", "--strict-markers", "--hypothesis-seed=10"
     )
     rerun2_output = "\n".join(rerun2.stdout.lines)
     assert "FailedHealthCheck" not in rerun2_output
+
+
+SIMPLE_SEEDING_TEST = """
+import os
+
+from hypothesis import given, strategies as st, settings, Verbosity
+
+@given(st.integers())
+@settings(verbosity=Verbosity.verbose)
+def test_seed(i):
+    assert i < 1000
+"""
+
+
+def test_seed_shows_in_verbose_mode(testdir, tmpdir):
+    script = testdir.makepyfile(SIMPLE_SEEDING_TEST)
+
+    initial = testdir.runpytest(script, "--strict-markers")
+
+    initial_output = "\n".join(initial.stdout.lines)
+
+    match = CONTAINS_SEED_INSTRUCTION.search(initial_output)
+    assert match is not None
+
+    rerun = testdir.runpytest(script, "--verbose", "--strict-markers", match.group(0))
+    rerun_output = "\n".join(rerun.stdout.lines)
+
+    assert "--hypothesis-seed" in rerun_output
+
