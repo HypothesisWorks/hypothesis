@@ -11,7 +11,7 @@
 import collections
 import sys
 import typing
-from typing import Dict, List, Union, Callable
+from typing import Callable, Dict, List, Union
 
 import pytest
 from typing_extensions import (
