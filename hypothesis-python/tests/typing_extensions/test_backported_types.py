@@ -223,6 +223,7 @@ def test_non_runtime_type_cannot_be_resolved(non_runtime_type):
         strategy.example()
 
 
+@pytest.mark.skipif(sys.version_info <= (3, 7), reason="requires python3.8 or higher")
 @pytest.mark.parametrize("non_runtime_type", NON_RUNTIME_TYPES)
 def test_non_runtime_type_cannot_be_registered(non_runtime_type):
     with pytest.raises(
