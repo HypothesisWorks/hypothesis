@@ -23,6 +23,7 @@ import re
 import sys
 import typing
 import uuid
+from collections.abc import Iterable
 from pathlib import PurePath
 from types import FunctionType
 
