@@ -234,10 +234,10 @@ def test_non_runtime_type_cannot_be_registered(non_runtime_type):
 @pytest.mark.parametrize("non_runtime_type", [Concatenate, ParamSpec])
 def test_callable_with_non_runtime_type(non_runtime_type):
     strategy = st.from_type(Callable[[non_runtime_type], None])
-    with pytest.raises(InvalidArgument, match="cannot be resolved in Callables."):
+    with pytest.raises(InvalidArgument, match="cannot be arguments in Callables."):
         strategy.example()
 
-    with pytest.raises(InvalidArgument, match="cannot be resolved in Callables."):
+    with pytest.raises(InvalidArgument, match="Cannot register generic type"):
         st.register_type_strategy(Callable[[non_runtime_type], None], st.none())
 
 

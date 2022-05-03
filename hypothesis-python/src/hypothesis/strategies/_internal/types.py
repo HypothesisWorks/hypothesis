@@ -933,10 +933,14 @@ def resolve_Callable(thing):
         return st.functions()
 
     # Concatenate and ParamSpec can never be registered or resolved at Callable arguments
-    if isinstance(thing.__args__[0], Iterable):
-        for stuff in thing.__args__[0]:
-            if stuff in ConcatenateTypes + ParamSpecTypes:
-                raise InvalidArgument(f"{stuff} cannot be arguments in Callables.")
+    # if it is a single argument it will not be iterable
+    if not isinstance(thing.__args__[0], Iterable):
+        thing_args = [thing.__args__[0]]
+    else:
+        thing_args = thing.__args__[0]
+    for stuff in thing_args:
+        if stuff in ConcatenateTypes + ParamSpecTypes:
+            raise InvalidArgument(f"{stuff} cannot be arguments in Callables.")
     # TypeGuard can never be returned by Callable types
     if getattr(thing.__args__[-1], "__origin__", None) in TypeGuardTypes:
         raise InvalidArgument(
