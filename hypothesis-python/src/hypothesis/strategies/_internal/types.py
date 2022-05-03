@@ -939,7 +939,9 @@ def resolve_Callable(thing):
                 raise InvalidArgument(f"{stuff} cannot be arguments in Callables.")
     # TypeGuard can never be returned by Callable types
     if thing.__args__[1] in TypeGuardTypes:
-        raise InvalidArgument(f"Return type of Callables cannot be {thing.__args__[1]}.")
+        raise InvalidArgument(
+            f"Return type of Callables cannot be {thing.__args__[1]}."
+        )
 
     # Note that a list can only appear in __args__ under Python 3.9 with the
     # collections.abc version; see https://bugs.python.org/issue42195
