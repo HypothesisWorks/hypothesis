@@ -142,12 +142,15 @@ def example(*args: Any, **kwargs: Any) -> Callable[[TestFunc], TestFunc]:
     if not (args or kwargs):
         raise InvalidArgument("An example must provide at least one argument")
 
+    hypothesis_explicit_examples: List[Example] = []
+
     def accept(test):
         if not hasattr(test, "hypothesis_explicit_examples"):
-            test.hypothesis_explicit_examples = []
+            test.hypothesis_explicit_examples = hypothesis_explicit_examples
         test.hypothesis_explicit_examples.append(Example(tuple(args), kwargs))
         return test
 
+    accept.hypothesis_explicit_examples = hypothesis_explicit_examples  # type: ignore
     return accept
 
 
