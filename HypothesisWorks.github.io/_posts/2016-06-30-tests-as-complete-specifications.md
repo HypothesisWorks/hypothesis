@@ -35,16 +35,19 @@ Using Hypothesis we can write down tests for all these properties:
 ```python
 from hypothesis import given, strategies as st
 
+
 @given(lists(integers()).map(sorted), integers())
 def test_binary_search_gives_valid_index(ls, v):
     i = binary_search(ls, v)
     assert 0 <= i <= len(ls)
+
 
 @given(lists(integers()).map(sorted), integers())
 def test_inserting_at_binary_search_remains_sorted(ls, v):
     i = binary_search(ls, v)
     ls.insert(i, v)
     assert sorted(ls) == ls
+
 
 @given(lists(integers()).map(sorted), integers())
 def test_inserting_at_smaller_index_gives_unsorted(ls, v):
@@ -72,7 +75,6 @@ Lets see how this can cause us problems. Consider the following
 implementation of binary search:
 
 ```python
-
 def binary_search(list, value):
     if not list:
         return 0
@@ -136,7 +138,6 @@ interesting behaviours.
 Consider the following test:
 
 ```python
-
 @given(lists(integers()).map(sorted), integers())
 def test_inserting_at_result_point_and_searching_again(ls, v):
     i = binary_search(ls, v)

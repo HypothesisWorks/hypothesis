@@ -66,16 +66,13 @@ My colleague was less familiar with Hypothesis than I was, so we started with
 a plain old Python unit test:
 
 ```python
-    def test_checkout_new_branch(self):
-        """
-        Checking out a new branch results in it being the current active
-        branch.
-        """
-        tmpdir = FilePath(self.mktemp())
-        tmpdir.makedirs()
-        repo = Repository.initialize(tmpdir.path)
-        repo.checkout("new-branch", create=True)
-        self.assertEqual("new-branch", repo.get_active_branch())
+def test_checkout_new_branch(self):
+    """Checking out a new branch makes it the current active branch."""
+    tmpdir = FilePath(self.mktemp())
+    tmpdir.makedirs()
+    repo = Repository.initialize(tmpdir.path)
+    repo.checkout("new-branch", create=True)
+    self.assertEqual("new-branch", repo.get_active_branch())
 ```
 
 The first thing to notice here is that the string `"new-branch"` is not
@@ -86,12 +83,12 @@ Even before we started to use Hypothesis, we made this more explicit by making
 the branch name a parameter to the test:
 
 ```python
-    def test_checkout_new_branch(self, branch_name="new-branch"):
-        tmpdir = FilePath(self.mktemp())
-        tmpdir.makedirs()
-        repo = Repository.initialize(tmpdir.path)
-        repo.checkout(branch_name, create=True)
-        self.assertEqual(branch_name, repo.get_active_branch())
+def test_checkout_new_branch(self, branch_name="new-branch"):
+    tmpdir = FilePath(self.mktemp())
+    tmpdir.makedirs()
+    repo = Repository.initialize(tmpdir.path)
+    repo.checkout(branch_name, create=True)
+    self.assertEqual(branch_name, repo.get_active_branch())
 ```
 
 (For brevity, I'll elide the docstring from the rest of the code examples)
@@ -106,20 +103,19 @@ Once we had a parameter, the next thing was to use Hypothesis to provide the
 parameter for us. First, we imported Hypothesis:
 
 ```python
-    from hypothesis import given
-    from hypothesis import strategies as st
+from hypothesis import given, strategies as st
 ```
 
 And then made the simplest change to our test to actually use it:
 
 ```python
-    @given(branch_name=st.just("new-branch"))
-    def test_checkout_new_branch(self, branch_name):
-        tmpdir = FilePath(self.mktemp())
-        tmpdir.makedirs()
-        repo = Repository.initialize(tmpdir.path)
-        repo.checkout(branch_name, create=True)
-        self.assertEqual(branch_name, repo.get_active_branch())
+@given(branch_name=st.just("new-branch"))
+def test_checkout_new_branch(self, branch_name):
+    tmpdir = FilePath(self.mktemp())
+    tmpdir.makedirs()
+    repo = Repository.initialize(tmpdir.path)
+    repo.checkout(branch_name, create=True)
+    self.assertEqual(branch_name, repo.get_active_branch())
 ```
 
 Here, rather than providing the branch name as a default argument value, we
@@ -134,18 +130,19 @@ didn't yet know how to generate any valid branch name, but using a
 time-honored tradition we pretended that we did:
 
 ```python
-    def valid_branch_names():
-        """Hypothesis strategy to generate arbitrary valid branch names."""
-        # TODO: Improve this strategy.
-        return st.just("new-branch")
+def valid_branch_names():
+    """Hypothesis strategy to generate arbitrary valid branch names."""
+    # TODO: Improve this strategy.
+    return st.just("new-branch")
 
-    @given(branch_name=valid_branch_names())
-    def test_checkout_new_branch(self, branch_name):
-        tmpdir = FilePath(self.mktemp())
-        tmpdir.makedirs()
-        repo = Repository.initialize(tmpdir.path)
-        repo.checkout(branch_name, create=True)
-        self.assertEqual(branch_name, repo.get_active_branch())
+
+@given(branch_name=valid_branch_names())
+def test_checkout_new_branch(self, branch_name):
+    tmpdir = FilePath(self.mktemp())
+    tmpdir.makedirs()
+    repo = Repository.initialize(tmpdir.path)
+    repo.checkout(branch_name, create=True)
+    self.assertEqual(branch_name, repo.get_active_branch())
 ```
 
 Even if we had stopped here, this would have been an improvement. Although the
@@ -163,8 +160,8 @@ really get to take advantage of its bug finding power.
 The first thing my colleague and I tried was:
 
 ```python
-    def valid_branch_names():
-        return st.text()
+def valid_branch_names():
+    return st.text()
 ```
 
 But that failed pretty hard-core.
@@ -191,14 +188,15 @@ In the end, we compromised and implemented a relatively conservative strategy
 to simulate the good, normal, sensible branch names that we expected:
 
 ```python
-    from string import ascii_lowercase
+from string import ascii_lowercase
 
-    VALID_BRANCH_CHARS = ascii_lowercase + '_-.'
+VALID_BRANCH_CHARS = ascii_lowercase + "_-."
 
-    def valid_branch_names():
-        # TODO: Handle unicode / weird branch names by rejecting them early, raising nice errors
-        # TODO: How do we handle case-insensitive file systems?
-        return st.text(alphabet=VALID_BRANCH_CHARS, min_size=1, max_size=112)
+
+def valid_branch_names():
+    # TODO: Handle unicode / weird branch names by rejecting them early, raising nice errors
+    # TODO: How do we handle case-insensitive file systems?
+    return st.text(alphabet=VALID_BRANCH_CHARS, min_size=1, max_size=112)
 ```
 
 Not ideal, but *much* more extensive than just hard-coding `"new-branch"`, and
@@ -215,25 +213,27 @@ Rather than waiting on chance, we encoded this in the `valid_branch_names`
 strategy, to make it more likely:
 
 ```python
-    def valid_branch_names():
-        return st.text(
-            alphabet=letters, min_size=1, max_size=112).map(lambda t: t.lower()) | st.just("master")
+def valid_branch_names():
+    return st.text(alphabet=letters, min_size=1, max_size=112).map(
+        lambda t: t.lower()
+    ) | st.just("master")
 ```
 
 When we ran the tests now, they failed with an exception due to the branch
 `master` already existing. To fix this, we used `assume`:
 
 ```python
-    from hypothesis import assume
+from hypothesis import assume
 
-    @given(branch_name=valid_branch_names())
-    def test_checkout_new_branch(self, branch_name):
-        assume(branch_name != "master")
-        tmpdir = FilePath(self.mktemp())
-        tmpdir.makedirs()
-        repo = Repository.initialize(tmpdir.path)
-        repo.checkout(branch_name, create=True)
-        self.assertEqual(branch_name, repo.get_active_branch())
+
+@given(branch_name=valid_branch_names())
+def test_checkout_new_branch(self, branch_name):
+    assume(branch_name != "master")
+    tmpdir = FilePath(self.mktemp())
+    tmpdir.makedirs()
+    repo = Repository.initialize(tmpdir.path)
+    repo.checkout(branch_name, create=True)
+    self.assertEqual(branch_name, repo.get_active_branch())
 ```
 
 Why did we add `master` to the valid branch names if we were just going to
@@ -257,15 +257,15 @@ with more varied contents, commit histories, and existing branches.
 The test might then look something like this:
 
 ```python
-    @given(repo=repositories(), branch_name=valid_branch_names())
-    def test_checkout_new_branch(self, repo, branch_name):
-        """
-        Checking out a new branch results in it being the current active
-        branch.
-        """
-        assume(branch_name not in repo.get_branches())
-        repo.checkout(branch_name, create=True)
-        self.assertEqual(branch_name, repo.get_active_branch())
+@given(repo=repositories(), branch_name=valid_branch_names())
+def test_checkout_new_branch(self, repo, branch_name):
+    """
+    Checking out a new branch results in it being the current active
+    branch.
+    """
+    assume(branch_name not in repo.get_branches())
+    repo.checkout(branch_name, create=True)
+    self.assertEqual(branch_name, repo.get_active_branch())
 ```
 
 This is about as close to a bona fide "property" as you're likely to get in

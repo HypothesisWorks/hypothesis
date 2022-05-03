@@ -1,20 +1,18 @@
-from hypothesis import strategies as st
-from hypothesis import assume, find
 from collections import Counter
+
+from hypothesis import find, strategies as st
 
 
 @st.composite
 def election(draw, max_candidates=10):
     candidates = list(range(draw(st.integers(2, max_candidates))))
-    return draw(
-        st.lists(st.permutations(candidates), min_size=1)
-    )
+    return draw(st.lists(st.permutations(candidates), min_size=1))
 
 
 def candidates_for_election(election):
     return sorted({c for cs in election for c in cs})
-    
-    
+
+
 def plurality_winner(election):
     counts = Counter(vote[0] for vote in election)
     alternatives = candidates_for_election(election)
@@ -42,6 +40,7 @@ def irv_winner(election):
     else:
         return candidates[0]
 
+
 def differing_without_ties(election):
     irv = irv_winner(election)
     if irv is None:
@@ -66,4 +65,5 @@ def find_majority_dominated_winner(method):
     def test(election):
         winner = method(election)
         return winner is not None and is_majority_dominated(election, winner)
+
     return find(election(), test)

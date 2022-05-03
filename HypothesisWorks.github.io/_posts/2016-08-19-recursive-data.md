@@ -30,12 +30,15 @@ strategy. In principle you could just do this with composite:
 ```python
 import hypothesis.strategies as st
 
+
 @st.composite
 def composite_tree(draw):
-    return draw(st.one_of(
-        st.booleans(),
-        st.tuples(composite_tree(), composite_tree()),
-    ))
+    return draw(
+        st.one_of(
+            st.booleans(),
+            st.tuples(composite_tree(), composite_tree()),
+        )
+    )
 ```
 
 If you try drawing examples from this you'll probably see one of
@@ -85,10 +88,9 @@ repeatedly building up a series of strategies as follows:
 
 ```python
 s1 = base
-s2 = one_of(s1, extend(s1)
+s2 = one_of(s1, extend(s1))
 s3 = one_of(s2, extend(s2))
 ...
-
 ```
 
 So at each level you augment the things from the previous
@@ -154,7 +156,7 @@ but consider something like the following:
   False],
  False,
  [False, True, False, True, False],
- [True, False, True, False, False, False]]  
+ [True, False, True, False, False, False]]
 ```
 
 In this case the size of the example will tend to push up against the max_leaves value

@@ -55,21 +55,21 @@ of this definition in the past.
 An example of a property-based test using Hypothesis:
 
 ```python
-  from hypothesis import given
-  from hypothesis import strategies as st
+from hypothesis import given, strategies as st
 
-  @given(st.lists(st.integers()))
-  def test_sort_is_idempotent(ls):
-      sort1 = sorted(ls)
-      assert sorted(sort1) == sort1
+
+@given(st.lists(st.integers()))
+def test_sort_is_idempotent(ls):
+    sort1 = sorted(ls)
+    assert sorted(sort1) == sort1
 ```
 
 This exposes a normal function which can be picked up by a standard runner such as py.test. You can also just call it
 directly:
 
 ```python
-  if __name__ == '__main__':
-      test_sort_is_idempotent()
+if __name__ == "__main__":
+    test_sort_is_idempotent()
 ```
 
 When the test is run, Hypothesis will generate random lists of integers
@@ -82,8 +82,8 @@ the failure.
 To see this, suppose we implemented the following rather broken implementation of sorted:
 
 ```python
-  def sorted(ls):
-      return list(reversed(ls))
+def sorted(ls):
+    return list(reversed(ls))
 ```
 
 Then on running we would see the following output:
@@ -116,11 +116,11 @@ the bug is actually fixed.
 Tests can also draw more data as they execute:
 
 ```python
-  @given(st.lists(st.integers(), min_size=1), st.data())
-  def test_sort_is_idempotent(ls, data):
-      ls.sort()
-      i = data.draw(st.integers(0, len(ls) - 1))
-      assert ls[i - 1] <= ls[i]
+@given(st.lists(st.integers(), min_size=1), st.data())
+def test_sort_is_idempotent(ls, data):
+    ls.sort()
+    i = data.draw(st.integers(0, len(ls) - 1))
+    assert ls[i - 1] <= ls[i]
 ```
 
 This fails because we've forgotten than `i` may be zero, and also about Python's negative indexing of lists:

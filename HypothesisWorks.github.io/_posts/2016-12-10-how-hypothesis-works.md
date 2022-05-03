@@ -60,8 +60,7 @@ which essentially looks like an open file handle you can read
 bytes from:
 
 ```python
-
-class TestData(object):
+class TestData:
     def draw_bytes(self, n):
         ...
 ```
@@ -73,8 +72,7 @@ A strategy is then just an object which implements a single abstract
 method from the strategy class:
 
 ```python
-
-class SearchStrategy(object):
+class SearchStrategy:
     def do_draw(self, data):
         raise NotImplementedError()
 ```
@@ -88,14 +86,9 @@ For a simple example, we can implement a strategy for unsigned
 
 
 ```python
-
-class Int64Strategy(object):
+class Int64Strategy:
     def do_draw(self, data):
-        return int.from_bytes(
-            data.draw_bytes(8),
-            byteorder='big', signed=False
-        )
-
+        return int.from_bytes(data.draw_bytes(8), byteorder="big", signed=False)
 ```
 
 As well as returning bytes, draw_bytes can raise an exception
@@ -121,8 +114,7 @@ Once Hypothesis has found a failure it begins shrinking the
 byte stream using a TestData object that looks like the following:
 
 ```python
-
-class ShrinkingTestData(object):
+class ShrinkingTestData:
     def __init__(self, data):
         self.data = data
         self.index = 0
@@ -130,7 +122,7 @@ class ShrinkingTestData(object):
     def draw_bytes(self, n):
         if self.index + n > len(self.data):
             raise StopTest()
-        result = self.data[self.index:self.index+n]
+        result = self.data[self.index : self.index + n]
         self.index += n
         return result
 ```
@@ -172,18 +164,13 @@ For example, suppose we tried to implement lists as follows:
 
 
 ```python
-
 class ListStrategy(SearchStrategy):
     def __init__(self, elements):
         self.elements = elements
 
     def do_draw(self, data):
-        n_elements = integers(0, 10).do_draw(
-            self.elements)
-        return [
-            self.elements.do_draw(data)
-            for _ in range(n_elements)
-        ]
+        n_elements = integers(0, 10).do_draw(self.elements)
+        return [self.elements.do_draw(data) for _ in range(n_elements)]
 ```
 
 The problem with this is that deleting data doesn't actually
@@ -205,7 +192,6 @@ this as follows:
 
 
 ```python
-
 class ListStrategy(SearchStrategy):
     def __init__(self, elements):
         self.elements = elements
@@ -250,8 +236,7 @@ distribution hint:
 
 
 ```python
-
-class TestData(object):
+class TestData:
     def draw_bytes(self, n, distribution=None):
         ...
 ```
@@ -271,21 +256,17 @@ as:
 
 
 ```python
-
-class Int64Strategy(object):
+class Int64Strategy:
     def do_draw(self, data):
         def biased_distribution(random, n):
             if random.randint(0, 1):
-                return random.randint(0, 100).to_bytes(
-                    n, byteorder='big', signed=False
-                )
+                return random.randint(0, 100).to_bytes(n, byteorder="big", signed=False)
             else:
                 return uniform(random, n)
-        return int.from_bytes(
-            data.draw_bytes(8, biased_distribution),
-            byteorder='big', signed=False
-        )
 
+        return int.from_bytes(
+            data.draw_bytes(8, biased_distribution), byteorder="big", signed=False
+        )
 ```
 
 Now we have a biased integer distribution which will
@@ -296,7 +277,6 @@ buffers. For example we could pass in a TestData
 implementation that looked like this:
 
 ```python
-
 class GeneratingTestData(TestData):
     def __init__(self, random, max_bytes):
         self.max_bytes = max_bytes
@@ -347,8 +327,7 @@ generate data to mark useful intervals. TestData now
 looks like this:
 
 ```python
-
-class TestData(object):
+class TestData:
     def start_interval(self):
         ...
 
@@ -357,7 +336,6 @@ class TestData(object):
 
     def draw_bytes(self, n):
         ...
-
 
     def draw(self, strategy):
         self.start_interval()
@@ -385,7 +363,7 @@ intervals that I've glossed over.
 
 It's not a perfect system, but it works and works well:
 This has been the underlying implementation of Hypothesis
-since the 3.0 relase in early 2016, and the switch over
+since the 3.0 release in early 2016, and the switch over
 was nearly transparent to end users: the previous
 implementation was much closer to a classic QuickCheck
 model (with a great deal of extra complexity to support
@@ -407,8 +385,7 @@ you can chain strategies together like this:
 
 
 ```python
-
-class SearchStrategy(object):
+class SearchStrategy:
     def do_draw(self, data):
         raise NotImplementedError()
 

@@ -146,7 +146,7 @@ def test_can_find_unique_lists_of_non_set_order():
 
     ls = minimal(
         lists(text(), min_size=2, unique=True),
-        lambda x: list(set(reversed(x))) != x,  # noqa: C414  # yes, reverse inside set
+        lambda x: list(set(x)) != x,  # noqa: C414  # yes, reverse inside set
     )
     assert len(set(ls)) == len(ls)
     assert len(ls) == 2

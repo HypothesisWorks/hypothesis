@@ -24,8 +24,9 @@ When using a @given decorator, any arguments that are not provided in the @given
 will be left visible in the final function:
 
 ```python
-from hypothesis import given, strategies as st
 from inspect import getargspec
+
+from hypothesis import given, strategies as st
 
 
 @given(a=st.none(), c=st.none())
@@ -47,9 +48,9 @@ are still left to be passed in. In particular, they can be provided as py.test
 fixtures:
 
 ```python
+from pytest import fixture
 
 from hypothesis import given, strategies as st
-from pytest import fixture
 
 
 @fixture
@@ -66,8 +67,9 @@ def test_stuff(a, stuff):
 This also works if we want to use @given with positional arguments: 
 
 ```python
-from hypothesis import given, strategies as st
 from pytest import fixture
+
+from hypothesis import given, strategies as st
 
 
 @fixture
@@ -79,7 +81,6 @@ def stuff():
 def test_stuff(stuff, a):
     assert a is None
     assert stuff == "kittens"
-
 ```
 
 The positional argument fills in from the right, replacing the 'a'
@@ -93,11 +94,12 @@ you prefer though.
 @given also works fine in combination with parametrized tests:
 
 ```python
-from hypothesis import given, strategies as st
 import pytest
 
+from hypothesis import given, strategies as st
 
-@pytest.mark.parametrize('stuff', [1, 2, 3])
+
+@pytest.mark.parametrize("stuff", [1, 2, 3])
 @given(a=st.none())
 def test_stuff(a, stuff):
     assert a is None
@@ -113,15 +115,14 @@ rather than once for each time given calls your test function. So the following
 will fail:
 
 ```python
-
-from hypothesis import given, strategies as st
-from inspect import getargspec
 from pytest import fixture
 
+from hypothesis import given, strategies as st
 
 counter = 0
 
-@fixture(scope='function')
+
+@fixture(scope="function")
 def stuff():
     global counter
     counter = 0

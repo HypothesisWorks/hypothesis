@@ -21,8 +21,9 @@ Hypothesis provides an idiomatic Python solution, the `@given` decorator, that c
 
 ```python
 import unittest
-from hypothesis import given
-from hypothesis import strategies as st
+
+from hypothesis import given, strategies as st
+
 
 class TestEris(unittest.TestCase):
     "Comparing the syntax and implementation of features with Eris"
@@ -31,7 +32,9 @@ class TestEris(unittest.TestCase):
     def test_sum_is_commutative(self, first, second):
         x = first + second
         y = second + first
-        self.assertEqual(x, y, "Sum between %d and %d should be commutative" % (first, second))
+        self.assertEqual(
+            x, y, "Sum between %d and %d should be commutative" % (first, second)
+        )
 ```
 
 In this example, I am using the unittest syntax for maximum test portability, but this does not affect Hypothesis, which works across testing frameworks.
@@ -73,12 +76,12 @@ Both these tests will be run hundreds of times, each computing two sums and comp
 A very simple composition problem consists of generating a collection data structured whose elements are drawn from a known distribution, for example a list of integers. Hypothesis provides *strategies* that can compose other strategies, in this case to build a list of random integers of arbitrary length:
 
 ```python
-    @given(st.lists(st.integers()))
-    def test_sorting_a_list_twice_is_the_same_as_sorting_it_once(self, xs):
-        xs.sort()
-        ys = list(xs)
-        xs.sort()
-        self.assertEqual(xs, ys)
+@given(st.lists(st.integers()))
+def test_sorting_a_list_twice_is_the_same_as_sorting_it_once(self, xs):
+    xs.sort()
+    ys = list(xs)
+    xs.sort()
+    self.assertEqual(xs, ys)
 ```
 
 Eris calls *generators* the objects representing statistical distributions, but uses the same compositional pattern for higher-order values like lists and all collections:
@@ -108,9 +111,9 @@ Not all problems are abstract enough to accept all values in input, so it may be
 Hypothesis provides a `filter()` method to apply a lambda to values, expressing a condition for them to be included in the test:
 
 ```python
-    @given(st.integers().filter(lambda x: x > 42))
-    def test_filtering(self, x):
-        self.assertGreater(x, 42)
+@given(st.integers().filter(lambda x: x > 42))
+def test_filtering(self, x):
+    self.assertGreater(x, 42)
 ```
 
 Eris allows to filter values with a predicate in the same way, but prefers to allocate the filter to the generic `ForAll` object rather than decorate it on each Generator:
@@ -141,9 +144,9 @@ Filtering and the constructs that follow are integrated with shrinking in both H
 Another common need consists of transforming the generated value to a different space, for example the set of all even numbers rather than the (larger) set of integers. Hypothesis allows to do this by passing a lambda to the `map()` method of a strategy:
 
 ```python
-    @given(st.integers().map(lambda x: x * 2))
-    def test_mapping(self, x):
-        self.assertEqual(x % 2, 0)
+@given(st.integers().map(lambda x: x * 2))
+def test_mapping(self, x):
+    self.assertEqual(x % 2, 0)
 ```
 
 Eris instead provides a `Map` higher-order generator, which applies the lambda during generation:
@@ -176,15 +179,17 @@ It's possible to build even stricter values, that have internal constraints that
 Hypothesis provides the `flatmap()` method to pass the output of an inner strategy to a lambda that creates an outer strategy to use in the test. Here a list of 4 integers is passed to the lambda, to generate a tuple consisting of the list and a random element chosen from it:
 
 ```python
-    @given(st.lists(st.integers(), min_size=4, max_size=4).flatmap(
+@given(
+    st.lists(st.integers(), min_size=4, max_size=4).flatmap(
         lambda xs: st.tuples(st.just(xs), st.sampled_from(xs))
-    ))
-    def test_list_and_element_from_it(self, pair):
-        (generated_list, element) = pair
-        self.assertIn(element, generated_list)
+    )
+)
+def test_list_and_element_from_it(self, pair):
+    (generated_list, element) = pair
+    self.assertIn(element, generated_list)
 ```
 
-Eris does the same with a slighly different naming, calling this primitive `bind`:
+Eris does the same with a slightly different naming, calling this primitive `bind`:
 
 ```php
     public function testCreatingABrandNewGeneratorFromAGeneratedValue()
@@ -210,7 +215,7 @@ Eris does the same with a slighly different naming, calling this primitive `bind
 
 ## What the future brings
 
-Hypothesis is a much more mature project than Eris, especially when it comes to keeping state between test runs or acting as a generic random data provider rather than as an extension to a testing framework. It will be interesting to continue porting Hypothesis features to the PHP world, given the original features and patterns that Hypothesis shows with respect to the rest of the `*Check` world. 
+Hypothesis is a much more mature project than Eris, especially when it comes to keeping state between test runs or acting as a generic random data provider rather than as an extension to a testing framework. It will be interesting to continue porting Hypothesis features to the PHP world, given the original features and patterns that Hypothesis shows with respect to the rest of the `*Check` world.
 
 ## References
 

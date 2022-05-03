@@ -33,13 +33,14 @@ every single one of them has options to configure them to be more specific.
 Consider something like the following:
 
 ```python
-from hypothesis import given, strategies as st
 from statistics import mean
+
+from hypothesis import given, strategies as st
 
 
 @given(st.lists(st.floats(allow_nan=False, allow_infinity=False), min_size=1))
 def test_mean_is_in_bounds(ls):
-  assert min(ls) <= mean(ls) <= max(ls)
+    assert min(ls) <= mean(ls) <= max(ls)
 ```
 
 In this test we've restricted the domain we're testing on so we can focus on a property
@@ -58,14 +59,15 @@ don't map naturally to types.
 Consider writing this code based on types instead:
 
 ```python
-from hypothesis import infer, given, strategies as st
 from statistics import mean
 from typing import List
 
+from hypothesis import given, strategies as st
 
-@given(ls=infer)
+
+@given(ls=...)
 def test_mean_is_in_bounds(ls: List[float]):
-  assert min(ls) <= mean(ls) <= max(ls)
+    assert min(ls) <= mean(ls) <= max(ls)
 ```
 
 (this code doesn't work at the time of this writing, but it will soon -
@@ -77,17 +79,18 @@ previous test that our floats are all finite and our lists are all non-empty. So
 we have to add a precondition to make the test valid:
 
 ```python
-from hypothesis import infer, given, assume, strategies as st
+import math
 from statistics import mean
 from typing import List
-import math
+
+from hypothesis import assume, given, strategies as st
 
 
-@given(ls=infer)
+@given(ls=...)
 def test_mean_is_in_bounds(ls: List[float]):
-  assume(len(ls) > 1)
-  assume(all(math.isfinite(x) for x in ls))
-  assert min(ls) <= mean(ls) <= max(ls)
+    assume(len(ls) > 1)
+    assume(all(math.isfinite(x) for x in ls))
+    assert min(ls) <= mean(ls) <= max(ls)
 ```
 
 But this is now substantially longer and less readable than the original approach!
@@ -134,7 +137,7 @@ but it's almost as awkward as the newtype approach, particularly if you want mor
 data generator (it's even more awkward if you want shrinking - you have to use forAllWithShrink and
 explicitly pass a shrink function).
 
-This is more or less intrinsic to the type based approach. If you want tinkering with the 
+This is more or less intrinsic to the type based approach. If you want tinkering with the
 data generation to be non-awkward, starting from data generators needs to become the default.
 
 And experience suggests that when you make customising the data generation easy, people do
@@ -144,7 +147,7 @@ preconditions to tests (assume in Hypothesis, or `==>` in QuickCheck), either of
 the quality of your testing and causes more bugs to slip through as a result.
 
 Fortunately, it already *is* the default in most of the newer implementations of
-property-based testing. The only holdouts are ones that directly copied Haskell QuickCheck. 
+property-based testing. The only holdouts are ones that directly copied Haskell QuickCheck.
 
 Originally this was making a virtue of a necessity - most of the implementations
 which started off the trend of data generator first tests are either for dynamic languages

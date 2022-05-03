@@ -72,9 +72,10 @@ from mercurial.encoding import fromutf8b, toutf8b
 from hypothesis import given
 from hypothesis.strategies import binary
 
+
 @given(binary())
 def test_decode_inverts_encode(s):
-    assert fromutf8b(toutf8b(s)) == s 
+    assert fromutf8b(toutf8b(s)) == s
 ```
 
 (This is an example from testing Mercurial which found two bugs:

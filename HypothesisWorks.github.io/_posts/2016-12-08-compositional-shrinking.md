@@ -41,15 +41,15 @@ Consider the example from the last post:
 
 
 ```python
-
 from hypothesis import given
 from hypothesis.strategies import integers
 
 even_numbers = integers().map(lambda x: x * 2)
 
+
 @given(even_numbers)
 def test_even_numbers_are_even(n):
-  assert n % 2 == 0
+    assert n % 2 == 0
 ```
 
 We took a strategy and composed it with a function mapping over
@@ -59,8 +59,7 @@ Suppose the Hypothesis strategy implementation looked something
 like the following:
 
 ```python
-
-class SearchStrategy(object):
+class SearchStrategy:
     def generate(self, random):
         raise NotImplementedErro()
 
@@ -142,5 +141,5 @@ shrinking.
 
 The result is significantly more convenient to use because it
 means that users will rarely or never have to write their own
-shrinking functions, and there are fewer posssible places for
+shrinking functions, and there are fewer possible places for
 shrinking and generation to get out of sync.

@@ -17,8 +17,8 @@ doesn't use Hypothesis into one that does.
 Consider the following example using [py.test](http://pytest.org/latest/) style testing:
 
 ```python
-from hypothesis.strategies import floats
 from hypothesis import given
+from hypothesis.strategies import floats
 
 
 @given(floats(), floats())
@@ -59,8 +59,8 @@ variable:
 
 
 ```python
+from hypothesis import Verbosity, given, settings
 from hypothesis.strategies import floats
-from hypothesis import given, settings, Verbosity
 
 
 @settings(verbosity=Verbosity.verbose)
@@ -162,11 +162,11 @@ want to run every time in the source code as follows:
 
 
 ```python
+from hypothesis import example, given
 from hypothesis.strategies import floats
-from hypothesis import given, example
 
 
-@example(0.0, float('nan'))
+@example(0.0, float("nan"))
 @given(floats(), floats())
 def test_floats_are_commutative(x, y):
     assert x + y == y + x

@@ -68,7 +68,7 @@ to Python pretty easily:
 
 ```python
 from hypothesis import note, settings
-from hypothesis.stateful import RuleBasedStateMachine, rule, invariant
+from hypothesis.stateful import RuleBasedStateMachine, invariant, rule
 
 
 class DieHardProblem(RuleBasedStateMachine):
@@ -110,7 +110,7 @@ class DieHardProblem(RuleBasedStateMachine):
 
     @invariant()
     def die_hard_problem_not_solved(self):
-        note("> small: {s} big: {b}".format(s=self.small, b=self.big))
+        note(f"> small: {self.small} big: {self.big}")
         assert self.big != 4
 
 

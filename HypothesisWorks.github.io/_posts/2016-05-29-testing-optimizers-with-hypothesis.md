@@ -81,9 +81,7 @@ correctly it can't find a worse one than it previously found.
 The two tests look very similar:
 
 ```python
-
-from hypothesis import given, assume, settings, Verbosity
-import hypothesis.strategies as st
+from hypothesis import Verbosity, assume, given, settings, strategies as st
 
 
 def score_items(items):

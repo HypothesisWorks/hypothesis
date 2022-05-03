@@ -22,7 +22,7 @@ the same example from the encode/decode post, this would look something like thi
 
 ```python
 from hypothesis import given
-from hypothesis.strategies import lists, tuples, characters, integers
+from hypothesis.strategies import characters, integers, lists, tuples
 
 
 @given(lists(tuples(characters(), integers(1, 10))))

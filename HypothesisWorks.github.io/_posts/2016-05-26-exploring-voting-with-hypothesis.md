@@ -98,12 +98,11 @@ composite decorator:
 ```python
 import hypothesis.strategies as st
 
+
 @st.composite
 def election(draw):
     candidates = list(range(draw(st.integers(2, 10))))
-    return draw(
-        st.lists(st.permutations(candidates), min_size=1)
-    )
+    return draw(st.lists(st.permutations(candidates), min_size=1))
 ```
 
 This first draws the set of candidates as a list of integers of size

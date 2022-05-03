@@ -74,7 +74,8 @@ To see why it's important to have the max\_iterations limit,
 consider something like:
 
 ```python
-from hypothesis import given, assume, strategies as st
+from hypothesis import assume, given, strategies as st
+
 
 @given(st.integers())
 def test_stuff(i):

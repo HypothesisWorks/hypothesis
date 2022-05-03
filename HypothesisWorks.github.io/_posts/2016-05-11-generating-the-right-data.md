@@ -22,17 +22,16 @@ them.
 Suppose we have the following class:
 
 ```python
-
-class Project(object):
+class Project:
     def __init__(self, name, start, end):
         self.name = name
         self.start = start
         self.end = end
 
     def __repr__(self):
-      return "Project '%s from %s to %s" % (
-        self.name, self.start.isoformat(), self.end.isoformat()
-      )
+        return "Project {} from {} to {}".format(
+            self.name, self.start.isoformat(), self.end.isoformat()
+        )
 ```
 
 A project has a name, a start date, and an end date.
@@ -197,14 +196,17 @@ Lets put this all together into a test that demonstrates that our names now have
 desired properties:
 
 ```python
-from hypothesis.strategies import characters, text
-from hypothesis import given
 from unicodedata import category
 
+from hypothesis import given
+from hypothesis.strategies import characters, text
 
-names = text(
-    characters(max_codepoint=1000, blacklist_categories=('Cc', 'Cs')),
-    min_size=1).map(lambda s: s.strip()).filter(lambda s: len(s) > 0)
+names = (
+    text(characters(max_codepoint=1000, blacklist_categories=("Cc", "Cs")), min_size=1)
+    .map(lambda s: s.strip())
+    .filter(lambda s: len(s) > 0)
+)
+
 
 @given(names)
 def test_names_match_our_requirements(name):
@@ -212,7 +214,7 @@ def test_names_match_our_requirements(name):
     assert name == name.strip()
     for c in name:
         assert 1 <= ord(c) <= 1000
-        assert category(c) not in ('Cc', 'Cs')
+        assert category(c) not in ("Cc", "Cs")
 ```
 
 It's not common practice to write tests for your strategies, but it can be helpful
@@ -250,17 +252,16 @@ Again we can put together a test that checks this behaviour (though we have
 less code here so it's less useful):
 
 ```python
-
 from hypothesis import given
 from hypothesis.extra.datetime import datetimes
 
-project_date = datetimes(timezones=('UTC',), min_year=2000, max_year=2100)
+project_date = datetimes(timezones=("UTC",), min_year=2000, max_year=2100)
 
 
 @given(project_date)
 def test_dates_are_in_the_right_range(date):
     assert 2000 <= date.year <= 2100
-    assert date.tzinfo._tzname == 'UTC'
+    assert date.tzinfo._tzname == "UTC"
 ```
 
 ### Putting it all together
@@ -288,7 +289,7 @@ Unfortunately, this isn't quite right:
 ```pycon
 >>> find(projects, lambda x: x.start > x.end)
 Project '0' from 2000-01-01T00:00:00.000001+00:00 to 2000-01-01T00:00:00+00:00
-``` 
+```
 
 Projects can start after they end when we use builds this way. One way to fix this would be
 to use filter():
@@ -313,8 +314,9 @@ of the dependence between the arguments, so instead we'll use builds' more advan
 cousin, *composite*:
 
 ```python
-from hypothesis.strategies import composite
 from hypothesis import assume
+from hypothesis.strategies import composite
+
 
 @composite
 def projects(draw):

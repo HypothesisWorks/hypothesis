@@ -63,8 +63,8 @@ We could test this readily enough using @given with something like the following
 
 
 ```python
-from hypothesis.strategies import integers, lists
 from hypothesis import given
+from hypothesis.strategies import integers, lists
 
 
 @given(lists(integers()))
@@ -126,11 +126,12 @@ us data which we feed into a fixed structure of test, we let Hypothesis choose w
 to perform on our data structure:
 
 ```python
-from hypothesis.stateful import rule, precondition, RuleBasedStateMachine
+from hypothesis.stateful import RuleBasedStateMachine, precondition, rule
+
 
 class HeapMachine(RuleBasedStateMachine):
     def __init__(self):
-        super(HeapMachine, self).__init__()
+        super().__init__()
         self.heap = []
 
     @rule(value=integers())
@@ -203,7 +204,7 @@ a rule has previously provided to it. Using them is as follows:
 
 ```python
 class HeapMachine(RuleBasedStateMachine):
-    Heaps = Bundle('heaps')
+    Heaps = Bundle("heaps")
 
     @rule(target=Heaps)
     def newheap(self):

@@ -27,7 +27,7 @@ taken [from Rosetta Code](http://rosettacode.org/wiki/Run-length_encoding).
 ```python
 def encode(input_string):
     count = 1
-    prev = ''
+    prev = ""
     lst = []
     for character in input_string:
         if character != prev:
@@ -45,7 +45,7 @@ def encode(input_string):
 
 
 def decode(lst):
-    q = ''
+    q = ""
     for character, count in lst:
         q += character * count
     return q
@@ -55,9 +55,9 @@ We can test this using Hypothesis and py.test as follows:
 
 
 ```python
-
 from hypothesis import given
 from hypothesis.strategies import text
+
 
 @given(text())
 def test_decode_inverts_encode(s):
@@ -84,7 +84,6 @@ find interesting problems.
 We can fix this bug by adding a guard to the encode function:
 
 ```python
-
 if not input_string:
     return []
 ```
@@ -94,12 +93,11 @@ a line from our implementation of encode which resets the count when the charact
 
 
 ```python
-
 def encode(input_string):
     if not input_string:
         return []
     count = 1
-    prev = ''
+    prev = ""
     lst = []
     for character in input_string:
         if character != prev:

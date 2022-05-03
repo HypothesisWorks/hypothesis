@@ -49,15 +49,15 @@ test failures potentially extremely confusing.
 To see this, lets consider the following example in Hypothesis:
 
 ```python
-
 from hypothesis import given
 from hypothesis.strategies import integers
 
 even_numbers = integers().map(lambda x: x * 2)
 
+
 @given(even_numbers)
 def test_even_numbers_are_even(n):
-  assert n % 2 == 0
+    assert n % 2 == 0
 ```
 
 This test always passes: We generate an even number by multiplying
@@ -67,16 +67,16 @@ Now suppose we made the test fail:
 
 
 ```python
-
 from hypothesis import given
 from hypothesis.strategies import integers
 
 even_numbers = integers().map(lambda x: x * 2)
 
+
 @given(even_numbers)
 def test_even_numbers_are_even(n):
-  assert n % 2 == 0
-  assert n <= 4
+    assert n % 2 == 0
+    assert n <= 4
 ```
 
 This test will of course fail: Any value of n which is at least 5 will
@@ -114,17 +114,17 @@ the constraint logic in our test to make this work:
 
 
 ```python
-
-from hypothesis import given, assume
+from hypothesis import assume, given
 from hypothesis.strategies import integers
 
 even_numbers = integers().map(lambda x: x * 2)
 
+
 @given(even_numbers)
 def test_even_numbers_are_even(n):
-  assume(n % 2 == 0)
-  assert n % 2 == 0
-  assert n <= 4
+    assume(n % 2 == 0)
+    assert n % 2 == 0
+    assert n <= 4
 ```
 
 (Having both the assume and the first assert there is of course

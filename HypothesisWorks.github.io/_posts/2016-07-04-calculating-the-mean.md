@@ -23,7 +23,8 @@ Consider the following test case using Hypothesis:
 
 ```python
 from hypothesis import given
-from hypothesis.strategies import lists, floats
+from hypothesis.strategies import floats, lists
+
 
 @given(lists(floats(allow_nan=False, allow_infinity=False), min_size=1))
 def test_mean_is_within_reasonable_bounds(ls):
@@ -94,6 +95,7 @@ First let's try numpy:
 ```python
 import numpy as np
 
+
 def mean(ls):
     return np.array(ls).mean()
 ```
@@ -137,6 +139,7 @@ by simply cheating and not actually calculating the mean:
 ```python
 def clamp(lo, v, hi):
     return min(hi, max(lo, v))
+
 
 def mean(ls):
     return clamp(min(ls), sum(ls) / len(ls), max(ls))

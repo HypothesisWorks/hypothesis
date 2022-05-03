@@ -50,20 +50,17 @@ We can verify that hashing works correctly fairly immediately using
 Hypothesis:
 
 ```python
-
 from argon2 import PasswordHasher
 
-from hypothesis import given
-import hypothesis.strategies as st
+from hypothesis import given, strategies as st
 
 
-class TestPasswordHasherWithHypothesis(object):
+class TestPasswordHasherWithHypothesis:
     @given(password=st.text())
     def test_a_password_verifies(self, password):
         ph = PasswordHasher()
         hash = ph.hash(password)
         assert ph.verify(hash, password)
-
 ```
 
 This takes an arbitrary text password, hashes it and verifies it against
@@ -76,14 +73,12 @@ a lot of different parameters to it. We can expand the test to vary
 them and see what happens:
 
 ```python
-
 from argon2 import PasswordHasher
 
-from hypothesis import given, assume
-import hypothesis.strategies as st
+from hypothesis import assume, given, strategies as st
 
 
-class TestPasswordHasherWithHypothesis(object):
+class TestPasswordHasherWithHypothesis:
     @given(
         password=st.text(),
         time_cost=st.integers(1, 10),
@@ -94,17 +89,23 @@ class TestPasswordHasherWithHypothesis(object):
     )
     def test_a_password_verifies(
         self,
-        password, time_cost, parallelism, memory_cost, hash_len, salt_len,
+        password,
+        time_cost,
+        parallelism,
+        memory_cost,
+        hash_len,
+        salt_len,
     ):
         assume(parallelism * 8 <= memory_cost)
         ph = PasswordHasher(
-            time_cost=time_cost, parallelism=parallelism,
+            time_cost=time_cost,
+            parallelism=parallelism,
             memory_cost=memory_cost,
-            hash_len=hash_len, salt_len=salt_len,
+            hash_len=hash_len,
+            salt_len=salt_len,
         )
         hash = ph.hash(password)
         assert ph.verify(hash, password)
-
 ```
 
 

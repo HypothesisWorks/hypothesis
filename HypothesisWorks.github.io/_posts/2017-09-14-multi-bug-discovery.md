@@ -26,6 +26,7 @@ Consider for example, the following test:
 ```python
 from hypothesis import given, strategies as st
 
+
 def mean(ls):
     return sum(ls) / len(ls)
 

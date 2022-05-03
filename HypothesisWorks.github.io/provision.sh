@@ -5,7 +5,7 @@ set -e -x
 
 sudo ln -fs /usr/share/zoneinfo/UTC /etc/localtime
 
-if [ ! $(which node) ] ; then
+if [ ! "$(command -v node)" ] ; then
     # Ugh
     curl -sL https://deb.nodesource.com/setup_4.x | sudo -E bash -
 fi
@@ -31,12 +31,12 @@ rbenv install -s 2.3.0
 
 rbenv local 2.3.0
 
-if [ ! $(which bundle) ] ; then
+if [ ! "$(command -v bundle)" ] ; then
     gem install bundler
 fi
 bundle install
 
-if [ ! $(killall bundle 2>/dev/null) ]; then
+if [ ! "$(killall bundle 2>/dev/null)" ]; then
     sleep 1
     rm -f jekyll.log
 fi

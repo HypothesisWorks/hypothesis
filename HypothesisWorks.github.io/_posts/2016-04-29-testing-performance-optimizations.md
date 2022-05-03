@@ -44,9 +44,7 @@ def merge_sort(ls):
         return ls
     else:
         k = len(ls) // 2
-        return merge_sorted_lists(
-            merge_sort(ls[:k]), merge_sort(ls[k:])
-        )
+        return merge_sorted_lists(merge_sort(ls[:k]), merge_sort(ls[k:]))
 
 
 def merge_sorted_lists(x, y):
@@ -61,7 +59,6 @@ def merge_sorted_lists(x, y):
             result.append(y[j])
             j += 1
     return result
-
 ```
 
 We want a reference implementation to test it against, so lets also implement [bubble sort](
