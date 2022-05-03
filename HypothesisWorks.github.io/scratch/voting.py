@@ -1,3 +1,13 @@
+# This file is part of Hypothesis, which may be found at
+# https://github.com/HypothesisWorks/hypothesis/
+#
+# Copyright the Hypothesis Authors.
+# Individual contributors are listed in AUTHORS.rst and the git log.
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v. 2.0. If a copy of the MPL was not distributed with this file, You can
+# obtain one at https://mozilla.org/MPL/2.0/.
+
 from collections import Counter
 
 from hypothesis import find, strategies as st
@@ -15,7 +25,6 @@ def candidates_for_election(election):
 
 def plurality_winner(election):
     counts = Counter(vote[0] for vote in election)
-    alternatives = candidates_for_election(election)
     winning_score = max(counts.values())
     winners = [c for c, v in counts.items() if v == winning_score]
     if len(winners) > 1:
