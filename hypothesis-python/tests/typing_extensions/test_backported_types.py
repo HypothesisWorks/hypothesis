@@ -233,12 +233,12 @@ def test_non_runtime_type_cannot_be_registered(non_runtime_type):
 @pytest.mark.skipif(sys.version_info <= (3, 7), reason="requires python3.8 or higher")
 @pytest.mark.parametrize("non_runtime_type", [Concatenate, ParamSpec])
 def test_callable_with_non_runtime_type(non_runtime_type):
-    strategy = st.from_type(Callable[non_runtime_type, None])
+    strategy = st.from_type(Callable[[non_runtime_type], None])
     with pytest.raises(InvalidArgument, match="cannot be resolved in Callables."):
         strategy.example()
 
     with pytest.raises(InvalidArgument, match="cannot be resolved in Callables."):
-        st.register_type_strategy(Callable[non_runtime_type, None], st.none())
+        st.register_type_strategy(Callable[[non_runtime_type], None], st.none())
 
 
 @pytest.mark.skipif(sys.version_info <= (3, 7), reason="requires python3.8 or higher")
