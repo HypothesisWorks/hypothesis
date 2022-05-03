@@ -1209,10 +1209,10 @@ def given(
 
                 generated_seed = wrapped_test._hypothesis_internal_use_generated_seed
                 with local_settings(settings):
-                    if (
+                    if generated_seed is not None and (
                         current_verbosity() >= Verbosity.verbose
                         or is_in_ci()
-                        or not (state.failed_normally or generated_seed is None)
+                        or not state.failed_normally
                     ):
                         if running_under_pytest:
                             report(

@@ -120,7 +120,7 @@ def test_seed(i):
 """
 
 
-def test_seed_shows_in_verbose_mode(testdir, tmpdir):
+def test_seed_shows_in_verbose_mode(testdir):
     script = testdir.makepyfile(SIMPLE_SEEDING_TEST)
     verbosity_args = "--hypothesis-verbosity=verbose"
 
@@ -131,13 +131,8 @@ def test_seed_shows_in_verbose_mode(testdir, tmpdir):
     match = CONTAINS_SEED_INSTRUCTION.search(initial_output)
     assert match is not None
 
-    rerun = testdir.runpytest(script, verbosity_args, "--strict-markers", match.group(0))
-    rerun_output = "\n".join(rerun.stdout.lines)
 
-    assert "--hypothesis-seed" in rerun_output
-
-
-def test_seed_is_hidden_when_not_in_verbose_mode(testdir, tmpdir):
+def test_seed_is_hidden_when_not_in_verbose_mode(testdir):
     script = testdir.makepyfile(SIMPLE_SEEDING_TEST)
     verbosity_args = "--hypothesis-verbosity=normal"
 
@@ -147,4 +142,3 @@ def test_seed_is_hidden_when_not_in_verbose_mode(testdir, tmpdir):
 
     match = CONTAINS_SEED_INSTRUCTION.search(initial_output)
     assert match is None
-
