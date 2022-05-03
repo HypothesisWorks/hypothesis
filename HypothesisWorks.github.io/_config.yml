@@ -1,0 +1,39 @@
+# Site settings
+title: Hypothesis
+email: hello@hypothesis.works
+description: "Test faster, fix more"
+
+#baseurl: "" # the subpath of your site, e.g. /blog/
+url: http://hypothesis.works
+
+# Build settings
+markdown: kramdown
+kramdown:
+  input: GFM
+
+permalink: /articles/:title/
+
+highlighter: rouge
+
+#Other Global Configuration
+exclude:
+  - README.md
+  - LICENSE.md
+  - CNAME
+  - Gemfile
+  - Gemfile.lock
+  - Makefile
+  - provision.sh
+  - Vagrantfile
+  - Dockerfile
+
+excerpt_separator: <!--more-->
+
+#show the jumbotron header on index page
+show_blog_header: true
+
+tag_descriptions:
+  python: "Articles specific to the Python implementation of Hypothesis"
+
+gems:
+  - jekyll-redirect-from
