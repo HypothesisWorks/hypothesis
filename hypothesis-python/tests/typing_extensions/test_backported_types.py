@@ -241,6 +241,7 @@ def test_callable_with_non_runtime_type(non_runtime_type):
         st.register_type_strategy(Callable[non_runtime_type], st.none())
 
 
+@pytest.mark.skipif(sys.version_info <= (3, 7), reason="requires python3.8 or higher")
 def test_callable_return_typegard_type():
     strategy = st.from_type(Callable[[], TypeGuard])
     with pytest.raises(InvalidArgument, match="Return type of Callables cannot be"):
