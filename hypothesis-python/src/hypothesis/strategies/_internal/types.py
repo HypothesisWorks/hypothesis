@@ -938,9 +938,8 @@ def resolve_Callable(thing):
             if stuff in ConcatenateTypes + ParamSpecTypes:
                 raise InvalidArgument(f"{stuff} cannot be arguments in Callables.")
     # TypeGuard can never be returned by Callable types
-    for return_type in thing.__args__[1]:
-        if return_type in TypeGuardTypes:
-            raise InvalidArgument(f"Return type of Callables cannot be {return_type}.")
+    if thing.__args__[1] in TypeGuardTypes:
+        raise InvalidArgument(f"Return type of Callables cannot be {thing.__args__[1]}.")
 
     # Note that a list can only appear in __args__ under Python 3.9 with the
     # collections.abc version; see https://bugs.python.org/issue42195
