@@ -247,5 +247,5 @@ def test_callable_return_typegard_type():
     with pytest.raises(InvalidArgument, match="Return type of Callables cannot be"):
         strategy.example()
 
-    with pytest.raises(InvalidArgument, match="Return type of Callables cannot be"):
+    with pytest.raises(InvalidArgument, match="Cannot register generic type"):
         st.register_type_strategy(Callable[[], TypeGuard[int]], st.none())
