@@ -938,7 +938,7 @@ def resolve_Callable(thing):
             if stuff in ConcatenateTypes + ParamSpecTypes:
                 raise InvalidArgument(f"{stuff} cannot be arguments in Callables.")
     # TypeGuard can never be returned by Callable types
-    if thing.__args__[1] in TypeGuardTypes:
+    if thing.__args__[-1] in TypeGuardTypes:
         raise InvalidArgument(
             f"Return type of Callables cannot be {thing.__args__[1]}."
         )
