@@ -126,6 +126,7 @@ TestFunc = TypeVar("TestFunc", bound=Callable)
 
 
 running_under_pytest = False
+pytest_shows_exceptiongroups = True
 global_force_seed = None
 _hypothesis_global_random = None
 
@@ -436,7 +437,7 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
                     err = new
 
                 yield (fragments_reported, err)
-                if state.settings.report_multiple_bugs:
+                if state.settings.report_multiple_bugs and pytest_shows_exceptiongroups:
                     continue
                 break
             finally:
@@ -840,7 +841,7 @@ class StateForActualGivenExecution:
 
         if not self.falsifying_examples:
             return
-        elif not self.settings.report_multiple_bugs:
+        elif not (self.settings.report_multiple_bugs and pytest_shows_exceptiongroups):
             # Pretend that we only found one failure, by discarding the others.
             del self.falsifying_examples[:-1]
 
