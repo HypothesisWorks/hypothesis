@@ -935,7 +935,7 @@ def resolve_Callable(thing):
     # Concatenate and ParamSpec can never be registered or resolved at Callable arguments
     # if it is a single argument it will not be iterable
     if not isinstance(thing.__args__[0], Iterable):
-        thing_args = [thing.__args__[0]]
+        thing_args = thing.__args__[:-1]  # for python 3.8
     else:
         thing_args = thing.__args__[0]
     for stuff in thing_args:
