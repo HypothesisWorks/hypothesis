@@ -939,7 +939,9 @@ def resolve_Callable(thing):
     else:
         thing_args = thing.__args__[0]
     for stuff in thing_args:
-        if stuff in ConcatenateTypes + ParamSpecTypes:
+        if (
+            getattr(stuff, "__origin__", None) in ConcatenateTypes + ParamSpecTypes
+        ) or (type(stuff) in ConcatenateTypes + ParamSpecTypes):
             raise InvalidArgument(f"{stuff} cannot be arguments in Callables.")
     # TypeGuard can never be returned by Callable types
     if getattr(thing.__args__[-1], "__origin__", None) in TypeGuardTypes:
