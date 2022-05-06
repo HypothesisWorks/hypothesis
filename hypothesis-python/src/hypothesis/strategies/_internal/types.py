@@ -943,13 +943,14 @@ def resolve_Callable(thing):
             getattr(stuff, "__origin__", None) in ConcatenateTypes + ParamSpecTypes
         ) or (type(stuff) in ConcatenateTypes + ParamSpecTypes):
             raise InvalidArgument(
-                f"Hypothesis can't yet construct a strategy for instances of a Callable type "
+                "Hypothesis can't yet construct a strategy for instances of a Callable type "
                 f"parametrized by {stuff!r}.  Consider using an explicit strategy, or opening an issue."
             )
     # TypeGuard can never be returned by Callable types
     if getattr(thing.__args__[-1], "__origin__", None) in TypeGuardTypes:
         raise InvalidArgument(
-            f"Return type of Callables cannot be {thing.__args__[-1]}."
+            f"Hypothesis cannot yet construct a strategy for callables which are PEP-647 TypeGuards(got {thing.args[-1]!r})."
+            "Consider using an explicit strategy, or opening an issue."
         )
 
     # Note that a list can only appear in __args__ under Python 3.9 with the

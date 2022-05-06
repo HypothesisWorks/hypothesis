@@ -222,7 +222,9 @@ def test_non_runtime_type_cannot_be_resolved(non_runtime_type):
         strategy.example()
 
 
-@pytest.mark.parametrize("non_runtime_type", NON_RUNTIME_TYPES)
+@pytest.mark.parametrize(
+    "non_runtime_type", sorted(NON_RUNTIME_TYPES, key=lambda t: t.__name__)
+)
 def test_non_runtime_type_cannot_be_registered(non_runtime_type):
     with pytest.raises(
         InvalidArgument, match="there is no such thing as a runtime instance"
