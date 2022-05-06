@@ -213,7 +213,9 @@ def test_final_type(final_var_type):
         st.register_type_strategy(final_var_type, st.none())
 
 
-@pytest.mark.parametrize("non_runtime_type", NON_RUNTIME_TYPES)
+@pytest.mark.parametrize(
+    "non_runtime_type", sorted(NON_RUNTIME_TYPES, key=lambda t: str(t))
+)
 def test_non_runtime_type_cannot_be_resolved(non_runtime_type):
     strategy = st.from_type(non_runtime_type)
     with pytest.raises(
@@ -223,7 +225,7 @@ def test_non_runtime_type_cannot_be_resolved(non_runtime_type):
 
 
 @pytest.mark.parametrize(
-    "non_runtime_type", sorted(NON_RUNTIME_TYPES, key=lambda t: t.__name__)
+    "non_runtime_type", sorted(NON_RUNTIME_TYPES, key=lambda t: str(t))
 )
 def test_non_runtime_type_cannot_be_registered(non_runtime_type):
     with pytest.raises(
@@ -237,7 +239,10 @@ def test_callable_with_contatenate():
     P = ParamSpec("P")
     callable = Callable[Concatenate[int, P], None]
     strategy = st.from_type(callable)
-    with pytest.raises(InvalidArgument, match="cannot be arguments in Callables."):
+    with pytest.raises(
+        InvalidArgument,
+        match="Hypothesis can't yet construct a strategy for instances of a Callable type",
+    ):
         strategy.example()
 
     with pytest.raises(InvalidArgument, match="Cannot register generic type"):
@@ -249,7 +254,10 @@ def test_callable_with_paramspec():
     P = ParamSpec("P")
     callable = Callable[[P], None]
     strategy = st.from_type(callable)
-    with pytest.raises(InvalidArgument, match="cannot be arguments in Callables."):
+    with pytest.raises(
+        InvalidArgument,
+        match="Hypothesis can't yet construct a strategy for instances of a Callable type",
+    ):
         strategy.example()
 
     with pytest.raises(InvalidArgument, match="Cannot register generic type"):
@@ -259,7 +267,10 @@ def test_callable_with_paramspec():
 @pytest.mark.skipif(sys.version_info <= (3, 7), reason="requires python3.8 or higher")
 def test_callable_return_typegard_type():
     strategy = st.from_type(Callable[[], TypeGuard[int]])
-    with pytest.raises(InvalidArgument, match="Return type of Callables cannot be"):
+    with pytest.raises(
+        InvalidArgument,
+        match="Hypothesis cannot yet construct a strategy for callables which are PEP-647 TypeGuards",
+    ):
         strategy.example()
 
     with pytest.raises(InvalidArgument, match="Cannot register generic type"):

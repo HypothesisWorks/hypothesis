@@ -949,7 +949,7 @@ def resolve_Callable(thing):
     # TypeGuard can never be returned by Callable types
     if getattr(thing.__args__[-1], "__origin__", None) in TypeGuardTypes:
         raise InvalidArgument(
-            f"Hypothesis cannot yet construct a strategy for callables which are PEP-647 TypeGuards(got {thing.args[-1]!r})."
+            f"Hypothesis cannot yet construct a strategy for callables which are PEP-647 TypeGuards(got {thing.__args__[-1]!r})."
             "Consider using an explicit strategy, or opening an issue."
         )
 
