@@ -182,85 +182,75 @@ FLOAT_STRATEGY_DO_DRAW_LABEL = calc_label_from_name(
 )
 
 
+def _sign_aware_lte(x: float, y: float) -> bool:
+    """Less-than-or-equals, but strictly orders -0.0 and 0.0"""
+    if x == 0.0 == y:
+        return math.copysign(1.0, x) <= math.copysign(1.0, y)
+    else:
+        return x <= y
+
+
 class FloatStrategy(SearchStrategy):
     """A strategy for floating point numbers."""
 
     def __init__(
         self,
-        allow_infinity: bool,
-        allow_nan: bool,
-        allow_subnormal: bool,
-        width: int,
-        bounds: Optional[Tuple[float, float]] = None,
+        min_value: float = -math.inf,
+        max_value: float = math.inf,
+        allow_nan: bool = True,
     ):
         super().__init__()
-        assert isinstance(allow_infinity, bool)
+        assert isinstance(min_value, float)
+        assert isinstance(max_value, float)
         assert isinstance(allow_nan, bool)
-        assert isinstance(allow_subnormal, bool)
-        assert width in (16, 32, 64)
-        self.allow_infinity = allow_infinity
+        self.min_value = min_value
+        self.max_value = max_value
         self.allow_nan = allow_nan
-        self.allow_subnormal = allow_subnormal
-        self.width = width
-        self.bounds = bounds
-        if bounds:
-            (lower_bound, upper_bound) = bounds
-            assert 0 <= lower_bound < upper_bound
-            assert math.copysign(1, lower_bound) == 1, "lower bound may not be -0.0"
-            self.nasty_floats = None
+
+        if math.isfinite(min_value) and math.isfinite(max_value):
+            self.finite_range = max_value - min_value
             self.sampler = None
         else:
-            self.nasty_floats = [
-                float_of(f, self.width) for f in NASTY_FLOATS if self.permitted(f)
-            ]
+            self.finite_range = None
+            self.nasty_floats = [f for f in NASTY_FLOATS if self.permitted(f)]
+            print(self.nasty_floats)
             weights = [0.2 * len(self.nasty_floats)] + [0.8] * len(self.nasty_floats)
             self.sampler = d.Sampler(weights)
+        assert not (allow_nan and self.finite_range is not None)
 
     def __repr__(self):
-        return "{}(allow_infinity={}, allow_nan={}, width={}, bounds={})".format(
+        return "{}(min_value={}, max_value={}, allow_nan={})".format(
             self.__class__.__name__,
-            self.allow_infinity,
+            self.min_value,
+            self.max_value,
             self.allow_nan,
-            self.width,
-            self.bounds,
         )
 
     def permitted(self, f):
         assert isinstance(f, float)
-        # NOTE: We don't bother checking self.bounds because the draw logic is known
-        # to stay in-bounds.
-        if not self.allow_infinity and math.isinf(f):
-            return False
-        if not self.allow_nan and math.isnan(f):
-            return False
-        if self.width < 64:
-            try:
-                float_of(f, self.width)
-            except OverflowError:
-                return False
-        if not self.allow_subnormal and 0 < abs(f) < width_smallest_normals[self.width]:
-            return False
-        return True
+        if math.isnan(f):
+            return self.allow_nan
+        return _sign_aware_lte(self.min_value, f) and _sign_aware_lte(f, self.max_value)
 
     def do_draw(self, data):
         while True:
             data.start_example(FLOAT_STRATEGY_DO_DRAW_LABEL)
             i = self.sampler.sample(data) if self.sampler else 0
             if i == 0:
-                if self.bounds:
-                    lower, upper = self.bounds
-                    result = lower + (upper - lower) * d.fractional_float(data)
+                if self.finite_range:
+                    result = self.min_value + self.finite_range * d.fractional_float(
+                        data
+                    )
                 else:
                     result = flt.draw_float(data)
+                    if not self.permitted(result):
+                        data.stop_example(discard=True)
+                        continue
             else:
                 result = self.nasty_floats[i - 1]
                 flt.write_float(data, result)
-            if self.permitted(result):
-                data.stop_example()
-                if self.width < 64:
-                    return float_of(result, self.width)
-                return result
-            data.stop_example(discard=True)
+            data.stop_example()
+            return result
 
 
 @cacheable
@@ -474,67 +464,15 @@ def floats(
                 f"smallest negative normal {-smallest_normal}"
             )
 
-    # Any type hint silences mypy when we unpack these parameters
-    kw: Any = {"allow_subnormal": allow_subnormal, "width": width}
-    unbounded_floats = FloatStrategy(
-        allow_infinity=allow_infinity, allow_nan=allow_nan, **kw
+    result = FloatStrategy(
+        min_value if min_value is not None else float("-inf"),
+        max_value if max_value is not None else float("inf"),
+        allow_nan=allow_nan,
     )
-    if min_value is None and max_value is None:
-        return unbounded_floats
-    elif min_value is not None and max_value is not None:
-        if min_value == max_value:
-            assert isinstance(min_value, float)
-            result = just(min_value)
-        elif is_negative(min_value):
-            if is_negative(max_value):
-                return floats(min_value=-max_value, max_value=-min_value, **kw).map(
-                    operator.neg
-                )
-            else:
-                return floats(min_value=0.0, max_value=max_value, **kw) | floats(
-                    min_value=0.0, max_value=-min_value, **kw
-                ).map(
-                    operator.neg  # type: ignore
-                )
-        elif (
-            count_between_floats(min_value, max_value, width) > 1000
-            or not allow_subnormal
-        ):
-            assert not allow_infinity
-            assert not allow_nan
-            assert isinstance(min_value, float)
-            assert isinstance(max_value, float)
-            return FloatStrategy(
-                allow_infinity=False,
-                allow_nan=False,
-                bounds=(min_value, max_value),
-                **kw,
-            )
-        else:
-            ub_int = float_to_int(max_value, width)
-            lb_int = float_to_int(min_value, width)
-            assert lb_int <= ub_int
-            result = integers(min_value=lb_int, max_value=ub_int).map(
-                lambda x: int_to_float(x, width)
-            )
-    elif min_value is not None:
-        assert isinstance(min_value, float)
-        if is_negative(min_value):
-            # Ignore known bug https://github.com/python/mypy/issues/6697
-            return unbounded_floats.map(abs) | floats(  # type: ignore
-                min_value=min_value, max_value=-0.0, **kw
-            )
-        else:
-            result = unbounded_floats.map(lambda x: min_value + abs(x))
-    else:
-        assert isinstance(max_value, float)
-        if not is_negative(max_value):
-            return floats(
-                min_value=0.0, max_value=max_value, **kw
-            ) | unbounded_floats.map(lambda x: -abs(x))
-        else:
-            result = unbounded_floats.map(lambda x: max_value - abs(x))
 
+    if not allow_subnormal:
+        smallest = width_smallest_normals[width]
+        result = result.filter(lambda x: abs(x) >= smallest)
     if width < 64:
 
         def downcast(x):
