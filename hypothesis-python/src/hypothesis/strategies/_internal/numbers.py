@@ -9,11 +9,10 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
-import operator
 from decimal import Decimal
 from fractions import Fraction
 from sys import float_info
-from typing import Any, Optional, Tuple, Union
+from typing import Optional, Union
 
 from hypothesis.control import reject
 from hypothesis.errors import InvalidArgument
@@ -21,9 +20,7 @@ from hypothesis.internal.conjecture import floats as flt, utils as d
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.filtering import get_integer_predicate_bounds
 from hypothesis.internal.floats import (
-    count_between_floats,
     float_of,
-    float_to_int,
     int_to_float,
     is_negative,
     next_down_normal,
@@ -36,7 +33,7 @@ from hypothesis.internal.validation import (
     check_valid_bound,
     check_valid_interval,
 )
-from hypothesis.strategies._internal.misc import just, nothing
+from hypothesis.strategies._internal.misc import nothing
 from hypothesis.strategies._internal.strategies import SearchStrategy
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 
