@@ -16,7 +16,8 @@ import setuptools
 
 if sys.version_info[:2] < (3, 7):
     raise Exception(
-        "This version of Python is too old to install new versions of Hypothesis.  "
+        "You are trying to install Hypothesis using Python "
+        f"{sys.version.split()[0]}, but it requires Python 3.7 or later."
         "Update `pip` and `setuptools`, try again, and you will automatically "
         "get the latest compatible version of Hypothesis instead.  "
         "See also https://python3statement.org/practicalities/"
