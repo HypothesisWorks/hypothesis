@@ -130,7 +130,7 @@ jobs:
     - name: Install dependencies
       run: |
         pip install --upgrade setuptools pip wheel
-        pip install -r requirements/test.txt fakeredis typing-extensions
+        pip install -r requirements/coverage.txt
         pip install hypothesis-python/[all]
     - name: Run tests
       run: python -m pytest --numprocesses auto hypothesis-python/tests/ --ignore=hypothesis-python/tests/quality/ --ignore=hypothesis-python/tests/ghostwriter/
