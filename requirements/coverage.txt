@@ -4,8 +4,6 @@
 #
 #    pip-compile --output-file=requirements/coverage.txt hypothesis-python/setup.py requirements/coverage.in
 #
-async-timeout==4.0.2
-    # via redis
 attrs==21.4.0
     # via
     #   hypothesis (hypothesis-python/setup.py)
@@ -26,7 +24,7 @@ dpcontracts==0.6.0
     # via -r requirements/coverage.in
 execnet==1.9.0
     # via pytest-xdist
-fakeredis==1.7.4
+fakeredis==1.7.1
     # via -r requirements/coverage.in
 iniconfig==1.1.1
     # via pytest
@@ -84,7 +82,7 @@ pytz==2022.1
     #   pandas
 pyyaml==6.0
     # via libcst
-redis==4.2.2
+redis==4.1.4
     # via fakeredis
 six==1.16.0
     # via
