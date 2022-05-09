@@ -192,8 +192,8 @@ class FloatStrategy(SearchStrategy):
 
     def __init__(
         self,
-        min_value: float = -math.inf,
-        max_value: float = math.inf,
+        min_value: Real = -math.inf,
+        max_value: Real = math.inf,
         allow_nan: bool = True,
     ):
         super().__init__()
@@ -204,16 +204,21 @@ class FloatStrategy(SearchStrategy):
         self.max_value = max_value
         self.allow_nan = allow_nan
 
-        if math.isfinite(min_value) and math.isfinite(max_value):
-            self.finite_range = max_value - min_value
-            self.sampler = None
-        else:
-            self.finite_range = None
-            self.nasty_floats = [f for f in NASTY_FLOATS if self.permitted(f)]
-            print(self.nasty_floats)
-            weights = [0.2 * len(self.nasty_floats)] + [0.8] * len(self.nasty_floats)
-            self.sampler = d.Sampler(weights)
-        assert not (allow_nan and self.finite_range is not None)
+        self.nasty_floats = [f for f in NASTY_FLOATS if self.permitted(f)]
+        weights = [0.2 * len(self.nasty_floats)] + [0.8] * len(self.nasty_floats)
+        self.sampler = d.Sampler(weights) if self.nasty_floats else None
+
+        self.forced_sign_bit: Optional[int] = None
+        if _sign_aware_lte(0.0, max_value):
+            offset = max(0.0, min_value)
+            self.pos_offset_and_size = (offset, max_value - offset)
+            if _sign_aware_lte(0.0, min_value):
+                self.forced_sign_bit = 0
+        if not _sign_aware_lte(0.0, min_value):
+            offset = min(-0.0, max_value)
+            self.neg_offset_and_size = (offset, abs(min_value + offset))
+            if not _sign_aware_lte(0.0, max_value):
+                self.forced_sign_bit = 1
 
     def __repr__(self):
         return "{}(min_value={}, max_value={}, allow_nan={})".format(
@@ -231,22 +236,36 @@ class FloatStrategy(SearchStrategy):
 
     def do_draw(self, data):
         while True:
+            # print("XXX", repr(bytes(data.buffer)), file=sys.stderr)
             data.start_example(FLOAT_STRATEGY_DO_DRAW_LABEL)
             i = self.sampler.sample(data) if self.sampler else 0
             if i == 0:
-                if self.finite_range:
-                    result = self.min_value + self.finite_range * d.fractional_float(
-                        data
-                    )
+                is_negative = data.draw_bits(1, forced=self.forced_sign_bit)
+                if is_negative:
+                    offset, size = self.neg_offset_and_size
+                    if math.isfinite(size):
+                        result = offset - d.fractional_float(data) * size
+                    else:
+                        result = offset - flt.lex_to_float(data.draw_bits(64))
                 else:
-                    result = flt.draw_float(data)
-                    if not self.permitted(result):
-                        data.stop_example(discard=True)
-                        continue
+                    offset, size = self.pos_offset_and_size
+                    if math.isfinite(size):
+                        result = offset + d.fractional_float(data) * size
+                    else:
+                        result = offset + flt.lex_to_float(data.draw_bits(64))
+                if not self.permitted(result):
+                    data.stop_example(discard=True)
+                    # print("  discard:", result, file=sys.stderr)
+                    continue
             else:
                 result = self.nasty_floats[i - 1]
-                flt.write_float(data, result)
+
+                sign = flt.float_to_int(result) >> 63
+                data.draw_bits(1, forced=sign)
+                data.draw_bits(64, forced=flt.float_to_lex(abs(result)))
+
             data.stop_example()
+            # print("OOO", repr(bytes(data.buffer)), len(data.buffer), "i=", i, result, file=sys.stderr)
             return result
 
 
@@ -461,7 +480,7 @@ def floats(
                 f"smallest negative normal {-smallest_normal}"
             )
 
-    result = FloatStrategy(
+    result: SearchStrategy = FloatStrategy(
         min_value if min_value is not None else float("-inf"),
         max_value if max_value is not None else float("inf"),
         allow_nan=allow_nan,
