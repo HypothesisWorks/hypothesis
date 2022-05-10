@@ -1071,7 +1071,7 @@ class Shrinker:
             self.examples,
             lambda ex: (
                 ex.label == DRAW_FLOAT_LABEL
-                and len(ex.children) == 2
+                and len(ex.children) == 1
                 and ex.children[0].length == 8
             ),
         )

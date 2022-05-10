@@ -236,7 +236,6 @@ class FloatStrategy(SearchStrategy):
 
     def do_draw(self, data):
         while True:
-            # print("XXX", repr(bytes(data.buffer)), file=sys.stderr)
             data.start_example(FLOAT_STRATEGY_DO_DRAW_LABEL)
             i = self.sampler.sample(data) if self.sampler else 0
             if i == 0:
@@ -246,26 +245,23 @@ class FloatStrategy(SearchStrategy):
                     if math.isfinite(size):
                         result = offset - d.fractional_float(data) * size
                     else:
-                        result = offset - flt.lex_to_float(data.draw_bits(64))
+                        result = offset - flt.draw_float(data)
                 else:
                     offset, size = self.pos_offset_and_size
                     if math.isfinite(size):
                         result = offset + d.fractional_float(data) * size
                     else:
-                        result = offset + flt.lex_to_float(data.draw_bits(64))
+                        result = offset + flt.draw_float(data)
                 if not self.permitted(result):
-                    data.stop_example(discard=True)
-                    # print("  discard:", result, file=sys.stderr)
                     continue
             else:
                 result = self.nasty_floats[i - 1]
 
                 sign = flt.float_to_int(result) >> 63
                 data.draw_bits(1, forced=sign)
-                data.draw_bits(64, forced=flt.float_to_lex(abs(result)))
+                flt.write_float(data, result)
 
             data.stop_example()
-            # print("OOO", repr(bytes(data.buffer)), len(data.buffer), "i=", i, result, file=sys.stderr)
             return result
 
 
