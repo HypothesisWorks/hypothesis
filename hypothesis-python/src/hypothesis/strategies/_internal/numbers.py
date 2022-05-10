@@ -192,13 +192,11 @@ class FloatStrategy(SearchStrategy):
 
     def __init__(
         self,
-        min_value: Real = -math.inf,
-        max_value: Real = math.inf,
+        min_value: float = -math.inf,
+        max_value: float = math.inf,
         allow_nan: bool = True,
     ):
         super().__init__()
-        assert isinstance(min_value, float)
-        assert isinstance(max_value, float)
         assert isinstance(allow_nan, bool)
         self.min_value = min_value
         self.max_value = max_value
@@ -476,11 +474,11 @@ def floats(
                 f"smallest negative normal {-smallest_normal}"
             )
 
-    result: SearchStrategy = FloatStrategy(
-        min_value if min_value is not None else float("-inf"),
-        max_value if max_value is not None else float("inf"),
-        allow_nan=allow_nan,
-    )
+    min_value = min_value if min_value is not None else float("-inf")
+    max_value = max_value if max_value is not None else float("inf")
+    assert isinstance(min_value, float)
+    assert isinstance(max_value, float)
+    result: SearchStrategy = FloatStrategy(min_value, max_value, allow_nan=allow_nan)
 
     if not allow_subnormal:
         smallest = width_smallest_normals[width]
