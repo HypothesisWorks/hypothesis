@@ -163,10 +163,6 @@ def test_resolving_standard_callable_ellipsis(x: collections.abc.Callable[..., E
     assert isinstance(x(1, 2, 3, a=4, b=5, c=6), Elem)
 
 
-@pytest.mark.skipif(
-    sys.version_info[:3] == (3, 11, 0),
-    reason="https://github.com/python/cpython/issues/91621",
-)
 @given(...)
 def test_resolving_standard_callable_no_args(x: collections.abc.Callable[[], Elem]):
     assert isinstance(x, collections.abc.Callable)

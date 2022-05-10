@@ -83,7 +83,7 @@ their individual contributions.
 * `Katelyn Gigante <https://github.com/silasary>`_
 * `Katrina Durance <https://github.com/kdurance>`_
 * `kbara <https://www.github.com/kbara>`_
-* Keeri Tramm
+* `Keeri Tramm <keerilynn>`_
 * `Kristian Glass <https://www.github.com/doismellburning>`_
 * `Krzysztof Przybyła <https://github.com/kprzybyla>`_
 * `Kyle Reeve <https://www.github.com/kreeve>`_ (krzw92@gmail.com)

@@ -30,7 +30,7 @@ iniconfig==1.1.1
     # via pytest
 lark-parser==0.12.0
     # via -r requirements/coverage.in
-libcst==0.4.1
+libcst==0.4.2
     # via -r requirements/coverage.in
 mypy-extensions==0.4.3
     # via
@@ -104,5 +104,5 @@ typing-extensions==4.2.0
     #   typing-inspect
 typing-inspect==0.7.1
     # via libcst
-wrapt==1.14.0
+wrapt==1.14.1
     # via deprecated
