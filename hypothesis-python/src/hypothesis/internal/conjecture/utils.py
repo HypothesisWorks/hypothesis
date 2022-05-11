@@ -18,7 +18,7 @@ from functools import lru_cache
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import floor, int_from_bytes
-from hypothesis.internal.floats import int_to_float
+from hypothesis.internal.floats import int_to_float, next_up
 
 LABEL_MASK = 2**64 - 1
 
@@ -440,32 +440,44 @@ class many:
                 self.force_stop = True
 
 
+SMALLEST_POSITIVE_FLOAT = next_up(0.0) or sys.float_info.min
+
+
 @lru_cache()
 def _calc_p_continue(desired_avg, max_size):
     """Return the p_continue which will generate the desired average size."""
+    assert desired_avg <= max_size, (desired_avg, max_size)
     if desired_avg == max_size:
         return 1.0
     p_continue = 1 - 1.0 / (1 + desired_avg)
     if p_continue == 0 or max_size == float("inf"):
         assert 0 <= p_continue < 1, p_continue
         return p_continue
+    assert 0 < p_continue < 1, p_continue
     # For small max_size, the infinite-series p_continue is a poor approximation,
     # and while we can't solve the polynomial a few rounds of iteration quickly
     # gets us a good approximate solution in almost all cases (sometimes exact!).
     while _p_continue_to_avg(p_continue, max_size) > desired_avg:
         # This is impossible over the reals, but *can* happen with floats.
         p_continue -= 0.0001
+        # If we've reached zero or gone negative, we want to break out of this loop,
+        # and do so even if we're on a system with the unsafe denormals-are-zero flag.
+        # We make that an explicit error in st.floats(), but here we'd prefer to
+        # just get somewhat worse precision on collection lengths.
+        if p_continue < SMALLEST_POSITIVE_FLOAT:
+            p_continue = SMALLEST_POSITIVE_FLOAT
+            break
     # Let's binary-search our way to a better estimate!  We tried fancier options
     # like gradient descent, but this is numerically stable and works better.
     hi = 1.0
     while desired_avg - _p_continue_to_avg(p_continue, max_size) > 0.01:
-        assert p_continue < hi
+        assert 0 < p_continue < hi, (p_continue, hi)
         mid = (p_continue + hi) / 2
         if _p_continue_to_avg(mid, max_size) <= desired_avg:
             p_continue = mid
         else:
             hi = mid
-    assert 0 < p_continue < 1
+    assert 0 < p_continue < 1, p_continue
     assert _p_continue_to_avg(p_continue, max_size) <= desired_avg
     return p_continue
 
