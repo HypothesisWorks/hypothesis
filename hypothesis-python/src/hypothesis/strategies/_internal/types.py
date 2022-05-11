@@ -858,7 +858,8 @@ def resolve_Callable(thing):
 
     pep612 = ConcatenateTypes + ParamSpecTypes
     for arg in args_types:
-        if isinstance(arg, pep612) or getattr(arg, "__origin__", None) in pep612:
+        # awkward dance because you can't use Concatenate in isistance or issubclass
+        if getattr(arg, "__origin__", arg) in pep612 or type(arg) in pep612:
             raise InvalidArgument(
                 "Hypothesis can't yet construct a strategy for instances of a "
                 f"Callable type parametrized by {arg!r}.  Consider using an "
