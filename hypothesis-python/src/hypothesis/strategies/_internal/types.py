@@ -23,7 +23,6 @@ import re
 import sys
 import typing
 import uuid
-from collections.abc import Iterable
 from pathlib import PurePath
 from types import FunctionType
 
@@ -850,34 +849,31 @@ def resolve_Callable(thing):
     if not thing.__args__:  # pragma: no cover  # varies by minor version
         return st.functions()
 
-    # Concatenate and ParamSpec can never be registered or resolved at Callable arguments
-    # if it is a single argument it will not be iterable
-    if not isinstance(thing.__args__[0], Iterable):
-        thing_args = thing.__args__[:-1]  # for python 3.8
-    else:
-        thing_args = thing.__args__[0]
-    for stuff in thing_args:
-        if (
-            getattr(stuff, "__origin__", None) in ConcatenateTypes + ParamSpecTypes
-        ) or (type(stuff) in ConcatenateTypes + ParamSpecTypes):
-            raise InvalidArgument(
-                "Hypothesis can't yet construct a strategy for instances of a Callable type "
-                f"parametrized by {stuff!r}.  Consider using an explicit strategy, or opening an issue."
-            )
-    # TypeGuard can never be returned by Callable types
-    if getattr(thing.__args__[-1], "__origin__", None) in TypeGuardTypes:
-        raise InvalidArgument(
-            f"Hypothesis cannot yet construct a strategy for callables which are PEP-647 TypeGuards(got {thing.__args__[-1]!r})."
-            "Consider using an explicit strategy, or opening an issue."
-        )
+    *args_types, return_type = thing.__args__
 
     # Note that a list can only appear in __args__ under Python 3.9 with the
     # collections.abc version; see https://bugs.python.org/issue42195
+    if len(args_types) == 1 and isinstance(args_types[0], list):
+        args_types = tuple(args_types[0])
+
+    pep612 = ConcatenateTypes + ParamSpecTypes
+    for arg in args_types:
+        if isinstance(arg, pep612) or getattr(arg, "__origin__", None) in pep612:
+            raise InvalidArgument(
+                "Hypothesis can't yet construct a strategy for instances of a "
+                f"Callable type parametrized by {arg!r}.  Consider using an "
+                "explicit strategy, or opening an issue."
+            )
+    if getattr(return_type, "__origin__", None) in TypeGuardTypes:
+        raise InvalidArgument(
+            "Hypothesis cannot yet construct a strategy for callables which "
+            f"are PEP-647 TypeGuards (got {return_type!r}).  "
+            "Consider using an explicit strategy, or opening an issue."
+        )
+
     return st.functions(
-        like=(lambda: None)
-        if len(thing.__args__) == 1 or thing.__args__[0] == []
-        else (lambda *a, **k: None),
-        returns=st.from_type(thing.__args__[-1]),
+        like=(lambda *a, **k: None) if args_types else (lambda: None),
+        returns=st.from_type(return_type),
     )
 
 
