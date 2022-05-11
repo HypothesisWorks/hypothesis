@@ -20,7 +20,7 @@ def test_fuzz_event(value):
 
 @given(
     specifier=st.from_type(hypothesis.strategies.SearchStrategy),
-    condition=st.functions(like=lambda *a, **k: ..., returns=st.booleans()),
+    condition=st.functions(like=lambda *a, **k: None, returns=st.booleans()),
     settings=st.one_of(st.none(), st.builds(settings)),
     random=st.one_of(st.none(), st.builds(Random)),
     database_key=st.one_of(st.none(), st.binary()),

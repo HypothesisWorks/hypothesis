@@ -90,6 +90,37 @@ try:
 except AttributeError:  # pragma: no cover
     pass  # `typing_extensions` might not be installed
 
+ConcatenateTypes: tuple = ()
+try:
+    ConcatenateTypes += (typing.Concatenate,)
+except AttributeError:  # pragma: no cover
+    pass  # Is missing for `python<3.8`
+try:
+    ConcatenateTypes += (typing_extensions.Concatenate,)
+except AttributeError:  # pragma: no cover
+    pass  # `typing_extensions` might not be installed
+
+ParamSpecTypes: tuple = ()
+try:
+    ParamSpecTypes += (typing.ParamSpec,)
+except AttributeError:  # pragma: no cover
+    pass  # Is missing for `python<3.8`
+try:
+    ParamSpecTypes += (typing_extensions.ParamSpec,)
+except AttributeError:  # pragma: no cover
+    pass  # `typing_extensions` might not be installed
+
+TypeGuardTypes: tuple = ()
+try:
+    TypeGuardTypes += (typing.TypeGuard,)
+except AttributeError:  # pragma: no cover
+    pass  # Is missing for `python<3.8`
+try:
+    TypeGuardTypes += (typing_extensions.TypeGuard,)
+except AttributeError:  # pragma: no cover
+    pass  # `typing_extensions` might not be installed
+
+
 # We use this variable to be sure that we are working with a type from `typing`:
 typing_root_type = (typing._Final, typing._GenericAlias)  # type: ignore
 
@@ -98,14 +129,34 @@ typing_root_type = (typing._Final, typing._GenericAlias)  # type: ignore
 # and are just added for more fancy type annotations.
 # `Final` is a great example: it just indicates
 # that this value can't be reassigned.
-NON_RUNTIME_TYPES = frozenset(
-    (
-        typing.Any,
-        *ClassVarTypes,
-        *TypeAliasTypes,
-        *FinalTypes,
-    )
+NON_RUNTIME_TYPES = (
+    typing.Any,
+    *ClassVarTypes,
+    *TypeAliasTypes,
+    *FinalTypes,
+    *ConcatenateTypes,
+    *ParamSpecTypes,
+    *TypeGuardTypes,
 )
+for name in (
+    "Annotated",
+    "NoReturn",
+    "Self",
+    "Required",
+    "NotRequired",
+    "Never",
+    "TypeVarTuple",
+    "Unpack",
+    "LiteralString",
+):
+    try:
+        NON_RUNTIME_TYPES += (getattr(typing, name),)
+    except AttributeError:
+        pass
+    try:
+        NON_RUNTIME_TYPES += (getattr(typing_extensions, name),)
+    except AttributeError:  # pragma: no cover
+        pass  # typing_extensions might not be installed
 
 
 def type_sorting_key(t):
@@ -797,13 +848,33 @@ def resolve_Callable(thing):
     # use of keyword arguments and we'd rather not force positional-only.
     if not thing.__args__:  # pragma: no cover  # varies by minor version
         return st.functions()
+
+    *args_types, return_type = thing.__args__
+
     # Note that a list can only appear in __args__ under Python 3.9 with the
     # collections.abc version; see https://bugs.python.org/issue42195
+    if len(args_types) == 1 and isinstance(args_types[0], list):
+        args_types = tuple(args_types[0])
+
+    pep612 = ConcatenateTypes + ParamSpecTypes
+    for arg in args_types:
+        # awkward dance because you can't use Concatenate in isistance or issubclass
+        if getattr(arg, "__origin__", arg) in pep612 or type(arg) in pep612:
+            raise InvalidArgument(
+                "Hypothesis can't yet construct a strategy for instances of a "
+                f"Callable type parametrized by {arg!r}.  Consider using an "
+                "explicit strategy, or opening an issue."
+            )
+    if getattr(return_type, "__origin__", None) in TypeGuardTypes:
+        raise InvalidArgument(
+            "Hypothesis cannot yet construct a strategy for callables which "
+            f"are PEP-647 TypeGuards (got {return_type!r}).  "
+            "Consider using an explicit strategy, or opening an issue."
+        )
+
     return st.functions(
-        like=(lambda: None)
-        if len(thing.__args__) == 1 or thing.__args__[0] == []
-        else (lambda *a, **k: None),
-        returns=st.from_type(thing.__args__[-1]),
+        like=(lambda *a, **k: None) if args_types else (lambda: None),
+        returns=st.from_type(return_type),
     )
 
 
