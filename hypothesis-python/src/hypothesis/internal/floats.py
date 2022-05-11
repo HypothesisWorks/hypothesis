@@ -11,7 +11,7 @@
 import math
 import struct
 from sys import float_info
-from typing import Tuple
+from typing import Callable, Tuple
 
 # Format codes for (int, float) sized types, used for byte-wise casts.
 # See https://docs.python.org/3/library/struct.html#format-characters
@@ -127,7 +127,9 @@ def _exp_and_mantissa(f: float) -> Tuple[int, int]:
     return (exponent, mantissa)
 
 
-def make_float_clamper(minfloat: float = 0.0, maxfloat: float = math.inf):
+def make_float_clamper(
+    minfloat: float = 0.0, maxfloat: float = math.inf
+) -> Callable[[float], float]:
     """Return a function that clamps positive floats into the given bounds."""
     # NOTE: Set minfloat = float_info.min to exclude subnormals
     minexp, minman_at_bottom = _exp_and_mantissa(minfloat)
