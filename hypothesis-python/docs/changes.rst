@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.46.3:
+
+-------------------
+6.46.3 - 2022-05-11
+-------------------
+
+This patch by Cheuk Ting Ho makes it an explicit error to call :func:`~hypothesis.strategies.from_type`
+or :func:`~hypothesis.strategies.register_type_strategy` with types that have no runtime instances (:issue:`3280`).
+
 .. _v6.46.2:
 
 -------------------
