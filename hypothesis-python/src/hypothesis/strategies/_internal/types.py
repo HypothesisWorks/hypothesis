@@ -91,16 +91,6 @@ try:
 except AttributeError:  # pragma: no cover
     pass  # `typing_extensions` might not be installed
 
-AnnotatedTypes: tuple = ()
-try:
-    AnnotatedTypes += (typing.Annotated,)
-except AttributeError:  # pragma: no cover
-    pass  # Is missing for `python<3.8`
-try:
-    AnnotatedTypes += (typing_extensions.Annotated,)
-except AttributeError:  # pragma: no cover
-    pass  # `typing_extensions` might not be installed
-
 ConcatenateTypes: tuple = ()
 try:
     ConcatenateTypes += (typing.Concatenate,)
@@ -131,86 +121,6 @@ try:
 except AttributeError:  # pragma: no cover
     pass  # `typing_extensions` might not be installed
 
-NoReturnTypes: tuple = ()
-try:
-    NoReturnTypes += (typing.NoReturn,)
-except AttributeError:  # pragma: no cover
-    pass  # Is missing for `python<3.8`
-try:
-    NoReturnTypes += (typing_extensions.NoReturn,)
-except AttributeError:  # pragma: no cover
-    pass  # `typing_extensions` might not be installed
-
-SelfTypes: tuple = ()
-try:
-    SelfTypes += (typing.Self,)  # type: ignore
-except AttributeError:  # pragma: no cover
-    pass  # Is missing for `python<3.11`
-try:
-    SelfTypes += (typing_extensions.Self,)
-except AttributeError:  # pragma: no cover
-    pass  # `typing_extensions` might not be installed
-
-RequiredTypes: tuple = ()
-try:
-    RequiredTypes += (typing.Required,)  # type: ignore
-except AttributeError:  # pragma: no cover
-    pass  # Is missing for `python<3.11`
-try:
-    RequiredTypes += (typing_extensions.Required,)
-except AttributeError:  # pragma: no cover
-    pass  # `typing_extensions` might not be installed
-
-NotRequiredTypes: tuple = ()
-try:
-    NotRequiredTypes += (typing.NotRequired,)  # type: ignore
-except AttributeError:  # pragma: no cover
-    pass  # Is missing for `python<3.11`
-try:
-    NotRequiredTypes += (typing_extensions.NotRequired,)
-except AttributeError:  # pragma: no cover
-    pass  # `typing_extensions` might not be installed
-
-NeverTypes: tuple = ()
-try:
-    NeverTypes += (typing.Never,)  # type: ignore
-except AttributeError:  # pragma: no cover
-    pass  # Is missing for `python<3.11`
-try:
-    NeverTypes += (typing_extensions.Never,)
-except AttributeError:  # pragma: no cover
-    pass  # `typing_extensions` might not be installed
-
-TypeVarTupleTypes: tuple = ()
-try:
-    TypeVarTupleTypes += (typing.TypeVarTuple,)  # type: ignore
-except AttributeError:  # pragma: no cover
-    pass  # Is missing for `python<3.11`
-try:
-    TypeVarTupleTypes += (typing_extensions.TypeVarTuple,)
-except AttributeError:  # pragma: no cover
-    pass  # `typing_extensions` might not be installed
-
-UnpackTypes: tuple = ()
-try:
-    UnpackTypes += (typing.Unpack,)  # type: ignore
-except AttributeError:  # pragma: no cover
-    pass  # Is missing for `python<3.11`
-try:
-    UnpackTypes += (typing_extensions.Unpack,)
-except AttributeError:  # pragma: no cover
-    pass  # `typing_extensions` might not be installed
-
-# banned for now; revisit later
-LiteralStringTypes: tuple = ()
-try:
-    LiteralStringTypes += (typing.LiteralString,)  # type: ignore
-except AttributeError:  # pragma: no cover
-    pass  # Is missing for `python<3.11`
-try:
-    LiteralStringTypes += (typing_extensions.LiteralString,)
-except AttributeError:  # pragma: no cover
-    pass  # `typing_extensions` might not be installed
 
 # We use this variable to be sure that we are working with a type from `typing`:
 typing_root_type = (typing._Final, typing._GenericAlias)  # type: ignore
@@ -220,26 +130,34 @@ typing_root_type = (typing._Final, typing._GenericAlias)  # type: ignore
 # and are just added for more fancy type annotations.
 # `Final` is a great example: it just indicates
 # that this value can't be reassigned.
-NON_RUNTIME_TYPES = frozenset(
-    (
-        typing.Any,
-        *ClassVarTypes,
-        *TypeAliasTypes,
-        *FinalTypes,
-        *AnnotatedTypes,
-        *ConcatenateTypes,
-        *ParamSpecTypes,
-        *TypeGuardTypes,
-        *NoReturnTypes,
-        *SelfTypes,
-        *RequiredTypes,
-        *NotRequiredTypes,
-        *NeverTypes,
-        *TypeVarTupleTypes,
-        *UnpackTypes,
-        *LiteralStringTypes,  # banned for now; revisit later
-    )
+NON_RUNTIME_TYPES = (
+    typing.Any,
+    *ClassVarTypes,
+    *TypeAliasTypes,
+    *FinalTypes,
+    *ConcatenateTypes,
+    *ParamSpecTypes,
+    *TypeGuardTypes,
 )
+for name in (
+    "Annotated",
+    "NoReturn",
+    "Self",
+    "Required",
+    "NotRequired",
+    "Never",
+    "TypeVarTuple",
+    "Unpack",
+    "LiteralString",
+):
+    try:
+        NON_RUNTIME_TYPES += (getattr(typing, name),)
+    except AttributeError:
+        pass
+    try:
+        NON_RUNTIME_TYPES += (getattr(typing_extensions, name),)
+    except AttributeError:  # pragma: no cover
+        pass  # typing_extensions might not be installed
 
 
 def type_sorting_key(t):
