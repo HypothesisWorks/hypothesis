@@ -11,6 +11,7 @@
 import math
 import struct
 from sys import float_info
+from typing import Tuple
 
 # Format codes for (int, float) sized types, used for byte-wise casts.
 # See https://docs.python.org/3/library/struct.html#format-characters
@@ -117,3 +118,29 @@ width_smallest_normals = {
     64: 2 ** -(2 ** (11 - 1) - 2),
 }
 assert width_smallest_normals[64] == float_info.min
+
+
+def _exp_and_mantissa(f: float) -> Tuple[int, int]:
+    i = float_to_int(f)
+    exponent = (i >> 52) & ((1 << 11) - 1)
+    mantissa = i & ((1 << 52) - 1)
+    return (exponent, mantissa)
+
+
+def make_float_clamper(minfloat: float = 0.0, maxfloat: float = math.inf):
+    """Return a function that clamps positive floats into the given bounds."""
+    # NOTE: Set minfloat = float_info.min to exclude subnormals
+    minexp, minman_at_bottom = _exp_and_mantissa(minfloat)
+    maxexp, maxman_at_top = _exp_and_mantissa(maxfloat)
+
+    def float_clamper(f: float) -> float:
+        exp, man = _exp_and_mantissa(f)
+        if not (minexp <= exp <= maxexp):
+            exp = minexp + (exp - minexp) % (1 + maxexp - minexp)
+        maxman = ((1 << 52) - 1) if exp < maxexp else maxman_at_top
+        minman = 0 if exp > minexp else minman_at_bottom
+        if not (minman <= man <= maxman):
+            man = minman + (man - minman) % (1 + maxman - minman)
+        return int_to_float((exp << 52) | man)
+
+    return float_clamper

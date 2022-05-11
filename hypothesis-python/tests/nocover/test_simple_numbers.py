@@ -93,7 +93,7 @@ def test_minimals_boundary_floats():
 
 def test_minimal_non_boundary_float():
     x = minimal(floats(min_value=1, max_value=9), lambda x: x > 2)
-    assert 2 < x < 3
+    assert x == 3  # (the smallest integer > 2)
 
 
 def test_minimal_float_is_zero():

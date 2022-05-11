@@ -23,6 +23,7 @@ from hypothesis.internal.floats import (
     float_of,
     int_to_float,
     is_negative,
+    make_float_clamper,
     next_down_normal,
     next_up,
     next_up_normal,
@@ -208,13 +209,11 @@ class FloatStrategy(SearchStrategy):
 
         self.forced_sign_bit: Optional[int] = None
         if _sign_aware_lte(0.0, max_value):
-            offset = max(0.0, min_value)
-            self.pos_offset_and_size = (offset, max_value - offset)
+            self.pos_clamper = make_float_clamper(max(0.0, min_value), max_value)
             if _sign_aware_lte(0.0, min_value):
                 self.forced_sign_bit = 0
         if not _sign_aware_lte(0.0, min_value):
-            offset = min(-0.0, max_value)
-            self.neg_offset_and_size = (offset, abs(min_value + offset))
+            self.neg_clamper = make_float_clamper(-min(-0.0, max_value), -min_value)
             if not _sign_aware_lte(0.0, max_value):
                 self.forced_sign_bit = 1
 
@@ -238,20 +237,18 @@ class FloatStrategy(SearchStrategy):
             i = self.sampler.sample(data) if self.sampler else 0
             if i == 0:
                 is_negative = data.draw_bits(1, forced=self.forced_sign_bit)
+                data.start_example(flt.DRAW_FLOAT_LABEL)
+                result = flt.lex_to_float(data.draw_bits(64))
+                clamper = self.neg_clamper if is_negative else self.pos_clamper
+                clamped = clamper(result)
+                if clamped != result:
+                    data.stop_example(discard=True)
+                    data.start_example(flt.DRAW_FLOAT_LABEL)
+                    flt.write_float(data, clamped)
+                    result = clamped
                 if is_negative:
-                    offset, size = self.neg_offset_and_size
-                    if math.isfinite(size):
-                        result = offset - d.fractional_float(data) * size
-                    else:
-                        result = offset - flt.draw_float(data)
-                else:
-                    offset, size = self.pos_offset_and_size
-                    if math.isfinite(size):
-                        result = offset + d.fractional_float(data) * size
-                    else:
-                        result = offset + flt.draw_float(data)
-                if not self.permitted(result):
-                    continue
+                    result = -result
+                data.stop_example()
             else:
                 result = self.nasty_floats[i - 1]
 
@@ -259,7 +256,7 @@ class FloatStrategy(SearchStrategy):
                 data.draw_bits(1, forced=sign)
                 flt.write_float(data, result)
 
-            data.stop_example()
+            data.stop_example()  # (FLOAT_STRATEGY_DO_DRAW_LABEL)
             return result
 
 

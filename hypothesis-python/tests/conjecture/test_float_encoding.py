@@ -65,7 +65,7 @@ def test_double_reverse(i):
 
 @example(1.25)
 @example(1.0)
-@given(st.floats())
+@given(st.floats(min_value=0.0))
 def test_draw_write_round_trip(f):
     d = ConjectureData.for_buffer(bytes(10))
     flt.write_float(d, f)
