@@ -196,26 +196,33 @@ class FloatStrategy(SearchStrategy):
         min_value: float = -math.inf,
         max_value: float = math.inf,
         allow_nan: bool = True,
+        smallest_nonzero_magnitude: float = 0.0,
     ):
         super().__init__()
         assert isinstance(allow_nan, bool)
+        assert smallest_nonzero_magnitude >= 0.0
         self.min_value = min_value
         self.max_value = max_value
         self.allow_nan = allow_nan
+        self.smallest_nonzero_magnitude = smallest_nonzero_magnitude
 
         self.nasty_floats = [f for f in NASTY_FLOATS if self.permitted(f)]
         weights = [0.2 * len(self.nasty_floats)] + [0.8] * len(self.nasty_floats)
         self.sampler = d.Sampler(weights) if self.nasty_floats else None
 
-        self.forced_sign_bit: Optional[int] = None
+        self.pos_clamper = self.neg_clamper = None
         if _sign_aware_lte(0.0, max_value):
-            self.pos_clamper = make_float_clamper(max(0.0, min_value), max_value)
-            if _sign_aware_lte(0.0, min_value):
-                self.forced_sign_bit = 0
-        if not _sign_aware_lte(0.0, min_value):
-            self.neg_clamper = make_float_clamper(-min(-0.0, max_value), -min_value)
-            if not _sign_aware_lte(0.0, max_value):
-                self.forced_sign_bit = 1
+            pos_min = max(min_value, smallest_nonzero_magnitude)
+            allow_zero = _sign_aware_lte(min_value, 0.0)
+            self.pos_clamper = make_float_clamper(pos_min, max_value, allow_zero)
+        if _sign_aware_lte(min_value, -0.0):
+            neg_max = min(max_value, -smallest_nonzero_magnitude)
+            allow_zero = _sign_aware_lte(-0.0, max_value)
+            self.neg_clamper = make_float_clamper(-neg_max, -min_value, allow_zero)
+
+        self.forced_sign_bit: Optional[int] = None
+        if (self.pos_clamper is None) ^ (self.neg_clamper is None):
+            self.forced_sign_bit = 1 if self.neg_clamper else 0
 
     def __repr__(self):
         return "{}(min_value={}, max_value={}, allow_nan={})".format(
@@ -229,6 +236,8 @@ class FloatStrategy(SearchStrategy):
         assert isinstance(f, float)
         if math.isnan(f):
             return self.allow_nan
+        if 0 < abs(f) < self.smallest_nonzero_magnitude:
+            return False
         return _sign_aware_lte(self.min_value, f) and _sign_aware_lte(f, self.max_value)
 
     def do_draw(self, data):
@@ -471,15 +480,20 @@ def floats(
                 f"smallest negative normal {-smallest_normal}"
             )
 
-    min_value = min_value if min_value is not None else float("-inf")
-    max_value = max_value if max_value is not None else float("inf")
+    if min_value is None:
+        min_value = float("-inf")
+    if max_value is None:
+        max_value = float("inf")
     assert isinstance(min_value, float)
     assert isinstance(max_value, float)
-    result: SearchStrategy = FloatStrategy(min_value, max_value, allow_nan=allow_nan)
+    smallest_nonzero_magnitude = 0.0 if allow_subnormal else smallest_normal
+    result: SearchStrategy = FloatStrategy(
+        min_value,
+        max_value,
+        allow_nan=allow_nan,
+        smallest_nonzero_magnitude=smallest_nonzero_magnitude,
+    )
 
-    if not allow_subnormal:
-        smallest = width_smallest_normals[width]
-        result = result.filter(lambda x: abs(x) >= smallest)
     if width < 64:
 
         def downcast(x):

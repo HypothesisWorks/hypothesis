@@ -53,8 +53,9 @@ def test_next_float_equal(func, val):
         (0.9, math.inf),
     ],
 )
-def test_float_clamper(minfloat, maxfloat):
-    clamper = make_float_clamper(minfloat, maxfloat)
+@pytest.mark.parametrize("allow_zero", [True, False])
+def test_float_clamper(minfloat, maxfloat, allow_zero):
+    clamper = make_float_clamper(minfloat, maxfloat, allow_zero)
 
     assert clamper(minfloat) == minfloat
     assert clamper(maxfloat) == maxfloat
@@ -62,7 +63,6 @@ def test_float_clamper(minfloat, maxfloat):
     inside = next_up(minfloat)
     assert clamper(inside) == inside
 
-    assert minfloat <= clamper(0.0) <= maxfloat
     assert minfloat <= clamper(float_info.min) <= maxfloat
     assert minfloat <= clamper(0.001) <= maxfloat
     assert minfloat <= clamper(1.0) <= maxfloat
@@ -70,3 +70,8 @@ def test_float_clamper(minfloat, maxfloat):
     assert minfloat <= clamper(100.0001) <= maxfloat
     assert minfloat <= clamper(float_info.max) <= maxfloat
     assert minfloat <= clamper(math.inf) <= maxfloat
+
+    if allow_zero:
+        assert clamper(0.0) == 0.0
+    else:
+        assert minfloat <= clamper(0.0) <= maxfloat

@@ -11,7 +11,7 @@
 import math
 import struct
 from sys import float_info
-from typing import Callable, Tuple
+from typing import Callable, Optional, Tuple
 
 # Format codes for (int, float) sized types, used for byte-wise casts.
 # See https://docs.python.org/3/library/struct.html#format-characters
@@ -128,14 +128,27 @@ def _exp_and_mantissa(f: float) -> Tuple[int, int]:
 
 
 def make_float_clamper(
-    minfloat: float = 0.0, maxfloat: float = math.inf
-) -> Callable[[float], float]:
-    """Return a function that clamps positive floats into the given bounds."""
-    # NOTE: Set minfloat = float_info.min to exclude subnormals
+    minfloat: float = 0.0,
+    maxfloat: float = math.inf,
+    allow_zero: bool = False,  # Allows +0.0 (even if minfloat > 0)
+) -> Optional[Callable[[float], float]]:
+    """
+    Return a function that clamps positive floats into the given bounds.
+
+    Returns None when no values are allowed (min > max and zero is not allowed).
+    """
+    if maxfloat < minfloat:
+        if allow_zero:
+            minfloat = maxfloat = 0.0
+        else:
+            return None
+
     minexp, minman_at_bottom = _exp_and_mantissa(minfloat)
     maxexp, maxman_at_top = _exp_and_mantissa(maxfloat)
 
     def float_clamper(f: float) -> float:
+        if allow_zero and f == 0.0:
+            return f
         exp, man = _exp_and_mantissa(f)
         if not (minexp <= exp <= maxexp):
             exp = minexp + (exp - minexp) % (1 + maxexp - minexp)
