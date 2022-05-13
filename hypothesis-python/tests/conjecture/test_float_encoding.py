@@ -98,7 +98,7 @@ def test_floats_round_trip(f):
 
 
 @example(1, 0.5)
-@given(st.integers(1, 2**53), st.floats(0, 1).filter(lambda x: x not in (0, 1)))
+@given(st.integers(1, 2**53), st.floats(1, 2).filter(lambda x: x not in (1, 2)))
 def test_floats_order_worse_than_their_integral_part(n, g):
     f = n + g
     assume(int(f) != f)
