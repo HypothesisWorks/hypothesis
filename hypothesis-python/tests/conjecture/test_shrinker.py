@@ -313,7 +313,7 @@ def test_float_shrink_can_run_when_canonicalisation_does_not_work(monkeypatch):
     # This should be an error when called
     monkeypatch.setattr(Float, "shrink", None)
 
-    base_buf = int_to_bytes(flt.base_float_to_lex(1000.0), 8)
+    base_buf = bytes(1) + int_to_bytes(flt.base_float_to_lex(1000.0), 8)
 
     @shrinking_from(base_buf)
     def shrinker(data):

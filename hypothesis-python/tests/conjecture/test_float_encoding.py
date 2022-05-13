@@ -157,7 +157,7 @@ def float_runner(start, condition):
             data.mark_interesting()
 
     runner = ConjectureRunner(test_function)
-    runner.cached_test_function(int_to_bytes(flt.float_to_lex(start), 8) + bytes(1))
+    runner.cached_test_function(b"\x00" + int_to_bytes(flt.float_to_lex(start), 8))
     assert runner.interesting_examples
     return runner
 

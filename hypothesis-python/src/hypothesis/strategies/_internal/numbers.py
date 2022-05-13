@@ -244,20 +244,20 @@ class FloatStrategy(SearchStrategy):
         while True:
             data.start_example(FLOAT_STRATEGY_DO_DRAW_LABEL)
             i = self.sampler.sample(data) if self.sampler else 0
+            data.start_example(flt.DRAW_FLOAT_LABEL)
             if i == 0:
                 is_negative = data.draw_bits(1, forced=self.forced_sign_bit)
-                data.start_example(flt.DRAW_FLOAT_LABEL)
                 result = flt.lex_to_float(data.draw_bits(64))
                 clamper = self.neg_clamper if is_negative else self.pos_clamper
                 clamped = clamper(result)
                 if clamped != result:
                     data.stop_example(discard=True)
                     data.start_example(flt.DRAW_FLOAT_LABEL)
+                    data.draw_bits(1, forced=is_negative)
                     flt.write_float(data, clamped)
                     result = clamped
                 if is_negative:
                     result = -result
-                data.stop_example()
             else:
                 result = self.nasty_floats[i - 1]
 
@@ -265,6 +265,7 @@ class FloatStrategy(SearchStrategy):
                 data.draw_bits(1, forced=sign)
                 flt.write_float(data, result)
 
+            data.stop_example()  # (DRAW_FLOAT_LABEL)
             data.stop_example()  # (FLOAT_STRATEGY_DO_DRAW_LABEL)
             return result
 

@@ -75,3 +75,9 @@ def test_float_clamper(minfloat, maxfloat, allow_zero):
         assert clamper(0.0) == 0.0
     else:
         assert minfloat <= clamper(0.0) <= maxfloat
+
+
+def test_float_clamper_degenerate_cases():
+    assert make_float_clamper(2.0, 1.0, allow_zero=False) is None
+    assert make_float_clamper(2.0, 1.0, allow_zero=True)(1.5) == 0.0
+    assert make_float_clamper(2.0, 2.0, allow_zero=False)(1.5) == 2.0

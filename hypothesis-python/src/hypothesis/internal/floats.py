@@ -128,8 +128,8 @@ def _exp_and_mantissa(f: float) -> Tuple[int, int]:
 
 
 def make_float_clamper(
-    minfloat: float = 0.0,
-    maxfloat: float = math.inf,
+    min_float: float = 0.0,
+    max_float: float = math.inf,
     allow_zero: bool = False,  # Allows +0.0 (even if minfloat > 0)
 ) -> Optional[Callable[[float], float]]:
     """
@@ -137,25 +137,26 @@ def make_float_clamper(
 
     Returns None when no values are allowed (min > max and zero is not allowed).
     """
-    if maxfloat < minfloat:
+    if max_float < min_float:
         if allow_zero:
-            minfloat = maxfloat = 0.0
+            min_float = max_float = 0.0
         else:
             return None
 
-    minexp, minman_at_bottom = _exp_and_mantissa(minfloat)
-    maxexp, maxman_at_top = _exp_and_mantissa(maxfloat)
+    min_exp, min_mant_at_bottom = _exp_and_mantissa(min_float)
+    max_exp, max_mant_at_top = _exp_and_mantissa(max_float)
+    mantissa_mask = (1 << 52) - 1
 
-    def float_clamper(f: float) -> float:
-        if allow_zero and f == 0.0:
-            return f
-        exp, man = _exp_and_mantissa(f)
-        if not (minexp <= exp <= maxexp):
-            exp = minexp + (exp - minexp) % (1 + maxexp - minexp)
-        maxman = ((1 << 52) - 1) if exp < maxexp else maxman_at_top
-        minman = 0 if exp > minexp else minman_at_bottom
-        if not (minman <= man <= maxman):
-            man = minman + (man - minman) % (1 + maxman - minman)
-        return int_to_float((exp << 52) | man)
+    def float_clamper(float_val: float) -> float:
+        if allow_zero and float_val == 0.0:
+            return float_val
+        exp, mant = _exp_and_mantissa(float_val)
+        if not (min_exp <= exp <= max_exp):
+            exp = min_exp + (exp - min_exp) % (1 + max_exp - min_exp)
+        max_mant = mantissa_mask if exp < max_exp else max_mant_at_top
+        min_mant = 0 if exp > min_exp else min_mant_at_bottom
+        if not (min_mant <= mant <= max_mant):
+            mant = min_mant + (mant - min_mant) % (1 + max_mant - min_mant)
+        return int_to_float((exp << 52) | mant)
 
     return float_clamper
