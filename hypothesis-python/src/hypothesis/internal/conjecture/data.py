@@ -751,8 +751,6 @@ class ConjectureData:
         self.max_length = max_length
         self.is_find = False
         self.overdraw = 0
-        self.__block_starts = defaultdict(list)
-        self.__block_starts_calculated_to = 0
         self.__prefix = prefix
         self.__random = random
 
