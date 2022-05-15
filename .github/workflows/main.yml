@@ -32,6 +32,7 @@ jobs:
           - check-py310
           # - check-py310-pyjion  # see notes in tox.ini
           - check-py311
+          # - check-py312  # enable when alpha1 is released, ~Nov 2022
           - check-quality
           - lint-ruby
           - check-ruby-tests
