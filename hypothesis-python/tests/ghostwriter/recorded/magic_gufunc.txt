@@ -3,7 +3,7 @@
 
 import numpy
 from hypothesis import given, strategies as st
-from hypothesis.extra._array_helpers import mutually_broadcastable_shapes
+from hypothesis.extra.numpy import arrays, mutually_broadcastable_shapes
 
 
 @given(
@@ -14,9 +14,12 @@ from hypothesis.extra._array_helpers import mutually_broadcastable_shapes
 def test_gufunc_matmul(data, shapes, types):
     input_shapes, expected_shape = shapes
     input_dtypes, expected_dtype = types.split("->")
-    array_st = [npst.arrays(d, s) for d, s in zip(input_dtypes, input_shapes)]
+    array_strats = [
+        arrays(dtype=dtp, shape=shp, elements={"allow_nan": True})
+        for dtp, shp in zip(input_dtypes, input_shapes)
+    ]
 
-    a, b = data.draw(st.tuples(*array_st))
+    a, b = data.draw(st.tuples(*array_strats))
     result = numpy.matmul(a, b)
 
     assert result.shape == expected_shape
