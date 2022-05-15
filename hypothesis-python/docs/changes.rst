@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.46.5:
+
+-------------------
+6.46.5 - 2022-05-15
+-------------------
+
+This patch fixes :func:`~hypothesis.extra.numpy.from_dtype` with long-precision
+floating-point datatypes (typecode ``g``; see :func:`numpy:numpy.typename`).
+
 .. _v6.46.4:
 
 -------------------
