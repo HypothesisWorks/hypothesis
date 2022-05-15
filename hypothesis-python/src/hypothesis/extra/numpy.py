@@ -121,7 +121,7 @@ def from_dtype(
         result: st.SearchStrategy[Any] = st.booleans()
     elif dtype.kind == "f":
         result = st.floats(
-            width=8 * dtype.itemsize,
+            width=min(8 * dtype.itemsize, 64),
             **compat_kw(
                 "min_value",
                 "max_value",
