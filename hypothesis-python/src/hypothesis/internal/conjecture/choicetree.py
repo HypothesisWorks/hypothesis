@@ -9,16 +9,17 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 from collections import defaultdict
+from typing import Any, Callable, Dict, Iterable, Iterator, List, Optional, Sequence
 
 from hypothesis.internal.conjecture.junkdrawer import LazySequenceCopy, pop_random
 
 
-def prefix_selection_order(prefix):
+def prefix_selection_order(prefix: Sequence[int]) -> Callable[[int, int], Iterator[int]]:
     """Select choices starting from ``prefix```,
     preferring to move left then wrapping around
     to the right."""
 
-    def selection_order(depth, n):
+    def selection_order(depth: int, n: int) -> Iterator[int]:
         if depth < len(prefix):
             i = prefix[depth]
             if i >= n:
@@ -31,10 +32,10 @@ def prefix_selection_order(prefix):
     return selection_order
 
 
-def random_selection_order(random):
+def random_selection_order(random: Any) -> Callable[[int, int], Iterable[int]]:
     """Select choices uniformly at random."""
 
-    def selection_order(depth, n):
+    def selection_order(depth: int, n: int) -> Iterable[int]:
         pending = LazySequenceCopy(range(n))
         while pending:
             yield pop_random(random, pending)
@@ -45,14 +46,14 @@ def random_selection_order(random):
 class Chooser:
     """A source of nondeterminism for use in shrink passes."""
 
-    def __init__(self, tree, selection_order):
+    def __init__(self, tree: "ChoiceTree", selection_order: Callable[[int, int], Iterable[int]]):
         self.__selection_order = selection_order
         self.__tree = tree
         self.__node_trail = [tree.root]
-        self.__choices = []
+        self.__choices: "List[int]" = []
         self.__finished = False
 
-    def choose(self, values, condition=lambda x: True):
+    def choose(self, values: Sequence[int], condition: Callable[[int], bool] = lambda x: True) -> int:
         """Return some element of values satisfying the condition
         that will not lead to an exhausted branch, or raise DeadBranch
         if no such element exist".
@@ -80,7 +81,7 @@ class Chooser:
         assert node.live_child_count == 0
         raise DeadBranch()
 
-    def finish(self):
+    def finish(self) -> Sequence[int]:
         """Record the decisions made in the underlying tree and return
         a prefix that can be used for the next Chooser to be used."""
         self.__finished = True
@@ -95,6 +96,7 @@ class Chooser:
             i = self.__choices.pop()
             target = self.__node_trail[-1]
             target.children[i] = DeadNode
+            assert target.live_child_count is not None
             target.live_child_count -= 1
 
         return result
@@ -107,14 +109,14 @@ class ChoiceTree:
     decisions about what to do.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.root = TreeNode()
 
     @property
-    def exhausted(self):
+    def exhausted(self) -> bool:
         return self.root.exhausted
 
-    def step(self, selection_order, f):
+    def step(self, selection_order: Callable[[int, int], Iterable[int]], f: Callable[[Chooser], None]) -> Sequence[int]:
         assert not self.exhausted
 
         chooser = Chooser(self, selection_order)
@@ -127,9 +129,9 @@ class ChoiceTree:
 
 class TreeNode:
     def __init__(self):
-        self.children = defaultdict(TreeNode)
-        self.live_child_count = None
-        self.n = None
+        self.children: Dict[int, TreeNode] = defaultdict(TreeNode)
+        self.live_child_count: "Optional[int]" = None
+        self.n: "Optional[int]" = None
 
     @property
     def exhausted(self):

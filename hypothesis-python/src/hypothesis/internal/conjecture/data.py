@@ -11,7 +11,8 @@
 import time
 from collections import defaultdict
 from enum import IntEnum
-from typing import Dict
+from random import Random
+from typing import TYPE_CHECKING, Any, Iterable, Iterator, List, Optional, Tuple, Union, Dict
 
 import attr
 
@@ -19,6 +20,8 @@ from hypothesis.errors import Frozen, InvalidArgument, StopTest
 from hypothesis.internal.compat import int_from_bytes, int_to_bytes
 from hypothesis.internal.conjecture.junkdrawer import IntList, uniform
 from hypothesis.internal.conjecture.utils import calc_label_from_name
+if TYPE_CHECKING:
+    from hypothesis.strategies import SearchStrategy
 
 TOP_LABEL = calc_label_from_name("top")
 DRAW_BYTES_LABEL = calc_label_from_name("draw_bytes() in ConjectureData")
@@ -28,12 +31,12 @@ class ExtraInformation:
     """A class for holding shared state on a ``ConjectureData`` that should
     be added to the final ``ConjectureResult``."""
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "ExtraInformation({})".format(
             ", ".join(f"{k}={v!r}" for k, v in self.__dict__.items()),
         )
 
-    def has_information(self):
+    def has_information(self) -> bool:
         return bool(self.__dict__)
 
 
@@ -43,7 +46,7 @@ class Status(IntEnum):
     VALID = 2
     INTERESTING = 3
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"Status.{self.name}"
 
 
@@ -94,29 +97,29 @@ class Example:
 
     __slots__ = ("owner", "index")
 
-    def __init__(self, owner, index):
+    def __init__(self, owner: "Examples", index: int) -> None:
         self.owner = owner
         self.index = index
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if self is other:
             return True
         if not isinstance(other, Example):
             return NotImplemented
         return (self.owner is other.owner) and (self.index == other.index)
 
-    def __ne__(self, other):
+    def __ne__(self, other: object) -> bool:
         if self is other:
             return False
         if not isinstance(other, Example):
             return NotImplemented
         return (self.owner is not other.owner) or (self.index != other.index)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"examples[{self.index}]"
 
     @property
-    def label(self):
+    def label(self) -> int:
         """A label is an opaque value that associates each example with its
         approximate origin, such as a particular strategy class or a particular
         kind of draw."""
@@ -130,12 +133,12 @@ class Example:
         return self.owner.parentage[self.index]
 
     @property
-    def start(self):
+    def start(self) -> int:
         """The position of the start of this example in the byte stream."""
         return self.owner.starts[self.index]
 
     @property
-    def end(self):
+    def end(self) -> int:
         """The position directly after the last byte in this byte stream.
         i.e. the example corresponds to the half open region [start, end).
         """
@@ -155,7 +158,7 @@ class Example:
         return self.index in self.owner.trivial
 
     @property
-    def discarded(self):
+    def discarded(self) -> bool:
         """True if this is example's ``stop_example`` call had ``discard`` set to
         ``True``. This means we believe that the shrinker should be able to delete
         this example completely, without affecting the value produced by its enclosing
@@ -164,12 +167,12 @@ class Example:
         return self.index in self.owner.discarded
 
     @property
-    def length(self):
+    def length(self) -> int:
         """The number of bytes in this example."""
         return self.end - self.start
 
     @property
-    def children(self):
+    def children(self) -> "List[Example]":
         """The list of all examples with this as a parent, in increasing index
         order."""
         return [self.owner[i] for i in self.owner.children[self.index]]
@@ -184,8 +187,8 @@ class ExampleProperty:
     to calculate these properties.
     """
 
-    def __init__(self, examples):
-        self.example_stack = []
+    def __init__(self, examples: "Examples"):
+        self.example_stack: "List[int]" = []
         self.examples = examples
         self.bytes_read = 0
         self.example_count = 0
@@ -213,32 +216,32 @@ class ExampleProperty:
                 self.__pop(record == STOP_EXAMPLE_DISCARD_RECORD)
         return self.finish()
 
-    def __push(self, label_index):
+    def __push(self, label_index: int) -> None:
         i = self.example_count
         assert i < len(self.examples)
         self.start_example(i, label_index)
         self.example_count += 1
         self.example_stack.append(i)
 
-    def __pop(self, discarded):
+    def __pop(self, discarded: bool) -> None:
         i = self.example_stack.pop()
         self.stop_example(i, discarded)
 
-    def begin(self):
+    def begin(self) -> None:
         """Called at the beginning of the run to initialise any
         relevant state."""
         self.result = IntList.of_length(len(self.examples))
 
-    def start_example(self, i, label_index):
+    def start_example(self, i: int, label_index: int) -> None:
         """Called at the start of each example, with ``i`` the
         index of the example and ``label_index`` the index of
         its label in ``self.examples.labels``."""
 
-    def block(self, i):
+    def block(self, i: int) -> None:
         """Called with each ``draw_bits`` call, with ``i`` the index of the
         corresponding block in ``self.examples.blocks``"""
 
-    def stop_example(self, i, discarded):
+    def stop_example(self, i: int, discarded: bool) -> None:
         """Called at the end of each example, with ``i`` the
         index of the example and ``discarded`` being ``True`` if ``stop_example``
         was called with ``discard=True``."""
@@ -287,15 +290,18 @@ class ExampleRecord:
     they currently have slightly different functions and implementations.
     """
 
-    def __init__(self):
+    __index_of_labels: Union[None, Dict[int, int]]
+
+    def __init__(self) -> None:
         self.labels = [DRAW_BYTES_LABEL]
         self.__index_of_labels = {DRAW_BYTES_LABEL: 0}
         self.trail = IntList()
 
-    def freeze(self):
+    def freeze(self) -> None:
         self.__index_of_labels = None
 
-    def start_example(self, label):
+    def start_example(self, label: int) -> None:
+        assert self.__index_of_labels is not None
         try:
             i = self.__index_of_labels[label]
         except KeyError:
@@ -303,13 +309,13 @@ class ExampleRecord:
             self.labels.append(label)
         self.trail.append(START_EXAMPLE_RECORD + i)
 
-    def stop_example(self, discard):
+    def stop_example(self, discard: bool) -> None:
         if discard:
             self.trail.append(STOP_EXAMPLE_DISCARD_RECORD)
         else:
             self.trail.append(STOP_EXAMPLE_NO_DISCARD_RECORD)
 
-    def draw_bits(self, n, forced):
+    def draw_bits(self, n: int, forced: Optional[int]) -> None:
         self.trail.append(DRAW_BITS_RECORD)
 
 
@@ -324,7 +330,7 @@ class Examples:
     described there.
     """
 
-    def __init__(self, record, blocks):
+    def __init__(self, record: ExampleRecord, blocks: "Blocks") -> None:
         self.trail = record.trail
         self.labels = record.labels
         self.__length = (
@@ -332,8 +338,6 @@ class Examples:
             + record.trail.count(STOP_EXAMPLE_NO_DISCARD_RECORD)
             + record.trail.count(DRAW_BITS_RECORD)
         )
-        self.__example_lengths = None
-
         self.blocks = blocks
         self.__children = None
 
@@ -343,21 +347,21 @@ class Examples:
             self.starts = IntList.of_length(len(self.examples))
             self.ends = IntList.of_length(len(self.examples))
 
-        def start_example(self, i, label_index):
+        def start_example(self, i: int, label_index: int) -> None:
             self.starts[i] = self.bytes_read
 
-        def stop_example(self, i, label_index):
+        def stop_example(self, i: int, discarded: bool) -> None:
             self.ends[i] = self.bytes_read
 
-        def finish(self):
+        def finish(self) -> Iterable[int]:
             return (self.starts, self.ends)
 
     @property
-    def starts(self):
+    def starts(self) -> IntList:
         return self.starts_and_ends[0]
 
     @property
-    def ends(self):
+    def ends(self) -> IntList:
         return self.starts_and_ends[1]
 
     @calculated_example_property
@@ -426,7 +430,7 @@ class Examples:
             return [g for g in self.groups.values() if len(g) >= 2]
 
     @property
-    def children(self):
+    def children(self) -> List[Union[IntList, Tuple[()]]]:
         if self.__children is None:
             self.__children = [IntList() for _ in range(len(self))]
             for i, p in enumerate(self.parentage):
@@ -439,10 +443,10 @@ class Examples:
                     self.__children[i] = ()
         return self.__children
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self.__length
 
-    def __getitem__(self, i):
+    def __getitem__(self, i: int) -> Example:
         assert isinstance(i, int)
         n = len(self)
         if i < -n or i >= n:
@@ -478,15 +482,15 @@ class Block:
     all_zero = attr.ib(repr=False)
 
     @property
-    def bounds(self):
+    def bounds(self) -> Tuple[int, int]:
         return (self.start, self.end)
 
     @property
-    def length(self):
+    def length(self) -> int:
         return self.end - self.start
 
     @property
-    def trivial(self):
+    def trivial(self) -> bool:
         return self.forced or self.all_zero
 
 
@@ -509,19 +513,19 @@ class Blocks:
 
     __slots__ = ("endpoints", "owner", "__blocks", "__count", "__sparse")
 
-    def __init__(self, owner):
+    def __init__(self, owner: "ConjectureData") -> None:
         self.owner = owner
         self.endpoints = IntList()
         self.__blocks = {}
         self.__count = 0
         self.__sparse = True
 
-    def add_endpoint(self, n):
+    def add_endpoint(self, n: int) -> None:
         """Add n to the list of endpoints."""
         assert isinstance(self.owner, ConjectureData)
         self.endpoints.append(n)
 
-    def transfer_ownership(self, new_owner):
+    def transfer_ownership(self, new_owner: "ConjectureResult") -> None:
         """Used to move ``Blocks`` over to a ``ConjectureResult`` object
         when that is read to be used and we no longer want to keep the
         whole ``ConjectureData`` around."""
@@ -529,7 +533,7 @@ class Blocks:
         self.owner = new_owner
         self.__check_completion()
 
-    def start(self, i):
+    def start(self, i: int) -> int:
         """Equivalent to self[i].start."""
         i = self._check_index(i)
 
@@ -538,15 +542,15 @@ class Blocks:
         else:
             return self.end(i - 1)
 
-    def end(self, i):
+    def end(self, i: int) -> int:
         """Equivalent to self[i].end."""
         return self.endpoints[i]
 
-    def bounds(self, i):
+    def bounds(self, i: int) -> Tuple[int, int]:
         """Equivalent to self[i].bounds."""
         return (self.start(i), self.end(i))
 
-    def all_bounds(self):
+    def all_bounds(self) -> Iterator[Tuple[int, int]]:
         """Equivalent to [(b.start, b.end) for b in self]."""
         prev = 0
         for e in self.endpoints:
@@ -557,7 +561,7 @@ class Blocks:
     def last_block_length(self):
         return self.end(-1) - self.start(-1)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.endpoints)
 
     def __known_block(self, i):
@@ -575,7 +579,7 @@ class Blocks:
         else:
             return self[i].trivial
 
-    def _check_index(self, i):
+    def _check_index(self, i: int) -> int:
         n = len(self)
         if i < -n or i >= n:
             raise IndexError(f"Index {i} out of range [-{n}, {n})")
@@ -583,7 +587,7 @@ class Blocks:
             i += n
         return i
 
-    def __getitem__(self, i):
+    def __getitem__(self, i: int) -> Block:
         i = self._check_index(i)
         assert i >= 0
         result = self.__known_block(i)
@@ -645,11 +649,11 @@ class Blocks:
         if self.__count == len(self) and isinstance(self.owner, ConjectureResult):
             self.owner = None
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Block]:
         for i in range(len(self)):
             yield self[i]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         parts = []
         for i in range(len(self)):
             b = self.__known_block(i)
@@ -666,7 +670,7 @@ class _Overrun:
     def __repr__(self):
         return "Overrun"
 
-    def as_result(self):
+    def as_result(self) -> "_Overrun":
         return self
 
 
@@ -683,14 +687,14 @@ class DataObserver:
     ConjectureData object, primarily used for tracking
     the behaviour in the tree cache."""
 
-    def conclude_test(self, status, interesting_origin):
+    def conclude_test(self, status: Status, interesting_origin: None) -> None:
         """Called when ``conclude_test`` is called on the
         observed ``ConjectureData``, with the same arguments.
 
         Note that this is called after ``freeze`` has completed.
         """
 
-    def draw_bits(self, n_bits, forced, value):
+    def draw_bits(self, n_bits: int, forced: bool, value: int) -> None:
         """Called when ``draw_bits`` is called on on the
         observed ``ConjectureData``.
         * ``n_bits`` is the number of bits drawn.
@@ -699,7 +703,7 @@ class DataObserver:
         * ``value`` is the result that ``draw_bits`` returned.
         """
 
-    def kill_branch(self):
+    def kill_branch(self) -> None:
         """Mark this part of the tree as not worth re-exploring."""
 
 
@@ -723,11 +727,11 @@ class ConjectureResult:
 
     index = attr.ib(init=False)
 
-    def __attrs_post_init__(self):
+    def __attrs_post_init__(self) -> None:
         self.index = len(self.buffer)
         self.forced_indices = frozenset(self.forced_indices)
 
-    def as_result(self):
+    def as_result(self) -> "ConjectureResult":
         return self
 
 
@@ -739,10 +743,10 @@ BYTE_MASKS[0] = 255
 
 class ConjectureData:
     @classmethod
-    def for_buffer(cls, buffer, observer=None):
+    def for_buffer(cls, buffer: Union[List[int], bytes], observer: Optional[DataObserver]=None) -> "ConjectureData":
         return cls(len(buffer), buffer, random=None, observer=observer)
 
-    def __init__(self, max_length, prefix, random, observer=None):
+    def __init__(self, max_length: int, prefix: Union[List[int], bytes, bytearray], random: Optional[Random], observer: Optional[Union[DataObserver, DataObserver]]=None) -> None:
         if observer is None:
             observer = DataObserver()
         assert isinstance(observer, DataObserver)
@@ -751,8 +755,6 @@ class ConjectureData:
         self.max_length = max_length
         self.is_find = False
         self.overdraw = 0
-        self.__block_starts = defaultdict(list)
-        self.__block_starts_calculated_to = 0
         self.__prefix = prefix
         self.__random = random
 
@@ -807,7 +809,7 @@ class ConjectureData:
             ", frozen" if self.frozen else "",
         )
 
-    def as_result(self):
+    def as_result(self) -> Union[ConjectureResult, _Overrun]:
         """Convert the result of running this test into
         either an Overrun object or a ConjectureResult."""
 
@@ -843,7 +845,7 @@ class ConjectureData:
             value = repr(value)
         self.output += value
 
-    def draw(self, strategy, label=None):
+    def draw(self, strategy: "SearchStrategy", label: None=None) -> Any:
         if self.is_find and not strategy.supports_find:
             raise InvalidArgument(
                 f"Cannot use strategy {strategy!r} within a call to find "
@@ -881,7 +883,7 @@ class ConjectureData:
         finally:
             self.stop_example()
 
-    def start_example(self, label):
+    def start_example(self, label: int) -> None:
         self.__assert_not_frozen("start_example")
         self.depth += 1
         # Logically it would make sense for this to just be
@@ -895,7 +897,7 @@ class ConjectureData:
         self.__example_record.start_example(label)
         self.labels_for_structure_stack.append({label})
 
-    def stop_example(self, discard=False):
+    def stop_example(self, discard: bool=False) -> None:
         if self.frozen:
             return
         if discard:
@@ -943,13 +945,13 @@ class ConjectureData:
         self.events.add(event)
 
     @property
-    def examples(self):
+    def examples(self) -> Examples:
         assert self.frozen
         if self.__examples is None:
             self.__examples = Examples(record=self.__example_record, blocks=self.blocks)
         return self.__examples
 
-    def freeze(self):
+    def freeze(self) -> None:
         if self.frozen:
             assert isinstance(self.buffer, bytes)
             return
@@ -969,7 +971,7 @@ class ConjectureData:
         self.events = frozenset(self.events)
         self.observer.conclude_test(self.status, self.interesting_origin)
 
-    def draw_bits(self, n, *, forced=None):
+    def draw_bits(self, n: int, *, forced=None) -> int:
         """Return an ``n``-bit integer from the underlying source of
         bytes. If ``forced`` is set to an integer will instead
         ignore the underlying source and simulate a draw as if it had
@@ -1017,11 +1019,11 @@ class ConjectureData:
         assert result.bit_length() <= n
         return result
 
-    def draw_bytes(self, n):
+    def draw_bytes(self, n: int) -> bytes:
         """Draw n bytes from the underlying source."""
         return int_to_bytes(self.draw_bits(8 * n), n)
 
-    def write(self, string):
+    def write(self, string: bytes) -> bytearray:
         """Write ``string`` to the output buffer."""
         self.__assert_not_frozen("write")
         string = bytes(string)
@@ -1034,7 +1036,7 @@ class ConjectureData:
         if self.index + n > self.max_length:
             self.mark_overrun()
 
-    def conclude_test(self, status, interesting_origin=None):
+    def conclude_test(self, status: Status, interesting_origin: None=None):
         assert (interesting_origin is None) or (status == Status.INTERESTING)
         self.__assert_not_frozen("conclude_test")
         self.interesting_origin = interesting_origin
@@ -1042,7 +1044,7 @@ class ConjectureData:
         self.freeze()
         raise StopTest(self.testcounter)
 
-    def mark_interesting(self, interesting_origin=None):
+    def mark_interesting(self, interesting_origin: None=None):
         self.conclude_test(Status.INTERESTING, interesting_origin)
 
     def mark_invalid(self):
@@ -1052,7 +1054,7 @@ class ConjectureData:
         self.conclude_test(Status.OVERRUN)
 
 
-def bits_to_bytes(n):
+def bits_to_bytes(n: int) -> int:
     """The number of bytes required to represent an n-bit number.
     Equivalent to (n + 7) // 8, but slightly faster. This really is
     called enough times that that matters."""
