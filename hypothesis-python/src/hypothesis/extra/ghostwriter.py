@@ -587,6 +587,8 @@ def _imports_for_strategy(strategy):
             return _imports_for_object(strategy._LazyStrategy__args[0])
         elif _get_module(strategy.function).startswith("hypothesis.extra."):
             return {(_get_module(strategy.function), strategy.function.__name__)}
+            module = _get_module(strategy.function).replace("._array_helpers", ".numpy")
+            return {(module, strategy.function.__name__)}
 
     imports = set()
     strategy = unwrap_strategies(strategy)
@@ -742,11 +744,12 @@ def _make_test_body(
     assertions: str = "",
     style: str,
     given_strategies: Optional[Mapping[str, Union[str, st.SearchStrategy]]] = None,
+    imports: Optional[ImportSet] = None,
 ) -> Tuple[ImportSet, str]:
     # A set of modules to import - we might add to this later.  The import code
     # is written later, so we can have one import section for multiple magic()
     # test functions.
-    imports = {_get_module(f) for f in funcs}
+    imports = (imports or set()) | {_get_module(f) for f in funcs}
 
     # Get strategies for all the arguments to each function we're testing.
     with _with_any_registered():
@@ -1497,13 +1500,17 @@ def _make_ufunc_body(func, *, except_, style):
         shapes = npst.mutually_broadcastable_shapes(num_shapes=func.nin)
     else:
         shapes = npst.mutually_broadcastable_shapes(signature=func.signature)
+    shapes.function.__module__ = npst.__name__
 
     body = """
     input_shapes, expected_shape = shapes
     input_dtypes, expected_dtype = types.split("->")
-    array_st = [npst.arrays(d, s) for d, s in zip(input_dtypes, input_shapes)]
+    array_strats = [
+        arrays(dtype=dtp, shape=shp, elements={{"allow_nan": True}})
+        for dtp, shp in zip(input_dtypes, input_shapes)
+    ]
 
-    {array_names} = data.draw(st.tuples(*array_st))
+    {array_names} = data.draw(st.tuples(*array_strats))
     result = {call}
     """.format(
         array_names=", ".join(ascii_lowercase[: func.nin]),
@@ -1529,4 +1536,5 @@ def _make_ufunc_body(func, *, except_, style):
         ghost="ufunc" if func.signature is None else "gufunc",
         style=style,
         given_strategies={"data": st.data(), "shapes": shapes, "types": types},
+        imports={("hypothesis.extra.numpy", "arrays")},
     )
