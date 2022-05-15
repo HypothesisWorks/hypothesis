@@ -12,7 +12,7 @@ import time
 from collections import defaultdict
 from enum import IntEnum
 from random import Random
-from typing import TYPE_CHECKING, Any, Iterable, Iterator, List, Optional, Tuple, Union, Dict
+from typing import TYPE_CHECKING, Any, Iterable, Iterator, List, Optional, Set, Tuple, Type, Union, Dict, cast
 
 import attr
 
@@ -246,11 +246,11 @@ class ExampleProperty:
         index of the example and ``discarded`` being ``True`` if ``stop_example``
         was called with ``discard=True``."""
 
-    def finish(self):
+    def finish(self) -> Union[Iterable[int], Iterable[Iterable[int]]]:
         return self.result
 
 
-def calculated_example_property(cls):
+def calculated_example_property(cls: Type[ExampleProperty]) -> property:
     """Given an ``ExampleProperty`` as above we use this decorator
     to transform it into a lazy property on the ``Examples`` class,
     which has as its value the result of calling ``cls.run()``,
@@ -261,7 +261,7 @@ def calculated_example_property(cls):
     name = cls.__name__
     cache_name = "__" + name
 
-    def lazy_calculate(self):
+    def lazy_calculate(self: "Examples") -> Any:
         result = getattr(self, cache_name, None)
         if result is None:
             result = cls(self).run()
@@ -339,7 +339,7 @@ class Examples:
             + record.trail.count(DRAW_BITS_RECORD)
         )
         self.blocks = blocks
-        self.__children = None
+        self.__children: "Optional[List[IntList]]" = None
 
     @calculated_example_property
     class starts_and_ends(ExampleProperty):
@@ -353,7 +353,7 @@ class Examples:
         def stop_example(self, i: int, discarded: bool) -> None:
             self.ends[i] = self.bytes_read
 
-        def finish(self) -> Iterable[int]:
+        def finish(self) -> Tuple[IntList, IntList]:
             return (self.starts, self.ends)
 
     @property
@@ -367,12 +367,12 @@ class Examples:
     @calculated_example_property
     class discarded(ExampleProperty):
         def begin(self):
-            self.result = set()
+            self.result: "Set[int]" = set()
 
         def finish(self):
             return frozenset(self.result)
 
-        def stop_example(self, i, discarded):
+        def stop_example(self, i: int, discarded: int) -> None:
             if discarded:
                 self.result.add(i)
 
@@ -380,9 +380,9 @@ class Examples:
     class trivial(ExampleProperty):
         def begin(self):
             self.nontrivial = IntList.of_length(len(self.examples))
-            self.result = set()
+            self.result: "Set[int]" = set()
 
-        def block(self, i):
+        def block(self, i: int):
             if not self.examples.blocks.trivial(i):
                 self.nontrivial[self.example_stack[-1]] = 1
 
@@ -407,24 +407,24 @@ class Examples:
         def begin(self):
             self.result = IntList.of_length(len(self.examples))
 
-        def start_example(self, i, label_index):
+        def start_example(self, i: int, label_index: int) -> None:
             self.result[i] = len(self.example_stack)
 
     @calculated_example_property
     class label_indices(ExampleProperty):
-        def start_example(self, i, label_index):
+        def start_example(self, i: int, label_index: int) -> None:
             self.result[i] = label_index
 
     @calculated_example_property
     class mutator_groups(ExampleProperty):
         def begin(self):
-            self.groups = defaultdict(list)
+            self.groups: "Dict[Tuple[int, int], List[int]]" = defaultdict(list)
 
-        def start_example(self, i, label_index):
+        def start_example(self, i: int, label_index: int) -> None:
             depth = len(self.example_stack)
             self.groups[label_index, depth].append(i)
 
-        def finish(self):
+        def finish(self) -> Iterable[Iterable[int]]:
             # Discard groups with only one example, since the mutator can't
             # do anything useful with them.
             return [g for g in self.groups.values() if len(g) >= 2]
@@ -512,6 +512,8 @@ class Blocks:
     have to allocate the actual object."""
 
     __slots__ = ("endpoints", "owner", "__blocks", "__count", "__sparse")
+    owner: "Union[ConjectureData, ConjectureResult, None]"
+    __blocks: Union[Dict[int, Block], List[Optional[Block]]]
 
     def __init__(self, owner: "ConjectureData") -> None:
         self.owner = owner
@@ -564,13 +566,13 @@ class Blocks:
     def __len__(self) -> int:
         return len(self.endpoints)
 
-    def __known_block(self, i):
+    def __known_block(self, i: int) -> Optional[Block]:
         try:
             return self.__blocks[i]
         except (KeyError, IndexError):
             return None
 
-    def trivial(self, i):
+    def trivial(self, i: int) -> Any:
         """Equivalent to self.blocks[i].trivial."""
         if self.owner is not None:
             return self.start(i) in self.owner.forced_indices or not any(
@@ -599,7 +601,8 @@ class Blocks:
         # stop being sparse and want to use most of the blocks. Switch
         # over to a list at that point.
         if self.__sparse and len(self.__blocks) * 2 >= len(self):
-            new_blocks = [None] * len(self)
+            new_blocks: "List[Optional[Block]]" = [None] * len(self)
+            assert isinstance(self.__blocks, dict)
             for k, v in self.__blocks.items():
                 new_blocks[k] = v
             self.__sparse = False
@@ -654,7 +657,7 @@ class Blocks:
             yield self[i]
 
     def __repr__(self) -> str:
-        parts = []
+        parts: "List[str]" = []
         for i in range(len(self)):
             b = self.__known_block(i)
             if b is None:
@@ -971,7 +974,7 @@ class ConjectureData:
         self.events = frozenset(self.events)
         self.observer.conclude_test(self.status, self.interesting_origin)
 
-    def draw_bits(self, n: int, *, forced=None) -> int:
+    def draw_bits(self, n: int, *, forced: Optional[int] = None) -> int:
         """Return an ``n``-bit integer from the underlying source of
         bytes. If ``forced`` is set to an integer will instead
         ignore the underlying source and simulate a draw as if it had
