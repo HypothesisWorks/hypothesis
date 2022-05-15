@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.46.4:
+
+-------------------
+6.46.4 - 2022-05-15
+-------------------
+
+This patch improves some error messages for custom signatures
+containing invalid parameter names (:issue:`3317`).
+
 .. _v6.46.3:
 
 -------------------
