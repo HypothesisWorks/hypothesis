@@ -58,6 +58,7 @@ from hypothesis.internal.entropy import get_seeder_and_restorer
 from hypothesis.internal.reflection import (
     define_function_signature_from_signature,
     get_pretty_function_description,
+    get_signature,
     nicerepr,
     required_args,
 )
@@ -1147,7 +1148,7 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
             )
         try:
             hints = get_type_hints(thing)
-            params = signature(thing).parameters
+            params = get_signature(thing).parameters
         except Exception:
             return builds(thing)
         kwargs = {}
@@ -1498,7 +1499,7 @@ def composite(f: Callable[..., Ex]) -> Callable[..., SearchStrategy[Ex]]:
     else:
         special_method = None
 
-    sig = signature(f)
+    sig = get_signature(f)
     params = tuple(sig.parameters.values())
 
     if not (params and "POSITIONAL" in params[0].kind.name):

@@ -300,7 +300,7 @@ def from_field(field: F) -> st.SearchStrategy[Union[F, None]]:
     """
     check_type((dm.Field, df.Field), field, "field")
     if getattr(field, "choices", False):
-        choices = []  # type: list
+        choices: list = []
         for value, name_or_optgroup in field.choices:
             if isinstance(name_or_optgroup, (list, tuple)):
                 choices.extend(key for key, _ in name_or_optgroup)

@@ -79,6 +79,7 @@ import sys
 import types
 from collections import OrderedDict, defaultdict
 from itertools import permutations, zip_longest
+from keyword import iskeyword
 from string import ascii_lowercase
 from textwrap import dedent, indent
 from typing import (
@@ -100,7 +101,7 @@ import black
 from hypothesis import Verbosity, find, settings, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import get_type_hints
-from hypothesis.internal.reflection import is_mock
+from hypothesis.internal.reflection import get_signature, is_mock
 from hypothesis.internal.validation import check_type
 from hypothesis.provisional import domains
 from hypothesis.strategies._internal.collections import ListStrategy
@@ -441,7 +442,7 @@ def _get_params(func: Callable) -> Dict[str, inspect.Parameter]:
     """Get non-vararg parameters of `func` as an ordered dict."""
     var_param_kinds = (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
     try:
-        params = list(inspect.signature(func).parameters.values())
+        params = list(get_signature(func).parameters.values())
     except Exception:
         if (
             isinstance(func, (types.BuiltinFunctionType, types.BuiltinMethodType))
@@ -460,14 +461,16 @@ def _get_params(func: Callable) -> Dict[str, inspect.Parameter]:
             kind: inspect._ParameterKind = inspect.Parameter.POSITIONAL_ONLY
             for arg in args.split(", "):
                 arg, *_ = arg.partition("=")
+                arg = arg.strip()
                 if arg == "/":
                     kind = inspect.Parameter.POSITIONAL_OR_KEYWORD
                     continue
-                if arg.startswith("*"):
+                if arg.startswith("*") or arg == "...":
                     kind = inspect.Parameter.KEYWORD_ONLY
                     continue  # we omit *varargs, if there are any
-                if arg.startswith("**"):
-                    break  # and likewise omit **varkw
+                if iskeyword(arg.lstrip("*")) or not arg.lstrip("*").isidentifier():
+                    print(repr(args))
+                    break  # skip all subsequent params if this name is invalid
                 params.append(inspect.Parameter(name=arg, kind=kind))
 
         elif _is_probably_ufunc(func):

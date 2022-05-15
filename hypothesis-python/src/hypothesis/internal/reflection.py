@@ -19,6 +19,7 @@ import re
 import sys
 import types
 from functools import wraps
+from keyword import iskeyword
 from tokenize import detect_encoding
 from types import ModuleType
 from typing import TYPE_CHECKING, Callable
@@ -84,6 +85,18 @@ def function_digest(function):
     return hasher.digest()
 
 
+def check_signature(sig: inspect.Signature) -> None:
+    # Backport from Python 3.11; see https://github.com/python/cpython/pull/92065
+    for p in sig.parameters.values():
+        if iskeyword(p.name) and p.kind is not p.POSITIONAL_ONLY:
+            raise ValueError(
+                f"Signature {sig!r} contains a parameter named {p.name!r}, "
+                f"but this is a SyntaxError because `{p.name}` is a keyword. "
+                "You, or a library you use, must have manually created an "
+                "invalid signature - this will be an error in Python 3.11+"
+            )
+
+
 def get_signature(target, *, follow_wrapped=True):
     # Special case for use of `@unittest.mock.patch` decorator, mimicking the
     # behaviour of getfullargspec instead of reporting unusable arguments.
@@ -97,6 +110,7 @@ def get_signature(target, *, follow_wrapped=True):
     if isinstance(getattr(target, "__signature__", None), inspect.Signature):
         # This special case covers unusual codegen like Pydantic models
         sig = target.__signature__
+        check_signature(sig)
         # And *this* much more complicated block ignores the `self` argument
         # if that's been (incorrectly) included in the custom signature.
         if sig.parameters and (inspect.isclass(target) or inspect.ismethod(target)):
@@ -116,10 +130,13 @@ def get_signature(target, *, follow_wrapped=True):
 
         if is_generic_type(target):
             sig = inspect.signature(target.__init__)
+            check_signature(sig)
             return sig.replace(
                 parameters=[v for k, v in sig.parameters.items() if k != "self"]
             )
-    return inspect.signature(target, follow_wrapped=follow_wrapped)
+    sig = inspect.signature(target, follow_wrapped=follow_wrapped)
+    check_signature(sig)
+    return sig
 
 
 def arg_is_required(param):
