@@ -120,6 +120,34 @@ except ImportError:  # < py3.8
     Protocol = object  # type: ignore[assignment]
 
 
+try:
+    import typing_extensions
+except ImportError:
+    typing_extensions = None  # type: ignore
+
+
+RequiredTypes: tuple = ()
+try:
+    RequiredTypes += (typing.Required,)
+except AttributeError:  # pragma: no cover
+    pass  # Is missing for `python<3.11`
+try:
+    RequiredTypes += (typing_extensions.Required,)
+except AttributeError:  # pragma: no cover
+    pass  # `typing_extensions` might not be installed
+
+
+NotRequiredTypes: tuple = ()
+try:
+    NotRequiredTypes += (typing.NotRequired,)
+except AttributeError:  # pragma: no cover
+    pass  # Is missing for `python<3.11`
+try:
+    NotRequiredTypes += (typing_extensions.NotRequired,)
+except AttributeError:  # pragma: no cover
+    pass  # `typing_extensions` might not be installed
+
+
 @cacheable
 @defines_strategy()
 def booleans() -> SearchStrategy[bool]:
@@ -1083,7 +1111,17 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
         # way to tell and we just have to assume that everything is required.
         # See https://github.com/python/cpython/pull/17214 for details.
         optional = getattr(thing, "__optional_keys__", ())
-        anns = {k: from_type(v) for k, v in get_type_hints(thing).items()}
+        anns = {}
+        for k, v in get_type_hints(thing).items():
+            if hasattr(v, "__origin__") and v.__origin__ in NotRequiredTypes:
+                optional = optional.union({k})
+                anns.update({k: from_type(v.__args__[0])})
+            elif hasattr(v, "__origin__") and v.__origin__ in RequiredTypes:
+                anns.update({k: from_type(v.__args__[0])})
+            else:
+                anns.update({k: from_type(v)})
+
+        # anns = {k: from_type(v) for k, v in get_type_hints(thing).items()}
         if (
             (not anns)
             and thing.__annotations__

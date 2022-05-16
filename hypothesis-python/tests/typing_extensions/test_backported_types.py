@@ -19,7 +19,9 @@ from typing_extensions import (
     DefaultDict,
     Literal,
     NewType,
+    NotRequired,
     ParamSpec,
+    Required,
     Type,
     TypedDict,
     TypeGuard,
@@ -202,3 +204,31 @@ def test_callable_return_typegard_type():
 
     with pytest.raises(InvalidArgument, match="Cannot register generic type"):
         st.register_type_strategy(Callable[[], TypeGuard[int]], st.none())
+
+
+class Movie(TypedDict):  # implicitly total=True
+    title: str
+    year: NotRequired[int]
+
+
+@given(from_type(Movie))
+def test_typeddict_not_required(value):
+    assert type(value) == dict
+    assert set(value).issubset({"title", "year"})
+    assert isinstance(value["title"], str)
+    if "year" in value:
+        assert isinstance(value["year"], int)
+
+
+class OtherMovie(TypedDict, total=False):
+    title: Required[str]
+    year: int
+
+
+@given(from_type(OtherMovie))
+def test_typeddict_required(value):
+    assert type(value) == dict
+    assert set(value).issubset({"title", "year"})
+    assert isinstance(value["title"], str)
+    if "year" in value:
+        assert isinstance(value["year"], int)
