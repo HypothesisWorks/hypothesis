@@ -123,7 +123,7 @@ except AttributeError:  # pragma: no cover
 
 RequiredTypes: tuple = ()
 try:
-    RequiredTypes += (typing.Required,)
+    RequiredTypes += (typing.Required,)  # type: ignore
 except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.11`
 try:
@@ -134,7 +134,7 @@ except AttributeError:  # pragma: no cover
 
 NotRequiredTypes: tuple = ()
 try:
-    NotRequiredTypes += (typing.NotRequired,)
+    NotRequiredTypes += (typing.NotRequired,)  # type: ignore
 except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.11`
 try:
