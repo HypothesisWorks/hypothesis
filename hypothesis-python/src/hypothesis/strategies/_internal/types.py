@@ -121,6 +121,28 @@ except AttributeError:  # pragma: no cover
     pass  # `typing_extensions` might not be installed
 
 
+RequiredTypes: tuple = ()
+try:
+    RequiredTypes += (typing.Required,)
+except AttributeError:  # pragma: no cover
+    pass  # Is missing for `python<3.11`
+try:
+    RequiredTypes += (typing_extensions.Required,)
+except AttributeError:  # pragma: no cover
+    pass  # `typing_extensions` might not be installed
+
+
+NotRequiredTypes: tuple = ()
+try:
+    NotRequiredTypes += (typing.NotRequired,)
+except AttributeError:  # pragma: no cover
+    pass  # Is missing for `python<3.11`
+try:
+    NotRequiredTypes += (typing_extensions.NotRequired,)
+except AttributeError:  # pragma: no cover
+    pass  # `typing_extensions` might not be installed
+
+
 # We use this variable to be sure that we are working with a type from `typing`:
 typing_root_type = (typing._Final, typing._GenericAlias)  # type: ignore
 
