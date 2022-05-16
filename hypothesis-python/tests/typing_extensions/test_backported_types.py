@@ -32,6 +32,8 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import from_type
 from hypothesis.strategies._internal.types import NON_RUNTIME_TYPES
 
+from tests.common.debug import find_any
+
 # See also nocover/test_type_lookp.py
 
 
@@ -232,3 +234,56 @@ def test_typeddict_required(value):
     assert isinstance(value["title"], str)
     if "year" in value:
         assert isinstance(value["year"], int)
+
+
+class Story(TypedDict, total=True):
+    author: str
+
+
+class Book(Story, total=False):
+    pages: int
+
+
+class Novel(Book):
+    genre: Required[str]
+    rating: NotRequired[str]
+
+
+def test_author_and_genre_only():
+    find_any(
+        from_type(Novel),
+        lambda novel: "author" in novel
+        and "genre" in novel
+        and "pages" not in novel
+        and "rating" not in novel,
+    )
+
+
+def test_author_and_genre_and_pages_only():
+    find_any(
+        from_type(Novel),
+        lambda novel: "author" in novel
+        and "genre" in novel
+        and "pages" in novel
+        and "rating" not in novel,
+    )
+
+
+def test_author_and_genre_and_rating_only():
+    find_any(
+        from_type(Novel),
+        lambda novel: "author" in novel
+        and "genre" in novel
+        and "pages" not in novel
+        and "rating" in novel,
+    )
+
+
+def test_novel_all_in():
+    find_any(
+        from_type(Novel),
+        lambda novel: "author" in novel
+        and "genre" in novel
+        and "pages" in novel
+        and "rating" in novel,
+    )
