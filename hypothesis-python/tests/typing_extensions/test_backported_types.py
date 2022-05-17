@@ -32,7 +32,7 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import from_type
 from hypothesis.strategies._internal.types import NON_RUNTIME_TYPES
 
-from tests.common.debug import find_any, assert_all_examples
+from tests.common.debug import assert_all_examples, find_any
 
 # See also nocover/test_type_lookp.py
 
@@ -276,3 +276,15 @@ class Novel(Book):
 )
 def test_required_and_not_required_keys(check, condition):
     check(from_type(Novel), condition)
+
+
+def test_typeddict_error_msg():
+    with pytest.raises(TypeError, match="is not valid as type argument"):
+
+        class Foo(TypedDict):
+            attr: Required
+
+    with pytest.raises(TypeError, match="is not valid as type argument"):
+
+        class Bar(TypedDict):
+            attr: NotRequired
