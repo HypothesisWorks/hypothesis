@@ -32,7 +32,7 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import from_type
 from hypothesis.strategies._internal.types import NON_RUNTIME_TYPES
 
-from tests.common.debug import find_any
+from tests.common.debug import find_any, assert_all_examples
 
 # See also nocover/test_type_lookp.py
 
