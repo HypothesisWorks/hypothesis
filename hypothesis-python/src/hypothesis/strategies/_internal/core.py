@@ -1082,11 +1082,11 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
         # The __optional_keys__ attribute may or may not be present, but if there's no
         # way to tell and we just have to assume that everything is required.
         # See https://github.com/python/cpython/pull/17214 for details.
-        optional = getattr(thing, "__optional_keys__", ())
+        optional = set(getattr(thing, "__optional_keys__", ()))
         anns = {}
         for k, v in get_type_hints(thing).items():
             if hasattr(v, "__origin__") and v.__origin__ in types.NotRequiredTypes:
-                optional = optional.union({k})
+                optional.add(k)
                 anns.update({k: from_type(v.__args__[0])})
             elif hasattr(v, "__origin__") and v.__origin__ in types.RequiredTypes:
                 anns.update({k: from_type(v.__args__[0])})
