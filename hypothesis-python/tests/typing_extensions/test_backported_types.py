@@ -249,41 +249,30 @@ class Novel(Book):
     rating: NotRequired[str]
 
 
-def test_author_and_genre_only():
-    find_any(
-        from_type(Novel),
-        lambda novel: "author" in novel
-        and "genre" in novel
-        and "pages" not in novel
-        and "rating" not in novel,
-    )
-
-
-def test_author_and_genre_and_pages_only():
-    find_any(
-        from_type(Novel),
-        lambda novel: "author" in novel
-        and "genre" in novel
-        and "pages" in novel
-        and "rating" not in novel,
-    )
-
-
-def test_author_and_genre_and_rating_only():
-    find_any(
-        from_type(Novel),
-        lambda novel: "author" in novel
-        and "genre" in novel
-        and "pages" not in novel
-        and "rating" in novel,
-    )
-
-
-def test_novel_all_in():
-    find_any(
-        from_type(Novel),
-        lambda novel: "author" in novel
-        and "genre" in novel
-        and "pages" in novel
-        and "rating" in novel,
-    )
+@pytest.mark.parametrize(
+    "check,condition",
+    [
+        pytest.param(
+            assert_all_examples,
+            lambda novel: "author" in novel,
+            id="author-is-required",
+        ),
+        pytest.param(
+            assert_all_examples, lambda novel: "genre" in novel, id="genre-is-required"
+        ),
+        pytest.param(
+            find_any, lambda novel: "pages" in novel, id="pages-may-be-present"
+        ),
+        pytest.param(
+            find_any, lambda novel: "pages" not in novel, id="pages-may-be-absent"
+        ),
+        pytest.param(
+            find_any, lambda novel: "rating" in novel, id="rating-may-be-present"
+        ),
+        pytest.param(
+            find_any, lambda novel: "rating" not in novel, id="rating-may-be-absent"
+        ),
+    ],
+)
+def test_required_and_not_required_keys(check, condition):
+    check(from_type(Novel), condition)
