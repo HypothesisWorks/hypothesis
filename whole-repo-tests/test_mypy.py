@@ -344,7 +344,7 @@ def test_stateful_consumed_bundle_cannot_be_target(tmpdir):
 
 
 def test_raises_for_mixed_pos_kwargs_in_given(tmpdir):
-    f = tmpdir.join("raises_for_mixed_pos_kwargs_in_given")
+    f = tmpdir.join("raises_for_mixed_pos_kwargs_in_given.py")
     f.write(
         textwrap.dedent(
             """
