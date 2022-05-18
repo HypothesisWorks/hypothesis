@@ -1098,8 +1098,6 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
                         f"`{k}: {v.__name__}` is not a valid type annotation"
                     ) from None
             anns[k] = from_type(v)
-
-        # anns = {k: from_type(v) for k, v in get_type_hints(thing).items()}
         if (
             (not anns)
             and thing.__annotations__
