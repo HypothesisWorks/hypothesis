@@ -734,7 +734,9 @@ def one_of(*args: SearchStrategy[Any]) -> SearchStrategy[Any]:  # pragma: no cov
 
 
 @defines_strategy(never_lazy=True)
-def one_of(*args: SearchStrategy[Any]) -> SearchStrategy[Any]:  # noqa: F811
+def one_of(
+    *args: Union[Sequence[SearchStrategy[Any]], SearchStrategy[Any]]
+) -> SearchStrategy[Any]:  # noqa: F811
     # Mypy workaround alert:  Any is too loose above; the return parameter
     # should be the union of the input parameters.  Unfortunately, Mypy <=0.600
     # raises errors due to incompatible inputs instead.  See #1270 for links.
