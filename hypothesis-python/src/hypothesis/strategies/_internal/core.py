@@ -1085,13 +1085,17 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
         optional = set(getattr(thing, "__optional_keys__", ()))
         anns = {}
         for k, v in get_type_hints(thing).items():
-            if hasattr(v, "__origin__") and v.__origin__ in types.NotRequiredTypes:
-                optional.add(k)
-                anns.update({k: from_type(v.__args__[0])})
-            elif hasattr(v, "__origin__") and v.__origin__ in types.RequiredTypes:
-                anns.update({k: from_type(v.__args__[0])})
-            else:
-                anns.update({k: from_type(v)})
+            origin = getattr(v, "__origin__", None)
+            if origin in types.RequiredTypes + types.NotRequiredTypes:
+                if origin in types.NotRequiredTypes:
+                    optional.add(k)
+                else:
+                    optional.discard(k)
+                try:
+                    v = v.__args__[0]
+                except IndexError:
+                    raise InvalidArgument(f"`{k}: {v.__name__}` is not a valid type annotation") from None
+            anns[k] = from_type(v)
 
         # anns = {k: from_type(v) for k, v in get_type_hints(thing).items()}
         if (
