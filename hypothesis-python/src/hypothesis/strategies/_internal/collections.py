@@ -67,53 +67,53 @@ def tuples() -> SearchStrategy[Tuple[()]]:
 
 
 @overload  # noqa: F811
-def tuples(a1: SearchStrategy[Ex]) -> SearchStrategy[Tuple[Ex]]:
+def tuples(__a1: SearchStrategy[Ex]) -> SearchStrategy[Tuple[Ex]]:
     raise NotImplementedError
 
 
 @overload  # noqa: F811
 def tuples(
-    a1: SearchStrategy[Ex], a2: SearchStrategy[T]
+    __a1: SearchStrategy[Ex], __a2: SearchStrategy[T]
 ) -> SearchStrategy[Tuple[Ex, T]]:
     raise NotImplementedError
 
 
 @overload  # noqa: F811
 def tuples(
-    a1: SearchStrategy[Ex], a2: SearchStrategy[T], a3: SearchStrategy[T3]
+    __a1: SearchStrategy[Ex], __a2: SearchStrategy[T], __a3: SearchStrategy[T3]
 ) -> SearchStrategy[Tuple[Ex, T, T3]]:
     raise NotImplementedError
 
 
 @overload  # noqa: F811
 def tuples(
-    a1: SearchStrategy[Ex],
-    a2: SearchStrategy[T],
-    a3: SearchStrategy[T3],
-    a4: SearchStrategy[T4],
+    __a1: SearchStrategy[Ex],
+    __a2: SearchStrategy[T],
+    __a3: SearchStrategy[T3],
+    __a4: SearchStrategy[T4],
 ) -> SearchStrategy[Tuple[Ex, T, T3, T4]]:
     raise NotImplementedError
 
 
 @overload  # noqa: F811
 def tuples(
-    a1: SearchStrategy[Ex],
-    a2: SearchStrategy[T],
-    a3: SearchStrategy[T3],
-    a4: SearchStrategy[T4],
-    a5: SearchStrategy[T5],
+    __a1: SearchStrategy[Ex],
+    __a2: SearchStrategy[T],
+    __a3: SearchStrategy[T3],
+    __a4: SearchStrategy[T4],
+    __a5: SearchStrategy[T5],
 ) -> SearchStrategy[Tuple[Ex, T, T3, T4, T5]]:
     raise NotImplementedError
 
 
 @overload  # noqa: F811
-def tuples(*args: SearchStrategy[Any]) -> SearchStrategy[Tuple]:
+def tuples(*args: SearchStrategy[Any]) -> SearchStrategy[Tuple[Any, ...]]:
     raise NotImplementedError
 
 
 @cacheable
 @defines_strategy()
-def tuples(*args):  # noqa: F811
+def tuples(*args: SearchStrategy[Any]) -> SearchStrategy[Tuple[Any, ...]]:  # noqa: F811
     """Return a strategy which generates a tuple of the same length as args by
     generating the value at index i from args[i].
 

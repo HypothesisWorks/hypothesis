@@ -419,3 +419,18 @@ def test_stateful_precondition_precond_requires_one_arg(tmpdir):
         str(f.realpath()),
         [(2, "arg-type"), (2, "misc"), (3, "arg-type"), (3, "misc")],
     )
+
+
+def test_tuples_pos_only_args(tmpdir):
+    f = tmpdir.join("raises_for_mixed_pos_kwargs_in_given")
+    f.write(
+        textwrap.dedent(
+            """
+            import hypothesis.strategies as st
+
+            st.tuples(a1=st.integers())
+            st.tuples(a1=st.integers(), a2=st.integers())
+            """
+        )
+    )
+    assert_mypy_errors(str(f.realpath()), [(3, "call-overload"), (4, "call-overload")])
