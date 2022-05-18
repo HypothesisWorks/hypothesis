@@ -19,7 +19,9 @@ from typing_extensions import (
     DefaultDict,
     Literal,
     NewType,
+    NotRequired,
     ParamSpec,
+    Required,
     Type,
     TypedDict,
     TypeGuard,
@@ -29,6 +31,8 @@ from hypothesis import assume, given, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import from_type
 from hypothesis.strategies._internal.types import NON_RUNTIME_TYPES
+
+from tests.common.debug import assert_all_examples, find_any
 
 # See also nocover/test_type_lookp.py
 
@@ -202,3 +206,93 @@ def test_callable_return_typegard_type():
 
     with pytest.raises(InvalidArgument, match="Cannot register generic type"):
         st.register_type_strategy(Callable[[], TypeGuard[int]], st.none())
+
+
+class Movie(TypedDict):  # implicitly total=True
+    title: str
+    year: NotRequired[int]
+
+
+@given(from_type(Movie))
+def test_typeddict_not_required(value):
+    assert type(value) == dict
+    assert set(value).issubset({"title", "year"})
+    assert isinstance(value["title"], str)
+    if "year" in value:
+        assert isinstance(value["year"], int)
+
+
+def test_typeddict_not_required_can_skip():
+    find_any(from_type(Movie), lambda movie: "year" not in movie)
+
+
+class OtherMovie(TypedDict, total=False):
+    title: Required[str]
+    year: int
+
+
+@given(from_type(OtherMovie))
+def test_typeddict_required(value):
+    assert type(value) == dict
+    assert set(value).issubset({"title", "year"})
+    assert isinstance(value["title"], str)
+    if "year" in value:
+        assert isinstance(value["year"], int)
+
+
+def test_typeddict_required_must_have():
+    assert_all_examples(from_type(OtherMovie), lambda movie: "title" in movie)
+
+
+class Story(TypedDict, total=True):
+    author: str
+
+
+class Book(Story, total=False):
+    pages: int
+
+
+class Novel(Book):
+    genre: Required[str]
+    rating: NotRequired[str]
+
+
+@pytest.mark.parametrize(
+    "check,condition",
+    [
+        pytest.param(
+            assert_all_examples,
+            lambda novel: "author" in novel,
+            id="author-is-required",
+        ),
+        pytest.param(
+            assert_all_examples, lambda novel: "genre" in novel, id="genre-is-required"
+        ),
+        pytest.param(
+            find_any, lambda novel: "pages" in novel, id="pages-may-be-present"
+        ),
+        pytest.param(
+            find_any, lambda novel: "pages" not in novel, id="pages-may-be-absent"
+        ),
+        pytest.param(
+            find_any, lambda novel: "rating" in novel, id="rating-may-be-present"
+        ),
+        pytest.param(
+            find_any, lambda novel: "rating" not in novel, id="rating-may-be-absent"
+        ),
+    ],
+)
+def test_required_and_not_required_keys(check, condition):
+    check(from_type(Novel), condition)
+
+
+def test_typeddict_error_msg():
+    with pytest.raises(TypeError, match="is not valid as type argument"):
+
+        class Foo(TypedDict):
+            attr: Required
+
+    with pytest.raises(TypeError, match="is not valid as type argument"):
+
+        class Bar(TypedDict):
+            attr: NotRequired
