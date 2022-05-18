@@ -101,6 +101,7 @@ def test_pyright_issue_3348(tmp_path: Path):
             st.tuples(st.integers(), st.integers())
             st.one_of(st.integers(), st.integers())
             st.one_of([st.integers(), st.floats()])  # sequence of strats should be OK
+            st.nothing()
             """
         )
     )

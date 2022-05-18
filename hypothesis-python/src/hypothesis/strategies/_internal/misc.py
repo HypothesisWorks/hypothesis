@@ -109,7 +109,7 @@ NOTHING = Nothing()
 
 @cacheable
 @defines_strategy(never_lazy=True)
-def nothing() -> SearchStrategy:
+def nothing() -> SearchStrategy[Nothing]:
     """This strategy never successfully draws a value and will always reject on
     an attempt to draw.
 
