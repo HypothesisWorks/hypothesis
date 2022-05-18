@@ -137,13 +137,22 @@ def sampled_from(elements: Sequence[T]) -> SearchStrategy[T]:  # pragma: no cove
 
 
 @overload  # noqa: F811
-def sampled_from(elements: Type[enum.Enum]) -> SearchStrategy[Any]:
-    # `SearchStrategy[Enum]` is unreliable due to metaclass issues.  # pragma: no cover
+def sampled_from(elements: Type[enum.Enum]) -> SearchStrategy[Any]:  # pragma: no cover
+    # `SearchStrategy[Enum]` is unreliable due to metaclass issues.
+    ...
+
+
+@overload  # noqa: F811
+def sampled_from(
+    elements: Union[Type[enum.Enum], Sequence[Any]]
+) -> SearchStrategy[Any]:  # pragma: no cover
     ...
 
 
 @defines_strategy(try_non_lazy=True)  # noqa: F811
-def sampled_from(elements):
+def sampled_from(
+    elements: Union[Type[enum.Enum], Sequence[Any]]
+) -> SearchStrategy[Any]:
     """Returns a strategy which generates any value present in ``elements``.
 
     Note that as with :func:`~hypothesis.strategies.just`, values will not be
