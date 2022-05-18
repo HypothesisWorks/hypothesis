@@ -62,27 +62,27 @@ class TupleStrategy(SearchStrategy):
 
 
 @overload
-def tuples() -> SearchStrategy[Tuple[()]]:
-    raise NotImplementedError
+def tuples() -> SearchStrategy[Tuple[()]]:  # pragma: no cover
+    ...
 
 
 @overload  # noqa: F811
-def tuples(__a1: SearchStrategy[Ex]) -> SearchStrategy[Tuple[Ex]]:
-    raise NotImplementedError
+def tuples(__a1: SearchStrategy[Ex]) -> SearchStrategy[Tuple[Ex]]:  # pragma: no cover
+    ...
 
 
 @overload  # noqa: F811
 def tuples(
     __a1: SearchStrategy[Ex], __a2: SearchStrategy[T]
-) -> SearchStrategy[Tuple[Ex, T]]:
-    raise NotImplementedError
+) -> SearchStrategy[Tuple[Ex, T]]:  # pragma: no cover
+    ...
 
 
 @overload  # noqa: F811
 def tuples(
     __a1: SearchStrategy[Ex], __a2: SearchStrategy[T], __a3: SearchStrategy[T3]
-) -> SearchStrategy[Tuple[Ex, T, T3]]:
-    raise NotImplementedError
+) -> SearchStrategy[Tuple[Ex, T, T3]]:  # pragma: no cover
+    ...
 
 
 @overload  # noqa: F811
@@ -91,8 +91,8 @@ def tuples(
     __a2: SearchStrategy[T],
     __a3: SearchStrategy[T3],
     __a4: SearchStrategy[T4],
-) -> SearchStrategy[Tuple[Ex, T, T3, T4]]:
-    raise NotImplementedError
+) -> SearchStrategy[Tuple[Ex, T, T3, T4]]:  # pragma: no cover
+    ...
 
 
 @overload  # noqa: F811
@@ -102,13 +102,15 @@ def tuples(
     __a3: SearchStrategy[T3],
     __a4: SearchStrategy[T4],
     __a5: SearchStrategy[T5],
-) -> SearchStrategy[Tuple[Ex, T, T3, T4, T5]]:
-    raise NotImplementedError
+) -> SearchStrategy[Tuple[Ex, T, T3, T4, T5]]:  # pragma: no cover
+    ...
 
 
 @overload  # noqa: F811
-def tuples(*args: SearchStrategy[Any]) -> SearchStrategy[Tuple[Any, ...]]:
-    raise NotImplementedError
+def tuples(
+    *args: SearchStrategy[Any],
+) -> SearchStrategy[Tuple[Any, ...]]:  # pragma: no cover
+    ...
 
 
 @cacheable

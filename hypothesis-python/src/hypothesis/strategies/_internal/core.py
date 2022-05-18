@@ -132,14 +132,14 @@ def booleans() -> SearchStrategy[bool]:
 
 
 @overload
-def sampled_from(elements: Sequence[T]) -> SearchStrategy[T]:
-    raise NotImplementedError
+def sampled_from(elements: Sequence[T]) -> SearchStrategy[T]:  # pragma: no cover
+    ...
 
 
 @overload  # noqa: F811
 def sampled_from(elements: Type[enum.Enum]) -> SearchStrategy[Any]:
-    # `SearchStrategy[Enum]` is unreliable due to metaclass issues.
-    raise NotImplementedError
+    # `SearchStrategy[Enum]` is unreliable due to metaclass issues.  # pragma: no cover
+    ...
 
 
 @defines_strategy(try_non_lazy=True)  # noqa: F811

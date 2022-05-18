@@ -681,27 +681,29 @@ class OneOfStrategy(SearchStrategy):
 
 
 @overload
-def one_of(__args: Sequence[SearchStrategy[Any]]) -> SearchStrategy[Any]:
-    raise NotImplementedError
+def one_of(
+    __args: Sequence[SearchStrategy[Any]],
+) -> SearchStrategy[Any]:  # pragma: no cover
+    ...
 
 
 @overload  # noqa: F811
-def one_of(__a1: SearchStrategy[Ex]) -> SearchStrategy[Ex]:
-    raise NotImplementedError
+def one_of(__a1: SearchStrategy[Ex]) -> SearchStrategy[Ex]:  # pragma: no cover
+    ...
 
 
 @overload  # noqa: F811
 def one_of(
     __a1: SearchStrategy[Ex], __a2: SearchStrategy[T]
-) -> SearchStrategy[Union[Ex, T]]:
-    raise NotImplementedError
+) -> SearchStrategy[Union[Ex, T]]:  # pragma: no cover
+    ...
 
 
 @overload  # noqa: F811
 def one_of(
     __a1: SearchStrategy[Ex], __a2: SearchStrategy[T], __a3: SearchStrategy[T3]
-) -> SearchStrategy[Union[Ex, T, T3]]:
-    raise NotImplementedError
+) -> SearchStrategy[Union[Ex, T, T3]]:  # pragma: no cover
+    ...
 
 
 @overload  # noqa: F811
@@ -710,8 +712,8 @@ def one_of(
     __a2: SearchStrategy[T],
     __a3: SearchStrategy[T3],
     __a4: SearchStrategy[T4],
-) -> SearchStrategy[Union[Ex, T, T3, T4]]:
-    raise NotImplementedError
+) -> SearchStrategy[Union[Ex, T, T3, T4]]:  # pragma: no cover
+    ...
 
 
 @overload  # noqa: F811
@@ -721,13 +723,13 @@ def one_of(
     __a3: SearchStrategy[T3],
     __a4: SearchStrategy[T4],
     __a5: SearchStrategy[T5],
-) -> SearchStrategy[Union[Ex, T, T3, T4, T5]]:
-    raise NotImplementedError
+) -> SearchStrategy[Union[Ex, T, T3, T4, T5]]:  # pragma: no cover
+    ...
 
 
 @overload  # noqa: F811
-def one_of(*args: SearchStrategy[Any]) -> SearchStrategy[Any]:
-    raise NotImplementedError
+def one_of(*args: SearchStrategy[Any]) -> SearchStrategy[Any]:  # pragma: no cover
+    ...
 
 
 @defines_strategy(never_lazy=True)
