@@ -21,6 +21,7 @@ from typing import (
     Sequence,
     TypeVar,
     Union,
+    cast,
     overload,
 )
 
@@ -424,13 +425,13 @@ class SearchStrategy(Generic[Ex]):
         return result
 
     @property
-    def label(self):
+    def label(self) -> int:
         if self.__label is calculating:
             return 0
         if self.__label is None:
             self.__label = calculating
             self.__label = self.calc_label()
-        return self.__label
+        return cast(int, self.__label)
 
     def calc_label(self):
         return self.class_label

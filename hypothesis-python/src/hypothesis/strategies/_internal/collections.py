@@ -9,7 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import copy
-from typing import Any, Tuple, overload
+from typing import Any, Iterable, Tuple, overload
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import utils as cu
@@ -34,7 +34,7 @@ class TupleStrategy(SearchStrategy):
     """A strategy responsible for fixed length tuples based on heterogeneous
     strategies for each of their elements."""
 
-    def __init__(self, strategies):
+    def __init__(self, strategies: Iterable[SearchStrategy[Any]]):
         super().__init__()
         self.element_strategies = tuple(strategies)
 
