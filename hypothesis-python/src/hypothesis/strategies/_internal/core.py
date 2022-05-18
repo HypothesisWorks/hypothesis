@@ -1682,7 +1682,7 @@ def uuids(
     to :class:`~python:uuid.UUID` and only UUIDs of that version will
     be generated.
 
-    If ``allow_nil` is True, generate the nil UUID much more often.
+    If ``allow_nil`` is True, generate the nil UUID much more often.
     Otherwise, all returned values from this will be unique, so e.g. if you do
     ``lists(uuids())`` the resulting list will never contain duplicates.
 
