@@ -433,4 +433,4 @@ def test_tuples_pos_only_args(tmpdir):
             """
         )
     )
-    assert_mypy_errors(str(f.realpath()), [(3, "call-overload"), (4, "call-overload")])
+    assert_mypy_errors(str(f.realpath()), [(4, "call-overload"), (5, "call-overload")])

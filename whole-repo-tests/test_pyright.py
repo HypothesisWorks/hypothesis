@@ -121,7 +121,9 @@ def test_pyright_tuples_pos_args_only(tmp_path: Path):
     )
     _write_config(tmp_path, {"typeCheckingMode": "strict"})
     assert any(
-        e["message"].startswith('No overloads for "given" match the provided arguments')
+        e["message"].startswith(
+            'No overloads for "tuples" match the provided arguments'
+        )
         for e in _get_pyright_errors(file)
     )
 
