@@ -1094,7 +1094,9 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
                 try:
                     v = v.__args__[0]
                 except IndexError:
-                    raise InvalidArgument(f"`{k}: {v.__name__}` is not a valid type annotation") from None
+                    raise InvalidArgument(
+                        f"`{k}: {v.__name__}` is not a valid type annotation"
+                    ) from None
             anns[k] = from_type(v)
 
         # anns = {k: from_type(v) for k, v in get_type_hints(thing).items()}
