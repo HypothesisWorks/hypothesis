@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.46.6:
+
+-------------------
+6.46.6 - 2022-05-18
+-------------------
+
+This patch by Cheuk Ting Ho adds support for :pep:`655` ``Required`` and ``NotRequired`` as attributes of
+:class:`~python:typing.TypedDict` in :func:`~hypothesis.strategies.from_type` (:issue:`3339`).
+
 .. _v6.46.5:
 
 -------------------
