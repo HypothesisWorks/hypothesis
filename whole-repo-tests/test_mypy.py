@@ -421,8 +421,8 @@ def test_stateful_precondition_precond_requires_one_arg(tmpdir):
     )
 
 
-def test_tuples_pos_only_args(tmpdir):
-    f = tmpdir.join("raises_for_mixed_pos_kwargs_in_given")
+def test_pos_only_args(tmpdir):
+    f = tmpdir.join("check_mypy_on_pos_arg_only_strats.py")
     f.write(
         textwrap.dedent(
             """
@@ -430,7 +430,18 @@ def test_tuples_pos_only_args(tmpdir):
 
             st.tuples(a1=st.integers())
             st.tuples(a1=st.integers(), a2=st.integers())
+            
+            st.one_of(a1=st.integers())
+            st.one_of(a1=st.integers(), a2=st.integers())
             """
         )
     )
-    assert_mypy_errors(str(f.realpath()), [(4, "call-overload"), (5, "call-overload")])
+    assert_mypy_errors(
+        str(f.realpath()),
+        [
+            (4, "call-overload"),
+            (5, "call-overload"),
+            (7, "call-overload"),
+            (8, "call-overload"),
+        ],
+    )

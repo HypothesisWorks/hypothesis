@@ -681,46 +681,46 @@ class OneOfStrategy(SearchStrategy):
 
 
 @overload
-def one_of(args: Sequence[SearchStrategy[Any]]) -> SearchStrategy[Any]:
+def one_of(__args: Sequence[SearchStrategy[Any]]) -> SearchStrategy[Any]:
     raise NotImplementedError
 
 
 @overload  # noqa: F811
-def one_of(a1: SearchStrategy[Ex]) -> SearchStrategy[Ex]:
+def one_of(__a1: SearchStrategy[Ex]) -> SearchStrategy[Ex]:
     raise NotImplementedError
 
 
 @overload  # noqa: F811
 def one_of(
-    a1: SearchStrategy[Ex], a2: SearchStrategy[T]
+    __a1: SearchStrategy[Ex], __a2: SearchStrategy[T]
 ) -> SearchStrategy[Union[Ex, T]]:
     raise NotImplementedError
 
 
 @overload  # noqa: F811
 def one_of(
-    a1: SearchStrategy[Ex], a2: SearchStrategy[T], a3: SearchStrategy[T3]
+    __a1: SearchStrategy[Ex], __a2: SearchStrategy[T], __a3: SearchStrategy[T3]
 ) -> SearchStrategy[Union[Ex, T, T3]]:
     raise NotImplementedError
 
 
 @overload  # noqa: F811
 def one_of(
-    a1: SearchStrategy[Ex],
-    a2: SearchStrategy[T],
-    a3: SearchStrategy[T3],
-    a4: SearchStrategy[T4],
+    __a1: SearchStrategy[Ex],
+    __a2: SearchStrategy[T],
+    __a3: SearchStrategy[T3],
+    __a4: SearchStrategy[T4],
 ) -> SearchStrategy[Union[Ex, T, T3, T4]]:
     raise NotImplementedError
 
 
 @overload  # noqa: F811
 def one_of(
-    a1: SearchStrategy[Ex],
-    a2: SearchStrategy[T],
-    a3: SearchStrategy[T3],
-    a4: SearchStrategy[T4],
-    a5: SearchStrategy[T5],
+    __a1: SearchStrategy[Ex],
+    __a2: SearchStrategy[T],
+    __a3: SearchStrategy[T3],
+    __a4: SearchStrategy[T4],
+    __a5: SearchStrategy[T5],
 ) -> SearchStrategy[Union[Ex, T, T3, T4, T5]]:
     raise NotImplementedError
 
@@ -731,7 +731,7 @@ def one_of(*args: SearchStrategy[Any]) -> SearchStrategy[Any]:
 
 
 @defines_strategy(never_lazy=True)
-def one_of(*args):  # noqa: F811
+def one_of(*args: SearchStrategy[Any]) -> SearchStrategy[Any]:  # noqa: F811
     # Mypy workaround alert:  Any is too loose above; the return parameter
     # should be the union of the input parameters.  Unfortunately, Mypy <=0.600
     # raises errors due to incompatible inputs instead.  See #1270 for links.
