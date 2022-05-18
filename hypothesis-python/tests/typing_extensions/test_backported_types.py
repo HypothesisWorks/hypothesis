@@ -222,6 +222,10 @@ def test_typeddict_not_required(value):
         assert isinstance(value["year"], int)
 
 
+def test_typeddict_not_required_can_skip():
+    find_any(from_type(Movie), lambda movie: "year" not in movie)
+
+
 class OtherMovie(TypedDict, total=False):
     title: Required[str]
     year: int
@@ -234,6 +238,10 @@ def test_typeddict_required(value):
     assert isinstance(value["title"], str)
     if "year" in value:
         assert isinstance(value["year"], int)
+
+
+def test_typeddict_required_must_have():
+    assert_all_examples(from_type(OtherMovie), lambda movie: "title" in movie)
 
 
 class Story(TypedDict, total=True):
