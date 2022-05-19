@@ -65,7 +65,7 @@ def test_double_reverse(i):
 
 @example(1.25)
 @example(1.0)
-@given(st.floats(min_value=0.0))
+@given(st.floats())
 def test_draw_write_round_trip(f):
     d = ConjectureData.for_buffer(bytes(10))
     flt.write_float(d, f)
@@ -97,6 +97,8 @@ def test_floats_round_trip(f):
     assert float_to_int(f) == float_to_int(g)
 
 
+# TODO: change this test to draw the float from 0.0 - 1.0 instead of 1.0 - 2.0.
+# (the sampling distribution is currently overweighted towards tiny numbers near 0)
 @example(1, 0.5)
 @given(st.integers(1, 2**53), st.floats(1, 2).filter(lambda x: x not in (1, 2)))
 def test_floats_order_worse_than_their_integral_part(n, g):
@@ -157,7 +159,7 @@ def float_runner(start, condition):
             data.mark_interesting()
 
     runner = ConjectureRunner(test_function)
-    runner.cached_test_function(b"\x00" + int_to_bytes(flt.float_to_lex(start), 8))
+    runner.cached_test_function(bytes(1) + int_to_bytes(flt.float_to_lex(start), 8))
     assert runner.interesting_examples
     return runner
 

@@ -24,6 +24,7 @@ from hypothesis.internal.floats import (
     int_to_float,
     is_negative,
     make_float_clamper,
+    next_down,
     next_down_normal,
     next_up,
     next_up_normal,
@@ -142,6 +143,7 @@ def integers(
     return IntegersStrategy(min_value, max_value)
 
 
+SMALLEST_SUBNORMAL = next_up(0.0)
 SIGNALING_NAN = int_to_float(0x7FF8_0000_0000_0001)  # nonzero mantissa
 assert math.isnan(SIGNALING_NAN) and math.copysign(1, SIGNALING_NAN) == 1
 
@@ -196,7 +198,11 @@ class FloatStrategy(SearchStrategy):
         min_value: float = -math.inf,
         max_value: float = math.inf,
         allow_nan: bool = True,
-        smallest_nonzero_magnitude: float = 0.0,
+        # The smallest nonzero number we can represent is usually a subnormal, but may
+        # be the smallest normal if we're running in unsafe denormals-are-zero mode.
+        # While that's usually an explicit error, we do need to handle the case where
+        # the user passes allow_subnormal=False.
+        smallest_nonzero_magnitude: float = SMALLEST_SUBNORMAL,
     ):
         super().__init__()
         assert isinstance(allow_nan, bool)
@@ -206,7 +212,17 @@ class FloatStrategy(SearchStrategy):
         self.allow_nan = allow_nan
         self.smallest_nonzero_magnitude = smallest_nonzero_magnitude
 
-        self.nasty_floats = [f for f in NASTY_FLOATS if self.permitted(f)]
+        boundary_values = [
+            min_value,
+            next_up(min_value),
+            min_value + 1,
+            max_value - 1,
+            next_down(max_value),
+            max_value,
+        ]
+        self.nasty_floats = [
+            f for f in NASTY_FLOATS + boundary_values if self.permitted(f)
+        ]
         weights = [0.2 * len(self.nasty_floats)] + [0.8] * len(self.nasty_floats)
         self.sampler = d.Sampler(weights) if self.nasty_floats else None
 
@@ -221,7 +237,7 @@ class FloatStrategy(SearchStrategy):
             self.neg_clamper = make_float_clamper(-neg_max, -min_value, allow_zero)
 
         self.forced_sign_bit: Optional[int] = None
-        if (self.pos_clamper is None) ^ (self.neg_clamper is None):
+        if (self.pos_clamper is None) != (self.neg_clamper is None):
             self.forced_sign_bit = 1 if self.neg_clamper else 0
 
     def __repr__(self):
@@ -246,23 +262,20 @@ class FloatStrategy(SearchStrategy):
             i = self.sampler.sample(data) if self.sampler else 0
             data.start_example(flt.DRAW_FLOAT_LABEL)
             if i == 0:
-                is_negative = data.draw_bits(1, forced=self.forced_sign_bit)
-                result = flt.lex_to_float(data.draw_bits(64))
-                clamper = self.neg_clamper if is_negative else self.pos_clamper
-                clamped = clamper(result)
+                result = flt.draw_float(data, forced_sign_bit=self.forced_sign_bit)
+                is_negative = flt.float_to_int(result) >> 63
+                if is_negative:
+                    clamped = -self.neg_clamper(-result)
+                else:
+                    clamped = self.pos_clamper(result)
                 if clamped != result:
                     data.stop_example(discard=True)
                     data.start_example(flt.DRAW_FLOAT_LABEL)
-                    data.draw_bits(1, forced=is_negative)
                     flt.write_float(data, clamped)
                     result = clamped
-                if is_negative:
-                    result = -result
             else:
                 result = self.nasty_floats[i - 1]
 
-                sign = flt.float_to_int(result) >> 63
-                data.draw_bits(1, forced=sign)
                 flt.write_float(data, result)
 
             data.stop_example()  # (DRAW_FLOAT_LABEL)
@@ -487,7 +500,9 @@ def floats(
         max_value = float("inf")
     assert isinstance(min_value, float)
     assert isinstance(max_value, float)
-    smallest_nonzero_magnitude = 0.0 if allow_subnormal else smallest_normal
+    smallest_nonzero_magnitude = (
+        SMALLEST_SUBNORMAL if allow_subnormal else smallest_normal
+    )
     result: SearchStrategy = FloatStrategy(
         min_value,
         max_value,
