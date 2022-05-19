@@ -104,7 +104,9 @@ else:
             try:
                 return getattr(module, funcname)
             except AttributeError as err:
-                public_names = [name for name in vars(module) if not name.startswith("_")]
+                public_names = [
+                    name for name in vars(module) if not name.startswith("_")
+                ]
                 matches = get_close_matches(funcname, public_names)
                 raise click.UsageError(
                     f"Found the {modulename!r} module, but it doesn't have a "
@@ -117,7 +119,8 @@ else:
             except AttributeError as err:
                 raise click.UsageError(
                     f"Found the {modulename!r} module, but it doesn't have a "
-                    f"{classname!r} class.")
+                    f"{classname!r} class."
+                )
             try:
                 return getattr(func_class, funcname)
             except:
