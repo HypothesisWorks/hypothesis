@@ -344,7 +344,7 @@ def test_stateful_consumed_bundle_cannot_be_target(tmpdir):
 
 
 def test_raises_for_mixed_pos_kwargs_in_given(tmpdir):
-    f = tmpdir.join("raises_for_mixed_pos_kwargs_in_given")
+    f = tmpdir.join("raises_for_mixed_pos_kwargs_in_given.py")
     f.write(
         textwrap.dedent(
             """
@@ -418,4 +418,30 @@ def test_stateful_precondition_precond_requires_one_arg(tmpdir):
     assert_mypy_errors(
         str(f.realpath()),
         [(2, "arg-type"), (2, "misc"), (3, "arg-type"), (3, "misc")],
+    )
+
+
+def test_pos_only_args(tmpdir):
+    f = tmpdir.join("check_mypy_on_pos_arg_only_strats.py")
+    f.write(
+        textwrap.dedent(
+            """
+            import hypothesis.strategies as st
+
+            st.tuples(a1=st.integers())
+            st.tuples(a1=st.integers(), a2=st.integers())
+            
+            st.one_of(a1=st.integers())
+            st.one_of(a1=st.integers(), a2=st.integers())
+            """
+        )
+    )
+    assert_mypy_errors(
+        str(f.realpath()),
+        [
+            (4, "call-overload"),
+            (5, "call-overload"),
+            (7, "call-overload"),
+            (8, "call-overload"),
+        ],
     )

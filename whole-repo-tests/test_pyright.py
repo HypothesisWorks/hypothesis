@@ -91,6 +91,66 @@ def test_pyright_raises_for_mixed_pos_kwargs_in_given(tmp_path: Path):
     )
 
 
+def test_pyright_issue_3348(tmp_path: Path):
+    file = tmp_path / "test.py"
+    file.write_text(
+        textwrap.dedent(
+            """
+            import hypothesis.strategies as st
+
+            st.tuples(st.integers(), st.integers())
+            st.one_of(st.integers(), st.integers())
+            st.one_of([st.integers(), st.floats()])  # sequence of strats should be OK
+            st.sampled_from([1, 2])
+            """
+        )
+    )
+    _write_config(tmp_path, {"typeCheckingMode": "strict"})
+    assert _get_pyright_errors(file) == []
+
+
+def test_pyright_tuples_pos_args_only(tmp_path: Path):
+    file = tmp_path / "test.py"
+    file.write_text(
+        textwrap.dedent(
+            """
+            import hypothesis.strategies as st
+
+            st.tuples(a1=st.integers())
+            st.tuples(a1=st.integers(), a2=st.integers())
+            """
+        )
+    )
+    _write_config(tmp_path, {"typeCheckingMode": "strict"})
+    assert any(
+        e["message"].startswith(
+            'No overloads for "tuples" match the provided arguments'
+        )
+        for e in _get_pyright_errors(file)
+    )
+
+
+def test_pyright_one_of_pos_args_only(tmp_path: Path):
+    file = tmp_path / "test.py"
+    file.write_text(
+        textwrap.dedent(
+            """
+            import hypothesis.strategies as st
+
+            st.one_of(a1=st.integers())
+            st.one_of(a1=st.integers(), a2=st.integers())
+            """
+        )
+    )
+    _write_config(tmp_path, {"typeCheckingMode": "strict"})
+    assert any(
+        e["message"].startswith(
+            'No overloads for "one_of" match the provided arguments'
+        )
+        for e in _get_pyright_errors(file)
+    )
+
+
 # ---------- Helpers for running pyright ---------- #
 
 

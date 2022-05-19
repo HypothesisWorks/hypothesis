@@ -132,18 +132,27 @@ def booleans() -> SearchStrategy[bool]:
 
 
 @overload
-def sampled_from(elements: Sequence[T]) -> SearchStrategy[T]:
-    raise NotImplementedError
+def sampled_from(elements: Sequence[T]) -> SearchStrategy[T]:  # pragma: no cover
+    ...
 
 
 @overload  # noqa: F811
-def sampled_from(elements: Type[enum.Enum]) -> SearchStrategy[Any]:
+def sampled_from(elements: Type[enum.Enum]) -> SearchStrategy[Any]:  # pragma: no cover
     # `SearchStrategy[Enum]` is unreliable due to metaclass issues.
-    raise NotImplementedError
+    ...
+
+
+@overload  # noqa: F811
+def sampled_from(
+    elements: Union[Type[enum.Enum], Sequence[Any]]
+) -> SearchStrategy[Any]:  # pragma: no cover
+    ...
 
 
 @defines_strategy(try_non_lazy=True)  # noqa: F811
-def sampled_from(elements):
+def sampled_from(
+    elements: Union[Type[enum.Enum], Sequence[Any]]
+) -> SearchStrategy[Any]:
     """Returns a strategy which generates any value present in ``elements``.
 
     Note that as with :func:`~hypothesis.strategies.just`, values will not be
@@ -1673,7 +1682,7 @@ def uuids(
     to :class:`~python:uuid.UUID` and only UUIDs of that version will
     be generated.
 
-    If ``allow_nil` is True, generate the nil UUID much more often.
+    If ``allow_nil`` is True, generate the nil UUID much more often.
     Otherwise, all returned values from this will be unique, so e.g. if you do
     ``lists(uuids())`` the resulting list will never contain duplicates.
 
