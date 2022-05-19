@@ -222,7 +222,7 @@ def is_simple(f):
     return i.bit_length() <= 56
 
 
-def draw_float(data, forced_sign_bit = None):
+def draw_float(data, forced_sign_bit=None):
     try:
         data.start_example(DRAW_FLOAT_LABEL)
         is_negative = data.draw_bits(1, forced=forced_sign_bit)
