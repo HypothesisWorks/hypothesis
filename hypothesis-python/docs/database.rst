@@ -35,9 +35,14 @@ ExampleDatabase implementations
 
 Hypothesis' default :obj:`~hypothesis.settings.database` setting creates a
 :class:`~hypothesis.database.DirectoryBasedExampleDatabase` in your current working directory,
-under ``.hypothesis/examples``.  If this location is unusable, e.g. because you do not have
+under ``.hypothesis/examples``. If this location is unusable, e.g. because you do not have
 read or write permissions, Hypothesis will emit a warning and fall back to an
 :class:`~hypothesis.database.InMemoryExampleDatabase`.
+
+If you use an :class:`~hypothesis.database.InMemoryExampleDatabase` hypothesis will still create
+the ``.hypothesis`` directory as it is used to cache a few other things like unicode tables. The
+location of the ``.hypothesis`` directory can be changed with the environment variable
+``HYPOTHESIS_STORAGE_DIRECTORY``.
 
 Hypothesis provides the following :class:`~hypothesis.database.ExampleDatabase` implementations:
 
