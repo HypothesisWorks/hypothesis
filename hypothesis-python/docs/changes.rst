@@ -18,6 +18,18 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.46.7:
+
+-------------------
+6.46.7 - 2022-05-19
+-------------------
+
+This patch updates the type annotations for :func:`~hypothesis.strategies.tuples` and
+:func:`~hypothesis.strategies.one_of` so that type-checkers require its arguments to be
+positional-only, and so that it no longer fails under pyright-strict mode (see
+:issue:`3348`). Additional changes are made to Hypothesis' internals improve pyright
+scans.
+
 .. _v6.46.6:
 
 -------------------
