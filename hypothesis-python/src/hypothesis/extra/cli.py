@@ -88,23 +88,43 @@ else:
             modulename, module, funcname = "builtins", builtins, s
         else:
             modulename, funcname = s.rsplit(".", 1)
+            classname = None
             try:
                 module = importlib.import_module(modulename)
             except ImportError as err:
+                try:
+                    modulename, classname = modulename.rsplit(".", 1)
+                    module = importlib.import_module(modulename)
+                except ImportError as err:
+                    raise click.UsageError(
+                        f"Failed to import the {modulename} module for introspection.  "
+                        "Check spelling and your Python import path, or use the Python API?"
+                    ) from err
+        if classname is None:
+            try:
+                return getattr(module, funcname)
+            except AttributeError as err:
+                public_names = [name for name in vars(module) if not name.startswith("_")]
+                matches = get_close_matches(funcname, public_names)
                 raise click.UsageError(
-                    f"Failed to import the {modulename} module for introspection.  "
-                    "Check spelling and your Python import path, or use the Python API?"
+                    f"Found the {modulename!r} module, but it doesn't have a "
+                    f"{funcname!r} attribute."
+                    + (f"  Closest matches: {matches!r}" if matches else "")
                 ) from err
-        try:
-            return getattr(module, funcname)
-        except AttributeError as err:
-            public_names = [name for name in vars(module) if not name.startswith("_")]
-            matches = get_close_matches(funcname, public_names)
-            raise click.UsageError(
-                f"Found the {modulename!r} module, but it doesn't have a "
-                f"{funcname!r} attribute."
-                + (f"  Closest matches: {matches!r}" if matches else "")
-            ) from err
+        else:
+            try:
+                func_class = getattr(module, classname)
+            except AttributeError as err:
+                raise click.UsageError(
+                    f"Found the {modulename!r} module, but it doesn't have a "
+                    f"{classname!r} class.")
+            try:
+                return getattr(func_class, funcname)
+            except:
+                raise click.UsageError(
+                    f"Found the {modulename!r} module and {classname!r} class, "
+                    f"but it doesn't have a {funcname!r} attribute."
+                ) from err
 
     def _refactor(func, fname):
         try:
