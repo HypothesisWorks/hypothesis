@@ -84,11 +84,11 @@ else:
             return importlib.import_module(s)
         except ImportError:
             pass
+        classname = None
         if "." not in s:
             modulename, module, funcname = "builtins", builtins, s
         else:
             modulename, funcname = s.rsplit(".", 1)
-            classname = None
             try:
                 module = importlib.import_module(modulename)
             except ImportError as err:
