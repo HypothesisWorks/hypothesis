@@ -125,7 +125,7 @@ else:
                     f"Found the {modulename!r} module, but it doesn't have a "
                     f"{classname!r} class."
                     + (f"  Closest matches: {matches!r}" if matches else "")
-                )
+                ) from err
             try:
                 return getattr(func_class, funcname)
             except:
