@@ -117,16 +117,26 @@ else:
             try:
                 func_class = getattr(module, classname)
             except AttributeError as err:
+                public_names = [
+                    name for name in vars(module) if not name.startswith("_")
+                ]
+                matches = get_close_matches(classname, public_names)
                 raise click.UsageError(
                     f"Found the {modulename!r} module, but it doesn't have a "
                     f"{classname!r} class."
+                    + (f"  Closest matches: {matches!r}" if matches else "")
                 )
             try:
                 return getattr(func_class, funcname)
             except:
+                public_names = [
+                    name for name in vars(func_class) if not name.startswith("_")
+                ]
+                matches = get_close_matches(funcname, public_names)
                 raise click.UsageError(
                     f"Found the {modulename!r} module and {classname!r} class, "
                     f"but it doesn't have a {funcname!r} attribute."
+                    + (f"  Closest matches: {matches!r}" if matches else "")
                 ) from err
 
     def _refactor(func, fname):
