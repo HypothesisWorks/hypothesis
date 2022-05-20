@@ -13,6 +13,7 @@ from sys import float_info
 
 import pytest
 
+from hypothesis import example, given, strategies as st
 from hypothesis.internal.floats import (
     count_between_floats,
     make_float_clamper,
@@ -43,41 +44,38 @@ def test_next_float_equal(func, val):
         assert func(val) == val
 
 
-@pytest.mark.parametrize(
-    "minfloat,maxfloat",
-    [
-        (0.1, 5.0),
-        (0.0, math.inf),
-        (0.0, 3.14),
-        (100.0, 100.0002),
-        (0.9, math.inf),
-    ],
-)
-@pytest.mark.parametrize("allow_zero", [True, False])
-def test_float_clamper(minfloat, maxfloat, allow_zero):
-    clamper = make_float_clamper(minfloat, maxfloat, allow_zero)
-
-    assert clamper(minfloat) == minfloat
-    assert clamper(maxfloat) == maxfloat
-
-    inside = next_up(minfloat)
-    assert clamper(inside) == inside
-
-    assert minfloat <= clamper(float_info.min) <= maxfloat
-    assert minfloat <= clamper(0.001) <= maxfloat
-    assert minfloat <= clamper(1.0) <= maxfloat
-    assert minfloat <= clamper(3.14) <= maxfloat
-    assert minfloat <= clamper(100.0001) <= maxfloat
-    assert minfloat <= clamper(float_info.max) <= maxfloat
-    assert minfloat <= clamper(math.inf) <= maxfloat
-
-    if allow_zero:
-        assert clamper(0.0) == 0.0
+# exponent comparisons:
+@example(1, float_info.max, 0)
+@example(1, float_info.max, 1)
+@example(1, float_info.max, 10)
+@example(1, float_info.max, float_info.max)
+@example(1, float_info.max, math.inf)
+# mantissa comparisons:
+@example(100.0001, 100.0003, 100.0001)
+@example(100.0001, 100.0003, 100.0002)
+@example(100.0001, 100.0003, 100.0003)
+@given(st.floats(min_value=0), st.floats(min_value=0), st.floats(min_value=0))
+def test_float_clamper(min_value, max_value, input_value):
+    clamper = make_float_clamper(min_value, max_value, allow_zero=False)
+    if max_value < min_value:
+        assert clamper is None
+        return
+    clamped = clamper(input_value)
+    if min_value <= input_value <= max_value:
+        assert input_value == clamped
     else:
-        assert minfloat <= clamper(0.0) <= maxfloat
+        assert min_value <= clamped <= max_value
 
 
-def test_float_clamper_degenerate_cases():
-    assert make_float_clamper(2.0, 1.0, allow_zero=False) is None
-    assert make_float_clamper(2.0, 1.0, allow_zero=True)(1.5) == 0.0
-    assert make_float_clamper(2.0, 2.0, allow_zero=False)(1.5) == 2.0
+@example(0.01, math.inf, 0.0)
+@given(st.floats(min_value=0), st.floats(min_value=0), st.floats(min_value=0))
+def test_float_clamper_with_allowed_zeros(min_value, max_value, input_value):
+    clamper = make_float_clamper(min_value, max_value, allow_zero=True)
+    assert clamper is not None
+    clamped = clamper(input_value)
+    if input_value == 0.0 or max_value < min_value:
+        assert clamped == 0.0
+    elif min_value <= input_value <= max_value:
+        assert input_value == clamped
+    else:
+        assert min_value <= clamped <= max_value
