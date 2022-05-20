@@ -116,6 +116,63 @@ def test_can_import_from_scripts_in_working_dir(tmpdir):
     assert "Error: " not in result.stderr
 
 
+CLASS_CODE_TO_TEST = """
+from typing import Sequence, List
+
+class S:
+
+    @staticmethod
+    def static_sorter(seq: Sequence[int]) -> List[int]:
+        return sorted(seq)
+
+    @classmethod
+    def class_sorter(seq: Sequence[int]) -> List[int]:
+        return sorted(seq)
+"""
+
+
+@pytest.mark.parametrize("func", ["static_sorter", "class_sorter"])
+def test_can_import_from_class(tmpdir, func):
+    (tmpdir / "mycode_class.py").write(CLASS_CODE_TO_TEST)
+    result = subprocess.run(
+        f"hypothesis write mycode_class.S.{func}",
+        capture_output=True,
+        shell=True,
+        text=True,
+        cwd=tmpdir,
+    )
+    assert result.returncode == 0
+    assert "Error: " not in result.stderr
+
+
+@pytest.mark.parametrize(
+    "classname,funcname,err_msg",
+    [
+        (
+            "XX",
+            "XX",
+            "Found the 'mycode_class' module, but it doesn't have a 'XX' class.",
+        ),
+        (
+            "S",
+            "XX",
+            "Found the 'mycode_class' module and 'S' class, but it doesn't have a 'XX' attribute.",
+        ),
+    ],
+)
+def test_error_import_from_class(tmpdir, classname, funcname, err_msg):
+    (tmpdir / "mycode_class.py").write(CLASS_CODE_TO_TEST)
+    result = subprocess.run(
+        f"hypothesis write mycode_class.{classname}.{funcname}",
+        capture_output=True,
+        shell=True,
+        text=True,
+        cwd=tmpdir,
+    )
+    assert result.returncode == 2
+    assert "Error: " + err_msg in result.stderr
+
+
 def test_empty_module_is_not_error(tmpdir):
     (tmpdir / "mycode.py").write("# Nothing to see here\n")
     result = subprocess.run(

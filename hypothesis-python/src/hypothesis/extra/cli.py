@@ -128,7 +128,7 @@ else:
                 ) from err
             try:
                 return getattr(func_class, funcname)
-            except:
+            except AttributeError as err:
                 public_names = [
                     name for name in vars(func_class) if not name.startswith("_")
                 ]
