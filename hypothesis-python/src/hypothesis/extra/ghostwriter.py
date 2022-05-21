@@ -914,7 +914,6 @@ def magic(
                         for k, v in vars(f).items()
                         if hasattr(v, "__func__")
                         and not is_mock(v)
-                        and ((not pkg) or getattr(v, "__module__", pkg).startswith(pkg))
                         and not k.startswith("_")
                     ]
             for f in funcs:
