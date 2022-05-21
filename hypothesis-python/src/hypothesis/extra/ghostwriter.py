@@ -78,6 +78,7 @@ import re
 import sys
 import types
 from collections import OrderedDict, defaultdict
+from copy import copy
 from itertools import permutations, zip_longest
 from keyword import iskeyword
 from string import ascii_lowercase
@@ -906,6 +907,16 @@ def magic(
                 ]
                 if pkg and any(getattr(f, "__module__", pkg) == pkg for f in funcs):
                     funcs = [f for f in funcs if getattr(f, "__module__", pkg) == pkg]
+            for f in copy(funcs):
+                if inspect.isclass(f):
+                    funcs += [
+                        v.__get__(f)
+                        for k, v in vars(f).items()
+                        if hasattr(v, "__func__")
+                        and not is_mock(v)
+                        and ((not pkg) or getattr(v, "__module__", pkg).startswith(pkg))
+                        and not k.startswith("_")
+                    ]
             for f in funcs:
                 try:
                     if (
