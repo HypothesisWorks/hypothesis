@@ -238,7 +238,7 @@ def test_roundtrip_correct_pairs(tmpdir):
         cwd=tmpdir,
     )
     assert result.returncode == 0
-    # corrent paris
+    # correct paris
     assert (
         """value0 = mycode.S.to_json(json=json)
     value1 = mycode.S.from_json(json=value0)"""
@@ -254,7 +254,7 @@ def test_roundtrip_correct_pairs(tmpdir):
     value1 = mycode.from_json(json=value0)"""
         in result.stdout
     )
-    # incorrent paris
+    # incorrect paris
     assert (
         """value0 = mycode.to_json(json=json)
     value1 = mycode.S.from_json(json=value0)"""
