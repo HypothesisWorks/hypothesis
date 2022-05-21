@@ -136,9 +136,9 @@ class S:
 
 @pytest.mark.parametrize("func", ["static_sorter", "class_sorter"])
 def test_can_import_from_class(tmpdir, func):
-    (tmpdir / "mycode_class.py").write(CLASS_CODE_TO_TEST)
+    (tmpdir / "mycode.py").write(CLASS_CODE_TO_TEST)
     result = subprocess.run(
-        f"hypothesis write mycode_class.S.{func}",
+        f"hypothesis write mycode.S.{func}",
         capture_output=True,
         shell=True,
         text=True,
@@ -154,24 +154,24 @@ def test_can_import_from_class(tmpdir, func):
         (
             "XX",
             "XX",
-            "Found the 'mycode_class' module, but it doesn't have a 'XX' class.",
+            "Found the 'mycode' module, but it doesn't have a 'XX' class.",
         ),
         (
             "S",
             "XX",
-            "Found the 'mycode_class' module and 'S' class, but it doesn't have a 'XX' attribute.",
+            "Found the 'mycode' module and 'S' class, but it doesn't have a 'XX' attribute.",
         ),
         (
             "func_sorter",
             "XX",
-            "Found the 'mycode_class' module and 'func_sorter' attribute, but it doesn't have a 'XX' attribute.",
+            "Found the 'mycode' module and 'func_sorter' attribute, but it doesn't have a 'XX' attribute.",
         ),
     ],
 )
 def test_error_import_from_class(tmpdir, classname, funcname, err_msg):
-    (tmpdir / "mycode_class.py").write(CLASS_CODE_TO_TEST)
+    (tmpdir / "mycode.py").write(CLASS_CODE_TO_TEST)
     result = subprocess.run(
-        f"hypothesis write mycode_class.{classname}.{funcname}",
+        f"hypothesis write mycode.{classname}.{funcname}",
         capture_output=True,
         shell=True,
         text=True,
@@ -182,9 +182,9 @@ def test_error_import_from_class(tmpdir, classname, funcname, err_msg):
 
 
 def test_magic_discovery_from_module(tmpdir):
-    (tmpdir / "mycode_class.py").write(CLASS_CODE_TO_TEST)
+    (tmpdir / "mycode.py").write(CLASS_CODE_TO_TEST)
     result = subprocess.run(
-        f"hypothesis write mycode_class",
+        f"hypothesis write mycode",
         capture_output=True,
         shell=True,
         text=True,
@@ -194,6 +194,62 @@ def test_magic_discovery_from_module(tmpdir):
     assert "func_sorter" in result.stdout
     assert "S.static_sorter" in result.stdout
     assert "S.class_sorter" in result.stdout
+
+
+ROUNDTRIP_CODE_TO_TEST = """
+from typing import Union
+import json
+
+def to_json(json: Union[dict,list]) -> str:
+    return json.dumps(json)
+
+def from_json(json: str) -> Union[dict,list]:
+    return json.loads(json)
+
+class S:
+
+    @staticmethod
+    def to_json(json: Union[dict,list]) -> str:
+        return json.dumps(json)
+
+    @staticmethod
+    def from_json(json: str) -> Union[dict,list]:
+        return json.loads(json)
+"""
+
+
+def test_roundtrip_correct_pairs(tmpdir):
+    (tmpdir / "mycode.py").write(ROUNDTRIP_CODE_TO_TEST)
+    result = subprocess.run(
+        f"hypothesis write mycode",
+        capture_output=True,
+        shell=True,
+        text=True,
+        cwd=tmpdir,
+    )
+    assert result.returncode == 0
+    # corrent paris
+    assert (
+        """value0 = mycode.S.to_json(json=json)
+    value1 = mycode.S.from_json(json=value0)"""
+        in result.stdout
+    )
+    assert (
+        """value0 = mycode.to_json(json=json)
+    value1 = mycode.from_json(json=value0)"""
+        in result.stdout
+    )
+    # incorrent paris
+    assert (
+        """value0 = mycode.to_json(json=json)
+    value1 = mycode.S.from_json(json=value0)"""
+        not in result.stdout
+    )
+    assert (
+        """value0 = mycode.S.to_json(json=json)
+    value1 = mycode.from_json(json=value0)"""
+        not in result.stdout
+    )
 
 
 def test_empty_module_is_not_error(tmpdir):
