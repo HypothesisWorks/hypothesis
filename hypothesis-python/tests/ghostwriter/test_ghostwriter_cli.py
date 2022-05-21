@@ -129,7 +129,7 @@ class S:
         return sorted(seq)
 
     @classmethod
-    def class_sorter(seq: Sequence[int]) -> List[int]:
+    def class_sorter(cls, seq: Sequence[int]) -> List[int]:
         return sorted(seq)
 """
 
@@ -179,6 +179,21 @@ def test_error_import_from_class(tmpdir, classname, funcname, err_msg):
     )
     assert result.returncode == 2
     assert "Error: " + err_msg in result.stderr
+
+
+def test_magic_discovery_from_module(tmpdir):
+    (tmpdir / "mycode_class.py").write(CLASS_CODE_TO_TEST)
+    result = subprocess.run(
+        f"hypothesis write mycode_class",
+        capture_output=True,
+        shell=True,
+        text=True,
+        cwd=tmpdir,
+    )
+    assert result.returncode == 0
+    assert "func_sorter" in result.stdout
+    assert "S.static_sorter" in result.stdout
+    assert "S.class_sorter" in result.stdout
 
 
 def test_empty_module_is_not_error(tmpdir):
