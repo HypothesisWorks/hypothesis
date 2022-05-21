@@ -37,6 +37,7 @@ command (`learn more about that here <https://hypofuzz.com/docs/quickstart.html>
 
 import builtins
 import importlib
+import inspect
 import sys
 from difflib import get_close_matches
 from functools import partial
@@ -133,8 +134,12 @@ else:
                     name for name in vars(func_class) if not name.startswith("_")
                 ]
                 matches = get_close_matches(funcname, public_names)
+                if inspect.isclass(func_class):
+                    func_class_is = "class"
+                else:
+                    func_class_is = "attribute"
                 raise click.UsageError(
-                    f"Found the {modulename!r} module and {classname!r} class, "
+                    f"Found the {modulename!r} module and {classname!r} {func_class_is}, "
                     f"but it doesn't have a {funcname!r} attribute."
                     + (f"  Closest matches: {matches!r}" if matches else "")
                 ) from err
