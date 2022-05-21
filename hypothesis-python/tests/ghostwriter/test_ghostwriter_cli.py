@@ -215,6 +215,16 @@ class S:
     @staticmethod
     def from_json(json: str) -> Union[dict,list]:
         return json.loads(json)
+
+class A:
+
+    @staticmethod
+    def to_json(json: Union[dict,list]) -> str:
+        return json.dumps(json)
+
+    @staticmethod
+    def from_json(json: str) -> Union[dict,list]:
+        return json.loads(json)
 """
 
 
@@ -235,6 +245,11 @@ def test_roundtrip_correct_pairs(tmpdir):
         in result.stdout
     )
     assert (
+        """value0 = mycode.A.to_json(json=json)
+    value1 = mycode.A.from_json(json=value0)"""
+        in result.stdout
+    )
+    assert (
         """value0 = mycode.to_json(json=json)
     value1 = mycode.from_json(json=value0)"""
         in result.stdout
@@ -248,6 +263,11 @@ def test_roundtrip_correct_pairs(tmpdir):
     assert (
         """value0 = mycode.S.to_json(json=json)
     value1 = mycode.from_json(json=value0)"""
+        not in result.stdout
+    )
+    assert (
+        """value0 = mycode.S.to_json(json=json)
+    value1 = mycode.A.from_json(json=value0)"""
         not in result.stdout
     )
 
