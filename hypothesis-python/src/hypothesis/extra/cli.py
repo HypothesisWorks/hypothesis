@@ -95,7 +95,7 @@ else:
                 try:
                     modulename, classname = modulename.rsplit(".", 1)
                     module = importlib.import_module(modulename)
-                except ImportError as err:
+                except ImportError:
                     raise click.UsageError(
                         f"Failed to import the {modulename} module for introspection.  "
                         "Check spelling and your Python import path, or use the Python API?"
