@@ -119,6 +119,9 @@ def test_can_import_from_scripts_in_working_dir(tmpdir):
 CLASS_CODE_TO_TEST = """
 from typing import Sequence, List
 
+def func_sorter(seq: Sequence[int]) -> List[int]:
+    return sorted(seq)
+
 class S:
 
     @staticmethod
@@ -157,6 +160,11 @@ def test_can_import_from_class(tmpdir, func):
             "S",
             "XX",
             "Found the 'mycode_class' module and 'S' class, but it doesn't have a 'XX' attribute.",
+        ),
+        (
+            "func_sorter",
+            "XX",
+            "Found the 'mycode_class' module and 'func_sorter' attribute, but it doesn't have a 'XX' attribute.",
         ),
     ],
 )
