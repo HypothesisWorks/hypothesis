@@ -169,7 +169,7 @@ def reverse_bits(x: int, n: int) -> int:
     return x
 
 
-def update_mantissa(unbiased_exponent:int , mantissa: int) -> int:
+def update_mantissa(unbiased_exponent: int, mantissa: int) -> int:
     if unbiased_exponent <= 0:
         mantissa = reverse_bits(mantissa, 52)
     elif unbiased_exponent <= 51:

@@ -12,7 +12,20 @@ import time
 from collections import defaultdict
 from enum import IntEnum
 from random import Random
-from typing import TYPE_CHECKING, Any, Iterable, Iterator, List, Optional, Set, Tuple, Type, Union, Dict, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    Union,
+    Dict,
+    cast,
+)
 
 import attr
 
@@ -20,6 +33,7 @@ from hypothesis.errors import Frozen, InvalidArgument, StopTest
 from hypothesis.internal.compat import int_from_bytes, int_to_bytes
 from hypothesis.internal.conjecture.junkdrawer import IntList, uniform
 from hypothesis.internal.conjecture.utils import calc_label_from_name
+
 if TYPE_CHECKING:
     from hypothesis.strategies import SearchStrategy
 
@@ -746,10 +760,18 @@ BYTE_MASKS[0] = 255
 
 class ConjectureData:
     @classmethod
-    def for_buffer(cls, buffer: Union[List[int], bytes], observer: Optional[DataObserver]=None) -> "ConjectureData":
+    def for_buffer(
+        cls, buffer: Union[List[int], bytes], observer: Optional[DataObserver] = None
+    ) -> "ConjectureData":
         return cls(len(buffer), buffer, random=None, observer=observer)
 
-    def __init__(self, max_length: int, prefix: Union[List[int], bytes, bytearray], random: Optional[Random], observer: Optional[Union[DataObserver, DataObserver]]=None) -> None:
+    def __init__(
+        self,
+        max_length: int,
+        prefix: Union[List[int], bytes, bytearray],
+        random: Optional[Random],
+        observer: Optional[Union[DataObserver, DataObserver]] = None,
+    ) -> None:
         if observer is None:
             observer = DataObserver()
         assert isinstance(observer, DataObserver)
@@ -848,7 +870,7 @@ class ConjectureData:
             value = repr(value)
         self.output += value
 
-    def draw(self, strategy: "SearchStrategy", label: None=None) -> Any:
+    def draw(self, strategy: "SearchStrategy", label: None = None) -> Any:
         if self.is_find and not strategy.supports_find:
             raise InvalidArgument(
                 f"Cannot use strategy {strategy!r} within a call to find "
@@ -900,7 +922,7 @@ class ConjectureData:
         self.__example_record.start_example(label)
         self.labels_for_structure_stack.append({label})
 
-    def stop_example(self, discard: bool=False) -> None:
+    def stop_example(self, discard: bool = False) -> None:
         if self.frozen:
             return
         if discard:
@@ -1039,7 +1061,7 @@ class ConjectureData:
         if self.index + n > self.max_length:
             self.mark_overrun()
 
-    def conclude_test(self, status: Status, interesting_origin: None=None):
+    def conclude_test(self, status: Status, interesting_origin: None = None):
         assert (interesting_origin is None) or (status == Status.INTERESTING)
         self.__assert_not_frozen("conclude_test")
         self.interesting_origin = interesting_origin
@@ -1047,7 +1069,7 @@ class ConjectureData:
         self.freeze()
         raise StopTest(self.testcounter)
 
-    def mark_interesting(self, interesting_origin: None=None):
+    def mark_interesting(self, interesting_origin: None = None):
         self.conclude_test(Status.INTERESTING, interesting_origin)
 
     def mark_invalid(self):

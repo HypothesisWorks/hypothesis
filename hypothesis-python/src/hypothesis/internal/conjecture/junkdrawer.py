@@ -40,7 +40,9 @@ def array_or_list(
     return array.array(code, contents)
 
 
-def replace_all(buffer: Sequence[int], replacements: Iterable[Tuple[int, int, Sequence[int]]]) -> bytes:
+def replace_all(
+    buffer: Sequence[int], replacements: Iterable[Tuple[int, int, Sequence[int]]]
+) -> bytes:
     """Substitute multiple replacement values into a buffer.
 
     Replacements is a list of (start, end, value) triples.
@@ -106,11 +108,11 @@ class IntList:
 
     @overload
     def __getitem__(self, i: slice) -> "IntList":
-        ...
+        ...  # pramga: no cover
 
     @overload
     def __getitem__(self, i: int) -> int:
-        ...
+        ...  # pramga: no cover
 
     def __getitem__(self, i: Union[int, slice]) -> "Union[int, IntList]":
         if isinstance(i, slice):

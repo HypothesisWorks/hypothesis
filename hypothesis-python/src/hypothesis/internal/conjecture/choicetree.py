@@ -14,7 +14,9 @@ from typing import Any, Callable, Dict, Iterable, Iterator, List, Optional, Sequ
 from hypothesis.internal.conjecture.junkdrawer import LazySequenceCopy, pop_random
 
 
-def prefix_selection_order(prefix: Sequence[int]) -> Callable[[int, int], Iterator[int]]:
+def prefix_selection_order(
+    prefix: Sequence[int],
+) -> Callable[[int, int], Iterator[int]]:
     """Select choices starting from ``prefix```,
     preferring to move left then wrapping around
     to the right."""
@@ -46,14 +48,18 @@ def random_selection_order(random: Any) -> Callable[[int, int], Iterable[int]]:
 class Chooser:
     """A source of nondeterminism for use in shrink passes."""
 
-    def __init__(self, tree: "ChoiceTree", selection_order: Callable[[int, int], Iterable[int]]):
+    def __init__(
+        self, tree: "ChoiceTree", selection_order: Callable[[int, int], Iterable[int]]
+    ):
         self.__selection_order = selection_order
         self.__tree = tree
         self.__node_trail = [tree.root]
         self.__choices: "List[int]" = []
         self.__finished = False
 
-    def choose(self, values: Sequence[int], condition: Callable[[int], bool] = lambda x: True) -> int:
+    def choose(
+        self, values: Sequence[int], condition: Callable[[int], bool] = lambda x: True
+    ) -> int:
         """Return some element of values satisfying the condition
         that will not lead to an exhausted branch, or raise DeadBranch
         if no such element exist".
@@ -116,7 +122,11 @@ class ChoiceTree:
     def exhausted(self) -> bool:
         return self.root.exhausted
 
-    def step(self, selection_order: Callable[[int, int], Iterable[int]], f: Callable[[Chooser], None]) -> Sequence[int]:
+    def step(
+        self,
+        selection_order: Callable[[int, int], Iterable[int]],
+        f: Callable[[Chooser], None],
+    ) -> Sequence[int]:
         assert not self.exhausted
 
         chooser = Chooser(self, selection_order)
