@@ -15,6 +15,7 @@ from random import Random
 from typing import (
     TYPE_CHECKING,
     Any,
+    Dict,
     Iterable,
     Iterator,
     List,
@@ -23,8 +24,6 @@ from typing import (
     Tuple,
     Type,
     Union,
-    Dict,
-    cast,
 )
 
 import attr

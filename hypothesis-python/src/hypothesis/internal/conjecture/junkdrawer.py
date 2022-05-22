@@ -161,9 +161,9 @@ class IntList:
             self.append(n)
 
     def __upgrade(self) -> None:
-        if isinstance(self.__underlying, array.array):
-            code = NEXT_ARRAY_CODE[self.__underlying.typecode]
-            self.__underlying = array_or_list(code, self.__underlying)
+        assert isinstance(self.__underlying, array.array)
+        code = NEXT_ARRAY_CODE[self.__underlying.typecode]
+        self.__underlying = array_or_list(code, self.__underlying)
 
 
 def binary_search(lo: int, hi: int, f: Callable[[int], bool]) -> int:
