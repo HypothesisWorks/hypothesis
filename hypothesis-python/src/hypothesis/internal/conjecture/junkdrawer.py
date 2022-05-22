@@ -108,11 +108,11 @@ class IntList:
 
     @overload
     def __getitem__(self, i: slice) -> "IntList":
-        ...  # pramga: no cover
+        ...  # pragma: no cover
 
     @overload
     def __getitem__(self, i: int) -> int:
-        ...  # pramga: no cover
+        ...  # pragma: no cover
 
     def __getitem__(self, i: Union[int, slice]) -> "Union[int, IntList]":
         if isinstance(i, slice):
