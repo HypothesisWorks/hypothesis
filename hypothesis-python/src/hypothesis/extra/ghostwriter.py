@@ -890,12 +890,12 @@ def magic(
         raise InvalidArgument("Must pass at least one function or module to test.")
     functions = set()
     for thing in modules_or_functions:
-        if callable(thing):
+        if callable(thing) and not inspect.isclass(thing):
             functions.add(thing)
-        elif isinstance(thing, types.ModuleType):
+        elif isinstance(thing, types.ModuleType) or inspect.isclass(thing):
             if hasattr(thing, "__all__"):
                 funcs = [getattr(thing, name, None) for name in thing.__all__]
-            else:
+            elif hasattr(thing, "__package__"):
                 pkg = thing.__package__
                 funcs = [
                     v
@@ -907,6 +907,14 @@ def magic(
                 ]
                 if pkg and any(getattr(f, "__module__", pkg) == pkg for f in funcs):
                     funcs = [f for f in funcs if getattr(f, "__module__", pkg) == pkg]
+            else:
+                funcs = [
+                    v.__get__(thing)
+                    for k, v in vars(thing).items()
+                    if hasattr(v, "__func__")
+                    and not is_mock(v)
+                    and not k.startswith("_")
+                ]
             for f in copy(funcs):
                 if inspect.isclass(f):
                     funcs += [
@@ -926,7 +934,10 @@ def magic(
                     ):
                         functions.add(f)
                         if getattr(thing, "__name__", None):
-                            KNOWN_FUNCTION_LOCATIONS[f] = thing.__name__
+                            if inspect.isclass(thing):
+                                KNOWN_FUNCTION_LOCATIONS[f] = thing.__module__
+                            else:
+                                KNOWN_FUNCTION_LOCATIONS[f] = thing.__name__
                 except (TypeError, ValueError):
                     pass
         else:
