@@ -96,6 +96,21 @@ def test_fuzz_settings(
     )
 
 
+@given(name=st.text())
+def test_fuzz_settings_get_profile(name):
+    hypothesis.settings.get_profile(name=name)
+
+
+@given(name=st.text())
+def test_fuzz_settings_load_profile(name):
+    hypothesis.settings.load_profile(name=name)
+
+
+@given(name=st.text(), parent=st.one_of(st.none(), st.builds(settings)))
+def test_fuzz_settings_register_profile(name, parent):
+    hypothesis.settings.register_profile(name=name, parent=parent)
+
+
 @given(observation=st.one_of(st.floats(), st.integers()), label=st.text())
 def test_fuzz_target(observation, label):
     hypothesis.target(observation=observation, label=label)
