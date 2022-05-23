@@ -118,7 +118,7 @@ def annotated_any(x: Any):
     pass
 
 
-space_in_name = type("a name", (type,), {"__init__": lambda self: None})
+space_in_name = type("a name", (type,), {"__init__": lambda self: None, "method": lambda cls: cls})
 
 
 class NotResolvable:
@@ -180,7 +180,7 @@ def takes_attrs_class(x: Foo) -> None:
         ast.literal_eval,
         non_type_annotation,
         annotated_any,
-        space_in_name,
+        space_in_name.method,
         non_resolvable_arg,
         takes_keys,
         takes_values,
