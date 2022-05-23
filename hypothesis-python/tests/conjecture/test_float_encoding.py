@@ -97,10 +97,8 @@ def test_floats_round_trip(f):
     assert float_to_int(f) == float_to_int(g)
 
 
-# TODO: change this test to draw the float from 0.0 - 1.0 instead of 1.0 - 2.0.
-# (the sampling distribution is currently overweighted towards tiny numbers near 0)
 @example(1, 0.5)
-@given(st.integers(1, 2**53), st.floats(1, 2).filter(lambda x: x not in (1, 2)))
+@given(st.integers(1, 2**53), st.floats(0, 1).filter(lambda x: x not in (0, 1)))
 def test_floats_order_worse_than_their_integral_part(n, g):
     f = n + g
     assume(int(f) != f)
