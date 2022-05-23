@@ -890,9 +890,16 @@ def magic(
         raise InvalidArgument("Must pass at least one function or module to test.")
     functions = set()
     for thing in modules_or_functions:
-        if callable(thing) and not inspect.isclass(thing):
+        if inspect.isclass(thing):
+            funcs = [
+                v.__get__(thing)
+                for k, v in vars(thing).items()
+                if hasattr(v, "__func__") and not is_mock(v) and not k.startswith("_")
+            ]
+        elif callable(thing):
             functions.add(thing)
-        elif isinstance(thing, types.ModuleType) or inspect.isclass(thing):
+            funcs = []
+        elif isinstance(thing, types.ModuleType):
             if hasattr(thing, "__all__"):
                 funcs = [getattr(thing, name, None) for name in thing.__all__]
             elif hasattr(thing, "__package__"):
@@ -907,41 +914,34 @@ def magic(
                 ]
                 if pkg and any(getattr(f, "__module__", pkg) == pkg for f in funcs):
                     funcs = [f for f in funcs if getattr(f, "__module__", pkg) == pkg]
-            else:
-                funcs = [
-                    v.__get__(thing)
-                    for k, v in vars(thing).items()
+        else:
+            raise InvalidArgument(f"Can't test non-module non-callable {thing!r}")
+
+        for f in copy(funcs):
+            if inspect.isclass(f):
+                funcs += [
+                    v.__get__(f)
+                    for k, v in vars(f).items()
                     if hasattr(v, "__func__")
                     and not is_mock(v)
                     and not k.startswith("_")
                 ]
-            for f in copy(funcs):
-                if inspect.isclass(f):
-                    funcs += [
-                        v.__get__(f)
-                        for k, v in vars(f).items()
-                        if hasattr(v, "__func__")
-                        and not is_mock(v)
-                        and not k.startswith("_")
-                    ]
-            for f in funcs:
-                try:
-                    if (
-                        (not is_mock(f))
-                        and callable(f)
-                        and _get_params(f)
-                        and not isinstance(f, enum.EnumMeta)
-                    ):
-                        functions.add(f)
-                        if getattr(thing, "__name__", None):
-                            if inspect.isclass(thing):
-                                KNOWN_FUNCTION_LOCATIONS[f] = thing.__module__
-                            else:
-                                KNOWN_FUNCTION_LOCATIONS[f] = thing.__name__
-                except (TypeError, ValueError):
-                    pass
-        else:
-            raise InvalidArgument(f"Can't test non-module non-callable {thing!r}")
+        for f in funcs:
+            try:
+                if (
+                    (not is_mock(f))
+                    and callable(f)
+                    and _get_params(f)
+                    and not isinstance(f, enum.EnumMeta)
+                ):
+                    functions.add(f)
+                    if getattr(thing, "__name__", None):
+                        if inspect.isclass(thing):
+                            KNOWN_FUNCTION_LOCATIONS[f] = thing.__module__
+                        else:
+                            KNOWN_FUNCTION_LOCATIONS[f] = thing.__name__
+            except (TypeError, ValueError):
+                pass
 
     imports = set()
     parts = []
