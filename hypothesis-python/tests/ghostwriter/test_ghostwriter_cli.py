@@ -16,12 +16,14 @@ import subprocess
 
 import pytest
 
+import hypothesis.strategies
 from hypothesis.errors import StopTest
 from hypothesis.extra.ghostwriter import (
     binary_operation,
     equivalent,
     fuzz,
     idempotent,
+    magic,
     roundtrip,
 )
 
@@ -41,8 +43,11 @@ from hypothesis.extra.ghostwriter import (
             "--roundtrip json.loads json.dumps --except ValueError",
             lambda: roundtrip(json.loads, json.dumps, except_=ValueError),
         ),
+        ("hypothesis.strategies.builds", lambda: fuzz(hypothesis.strategies.builds)),
+        # Discover methods in class
+        ("hypothesis.errors.StopTest", lambda: magic(StopTest)),
         # Imports submodule (importlib.import_module passes; __import__ fails)
-        ("hypothesis.errors.StopTest", lambda: fuzz(StopTest)),
+        ("hypothesis.strategies", lambda: magic(hypothesis.strategies)),
         # Search for identity element does not print e.g. "You can use @seed ..."
         ("--binary-op operator.add", lambda: binary_operation(operator.add)),
     ],
