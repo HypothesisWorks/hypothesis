@@ -9,19 +9,20 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 from collections import defaultdict
-from typing import Any, Callable, Dict, Iterable, Iterator, List, Optional, Sequence
+from random import Random
+from typing import Callable, Dict, Iterable, List, Optional, Sequence
 
 from hypothesis.internal.conjecture.junkdrawer import LazySequenceCopy, pop_random
 
 
 def prefix_selection_order(
     prefix: Sequence[int],
-) -> Callable[[int, int], Iterator[int]]:
+) -> Callable[[int, int], Iterable[int]]:
     """Select choices starting from ``prefix```,
     preferring to move left then wrapping around
     to the right."""
 
-    def selection_order(depth: int, n: int) -> Iterator[int]:
+    def selection_order(depth: int, n: int) -> Iterable[int]:
         if depth < len(prefix):
             i = prefix[depth]
             if i >= n:
@@ -34,7 +35,7 @@ def prefix_selection_order(
     return selection_order
 
 
-def random_selection_order(random: Any) -> Callable[[int, int], Iterable[int]]:
+def random_selection_order(random: Random) -> Callable[[int, int], Iterable[int]]:
     """Select choices uniformly at random."""
 
     def selection_order(depth: int, n: int) -> Iterable[int]:

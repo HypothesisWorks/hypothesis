@@ -13,6 +13,7 @@ obviously belong anywhere else. If you spot a better home for
 anything that lives here, please move it."""
 
 import array
+from random import Random
 import sys
 from typing import (
     Any,
@@ -184,7 +185,7 @@ def binary_search(lo: int, hi: int, f: Callable[[int], bool]) -> int:
     return lo
 
 
-def uniform(random: Any, n: int) -> bytes:
+def uniform(random: Random, n: int) -> bytes:
     """Returns a bytestring of length n, distributed uniformly at random."""
     return random.getrandbits(n * 8).to_bytes(n, "big")
 
@@ -309,7 +310,7 @@ def find_integer(f: Callable[[int], bool]) -> int:
     return lo
 
 
-def pop_random(random: Any, seq: LazySequenceCopy) -> int:
+def pop_random(random: Random, seq: LazySequenceCopy) -> int:
     """Remove and return a random element of seq. This runs in O(1) but leaves
     the sequence in an arbitrary order."""
     i = random.randrange(0, len(seq))

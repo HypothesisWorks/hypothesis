@@ -48,6 +48,8 @@ TOP_LABEL = calc_label_from_name("top")
 DRAW_BYTES_LABEL = calc_label_from_name("draw_bytes() in ConjectureData")
 
 
+InterestingOrigin = Tuple[Any, ...]
+
 class ExtraInformation:
     """A class for holding shared state on a ``ConjectureData`` that should
     be added to the final ``ConjectureResult``."""
@@ -722,7 +724,7 @@ class DataObserver:
     ConjectureData object, primarily used for tracking
     the behaviour in the tree cache."""
 
-    def conclude_test(self, status: Status, interesting_origin: None) -> None:
+    def conclude_test(self, status: Status, interesting_origin: Optional[InterestingOrigin]) -> None:
         """Called when ``conclude_test`` is called on the
         observed ``ConjectureData``, with the same arguments.
 
@@ -743,17 +745,17 @@ class DataObserver:
 
 @dataclass_transform()
 @attr.s(slots=True)
-class ConjectureResult:
+class ConjectureResult:  # type: ignore[no-untyped-def]
     """Result class storing the parts of ConjectureData that we
     will care about after the original ConjectureData has outlived its
     usefulness."""
 
     status: Status = attr.ib()
-    interesting_origin = attr.ib()
+    interesting_origin: Optional[InterestingOrigin] = attr.ib()
     buffer: bytes = attr.ib()
     blocks: Blocks = attr.ib()
     output: str = attr.ib()
-    extra_information: ExtraInformation = attr.ib()
+    extra_information: Optional[ExtraInformation] = attr.ib()
     has_discards: bool = attr.ib()
     target_observations = attr.ib()
     tags: FrozenSet[StructuralCoverageTag] = attr.ib()
@@ -820,7 +822,7 @@ class ConjectureData:
         self.max_depth = 0
         self.has_discards = False
 
-        self.__result = None
+        self.__result: "Optional[ConjectureResult]" = None
 
         # Observations used for targeted search.  They'll be aggregated in
         # ConjectureRunner.generate_new_examples and fed to TargetSelector.
@@ -1037,8 +1039,10 @@ class ConjectureData:
             index = self.__bytes_drawn
             buf = self.__prefix[index : index + n_bytes]
             if len(buf) < n_bytes:
+                assert self.__random is not None
                 buf += uniform(self.__random, n_bytes - len(buf))
         else:
+            assert self.__random is not None
             buf = uniform(self.__random, n_bytes)
         buf = bytearray(buf)
         self.__bytes_drawn += n_bytes
