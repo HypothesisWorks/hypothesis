@@ -21,6 +21,7 @@ import operator
 import pathlib
 import re
 import sys
+import xml
 from typing import Sequence
 
 import numpy
@@ -175,6 +176,10 @@ def divide(a: int, b: int) -> float:
                 except_=(TypeError, ValueError),
                 style="unittest",
             ),
+        ),
+        (
+            "xml_etree_ElementTree",
+            ghostwriter.magic(xml.etree.ElementTree),
         ),
         pytest.param(
             ("magic_builtins", ghostwriter.magic(builtins)),
