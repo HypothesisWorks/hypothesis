@@ -11,7 +11,7 @@
 import math
 import struct
 from sys import float_info
-from typing import Callable, Optional, Tuple
+from typing import Callable, Optional
 
 # Format codes for (int, float) sized types, used for byte-wise casts.
 # See https://docs.python.org/3/library/struct.html#format-characters
@@ -120,13 +120,6 @@ width_smallest_normals = {
 assert width_smallest_normals[64] == float_info.min
 
 
-def _exp_and_mantissa(f: float) -> Tuple[int, int]:
-    i = float_to_int(f)
-    exponent = (i >> 52) & ((1 << 11) - 1)
-    mantissa = i & ((1 << 52) - 1)
-    return (exponent, mantissa)
-
-
 def make_float_clamper(
     min_float: float = 0.0,
     max_float: float = math.inf,
@@ -143,20 +136,19 @@ def make_float_clamper(
         else:
             return None
 
-    min_exp, min_mant_at_bottom = _exp_and_mantissa(min_float)
-    max_exp, max_mant_at_top = _exp_and_mantissa(max_float)
+    range_size = min(max_float - min_float, float_info.max)
     mantissa_mask = (1 << 52) - 1
 
     def float_clamper(float_val: float) -> float:
-        if allow_zero and float_val == 0.0:
+        if min_float <= float_val <= max_float:
             return float_val
-        exp, mant = _exp_and_mantissa(float_val)
-        if not (min_exp <= exp <= max_exp):
-            exp = min_exp + (exp - min_exp) % (1 + max_exp - min_exp)
-        max_mant = mantissa_mask if exp < max_exp else max_mant_at_top
-        min_mant = 0 if exp > min_exp else min_mant_at_bottom
-        if not (min_mant <= mant <= max_mant):
-            mant = min_mant + (mant - min_mant) % (1 + max_mant - min_mant)
-        return int_to_float((exp << 52) | mant)
+        if float_val == 0.0 and allow_zero:
+            return float_val
+        # Outside bounds; pick a new value, sampled from the allowed range,
+        # using the mantissa bits.
+        mant = float_to_int(float_val) & mantissa_mask
+        float_val = min_float + range_size * (mant / mantissa_mask)
+        # Re-enforce the bounds (just in case of floating point arithmetic error)
+        return max(min_float, min(max_float, float_val))
 
     return float_clamper
