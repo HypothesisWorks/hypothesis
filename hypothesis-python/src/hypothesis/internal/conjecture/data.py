@@ -18,6 +18,7 @@ from typing import (
     AbstractSet,
     Any,
     Dict,
+    Hashable,
     Iterable,
     Iterator,
     FrozenSet,
@@ -49,6 +50,7 @@ DRAW_BYTES_LABEL = calc_label_from_name("draw_bytes() in ConjectureData")
 
 
 InterestingOrigin = Tuple[Any, ...]
+TargetObservations = Dict[Optional[str], Union[int, float]]
 
 class ExtraInformation:
     """A class for holding shared state on a ``ConjectureData`` that should
@@ -757,7 +759,7 @@ class ConjectureResult:  # type: ignore[no-untyped-def]
     output: str = attr.ib()
     extra_information: Optional[ExtraInformation] = attr.ib()
     has_discards: bool = attr.ib()
-    target_observations = attr.ib()
+    target_observations: TargetObservations = attr.ib()
     tags: FrozenSet[StructuralCoverageTag] = attr.ib()
     forced_indices: AbstractSet[int] = attr.ib(repr=False)
     examples: Examples = attr.ib(repr=False)
@@ -815,7 +817,7 @@ class ConjectureData:
         self.testcounter = global_test_counter
         global_test_counter += 1
         self.start_time = time.perf_counter()
-        self.events: "Union[Set[str], FrozenSet[str]]" = set()
+        self.events: "Union[Set[Hashable], FrozenSet[Hashable]]" = set()
         self.forced_indices: "Set[int]" = set()
         self.interesting_origin = None
         self.draw_times: "List[float]" = []
@@ -826,7 +828,7 @@ class ConjectureData:
 
         # Observations used for targeted search.  They'll be aggregated in
         # ConjectureRunner.generate_new_examples and fed to TargetSelector.
-        self.target_observations = {}
+        self.target_observations: TargetObservations = {}
 
         # Tags which indicate something about which part of the search space
         # this example is in. These are used to guide generation.
@@ -990,7 +992,7 @@ class ConjectureData:
 
             self.observer.kill_branch()
 
-    def note_event(self, event):
+    def note_event(self, event: Hashable) -> None:
         assert isinstance(self.events, set)
         self.events.add(event)
 
