@@ -64,7 +64,7 @@ def replace_all(
 NEXT_ARRAY_CODE = dict(zip(ARRAY_CODES, ARRAY_CODES[1:]))
 
 
-class IntList:
+class IntList(Sequence[int]):
     """Class for storing a list of non-negative integers compactly.
 
     We store them as the smallest size integer array we can get
@@ -97,8 +97,8 @@ class IntList:
     def of_length(cls, n: int) -> "IntList":
         return cls(array_or_list("B", [0]) * n)
 
-    def count(self, n: int) -> int:
-        return self.__underlying.count(n)
+    def count(self, value: int) -> int:
+        return self.__underlying.count(value)
 
     def __repr__(self):
         return f"IntList({list(self.__underlying)!r})"
@@ -107,11 +107,11 @@ class IntList:
         return len(self.__underlying)
 
     @overload
-    def __getitem__(self, i: slice) -> "IntList":
+    def __getitem__(self, i: int) -> int:
         ...  # pragma: no cover
 
     @overload
-    def __getitem__(self, i: int) -> int:
+    def __getitem__(self, i: slice) -> "IntList":
         ...  # pragma: no cover
 
     def __getitem__(self, i: Union[int, slice]) -> "Union[int, IntList]":

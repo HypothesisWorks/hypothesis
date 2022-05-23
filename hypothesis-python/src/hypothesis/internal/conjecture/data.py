@@ -8,18 +8,22 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import sys
 import time
 from collections import defaultdict
 from enum import IntEnum
 from random import Random
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     Dict,
     Iterable,
     Iterator,
+    FrozenSet,
     List,
     Optional,
+    Sequence,
     Set,
     Tuple,
     Type,
@@ -35,6 +39,10 @@ from hypothesis.internal.conjecture.utils import calc_label_from_name
 
 if TYPE_CHECKING:
     from hypothesis.strategies import SearchStrategy
+if sys.version_info < (3, 11):
+    from typing_extensions import dataclass_transform
+else:
+    from typing import dataclass_transform
 
 TOP_LABEL = calc_label_from_name("top")
 DRAW_BYTES_LABEL = calc_label_from_name("draw_bytes() in ConjectureData")
@@ -63,6 +71,7 @@ class Status(IntEnum):
         return f"Status.{self.name}"
 
 
+@dataclass_transform()
 @attr.s(frozen=True, slots=True, auto_attribs=True)
 class StructuralCoverageTag:
     label: int
@@ -136,6 +145,8 @@ class Example:
         """A label is an opaque value that associates each example with its
         approximate origin, such as a particular strategy class or a particular
         kind of draw."""
+        x = self.owner.label_indices
+        x[self.index]
         return self.owner.labels[self.owner.label_indices[self.index]]
 
     @property
@@ -207,7 +218,7 @@ class ExampleProperty:
         self.example_count = 0
         self.block_count = 0
 
-    def run(self):
+    def run(self) -> Any:
         """Rerun the test case with this visitor and return the
         results of ``self.finish()``."""
         self.begin()
@@ -259,11 +270,11 @@ class ExampleProperty:
         index of the example and ``discarded`` being ``True`` if ``stop_example``
         was called with ``discard=True``."""
 
-    def finish(self) -> Union[Iterable[int], Iterable[Iterable[int]]]:
+    def finish(self) -> Any:
         return self.result
 
 
-def calculated_example_property(cls: Type[ExampleProperty]) -> property:
+def calculated_example_property(cls: Type[ExampleProperty]) -> Any:
     """Given an ``ExampleProperty`` as above we use this decorator
     to transform it into a lazy property on the ``Examples`` class,
     which has as its value the result of calling ``cls.run()``,
@@ -274,7 +285,7 @@ def calculated_example_property(cls: Type[ExampleProperty]) -> property:
     name = cls.__name__
     cache_name = "__" + name
 
-    def lazy_calculate(self: "Examples") -> Any:
+    def lazy_calculate(self: "Examples") -> IntList:
         result = getattr(self, cache_name, None)
         if result is None:
             result = cls(self).run()
@@ -303,11 +314,9 @@ class ExampleRecord:
     they currently have slightly different functions and implementations.
     """
 
-    __index_of_labels: Union[None, Dict[int, int]]
-
     def __init__(self) -> None:
         self.labels = [DRAW_BYTES_LABEL]
-        self.__index_of_labels = {DRAW_BYTES_LABEL: 0}
+        self.__index_of_labels: "Optional[Dict[int, int]]" = {DRAW_BYTES_LABEL: 0}
         self.trail = IntList()
 
     def freeze(self) -> None:
@@ -352,10 +361,9 @@ class Examples:
             + record.trail.count(DRAW_BITS_RECORD)
         )
         self.blocks = blocks
-        self.__children: "Optional[List[IntList]]" = None
+        self.__children: "Optional[List[Sequence[int]]]" = None
 
-    @calculated_example_property
-    class starts_and_ends(ExampleProperty):
+    class _starts_and_ends(ExampleProperty):
         def begin(self):
             self.starts = IntList.of_length(len(self.examples))
             self.ends = IntList.of_length(len(self.examples))
@@ -369,6 +377,8 @@ class Examples:
         def finish(self) -> Tuple[IntList, IntList]:
             return (self.starts, self.ends)
 
+    starts_and_ends: "Tuple[IntList, IntList]" = calculated_example_property(_starts_and_ends)
+
     @property
     def starts(self) -> IntList:
         return self.starts_and_ends[0]
@@ -377,8 +387,7 @@ class Examples:
     def ends(self) -> IntList:
         return self.starts_and_ends[1]
 
-    @calculated_example_property
-    class discarded(ExampleProperty):
+    class _discarded(ExampleProperty):
         def begin(self):
             self.result: "Set[int]" = set()
 
@@ -389,17 +398,18 @@ class Examples:
             if discarded:
                 self.result.add(i)
 
-    @calculated_example_property
-    class trivial(ExampleProperty):
+    discarded: "AbstractSet[int]" = calculated_example_property(_discarded)
+
+    class _trivial(ExampleProperty):
         def begin(self):
             self.nontrivial = IntList.of_length(len(self.examples))
             self.result: "Set[int]" = set()
 
-        def block(self, i: int):
+        def block(self, i: int) -> None:
             if not self.examples.blocks.trivial(i):
                 self.nontrivial[self.example_stack[-1]] = 1
 
-        def stop_example(self, i, discarded):
+        def stop_example(self, i: int, discarded: bool) -> None:
             if self.nontrivial[i]:
                 if self.example_stack:
                     self.nontrivial[self.example_stack[-1]] = 1
@@ -409,27 +419,31 @@ class Examples:
         def finish(self):
             return frozenset(self.result)
 
-    @calculated_example_property
-    class parentage(ExampleProperty):
-        def stop_example(self, i, discarded):
+    trivial: "AbstractSet[int]" = calculated_example_property(_trivial)
+
+    class _parentage(ExampleProperty):
+        def stop_example(self, i: int, discarded: bool) -> None:
             if i > 0:
                 self.result[i] = self.example_stack[-1]
+    
+    parentage: IntList = calculated_example_property(_parentage)
 
-    @calculated_example_property
-    class depths(ExampleProperty):
+    class _depths(ExampleProperty):
         def begin(self):
             self.result = IntList.of_length(len(self.examples))
 
         def start_example(self, i: int, label_index: int) -> None:
             self.result[i] = len(self.example_stack)
+    
+    depths: IntList = calculated_example_property(_depths)
 
-    @calculated_example_property
-    class label_indices(ExampleProperty):
+    class _label_indices(ExampleProperty):
         def start_example(self, i: int, label_index: int) -> None:
             self.result[i] = label_index
 
-    @calculated_example_property
-    class mutator_groups(ExampleProperty):
+    label_indices: IntList = calculated_example_property(_label_indices)
+
+    class _mutator_groups(ExampleProperty):
         def begin(self):
             self.groups: "Dict[Tuple[int, int], List[int]]" = defaultdict(list)
 
@@ -441,20 +455,23 @@ class Examples:
             # Discard groups with only one example, since the mutator can't
             # do anything useful with them.
             return [g for g in self.groups.values() if len(g) >= 2]
+        
+    mutator_groups: "Iterable[Iterable[int]]" = calculated_example_property(_mutator_groups)
 
     @property
-    def children(self) -> List[Union[IntList, Tuple[()]]]:
+    def children(self) -> List[Sequence[int]]:
         if self.__children is None:
-            self.__children = [IntList() for _ in range(len(self))]
+            children = [IntList() for _ in range(len(self))]
             for i, p in enumerate(self.parentage):
                 if i > 0:
-                    self.__children[p].append(i)
+                    children[p].append(i)
             # Replace empty children lists with a tuple to reduce
             # memory usage.
-            for i, c in enumerate(self.__children):
+            for i, c in enumerate(children):
                 if not c:
-                    self.__children[i] = ()
-        return self.__children
+                    children[i] = ()  # type: ignore
+            self.__children = children  # type: ignore
+        return self.__children  # type: ignore
 
     def __len__(self) -> int:
         return self.__length
@@ -470,6 +487,7 @@ class Examples:
 
 
 @attr.s(slots=True, frozen=True)
+@dataclass_transform()
 class Block:
     """Blocks track the flat list of lowest-level draws from the byte stream,
     within a single test run.
@@ -479,20 +497,20 @@ class Block:
     individual call to ``draw_bits``.
     """
 
-    start = attr.ib()
-    end = attr.ib()
+    start: int = attr.ib()
+    end: int = attr.ib()
 
     # Index of this block inside the overall list of blocks.
-    index = attr.ib()
+    index: int = attr.ib()
 
     # True if this block's byte values were forced by a write operation.
     # As long as the bytes before this block remain the same, modifying this
     # block's bytes will have no effect.
-    forced = attr.ib(repr=False)
+    forced: bool = attr.ib(repr=False)
 
     # True if this block's byte values are all 0. Reading this flag can be
     # more convenient than explicitly checking a slice for non-zero bytes.
-    all_zero = attr.ib(repr=False)
+    all_zero: bool = attr.ib(repr=False)
 
     @property
     def bounds(self) -> Tuple[int, int]:
@@ -634,6 +652,7 @@ class Blocks:
         # Integrity check: We can't have allocated more blocks than we have
         # positions for blocks.
         assert self.__count <= len(self)
+        assert self.owner is not None
         result = Block(
             start=start,
             end=end,
@@ -722,26 +741,26 @@ class DataObserver:
     def kill_branch(self) -> None:
         """Mark this part of the tree as not worth re-exploring."""
 
-
+@dataclass_transform()
 @attr.s(slots=True)
 class ConjectureResult:
     """Result class storing the parts of ConjectureData that we
     will care about after the original ConjectureData has outlived its
     usefulness."""
 
-    status = attr.ib()
+    status: Status = attr.ib()
     interesting_origin = attr.ib()
-    buffer = attr.ib()
-    blocks = attr.ib()
-    output = attr.ib()
-    extra_information = attr.ib()
-    has_discards = attr.ib()
+    buffer: bytes = attr.ib()
+    blocks: Blocks = attr.ib()
+    output: str = attr.ib()
+    extra_information: ExtraInformation = attr.ib()
+    has_discards: bool = attr.ib()
     target_observations = attr.ib()
-    tags = attr.ib()
-    forced_indices = attr.ib(repr=False)
-    examples = attr.ib(repr=False)
+    tags: FrozenSet[StructuralCoverageTag] = attr.ib()
+    forced_indices: AbstractSet[int] = attr.ib(repr=False)
+    examples: Examples = attr.ib(repr=False)
 
-    index = attr.ib(init=False)
+    index: int = attr.ib(init=False)
 
     def __attrs_post_init__(self) -> None:
         self.index = len(self.buffer)
@@ -785,7 +804,7 @@ class ConjectureData:
         assert random is not None or max_length <= len(prefix)
 
         self.blocks = Blocks(self)
-        self.buffer = bytearray()
+        self.buffer: "Union[bytes, bytearray]"  = bytearray()
         self.index = 0
         self.output = ""
         self.status = Status.VALID
@@ -794,10 +813,10 @@ class ConjectureData:
         self.testcounter = global_test_counter
         global_test_counter += 1
         self.start_time = time.perf_counter()
-        self.events = set()
-        self.forced_indices = set()
+        self.events: "Union[Set[str], FrozenSet[str]]" = set()
+        self.forced_indices: "Set[int]" = set()
         self.interesting_origin = None
-        self.draw_times = []
+        self.draw_times: "List[float]" = []
         self.max_depth = 0
         self.has_discards = False
 
@@ -809,13 +828,13 @@ class ConjectureData:
 
         # Tags which indicate something about which part of the search space
         # this example is in. These are used to guide generation.
-        self.tags = set()
-        self.labels_for_structure_stack = []
+        self.tags: "Set[StructuralCoverageTag]" = set()
+        self.labels_for_structure_stack: "List[Set[int]]" = []
 
         # Normally unpopulated but we need this in the niche case
         # that self.as_result() is Overrun but we still want the
         # examples for reporting purposes.
-        self.__examples = None
+        self.__examples: "Optional[Examples]" = None
 
         # We want the top level example to have depth 0, so we start
         # at -1.
@@ -856,20 +875,21 @@ class ConjectureData:
                 tags=frozenset(self.tags),
                 forced_indices=self.forced_indices,
             )
+            assert self.__result is not None
             self.blocks.transfer_ownership(self.__result)
         return self.__result
 
-    def __assert_not_frozen(self, name):
+    def __assert_not_frozen(self, name: str) -> None:
         if self.frozen:
             raise Frozen(f"Cannot call {name} on frozen ConjectureData")
 
-    def note(self, value):
+    def note(self, value: Any) -> None:
         self.__assert_not_frozen("note")
         if not isinstance(value, str):
             value = repr(value)
         self.output += value
 
-    def draw(self, strategy: "SearchStrategy", label: None = None) -> Any:
+    def draw(self, strategy: "SearchStrategy[Any]", label: Optional[int] = None) -> Any:
         if self.is_find and not strategy.supports_find:
             raise InvalidArgument(
                 f"Cannot use strategy {strategy!r} within a call to find "
@@ -877,6 +897,7 @@ class ConjectureData:
             )
 
         at_top_level = self.depth == 0
+        start_time = None
         if at_top_level:
             # We start this timer early, because accessing attributes on a LazyStrategy
             # can be almost arbitrarily slow.  In cases like characters() and text()
@@ -893,12 +914,14 @@ class ConjectureData:
             self.mark_invalid()
 
         if label is None:
+            assert isinstance(strategy.label, int)
             label = strategy.label
         self.start_example(label=label)
         try:
             if not at_top_level:
                 return strategy.do_draw(self)
             else:
+                assert start_time is not None
                 strategy.validate()
                 try:
                     return strategy.do_draw(self)
@@ -966,6 +989,7 @@ class ConjectureData:
             self.observer.kill_branch()
 
     def note_event(self, event):
+        assert isinstance(self.events, set)
         self.events.add(event)
 
     @property
@@ -1032,6 +1056,7 @@ class ConjectureData:
 
         initial = self.index
 
+        assert isinstance(self.buffer, bytearray)
         self.buffer.extend(buf)
         self.index = len(self.buffer)
 
@@ -1047,20 +1072,20 @@ class ConjectureData:
         """Draw n bytes from the underlying source."""
         return int_to_bytes(self.draw_bits(8 * n), n)
 
-    def write(self, string: bytes) -> bytearray:
+    def write(self, string: bytes) -> Optional[bytes]:
         """Write ``string`` to the output buffer."""
         self.__assert_not_frozen("write")
         string = bytes(string)
         if not string:
-            return
+            return None
         self.draw_bits(len(string) * 8, forced=int_from_bytes(string))
         return self.buffer[-len(string) :]
 
-    def __check_capacity(self, n):
+    def __check_capacity(self, n: int) -> None:
         if self.index + n > self.max_length:
             self.mark_overrun()
 
-    def conclude_test(self, status: Status, interesting_origin: None = None):
+    def conclude_test(self, status: Status, interesting_origin: None = None) -> None:
         assert (interesting_origin is None) or (status == Status.INTERESTING)
         self.__assert_not_frozen("conclude_test")
         self.interesting_origin = interesting_origin
@@ -1068,7 +1093,7 @@ class ConjectureData:
         self.freeze()
         raise StopTest(self.testcounter)
 
-    def mark_interesting(self, interesting_origin: None = None):
+    def mark_interesting(self, interesting_origin: None = None) -> None:
         self.conclude_test(Status.INTERESTING, interesting_origin)
 
     def mark_invalid(self):
