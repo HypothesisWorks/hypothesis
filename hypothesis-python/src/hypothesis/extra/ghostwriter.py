@@ -1072,7 +1072,7 @@ def fuzz(func: Callable, *, except_: Except = (), style: str = "pytest") -> str:
     you'll need to specify a strategy - for example :func:`~hypothesis.strategies.text`
     or :func:`~hypothesis.strategies.binary`.  After that, you have a test!
     """
-    if not callable(func):
+    if not callable(func) or inspect.isclass(func):
         raise InvalidArgument(f"Got non-callable func={func!r}")
     except_ = _check_except(except_)
     _check_style(style)
