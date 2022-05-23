@@ -164,7 +164,7 @@ def boolean(data):
 
 
 def biased_coin(
-    data: "ConjectureData", p: float, *, forced: Optional[Any] = None
+    data: "ConjectureData", p: float, *, forced: Optional[bool] = None
 ) -> bool:
     """Return True with probability p (assuming a uniform generator),
     shrinking towards False. If ``forced`` is set to a non-None value, this
