@@ -790,7 +790,7 @@ class ConjectureData:
         max_length: int,
         prefix: Union[List[int], bytes, bytearray],
         random: Optional[Random],
-        observer: Optional[Union[DataObserver, DataObserver]] = None,
+        observer: Optional[DataObserver] = None,
     ) -> None:
         if observer is None:
             observer = DataObserver()
