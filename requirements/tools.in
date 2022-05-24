@@ -40,3 +40,4 @@ types-click
 types-pkg_resources
 types-pytz
 types-redis
+typing-extensions

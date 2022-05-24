@@ -17,6 +17,7 @@ from typing import (
     TYPE_CHECKING,
     AbstractSet,
     Any,
+    Callable,
     Dict,
     Hashable,
     Iterable,
@@ -40,10 +41,15 @@ from hypothesis.internal.conjecture.utils import calc_label_from_name
 
 if TYPE_CHECKING:
     from hypothesis.strategies import SearchStrategy
-if sys.version_info < (3, 11):
     from typing_extensions import dataclass_transform
 else:
-    from typing import dataclass_transform
+
+    def dataclass_transform() -> Callable[[T], T]:
+        def wrapper(tp: T) -> T:
+            return tp
+
+        return wrapper
+
 
 TOP_LABEL = calc_label_from_name("top")
 DRAW_BYTES_LABEL = calc_label_from_name("draw_bytes() in ConjectureData")
@@ -51,6 +57,7 @@ DRAW_BYTES_LABEL = calc_label_from_name("draw_bytes() in ConjectureData")
 
 InterestingOrigin = Tuple[Any, ...]
 TargetObservations = Dict[Optional[str], Union[int, float]]
+
 
 class ExtraInformation:
     """A class for holding shared state on a ``ConjectureData`` that should
@@ -381,7 +388,9 @@ class Examples:
         def finish(self) -> Tuple[IntList, IntList]:
             return (self.starts, self.ends)
 
-    starts_and_ends: "Tuple[IntList, IntList]" = calculated_example_property(_starts_and_ends)
+    starts_and_ends: "Tuple[IntList, IntList]" = calculated_example_property(
+        _starts_and_ends
+    )
 
     @property
     def starts(self) -> IntList:
@@ -429,7 +438,7 @@ class Examples:
         def stop_example(self, i: int, discarded: bool) -> None:
             if i > 0:
                 self.result[i] = self.example_stack[-1]
-    
+
     parentage: IntList = calculated_example_property(_parentage)
 
     class _depths(ExampleProperty):
@@ -438,7 +447,7 @@ class Examples:
 
         def start_example(self, i: int, label_index: int) -> None:
             self.result[i] = len(self.example_stack)
-    
+
     depths: IntList = calculated_example_property(_depths)
 
     class _label_indices(ExampleProperty):
@@ -459,8 +468,10 @@ class Examples:
             # Discard groups with only one example, since the mutator can't
             # do anything useful with them.
             return [g for g in self.groups.values() if len(g) >= 2]
-        
-    mutator_groups: "Iterable[Iterable[int]]" = calculated_example_property(_mutator_groups)
+
+    mutator_groups: "Iterable[Iterable[int]]" = calculated_example_property(
+        _mutator_groups
+    )
 
     @property
     def children(self) -> List[Sequence[int]]:
@@ -726,7 +737,9 @@ class DataObserver:
     ConjectureData object, primarily used for tracking
     the behaviour in the tree cache."""
 
-    def conclude_test(self, status: Status, interesting_origin: Optional[InterestingOrigin]) -> None:
+    def conclude_test(
+        self, status: Status, interesting_origin: Optional[InterestingOrigin]
+    ) -> None:
         """Called when ``conclude_test`` is called on the
         observed ``ConjectureData``, with the same arguments.
 
@@ -744,6 +757,7 @@ class DataObserver:
 
     def kill_branch(self) -> None:
         """Mark this part of the tree as not worth re-exploring."""
+
 
 @dataclass_transform()
 @attr.s(slots=True)
@@ -808,7 +822,7 @@ class ConjectureData:
         assert random is not None or max_length <= len(prefix)
 
         self.blocks = Blocks(self)
-        self.buffer: "Union[bytes, bytearray]"  = bytearray()
+        self.buffer: "Union[bytes, bytearray]" = bytearray()
         self.index = 0
         self.output = ""
         self.status = Status.VALID
