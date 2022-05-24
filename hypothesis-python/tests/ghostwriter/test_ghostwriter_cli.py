@@ -223,12 +223,12 @@ class S:
 
 class A:
 
-    @staticmethod
-    def to_json(json: Union[dict,list]) -> str:
+    @classmethod
+    def to_json(cls, json: Union[dict,list]) -> str:
         return json.dumps(json)
 
-    @staticmethod
-    def from_json(json: str) -> Union[dict,list]:
+    @classmethod
+    def from_json(cls, json: str) -> Union[dict,list]:
         return json.loads(json)
 """
 

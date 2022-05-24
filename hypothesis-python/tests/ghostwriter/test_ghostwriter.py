@@ -259,6 +259,34 @@ def test_invalid_func_inputs(gw, args):
         gw(*args)
 
 
+class A:
+    @classmethod
+    def to_json(cls, obj: Union[dict, list]) -> str:
+        return json.dumps(obj)
+
+    @classmethod
+    def from_json(cls, obj: str) -> Union[dict, list]:
+        return json.loads(obj)
+
+    @staticmethod
+    def static_sorter(seq: Sequence[int]) -> List[int]:
+        return sorted(seq)
+
+
+@pytest.mark.parametrize(
+    "gw,args",
+    [
+        (ghostwriter.fuzz, [A.static_sorter]),
+        (ghostwriter.idempotent, [A.static_sorter]),
+        (ghostwriter.roundtrip, [A.to_json, A.from_json]),
+        (ghostwriter.equivalent, [A.to_json, json.dumps]),
+    ],
+)
+def test_class_methods_inputs(gw, args):
+    source_code = gw(*args)
+    get_test_function(source_code)()
+
+
 def test_run_ghostwriter_fuzz():
     # Our strategy-guessing code works for all the arguments to sorted,
     # and we handle positional-only arguments in calls correctly too.
