@@ -21,6 +21,7 @@ from typing import (
     Sequence,
     TypeVar,
     Union,
+    cast,
     overload,
 )
 
@@ -424,13 +425,13 @@ class SearchStrategy(Generic[Ex]):
         return result
 
     @property
-    def label(self):
+    def label(self) -> int:
         if self.__label is calculating:
             return 0
         if self.__label is None:
             self.__label = calculating
             self.__label = self.calc_label()
-        return self.__label
+        return cast(int, self.__label)
 
     def calc_label(self):
         return self.class_label
@@ -681,57 +682,61 @@ class OneOfStrategy(SearchStrategy):
 
 
 @overload
-def one_of(args: Sequence[SearchStrategy[Any]]) -> SearchStrategy[Any]:
-    raise NotImplementedError
+def one_of(
+    __args: Sequence[SearchStrategy[Any]],
+) -> SearchStrategy[Any]:  # pragma: no cover
+    ...
 
 
 @overload  # noqa: F811
-def one_of(a1: SearchStrategy[Ex]) -> SearchStrategy[Ex]:
-    raise NotImplementedError
+def one_of(__a1: SearchStrategy[Ex]) -> SearchStrategy[Ex]:  # pragma: no cover
+    ...
 
 
 @overload  # noqa: F811
 def one_of(
-    a1: SearchStrategy[Ex], a2: SearchStrategy[T]
-) -> SearchStrategy[Union[Ex, T]]:
-    raise NotImplementedError
+    __a1: SearchStrategy[Ex], __a2: SearchStrategy[T]
+) -> SearchStrategy[Union[Ex, T]]:  # pragma: no cover
+    ...
 
 
 @overload  # noqa: F811
 def one_of(
-    a1: SearchStrategy[Ex], a2: SearchStrategy[T], a3: SearchStrategy[T3]
-) -> SearchStrategy[Union[Ex, T, T3]]:
-    raise NotImplementedError
+    __a1: SearchStrategy[Ex], __a2: SearchStrategy[T], __a3: SearchStrategy[T3]
+) -> SearchStrategy[Union[Ex, T, T3]]:  # pragma: no cover
+    ...
 
 
 @overload  # noqa: F811
 def one_of(
-    a1: SearchStrategy[Ex],
-    a2: SearchStrategy[T],
-    a3: SearchStrategy[T3],
-    a4: SearchStrategy[T4],
-) -> SearchStrategy[Union[Ex, T, T3, T4]]:
-    raise NotImplementedError
+    __a1: SearchStrategy[Ex],
+    __a2: SearchStrategy[T],
+    __a3: SearchStrategy[T3],
+    __a4: SearchStrategy[T4],
+) -> SearchStrategy[Union[Ex, T, T3, T4]]:  # pragma: no cover
+    ...
 
 
 @overload  # noqa: F811
 def one_of(
-    a1: SearchStrategy[Ex],
-    a2: SearchStrategy[T],
-    a3: SearchStrategy[T3],
-    a4: SearchStrategy[T4],
-    a5: SearchStrategy[T5],
-) -> SearchStrategy[Union[Ex, T, T3, T4, T5]]:
-    raise NotImplementedError
+    __a1: SearchStrategy[Ex],
+    __a2: SearchStrategy[T],
+    __a3: SearchStrategy[T3],
+    __a4: SearchStrategy[T4],
+    __a5: SearchStrategy[T5],
+) -> SearchStrategy[Union[Ex, T, T3, T4, T5]]:  # pragma: no cover
+    ...
 
 
 @overload  # noqa: F811
-def one_of(*args: SearchStrategy[Any]) -> SearchStrategy[Any]:
-    raise NotImplementedError
+def one_of(*args: SearchStrategy[Any]) -> SearchStrategy[Any]:  # pragma: no cover
+    ...
 
 
 @defines_strategy(never_lazy=True)
-def one_of(*args):  # noqa: F811
+def one_of(
+    *args: Union[Sequence[SearchStrategy[Any]], SearchStrategy[Any]]
+) -> SearchStrategy[Any]:  # noqa: F811
     # Mypy workaround alert:  Any is too loose above; the return parameter
     # should be the union of the input parameters.  Unfortunately, Mypy <=0.600
     # raises errors due to incompatible inputs instead.  See #1270 for links.

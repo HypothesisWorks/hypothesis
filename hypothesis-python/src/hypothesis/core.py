@@ -142,12 +142,15 @@ def example(*args: Any, **kwargs: Any) -> Callable[[TestFunc], TestFunc]:
     if not (args or kwargs):
         raise InvalidArgument("An example must provide at least one argument")
 
+    hypothesis_explicit_examples: List[Example] = []
+
     def accept(test):
         if not hasattr(test, "hypothesis_explicit_examples"):
-            test.hypothesis_explicit_examples = []
+            test.hypothesis_explicit_examples = hypothesis_explicit_examples
         test.hypothesis_explicit_examples.append(Example(tuple(args), kwargs))
         return test
 
+    accept.hypothesis_explicit_examples = hypothesis_explicit_examples  # type: ignore
     return accept
 
 
@@ -550,10 +553,8 @@ class StateForActualGivenExecution:
         self.falsifying_examples = ()
         self.__was_flaky = False
         self.random = random
-        self.__warned_deadline = False
         self.__test_runtime = None
 
-        self.__had_seed = wrapped_test._hypothesis_internal_use_seed
         self.is_find = getattr(wrapped_test, "_hypothesis_internal_is_find", False)
         self.wrapped_test = wrapped_test
 

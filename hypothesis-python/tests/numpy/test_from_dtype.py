@@ -42,6 +42,11 @@ STANDARD_TYPES = [
         bytes,
     )
 ]
+for nonstandard_typecode in ["g", "G", "S1", "q", "Q"]:
+    try:
+        STANDARD_TYPES.append(np.dtype(nonstandard_typecode))
+    except Exception:
+        pass
 
 
 @given(nps.nested_dtypes())

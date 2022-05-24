@@ -313,7 +313,7 @@ def _query_for_key(key):
     return result
 
 
-limited_category_index_cache = {}  # type: cache_type
+limited_category_index_cache: cache_type = {}
 
 
 def query(

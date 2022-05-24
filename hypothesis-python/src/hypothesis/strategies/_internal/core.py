@@ -58,6 +58,7 @@ from hypothesis.internal.entropy import get_seeder_and_restorer
 from hypothesis.internal.reflection import (
     define_function_signature_from_signature,
     get_pretty_function_description,
+    get_signature,
     nicerepr,
     required_args,
 )
@@ -131,18 +132,27 @@ def booleans() -> SearchStrategy[bool]:
 
 
 @overload
-def sampled_from(elements: Sequence[T]) -> SearchStrategy[T]:
-    raise NotImplementedError
+def sampled_from(elements: Sequence[T]) -> SearchStrategy[T]:  # pragma: no cover
+    ...
 
 
 @overload  # noqa: F811
-def sampled_from(elements: Type[enum.Enum]) -> SearchStrategy[Any]:
+def sampled_from(elements: Type[enum.Enum]) -> SearchStrategy[Any]:  # pragma: no cover
     # `SearchStrategy[Enum]` is unreliable due to metaclass issues.
-    raise NotImplementedError
+    ...
+
+
+@overload  # noqa: F811
+def sampled_from(
+    elements: Union[Type[enum.Enum], Sequence[Any]]
+) -> SearchStrategy[Any]:  # pragma: no cover
+    ...
 
 
 @defines_strategy(try_non_lazy=True)  # noqa: F811
-def sampled_from(elements):
+def sampled_from(
+    elements: Union[Type[enum.Enum], Sequence[Any]]
+) -> SearchStrategy[Any]:
     """Returns a strategy which generates any value present in ``elements``.
 
     Note that as with :func:`~hypothesis.strategies.just`, values will not be
@@ -1081,8 +1091,22 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
         # The __optional_keys__ attribute may or may not be present, but if there's no
         # way to tell and we just have to assume that everything is required.
         # See https://github.com/python/cpython/pull/17214 for details.
-        optional = getattr(thing, "__optional_keys__", ())
-        anns = {k: from_type(v) for k, v in get_type_hints(thing).items()}
+        optional = set(getattr(thing, "__optional_keys__", ()))
+        anns = {}
+        for k, v in get_type_hints(thing).items():
+            origin = getattr(v, "__origin__", None)
+            if origin in types.RequiredTypes + types.NotRequiredTypes:
+                if origin in types.NotRequiredTypes:
+                    optional.add(k)
+                else:
+                    optional.discard(k)
+                try:
+                    v = v.__args__[0]
+                except IndexError:
+                    raise InvalidArgument(
+                        f"`{k}: {v.__name__}` is not a valid type annotation"
+                    ) from None
+            anns[k] = from_type(v)
         if (
             (not anns)
             and thing.__annotations__
@@ -1147,7 +1171,7 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
             )
         try:
             hints = get_type_hints(thing)
-            params = signature(thing).parameters
+            params = get_signature(thing).parameters
         except Exception:
             return builds(thing)
         kwargs = {}
@@ -1498,7 +1522,7 @@ def composite(f: Callable[..., Ex]) -> Callable[..., SearchStrategy[Ex]]:
     else:
         special_method = None
 
-    sig = signature(f)
+    sig = get_signature(f)
     params = tuple(sig.parameters.values())
 
     if not (params and "POSITIONAL" in params[0].kind.name):
@@ -1658,7 +1682,7 @@ def uuids(
     to :class:`~python:uuid.UUID` and only UUIDs of that version will
     be generated.
 
-    If ``allow_nil` is True, generate the nil UUID much more often.
+    If ``allow_nil`` is True, generate the nil UUID much more often.
     Otherwise, all returned values from this will be unique, so e.g. if you do
     ``lists(uuids())`` the resulting list will never contain duplicates.
 

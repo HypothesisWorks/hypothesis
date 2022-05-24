@@ -282,3 +282,11 @@ def test_helpful_message_when_example_fails_because_it_was_passed_a_strategy():
         assert isinstance(err.__cause__, AssertionError)
     else:
         raise NotImplementedError("should be unreachable")
+
+
+def test_stop_silently_dropping_examples_when_decorator_is_applied_to_itself():
+    def f():
+        pass
+
+    test = example("outer")(example("inner"))(f)
+    assert len(test.hypothesis_explicit_examples) == 2

@@ -10,25 +10,31 @@
 
 import collections
 import sys
-import typing
-from typing import Dict, List, Union
+from typing import Callable, Dict, List, Union
 
 import pytest
 from typing_extensions import (
     Annotated,
-    ClassVar,
+    Concatenate,
     DefaultDict,
-    Final,
     Literal,
     NewType,
+    NotRequired,
+    ParamSpec,
+    Required,
     Type,
-    TypeAlias,
     TypedDict,
+    TypeGuard,
 )
 
 from hypothesis import assume, given, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import from_type
+from hypothesis.strategies._internal.types import NON_RUNTIME_TYPES
+
+from tests.common.debug import assert_all_examples, find_any
+
+# See also nocover/test_type_lookp.py
 
 
 @pytest.mark.parametrize("value", ["dog", b"goldfish", 42, 63.4, -80.5, False])
@@ -141,69 +147,152 @@ def test_annotated_extra_metadata(data):
     assert data.draw(st.from_type(ExtraAnnotationNoStrategy)) > 0
 
 
+@pytest.mark.parametrize("non_runtime_type", NON_RUNTIME_TYPES)
+def test_non_runtime_type_cannot_be_resolved(non_runtime_type):
+    strategy = st.from_type(non_runtime_type)
+    with pytest.raises(
+        InvalidArgument, match="there is no such thing as a runtime instance"
+    ):
+        strategy.example()
+
+
+@pytest.mark.parametrize("non_runtime_type", NON_RUNTIME_TYPES)
+def test_non_runtime_type_cannot_be_registered(non_runtime_type):
+    with pytest.raises(
+        InvalidArgument, match="there is no such thing as a runtime instance"
+    ):
+        st.register_type_strategy(non_runtime_type, st.none())
+
+
+@pytest.mark.skipif(sys.version_info <= (3, 7), reason="requires python3.8 or higher")
+def test_callable_with_concatenate():
+    P = ParamSpec("P")
+    func_type = Callable[Concatenate[int, P], None]
+    strategy = st.from_type(func_type)
+    with pytest.raises(
+        InvalidArgument,
+        match="Hypothesis can't yet construct a strategy for instances of a Callable type",
+    ):
+        strategy.example()
+
+    with pytest.raises(InvalidArgument, match="Cannot register generic type"):
+        st.register_type_strategy(func_type, st.none())
+
+
+@pytest.mark.skipif(sys.version_info <= (3, 7), reason="requires python3.8 or higher")
+def test_callable_with_paramspec():
+    P = ParamSpec("P")
+    func_type = Callable[P, None]
+    strategy = st.from_type(func_type)
+    with pytest.raises(
+        InvalidArgument,
+        match="Hypothesis can't yet construct a strategy for instances of a Callable type",
+    ):
+        strategy.example()
+
+    with pytest.raises(InvalidArgument, match="Cannot register generic type"):
+        st.register_type_strategy(func_type, st.none())
+
+
+@pytest.mark.skipif(sys.version_info <= (3, 7), reason="requires python3.8 or higher")
+def test_callable_return_typegard_type():
+    strategy = st.from_type(Callable[[], TypeGuard[int]])
+    with pytest.raises(
+        InvalidArgument,
+        match="Hypothesis cannot yet construct a strategy for callables "
+        "which are PEP-647 TypeGuards",
+    ):
+        strategy.example()
+
+    with pytest.raises(InvalidArgument, match="Cannot register generic type"):
+        st.register_type_strategy(Callable[[], TypeGuard[int]], st.none())
+
+
+class Movie(TypedDict):  # implicitly total=True
+    title: str
+    year: NotRequired[int]
+
+
+@given(from_type(Movie))
+def test_typeddict_not_required(value):
+    assert type(value) == dict
+    assert set(value).issubset({"title", "year"})
+    assert isinstance(value["title"], str)
+    if "year" in value:
+        assert isinstance(value["year"], int)
+
+
+def test_typeddict_not_required_can_skip():
+    find_any(from_type(Movie), lambda movie: "year" not in movie)
+
+
+class OtherMovie(TypedDict, total=False):
+    title: Required[str]
+    year: int
+
+
+@given(from_type(OtherMovie))
+def test_typeddict_required(value):
+    assert type(value) == dict
+    assert set(value).issubset({"title", "year"})
+    assert isinstance(value["title"], str)
+    if "year" in value:
+        assert isinstance(value["year"], int)
+
+
+def test_typeddict_required_must_have():
+    assert_all_examples(from_type(OtherMovie), lambda movie: "title" in movie)
+
+
+class Story(TypedDict, total=True):
+    author: str
+
+
+class Book(Story, total=False):
+    pages: int
+
+
+class Novel(Book):
+    genre: Required[str]
+    rating: NotRequired[str]
+
+
 @pytest.mark.parametrize(
-    "type_alias_type",
+    "check,condition",
     [
-        TypeAlias,  # It is always available from recent versions of `typing_extensions`
         pytest.param(
-            getattr(typing, "TypeAlias", None),
-            marks=pytest.mark.skipif(
-                sys.version_info < (3, 10), reason="TypeAlias was added in 3.10"
-            ),
+            assert_all_examples,
+            lambda novel: "author" in novel,
+            id="author-is-required",
+        ),
+        pytest.param(
+            assert_all_examples, lambda novel: "genre" in novel, id="genre-is-required"
+        ),
+        pytest.param(
+            find_any, lambda novel: "pages" in novel, id="pages-may-be-present"
+        ),
+        pytest.param(
+            find_any, lambda novel: "pages" not in novel, id="pages-may-be-absent"
+        ),
+        pytest.param(
+            find_any, lambda novel: "rating" in novel, id="rating-may-be-present"
+        ),
+        pytest.param(
+            find_any, lambda novel: "rating" not in novel, id="rating-may-be-absent"
         ),
     ],
 )
-def test_type_alias_type(type_alias_type):
-    strategy = st.from_type(type_alias_type)
-    with pytest.raises(
-        InvalidArgument, match=r"Could not resolve .*TypeAlias to a strategy"
-    ):
-        strategy.example()
-
-    with pytest.raises(
-        InvalidArgument, match="TypeAlias is not allowed to be registered"
-    ):
-        st.register_type_strategy(type_alias_type, st.none())
+def test_required_and_not_required_keys(check, condition):
+    check(from_type(Novel), condition)
 
 
-@pytest.mark.parametrize(
-    "class_var_type",
-    [
-        ClassVar,
-        typing.ClassVar,
-    ],
-)
-def test_class_var_type(class_var_type):
-    strategy = st.from_type(class_var_type)
-    with pytest.raises(
-        InvalidArgument, match=r"Could not resolve .*ClassVar to a strategy"
-    ):
-        strategy.example()
+def test_typeddict_error_msg():
+    with pytest.raises(TypeError, match="is not valid as type argument"):
 
-    with pytest.raises(
-        InvalidArgument, match="ClassVar is not allowed to be registered"
-    ):
-        st.register_type_strategy(class_var_type, st.none())
+        class Foo(TypedDict):
+            attr: Required
 
+    with pytest.raises(TypeError, match="is not valid as type argument"):
 
-@pytest.mark.parametrize(
-    "final_var_type",
-    [
-        Final,
-        pytest.param(
-            getattr(typing, "Final", None),
-            marks=pytest.mark.skipif(
-                sys.version_info < (3, 8), reason="Final was added in 3.8"
-            ),
-        ),
-    ],
-)
-def test_final_type(final_var_type):
-    strategy = st.from_type(final_var_type)
-    with pytest.raises(
-        InvalidArgument, match=r"Could not resolve .*Final to a strategy"
-    ):
-        strategy.example()
-
-    with pytest.raises(InvalidArgument, match="Final is not allowed to be registered"):
-        st.register_type_strategy(final_var_type, st.none())
+        class Bar(TypedDict):
+            attr: NotRequired

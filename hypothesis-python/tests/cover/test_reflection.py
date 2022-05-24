@@ -12,7 +12,7 @@ import sys
 from copy import deepcopy
 from datetime import time
 from functools import partial, wraps
-from inspect import FullArgSpec, getfullargspec
+from inspect import FullArgSpec, Parameter, Signature, getfullargspec
 from unittest.mock import MagicMock, Mock, NonCallableMagicMock, NonCallableMock
 
 import pytest
@@ -26,6 +26,7 @@ from hypothesis.internal.reflection import (
     define_function_signature,
     function_digest,
     get_pretty_function_description,
+    get_signature,
     is_mock,
     proxies,
     repr_call,
@@ -673,3 +674,20 @@ class Bar:
 @given(st.builds(Bar))
 def test_issue_2495_regression(_):
     """See https://github.com/HypothesisWorks/hypothesis/issues/2495"""
+
+
+@pytest.mark.skipif(
+    sys.version_info[:2] >= (3, 11),
+    reason="handled upstream in https://github.com/python/cpython/pull/92065",
+)
+def test_error_on_keyword_parameter_name():
+    def f(source):
+        pass
+
+    f.__signature__ = Signature(
+        parameters=[Parameter("from", Parameter.KEYWORD_ONLY)],
+        return_annotation=Parameter.empty,
+    )
+
+    with pytest.raises(ValueError, match="SyntaxError because `from` is a keyword"):
+        get_signature(f)

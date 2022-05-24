@@ -1,0 +1,75 @@
+---
+layout: default
+has_feed: true
+---
+
+{% if page.tag %}
+
+{% assign posts = site.tags[page.tag] %}
+
+{% else %}
+
+{% assign posts = site.posts %}
+
+{% endif %}
+
+<div class="container article-listing">
+  <div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        {% if page.tag %}
+          <span class="label label-tag">{{page.tag}}</span>
+        {% else %}
+          All our articles
+        {% endif %}
+      </div>
+      <div class="panel-body">
+          {{content}}
+      </div>
+      <div class="panel-footer rss-plug">
+        <a href="{{page.url}}feed/">
+        {% if page.tag %}
+          Subscribe to articles tagged &ldquo;{{page.tag}}&rdquo; via RSS
+        {% else %}
+          Subscribe to all articles from us via RSS
+        {% endif %}
+
+        <i class="fa fa-rss" aria-hidden="true"></i>
+        </a>
+      </div>
+    </div>
+
+      {% for post in posts %}
+        <div class="blog-short">
+          <h3><a href="{{post.url | prepend: site.baseurl}}">{{post.title}}</a></h3>
+  		<div>
+  		  <small>
+  			<i class="fa fa-calendar"></i>
+  			<time>
+          {{ post.date | date:'%A, %B %d, %Y'}}
+  			</time>
+  		  </small>
+           </div>
+  		    <div class="margin10">
+            <small>
+              <i class="fa fa-tag"></i>
+              {% assign sorted_tags = post.tags |  sort %}
+              {% for tag in sorted_tags %}
+                <span class="label label-tag"><a href="/articles/{{tag}}/">{{tag}}</a></span>
+              {% endfor %}
+            </small>
+          </div>
+          {% if post.thumbnail %}
+            <div class="imgcontainer col-xs-12 col-sm-4 col-md-3 col-lg-3">
+              <img src="{{post.thumbnail}}"
+              alt="{{post.title}}"  class="pull-left img-responsive thumb img-thumbnail" />
+            </div>
+          {% endif %}
+          <article class="excerpt">{{post.excerpt}}</article>
+          <a class="pull-right marginBottom10" href="{{post.url | prepend: site.baseurl }}">Read More</a>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>

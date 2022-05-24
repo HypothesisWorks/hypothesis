@@ -14,7 +14,7 @@ import pytest
 
 from hypothesistooling.__main__ import PYTHONS
 
-ci_checks = tuple(
+ci_checks = "    ".join(
     line.strip()
     for line in Path(".github/workflows/main.yml").read_text().splitlines()
     if "- check-py" in line

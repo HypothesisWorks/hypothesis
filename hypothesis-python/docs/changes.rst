@@ -18,6 +18,64 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.46.7:
+
+-------------------
+6.46.7 - 2022-05-19
+-------------------
+
+This patch updates the type annotations for :func:`~hypothesis.strategies.tuples` and
+:func:`~hypothesis.strategies.one_of` so that type-checkers require its arguments to be
+positional-only, and so that it no longer fails under pyright-strict mode (see
+:issue:`3348`). Additional changes are made to Hypothesis' internals improve pyright
+scans.
+
+.. _v6.46.6:
+
+-------------------
+6.46.6 - 2022-05-18
+-------------------
+
+This patch by Cheuk Ting Ho adds support for :pep:`655` ``Required`` and ``NotRequired`` as attributes of
+:class:`~python:typing.TypedDict` in :func:`~hypothesis.strategies.from_type` (:issue:`3339`).
+
+.. _v6.46.5:
+
+-------------------
+6.46.5 - 2022-05-15
+-------------------
+
+This patch fixes :func:`~hypothesis.extra.numpy.from_dtype` with long-precision
+floating-point datatypes (typecode ``g``; see :func:`numpy:numpy.typename`).
+
+.. _v6.46.4:
+
+-------------------
+6.46.4 - 2022-05-15
+-------------------
+
+This patch improves some error messages for custom signatures
+containing invalid parameter names (:issue:`3317`).
+
+.. _v6.46.3:
+
+-------------------
+6.46.3 - 2022-05-11
+-------------------
+
+This patch by Cheuk Ting Ho makes it an explicit error to call :func:`~hypothesis.strategies.from_type`
+or :func:`~hypothesis.strategies.register_type_strategy` with types that have no runtime instances (:issue:`3280`).
+
+.. _v6.46.2:
+
+-------------------
+6.46.2 - 2022-05-03
+-------------------
+
+This patch fixes silently dropping examples when the :func:`@example <hypothesis.example>`
+decorator is applied to itself (:issue:`3319`).  This was always a weird pattern, but now it
+works.  Thanks to Ray Sogata, Keeri Tramm, and Kevin Khuong for working on this patch!
+
 .. _v6.46.1:
 
 -------------------

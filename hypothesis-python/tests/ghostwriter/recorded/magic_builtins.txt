@@ -233,6 +233,17 @@ def test_fuzz_pow(base, exp, mod):
     pow(base=base, exp=exp, mod=mod)
 
 
+@given(
+    value=st.nothing(),
+    sep=st.text(),
+    end=st.nothing(),
+    file=st.nothing(),
+    flush=st.nothing(),
+)
+def test_fuzz_print(value, sep, end, file, flush):
+    print(value, sep=sep, end=end, file=file, flush=flush)
+
+
 @given(fget=st.none(), fset=st.none(), fdel=st.none(), doc=st.none())
 def test_fuzz_property(fget, fset, fdel, doc):
     property(fget=fget, fset=fset, fdel=fdel, doc=doc)

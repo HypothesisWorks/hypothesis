@@ -248,6 +248,14 @@ def test_fixed_size_draw_many():
     assert not many.more()
 
 
+def test_astronomically_unlikely_draw_many():
+    # Our internal helper doesn't underflow to zero or negative, but nor
+    # will we ever generate an element for such a low average size.
+    buffer = ConjectureData.for_buffer(1024 * [255])
+    many = cu.many(buffer, min_size=0, max_size=10, average_size=1e-5)
+    assert not many.more()
+
+
 def test_rejection_eventually_terminates_many():
     many = cu.many(
         ConjectureData.for_buffer([1] * 1000),

@@ -32,6 +32,7 @@ jobs:
           - check-py310
           # - check-py310-pyjion  # see notes in tox.ini
           - check-py311
+          # - check-py312  # enable when alpha1 is released, ~Nov 2022
           - check-quality
           - lint-ruby
           - check-ruby-tests
@@ -130,7 +131,7 @@ jobs:
     - name: Install dependencies
       run: |
         pip install --upgrade setuptools pip wheel
-        pip install -r requirements/test.txt fakeredis typing-extensions
+        pip install -r requirements/coverage.txt
         pip install hypothesis-python/[all]
     - name: Run tests
       run: python -m pytest --numprocesses auto hypothesis-python/tests/ --ignore=hypothesis-python/tests/quality/ --ignore=hypothesis-python/tests/ghostwriter/
