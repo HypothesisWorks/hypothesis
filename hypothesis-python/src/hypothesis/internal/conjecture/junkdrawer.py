@@ -13,8 +13,8 @@ obviously belong anywhere else. If you spot a better home for
 anything that lives here, please move it."""
 
 import array
-from random import Random
 import sys
+from random import Random
 from typing import (
     Any,
     Callable,

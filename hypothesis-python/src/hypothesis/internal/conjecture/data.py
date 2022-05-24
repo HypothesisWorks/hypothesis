@@ -19,10 +19,10 @@ from typing import (
     Any,
     Callable,
     Dict,
+    FrozenSet,
     Hashable,
     Iterable,
     Iterator,
-    FrozenSet,
     List,
     Optional,
     Sequence,
@@ -40,12 +40,13 @@ from hypothesis.internal.conjecture.junkdrawer import IntList, uniform
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 
 if TYPE_CHECKING:
-    from hypothesis.strategies import SearchStrategy
     from typing_extensions import dataclass_transform
+
+    from hypothesis.strategies import SearchStrategy
 else:
 
-    def dataclass_transform() -> Callable[[T], T]:
-        def wrapper(tp: T) -> T:
+    def dataclass_transform():
+        def wrapper(tp):
             return tp
 
         return wrapper
