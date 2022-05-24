@@ -79,8 +79,8 @@ def test_minimal_small_number_in_large_range():
 
 
 def test_minimal_small_sum_float_list():
-    xs = minimal(lists(floats(), min_size=10), lambda x: sum(x) >= 1.0)
-    assert sum(xs) == 1.0
+    xs = minimal(lists(floats(), min_size=5), lambda x: sum(x) >= 1.0)
+    assert xs == [0.0, 0.0, 0.0, 0.0, 1.0]
 
 
 def test_minimals_boundary_floats():
