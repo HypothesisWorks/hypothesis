@@ -241,11 +241,12 @@ class FloatStrategy(SearchStrategy):
             self.forced_sign_bit = 1 if self.neg_clamper else 0
 
     def __repr__(self):
-        return "{}(min_value={}, max_value={}, allow_nan={})".format(
+        return "{}(min_value={}, max_value={}, allow_nan={}, smallest_nonzero_magnitude={})".format(
             self.__class__.__name__,
             self.min_value,
             self.max_value,
             self.allow_nan,
+            self.smallest_nonzero_magnitude,
         )
 
     def permitted(self, f):
