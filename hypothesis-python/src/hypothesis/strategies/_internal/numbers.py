@@ -206,7 +206,7 @@ class FloatStrategy(SearchStrategy):
     ):
         super().__init__()
         assert isinstance(allow_nan, bool)
-        assert smallest_nonzero_magnitude >= 0.0
+        assert smallest_nonzero_magnitude > 0.0
         self.min_value = min_value
         self.max_value = max_value
         self.allow_nan = allow_nan
