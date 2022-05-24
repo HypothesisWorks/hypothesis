@@ -177,16 +177,34 @@ def divide(a: int, b: int) -> float:
                 style="unittest",
             ),
         ),
-        (
-            "xml_etree_ElementTree",
-            ghostwriter.magic(xml.etree.ElementTree),
-        ),
+        # (
+        #     "xml_etree_ElementTree_py38",
+        #     ghostwriter.magic(xml.etree.ElementTree),
+        # ),
         pytest.param(
             ("magic_builtins", ghostwriter.magic(builtins)),
             marks=[
                 pytest.mark.skipif(
                     sys.version_info[:2] not in [(3, 8), (3, 9)],
                     reason="compile arg new in 3.8, aiter and anext new in 3.10",
+                )
+            ],
+        ),
+        pytest.param(
+            ("xml_etree_ElementTree_py38", ghostwriter.magic(xml.etree.ElementTree)),
+            marks=[
+                pytest.mark.skipif(
+                    sys.version_info[:2] != (3, 8),
+                    reason="output generated with Python 3.8",
+                )
+            ],
+        ),
+        pytest.param(
+            ("xml_etree_ElementTree_py310", ghostwriter.magic(xml.etree.ElementTree)),
+            marks=[
+                pytest.mark.skipif(
+                    sys.version_info[:2] != (3, 10),
+                    reason="output generated with Python 3.10",
                 )
             ],
         ),
