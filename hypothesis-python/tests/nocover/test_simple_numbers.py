@@ -100,6 +100,10 @@ def test_minimal_float_is_zero():
     assert minimal(floats(), lambda x: True) == 0.0
 
 
+def test_minimal_asymetric_bounded_float():
+    assert minimal(floats(min_value=1.1, max_value=1.9), lambda x: True) == 1.5
+
+
 def test_negative_floats_simplify_to_zero():
     assert minimal(floats(), lambda x: x <= -1.0) == -1.0
 
