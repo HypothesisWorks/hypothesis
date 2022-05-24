@@ -1072,12 +1072,12 @@ class Shrinker:
             lambda ex: (
                 ex.label == DRAW_FLOAT_LABEL
                 and len(ex.children) == 2
-                and ex.children[0].length == 8
+                and ex.children[1].length == 8
             ),
         )
 
-        u = ex.children[0].start
-        v = ex.children[0].end
+        u = ex.children[1].start
+        v = ex.children[1].end
         buf = self.shrink_target.buffer
         b = buf[u:v]
         f = lex_to_float(int_from_bytes(b))
