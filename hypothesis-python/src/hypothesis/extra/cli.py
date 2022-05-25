@@ -39,6 +39,7 @@ import builtins
 import importlib
 import inspect
 import sys
+import types
 from difflib import get_close_matches
 from functools import partial
 from multiprocessing import Pool
@@ -103,7 +104,7 @@ else:
                     ) from err
 
         def describe_close_matches(
-            module_or_class: type.ModuleType, objname: str
+            module_or_class: types.ModuleType, objname: str
         ) -> str:
             public_names = [
                 name for name in vars(module_or_class) if not name.startswith("_")
