@@ -15,7 +15,7 @@ import math
 import sys
 from collections import OrderedDict, abc
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, List, Optional, Sequence, TypeVar, Union
+from typing import TYPE_CHECKING, List, Optional, Sequence, Type, TypeVar, Union
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import floor, int_from_bytes
@@ -119,7 +119,9 @@ def integer_range(
 T = TypeVar("T")
 
 
-def check_sample(values: Sequence[T], strategy_name: str) -> Sequence[T]:
+def check_sample(
+    values: Union[Type[enum.Enum], Sequence[T]], strategy_name: str
+) -> Sequence[T]:
     if "numpy" in sys.modules and isinstance(values, sys.modules["numpy"].ndarray):
         if values.ndim != 1:
             raise InvalidArgument(
@@ -147,7 +149,7 @@ def check_sample(values: Sequence[T], strategy_name: str) -> Sequence[T]:
     return tuple(values)
 
 
-def choice(data, values):
+def choice(data: "ConjectureData", values: Sequence[T]) -> T:
     return values[integer_range(data, 0, len(values) - 1)]
 
 
@@ -155,11 +157,11 @@ FLOAT_PREFIX = 0b1111111111 << 52
 FULL_FLOAT = int_to_float(FLOAT_PREFIX | ((2 << 53) - 1)) - 1
 
 
-def fractional_float(data):
+def fractional_float(data: "ConjectureData") -> float:
     return (int_to_float(FLOAT_PREFIX | data.draw_bits(52)) - 1) / FULL_FLOAT
 
 
-def boolean(data):
+def boolean(data: "ConjectureData") -> bool:
     return bool(data.draw_bits(1))
 
 
@@ -466,7 +468,7 @@ class many:
                 self.force_stop = True
 
 
-SMALLEST_POSITIVE_FLOAT = next_up(0.0) or sys.float_info.min
+SMALLEST_POSITIVE_FLOAT: float = next_up(0.0) or sys.float_info.min
 
 
 @lru_cache()

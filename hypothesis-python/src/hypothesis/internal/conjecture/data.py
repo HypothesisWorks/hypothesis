@@ -8,7 +8,6 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import sys
 import time
 from collections import defaultdict
 from enum import IntEnum
@@ -17,7 +16,6 @@ from typing import (
     TYPE_CHECKING,
     AbstractSet,
     Any,
-    Callable,
     Dict,
     FrozenSet,
     Hashable,
