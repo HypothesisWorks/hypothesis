@@ -124,26 +124,26 @@ def test_can_import_from_scripts_in_working_dir(tmpdir):
 CLASS_CODE_TO_TEST = """
 from typing import Sequence, List
 
-def func_sorter(seq: Sequence[int]) -> List[int]:
+def my_func(seq: Sequence[int]) -> List[int]:
     return sorted(seq)
 
-class S:
+class MyClass:
 
     @staticmethod
-    def static_sorter(seq: Sequence[int]) -> List[int]:
+    def my_staticmethod(seq: Sequence[int]) -> List[int]:
         return sorted(seq)
 
     @classmethod
-    def class_sorter(cls, seq: Sequence[int]) -> List[int]:
+    def my_classmethod(cls, seq: Sequence[int]) -> List[int]:
         return sorted(seq)
 """
 
 
-@pytest.mark.parametrize("func", ["static_sorter", "class_sorter"])
+@pytest.mark.parametrize("func", ["my_staticmethod", "my_classmethod"])
 def test_can_import_from_class(tmpdir, func):
     (tmpdir / "mycode.py").write(CLASS_CODE_TO_TEST)
     result = subprocess.run(
-        f"hypothesis write mycode.S.{func}",
+        f"hypothesis write mycode.MyClass.{func}",
         capture_output=True,
         shell=True,
         text=True,
@@ -162,14 +162,14 @@ def test_can_import_from_class(tmpdir, func):
             "Found the 'mycode' module, but it doesn't have a 'XX' class.",
         ),
         (
-            "S",
+            "MyClass",
             "XX",
-            "Found the 'mycode' module and 'S' class, but it doesn't have a 'XX' attribute.",
+            "Found the 'mycode' module and 'MyClass' class, but it doesn't have a 'XX' attribute.",
         ),
         (
-            "func_sorter",
+            "my_func",
             "XX",
-            "Found the 'mycode' module and 'func_sorter' attribute, but it doesn't have a 'XX' attribute.",
+            "Found the 'mycode' module and 'my_func' attribute, but it doesn't have a 'XX' attribute.",
         ),
     ],
 )
@@ -196,9 +196,9 @@ def test_magic_discovery_from_module(tmpdir):
         cwd=tmpdir,
     )
     assert result.returncode == 0
-    assert "func_sorter" in result.stdout
-    assert "S.static_sorter" in result.stdout
-    assert "S.class_sorter" in result.stdout
+    assert "my_func" in result.stdout
+    assert "MyClass.my_staticmethod" in result.stdout
+    assert "MyClass.my_classmethod" in result.stdout
 
 
 ROUNDTRIP_CODE_TO_TEST = """
@@ -211,7 +211,7 @@ def to_json(json: Union[dict,list]) -> str:
 def from_json(json: str) -> Union[dict,list]:
     return json.loads(json)
 
-class S:
+class MyClass:
 
     @staticmethod
     def to_json(json: Union[dict,list]) -> str:
@@ -221,7 +221,7 @@ class S:
     def from_json(json: str) -> Union[dict,list]:
         return json.loads(json)
 
-class A:
+class OtherClass:
 
     @classmethod
     def to_json(cls, json: Union[dict,list]) -> str:
@@ -245,13 +245,13 @@ def test_roundtrip_correct_pairs(tmpdir):
     assert result.returncode == 0
     # correct pairs
     assert (
-        """value0 = mycode.S.to_json(json=json)
-    value1 = mycode.S.from_json(json=value0)"""
+        """value0 = mycode.MyClass.to_json(json=json)
+    value1 = mycode.MyClass.from_json(json=value0)"""
         in result.stdout
     )
     assert (
-        """value0 = mycode.A.to_json(json=json)
-    value1 = mycode.A.from_json(json=value0)"""
+        """value0 = mycode.OtherClass.to_json(json=json)
+    value1 = mycode.OtherClass.from_json(json=value0)"""
         in result.stdout
     )
     assert (
@@ -262,7 +262,7 @@ def test_roundtrip_correct_pairs(tmpdir):
     # incorrect pairs
     assert (
         """value0 = mycode.to_json(json=json)
-    value1 = mycode.S.from_json(json=value0)"""
+    value1 = mycode.MyClass.from_json(json=value0)"""
         not in result.stdout
     )
     assert (
@@ -271,8 +271,8 @@ def test_roundtrip_correct_pairs(tmpdir):
         not in result.stdout
     )
     assert (
-        """value0 = mycode.S.to_json(json=json)
-    value1 = mycode.A.from_json(json=value0)"""
+        """value0 = mycode.MyClass.to_json(json=json)
+    value1 = mycode.OtherClass.from_json(json=value0)"""
         not in result.stdout
     )
 
