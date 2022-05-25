@@ -9,10 +9,17 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
+from sys import float_info
 
 import pytest
 
-from hypothesis.internal.floats import count_between_floats, next_down, next_up
+from hypothesis import example, given, strategies as st
+from hypothesis.internal.floats import (
+    count_between_floats,
+    make_float_clamper,
+    next_down,
+    next_up,
+)
 
 
 def test_can_handle_straddling_zero():
@@ -35,3 +42,40 @@ def test_next_float_equal(func, val):
         assert math.isnan(func(val))
     else:
         assert func(val) == val
+
+
+# exponent comparisons:
+@example(1, float_info.max, 0)
+@example(1, float_info.max, 1)
+@example(1, float_info.max, 10)
+@example(1, float_info.max, float_info.max)
+@example(1, float_info.max, math.inf)
+# mantissa comparisons:
+@example(100.0001, 100.0003, 100.0001)
+@example(100.0001, 100.0003, 100.0002)
+@example(100.0001, 100.0003, 100.0003)
+@given(st.floats(min_value=0), st.floats(min_value=0), st.floats(min_value=0))
+def test_float_clamper(min_value, max_value, input_value):
+    clamper = make_float_clamper(min_value, max_value, allow_zero=False)
+    if max_value < min_value:
+        assert clamper is None
+        return
+    clamped = clamper(input_value)
+    if min_value <= input_value <= max_value:
+        assert input_value == clamped
+    else:
+        assert min_value <= clamped <= max_value
+
+
+@example(0.01, math.inf, 0.0)
+@given(st.floats(min_value=0), st.floats(min_value=0), st.floats(min_value=0))
+def test_float_clamper_with_allowed_zeros(min_value, max_value, input_value):
+    clamper = make_float_clamper(min_value, max_value, allow_zero=True)
+    assert clamper is not None
+    clamped = clamper(input_value)
+    if input_value == 0.0 or max_value < min_value:
+        assert clamped == 0.0
+    elif min_value <= input_value <= max_value:
+        assert input_value == clamped
+    else:
+        assert min_value <= clamped <= max_value

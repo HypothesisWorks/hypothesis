@@ -9,7 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 from array import array
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.floats import float_to_int, int_to_float
@@ -226,18 +226,17 @@ def is_simple(f: float) -> int:
     return i.bit_length() <= 56
 
 
-def draw_float(data: "ConjectureData") -> float:
+def draw_float(data: "ConjectureData", forced_sign_bit: Optional[int] = None) -> float:
     try:
         data.start_example(DRAW_FLOAT_LABEL)
+        is_negative = data.draw_bits(1, forced=forced_sign_bit)
         f = lex_to_float(data.draw_bits(64))
-        if data.draw_bits(1):
-            f = -f
-        return f
+        return -f if is_negative else f
     finally:
         data.stop_example()
 
 
 def write_float(data: "ConjectureData", f: float) -> None:
-    data.draw_bits(64, forced=float_to_lex(abs(f)))
     sign = float_to_int(f) >> 63
     data.draw_bits(1, forced=sign)
+    data.draw_bits(64, forced=float_to_lex(abs(f)))

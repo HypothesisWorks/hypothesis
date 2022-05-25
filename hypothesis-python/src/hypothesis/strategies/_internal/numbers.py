@@ -9,23 +9,22 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
-import operator
 from decimal import Decimal
 from fractions import Fraction
 from sys import float_info
-from typing import Any, Optional, Union
+from typing import Optional, Union
 
-from hypothesis.control import assume, reject
+from hypothesis.control import reject
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import floats as flt, utils as d
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.filtering import get_integer_predicate_bounds
 from hypothesis.internal.floats import (
-    count_between_floats,
     float_of,
-    float_to_int,
     int_to_float,
     is_negative,
+    make_float_clamper,
+    next_down,
     next_down_normal,
     next_up,
     next_up_normal,
@@ -36,7 +35,7 @@ from hypothesis.internal.validation import (
     check_valid_bound,
     check_valid_interval,
 )
-from hypothesis.strategies._internal.misc import just, nothing
+from hypothesis.strategies._internal.misc import nothing
 from hypothesis.strategies._internal.strategies import SearchStrategy
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 
@@ -144,6 +143,7 @@ def integers(
     return IntegersStrategy(min_value, max_value)
 
 
+SMALLEST_SUBNORMAL = next_up(0.0)
 SIGNALING_NAN = int_to_float(0x7FF8_0000_0000_0001)  # nonzero mantissa
 assert math.isnan(SIGNALING_NAN) and math.copysign(1, SIGNALING_NAN) == 1
 
@@ -182,97 +182,106 @@ FLOAT_STRATEGY_DO_DRAW_LABEL = calc_label_from_name(
 )
 
 
+def _sign_aware_lte(x: float, y: float) -> bool:
+    """Less-than-or-equals, but strictly orders -0.0 and 0.0"""
+    if x == 0.0 == y:
+        return math.copysign(1.0, x) <= math.copysign(1.0, y)
+    else:
+        return x <= y
+
+
 class FloatStrategy(SearchStrategy):
-    """Generic superclass for strategies which produce floats."""
+    """A strategy for floating point numbers."""
 
-    def __init__(self, allow_infinity, allow_nan, allow_subnormal, width):
+    def __init__(
+        self,
+        min_value: float = -math.inf,
+        max_value: float = math.inf,
+        allow_nan: bool = True,
+        # The smallest nonzero number we can represent is usually a subnormal, but may
+        # be the smallest normal if we're running in unsafe denormals-are-zero mode.
+        # While that's usually an explicit error, we do need to handle the case where
+        # the user passes allow_subnormal=False.
+        smallest_nonzero_magnitude: float = SMALLEST_SUBNORMAL,
+    ):
         super().__init__()
-        assert isinstance(allow_infinity, bool)
         assert isinstance(allow_nan, bool)
-        assert isinstance(allow_subnormal, bool)
-        assert width in (16, 32, 64)
-        self.allow_infinity = allow_infinity
+        assert smallest_nonzero_magnitude > 0.0
+        self.min_value = min_value
+        self.max_value = max_value
         self.allow_nan = allow_nan
-        self.allow_subnormal = allow_subnormal
-        self.width = width
+        self.smallest_nonzero_magnitude = smallest_nonzero_magnitude
 
+        boundary_values = [
+            min_value,
+            next_up(min_value),
+            min_value + 1,
+            max_value - 1,
+            next_down(max_value),
+            max_value,
+        ]
         self.nasty_floats = [
-            float_of(f, self.width) for f in NASTY_FLOATS if self.permitted(f)
+            f for f in NASTY_FLOATS + boundary_values if self.permitted(f)
         ]
         weights = [0.2 * len(self.nasty_floats)] + [0.8] * len(self.nasty_floats)
-        self.sampler = d.Sampler(weights)
+        self.sampler = d.Sampler(weights) if self.nasty_floats else None
+
+        self.pos_clamper = self.neg_clamper = None
+        if _sign_aware_lte(0.0, max_value):
+            pos_min = max(min_value, smallest_nonzero_magnitude)
+            allow_zero = _sign_aware_lte(min_value, 0.0)
+            self.pos_clamper = make_float_clamper(pos_min, max_value, allow_zero)
+        if _sign_aware_lte(min_value, -0.0):
+            neg_max = min(max_value, -smallest_nonzero_magnitude)
+            allow_zero = _sign_aware_lte(-0.0, max_value)
+            self.neg_clamper = make_float_clamper(-neg_max, -min_value, allow_zero)
+
+        self.forced_sign_bit: Optional[int] = None
+        if (self.pos_clamper is None) != (self.neg_clamper is None):
+            self.forced_sign_bit = 1 if self.neg_clamper else 0
 
     def __repr__(self):
-        return "{}(allow_infinity={}, allow_nan={}, width={})".format(
-            self.__class__.__name__, self.allow_infinity, self.allow_nan, self.width
+        return "{}(min_value={}, max_value={}, allow_nan={}, smallest_nonzero_magnitude={})".format(
+            self.__class__.__name__,
+            self.min_value,
+            self.max_value,
+            self.allow_nan,
+            self.smallest_nonzero_magnitude,
         )
 
     def permitted(self, f):
         assert isinstance(f, float)
-        if not self.allow_infinity and math.isinf(f):
+        if math.isnan(f):
+            return self.allow_nan
+        if 0 < abs(f) < self.smallest_nonzero_magnitude:
             return False
-        if not self.allow_nan and math.isnan(f):
-            return False
-        if self.width < 64:
-            try:
-                float_of(f, self.width)
-            except OverflowError:
-                return False
-        if not self.allow_subnormal and 0 < abs(f) < width_smallest_normals[self.width]:
-            return False
-        return True
+        return _sign_aware_lte(self.min_value, f) and _sign_aware_lte(f, self.max_value)
 
     def do_draw(self, data):
         while True:
             data.start_example(FLOAT_STRATEGY_DO_DRAW_LABEL)
-            i = self.sampler.sample(data)
+            i = self.sampler.sample(data) if self.sampler else 0
+            data.start_example(flt.DRAW_FLOAT_LABEL)
             if i == 0:
-                result = flt.draw_float(data)
+                result = flt.draw_float(data, forced_sign_bit=self.forced_sign_bit)
+                is_negative = flt.float_to_int(result) >> 63
+                if is_negative:
+                    clamped = -self.neg_clamper(-result)
+                else:
+                    clamped = self.pos_clamper(result)
+                if clamped != result:
+                    data.stop_example(discard=True)
+                    data.start_example(flt.DRAW_FLOAT_LABEL)
+                    flt.write_float(data, clamped)
+                    result = clamped
             else:
                 result = self.nasty_floats[i - 1]
+
                 flt.write_float(data, result)
-            if self.permitted(result):
-                data.stop_example()
-                if self.width < 64:
-                    return float_of(result, self.width)
-                return result
-            data.stop_example(discard=True)
 
-
-class FixedBoundedFloatStrategy(SearchStrategy):
-    """A strategy for floats distributed between two endpoints.
-
-    The conditional distribution tries to produce values clustered
-    closer to one of the ends.
-    """
-
-    def __init__(self, lower_bound, upper_bound, allow_subnormal, width):
-        super().__init__()
-        assert isinstance(lower_bound, float)
-        assert isinstance(upper_bound, float)
-        assert 0 <= lower_bound < upper_bound
-        assert math.copysign(1, lower_bound) == 1, "lower bound may not be -0.0"
-        assert width in (16, 32, 64)
-        self.lower_bound = lower_bound
-        self.upper_bound = upper_bound
-        self.allow_subnormal = allow_subnormal
-        self.width = width
-
-    def __repr__(self):
-        return "FixedBoundedFloatStrategy({}, {}, {})".format(
-            self.lower_bound, self.upper_bound, self.width
-        )
-
-    def do_draw(self, data):
-        f = self.lower_bound + (
-            self.upper_bound - self.lower_bound
-        ) * d.fractional_float(data)
-        if self.width < 64:
-            f = float_of(f, self.width)
-        assume(self.lower_bound <= f <= self.upper_bound)
-        if not self.allow_subnormal:
-            assume(f == 0 or abs(f) >= width_smallest_normals[self.width])
-        return f
+            data.stop_example()  # (DRAW_FLOAT_LABEL)
+            data.stop_example()  # (FLOAT_STRATEGY_DO_DRAW_LABEL)
+            return result
 
 
 @cacheable
@@ -486,59 +495,21 @@ def floats(
                 f"smallest negative normal {-smallest_normal}"
             )
 
-    # Any type hint silences mypy when we unpack these parameters
-    kw: Any = {"allow_subnormal": allow_subnormal, "width": width}
-    unbounded_floats = FloatStrategy(
-        allow_infinity=allow_infinity, allow_nan=allow_nan, **kw
+    if min_value is None:
+        min_value = float("-inf")
+    if max_value is None:
+        max_value = float("inf")
+    assert isinstance(min_value, float)
+    assert isinstance(max_value, float)
+    smallest_nonzero_magnitude = (
+        SMALLEST_SUBNORMAL if allow_subnormal else smallest_normal
     )
-    if min_value is None and max_value is None:
-        return unbounded_floats
-    elif min_value is not None and max_value is not None:
-        if min_value == max_value:
-            assert isinstance(min_value, float)
-            result = just(min_value)
-        elif is_negative(min_value):
-            if is_negative(max_value):
-                return floats(min_value=-max_value, max_value=-min_value, **kw).map(
-                    operator.neg
-                )
-            else:
-                return floats(min_value=0.0, max_value=max_value, **kw) | floats(
-                    min_value=0.0, max_value=-min_value, **kw
-                ).map(
-                    operator.neg  # type: ignore
-                )
-        elif (
-            count_between_floats(min_value, max_value, width) > 1000
-            or not allow_subnormal
-        ):
-            return FixedBoundedFloatStrategy(
-                lower_bound=min_value, upper_bound=max_value, **kw
-            )
-        else:
-            ub_int = float_to_int(max_value, width)
-            lb_int = float_to_int(min_value, width)
-            assert lb_int <= ub_int
-            result = integers(min_value=lb_int, max_value=ub_int).map(
-                lambda x: int_to_float(x, width)
-            )
-    elif min_value is not None:
-        assert isinstance(min_value, float)
-        if is_negative(min_value):
-            # Ignore known bug https://github.com/python/mypy/issues/6697
-            return unbounded_floats.map(abs) | floats(  # type: ignore
-                min_value=min_value, max_value=-0.0, **kw
-            )
-        else:
-            result = unbounded_floats.map(lambda x: min_value + abs(x))
-    else:
-        assert isinstance(max_value, float)
-        if not is_negative(max_value):
-            return floats(
-                min_value=0.0, max_value=max_value, **kw
-            ) | unbounded_floats.map(lambda x: -abs(x))
-        else:
-            result = unbounded_floats.map(lambda x: max_value - abs(x))
+    result: SearchStrategy = FloatStrategy(
+        min_value,
+        max_value,
+        allow_nan=allow_nan,
+        smallest_nonzero_magnitude=smallest_nonzero_magnitude,
+    )
 
     if width < 64:
 

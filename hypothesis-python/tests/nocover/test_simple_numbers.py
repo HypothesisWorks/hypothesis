@@ -79,8 +79,8 @@ def test_minimal_small_number_in_large_range():
 
 
 def test_minimal_small_sum_float_list():
-    xs = minimal(lists(floats(), min_size=10), lambda x: sum(x) >= 1.0)
-    assert sum(xs) <= 2.0
+    xs = minimal(lists(floats(), min_size=5), lambda x: sum(x) >= 1.0)
+    assert xs == [0.0, 0.0, 0.0, 0.0, 1.0]
 
 
 def test_minimals_boundary_floats():
@@ -88,16 +88,20 @@ def test_minimals_boundary_floats():
         print(x)
         return True
 
-    assert -1 <= minimal(floats(min_value=-1, max_value=1), f) <= 1
+    assert minimal(floats(min_value=-1, max_value=1), f) == 0
 
 
 def test_minimal_non_boundary_float():
     x = minimal(floats(min_value=1, max_value=9), lambda x: x > 2)
-    assert 2 < x < 3
+    assert x == 3  # (the smallest integer > 2)
 
 
 def test_minimal_float_is_zero():
     assert minimal(floats(), lambda x: True) == 0.0
+
+
+def test_minimal_asymetric_bounded_float():
+    assert minimal(floats(min_value=1.1, max_value=1.9), lambda x: True) == 1.5
 
 
 def test_negative_floats_simplify_to_zero():
@@ -122,7 +126,7 @@ def test_minimize_nan():
 
 def test_minimize_very_large_float():
     t = sys.float_info.max / 2
-    assert t <= minimal(floats(), lambda x: x >= t) < math.inf
+    assert minimal(floats(), lambda x: x >= t) == t
 
 
 def is_integral(value):
@@ -143,11 +147,11 @@ def test_list_of_fractional_float():
             lambda x: len([t for t in x if t >= 1.5]) >= 5,
             timeout_after=60,
         )
-    ).issubset([1.5, 2.0])
+    ) == {2}
 
 
 def test_minimal_fractional_float():
-    assert minimal(floats(), lambda x: x >= 1.5) in (1.5, 2.0)
+    assert minimal(floats(), lambda x: x >= 1.5) == 2
 
 
 def test_minimizes_lists_of_negative_ints_up_to_boundary():

@@ -120,6 +120,7 @@ their individual contributions.
 * `Pax (R. Margret) W. <https://github.com/paxcodes>`_
 * `Peadar Coyle <https://github.com/springcoil>`_ (peadarcoyle@gmail.com)
 * `Petr Viktorin <https://github.com/encukou>`_
+* `Phillip Schanely <https://github.com/pschanely>`_ (pschanely@gmail.com)
 * `Pierre-Jean Campigotto <https://github.com/PJCampi>`_
 * `Przemek Konopko <https://github.com/soutys>`_
 * `Richard Boulton <https://www.github.com/rboulton>`_ (richard@tartarus.org)

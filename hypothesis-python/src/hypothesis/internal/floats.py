@@ -11,6 +11,7 @@
 import math
 import struct
 from sys import float_info
+from typing import Callable, Optional
 
 # Format codes for (int, float) sized types, used for byte-wise casts.
 # See https://docs.python.org/3/library/struct.html#format-characters
@@ -117,3 +118,37 @@ width_smallest_normals = {
     64: 2 ** -(2 ** (11 - 1) - 2),
 }
 assert width_smallest_normals[64] == float_info.min
+
+
+def make_float_clamper(
+    min_float: float = 0.0,
+    max_float: float = math.inf,
+    allow_zero: bool = False,  # Allows +0.0 (even if minfloat > 0)
+) -> Optional[Callable[[float], float]]:
+    """
+    Return a function that clamps positive floats into the given bounds.
+
+    Returns None when no values are allowed (min > max and zero is not allowed).
+    """
+    if max_float < min_float:
+        if allow_zero:
+            min_float = max_float = 0.0
+        else:
+            return None
+
+    range_size = min(max_float - min_float, float_info.max)
+    mantissa_mask = (1 << 52) - 1
+
+    def float_clamper(float_val: float) -> float:
+        if min_float <= float_val <= max_float:
+            return float_val
+        if float_val == 0.0 and allow_zero:
+            return float_val
+        # Outside bounds; pick a new value, sampled from the allowed range,
+        # using the mantissa bits.
+        mant = float_to_int(float_val) & mantissa_mask
+        float_val = min_float + range_size * (mant / mantissa_mask)
+        # Re-enforce the bounds (just in case of floating point arithmetic error)
+        return max(min_float, min(max_float, float_val))
+
+    return float_clamper
