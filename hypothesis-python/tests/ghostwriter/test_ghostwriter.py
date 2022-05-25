@@ -118,9 +118,7 @@ def annotated_any(x: Any):
     pass
 
 
-space_in_name = type(
-    "a name", (type,), {"__init__": lambda self: None}
-)
+space_in_name = type("a name", (type,), {"__init__": lambda self: None})
 
 
 class NotResolvable:
