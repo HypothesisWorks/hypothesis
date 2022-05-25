@@ -15,10 +15,15 @@ import math
 import sys
 from collections import OrderedDict, abc
 from functools import lru_cache
+from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Type, TypeVar, Union
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import floor, int_from_bytes
 from hypothesis.internal.floats import int_to_float, next_up
+
+if TYPE_CHECKING:
+    from hypothesis.internal.conjecture.data import ConjectureData
+
 
 LABEL_MASK = 2**64 - 1
 
@@ -47,7 +52,7 @@ SAMPLE_IN_SAMPLER_LABEL = calc_label_from_name("a sample() in Sampler")
 ONE_FROM_MANY_LABEL = calc_label_from_name("one more from many()")
 
 
-def unbounded_integers(data):
+def unbounded_integers(data: "ConjectureData") -> int:
     size = INT_SIZES[INT_SIZES_SAMPLER.sample(data)]
     r = data.draw_bits(size)
     sign = r & 1
@@ -57,7 +62,9 @@ def unbounded_integers(data):
     return int(r)
 
 
-def integer_range(data, lower, upper, center=None):
+def integer_range(
+    data: "ConjectureData", lower: int, upper: int, center: Optional[int] = None
+) -> int:
     assert lower <= upper
     if lower == upper:
         # Write a value even when this is trivial so that when a bound depends
@@ -109,7 +116,12 @@ def integer_range(data, lower, upper, center=None):
     return int(result)
 
 
-def check_sample(values, strategy_name):
+T = TypeVar("T")
+
+
+def check_sample(
+    values: Union[Type[enum.Enum], Sequence[T]], strategy_name: str
+) -> Sequence[T]:
     if "numpy" in sys.modules and isinstance(values, sys.modules["numpy"].ndarray):
         if values.ndim != 1:
             raise InvalidArgument(
@@ -127,7 +139,7 @@ def check_sample(values, strategy_name):
             "strategy has stable results between runs. To replay a saved "
             "example, the sampled values must have the same iteration order "
             "on every run - ruling out sets, dicts, etc due to hash "
-            "randomisation. Most cases can simply use `sorted(values)`, but "
+            "randomization. Most cases can simply use `sorted(values)`, but "
             "mixed types or special values such as math.nan require careful "
             "handling - and note that when simplifying an example, "
             "Hypothesis treats earlier values as simpler."
@@ -137,7 +149,7 @@ def check_sample(values, strategy_name):
     return tuple(values)
 
 
-def choice(data, values):
+def choice(data: "ConjectureData", values: Sequence[T]) -> T:
     return values[integer_range(data, 0, len(values) - 1)]
 
 
@@ -145,15 +157,17 @@ FLOAT_PREFIX = 0b1111111111 << 52
 FULL_FLOAT = int_to_float(FLOAT_PREFIX | ((2 << 53) - 1)) - 1
 
 
-def fractional_float(data):
+def fractional_float(data: "ConjectureData") -> float:
     return (int_to_float(FLOAT_PREFIX | data.draw_bits(52)) - 1) / FULL_FLOAT
 
 
-def boolean(data):
+def boolean(data: "ConjectureData") -> bool:
     return bool(data.draw_bits(1))
 
 
-def biased_coin(data, p, *, forced=None):
+def biased_coin(
+    data: "ConjectureData", p: float, *, forced: Optional[bool] = None
+) -> bool:
     """Return True with probability p (assuming a uniform generator),
     shrinking towards False. If ``forced`` is set to a non-None value, this
     will always return that value but will write choices appropriate to having
@@ -289,11 +303,13 @@ class Sampler:
        shrinking the chosen element.
     """
 
-    def __init__(self, weights):
+    table: List[Tuple[int, int, float]]  # (base_idx, alt_idx, alt_chance)
+
+    def __init__(self, weights: Sequence[float]):
 
         n = len(weights)
 
-        self.table = [[i, None, None] for i in range(n)]
+        table: "list[list[int | float | None]]" = [[i, None, None] for i in range(n)]
 
         total = sum(weights)
 
@@ -302,17 +318,17 @@ class Sampler:
         zero = num_type(0)
         one = num_type(1)
 
-        small = []
-        large = []
+        small: "List[int]" = []
+        large: "List[int]" = []
 
         probabilities = [w / total for w in weights]
-        scaled_probabilities = []
+        scaled_probabilities: "List[float]" = []
 
-        for i, p in enumerate(probabilities):
-            scaled = p * n
+        for i, alternate_chance in enumerate(probabilities):
+            scaled = alternate_chance * n
             scaled_probabilities.append(scaled)
             if scaled == 1:
-                self.table[i][2] = zero
+                table[i][2] = zero
             elif scaled < 1:
                 small.append(i)
             else:
@@ -326,9 +342,9 @@ class Sampler:
 
             assert lo != hi
             assert scaled_probabilities[hi] > one
-            assert self.table[lo][1] is None
-            self.table[lo][1] = hi
-            self.table[lo][2] = one - scaled_probabilities[lo]
+            assert table[lo][1] is None
+            table[lo][1] = hi
+            table[lo][2] = one - scaled_probabilities[lo]
             scaled_probabilities[hi] = (
                 scaled_probabilities[hi] + scaled_probabilities[lo]
             ) - one
@@ -336,27 +352,29 @@ class Sampler:
             if scaled_probabilities[hi] < 1:
                 heapq.heappush(small, hi)
             elif scaled_probabilities[hi] == 1:
-                self.table[hi][2] = zero
+                table[hi][2] = zero
             else:
                 heapq.heappush(large, hi)
         while large:
-            self.table[large.pop()][2] = zero
+            table[large.pop()][2] = zero
         while small:
-            self.table[small.pop()][2] = zero
+            table[small.pop()][2] = zero
 
-        for entry in self.table:
-            assert entry[2] is not None
-            if entry[1] is None:
-                entry[1] = entry[0]
-            elif entry[1] < entry[0]:
-                entry[0], entry[1] = entry[1], entry[0]
-                entry[2] = one - entry[2]
+        self.table: "List[Tuple[int, int, float]]" = []
+        for base, alternate, alternate_chance in table:  # type: ignore
+            assert isinstance(base, int)
+            assert isinstance(alternate, int) or alternate is None
+            if alternate is None:
+                self.table.append((base, base, alternate_chance))
+            elif alternate < base:
+                self.table.append((alternate, base, one - alternate_chance))
+            else:
+                self.table.append((base, alternate, alternate_chance))
         self.table.sort()
 
-    def sample(self, data):
+    def sample(self, data: "ConjectureData") -> int:
         data.start_example(SAMPLE_IN_SAMPLER_LABEL)
-        i = integer_range(data, 0, len(self.table) - 1)
-        base, alternate, alternate_chance = self.table[i]
+        base, alternate, alternate_chance = choice(data, self.table)
         use_alternate = biased_coin(data, alternate_chance)
         data.stop_example()
         if use_alternate:
@@ -381,7 +399,13 @@ class many:
         add_stuff_to_result()
     """
 
-    def __init__(self, data, min_size, max_size, average_size):
+    def __init__(
+        self,
+        data: "ConjectureData",
+        min_size: int,
+        max_size: Union[int, float],
+        average_size: Union[int, float],
+    ) -> None:
         assert 0 <= min_size <= average_size <= max_size
         self.min_size = min_size
         self.max_size = max_size
@@ -393,7 +417,7 @@ class many:
         self.force_stop = False
         self.rejected = False
 
-    def more(self):
+    def more(self) -> bool:
         """Should I draw another element to add to the collection?"""
         if self.drawn:
             self.data.stop_example(discard=self.rejected)
@@ -440,11 +464,11 @@ class many:
                 self.force_stop = True
 
 
-SMALLEST_POSITIVE_FLOAT = next_up(0.0) or sys.float_info.min
+SMALLEST_POSITIVE_FLOAT: float = next_up(0.0) or sys.float_info.min
 
 
 @lru_cache()
-def _calc_p_continue(desired_avg, max_size):
+def _calc_p_continue(desired_avg: float, max_size: int) -> float:
     """Return the p_continue which will generate the desired average size."""
     assert desired_avg <= max_size, (desired_avg, max_size)
     if desired_avg == max_size:
@@ -482,7 +506,7 @@ def _calc_p_continue(desired_avg, max_size):
     return p_continue
 
 
-def _p_continue_to_avg(p_continue, max_size):
+def _p_continue_to_avg(p_continue: float, max_size: int) -> float:
     """Return the average_size generated by this p_continue and max_size."""
     if p_continue >= 1:
         return max_size
