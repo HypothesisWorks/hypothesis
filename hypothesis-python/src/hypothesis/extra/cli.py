@@ -101,39 +101,39 @@ else:
                         f"Failed to import the {modulename} module for introspection.  "
                         "Check spelling and your Python import path, or use the Python API?"
                     ) from err
+
+        def describe_close_matches(
+            module_or_class: type.ModuleType, objname: str
+        ) -> str:
+            public_names = [
+                name for name in vars(module_or_class) if not name.startswith("_")
+            ]
+            matches = get_close_matches(objname, public_names)
+            if matches:
+                return f"  Closest matches: {matches!r}"
+            else:
+                return ""
+
         if classname is None:
             try:
                 return getattr(module, funcname)
             except AttributeError as err:
-                public_names = [
-                    name for name in vars(module) if not name.startswith("_")
-                ]
-                matches = get_close_matches(funcname, public_names)
                 raise click.UsageError(
                     f"Found the {modulename!r} module, but it doesn't have a "
                     f"{funcname!r} attribute."
-                    + (f"  Closest matches: {matches!r}" if matches else "")
+                    + describe_close_matches(module, funcname)
                 ) from err
         else:
             try:
                 func_class = getattr(module, classname)
             except AttributeError as err:
-                public_names = [
-                    name for name in vars(module) if not name.startswith("_")
-                ]
-                matches = get_close_matches(classname, public_names)
                 raise click.UsageError(
                     f"Found the {modulename!r} module, but it doesn't have a "
-                    f"{classname!r} class."
-                    + (f"  Closest matches: {matches!r}" if matches else "")
+                    f"{classname!r} class." + describe_close_matches(module, classname)
                 ) from err
             try:
                 return getattr(func_class, funcname)
             except AttributeError as err:
-                public_names = [
-                    name for name in vars(func_class) if not name.startswith("_")
-                ]
-                matches = get_close_matches(funcname, public_names)
                 if inspect.isclass(func_class):
                     func_class_is = "class"
                 else:
@@ -141,7 +141,7 @@ else:
                 raise click.UsageError(
                     f"Found the {modulename!r} module and {classname!r} {func_class_is}, "
                     f"but it doesn't have a {funcname!r} attribute."
-                    + (f"  Closest matches: {matches!r}" if matches else "")
+                    + describe_close_matches(func_class, funcname)
                 ) from err
 
     def _refactor(func, fname):
