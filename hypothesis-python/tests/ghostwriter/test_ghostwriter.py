@@ -119,7 +119,7 @@ def annotated_any(x: Any):
 
 
 space_in_name = type(
-    "a name", (type,), {"__init__": lambda self: None, "method": lambda cls: cls}
+    "a name", (type,), {"__init__": lambda self: None}
 )
 
 
@@ -182,7 +182,7 @@ def takes_attrs_class(x: Foo) -> None:
         ast.literal_eval,
         non_type_annotation,
         annotated_any,
-        space_in_name.method,
+        space_in_name,
         non_resolvable_arg,
         takes_keys,
         takes_values,
