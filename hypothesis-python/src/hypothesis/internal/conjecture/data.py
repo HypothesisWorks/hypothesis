@@ -14,7 +14,6 @@ from enum import IntEnum
 from random import Random
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
     Any,
     Dict,
     FrozenSet,
@@ -54,7 +53,9 @@ TOP_LABEL = calc_label_from_name("top")
 DRAW_BYTES_LABEL = calc_label_from_name("draw_bytes() in ConjectureData")
 
 
-InterestingOrigin = Tuple[Any, ...]
+InterestingOrigin = Tuple[
+    Type[BaseException], str, int, Tuple[Any, ...], Tuple[Tuple[Any, ...], ...]
+]
 TargetObservations = Dict[Optional[str], Union[int, float]]
 
 
@@ -155,8 +156,6 @@ class Example:
         """A label is an opaque value that associates each example with its
         approximate origin, such as a particular strategy class or a particular
         kind of draw."""
-        x = self.owner.label_indices
-        x[self.index]
         return self.owner.labels[self.owner.label_indices[self.index]]
 
     @property
@@ -406,11 +405,11 @@ class Examples:
         def finish(self):
             return frozenset(self.result)
 
-        def stop_example(self, i: int, discarded: int) -> None:
+        def stop_example(self, i: int, discarded: bool) -> None:
             if discarded:
                 self.result.add(i)
 
-    discarded: "AbstractSet[int]" = calculated_example_property(_discarded)
+    discarded: FrozenSet[int] = calculated_example_property(_discarded)
 
     class _trivial(ExampleProperty):
         def begin(self):
@@ -431,7 +430,7 @@ class Examples:
         def finish(self):
             return frozenset(self.result)
 
-    trivial: "AbstractSet[int]" = calculated_example_property(_trivial)
+    trivial: FrozenSet[int] = calculated_example_property(_trivial)
 
     class _parentage(ExampleProperty):
         def stop_example(self, i: int, discarded: bool) -> None:
@@ -468,9 +467,7 @@ class Examples:
             # do anything useful with them.
             return [g for g in self.groups.values() if len(g) >= 2]
 
-    mutator_groups: "Iterable[Iterable[int]]" = calculated_example_property(
-        _mutator_groups
-    )
+    mutator_groups: List[List[int]] = calculated_example_property(_mutator_groups)
 
     @property
     def children(self) -> List[Sequence[int]]:
@@ -500,8 +497,8 @@ class Examples:
         return Example(self, i)
 
 
-@attr.s(slots=True, frozen=True)
 @dataclass_transform()
+@attr.s(slots=True, frozen=True)
 class Block:
     """Blocks track the flat list of lowest-level draws from the byte stream,
     within a single test run.
@@ -597,7 +594,7 @@ class Blocks:
         """Equivalent to self[i].bounds."""
         return (self.start(i), self.end(i))
 
-    def all_bounds(self) -> Iterator[Tuple[int, int]]:
+    def all_bounds(self) -> Iterable[Tuple[int, int]]:
         """Equivalent to [(b.start, b.end) for b in self]."""
         prev = 0
         for e in self.endpoints:
@@ -737,7 +734,9 @@ class DataObserver:
     the behaviour in the tree cache."""
 
     def conclude_test(
-        self, status: Status, interesting_origin: Optional[InterestingOrigin]
+        self,
+        status: Status,
+        interesting_origin: Optional[InterestingOrigin],
     ) -> None:
         """Called when ``conclude_test`` is called on the
         observed ``ConjectureData``, with the same arguments.
@@ -774,7 +773,7 @@ class ConjectureResult:
     has_discards: bool = attr.ib()
     target_observations: TargetObservations = attr.ib()
     tags: FrozenSet[StructuralCoverageTag] = attr.ib()
-    forced_indices: AbstractSet[int] = attr.ib(repr=False)
+    forced_indices: FrozenSet[int] = attr.ib(repr=False)
     examples: Examples = attr.ib(repr=False)
 
     index: int = attr.ib(init=False)
@@ -796,7 +795,9 @@ BYTE_MASKS[0] = 255
 class ConjectureData:
     @classmethod
     def for_buffer(
-        cls, buffer: Union[List[int], bytes], observer: Optional[DataObserver] = None
+        cls,
+        buffer: Union[List[int], bytes],
+        observer: Optional[DataObserver] = None,
     ) -> "ConjectureData":
         return cls(len(buffer), buffer, random=None, observer=observer)
 
@@ -1104,7 +1105,11 @@ class ConjectureData:
         if self.index + n > self.max_length:
             self.mark_overrun()
 
-    def conclude_test(self, status: Status, interesting_origin: None = None) -> None:
+    def conclude_test(
+        self,
+        status: Status,
+        interesting_origin: Optional[InterestingOrigin] = None,
+    ) -> None:
         assert (interesting_origin is None) or (status == Status.INTERESTING)
         self.__assert_not_frozen("conclude_test")
         self.interesting_origin = interesting_origin
@@ -1112,7 +1117,9 @@ class ConjectureData:
         self.freeze()
         raise StopTest(self.testcounter)
 
-    def mark_interesting(self, interesting_origin: None = None) -> None:
+    def mark_interesting(
+        self, interesting_origin: Optional[InterestingOrigin] = None
+    ) -> None:
         self.conclude_test(Status.INTERESTING, interesting_origin)
 
     def mark_invalid(self):

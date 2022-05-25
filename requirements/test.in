@@ -1,4 +1,3 @@
 pexpect
 pytest
 pytest-xdist
-typing_extensions

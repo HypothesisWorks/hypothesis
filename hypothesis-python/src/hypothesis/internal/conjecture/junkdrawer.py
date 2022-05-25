@@ -23,6 +23,8 @@ from typing import (
     Iterable,
     Iterator,
     List,
+    MutableSequence,
+    Optional,
     Sequence,
     Tuple,
     TypeVar,
@@ -42,7 +44,8 @@ def array_or_list(
 
 
 def replace_all(
-    buffer: Sequence[int], replacements: Iterable[Tuple[int, int, Sequence[int]]]
+    buffer: Sequence[int],
+    replacements: Iterable[Tuple[int, int, Sequence[int]]],
 ) -> bytes:
     """Substitute multiple replacement values into a buffer.
 
@@ -75,14 +78,12 @@ class IntList(Sequence[int]):
 
     __slots__ = ("__underlying",)
 
-    __underlying: Union[List[int], "array.ArrayType[int]"]
+    __underlying: "Union[List[int], array.ArrayType[int]]"
 
     def __init__(self, values: Sequence[int] = ()):
         for code in ARRAY_CODES:
             try:
-                underlying: "Union[List[Any], array.ArrayType[int]]" = array_or_list(
-                    code, values
-                )
+                underlying = array_or_list(code, values)
                 break
             except OverflowError:
                 pass
@@ -200,7 +201,7 @@ class LazySequenceCopy:
     in O(1) time. The full list API is not supported yet but there's no reason
     in principle it couldn't be."""
 
-    __mask: Union[Dict[int, int], None]
+    __mask: Optional[Dict[int, int]]
 
     def __init__(self, values: Sequence[int]):
         self.__values = values

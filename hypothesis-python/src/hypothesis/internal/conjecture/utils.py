@@ -15,7 +15,7 @@ import math
 import sys
 from collections import OrderedDict, abc
 from functools import lru_cache
-from typing import TYPE_CHECKING, List, Optional, Sequence, Type, TypeVar, Union
+from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Type, TypeVar, Union
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import floor, int_from_bytes
@@ -303,13 +303,13 @@ class Sampler:
        shrinking the chosen element.
     """
 
-    table: List[List[Optional[Union[int, float]]]]
+    table: List[Tuple[Union[float, int], Union[float, int], float]]
 
     def __init__(self, weights: Sequence[Union[float, int]]):
 
         n = len(weights)
 
-        self.table = [[i, None, None] for i in range(n)]
+        table = [[i, None, None] for i in range(n)]
 
         total = sum(weights)
 
@@ -324,11 +324,11 @@ class Sampler:
         probabilities = [w / total for w in weights]
         scaled_probabilities: "List[float]" = []
 
-        for i, p in enumerate(probabilities):
-            scaled = p * n
+        for i, alternate_chance in enumerate(probabilities):
+            scaled = alternate_chance * n
             scaled_probabilities.append(scaled)
             if scaled == 1:
-                self.table[i][2] = zero
+                table[i][2] = zero
             elif scaled < 1:
                 small.append(i)
             else:
@@ -342,9 +342,9 @@ class Sampler:
 
             assert lo != hi
             assert scaled_probabilities[hi] > one
-            assert self.table[lo][1] is None
-            self.table[lo][1] = hi
-            self.table[lo][2] = one - scaled_probabilities[lo]
+            assert table[lo][1] is None
+            table[lo][1] = hi
+            table[lo][2] = one - scaled_probabilities[lo]
             scaled_probabilities[hi] = (
                 scaled_probabilities[hi] + scaled_probabilities[lo]
             ) - one
@@ -352,33 +352,28 @@ class Sampler:
             if scaled_probabilities[hi] < 1:
                 heapq.heappush(small, hi)
             elif scaled_probabilities[hi] == 1:
-                self.table[hi][2] = zero
+                table[hi][2] = zero
             else:
                 heapq.heappush(large, hi)
         while large:
-            self.table[large.pop()][2] = zero
+            table[large.pop()][2] = zero
         while small:
-            self.table[small.pop()][2] = zero
+            table[small.pop()][2] = zero
 
-        for entry in self.table:
-            assert entry[0] is not None
-            assert entry[2] is not None
-            if entry[1] is None:
-                entry[1] = entry[0]
-            elif entry[1] < entry[0]:
-                entry[0], entry[1] = entry[1], entry[0]
-                entry[2] = one - entry[2]
-        self.table.sort()
+        result = []
+        for base, alternate, alternate_chance in table:
+            assert base is not None and alternate_chance is not None
+            if alternate is None:
+                result.append((base, base, alternate_chance))
+            elif alternate < base:
+                result.append((alternate, base, one - alternate_chance))
+            else:
+                result.append((base, alternate, alternate_chance))
+        self.table = sorted(result)
 
     def sample(self, data: "ConjectureData") -> int:
         data.start_example(SAMPLE_IN_SAMPLER_LABEL)
-        i = integer_range(data, 0, len(self.table) - 1)
-        base, alternate, alternate_chance = self.table[i]
-        assert base is not None
-        assert alternate is not None
-        assert alternate_chance is not None
-        assert isinstance(base, int)
-        assert isinstance(alternate, int)
+        base, alternate, alternate_chance = choice(data, self.table)
         use_alternate = biased_coin(data, alternate_chance)
         data.stop_example()
         if use_alternate:
