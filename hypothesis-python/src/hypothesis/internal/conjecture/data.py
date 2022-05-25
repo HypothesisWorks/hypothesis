@@ -833,7 +833,7 @@ class ConjectureData:
         self.start_time = time.perf_counter()
         self.events: "Union[Set[Hashable], FrozenSet[Hashable]]" = set()
         self.forced_indices: "Set[int]" = set()
-        self.interesting_origin = None
+        self.interesting_origin: Optional[InterestingOrigin] = None
         self.draw_times: "List[float]" = []
         self.max_depth = 0
         self.has_discards = False
@@ -891,7 +891,7 @@ class ConjectureData:
                 has_discards=self.has_discards,
                 target_observations=self.target_observations,
                 tags=frozenset(self.tags),
-                forced_indices=self.forced_indices,
+                forced_indices=frozenset(self.forced_indices),
             )
             assert self.__result is not None
             self.blocks.transfer_ownership(self.__result)

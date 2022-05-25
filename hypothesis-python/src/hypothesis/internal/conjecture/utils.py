@@ -303,13 +303,13 @@ class Sampler:
        shrinking the chosen element.
     """
 
-    table: List[Tuple[Union[float, int], Union[float, int], float]]
+    table: List[Tuple[int, int, float]]  # (base_idx, alt_idx, alt_chance)
 
-    def __init__(self, weights: Sequence[Union[float, int]]):
+    def __init__(self, weights: Sequence[float]):
 
         n = len(weights)
 
-        table = [[i, None, None] for i in range(n)]
+        table: "list[list[int | float | None]]" = [[i, None, None] for i in range(n)]
 
         total = sum(weights)
 
@@ -360,16 +360,17 @@ class Sampler:
         while small:
             table[small.pop()][2] = zero
 
-        result = []
-        for base, alternate, alternate_chance in table:
-            assert base is not None and alternate_chance is not None
+        self.table: "List[Tuple[int, int, float]]" = []
+        for base, alternate, alternate_chance in table:  # type: ignore
+            assert isinstance(base, int)
+            assert isinstance(alternate, int) or alternate is None
             if alternate is None:
-                result.append((base, base, alternate_chance))
+                self.table.append((base, base, alternate_chance))
             elif alternate < base:
-                result.append((alternate, base, one - alternate_chance))
+                self.table.append((alternate, base, one - alternate_chance))
             else:
-                result.append((base, alternate, alternate_chance))
-        self.table = sorted(result)
+                self.table.append((base, alternate, alternate_chance))
+        self.table.sort()
 
     def sample(self, data: "ConjectureData") -> int:
         data.start_example(SAMPLE_IN_SAMPLER_LABEL)
