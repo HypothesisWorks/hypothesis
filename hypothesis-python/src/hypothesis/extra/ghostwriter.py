@@ -890,12 +890,9 @@ def magic(
         raise InvalidArgument("Must pass at least one function or module to test.")
     functions = set()
     for thing in modules_or_functions:
-        if inspect.isclass(thing):
-            funcs = [
-                v.__get__(thing)
-                for k, v in vars(thing).items()
-                if hasattr(v, "__func__") and not is_mock(v) and not k.startswith("_")
-            ]
+        if callable(thing):
+            functions.add(thing)
+            funcs = []
         elif callable(thing):
             functions.add(thing)
             funcs = []
