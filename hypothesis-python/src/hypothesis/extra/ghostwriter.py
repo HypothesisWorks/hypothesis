@@ -1072,7 +1072,7 @@ def fuzz(func: Callable, *, except_: Except = (), style: str = "pytest") -> str:
     you'll need to specify a strategy - for example :func:`~hypothesis.strategies.text`
     or :func:`~hypothesis.strategies.binary`.  After that, you have a test!
     """
-    if not callable(func) or inspect.isclass(func):
+    if not callable(func):
         raise InvalidArgument(f"Got non-callable func={func!r}")
     except_ = _check_except(except_)
     _check_style(style)
@@ -1122,7 +1122,7 @@ def idempotent(func: Callable, *, except_: Except = (), style: str = "pytest") -
             repeat = timsort(seq=result)
             assert result == repeat, (result, repeat)
     """
-    if not callable(func) or inspect.isclass(func):
+    if not callable(func):
         raise InvalidArgument(f"Got non-callable func={func!r}")
     except_ = _check_except(except_)
     _check_style(style)
@@ -1177,7 +1177,7 @@ def roundtrip(*funcs: Callable, except_: Except = (), style: str = "pytest") -> 
     if not funcs:
         raise InvalidArgument("Round-trip of zero functions is meaningless.")
     for i, f in enumerate(funcs):
-        if not callable(f) or inspect.isclass(f):
+        if not callable(f):
             raise InvalidArgument(f"Got non-callable funcs[{i}]={f!r}")
     except_ = _check_except(except_)
     _check_style(style)
@@ -1289,7 +1289,7 @@ def equivalent(
     if len(funcs) < 2:
         raise InvalidArgument("Need at least two functions to compare.")
     for i, f in enumerate(funcs):
-        if not callable(f) or inspect.isclass(f):
+        if not callable(f):
             raise InvalidArgument(f"Got non-callable funcs[{i}]={f!r}")
     check_type(bool, allow_same_errors, "allow_same_errors")
     except_ = _check_except(except_)
@@ -1339,7 +1339,7 @@ def binary_operation(
             style="unittest",
         )
     """
-    if not callable(func) or inspect.isclass(func):
+    if not callable(func):
         raise InvalidArgument(f"Got non-callable func={func!r}")
     except_ = _check_except(except_)
     _check_style(style)
