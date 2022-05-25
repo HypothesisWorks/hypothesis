@@ -760,7 +760,7 @@ class DataObserver:
 
 @dataclass_transform()
 @attr.s(slots=True)
-class ConjectureResult:  # type: ignore[no-untyped-def]
+class ConjectureResult:
     """Result class storing the parts of ConjectureData that we
     will care about after the original ConjectureData has outlived its
     usefulness."""
