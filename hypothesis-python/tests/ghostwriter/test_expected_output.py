@@ -177,10 +177,6 @@ def divide(a: int, b: int) -> float:
                 style="unittest",
             ),
         ),
-        # (
-        #     "xml_etree_ElementTree_py38",
-        #     ghostwriter.magic(xml.etree.ElementTree),
-        # ),
         pytest.param(
             ("magic_builtins", ghostwriter.magic(builtins)),
             marks=[
