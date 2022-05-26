@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import ast
+import itertools
 import json
 import operator
 import re
@@ -243,38 +244,21 @@ def test_roundtrip_correct_pairs(tmpdir):
         cwd=tmpdir,
     )
     assert result.returncode == 0
-    # correct pairs
-    assert (
-        """value0 = mycode.MyClass.to_json(json=json)
-    value1 = mycode.MyClass.from_json(json=value0)"""
-        in result.stdout
-    )
-    assert (
-        """value0 = mycode.OtherClass.to_json(json=json)
-    value1 = mycode.OtherClass.from_json(json=value0)"""
-        in result.stdout
-    )
-    assert (
-        """value0 = mycode.to_json(json=json)
-    value1 = mycode.from_json(json=value0)"""
-        in result.stdout
-    )
-    # incorrect pairs
-    assert (
-        """value0 = mycode.to_json(json=json)
-    value1 = mycode.MyClass.from_json(json=value0)"""
-        not in result.stdout
-    )
-    assert (
-        """value0 = mycode.S.to_json(json=json)
-    value1 = mycode.from_json(json=value0)"""
-        not in result.stdout
-    )
-    assert (
-        """value0 = mycode.MyClass.to_json(json=json)
-    value1 = mycode.OtherClass.from_json(json=value0)"""
-        not in result.stdout
-    )
+    for scope1, scope2 in itertools.product(
+        ["mycode.MyClass", "mycode.OtherClass", "mycode"], repeat=2
+    ):
+        if scope1 == scope2:
+            assert (
+                f"""value0 = {scope1}.to_json(json=json)
+    value1 = {scope2}.from_json(json=value0)"""
+                in result.stdout
+            )
+        else:
+            assert (
+                f"""value0 = {scope1}.to_json(json=json)
+    value1 = {scope2}.from_json(json=value0)"""
+                not in result.stdout
+            )
 
 
 def test_empty_module_is_not_error(tmpdir):
