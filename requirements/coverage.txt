@@ -18,7 +18,7 @@ click==8.1.3
     # via
     #   -r requirements/coverage.in
     #   black
-coverage==6.3.3
+coverage==6.4
     # via -r requirements/coverage.in
 deprecated==1.2.13
     # via redis
@@ -26,7 +26,7 @@ dpcontracts==0.6.0
     # via -r requirements/coverage.in
 execnet==1.9.0
     # via pytest-xdist
-fakeredis==1.7.5
+fakeredis==1.8
     # via -r requirements/coverage.in
 iniconfig==1.1.1
     # via pytest
@@ -44,7 +44,6 @@ numpy==1.22.4
     #   pandas
 packaging==21.3
     # via
-    #   fakeredis
     #   pytest
     #   redis
 pandas==1.4.2
