@@ -49,7 +49,7 @@ com2ann==0.3.0
     # via shed
 commonmark==0.9.1
     # via rich
-coverage==6.3.3
+coverage==6.4
     # via -r requirements/tools.in
 cryptography==37.0.2
     # via secretstorage
@@ -140,7 +140,7 @@ importlib-metadata==4.11.4
     #   twine
 iniconfig==1.1.1
     # via pytest
-ipython==8.3.0
+ipython==8.4.0
     # via -r requirements/tools.in
 isort==5.10.1
     # via shed
@@ -152,7 +152,7 @@ jeepney==0.8.0
     #   secretstorage
 jinja2==3.1.2
     # via sphinx
-keyring==23.5.0
+keyring==23.5.1
     # via twine
 lark-parser==0.12.0
     # via -r requirements/tools.in
@@ -166,7 +166,7 @@ matplotlib-inline==0.1.3
     # via ipython
 mccabe==0.6.1
     # via flake8
-mypy==0.950
+mypy==0.960
     # via -r requirements/tools.in
 mypy-extensions==0.4.3
     # via
@@ -192,7 +192,7 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pip-tools==6.6.1
+pip-tools==6.6.2
     # via -r requirements/tools.in
 pkginfo==1.8.2
     # via twine
@@ -234,7 +234,7 @@ pygments==2.12.0
     #   sphinx
 pyparsing==3.0.9
     # via packaging
-pyright==1.1.248
+pyright==1.1.249
     # via -r requirements/tools.in
 pytest==7.1.2
     # via -r requirements/tools.in
@@ -262,11 +262,11 @@ restructuredtext-lint==1.4.0
     # via -r requirements/tools.in
 rfc3986==2.0.0
     # via twine
-rich==12.4.1
+rich==12.4.4
     # via twine
 secretstorage==3.3.2
     # via keyring
-shed==0.9.7
+shed==0.10.0
     # via -r requirements/tools.in
 six==1.16.0
     # via
@@ -342,10 +342,11 @@ types-pkg-resources==0.1.3
     # via -r requirements/tools.in
 types-pytz==2021.3.8
     # via -r requirements/tools.in
-types-redis==4.2.5
+types-redis==4.2.6
     # via -r requirements/tools.in
 typing-extensions==4.2.0
     # via
+    #   -r requirements/tools.in
     #   black
     #   flake8-noqa
     #   flake8-pie
