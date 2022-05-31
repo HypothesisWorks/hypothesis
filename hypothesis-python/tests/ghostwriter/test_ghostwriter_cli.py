@@ -247,18 +247,12 @@ def test_roundtrip_correct_pairs(tmpdir):
     for scope1, scope2 in itertools.product(
         ["mycode.MyClass", "mycode.OtherClass", "mycode"], repeat=2
     ):
+        round_trip_code = f"""value0 = {scope1}.to_json(json=json)
+value1 = {scope2}.from_json(json=value0)"""
         if scope1 == scope2:
-            assert (
-                f"""value0 = {scope1}.to_json(json=json)
-    value1 = {scope2}.from_json(json=value0)"""
-                in result.stdout
-            )
+            assert round_trip_code in result.stdout
         else:
-            assert (
-                f"""value0 = {scope1}.to_json(json=json)
-    value1 = {scope2}.from_json(json=value0)"""
-                not in result.stdout
-            )
+            assert round_trip_code not in result.stdout
 
 
 def test_empty_module_is_not_error(tmpdir):
