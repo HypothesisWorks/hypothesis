@@ -248,7 +248,7 @@ def test_roundtrip_correct_pairs(tmpdir):
         ["mycode.MyClass", "mycode.OtherClass", "mycode"], repeat=2
     ):
         round_trip_code = f"""value0 = {scope1}.to_json(json=json)
-value1 = {scope2}.from_json(json=value0)"""
+    value1 = {scope2}.from_json(json=value0)"""
         if scope1 == scope2:
             assert round_trip_code in result.stdout
         else:
