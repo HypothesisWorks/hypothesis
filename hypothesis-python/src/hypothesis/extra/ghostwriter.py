@@ -892,7 +892,7 @@ def magic(
     for thing in modules_or_functions:
         if callable(thing):
             functions.add(thing)
-            funcs: List[Callable] = []
+            funcs: list = []
         elif isinstance(thing, types.ModuleType):
             if hasattr(thing, "__all__"):
                 funcs = [getattr(thing, name, None) for name in thing.__all__]
