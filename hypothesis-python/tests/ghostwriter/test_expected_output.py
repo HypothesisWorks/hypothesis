@@ -187,20 +187,11 @@ def divide(a: int, b: int) -> float:
             ],
         ),
         pytest.param(
-            ("xml_etree_ElementTree_py38", ghostwriter.magic(xml.etree.ElementTree)),
+            ("xml_etree_ElementTree", ghostwriter.magic(xml.etree.ElementTree)),
             marks=[
                 pytest.mark.skipif(
-                    sys.version_info[:2] != (3, 8),
-                    reason="output generated with Python 3.8",
-                )
-            ],
-        ),
-        pytest.param(
-            ("xml_etree_ElementTree_py310", ghostwriter.magic(xml.etree.ElementTree)),
-            marks=[
-                pytest.mark.skipif(
-                    sys.version_info[:2] != (3, 10),
-                    reason="output generated with Python 3.10",
+                    sys.version_info[:2] not in [(3, 9), (3, 10)],
+                    reason="xml.etree.ElementTree.indent new in version 3.9",
                 )
             ],
         ),
