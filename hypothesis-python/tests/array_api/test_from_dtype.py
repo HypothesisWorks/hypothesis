@@ -95,12 +95,7 @@ smallest_normal = width_smallest_normals[32]
         {},
         {"min_value": -1},
         {"max_value": 1},
-        pytest.param(
-            {"min_value": -1, "max_value": 1},
-            marks=pytest.mark.skip(
-                reason="FixedBoundFloatStrategy(0, 1) rarely generates subnormals"
-            ),
-        ),
+        {"min_value": -1, "max_value": 1},
     ],
 )
 def test_subnormal_generation(xp, xps, kwargs):

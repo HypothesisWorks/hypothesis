@@ -206,7 +206,16 @@ class FloatStrategy(SearchStrategy):
     ):
         super().__init__()
         assert isinstance(allow_nan, bool)
-        assert smallest_nonzero_magnitude > 0.0
+        assert smallest_nonzero_magnitude >= 0.0, "programmer error if this is negative"
+        if smallest_nonzero_magnitude == 0.0:  # pragma: no cover
+            raise FloatingPointError(
+                "Got allow_subnormal=True, but we can't represent subnormal floats "
+                "right now, in violation of the IEEE-754 floating-point "
+                "specification.  This is usually because something was compiled with "
+                "-ffast-math or a similar option, which sets global processor state.  "
+                "See https://simonbyrne.github.io/notes/fastmath/ for a more detailed "
+                "writeup - and good luck!"
+            )
         self.min_value = min_value
         self.max_value = max_value
         self.allow_nan = allow_nan

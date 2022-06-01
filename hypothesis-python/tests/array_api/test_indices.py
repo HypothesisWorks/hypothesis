@@ -39,7 +39,9 @@ def test_generate_optional_indices(xp, xps, condition):
 
 def test_cannot_generate_newaxis_when_disabled(xp, xps):
     """Strategy does not generate newaxis when disabled (i.e. the default)."""
-    assert_all_examples(xps.indices((3, 3, 3)), lambda idx: None not in idx)
+    assert_all_examples(
+        xps.indices((3, 3, 3)), lambda idx: idx == ... or None not in idx
+    )
 
 
 def test_generate_indices_for_0d_shape(xp, xps):

@@ -77,9 +77,9 @@ def build_docs(builder="html"):
     )
 
 
-CHANGELOG_ANCHOR = re.compile(r"^\.\. _v\d+\.\d+\.\d+:$")
-CHANGELOG_BORDER = re.compile(r"^-+$")
-CHANGELOG_HEADER = re.compile(r"^\d+\.\d+\.\d+ - \d\d\d\d-\d\d-\d\d$")
+CHANGELOG_ANCHOR = re.compile(r"^\.\. _v\d+\.\d+\.\d+:$", flags=re.MULTILINE)
+CHANGELOG_BORDER = re.compile(r"^-+$", flags=re.MULTILINE)
+CHANGELOG_HEADER = re.compile(r"^\d+\.\d+\.\d+ - \d\d\d\d-\d\d-\d\d$", flags=re.M)
 
 
 def update_changelog_and_version():
