@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.46.10:
+
+--------------------
+6.46.10 - 2022-06-01
+--------------------
+
+This release contains some small improvements to our documentation.
+Thanks to Felix Divo for his contribution!
+
 .. _v6.46.9:
 
 -------------------
