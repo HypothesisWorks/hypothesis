@@ -60,14 +60,7 @@ def test_subnormal_validation(kwargs):
         kw(allow_subnormal=True, max_value=1),
         kw(allow_subnormal=True, max_value=next_up(-float_info.min)),
         # min/max values
-        kw(
-            allow_subnormal=True,
-            min_value=-1,
-            max_value=1,
-            marks=pytest.mark.skip(
-                reason="FixedBoundFloatStrategy(0, 1) rarely generates subnormals"
-            ),
-        ),
+        kw(allow_subnormal=True, min_value=-1, max_value=1),
         kw(
             allow_subnormal=True,
             min_value=next_down(float_info.min),
