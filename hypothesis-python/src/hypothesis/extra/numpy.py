@@ -370,7 +370,7 @@ def arrays(
       strategy that generates such values.
     * ``elements`` is a strategy for generating values to put in the array.
       If it is None a suitable value will be inferred based on the dtype,
-      which may give any legal value (including eg ``NaN`` for floats).
+      which may give any legal value (including eg NaN for floats).
       If a mapping, it will be passed as ``**kwargs`` to ``from_dtype()``
     * ``fill`` is a strategy that may be used to generate a single background
       value for the array. If None, a suitable default will be inferred
@@ -392,17 +392,11 @@ def arrays(
     .. code-block:: pycon
 
       >>> import numpy as np
+      >>> from hypothesis import strategies as st
       >>> arrays(np.int8, (2, 3)).example()
       array([[-8,  6,  3],
              [-6,  4,  6]], dtype=int8)
-
-    - See :doc:`What you can generate and how <data>`.
-
-    .. code-block:: pycon
-
-      >>> import numpy as np
-      >>> from hypothesis.strategies import floats
-      >>> arrays(np.float, 3, elements=floats(0, 1)).example()
+      >>> arrays(np.float, 3, elements=st.floats(0, 1)).example()
       array([ 0.88974794,  0.77387938,  0.1977879 ])
 
     Array values are generated in two parts:
@@ -413,11 +407,11 @@ def arrays(
        value is drawn from the ``fill`` strategy and is assigned to all remaining
        places.
 
-    You can set fill to :func:`~hypothesis.strategies.nothing` if you want to
+    You can set :func:`fill=nothing() <hypothesis.strategies.nothing>` to
     disable this behaviour and draw a value for every element.
 
-    If ``fill`` is set to ``None`` then it will attempt to infer the correct behaviour
-    automatically: If ``unique`` is ``True``, no filling will occur by default.
+    If ``fill=None``, then it will attempt to infer the correct behaviour
+    automatically. If ``unique`` is ``True``, no filling will occur by default.
     Otherwise, if it looks safe to reuse the values of elements across
     multiple coordinates (this will be the case for any inferred strategy, and
     for most of the builtins, but is not the case for mutable values or
@@ -427,7 +421,7 @@ def arrays(
     Having a fill helps Hypothesis craft high quality examples, but its
     main importance is when the array generated is large: Hypothesis is
     primarily designed around testing small examples. If you have arrays with
-    hundreds or more elements, having a ``fill`` value is essential if you want
+    hundreds or more elements, having a fill value is essential if you want
     your tests to run in reasonable time.
     """
     # We support passing strategies as arguments for convenience, or at least
