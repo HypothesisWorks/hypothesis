@@ -48,7 +48,7 @@ def test_emits_unicode():
     @settings(verbosity=Verbosity.verbose)
     @given(text())
     def test_should_emit_unicode(t):
-        assert all(ord(c) <= 1000 for c in t)
+        assert all(ord(c) <= 1000 for c in t), ascii(t)
     with pytest.raises(AssertionError):
         test_should_emit_unicode()
 """
@@ -57,6 +57,7 @@ def test_emits_unicode():
 @pytest.mark.xfail(
     WINDOWS,
     reason="Encoding issues in running the subprocess, possibly pytest's fault",
+    strict=False,  # It's possible, if rare, for this to pass on Windows too.
 )
 def test_output_emitting_unicode(testdir, monkeypatch):
     monkeypatch.setenv("LC_ALL", "C")
