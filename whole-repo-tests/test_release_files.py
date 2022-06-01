@@ -31,6 +31,6 @@ def test_release_file_has_no_merge_conflicts():
     assert "<<<" not in message, "Merge conflict in RELEASE.rst"
     _, *recent_changes, _ = hp.CHANGELOG_ANCHOR.split(hp.changelog(), maxsplit=12)
     for entry in recent_changes:
-        _, version, _, old_msg = hp.CHANGELOG_BORDER.split(entry.strip())
+        _, version, old_msg = (x.strip() for x in hp.CHANGELOG_BORDER.split(entry))
         assert message not in old_msg, f"Release notes already published for {version}"
         assert old_msg not in message, f"Copied {version} release notes - merge error?"
