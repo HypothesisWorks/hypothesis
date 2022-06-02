@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.46.11:
+
+--------------------
+6.46.11 - 2022-06-02
+--------------------
+
+Mention :func:`hypothesis.strategies.timezones`
+in the documentation of :func:`hypothesis.strategies.datetimes` for completeness.
+
+Thanks to George Macon for this addition.
+
 .. _v6.46.10:
 
 --------------------
