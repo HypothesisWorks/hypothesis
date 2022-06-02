@@ -78,7 +78,6 @@ import re
 import sys
 import types
 from collections import OrderedDict, defaultdict
-from copy import copy
 from itertools import permutations, zip_longest
 from keyword import iskeyword
 from string import ascii_lowercase
@@ -911,7 +910,7 @@ def magic(
         else:
             raise InvalidArgument(f"Can't test non-module non-callable {thing!r}")
 
-        for f in copy(funcs):
+        for f in list(funcs):
             if inspect.isclass(f):
                 funcs += [
                     v.__get__(f)
