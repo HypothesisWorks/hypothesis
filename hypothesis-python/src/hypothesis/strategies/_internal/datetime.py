@@ -186,9 +186,14 @@ def datetimes(
 
     ``timezones`` must be a strategy that generates either ``None``, for naive
     datetimes, or :class:`~python:datetime.tzinfo` objects for 'aware' datetimes.
-    You can construct your own, though we recommend using the :pypi:`dateutil
-    <python-dateutil>` package and :func:`hypothesis.extra.dateutil.timezones`
-    strategy, and also provide :func:`hypothesis.extra.pytz.timezones`.
+    You can construct your own, though we recommend using one of these built-in
+    strategies:
+
+    * with Python 3.9 or newer or :pypi:`backports.zoneinfo`:
+      :func:`hypothesis.strategies.timezones`;
+    * with :pypi:`dateutil <python-dateutil>`:
+      :func:`hypothesis.extra.dateutil.timezones`; or
+    * with :pypi:`pytz`: :func:`hypothesis.extra.pytz.timezones`.
 
     You may pass ``allow_imaginary=False`` to filter out "imaginary" datetimes
     which did not (or will not) occur due to daylight savings, leap seconds,
