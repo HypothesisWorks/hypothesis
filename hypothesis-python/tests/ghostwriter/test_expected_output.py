@@ -21,7 +21,6 @@ import operator
 import pathlib
 import re
 import sys
-import xml
 from typing import Sequence
 
 import numpy
