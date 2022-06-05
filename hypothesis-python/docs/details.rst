@@ -702,7 +702,7 @@ providing extra information and convenient access to config options.
   :ref:`display test and data generation statistics <statistics>`.
 - ``pytest --hypothesis-profile=<profile name>`` can be used to
   :ref:`load a settings profile <settings_profiles>`.
-  ``pytest --hypothesis-verbosity=<level name>`` can be used to
+- ``pytest --hypothesis-verbosity=<level name>`` can be used to
   :ref:`override the current verbosity level <verbose-output>`.
 - ``pytest --hypothesis-seed=<an int>`` can be used to
   :ref:`reproduce a failure with a particular seed <reproducing-with-seed>`.
