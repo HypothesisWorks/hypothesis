@@ -893,7 +893,7 @@ def magic(
             functions.add(thing)
             # class need to be added for exploration
             if inspect.isclass(thing):
-                funcs = [thing]
+                funcs: List[Optional[Any]] = [thing]
             else:
                 funcs = []
         elif isinstance(thing, types.ModuleType):
