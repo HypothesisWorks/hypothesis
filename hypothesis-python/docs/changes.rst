@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.47.0:
+
+-------------------
+6.47.0 - 2022-06-07
+-------------------
+
+The :doc:`Ghostwritter <ghostwriter>` can now write tests for
+:obj:`@classmethod <classmethod>` or :obj:`@staticmethod <staticmethod>`
+methods, in addition to the existing support for functions and other callables
+(:issue:`3318`).  Thanks to Cheuk Ting Ho for the patch.
+
 .. _v6.46.11:
 
 --------------------
