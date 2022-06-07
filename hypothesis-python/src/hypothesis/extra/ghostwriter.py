@@ -891,10 +891,15 @@ def magic(
     for thing in modules_or_functions:
         if callable(thing):
             functions.add(thing)
+            # class need to be added for exploration
+            if inspect.isclass(thing):
+                funcs: List[Optional[Any]] = [thing]
+            else:
+                funcs = []
         elif isinstance(thing, types.ModuleType):
             if hasattr(thing, "__all__"):
                 funcs = [getattr(thing, name, None) for name in thing.__all__]
-            else:
+            elif hasattr(thing, "__package__"):
                 pkg = thing.__package__
                 funcs = [
                     v
@@ -906,21 +911,34 @@ def magic(
                 ]
                 if pkg and any(getattr(f, "__module__", pkg) == pkg for f in funcs):
                     funcs = [f for f in funcs if getattr(f, "__module__", pkg) == pkg]
-            for f in funcs:
-                try:
-                    if (
-                        (not is_mock(f))
-                        and callable(f)
-                        and _get_params(f)
-                        and not isinstance(f, enum.EnumMeta)
-                    ):
-                        functions.add(f)
-                        if getattr(thing, "__name__", None):
-                            KNOWN_FUNCTION_LOCATIONS[f] = thing.__name__
-                except (TypeError, ValueError):
-                    pass
         else:
             raise InvalidArgument(f"Can't test non-module non-callable {thing!r}")
+
+        for f in list(funcs):
+            if inspect.isclass(f):
+                funcs += [
+                    v.__get__(f)
+                    for k, v in vars(f).items()
+                    if hasattr(v, "__func__")
+                    and not is_mock(v)
+                    and not k.startswith("_")
+                ]
+        for f in funcs:
+            try:
+                if (
+                    (not is_mock(f))
+                    and callable(f)
+                    and _get_params(f)
+                    and not isinstance(f, enum.EnumMeta)
+                ):
+                    functions.add(f)
+                    if getattr(thing, "__name__", None):
+                        if inspect.isclass(thing):
+                            KNOWN_FUNCTION_LOCATIONS[f] = thing.__module__
+                        else:
+                            KNOWN_FUNCTION_LOCATIONS[f] = thing.__name__
+            except (TypeError, ValueError):
+                pass
 
     imports = set()
     parts = []

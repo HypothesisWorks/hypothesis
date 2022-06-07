@@ -37,7 +37,9 @@ command (`learn more about that here <https://hypofuzz.com/docs/quickstart.html>
 
 import builtins
 import importlib
+import inspect
 import sys
+import types
 from difflib import get_close_matches
 from functools import partial
 from multiprocessing import Pool
@@ -84,6 +86,7 @@ else:
             return importlib.import_module(s)
         except ImportError:
             pass
+        classname = None
         if "." not in s:
             modulename, module, funcname = "builtins", builtins, s
         else:
@@ -91,20 +94,56 @@ else:
             try:
                 module = importlib.import_module(modulename)
             except ImportError as err:
+                try:
+                    modulename, classname = modulename.rsplit(".", 1)
+                    module = importlib.import_module(modulename)
+                except ImportError:
+                    raise click.UsageError(
+                        f"Failed to import the {modulename} module for introspection.  "
+                        "Check spelling and your Python import path, or use the Python API?"
+                    ) from err
+
+        def describe_close_matches(
+            module_or_class: types.ModuleType, objname: str
+        ) -> str:
+            public_names = [
+                name for name in vars(module_or_class) if not name.startswith("_")
+            ]
+            matches = get_close_matches(objname, public_names)
+            if matches:
+                return f"  Closest matches: {matches!r}"
+            else:
+                return ""
+
+        if classname is None:
+            try:
+                return getattr(module, funcname)
+            except AttributeError as err:
                 raise click.UsageError(
-                    f"Failed to import the {modulename} module for introspection.  "
-                    "Check spelling and your Python import path, or use the Python API?"
+                    f"Found the {modulename!r} module, but it doesn't have a "
+                    f"{funcname!r} attribute."
+                    + describe_close_matches(module, funcname)
                 ) from err
-        try:
-            return getattr(module, funcname)
-        except AttributeError as err:
-            public_names = [name for name in vars(module) if not name.startswith("_")]
-            matches = get_close_matches(funcname, public_names)
-            raise click.UsageError(
-                f"Found the {modulename!r} module, but it doesn't have a "
-                f"{funcname!r} attribute."
-                + (f"  Closest matches: {matches!r}" if matches else "")
-            ) from err
+        else:
+            try:
+                func_class = getattr(module, classname)
+            except AttributeError as err:
+                raise click.UsageError(
+                    f"Found the {modulename!r} module, but it doesn't have a "
+                    f"{classname!r} class." + describe_close_matches(module, classname)
+                ) from err
+            try:
+                return getattr(func_class, funcname)
+            except AttributeError as err:
+                if inspect.isclass(func_class):
+                    func_class_is = "class"
+                else:
+                    func_class_is = "attribute"
+                raise click.UsageError(
+                    f"Found the {modulename!r} module and {classname!r} {func_class_is}, "
+                    f"but it doesn't have a {funcname!r} attribute."
+                    + describe_close_matches(func_class, funcname)
+                ) from err
 
     def _refactor(func, fname):
         try:

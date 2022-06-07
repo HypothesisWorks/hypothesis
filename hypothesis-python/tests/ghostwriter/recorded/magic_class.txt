@@ -1,0 +1,20 @@
+# This test code was written by the `hypothesis.extra.ghostwriter` module
+# and is provided under the Creative Commons Zero public domain dedication.
+
+import test_expected_output
+from hypothesis import given, strategies as st
+
+
+@given()
+def test_fuzz_A_Class():
+    test_expected_output.A_Class()
+
+
+@given(arg=st.integers())
+def test_fuzz_A_Class_a_classmethod(arg):
+    test_expected_output.A_Class.a_classmethod(arg=arg)
+
+
+@given(arg=st.integers())
+def test_fuzz_A_Class_a_staticmethod(arg):
+    test_expected_output.A_Class.a_staticmethod(arg=arg)

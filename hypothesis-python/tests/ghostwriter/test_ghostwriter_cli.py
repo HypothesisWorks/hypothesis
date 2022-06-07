@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import ast
+import itertools
 import json
 import operator
 import re
@@ -42,6 +43,8 @@ from hypothesis.extra.ghostwriter import (
             lambda: roundtrip(json.loads, json.dumps, except_=ValueError),
         ),
         # Imports submodule (importlib.import_module passes; __import__ fails)
+        ("hypothesis.errors.StopTest", lambda: fuzz(StopTest)),
+        # We can write tests for classes even without classmethods or staticmethods
         ("hypothesis.errors.StopTest", lambda: fuzz(StopTest)),
         # Search for identity element does not print e.g. "You can use @seed ..."
         ("--binary-op operator.add", lambda: binary_operation(operator.add)),
@@ -114,6 +117,128 @@ def test_can_import_from_scripts_in_working_dir(tmpdir):
     )
     assert result.returncode == 0
     assert "Error: " not in result.stderr
+
+
+CLASS_CODE_TO_TEST = """
+from typing import Sequence, List
+
+def my_func(seq: Sequence[int]) -> List[int]:
+    return sorted(seq)
+
+class MyClass:
+
+    @staticmethod
+    def my_staticmethod(seq: Sequence[int]) -> List[int]:
+        return sorted(seq)
+
+    @classmethod
+    def my_classmethod(cls, seq: Sequence[int]) -> List[int]:
+        return sorted(seq)
+"""
+
+
+@pytest.mark.parametrize("func", ["my_staticmethod", "my_classmethod"])
+def test_can_import_from_class(tmpdir, func):
+    (tmpdir / "mycode.py").write(CLASS_CODE_TO_TEST)
+    result = subprocess.run(
+        f"hypothesis write mycode.MyClass.{func}",
+        capture_output=True,
+        shell=True,
+        text=True,
+        cwd=tmpdir,
+    )
+    assert result.returncode == 0
+    assert "Error: " not in result.stderr
+
+
+@pytest.mark.parametrize(
+    "classname,thing,kind",
+    [
+        ("XX", "", "class"),
+        ("MyClass", " and 'MyClass' class", "attribute"),
+        ("my_func", " and 'my_func' attribute", "attribute"),
+    ],
+)
+def test_error_import_from_class(tmpdir, classname, thing, kind):
+    (tmpdir / "mycode.py").write(CLASS_CODE_TO_TEST)
+    result = subprocess.run(
+        f"hypothesis write mycode.{classname}.XX",
+        capture_output=True,
+        shell=True,
+        text=True,
+        cwd=tmpdir,
+    )
+    msg = f"Error: Found the 'mycode' module{thing}, but it doesn't have a 'XX' {kind}."
+    assert result.returncode == 2
+    assert msg in result.stderr
+
+
+def test_magic_discovery_from_module(tmpdir):
+    (tmpdir / "mycode.py").write(CLASS_CODE_TO_TEST)
+    result = subprocess.run(
+        f"hypothesis write mycode",
+        capture_output=True,
+        shell=True,
+        text=True,
+        cwd=tmpdir,
+    )
+    assert result.returncode == 0
+    assert "my_func" in result.stdout
+    assert "MyClass.my_staticmethod" in result.stdout
+    assert "MyClass.my_classmethod" in result.stdout
+
+
+ROUNDTRIP_CODE_TO_TEST = """
+from typing import Union
+import json
+
+def to_json(json: Union[dict,list]) -> str:
+    return json.dumps(json)
+
+def from_json(json: str) -> Union[dict,list]:
+    return json.loads(json)
+
+class MyClass:
+
+    @staticmethod
+    def to_json(json: Union[dict,list]) -> str:
+        return json.dumps(json)
+
+    @staticmethod
+    def from_json(json: str) -> Union[dict,list]:
+        return json.loads(json)
+
+class OtherClass:
+
+    @classmethod
+    def to_json(cls, json: Union[dict,list]) -> str:
+        return json.dumps(json)
+
+    @classmethod
+    def from_json(cls, json: str) -> Union[dict,list]:
+        return json.loads(json)
+"""
+
+
+def test_roundtrip_correct_pairs(tmpdir):
+    (tmpdir / "mycode.py").write(ROUNDTRIP_CODE_TO_TEST)
+    result = subprocess.run(
+        f"hypothesis write mycode",
+        capture_output=True,
+        shell=True,
+        text=True,
+        cwd=tmpdir,
+    )
+    assert result.returncode == 0
+    for scope1, scope2 in itertools.product(
+        ["mycode.MyClass", "mycode.OtherClass", "mycode"], repeat=2
+    ):
+        round_trip_code = f"""value0 = {scope1}.to_json(json=json)
+    value1 = {scope2}.from_json(json=value0)"""
+        if scope1 == scope2:
+            assert round_trip_code in result.stdout
+        else:
+            assert round_trip_code not in result.stdout
 
 
 def test_empty_module_is_not_error(tmpdir):

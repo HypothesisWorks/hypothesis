@@ -31,6 +31,16 @@ def test_fuzz_bin(number):
     bin(number)
 
 
+@given(frm=st.nothing(), to=st.nothing())
+def test_fuzz_bytearray_maketrans(frm, to):
+    bytearray.maketrans(frm, to)
+
+
+@given(frm=st.nothing(), to=st.nothing())
+def test_fuzz_bytes_maketrans(frm, to):
+    bytes.maketrans(frm, to)
+
+
 @given(obj=st.nothing())
 def test_fuzz_callable(obj):
     callable(obj)
