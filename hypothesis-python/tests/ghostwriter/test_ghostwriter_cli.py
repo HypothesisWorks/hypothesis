@@ -17,14 +17,12 @@ import subprocess
 
 import pytest
 
-import hypothesis.strategies
 from hypothesis.errors import StopTest
 from hypothesis.extra.ghostwriter import (
     binary_operation,
     equivalent,
     fuzz,
     idempotent,
-    magic,
     roundtrip,
 )
 
@@ -44,11 +42,10 @@ from hypothesis.extra.ghostwriter import (
             "--roundtrip json.loads json.dumps --except ValueError",
             lambda: roundtrip(json.loads, json.dumps, except_=ValueError),
         ),
-        ("hypothesis.strategies.builds", lambda: fuzz(hypothesis.strategies.builds)),
-        # Discover methods in class
-        ("hypothesis.errors.StopTest", lambda: magic(StopTest)),
         # Imports submodule (importlib.import_module passes; __import__ fails)
-        ("hypothesis.strategies", lambda: magic(hypothesis.strategies)),
+        ("hypothesis.errors.StopTest", lambda: fuzz(StopTest)),
+        # We can write tests for classes even without classmethods or staticmethods
+        ("hypothesis.errors.StopTest", lambda: fuzz(StopTest)),
         # Search for identity element does not print e.g. "You can use @seed ..."
         ("--binary-op operator.add", lambda: binary_operation(operator.add)),
     ],
@@ -155,36 +152,25 @@ def test_can_import_from_class(tmpdir, func):
 
 
 @pytest.mark.parametrize(
-    "classname,funcname,err_msg",
+    "classname,thing,kind",
     [
-        (
-            "XX",
-            "XX",
-            "Found the 'mycode' module, but it doesn't have a 'XX' class.",
-        ),
-        (
-            "MyClass",
-            "XX",
-            "Found the 'mycode' module and 'MyClass' class, but it doesn't have a 'XX' attribute.",
-        ),
-        (
-            "my_func",
-            "XX",
-            "Found the 'mycode' module and 'my_func' attribute, but it doesn't have a 'XX' attribute.",
-        ),
+        ("XX", "", "class"),
+        ("MyClass", " and 'MyClass' class", "attribute"),
+        ("my_func", " and 'my_func' attribute", "attribute"),
     ],
 )
-def test_error_import_from_class(tmpdir, classname, funcname, err_msg):
+def test_error_import_from_class(tmpdir, classname, thing, kind):
     (tmpdir / "mycode.py").write(CLASS_CODE_TO_TEST)
     result = subprocess.run(
-        f"hypothesis write mycode.{classname}.{funcname}",
+        f"hypothesis write mycode.{classname}.XX",
         capture_output=True,
         shell=True,
         text=True,
         cwd=tmpdir,
     )
+    msg = f"Error: Found the 'mycode' module{thing}, but it doesn't have a 'XX' {kind}."
     assert result.returncode == 2
-    assert "Error: " + err_msg in result.stderr
+    assert msg in result.stderr
 
 
 def test_magic_discovery_from_module(tmpdir):
