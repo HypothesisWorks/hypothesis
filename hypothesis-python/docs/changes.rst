@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.47.1:
+
+-------------------
+6.47.1 - 2022-06-10
+-------------------
+
+Our pretty-printer no longer sorts dictionary keys, since iteration order is
+stable in Python 3.7+ and this can affect reproducing examples (:issue:`3370`).
+This PR was kindly supported by `Ordina Pythoneers
+<https://www.ordina.nl/vakgebieden/python/>`__.
+
 .. _v6.47.0:
 
 -------------------
