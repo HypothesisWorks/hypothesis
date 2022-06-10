@@ -32,6 +32,7 @@ their individual contributions.
 * `Chase Garner <https://www.github.com/chasegarner>`_ (chase@garner.red)
 * `Cheuk Ting Ho <https://github.com/Cheukting>`_
 * `Chris Down  <https://chrisdown.name>`_
+* `Chris van Dronkelaar <https://github.com/Chrisvandr>`_
 * `Christopher Martin <https://www.github.com/chris-martin>`_ (ch.martin@gmail.com)
 * `Claudio Jolowicz <https://github.com/cjolowicz>`_
 * `Conrad Ho <https://www.github.com/conradho>`_ (conrad.alwin.ho@gmail.com)
@@ -126,6 +127,7 @@ their individual contributions.
 * `Pierre-Jean Campigotto <https://github.com/PJCampi>`_
 * `Przemek Konopko <https://github.com/soutys>`_
 * `Richard Boulton <https://www.github.com/rboulton>`_ (richard@tartarus.org)
+* `Richard Scholtens <https://github.com/richardscholtens>`_ (richardscholtens2@gmail.com)
 * `Robert Howlett <https://github.com/jebob>`_
 * `Robert Knight <https://github.com/robertknight>`_ (robertknight@gmail.com)
 * `Rónán Carrigan <https://www.github.com/rcarriga>`_ (rcarriga@tcd.ie)
@@ -138,6 +140,7 @@ their individual contributions.
 * `Sangarshanan <https://www.github.com/sangarshanan>`_ (sangarshanan1998@gmail.com)
 * `Sanyam Khurana <https://github.com/CuriousLearner>`_
 * `Saul Shanabrook <https://www.github.com/saulshanabrook>`_ (s.shanabrook@gmail.com)
+* `Sebastiaan Zeeff <https://github.com/SebastiaanZ>`_ (sebastiaan.zeeff@ordina.nl)
 * `Shlok Gandhi <https://github.com/shlok57>`_ (shlok.gandhi@gmail.com)
 * `Sogata Ray <https://github.com/rayardinanda>`_ (rayardinanda@gmail.com)
 * `Stuart Cook <https://www.github.com/Zalathar>`_
@@ -155,6 +158,7 @@ their individual contributions.
 * `Tyler Nickerson <https://www.github.com/nmbrgts>`_
 * `Vidya Rani <https://www.github.com/vidyarani-dg>`_ (vidyarani.d.g@gmail.com)
 * `Vincent Michel <https://www.github.com/vxgmichel>`_ (vxgmichel@gmail.com)
+* `Viorel Pluta <https://github.com/viopl>`_ (viopluta@gmail.com)
 * `Vytautas Strimaitis <https://www.github.com/vstrimaitis>`_
 * `Will Hall <https://www.github.com/wrhall>`_ (wrsh07@gmail.com)
 * `Will Thompson <https://www.github.com/wjt>`_ (will@willthompson.co.uk)
