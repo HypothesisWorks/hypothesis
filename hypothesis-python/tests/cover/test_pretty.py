@@ -134,6 +134,7 @@ def test_list():
 def test_dict():
     assert pretty.pretty({}) == "{}"
     assert pretty.pretty({1: 1}) == "{1: 1}"
+    assert pretty.pretty({1: 1, 0: 0}) == "{1: 1, 0: 0}"
 
 
 def test_tuple():
