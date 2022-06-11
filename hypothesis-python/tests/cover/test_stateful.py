@@ -981,6 +981,7 @@ state.teardown()
 
 def test_steps_printed_despite_pytest_fail(capsys):
     # Test for https://github.com/HypothesisWorks/hypothesis/issues/1372
+    @Settings(print_blob=False)
     class RaisesProblem(RuleBasedStateMachine):
         @rule()
         def oops(self):
