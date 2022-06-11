@@ -28,7 +28,7 @@ from types import FunctionType
 
 from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument, ResolutionFailed
-from hypothesis.internal.compat import PYPY
+from hypothesis.internal.compat import PYPY, BaseExceptionGroup, ExceptionGroup
 from hypothesis.internal.conjecture.utils import many as conjecture_utils_many
 from hypothesis.strategies._internal.datetime import zoneinfo  # type: ignore
 from hypothesis.strategies._internal.ipaddress import (
@@ -554,6 +554,16 @@ _global_type_lookup: typing.Dict[
     UnicodeTranslateError: st.builds(
         UnicodeTranslateError, st.text(), st.just(0), st.just(0), st.just("reason")
     ),
+    BaseExceptionGroup: st.builds(
+        BaseExceptionGroup,
+        st.text(),
+        st.lists(st.from_type(BaseException), min_size=1),
+    ),
+    ExceptionGroup: st.builds(
+        ExceptionGroup,
+        st.text(),
+        st.lists(st.from_type(Exception), min_size=1),
+    ),
     enumerate: st.builds(enumerate, st.just(())),
     filter: st.builds(filter, st.just(lambda _: None), st.just(())),
     map: st.builds(map, st.just(lambda _: None), st.just(())),
@@ -569,21 +579,6 @@ if zoneinfo is not None:  # pragma: no branch
     _global_type_lookup[zoneinfo.ZoneInfo] = st.timezones()
 if PYPY:
     _global_type_lookup[builtins.sequenceiterator] = st.builds(iter, st.tuples())  # type: ignore
-try:
-    BaseExceptionGroup  # type: ignore # noqa
-except NameError:
-    pass
-else:  # pragma: no cover
-    _global_type_lookup[BaseExceptionGroup] = st.builds(  # type: ignore
-        BaseExceptionGroup,  # type: ignore
-        st.text(),
-        st.lists(st.from_type(BaseException), min_size=1),
-    )
-    _global_type_lookup[ExceptionGroup] = st.builds(  # type: ignore
-        ExceptionGroup,  # type: ignore
-        st.text(),
-        st.lists(st.from_type(Exception), min_size=1),
-    )
 
 
 _global_type_lookup[type] = st.sampled_from(

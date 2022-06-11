@@ -100,7 +100,11 @@ setuptools.setup(
     description="A library for property-based testing",
     zip_safe=False,
     extras_require=extras,
-    install_requires=["attrs>=19.2.0", "sortedcontainers>=2.1.0,<3.0.0"],
+    install_requires=[
+        "attrs>=19.2.0",
+        "exceptiongroup>=1.0.0rc8 ; python_version<'3.11.0b1'",
+        "sortedcontainers>=2.1.0,<3.0.0",
+    ],
     python_requires=">=3.7",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
