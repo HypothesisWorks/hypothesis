@@ -236,7 +236,7 @@ pygments==2.12.0
     #   sphinx
 pyparsing==3.0.9
     # via packaging
-pyright==1.1.254
+pyright==1.1.249
     # via -r requirements/tools.in
 pytest==7.1.2
     # via -r requirements/tools.in

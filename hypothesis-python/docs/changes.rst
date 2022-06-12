@@ -2637,7 +2637,7 @@ Thanks to Zac Hatfield-Dodds and Nikita Sobolev for this feature!
 
 This patch adds two new :doc:`ghostwriters <ghostwriter>` to test
 :wikipedia:`binary operations <Binary_operation>`, like :func:`python:operator.add`,
-and Numpy :doc:`ufuncs <reference/ufuncs>` and :doc:`gufuncs
+and Numpy :doc:`ufuncs <numpy:reference/ufuncs>` and :doc:`gufuncs
 <numpy:reference/c-api/generalized-ufuncs>` like :data:`np.matmul() <numpy:numpy.matmul>`.
 
 .. _v5.26.1:
