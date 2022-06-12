@@ -16,11 +16,12 @@ import typing
 
 try:
     BaseExceptionGroup = BaseExceptionGroup
-except NameError:  # pragma: no cover
-    try:
-        from exceptiongroup import BaseExceptionGroup as BaseExceptionGroup  # for mypy
-    except ImportError:
-        BaseExceptionGroup = ()  # valid in isinstance and except clauses!
+    ExceptionGroup = ExceptionGroup  # pragma: no cover
+except NameError:
+    from exceptiongroup import (
+        BaseExceptionGroup as BaseExceptionGroup,
+        ExceptionGroup as ExceptionGroup,
+    )
 
 PYPY = platform.python_implementation() == "PyPy"
 WINDOWS = platform.system() == "Windows"

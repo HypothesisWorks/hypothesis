@@ -9,11 +9,11 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
-import traceback
 from typing import NoReturn, Union
 
 from hypothesis import Verbosity, settings
-from hypothesis.errors import CleanupFailed, InvalidArgument, UnsatisfiedAssumption
+from hypothesis.errors import InvalidArgument, UnsatisfiedAssumption
+from hypothesis.internal.compat import BaseExceptionGroup
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.validation import check_type
 from hypothesis.reporting import report, verbose_report
@@ -74,18 +74,16 @@ class BuildContext:
 
     def __exit__(self, exc_type, exc_value, tb):
         self.assign_variable.__exit__(exc_type, exc_value, tb)
-        if self.close() and exc_type is None:
-            raise CleanupFailed()
-
-    def close(self):
-        any_failed = False
+        errors = []
         for task in self.tasks:
             try:
                 task()
-            except BaseException:
-                any_failed = True
-                report(traceback.format_exc())
-        return any_failed
+            except BaseException as err:
+                errors.append(err)
+        if errors:
+            if len(errors) == 1:
+                raise errors[0] from exc_value
+            raise BaseExceptionGroup("Cleanup failed", errors) from exc_value
 
 
 def cleanup(teardown):

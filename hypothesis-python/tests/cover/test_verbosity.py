@@ -61,7 +61,6 @@ def test_includes_progress_in_verbose_mode():
     out = o.getvalue()
     assert out
     assert "Trying example: " in out
-    assert "Falsifying example: " in out
 
 
 def test_prints_initial_attempts_on_find():
