@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.47.2:
+
+-------------------
+6.47.2 - 2022-06-12
+-------------------
+
+We now use the :pep:`654` `ExceptionGroup <https://docs.python.org/3.11/library/exceptions.html#ExceptionGroup>`__
+type - provided by the :pypi:`exceptiongroup` backport on older Pythons -
+to ensure that if multiple errors are raised in teardown, they will all propagate.
+
 .. _v6.47.1:
 
 -------------------
