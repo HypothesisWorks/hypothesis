@@ -65,7 +65,7 @@ def setup(app):
     sys.modules["xps"] = mod
 
 
-language = None
+language = "en"
 
 exclude_patterns = ["_build"]
 
@@ -103,15 +103,15 @@ from hypothesis.strategies import *
 # See http://sphinx-doc.org/ext/extlinks.html
 _repo = "https://github.com/HypothesisWorks/hypothesis/"
 extlinks = {
-    "commit": (_repo + "commit/%s", "commit "),
-    "gh-file": (_repo + "blob/master/%s", ""),
-    "gh-link": (_repo + "%s", ""),
-    "issue": (_repo + "issues/%s", "issue #"),
-    "pull": (_repo + "pull/%s", "pull request #"),
-    "pypi": ("https://pypi.org/project/%s/", ""),
-    "bpo": ("https://bugs.python.org/issue%s", "bpo-"),
-    "xp-ref": ("https://data-apis.org/array-api/latest/API_specification/%s", ""),
-    "wikipedia": ("https://en.wikipedia.org/wiki/%s", ""),
+    "commit": (_repo + "commit/%s", "commit %s"),
+    "gh-file": (_repo + "blob/master/%s", "%s"),
+    "gh-link": (_repo + "%s", "%s"),
+    "issue": (_repo + "issues/%s", "issue #%s"),
+    "pull": (_repo + "pull/%s", "pull request #%s"),
+    "pypi": ("https://pypi.org/project/%s/", "%s"),
+    "bpo": ("https://bugs.python.org/issue%s", "bpo-%s"),
+    "xp-ref": ("https://data-apis.org/array-api/latest/API_specification/%s", "%s"),
+    "wikipedia": ("https://en.wikipedia.org/wiki/%s", "%s"),
 }
 
 # -- Options for HTML output ----------------------------------------------
