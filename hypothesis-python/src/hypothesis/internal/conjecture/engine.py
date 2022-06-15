@@ -13,6 +13,7 @@ import sys
 import time
 from collections import defaultdict
 from contextlib import contextmanager
+from datetime import timedelta
 from enum import Enum
 from random import Random, getrandbits
 from weakref import WeakKeyDictionary
@@ -386,7 +387,10 @@ class ConjectureRunner:
 
         draw_time = sum(state.draw_times)
 
-        if draw_time > 1.0:
+        # Allow at least the greater of one second or 5x the deadline.  If deadline
+        # is None, allow 30s - the user can disable the healthcheck too if desired.
+        draw_time_limit = 5 * (self.settings.deadline or timedelta(seconds=6))
+        if draw_time > max(1.0, draw_time_limit.total_seconds()):
             fail_health_check(
                 self.settings,
                 "Data generation is extremely slow: Only produced "
