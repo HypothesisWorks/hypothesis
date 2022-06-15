@@ -58,9 +58,5 @@ def test_can_generate_specified_version(function):
         # Indirection to fix https://github.com/HypothesisWorks/hypothesis/issues/2888
         return function(x, y)
 
-    try:
+    with pytest.raises(MultipleFailures):
         test_fn()
-    except MultipleFailures:
-        pass
-    else:
-        raise AssertionError("Expected MultipleFailures")

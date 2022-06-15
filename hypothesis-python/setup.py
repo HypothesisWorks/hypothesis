@@ -102,7 +102,7 @@ setuptools.setup(
     extras_require=extras,
     install_requires=[
         "attrs>=19.2.0",
-        "exceptiongroup>=1.0.0rc8 ; python_version<'3.11.0b1'",
+        "exceptiongroup>=1.0.0rc8 ; python_version<'3.11'",
         "sortedcontainers>=2.1.0,<3.0.0",
     ],
     python_requires=">=3.7",

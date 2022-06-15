@@ -74,7 +74,7 @@ def test_does_not_suppress_exceptions():
 
 
 def test_suppresses_exceptions_in_teardown():
-    with pytest.raises(ValueError) as err:
+    with pytest.raises(ValueError) as exc_info:
         with bc():
 
             def foo():
@@ -83,12 +83,12 @@ def test_suppresses_exceptions_in_teardown():
             cleanup(foo)
             raise AssertionError
 
-    assert isinstance(err.value, ValueError)
-    assert isinstance(err.value.__cause__, AssertionError)
+    assert isinstance(exc_info.value, ValueError)
+    assert isinstance(exc_info.value.__cause__, AssertionError)
 
 
 def test_runs_multiple_cleanup_with_teardown():
-    with pytest.raises(ExceptionGroup) as err:
+    with pytest.raises(ExceptionGroup) as exc_info:
         with bc():
 
             def foo():
@@ -101,9 +101,9 @@ def test_runs_multiple_cleanup_with_teardown():
             cleanup(bar)
             raise AssertionError
 
-    assert isinstance(err.value, ExceptionGroup)
-    assert isinstance(err.value.__cause__, AssertionError)
-    assert {type(e) for e in err.value.exceptions} == {ValueError, TypeError}
+    assert isinstance(exc_info.value, ExceptionGroup)
+    assert isinstance(exc_info.value.__cause__, AssertionError)
+    assert {type(e) for e in exc_info.value.exceptions} == {ValueError, TypeError}
     assert _current_build_context.value is None
 
 

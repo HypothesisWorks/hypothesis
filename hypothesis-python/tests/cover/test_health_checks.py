@@ -45,7 +45,7 @@ def test_slow_generation_fails_a_health_check():
 
 
 def test_slow_generation_inline_fails_a_health_check():
-    @settings(HEALTH_CHECK_SETTINGS, deadline=None)
+    @HEALTH_CHECK_SETTINGS
     @given(st.data())
     def test(data):
         data.draw(st.integers().map(lambda x: time.sleep(0.2)))
