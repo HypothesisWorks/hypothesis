@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.47.3:
+
+-------------------
+6.47.3 - 2022-06-15
+-------------------
+
+This patch makes the :obj:`~hypothesis.HealthCheck.too_slow` health check more
+consistent with long :obj:`~hypothesis.settings.deadline` tests (:issue:`3367`)
+and fixes an install issue under :pypi:`pipenv` which was introduced in
+:ref:`Hypothesis 6.47.2 <v6.47.2>` (:issue:`3374`).
+
 .. _v6.47.2:
 
 -------------------
