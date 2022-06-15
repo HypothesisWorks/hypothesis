@@ -178,11 +178,14 @@ def assert_falsifying_output(
         if expected_exception is None:
             # Some tests want to check the output of non-failing runs.
             test()
+            msg = ""
         else:
-            with raises(expected_exception):
+            with raises(expected_exception) as exc_info:
                 test()
+            notes = "\n".join(getattr(exc_info.value, "__notes__", []))
+            msg = str(exc_info.value) + "\n" + notes
 
-    output = out.getvalue()
+    output = out.getvalue() + msg
     assert f"{example_type} example:" in output
     assert_output_contains_failure(output, test, **kwargs)
 
