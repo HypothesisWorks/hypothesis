@@ -11,6 +11,7 @@
 import contextlib
 import sys
 from io import StringIO
+from types import SimpleNamespace
 
 from hypothesis import Phase, settings
 from hypothesis.errors import HypothesisDeprecationWarning
@@ -29,9 +30,11 @@ except ModuleNotFoundError:
 
     @contextlib.contextmanager
     def raises(expected_exception, match=None):
+        err = SimpleNamespace(value=None)
         try:
-            yield
+            yield err
         except expected_exception as e:
+            err.value = e
             if match is not None:
                 import re
 
