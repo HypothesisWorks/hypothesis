@@ -2,6 +2,34 @@
 Hypothesis
 ==========
 
+-------
+Example
+-------
+
+Here's a very simple parameterized test of a recursive exponentiation algorithm:
+
+.. code-block:: python
+
+    from hypothesis import given
+    from hypothesis.strategies import integers
+
+    def exponent(base, power):
+        if power == 0: return 1
+        else: return base * exponent(base, power - 1)
+
+    @given(integers(), integers())
+    def test_exponent(base, power):
+        assert exponent(base, power) == base**power
+
+    test_exponent()
+
+
+When you run this, hypothesis will tell you that this code does not terminate
+when ``base=0, power=-1,``. If you change ``power == 0`` to ``power <= 0``, then
+it will tell you the output is incorrect for ``0,992``, ``-1,-1``, and ``0,-1``.
+
+------
+
 Hypothesis is a family of testing libraries which let you write tests parametrized
 by a source of examples. A Hypothesis implementation then generates simple and
 comprehensible examples that make your tests fail.
