@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.47.4:
+
+-------------------
+6.47.4 - 2022-06-23
+-------------------
+
+This patch fixes :func:`~hypothesis.strategies.from_type` on Python 3.11,
+following `python/cpython#93754 <https://github.com/python/cpython/pull/93754/>`__.
+
 .. _v6.47.3:
 
 -------------------
