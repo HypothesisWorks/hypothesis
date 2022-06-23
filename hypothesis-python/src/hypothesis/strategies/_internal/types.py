@@ -39,22 +39,19 @@ from hypothesis.strategies._internal.ipaddress import (
 from hypothesis.strategies._internal.lazy import unwrap_strategies
 from hypothesis.strategies._internal.strategies import OneOfStrategy
 
+GenericAlias: typing.Any
 UnionType: typing.Any
 try:
     # The type of PEP-604 unions (`int | str`), added in Python 3.10
-    from types import UnionType
+    from types import GenericAlias, UnionType
 except ImportError:
+    GenericAlias = ()
     UnionType = ()
 
 try:
     import typing_extensions
 except ImportError:
     typing_extensions = None  # type: ignore
-
-try:
-    from typing import _GenericAlias  # type: ignore  # python >= 3.7
-except ImportError:
-    _GenericAlias = ()
 
 try:
     from typing import _AnnotatedAlias  # type: ignore
@@ -298,7 +295,7 @@ def find_annotated_strategy(annotated_type):  # pragma: no cover
 def has_type_arguments(type_):
     """Decides whethere or not this type has applied type arguments."""
     args = getattr(type_, "__args__", None)
-    if args and isinstance(type_, _GenericAlias):
+    if args and isinstance(type_, (typing._GenericAlias, GenericAlias)):
         # There are some cases when declared types do already have type arguments
         # Like `Sequence`, that is `_GenericAlias(abc.Sequence[T])[T]`
         parameters = getattr(type_, "__parameters__", None)
@@ -312,7 +309,7 @@ def is_generic_type(type_):
     # The ugly truth is that `MyClass`, `MyClass[T]`, and `MyClass[int]` are very different.
     # We check for `MyClass[T]` and `MyClass[int]` with the first condition,
     # while the second condition is for `MyClass`.
-    return isinstance(type_, typing_root_type) or (
+    return isinstance(type_, typing_root_type + (GenericAlias,)) or (
         isinstance(type_, type) and typing.Generic in type_.__mro__
     )
 
