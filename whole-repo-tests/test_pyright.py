@@ -21,7 +21,7 @@ import pytest
 from hypothesistooling.projects.hypothesispython import HYPOTHESIS_PYTHON, PYTHON_SRC
 from hypothesistooling.scripts import pip_tool, tool_path
 
-PYTHON_VERSIONS = [f"3.{v}" for v in range(7, 11)]
+PYTHON_VERSIONS = ["3.7", "3.8", "3.9", "3.10", "3.11"]
 
 
 @pytest.mark.skip(
