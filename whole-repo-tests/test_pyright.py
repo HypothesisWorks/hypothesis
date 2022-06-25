@@ -118,9 +118,14 @@ def test_pyright_raises_for_mixed_pos_kwargs_in_given(tmp_path: Path):
         )
     )
     _write_config(tmp_path, {"typeCheckingMode": "strict"})
-    assert any(
-        e["message"].startswith('No overloads for "given" match the provided arguments')
-        for e in _get_pyright_errors(file)
+    assert (
+        sum(
+            e["message"].startswith(
+                'No overloads for "given" match the provided arguments'
+            )
+            for e in _get_pyright_errors(file)
+        )
+        == 1
     )
 
 
@@ -155,11 +160,14 @@ def test_pyright_tuples_pos_args_only(tmp_path: Path):
         )
     )
     _write_config(tmp_path, {"typeCheckingMode": "strict"})
-    assert any(
-        e["message"].startswith(
-            'No overloads for "tuples" match the provided arguments'
+    assert (
+        sum(
+            e["message"].startswith(
+                'No overloads for "tuples" match the provided arguments'
+            )
+            for e in _get_pyright_errors(file)
         )
-        for e in _get_pyright_errors(file)
+        == 2
     )
 
 
@@ -176,11 +184,14 @@ def test_pyright_one_of_pos_args_only(tmp_path: Path):
         )
     )
     _write_config(tmp_path, {"typeCheckingMode": "strict"})
-    assert any(
-        e["message"].startswith(
-            'No overloads for "one_of" match the provided arguments'
+    assert (
+        sum(
+            e["message"].startswith(
+                'No overloads for "one_of" match the provided arguments'
+            )
+            for e in _get_pyright_errors(file)
         )
-        for e in _get_pyright_errors(file)
+        == 2
     )
 
 
