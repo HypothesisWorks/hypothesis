@@ -63,7 +63,7 @@ def assert_mypy_errors(fname, expected):
 
     def convert_lines():
         for error_line in out.splitlines():
-            col, category = error_line.split(":")[1:3]
+            col, category = error_line.split(":")[-3:-1]
             if category.strip() != "error":
                 # mypy outputs "note" messages for overload problems, even with
                 # --hide-error-context. Don't include these
