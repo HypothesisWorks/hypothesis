@@ -83,6 +83,7 @@ from keyword import iskeyword
 from string import ascii_lowercase
 from textwrap import dedent, indent
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -119,7 +120,8 @@ from hypothesis.utils.conventions import infer
 
 if sys.version_info >= (3, 10):  # pragma: no cover
     from types import EllipsisType as InferType
-
+elif TYPE_CHECKING:
+    from builtins import ellipsis as InferType
 else:
     InferType = type(Ellipsis)
 

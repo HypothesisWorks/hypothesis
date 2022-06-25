@@ -25,6 +25,7 @@ from io import StringIO
 from itertools import chain
 from random import Random
 from typing import (
+    TYPE_CHECKING,
     Any,
     BinaryIO,
     Callable,
@@ -114,7 +115,8 @@ from hypothesis.version import __version__
 
 if sys.version_info >= (3, 10):  # pragma: no cover
     from types import EllipsisType as InferType
-
+elif TYPE_CHECKING:
+    from builtins import ellipsis as InferType
 else:
     InferType = type(Ellipsis)
 

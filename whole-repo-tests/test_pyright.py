@@ -21,6 +21,8 @@ import pytest
 from hypothesistooling.projects.hypothesispython import HYPOTHESIS_PYTHON, PYTHON_SRC
 from hypothesistooling.scripts import pip_tool, tool_path
 
+PYTHON_VERSIONS = ["3.7", "3.8", "3.9", "3.10", "3.11"]
+
 
 @pytest.mark.skip(
     reason="Hypothesis type-annotates the public API as a convenience for users, "
@@ -30,7 +32,8 @@ def test_pyright_passes_on_hypothesis():
     pip_tool("pyright", "--project", HYPOTHESIS_PYTHON)
 
 
-def test_pyright_passes_on_basic_test(tmp_path: Path):
+@pytest.mark.parametrize("python_version", PYTHON_VERSIONS)
+def test_pyright_passes_on_basic_test(tmp_path: Path, python_version: str):
     file = tmp_path / "test.py"
     file.write_text(
         textwrap.dedent(
@@ -51,8 +54,38 @@ def test_pyright_passes_on_basic_test(tmp_path: Path):
             """
         )
     )
-    _write_config(tmp_path, {"typeCheckingMode": "strict"})
+    _write_config(
+        tmp_path, {"typeCheckingMode": "strict", "pythonVersion": python_version}
+    )
     assert _get_pyright_errors(file) == []
+
+
+@pytest.mark.parametrize("python_version", PYTHON_VERSIONS)
+def test_given_only_allows_strategies(tmp_path: Path, python_version: str):
+    file = tmp_path / "test.py"
+    file.write_text(
+        textwrap.dedent(
+            """
+            from hypothesis import given
+
+            @given(1)
+            def f():
+                pass
+            """
+        )
+    )
+    _write_config(
+        tmp_path, {"typeCheckingMode": "strict", "pythonVersion": python_version}
+    )
+    assert (
+        sum(
+            e["message"].startswith(
+                'Argument of type "Literal[1]" cannot be assigned to parameter "_given_arguments"'
+            )
+            for e in _get_pyright_errors(file)
+        )
+        == 1
+    )
 
 
 def test_pyright_issue_3296(tmp_path: Path):
@@ -85,9 +118,14 @@ def test_pyright_raises_for_mixed_pos_kwargs_in_given(tmp_path: Path):
         )
     )
     _write_config(tmp_path, {"typeCheckingMode": "strict"})
-    assert any(
-        e["message"].startswith('No overloads for "given" match the provided arguments')
-        for e in _get_pyright_errors(file)
+    assert (
+        sum(
+            e["message"].startswith(
+                'No overloads for "given" match the provided arguments'
+            )
+            for e in _get_pyright_errors(file)
+        )
+        == 1
     )
 
 
@@ -122,11 +160,14 @@ def test_pyright_tuples_pos_args_only(tmp_path: Path):
         )
     )
     _write_config(tmp_path, {"typeCheckingMode": "strict"})
-    assert any(
-        e["message"].startswith(
-            'No overloads for "tuples" match the provided arguments'
+    assert (
+        sum(
+            e["message"].startswith(
+                'No overloads for "tuples" match the provided arguments'
+            )
+            for e in _get_pyright_errors(file)
         )
-        for e in _get_pyright_errors(file)
+        == 2
     )
 
 
@@ -143,11 +184,14 @@ def test_pyright_one_of_pos_args_only(tmp_path: Path):
         )
     )
     _write_config(tmp_path, {"typeCheckingMode": "strict"})
-    assert any(
-        e["message"].startswith(
-            'No overloads for "one_of" match the provided arguments'
+    assert (
+        sum(
+            e["message"].startswith(
+                'No overloads for "one_of" match the provided arguments'
+            )
+            for e in _get_pyright_errors(file)
         )
-        for e in _get_pyright_errors(file)
+        == 2
     )
 
 

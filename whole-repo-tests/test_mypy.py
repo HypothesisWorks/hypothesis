@@ -16,6 +16,8 @@ import pytest
 from hypothesistooling.projects.hypothesispython import PYTHON_SRC
 from hypothesistooling.scripts import pip_tool, tool_path
 
+PYTHON_VERSIONS = ["3.7", "3.8", "3.9", "3.10", "3.11"]
+
 
 def test_mypy_passes_on_hypothesis():
     pip_tool("mypy", PYTHON_SRC)
@@ -56,14 +58,20 @@ def get_mypy_analysed_type(fname, val):
     )
 
 
-def assert_mypy_errors(fname, expected):
-    out = get_mypy_output(fname, "--no-error-summary", "--show-error-codes")
+def assert_mypy_errors(fname, expected, python_version=None):
+    _args = ["--no-error-summary", "--show-error-codes"]
+
+    if python_version:
+        _args.append(f"--python-version={python_version}")
+
+    out = get_mypy_output(fname, *_args)
+    del _args
     # Shell output looks like:
     # file.py:2: error: Incompatible types in assignment ... [assignment]
 
     def convert_lines():
         for error_line in out.splitlines():
-            col, category = error_line.split(":")[1:3]
+            col, category = error_line.split(":")[-3:-1]
             if category.strip() != "error":
                 # mypy outputs "note" messages for overload problems, even with
                 # --hide-error-context. Don't include these
@@ -343,23 +351,6 @@ def test_stateful_consumed_bundle_cannot_be_target(tmpdir):
     assert_mypy_errors(str(f.realpath()), [(3, "call-overload")])
 
 
-def test_raises_for_mixed_pos_kwargs_in_given(tmpdir):
-    f = tmpdir.join("raises_for_mixed_pos_kwargs_in_given.py")
-    f.write(
-        textwrap.dedent(
-            """
-            from hypothesis import given
-            from hypothesis.strategies import text
-
-            @given(text(), x=text())
-            def test_bar(x):
-                ...
-            """
-        )
-    )
-    assert_mypy_errors(str(f.realpath()), [(5, "call-overload")])
-
-
 @pytest.mark.parametrize(
     "return_val,errors",
     [
@@ -444,4 +435,68 @@ def test_pos_only_args(tmpdir):
             (7, "call-overload"),
             (8, "call-overload"),
         ],
+    )
+
+
+@pytest.mark.parametrize("python_version", PYTHON_VERSIONS)
+def test_mypy_passes_on_basic_test(tmpdir, python_version):
+    f = tmpdir.join("check_mypy_on_basic_tests.py")
+    f.write(
+        textwrap.dedent(
+            """
+            import hypothesis
+            import hypothesis.strategies as st
+
+            @hypothesis.given(x=st.text())
+            def test_foo(x: str) -> None:
+                assert x == x
+
+            from hypothesis import given
+            from hypothesis.strategies import text
+
+            @given(x=text())
+            def test_bar(x: str) -> None:
+                assert x == x
+            """
+        )
+    )
+    assert_mypy_errors(str(f.realpath()), [], python_version=python_version)
+
+
+@pytest.mark.parametrize("python_version", PYTHON_VERSIONS)
+def test_given_only_allows_strategies(tmpdir, python_version):
+    f = tmpdir.join("check_mypy_given_expects_strategies.py")
+    f.write(
+        textwrap.dedent(
+            """
+            from hypothesis import given
+
+            @given(1)
+            def f():
+                pass
+            """
+        )
+    )
+    assert_mypy_errors(
+        str(f.realpath()), [(4, "call-overload")], python_version=python_version
+    )
+
+
+@pytest.mark.parametrize("python_version", PYTHON_VERSIONS)
+def test_raises_for_mixed_pos_kwargs_in_given(tmpdir, python_version):
+    f = tmpdir.join("raises_for_mixed_pos_kwargs_in_given.py")
+    f.write(
+        textwrap.dedent(
+            """
+            from hypothesis import given
+            from hypothesis.strategies import text
+
+            @given(text(), x=text())
+            def test_bar(x):
+                ...
+            """
+        )
+    )
+    assert_mypy_errors(
+        str(f.realpath()), [(5, "call-overload")], python_version=python_version
     )
