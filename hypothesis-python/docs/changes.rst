@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.47.5:
+
+-------------------
+6.47.5 - 2022-06-25
+-------------------
+
+This patch fixes type annotations that had caused the signature of
+:func:`@given <hypothesis.given>` to be partially-unknown to type-checkers for Python
+versions before 3.10.
+
 .. _v6.47.4:
 
 -------------------
