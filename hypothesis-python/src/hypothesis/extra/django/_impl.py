@@ -12,7 +12,7 @@ import sys
 import unittest
 from functools import partial
 from inspect import Parameter, signature
-from typing import Optional, Type, Union
+from typing import TYPE_CHECKING, Optional, Type, Union
 
 from django import forms as df, test as dt
 from django.contrib.staticfiles import testing as dst
@@ -28,7 +28,8 @@ from hypothesis.utils.conventions import infer
 
 if sys.version_info >= (3, 10):  # pragma: no cover
     from types import EllipsisType as InferType
-
+elif TYPE_CHECKING:
+    from builtins import ellipsis as InferType
 else:
     InferType = type(Ellipsis)
 

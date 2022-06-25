@@ -109,7 +109,8 @@ from hypothesis.utils.conventions import infer, not_set
 
 if sys.version_info >= (3, 10):  # pragma: no cover
     from types import EllipsisType as InferType
-
+elif typing.TYPE_CHECKING:
+    from builtins import ellipsis as InferType
 else:
     InferType = type(Ellipsis)
 
