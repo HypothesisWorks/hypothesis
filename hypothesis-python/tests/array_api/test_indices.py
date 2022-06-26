@@ -94,25 +94,6 @@ def test_efficiently_generate_indexers(xp, xps):
 @given(allow_newaxis=st.booleans(), allow_ellipsis=st.booleans(), data=st.data())
 def test_generate_valid_indices(xp, xps, allow_newaxis, allow_ellipsis, data):
     """Strategy generates valid indices."""
-    try:
-        import numpy.array_api
-    except ImportError:
-        pass
-    else:
-        if allow_newaxis and xp is numpy.array_api:
-            # Special case NumPy due to https://github.com/numpy/numpy/issues/21373
-            x = xp.ones(5)
-            try:
-                x[None, :]
-            except IndexError:
-                note("Forcing `allow_newaxis=False` for np.array_api")
-                allow_newaxis = False
-            else:
-                raise AssertionError(
-                    "numpy.array_api looks to now support newaxis indexing, "
-                    "so this try/except/else special case should be removed."
-                )
-
     shape = data.draw(
         xps.array_shapes(min_dims=1, max_side=4)
         | xps.array_shapes(min_dims=1, min_side=0, max_side=10),

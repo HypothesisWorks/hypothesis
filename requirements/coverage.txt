@@ -24,7 +24,7 @@ deprecated==1.2.13
     # via redis
 dpcontracts==0.6.0
     # via -r requirements/coverage.in
-exceptiongroup==1.0.0rc8 ; python_version < "3.11.0b1"
+exceptiongroup==1.0.0rc8 ; python_version < "3.11"
     # via hypothesis (hypothesis-python/setup.py)
 execnet==1.9.0
     # via pytest-xdist
@@ -34,13 +34,13 @@ iniconfig==1.1.1
     # via pytest
 lark-parser==0.12.0
     # via -r requirements/coverage.in
-libcst==0.4.3
+libcst==0.4.5
     # via -r requirements/coverage.in
 mypy-extensions==0.4.3
     # via
     #   black
     #   typing-inspect
-numpy==1.22.4
+numpy==1.23.0
     # via
     #   -r requirements/coverage.in
     #   pandas
@@ -48,7 +48,7 @@ packaging==21.3
     # via
     #   pytest
     #   redis
-pandas==1.4.2
+pandas==1.4.3
     # via -r requirements/coverage.in
 pathspec==0.9.0
     # via black
