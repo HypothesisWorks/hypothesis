@@ -19,7 +19,7 @@ attrs==21.4.0
     #   pytest
 autoflake==1.4
     # via shed
-babel==2.10.1
+babel==2.10.3
     # via sphinx
 backcall==0.2.0
     # via ipython
@@ -33,7 +33,7 @@ black==22.3.0
     # via shed
 bleach==5.0.0
     # via readme-renderer
-certifi==2022.5.18.1
+certifi==2022.6.15
     # via requests
 cffi==1.15.0
     # via cryptography
@@ -67,7 +67,7 @@ docutils==0.17.1
     #   sphinx-rtd-theme
 dpcontracts==0.6.0
     # via -r requirements/tools.in
-exceptiongroup==1.0.0rc8 ; python_version < "3.11.0b1"
+exceptiongroup==1.0.0rc8 ; python_version < "3.11"
     # via hypothesis (hypothesis-python/setup.py)
 executing==0.8.3
     # via stack-data
@@ -95,7 +95,7 @@ flake8-2020==1.6.1
     # via -r requirements/tools.in
 flake8-bandit==3.0.0
     # via -r requirements/tools.in
-flake8-bugbear==22.4.25
+flake8-bugbear==22.6.22
     # via -r requirements/tools.in
 flake8-builtins==1.5.3
     # via -r requirements/tools.in
@@ -109,7 +109,7 @@ flake8-helper==0.2.1
     # via flake8-strftime
 flake8-mutable==1.2.0
     # via -r requirements/tools.in
-flake8-noqa==1.2.2
+flake8-noqa==1.2.5
     # via -r requirements/tools.in
 flake8-pie==0.15.0
     # via -r requirements/tools.in
@@ -135,7 +135,7 @@ idna==3.3
     # via requests
 imagesize==1.3.0
     # via sphinx
-importlib-metadata==4.11.4
+importlib-metadata==4.12.0
     # via
     #   keyring
     #   sphinx
@@ -158,7 +158,7 @@ keyring==23.6.0
     # via twine
 lark-parser==0.12.0
     # via -r requirements/tools.in
-libcst==0.4.3
+libcst==0.4.5
     # via
     #   -r requirements/tools.in
     #   shed
@@ -175,7 +175,7 @@ mypy-extensions==0.4.3
     #   black
     #   mypy
     #   typing-inspect
-nodeenv==1.6.0
+nodeenv==1.7.0
     # via pyright
 packaging==21.3
     # via
@@ -287,7 +287,7 @@ sortedcontainers==2.4.0
     # via hypothesis (hypothesis-python/setup.py)
 soupsieve==2.3.2.post1
     # via beautifulsoup4
-sphinx==5.0.1
+sphinx==5.0.2
     # via
     #   -r requirements/tools.in
     #   sphinx-codeautolink
@@ -315,7 +315,7 @@ sphinxcontrib-serializinghtml==1.1.5
     # via sphinx
 sqlparse==0.4.2
     # via django
-stack-data==0.2.0
+stack-data==0.3.0
     # via ipython
 stevedore==3.5.0
     # via bandit
@@ -333,7 +333,7 @@ tomli==2.0.1
     #   pytest
 tox==3.25.0
     # via -r requirements/tools.in
-traitlets==5.2.2.post1
+traitlets==5.3.0
     # via
     #   ipython
     #   matplotlib-inline
@@ -343,9 +343,9 @@ types-click==7.1.8
     # via -r requirements/tools.in
 types-pkg-resources==0.1.3
     # via -r requirements/tools.in
-types-pytz==2021.3.8
+types-pytz==2022.1.0
     # via -r requirements/tools.in
-types-redis==4.2.6
+types-redis==4.3.2
     # via -r requirements/tools.in
 typing-extensions==4.2.0
     # via
@@ -363,7 +363,7 @@ urllib3==1.26.9
     # via
     #   requests
     #   twine
-virtualenv==20.14.1
+virtualenv==20.15.0
     # via tox
 wcwidth==0.2.5
     # via prompt-toolkit
