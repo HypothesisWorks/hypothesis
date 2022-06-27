@@ -195,9 +195,10 @@ class FloatStrategy(SearchStrategy):
 
     def __init__(
         self,
-        min_value: float = -math.inf,
-        max_value: float = math.inf,
-        allow_nan: bool = True,
+        *,
+        min_value: float,
+        max_value: float,
+        allow_nan: bool,
         # The smallest nonzero number we can represent is usually a subnormal, but may
         # be the smallest normal if we're running in unsafe denormals-are-zero mode.
         # While that's usually an explicit error, we do need to handle the case where
@@ -510,12 +511,15 @@ def floats(
         max_value = float("inf")
     assert isinstance(min_value, float)
     assert isinstance(max_value, float)
+    if not allow_infinity:
+        min_value = max(min_value, next_up(float("-inf")))
+        max_value = min(max_value, next_down(float("inf")))
     smallest_nonzero_magnitude = (
         SMALLEST_SUBNORMAL if allow_subnormal else smallest_normal
     )
     result: SearchStrategy = FloatStrategy(
-        min_value,
-        max_value,
+        min_value=min_value,
+        max_value=max_value,
         allow_nan=allow_nan,
         smallest_nonzero_magnitude=smallest_nonzero_magnitude,
     )
@@ -529,6 +533,4 @@ def floats(
                 reject()
 
         result = result.map(downcast)
-    if not allow_infinity:
-        result = result.filter(lambda x: not math.isinf(x))
     return result
