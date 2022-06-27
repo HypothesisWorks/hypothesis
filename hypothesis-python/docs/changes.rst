@@ -18,6 +18,18 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.48.0:
+
+-------------------
+6.48.0 - 2022-06-27
+-------------------
+
+This release raises :class:`~unittest.SkipTest` for which never executed any
+examples, for example because the :obj:`~hypothesis.settings.phases` setting
+excluded the :obj:`~hypothesis.Phase.explicit`, :obj:`~hypothesis.Phase.reuse`,
+and :obj:`~hypothesis.Phase.generate` phases.  This helps to avoid cases where
+broken tests appear to pass, because they didn't actually execute (:issue:`3328`).
+
 .. _v6.47.5:
 
 -------------------
