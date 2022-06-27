@@ -32,6 +32,7 @@ from functools import partial
 from typing import Any, Callable, Dict, NamedTuple, Optional, TypeVar
 
 from hypothesis.internal.compat import ceil, floor
+from hypothesis.internal.floats import next_down, next_up
 from hypothesis.internal.reflection import extract_lambda_source
 
 Ex = TypeVar("Ex")
@@ -271,6 +272,29 @@ def get_integer_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
             kwargs["max_value"] = floor(kwargs["max_value"])
         elif kwargs.get("exclude_max", False):
             kwargs["max_value"] = int(kwargs["max_value"]) - 1
+
+    kwargs = {k: v for k, v in kwargs.items() if k in {"min_value", "max_value"}}
+    return ConstructivePredicate(kwargs, predicate)
+
+
+def get_float_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
+    kwargs, predicate = get_numeric_predicate_bounds(predicate)  # type: ignore
+
+    if "min_value" in kwargs:
+        min_value = kwargs["min_value"]
+        kwargs["min_value"] = float(kwargs["min_value"])
+        if min_value < kwargs["min_value"] or (
+            min_value == kwargs["min_value"] and kwargs.get("exclude_min", False)
+        ):
+            kwargs["min_value"] = next_up(kwargs["min_value"])
+
+    if "max_value" in kwargs:
+        max_value = kwargs["max_value"]
+        kwargs["max_value"] = float(kwargs["max_value"])
+        if max_value > kwargs["max_value"] or (
+            max_value == kwargs["max_value"] and kwargs.get("exclude_max", False)
+        ):
+            kwargs["max_value"] = next_down(kwargs["max_value"])
 
     kwargs = {k: v for k, v in kwargs.items() if k in {"min_value", "max_value"}}
     return ConstructivePredicate(kwargs, predicate)
