@@ -18,6 +18,7 @@ import io
 import sys
 import time
 import types
+import unittest
 import warnings
 import zlib
 from collections import defaultdict
@@ -556,6 +557,7 @@ class StateForActualGivenExecution:
         self.__was_flaky = False
         self.random = random
         self.__test_runtime = None
+        self.ever_executed = False
 
         self.is_find = getattr(wrapped_test, "_hypothesis_internal_is_find", False)
         self.wrapped_test = wrapped_test
@@ -586,6 +588,7 @@ class StateForActualGivenExecution:
         swallowed the corresponding control exception.
         """
 
+        self.ever_executed = True
         data.is_find = self.is_find
 
         text_repr = None
@@ -1189,9 +1192,17 @@ def given(
             # The next step is to use the Conjecture engine to run the test on
             # many different inputs.
 
+            ran_explicit_examples = Phase.explicit in state.settings.phases and getattr(
+                wrapped_test, "hypothesis_explicit_examples", ()
+            )
+            SKIP_BECAUSE_NO_EXAMPLES = unittest.SkipTest(
+                "Hypothesis has been told to run no examples for this test."
+            )
             if not (
                 Phase.reuse in settings.phases or Phase.generate in settings.phases
             ):
+                if not ran_explicit_examples:
+                    raise SKIP_BECAUSE_NO_EXAMPLES
                 return
 
             try:
@@ -1235,6 +1246,9 @@ def given(
                         get_trimmed_traceback()
                     )
                     raise the_error_hypothesis_found
+
+            if not (ran_explicit_examples or state.ever_executed):
+                raise SKIP_BECAUSE_NO_EXAMPLES
 
         def _get_fuzz_target() -> Callable[
             [Union[bytes, bytearray, memoryview, BinaryIO]], Optional[bytes]
