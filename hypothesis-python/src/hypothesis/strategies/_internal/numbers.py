@@ -18,7 +18,10 @@ from hypothesis.control import reject
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import floats as flt, utils as d
 from hypothesis.internal.conjecture.utils import calc_label_from_name
-from hypothesis.internal.filtering import get_integer_predicate_bounds
+from hypothesis.internal.filtering import (
+    get_float_predicate_bounds,
+    get_integer_predicate_bounds,
+)
 from hypothesis.internal.floats import (
     float_of,
     int_to_float,
@@ -293,6 +296,40 @@ class FloatStrategy(SearchStrategy):
             data.stop_example()  # (FLOAT_STRATEGY_DO_DRAW_LABEL)
             return result
 
+    def filter(self, condition):
+        kwargs, pred = get_float_predicate_bounds(condition)
+        if not kwargs:
+            return super().filter(pred)
+        min_bound = max(kwargs.get("min_value", -math.inf), self.min_value)
+        max_bound = min(kwargs.get("max_value", math.inf), self.max_value)
+
+        # Adjustments for allow_subnormal=False, if any need to be made
+        if -self.smallest_nonzero_magnitude < min_bound < 0:
+            min_bound = -0.0
+        elif 0 < min_bound < self.smallest_nonzero_magnitude:
+            min_bound = self.smallest_nonzero_magnitude
+        if -self.smallest_nonzero_magnitude < max_bound < 0:
+            max_bound = -self.smallest_nonzero_magnitude
+        elif 0 < max_bound < self.smallest_nonzero_magnitude:
+            max_bound = 0.0
+
+        if min_bound > max_bound:
+            return nothing()
+        if (
+            min_bound > self.min_value
+            or self.max_value > max_bound
+            or (self.allow_nan and (-math.inf < min_bound or max_bound < math.inf))
+        ):
+            self = type(self)(
+                min_value=min_bound,
+                max_value=max_bound,
+                allow_nan=False,
+                smallest_nonzero_magnitude=self.smallest_nonzero_magnitude,
+            )
+        if pred is None:
+            return self
+        return super().filter(pred)
+
 
 @cacheable
 @defines_strategy(force_reusable_values=True)
@@ -509,11 +546,11 @@ def floats(
         min_value = float("-inf")
     if max_value is None:
         max_value = float("inf")
-    assert isinstance(min_value, float)
-    assert isinstance(max_value, float)
     if not allow_infinity:
         min_value = max(min_value, next_up(float("-inf")))
         max_value = min(max_value, next_down(float("inf")))
+    assert isinstance(min_value, float)
+    assert isinstance(max_value, float)
     smallest_nonzero_magnitude = (
         SMALLEST_SUBNORMAL if allow_subnormal else smallest_normal
     )
