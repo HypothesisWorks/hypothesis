@@ -78,7 +78,7 @@ def test_converter_handles_kwonly_args():
         pass
 
     out = convert_positional_arguments(f, (), {"a": 1})
-    assert out == ((), {"a": 1, "b": 2})
+    assert out == ((), {"a": 1})
 
 
 def test_converter_notices_missing_kwonly_args():

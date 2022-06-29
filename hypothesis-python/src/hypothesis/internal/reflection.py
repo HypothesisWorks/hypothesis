@@ -176,44 +176,9 @@ def convert_keyword_arguments(function, args, kwargs):
     passed as positional and keyword args to the function. Unless function has
     kwonlyargs or **kwargs the dictionary will always be empty.
     """
-    argspec = getfullargspec_except_self(function)
-    new_args = []
-    kwargs = dict(kwargs)
-
-    defaults = dict(argspec.kwonlydefaults or {})
-
-    if argspec.defaults:
-        for name, value in zip(
-            argspec.args[-len(argspec.defaults) :], argspec.defaults
-        ):
-            defaults[name] = value
-
-    n = max(len(args), len(argspec.args))
-
-    for i in range(n):
-        if i < len(args):
-            new_args.append(args[i])
-        else:
-            arg_name = argspec.args[i]
-            if arg_name in kwargs:
-                new_args.append(kwargs.pop(arg_name))
-            elif arg_name in defaults:
-                new_args.append(defaults[arg_name])
-            else:
-                raise TypeError(f"No value provided for argument {arg_name!r}")
-
-    if kwargs and not (argspec.varkw or argspec.kwonlyargs):
-        if len(kwargs) > 1:
-            raise TypeError(
-                "%s() got unexpected keyword arguments %s"
-                % (function.__name__, ", ".join(map(repr, kwargs)))
-            )
-        else:
-            bad_kwarg = next(iter(kwargs))
-            raise TypeError(
-                f"{function.__name__}() got an unexpected keyword argument {bad_kwarg!r}"
-            )
-    return tuple(new_args), kwargs
+    sig = inspect.signature(function, follow_wrapped=False)
+    bound = sig.bind(*args, **kwargs)
+    return bound.args, bound.kwargs
 
 
 def convert_positional_arguments(function, args, kwargs):
@@ -222,38 +187,20 @@ def convert_positional_arguments(function, args, kwargs):
 
     new_args will only be non-empty if function has a variadic argument.
     """
-    argspec = getfullargspec_except_self(function)
-    new_kwargs = dict(argspec.kwonlydefaults or {})
-    new_kwargs.update(kwargs)
-    if not argspec.varkw:
-        for k in new_kwargs.keys():
-            if k not in argspec.args and k not in argspec.kwonlyargs:
-                raise TypeError(
-                    f"{function.__name__}() got an unexpected keyword argument {k!r}"
-                )
-    if len(args) < len(argspec.args):
-        for i in range(len(args), len(argspec.args) - len(argspec.defaults or ())):
-            if argspec.args[i] not in kwargs:
-                raise TypeError(f"No value provided for argument {argspec.args[i]}")
-    for kw in argspec.kwonlyargs:
-        if kw not in new_kwargs:
-            raise TypeError(f"No value provided for argument {kw}")
-
-    if len(args) > len(argspec.args) and not argspec.varargs:
-        raise TypeError(
-            f"{function.__name__}() takes at most {len(argspec.args)} "
-            f"positional arguments ({len(args)} given)"
-        )
-
-    for arg, name in zip(args, argspec.args):
-        if name in new_kwargs:
-            raise TypeError(
-                f"{function.__name__}() got multiple values for keyword argument {name!r}"
-            )
-        else:
-            new_kwargs[name] = arg
-
-    return (tuple(args[len(argspec.args) :]), new_kwargs)
+    sig = inspect.signature(function, follow_wrapped=False)
+    bound = sig.bind(*args, **kwargs)
+    new_args = []
+    new_kwargs = dict(bound.arguments)
+    for p in sig.parameters.values():
+        if p.name in new_kwargs:
+            if p.kind is p.POSITIONAL_ONLY:
+                new_args.append(new_kwargs.pop(p.name))
+            elif p.kind is p.VAR_POSITIONAL:
+                new_args.extend(new_kwargs.pop(p.name))
+            elif p.kind is p.VAR_KEYWORD:
+                assert set(new_kwargs[p.name]).isdisjoint(set(new_kwargs) - {p.name})
+                new_kwargs.update(new_kwargs.pop(p.name))
+    return tuple(new_args), new_kwargs
 
 
 def ast_arguments_matches_signature(args, sig):

@@ -59,16 +59,6 @@ def test_simple_conversion():
     do_conversion_test(foo, (1,), {"c": 2, "b": "foo"})
 
 
-def test_populates_defaults():
-    def bar(x=[], y=1):
-        pass
-
-    assert convert_keyword_arguments(bar, (), {}) == (([], 1), {})
-    assert convert_keyword_arguments(bar, (), {"y": 42}) == (([], 42), {})
-    do_conversion_test(bar, (), {})
-    do_conversion_test(bar, (1,), {})
-
-
 def test_leaves_unknown_kwargs_in_dict():
     def bar(x, **kwargs):
         pass
@@ -130,7 +120,7 @@ def test_positional_errors_if_too_many_args():
     def foo(a):
         pass
 
-    with raises(TypeError, match="2 given"):
+    with raises(TypeError, match="too many positional arguments"):
         convert_positional_arguments(foo, (1, 2), {})
 
 
@@ -153,7 +143,7 @@ def test_positional_errors_if_given_bad_kwargs():
     def foo(a):
         pass
 
-    with raises(TypeError, match="unexpected keyword argument"):
+    with raises(TypeError, match="missing a required argument: 'a'"):
         convert_positional_arguments(foo, (), {"b": 1})
 
 
