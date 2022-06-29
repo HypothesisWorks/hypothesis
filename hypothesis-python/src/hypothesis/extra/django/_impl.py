@@ -22,7 +22,7 @@ from django.db import IntegrityError, models as dm
 from hypothesis import reject, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.django._fields import from_field
-from hypothesis.internal.reflection import define_function_signature_from_signature
+from hypothesis.internal.reflection import define_function_signature
 from hypothesis.strategies._internal.utils import defines_strategy
 from hypothesis.utils.conventions import infer
 
@@ -137,7 +137,7 @@ if sys.version_info[:2] >= (3, 8):  # pragma: no branch
     sig = signature(from_model)
     params = list(sig.parameters.values())
     params[0] = params[0].replace(kind=Parameter.POSITIONAL_ONLY)
-    from_model = define_function_signature_from_signature(
+    from_model = define_function_signature(
         name=from_model.__name__,
         docstring=from_model.__doc__,
         signature=sig.replace(parameters=params),

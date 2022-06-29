@@ -15,12 +15,15 @@ import typing
 import pytest
 
 from hypothesis import given, strategies as st
-from hypothesis.errors import Unsatisfiable
-from hypothesis.internal.reflection import get_pretty_function_description
+from hypothesis.errors import HypothesisException, Unsatisfiable
+from hypothesis.internal.reflection import (
+    convert_positional_arguments,
+    get_pretty_function_description,
+)
 from hypothesis.strategies import from_type
 
 from tests.common.debug import find_any
-from tests.common.utils import temp_registered
+from tests.common.utils import fails_with, temp_registered
 
 
 @given(st.data())
@@ -149,3 +152,37 @@ def test_can_register_new_type_for_typeddicts():
 def test_posonly_lambda_formatting(lam, source):
     # Testing posonly lambdas, with and without default values
     assert get_pretty_function_description(lam) == source
+
+
+def test_does_not_convert_posonly_to_keyword():
+    args, kws = convert_positional_arguments(lambda x, /: None, (1,), {})
+    assert args
+    assert not kws
+
+
+@given(x=st.booleans())
+def test_given_works_with_keyword_only_params(*, x):
+    pass
+
+
+def test_given_works_with_keyword_only_params_some_unbound():
+    @given(x=st.booleans())
+    def test(*, x, y):
+        assert y is None
+
+    test(y=None)
+
+
+@fails_with(HypothesisException)
+@given(st.booleans())
+def test_given_works_with_positional_only_params(x, /):
+    pass
+
+
+def test_given_works_with_positional_only_params_some_unbound():
+    @fails_with(HypothesisException)
+    @given(st.booleans())
+    def test(x, y, /):
+        assert y is None
+
+    test(None)

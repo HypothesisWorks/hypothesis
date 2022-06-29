@@ -56,7 +56,7 @@ from hypothesis.internal.conjecture.utils import (
 )
 from hypothesis.internal.entropy import get_seeder_and_restorer
 from hypothesis.internal.reflection import (
-    define_function_signature_from_signature,
+    define_function_signature,
     get_pretty_function_description,
     get_signature,
     nicerepr,
@@ -934,7 +934,7 @@ if sys.version_info[:2] >= (3, 8):  # pragma: no branch
     # matches the semantics of the function.  Great for documentation!
     sig = signature(builds)
     args, kwargs = sig.parameters.values()
-    builds = define_function_signature_from_signature(
+    builds = define_function_signature(
         name=builds.__name__,
         docstring=builds.__doc__,
         signature=sig.replace(
@@ -1543,7 +1543,7 @@ def composite(f: Callable[..., Ex]) -> Callable[..., SearchStrategy[Ex]]:
     )
 
     @defines_strategy()
-    @define_function_signature_from_signature(f.__name__, f.__doc__, newsig)
+    @define_function_signature(f.__name__, f.__doc__, newsig)
     def accept(*args, **kwargs):
         return CompositeStrategy(f, args, kwargs)
 

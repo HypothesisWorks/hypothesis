@@ -176,84 +176,31 @@ def convert_keyword_arguments(function, args, kwargs):
     passed as positional and keyword args to the function. Unless function has
     kwonlyargs or **kwargs the dictionary will always be empty.
     """
-    argspec = getfullargspec_except_self(function)
-    new_args = []
-    kwargs = dict(kwargs)
-
-    defaults = dict(argspec.kwonlydefaults or {})
-
-    if argspec.defaults:
-        for name, value in zip(
-            argspec.args[-len(argspec.defaults) :], argspec.defaults
-        ):
-            defaults[name] = value
-
-    n = max(len(args), len(argspec.args))
-
-    for i in range(n):
-        if i < len(args):
-            new_args.append(args[i])
-        else:
-            arg_name = argspec.args[i]
-            if arg_name in kwargs:
-                new_args.append(kwargs.pop(arg_name))
-            elif arg_name in defaults:
-                new_args.append(defaults[arg_name])
-            else:
-                raise TypeError(f"No value provided for argument {arg_name!r}")
-
-    if kwargs and not (argspec.varkw or argspec.kwonlyargs):
-        if len(kwargs) > 1:
-            raise TypeError(
-                "%s() got unexpected keyword arguments %s"
-                % (function.__name__, ", ".join(map(repr, kwargs)))
-            )
-        else:
-            bad_kwarg = next(iter(kwargs))
-            raise TypeError(
-                f"{function.__name__}() got an unexpected keyword argument {bad_kwarg!r}"
-            )
-    return tuple(new_args), kwargs
+    sig = inspect.signature(function, follow_wrapped=False)
+    bound = sig.bind(*args, **kwargs)
+    return bound.args, bound.kwargs
 
 
 def convert_positional_arguments(function, args, kwargs):
     """Return a tuple (new_args, new_kwargs) where all possible arguments have
     been moved to kwargs.
 
-    new_args will only be non-empty if function has a variadic argument.
+    new_args will only be non-empty if function has pos-only args or *args.
     """
-    argspec = getfullargspec_except_self(function)
-    new_kwargs = dict(argspec.kwonlydefaults or {})
-    new_kwargs.update(kwargs)
-    if not argspec.varkw:
-        for k in new_kwargs.keys():
-            if k not in argspec.args and k not in argspec.kwonlyargs:
-                raise TypeError(
-                    f"{function.__name__}() got an unexpected keyword argument {k!r}"
-                )
-    if len(args) < len(argspec.args):
-        for i in range(len(args), len(argspec.args) - len(argspec.defaults or ())):
-            if argspec.args[i] not in kwargs:
-                raise TypeError(f"No value provided for argument {argspec.args[i]}")
-    for kw in argspec.kwonlyargs:
-        if kw not in new_kwargs:
-            raise TypeError(f"No value provided for argument {kw}")
-
-    if len(args) > len(argspec.args) and not argspec.varargs:
-        raise TypeError(
-            f"{function.__name__}() takes at most {len(argspec.args)} "
-            f"positional arguments ({len(args)} given)"
-        )
-
-    for arg, name in zip(args, argspec.args):
-        if name in new_kwargs:
-            raise TypeError(
-                f"{function.__name__}() got multiple values for keyword argument {name!r}"
-            )
-        else:
-            new_kwargs[name] = arg
-
-    return (tuple(args[len(argspec.args) :]), new_kwargs)
+    sig = inspect.signature(function, follow_wrapped=False)
+    bound = sig.bind(*args, **kwargs)
+    new_args = []
+    new_kwargs = dict(bound.arguments)
+    for p in sig.parameters.values():
+        if p.name in new_kwargs:
+            if p.kind is p.POSITIONAL_ONLY:
+                new_args.append(new_kwargs.pop(p.name))
+            elif p.kind is p.VAR_POSITIONAL:
+                new_args.extend(new_kwargs.pop(p.name))
+            elif p.kind is p.VAR_KEYWORD:
+                assert set(new_kwargs[p.name]).isdisjoint(set(new_kwargs) - {p.name})
+                new_kwargs.update(new_kwargs.pop(p.name))
+    return tuple(new_args), new_kwargs
 
 
 def ast_arguments_matches_signature(args, sig):
@@ -489,96 +436,6 @@ def source_exec_as_module(source):
     return result
 
 
-COPY_ARGSPEC_SCRIPT = """
-from hypothesis.utils.conventions import not_set
-
-def accept({funcname}):
-    def {name}({argspec}):
-        return {funcname}({invocation})
-    return {name}
-""".lstrip()
-
-
-def define_function_signature(name, docstring, argspec):
-    """A decorator which sets the name, argspec and docstring of the function
-    passed into it."""
-    if name == "<lambda>":
-        name = "_lambda_"
-    check_valid_identifier(name)
-    for a in argspec.args:
-        check_valid_identifier(a)
-    if argspec.varargs is not None:
-        check_valid_identifier(argspec.varargs)
-    if argspec.varkw is not None:
-        check_valid_identifier(argspec.varkw)
-    n_defaults = len(argspec.defaults or ())
-    if n_defaults:
-        parts = []
-        for a in argspec.args[:-n_defaults]:
-            parts.append(a)
-        for a in argspec.args[-n_defaults:]:
-            parts.append(f"{a}=not_set")
-    else:
-        parts = list(argspec.args)
-    used_names = list(argspec.args) + list(argspec.kwonlyargs)
-    used_names.append(name)
-
-    for a in argspec.kwonlyargs:
-        check_valid_identifier(a)
-
-    def accept(f):
-        fargspec = getfullargspec_except_self(f)
-        must_pass_as_kwargs = []
-        invocation_parts = []
-        for a in argspec.args:
-            if a not in fargspec.args and not fargspec.varargs:
-                must_pass_as_kwargs.append(a)  # pragma: no cover
-            else:
-                invocation_parts.append(a)
-        if argspec.varargs:
-            used_names.append(argspec.varargs)
-            parts.append("*" + argspec.varargs)
-            invocation_parts.append("*" + argspec.varargs)
-        elif argspec.kwonlyargs:
-            parts.append("*")
-        for k in must_pass_as_kwargs:
-            invocation_parts.append(f"{k}={k}")  # pragma: no cover
-
-        for k in argspec.kwonlyargs:
-            invocation_parts.append(f"{k}={k}")
-            if k in (argspec.kwonlydefaults or []):
-                parts.append(f"{k}=not_set")
-            else:
-                parts.append(k)
-        if argspec.varkw:
-            used_names.append(argspec.varkw)
-            parts.append("**" + argspec.varkw)
-            invocation_parts.append("**" + argspec.varkw)
-
-        candidate_names = ["f"] + [f"f_{i}" for i in range(1, len(used_names) + 2)]
-
-        for funcname in candidate_names:  # pragma: no branch
-            if funcname not in used_names:
-                break
-
-        source = COPY_ARGSPEC_SCRIPT.format(
-            name=name,
-            funcname=funcname,
-            argspec=", ".join(parts),
-            invocation=", ".join(invocation_parts),
-        )
-        result = source_exec_as_module(source).accept(f)
-        result.__doc__ = docstring
-        result.__defaults__ = argspec.defaults
-        if argspec.kwonlydefaults:
-            result.__kwdefaults__ = argspec.kwonlydefaults
-        if argspec.annotations:
-            result.__annotations__ = argspec.annotations
-        return result
-
-    return accept
-
-
 COPY_SIGNATURE_SCRIPT = """
 from hypothesis.utils.conventions import not_set
 
@@ -596,13 +453,11 @@ def get_varargs(sig, kind=inspect.Parameter.VAR_POSITIONAL):
     return None
 
 
-def define_function_signature_from_signature(name, docstring, signature):
+def define_function_signature(name, docstring, signature):
     """A decorator which sets the name, argspec and docstring of the function
     passed into it."""
-    # TODO: we will (eventually...) replace the last few uses of getfullargspec
-    # with this version, and then delete the one above.  For now though, this
-    # works for @proxies() and @given() is under stricter constraints anyway.
-
+    if name == "<lambda>":
+        name = "_lambda_"
     check_valid_identifier(name)
     for a in signature.parameters:
         check_valid_identifier(a)
@@ -677,6 +532,8 @@ def define_function_signature_from_signature(name, docstring, signature):
             for p in signature.parameters.values()
             if p.annotation is not signature.empty
         }
+        if signature.return_annotation is not signature.empty:
+            annotations["return"] = signature.return_annotation
         if annotations:
             result.__annotations__ = annotations
         return result
@@ -706,7 +563,7 @@ def impersonate(target):
 
 
 def proxies(target: "T") -> Callable[[Callable], "T"]:
-    replace_sig = define_function_signature_from_signature(
+    replace_sig = define_function_signature(
         target.__name__.replace("<lambda>", "_lambda_"),  # type: ignore
         target.__doc__,
         get_signature(target, follow_wrapped=False),

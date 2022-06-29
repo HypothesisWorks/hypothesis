@@ -8,7 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from inspect import getfullargspec
+from inspect import signature
 
 import pytest
 
@@ -111,9 +111,10 @@ def test_functions_valid_within_given_invalid_outside():
 def test_can_call_default_like_arg():
     # This test is somewhat silly, but coverage complains about the uncovered
     # branch for calling it otherwise and alternative workarounds are worse.
-    defaults = getfullargspec(functions).kwonlydefaults
-    assert defaults["like"]() is None
-    assert defaults["returns"] is ...
+    like, returns, pure = signature(functions).parameters.values()
+    assert like.default() is None
+    assert returns.default is ...
+    assert pure.default is False
 
 
 def func(arg, *, kwonly_arg):

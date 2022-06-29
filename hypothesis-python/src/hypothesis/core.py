@@ -58,6 +58,7 @@ from hypothesis.errors import (
     Flaky,
     Found,
     HypothesisDeprecationWarning,
+    HypothesisException,
     HypothesisWarning,
     InvalidArgument,
     MultipleFailures,
@@ -272,6 +273,13 @@ def is_invalid_test(test, original_argspec, given_arguments, given_kwargs):
     if not (given_arguments or given_kwargs):
         return invalid("given must be called with at least one argument")
 
+    p = inspect.signature(test).parameters
+    if p and list(p.values())[0].kind is inspect.Parameter.POSITIONAL_ONLY:
+        return invalid(
+            "given does not support tests with positional-only arguments",
+            exc=HypothesisException,
+        )
+
     if given_arguments and any(
         [original_argspec.varargs, original_argspec.varkw, original_argspec.kwonlyargs]
     ):
@@ -310,13 +318,6 @@ def is_invalid_test(test, original_argspec, given_arguments, given_kwargs):
         )
     if original_argspec.defaults or original_argspec.kwonlydefaults:
         return invalid("Cannot apply @given to a function with defaults.")
-    missing = [repr(kw) for kw in original_argspec.kwonlyargs if kw not in given_kwargs]
-    if missing:
-        return invalid(
-            "Missing required kwarg{}: {}".format(
-                "s" if len(missing) > 1 else "", ", ".join(missing)
-            )
-        )
 
     # This case would raise Unsatisfiable *anyway*, but by detecting it here we can
     # provide a much more helpful error message for people e.g. using the Ghostwriter.
@@ -972,6 +973,30 @@ class HypothesisHandle:
             return self.__cached_target
 
 
+def fullargspec_to_signature(
+    argspec: inspect.FullArgSpec, *, return_annotation: object = inspect.Parameter.empty
+) -> inspect.Signature:
+    # Construct a new signature based on this argspec.  We'll later convert everything
+    # over to explicit use of signature everywhere, but this is a nice stopgap.
+
+    def as_param(name, kind, defaults):
+        annot = argspec.annotations.get(name, P.empty)
+        return P(name, kind, default=defaults.get(name, P.empty), annotation=annot)
+
+    params = []
+    P = inspect.Parameter
+    for arg in argspec.args:
+        defaults = dict(zip(argspec.args[::-1], (argspec.defaults or [])[::-1]))
+        params.append(as_param(arg, P.POSITIONAL_OR_KEYWORD, defaults))
+    if argspec.varargs:
+        params.append(as_param(argspec.varargs, P.VAR_POSITIONAL, {}))
+    for arg in argspec.kwonlyargs:
+        params.append(as_param(arg, P.KEYWORD_ONLY, argspec.kwonlydefaults or {}))
+    if argspec.varkw:
+        params.append(as_param(argspec.varkw, P.VAR_KEYWORD, {}))
+    return inspect.Signature(params, return_annotation=return_annotation)
+
+
 @overload
 def given(
     *_given_arguments: Union[SearchStrategy[Any], InferType],
@@ -1039,6 +1064,7 @@ def given(
         del given_arguments
 
         argspec = new_given_argspec(original_argspec, given_kwargs)
+        new_signature = fullargspec_to_signature(argspec, return_annotation=None)
 
         # Use type information to convert "infer" arguments into appropriate strategies.
         if infer in given_kwargs.values():
@@ -1049,7 +1075,7 @@ def given(
                 # not when it's decorated.
 
                 @impersonate(test)
-                @define_function_signature(test.__name__, test.__doc__, argspec)
+                @define_function_signature(test.__name__, test.__doc__, new_signature)
                 def wrapped_test(*arguments, **kwargs):
                     __tracebackhide__ = True
                     raise InvalidArgument(
@@ -1062,7 +1088,7 @@ def given(
             given_kwargs[name] = st.from_type(hints[name])
 
         @impersonate(test)
-        @define_function_signature(test.__name__, test.__doc__, argspec)
+        @define_function_signature(test.__name__, test.__doc__, new_signature)
         def wrapped_test(*arguments, **kwargs):
             # Tell pytest to omit the body of this function from tracebacks
             __tracebackhide__ = True
