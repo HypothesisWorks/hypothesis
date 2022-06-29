@@ -17,7 +17,7 @@ import attr
 
 from hypothesis.control import should_note
 from hypothesis.internal.conjecture import utils as cu
-from hypothesis.internal.reflection import define_function_signature_from_signature
+from hypothesis.internal.reflection import define_function_signature
 from hypothesis.reporting import report
 from hypothesis.strategies._internal.core import (
     binary,
@@ -133,11 +133,11 @@ def define_copy_method(name):
         self._hypothesis_log_random(name, kwargs, result)
         return result
 
-    spec = inspect.signature(STUBS.get(name, target))
+    sig = inspect.signature(STUBS.get(name, target))
 
-    result = define_function_signature_from_signature(
-        target.__name__, target.__doc__, spec
-    )(implementation)
+    result = define_function_signature(target.__name__, target.__doc__, sig)(
+        implementation
+    )
 
     result.__module__ = __name__
     result.__qualname__ = "HypothesisRandom." + result.__name__
