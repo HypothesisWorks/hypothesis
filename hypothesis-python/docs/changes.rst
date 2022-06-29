@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.48.2:
+
+-------------------
+6.48.2 - 2022-06-29
+-------------------
+
+This patch tidies up some internal introspection logic, which will improve
+support for positional-only arguments in a future release (:issue:`2706`).
+
 .. _v6.48.1:
 
 -------------------
