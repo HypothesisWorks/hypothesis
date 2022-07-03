@@ -180,6 +180,7 @@ else:
 
     @pytest.hookimpl(hookwrapper=True)
     def pytest_runtest_call(item):
+        __tracebackhide__ = True
         if not (hasattr(item, "obj") and "hypothesis" in sys.modules):
             yield
             return
@@ -192,10 +193,14 @@ else:
         if not is_hypothesis_test(item.obj):
             # If @given was not applied, check whether other hypothesis
             # decorators were applied, and raise an error if they were.
+            # We add this frame of indirection to enable __tracebackhide__.
+            def raise_hypothesis_usage_error(msg):
+                raise InvalidArgument(msg)
+
             if getattr(item.obj, "is_hypothesis_strategy_function", False):
                 from hypothesis.errors import InvalidArgument
 
-                raise InvalidArgument(
+                raise_hypothesis_usage_error(
                     f"{item.nodeid} is a function that returns a Hypothesis strategy, "
                     "but pytest has collected it as a test function.  This is useless "
                     "as the function body will never be executed.  To define a test "
@@ -211,7 +216,7 @@ else:
                 if hasattr(item.obj, attribute):
                     from hypothesis.errors import InvalidArgument
 
-                    raise InvalidArgument(message % (name,))
+                    raise_hypothesis_usage_error(message % (name,))
             yield
         else:
             from hypothesis import HealthCheck, settings
