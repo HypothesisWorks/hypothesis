@@ -1067,10 +1067,13 @@ class ConjectureRunner:
             return event
         try:
             return self.events_to_strings[event]
-        except KeyError:
+        except (KeyError, TypeError):
             pass
         result = str(event)
-        self.events_to_strings[event] = result
+        try:
+            self.events_to_strings[event] = result
+        except TypeError:
+            pass
         return result
 
 
