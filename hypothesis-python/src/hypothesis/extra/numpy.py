@@ -15,7 +15,7 @@ import numpy as np
 
 from hypothesis import strategies as st
 from hypothesis._settings import note_deprecation
-from hypothesis.errors import InvalidArgument
+from hypothesis.errors import HypothesisException, InvalidArgument
 from hypothesis.extra._array_helpers import (
     NDIM_MAX,
     BasicIndex,
@@ -192,7 +192,16 @@ class ArrayStrategy(st.SearchStrategy):
                 f"Could not add element={val!r} of {val.dtype!r} to array of "
                 f"{result.dtype!r} - possible mismatch of time units in dtypes?"
             ) from err
-        if self._check_elements and val != result[idx] and val == val:
+        try:
+            elem_changed = self._check_elements and val != result[idx] and val == val
+        except Exception as err:  # pragma: no cover
+            # This branch only exists to help debug weird behaviour in Numpy,
+            # such as the string problems we had a while back.
+            raise HypothesisException(
+                "Internal error when checking element=%r of %r to array of %r"
+                % (val, val.dtype, result.dtype)
+            ) from err
+        if elem_changed:
             strategy = self.fill if fill else self.element_strategy
             if self.dtype.kind == "f":
                 try:
