@@ -63,6 +63,9 @@ __all__ = [
 
 TIME_RESOLUTIONS = tuple("Y  M  D  h  m  s  ms  us  ns  ps  fs  as".split())
 
+# See https://github.com/HypothesisWorks/hypothesis/pull/3394 and linked discussion.
+NP_FIXED_UNICODE = tuple(int(x) for x in np.__version__.split(".")[:2]) >= (1, 19)
+
 
 @defines_strategy(force_reusable_values=True)
 def from_dtype(
@@ -157,6 +160,8 @@ def from_dtype(
     elif dtype.kind == "U":
         # Encoded in UTF-32 (four bytes/codepoint) and null-terminated
         max_size = (dtype.itemsize or 0) // 4 or None
+        if NP_FIXED_UNICODE and "alphabet" not in kwargs:
+            kwargs["alphabet"] = st.characters()
         result = st.text(**compat_kw("alphabet", "min_size", max_size=max_size)).filter(
             lambda b: b[-1:] != "\0"
         )
