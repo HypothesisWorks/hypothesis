@@ -33,4 +33,6 @@ def test_repro_without_given_fails():
 
 def test_decorators_without_given_should_fail(testdir):
     script = testdir.makepyfile(TEST_DECORATORS_ALONE)
-    testdir.runpytest(script).assert_outcomes(failed=4)
+    result = testdir.runpytest(script)
+    result.assert_outcomes(failed=4)
+    assert "pytest_runtest_call" not in "\n".join(result.outlines)
