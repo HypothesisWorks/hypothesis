@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.48.3:
+
+-------------------
+6.48.3 - 2022-07-03
+-------------------
+
+:func:`hypothesis.event` now works for hashable objects which do not
+support weakrefs, such as integers and tuples.
+
 .. _v6.48.2:
 
 -------------------
