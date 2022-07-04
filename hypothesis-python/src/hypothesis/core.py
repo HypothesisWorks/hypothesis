@@ -1001,7 +1001,7 @@ def fullargspec_to_signature(
 def given(
     *_given_arguments: Union[SearchStrategy[Any], InferType],
 ) -> Callable[
-    [Callable[..., Union[None, Coroutine[Any, Any, None]]]], Callable[..., None]
+    [Callable[..., Optional[Coroutine[Any, Any, None]]]], Callable[..., None]
 ]:  # pragma: no cover
     ...
 
@@ -1010,7 +1010,7 @@ def given(
 def given(
     **_given_kwargs: Union[SearchStrategy[Any], InferType],
 ) -> Callable[
-    [Callable[..., Union[None, Coroutine[Any, Any, None]]]], Callable[..., None]
+    [Callable[..., Optional[Coroutine[Any, Any, None]]]], Callable[..., None]
 ]:  # pragma: no cover
     ...
 
@@ -1019,7 +1019,7 @@ def given(
     *_given_arguments: Union[SearchStrategy[Any], InferType],
     **_given_kwargs: Union[SearchStrategy[Any], InferType],
 ) -> Callable[
-    [Callable[..., Union[None, Coroutine[Any, Any, None]]]], Callable[..., None]
+    [Callable[..., Optional[Coroutine[Any, Any, None]]]], Callable[..., None]
 ]:
     """A decorator for turning a test function that accepts arguments into a
     randomized test.

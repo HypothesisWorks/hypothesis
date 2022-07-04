@@ -889,7 +889,7 @@ def builds(
             "target to construct."
         )
 
-    if infer in args:
+    if infer in args:  # type: ignore  # we only annotated the allowed types
         # Avoid an implementation nightmare juggling tuples and worse things
         raise InvalidArgument(
             "... was passed as a positional argument to "
@@ -1396,9 +1396,9 @@ def decimals(
     special: List[Decimal] = []
     if allow_nan or (allow_nan is None and (None in (min_value, max_value))):
         special.extend(map(Decimal, ("NaN", "-NaN", "sNaN", "-sNaN")))
-    if allow_infinity or (allow_infinity is max_value is None):
+    if allow_infinity or (allow_infinity is None and max_value is None):
         special.append(Decimal("Infinity"))
-    if allow_infinity or (allow_infinity is min_value is None):
+    if allow_infinity or (allow_infinity is None and min_value is None):
         special.append(Decimal("-Infinity"))
     return strat | (sampled_from(special) if special else nothing())
 

@@ -148,7 +148,7 @@ class TreeNode:
         self.n: "Optional[int]" = None
 
     @property
-    def exhausted(self):
+    def exhausted(self) -> bool:
         return self.live_child_count == 0
 
 

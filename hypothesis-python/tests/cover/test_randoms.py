@@ -107,8 +107,6 @@ def any_call_of_method(draw, method):
         a, b = sorted((a, b))
         if draw(st.booleans()):
             draw(st.floats(a, b))
-        else:
-            pass
         kwargs = {"low": a, "high": b, "mode": None}
     elif method == "uniform":
         a = normalize_zero(draw(st.floats(allow_infinity=False, allow_nan=False)))

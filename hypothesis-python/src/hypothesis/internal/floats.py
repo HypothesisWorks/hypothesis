@@ -11,7 +11,7 @@
 import math
 import struct
 from sys import float_info
-from typing import Callable, Optional
+from typing import Callable, Optional, SupportsFloat
 
 # Format codes for (int, float) sized types, used for byte-wise casts.
 # See https://docs.python.org/3/library/struct.html#format-characters
@@ -36,17 +36,13 @@ def float_of(x, width):
         return reinterpret_bits(float(x), "!e", "!e")
 
 
-def sign(x):
+def is_negative(x: SupportsFloat) -> bool:
     try:
-        return math.copysign(1.0, x)
+        return math.copysign(1.0, x) < 0
     except TypeError:
         raise TypeError(
             f"Expected float but got {x!r} of type {type(x).__name__}"
         ) from None
-
-
-def is_negative(x):
-    return sign(x) < 0
 
 
 def count_between_floats(x, y, width=64):

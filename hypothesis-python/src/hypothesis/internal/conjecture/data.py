@@ -40,6 +40,7 @@ if TYPE_CHECKING:
     from typing_extensions import dataclass_transform
 
     from hypothesis.strategies import SearchStrategy
+    from hypothesis.strategies._internal.strategies import Ex
 else:
 
     def dataclass_transform():
@@ -816,7 +817,7 @@ class ConjectureData:
         self.max_length = max_length
         self.is_find = False
         self.overdraw = 0
-        self.__prefix = prefix
+        self.__prefix = bytes(prefix)
         self.__random = random
 
         assert random is not None or max_length <= len(prefix)
@@ -907,7 +908,7 @@ class ConjectureData:
             value = repr(value)
         self.output += value
 
-    def draw(self, strategy: "SearchStrategy[Any]", label: Optional[int] = None) -> Any:
+    def draw(self, strategy: "SearchStrategy[Ex]", label: Optional[int] = None) -> "Ex":
         if self.is_find and not strategy.supports_find:
             raise InvalidArgument(
                 f"Cannot use strategy {strategy!r} within a call to find "
