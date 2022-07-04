@@ -36,17 +36,13 @@ def float_of(x, width):
         return reinterpret_bits(float(x), "!e", "!e")
 
 
-def sign(x):
+def is_negative(x: Real) -> bool:
     try:
-        return math.copysign(1.0, x)
+        return math.copysign(1.0, x) < 0
     except TypeError:
         raise TypeError(
             f"Expected float but got {x!r} of type {type(x).__name__}"
         ) from None
-
-
-def is_negative(x):
-    return sign(x) < 0
 
 
 def count_between_floats(x, y, width=64):
