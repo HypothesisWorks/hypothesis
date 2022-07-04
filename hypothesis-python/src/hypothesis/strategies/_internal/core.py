@@ -120,6 +120,14 @@ try:
 except ImportError:  # < py3.8
     Protocol = object  # type: ignore[assignment]
 
+try:
+    from typing import Concatenate, ParamSpec
+except ImportError:
+    try:
+        from typing_extensions import Concatenate, ParamSpec
+    except ImportError:
+        ParamSpec = None  # type: ignore
+
 
 @cacheable
 @defines_strategy()
@@ -1505,18 +1513,8 @@ class DrawFn(Protocol):
         raise NotImplementedError
 
 
-@cacheable
-def composite(f: Callable[..., Ex]) -> Callable[..., SearchStrategy[Ex]]:
-    """Defines a strategy that is built out of potentially arbitrarily many
-    other strategies.
-
-    This is intended to be used as a decorator. See
-    :ref:`the full documentation for more details <composite-strategies>`
-    about how to use this function.
-
-    Examples from this strategy shrink by shrinking the output of each draw
-    call.
-    """
+def _composite(f):
+    # Wrapped below, using ParamSpec if available
     if isinstance(f, (classmethod, staticmethod)):
         special_method = type(f)
         f = f.__func__
@@ -1539,7 +1537,7 @@ def composite(f: Callable[..., Ex]) -> Callable[..., SearchStrategy[Ex]]:
         parameters=params,
         return_annotation=SearchStrategy
         if sig.return_annotation is sig.empty
-        else SearchStrategy[sig.return_annotation],  # type: ignore
+        else SearchStrategy[sig.return_annotation],
     )
 
     @defines_strategy()
@@ -1552,6 +1550,41 @@ def composite(f: Callable[..., Ex]) -> Callable[..., SearchStrategy[Ex]]:
     if special_method is not None:
         return special_method(accept)
     return accept
+
+
+if typing.TYPE_CHECKING or ParamSpec is not None:
+    P = ParamSpec("P")
+
+    def composite(
+        f: Callable[Concatenate[DrawFn, P], Ex]
+    ) -> Callable[P, SearchStrategy[Ex]]:
+        """Defines a strategy that is built out of potentially arbitrarily many
+        other strategies.
+
+        This is intended to be used as a decorator. See
+        :ref:`the full documentation for more details <composite-strategies>`
+        about how to use this function.
+
+        Examples from this strategy shrink by shrinking the output of each draw
+        call.
+        """
+        return _composite(f)
+
+else:  # pragma: no cover
+
+    @cacheable
+    def composite(f: Callable[..., Ex]) -> Callable[..., SearchStrategy[Ex]]:
+        """Defines a strategy that is built out of potentially arbitrarily many
+        other strategies.
+
+        This is intended to be used as a decorator. See
+        :ref:`the full documentation for more details <composite-strategies>`
+        about how to use this function.
+
+        Examples from this strategy shrink by shrinking the output of each draw
+        call.
+        """
+        return _composite(f)
 
 
 @defines_strategy(force_reusable_values=True)
