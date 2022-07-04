@@ -9,10 +9,8 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
-from decimal import Decimal
-from fractions import Fraction
 from sys import float_info
-from typing import Optional, Union
+from typing import Optional
 
 from hypothesis.control import reject
 from hypothesis.errors import InvalidArgument
@@ -23,6 +21,7 @@ from hypothesis.internal.filtering import (
     get_integer_predicate_bounds,
 )
 from hypothesis.internal.floats import (
+    Real,
     float_of,
     int_to_float,
     is_negative,
@@ -42,8 +41,6 @@ from hypothesis.strategies._internal.misc import nothing
 from hypothesis.strategies._internal.strategies import SearchStrategy
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 
-# See https://github.com/python/mypy/issues/3186 - numbers.Real is wrong!
-Real = Union[int, float, Fraction, Decimal]
 ONE_BOUND_INTEGERS_LABEL = d.calc_label_from_name("trying a one-bound int allowing 0")
 
 

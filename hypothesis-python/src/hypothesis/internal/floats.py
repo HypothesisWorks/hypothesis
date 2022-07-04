@@ -10,8 +10,18 @@
 
 import math
 import struct
+from decimal import Decimal
+from fractions import Fraction
 from sys import float_info
-from typing import Callable, Optional
+from typing import Callable, Optional, Union
+
+try:
+    from typing import TypeAlias
+except ImportError:
+    TypeAlias = object  # type: ignore
+
+# See https://github.com/python/mypy/issues/3186 - numbers.Real is wrong!
+Real: TypeAlias = Union[int, float, Fraction, Decimal]
 
 # Format codes for (int, float) sized types, used for byte-wise casts.
 # See https://docs.python.org/3/library/struct.html#format-characters
