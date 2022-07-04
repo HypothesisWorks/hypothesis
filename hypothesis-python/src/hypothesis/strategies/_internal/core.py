@@ -1964,50 +1964,112 @@ def emails() -> SearchStrategy[str]:
     )
 
 
-@defines_strategy()
-def functions(
-    *,
-    like: Callable[..., Any] = lambda: None,
-    returns: Union[SearchStrategy[Any], InferType] = infer,
-    pure: bool = False,
-) -> SearchStrategy[Callable[..., Any]]:
-    # The proper type signature of `functions()` would have T instead of Any, but mypy
-    # disallows default args for generics: https://github.com/python/mypy/issues/3737
-    """functions(*, like=lambda: None, returns=..., pure=False)
-
-    A strategy for functions, which can be used in callbacks.
-
-    The generated functions will mimic the interface of ``like``, which must
-    be a callable (including a class, method, or function).  The return value
-    for the function is drawn from the ``returns`` argument, which must be a
-    strategy.  If ``returns`` is not passed, we attempt to infer a strategy
-    from the return-type annotation if present, falling back to :func:`~none`.
-
-    If ``pure=True``, all arguments passed to the generated function must be
-    hashable, and if passed identical arguments the original return value will
-    be returned again - *not* regenerated, so beware mutable values.
-
-    If ``pure=False``, generated functions do not validate their arguments, and
-    may return a different value if called again with the same arguments.
-
-    Generated functions can only be called within the scope of the ``@given``
-    which created them.  This strategy does not support ``.example()``.
-    """
+def _functions(*, like, returns, pure):
+    # Wrapped up to use ParamSpec below
     check_type(bool, pure, "pure")
     if not callable(like):
         raise InvalidArgument(
             "The first argument to functions() must be a callable to imitate, "
             f"but got non-callable like={nicerepr(like)!r}"
         )
-
     if returns is None or returns is infer:
         # Passing `None` has never been *documented* as working, but it still
         # did from May 2020 to Jan 2022 so we'll avoid breaking it without cause.
         hints = get_type_hints(like)
         returns = from_type(hints.get("return", type(None)))
-
     check_strategy(returns, "returns")
     return FunctionStrategy(like, returns, pure)
+
+
+if typing.TYPE_CHECKING or ParamSpec is not None:
+
+    @overload
+    def functions(
+        *, pure: bool = ...
+    ) -> SearchStrategy[Callable[[], None]]:  # pragma: no cover
+        ...
+
+    @overload
+    def functions(
+        *,
+        like: Callable[P, T],
+        pure: bool = ...,
+    ) -> SearchStrategy[Callable[P, T]]:  # pragma: no cover
+        ...
+
+    @overload
+    def functions(
+        *,
+        returns: SearchStrategy[T],
+        pure: bool = ...,
+    ) -> SearchStrategy[Callable[[], T]]:  # pragma: no cover
+        ...
+
+    @overload
+    def functions(
+        *,
+        like: Callable[P, Any],
+        returns: SearchStrategy[T],
+        pure: bool = ...,
+    ) -> SearchStrategy[Callable[P, T]]:  # pragma: no cover
+        ...
+
+    @defines_strategy()
+    def functions(*, like=lambda: None, returns=infer, pure=False):
+        # We shouldn't need overloads here, but mypy disallows default args for
+        # generics: https://github.com/python/mypy/issues/3737
+        """functions(*, like=lambda: None, returns=..., pure=False)
+
+        A strategy for functions, which can be used in callbacks.
+
+        The generated functions will mimic the interface of ``like``, which must
+        be a callable (including a class, method, or function).  The return value
+        for the function is drawn from the ``returns`` argument, which must be a
+        strategy.  If ``returns`` is not passed, we attempt to infer a strategy
+        from the return-type annotation if present, falling back to :func:`~none`.
+
+        If ``pure=True``, all arguments passed to the generated function must be
+        hashable, and if passed identical arguments the original return value will
+        be returned again - *not* regenerated, so beware mutable values.
+
+        If ``pure=False``, generated functions do not validate their arguments, and
+        may return a different value if called again with the same arguments.
+
+        Generated functions can only be called within the scope of the ``@given``
+        which created them.  This strategy does not support ``.example()``.
+        """
+        return _functions(like=like, returns=returns, pure=pure)
+
+else:  # pragma: no cover
+
+    @defines_strategy()
+    def functions(
+        *,
+        like: Callable[..., Any] = lambda: None,
+        returns: Union[SearchStrategy[Any], InferType] = infer,
+        pure: bool = False,
+    ) -> SearchStrategy[Callable[..., Any]]:
+        """functions(*, like=lambda: None, returns=..., pure=False)
+
+        A strategy for functions, which can be used in callbacks.
+
+        The generated functions will mimic the interface of ``like``, which must
+        be a callable (including a class, method, or function).  The return value
+        for the function is drawn from the ``returns`` argument, which must be a
+        strategy.  If ``returns`` is not passed, we attempt to infer a strategy
+        from the return-type annotation if present, falling back to :func:`~none`.
+
+        If ``pure=True``, all arguments passed to the generated function must be
+        hashable, and if passed identical arguments the original return value will
+        be returned again - *not* regenerated, so beware mutable values.
+
+        If ``pure=False``, generated functions do not validate their arguments, and
+        may return a different value if called again with the same arguments.
+
+        Generated functions can only be called within the scope of the ``@given``
+        which created them.  This strategy does not support ``.example()``.
+        """
+        return _functions(like=like, returns=returns, pure=pure)
 
 
 @composite
