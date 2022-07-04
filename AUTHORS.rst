@@ -56,6 +56,7 @@ their individual contributions.
 * `Felix Sheldon <https://www.github.com/darkpaw>`_
 * `Florian Bruhin <https://www.github.com/The-Compiler>`_
 * `follower <https://www.github.com/follower>`_
+* `Gabe Joseph <https://github.com/gjoseph92>`_
 * `Gary Donovan <https://www.github.com/garyd203>`_
 * `George Macon <https://www.github.com/gmacon>`_
 * `Glenn Lehman <https://www.github.com/glnnlhmn>`_

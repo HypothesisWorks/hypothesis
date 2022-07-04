@@ -120,6 +120,14 @@ try:
 except ImportError:  # < py3.8
     Protocol = object  # type: ignore[assignment]
 
+try:
+    from typing import Concatenate, ParamSpec
+except ImportError:
+    try:
+        from typing_extensions import Concatenate, ParamSpec
+    except ImportError:
+        ParamSpec = None  # type: ignore
+
 
 @cacheable
 @defines_strategy()
@@ -889,7 +897,7 @@ def builds(
             "target to construct."
         )
 
-    if infer in args:
+    if infer in args:  # type: ignore  # we only annotated the allowed types
         # Avoid an implementation nightmare juggling tuples and worse things
         raise InvalidArgument(
             "... was passed as a positional argument to "
@@ -1396,9 +1404,9 @@ def decimals(
     special: List[Decimal] = []
     if allow_nan or (allow_nan is None and (None in (min_value, max_value))):
         special.extend(map(Decimal, ("NaN", "-NaN", "sNaN", "-sNaN")))
-    if allow_infinity or (allow_infinity is max_value is None):
+    if allow_infinity or (allow_infinity is None and max_value is None):
         special.append(Decimal("Infinity"))
-    if allow_infinity or (allow_infinity is min_value is None):
+    if allow_infinity or (allow_infinity is None and min_value is None):
         special.append(Decimal("-Infinity"))
     return strat | (sampled_from(special) if special else nothing())
 
@@ -1505,18 +1513,8 @@ class DrawFn(Protocol):
         raise NotImplementedError
 
 
-@cacheable
-def composite(f: Callable[..., Ex]) -> Callable[..., SearchStrategy[Ex]]:
-    """Defines a strategy that is built out of potentially arbitrarily many
-    other strategies.
-
-    This is intended to be used as a decorator. See
-    :ref:`the full documentation for more details <composite-strategies>`
-    about how to use this function.
-
-    Examples from this strategy shrink by shrinking the output of each draw
-    call.
-    """
+def _composite(f):
+    # Wrapped below, using ParamSpec if available
     if isinstance(f, (classmethod, staticmethod)):
         special_method = type(f)
         f = f.__func__
@@ -1539,7 +1537,7 @@ def composite(f: Callable[..., Ex]) -> Callable[..., SearchStrategy[Ex]]:
         parameters=params,
         return_annotation=SearchStrategy
         if sig.return_annotation is sig.empty
-        else SearchStrategy[sig.return_annotation],  # type: ignore
+        else SearchStrategy[sig.return_annotation],
     )
 
     @defines_strategy()
@@ -1552,6 +1550,41 @@ def composite(f: Callable[..., Ex]) -> Callable[..., SearchStrategy[Ex]]:
     if special_method is not None:
         return special_method(accept)
     return accept
+
+
+if typing.TYPE_CHECKING or ParamSpec is not None:
+    P = ParamSpec("P")
+
+    def composite(
+        f: Callable[Concatenate[DrawFn, P], Ex]
+    ) -> Callable[P, SearchStrategy[Ex]]:
+        """Defines a strategy that is built out of potentially arbitrarily many
+        other strategies.
+
+        This is intended to be used as a decorator. See
+        :ref:`the full documentation for more details <composite-strategies>`
+        about how to use this function.
+
+        Examples from this strategy shrink by shrinking the output of each draw
+        call.
+        """
+        return _composite(f)
+
+else:  # pragma: no cover
+
+    @cacheable
+    def composite(f: Callable[..., Ex]) -> Callable[..., SearchStrategy[Ex]]:
+        """Defines a strategy that is built out of potentially arbitrarily many
+        other strategies.
+
+        This is intended to be used as a decorator. See
+        :ref:`the full documentation for more details <composite-strategies>`
+        about how to use this function.
+
+        Examples from this strategy shrink by shrinking the output of each draw
+        call.
+        """
+        return _composite(f)
 
 
 @defines_strategy(force_reusable_values=True)
@@ -1931,50 +1964,112 @@ def emails() -> SearchStrategy[str]:
     )
 
 
-@defines_strategy()
-def functions(
-    *,
-    like: Callable[..., Any] = lambda: None,
-    returns: Union[SearchStrategy[Any], InferType] = infer,
-    pure: bool = False,
-) -> SearchStrategy[Callable[..., Any]]:
-    # The proper type signature of `functions()` would have T instead of Any, but mypy
-    # disallows default args for generics: https://github.com/python/mypy/issues/3737
-    """functions(*, like=lambda: None, returns=..., pure=False)
-
-    A strategy for functions, which can be used in callbacks.
-
-    The generated functions will mimic the interface of ``like``, which must
-    be a callable (including a class, method, or function).  The return value
-    for the function is drawn from the ``returns`` argument, which must be a
-    strategy.  If ``returns`` is not passed, we attempt to infer a strategy
-    from the return-type annotation if present, falling back to :func:`~none`.
-
-    If ``pure=True``, all arguments passed to the generated function must be
-    hashable, and if passed identical arguments the original return value will
-    be returned again - *not* regenerated, so beware mutable values.
-
-    If ``pure=False``, generated functions do not validate their arguments, and
-    may return a different value if called again with the same arguments.
-
-    Generated functions can only be called within the scope of the ``@given``
-    which created them.  This strategy does not support ``.example()``.
-    """
+def _functions(*, like, returns, pure):
+    # Wrapped up to use ParamSpec below
     check_type(bool, pure, "pure")
     if not callable(like):
         raise InvalidArgument(
             "The first argument to functions() must be a callable to imitate, "
             f"but got non-callable like={nicerepr(like)!r}"
         )
-
     if returns is None or returns is infer:
         # Passing `None` has never been *documented* as working, but it still
         # did from May 2020 to Jan 2022 so we'll avoid breaking it without cause.
         hints = get_type_hints(like)
         returns = from_type(hints.get("return", type(None)))
-
     check_strategy(returns, "returns")
     return FunctionStrategy(like, returns, pure)
+
+
+if typing.TYPE_CHECKING or ParamSpec is not None:
+
+    @overload
+    def functions(
+        *, pure: bool = ...
+    ) -> SearchStrategy[Callable[[], None]]:  # pragma: no cover
+        ...
+
+    @overload
+    def functions(
+        *,
+        like: Callable[P, T],
+        pure: bool = ...,
+    ) -> SearchStrategy[Callable[P, T]]:  # pragma: no cover
+        ...
+
+    @overload
+    def functions(
+        *,
+        returns: SearchStrategy[T],
+        pure: bool = ...,
+    ) -> SearchStrategy[Callable[[], T]]:  # pragma: no cover
+        ...
+
+    @overload
+    def functions(
+        *,
+        like: Callable[P, Any],
+        returns: SearchStrategy[T],
+        pure: bool = ...,
+    ) -> SearchStrategy[Callable[P, T]]:  # pragma: no cover
+        ...
+
+    @defines_strategy()
+    def functions(*, like=lambda: None, returns=infer, pure=False):
+        # We shouldn't need overloads here, but mypy disallows default args for
+        # generics: https://github.com/python/mypy/issues/3737
+        """functions(*, like=lambda: None, returns=..., pure=False)
+
+        A strategy for functions, which can be used in callbacks.
+
+        The generated functions will mimic the interface of ``like``, which must
+        be a callable (including a class, method, or function).  The return value
+        for the function is drawn from the ``returns`` argument, which must be a
+        strategy.  If ``returns`` is not passed, we attempt to infer a strategy
+        from the return-type annotation if present, falling back to :func:`~none`.
+
+        If ``pure=True``, all arguments passed to the generated function must be
+        hashable, and if passed identical arguments the original return value will
+        be returned again - *not* regenerated, so beware mutable values.
+
+        If ``pure=False``, generated functions do not validate their arguments, and
+        may return a different value if called again with the same arguments.
+
+        Generated functions can only be called within the scope of the ``@given``
+        which created them.  This strategy does not support ``.example()``.
+        """
+        return _functions(like=like, returns=returns, pure=pure)
+
+else:  # pragma: no cover
+
+    @defines_strategy()
+    def functions(
+        *,
+        like: Callable[..., Any] = lambda: None,
+        returns: Union[SearchStrategy[Any], InferType] = infer,
+        pure: bool = False,
+    ) -> SearchStrategy[Callable[..., Any]]:
+        """functions(*, like=lambda: None, returns=..., pure=False)
+
+        A strategy for functions, which can be used in callbacks.
+
+        The generated functions will mimic the interface of ``like``, which must
+        be a callable (including a class, method, or function).  The return value
+        for the function is drawn from the ``returns`` argument, which must be a
+        strategy.  If ``returns`` is not passed, we attempt to infer a strategy
+        from the return-type annotation if present, falling back to :func:`~none`.
+
+        If ``pure=True``, all arguments passed to the generated function must be
+        hashable, and if passed identical arguments the original return value will
+        be returned again - *not* regenerated, so beware mutable values.
+
+        If ``pure=False``, generated functions do not validate their arguments, and
+        may return a different value if called again with the same arguments.
+
+        Generated functions can only be called within the scope of the ``@given``
+        which created them.  This strategy does not support ``.example()``.
+        """
+        return _functions(like=like, returns=returns, pure=pure)
 
 
 @composite

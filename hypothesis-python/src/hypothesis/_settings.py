@@ -148,19 +148,19 @@ class settings(metaclass=settingsMeta):
         # The intended use is "like **kwargs, but more tractable for tooling".
         max_examples: int = not_set,  # type: ignore
         derandomize: bool = not_set,  # type: ignore
-        database: Union[None, "ExampleDatabase"] = not_set,  # type: ignore
+        database: Optional["ExampleDatabase"] = not_set,  # type: ignore
         verbosity: "Verbosity" = not_set,  # type: ignore
         phases: Collection["Phase"] = not_set,  # type: ignore
         stateful_step_count: int = not_set,  # type: ignore
         report_multiple_bugs: bool = not_set,  # type: ignore
         suppress_health_check: Collection["HealthCheck"] = not_set,  # type: ignore
-        deadline: Union[None, int, float, datetime.timedelta] = not_set,  # type: ignore
+        deadline: Union[int, float, datetime.timedelta, None] = not_set,  # type: ignore
         print_blob: bool = not_set,  # type: ignore
     ) -> None:
         if parent is not None:
             check_type(settings, parent, "parent")
         if derandomize not in (not_set, False):
-            if database not in (not_set, None):
+            if database not in (not_set, None):  # type: ignore
                 raise InvalidArgument(
                     "derandomize=True implies database=None, so passing "
                     f"database={database!r} too is invalid."

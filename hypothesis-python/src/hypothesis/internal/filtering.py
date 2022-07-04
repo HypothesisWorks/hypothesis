@@ -61,7 +61,7 @@ class ConstructivePredicate(NamedTuple):
     predicate: Optional[Predicate]
 
     @classmethod
-    def unchanged(cls, predicate):
+    def unchanged(cls, predicate: Predicate) -> "ConstructivePredicate":
         return cls({}, predicate)
 
 

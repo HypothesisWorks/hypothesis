@@ -55,6 +55,10 @@ def get_mypy_analysed_type(fname, val):
         .strip('"' + "'")
         .replace("builtins.", "")
         .replace("*", "")
+        .replace(
+            "hypothesis.strategies._internal.strategies.SearchStrategy",
+            "SearchStrategy",
+        )
     )
 
 
@@ -131,7 +135,7 @@ def test_revealed_types(tmpdir, val, expect):
         "reveal_type(s)\n"  # fmt: skip
     )
     typ = get_mypy_analysed_type(str(f.realpath()), val)
-    assert typ == f"hypothesis.strategies._internal.strategies.SearchStrategy[{expect}]"
+    assert typ == f"SearchStrategy[{expect}]"
 
 
 def test_data_object_type_tracing(tmpdir):
@@ -157,6 +161,40 @@ def test_drawfn_type_tracing(tmpdir):
     )
     got = get_mypy_analysed_type(str(f.realpath()), ...)
     assert got == "str"
+
+
+def test_composite_type_tracing(tmpdir):
+    f = tmpdir.join("check_mypy_on_st_composite.py")
+    f.write(
+        "from hypothesis.strategies import composite, DrawFn\n"
+        "@composite\n"
+        "def comp(draw: DrawFn, x: int) -> int:\n"
+        "    return x\n"
+        "reveal_type(comp)\n"
+    )
+    got = get_mypy_analysed_type(str(f.realpath()), ...)
+    assert got == "def (x: int) -> SearchStrategy[int]"
+
+
+@pytest.mark.parametrize(
+    "source, expected",
+    [
+        ("", "def ()"),
+        ("like=f", "def (x: int) -> int"),
+        ("returns=booleans()", "def () -> bool"),
+        ("like=f, returns=booleans()", "def (x: int) -> bool"),
+    ],
+)
+def test_functions_type_tracing(tmpdir, source, expected):
+    f = tmpdir.join("check_mypy_on_st_composite.py")
+    f.write(
+        "from hypothesis.strategies import booleans, functions\n"
+        "def f(x: int) -> int: return x\n"
+        f"g = functions({source}).example()\n"
+        "reveal_type(g)\n"
+    )
+    got = get_mypy_analysed_type(str(f.realpath()), ...)
+    assert got == expected, (got, expected)
 
 
 def test_settings_preserves_type(tmpdir):
@@ -421,7 +459,7 @@ def test_pos_only_args(tmpdir):
 
             st.tuples(a1=st.integers())
             st.tuples(a1=st.integers(), a2=st.integers())
-            
+
             st.one_of(a1=st.integers())
             st.one_of(a1=st.integers(), a2=st.integers())
             """
