@@ -10,7 +10,7 @@
 
 import pytest
 
-from hypothesis import example, given, strategies as st
+from hypothesis import Phase, example, given, settings, strategies as st
 
 from tests.common.utils import capture_out
 
@@ -49,13 +49,26 @@ def test_inserts_line_breaks_only_at_appropriate_lengths(line_break, input):
     assert desired_output.strip() == actual_output.strip()
 
 
-def test_vararg_output():
-    @given(foo=st.text())
-    def test(*args, foo):
-        raise AssertionError
+@given(kw=st.none())
+def generate_phase(*args, kw):
+    assert args != (1, 2, 3)
 
+
+@given(kw=st.none())
+@example(kw=None)
+@settings(phases=[Phase.explicit])
+def explicit_phase(*args, kw):
+    assert args != (1, 2, 3)
+
+
+@pytest.mark.parametrize(
+    "fn",
+    [generate_phase, explicit_phase],
+    ids=lambda fn: fn.__name__,
+)
+def test_vararg_output(fn):
     with capture_out() as cap:
         with pytest.raises(AssertionError):
-            test(1, 2, 3)
+            fn(1, 2, 3)
 
     assert "1, 2, 3" in cap.getvalue()

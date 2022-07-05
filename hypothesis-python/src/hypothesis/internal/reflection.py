@@ -47,13 +47,6 @@ def is_mock(obj):
     return hasattr(obj, "hypothesis_internal_is_this_a_mock_check")
 
 
-def getfullargspec_except_self(target):
-    spec = inspect.getfullargspec(target)
-    if inspect.ismethod(target):
-        del spec.args[0]
-    return spec
-
-
 def function_digest(function):
     """Returns a string that is stable across multiple invocations across
     multiple processes and is prone to changing significantly in response to
@@ -75,7 +68,13 @@ def function_digest(function):
     except AttributeError:
         pass
     try:
-        hasher.update(repr(getfullargspec_except_self(function)).encode())
+        # We prefer to use the modern signature API, but left this for compatibility.
+        # While we don't promise stability of the database, there's no advantage to
+        # using signature here, so we might as well keep the existing keys for now.
+        spec = inspect.getfullargspec(function)
+        if inspect.ismethod(function):
+            del spec.args[0]
+        hasher.update(repr(spec).encode())
     except TypeError:
         pass
     try:
@@ -187,7 +186,10 @@ def convert_positional_arguments(function, args, kwargs):
 
     new_args will only be non-empty if function has pos-only args or *args.
     """
-    sig = inspect.signature(function, follow_wrapped=False)
+    if isinstance(function, inspect.Signature):
+        sig = function
+    else:
+        sig = inspect.signature(function, follow_wrapped=False)
     bound = sig.bind(*args, **kwargs)
     new_args = []
     new_kwargs = dict(bound.arguments)

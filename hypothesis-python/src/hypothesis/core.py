@@ -22,8 +22,8 @@ import unittest
 import warnings
 import zlib
 from collections import defaultdict
+from functools import partial
 from io import StringIO
-from itertools import chain
 from random import Random
 from typing import (
     TYPE_CHECKING,
@@ -58,7 +58,6 @@ from hypothesis.errors import (
     Flaky,
     Found,
     HypothesisDeprecationWarning,
-    HypothesisException,
     HypothesisWarning,
     InvalidArgument,
     MultipleFailures,
@@ -90,7 +89,7 @@ from hypothesis.internal.reflection import (
     define_function_signature,
     function_digest,
     get_pretty_function_description,
-    getfullargspec_except_self as getfullargspec,
+    get_signature,
     impersonate,
     is_mock,
     proxies,
@@ -249,7 +248,21 @@ class WithRunner(MappedSearchStrategy):
         return f"WithRunner({self.mapped_strategy!r}, runner={self.runner!r})"
 
 
-def is_invalid_test(test, original_argspec, given_arguments, given_kwargs):
+def _invalid(message, *, exc=InvalidArgument, test, given_kwargs):
+    @impersonate(test)
+    def wrapped_test(*arguments, **kwargs):  # pragma: no cover  # coverage limitation
+        raise exc(message)
+
+    wrapped_test.is_hypothesis_test = True
+    wrapped_test.hypothesis = HypothesisHandle(
+        inner_test=test,
+        get_fuzz_target=wrapped_test,
+        given_kwargs=given_kwargs,
+    )
+    return wrapped_test
+
+
+def is_invalid_test(test, original_sig, given_arguments, given_kwargs):
     """Check the arguments to ``@given`` for basic usage constraints.
 
     Most errors are not raised immediately; instead we return a dummy test
@@ -257,66 +270,45 @@ def is_invalid_test(test, original_argspec, given_arguments, given_kwargs):
     When the user runs a subset of tests (e.g via ``pytest -k``), errors will
     only be reported for tests that actually ran.
     """
-
-    def invalid(message, *, exc=InvalidArgument):
-        def wrapped_test(*arguments, **kwargs):
-            raise exc(message)
-
-        wrapped_test.is_hypothesis_test = True
-        wrapped_test.hypothesis = HypothesisHandle(
-            inner_test=test,
-            get_fuzz_target=wrapped_test,
-            given_kwargs=given_kwargs,
-        )
-        return wrapped_test
+    invalid = partial(_invalid, test=test, given_kwargs=given_kwargs)
 
     if not (given_arguments or given_kwargs):
         return invalid("given must be called with at least one argument")
 
-    p = inspect.signature(test).parameters
-    if p and list(p.values())[0].kind is inspect.Parameter.POSITIONAL_ONLY:
-        return invalid(
-            "given does not support tests with positional-only arguments",
-            exc=HypothesisException,
-        )
-
-    if given_arguments and any(
-        [original_argspec.varargs, original_argspec.varkw, original_argspec.kwonlyargs]
-    ):
+    params = list(original_sig.parameters.values())
+    pos_params = [p for p in params if p.kind is p.POSITIONAL_OR_KEYWORD]
+    kwonly_params = [p for p in params if p.kind is p.KEYWORD_ONLY]
+    if given_arguments and params != pos_params:
         return invalid(
             "positional arguments to @given are not supported with varargs, "
-            "varkeywords, or keyword-only arguments"
+            "varkeywords, positional-only, or keyword-only arguments"
         )
 
-    if len(given_arguments) > len(original_argspec.args):
-        args = tuple(given_arguments)
+    if len(given_arguments) > len(pos_params):
         return invalid(
             f"Too many positional arguments for {test.__name__}() were passed to "
-            f"@given - expected at most {int(len(original_argspec.args))} "
-            f"arguments, but got {int(len(args))} {args!r}"
+            f"@given - expected at most {len(pos_params)} "
+            f"arguments, but got {len(given_arguments)} {given_arguments!r}"
         )
 
     if infer in given_arguments:
         return invalid(
-            "... was passed as a positional argument to @given, "
-            "but may only be passed as a keyword argument or as "
-            "the sole argument of @given"
+            "... was passed as a positional argument to @given,  but may only be "
+            "passed as a keyword argument or as the sole argument of @given"
         )
 
     if given_arguments and given_kwargs:
         return invalid("cannot mix positional and keyword arguments to @given")
     extra_kwargs = [
-        k
-        for k in given_kwargs
-        if k not in original_argspec.args + original_argspec.kwonlyargs
+        k for k in given_kwargs if k not in {p.name for p in pos_params + kwonly_params}
     ]
-    if extra_kwargs and not original_argspec.varkw:
+    if extra_kwargs and (params == [] or params[-1].kind is not params[-1].VAR_KEYWORD):
         arg = extra_kwargs[0]
         return invalid(
             f"{test.__name__}() got an unexpected keyword argument {arg!r}, "
             f"from `{arg}={given_kwargs[arg]!r}` in @given"
         )
-    if original_argspec.defaults or original_argspec.kwonlydefaults:
+    if any(p.default is not p.empty for p in params):
         return invalid("Cannot apply @given to a function with defaults.")
 
     # This case would raise Unsatisfiable *anyway*, but by detecting it here we can
@@ -340,8 +332,9 @@ class ArtificialDataForExample(ConjectureData):
     provided by @example.
     """
 
-    def __init__(self, kwargs):
+    def __init__(self, args, kwargs):
         self.__draws = 0
+        self.__args = args
         self.__kwargs = kwargs
         super().__init__(max_length=0, prefix=b"", random=None)
 
@@ -355,35 +348,40 @@ class ArtificialDataForExample(ConjectureData):
         # first positional arguments then keyword arguments. When building this
         # object already converted all positional arguments to keyword arguments,
         # so this is the correct format to return.
-        return (), self.__kwargs
+        return self.__args, self.__kwargs
 
 
-def execute_explicit_examples(state, wrapped_test, arguments, kwargs):
-    original_argspec = getfullargspec(state.test)
+def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_sig):
+    posargs = [
+        p.name
+        for p in original_sig.parameters.values()
+        if p.kind is p.POSITIONAL_OR_KEYWORD
+    ]
 
     for example in reversed(getattr(wrapped_test, "hypothesis_explicit_examples", ())):
-        example_kwargs = dict(original_argspec.kwonlydefaults or {})
         if example.args:
-            if len(example.args) > len(original_argspec.args):
+            assert not example.kwargs
+            if len(example.args) > len(posargs):
                 raise InvalidArgument(
                     "example has too many arguments for test. Expected at most "
-                    f"{len(original_argspec.args)} but got {len(example.args)}"
+                    f"{len(posargs)} but got {len(example.args)}"
                 )
-            example_kwargs.update(
-                dict(zip(original_argspec.args[-len(example.args) :], example.args))
-            )
+            example_kwargs = dict(zip(posargs[::-1], example.args[::-1]))
         else:
-            example_kwargs.update(example.kwargs)
+            example_kwargs = dict(example.kwargs)
+
+        bound = original_sig.bind(*arguments, **example_kwargs, **kwargs)
+
         if Phase.explicit not in state.settings.phases:
             continue
-        example_kwargs.update(kwargs)
 
+        args, kw = convert_positional_arguments(original_sig, bound.args, bound.kwargs)
         with local_settings(state.settings):
             fragments_reported = []
             try:
                 with with_reporter(fragments_reported.append):
                     state.execute_once(
-                        ArtificialDataForExample(example_kwargs),
+                        ArtificialDataForExample(args, kw),
                         is_final=True,
                         print_example=True,
                     )
@@ -452,15 +450,16 @@ def get_random_for_wrapped_test(test, wrapped_test):
         return Random(seed)
 
 
-def process_arguments_to_given(wrapped_test, arguments, kwargs, given_kwargs, argspec):
+def process_arguments_to_given(wrapped_test, arguments, kwargs, given_kwargs, params):
     selfy = None
     arguments, kwargs = convert_positional_arguments(wrapped_test, arguments, kwargs)
 
     # If the test function is a method of some kind, the bound object
     # will be the first named argument if there are any, otherwise the
     # first vararg (if any).
-    if argspec.args:
-        selfy = kwargs.get(argspec.args[0])
+    posargs = [p.name for p in params.values() if p.kind is p.POSITIONAL_OR_KEYWORD]
+    if posargs:
+        selfy = kwargs.get(posargs[0])
     elif arguments:
         selfy = arguments[0]
 
@@ -531,18 +530,18 @@ def failure_exceptions_to_catch():
     return tuple(exceptions)
 
 
-def new_given_argspec(original_argspec, given_kwargs):
-    """Make an updated argspec for the wrapped test."""
-    new_args = [a for a in original_argspec.args if a not in given_kwargs]
-    new_kwonlyargs = [a for a in original_argspec.kwonlyargs if a not in given_kwargs]
-    annots = {
-        k: v
-        for k, v in original_argspec.annotations.items()
-        if k in new_args + new_kwonlyargs
-    }
-    annots["return"] = None
-    return original_argspec._replace(
-        args=new_args, kwonlyargs=new_kwonlyargs, annotations=annots
+def new_given_signature(original_sig, given_kwargs):
+    """Make an updated signature for the wrapped test."""
+    return original_sig.replace(
+        parameters=[
+            p
+            for p in original_sig.parameters.values()
+            if not (
+                p.name in given_kwargs
+                and p.kind in (p.POSITIONAL_OR_KEYWORD, p.KEYWORD_ONLY)
+            )
+        ],
+        return_annotation=None,
     )
 
 
@@ -973,30 +972,6 @@ class HypothesisHandle:
             return self.__cached_target
 
 
-def fullargspec_to_signature(
-    argspec: inspect.FullArgSpec, *, return_annotation: object = inspect.Parameter.empty
-) -> inspect.Signature:
-    # Construct a new signature based on this argspec.  We'll later convert everything
-    # over to explicit use of signature everywhere, but this is a nice stopgap.
-
-    def as_param(name, kind, defaults):
-        annot = argspec.annotations.get(name, P.empty)
-        return P(name, kind, default=defaults.get(name, P.empty), annotation=annot)
-
-    params = []
-    P = inspect.Parameter
-    for arg in argspec.args:
-        defaults = dict(zip(argspec.args[::-1], (argspec.defaults or [])[::-1]))
-        params.append(as_param(arg, P.POSITIONAL_OR_KEYWORD, defaults))
-    if argspec.varargs:
-        params.append(as_param(argspec.varargs, P.VAR_POSITIONAL, {}))
-    for arg in argspec.kwonlyargs:
-        params.append(as_param(arg, P.KEYWORD_ONLY, argspec.kwonlydefaults or {}))
-    if argspec.varkw:
-        params.append(as_param(argspec.varkw, P.VAR_KEYWORD, {}))
-    return inspect.Signature(params, return_annotation=return_annotation)
-
-
 @overload
 def given(
     *_given_arguments: Union[SearchStrategy[Any], InferType],
@@ -1035,18 +1010,18 @@ def given(
         given_arguments = tuple(_given_arguments)
         given_kwargs = dict(_given_kwargs)
 
-        original_argspec = getfullargspec(test)
-
+        original_sig = get_signature(test)
         if given_arguments == (Ellipsis,) and not given_kwargs:
             # user indicated that they want to infer all arguments
-            given_kwargs.update(
-                (name, Ellipsis)
-                for name in chain(original_argspec.args, original_argspec.kwonlyargs)
-            )
+            given_kwargs = {
+                p.name: Ellipsis
+                for p in original_sig.parameters.values()
+                if p.kind in (p.POSITIONAL_OR_KEYWORD, p.KEYWORD_ONLY)
+            }
             given_arguments = ()
 
         check_invalid = is_invalid_test(
-            test, original_argspec, given_arguments, given_kwargs
+            test, original_sig, given_arguments, given_kwargs
         )
 
         # If the argument check found problems, return a dummy test function
@@ -1058,33 +1033,28 @@ def given(
         # positional arguments into keyword arguments for simplicity.
         if given_arguments:
             assert not given_kwargs
-            nargs = len(given_arguments)
-            given_kwargs.update(zip(original_argspec.args[-nargs:], given_arguments))
+            posargs = [
+                p.name
+                for p in original_sig.parameters.values()
+                if p.kind is p.POSITIONAL_OR_KEYWORD
+            ]
+            given_kwargs = dict(zip(posargs[::-1], given_arguments[::-1]))
         # These have been converted, so delete them to prevent accidental use.
         del given_arguments
 
-        argspec = new_given_argspec(original_argspec, given_kwargs)
-        new_signature = fullargspec_to_signature(argspec, return_annotation=None)
+        new_signature = new_given_signature(original_sig, given_kwargs)
 
         # Use type information to convert "infer" arguments into appropriate strategies.
         if infer in given_kwargs.values():
             hints = get_type_hints(test)
         for name in [name for name, value in given_kwargs.items() if value is infer]:
             if name not in hints:
-                # As usual, we want to emit this error when the test is executed,
-                # not when it's decorated.
-
-                @impersonate(test)
-                @define_function_signature(test.__name__, test.__doc__, new_signature)
-                def wrapped_test(*arguments, **kwargs):
-                    __tracebackhide__ = True
-                    raise InvalidArgument(
-                        f"passed {name}=... for {test.__name__}, but {name} has "
-                        "no type annotation"
-                    )
-
-                return wrapped_test
-
+                return _invalid(
+                    f"passed {name}=... for {test.__name__}, but {name} has "
+                    "no type annotation",
+                    test=test,
+                    given_kwargs=given_kwargs,
+                )
             given_kwargs[name] = st.from_type(hints[name])
 
         @impersonate(test)
@@ -1110,7 +1080,7 @@ def given(
             random = get_random_for_wrapped_test(test, wrapped_test)
 
             processed_args = process_arguments_to_given(
-                wrapped_test, arguments, kwargs, given_kwargs, argspec
+                wrapped_test, arguments, kwargs, given_kwargs, new_signature.parameters
             )
             arguments, kwargs, test_runner, search_strategy = processed_args
 
@@ -1194,7 +1164,9 @@ def given(
             # There was no @reproduce_failure, so start by running any explicit
             # examples from @example decorators.
             errors = list(
-                execute_explicit_examples(state, wrapped_test, arguments, kwargs)
+                execute_explicit_examples(
+                    state, wrapped_test, arguments, kwargs, original_sig
+                )
             )
             with local_settings(state.settings):
                 if len(errors) > 1:
@@ -1294,7 +1266,7 @@ def given(
             )
             random = get_random_for_wrapped_test(test, wrapped_test)
             _args, _kwargs, test_runner, search_strategy = process_arguments_to_given(
-                wrapped_test, (), {}, given_kwargs, argspec
+                wrapped_test, (), {}, given_kwargs, new_signature.parameters
             )
             assert not _args
             assert not _kwargs
