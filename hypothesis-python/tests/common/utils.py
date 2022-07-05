@@ -168,7 +168,7 @@ def counts_calls(func):
 def assert_output_contains_failure(output, test, **kwargs):
     assert test.__name__ + "(" in output
     for k, v in kwargs.items():
-        assert f"{k}={v!r}" in output
+        assert f"{k}={v!r}" in output, (f"{k}={v!r}", output)
 
 
 def assert_falsifying_output(

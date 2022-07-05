@@ -454,7 +454,7 @@ def get_varargs(sig, kind=inspect.Parameter.VAR_POSITIONAL):
 
 
 def define_function_signature(name, docstring, signature):
-    """A decorator which sets the name, argspec and docstring of the function
+    """A decorator which sets the name, signature and docstring of the function
     passed into it."""
     if name == "<lambda>":
         name = "_lambda_"

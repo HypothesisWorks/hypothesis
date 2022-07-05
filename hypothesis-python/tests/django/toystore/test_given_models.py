@@ -192,7 +192,7 @@ class TestPosOnlyArg(TestCase):
     def test_user_issue_2369_regression(self, val):
         pass
 
-    def test_from_model_argspec(self):
+    def test_from_model_signature(self):
         if sys.version_info[:2] <= (3, 7):
             self.assertRaises(TypeError, from_model().example)
             self.assertRaises(TypeError, from_model(Car, None).example)
