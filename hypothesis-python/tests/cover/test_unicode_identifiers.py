@@ -12,7 +12,7 @@ from hypothesis import given, strategies as st
 from hypothesis.internal.reflection import get_pretty_function_description, proxies
 
 
-def test_can_copy_argspec_of_unicode_args():
+def test_can_copy_signature_of_unicode_args():
     def foo(μ):
         return μ
 
@@ -23,7 +23,7 @@ def test_can_copy_argspec_of_unicode_args():
     assert bar(1) == 1
 
 
-def test_can_copy_argspec_of_unicode_name():
+def test_can_copy_signature_of_unicode_name():
     def ā():
         return 1
 

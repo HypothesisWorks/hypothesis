@@ -35,7 +35,7 @@ def has_annotation(a: int, *b, c=2) -> None:
 
 
 @pytest.mark.parametrize("f", [has_annotation, lambda *, a: a, lambda *, a=1: a])
-def test_copying_preserves_argspec(f):
+def test_copying_preserves_signature(f):
     af = signature(f)
     t = define_function_signature("foo", "docstring", af)(universal_acceptor)
     at = signature(t)

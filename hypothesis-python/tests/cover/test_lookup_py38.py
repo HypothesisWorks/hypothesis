@@ -15,7 +15,7 @@ import typing
 import pytest
 
 from hypothesis import given, strategies as st
-from hypothesis.errors import HypothesisException, Unsatisfiable
+from hypothesis.errors import InvalidArgument, Unsatisfiable
 from hypothesis.internal.reflection import (
     convert_positional_arguments,
     get_pretty_function_description,
@@ -173,16 +173,24 @@ def test_given_works_with_keyword_only_params_some_unbound():
     test(y=None)
 
 
-@fails_with(HypothesisException)
-@given(st.booleans())
-def test_given_works_with_positional_only_params(x, /):
-    pass
-
-
-def test_given_works_with_positional_only_params_some_unbound():
-    @fails_with(HypothesisException)
-    @given(st.booleans())
-    def test(x, y, /):
-        assert y is None
+def test_given_works_with_positional_only_params():
+    @given(y=st.booleans())
+    def test(x, /, y):
+        pass
 
     test(None)
+
+
+def test_cannot_pass_strategies_by_position_if_there_are_posonly_args():
+    @given(st.booleans())
+    def test(x, /, y):
+        pass
+
+    with pytest.raises(InvalidArgument):
+        test(None)
+
+
+@fails_with(InvalidArgument)
+@given(st.booleans())
+def test_cannot_pass_strategies_for_posonly_args(x, /):
+    pass

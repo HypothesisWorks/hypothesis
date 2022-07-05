@@ -24,7 +24,7 @@ When using a @given decorator, any arguments that are not provided in the @given
 will be left visible in the final function:
 
 ```python
-from inspect import getargspec
+from inspect import signature
 
 from hypothesis import given, strategies as st
 
@@ -34,13 +34,13 @@ def test_stuff(a, b, c, d):
     pass
 
 
-print(getargspec(test_stuff))
+print(signature(test_stuff))
 ```
 
 This then outputs the following:
 
 ```
-ArgSpec(args=['b', 'd'], varargs=None, keywords=None, defaults=None)
+<Signature (b, d)>
 ```
 
 We've hidden the arguments 'a' and 'c', but the unspecified arguments 'b' and 'd'
@@ -64,7 +64,7 @@ def test_stuff(a, stuff):
     assert stuff == "kittens"
 ```
 
-This also works if we want to use @given with positional arguments: 
+This also works if we want to use @given with positional arguments:
 
 ```python
 from pytest import fixture
