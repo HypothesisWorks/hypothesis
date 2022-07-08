@@ -156,6 +156,7 @@ class settings(metaclass=settingsMeta):
         suppress_health_check: Collection["HealthCheck"] = not_set,  # type: ignore
         deadline: Union[int, float, datetime.timedelta, None] = not_set,  # type: ignore
         print_blob: bool = not_set,  # type: ignore
+        max_shrink_seconds: float = not_set,  # type:ignore
     ) -> None:
         if parent is not None:
             check_type(settings, parent, "parent")
@@ -661,6 +662,13 @@ If set to ``True``, Hypothesis will print code for failing examples that can be 
 :func:`@reproduce_failure <hypothesis.reproduce_failure>` to reproduce the failing example.
 The default is ``True`` if the ``CI`` or ``TF_BUILD`` env vars are set, ``False`` otherwise.
 """,
+)
+
+settings._define_setting(
+    "max_shrink_seconds",
+    default=300,
+    validator=int,
+    description="""The maximum time given to the shrinker to work.""",
 )
 
 settings.lock_further_definitions()
