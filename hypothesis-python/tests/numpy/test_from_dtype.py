@@ -104,7 +104,7 @@ def test_can_unicode_strings_without_decode_error(arr):
     pass
 
 
-@pytest.mark.xfail(strict=False, reason="mitigation for issue above")
+@pytest.mark.skipif(not nps.NP_FIXED_UNICODE, reason="workaround for old bug")
 def test_unicode_string_dtypes_need_not_be_utf8():
     def cannot_encode(string):
         try:

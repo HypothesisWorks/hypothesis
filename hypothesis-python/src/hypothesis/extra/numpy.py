@@ -15,7 +15,7 @@ import numpy as np
 
 from hypothesis import strategies as st
 from hypothesis._settings import note_deprecation
-from hypothesis.errors import InvalidArgument
+from hypothesis.errors import HypothesisException, InvalidArgument
 from hypothesis.extra._array_helpers import (
     NDIM_MAX,
     BasicIndex,
@@ -62,6 +62,9 @@ __all__ = [
 ]
 
 TIME_RESOLUTIONS = tuple("Y  M  D  h  m  s  ms  us  ns  ps  fs  as".split())
+
+# See https://github.com/HypothesisWorks/hypothesis/pull/3394 and linked discussion.
+NP_FIXED_UNICODE = tuple(int(x) for x in np.__version__.split(".")[:2]) >= (1, 19)
 
 
 @defines_strategy(force_reusable_values=True)
@@ -157,6 +160,8 @@ def from_dtype(
     elif dtype.kind == "U":
         # Encoded in UTF-32 (four bytes/codepoint) and null-terminated
         max_size = (dtype.itemsize or 0) // 4 or None
+        if NP_FIXED_UNICODE and "alphabet" not in kwargs:
+            kwargs["alphabet"] = st.characters()
         result = st.text(**compat_kw("alphabet", "min_size", max_size=max_size)).filter(
             lambda b: b[-1:] != "\0"
         )
@@ -192,7 +197,16 @@ class ArrayStrategy(st.SearchStrategy):
                 f"Could not add element={val!r} of {val.dtype!r} to array of "
                 f"{result.dtype!r} - possible mismatch of time units in dtypes?"
             ) from err
-        if self._check_elements and val != result[idx] and val == val:
+        try:
+            elem_changed = self._check_elements and val != result[idx] and val == val
+        except Exception as err:  # pragma: no cover
+            # This branch only exists to help debug weird behaviour in Numpy,
+            # such as the string problems we had a while back.
+            raise HypothesisException(
+                "Internal error when checking element=%r of %r to array of %r"
+                % (val, val.dtype, result.dtype)
+            ) from err
+        if elem_changed:
             strategy = self.fill if fill else self.element_strategy
             if self.dtype.kind == "f":
                 try:
