@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.50.1:
+
+-------------------
+6.50.1 - 2022-07-09
+-------------------
+
+This patch improves the error messages in :func:`@example() <hypothesis.example>`
+argument validation following the recent release of :ref:`6.49.1 <v6.49.1>`.
+
 .. _v6.50.0:
 
 -------------------
