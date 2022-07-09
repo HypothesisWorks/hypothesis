@@ -9,12 +9,13 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import dataclasses
+import re
 import sys
 import typing
 
 import pytest
 
-from hypothesis import given, strategies as st
+from hypothesis import example, given, strategies as st
 from hypothesis.errors import InvalidArgument, Unsatisfiable
 from hypothesis.internal.reflection import (
     convert_positional_arguments,
@@ -194,3 +195,30 @@ def test_cannot_pass_strategies_by_position_if_there_are_posonly_args():
 @given(st.booleans())
 def test_cannot_pass_strategies_for_posonly_args(x, /):
     pass
+
+
+@given(y=st.booleans())
+def has_posonly_args(x, /, y):
+    pass
+
+
+def test_example_argument_validation():
+    example(y=None)(has_posonly_args)(1)  # Basic case is OK
+
+    with pytest.raises(
+        InvalidArgument,
+        match=re.escape(
+            "Cannot pass positional arguments to @example() when decorating "
+            "a test function which has positional-only parameters."
+        ),
+    ):
+        example(None)(has_posonly_args)(1)
+
+    with pytest.raises(
+        InvalidArgument,
+        match=re.escape(
+            "Inconsistent args: @given() got strategies for 'y', "
+            "but @example() got arguments for 'x'"
+        ),
+    ):
+        example(x=None)(has_posonly_args)(1)

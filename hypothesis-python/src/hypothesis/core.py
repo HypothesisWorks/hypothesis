@@ -359,29 +359,50 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
     ]
 
     for example in reversed(getattr(wrapped_test, "hypothesis_explicit_examples", ())):
+        # All of this validation is to check that @example() got "the same" arguments
+        # as @given, i.e. corresponding to the same parameters, even though they might
+        # be any mixture of positional and keyword arguments.
         if example.args:
             assert not example.kwargs
+            if any(
+                p.kind is p.POSITIONAL_ONLY for p in original_sig.parameters.values()
+            ):
+                raise InvalidArgument(
+                    "Cannot pass positional arguments to @example() when decorating "
+                    "a test function which has positional-only parameters."
+                )
             if len(example.args) > len(posargs):
                 raise InvalidArgument(
                     "example has too many arguments for test. Expected at most "
                     f"{len(posargs)} but got {len(example.args)}"
                 )
-            example_kwargs = dict(zip(posargs[::-1], example.args[::-1]))
+            example_kwargs = dict(zip(posargs[-len(example.args) :], example.args))
         else:
             example_kwargs = dict(example.kwargs)
+        given_kws = ", ".join(
+            repr(k) for k in sorted(wrapped_test.hypothesis._given_kwargs)
+        )
+        example_kws = ", ".join(repr(k) for k in sorted(example_kwargs))
+        if given_kws != example_kws:
+            raise InvalidArgument(
+                f"Inconsistent args: @given() got strategies for {given_kws}, "
+                f"but @example() got arguments for {example_kws}"
+            ) from None
 
-        bound = original_sig.bind(*arguments, **example_kwargs, **kwargs)
+        # This is certainly true because the example_kwargs exactly match the params
+        # reserved by @given(), which are then remove from the function signature.
+        assert set(example_kwargs).isdisjoint(kwargs)
+        example_kwargs.update(kwargs)
 
         if Phase.explicit not in state.settings.phases:
             continue
 
-        args, kw = convert_positional_arguments(original_sig, bound.args, bound.kwargs)
         with local_settings(state.settings):
             fragments_reported = []
             try:
                 with with_reporter(fragments_reported.append):
                     state.execute_once(
-                        ArtificialDataForExample(args, kw),
+                        ArtificialDataForExample(arguments, example_kwargs),
                         is_final=True,
                         print_example=True,
                     )

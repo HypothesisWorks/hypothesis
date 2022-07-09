@@ -186,10 +186,7 @@ def convert_positional_arguments(function, args, kwargs):
 
     new_args will only be non-empty if function has pos-only args or *args.
     """
-    if isinstance(function, inspect.Signature):
-        sig = function
-    else:
-        sig = inspect.signature(function, follow_wrapped=False)
+    sig = inspect.signature(function, follow_wrapped=False)
     bound = sig.bind(*args, **kwargs)
     new_args = []
     new_kwargs = dict(bound.arguments)
