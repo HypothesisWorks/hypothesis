@@ -34,13 +34,13 @@ iniconfig==1.1.1
     # via pytest
 lark-parser==0.12.0
     # via -r requirements/coverage.in
-libcst==0.4.5
+libcst==0.4.6
     # via -r requirements/coverage.in
 mypy-extensions==0.4.3
     # via
     #   black
     #   typing-inspect
-numpy==1.23.0
+numpy==1.23.1
     # via
     #   -r requirements/coverage.in
     #   pandas
