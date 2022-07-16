@@ -1531,6 +1531,10 @@ def _composite(f):
         )
     if params[0].default is not sig.empty:
         raise InvalidArgument("A default value for initial argument will never be used")
+
+    if check_if_param_name_called(f, params[0]):
+        raise(DeprecationWarning)
+
     if params[0].kind.name != "VAR_POSITIONAL":
         params = params[1:]
     newsig = sig.replace(
