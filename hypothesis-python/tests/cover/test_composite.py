@@ -75,7 +75,6 @@ def test_errors_given_kwargs_only():
             pass
 
 
-@pytest.mark.xfail
 def test_warning_given_no_drawfn_call():
     with pytest.raises(DeprecationWarning):
 
@@ -129,9 +128,8 @@ class MyList(list):
 @given(st.data(), st.lists(st.integers()).map(MyList))
 def test_does_not_change_arguments(data, ls):
     # regression test for issue #1017 or other argument mutation
-    @st.composite
-    def strat(draw, arg):
-        return arg
+    def strat(arg):
+        return st.just(arg)
 
     ex = data.draw(strat(ls))
     assert ex is ls
