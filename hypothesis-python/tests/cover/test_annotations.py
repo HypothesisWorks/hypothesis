@@ -101,6 +101,7 @@ def test_composite_edits_annotations():
     assert sig_comp.parameters["nothing"].annotation is not P.empty
     assert "draw" not in sig_comp.parameters
 
+
 @pytest.mark.parametrize("nargs", [1, 2, 3])
 def test_given_edits_annotations(nargs):
     sig_given = signature(given(*(nargs * [st.none()]))(pointless_composite))
