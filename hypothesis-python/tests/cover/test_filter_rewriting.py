@@ -168,7 +168,6 @@ def test_filter_rewriting_floats(data, strategy, predicate, min_value, max_value
 @pytest.mark.parametrize("s", [st.integers(1, 5), st.floats(1, 5)])
 def test_rewrite_unsatisfiable_filter(s, pred):
     rewritten_strat = s.filter(pred).wrapped_strategy
-    print(type(rewritten_strat))
     assert isinstance(rewritten_strat, Nothing)
 
 @pytest.mark.parametrize(
