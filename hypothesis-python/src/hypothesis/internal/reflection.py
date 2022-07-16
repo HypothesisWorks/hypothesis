@@ -224,13 +224,14 @@ def is_func_param_called_within(f, name):
     """Is the given name referenced within f?"""
     try:
         tree = ast.parse(textwrap.dedent(inspect.getsource(f)))
-    except (OSError, ValueError):
+    except Exception:
         return True
     else:
         return any(
-            isinstance(node, ast.Name)
-            and node.id == name
-            and isinstance(node.ctx, ast.Load)
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id == name
+            and isinstance(node.func.ctx, ast.Load)
             for node in ast.walk(tree)
         )
 
