@@ -220,39 +220,17 @@ def ast_arguments_matches_signature(args, sig):
     return expected == [(p.name, p.kind) for p in sig.parameters.values()]
 
 
-class _NameUsageNodeVisitor(ast.NodeVisitor):
-    """Node visitor to check if a name is used inside an AST."""
-
-    def __init__(self, f, name):
-        self.name = name
-
-        # Getting the source might fail if we are in the REPL and parsing might fail
-        # in other edge cases.
-        try:
-            tree = ast.parse(textwrap.dedent(inspect.getsource(f)))
-        except (OSError, ValueError):
-            self.found = True
-        else:
-            self.found = False
-            self.tree = tree
-
-    def check(self):
-        self.visit(self.tree)
-        return self.found
-
-    def generic_visit(self, node):
-        if self.found:
-            return self.found
-        return super().generic_visit(node)
-
-    def visit_Name(self, node):
-        if node.id == self.name and isinstance(node.ctx, ast.Load):
-            self.found = True
-
-
 def is_func_param_called_within(f, name):
     """Is the given name referenced within f?"""
-    return _NameUsageNodeVisitor(f, name).check()
+    try:
+        tree = ast.parse(textwrap.dedent(inspect.getsource(f)))
+    except (OSError, ValueError):
+        return True
+    else:
+        return any(
+            isinstance(node, ast.Name) and node.id == name and isinstance(node.ctx, ast.Load)
+            for node in ast.walk(tree)
+        )
 
 
 def extract_all_lambdas(tree, matching_signature):
