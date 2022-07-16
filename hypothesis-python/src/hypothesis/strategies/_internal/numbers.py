@@ -21,6 +21,7 @@ from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.filtering import (
     get_float_predicate_bounds,
     get_integer_predicate_bounds,
+    UNSATISFIABLE
 )
 from hypothesis.internal.floats import (
     float_of,
@@ -93,7 +94,14 @@ class IntegersStrategy(SearchStrategy):
         return d.integer_range(data, self.start, self.end, center=0)
 
     def filter(self, condition):
+        if condition is math.isfinite:
+            return self
+        if condition in [math.isinf, math.isnan]:
+            return nothing()
         kwargs, pred = get_integer_predicate_bounds(condition)
+
+        if pred == UNSATISFIABLE.predicate:
+            return nothing()
 
         start, end = self.start, self.end
         if "min_value" in kwargs:
@@ -297,7 +305,15 @@ class FloatStrategy(SearchStrategy):
             return result
 
     def filter(self, condition):
+        # Handle a few specific weird cases.
+        if condition is math.isfinite:
+            return self
+        if condition in [math.isinf, math.isnan]:
+            return nothing()
+
         kwargs, pred = get_float_predicate_bounds(condition)
+        if pred == UNSATISFIABLE.predicate:
+            return nothing()
         if not kwargs:
             return super().filter(pred)
         min_bound = max(kwargs.get("min_value", -math.inf), self.min_value)
