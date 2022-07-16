@@ -11,7 +11,7 @@
 import pytest
 
 from hypothesis import assume, given, strategies as st
-from hypothesis.errors import InvalidArgument
+from hypothesis.errors import HypothesisDeprecationWarning, InvalidArgument
 
 from tests.common.debug import minimal
 from tests.common.utils import fails, flaky
@@ -75,8 +75,9 @@ def test_errors_given_kwargs_only():
             pass
 
 
-def test_warning_given_no_drawfn_call_within():
-    with pytest.raises(DeprecationWarning):
+
+def test_warning_given_no_drawfn_call():
+    with pytest.raises(HypothesisDeprecationWarning):
 
         @st.composite
         def foo(_):
