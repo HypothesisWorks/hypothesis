@@ -94,7 +94,7 @@ def test_minmax_magnitude_equal(data, mag):
 
 
 def _is_subnormal(x):
-    return -sys.float_info.min < x < sys.float_info.min
+    return 0 < abs(x) < sys.float_info.min
 
 
 @pytest.mark.parametrize(
