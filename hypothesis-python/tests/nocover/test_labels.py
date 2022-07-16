@@ -22,12 +22,12 @@ def test_labels_are_distinct():
 
 @st.composite
 def foo(draw):
-    pass
+    return draw(st.integers())
 
 
 @st.composite
 def bar(draw):
-    pass
+    return draw(st.integers())
 
 
 def test_different_composites_have_different_labels():
