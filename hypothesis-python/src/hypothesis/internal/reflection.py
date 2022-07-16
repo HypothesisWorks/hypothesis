@@ -17,6 +17,7 @@ import inspect
 import os
 import re
 import sys
+import textwrap
 import types
 from functools import wraps
 from keyword import iskeyword
@@ -217,6 +218,36 @@ def ast_arguments_matches_signature(args, sig):
     if args.kwarg is not None:
         expected.append((args.kwarg.arg, inspect.Parameter.VAR_KEYWORD))
     return expected == [(p.name, p.kind) for p in sig.parameters.values()]
+
+
+class NameUsageNodeVisitor(ast.NodeVisitor):
+    """Node visitor to check if a name is used inside an AST."""
+
+    def __init__(self, f, name):
+        # Remove indentation the function source might have to allow ast to parse it.
+        source = textwrap.dedent(inspect.getsource(f))
+        self.tree = ast.parse(source)
+        self.name = name
+        self.found = False
+
+    def check(self):
+        self.visit(self.tree)
+        return self.found
+
+    def generic_visit(self, node):
+        if self.found:
+            return self.found
+        print(node)
+        return super().generic_visit(node)
+
+    def visit_Name(self, node):
+        if node.id == self.name and isinstance(node.ctx, ast.Load):
+            self.found = True
+
+
+def check_if_param_name_called(f, name):
+    """Is the given name referenced within f?"""
+    return NameUsageNodeVisitor(f, name).check()
 
 
 def extract_all_lambdas(tree, matching_signature):
