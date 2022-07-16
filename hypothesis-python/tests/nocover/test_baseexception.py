@@ -34,8 +34,8 @@ def test_exception_propagates_fine_from_strategy(e):
     @composite
     def interrupt_eventually(draw):
         raise e
-        # this line will not be executed, but must be here 
-        # to pass draw funcition static reference check
+        # this line will not be executed, but must be here
+        # to pass draw function static reference check
         return draw(st.integers())
 
     @given(interrupt_eventually())
@@ -105,7 +105,7 @@ from hypothesis import given, note, strategies as st
 def things(draw):
     raise {exception}
     # this line will not be executed, but must be here 
-    # to pass draw funcition static reference check
+    # to pass draw function static reference check
     return draw(st.integers())
 
 

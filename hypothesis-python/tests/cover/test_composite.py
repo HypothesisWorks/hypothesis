@@ -75,7 +75,6 @@ def test_errors_given_kwargs_only():
             pass
 
 
-
 def test_warning_given_no_drawfn_call():
     with pytest.raises(HypothesisDeprecationWarning):
 
