@@ -108,10 +108,10 @@ def test_healthcheck_traceback_is_hidden(testdir):
 
 
 COMPOSITE_IS_NOT_A_TEST = """
-from hypothesis.strategies import composite, integers
+from hypothesis.strategies import composite, none
 @composite
 def test_data_factory(draw):
-    return draw(integers())
+    return draw(none())
 """
 
 
