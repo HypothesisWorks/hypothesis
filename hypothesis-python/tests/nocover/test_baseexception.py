@@ -12,7 +12,7 @@ import pytest
 
 from hypothesis import given
 from hypothesis.errors import Flaky
-from hypothesis.strategies import composite, integers, none
+from hypothesis.strategies import composite, integers
 
 
 @pytest.mark.parametrize(
