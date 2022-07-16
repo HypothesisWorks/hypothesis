@@ -15,7 +15,7 @@ from hypothesis.strategies import composite
 @composite
 def test_composite_is_not_a_test(draw):
     # This strategy will be instantiated, but no draws == no calls.
-    assert False
+    assert draw
 
 @hypothesis.seed(0)
 def test_seed_without_given_fails():
