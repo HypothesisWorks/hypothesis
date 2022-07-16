@@ -83,6 +83,14 @@ def test_warning_given_no_drawfn_call():
             return "bar"
 
 
+def test_cannot_use_pure_args():
+    with pytest.raises(HypothesisDeprecationWarning):
+
+        @st.composite
+        def stuff(*args):
+            return args[0](st.sampled_from(args[1:]))
+
+
 def test_composite_of_lists():
     @st.composite
     def f(draw):
