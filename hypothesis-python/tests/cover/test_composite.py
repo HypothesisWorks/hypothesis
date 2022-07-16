@@ -14,7 +14,7 @@ from hypothesis import assume, given, strategies as st
 from hypothesis.errors import InvalidArgument
 
 from tests.common.debug import minimal
-from tests.common.utils import fails, flaky
+from tests.common.utils import flaky
 
 
 @st.composite

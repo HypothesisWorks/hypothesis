@@ -16,6 +16,9 @@ from inspect import Parameter, Signature, signature
 from unittest.mock import MagicMock, Mock, NonCallableMagicMock, NonCallableMock
 
 import pytest
+from pytest import raises
+
+from hypothesis import given, strategies as st
 from hypothesis.internal import reflection
 from hypothesis.internal.reflection import (
     convert_keyword_arguments,
@@ -31,10 +34,6 @@ from hypothesis.internal.reflection import (
     required_args,
     source_exec_as_module,
 )
-from pytest import raises
-
-from hypothesis import given
-from hypothesis import strategies as st
 
 
 def do_conversion_test(f, args, kwargs):
