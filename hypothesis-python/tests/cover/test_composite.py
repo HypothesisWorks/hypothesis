@@ -129,8 +129,9 @@ class MyList(list):
 def test_does_not_change_arguments(data, ls):
     # regression test for issue #1017 or other argument mutation
     @st.composite
-    def strat(draw):
-        return draw(st.none())
+    def strat(draw, arg):
+        draw(st.none())
+        return arg
 
     ex = data.draw(strat(ls))
     assert ex is ls
