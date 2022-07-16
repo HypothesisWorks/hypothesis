@@ -1656,7 +1656,7 @@ def complex_numbers(
         # In this simple but common case, there are no constraints on the
         # magnitude and therefore no relationship between the real and
         # imaginary parts.
-        return builds(complex, floats(**allow_kw), floats(**allow_kw))
+        return builds(complex, floats(**allow_kw), floats(**allow_kw))  # type: ignore
 
     @composite
     def constrained_complex(draw):
