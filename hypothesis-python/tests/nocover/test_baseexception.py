@@ -72,15 +72,16 @@ def test_baseexception_no_rerun_no_flaky(e):
     "e", [KeyboardInterrupt, SystemExit, GeneratorExit, ValueError]
 )
 def test_baseexception_in_strategy_no_rerun_no_flaky(e):
-    runs = [0]
+    runs = 0
     interrupt = 3
 
     @composite
     def interrupt_eventually(draw):
-        runs[0] += 1
-        if runs[0] == interrupt:
+        nonlocal runs
+        runs += 1
+        if runs == interrupt:
             raise e
-        return draw(none())
+        return draw(integers())
 
     @given(interrupt_eventually())
     def test_do_nothing(x):
@@ -90,7 +91,7 @@ def test_baseexception_in_strategy_no_rerun_no_flaky(e):
         with pytest.raises(e):
             test_do_nothing()
 
-        assert runs[0] == interrupt
+        assert runs == interrupt
 
     else:
         # Now SystemExit and GeneratorExit are caught like other exceptions
