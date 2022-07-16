@@ -12,7 +12,7 @@ import pytest
 
 from hypothesis import given
 from hypothesis.errors import Flaky
-from hypothesis.strategies import composite, integers
+from hypothesis.strategies import composite, integers, none
 
 
 @pytest.mark.parametrize(
@@ -36,7 +36,7 @@ def test_exception_propagates_fine_from_strategy(e):
         raise e
         # this line will not be executed, but must be here
         # to pass draw function static reference check
-        return draw(st.integers())
+        return draw(st.none())
 
     @given(interrupt_eventually())
     def test_do_nothing(x):
@@ -80,7 +80,7 @@ def test_baseexception_in_strategy_no_rerun_no_flaky(e):
         runs[0] += 1
         if runs[0] == interrupt:
             raise e
-        return draw(integers())
+        return draw(none())
 
     @given(interrupt_eventually())
     def test_do_nothing(x):
@@ -106,7 +106,7 @@ def things(draw):
     raise {exception}
     # this line will not be executed, but must be here 
     # to pass draw function static reference check
-    return draw(st.integers())
+    return draw(st.none())
 
 
 @given(st.data(), st.integers())
