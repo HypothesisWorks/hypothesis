@@ -56,11 +56,13 @@ from hypothesis.internal.conjecture.utils import (
 )
 from hypothesis.internal.entropy import get_seeder_and_restorer
 from hypothesis.internal.reflection import (
+    check_if_param_name_called,
     define_function_signature,
     get_pretty_function_description,
     get_signature,
     nicerepr,
     required_args,
+    
 )
 from hypothesis.internal.validation import (
     check_type,
@@ -1532,7 +1534,7 @@ def _composite(f):
     if params[0].default is not sig.empty:
         raise InvalidArgument("A default value for initial argument will never be used")
 
-    if check_if_param_name_called(f, params[0]):
+    if not check_if_param_name_called(f, params[0]):
         raise(DeprecationWarning)
 
     if params[0].kind.name != "VAR_POSITIONAL":
