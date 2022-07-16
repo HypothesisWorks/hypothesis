@@ -1646,6 +1646,9 @@ def complex_numbers(
     allow_kw = {
         "allow_nan": allow_nan,
         "allow_infinity": allow_infinity,
+        # If we have a nonzero normal min_magnitude and draw a zero imaginary part,
+        # then allow_subnormal=True would be an error with the min_value to the floats()
+        # strategy for the real part.  We therefore replace True with None.
         "allow_subnormal": None if allow_subnormal else allow_subnormal,
     }
 
