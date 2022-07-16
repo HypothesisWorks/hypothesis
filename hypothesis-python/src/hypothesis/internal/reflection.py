@@ -228,7 +228,9 @@ def is_func_param_called_within(f, name):
         return True
     else:
         return any(
-            isinstance(node, ast.Name) and node.id == name and isinstance(node.ctx, ast.Load)
+            isinstance(node, ast.Name)
+            and node.id == name
+            and isinstance(node.ctx, ast.Load)
             for node in ast.walk(tree)
         )
 
