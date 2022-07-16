@@ -152,6 +152,7 @@ def test_draw_time_percentage(draw_delay, test_delay):
     def s(draw):
         if draw_delay:
             time.sleep(0.05)
+        draw(st.integers())
 
     @given(s())
     def test(_):
