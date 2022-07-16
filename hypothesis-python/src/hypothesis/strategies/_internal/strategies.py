@@ -288,6 +288,7 @@ class SearchStrategy(Generic[Ex]):
                 "it performs better, saves and replays failures to avoid flakiness, "
                 "and reports minimal examples. (strategy: %r)" % (self,),
                 NonInteractiveExampleWarning,
+                stacklevel=2,
             )
 
         context = _current_build_context.value
