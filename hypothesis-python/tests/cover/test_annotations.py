@@ -84,7 +84,7 @@ def test_converter_notices_missing_kwonly_args():
 
 
 def pointless_composite(draw: None, strat: bool, nothing: list) -> int:
-    return 3
+    return draw(st.integers())
 
 
 def return_annot() -> int:
@@ -100,7 +100,6 @@ def test_composite_edits_annotations():
     assert sig_comp.return_annotation == st.SearchStrategy[int]
     assert sig_comp.parameters["nothing"].annotation is not P.empty
     assert "draw" not in sig_comp.parameters
-
 
 @pytest.mark.parametrize("nargs", [1, 2, 3])
 def test_given_edits_annotations(nargs):
