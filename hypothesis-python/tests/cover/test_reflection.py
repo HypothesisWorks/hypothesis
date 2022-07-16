@@ -16,9 +16,6 @@ from inspect import Parameter, Signature, signature
 from unittest.mock import MagicMock, Mock, NonCallableMagicMock, NonCallableMock
 
 import pytest
-from pytest import raises
-
-from hypothesis import given, strategies as st
 from hypothesis.internal import reflection
 from hypothesis.internal.reflection import (
     convert_keyword_arguments,
@@ -27,12 +24,17 @@ from hypothesis.internal.reflection import (
     function_digest,
     get_pretty_function_description,
     get_signature,
+    is_func_param_called_within,
     is_mock,
     proxies,
     repr_call,
     required_args,
     source_exec_as_module,
 )
+from pytest import raises
+
+from hypothesis import given
+from hypothesis import strategies as st
 
 
 def do_conversion_test(f, args, kwargs):
@@ -622,3 +624,33 @@ def test_error_on_keyword_parameter_name():
 
     with pytest.raises(ValueError, match="SyntaxError because `from` is a keyword"):
         get_signature(f)
+
+
+def test_param_is_called_within_func():
+    def f(any_name):
+        any_name()
+
+    assert is_func_param_called_within(f, "any_name") is True
+
+
+def test_param_is_called_within_func_after_assignment():
+    def f(any_name):
+        new_name = any_name
+        new_name()
+
+    assert is_func_param_called_within(f, "any_name") is True
+
+
+def test_param_is_called_within_subfunc():
+    def f(any_name):
+        def f2():
+            any_name()
+
+    assert is_func_param_called_within(f, "any_name") is True
+
+
+def test_param_is_not_called_within_func():
+    def f(any_name):
+        pass
+
+    assert is_func_param_called_within(f, "any_name") is False

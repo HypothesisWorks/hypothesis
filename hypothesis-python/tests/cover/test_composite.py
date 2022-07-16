@@ -75,7 +75,7 @@ def test_errors_given_kwargs_only():
             pass
 
 
-def test_warning_given_no_drawfn_call():
+def test_warning_given_no_drawfn_call_within():
     with pytest.raises(DeprecationWarning):
 
         @st.composite
