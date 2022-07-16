@@ -244,7 +244,7 @@ class _NameUsageNodeVisitor(ast.NodeVisitor):
             self.found = True
 
 
-def check_if_param_name_called(f, name):
+def is_func_param_called_within(f, name):
     """Is the given name referenced within f?"""
     return _NameUsageNodeVisitor(f, name).check()
 

@@ -56,7 +56,7 @@ from hypothesis.internal.conjecture.utils import (
 )
 from hypothesis.internal.entropy import get_seeder_and_restorer
 from hypothesis.internal.reflection import (
-    check_if_param_name_called,
+    is_func_param_called_within,
     define_function_signature,
     get_pretty_function_description,
     get_signature,
