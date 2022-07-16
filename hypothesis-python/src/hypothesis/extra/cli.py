@@ -82,6 +82,14 @@ else:
     def obj_name(s: str) -> object:
         """This "type" imports whatever object is named by a dotted string."""
         s = s.strip()
+        if "/" in s:
+            raise click.UsageError(
+                "Remember that the ghostwriter should be passed the name of a module, not a path."
+            )
+        if s.endswith(".py"):
+            raise click.UsageError(
+                "Remember that the ghostwriter should be passed the name of a module, not a file."
+            )
         try:
             return importlib.import_module(s)
         except ImportError:
