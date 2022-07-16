@@ -224,11 +224,17 @@ class _NameUsageNodeVisitor(ast.NodeVisitor):
     """Node visitor to check if a name is used inside an AST."""
 
     def __init__(self, f, name):
-        # Remove indentation the function source might have to allow ast to parse it.
-        source = textwrap.dedent(inspect.getsource(f))
-        self.tree = ast.parse(source)
         self.name = name
-        self.found = False
+
+        # Getting the source might fail if we are in the REPL and parsing might fail
+        # in other edge cases.
+        try:
+            tree = ast.parse(textwrap.dedent(inspect.getsource(f)))
+        except (OSError, ValueError):
+            self.found = True
+        else:
+            self.found = False
+            self.tree = tree
 
     def check(self):
         self.visit(self.tree)
