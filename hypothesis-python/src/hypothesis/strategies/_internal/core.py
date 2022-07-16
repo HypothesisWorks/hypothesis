@@ -1609,7 +1609,7 @@ def complex_numbers(
     it is an error to enable ``allow_infinity``.
 
     ``allow_subnormal`` is applied to each part of the complex number
-    separately.
+    separately, as for :func:`~hypothesis.strategies.floats`.
 
     The magnitude constraints are respected up to a relative error
     of (around) floating-point epsilon, due to implementation via
