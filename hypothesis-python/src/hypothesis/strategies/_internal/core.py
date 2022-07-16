@@ -1595,6 +1595,7 @@ def complex_numbers(
     max_magnitude: Optional[Real] = None,
     allow_infinity: Optional[bool] = None,
     allow_nan: Optional[bool] = None,
+    allow_subnormal: bool = True,
 ) -> SearchStrategy[complex]:
     """Returns a strategy that generates complex numbers.
 
@@ -1606,6 +1607,9 @@ def complex_numbers(
     If ``min_magnitude`` is nonzero or ``max_magnitude`` is finite, it
     is an error to enable ``allow_nan``.  If ``max_magnitude`` is finite,
     it is an error to enable ``allow_infinity``.
+
+    ``allow_subnormal`` is applied to each part of the complex number
+    separately.
 
     The magnitude constraints are respected up to a relative error
     of (around) floating-point epsilon, due to implementation via
@@ -1639,7 +1643,11 @@ def complex_numbers(
             f"Cannot have allow_nan={allow_nan!r}, min_magnitude={min_magnitude!r} "
             f"max_magnitude={max_magnitude!r}"
         )
-    allow_kw = {"allow_nan": allow_nan, "allow_infinity": allow_infinity}
+    allow_kw = {
+        "allow_nan": allow_nan,
+        "allow_infinity": allow_infinity,
+        "allow_subnormal": None if allow_subnormal else allow_subnormal,
+    }
 
     if min_magnitude == 0 and max_magnitude is None:
         # In this simple but common case, there are no constraints on the
