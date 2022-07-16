@@ -44,6 +44,7 @@ from uuid import UUID
 
 import attr
 
+from hypothesis._settings import note_deprecation
 from hypothesis.control import cleanup, note
 from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.internal.cathetus import cathetus
@@ -107,7 +108,6 @@ from hypothesis.strategies._internal.strings import (
 )
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 from hypothesis.utils.conventions import infer, not_set
-from hypothesis._settings import note_deprecation
 
 if sys.version_info >= (3, 10):  # pragma: no cover
     from types import EllipsisType as InferType
@@ -1534,8 +1534,12 @@ def _composite(f):
     if params[0].default is not sig.empty:
         raise InvalidArgument("A default value for initial argument will never be used")
     if not is_func_param_called_within(f, params[0].name):
-        #raise DeprecationWarning("First parameter should be referenced within")
-        return note_deprecation("First parameter should be referenced within", since="2022-07-16", has_codemod=False)
+        # raise DeprecationWarning("First parameter should be referenced within")
+        return note_deprecation(
+            "First parameter should be referenced within",
+            since="2022-07-16",
+            has_codemod=False,
+        )
     if params[0].kind.name != "VAR_POSITIONAL":
         params = params[1:]
     newsig = sig.replace(
