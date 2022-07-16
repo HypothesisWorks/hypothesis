@@ -1535,7 +1535,7 @@ def _composite(f):
         raise InvalidArgument("A default value for initial argument will never be used")
     if params[0].kind.name != "VAR_POSITIONAL":
         if not is_func_param_called_within(f, params[0].name):
-            return note_deprecation(
+            note_deprecation(
                 "There is no reason to use @st.composite on a function which "
                 + "does not call the provided draw() function internally.",
                 since="RELEASEDAY",
