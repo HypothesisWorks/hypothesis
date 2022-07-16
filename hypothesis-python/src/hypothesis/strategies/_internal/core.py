@@ -1534,8 +1534,8 @@ def _composite(f):
     if params[0].default is not sig.empty:
         raise InvalidArgument("A default value for initial argument will never be used")
 
-    if not check_if_param_name_called(f, params[0]):
-        raise(DeprecationWarning)
+    if not is_func_param_called_within(f, params[0].name):
+        raise DeprecationWarning("First parameter should be referenced within")
 
     if params[0].kind.name != "VAR_POSITIONAL":
         params = params[1:]
