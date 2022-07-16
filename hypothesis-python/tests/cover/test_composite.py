@@ -14,7 +14,7 @@ from hypothesis import assume, given, strategies as st
 from hypothesis.errors import InvalidArgument
 
 from tests.common.debug import minimal
-from tests.common.utils import flaky
+from tests.common.utils import fails, flaky
 
 
 @st.composite
@@ -73,6 +73,15 @@ def test_errors_given_kwargs_only():
         @st.composite
         def foo(**kwargs):
             pass
+
+
+@pytest.mark.xfail
+def test_warning_given_no_drawfn_call():
+    with pytest.raises(DeprecationWarning):
+
+        @st.composite
+        def foo(_):
+            return "bar"
 
 
 def test_can_use_pure_args():
