@@ -653,3 +653,9 @@ def test_param_is_not_called_within_func():
         pass
 
     assert not is_func_param_called_within(f, "any_name")
+
+
+def test_param_called_within_defaults_on_error():
+    # Create a function object for which we cannot retrieve the source.
+    f = compile("lambda: ...", "_.py", "eval")
+    assert is_func_param_called_within(f, "any_name")
