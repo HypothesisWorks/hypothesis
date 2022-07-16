@@ -1,7 +1,6 @@
 RELEASE_TYPE: minor
 
-This release adds the ``allow_subnormal`` argument to ``complex_numbers()`` by
-applying it to each the real and imaginary parts separately. Closes issue
-:issue:`3390`.
+This release adds the ``allow_subnormal`` argument to :func:`~hypothesis.strategies.complex_numbers` by
+applying it to each of the real and imaginary parts separately. Closes :issue:`3390`.
 
-Thanks to Evan They for this fix.
+Thanks to Evan Tey for this fix.
