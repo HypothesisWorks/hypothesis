@@ -63,7 +63,7 @@ their individual contributions.
 * `Graham Williamson <https://github.com/00willo>`_
 * `Grant David Bachman <https://github.com/grantbachman>`_ (grantbachman@gmail.com)
 * `Gregory Petrosyan <https://github.com/flyingmutant>`_
-* `Grzegorz Zieba <https://github.com/gzaxel>` _ (g.zieba@erax.pl)
+* `Grzegorz Zieba <https://github.com/gzaxel>`_ (g.zieba@erax.pl)
 * `Grigorios Giannakopoulos <https://github.com/grigoriosgiann>`_
 * `Hugo van Kemenade <https://github.com/hugovk>`_
 * `Humberto Rocha <https://github.com/humrochagf>`_
