@@ -629,7 +629,7 @@ def test_param_is_called_within_func():
     def f(any_name):
         any_name()
 
-    assert is_func_param_called_within(f, "any_name") is True
+    assert is_func_param_called_within(f, "any_name")
 
 
 def test_param_is_called_within_func_after_assignment():
@@ -637,7 +637,7 @@ def test_param_is_called_within_func_after_assignment():
         new_name = any_name
         new_name()
 
-    assert is_func_param_called_within(f, "any_name") is True
+    assert is_func_param_called_within(f, "any_name")
 
 
 def test_param_is_called_within_subfunc():
@@ -645,11 +645,11 @@ def test_param_is_called_within_subfunc():
         def f2():
             any_name()
 
-    assert is_func_param_called_within(f, "any_name") is True
+    assert is_func_param_called_within(f, "any_name")
 
 
 def test_param_is_not_called_within_func():
     def f(any_name):
         pass
 
-    assert is_func_param_called_within(f, "any_name") is False
+    assert not is_func_param_called_within(f, "any_name")
