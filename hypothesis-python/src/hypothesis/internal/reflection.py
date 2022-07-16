@@ -220,7 +220,7 @@ def ast_arguments_matches_signature(args, sig):
     return expected == [(p.name, p.kind) for p in sig.parameters.values()]
 
 
-class NameUsageNodeVisitor(ast.NodeVisitor):
+class _NameUsageNodeVisitor(ast.NodeVisitor):
     """Node visitor to check if a name is used inside an AST."""
 
     def __init__(self, f, name):
@@ -247,7 +247,7 @@ class NameUsageNodeVisitor(ast.NodeVisitor):
 
 def check_if_param_name_called(f, name):
     """Is the given name referenced within f?"""
-    return NameUsageNodeVisitor(f, name).check()
+    return _NameUsageNodeVisitor(f, name).check()
 
 
 def extract_all_lambdas(tree, matching_signature):
