@@ -237,7 +237,6 @@ class _NameUsageNodeVisitor(ast.NodeVisitor):
     def generic_visit(self, node):
         if self.found:
             return self.found
-        print(node)
         return super().generic_visit(node)
 
     def visit_Name(self, node):
