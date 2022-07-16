@@ -101,6 +101,7 @@ from hypothesis import given, note, strategies as st
 @st.composite
 def things(draw):
     raise {exception}
+    return draw(st.integers())
 
 
 @given(st.data(), st.integers())
