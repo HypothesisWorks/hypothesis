@@ -1,6 +1,8 @@
-RELEASE_TYPE: patch
+RELEASE_TYPE: minor
 
-Issue a deprecation warning if a function decorated with :func:`@composite <hypothesis.strategies.composite>`
+Issue a deprecation warning if a function decorated with
+:func:`@composite <hypothesis.strategies.composite>`
 does not draw any values (:issue:`3384`).
 
-Thanks to Grzegorz Zieba, Rodrigo Girão, and Thomas Ball for working on this at the EuroPython sprints!
+Thanks to Grzegorz Zieba, Rodrigo Girão, and Thomas Ball for
+working on this at the EuroPython sprints!
