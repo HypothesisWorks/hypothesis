@@ -90,7 +90,19 @@ class IntegersStrategy(SearchStrategy):
                     data.stop_example(discard=probe < self.start)
                 return probe
 
-        return d.integer_range(data, self.start, self.end, center=0)
+        # For bounded integers, make the bounds and near-bounds more likely.
+        forced = None
+        if self.end - self.start > 127:
+            forced = {
+                122: self.start,
+                123: self.start,
+                124: self.end,
+                125: self.end,
+                126: self.start + 1,
+                127: self.end - 1,
+            }.get(data.draw_bits(7))
+
+        return d.integer_range(data, self.start, self.end, center=0, forced=forced)
 
     def filter(self, condition):
         kwargs, pred = get_integer_predicate_bounds(condition)

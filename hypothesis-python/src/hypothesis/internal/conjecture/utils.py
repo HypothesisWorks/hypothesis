@@ -63,9 +63,14 @@ def unbounded_integers(data: "ConjectureData") -> int:
 
 
 def integer_range(
-    data: "ConjectureData", lower: int, upper: int, center: Optional[int] = None
+    data: "ConjectureData",
+    lower: int,
+    upper: int,
+    center: Optional[int] = None,
+    forced: Optional[int] = None,
 ) -> int:
     assert lower <= upper
+    assert forced is None or lower <= forced <= upper
     if lower == upper:
         # Write a value even when this is trivial so that when a bound depends
         # on other values we don't suddenly disappear when the gap shrinks to
@@ -82,8 +87,10 @@ def integer_range(
         above = False
     elif center == lower:
         above = True
+    elif forced:
+        above = not data.draw_bits(1, forced=forced < center)
     else:
-        above = not boolean(data)
+        above = not data.draw_bits(1)
 
     if above:
         gap = upper - center
@@ -95,7 +102,7 @@ def integer_range(
     bits = gap.bit_length()
     probe = gap + 1
 
-    if bits > 24 and data.draw_bits(3):
+    if bits > 24 and data.draw_bits(3, forced=None if forced is None else 0):
         # For large ranges, we combine the uniform random distribution from draw_bits
         # with a weighting scheme with moderate chance.  Cutoff at 2 ** 24 so that our
         # choice of unicode characters is uniform but the 32bit distribution is not.
@@ -104,7 +111,9 @@ def integer_range(
 
     while probe > gap:
         data.start_example(INTEGER_RANGE_DRAW_LABEL)
-        probe = data.draw_bits(bits)
+        probe = data.draw_bits(
+            bits, forced=None if forced is None else abs(forced - center)
+        )
         data.stop_example(discard=probe > gap)
 
     if above:
@@ -113,7 +122,8 @@ def integer_range(
         result = center - probe
 
     assert lower <= result <= upper
-    return int(result)
+    assert forced is None or result == forced, (result, forced, center, above)
+    return result
 
 
 T = TypeVar("T")

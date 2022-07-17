@@ -17,7 +17,7 @@ def test_filter_iterations_are_marked_as_discarded():
     variable_equal_to_zero = 0  # non-local references disables filter-rewriting
     x = st.integers(0, 255).filter(lambda x: x == variable_equal_to_zero)
 
-    data = ConjectureData.for_buffer([2, 1, 0])
+    data = ConjectureData.for_buffer([0, 2, 1, 0])
 
     assert data.draw(x) == 0
 
