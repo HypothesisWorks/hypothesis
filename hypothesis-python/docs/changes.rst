@@ -18,6 +18,19 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.51.0:
+
+-------------------
+6.51.0 - 2022-07-17
+-------------------
+
+Issue a deprecation warning if a function decorated with
+:func:`@composite <hypothesis.strategies.composite>`
+does not draw any values (:issue:`3384`).
+
+Thanks to Grzegorz Zieba, Rodrigo Girão, and Thomas Ball for
+working on this at the EuroPython sprints!
+
 .. _v6.50.1:
 
 -------------------

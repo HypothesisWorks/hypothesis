@@ -1537,7 +1537,7 @@ def _composite(f):
         note_deprecation(
             "There is no reason to use @st.composite on a function which "
             + "does not call the provided draw() function internally.",
-            since="RELEASEDAY",
+            since="2022-07-17",
             has_codemod=False,
         )
     if params[0].kind.name != "VAR_POSITIONAL":
