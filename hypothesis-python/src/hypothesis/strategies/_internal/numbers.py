@@ -605,4 +605,7 @@ class NanStrategy(SearchStrategy):
     def do_draw(self, data):
         # Nans must have all exponent bits and the first mantissa bit set, so
         # we generate by taking 64 random bits and setting the required ones.
-        return int_to_float(data.draw_bits(64) | float_to_int(math.nan))
+        sign_bit = data.draw_bits(1) << 63
+        nan_bits = float_to_int(math.nan)
+        mantissa_bits = data.draw_bits(52)
+        return int_to_float(sign_bit | nan_bits | mantissa_bits)
