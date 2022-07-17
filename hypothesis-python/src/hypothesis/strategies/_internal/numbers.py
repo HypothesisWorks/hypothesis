@@ -24,6 +24,7 @@ from hypothesis.internal.filtering import (
 )
 from hypothesis.internal.floats import (
     float_of,
+    float_to_int,
     int_to_float,
     is_negative,
     make_float_clamper,
@@ -32,8 +33,6 @@ from hypothesis.internal.floats import (
     next_up,
     next_up_normal,
     width_smallest_normals,
-    float_to_int,
-    int_to_float
 )
 from hypothesis.internal.validation import (
     check_type,
@@ -41,7 +40,10 @@ from hypothesis.internal.validation import (
     check_valid_interval,
 )
 from hypothesis.strategies._internal.misc import nothing
-from hypothesis.strategies._internal.strategies import SearchStrategy, SampledFromStrategy
+from hypothesis.strategies._internal.strategies import (
+    SampledFromStrategy,
+    SearchStrategy,
+)
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 
 # See https://github.com/python/mypy/issues/3186 - numbers.Real is wrong!
@@ -306,10 +308,10 @@ class FloatStrategy(SearchStrategy):
         # Handle a few specific weird cases.
         if condition is math.isfinite:
             return FloatStrategy(
-                min_value = max(self.min_value, next_up(float("-inf"))),
-                max_value = min(self.max_value, next_down(float("inf"))),
-                allow_nan = self.allow_nan,
-                smallest_nonzero_magnitude = self.smallest_nonzero_magnitude
+                min_value=max(self.min_value, next_up(float("-inf"))),
+                max_value=min(self.max_value, next_down(float("inf"))),
+                allow_nan=False,
+                smallest_nonzero_magnitude=self.smallest_nonzero_magnitude,
             )
         if condition is math.isinf:
             permitted_infs = [x for x in (-math.inf, math.inf) if self.permitted(x)]
@@ -601,15 +603,13 @@ def floats(
 
 class NanStrategy(SearchStrategy):
     """Strategy for sampling the space of nan float values."""
-    
-    def do_draw(self, data):
-        # All (64-bit) Nans start have this mantissa.
-        nan_mantissa = float_to_int(math.nan)
 
-        # Get a non-zero positive 53-bit integer to fill the 
-        # significand
-        base_int = d.integer_range(data, 1, (2**53)-1)
+    def do_draw(self, data):
+        # All (64-bit) Nans start have this exponent and first mantissa bit.
+        required_nan_bits = float_to_int(math.nan)
+
+        # Get a non-zero positive 53-bit integer to fill the significand.
+        base_int = data.draw_bits(64)
 
         # Combine to get a random nan.
-        return int_to_float(base_int | nan_mantissa)
-
+        return int_to_float(base_int | required_nan_bits)

@@ -182,7 +182,7 @@ def numeric_bounds_from_ast(
     return fallback
 
 
-UNSATISFIABLE = ConstructivePredicate({"min_value": 1,"max_value": -1}, None)
+UNSATISFIABLE = ConstructivePredicate({"min_value": 1, "max_value": -1}, None)
 
 
 def get_numeric_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
