@@ -51,6 +51,7 @@ their individual contributions.
 * `Eduardo Enriquez <https://www.github.com/eduzen>`_ (eduardo.a.enriquez@gmail.com)
 * `El Awbery <https://www.github.com/ElAwbery>`_
 * `Emmanuel Leblond <https://www.github.com/touilleMan>`_
+* `Evan Tey <https://github.com/evantey14>`_
 * `Felix Divo <https://www.github.com/felixdivo>`_
 * `Felix Grünewald <https://www.github.com/fgruen>`_
 * `Felix Sheldon <https://www.github.com/darkpaw>`_
