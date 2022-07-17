@@ -10,19 +10,16 @@
 
 import collections
 import sys
-from typing import Callable, Dict, List, Union
+from typing import Callable, DefaultDict, Dict, List, NewType, Type, Union
 
 import pytest
 from typing_extensions import (
     Annotated,
     Concatenate,
-    DefaultDict,
     Literal,
-    NewType,
     NotRequired,
     ParamSpec,
     Required,
-    Type,
     TypedDict,
     TypeGuard,
 )
