@@ -27,7 +27,7 @@ from hypothesis.internal.reflection import (
     function_digest,
     get_pretty_function_description,
     get_signature,
-    is_func_param_called_within,
+    is_first_param_referenced_in_function,
     is_mock,
     proxies,
     repr_call,
@@ -629,7 +629,7 @@ def test_param_is_called_within_func():
     def f(any_name):
         any_name()
 
-    assert is_func_param_called_within(f, "any_name")
+    assert is_first_param_referenced_in_function(f, "any_name")
 
 
 def test_param_is_called_within_subfunc():
@@ -637,17 +637,17 @@ def test_param_is_called_within_subfunc():
         def f2():
             any_name()
 
-    assert is_func_param_called_within(f, "any_name")
+    assert is_first_param_referenced_in_function(f, "any_name")
 
 
 def test_param_is_not_called_within_func():
     def f(any_name):
         pass
 
-    assert not is_func_param_called_within(f, "any_name")
+    assert not is_first_param_referenced_in_function(f, "any_name")
 
 
 def test_param_called_within_defaults_on_error():
     # Create a function object for which we cannot retrieve the source.
     f = compile("lambda: ...", "_.py", "eval")
-    assert is_func_param_called_within(f, "any_name")
+    assert is_first_param_referenced_in_function(f, "any_name")

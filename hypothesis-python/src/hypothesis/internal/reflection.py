@@ -220,19 +220,18 @@ def ast_arguments_matches_signature(args, sig):
     return expected == [(p.name, p.kind) for p in sig.parameters.values()]
 
 
-def is_func_param_called_within(f, name):
+def is_first_param_referenced_in_function(f, name):
     """Is the given name referenced within f?"""
     try:
         tree = ast.parse(textwrap.dedent(inspect.getsource(f)))
     except Exception:
-        return True
-    else:
-        return any(
-            isinstance(node, ast.Name)
-            and node.id == name
-            and isinstance(node.ctx, ast.Load)
-            for node in ast.walk(tree)
-        )
+        return True  # Assume it's OK unless we know otherwise
+    return any(
+        isinstance(node, ast.Name)
+        and node.id == name
+        and isinstance(node.ctx, ast.Load)
+        for node in ast.walk(tree)
+    )
 
 
 def extract_all_lambdas(tree, matching_signature):

@@ -76,7 +76,7 @@ def test_errors_given_kwargs_only():
 
 
 def test_warning_given_no_drawfn_call():
-    with pytest.raises(HypothesisDeprecationWarning):
+    with pytest.warns(HypothesisDeprecationWarning):
 
         @st.composite
         def foo(_):
