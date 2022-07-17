@@ -315,15 +315,13 @@ class FloatStrategy(SearchStrategy):
             )
         if condition is math.isinf:
             permitted_infs = [x for x in (-math.inf, math.inf) if self.permitted(x)]
-            if len(permitted_infs) == 0:
+            if not permitted_infs:
                 return nothing()
-            else:
-                return SampledFromStrategy(permitted_infs)
+            return SampledFromStrategy(permitted_infs)
         if condition is math.isnan:
             if not self.allow_nan:
                 return nothing()
-            else:
-                return NanStrategy()
+            return NanStrategy()
 
         kwargs, pred = get_float_predicate_bounds(condition)
         if not kwargs:
@@ -605,11 +603,6 @@ class NanStrategy(SearchStrategy):
     """Strategy for sampling the space of nan float values."""
 
     def do_draw(self, data):
-        # All (64-bit) Nans start have this exponent and first mantissa bit.
-        required_nan_bits = float_to_int(math.nan)
-
-        # Get a non-zero positive 53-bit integer to fill the significand.
-        base_int = data.draw_bits(64)
-
-        # Combine to get a random nan.
-        return int_to_float(base_int | required_nan_bits)
+        # Nans must have all exponent bits and the first mantissa bit set, so
+        # we generate by taking 64 random bits and setting the required ones.
+        return int_to_float(data.draw_bits(64) | float_to_int(math.nan))
