@@ -22,16 +22,8 @@ from hypothesis.errors import HypothesisWarning, Unsatisfiable
 from hypothesis.internal.floats import next_down, next_up
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies._internal.lazy import LazyStrategy, unwrap_strategies
-from hypothesis.strategies._internal.misc import Nothing
-from hypothesis.strategies._internal.numbers import (
-    FloatStrategy,
-    IntegersStrategy,
-    NanStrategy,
-)
-from hypothesis.strategies._internal.strategies import (
-    FilteredStrategy,
-    SampledFromStrategy,
-)
+from hypothesis.strategies._internal.numbers import FloatStrategy, IntegersStrategy
+from hypothesis.strategies._internal.strategies import FilteredStrategy
 
 from tests.common.utils import fails_with
 
@@ -147,12 +139,7 @@ def test_filter_rewriting_ints(data, strategy, predicate, start, end):
         (st.floats(), lambda x: x > 1 and x > 0, next_up(1.0), math.inf),
         (st.floats(), lambda x: x < 1 and x < 2, -math.inf, next_down(1.0)),
         # Specific named functions
-        (
-            st.floats(allow_nan=False),
-            math.isfinite,
-            next_up(-math.inf),
-            next_down(math.inf),
-        ),
+        (st.floats(), math.isfinite, next_up(-math.inf), next_down(math.inf)),
     ],
     ids=get_pretty_function_description,
 )
@@ -163,9 +150,8 @@ def test_filter_rewriting_floats(data, strategy, predicate, min_value, max_value
     assert isinstance(s.wrapped_strategy, FloatStrategy)
     assert s.wrapped_strategy.min_value == min_value
     assert s.wrapped_strategy.max_value == max_value
-    for i in range(10):
-        value = data.draw(s)
-        assert predicate(value)
+    value = data.draw(s)
+    assert predicate(value)
 
 
 @pytest.mark.parametrize(
@@ -182,13 +168,14 @@ def test_filter_rewriting_floats(data, strategy, predicate, min_value, max_value
 )
 @pytest.mark.parametrize("s", [st.integers(1, 5), st.floats(1, 5)])
 def test_rewrite_unsatisfiable_filter(s, pred):
-    rewritten_strat = s.filter(pred).wrapped_strategy
-    assert isinstance(rewritten_strat, Nothing)
+    assert s.filter(pred).is_empty
 
 
 @pytest.mark.parametrize(
     "pred",
-    [partial(operator.eq, "numbers are never equal to strings")],
+    [
+        partial(operator.eq, "numbers are never equal to strings"),
+    ],
 )
 @pytest.mark.parametrize("s", [st.integers(1, 5), st.floats(1, 5)])
 @fails_with(Unsatisfiable)
@@ -197,24 +184,32 @@ def test_erroring_rewrite_unsatisfiable_filter(s, pred):
 
 
 @pytest.mark.parametrize(
-    "strategy, predicate, rewritten_type",
+    "strategy, predicate",
     [
-        (st.floats(), math.isinf, SampledFromStrategy),
-        (st.floats(0, math.inf), math.isinf, SampledFromStrategy),
-        (st.floats(allow_infinity=False), math.isinf, Nothing),
-        (st.floats(), math.isnan, NanStrategy),
-        (st.floats(0, math.inf), math.isnan, Nothing),
-        (st.floats(allow_nan=False), math.isnan, Nothing),
+        (st.floats(), math.isinf),
+        (st.floats(0, math.inf), math.isinf),
+        (st.floats(), math.isnan),
     ],
 )
 @given(data=st.data())
-def test_misc_filter_rewrites(data, strategy, predicate, rewritten_type):
-    s = strategy.filter(predicate)
-    assert isinstance(s, LazyStrategy)
-    assert isinstance(s.wrapped_strategy, rewritten_type)
-    if rewritten_type != Nothing:
-        value = data.draw(s)
-        assert predicate(value)
+def test_misc_sat_filter_rewrites(data, strategy, predicate):
+    s = strategy.filter(predicate).wrapped_strategy
+    assert not isinstance(s, FloatStrategy)
+    value = data.draw(s)
+    assert predicate(value)
+
+
+@pytest.mark.parametrize(
+    "strategy, predicate",
+    [
+        (st.floats(allow_infinity=False), math.isinf),
+        (st.floats(0, math.inf), math.isnan),
+        (st.floats(allow_nan=False), math.isnan),
+    ],
+)
+@given(data=st.data())
+def test_misc_unsat_filter_rewrites(data, strategy, predicate):
+    assert strategy.filter(predicate).is_empty
 
 
 @given(st.integers(0, 2).filter(partial(operator.ne, 1)))
