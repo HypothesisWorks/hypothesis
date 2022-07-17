@@ -10,12 +10,12 @@
 
 TEST_DECORATORS_ALONE = """
 import hypothesis
-from hypothesis.strategies import composite
+from hypothesis.strategies import composite, none
 
 @composite
 def test_composite_is_not_a_test(draw):
     # This strategy will be instantiated, but no draws == no calls.
-    assert False
+    return draw(none())
 
 @hypothesis.seed(0)
 def test_seed_without_given_fails():

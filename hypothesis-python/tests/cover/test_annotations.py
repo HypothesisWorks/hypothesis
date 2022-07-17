@@ -83,8 +83,8 @@ def test_converter_notices_missing_kwonly_args():
         assert convert_positional_arguments(f, (), {})
 
 
-def pointless_composite(draw: None, strat: bool, nothing: list) -> int:
-    return 3
+def to_wrap_with_composite(draw: None, strat: bool, nothing: list) -> int:
+    return draw(st.none())
 
 
 def return_annot() -> int:
@@ -96,7 +96,7 @@ def first_annot(draw: None):
 
 
 def test_composite_edits_annotations():
-    sig_comp = signature(st.composite(pointless_composite))
+    sig_comp = signature(st.composite(to_wrap_with_composite))
     assert sig_comp.return_annotation == st.SearchStrategy[int]
     assert sig_comp.parameters["nothing"].annotation is not P.empty
     assert "draw" not in sig_comp.parameters
@@ -104,7 +104,7 @@ def test_composite_edits_annotations():
 
 @pytest.mark.parametrize("nargs", [1, 2, 3])
 def test_given_edits_annotations(nargs):
-    sig_given = signature(given(*(nargs * [st.none()]))(pointless_composite))
+    sig_given = signature(given(*(nargs * [st.none()]))(to_wrap_with_composite))
     assert sig_given.return_annotation is None
     assert len(sig_given.parameters) == 3 - nargs
     assert all(p.annotation is not P.empty for p in sig_given.parameters.values())

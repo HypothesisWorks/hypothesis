@@ -11,7 +11,7 @@
 import pytest
 
 from hypothesis import assume, given, strategies as st
-from hypothesis.errors import InvalidArgument
+from hypothesis.errors import HypothesisDeprecationWarning, InvalidArgument
 
 from tests.common.debug import minimal
 from tests.common.utils import flaky
@@ -75,6 +75,14 @@ def test_errors_given_kwargs_only():
             pass
 
 
+def test_warning_given_no_drawfn_call():
+    with pytest.warns(HypothesisDeprecationWarning):
+
+        @st.composite
+        def foo(_):
+            return "bar"
+
+
 def test_can_use_pure_args():
     @st.composite
     def stuff(*args):
@@ -122,6 +130,7 @@ def test_does_not_change_arguments(data, ls):
     # regression test for issue #1017 or other argument mutation
     @st.composite
     def strat(draw, arg):
+        draw(st.none())
         return arg
 
     ex = data.draw(strat(ls))

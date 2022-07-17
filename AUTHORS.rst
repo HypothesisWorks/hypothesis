@@ -63,6 +63,7 @@ their individual contributions.
 * `Graham Williamson <https://github.com/00willo>`_
 * `Grant David Bachman <https://github.com/grantbachman>`_ (grantbachman@gmail.com)
 * `Gregory Petrosyan <https://github.com/flyingmutant>`_
+* `Grzegorz Zieba <https://github.com/gzaxel>`_ (g.zieba@erax.pl)
 * `Grigorios Giannakopoulos <https://github.com/grigoriosgiann>`_
 * `Hugo van Kemenade <https://github.com/hugovk>`_
 * `Humberto Rocha <https://github.com/humrochagf>`_
@@ -131,6 +132,7 @@ their individual contributions.
 * `Richard Scholtens <https://github.com/richardscholtens>`_ (richardscholtens2@gmail.com)
 * `Robert Howlett <https://github.com/jebob>`_
 * `Robert Knight <https://github.com/robertknight>`_ (robertknight@gmail.com)
+* `Rodrigo Girão Serrão <https://github.com/rodrigogiraoserrao>`_ (rodrigo@mathspp.com)
 * `Rónán Carrigan <https://www.github.com/rcarriga>`_ (rcarriga@tcd.ie)
 * `Ruben Opdebeeck <https://github.com/ROpdebee>`_
 * `Ryan Soklaski <https://www.github.com/rsokl>`_ (rsoklaski@gmail.com)
@@ -150,9 +152,10 @@ their individual contributions.
 * `Tariq Khokhar <https://www.github.com/tkb>`_ (tariq@khokhar.net)
 * `Tessa Bradbury <https://www.github.com/tessereth>`_
 * `Thea Koutsoukis <https://www.github.com/theakaterina>`_
+* `Thomas Ball <https://www.github.com/bomtall>`_ (bomtall1@hotmail.com)
 * `Thomas Grainge <https://www.github.com/tgrainge>`_
-* `Tim Martin <https://www.github.com/timmartin>`_ (tim@asymptotic.co.uk)
 * `Thomas Kluyver <https://www.github.com/takluyver>`_ (thomas@kluyver.me.uk)
+* `Tim Martin <https://www.github.com/timmartin>`_ (tim@asymptotic.co.uk)
 * `Tom McDermott <https://www.github.com/sponster-au>`_ (sponster@gmail.com)
 * `Tom Milligan <https://www.github.com/tommilligan>`_ (code@tommilligan.net)
 * `Tyler Gibbons <https://www.github.com/kavec>`_ (tyler.gibbons@flexport.com)

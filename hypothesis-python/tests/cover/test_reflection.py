@@ -27,6 +27,7 @@ from hypothesis.internal.reflection import (
     function_digest,
     get_pretty_function_description,
     get_signature,
+    is_first_param_referenced_in_function,
     is_mock,
     proxies,
     repr_call,
@@ -622,3 +623,31 @@ def test_error_on_keyword_parameter_name():
 
     with pytest.raises(ValueError, match="SyntaxError because `from` is a keyword"):
         get_signature(f)
+
+
+def test_param_is_called_within_func():
+    def f(any_name):
+        any_name()
+
+    assert is_first_param_referenced_in_function(f)
+
+
+def test_param_is_called_within_subfunc():
+    def f(any_name):
+        def f2():
+            any_name()
+
+    assert is_first_param_referenced_in_function(f)
+
+
+def test_param_is_not_called_within_func():
+    def f(any_name):
+        pass
+
+    assert not is_first_param_referenced_in_function(f)
+
+
+def test_param_called_within_defaults_on_error():
+    # Create a function object for which we cannot retrieve the source.
+    f = compile("lambda: ...", "_.py", "eval")
+    assert is_first_param_referenced_in_function(f)
