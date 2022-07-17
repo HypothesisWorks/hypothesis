@@ -220,12 +220,13 @@ def ast_arguments_matches_signature(args, sig):
     return expected == [(p.name, p.kind) for p in sig.parameters.values()]
 
 
-def is_first_param_referenced_in_function(f, name):
+def is_first_param_referenced_in_function(f):
     """Is the given name referenced within f?"""
     try:
         tree = ast.parse(textwrap.dedent(inspect.getsource(f)))
     except Exception:
         return True  # Assume it's OK unless we know otherwise
+    name = list(get_signature(f).parameters)[0]
     return any(
         isinstance(node, ast.Name)
         and node.id == name

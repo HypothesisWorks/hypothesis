@@ -1533,7 +1533,7 @@ def _composite(f):
         )
     if params[0].default is not sig.empty:
         raise InvalidArgument("A default value for initial argument will never be used")
-    if not is_first_param_referenced_in_function(f, params[0].name):
+    if not is_first_param_referenced_in_function(f):
         note_deprecation(
             "There is no reason to use @st.composite on a function which "
             + "does not call the provided draw() function internally.",

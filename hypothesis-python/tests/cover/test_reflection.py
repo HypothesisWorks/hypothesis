@@ -629,7 +629,7 @@ def test_param_is_called_within_func():
     def f(any_name):
         any_name()
 
-    assert is_first_param_referenced_in_function(f, "any_name")
+    assert is_first_param_referenced_in_function(f)
 
 
 def test_param_is_called_within_subfunc():
@@ -637,17 +637,17 @@ def test_param_is_called_within_subfunc():
         def f2():
             any_name()
 
-    assert is_first_param_referenced_in_function(f, "any_name")
+    assert is_first_param_referenced_in_function(f)
 
 
 def test_param_is_not_called_within_func():
     def f(any_name):
         pass
 
-    assert not is_first_param_referenced_in_function(f, "any_name")
+    assert not is_first_param_referenced_in_function(f)
 
 
 def test_param_called_within_defaults_on_error():
     # Create a function object for which we cannot retrieve the source.
     f = compile("lambda: ...", "_.py", "eval")
-    assert is_first_param_referenced_in_function(f, "any_name")
+    assert is_first_param_referenced_in_function(f)
