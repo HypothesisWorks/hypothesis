@@ -87,10 +87,9 @@ def integer_range(
         above = False
     elif center == lower:
         above = True
-    elif forced:
-        above = not data.draw_bits(1, forced=forced < center)
     else:
-        above = not data.draw_bits(1)
+        force_above = None if forced is None else forced < center
+        above = not data.draw_bits(1, forced=force_above)
 
     if above:
         gap = upper - center
@@ -169,10 +168,6 @@ FULL_FLOAT = int_to_float(FLOAT_PREFIX | ((2 << 53) - 1)) - 1
 
 def fractional_float(data: "ConjectureData") -> float:
     return (int_to_float(FLOAT_PREFIX | data.draw_bits(52)) - 1) / FULL_FLOAT
-
-
-def boolean(data: "ConjectureData") -> bool:
-    return bool(data.draw_bits(1))
 
 
 def biased_coin(
