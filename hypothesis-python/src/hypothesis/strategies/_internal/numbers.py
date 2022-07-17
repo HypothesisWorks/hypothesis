@@ -55,6 +55,20 @@ class IntegersStrategy(SearchStrategy):
         self.start = start
         self.end = end
 
+        # These weights will be used to bias sampling a bit towards extreme values.
+        num_endpoints = (start is not None) + (stop is not None)
+        if num_endpoints > 0:
+            weights = [0.02] * num_endpoints + [0.01] * num_endpoints + [1.0 - 0.03 * num_endpoints] 
+            self.end_weighted_sampler = d.Sampler(weights)
+            if start is None:
+                self.end_weighted_samples = [self.stop, self.stop - 1]
+            elif stop is None:
+                self.end_weighted_samples = [self.start, self.start + 1]
+            else:
+                self.end_weighted_samples = [self.start, self.stop, self.start + 1, self.stop - 1]
+        else:
+            self.end_weighted_sampler = None
+
     def __repr__(self):
         if self.start is None and self.end is None:
             return "integers()"
@@ -65,6 +79,12 @@ class IntegersStrategy(SearchStrategy):
         return f"integers({self.start}, {self.end})"
 
     def do_draw(self, data):
+        # For each finite endpoint, return that endpoint 2% of the time and one away 1% 
+        # of the time.
+        i = self.end_weighted_sampler.sample(data) if self.end_weighted_sampler else 0
+        if i < self.end_weighted_samples - 1:
+            return self.end_weighted_samples[i]
+
         if self.start is None and self.end is None:
             return d.unbounded_integers(data)
 
