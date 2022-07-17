@@ -17,6 +17,7 @@ import inspect
 import os
 import re
 import sys
+import textwrap
 import types
 from functools import wraps
 from keyword import iskeyword
@@ -217,6 +218,21 @@ def ast_arguments_matches_signature(args, sig):
     if args.kwarg is not None:
         expected.append((args.kwarg.arg, inspect.Parameter.VAR_KEYWORD))
     return expected == [(p.name, p.kind) for p in sig.parameters.values()]
+
+
+def is_func_param_called_within(f, name):
+    """Is the given name referenced within f?"""
+    try:
+        tree = ast.parse(textwrap.dedent(inspect.getsource(f)))
+    except Exception:
+        return True
+    else:
+        return any(
+            isinstance(node, ast.Name)
+            and node.id == name
+            and isinstance(node.ctx, ast.Load)
+            for node in ast.walk(tree)
+        )
 
 
 def extract_all_lambdas(tree, matching_signature):
