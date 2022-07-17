@@ -21,7 +21,6 @@ from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.filtering import (
     get_float_predicate_bounds,
     get_integer_predicate_bounds,
-    UNSATISFIABLE
 )
 from hypothesis.internal.floats import (
     float_of,
@@ -33,6 +32,8 @@ from hypothesis.internal.floats import (
     next_up,
     next_up_normal,
     width_smallest_normals,
+    float_to_int,
+    int_to_float
 )
 from hypothesis.internal.validation import (
     check_type,
@@ -40,7 +41,7 @@ from hypothesis.internal.validation import (
     check_valid_interval,
 )
 from hypothesis.strategies._internal.misc import nothing
-from hypothesis.strategies._internal.strategies import SearchStrategy
+from hypothesis.strategies._internal.strategies import SearchStrategy, SampledFromStrategy
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 
 # See https://github.com/python/mypy/issues/3186 - numbers.Real is wrong!
@@ -99,9 +100,6 @@ class IntegersStrategy(SearchStrategy):
         if condition in [math.isinf, math.isnan]:
             return nothing()
         kwargs, pred = get_integer_predicate_bounds(condition)
-
-        if pred == UNSATISFIABLE.predicate:
-            return nothing()
 
         start, end = self.start, self.end
         if "min_value" in kwargs:
@@ -307,13 +305,25 @@ class FloatStrategy(SearchStrategy):
     def filter(self, condition):
         # Handle a few specific weird cases.
         if condition is math.isfinite:
-            return self
-        if condition in [math.isinf, math.isnan]:
-            return nothing()
+            return FloatStrategy(
+                min_value = max(self.min_value, next_up(float("-inf"))),
+                max_value = min(self.max_value, next_down(float("inf"))),
+                allow_nan = self.allow_nan,
+                smallest_nonzero_magnitude = self.smallest_nonzero_magnitude
+            )
+        if condition is math.isinf:
+            permitted_infs = [x for x in (-math.inf, math.inf) if self.permitted(x)]
+            if len(permitted_infs) == 0:
+                return nothing()
+            else:
+                return SampledFromStrategy(permitted_infs)
+        if condition is math.isnan:
+            if not self.allow_nan:
+                return nothing()
+            else:
+                return NanStrategy()
 
         kwargs, pred = get_float_predicate_bounds(condition)
-        if pred == UNSATISFIABLE.predicate:
-            return nothing()
         if not kwargs:
             return super().filter(pred)
         min_bound = max(kwargs.get("min_value", -math.inf), self.min_value)
@@ -587,3 +597,19 @@ def floats(
 
         result = result.map(downcast)
     return result
+
+
+class NanStrategy(SearchStrategy):
+    """Strategy for sampling the space of nan float values."""
+    
+    def do_draw(self, data):
+        # All (64-bit) Nans start have this mantissa.
+        nan_mantissa = float_to_int(math.nan)
+
+        # Get a non-zero positive 53-bit integer to fill the 
+        # significand
+        base_int = d.integer_range(data, 1, (2**53)-1)
+
+        # Combine to get a random nan.
+        return int_to_float(base_int | nan_mantissa)
+
