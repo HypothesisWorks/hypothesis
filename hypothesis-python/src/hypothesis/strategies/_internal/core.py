@@ -44,6 +44,7 @@ from uuid import UUID
 
 import attr
 
+from hypothesis._settings import note_deprecation
 from hypothesis.control import cleanup, note
 from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.internal.cathetus import cathetus
@@ -59,6 +60,7 @@ from hypothesis.internal.reflection import (
     define_function_signature,
     get_pretty_function_description,
     get_signature,
+    is_func_param_called_within,
     nicerepr,
     required_args,
 )
@@ -1531,6 +1533,13 @@ def _composite(f):
         )
     if params[0].default is not sig.empty:
         raise InvalidArgument("A default value for initial argument will never be used")
+    if not is_func_param_called_within(f, params[0].name):
+        note_deprecation(
+            "There is no reason to use @st.composite on a function which "
+            + "does not call the provided draw() function internally.",
+            since="RELEASEDAY",
+            has_codemod=False,
+        )
     if params[0].kind.name != "VAR_POSITIONAL":
         params = params[1:]
     newsig = sig.replace(
