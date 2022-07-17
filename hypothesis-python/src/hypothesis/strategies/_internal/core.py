@@ -1643,6 +1643,8 @@ def complex_numbers(
             f"Cannot have allow_nan={allow_nan!r}, min_magnitude={min_magnitude!r} "
             f"max_magnitude={max_magnitude!r}"
         )
+
+    check_type(bool, allow_subnormal, "allow_subnormal")
     allow_kw = {
         "allow_nan": allow_nan,
         "allow_infinity": allow_infinity,
