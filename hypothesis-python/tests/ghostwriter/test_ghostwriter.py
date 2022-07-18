@@ -33,9 +33,10 @@ from typing import (
 
 import attr
 import pytest
+import click
 
 from hypothesis.errors import InvalidArgument, MultipleFailures, Unsatisfiable
-from hypothesis.extra import ghostwriter
+from hypothesis.extra import cli, ghostwriter
 from hypothesis.strategies import builds, from_type, just, lists
 from hypothesis.strategies._internal.lazy import LazyStrategy
 
@@ -425,3 +426,18 @@ def test_unrepr_identity_elem():
 )
 def test_get_imports_for_strategy(strategy, imports):
     assert ghostwriter._imports_for_strategy(strategy) == imports
+
+
+def test_obj_name():
+    # Module paths (strings including a "/") should raise a meaningful UsageError
+    with pytest.raises(click.exceptions.UsageError) as e:
+        cli.obj_name("module/range.py")
+    assert e.match(
+        "Remember that the ghostwriter should be passed the name of a module, not a file."
+    )
+    # File names of modules (strings ending in ".py") should raise a meaningful UsageError
+    with pytest.raises(click.exceptions.UsageError) as e:
+        cli.obj_name("range.py")
+    assert e.match(
+        "Remember that the ghostwriter should be passed the name of a module, not a path."
+    )
