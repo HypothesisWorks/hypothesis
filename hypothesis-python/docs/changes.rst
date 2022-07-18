@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.52.0:
+
+-------------------
+6.52.0 - 2022-07-18
+-------------------
+
+This release adds the ``allow_subnormal`` argument to :func:`~hypothesis.strategies.complex_numbers` by
+applying it to each of the real and imaginary parts separately. Closes :issue:`3390`.
+
+Thanks to Evan Tey for this fix.
+
 .. _v6.51.0:
 
 -------------------
