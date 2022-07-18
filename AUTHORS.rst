@@ -139,6 +139,7 @@ their individual contributions.
 * `Ryan Soklaski <https://www.github.com/rsokl>`_ (rsoklaski@gmail.com)
 * `Ryan Turner <https://github.com/rdturnermtl>`_ (ryan.turner@uber.com)
 * `Sam Bishop (TechDragon) <https://github.com/techdragon>`_ (sam@techdragon.io)
+* `Sam Clamons <https://github.com/sclamons>`_ (sclamons@gmail.com)
 * `Sam Hames <https://www.github.com/SamHames>`_
 * `Sam Watts <https://www.github.com/sam-watts>`_
 * `Sangarshanan <https://www.github.com/sangarshanan>`_ (sangarshanan1998@gmail.com)

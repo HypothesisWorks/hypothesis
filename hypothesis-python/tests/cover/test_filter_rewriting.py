@@ -31,6 +31,8 @@ from tests.common.utils import fails_with
 @pytest.mark.parametrize(
     "strategy, predicate, start, end",
     [
+        # Finitude check
+        (st.integers(1, 5), math.isfinite, 1, 5),
         # Integers with integer bounds
         (st.integers(1, 5), partial(operator.lt, 3), 4, 5),  # lambda x: 3 < x
         (st.integers(1, 5), partial(operator.le, 3), 3, 5),  # lambda x: 3 <= x
@@ -79,7 +81,7 @@ from tests.common.utils import fails_with
     ids=get_pretty_function_description,
 )
 @given(data=st.data())
-def test_filter_rewriting(data, strategy, predicate, start, end):
+def test_filter_rewriting_ints(data, strategy, predicate, start, end):
     s = strategy.filter(predicate)
     assert isinstance(s, LazyStrategy)
     assert isinstance(s.wrapped_strategy, IntegersStrategy)
@@ -136,6 +138,8 @@ def test_filter_rewriting(data, strategy, predicate, start, end):
         (st.floats(), lambda x: x < 1 and x < 1, -math.inf, next_down(1.0)),
         (st.floats(), lambda x: x > 1 and x > 0, next_up(1.0), math.inf),
         (st.floats(), lambda x: x < 1 and x < 2, -math.inf, next_down(1.0)),
+        # Specific named functions
+        (st.floats(), math.isfinite, next_up(-math.inf), next_down(math.inf)),
     ],
     ids=get_pretty_function_description,
 )
@@ -153,18 +157,59 @@ def test_filter_rewriting_floats(data, strategy, predicate, min_value, max_value
 @pytest.mark.parametrize(
     "pred",
     [
+        math.isinf,
+        math.isnan,
         partial(operator.lt, 6),
         partial(operator.eq, Fraction(10, 3)),
-        partial(operator.eq, "can't compare to strings"),
         partial(operator.ge, 0),
         partial(operator.lt, math.inf),
         partial(operator.gt, -math.inf),
     ],
 )
 @pytest.mark.parametrize("s", [st.integers(1, 5), st.floats(1, 5)])
-@fails_with(Unsatisfiable)
 def test_rewrite_unsatisfiable_filter(s, pred):
+    assert s.filter(pred).is_empty
+
+
+@pytest.mark.parametrize(
+    "pred",
+    [
+        partial(operator.eq, "numbers are never equal to strings"),
+    ],
+)
+@pytest.mark.parametrize("s", [st.integers(1, 5), st.floats(1, 5)])
+@fails_with(Unsatisfiable)
+def test_erroring_rewrite_unsatisfiable_filter(s, pred):
     s.filter(pred).example()
+
+
+@pytest.mark.parametrize(
+    "strategy, predicate",
+    [
+        (st.floats(), math.isinf),
+        (st.floats(0, math.inf), math.isinf),
+        (st.floats(), math.isnan),
+    ],
+)
+@given(data=st.data())
+def test_misc_sat_filter_rewrites(data, strategy, predicate):
+    s = strategy.filter(predicate).wrapped_strategy
+    assert not isinstance(s, FloatStrategy)
+    value = data.draw(s)
+    assert predicate(value)
+
+
+@pytest.mark.parametrize(
+    "strategy, predicate",
+    [
+        (st.floats(allow_infinity=False), math.isinf),
+        (st.floats(0, math.inf), math.isnan),
+        (st.floats(allow_nan=False), math.isnan),
+    ],
+)
+@given(data=st.data())
+def test_misc_unsat_filter_rewrites(data, strategy, predicate):
+    assert strategy.filter(predicate).is_empty
 
 
 @given(st.integers(0, 2).filter(partial(operator.ne, 1)))

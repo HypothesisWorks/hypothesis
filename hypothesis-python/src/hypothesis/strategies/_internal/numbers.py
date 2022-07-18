@@ -24,6 +24,7 @@ from hypothesis.internal.filtering import (
 )
 from hypothesis.internal.floats import (
     float_of,
+    float_to_int,
     int_to_float,
     is_negative,
     make_float_clamper,
@@ -39,7 +40,10 @@ from hypothesis.internal.validation import (
     check_valid_interval,
 )
 from hypothesis.strategies._internal.misc import nothing
-from hypothesis.strategies._internal.strategies import SearchStrategy
+from hypothesis.strategies._internal.strategies import (
+    SampledFromStrategy,
+    SearchStrategy,
+)
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 
 # See https://github.com/python/mypy/issues/3186 - numbers.Real is wrong!
@@ -93,6 +97,10 @@ class IntegersStrategy(SearchStrategy):
         return d.integer_range(data, self.start, self.end, center=0)
 
     def filter(self, condition):
+        if condition is math.isfinite:
+            return self
+        if condition in [math.isinf, math.isnan]:
+            return nothing()
         kwargs, pred = get_integer_predicate_bounds(condition)
 
         start, end = self.start, self.end
@@ -297,6 +305,24 @@ class FloatStrategy(SearchStrategy):
             return result
 
     def filter(self, condition):
+        # Handle a few specific weird cases.
+        if condition is math.isfinite:
+            return FloatStrategy(
+                min_value=max(self.min_value, next_up(float("-inf"))),
+                max_value=min(self.max_value, next_down(float("inf"))),
+                allow_nan=False,
+                smallest_nonzero_magnitude=self.smallest_nonzero_magnitude,
+            )
+        if condition is math.isinf:
+            permitted_infs = [x for x in (-math.inf, math.inf) if self.permitted(x)]
+            if not permitted_infs:
+                return nothing()
+            return SampledFromStrategy(permitted_infs)
+        if condition is math.isnan:
+            if not self.allow_nan:
+                return nothing()
+            return NanStrategy()
+
         kwargs, pred = get_float_predicate_bounds(condition)
         if not kwargs:
             return super().filter(pred)
@@ -571,3 +597,15 @@ def floats(
 
         result = result.map(downcast)
     return result
+
+
+class NanStrategy(SearchStrategy):
+    """Strategy for sampling the space of nan float values."""
+
+    def do_draw(self, data):
+        # Nans must have all exponent bits and the first mantissa bit set, so
+        # we generate by taking 64 random bits and setting the required ones.
+        sign_bit = data.draw_bits(1) << 63
+        nan_bits = float_to_int(math.nan)
+        mantissa_bits = data.draw_bits(52)
+        return int_to_float(sign_bit | nan_bits | mantissa_bits)

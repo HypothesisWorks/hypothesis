@@ -182,9 +182,6 @@ def numeric_bounds_from_ast(
     return fallback
 
 
-UNSATISFIABLE = ConstructivePredicate.unchanged(lambda _: False)
-
-
 def get_numeric_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
     """Shared logic for understanding numeric bounds.
 
@@ -257,7 +254,7 @@ def get_integer_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
         if kwargs["min_value"] == -math.inf:
             del kwargs["min_value"]
         elif math.isinf(kwargs["min_value"]):
-            return UNSATISFIABLE
+            return ConstructivePredicate({"min_value": 1, "max_value": -1}, None)
         elif kwargs["min_value"] != int(kwargs["min_value"]):
             kwargs["min_value"] = ceil(kwargs["min_value"])
         elif kwargs.get("exclude_min", False):
@@ -267,7 +264,7 @@ def get_integer_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
         if kwargs["max_value"] == math.inf:
             del kwargs["max_value"]
         elif math.isinf(kwargs["max_value"]):
-            return UNSATISFIABLE
+            return ConstructivePredicate({"min_value": 1, "max_value": -1}, None)
         elif kwargs["max_value"] != int(kwargs["max_value"]):
             kwargs["max_value"] = floor(kwargs["max_value"])
         elif kwargs.get("exclude_max", False):
