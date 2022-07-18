@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.52.1:
+
+-------------------
+6.52.1 - 2022-07-18
+-------------------
+
+This patch adds filter rewriting for :func:`math.isfinite`, :func:`math.isinf`, and :func:`math.isnan`
+on :func:`~hypothesis.strategies.integers` or :func:`~hypothesis.strategies.floats` (:issue:`2701`).
+
+Thanks to Sam Clamons at the SciPy Sprints!
+
 .. _v6.52.0:
 
 -------------------
