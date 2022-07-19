@@ -32,8 +32,8 @@ from typing import (
 )
 
 import attr
-import pytest
 import click
+import pytest
 
 from hypothesis.errors import InvalidArgument, MultipleFailures, Unsatisfiable
 from hypothesis.extra import cli, ghostwriter
@@ -433,11 +433,11 @@ def test_obj_name():
     with pytest.raises(click.exceptions.UsageError) as e:
         cli.obj_name("module/range.py")
     assert e.match(
-        "Remember that the ghostwriter should be passed the name of a module, not a file."
+        "Remember that the ghostwriter should be passed the name of a module, not a path."
     )
     # File names of modules (strings ending in ".py") should raise a meaningful UsageError
     with pytest.raises(click.exceptions.UsageError) as e:
         cli.obj_name("range.py")
     assert e.match(
-        "Remember that the ghostwriter should be passed the name of a module, not a path."
+        "Remember that the ghostwriter should be passed the name of a module, not a file."
     )
