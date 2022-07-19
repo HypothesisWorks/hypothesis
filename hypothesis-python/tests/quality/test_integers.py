@@ -111,3 +111,20 @@ def test_always_reduces_integers_to_smallest_suitable_sizes(problem):
     bytes_needed = actual_bits_needed // 8
     # 3 extra bytes: two for the sampler, one for the capping value.
     assert len(v.buffer) == 3 + bytes_needed
+
+
+def test_generates_boundary_values_even_when_unlikely():
+    r = Random()
+    trillion = 10**12
+    strat = st.integers(-trillion, trillion)
+    boundary_vals = {-trillion, -trillion + 1, trillion - 1, trillion}
+    for _ in range(10_000):
+        buffer = bytes(r.randrange(0, 255) for _ in range(1000))
+        val = ConjectureData.for_buffer(buffer).draw(strat)
+        boundary_vals.discard(val)
+        if not boundary_vals:
+            break
+    else:
+        raise AssertionError(
+            f"Expected to see all boundary vals, but still have {boundary_vals}"
+        )

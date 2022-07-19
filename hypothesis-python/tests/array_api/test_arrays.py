@@ -444,8 +444,7 @@ def test_excluded_min_in_float_arrays(xp, xps, dtype, low, data):
 @st.composite
 def distinct_int64_integers(draw):
     used = draw(st.shared(st.builds(set), key="distinct_int64_integers.used"))
-    int64_max = 2**63
-    i = draw(st.integers(1 - int64_max, int64_max).filter(lambda x: x not in used))
+    i = draw(st.integers(-(2**63), 2**63 - 1).filter(lambda x: x not in used))
     used.add(i)
     return i
 
