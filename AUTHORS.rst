@@ -73,6 +73,7 @@ their individual contributions.
 * `Ivan Tham <https://github.com/pickfire>`_
 * `Jack Massey <https://github.com/massey101>`_
 * `Jakub Nabaglo <https://github.com/nbgl>`_ (j@nab.gl)
+* `James Lamb <https://github.com/jameslamb>`_
 * `Jenny Rouleau <https://github.com/jennyrou>`_
 * `Jeremy Thurgood <https://github.com/jerith>`_
 * `J.J. Green <http://soliton.vm.bytemark.co.uk/pub/jjg/>`_
