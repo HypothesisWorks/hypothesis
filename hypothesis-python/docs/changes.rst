@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.52.2:
+
+-------------------
+6.52.2 - 2022-07-19
+-------------------
+
+This patch makes :func:`~hypothesis.strategies.integers` more likely to
+generate boundary values for large two-sided intervals (:issue:`2942`).
+
 .. _v6.52.1:
 
 -------------------
