@@ -82,14 +82,10 @@ else:
     def obj_name(s: str) -> object:
         """This "type" imports whatever object is named by a dotted string."""
         s = s.strip()
-        if "/" in s:
+        if "/" in s or "\\" in s:
             raise click.UsageError(
                 "Remember that the ghostwriter should be passed the name of a module, not a path."
-            )
-        if s.endswith(".py"):
-            raise click.UsageError(
-                "Remember that the ghostwriter should be passed the name of a module, not a file."
-            )
+            ) from None
         try:
             return importlib.import_module(s)
         except ImportError:
@@ -105,7 +101,11 @@ else:
                 try:
                     modulename, classname = modulename.rsplit(".", 1)
                     module = importlib.import_module(modulename)
-                except ImportError:
+                except (ImportError, ValueError):
+                    if s.endswith(".py"):
+                        raise click.UsageError(
+                            "Remember that the ghostwriter should be passed the name of a module, not a file."
+                        ) from None
                     raise click.UsageError(
                         f"Failed to import the {modulename} module for introspection.  "
                         "Check spelling and your Python import path, or use the Python API?"
@@ -127,6 +127,12 @@ else:
             try:
                 return getattr(module, funcname)
             except AttributeError as err:
+                if funcname == "py":
+                    # Likely attempted to pass a local file (Eg., "myscript.py") instead of a module name
+                    raise click.UsageError(
+                        "Remember that the ghostwriter should be passed the name of a module, not a file."
+                        + f"\n\tTry: hypothesis write {s[:-3]}"
+                    ) from None
                 raise click.UsageError(
                     f"Found the {modulename!r} module, but it doesn't have a "
                     f"{funcname!r} attribute."
