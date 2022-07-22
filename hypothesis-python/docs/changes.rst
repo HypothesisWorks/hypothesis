@@ -18,6 +18,18 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.52.4:
+
+-------------------
+6.52.4 - 2022-07-22
+-------------------
+
+This patch improves the error message when you pass filenames to the :command:`hypothesis write`
+CLI, which takes the name of a module or function (e.g. :command:`hypothesis write gzip` or
+:command:`hypothesis write package.some_function` rather than :command:`hypothesis write script.py`).
+
+Thanks to Ed Rogers for implementing this as part of the SciPy 2022 sprints!
+
 .. _v6.52.3:
 
 -------------------
