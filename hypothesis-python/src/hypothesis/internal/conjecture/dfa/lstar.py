@@ -142,7 +142,7 @@ class LStar:
 
         # When we're trying to figure out what state a string leads to we will
         # end up searching to find a suitable candidate. By putting states in
-        # a self-organisating list we ideally minimise the number of lookups.
+        # a self-organising list we ideally minimise the number of lookups.
         self.__self_organising_states = SelfOrganisingList(self.__states)
 
         self.start = 0
