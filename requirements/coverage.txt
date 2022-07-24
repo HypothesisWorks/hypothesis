@@ -28,7 +28,7 @@ exceptiongroup==1.0.0rc8 ; python_version < "3.11"
     # via hypothesis (hypothesis-python/setup.py)
 execnet==1.9.0
     # via pytest-xdist
-fakeredis==1.8.1
+fakeredis==1.8.2
     # via -r requirements/coverage.in
 iniconfig==1.1.1
     # via pytest
