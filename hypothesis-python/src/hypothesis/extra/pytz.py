@@ -23,7 +23,7 @@ You can use this strategy to make
 import datetime as dt
 
 import pytz
-from pytz.tzfile import StaticTzInfo
+from pytz.tzfile import StaticTzInfo  # type: ignore  # considered private by typeshed
 
 from hypothesis import strategies as st
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
