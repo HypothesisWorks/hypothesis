@@ -56,11 +56,11 @@ jobs:
           - check-django40
           - check-django32
           - check-django22
+          - check-pandas14
           - check-pandas13
           - check-pandas12
           - check-pandas11
           - check-pandas10
-          - check-pandas25
       fail-fast: false
     steps:
     - uses: actions/checkout@v2

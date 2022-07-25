@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 from django import forms
+from django.contrib.auth.forms import ReadOnlyPasswordHashField, UsernameField
 from django.core.validators import (
     MaxLengthValidator,
     MaxValueValidator,
@@ -212,3 +213,11 @@ class ManyMultiValueForm(ReprForm):
 
 class ShortStringForm(ReprForm):
     _not_too_long = forms.CharField(max_length=20, required=False)
+
+
+class UsernameForm(ReprForm):
+    username = UsernameField()
+
+
+class ReadOnlyPasswordHashFieldForm(ReprForm):
+    password = ReadOnlyPasswordHashField()

@@ -17,6 +17,7 @@ from typing import Any, Callable, Dict, Type, TypeVar, Union
 
 import django
 from django import forms as df
+from django.contrib.auth.forms import UsernameField
 from django.core.validators import (
     validate_ipv4_address,
     validate_ipv6_address,
@@ -223,6 +224,7 @@ def _for_binary(field):
 @register_for(dm.TextField)
 @register_for(df.CharField)
 @register_for(df.RegexField)
+@register_for(UsernameField)
 def _for_text(field):
     # We can infer a vastly more precise strategy by considering the
     # validators as well as the field type.  This is a minimal proof of
