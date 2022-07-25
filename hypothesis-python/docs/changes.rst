@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.53.0:
+
+-------------------
+6.53.0 - 2022-07-25
+-------------------
+
+:func:`~hypothesis.extra.django.from_field` now supports ``UsernameField``
+from :mod:`django.contrib.auth.forms`.
+
+Thanks to Afonso Silva for reporting and working on :issue:`3417`.
+
 .. _v6.52.4:
 
 -------------------
