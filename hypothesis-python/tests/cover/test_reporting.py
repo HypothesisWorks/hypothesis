@@ -21,18 +21,6 @@ from hypothesis.strategies import integers
 from tests.common.utils import capture_out
 
 
-def test_can_suppress_output():
-    @given(integers())
-    def test_int(x):
-        raise AssertionError
-
-    with capture_out() as o:
-        with reporting.with_reporter(reporting.silent):
-            with pytest.raises(AssertionError):
-                test_int()
-    assert "Falsifying example" not in o.getvalue()
-
-
 def test_can_print_bytes():
     with capture_out() as o:
         with reporting.with_reporter(reporting.default):
