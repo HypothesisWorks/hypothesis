@@ -6,7 +6,7 @@
 #
 async-timeout==4.0.2
     # via redis
-attrs==21.4.0
+attrs==22.1.0
     # via
     #   hypothesis (hypothesis-python/setup.py)
     #   pytest
