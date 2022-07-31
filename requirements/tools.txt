@@ -12,7 +12,7 @@ astor==0.8.1
     # via flake8-simplify
 asttokens==2.0.5
     # via stack-data
-attrs==21.4.0
+attrs==22.1.0
     # via
     #   flake8-bugbear
     #   hypothesis (hypothesis-python/setup.py)
@@ -71,7 +71,7 @@ dpcontracts==0.6.0
     # via -r requirements/tools.in
 exceptiongroup==1.0.0rc8 ; python_version < "3.11"
     # via hypothesis (hypothesis-python/setup.py)
-executing==0.8.3
+executing==0.9.1
     # via stack-data
 filelock==3.7.1
     # via
@@ -125,7 +125,7 @@ flake8-pytest-style==1.6.0
     # via -r requirements/tools.in
 flake8-return==1.1.3
     # via -r requirements/tools.in
-flake8-simplify==0.19.2
+flake8-simplify==0.19.3
     # via -r requirements/tools.in
 flake8-strftime==0.3.2
     # via -r requirements/tools.in
@@ -191,7 +191,7 @@ pathspec==0.9.0
     # via black
 pbr==5.9.0
     # via stevedore
-pep517==0.12.0
+pep517==0.13.0
     # via build
 pexpect==4.8.0
     # via ipython
@@ -239,7 +239,7 @@ pygments==2.12.0
     #   sphinx
 pyparsing==3.0.9
     # via packaging
-pyright==1.1.263
+pyright==1.1.264
     # via -r requirements/tools.in
 pytest==7.1.2
     # via -r requirements/tools.in
@@ -247,7 +247,7 @@ python-dateutil==2.8.2
     # via -r requirements/tools.in
 pytz==2022.1
     # via babel
-pyupgrade==2.37.2
+pyupgrade==2.37.3
     # via shed
 pyyaml==6.0
     # via
@@ -279,7 +279,6 @@ six==1.16.0
     #   bleach
     #   python-dateutil
     #   tox
-    #   virtualenv
 smmap==5.0.0
     # via gitdb
 snowballstemmer==2.2.0
@@ -290,7 +289,7 @@ sortedcontainers==2.4.0
     # via hypothesis (hypothesis-python/setup.py)
 soupsieve==2.3.2.post1
     # via beautifulsoup4
-sphinx==5.0.2
+sphinx==5.1.1
     # via
     #   -r requirements/tools.in
     #   sphinx-codeautolink
@@ -349,7 +348,7 @@ types-pkg-resources==0.1.3
     # via -r requirements/tools.in
 types-pytz==2022.1.2
     # via -r requirements/tools.in
-types-redis==4.3.11
+types-redis==4.3.12
     # via -r requirements/tools.in
 typing-extensions==4.3.0
     # via
@@ -363,11 +362,11 @@ typing-extensions==4.3.0
     #   typing-inspect
 typing-inspect==0.7.1
     # via libcst
-urllib3==1.26.10
+urllib3==1.26.11
     # via
     #   requests
     #   twine
-virtualenv==20.15.1
+virtualenv==20.16.2
     # via tox
 wcwidth==0.2.5
     # via prompt-toolkit

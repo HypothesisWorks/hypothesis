@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/test.txt hypothesis-python/setup.py requirements/test.in
 #
-attrs==21.4.0
+attrs==22.1.0
     # via
     #   hypothesis (hypothesis-python/setup.py)
     #   pytest
