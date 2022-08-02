@@ -24,4 +24,4 @@ def fail_health_check(settings, message, label):
         f"If you want to disable just this health check, add {label} "
         "to the suppress_health_check settings for this test."
     )
-    raise FailedHealthCheck(message, label)
+    raise FailedHealthCheck(message)
