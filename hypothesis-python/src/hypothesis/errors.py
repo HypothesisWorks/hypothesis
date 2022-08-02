@@ -132,7 +132,7 @@ def __getattr__(name):
         note_deprecation(
             "MultipleFailures is deprecated; use the builtin `BaseExceptionGroup` type "
             "instead, or `exceptiongroup.BaseExceptionGroup` before Python 3.11",
-            since="RELEASEDAY",
+            since="2022-08-02",
             has_codemod=False,  # This would be a great PR though!
         )
         return BaseExceptionGroup
