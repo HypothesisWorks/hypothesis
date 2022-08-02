@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.54.1:
+
+-------------------
+6.54.1 - 2022-08-02
+-------------------
+
+This patch makes ``FailedHealthCheck`` and ``DeadlineExceeded`` exceptions
+picklable, for compatibility with Django's parallel test runner (:issue:`3426`).
+
 .. _v6.54.0:
 
 -------------------
