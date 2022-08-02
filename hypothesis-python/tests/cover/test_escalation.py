@@ -13,7 +13,9 @@ import os
 import pytest
 
 import hypothesis
+from hypothesis import errors
 from hypothesis.internal import escalation as esc
+from hypothesis.internal.compat import BaseExceptionGroup
 
 
 def test_does_not_escalate_errors_in_non_hypothesis_file():
@@ -62,3 +64,9 @@ def test_is_hypothesis_file_not_confused_by_prefix(monkeypatch):
 @pytest.mark.parametrize("fname", ["", "<ipython-input-18-f7c304bea5eb>"])
 def test_is_hypothesis_file_does_not_error_on_invalid_paths_issue_2319(fname):
     assert not esc.is_hypothesis_file(fname)
+
+
+def test_multiplefailures_deprecation():
+    with pytest.warns(errors.HypothesisDeprecationWarning):
+        exc = errors.MultipleFailures
+    assert exc is BaseExceptionGroup

@@ -37,8 +37,9 @@ import attr
 import click
 import pytest
 
-from hypothesis.errors import InvalidArgument, MultipleFailures, Unsatisfiable
+from hypothesis.errors import InvalidArgument, Unsatisfiable
 from hypothesis.extra import cli, ghostwriter
+from hypothesis.internal.compat import BaseExceptionGroup
 from hypothesis.strategies import builds, from_type, just, lists
 from hypothesis.strategies._internal.lazy import LazyStrategy
 
@@ -336,7 +337,7 @@ def test_run_ghostwriter_roundtrip():
     )
     try:
         get_test_function(source_code)()
-    except (AssertionError, ValueError, MultipleFailures):
+    except (AssertionError, ValueError, BaseExceptionGroup):
         pass
 
     # Finally, restricting ourselves to finite floats makes the test pass!

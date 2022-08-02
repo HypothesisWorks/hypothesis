@@ -60,7 +60,6 @@ from hypothesis.errors import (
     HypothesisDeprecationWarning,
     HypothesisWarning,
     InvalidArgument,
-    MultipleFailures,
     NoSuchExample,
     StopTest,
     Unsatisfiable,
@@ -69,6 +68,7 @@ from hypothesis.errors import (
 from hypothesis.executors import default_new_style_executor, new_style_executor
 from hypothesis.internal.compat import (
     PYPY,
+    BaseExceptionGroup,
     bad_django_TestCase,
     get_type_hints,
     int_from_bytes,
@@ -126,6 +126,7 @@ TestFunc = TypeVar("TestFunc", bound=Callable)
 
 
 running_under_pytest = False
+pytest_shows_exceptiongroups = True
 global_force_seed = None
 _hypothesis_global_random = None
 
@@ -436,7 +437,7 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
                     err = new
 
                 yield (fragments_reported, err)
-                if state.settings.report_multiple_bugs:
+                if state.settings.report_multiple_bugs and pytest_shows_exceptiongroups:
                     continue
                 break
             finally:
@@ -575,7 +576,6 @@ class StateForActualGivenExecution:
         self.settings = settings
         self.last_exception = None
         self.falsifying_examples = ()
-        self.__was_flaky = False
         self.random = random
         self.__test_runtime = None
         self.ever_executed = False
@@ -710,11 +710,10 @@ class StateForActualGivenExecution:
                 )
             else:
                 report("Failed to reproduce exception. Expected: \n" + traceback)
-            self.__flaky(
-                f"Hypothesis {text_repr} produces unreliable results: Falsified"
-                " on the first call but did not on a subsequent one",
-                cause=exception,
-            )
+            raise Flaky(
+                f"Hypothesis {text_repr} produces unreliable results: "
+                "Falsified on the first call but did not on a subsequent one"
+            ) from exception
         return result
 
     def _execute_once_for_engine(self, data):
@@ -842,64 +841,57 @@ class StateForActualGivenExecution:
 
         if not self.falsifying_examples:
             return
-        elif not self.settings.report_multiple_bugs:
+        elif not (self.settings.report_multiple_bugs and pytest_shows_exceptiongroups):
             # Pretend that we only found one failure, by discarding the others.
             del self.falsifying_examples[:-1]
 
         # The engine found one or more failures, so we need to reproduce and
         # report them.
 
-        flaky = 0
+        errors_to_report = []
 
-        if runner.best_observed_targets:
-            for line in describe_targets(runner.best_observed_targets):
-                report(line)
-            report("")
+        report_lines = describe_targets(runner.best_observed_targets)
+        if report_lines:
+            report_lines.append("")
 
         explanations = explanatory_lines(self.explain_traces, self.settings)
         for falsifying_example in self.falsifying_examples:
             info = falsifying_example.extra_information
+            fragments = []
 
             ran_example = ConjectureData.for_buffer(falsifying_example.buffer)
-            self.__was_flaky = False
             assert info.__expected_exception is not None
             try:
-                self.execute_once(
-                    ran_example,
-                    print_example=not self.is_find,
-                    is_final=True,
-                    expected_failure=(
-                        info.__expected_exception,
-                        info.__expected_traceback,
-                    ),
-                )
+                with with_reporter(fragments.append):
+                    self.execute_once(
+                        ran_example,
+                        print_example=not self.is_find,
+                        is_final=True,
+                        expected_failure=(
+                            info.__expected_exception,
+                            info.__expected_traceback,
+                        ),
+                    )
             except (UnsatisfiedAssumption, StopTest) as e:
-                report(format_exception(e, e.__traceback__))
-                self.__flaky(
+                err = Flaky(
                     "Unreliable assumption: An example which satisfied "
                     "assumptions on the first run now fails it.",
-                    cause=e,
                 )
+                err.__cause__ = err.__context__ = e
+                errors_to_report.append((fragments, err))
             except BaseException as e:
                 # If we have anything for explain-mode, this is the time to report.
                 for line in explanations[falsifying_example.interesting_origin]:
-                    report(line)
-
-                if len(self.falsifying_examples) <= 1:
-                    # There is only one failure, so we can report it by raising
-                    # it directly.
-                    raise
-
-                # We are reporting multiple failures, so we need to manually
-                # print each exception's stack trace and information.
-                tb = get_trimmed_traceback()
-                report(format_exception(e, tb))
+                    fragments.append(line)
+                errors_to_report.append(
+                    (fragments, e.with_traceback(get_trimmed_traceback()))
+                )
 
             finally:
                 # Whether or not replay actually raised the exception again, we want
                 # to print the reproduce_failure decorator for the failing example.
                 if self.settings.print_blob:
-                    report(
+                    fragments.append(
                         "\nYou can reproduce this example by temporarily adding "
                         "@reproduce_failure(%r, %r) as a decorator on your test case"
                         % (__version__, encode_failure(falsifying_example.buffer))
@@ -908,30 +900,38 @@ class StateForActualGivenExecution:
                 # hold on to a reference to ``data`` know that it's now been
                 # finished and they can't draw more data from it.
                 ran_example.freeze()
+        _raise_to_user(errors_to_report, self.settings, report_lines)
 
-            if self.__was_flaky:
-                flaky += 1
 
-        # If we only have one example then we should have raised an error or
-        # flaky prior to this point.
-        assert len(self.falsifying_examples) > 1
+def add_note(exc, note):
+    try:
+        exc.add_note(note)
+    except AttributeError:
+        if not hasattr(exc, "__notes__"):
+            exc.__notes__ = []
+        exc.__notes__.append(note)
 
-        if flaky > 0:
-            raise Flaky(
-                f"Hypothesis found {len(self.falsifying_examples)} distinct failures, "
-                f"but {flaky} of them exhibited some sort of flaky behaviour."
-            )
-        else:
-            raise MultipleFailures(
-                f"Hypothesis found {len(self.falsifying_examples)} distinct failures."
-            )
 
-    def __flaky(self, message, *, cause):
-        if len(self.falsifying_examples) <= 1:
-            raise Flaky(message) from cause
-        else:
-            self.__was_flaky = True
-            report("Flaky example! " + message)
+def _raise_to_user(errors_to_report, settings, target_lines, trailer=""):
+    """Helper function for attaching notes and grouping multiple errors."""
+    if settings.verbosity >= Verbosity.normal:
+        for fragments, err in errors_to_report:
+            for note in fragments:
+                add_note(err, note)
+
+    if len(errors_to_report) == 1:
+        _, the_error_hypothesis_found = errors_to_report[0]
+    else:
+        assert errors_to_report
+        the_error_hypothesis_found = BaseExceptionGroup(
+            f"Hypothesis found {len(errors_to_report)} distinct failures{trailer}.",
+            [e for _, e in errors_to_report],
+        )
+
+    if settings.verbosity >= Verbosity.normal:
+        for line in target_lines:
+            add_note(the_error_hypothesis_found, line)
+    raise the_error_hypothesis_found
 
 
 @contextlib.contextmanager
@@ -1189,23 +1189,11 @@ def given(
                     state, wrapped_test, arguments, kwargs, original_sig
                 )
             )
-            with local_settings(state.settings):
-                if len(errors) > 1:
-                    # If we're not going to report multiple bugs, we would have
-                    # stopped running explicit examples at the first failure.
-                    assert state.settings.report_multiple_bugs
-                    for fragments, err in errors:
-                        for f in fragments:
-                            report(f)
-                        report(format_exception(err, err.__traceback__))
-                    raise MultipleFailures(
-                        f"Hypothesis found {len(errors)} failures in explicit examples."
-                    )
-                elif errors:
-                    fragments, the_error_hypothesis_found = errors[0]
-                    for f in fragments:
-                        report(f)
-                    raise the_error_hypothesis_found
+            if errors:
+                # If we're not going to report multiple bugs, we would have
+                # stopped running explicit examples at the first failure.
+                assert len(errors) == 1 or state.settings.report_multiple_bugs
+                _raise_to_user(errors, state.settings, [], " in explicit examples")
 
             # If there were any explicit examples, they all ran successfully.
             # The next step is to use the Conjecture engine to run the test on
@@ -1236,7 +1224,7 @@ def given(
                     state.run_engine()
             except BaseException as e:
                 # The exception caught here should either be an actual test
-                # failure (or MultipleFailures), or some kind of fatal error
+                # failure (or BaseExceptionGroup), or some kind of fatal error
                 # that caused the engine to stop.
 
                 generated_seed = wrapped_test._hypothesis_internal_use_generated_seed
@@ -1262,7 +1250,9 @@ def given(
                     # which will actually appear in tracebacks is as clear as
                     # possible - "raise the_error_hypothesis_found".
                     the_error_hypothesis_found = e.with_traceback(
-                        get_trimmed_traceback()
+                        None
+                        if isinstance(e, BaseExceptionGroup)
+                        else get_trimmed_traceback()
                     )
                     raise the_error_hypothesis_found
 

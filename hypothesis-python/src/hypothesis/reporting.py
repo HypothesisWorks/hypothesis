@@ -15,10 +15,6 @@ from hypothesis.internal.compat import escape_unicode_characters
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
 
-def silent(value):
-    pass
-
-
 def default(value):
     try:
         print(value)

@@ -13,13 +13,11 @@ import random
 
 import pytest
 
-from hypothesis import core, find, given, register_random, reporting, strategies as st
+from hypothesis import core, find, given, register_random, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal import entropy
 from hypothesis.internal.compat import PYPY
 from hypothesis.internal.entropy import deterministic_PRNG
-
-from tests.common.utils import capture_out
 
 
 def gc_on_pypy():
@@ -32,16 +30,13 @@ def gc_on_pypy():
 
 
 def test_can_seed_random():
-    with capture_out() as out:
-        with reporting.with_reporter(reporting.default):
-            with pytest.raises(AssertionError):
+    @given(st.random_module())
+    def test(r):
+        raise AssertionError
 
-                @given(st.random_module())
-                def test(r):
-                    raise AssertionError
-
-                test()
-    assert "RandomSeeder(0)" in out.getvalue()
+    with pytest.raises(AssertionError) as err:
+        test()
+    assert "RandomSeeder(0)" in "\n".join(err.value.__notes__)
 
 
 @given(st.random_module(), st.random_module())

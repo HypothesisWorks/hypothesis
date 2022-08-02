@@ -23,7 +23,7 @@ def test_to_be_skipped(xs):
     if xs == 0:
         pytest.skip()
     # But the pytest 3.0 internals don't have such an exception, so we keep
-    # going and raise a MultipleFailures error.  Ah well.
+    # going and raise a BaseExceptionGroup error.  Ah well.
     else:
         assert xs == 0
 """

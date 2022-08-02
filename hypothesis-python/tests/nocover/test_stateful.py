@@ -11,13 +11,10 @@
 from collections import namedtuple
 
 import pytest
-from pytest import raises
 
 from hypothesis import settings as Settings
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, precondition, rule
 from hypothesis.strategies import booleans, integers, lists
-
-from tests.common.utils import capture_out
 
 Leaf = namedtuple("Leaf", ("label",))
 Split = namedtuple("Split", ("left", "right"))
@@ -183,13 +180,9 @@ with_cheap_bad_machines = pytest.mark.parametrize(
 def test_bad_machines_fail(machine):
     test_class = machine.TestCase
     try:
-        with capture_out() as o:
-            with raises(AssertionError):
-                test_class().runTest()
-    except Exception:
-        print(o.getvalue())
-        raise
-    v = o.getvalue()
-    print(v)
-    steps = [l for l in v.splitlines() if "Step " in l or "state." in l]
+        test_class().runTest()
+        raise RuntimeError("Expected an assertion error")
+    except AssertionError as err:
+        notes = err.__notes__
+    steps = [l for l in notes if "Step " in l or "state." in l]
     assert 1 <= len(steps) <= 50

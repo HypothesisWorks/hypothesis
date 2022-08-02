@@ -128,13 +128,13 @@ def test_prints_reproduction_if_requested():
             failing_example[0] = i
         assert i not in failing_example
 
-    with capture_out() as o:
-        with pytest.raises(AssertionError):
-            test()
-    assert "@reproduce_failure" in o.getvalue()
+    with pytest.raises(AssertionError) as err:
+        test()
+    notes = "\n".join(err.value.__notes__)
+    assert "@reproduce_failure" in notes
 
     exp = re.compile(r"reproduce_failure\(([^)]+)\)", re.MULTILINE)
-    extract = exp.search(o.getvalue())
+    extract = exp.search(notes)
     reproduction = eval(extract.group(0))
     test = reproduction(test)
 

@@ -34,7 +34,6 @@ def test_reports_target_results(testdir, multiple):
     assert "Falsifying example" in out
     assert "x=101" in out
     assert out.count("Highest target score") == 1
-    assert out.index("Highest target score") < out.index("Falsifying example")
     assert result.ret != 0
 
 

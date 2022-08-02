@@ -124,9 +124,18 @@ class Frozen(HypothesisException):
     after freeze() has been called."""
 
 
-class MultipleFailures(_Trimmable):
-    """Indicates that Hypothesis found more than one distinct bug when testing
-    your code."""
+def __getattr__(name):
+    if name == "MultipleFailures":
+        from hypothesis._settings import note_deprecation
+        from hypothesis.internal.compat import BaseExceptionGroup
+
+        note_deprecation(
+            "MultipleFailures is deprecated; use the builtin `BaseExceptionGroup` type "
+            "instead, or `exceptiongroup.BaseExceptionGroup` before Python 3.11",
+            since="RELEASEDAY",
+            has_codemod=False,  # This would be a great PR though!
+        )
+        return BaseExceptionGroup
 
 
 class DeadlineExceeded(_Trimmable):
