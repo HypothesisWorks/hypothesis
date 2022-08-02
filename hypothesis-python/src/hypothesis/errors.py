@@ -93,12 +93,7 @@ class HypothesisWarning(HypothesisException, Warning):
 
 
 class FailedHealthCheck(_Trimmable):
-    """Raised when a test fails a preliminary healthcheck that occurs before
-    execution."""
-
-    def __init__(self, message, check):
-        super().__init__(message)
-        self.health_check = check
+    """Raised when a test fails a healthcheck."""
 
 
 class NonInteractiveExampleWarning(HypothesisWarning):
@@ -148,6 +143,9 @@ class DeadlineExceeded(_Trimmable):
         )
         self.runtime = runtime
         self.deadline = deadline
+
+    def __reduce__(self):
+        return (type(self), (self.runtime, self.deadline))
 
 
 class StopTest(BaseException):

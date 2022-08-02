@@ -404,7 +404,7 @@ def fails_health_check(label, **kwargs):
 
         with pytest.raises(FailedHealthCheck) as e:
             runner.run()
-        assert e.value.health_check == label
+        assert str(label) in str(e.value)
         assert not runner.interesting_examples
 
     return accept
