@@ -12,6 +12,7 @@ import dataclasses
 import re
 import sys
 import typing
+from types import SimpleNamespace
 
 import pytest
 
@@ -222,3 +223,29 @@ def test_example_argument_validation():
         ),
     ):
         example(x=None)(has_posonly_args)(1)
+
+
+class FooProtocol(typing.Protocol):
+    def frozzle(self, x):
+        pass
+
+
+class BarProtocol(typing.Protocol):
+    def bazzle(self, y):
+        pass
+
+
+@given(st.data())
+def test_can_resolve_registered_protocol(data):
+    with temp_registered(
+        FooProtocol,
+        st.builds(SimpleNamespace, frozzle=st.functions(like=lambda x: ...)),
+    ):
+        obj = data.draw(st.from_type(FooProtocol))
+    assert obj.frozzle(x=1) is None
+
+
+def test_cannot_resolve_un_registered_protocol():
+    msg = "Instance and class checks can only be used with @runtime_checkable protocols"
+    with pytest.raises(TypeError, match=msg):
+        st.from_type(BarProtocol).example()
