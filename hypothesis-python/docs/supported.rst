@@ -26,7 +26,7 @@ Python versions
 ---------------
 
 Hypothesis is supported and tested on CPython 3.7+, i.e.
-`all versions of CPython with upstream support <https://devguide.python.org/#status-of-python-branches>`_,
+`all versions of CPython with upstream support <https://devguide.python.org/versions/>`_,
 along with PyPy for the same versions.
 32-bit builds of CPython also work, though we only test them on Windows.
 

@@ -71,11 +71,6 @@ that pass validation.  Sometimes that will mean that we fail a
 :class:`~hypothesis.HealthCheck` because of the filtering, so let's explicitly
 pass a strategy to skip validation at the strategy level:
 
-.. note::
-    Inference from validators will be much more powerful when :issue:`1116`
-    is implemented, but there will always be some edge cases that require you
-    to pass an explicit strategy.
-
 .. code-block:: pycon
 
     >>> from hypothesis.strategies import integers

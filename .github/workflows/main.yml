@@ -53,9 +53,9 @@ jobs:
           - check-pytest46
           - check-pytest54
           - check-pytest62
+          - check-django41
           - check-django40
           - check-django32
-          - check-django22
           - check-pandas14
           - check-pandas13
           - check-pandas12
