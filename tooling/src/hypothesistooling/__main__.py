@@ -438,7 +438,7 @@ standard_tox_task("pytest46")
 standard_tox_task("pytest54")
 standard_tox_task("pytest62")
 
-for n in [22, 32, 40]:
+for n in [32, 40, 41]:
     standard_tox_task(f"django{n}")
 for n in [10, 11, 12, 13, 14]:
     standard_tox_task(f"pandas{n}")

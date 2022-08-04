@@ -73,7 +73,7 @@ extras = {
     # https://www.djangoproject.com/download/#supported-versions
     # We also leave the choice of timezone library to the user, since it
     # might be zoneinfo or pytz depending on version and configuration.
-    "django": ["django>=2.2"],
+    "django": ["django>=3.2"],
 }
 
 extras["all"] = sorted(
