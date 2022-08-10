@@ -178,13 +178,6 @@ else:
                 pass
             core.global_force_seed = seed
 
-        core.pytest_shows_exceptiongroups = (
-            sys.version_info[:2] >= (3, 11)
-            ## See https://github.com/pytest-dev/pytest/issues/9159
-            # or pytest_version >= (7, 2)  # TODO: fill in correct version here
-            or config.getoption("tbstyle", "auto") == "native"
-        )
-
     @pytest.hookimpl(hookwrapper=True)
     def pytest_runtest_call(item):
         __tracebackhide__ = True
@@ -195,6 +188,11 @@ else:
         from hypothesis import core
         from hypothesis.internal.detection import is_hypothesis_test
 
+        ## See https://github.com/pytest-dev/pytest/issues/9159
+        # TODO: add `pytest_version >= (7, 2) or` once the issue above is fixed.
+        core.pytest_shows_exceptiongroups = (
+            item.config.getoption("tbstyle", "auto") == "native"
+        )
         core.running_under_pytest = True
 
         if not is_hypothesis_test(item.obj):
