@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.54.2:
+
+-------------------
+6.54.2 - 2022-08-10
+-------------------
+
+This patch fixes our workaround for `a pytest bug where the inner exceptions in
+an ExceptionGroup are not displayed <https://github.com/pytest-dev/pytest/issues/9159>`__
+(:issue:`3430`).
+
 .. _v6.54.1:
 
 -------------------
