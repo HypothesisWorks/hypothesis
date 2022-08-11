@@ -54,6 +54,7 @@ and was used by `more than 4% of Python users surveyed by the PSF in 2020
 * `tchannel <https://github.com/uber/tchannel-python>`_
 * `vdirsyncer <https://github.com/pimutils/vdirsyncer>`_
 * `wcag-contrast-ratio <https://github.com/gsnedders/wcag-contrast-ratio>`_
+* `xarray <https://github.com/pydata/xarray>`_ 
 * `yacluster <https://github.com/KrzysiekJ/yacluster>`_
 * `yturl <https://github.com/cdown/yturl>`_
 * `zenml <https://github.com/zenml-io/zenml>`_
