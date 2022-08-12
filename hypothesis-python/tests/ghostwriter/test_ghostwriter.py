@@ -37,6 +37,7 @@ import attr
 import click
 import pytest
 
+from hypothesis import assume
 from hypothesis.errors import InvalidArgument, Unsatisfiable
 from hypothesis.extra import cli, ghostwriter
 from hypothesis.internal.compat import BaseExceptionGroup
@@ -501,3 +502,7 @@ def test_obj_name(temp_script_file, temp_script_file_with_py_function):
     assert isinstance(
         cli.obj_name(str(temp_script_file_with_py_function)), FunctionType
     )
+
+
+def test_gets_public_location_not_impl_location():
+    assert ghostwriter._get_module(assume) == "hypothesis"  # not "hypothesis.control"
