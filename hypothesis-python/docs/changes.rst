@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.54.3:
+
+-------------------
+6.54.3 - 2022-08-12
+-------------------
+
+This patch teaches the Ghostwriter an additional check for function
+and class locations that should make it use public APIs more often.
+
 .. _v6.54.2:
 
 -------------------
