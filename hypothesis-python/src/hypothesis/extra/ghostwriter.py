@@ -673,11 +673,25 @@ def _valid_syntax_repr(strategy):
 KNOWN_FUNCTION_LOCATIONS: Dict[object, str] = {}
 
 
+def _get_module_helper(obj):
+    # Get the __module__ attribute of the object, and return the first ancestor module
+    # which contains the object; falling back to the literal __module__ if none do.
+    # The goal is to show location from which obj should usually be accessed, rather
+    # than what we assume is an internal submodule which defined it.
+    module_name = obj.__module__
+    dots = [i for i, c in enumerate(module_name) if c == "."] + [None]
+    for idx in dots:
+        if getattr(sys.modules.get(module_name[:idx]), obj.__name__, None) is obj:
+            KNOWN_FUNCTION_LOCATIONS[obj] = module_name[:idx]
+            return module_name[:idx]
+    return module_name
+
+
 def _get_module(obj):
     if obj in KNOWN_FUNCTION_LOCATIONS:
         return KNOWN_FUNCTION_LOCATIONS[obj]
     try:
-        return obj.__module__
+        return _get_module_helper(obj)
     except AttributeError:
         if not _is_probably_ufunc(obj):
             raise
@@ -936,7 +950,7 @@ def magic(
                     functions.add(f)
                     if getattr(thing, "__name__", None):
                         if inspect.isclass(thing):
-                            KNOWN_FUNCTION_LOCATIONS[f] = thing.__module__
+                            KNOWN_FUNCTION_LOCATIONS[f] = _get_module_helper(thing)
                         else:
                             KNOWN_FUNCTION_LOCATIONS[f] = thing.__name__
             except (TypeError, ValueError):

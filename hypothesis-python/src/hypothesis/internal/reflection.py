@@ -276,6 +276,8 @@ def extract_lambda_source(f):
     source = LINE_CONTINUATION.sub(" ", source)
     source = WHITESPACE.sub(" ", source)
     source = source.strip()
+    if "lambda" not in source and sys.platform == "emscripten":  # pragma: no cover
+        return if_confused  # work around Pyodide bug in inspect.getsource()
     assert "lambda" in source
 
     tree = None
