@@ -79,3 +79,25 @@ def test_no_explanations_if_deadline_exceeded(code, testdir):
     code = code.replace("AssertionError", "DeadlineExceeded(timedelta(), timedelta())")
     pytest_stdout, _ = get_reports(DEADLINE_PRELUDE + PRELUDE + code, testdir=testdir)
     assert "Explanation:" not in pytest_stdout
+
+
+NO_SHOW_CONTEXTLIB = """
+from contextlib import contextmanager
+from hypothesis import given, strategies as st, Phase, settings
+
+@contextmanager
+def ctx():
+    yield
+
+@settings(phases=list(Phase))
+@given(st.integers())
+def test(x):
+    with ctx():
+        assert x < 100
+"""
+
+
+@pytest.mark.skipif(PYPY, reason="Tracing is slow under PyPy")
+def test_skips_uninformative_locations(testdir):
+    pytest_stdout, _ = get_reports(NO_SHOW_CONTEXTLIB, testdir=testdir)
+    assert "Explanation:" not in pytest_stdout

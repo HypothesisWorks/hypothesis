@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import base64
+import sys
 from collections import defaultdict
 
 import pytest
@@ -19,6 +20,7 @@ from hypothesis import __version__, reproduce_failure, seed, settings as Setting
 from hypothesis.control import current_build_context
 from hypothesis.database import ExampleDatabase
 from hypothesis.errors import DidNotReproduce, Flaky, InvalidArgument, InvalidDefinition
+from hypothesis.internal.compat import PYPY
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.stateful import (
     Bundle,
@@ -676,10 +678,7 @@ def test_invariant_present_in_falsifying_example():
     with pytest.raises(ValueError) as err:
         run_state_machine_as_test(BadRuleWithGoodInvariants)
 
-    result = "\n".join(err.value.__notes__)
-    assert (
-        result
-        == """
+    expected = """\
 Falsifying example:
 state = BadRuleWithGoodInvariants()
 state.invariant_1()
@@ -691,9 +690,19 @@ state.invariant_1()
 state.invariant_2()
 state.invariant_3()
 state.rule_1()
-state.teardown()
-""".strip()
-    )
+state.teardown()"""
+
+    if PYPY or sys.gettrace():  # explain mode disabled in these cases
+        result = "\n".join(err.value.__notes__)
+    else:
+        # Non-PyPy runs include explain mode, but we skip the final line because
+        # it includes the absolute path, which of course varies between machines.
+        expected += """
+Explanation:
+    These lines were always and only run by failing examples:"""
+        result = "\n".join(err.value.__notes__[:-1])
+
+    assert expected == result
 
 
 def test_always_runs_at_least_one_step():
