@@ -12,7 +12,7 @@ import os
 from tempfile import mkdtemp
 from warnings import filterwarnings
 
-from hypothesis import Verbosity, settings
+from hypothesis import Phase, Verbosity, settings
 from hypothesis._settings import not_set
 from hypothesis.configuration import set_hypothesis_home_dir
 from hypothesis.errors import NonInteractiveExampleWarning
@@ -66,7 +66,11 @@ def run():
             )
 
     settings.register_profile(
-        "default", settings(max_examples=20 if IN_COVERAGE_TESTS else not_set)
+        "default",
+        settings(
+            max_examples=20 if IN_COVERAGE_TESTS else not_set,
+            phases=list(Phase),  # Dogfooding the explain phase
+        ),
     )
 
     settings.register_profile("speedy", settings(max_examples=5))
