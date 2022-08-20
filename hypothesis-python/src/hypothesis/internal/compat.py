@@ -22,6 +22,19 @@ except NameError:
         BaseExceptionGroup as BaseExceptionGroup,
         ExceptionGroup as ExceptionGroup,
     )
+if typing.TYPE_CHECKING:  # pragma: no cover
+    from typing_extensions import Concatenate as Concatenate, ParamSpec as ParamSpec
+else:
+    try:
+        from typing import Concatenate as Concatenate, ParamSpec as ParamSpec
+    except ImportError:
+        try:
+            from typing_extensions import (
+                Concatenate as Concatenate,
+                ParamSpec as ParamSpec,
+            )
+        except ImportError:
+            Concatenate, ParamSpec = None, None
 
 PYPY = platform.python_implementation() == "PyPy"
 WINDOWS = platform.system() == "Windows"

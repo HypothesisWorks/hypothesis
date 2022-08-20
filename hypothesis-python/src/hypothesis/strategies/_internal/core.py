@@ -49,7 +49,14 @@ from hypothesis.control import cleanup, note
 from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.internal.cathetus import cathetus
 from hypothesis.internal.charmap import as_general_categories
-from hypothesis.internal.compat import ceil, floor, get_type_hints, is_typed_named_tuple
+from hypothesis.internal.compat import (
+    Concatenate,
+    ParamSpec,
+    ceil,
+    floor,
+    get_type_hints,
+    is_typed_named_tuple,
+)
 from hypothesis.internal.conjecture.utils import (
     calc_label_from_cls,
     check_sample,
@@ -121,14 +128,6 @@ try:
     from typing import Protocol
 except ImportError:  # < py3.8
     Protocol = object  # type: ignore[assignment]
-
-try:
-    from typing import Concatenate, ParamSpec
-except ImportError:
-    try:
-        from typing_extensions import Concatenate, ParamSpec
-    except ImportError:
-        ParamSpec = None  # type: ignore
 
 
 @cacheable

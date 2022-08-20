@@ -31,7 +31,7 @@ from hypothesis.strategies._internal.types import NON_RUNTIME_TYPES
 
 from tests.common.debug import assert_all_examples, find_any
 
-# See also nocover/test_type_lookp.py
+# See also nocover/test_type_lookup.py
 
 
 @pytest.mark.parametrize("value", ["dog", b"goldfish", 42, 63.4, -80.5, False])

@@ -14,14 +14,13 @@ import pytest
 
 from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument
+from hypothesis.internal.compat import Concatenate, ParamSpec
 from hypothesis.strategies._internal.types import NON_RUNTIME_TYPES
 
 try:
-    from typing import Concatenate, ParamSpec, TypeGuard  # new in 3.10
+    from typing import TypeGuard  # new in 3.10
 except ImportError:
-    Concatenate = ParamSpec = TypeGuard = None
-
-# See also typing_extensions/test_backported_types.py
+    TypeGuard = None
 
 
 @pytest.mark.parametrize("non_runtime_type", NON_RUNTIME_TYPES)
