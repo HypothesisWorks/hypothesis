@@ -65,10 +65,6 @@ def function_digest(function):
     except AttributeError:
         pass
     try:
-        hasher.update(function.__module__.__name__.encode())
-    except AttributeError:
-        pass
-    try:
         # We prefer to use the modern signature API, but left this for compatibility.
         # While we don't promise stability of the database, there's no advantage to
         # using signature here, so we might as well keep the existing keys for now.

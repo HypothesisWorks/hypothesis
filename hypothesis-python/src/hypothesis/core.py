@@ -881,8 +881,7 @@ class StateForActualGivenExecution:
                 errors_to_report.append((fragments, err))
             except BaseException as e:
                 # If we have anything for explain-mode, this is the time to report.
-                for line in explanations[falsifying_example.interesting_origin]:
-                    fragments.append(line)
+                fragments.extend(explanations[falsifying_example.interesting_origin])
                 errors_to_report.append(
                     (fragments, e.with_traceback(get_trimmed_traceback()))
                 )
