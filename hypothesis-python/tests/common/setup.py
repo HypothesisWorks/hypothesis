@@ -25,10 +25,7 @@ def run():
     filterwarnings("ignore", category=ImportWarning)
     filterwarnings("ignore", category=FutureWarning, module="pandas._version")
 
-    # Fixed in recent versions but allowed by pytest=3.0.0; see #1630
-    filterwarnings("ignore", category=DeprecationWarning, module="pluggy")
-
-    # See https://github.com/numpy/numpy/pull/432
+    # See https://github.com/numpy/numpy/pull/432; still a thing as of 2022.
     filterwarnings("ignore", message="numpy.dtype size changed")
     filterwarnings("ignore", message="numpy.ufunc size changed")
 
@@ -40,14 +37,6 @@ def run():
             "same location as the system distutils?"
         ),
         category=UserWarning,
-    )
-
-    # Imported by Pandas in version 1.9, but fixed in later versions.
-    filterwarnings(
-        "ignore", message="Importing from numpy.testing.decorators is deprecated"
-    )
-    filterwarnings(
-        "ignore", message="Importing from numpy.testing.nosetester is deprecated"
     )
 
     # User-facing warning which does not apply to our own tests
