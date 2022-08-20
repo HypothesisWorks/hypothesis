@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.54.4:
+
+-------------------
+6.54.4 - 2022-08-20
+-------------------
+
+This patch fixes some type annotations for Python 3.9 and earlier (:issue:`3397`),
+and teaches :ref:`explain mode <phases>` about certain locations it should not
+bother reporting (:issue:`3439`).
+
 .. _v6.54.3:
 
 -------------------
