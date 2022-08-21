@@ -8,7 +8,6 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-
 class IntervalSet:
     def __init__(self, intervals):
         self.intervals = tuple(intervals)
