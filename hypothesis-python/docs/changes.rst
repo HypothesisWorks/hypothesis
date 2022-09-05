@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.54.5:
+
+-------------------
+6.54.5 - 2022-09-05
+-------------------
+
+This patch updates our autoformatting tools, improving our code style without any API changes.
+
 .. _v6.54.4:
 
 -------------------
