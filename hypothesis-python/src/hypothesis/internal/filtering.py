@@ -12,7 +12,7 @@
 
 For example::
 
-    integers().filter(lamda x: x >= 0) -> integers(min_value=0)
+    integers().filter(lambda x: x >= 0) -> integers(min_value=0)
 
 This is intractable in general, but reasonably easy for simple cases involving
 numeric bounds, strings with length or regex constraints, and collection lengths -
