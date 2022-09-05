@@ -1464,7 +1464,7 @@ def _make_binop_body(
         # happen.  E.g. type(None) -> <class 'NoneType'> -> quoted.
         try:
             # We don't actually execute this code object; we're just compiling
-            # to check that the repr is syntatically valid.  HOWEVER, we're
+            # to check that the repr is syntactically valid.  HOWEVER, we're
             # going to output that code string into test code which will be
             # executed; so you still shouldn't ghostwrite for hostile code.
             compile(repr(identity), "<string>", "exec")
