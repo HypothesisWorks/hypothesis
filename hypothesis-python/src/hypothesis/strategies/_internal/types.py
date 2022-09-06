@@ -713,6 +713,22 @@ def resolve_Type(thing):
 def resolve_List(thing):
     return st.lists(st.from_type(thing.__args__[0]))
 
+try:
+    import numpy.typing as npt
+
+    from numpy._typing._generic_alias import ScalarType
+    from hypothesis.extra.numpy import array_shapes, arrays, scalar_dtypes
+
+    @register(npt.NDArray)
+    def resolve_ndarray(thing):
+        array_type = thing.__args__[1].__args__[0]
+        if array_type == ScalarType:
+            return arrays(scalar_dtypes(), array_shapes(max_dims=2))
+        else:
+            return arrays(st.from_type(array_type), array_shapes(max_dims=2))
+
+except ImportError:
+    pass
 
 def _can_hash(val):
     try:
