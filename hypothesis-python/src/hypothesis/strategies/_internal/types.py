@@ -713,6 +713,7 @@ def resolve_Type(thing):
 def resolve_List(thing):
     return st.lists(st.from_type(thing.__args__[0]))
 
+
 try:
     import numpy.typing as npt
 
@@ -729,6 +730,7 @@ try:
 
 except ImportError:
     pass
+
 
 def _can_hash(val):
     try:
