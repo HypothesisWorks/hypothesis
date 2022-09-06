@@ -11,10 +11,12 @@
 import pytest
 
 from hypothesis.extra.array_api import (
+    COMPLEX_NAMES,
     DTYPE_NAMES,
     FLOAT_NAMES,
     INT_NAMES,
     NUMERIC_NAMES,
+    REAL_NAMES,
     UINT_NAMES,
 )
 
@@ -50,6 +52,16 @@ def test_can_generate_unsigned_integer_dtypes(xp, xps):
 def test_can_generate_floating_dtypes(xp, xps):
     float_dtypes = [getattr(xp, name) for name in FLOAT_NAMES]
     assert_all_examples(xps.floating_dtypes(), lambda dtype: dtype in float_dtypes)
+
+
+def test_can_generate_real_dtypes(xp, xps):
+    real_dtypes = [getattr(xp, name) for name in REAL_NAMES]
+    assert_all_examples(xps.real_dtypes(), lambda dtype: dtype in real_dtypes)
+
+
+def test_can_generate_complex_dtypes(xp, xps):
+    complex_dtypes = [getattr(xp, name) for name in COMPLEX_NAMES]
+    assert_all_examples(xps.complex_dtypes(), lambda dtype: dtype in complex_dtypes)
 
 
 def test_minimise_scalar_dtypes(xp, xps):

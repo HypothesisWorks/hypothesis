@@ -20,7 +20,7 @@ from hypothesis.extra.array_api import make_strategies_namespace, mock_xp
 from tests.array_api.common import installed_array_modules
 
 with pytest.warns(HypothesisWarning):
-    mock_xps = make_strategies_namespace(mock_xp)
+    mock_xps = make_strategies_namespace(mock_xp, api_version="draft")
 
 # See README.md in regards to the HYPOTHESIS_TEST_ARRAY_API env variable
 test_xp_option = getenv("HYPOTHESIS_TEST_ARRAY_API", "default")
@@ -35,7 +35,7 @@ with warnings.catch_warnings():
     if test_xp_option == "default":
         try:
             xp = name_to_entry_point["numpy"].load()
-            xps = make_strategies_namespace(xp)
+            xps = make_strategies_namespace(xp, api_version="draft")
             params = [pytest.param(xp, xps, id="numpy")]
         except KeyError:
             params = [pytest.param(mock_xp, mock_xps, id="mock")]
@@ -47,17 +47,17 @@ with warnings.catch_warnings():
         params = [pytest.param(mock_xp, mock_xps, id="mock")]
         for name, ep in name_to_entry_point.items():
             xp = ep.load()
-            xps = make_strategies_namespace(xp)
+            xps = make_strategies_namespace(xp, api_version="draft")
             params.append(pytest.param(xp, xps, id=name))
     elif test_xp_option in name_to_entry_point.keys():
         ep = name_to_entry_point[test_xp_option]
         xp = ep.load()
-        xps = make_strategies_namespace(xp)
+        xps = make_strategies_namespace(xp, api_version="draft")
         params = [pytest.param(xp, xps, id=test_xp_option)]
     else:
         try:
             xp = import_module(test_xp_option)
-            xps = make_strategies_namespace(xp)
+            xps = make_strategies_namespace(xp, api_version="draft")
             params = [pytest.param(xp, xps, id=test_xp_option)]
         except ImportError as e:
             raise ValueError(

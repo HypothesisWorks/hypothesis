@@ -18,6 +18,7 @@ import pytest
 from hypothesis import given, strategies as st
 from hypothesis.errors import HypothesisWarning, InvalidArgument
 from hypothesis.extra.array_api import (
+    COMPLEX_NAMES,
     DTYPE_NAMES,
     FLOAT_NAMES,
     INT_NAMES,
@@ -41,7 +42,7 @@ def test_warning_on_noncompliant_xp():
     """Using non-compliant array modules raises helpful warning"""
     xp = make_mock_xp()
     with pytest.warns(HypothesisWarning, match=MOCK_WARN_MSG):
-        make_strategies_namespace(xp)
+        make_strategies_namespace(xp, api_version="draft")
 
 
 @pytest.mark.filterwarnings(f"ignore:.*{MOCK_WARN_MSG}.*")
@@ -53,7 +54,7 @@ def test_error_on_missing_attr(stratname, args, attr):
     """Strategies raise helpful error when using array modules that lack
     required attributes."""
     xp = make_mock_xp(exclude=(attr,))
-    xps = make_strategies_namespace(xp)
+    xps = make_strategies_namespace(xp, api_version="draft")
     func = getattr(xps, stratname)
     with pytest.raises(InvalidArgument, match=f"{mock_xp.__name__}.*required.*{attr}"):
         func(*args).example()
@@ -61,7 +62,7 @@ def test_error_on_missing_attr(stratname, args, attr):
 
 dtypeless_xp = make_mock_xp(exclude=tuple(DTYPE_NAMES))
 with pytest.warns(HypothesisWarning):
-    dtypeless_xps = make_strategies_namespace(dtypeless_xp)
+    dtypeless_xps = make_strategies_namespace(dtypeless_xp, api_version="draft")
 
 
 @pytest.mark.parametrize(
@@ -73,6 +74,8 @@ with pytest.warns(HypothesisWarning):
         "integer_dtypes",
         "unsigned_integer_dtypes",
         "floating_dtypes",
+        "real_dtypes",
+        "complex_dtypes",
     ],
 )
 def test_error_on_missing_dtypes(stratname):
@@ -88,10 +91,12 @@ def test_error_on_missing_dtypes(stratname):
     "stratname, keep_anys",
     [
         ("scalar_dtypes", [INT_NAMES, UINT_NAMES, FLOAT_NAMES]),
-        ("numeric_dtypes", [INT_NAMES, UINT_NAMES, FLOAT_NAMES]),
+        ("numeric_dtypes", [INT_NAMES, UINT_NAMES, FLOAT_NAMES, COMPLEX_NAMES]),
         ("integer_dtypes", [INT_NAMES]),
         ("unsigned_integer_dtypes", [UINT_NAMES]),
         ("floating_dtypes", [FLOAT_NAMES]),
+        ("real_dtypes", [INT_NAMES, UINT_NAMES, FLOAT_NAMES]),
+        ("complex_dtypes", [COMPLEX_NAMES]),
     ],
 )
 @given(st.data())
@@ -111,7 +116,7 @@ def test_warning_on_partial_dtypes(stratname, keep_anys, data):
             )
         )
     xp = make_mock_xp(exclude=tuple(exclude))
-    xps = make_strategies_namespace(xp)
+    xps = make_strategies_namespace(xp, api_version="draft")
     func = getattr(xps, stratname)
     with pytest.warns(HypothesisWarning, match=f"{mock_xp.__name__}.*dtype.*namespace"):
         data.draw(func())

@@ -25,6 +25,8 @@ import pytest
         "integer_dtypes",
         "unsigned_integer_dtypes",
         "floating_dtypes",
+        "real_dtypes",
+        "complex_dtypes",
         "valid_tuple_axes",
         "broadcastable_shapes",
         "mutually_broadcastable_shapes",
@@ -55,6 +57,8 @@ def test_namespaced_methods_meta(xp, xps, name):
         ("integer_dtypes", []),
         ("unsigned_integer_dtypes", []),
         ("floating_dtypes", []),
+        ("real_dtypes", []),
+        ("complex_dtypes", []),
         ("valid_tuple_axes", [0]),
         ("broadcastable_shapes", [()]),
         ("mutually_broadcastable_shapes", [3]),
@@ -72,6 +76,6 @@ def test_namespaced_strategies_repr(xp, xps, name, valid_args):
 
 def test_strategies_namespace_repr(xp, xps):
     """Strategies namespace has good repr."""
-    expected = f"make_strategies_namespace({xp.__name__})"
+    expected = f"make_strategies_namespace({xp.__name__}, api_version='draft')"
     assert repr(xps) == expected
     assert str(xps) == expected
