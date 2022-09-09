@@ -8,12 +8,10 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import pytest
-
-from hypothesis import given, strategies as st
-
-from numpy.typing import NDArray
 import numpy as np
+from numpy.typing import NDArray
+
+from hypothesis import strategies as st
 
 from tests.common.debug import assert_all_examples
 

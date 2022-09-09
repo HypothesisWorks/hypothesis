@@ -716,8 +716,8 @@ def resolve_List(thing):
 
 try:
     import numpy.typing as npt
-
     from numpy._typing._generic_alias import ScalarType
+
     from hypothesis.extra.numpy import array_shapes, arrays, scalar_dtypes
 
     @register(npt.NDArray)
