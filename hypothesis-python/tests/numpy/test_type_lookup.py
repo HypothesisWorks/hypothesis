@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import numpy as np
+import pytest
 from numpy.typing import NDArray
 
 from hypothesis import strategies as st
@@ -20,8 +21,18 @@ def test_from_numpy_ndarray_any_type():
     assert_all_examples(st.from_type(NDArray), lambda obj: isinstance(obj, np.ndarray))
 
 
-def test_from_numpy_ndarray_specific_type():
-    def check_dtype(obj):
-        return obj.dtype == np.float64
-
-    assert_all_examples(st.from_type(NDArray[np.float64]), check_dtype)
+@pytest.mark.parametrize(
+    "test_nptype",
+    [
+        np.float64,
+        np.int32,
+        np.uint64,
+        np.int16,
+        np.uint8,
+        np.complex128,
+    ],
+)
+def test_from_numpy_ndarray_specific_type(test_nptype):
+    assert_all_examples(
+        st.from_type(NDArray[test_nptype]), lambda obj: obj.dtype == test_nptype
+    )
