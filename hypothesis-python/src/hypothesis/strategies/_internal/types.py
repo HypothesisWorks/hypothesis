@@ -256,9 +256,24 @@ def is_a_union(thing):
     )
 
 
+try:
+    import numpy.typing as npt
+except ImportError:
+    pass
+else:
+
+    def is_np_type(thing):
+        return issubclass(thing, (npt.ArrayLike, npt.DTypeLike))
+
+
 def is_a_type(thing):
     """Return True if thing is a type or a generic type like thing."""
-    return isinstance(thing, type) or is_generic_type(thing) or is_a_new_type(thing)
+    return (
+        isinstance(thing, type)
+        or is_generic_type(thing)
+        or is_a_new_type(thing)
+        or is_np_type(thing)
+    )
 
 
 def is_typing_literal(thing):
