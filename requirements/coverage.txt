@@ -40,7 +40,7 @@ mypy-extensions==0.4.3
     # via
     #   black
     #   typing-inspect
-numpy==1.23.2
+numpy==1.23.3
     # via
     #   -r requirements/coverage.in
     #   pandas
