@@ -326,8 +326,7 @@ class ArrayStrategy(st.SearchStrategy):
         self.finfo = None if self.builtin is not float else xp.finfo(self.dtype)
 
     def check_set_value(self, val, val_0d, strategy):
-        finite = self.builtin is bool or self.xp.isfinite(val_0d)
-        if finite and self.builtin(val_0d) != val:
+        if val == val and self.builtin(val_0d) != val:
             if self.builtin is float:
                 assert self.finfo is not None  # for mypy
                 try:

@@ -296,6 +296,10 @@ def test_may_not_use_overflowing_integers(xp, xps, kwargs):
     [
         ("float32", st.floats(min_value=10**40, allow_infinity=False)),
         ("float64", st.floats(min_value=10**40, allow_infinity=False)),
+        (
+            "complex64",
+            st.complex_numbers(min_magnitude=10**300, allow_infinity=False),
+        ),
     ],
 )
 def test_may_not_use_unrepresentable_elements(xp, xps, fill, dtype, strat):
