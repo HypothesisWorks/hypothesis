@@ -855,13 +855,13 @@ def make_strategies_namespace(
 
     """
     array = xp.zeros(1)
-    if isinstance(api_version, str):
-        assert api_version in NOMINAL_VERSIONS  # TODO
-    else:
-        if api_version is None:
-            raise ValueError("TODO")
-        assert api_version == Ellipsis  # TODO
-        for api_version in ["2021.12"]:
+    check_argument(
+        api_version in NOMINAL_VERSIONS or api_version == Ellipsis,
+        f"{api_version=}, but api_version must be an ellipsis (...), or valid "
+        f"version string {RELEASED_VERSIONS}",
+    )
+    if not isinstance(api_version, str):
+        for api_version in RELEASED_VERSIONS:
             try:
                 xp = array.__array_namespace__(api_version=api_version)
             except Exception:
