@@ -296,10 +296,19 @@ def _from_dtype(
         except AttributeError:
             raise NotImplementedError() from e  # TODO
         else:
+            kw = {
+                "min_value": min_value,
+                "max_value": max_value,
+                "allow_nan": allow_nan,
+                "allow_infinity": allow_infinity,
+                "allow_subnormal": allow_subnormal,
+                "exclude_min": exclude_min,
+                "exclude_max": exclude_max,
+            }
             if dtype == complex64:
-                floats = _from_dtype(xp, float32)
+                floats = _from_dtype(xp, float32, **kw)
             else:
-                floats = _from_dtype(xp, float64)
+                floats = _from_dtype(xp, float64, **kw)
 
             return st.builds(complex, floats, floats)
 
