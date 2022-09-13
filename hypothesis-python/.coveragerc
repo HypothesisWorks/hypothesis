@@ -19,6 +19,7 @@ exclude_lines =
     def __copy__
     def __deepcopy__
     except ImportError:
+    except ModuleNotFoundError:
     if PYPY:
     if TYPE_CHECKING:
     if "\w+" in sys\.modules:
