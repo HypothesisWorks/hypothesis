@@ -11,7 +11,7 @@
 from copy import copy
 from functools import lru_cache
 from types import SimpleNamespace
-from typing import Tuple
+from typing import List, Literal, Optional, Tuple
 
 import pytest
 
@@ -22,6 +22,7 @@ from hypothesis.extra.array_api import (
     DTYPE_NAMES,
     FLOAT_NAMES,
     INT_NAMES,
+    RELEASED_VERSIONS,
     UINT_NAMES,
     make_strategies_namespace,
     mock_xp,
@@ -120,3 +121,48 @@ def test_warning_on_partial_dtypes(stratname, keep_anys, data):
     func = getattr(xps, stratname)
     with pytest.warns(HypothesisWarning, match=f"{mock_xp.__name__}.*dtype.*namespace"):
         data.draw(func())
+
+
+class MockArray:
+    def __init__(self, supported_versions: Tuple[Literal[RELEASED_VERSIONS], ...]):
+        self.supported_versions = supported_versions
+
+    def __array_namespace__(self, *, api_version: Optional[str] = None):
+        if api_version is not None and api_version not in self.supported_versions:
+            raise
+        return SimpleNamespace(
+            __name__="foopy", zeros=lambda _: MockArray(self.supported_versions)
+        )
+
+
+version_permutations: List[Tuple[Literal[RELEASED_VERSIONS], ...]] = [
+    RELEASED_VERSIONS[:i] for i in range(1, len(RELEASED_VERSIONS) + 1)
+]
+
+
+@pytest.mark.parametrize(
+    "supported_versions",
+    version_permutations,
+    ids=lambda supported_versions: "-".join(supported_versions),
+)
+def test_version_inferrence(supported_versions):
+    xp = MockArray(supported_versions).__array_namespace__()
+    xps = make_strategies_namespace(xp)
+    assert xps.api_version == supported_versions[-1]
+
+
+def test_raises_on_inferring_with_no_supported_versions():
+    xp = MockArray(()).__array_namespace__()
+    with pytest.raises(InvalidArgument):
+        xps = make_strategies_namespace(xp)
+
+
+@pytest.mark.parametrize(
+    ("api_version", "supported_versions"),
+    [pytest.param(p[-1], p[:-1], id=p[-1]) for p in version_permutations],
+)
+def test_warns_on_specifying_unsupported_version(api_version, supported_versions):
+    xp = MockArray(supported_versions).__array_namespace__()
+    with pytest.warns(HypothesisWarning):
+        xps = make_strategies_namespace(xp)
+    assert xps.api_version == api_version

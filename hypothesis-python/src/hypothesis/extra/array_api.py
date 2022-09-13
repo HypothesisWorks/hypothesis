@@ -854,23 +854,32 @@ def make_strategies_namespace(
       True
 
     """
-    array = xp.zeros(1)
     check_argument(
         api_version in NOMINAL_VERSIONS or api_version == Ellipsis,
         f"{api_version=}, but api_version must be an ellipsis (...), or valid "
         f"version string {RELEASED_VERSIONS}",
     )
     if not isinstance(api_version, str):
-        for api_version in RELEASED_VERSIONS:
+        # When api_version=..., we infer the most recent API version for which
+        # the passed xp is valid. We go through the released versions in
+        # descending order, passing them to x.__array_namespace__() until no
+        # errors are raised, thus inferring that specific api_version is
+        # supported. If errors are raised for all released versions, we raise
+        # our own useful error.
+        array = xp.zeros(1)
+        for api_version in reversed(RELEASED_VERSIONS):
             try:
                 xp = array.__array_namespace__(api_version=api_version)
             except Exception:
                 pass
             else:
-                break  # xp and api_version kept TODO comment
+                break  # i.e. a valid xp and api_version has been inferred
         else:
-            raise ValueError("TODO")
-
+            raise InvalidArgument(
+                "Could not infer any api_version which module {xp.__name__} "
+                "supports. If you believe xp is indeed an Array API module, "
+                "try explicitly passing an api_version."
+            )
     array = xp.zeros(1)
     try:
         array.__array_namespace__()
@@ -973,6 +982,7 @@ def make_strategies_namespace(
             return f"make_strategies_namespace({xp.__name__}, {api_version=})"
 
     kwargs = dict(
+        api_version=api_version,
         from_dtype=from_dtype,
         arrays=arrays,
         array_shapes=array_shapes,

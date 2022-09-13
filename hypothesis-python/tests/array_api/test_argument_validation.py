@@ -11,6 +11,7 @@
 import pytest
 
 from hypothesis.errors import InvalidArgument
+from hypothesis.extra.array_api import make_strategies_namespace, mock_xp
 
 
 def e(name, **kwargs):
@@ -223,3 +224,9 @@ def test_raise_invalid_argument(xp, xps, strat_name, kwargs):
     strat = strat_func(**kwargs)
     with pytest.raises(InvalidArgument):
         strat.example()
+
+
+@pytest.mark.parametrize("api_version", [None, "latest", "1970.01", 42])
+def test_make_namespace_raise_invalid_argument(api_version):
+    with pytest.raises(InvalidArgument):
+        make_strategies_namespace(mock_xp, api_version=api_version)
