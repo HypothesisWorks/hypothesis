@@ -437,7 +437,11 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
                     err = new
 
                 yield (fragments_reported, err)
-                if state.settings.report_multiple_bugs and pytest_shows_exceptiongroups:
+                if (
+                    state.settings.report_multiple_bugs
+                    and pytest_shows_exceptiongroups
+                    and not isinstance(err, skip_exceptions_to_reraise())
+                ):
                     continue
                 break
             finally:
@@ -1192,6 +1196,14 @@ def given(
                 # If we're not going to report multiple bugs, we would have
                 # stopped running explicit examples at the first failure.
                 assert len(errors) == 1 or state.settings.report_multiple_bugs
+
+                # If an explicit example raised a 'skip' exception, ensure it's never
+                # wrapped up in an exception group.  Because we break out of the loop
+                # immediately on finding a skip, if present it's always the last error.
+                if isinstance(errors[-1][1], skip_exceptions_to_reraise()):
+                    # Covered by `test_issue_3453_regression`, just in a subprocess.
+                    del errors[:-1]  # pragma: no cover
+
                 _raise_to_user(errors, state.settings, [], " in explicit examples")
 
             # If there were any explicit examples, they all ran successfully.

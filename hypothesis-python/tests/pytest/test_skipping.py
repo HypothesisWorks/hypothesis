@@ -39,3 +39,25 @@ def test_no_falsifying_example_if_pytest_skip(testdir):
     )
     out = "\n".join(result.stdout.lines)
     assert "Falsifying example" not in out
+
+
+def test_issue_3453_regression(testdir):
+    """If ``pytest.skip() is called during a test, Hypothesis should not
+    continue running the test and shrink process, nor should it print anything
+    about falsifying examples."""
+    script = testdir.makepyfile(
+        """
+from hypothesis import example, given, strategies as st
+import pytest
+
+@given(value=st.none())
+@example("hello")
+@example("goodbye")
+def test_skip_on_first_skipping_example(value):
+    assert value is not None
+    assert value != "hello"  # queue up a non-skip error which must be discarded
+    pytest.skip()
+"""
+    )
+    result = testdir.runpytest(script, "--tb=native")
+    result.assert_outcomes(skipped=1)
