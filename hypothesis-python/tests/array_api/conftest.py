@@ -35,8 +35,8 @@ with warnings.catch_warnings():
     if test_xp_option == "default":
         try:
             xp = name_to_entry_point["numpy"].load()
-            xps = make_strategies_namespace(xp, api_version="draft")
-            params = [pytest.param(xp, xps, id="numpy")]
+            xps = make_strategies_namespace(xp)
+            params = [pytest.param(xp, xps, id=f"numpy-{xps.api_version}")]
         except KeyError:
             params = [pytest.param(mock_xp, mock_xps, id="mock")]
     elif test_xp_option == "all":
@@ -44,21 +44,21 @@ with warnings.catch_warnings():
             raise ValueError(
                 "HYPOTHESIS_TEST_ARRAY_API='all', but no entry points where found"
             )
-        params = [pytest.param(mock_xp, mock_xps, id="mock")]
+        params = [pytest.param(mock_xp, mock_xps, id="mock-draft")]
         for name, ep in name_to_entry_point.items():
             xp = ep.load()
-            xps = make_strategies_namespace(xp, api_version="draft")
-            params.append(pytest.param(xp, xps, id=name))
+            xps = make_strategies_namespace(xp)
+            params.append(pytest.param(xp, xps, id=f"{name}-{xps.api_version}"))
     elif test_xp_option in name_to_entry_point.keys():
         ep = name_to_entry_point[test_xp_option]
         xp = ep.load()
-        xps = make_strategies_namespace(xp, api_version="draft")
-        params = [pytest.param(xp, xps, id=test_xp_option)]
+        xps = make_strategies_namespace(xp)
+        params = [pytest.param(xp, xps, id=f"{test_xp_option}-{xps.api_version}")]
     else:
         try:
             xp = import_module(test_xp_option)
-            xps = make_strategies_namespace(xp, api_version="draft")
-            params = [pytest.param(xp, xps, id=test_xp_option)]
+            xps = make_strategies_namespace(xp)
+            params = [pytest.param(xp, xps, id=f"{test_xp_option}-{xps.api_version}")]
         except ImportError as e:
             raise ValueError(
                 f"HYPOTHESIS_TEST_ARRAY_API='{test_xp_option}' is not a valid "
