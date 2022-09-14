@@ -866,7 +866,20 @@ def make_strategies_namespace(
         # errors are raised, thus inferring that specific api_version is
         # supported. If errors are raised for all released versions, we raise
         # our own useful error.
-        array = xp.zeros(1)
+        check_argument(
+            hasattr(xp, "zeros"),
+            f"Array module {xp.__name__} has no function zeros(), which is "
+            "required when inferring api_version.",
+        )
+        errmsg = (
+            f"Could not infer any api_version which module {xp.__name__} "
+            f"supports. If you believe {xp.__name__} is indeed an Array API "
+            "module, try explicitly passing an api_version."
+        )
+        try:
+            array = xp.zeros(1)
+        except Exception:
+            raise InvalidArgument(errmsg)
         for api_version in reversed(RELEASED_VERSIONS):
             try:
                 xp = array.__array_namespace__(api_version=api_version)
@@ -875,13 +888,9 @@ def make_strategies_namespace(
             else:
                 break  # i.e. a valid xp and api_version has been inferred
         else:
-            raise InvalidArgument(
-                "Could not infer any api_version which module {xp.__name__} "
-                "supports. If you believe xp is indeed an Array API module, "
-                "try explicitly passing an api_version."
-            )
-    array = xp.zeros(1)
+            raise InvalidArgument(errmsg)
     try:
+        array = xp.zeros(1)
         array.__array_namespace__()
     except Exception:
         warn(

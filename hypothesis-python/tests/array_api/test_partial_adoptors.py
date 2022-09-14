@@ -32,8 +32,9 @@ MOCK_WARN_MSG = f"determine.*{mock_xp.__name__}.*Array API"
 
 
 @lru_cache()
-def make_mock_xp(exclude: Tuple[str, ...] = ()) -> SimpleNamespace:
+def make_mock_xp(*, exclude: Tuple[str, ...] = ()) -> SimpleNamespace:
     xp = copy(mock_xp)
+    assert isinstance(exclude, tuple)  # sanity check
     for attr in exclude:
         delattr(xp, attr)
     return xp
@@ -164,5 +165,18 @@ def test_raises_on_inferring_with_no_supported_versions():
 def test_warns_on_specifying_unsupported_version(api_version, supported_versions):
     xp = MockArray(supported_versions).__array_namespace__()
     with pytest.warns(HypothesisWarning):
-        xps = make_strategies_namespace(xp)
+        xps = make_strategies_namespace(xp, api_version=api_version)
     assert xps.api_version == api_version
+
+
+def test_raises_on_inferring_with_no_zeros_func():
+    xp = make_mock_xp(exclude=("zeros",))
+    with pytest.raises(InvalidArgument, match="has no function"):
+        xps = make_strategies_namespace(xp)
+
+
+def test_raises_on_erroneous_zeros_func():
+    xp = make_mock_xp()
+    setattr(xp, "zeros", None)
+    with pytest.raises(InvalidArgument):
+        xps = make_strategies_namespace(xp)
