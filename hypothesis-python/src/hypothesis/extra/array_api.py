@@ -66,7 +66,7 @@ __all__ = [
 # Be sure to keep versions in ascending order so api_verson_gt() works
 RELEASED_VERSIONS = ("2021.12",)
 NOMINAL_VERSIONS = RELEASED_VERSIONS + ("draft",)
-NominalVersion = Literal[tuple(NOMINAL_VERSIONS)]
+NominalVersion = Literal[NOMINAL_VERSIONS]
 
 
 def api_verson_gt(api_version1: NominalVersion, api_version2: NominalVersion) -> bool:
