@@ -292,7 +292,6 @@ def _from_dtype(
             float32 = xp.float32
             float64 = xp.float64
             complex64 = xp.complex64
-            complex128 = xp.complex64
         except AttributeError:
             raise NotImplementedError() from e  # TODO
         else:
