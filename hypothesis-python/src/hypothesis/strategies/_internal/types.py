@@ -259,7 +259,10 @@ def is_a_union(thing):
 try:
     import numpy.typing as npt
 except ImportError:
-    pass
+
+    def is_np_type(thing):
+        return False
+
 else:
 
     def is_np_type(thing):
