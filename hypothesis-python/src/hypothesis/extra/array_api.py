@@ -865,7 +865,9 @@ def make_strategies_namespace(
         api_version == Ellipsis
         or (isinstance(api_version, str) and api_version in NOMINAL_VERSIONS),
         f"{api_version=}, but api_version must be an ellipsis (...), or valid "
-        f"version string {RELEASED_VERSIONS}",
+        f"version string {RELEASED_VERSIONS}. If the standard version you want "
+        "is not available, please ensure you're using the latest version of "
+        "Hypothesis, then open an issue if one doesn't already exist.",
     )
     if api_version == Ellipsis:
         # When api_version=..., we infer the most recent API version for which
