@@ -8,15 +8,26 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+from typing import Optional
+
 import pytest
 
 from hypothesis.errors import InvalidArgument
-from hypothesis.extra.array_api import make_strategies_namespace, mock_xp
+from hypothesis.extra.array_api import (
+    NominalVersion,
+    make_strategies_namespace,
+    mock_xp,
+)
 
 
-def e(name, **kwargs):
+def e(name, *, _min_version: Optional[NominalVersion] = None, **kwargs):
     kw = ", ".join(f"{k}={v!r}" for k, v in kwargs.items())
-    return pytest.param(name, kwargs, id=f"{name}({kw})")
+    id_ = f"{name}({kw})"
+    if _min_version is None:
+        marks = ()
+    else:
+        marks = pytest.mark.xp_min_version(_min_version)
+    return pytest.param(name, kwargs, id=id_, marks=marks)
 
 
 @pytest.mark.parametrize(
@@ -42,11 +53,27 @@ def e(name, **kwargs):
         e("from_dtype", dtype="int8", max_value="not an int"),
         e("from_dtype", dtype="float32", min_value="not a float"),
         e("from_dtype", dtype="float32", max_value="not a float"),
-        e("from_dtype", dtype="complex64", min_value="not a float"),
-        e("from_dtype", dtype="complex64", max_value="not a float"),
+        e(
+            "from_dtype",
+            _min_version="draft",
+            dtype="complex64",
+            min_value="not a float",
+        ),
+        e(
+            "from_dtype",
+            _min_version="draft",
+            dtype="complex64",
+            max_value="not a float",
+        ),
         e("from_dtype", dtype="int8", min_value=10, max_value=5),
         e("from_dtype", dtype="float32", min_value=10, max_value=5),
-        e("from_dtype", dtype="complex64", min_value=10, max_value=5),
+        e(
+            "from_dtype",
+            _min_version="draft",
+            dtype="complex64",
+            min_value=10,
+            max_value=5,
+        ),
         e("from_dtype", dtype="int8", min_value=-999),
         e("from_dtype", dtype="int8", max_value=-999),
         e("from_dtype", dtype="int8", min_value=999),
@@ -59,18 +86,18 @@ def e(name, **kwargs):
         e("from_dtype", dtype="float32", max_value=-4e38),
         e("from_dtype", dtype="float32", min_value=4e38),
         e("from_dtype", dtype="float32", max_value=4e38),
-        e("from_dtype", dtype="complex64", min_value=-4e38),
-        e("from_dtype", dtype="complex64", max_value=-4e38),
-        e("from_dtype", dtype="complex64", min_value=4e38),
-        e("from_dtype", dtype="complex64", max_value=4e38),
+        e("from_dtype", _min_version="draft", dtype="complex64", min_value=-4e38),
+        e("from_dtype", _min_version="draft", dtype="complex64", max_value=-4e38),
+        e("from_dtype", _min_version="draft", dtype="complex64", min_value=4e38),
+        e("from_dtype", _min_version="draft", dtype="complex64", max_value=4e38),
         e("integer_dtypes", sizes=()),
         e("integer_dtypes", sizes=(3,)),
         e("unsigned_integer_dtypes", sizes=()),
         e("unsigned_integer_dtypes", sizes=(3,)),
         e("floating_dtypes", sizes=()),
         e("floating_dtypes", sizes=(3,)),
-        e("complex_dtypes", sizes=()),
-        e("complex_dtypes", sizes=(3,)),
+        e("complex_dtypes", _min_version="draft", sizes=()),
+        e("complex_dtypes", _min_version="draft", sizes=(3,)),
         e("valid_tuple_axes", ndim=-1),
         e("valid_tuple_axes", ndim=2, min_size=-1),
         e("valid_tuple_axes", ndim=2, min_size=3, max_size=10),

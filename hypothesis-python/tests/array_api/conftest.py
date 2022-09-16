@@ -11,11 +11,17 @@
 import warnings
 from importlib import import_module
 from os import getenv
+from typing import Literal
 
 import pytest
 
 from hypothesis.errors import HypothesisWarning
-from hypothesis.extra.array_api import make_strategies_namespace, mock_xp
+from hypothesis.extra.array_api import (
+    RELEASED_VERSIONS,
+    api_verson_gt,
+    make_strategies_namespace,
+    mock_xp,
+)
 
 from tests.array_api.common import installed_array_modules
 
@@ -70,3 +76,27 @@ with warnings.catch_warnings():
 def pytest_generate_tests(metafunc):
     if "xp" in metafunc.fixturenames and "xps" in metafunc.fixturenames:
         metafunc.parametrize("xp, xps", params)
+
+
+def pytest_configure(config):
+    config.addinivalue_line(
+        "markers",
+        "xp_min_version(api_version): "
+        "mark test to run when greater or equal to api_version",
+    )
+
+
+def pytest_collection_modifyitems(config, items):
+    for item in items:
+        if all(f in item.fixturenames for f in ["xp", "xps"]):
+            try:
+                marker = next(m for m in item.own_markers if m.name == "xp_min_version")
+            except StopIteration:
+                pass
+            else:
+                item.callspec.params["xps"].api_version
+                min_version: Literal[RELEASED_VERSIONS] = marker.args[0]
+                if api_verson_gt(min_version, item.callspec.params["xps"].api_version):
+                    item.add_marker(
+                        pytest.mark.skip(reason=f"requires api_version=>{min_version}")
+                    )

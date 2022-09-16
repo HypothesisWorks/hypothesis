@@ -11,11 +11,15 @@
 from importlib.metadata import EntryPoint, entry_points  # type: ignore
 from typing import Dict
 
+import pytest
+
+from hypothesis.extra.array_api import COMPLEX_NAMES, REAL_NAMES
 from hypothesis.internal.floats import next_up
 
 __all__ = [
     "installed_array_modules",
     "flushes_to_zero",
+    "dtype_name_params",
 ]
 
 
@@ -48,3 +52,9 @@ def flushes_to_zero(xp, width: int) -> bool:
         raise ValueError(f"{width=}, but should be either 32 or 64")
     dtype = getattr(xp, f"float{width}")
     return bool(xp.asarray(next_up(0.0, width=width), dtype=dtype) == 0)
+
+
+dtype_name_params = ["bool"] + list(REAL_NAMES)
+dtype_name_params += [
+    pytest.param(n, marks=pytest.mark.xp_min_version("draft")) for n in COMPLEX_NAMES
+]
