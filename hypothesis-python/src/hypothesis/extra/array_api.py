@@ -119,7 +119,7 @@ def warn_on_missing_dtypes(xp: Any, stubs: List[str]) -> None:
 
 
 def find_castable_builtin_for_dtype(
-    xp: Any, dtype: DataType
+    xp: Any, api_version: NominalVersion, dtype: DataType
 ) -> Type[Union[bool, int, float, complex]]:
     """Returns builtin type which can have values that are castable to the given
     dtype, according to :xp-ref:`type promotion rules <type_promotion.html>`.
@@ -147,13 +147,17 @@ def find_castable_builtin_for_dtype(
     if dtype is not None and dtype in float_dtypes:
         return float
 
-    complex_dtypes, complex_stubs = partition_attributes_and_stubs(xp, COMPLEX_NAMES)
-    if dtype in complex_dtypes:
-        return complex
-
     stubs.extend(int_stubs)
     stubs.extend(float_stubs)
-    stubs.extend(complex_stubs)
+
+    if api_verson_gt(api_version, "2021.12"):
+        complex_dtypes, complex_stubs = partition_attributes_and_stubs(
+            xp, COMPLEX_NAMES
+        )
+        if dtype in complex_dtypes:
+            return complex
+        stubs.extend(complex_stubs)
+
     if len(stubs) > 0:
         warn_on_missing_dtypes(xp, stubs)
     raise InvalidArgument(f"dtype={dtype} not recognised in {xp.__name__}")
@@ -177,6 +181,7 @@ def dtype_from_name(xp: Any, name: str) -> DataType:
 
 def _from_dtype(
     xp: Any,
+    api_version: NominalVersion,
     dtype: Union[DataType, str],
     *,
     min_value: Optional[Union[int, float]] = None,
@@ -206,7 +211,7 @@ def _from_dtype(
 
     if isinstance(dtype, str):
         dtype = dtype_from_name(xp, dtype)
-    builtin = find_castable_builtin_for_dtype(xp, dtype)
+    builtin = find_castable_builtin_for_dtype(xp, api_version, dtype)
 
     def check_valid_minmax(prefix, val, info_obj):
         name = f"{prefix}_value"
@@ -305,15 +310,15 @@ def _from_dtype(
                 "exclude_max": exclude_max,
             }
             if dtype == complex64:
-                floats = _from_dtype(xp, float32, **kw)
+                floats = _from_dtype(xp, api_version, float32, **kw)
             else:
-                floats = _from_dtype(xp, float64, **kw)
+                floats = _from_dtype(xp, api_version, float64, **kw)
 
             return st.builds(complex, floats, floats)
 
 
 class ArrayStrategy(st.SearchStrategy):
-    def __init__(self, xp, elements_strategy, dtype, shape, fill, unique):
+    def __init__(self, xp, api_version, elements_strategy, dtype, shape, fill, unique):
         self.xp = xp
         self.elements_strategy = elements_strategy
         self.dtype = dtype
@@ -321,7 +326,7 @@ class ArrayStrategy(st.SearchStrategy):
         self.fill = fill
         self.unique = unique
         self.array_size = math.prod(shape)
-        self.builtin = find_castable_builtin_for_dtype(xp, dtype)
+        self.builtin = find_castable_builtin_for_dtype(xp, api_version, dtype)
         self.finfo = None if self.builtin is not float else xp.finfo(self.dtype)
 
     def check_set_value(self, val, val_0d, strategy):
@@ -458,6 +463,7 @@ class ArrayStrategy(st.SearchStrategy):
 
 def _arrays(
     xp: Any,
+    api_version: NominalVersion,
     dtype: Union[DataType, str, st.SearchStrategy[DataType], st.SearchStrategy[str]],
     shape: Union[int, Shape, st.SearchStrategy[Shape]],
     *,
@@ -540,14 +546,18 @@ def _arrays(
 
     if isinstance(dtype, st.SearchStrategy):
         return dtype.flatmap(
-            lambda d: _arrays(xp, d, shape, elements=elements, fill=fill, unique=unique)
+            lambda d: _arrays(
+                xp, api_version, d, shape, elements=elements, fill=fill, unique=unique
+            )
         )
     elif isinstance(dtype, str):
         dtype = dtype_from_name(xp, dtype)
 
     if isinstance(shape, st.SearchStrategy):
         return shape.flatmap(
-            lambda s: _arrays(xp, dtype, s, elements=elements, fill=fill, unique=unique)
+            lambda s: _arrays(
+                xp, api_version, dtype, s, elements=elements, fill=fill, unique=unique
+            )
         )
     elif isinstance(shape, int):
         shape = (shape,)
@@ -559,9 +569,9 @@ def _arrays(
     )
 
     if elements is None:
-        elements = _from_dtype(xp, dtype)
+        elements = _from_dtype(xp, api_version, dtype)
     elif isinstance(elements, Mapping):
-        elements = _from_dtype(xp, dtype, **elements)
+        elements = _from_dtype(xp, api_version, dtype, **elements)
     check_strategy(elements, "elements")
 
     if fill is None:
@@ -572,7 +582,7 @@ def _arrays(
             fill = elements
     check_strategy(fill, "fill")
 
-    return ArrayStrategy(xp, elements, dtype, shape, fill, unique)
+    return ArrayStrategy(xp, api_version, elements, dtype, shape, fill, unique)
 
 
 @check_function
@@ -912,6 +922,7 @@ def make_strategies_namespace(
     ) -> st.SearchStrategy[Union[bool, int, float]]:
         return _from_dtype(
             xp,
+            api_version,
             dtype,
             min_value=min_value,
             max_value=max_value,
@@ -935,6 +946,7 @@ def make_strategies_namespace(
     ) -> st.SearchStrategy:
         return _arrays(
             xp,
+            api_version,
             dtype,
             shape,
             elements=elements,

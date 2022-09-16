@@ -36,7 +36,7 @@ def test_produces_castable_instances_from_dtype(xp, xps, dtype_name):
     """Strategies inferred by dtype generate values of a builtin type castable
     to the dtype."""
     dtype = getattr(xp, dtype_name)
-    builtin = find_castable_builtin_for_dtype(xp, dtype)
+    builtin = find_castable_builtin_for_dtype(xp, xps.api_version, dtype)
     assert_all_examples(xps.from_dtype(dtype), lambda v: isinstance(v, builtin))
 
 
@@ -45,7 +45,7 @@ def test_produces_castable_instances_from_name(xp, xps, dtype_name):
     """Strategies inferred by dtype name generate values of a builtin type
     castable to the dtype."""
     dtype = getattr(xp, dtype_name)
-    builtin = find_castable_builtin_for_dtype(xp, dtype)
+    builtin = find_castable_builtin_for_dtype(xp, xps.api_version, dtype)
     assert_all_examples(xps.from_dtype(dtype_name), lambda v: isinstance(v, builtin))
 
 
