@@ -63,13 +63,13 @@ __all__ = [
 ]
 
 
-# Be sure to keep versions in ascending order so api_verson_gt() works
+# Be sure to keep versions in ascending order so api_version_gt() works
 RELEASED_VERSIONS = ("2021.12",)
 NOMINAL_VERSIONS = RELEASED_VERSIONS + ("draft",)
 NominalVersion = Literal[NOMINAL_VERSIONS]
 
 
-def api_verson_gt(api_version1: NominalVersion, api_version2: NominalVersion) -> bool:
+def api_version_gt(api_version1: NominalVersion, api_version2: NominalVersion) -> bool:
     return NOMINAL_VERSIONS.index(api_version1) > NOMINAL_VERSIONS.index(api_version2)
 
 
@@ -150,7 +150,7 @@ def find_castable_builtin_for_dtype(
     stubs.extend(int_stubs)
     stubs.extend(float_stubs)
 
-    if api_verson_gt(api_version, "2021.12"):
+    if api_version_gt(api_version, "2021.12"):
         complex_dtypes, complex_stubs = partition_attributes_and_stubs(
             xp, COMPLEX_NAMES
         )
@@ -627,7 +627,7 @@ def _numeric_dtypes(
 ) -> st.SearchStrategy[DataType]:
     """Return a strategy for all numeric dtype objects."""
     strat = _real_dtypes(xp)
-    if api_verson_gt(api_version, "2021.12"):
+    if api_version_gt(api_version, "2021.12"):
         strat |= _complex_dtypes(xp)
     return strat
 
@@ -1020,7 +1020,7 @@ def make_strategies_namespace(
         indices=indices,
     )
 
-    if api_verson_gt(api_version, "2021.12"):
+    if api_version_gt(api_version, "2021.12"):
 
         @defines_strategy()
         def complex_dtypes(

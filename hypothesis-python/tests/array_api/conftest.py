@@ -18,7 +18,7 @@ import pytest
 from hypothesis.errors import HypothesisWarning
 from hypothesis.extra.array_api import (
     RELEASED_VERSIONS,
-    api_verson_gt,
+    api_version_gt,
     make_strategies_namespace,
     mock_xp,
 )
@@ -96,7 +96,7 @@ def pytest_collection_modifyitems(config, items):
             else:
                 item.callspec.params["xps"].api_version
                 min_version: Literal[RELEASED_VERSIONS] = marker.args[0]
-                if api_verson_gt(min_version, item.callspec.params["xps"].api_version):
+                if api_version_gt(min_version, item.callspec.params["xps"].api_version):
                     item.add_marker(
                         pytest.mark.skip(reason=f"requires api_version=>{min_version}")
                     )
