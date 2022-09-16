@@ -18,13 +18,17 @@ from hypothesis.extra.array_api import (
     NUMERIC_NAMES,
     REAL_NAMES,
     UINT_NAMES,
+    api_verson_gt,
 )
 
 from tests.common.debug import assert_all_examples, find_any, minimal
 
 
 def test_can_generate_scalar_dtypes(xp, xps):
-    dtypes = [getattr(xp, name) for name in DTYPE_NAMES]
+    if api_verson_gt(xps.api_version, "2021.12"):
+        dtypes = [getattr(xp, name) for name in DTYPE_NAMES]
+    else:
+        dtypes = [getattr(xp, name) for name in ("bool",) + REAL_NAMES]
     assert_all_examples(xps.scalar_dtypes(), lambda dtype: dtype in dtypes)
 
 
@@ -33,7 +37,10 @@ def test_can_generate_boolean_dtypes(xp, xps):
 
 
 def test_can_generate_numeric_dtypes(xp, xps):
-    numeric_dtypes = [getattr(xp, name) for name in NUMERIC_NAMES]
+    if api_verson_gt(xps.api_version, "2021.12"):
+        numeric_dtypes = [getattr(xp, name) for name in NUMERIC_NAMES]
+    else:
+        numeric_dtypes = [getattr(xp, name) for name in REAL_NAMES]
     assert_all_examples(xps.numeric_dtypes(), lambda dtype: dtype in numeric_dtypes)
 
 
