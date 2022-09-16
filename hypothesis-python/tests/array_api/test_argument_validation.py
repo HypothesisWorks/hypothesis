@@ -13,11 +13,7 @@ from typing import Optional
 import pytest
 
 from hypothesis.errors import InvalidArgument
-from hypothesis.extra.array_api import (
-    NominalVersion,
-    make_strategies_namespace,
-    mock_xp,
-)
+from hypothesis.extra.array_api import NominalVersion, make_strategies_namespace
 
 
 def e(name, *, _min_version: Optional[NominalVersion] = None, **kwargs):
@@ -231,6 +227,6 @@ def test_raise_invalid_argument(xp, xps, strat_name, kwargs):
 
 
 @pytest.mark.parametrize("api_version", [None, "latest", "1970.01", 42])
-def test_make_namespace_raise_invalid_argument(api_version):
+def test_make_namespace_raise_invalid_argument(xp, xps, api_version):
     with pytest.raises(InvalidArgument):
-        make_strategies_namespace(mock_xp, api_version=api_version)
+        make_strategies_namespace(xp, api_version=api_version)
