@@ -303,13 +303,9 @@ def _from_dtype(
             raise NotImplementedError() from e  # TODO
         else:
             kw = {
-                "min_value": min_value,
-                "max_value": max_value,
                 "allow_nan": allow_nan,
                 "allow_infinity": allow_infinity,
                 "allow_subnormal": allow_subnormal,
-                "exclude_min": exclude_min,
-                "exclude_max": exclude_max,
             }
             if dtype == complex64:
                 floats = _from_dtype(xp, api_version, float32, **kw)
