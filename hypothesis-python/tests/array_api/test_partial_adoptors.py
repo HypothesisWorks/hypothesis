@@ -11,7 +11,7 @@
 from copy import copy
 from functools import lru_cache
 from types import SimpleNamespace
-from typing import List, Literal, Optional, Tuple
+from typing import List, Optional, Tuple
 
 import pytest
 
@@ -24,6 +24,7 @@ from hypothesis.extra.array_api import (
     INT_NAMES,
     RELEASED_VERSIONS,
     UINT_NAMES,
+    NominalVersion,
     make_strategies_namespace,
     mock_xp,
 )
@@ -125,10 +126,11 @@ def test_warning_on_partial_dtypes(stratname, keep_anys, data):
 
 
 class MockArray:
-    def __init__(self, supported_versions: Tuple[Literal[RELEASED_VERSIONS], ...]):
+    def __init__(self, supported_versions: Tuple[NominalVersion, ...]):
+        assert len(set(supported_versions)) == len(supported_versions)  # sanity check
         self.supported_versions = supported_versions
 
-    def __array_namespace__(self, *, api_version: Optional[str] = None):
+    def __array_namespace__(self, *, api_version: Optional[NominalVersion] = None):
         if api_version is not None and api_version not in self.supported_versions:
             raise
         return SimpleNamespace(
@@ -136,7 +138,7 @@ class MockArray:
         )
 
 
-version_permutations: List[Tuple[Literal[RELEASED_VERSIONS], ...]] = [
+version_permutations: List[Tuple[NominalVersion, ...]] = [
     RELEASED_VERSIONS[:i] for i in range(1, len(RELEASED_VERSIONS) + 1)
 ]
 

@@ -65,8 +65,10 @@ __all__ = [
 
 # Be sure to keep versions in ascending order so api_version_gt() works
 RELEASED_VERSIONS = ("2021.12",)
+assert sorted(RELEASED_VERSIONS) == list(RELEASED_VERSIONS)  # sanity check
 NOMINAL_VERSIONS = RELEASED_VERSIONS + ("draft",)
-NominalVersion = Literal[NOMINAL_VERSIONS]
+NominalVersion = Literal["2021.12", "draft"]
+assert NominalVersion.__args__ == NOMINAL_VERSIONS  # sanity check
 
 
 def api_version_gt(api_version1: NominalVersion, api_version2: NominalVersion) -> bool:
