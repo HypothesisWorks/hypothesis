@@ -296,24 +296,29 @@ def _from_dtype(
 
         return st.floats(width=finfo.bits, **kw)
     else:
-        try:
-            float32 = xp.float32
-            float64 = xp.float64
-            complex64 = xp.complex64
-        except AttributeError:
-            raise NotImplementedError() from e  # TODO
+        # A less-inelegant solution to support complex dtypes exists, but as
+        # this is currently a draft feature, we might as well wait for
+        # discussion of complex inspection to resolve first - a better method
+        # might become available soon enough.
+        # See https://github.com/data-apis/array-api/issues/433
+        for attr in ["float32", "float64", "complex64"]:
+            if not hasattr(xp, attr):
+                raise NotImplementedError(
+                    f"Array module {xp.__name__} has no dtype {attr}, which is "
+                    "currently required for xps.from_dtype() to work with "
+                    "any complex dtype."
+                )
+        kw = {
+            "allow_nan": allow_nan,
+            "allow_infinity": allow_infinity,
+            "allow_subnormal": allow_subnormal,
+        }
+        if dtype == xp.complex64:
+            floats = _from_dtype(xp, api_version, xp.float32, **kw)
         else:
-            kw = {
-                "allow_nan": allow_nan,
-                "allow_infinity": allow_infinity,
-                "allow_subnormal": allow_subnormal,
-            }
-            if dtype == complex64:
-                floats = _from_dtype(xp, api_version, float32, **kw)
-            else:
-                floats = _from_dtype(xp, api_version, float64, **kw)
+            floats = _from_dtype(xp, api_version, xp.float64, **kw)
 
-            return st.builds(complex, floats, floats)
+        return st.builds(complex, floats, floats)
 
 
 class ArrayStrategy(st.SearchStrategy):
