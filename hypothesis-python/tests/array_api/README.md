@@ -10,7 +10,7 @@ You can test other array modules which adopt the Array API via the
 `HYPOTHESIS_TEST_ARRAY_API` environment variable. There are two recognized
 options:
 
-* `"default"`: only uses `numpy.array_api`, or if not available, fallbacks to the mock.
+* `"default"`: uses the mock, and `numpy.array_api` if available.
 * `"all"`: uses all array modules found via entry points, _and_ the mock.
 
 If neither of these, the test suite will then try resolve the variable like so:

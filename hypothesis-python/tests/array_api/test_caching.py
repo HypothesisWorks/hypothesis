@@ -17,7 +17,7 @@ from hypothesis.extra import array_api
 
 
 @pytest.mark.filterwarnings("ignore::hypothesis.errors.HypothesisWarning")
-def test_make_strategies_namespace(xp, xps, monkeypatch):
+def test_make_strategies_namespace(xp, monkeypatch):
     try:
         hash(xp)
     except TypeError:

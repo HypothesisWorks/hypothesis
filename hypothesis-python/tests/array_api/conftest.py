@@ -38,32 +38,34 @@ with warnings.catch_warnings():
     # Specifically `params` is a list of pytest parameters, with each parameter
     # containing the array module and its respective strategies namespace.
     if test_xp_option == "default":
+        xp_and_xps_pairs = [(mock_xp, mock_xps)]
         try:
             xp = name_to_entry_point["numpy"].load()
-            xps = make_strategies_namespace(xp)
-            params = [pytest.param(xp, xps, id=f"numpy-{xps.api_version}")]
         except KeyError:
-            params = [pytest.param(mock_xp, mock_xps, id="mock")]
+            pass
+        else:
+            xps = make_strategies_namespace(xp)
+            xp_and_xps_pairs.append((xp, xps))
     elif test_xp_option == "all":
         if len(name_to_entry_point) == 0:
             raise ValueError(
                 "HYPOTHESIS_TEST_ARRAY_API='all', but no entry points where found"
             )
-        params = [pytest.param(mock_xp, mock_xps, id="mock-draft")]
+        xp_and_xps_pairs = [(mock_xp, mock_xps)]
         for name, ep in name_to_entry_point.items():
             xp = ep.load()
             xps = make_strategies_namespace(xp)
-            params.append(pytest.param(xp, xps, id=f"{name}-{xps.api_version}"))
+            xp_and_xps_pairs.append((xp, xps))
     elif test_xp_option in name_to_entry_point.keys():
         ep = name_to_entry_point[test_xp_option]
         xp = ep.load()
         xps = make_strategies_namespace(xp)
-        params = [pytest.param(xp, xps, id=f"{test_xp_option}-{xps.api_version}")]
+        xp_and_xps_pairs = [(xp, xps)]
     else:
         try:
             xp = import_module(test_xp_option)
             xps = make_strategies_namespace(xp)
-            params = [pytest.param(xp, xps, id=f"{test_xp_option}-{xps.api_version}")]
+            xp_and_xps_pairs = [(xp, xps)]
         except ImportError as e:
             raise ValueError(
                 f"HYPOTHESIS_TEST_ARRAY_API='{test_xp_option}' is not a valid "
@@ -73,8 +75,18 @@ with warnings.catch_warnings():
 
 
 def pytest_generate_tests(metafunc):
-    if "xp" in metafunc.fixturenames and "xps" in metafunc.fixturenames:
-        metafunc.parametrize("xp, xps", params)
+    xp_params = []
+    xp_and_xps_params = []
+    for xp, xps in xp_and_xps_pairs:
+        xp_params.append(pytest.param(xp, id=xp.__name__))
+        xp_and_xps_params.append(
+            pytest.param(xp, xps, id=f"{xp.__name__}-{xps.api_version}")
+        )
+    if "xp" in metafunc.fixturenames:
+        if "xps" in metafunc.fixturenames:
+            metafunc.parametrize("xp, xps", xp_and_xps_params)
+        else:
+            metafunc.parametrize("xp", xp_params)
 
 
 def pytest_configure(config):
