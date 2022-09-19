@@ -16,6 +16,7 @@ import pytest
 
 from hypothesis.errors import HypothesisWarning
 from hypothesis.extra.array_api import (
+    NOMINAL_VERSIONS,
     NominalVersion,
     api_version_gt,
     make_strategies_namespace,
@@ -24,19 +25,30 @@ from hypothesis.extra.array_api import (
 
 from tests.array_api.common import installed_array_modules
 
-with pytest.warns(HypothesisWarning):
-    mock_xps = make_strategies_namespace(mock_xp, api_version="draft")
-
-# See README.md in regards to the HYPOTHESIS_TEST_ARRAY_API env variable
+# See README.md in regards to the env variables
 test_xp_option = getenv("HYPOTHESIS_TEST_ARRAY_API", "default")
+test_version_option = getenv("HYPOTHESIS_TEST_ARRAY_API_VERSION", "default")
+if test_version_option != "default" and test_version_option not in NOMINAL_VERSIONS:
+    raise ValueError(
+        f"HYPOTHESIS_TEST_ARRAY_API_VERSION='{test_version_option}' is not "
+        f"'default' or a valid api_version {NOMINAL_VERSIONS}."
+    )
+with pytest.warns(HypothesisWarning):
+    mock_xps = make_strategies_namespace(
+        mock_xp,
+        api_version="draft"
+        if test_version_option == "default"
+        else test_version_option,
+    )
+api_version = ... if test_version_option == "default" else test_version_option
+
 name_to_entry_point = installed_array_modules()
 with warnings.catch_warnings():
     # We ignore all warnings here as many array modules warn on import
     warnings.simplefilter("ignore")
-    # We go through the steps described in README.md to define `params`, which
-    # contains the array module(s) to be ran against the test suite.
-    # Specifically `params` is a list of pytest parameters, with each parameter
-    # containing the array module and its respective strategies namespace.
+    # We go through the steps described in README.md to define `xp_xps_parais`,
+    # which contains the array module(s) to be ran against the test suite along
+    # with their respective strategy namespaces.
     if test_xp_option == "default":
         xp_and_xps_pairs = [(mock_xp, mock_xps)]
         try:
@@ -44,7 +56,7 @@ with warnings.catch_warnings():
         except KeyError:
             pass
         else:
-            xps = make_strategies_namespace(xp)
+            xps = make_strategies_namespace(xp, api_version=api_version)
             xp_and_xps_pairs.append((xp, xps))
     elif test_xp_option == "all":
         if len(name_to_entry_point) == 0:
@@ -54,17 +66,17 @@ with warnings.catch_warnings():
         xp_and_xps_pairs = [(mock_xp, mock_xps)]
         for name, ep in name_to_entry_point.items():
             xp = ep.load()
-            xps = make_strategies_namespace(xp)
+            xps = make_strategies_namespace(xp, api_version=api_version)
             xp_and_xps_pairs.append((xp, xps))
     elif test_xp_option in name_to_entry_point.keys():
         ep = name_to_entry_point[test_xp_option]
         xp = ep.load()
-        xps = make_strategies_namespace(xp)
+        xps = make_strategies_namespace(xp, api_version=api_version)
         xp_and_xps_pairs = [(xp, xps)]
     else:
         try:
             xp = import_module(test_xp_option)
-            xps = make_strategies_namespace(xp)
+            xps = make_strategies_namespace(xp, api_version=api_version)
             xp_and_xps_pairs = [(xp, xps)]
         except ImportError as e:
             raise ValueError(
