@@ -1010,11 +1010,21 @@ def make_strategies_namespace(
     unsigned_integer_dtypes.__doc__ = _unsigned_integer_dtypes.__doc__
     floating_dtypes.__doc__ = _floating_dtypes.__doc__
 
-    class PrettySimpleNamespace(SimpleNamespace):
+    class StrategiesNamespace(SimpleNamespace):
+        def __init__(self, **kwargs):
+            for attr in ["name", "api_version"]:
+                if attr not in kwargs.keys():
+                    raise ValueError(f"'{attr}' kwarg required")
+            super().__init__(**kwargs)
+
         def __repr__(self):
-            return f"make_strategies_namespace({xp.__name__}, {api_version=})"
+            return (
+                f"make_strategies_namespace("
+                f"{self.name}, api_version='{self.api_version}')"
+            )
 
     kwargs = dict(
+        name=xp.__name__,
         api_version=api_version,
         from_dtype=from_dtype,
         arrays=arrays,
@@ -1043,7 +1053,7 @@ def make_strategies_namespace(
         complex_dtypes.__doc__ = _complex_dtypes.__doc__
         kwargs["complex_dtypes"] = complex_dtypes
 
-    namespace = PrettySimpleNamespace(**kwargs)
+    namespace = StrategiesNamespace(**kwargs)
     try:
         _args_to_xps[(xp, api_version)] = namespace
     except TypeError:
