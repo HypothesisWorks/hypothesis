@@ -14,10 +14,17 @@ from weakref import WeakValueDictionary
 import pytest
 
 from hypothesis.extra import array_api
+from hypothesis.extra.array_api import (
+    NOMINAL_VERSIONS,
+    make_strategies_namespace,
+    mock_xp,
+)
+from hypothesis.strategies import SearchStrategy
+
+pytestmark = pytest.mark.filterwarnings("ignore::hypothesis.errors.HypothesisWarning")
 
 
-@pytest.mark.filterwarnings("ignore::hypothesis.errors.HypothesisWarning")
-def test_make_strategies_namespace(xp, monkeypatch):
+def test_caching(xp, monkeypatch):
     try:
         hash(xp)
     except TypeError:
@@ -34,3 +41,12 @@ def test_make_strategies_namespace(xp, monkeypatch):
     del xps1
     del xps2
     assert len(array_api._args_to_xps) == 0
+
+
+def test_complex_dtypes_raises_on_first_version():
+    first_xps = make_strategies_namespace(mock_xp, api_version=NOMINAL_VERSIONS[0])
+    with pytest.raises(AttributeError):
+        first_xps.complex_dtypes()
+    for api_version in NOMINAL_VERSIONS[1:]:
+        xps = make_strategies_namespace(mock_xp, api_version=api_version)
+        assert isinstance(xps.complex_dtypes(), SearchStrategy)

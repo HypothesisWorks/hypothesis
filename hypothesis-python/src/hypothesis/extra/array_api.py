@@ -1017,6 +1017,16 @@ def make_strategies_namespace(
                     raise ValueError(f"'{attr}' kwarg required")
             super().__init__(**kwargs)
 
+        @property
+        def complex_dtypes(self):
+            try:
+                return self.__dict__["complex_dtypes"]
+            except KeyError:
+                raise AttributeError(
+                    "You attempted to access 'complex_dtypes', but it is not "
+                    f"available for api_version='{self.api_version}'."
+                )
+
         def __repr__(self):
             return (
                 f"make_strategies_namespace("
