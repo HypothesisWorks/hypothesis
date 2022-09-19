@@ -28,6 +28,7 @@ from typing import (
     Union,
 )
 from warnings import warn
+from weakref import WeakValueDictionary
 
 from hypothesis import strategies as st
 from hypothesis.errors import HypothesisWarning, InvalidArgument
@@ -836,6 +837,10 @@ def indices(
     )
 
 
+# Cache for make_strategies_namespace()
+_args_to_xps = WeakValueDictionary()
+
+
 def make_strategies_namespace(
     xp: Any, *, api_version: Union["Ellipsis", NominalVersion] = ...
 ) -> SimpleNamespace:
@@ -861,6 +866,13 @@ def make_strategies_namespace(
       True
 
     """
+    try:
+        namespace = _args_to_xps[(xp, api_version)]
+    except (KeyError, TypeError):
+        pass
+    else:
+        return namespace
+
     check_argument(
         api_version == Ellipsis
         or (isinstance(api_version, str) and api_version in NOMINAL_VERSIONS),
@@ -1031,7 +1043,13 @@ def make_strategies_namespace(
         complex_dtypes.__doc__ = _complex_dtypes.__doc__
         kwargs["complex_dtypes"] = complex_dtypes
 
-    return PrettySimpleNamespace(**kwargs)
+    namespace = PrettySimpleNamespace(**kwargs)
+    try:
+        _args_to_xps[(xp, api_version)] = namespace
+    except TypeError:
+        pass
+
+    return namespace
 
 
 try:
@@ -1074,7 +1092,7 @@ if np is not None:
         )
 
     mock_xp = SimpleNamespace(
-        __name__="mockpy",
+        __name__="mock",
         # Data types
         int8=np.int8,
         int16=np.int16,
