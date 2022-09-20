@@ -64,24 +64,27 @@ def test_all_generated_numeric_dtypes_are_numeric(xp, xps):
     assert_all_examples(xps.numeric_dtypes(), lambda dtype: dtype in dtypes)
 
 
+def skipif_unsupported_complex(strat_name, dtype_name):
+    if not dtype_name.startswith("complex"):
+        return strat_name, dtype_name
+    mark = pytest.mark.xp_min_version(MIN_VER_FOR_COMPLEX)
+    return pytest.param(strat_name, dtype_name, marks=mark)
+
+
 @pytest.mark.parametrize(
     ("strat_name", "dtype_name"),
     [
-        *[("scalar_dtypes", n) for n in DTYPE_NAMES],
-        *[("numeric_dtypes", n) for n in NUMERIC_NAMES],
+        *[skipif_unsupported_complex("scalar_dtypes", n) for n in DTYPE_NAMES],
+        *[skipif_unsupported_complex("numeric_dtypes", n) for n in NUMERIC_NAMES],
         *[("integer_dtypes", n) for n in INT_NAMES],
         *[("unsigned_integer_dtypes", n) for n in UINT_NAMES],
         *[("floating_dtypes", n) for n in FLOAT_NAMES],
         *[("real_dtypes", n) for n in REAL_NAMES],
-        *[("complex_dtypes", n) for n in COMPLEX_NAMES],
+        *[skipif_unsupported_complex("complex_dtypes", n) for n in COMPLEX_NAMES],
     ],
 )
 def test_strategy_can_generate_every_dtype(xp, xps, strat_name, dtype_name):
     """Strategy generates every expected dtype."""
-    if dtype_name.startswith("complex") and api_version_gt(
-        MIN_VER_FOR_COMPLEX, xps.api_version
-    ):
-        pytest.skip(f"requires api_version=>{MIN_VER_FOR_COMPLEX}")
     strat_func = getattr(xps, strat_name)
     dtype = getattr(xp, dtype_name)
     find_any(strat_func(), lambda d: d == dtype)
