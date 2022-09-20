@@ -11,7 +11,7 @@
 from copy import copy
 from functools import lru_cache
 from types import SimpleNamespace
-from typing import List, Optional, Tuple
+from typing import Tuple
 
 import pytest
 
@@ -22,9 +22,7 @@ from hypothesis.extra.array_api import (
     DTYPE_NAMES,
     FLOAT_NAMES,
     INT_NAMES,
-    RELEASED_VERSIONS,
     UINT_NAMES,
-    NominalVersion,
     make_strategies_namespace,
     mock_xp,
 )
@@ -125,61 +123,16 @@ def test_warning_on_partial_dtypes(stratname, keep_anys, data):
         data.draw(func())
 
 
-class MockArray:
-    def __init__(self, supported_versions: Tuple[NominalVersion, ...]):
-        assert len(set(supported_versions)) == len(supported_versions)  # sanity check
-        self.supported_versions = supported_versions
-
-    def __array_namespace__(self, *, api_version: Optional[NominalVersion] = None):
-        if api_version is not None and api_version not in self.supported_versions:
-            raise
-        return SimpleNamespace(
-            __name__="foopy", zeros=lambda _: MockArray(self.supported_versions)
-        )
-
-
-version_permutations: List[Tuple[NominalVersion, ...]] = [
-    RELEASED_VERSIONS[:i] for i in range(1, len(RELEASED_VERSIONS) + 1)
-]
-
-
-@pytest.mark.parametrize(
-    "supported_versions",
-    version_permutations,
-    ids=lambda supported_versions: "-".join(supported_versions),
-)
-def test_version_inferrence(supported_versions):
-    xp = MockArray(supported_versions).__array_namespace__()
-    xps = make_strategies_namespace(xp)
-    assert xps.api_version == supported_versions[-1]
-
-
-def test_raises_on_inferring_with_no_supported_versions():
-    xp = MockArray(()).__array_namespace__()
-    with pytest.raises(InvalidArgument):
-        xps = make_strategies_namespace(xp)
-
-
-@pytest.mark.parametrize(
-    ("api_version", "supported_versions"),
-    [pytest.param(p[-1], p[:-1], id=p[-1]) for p in version_permutations],
-)
-def test_warns_on_specifying_unsupported_version(api_version, supported_versions):
-    xp = MockArray(supported_versions).__array_namespace__()
-    xp.zeros = None
-    with pytest.warns(HypothesisWarning):
-        xps = make_strategies_namespace(xp, api_version=api_version)
-    assert xps.api_version == api_version
-
-
 def test_raises_on_inferring_with_no_zeros_func():
+    """When xp has no zeros(), inferring api_version raises helpful error."""
     xp = make_mock_xp(exclude=("zeros",))
     with pytest.raises(InvalidArgument, match="has no function"):
-        xps = make_strategies_namespace(xp)
+        make_strategies_namespace(xp)
 
 
 def test_raises_on_erroneous_zeros_func():
+    """When xp has erroneous zeros(), inferring api_version raises helpful error."""
     xp = make_mock_xp()
     xp.zeros = None
     with pytest.raises(InvalidArgument):
-        xps = make_strategies_namespace(xp)
+        make_strategies_namespace(xp)

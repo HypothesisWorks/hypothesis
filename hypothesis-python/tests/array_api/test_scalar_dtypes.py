@@ -40,12 +40,14 @@ from tests.common.debug import assert_all_examples, find_any, minimal
     ],
 )
 def test_all_generated_dtypes_are_of_group(xp, xps, strat_name, dtype_names):
+    """Strategy only generates expected dtypes."""
     strat_func = getattr(xps, strat_name)
     dtypes = [getattr(xp, n) for n in dtype_names]
     assert_all_examples(strat_func(), lambda dtype: dtype in dtypes)
 
 
 def test_all_generated_scalar_dtypes_are_scalar(xp, xps):
+    """Strategy only generates scalar dtypes."""
     if api_version_gt(xps.api_version, "2021.12"):
         dtypes = [getattr(xp, n) for n in DTYPE_NAMES]
     else:
@@ -54,6 +56,7 @@ def test_all_generated_scalar_dtypes_are_scalar(xp, xps):
 
 
 def test_all_generated_numeric_dtypes_are_numeric(xp, xps):
+    """Strategy only generates numeric dtypes."""
     if api_version_gt(xps.api_version, "2021.12"):
         dtypes = [getattr(xp, n) for n in NUMERIC_NAMES]
     else:
@@ -74,6 +77,7 @@ def test_all_generated_numeric_dtypes_are_numeric(xp, xps):
     ],
 )
 def test_strategy_can_generate_every_dtype(xp, xps, strat_name, dtype_name):
+    """Strategy generates every expected dtype."""
     if dtype_name.startswith("complex") and api_version_gt(
         MIN_VER_FOR_COMPLEX, xps.api_version
     ):
@@ -84,6 +88,7 @@ def test_strategy_can_generate_every_dtype(xp, xps, strat_name, dtype_name):
 
 
 def test_minimise_scalar_dtypes(xp, xps):
+    """Strategy minimizes to bool dtype."""
     assert minimal(xps.scalar_dtypes()) == xp.bool
 
 
@@ -99,6 +104,7 @@ def test_minimise_scalar_dtypes(xp, xps):
     ],
 )
 def test_can_specify_sizes_as_an_int(xp, xps, strat_name, sizes):
+    """Strategy treats ints as a single size."""
     strat_func = getattr(xps, strat_name)
     strat = strat_func(sizes=sizes)
     find_any(strat)
