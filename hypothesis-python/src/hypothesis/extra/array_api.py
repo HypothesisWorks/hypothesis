@@ -863,7 +863,11 @@ def make_strategies_namespace(
     """Creates a strategies namespace for the given array module.
 
     * ``xp`` is the Array API library to automatically pass to the namespaced methods.
-    * ``api_version`` TODO
+    * ``api_version`` is the version of the Array API which the returned
+      strategies namespace should conform to. If ``None``, the latest API
+      version which ``xp`` supports will be inferred. If a version string in the
+      ``YYYY.MM`` format, the strategies namespace will conform to that version
+      if supported.
 
     A :obj:`python:types.SimpleNamespace` is returned which contains all the
     strategy methods in this module but without requiring the ``xp`` argument.
@@ -874,11 +878,13 @@ def make_strategies_namespace(
 
       >>> from numpy import array_api as xp
       >>> xps = make_strategies_namespace(xp)
+      >>> xps.api_version
+      '2021.12'  # this will depend on the version of NumPy installed
       >>> x = xps.arrays(xp.int8, (2, 3)).example()
       >>> x
       Array([[-8,  6,  3],
              [-6,  4,  6]], dtype=int8)
-      >>> x.__array_namespace__() is xp  TODO
+      >>> x.__array_namespace__() is xp
       True
 
     """
