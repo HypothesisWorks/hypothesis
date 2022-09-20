@@ -13,14 +13,19 @@ from typing import Dict
 
 import pytest
 
-from hypothesis.extra.array_api import COMPLEX_NAMES, REAL_NAMES
+from hypothesis.extra.array_api import COMPLEX_NAMES, REAL_NAMES, NominalVersion
 from hypothesis.internal.floats import next_up
 
 __all__ = [
+    "MIN_VER_FOR_COMPLEX:",
     "installed_array_modules",
     "flushes_to_zero",
     "dtype_name_params",
 ]
+
+
+# This should be updated for when a released version includes complex numbers
+MIN_VER_FOR_COMPLEX: NominalVersion = "draft"
 
 
 def installed_array_modules() -> Dict[str, EntryPoint]:
@@ -55,6 +60,6 @@ def flushes_to_zero(xp, width: int) -> bool:
 
 
 dtype_name_params = ["bool"] + list(REAL_NAMES)
-dtype_name_params += [
-    pytest.param(n, marks=pytest.mark.xp_min_version("draft")) for n in COMPLEX_NAMES
-]
+for name in COMPLEX_NAMES:
+    param = pytest.param(name, marks=pytest.mark.xp_min_version(MIN_VER_FOR_COMPLEX))
+    dtype_name_params.append(param)

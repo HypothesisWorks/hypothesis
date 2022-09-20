@@ -15,6 +15,8 @@ import pytest
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.array_api import NominalVersion, make_strategies_namespace
 
+from tests.array_api.common import MIN_VER_FOR_COMPLEX
+
 
 def e(name, *, _min_version: Optional[NominalVersion] = None, **kwargs):
     kw = ", ".join(f"{k}={v!r}" for k, v in kwargs.items())
@@ -69,8 +71,8 @@ def e(name, *, _min_version: Optional[NominalVersion] = None, **kwargs):
         e("unsigned_integer_dtypes", sizes=(3,)),
         e("floating_dtypes", sizes=()),
         e("floating_dtypes", sizes=(3,)),
-        e("complex_dtypes", _min_version="draft", sizes=()),
-        e("complex_dtypes", _min_version="draft", sizes=(3,)),
+        e("complex_dtypes", _min_version=MIN_VER_FOR_COMPLEX, sizes=()),
+        e("complex_dtypes", _min_version=MIN_VER_FOR_COMPLEX, sizes=(3,)),
         e("valid_tuple_axes", ndim=-1),
         e("valid_tuple_axes", ndim=2, min_size=-1),
         e("valid_tuple_axes", ndim=2, min_size=3, max_size=10),

@@ -15,7 +15,11 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.extra.array_api import COMPLEX_NAMES, REAL_NAMES, api_version_gt
 from hypothesis.internal.floats import width_smallest_normals
 
-from tests.array_api.common import dtype_name_params, flushes_to_zero
+from tests.array_api.common import (
+    MIN_VER_FOR_COMPLEX,
+    dtype_name_params,
+    flushes_to_zero,
+)
 from tests.common.debug import assert_all_examples, find_any, minimal
 from tests.common.utils import flaky
 
@@ -78,7 +82,9 @@ def test_draw_arrays_from_int_shapes(xp, xps, data):
         "unsigned_integer_dtypes",
         "floating_dtypes",
         "real_dtypes",
-        pytest.param("complex_dtypes", marks=pytest.mark.xp_min_version("draft")),
+        pytest.param(
+            "complex_dtypes", marks=pytest.mark.xp_min_version(MIN_VER_FOR_COMPLEX)
+        ),
     ],
 )
 def test_draw_arrays_from_dtype_strategies(xp, xps, strat_name):
@@ -303,7 +309,7 @@ def test_may_not_use_overflowing_integers(xp, xps, kwargs):
         pytest.param(
             "complex64",
             st.complex_numbers(min_magnitude=10**300, allow_infinity=False),
-            marks=pytest.mark.xp_min_version("draft"),
+            marks=pytest.mark.xp_min_version(MIN_VER_FOR_COMPLEX),
         ),
     ],
 )

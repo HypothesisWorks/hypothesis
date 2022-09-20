@@ -21,6 +21,7 @@ from hypothesis.extra.array_api import (
     api_version_gt,
 )
 
+from tests.array_api.common import MIN_VER_FOR_COMPLEX
 from tests.common.debug import assert_all_examples, find_any, minimal
 
 
@@ -66,7 +67,7 @@ def test_can_generate_real_dtypes(xp, xps):
     assert_all_examples(xps.real_dtypes(), lambda dtype: dtype in real_dtypes)
 
 
-@pytest.mark.xp_min_version("draft")
+@pytest.mark.xp_min_version(MIN_VER_FOR_COMPLEX)
 def test_can_generate_complex_dtypes(xp, xps):
     complex_dtypes = [getattr(xp, name) for name in COMPLEX_NAMES]
     assert_all_examples(xps.complex_dtypes(), lambda dtype: dtype in complex_dtypes)
