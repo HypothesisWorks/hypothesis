@@ -226,7 +226,7 @@ def test_raise_invalid_argument(xp, xps, strat_name, kwargs):
         strat.example()
 
 
-@pytest.mark.parametrize("api_version", [None, "latest", "1970.01", 42])
+@pytest.mark.parametrize("api_version", [..., "latest", "1970.01", 42])
 def test_make_namespace_raise_invalid_argument(xp, api_version):
     with pytest.raises(InvalidArgument):
         make_strategies_namespace(xp, api_version=api_version)

@@ -858,7 +858,7 @@ _args_to_xps = WeakValueDictionary()
 
 
 def make_strategies_namespace(
-    xp: Any, *, api_version: Union["Ellipsis", NominalVersion] = ...
+    xp: Any, *, api_version: Optional[NominalVersion] = None
 ) -> SimpleNamespace:
     """Creates a strategies namespace for the given array module.
 
@@ -890,15 +890,15 @@ def make_strategies_namespace(
         return namespace
 
     check_argument(
-        api_version == Ellipsis
+        api_version is None
         or (isinstance(api_version, str) and api_version in NOMINAL_VERSIONS),
-        f"{api_version=}, but api_version must be an ellipsis (...), or valid "
-        f"version string {RELEASED_VERSIONS}. If the standard version you want "
-        "is not available, please ensure you're using the latest version of "
+        f"{api_version=}, but api_version must be None, or a valid version "
+        f"string {RELEASED_VERSIONS}. If the standard version you want is not "
+        "available, please ensure you're using the latest version of "
         "Hypothesis, then open an issue if one doesn't already exist.",
     )
-    if api_version == Ellipsis:
-        # When api_version=..., we infer the most recent API version for which
+    if api_version is None:
+        # When api_version=None, we infer the most recent API version for which
         # the passed xp is valid. We go through the released versions in
         # descending order, passing them to x.__array_namespace__() until no
         # errors are raised, thus inferring that specific api_version is

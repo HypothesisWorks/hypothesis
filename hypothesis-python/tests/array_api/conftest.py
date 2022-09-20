@@ -36,7 +36,7 @@ if test_version_option != "default" and test_version_option not in NOMINAL_VERSI
 with pytest.warns(HypothesisWarning):
     mock_version = "draft" if test_version_option == "default" else test_version_option
     mock_xps = make_strategies_namespace(mock_xp, api_version=mock_version)
-api_version = ... if test_version_option == "default" else test_version_option
+api_version = None if test_version_option == "default" else test_version_option
 
 name_to_entry_point = installed_array_modules()
 with warnings.catch_warnings():
