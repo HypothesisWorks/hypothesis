@@ -618,7 +618,7 @@ def _boolean_dtypes(xp: Any) -> st.SearchStrategy[DataType]:
 
 
 def _real_dtypes(xp: Any) -> st.SearchStrategy[DataType]:
-    """Return a strategy for all real dtype objects."""
+    """Return a strategy for all real-valued dtype objects."""
     return st.one_of(
         _integer_dtypes(xp),
         _unsigned_integer_dtypes(xp),

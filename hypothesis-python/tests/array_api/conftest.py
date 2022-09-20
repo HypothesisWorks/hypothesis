@@ -42,8 +42,8 @@ name_to_entry_point = installed_array_modules()
 with warnings.catch_warnings():
     # We ignore all warnings here as many array modules warn on import
     warnings.simplefilter("ignore")
-    # We go through the steps described in README.md to define `xp_xps_parais`,
-    # which contains the array module(s) to be ran against the test suite along
+    # We go through the steps described in README.md to define `xp_xps_pairs`,
+    # which contains the array module(s) to be run against the test suite, along
     # with their respective strategy namespaces.
     if test_xp_option == "default":
         xp_and_xps_pairs = [(mock_xp, mock_xps)]
