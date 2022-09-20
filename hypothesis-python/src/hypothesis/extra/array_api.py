@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import contextlib
 import math
 import sys
 from numbers import Real
@@ -918,11 +919,8 @@ def make_strategies_namespace(
         except Exception:
             raise InvalidArgument(errmsg)
         for api_version in reversed(RELEASED_VERSIONS):
-            try:
+            with contextlib.suppress(Exception):
                 xp = array.__array_namespace__(api_version=api_version)
-            except Exception:
-                pass
-            else:
                 break  # i.e. a valid xp and api_version has been inferred
         else:
             raise InvalidArgument(errmsg)
