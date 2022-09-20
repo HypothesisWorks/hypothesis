@@ -25,52 +25,62 @@ from tests.array_api.common import MIN_VER_FOR_COMPLEX
 from tests.common.debug import assert_all_examples, find_any, minimal
 
 
-def test_can_generate_scalar_dtypes(xp, xps):
+@pytest.mark.parametrize(
+    ("strat_name", "dtype_names"),
+    [
+        ("integer_dtypes", INT_NAMES),
+        ("unsigned_integer_dtypes", UINT_NAMES),
+        ("floating_dtypes", FLOAT_NAMES),
+        ("real_dtypes", REAL_NAMES),
+        pytest.param(
+            "complex_dtypes",
+            COMPLEX_NAMES,
+            marks=pytest.mark.xp_min_version(MIN_VER_FOR_COMPLEX),
+        ),
+    ],
+)
+def test_all_generated_dtypes_are_of_group(xp, xps, strat_name, dtype_names):
+    strat_func = getattr(xps, strat_name)
+    dtypes = [getattr(xp, n) for n in dtype_names]
+    assert_all_examples(strat_func(), lambda dtype: dtype in dtypes)
+
+
+def test_all_generated_scalar_dtypes_are_scalar(xp, xps):
     if api_version_gt(xps.api_version, "2021.12"):
-        dtypes = [getattr(xp, name) for name in DTYPE_NAMES]
+        dtypes = [getattr(xp, n) for n in DTYPE_NAMES]
     else:
-        dtypes = [getattr(xp, name) for name in ("bool",) + REAL_NAMES]
+        dtypes = [getattr(xp, n) for n in ("bool",) + REAL_NAMES]
     assert_all_examples(xps.scalar_dtypes(), lambda dtype: dtype in dtypes)
 
 
-def test_can_generate_boolean_dtypes(xp, xps):
-    assert_all_examples(xps.boolean_dtypes(), lambda dtype: dtype == xp.bool)
-
-
-def test_can_generate_numeric_dtypes(xp, xps):
+def test_all_generated_numeric_dtypes_are_numeric(xp, xps):
     if api_version_gt(xps.api_version, "2021.12"):
-        numeric_dtypes = [getattr(xp, name) for name in NUMERIC_NAMES]
+        dtypes = [getattr(xp, n) for n in NUMERIC_NAMES]
     else:
-        numeric_dtypes = [getattr(xp, name) for name in REAL_NAMES]
-    assert_all_examples(xps.numeric_dtypes(), lambda dtype: dtype in numeric_dtypes)
+        dtypes = [getattr(xp, n) for n in REAL_NAMES]
+    assert_all_examples(xps.numeric_dtypes(), lambda dtype: dtype in dtypes)
 
 
-def test_can_generate_integer_dtypes(xp, xps):
-    int_dtypes = [getattr(xp, name) for name in INT_NAMES]
-    assert_all_examples(xps.integer_dtypes(), lambda dtype: dtype in int_dtypes)
-
-
-def test_can_generate_unsigned_integer_dtypes(xp, xps):
-    uint_dtypes = [getattr(xp, name) for name in UINT_NAMES]
-    assert_all_examples(
-        xps.unsigned_integer_dtypes(), lambda dtype: dtype in uint_dtypes
-    )
-
-
-def test_can_generate_floating_dtypes(xp, xps):
-    float_dtypes = [getattr(xp, name) for name in FLOAT_NAMES]
-    assert_all_examples(xps.floating_dtypes(), lambda dtype: dtype in float_dtypes)
-
-
-def test_can_generate_real_dtypes(xp, xps):
-    real_dtypes = [getattr(xp, name) for name in REAL_NAMES]
-    assert_all_examples(xps.real_dtypes(), lambda dtype: dtype in real_dtypes)
-
-
-@pytest.mark.xp_min_version(MIN_VER_FOR_COMPLEX)
-def test_can_generate_complex_dtypes(xp, xps):
-    complex_dtypes = [getattr(xp, name) for name in COMPLEX_NAMES]
-    assert_all_examples(xps.complex_dtypes(), lambda dtype: dtype in complex_dtypes)
+@pytest.mark.parametrize(
+    ("strat_name", "dtype_name"),
+    [
+        *[("scalar_dtypes", n) for n in DTYPE_NAMES],
+        *[("numeric_dtypes", n) for n in NUMERIC_NAMES],
+        *[("integer_dtypes", n) for n in INT_NAMES],
+        *[("unsigned_integer_dtypes", n) for n in UINT_NAMES],
+        *[("floating_dtypes", n) for n in FLOAT_NAMES],
+        *[("real_dtypes", n) for n in REAL_NAMES],
+        *[("complex_dtypes", n) for n in COMPLEX_NAMES],
+    ],
+)
+def test_strategy_can_generate_every_dtype(xp, xps, strat_name, dtype_name):
+    if dtype_name.startswith("complex") and api_version_gt(
+        MIN_VER_FOR_COMPLEX, xps.api_version
+    ):
+        pytest.skip(f"requires api_version=>{MIN_VER_FOR_COMPLEX}")
+    strat_func = getattr(xps, strat_name)
+    dtype = getattr(xp, dtype_name)
+    find_any(strat_func(), lambda d: d == dtype)
 
 
 def test_minimise_scalar_dtypes(xp, xps):
