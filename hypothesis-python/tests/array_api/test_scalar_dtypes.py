@@ -93,6 +93,9 @@ def test_minimise_scalar_dtypes(xp, xps):
         ("integer_dtypes", 8),
         ("unsigned_integer_dtypes", 8),
         ("floating_dtypes", 32),
+        pytest.param(
+            "complex_dtypes", 64, marks=pytest.mark.xp_min_version(MIN_VER_FOR_COMPLEX)
+        ),
     ],
 )
 def test_can_specify_sizes_as_an_int(xp, xps, strat_name, sizes):
