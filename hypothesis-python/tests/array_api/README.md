@@ -45,3 +45,7 @@ recognized option:
 
 Otherwise the test suite will use the variable as the `api_version` argument for
 `make_strategies_namespace()`.
+
+In the future we intend to support running tests against multiple API versioned
+namespaces, likely with an additional recognized option that infers all
+supported versions.
