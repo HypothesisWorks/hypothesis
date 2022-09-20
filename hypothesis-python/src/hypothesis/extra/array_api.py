@@ -322,7 +322,9 @@ def _from_dtype(
 
 
 class ArrayStrategy(st.SearchStrategy):
-    def __init__(self, xp, api_version, elements_strategy, dtype, shape, fill, unique):
+    def __init__(
+        self, *, xp, api_version, elements_strategy, dtype, shape, fill, unique
+    ):
         self.xp = xp
         self.elements_strategy = elements_strategy
         self.dtype = dtype
@@ -586,7 +588,15 @@ def _arrays(
             fill = elements
     check_strategy(fill, "fill")
 
-    return ArrayStrategy(xp, api_version, elements, dtype, shape, fill, unique)
+    return ArrayStrategy(
+        xp=xp,
+        api_version=api_version,
+        elements_strategy=elements,
+        dtype=dtype,
+        shape=shape,
+        fill=fill,
+        unique=unique,
+    )
 
 
 @check_function
