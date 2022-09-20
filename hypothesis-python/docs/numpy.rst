@@ -83,9 +83,12 @@ standard semantics and returning objects from the ``xp`` module:
         scalar_dtypes,
         boolean_dtypes,
         numeric_dtypes,
+        real_dtypes,
         integer_dtypes,
         unsigned_integer_dtypes,
         floating_dtypes,
+        ..
+           TODO: for next released xp version, include complex_dtypes here
         valid_tuple_axes,
         broadcastable_shapes,
         mutually_broadcastable_shapes,

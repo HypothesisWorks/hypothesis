@@ -57,10 +57,16 @@ def setup(app):
         app.tags.add("has_release_file")
 
     # patch in mock array_api namespace so we can autodoc it
-    from hypothesis.extra.array_api import make_strategies_namespace, mock_xp
+    from hypothesis.extra.array_api import (
+        RELEASED_VERSIONS,
+        make_strategies_namespace,
+        mock_xp,
+    )
 
     mod = types.ModuleType("xps")
-    mod.__dict__.update(make_strategies_namespace(mock_xp).__dict__)
+    mod.__dict__.update(
+        make_strategies_namespace(mock_xp, api_version=RELEASED_VERSIONS[-1]).__dict__
+    )
     assert "xps" not in sys.modules
     sys.modules["xps"] = mod
 
