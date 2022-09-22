@@ -14,7 +14,7 @@ from os import getenv
 
 import pytest
 
-from hypothesis.errors import HypothesisWarning
+from hypothesis.errors import HypothesisWarning, InvalidArgument
 from hypothesis.extra.array_api import (
     NOMINAL_VERSIONS,
     NominalVersion,
@@ -52,8 +52,13 @@ with warnings.catch_warnings():
         except KeyError:
             pass
         else:
-            xps = make_strategies_namespace(xp, api_version=api_version)
-            xp_and_xps_pairs.append((xp, xps))
+            # TODO: think about failing gracefully more, apply for similar instances
+            try:
+                xps = make_strategies_namespace(xp, api_version=api_version)
+            except InvalidArgument as e:
+                warnings.warn(e)
+            else:
+                xp_and_xps_pairs.append((xp, xps))
     elif test_xp_option == "all":
         if len(name_to_entry_point) == 0:
             raise ValueError(
@@ -62,16 +67,19 @@ with warnings.catch_warnings():
         xp_and_xps_pairs = [(mock_xp, mock_xps)]
         for name, ep in name_to_entry_point.items():
             xp = ep.load()
+            # TODO
             xps = make_strategies_namespace(xp, api_version=api_version)
             xp_and_xps_pairs.append((xp, xps))
     elif test_xp_option in name_to_entry_point.keys():
         ep = name_to_entry_point[test_xp_option]
         xp = ep.load()
+        # TODO
         xps = make_strategies_namespace(xp, api_version=api_version)
         xp_and_xps_pairs = [(xp, xps)]
     else:
         try:
             xp = import_module(test_xp_option)
+            # TODO
             xps = make_strategies_namespace(xp, api_version=api_version)
             xp_and_xps_pairs = [(xp, xps)]
         except ImportError as e:

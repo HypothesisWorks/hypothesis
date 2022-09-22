@@ -8,7 +8,6 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import contextlib
 import math
 import sys
 from numbers import Real
@@ -865,9 +864,9 @@ def make_strategies_namespace(
     * ``xp`` is the Array API library to automatically pass to the namespaced methods.
     * ``api_version`` is the version of the Array API which the returned
       strategies namespace should conform to. If ``None``, the latest API
-      version which ``xp`` supports will be inferred. If a version string in the
-      ``YYYY.MM`` format, the strategies namespace will conform to that version
-      if supported.
+      version which ``xp`` supports will be inferred from ``xp.__array_api_version__``.
+      If a version string in the ``YYYY.MM`` format, the strategies namespace
+      will conform to that version if supported.
 
     A :obj:`python:types.SimpleNamespace` is returned which contains all the
     strategy methods in this module but without requiring the ``xp`` argument.
@@ -876,10 +875,11 @@ def make_strategies_namespace(
 
     .. code-block:: pycon
 
-      >>> from numpy import array_api as xp
+      >>> xp.__array_api_version__  # xp is your desired array library
+      '2021.12'
       >>> xps = make_strategies_namespace(xp)
       >>> xps.api_version
-      '2021.12'  # this will depend on the version of NumPy installed
+      '2021.12'
       >>> x = xps.arrays(xp.int8, (2, 3)).example()
       >>> x
       Array([[-8,  6,  3],
@@ -895,41 +895,32 @@ def make_strategies_namespace(
     else:
         return namespace
 
+    not_available_msg = (
+        "If the standard version you want is not available, please ensure "
+        "you're using the latest version of Hypothesis, then open an issue if "
+        "one doesn't already exist."
+    )
     check_argument(
         api_version is None
         or (isinstance(api_version, str) and api_version in NOMINAL_VERSIONS),
         f"{api_version=}, but api_version must be None, or a valid version "
-        f"string {RELEASED_VERSIONS}. If the standard version you want is not "
-        "available, please ensure you're using the latest version of "
-        "Hypothesis, then open an issue if one doesn't already exist.",
+        f"string {RELEASED_VERSIONS}. {not_available_msg}",
     )
     if api_version is None:
-        # When api_version=None, we infer the most recent API version for which
-        # the passed xp is valid. We go through the released versions in
-        # descending order, passing them to x.__array_namespace__() until no
-        # errors are raised, thus inferring that specific api_version is
-        # supported. If errors are raised for all released versions, we raise
-        # our own useful error.
         check_argument(
-            hasattr(xp, "zeros"),
-            f"Array module {xp.__name__} has no function zeros(), which is "
-            "required when inferring api_version.",
+            hasattr(xp, "__array_api_version__"),
+            f"Array module {xp.__name__} has no attribute __array_api_version__, "
+            "which is required when inferring api_version. If you believe "
+            f"{xp.__name__} is indeed an Array API module, try explicitly "
+            "passing an api_version.",
         )
-        errmsg = (
-            f"Could not infer any api_version which module {xp.__name__} "
-            f"supports. If you believe {xp.__name__} is indeed an Array API "
-            "module, try explicitly passing an api_version."
+        check_argument(
+            isinstance(xp.__array_api_version__, str)
+            and xp.__array_api_version__ in RELEASED_VERSIONS,
+            f"{xp.__array_api_version__=}, but xp.__array_api_version__ must "
+            f"be a valid version string {RELEASED_VERSIONS}. {not_available_msg}",
         )
-        try:
-            array = xp.zeros(1)
-        except Exception:
-            raise InvalidArgument(errmsg)
-        for api_version in reversed(RELEASED_VERSIONS):
-            with contextlib.suppress(Exception):
-                xp = array.__array_namespace__(api_version=api_version)
-                break  # i.e. a valid xp and api_version has been inferred
-        else:
-            raise InvalidArgument(errmsg)
+        api_version = xp.__array_api_version__
     try:
         array = xp.zeros(1)
         array.__array_namespace__()
@@ -1132,6 +1123,7 @@ if np is not None:
 
     mock_xp = SimpleNamespace(
         __name__="mock",
+        __array_api_version__="2021.12",
         # Data types
         int8=np.int8,
         int16=np.int16,

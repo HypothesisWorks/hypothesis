@@ -123,16 +123,18 @@ def test_warning_on_partial_dtypes(stratname, keep_anys, data):
         data.draw(func())
 
 
-def test_raises_on_inferring_with_no_zeros_func():
-    """When xp has no zeros(), inferring api_version raises helpful error."""
-    xp = make_mock_xp(exclude=("zeros",))
-    with pytest.raises(InvalidArgument, match="has no function"):
+def test_raises_on_inferring_with_no_dunder_version():
+    """When xp has no __array_api_version__, inferring api_version raises
+    helpful error."""
+    xp = make_mock_xp(exclude=("__array_api_version__",))
+    with pytest.raises(InvalidArgument, match="has no attribute"):
         make_strategies_namespace(xp)
 
 
-def test_raises_on_erroneous_zeros_func():
-    """When xp has erroneous zeros(), inferring api_version raises helpful error."""
+def test_raises_on_invalid_dunder_version():
+    """When xp has invalid __array_api_version__, inferring api_version raises
+    helpful error."""
     xp = make_mock_xp()
-    xp.zeros = None
+    xp.__array_api_version__ = None
     with pytest.raises(InvalidArgument):
         make_strategies_namespace(xp)
