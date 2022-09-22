@@ -58,17 +58,6 @@ with warnings.catch_warnings():
     # with their respective strategy namespaces.
     if test_xp_option == "default":
         xp_and_xps_pairs = [(mock_xp, mock_xps)]
-        try:
-            xp = name_to_entry_point["numpy"].load()
-        except KeyError:
-            pass
-        else:
-            try:
-                xps = make_strategies_namespace(xp, api_version=api_version)
-            except InvalidArgument as e:
-                warnings.warn(str(e), InvalidArgumentWarning)
-            else:
-                xp_and_xps_pairs.append((xp, xps))
     elif test_xp_option == "all":
         if len(name_to_entry_point) == 0:
             raise ValueError(

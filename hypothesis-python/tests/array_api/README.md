@@ -13,7 +13,7 @@ You can test other array modules which adopt the Array API via the
 `HYPOTHESIS_TEST_ARRAY_API` environment variable. There are two recognized
 options:
 
-* `"default"`: uses the mock, and `numpy.array_api` if available.
+* `"default"`: uses the mock.
 * `"all"`: uses all array modules found via entry points, _and_ the mock.
 
 If neither of these, the test suite will then try resolve the variable like so:
@@ -33,7 +33,6 @@ or use the import path (**2.**),
 The former method is more ergonomic, but as entry points are optional for
 adopting the Array API, you will need to use the latter method for libraries
 that opt-out.
-
 
 ## Running against different API versions
 
