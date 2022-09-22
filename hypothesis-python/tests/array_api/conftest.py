@@ -76,18 +76,19 @@ with warnings.catch_warnings():
         ep = name_to_entry_point[test_xp_option]
         xp = ep.load()
         xps = make_strategies_namespace(xp, api_version=api_version)
-        xp_and_xps_pairs.append(xp, xps)
+        xp_and_xps_pairs = [(xp, xps)]
     else:
         try:
             xp = import_module(test_xp_option)
-            xps = make_strategies_namespace(xp, api_version=api_version)
-            xp_and_xps_pairs = [(xp, xps)]
         except ImportError as e:
             raise ValueError(
                 f"HYPOTHESIS_TEST_ARRAY_API='{test_xp_option}' is not a valid "
                 "option ('default' or 'all'), name of an available entry point, "
                 "or a valid import path."
             ) from e
+        else:
+            xps = make_strategies_namespace(xp, api_version=api_version)
+            xp_and_xps_pairs = [(xp, xps)]
 
 
 def pytest_generate_tests(metafunc):
