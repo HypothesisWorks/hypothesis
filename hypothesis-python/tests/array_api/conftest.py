@@ -11,6 +11,8 @@
 import warnings
 from importlib import import_module
 from os import getenv
+from types import ModuleType, SimpleNamespace
+from typing import Tuple
 
 import pytest
 
@@ -27,6 +29,7 @@ from tests.array_api.common import installed_array_modules
 
 # See README.md in regards to the env variables
 test_xp_option = getenv("HYPOTHESIS_TEST_ARRAY_API", "default")
+
 test_version_option = getenv("HYPOTHESIS_TEST_ARRAY_API_VERSION", "default")
 if test_version_option != "default" and test_version_option not in NOMINAL_VERSIONS:
     raise ValueError(
@@ -38,10 +41,18 @@ with pytest.warns(HypothesisWarning):
     mock_xps = make_strategies_namespace(mock_xp, api_version=mock_version)
 api_version = None if test_version_option == "default" else test_version_option
 
+
+class InvalidArgumentWarning(UserWarning):
+    """Custom warning so we can bypass our global capturing"""
+
+
 name_to_entry_point = installed_array_modules()
+xp_and_xps_pairs: Tuple[ModuleType, SimpleNamespace] = []
 with warnings.catch_warnings():
-    # We ignore all warnings here as many array modules warn on import
+    # We ignore all warnings here as many array modules warn on import. Ideally
+    # we would just ignore ImportWarning, but no one seems to use it!
     warnings.simplefilter("ignore")
+    warnings.simplefilter("default", category=InvalidArgumentWarning)
     # We go through the steps described in README.md to define `xp_xps_pairs`,
     # which contains the array module(s) to be run against the test suite, along
     # with their respective strategy namespaces.
@@ -52,11 +63,10 @@ with warnings.catch_warnings():
         except KeyError:
             pass
         else:
-            # TODO: think about failing gracefully more, apply for similar instances
             try:
                 xps = make_strategies_namespace(xp, api_version=api_version)
             except InvalidArgument as e:
-                warnings.warn(e)
+                warnings.warn(str(e), InvalidArgumentWarning)
             else:
                 xp_and_xps_pairs.append((xp, xps))
     elif test_xp_option == "all":
@@ -67,19 +77,20 @@ with warnings.catch_warnings():
         xp_and_xps_pairs = [(mock_xp, mock_xps)]
         for name, ep in name_to_entry_point.items():
             xp = ep.load()
-            # TODO
-            xps = make_strategies_namespace(xp, api_version=api_version)
-            xp_and_xps_pairs.append((xp, xps))
+            try:
+                xps = make_strategies_namespace(xp, api_version=api_version)
+            except InvalidArgument as e:
+                warnings.warn(str(e), InvalidArgumentWarning)
+            else:
+                xp_and_xps_pairs.append((xp, xps))
     elif test_xp_option in name_to_entry_point.keys():
         ep = name_to_entry_point[test_xp_option]
         xp = ep.load()
-        # TODO
         xps = make_strategies_namespace(xp, api_version=api_version)
-        xp_and_xps_pairs = [(xp, xps)]
+        xp_and_xps_pairs.append(xp, xps)
     else:
         try:
             xp = import_module(test_xp_option)
-            # TODO
             xps = make_strategies_namespace(xp, api_version=api_version)
             xp_and_xps_pairs = [(xp, xps)]
         except ImportError as e:
