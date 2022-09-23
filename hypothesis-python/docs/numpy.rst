@@ -75,6 +75,9 @@ The resulting namespace contains all our familiar strategies like
 :func:`~xps.arrays` and :func:`~xps.from_dtype`, but based on the Array API
 standard semantics and returning objects from the ``xp`` module:
 
+..
+    TODO: for next released xp version, include complex_dtypes here
+
 .. automodule:: xps
    :members:
         from_dtype,
@@ -87,8 +90,6 @@ standard semantics and returning objects from the ``xp`` module:
         integer_dtypes,
         unsigned_integer_dtypes,
         floating_dtypes,
-        ..
-           TODO: for next released xp version, include complex_dtypes here
         valid_tuple_axes,
         broadcastable_shapes,
         mutually_broadcastable_shapes,
