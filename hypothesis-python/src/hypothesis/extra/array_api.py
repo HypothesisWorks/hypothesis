@@ -1041,11 +1041,11 @@ def make_strategies_namespace(
         def complex_dtypes(self):
             try:
                 return self.__dict__["complex_dtypes"]
-            except KeyError:
+            except KeyError as e:
                 raise AttributeError(
                     "You attempted to access 'complex_dtypes', but it is not "
                     f"available for api_version='{self.api_version}'."
-                )
+                ) from e
 
         def __repr__(self):
             return (
