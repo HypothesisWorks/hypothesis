@@ -205,11 +205,12 @@ def _from_dtype(
       :xp-ref:`valid dtype <data_types.html>`.
 
     Compatible ``**kwargs`` are passed to the inferred strategy function for
-    integers and floats.  This allows you to customise the min and max values,
+    integers, floats.  This allows you to customise the min and max values,
     and exclude non-finite numbers. This is particularly useful when kwargs are
     passed through from :func:`arrays()`, as it seamlessly handles the ``width``
     or other representable bounds for you.
     """
+    # TODO: for next released xp version, add note for complex dtype support
     check_xp_attributes(xp, ["iinfo", "finfo"])
 
     if isinstance(dtype, str):
@@ -717,7 +718,7 @@ def _unsigned_integer_dtypes(
 def _floating_dtypes(
     xp: Any, *, sizes: Union[int, Sequence[int]] = (32, 64)
 ) -> st.SearchStrategy[DataType]:
-    """Return a strategy for floating-point dtype objects.
+    """Return a strategy for real-valued floating-point dtype objects.
 
     ``sizes`` contains the floating-point sizes in bits, defaulting to
     ``(32, 64)`` which covers all valid sizes.
