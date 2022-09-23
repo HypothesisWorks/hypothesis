@@ -308,6 +308,11 @@ def _from_dtype(
                     "currently required for xps.from_dtype() to work with "
                     "any complex dtype."
                 )
+        # Ideally we would infer allow_subnormal with a complex array here, just
+        # in case the array library has different FTZ behaviour between complex
+        # and float arrays. Unfortunately the spec currently has no mechanism to
+        # extract both real and imaj components, but should in the future.
+        # See https://github.com/data-apis/array-api/pull/427
         kw = {
             "allow_nan": allow_nan,
             "allow_infinity": allow_infinity,
@@ -317,7 +322,11 @@ def _from_dtype(
             floats = _from_dtype(xp, api_version, xp.float32, **kw)
         else:
             floats = _from_dtype(xp, api_version, xp.float64, **kw)
-
+        # Due to the aforementioned lack of complex dtype inspection, along with
+        # no mechanism to separate real and imaj components, we lean on
+        # st.builds() here. Once both issues resolves, in the future we should
+        # lean on st.complex_numbers() - we could then maybe support min/max
+        # magnitude arguments!
         return st.builds(complex, floats, floats)
 
 
