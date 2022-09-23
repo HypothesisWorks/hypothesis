@@ -26,6 +26,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    get_args,
 )
 from warnings import warn
 from weakref import WeakValueDictionary
@@ -69,7 +70,7 @@ RELEASED_VERSIONS = ("2021.12",)
 assert sorted(RELEASED_VERSIONS) == list(RELEASED_VERSIONS)  # sanity check
 NOMINAL_VERSIONS = RELEASED_VERSIONS + ("draft",)
 NominalVersion = Literal["2021.12", "draft"]
-assert NominalVersion.__args__ == NOMINAL_VERSIONS  # sanity check
+assert get_args(NominalVersion) == NOMINAL_VERSIONS  # sanity check
 
 
 def api_version_gt(api_version1: NominalVersion, api_version2: NominalVersion) -> bool:
@@ -309,26 +310,26 @@ def _from_dtype(
                     "currently required for xps.from_dtype() to work with "
                     "any complex dtype."
                 )
+        component_dtype = xp.float32 if dtype == xp.complex64 else xp.float64
         # Ideally we would infer allow_subnormal with a complex array here, just
         # in case the array library has different FTZ behaviour between complex
         # and float arrays. Unfortunately the spec currently has no mechanism to
         # extract both real and imaj components, but should in the future.
         # See https://github.com/data-apis/array-api/pull/427
-        kw = {
-            "allow_nan": allow_nan,
-            "allow_infinity": allow_infinity,
-            "allow_subnormal": allow_subnormal,
-        }
-        if dtype == xp.complex64:
-            floats = _from_dtype(xp, api_version, xp.float32, **kw)
-        else:
-            floats = _from_dtype(xp, api_version, xp.float64, **kw)
+        floats = _from_dtype(
+            xp,
+            api_version,
+            component_dtype,
+            allow_nan=allow_nan,
+            allow_infinity=allow_infinity,
+            allow_subnormal=allow_subnormal,
+        )
         # Due to the aforementioned lack of complex dtype inspection, along with
         # no mechanism to separate real and imaj components, we lean on
         # st.builds() here. Once both issues resolves, in the future we should
         # lean on st.complex_numbers() - we could then maybe support min/max
         # magnitude arguments!
-        return st.builds(complex, floats, floats)
+        return st.builds(complex, floats, floats)  # type: ignore[arg-type]
 
 
 class ArrayStrategy(st.SearchStrategy):
@@ -650,7 +651,7 @@ def _numeric_dtypes(
     xp: Any, api_version: NominalVersion
 ) -> st.SearchStrategy[DataType]:
     """Return a strategy for all numeric dtype objects."""
-    strat = _real_dtypes(xp)
+    strat: st.SearchStrategy[DataType] = _real_dtypes(xp)
     if api_version_gt(api_version, "2021.12"):
         strat |= _complex_dtypes(xp)
     return strat
@@ -863,7 +864,7 @@ def indices(
 
 
 # Cache for make_strategies_namespace()
-_args_to_xps = WeakValueDictionary()
+_args_to_xps: WeakValueDictionary = WeakValueDictionary()
 
 
 def make_strategies_namespace(
@@ -954,7 +955,7 @@ def make_strategies_namespace(
     ) -> st.SearchStrategy[Union[bool, int, float]]:
         return _from_dtype(
             xp,
-            api_version,
+            api_version,  # type: ignore[arg-type]
             dtype,
             min_value=min_value,
             max_value=max_value,
@@ -978,7 +979,7 @@ def make_strategies_namespace(
     ) -> st.SearchStrategy:
         return _arrays(
             xp,
-            api_version,
+            api_version,  # type: ignore[arg-type]
             dtype,
             shape,
             elements=elements,
@@ -988,7 +989,7 @@ def make_strategies_namespace(
 
     @defines_strategy()
     def scalar_dtypes() -> st.SearchStrategy[DataType]:
-        return _scalar_dtypes(xp, api_version)
+        return _scalar_dtypes(xp, api_version)  # type: ignore[arg-type]
 
     @defines_strategy()
     def boolean_dtypes() -> st.SearchStrategy[DataType]:
@@ -1000,7 +1001,7 @@ def make_strategies_namespace(
 
     @defines_strategy()
     def numeric_dtypes() -> st.SearchStrategy[DataType]:
-        return _numeric_dtypes(xp, api_version)
+        return _numeric_dtypes(xp, api_version)  # type: ignore[arg-type]
 
     @defines_strategy()
     def integer_dtypes(
