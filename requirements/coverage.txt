@@ -48,7 +48,7 @@ packaging==21.3
     # via
     #   pytest
     #   redis
-pandas==1.4.4
+pandas==1.5.0
     # via -r requirements/coverage.in
 pathspec==0.10.1
     # via black
