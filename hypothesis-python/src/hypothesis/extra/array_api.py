@@ -311,11 +311,7 @@ def _from_dtype(
                     "any complex dtype."
                 )
         component_dtype = xp.float32 if dtype == xp.complex64 else xp.float64
-        # Ideally we would infer allow_subnormal with a complex array here, just
-        # in case the array library has different FTZ behaviour between complex
-        # and float arrays. Unfortunately the spec currently has no mechanism to
-        # extract both real and imaj components, but should in the future.
-        # See https://github.com/data-apis/array-api/pull/427
+
         floats = _from_dtype(
             xp,
             api_version,
@@ -324,11 +320,7 @@ def _from_dtype(
             allow_infinity=allow_infinity,
             allow_subnormal=allow_subnormal,
         )
-        # Due to the aforementioned lack of complex dtype inspection, along with
-        # no mechanism to separate real and imaj components, we lean on
-        # st.builds() here. Once both issues resolves, in the future we should
-        # lean on st.complex_numbers() - we could then maybe support min/max
-        # magnitude arguments!
+
         return st.builds(complex, floats, floats)  # type: ignore[arg-type]
 
 
