@@ -105,14 +105,6 @@ def pytest_generate_tests(metafunc):
             metafunc.parametrize("xp", xp_params)
 
 
-def pytest_configure(config):
-    config.addinivalue_line(
-        "markers",
-        "xp_min_version(api_version): "
-        "mark test to run when greater or equal to api_version",
-    )
-
-
 def pytest_collection_modifyitems(config, items):
     for item in items:
         if all(f in item.fixturenames for f in ["xp", "xps"]):
