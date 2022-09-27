@@ -317,9 +317,7 @@ stevedore==4.0.0
 tokenize-rt==4.2.1
     # via pyupgrade
 toml==0.10.2
-    # via
-    #   -r requirements/tools.in
-    #   autoflake
+    # via autoflake
 tomli==2.0.1
     # via
     #   black

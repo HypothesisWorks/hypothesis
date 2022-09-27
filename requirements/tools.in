@@ -33,7 +33,6 @@ sphinx-codeautolink
 sphinx-hoverxref
 sphinx-rtd-theme
 sphinx-selective-exclude
-toml
 tox
 twine
 types-click
