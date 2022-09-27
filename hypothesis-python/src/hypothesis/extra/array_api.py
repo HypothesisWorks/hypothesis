@@ -898,12 +898,6 @@ def make_strategies_namespace(
         "you're using the latest version of Hypothesis, then open an issue if "
         "one doesn't already exist."
     )
-    check_argument(
-        api_version is None
-        or (isinstance(api_version, str) and api_version in NOMINAL_VERSIONS),
-        f"{api_version=}, but api_version must be None, or a valid version "
-        f"string {RELEASED_VERSIONS}. {not_available_msg}",
-    )
     if api_version is None:
         check_argument(
             hasattr(xp, "__array_api_version__"),
@@ -919,6 +913,14 @@ def make_strategies_namespace(
             f"be a valid version string {RELEASED_VERSIONS}. {not_available_msg}",
         )
         api_version = xp.__array_api_version__
+        inferred_version = True
+    else:
+        check_argument(
+            isinstance(api_version, str) and api_version in NOMINAL_VERSIONS,
+            f"{api_version=}, but api_version must be None, or a valid version "
+            f"string {RELEASED_VERSIONS}. {not_available_msg}",
+        )
+        inferred_version = False
     try:
         array = xp.zeros(1)
         array.__array_namespace__()
@@ -1037,10 +1039,10 @@ def make_strategies_namespace(
                 ) from e
 
         def __repr__(self):
-            return (
-                f"make_strategies_namespace("
-                f"{self.name}, api_version='{self.api_version}')"
-            )
+            f_args = self.name
+            if not inferred_version:
+                f_args += f", api_version='{self.api_version}'"
+            return f"make_strategies_namespace({f_args})"
 
     kwargs = dict(
         name=xp.__name__,

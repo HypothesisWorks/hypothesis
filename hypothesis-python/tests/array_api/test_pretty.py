@@ -12,6 +12,9 @@ from inspect import signature
 
 import pytest
 
+from hypothesis.errors import InvalidArgument
+from hypothesis.extra.array_api import make_strategies_namespace
+
 from tests.array_api.common import MIN_VER_FOR_COMPLEX
 
 
@@ -80,10 +83,22 @@ def test_namespaced_strategies_repr(xp, xps, name, valid_args):
     assert xp.__name__ not in repr(strat), f"{xp.__name__} in strat repr"
 
 
-def test_strategies_namespace_repr(xp, xps):
-    """Strategies namespace has good repr."""
-    expected = (
-        f"make_strategies_namespace({xp.__name__}, api_version='{xps.api_version}')"
-    )
+@pytest.mark.filterwarnings("ignore::hypothesis.errors.HypothesisWarning")
+def test_inferred_version_strategies_namespace_repr(xp):
+    """Strategies namespace has good repr when api_version=None."""
+    try:
+        xps = make_strategies_namespace(xp)
+    except InvalidArgument as e:
+        pytest.skip(str(e))
+    expected = f"make_strategies_namespace({xp.__name__})"
+    assert repr(xps) == expected
+    assert str(xps) == expected
+
+
+@pytest.mark.filterwarnings("ignore::hypothesis.errors.HypothesisWarning")
+def test_specified_version_strategies_namespace_repr(xp):
+    """Strategies namespace has good repr when api_version is specified."""
+    xps = make_strategies_namespace(xp, api_version="2021.12")
+    expected = f"make_strategies_namespace({xp.__name__}, api_version='2021.12')"
     assert repr(xps) == expected
     assert str(xps) == expected
