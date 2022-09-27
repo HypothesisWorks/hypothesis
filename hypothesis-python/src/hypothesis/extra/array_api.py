@@ -201,7 +201,7 @@ def _from_dtype(
       :xp-ref:`valid dtype <data_types.html>`.
 
     Compatible ``**kwargs`` are passed to the inferred strategy function for
-    integers, floats.  This allows you to customise the min and max values,
+    integers and floats.  This allows you to customise the min and max values,
     and exclude non-finite numbers. This is particularly useful when kwargs are
     passed through from :func:`arrays()`, as it seamlessly handles the ``width``
     or other representable bounds for you.
