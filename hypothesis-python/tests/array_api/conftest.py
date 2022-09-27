@@ -107,15 +107,13 @@ def pytest_generate_tests(metafunc):
 
 def pytest_collection_modifyitems(config, items):
     for item in items:
-        if all(f in item.fixturenames for f in ["xp", "xps"]):
-            try:
-                marker = next(m for m in item.own_markers if m.name == "xp_min_version")
-            except StopIteration:
-                pass
-            else:
-                item.callspec.params["xps"].api_version
-                min_version: NominalVersion = marker.args[0]
-                if item.callspec.params["xps"].api_version < min_version:
+        if "xps" in item.fixturenames:
+            markers = [m for m in item.own_markers if m.name == "xp_min_version"]
+            if markers:
+                assert len(markers) == 1  # sanity check
+                min_version: NominalVersion = markers[0].args[0]
+                xps_version: NominalVersion = item.callspec.params["xps"].api_version
+                if xps_version < min_version:
                     item.add_marker(
                         pytest.mark.skip(reason=f"requires api_version=>{min_version}")
                     )
