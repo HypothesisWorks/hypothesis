@@ -13,7 +13,12 @@ from typing import Dict
 
 import pytest
 
-from hypothesis.extra.array_api import COMPLEX_NAMES, REAL_NAMES, NominalVersion
+from hypothesis.extra.array_api import (
+    COMPLEX_NAMES,
+    REAL_NAMES,
+    RELEASED_VERSIONS,
+    NominalVersion,
+)
 from hypothesis.internal.floats import next_up
 
 __all__ = [
@@ -24,8 +29,10 @@ __all__ = [
 ]
 
 
-# This should be updated for when a released version includes complex numbers
+# This should be updated to the next spec release, which should include complex numbers
 MIN_VER_FOR_COMPLEX: NominalVersion = "draft"
+if len(RELEASED_VERSIONS) > 1:
+    assert MIN_VER_FOR_COMPLEX == RELEASED_VERSIONS[1]
 
 
 def installed_array_modules() -> Dict[str, EntryPoint]:
