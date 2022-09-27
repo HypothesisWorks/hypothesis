@@ -18,7 +18,6 @@ from hypothesis.extra.array_api import (
     NUMERIC_NAMES,
     REAL_NAMES,
     UINT_NAMES,
-    api_version_gt,
 )
 
 from tests.array_api.common import MIN_VER_FOR_COMPLEX
@@ -48,7 +47,7 @@ def test_all_generated_dtypes_are_of_group(xp, xps, strat_name, dtype_names):
 
 def test_all_generated_scalar_dtypes_are_scalar(xp, xps):
     """Strategy only generates scalar dtypes."""
-    if api_version_gt(xps.api_version, "2021.12"):
+    if xps.api_version > "2021.12":
         dtypes = [getattr(xp, n) for n in DTYPE_NAMES]
     else:
         dtypes = [getattr(xp, n) for n in ("bool",) + REAL_NAMES]
@@ -57,7 +56,7 @@ def test_all_generated_scalar_dtypes_are_scalar(xp, xps):
 
 def test_all_generated_numeric_dtypes_are_numeric(xp, xps):
     """Strategy only generates numeric dtypes."""
-    if api_version_gt(xps.api_version, "2021.12"):
+    if xps.api_version > "2021.12":
         dtypes = [getattr(xp, n) for n in NUMERIC_NAMES]
     else:
         dtypes = [getattr(xp, n) for n in REAL_NAMES]

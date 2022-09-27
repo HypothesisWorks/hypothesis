@@ -12,7 +12,7 @@ import pytest
 
 from hypothesis import given, strategies as st
 from hypothesis.errors import InvalidArgument
-from hypothesis.extra.array_api import COMPLEX_NAMES, REAL_NAMES, api_version_gt
+from hypothesis.extra.array_api import COMPLEX_NAMES, REAL_NAMES
 from hypothesis.internal.floats import width_smallest_normals
 
 from tests.array_api.common import (
@@ -98,7 +98,7 @@ def test_draw_arrays_from_dtype_strategies(xp, xps, strat_name):
 def test_draw_arrays_from_dtype_name_strategies(xp, xps, data):
     """Draw arrays from dtype name strategies."""
     all_names = ("bool",) + REAL_NAMES
-    if api_version_gt(xps.api_version, "2021.12"):
+    if xps.api_version > "2021.12":
         all_names += COMPLEX_NAMES
     sample_names = data.draw(
         st.lists(st.sampled_from(all_names), min_size=1, unique=True)
