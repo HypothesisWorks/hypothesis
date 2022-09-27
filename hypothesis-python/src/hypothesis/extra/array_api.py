@@ -1032,7 +1032,8 @@ def make_strategies_namespace(
             except KeyError as e:
                 raise AttributeError(
                     "You attempted to access 'complex_dtypes', but it is not "
-                    f"available for api_version='{self.api_version}'."
+                    f"available for api_version='{self.api_version}' of "
+                    f"xp={self.name}."
                 ) from e
 
         def __repr__(self):
