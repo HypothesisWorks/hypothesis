@@ -1076,7 +1076,7 @@ def make_strategies_namespace(
 
     namespace = StrategiesNamespace(**kwargs)
     try:
-        _args_to_xps[(xp, api_version)] = namespace
+        _args_to_xps[(xp, None if inferred_version else api_version)] = namespace
     except TypeError:
         pass
 
