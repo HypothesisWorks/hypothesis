@@ -8,14 +8,24 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+from typing import Optional
+
 import pytest
 
 from hypothesis.errors import InvalidArgument
+from hypothesis.extra.array_api import NominalVersion, make_strategies_namespace
+
+from tests.array_api.common import MIN_VER_FOR_COMPLEX
 
 
-def e(name, **kwargs):
+def e(name, *, _min_version: Optional[NominalVersion] = None, **kwargs):
     kw = ", ".join(f"{k}={v!r}" for k, v in kwargs.items())
-    return pytest.param(name, kwargs, id=f"{name}({kw})")
+    id_ = f"{name}({kw})"
+    if _min_version is None:
+        marks = ()
+    else:
+        marks = pytest.mark.xp_min_version(_min_version)
+    return pytest.param(name, kwargs, id=id_, marks=marks)
 
 
 @pytest.mark.parametrize(
@@ -61,6 +71,8 @@ def e(name, **kwargs):
         e("unsigned_integer_dtypes", sizes=(3,)),
         e("floating_dtypes", sizes=()),
         e("floating_dtypes", sizes=(3,)),
+        e("complex_dtypes", _min_version=MIN_VER_FOR_COMPLEX, sizes=()),
+        e("complex_dtypes", _min_version=MIN_VER_FOR_COMPLEX, sizes=(3,)),
         e("valid_tuple_axes", ndim=-1),
         e("valid_tuple_axes", ndim=2, min_size=-1),
         e("valid_tuple_axes", ndim=2, min_size=3, max_size=10),
@@ -214,3 +226,10 @@ def test_raise_invalid_argument(xp, xps, strat_name, kwargs):
     strat = strat_func(**kwargs)
     with pytest.raises(InvalidArgument):
         strat.example()
+
+
+@pytest.mark.parametrize("api_version", [..., "latest", "1970.01", 42])
+def test_make_strategies_namespace_raise_invalid_argument(xp, api_version):
+    """Function raises helpful error with invalid arguments."""
+    with pytest.raises(InvalidArgument):
+        make_strategies_namespace(xp, api_version=api_version)

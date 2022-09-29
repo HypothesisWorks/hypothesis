@@ -40,6 +40,10 @@ if sys.version_info >= (3, 11):
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "slow: pandas expects this marker to exist.")
+    config.addinivalue_line(
+        "markers",
+        "xp_min_version(api_version): run when greater or equal to api_version",
+    )
 
 
 def pytest_addoption(parser):
