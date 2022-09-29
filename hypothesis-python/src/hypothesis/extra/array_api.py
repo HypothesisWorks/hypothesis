@@ -886,13 +886,6 @@ def make_strategies_namespace(
       True
 
     """
-    try:
-        namespace = _args_to_xps[(xp, api_version)]
-    except (KeyError, TypeError):
-        pass
-    else:
-        return namespace
-
     not_available_msg = (
         "If the standard version you want is not available, please ensure "
         "you're using the latest version of Hypothesis, then open an issue if "
@@ -929,6 +922,13 @@ def make_strategies_namespace(
             f"Could not determine whether module {xp.__name__} is an Array API library",
             HypothesisWarning,
         )
+
+    try:
+        namespace = _args_to_xps[(xp, api_version)]
+    except (KeyError, TypeError):
+        pass
+    else:
+        return namespace
 
     @defines_strategy(force_reusable_values=True)
     def from_dtype(
@@ -1076,7 +1076,7 @@ def make_strategies_namespace(
 
     namespace = StrategiesNamespace(**kwargs)
     try:
-        _args_to_xps[(xp, None if inferred_version else api_version)] = namespace
+        _args_to_xps[(xp, api_version)] = namespace
     except TypeError:
         pass
 

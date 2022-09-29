@@ -58,10 +58,8 @@ def test_caching(api_version, monkeypatch):
 @pytest.mark.parametrize(
     "api_version1, api_version2", [(None, "2021.12"), ("2021.12", None)]
 )
-def test_inferred_namespace_is_cached_seperately(
-    api_version1, api_version2, monkeypatch
-):
-    """Results from inferred versions do not share the same cache key as results
+def test_inferred_namespace_shares_cache(api_version1, api_version2, monkeypatch):
+    """Results from inferred versions share the same cache key as results
     from specified versions."""
     xp = HashableArrayModuleFactory()
     xp.__array_api_version__ = "2021.12"
@@ -73,8 +71,8 @@ def test_inferred_namespace_is_cached_seperately(
     assert len(array_api._args_to_xps) == 1
     xps2 = array_api.make_strategies_namespace(xp, api_version=api_version2)
     assert xps2.api_version == "2021.12"  # sanity check
-    assert len(array_api._args_to_xps) == 2
-    assert xps2 is not xps1
+    assert len(array_api._args_to_xps) == 1
+    assert xps2 is xps1
 
 
 def test_complex_dtypes_raises_on_2021_12():
