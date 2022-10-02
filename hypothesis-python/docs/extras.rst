@@ -28,12 +28,12 @@ There are separate pages for :doc:`django` and :doc:`numpy`.
 .. automodule:: hypothesis.extra.dpcontracts
    :members:
 
-    .. tip::
+.. tip::
 
-        For new projects, we recommend using either :pypi:`deal` or :pypi:`icontract`
-        and :pypi:`icontract-hypothesis` over :pypi:`dpcontracts`.
-        They're generally more powerful tools for design-by-contract programming,
-        and have substantially nicer Hypothesis integration too!
+   For new projects, we recommend using either :pypi:`deal` or :pypi:`icontract`
+   and :pypi:`icontract-hypothesis` over :pypi:`dpcontracts`.
+   They're generally more powerful tools for design-by-contract programming,
+   and have substantially nicer Hypothesis integration too!
 
 .. automodule:: hypothesis.extra.lark
    :members:

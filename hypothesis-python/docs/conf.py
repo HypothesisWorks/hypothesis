@@ -82,6 +82,17 @@ todo_include_todos = False
 # See https://sphinx-hoverxref.readthedocs.io/en/latest/configuration.html
 hoverxref_auto_ref = True
 hoverxref_domains = ["py"]
+hoverxref_role_types = {
+    "attr": "tooltip",
+    "class": "tooltip",
+    "const": "tooltip",
+    "exc": "tooltip",
+    "func": "tooltip",
+    "meth": "tooltip",
+    "mod": "tooltip",
+    "obj": "tooltip",
+    "ref": "tooltip",
+}
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
