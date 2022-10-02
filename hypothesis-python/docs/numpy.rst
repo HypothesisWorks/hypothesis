@@ -47,7 +47,7 @@ Supported versions
 There is quite a lot of variation between pandas versions. We only
 commit to supporting the latest version of pandas, but older minor versions are
 supported on a "best effort" basis.  Hypothesis is currently tested against
-and confirmed working with every Pandas minor version from 1.0 through to 1.4.
+and confirmed working with every Pandas minor version from 1.0 through to 1.5.
 
 Releases that are not the latest patch release of their minor version are not
 tested or officially supported, but will probably also work unless you hit a

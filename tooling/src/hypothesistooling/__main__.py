@@ -440,7 +440,7 @@ standard_tox_task("pytest62")
 
 for n in [32, 40, 41]:
     standard_tox_task(f"django{n}")
-for n in [10, 11, 12, 13, 14]:
+for n in [10, 11, 12, 13, 14, 15]:
     standard_tox_task(f"pandas{n}")
 
 standard_tox_task("coverage")
