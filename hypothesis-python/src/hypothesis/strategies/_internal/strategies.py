@@ -29,6 +29,7 @@ from hypothesis._settings import HealthCheck, Phase, Verbosity, settings
 from hypothesis.control import _current_build_context, assume
 from hypothesis.errors import (
     HypothesisException,
+    HypothesisWarning,
     InvalidArgument,
     NonInteractiveExampleWarning,
     UnsatisfiedAssumption,
@@ -395,6 +396,14 @@ class SearchStrategy(Generic[Ex]):
         if not isinstance(other, SearchStrategy):
             raise ValueError(f"Cannot | a SearchStrategy with {other!r}")
         return OneOfStrategy((self, other))
+
+    def __bool__(self) -> bool:
+        warnings.warn(
+            f"bool({self!r}) is always True, did you mean to draw a value?",
+            HypothesisWarning,
+            stacklevel=2,
+        )
+        return True
 
     def validate(self) -> None:
         """Throw an exception if the strategy is not valid.
