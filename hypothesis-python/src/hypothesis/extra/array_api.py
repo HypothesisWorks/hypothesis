@@ -163,7 +163,7 @@ def find_castable_builtin_for_dtype(
 
 
 @check_function
-def dtype_from_name(xp: Any, name: str) -> DataType:
+def dtype_from_name(xp: Any, name: str) -> Any:
     if name in DTYPE_NAMES:
         try:
             return getattr(xp, name)

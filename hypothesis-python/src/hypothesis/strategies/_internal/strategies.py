@@ -589,7 +589,7 @@ class SampledFromStrategy(SearchStrategy):
         return filter_not_satisfied
 
 
-class OneOfStrategy(SearchStrategy):
+class OneOfStrategy(SearchStrategy[Ex]):
     """Implements a union of strategies. Given a number of strategies this
     generates values which could have come from any of them.
 
@@ -781,7 +781,7 @@ def one_of(
     return OneOfStrategy(args)
 
 
-class MappedSearchStrategy(SearchStrategy):
+class MappedSearchStrategy(SearchStrategy[Ex]):
     """A strategy which is defined purely by conversion to and from another
     strategy.
 
@@ -816,7 +816,7 @@ class MappedSearchStrategy(SearchStrategy):
         into a value suitable for outputting from this strategy."""
         raise NotImplementedError(f"{self.__class__.__name__}.pack()")
 
-    def do_draw(self, data: ConjectureData) -> Ex:
+    def do_draw(self, data: ConjectureData) -> Any:
         with warnings.catch_warnings():
             if isinstance(self.pack, type) and issubclass(
                 self.pack, (abc.Mapping, abc.Set)
@@ -826,7 +826,7 @@ class MappedSearchStrategy(SearchStrategy):
                 i = data.index
                 try:
                     data.start_example(MAPPED_SEARCH_STRATEGY_DO_DRAW_LABEL)
-                    result = self.pack(data.draw(self.mapped_strategy))
+                    result = self.pack(data.draw(self.mapped_strategy))  # type: ignore
                     data.stop_example()
                     return result
                 except UnsatisfiedAssumption:
@@ -846,7 +846,7 @@ class MappedSearchStrategy(SearchStrategy):
 filter_not_satisfied = UniqueIdentifier("filter not satisfied")
 
 
-class FilteredStrategy(SearchStrategy):
+class FilteredStrategy(SearchStrategy[Ex]):
     def __init__(self, strategy, conditions):
         super().__init__()
         if isinstance(strategy, FilteredStrategy):
