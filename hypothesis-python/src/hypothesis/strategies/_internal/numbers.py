@@ -450,13 +450,31 @@ def floats(
         # Erroring out here ensures that the database contents are interpreted
         # consistently - which matters for such a foundational strategy, even if it's
         # not always true for all user-composed strategies further up the stack.
+        from _hypothesis_ftz_detector import identify_ftz_culprits
+
+        try:
+            ftz_pkg = identify_ftz_culprits()
+        except Exception:
+            ftz_pkg = None
+        if ftz_pkg:
+            ftz_msg = (
+                f"This seems to be because the `{ftz_pkg}` package was compiled with "
+                f"-ffast-math or a similar option, which sets global processor state "
+                f"- see https://simonbyrne.github.io/notes/fastmath/ for details.  "
+                f"If you don't know why {ftz_pkg} is installed, `pipdeptree -rp "
+                f"{ftz_pkg}` will show which packages depend on it."
+            )
+        else:
+            ftz_msg = (
+                "This is usually because something was compiled with -ffast-math "
+                "or a similar option, which sets global processor state.  See "
+                "https://simonbyrne.github.io/notes/fastmath/ for a more detailed "
+                "writeup - and good luck!"
+            )
         raise FloatingPointError(
             f"Got allow_subnormal={allow_subnormal!r}, but we can't represent "
             f"subnormal floats right now, in violation of the IEEE-754 floating-point "
-            f"specification.  This is usually because something was compiled with "
-            f"-ffast-math or a similar option, which sets global processor state.  "
-            f"See https://simonbyrne.github.io/notes/fastmath/ for a more detailed "
-            f"writeup - and good luck!"
+            f"specification.  {ftz_msg}"
         )
 
     min_arg, max_arg = min_value, max_value
