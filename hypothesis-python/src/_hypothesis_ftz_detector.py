@@ -139,8 +139,11 @@ def identify_ftz_culprits():
 if __name__ == "__main__":
     # This would be really really annoying to write automated tests for, so I've
     # done some manual exploratory testing: `pip install grequests gevent==21.12.0`,
-    # delete gevent from the known-ftz set and reverse-alphabetical sort so we land
-    # on grequests before gevent, and call print() as desired to observe behavior.
+    # and call print() as desired to observe behavior.
     import grequests  # noqa
 
+    # To test without skipping to a known answer, uncomment the following line and
+    # change the last element of key from `name` to `-len(name)` so that we check
+    # grequests before gevent.
+    ## KNOWN_EVER_CULPRITS = [c for c in KNOWN_EVER_CULPRITS if c != "gevent"]
     print(identify_ftz_culprits())
