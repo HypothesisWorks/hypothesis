@@ -17,7 +17,7 @@ attrs==22.1.0
     #   flake8-bugbear
     #   hypothesis (hypothesis-python/setup.py)
     #   pytest
-autoflake==1.6.1
+autoflake==1.7.0
     # via shed
 babel==2.10.3
     # via sphinx
@@ -29,7 +29,7 @@ bandit==1.7.4
     # via flake8-bandit
 beautifulsoup4==4.11.1
     # via sphinx-codeautolink
-black==22.8.0
+black==22.10.0
     # via shed
 bleach==5.0.1
     # via readme-renderer
@@ -59,7 +59,7 @@ decorator==5.1.1
     # via ipython
 distlib==0.3.6
     # via virtualenv
-django==4.1.1
+django==4.1.2
     # via -r requirements/tools.in
 docutils==0.17.1
     # via
@@ -71,7 +71,7 @@ dpcontracts==0.6.0
     # via -r requirements/tools.in
 exceptiongroup==1.0.0rc9 ; python_version < "3.11"
     # via hypothesis (hypothesis-python/setup.py)
-executing==1.1.0
+executing==1.1.1
     # via stack-data
 filelock==3.8.0
     # via
@@ -96,7 +96,7 @@ flake8-bandit==4.1.1
     # via -r requirements/tools.in
 flake8-bugbear==22.9.23
     # via -r requirements/tools.in
-flake8-builtins==1.5.3
+flake8-builtins==2.0.0
     # via -r requirements/tools.in
 flake8-comprehensions==3.10.0
     # via -r requirements/tools.in
@@ -122,13 +122,13 @@ flake8-simplify==0.19.3
     # via -r requirements/tools.in
 gitdb==4.0.9
     # via gitpython
-gitpython==3.1.27
+gitpython==3.1.28
     # via bandit
 idna==3.4
     # via requests
 imagesize==1.4.1
     # via sphinx
-importlib-metadata==4.13.0
+importlib-metadata==5.0.0
     # via
     #   keyring
     #   sphinx
@@ -165,7 +165,7 @@ mccabe==0.7.0
     # via flake8
 more-itertools==8.14.0
     # via jaraco-classes
-mypy==0.981
+mypy==0.982
     # via -r requirements/tools.in
 mypy-extensions==0.4.3
     # via
@@ -192,7 +192,7 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pip-tools==6.8.0
+pip-tools==6.9.0
     # via -r requirements/tools.in
 pkginfo==1.8.3
     # via twine
@@ -232,15 +232,15 @@ pygments==2.13.0
     #   sphinx
 pyparsing==3.0.9
     # via packaging
-pyright==1.1.273
+pyright==1.1.274
     # via -r requirements/tools.in
 pytest==7.1.3
     # via -r requirements/tools.in
 python-dateutil==2.8.2
     # via -r requirements/tools.in
-pytz==2022.2.1
+pytz==2022.4
     # via babel
-pyupgrade==2.38.2
+pyupgrade==3.0.0
     # via shed
 pyyaml==6.0
     # via
@@ -254,17 +254,17 @@ requests==2.28.1
     #   requests-toolbelt
     #   sphinx
     #   twine
-requests-toolbelt==0.9.1
+requests-toolbelt==0.10.0
     # via twine
 restructuredtext-lint==1.4.0
     # via -r requirements/tools.in
 rfc3986==2.0.0
     # via twine
-rich==12.5.1
+rich==12.6.0
     # via twine
 secretstorage==3.3.3
     # via keyring
-shed==0.10.3
+shed==0.10.5
     # via -r requirements/tools.in
 six==1.16.0
     # via
@@ -314,7 +314,7 @@ stack-data==0.5.1
     # via ipython
 stevedore==4.0.0
     # via bandit
-tokenize-rt==4.2.1
+tokenize-rt==5.0.0
     # via pyupgrade
 tomli==2.0.1
     # via
@@ -337,11 +337,11 @@ types-click==7.1.8
     # via -r requirements/tools.in
 types-pkg-resources==0.1.3
     # via -r requirements/tools.in
-types-pytz==2022.2.1.0
+types-pytz==2022.4.0.0
     # via -r requirements/tools.in
-types-redis==4.3.21
+types-redis==4.3.21.1
     # via -r requirements/tools.in
-typing-extensions==4.3.0
+typing-extensions==4.4.0
     # via
     #   -r requirements/tools.in
     #   black
@@ -365,7 +365,7 @@ webencodings==0.5.1
     # via bleach
 wheel==0.37.1
     # via pip-tools
-zipp==3.8.1
+zipp==3.9.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
