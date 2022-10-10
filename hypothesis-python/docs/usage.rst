@@ -32,6 +32,7 @@ and was used by `more than 4% of Python users surveyed by the PSF in 2020
 * `fusion-index <https://github.com/fusionapp/fusion-index>`_
 * `hyper-h2 <https://github.com/python-hyper/h2>`_
 * `into-dbus-python <https://github.com/stratis-storage/into-dbus-python>`_
+* `ivy <https://github.com/unifyai/ivy>`_
 * `justbases <https://github.com/mulkieran/justbases>`_
 * `justbytes <https://github.com/mulkieran/justbytes>`_
 * `loris <https://github.com/loris-imageserver/loris>`_
