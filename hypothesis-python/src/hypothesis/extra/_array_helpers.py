@@ -387,8 +387,8 @@ def mutually_broadcastable_shapes(
         ...     print(strat.example())
         BroadcastableShapes(input_shapes=((4, 1, 3), (4, 2, 3), ()), result_shape=(4, 2, 3))
         BroadcastableShapes(input_shapes=((3,), (1, 3), (2, 3)), result_shape=(2, 3))
-        BroadcastableShapes(input_shapes=((), (), ()), result_shape=(2, 3))
-        BroadcastableShapes(input_shapes=((3,), (), (3,)), result_shape=(2, 3))
+        BroadcastableShapes(input_shapes=((), (), ()), result_shape=())
+        BroadcastableShapes(input_shapes=((3,), (), (3,)), result_shape=(3,))
         BroadcastableShapes(input_shapes=((1, 2, 3), (3,), ()), result_shape=(1, 2, 3))
 
     """
