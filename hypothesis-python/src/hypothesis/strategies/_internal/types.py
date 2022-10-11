@@ -256,17 +256,11 @@ def is_a_union(thing):
     )
 
 
-try:
-    import numpy as np
-except ImportError:
-
-    def is_np_type(thing):
+def is_np_type(thing):
+    np = sys.modules.get("numpy")
+    if np is None:
         return False
-
-else:
-
-    def is_np_type(thing):
-        return isinstance(thing, (np.ndarray, np.generic))
+    return isinstance(thing, (np.ndarray, np.generic))
 
 
 def is_a_type(thing):
