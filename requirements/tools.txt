@@ -17,7 +17,7 @@ attrs==22.1.0
     #   flake8-bugbear
     #   hypothesis (hypothesis-python/setup.py)
     #   pytest
-autoflake==1.7.0
+autoflake==1.7.6
     # via shed
 babel==2.10.3
     # via sphinx
@@ -45,7 +45,7 @@ click==8.1.3
     # via
     #   black
     #   pip-tools
-codespell==2.2.1
+codespell==2.2.2
     # via -r requirements/tools.in
 com2ann==0.3.0
     # via shed
@@ -122,7 +122,7 @@ flake8-simplify==0.19.3
     # via -r requirements/tools.in
 gitdb==4.0.9
     # via gitpython
-gitpython==3.1.28
+gitpython==3.1.29
     # via bandit
 idna==3.4
     # via requests
@@ -232,7 +232,7 @@ pygments==2.13.0
     #   sphinx
 pyparsing==3.0.9
     # via packaging
-pyright==1.1.274
+pyright==1.1.275
     # via -r requirements/tools.in
 pytest==7.1.3
     # via -r requirements/tools.in
@@ -240,7 +240,7 @@ python-dateutil==2.8.2
     # via -r requirements/tools.in
 pytz==2022.4
     # via babel
-pyupgrade==3.0.0
+pyupgrade==3.1.0
     # via shed
 pyyaml==6.0
     # via
@@ -312,7 +312,7 @@ sqlparse==0.4.3
     # via django
 stack-data==0.5.1
     # via ipython
-stevedore==4.0.0
+stevedore==4.0.1
     # via bandit
 tokenize-rt==5.0.0
     # via pyupgrade
@@ -339,7 +339,7 @@ types-pkg-resources==0.1.3
     # via -r requirements/tools.in
 types-pytz==2022.4.0.0
     # via -r requirements/tools.in
-types-redis==4.3.21.1
+types-redis==4.3.21.2
     # via -r requirements/tools.in
 typing-extensions==4.4.0
     # via
