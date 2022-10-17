@@ -121,11 +121,14 @@ class TextStrategy(ListStrategy):
     # See https://docs.python.org/3/library/stdtypes.html#string-methods
     # These methods always return Truthy values for any nonempty string.
     _nonempty_filters = ListStrategy._nonempty_filters + (
+        str,
         str.capitalize,
         str.casefold,
+        str.encode,
         str.expandtabs,
         str.join,
         str.lower,
+        str.rsplit,
         str.split,
         str.splitlines,
         str.swapcase,
@@ -144,6 +147,9 @@ class TextStrategy(ListStrategy):
         str.isnumeric,
         str.isspace,
         str.istitle,
+        str.lstrip,
+        str.rstrip,
+        str.strip,
     )
 
     def filter(self, condition):
@@ -156,9 +162,6 @@ class TextStrategy(ListStrategy):
         # We use ListStrategy filter logic for the conditions that *only* imply
         # the string is nonempty.  Here, we increment the min_size but still apply
         # the filter for conditions that imply nonempty *and specific contents*.
-        #
-        # TODO: we may eventually rewrite the elements_strategy for some of these,
-        #       avoiding rejection sampling and making them much more efficient.
         if condition in self._nonempty_and_content_filters:
             assert self.max_size >= 1, "Always-empty is special cased in st.text()"
             self = copy.copy(self)
