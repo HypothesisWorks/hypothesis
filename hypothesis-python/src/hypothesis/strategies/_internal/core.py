@@ -114,14 +114,14 @@ from hypothesis.strategies._internal.strings import (
     TextStrategy,
 )
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
-from hypothesis.utils.conventions import infer, not_set
+from hypothesis.utils.conventions import not_set
 
 if sys.version_info >= (3, 10):  # pragma: no cover
-    from types import EllipsisType as InferType
+    from types import EllipsisType as EllipsisType
 elif typing.TYPE_CHECKING:  # pragma: no cover
-    from builtins import ellipsis as InferType
+    from builtins import ellipsis as EllipsisType
 else:
-    InferType = type(Ellipsis)
+    EllipsisType = type(Ellipsis)
 
 
 try:
@@ -863,7 +863,7 @@ class BuildsStrategy(SearchStrategy):
 @defines_strategy()
 def builds(
     *callable_and_args: Union[Callable[..., Ex], SearchStrategy[Any]],
-    **kwargs: Union[SearchStrategy[Any], InferType],
+    **kwargs: Union[SearchStrategy[Any], EllipsisType],
 ) -> SearchStrategy[Ex]:
     """Generates values by drawing from ``args`` and ``kwargs`` and passing
     them to the callable (provided as the first positional argument) in the
@@ -898,14 +898,14 @@ def builds(
             "target to construct."
         )
 
-    if infer in args:  # type: ignore  # we only annotated the allowed types
+    if ... in args:  # type: ignore  # we only annotated the allowed types
         # Avoid an implementation nightmare juggling tuples and worse things
         raise InvalidArgument(
             "... was passed as a positional argument to "
             "builds(), but is only allowed as a keyword arg"
         )
     required = required_args(target, args, kwargs)
-    to_infer = {k for k, v in kwargs.items() if v is infer}
+    to_infer = {k for k, v in kwargs.items() if v is ...}
     if required or to_infer:
         if isinstance(target, type) and attr.has(target):
             # Use our custom introspection for attrs classes
@@ -1993,7 +1993,7 @@ def _functions(*, like, returns, pure):
             "The first argument to functions() must be a callable to imitate, "
             f"but got non-callable like={nicerepr(like)!r}"
         )
-    if returns is None or returns is infer:
+    if returns in (None, ...):
         # Passing `None` has never been *documented* as working, but it still
         # did from May 2020 to Jan 2022 so we'll avoid breaking it without cause.
         hints = get_type_hints(like)
@@ -2036,7 +2036,7 @@ if typing.TYPE_CHECKING or ParamSpec is not None:
         ...
 
     @defines_strategy()
-    def functions(*, like=lambda: None, returns=infer, pure=False):
+    def functions(*, like=lambda: None, returns=..., pure=False):
         # We shouldn't need overloads here, but mypy disallows default args for
         # generics: https://github.com/python/mypy/issues/3737
         """functions(*, like=lambda: None, returns=..., pure=False)
@@ -2067,7 +2067,7 @@ else:  # pragma: no cover
     def functions(
         *,
         like: Callable[..., Any] = lambda: None,
-        returns: Union[SearchStrategy[Any], InferType] = infer,
+        returns: Union[SearchStrategy[Any], EllipsisType] = ...,
         pure: bool = False,
     ) -> SearchStrategy[Callable[..., Any]]:
         """functions(*, like=lambda: None, returns=..., pure=False)

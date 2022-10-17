@@ -24,14 +24,13 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.extra.django._fields import from_field
 from hypothesis.internal.reflection import define_function_signature
 from hypothesis.strategies._internal.utils import defines_strategy
-from hypothesis.utils.conventions import infer
 
 if sys.version_info >= (3, 10):  # pragma: no cover
-    from types import EllipsisType as InferType
+    from types import EllipsisType as EllipsisType
 elif TYPE_CHECKING:
-    from builtins import ellipsis as InferType
+    from builtins import ellipsis as EllipsisType
 else:
-    InferType = type(Ellipsis)
+    EllipsisType = type(Ellipsis)
 
 
 class HypothesisTestCase:
@@ -67,7 +66,7 @@ class StaticLiveServerTestCase(HypothesisTestCase, dst.StaticLiveServerTestCase)
 
 @defines_strategy()
 def from_model(
-    *model: Type[dm.Model], **field_strategies: Union[st.SearchStrategy, InferType]
+    *model: Type[dm.Model], **field_strategies: Union[st.SearchStrategy, EllipsisType]
 ) -> st.SearchStrategy:
     """Return a strategy for examples of ``model``.
 
@@ -106,7 +105,7 @@ def from_model(
 
     fields_by_name = {f.name: f for f in m_type._meta.concrete_fields}
     for name, value in sorted(field_strategies.items()):
-        if value is infer:
+        if value is ...:
             field_strategies[name] = from_field(fields_by_name[name])
     for name, field in sorted(fields_by_name.items()):
         if (
@@ -157,7 +156,7 @@ def _models_impl(draw, strat):
 def from_form(
     form: Type[df.Form],
     form_kwargs: Optional[dict] = None,
-    **field_strategies: Union[st.SearchStrategy, InferType],
+    **field_strategies: Union[st.SearchStrategy, EllipsisType],
 ) -> st.SearchStrategy[df.Form]:
     """Return a strategy for examples of ``form``.
 
@@ -214,7 +213,7 @@ def from_form(
         else:
             fields_by_name[name] = field
     for name, value in sorted(field_strategies.items()):
-        if value is infer:
+        if value is ...:
             field_strategies[name] = from_field(fields_by_name[name])
 
     for name, field in sorted(fields_by_name.items()):
