@@ -116,14 +116,13 @@ from hypothesis.strategies._internal.strategies import (
     SampledFromStrategy,
 )
 from hypothesis.strategies._internal.types import _global_type_lookup, is_generic_type
-from hypothesis.utils.conventions import infer
 
 if sys.version_info >= (3, 10):  # pragma: no cover
-    from types import EllipsisType as InferType
+    from types import EllipsisType as EllipsisType
 elif TYPE_CHECKING:
-    from builtins import ellipsis as InferType
+    from builtins import ellipsis as EllipsisType
 else:
-    InferType = type(Ellipsis)
+    EllipsisType = type(Ellipsis)
 
 
 IMPORT_SECTION = """
@@ -252,10 +251,7 @@ def _type_from_doc_fragment(token: str) -> Optional[type]:
     return getattr(sys.modules.get(mod, None), name, None)
 
 
-def _strategy_for(
-    param: inspect.Parameter,
-    docstring: str,
-) -> Union[st.SearchStrategy, InferType]:
+def _strategy_for(param: inspect.Parameter, docstring: str) -> st.SearchStrategy:
     # Example types in docstrings:
     # - `:type a: sequence of integers`
     # - `b (list, tuple, or None): ...`
@@ -532,7 +528,7 @@ def _get_strategies(
         hints = get_type_hints(f)
         docstring = getattr(f, "__doc__", None) or ""
         builder_args = {
-            k: infer if k in hints else _strategy_for(v, docstring)
+            k: ... if k in hints else _strategy_for(v, docstring)
             for k, v in params.items()
         }
         with _with_any_registered():
@@ -1323,7 +1319,7 @@ def binary_operation(
     *,
     associative: bool = True,
     commutative: bool = True,
-    identity: Union[X, InferType, None] = infer,
+    identity: Union[X, EllipsisType, None] = ...,
     distributes_over: Optional[Callable[[X, X], X]] = None,
     except_: Except = (),
     style: str = "pytest",
@@ -1384,7 +1380,7 @@ def _make_binop_body(
     *,
     associative: bool = True,
     commutative: bool = True,
-    identity: Union[X, InferType, None] = infer,
+    identity: Union[X, EllipsisType, None] = ...,
     distributes_over: Optional[Callable[[X, X], X]] = None,
     except_: Tuple[Type[Exception], ...],
     style: str,
@@ -1454,7 +1450,7 @@ def _make_binop_body(
         # Guess that the identity element is the minimal example from our operands
         # strategy.  This is correct often enough to be worthwhile, and close enough
         # that it's a good starting point to edit much of the rest.
-        if identity is infer:
+        if identity is ...:
             try:
                 identity = find(operands, lambda x: True, settings=_quietly_settings)
             except Exception:

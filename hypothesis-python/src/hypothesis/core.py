@@ -110,16 +110,15 @@ from hypothesis.strategies._internal.strategies import (
     MappedSearchStrategy,
     SearchStrategy,
 )
-from hypothesis.utils.conventions import infer
 from hypothesis.vendor.pretty import RepresentationPrinter
 from hypothesis.version import __version__
 
 if sys.version_info >= (3, 10):  # pragma: no cover
-    from types import EllipsisType as InferType
+    from types import EllipsisType as EllipsisType
 elif TYPE_CHECKING:
-    from builtins import ellipsis as InferType
+    from builtins import ellipsis as EllipsisType
 else:
-    InferType = type(Ellipsis)
+    EllipsisType = type(Ellipsis)
 
 
 TestFunc = TypeVar("TestFunc", bound=Callable)
@@ -292,7 +291,7 @@ def is_invalid_test(test, original_sig, given_arguments, given_kwargs):
             f"arguments, but got {len(given_arguments)} {given_arguments!r}"
         )
 
-    if infer in given_arguments:
+    if ... in given_arguments:
         return invalid(
             "... was passed as a positional argument to @given,  but may only be "
             "passed as a keyword argument or as the sole argument of @given"
@@ -998,7 +997,7 @@ class HypothesisHandle:
 
 @overload
 def given(
-    *_given_arguments: Union[SearchStrategy[Any], InferType],
+    *_given_arguments: Union[SearchStrategy[Any], EllipsisType],
 ) -> Callable[
     [Callable[..., Optional[Coroutine[Any, Any, None]]]], Callable[..., None]
 ]:  # pragma: no cover
@@ -1007,7 +1006,7 @@ def given(
 
 @overload
 def given(
-    **_given_kwargs: Union[SearchStrategy[Any], InferType],
+    **_given_kwargs: Union[SearchStrategy[Any], EllipsisType],
 ) -> Callable[
     [Callable[..., Optional[Coroutine[Any, Any, None]]]], Callable[..., None]
 ]:  # pragma: no cover
@@ -1015,8 +1014,8 @@ def given(
 
 
 def given(
-    *_given_arguments: Union[SearchStrategy[Any], InferType],
-    **_given_kwargs: Union[SearchStrategy[Any], InferType],
+    *_given_arguments: Union[SearchStrategy[Any], EllipsisType],
+    **_given_kwargs: Union[SearchStrategy[Any], EllipsisType],
 ) -> Callable[
     [Callable[..., Optional[Coroutine[Any, Any, None]]]], Callable[..., None]
 ]:
@@ -1069,9 +1068,9 @@ def given(
         new_signature = new_given_signature(original_sig, given_kwargs)
 
         # Use type information to convert "infer" arguments into appropriate strategies.
-        if infer in given_kwargs.values():
+        if ... in given_kwargs.values():
             hints = get_type_hints(test)
-        for name in [name for name, value in given_kwargs.items() if value is infer]:
+        for name in [name for name, value in given_kwargs.items() if value is ...]:
             if name not in hints:
                 return _invalid(
                     f"passed {name}=... for {test.__name__}, but {name} has "

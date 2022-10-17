@@ -51,10 +51,11 @@ class test_given_on_setUp_fails_health_check(unittest.TestCase):
 
 SUBTEST_SUITE = """
 import unittest
-from hypothesis import given, strategies as st
+from hypothesis import given, settings, strategies as st
 
 class MyTest(unittest.TestCase):
     @given(s=st.text())
+    @settings(deadline=None)
     def test_subtest(self, s):
         with self.subTest(text=s):
             self.assertIsInstance(s, str)
