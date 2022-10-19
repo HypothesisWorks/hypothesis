@@ -15,6 +15,7 @@ and was used by `more than 4% of Python users surveyed by the PSF in 2020
 
 * `aur <https://github.com/cdown/aur>`_
 * `argon2_cffi <https://github.com/hynek/argon2-cffi>`_
+* `array-api-tests <https://github.com/data-apis/array-api-tests>`_
 * `attrs <https://github.com/python-attrs/attrs>`_
 * `axelrod <https://github.com/Axelrod-Python/Axelrod>`_
 * `bidict <https://github.com/jab/bidict>`_
