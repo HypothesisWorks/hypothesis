@@ -31,14 +31,14 @@ def local_file(name):
 SOURCE = local_file("src")
 README = local_file("README.rst")
 
-setuptools_version = tuple(map(int, setuptools.__version__.split(".")[:2]))
+setuptools_version = tuple(map(int, setuptools.__version__.split(".")[:1]))
 
-if setuptools_version < (36, 2):
+if setuptools_version < (42,):
     # Warning only - very bad if uploading bdist but fine if installing sdist.
     warnings.warn(
-        "This version of setuptools is too old to correctly store "
-        "conditional dependencies in binary wheels.  For more info, see:  "
-        "https://hynek.me/articles/conditional-python-dependencies/"
+        "This version of setuptools is too old to handle license_files "
+        "metadata key.  For more info, see:  "
+        "https://setuptools.pypa.io/en/latest/userguide/declarative_config.html#metadata"
     )
 
 
