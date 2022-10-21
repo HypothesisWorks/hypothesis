@@ -470,11 +470,23 @@ class ArrayStrategy(st.SearchStrategy):
                 self.check_set_value(val, result[i], self.elements_strategy)
                 assigned.add(i)
 
-        result = self.xp.reshape(result, self.shape)
+        if self.allow_noncontiguous and len(self.shape) > 1:
+            # We want to generate a noncontiguous array of shape `self.shape`.
+            # An easy way to make an array noncontiguous is to tranpose some dimensions,
+            # but that will ruin our shape, so we generate a shape, `pretransposed_shape` that when
+            # transposed by `permuted_indices` gives our desired shape.
+            indices = tuple(range(len(self.shape)))
+            permuted_indices = data.draw(st.permutations(indices))
 
-        # TODO: Make this actually work! Why aren't tests failing??
-        if self.allow_noncontiguous:
-            result = result.T
+            inverse_permutation = [0] * len(indices)
+            for i, index in enumerate(permuted_indices):
+                inverse_permutation[index] = i
+            pretransposed_shape = [self.shape[i] for i in inverse_permutation]
+
+            result = self.xp.reshape(result, pretransposed_shape)
+            result = result.transpose(permuted_indices)
+        else:
+            result = self.xp.reshape(result, self.shape)
 
         return result
 
