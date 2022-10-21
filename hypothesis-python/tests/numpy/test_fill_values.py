@@ -54,3 +54,7 @@ def test_minimizes_to_fill():
 )
 def test_fills_everything(x):
     assert x.all()
+
+
+def test_should_fail():
+    assert False
