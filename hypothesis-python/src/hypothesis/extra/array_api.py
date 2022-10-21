@@ -321,7 +321,16 @@ def _from_dtype(
 
 class ArrayStrategy(st.SearchStrategy):
     def __init__(
-        self, *, xp, api_version, elements_strategy, dtype, shape, fill, unique
+        self,
+        *,
+        xp,
+        api_version,
+        elements_strategy,
+        dtype,
+        shape,
+        fill,
+        unique,
+        allow_noncontiguous,
     ):
         self.xp = xp
         self.elements_strategy = elements_strategy
@@ -329,6 +338,7 @@ class ArrayStrategy(st.SearchStrategy):
         self.shape = shape
         self.fill = fill
         self.unique = unique
+        self.allow_noncontiguous = allow_noncontiguous
         self.array_size = math.prod(shape)
         self.builtin = find_castable_builtin_for_dtype(xp, api_version, dtype)
         self.finfo = None if self.builtin is not float else xp.finfo(self.dtype)
@@ -462,6 +472,10 @@ class ArrayStrategy(st.SearchStrategy):
 
         result = self.xp.reshape(result, self.shape)
 
+        # TODO: Make this actually work! Why aren't tests failing??
+        if self.allow_noncontiguous:
+            result = result.T
+
         return result
 
 
@@ -474,6 +488,7 @@ def _arrays(
     elements: Optional[Union[Mapping[str, Any], st.SearchStrategy]] = None,
     fill: Optional[st.SearchStrategy[Any]] = None,
     unique: bool = False,
+    allow_noncontiguous: bool = True,
 ) -> st.SearchStrategy:
     """Returns a strategy for :xp-ref:`arrays <array_object.html>`.
 
@@ -493,6 +508,8 @@ def _arrays(
     * ``unique`` specifies if the elements of the array should all be distinct
       from one another; if fill is also set, the only valid values for fill to
       return are NaN values.
+    * ``allow_noncontiguous`` specifies whether the strategy may generate arrays
+      that are noncontiguous in memory, e.g. have been transposed prior to being returned.
 
     Arrays of specified ``dtype`` and ``shape`` are generated for example
     like this:
@@ -594,6 +611,7 @@ def _arrays(
         shape=shape,
         fill=fill,
         unique=unique,
+        allow_noncontiguous=allow_noncontiguous,
     )
 
 
@@ -965,6 +983,7 @@ def make_strategies_namespace(
         elements: Optional[Union[Mapping[str, Any], st.SearchStrategy]] = None,
         fill: Optional[st.SearchStrategy[Any]] = None,
         unique: bool = False,
+        allow_noncontiguous: bool = True,
     ) -> st.SearchStrategy:
         return _arrays(
             xp,
@@ -974,6 +993,7 @@ def make_strategies_namespace(
             elements=elements,
             fill=fill,
             unique=unique,
+            allow_noncontiguous=allow_noncontiguous,
         )
 
     @defines_strategy()
