@@ -517,3 +517,7 @@ def test_draw_contiguous(xp, xps, data):
     shape = data.draw(xps.array_shapes())
     x = data.draw(xps.arrays(xp.int8, shape, allow_noncontiguous=False))
     assert x.data.contiguous
+
+def test_draw_noncontiguous(xp, xps):
+    """Generate noncontiguous arrays."""
+    find_any(xps.arrays(xp.int8, xps.array_shapes(), allow_noncontiguous=True), lambda x: not x.data.contiguous)
