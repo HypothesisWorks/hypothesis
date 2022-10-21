@@ -513,7 +513,7 @@ def test_subnormal_elements_validation(xp, xps):
 
 @given(data=st.data())
 def test_draw_contiguous(xp, xps, data):
-    """Strategy with contiguous=True generates contiguous arrays."""
+    """Strategy with allow_noncontiguous=False generates contiguous arrays."""
     shape = data.draw(xps.array_shapes())
-    x = data.draw(xps.arrays(xp.int8, shape, contiguous=True))
+    x = data.draw(xps.arrays(xp.int8, shape, allow_noncontiguous=True))
     assert x.is_contiguous()
