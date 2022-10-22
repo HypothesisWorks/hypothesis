@@ -12,7 +12,7 @@ import numpy as np
 import pytest
 from numpy.typing import NDArray
 
-from hypothesis import strategies as st
+from hypothesis import given, strategies as st
 
 from tests.common.debug import assert_all_examples
 
@@ -36,3 +36,8 @@ def test_from_numpy_ndarray_specific_type(test_nptype):
     assert_all_examples(
         st.from_type(NDArray[test_nptype]), lambda obj: obj.dtype == test_nptype
     )
+
+
+@given(...)
+def test_numpy_str(x: np.ndarray):
+    assert isinstance(x, np.ndarray)

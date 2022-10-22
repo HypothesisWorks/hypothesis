@@ -143,6 +143,15 @@ except AttributeError:  # pragma: no cover
 # We use this variable to be sure that we are working with a type from `typing`:
 typing_root_type = (typing._Final, typing._GenericAlias)  # type: ignore
 
+try:
+    from numpy._typing._generic_alias import _GenericAlias as NumpyGenericAlias
+except ImportError:
+    pass
+else:
+    # numpy ships its own GenericAlias, which they only rely on for Python < 3.9
+    # but I think we should just always include this in our checks
+    typing_root_type += (NumpyGenericAlias,)
+
 # We use this to disallow all non-runtime types from being registered and resolved.
 # By "non-runtime" we mean: types that do not really exist in python's
 # and are just added for more fancy type annotations.
@@ -256,21 +265,9 @@ def is_a_union(thing):
     )
 
 
-def is_np_type(thing):
-    np = sys.modules.get("numpy")
-    if np is None:
-        return False
-    return isinstance(thing, (np.ndarray, np.generic))
-
-
 def is_a_type(thing):
     """Return True if thing is a type or a generic type like thing."""
-    return (
-        isinstance(thing, type)
-        or is_generic_type(thing)
-        or is_a_new_type(thing)
-        or is_np_type(thing)
-    )
+    return isinstance(thing, type) or is_generic_type(thing) or is_a_new_type(thing)
 
 
 def is_typing_literal(thing):
@@ -316,13 +313,25 @@ def has_type_arguments(type_):
     return bool(args)
 
 
+def is_numpy_generic(type_):  # pragma: no cover
+    if sys.version_info[:2] >= (3, 9):
+        # ndarray doesn't include Generic in its mro, so we have to manually
+        # add this check
+        np = sys.modules.get("numpy")
+        return np is not None and type_ is np.ndarray
+    # for Python < 3.9 numpy ships its own generic alias that we have registered
+    return False
+
+
 def is_generic_type(type_):
     """Decides whether a given type is generic or not."""
     # The ugly truth is that `MyClass`, `MyClass[T]`, and `MyClass[int]` are very different.
     # We check for `MyClass[T]` and `MyClass[int]` with the first condition,
     # while the second condition is for `MyClass`.
-    return isinstance(type_, typing_root_type + (GenericAlias,)) or (
-        isinstance(type_, type) and typing.Generic in type_.__mro__
+    return (
+        isinstance(type_, typing_root_type + (GenericAlias,))
+        or (isinstance(type_, type) and typing.Generic in type_.__mro__)
+        or is_numpy_generic(type_)
     )
 
 
@@ -599,17 +608,6 @@ if sys.version_info[:2] >= (3, 9):  # pragma: no cover
     _global_type_lookup[os._Environ] = st.just(os.environ)
 
 
-try:  # pragma: no cover
-    import numpy as np
-
-    from hypothesis.extra.numpy import array_dtypes, array_shapes, arrays, scalar_dtypes
-
-    _global_type_lookup[np.dtype] = array_dtypes()
-    _global_type_lookup[np.ndarray] = arrays(scalar_dtypes(), array_shapes(max_dims=2))
-except ImportError:
-    pass
-
-
 _global_type_lookup.update(
     {
         # Note: while ByteString notionally also represents the bytearray and
@@ -698,6 +696,42 @@ def register(type_, fallback=None, *, module=typing):
     return inner
 
 
+try:  # pragma: no cover
+    import numpy as np
+    from numpy._typing._generic_alias import ScalarType
+
+    from hypothesis.extra.numpy import array_dtypes, array_shapes, arrays, scalar_dtypes
+except ImportError:
+    pass
+else:  # pragma: no cover
+
+    _global_type_lookup[np.dtype] = array_dtypes()
+
+    def resolve_ndarray(thing):
+        # TODO: add shape-type support
+        if not hasattr(thing, "__args__"):
+            # ndarray was supplied without parameters
+            return arrays(scalar_dtypes(), array_shapes(max_dims=2))
+        array_type = thing.__args__[1].__args__[0]
+        if array_type == ScalarType:
+            return arrays(scalar_dtypes(), array_shapes(max_dims=2))
+        else:
+            return arrays(st.from_type(array_type), array_shapes(max_dims=2))
+
+    if sys.version_info[:2] >= (3, 9):
+        _global_type_lookup[np.ndarray] = resolve_ndarray
+    else:
+        _global_type_lookup[np.ndarray] = arrays(
+            scalar_dtypes(), array_shapes(max_dims=2)
+        )
+        try:
+            import numpy.typing as npt
+        except ImportError:
+            pass
+        else:
+            register(npt.NDArray)(resolve_ndarray)
+
+
 @register(typing.Type)
 @register("Type", module=typing_extensions)
 def resolve_Type(thing):
@@ -724,24 +758,6 @@ def resolve_Type(thing):
 @register(typing.List, st.builds(list))
 def resolve_List(thing):
     return st.lists(st.from_type(thing.__args__[0]))
-
-
-try:
-    import numpy.typing as npt
-    from numpy._typing._generic_alias import ScalarType
-
-    from hypothesis.extra.numpy import array_shapes, arrays, scalar_dtypes
-except ImportError:
-    pass
-else:
-
-    @register(npt.NDArray)
-    def resolve_ndarray(thing):
-        array_type = thing.__args__[1].__args__[0]
-        if array_type == ScalarType:
-            return arrays(scalar_dtypes(), array_shapes(max_dims=2))
-        else:
-            return arrays(st.from_type(array_type), array_shapes(max_dims=2))
 
 
 def _can_hash(val):
