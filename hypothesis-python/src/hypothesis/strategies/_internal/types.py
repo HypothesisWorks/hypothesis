@@ -256,21 +256,9 @@ def is_a_union(thing):
     )
 
 
-def is_np_type(thing):
-    np = sys.modules.get("numpy")
-    if np is None:
-        return False
-    return isinstance(thing, (np.ndarray, np.generic))
-
-
 def is_a_type(thing):
     """Return True if thing is a type or a generic type like thing."""
-    return (
-        isinstance(thing, type)
-        or is_generic_type(thing)
-        or is_a_new_type(thing)
-        or is_np_type(thing)
-    )
+    return isinstance(thing, type) or is_generic_type(thing) or is_a_new_type(thing)
 
 
 def is_typing_literal(thing):
@@ -321,8 +309,10 @@ def is_generic_type(type_):
     # The ugly truth is that `MyClass`, `MyClass[T]`, and `MyClass[int]` are very different.
     # We check for `MyClass[T]` and `MyClass[int]` with the first condition,
     # while the second condition is for `MyClass`.
-    return isinstance(type_, typing_root_type + (GenericAlias,)) or (
-        isinstance(type_, type) and typing.Generic in type_.__mro__
+    return (
+        isinstance(type_, typing_root_type + (GenericAlias,))
+        or (isinstance(type_, type) and typing.Generic in type_.__mro__)
+        or isinstance(getattr(type_, "__origin__", None), type)
     )
 
 
@@ -388,9 +378,7 @@ def from_typing_type(thing):
         annotated_type = args[0]
         return st.from_type(annotated_type)
     # Now, confirm that we're dealing with a generic type as we expected
-    if sys.version_info[:2] < (3, 9) and not isinstance(
-        thing, typing_root_type
-    ):  # pragma: no cover
+    if sys.version_info[:2] < (3, 9) and not is_generic_type(thing):
         raise ResolutionFailed(f"Cannot resolve {thing} to a strategy")
 
     # Some "generic" classes are not generic *in* anything - for example both
