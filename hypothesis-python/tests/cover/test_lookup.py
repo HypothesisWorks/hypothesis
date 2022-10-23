@@ -34,6 +34,12 @@ from hypothesis.strategies._internal import types
 from tests.common.debug import assert_all_examples, find_any, minimal
 from tests.common.utils import fails_with, temp_registered
 
+if sys.version_info[:2] < (3, 9):
+    try:
+        from numpy.typing import NDArray
+    except ImportError:
+        NDArray = None
+
 sentinel = object()
 BUILTIN_TYPES = tuple(
     v
@@ -66,6 +72,13 @@ def test_resolve_typing_module(data, typ):
         pass
     elif typ is typing.Type and not isinstance(typing.Type, type):
         assert ex is type or isinstance(ex, typing.TypeVar)
+    elif NDArray is not None and typ is NDArray:
+        # numpy ships its own GenericAlias, used to create
+        # NDArray. Because it is not a real parameterized generic,
+        # we have to register it -- not its origin -- directly, but
+        # it looks enough like a parameterized generic that it cannot
+        # be used in isinstance checks
+        assert isinstance(ex, NDArray.__origin__)  # type: ignore
     else:
         assert isinstance(ex, typ)
 
