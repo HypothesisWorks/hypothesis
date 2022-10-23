@@ -39,5 +39,10 @@ def test_from_numpy_ndarray_specific_type(test_nptype):
 
 
 @given(...)
-def test_numpy_str(x: np.ndarray):
+def test_bare_ndarray(x: np.ndarray):
+    assert isinstance(x, np.ndarray)
+
+
+@given(...)
+def test_bare_NDArray(x: NDArray):
     assert isinstance(x, np.ndarray)
