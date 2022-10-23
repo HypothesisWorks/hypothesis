@@ -315,11 +315,12 @@ def has_type_arguments(type_):
 
 def is_numpy_generic(type_):  # pragma: no cover
     if sys.version_info[:2] >= (3, 9):
-        # ndarray doesn't include Generic in its mro, so we have to manually
+        # Somehow, ndarray doesn't include Generic in its mro, so we have to manually
         # add this check
         np = sys.modules.get("numpy")
         return np is not None and type_ is np.ndarray
-    # for Python < 3.9 numpy ships its own generic alias that we have registered
+    # For Python < 3.9, numpy ships its own GenericAlias-instance that we have
+    # registered in order to support NDArray
     return False
 
 
@@ -708,10 +709,17 @@ else:  # pragma: no cover
     _global_type_lookup[np.dtype] = array_dtypes()
 
     def resolve_ndarray(thing):
-        # TODO: add shape-type support
         if not hasattr(thing, "__args__"):
-            # ndarray was supplied without parameters
+            # thing: ndarray (without parameters)
             return arrays(scalar_dtypes(), array_shapes(max_dims=2))
+
+        # TODO: add shape-type support
+        if thing.__args__[0] is not typing.Any:
+            raise ValueError(f"ndarray[<shape-type>], ...] is not yet supported")
+
+        if len(thing.__args__) == 1:
+            return arrays(scalar_dtypes(), array_shapes(max_dims=2))
+
         array_type = thing.__args__[1].__args__[0]
         if array_type == ScalarType:
             return arrays(scalar_dtypes(), array_shapes(max_dims=2))
