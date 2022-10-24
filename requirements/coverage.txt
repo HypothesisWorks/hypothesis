@@ -48,7 +48,7 @@ packaging==21.3
     # via
     #   pytest
     #   redis
-pandas==1.5.0
+pandas==1.5.1
     # via -r requirements/coverage.in
 pathspec==0.10.1
     # via black
@@ -79,7 +79,7 @@ python-dateutil==2.8.2
     # via
     #   -r requirements/coverage.in
     #   pandas
-pytz==2022.4
+pytz==2022.5
     # via
     #   -r requirements/coverage.in
     #   pandas
