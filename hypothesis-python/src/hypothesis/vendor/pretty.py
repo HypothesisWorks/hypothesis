@@ -738,6 +738,15 @@ def _repr_float_counting_nans(obj, p, cycle):
             return
     p.text(repr(obj))
 
+def _repr_array_maybe_noncontiguous(obj, p, cycle):
+    obj_repr = repr(obj)
+    if obj.data.contiguous:
+        output = obj_repr
+    else:
+        output = f"{obj_repr} (noncontiguous, strides={obj.strides})"
+    p.text(output)
+    return
+
 
 #: printers for builtin types
 _type_pprinters = {
@@ -833,4 +842,5 @@ for_type_by_name("collections", "OrderedDict", _ordereddict_pprint)
 for_type_by_name("ordereddict", "OrderedDict", _ordereddict_pprint)
 for_type_by_name("collections", "deque", _deque_pprint)
 for_type_by_name("collections", "Counter", _counter_pprint)
+for_type_by_name("numpy", "ndarray", _repr_array_maybe_noncontiguous)
 for_type_by_name("pandas.core.frame", "DataFrame", _repr_dataframe)

@@ -1184,6 +1184,7 @@ if np is not None:
         linspace=np.linspace,
         # Manipulation functions
         reshape=np.reshape,
+        flip=np.flip,
         # Element-wise functions
         isnan=np.isnan,
         isfinite=np.isfinite,

@@ -14,6 +14,7 @@ import pytest
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.array_api import make_strategies_namespace
+from hypothesis.vendor import pretty
 
 from tests.array_api.common import MIN_VER_FOR_COMPLEX
 
@@ -102,3 +103,8 @@ def test_specified_version_strategies_namespace_repr(xp):
     expected = f"make_strategies_namespace({xp.__name__}, api_version='2021.12')"
     assert repr(xps) == expected
     assert str(xps) == expected
+
+def test_noncontiguous_arrays(xp):
+    # Make sure we only append the "noncontiguous" note if the array is actually noncontiguous.
+    assert pretty.pretty(xp.asarray([[1,2],[3,4]])) == "array([[1, 2],\n       [3, 4]])"
+    assert pretty.pretty(xp.flip(xp.asarray([[1,2],[3,4]]), 0)) == "array([[3, 4],\n       [1, 2]]) (noncontiguous, strides=(-16, 8))"
