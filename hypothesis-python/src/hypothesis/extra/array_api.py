@@ -472,19 +472,15 @@ class ArrayStrategy(st.SearchStrategy):
 
         if self.allow_noncontiguous and len(self.shape) > 1:
             # We want to generate a noncontiguous array of shape `self.shape`.
-            # An easy way to make an array noncontiguous is to tranpose some dimensions,
-            # but that will ruin our shape, so we generate a shape, `pretransposed_shape` that when
-            # transposed by `permuted_indices` gives our desired shape.
+            # An easy way to make an array noncontiguous is to transpose some dimensions.
             indices = tuple(range(len(self.shape)))
             permuted_indices = data.draw(st.permutations(indices))
 
-            inverse_permutation = [0] * len(indices)
-            for i, index in enumerate(permuted_indices):
-                inverse_permutation[index] = i
-            pretransposed_shape = [self.shape[i] for i in inverse_permutation]
-
-            result = self.xp.reshape(result, pretransposed_shape)
+            # Reshape once to get the right number of dimensions to transpose
+            result = self.xp.reshape(result, self.shape)
             result = result.transpose(permuted_indices)
+            # Then, since the transpose almost certainly made our shape wrong, reshape again
+            result = self.xp.reshape(result, self.shape)
         else:
             result = self.xp.reshape(result, self.shape)
 
