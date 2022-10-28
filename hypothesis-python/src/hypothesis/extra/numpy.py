@@ -60,7 +60,7 @@ __all__ = [
     "mutually_broadcastable_shapes",
     "basic_indices",
     "integer_array_indices",
-    "make_discontiguous",
+    "make_noncontiguous",
     "permute_dimensions",
     "array_memory_scramblers",
 ]
@@ -69,8 +69,6 @@ TIME_RESOLUTIONS = tuple("Y  M  D  h  m  s  ms  us  ns  ps  fs  as".split())
 
 # See https://github.com/HypothesisWorks/hypothesis/pull/3394 and linked discussion.
 NP_FIXED_UNICODE = tuple(int(x) for x in np.__version__.split(".")[:2]) >= (1, 19)
-
-
 
 
 @defines_strategy(force_reusable_values=True)
@@ -963,8 +961,8 @@ def integer_array_indices(
     )
 
 
-def make_discontiguous(array: np.ndarray, stride: int = 2) -> np.ndarray:
-    """Return a discontiguous view of `array` if possible."""
+def make_noncontiguous(array: np.ndarray, stride: int = 2) -> np.ndarray:
+    """Return a noncontiguous view of `array` if possible."""
     if np.isscalar(array) or array.size < 2:
         return array
 
@@ -1006,22 +1004,22 @@ class ArrayMemoryScramblerStrategy(st.SearchStrategy):
         pass
 
     def do_draw(self, data):
-        make_discontig = data.draw(st.booleans())
+        make_noncontig = data.draw(st.booleans())
         transpose = data.draw(st.booleans())
 
         identity = lambda x: x
 
-        discontig_f = identity
-        if make_discontig:
+        noncontig_f = identity
+        if make_noncontig:
             # Don't draw 0 because it's an invalid stride, and don't draw positive 1 since we want
             # to not return the identity unless we fall all the way through.
             stride = data.draw(st.integers(-5, 5).filter(lambda x: x != 0 and x != 1))
-            discontig_f = functools.partial(make_discontiguous, stride=stride)
+            noncontig_f = functools.partial(make_noncontiguous, stride=stride)
 
         transpose_f = permute_dimensions if transpose else identity
 
         # Compose whatever manipulations we end up doing to make maximally scrambled arrays.
-        return lambda x: transpose_f(discontig_f(x))
+        return lambda x: transpose_f(noncontig_f(x))
 
 
 @defines_strategy()
