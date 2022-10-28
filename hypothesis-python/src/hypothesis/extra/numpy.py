@@ -81,13 +81,20 @@ def make_discontiguous(array: np.ndarray, stride: int = 2) -> np.ndarray:
     return backing_arr[::stride].reshape(array.shape)
 
 
-def permute_dimensions(array: np.ndarray) -> np.ndarray:
+def permute_dimensions(
+    array: np.ndarray, permuted_indices: Sequence[int] = None
+) -> np.ndarray:
+    """Return an array that is functionally identical to `array`, but whose underlying dimensions have been permuted."""
     indices = tuple(range(len(array.shape)))
     # This is annoying! Because `ArrayMemoryScrambleStrategy` returns a function,
-    # we don't have access to `data` within this function. So just draw a deterministic
+    # we don't have access to `data` within this function. But also because it's a function,
+    # we don't know the shape of the array we're going to be passed. So just draw a deterministic
     # permutation for a given array shape.
-    permuted_indices = np.random.default_rng(seed=0).permutation(indices)
+    if permuted_indices is None:
+        permuted_indices = np.random.default_rng(seed=0).permutation(indices)
 
+    # Invert the permutatation so that when we apply the original permutation, we get back
+    # our desired data.
     inverse_permutation = [0] * len(indices)
     for i, index in enumerate(permuted_indices):
         inverse_permutation[index] = i
@@ -95,10 +102,6 @@ def permute_dimensions(array: np.ndarray) -> np.ndarray:
     result = array.transpose(inverse_permutation)
     result = np.ascontiguousarray(result)
     result = result.transpose(permuted_indices)
-
-    print(list(result.strides))
-    print(sorted(list(result.strides)))
-    print(list(result.strides) == sorted(list(result.strides)))
 
     return result
 
