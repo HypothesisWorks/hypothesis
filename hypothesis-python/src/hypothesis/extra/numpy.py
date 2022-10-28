@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import functools
 import math
 from typing import Any, Callable, Mapping, Optional, Sequence, Tuple, Union
 
@@ -67,26 +68,26 @@ TIME_RESOLUTIONS = tuple("Y  M  D  h  m  s  ms  us  ns  ps  fs  as".split())
 NP_FIXED_UNICODE = tuple(int(x) for x in np.__version__.split(".")[:2]) >= (1, 19)
 
 
+def make_discontiguous(array: np.ndarray, stride: int = 2) -> np.ndarray:
+    """Return a discontiguous view of `array` if possible."""
+    if np.isscalar(array) or array.size < 2:
+        return array
+
+    # Flatten our data, interleave it with garbage, then create a view that only
+    # looks at the original data.
+    flat = array.ravel()
+    backing_arr = np.empty(flat.size * stride, dtype=flat.dtype)
+    backing_arr[::stride] = flat
+    return backing_arr[::stride].reshape(array.shape)
+
+
 class ArrayMemoryScramblerStrategy(st.SearchStrategy):
     def __init__(self):
         pass
 
     def do_draw(self, data):
         stride = data.draw(st.integers(2, 5))
-
-        def make_discontiguous(arr: np.ndarray) -> np.ndarray:
-            """Return a discontiguous view of the array."""
-            if np.isscalar(arr) or arr.size < 2:
-                return arr
-
-            # Flatten our data, interleave it with garbage, then create a view that only
-            # looks at the original data.
-            flat = arr.ravel()
-            backing_arr = np.empty(flat.size * stride, dtype=flat.dtype)
-            backing_arr[::stride] = flat
-            return backing_arr[::stride].reshape(arr.shape)
-
-        return make_discontiguous
+        return functools.partial(make_discontiguous, stride=stride)
 
 
 @defines_strategy()
