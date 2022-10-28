@@ -82,7 +82,7 @@ def make_discontiguous(array: np.ndarray, stride: int = 2) -> np.ndarray:
 
 
 def permute_dimensions(
-    array: np.ndarray, permuted_indices: Sequence[int] = None
+    array: np.ndarray, permuted_indices: Optional[Sequence[int]] = None
 ) -> np.ndarray:
     """Return an array that is functionally identical to `array`, but whose underlying dimensions have been permuted."""
     indices = tuple(range(len(array.shape)))
