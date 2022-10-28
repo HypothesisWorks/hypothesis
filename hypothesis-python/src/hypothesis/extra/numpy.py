@@ -76,9 +76,31 @@ def make_discontiguous(array: np.ndarray, stride: int = 2) -> np.ndarray:
     # Flatten our data, interleave it with garbage, then create a view that only
     # looks at the original data.
     flat = array.ravel()
-    backing_arr = np.empty(flat.size * stride, dtype=flat.dtype)
+    backing_arr = np.empty(flat.size * abs(stride), dtype=flat.dtype)
     backing_arr[::stride] = flat
     return backing_arr[::stride].reshape(array.shape)
+
+
+def permute_dimensions(array: np.ndarray) -> np.ndarray:
+    indices = tuple(range(len(array.shape)))
+    # This is annoying! Because `ArrayMemoryScrambleStrategy` returns a function,
+    # we don't have access to `data` within this function. So just draw a deterministic
+    # permutation for a given array shape.
+    permuted_indices = np.random.default_rng(seed=0).permutation(indices)
+
+    inverse_permutation = [0] * len(indices)
+    for i, index in enumerate(permuted_indices):
+        inverse_permutation[index] = i
+
+    result = array.transpose(inverse_permutation)
+    result = np.ascontiguousarray(result)
+    result = result.transpose(permuted_indices)
+
+    print(list(result.strides))
+    print(sorted(list(result.strides)))
+    print(list(result.strides) == sorted(list(result.strides)))
+
+    return result
 
 
 class ArrayMemoryScramblerStrategy(st.SearchStrategy):
@@ -86,8 +108,22 @@ class ArrayMemoryScramblerStrategy(st.SearchStrategy):
         pass
 
     def do_draw(self, data):
-        stride = data.draw(st.integers(2, 5))
-        return functools.partial(make_discontiguous, stride=stride)
+        make_discontig = data.draw(st.booleans())
+        transpose = data.draw(st.booleans())
+
+        identity = lambda x: x
+
+        discontig_f = identity
+        if make_discontig:
+            # Don't draw 0 because it's an invalid stride, and don't draw positive 1 since we want
+            # to not return the identity unless we fall all the way through.
+            stride = data.draw(st.integers(-5, 5).filter(lambda x: x != 0 and x != 1))
+            discontig_f = functools.partial(make_discontiguous, stride=stride)
+
+        transpose_f = permute_dimensions if transpose else identity
+
+        # Compose whatever manipulations we end up doing to make maximally scrambled arrays.
+        return lambda x: transpose_f(discontig_f(x))
 
 
 @defines_strategy()

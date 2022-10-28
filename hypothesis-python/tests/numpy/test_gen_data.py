@@ -1223,7 +1223,14 @@ def test_array_memory_scramblers(scrambler, array):
     np.testing.assert_array_equal(array, scrambled)
 
 
-def test_array_memory_scramblers_noncontiguous():
+@settings(deadline=None, max_examples=10)
+@given(nps.arrays(float, nps.array_shapes(min_dims=3, min_side=3)))
+def test_array_memory_scramblers_noncontiguous(array):
     # We should be able to find a scrambler that makes a non-contiguous array
-    array = np.array([[1, 2], [3, 4]])
     find_any(nps.array_memory_scramblers(), lambda f: not f(array).data.contiguous)
+
+    # We should be able to find a scrambler whose strides aren't in default order
+    def strides_wonky(array):
+        return array.strides != np.zeros_like(array).strides
+
+    find_any(nps.array_memory_scramblers(), lambda f: strides_wonky(f(array)))
