@@ -8,7 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-"""A module controlling settings for Hypothesis to use in falsification.
+"""The settings module configures runtime options for Hypothesis.
 
 Either an explicit settings object can be used or the default object on
 this module can be modified.
@@ -120,9 +120,8 @@ class settingsMeta(type):
 
 
 class settings(metaclass=settingsMeta):
-    """A settings object controls a variety of parameters that are used in
-    falsification. These may control both the falsification strategy and the
-    details of the data that is generated.
+    """A settings object configures options including verbosity, runtime controls,
+    persistence, determinism, and more.
 
     Default values are picked up from the settings.default object and
     changes made there will be picked up in newly created settings.
@@ -364,7 +363,12 @@ settings._define_setting(
     validator=_max_examples_validator,
     description="""
 Once this many satisfying examples have been considered without finding any
-counter-example, falsification will terminate.
+counter-example, Hypothesis will stop looking.
+
+Note that we might call your test function fewer times if we find a bug early
+or can tell that we've exhausted the search space; or more if we discard some
+examples due to use of .filter(), assume(), or a few other things that can
+prevent the test case from completing successfully.
 
 The default value is chosen to suit a workflow where the test will be part of
 a suite that is regularly executed locally or on a CI server, balancing total

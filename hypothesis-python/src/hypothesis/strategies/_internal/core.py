@@ -1497,6 +1497,7 @@ class DrawFn(Protocol):
         def list_and_index(draw: DrawFn) -> Tuple[int, str]:
             i = draw(integers())  # type inferred as 'int'
             s = draw(text())  # type inferred as 'str'
+            return i, s
 
     """
 
