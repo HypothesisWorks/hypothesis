@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.56.4:
+
+-------------------
+6.56.4 - 2022-10-28
+-------------------
+
+This patch updates some docs, and depends on :pypi:`exceptiongroup` 1.0.0
+final to avoid a bug in the previous version.
+
 .. _v6.56.3:
 
 -------------------
