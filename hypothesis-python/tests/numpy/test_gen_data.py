@@ -1212,3 +1212,18 @@ def test_basic_indices_generate_valid_indexers(
 def test_array_owns_memory(x: np.ndarray):
     assert x.base is None
     assert x[...].base is x
+
+
+@given(
+    nps.array_memory_scramblers(), nps.arrays(nps.floating_dtypes(), nps.array_shapes())
+)
+def test_array_memory_scramblers(scrambler, array):
+    scrambled = scrambler(array)
+    # A scrambler should always return an equivalent array
+    np.testing.assert_array_equal(array, scrambled)
+
+
+def test_array_memory_scramblers_noncontiguous():
+    # We should be able to find a scrambler that makes a non-contiguous array
+    array = np.array([[1, 2], [3, 4]])
+    find_any(nps.array_memory_scramblers(), lambda f: not f(array).data.contiguous)

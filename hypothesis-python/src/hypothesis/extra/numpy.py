@@ -9,7 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
-from typing import Any, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Mapping, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
@@ -65,6 +65,38 @@ TIME_RESOLUTIONS = tuple("Y  M  D  h  m  s  ms  us  ns  ps  fs  as".split())
 
 # See https://github.com/HypothesisWorks/hypothesis/pull/3394 and linked discussion.
 NP_FIXED_UNICODE = tuple(int(x) for x in np.__version__.split(".")[:2]) >= (1, 19)
+
+
+class ArrayMemoryScramblerStrategy(st.SearchStrategy):
+    def __init__(self):
+        pass
+
+    def do_draw(self, data):
+        stride = data.draw(st.integers(2, 5))
+
+        def make_discontiguous(arr: np.ndarray) -> np.ndarray:
+            """Return a discontiguous view of the array."""
+            if np.isscalar(arr) or arr.size < 2:
+                return arr
+
+            # Flatten our data, interleave it with garbage, then create a view that only
+            # looks at the original data.
+            flat = arr.ravel()
+            backing_arr = np.empty(flat.size * stride, dtype=flat.dtype)
+            backing_arr[::stride] = flat
+            return backing_arr[::stride].reshape(arr.shape)
+
+        return make_discontiguous
+
+
+@defines_strategy()
+def array_memory_scramblers() -> st.SearchStrategy[Callable[[np.ndarray], np.ndarray]]:
+    """Return a strategy for functions that scramble the memory layout of an array.
+
+    This is useful for testing code that is sensitive to memory layout, e.g. tricky
+    kernels in pytorch.
+    """
+    return ArrayMemoryScramblerStrategy()
 
 
 @defines_strategy(force_reusable_values=True)
