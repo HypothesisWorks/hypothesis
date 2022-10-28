@@ -60,6 +60,9 @@ __all__ = [
     "mutually_broadcastable_shapes",
     "basic_indices",
     "integer_array_indices",
+    "make_discontiguous",
+    "permute_dimensions",
+    "array_memory_scramblers",
 ]
 
 TIME_RESOLUTIONS = tuple("Y  M  D  h  m  s  ms  us  ns  ps  fs  as".split())
@@ -68,75 +71,6 @@ TIME_RESOLUTIONS = tuple("Y  M  D  h  m  s  ms  us  ns  ps  fs  as".split())
 NP_FIXED_UNICODE = tuple(int(x) for x in np.__version__.split(".")[:2]) >= (1, 19)
 
 
-def make_discontiguous(array: np.ndarray, stride: int = 2) -> np.ndarray:
-    """Return a discontiguous view of `array` if possible."""
-    if np.isscalar(array) or array.size < 2:
-        return array
-
-    # Flatten our data, interleave it with garbage, then create a view that only
-    # looks at the original data.
-    flat = array.ravel()
-    backing_arr = np.empty(flat.size * abs(stride), dtype=flat.dtype)
-    backing_arr[::stride] = flat
-    return backing_arr[::stride].reshape(array.shape)
-
-
-def permute_dimensions(
-    array: np.ndarray, permuted_indices: Optional[Sequence[int]] = None
-) -> np.ndarray:
-    """Return an array that is functionally identical to `array`, but whose underlying dimensions have been permuted."""
-    indices = tuple(range(len(array.shape)))
-    # This is annoying! Because `ArrayMemoryScrambleStrategy` returns a function,
-    # we don't have access to `data` within this function. But also because it's a function,
-    # we don't know the shape of the array we're going to be passed. So just draw a deterministic
-    # permutation for a given array shape.
-    if permuted_indices is None:
-        permuted_indices = np.random.default_rng(seed=0).permutation(indices)
-
-    # Invert the permutatation so that when we apply the original permutation, we get back
-    # our desired data.
-    inverse_permutation = [0] * len(indices)
-    for i, index in enumerate(permuted_indices):
-        inverse_permutation[index] = i
-
-    result = array.transpose(inverse_permutation)
-    result = np.ascontiguousarray(result)
-    result = result.transpose(permuted_indices)
-
-    return result
-
-
-class ArrayMemoryScramblerStrategy(st.SearchStrategy):
-    def __init__(self):
-        pass
-
-    def do_draw(self, data):
-        make_discontig = data.draw(st.booleans())
-        transpose = data.draw(st.booleans())
-
-        identity = lambda x: x
-
-        discontig_f = identity
-        if make_discontig:
-            # Don't draw 0 because it's an invalid stride, and don't draw positive 1 since we want
-            # to not return the identity unless we fall all the way through.
-            stride = data.draw(st.integers(-5, 5).filter(lambda x: x != 0 and x != 1))
-            discontig_f = functools.partial(make_discontiguous, stride=stride)
-
-        transpose_f = permute_dimensions if transpose else identity
-
-        # Compose whatever manipulations we end up doing to make maximally scrambled arrays.
-        return lambda x: transpose_f(discontig_f(x))
-
-
-@defines_strategy()
-def array_memory_scramblers() -> st.SearchStrategy[Callable[[np.ndarray], np.ndarray]]:
-    """Return a strategy for functions that scramble the memory layout of an array.
-
-    This is useful for testing code that is sensitive to memory layout, e.g. tricky
-    kernels in pytorch.
-    """
-    return ArrayMemoryScramblerStrategy()
 
 
 @defines_strategy(force_reusable_values=True)
@@ -1027,3 +961,74 @@ def integer_array_indices(
     return result_shape.flatmap(
         lambda index_shape: st.tuples(*(array_for(index_shape, size) for size in shape))
     )
+
+
+def make_discontiguous(array: np.ndarray, stride: int = 2) -> np.ndarray:
+    """Return a discontiguous view of `array` if possible."""
+    if np.isscalar(array) or array.size < 2:
+        return array
+
+    # Flatten our data, interleave it with garbage, then create a view that only
+    # looks at the original data.
+    flat = array.ravel()
+    backing_arr = np.empty(flat.size * abs(stride), dtype=flat.dtype)
+    backing_arr[::stride] = flat
+    return backing_arr[::stride].reshape(array.shape)
+
+
+def permute_dimensions(
+    array: np.ndarray, permuted_indices: Optional[Sequence[int]] = None
+) -> np.ndarray:
+    """Return an array that is functionally identical to `array`, but whose underlying dimensions have been permuted."""
+    indices = tuple(range(len(array.shape)))
+    # This is annoying! Because `ArrayMemoryScrambleStrategy` returns a function,
+    # we don't have access to `data` within this function. But also because it's a function,
+    # we don't know the shape of the array we're going to be passed. So just draw a deterministic
+    # permutation for a given array shape.
+    if permuted_indices is None:
+        permuted_indices = np.random.default_rng(seed=0).permutation(indices)
+
+    # Invert the permutatation so that when we apply the original permutation, we get back
+    # our desired data.
+    inverse_permutation = [0] * len(indices)
+    for i, index in enumerate(permuted_indices):
+        inverse_permutation[index] = i
+
+    result = array.transpose(inverse_permutation)
+    result = np.ascontiguousarray(result)
+    result = result.transpose(permuted_indices)
+
+    return result
+
+
+class ArrayMemoryScramblerStrategy(st.SearchStrategy):
+    def __init__(self):
+        pass
+
+    def do_draw(self, data):
+        make_discontig = data.draw(st.booleans())
+        transpose = data.draw(st.booleans())
+
+        identity = lambda x: x
+
+        discontig_f = identity
+        if make_discontig:
+            # Don't draw 0 because it's an invalid stride, and don't draw positive 1 since we want
+            # to not return the identity unless we fall all the way through.
+            stride = data.draw(st.integers(-5, 5).filter(lambda x: x != 0 and x != 1))
+            discontig_f = functools.partial(make_discontiguous, stride=stride)
+
+        transpose_f = permute_dimensions if transpose else identity
+
+        # Compose whatever manipulations we end up doing to make maximally scrambled arrays.
+        return lambda x: transpose_f(discontig_f(x))
+
+
+@defines_strategy()
+def array_memory_scramblers() -> st.SearchStrategy[Callable[[np.ndarray], np.ndarray]]:
+    """Return a strategy for functions that scramble the memory layout of an array.
+
+    This is useful for testing code that is sensitive to memory layout, e.g. tricky
+    kernels in pytorch.
+    """
+    return ArrayMemoryScramblerStrategy()
