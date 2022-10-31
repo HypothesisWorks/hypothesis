@@ -974,21 +974,13 @@ def make_noncontiguous(array: np.ndarray, stride: int = 2) -> np.ndarray:
     return backing_arr[::stride].reshape(array.shape)
 
 
-def permute_dimensions(
-    array: np.ndarray, permuted_indices: Optional[Sequence[int]] = None
-) -> np.ndarray:
+def permute_dimensions(array: np.ndarray, permuted_indices: Sequence[int]) -> np.ndarray:
     """Return an array that is functionally identical to `array`, but whose underlying dimensions have been permuted."""
-    indices = tuple(range(len(array.shape)))
-    # This is annoying! Because `ArrayMemoryScrambleStrategy` returns a function,
-    # we don't have access to `data` within this function. But also because it's a function,
-    # we don't know the shape of the array we're going to be passed. So just draw a deterministic
-    # permutation for a given array shape.
-    if permuted_indices is None:
-        permuted_indices = np.random.default_rng(seed=0).permutation(indices)
+    assert len(array.shape) == len(permuted_indices)
 
     # Invert the permutatation so that when we apply the original permutation, we get back
     # our desired data.
-    inverse_permutation = [0] * len(indices)
+    inverse_permutation = [0] * len(permuted_indices)
     for i, index in enumerate(permuted_indices):
         inverse_permutation[index] = i
 
@@ -1023,7 +1015,13 @@ class ArrayMemoryScrambler:
         if self.make_noncontiguous_stride is not None:
             x = make_noncontiguous(x, self.make_noncontiguous_stride)
         if self.transpose:
-            x = permute_dimensions(x)
+            # This is annoying! Because `ArrayMemoryScrambleStrategy` returns a function,
+            # we don't have access to `data` within this function. But also because it's a function,
+            # we don't know the shape of the array we're going to be passed. So just draw a deterministic
+            # permutation for a given array shape.
+            indices = tuple(range(x.ndim))
+            permuted_indices = np.random.default_rng(seed=0).permutation(indices)
+            x = permute_dimensions(x, permuted_indices=permuted_indices)
         return x
 
     def __repr__(self) -> str:

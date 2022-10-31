@@ -1219,9 +1219,10 @@ def test_make_noncontiguous(array):
     np.testing.assert_array_equal(array, nps.make_noncontiguous(array))
 
 
-@given(nps.arrays(nps.floating_dtypes(), nps.array_shapes()))
-def test_permute_dimensions(array):
-    np.testing.assert_array_equal(array, nps.permute_dimensions(array))
+@given(nps.arrays(nps.floating_dtypes(), nps.array_shapes()), st.data())
+def test_permute_dimensions(array, data):
+    permutation = data.draw(st.permutations(range(array.ndim)))
+    np.testing.assert_array_equal(array, nps.permute_dimensions(array, permutation))
 
 
 @given(nps.arrays(nps.floating_dtypes(), nps.array_shapes()), st.data())
