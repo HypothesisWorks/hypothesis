@@ -1004,22 +1004,30 @@ class ArrayMemoryScramblerStrategy(st.SearchStrategy):
         pass
 
     def do_draw(self, data):
-        make_noncontig = data.draw(st.booleans())
+        # 0 is an invalid stride. 1 is a no-op, but rather than draw a boolean to control whether
+        # we make it discontiguous, just use stride=1.
+        stride = data.draw(st.integers(-5, 5).filter(lambda x: x != 0))
+
         transpose = data.draw(st.booleans())
+        return ArrayMemoryScrambler(make_noncontiguous_stride=stride, transpose=transpose)
 
-        identity = lambda x: x
 
-        noncontig_f = identity
-        if make_noncontig:
-            # Don't draw 0 because it's an invalid stride, and don't draw positive 1 since we want
-            # to not return the identity unless we fall all the way through.
-            stride = data.draw(st.integers(-5, 5).filter(lambda x: x != 0 and x != 1))
-            noncontig_f = functools.partial(make_noncontiguous, stride=stride)
+# This gets to be its own Callable class so that we can override repr and understand how an array
+# is being scrambled.
+class ArrayMemoryScrambler:
+    def __init__(self, make_noncontiguous_stride: Optional[int], transpose: bool = False):
+        self.make_noncontiguous_stride = make_noncontiguous_stride
+        self.transpose = transpose
 
-        transpose_f = permute_dimensions if transpose else identity
+    def __call__(self, x: np.ndarray) -> np.ndarray:
+        if self.make_noncontiguous_stride is not None:
+            x = make_noncontiguous(x, self.make_noncontiguous_stride)
+        if self.transpose:
+            x = permute_dimensions(x)
+        return x
 
-        # Compose whatever manipulations we end up doing to make maximally scrambled arrays.
-        return lambda x: transpose_f(noncontig_f(x))
+    def __repr__(self) -> str:
+        return f"ArrayMemoryScrambler(make_noncontiguous_stride={self.make_noncontiguous_stride}, transpose={self.transpose})"
 
 
 @defines_strategy()
