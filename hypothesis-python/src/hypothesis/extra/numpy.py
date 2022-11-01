@@ -8,7 +8,6 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import functools
 import math
 from typing import Any, Callable, Mapping, Optional, Sequence, Tuple, Union
 
@@ -992,8 +991,8 @@ def permute_dimensions(array: np.ndarray, permuted_indices: Sequence[int]) -> np
 
 
 class ArrayMemoryScramblerStrategy(st.SearchStrategy):
-    def __init__(self):
-        pass
+    def __init__(self, num_dims: Optional[int] = None):
+        self.num_dims = num_dims
 
     def do_draw(self, data):
         # 0 is an invalid stride. 1 is a no-op, but rather than draw a boolean to control whether
@@ -1001,15 +1000,23 @@ class ArrayMemoryScramblerStrategy(st.SearchStrategy):
         stride = data.draw(st.integers(-5, 5).filter(lambda x: x != 0))
 
         transpose = data.draw(st.booleans())
-        return ArrayMemoryScrambler(make_noncontiguous_stride=stride, transpose=transpose)
+        if transpose and self.num_dims is not None:
+            permuted_indices = data.draw(st.permutations(range(self.num_dims)))
+        else:
+            permuted_indices = None
+        return ArrayMemoryScrambler(make_noncontiguous_stride=stride, transpose=transpose, permuted_indices=permuted_indices)
 
 
 # This gets to be its own Callable class so that we can override repr and understand how an array
 # is being scrambled.
 class ArrayMemoryScrambler:
-    def __init__(self, make_noncontiguous_stride: Optional[int], transpose: bool = False):
+    def __init__(self, make_noncontiguous_stride: Optional[int], transpose: bool = False, permuted_indices: Optional[Sequence[int]] = None):
+        if not transpose and permuted_indices is not None:
+            raise InvalidArgument("Can't pass explicit permuted_indices without transpose=True")
+
         self.make_noncontiguous_stride = make_noncontiguous_stride
         self.transpose = transpose
+        self.permuted_indices = permuted_indices
 
     def __call__(self, x: np.ndarray) -> np.ndarray:
         if self.make_noncontiguous_stride is not None:
@@ -1018,21 +1025,36 @@ class ArrayMemoryScrambler:
             # This is annoying! Because `ArrayMemoryScrambleStrategy` returns a function,
             # we don't have access to `data` within this function. But also because it's a function,
             # we don't know the shape of the array we're going to be passed. So just draw a deterministic
-            # permutation for a given array shape.
-            indices = tuple(range(x.ndim))
-            permuted_indices = np.random.default_rng(seed=0).permutation(indices)
+            # permutation for a given array shape unless we were given a specific permutation in advance.
+            if self.permuted_indices is None:
+                indices = tuple(range(x.ndim))
+                permuted_indices = np.random.default_rng(seed=0).permutation(indices)
+            else:
+                # Check that our pre-determined permutation has the right number of dimensions
+                if len(self.permuted_indices) != x.ndim:
+                    raise InvalidArgument(f"Pre-determined permutation {self.permuted_indices} has {len(self.permuted_indices)} dimensions, but array has {x.ndim}")
+                permuted_indices = self.permuted_indices
             x = permute_dimensions(x, permuted_indices=permuted_indices)
         return x
 
     def __repr__(self) -> str:
-        return f"ArrayMemoryScrambler(make_noncontiguous_stride={self.make_noncontiguous_stride}, transpose={self.transpose})"
+        # If we have permuted indices, we don't need to explicitly state that transpose=True
+        if self.permuted_indices:
+            return f"ArrayMemoryScrambler(make_noncontiguous_stride={self.make_noncontiguous_stride}, permuted_indices={self.permuted_indices})"
+        else:
+            return f"ArrayMemoryScrambler(make_noncontiguous_stride={self.make_noncontiguous_stride}, transpose={self.transpose})"
 
 
 @defines_strategy()
-def array_memory_scramblers() -> st.SearchStrategy[Callable[[np.ndarray], np.ndarray]]:
+def array_memory_scramblers(num_dims: Optional[int] = None) -> st.SearchStrategy[Callable[[np.ndarray], np.ndarray]]:
     """Return a strategy for functions that scramble the memory layout of an array.
 
     This is useful for testing code that is sensitive to memory layout, e.g. tricky
     kernels in pytorch.
+
+    * ``num_dims`` is the number of dimensions of the array to be scrambled. If provided,
+      passing arrays of different numbers of dimensions to the resulting function will
+      raise ValueError. If not provided, the function will accept arrays of any number of
+      dimensions, but produce less clear index permutations.
     """
-    return ArrayMemoryScramblerStrategy()
+    return ArrayMemoryScramblerStrategy(num_dims)
