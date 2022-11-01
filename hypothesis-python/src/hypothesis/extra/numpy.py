@@ -975,6 +975,9 @@ def make_noncontiguous(array: np.ndarray, stride: int = 2) -> np.ndarray:
 
 def permute_dimensions(array: np.ndarray, permuted_indices: Sequence[int]) -> np.ndarray:
     """Return an array that is functionally identical to `array`, but whose underlying dimensions have been permuted."""
+    if array.ndim < 2:
+        return array
+
     assert len(array.shape) == len(permuted_indices)
 
     # Invert the permutatation so that when we apply the original permutation, we get back
@@ -1000,7 +1003,7 @@ class ArrayMemoryScramblerStrategy(st.SearchStrategy):
         stride = data.draw(st.integers(-5, 5).filter(lambda x: x != 0))
 
         transpose = data.draw(st.booleans())
-        if transpose and self.num_dims is not None:
+        if transpose and self.num_dims is not None and self.num_dims > 1:
             permuted_indices = data.draw(st.permutations(range(self.num_dims)))
         else:
             permuted_indices = None
