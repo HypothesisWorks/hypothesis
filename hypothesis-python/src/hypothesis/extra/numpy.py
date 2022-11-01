@@ -1010,7 +1010,7 @@ class ArrayMemoryScramblerStrategy(st.SearchStrategy):
 # This gets to be its own Callable class so that we can override repr and understand how an array
 # is being scrambled.
 class ArrayMemoryScrambler:
-    def __init__(self, make_noncontiguous_stride: Optional[int], transpose: bool = False, permuted_indices: Optional[Sequence[int]] = None):
+    def __init__(self, make_noncontiguous_stride: int, transpose: bool = False, permuted_indices: Optional[Sequence[int]] = None):
         if not transpose and permuted_indices is not None:
             raise InvalidArgument("Can't pass explicit permuted_indices without transpose=True")
 
@@ -1019,7 +1019,8 @@ class ArrayMemoryScrambler:
         self.permuted_indices = permuted_indices
 
     def __call__(self, x: np.ndarray) -> np.ndarray:
-        if self.make_noncontiguous_stride is not None:
+        # Don't bother calling make_noncontiguous if it's not going to do anything.
+        if self.make_noncontiguous_stride != 1:
             x = make_noncontiguous(x, self.make_noncontiguous_stride)
         if self.transpose:
             # This is annoying! Because `ArrayMemoryScrambleStrategy` returns a function,

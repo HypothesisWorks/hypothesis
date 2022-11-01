@@ -1242,6 +1242,13 @@ def test_array_memory_scramblers(scrambler, array):
     np.testing.assert_array_equal(array, scrambled)
 
 
+def test_minimal_scrambler_is_identity():
+    x = np.arange(10)
+    # Test that this returns the literal identity (just passes `x` through) for now, because
+    # asserting that it's identical in every meaningful way, e.g. strides, contiguousness, etc.
+    # is difficult.
+    assert minimal(nps.array_memory_scramblers())(x) is x
+
 @settings(deadline=None, max_examples=10)
 @given(nps.arrays(float, nps.array_shapes(min_dims=3, min_side=3)))
 def test_array_memory_scramblers_noncontiguous(array):
