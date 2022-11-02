@@ -8,11 +8,10 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from hypothesis import assume, given, strategies as st
-from hypothesis.strategies._internal.lazy import unwrap_strategies
-
 from tests.common.debug import assert_no_examples
 
+from hypothesis import assume, given, strategies as st
+from hypothesis.strategies._internal.lazy import unwrap_strategies
 
 @given(st.integers().map(lambda x: assume(x % 3 != 0) and x))
 def test_can_assume_in_map(x):

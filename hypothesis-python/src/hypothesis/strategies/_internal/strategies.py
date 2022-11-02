@@ -127,7 +127,7 @@ def recursive_property(name, default):
             if result is calculating:
                 hit_recursion[0] = True
                 return default
-            elif result is sentinel:
+            if result is sentinel:
                 mapping[strat] = calculating
                 mapping[strat] = getattr(strat, calculation)(recur)
                 return mapping[strat]
@@ -304,14 +304,13 @@ class SearchStrategy(Generic[Ex]):
                     "https://hypothesis.readthedocs.io/en/latest/data.html"
                     "#composite-strategies for more details."
                 )
-            else:
-                raise HypothesisException(
-                    "Using example() inside a test function is a bad "
-                    "idea. Instead consider using hypothesis.strategies.data() "
-                    "to draw more examples during testing. See "
-                    "https://hypothesis.readthedocs.io/en/latest/data.html"
-                    "#drawing-interactively-in-tests for more details."
-                )
+            raise HypothesisException(
+                "Using example() inside a test function is a bad "
+                "idea. Instead consider using hypothesis.strategies.data() "
+                "to draw more examples during testing. See "
+                "https://hypothesis.readthedocs.io/en/latest/data.html"
+                "#drawing-interactively-in-tests for more details."
+            )
 
         try:
             return self.__examples.pop()
@@ -960,14 +959,13 @@ class FilteredStrategy(SearchStrategy[Ex]):
             if self.condition(value):
                 data.stop_example()
                 return value
-            else:
-                data.stop_example(discard=True)
-                if i == 0:
-                    self.note_retried(data)
-                # This is to guard against the case where we consume no data.
-                # As long as we consume data, we'll eventually pass or raise.
-                # But if we don't this could be an infinite loop.
-                assume(data.index > start_index)
+            data.stop_example(discard=True)
+            if i == 0:
+                self.note_retried(data)
+            # This is to guard against the case where we consume no data.
+            # As long as we consume data, we'll eventually pass or raise.
+            # But if we don't this could be an infinite loop.
+            assume(data.index > start_index)
 
         return filter_not_satisfied
 

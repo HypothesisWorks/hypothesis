@@ -448,8 +448,7 @@ class BundleReferenceStrategy(SearchStrategy):
         position = cu.integer_range(data, 0, len(bundle) - 1, center=len(bundle))
         if self.consume:
             return bundle.pop(position)
-        else:
-            return bundle[position]
+        return bundle[position]
 
 
 class Bundle(SearchStrategy[Ex]):

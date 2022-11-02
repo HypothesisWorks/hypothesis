@@ -14,14 +14,13 @@ import pytest
 from django.db import IntegrityError
 from django.test import TestCase as DjangoTestCase
 
+from tests.django.toystore.models import Company
+
 from hypothesis import HealthCheck, Verbosity, given, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.django import TestCase, TransactionTestCase
 from hypothesis.internal.compat import PYPY
 from hypothesis.strategies import integers
-
-from tests.django.toystore.models import Company
-
 
 class SomeStuff:
     @settings(suppress_health_check=[HealthCheck.too_slow])

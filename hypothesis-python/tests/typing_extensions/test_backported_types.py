@@ -24,12 +24,12 @@ from typing_extensions import (
     TypeGuard,
 )
 
+from tests.common.debug import assert_all_examples, find_any
+
 from hypothesis import assume, given, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import from_type
 from hypothesis.strategies._internal.types import NON_RUNTIME_TYPES
-
-from tests.common.debug import assert_all_examples, find_any
 
 # See also nocover/test_type_lookup.py
 
@@ -63,7 +63,7 @@ class A(TypedDict):
 
 @given(from_type(A))
 def test_simple_typeddict(value):
-    assert type(value) == dict
+    assert isinstance(value, dict)
     assert set(value) == {"a"}
     assert isinstance(value["a"], int)
 
@@ -212,7 +212,7 @@ class Movie(TypedDict):  # implicitly total=True
 
 @given(from_type(Movie))
 def test_typeddict_not_required(value):
-    assert type(value) == dict
+    assert isinstance(value, dict)
     assert set(value).issubset({"title", "year"})
     assert isinstance(value["title"], str)
     if "year" in value:
@@ -230,7 +230,7 @@ class OtherMovie(TypedDict, total=False):
 
 @given(from_type(OtherMovie))
 def test_typeddict_required(value):
-    assert type(value) == dict
+    assert isinstance(value, dict)
     assert set(value).issubset({"title", "year"})
     assert isinstance(value["title"], str)
     if "year" in value:

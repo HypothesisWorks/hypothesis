@@ -12,11 +12,10 @@ import uuid
 
 import pytest
 
-from hypothesis import strategies as st
-from hypothesis.errors import InvalidArgument
-
 from tests.common.debug import assert_no_examples, find_any
 
+from hypothesis import strategies as st
+from hypothesis.errors import InvalidArgument
 
 def test_no_nil_uuid_by_default():
     assert_no_examples(st.uuids(), lambda x: x == uuid.UUID(int=0))

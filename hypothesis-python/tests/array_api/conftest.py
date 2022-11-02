@@ -16,6 +16,8 @@ from typing import Tuple
 
 import pytest
 
+from tests.array_api.common import installed_array_modules
+
 from hypothesis.errors import HypothesisWarning, InvalidArgument
 from hypothesis.extra.array_api import (
     NOMINAL_VERSIONS,
@@ -23,8 +25,6 @@ from hypothesis.extra.array_api import (
     make_strategies_namespace,
     mock_xp,
 )
-
-from tests.array_api.common import installed_array_modules
 
 # See README.md in regards to the env variables
 test_xp_option = getenv("HYPOTHESIS_TEST_ARRAY_API", "default")

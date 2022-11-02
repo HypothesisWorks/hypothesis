@@ -14,6 +14,8 @@ import unicodedata
 
 import pytest
 
+from tests.common.debug import assert_all_examples, assert_no_examples, find_any
+
 from hypothesis import HealthCheck, assume, given, settings, strategies as st
 from hypothesis._settings import local_settings
 from hypothesis.errors import InvalidArgument
@@ -27,8 +29,6 @@ from hypothesis.strategies._internal.regex import (
     base_regex_strategy,
     regex_strategy,
 )
-
-from tests.common.debug import assert_all_examples, assert_no_examples, find_any
 
 
 def is_ascii(s):
@@ -339,7 +339,7 @@ def test_can_handle_binary_regex_which_is_not_ascii():
 def test_regex_have_same_type_as_pattern(pattern):
     @given(st.from_regex(pattern))
     def test_result_type(s):
-        assert type(s) == type(pattern)
+        assert isinstance(s,type(pattern))
 
     test_result_type()
 

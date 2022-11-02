@@ -13,6 +13,9 @@ from random import Random
 
 import pytest
 
+from tests.common.debug import find_any, minimal
+from tests.common.utils import flaky
+
 from hypothesis import given, settings
 from hypothesis.strategies import (
     booleans,
@@ -28,8 +31,7 @@ from hypothesis.strategies import (
     tuples,
 )
 
-from tests.common.debug import find_any, minimal
-from tests.common.utils import flaky
+
 
 
 @pytest.mark.parametrize(

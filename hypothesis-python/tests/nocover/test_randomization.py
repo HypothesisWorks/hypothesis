@@ -10,9 +10,9 @@
 
 from pytest import raises
 
-from hypothesis import Verbosity, core, find, given, settings, strategies as st
-
 from tests.common.utils import no_shrink
+
+from hypothesis import Verbosity, core, find, given, settings, strategies as st
 
 
 def test_seeds_off_internal_random():

@@ -230,7 +230,7 @@ def _type_from_doc_fragment(token: str) -> Optional[type]:
     if "numpy" in sys.modules:
         if re.fullmatch(r"[Aa]rray[-_ ]?like", token):
             return sys.modules["numpy"].ndarray
-        elif token == "dtype":
+        if token == "dtype":
             return sys.modules["numpy"].dtype
     # Natural-language syntax, e.g. "sequence of integers"
     coll_match = re.fullmatch(r"(\w+) of (\w+)", token)
@@ -586,7 +586,7 @@ def _imports_for_strategy(strategy):
     if isinstance(strategy, LazyStrategy):
         if strategy.function is st.from_type:
             return _imports_for_object(strategy._LazyStrategy__args[0])
-        elif _get_module(strategy.function).startswith("hypothesis.extra."):
+        if _get_module(strategy.function).startswith("hypothesis.extra."):
             return {(_get_module(strategy.function), strategy.function.__name__)}
             module = _get_module(strategy.function).replace("._array_helpers", ".numpy")
             return {(module, strategy.function.__name__)}

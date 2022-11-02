@@ -121,8 +121,7 @@ def test_map_breaks_reusability(s):
         some strategies introspect their mappings."""
         if cond:
             return x
-        else:
-            return None
+        return None
 
     assert s.has_reusable_values
     assert not s.map(nontrivial_map).has_reusable_values
@@ -138,8 +137,7 @@ def test_flatmap_breaks_reusability(s):
         if some strategies introspect their flat-mappings."""
         if cond:
             return st.just(x)
-        else:
-            return st.none()
+        return st.none()
 
     assert s.has_reusable_values
     assert not s.flatmap(nontrivial_flatmap).has_reusable_values

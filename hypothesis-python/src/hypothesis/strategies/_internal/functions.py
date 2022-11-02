@@ -53,10 +53,9 @@ class FunctionStrategy(SearchStrategy):
                     rep = repr_call(self.like, args, kwargs, reorder=False)
                     note(f"Called function: {rep} -> {cache[key]!r}")
                 return cache[key]
-            else:
-                val = data.draw(self.returns)
-                rep = repr_call(self.like, args, kwargs, reorder=False)
-                note(f"Called function: {rep} -> {val!r}")
-                return val
+            val = data.draw(self.returns)
+            rep = repr_call(self.like, args, kwargs, reorder=False)
+            note(f"Called function: {rep} -> {val!r}")
+            return val
 
         return inner

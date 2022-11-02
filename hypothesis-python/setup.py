@@ -45,7 +45,7 @@ if setuptools_version < (42,):
 # Assignment to placate pyflakes. The actual version is from the exec that follows.
 __version__ = None
 
-with open(local_file("src/hypothesis/version.py")) as o:
+with open(local_file("src/hypothesis/version.py"), encoding="utf-8") as o:
     exec(o.read())
 
 assert __version__ is not None
@@ -133,7 +133,7 @@ setuptools.setup(
         "pytest11": ["hypothesispytest = _hypothesis_pytestplugin"],
         "console_scripts": ["hypothesis = hypothesis.extra.cli:main"],
     },
-    long_description=open(README).read(),
+    long_description=open(README, encoding="utf-8").read(),
     long_description_content_type="text/x-rst",
     keywords="python testing fuzzing property-based-testing",
 )

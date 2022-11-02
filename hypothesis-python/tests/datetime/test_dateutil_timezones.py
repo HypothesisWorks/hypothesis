@@ -13,15 +13,14 @@ import datetime as dt
 import pytest
 from dateutil import tz, zoneinfo
 
+from tests.common.debug import assert_all_examples, find_any, minimal
+from tests.common.utils import fails_with
+
 from hypothesis import assume, given
 from hypothesis.errors import FailedHealthCheck, InvalidArgument
 from hypothesis.extra.dateutil import timezones
 from hypothesis.strategies import data, datetimes, just, sampled_from, times
 from hypothesis.strategies._internal.datetime import datetime_does_not_exist
-
-from tests.common.debug import assert_all_examples, find_any, minimal
-from tests.common.utils import fails_with
-
 
 def test_utc_is_minimal():
     assert tz.UTC is minimal(timezones())

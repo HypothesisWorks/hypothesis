@@ -90,19 +90,19 @@ def comp_to_kwargs(x: ast.AST, op: ast.AST, y: ast.AST, *, argname: str) -> dict
         if a is ARG:
             return {"max_value": b, "exclude_max": True}
         return {"min_value": a, "exclude_min": True}
-    elif isinstance(op, ast.LtE):
+    if isinstance(op, ast.LtE):
         if a is ARG:
             return {"max_value": b}
         return {"min_value": a}
-    elif isinstance(op, ast.Eq):
+    if isinstance(op, ast.Eq):
         if a is ARG:
             return {"min_value": b, "max_value": b}
         return {"min_value": a, "max_value": a}
-    elif isinstance(op, ast.GtE):
+    if isinstance(op, ast.GtE):
         if a is ARG:
             return {"min_value": b}
         return {"max_value": a}
-    elif isinstance(op, ast.Gt):
+    if isinstance(op, ast.Gt):
         if a is ARG:
             return {"min_value": b, "exclude_min": True}
         return {"max_value": a, "exclude_max": True}
@@ -235,7 +235,7 @@ def get_numeric_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
 
     if isinstance(tree, ast.Lambda) and len(tree.args.args) == 1:
         return numeric_bounds_from_ast(tree.body, tree.args.args[0].arg, unchanged)
-    elif isinstance(tree, ast.FunctionDef) and len(tree.args.args) == 1:
+    if isinstance(tree, ast.FunctionDef) and len(tree.args.args) == 1:
         if len(tree.body) != 1 or not isinstance(tree.body[0], ast.Return):
             # If the body of the function is anything but `return <expr>`,
             # i.e. as simple as a lambda, we can't process it (yet).

@@ -8,10 +8,10 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+from tests.common.debug import find_any
+
 from hypothesis import given, settings
 from hypothesis.strategies import floats, integers, sets
-
-from tests.common.debug import find_any
 
 
 def test_can_draw_sets_of_hard_to_find_elements():

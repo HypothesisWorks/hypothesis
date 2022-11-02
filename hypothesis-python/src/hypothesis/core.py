@@ -221,7 +221,7 @@ def decode_failure(blob):
     prefix = buffer[:1]
     if prefix == b"\0":
         return buffer[1:]
-    elif prefix == b"\1":
+    if prefix == b"\1":
         try:
             return zlib.decompress(buffer[1:])
         except zlib.error as err:
@@ -302,7 +302,7 @@ def is_invalid_test(test, original_sig, given_arguments, given_kwargs):
     extra_kwargs = [
         k for k in given_kwargs if k not in {p.name for p in pos_params + kwonly_params}
     ]
-    if extra_kwargs and (params == [] or params[-1].kind is not params[-1].VAR_KEYWORD):
+    if extra_kwargs and (not params or params[-1].kind is not params[-1].VAR_KEYWORD):
         arg = extra_kwargs[0]
         return invalid(
             f"{test.__name__}() got an unexpected keyword argument {arg!r}, "
@@ -462,17 +462,16 @@ def get_random_for_wrapped_test(test, wrapped_test):
 
     if wrapped_test._hypothesis_internal_use_seed is not None:
         return Random(wrapped_test._hypothesis_internal_use_seed)
-    elif settings.derandomize:
+    if settings.derandomize:
         return Random(int_from_bytes(function_digest(test)))
-    elif global_force_seed is not None:
+    if global_force_seed is not None:
         return Random(global_force_seed)
-    else:
-        global _hypothesis_global_random
-        if _hypothesis_global_random is None:
-            _hypothesis_global_random = Random()
-        seed = _hypothesis_global_random.getrandbits(128)
-        wrapped_test._hypothesis_internal_use_generated_seed = seed
-        return Random(seed)
+    global _hypothesis_global_random
+    if _hypothesis_global_random is None:
+        _hypothesis_global_random = Random()
+    seed = _hypothesis_global_random.getrandbits(128)
+    wrapped_test._hypothesis_internal_use_generated_seed = seed
+    return Random(seed)
 
 
 def process_arguments_to_given(wrapped_test, arguments, kwargs, given_kwargs, params):
@@ -782,27 +781,26 @@ class StateForActualGivenExecution:
                 # block somewhere, suppressing our original StopTest.
                 # We raise a new one here to resume normal operation.
                 raise StopTest(data.testcounter) from e
-            else:
-                # The test failed by raising an exception, so we inform the
-                # engine that this test run was interesting. This is the normal
-                # path for test runs that fail.
+            # The test failed by raising an exception, so we inform the
+            # engine that this test run was interesting. This is the normal
+            # path for test runs that fail.
 
-                tb = get_trimmed_traceback()
-                info = data.extra_information
-                info.__expected_traceback = format_exception(e, tb)
-                info.__expected_exception = e
-                verbose_report(info.__expected_traceback)
+            tb = get_trimmed_traceback()
+            info = data.extra_information
+            info.__expected_traceback = format_exception(e, tb)
+            info.__expected_exception = e
+            verbose_report(info.__expected_traceback)
 
-                self.failed_normally = True
+            self.failed_normally = True
 
-                interesting_origin = get_interesting_origin(e)
-                if trace:  # pragma: no cover
-                    # Trace collection is explicitly disabled under coverage.
-                    self.explain_traces[interesting_origin].add(trace)
-                if interesting_origin[0] == DeadlineExceeded:
-                    self.failed_due_to_deadline = True
-                    self.explain_traces.clear()
-                data.mark_interesting(interesting_origin)
+            interesting_origin = get_interesting_origin(e)
+            if trace:  # pragma: no cover
+                # Trace collection is explicitly disabled under coverage.
+                self.explain_traces[interesting_origin].add(trace)
+            if interesting_origin[0] == DeadlineExceeded:
+                self.failed_due_to_deadline = True
+                self.explain_traces.clear()
+            data.mark_interesting(interesting_origin)
 
     def run_engine(self):
         """Run the test function many times, on database input and generated
@@ -844,7 +842,7 @@ class StateForActualGivenExecution:
 
         if not self.falsifying_examples:
             return
-        elif not (self.settings.report_multiple_bugs and pytest_shows_exceptiongroups):
+        if not (self.settings.report_multiple_bugs and pytest_shows_exceptiongroups):
             # Pretend that we only found one failure, by discarding the others.
             del self.falsifying_examples[:-1]
 

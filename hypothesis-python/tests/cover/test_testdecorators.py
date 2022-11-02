@@ -12,6 +12,16 @@ import functools
 import threading
 from collections import namedtuple
 
+from tests.common.utils import (
+    assert_falsifying_output,
+    capture_out,
+    fails,
+    fails_with,
+    no_shrink,
+    raises,
+)
+
+
 from hypothesis import HealthCheck, Verbosity, assume, given, note, reporting, settings
 from hypothesis.strategies import (
     binary,
@@ -27,15 +37,6 @@ from hypothesis.strategies import (
     sampled_from,
     sets,
     text,
-)
-
-from tests.common.utils import (
-    assert_falsifying_output,
-    capture_out,
-    fails,
-    fails_with,
-    no_shrink,
-    raises,
 )
 
 # This particular test file is run under both pytest and nose, so it can't
@@ -139,7 +140,7 @@ def test_can_be_given_keyword_args(x, name):
 @fails
 @given(one_of(floats(), booleans()), one_of(floats(), booleans()))
 def test_one_of_produces_different_values(x, y):
-    assert type(x) == type(y)
+    assert isinstance(x, type(y))
 
 
 @given(just(42))
@@ -202,7 +203,7 @@ mix = one_of(sampled_from([1, 2, 3]), text())
 @fails
 @given(mix, mix)
 def test_can_mix_sampling_with_generating(x, y):
-    assert type(x) == type(y)
+    assert isinstance(x,type(y))
 
 
 @fails

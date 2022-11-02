@@ -10,13 +10,12 @@
 
 import os.path
 
+from tests.common.utils import all_values, non_covering_examples
+
 from hypothesis import assume, core, find, given, settings, strategies as st
 from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
 from hypothesis.errors import NoSuchExample, Unsatisfiable
 from hypothesis.internal.entropy import deterministic_PRNG
-
-from tests.common.utils import all_values, non_covering_examples
-
 
 def has_a_non_zero_byte(x):
     return any(bytes(x))

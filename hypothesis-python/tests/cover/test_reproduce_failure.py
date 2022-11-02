@@ -14,6 +14,8 @@ import zlib
 
 import pytest
 
+from tests.common.utils import capture_out, no_shrink
+
 from hypothesis import (
     Verbosity,
     __version__,
@@ -26,8 +28,6 @@ from hypothesis import (
 )
 from hypothesis.core import decode_failure, encode_failure
 from hypothesis.errors import DidNotReproduce, InvalidArgument, UnsatisfiedAssumption
-
-from tests.common.utils import capture_out, no_shrink
 
 
 @example(bytes(20))  # shorter compressed

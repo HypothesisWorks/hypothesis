@@ -23,9 +23,8 @@ def test_find_uses_provided_random():
             if len(v) > 5:
                 if seen:
                     return v == seen[0]
-                else:
-                    seen.append(v)
-                    return True
+                seen.append(v)
+                return True
 
         result = find(
             st.text(),

@@ -583,7 +583,7 @@ class ConjectureRunner:
             return True
         # Users who disable shrinking probably want to exit as fast as possible.
         # If we've found a bug and won't report more than one, stop looking.
-        elif (
+        if (
             Phase.shrink not in self.settings.phases
             or not self.settings.report_multiple_bugs
         ):
@@ -972,12 +972,11 @@ class ConjectureRunner:
 
                 if sort_key(c) > cap:
                     break
-                else:
-                    self.cached_test_function(c)
-                    # We unconditionally remove c from the secondary key as it
-                    # is either now primary or worse than our primary example
-                    # of this reason for interestingness.
-                    self.settings.database.delete(self.secondary_key, c)
+                self.cached_test_function(c)
+                # We unconditionally remove c from the secondary key as it
+                # is either now primary or worse than our primary example
+                # of this reason for interestingness.
+                self.settings.database.delete(self.secondary_key, c)
 
     def shrink(self, example, predicate=None, allow_transition=None):
         s = self.new_shrinker(example, predicate, allow_transition)

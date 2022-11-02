@@ -12,11 +12,11 @@ from datetime import datetime
 
 import pandas as pd
 
-from hypothesis import given, strategies as st
-from hypothesis.extra import pandas as pdst
-
 from tests.common.arguments import argument_validation_test, e
 from tests.common.utils import checks_deprecated_behaviour
+
+from hypothesis import given, strategies as st
+from hypothesis.extra import pandas as pdst
 
 BAD_ARGS = [
     e(pdst.data_frames),

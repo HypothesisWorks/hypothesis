@@ -8,10 +8,9 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from hypothesis import strategies as st
-
 from tests.common.debug import minimal
 
+from hypothesis import strategies as st
 
 def test_large_branching_tree():
     tree = st.deferred(lambda: st.integers() | st.tuples(tree, tree, tree, tree, tree))

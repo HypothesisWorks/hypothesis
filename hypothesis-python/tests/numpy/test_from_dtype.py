@@ -11,12 +11,12 @@
 import numpy as np
 import pytest
 
+from tests.common.debug import find_any
+
 from hypothesis import assume, given, settings, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra import numpy as nps
 from hypothesis.strategies._internal import SearchStrategy
-
-from tests.common.debug import find_any
 
 STANDARD_TYPES = [
     np.dtype(t)
@@ -168,14 +168,14 @@ def test_all_inferred_scalar_strategies_roundtrip(data, dtype):
 @given(data=st.data())
 def test_from_dtype_works_without_time_unit(data, dtype_str):
     arr = data.draw(nps.from_dtype(np.dtype(dtype_str)))
-    assert (dtype_str + "[") in arr.dtype.str
+    assert dtype_str + "[" in arr.dtype.str
 
 
 @pytest.mark.parametrize("dtype_str", ["m8", "M8"])
 @given(data=st.data())
 def test_arrays_selects_consistent_time_unit(data, dtype_str):
     arr = data.draw(nps.arrays(dtype_str, 10))
-    assert (dtype_str + "[") in arr.dtype.str
+    assert dtype_str + "[" in arr.dtype.str
 
 
 def test_arrays_gives_useful_error_on_inconsistent_time_unit():

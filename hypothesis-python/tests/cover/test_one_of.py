@@ -12,11 +12,10 @@ import re
 
 import pytest
 
-from hypothesis import given, strategies as st
-from hypothesis.errors import InvalidArgument
-
 from tests.common.debug import assert_no_examples
 
+from hypothesis import given, strategies as st
+from hypothesis.errors import InvalidArgument
 
 def test_one_of_empty():
     e = st.one_of()

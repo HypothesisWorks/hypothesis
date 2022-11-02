@@ -584,8 +584,7 @@ class Blocks:
 
         if i == 0:
             return 0
-        else:
-            return self.end(i - 1)
+        return self.end(i - 1)
 
     def end(self, i: int) -> int:
         """Equivalent to self[i].end."""
@@ -621,8 +620,7 @@ class Blocks:
             return self.start(i) in self.owner.forced_indices or not any(
                 self.owner.buffer[self.start(i) : self.end(i)]
             )
-        else:
-            return self[i].trivial
+        return self[i].trivial
 
     def _check_index(self, i: int) -> int:
         n = len(self)
@@ -939,13 +937,12 @@ class ConjectureData:
         try:
             if not at_top_level:
                 return strategy.do_draw(self)
-            else:
-                assert start_time is not None
-                strategy.validate()
-                try:
-                    return strategy.do_draw(self)
-                finally:
-                    self.draw_times.append(time.perf_counter() - start_time)
+            assert start_time is not None
+            strategy.validate()
+            try:
+                return strategy.do_draw(self)
+            finally:
+                self.draw_times.append(time.perf_counter() - start_time)
         finally:
             self.stop_example()
 

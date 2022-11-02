@@ -31,9 +31,6 @@ from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies import from_type
 from hypothesis.strategies._internal import types
 
-from tests.common.debug import assert_all_examples, find_any, minimal
-from tests.common.utils import fails_with, temp_registered
-
 sentinel = object()
 BUILTIN_TYPES = tuple(
     v
@@ -308,7 +305,7 @@ def test_typevar_type_is_consistent(data, var, expected):
     v1 = data.draw(strat)
     v2 = data.draw(strat)
     assume(v1 != v2)  # Values may vary, just not types
-    assert type(v1) == type(v2)
+    assert isinstance(v1, type(v2))
     assert isinstance(v1, expected)
 
 
@@ -317,7 +314,7 @@ def test_distinct_typevars_same_constraint():
     B = typing.TypeVar("B", int, str)
     find_any(
         st.tuples(st.from_type(A), st.from_type(B)),
-        lambda ab: type(ab[0]) != type(ab[1]),  # noqa
+        lambda ab: not isinstance(ab[0], type(ab[1])),
     )
 
 
@@ -327,7 +324,7 @@ def test_distinct_typevars_distinct_type():
     B = typing.TypeVar("B")
     find_any(
         st.tuples(st.from_type(A), st.from_type(B)),
-        lambda ab: type(ab[0]) != type(ab[1]),  # noqa
+        lambda ab: not isinstance(ab[0], type(ab[1])),
     )
 
 
@@ -335,7 +332,7 @@ A = typing.TypeVar("A")
 
 
 def same_type_args(a: A, b: A):
-    assert type(a) == type(b)
+    assert isinstance(a, type(b))
 
 
 @given(st.builds(same_type_args))

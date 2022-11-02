@@ -30,10 +30,9 @@ def float_of(x, width):
     assert width in (16, 32, 64)
     if width == 64:
         return float(x)
-    elif width == 32:
+    if width == 32:
         return reinterpret_bits(float(x), "!f", "!f")
-    else:
-        return reinterpret_bits(float(x), "!e", "!e")
+    return reinterpret_bits(float(x), "!e", "!e")
 
 
 def is_negative(x: SupportsFloat) -> bool:
@@ -50,13 +49,11 @@ def count_between_floats(x, y, width=64):
     if is_negative(x):
         if is_negative(y):
             return float_to_int(x, width) - float_to_int(y, width) + 1
-        else:
-            return count_between_floats(x, -0.0, width) + count_between_floats(
-                0.0, y, width
-            )
-    else:
-        assert not is_negative(y)
-        return float_to_int(y, width) - float_to_int(x, width) + 1
+        return count_between_floats(x, -0.0, width) + count_between_floats(
+            0.0, y, width
+        )
+    assert not is_negative(y)
+    return float_to_int(y, width) - float_to_int(x, width) + 1
 
 
 def float_to_int(value, width=64):

@@ -10,10 +10,9 @@
 
 import pytest
 
-from hypothesis import given, strategies as st
-
 from tests.common.debug import minimal
 
+from hypothesis import given, strategies as st
 
 @given(st.lists(st.uuids()))
 def test_are_unique(ls):

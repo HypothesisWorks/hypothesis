@@ -13,12 +13,12 @@ import sys
 
 import pytest
 
+from tests.common.utils import capture_out
+
 from hypothesis import given, reporting
 from hypothesis._settings import Verbosity, settings
 from hypothesis.reporting import debug_report, report, verbose_report
 from hypothesis.strategies import integers
-
-from tests.common.utils import capture_out
 
 
 def test_can_print_bytes():

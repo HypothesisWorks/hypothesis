@@ -10,11 +10,6 @@
 
 import pytest
 
-from hypothesis import given, strategies as st
-from hypothesis.errors import InvalidArgument
-from hypothesis.extra.array_api import COMPLEX_NAMES, REAL_NAMES
-from hypothesis.internal.floats import width_smallest_normals
-
 from tests.array_api.common import (
     MIN_VER_FOR_COMPLEX,
     dtype_name_params,
@@ -22,6 +17,11 @@ from tests.array_api.common import (
 )
 from tests.common.debug import assert_all_examples, find_any, minimal
 from tests.common.utils import flaky
+
+from hypothesis import given, strategies as st
+from hypothesis.errors import InvalidArgument
+from hypothesis.extra.array_api import COMPLEX_NAMES, REAL_NAMES
+from hypothesis.internal.floats import width_smallest_normals
 
 
 def skip_on_missing_unique_values(xp):

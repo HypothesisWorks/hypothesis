@@ -72,8 +72,7 @@ def group_conditional(draw, group_name, if_yes, if_no):
     cache = draw(GROUP_CACHE_STRATEGY)
     if group_name in cache:
         return draw(if_yes)
-    else:
-        return draw(if_no)
+    return draw(if_no)
 
 
 @st.composite
@@ -234,8 +233,7 @@ def regex_strategy(regex, fullmatch, *, _temp_jsonschema_hack_no_end_newline=Fal
     if not parsed:
         if is_unicode:
             return st.text()
-        else:
-            return st.binary()
+        return st.binary()
 
     if is_unicode:
         base_padding_strategy = st.text()
@@ -351,151 +349,147 @@ def _strategy(codes, context, is_unicode):
         if len(strategies) == 1:
             return strategies[0]
         return st.tuples(*strategies).map(empty.join)
-    else:
-        # Single code
-        code, value = codes
-        if code == sre.LITERAL:
-            # Regex 'a' (single char)
-            c = to_char(value)
-            if (
-                context.flags & re.IGNORECASE
-                and c != c.swapcase()
-                and re.match(re.escape(c), c.swapcase(), re.IGNORECASE) is not None
-            ):
-                # We do the explicit check for swapped-case matching because
-                # eg 'ß'.upper() == 'SS' and ignorecase doesn't match it.
-                return st.sampled_from([c, c.swapcase()])
-            return st.just(c)
+    # Single code
+    code, value = codes
+    if code == sre.LITERAL:
+        # Regex 'a' (single char)
+        c = to_char(value)
+        if (
+            context.flags & re.IGNORECASE
+            and c != c.swapcase()
+            and re.match(re.escape(c), c.swapcase(), re.IGNORECASE) is not None
+        ):
+            # We do the explicit check for swapped-case matching because
+            # eg 'ß'.upper() == 'SS' and ignorecase doesn't match it.
+            return st.sampled_from([c, c.swapcase()])
+        return st.just(c)
 
-        elif code == sre.NOT_LITERAL:
-            # Regex '[^a]' (negation of a single char)
-            c = to_char(value)
-            blacklist = {c}
-            if (
-                context.flags & re.IGNORECASE
-                and re.match(re.escape(c), c.swapcase(), re.IGNORECASE) is not None
-            ):
-                # There are a few cases where .swapcase() returns two characters,
-                # but is still a case-insensitive match.  In such cases we add *both*
-                # characters to our blacklist, to avoid doing the wrong thing for
-                # patterns such as r"[^\u0130]+" where "i\u0307" matches.
-                #
-                # (that's respectively 'Latin letter capital I with dot above' and
-                # 'latin latter i' + 'combining dot above'; see issue #2657)
-                #
-                # As a final additional wrinkle, "latin letter capital I" *also*
-                # case-insensitive-matches, with or without combining dot character.
-                # We therefore have to chain .swapcase() calls until a fixpoint.
-                stack = [c.swapcase()]
-                while stack:
-                    for char in stack.pop():
-                        blacklist.add(char)
-                        stack.extend(set(char.swapcase()) - blacklist)
+    if code == sre.NOT_LITERAL:
+        # Regex '[^a]' (negation of a single char)
+        c = to_char(value)
+        blacklist = {c}
+        if (
+            context.flags & re.IGNORECASE
+            and re.match(re.escape(c), c.swapcase(), re.IGNORECASE) is not None
+        ):
+            # There are a few cases where .swapcase() returns two characters,
+            # but is still a case-insensitive match.  In such cases we add *both*
+            # characters to our blacklist, to avoid doing the wrong thing for
+            # patterns such as r"[^\u0130]+" where "i\u0307" matches.
+            #
+            # (that's respectively 'Latin letter capital I with dot above' and
+            # 'latin latter i' + 'combining dot above'; see issue #2657)
+            #
+            # As a final additional wrinkle, "latin letter capital I" *also*
+            # case-insensitive-matches, with or without combining dot character.
+            # We therefore have to chain .swapcase() calls until a fixpoint.
+            stack = [c.swapcase()]
+            while stack:
+                for char in stack.pop():
+                    blacklist.add(char)
+                    stack.extend(set(char.swapcase()) - blacklist)
 
-            if is_unicode:
-                return st.characters(blacklist_characters=blacklist)
-            else:
-                return binary_char.filter(lambda c: c not in blacklist)
+        if is_unicode:
+            return st.characters(blacklist_characters=blacklist)
+        return binary_char.filter(lambda c: c not in blacklist)
 
-        elif code == sre.IN:
-            # Regex '[abc0-9]' (set of characters)
-            negate = value[0][0] == sre.NEGATE
-            if is_unicode:
-                builder = CharactersBuilder(negate, context.flags)
-            else:
-                builder = BytesBuilder(negate, context.flags)
-
-            for charset_code, charset_value in value:
-                if charset_code == sre.NEGATE:
-                    # Regex '[^...]' (negation)
-                    # handled by builder = CharactersBuilder(...) above
-                    pass
-                elif charset_code == sre.LITERAL:
-                    # Regex '[a]' (single char)
-                    builder.add_char(charset_value)
-                elif charset_code == sre.RANGE:
-                    # Regex '[a-z]' (char range)
-                    low, high = charset_value
-                    for char_code in range(low, high + 1):
-                        builder.add_char(char_code)
-                elif charset_code == sre.CATEGORY:
-                    # Regex '[\w]' (char category)
-                    builder.add_category(charset_value)
-                else:
-                    # Currently there are no known code points other than
-                    # handled here. This code is just future proofing
-                    raise NotImplementedError(f"Unknown charset code: {charset_code}")
-            return builder.strategy
-
-        elif code == sre.ANY:
-            # Regex '.' (any char)
-            if is_unicode:
-                if context.flags & re.DOTALL:
-                    return st.characters()
-                return st.characters(blacklist_characters="\n")
-            else:
-                if context.flags & re.DOTALL:
-                    return binary_char
-                return binary_char.filter(lambda c: c != b"\n")
-
-        elif code == sre.AT:
-            # Regexes like '^...', '...$', '\bfoo', '\Bfoo'
-            # An empty string (or newline) will match the token itself, but
-            # we don't and can't check the position (eg '%' at the end)
-            return st.just(empty)
-
-        elif code == sre.SUBPATTERN:
-            # Various groups: '(...)', '(:...)' or '(?P<name>...)'
-            old_flags = context.flags
-            context.flags = (context.flags | value[1]) & ~value[2]
-
-            strat = _strategy(value[-1], context, is_unicode)
-
-            context.flags = old_flags
-
-            if value[0]:
-                strat = update_group(value[0], strat)
-
-            return strat
-
-        elif code == sre.GROUPREF:
-            # Regex '\\1' or '(?P=name)' (group reference)
-            return reuse_group(value)
-
-        elif code == sre.ASSERT:
-            # Regex '(?=...)' or '(?<=...)' (positive lookahead/lookbehind)
-            return recurse(value[1])
-
-        elif code == sre.ASSERT_NOT:
-            # Regex '(?!...)' or '(?<!...)' (negative lookahead/lookbehind)
-            return st.just(empty)
-
-        elif code == sre.BRANCH:
-            # Regex 'a|b|c' (branch)
-            return st.one_of([recurse(branch) for branch in value[1]])
-
-        elif code in [sre.MIN_REPEAT, sre.MAX_REPEAT]:
-            # Regexes 'a?', 'a*', 'a+' and their non-greedy variants
-            # (repeaters)
-            at_least, at_most, subregex = value
-            if at_most == sre.MAXREPEAT:
-                at_most = None
-            if at_least == 0 and at_most == 1:
-                return st.just(empty) | recurse(subregex)
-            return st.lists(recurse(subregex), min_size=at_least, max_size=at_most).map(
-                empty.join
-            )
-
-        elif code == sre.GROUPREF_EXISTS:
-            # Regex '(?(id/name)yes-pattern|no-pattern)'
-            # (if group exists choice)
-            return group_conditional(
-                value[0],
-                recurse(value[1]),
-                recurse(value[2]) if value[2] else st.just(empty),
-            )
-
+    if code == sre.IN:
+        # Regex '[abc0-9]' (set of characters)
+        negate = value[0][0] == sre.NEGATE
+        if is_unicode:
+            builder = CharactersBuilder(negate, context.flags)
         else:
-            # Currently there are no known code points other than handled here.
-            # This code is just future proofing
-            raise NotImplementedError(f"Unknown code point: {code!r}")
+            builder = BytesBuilder(negate, context.flags)
+
+        for charset_code, charset_value in value:
+            if charset_code == sre.NEGATE:
+                # Regex '[^...]' (negation)
+                # handled by builder = CharactersBuilder(...) above
+                pass
+            elif charset_code == sre.LITERAL:
+                # Regex '[a]' (single char)
+                builder.add_char(charset_value)
+            elif charset_code == sre.RANGE:
+                # Regex '[a-z]' (char range)
+                low, high = charset_value
+                for char_code in range(low, high + 1):
+                    builder.add_char(char_code)
+            elif charset_code == sre.CATEGORY:
+                # Regex '[\w]' (char category)
+                builder.add_category(charset_value)
+            else:
+                # Currently there are no known code points other than
+                # handled here. This code is just future proofing
+                raise NotImplementedError(f"Unknown charset code: {charset_code}")
+        return builder.strategy
+
+    if code == sre.ANY:
+        # Regex '.' (any char)
+        if is_unicode:
+            if context.flags & re.DOTALL:
+                return st.characters()
+            return st.characters(blacklist_characters="\n")
+        if context.flags & re.DOTALL:
+            return binary_char
+        return binary_char.filter(lambda c: c != b"\n")
+
+    if code == sre.AT:
+        # Regexes like '^...', '...$', '\bfoo', '\Bfoo'
+        # An empty string (or newline) will match the token itself, but
+        # we don't and can't check the position (eg '%' at the end)
+        return st.just(empty)
+
+    if code == sre.SUBPATTERN:
+        # Various groups: '(...)', '(:...)' or '(?P<name>...)'
+        old_flags = context.flags
+        context.flags = (context.flags | value[1]) & ~value[2]
+
+        strat = _strategy(value[-1], context, is_unicode)
+
+        context.flags = old_flags
+
+        if value[0]:
+            strat = update_group(value[0], strat)
+
+        return strat
+
+    if code == sre.GROUPREF:
+        # Regex '\\1' or '(?P=name)' (group reference)
+        return reuse_group(value)
+
+    if code == sre.ASSERT:
+        # Regex '(?=...)' or '(?<=...)' (positive lookahead/lookbehind)
+        return recurse(value[1])
+
+    if code == sre.ASSERT_NOT:
+        # Regex '(?!...)' or '(?<!...)' (negative lookahead/lookbehind)
+        return st.just(empty)
+
+    if code == sre.BRANCH:
+        # Regex 'a|b|c' (branch)
+        return st.one_of([recurse(branch) for branch in value[1]])
+
+    if code in [sre.MIN_REPEAT, sre.MAX_REPEAT]:
+        # Regexes 'a?', 'a*', 'a+' and their non-greedy variants
+        # (repeaters)
+        at_least, at_most, subregex = value
+        if at_most == sre.MAXREPEAT:
+            at_most = None
+        if at_least == 0 and at_most == 1:
+            return st.just(empty) | recurse(subregex)
+        return st.lists(recurse(subregex), min_size=at_least, max_size=at_most).map(
+            empty.join
+        )
+
+    if code == sre.GROUPREF_EXISTS:
+        # Regex '(?(id/name)yes-pattern|no-pattern)'
+        # (if group exists choice)
+        return group_conditional(
+            value[0],
+            recurse(value[1]),
+            recurse(value[2]) if value[2] else st.just(empty),
+        )
+
+    # Currently there are no known code points other than handled here.
+    # This code is just future proofing
+    raise NotImplementedError(f"Unknown code point: {code!r}")

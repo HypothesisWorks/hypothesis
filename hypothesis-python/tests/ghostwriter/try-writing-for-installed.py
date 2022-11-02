@@ -19,7 +19,7 @@ Some have import-time side effects or errors so we skip them; others
 just have such weird semantics that we don't _want_ to support them.
 """
 
-import distutils.sysconfig as sysconfig
+import sysconfig
 import multiprocessing
 import os
 import subprocess

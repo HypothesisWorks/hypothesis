@@ -355,20 +355,18 @@ class RepresentationPrinter(PrettyPrinter):
                 if cls in self.type_pprinters:
                     # printer registered in self.type_pprinters
                     return self.type_pprinters[cls](obj, self, cycle)
-                else:
-                    # deferred printer
-                    printer = self._in_deferred_types(cls)
-                    if printer is not None:
-                        return printer(obj, self, cycle)
-                    else:
-                        # Finally look for special method names.
-                        # Some objects automatically create any requested
-                        # attribute. Try to ignore most of them by checking for
-                        # callability.
-                        if "_repr_pretty_" in cls.__dict__:
-                            meth = cls._repr_pretty_
-                            if callable(meth):
-                                return meth(obj, self, cycle)
+                # deferred printer
+                printer = self._in_deferred_types(cls)
+                if printer is not None:
+                    return printer(obj, self, cycle)
+                # Finally look for special method names.
+                # Some objects automatically create any requested
+                # attribute. Try to ignore most of them by checking for
+                # callability.
+                if "_repr_pretty_" in cls.__dict__:
+                    meth = cls._repr_pretty_
+                    if callable(meth):
+                        return meth(obj, self, cycle)
             return _default_pprint(obj, self, cycle)
         finally:
             self.end_group()
@@ -537,7 +535,7 @@ def _seq_pprinter_factory(start, end, basetype):
                 p.text(",")
                 p.breakable()
             p.pretty(x)
-        if len(obj) == 1 and type(obj) is tuple:
+        if len(obj) == 1 and isinstance(obj, tuple):
             # Special case for 1-item tuples.
             p.text(",")
         p.end_group(step, end)

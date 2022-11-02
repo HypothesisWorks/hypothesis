@@ -30,8 +30,7 @@ class Poisoned(SearchStrategy):
     def do_draw(self, data):
         if cu.biased_coin(data, self.__poison_chance):
             return POISON
-        else:
-            return data.draw(self.__ints)
+        return data.draw(self.__ints)
 
 
 class LinearLists(SearchStrategy):

@@ -92,8 +92,7 @@ def exponent_key(e: int) -> float:
     unbiased = e - BIAS
     if unbiased < 0:
         return 10000 - unbiased
-    else:
-        return unbiased
+    return unbiased
 
 
 ENCODING_TABLE = array("H", sorted(range(MAX_EXPONENT + 1), key=exponent_key))
@@ -192,9 +191,8 @@ def lex_to_float(i: int) -> float:
         assert mantissa.bit_length() <= 52
 
         return int_to_float((exponent << 52) | mantissa)
-    else:
-        integral_part = i & ((1 << 56) - 1)
-        return float(integral_part)
+    integral_part = i & ((1 << 56) - 1)
+    return float(integral_part)
 
 
 def float_to_lex(f: float) -> int:

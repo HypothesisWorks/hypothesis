@@ -14,6 +14,8 @@ import warnings
 
 import pytest
 
+from tests.common.debug import find_any, minimal
+
 from hypothesis import assume, given, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.floats import (
@@ -24,8 +26,6 @@ from hypothesis.internal.floats import (
     next_down,
     next_up,
 )
-
-from tests.common.debug import find_any, minimal
 
 try:
     import numpy

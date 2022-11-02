@@ -14,10 +14,10 @@ import unittest
 
 import pytest
 
+from tests.common.utils import fails_with
+
 from hypothesis import given, strategies as st
 from hypothesis.errors import FailedHealthCheck, HypothesisWarning
-
-from tests.common.utils import fails_with
 
 
 class Thing_with_a_subThing(unittest.TestCase):

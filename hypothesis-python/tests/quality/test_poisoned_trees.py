@@ -36,16 +36,14 @@ class PoisonedTree(SearchStrategy):
     def do_draw(self, data):
         if cu.biased_coin(data, self.__p):
             return data.draw(self) + data.draw(self)
-        else:
-            # We draw n as two separate calls so that it doesn't show up as a
-            # single block. If it did, the heuristics that allow us to move
-            # blocks around would fire and it would move right, which would
-            # then allow us to shrink it more easily.
-            n = (data.draw_bits(16) << 16) | data.draw_bits(16)
-            if n == MAX_INT:
-                return (POISON,)
-            else:
-                return (None,)
+        # We draw n as two separate calls so that it doesn't show up as a
+        # single block. If it did, the heuristics that allow us to move
+        # blocks around would fire and it would move right, which would
+        # then allow us to shrink it more easily.
+        n = (data.draw_bits(16) << 16) | data.draw_bits(16)
+        if n == MAX_INT:
+            return (POISON,)
+        return (None,)
 
 
 LOTS = 10**6

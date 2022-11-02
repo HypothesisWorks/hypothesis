@@ -15,18 +15,6 @@ from uuid import UUID
 from django.conf import settings as django_settings
 from django.contrib.auth.models import User
 
-from hypothesis import HealthCheck, assume, given, settings
-from hypothesis.control import reject
-from hypothesis.errors import HypothesisException, InvalidArgument
-from hypothesis.extra.django import (
-    TestCase,
-    TransactionTestCase,
-    from_model,
-    register_field_strategy,
-)
-from hypothesis.internal.conjecture.data import ConjectureData
-from hypothesis.strategies import binary, just, lists
-
 from tests.django.toystore.models import (
     Car,
     Company,
@@ -44,6 +32,19 @@ from tests.django.toystore.models import (
     SelfLoop,
     Store,
 )
+
+
+from hypothesis import HealthCheck, assume, given, settings
+from hypothesis.control import reject
+from hypothesis.errors import HypothesisException, InvalidArgument
+from hypothesis.extra.django import (
+    TestCase,
+    TransactionTestCase,
+    from_model,
+    register_field_strategy,
+)
+from hypothesis.internal.conjecture.data import ConjectureData
+from hypothesis.strategies import binary, just, lists
 
 register_field_strategy(CustomishField, just("a"))
 

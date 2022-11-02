@@ -37,8 +37,8 @@ def test_our_floor_and_ceil_avoid_numpy_rounding(value):
     f = floor(a)
     c = ceil(a)
 
-    assert type(f) == int
-    assert type(c) == int
+    assert isinstance(f, int)
+    assert isinstance(c, int)
 
     # Using math.floor or math.ceil for these values would give an incorrect
     # result.

@@ -12,11 +12,12 @@ from typing import Generic, TypeVar
 
 import pytest
 
+from tests.common.debug import find_any
+from tests.common.utils import temp_registered
+
 from hypothesis import given, strategies as st
 from hypothesis.errors import ResolutionFailed
 
-from tests.common.debug import find_any
-from tests.common.utils import temp_registered
 
 # Primitives:
 # ===========

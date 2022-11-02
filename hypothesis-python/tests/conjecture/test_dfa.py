@@ -191,7 +191,7 @@ def test_max_length_of_recursive_dfa(order):
 
 def test_transitions_out_of_dead_are_empty():
     dfa = ConcreteDFA([{}], {0})
-    assert list(dfa.raw_transitions(DEAD)) == []
+    assert not list(dfa.raw_transitions(DEAD))
 
 
 def test_can_transition_from_dead():

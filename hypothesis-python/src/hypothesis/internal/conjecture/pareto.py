@@ -52,12 +52,11 @@ def dominance(left, right):
         result = dominance(left=right, right=left)
         if result == DominanceRelation.LEFT_DOMINATES:
             return DominanceRelation.RIGHT_DOMINATES
-        else:
-            # Because we have sort_key(left) < sort_key(right) the only options
-            # are that right is better than left or that the two are
-            # incomparable.
-            assert result == DominanceRelation.NO_DOMINANCE
-            return result
+        # Because we have sort_key(left) < sort_key(right) the only options
+        # are that right is better than left or that the two are
+        # incomparable.
+        assert result == DominanceRelation.NO_DOMINANCE
+        return result
 
     # Either left is better or there is no dominance relationship.
     assert sort_key(left.buffer) < sort_key(right.buffer)

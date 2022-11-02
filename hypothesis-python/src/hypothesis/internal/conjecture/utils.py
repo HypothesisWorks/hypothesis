@@ -384,8 +384,7 @@ class Sampler:
         data.stop_example()
         if use_alternate:
             return alternate
-        else:
-            return base
+        return base
 
 
 INT_SIZES = (8, 16, 32, 64, 128)
@@ -449,9 +448,8 @@ class many:
         if should_continue:
             self.count += 1
             return True
-        else:
-            self.data.stop_example()
-            return False
+        self.data.stop_example()
+        return False
 
     def reject(self):
         """Reject the last example (i.e. don't count it towards our budget of

@@ -10,18 +10,16 @@
 
 import threading
 
-from hypothesis import HealthCheck, given, settings, strategies as st
-
 from tests.common.debug import find_any, minimal
 from tests.common.utils import flaky
 
+from hypothesis import HealthCheck, given, settings, strategies as st
 
 def test_can_generate_with_large_branching():
     def flatten(x):
         if isinstance(x, list):
             return sum(map(flatten, x), [])
-        else:
-            return [x]
+        return [x]
 
     size = 20
 
@@ -41,8 +39,7 @@ def test_can_generate_some_depth_with_large_branching():
     def depth(x):
         if x and isinstance(x, list):
             return 1 + max(map(depth, x))
-        else:
-            return 1
+        return 1
 
     xs = minimal(
         st.recursive(st.integers(), st.lists),
@@ -56,8 +53,7 @@ def test_can_find_quite_broad_lists():
     def breadth(x):
         if isinstance(x, list):
             return sum(map(breadth, x))
-        else:
-            return 1
+        return 1
 
     target = 10
 
@@ -96,13 +92,12 @@ def test_can_use_recursive_data_in_sets():
     def flatten(x):
         if isinstance(x, bool):
             return frozenset((x,))
-        else:
-            result = frozenset()
-            for t in x:
-                result |= flatten(t)
-                if len(result) == 2:
-                    break
-            return result
+        result = frozenset()
+        for t in x:
+            result |= flatten(t)
+            if len(result) == 2:
+                break
+        return result
 
     x = minimal(nested_sets, lambda x: len(flatten(x)) == 2, settings(deadline=None))
     assert x in (

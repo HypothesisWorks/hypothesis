@@ -10,6 +10,8 @@
 
 import pytest
 
+from tests.common.debug import minimal
+
 from hypothesis import (
     HealthCheck,
     Verbosity,
@@ -20,9 +22,6 @@ from hypothesis import (
     strategies as st,
 )
 from hypothesis.internal.compat import ceil
-
-from tests.common.debug import minimal
-
 
 def test_shrinks_to_simple_floats():
     assert minimal(st.floats(), lambda x: x > 1) == 2.0

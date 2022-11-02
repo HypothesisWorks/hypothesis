@@ -10,13 +10,13 @@
 
 import pytest
 
+from tests.conjecture.common import TEST_SETTINGS, buffer_size_limit
+
 from hypothesis import settings
 from hypothesis.internal.compat import int_to_bytes
 from hypothesis.internal.conjecture.data import Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner, RunIsComplete
 from hypothesis.internal.entropy import deterministic_PRNG
-
-from tests.conjecture.common import TEST_SETTINGS, buffer_size_limit
 
 
 def test_optimises_to_maximum():

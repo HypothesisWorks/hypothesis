@@ -10,19 +10,17 @@
 
 import pytest
 
-from hypothesis import given, strategies as st
-from hypothesis.errors import InvalidArgument
-
 from tests.common.debug import find_any, minimal
 
+from hypothesis import given, strategies as st
+from hypothesis.errors import InvalidArgument
 
 @given(st.recursive(st.booleans(), st.lists, max_leaves=10))
 def test_respects_leaf_limit(xs):
     def flatten(x):
         if isinstance(x, list):
             return sum(map(flatten, x), [])
-        else:
-            return [x]
+        return [x]
 
     assert len(flatten(xs)) <= 10
 

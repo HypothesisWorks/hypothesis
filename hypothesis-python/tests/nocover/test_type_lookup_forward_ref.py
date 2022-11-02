@@ -12,10 +12,10 @@ from typing import Dict, ForwardRef, List, Union
 
 import pytest
 
+from tests.common import utils
+
 from hypothesis import given, strategies as st
 from hypothesis.errors import ResolutionFailed
-
-from tests.common import utils
 
 # Mutually-recursive types
 # See https://github.com/HypothesisWorks/hypothesis/issues/2722

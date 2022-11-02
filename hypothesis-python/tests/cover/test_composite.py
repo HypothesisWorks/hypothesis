@@ -10,12 +10,11 @@
 
 import pytest
 
-from hypothesis import assume, given, strategies as st
-from hypothesis.errors import HypothesisDeprecationWarning, InvalidArgument
-
 from tests.common.debug import minimal
 from tests.common.utils import flaky
 
+from hypothesis import assume, given, strategies as st
+from hypothesis.errors import HypothesisDeprecationWarning, InvalidArgument
 
 @st.composite
 def badly_draw_lists(draw, m=0):

@@ -13,6 +13,8 @@ import string
 
 import pytest
 
+from tests.common.debug import find_any
+
 from hypothesis import given, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.provisional import (
@@ -21,8 +23,6 @@ from hypothesis.provisional import (
     domains,
     urls,
 )
-
-from tests.common.debug import find_any
 
 
 @given(urls())

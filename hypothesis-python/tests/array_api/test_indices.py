@@ -12,10 +12,10 @@ import math
 
 import pytest
 
+from tests.common.debug import assert_all_examples, find_any
+
 from hypothesis import assume, given, note, strategies as st
 from hypothesis.extra._array_helpers import NDIM_MAX
-
-from tests.common.debug import assert_all_examples, find_any
 
 
 @pytest.mark.parametrize(

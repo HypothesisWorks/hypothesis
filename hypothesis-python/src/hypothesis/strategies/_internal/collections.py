@@ -167,8 +167,7 @@ class ListStrategy(SearchStrategy):
     def calc_is_empty(self, recur):
         if self.min_size == 0:
             return False
-        else:
-            return recur(self.element_strategy)
+        return recur(self.element_strategy)
 
     def do_draw(self, data):
         if self.element_strategy.is_empty:

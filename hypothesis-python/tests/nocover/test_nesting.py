@@ -10,10 +10,8 @@
 
 from pytest import raises
 
-from hypothesis import Verbosity, given, settings, strategies as st
-
 from tests.common.utils import no_shrink
-
+from hypothesis import Verbosity, given, settings, strategies as st
 
 def test_nesting_1():
     @given(st.integers(0, 100))

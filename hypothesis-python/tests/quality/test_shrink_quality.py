@@ -14,6 +14,9 @@ from functools import reduce
 
 import pytest
 
+from tests.common.debug import minimal
+from tests.common.utils import flaky
+
 import hypothesis.strategies as st
 from hypothesis import assume, settings
 from hypothesis.strategies import (
@@ -32,9 +35,6 @@ from hypothesis.strategies import (
     text,
     tuples,
 )
-
-from tests.common.debug import minimal
-from tests.common.utils import flaky
 
 
 def test_integers_from_minimizes_leftwards():
@@ -375,11 +375,10 @@ def test_calculator_benchmark():
     def evaluate(e):
         if isinstance(e, int):
             return e
-        elif e[0] == "+":
+        if e[0] == "+":
             return evaluate(e[1]) + evaluate(e[2])
-        else:
-            assert e[0] == "/"
-            return evaluate(e[1]) // evaluate(e[2])
+        assert e[0] == "/"
+        return evaluate(e[1]) // evaluate(e[2])
 
     def is_failing(e):
         assume(div_subterms(e))

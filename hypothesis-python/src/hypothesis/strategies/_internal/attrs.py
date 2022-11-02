@@ -98,7 +98,7 @@ def types_to_strategy(attrib, types):
         if isinstance(typ, tuple):
             return st.one_of(*map(st.from_type, typ))
         return st.from_type(typ)
-    elif types:
+    if types:
         # We have a list of tuples of types, and want to find a type
         # (or tuple of types) that is a subclass of all of of them.
         type_tuples = [k if isinstance(k, tuple) else (k,) for k in types]
@@ -123,7 +123,7 @@ def types_to_strategy(attrib, types):
     converter = getattr(attrib, "converter", None)
     if isinstance(converter, type):
         return st.from_type(converter)
-    elif callable(converter):
+    if callable(converter):
         hints = get_type_hints(converter)
         if "return" in hints:
             return st.from_type(hints["return"])

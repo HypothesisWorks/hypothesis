@@ -8,10 +8,10 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+from tests.common.debug import find_any, minimal
+
 from hypothesis import given, strategies as st
 from hypothesis.extra.numpy import arrays
-
-from tests.common.debug import find_any, minimal
 
 
 @given(arrays(object, 100, elements=st.builds(list)))

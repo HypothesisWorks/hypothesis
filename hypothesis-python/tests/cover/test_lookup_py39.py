@@ -14,10 +14,12 @@ import typing
 
 import pytest
 
+from tests.common.debug import find_any
+
 from hypothesis import given, strategies as st
 from hypothesis.errors import InvalidArgument
 
-from tests.common.debug import find_any
+
 
 
 @pytest.mark.parametrize(

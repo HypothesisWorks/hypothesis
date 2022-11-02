@@ -85,9 +85,8 @@ class Chooser:
                     self.__choices.append(i)
                     self.__node_trail.append(node.children[i])
                     return v
-                else:
-                    node.children[i] = DeadNode
-                    node.live_child_count -= 1
+                node.children[i] = DeadNode
+                node.live_child_count -= 1
         assert node.live_child_count == 0
         raise DeadBranch()
 

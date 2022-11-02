@@ -12,6 +12,8 @@ import time
 
 import pytest
 
+from tests.conjecture.common import SOME_LABEL, run_to_buffer, shrinking_from
+
 from hypothesis.internal.compat import int_to_bytes
 from hypothesis.internal.conjecture import floats as flt
 from hypothesis.internal.conjecture.engine import ConjectureRunner
@@ -23,8 +25,6 @@ from hypothesis.internal.conjecture.shrinker import (
 )
 from hypothesis.internal.conjecture.shrinking import Float
 from hypothesis.internal.conjecture.utils import Sampler
-
-from tests.conjecture.common import SOME_LABEL, run_to_buffer, shrinking_from
 
 
 @pytest.mark.parametrize("n", [1, 5, 8, 15])

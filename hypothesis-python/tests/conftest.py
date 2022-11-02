@@ -15,11 +15,11 @@ import time as time_module
 
 import pytest
 
-from hypothesis._settings import is_in_ci
-from hypothesis.internal.detection import is_hypothesis_test
-
 from tests.common import TIME_INCREMENT
 from tests.common.setup import run
+
+from hypothesis._settings import is_in_ci
+from hypothesis.internal.detection import is_hypothesis_test
 
 run()
 

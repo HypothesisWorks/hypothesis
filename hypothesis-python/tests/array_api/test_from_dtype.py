@@ -12,9 +12,6 @@ import math
 
 import pytest
 
-from hypothesis.extra.array_api import find_castable_builtin_for_dtype
-from hypothesis.internal.floats import width_smallest_normals
-
 from tests.array_api.common import dtype_name_params, flushes_to_zero
 from tests.common.debug import (
     assert_all_examples,
@@ -23,6 +20,8 @@ from tests.common.debug import (
     minimal,
 )
 
+from hypothesis.extra.array_api import find_castable_builtin_for_dtype
+from hypothesis.internal.floats import width_smallest_normals
 
 @pytest.mark.parametrize("dtype_name", dtype_name_params)
 def test_strategies_have_reusable_values(xp, xps, dtype_name):

@@ -29,8 +29,7 @@ def plurality_winner(election):
     winners = [c for c, v in counts.items() if v == winning_score]
     if len(winners) > 1:
         return None
-    else:
-        return winners[0]
+    return winners[0]
 
 
 def irv_winner(election):
@@ -46,8 +45,7 @@ def irv_winner(election):
         candidates = [c for c in candidates if scores[c] > losing_score]
     if not candidates:
         return None
-    else:
-        return candidates[0]
+    return candidates[0]
 
 
 def differing_without_ties(election):

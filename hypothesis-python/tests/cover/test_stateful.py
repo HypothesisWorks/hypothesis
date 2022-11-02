@@ -16,6 +16,9 @@ import pytest
 from _pytest.outcomes import Failed, Skipped
 from pytest import raises
 
+from tests.common.utils import capture_out, validate_deprecation
+from tests.nocover.test_stateful import DepthMachine
+
 from hypothesis import __version__, reproduce_failure, seed, settings as Settings
 from hypothesis.control import current_build_context
 from hypothesis.database import ExampleDatabase
@@ -34,9 +37,6 @@ from hypothesis.stateful import (
     run_state_machine_as_test,
 )
 from hypothesis.strategies import binary, data, integers, just, lists
-
-from tests.common.utils import capture_out, validate_deprecation
-from tests.nocover.test_stateful import DepthMachine
 
 NO_BLOB_SETTINGS = Settings(print_blob=False)
 

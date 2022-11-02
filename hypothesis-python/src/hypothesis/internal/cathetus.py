@@ -35,10 +35,9 @@ def cathetus(h, a):
     if isinf(h):
         if isinf(a):
             return nan
-        else:
-            # Deliberately includes the case when isnan(a), because the
-            # C99 standard mandates that hypot(inf, nan) == inf
-            return inf
+        # Deliberately includes the case when isnan(a), because the
+        # C99 standard mandates that hypot(inf, nan) == inf
+        return inf
 
     h = fabs(h)
     a = fabs(a)

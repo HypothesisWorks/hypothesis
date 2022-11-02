@@ -33,7 +33,7 @@ class Float(Shrinker):
     def check_invariants(self, value):
         # We only handle positive floats because we encode the sign separately
         # anyway.
-        assert not (value < 0)
+        assert not value < 0
 
     def left_is_better(self, left, right):
         lex1 = float_to_lex(left)

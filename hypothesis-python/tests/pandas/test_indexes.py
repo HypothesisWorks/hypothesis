@@ -12,11 +12,11 @@ import numpy as np
 import pandas
 import pytest
 
+from tests.pandas.helpers import supported_by_pandas
+
 from hypothesis import HealthCheck, given, reject, settings, strategies as st
 from hypothesis.errors import Unsatisfiable
 from hypothesis.extra import numpy as npst, pandas as pdst
-
-from tests.pandas.helpers import supported_by_pandas
 
 
 @given(pdst.indexes(dtype=int, max_size=0))

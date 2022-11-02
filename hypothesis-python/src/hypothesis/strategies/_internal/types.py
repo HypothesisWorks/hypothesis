@@ -351,7 +351,7 @@ def from_typing_type(thing):
             and elem_types[-1] is Ellipsis
         ):
             return st.lists(st.from_type(elem_types[0])).map(tuple)
-        elif len(elem_types) == 1 and elem_types[0] == ():
+        if len(elem_types) == 1 and elem_types[0] == ():
             return st.tuples()  # Empty tuple; see issue #1583
         return st.tuples(*map(st.from_type, elem_types))
     if hasattr(typing, "Final") and getattr(thing, "__origin__", None) == typing.Final:
@@ -698,7 +698,7 @@ def resolve_Type(thing):
     # Duplicate check from from_type here - only paying when needed.
     args = list(args)
     for i, a in enumerate(args):
-        if type(a) == typing.ForwardRef:
+        if isinstance(a, typing.ForwardRef):
             try:
                 args[i] = getattr(builtins, a.__forward_arg__)
             except AttributeError:
@@ -734,8 +734,7 @@ ALWAYS_HASHABLE_TYPES = {type(None), bool, int, float, complex, str, bytes}
 def _from_hashable_type(type_):
     if type_ in ALWAYS_HASHABLE_TYPES:
         return st.from_type(type_)
-    else:
-        return st.from_type(type_).filter(_can_hash)
+    return st.from_type(type_).filter(_can_hash)
 
 
 @register(typing.Set, st.builds(set))

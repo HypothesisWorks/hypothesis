@@ -10,18 +10,18 @@
 
 import pytest
 
-from hypothesis import Phase, assume, given, settings, strategies as st, target
-from hypothesis.database import InMemoryExampleDatabase
-from hypothesis.errors import Flaky
-from hypothesis.internal.compat import ExceptionGroup
-from hypothesis.internal.conjecture.engine import MIN_TEST_CALLS
-
 from tests.common.utils import (
     assert_output_contains_failure,
     capture_out,
     non_covering_examples,
 )
 
+
+from hypothesis import Phase, assume, given, settings, strategies as st, target
+from hypothesis.database import InMemoryExampleDatabase
+from hypothesis.errors import Flaky
+from hypothesis.internal.compat import ExceptionGroup
+from hypothesis.internal.conjecture.engine import MIN_TEST_CALLS
 
 def capture_reports(test):
     with capture_out() as o, pytest.raises(ExceptionGroup) as err:
@@ -77,8 +77,7 @@ def test_raises_multiple_failures_when_position_varies():
             target[0] = i
         if target[0] == i:
             raise ValueError("loc 1")
-        else:
-            raise ValueError("loc 2")
+        raise ValueError("loc 2")
 
     output = capture_reports(test)
     assert "loc 1" in output
@@ -252,7 +251,7 @@ def test_can_disable_multiple_error_reporting(allow_multi):
         if i == 1:
             seen.add(TypeError)
             raise TypeError
-        elif i >= 2:
+        if i >= 2:
             seen.add(ValueError)
             raise ValueError
 

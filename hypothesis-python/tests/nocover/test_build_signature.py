@@ -11,9 +11,9 @@
 from inspect import signature
 from typing import List, get_type_hints
 
-from hypothesis import given, strategies as st
-
 from tests.common.debug import find_any
+
+from hypothesis import given, strategies as st
 
 
 def use_this_signature(self, a: int, b: bool = None, *, x: float, y: str):

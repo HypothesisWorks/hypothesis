@@ -10,10 +10,8 @@
 
 import pytest
 
-from hypothesis.strategies import lists
-
 from tests.common import standard_types
-
+from hypothesis.strategies import lists
 
 @pytest.mark.parametrize("spec", standard_types, ids=list(map(repr, standard_types)))
 def test_single_example(spec):

@@ -306,15 +306,14 @@ def series(
                 )
 
             return pandas.Series(result_data, index=index, dtype=dtype, name=draw(name))
-        else:
-            return pandas.Series(
-                (),
-                index=index,
-                dtype=dtype
-                if dtype is not None
-                else draw(dtype_for_elements_strategy(elements)),
-                name=draw(name),
-            )
+        return pandas.Series(
+            (),
+            index=index,
+            dtype=dtype
+            if dtype is not None
+            else draw(dtype_for_elements_strategy(elements)),
+            name=draw(name),
+        )
 
     return result()
 
@@ -490,28 +489,25 @@ def data_frames(
     if columns is None:
         if rows is None:
             raise InvalidArgument("At least one of rows and columns must be provided")
-        else:
+        @st.composite
+        def rows_only(draw):
+            index = draw(index_strategy)
 
-            @st.composite
-            def rows_only(draw):
-                index = draw(index_strategy)
+            @check_function
+            def row():
+                result = draw(rows)
+                check_type(abc.Iterable, result, "draw(row)")
+                return result
 
-                @check_function
-                def row():
-                    result = draw(rows)
-                    check_type(abc.Iterable, result, "draw(row)")
-                    return result
+            if len(index) > 0:
+                return pandas.DataFrame([row() for _ in index], index=index)
+            # If we haven't drawn any rows we need to draw one row and
+            # then discard it so that we get a consistent shape for the
+            # DataFrame.
+            base = pandas.DataFrame([row()])
+            return base.drop(0)
 
-                if len(index) > 0:
-                    return pandas.DataFrame([row() for _ in index], index=index)
-                else:
-                    # If we haven't drawn any rows we need to draw one row and
-                    # then discard it so that we get a consistent shape for the
-                    # DataFrame.
-                    base = pandas.DataFrame([row()])
-                    return base.drop(0)
-
-            return rows_only()
+        return rows_only()
 
     assert columns is not None
     cols = try_convert(tuple, columns, "columns")
@@ -629,91 +625,90 @@ def data_frames(
             return pandas.DataFrame(data, index=index)
 
         return just_draw_columns()
-    else:
 
-        @st.composite
-        def assign_rows(draw):
-            index = draw(index_strategy)
+    @st.composite
+    def assign_rows(draw):
+        index = draw(index_strategy)
 
-            result = pandas.DataFrame(
-                OrderedDict(
-                    (
-                        c.name,
-                        pandas.Series(
-                            np.zeros(dtype=c.dtype, shape=len(index)), dtype=c.dtype
-                        ),
-                    )
-                    for c in rewritten_columns
-                ),
-                index=index,
-            )
+        result = pandas.DataFrame(
+            OrderedDict(
+                (
+                    c.name,
+                    pandas.Series(
+                        np.zeros(dtype=c.dtype, shape=len(index)), dtype=c.dtype
+                    ),
+                )
+                for c in rewritten_columns
+            ),
+            index=index,
+        )
 
-            fills = {}
+        fills = {}
 
-            any_unique = any(c.unique for c in rewritten_columns)
+        any_unique = any(c.unique for c in rewritten_columns)
 
-            if any_unique:
-                all_seen = [set() if c.unique else None for c in rewritten_columns]
-                while all_seen[-1] is None:
-                    all_seen.pop()
+        if any_unique:
+            all_seen = [set() if c.unique else None for c in rewritten_columns]
+            while all_seen[-1] is None:
+                all_seen.pop()
 
-            for row_index in range(len(index)):
-                for _ in range(5):
-                    original_row = draw(rows)
-                    row = original_row
-                    if isinstance(row, dict):
-                        as_list = [None] * len(rewritten_columns)
-                        for i, c in enumerate(rewritten_columns):
+        for row_index in range(len(index)):
+            for _ in range(5):
+                original_row = draw(rows)
+                row = original_row
+                if isinstance(row, dict):
+                    as_list = [None] * len(rewritten_columns)
+                    for i, c in enumerate(rewritten_columns):
+                        try:
+                            as_list[i] = row[c.name]
+                        except KeyError:
                             try:
-                                as_list[i] = row[c.name]
+                                as_list[i] = fills[i]
                             except KeyError:
-                                try:
-                                    as_list[i] = fills[i]
-                                except KeyError:
-                                    if c.fill.is_empty:
-                                        raise InvalidArgument(
-                                            f"Empty fill strategy in {c!r} cannot "
-                                            f"complete row {original_row!r}"
-                                        ) from None
-                                    fills[i] = draw(c.fill)
-                                    as_list[i] = fills[i]
-                        for k in row:
-                            if k not in column_names:
-                                raise InvalidArgument(
-                                    "Row %r contains column %r not in columns %r)"
-                                    % (row, k, [c.name for c in rewritten_columns])
-                                )
-                        row = as_list
-                    if any_unique:
-                        has_duplicate = False
-                        for seen, value in zip(all_seen, row):
-                            if seen is None:
-                                continue
-                            if value in seen:
-                                has_duplicate = True
-                                break
-                            seen.add(value)
-                        if has_duplicate:
-                            continue
-                    row = list(try_convert(tuple, row, "draw(rows)"))
-
-                    if len(row) > len(rewritten_columns):
-                        raise InvalidArgument(
-                            f"Row {original_row!r} contains too many entries. Has "
-                            f"{len(row)} but expected at most {len(rewritten_columns)}"
-                        )
-                    while len(row) < len(rewritten_columns):
-                        c = rewritten_columns[len(row)]
-                        if c.fill.is_empty:
+                                if c.fill.is_empty:
+                                    raise InvalidArgument(
+                                        f"Empty fill strategy in {c!r} cannot "
+                                        f"complete row {original_row!r}"
+                                    ) from None
+                                fills[i] = draw(c.fill)
+                                as_list[i] = fills[i]
+                    for k in row:
+                        if k not in column_names:
                             raise InvalidArgument(
-                                f"Empty fill strategy in {c!r} cannot "
-                                f"complete row {original_row!r}"
+                                "Row %r contains column %r not in columns %r)"
+                                % (row, k, [c.name for c in rewritten_columns])
                             )
-                        row.append(draw(c.fill))
-                    result.iloc[row_index] = row
-                    break
-                else:
-                    reject()
-            return result
+                    row = as_list
+                if any_unique:
+                    has_duplicate = False
+                    for seen, value in zip(all_seen, row):
+                        if seen is None:
+                            continue
+                        if value in seen:
+                            has_duplicate = True
+                            break
+                        seen.add(value)
+                    if has_duplicate:
+                        continue
+                row = list(try_convert(tuple, row, "draw(rows)"))
 
-        return assign_rows()
+                if len(row) > len(rewritten_columns):
+                    raise InvalidArgument(
+                        f"Row {original_row!r} contains too many entries. Has "
+                        f"{len(row)} but expected at most {len(rewritten_columns)}"
+                    )
+                while len(row) < len(rewritten_columns):
+                    c = rewritten_columns[len(row)]
+                    if c.fill.is_empty:
+                        raise InvalidArgument(
+                            f"Empty fill strategy in {c!r} cannot "
+                            f"complete row {original_row!r}"
+                        )
+                    row.append(draw(c.fill))
+                result.iloc[row_index] = row
+                break
+            else:
+                reject()
+        return result
+
+    return assign_rows()

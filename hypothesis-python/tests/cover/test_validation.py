@@ -12,6 +12,8 @@ import functools
 
 import pytest
 
+from tests.common.utils import fails_with
+
 from hypothesis import find, given
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.validation import check_type
@@ -31,8 +33,6 @@ from hypothesis.strategies import (
     text,
 )
 from hypothesis.strategies._internal.strategies import check_strategy
-
-from tests.common.utils import fails_with
 
 
 def test_errors_when_given_varargs():

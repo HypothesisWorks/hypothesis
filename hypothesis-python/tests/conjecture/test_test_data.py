@@ -452,13 +452,13 @@ def test_example_equality():
     examples = list(d.examples)
     for ex1, ex2 in itertools.combinations(examples, 2):
         assert ex1 != ex2
-        assert not (ex1 == ex2)
+        assert not ex1 == ex2
 
     for ex in examples:
         assert ex == ex
-        not (ex != ex)
+        not ex != ex
 
-        assert not (ex == "hello")
+        assert not ex == "hello"
         assert ex != "hello"
 
 

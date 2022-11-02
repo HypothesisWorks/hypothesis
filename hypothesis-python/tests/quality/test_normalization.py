@@ -13,19 +13,18 @@ from random import Random
 
 import pytest
 
+from tests.quality.test_shrinking_order import iter_values
+
 from hypothesis import strategies as st
 from hypothesis.errors import UnsatisfiedAssumption
 from hypothesis.internal.conjecture.shrinking import dfas
-
-from tests.quality.test_shrinking_order import iter_values
 
 
 @pytest.fixture
 def normalize_kwargs(request):
     if request.config.getoption("--hypothesis-learn-to-normalize"):
         return {"allowed_to_update": True, "required_successes": 1000}
-    else:
-        return {"allowed_to_update": False, "required_successes": 10}
+    return {"allowed_to_update": False, "required_successes": 10}
 
 
 @pytest.mark.parametrize("n", range(10, -1, -1))

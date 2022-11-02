@@ -13,12 +13,14 @@ import json
 import pytest
 from lark.lark import Lark
 
+from tests.common.debug import find_any
+
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.lark import from_lark
 from hypothesis.strategies import data, just
 
-from tests.common.debug import find_any
+
 
 # Adapted from the official Lark tutorial, with modifications to ensure
 # that the generated JSON is valid.  i.e. no numbers starting with ".",

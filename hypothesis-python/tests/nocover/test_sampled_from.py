@@ -12,11 +12,10 @@ import enum
 
 import pytest
 
-from hypothesis import given, strategies as st
-from hypothesis.errors import InvalidArgument
-
 from tests.common.utils import counts_calls, fails_with
 
+from hypothesis import given, strategies as st
+from hypothesis.errors import InvalidArgument
 
 @pytest.mark.parametrize("n", [100, 10**5, 10**6, 2**25])
 def test_filter_large_lists(n):

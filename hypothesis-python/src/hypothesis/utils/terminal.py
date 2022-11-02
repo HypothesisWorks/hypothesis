@@ -30,7 +30,7 @@ def guess_background_color():
         # 0=black, 7=light-grey, 15=white ; we don't interpret other colors
         if fg in ("7", "15") and bg == "0":
             return "dark"
-        elif fg == "0" and bg in ("7", "15"):
+        if fg == "0" and bg in ("7", "15"):
             return "light"
     # TODO: Guessing based on the xterm control sequence
     return "unknown"

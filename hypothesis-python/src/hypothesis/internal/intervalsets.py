@@ -56,7 +56,7 @@ class IntervalSet:
         for offset, (u, v) in zip(self.offsets, self.intervals):
             if u == value:
                 return offset
-            elif u > value:
+            if u > value:
                 raise ValueError(f"{value} is not in list")
             if value <= v:
                 return offset + (value - u)

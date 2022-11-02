@@ -10,10 +10,10 @@
 
 import pytest
 
+from tests.common.debug import assert_no_examples, minimal
+
 from hypothesis import given, strategies as st
 from hypothesis.errors import InvalidArgument
-
-from tests.common.debug import assert_no_examples, minimal
 
 
 def test_binary_tree():
@@ -123,8 +123,7 @@ def test_very_deep_deferral():
     def strat(i):
         if i == 0:
             return st.deferred(lambda: st.one_of(strategies + [st.none()]))
-        else:
-            return st.deferred(lambda: st.tuples(strategies[(i + 1) % len(strategies)]))
+        return st.deferred(lambda: st.tuples(strategies[(i + 1) % len(strategies)]))
 
     strategies = list(map(strat, range(100)))
 

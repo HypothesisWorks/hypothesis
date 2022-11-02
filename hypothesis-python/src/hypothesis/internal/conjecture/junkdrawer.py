@@ -223,8 +223,7 @@ class LazySequenceCopy:
         default = self.__values[i]
         if self.__mask is None:
             return default
-        else:
-            return self.__mask.get(i, default)
+        return self.__mask.get(i, default)
 
     def __setitem__(self, i: int, v: int) -> None:
         i = self.__check_index(i)

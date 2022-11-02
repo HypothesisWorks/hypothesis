@@ -12,11 +12,10 @@ import datetime as dt
 
 import pytest
 
-from hypothesis import given, settings
-from hypothesis.strategies import dates, datetimes, timedeltas, times
-
 from tests.common.debug import find_any, minimal
 
+from hypothesis import given, settings
+from hypothesis.strategies import dates, datetimes, timedeltas, times
 
 def test_can_find_positive_delta():
     assert minimal(timedeltas(), lambda x: x.days > 0) == dt.timedelta(1)

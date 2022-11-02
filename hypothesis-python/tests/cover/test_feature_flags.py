@@ -8,10 +8,10 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+from tests.common.debug import find_any, minimal
+
 from hypothesis import given, strategies as st
 from hypothesis.strategies._internal.featureflags import FeatureFlags, FeatureStrategy
-
-from tests.common.debug import find_any, minimal
 
 STRAT = FeatureStrategy()
 

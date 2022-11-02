@@ -15,6 +15,8 @@ from decimal import Decimal
 import pexpect
 import pytest
 
+from tests.common.utils import fails_with
+
 from hypothesis import example, find, given, strategies as st
 from hypothesis.errors import (
     HypothesisException,
@@ -22,8 +24,6 @@ from hypothesis.errors import (
     Unsatisfiable,
 )
 from hypothesis.internal.compat import WINDOWS
-
-from tests.common.utils import fails_with
 
 
 def test_example_of_none_is_none():

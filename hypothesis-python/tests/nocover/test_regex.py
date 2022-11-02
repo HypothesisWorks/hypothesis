@@ -22,8 +22,7 @@ def charset(draw):
     chars = draw(st.text(string.ascii_letters + string.digits, min_size=1))
     if negated:
         return f"[^{chars}]"
-    else:
-        return f"[{chars}]"
+    return f"[{chars}]"
 
 
 COMBINED_MATCHER = re.compile("[?+*]{2}")

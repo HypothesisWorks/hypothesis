@@ -177,8 +177,7 @@ UNIFORM = floats(0, 1)
 def normalize_zero(f: float) -> float:
     if f == 0.0:
         return 0.0
-    else:
-        return f
+    return f
 
 
 class ArtificialRandom(HypothesisRandom):
@@ -432,7 +431,6 @@ class RandomStrategy(SearchStrategy):
         if self.__use_true_random:
             seed = data.draw_bits(64)
             return TrueRandom(seed=seed, note_method_calls=self.__note_method_calls)
-        else:
-            return ArtificialRandom(
-                note_method_calls=self.__note_method_calls, data=data
-            )
+        return ArtificialRandom(
+            note_method_calls=self.__note_method_calls, data=data
+        )

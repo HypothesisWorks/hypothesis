@@ -184,7 +184,7 @@ INTERESTING_FLOATS = [0.0, 1.0, 2.0, sys.float_info.max, float("inf"), float("na
     ],
 )
 def test_can_shrink_downwards(start, end):
-    assert minimal_from(start, lambda x: not (x < end)) == end
+    assert minimal_from(start, lambda x: not x < end) == end
 
 
 @pytest.mark.parametrize(

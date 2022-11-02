@@ -12,12 +12,12 @@ import unittest
 
 import pytest
 
+from tests.common.utils import capture_out
+
+
 from hypothesis import given
 from hypothesis.core import skip_exceptions_to_reraise
 from hypothesis.strategies import integers
-
-from tests.common.utils import capture_out
-
 
 @pytest.mark.parametrize("skip_exception", skip_exceptions_to_reraise())
 def test_no_falsifying_example_if_unittest_skip(skip_exception):
@@ -30,8 +30,7 @@ def test_no_falsifying_example_if_unittest_skip(skip_exception):
         def test_to_be_skipped(self, xs):
             if xs == 0:
                 raise skip_exception
-            else:
-                assert xs == 0
+            assert xs == 0
 
     with capture_out() as o:
         suite = unittest.defaultTestLoader.loadTestsFromTestCase(DemoTest)

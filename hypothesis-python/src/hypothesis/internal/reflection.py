@@ -386,7 +386,7 @@ def get_pretty_function_description(f):
     name = f.__name__
     if name == "<lambda>":
         return extract_lambda_source(f)
-    elif isinstance(f, (types.MethodType, types.BuiltinMethodType)):
+    if isinstance(f, (types.MethodType, types.BuiltinMethodType)):
         self = f.__self__
         # Some objects, like `builtins.abs` are of BuiltinMethodType but have
         # their module as __self__.  This might include c-extensions generally?
@@ -401,11 +401,10 @@ def get_pretty_function_description(f):
 def nicerepr(v):
     if inspect.isfunction(v):
         return get_pretty_function_description(v)
-    elif isinstance(v, type):
+    if isinstance(v, type):
         return v.__name__
-    else:
-        # With TypeVar T, show List[T] instead of TypeError on List[~T]
-        return re.sub(r"(\[)~([A-Z][a-z]*\])", r"\g<1>\g<2>", pretty(v))
+    # With TypeVar T, show List[T] instead of TypeError on List[~T]
+    return re.sub(r"(\[)~([A-Z][a-z]*\])", r"\g<1>\g<2>", pretty(v))
 
 
 def repr_call(f, args, kwargs, reorder=True):

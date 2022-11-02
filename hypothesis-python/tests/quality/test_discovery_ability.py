@@ -22,6 +22,8 @@ import collections
 import math
 import re
 
+from tests.common.utils import no_shrink
+
 from hypothesis import HealthCheck, settings as Settings
 from hypothesis.errors import UnsatisfiedAssumption
 from hypothesis.internal import reflection
@@ -39,8 +41,6 @@ from hypothesis.strategies import (
     text,
     tuples,
 )
-
-from tests.common.utils import no_shrink
 
 RUNS = 100
 

@@ -66,7 +66,7 @@ def test_all_filtered_child():
     def all_filtered(chooser):
         chooser.choose(range(10), condition=lambda j: False)
 
-    assert all_filtered == []
+    assert not all_filtered
 
 
 def test_skips_over_exhausted_children():

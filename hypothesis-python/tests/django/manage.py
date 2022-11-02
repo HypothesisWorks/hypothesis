@@ -12,9 +12,11 @@ import os
 import sys
 import warnings
 
+from tests.common.setup import run
+
 from hypothesis import HealthCheck, settings
 
-from tests.common.setup import run
+
 
 if __name__ == "__main__":
     run()

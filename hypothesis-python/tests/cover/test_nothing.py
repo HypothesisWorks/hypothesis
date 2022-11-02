@@ -10,10 +10,10 @@
 
 import pytest
 
+from tests.common.debug import assert_no_examples, minimal
+
 from hypothesis import given, strategies as st
 from hypothesis.errors import InvalidArgument
-
-from tests.common.debug import assert_no_examples, minimal
 
 
 def test_resampling():

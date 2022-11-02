@@ -17,6 +17,8 @@ from sys import float_info
 
 import pytest
 
+from tests.common.utils import fails_with
+
 from hypothesis import given, strategies as st
 from hypothesis.errors import HypothesisWarning, Unsatisfiable
 from hypothesis.internal.floats import next_down, next_up
@@ -24,8 +26,6 @@ from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies._internal.lazy import LazyStrategy, unwrap_strategies
 from hypothesis.strategies._internal.numbers import FloatStrategy, IntegersStrategy
 from hypothesis.strategies._internal.strategies import FilteredStrategy
-
-from tests.common.utils import fails_with
 
 
 @pytest.mark.parametrize(

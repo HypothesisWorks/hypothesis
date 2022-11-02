@@ -12,11 +12,11 @@ import math
 
 import pytest
 
+from tests.common.debug import minimal
+
 from hypothesis import find, settings as Settings
 from hypothesis.errors import NoSuchExample
 from hypothesis.strategies import booleans, dictionaries, floats, integers, lists
-
-from tests.common.debug import minimal
 
 
 def test_can_find_an_int():

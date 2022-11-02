@@ -13,6 +13,8 @@ from math import copysign, inf
 
 import pytest
 
+from tests.common.debug import find_any
+
 from hypothesis import HealthCheck, assume, given, reject, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.floats import next_down, next_up
@@ -27,9 +29,6 @@ from hypothesis.strategies import (
     sampled_from,
     tuples,
 )
-
-from tests.common.debug import find_any
-
 
 @settings(suppress_health_check=HealthCheck.all())
 @given(data())

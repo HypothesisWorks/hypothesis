@@ -265,8 +265,7 @@ def lists(
                 "cannot specify both unique and unique_by "
                 "(you probably only want to set unique_by)"
             )
-        else:
-            unique_by = identity
+        unique_by = identity
 
     if max_size == 0:
         return builds(list)
@@ -460,7 +459,7 @@ def fixed_dictionaries(
         check_type(dict, optional, "optional")
         for k, v in optional.items():
             check_strategy(v, f"optional[{k!r}]")
-        if type(mapping) != type(optional):
+        if not isinstance(mapping, type(optional)):
             raise InvalidArgument(
                 "Got arguments of different types: mapping=%s, optional=%s"
                 % (nicerepr(type(mapping)), nicerepr(type(optional)))
@@ -1094,9 +1093,9 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
         pass
     if (
         hasattr(typing, "_TypedDictMeta")
-        and type(thing) is typing._TypedDictMeta  # type: ignore
+        and isinstance(thing, typing._TypedDictMeta)
         or hasattr(types.typing_extensions, "_TypedDictMeta")  # type: ignore
-        and type(thing) is types.typing_extensions._TypedDictMeta  # type: ignore
+        and isinstance(thing, types.typing_extensions._TypedDictMeta)
     ):  # pragma: no cover
         # The __optional_keys__ attribute may or may not be present, but if there's no
         # way to tell and we just have to assume that everything is required.
@@ -1773,10 +1772,8 @@ class RunnerStrategy(SearchStrategy):
                     "Cannot use runner() strategy with no "
                     "associated runner or explicit default."
                 )
-            else:
-                return self.default
-        else:
-            return runner
+            return self.default
+        return runner
 
 
 @defines_strategy(force_reusable_values=True)
@@ -1899,14 +1896,14 @@ def register_type_strategy(
             f"custom_type={custom_type!r} is not allowed to be registered, "
             f"because there is no such thing as a runtime instance of {custom_type!r}"
         )
-    elif not (isinstance(strategy, SearchStrategy) or callable(strategy)):
+    if not (isinstance(strategy, SearchStrategy) or callable(strategy)):
         raise InvalidArgument(
             "strategy=%r must be a SearchStrategy, or a function that takes "
             "a generic type and returns a specific SearchStrategy"
         )
-    elif isinstance(strategy, SearchStrategy) and strategy.is_empty:
+    if isinstance(strategy, SearchStrategy) and strategy.is_empty:
         raise InvalidArgument("strategy=%r must not be empty")
-    elif types.has_type_arguments(custom_type):
+    if types.has_type_arguments(custom_type):
         origin = getattr(custom_type, "__origin__", None)
         raise InvalidArgument(
             f"Cannot register generic type {custom_type!r}, because it has type "

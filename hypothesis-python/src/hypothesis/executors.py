@@ -61,5 +61,4 @@ def new_style_executor(runner):
     old_school = executor(runner)
     if old_school is default_executor:
         return default_new_style_executor
-    else:
-        return lambda data, function: old_school(lambda: function(data))
+    return lambda data, function: old_school(lambda: function(data))

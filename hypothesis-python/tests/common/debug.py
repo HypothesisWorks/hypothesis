@@ -8,6 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+from tests.common.utils import no_shrink
+
 from hypothesis import (
     HealthCheck,
     Verbosity,
@@ -19,7 +21,7 @@ from hypothesis.errors import Found, NoSuchExample, Unsatisfiable
 from hypothesis.internal.conjecture.data import ConjectureData, StopTest
 from hypothesis.internal.reflection import get_pretty_function_description
 
-from tests.common.utils import no_shrink
+
 
 TIME_INCREMENT = 0.01
 

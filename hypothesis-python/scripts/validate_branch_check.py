@@ -13,7 +13,7 @@ import sys
 from collections import defaultdict
 
 if __name__ == "__main__":
-    with open("branch-check") as i:
+    with open("branch-check", encoding="utf-8") as i:
         data = [json.loads(l) for l in i]
 
     checks = defaultdict(set)

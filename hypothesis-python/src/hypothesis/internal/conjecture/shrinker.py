@@ -1301,8 +1301,7 @@ class Shrinker:
                     value = int_from_bytes(attempt[u:v])
                     if value == 0:
                         return False
-                    else:
-                        attempt[u:v] = int_to_bytes(value - 1, v - u)
+                    attempt[u:v] = int_to_bytes(value - 1, v - u)
                 elif d == "X":
                     del attempt[u:v]
                 else:

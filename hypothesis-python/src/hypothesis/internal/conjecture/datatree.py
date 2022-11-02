@@ -224,35 +224,34 @@ class DataTree:
                     # We've now found a value that is allowed to
                     # vary, so what follows is not fixed.
                     return bytes(novel_prefix)
-            else:
-                assert not isinstance(current_node.transition, (Conclusion, Killed))
-                if current_node.transition is None:
-                    return bytes(novel_prefix)
-                branch = current_node.transition
-                assert isinstance(branch, Branch)
-                n_bits = branch.bit_length
+            assert not isinstance(current_node.transition, (Conclusion, Killed))
+            if current_node.transition is None:
+                return bytes(novel_prefix)
+            branch = current_node.transition
+            assert isinstance(branch, Branch)
+            n_bits = branch.bit_length
 
-                check_counter = 0
-                while True:
-                    k = random.getrandbits(n_bits)
-                    try:
-                        child = branch.children[k]
-                    except KeyError:
-                        append_int(n_bits, k)
-                        return bytes(novel_prefix)
-                    if not child.is_exhausted:
-                        append_int(n_bits, k)
-                        current_node = child
-                        break
-                    check_counter += 1
-                    # We don't expect this assertion to ever fire, but coverage
-                    # wants the loop inside to run if you have branch checking
-                    # on, hence the pragma.
-                    assert (  # pragma: no cover
-                        check_counter != 1000
-                        or len(branch.children) < (2**n_bits)
-                        or any(not v.is_exhausted for v in branch.children.values())
-                    )
+            check_counter = 0
+            while True:
+                k = random.getrandbits(n_bits)
+                try:
+                    child = branch.children[k]
+                except KeyError:
+                    append_int(n_bits, k)
+                    return bytes(novel_prefix)
+                if not child.is_exhausted:
+                    append_int(n_bits, k)
+                    current_node = child
+                    break
+                check_counter += 1
+                # We don't expect this assertion to ever fire, but coverage
+                # wants the loop inside to run if you have branch checking
+                # on, hence the pragma.
+                assert (  # pragma: no cover
+                    check_counter != 1000
+                    or len(branch.children) < (2**n_bits)
+                    or any(not v.is_exhausted for v in branch.children.values())
+                )
 
     def rewrite(self, buffer):
         """Use previously seen ConjectureData objects to return a tuple of

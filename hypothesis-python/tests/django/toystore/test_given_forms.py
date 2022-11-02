@@ -8,10 +8,6 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from hypothesis import given
-from hypothesis.extra.django import TestCase, from_form, register_field_strategy
-from hypothesis.strategies import booleans, sampled_from
-
 from tests.django.toystore.forms import (
     BasicFieldForm,
     BroadBooleanField,
@@ -33,6 +29,10 @@ from tests.django.toystore.forms import (
     UUIDFieldForm,
     WithValidatorsForm,
 )
+
+from hypothesis import given
+from hypothesis.extra.django import TestCase, from_form, register_field_strategy
+from hypothesis.strategies import booleans, sampled_from
 
 register_field_strategy(
     BroadBooleanField, booleans() | sampled_from(["1", "0", "True", "False"])

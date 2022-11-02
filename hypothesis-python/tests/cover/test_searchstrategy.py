@@ -13,11 +13,11 @@ from collections import namedtuple
 
 import pytest
 
+from tests.common.debug import assert_no_examples
+
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.strategies import booleans, integers, just, none, tuples
-
-from tests.common.debug import assert_no_examples
 
 
 def test_or_errors_when_given_non_strategy():

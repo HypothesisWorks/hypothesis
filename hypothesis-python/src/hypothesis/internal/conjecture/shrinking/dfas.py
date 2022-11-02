@@ -126,7 +126,7 @@ def learn_a_new_dfa(runner, u, v, predicate):
     allow_discards = worse.has_discards or better.has_discards
 
     def is_valid_core(s):
-        if not (len(u_core) <= len(s) <= len(v_core)):
+        if not len(u_core) <= len(s) <= len(v_core):
             return False
         buf = prefix + s + suffix
         result = runner.cached_test_function(buf)

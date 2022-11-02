@@ -116,7 +116,7 @@ def test_uses_cached_charmap():
 
 
 def test_union_empty():
-    assert cm._union_intervals([], []) == ()
+    assert not cm._union_intervals([], [])
     assert cm._union_intervals([], [[1, 2]]) == ((1, 2),)
     assert cm._union_intervals([[1, 2]], []) == ((1, 2),)
 

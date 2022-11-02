@@ -38,8 +38,7 @@ class HardToShrink(SearchStrategy):
                 self.__last = x
                 self.accepted.add(x)
                 return True
-            else:
-                return False
+            return False
         diffs = [i for i in range(len(x)) if x[i] != ls[i]]
         if len(diffs) == 1:
             i = diffs[0]

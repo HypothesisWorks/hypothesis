@@ -13,11 +13,11 @@ from sys import float_info
 
 import pytest
 
-from hypothesis.internal.floats import width_smallest_normals
-from hypothesis.strategies import floats
-
 from tests.common.debug import assert_all_examples, find_any
 from tests.common.utils import PYTHON_FTZ
+
+from hypothesis.internal.floats import width_smallest_normals
+from hypothesis.strategies import floats
 
 
 def test_python_compiled_with_sane_math_options():

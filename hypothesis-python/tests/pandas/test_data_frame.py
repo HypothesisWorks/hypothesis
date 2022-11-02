@@ -11,11 +11,11 @@
 import numpy as np
 import pytest
 
-from hypothesis import HealthCheck, given, reject, settings, strategies as st
-from hypothesis.extra import numpy as npst, pandas as pdst
-
 from tests.common.debug import find_any
 from tests.pandas.helpers import supported_by_pandas
+
+from hypothesis import HealthCheck, given, reject, settings, strategies as st
+from hypothesis.extra import numpy as npst, pandas as pdst
 
 
 @given(pdst.data_frames([pdst.column("a", dtype=int), pdst.column("b", dtype=float)]))

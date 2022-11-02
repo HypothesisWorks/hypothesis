@@ -18,11 +18,11 @@ from ipaddress import IPv4Network, IPv6Network
 
 import pytest
 
+from tests.common.debug import minimal
+
 from hypothesis import given, settings, strategies as ds
 from hypothesis.errors import InvalidArgument
 from hypothesis.vendor.pretty import pretty
-
-from tests.common.debug import minimal
 
 # Use `pretty` instead of `repr` for building test names, so that set and dict
 # parameters print consistently across multiple worker processes with different
@@ -421,7 +421,7 @@ def test_iterables_are_exhaustible(it):
 
 
 def test_minimal_iterable():
-    assert list(minimal(ds.iterables(ds.integers()), lambda x: True)) == []
+    assert not list(minimal(ds.iterables(ds.integers()), lambda x: True))
 
 
 @pytest.mark.parametrize("parameter_name", ["min_value", "max_value"])

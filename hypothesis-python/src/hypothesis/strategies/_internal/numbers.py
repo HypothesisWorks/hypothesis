@@ -75,24 +75,22 @@ class IntegersStrategy(SearchStrategy):
         if self.start is None:
             if self.end <= 0:
                 return self.end - abs(d.unbounded_integers(data))
-            else:
-                probe = self.end + 1
-                while self.end < probe:
-                    data.start_example(ONE_BOUND_INTEGERS_LABEL)
-                    probe = d.unbounded_integers(data)
-                    data.stop_example(discard=self.end < probe)
-                return probe
+            probe = self.end + 1
+            while self.end < probe:
+                data.start_example(ONE_BOUND_INTEGERS_LABEL)
+                probe = d.unbounded_integers(data)
+                data.stop_example(discard=self.end < probe)
+            return probe
 
         if self.end is None:
             if self.start >= 0:
                 return self.start + abs(d.unbounded_integers(data))
-            else:
-                probe = self.start - 1
-                while probe < self.start:
-                    data.start_example(ONE_BOUND_INTEGERS_LABEL)
-                    probe = d.unbounded_integers(data)
-                    data.stop_example(discard=probe < self.start)
-                return probe
+            probe = self.start - 1
+            while probe < self.start:
+                data.start_example(ONE_BOUND_INTEGERS_LABEL)
+                probe = d.unbounded_integers(data)
+                data.stop_example(discard=probe < self.start)
+            return probe
 
         # For bounded integers, make the bounds and near-bounds more likely.
         forced = None
@@ -209,8 +207,7 @@ def _sign_aware_lte(x: float, y: float) -> bool:
     """Less-than-or-equals, but strictly orders -0.0 and 0.0"""
     if x == 0.0 == y:
         return math.copysign(1.0, x) <= math.copysign(1.0, y)
-    else:
-        return x <= y
+    return x <= y
 
 
 class FloatStrategy(SearchStrategy):

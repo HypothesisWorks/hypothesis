@@ -11,12 +11,11 @@
 import numpy
 import pytest
 
+from tests.common.utils import checks_deprecated_behaviour
+
 from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra import numpy as nps
-
-from tests.common.utils import checks_deprecated_behaviour
-
 
 def e(a, **kwargs):
     kw = ", ".join(f"{k}={v!r}" for k, v in kwargs.items())

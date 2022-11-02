@@ -12,9 +12,11 @@ import re
 
 import pytest
 
+from tests.common.utils import capture_out
+
 from hypothesis import Verbosity, given, settings, strategies as st
 
-from tests.common.utils import capture_out
+
 
 
 def test_reports_passes():

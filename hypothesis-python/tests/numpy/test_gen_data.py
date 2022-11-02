@@ -15,6 +15,9 @@ from itertools import zip_longest
 import numpy as np
 import pytest
 
+from tests.common.debug import find_any, minimal
+from tests.common.utils import fails_with, flaky
+
 from hypothesis import (
     HealthCheck,
     assume,
@@ -26,9 +29,6 @@ from hypothesis import (
 )
 from hypothesis.errors import InvalidArgument, UnsatisfiedAssumption
 from hypothesis.extra import numpy as nps
-
-from tests.common.debug import find_any, minimal
-from tests.common.utils import fails_with, flaky
 
 ANY_SHAPE = nps.array_shapes(min_dims=0, max_dims=32, min_side=0, max_side=32)
 ANY_NONZERO_SHAPE = nps.array_shapes(min_dims=0, max_dims=32, min_side=1, max_side=32)

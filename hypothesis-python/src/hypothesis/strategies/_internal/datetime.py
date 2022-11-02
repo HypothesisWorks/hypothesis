@@ -103,7 +103,7 @@ def draw_capped_multipart(
     data, min_value, max_value, duration_names=DATENAMES + TIMENAMES
 ):
     assert isinstance(min_value, (dt.date, dt.time, dt.datetime))
-    assert type(min_value) == type(max_value)
+    assert isinstance(min_value, type(max_value))
     assert min_value <= max_value
     result = {}
     cap_low, cap_high = True, True
@@ -346,21 +346,21 @@ def _valid_key_cacheable(tzpath, key):
         if os.path.exists(os.path.join(root, key)):  # pragma: no branch
             # No branch because most systems only have one TZPATH component.
             return True
-    else:  # pragma: no cover
-        # This branch is only taken for names which are known to zoneinfo
-        # but not present on the filesystem, i.e. on Windows with tzdata,
-        # and so is never executed by our coverage tests.
-        *package_loc, resource_name = key.split("/")
-        package = "tzdata.zoneinfo." + ".".join(package_loc)
+    # pragma: no cover
+    # This branch is only taken for names which are known to zoneinfo
+    # but not present on the filesystem, i.e. on Windows with tzdata,
+    # and so is never executed by our coverage tests.
+    *package_loc, resource_name = key.split("/")
+    package = "tzdata.zoneinfo." + ".".join(package_loc)
+    try:
         try:
-            try:
-                traversable = resources.files(package) / resource_name
-                return traversable.exists()
-            except (AttributeError, ValueError):
-                # .files() was added in Python 3.9
-                return resources.is_resource(package, resource_name)
-        except ModuleNotFoundError:
-            return False
+            traversable = resources.files(package) / resource_name
+            return traversable.exists()
+        except (AttributeError, ValueError):
+            # .files() was added in Python 3.9
+            return resources.is_resource(package, resource_name)
+    except ModuleNotFoundError:
+        return False
 
 
 @defines_strategy(force_reusable_values=True)

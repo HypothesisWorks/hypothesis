@@ -12,10 +12,10 @@ from unittest.mock import Mock, create_autospec
 
 import pytest
 
+from tests.common.utils import fails
+
 from hypothesis import example, given
 from hypothesis.strategies import integers
-
-from tests.common.utils import fails
 
 pytest_plugins = "pytester"
 
@@ -206,7 +206,7 @@ def test(x):
 
 def test_fixture_errors_if_already_decorated_with_given(testdir):
     script = testdir.makepyfile(TESTSCRIPT_GIVEN_THEN_FIXTURE)
-    if int(pytest.__version__.split(".")[0]) > 5:
+    if int(pytest.__version__.split('.', maxsplit=1)[0]) > 5:
         testdir.runpytest(script).assert_outcomes(errors=1)
     else:
         testdir.runpytest(script).assert_outcomes(error=1)

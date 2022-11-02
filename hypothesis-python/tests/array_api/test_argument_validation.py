@@ -12,10 +12,10 @@ from typing import Optional
 
 import pytest
 
+from tests.array_api.common import MIN_VER_FOR_COMPLEX
+
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.array_api import NominalVersion, make_strategies_namespace
-
-from tests.array_api.common import MIN_VER_FOR_COMPLEX
 
 
 def e(name, *, _min_version: Optional[NominalVersion] = None, **kwargs):

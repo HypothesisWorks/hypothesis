@@ -12,13 +12,13 @@ from sys import float_info
 
 import pytest
 
+from tests.common.debug import assert_no_examples, find_any
+from tests.common.utils import PYTHON_FTZ
+
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.floats import next_down, next_up
 from hypothesis.strategies import floats
 from hypothesis.strategies._internal.numbers import next_down_normal, next_up_normal
-
-from tests.common.debug import assert_no_examples, find_any
-from tests.common.utils import PYTHON_FTZ
 
 pytestmark = [pytest.mark.skipif(PYTHON_FTZ, reason="broken by unsafe compiler flags")]
 

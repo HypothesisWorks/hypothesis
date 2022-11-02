@@ -12,6 +12,8 @@ from collections import Counter
 
 import pytest
 
+from tests.common.debug import minimal
+
 from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.database import ExampleDatabase
 from hypothesis.strategies import (
@@ -24,8 +26,6 @@ from hypothesis.strategies import (
     text,
     tuples,
 )
-
-from tests.common.debug import minimal
 
 ConstantLists = integers().flatmap(lambda i: lists(just(i)))
 

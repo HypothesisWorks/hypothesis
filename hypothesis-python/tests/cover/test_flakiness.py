@@ -10,13 +10,12 @@
 
 import pytest
 
+from tests.common.utils import no_shrink
+
 from hypothesis import HealthCheck, Verbosity, assume, example, given, reject, settings
 from hypothesis.errors import Flaky, Unsatisfiable, UnsatisfiedAssumption
 from hypothesis.internal.conjecture.engine import MIN_TEST_CALLS
 from hypothesis.strategies import booleans, composite, integers, lists, random_module
-
-from tests.common.utils import no_shrink
-
 
 class Nope(Exception):
     pass
@@ -111,10 +110,9 @@ def test_failure_sequence_inducing(building, testing, rnd):
             return
         if i == 1:
             return
-        elif i == 2:
+        if i == 2:
             reject()
-        else:
-            raise Nope()
+        raise Nope()
 
     try:
         test()

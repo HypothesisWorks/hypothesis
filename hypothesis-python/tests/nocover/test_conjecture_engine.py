@@ -8,16 +8,15 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+from tests.common.utils import counts_calls, non_covering_examples
+from tests.conjecture.common import run_to_buffer, shrinking_from
+
 from hypothesis import given, settings, strategies as st
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.internal.compat import int_from_bytes
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.shrinker import Shrinker, block_program
-
-from tests.common.utils import counts_calls, non_covering_examples
-from tests.conjecture.common import run_to_buffer, shrinking_from
-
 
 def test_lot_of_dead_nodes():
     @run_to_buffer
@@ -34,7 +33,7 @@ def test_saves_data_while_shrinking(monkeypatch):
     key = b"hi there"
     n = 5
     db = InMemoryExampleDatabase()
-    assert list(db.fetch(key)) == []
+    assert not list(db.fetch(key))
     seen = set()
 
     monkeypatch.setattr(

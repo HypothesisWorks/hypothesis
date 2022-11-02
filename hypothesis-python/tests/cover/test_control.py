@@ -10,6 +10,8 @@
 
 import pytest
 
+from tests.common.utils import capture_out
+
 from hypothesis import Verbosity, given, reporting, settings
 from hypothesis.control import (
     BuildContext,
@@ -25,9 +27,6 @@ from hypothesis.internal.compat import ExceptionGroup
 from hypothesis.internal.conjecture.data import ConjectureData as TD
 from hypothesis.stateful import RuleBasedStateMachine, rule
 from hypothesis.strategies import integers
-
-from tests.common.utils import capture_out
-
 
 def bc():
     return BuildContext(TD.for_buffer(b""))

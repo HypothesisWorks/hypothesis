@@ -176,7 +176,7 @@ def test_error_import_from_class(tmpdir, classname, thing, kind):
 def test_magic_discovery_from_module(tmpdir):
     (tmpdir / "mycode.py").write(CLASS_CODE_TO_TEST)
     result = subprocess.run(
-        f"hypothesis write mycode",
+        "hypothesis write mycode",
         capture_output=True,
         shell=True,
         text=True,
@@ -223,7 +223,7 @@ class OtherClass:
 def test_roundtrip_correct_pairs(tmpdir):
     (tmpdir / "mycode.py").write(ROUNDTRIP_CODE_TO_TEST)
     result = subprocess.run(
-        f"hypothesis write mycode",
+        "hypothesis write mycode",
         capture_output=True,
         shell=True,
         text=True,

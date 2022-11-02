@@ -10,6 +10,9 @@
 
 import pytest
 
+from tests.array_api.common import MIN_VER_FOR_COMPLEX
+from tests.common.debug import assert_all_examples, find_any, minimal
+
 from hypothesis.extra.array_api import (
     COMPLEX_NAMES,
     DTYPE_NAMES,
@@ -19,9 +22,6 @@ from hypothesis.extra.array_api import (
     REAL_NAMES,
     UINT_NAMES,
 )
-
-from tests.array_api.common import MIN_VER_FOR_COMPLEX
-from tests.common.debug import assert_all_examples, find_any, minimal
 
 
 @pytest.mark.parametrize(

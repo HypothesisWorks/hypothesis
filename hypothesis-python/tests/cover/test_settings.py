@@ -15,6 +15,8 @@ from unittest import TestCase
 
 import pytest
 
+from tests.common.utils import counts_calls, fails_with
+
 from hypothesis import example, given, strategies as st
 from hypothesis._settings import (
     Phase,
@@ -32,9 +34,6 @@ from hypothesis.errors import (
 )
 from hypothesis.stateful import RuleBasedStateMachine, rule
 from hypothesis.utils.conventions import not_set
-
-from tests.common.utils import counts_calls, fails_with
-
 
 def test_has_docstrings():
     assert settings.verbosity.__doc__

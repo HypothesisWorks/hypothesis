@@ -82,7 +82,7 @@ def test_can_delete_a_key_that_is_not_present(exampledatabase):
 
 
 def test_can_fetch_a_key_that_is_not_present(exampledatabase):
-    assert list(exampledatabase.fetch(b"foo")) == []
+    assert not list(exampledatabase.fetch(b"foo"))
 
 
 def test_saving_a_key_twice_fetches_it_once(exampledatabase):

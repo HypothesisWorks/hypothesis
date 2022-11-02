@@ -16,6 +16,9 @@ from types import SimpleNamespace
 
 import pytest
 
+from tests.common.debug import find_any
+from tests.common.utils import fails_with, temp_registered
+
 from hypothesis import example, given, strategies as st
 from hypothesis.errors import InvalidArgument, Unsatisfiable
 from hypothesis.internal.reflection import (
@@ -24,8 +27,6 @@ from hypothesis.internal.reflection import (
 )
 from hypothesis.strategies import from_type
 
-from tests.common.debug import find_any
-from tests.common.utils import fails_with, temp_registered
 
 
 @given(st.data())
@@ -60,7 +61,7 @@ class A(typing.TypedDict):
 
 @given(from_type(A))
 def test_simple_typeddict(value):
-    assert type(value) == dict
+    assert isinstance(value, dict)
     assert set(value) == {"a"}
     assert isinstance(value["a"], int)
 
@@ -72,7 +73,7 @@ class B(A, total=False):
 
 @given(from_type(B))
 def test_typeddict_with_optional(value):
-    assert type(value) == dict
+    assert isinstance(value, dict)
     assert set(value).issubset({"a", "b"})
     assert isinstance(value["a"], int)
     if "b" in value:
@@ -101,7 +102,7 @@ class C(B):
 
 @given(from_type(C))
 def test_typeddict_with_optional_then_required_again(value):
-    assert type(value) == dict
+    assert isinstance(value, dict)
     assert set(value).issubset({"a", "b", "c"})
     assert isinstance(value["a"], int)
     if "b" in value:
@@ -115,7 +116,7 @@ class NestedDict(typing.TypedDict):
 
 @given(from_type(NestedDict))
 def test_typeddict_with_nested_value(value):
-    assert type(value) == dict
+    assert isinstance(value, dict)
     assert set(value) == {"inner"}
     assert isinstance(value["inner"]["a"], int)
 

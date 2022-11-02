@@ -120,8 +120,7 @@ else:
             matches = get_close_matches(objname, public_names)
             if matches:
                 return f"  Closest matches: {matches!r}"
-            else:
-                return ""
+            return ""
 
         if classname is None:
             try:

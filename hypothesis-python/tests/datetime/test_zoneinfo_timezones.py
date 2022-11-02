@@ -12,12 +12,11 @@ import platform
 
 import pytest
 
+from tests.common.debug import assert_no_examples, find_any, minimal
+
 from hypothesis import given, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies._internal.datetime import zoneinfo
-
-from tests.common.debug import assert_no_examples, find_any, minimal
-
 
 def test_utc_is_minimal():
     assert minimal(st.timezones()) is zoneinfo.ZoneInfo("UTC")

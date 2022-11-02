@@ -227,7 +227,7 @@ def _from_dtype(
 
     if builtin is bool:
         return st.booleans()
-    elif builtin is int:
+    if builtin is int:
         iinfo = xp.iinfo(dtype)
         if min_value is None:
             min_value = iinfo.min
@@ -241,7 +241,7 @@ def _from_dtype(
         check_valid_minmax("max", max_value, iinfo)
         check_valid_interval(min_value, max_value, "min_value", "max_value")
         return st.integers(min_value=min_value, max_value=max_value)
-    elif builtin is float:
+    if builtin is float:
         finfo = xp.finfo(dtype)
         kw = {}
 
@@ -292,31 +292,30 @@ def _from_dtype(
             kw["exclude_max"] = exclude_max
 
         return st.floats(width=finfo.bits, **kw)
-    else:
-        # A less-inelegant solution to support complex dtypes exists, but as
-        # this is currently a draft feature, we might as well wait for
-        # discussion of complex inspection to resolve first - a better method
-        # might become available soon enough.
-        # See https://github.com/data-apis/array-api/issues/433
-        for attr in ["float32", "float64", "complex64"]:
-            if not hasattr(xp, attr):
-                raise NotImplementedError(
-                    f"Array module {xp.__name__} has no dtype {attr}, which is "
-                    "currently required for xps.from_dtype() to work with "
-                    "any complex dtype."
-                )
-        component_dtype = xp.float32 if dtype == xp.complex64 else xp.float64
+     # A less-inelegant solution to support complex dtypes exists, but as
+    # this is currently a draft feature, we might as well wait for
+    # discussion of complex inspection to resolve first - a better method
+    # might become available soon enough.
+    # See https://github.com/data-apis/array-api/issues/433
+    for attr in ["float32", "float64", "complex64"]:
+        if not hasattr(xp, attr):
+            raise NotImplementedError(
+                f"Array module {xp.__name__} has no dtype {attr}, which is "
+                "currently required for xps.from_dtype() to work with "
+                "any complex dtype."
+            )
+    component_dtype = xp.float32 if dtype == xp.complex64 else xp.float64
 
-        floats = _from_dtype(
-            xp,
-            api_version,
-            component_dtype,
-            allow_nan=allow_nan,
-            allow_infinity=allow_infinity,
-            allow_subnormal=allow_subnormal,
-        )
+    floats = _from_dtype(
+        xp,
+        api_version,
+        component_dtype,
+        allow_nan=allow_nan,
+        allow_infinity=allow_infinity,
+        allow_subnormal=allow_subnormal,
+    )
 
-        return st.builds(complex, floats, floats)  # type: ignore[arg-type]
+    return st.builds(complex, floats, floats)  # type: ignore[arg-type]
 
 
 class ArrayStrategy(st.SearchStrategy):
@@ -448,8 +447,7 @@ class ArrayStrategy(st.SearchStrategy):
                     if val in seen:
                         elements.reject()
                         continue
-                    else:
-                        seen.add(val)
+                    seen.add(val)
                 try:
                     result[i] = val
                 except Exception as e:
@@ -554,7 +552,7 @@ def _arrays(
                 xp, api_version, d, shape, elements=elements, fill=fill, unique=unique
             )
         )
-    elif isinstance(dtype, str):
+    if isinstance(dtype, str):
         dtype = dtype_from_name(xp, dtype)
 
     if isinstance(shape, st.SearchStrategy):
@@ -563,7 +561,7 @@ def _arrays(
                 xp, api_version, dtype, s, elements=elements, fill=fill, unique=unique
             )
         )
-    elif isinstance(shape, int):
+    if isinstance(shape, int):
         shape = (shape,)
     elif not isinstance(shape, tuple):
         raise InvalidArgument(f"shape={shape} is not a valid shape or strategy")
@@ -606,7 +604,7 @@ def check_dtypes(xp: Any, dtypes: List[DataType], stubs: List[str]) -> None:
             f"Array module {xp.__name__} does not have the following "
             f"required dtypes in its namespace: {f_stubs}"
         )
-    elif len(stubs) > 0:
+    if len(stubs) > 0:
         warn_on_missing_dtypes(xp, stubs)
 
 
@@ -1023,7 +1021,7 @@ def make_strategies_namespace(
     class StrategiesNamespace(SimpleNamespace):
         def __init__(self, **kwargs):
             for attr in ["name", "api_version"]:
-                if attr not in kwargs.keys():
+                if attr not in kwargs:
                     raise ValueError(f"'{attr}' kwarg required")
             super().__init__(**kwargs)
 

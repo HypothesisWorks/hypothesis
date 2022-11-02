@@ -10,14 +10,13 @@
 
 import pytest
 
-from hypothesis import settings
-from hypothesis.errors import Unsatisfiable
-from hypothesis.strategies import lists
-
 from tests.common import standard_types
 from tests.common.debug import minimal
 from tests.common.utils import flaky
 
+from hypothesis import settings
+from hypothesis.errors import Unsatisfiable
+from hypothesis.strategies import lists
 
 @pytest.mark.parametrize("spec", standard_types, ids=list(map(repr, standard_types)))
 @flaky(min_passes=1, max_runs=2)

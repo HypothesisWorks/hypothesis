@@ -12,11 +12,10 @@ import time
 
 import pytest
 
-from hypothesis import given, settings, strategies as st
-from hypothesis.errors import DeadlineExceeded, Flaky, InvalidArgument
-
 from tests.common.utils import assert_falsifying_output, fails_with
 
+from hypothesis import given, settings, strategies as st
+from hypothesis.errors import DeadlineExceeded, Flaky, InvalidArgument
 
 def test_raises_deadline_on_slow_test():
     @settings(deadline=500)
@@ -85,8 +84,7 @@ def test_keeps_you_well_above_the_deadline():
         if not failed_once[0]:
             if i * 0.9 <= 100:
                 return
-            else:
-                failed_once[0] = True
+            failed_once[0] = True
 
         t = i / 1000
         if i in seen:

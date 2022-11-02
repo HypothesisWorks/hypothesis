@@ -12,11 +12,11 @@ import time
 
 import pytest
 
+from tests.common.utils import all_values, capture_out
+
 from hypothesis import Verbosity, assume, core, given, settings, strategies as st
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.errors import FailedHealthCheck
-
-from tests.common.utils import all_values, capture_out
 
 
 @pytest.mark.parametrize("in_pytest", [False, True])

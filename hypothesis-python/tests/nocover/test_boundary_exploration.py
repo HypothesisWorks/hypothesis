@@ -10,12 +10,11 @@
 
 import pytest
 
-from hypothesis import HealthCheck, Verbosity, given, reject, settings, strategies as st
-from hypothesis.errors import Unsatisfiable
-
 from tests.common.debug import minimal
 from tests.common.utils import no_shrink
 
+from hypothesis import HealthCheck, Verbosity, given, reject, settings, strategies as st
+from hypothesis.errors import Unsatisfiable
 
 @pytest.mark.parametrize("strat", [st.text(min_size=5)])
 @settings(phases=no_shrink, deadline=None, suppress_health_check=HealthCheck.all())

@@ -114,7 +114,7 @@ def from_dtype(
             if kw[key] is not None:
                 if key.startswith("min_") and kw[key] > kwargs[key]:
                     raise InvalidArgument(msg % ("at least",))
-                elif key.startswith("max_") and kw[key] < kwargs[key]:
+                if key.startswith("max_") and kw[key] < kwargs[key]:
                     raise InvalidArgument(msg % ("at most",))
         kw.update({k: v for k, v in kwargs.items() if k in args or k in kw})
         return kw
@@ -300,8 +300,7 @@ class ArrayStrategy(st.SearchStrategy):
                     if result[i] in seen:
                         elements.reject()
                         continue
-                    else:
-                        seen.add(result[i])
+                    seen.add(result[i])
                 needs_fill[i] = False
             if needs_fill.any():
                 # We didn't fill all of the indices in the early loop, so we

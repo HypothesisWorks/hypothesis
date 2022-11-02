@@ -11,6 +11,8 @@
 import sys
 from collections import namedtuple
 
+from tests.common.debug import TIME_INCREMENT
+
 from hypothesis.strategies import (
     binary,
     booleans,
@@ -35,7 +37,7 @@ from hypothesis.strategies import (
     tuples,
 )
 
-from tests.common.debug import TIME_INCREMENT
+
 
 __all__ = ["standard_types", "OrderedPair", "TIME_INCREMENT"]
 

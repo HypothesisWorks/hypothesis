@@ -13,10 +13,10 @@ import sys
 
 import pytest
 
+from tests.common.debug import minimal
+
 from hypothesis import given
 from hypothesis.strategies import floats, integers, lists
-
-from tests.common.debug import minimal
 
 
 def test_minimize_negative_int():

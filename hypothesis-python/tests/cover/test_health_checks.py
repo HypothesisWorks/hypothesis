@@ -13,6 +13,8 @@ import time
 import pytest
 from pytest import raises
 
+from tests.common.utils import no_shrink
+
 from hypothesis import HealthCheck, Phase, given, settings, strategies as st
 from hypothesis.control import assume
 from hypothesis.errors import FailedHealthCheck, InvalidArgument
@@ -28,8 +30,6 @@ from hypothesis.stateful import (
 )
 from hypothesis.strategies._internal.lazy import LazyStrategy
 from hypothesis.strategies._internal.strategies import SearchStrategy
-
-from tests.common.utils import no_shrink
 
 HEALTH_CHECK_SETTINGS = settings(max_examples=11, database=None)
 

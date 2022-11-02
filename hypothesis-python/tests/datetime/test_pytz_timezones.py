@@ -14,18 +14,18 @@ import pytest
 import pytz
 from dateutil.tz import datetime_exists
 
-from hypothesis import assume, given
-from hypothesis.errors import InvalidArgument
-from hypothesis.extra.pytz import timezones
-from hypothesis.strategies import data, datetimes, just, sampled_from, times
-from hypothesis.strategies._internal.datetime import datetime_does_not_exist
-
 from tests.common.debug import (
     assert_all_examples,
     assert_can_trigger_event,
     find_any,
     minimal,
 )
+
+from hypothesis import assume, given
+from hypothesis.errors import InvalidArgument
+from hypothesis.extra.pytz import timezones
+from hypothesis.strategies import data, datetimes, just, sampled_from, times
+from hypothesis.strategies._internal.datetime import datetime_does_not_exist
 
 
 def test_utc_is_minimal():

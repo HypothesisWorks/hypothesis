@@ -15,6 +15,18 @@ from unittest.mock import Mock
 
 import pytest
 
+from tests.common.strategies import SLOW, HardToShrink
+from tests.common.utils import no_shrink
+from tests.conjecture.common import (
+    SOME_LABEL,
+    TEST_SETTINGS,
+    buffer_size_limit,
+    run_to_buffer,
+    run_to_data,
+    shrinking_from,
+)
+
+
 from hypothesis import HealthCheck, Phase, Verbosity, settings
 from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
 from hypothesis.errors import FailedHealthCheck, Flaky
@@ -31,17 +43,6 @@ from hypothesis.internal.conjecture.pareto import DominanceRelation, dominance
 from hypothesis.internal.conjecture.shrinker import Shrinker, block_program
 from hypothesis.internal.conjecture.utils import integer_range
 from hypothesis.internal.entropy import deterministic_PRNG
-
-from tests.common.strategies import SLOW, HardToShrink
-from tests.common.utils import no_shrink
-from tests.conjecture.common import (
-    SOME_LABEL,
-    TEST_SETTINGS,
-    buffer_size_limit,
-    run_to_buffer,
-    run_to_data,
-    shrinking_from,
-)
 
 
 def test_can_index_results():

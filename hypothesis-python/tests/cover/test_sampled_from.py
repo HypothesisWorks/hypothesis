@@ -13,6 +13,9 @@ import enum
 
 import pytest
 
+
+from tests.common.utils import fails_with
+
 from hypothesis import given, strategies as st
 from hypothesis.errors import (
     FailedHealthCheck,
@@ -27,8 +30,6 @@ from hypothesis.strategies._internal.strategies import (
     FilteredStrategy,
     filter_not_satisfied,
 )
-
-from tests.common.utils import fails_with
 
 an_enum = enum.Enum("A", "a b c")
 
@@ -50,7 +51,7 @@ def test_can_sample_ordereddict_without_warning():
 
 @given(sampled_from(an_enum))
 def test_can_sample_enums(member):
-    assert isinstance(member, an_enum)
+    assert isinstance(member, type(an_enum))
 
 
 @fails_with(FailedHealthCheck)

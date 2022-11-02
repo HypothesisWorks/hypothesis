@@ -52,19 +52,18 @@ class settingsProperty:
     def __get__(self, obj, type=None):
         if obj is None:
             return self
-        else:
-            try:
-                result = obj.__dict__[self.name]
-                # This is a gross hack, but it preserves the old behaviour that
-                # you can change the storage directory and it will be reflected
-                # in the default database.
-                if self.name == "database" and result is not_set:
-                    from hypothesis.database import ExampleDatabase
+        try:
+            result = obj.__dict__[self.name]
+            # This is a gross hack, but it preserves the old behaviour that
+            # you can change the storage directory and it will be reflected
+            # in the default database.
+            if self.name == "database" and result is not_set:
+                from hypothesis.database import ExampleDatabase
 
-                    result = ExampleDatabase(not_set)
-                return result
-            except KeyError:
-                raise AttributeError(self.name) from None
+                result = ExampleDatabase(not_set)
+            return result
+        except KeyError:
+            raise AttributeError(self.name) from None
 
     def __set__(self, obj, value):
         obj.__dict__[self.name] = value
@@ -109,7 +108,7 @@ class settingsMeta(type):
                 "Cannot assign to the property settings.default - "
                 "consider using settings.load_profile instead."
             )
-        elif not (isinstance(value, settingsProperty) or name.startswith("_")):
+        if not (isinstance(value, settingsProperty) or name.startswith("_")):
             raise AttributeError(
                 f"Cannot assign hypothesis.settings.{name}={value!r} - the settings "
                 "class is immutable.  You can change the global default "
@@ -134,8 +133,7 @@ class settings(metaclass=settingsMeta):
     def __getattr__(self, name):
         if name in all_settings:
             return all_settings[name].default
-        else:
-            raise AttributeError(f"settings has no attribute {name}")
+        raise AttributeError(f"settings has no attribute {name}")
 
     def __init__(
         self,
@@ -207,11 +205,10 @@ class settings(metaclass=settingsMeta):
                 setattr(test, attr_name, True)
                 _test.TestCase.settings = self
                 return test  # type: ignore
-            else:
-                raise InvalidArgument(
-                    "@settings(...) can only be used as a decorator on "
-                    "functions, or on subclasses of RuleBasedStateMachine."
-                )
+            raise InvalidArgument(
+                "@settings(...) can only be used as a decorator on "
+                "functions, or on subclasses of RuleBasedStateMachine."
+            )
         if hasattr(_test, "_hypothesis_internal_settings_applied"):
             # Can't use _hypothesis_internal_use_settings as an indicator that
             # @settings was applied, because @given also assigns that attribute.

@@ -38,7 +38,7 @@ class Tracer:
     def trace(self, frame, event, arg):
         if event == "call":
             return self.trace
-        elif event == "line":
+        if event == "line":
             fname = frame.f_code.co_filename
             if should_trace_file(fname):
                 current_location = (fname, frame.f_lineno)

@@ -13,12 +13,11 @@ import sys
 
 import pytest
 
+from tests.common.debug import assert_no_examples, find_any, minimal
+
 from hypothesis import given, reject, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import complex_numbers
-
-from tests.common.debug import assert_no_examples, find_any, minimal
-
 
 def test_minimal():
     assert minimal(complex_numbers(), lambda x: True) == 0

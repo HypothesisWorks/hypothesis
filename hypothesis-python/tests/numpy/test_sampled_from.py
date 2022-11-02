@@ -8,12 +8,12 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+from tests.common.utils import fails_with
+
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra import numpy as npst
 from hypothesis.strategies import data, sampled_from
-
-from tests.common.utils import fails_with
 
 
 @given(

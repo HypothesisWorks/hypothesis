@@ -13,6 +13,8 @@ from unittest import TestCase
 
 import pytest
 
+from tests.common.utils import assert_falsifying_output, capture_out
+
 from hypothesis import (
     Phase,
     Verbosity,
@@ -26,8 +28,6 @@ from hypothesis import (
 from hypothesis.errors import DeadlineExceeded, HypothesisWarning, InvalidArgument
 from hypothesis.internal.compat import ExceptionGroup
 from hypothesis.strategies import floats, integers, text
-
-from tests.common.utils import assert_falsifying_output, capture_out
 
 
 class TestInstanceMethods(TestCase):

@@ -285,11 +285,10 @@ else:
         if hasattr(config, "stash"):
             # pytest 7
             return config.stash.get(key, default)
-        elif hasattr(config, "_store"):
+        if hasattr(config, "_store"):
             # pytest 5.4
             return config._store.get(key, default)
-        else:
-            return getattr(config, key, default)
+        return getattr(config, key, default)
 
     @pytest.hookimpl(hookwrapper=True)
     def pytest_runtest_makereport(item, call):

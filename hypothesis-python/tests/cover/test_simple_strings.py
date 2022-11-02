@@ -8,10 +8,10 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+from tests.common.debug import minimal
+
 from hypothesis import given
 from hypothesis.strategies import binary, characters, text, tuples
-
-from tests.common.debug import minimal
 
 
 def test_can_minimize_up_to_zero():

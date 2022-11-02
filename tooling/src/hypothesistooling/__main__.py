@@ -299,7 +299,7 @@ def update_vendored_files():
 
     # Turns out that as well as adding new gTLDs, IANA can *terminate* old ones
     url = "http://data.iana.org/TLD/tlds-alpha-by-domain.txt"
-    fname = vendor / url.split("/")[-1]
+    fname = vendor / url.split("/", maxsplit=1)[-1]
     new = requests.get(url).content
     # If only the timestamp in the header comment has changed, skip the update.
     if fname.read_bytes().splitlines()[1:] != new.splitlines()[1:]:

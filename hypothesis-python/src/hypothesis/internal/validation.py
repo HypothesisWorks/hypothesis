@@ -72,7 +72,7 @@ def check_valid_magnitude(value, name):
     check_valid_bound(value, name)
     if value is not None and value < 0:
         raise InvalidArgument(f"{name}={value!r} must not be negative.")
-    elif value is None and name == "min_magnitude":
+    if value is None and name == "min_magnitude":
         raise InvalidArgument("Use min_magnitude=0 or omit the argument entirely.")
 
 

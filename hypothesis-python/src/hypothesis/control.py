@@ -181,7 +181,6 @@ def target(observation: Union[int, float], *, label: str = "") -> Union[int, flo
             f"Calling target({observation!r}, label={label!r}) would overwrite "
             f"target({context.data.target_observations[label]!r}, label={label!r})"
         )
-    else:
-        context.data.target_observations[label] = observation
+    context.data.target_observations[label] = observation
 
     return observation

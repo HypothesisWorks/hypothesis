@@ -44,8 +44,7 @@ class HypothesisTestCase:
         testMethod = getattr(self, self._testMethodName)
         if getattr(testMethod, "is_hypothesis_test", False):
             return unittest.TestCase.__call__(self, result)
-        else:
-            return dt.SimpleTestCase.__call__(self, result)
+        return dt.SimpleTestCase.__call__(self, result)
 
 
 class TestCase(HypothesisTestCase, dt.TestCase):

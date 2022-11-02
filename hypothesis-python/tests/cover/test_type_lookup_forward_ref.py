@@ -26,10 +26,10 @@ from typing import TYPE_CHECKING, ForwardRef, TypeVar
 
 import pytest
 
+from tests.common import utils
+
 from hypothesis import given, strategies as st
 from hypothesis.errors import ResolutionFailed
-
-from tests.common import utils
 
 if TYPE_CHECKING:
     from tests.common.utils import ExcInfo  # we just need any type  # noqa: F401

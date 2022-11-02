@@ -10,10 +10,10 @@
 
 import pytest
 
+from tests.common.utils import flaky
+
 from hypothesis import given, settings, strategies as st
 from hypothesis.internal.compat import ExceptionGroup
-
-from tests.common.utils import flaky
 
 
 def go_wrong_naive(a, b):

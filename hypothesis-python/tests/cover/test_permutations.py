@@ -8,13 +8,12 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from hypothesis import given
-from hypothesis.errors import InvalidArgument
-from hypothesis.strategies import permutations
-
 from tests.common.debug import minimal
 from tests.common.utils import fails_with
 
+from hypothesis import given
+from hypothesis.errors import InvalidArgument
+from hypothesis.strategies import permutations
 
 def test_can_find_non_trivial_permutation():
     x = minimal(permutations(list(range(5))), lambda x: x[0] != 0)
