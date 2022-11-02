@@ -1,4 +1,4 @@
-v# This file is part of Hypothesis, which may be found at
+# This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
 # Copyright the Hypothesis Authors.
