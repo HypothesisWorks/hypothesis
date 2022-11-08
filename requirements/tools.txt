@@ -10,16 +10,16 @@ asgiref==3.5.2
     # via django
 astor==0.8.1
     # via flake8-simplify
-asttokens==2.0.8
+asttokens==2.1.0
     # via stack-data
 attrs==22.1.0
     # via
     #   flake8-bugbear
     #   hypothesis (hypothesis-python/setup.py)
     #   pytest
-autoflake==1.7.6
+autoflake==1.7.7
     # via shed
-babel==2.10.3
+babel==2.11.0
     # via sphinx
 backcall==0.2.0
     # via ipython
@@ -33,7 +33,7 @@ black==22.10.0
     # via shed
 bleach==5.0.1
     # via readme-renderer
-build==0.8.0
+build==0.9.0
     # via pip-tools
 certifi==2022.9.24
     # via requests
@@ -53,13 +53,13 @@ commonmark==0.9.1
     # via rich
 coverage==6.5.0
     # via -r requirements/tools.in
-cryptography==38.0.1
+cryptography==38.0.3
     # via secretstorage
 decorator==5.1.1
     # via ipython
 distlib==0.3.6
     # via virtualenv
-django==4.1.2
+django==4.1.3
     # via -r requirements/tools.in
 docutils==0.17.1
     # via
@@ -69,9 +69,11 @@ docutils==0.17.1
     #   sphinx-rtd-theme
 dpcontracts==0.6.0
     # via -r requirements/tools.in
-exceptiongroup==1.0.0rc9 ; python_version < "3.11"
-    # via hypothesis (hypothesis-python/setup.py)
-executing==1.1.1
+exceptiongroup==1.0.1 ; python_version < "3.11"
+    # via
+    #   hypothesis (hypothesis-python/setup.py)
+    #   pytest
+executing==1.2.0
     # via stack-data
 filelock==3.8.0
     # via
@@ -94,11 +96,11 @@ flake8-2020==1.7.0
     # via -r requirements/tools.in
 flake8-bandit==4.1.1
     # via -r requirements/tools.in
-flake8-bugbear==22.9.23
+flake8-bugbear==22.10.27
     # via -r requirements/tools.in
-flake8-builtins==2.0.0
+flake8-builtins==2.0.1
     # via -r requirements/tools.in
-flake8-comprehensions==3.10.0
+flake8-comprehensions==3.10.1
     # via -r requirements/tools.in
 flake8-datetimez==20.10.0
     # via -r requirements/tools.in
@@ -116,7 +118,7 @@ flake8-plugin-utils==1.3.2
     #   flake8-return
 flake8-pytest-style==1.6.0
     # via -r requirements/tools.in
-flake8-return==1.1.3
+flake8-return==1.2.0
     # via -r requirements/tools.in
 flake8-simplify==0.19.3
     # via -r requirements/tools.in
@@ -135,7 +137,7 @@ importlib-metadata==5.0.0
     #   twine
 iniconfig==1.1.1
     # via pytest
-ipython==8.5.0
+ipython==8.6.0
     # via -r requirements/tools.in
 isort==5.10.1
     # via shed
@@ -149,7 +151,7 @@ jeepney==0.8.0
     #   secretstorage
 jinja2==3.1.2
     # via sphinx
-keyring==23.9.3
+keyring==23.11.0
     # via twine
 lark-parser==0.12.0
     # via -r requirements/tools.in
@@ -204,16 +206,14 @@ pluggy==1.0.0
     # via
     #   pytest
     #   tox
-prompt-toolkit==3.0.31
+prompt-toolkit==3.0.32
     # via ipython
 ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.2
     # via stack-data
 py==1.11.0
-    # via
-    #   pytest
-    #   tox
+    # via tox
 pycodestyle==2.9.1
     # via flake8
 pycparser==2.21
@@ -232,21 +232,21 @@ pygments==2.13.0
     #   sphinx
 pyparsing==3.0.9
     # via packaging
-pyright==1.1.276
+pyright==1.1.278
     # via -r requirements/tools.in
-pytest==7.1.3
+pytest==7.2.0
     # via -r requirements/tools.in
 python-dateutil==2.8.2
     # via -r requirements/tools.in
-pytz==2022.5
+pytz==2022.6
     # via babel
-pyupgrade==3.1.0
+pyupgrade==3.2.0
     # via shed
 pyyaml==6.0
     # via
     #   bandit
     #   libcst
-readme-renderer==37.2
+readme-renderer==37.3
     # via twine
 requests==2.28.1
     # via
@@ -254,7 +254,7 @@ requests==2.28.1
     #   requests-toolbelt
     #   sphinx
     #   twine
-requests-toolbelt==0.10.0
+requests-toolbelt==0.10.1
     # via twine
 restructuredtext-lint==1.4.0
     # via -r requirements/tools.in
@@ -264,7 +264,7 @@ rich==12.6.0
     # via twine
 secretstorage==3.3.3
     # via keyring
-shed==0.10.5
+shed==0.10.7
     # via -r requirements/tools.in
 six==1.16.0
     # via
@@ -288,11 +288,11 @@ sphinx==5.3.0
     #   sphinx-codeautolink
     #   sphinx-hoverxref
     #   sphinx-rtd-theme
-sphinx-codeautolink==0.12.0
+sphinx-codeautolink==0.12.1
     # via -r requirements/tools.in
-sphinx-hoverxref==1.1.3
+sphinx-hoverxref==1.3.0
     # via -r requirements/tools.in
-sphinx-rtd-theme==1.0.0
+sphinx-rtd-theme==1.1.1
     # via -r requirements/tools.in
 sphinx-selective-exclude==1.0.3
     # via -r requirements/tools.in
@@ -302,6 +302,8 @@ sphinxcontrib-devhelp==1.0.2
     # via sphinx
 sphinxcontrib-htmlhelp==2.0.0
     # via sphinx
+sphinxcontrib-jquery==3.0.0
+    # via sphinx-hoverxref
 sphinxcontrib-jsmath==1.0.1
     # via sphinx
 sphinxcontrib-qthelp==1.0.3
@@ -310,7 +312,7 @@ sphinxcontrib-serializinghtml==1.1.5
     # via sphinx
 sqlparse==0.4.3
     # via django
-stack-data==0.5.1
+stack-data==0.6.0
     # via ipython
 stevedore==4.1.0
     # via bandit
@@ -325,7 +327,7 @@ tomli==2.0.1
     #   pep517
     #   pytest
     #   tox
-tox==3.26.0
+tox==3.27.0
     # via -r requirements/tools.in
 traitlets==5.5.0
     # via
@@ -337,7 +339,7 @@ types-click==7.1.8
     # via -r requirements/tools.in
 types-pkg-resources==0.1.3
     # via -r requirements/tools.in
-types-pytz==2022.5.0.0
+types-pytz==2022.6.0.1
     # via -r requirements/tools.in
 types-redis==4.3.21.3
     # via -r requirements/tools.in
@@ -357,15 +359,15 @@ urllib3==1.26.12
     # via
     #   requests
     #   twine
-virtualenv==20.16.5
+virtualenv==20.16.6
     # via tox
 wcwidth==0.2.5
     # via prompt-toolkit
 webencodings==0.5.1
     # via bleach
-wheel==0.37.1
+wheel==0.38.2
     # via pip-tools
-zipp==3.9.0
+zipp==3.10.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
