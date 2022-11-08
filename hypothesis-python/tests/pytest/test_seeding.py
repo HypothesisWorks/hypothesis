@@ -43,7 +43,7 @@ def test_runs_repeatably_when_seed_is_set(seed, testdir):
 
     results = [
         testdir.runpytest(
-            script, "--verbose", "--strict-markers", "--hypothesis-seed", str(seed)
+            script, "--verbose", "--strict-markers", f"--hypothesis-seed={seed}", "-rN"
         )
         for _ in range(2)
     ]
