@@ -87,8 +87,10 @@ def get_trimmed_traceback(exception=None):
         tb = exception.__traceback__
     # Avoid trimming the traceback if we're in verbose mode, or the error
     # was raised inside Hypothesis
-    if hypothesis.settings.default.verbosity >= hypothesis.Verbosity.debug or (
-        is_hypothesis_file(traceback.extract_tb(tb)[-1][0])
+    if (
+        tb is None
+        or hypothesis.settings.default.verbosity >= hypothesis.Verbosity.debug
+        or is_hypothesis_file(traceback.extract_tb(tb)[-1][0])
         and not isinstance(exception, _Trimmable)
     ):
         return tb
