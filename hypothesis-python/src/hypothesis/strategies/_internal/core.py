@@ -18,7 +18,7 @@ import sys
 import typing
 from decimal import Context, Decimal, localcontext
 from fractions import Fraction
-from functools import reduce
+from functools import lru_cache, reduce
 from inspect import Parameter, Signature, isabstract, isclass, signature
 from types import FunctionType
 from typing import (
@@ -92,7 +92,7 @@ from hypothesis.strategies._internal.collections import (
 )
 from hypothesis.strategies._internal.deferred import DeferredStrategy
 from hypothesis.strategies._internal.functions import FunctionStrategy
-from hypothesis.strategies._internal.lazy import LazyStrategy
+from hypothesis.strategies._internal.lazy import LazyStrategy, unwrap_strategies
 from hypothesis.strategies._internal.misc import just, none, nothing
 from hypothesis.strategies._internal.numbers import (
     IntegersStrategy,
@@ -615,6 +615,19 @@ def characters(
     )
 
 
+# Cache size is limited by sys.maxunicode, but passing None makes it slightly faster.
+@lru_cache(maxsize=None)
+def _check_is_single_character(c):
+    # In order to mitigate the performance cost of this check, we use a shared cache,
+    # even at the cost of showing the culprit strategy in the error message.
+    if not isinstance(c, str):
+        type_ = get_pretty_function_description(type(c))
+        raise InvalidArgument(f"Got non-string {c!r} (type {type_})")
+    if len(c) != 1:
+        raise InvalidArgument(f"Got {c!r} (length {len(c)} != 1)")
+    return c
+
+
 @cacheable
 @defines_strategy(force_reusable_values=True)
 def text(
@@ -645,7 +658,13 @@ def text(
     """
     check_valid_sizes(min_size, max_size)
     if isinstance(alphabet, SearchStrategy):
-        char_strategy = alphabet
+        char_strategy = unwrap_strategies(alphabet)
+        if isinstance(char_strategy, SampledFromStrategy):
+            # Check this via the up-front validation logic below, and incidentally
+            # convert into a `characters()` strategy for standard text shrinking.
+            return text(char_strategy.elements, min_size=min_size, max_size=max_size)
+        elif not isinstance(char_strategy, OneCharStringStrategy):
+            char_strategy = char_strategy.map(_check_is_single_character)
     else:
         non_string = [c for c in alphabet if not isinstance(c, str)]
         if non_string:
