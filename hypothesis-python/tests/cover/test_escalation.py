@@ -70,3 +70,7 @@ def test_multiplefailures_deprecation():
     with pytest.warns(errors.HypothesisDeprecationWarning):
         exc = errors.MultipleFailures
     assert exc is BaseExceptionGroup
+
+
+def test_handles_null_traceback():
+    esc.get_interesting_origin(Exception())

@@ -8,8 +8,12 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import math
 import sys
+
+if sys.version_info[:2] < (3, 8):
+    raise RuntimeError("The Array API standard requires Python 3.8 or later")
+
+import math
 from numbers import Real
 from types import SimpleNamespace
 from typing import (
@@ -902,7 +906,7 @@ def make_strategies_namespace(
         check_argument(
             isinstance(xp.__array_api_version__, str)
             and xp.__array_api_version__ in RELEASED_VERSIONS,
-            f"{xp.__array_api_version__=}, but xp.__array_api_version__ must "
+            f"xp.__array_api_version__={xp.__array_api_version__!r}, but it must "
             f"be a valid version string {RELEASED_VERSIONS}. {not_available_msg}",
         )
         api_version = xp.__array_api_version__
@@ -910,8 +914,8 @@ def make_strategies_namespace(
     else:
         check_argument(
             isinstance(api_version, str) and api_version in NOMINAL_VERSIONS,
-            f"{api_version=}, but api_version must be None, or a valid version "
-            f"string {RELEASED_VERSIONS}. {not_available_msg}",
+            f"api_version={api_version!r}, but it must be None, or a valid version "
+            f"string in {RELEASED_VERSIONS}. {not_available_msg}",
         )
         inferred_version = False
     try:
