@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.57.1:
+
+-------------------
+6.57.1 - 2022-11-14
+-------------------
+
+This patch updates some internal type annotations and fixes a formatting bug in the
+:obj:`~hypothesis.Phase.explain` phase reporting.
+
 .. _v6.57.0:
 
 -------------------
