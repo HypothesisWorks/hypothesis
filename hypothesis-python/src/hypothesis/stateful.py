@@ -249,7 +249,7 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
     _invariants_per_class: Dict[type, List[classmethod]] = {}
     _initializers_per_class: Dict[type, List[classmethod]] = {}
 
-    def __init__(self):
+    def __init__(self) -> None:
         if not self.rules():
             raise InvalidDefinition(f"Type {type(self).__name__} defines no rules")
         self.bundles: Dict[str, list] = {}
