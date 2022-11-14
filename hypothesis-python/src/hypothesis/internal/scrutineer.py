@@ -11,7 +11,6 @@
 import sys
 from collections import defaultdict
 from functools import lru_cache, reduce
-from itertools import groupby
 from os import sep
 from pathlib import Path
 
@@ -118,10 +117,7 @@ EXPLANATION_STUB = (
 def make_report(explanations, cap_lines_at=5):
     report = defaultdict(list)
     for origin, locations in explanations.items():
-        report_lines = [
-            "        {}:{}".format(k, ", ".join(map(str, sorted(l for _, l in v))))
-            for k, v in groupby(locations, lambda kv: kv[0])
-        ]
+        report_lines = [f"        {fname}:{lineno}" for fname, lineno in locations]
         report_lines.sort(key=lambda line: (line.startswith(LIB_DIR), line))
         if len(report_lines) > cap_lines_at + 1:
             msg = "        (and {} more with settings.verbosity >= verbose)"
@@ -136,5 +132,5 @@ def explanatory_lines(traces, settings):
         return defaultdict(list)
     # Return human-readable report lines summarising the traces
     explanations = get_explaining_locations(traces)
-    max_lines = 5 if settings.verbosity <= Verbosity.normal else 100
+    max_lines = 5 if settings.verbosity <= Verbosity.normal else float("inf")
     return make_report(explanations, cap_lines_at=max_lines)
