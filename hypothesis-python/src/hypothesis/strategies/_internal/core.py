@@ -1113,7 +1113,7 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
         pass
     if (
         hasattr(typing, "_TypedDictMeta")
-        and type(thing) is typing._TypedDictMeta  # type: ignore
+        and type(thing) is typing._TypedDictMeta
         or hasattr(types.typing_extensions, "_TypedDictMeta")  # type: ignore
         and type(thing) is types.typing_extensions._TypedDictMeta  # type: ignore
     ):  # pragma: no cover

@@ -65,6 +65,7 @@ BAD_ARGS = [
     e(pdst.indexes, elements="not a strategy"),
     e(pdst.indexes, elements=st.text(), dtype=float),
     e(pdst.indexes, elements=st.none(), dtype=int),
+    e(pdst.indexes, elements=st.integers(0, 10), dtype=st.sampled_from([int, float])),
     e(pdst.indexes, dtype=int, max_size=0, min_size=1),
     e(pdst.indexes, dtype=int, unique="true"),
     e(pdst.indexes, dtype=int, min_size="0"),

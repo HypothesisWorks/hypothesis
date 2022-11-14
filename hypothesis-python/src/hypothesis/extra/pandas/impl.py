@@ -88,6 +88,11 @@ def elements_and_dtype(elements, dtype, source=None):
             has_codemod=False,
         )
 
+    if isinstance(dtype, st.SearchStrategy):
+        raise InvalidArgument(
+            f"Passed dtype={dtype!r} is a strategy, but we require a concrete dtype "
+            "here.  See https://stackoverflow.com/q/74355937 for workaround patterns."
+        )
     dtype = try_convert(np.dtype, dtype, "dtype")
 
     if elements is None:
@@ -532,9 +537,8 @@ def data_frames(
                 hash(c.name)
             except TypeError:
                 raise InvalidArgument(
-                    "Column names must be hashable, but columns[%d].name was "
-                    "%r of type %s, which cannot be hashed."
-                    % (i, c.name, type(c.name).__name__)
+                    f"Column names must be hashable, but columns[{i}].name was "
+                    f"{c.name!r} of type {type(c.name).__name__}, which cannot be hashed."
                 ) from None
 
         if c.name in column_names:

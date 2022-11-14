@@ -84,6 +84,8 @@ def assert_mypy_errors(fname, expected, python_version=None):
             # Intentional print so we can check mypy's output if a test fails
             print(error_line)
             error_code = error_line.split("[")[-1].rstrip("]")
+            if error_code == "empty-body":
+                continue
             yield (int(col), error_code)
 
     assert sorted(convert_lines()) == sorted(expected)

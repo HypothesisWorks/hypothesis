@@ -320,8 +320,8 @@ class Sampler:
 
         num_type = type(total)
 
-        zero = num_type(0)
-        one = num_type(1)
+        zero = num_type(0)  # type: ignore
+        one = num_type(1)  # type: ignore
 
         small: "List[int]" = []
         large: "List[int]" = []
