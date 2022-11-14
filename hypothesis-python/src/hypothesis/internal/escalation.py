@@ -67,12 +67,12 @@ def escalate_hypothesis_internal_error():
     if PREVENT_ESCALATION:
         return
 
-    error_type, e, tb = sys.exc_info()
+    _, e, tb = sys.exc_info()
 
     if getattr(e, "hypothesis_internal_never_escalate", False):
         return
 
-    filepath = traceback.extract_tb(tb)[-1][0]
+    filepath = None if tb is None else traceback.extract_tb(tb)[-1][0]
     if is_hypothesis_file(filepath) and not isinstance(
         e, (HypothesisException,) + HYPOTHESIS_CONTROL_EXCEPTIONS
     ):
@@ -113,7 +113,10 @@ def get_interesting_origin(exception):
     # blocks and understand the __cause__ (`raise x from y`) or __context__ that
     # first raised an exception as well as PEP-654 exception groups.
     tb = get_trimmed_traceback(exception)
-    filename, lineno, *_ = traceback.extract_tb(tb)[-1]
+    if tb is None:
+        filename, lineno = None, None
+    else:
+        filename, lineno, *_ = traceback.extract_tb(tb)[-1]
     return (
         type(exception),
         filename,
