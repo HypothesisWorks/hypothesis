@@ -83,6 +83,7 @@ from keyword import iskeyword
 from string import ascii_lowercase
 from textwrap import dedent, indent
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -115,13 +116,13 @@ from hypothesis.strategies._internal.strategies import (
     SampledFromStrategy,
 )
 from hypothesis.strategies._internal.types import _global_type_lookup, is_generic_type
-from hypothesis.utils.conventions import infer
 
 if sys.version_info >= (3, 10):  # pragma: no cover
-    from types import EllipsisType as InferType
-
+    from types import EllipsisType as EllipsisType
+elif TYPE_CHECKING:
+    from builtins import ellipsis as EllipsisType
 else:
-    InferType = type(Ellipsis)
+    EllipsisType = type(Ellipsis)
 
 
 IMPORT_SECTION = """
@@ -250,10 +251,7 @@ def _type_from_doc_fragment(token: str) -> Optional[type]:
     return getattr(sys.modules.get(mod, None), name, None)
 
 
-def _strategy_for(
-    param: inspect.Parameter,
-    docstring: str,
-) -> Union[st.SearchStrategy, InferType]:
+def _strategy_for(param: inspect.Parameter, docstring: str) -> st.SearchStrategy:
     # Example types in docstrings:
     # - `:type a: sequence of integers`
     # - `b (list, tuple, or None): ...`
@@ -530,7 +528,7 @@ def _get_strategies(
         hints = get_type_hints(f)
         docstring = getattr(f, "__doc__", None) or ""
         builder_args = {
-            k: infer if k in hints else _strategy_for(v, docstring)
+            k: ... if k in hints else _strategy_for(v, docstring)
             for k, v in params.items()
         }
         with _with_any_registered():
@@ -671,11 +669,25 @@ def _valid_syntax_repr(strategy):
 KNOWN_FUNCTION_LOCATIONS: Dict[object, str] = {}
 
 
+def _get_module_helper(obj):
+    # Get the __module__ attribute of the object, and return the first ancestor module
+    # which contains the object; falling back to the literal __module__ if none do.
+    # The goal is to show location from which obj should usually be accessed, rather
+    # than what we assume is an internal submodule which defined it.
+    module_name = obj.__module__
+    dots = [i for i, c in enumerate(module_name) if c == "."] + [None]
+    for idx in dots:
+        if getattr(sys.modules.get(module_name[:idx]), obj.__name__, None) is obj:
+            KNOWN_FUNCTION_LOCATIONS[obj] = module_name[:idx]
+            return module_name[:idx]
+    return module_name
+
+
 def _get_module(obj):
     if obj in KNOWN_FUNCTION_LOCATIONS:
         return KNOWN_FUNCTION_LOCATIONS[obj]
     try:
-        return obj.__module__
+        return _get_module_helper(obj)
     except AttributeError:
         if not _is_probably_ufunc(obj):
             raise
@@ -934,7 +946,7 @@ def magic(
                     functions.add(f)
                     if getattr(thing, "__name__", None):
                         if inspect.isclass(thing):
-                            KNOWN_FUNCTION_LOCATIONS[f] = thing.__module__
+                            KNOWN_FUNCTION_LOCATIONS[f] = _get_module_helper(thing)
                         else:
                             KNOWN_FUNCTION_LOCATIONS[f] = thing.__name__
             except (TypeError, ValueError):
@@ -1307,7 +1319,7 @@ def binary_operation(
     *,
     associative: bool = True,
     commutative: bool = True,
-    identity: Union[X, InferType, None] = infer,
+    identity: Union[X, EllipsisType, None] = ...,
     distributes_over: Optional[Callable[[X, X], X]] = None,
     except_: Except = (),
     style: str = "pytest",
@@ -1368,7 +1380,7 @@ def _make_binop_body(
     *,
     associative: bool = True,
     commutative: bool = True,
-    identity: Union[X, InferType, None] = infer,
+    identity: Union[X, EllipsisType, None] = ...,
     distributes_over: Optional[Callable[[X, X], X]] = None,
     except_: Tuple[Type[Exception], ...],
     style: str,
@@ -1438,7 +1450,7 @@ def _make_binop_body(
         # Guess that the identity element is the minimal example from our operands
         # strategy.  This is correct often enough to be worthwhile, and close enough
         # that it's a good starting point to edit much of the rest.
-        if identity is infer:
+        if identity is ...:
             try:
                 identity = find(operands, lambda x: True, settings=_quietly_settings)
             except Exception:
@@ -1448,7 +1460,7 @@ def _make_binop_body(
         # happen.  E.g. type(None) -> <class 'NoneType'> -> quoted.
         try:
             # We don't actually execute this code object; we're just compiling
-            # to check that the repr is syntatically valid.  HOWEVER, we're
+            # to check that the repr is syntactically valid.  HOWEVER, we're
             # going to output that code string into test code which will be
             # executed; so you still shouldn't ghostwrite for hostile code.
             compile(repr(identity), "<string>", "exec")

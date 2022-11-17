@@ -22,24 +22,37 @@ except NameError:
         BaseExceptionGroup as BaseExceptionGroup,
         ExceptionGroup as ExceptionGroup,
     )
+if typing.TYPE_CHECKING:  # pragma: no cover
+    from typing_extensions import Concatenate as Concatenate, ParamSpec as ParamSpec
+else:
+    try:
+        from typing import Concatenate as Concatenate, ParamSpec as ParamSpec
+    except ImportError:
+        try:
+            from typing_extensions import (
+                Concatenate as Concatenate,
+                ParamSpec as ParamSpec,
+            )
+        except ImportError:
+            Concatenate, ParamSpec = None, None
 
 PYPY = platform.python_implementation() == "PyPy"
 WINDOWS = platform.system() == "Windows"
 
 
-def escape_unicode_characters(s):
+def escape_unicode_characters(s: str) -> str:
     return codecs.encode(s, "unicode_escape").decode("ascii")
 
 
-def int_from_bytes(data):
+def int_from_bytes(data: typing.Union[bytes, bytearray]) -> int:
     return int.from_bytes(data, "big")
 
 
-def int_to_bytes(i, size):
+def int_to_bytes(i: int, size: int) -> bytes:
     return i.to_bytes(size, "big")
 
 
-def int_to_byte(i):
+def int_to_byte(i: int) -> bytes:
     return bytes([i])
 
 

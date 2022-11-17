@@ -8,12 +8,22 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import pickle
 import random
+from datetime import timedelta
 from unittest.mock import Mock
 
 import pytest
 
-from hypothesis import Verbosity, assume, given, seed, settings, strategies as st
+from hypothesis import (
+    Verbosity,
+    assume,
+    errors,
+    given,
+    seed,
+    settings,
+    strategies as st,
+)
 
 
 def strat():
@@ -111,3 +121,27 @@ def test_prng_state_unpolluted_by_given_issue_1266():
         assert second == third
     else:
         assert second != third
+
+
+exc_instances = [
+    errors.NoSuchExample("foobar", extra="baz"),
+    errors.DeadlineExceeded(
+        runtime=timedelta(seconds=1.5), deadline=timedelta(seconds=1.0)
+    ),
+]
+
+
+@pytest.mark.parametrize("exc", exc_instances, ids=repr)
+def test_exceptions_are_picklable(exc):
+    # See https://github.com/HypothesisWorks/hypothesis/issues/3426
+    pickle.loads(pickle.dumps(exc))
+
+
+def test_no_missed_custom_init_exceptions():
+    untested_errors_with_custom_init = {
+        et
+        for et in vars(errors).values()
+        if isinstance(et, type) and issubclass(et, Exception) and "__init__" in vars(et)
+    } - {type(exc) for exc in exc_instances}
+    print(untested_errors_with_custom_init)
+    assert not untested_errors_with_custom_init

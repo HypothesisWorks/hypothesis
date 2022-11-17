@@ -18,6 +18,342 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.57.1:
+
+-------------------
+6.57.1 - 2022-11-14
+-------------------
+
+This patch updates some internal type annotations and fixes a formatting bug in the
+:obj:`~hypothesis.Phase.explain` phase reporting.
+
+.. _v6.57.0:
+
+-------------------
+6.57.0 - 2022-11-14
+-------------------
+
+Hypothesis now raises an error if you passed a strategy as the ``alphabet=``
+argument to :func:`~hypothesis.strategies.text`, and it generated something
+which was not a length-one string.  This has never been supported, we're just
+adding explicit validation to catch cases like `this StackOverflow question
+<https://stackoverflow.com/a/74336909/9297601>`__.
+
+.. _v6.56.4:
+
+-------------------
+6.56.4 - 2022-10-28
+-------------------
+
+This patch updates some docs, and depends on :pypi:`exceptiongroup` 1.0.0
+final to avoid a bug in the previous version.
+
+.. _v6.56.3:
+
+-------------------
+6.56.3 - 2022-10-17
+-------------------
+
+This patch teaches :func:`~hypothesis.strategies.text` to rewrite a few more
+filter predicates (:issue:`3134`).  You're unlikely to notice any change.
+
+.. _v6.56.2:
+
+-------------------
+6.56.2 - 2022-10-10
+-------------------
+
+This patch updates our vendored `list of top-level domains <https://www.iana.org/domains/root/db>`__,
+which is used by the provisional :func:`~hypothesis.provisional.domains` strategy, and fixes some
+incorrect examples in the docs for :func:`~hypothesis.extra.numpy.mutually_broadcastable_shapes`.
+
+.. _v6.56.1:
+
+-------------------
+6.56.1 - 2022-10-05
+-------------------
+
+This patch improves the error message when Hypothesis detects "flush to zero"
+mode for floating-point: we now report which package(s) enabled this, which
+can make debugging much easier.  See :issue:`3458` for details.
+
+.. _v6.56.0:
+
+-------------------
+6.56.0 - 2022-10-02
+-------------------
+
+This release defines ``__bool__()`` on :class:`~hypothesis.strategies.SearchStrategy`.
+It always returns ``True``, like before, but also emits a warning to help with
+cases where you intended to draw a value (:issue:`3463`).
+
+.. _v6.55.0:
+
+-------------------
+6.55.0 - 2022-09-29
+-------------------
+
+In preparation for `future versions of the Array API standard
+<https://data-apis.org/array-api/latest/future_API_evolution.html>`__,
+:func:`~hypothesis.extra.array_api.make_strategies_namespace` now accepts an
+optional ``api_version`` argument, which determines the version conformed to by
+the returned strategies namespace. If ``None``, the version of the passed array
+module ``xp`` is inferred.
+
+This release also introduces :func:`xps.real_dtypes`. This is currently
+equivalent to the existing :func:`xps.numeric_dtypes` strategy, but exists
+because the latter is expected to include complex numbers in the next version of
+the standard.
+
+.. _v6.54.6:
+
+-------------------
+6.54.6 - 2022-09-18
+-------------------
+
+If multiple explicit examples (from :func:`@example() <hypothesis.example>`)
+raise a Skip exception, for consistency with generated examples we now re-raise
+the first instead of collecting them into an ExceptionGroup (:issue:`3453`).
+
+.. _v6.54.5:
+
+-------------------
+6.54.5 - 2022-09-05
+-------------------
+
+This patch updates our autoformatting tools, improving our code style without any API changes.
+
+.. _v6.54.4:
+
+-------------------
+6.54.4 - 2022-08-20
+-------------------
+
+This patch fixes some type annotations for Python 3.9 and earlier (:issue:`3397`),
+and teaches :ref:`explain mode <phases>` about certain locations it should not
+bother reporting (:issue:`3439`).
+
+.. _v6.54.3:
+
+-------------------
+6.54.3 - 2022-08-12
+-------------------
+
+This patch teaches the Ghostwriter an additional check for function
+and class locations that should make it use public APIs more often.
+
+.. _v6.54.2:
+
+-------------------
+6.54.2 - 2022-08-10
+-------------------
+
+This patch fixes our workaround for `a pytest bug where the inner exceptions in
+an ExceptionGroup are not displayed <https://github.com/pytest-dev/pytest/issues/9159>`__
+(:issue:`3430`).
+
+.. _v6.54.1:
+
+-------------------
+6.54.1 - 2022-08-02
+-------------------
+
+This patch makes ``FailedHealthCheck`` and ``DeadlineExceeded`` exceptions
+picklable, for compatibility with Django's parallel test runner (:issue:`3426`).
+
+.. _v6.54.0:
+
+-------------------
+6.54.0 - 2022-08-02
+-------------------
+
+Reporting of :obj:`multiple failing examples <hypothesis.settings.report_multiple_bugs>`
+now uses the :pep:`654` `ExceptionGroup <https://docs.python.org/3.11/library/exceptions.html#ExceptionGroup>`__ type, which is provided by the
+:pypi:`exceptiongroup` backport on Python 3.10 and earlier (:issue:`3175`).
+``hypothesis.errors.MultipleFailures`` is therefore deprecated.
+
+Failing examples and other reports are now stored as :pep:`678` exception notes, which
+ensures that they will always appear together with the traceback and other information
+about their respective error.
+
+.. _v6.53.0:
+
+-------------------
+6.53.0 - 2022-07-25
+-------------------
+
+:func:`~hypothesis.extra.django.from_field` now supports ``UsernameField``
+from :mod:`django.contrib.auth.forms`.
+
+Thanks to Afonso Silva for reporting and working on :issue:`3417`.
+
+.. _v6.52.4:
+
+-------------------
+6.52.4 - 2022-07-22
+-------------------
+
+This patch improves the error message when you pass filenames to the :command:`hypothesis write`
+CLI, which takes the name of a module or function (e.g. :command:`hypothesis write gzip` or
+:command:`hypothesis write package.some_function` rather than :command:`hypothesis write script.py`).
+
+Thanks to Ed Rogers for implementing this as part of the SciPy 2022 sprints!
+
+.. _v6.52.3:
+
+-------------------
+6.52.3 - 2022-07-19
+-------------------
+
+This patch ensures that the warning for non-interactive ``.example()``
+points to your code instead of Hypothesis internals (:issue:`3403`).
+
+Thanks to @jameslamb for this fix.
+
+.. _v6.52.2:
+
+-------------------
+6.52.2 - 2022-07-19
+-------------------
+
+This patch makes :func:`~hypothesis.strategies.integers` more likely to
+generate boundary values for large two-sided intervals (:issue:`2942`).
+
+.. _v6.52.1:
+
+-------------------
+6.52.1 - 2022-07-18
+-------------------
+
+This patch adds filter rewriting for :func:`math.isfinite`, :func:`math.isinf`, and :func:`math.isnan`
+on :func:`~hypothesis.strategies.integers` or :func:`~hypothesis.strategies.floats` (:issue:`2701`).
+
+Thanks to Sam Clamons at the SciPy Sprints!
+
+.. _v6.52.0:
+
+-------------------
+6.52.0 - 2022-07-18
+-------------------
+
+This release adds the ``allow_subnormal`` argument to :func:`~hypothesis.strategies.complex_numbers` by
+applying it to each of the real and imaginary parts separately. Closes :issue:`3390`.
+
+Thanks to Evan Tey for this fix.
+
+.. _v6.51.0:
+
+-------------------
+6.51.0 - 2022-07-17
+-------------------
+
+Issue a deprecation warning if a function decorated with
+:func:`@composite <hypothesis.strategies.composite>`
+does not draw any values (:issue:`3384`).
+
+Thanks to Grzegorz Zieba, Rodrigo Girão, and Thomas Ball for
+working on this at the EuroPython sprints!
+
+.. _v6.50.1:
+
+-------------------
+6.50.1 - 2022-07-09
+-------------------
+
+This patch improves the error messages in :func:`@example() <hypothesis.example>`
+argument validation following the recent release of :ref:`6.49.1 <v6.49.1>`.
+
+.. _v6.50.0:
+
+-------------------
+6.50.0 - 2022-07-09
+-------------------
+
+This release allows :func:`~hypothesis.extra.numpy.from_dtype` to generate
+Unicode strings which cannot be encoded in UTF-8, but are valid in Numpy
+arrays (which use UTF-32).
+
+This logic will only be used with :pypi:`Numpy` >= 1.19, because earlier
+versions have `an issue <https://github.com/numpy/numpy/issues/15363>`__
+which led us to revert :ref:`Hypothesis 5.2 <v5.2.0>` last time!
+
+.. _v6.49.1:
+
+-------------------
+6.49.1 - 2022-07-05
+-------------------
+
+This patch fixes some inconsistency between argument handling for
+:func:`@example <hypothesis.example>` and :func:`@given <hypothesis.given>`
+(:issue:`2706 <2706#issuecomment-1168363177>`).
+
+.. _v6.49.0:
+
+-------------------
+6.49.0 - 2022-07-04
+-------------------
+
+This release uses :pep:`612` :obj:`python:typing.ParamSpec` (or the
+:pypi:`typing_extensions` backport) to express the first-argument-removing
+behaviour of :func:`@st.composite <hypothesis.strategies.composite>`
+and signature-preservation of :func:`~hypothesis.strategies.functions`
+to IDEs, editor plugins, and static type checkers such as :pypi:`mypy`.
+
+.. _v6.48.3:
+
+-------------------
+6.48.3 - 2022-07-03
+-------------------
+
+:func:`hypothesis.event` now works for hashable objects which do not
+support weakrefs, such as integers and tuples.
+
+.. _v6.48.2:
+
+-------------------
+6.48.2 - 2022-06-29
+-------------------
+
+This patch tidies up some internal introspection logic, which will improve
+support for positional-only arguments in a future release (:issue:`2706`).
+
+.. _v6.48.1:
+
+-------------------
+6.48.1 - 2022-06-27
+-------------------
+
+This release automatically rewrites some simple filters, such as
+``floats().filter(lambda x: x >= 10)`` to the more efficient
+``floats(min_value=10)``, based on the AST of the predicate.
+
+We continue to recommend using the efficient form directly wherever
+possible, but this should be useful for e.g. :pypi:`pandera` "``Checks``"
+where you already have a simple predicate and translating manually
+is really annoying.  See :issue:`2701` for details.
+
+.. _v6.48.0:
+
+-------------------
+6.48.0 - 2022-06-27
+-------------------
+
+This release raises :class:`~unittest.SkipTest` for which never executed any
+examples, for example because the :obj:`~hypothesis.settings.phases` setting
+excluded the :obj:`~hypothesis.Phase.explicit`, :obj:`~hypothesis.Phase.reuse`,
+and :obj:`~hypothesis.Phase.generate` phases.  This helps to avoid cases where
+broken tests appear to pass, because they didn't actually execute (:issue:`3328`).
+
+.. _v6.47.5:
+
+-------------------
+6.47.5 - 2022-06-25
+-------------------
+
+This patch fixes type annotations that had caused the signature of
+:func:`@given <hypothesis.given>` to be partially-unknown to type-checkers for Python
+versions before 3.10.
+
 .. _v6.47.4:
 
 -------------------

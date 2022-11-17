@@ -81,6 +81,7 @@ if [ "$(python -c 'import platform; print(platform.python_implementation())')" !
   pip uninstall -y django pytz
 
   pip install "$(grep 'numpy==' ../requirements/coverage.txt)"
+  $PYTEST tests/array_api
   $PYTEST tests/numpy
 
   pip install "$(grep 'pandas==' ../requirements/coverage.txt)"

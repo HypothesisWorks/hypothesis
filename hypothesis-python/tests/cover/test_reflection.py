@@ -12,7 +12,7 @@ import sys
 from copy import deepcopy
 from datetime import time
 from functools import partial, wraps
-from inspect import FullArgSpec, Parameter, Signature, getfullargspec
+from inspect import Parameter, Signature, signature
 from unittest.mock import MagicMock, Mock, NonCallableMagicMock, NonCallableMock
 
 import pytest
@@ -27,6 +27,7 @@ from hypothesis.internal.reflection import (
     function_digest,
     get_pretty_function_description,
     get_signature,
+    is_first_param_referenced_in_function,
     is_mock,
     proxies,
     repr_call,
@@ -57,16 +58,6 @@ def test_simple_conversion():
 
     do_conversion_test(foo, (1, 0), {"c": 2})
     do_conversion_test(foo, (1,), {"c": 2, "b": "foo"})
-
-
-def test_populates_defaults():
-    def bar(x=[], y=1):
-        pass
-
-    assert convert_keyword_arguments(bar, (), {}) == (([], 1), {})
-    assert convert_keyword_arguments(bar, (), {"y": 42}) == (([], 42), {})
-    do_conversion_test(bar, (), {})
-    do_conversion_test(bar, (1,), {})
 
 
 def test_leaves_unknown_kwargs_in_dict():
@@ -130,7 +121,7 @@ def test_positional_errors_if_too_many_args():
     def foo(a):
         pass
 
-    with raises(TypeError, match="2 given"):
+    with raises(TypeError, match="too many positional arguments"):
         convert_positional_arguments(foo, (1, 2), {})
 
 
@@ -153,7 +144,7 @@ def test_positional_errors_if_given_bad_kwargs():
     def foo(a):
         pass
 
-    with raises(TypeError, match="unexpected keyword argument"):
+    with raises(TypeError, match="missing a required argument: 'a'"):
         convert_positional_arguments(foo, (), {"b": 1})
 
 
@@ -305,24 +296,18 @@ def has_kwargs(**kwargs):
 
 
 @pytest.mark.parametrize("f", [has_one_arg, has_two_args, has_varargs, has_kwargs])
-def test_copying_preserves_argspec(f):
-    af = getfullargspec(f)
+def test_copying_preserves_signature(f):
+    af = get_signature(f)
     t = define_function_signature("foo", "docstring", af)(universal_acceptor)
-    at = getfullargspec(t)
-    assert af.args == at.args
-    assert af.varargs == at.varargs
-    assert af.varkw == at.varkw
-    assert len(af.defaults or ()) == len(at.defaults or ())
-    assert af.kwonlyargs == at.kwonlyargs
-    assert af.kwonlydefaults == at.kwonlydefaults
-    assert af.annotations == at.annotations
+    at = get_signature(t)
+    assert af == at
 
 
 def test_name_does_not_clash_with_function_names():
     def f():
         pass
 
-    @define_function_signature("f", "A docstring for f", getfullargspec(f))
+    @define_function_signature("f", "A docstring for f", signature(f))
     def g():
         pass
 
@@ -331,29 +316,29 @@ def test_name_does_not_clash_with_function_names():
 
 def test_copying_sets_name():
     f = define_function_signature(
-        "hello_world", "A docstring for hello_world", getfullargspec(has_two_args)
+        "hello_world", "A docstring for hello_world", signature(has_two_args)
     )(universal_acceptor)
     assert f.__name__ == "hello_world"
 
 
 def test_copying_sets_docstring():
     f = define_function_signature(
-        "foo", "A docstring for foo", getfullargspec(has_two_args)
+        "foo", "A docstring for foo", signature(has_two_args)
     )(universal_acceptor)
     assert f.__doc__ == "A docstring for foo"
 
 
 def test_uses_defaults():
     f = define_function_signature(
-        "foo", "A docstring for foo", getfullargspec(has_a_default)
+        "foo", "A docstring for foo", signature(has_a_default)
     )(universal_acceptor)
     assert f(3, 2) == ((3, 2, 1), {})
 
 
 def test_uses_varargs():
-    f = define_function_signature(
-        "foo", "A docstring for foo", getfullargspec(has_varargs)
-    )(universal_acceptor)
+    f = define_function_signature("foo", "A docstring for foo", signature(has_varargs))(
+        universal_acceptor
+    )
     assert f(1, 2) == ((1, 2), {})
 
 
@@ -387,92 +372,39 @@ def test_define_function_signature_works_with_conflicts():
     define_function_signature(
         "hello",
         "A docstring for hello",
-        FullArgSpec(
-            args=("f",),
-            varargs=None,
-            varkw=None,
-            defaults=None,
-            kwonlyargs=[],
-            kwonlydefaults=None,
-            annotations={},
-        ),
+        Signature(parameters=[Parameter("f", Parameter.POSITIONAL_OR_KEYWORD)]),
     )(accepts_everything)(1)
 
     define_function_signature(
         "hello",
         "A docstring for hello",
-        FullArgSpec(
-            args=(),
-            varargs="f",
-            varkw=None,
-            defaults=None,
-            kwonlyargs=[],
-            kwonlydefaults=None,
-            annotations={},
-        ),
+        Signature(parameters=[Parameter("f", Parameter.VAR_POSITIONAL)]),
     )(accepts_everything)(1)
 
     define_function_signature(
         "hello",
         "A docstring for hello",
-        FullArgSpec(
-            args=(),
-            varargs=None,
-            varkw="f",
-            defaults=None,
-            kwonlyargs=[],
-            kwonlydefaults=None,
-            annotations={},
-        ),
+        Signature(parameters=[Parameter("f", Parameter.VAR_KEYWORD)]),
     )(accepts_everything)()
 
     define_function_signature(
         "hello",
         "A docstring for hello",
-        FullArgSpec(
-            args=("f", "f_3"),
-            varargs="f_1",
-            varkw="f_2",
-            defaults=None,
-            kwonlyargs=[],
-            kwonlydefaults=None,
-            annotations={},
+        Signature(
+            parameters=[
+                Parameter("f", Parameter.POSITIONAL_OR_KEYWORD),
+                Parameter("f_3", Parameter.POSITIONAL_OR_KEYWORD),
+                Parameter("f_1", Parameter.VAR_POSITIONAL),
+                Parameter("f_2", Parameter.VAR_KEYWORD),
+            ]
         ),
     )(accepts_everything)(1, 2)
 
 
-def test_define_function_signature_validates_arguments():
-    with raises(ValueError):
-        define_function_signature(
-            "hello_world",
-            None,
-            FullArgSpec(
-                args=["a b"],
-                varargs=None,
-                varkw=None,
-                defaults=None,
-                kwonlyargs=[],
-                kwonlydefaults=None,
-                annotations={},
-            ),
-        )
-
-
 def test_define_function_signature_validates_function_name():
+    define_function_signature("hello_world", None, Signature())
     with raises(ValueError):
-        define_function_signature(
-            "hello world",
-            None,
-            FullArgSpec(
-                args=["a", "b"],
-                varargs=None,
-                varkw=None,
-                defaults=None,
-                kwonlyargs=[],
-                kwonlydefaults=None,
-                annotations={},
-            ),
-        )
+        define_function_signature("hello world", None, Signature())
 
 
 class Container:
@@ -691,3 +623,31 @@ def test_error_on_keyword_parameter_name():
 
     with pytest.raises(ValueError, match="SyntaxError because `from` is a keyword"):
         get_signature(f)
+
+
+def test_param_is_called_within_func():
+    def f(any_name):
+        any_name()
+
+    assert is_first_param_referenced_in_function(f)
+
+
+def test_param_is_called_within_subfunc():
+    def f(any_name):
+        def f2():
+            any_name()
+
+    assert is_first_param_referenced_in_function(f)
+
+
+def test_param_is_not_called_within_func():
+    def f(any_name):
+        pass
+
+    assert not is_first_param_referenced_in_function(f)
+
+
+def test_param_called_within_defaults_on_error():
+    # Create a function object for which we cannot retrieve the source.
+    f = compile("lambda: ...", "_.py", "eval")
+    assert is_first_param_referenced_in_function(f)

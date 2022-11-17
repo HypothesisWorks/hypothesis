@@ -57,10 +57,16 @@ def setup(app):
         app.tags.add("has_release_file")
 
     # patch in mock array_api namespace so we can autodoc it
-    from hypothesis.extra.array_api import make_strategies_namespace, mock_xp
+    from hypothesis.extra.array_api import (
+        RELEASED_VERSIONS,
+        make_strategies_namespace,
+        mock_xp,
+    )
 
     mod = types.ModuleType("xps")
-    mod.__dict__.update(make_strategies_namespace(mock_xp).__dict__)
+    mod.__dict__.update(
+        make_strategies_namespace(mock_xp, api_version=RELEASED_VERSIONS[-1]).__dict__
+    )
     assert "xps" not in sys.modules
     sys.modules["xps"] = mod
 
@@ -76,6 +82,17 @@ todo_include_todos = False
 # See https://sphinx-hoverxref.readthedocs.io/en/latest/configuration.html
 hoverxref_auto_ref = True
 hoverxref_domains = ["py"]
+hoverxref_role_types = {
+    "attr": "tooltip",
+    "class": "tooltip",
+    "const": "tooltip",
+    "exc": "tooltip",
+    "func": "tooltip",
+    "meth": "tooltip",
+    "mod": "tooltip",
+    "obj": "tooltip",
+    "ref": "tooltip",
+}
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
@@ -89,7 +106,7 @@ intersphinx_mapping = {
     "sphinx": ("https://www.sphinx-doc.org/en/master/", None),
 }
 
-autodoc_mock_imports = ["numpy", "pandas", "redis"]
+autodoc_mock_imports = ["numpy", "pandas", "redis", "django"]
 
 codeautolink_autodoc_inject = False
 codeautolink_global_preface = """

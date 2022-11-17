@@ -11,7 +11,7 @@
 import pytest
 
 from hypothesis import given, settings, strategies as st
-from hypothesis.errors import MultipleFailures
+from hypothesis.internal.compat import ExceptionGroup
 
 from tests.common.utils import flaky
 
@@ -58,5 +58,5 @@ def test_can_generate_specified_version(function):
         # Indirection to fix https://github.com/HypothesisWorks/hypothesis/issues/2888
         return function(x, y)
 
-    with pytest.raises(MultipleFailures):
+    with pytest.raises(ExceptionGroup):
         test_fn()

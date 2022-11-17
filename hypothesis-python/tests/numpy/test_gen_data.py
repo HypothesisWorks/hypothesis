@@ -15,7 +15,15 @@ from itertools import zip_longest
 import numpy as np
 import pytest
 
-from hypothesis import HealthCheck, assume, given, note, settings, strategies as st
+from hypothesis import (
+    HealthCheck,
+    assume,
+    given,
+    note,
+    settings,
+    strategies as st,
+    target,
+)
 from hypothesis.errors import InvalidArgument, UnsatisfiedAssumption
 from hypothesis.extra import numpy as nps
 
@@ -1050,7 +1058,7 @@ def test_advanced_integer_index_minimizes_as_documented(
         np.testing.assert_array_equal(s, d)
 
 
-@settings(deadline=None, max_examples=10)
+@settings(deadline=None, max_examples=25)
 @given(
     shape=nps.array_shapes(min_dims=1, max_dims=2, min_side=1, max_side=3),
     data=st.data(),
@@ -1059,7 +1067,7 @@ def test_advanced_integer_index_can_generate_any_pattern(shape, data):
     # ensures that generated index-arrays can be used to yield any pattern of elements from an array
     x = np.arange(np.product(shape)).reshape(shape)
 
-    target = data.draw(
+    target_array = data.draw(
         nps.arrays(
             shape=nps.array_shapes(min_dims=1, max_dims=2, min_side=1, max_side=2),
             elements=st.sampled_from(x.flatten()),
@@ -1067,11 +1075,16 @@ def test_advanced_integer_index_can_generate_any_pattern(shape, data):
         ),
         label="target",
     )
+
+    def index_selects_values_in_order(index):
+        selected = x[index]
+        target(len(set(selected.flatten())), label="unique indices")
+        target(float(np.sum(target_array == selected)), label="elements correct")
+        return np.all(target_array == selected)
+
     find_any(
-        nps.integer_array_indices(
-            shape, result_shape=st.just(target.shape), dtype=np.dtype("int8")
-        ),
-        lambda index: np.all(target == x[index]),
+        nps.integer_array_indices(shape, result_shape=st.just(target_array.shape)),
+        index_selects_values_in_order,
         settings(max_examples=10**6),
     )
 

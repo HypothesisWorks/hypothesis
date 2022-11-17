@@ -31,14 +31,14 @@ def local_file(name):
 SOURCE = local_file("src")
 README = local_file("README.rst")
 
-setuptools_version = tuple(map(int, setuptools.__version__.split(".")[:2]))
+setuptools_version = tuple(map(int, setuptools.__version__.split(".")[:1]))
 
-if setuptools_version < (36, 2):
+if setuptools_version < (42,):
     # Warning only - very bad if uploading bdist but fine if installing sdist.
     warnings.warn(
-        "This version of setuptools is too old to correctly store "
-        "conditional dependencies in binary wheels.  For more info, see:  "
-        "https://hynek.me/articles/conditional-python-dependencies/"
+        "This version of setuptools is too old to handle license_files "
+        "metadata key.  For more info, see:  "
+        "https://setuptools.pypa.io/en/latest/userguide/declarative_config.html#metadata"
     )
 
 
@@ -59,21 +59,21 @@ extras = {
     "dateutil": ["python-dateutil>=1.4"],
     "lark": ["lark-parser>=0.6.5"],
     "numpy": ["numpy>=1.9.0"],
-    "pandas": ["pandas>=0.25"],
+    "pandas": ["pandas>=1.0"],
     "pytest": ["pytest>=4.6"],
     "dpcontracts": ["dpcontracts>=0.4"],
     "redis": ["redis>=3.0.0"],
     # zoneinfo is an odd one: every dependency is conditional, because they're
     # only necessary on old versions of Python or Windows systems.
     "zoneinfo": [
-        "tzdata>=2022.1 ; sys_platform == 'win32'",
+        "tzdata>=2022.6 ; sys_platform == 'win32'",
         "backports.zoneinfo>=0.2.1 ; python_version<'3.9'",
     ],
     # We only support Django versions with upstream support - see
     # https://www.djangoproject.com/download/#supported-versions
     # We also leave the choice of timezone library to the user, since it
     # might be zoneinfo or pytz depending on version and configuration.
-    "django": ["django>=2.2"],
+    "django": ["django>=3.2"],
 }
 
 extras["all"] = sorted(
@@ -102,7 +102,7 @@ setuptools.setup(
     extras_require=extras,
     install_requires=[
         "attrs>=19.2.0",
-        "exceptiongroup>=1.0.0rc8 ; python_version<'3.11'",
+        "exceptiongroup>=1.0.0 ; python_version<'3.11'",
         "sortedcontainers>=2.1.0,<3.0.0",
     ],
     python_requires=">=3.7",
@@ -128,7 +128,7 @@ setuptools.setup(
         "Topic :: Software Development :: Testing",
         "Typing :: Typed",
     ],
-    py_modules=["_hypothesis_pytestplugin"],
+    py_modules=["_hypothesis_pytestplugin", "_hypothesis_ftz_detector"],
     entry_points={
         "pytest11": ["hypothesispytest = _hypothesis_pytestplugin"],
         "console_scripts": ["hypothesis = hypothesis.extra.cli:main"],

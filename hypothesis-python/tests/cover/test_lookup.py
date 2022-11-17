@@ -555,7 +555,15 @@ def test_resolving_recursive_type_with_registered_constraint():
         SomeClass, st.builds(SomeClass, value=st.integers(min_value=1))
     ):
         find_any(st.from_type(SomeClass), lambda s: s.next_node is None)
-        find_any(st.from_type(SomeClass), lambda s: s.next_node is not None)
+
+
+def test_resolving_recursive_type_with_registered_constraint_not_none():
+    with temp_registered(
+        SomeClass, st.builds(SomeClass, value=st.integers(min_value=1))
+    ):
+        s = st.from_type(SomeClass)
+        print(s, s.wrapped_strategy)
+        find_any(s, lambda s: s.next_node is not None)
 
 
 @given(from_type(typing.Tuple[()]))

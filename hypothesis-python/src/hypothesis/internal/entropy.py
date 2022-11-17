@@ -12,6 +12,7 @@ import contextlib
 import random
 import sys
 from itertools import count
+from typing import Callable, Hashable, Tuple
 from weakref import WeakValueDictionary
 
 import hypothesis.core
@@ -58,7 +59,9 @@ def register_random(r: random.Random) -> None:
         RANDOMS_TO_MANAGE[next(_RKEY)] = r
 
 
-def get_seeder_and_restorer(seed=0):
+def get_seeder_and_restorer(
+    seed: Hashable = 0,
+) -> Tuple[Callable[[], None], Callable[[], None]]:
     """Return a pair of functions which respectively seed all and restore
     the state of all registered PRNGs.
 

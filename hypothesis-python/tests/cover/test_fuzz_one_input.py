@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import io
+import unittest
 from operator import attrgetter
 
 import pytest
@@ -45,7 +46,8 @@ def test_fuzz_one_input(buffer_type):
 
     # Before running fuzz_one_input, there's nothing in `db`, and so the test passes
     # (because example generation is disabled by the custom settings)
-    test()
+    with pytest.raises(unittest.SkipTest):  # because this generates no examples
+        test()
     assert len(seen) == 0
 
     # If we run a lot of random bytestrings through fuzz_one_input, we'll eventually

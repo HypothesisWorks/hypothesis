@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import base64
+import sys
 from collections import defaultdict
 
 import pytest
@@ -19,6 +20,7 @@ from hypothesis import __version__, reproduce_failure, seed, settings as Setting
 from hypothesis.control import current_build_context
 from hypothesis.database import ExampleDatabase
 from hypothesis.errors import DidNotReproduce, Flaky, InvalidArgument, InvalidDefinition
+from hypothesis.internal.compat import PYPY
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.stateful import (
     Bundle,
@@ -206,16 +208,13 @@ def test_multiple_variables_printed():
         def fail_fast(self):
             raise AssertionError
 
-    with capture_out() as o:
-        # The state machine must raise an exception for the
-        # falsifying example to be printed.
-        with raises(AssertionError):
-            run_state_machine_as_test(ProducesMultiple)
+    with raises(AssertionError) as err:
+        run_state_machine_as_test(ProducesMultiple)
 
     # This is tightly coupled to the output format of the step printing.
     # The first line is "Falsifying Example:..." the second is creating
     # the state machine, the third is calling the "initialize" method.
-    assignment_line = o.getvalue().split("\n")[2]
+    assignment_line = err.value.__notes__[2]
     # 'populate_bundle()' returns 2 values, so should be
     # expanded to 2 variables.
     assert assignment_line == "v1, v2 = state.populate_bundle()"
@@ -241,10 +240,10 @@ def test_multiple_variables_printed_single_element():
         def fail_fast(self, b):
             assert b != 1
 
-    with capture_out() as o, raises(AssertionError):
+    with raises(AssertionError) as err:
         run_state_machine_as_test(ProducesMultiple)
 
-    assignment_line = o.getvalue().split("\n")[2]
+    assignment_line = err.value.__notes__[2]
     assert assignment_line == "(v1,) = state.populate_bundle()"
 
     state = ProducesMultiple()
@@ -266,16 +265,13 @@ def test_no_variables_printed():
         def fail_fast(self):
             raise AssertionError
 
-    with capture_out() as o:
-        # The state machine must raise an exception for the
-        # falsifying example to be printed.
-        with raises(AssertionError):
-            run_state_machine_as_test(ProducesNoVariables)
+    with raises(AssertionError) as err:
+        run_state_machine_as_test(ProducesNoVariables)
 
     # This is tightly coupled to the output format of the step printing.
     # The first line is "Falsifying Example:..." the second is creating
     # the state machine, the third is calling the "initialize" method.
-    assignment_line = o.getvalue().split("\n")[2]
+    assignment_line = err.value.__notes__[2]
     # 'populate_bundle()' returns 0 values, so there should be no
     # variable assignment.
     assert assignment_line == "state.populate_bundle()"
@@ -633,20 +629,19 @@ def test_invariant_failling_present_in_falsifying_example():
         def rule_1(self):
             pass
 
-    with capture_out() as o:
-        with pytest.raises(ValueError):
-            run_state_machine_as_test(BadInvariant)
+    with pytest.raises(ValueError) as err:
+        run_state_machine_as_test(BadInvariant)
 
-    result = o.getvalue()
+    result = "\n".join(err.value.__notes__)
     assert (
         result
-        == """\
+        == """
 Falsifying example:
 state = BadInvariant()
 state.initialize_1()
 state.invariant_1()
 state.teardown()
-"""
+""".strip()
     )
 
 
@@ -680,14 +675,10 @@ def test_invariant_present_in_falsifying_example():
             if self.num == 2:
                 raise ValueError()
 
-    with capture_out() as o:
-        with pytest.raises(ValueError):
-            run_state_machine_as_test(BadRuleWithGoodInvariants)
+    with pytest.raises(ValueError) as err:
+        run_state_machine_as_test(BadRuleWithGoodInvariants)
 
-    result = o.getvalue()
-    assert (
-        result
-        == """\
+    expected = """\
 Falsifying example:
 state = BadRuleWithGoodInvariants()
 state.invariant_1()
@@ -699,9 +690,19 @@ state.invariant_1()
 state.invariant_2()
 state.invariant_3()
 state.rule_1()
-state.teardown()
-"""
-    )
+state.teardown()"""
+
+    if PYPY or sys.gettrace():  # explain mode disabled in these cases
+        result = "\n".join(err.value.__notes__)
+    else:
+        # Non-PyPy runs include explain mode, but we skip the final line because
+        # it includes the absolute path, which of course varies between machines.
+        expected += """
+Explanation:
+    These lines were always and only run by failing examples:"""
+        result = "\n".join(err.value.__notes__[:-1])
+
+    assert expected == result
 
 
 def test_always_runs_at_least_one_step():
@@ -763,12 +764,12 @@ def test_removes_needless_steps():
         def values_agree(self, k):
             assert not self.__deleted[k]
 
-    with capture_out() as o:
-        with pytest.raises(AssertionError):
-            run_state_machine_as_test(IncorrectDeletion)
+    with pytest.raises(AssertionError) as err:
+        run_state_machine_as_test(IncorrectDeletion)
 
-    assert o.getvalue().count(" = state.k(") == 1
-    assert o.getvalue().count(" = state.v(") == 1
+    result = "\n".join(err.value.__notes__)
+    assert result.count(" = state.k(") == 1
+    assert result.count(" = state.v(") == 1
 
 
 def test_prints_equal_values_with_correct_variable_name():
@@ -789,11 +790,10 @@ def test_prints_equal_values_with_correct_variable_name():
         def fail(self, source):
             raise AssertionError
 
-    with capture_out() as o:
-        with pytest.raises(AssertionError):
-            run_state_machine_as_test(MovesBetweenBundles)
+    with pytest.raises(AssertionError) as err:
+        run_state_machine_as_test(MovesBetweenBundles)
 
-    result = o.getvalue()
+    result = "\n".join(err.value.__notes__)
     for m in ["create", "transfer", "fail"]:
         assert result.count("state." + m) == 1
     assert "v1 = state.create()" in result
@@ -822,12 +822,11 @@ def test_initialize_rule():
         def fail_fast(self):
             raise AssertionError
 
-    with capture_out() as o:
-        with pytest.raises(AssertionError):
-            run_state_machine_as_test(WithInitializeRules)
+    with pytest.raises(AssertionError) as err:
+        run_state_machine_as_test(WithInitializeRules)
 
     assert set(WithInitializeRules.initialized[-3:]) == {"a", "b", "c"}
-    result = o.getvalue().splitlines()[1:]
+    result = err.value.__notes__[1:]
     assert result[0] == "state = WithInitializeRules()"
     # Initialize rules call order is shuffled
     assert {result[1], result[2], result[3]} == {
@@ -852,20 +851,19 @@ def test_initialize_rule_populate_bundle():
             raise AssertionError
 
     WithInitializeBundleRules.TestCase.settings = NO_BLOB_SETTINGS
-    with capture_out() as o:
-        with pytest.raises(AssertionError):
-            run_state_machine_as_test(WithInitializeBundleRules)
+    with pytest.raises(AssertionError) as err:
+        run_state_machine_as_test(WithInitializeBundleRules)
 
-    result = o.getvalue()
+    result = "\n".join(err.value.__notes__)
     assert (
         result
-        == """\
+        == """
 Falsifying example:
 state = WithInitializeBundleRules()
 v1 = state.initialize_a(dep='dep')
 state.fail_fast(param=v1)
 state.teardown()
-"""
+""".strip()
     )
 
 
@@ -934,12 +932,11 @@ def test_initialize_rule_in_state_machine_with_inheritance():
         def fail_fast(self):
             raise AssertionError
 
-    with capture_out() as o:
-        with pytest.raises(AssertionError):
-            run_state_machine_as_test(ChildStateMachine)
+    with pytest.raises(AssertionError) as err:
+        run_state_machine_as_test(ChildStateMachine)
 
     assert set(ChildStateMachine.initialized[-2:]) == {"a", "b"}
-    result = o.getvalue().splitlines()[1:]
+    result = err.value.__notes__[1:]
     assert result[0] == "state = ChildStateMachine()"
     # Initialize rules call order is shuffled
     assert {result[1], result[2]} == {"state.initialize_a()", "state.initialize_b()"}
@@ -961,25 +958,24 @@ def test_can_manually_call_initialize_rule():
             assert self.initialize_called_counter <= 2
 
     StateMachine.TestCase.settings = NO_BLOB_SETTINGS
-    with capture_out() as o:
-        with pytest.raises(AssertionError):
-            run_state_machine_as_test(StateMachine)
+    with pytest.raises(AssertionError) as err:
+        run_state_machine_as_test(StateMachine)
 
-    result = o.getvalue()
+    result = "\n".join(err.value.__notes__)
     assert (
         result
-        == """\
+        == """
 Falsifying example:
 state = StateMachine()
 state.initialize()
 state.fail_eventually()
 state.fail_eventually()
 state.teardown()
-"""
+""".strip()
     )
 
 
-def test_steps_printed_despite_pytest_fail(capsys):
+def test_steps_printed_despite_pytest_fail():
     # Test for https://github.com/HypothesisWorks/hypothesis/issues/1372
     @Settings(print_blob=False)
     class RaisesProblem(RuleBasedStateMachine):
@@ -987,17 +983,15 @@ def test_steps_printed_despite_pytest_fail(capsys):
         def oops(self):
             pytest.fail()
 
-    with pytest.raises(Failed):
+    with pytest.raises(Failed) as err:
         run_state_machine_as_test(RaisesProblem)
-    out, _ = capsys.readouterr()
     assert (
-        """\
+        "\n".join(err.value.__notes__).strip()
+        == """
 Falsifying example:
 state = RaisesProblem()
 state.oops()
-state.teardown()
-"""
-        in out
+state.teardown()""".strip()
     )
 
 
@@ -1090,12 +1084,10 @@ def test_arguments_do_not_use_names_of_return_values():
         def mostly_fails(self, d):
             assert d == 42
 
-    with capture_out() as o:
-        with pytest.raises(AssertionError):
-            run_state_machine_as_test(TrickyPrintingMachine)
-    output = o.getvalue()
-    assert "v1 = state.init_data(value=0)" in output
-    assert "v1 = state.init_data(value=v1)" not in output
+    with pytest.raises(AssertionError) as err:
+        run_state_machine_as_test(TrickyPrintingMachine)
+    assert "v1 = state.init_data(value=0)" in err.value.__notes__
+    assert "v1 = state.init_data(value=v1)" not in err.value.__notes__
 
 
 def test_multiple_precondition_bug():

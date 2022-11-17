@@ -29,12 +29,11 @@ def test_threshold_problem(x):
 @pytest.mark.parametrize("multiple", [False, True])
 def test_reports_target_results(testdir, multiple):
     script = testdir.makepyfile(TESTSUITE.format("" if multiple else "# "))
-    result = testdir.runpytest(script, "--tb=native")
+    result = testdir.runpytest(script, "--tb=native", "-rN")
     out = "\n".join(result.stdout.lines)
     assert "Falsifying example" in out
     assert "x=101" in out
     assert out.count("Highest target score") == 1
-    assert out.index("Highest target score") < out.index("Falsifying example")
     assert result.ret != 0
 
 

@@ -18,7 +18,7 @@ import sys
 import typing
 from decimal import Context, Decimal, localcontext
 from fractions import Fraction
-from functools import reduce
+from functools import lru_cache, reduce
 from inspect import Parameter, Signature, isabstract, isclass, signature
 from types import FunctionType
 from typing import (
@@ -44,11 +44,19 @@ from uuid import UUID
 
 import attr
 
+from hypothesis._settings import note_deprecation
 from hypothesis.control import cleanup, note
 from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.internal.cathetus import cathetus
 from hypothesis.internal.charmap import as_general_categories
-from hypothesis.internal.compat import ceil, floor, get_type_hints, is_typed_named_tuple
+from hypothesis.internal.compat import (
+    Concatenate,
+    ParamSpec,
+    ceil,
+    floor,
+    get_type_hints,
+    is_typed_named_tuple,
+)
 from hypothesis.internal.conjecture.utils import (
     calc_label_from_cls,
     check_sample,
@@ -56,9 +64,10 @@ from hypothesis.internal.conjecture.utils import (
 )
 from hypothesis.internal.entropy import get_seeder_and_restorer
 from hypothesis.internal.reflection import (
-    define_function_signature_from_signature,
+    define_function_signature,
     get_pretty_function_description,
     get_signature,
+    is_first_param_referenced_in_function,
     nicerepr,
     required_args,
 )
@@ -83,7 +92,7 @@ from hypothesis.strategies._internal.collections import (
 )
 from hypothesis.strategies._internal.deferred import DeferredStrategy
 from hypothesis.strategies._internal.functions import FunctionStrategy
-from hypothesis.strategies._internal.lazy import LazyStrategy
+from hypothesis.strategies._internal.lazy import LazyStrategy, unwrap_strategies
 from hypothesis.strategies._internal.misc import just, none, nothing
 from hypothesis.strategies._internal.numbers import (
     IntegersStrategy,
@@ -105,13 +114,14 @@ from hypothesis.strategies._internal.strings import (
     TextStrategy,
 )
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
-from hypothesis.utils.conventions import infer, not_set
+from hypothesis.utils.conventions import not_set
 
 if sys.version_info >= (3, 10):  # pragma: no cover
-    from types import EllipsisType as InferType
-
+    from types import EllipsisType as EllipsisType
+elif typing.TYPE_CHECKING:  # pragma: no cover
+    from builtins import ellipsis as EllipsisType
 else:
-    InferType = type(Ellipsis)
+    EllipsisType = type(Ellipsis)
 
 
 try:
@@ -605,6 +615,19 @@ def characters(
     )
 
 
+# Cache size is limited by sys.maxunicode, but passing None makes it slightly faster.
+@lru_cache(maxsize=None)
+def _check_is_single_character(c):
+    # In order to mitigate the performance cost of this check, we use a shared cache,
+    # even at the cost of showing the culprit strategy in the error message.
+    if not isinstance(c, str):
+        type_ = get_pretty_function_description(type(c))
+        raise InvalidArgument(f"Got non-string {c!r} (type {type_})")
+    if len(c) != 1:
+        raise InvalidArgument(f"Got {c!r} (length {len(c)} != 1)")
+    return c
+
+
 @cacheable
 @defines_strategy(force_reusable_values=True)
 def text(
@@ -635,7 +658,13 @@ def text(
     """
     check_valid_sizes(min_size, max_size)
     if isinstance(alphabet, SearchStrategy):
-        char_strategy = alphabet
+        char_strategy = unwrap_strategies(alphabet)
+        if isinstance(char_strategy, SampledFromStrategy):
+            # Check this via the up-front validation logic below, and incidentally
+            # convert into a `characters()` strategy for standard text shrinking.
+            return text(char_strategy.elements, min_size=min_size, max_size=max_size)
+        elif not isinstance(char_strategy, OneCharStringStrategy):
+            char_strategy = char_strategy.map(_check_is_single_character)
     else:
         non_string = [c for c in alphabet if not isinstance(c, str)]
         if non_string:
@@ -853,7 +882,7 @@ class BuildsStrategy(SearchStrategy):
 @defines_strategy()
 def builds(
     *callable_and_args: Union[Callable[..., Ex], SearchStrategy[Any]],
-    **kwargs: Union[SearchStrategy[Any], InferType],
+    **kwargs: Union[SearchStrategy[Any], EllipsisType],
 ) -> SearchStrategy[Ex]:
     """Generates values by drawing from ``args`` and ``kwargs`` and passing
     them to the callable (provided as the first positional argument) in the
@@ -888,14 +917,14 @@ def builds(
             "target to construct."
         )
 
-    if infer in args:
+    if ... in args:  # type: ignore  # we only annotated the allowed types
         # Avoid an implementation nightmare juggling tuples and worse things
         raise InvalidArgument(
             "... was passed as a positional argument to "
             "builds(), but is only allowed as a keyword arg"
         )
     required = required_args(target, args, kwargs)
-    to_infer = {k for k, v in kwargs.items() if v is infer}
+    to_infer = {k for k, v in kwargs.items() if v is ...}
     if required or to_infer:
         if isinstance(target, type) and attr.has(target):
             # Use our custom introspection for attrs classes
@@ -933,7 +962,7 @@ if sys.version_info[:2] >= (3, 8):  # pragma: no branch
     # matches the semantics of the function.  Great for documentation!
     sig = signature(builds)
     args, kwargs = sig.parameters.values()
-    builds = define_function_signature_from_signature(
+    builds = define_function_signature(
         name=builds.__name__,
         docstring=builds.__doc__,
         signature=sig.replace(
@@ -1084,7 +1113,7 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
         pass
     if (
         hasattr(typing, "_TypedDictMeta")
-        and type(thing) is typing._TypedDictMeta  # type: ignore
+        and type(thing) is typing._TypedDictMeta
         or hasattr(types.typing_extensions, "_TypedDictMeta")  # type: ignore
         and type(thing) is types.typing_extensions._TypedDictMeta  # type: ignore
     ):  # pragma: no cover
@@ -1395,9 +1424,9 @@ def decimals(
     special: List[Decimal] = []
     if allow_nan or (allow_nan is None and (None in (min_value, max_value))):
         special.extend(map(Decimal, ("NaN", "-NaN", "sNaN", "-sNaN")))
-    if allow_infinity or (allow_infinity is max_value is None):
+    if allow_infinity or (allow_infinity is None and max_value is None):
         special.append(Decimal("Infinity"))
-    if allow_infinity or (allow_infinity is min_value is None):
+    if allow_infinity or (allow_infinity is None and min_value is None):
         special.append(Decimal("-Infinity"))
     return strat | (sampled_from(special) if special else nothing())
 
@@ -1487,6 +1516,7 @@ class DrawFn(Protocol):
         def list_and_index(draw: DrawFn) -> Tuple[int, str]:
             i = draw(integers())  # type inferred as 'int'
             s = draw(text())  # type inferred as 'str'
+            return i, s
 
     """
 
@@ -1504,18 +1534,8 @@ class DrawFn(Protocol):
         raise NotImplementedError
 
 
-@cacheable
-def composite(f: Callable[..., Ex]) -> Callable[..., SearchStrategy[Ex]]:
-    """Defines a strategy that is built out of potentially arbitrarily many
-    other strategies.
-
-    This is intended to be used as a decorator. See
-    :ref:`the full documentation for more details <composite-strategies>`
-    about how to use this function.
-
-    Examples from this strategy shrink by shrinking the output of each draw
-    call.
-    """
+def _composite(f):
+    # Wrapped below, using ParamSpec if available
     if isinstance(f, (classmethod, staticmethod)):
         special_method = type(f)
         f = f.__func__
@@ -1532,17 +1552,24 @@ def composite(f: Callable[..., Ex]) -> Callable[..., SearchStrategy[Ex]]:
         )
     if params[0].default is not sig.empty:
         raise InvalidArgument("A default value for initial argument will never be used")
+    if not is_first_param_referenced_in_function(f):
+        note_deprecation(
+            "There is no reason to use @st.composite on a function which "
+            + "does not call the provided draw() function internally.",
+            since="2022-07-17",
+            has_codemod=False,
+        )
     if params[0].kind.name != "VAR_POSITIONAL":
         params = params[1:]
     newsig = sig.replace(
         parameters=params,
         return_annotation=SearchStrategy
         if sig.return_annotation is sig.empty
-        else SearchStrategy[sig.return_annotation],  # type: ignore
+        else SearchStrategy[sig.return_annotation],
     )
 
     @defines_strategy()
-    @define_function_signature_from_signature(f.__name__, f.__doc__, newsig)
+    @define_function_signature(f.__name__, f.__doc__, newsig)
     def accept(*args, **kwargs):
         return CompositeStrategy(f, args, kwargs)
 
@@ -1553,6 +1580,41 @@ def composite(f: Callable[..., Ex]) -> Callable[..., SearchStrategy[Ex]]:
     return accept
 
 
+if typing.TYPE_CHECKING or ParamSpec is not None:
+    P = ParamSpec("P")
+
+    def composite(
+        f: Callable[Concatenate[DrawFn, P], Ex]
+    ) -> Callable[P, SearchStrategy[Ex]]:
+        """Defines a strategy that is built out of potentially arbitrarily many
+        other strategies.
+
+        This is intended to be used as a decorator. See
+        :ref:`the full documentation for more details <composite-strategies>`
+        about how to use this function.
+
+        Examples from this strategy shrink by shrinking the output of each draw
+        call.
+        """
+        return _composite(f)
+
+else:  # pragma: no cover
+
+    @cacheable
+    def composite(f: Callable[..., Ex]) -> Callable[..., SearchStrategy[Ex]]:
+        """Defines a strategy that is built out of potentially arbitrarily many
+        other strategies.
+
+        This is intended to be used as a decorator. See
+        :ref:`the full documentation for more details <composite-strategies>`
+        about how to use this function.
+
+        Examples from this strategy shrink by shrinking the output of each draw
+        call.
+        """
+        return _composite(f)
+
+
 @defines_strategy(force_reusable_values=True)
 @cacheable
 def complex_numbers(
@@ -1561,6 +1623,7 @@ def complex_numbers(
     max_magnitude: Optional[Real] = None,
     allow_infinity: Optional[bool] = None,
     allow_nan: Optional[bool] = None,
+    allow_subnormal: bool = True,
 ) -> SearchStrategy[complex]:
     """Returns a strategy that generates complex numbers.
 
@@ -1572,6 +1635,9 @@ def complex_numbers(
     If ``min_magnitude`` is nonzero or ``max_magnitude`` is finite, it
     is an error to enable ``allow_nan``.  If ``max_magnitude`` is finite,
     it is an error to enable ``allow_infinity``.
+
+    ``allow_subnormal`` is applied to each part of the complex number
+    separately, as for :func:`~hypothesis.strategies.floats`.
 
     The magnitude constraints are respected up to a relative error
     of (around) floating-point epsilon, due to implementation via
@@ -1605,13 +1671,22 @@ def complex_numbers(
             f"Cannot have allow_nan={allow_nan!r}, min_magnitude={min_magnitude!r} "
             f"max_magnitude={max_magnitude!r}"
         )
-    allow_kw = {"allow_nan": allow_nan, "allow_infinity": allow_infinity}
+
+    check_type(bool, allow_subnormal, "allow_subnormal")
+    allow_kw = {
+        "allow_nan": allow_nan,
+        "allow_infinity": allow_infinity,
+        # If we have a nonzero normal min_magnitude and draw a zero imaginary part,
+        # then allow_subnormal=True would be an error with the min_value to the floats()
+        # strategy for the real part.  We therefore replace True with None.
+        "allow_subnormal": None if allow_subnormal else allow_subnormal,
+    }
 
     if min_magnitude == 0 and max_magnitude is None:
         # In this simple but common case, there are no constraints on the
         # magnitude and therefore no relationship between the real and
         # imaginary parts.
-        return builds(complex, floats(**allow_kw), floats(**allow_kw))
+        return builds(complex, floats(**allow_kw), floats(**allow_kw))  # type: ignore
 
     @composite
     def constrained_complex(draw):
@@ -1930,50 +2005,112 @@ def emails() -> SearchStrategy[str]:
     )
 
 
-@defines_strategy()
-def functions(
-    *,
-    like: Callable[..., Any] = lambda: None,
-    returns: Union[SearchStrategy[Any], InferType] = infer,
-    pure: bool = False,
-) -> SearchStrategy[Callable[..., Any]]:
-    # The proper type signature of `functions()` would have T instead of Any, but mypy
-    # disallows default args for generics: https://github.com/python/mypy/issues/3737
-    """functions(*, like=lambda: None, returns=..., pure=False)
-
-    A strategy for functions, which can be used in callbacks.
-
-    The generated functions will mimic the interface of ``like``, which must
-    be a callable (including a class, method, or function).  The return value
-    for the function is drawn from the ``returns`` argument, which must be a
-    strategy.  If ``returns`` is not passed, we attempt to infer a strategy
-    from the return-type annotation if present, falling back to :func:`~none`.
-
-    If ``pure=True``, all arguments passed to the generated function must be
-    hashable, and if passed identical arguments the original return value will
-    be returned again - *not* regenerated, so beware mutable values.
-
-    If ``pure=False``, generated functions do not validate their arguments, and
-    may return a different value if called again with the same arguments.
-
-    Generated functions can only be called within the scope of the ``@given``
-    which created them.  This strategy does not support ``.example()``.
-    """
+def _functions(*, like, returns, pure):
+    # Wrapped up to use ParamSpec below
     check_type(bool, pure, "pure")
     if not callable(like):
         raise InvalidArgument(
             "The first argument to functions() must be a callable to imitate, "
             f"but got non-callable like={nicerepr(like)!r}"
         )
-
-    if returns is None or returns is infer:
+    if returns in (None, ...):
         # Passing `None` has never been *documented* as working, but it still
         # did from May 2020 to Jan 2022 so we'll avoid breaking it without cause.
         hints = get_type_hints(like)
         returns = from_type(hints.get("return", type(None)))
-
     check_strategy(returns, "returns")
     return FunctionStrategy(like, returns, pure)
+
+
+if typing.TYPE_CHECKING or ParamSpec is not None:
+
+    @overload
+    def functions(
+        *, pure: bool = ...
+    ) -> SearchStrategy[Callable[[], None]]:  # pragma: no cover
+        ...
+
+    @overload
+    def functions(
+        *,
+        like: Callable[P, T],
+        pure: bool = ...,
+    ) -> SearchStrategy[Callable[P, T]]:  # pragma: no cover
+        ...
+
+    @overload
+    def functions(
+        *,
+        returns: SearchStrategy[T],
+        pure: bool = ...,
+    ) -> SearchStrategy[Callable[[], T]]:  # pragma: no cover
+        ...
+
+    @overload
+    def functions(
+        *,
+        like: Callable[P, Any],
+        returns: SearchStrategy[T],
+        pure: bool = ...,
+    ) -> SearchStrategy[Callable[P, T]]:  # pragma: no cover
+        ...
+
+    @defines_strategy()
+    def functions(*, like=lambda: None, returns=..., pure=False):
+        # We shouldn't need overloads here, but mypy disallows default args for
+        # generics: https://github.com/python/mypy/issues/3737
+        """functions(*, like=lambda: None, returns=..., pure=False)
+
+        A strategy for functions, which can be used in callbacks.
+
+        The generated functions will mimic the interface of ``like``, which must
+        be a callable (including a class, method, or function).  The return value
+        for the function is drawn from the ``returns`` argument, which must be a
+        strategy.  If ``returns`` is not passed, we attempt to infer a strategy
+        from the return-type annotation if present, falling back to :func:`~none`.
+
+        If ``pure=True``, all arguments passed to the generated function must be
+        hashable, and if passed identical arguments the original return value will
+        be returned again - *not* regenerated, so beware mutable values.
+
+        If ``pure=False``, generated functions do not validate their arguments, and
+        may return a different value if called again with the same arguments.
+
+        Generated functions can only be called within the scope of the ``@given``
+        which created them.  This strategy does not support ``.example()``.
+        """
+        return _functions(like=like, returns=returns, pure=pure)
+
+else:  # pragma: no cover
+
+    @defines_strategy()
+    def functions(
+        *,
+        like: Callable[..., Any] = lambda: None,
+        returns: Union[SearchStrategy[Any], EllipsisType] = ...,
+        pure: bool = False,
+    ) -> SearchStrategy[Callable[..., Any]]:
+        """functions(*, like=lambda: None, returns=..., pure=False)
+
+        A strategy for functions, which can be used in callbacks.
+
+        The generated functions will mimic the interface of ``like``, which must
+        be a callable (including a class, method, or function).  The return value
+        for the function is drawn from the ``returns`` argument, which must be a
+        strategy.  If ``returns`` is not passed, we attempt to infer a strategy
+        from the return-type annotation if present, falling back to :func:`~none`.
+
+        If ``pure=True``, all arguments passed to the generated function must be
+        hashable, and if passed identical arguments the original return value will
+        be returned again - *not* regenerated, so beware mutable values.
+
+        If ``pure=False``, generated functions do not validate their arguments, and
+        may return a different value if called again with the same arguments.
+
+        Generated functions can only be called within the scope of the ``@given``
+        which created them.  This strategy does not support ``.example()``.
+        """
+        return _functions(like=like, returns=returns, pure=pure)
 
 
 @composite

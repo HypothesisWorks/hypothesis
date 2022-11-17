@@ -47,7 +47,7 @@ Supported versions
 There is quite a lot of variation between pandas versions. We only
 commit to supporting the latest version of pandas, but older minor versions are
 supported on a "best effort" basis.  Hypothesis is currently tested against
-and confirmed working with every Pandas minor version from 0.25 through to 1.3.
+and confirmed working with every Pandas minor version from 1.0 through to 1.5.
 
 Releases that are not the latest patch release of their minor version are not
 tested or officially supported, but will probably also work unless you hit a
@@ -75,6 +75,9 @@ The resulting namespace contains all our familiar strategies like
 :func:`~xps.arrays` and :func:`~xps.from_dtype`, but based on the Array API
 standard semantics and returning objects from the ``xp`` module:
 
+..
+    TODO: for next released xp version, include complex_dtypes here
+
 .. automodule:: xps
    :members:
         from_dtype,
@@ -83,6 +86,7 @@ standard semantics and returning objects from the ``xp`` module:
         scalar_dtypes,
         boolean_dtypes,
         numeric_dtypes,
+        real_dtypes,
         integer_dtypes,
         unsigned_integer_dtypes,
         floating_dtypes,

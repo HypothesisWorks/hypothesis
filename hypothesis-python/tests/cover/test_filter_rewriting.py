@@ -11,15 +11,18 @@
 import decimal
 import math
 import operator
+from fractions import Fraction
 from functools import partial
+from sys import float_info
 
 import pytest
 
 from hypothesis import given, strategies as st
 from hypothesis.errors import HypothesisWarning, Unsatisfiable
+from hypothesis.internal.floats import next_down, next_up
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies._internal.lazy import LazyStrategy, unwrap_strategies
-from hypothesis.strategies._internal.numbers import IntegersStrategy
+from hypothesis.strategies._internal.numbers import FloatStrategy, IntegersStrategy
 from hypothesis.strategies._internal.strategies import FilteredStrategy
 
 from tests.common.utils import fails_with
@@ -28,6 +31,8 @@ from tests.common.utils import fails_with
 @pytest.mark.parametrize(
     "strategy, predicate, start, end",
     [
+        # Finitude check
+        (st.integers(1, 5), math.isfinite, 1, 5),
         # Integers with integer bounds
         (st.integers(1, 5), partial(operator.lt, 3), 4, 5),  # lambda x: 3 < x
         (st.integers(1, 5), partial(operator.le, 3), 3, 5),  # lambda x: 3 <= x
@@ -76,7 +81,7 @@ from tests.common.utils import fails_with
     ids=get_pretty_function_description,
 )
 @given(data=st.data())
-def test_filter_rewriting(data, strategy, predicate, start, end):
+def test_filter_rewriting_ints(data, strategy, predicate, start, end):
     s = strategy.filter(predicate)
     assert isinstance(s, LazyStrategy)
     assert isinstance(s.wrapped_strategy, IntegersStrategy)
@@ -87,20 +92,124 @@ def test_filter_rewriting(data, strategy, predicate, start, end):
 
 
 @pytest.mark.parametrize(
-    "s",
+    "strategy, predicate, min_value, max_value",
     [
-        st.integers(1, 5).filter(partial(operator.lt, 6)),
-        st.integers(1, 5).filter(partial(operator.eq, 3.5)),
-        st.integers(1, 5).filter(partial(operator.eq, "can't compare to strings")),
-        st.integers(1, 5).filter(partial(operator.ge, 0)),
-        st.integers(1, 5).filter(partial(operator.lt, math.inf)),
-        st.integers(1, 5).filter(partial(operator.gt, -math.inf)),
+        # Floats with integer bounds
+        (st.floats(1, 5), partial(operator.lt, 3), next_up(3.0), 5),  # 3 < x
+        (st.floats(1, 5), partial(operator.le, 3), 3, 5),  # lambda x: 3 <= x
+        (st.floats(1, 5), partial(operator.eq, 3), 3, 3),  # lambda x: 3 == x
+        (st.floats(1, 5), partial(operator.ge, 3), 1, 3),  # lambda x: 3 >= x
+        (st.floats(1, 5), partial(operator.gt, 3), 1, next_down(3.0)),  # 3 > x
+        # Floats with non-integer bounds
+        (st.floats(1, 5), partial(operator.lt, 3.5), next_up(3.5), 5),
+        (st.floats(1, 5), partial(operator.le, 3.5), 3.5, 5),
+        (st.floats(1, 5), partial(operator.ge, 3.5), 1, 3.5),
+        (st.floats(1, 5), partial(operator.gt, 3.5), 1, next_down(3.5)),
+        (st.floats(1, 5), partial(operator.lt, -math.inf), 1, 5),
+        (st.floats(1, 5), partial(operator.gt, math.inf), 1, 5),
+        # Floats with only one bound
+        (st.floats(min_value=1), partial(operator.lt, 3), next_up(3.0), math.inf),
+        (st.floats(min_value=1), partial(operator.le, 3), 3, math.inf),
+        (st.floats(max_value=5), partial(operator.ge, 3), -math.inf, 3),
+        (st.floats(max_value=5), partial(operator.gt, 3), -math.inf, next_down(3.0)),
+        # Unbounded floats
+        (st.floats(), partial(operator.lt, 3), next_up(3.0), math.inf),
+        (st.floats(), partial(operator.le, 3), 3, math.inf),
+        (st.floats(), partial(operator.eq, 3), 3, 3),
+        (st.floats(), partial(operator.ge, 3), -math.inf, 3),
+        (st.floats(), partial(operator.gt, 3), -math.inf, next_down(3.0)),
+        # Simple lambdas
+        (st.floats(), lambda x: x < 3, -math.inf, next_down(3.0)),
+        (st.floats(), lambda x: x <= 3, -math.inf, 3),
+        (st.floats(), lambda x: x == 3, 3, 3),
+        (st.floats(), lambda x: x >= 3, 3, math.inf),
+        (st.floats(), lambda x: x > 3, next_up(3.0), math.inf),
+        # Simple lambdas, reverse comparison
+        (st.floats(), lambda x: 3 > x, -math.inf, next_down(3.0)),
+        (st.floats(), lambda x: 3 >= x, -math.inf, 3),
+        (st.floats(), lambda x: 3 == x, 3, 3),
+        (st.floats(), lambda x: 3 <= x, 3, math.inf),
+        (st.floats(), lambda x: 3 < x, next_up(3.0), math.inf),
+        # More complicated lambdas
+        (st.floats(), lambda x: 0 < x < 5, next_up(0.0), next_down(5.0)),
+        (st.floats(), lambda x: 0 < x >= 1, 1, math.inf),
+        (st.floats(), lambda x: 1 > x <= 0, -math.inf, 0),
+        (st.floats(), lambda x: x > 0 and x > 0, next_up(0.0), math.inf),
+        (st.floats(), lambda x: x < 1 and x < 1, -math.inf, next_down(1.0)),
+        (st.floats(), lambda x: x > 1 and x > 0, next_up(1.0), math.inf),
+        (st.floats(), lambda x: x < 1 and x < 2, -math.inf, next_down(1.0)),
+        # Specific named functions
+        (st.floats(), math.isfinite, next_up(-math.inf), next_down(math.inf)),
+    ],
+    ids=get_pretty_function_description,
+)
+@given(data=st.data())
+def test_filter_rewriting_floats(data, strategy, predicate, min_value, max_value):
+    s = strategy.filter(predicate)
+    assert isinstance(s, LazyStrategy)
+    assert isinstance(s.wrapped_strategy, FloatStrategy)
+    assert s.wrapped_strategy.min_value == min_value
+    assert s.wrapped_strategy.max_value == max_value
+    value = data.draw(s)
+    assert predicate(value)
+
+
+@pytest.mark.parametrize(
+    "pred",
+    [
+        math.isinf,
+        math.isnan,
+        partial(operator.lt, 6),
+        partial(operator.eq, Fraction(10, 3)),
+        partial(operator.ge, 0),
+        partial(operator.lt, math.inf),
+        partial(operator.gt, -math.inf),
     ],
 )
+@pytest.mark.parametrize("s", [st.integers(1, 5), st.floats(1, 5)])
+def test_rewrite_unsatisfiable_filter(s, pred):
+    assert s.filter(pred).is_empty
+
+
+@pytest.mark.parametrize(
+    "pred",
+    [
+        partial(operator.eq, "numbers are never equal to strings"),
+    ],
+)
+@pytest.mark.parametrize("s", [st.integers(1, 5), st.floats(1, 5)])
 @fails_with(Unsatisfiable)
+def test_erroring_rewrite_unsatisfiable_filter(s, pred):
+    s.filter(pred).example()
+
+
+@pytest.mark.parametrize(
+    "strategy, predicate",
+    [
+        (st.floats(), math.isinf),
+        (st.floats(0, math.inf), math.isinf),
+        (st.floats(), math.isnan),
+    ],
+)
 @given(data=st.data())
-def test_rewrite_unsatisfiable_filter(data, s):
-    data.draw(s)
+def test_misc_sat_filter_rewrites(data, strategy, predicate):
+    s = strategy.filter(predicate).wrapped_strategy
+    assert not isinstance(s, FloatStrategy)
+    value = data.draw(s)
+    assert predicate(value)
+
+
+@pytest.mark.parametrize(
+    "strategy, predicate",
+    [
+        (st.floats(allow_infinity=False), math.isinf),
+        (st.floats(0, math.inf), math.isnan),
+        (st.floats(allow_nan=False), math.isnan),
+    ],
+)
+@given(data=st.data())
+def test_misc_unsat_filter_rewrites(data, strategy, predicate):
+    assert strategy.filter(predicate).is_empty
 
 
 @given(st.integers(0, 2).filter(partial(operator.ne, 1)))
@@ -115,14 +224,8 @@ def test_rewriting_does_not_compare_decimal_snan():
         s.example()
 
 
-@pytest.mark.parametrize(
-    "strategy, lo, hi",
-    [
-        (st.integers(0, 1), -1, 2),
-    ],
-    ids=repr,
-)
-def test_applying_noop_filter_returns_self(strategy, lo, hi):
+@pytest.mark.parametrize("strategy", [st.integers(0, 1), st.floats(0, 1)], ids=repr)
+def test_applying_noop_filter_returns_self(strategy):
     s = strategy.wrapped_strategy
     s2 = s.filter(partial(operator.le, -1)).filter(partial(operator.ge, 2))
     assert s is s2
@@ -135,6 +238,7 @@ def mod2(x):
 Y = 2**20
 
 
+@pytest.mark.parametrize("s", [st.integers(1, 5), st.floats(1, 5)])
 @given(
     data=st.data(),
     predicates=st.permutations(
@@ -149,9 +253,8 @@ Y = 2**20
         ]
     ),
 )
-def test_rewrite_filter_chains_with_some_unhandled(data, predicates):
+def test_rewrite_filter_chains_with_some_unhandled(data, predicates, s):
     # Set up our strategy
-    s = st.integers(1, 5)
     for p in predicates:
         s = s.filter(p)
 
@@ -163,7 +266,7 @@ def test_rewrite_filter_chains_with_some_unhandled(data, predicates):
     # No matter the order of the filters, we get the same resulting structure
     unwrapped = s.wrapped_strategy
     assert isinstance(unwrapped, FilteredStrategy)
-    assert isinstance(unwrapped.filtered_strategy, IntegersStrategy)
+    assert isinstance(unwrapped.filtered_strategy, (IntegersStrategy, FloatStrategy))
     for pred in unwrapped.flat_conditions:
         assert pred is mod2 or pred.__name__ == "<lambda>"
 
@@ -246,3 +349,17 @@ def test_bumps_min_size_and_filters_for_content_str_methods(method):
     fs = s.filter(method)
     assert fs.filtered_strategy.min_size == 1
     assert fs.flat_conditions == (method,)
+
+
+@pytest.mark.parametrize(
+    "op, attr, value, expected",
+    [
+        (operator.lt, "min_value", -float_info.min / 2, 0),
+        (operator.lt, "min_value", float_info.min / 2, float_info.min),
+        (operator.gt, "max_value", float_info.min / 2, 0),
+        (operator.gt, "max_value", -float_info.min / 2, -float_info.min),
+    ],
+)
+def test_filter_floats_can_skip_subnormals(op, attr, value, expected):
+    base = st.floats(allow_subnormal=False).filter(partial(op, value))
+    assert getattr(base.wrapped_strategy, attr) == expected

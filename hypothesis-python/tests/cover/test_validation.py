@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import functools
+import sys
 
 import pytest
 
@@ -274,3 +275,13 @@ def test_check_strategy_might_suggest_sampled_from():
     with pytest.raises(InvalidArgument, match="such as st.sampled_from"):
         check_strategy_((1, 2, 3))
     check_strategy_(integers(), "passes for our custom coverage check")
+
+
+@pytest.mark.skipif(sys.version_info[:2] >= (3, 8), reason="only on 3.7")
+def test_explicit_error_from_array_api_before_py38():
+    with pytest.raises(
+        RuntimeError, match=r"The Array API standard requires Python 3\.8 or later"
+    ):
+        from hypothesis.extra import array_api
+
+        assert array_api  # avoid unused-name lint error

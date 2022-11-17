@@ -15,7 +15,7 @@ import pytest
 from hypothesis import given, settings, strategies as st
 from hypothesis.errors import DeadlineExceeded, Flaky, InvalidArgument
 
-from tests.common.utils import assert_falsifying_output, capture_out, fails_with
+from tests.common.utils import assert_falsifying_output, fails_with
 
 
 def test_raises_deadline_on_slow_test():
@@ -109,11 +109,10 @@ def test_gives_a_deadline_specific_flaky_error_message():
             once[0] = False
             time.sleep(0.2)
 
-    with capture_out() as o:
-        with pytest.raises(Flaky):
-            slow_once()
-    assert "Unreliable test timing" in o.getvalue()
-    assert "took 2" in o.getvalue()
+    with pytest.raises(Flaky) as err:
+        slow_once()
+    assert "Unreliable test timing" in "\n".join(err.value.__notes__)
+    assert "took 2" in "\n".join(err.value.__notes__)
 
 
 @pytest.mark.parametrize("slow_strategy", [False, True])

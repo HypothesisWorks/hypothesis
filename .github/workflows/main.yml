@@ -12,6 +12,12 @@ on:
     branches: [ master ]
   workflow_dispatch:
 
+# Cancel in-progress PR builds if another commit is pushed.
+# On non-PR builds, fall back to the globally-unique run_id and don't cancel.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -47,14 +53,15 @@ jobs:
           - check-pytest46
           - check-pytest54
           - check-pytest62
+          - check-django41
           - check-django40
           - check-django32
-          - check-django22
+          - check-pandas15
+          - check-pandas14
           - check-pandas13
           - check-pandas12
           - check-pandas11
           - check-pandas10
-          - check-pandas25
       fail-fast: false
     steps:
     - uses: actions/checkout@v2

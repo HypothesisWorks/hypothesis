@@ -23,12 +23,8 @@ from hypothesis import (
     reporting,
     settings,
 )
-from hypothesis.errors import (
-    DeadlineExceeded,
-    HypothesisWarning,
-    InvalidArgument,
-    MultipleFailures,
-)
+from hypothesis.errors import DeadlineExceeded, HypothesisWarning, InvalidArgument
+from hypothesis.internal.compat import ExceptionGroup
 from hypothesis.strategies import floats, integers, text
 
 from tests.common.utils import assert_falsifying_output, capture_out
@@ -210,14 +206,10 @@ def test_prints_note_in_failing_example():
         note(f"x -> {x}")
         assert x == 42
 
-    with capture_out() as out:
-        with reporting.with_reporter(reporting.default):
-            with pytest.raises(AssertionError):
-                test()
-    v = out.getvalue()
-    print(v)
-    assert "x -> 43" in v
-    assert "x -> 42" not in v
+    with pytest.raises(AssertionError) as err:
+        test()
+    assert "x -> 43" in err.value.__notes__
+    assert "x -> 42" not in err.value.__notes__
 
 
 def test_must_agree_with_number_of_arguments():
@@ -250,11 +242,11 @@ def test_unsatisfied_assumption_during_explicit_example(threshold, value):
     assume(value < threshold)
 
 
-@pytest.mark.parametrize("exc", [MultipleFailures, AssertionError])
+@pytest.mark.parametrize("exc", [ExceptionGroup, AssertionError])
 def test_multiple_example_reporting(exc):
     @example(1)
     @example(2)
-    @settings(report_multiple_bugs=exc is MultipleFailures, phases=[Phase.explicit])
+    @settings(report_multiple_bugs=exc is ExceptionGroup, phases=[Phase.explicit])
     @given(integers())
     def inner_test_multiple_failing_examples(x):
         assert x < 2

@@ -47,6 +47,7 @@ def conservative_regex(draw):
     assume(COMBINED_MATCHER.search(result) is None)
     control = sum(result.count(c) for c in "?+*")
     assume(control <= 3)
+    assume(I_WITH_DOT not in result)  # known to be weird
     return result
 
 

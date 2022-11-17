@@ -176,7 +176,7 @@ def test_large_base_example_fails_health_check():
     with pytest.raises(FailedHealthCheck) as exc:
         test()
 
-    assert exc.value.health_check == HealthCheck.large_base_example
+    assert str(HealthCheck.large_base_example) in str(exc.value)
 
 
 def test_example_that_shrinks_to_overrun_fails_health_check():
@@ -187,7 +187,7 @@ def test_example_that_shrinks_to_overrun_fails_health_check():
     with pytest.raises(FailedHealthCheck) as exc:
         test()
 
-    assert exc.value.health_check == HealthCheck.large_base_example
+    assert str(HealthCheck.large_base_example) in str(exc.value)
 
 
 def test_it_is_an_error_to_suppress_non_iterables():

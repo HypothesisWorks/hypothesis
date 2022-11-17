@@ -11,10 +11,13 @@
 import math
 import sys
 
+import pytest
+
 from hypothesis import given, reject, strategies as st
+from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import complex_numbers
 
-from tests.common.debug import minimal
+from tests.common.debug import assert_no_examples, find_any, minimal
 
 
 def test_minimal():
@@ -89,3 +92,36 @@ def test_minmax_magnitude_equal(data, mag):
         assert math.isclose(abs(val), mag)
     except OverflowError:
         reject()
+
+
+def _is_subnormal(x):
+    return 0 < abs(x) < sys.float_info.min
+
+
+@pytest.mark.parametrize(
+    "allow_subnormal, min_magnitude, max_magnitude",
+    [
+        (True, 0, None),
+        (True, 1, None),
+        (False, 0, None),
+    ],
+)
+def test_allow_subnormal(allow_subnormal, min_magnitude, max_magnitude):
+    strat = complex_numbers(
+        min_magnitude=min_magnitude,
+        max_magnitude=max_magnitude,
+        allow_subnormal=allow_subnormal,
+    ).filter(lambda x: x.real != 0 and x.imag != 0)
+
+    if allow_subnormal:
+        find_any(strat, lambda x: _is_subnormal(x.real) or _is_subnormal(x.imag))
+    else:
+        assert_no_examples(
+            strat, lambda x: _is_subnormal(x.real) or _is_subnormal(x.imag)
+        )
+
+
+@pytest.mark.parametrize("allow_subnormal", [1, 0.0, "False"])
+def test_allow_subnormal_validation(allow_subnormal):
+    with pytest.raises(InvalidArgument):
+        complex_numbers(allow_subnormal=allow_subnormal).example()

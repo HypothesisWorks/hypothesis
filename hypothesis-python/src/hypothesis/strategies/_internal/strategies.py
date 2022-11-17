@@ -29,6 +29,7 @@ from hypothesis._settings import HealthCheck, Phase, Verbosity, settings
 from hypothesis.control import _current_build_context, assume
 from hypothesis.errors import (
     HypothesisException,
+    HypothesisWarning,
     InvalidArgument,
     NonInteractiveExampleWarning,
     UnsatisfiedAssumption,
@@ -288,6 +289,7 @@ class SearchStrategy(Generic[Ex]):
                 "it performs better, saves and replays failures to avoid flakiness, "
                 "and reports minimal examples. (strategy: %r)" % (self,),
                 NonInteractiveExampleWarning,
+                stacklevel=2,
             )
 
         context = _current_build_context.value
@@ -394,6 +396,14 @@ class SearchStrategy(Generic[Ex]):
         if not isinstance(other, SearchStrategy):
             raise ValueError(f"Cannot | a SearchStrategy with {other!r}")
         return OneOfStrategy((self, other))
+
+    def __bool__(self) -> bool:
+        warnings.warn(
+            f"bool({self!r}) is always True, did you mean to draw a value?",
+            HypothesisWarning,
+            stacklevel=2,
+        )
+        return True
 
     def validate(self) -> None:
         """Throw an exception if the strategy is not valid.
@@ -588,7 +598,7 @@ class SampledFromStrategy(SearchStrategy):
         return filter_not_satisfied
 
 
-class OneOfStrategy(SearchStrategy):
+class OneOfStrategy(SearchStrategy[Ex]):
     """Implements a union of strategies. Given a number of strategies this
     generates values which could have come from any of them.
 
@@ -780,7 +790,7 @@ def one_of(
     return OneOfStrategy(args)
 
 
-class MappedSearchStrategy(SearchStrategy):
+class MappedSearchStrategy(SearchStrategy[Ex]):
     """A strategy which is defined purely by conversion to and from another
     strategy.
 
@@ -815,7 +825,7 @@ class MappedSearchStrategy(SearchStrategy):
         into a value suitable for outputting from this strategy."""
         raise NotImplementedError(f"{self.__class__.__name__}.pack()")
 
-    def do_draw(self, data: ConjectureData) -> Ex:
+    def do_draw(self, data: ConjectureData) -> Any:
         with warnings.catch_warnings():
             if isinstance(self.pack, type) and issubclass(
                 self.pack, (abc.Mapping, abc.Set)
@@ -825,7 +835,7 @@ class MappedSearchStrategy(SearchStrategy):
                 i = data.index
                 try:
                     data.start_example(MAPPED_SEARCH_STRATEGY_DO_DRAW_LABEL)
-                    result = self.pack(data.draw(self.mapped_strategy))
+                    result = self.pack(data.draw(self.mapped_strategy))  # type: ignore
                     data.stop_example()
                     return result
                 except UnsatisfiedAssumption:
@@ -845,7 +855,7 @@ class MappedSearchStrategy(SearchStrategy):
 filter_not_satisfied = UniqueIdentifier("filter not satisfied")
 
 
-class FilteredStrategy(SearchStrategy):
+class FilteredStrategy(SearchStrategy[Ex]):
     def __init__(self, strategy, conditions):
         super().__init__()
         if isinstance(strategy, FilteredStrategy):
