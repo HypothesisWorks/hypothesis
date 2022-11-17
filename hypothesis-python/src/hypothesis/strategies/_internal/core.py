@@ -124,10 +124,12 @@ else:
     EllipsisType = type(Ellipsis)
 
 
-try:
+if sys.version_info >= (3, 8):  # pragma: no cover
     from typing import Protocol
-except ImportError:  # < py3.8
-    Protocol = object  # type: ignore[assignment]
+elif TYPE_CHECKING:
+    from typing_extensions import Protocol
+else:
+    Protocol = object
 
 
 @cacheable

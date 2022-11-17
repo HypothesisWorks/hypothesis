@@ -12,17 +12,31 @@ import contextlib
 import random
 import sys
 from itertools import count
-from typing import Callable, Hashable, Tuple
+from typing import Any, Callable, Hashable, Tuple
 from weakref import WeakValueDictionary
 
 import hypothesis.core
 from hypothesis.errors import InvalidArgument
+
+if sys.version_info >= (3, 8):  # pragma: no cover
+    from typing import Protocol
+elif TYPE_CHECKING:
+    from typing_extensions import Protocol
+else:
+    Protocol = object
+
 
 # This is effectively a WeakSet, which allows us to associate the saved states
 # with their respective Random instances even as new ones are registered and old
 # ones go out of scope and get garbage collected.  Keys are ascending integers.
 _RKEY = count()
 RANDOMS_TO_MANAGE: WeakValueDictionary = WeakValueDictionary({next(_RKEY): random})
+
+
+class RandomLike(Protocol):
+    seed: Callable[..., Any]
+    getstate: Callable[[], Any]
+    setstate: Callable[..., Any]
 
 
 class NumpyRandomWrapper:
@@ -40,7 +54,7 @@ class NumpyRandomWrapper:
 NP_RANDOM = None
 
 
-def register_random(r: random.Random) -> None:
+def register_random(r: RandomLike) -> None:
     """Register the given Random instance for management by Hypothesis.
 
     You can pass ``random.Random`` instances (or other objects with seed,
