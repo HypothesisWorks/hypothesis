@@ -39,7 +39,8 @@ if sys.version_info[:2] < (3, 9):
         from numpy.typing import NDArray
     except ImportError:
         NDArray = None
-
+else:
+    NDArray = None
 sentinel = object()
 BUILTIN_TYPES = tuple(
     v
