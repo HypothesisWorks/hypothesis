@@ -445,3 +445,26 @@ def test_pos_only_args(tmpdir):
             (8, "call-overload"),
         ],
     )
+
+
+def test_register_random_interface(tmpdir):
+    f = tmpdir.join("check_mypy_on_pos_arg_only_strats.py")
+    f.write(
+        textwrap.dedent(
+            """
+            from random import Random
+            from hypothesis import register_random
+
+            class MyRandom:
+                def __init__(self) -> None:
+                    r = Random()
+                    self.seed = r.seed
+                    self.setstate = r.setstate
+                    self.getstate = r.getstate
+
+            register_random(MyRandom())
+            register_random(None)  # type: ignore[arg-type]
+            """
+        )
+    )
+    assert_mypy_errors(str(f.realpath()), [])
