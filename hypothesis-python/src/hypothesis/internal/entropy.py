@@ -9,8 +9,10 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import contextlib
+import gc
 import random
 import sys
+import warnings
 from itertools import count
 from typing import TYPE_CHECKING, Any, Callable, Hashable, Tuple
 from weakref import WeakValueDictionary
@@ -120,6 +122,25 @@ def register_random(r: RandomLike) -> None:
     """
     if not (hasattr(r, "seed") and hasattr(r, "getstate") and hasattr(r, "setstate")):
         raise InvalidArgument(f"r={r!r} does not have all the required methods")
+
+    if not PYPY:
+        gc.collect()
+        if not gc.get_referrers(r):
+            if sys.getrefcount(r) <= _PLATFORM_REF_COUNT:
+                raise ReferenceError(
+                    f"`register_random` was passed `r={r}` which will be "
+                    "garbage collected immediately after `register_random` creates a "
+                    "weakref to it. This will prevent Hypothesis from managing this "
+                    "source of RNG. See the docs for `register_random` for more "
+                    "details."
+                )
+            else:
+                warnings.warn(
+                    "It looks like `register_random` was passed an object "
+                    "that could be garbage collected immediately after `register_random` creates a weakref to it. This will "
+                    "prevent Hypothesis from managing this source of RNG. "
+                    "See the docs for `register_random` for more details."
+                )
 
     if r not in RANDOMS_TO_MANAGE.values():
         # PYPY does not have `sys.getrefcount`

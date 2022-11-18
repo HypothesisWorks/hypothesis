@@ -54,6 +54,9 @@ def test_cannot_register_non_Random():
         register_random("not a Random instance")
 
 
+@pytest.mark.filterwarnings(
+    "ignore:It looks like `register_random` was passed an object that could be garbage collected"
+)
 def test_registering_a_Random_is_idempotent():
     gc_on_pypy()
     n_registered = len(entropy.RANDOMS_TO_MANAGE)
@@ -144,6 +147,9 @@ def test_find_does_not_pollute_state():
         assert state_a2 != state_b2
 
 
+@pytest.mark.filterwarnings(
+    "ignore:It looks like `register_random` was passed an object that could be garbage collected"
+)
 def test_evil_prng_registration_nonsense():
     gc_on_pypy()
     n_registered = len(entropy.RANDOMS_TO_MANAGE)
@@ -174,12 +180,18 @@ def test_evil_prng_registration_nonsense():
     assert r3.getstate() == s4, "retained state when registered within the context"
 
 
+@pytest.mark.skipif(
+    PYPY, reason="We can't guard against bad no-reference patterns in pypy."
+)
 def test_passing_unreferenced_instance_raises():
     with pytest.raises(ReferenceError):
         register_random(random.Random(0))
 
 
-def test_passing_unreferenced_instance_raises_within_function_scope():
+@pytest.mark.skipif(
+    PYPY, reason="We can't guard against bad no-reference patterns in pypy."
+)
+def test_passing_unreferenced_instance_within_function_scope_raises():
     def f():
         register_random(random.Random(0))
 
@@ -187,6 +199,24 @@ def test_passing_unreferenced_instance_raises_within_function_scope():
         f()
 
 
+@pytest.mark.skipif(
+    PYPY, reason="We can't guard against bad no-reference patterns in pypy."
+)
+def test_passing_referenced_instance_within_function_scope_warns():
+    def f():
+        r = random.Random(0)
+        register_random(r)
+
+    with pytest.warns(UserWarning):
+        f()
+
+
+@pytest.mark.filterwarnings(
+    "ignore:It looks like `register_random` was passed an object that could be garbage collected"
+)
+@pytest.mark.skipif(
+    PYPY, reason="We can't guard against bad no-reference patterns in pypy."
+)
 def test_register_random_within_nested_function_scope():
     n_registered = len(entropy.RANDOMS_TO_MANAGE)
 
