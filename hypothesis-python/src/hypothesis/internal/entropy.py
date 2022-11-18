@@ -65,7 +65,7 @@ if not PYPY:
     # Determine the number of refcounts created by function scope for
     # the given platform / version of Python.
     _PLATFORM_REF_COUNT = _get_platform_base_refcount(object())
-else:
+else:  # pragma: no cover
     # PYPY doesn't have `sys.getrefcount`
     _PLATFORM_REF_COUNT = -1
 
