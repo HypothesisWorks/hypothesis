@@ -1,6 +1,6 @@
 RELEASE_TYPE: minor
 
-Since :ref:`v6.27.1 <_v6.27.1>` the backing data structure of 
+Since :ref:`v6.27.1` the backing data structure of 
 :func:`~hypothesis.register_random` is a :class:`weakref.WeakKeyDictionary`. As a 
 consequence, passing an unreferenced object to :func:`~hypothesis.register_random` will 
 have no affect on Hypothesis' tracking of RNG sources. This patch modifies 
