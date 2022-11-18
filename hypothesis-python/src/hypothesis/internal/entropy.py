@@ -18,21 +18,12 @@ from weakref import WeakValueDictionary
 import hypothesis.core
 from hypothesis.errors import InvalidArgument
 
-if sys.version_info >= (3, 8):  # pragma: no cover
-    from typing import Protocol
-elif TYPE_CHECKING:
-    from typing_extensions import Protocol
-else:  # pragma: no cover
-    Protocol = object
-
-
-# This is effectively a WeakSet, which allows us to associate the saved states
-# with their respective Random instances even as new ones are registered and old
-# ones go out of scope and get garbage collected.  Keys are ascending integers.
-_RKEY = count()
-RANDOMS_TO_MANAGE: WeakValueDictionary = WeakValueDictionary({next(_RKEY): random})
-
 if TYPE_CHECKING:
+    if sys.version_info >= (3, 8):  # pragma: no cover
+        from typing import Protocol
+    else:
+        from typing_extensions import Protocol
+
     # we can't use this at runtime until from_type supports
     # protocols -- breaks ghostwriter tests
     class RandomLike(Protocol):
@@ -42,6 +33,12 @@ if TYPE_CHECKING:
 
 else:  # pragma: no cover
     RandomLike = random.Random
+
+# This is effectively a WeakSet, which allows us to associate the saved states
+# with their respective Random instances even as new ones are registered and old
+# ones go out of scope and get garbage collected.  Keys are ascending integers.
+_RKEY = count()
+RANDOMS_TO_MANAGE: WeakValueDictionary = WeakValueDictionary({next(_RKEY): random})
 
 
 class NumpyRandomWrapper:
@@ -60,21 +57,64 @@ NP_RANDOM = None
 
 
 def register_random(r: RandomLike) -> None:
-    """Register the given Random instance for management by Hypothesis.
+    """Register (a weakref to) the given Random-like instance for management by
+    Hypothesis.
 
-    You can pass ``random.Random`` instances (or other objects with seed,
-    getstate, and setstate methods) to ``register_random(r)`` to have their
-    states seeded and restored in the same way as the global PRNGs from the
-    ``random`` and ``numpy.random`` modules.
+    You can pass instances of structural subtypes of ``random.Random``
+    (i.e., objects with seed, getstate, and setstate methods) to
+    ``register_random(r)`` to have their states seeded and restored in the same
+    way as the global PRNGs from the ``random`` and ``numpy.random`` modules.
 
     All global PRNGs, from e.g. simulation or scheduling frameworks, should
-    be registered to prevent flaky tests.  Hypothesis will ensure that the
-    PRNG state is consistent for all test runs, or reproducibly varied if you
+    be registered to prevent flaky tests. Hypothesis will ensure that the
+    PRNG state is consistent for all test runs, always seeding them to zero and
+    restoring the previous state after the test, or, reproducibly varied if you
     choose to use the :func:`~hypothesis.strategies.random_module` strategy.
+
+    ``register_random`` only makes `weakrefs
+    <https://docs.python.org/3/library/weakref.html#module-weakref>`_ to ``r``,
+    thus ``r`` will only be managed by Hypothesis as long as it has active
+    references elsewhere at runtime. The pattern ``register_random(MyRandom())``
+    will raise a ``ReferenceError`` to help protect users from this issue. That
+    being said, a pattern like
+
+    .. code-block:: python
+
+       # contents of mylib/foo.py
+
+
+       def my_hook():
+           rng = MyRandomSingleton()
+           register_random(rng)
+           return None
+
+    must be refactored as
+
+    .. code-block:: python
+
+       # contents of mylib/foo.py
+
+       rng = MyRandomSingleton()
+
+
+       def my_hook():
+           register_random(rng)
+           return None
+
+    in order for Hypothesis to continue managing the random instance after the hook
+    is called.
     """
     if not (hasattr(r, "seed") and hasattr(r, "getstate") and hasattr(r, "setstate")):
         raise InvalidArgument(f"r={r!r} does not have all the required methods")
+
     if r not in RANDOMS_TO_MANAGE.values():
+        if sys.getrefcount(r) <= 3:  # register_random appears to create 3 refs to `r`
+            raise ReferenceError(
+                f"`register_random` was passed `r={r}` which will be "
+                "garbage collected immediately after `register_random` creates a weakref "
+                "to it. Create a reference to `r` that will remain in scope before "
+                "registering it. See the docs for `register_random` for more details."
+            )
         RANDOMS_TO_MANAGE[next(_RKEY)] = r
 
 

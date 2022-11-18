@@ -172,3 +172,29 @@ def test_evil_prng_registration_nonsense():
     # Implicit check, no exception was raised in __exit__
     assert r2.getstate() == s2, "reset previously registered random state"
     assert r3.getstate() == s4, "retained state when registered within the context"
+
+
+def test_passing_unreferenced_instance_raises():
+    with pytest.raises(ReferenceError):
+        register_random(random.Random(0))
+
+
+def test_passing_unreferenced_instance_raises_within_function_scope():
+    def f():
+        register_random(random.Random(0))
+
+    with pytest.raises(ReferenceError):
+        f()
+
+
+def test_register_random_within_nested_function_scope():
+    n_registered = len(entropy.RANDOMS_TO_MANAGE)
+
+    def f():
+        r = random.Random()
+        register_random(r)
+        assert len(entropy.RANDOMS_TO_MANAGE) == n_registered + 1
+
+    f()
+    gc_on_pypy()
+    assert len(entropy.RANDOMS_TO_MANAGE) == n_registered
