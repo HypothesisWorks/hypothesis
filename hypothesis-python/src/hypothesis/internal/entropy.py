@@ -32,11 +32,16 @@ else:  # pragma: no cover
 _RKEY = count()
 RANDOMS_TO_MANAGE: WeakValueDictionary = WeakValueDictionary({next(_RKEY): random})
 
+if TYPE_CHECKING:
+    # we can't use this at runtime until from_type supports
+    # protocols -- breaks ghostwriter tests
+    class RandomLike(Protocol):
+        seed: Callable[..., Any]
+        getstate: Callable[[], Any]
+        setstate: Callable[..., Any]
 
-class RandomLike(Protocol):
-    seed: Callable[..., Any]
-    getstate: Callable[[], Any]
-    setstate: Callable[..., Any]
+else:  # pragma: no cover
+    RandomLike = random.Random
 
 
 class NumpyRandomWrapper:
