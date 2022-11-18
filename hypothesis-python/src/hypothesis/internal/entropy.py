@@ -57,17 +57,17 @@ class NumpyRandomWrapper:
 NP_RANDOM = None
 
 
-def _get_platform_base_refcount(r: Any) -> int:
-    # see _PLATFORM_REF_COUNT
-    if not PYPY:
+if not PYPY:
+
+    def _get_platform_base_refcount(r: Any) -> int:
         return sys.getrefcount(r)
-    else:  # pragma: no cover
-        assert False  # we should never rely on this for PYPY
 
-
-# Determine the number of refcounts created by function scope for
-# the given platform / version of Python.
-_PLATFORM_REF_COUNT = _get_platform_base_refcount(object())
+    # Determine the number of refcounts created by function scope for
+    # the given platform / version of Python.
+    _PLATFORM_REF_COUNT = _get_platform_base_refcount(object())
+else:
+    # PYPY doesn't have `sys.getrefcount`
+    _PLATFORM_REF_COUNT = -1
 
 
 def register_random(r: RandomLike) -> None:
@@ -123,7 +123,7 @@ def register_random(r: RandomLike) -> None:
 
     if r not in RANDOMS_TO_MANAGE.values():
         # PYPY does not have `sys.getrefcount`
-        if not PYPY and sys.getrefcount(r) <= _PLATFORM_REF_COUNT:
+        if sys.getrefcount(r) <= _PLATFORM_REF_COUNT:
             raise ReferenceError(
                 f"`register_random` was passed `r={r}` which will be "
                 "garbage collected immediately after `register_random` creates a weakref "
