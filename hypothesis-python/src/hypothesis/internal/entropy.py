@@ -17,6 +17,7 @@ from weakref import WeakValueDictionary
 
 import hypothesis.core
 from hypothesis.errors import InvalidArgument
+from hypothesis.internal.compat import PYPY
 
 if TYPE_CHECKING:
     if sys.version_info >= (3, 8):  # pragma: no cover
@@ -54,6 +55,19 @@ class NumpyRandomWrapper:
 
 
 NP_RANDOM = None
+
+
+def _get_platform_base_refcount(r: Any) -> int:
+    # see _PLATFORM_REF_COUNT
+    if not PYPY:
+        return sys.getrefcount(r)
+    else:  # pragma: no cover
+        assert False  # we should never rely on this for PYPY
+
+
+# Determine the number of refcounts created by function scope for
+# the given platform / version of Python.
+_PLATFORM_REF_COUNT = _get_platform_base_refcount(object())
 
 
 def register_random(r: RandomLike) -> None:
@@ -108,7 +122,8 @@ def register_random(r: RandomLike) -> None:
         raise InvalidArgument(f"r={r!r} does not have all the required methods")
 
     if r not in RANDOMS_TO_MANAGE.values():
-        if sys.getrefcount(r) <= 3:  # register_random appears to create 3 refs to `r`
+        # PYPY does not have `sys.getrefcount`
+        if not PYPY and sys.getrefcount(r) <= _PLATFORM_REF_COUNT:
             raise ReferenceError(
                 f"`register_random` was passed `r={r}` which will be "
                 "garbage collected immediately after `register_random` creates a weakref "
