@@ -215,7 +215,7 @@ def test_register_random_protocol(tmp_path: Path):
             """
         )
     )
-    _write_config(tmp_path, {"reportUnnecessaryTypeIgnoreComment": "true"})
+    _write_config(tmp_path, {"reportUnnecessaryTypeIgnoreComment": True})
     assert _get_pyright_errors(file) == []
 
 
