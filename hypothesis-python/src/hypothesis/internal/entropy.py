@@ -126,7 +126,7 @@ def register_random(r: RandomLike) -> None:
     if r in RANDOMS_TO_MANAGE.values():
         return
 
-    if not PYPY:
+    if not PYPY:  # pragma: no branch
         # PYPY does not have `sys.getrefcount`
         gc.collect()
         if not gc.get_referrers(r):
