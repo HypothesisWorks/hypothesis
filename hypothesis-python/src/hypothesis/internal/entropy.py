@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Any, Callable, Hashable, Tuple
 from weakref import WeakValueDictionary
 
 import hypothesis.core
-from hypothesis.errors import InvalidArgument
+from hypothesis.errors import HypothesisWarning, InvalidArgument
 from hypothesis.internal.compat import PYPY
 
 if TYPE_CHECKING:
@@ -140,10 +140,13 @@ def register_random(r: RandomLike) -> None:
                 )
             else:
                 warnings.warn(
-                    "It looks like `register_random` was passed an object "
-                    "that could be garbage collected immediately after `register_random` creates a weakref to it. This will "
-                    "prevent Hypothesis from managing this source of RNG. "
-                    "See the docs for `register_random` for more details."
+                    HypothesisWarning(
+                        "It looks like `register_random` was passed an object "
+                        "that could be garbage collected immediately after "
+                        "`register_random` creates a weakref to it. This will "
+                        "prevent Hypothesis from managing this source of RNG. "
+                        "See the docs for `register_random` for more details."
+                    )
                 )
 
     RANDOMS_TO_MANAGE[next(_RKEY)] = r

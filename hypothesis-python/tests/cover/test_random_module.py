@@ -14,7 +14,7 @@ import random
 import pytest
 
 from hypothesis import core, find, given, register_random, strategies as st
-from hypothesis.errors import InvalidArgument
+from hypothesis.errors import HypothesisWarning, InvalidArgument
 from hypothesis.internal import entropy
 from hypothesis.internal.compat import PYPY
 from hypothesis.internal.entropy import deterministic_PRNG
@@ -207,7 +207,11 @@ def test_passing_referenced_instance_within_function_scope_warns():
         r = random.Random(0)
         register_random(r)
 
-    with pytest.warns(UserWarning):
+    with pytest.warns(
+        HypothesisWarning,
+        match="It looks like `register_random` was passed an object that could be"
+        " garbage collected",
+    ):
         f()
 
 
