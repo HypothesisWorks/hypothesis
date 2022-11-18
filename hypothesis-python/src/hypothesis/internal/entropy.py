@@ -91,34 +91,26 @@ def register_random(r: RandomLike) -> None:
     <https://docs.python.org/3/library/weakref.html#module-weakref>`_ to ``r``,
     thus ``r`` will only be managed by Hypothesis as long as it has active
     references elsewhere at runtime. The pattern ``register_random(MyRandom())``
-    will raise a ``ReferenceError`` to help protect users from this issue. That
-    being said, a pattern like
+    will raise a ``ReferenceError`` to help protect users from this issue.
+    This check does not occur for the PyPy interpreter. See the following example for
+    an illustration of this issue
 
     .. code-block:: python
 
-       # contents of mylib/foo.py
+
+       def my_BROKEN_hook():
+           r = MyRandomLike()
+
+           # `r` will be garbage collected after the hook resolved
+           # and Hypothesis will 'forget' that it was registered
+           register_random(r)  # Hypothesis will emit a warning
 
 
-       def my_hook():
-           rng = MyRandomSingleton()
+       rng = MyRandomLike()
+
+
+       def my_WORKING_hook():
            register_random(rng)
-           return None
-
-    must be refactored as
-
-    .. code-block:: python
-
-       # contents of mylib/foo.py
-
-       rng = MyRandomSingleton()
-
-
-       def my_hook():
-           register_random(rng)
-           return None
-
-    in order for Hypothesis to continue managing the random instance after the hook
-    is called.
     """
     if not (hasattr(r, "seed") and hasattr(r, "getstate") and hasattr(r, "setstate")):
         raise InvalidArgument(f"r={r!r} does not have all the required methods")
