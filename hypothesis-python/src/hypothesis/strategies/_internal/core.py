@@ -22,6 +22,7 @@ from functools import lru_cache, reduce
 from inspect import Parameter, Signature, isabstract, isclass, signature
 from types import FunctionType
 from typing import (
+    TYPE_CHECKING,
     Any,
     AnyStr,
     Callable,

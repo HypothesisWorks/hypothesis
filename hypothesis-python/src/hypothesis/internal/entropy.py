@@ -12,7 +12,7 @@ import contextlib
 import random
 import sys
 from itertools import count
-from typing import Any, Callable, Hashable, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Hashable, Tuple
 from weakref import WeakValueDictionary
 
 import hypothesis.core
