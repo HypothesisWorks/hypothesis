@@ -124,6 +124,7 @@ def register_random(r: RandomLike) -> None:
         raise InvalidArgument(f"r={r!r} does not have all the required methods")
 
     if not PYPY:
+        # PYPY does not have `sys.getrefcount`
         gc.collect()
         if not gc.get_referrers(r):
             if sys.getrefcount(r) <= _PLATFORM_REF_COUNT:
@@ -143,14 +144,6 @@ def register_random(r: RandomLike) -> None:
                 )
 
     if r not in RANDOMS_TO_MANAGE.values():
-        # PYPY does not have `sys.getrefcount`
-        if sys.getrefcount(r) <= _PLATFORM_REF_COUNT:
-            raise ReferenceError(
-                f"`register_random` was passed `r={r}` which will be "
-                "garbage collected immediately after `register_random` creates a weakref "
-                "to it. Create a reference to `r` that will remain in scope before "
-                "registering it. See the docs for `register_random` for more details."
-            )
         RANDOMS_TO_MANAGE[next(_RKEY)] = r
 
 
