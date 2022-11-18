@@ -22,7 +22,7 @@ if sys.version_info >= (3, 8):  # pragma: no cover
     from typing import Protocol
 elif TYPE_CHECKING:
     from typing_extensions import Protocol
-else:
+else:  # pragma: no cover
     Protocol = object
 
 
