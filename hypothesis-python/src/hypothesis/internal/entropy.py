@@ -123,6 +123,9 @@ def register_random(r: RandomLike) -> None:
     if not (hasattr(r, "seed") and hasattr(r, "getstate") and hasattr(r, "setstate")):
         raise InvalidArgument(f"r={r!r} does not have all the required methods")
 
+    if r in RANDOMS_TO_MANAGE.values():
+        return
+
     if not PYPY:
         # PYPY does not have `sys.getrefcount`
         gc.collect()
@@ -143,8 +146,7 @@ def register_random(r: RandomLike) -> None:
                     "See the docs for `register_random` for more details."
                 )
 
-    if r not in RANDOMS_TO_MANAGE.values():
-        RANDOMS_TO_MANAGE[next(_RKEY)] = r
+    RANDOMS_TO_MANAGE[next(_RKEY)] = r
 
 
 def get_seeder_and_restorer(
