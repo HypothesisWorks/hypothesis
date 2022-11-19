@@ -195,6 +195,30 @@ def test_pyright_one_of_pos_args_only(tmp_path: Path):
     )
 
 
+def test_register_random_protocol(tmp_path: Path):
+    file = tmp_path / "test.py"
+    file.write_text(
+        textwrap.dedent(
+            """
+            from random import Random
+            from hypothesis import register_random
+
+            class MyRandom:
+                def __init__(self) -> None:
+                    r = Random()
+                    self.seed = r.seed
+                    self.setstate = r.setstate
+                    self.getstate = r.getstate
+
+            register_random(MyRandom())
+            register_random(None)  # type: ignore
+            """
+        )
+    )
+    _write_config(tmp_path, {"reportUnnecessaryTypeIgnoreComment": True})
+    assert _get_pyright_errors(file) == []
+
+
 # ---------- Helpers for running pyright ---------- #
 
 

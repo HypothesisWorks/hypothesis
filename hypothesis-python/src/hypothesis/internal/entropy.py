@@ -9,14 +9,33 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import contextlib
+import gc
 import random
 import sys
+import warnings
 from itertools import count
-from typing import Callable, Hashable, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Hashable, Tuple
 from weakref import WeakValueDictionary
 
 import hypothesis.core
-from hypothesis.errors import InvalidArgument
+from hypothesis.errors import HypothesisWarning, InvalidArgument
+from hypothesis.internal.compat import PYPY
+
+if TYPE_CHECKING:
+    if sys.version_info >= (3, 8):  # pragma: no cover
+        from typing import Protocol
+    else:
+        from typing_extensions import Protocol
+
+    # we can't use this at runtime until from_type supports
+    # protocols -- breaks ghostwriter tests
+    class RandomLike(Protocol):
+        seed: Callable[..., Any]
+        getstate: Callable[[], Any]
+        setstate: Callable[..., Any]
+
+else:  # pragma: no cover
+    RandomLike = random.Random
 
 # This is effectively a WeakSet, which allows us to associate the saved states
 # with their respective Random instances even as new ones are registered and old
@@ -40,23 +59,89 @@ class NumpyRandomWrapper:
 NP_RANDOM = None
 
 
-def register_random(r: random.Random) -> None:
-    """Register the given Random instance for management by Hypothesis.
+if not PYPY:
 
-    You can pass ``random.Random`` instances (or other objects with seed,
-    getstate, and setstate methods) to ``register_random(r)`` to have their
-    states seeded and restored in the same way as the global PRNGs from the
-    ``random`` and ``numpy.random`` modules.
+    def _get_platform_base_refcount(r: Any) -> int:
+        return sys.getrefcount(r)
+
+    # Determine the number of refcounts created by function scope for
+    # the given platform / version of Python.
+    _PLATFORM_REF_COUNT = _get_platform_base_refcount(object())
+else:  # pragma: no cover
+    # PYPY doesn't have `sys.getrefcount`
+    _PLATFORM_REF_COUNT = -1
+
+
+def register_random(r: RandomLike) -> None:
+    """Register (a weakref to) the given Random-like instance for management by
+    Hypothesis.
+
+    You can pass instances of structural subtypes of ``random.Random``
+    (i.e., objects with seed, getstate, and setstate methods) to
+    ``register_random(r)`` to have their states seeded and restored in the same
+    way as the global PRNGs from the ``random`` and ``numpy.random`` modules.
 
     All global PRNGs, from e.g. simulation or scheduling frameworks, should
-    be registered to prevent flaky tests.  Hypothesis will ensure that the
-    PRNG state is consistent for all test runs, or reproducibly varied if you
+    be registered to prevent flaky tests. Hypothesis will ensure that the
+    PRNG state is consistent for all test runs, always seeding them to zero and
+    restoring the previous state after the test, or, reproducibly varied if you
     choose to use the :func:`~hypothesis.strategies.random_module` strategy.
+
+    ``register_random`` only makes `weakrefs
+    <https://docs.python.org/3/library/weakref.html#module-weakref>`_ to ``r``,
+    thus ``r`` will only be managed by Hypothesis as long as it has active
+    references elsewhere at runtime. The pattern ``register_random(MyRandom())``
+    will raise a ``ReferenceError`` to help protect users from this issue.
+    This check does not occur for the PyPy interpreter. See the following example for
+    an illustration of this issue
+
+    .. code-block:: python
+
+
+       def my_BROKEN_hook():
+           r = MyRandomLike()
+
+           # `r` will be garbage collected after the hook resolved
+           # and Hypothesis will 'forget' that it was registered
+           register_random(r)  # Hypothesis will emit a warning
+
+
+       rng = MyRandomLike()
+
+
+       def my_WORKING_hook():
+           register_random(rng)
     """
     if not (hasattr(r, "seed") and hasattr(r, "getstate") and hasattr(r, "setstate")):
         raise InvalidArgument(f"r={r!r} does not have all the required methods")
-    if r not in RANDOMS_TO_MANAGE.values():
-        RANDOMS_TO_MANAGE[next(_RKEY)] = r
+
+    if r in RANDOMS_TO_MANAGE.values():
+        return
+
+    if not PYPY:  # pragma: no branch
+        # PYPY does not have `sys.getrefcount`
+        gc.collect()
+        if not gc.get_referrers(r):
+            if sys.getrefcount(r) <= _PLATFORM_REF_COUNT:
+                raise ReferenceError(
+                    f"`register_random` was passed `r={r}` which will be "
+                    "garbage collected immediately after `register_random` creates a "
+                    "weakref to it. This will prevent Hypothesis from managing this "
+                    "source of RNG. See the docs for `register_random` for more "
+                    "details."
+                )
+            else:
+                warnings.warn(
+                    HypothesisWarning(
+                        "It looks like `register_random` was passed an object "
+                        "that could be garbage collected immediately after "
+                        "`register_random` creates a weakref to it. This will "
+                        "prevent Hypothesis from managing this source of RNG. "
+                        "See the docs for `register_random` for more details."
+                    )
+                )
+
+    RANDOMS_TO_MANAGE[next(_RKEY)] = r
 
 
 def get_seeder_and_restorer(
