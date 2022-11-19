@@ -8,6 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+from typing import Any, Callable
+
 from hypothesis import (
     HealthCheck,
     Verbosity,
@@ -74,7 +76,9 @@ def minimal(definition, condition=lambda x: True, settings=None, timeout_after=1
     )
 
 
-def find_any(definition, condition=lambda _: True, settings=None):
+def find_any(
+    definition, condition: Callable[[Any], bool] = lambda _: True, settings=None
+):
     settings = settings or Settings.default
     return minimal(
         definition,

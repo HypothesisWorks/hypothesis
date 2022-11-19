@@ -1237,7 +1237,7 @@ def test_random_generators_have_accurate_reprs(BitGen: Type[BitGenerator]):
     cache = []
     name_to_bit_gen = {x.__name__: x for x in ALL_BIT_GENERATORS}
 
-    @settings(max_examples=10)
+    @settings(max_examples=10, database=None)
     @given(nps.rand_generators(BitGen))
     def runner(generator):
         cache.append(generator)
@@ -1258,3 +1258,17 @@ def test_random_generators_have_accurate_reprs(BitGen: Type[BitGenerator]):
         # draws.
         for _ in range(10):
             assert gen.uniform() == reconstructed_gen.uniform()
+
+
+@pytest.mark.parametrize("BitGen", ALL_BIT_GENERATORS)
+def test_samples_from_bit_generators(BitGen: Type[BitGenerator]):
+    find_any(
+        nps.rand_generators(*ALL_BIT_GENERATORS),
+        lambda gen: type(gen.bit_generator) is BitGen,
+    )
+
+
+@settings(max_examples=10)
+@given(nps.rand_generators())
+def test_default_bit_generator_matches_default_rng_backing(gen: Generator):
+    assert type(gen.bit_generator) is type(np.random.default_rng().bit_generator)
