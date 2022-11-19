@@ -1014,14 +1014,14 @@ def rand_generators(
 
     .. code-block:: pycon
 
-        >>> [randoms().example() for _ in range(3)]
+        >>> [rand_generators().example() for _ in range(3)]
         [Generator(PCG64(17731618377865219412)),
          Generator(PCG64(16938332804403789103)),
          Generator(PCG64(9641801721570554589))]
 
         >>> from numpy.random import MT19937, PCG64
         >>> # specifying multiple bit-generator types
-        >>> [randoms(MT19937, PCG64).example() for _ in range(3)]
+        >>> [rand_generators(MT19937, PCG64).example() for _ in range(3)]
         [Generator(PCG64(1138900339423482065)),
         Generator(MT19937(13796052070681794055)),
         Generator(MT19937(16637614687104877655))]
