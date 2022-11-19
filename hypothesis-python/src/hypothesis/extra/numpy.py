@@ -999,7 +999,9 @@ def rand_generators(
     Examples from this strategy shrink towards a generator backed by the
     first-specified bit-generator type, seeded with 0.
 
-    This is the recommended way for utilizing diverse, reproducible sources of random number generation in Hypothesis tests. The resulting generators are of a special Hypothesis subclass whose repr displays the initial seed for the bit generator.
+    This is the recommended way for utilizing diverse, reproducible sources of random
+    number generation in Hypothesis tests. The resulting generators are of a special
+    Hypothesis subclass whose repr displays the initial seed for the bit generator.
 
     .. code-block:: pycon
 
