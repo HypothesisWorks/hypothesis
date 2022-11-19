@@ -1020,8 +1020,13 @@ def rand_generators(
     """
     bit_generator_types = (__g,) + bit_generator_types
     for g in bit_generator_types:
-        if not issubclass(g, np.random.BitGenerator):
+        if (
+            not isinstance(g, type)
+            or not issubclass(g, np.random.BitGenerator)
+            or g is np.random.BitGenerator
+        ):
             raise InvalidArgument(
-                f"`randoms` must be passed BitGenerator subclasses. Got " "{g}"
+                f"`randoms` must be passed BitGenerator subclasses (BitGenerator "
+                "itself is not a valid implementation). Got {g}"
             )
     return NumpyGeneratorStrategy(bit_generator_types)

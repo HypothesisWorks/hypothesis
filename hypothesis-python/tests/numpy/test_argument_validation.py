@@ -23,6 +23,10 @@ def e(a, **kwargs):
     return pytest.param(a, kwargs, id=f"{a.__name__}({kw})")
 
 
+def p(a, *args):
+    return pytest.param(a, args, id=f"{a.__name__}({', '.join(str(x) for x in args)})")
+
+
 @pytest.mark.parametrize(
     ("function", "kwargs"),
     [
@@ -288,3 +292,17 @@ def test_raise_invalid_argument(function, kwargs):
 def test_raise_invalid_argument_deprecated(function, kwargs):
     with pytest.raises(InvalidArgument):
         function(**kwargs).example()
+
+
+@pytest.mark.parametrize(
+    ("function", "args"),
+    [
+        p(nps.rand_generators, True),
+        p(nps.rand_generators, numpy.random.Generator),
+        p(nps.rand_generators, numpy.random.BitGenerator),
+        p(nps.rand_generators, numpy.random.PCG64, numpy.random.BitGenerator),
+    ],
+)
+def test_raise_invalid_pos_args(function, args):
+    with pytest.raises(InvalidArgument):
+        function(*args).example()

@@ -11,9 +11,11 @@
 import sys
 from functools import reduce
 from itertools import zip_longest
+from typing import List, Type
 
 import numpy as np
 import pytest
+from numpy.random import BitGenerator, Generator
 
 from hypothesis import (
     HealthCheck,
@@ -1203,6 +1205,13 @@ def test_basic_indices_generate_valid_indexers(
             assert np.shares_memory(view, array)
 
 
+ALL_BIT_GENERATORS: List[Type[BitGenerator]] = [
+    x
+    for x in (getattr(np.random, name) for name in np.random.__all__)
+    if isinstance(x, type) and issubclass(x, BitGenerator) and x is not BitGenerator
+]
+
+
 # addresses https://github.com/HypothesisWorks/hypothesis/issues/2582
 @given(
     nps.arrays(
@@ -1212,3 +1221,40 @@ def test_basic_indices_generate_valid_indexers(
 def test_array_owns_memory(x: np.ndarray):
     assert x.base is None
     assert x[...].base is x
+
+
+@pytest.mark.parametrize("BitGen", ALL_BIT_GENERATORS)
+@given(data=st.data())
+def test_fuzz_all_bit_generators(BitGen: Type[BitGenerator], data: st.DrawFn):
+    # ensure that our seed mechanism works for all bit generators
+    gen = data.draw(nps.rand_generators(BitGen))
+    assert isinstance(gen.bit_generator, BitGen)
+    gen.normal()
+
+
+@pytest.mark.parametrize("BitGen", ALL_BIT_GENERATORS)
+def test_random_generators_have_accurate_reprs(BitGen: Type[BitGenerator]):
+    cache = []
+    name_to_bit_gen = {x.__name__: x for x in ALL_BIT_GENERATORS}
+
+    @settings(max_examples=10)
+    @given(nps.rand_generators(BitGen))
+    def runner(generator):
+        cache.append(generator)
+
+    runner()
+
+    for gen in cache:
+        # reconstruct bit-generator from repr and ensure they generate same numbers
+        _, bit_gen_name, seed_tail = repr(gen).split("(")
+        bit_gen_type = name_to_bit_gen[bit_gen_name]
+        seed = int(seed_tail[:-2])
+        reconstructed_gen = Generator(bit_gen_type(seed))
+        # It would be preferable to compare bit-generator states, but
+        # different bit generators implement state differently, and some
+        # require traversing pytrees with array leaves -- not easy to compare
+        #
+        # So instead we compare that the generators match 10 consecutive
+        # draws.
+        for _ in range(10):
+            assert gen.uniform() == reconstructed_gen.uniform()
