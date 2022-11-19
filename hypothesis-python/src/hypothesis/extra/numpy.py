@@ -9,9 +9,10 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
-from typing import Any, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any, Mapping, Optional, Sequence, Tuple, Type, Union
 
 import numpy as np
+from numpy.random import PCG64
 
 from hypothesis import strategies as st
 from hypothesis._settings import note_deprecation
@@ -35,7 +36,7 @@ from hypothesis.internal.coverage import check_function
 from hypothesis.internal.reflection import proxies
 from hypothesis.internal.validation import check_type
 from hypothesis.strategies._internal.strategies import T, check_strategy
-from hypothesis.strategies._internal.utils import defines_strategy
+from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 
 __all__ = [
     "BroadcastableShapes",
@@ -59,6 +60,7 @@ __all__ = [
     "mutually_broadcastable_shapes",
     "basic_indices",
     "integer_array_indices",
+    "rand_generators",
 ]
 
 TIME_RESOLUTIONS = tuple("Y  M  D  h  m  s  ms  us  ns  ps  fs  as".split())
@@ -955,3 +957,69 @@ def integer_array_indices(
     return result_shape.flatmap(
         lambda index_shape: st.tuples(*(array_for(index_shape, size) for size in shape))
     )
+
+
+class NumpyGeneratorStrategy(st.SearchStrategy):
+    class _GeneratorWithSeedRepr(np.random.Generator):
+        # must be attached to the instance externally
+        _hypothesis_initial_seed: int
+
+        def __repr__(self) -> str:
+            return f"Generator({type(self.bit_generator).__name__}({self._hypothesis_initial_seed!r}))"
+
+    def __init__(self, bit_gen_types: Tuple[Type[np.random.BitGenerator], ...]):
+        assert bit_gen_types
+        self._bit_gen_types = (
+            st.just(bit_gen_types[0])
+            if len(bit_gen_types) == 1
+            else st.sampled_from(bit_gen_types)
+        )
+
+    def do_draw(self, data):
+        CurrentBitGenerator = data.draw(self._bit_gen_types)
+        seed = data.draw_bits(64)
+        gen = self._GeneratorWithSeedRepr(CurrentBitGenerator(seed))
+        gen._hypothesis_initial_seed = seed
+        return gen
+
+
+@cacheable
+@defines_strategy()
+def rand_generators(
+    __g: Type[np.random.BitGenerator] = PCG64,
+    *bit_generator_types: Type[np.random.BitGenerator],
+) -> st.SearchStrategy[np.random.Generator]:
+    """Generates instances of
+    :obj:`numpy.random.Generator <numpy:numpy.random.Generator>` backed by a
+    bit-generator initialized with a Hypothesis-drawn 64 bit seed.
+
+    Accepts one or more
+    :obj:`numpy.random.BitGenerator <numpy:numpy.random.BitGenerator>` types,
+    defaulting to PCG64, that will be sampled from during example generation.
+    Examples from this strategy shrink towards a generator backed by the
+    first-specified bit-generator type, seeded with 0.
+
+    This is the recommended way for utilizing diverse, reproducible sources of random number generation in Hypothesis tests. The resulting generators are of a special Hypothesis subclass whose repr displays the initial seed for the bit generator.
+
+    .. code-block:: pycon
+
+        >>> [randoms().example() for _ in range(3)]
+        [Generator(PCG64(17731618377865219412)),
+         Generator(PCG64(16938332804403789103)),
+         Generator(PCG64(9641801721570554589))]
+
+        >>> from numpy.random import MT19937, PCG64
+        >>> # specifying multiple bit-generator types
+        >>> [randoms(MT19937, PCG64).example() for _ in range(3)]
+        [Generator(PCG64(1138900339423482065)),
+        Generator(MT19937(13796052070681794055)),
+        Generator(MT19937(16637614687104877655))]
+
+    """
+    bit_generator_types = (__g,) + bit_generator_types
+    for g in bit_generator_types:
+        if not issubclass(g, np.random.BitGenerator):
+            raise InvalidArgument(
+                f"`randoms` must be passed BitGenerator subclasses. Got " "{g}"
+            )
+    return NumpyGeneratorStrategy(bit_generator_types)
