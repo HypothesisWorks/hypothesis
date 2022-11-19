@@ -590,10 +590,19 @@ if sys.version_info[:2] >= (3, 9):  # pragma: no cover
 try:  # pragma: no cover
     import numpy as np
 
-    from hypothesis.extra.numpy import array_dtypes, array_shapes, arrays, scalar_dtypes
+    from hypothesis.extra.numpy import (
+        _ALL_BIT_GENERATORS,
+        array_dtypes,
+        array_shapes,
+        arrays,
+        rand_generators,
+        scalar_dtypes,
+    )
 
     _global_type_lookup[np.dtype] = array_dtypes()
     _global_type_lookup[np.ndarray] = arrays(scalar_dtypes(), array_shapes(max_dims=2))
+    # is it too intense to sample from all available bit-generators
+    _global_type_lookup[np.random.Generator] = rand_generators(*_ALL_BIT_GENERATORS)
 except ImportError:
     pass
 

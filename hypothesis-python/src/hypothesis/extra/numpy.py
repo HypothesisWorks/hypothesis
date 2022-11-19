@@ -9,7 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
-from typing import Any, Mapping, Optional, Sequence, Tuple, Type, Union
+from typing import Any, List, Mapping, Optional, Sequence, Tuple, Type, Union
 
 import numpy as np
 from numpy.random import PCG64
@@ -957,6 +957,15 @@ def integer_array_indices(
     return result_shape.flatmap(
         lambda index_shape: st.tuples(*(array_for(index_shape, size) for size in shape))
     )
+
+
+_ALL_BIT_GENERATORS: List[Type[np.random.BitGenerator]] = [
+    x
+    for x in (getattr(np.random, name) for name in np.random.__all__)
+    if isinstance(x, type)
+    and issubclass(x, np.random.BitGenerator)
+    and x is not np.random.BitGenerator
+]
 
 
 class NumpyGeneratorStrategy(st.SearchStrategy):

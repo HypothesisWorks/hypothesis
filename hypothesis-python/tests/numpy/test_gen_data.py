@@ -11,7 +11,7 @@
 import sys
 from functools import reduce
 from itertools import zip_longest
-from typing import List, Type
+from typing import Type
 
 import numpy as np
 import pytest
@@ -1205,13 +1205,6 @@ def test_basic_indices_generate_valid_indexers(
             assert np.shares_memory(view, array)
 
 
-ALL_BIT_GENERATORS: List[Type[BitGenerator]] = [
-    x
-    for x in (getattr(np.random, name) for name in np.random.__all__)
-    if isinstance(x, type) and issubclass(x, BitGenerator) and x is not BitGenerator
-]
-
-
 # addresses https://github.com/HypothesisWorks/hypothesis/issues/2582
 @given(
     nps.arrays(
@@ -1223,7 +1216,7 @@ def test_array_owns_memory(x: np.ndarray):
     assert x[...].base is x
 
 
-@pytest.mark.parametrize("BitGen", ALL_BIT_GENERATORS)
+@pytest.mark.parametrize("BitGen", nps._ALL_BIT_GENERATORS)
 @given(data=st.data())
 def test_fuzz_all_bit_generators(BitGen: Type[BitGenerator], data: st.DrawFn):
     # ensure that our seed mechanism works for all bit generators
@@ -1232,10 +1225,10 @@ def test_fuzz_all_bit_generators(BitGen: Type[BitGenerator], data: st.DrawFn):
     gen.normal()
 
 
-@pytest.mark.parametrize("BitGen", ALL_BIT_GENERATORS)
+@pytest.mark.parametrize("BitGen", nps._ALL_BIT_GENERATORS)
 def test_random_generators_have_accurate_reprs(BitGen: Type[BitGenerator]):
     cache = []
-    name_to_bit_gen = {x.__name__: x for x in ALL_BIT_GENERATORS}
+    name_to_bit_gen = {x.__name__: x for x in nps._ALL_BIT_GENERATORS}
 
     @settings(max_examples=10, database=None)
     @given(nps.rand_generators(BitGen))
@@ -1260,10 +1253,10 @@ def test_random_generators_have_accurate_reprs(BitGen: Type[BitGenerator]):
             assert gen.uniform() == reconstructed_gen.uniform()
 
 
-@pytest.mark.parametrize("BitGen", ALL_BIT_GENERATORS)
+@pytest.mark.parametrize("BitGen", nps._ALL_BIT_GENERATORS)
 def test_samples_from_bit_generators(BitGen: Type[BitGenerator]):
     find_any(
-        nps.rand_generators(*ALL_BIT_GENERATORS),
+        nps.rand_generators(*nps._ALL_BIT_GENERATORS),
         lambda gen: type(gen.bit_generator) is BitGen,
     )
 
