@@ -15,15 +15,19 @@ from hypothesis.strategies import none
 
 
 def test_numpy_prng_is_seeded():
-    first = []
     prng_state = np.random.get_state()
 
     @given(none())
     def inner(_):
-        val = np.random.bytes(10)
-        if not first:
-            first.append(val)
-        assert val == first[0], "Numpy random module should be reproducible"
+        # Hypothesis sets seed to 0 by default
+        implicitly_seeded_val = np.random.bytes(10)
+
+        np.random.seed(0)
+        explicitly_seeded_val = np.random.bytes(10)
+
+        assert (
+            implicitly_seeded_val == explicitly_seeded_val
+        ), "Numpy random module should be reproducible"
 
     inner()
 
