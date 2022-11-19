@@ -36,7 +36,7 @@ from hypothesis.internal.coverage import check_function
 from hypothesis.internal.reflection import proxies
 from hypothesis.internal.validation import check_type
 from hypothesis.strategies._internal.strategies import T, check_strategy
-from hypothesis.strategies._internal.utils import cacheable, defines_strategy
+from hypothesis.strategies._internal.utils import defines_strategy
 
 __all__ = [
     "BroadcastableShapes",
@@ -992,7 +992,6 @@ class NumpyGeneratorStrategy(st.SearchStrategy):
         return gen
 
 
-@cacheable
 @defines_strategy()
 def rand_generators(
     __g: Type[np.random.BitGenerator] = PCG64,
@@ -1035,7 +1034,7 @@ def rand_generators(
             or g is np.random.BitGenerator
         ):
             raise InvalidArgument(
-                f"`randoms` must be passed BitGenerator subclasses (BitGenerator "
-                "itself is not a valid implementation). Got {g}"
+                f"`rand_generators` must be passed BitGenerator subclasses "
+                "(BitGenerator itself is not a valid implementation). Got {g}"
             )
     return NumpyGeneratorStrategy(bit_generator_types)
