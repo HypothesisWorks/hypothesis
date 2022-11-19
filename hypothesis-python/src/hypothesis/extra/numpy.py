@@ -994,7 +994,6 @@ class NumpyGeneratorStrategy(st.SearchStrategy):
 
 @defines_strategy()
 def rand_generators(
-    __g: Type[np.random.BitGenerator] = PCG64,
     *bit_generator_types: Type[np.random.BitGenerator],
 ) -> st.SearchStrategy[np.random.Generator]:
     """Generates instances of
@@ -1003,7 +1002,7 @@ def rand_generators(
 
     Accepts one or more
     :obj:`numpy.random.BitGenerator <numpy:numpy.random.BitGenerator>` types,
-    defaulting to PCG64, that will be sampled from during example generation.
+    defaulting to ``PCG64``, that will be sampled from during example generation.
     Examples from this strategy shrink towards a generator backed by the
     first-specified bit-generator type, seeded with 0.
 
@@ -1024,10 +1023,11 @@ def rand_generators(
         >>> [rand_generators(MT19937, PCG64).example() for _ in range(3)]
         [Generator(PCG64(1138900339423482065)),
         Generator(MT19937(13796052070681794055)),
-        Generator(MT19937(16637614687104877655))]
-
+        Generator(MT19937(16637614687104877655))
     """
-    bit_generator_types = (__g,) + bit_generator_types
+    if not bit_generator_types:
+        bit_generator_types = (PCG64,)
+
     for g in bit_generator_types:
         if (
             not isinstance(g, type)
