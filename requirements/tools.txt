@@ -69,7 +69,7 @@ docutils==0.17.1
     #   sphinx-rtd-theme
 dpcontracts==0.6.0
     # via -r requirements/tools.in
-exceptiongroup==1.0.1 ; python_version < "3.11"
+exceptiongroup==1.0.4 ; python_version < "3.11"
     # via
     #   hypothesis (hypothesis-python/setup.py)
     #   pytest
@@ -167,7 +167,7 @@ mccabe==0.7.0
     # via flake8
 more-itertools==9.0.0
     # via jaraco-classes
-mypy==0.990
+mypy==0.991
     # via -r requirements/tools.in
 mypy-extensions==0.4.3
     # via
@@ -184,7 +184,7 @@ packaging==21.3
     #   tox
 parso==0.8.3
     # via jedi
-pathspec==0.10.1
+pathspec==0.10.2
     # via black
 pbr==5.11.0
     # via stevedore
@@ -194,11 +194,11 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pip-tools==6.9.0
+pip-tools==6.10.0
     # via -r requirements/tools.in
 pkginfo==1.8.3
     # via twine
-platformdirs==2.5.3
+platformdirs==2.5.4
     # via
     #   black
     #   virtualenv
@@ -232,7 +232,7 @@ pygments==2.13.0
     #   sphinx
 pyparsing==3.0.9
     # via packaging
-pyright==1.1.279
+pyright==1.1.280
     # via -r requirements/tools.in
 pytest==7.2.0
     # via -r requirements/tools.in
@@ -327,7 +327,7 @@ tomli==2.0.1
     #   pep517
     #   pytest
     #   tox
-tox==3.27.0
+tox==3.27.1
     # via -r requirements/tools.in
 traitlets==5.5.0
     # via

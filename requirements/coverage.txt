@@ -24,13 +24,13 @@ deprecated==1.2.13
     # via redis
 dpcontracts==0.6.0
     # via -r requirements/coverage.in
-exceptiongroup==1.0.1 ; python_version < "3.11"
+exceptiongroup==1.0.4 ; python_version < "3.11"
     # via
     #   hypothesis (hypothesis-python/setup.py)
     #   pytest
 execnet==1.9.0
     # via pytest-xdist
-fakeredis==1.10.1
+fakeredis==2.0.0
     # via -r requirements/coverage.in
 iniconfig==1.1.1
     # via pytest
@@ -52,11 +52,11 @@ packaging==21.3
     #   redis
 pandas==1.5.1
     # via -r requirements/coverage.in
-pathspec==0.10.1
+pathspec==0.10.2
     # via black
 pexpect==4.8.0
     # via -r requirements/test.in
-platformdirs==2.5.3
+platformdirs==2.5.4
     # via black
 pluggy==1.0.0
     # via pytest
