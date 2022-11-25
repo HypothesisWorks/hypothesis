@@ -18,7 +18,7 @@ flake8-return
 flake8-simplify
 # flake8-strftime  # See https://github.com/python-formate/flake8_strftime/issues/47
 ipython
-lark-parser
+lark
 libcst
 mypy
 pip-tools
