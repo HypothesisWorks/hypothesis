@@ -39,10 +39,11 @@ if [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 7))')" = "False
 fi
 
 pip install ".[lark]"
+pip install "$(grep -oE 'lark>=([0-9.]+)' ../hypothesis-python/setup.py | tr '>' =)"
+$PYTEST -Wignore tests/lark/
+pip install "$(grep 'lark==' ../requirements/coverage.txt)"
 $PYTEST tests/lark/
-pip install "$(grep 'lark-parser==' ../requirements/coverage.txt)"
-$PYTEST tests/lark/
-pip uninstall -y lark-parser
+pip uninstall -y lark
 
 if [ "$(python -c $'import platform, sys; print(sys.version_info.releaselevel == \'final\' and platform.python_implementation() != "PyPy")')" = "True" ] ; then
   pip install ".[codemods,cli]"
