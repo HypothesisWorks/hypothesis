@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.58.1:
+
+-------------------
+6.58.1 - 2022-11-26
+-------------------
+
+This patch shifts ``hypothesis[lark]`` from depending on the old :pypi:`lark-parser`
+package to the new :pypi:`lark` package.  There are no code changes in Hypothesis,
+it's just that Lark got a new name on PyPI for version 1.0 onwards.
+
 .. _v6.58.0:
 
 -------------------
