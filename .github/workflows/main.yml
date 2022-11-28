@@ -79,6 +79,7 @@ jobs:
           ~/wheelhouse
           ~/.local
           vendor/bundle
+          .tox/
         key: deps-${{ runner.os }}-${{ hashFiles('requirements/*.txt') }}-${{ matrix.task }}
         restore-keys: |
           deps-${{ runner.os }}-${{ hashFiles('requirements/*.txt') }}
@@ -131,6 +132,7 @@ jobs:
         path: |
           ~\appdata\local\pip\cache
           vendor\bundle
+          .tox
         key: deps-${{ runner.os }}-${{ matrix.python-architecture }}-${{ hashFiles('requirements/*.txt') }}-${{ matrix.task }}
         restore-keys: |
           deps-${{ runner.os }}-${{ matrix.python-architecture }}-${{ hashFiles('requirements/*.txt') }}
@@ -164,6 +166,7 @@ jobs:
         path: |
           ~/.cache
           ~/Library/Caches/pip
+          .tox/
         key: deps-${{ runner.os }}-${{ hashFiles('requirements/*.txt') }}-${{ matrix.task }}
     - name: Run tests
       run: TASK=${{ matrix.task }} ./build.sh

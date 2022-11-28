@@ -412,13 +412,13 @@ for key, version in PYTHONS.items():
         ALIASES[version] = f"python{key}"
         name = f"py3{key[2:]}"
     TASKS[f"check-{name}"] = python_tests(
-        lambda n=f"{name}-full", v=version: run_tox(n, v)
+        lambda n=f"{name}-full", v=version, *args: run_tox(n, v, *args)
     )
 
 
 @python_tests
-def check_py310_pyjion():
-    run_tox("py310-pyjion", PYTHONS["3.10"])
+def check_py310_pyjion(*args):
+    run_tox("py310-pyjion", PYTHONS["3.10"], *args)
 
 
 @task()
@@ -429,8 +429,10 @@ def tox(*args):
     run_tox(args[0], args[1], *args[2:])
 
 
-def standard_tox_task(name):
-    TASKS["check-" + name] = python_tests(lambda: run_tox(name, PYTHONS[ci_version]))
+def standard_tox_task(name, *args, py=ci_version):
+    TASKS["check-" + name] = python_tests(
+        lambda: run_tox(name, PYTHONS.get(py, py), *args)
+    )
 
 
 standard_tox_task("nose")
@@ -448,13 +450,13 @@ standard_tox_task("conjecture-coverage")
 
 
 @task()
-def check_quality():
-    run_tox("quality", PYTHONS[ci_version])
+def check_quality(*args):
+    run_tox("quality", PYTHONS[ci_version], *args)
 
 
 @task(if_changed=(hp.PYTHON_SRC, os.path.join(hp.HYPOTHESIS_PYTHON, "examples")))
-def check_examples3():
-    run_tox("examples3", PYTHONS[ci_version])
+def check_examples3(*args):
+    run_tox("examples3", PYTHONS[ci_version], *args)
 
 
 @task()
