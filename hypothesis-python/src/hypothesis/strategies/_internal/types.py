@@ -64,7 +64,7 @@ except ImportError:
 TypeAliasTypes: tuple = ()
 try:
     TypeAliasTypes += (typing.TypeAlias,)
-except AttributeError:
+except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.10`
 try:
     TypeAliasTypes += (typing_extensions.TypeAlias,)
@@ -223,7 +223,7 @@ def try_issubclass(thing, superclass):
             # and Hypothesis issue #2951 closely first, and good luck.  The tests
             # will help you, I hope - good luck.
             if getattr(thing, "__args__", None) is not None:
-                return True
+                return True  # pragma: no cover  # only possible on Python <= 3.9
             for orig_base in getattr(thing, "__orig_bases__", None) or [None]:
                 args = getattr(orig_base, "__args__", None)
                 if _compatible_args(args, superclass_args):
@@ -238,7 +238,7 @@ def is_a_new_type(thing):
     if not isinstance(typing.NewType, type):
         # At runtime, `typing.NewType` returns an identity function rather
         # than an actual type, but we can check whether that thing matches.
-        return (
+        return (  # pragma: no cover  # Python <= 3.9 only
             hasattr(thing, "__supertype__")
             and getattr(thing, "__module__", None) in ("typing", "typing_extensions")
             and inspect.isfunction(thing)
@@ -361,7 +361,8 @@ def from_typing_type(thing):
         literals = []
         while args_dfs_stack:
             arg = args_dfs_stack.pop()
-            if is_typing_literal(arg):
+            if is_typing_literal(arg):  # pragma: no cover
+                # Python 3.10+ flattens for us when constructing Literal objects
                 args_dfs_stack.extend(reversed(arg.__args__))
             else:
                 literals.append(arg)
@@ -813,7 +814,9 @@ def resolve_OrderedDict(thing):
 
 @register(typing.Pattern, st.builds(re.compile, st.sampled_from(["", b""])))
 def resolve_Pattern(thing):
-    if isinstance(thing.__args__[0], typing.TypeVar):
+    if isinstance(thing.__args__[0], typing.TypeVar):  # pragma: no cover
+        # TODO: this was covered on Python 3.8, but isn't on 3.10 - we should
+        # work out why not and write some extra tests to help avoid regressions.
         return st.builds(re.compile, st.sampled_from(["", b""]))
     return st.just(re.compile(thing.__args__[0]()))
 
@@ -868,7 +871,7 @@ def resolve_Callable(thing):
     # Note that a list can only appear in __args__ under Python 3.9 with the
     # collections.abc version; see https://bugs.python.org/issue42195
     if len(args_types) == 1 and isinstance(args_types[0], list):
-        args_types = tuple(args_types[0])
+        args_types = tuple(args_types[0])  # pragma: no cover
 
     pep612 = ConcatenateTypes + ParamSpecTypes
     for arg in args_types:

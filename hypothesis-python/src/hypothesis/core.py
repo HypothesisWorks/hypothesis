@@ -113,11 +113,11 @@ from hypothesis.strategies._internal.strategies import (
 from hypothesis.vendor.pretty import RepresentationPrinter
 from hypothesis.version import __version__
 
-if sys.version_info >= (3, 10):  # pragma: no cover
+if sys.version_info >= (3, 10):
     from types import EllipsisType as EllipsisType
 elif TYPE_CHECKING:
     from builtins import ellipsis as EllipsisType
-else:
+else:  # pragma: no cover
     EllipsisType = type(Ellipsis)
 
 

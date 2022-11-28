@@ -120,7 +120,7 @@ def get_signature(target, *, follow_wrapped=True):
                     parameters=[v for k, v in sig.parameters.items() if k != "self"]
                 )
         return sig
-    if sys.version_info[:2] <= (3, 8) and inspect.isclass(target):
+    if sys.version_info[:2] <= (3, 8) and inspect.isclass(target):  # pragma: no cover
         # Workaround for subclasses of typing.Generic on Python <= 3.8
         from hypothesis.strategies._internal.types import is_generic_type
 
