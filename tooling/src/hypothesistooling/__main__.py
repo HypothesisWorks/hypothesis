@@ -390,7 +390,7 @@ PYTHONS = {
     "pypy3.8": "pypy3.8-7.3.9",
     "pypy3.9": "pypy3.9-7.3.9",
 }
-ci_version = "3.8"  # Keep this in sync with GH Actions main.yml
+ci_version = "3.10"  # Keep this in sync with GH Actions main.yml and .readthedocs.yml
 
 python_tests = task(
     if_changed=(
@@ -426,7 +426,7 @@ def tox(*args):
     if len(args) < 2:
         print("Usage: ./build.sh tox TOX_ENV PY_VERSION [tox args]")
         sys.exit(1)
-    run_tox(args[0], args[1], *args[2:])
+    run_tox(*args)
 
 
 def standard_tox_task(name, *args, py=ci_version):
@@ -435,14 +435,16 @@ def standard_tox_task(name, *args, py=ci_version):
     )
 
 
-standard_tox_task("nose")
-standard_tox_task("pytest46")
-standard_tox_task("pytest54")
+standard_tox_task("py39-nose", py="3.9")
+standard_tox_task("py39-pytest46", py="3.9")
+standard_tox_task("py39-pytest54", py="3.9")
 standard_tox_task("pytest62")
 
 for n in [32, 40, 41]:
     standard_tox_task(f"django{n}")
-for n in [10, 11, 12, 13, 14, 15]:
+
+standard_tox_task("py39-pandas10", py="3.9")
+for n in [11, 12, 13, 14, 15]:
     standard_tox_task(f"pandas{n}")
 
 standard_tox_task("coverage")

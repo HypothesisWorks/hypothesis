@@ -62,7 +62,7 @@ if [ "$(python -c $'import platform, sys; print(sys.version_info.releaselevel ==
   pip uninstall -y black numpy
 fi
 
-if [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 8))')" = "False" ] ; then
+if [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 10))')" = "False" ] ; then
   exit 0
 fi
 

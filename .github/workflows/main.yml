@@ -49,9 +49,9 @@ jobs:
           - check-rust-tests
           - audit-conjecture-rust
           - lint-conjecture-rust
-          - check-nose
-          - check-pytest46
-          - check-pytest54
+          - check-py39-nose
+          - check-py39-pytest46
+          - check-py39-pytest54
           - check-pytest62
           - check-django41
           - check-django40
@@ -61,16 +61,16 @@ jobs:
           - check-pandas13
           - check-pandas12
           - check-pandas11
-          - check-pandas10
+          - check-py39-pandas10
       fail-fast: false
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
-    - name: Set up Python 3.8
+    - name: Set up Python 3.10
       uses: actions/setup-python@v2
       with:
-        python-version: "3.8"
+        python-version: "3.10"
     - name: Restore cache
       uses: actions/cache@v2
       with:
@@ -112,19 +112,20 @@ jobs:
     strategy:
       matrix:
         include:
-          - task: check-py38-x64
-            python.architecture: "x64"
-          - task: check-py38-x86
+          - task: check-py37
+          - task: check-py310
+          - task: check-py310-x86
             python.architecture: "x86"
+          - task: check-py311
       fail-fast: false
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
-    - name: Set up Python 3.8
+    - name: Set up Python 3.10
       uses: actions/setup-python@v2
       with:
-        python-version: "3.8"
+        python-version: "3.10"
         architecture: ${{ matrix.python-architecture }}
     - name: Restore cache
       uses: actions/cache@v2
@@ -150,16 +151,18 @@ jobs:
     strategy:
       matrix:
         task:
-          - check-py38
+          - check-py37
+          - check-py310
+          - check-py311
       fail-fast: false
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
-    - name: Set up Python 3.8
+    - name: Set up Python 3.10
       uses: actions/setup-python@v2
       with:
-        python-version: "3.8"
+        python-version: "3.10"
     - name: Restore cache
       uses: actions/cache@v2
       with:
@@ -181,14 +184,14 @@ jobs:
           - deploy
       fail-fast: false
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
         token: ${{ secrets.GH_TOKEN }}
-    - name: Set up Python 3.8
+    - name: Set up Python 3.10
       uses: actions/setup-python@v2
       with:
-        python-version: "3.8"
+        python-version: "3.10"
     - name: Restore cache
       uses: actions/cache@v2
       with:
