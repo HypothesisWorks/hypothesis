@@ -243,7 +243,7 @@ def check_not_changed():
 @task()
 def compile_requirements(upgrade=False):
     if upgrade:
-        extra = ["--upgrade"]
+        extra = ["--upgrade", "--rebuild"]
     else:
         extra = []
 
@@ -251,12 +251,18 @@ def compile_requirements(upgrade=False):
         base, _ = os.path.splitext(f)
         pip_tool(
             "pip-compile",
+            "--allow-unsafe",  # future default, not actually unsafe
+            "--resolver=backtracking",  # new pip resolver, default in pip-compile 7+
             *extra,
             f,
             "hypothesis-python/setup.py",
             "--output-file",
             base + ".txt",
             cwd=tools.ROOT,
+            env={
+                "CUSTOM_COMPILE_COMMAND": "./build.sh upgrade-requirements",
+                **os.environ,
+            },
         )
 
 
