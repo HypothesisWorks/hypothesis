@@ -29,15 +29,21 @@ jobs:
           - check-format
           - check-coverage
           - check-conjecture-coverage
-          - check-py37
-          - check-pypy37
-          - check-py38
-          - check-pypy38
-          - check-py39
-          - check-pypy39
-          - check-py310
+          - check-py37-cover
+          - check-pypy37-cover
+          - check-py38-cover
+          - check-py38-nocover
+          - check-py38-niche
+          - check-pypy38-cover
+          - check-py39-cover
+          - check-pypy39-cover
+          - check-py310-cover
+          - check-py310-nocover
+          - check-py310-niche
           # - check-py310-pyjion  # see notes in tox.ini
-          - check-py311
+          - check-py311-cover
+          - check-py311-nocover
+          - check-py311-niche
           # - check-py312  # enable when alpha1 is released, ~Nov 2022
           - check-quality
           - lint-ruby
@@ -112,11 +118,18 @@ jobs:
     strategy:
       matrix:
         include:
-          - task: check-py37
-          - task: check-py310
-          - task: check-py310-x86
+          - task: check-py37-cover
+          - task: check-py37-niche
+          - task: check-py310-cover
+          - task: check-py310-niche
+          - task: check-py310-x86-cover
             python.architecture: "x86"
-          - task: check-py311
+          - task: check-py310-x86-nocover
+            python.architecture: "x86"
+          - task: check-py310-x86-niche
+            python.architecture: "x86"
+          - task: check-py311-cover
+          - task: check-py311-niche
       fail-fast: false
     steps:
     - uses: actions/checkout@v3
@@ -151,9 +164,11 @@ jobs:
     strategy:
       matrix:
         task:
-          - check-py37
-          - check-py310
-          - check-py311
+          - check-py37-cover
+          - check-py310-cover
+          - check-py310-nocover
+          - check-py310-niche
+          - check-py311-cover
       fail-fast: false
     steps:
     - uses: actions/checkout@v3

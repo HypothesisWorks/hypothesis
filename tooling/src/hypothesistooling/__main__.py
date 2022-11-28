@@ -420,6 +420,10 @@ for key, version in PYTHONS.items():
     TASKS[f"check-{name}"] = python_tests(
         lambda n=f"{name}-full", v=version, *args: run_tox(n, v, *args)
     )
+    for subtask in ("brief", "full", "cover", "nocover", "niche", "custom"):
+        TASKS[f"check-{name}-{subtask}"] = python_tests(
+            lambda n=f"{name}-{subtask}", v=version, *args: run_tox(n, v, *args)
+        )
 
 
 @python_tests
