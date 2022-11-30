@@ -888,7 +888,9 @@ class StateForActualGivenExecution:
                 errors_to_report.append(
                     (fragments, e.with_traceback(get_trimmed_traceback()))
                 )
-
+            else:
+                # execute_once() will always raise either the expected error, or Flaky.
+                raise NotImplementedError("This should be unreachable")
             finally:
                 # Whether or not replay actually raised the exception again, we want
                 # to print the reproduce_failure decorator for the failing example.
