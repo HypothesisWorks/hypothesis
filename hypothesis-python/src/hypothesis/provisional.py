@@ -35,7 +35,7 @@ FRAGMENT_SAFE_CHARACTERS = URL_SAFE_CHARACTERS | {"?", "/"}
 try:  # pragma: no cover
     traversable = resources.files("hypothesis.vendor") / "tlds-alpha-by-domain.txt"
     _tlds = traversable.read_text().splitlines()
-except (AttributeError, ValueError):  # .files() was added in Python 3.9
+except (AttributeError, ValueError):  # pragma: no cover  # .files() was added in 3.9
     _tlds = resources.read_text(
         "hypothesis.vendor", "tlds-alpha-by-domain.txt"
     ).splitlines()

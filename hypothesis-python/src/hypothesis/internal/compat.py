@@ -88,7 +88,7 @@ def get_type_hints(thing):
 
     try:
         hints = typing.get_type_hints(thing, **kwargs)
-    except (AttributeError, TypeError, NameError):
+    except (AttributeError, TypeError, NameError):  # pragma: no cover
         hints = {}
 
     if inspect.isclass(thing):

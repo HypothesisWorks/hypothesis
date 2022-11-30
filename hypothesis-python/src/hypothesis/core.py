@@ -113,11 +113,11 @@ from hypothesis.strategies._internal.strategies import (
 from hypothesis.vendor.pretty import RepresentationPrinter
 from hypothesis.version import __version__
 
-if sys.version_info >= (3, 10):  # pragma: no cover
+if sys.version_info >= (3, 10):
     from types import EllipsisType as EllipsisType
 elif TYPE_CHECKING:
     from builtins import ellipsis as EllipsisType
-else:
+else:  # pragma: no cover
     EllipsisType = type(Ellipsis)
 
 
@@ -888,7 +888,9 @@ class StateForActualGivenExecution:
                 errors_to_report.append(
                     (fragments, e.with_traceback(get_trimmed_traceback()))
                 )
-
+            else:
+                # execute_once() will always raise either the expected error, or Flaky.
+                raise NotImplementedError("This should be unreachable")
             finally:
                 # Whether or not replay actually raised the exception again, we want
                 # to print the reproduce_failure decorator for the failing example.
@@ -901,7 +903,8 @@ class StateForActualGivenExecution:
                 # Mostly useful for ``find`` and ensuring that objects that
                 # hold on to a reference to ``data`` know that it's now been
                 # finished and they can't draw more data from it.
-                ran_example.freeze()
+                ran_example.freeze()  # pragma: no branch
+                # No branch is possible here because we never have an active exception.
         _raise_to_user(errors_to_report, self.settings, report_lines)
 
 

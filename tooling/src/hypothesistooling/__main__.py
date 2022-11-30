@@ -243,7 +243,7 @@ def check_not_changed():
 @task()
 def compile_requirements(upgrade=False):
     if upgrade:
-        extra = ["--upgrade"]
+        extra = ["--upgrade", "--rebuild"]
     else:
         extra = []
 
@@ -251,12 +251,18 @@ def compile_requirements(upgrade=False):
         base, _ = os.path.splitext(f)
         pip_tool(
             "pip-compile",
+            "--allow-unsafe",  # future default, not actually unsafe
+            "--resolver=backtracking",  # new pip resolver, default in pip-compile 7+
             *extra,
             f,
             "hypothesis-python/setup.py",
             "--output-file",
             base + ".txt",
             cwd=tools.ROOT,
+            env={
+                "CUSTOM_COMPILE_COMMAND": "./build.sh upgrade-requirements",
+                **os.environ,
+            },
         )
 
 
@@ -390,7 +396,7 @@ PYTHONS = {
     "pypy3.8": "pypy3.8-7.3.9",
     "pypy3.9": "pypy3.9-7.3.9",
 }
-ci_version = "3.8"  # Keep this in sync with GH Actions main.yml
+ci_version = "3.10"  # Keep this in sync with GH Actions main.yml and .readthedocs.yml
 
 python_tests = task(
     if_changed=(
@@ -412,13 +418,17 @@ for key, version in PYTHONS.items():
         ALIASES[version] = f"python{key}"
         name = f"py3{key[2:]}"
     TASKS[f"check-{name}"] = python_tests(
-        lambda n=f"{name}-full", v=version: run_tox(n, v)
+        lambda n=f"{name}-full", v=version, *args: run_tox(n, v, *args)
     )
+    for subtask in ("brief", "full", "cover", "nocover", "niche", "custom"):
+        TASKS[f"check-{name}-{subtask}"] = python_tests(
+            lambda n=f"{name}-{subtask}", v=version, *args: run_tox(n, v, *args)
+        )
 
 
 @python_tests
-def check_py310_pyjion():
-    run_tox("py310-pyjion", PYTHONS["3.10"])
+def check_py310_pyjion(*args):
+    run_tox("py310-pyjion", PYTHONS["3.10"], *args)
 
 
 @task()
@@ -426,21 +436,25 @@ def tox(*args):
     if len(args) < 2:
         print("Usage: ./build.sh tox TOX_ENV PY_VERSION [tox args]")
         sys.exit(1)
-    run_tox(args[0], args[1], *args[2:])
+    run_tox(*args)
 
 
-def standard_tox_task(name):
-    TASKS["check-" + name] = python_tests(lambda: run_tox(name, PYTHONS[ci_version]))
+def standard_tox_task(name, *args, py=ci_version):
+    TASKS["check-" + name] = python_tests(
+        lambda: run_tox(name, PYTHONS.get(py, py), *args)
+    )
 
 
-standard_tox_task("nose")
-standard_tox_task("pytest46")
-standard_tox_task("pytest54")
+standard_tox_task("py39-nose", py="3.9")
+standard_tox_task("py39-pytest46", py="3.9")
+standard_tox_task("py39-pytest54", py="3.9")
 standard_tox_task("pytest62")
 
 for n in [32, 40, 41]:
     standard_tox_task(f"django{n}")
-for n in [10, 11, 12, 13, 14, 15]:
+
+standard_tox_task("py39-pandas10", py="3.9")
+for n in [11, 12, 13, 14, 15]:
     standard_tox_task(f"pandas{n}")
 
 standard_tox_task("coverage")
@@ -448,13 +462,13 @@ standard_tox_task("conjecture-coverage")
 
 
 @task()
-def check_quality():
-    run_tox("quality", PYTHONS[ci_version])
+def check_quality(*args):
+    run_tox("quality", PYTHONS[ci_version], *args)
 
 
 @task(if_changed=(hp.PYTHON_SRC, os.path.join(hp.HYPOTHESIS_PYTHON, "examples")))
-def check_examples3():
-    run_tox("examples3", PYTHONS[ci_version])
+def check_examples3(*args):
+    run_tox("examples3", PYTHONS[ci_version], *args)
 
 
 @task()

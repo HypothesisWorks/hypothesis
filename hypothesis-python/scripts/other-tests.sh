@@ -4,19 +4,17 @@ set -e -o xtrace
 HERE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "$HERE/.."
 
-python -c '
-import os
-for k, v in sorted(dict(os.environ).items()):
-    print("%s=%s" % (k, v))
-'
-
 pip install .
 
 
 PYTEST="python -bb -X dev -m pytest -nauto --durations-min=1.0"
 
-# Run all the no-extra-dependency tests for this version (except slow nocover tests)
-$PYTEST tests/cover tests/pytest
+# Run some tests without docstrings or assertions, to catch bugs
+# like issue #822 in one of the test decorators.  See also #1541.
+PYTHONOPTIMIZE=2 $PYTEST \
+    -W'ignore:assertions not in test modules or plugins will be ignored because assert statements are not executed by the underlying Python interpreter:pytest.PytestConfigWarning' \
+    -W'ignore:Module already imported so cannot be rewritten:pytest.PytestAssertRewriteWarning' \
+    tests/cover/test_testdecorators.py
 
 # Run tests for each extra module while the requirements are installed
 pip install ".[pytz, dateutil, zoneinfo]"
@@ -57,34 +55,12 @@ if [ "$(python -c $'import platform, sys; print(sys.version_info.releaselevel ==
     pip install "$(grep 'numpy==' ../requirements/coverage.txt)"
   fi
 
+  if [ "$(python -c 'import platform; print(platform.python_implementation())')" != "PyPy" ]; then\
+    $PYTEST tests/array_api
+    $PYTEST tests/numpy
+  fi
+
   pip install "$(grep 'black==' ../requirements/coverage.txt)"
   $PYTEST tests/ghostwriter/
   pip uninstall -y black numpy
-fi
-
-if [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 10))')" = "False" ] ; then
-  exit 0
-fi
-
-$PYTEST tests/nocover/
-
-# Run some tests without docstrings or assertions, to catch bugs
-# like issue #822 in one of the test decorators.  See also #1541.
-PYTHONOPTIMIZE=2 $PYTEST \
-    -W'ignore:assertions not in test modules or plugins will be ignored because assert statements are not executed by the underlying Python interpreter:pytest.PytestConfigWarning' \
-    -W'ignore:Module already imported so cannot be rewritten:pytest.PytestAssertRewriteWarning' \
-    tests/cover/test_testdecorators.py
-
-if [ "$(python -c 'import platform; print(platform.python_implementation())')" != "PyPy" ]; then
-  pip install .[django]
-  HYPOTHESIS_DJANGO_USETZ=TRUE python -m tests.django.manage test tests.django
-  HYPOTHESIS_DJANGO_USETZ=FALSE python -m tests.django.manage test tests.django
-  pip uninstall -y django pytz
-
-  pip install "$(grep 'numpy==' ../requirements/coverage.txt)"
-  $PYTEST tests/array_api
-  $PYTEST tests/numpy
-
-  pip install "$(grep 'pandas==' ../requirements/coverage.txt)"
-  $PYTEST tests/pandas
 fi
