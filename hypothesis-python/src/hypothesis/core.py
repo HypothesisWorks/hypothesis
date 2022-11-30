@@ -903,7 +903,8 @@ class StateForActualGivenExecution:
                 # Mostly useful for ``find`` and ensuring that objects that
                 # hold on to a reference to ``data`` know that it's now been
                 # finished and they can't draw more data from it.
-                ran_example.freeze()
+                ran_example.freeze()  # pragma: no branch
+                # No branch is possible here because we never have an active exception.
         _raise_to_user(errors_to_report, self.settings, report_lines)
 
 
