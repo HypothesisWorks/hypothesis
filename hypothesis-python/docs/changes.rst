@@ -144,7 +144,7 @@ the standard.
 6.54.6 - 2022-09-18
 -------------------
 
-If multiple explicit examples (from :func:`@example() <hypothesis.example>`)
+If multiple explicit examples (from :obj:`@example() <hypothesis.example>`)
 raise a Skip exception, for consistency with generated examples we now re-raise
 the first instead of collecting them into an ExceptionGroup (:issue:`3453`).
 
@@ -293,7 +293,7 @@ working on this at the EuroPython sprints!
 6.50.1 - 2022-07-09
 -------------------
 
-This patch improves the error messages in :func:`@example() <hypothesis.example>`
+This patch improves the error messages in :obj:`@example() <hypothesis.example>`
 argument validation following the recent release of :ref:`6.49.1 <v6.49.1>`.
 
 .. _v6.50.0:
@@ -317,7 +317,7 @@ which led us to revert :ref:`Hypothesis 5.2 <v5.2.0>` last time!
 -------------------
 
 This patch fixes some inconsistency between argument handling for
-:func:`@example <hypothesis.example>` and :func:`@given <hypothesis.given>`
+:obj:`@example <hypothesis.example>` and :func:`@given <hypothesis.given>`
 (:issue:`2706 <2706#issuecomment-1168363177>`).
 
 .. _v6.49.0:
@@ -538,7 +538,7 @@ or :func:`~hypothesis.strategies.register_type_strategy` with types that have no
 6.46.2 - 2022-05-03
 -------------------
 
-This patch fixes silently dropping examples when the :func:`@example <hypothesis.example>`
+This patch fixes silently dropping examples when the :obj:`@example <hypothesis.example>`
 decorator is applied to itself (:issue:`3319`).  This was always a weird pattern, but now it
 works.  Thanks to Ray Sogata, Keeri Tramm, and Kevin Khuong for working on this patch!
 
@@ -2500,7 +2500,7 @@ Permitted values are ``None``, and instances of
 -------------------
 
 This patch fixes :issue:`2696`, an internal error triggered when the
-:func:`@example <hypothesis.example>` decorator was used and the
+:obj:`@example <hypothesis.example>` decorator was used and the
 :obj:`~hypothesis.settings.verbosity` setting was ``quiet``.
 
 .. _v5.43.2:
@@ -2767,7 +2767,7 @@ which makes ``import hypothesis`` around 200 milliseconds faster
 -------------------
 
 This patch adds some helpful suggestions to error messages you might see
-while learning to use the :func:`@example() <hypothesis.example>` decorator
+while learning to use the :obj:`@example() <hypothesis.example>` decorator
 (:issue:`2611`) or the :func:`~hypothesis.strategies.one_of` strategy.
 
 .. _v5.36.0:
@@ -2891,7 +2891,7 @@ Thanks to Nikita Sobolev for fixing :issue:`2604`!
 -------------------
 
 When reporting failing examples, or tried examples in verbose mode, Hypothesis now
-identifies which were from :func:`@example(...) <hypothesis.example>` explicit examples.
+identifies which were from :obj:`@example(...) <hypothesis.example>` explicit examples.
 
 .. _v5.32.1:
 
@@ -3556,7 +3556,7 @@ report to help us improve the shrinker for difficult but realistic workloads.
 -------------------
 
 This release improves the interaction between :func:`~hypothesis.assume`
-and the :func:`@example() <hypothesis.example>` decorator, so that the
+and the :obj:`@example() <hypothesis.example>` decorator, so that the
 following test no longer fails with ``UnsatisfiedAssumption`` (:issue:`2125`):
 
 .. code-block:: python
@@ -4094,7 +4094,7 @@ Miscellaneous
 ~~~~~~~~~~~~~
 - The ``.example()`` method of strategies (intended for interactive
   exploration) no longer takes a ``random`` argument.
-- It is now an error to apply :func:`@example <hypothesis.example>`,
+- It is now an error to apply :obj:`@example <hypothesis.example>`,
   :func:`@seed <hypothesis.seed>`, or :func:`@reproduce_failure <hypothesis.reproduce_failure>`
   without also applying :func:`@given <hypothesis.given>`.
 - You may pass either the ``target`` or ``targets`` argument to stateful rules, but not both.
@@ -4364,7 +4364,7 @@ It is unlikely to have much user visible impact.
 4.51.0 - 2019-12-07
 -------------------
 
-This release deprecates use of :func:`@example <hypothesis.example>`,
+This release deprecates use of :obj:`@example <hypothesis.example>`,
 :func:`@seed <hypothesis.seed>`, or :func:`@reproduce_failure <hypothesis.reproduce_failure>`
 without :func:`@given <hypothesis.given>`.
 
@@ -7710,7 +7710,7 @@ setting ``allow_infinity=False`` and exactly one of ``min_value`` and
 3.66.32 - 2018-08-09
 --------------------
 
-This release adds type hints to the :func:`~hypothesis.example` and
+This release adds type hints to the :obj:`@example() <hypothesis.example>` and
 :func:`~hypothesis.seed` decorators, and fixes the type hint on
 :func:`~hypothesis.strategies.register_type_strategy`. The second argument to
 :func:`~hypothesis.strategies.register_type_strategy` must either be a
@@ -10122,7 +10122,7 @@ This release fixes some minor bugs in argument validation:
 -------------------
 
 This release fixes a bug where test failures that were the result of
-an :func:`@example <hypothesis.example>` would print an extra stack trace before re-raising the
+an :obj:`@example <hypothesis.example>` would print an extra stack trace before re-raising the
 exception.
 
 .. _v3.21.0:
@@ -10673,7 +10673,7 @@ properties such as indexing support or repeated iteration.
 ------------------
 
 This patch fixes a bug in :ref:`3.7.3 <v3.7.3>`, where using
-:func:`@example <hypothesis.example>` and a pytest fixture in the same test
+:obj:`@example <hypothesis.example>` and a pytest fixture in the same test
 could cause the test to fail to fill the arguments, and throw a TypeError.
 
 .. _v3.7.3:

@@ -18,6 +18,7 @@ import pytest
 from hypothesis import example, find, given, strategies as st
 from hypothesis.errors import (
     HypothesisException,
+    InvalidArgument,
     NonInteractiveExampleWarning,
     Unsatisfiable,
 )
@@ -84,3 +85,22 @@ def test_interactive_example_does_not_emit_warning():
     child.sendline("from hypothesis.strategies import none")
     child.sendline("none().example()")
     child.sendline("quit(code=0)")
+
+
+def identity(decorator):
+    # The "identity function hack" from https://peps.python.org/pep-0614/
+    # Method-chaining decorators are otherwise a syntax error in Python <= 3.8
+    return decorator
+
+
+@identity(example(False).via("Manually specified"))
+@given(st.booleans())
+def test_ok_example_via(x):
+    pass
+
+
+def test_invalid_example_via():
+    with pytest.raises(InvalidArgument):
+        example(x=False).via(100)  # not a string!
+    with pytest.raises(TypeError):
+        example(x=False).via("abc", "def")  # too many args
