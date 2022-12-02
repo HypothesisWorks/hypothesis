@@ -330,7 +330,7 @@ strategies interactively. Rather than having to specify everything up front in
 This is similar to :func:`@composite <hypothesis.strategies.composite>`, but
 even more powerful as it allows you to mix test code with example generation.
 The downside of this power is that :func:`~hypothesis.strategies.data` is
-incompatible with explicit :func:`@example(...) <hypothesis.example>`\ s -
+incompatible with explicit :obj:`@example(...) <hypothesis.example>`\ s -
 and the mixed code is often harder to debug when something goes wrong.
 
 If you need values that are affected by previous draws but which *don't* depend
