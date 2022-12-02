@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.59.0:
+
+-------------------
+6.59.0 - 2022-12-02
+-------------------
+
+The :obj:`@example(...) <hypothesis.example>` decorator now has a ``.via()``
+method, which future tools will use to track automatically-added covering
+examples (:issue:`3506`).
+
 .. _v6.58.2:
 
 -------------------
