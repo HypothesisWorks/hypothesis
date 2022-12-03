@@ -11,7 +11,7 @@
 import math
 from dataclasses import dataclass
 from inspect import Parameter, Signature, signature
-from typing import ForwardRef
+from typing import ForwardRef, Optional
 
 import pytest
 
