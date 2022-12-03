@@ -150,7 +150,7 @@ def get_type_hints(thing):
                     p_hint = p.annotation
 
                     # Defer to `get_type_hints` if signature annotation is, or
-                    # contains, a forward refence that is otherwise resolved.
+                    # contains, a forward reference that is otherwise resolved.
                     if any(
                         isinstance(sig_hint, ForwardRef)
                         and not isinstance(hint, ForwardRef)
