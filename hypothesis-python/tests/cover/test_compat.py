@@ -51,7 +51,7 @@ def test_no_type_hints():
 
 @dataclass
 class Foo:
-    x: "Foo"
+    x: "Foo" = None  # type: ignore
 
 
 Foo.__signature__ = signature(Foo).replace(  # type: ignore
@@ -67,4 +67,4 @@ Foo.__signature__ = signature(Foo).replace(  # type: ignore
 
 def test_resolve_fwd_refs():
     # See: https://github.com/HypothesisWorks/hypothesis/issues/3519
-    assert get_type_hints(Foo)["x"] is Foo
+    assert get_type_hints(Foo)["x"] is Optional[Foo]

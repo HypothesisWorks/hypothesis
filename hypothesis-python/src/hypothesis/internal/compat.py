@@ -111,15 +111,18 @@ def get_type_hints(thing):
                     and is_a_type(p.annotation)
                     and p.annotation is not p.empty
                 ):
+
+                    p_hint = p.annotation
+
                     if isinstance(p.annotation, typing.ForwardRef) and not isinstance(
                         hints[p.name], typing.ForwardRef
                     ):
-                        continue
+                        p_hint = hints[p.name]
 
                     if p.default is None:
-                        hints[p.name] = typing.Optional[p.annotation]  # type: ignore
+                        hints[p.name] = typing.Optional[p_hint]  # type: ignore
                     else:
-                        hints[p.name] = p.annotation
+                        hints[p.name] = p_hint
     except (AttributeError, TypeError, NameError):  # pragma: no cover
         pass
 
