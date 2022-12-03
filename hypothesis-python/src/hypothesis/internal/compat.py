@@ -17,7 +17,7 @@ from typing import Any, ForwardRef, List, Tuple, Union
 
 try:
     from typing import get_args
-except ImportError:  # pragma: no cover
+except ImportError:
     # remove at Python 3.7 end-of-life
     from collections.abc import Callable as _Callable
 
