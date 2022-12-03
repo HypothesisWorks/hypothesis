@@ -11,7 +11,7 @@
 import math
 from dataclasses import dataclass
 from inspect import Parameter, Signature, signature
-from typing import ForwardRef, Optional
+from typing import ForwardRef, Optional, Union
 
 import pytest
 
@@ -65,6 +65,25 @@ Foo.__signature__ = signature(Foo).replace(  # type: ignore
 )
 
 
-def test_resolve_fwd_refs():
+@dataclass
+class Bar:
+    x: Optional[Union[int, "Bar"]]
+
+
+Bar.__signature__ = signature(Bar).replace(  # type: ignore
+    parameters=[
+        Parameter(
+            "x",
+            Parameter.POSITIONAL_OR_KEYWORD,
+            annotation=Optional[Union[int, ForwardRef("Bar")]],  # type: ignore
+        )
+    ]
+)
+
+
+@pytest.mark.parametrize(
+    "obj,expected", [(Foo, Optional[Foo]), (Bar, Optional[Union[int, Bar]])]
+)
+def test_resolve_fwd_refs(obj, expected):
     # See: https://github.com/HypothesisWorks/hypothesis/issues/3519
-    assert get_type_hints(Foo)["x"] is Optional[Foo]
+    assert get_type_hints(obj)["x"] == expected
