@@ -13,7 +13,7 @@ import inspect
 import platform
 import sys
 import typing
-from typing import Any, ForwardRef, List, Tuple, Union
+from typing import Any, ForwardRef, Tuple
 
 try:
     from typing import get_args
@@ -23,7 +23,7 @@ except ImportError:
 
     def get_args(
         tp: Any,
-    ) -> Union[Tuple[type, ...], Tuple[List[type], type]]:  # pragma: no cover
+    ) -> Tuple[Any, ...]:  # pragma: no cover
         """
         Examples
         --------
@@ -155,13 +155,14 @@ def get_type_hints(thing):
                         isinstance(sig_hint, ForwardRef)
                         and not isinstance(hint, ForwardRef)
                         for sig_hint, hint in zip(
-                            _hint_and_args(p.annotation), _hint_and_args(hints[p.name])
+                            _hint_and_args(p.annotation),
+                            _hint_and_args(hints.get(p.name, Any)),
                         )
                     ):
                         p_hint = hints[p.name]
-
+                    print(p_hint, p.default)
                     if p.default is None:
-                        hints[p.name] = typing.Optional[p_hint]  # type: ignore
+                        hints[p.name] = typing.Optional[p_hint]
                     else:
                         hints[p.name] = p_hint
     except (AttributeError, TypeError, NameError):  # pragma: no cover

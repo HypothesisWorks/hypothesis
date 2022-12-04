@@ -60,6 +60,7 @@ Foo.__signature__ = signature(Foo).replace(  # type: ignore
             "x",
             Parameter.POSITIONAL_OR_KEYWORD,
             annotation=ForwardRef("Foo"),
+            default=None,
         )
     ]
 )
