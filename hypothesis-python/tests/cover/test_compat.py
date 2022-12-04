@@ -9,7 +9,9 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
-from inspect import Parameter, Signature
+from dataclasses import dataclass
+from inspect import Parameter, Signature, signature
+from typing import ForwardRef, Optional, Union
 
 import pytest
 
@@ -45,3 +47,44 @@ class WeirdSig:
 
 def test_no_type_hints():
     assert get_type_hints(WeirdSig) == {}
+
+
+@dataclass
+class Foo:
+    x: "Foo" = None  # type: ignore
+
+
+Foo.__signature__ = signature(Foo).replace(  # type: ignore
+    parameters=[
+        Parameter(
+            "x",
+            Parameter.POSITIONAL_OR_KEYWORD,
+            annotation=ForwardRef("Foo"),
+            default=None,
+        )
+    ]
+)
+
+
+@dataclass
+class Bar:
+    x: Optional[Union[int, "Bar"]]
+
+
+Bar.__signature__ = signature(Bar).replace(  # type: ignore
+    parameters=[
+        Parameter(
+            "x",
+            Parameter.POSITIONAL_OR_KEYWORD,
+            annotation=Optional[Union[int, ForwardRef("Bar")]],  # type: ignore
+        )
+    ]
+)
+
+
+@pytest.mark.parametrize(
+    "obj,expected", [(Foo, Optional[Foo]), (Bar, Optional[Union[int, Bar]])]
+)
+def test_resolve_fwd_refs(obj, expected):
+    # See: https://github.com/HypothesisWorks/hypothesis/issues/3519
+    assert get_type_hints(obj)["x"] == expected

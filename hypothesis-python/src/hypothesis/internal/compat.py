@@ -13,6 +13,37 @@ import inspect
 import platform
 import sys
 import typing
+from typing import Any, ForwardRef, Tuple
+
+try:
+    from typing import get_args
+except ImportError:
+    # remove at Python 3.7 end-of-life
+    from collections.abc import Callable as _Callable
+
+    def get_args(
+        tp: Any,
+    ) -> Tuple[Any, ...]:  # pragma: no cover
+        """
+        Examples
+        --------
+        >>> assert get_args(int) == ()
+        >>> assert get_args(Dict[str, int]) == (str, int)
+        >>> assert get_args(Union[int, Union[T, int], str][int]) == (int, str)
+        >>> assert get_args(Union[int, Tuple[T, int]][str]) == (int, Tuple[str, int])
+        >>> assert get_args(Callable[[], T][int]) == ([], int)
+        """
+        if hasattr(tp, "__origin__") and hasattr(tp, "__args__"):
+            args = tp.__args__
+            if (
+                getattr(tp, "__origin__", None) is _Callable
+                and args
+                and args[0] is not Ellipsis
+            ):
+                args = (list(args[:-1]), args[-1])
+            return args
+        return ()
+
 
 try:
     BaseExceptionGroup = BaseExceptionGroup
@@ -71,6 +102,10 @@ def is_typed_named_tuple(cls):
     )
 
 
+def _hint_and_args(x):
+    return (x,) + get_args(x)
+
+
 def get_type_hints(thing):
     """Like the typing version, but tries harder and never errors.
 
@@ -111,10 +146,24 @@ def get_type_hints(thing):
                     and is_a_type(p.annotation)
                     and p.annotation is not p.empty
                 ):
+
+                    p_hint = p.annotation
+
+                    # Defer to `get_type_hints` if signature annotation is, or
+                    # contains, a forward reference that is otherwise resolved.
+                    if any(
+                        isinstance(sig_hint, ForwardRef)
+                        and not isinstance(hint, ForwardRef)
+                        for sig_hint, hint in zip(
+                            _hint_and_args(p.annotation),
+                            _hint_and_args(hints.get(p.name, Any)),
+                        )
+                    ):
+                        p_hint = hints[p.name]
                     if p.default is None:
-                        hints[p.name] = typing.Optional[p.annotation]
+                        hints[p.name] = typing.Optional[p_hint]
                     else:
-                        hints[p.name] = p.annotation
+                        hints[p.name] = p_hint
     except (AttributeError, TypeError, NameError):  # pragma: no cover
         pass
 
