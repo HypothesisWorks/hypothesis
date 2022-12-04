@@ -160,7 +160,6 @@ def get_type_hints(thing):
                         )
                     ):
                         p_hint = hints[p.name]
-                    print(p_hint, p.default)
                     if p.default is None:
                         hints[p.name] = typing.Optional[p_hint]
                     else:
