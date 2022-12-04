@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.60.0:
+
+-------------------
+6.60.0 - 2022-12-04
+-------------------
+
+This release improves Hypothesis' ability to resolve forward references in
+type annotations. It fixes a bug that prevented
+:func:`~hypothesis.strategies.builds` from being used with `pydantic models that
+possess updated forward references <https://pydantic-docs.helpmanual.io/usage/postponed_annotations/>`__. See :issue:`3519`.
+
 .. _v6.59.0:
 
 -------------------
