@@ -13,7 +13,6 @@ import pytest
 from hypothesis import (
     HealthCheck,
     Verbosity,
-    assume,
     example,
     given,
     settings,
@@ -42,7 +41,10 @@ def test_can_shrink_in_variable_sized_context(n):
 @given(st.floats(min_value=0, allow_infinity=False, allow_nan=False))
 @settings(deadline=None, suppress_health_check=HealthCheck.all())
 def test_shrinks_downwards_to_integers(f):
-    g = minimal(st.floats(), lambda x: x >= f, settings(verbosity=Verbosity.quiet))
+    g = minimal(
+        st.floats().filter(lambda x: x >= f),
+        settings=settings(verbosity=Verbosity.quiet, max_examples=10**6),
+    )
     assert g == ceil(f)
 
 
@@ -51,8 +53,7 @@ def test_shrinks_downwards_to_integers(f):
 @settings(deadline=None, suppress_health_check=HealthCheck.all(), max_examples=10)
 def test_shrinks_downwards_to_integers_when_fractional(b):
     g = minimal(
-        st.floats(),
-        lambda x: assume((0 < x < (2**53)) and int(x) != x) and x >= b,
+        st.floats().filter(lambda x: b < x < 2**53 and int(x) != x),
         settings=settings(verbosity=Verbosity.quiet, max_examples=10**6),
     )
     assert g == b + 0.5
