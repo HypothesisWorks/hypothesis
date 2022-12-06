@@ -13,6 +13,7 @@ from copy import deepcopy
 from datetime import time
 from functools import partial, wraps
 from inspect import Parameter, Signature, signature
+from textwrap import dedent
 from unittest.mock import MagicMock, Mock, NonCallableMagicMock, NonCallableMock
 
 import pytest
@@ -651,3 +652,61 @@ def test_param_called_within_defaults_on_error():
     # Create a function object for which we cannot retrieve the source.
     f = compile("lambda: ...", "_.py", "eval")
     assert is_first_param_referenced_in_function(f)
+
+
+def _prep_source(*pairs):
+    return [
+        pytest.param(dedent(x).strip(), dedent(y).strip().encode(), id=f"case-{i}")
+        for i, (x, y) in enumerate(pairs)
+    ]
+
+
+@pytest.mark.parametrize(
+    "src, clean",
+    _prep_source(
+        ("", ""),
+        ("def test(): pass", "def test(): pass"),
+        ("def invalid syntax", "def invalid syntax"),
+        ("def also invalid(", "def also invalid("),
+        (
+            """
+            @example(1)
+            @given(st.integers())
+            def test(x):
+                # line comment
+                assert x  # end-of-line comment
+
+
+                "Had some blank lines above"
+            """,
+            """
+            def test(x):
+                assert x
+                "Had some blank lines above"
+            """,
+        ),
+        (
+            """
+            def      \\
+                f(): pass
+            """,
+            """
+            def\\
+                f(): pass
+            """,
+        ),
+        (
+            """
+            @dec
+            async def f():
+                pass
+            """,
+            """
+            async def f():
+                pass
+            """,
+        ),
+    ),
+)
+def test_clean_source(src, clean):
+    assert reflection._clean_source(src).splitlines() == clean.splitlines()
