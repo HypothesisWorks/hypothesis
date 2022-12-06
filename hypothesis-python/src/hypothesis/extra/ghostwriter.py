@@ -52,7 +52,7 @@ generally do their best to write you a useful test.  You can also use
 .. tip::
 
     Using a light theme?  Hypothesis respects `NO_COLOR <https://no-color.org/>`__
-    and :envvar:`DJANGO_COLORS=light <django:DJANGO_COLORS>`.
+    and ``DJANGO_COLORS=light``.
 
 .. note::
 
