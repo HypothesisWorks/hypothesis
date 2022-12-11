@@ -20,13 +20,14 @@ import sys
 import textwrap
 import types
 from functools import wraps
+from io import StringIO
 from keyword import iskeyword
-from tokenize import detect_encoding
+from tokenize import COMMENT, detect_encoding, generate_tokens, untokenize
 from types import ModuleType
 from typing import TYPE_CHECKING, Callable
 from unittest.mock import _patch as PatchType
 
-from hypothesis.internal.compat import is_typed_named_tuple, update_code_location
+from hypothesis.internal.compat import PYPY, is_typed_named_tuple, update_code_location
 from hypothesis.utils.conventions import not_set
 from hypothesis.vendor.pretty import pretty
 
@@ -48,6 +49,40 @@ def is_mock(obj):
     return hasattr(obj, "hypothesis_internal_is_this_a_mock_check")
 
 
+def _clean_source(src: str) -> bytes:
+    """Return the source code as bytes, without decorators or comments.
+
+    Because this is part of our database key, we reduce the cache invalidation
+    rate by ignoring decorators, comments, trailing whitespace, and empty lines.
+    We can't just use the (dumped) AST directly because it changes between Python
+    versions (e.g. ast.Constant)
+    """
+    # Get the (one-indexed) line number of the function definition, and drop preceding
+    # lines - i.e. any decorators, so that adding `@example()`s keeps the same key.
+    try:
+        funcdef = ast.parse(src).body[0]
+        if sys.version_info[:2] == (3, 7) or (sys.version_info[:2] == (3, 8) and PYPY):
+            # We can't get a line number of the (async) def here, so as a best-effort
+            # approximation we'll use str.split instead and hope for the best.
+            tag = "async def " if isinstance(funcdef, ast.AsyncFunctionDef) else "def "
+            if tag in src:
+                src = tag + src.split(tag, maxsplit=1)[1]
+        else:
+            src = "".join(src.splitlines(keepends=True)[funcdef.lineno - 1 :])
+    except Exception:
+        pass
+    # Remove blank lines and use the tokenize module to strip out comments,
+    # so that those can be changed without changing the database key.
+    try:
+        src = untokenize(
+            t for t in generate_tokens(StringIO(src).readline) if t.type != COMMENT
+        )
+    except Exception:
+        pass
+    # Finally, remove any trailing whitespace and empty lines as a last cleanup.
+    return "\n".join(x.rstrip() for x in src.splitlines() if x.rstrip()).encode()
+
+
 def function_digest(function):
     """Returns a string that is stable across multiple invocations across
     multiple processes and is prone to changing significantly in response to
@@ -57,24 +92,23 @@ def function_digest(function):
     """
     hasher = hashlib.sha384()
     try:
-        hasher.update(inspect.getsource(function).encode())
+        src = inspect.getsource(function)
     except (OSError, TypeError):
+        # If we can't actually get the source code, try for the name as a fallback.
+        try:
+            hasher.update(function.__name__.encode())
+        except AttributeError:
+            pass
+    else:
+        hasher.update(_clean_source(src))
+    try:
+        # This is additional to the source code because it can include the effects
+        # of decorators, or of post-hoc assignment to the .__signature__ attribute.
+        hasher.update(repr(get_signature(function)).encode())
+    except Exception:
         pass
     try:
-        hasher.update(function.__name__.encode())
-    except AttributeError:
-        pass
-    try:
-        # We prefer to use the modern signature API, but left this for compatibility.
-        # While we don't promise stability of the database, there's no advantage to
-        # using signature here, so we might as well keep the existing keys for now.
-        spec = inspect.getfullargspec(function)
-        if inspect.ismethod(function):
-            del spec.args[0]
-        hasher.update(repr(spec).encode())
-    except TypeError:
-        pass
-    try:
+        # We set this in order to distinguish e.g. @pytest.mark.parametrize cases.
         hasher.update(function._hypothesis_internal_add_digest)
     except AttributeError:
         pass
@@ -120,7 +154,7 @@ def get_signature(target, *, follow_wrapped=True):
                     parameters=[v for k, v in sig.parameters.items() if k != "self"]
                 )
         return sig
-    if sys.version_info[:2] <= (3, 8) and inspect.isclass(target):  # pragma: no cover
+    if sys.version_info[:2] <= (3, 8) and inspect.isclass(target):
         # Workaround for subclasses of typing.Generic on Python <= 3.8
         from hypothesis.strategies._internal.types import is_generic_type
 

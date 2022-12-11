@@ -52,7 +52,7 @@ generally do their best to write you a useful test.  You can also use
 .. tip::
 
     Using a light theme?  Hypothesis respects `NO_COLOR <https://no-color.org/>`__
-    and :envvar:`DJANGO_COLORS=light <django:DJANGO_COLORS>`.
+    and ``DJANGO_COLORS=light``.
 
 .. note::
 
@@ -117,7 +117,7 @@ from hypothesis.strategies._internal.strategies import (
 )
 from hypothesis.strategies._internal.types import _global_type_lookup, is_generic_type
 
-if sys.version_info >= (3, 10):  # pragma: no cover
+if sys.version_info >= (3, 10):
     from types import EllipsisType as EllipsisType
 elif TYPE_CHECKING:
     from builtins import ellipsis as EllipsisType
