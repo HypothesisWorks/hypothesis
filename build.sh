@@ -23,8 +23,8 @@ if [ -n "${GITHUB_ACTIONS-}" ] || [ -n "${CODESPACES-}" ] ; then
 else
     # Otherwise, we install it from scratch
     # NOTE: tooling keeps this version in sync with ci_version in tooling
-    "$SCRIPTS/ensure-python.sh" 3.10.8
-    PYTHON=$(pythonloc 3.10.8)/bin/python
+    "$SCRIPTS/ensure-python.sh" 3.10.9
+    PYTHON=$(pythonloc 3.10.9)/bin/python
 fi
 
 TOOL_REQUIREMENTS="$ROOT/requirements/tools.txt"
