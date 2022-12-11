@@ -29,6 +29,8 @@ def test_release_file_exists_and_is_valid(project):
 def test_release_file_has_no_merge_conflicts():
     _, message = rm.parse_release_file(hp.RELEASE_FILE)
     assert "<<<" not in message, "Merge conflict in RELEASE.rst"
+    if message in {hp.get_autoupdate_message(x).strip() for x in (True, False)}:
+        return
     _, *recent_changes, _ = hp.CHANGELOG_ANCHOR.split(hp.changelog(), maxsplit=12)
     for entry in recent_changes:
         _, version, old_msg = (x.strip() for x in hp.CHANGELOG_BORDER.split(entry))

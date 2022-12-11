@@ -330,16 +330,9 @@ def upgrade_requirements():
     compile_requirements(upgrade=True)
     subprocess.call(["./build.sh", "format"], cwd=tools.ROOT)  # exits 1 if changed
     if has_diff(hp.PYTHON_SRC) and not os.path.isfile(hp.RELEASE_FILE):
-        if has_diff(f"{hp.PYTHON_SRC}/hypothesis/vendor/tlds-alpha-by-domain.txt"):
-            msg = (
-                "our vendored `list of top-level domains "
-                "<https://www.iana.org/domains/root/db>`__,\nwhich is used by the "
-                "provisional :func:`~hypothesis.provisional.domains` strategy."
-            )
-        else:
-            msg = "our autoformatting tools, improving our code style without any API changes."
+        msg = hp.get_autoupdate_message(domainlist_changed=has_diff(hp.DOMAINS_LIST))
         with open(hp.RELEASE_FILE, mode="w") as f:
-            f.write(f"RELEASE_TYPE: patch\n\nThis patch updates {msg}\n")
+            f.write(f"RELEASE_TYPE: patch\n\n" + msg)
     update_python_versions()
     subprocess.call(["git", "add", "."], cwd=tools.ROOT)
 
