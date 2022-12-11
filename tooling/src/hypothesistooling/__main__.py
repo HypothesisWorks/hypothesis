@@ -330,16 +330,9 @@ def upgrade_requirements():
     compile_requirements(upgrade=True)
     subprocess.call(["./build.sh", "format"], cwd=tools.ROOT)  # exits 1 if changed
     if has_diff(hp.PYTHON_SRC) and not os.path.isfile(hp.RELEASE_FILE):
-        if has_diff(f"{hp.PYTHON_SRC}/hypothesis/vendor/tlds-alpha-by-domain.txt"):
-            msg = (
-                "our vendored `list of top-level domains "
-                "<https://www.iana.org/domains/root/db>`__,\nwhich is used by the "
-                "provisional :func:`~hypothesis.provisional.domains` strategy."
-            )
-        else:
-            msg = "our autoformatting tools, improving our code style without any API changes."
+        msg = hp.get_autoupdate_message(domainlist_changed=has_diff(hp.DOMAINS_LIST))
         with open(hp.RELEASE_FILE, mode="w") as f:
-            f.write(f"RELEASE_TYPE: patch\n\nThis patch updates {msg}\n")
+            f.write(f"RELEASE_TYPE: patch\n\n" + msg)
     update_python_versions()
     subprocess.call(["git", "add", "."], cwd=tools.ROOT)
 
@@ -386,11 +379,11 @@ def run_tox(task, version, *args):
 # When a version is added or removed, manually update the env lists in tox.ini and
 # workflows/main.yml, and the `Programming Language ::` specifiers in setup.py
 PYTHONS = {
-    "3.7": "3.7.15",
-    "3.8": "3.8.15",
-    "3.9": "3.9.15",
-    "3.10": "3.10.8",
-    "3.11": "3.11.0",
+    "3.7": "3.7.16",
+    "3.8": "3.8.16",
+    "3.9": "3.9.16",
+    "3.10": "3.10.9",
+    "3.11": "3.11.1",
     "3.12": "3.12-dev",
     "pypy3.7": "pypy3.7-7.3.9",
     "pypy3.8": "pypy3.8-7.3.9",
