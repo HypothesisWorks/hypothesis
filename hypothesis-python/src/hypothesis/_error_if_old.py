@@ -19,5 +19,5 @@ This can only happen if your packaging toolchain is older than python_requires.
 See https://packaging.python.org/guides/distributing-packages-using-setuptools/
 """
 
-if sys.version_info[:2] < (3, 7):  # pragma: no cover
+if sys.version_info[:2] < (3, 7):
     raise Exception(message.format(__version__))

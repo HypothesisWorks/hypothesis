@@ -22,7 +22,7 @@ from hypothesis.errors import HypothesisWarning, InvalidArgument
 from hypothesis.internal.compat import PYPY
 
 if TYPE_CHECKING:
-    if sys.version_info >= (3, 8):  # pragma: no cover
+    if sys.version_info >= (3, 8):
         from typing import Protocol
     else:
         from typing_extensions import Protocol

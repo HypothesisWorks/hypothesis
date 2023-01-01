@@ -4,11 +4,11 @@
 #
 #    ./build.sh upgrade-requirements
 #
-attrs==22.1.0
+attrs==22.2.0
     # via
     #   hypothesis (hypothesis-python/setup.py)
     #   pytest
-exceptiongroup==1.0.4 ; python_version < "3.11"
+exceptiongroup==1.1.0 ; python_version < "3.11"
     # via
     #   hypothesis (hypothesis-python/setup.py)
     #   pytest

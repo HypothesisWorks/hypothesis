@@ -386,8 +386,8 @@ PYTHONS = {
     "3.11": "3.11.1",
     "3.12": "3.12-dev",
     "pypy3.7": "pypy3.7-7.3.9",
-    "pypy3.8": "pypy3.8-7.3.9",
-    "pypy3.9": "pypy3.9-7.3.9",
+    "pypy3.8": "pypy3.8-7.3.11",
+    "pypy3.9": "pypy3.9-7.3.11",
 }
 ci_version = "3.10"  # Keep this in sync with GH Actions main.yml and .readthedocs.yml
 

@@ -582,7 +582,7 @@ if PYPY:
 _global_type_lookup[type] = st.sampled_from(
     [type(None)] + sorted(_global_type_lookup, key=str)
 )
-if sys.version_info[:2] >= (3, 9):  # pragma: no cover
+if sys.version_info[:2] >= (3, 9):
     # subclass of MutableMapping, and in Python 3.9 we resolve to a union
     # which includes this... but we don't actually ever want to build one.
     _global_type_lookup[os._Environ] = st.just(os.environ)
