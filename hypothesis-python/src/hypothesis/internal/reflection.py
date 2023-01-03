@@ -24,7 +24,7 @@ from io import StringIO
 from keyword import iskeyword
 from tokenize import COMMENT, detect_encoding, generate_tokens, untokenize
 from types import ModuleType
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Any, Callable
 from unittest.mock import _patch as PatchType
 
 from hypothesis.internal.compat import PYPY, is_typed_named_tuple, update_code_location
@@ -127,7 +127,7 @@ def check_signature(sig: inspect.Signature) -> None:
             )
 
 
-def get_signature(target, *, follow_wrapped=True):
+def get_signature(target: Any, *, follow_wrapped: bool = True) -> inspect.Signature:
     # Special case for use of `@unittest.mock.patch` decorator, mimicking the
     # behaviour of getfullargspec instead of reporting unusable arguments.
     patches = getattr(target, "patchings", None)

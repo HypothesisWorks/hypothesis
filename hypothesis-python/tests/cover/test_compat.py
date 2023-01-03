@@ -10,6 +10,7 @@
 
 import math
 from dataclasses import dataclass
+from functools import partial
 from inspect import Parameter, Signature, signature
 from typing import ForwardRef, Optional, Union
 
@@ -88,3 +89,20 @@ Bar.__signature__ = signature(Bar).replace(  # type: ignore
 def test_resolve_fwd_refs(obj, expected):
     # See: https://github.com/HypothesisWorks/hypothesis/issues/3519
     assert get_type_hints(obj)["x"] == expected
+
+
+def func(a, b: int, *c: str, d: int = None):
+    pass
+
+
+@pytest.mark.parametrize(
+    "pf, names",
+    [
+        (partial(func, 1), "b c d"),
+        (partial(func, 1, 2), "c d"),
+        (partial(func, 1, 2, 3, 4, 5), "c d"),  # varargs don't fill
+        (partial(func, 1, 2, 3, d=4), "c d"),  # kwonly args just get new defaults
+    ],
+)
+def test_get_hints_through_partial(pf, names):
+    assert set(get_type_hints(pf)) == set(names.split())
