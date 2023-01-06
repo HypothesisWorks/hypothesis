@@ -50,6 +50,7 @@ def define_method_strategy(name, **kwargs):
 
 
 define_method_strategy("betavariate", alpha=beta_param, beta=beta_param)
+define_method_strategy("binomialvariate", n=st.integers(min_value=1), p=st.floats(0, 1))
 define_method_strategy("gammavariate", alpha=beta_param, beta=beta_param)
 define_method_strategy("weibullvariate", alpha=beta_param, beta=beta_param)
 define_method_strategy("choice", seq=seq_param)
