@@ -76,6 +76,8 @@ Either are fine, and you can use one in one example and the other in another
 example if for some reason you really want to, but a single example must be
 consistent.
 
+.. automethod:: hypothesis.example.xfail
+
 .. automethod:: hypothesis.example.via
 
 .. _reproducing-with-seed:
