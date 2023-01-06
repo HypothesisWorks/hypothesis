@@ -208,15 +208,18 @@ class ArrayStrategy(st.SearchStrategy):
             ) from err
         if elem_changed:
             strategy = self.fill if fill else self.element_strategy
-            if self.dtype.kind == "f":
+            if self.dtype.kind == "f":  # pragma: no cover
+                # This logic doesn't trigger in our coverage tests under Numpy 1.24+,
+                # with built-in checks for overflow, but we keep it for good error
+                # messages and compatbility with older versions of Numpy.
                 try:
                     is_subnormal = 0 < abs(val) < np.finfo(self.dtype).tiny
-                except Exception:  # pragma: no cover
+                except Exception:
                     # val may be a non-float that does not support the
                     # operations __lt__ and __abs__
-                    is_subnormal = False  # pragma: no cover
+                    is_subnormal = False
                 if is_subnormal:
-                    raise InvalidArgument(  # pragma: no cover
+                    raise InvalidArgument(
                         f"Generated subnormal float {val} from strategy "
                         f"{strategy} resulted in {result[idx]!r}, probably "
                         "as a result of NumPy being built with flush-to-zero "
