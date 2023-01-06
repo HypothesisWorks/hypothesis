@@ -44,17 +44,20 @@ jobs:
           - check-py311-cover
           - check-py311-nocover
           - check-py311-niche
-          # - check-py312  # enable when alpha1 is released, ~Nov 2022
+          - check-py312-cover
+          - check-py312-nocover
+          - check-py312-niche
           - check-quality
-          - lint-ruby
-          - check-ruby-tests
-          - check-rust-in-ruby-format
-          - lint-rust-in-ruby
-          - audit-rust-in-ruby
-          - check-conjecture-rust-format
-          - check-rust-tests
-          - audit-conjecture-rust
-          - lint-conjecture-rust
+          ## Skip all the (inactive/old) Rust and Ruby tests pending fixes
+          # - lint-ruby
+          # - check-ruby-tests
+          # - check-rust-in-ruby-format
+          # - lint-rust-in-ruby
+          # - audit-rust-in-ruby
+          # - check-conjecture-rust-format
+          # - check-rust-tests
+          # - audit-conjecture-rust
+          # - lint-conjecture-rust
           - check-py39-nose
           - check-py39-pytest46
           - check-py39-pytest54

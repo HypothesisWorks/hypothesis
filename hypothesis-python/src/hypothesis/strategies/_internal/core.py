@@ -125,7 +125,7 @@ else:
     EllipsisType = type(Ellipsis)  # pragma: no cover
 
 
-if sys.version_info >= (3, 8):  # pragma: no cover
+if sys.version_info >= (3, 8):
     from typing import Protocol
 elif TYPE_CHECKING:
     from typing_extensions import Protocol
@@ -960,7 +960,7 @@ def builds(
     return BuildsStrategy(target, args, kwargs)
 
 
-if sys.version_info[:2] >= (3, 8):  # pragma: no branch
+if sys.version_info[:2] >= (3, 8):
     # See notes above definition - this signature is compatible and better
     # matches the semantics of the function.  Great for documentation!
     sig = signature(builds)

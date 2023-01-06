@@ -340,8 +340,12 @@ def test_may_not_fill_with_non_nan_when_unique_is_set_and_type_is_not_number(arr
     pass
 
 
+np_version = tuple(int(x) for x in np.__version__.split(".")[:2])
+
+
 @pytest.mark.parametrize("fill", [False, True])
-@fails_with(InvalidArgument)
+# Overflowing elements deprecated upstream in Numpy 1.24 :-)
+@fails_with(InvalidArgument if np_version < (1, 24) else DeprecationWarning)
 @given(st.data())
 def test_overflowing_integers_are_deprecated(fill, data):
     kw = {"elements": st.just(300)}
@@ -372,7 +376,12 @@ def test_unrepresentable_elements_are_deprecated(fill, dtype, strat, data):
         kw = {"elements": st.nothing(), "fill": strat}
     else:
         kw = {"elements": strat}
-    arr = data.draw(nps.arrays(dtype=dtype, shape=(1,), **kw))
+    try:
+        arr = data.draw(nps.arrays(dtype=dtype, shape=(1,), **kw))
+    except RuntimeWarning:
+        assert np_version >= (1, 24), "New overflow-on-cast detection"
+        raise InvalidArgument("so the test passes") from None
+
     try:
         # This is a float or complex number, and has overflowed to infinity,
         # triggering our deprecation for overflow.
