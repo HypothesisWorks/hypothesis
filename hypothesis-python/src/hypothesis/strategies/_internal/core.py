@@ -125,7 +125,7 @@ else:
     EllipsisType = type(Ellipsis)  # pragma: no cover
 
 
-if sys.version_info >= (3, 8):  # pragma: no cover
+if sys.version_info >= (3, 8):
     from typing import Protocol
 elif TYPE_CHECKING:
     from typing_extensions import Protocol
@@ -902,7 +902,7 @@ def builds(
 
     If the callable is a class defined with :pypi:`attrs`, missing required
     arguments will be inferred from the attribute on a best-effort basis,
-    e.g. by checking :ref:`attrs standard validators <attrs:api_validators>`.
+    e.g. by checking :ref:`attrs standard validators <attrs:api-validators>`.
     Dataclasses are handled natively by the inference from type hints.
 
     Examples from this strategy shrink by shrinking the argument values to
@@ -960,7 +960,7 @@ def builds(
     return BuildsStrategy(target, args, kwargs)
 
 
-if sys.version_info[:2] >= (3, 8):  # pragma: no branch
+if sys.version_info[:2] >= (3, 8):
     # See notes above definition - this signature is compatible and better
     # matches the semantics of the function.  Great for documentation!
     sig = signature(builds)

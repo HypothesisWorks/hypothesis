@@ -196,7 +196,7 @@ class example:
         # This is deliberately a no-op at runtime; the tools operate on source code.
         return self
 
-    if sys.version_info[:2] >= (3, 8):  # pragma: no branch
+    if sys.version_info[:2] >= (3, 8):
         # We want a positional-only argument, and on Python 3.8+ we'll get it.
         __sig = get_signature(via)
         via = define_function_signature(

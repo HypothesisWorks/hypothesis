@@ -107,6 +107,11 @@ class DomainNameStrategy(st.SearchStrategy):
                 ).map("".join)
             )
         )
+        # RFC-5890 s2.3.1 says such labels are reserved, and since we don't
+        # want to bother with xn-- punycode labels we'll exclude them all.
+        elem_st = st.from_regex(self.label_regex, fullmatch=True).filter(
+            lambda label: len(label) < 4 or label[2:4] != "--"
+        )
         # The maximum possible number of subdomains is 126,
         # 1 character subdomain + 1 '.' character, * 126 = 252,
         # with a max of 255, that leaves 3 characters for a TLD.
@@ -115,7 +120,7 @@ class DomainNameStrategy(st.SearchStrategy):
         elements = cu.many(data, min_size=1, average_size=3, max_size=126)
         while elements.more():
             # Generate a new valid subdomain using the regex strategy.
-            sub_domain = data.draw(st.from_regex(self.label_regex, fullmatch=True))
+            sub_domain = data.draw(elem_st)
             if len(domain) + len(sub_domain) >= self.max_length:
                 data.stop_example(discard=True)
                 break

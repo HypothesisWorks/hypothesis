@@ -70,6 +70,7 @@ RANDOM_METHODS = [
     for name in [
         "_randbelow",
         "betavariate",
+        "binomialvariate",
         "choice",
         "choices",
         "expovariate",
@@ -271,6 +272,9 @@ class ArtificialRandom(HypothesisRandom):
                 result = cu.integer_range(self.__data, start, stop - 1)
         elif method == "randint":
             result = cu.integer_range(self.__data, kwargs["a"], kwargs["b"])
+        # New in Python 3.12, so not taken by our coverage job
+        elif method == "binomialvariate":  # pragma: no cover
+            result = cu.integer_range(self.__data, 0, kwargs["n"])
         elif method == "choice":
             seq = kwargs["seq"]
             result = cu.integer_range(self.__data, 0, len(seq) - 1)
@@ -317,8 +321,7 @@ class ArtificialRandom(HypothesisRandom):
             result = self.__data.draw(floats(min_value=0.0))
         elif method == "shuffle":
             result = self.__data.draw(permutations(range(len(kwargs["x"]))))
-        # This is tested for but only appears in 3.9 so doesn't appear in coverage.
-        elif method == "randbytes":  # pragma: no cover
+        elif method == "randbytes":
             n = kwargs["n"]
             result = self.__data.draw(binary(min_size=n, max_size=n))
         else:

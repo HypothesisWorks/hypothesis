@@ -25,7 +25,7 @@ from hypothesis.extra.django._fields import from_field
 from hypothesis.internal.reflection import define_function_signature
 from hypothesis.strategies._internal.utils import defines_strategy
 
-if sys.version_info >= (3, 10):  # pragma: no cover
+if sys.version_info >= (3, 10):
     from types import EllipsisType as EllipsisType
 elif TYPE_CHECKING:
     from builtins import ellipsis as EllipsisType
@@ -130,7 +130,7 @@ def from_model(
     return _models_impl(st.builds(m_type.objects.get_or_create, **field_strategies))
 
 
-if sys.version_info[:2] >= (3, 8):  # pragma: no branch
+if sys.version_info[:2] >= (3, 8):
     # See notes above definition of st.builds() - this signature is compatible
     # and better matches the semantics of the function.  Great for documentation!
     sig = signature(from_model)
