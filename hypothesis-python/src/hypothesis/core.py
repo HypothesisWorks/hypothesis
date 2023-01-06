@@ -400,9 +400,7 @@ class ArtificialDataForExample(ConjectureData):
         assert self.__draws == 0
         self.__draws += 1
         # The main strategy for given is always a tuples strategy that returns
-        # first positional arguments then keyword arguments. When building this
-        # object already converted all positional arguments to keyword arguments,
-        # so this is the correct format to return.
+        # first positional arguments then keyword arguments.
         return self.__args, self.__kwargs
 
 
@@ -414,6 +412,7 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
     ]
 
     for example in reversed(getattr(wrapped_test, "hypothesis_explicit_examples", ())):
+        assert isinstance(example, Example)
         # All of this validation is to check that @example() got "the same" arguments
         # as @given, i.e. corresponding to the same parameters, even though they might
         # be any mixture of positional and keyword arguments.
@@ -478,7 +477,7 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
                 # One user error - whether misunderstanding or typo - we've seen a few
                 # times is to pass strategies to @example() where values are expected.
                 # Checking is easy, and false-positives not much of a problem, so:
-                if any(
+                if isinstance(err, failure_exceptions_to_catch()) and any(
                     isinstance(arg, SearchStrategy)
                     for arg in example.args + tuple(example.kwargs.values())
                 ):
@@ -494,6 +493,7 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
                 if (
                     state.settings.report_multiple_bugs
                     and pytest_shows_exceptiongroups
+                    and isinstance(err, failure_exceptions_to_catch())
                     and not isinstance(err, skip_exceptions_to_reraise())
                 ):
                     continue
