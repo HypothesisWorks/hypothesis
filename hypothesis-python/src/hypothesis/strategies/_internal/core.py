@@ -902,7 +902,7 @@ def builds(
 
     If the callable is a class defined with :pypi:`attrs`, missing required
     arguments will be inferred from the attribute on a best-effort basis,
-    e.g. by checking :ref:`attrs standard validators <attrs:api_validators>`.
+    e.g. by checking :ref:`attrs standard validators <attrs:api-validators>`.
     Dataclasses are handled natively by the inference from type hints.
 
     Examples from this strategy shrink by shrinking the argument values to
