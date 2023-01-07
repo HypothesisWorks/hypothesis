@@ -607,10 +607,9 @@ def _repr_call(*args, **kwargs):
 
 @pytest.mark.parametrize("func_name", ["f", "lambda: ...", "lambda *args: ..."])
 def test_repr_call(func_name):
-    if func_name.startswith(("lambda:", "lambda ")):
-        func_name = f"({func_name})"
+    fn = f"({func_name})" if func_name.startswith(("lambda:", "lambda ")) else func_name
     aas = "a" * 100
-    assert _repr_call(func_name, (1, 2), {}) == f"{func_name}(1, 2)"
-    assert _repr_call(func_name, (aas,), {}) == f"{func_name}(\n    {aas!r},\n)"
-    assert _repr_call(func_name, (), {"a": 1, "b": 2}) == f"{func_name}(a=1, b=2)"
-    assert _repr_call(func_name, (), {"x": aas}) == f"{func_name}(\n    x={aas!r},\n)"
+    assert _repr_call(func_name, (1, 2), {}) == f"{fn}(1, 2)"
+    assert _repr_call(func_name, (aas,), {}) == f"{fn}(\n    {aas!r},\n)"
+    assert _repr_call(func_name, (), {"a": 1, "b": 2}) == f"{fn}(a=1, b=2)"
+    assert _repr_call(func_name, (), {"x": aas}) == f"{fn}(\n    x={aas!r},\n)"
