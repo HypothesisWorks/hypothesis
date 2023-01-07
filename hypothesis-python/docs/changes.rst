@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.61.2:
+
+-------------------
+6.61.2 - 2023-01-07
+-------------------
+
+This patch improves our pretty-printing of failing examples, including
+some refactoring to prepare for exciting future features.
+
 .. _v6.61.1:
 
 -------------------
