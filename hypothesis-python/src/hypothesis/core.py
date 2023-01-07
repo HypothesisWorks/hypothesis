@@ -348,7 +348,7 @@ def is_invalid_test(test, original_sig, given_arguments, given_kwargs):
 
     if ... in given_arguments:
         return invalid(
-            "... was passed as a positional argument to @given,  but may only be "
+            "... was passed as a positional argument to @given, but may only be "
             "passed as a keyword argument or as the sole argument of @given"
         )
 
