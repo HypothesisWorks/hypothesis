@@ -49,7 +49,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import re
 from collections import Counter, OrderedDict, defaultdict, deque
-from io import StringIO
 
 import pytest
 
@@ -380,12 +379,10 @@ def test_basic_class():
 
     type_pprint_wrapper.called = False
 
-    stream = StringIO()
-    printer = pretty.RepresentationPrinter(stream)
+    printer = pretty.RepresentationPrinter()
     printer.type_pprinters[type] = type_pprint_wrapper
     printer.pretty(MyObj)
-    printer.flush()
-    output = stream.getvalue()
+    output = printer.getvalue()
 
     assert output == f"{__name__}.MyObj"
     assert type_pprint_wrapper.called
@@ -576,26 +573,6 @@ def test_re_evals():
         assert r.pattern == r2.pattern and r.flags == r2.flags
 
 
-class CustomStuff:
-    def __init__(self):
-        self.hi = 1
-        self.bye = "fish"
-        self.spoon = self
-
-    @property
-    def oops(self):
-        raise AttributeError("Nope")
-
-    def squirrels(self):
-        pass
-
-
-def test_custom():
-    assert "bye" not in pretty.pretty(CustomStuff())
-    assert "bye=" in pretty.pretty(CustomStuff(), verbose=True)
-    assert "squirrels" not in pretty.pretty(CustomStuff(), verbose=True)
-
-
 def test_print_builtin_function():
     assert pretty.pretty(abs) == "abs"
 
@@ -604,19 +581,8 @@ def test_pretty_function():
     assert pretty.pretty(test_pretty_function) == "test_pretty_function"
 
 
-def test_empty_printer():
-    printer = pretty.RepresentationPrinter(
-        StringIO(),
-        singleton_pprinters={},
-        type_pprinters={int: pretty._repr_pprint, list: pretty._repr_pprint},
-        deferred_pprinters={},
-    )
-    printer.pretty([1, 2, 3])
-    assert printer.output.getvalue() == "[1, 2, 3]"
-
-
 def test_breakable_at_group_boundary():
-    assert "\n" in pretty.pretty([[], "000000"], max_width=5)
+    assert "\n" in pretty.pretty([[], "0" * 80])
 
 
 @pytest.mark.parametrize(
