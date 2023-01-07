@@ -116,6 +116,7 @@ from hypothesis.strategies._internal.strings import (
 )
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 from hypothesis.utils.conventions import not_set
+from hypothesis.vendor.pretty import RepresentationPrinter
 
 if sys.version_info >= (3, 10):
     from types import EllipsisType as EllipsisType
@@ -1834,10 +1835,11 @@ class DataObject:
         check_strategy(strategy, "strategy")
         result = self.conjecture_data.draw(strategy)
         self.count += 1
-        if label is not None:
-            note(f"Draw {self.count} ({label}): {result!r}")
-        else:
-            note(f"Draw {self.count}: {result!r}")
+        printer = RepresentationPrinter()
+        printer.text(f"Draw {self.count}")
+        printer.text(": " if label is None else f" ({label}): ")
+        printer.pretty(result)
+        note(printer.getvalue())
         return result
 
 

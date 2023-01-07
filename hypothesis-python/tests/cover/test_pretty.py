@@ -597,3 +597,20 @@ def test_breakable_at_group_boundary():
 )
 def test_nan_reprs(obj, rep):
     assert pretty.pretty(obj) == rep
+
+
+def _repr_call(*args, **kwargs):
+    p = pretty.RepresentationPrinter()
+    p.repr_call(*args, **kwargs)
+    return p.getvalue()
+
+
+@pytest.mark.parametrize("func_name", ["f", "lambda: ...", "lambda *args: ..."])
+def test_repr_call(func_name):
+    if func_name.startswith(("lambda:", "lambda ")):
+        func_name = f"({func_name})"
+    aas = "a" * 100
+    assert _repr_call(func_name, (1, 2), {}) == f"{func_name}(1, 2)"
+    assert _repr_call(func_name, (aas,), {}) == f"{func_name}(\n    {aas!r},\n)"
+    assert _repr_call(func_name, (), {"a": 1, "b": 2}) == f"{func_name}(a=1, b=2)"
+    assert _repr_call(func_name, (), {"x": aas}) == f"{func_name}(\n    x={aas!r},\n)"

@@ -443,6 +443,7 @@ def nicerepr(v):
 
 
 def repr_call(f, args, kwargs, reorder=True):
+    # Note: for multi-line pretty-printing, see RepresentationPrinter.repr_call()
     if reorder:
         args, kwargs = convert_positional_arguments(f, args, kwargs)
 

@@ -299,6 +299,45 @@ class RepresentationPrinter:
         self.flush()
         return self.output.getvalue()
 
+    def repr_call(self, func_name, args, kwargs, *, force_split=False):
+        """Helper function to represent a function call.
+
+        - func_name, args, and kwargs should all be pretty obvious.
+        - If split_lines, we'll force one-argument-per-line; otherwise we'll place
+          calls that fit on a single line (and split otherwise).
+        """
+        assert isinstance(func_name, str)
+        if func_name.startswith(("lambda:", "lambda ")):
+            func_name = f"({func_name})"
+        self.text(func_name)
+        all_args = [(None, v) for v in args] + list(kwargs.items())
+        if not force_split:
+            # We're OK with printing this call on a single line, but will it fit?
+            # If not, we'd rather fall back to one-argument-per-line instead.
+            p = RepresentationPrinter()
+            for k, v in all_args:
+                if k:
+                    p.text(f"{k}=")
+                p.pretty(v)
+                p.text(", ")
+            force_split = self.max_width <= self.output_width + len(p.getvalue())
+
+        with self.group(indent=4, open="(", close=""):
+            all_args = [(None, v) for v in args] + list(kwargs.items())
+            for i, (k, v) in enumerate(all_args):
+                if force_split:
+                    self.break_()
+                elif i:
+                    self.breakable()
+                if k:
+                    self.text(f"{k}=")
+                self.pretty(v)
+                if force_split or i + 1 < len(all_args):
+                    self.text(",")
+        if all_args and force_split:
+            self.break_()
+        self.text(")")  # after dedent
+
 
 class Printable:
     def output(self, stream, output_width):  # pragma: no cover

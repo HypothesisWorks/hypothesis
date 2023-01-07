@@ -717,28 +717,13 @@ class StateForActualGivenExecution:
 
                             if self.print_given_args:
                                 printer.text(" ")
-                                printer.text(test.__name__)
-                                with printer.group(indent=4, open="(", close=""):
-                                    printer.break_()
-                                    for v in args:
-                                        printer.pretty(v)
-                                        # We add a comma unconditionally because
-                                        # generated arguments will always be kwargs,
-                                        # so there will always be more to come.
-                                        printer.text(",")
-                                        printer.breakable()
-
-                                    for i, (k, v) in enumerate(kwargs.items()):
-                                        printer.text(k)
-                                        printer.text("=")
-                                        printer.pretty(v)
-                                        printer.text(",")
-                                        if i + 1 < len(kwargs):
-                                            printer.breakable()
-                                printer.break_()
-                                printer.text(")")
-                            printer.flush()
-                            report(output.getvalue())
+                                printer.repr_call(
+                                    test.__name__,
+                                    args,
+                                    kwargs,
+                                    force_split=True,
+                                )
+                            report(printer.getvalue())
                         return test(*args, **kwargs)
 
         # Run the test function once, via the executor hook.
