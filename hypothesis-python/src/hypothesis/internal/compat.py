@@ -13,6 +13,7 @@ import inspect
 import platform
 import sys
 import typing
+from functools import partial
 from typing import Any, ForwardRef, Tuple
 
 try:
@@ -119,6 +120,14 @@ def get_type_hints(thing):
     Never errors: instead of raising TypeError for uninspectable objects, or
     NameError for unresolvable forward references, just return an empty dict.
     """
+    if isinstance(thing, partial):
+        from hypothesis.internal.reflection import get_signature
+
+        bound = set(get_signature(thing.func).parameters).difference(
+            get_signature(thing).parameters
+        )
+        return {k: v for k, v in get_type_hints(thing.func).items() if k not in bound}
+
     kwargs = {} if sys.version_info[:2] < (3, 9) else {"include_extras": True}
 
     try:
