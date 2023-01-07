@@ -9,7 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
-from typing import NoReturn, Union
+from typing import NoReturn, Optional, Union
 
 from hypothesis import Verbosity, settings
 from hypothesis.errors import InvalidArgument, UnsatisfiedAssumption
@@ -51,7 +51,7 @@ def currently_in_test_context() -> bool:
     return _current_build_context.value is not None
 
 
-def current_build_context():
+def current_build_context() -> "Optional[BuildContext]":
     context = _current_build_context.value
     if context is None:
         raise InvalidArgument("No build context registered")

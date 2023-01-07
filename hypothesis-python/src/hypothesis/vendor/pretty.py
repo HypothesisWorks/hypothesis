@@ -63,7 +63,6 @@ Inheritance diagram:
 """
 
 import datetime
-import platform
 import re
 import struct
 import types
@@ -74,16 +73,11 @@ from math import copysign, isnan
 
 __all__ = [
     "pretty",
-    "PrettyPrinter",
     "RepresentationPrinter",
-    "for_type_by_name",
 ]
 
 
-MAX_SEQ_LENGTH = 1000
 _re_pattern_type = type(re.compile(""))
-
-PYPY = platform.python_implementation() == "PyPy"
 
 
 def _safe_getattr(obj, attr, default=None):
@@ -99,56 +93,28 @@ def _safe_getattr(obj, attr, default=None):
         return default
 
 
-def pretty(
-    obj, verbose=False, max_width=79, newline="\n", max_seq_length=MAX_SEQ_LENGTH
-):
+def pretty(obj):
     """Pretty print the object's representation."""
-    stream = StringIO()
-    printer = RepresentationPrinter(
-        stream, verbose, max_width, newline, max_seq_length=max_seq_length
-    )
+    printer = RepresentationPrinter()
     printer.pretty(obj)
-    printer.flush()
-    return stream.getvalue()
+    return printer.getvalue()
 
 
-class _PrettyPrinterBase:
-    @contextmanager
-    def indent(self, indent):
-        """`with`-statement support for indenting/dedenting."""
-        self.indentation += indent
-        try:
-            yield
-        finally:
-            self.indentation -= indent
+class RepresentationPrinter:
+    """Special pretty printer that has a `pretty` method that calls the pretty
+    printer for a python object.
 
-    @contextmanager
-    def group(self, indent=0, open="", close=""):
-        """Like begin_group / end_group but for the with statement."""
-        self.begin_group(indent, open)
-        try:
-            yield
-        finally:
-            self.end_group(indent, close)
-
-
-class PrettyPrinter(_PrettyPrinterBase):
-    """Baseclass for the `RepresentationPrinter` prettyprinter that is used to
-    generate pretty reprs of objects.
-
-    Contrary to the `RepresentationPrinter` this printer knows nothing
-    about the default pprinters or the `_repr_pretty_` callback method.
+    This class stores processing data on `self` so you must *never* use
+    this class in a threaded environment.  Always lock it or
+    reinstantiate it.
 
     """
 
-    def __init__(
-        self, output, max_width=79, newline="\n", max_seq_length=MAX_SEQ_LENGTH
-    ):
+    def __init__(self, output=None):
         self.broken = False
-        self.output = output
-        self.max_width = max_width
-        self.newline = newline
-        self.max_seq_length = max_seq_length
+        self.output = StringIO() if output is None else output
+        self.max_width = 79
+        self.max_seq_length = 1000
         self.output_width = 0
         self.buffer_width = 0
         self.buffer = deque()
@@ -159,6 +125,59 @@ class PrettyPrinter(_PrettyPrinterBase):
         self.indentation = 0
 
         self.snans = 0
+
+        self.stack = []
+        self.singleton_pprinters = _singleton_pprinters.copy()
+        self.type_pprinters = _type_pprinters.copy()
+        self.deferred_pprinters = _deferred_type_pprinters.copy()
+
+    def pretty(self, obj):
+        """Pretty print the given object."""
+        obj_id = id(obj)
+        cycle = obj_id in self.stack
+        self.stack.append(obj_id)
+        try:
+            with self.group():
+                obj_class = _safe_getattr(obj, "__class__", None) or type(obj)
+                # First try to find registered singleton printers for the type.
+                try:
+                    printer = self.singleton_pprinters[obj_id]
+                except (TypeError, KeyError):
+                    pass
+                else:
+                    return printer(obj, self, cycle)
+                # Next walk the mro and check for either:
+                #   1) a registered printer
+                #   2) a _repr_pretty_ method
+                for cls in obj_class.__mro__:
+                    if cls in self.type_pprinters:
+                        # printer registered in self.type_pprinters
+                        return self.type_pprinters[cls](obj, self, cycle)
+                    else:
+                        # Check if the given class is specified in the deferred type
+                        # registry; move it to the regular type registry if so.
+                        key = (
+                            _safe_getattr(cls, "__module__", None),
+                            _safe_getattr(cls, "__name__", None),
+                        )
+                        if key in self.deferred_pprinters:
+                            # Move the printer over to the regular registry.
+                            printer = self.deferred_pprinters.pop(key)
+                            self.type_pprinters[cls] = printer
+                            return printer(obj, self, cycle)
+                        else:
+                            # Finally look for special method names.
+                            # Some objects automatically create any requested
+                            # attribute. Try to ignore most of them by checking for
+                            # callability.
+                            if "_repr_pretty_" in cls.__dict__:
+                                meth = cls._repr_pretty_
+                                if callable(meth):
+                                    return meth(obj, self, cycle)
+                # A user-provided repr. Find newlines and replace them with p.break_()
+                return _repr_pprint(obj, self, cycle)
+        finally:
+            self.stack.pop()
 
     def _break_outer_groups(self):
         while self.max_width < self.output_width + self.buffer_width:
@@ -201,8 +220,7 @@ class PrettyPrinter(_PrettyPrinterBase):
         group = self.group_stack[-1]
         if group.want_break:
             self.flush()
-            self.output.write(self.newline)
-            self.output.write(" " * self.indentation)
+            self.output.write("\n" + " " * self.indentation)
             self.output_width = self.indentation
             self.buffer_width = 0
         else:
@@ -214,24 +232,28 @@ class PrettyPrinter(_PrettyPrinterBase):
         """Explicitly insert a newline into the output, maintaining correct
         indentation."""
         self.flush()
-        self.output.write(self.newline)
-        self.output.write(" " * self.indentation)
+        self.output.write("\n" + " " * self.indentation)
         self.output_width = self.indentation
         self.buffer_width = 0
 
-    def begin_group(self, indent=0, open=""):
-        """
-        Begin a group.  If you want support for python < 2.5 which doesn't has
-        the with statement this is the preferred way:
-            p.begin_group(1, '{')
-            ...
-            p.end_group(1, '}')
-        The python 2.5 expression would be this:
+    @contextmanager
+    def indent(self, indent):
+        """`with`-statement support for indenting/dedenting."""
+        self.indentation += indent
+        try:
+            yield
+        finally:
+            self.indentation -= indent
+
+    @contextmanager
+    def group(self, indent=0, open="", close=""):
+        """Context manager for an indented group.
+
             with p.group(1, '{', '}'):
-                ...
-        The first parameter specifies the indentation for the next line (
-        usually the width of the opening text), the second the opening text.
-        All parameters are optional.
+
+        The first parameter specifies the indentation for the next line
+        (usually the width of the opening text), the second and third the
+        opening and closing delimiters.
         """
         if open:
             self.text(open)
@@ -239,6 +261,15 @@ class PrettyPrinter(_PrettyPrinterBase):
         self.group_stack.append(group)
         self.group_queue.enq(group)
         self.indentation += indent
+        try:
+            yield
+        finally:
+            self.indentation -= indent
+            group = self.group_stack.pop()
+            if not group.breakables:
+                self.group_queue.remove(group)
+            if close:
+                self.text(close)
 
     def _enumerate(self, seq):
         """Like enumerate, but with an upper limit on the number of items."""
@@ -249,19 +280,6 @@ class PrettyPrinter(_PrettyPrinterBase):
                 self.text("...")
                 return
             yield idx, x
-
-    def end_group(self, dedent=0, close=""):
-        """End a group.
-
-        See `begin_group` for more details.
-
-        """
-        self.indentation -= dedent
-        group = self.group_stack.pop()
-        if not group.breakables:
-            self.group_queue.remove(group)
-        if close:
-            self.text(close)
 
     def flush(self):
         """Flush data that is left in the buffer."""
@@ -276,121 +294,49 @@ class PrettyPrinter(_PrettyPrinterBase):
         self.buffer.clear()
         self.buffer_width = 0
 
+    def getvalue(self):
+        assert isinstance(self.output, StringIO)
+        self.flush()
+        return self.output.getvalue()
 
-def _get_mro(obj_class):
-    """Get a reasonable method resolution order of a class and its superclasses
-    for both old-style and new-style classes."""
-    if not hasattr(obj_class, "__mro__"):  # pragma: no cover
-        # Old-style class. Mix in object to make a fake new-style class.
-        try:
-            obj_class = type(obj_class.__name__, (obj_class, object), {})
-        except TypeError:
-            # Old-style extension type that does not descend from object.
-            # FIXME: try to construct a more thorough MRO.
-            mro = [obj_class]
-        else:
-            mro = obj_class.__mro__[1:-1]
-    else:
-        mro = obj_class.__mro__
-    return mro
+    def repr_call(self, func_name, args, kwargs, *, force_split=False):
+        """Helper function to represent a function call.
 
-
-class RepresentationPrinter(PrettyPrinter):
-    """Special pretty printer that has a `pretty` method that calls the pretty
-    printer for a python object.
-
-    This class stores processing data on `self` so you must *never* use
-    this class in a threaded environment.  Always lock it or
-    reinstanciate it. Instances also have a verbose flag callbacks can
-    access to control their output.  For example the default instance
-    repr prints all attributes and methods that are not prefixed by an
-    underscore if the printer is in verbose mode.
-
-    """
-
-    def __init__(
-        self,
-        output,
-        verbose=False,
-        max_width=79,
-        newline="\n",
-        singleton_pprinters=None,
-        type_pprinters=None,
-        deferred_pprinters=None,
-        max_seq_length=MAX_SEQ_LENGTH,
-    ):
-
-        super().__init__(output, max_width, newline, max_seq_length=max_seq_length)
-        self.verbose = verbose
-        self.stack = []
-        if singleton_pprinters is None:
-            singleton_pprinters = _singleton_pprinters.copy()
-        self.singleton_pprinters = singleton_pprinters
-        if type_pprinters is None:
-            type_pprinters = _type_pprinters.copy()
-        self.type_pprinters = type_pprinters
-        if deferred_pprinters is None:
-            deferred_pprinters = _deferred_type_pprinters.copy()
-        self.deferred_pprinters = deferred_pprinters
-
-    def pretty(self, obj):
-        """Pretty print the given object."""
-        obj_id = id(obj)
-        cycle = obj_id in self.stack
-        self.stack.append(obj_id)
-        self.begin_group()
-        try:
-            obj_class = _safe_getattr(obj, "__class__", None) or type(obj)
-            # First try to find registered singleton printers for the type.
-            try:
-                printer = self.singleton_pprinters[obj_id]
-            except (TypeError, KeyError):
-                pass
-            else:
-                return printer(obj, self, cycle)
-            # Next walk the mro and check for either:
-            #   1) a registered printer
-            #   2) a _repr_pretty_ method
-            for cls in _get_mro(obj_class):
-                if cls in self.type_pprinters:
-                    # printer registered in self.type_pprinters
-                    return self.type_pprinters[cls](obj, self, cycle)
-                else:
-                    # deferred printer
-                    printer = self._in_deferred_types(cls)
-                    if printer is not None:
-                        return printer(obj, self, cycle)
-                    else:
-                        # Finally look for special method names.
-                        # Some objects automatically create any requested
-                        # attribute. Try to ignore most of them by checking for
-                        # callability.
-                        if "_repr_pretty_" in cls.__dict__:
-                            meth = cls._repr_pretty_
-                            if callable(meth):
-                                return meth(obj, self, cycle)
-            return _default_pprint(obj, self, cycle)
-        finally:
-            self.end_group()
-            self.stack.pop()
-
-    def _in_deferred_types(self, cls):
-        """Check if the given class is specified in the deferred type registry.
-
-        Returns the printer from the registry if it exists, and None if
-        the class is not in the registry. Successful matches will be
-        moved to the regular type registry for future use.
-
+        - func_name, args, and kwargs should all be pretty obvious.
+        - If split_lines, we'll force one-argument-per-line; otherwise we'll place
+          calls that fit on a single line (and split otherwise).
         """
-        mod = _safe_getattr(cls, "__module__", None)
-        name = _safe_getattr(cls, "__name__", None)
-        key = (mod, name)
-        printer = None
-        if key in self.deferred_pprinters:
-            # Move the printer over to the regular registry.
-            printer = self.deferred_pprinters.pop(key)
-            self.type_pprinters[cls] = printer
-        return printer
+        assert isinstance(func_name, str)
+        if func_name.startswith(("lambda:", "lambda ")):
+            func_name = f"({func_name})"
+        self.text(func_name)
+        all_args = [(None, v) for v in args] + list(kwargs.items())
+        if not force_split:
+            # We're OK with printing this call on a single line, but will it fit?
+            # If not, we'd rather fall back to one-argument-per-line instead.
+            p = RepresentationPrinter()
+            for k, v in all_args:
+                if k:
+                    p.text(f"{k}=")
+                p.pretty(v)
+                p.text(", ")
+            force_split = self.max_width <= self.output_width + len(p.getvalue())
+
+        with self.group(indent=4, open="(", close=""):
+            all_args = [(None, v) for v in args] + list(kwargs.items())
+            for i, (k, v) in enumerate(all_args):
+                if force_split:
+                    self.break_()
+                elif i:
+                    self.breakable()
+                if k:
+                    self.text(f"{k}=")
+                self.pretty(v)
+                if force_split or i + 1 < len(all_args):
+                    self.text(",")
+        if all_args and force_split:
+            self.break_()
+        self.text(")")  # after dedent
 
 
 class Printable:
@@ -425,8 +371,7 @@ class Breakable(Printable):
     def output(self, stream, output_width):
         self.group.breakables.popleft()
         if self.group.want_break:
-            stream.write(self.pretty.newline)
-            stream.write(" " * self.indentation)
+            stream.write("\n" + " " * self.indentation)
             return self.indentation
         if not self.group.breakables:
             self.pretty.group_queue.remove(self.group)
@@ -471,46 +416,6 @@ class GroupQueue:
             pass
 
 
-def _default_pprint(obj, p, cycle):
-    """The default print function.
-
-    Used if an object does not provide one and it's none of the builtin
-    objects.
-
-    """
-    klass = _safe_getattr(obj, "__class__", None) or type(obj)
-    if _safe_getattr(klass, "__repr__", None) is not object.__repr__:
-        # A user-provided repr. Find newlines and replace them with p.break_()
-        _repr_pprint(obj, p, cycle)
-        return
-    p.begin_group(1, "<")
-    p.pretty(klass)
-    p.text(f" at 0x{id(obj):x}")
-    if cycle:
-        p.text(" ...")
-    elif p.verbose:
-        first = True
-        for key in dir(obj):
-            if not key.startswith("_"):
-                try:
-                    value = getattr(obj, key)
-                except AttributeError:
-                    continue
-                if isinstance(value, types.MethodType):
-                    continue
-                if not first:
-                    p.text(",")
-                p.breakable()
-                p.text(key)
-                p.text("=")
-                step = len(key) + 1
-                p.indentation += step
-                p.pretty(value)
-                p.indentation -= step
-                first = False
-    p.end_group(1, ">")
-
-
 def _seq_pprinter_factory(start, end, basetype):
     """Factory that returns a pprint function useful for sequences.
 
@@ -531,16 +436,15 @@ def _seq_pprinter_factory(start, end, basetype):
         if cycle:
             return p.text(start + "..." + end)
         step = len(start)
-        p.begin_group(step, start)
-        for idx, x in p._enumerate(obj):
-            if idx:
+        with p.group(step, start, end):
+            for idx, x in p._enumerate(obj):
+                if idx:
+                    p.text(",")
+                    p.breakable()
+                p.pretty(x)
+            if len(obj) == 1 and type(obj) is tuple:
+                # Special case for 1-item tuples.
                 p.text(",")
-                p.breakable()
-            p.pretty(x)
-        if len(obj) == 1 and type(obj) is tuple:
-            # Special case for 1-item tuples.
-            p.text(",")
-        p.end_group(step, end)
 
     return inner
 
@@ -566,22 +470,20 @@ def _set_pprinter_factory(start, end, basetype):
             p.text(basetype.__name__ + "()")
         else:
             step = len(start)
-            p.begin_group(step, start)
-            # Like dictionary keys, we will try to sort the items if there
-            # aren't too many
-            items = obj
-            if not (p.max_seq_length and len(obj) >= p.max_seq_length):
-                try:
-                    items = sorted(obj)
-                except Exception:
-                    # Sometimes the items don't sort.
-                    pass
-            for idx, x in p._enumerate(items):
-                if idx:
-                    p.text(",")
-                    p.breakable()
-                p.pretty(x)
-            p.end_group(step, end)
+            with p.group(step, start, end):
+                # Like dictionary keys, try to sort the items if there aren't too many
+                items = obj
+                if not (p.max_seq_length and len(obj) >= p.max_seq_length):
+                    try:
+                        items = sorted(obj)
+                    except Exception:
+                        # Sometimes the items don't sort.
+                        pass
+                for idx, x in p._enumerate(items):
+                    if idx:
+                        p.text(",")
+                        p.breakable()
+                    p.pretty(x)
 
     return inner
 
@@ -602,15 +504,14 @@ def _dict_pprinter_factory(start, end, basetype=None):
 
         if cycle:
             return p.text("{...}")
-        p.begin_group(1, start)
-        for idx, key in p._enumerate(obj):
-            if idx:
-                p.text(",")
-                p.breakable()
-            p.pretty(key)
-            p.text(": ")
-            p.pretty(obj[key])
-        p.end_group(1, end)
+        with p.group(1, start, end):
+            for idx, key in p._enumerate(obj):
+                if idx:
+                    p.text(",")
+                    p.breakable()
+                p.pretty(key)
+                p.text(": ")
+                p.pretty(obj[key])
 
     inner.__name__ = f"_dict_pprinter_factory({start!r}, {end!r}, {basetype!r})"
     return inner
@@ -618,21 +519,11 @@ def _dict_pprinter_factory(start, end, basetype=None):
 
 def _super_pprint(obj, p, cycle):
     """The pprint for the super type."""
-    try:
-        # This section works around various pypy versions that don't do
-        # have the same attributes on super objects
-        obj.__thisclass__
-        obj.__self__
-    except AttributeError:  # pragma: no cover
-        assert PYPY
-        _repr_pprint(obj, p, cycle)
-        return
-    p.begin_group(8, "<super: ")
-    p.pretty(obj.__thisclass__)
-    p.text(",")
-    p.breakable()
-    p.pretty(obj.__self__)
-    p.end_group(8, ">")
+    with p.group(8, "<super: ", ">"):
+        p.pretty(obj.__thisclass__)
+        p.text(",")
+        p.breakable()
+        p.pretty(obj.__self__)
 
 
 def _re_pattern_pprint(obj, p, cycle):
@@ -720,13 +611,12 @@ def _exception_pprint(obj, p, cycle):
     if obj.__class__.__module__ not in ("exceptions", "builtins"):
         name = f"{obj.__class__.__module__}.{name}"
     step = len(name) + 1
-    p.begin_group(step, name + "(")
-    for idx, arg in enumerate(getattr(obj, "args", ())):
-        if idx:
-            p.text(",")
-            p.breakable()
-        p.pretty(arg)
-    p.end_group(step, ")")
+    with p.group(step, name + "(", ")"):
+        for idx, arg in enumerate(getattr(obj, "args", ())):
+            if idx:
+                p.text(",")
+                p.breakable()
+            p.pretty(arg)
 
 
 def _repr_float_counting_nans(obj, p, cycle):

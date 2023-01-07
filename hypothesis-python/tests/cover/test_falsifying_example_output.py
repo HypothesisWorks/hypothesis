@@ -12,12 +12,6 @@ import pytest
 
 from hypothesis import Phase, example, given, settings, strategies as st
 
-OUTPUT_NO_BREAK = """
-Falsifying explicit example: test(
-    x={0!r}, y={0!r},
-)
-"""
-
 OUTPUT_WITH_BREAK = """
 Falsifying explicit example: test(
     x={0!r},
@@ -26,9 +20,9 @@ Falsifying explicit example: test(
 """
 
 
-@pytest.mark.parametrize("line_break,input", [(False, "0" * 10), (True, "0" * 100)])
-def test_inserts_line_breaks_only_at_appropriate_lengths(line_break, input):
-    @example(input, input)
+@pytest.mark.parametrize("n", [10, 100])
+def test_inserts_line_breaks_only_at_appropriate_lengths(n):
+    @example("0" * n, "0" * n)
     @given(st.text(), st.text())
     def test(x, y):
         assert x < y
@@ -36,8 +30,7 @@ def test_inserts_line_breaks_only_at_appropriate_lengths(line_break, input):
     with pytest.raises(AssertionError) as err:
         test()
 
-    expected = (OUTPUT_WITH_BREAK if line_break else OUTPUT_NO_BREAK).format(input)
-    assert expected.strip() == "\n".join(err.value.__notes__)
+    assert OUTPUT_WITH_BREAK.format("0" * n).strip() == "\n".join(err.value.__notes__)
 
 
 @given(kw=st.none())
@@ -61,4 +54,4 @@ def test_vararg_output(fn):
     with pytest.raises(AssertionError) as err:
         fn(1, 2, 3)
 
-    assert "1, 2, 3" in "\n".join(err.value.__notes__)
+    assert "1,\n    2,\n    3,\n" in "\n".join(err.value.__notes__)

@@ -348,7 +348,7 @@ def is_invalid_test(test, original_sig, given_arguments, given_kwargs):
 
     if ... in given_arguments:
         return invalid(
-            "... was passed as a positional argument to @given,  but may only be "
+            "... was passed as a positional argument to @given, but may only be "
             "passed as a keyword argument or as the sole argument of @given"
         )
 
@@ -717,28 +717,13 @@ class StateForActualGivenExecution:
 
                             if self.print_given_args:
                                 printer.text(" ")
-                                printer.text(test.__name__)
-                                with printer.group(indent=4, open="(", close=""):
-                                    printer.break_()
-                                    for v in args:
-                                        printer.pretty(v)
-                                        # We add a comma unconditionally because
-                                        # generated arguments will always be kwargs,
-                                        # so there will always be more to come.
-                                        printer.text(",")
-                                        printer.breakable()
-
-                                    for i, (k, v) in enumerate(kwargs.items()):
-                                        printer.text(k)
-                                        printer.text("=")
-                                        printer.pretty(v)
-                                        printer.text(",")
-                                        if i + 1 < len(kwargs):
-                                            printer.breakable()
-                                printer.break_()
-                                printer.text(")")
-                            printer.flush()
-                            report(output.getvalue())
+                                printer.repr_call(
+                                    test.__name__,
+                                    args,
+                                    kwargs,
+                                    force_split=True,
+                                )
+                            report(printer.getvalue())
                         return test(*args, **kwargs)
 
         # Run the test function once, via the executor hook.
@@ -1119,7 +1104,7 @@ def given(
                 for p in original_sig.parameters.values()
                 if p.kind is p.POSITIONAL_OR_KEYWORD
             ]
-            given_kwargs = dict(zip(posargs[::-1], given_arguments[::-1]))
+            given_kwargs = dict(list(zip(posargs[::-1], given_arguments[::-1]))[::-1])
         # These have been converted, so delete them to prevent accidental use.
         del given_arguments
 
