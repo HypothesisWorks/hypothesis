@@ -1119,7 +1119,7 @@ def given(
                 for p in original_sig.parameters.values()
                 if p.kind is p.POSITIONAL_OR_KEYWORD
             ]
-            given_kwargs = dict(zip(posargs[::-1], given_arguments[::-1]))
+            given_kwargs = dict(list(zip(posargs[::-1], given_arguments[::-1]))[::-1])
         # These have been converted, so delete them to prevent accidental use.
         del given_arguments
 
