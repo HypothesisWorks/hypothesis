@@ -168,7 +168,9 @@ class example:
         condition: bool = True,
         *,
         reason: str = "",
-        raises: Union[Type[BaseException], Tuple[Type[BaseException], ...]] = BaseException,
+        raises: Union[
+            Type[BaseException], Tuple[Type[BaseException], ...]
+        ] = BaseException,
     ) -> "example":
         """Mark this example as an expected failure, like pytest.mark.xfail().
 
