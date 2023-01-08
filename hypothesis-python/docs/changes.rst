@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.61.3:
+
+-------------------
+6.61.3 - 2023-01-08
+-------------------
+
+This patch teaches our enhanced :func:`~typing.get_type_hints` function to
+'see through' :obj:`~functools.partial` application, allowing inference
+from type hints to work in a few more cases which aren't (yet!) supported
+by the standard-library version.
+
 .. _v6.61.2:
 
 -------------------
