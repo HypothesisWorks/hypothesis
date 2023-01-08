@@ -89,7 +89,7 @@ class ExcInfo:
     pass
 
 
-def fails_with(e):
+def fails_with(e, *, match=None):
     def accepts(f):
         @proxies(f)
         def inverted_test(*arguments, **kwargs):
@@ -98,7 +98,7 @@ def fails_with(e):
             # the `raises` context manager so that any problems in rigging the
             # PRNG don't accidentally count as the expected failure.
             with deterministic_PRNG():
-                with raises(e):
+                with raises(e, match=match):
                     f(*arguments, **kwargs)
 
         return inverted_test

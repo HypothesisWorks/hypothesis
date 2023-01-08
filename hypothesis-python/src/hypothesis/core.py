@@ -34,6 +34,8 @@ from typing import (
     Hashable,
     List,
     Optional,
+    Tuple,
+    Type,
     TypeVar,
     Union,
     overload,
@@ -92,10 +94,12 @@ from hypothesis.internal.reflection import (
     get_signature,
     impersonate,
     is_mock,
+    nicerepr,
     proxies,
     repr_call,
 )
 from hypothesis.internal.scrutineer import Tracer, explanatory_lines
+from hypothesis.internal.validation import check_type
 from hypothesis.reporting import (
     current_verbosity,
     report,
@@ -134,6 +138,9 @@ _hypothesis_global_random = None
 class Example:
     args = attr.ib()
     kwargs = attr.ib()
+    # Plus two optional arguments for .xfail()
+    raises = attr.ib(default=None)
+    reason = attr.ib(default=None)
 
 
 class example:
@@ -155,6 +162,51 @@ class example:
             test.hypothesis_explicit_examples = self.hypothesis_explicit_examples  # type: ignore
         test.hypothesis_explicit_examples.append(self._this_example)  # type: ignore
         return test
+
+    def xfail(
+        self,
+        condition: bool = True,
+        *,
+        reason: str = "",
+        raises: Union[
+            Type[BaseException], Tuple[Type[BaseException], ...]
+        ] = BaseException,
+    ) -> "example":
+        """Mark this example as an expected failure, like pytest.mark.xfail().
+
+        Expected-failing examples allow you to check that your test does fail on
+        some examples, and therefore build confidence that *passing* tests are
+        because your code is working, not because the test is missing something.
+
+        .. code-block:: python
+
+            @example(...).xfail()
+            @example(...).xfail(reason="Prices must be non-negative")
+            @example(...).xfail(raises=(KeyError, ValueError))
+            @example(...).xfail(sys.version_info[:2] >= (3, 9), reason="needs py39+")
+            @example(...).xfail(condition=sys.platform != "linux", raises=OSError)
+            def test(x):
+                pass
+        """
+        check_type(bool, condition, "condition")
+        check_type(str, reason, "reason")
+        if not (
+            isinstance(raises, type) and issubclass(raises, BaseException)
+        ) and not (
+            isinstance(raises, tuple)
+            and raises  # () -> expected to fail with no error, which is impossible
+            and all(
+                isinstance(r, type) and issubclass(r, BaseException) for r in raises
+            )
+        ):
+            raise InvalidArgument(
+                f"raises={raises!r} must be an exception type or tuple of exception types"
+            )
+        if condition:
+            self._this_example = attr.evolve(
+                self._this_example, raises=raises, reason=reason
+            )
+        return self
 
     def via(self, *whence: str) -> "example":
         """Attach a machine-readable label noting whence this example came.
@@ -400,9 +452,7 @@ class ArtificialDataForExample(ConjectureData):
         assert self.__draws == 0
         self.__draws += 1
         # The main strategy for given is always a tuples strategy that returns
-        # first positional arguments then keyword arguments. When building this
-        # object already converted all positional arguments to keyword arguments,
-        # so this is the correct format to return.
+        # first positional arguments then keyword arguments.
         return self.__args, self.__kwargs
 
 
@@ -414,6 +464,7 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
     ]
 
     for example in reversed(getattr(wrapped_test, "hypothesis_explicit_examples", ())):
+        assert isinstance(example, Example)
         # All of this validation is to check that @example() got "the same" arguments
         # as @given, i.e. corresponding to the same parameters, even though they might
         # be any mixture of positional and keyword arguments.
@@ -455,12 +506,47 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
         with local_settings(state.settings):
             fragments_reported = []
             try:
+                adata = ArtificialDataForExample(arguments, example_kwargs)
+                bits = ", ".join(nicerepr(x) for x in arguments) + ", ".join(
+                    f"{k}={nicerepr(v)}" for k, v in example_kwargs.items()
+                )
                 with with_reporter(fragments_reported.append):
-                    state.execute_once(
-                        ArtificialDataForExample(arguments, example_kwargs),
-                        is_final=True,
-                        print_example=True,
-                    )
+                    if example.raises is None:
+                        state.execute_once(adata, is_final=True, print_example=True)
+                    else:
+                        # @example(...).xfail(...)
+                        try:
+                            state.execute_once(adata, is_final=True, print_example=True)
+                        except failure_exceptions_to_catch() as err:
+                            if not isinstance(err, example.raises):
+                                raise
+                        except example.raises as err:
+                            # We'd usually check this as early as possible, but it's
+                            # possible for failure_exceptions_to_catch() to grow when
+                            # e.g. pytest is imported between import- and test-time.
+                            raise InvalidArgument(
+                                f"@example({bits}) raised an expected {err!r}, "
+                                "but Hypothesis does not treat this as a test failure"
+                            ) from err
+                        else:
+                            # Unexpectedly passing; always raise an error in this case.
+                            reason = f" because {example.reason}" * bool(example.reason)
+                            if example.raises is BaseException:
+                                name = "exception"  # special-case no raises= arg
+                            elif not isinstance(example.raises, tuple):
+                                name = example.raises.__name__
+                            elif len(example.raises) == 1:
+                                name = example.raises[0].__name__
+                            else:
+                                name = (
+                                    ", ".join(ex.__name__ for ex in example.raises[:-1])
+                                    + f", or {example.raises[-1].__name__}"
+                                )
+                            vowel = name.upper()[0] in "AEIOU"
+                            raise AssertionError(
+                                f"Expected a{'n' * vowel} {name} from @example({bits})"
+                                f"{reason}, but no exception was raised."
+                            )
             except UnsatisfiedAssumption:
                 # Odd though it seems, we deliberately support explicit examples that
                 # are then rejected by a call to `assume()`.  As well as iterative
@@ -478,7 +564,7 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
                 # One user error - whether misunderstanding or typo - we've seen a few
                 # times is to pass strategies to @example() where values are expected.
                 # Checking is easy, and false-positives not much of a problem, so:
-                if any(
+                if isinstance(err, failure_exceptions_to_catch()) and any(
                     isinstance(arg, SearchStrategy)
                     for arg in example.args + tuple(example.kwargs.values())
                 ):
@@ -494,6 +580,7 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
                 if (
                     state.settings.report_multiple_bugs
                     and pytest_shows_exceptiongroups
+                    and isinstance(err, failure_exceptions_to_catch())
                     and not isinstance(err, skip_exceptions_to_reraise())
                 ):
                     continue
