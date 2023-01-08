@@ -14,7 +14,7 @@ exceptiongroup==1.1.0 ; python_version < "3.11"
     #   pytest
 execnet==1.9.0
     # via pytest-xdist
-iniconfig==1.1.1
+iniconfig==2.0.0
     # via pytest
 packaging==22.0
     # via pytest
