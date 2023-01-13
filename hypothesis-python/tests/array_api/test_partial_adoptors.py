@@ -31,7 +31,6 @@ from hypothesis.extra.array_api import (
 MOCK_WARN_MSG = f"determine.*{mock_xp.__name__}.*Array API"
 
 
-@lru_cache()
 def make_mock_xp(*, exclude: Tuple[str, ...] = ()) -> SimpleNamespace:
     xp = copy(mock_xp)
     assert isinstance(exclude, tuple)  # sanity check
