@@ -16,7 +16,7 @@ execnet==1.9.0
     # via pytest-xdist
 iniconfig==2.0.0
     # via pytest
-packaging==22.0
+packaging==23.0
     # via pytest
 pexpect==4.8.0
     # via -r requirements/test.in
@@ -24,7 +24,7 @@ pluggy==1.0.0
     # via pytest
 ptyprocess==0.7.0
     # via pexpect
-pytest==7.2.0
+pytest==7.2.1
     # via
     #   -r requirements/test.in
     #   pytest-xdist
