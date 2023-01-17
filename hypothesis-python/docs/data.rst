@@ -68,6 +68,8 @@ hurts reuse because you then have to repeat the adaption in every test.
 Hypothesis gives you ways to build strategies from other strategies given
 functions for transforming the data.
 
+.. _mapping:
+
 -------
 Mapping
 -------

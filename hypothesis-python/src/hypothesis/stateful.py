@@ -42,7 +42,7 @@ from hypothesis._settings import (
     note_deprecation,
     settings as Settings,
 )
-from hypothesis.control import current_build_context
+from hypothesis.control import _current_build_context, current_build_context
 from hypothesis.core import TestFunc, given
 from hypothesis.errors import InvalidArgument, InvalidDefinition
 from hypothesis.internal.conjecture import utils as cu
@@ -256,7 +256,9 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         self.name_counter = 1
         self.names_to_values: Dict[str, Any] = {}
         self.__stream = StringIO()
-        self.__printer = RepresentationPrinter(self.__stream)
+        self.__printer = RepresentationPrinter(
+            self.__stream, context=_current_build_context.value
+        )
         self._initialize_rules_to_run = copy(self.initialize_rules())
         self._rules_strategy = RuleStrategy(self)
 

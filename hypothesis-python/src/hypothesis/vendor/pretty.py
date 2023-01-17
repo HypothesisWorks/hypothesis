@@ -66,13 +66,15 @@ import datetime
 import re
 import struct
 import types
-from collections import deque
+import warnings
+from collections import defaultdict, deque
 from contextlib import contextmanager
 from io import StringIO
 from math import copysign, isnan
 
 __all__ = [
     "pretty",
+    "IDKey",
     "RepresentationPrinter",
 ]
 
@@ -100,6 +102,17 @@ def pretty(obj):
     return printer.getvalue()
 
 
+class IDKey:
+    def __init__(self, value):
+        self.value = value
+
+    def __hash__(self) -> int:
+        return hash((type(self), id(self.value)))
+
+    def __eq__(self, __o: object) -> bool:
+        return isinstance(__o, type(self)) and id(self.value) == id(__o.value)
+
+
 class RepresentationPrinter:
     """Special pretty printer that has a `pretty` method that calls the pretty
     printer for a python object.
@@ -110,7 +123,13 @@ class RepresentationPrinter:
 
     """
 
-    def __init__(self, output=None):
+    def __init__(self, output=None, *, context=None):
+        """Pass the output stream, and optionally the current build context.
+
+        We use the context to represent objects constructed by strategies by showing
+        *how* they were constructed, and add annotations showing which parts of the
+        minimal failing example can vary without changing the test result.
+        """
         self.broken = False
         self.output = StringIO() if output is None else output
         self.max_width = 79
@@ -130,6 +149,11 @@ class RepresentationPrinter:
         self.singleton_pprinters = _singleton_pprinters.copy()
         self.type_pprinters = _type_pprinters.copy()
         self.deferred_pprinters = _deferred_type_pprinters.copy()
+        if context is None:
+            self.known_object_printers = defaultdict(list)
+        else:
+            self.known_object_printers = context.known_object_printers
+        assert all(isinstance(k, IDKey) for k in self.known_object_printers)
 
     def pretty(self, obj):
         """Pretty print the given object."""
@@ -174,6 +198,24 @@ class RepresentationPrinter:
                                 meth = cls._repr_pretty_
                                 if callable(meth):
                                     return meth(obj, self, cycle)
+                # Now check for object-specific printers which show how this
+                # object was constructed (a Hypothesis special feature).
+                printers = self.known_object_printers[IDKey(obj)]
+                if len(printers) == 1:
+                    return printers[0](obj, self, cycle)
+                elif printers:
+                    # We've ended up with multiple registered functions for the same
+                    # object, which must have been returned from multiple calls due to
+                    # e.g. memoization.  If they all return the same string, we'll use
+                    # the first; otherwise we'll pretend that *none* were registered.
+                    strs = set()
+                    for f in printers:
+                        p = RepresentationPrinter()
+                        f(obj, p, cycle)
+                        strs.add(p.getvalue())
+                    if len(strs) == 1:
+                        return printers[0](obj, self, cycle)
+
                 # A user-provided repr. Find newlines and replace them with p.break_()
                 return _repr_pprint(obj, self, cycle)
         finally:
@@ -299,7 +341,7 @@ class RepresentationPrinter:
         self.flush()
         return self.output.getvalue()
 
-    def repr_call(self, func_name, args, kwargs, *, force_split=False):
+    def repr_call(self, func_name, args, kwargs, *, force_split=None):
         """Helper function to represent a function call.
 
         - func_name, args, and kwargs should all be pretty obvious.
@@ -311,24 +353,21 @@ class RepresentationPrinter:
             func_name = f"({func_name})"
         self.text(func_name)
         all_args = [(None, v) for v in args] + list(kwargs.items())
-        if not force_split:
+        if force_split is None:
             # We're OK with printing this call on a single line, but will it fit?
             # If not, we'd rather fall back to one-argument-per-line instead.
             p = RepresentationPrinter()
-            for k, v in all_args:
-                if k:
-                    p.text(f"{k}=")
-                p.pretty(v)
-                p.text(", ")
-            force_split = self.max_width <= self.output_width + len(p.getvalue())
+            p.known_object_printers = self.known_object_printers
+            p.repr_call("_" * self.output_width, args, kwargs, force_split=False)
+            s = p.getvalue()
+            force_split = "\n" in s
 
         with self.group(indent=4, open="(", close=""):
-            all_args = [(None, v) for v in args] + list(kwargs.items())
             for i, (k, v) in enumerate(all_args):
                 if force_split:
                     self.break_()
-                elif i:
-                    self.breakable()
+                else:
+                    self.breakable(" " if i else "")
                 if k:
                     self.text(f"{k}=")
                 self.pretty(v)
@@ -505,13 +544,18 @@ def _dict_pprinter_factory(start, end, basetype=None):
         if cycle:
             return p.text("{...}")
         with p.group(1, start, end):
-            for idx, key in p._enumerate(obj):
-                if idx:
-                    p.text(",")
-                    p.breakable()
-                p.pretty(key)
-                p.text(": ")
-                p.pretty(obj[key])
+            # If the dict contains both "" and b"" (empty string and empty bytes), we
+            # ignore the BytesWarning raised by `python -bb` mode.  We can't use
+            # `.items()` because it might be a non-`dict` type of mapping.
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", BytesWarning)
+                for idx, key in p._enumerate(obj):
+                    if idx:
+                        p.text(",")
+                        p.breakable()
+                    p.pretty(key)
+                    p.text(": ")
+                    p.pretty(obj[key])
 
     inner.__name__ = f"_dict_pprinter_factory({start!r}, {end!r}, {basetype!r})"
     return inner
