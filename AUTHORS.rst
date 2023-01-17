@@ -10,6 +10,7 @@ their individual contributions.
 
 * `Aaron Meurer <https://github.com/asmeurer>`_
 * `Adam Johnson <https://github.com/adamchainz>`_
+* `Adam Matan <https://github.com/adamatan/adamatan>_`
 * `Adam Sven Johnson <https://www.github.com/pkqk>`_
 * `Afrida Tabassum <https://github.com/oxfordhalfblood>`_ (afrida@gmail.com)
 * `Afonso Silva <https://github.com/ajcerejeira>`_ (ajcerejeira@gmail.com)
