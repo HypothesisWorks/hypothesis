@@ -14,11 +14,9 @@ from hypothesis import given, strategies as st
 # Our tested class
 class Product:
     def __init__(self, price: float) -> None:
-        assert price >= 0
         self.price: float = price
 
     def get_discount_price(self, discount_percentage: float):
-        assert 0 <= discount_percentage <= 100
         return self.price * (discount_percentage / 100)
 
 
