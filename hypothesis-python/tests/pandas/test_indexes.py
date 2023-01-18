@@ -47,7 +47,7 @@ def test_unique_indexes_of_many_small_values(ix):
 
 
 @given(pdst.indexes(dtype="int8", name=st.just("test_name")))
-def test_name_passed_on(s):
+def test_name_passed_on_indexes(s):
     assert s.name == "test_name"
 
 
@@ -60,6 +60,11 @@ def test_arbitrary_range_index(i, j, data):
     if j is not None:
         i, j = sorted((i, j))
     data.draw(pdst.range_indexes(i, j))
+
+
+@given(pdst.range_indexes(name="test_name"))
+def test_name_passed_on_range_indexes(s):
+    assert s.name == "test_name"
 
 
 @given(pdst.range_indexes())
