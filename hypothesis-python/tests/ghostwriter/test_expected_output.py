@@ -95,7 +95,10 @@ def divide(a: int, b: int) -> float:
         ("fuzz_ufunc", ghostwriter.fuzz(numpy.add)),
         ("magic_gufunc", ghostwriter.magic(numpy.matmul)),
         ("magic_base64_roundtrip", ghostwriter.magic(base64.b64encode)),
-        ("magic_base64_roundtrip_with_annotations", ghostwriter.magic(base64.b64encode, annotations=True)),
+        (
+            "magic_base64_roundtrip_with_annotations",
+            ghostwriter.magic(base64.b64encode, annotations=True),
+        ),
         ("re_compile", ghostwriter.fuzz(re.compile)),
         (
             "re_compile_except",
@@ -116,7 +119,10 @@ def divide(a: int, b: int) -> float:
         ),
         ("eval_equivalent", ghostwriter.equivalent(eval, ast.literal_eval)),
         ("sorted_self_equivalent", ghostwriter.equivalent(sorted, sorted, sorted)),
-        ("sorted_self_equivalent_with_annotations", ghostwriter.equivalent(sorted, sorted, sorted, annotations=True)),
+        (
+            "sorted_self_equivalent_with_annotations",
+            ghostwriter.equivalent(sorted, sorted, sorted, annotations=True),
+        ),
         ("addition_op_magic", ghostwriter.magic(add)),
         ("addition_op_multimagic", ghostwriter.magic(add, operator.add, numpy.add)),
         ("division_fuzz_error_handler", ghostwriter.fuzz(divide)),

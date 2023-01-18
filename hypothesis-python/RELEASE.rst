@@ -5,5 +5,5 @@ Currently, this is done by analysing the annotations of the arguments.
 
 A `annotation` parameter is introduced to all public ghostwriter functions. If set to
 `True`, the annotations will be written where possible. If set to `False` no annotations
-will be written. If ommited or set to `None` it will add annotations if any of the
+will be written. If omitted or set to `None` it will add annotations if any of the
 targeted functions has a type annotation.

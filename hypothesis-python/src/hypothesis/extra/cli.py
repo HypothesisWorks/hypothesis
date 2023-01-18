@@ -272,9 +272,11 @@ else:
     @click.option(
         "--annotations/--no-annotations",
         default=None,
-        help="whether the generated tests should have annotations or not (if ommited it will generate annotations if any parameter has annotations)",
+        help="whether the generated tests should have annotations or not (if omitted it will generate annotations if any parameter has annotations)",
     )
-    def write(func, writer, except_, style, annotations):  # noqa: D301  # \b disables autowrap
+    def write(
+        func, writer, except_, style, annotations
+    ):  # noqa: D301  # \b disables autowrap
         """`hypothesis write` writes property-based tests for you!
 
         Type annotations are helpful but not required for our advanced introspection

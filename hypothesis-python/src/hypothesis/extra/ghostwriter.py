@@ -793,7 +793,7 @@ def _make_test_body(
         test_body = f"{test_body}\n{assertions}"
 
     # Indent our test code to form the body of a function or method.
-    argnames = (["self"] if style == "unittest" else [])
+    argnames = ["self"] if style == "unittest" else []
     if annotations:
         argnames.extend(_annotate_args(given_strategies, funcs, imports))
     else:
@@ -820,7 +820,9 @@ def _make_test_body(
     return imports, body
 
 
-def _annotate_args(argnames: Iterable[str], funcs: Iterable[Callable], imports: ImportSet) -> Iterable[str]:
+def _annotate_args(
+    argnames: Iterable[str], funcs: Iterable[Callable], imports: ImportSet
+) -> Iterable[str]:
     arg_parameters: Dict[str, Set[Any]] = {}
     for func in funcs:
         for key, param in _get_params(func).items():
@@ -831,14 +833,20 @@ def _annotate_args(argnames: Iterable[str], funcs: Iterable[Callable], imports: 
 
     for argname in argnames:
         parameters = arg_parameters.get(argname)
-        annotation = None if parameters is None else _parameters_to_annotation(parameters, imports)
+        annotation = (
+            None
+            if parameters is None
+            else _parameters_to_annotation(parameters, imports)
+        )
         if annotation is None:
             yield argname
         else:
-            yield "{}: {}".format(argname, annotation)
+            yield f"{argname}: {annotation}"
 
 
-def _parameters_to_annotation(parameters: Iterable[Any], imports: ImportSet) -> Optional[str]:
+def _parameters_to_annotation(
+    parameters: Iterable[Any], imports: ImportSet
+) -> Optional[str]:
     annotations = {
         _parameter_to_annotation(parameter, imports)
         for parameter in parameters
@@ -854,7 +862,7 @@ def _parameters_to_annotation(parameters: Iterable[Any], imports: ImportSet) -> 
 def _parameter_to_annotation(parameter: Any, imports: ImportSet) -> str:
     if isinstance(parameter, type):
         imports.add(parameter.__module__)
-        return "{}.{}".format(parameter.__module__, parameter.__name__)
+        return f"{parameter.__module__}.{parameter.__name__}"
     type_name = str(parameter)
     if type_name.startswith("typing."):
         imports.add("typing")
@@ -1045,7 +1053,11 @@ def magic(
                 for other in sorted(
                     n for n in by_name if n.split(".")[-1] == inverse_name
                 ):
-                    make_(_make_roundtrip_body, (by_name.pop(name), by_name.pop(other)), annotations=annotations)
+                    make_(
+                        _make_roundtrip_body,
+                        (by_name.pop(name), by_name.pop(other)),
+                        annotations=annotations,
+                    )
                     break
                 else:
                     try:
@@ -1057,7 +1069,11 @@ def magic(
                     except Exception:
                         pass
                     else:
-                        make_(_make_roundtrip_body, (by_name.pop(name), other_func), annotations=annotations)
+                        make_(
+                            _make_roundtrip_body,
+                            (by_name.pop(name), other_func),
+                            annotations=annotations,
+                        )
 
     # Look for equivalent functions: same name, all required arguments of any can
     # be found in all signatures, and if all have return-type annotations they match.
@@ -1098,12 +1114,22 @@ def magic(
     # be worth the trouble when it's so easy for the user to specify themselves.
     for _, f in sorted(by_name.items()):
         make_(
-            _make_test_body, f, test_body=_write_call(f, except_=except_), ghost="fuzz", annotations=annotations
+            _make_test_body,
+            f,
+            test_body=_write_call(f, except_=except_),
+            ghost="fuzz",
+            annotations=annotations,
         )
     return _make_test(imports, "\n".join(parts))
 
 
-def fuzz(func: Callable, *, except_: Except = (), style: str = "pytest", annotations: Optional[bool] = None) -> str:
+def fuzz(
+    func: Callable,
+    *,
+    except_: Except = (),
+    style: str = "pytest",
+    annotations: Optional[bool] = None,
+) -> str:
     """Write source code for a property-based test of ``func``.
 
     The resulting test checks that valid input only leads to expected exceptions.
@@ -1161,7 +1187,13 @@ def fuzz(func: Callable, *, except_: Except = (), style: str = "pytest", annotat
     return _make_test(imports, body)
 
 
-def idempotent(func: Callable, *, except_: Except = (), style: str = "pytest", annotations: Optional[bool] = None) -> str:
+def idempotent(
+    func: Callable,
+    *,
+    except_: Except = (),
+    style: str = "pytest",
+    annotations: Optional[bool] = None,
+) -> str:
     """Write source code for a property-based test of ``func``.
 
     The resulting test checks that if you call ``func`` on it's own output,
@@ -1239,7 +1271,12 @@ def _make_roundtrip_body(funcs, except_, style, annotations: bool):
     )
 
 
-def roundtrip(*funcs: Callable, except_: Except = (), style: str = "pytest", annotations: Optional[bool] = None) -> str:
+def roundtrip(
+    *funcs: Callable,
+    except_: Except = (),
+    style: str = "pytest",
+    annotations: Optional[bool] = None,
+) -> str:
     """Write source code for a property-based test of ``funcs``.
 
     The resulting test checks that if you call the first function, pass the result
@@ -1385,7 +1422,9 @@ def equivalent(
         annotations = _are_annotations_used(*funcs)
 
     if allow_same_errors and not any(issubclass(Exception, ex) for ex in except_):
-        imports, source_code = _make_equiv_errors_body(funcs, except_, style, annotations)
+        imports, source_code = _make_equiv_errors_body(
+            funcs, except_, style, annotations
+        )
     else:
         imports, source_code = _make_equiv_body(funcs, except_, style, annotations)
     return _make_test(imports, source_code)
@@ -1595,7 +1634,13 @@ def _make_binop_body(
     )
 
 
-def ufunc(func: Callable, *, except_: Except = (), style: str = "pytest", annotations: Optional[bool] = None) -> str:
+def ufunc(
+    func: Callable,
+    *,
+    except_: Except = (),
+    style: str = "pytest",
+    annotations: Optional[bool] = None,
+) -> str:
     """Write a property-based test for the :doc:`array ufunc <numpy:reference/ufuncs>` ``func``.
 
     The resulting test checks that your ufunc or :doc:`gufunc
@@ -1615,7 +1660,9 @@ def ufunc(func: Callable, *, except_: Except = (), style: str = "pytest", annota
     if annotations is None:
         annotations = _are_annotations_used(func)
 
-    return _make_test(*_make_ufunc_body(func, except_=except_, style=style, annotations=annotations))
+    return _make_test(
+        *_make_ufunc_body(func, except_=except_, style=style, annotations=annotations)
+    )
 
 
 def _make_ufunc_body(func, *, except_, style, annotations: bool):
