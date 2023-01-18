@@ -11,8 +11,8 @@
 from collections import OrderedDict, abc
 from copy import copy
 from datetime import datetime, timedelta
-from typing import Any, List, Optional, Sequence, Set, Union
 from functools import partial
+from typing import Any, List, Optional, Sequence, Set, Union
 
 import attr
 import numpy as np
@@ -185,7 +185,7 @@ def range_indexes(
     if max_size is None:
         max_size = min([min_size + DEFAULT_MAX_SIZE, 2**63 - 1])
     check_valid_interval(min_size, max_size, "min_size", "max_size")
-    
+
     p = partial(pandas.RangeIndex, name=name)
     return st.integers(min_size, max_size).map(p)
 
