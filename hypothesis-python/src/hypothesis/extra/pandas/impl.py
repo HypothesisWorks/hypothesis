@@ -11,7 +11,6 @@
 from collections import OrderedDict, abc
 from copy import copy
 from datetime import datetime, timedelta
-from functools import partial
 from typing import Any, List, Optional, Sequence, Set, Union
 
 import attr
