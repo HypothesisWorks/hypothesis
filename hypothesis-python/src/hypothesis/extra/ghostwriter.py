@@ -87,9 +87,11 @@ from typing import (
     Any,
     Callable,
     Dict,
+    ForwardRef,
     Iterable,
     List,
     Mapping,
+    NamedTuple,
     Optional,
     Set,
     Tuple,
@@ -102,7 +104,7 @@ import black
 
 from hypothesis import Verbosity, find, settings, strategies as st
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import get_type_hints
+from hypothesis.internal.compat import get_args, get_origin, get_type_hints
 from hypothesis.internal.reflection import get_signature, is_mock
 from hypothesis.internal.validation import check_type
 from hypothesis.provisional import domains
@@ -836,7 +838,7 @@ def _annotate_args(
         annotation = (
             None
             if parameters is None
-            else _parameters_to_annotation(parameters, imports)
+            else _parameters_to_annotation_name(parameters, imports)
         )
         if annotation is None:
             yield argname
@@ -844,29 +846,125 @@ def _annotate_args(
             yield f"{argname}: {annotation}"
 
 
-def _parameters_to_annotation(
+class _AnnotationData(NamedTuple):
+    type_name: str
+    imports: Set[str]
+
+
+def _parameters_to_annotation_name(
     parameters: Iterable[Any], imports: ImportSet
 ) -> Optional[str]:
-    annotations = {
-        _parameter_to_annotation(parameter, imports)
-        for parameter in parameters
-        if parameter != inspect.Parameter.empty
-    }
+    annotations = tuple(
+        annotation
+        for annotation in (
+            _parameter_to_annotation(parameter)
+            for parameter in parameters
+            if parameter != inspect.Parameter.empty
+        )
+        if annotation is not None
+    )
     if not annotations:
         return None
     if len(annotations) == 1:
-        return annotations.pop()
-    return "typing.Union[{}]".format(", ".join(annotations))
+        type_name, new_imports = annotations[0]
+        imports.update(new_imports)
+        return type_name
+    joined = _join_generics(("typing.Union", {"typing"}), annotations)
+    if joined is None:
+        return None
+    imports.update(joined.imports)
+    return joined.type_name
 
 
-def _parameter_to_annotation(parameter: Any, imports: ImportSet) -> str:
+def _join_generics(
+    origin_type_data: Optional[Tuple[str, Set[str]]],
+    annotations: Iterable[Optional[_AnnotationData]],
+) -> Optional[_AnnotationData]:
+    if origin_type_data is None:
+        return None
+
+    origin_type, imports = origin_type_data
+    joined = _join_argument_annotations(annotations)
+    if joined is None or not joined[0]:
+        return None
+
+    arg_types, new_imports = joined
+    imports.update(new_imports)
+    return _AnnotationData("{}[{}]".format(origin_type, ", ".join(arg_types)), imports)
+
+
+def _join_argument_annotations(
+    annotations: Iterable[Optional[_AnnotationData]],
+) -> Optional[Tuple[List[str], Set[str]]]:
+    imports: Set[str] = set()
+    arg_types: List[str] = []
+
+    for annotation in annotations:
+        if annotation is None:
+            return None
+        arg_types.append(annotation.type_name)
+        imports.update(annotation.imports)
+
+    return arg_types, imports
+
+
+def _parameter_to_annotation(parameter: Any) -> Optional[_AnnotationData]:
+    # if a ForwardRef could not be resolved
+    if isinstance(parameter, str):
+        return None
+
+    if isinstance(parameter, ForwardRef):
+        forwarded_value = parameter.__forward_value__
+        if forwarded_value is None:
+            return None
+        return _parameter_to_annotation(forwarded_value)
+
     if isinstance(parameter, type):
-        imports.add(parameter.__module__)
-        return f"{parameter.__module__}.{parameter.__name__}"
+        if parameter.__module__ == "builtins":
+            return _AnnotationData(
+                "None" if parameter.__name__ == "NoneType" else parameter.__name__,
+                set(),
+            )
+        return _AnnotationData(
+            f"{parameter.__module__}.{parameter.__name__}", {parameter.__module__}
+        )
+
+    # the arguments of Callable are in a list
+    if isinstance(parameter, list):
+        joined = _join_argument_annotations(map(_parameter_to_annotation, parameter))
+        if joined is None:
+            return None
+        arg_type_names, new_imports = joined
+        return _AnnotationData("[{}]".format(", ".join(arg_type_names)), new_imports)
+
+    origin_type = get_origin(parameter)
+
+    # if not generic or no generic arguments
+    if origin_type is None or origin_type == parameter:
+        type_name = str(parameter)
+        if type_name.startswith("typing."):
+            return _AnnotationData(type_name, {"typing"})
+        return _AnnotationData(type_name, set())
+
+    arg_types = get_args(parameter)
     type_name = str(parameter)
+
+    # typing types get translated to classes that don't support generics
+    origin_annotation: Optional[_AnnotationData]
     if type_name.startswith("typing."):
-        imports.add("typing")
-    return type_name
+        try:
+            new_type_name = type_name[: type_name.index("[")]
+        except ValueError:
+            new_type_name = type_name
+        origin_annotation = _AnnotationData(new_type_name, {"typing"})
+    else:
+        origin_annotation = _parameter_to_annotation(origin_type)
+
+    if arg_types:
+        return _join_generics(
+            origin_annotation, map(_parameter_to_annotation, arg_types)
+        )
+    return origin_annotation
 
 
 def _are_annotations_used(*functions: Callable) -> bool:
