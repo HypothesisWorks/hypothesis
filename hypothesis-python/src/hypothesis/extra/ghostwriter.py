@@ -86,6 +86,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    DefaultDict,
     Dict,
     ForwardRef,
     Iterable,
@@ -825,13 +826,10 @@ def _make_test_body(
 def _annotate_args(
     argnames: Iterable[str], funcs: Iterable[Callable], imports: ImportSet
 ) -> Iterable[str]:
-    arg_parameters: Dict[str, Set[Any]] = {}
+    arg_parameters: DefaultDict[str, Set[Any]] = defaultdict(set)
     for func in funcs:
         for key, param in _get_params(func).items():
-            if key not in arg_parameters:
-                arg_parameters[key] = {param.annotation}
-            else:
-                arg_parameters[key].add(param.annotation)
+            arg_parameters[key].add(param.annotation)
 
     for argname in argnames:
         parameters = arg_parameters.get(argname)
