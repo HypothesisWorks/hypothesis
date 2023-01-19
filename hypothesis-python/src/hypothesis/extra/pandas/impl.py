@@ -167,7 +167,7 @@ DEFAULT_MAX_SIZE = 10
 def range_indexes(
     min_size: int = 0,
     max_size: Optional[int] = None,
-    name: Optional[str] = None,
+    name: st.SearchStrategy[Optional[str]] = st.none(),
 ) -> st.SearchStrategy[pandas.RangeIndex]:
     """Provides a strategy which generates an :class:`~pandas.Index` whose
     values are 0, 1, ..., n for some n.
@@ -177,17 +177,16 @@ def range_indexes(
     * min_size is the smallest number of elements the index can have.
     * max_size is the largest number of elements the index can have. If None
       it will default to some suitable value based on min_size.
-    * name is the name of the index. Unlike the other index names, this should
-        be a string rather than a search strategy. If None, the index will have no name.
+    * name is the name of the index. If st.none(), the index will have no name.
     """
     check_valid_size(min_size, "min_size")
     check_valid_size(max_size, "max_size")
     if max_size is None:
         max_size = min([min_size + DEFAULT_MAX_SIZE, 2**63 - 1])
     check_valid_interval(min_size, max_size, "min_size", "max_size")
+    check_strategy(name)
 
-    p = partial(pandas.RangeIndex, name=name)
-    return st.integers(min_size, max_size).map(p)
+    return st.builds(pandas.RangeIndex, st.integers(min_size, max_size), name=name)
 
 
 @cacheable
