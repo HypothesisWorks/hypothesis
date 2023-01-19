@@ -42,6 +42,7 @@ from hypothesis.errors import InvalidArgument, Unsatisfiable
 from hypothesis.extra import cli, ghostwriter
 from hypothesis.internal.compat import BaseExceptionGroup
 from hypothesis.strategies import builds, from_type, just, lists
+from hypothesis.strategies._internal.core import from_regex
 from hypothesis.strategies._internal.lazy import LazyStrategy
 
 varied_excepts = pytest.mark.parametrize("ex", [(), ValueError, (TypeError, re.error)])
@@ -430,6 +431,14 @@ def test_unrepr_identity_elem():
         (
             lists(builds(Decimal)),
             {("decimal", "Decimal")},
+        ),
+        (
+            from_regex(re.compile(".+")),
+            {"re"},
+        ),
+        (
+            from_regex(".+"),
+            set(),
         ),
     ],
 )

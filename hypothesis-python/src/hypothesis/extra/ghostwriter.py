@@ -597,7 +597,7 @@ def _imports_for_strategy(strategy):
     # If we have a lazy from_type strategy, because unwrapping it gives us an
     # error or invalid syntax, import that type and we're done.
     if isinstance(strategy, LazyStrategy):
-        if strategy.function is st.from_type:
+        if strategy.function is st.from_type or strategy.function.__name__ is st.from_regex.__name__:
             return _imports_for_object(strategy._LazyStrategy__args[0])
         elif _get_module(strategy.function).startswith("hypothesis.extra."):
             return {(_get_module(strategy.function), strategy.function.__name__)}
