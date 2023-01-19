@@ -78,6 +78,7 @@ their individual contributions.
 * `Jakub Nabaglo <https://github.com/nbgl>`_ (j@nab.gl)
 * `James Lamb <https://github.com/jameslamb>`_
 * `Jenny Rouleau <https://github.com/jennyrou>`_
+* `Jens Heinrich <https://github.com/JensHeinrich>`_
 * `Jeremy Thurgood <https://github.com/jerith>`_
 * `J.J. Green <http://soliton.vm.bytemark.co.uk/pub/jjg/>`_
 * `JP Viljoen <https://github.com/froztbyte>`_ (froztbyte@froztbyte.net)
