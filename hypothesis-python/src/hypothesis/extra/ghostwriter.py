@@ -966,11 +966,15 @@ def _parameter_to_annotation(parameter: Any) -> Optional[_AnnotationData]:
 
 
 def _are_annotations_used(*functions: Callable) -> bool:
-    return any(
-        param.annotation != inspect.Parameter.empty
-        for function in functions
-        for param in _get_params(function).values()
-    )
+    for function in functions:
+        try:
+            params = get_signature(function).parameters.values()
+        except Exception:
+            pass
+        else:
+            if any(param.annotation != inspect.Parameter.empty for param in params):
+                return True
+    return False
 
 
 def _make_test(imports: ImportSet, body: str) -> str:
