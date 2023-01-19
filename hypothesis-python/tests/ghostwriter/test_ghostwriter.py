@@ -437,7 +437,7 @@ def test_unrepr_identity_elem():
             from_regex(re.compile(".+")),
             {"re"},
         ),
-        # but don't add superflous imports
+        # but don't add superfluous imports
         (
             from_regex(".+"),
             set(),
