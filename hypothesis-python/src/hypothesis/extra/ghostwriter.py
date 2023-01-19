@@ -1251,7 +1251,7 @@ def idempotent(
     return _make_test(imports, body)
 
 
-def _make_roundtrip_body(funcs, except_, style, annotations: bool):
+def _make_roundtrip_body(funcs, except_, style, annotations):
     first_param = next(iter(_get_params(funcs[0])))
     test_lines = [
         _write_call(funcs[0], assign="value0", except_=except_),
@@ -1304,7 +1304,7 @@ def roundtrip(
     return _make_test(*_make_roundtrip_body(funcs, except_, style, annotations))
 
 
-def _make_equiv_body(funcs, except_, style, annotations: bool):
+def _make_equiv_body(funcs, except_, style, annotations):
     var_names = [f"result_{f.__name__}" for f in funcs]
     if len(set(var_names)) < len(var_names):
         var_names = [f"result_{i}_{ f.__name__}" for i, f in enumerate(funcs)]
@@ -1346,7 +1346,7 @@ else:
 """.rstrip()
 
 
-def _make_equiv_errors_body(funcs, except_, style, annotations: bool):
+def _make_equiv_errors_body(funcs, except_, style, annotations):
     var_names = [f"result_{f.__name__}" for f in funcs]
     if len(set(var_names)) < len(var_names):
         var_names = [f"result_{i}_{ f.__name__}" for i, f in enumerate(funcs)]
@@ -1665,7 +1665,7 @@ def ufunc(
     )
 
 
-def _make_ufunc_body(func, *, except_, style, annotations: bool):
+def _make_ufunc_body(func, *, except_, style, annotations):
 
     import hypothesis.extra.numpy as npst
 
