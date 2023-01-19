@@ -432,10 +432,12 @@ def test_unrepr_identity_elem():
             lists(builds(Decimal)),
             {("decimal", "Decimal")},
         ),
+        # find the needed import for from_regex if needed
         (
             from_regex(re.compile(".+")),
             {"re"},
         ),
+        # but don't add superflous imports
         (
             from_regex(".+"),
             set(),
