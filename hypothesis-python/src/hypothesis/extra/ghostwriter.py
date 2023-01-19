@@ -598,10 +598,14 @@ def _imports_for_strategy(strategy):
     # error or invalid syntax, import that type and we're done.
     if isinstance(strategy, LazyStrategy):
         if (
-            strategy.function is st.from_type
-            or strategy.function.__name__ is st.from_regex.__name__
+            strategy.function.__name__ in (
+                st.from_type.__name__, st.from_regex.__name__)
         ):
-            return _imports_for_object(strategy._LazyStrategy__args[0])
+            return {
+                imp
+                for arg in strategy._LazyStrategy__args + strategy._LazyStrategy__kwargs.values
+                for imp in _imports_for_object(arg)
+            }
         elif _get_module(strategy.function).startswith("hypothesis.extra."):
             return {(_get_module(strategy.function), strategy.function.__name__)}
             module = _get_module(strategy.function).replace("._array_helpers", ".numpy")
