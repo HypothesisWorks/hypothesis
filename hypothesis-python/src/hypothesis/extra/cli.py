@@ -296,7 +296,7 @@ else:
         # NOTE: if you want to call this function from Python, look instead at the
         # ``hypothesis.extra.ghostwriter`` module.  Click-decorated functions have
         # a different calling convention, and raise SystemExit instead of returning.
-        kwargs = {"except_": except_ or (), "style": style, "annotations": annotate}
+        kwargs = {"except_": except_ or (), "style": style, "annotate": annotate}
         if writer is None:
             writer = "magic"
         elif writer == "idempotent" and len(func) > 1:
