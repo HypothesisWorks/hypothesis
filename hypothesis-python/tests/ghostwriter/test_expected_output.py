@@ -88,7 +88,7 @@ def divide(a: int, b: int) -> float:
     "data",
     [
         ("fuzz_sorted", ghostwriter.fuzz(sorted)),
-        ("fuzz_sorted_with_annotations", ghostwriter.fuzz(sorted, annotations=True)),
+        ("fuzz_sorted_with_annotations", ghostwriter.fuzz(sorted, annotate=True)),
         ("fuzz_with_docstring", ghostwriter.fuzz(with_docstring)),
         ("fuzz_classmethod", ghostwriter.fuzz(A_Class.a_classmethod)),
         ("fuzz_staticmethod", ghostwriter.fuzz(A_Class.a_staticmethod)),
@@ -97,7 +97,7 @@ def divide(a: int, b: int) -> float:
         ("magic_base64_roundtrip", ghostwriter.magic(base64.b64encode)),
         (
             "magic_base64_roundtrip_with_annotations",
-            ghostwriter.magic(base64.b64encode, annotations=True),
+            ghostwriter.magic(base64.b64encode, annotate=True),
         ),
         ("re_compile", ghostwriter.fuzz(re.compile)),
         (
@@ -121,7 +121,7 @@ def divide(a: int, b: int) -> float:
         ("sorted_self_equivalent", ghostwriter.equivalent(sorted, sorted, sorted)),
         (
             "sorted_self_equivalent_with_annotations",
-            ghostwriter.equivalent(sorted, sorted, sorted, annotations=True),
+            ghostwriter.equivalent(sorted, sorted, sorted, annotate=True),
         ),
         ("addition_op_magic", ghostwriter.magic(add)),
         ("addition_op_multimagic", ghostwriter.magic(add, operator.add, numpy.add)),
@@ -136,7 +136,7 @@ def divide(a: int, b: int) -> float:
         ),
         (
             "division_roundtrip_error_handler_without_annotations",
-            ghostwriter.roundtrip(divide, operator.mul, annotations=False),
+            ghostwriter.roundtrip(divide, operator.mul, annotate=False),
         ),
         (
             "division_roundtrip_arithmeticerror_handler",
@@ -155,7 +155,7 @@ def divide(a: int, b: int) -> float:
         (
             "division_operator_with_annotations",
             ghostwriter.binary_operation(
-                operator.truediv, associative=False, commutative=False, annotations=True
+                operator.truediv, associative=False, commutative=False, annotate=True
             ),
         ),
         (

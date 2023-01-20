@@ -270,12 +270,13 @@ else:
         help="dotted name of exception(s) to ignore",
     )
     @click.option(
-        "--annotations/--no-annotations",
+        "--annotate/--no-annotate",
         default=None,
-        help="whether the generated tests should have annotations or not (if omitted it will generate annotations if any parameter has annotations)",
+        help="force ghostwritten tests to be type-annotated (or not).  "
+        "By default, match the code to test.",
     )
     def write(
-        func, writer, except_, style, annotations
+        func, writer, except_, style, annotate
     ):  # noqa: D301  # \b disables autowrap
         """`hypothesis write` writes property-based tests for you!
 
@@ -295,7 +296,7 @@ else:
         # NOTE: if you want to call this function from Python, look instead at the
         # ``hypothesis.extra.ghostwriter`` module.  Click-decorated functions have
         # a different calling convention, and raise SystemExit instead of returning.
-        kwargs = {"except_": except_ or (), "style": style, "annotations": annotations}
+        kwargs = {"except_": except_ or (), "style": style, "annotations": annotate}
         if writer is None:
             writer = "magic"
         elif writer == "idempotent" and len(func) > 1:

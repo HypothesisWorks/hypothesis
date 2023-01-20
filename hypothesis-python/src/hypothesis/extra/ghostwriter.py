@@ -33,6 +33,7 @@ generally do their best to write you a useful test.  You can also use
 
           hypothesis write gzip
           hypothesis write numpy.matmul
+          hypothesis write pandas.from_dummies
           hypothesis write re.compile --except re.error
           hypothesis write --equivalent ast.literal_eval eval
           hypothesis write --roundtrip json.dumps json.loads
@@ -40,14 +41,16 @@ generally do their best to write you a useful test.  You can also use
           hypothesis write --binary-op operator.add
 
     Options:
-      --roundtrip                start by testing write/read or encode/decode!
-      --equivalent               very useful when optimising or refactoring code
-      --errors-equivalent        --equivalent, but also allows consistent errors
-      --idempotent               check that f(x) == f(f(x))
-      --binary-op                associativity, commutativity, identity element
-      --style [pytest|unittest]  pytest-style function, or unittest-style method?
-      -e, --except OBJ_NAME      dotted name of exception(s) to ignore
-      -h, --help                 Show this message and exit.
+      --roundtrip                 start by testing write/read or encode/decode!
+      --equivalent                very useful when optimising or refactoring code
+      --errors-equivalent         --equivalent, but also allows consistent errors
+      --idempotent                check that f(x) == f(f(x))
+      --binary-op                 associativity, commutativity, identity element
+      --style [pytest|unittest]   pytest-style function, or unittest-style method?
+      -e, --except OBJ_NAME       dotted name of exception(s) to ignore
+      --annotate / --no-annotate  force ghostwritten tests to be type-annotated
+                                  (or not).  By default, match the code to test.
+      -h, --help                  Show this message and exit.
 
 .. tip::
 
@@ -764,7 +767,7 @@ def _make_test_body(
     style: str,
     given_strategies: Optional[Mapping[str, Union[str, st.SearchStrategy]]] = None,
     imports: Optional[ImportSet] = None,
-    annotations: bool,
+    annotate: bool,
 ) -> Tuple[ImportSet, str]:
     # A set of modules to import - we might add to this later.  The import code
     # is written later, so we can have one import section for multiple magic()
@@ -797,7 +800,7 @@ def _make_test_body(
 
     # Indent our test code to form the body of a function or method.
     argnames = ["self"] if style == "unittest" else []
-    if annotations:
+    if annotate:
         argnames.extend(_annotate_args(given_strategies, funcs, imports))
     else:
         argnames.extend(given_strategies)
@@ -807,7 +810,7 @@ def _make_test_body(
         test_kind=ghost,
         func_name="_".join(_get_qualname(f).replace(".", "_") for f in funcs),
         arg_names=", ".join(argnames),
-        return_annotation=" -> None" if annotations else "",
+        return_annotation=" -> None" if annotate else "",
         test_body=indent(test_body, prefix="    "),
     )
 
@@ -1045,7 +1048,7 @@ def magic(
     *modules_or_functions: Union[Callable, types.ModuleType],
     except_: Except = (),
     style: str = "pytest",
-    annotations: Optional[bool] = None,
+    annotate: Optional[bool] = None,
 ) -> str:
     """Guess which ghostwriters to use, for a module or collection of functions.
 
@@ -1118,8 +1121,8 @@ def magic(
             except (TypeError, ValueError):
                 pass
 
-    if annotations is None:
-        annotations = _are_annotations_used(*functions)
+    if annotate is None:
+        annotate = _are_annotations_used(*functions)
 
     imports = set()
     parts = []
@@ -1156,7 +1159,7 @@ def magic(
                     make_(
                         _make_roundtrip_body,
                         (by_name.pop(name), by_name.pop(other)),
-                        annotations=annotations,
+                        annotate=annotate,
                     )
                     break
                 else:
@@ -1172,7 +1175,7 @@ def magic(
                         make_(
                             _make_roundtrip_body,
                             (by_name.pop(name), other_func),
-                            annotations=annotations,
+                            annotate=annotate,
                         )
 
     # Look for equivalent functions: same name, all required arguments of any can
@@ -1185,7 +1188,7 @@ def magic(
             sentinel = object()
             returns = {get_type_hints(f).get("return", sentinel) for f in group}
             if len(returns - {sentinel}) <= 1:
-                make_(_make_equiv_body, group, annotations=annotations)
+                make_(_make_equiv_body, group, annotate=annotate)
                 for f in group:
                     by_name.pop(_get_qualname(f, include_module=True))
 
@@ -1199,14 +1202,14 @@ def magic(
             a, b = hints.values()
             arg1, arg2 = params
             if a == b and len(arg1) == len(arg2) <= 3:
-                make_(_make_binop_body, func, annotations=annotations)
+                make_(_make_binop_body, func, annotate=annotate)
                 del by_name[name]
 
     # Look for Numpy ufuncs or gufuncs, and write array-oriented tests for them.
     if "numpy" in sys.modules:
         for name, func in sorted(by_name.items()):
             if _is_probably_ufunc(func):
-                make_(_make_ufunc_body, func, annotations=annotations)
+                make_(_make_ufunc_body, func, annotate=annotate)
                 del by_name[name]
 
     # For all remaining callables, just write a fuzz-test.  In principle we could
@@ -1218,7 +1221,7 @@ def magic(
             f,
             test_body=_write_call(f, except_=except_),
             ghost="fuzz",
-            annotations=annotations,
+            annotate=annotate,
         )
     return _make_test(imports, "\n".join(parts))
 
@@ -1228,7 +1231,7 @@ def fuzz(
     *,
     except_: Except = (),
     style: str = "pytest",
-    annotations: Optional[bool] = None,
+    annotate: Optional[bool] = None,
 ) -> str:
     """Write source code for a property-based test of ``func``.
 
@@ -1273,8 +1276,8 @@ def fuzz(
     except_ = _check_except(except_)
     _check_style(style)
 
-    if annotations is None:
-        annotations = _are_annotations_used(func)
+    if annotate is None:
+        annotate = _are_annotations_used(func)
 
     imports, body = _make_test_body(
         func,
@@ -1282,7 +1285,7 @@ def fuzz(
         except_=except_,
         ghost="fuzz",
         style=style,
-        annotations=annotations,
+        annotate=annotate,
     )
     return _make_test(imports, body)
 
@@ -1292,7 +1295,7 @@ def idempotent(
     *,
     except_: Except = (),
     style: str = "pytest",
-    annotations: Optional[bool] = None,
+    annotate: Optional[bool] = None,
 ) -> str:
     """Write source code for a property-based test of ``func``.
 
@@ -1333,8 +1336,8 @@ def idempotent(
     except_ = _check_except(except_)
     _check_style(style)
 
-    if annotations is None:
-        annotations = _are_annotations_used(func)
+    if annotate is None:
+        annotate = _are_annotations_used(func)
 
     imports, body = _make_test_body(
         func,
@@ -1346,12 +1349,12 @@ def idempotent(
         assertions=_assert_eq(style, "result", "repeat"),
         ghost="idempotent",
         style=style,
-        annotations=annotations,
+        annotate=annotate,
     )
     return _make_test(imports, body)
 
 
-def _make_roundtrip_body(funcs, except_, style, annotations):
+def _make_roundtrip_body(funcs, except_, style, annotate):
     first_param = next(iter(_get_params(funcs[0])))
     test_lines = [
         _write_call(funcs[0], assign="value0", except_=except_),
@@ -1367,7 +1370,7 @@ def _make_roundtrip_body(funcs, except_, style, annotations):
         assertions=_assert_eq(style, first_param, f"value{len(funcs) - 1}"),
         ghost="roundtrip",
         style=style,
-        annotations=annotations,
+        annotate=annotate,
     )
 
 
@@ -1375,7 +1378,7 @@ def roundtrip(
     *funcs: Callable,
     except_: Except = (),
     style: str = "pytest",
-    annotations: Optional[bool] = None,
+    annotate: Optional[bool] = None,
 ) -> str:
     """Write source code for a property-based test of ``funcs``.
 
@@ -1398,13 +1401,13 @@ def roundtrip(
     except_ = _check_except(except_)
     _check_style(style)
 
-    if annotations is None:
-        annotations = _are_annotations_used(*funcs)
+    if annotate is None:
+        annotate = _are_annotations_used(*funcs)
 
-    return _make_test(*_make_roundtrip_body(funcs, except_, style, annotations))
+    return _make_test(*_make_roundtrip_body(funcs, except_, style, annotate))
 
 
-def _make_equiv_body(funcs, except_, style, annotations):
+def _make_equiv_body(funcs, except_, style, annotate):
     var_names = [f"result_{f.__name__}" for f in funcs]
     if len(set(var_names)) < len(var_names):
         var_names = [f"result_{i}_{ f.__name__}" for i, f in enumerate(funcs)]
@@ -1423,7 +1426,7 @@ def _make_equiv_body(funcs, except_, style, annotations):
         assertions=assertions,
         ghost="equivalent",
         style=style,
-        annotations=annotations,
+        annotate=annotate,
     )
 
 
@@ -1446,7 +1449,7 @@ else:
 """.rstrip()
 
 
-def _make_equiv_errors_body(funcs, except_, style, annotations):
+def _make_equiv_errors_body(funcs, except_, style, annotate):
     var_names = [f"result_{f.__name__}" for f in funcs]
     if len(set(var_names)) < len(var_names):
         var_names = [f"result_{i}_{ f.__name__}" for i, f in enumerate(funcs)]
@@ -1479,7 +1482,7 @@ def _make_equiv_errors_body(funcs, except_, style, annotations):
         except_=(),
         ghost="equivalent",
         style=style,
-        annotations=annotations,
+        annotate=annotate,
     )
     return imports | extra_imports, source_code
 
@@ -1489,7 +1492,7 @@ def equivalent(
     allow_same_errors: bool = False,
     except_: Except = (),
     style: str = "pytest",
-    annotations: Optional[bool] = None,
+    annotate: Optional[bool] = None,
 ) -> str:
     """Write source code for a property-based test of ``funcs``.
 
@@ -1518,15 +1521,13 @@ def equivalent(
     except_ = _check_except(except_)
     _check_style(style)
 
-    if annotations is None:
-        annotations = _are_annotations_used(*funcs)
+    if annotate is None:
+        annotate = _are_annotations_used(*funcs)
 
     if allow_same_errors and not any(issubclass(Exception, ex) for ex in except_):
-        imports, source_code = _make_equiv_errors_body(
-            funcs, except_, style, annotations
-        )
+        imports, source_code = _make_equiv_errors_body(funcs, except_, style, annotate)
     else:
-        imports, source_code = _make_equiv_body(funcs, except_, style, annotations)
+        imports, source_code = _make_equiv_body(funcs, except_, style, annotate)
     return _make_test(imports, source_code)
 
 
@@ -1543,7 +1544,7 @@ def binary_operation(
     distributes_over: Optional[Callable[[X, X], X]] = None,
     except_: Except = (),
     style: str = "pytest",
-    annotations: Optional[bool] = None,
+    annotate: Optional[bool] = None,
 ) -> str:
     """Write property tests for the binary operation ``func``.
 
@@ -1585,8 +1586,8 @@ def binary_operation(
             "You must select at least one property of the binary operation to test."
         )
 
-    if annotations is None:
-        annotations = _are_annotations_used(func)
+    if annotate is None:
+        annotate = _are_annotations_used(func)
 
     imports, body = _make_binop_body(
         func,
@@ -1596,7 +1597,7 @@ def binary_operation(
         distributes_over=distributes_over,
         except_=except_,
         style=style,
-        annotations=annotations,
+        annotate=annotate,
     )
     return _make_test(imports, body)
 
@@ -1610,7 +1611,7 @@ def _make_binop_body(
     distributes_over: Optional[Callable[[X, X], X]] = None,
     except_: Tuple[Type[Exception], ...],
     style: str,
-    annotations: bool,
+    annotate: bool,
 ) -> Tuple[ImportSet, str]:
     strategies = _get_strategies(func)
     operands, b = (strategies.pop(p) for p in list(_get_params(func))[:2])
@@ -1640,7 +1641,7 @@ def _make_binop_body(
             assertions=assertions,
             style=style,
             given_strategies={**strategies, **{n: operands_name for n in args}},
-            annotations=annotations,
+            annotate=annotate,
         )
         all_imports.update(imports)
         if style == "unittest":
@@ -1739,7 +1740,7 @@ def ufunc(
     *,
     except_: Except = (),
     style: str = "pytest",
-    annotations: Optional[bool] = None,
+    annotate: Optional[bool] = None,
 ) -> str:
     """Write a property-based test for the :doc:`array ufunc <numpy:reference/ufuncs>` ``func``.
 
@@ -1757,15 +1758,15 @@ def ufunc(
     except_ = _check_except(except_)
     _check_style(style)
 
-    if annotations is None:
-        annotations = _are_annotations_used(func)
+    if annotate is None:
+        annotate = _are_annotations_used(func)
 
     return _make_test(
-        *_make_ufunc_body(func, except_=except_, style=style, annotations=annotations)
+        *_make_ufunc_body(func, except_=except_, style=style, annotate=annotate)
     )
 
 
-def _make_ufunc_body(func, *, except_, style, annotations):
+def _make_ufunc_body(func, *, except_, style, annotate):
 
     import hypothesis.extra.numpy as npst
 
@@ -1810,5 +1811,5 @@ def _make_ufunc_body(func, *, except_, style, annotations):
         style=style,
         given_strategies={"data": st.data(), "shapes": shapes, "types": types},
         imports={("hypothesis.extra.numpy", "arrays")},
-        annotations=annotations,
+        annotate=annotate,
     )

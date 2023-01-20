@@ -320,7 +320,7 @@ def test_exception_deduplication(exceptions, output):
         test_body="pass",
         except_=exceptions,
         style="pytest",
-        annotations=False,
+        annotate=False,
     )
     assert f"except {output}:" in body
 
