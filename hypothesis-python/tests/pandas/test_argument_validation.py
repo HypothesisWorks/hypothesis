@@ -73,6 +73,7 @@ BAD_ARGS = [
     e(pdst.range_indexes, 1, 0),
     e(pdst.range_indexes, min_size="0"),
     e(pdst.range_indexes, max_size="1"),
+    e(pdst.range_indexes, name=""),
     e(pdst.series),
     e(pdst.series, dtype="not a dtype"),
     e(pdst.series, elements="not a strategy"),
