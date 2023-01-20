@@ -62,7 +62,7 @@ def test_arbitrary_range_index(i, j, data):
     data.draw(pdst.range_indexes(i, j))
 
 
-@given(pdst.range_indexes(name="test_name"))
+@given(pdst.range_indexes(name=st.just("test_name")))
 def test_name_passed_on_range_indexes(s):
     assert s.name == "test_name"
 
