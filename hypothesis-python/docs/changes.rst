@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.63.0:
+
+-------------------
+6.63.0 - 2023-01-20
+-------------------
+
+:func:`~hypothesis.extra.pandas.range_indexes` now accepts a ``name=`` argument,
+to generate named :class:`pandas.RangeIndex` objects.
+
+Thanks to Sam Watts for this new feature!
+
 .. _v6.62.1:
 
 -------------------
