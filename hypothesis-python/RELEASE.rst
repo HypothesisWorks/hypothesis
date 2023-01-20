@@ -1,6 +1,6 @@
 RELEASE_TYPE: minor
 
-This release adds the option to pass in a name when creating a pandas `RangeIndex`
-    * :class:`pandas.RangeIndex` created via :func:`~hypothesis.extra.pandas.range_indexes`
+:func:`~hypothesis.extra.pandas.range_indexes` now accepts a ``name=`` argument,
+to generate named :class:`pandas.RangeIndex` objects.
 
-Hacked together by Sam Watts :) 
+Thanks to Sam Watts for this new feature!
