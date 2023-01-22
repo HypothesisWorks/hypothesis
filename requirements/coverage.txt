@@ -44,7 +44,7 @@ numpy==1.24.1
     #   pandas
 packaging==23.0
     # via pytest
-pandas==1.5.2
+pandas==1.5.3
     # via -r requirements/coverage.in
 pathspec==0.10.3
     # via black
