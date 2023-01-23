@@ -90,6 +90,17 @@ def optional_union_parameter(a: float, b: Optional[Union[float, int]]) -> float:
     return a if b is None else a + b
 
 
+if sys.version_info[:2] >= (3, 10):
+
+    def union_sequence_parameter(items: Sequence[float | int]) -> float:
+        return sum(items)
+
+else:
+
+    def union_sequence_parameter(items: Sequence[Union[float, int]]) -> float:
+        return sum(items)
+
+
 # Note: for some of the `expected` outputs, we replace away some small
 #       parts which vary between minor versions of Python.
 @pytest.mark.parametrize(
@@ -111,6 +122,7 @@ def optional_union_parameter(a: float, b: Optional[Union[float, int]]) -> float:
             marks=pytest.mark.skipif("sys.version_info[:2] >= (3, 9)"),
         ),
         ("optional_union_parameter", ghostwriter.magic(optional_union_parameter)),
+        ("union_sequence_parameter", ghostwriter.magic(union_sequence_parameter)),
         ("magic_base64_roundtrip", ghostwriter.magic(base64.b64encode)),
         (
             "magic_base64_roundtrip_with_annotations",

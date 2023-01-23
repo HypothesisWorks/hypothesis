@@ -935,9 +935,14 @@ def _parameter_to_annotation(parameter: Any) -> Optional[_AnnotationData]:
                 "None" if parameter.__name__ == "NoneType" else parameter.__name__,
                 set(),
             )
-        return _AnnotationData(
-            f"{parameter.__module__}.{parameter.__name__}", {parameter.__module__}
-        )
+
+        full_name = f"{parameter.__module__}.{parameter.__name__}"
+
+        # the types.UnionType does not support type arguments and needs to be translated
+        if full_name == "types.UnionType":
+            return _AnnotationData("typing.Union", {"typing"})
+
+        return _AnnotationData(full_name, {parameter.__module__})
 
     # the arguments of Callable are in a list
     if isinstance(parameter, list):
