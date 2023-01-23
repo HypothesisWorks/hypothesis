@@ -18,6 +18,19 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.64.0:
+
+-------------------
+6.64.0 - 2023-01-23
+-------------------
+
+The :doc:`Ghostwritter <ghostwriter>` will now include type annotations on tests
+for type-annotated code.  If you want to force this to happen (or not happen),
+pass a boolean to the new ``annotate=`` argument to the Python functions, or
+the ``--[no-]annotate`` CLI flag.
+
+Thanks to Nicolas Ganz for this new feature!
+
 .. _v6.63.0:
 
 -------------------
