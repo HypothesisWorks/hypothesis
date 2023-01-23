@@ -884,6 +884,15 @@ def _join_generics(
     if origin_type_data is None:
         return None
 
+    # because typing.Optional is converted to a Union, it also contains None
+    # since typing.Optional only accepts one type variable, we need to remove it
+    if origin_type_data is not None and origin_type_data[0] == "typing.Optional":
+        annotations = (
+            annotation
+            for annotation in annotations
+            if annotation is None or annotation.type_name != "None"
+        )
+
     origin_type, imports = origin_type_data
     joined = _join_argument_annotations(annotations)
     if joined is None or not joined[0]:

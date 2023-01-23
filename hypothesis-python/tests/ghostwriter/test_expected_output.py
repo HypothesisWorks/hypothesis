@@ -21,7 +21,7 @@ import operator
 import pathlib
 import re
 import sys
-from typing import Sequence
+from typing import Optional, Sequence, Union
 
 import numpy
 import pytest
@@ -82,6 +82,14 @@ def divide(a: int, b: int) -> float:
     return a / b
 
 
+def optional_parameter(a: float, b: Optional[float]) -> float:
+    return optional_union_parameter(a, b)
+
+
+def optional_union_parameter(a: float, b: Optional[Union[float, int]]) -> float:
+    return a if b is None else a + b
+
+
 # Note: for some of the `expected` outputs, we replace away some small
 #       parts which vary between minor versions of Python.
 @pytest.mark.parametrize(
@@ -94,6 +102,15 @@ def divide(a: int, b: int) -> float:
         ("fuzz_staticmethod", ghostwriter.fuzz(A_Class.a_staticmethod)),
         ("fuzz_ufunc", ghostwriter.fuzz(numpy.add)),
         ("magic_gufunc", ghostwriter.magic(numpy.matmul)),
+        pytest.param(
+            ("optional_parameter", ghostwriter.magic(optional_parameter)),
+            marks=pytest.mark.skipif("sys.version_info[:2] < (3, 9)"),
+        ),
+        pytest.param(
+            ("optional_parameter_pre_py_3_9", ghostwriter.magic(optional_parameter)),
+            marks=pytest.mark.skipif("sys.version_info[:2] >= (3, 9)"),
+        ),
+        ("optional_union_parameter", ghostwriter.magic(optional_union_parameter)),
         ("magic_base64_roundtrip", ghostwriter.magic(base64.b64encode)),
         (
             "magic_base64_roundtrip_with_annotations",
