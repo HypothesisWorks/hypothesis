@@ -7,10 +7,10 @@ from hypothesis import given, reject, strategies as st
 
 
 @given(a=st.integers(), b=st.integers())
-def test_roundtrip_divide_mul(a: int, b: int) -> None:
+def test_roundtrip_divide_mul(a, b):
     try:
         value0 = test_expected_output.divide(a=a, b=b)
-        value1 = _operator.mul(value0, b)
-    except ArithmeticError:
+    except ZeroDivisionError:
         reject()
+    value1 = _operator.mul(value0, b)
     assert a == value1, (a, value1)

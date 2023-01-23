@@ -8,7 +8,7 @@ from hypothesis import given, strategies as st
 
 
 @given(a=st.floats(), b=st.floats())
-def test_equivalent_add_add_add(a, b):
+def test_equivalent_add_add_add(a: float, b: float) -> None:
     result_0_add = _operator.add(a, b)
     result_1_add = numpy.add(a, b)
     result_2_add = test_expected_output.add(a=a, b=b)

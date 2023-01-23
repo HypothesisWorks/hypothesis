@@ -315,7 +315,12 @@ class MyError(UnicodeDecodeError):
 )
 def test_exception_deduplication(exceptions, output):
     _, body = ghostwriter._make_test_body(
-        lambda: None, ghost="", test_body="pass", except_=exceptions, style="pytest"
+        lambda: None,
+        ghost="",
+        test_body="pass",
+        except_=exceptions,
+        style="pytest",
+        annotate=False,
     )
     assert f"except {output}:" in body
 

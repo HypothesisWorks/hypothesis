@@ -48,6 +48,9 @@ from hypothesis.extra.ghostwriter import (
         ("hypothesis.errors.StopTest", lambda: fuzz(StopTest)),
         # Search for identity element does not print e.g. "You can use @seed ..."
         ("--binary-op operator.add", lambda: binary_operation(operator.add)),
+        # Annotations are passed correctly
+        ("sorted --annotate", lambda: fuzz(sorted, annotate=True)),
+        ("sorted --no-annotate", lambda: fuzz(sorted, annotate=False)),
     ],
 )
 def test_cli_python_equivalence(cli, code):

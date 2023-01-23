@@ -8,19 +8,19 @@ divide_operands = st.integers()
 
 
 @given(a=divide_operands, b=divide_operands, c=divide_operands)
-def test_associative_binary_operation_divide(a, b, c):
+def test_associative_binary_operation_divide(a: int, b: int, c) -> None:
     left = test_expected_output.divide(a=a, b=test_expected_output.divide(a=b, b=c))
     right = test_expected_output.divide(a=test_expected_output.divide(a=a, b=b), b=c)
     assert left == right, (left, right)
 
 
 @given(a=divide_operands, b=divide_operands)
-def test_commutative_binary_operation_divide(a, b):
+def test_commutative_binary_operation_divide(a: int, b: int) -> None:
     left = test_expected_output.divide(a=a, b=b)
     right = test_expected_output.divide(a=b, b=a)
     assert left == right, (left, right)
 
 
 @given(a=divide_operands)
-def test_identity_binary_operation_divide(a):
+def test_identity_binary_operation_divide(a: int) -> None:
     assert a == test_expected_output.divide(a=a, b=1)

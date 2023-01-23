@@ -33,6 +33,7 @@ generally do their best to write you a useful test.  You can also use
 
           hypothesis write gzip
           hypothesis write numpy.matmul
+          hypothesis write pandas.from_dummies
           hypothesis write re.compile --except re.error
           hypothesis write --equivalent ast.literal_eval eval
           hypothesis write --roundtrip json.dumps json.loads
@@ -40,14 +41,16 @@ generally do their best to write you a useful test.  You can also use
           hypothesis write --binary-op operator.add
 
     Options:
-      --roundtrip                start by testing write/read or encode/decode!
-      --equivalent               very useful when optimising or refactoring code
-      --errors-equivalent        --equivalent, but also allows consistent errors
-      --idempotent               check that f(x) == f(f(x))
-      --binary-op                associativity, commutativity, identity element
-      --style [pytest|unittest]  pytest-style function, or unittest-style method?
-      -e, --except OBJ_NAME      dotted name of exception(s) to ignore
-      -h, --help                 Show this message and exit.
+      --roundtrip                 start by testing write/read or encode/decode!
+      --equivalent                very useful when optimising or refactoring code
+      --errors-equivalent         --equivalent, but also allows consistent errors
+      --idempotent                check that f(x) == f(f(x))
+      --binary-op                 associativity, commutativity, identity element
+      --style [pytest|unittest]   pytest-style function, or unittest-style method?
+      -e, --except OBJ_NAME       dotted name of exception(s) to ignore
+      --annotate / --no-annotate  force ghostwritten tests to be type-annotated
+                                  (or not).  By default, match the code to test.
+      -h, --help                  Show this message and exit.
 
 .. tip::
 
@@ -86,9 +89,13 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    DefaultDict,
     Dict,
+    ForwardRef,
+    Iterable,
     List,
     Mapping,
+    NamedTuple,
     Optional,
     Set,
     Tuple,
@@ -101,7 +108,7 @@ import black
 
 from hypothesis import Verbosity, find, settings, strategies as st
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import get_type_hints
+from hypothesis.internal.compat import get_args, get_origin, get_type_hints
 from hypothesis.internal.reflection import get_signature, is_mock
 from hypothesis.internal.validation import check_type
 from hypothesis.provisional import domains
@@ -134,7 +141,7 @@ IMPORT_SECTION = """
 
 TEMPLATE = """
 @given({given_args})
-def test_{test_kind}_{func_name}({arg_names}):
+def test_{test_kind}_{func_name}({arg_names}){return_annotation}:
 {test_body}
 """
 
@@ -760,6 +767,7 @@ def _make_test_body(
     style: str,
     given_strategies: Optional[Mapping[str, Union[str, st.SearchStrategy]]] = None,
     imports: Optional[ImportSet] = None,
+    annotate: bool,
 ) -> Tuple[ImportSet, str]:
     # A set of modules to import - we might add to this later.  The import code
     # is written later, so we can have one import section for multiple magic()
@@ -791,12 +799,18 @@ def _make_test_body(
         test_body = f"{test_body}\n{assertions}"
 
     # Indent our test code to form the body of a function or method.
-    argnames = (["self"] if style == "unittest" else []) + list(given_strategies)
+    argnames = ["self"] if style == "unittest" else []
+    if annotate:
+        argnames.extend(_annotate_args(given_strategies, funcs, imports))
+    else:
+        argnames.extend(given_strategies)
+
     body = TEMPLATE.format(
         given_args=given_args,
         test_kind=ghost,
         func_name="_".join(_get_qualname(f).replace(".", "_") for f in funcs),
         arg_names=", ".join(argnames),
+        return_annotation=" -> None" if annotate else "",
         test_body=indent(test_body, prefix="    "),
     )
 
@@ -810,6 +824,160 @@ def _make_test_body(
         )
 
     return imports, body
+
+
+def _annotate_args(
+    argnames: Iterable[str], funcs: Iterable[Callable], imports: ImportSet
+) -> Iterable[str]:
+    arg_parameters: DefaultDict[str, Set[Any]] = defaultdict(set)
+    for func in funcs:
+        for key, param in _get_params(func).items():
+            arg_parameters[key].add(param.annotation)
+
+    for argname in argnames:
+        parameters = arg_parameters.get(argname)
+        annotation = (
+            None
+            if parameters is None
+            else _parameters_to_annotation_name(parameters, imports)
+        )
+        if annotation is None:
+            yield argname
+        else:
+            yield f"{argname}: {annotation}"
+
+
+class _AnnotationData(NamedTuple):
+    type_name: str
+    imports: Set[str]
+
+
+def _parameters_to_annotation_name(
+    parameters: Iterable[Any], imports: ImportSet
+) -> Optional[str]:
+    annotations = tuple(
+        annotation
+        for annotation in (
+            _parameter_to_annotation(parameter)
+            for parameter in parameters
+            if parameter != inspect.Parameter.empty
+        )
+        if annotation is not None
+    )
+    if not annotations:
+        return None
+    if len(annotations) == 1:
+        type_name, new_imports = annotations[0]
+        imports.update(new_imports)
+        return type_name
+    joined = _join_generics(("typing.Union", {"typing"}), annotations)
+    if joined is None:
+        return None
+    imports.update(joined.imports)
+    return joined.type_name
+
+
+def _join_generics(
+    origin_type_data: Optional[Tuple[str, Set[str]]],
+    annotations: Iterable[Optional[_AnnotationData]],
+) -> Optional[_AnnotationData]:
+    if origin_type_data is None:
+        return None
+
+    origin_type, imports = origin_type_data
+    joined = _join_argument_annotations(annotations)
+    if joined is None or not joined[0]:
+        return None
+
+    arg_types, new_imports = joined
+    imports.update(new_imports)
+    return _AnnotationData("{}[{}]".format(origin_type, ", ".join(arg_types)), imports)
+
+
+def _join_argument_annotations(
+    annotations: Iterable[Optional[_AnnotationData]],
+) -> Optional[Tuple[List[str], Set[str]]]:
+    imports: Set[str] = set()
+    arg_types: List[str] = []
+
+    for annotation in annotations:
+        if annotation is None:
+            return None
+        arg_types.append(annotation.type_name)
+        imports.update(annotation.imports)
+
+    return arg_types, imports
+
+
+def _parameter_to_annotation(parameter: Any) -> Optional[_AnnotationData]:
+    # if a ForwardRef could not be resolved
+    if isinstance(parameter, str):
+        return None
+
+    if isinstance(parameter, ForwardRef):
+        forwarded_value = parameter.__forward_value__
+        if forwarded_value is None:
+            return None
+        return _parameter_to_annotation(forwarded_value)
+
+    if isinstance(parameter, type):
+        if parameter.__module__ == "builtins":
+            return _AnnotationData(
+                "None" if parameter.__name__ == "NoneType" else parameter.__name__,
+                set(),
+            )
+        return _AnnotationData(
+            f"{parameter.__module__}.{parameter.__name__}", {parameter.__module__}
+        )
+
+    # the arguments of Callable are in a list
+    if isinstance(parameter, list):
+        joined = _join_argument_annotations(map(_parameter_to_annotation, parameter))
+        if joined is None:
+            return None
+        arg_type_names, new_imports = joined
+        return _AnnotationData("[{}]".format(", ".join(arg_type_names)), new_imports)
+
+    origin_type = get_origin(parameter)
+
+    # if not generic or no generic arguments
+    if origin_type is None or origin_type == parameter:
+        type_name = str(parameter)
+        if type_name.startswith("typing."):
+            return _AnnotationData(type_name, {"typing"})
+        return _AnnotationData(type_name, set())
+
+    arg_types = get_args(parameter)
+    type_name = str(parameter)
+
+    # typing types get translated to classes that don't support generics
+    origin_annotation: Optional[_AnnotationData]
+    if type_name.startswith("typing."):
+        try:
+            new_type_name = type_name[: type_name.index("[")]
+        except ValueError:
+            new_type_name = type_name
+        origin_annotation = _AnnotationData(new_type_name, {"typing"})
+    else:
+        origin_annotation = _parameter_to_annotation(origin_type)
+
+    if arg_types:
+        return _join_generics(
+            origin_annotation, map(_parameter_to_annotation, arg_types)
+        )
+    return origin_annotation
+
+
+def _are_annotations_used(*functions: Callable) -> bool:
+    for function in functions:
+        try:
+            params = get_signature(function).parameters.values()
+        except Exception:
+            pass
+        else:
+            if any(param.annotation != inspect.Parameter.empty for param in params):
+                return True
+    return False
 
 
 def _make_test(imports: ImportSet, body: str) -> str:
@@ -880,6 +1048,7 @@ def magic(
     *modules_or_functions: Union[Callable, types.ModuleType],
     except_: Except = (),
     style: str = "pytest",
+    annotate: Optional[bool] = None,
 ) -> str:
     """Guess which ghostwriters to use, for a module or collection of functions.
 
@@ -952,6 +1121,9 @@ def magic(
             except (TypeError, ValueError):
                 pass
 
+    if annotate is None:
+        annotate = _are_annotations_used(*functions)
+
     imports = set()
     parts = []
 
@@ -984,7 +1156,11 @@ def magic(
                 for other in sorted(
                     n for n in by_name if n.split(".")[-1] == inverse_name
                 ):
-                    make_(_make_roundtrip_body, (by_name.pop(name), by_name.pop(other)))
+                    make_(
+                        _make_roundtrip_body,
+                        (by_name.pop(name), by_name.pop(other)),
+                        annotate=annotate,
+                    )
                     break
                 else:
                     try:
@@ -996,7 +1172,11 @@ def magic(
                     except Exception:
                         pass
                     else:
-                        make_(_make_roundtrip_body, (by_name.pop(name), other_func))
+                        make_(
+                            _make_roundtrip_body,
+                            (by_name.pop(name), other_func),
+                            annotate=annotate,
+                        )
 
     # Look for equivalent functions: same name, all required arguments of any can
     # be found in all signatures, and if all have return-type annotations they match.
@@ -1008,7 +1188,7 @@ def magic(
             sentinel = object()
             returns = {get_type_hints(f).get("return", sentinel) for f in group}
             if len(returns - {sentinel}) <= 1:
-                make_(_make_equiv_body, group)
+                make_(_make_equiv_body, group, annotate=annotate)
                 for f in group:
                     by_name.pop(_get_qualname(f, include_module=True))
 
@@ -1022,14 +1202,14 @@ def magic(
             a, b = hints.values()
             arg1, arg2 = params
             if a == b and len(arg1) == len(arg2) <= 3:
-                make_(_make_binop_body, func)
+                make_(_make_binop_body, func, annotate=annotate)
                 del by_name[name]
 
     # Look for Numpy ufuncs or gufuncs, and write array-oriented tests for them.
     if "numpy" in sys.modules:
         for name, func in sorted(by_name.items()):
             if _is_probably_ufunc(func):
-                make_(_make_ufunc_body, func)
+                make_(_make_ufunc_body, func, annotate=annotate)
                 del by_name[name]
 
     # For all remaining callables, just write a fuzz-test.  In principle we could
@@ -1037,12 +1217,22 @@ def magic(
     # be worth the trouble when it's so easy for the user to specify themselves.
     for _, f in sorted(by_name.items()):
         make_(
-            _make_test_body, f, test_body=_write_call(f, except_=except_), ghost="fuzz"
+            _make_test_body,
+            f,
+            test_body=_write_call(f, except_=except_),
+            ghost="fuzz",
+            annotate=annotate,
         )
     return _make_test(imports, "\n".join(parts))
 
 
-def fuzz(func: Callable, *, except_: Except = (), style: str = "pytest") -> str:
+def fuzz(
+    func: Callable,
+    *,
+    except_: Except = (),
+    style: str = "pytest",
+    annotate: Optional[bool] = None,
+) -> str:
     """Write source code for a property-based test of ``func``.
 
     The resulting test checks that valid input only leads to expected exceptions.
@@ -1086,17 +1276,27 @@ def fuzz(func: Callable, *, except_: Except = (), style: str = "pytest") -> str:
     except_ = _check_except(except_)
     _check_style(style)
 
+    if annotate is None:
+        annotate = _are_annotations_used(func)
+
     imports, body = _make_test_body(
         func,
         test_body=_write_call(func, except_=except_),
         except_=except_,
         ghost="fuzz",
         style=style,
+        annotate=annotate,
     )
     return _make_test(imports, body)
 
 
-def idempotent(func: Callable, *, except_: Except = (), style: str = "pytest") -> str:
+def idempotent(
+    func: Callable,
+    *,
+    except_: Except = (),
+    style: str = "pytest",
+    annotate: Optional[bool] = None,
+) -> str:
     """Write source code for a property-based test of ``func``.
 
     The resulting test checks that if you call ``func`` on it's own output,
@@ -1136,6 +1336,9 @@ def idempotent(func: Callable, *, except_: Except = (), style: str = "pytest") -
     except_ = _check_except(except_)
     _check_style(style)
 
+    if annotate is None:
+        annotate = _are_annotations_used(func)
+
     imports, body = _make_test_body(
         func,
         test_body="result = {}\nrepeat = {}".format(
@@ -1146,11 +1349,12 @@ def idempotent(func: Callable, *, except_: Except = (), style: str = "pytest") -
         assertions=_assert_eq(style, "result", "repeat"),
         ghost="idempotent",
         style=style,
+        annotate=annotate,
     )
     return _make_test(imports, body)
 
 
-def _make_roundtrip_body(funcs, except_, style):
+def _make_roundtrip_body(funcs, except_, style, annotate):
     first_param = next(iter(_get_params(funcs[0])))
     test_lines = [
         _write_call(funcs[0], assign="value0", except_=except_),
@@ -1166,10 +1370,16 @@ def _make_roundtrip_body(funcs, except_, style):
         assertions=_assert_eq(style, first_param, f"value{len(funcs) - 1}"),
         ghost="roundtrip",
         style=style,
+        annotate=annotate,
     )
 
 
-def roundtrip(*funcs: Callable, except_: Except = (), style: str = "pytest") -> str:
+def roundtrip(
+    *funcs: Callable,
+    except_: Except = (),
+    style: str = "pytest",
+    annotate: Optional[bool] = None,
+) -> str:
     """Write source code for a property-based test of ``funcs``.
 
     The resulting test checks that if you call the first function, pass the result
@@ -1190,10 +1400,14 @@ def roundtrip(*funcs: Callable, except_: Except = (), style: str = "pytest") -> 
             raise InvalidArgument(f"Got non-callable funcs[{i}]={f!r}")
     except_ = _check_except(except_)
     _check_style(style)
-    return _make_test(*_make_roundtrip_body(funcs, except_, style))
+
+    if annotate is None:
+        annotate = _are_annotations_used(*funcs)
+
+    return _make_test(*_make_roundtrip_body(funcs, except_, style, annotate))
 
 
-def _make_equiv_body(funcs, except_, style):
+def _make_equiv_body(funcs, except_, style, annotate):
     var_names = [f"result_{f.__name__}" for f in funcs]
     if len(set(var_names)) < len(var_names):
         var_names = [f"result_{i}_{ f.__name__}" for i, f in enumerate(funcs)]
@@ -1212,6 +1426,7 @@ def _make_equiv_body(funcs, except_, style):
         assertions=assertions,
         ghost="equivalent",
         style=style,
+        annotate=annotate,
     )
 
 
@@ -1234,7 +1449,7 @@ else:
 """.rstrip()
 
 
-def _make_equiv_errors_body(funcs, except_, style):
+def _make_equiv_errors_body(funcs, except_, style, annotate):
     var_names = [f"result_{f.__name__}" for f in funcs]
     if len(set(var_names)) < len(var_names):
         var_names = [f"result_{i}_{ f.__name__}" for i, f in enumerate(funcs)]
@@ -1267,6 +1482,7 @@ def _make_equiv_errors_body(funcs, except_, style):
         except_=(),
         ghost="equivalent",
         style=style,
+        annotate=annotate,
     )
     return imports | extra_imports, source_code
 
@@ -1276,6 +1492,7 @@ def equivalent(
     allow_same_errors: bool = False,
     except_: Except = (),
     style: str = "pytest",
+    annotate: Optional[bool] = None,
 ) -> str:
     """Write source code for a property-based test of ``funcs``.
 
@@ -1303,10 +1520,14 @@ def equivalent(
     check_type(bool, allow_same_errors, "allow_same_errors")
     except_ = _check_except(except_)
     _check_style(style)
+
+    if annotate is None:
+        annotate = _are_annotations_used(*funcs)
+
     if allow_same_errors and not any(issubclass(Exception, ex) for ex in except_):
-        imports, source_code = _make_equiv_errors_body(funcs, except_, style)
+        imports, source_code = _make_equiv_errors_body(funcs, except_, style, annotate)
     else:
-        imports, source_code = _make_equiv_body(funcs, except_, style)
+        imports, source_code = _make_equiv_body(funcs, except_, style, annotate)
     return _make_test(imports, source_code)
 
 
@@ -1323,6 +1544,7 @@ def binary_operation(
     distributes_over: Optional[Callable[[X, X], X]] = None,
     except_: Except = (),
     style: str = "pytest",
+    annotate: Optional[bool] = None,
 ) -> str:
     """Write property tests for the binary operation ``func``.
 
@@ -1363,6 +1585,10 @@ def binary_operation(
         raise InvalidArgument(
             "You must select at least one property of the binary operation to test."
         )
+
+    if annotate is None:
+        annotate = _are_annotations_used(func)
+
     imports, body = _make_binop_body(
         func,
         associative=associative,
@@ -1371,6 +1597,7 @@ def binary_operation(
         distributes_over=distributes_over,
         except_=except_,
         style=style,
+        annotate=annotate,
     )
     return _make_test(imports, body)
 
@@ -1384,6 +1611,7 @@ def _make_binop_body(
     distributes_over: Optional[Callable[[X, X], X]] = None,
     except_: Tuple[Type[Exception], ...],
     style: str,
+    annotate: bool,
 ) -> Tuple[ImportSet, str]:
     strategies = _get_strategies(func)
     operands, b = (strategies.pop(p) for p in list(_get_params(func))[:2])
@@ -1413,6 +1641,7 @@ def _make_binop_body(
             assertions=assertions,
             style=style,
             given_strategies={**strategies, **{n: operands_name for n in args}},
+            annotate=annotate,
         )
         all_imports.update(imports)
         if style == "unittest":
@@ -1506,7 +1735,13 @@ def _make_binop_body(
     )
 
 
-def ufunc(func: Callable, *, except_: Except = (), style: str = "pytest") -> str:
+def ufunc(
+    func: Callable,
+    *,
+    except_: Except = (),
+    style: str = "pytest",
+    annotate: Optional[bool] = None,
+) -> str:
     """Write a property-based test for the :doc:`array ufunc <numpy:reference/ufuncs>` ``func``.
 
     The resulting test checks that your ufunc or :doc:`gufunc
@@ -1522,10 +1757,16 @@ def ufunc(func: Callable, *, except_: Except = (), style: str = "pytest") -> str
         raise InvalidArgument(f"func={func!r} does not seem to be a ufunc")
     except_ = _check_except(except_)
     _check_style(style)
-    return _make_test(*_make_ufunc_body(func, except_=except_, style=style))
+
+    if annotate is None:
+        annotate = _are_annotations_used(func)
+
+    return _make_test(
+        *_make_ufunc_body(func, except_=except_, style=style, annotate=annotate)
+    )
 
 
-def _make_ufunc_body(func, *, except_, style):
+def _make_ufunc_body(func, *, except_, style, annotate):
 
     import hypothesis.extra.numpy as npst
 
@@ -1570,4 +1811,5 @@ def _make_ufunc_body(func, *, except_, style):
         style=style,
         given_strategies={"data": st.data(), "shapes": shapes, "types": types},
         imports={("hypothesis.extra.numpy", "arrays")},
+        annotate=annotate,
     )

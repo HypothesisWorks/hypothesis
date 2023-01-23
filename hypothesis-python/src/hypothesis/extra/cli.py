@@ -269,7 +269,15 @@ else:
         multiple=True,
         help="dotted name of exception(s) to ignore",
     )
-    def write(func, writer, except_, style):  # noqa: D301  # \b disables autowrap
+    @click.option(
+        "--annotate/--no-annotate",
+        default=None,
+        help="force ghostwritten tests to be type-annotated (or not).  "
+        "By default, match the code to test.",
+    )
+    def write(
+        func, writer, except_, style, annotate
+    ):  # noqa: D301  # \b disables autowrap
         """`hypothesis write` writes property-based tests for you!
 
         Type annotations are helpful but not required for our advanced introspection
@@ -278,6 +286,7 @@ else:
         \b
             hypothesis write gzip
             hypothesis write numpy.matmul
+            hypothesis write pandas.from_dummies
             hypothesis write re.compile --except re.error
             hypothesis write --equivalent ast.literal_eval eval
             hypothesis write --roundtrip json.dumps json.loads
@@ -287,7 +296,7 @@ else:
         # NOTE: if you want to call this function from Python, look instead at the
         # ``hypothesis.extra.ghostwriter`` module.  Click-decorated functions have
         # a different calling convention, and raise SystemExit instead of returning.
-        kwargs = {"except_": except_ or (), "style": style}
+        kwargs = {"except_": except_ or (), "style": style, "annotate": annotate}
         if writer is None:
             writer = "magic"
         elif writer == "idempotent" and len(func) > 1:
