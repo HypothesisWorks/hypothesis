@@ -9,15 +9,18 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
-from typing import NoReturn, Optional, Union
+from collections import defaultdict
+from typing import NoReturn, Union
 
 from hypothesis import Verbosity, settings
 from hypothesis.errors import InvalidArgument, UnsatisfiedAssumption
 from hypothesis.internal.compat import BaseExceptionGroup
 from hypothesis.internal.conjecture.data import ConjectureData
+from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.internal.validation import check_type
 from hypothesis.reporting import report, verbose_report
 from hypothesis.utils.dynamicvariables import DynamicVariable
+from hypothesis.vendor.pretty import IDKey
 
 
 def reject() -> NoReturn:
@@ -51,7 +54,7 @@ def currently_in_test_context() -> bool:
     return _current_build_context.value is not None
 
 
-def current_build_context() -> "Optional[BuildContext]":
+def current_build_context() -> "BuildContext":
     context = _current_build_context.value
     if context is None:
         raise InvalidArgument("No build context registered")
@@ -66,6 +69,16 @@ class BuildContext:
         self.is_final = is_final
         self.close_on_capture = close_on_capture
         self.close_on_del = False
+        # Use defaultdict(list) here to handle the possibility of having multiple
+        # functions registered for the same object (due to caching, small ints, etc).
+        # The printer will discard duplicates which return different representations.
+        self.known_object_printers = defaultdict(list)
+
+    def record_call(self, obj, func, a, kw):
+        name = get_pretty_function_description(func)
+        self.known_object_printers[IDKey(obj)].append(
+            lambda obj, p, cycle: p.text("<...>") if cycle else p.repr_call(name, a, kw)
+        )
 
     def __enter__(self):
         self.assign_variable = _current_build_context.with_value(self)

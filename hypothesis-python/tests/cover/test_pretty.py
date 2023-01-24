@@ -48,6 +48,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 import re
+import warnings
 from collections import Counter, OrderedDict, defaultdict, deque
 
 import pytest
@@ -134,6 +135,12 @@ def test_dict():
     assert pretty.pretty({}) == "{}"
     assert pretty.pretty({1: 1}) == "{1: 1}"
     assert pretty.pretty({1: 1, 0: 0}) == "{1: 1, 0: 0}"
+
+    # Check that pretty-printing doesn't trigger a BytesWarning under `python -bb`
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", BytesWarning)
+        x = {"": 0, b"": 0}
+    assert pretty.pretty(x) == "{'': 0, b'': 0}"
 
 
 def test_tuple():

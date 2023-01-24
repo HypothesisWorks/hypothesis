@@ -785,7 +785,7 @@ class StateForActualGivenExecution:
             # Set up dynamic context needed by a single test run.
             with local_settings(self.settings):
                 with deterministic_PRNG():
-                    with BuildContext(data, is_final=is_final):
+                    with BuildContext(data, is_final=is_final) as context:
 
                         # Generate all arguments to the test function.
                         args, kwargs = data.draw(self.search_strategy)
@@ -796,7 +796,7 @@ class StateForActualGivenExecution:
                         if print_example or current_verbosity() >= Verbosity.verbose:
                             output = StringIO()
 
-                            printer = RepresentationPrinter(output)
+                            printer = RepresentationPrinter(output, context=context)
                             if print_example:
                                 printer.text("Falsifying example:")
                             else:

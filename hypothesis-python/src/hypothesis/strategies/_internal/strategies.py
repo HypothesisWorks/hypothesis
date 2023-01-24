@@ -835,8 +835,10 @@ class MappedSearchStrategy(SearchStrategy[Ex]):
                 i = data.index
                 try:
                     data.start_example(MAPPED_SEARCH_STRATEGY_DO_DRAW_LABEL)
-                    result = self.pack(data.draw(self.mapped_strategy))  # type: ignore
+                    x = data.draw(self.mapped_strategy)
+                    result = self.pack(x)  # type: ignore
                     data.stop_example()
+                    _current_build_context.value.record_call(result, self.pack, [x], {})
                     return result
                 except UnsatisfiedAssumption:
                     data.stop_example(discard=True)

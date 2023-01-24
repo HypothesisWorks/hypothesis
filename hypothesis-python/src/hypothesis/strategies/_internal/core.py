@@ -46,7 +46,7 @@ from uuid import UUID
 import attr
 
 from hypothesis._settings import note_deprecation
-from hypothesis.control import cleanup, note
+from hypothesis.control import cleanup, current_build_context, note
 from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.internal.cathetus import cathetus
 from hypothesis.internal.charmap import as_general_categories
@@ -833,11 +833,10 @@ class BuildsStrategy(SearchStrategy):
         self.kwargs = kwargs
 
     def do_draw(self, data):
+        args = [data.draw(a) for a in self.args]
+        kwargs = {k: data.draw(v) for k, v in self.kwargs.items()}
         try:
-            return self.target(
-                *(data.draw(a) for a in self.args),
-                **{k: data.draw(v) for k, v in self.kwargs.items()},
-            )
+            obj = self.target(*args, **kwargs)
         except TypeError as err:
             if (
                 isinstance(self.target, type)
@@ -866,6 +865,9 @@ class BuildsStrategy(SearchStrategy):
                     "Hypothesis from inferring a strategy for some required arguments."
                 ) from err
             raise
+
+        current_build_context().record_call(obj, self.target, args, kwargs)
+        return obj
 
     def validate(self):
         tuples(*self.args).validate()
@@ -1835,7 +1837,7 @@ class DataObject:
         check_strategy(strategy, "strategy")
         result = self.conjecture_data.draw(strategy)
         self.count += 1
-        printer = RepresentationPrinter()
+        printer = RepresentationPrinter(context=current_build_context())
         printer.text(f"Draw {self.count}")
         printer.text(": " if label is None else f" ({label}): ")
         printer.pretty(result)

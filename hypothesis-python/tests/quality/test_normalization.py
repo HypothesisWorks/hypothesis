@@ -14,6 +14,7 @@ from random import Random
 import pytest
 
 from hypothesis import strategies as st
+from hypothesis.control import BuildContext
 from hypothesis.errors import UnsatisfiedAssumption
 from hypothesis.internal.conjecture.shrinking import dfas
 
@@ -53,11 +54,12 @@ def test_common_strategies_normalize_small_values(strategy, n, normalize_kwargs)
 @pytest.mark.parametrize("strategy", [st.emails(), st.complex_numbers()], ids=repr)
 def test_harder_strategies_normalize_to_minimal(strategy, normalize_kwargs):
     def test_function(data):
-        try:
-            v = data.draw(strategy)
-        except UnsatisfiedAssumption:
-            data.mark_invalid()
-        data.output = repr(v)
-        data.mark_interesting()
+        with BuildContext(data):
+            try:
+                v = data.draw(strategy)
+            except UnsatisfiedAssumption:
+                data.mark_invalid()
+            data.output = repr(v)
+            data.mark_interesting()
 
     dfas.normalize(repr(strategy), test_function, random=Random(0), **normalize_kwargs)

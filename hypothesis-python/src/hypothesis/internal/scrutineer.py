@@ -54,8 +54,10 @@ UNHELPFUL_LOCATIONS = (
     f"{sep}inspect.py",
     f"{sep}re.py",
     f"{sep}re{sep}__init__.py",  # refactored in Python 3.11
-    # Quite rarely, the first AFNP line is in Pytest's assertion-rewriting module.
+    f"{sep}warnings.py",
+    # Quite rarely, the first AFNP line is in Pytest's internals.
     f"{sep}_pytest{sep}assertion{sep}rewrite.py",
+    f"{sep}_pytest{sep}_io{sep}saferepr.py",
 )
 
 
