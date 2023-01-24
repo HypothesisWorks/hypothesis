@@ -254,6 +254,7 @@ def test_is_an_endpoint(x):
 def test_breaks_bounds():
     @fails
     @given(x=integers())
+    @settings(derandomize=True, max_examples=10_000)
     def test_is_bounded(t, x):
         assert x < t
 
