@@ -1561,8 +1561,10 @@ def complex_numbers(
     max_magnitude: Optional[Real] = None,
     allow_infinity: Optional[bool] = None,
     allow_nan: Optional[bool] = None,
+    width: int = 128,
 ) -> SearchStrategy[complex]:
-    """Returns a strategy that generates complex numbers.
+    """Returns a strategy that generates :class:`~python:complex`
+    numbers.
 
     This strategy draws complex numbers with constrained magnitudes.
     The ``min_magnitude`` and ``max_magnitude`` parameters should be
@@ -1576,6 +1578,14 @@ def complex_numbers(
     The magnitude constraints are respected up to a relative error
     of (around) floating-point epsilon, due to implementation via
     the system ``sqrt`` function.
+
+    The width argument specifies the maximum number of bits of precision
+    required to represent the entire generated complex.
+    Valid values are 64 or 128, which correspond to the real and imaginary
+    components having width 32 or 64, respectively.
+    Passing ``width=64`` will still use the builtin 128-bit
+    :class:`~python:complex` class, but always for values which can be
+    exactly represented as two 32-bit floats.
 
     Examples from this strategy shrink by shrinking their real and
     imaginary parts, as :func:`~hypothesis.strategies.floats`.
@@ -1605,7 +1615,13 @@ def complex_numbers(
             f"Cannot have allow_nan={allow_nan!r}, min_magnitude={min_magnitude!r} "
             f"max_magnitude={max_magnitude!r}"
         )
-    allow_kw = {"allow_nan": allow_nan, "allow_infinity": allow_infinity}
+    if width not in (64, 128):  # TODO change
+        raise InvalidArgument(
+            f"Got width={width!r}, but the only valid values "
+            "are the integers 16, 32, and 64."
+        )
+    width_for_float = width // 2  # The complex and real parts each get half of the space
+    allow_kw = {"allow_nan": allow_nan, "allow_infinity": allow_infinity, "width": width_for_float}
 
     if min_magnitude == 0 and max_magnitude is None:
         # In this simple but common case, there are no constraints on the
