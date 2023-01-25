@@ -127,7 +127,9 @@ def check_signature(sig: inspect.Signature) -> None:
             )
 
 
-def get_signature(target: Any, *, follow_wrapped: bool = True) -> inspect.Signature:
+def get_signature(
+    target: Any, *, follow_wrapped: bool = True, eval_str: bool = False
+) -> inspect.Signature:
     # Special case for use of `@unittest.mock.patch` decorator, mimicking the
     # behaviour of getfullargspec instead of reporting unusable arguments.
     patches = getattr(target, "patchings", None)
@@ -164,9 +166,27 @@ def get_signature(target: Any, *, follow_wrapped: bool = True) -> inspect.Signat
             return sig.replace(
                 parameters=[v for k, v in sig.parameters.items() if k != "self"]
             )
-    sig = inspect.signature(target, follow_wrapped=follow_wrapped)
+    sig = _inspect_signature(target, follow_wrapped=follow_wrapped, eval_str=eval_str)
     check_signature(sig)
     return sig
+
+
+# eval_str is only supported by Python 3.10 and newer
+if sys.version_info[:2] >= (3, 10):
+
+    def _inspect_signature(
+        target: Any, *, follow_wrapped: bool = True, eval_str: bool = False
+    ) -> inspect.Signature:
+        return inspect.signature(
+            target, follow_wrapped=follow_wrapped, eval_str=eval_str
+        )
+
+else:
+
+    def _inspect_signature(
+        target: Any, *, follow_wrapped: bool = True, eval_str: bool = False
+    ) -> inspect.Signature:
+        return inspect.signature(target, follow_wrapped=follow_wrapped)
 
 
 def arg_is_required(param):

@@ -1,0 +1,15 @@
+# This test code was written by the `hypothesis.extra.ghostwriter` module
+# and is provided under the Creative Commons Zero public domain dedication.
+
+import example_code.future_annotations
+import typing
+from example_code.future_annotations import CustomClass
+from hypothesis import given, strategies as st
+
+
+@given(c1=st.builds(CustomClass), c2=st.one_of(st.none(), st.builds(CustomClass)))
+def test_fuzz_add_custom_classes(
+    c1: example_code.future_annotations.CustomClass,
+    c2: typing.Union[example_code.future_annotations.CustomClass, None],
+) -> None:
+    example_code.future_annotations.add_custom_classes(c1=c1, c2=c2)

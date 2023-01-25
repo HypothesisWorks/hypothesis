@@ -443,11 +443,11 @@ def _guess_strategy_by_argname(name: str) -> st.SearchStrategy:
     return st.nothing()
 
 
-def _get_params(func: Callable) -> Dict[str, inspect.Parameter]:
+def _get_params(func: Callable, eval_str: bool = False) -> Dict[str, inspect.Parameter]:
     """Get non-vararg parameters of `func` as an ordered dict."""
     var_param_kinds = (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
     try:
-        params = list(get_signature(func).parameters.values())
+        params = list(get_signature(func, eval_str=eval_str).parameters.values())
     except Exception:
         if (
             isinstance(func, (types.BuiltinFunctionType, types.BuiltinMethodType))
@@ -831,7 +831,7 @@ def _annotate_args(
 ) -> Iterable[str]:
     arg_parameters: DefaultDict[str, Set[Any]] = defaultdict(set)
     for func in funcs:
-        for key, param in _get_params(func).items():
+        for key, param in _get_params(func, eval_str=True).items():
             arg_parameters[key].add(param.annotation)
 
     for argname in argnames:
@@ -929,6 +929,16 @@ def _parameter_to_annotation(parameter: Any) -> Optional[_AnnotationData]:
             return None
         return _parameter_to_annotation(forwarded_value)
 
+    # the arguments of Callable are in a list
+    if isinstance(parameter, list):
+        joined = _join_argument_annotations(
+            _parameter_to_annotation(param) for param in parameter
+        )
+        if joined is None:
+            return None
+        arg_type_names, new_imports = joined
+        return _AnnotationData("[{}]".format(", ".join(arg_type_names)), new_imports)
+
     if isinstance(parameter, type):
         if parameter.__module__ == "builtins":
             return _AnnotationData(
@@ -936,33 +946,24 @@ def _parameter_to_annotation(parameter: Any) -> Optional[_AnnotationData]:
                 set(),
             )
 
-        full_name = f"{parameter.__module__}.{parameter.__name__}"
+        type_name = f"{parameter.__module__}.{parameter.__name__}"
 
         # the types.UnionType does not support type arguments and needs to be translated
-        if full_name == "types.UnionType":
+        if type_name == "types.UnionType":
             return _AnnotationData("typing.Union", {"typing"})
-
-        return _AnnotationData(full_name, {parameter.__module__})
-
-    # the arguments of Callable are in a list
-    if isinstance(parameter, list):
-        joined = _join_argument_annotations(map(_parameter_to_annotation, parameter))
-        if joined is None:
-            return None
-        arg_type_names, new_imports = joined
-        return _AnnotationData("[{}]".format(", ".join(arg_type_names)), new_imports)
+    else:
+        if hasattr(parameter, "__module__") and hasattr(parameter, "__name__"):
+            type_name = f"{parameter.__module__}.{parameter.__name__}"
+        else:
+            type_name = str(parameter)
 
     origin_type = get_origin(parameter)
 
     # if not generic or no generic arguments
     if origin_type is None or origin_type == parameter:
-        type_name = str(parameter)
-        if type_name.startswith("typing."):
-            return _AnnotationData(type_name, {"typing"})
-        return _AnnotationData(type_name, set())
+        return _AnnotationData(type_name, set(type_name.rsplit(".", maxsplit=1)[:-1]))
 
     arg_types = get_args(parameter)
-    type_name = str(parameter)
 
     # typing types get translated to classes that don't support generics
     origin_annotation: Optional[_AnnotationData]
@@ -977,7 +978,8 @@ def _parameter_to_annotation(parameter: Any) -> Optional[_AnnotationData]:
 
     if arg_types:
         return _join_generics(
-            origin_annotation, map(_parameter_to_annotation, arg_types)
+            origin_annotation,
+            (_parameter_to_annotation(arg_type) for arg_type in arg_types),
         )
     return origin_annotation
 

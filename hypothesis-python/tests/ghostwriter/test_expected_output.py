@@ -25,6 +25,7 @@ from typing import Optional, Sequence, Union
 
 import numpy
 import pytest
+from example_code.future_annotations import add_custom_classes, merge_dicts
 
 import hypothesis
 from hypothesis.extra import ghostwriter
@@ -123,6 +124,14 @@ else:
         ),
         ("optional_union_parameter", ghostwriter.magic(optional_union_parameter)),
         ("union_sequence_parameter", ghostwriter.magic(union_sequence_parameter)),
+        pytest.param(
+            ("add_custom_classes", ghostwriter.magic(add_custom_classes)),
+            marks=pytest.mark.skipif("sys.version_info[:2] < (3, 10)"),
+        ),
+        pytest.param(
+            ("merge_dicts", ghostwriter.magic(merge_dicts)),
+            marks=pytest.mark.skipif("sys.version_info[:2] < (3, 10)"),
+        ),
         ("magic_base64_roundtrip", ghostwriter.magic(base64.b64encode)),
         (
             "magic_base64_roundtrip_with_annotations",

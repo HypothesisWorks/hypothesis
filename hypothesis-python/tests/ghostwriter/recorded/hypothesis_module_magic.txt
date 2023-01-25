@@ -4,6 +4,7 @@
 import datetime
 import hypothesis
 import hypothesis.strategies
+import hypothesis.strategies._internal.strategies
 import random
 import typing
 from hypothesis import given, settings, strategies as st
@@ -29,7 +30,9 @@ def test_fuzz_event(value: str) -> None:
     database_key=st.one_of(st.none(), st.binary()),
 )
 def test_fuzz_find(
-    specifier: hypothesis.strategies.SearchStrategy,
+    specifier: hypothesis.strategies.SearchStrategy[
+        hypothesis.strategies._internal.strategies.Ex
+    ],
     condition: typing.Callable[[typing.Any], bool],
     settings: typing.Union[hypothesis.settings, None],
     random: typing.Union[random.Random, None],
