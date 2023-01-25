@@ -1692,7 +1692,8 @@ def complex_numbers(
         raise InvalidArgument(
             f"Got width={width!r}, but the only valid values are the integers 64 and 128."
         )
-    width_for_float = width // 2  # The complex and real parts each get half of the space
+    # The real and imaginary parts get half of the space each
+    width_for_float = width // 2
     allow_kw = {
         "allow_nan": allow_nan,
         "allow_infinity": allow_infinity,
