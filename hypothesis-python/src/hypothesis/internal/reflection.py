@@ -185,7 +185,7 @@ else:
 
     def _inspect_signature(
         target: Any, *, follow_wrapped: bool = True, eval_str: bool = False
-    ) -> inspect.Signature:
+    ) -> inspect.Signature:  # pragma: no cover
         return inspect.signature(target, follow_wrapped=follow_wrapped)
 
 
