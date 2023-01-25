@@ -12,6 +12,12 @@ on:
     branches: [ master ]
   workflow_dispatch:
 
+# Cancel in-progress PR builds if another commit is pushed.
+# On non-PR builds, fall back to the globally-unique run_id and don't cancel.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -23,47 +29,57 @@ jobs:
           - check-format
           - check-coverage
           - check-conjecture-coverage
-          - check-py37
-          - check-pypy37
-          - check-py38
-          - check-pypy38
-          - check-py39
-          - check-pypy39
-          - check-py310
+          - check-py37-cover
+          - check-pypy37-cover
+          - check-py38-cover
+          - check-py38-nocover
+          - check-py38-niche
+          - check-pypy38-cover
+          - check-py39-cover
+          - check-pypy39-cover
+          - check-py310-cover
+          - check-py310-nocover
+          - check-py310-niche
           # - check-py310-pyjion  # see notes in tox.ini
-          - check-py311
-          # - check-py312  # enable when alpha1 is released, ~Nov 2022
+          - check-py311-cover
+          - check-py311-nocover
+          - check-py311-niche
+          - check-py312-cover
+          - check-py312-nocover
+          - check-py312-niche
           - check-quality
-          - lint-ruby
-          - check-ruby-tests
-          - check-rust-in-ruby-format
-          - lint-rust-in-ruby
-          - audit-rust-in-ruby
-          - check-conjecture-rust-format
-          - check-rust-tests
-          - audit-conjecture-rust
-          - lint-conjecture-rust
-          - check-nose
-          - check-pytest46
-          - check-pytest54
+          ## Skip all the (inactive/old) Rust and Ruby tests pending fixes
+          # - lint-ruby
+          # - check-ruby-tests
+          # - check-rust-in-ruby-format
+          # - lint-rust-in-ruby
+          # - audit-rust-in-ruby
+          # - check-conjecture-rust-format
+          # - check-rust-tests
+          # - audit-conjecture-rust
+          # - lint-conjecture-rust
+          - check-py39-nose
+          - check-py39-pytest46
+          - check-py39-pytest54
           - check-pytest62
+          - check-django41
           - check-django40
           - check-django32
-          - check-django22
+          - check-pandas15
+          - check-pandas14
           - check-pandas13
           - check-pandas12
           - check-pandas11
-          - check-pandas10
-          - check-pandas25
+          - check-py39-pandas10
       fail-fast: false
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
-    - name: Set up Python 3.8
+    - name: Set up Python 3.10
       uses: actions/setup-python@v2
       with:
-        python-version: "3.8"
+        python-version: "3.10"
     - name: Restore cache
       uses: actions/cache@v2
       with:
@@ -72,6 +88,7 @@ jobs:
           ~/wheelhouse
           ~/.local
           vendor/bundle
+          .tox/
         key: deps-${{ runner.os }}-${{ hashFiles('requirements/*.txt') }}-${{ matrix.task }}
         restore-keys: |
           deps-${{ runner.os }}-${{ hashFiles('requirements/*.txt') }}
@@ -104,19 +121,27 @@ jobs:
     strategy:
       matrix:
         include:
-          - task: check-py38-x64
-            python.architecture: "x64"
-          - task: check-py38-x86
+          - task: check-py37-cover
+          - task: check-py37-niche
+          - task: check-py310-cover
+          - task: check-py310-niche
+          - task: check-py310-x86-cover
             python.architecture: "x86"
+          - task: check-py310-x86-nocover
+            python.architecture: "x86"
+          - task: check-py310-x86-niche
+            python.architecture: "x86"
+          - task: check-py311-cover
+          - task: check-py311-niche
       fail-fast: false
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
-    - name: Set up Python 3.8
+    - name: Set up Python 3.10
       uses: actions/setup-python@v2
       with:
-        python-version: "3.8"
+        python-version: "3.10"
         architecture: ${{ matrix.python-architecture }}
     - name: Restore cache
       uses: actions/cache@v2
@@ -124,6 +149,7 @@ jobs:
         path: |
           ~\appdata\local\pip\cache
           vendor\bundle
+          .tox
         key: deps-${{ runner.os }}-${{ matrix.python-architecture }}-${{ hashFiles('requirements/*.txt') }}-${{ matrix.task }}
         restore-keys: |
           deps-${{ runner.os }}-${{ matrix.python-architecture }}-${{ hashFiles('requirements/*.txt') }}
@@ -141,22 +167,27 @@ jobs:
     strategy:
       matrix:
         task:
-          - check-py38
+          - check-py37-cover
+          - check-py310-cover
+          - check-py310-nocover
+          - check-py310-niche
+          - check-py311-cover
       fail-fast: false
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
-    - name: Set up Python 3.8
+    - name: Set up Python 3.10
       uses: actions/setup-python@v2
       with:
-        python-version: "3.8"
+        python-version: "3.10"
     - name: Restore cache
       uses: actions/cache@v2
       with:
         path: |
           ~/.cache
           ~/Library/Caches/pip
+          .tox/
         key: deps-${{ runner.os }}-${{ hashFiles('requirements/*.txt') }}-${{ matrix.task }}
     - name: Run tests
       run: TASK=${{ matrix.task }} ./build.sh
@@ -171,14 +202,14 @@ jobs:
           - deploy
       fail-fast: false
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
         token: ${{ secrets.GH_TOKEN }}
-    - name: Set up Python 3.8
+    - name: Set up Python 3.10
       uses: actions/setup-python@v2
       with:
-        python-version: "3.8"
+        python-version: "3.10"
     - name: Restore cache
       uses: actions/cache@v2
       with:

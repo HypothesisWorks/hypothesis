@@ -17,7 +17,7 @@ import attr
 
 from hypothesis.control import should_note
 from hypothesis.internal.conjecture import utils as cu
-from hypothesis.internal.reflection import define_function_signature_from_signature
+from hypothesis.internal.reflection import define_function_signature
 from hypothesis.reporting import report
 from hypothesis.strategies._internal.core import (
     binary,
@@ -70,6 +70,7 @@ RANDOM_METHODS = [
     for name in [
         "_randbelow",
         "betavariate",
+        "binomialvariate",
         "choice",
         "choices",
         "expovariate",
@@ -133,11 +134,11 @@ def define_copy_method(name):
         self._hypothesis_log_random(name, kwargs, result)
         return result
 
-    spec = inspect.signature(STUBS.get(name, target))
+    sig = inspect.signature(STUBS.get(name, target))
 
-    result = define_function_signature_from_signature(
-        target.__name__, target.__doc__, spec
-    )(implementation)
+    result = define_function_signature(target.__name__, target.__doc__, sig)(
+        implementation
+    )
 
     result.__module__ = __name__
     result.__qualname__ = "HypothesisRandom." + result.__name__
@@ -271,6 +272,9 @@ class ArtificialRandom(HypothesisRandom):
                 result = cu.integer_range(self.__data, start, stop - 1)
         elif method == "randint":
             result = cu.integer_range(self.__data, kwargs["a"], kwargs["b"])
+        # New in Python 3.12, so not taken by our coverage job
+        elif method == "binomialvariate":  # pragma: no cover
+            result = cu.integer_range(self.__data, 0, kwargs["n"])
         elif method == "choice":
             seq = kwargs["seq"]
             result = cu.integer_range(self.__data, 0, len(seq) - 1)
@@ -317,8 +321,7 @@ class ArtificialRandom(HypothesisRandom):
             result = self.__data.draw(floats(min_value=0.0))
         elif method == "shuffle":
             result = self.__data.draw(permutations(range(len(kwargs["x"]))))
-        # This is tested for but only appears in 3.9 so doesn't appear in coverage.
-        elif method == "randbytes":  # pragma: no cover
+        elif method == "randbytes":
             n = kwargs["n"]
             result = self.__data.draw(binary(min_size=n, max_size=n))
         else:

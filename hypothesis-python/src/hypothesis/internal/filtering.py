@@ -12,7 +12,7 @@
 
 For example::
 
-    integers().filter(lamda x: x >= 0) -> integers(min_value=0)
+    integers().filter(lambda x: x >= 0) -> integers(min_value=0)
 
 This is intractable in general, but reasonably easy for simple cases involving
 numeric bounds, strings with length or regex constraints, and collection lengths -
@@ -32,6 +32,7 @@ from functools import partial
 from typing import Any, Callable, Dict, NamedTuple, Optional, TypeVar
 
 from hypothesis.internal.compat import ceil, floor
+from hypothesis.internal.floats import next_down, next_up
 from hypothesis.internal.reflection import extract_lambda_source
 
 Ex = TypeVar("Ex")
@@ -60,7 +61,7 @@ class ConstructivePredicate(NamedTuple):
     predicate: Optional[Predicate]
 
     @classmethod
-    def unchanged(cls, predicate):
+    def unchanged(cls, predicate: Predicate) -> "ConstructivePredicate":
         return cls({}, predicate)
 
 
@@ -181,9 +182,6 @@ def numeric_bounds_from_ast(
     return fallback
 
 
-UNSATISFIABLE = ConstructivePredicate.unchanged(lambda _: False)
-
-
 def get_numeric_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
     """Shared logic for understanding numeric bounds.
 
@@ -256,7 +254,7 @@ def get_integer_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
         if kwargs["min_value"] == -math.inf:
             del kwargs["min_value"]
         elif math.isinf(kwargs["min_value"]):
-            return UNSATISFIABLE
+            return ConstructivePredicate({"min_value": 1, "max_value": -1}, None)
         elif kwargs["min_value"] != int(kwargs["min_value"]):
             kwargs["min_value"] = ceil(kwargs["min_value"])
         elif kwargs.get("exclude_min", False):
@@ -266,11 +264,34 @@ def get_integer_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
         if kwargs["max_value"] == math.inf:
             del kwargs["max_value"]
         elif math.isinf(kwargs["max_value"]):
-            return UNSATISFIABLE
+            return ConstructivePredicate({"min_value": 1, "max_value": -1}, None)
         elif kwargs["max_value"] != int(kwargs["max_value"]):
             kwargs["max_value"] = floor(kwargs["max_value"])
         elif kwargs.get("exclude_max", False):
             kwargs["max_value"] = int(kwargs["max_value"]) - 1
+
+    kwargs = {k: v for k, v in kwargs.items() if k in {"min_value", "max_value"}}
+    return ConstructivePredicate(kwargs, predicate)
+
+
+def get_float_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
+    kwargs, predicate = get_numeric_predicate_bounds(predicate)  # type: ignore
+
+    if "min_value" in kwargs:
+        min_value = kwargs["min_value"]
+        kwargs["min_value"] = float(kwargs["min_value"])
+        if min_value < kwargs["min_value"] or (
+            min_value == kwargs["min_value"] and kwargs.get("exclude_min", False)
+        ):
+            kwargs["min_value"] = next_up(kwargs["min_value"])
+
+    if "max_value" in kwargs:
+        max_value = kwargs["max_value"]
+        kwargs["max_value"] = float(kwargs["max_value"])
+        if max_value > kwargs["max_value"] or (
+            max_value == kwargs["max_value"] and kwargs.get("exclude_max", False)
+        ):
+            kwargs["max_value"] = next_down(kwargs["max_value"])
 
     kwargs = {k: v for k, v in kwargs.items() if k in {"min_value", "max_value"}}
     return ConstructivePredicate(kwargs, predicate)

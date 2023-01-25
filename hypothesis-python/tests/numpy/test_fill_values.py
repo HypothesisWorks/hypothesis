@@ -47,7 +47,7 @@ def test_minimizes_to_fill():
 @given(
     arrays(
         dtype=float,
-        elements=st.floats().filter(bool),
+        elements=st.floats(allow_nan=False).filter(bool),
         shape=(3, 3, 3),
         fill=st.just(1.0),
     )

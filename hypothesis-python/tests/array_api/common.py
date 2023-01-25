@@ -11,12 +11,28 @@
 from importlib.metadata import EntryPoint, entry_points  # type: ignore
 from typing import Dict
 
+import pytest
+
+from hypothesis.extra.array_api import (
+    COMPLEX_NAMES,
+    REAL_NAMES,
+    RELEASED_VERSIONS,
+    NominalVersion,
+)
 from hypothesis.internal.floats import next_up
 
 __all__ = [
+    "MIN_VER_FOR_COMPLEX:",
     "installed_array_modules",
     "flushes_to_zero",
+    "dtype_name_params",
 ]
+
+
+# This should be updated to the next spec release, which should include complex numbers
+MIN_VER_FOR_COMPLEX: NominalVersion = "draft"
+if len(RELEASED_VERSIONS) > 1:
+    assert MIN_VER_FOR_COMPLEX == RELEASED_VERSIONS[1]
 
 
 def installed_array_modules() -> Dict[str, EntryPoint]:
@@ -48,3 +64,9 @@ def flushes_to_zero(xp, width: int) -> bool:
         raise ValueError(f"{width=}, but should be either 32 or 64")
     dtype = getattr(xp, f"float{width}")
     return bool(xp.asarray(next_up(0.0, width=width), dtype=dtype) == 0)
+
+
+dtype_name_params = ["bool"] + list(REAL_NAMES)
+for name in COMPLEX_NAMES:
+    param = pytest.param(name, marks=pytest.mark.xp_min_version(MIN_VER_FOR_COMPLEX))
+    dtype_name_params.append(param)

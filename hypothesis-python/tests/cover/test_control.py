@@ -20,7 +20,8 @@ from hypothesis.control import (
     event,
     note,
 )
-from hypothesis.errors import CleanupFailed, InvalidArgument
+from hypothesis.errors import InvalidArgument
+from hypothesis.internal.compat import ExceptionGroup
 from hypothesis.internal.conjecture.data import ConjectureData as TD
 from hypothesis.stateful import RuleBasedStateMachine, rule
 from hypothesis.strategies import integers
@@ -73,44 +74,41 @@ def test_does_not_suppress_exceptions():
 
 
 def test_suppresses_exceptions_in_teardown():
-    with capture_out() as o:
-        with pytest.raises(AssertionError):
-            with bc():
+    with pytest.raises(ValueError) as exc_info:
+        with bc():
 
-                def foo():
-                    raise ValueError()
+            def foo():
+                raise ValueError
 
-                cleanup(foo)
-                raise AssertionError
+            cleanup(foo)
+            raise AssertionError
 
-    assert "ValueError" in o.getvalue()
-    assert _current_build_context.value is None
+    assert isinstance(exc_info.value, ValueError)
+    assert isinstance(exc_info.value.__cause__, AssertionError)
 
 
 def test_runs_multiple_cleanup_with_teardown():
-    with capture_out() as o:
-        with pytest.raises(AssertionError):
-            with bc():
+    with pytest.raises(ExceptionGroup) as exc_info:
+        with bc():
 
-                def foo():
-                    raise ValueError()
+            def foo():
+                raise ValueError
 
-                cleanup(foo)
+            def bar():
+                raise TypeError
 
-                def bar():
-                    raise TypeError()
+            cleanup(foo)
+            cleanup(bar)
+            raise AssertionError
 
-                cleanup(foo)
-                cleanup(bar)
-                raise AssertionError
-
-    assert "ValueError" in o.getvalue()
-    assert "TypeError" in o.getvalue()
+    assert isinstance(exc_info.value, ExceptionGroup)
+    assert isinstance(exc_info.value.__cause__, AssertionError)
+    assert {type(e) for e in exc_info.value.exceptions} == {ValueError, TypeError}
     assert _current_build_context.value is None
 
 
 def test_raises_error_if_cleanup_fails_but_block_does_not():
-    with pytest.raises(CleanupFailed):
+    with pytest.raises(ValueError):
         with bc():
 
             def foo():

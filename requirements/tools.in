@@ -16,9 +16,9 @@ flake8-pie
 flake8-pytest-style
 flake8-return
 flake8-simplify
-flake8-strftime
+# flake8-strftime  # See https://github.com/python-formate/flake8_strftime/issues/47
 ipython
-lark-parser
+lark
 libcst
 mypy
 pip-tools
@@ -33,7 +33,6 @@ sphinx-codeautolink
 sphinx-hoverxref
 sphinx-rtd-theme
 sphinx-selective-exclude
-toml
 tox
 twine
 types-click

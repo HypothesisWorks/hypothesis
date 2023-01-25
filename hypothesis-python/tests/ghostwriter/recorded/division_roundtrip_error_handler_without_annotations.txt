@@ -1,0 +1,16 @@
+# This test code was written by the `hypothesis.extra.ghostwriter` module
+# and is provided under the Creative Commons Zero public domain dedication.
+
+import _operator
+import test_expected_output
+from hypothesis import given, reject, strategies as st
+
+
+@given(a=st.integers(), b=st.integers())
+def test_roundtrip_divide_mul(a, b):
+    try:
+        value0 = test_expected_output.divide(a=a, b=b)
+    except ZeroDivisionError:
+        reject()
+    value1 = _operator.mul(value0, b)
+    assert a == value1, (a, value1)

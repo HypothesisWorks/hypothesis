@@ -26,7 +26,7 @@ try:
     def get_entry_points():
         try:
             eps = importlib_metadata.entry_points(group="hypothesis")
-        except TypeError:
+        except TypeError:  # pragma: no cover
             # Load-time selection requires Python >= 3.10 or importlib_metadata >= 3.6,
             # so we'll retain this fallback logic for some time to come.  See also
             # https://importlib-metadata.readthedocs.io/en/latest/using.html

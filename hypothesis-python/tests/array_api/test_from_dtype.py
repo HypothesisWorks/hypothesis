@@ -12,10 +12,10 @@ import math
 
 import pytest
 
-from hypothesis.extra.array_api import DTYPE_NAMES, find_castable_builtin_for_dtype
+from hypothesis.extra.array_api import find_castable_builtin_for_dtype
 from hypothesis.internal.floats import width_smallest_normals
 
-from tests.array_api.common import flushes_to_zero
+from tests.array_api.common import dtype_name_params, flushes_to_zero
 from tests.common.debug import (
     assert_all_examples,
     assert_no_examples,
@@ -24,32 +24,32 @@ from tests.common.debug import (
 )
 
 
-@pytest.mark.parametrize("dtype_name", DTYPE_NAMES)
+@pytest.mark.parametrize("dtype_name", dtype_name_params)
 def test_strategies_have_reusable_values(xp, xps, dtype_name):
     """Inferred strategies have reusable values."""
     strat = xps.from_dtype(dtype_name)
     assert strat.has_reusable_values
 
 
-@pytest.mark.parametrize("dtype_name", DTYPE_NAMES)
+@pytest.mark.parametrize("dtype_name", dtype_name_params)
 def test_produces_castable_instances_from_dtype(xp, xps, dtype_name):
     """Strategies inferred by dtype generate values of a builtin type castable
     to the dtype."""
     dtype = getattr(xp, dtype_name)
-    builtin = find_castable_builtin_for_dtype(xp, dtype)
+    builtin = find_castable_builtin_for_dtype(xp, xps.api_version, dtype)
     assert_all_examples(xps.from_dtype(dtype), lambda v: isinstance(v, builtin))
 
 
-@pytest.mark.parametrize("dtype_name", DTYPE_NAMES)
+@pytest.mark.parametrize("dtype_name", dtype_name_params)
 def test_produces_castable_instances_from_name(xp, xps, dtype_name):
     """Strategies inferred by dtype name generate values of a builtin type
     castable to the dtype."""
     dtype = getattr(xp, dtype_name)
-    builtin = find_castable_builtin_for_dtype(xp, dtype)
+    builtin = find_castable_builtin_for_dtype(xp, xps.api_version, dtype)
     assert_all_examples(xps.from_dtype(dtype_name), lambda v: isinstance(v, builtin))
 
 
-@pytest.mark.parametrize("dtype_name", DTYPE_NAMES)
+@pytest.mark.parametrize("dtype_name", dtype_name_params)
 def test_passing_inferred_strategies_in_arrays(xp, xps, dtype_name):
     """Inferred strategies usable in arrays strategy."""
     elements = xps.from_dtype(dtype_name)
@@ -95,12 +95,7 @@ smallest_normal = width_smallest_normals[32]
         {},
         {"min_value": -1},
         {"max_value": 1},
-        pytest.param(
-            {"min_value": -1, "max_value": 1},
-            marks=pytest.mark.skip(
-                reason="FixedBoundFloatStrategy(0, 1) rarely generates subnormals"
-            ),
-        ),
+        {"min_value": -1, "max_value": 1},
     ],
 )
 def test_subnormal_generation(xp, xps, kwargs):

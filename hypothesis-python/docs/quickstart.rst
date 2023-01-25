@@ -97,7 +97,7 @@ a passing test to).
         return []
 
 If we wanted to make sure this example was always checked we could add it in
-explicitly by using the :func:`@example <hypothesis.example>` decorator:
+explicitly by using the :obj:`@example <hypothesis.example>` decorator:
 
 .. code:: python
 
@@ -115,7 +115,7 @@ of data are valid inputs, or to ensure that particular edge cases such as
 although Hypothesis will :doc:`remember failing examples <database>`,
 we don't recommend distributing that database.
 
-It's also worth noting that both :func:`@example <hypothesis.example>` and
+It's also worth noting that both :obj:`@example <hypothesis.example>` and
 :func:`@given <hypothesis.given>` support keyword arguments as
 well as positional. The following would have worked just as well:
 

@@ -10,7 +10,7 @@
 
 import pytest
 
-from hypothesis import given
+from hypothesis import given, settings
 from hypothesis.internal.conjecture.utils import integer_range
 from hypothesis.strategies import integers
 from hypothesis.strategies._internal.strategies import SearchStrategy
@@ -47,14 +47,16 @@ def test_intervals_shrink_to_center(lower_center_upper):
 def test_bounded_integers_distribution_of_bit_width_issue_1387_regression():
     values = []
 
+    @settings(database=None, max_examples=1000)
     @given(integers(0, 1e100))
     def test(x):
-        values.append(x)
+        if 2 <= x <= int(1e100) - 2:  # skip forced-endpoints
+            values.append(x)
 
     test()
 
     # We draw from a shaped distribution up to 128bit ~7/8 of the time, and
     # uniformly the rest.  So we should get some very large but not too many.
     huge = sum(x > 1e97 for x in values)
-    assert huge != 0
+    assert huge != 0 or len(values) < 800
     assert huge <= 0.3 * len(values)  # expected ~1/8

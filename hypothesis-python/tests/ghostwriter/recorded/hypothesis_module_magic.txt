@@ -1,7 +1,10 @@
 # This test code was written by the `hypothesis.extra.ghostwriter` module
 # and is provided under the Creative Commons Zero public domain dedication.
 
+import datetime
 import hypothesis
+import hypothesis.strategies
+import random
 import typing
 from hypothesis import given, settings, strategies as st
 from hypothesis.strategies._internal.strategies import Ex
@@ -9,12 +12,12 @@ from random import Random
 
 
 @given(condition=st.from_type(object))
-def test_fuzz_assume(condition):
+def test_fuzz_assume(condition: object) -> None:
     hypothesis.assume(condition=condition)
 
 
 @given(value=st.text())
-def test_fuzz_event(value):
+def test_fuzz_event(value: str) -> None:
     hypothesis.event(value=value)
 
 
@@ -25,7 +28,13 @@ def test_fuzz_event(value):
     random=st.one_of(st.none(), st.builds(Random)),
     database_key=st.one_of(st.none(), st.binary()),
 )
-def test_fuzz_find(specifier, condition, settings, random, database_key):
+def test_fuzz_find(
+    specifier: hypothesis.strategies.SearchStrategy,
+    condition: typing.Callable[[typing.Any], bool],
+    settings: typing.Union[hypothesis.settings, None],
+    random: typing.Union[random.Random, None],
+    database_key: typing.Union[bytes, None],
+) -> None:
     hypothesis.find(
         specifier=specifier,
         condition=condition,
@@ -36,22 +45,22 @@ def test_fuzz_find(specifier, condition, settings, random, database_key):
 
 
 @given(value=st.text())
-def test_fuzz_note(value):
+def test_fuzz_note(value: str) -> None:
     hypothesis.note(value=value)
 
 
 @given(r=st.builds(Random))
-def test_fuzz_register_random(r):
+def test_fuzz_register_random(r: random.Random) -> None:
     hypothesis.register_random(r=r)
 
 
 @given(version=st.text(), blob=st.binary())
-def test_fuzz_reproduce_failure(version, blob):
+def test_fuzz_reproduce_failure(version: str, blob: bytes) -> None:
     hypothesis.reproduce_failure(version=version, blob=blob)
 
 
 @given(seed=st.from_type(typing.Hashable))
-def test_fuzz_seed(seed):
+def test_fuzz_seed(seed: typing.Hashable) -> None:
     hypothesis.seed(seed=seed)
 
 
@@ -69,18 +78,18 @@ def test_fuzz_seed(seed):
     print_blob=st.just(not_set),
 )
 def test_fuzz_settings(
-    parent,
-    max_examples,
-    derandomize,
+    parent: typing.Union[hypothesis.settings, None],
+    max_examples: int,
+    derandomize: bool,
     database,
     verbosity,
     phases,
-    stateful_step_count,
-    report_multiple_bugs,
+    stateful_step_count: int,
+    report_multiple_bugs: bool,
     suppress_health_check,
-    deadline,
-    print_blob,
-):
+    deadline: typing.Union[int, float, datetime.timedelta, None],
+    print_blob: bool,
+) -> None:
     hypothesis.settings(
         parent=parent,
         max_examples=max_examples,
@@ -96,6 +105,23 @@ def test_fuzz_settings(
     )
 
 
+@given(name=st.text())
+def test_fuzz_settings_get_profile(name: str) -> None:
+    hypothesis.settings.get_profile(name=name)
+
+
+@given(name=st.text())
+def test_fuzz_settings_load_profile(name: str) -> None:
+    hypothesis.settings.load_profile(name=name)
+
+
+@given(name=st.text(), parent=st.one_of(st.none(), st.builds(settings)))
+def test_fuzz_settings_register_profile(
+    name: str, parent: typing.Union[hypothesis.settings, None]
+) -> None:
+    hypothesis.settings.register_profile(name=name, parent=parent)
+
+
 @given(observation=st.one_of(st.floats(), st.integers()), label=st.text())
-def test_fuzz_target(observation, label):
+def test_fuzz_target(observation: typing.Union[int, float], label: str) -> None:
     hypothesis.target(observation=observation, label=label)

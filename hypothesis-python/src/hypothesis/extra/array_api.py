@@ -8,8 +8,12 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import math
 import sys
+
+if sys.version_info[:2] < (3, 8):
+    raise RuntimeError("The Array API standard requires Python 3.8 or later")
+
+import math
 from numbers import Real
 from types import SimpleNamespace
 from typing import (
@@ -17,6 +21,7 @@ from typing import (
     Iterable,
     Iterator,
     List,
+    Literal,
     Mapping,
     NamedTuple,
     Optional,
@@ -25,8 +30,10 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    get_args,
 )
 from warnings import warn
+from weakref import WeakValueDictionary
 
 from hypothesis import strategies as st
 from hypothesis.errors import HypothesisWarning, InvalidArgument
@@ -62,11 +69,20 @@ __all__ = [
 ]
 
 
+RELEASED_VERSIONS = ("2021.12",)
+NOMINAL_VERSIONS = RELEASED_VERSIONS + ("draft",)
+assert sorted(NOMINAL_VERSIONS) == list(NOMINAL_VERSIONS)  # sanity check
+NominalVersion = Literal["2021.12", "draft"]
+assert get_args(NominalVersion) == NOMINAL_VERSIONS  # sanity check
+
+
 INT_NAMES = ("int8", "int16", "int32", "int64")
 UINT_NAMES = ("uint8", "uint16", "uint32", "uint64")
 ALL_INT_NAMES = INT_NAMES + UINT_NAMES
 FLOAT_NAMES = ("float32", "float64")
-NUMERIC_NAMES = ALL_INT_NAMES + FLOAT_NAMES
+REAL_NAMES = ALL_INT_NAMES + FLOAT_NAMES
+COMPLEX_NAMES = ("complex64", "complex128")
+NUMERIC_NAMES = REAL_NAMES + COMPLEX_NAMES
 DTYPE_NAMES = ("bool",) + NUMERIC_NAMES
 
 DataType = TypeVar("DataType")
@@ -106,8 +122,8 @@ def warn_on_missing_dtypes(xp: Any, stubs: List[str]) -> None:
 
 
 def find_castable_builtin_for_dtype(
-    xp: Any, dtype: DataType
-) -> Type[Union[bool, int, float]]:
+    xp: Any, api_version: NominalVersion, dtype: DataType
+) -> Type[Union[bool, int, float, complex]]:
     """Returns builtin type which can have values that are castable to the given
     dtype, according to :xp-ref:`type promotion rules <type_promotion.html>`.
 
@@ -136,13 +152,22 @@ def find_castable_builtin_for_dtype(
 
     stubs.extend(int_stubs)
     stubs.extend(float_stubs)
+
+    if api_version > "2021.12":
+        complex_dtypes, complex_stubs = partition_attributes_and_stubs(
+            xp, COMPLEX_NAMES
+        )
+        if dtype in complex_dtypes:
+            return complex
+        stubs.extend(complex_stubs)
+
     if len(stubs) > 0:
         warn_on_missing_dtypes(xp, stubs)
     raise InvalidArgument(f"dtype={dtype} not recognised in {xp.__name__}")
 
 
 @check_function
-def dtype_from_name(xp: Any, name: str) -> DataType:
+def dtype_from_name(xp: Any, name: str) -> Any:
     if name in DTYPE_NAMES:
         try:
             return getattr(xp, name)
@@ -159,6 +184,7 @@ def dtype_from_name(xp: Any, name: str) -> DataType:
 
 def _from_dtype(
     xp: Any,
+    api_version: NominalVersion,
     dtype: Union[DataType, str],
     *,
     min_value: Optional[Union[int, float]] = None,
@@ -184,11 +210,12 @@ def _from_dtype(
     passed through from :func:`arrays()`, as it seamlessly handles the ``width``
     or other representable bounds for you.
     """
+    # TODO: for next released xp version, add note for complex dtype support
     check_xp_attributes(xp, ["iinfo", "finfo"])
 
     if isinstance(dtype, str):
         dtype = dtype_from_name(xp, dtype)
-    builtin = find_castable_builtin_for_dtype(xp, dtype)
+    builtin = find_castable_builtin_for_dtype(xp, api_version, dtype)
 
     def check_valid_minmax(prefix, val, info_obj):
         name = f"{prefix}_value"
@@ -218,7 +245,7 @@ def _from_dtype(
         check_valid_minmax("max", max_value, iinfo)
         check_valid_interval(min_value, max_value, "min_value", "max_value")
         return st.integers(min_value=min_value, max_value=max_value)
-    else:
+    elif builtin is float:
         finfo = xp.finfo(dtype)
         kw = {}
 
@@ -269,10 +296,37 @@ def _from_dtype(
             kw["exclude_max"] = exclude_max
 
         return st.floats(width=finfo.bits, **kw)
+    else:
+        # A less-inelegant solution to support complex dtypes exists, but as
+        # this is currently a draft feature, we might as well wait for
+        # discussion of complex inspection to resolve first - a better method
+        # might become available soon enough.
+        # See https://github.com/data-apis/array-api/issues/433
+        for attr in ["float32", "float64", "complex64"]:
+            if not hasattr(xp, attr):
+                raise NotImplementedError(
+                    f"Array module {xp.__name__} has no dtype {attr}, which is "
+                    "currently required for xps.from_dtype() to work with "
+                    "any complex dtype."
+                )
+        component_dtype = xp.float32 if dtype == xp.complex64 else xp.float64
+
+        floats = _from_dtype(
+            xp,
+            api_version,
+            component_dtype,
+            allow_nan=allow_nan,
+            allow_infinity=allow_infinity,
+            allow_subnormal=allow_subnormal,
+        )
+
+        return st.builds(complex, floats, floats)  # type: ignore[arg-type]
 
 
 class ArrayStrategy(st.SearchStrategy):
-    def __init__(self, xp, elements_strategy, dtype, shape, fill, unique):
+    def __init__(
+        self, *, xp, api_version, elements_strategy, dtype, shape, fill, unique
+    ):
         self.xp = xp
         self.elements_strategy = elements_strategy
         self.dtype = dtype
@@ -280,12 +334,11 @@ class ArrayStrategy(st.SearchStrategy):
         self.fill = fill
         self.unique = unique
         self.array_size = math.prod(shape)
-        self.builtin = find_castable_builtin_for_dtype(xp, dtype)
+        self.builtin = find_castable_builtin_for_dtype(xp, api_version, dtype)
         self.finfo = None if self.builtin is not float else xp.finfo(self.dtype)
 
     def check_set_value(self, val, val_0d, strategy):
-        finite = self.builtin is bool or self.xp.isfinite(val_0d)
-        if finite and self.builtin(val_0d) != val:
+        if val == val and self.builtin(val_0d) != val:
             if self.builtin is float:
                 assert self.finfo is not None  # for mypy
                 try:
@@ -418,6 +471,7 @@ class ArrayStrategy(st.SearchStrategy):
 
 def _arrays(
     xp: Any,
+    api_version: NominalVersion,
     dtype: Union[DataType, str, st.SearchStrategy[DataType], st.SearchStrategy[str]],
     shape: Union[int, Shape, st.SearchStrategy[Shape]],
     *,
@@ -500,14 +554,18 @@ def _arrays(
 
     if isinstance(dtype, st.SearchStrategy):
         return dtype.flatmap(
-            lambda d: _arrays(xp, d, shape, elements=elements, fill=fill, unique=unique)
+            lambda d: _arrays(
+                xp, api_version, d, shape, elements=elements, fill=fill, unique=unique
+            )
         )
     elif isinstance(dtype, str):
         dtype = dtype_from_name(xp, dtype)
 
     if isinstance(shape, st.SearchStrategy):
         return shape.flatmap(
-            lambda s: _arrays(xp, dtype, s, elements=elements, fill=fill, unique=unique)
+            lambda s: _arrays(
+                xp, api_version, dtype, s, elements=elements, fill=fill, unique=unique
+            )
         )
     elif isinstance(shape, int):
         shape = (shape,)
@@ -519,9 +577,9 @@ def _arrays(
     )
 
     if elements is None:
-        elements = _from_dtype(xp, dtype)
+        elements = _from_dtype(xp, api_version, dtype)
     elif isinstance(elements, Mapping):
-        elements = _from_dtype(xp, dtype, **elements)
+        elements = _from_dtype(xp, api_version, dtype, **elements)
     check_strategy(elements, "elements")
 
     if fill is None:
@@ -532,7 +590,15 @@ def _arrays(
             fill = elements
     check_strategy(fill, "fill")
 
-    return ArrayStrategy(xp, elements, dtype, shape, fill, unique)
+    return ArrayStrategy(
+        xp=xp,
+        api_version=api_version,
+        elements_strategy=elements,
+        dtype=dtype,
+        shape=shape,
+        fill=fill,
+        unique=unique,
+    )
 
 
 @check_function
@@ -548,9 +614,9 @@ def check_dtypes(xp: Any, dtypes: List[DataType], stubs: List[str]) -> None:
         warn_on_missing_dtypes(xp, stubs)
 
 
-def _scalar_dtypes(xp: Any) -> st.SearchStrategy[DataType]:
+def _scalar_dtypes(xp: Any, api_version: NominalVersion) -> st.SearchStrategy[DataType]:
     """Return a strategy for all :xp-ref:`valid dtype <data_types.html>` objects."""
-    return st.one_of(_boolean_dtypes(xp), _numeric_dtypes(xp))
+    return st.one_of(_boolean_dtypes(xp), _numeric_dtypes(xp, api_version))
 
 
 def _boolean_dtypes(xp: Any) -> st.SearchStrategy[DataType]:
@@ -563,13 +629,23 @@ def _boolean_dtypes(xp: Any) -> st.SearchStrategy[DataType]:
         ) from None
 
 
-def _numeric_dtypes(xp: Any) -> st.SearchStrategy[DataType]:
-    """Return a strategy for all numeric dtype objects."""
+def _real_dtypes(xp: Any) -> st.SearchStrategy[DataType]:
+    """Return a strategy for all real-valued dtype objects."""
     return st.one_of(
         _integer_dtypes(xp),
         _unsigned_integer_dtypes(xp),
         _floating_dtypes(xp),
     )
+
+
+def _numeric_dtypes(
+    xp: Any, api_version: NominalVersion
+) -> st.SearchStrategy[DataType]:
+    """Return a strategy for all numeric dtype objects."""
+    strat: st.SearchStrategy[DataType] = _real_dtypes(xp)
+    if api_version > "2021.12":
+        strat |= _complex_dtypes(xp)
+    return strat
 
 
 @check_function
@@ -634,7 +710,7 @@ def _unsigned_integer_dtypes(
 def _floating_dtypes(
     xp: Any, *, sizes: Union[int, Sequence[int]] = (32, 64)
 ) -> st.SearchStrategy[DataType]:
-    """Return a strategy for floating-point dtype objects.
+    """Return a strategy for real-valued floating-point dtype objects.
 
     ``sizes`` contains the floating-point sizes in bits, defaulting to
     ``(32, 64)`` which covers all valid sizes.
@@ -644,6 +720,24 @@ def _floating_dtypes(
     check_valid_sizes("int", sizes, (32, 64))
     dtypes, stubs = partition_attributes_and_stubs(
         xp, numeric_dtype_names("float", sizes)
+    )
+    check_dtypes(xp, dtypes, stubs)
+    return st.sampled_from(dtypes)
+
+
+def _complex_dtypes(
+    xp: Any, *, sizes: Union[int, Sequence[int]] = (64, 128)
+) -> st.SearchStrategy[DataType]:
+    """Return a strategy for complex dtype objects.
+
+    ``sizes`` contains the complex sizes in bits, defaulting to ``(64, 128)``
+    which covers all valid sizes.
+    """
+    if isinstance(sizes, int):
+        sizes = (sizes,)
+    check_valid_sizes("complex", sizes, (64, 128))
+    dtypes, stubs = partition_attributes_and_stubs(
+        xp, numeric_dtype_names("complex", sizes)
     )
     check_dtypes(xp, dtypes, stubs)
     return st.sampled_from(dtypes)
@@ -760,10 +854,21 @@ def indices(
     )
 
 
-def make_strategies_namespace(xp: Any) -> SimpleNamespace:
+# Cache for make_strategies_namespace()
+_args_to_xps: WeakValueDictionary = WeakValueDictionary()
+
+
+def make_strategies_namespace(
+    xp: Any, *, api_version: Optional[NominalVersion] = None
+) -> SimpleNamespace:
     """Creates a strategies namespace for the given array module.
 
     * ``xp`` is the Array API library to automatically pass to the namespaced methods.
+    * ``api_version`` is the version of the Array API which the returned
+      strategies namespace should conform to. If ``None``, the latest API
+      version which ``xp`` supports will be inferred from ``xp.__array_api_version__``.
+      If a version string in the ``YYYY.MM`` format, the strategies namespace
+      will conform to that version if supported.
 
     A :obj:`python:types.SimpleNamespace` is returned which contains all the
     strategy methods in this module but without requiring the ``xp`` argument.
@@ -772,8 +877,11 @@ def make_strategies_namespace(xp: Any) -> SimpleNamespace:
 
     .. code-block:: pycon
 
-      >>> from numpy import array_api as xp
+      >>> xp.__array_api_version__  # xp is your desired array library
+      '2021.12'
       >>> xps = make_strategies_namespace(xp)
+      >>> xps.api_version
+      '2021.12'
       >>> x = xps.arrays(xp.int8, (2, 3)).example()
       >>> x
       Array([[-8,  6,  3],
@@ -782,6 +890,34 @@ def make_strategies_namespace(xp: Any) -> SimpleNamespace:
       True
 
     """
+    not_available_msg = (
+        "If the standard version you want is not available, please ensure "
+        "you're using the latest version of Hypothesis, then open an issue if "
+        "one doesn't already exist."
+    )
+    if api_version is None:
+        check_argument(
+            hasattr(xp, "__array_api_version__"),
+            f"Array module {xp.__name__} has no attribute __array_api_version__, "
+            "which is required when inferring api_version. If you believe "
+            f"{xp.__name__} is indeed an Array API module, try explicitly "
+            "passing an api_version.",
+        )
+        check_argument(
+            isinstance(xp.__array_api_version__, str)
+            and xp.__array_api_version__ in RELEASED_VERSIONS,
+            f"xp.__array_api_version__={xp.__array_api_version__!r}, but it must "
+            f"be a valid version string {RELEASED_VERSIONS}. {not_available_msg}",
+        )
+        api_version = xp.__array_api_version__
+        inferred_version = True
+    else:
+        check_argument(
+            isinstance(api_version, str) and api_version in NOMINAL_VERSIONS,
+            f"api_version={api_version!r}, but it must be None, or a valid version "
+            f"string in {RELEASED_VERSIONS}. {not_available_msg}",
+        )
+        inferred_version = False
     try:
         array = xp.zeros(1)
         array.__array_namespace__()
@@ -790,6 +926,13 @@ def make_strategies_namespace(xp: Any) -> SimpleNamespace:
             f"Could not determine whether module {xp.__name__} is an Array API library",
             HypothesisWarning,
         )
+
+    try:
+        namespace = _args_to_xps[(xp, api_version)]
+    except (KeyError, TypeError):
+        pass
+    else:
+        return namespace
 
     @defines_strategy(force_reusable_values=True)
     def from_dtype(
@@ -805,6 +948,7 @@ def make_strategies_namespace(xp: Any) -> SimpleNamespace:
     ) -> st.SearchStrategy[Union[bool, int, float]]:
         return _from_dtype(
             xp,
+            api_version,  # type: ignore[arg-type]
             dtype,
             min_value=min_value,
             max_value=max_value,
@@ -814,6 +958,28 @@ def make_strategies_namespace(xp: Any) -> SimpleNamespace:
             exclude_min=exclude_min,
             exclude_max=exclude_max,
         )
+
+    # torch.full() does not accept integers as the shape argument (n.b.
+    # technically "size" in torch), but such behaviour is expected in
+    # xps.arrays(), so we copy xp and patch in a working function.
+    if xp is sys.modules.get("torch", object()):
+
+        class PatchedArrayModule:
+            def __getattr__(self, attr):
+                return getattr(xp, attr)
+
+            @property
+            def __name__(self):
+                return "torch<modified>"
+
+            def full(self, shape, *a, **kw):
+                if isinstance(shape, int):
+                    shape = (shape,)
+                return xp.full(shape, *a, **kw)
+
+        arrays_xp = PatchedArrayModule()
+    else:
+        arrays_xp = xp
 
     @defines_strategy(force_reusable_values=True)
     def arrays(
@@ -827,7 +993,8 @@ def make_strategies_namespace(xp: Any) -> SimpleNamespace:
         unique: bool = False,
     ) -> st.SearchStrategy:
         return _arrays(
-            xp,
+            arrays_xp,
+            api_version,  # type: ignore[arg-type]
             dtype,
             shape,
             elements=elements,
@@ -837,15 +1004,19 @@ def make_strategies_namespace(xp: Any) -> SimpleNamespace:
 
     @defines_strategy()
     def scalar_dtypes() -> st.SearchStrategy[DataType]:
-        return _scalar_dtypes(xp)
+        return _scalar_dtypes(xp, api_version)  # type: ignore[arg-type]
 
     @defines_strategy()
     def boolean_dtypes() -> st.SearchStrategy[DataType]:
         return _boolean_dtypes(xp)
 
     @defines_strategy()
+    def real_dtypes() -> st.SearchStrategy[DataType]:
+        return _real_dtypes(xp)
+
+    @defines_strategy()
     def numeric_dtypes() -> st.SearchStrategy[DataType]:
-        return _numeric_dtypes(xp)
+        return _numeric_dtypes(xp, api_version)  # type: ignore[arg-type]
 
     @defines_strategy()
     def integer_dtypes(
@@ -869,21 +1040,45 @@ def make_strategies_namespace(xp: Any) -> SimpleNamespace:
     arrays.__doc__ = _arrays.__doc__
     scalar_dtypes.__doc__ = _scalar_dtypes.__doc__
     boolean_dtypes.__doc__ = _boolean_dtypes.__doc__
+    real_dtypes.__doc__ = _real_dtypes.__doc__
     numeric_dtypes.__doc__ = _numeric_dtypes.__doc__
     integer_dtypes.__doc__ = _integer_dtypes.__doc__
     unsigned_integer_dtypes.__doc__ = _unsigned_integer_dtypes.__doc__
     floating_dtypes.__doc__ = _floating_dtypes.__doc__
 
-    class PrettySimpleNamespace(SimpleNamespace):
-        def __repr__(self):
-            return f"make_strategies_namespace({xp.__name__})"
+    class StrategiesNamespace(SimpleNamespace):
+        def __init__(self, **kwargs):
+            for attr in ["name", "api_version"]:
+                if attr not in kwargs.keys():
+                    raise ValueError(f"'{attr}' kwarg required")
+            super().__init__(**kwargs)
 
-    return PrettySimpleNamespace(
+        @property
+        def complex_dtypes(self):
+            try:
+                return self.__dict__["complex_dtypes"]
+            except KeyError as e:
+                raise AttributeError(
+                    "You attempted to access 'complex_dtypes', but it is not "
+                    f"available for api_version='{self.api_version}' of "
+                    f"xp={self.name}."
+                ) from e
+
+        def __repr__(self):
+            f_args = self.name
+            if not inferred_version:
+                f_args += f", api_version='{self.api_version}'"
+            return f"make_strategies_namespace({f_args})"
+
+    kwargs = dict(
+        name=xp.__name__,
+        api_version=api_version,
         from_dtype=from_dtype,
         arrays=arrays,
         array_shapes=array_shapes,
         scalar_dtypes=scalar_dtypes,
         boolean_dtypes=boolean_dtypes,
+        real_dtypes=real_dtypes,
         numeric_dtypes=numeric_dtypes,
         integer_dtypes=integer_dtypes,
         unsigned_integer_dtypes=unsigned_integer_dtypes,
@@ -893,6 +1088,25 @@ def make_strategies_namespace(xp: Any) -> SimpleNamespace:
         mutually_broadcastable_shapes=mutually_broadcastable_shapes,
         indices=indices,
     )
+
+    if api_version > "2021.12":
+
+        @defines_strategy()
+        def complex_dtypes(
+            *, sizes: Union[int, Sequence[int]] = (64, 128)
+        ) -> st.SearchStrategy[DataType]:
+            return _complex_dtypes(xp, sizes=sizes)
+
+        complex_dtypes.__doc__ = _complex_dtypes.__doc__
+        kwargs["complex_dtypes"] = complex_dtypes
+
+    namespace = StrategiesNamespace(**kwargs)
+    try:
+        _args_to_xps[(xp, api_version)] = namespace
+    except TypeError:
+        pass
+
+    return namespace
 
 
 try:
@@ -935,7 +1149,8 @@ if np is not None:
         )
 
     mock_xp = SimpleNamespace(
-        __name__="mockpy",
+        __name__="mock",
+        __array_api_version__="2021.12",
         # Data types
         int8=np.int8,
         int16=np.int16,
@@ -947,6 +1162,8 @@ if np is not None:
         uint64=np.uint64,
         float32=np.float32,
         float64=np.float64,
+        complex64=np.complex64,
+        complex128=np.complex128,
         bool=np.bool_,
         # Constants
         nan=np.nan,

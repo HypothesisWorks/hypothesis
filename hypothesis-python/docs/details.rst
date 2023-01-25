@@ -420,6 +420,19 @@ there is a natural metric like "floating-point error", "load factor" or
 
 .. autofunction:: hypothesis.target
 
+.. code-block:: python
+
+  from hypothesis import given, strategies as st, target
+
+
+  @given(st.floats(0, 1e100), st.floats(0, 1e100), st.floats(0, 1e100))
+  def test_associativity_with_target(a, b, c):
+      ab_c = (a + b) + c
+      a_bc = a + (b + c)
+      difference = abs(ab_c - a_bc)
+      target(difference)  # Without this, the test almost always passes
+      assert difference < 2.0
+
 We recommend that users also skim the papers introducing targeted PBT;
 from `ISSTA 2017 <http://proper.softlab.ntua.gr/papers/issta2017.pdf>`__
 and `ICST 2018 <http://proper.softlab.ntua.gr/papers/icst2018.pdf>`__.
@@ -702,7 +715,7 @@ providing extra information and convenient access to config options.
   :ref:`display test and data generation statistics <statistics>`.
 - ``pytest --hypothesis-profile=<profile name>`` can be used to
   :ref:`load a settings profile <settings_profiles>`.
-  ``pytest --hypothesis-verbosity=<level name>`` can be used to
+- ``pytest --hypothesis-verbosity=<level name>`` can be used to
   :ref:`override the current verbosity level <verbose-output>`.
 - ``pytest --hypothesis-seed=<an int>`` can be used to
   :ref:`reproduce a failure with a particular seed <reproducing-with-seed>`.

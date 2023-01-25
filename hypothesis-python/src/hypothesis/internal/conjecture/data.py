@@ -40,6 +40,7 @@ if TYPE_CHECKING:
     from typing_extensions import dataclass_transform
 
     from hypothesis.strategies import SearchStrategy
+    from hypothesis.strategies._internal.strategies import Ex
 else:
 
     def dataclass_transform():
@@ -399,10 +400,10 @@ class Examples:
         return self.starts_and_ends[1]
 
     class _discarded(ExampleProperty):
-        def begin(self):
-            self.result: "Set[int]" = set()
+        def begin(self) -> None:
+            self.result: "Set[int]" = set()  # type: ignore  # IntList in parent class
 
-        def finish(self):
+        def finish(self) -> FrozenSet[int]:
             return frozenset(self.result)
 
         def stop_example(self, i: int, discarded: bool) -> None:
@@ -412,9 +413,9 @@ class Examples:
     discarded: FrozenSet[int] = calculated_example_property(_discarded)
 
     class _trivial(ExampleProperty):
-        def begin(self):
+        def begin(self) -> None:
             self.nontrivial = IntList.of_length(len(self.examples))
-            self.result: "Set[int]" = set()
+            self.result: "Set[int]" = set()  # type: ignore  # IntList in parent class
 
         def block(self, i: int) -> None:
             if not self.examples.blocks.trivial(i):
@@ -427,7 +428,7 @@ class Examples:
             else:
                 self.result.add(i)
 
-        def finish(self):
+        def finish(self) -> FrozenSet[int]:
             return frozenset(self.result)
 
     trivial: FrozenSet[int] = calculated_example_property(_trivial)
@@ -455,7 +456,7 @@ class Examples:
     label_indices: IntList = calculated_example_property(_label_indices)
 
     class _mutator_groups(ExampleProperty):
-        def begin(self):
+        def begin(self) -> None:
             self.groups: "Dict[Tuple[int, int], List[int]]" = defaultdict(list)
 
         def start_example(self, i: int, label_index: int) -> None:
@@ -816,7 +817,7 @@ class ConjectureData:
         self.max_length = max_length
         self.is_find = False
         self.overdraw = 0
-        self.__prefix = prefix
+        self.__prefix = bytes(prefix)
         self.__random = random
 
         assert random is not None or max_length <= len(prefix)
@@ -907,7 +908,7 @@ class ConjectureData:
             value = repr(value)
         self.output += value
 
-    def draw(self, strategy: "SearchStrategy[Any]", label: Optional[int] = None) -> Any:
+    def draw(self, strategy: "SearchStrategy[Ex]", label: Optional[int] = None) -> "Ex":
         if self.is_find and not strategy.supports_find:
             raise InvalidArgument(
                 f"Cannot use strategy {strategy!r} within a call to find "

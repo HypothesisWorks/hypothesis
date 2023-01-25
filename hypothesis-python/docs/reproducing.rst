@@ -39,7 +39,7 @@ was printed you can decorate ``test`` with ``@example(n=1)``.
 as a regression test or to cover some edge case - basically combining a
 Hypothesis test and a traditional parametrized test.
 
-.. autofunction:: hypothesis.example
+.. autoclass:: hypothesis.example
 
 Hypothesis will run all examples you've asked for first. If any of them fail it
 will not go on to look for more examples.
@@ -75,6 +75,10 @@ positional and keyword arguments.
 Either are fine, and you can use one in one example and the other in another
 example if for some reason you really want to, but a single example must be
 consistent.
+
+.. automethod:: hypothesis.example.xfail
+
+.. automethod:: hypothesis.example.via
 
 .. _reproducing-with-seed:
 

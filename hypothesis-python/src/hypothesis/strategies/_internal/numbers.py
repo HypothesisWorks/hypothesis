@@ -18,9 +18,13 @@ from hypothesis.control import reject
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import floats as flt, utils as d
 from hypothesis.internal.conjecture.utils import calc_label_from_name
-from hypothesis.internal.filtering import get_integer_predicate_bounds
+from hypothesis.internal.filtering import (
+    get_float_predicate_bounds,
+    get_integer_predicate_bounds,
+)
 from hypothesis.internal.floats import (
     float_of,
+    float_to_int,
     int_to_float,
     is_negative,
     make_float_clamper,
@@ -36,7 +40,10 @@ from hypothesis.internal.validation import (
     check_valid_interval,
 )
 from hypothesis.strategies._internal.misc import nothing
-from hypothesis.strategies._internal.strategies import SearchStrategy
+from hypothesis.strategies._internal.strategies import (
+    SampledFromStrategy,
+    SearchStrategy,
+)
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 
 # See https://github.com/python/mypy/issues/3186 - numbers.Real is wrong!
@@ -87,9 +94,25 @@ class IntegersStrategy(SearchStrategy):
                     data.stop_example(discard=probe < self.start)
                 return probe
 
-        return d.integer_range(data, self.start, self.end, center=0)
+        # For bounded integers, make the bounds and near-bounds more likely.
+        forced = None
+        if self.end - self.start > 127:
+            forced = {
+                122: self.start,
+                123: self.start,
+                124: self.end,
+                125: self.end,
+                126: self.start + 1,
+                127: self.end - 1,
+            }.get(data.draw_bits(7))
+
+        return d.integer_range(data, self.start, self.end, center=0, forced=forced)
 
     def filter(self, condition):
+        if condition is math.isfinite:
+            return self
+        if condition in [math.isinf, math.isnan]:
+            return nothing()
         kwargs, pred = get_integer_predicate_bounds(condition)
 
         start, end = self.start, self.end
@@ -195,9 +218,10 @@ class FloatStrategy(SearchStrategy):
 
     def __init__(
         self,
-        min_value: float = -math.inf,
-        max_value: float = math.inf,
-        allow_nan: bool = True,
+        *,
+        min_value: float,
+        max_value: float,
+        allow_nan: bool,
         # The smallest nonzero number we can represent is usually a subnormal, but may
         # be the smallest normal if we're running in unsafe denormals-are-zero mode.
         # While that's usually an explicit error, we do need to handle the case where
@@ -206,7 +230,16 @@ class FloatStrategy(SearchStrategy):
     ):
         super().__init__()
         assert isinstance(allow_nan, bool)
-        assert smallest_nonzero_magnitude > 0.0
+        assert smallest_nonzero_magnitude >= 0.0, "programmer error if this is negative"
+        if smallest_nonzero_magnitude == 0.0:  # pragma: no cover
+            raise FloatingPointError(
+                "Got allow_subnormal=True, but we can't represent subnormal floats "
+                "right now, in violation of the IEEE-754 floating-point "
+                "specification.  This is usually because something was compiled with "
+                "-ffast-math or a similar option, which sets global processor state.  "
+                "See https://simonbyrne.github.io/notes/fastmath/ for a more detailed "
+                "writeup - and good luck!"
+            )
         self.min_value = min_value
         self.max_value = max_value
         self.allow_nan = allow_nan
@@ -282,6 +315,58 @@ class FloatStrategy(SearchStrategy):
             data.stop_example()  # (DRAW_FLOAT_LABEL)
             data.stop_example()  # (FLOAT_STRATEGY_DO_DRAW_LABEL)
             return result
+
+    def filter(self, condition):
+        # Handle a few specific weird cases.
+        if condition is math.isfinite:
+            return FloatStrategy(
+                min_value=max(self.min_value, next_up(float("-inf"))),
+                max_value=min(self.max_value, next_down(float("inf"))),
+                allow_nan=False,
+                smallest_nonzero_magnitude=self.smallest_nonzero_magnitude,
+            )
+        if condition is math.isinf:
+            permitted_infs = [x for x in (-math.inf, math.inf) if self.permitted(x)]
+            if not permitted_infs:
+                return nothing()
+            return SampledFromStrategy(permitted_infs)
+        if condition is math.isnan:
+            if not self.allow_nan:
+                return nothing()
+            return NanStrategy()
+
+        kwargs, pred = get_float_predicate_bounds(condition)
+        if not kwargs:
+            return super().filter(pred)
+        min_bound = max(kwargs.get("min_value", -math.inf), self.min_value)
+        max_bound = min(kwargs.get("max_value", math.inf), self.max_value)
+
+        # Adjustments for allow_subnormal=False, if any need to be made
+        if -self.smallest_nonzero_magnitude < min_bound < 0:
+            min_bound = -0.0
+        elif 0 < min_bound < self.smallest_nonzero_magnitude:
+            min_bound = self.smallest_nonzero_magnitude
+        if -self.smallest_nonzero_magnitude < max_bound < 0:
+            max_bound = -self.smallest_nonzero_magnitude
+        elif 0 < max_bound < self.smallest_nonzero_magnitude:
+            max_bound = 0.0
+
+        if min_bound > max_bound:
+            return nothing()
+        if (
+            min_bound > self.min_value
+            or self.max_value > max_bound
+            or (self.allow_nan and (-math.inf < min_bound or max_bound < math.inf))
+        ):
+            self = type(self)(
+                min_value=min_bound,
+                max_value=max_bound,
+                allow_nan=False,
+                smallest_nonzero_magnitude=self.smallest_nonzero_magnitude,
+            )
+        if pred is None:
+            return self
+        return super().filter(pred)
 
 
 @cacheable
@@ -365,13 +450,31 @@ def floats(
         # Erroring out here ensures that the database contents are interpreted
         # consistently - which matters for such a foundational strategy, even if it's
         # not always true for all user-composed strategies further up the stack.
+        from _hypothesis_ftz_detector import identify_ftz_culprits
+
+        try:
+            ftz_pkg = identify_ftz_culprits()
+        except Exception:
+            ftz_pkg = None
+        if ftz_pkg:
+            ftz_msg = (
+                f"This seems to be because the `{ftz_pkg}` package was compiled with "
+                f"-ffast-math or a similar option, which sets global processor state "
+                f"- see https://simonbyrne.github.io/notes/fastmath/ for details.  "
+                f"If you don't know why {ftz_pkg} is installed, `pipdeptree -rp "
+                f"{ftz_pkg}` will show which packages depend on it."
+            )
+        else:
+            ftz_msg = (
+                "This is usually because something was compiled with -ffast-math "
+                "or a similar option, which sets global processor state.  See "
+                "https://simonbyrne.github.io/notes/fastmath/ for a more detailed "
+                "writeup - and good luck!"
+            )
         raise FloatingPointError(
             f"Got allow_subnormal={allow_subnormal!r}, but we can't represent "
             f"subnormal floats right now, in violation of the IEEE-754 floating-point "
-            f"specification.  This is usually because something was compiled with "
-            f"-ffast-math or a similar option, which sets global processor state.  "
-            f"See https://simonbyrne.github.io/notes/fastmath/ for a more detailed "
-            f"writeup - and good luck!"
+            f"specification.  {ftz_msg}"
         )
 
     min_arg, max_arg = min_value, max_value
@@ -499,14 +602,17 @@ def floats(
         min_value = float("-inf")
     if max_value is None:
         max_value = float("inf")
+    if not allow_infinity:
+        min_value = max(min_value, next_up(float("-inf")))
+        max_value = min(max_value, next_down(float("inf")))
     assert isinstance(min_value, float)
     assert isinstance(max_value, float)
     smallest_nonzero_magnitude = (
         SMALLEST_SUBNORMAL if allow_subnormal else smallest_normal
     )
     result: SearchStrategy = FloatStrategy(
-        min_value,
-        max_value,
+        min_value=min_value,
+        max_value=max_value,
         allow_nan=allow_nan,
         smallest_nonzero_magnitude=smallest_nonzero_magnitude,
     )
@@ -520,6 +626,16 @@ def floats(
                 reject()
 
         result = result.map(downcast)
-    if not allow_infinity:
-        result = result.filter(lambda x: not math.isinf(x))
     return result
+
+
+class NanStrategy(SearchStrategy):
+    """Strategy for sampling the space of nan float values."""
+
+    def do_draw(self, data):
+        # Nans must have all exponent bits and the first mantissa bit set, so
+        # we generate by taking 64 random bits and setting the required ones.
+        sign_bit = data.draw_bits(1) << 63
+        nan_bits = float_to_int(math.nan)
+        mantissa_bits = data.draw_bits(52)
+        return int_to_float(sign_bit | nan_bits | mantissa_bits)

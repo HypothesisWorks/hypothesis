@@ -278,8 +278,8 @@ class Shrinker:
 
         # We keep track of the current best example on the shrink_target
         # attribute.
-        self.shrink_target = None
-        self.update_shrink_target(initial)
+        self.shrink_target = initial
+        self.clear_change_tracking()
         self.shrinks = 0
 
         # We terminate shrinks that seem to have reached their logical
@@ -447,23 +447,15 @@ class Shrinker:
                     return "s" if n != 1 else ""
 
                 total_deleted = self.initial_size - len(self.shrink_target.buffer)
-
-                self.debug("---------------------")
-                self.debug("Shrink pass profiling")
-                self.debug("---------------------")
-                self.debug("")
                 calls = self.engine.call_count - self.initial_calls
+
                 self.debug(
-                    "Shrinking made a total of %d call%s "
-                    "of which %d shrank. This deleted %d byte%s out of %d."
-                    % (
-                        calls,
-                        s(calls),
-                        self.shrinks,
-                        total_deleted,
-                        s(total_deleted),
-                        self.initial_size,
-                    )
+                    "---------------------\n"
+                    "Shrink pass profiling\n"
+                    "---------------------\n\n"
+                    f"Shrinking made a total of {calls} call{s(calls)} of which "
+                    f"{self.shrinks} shrank. This deleted {total_deleted} bytes out "
+                    f"of {self.initial_size}."
                 )
                 for useful in [True, False]:
                     self.debug("")
@@ -828,22 +820,17 @@ class Shrinker:
 
     def update_shrink_target(self, new_target):
         assert isinstance(new_target, ConjectureResult)
-        if self.shrink_target is not None:
-            self.shrinks += 1
-            # If we are just taking a long time to shrink we don't want to
-            # trigger this heuristic, so whenever we shrink successfully
-            # we give ourselves a bit of breathing room to make sure we
-            # would find a shrink that took that long to find the next time.
-            # The case where we're taking a long time but making steady
-            # progress is handled by `finish_shrinking_deadline` in engine.py
-            self.max_stall = max(
-                self.max_stall, (self.calls - self.calls_at_last_shrink) * 2
-            )
-            self.calls_at_last_shrink = self.calls
-        else:
-            self.__all_changed_blocks = set()
-            self.__last_checked_changed_at = new_target
-
+        self.shrinks += 1
+        # If we are just taking a long time to shrink we don't want to
+        # trigger this heuristic, so whenever we shrink successfully
+        # we give ourselves a bit of breathing room to make sure we
+        # would find a shrink that took that long to find the next time.
+        # The case where we're taking a long time but making steady
+        # progress is handled by `finish_shrinking_deadline` in engine.py
+        self.max_stall = max(
+            self.max_stall, (self.calls - self.calls_at_last_shrink) * 2
+        )
+        self.calls_at_last_shrink = self.calls
         self.shrink_target = new_target
         self.__derived_values = {}
 

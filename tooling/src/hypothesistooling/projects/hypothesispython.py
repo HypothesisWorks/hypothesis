@@ -29,6 +29,9 @@ BASE_DIR = HYPOTHESIS_PYTHON
 
 PYTHON_SRC = os.path.join(HYPOTHESIS_PYTHON, "src")
 PYTHON_TESTS = os.path.join(HYPOTHESIS_PYTHON, "tests")
+DOMAINS_LIST = os.path.join(
+    PYTHON_SRC, "hypothesis", "vendor", "tlds-alpha-by-domain.txt"
+)
 
 RELEASE_FILE = os.path.join(HYPOTHESIS_PYTHON, "RELEASE.rst")
 
@@ -77,9 +80,9 @@ def build_docs(builder="html"):
     )
 
 
-CHANGELOG_ANCHOR = re.compile(r"^\.\. _v\d+\.\d+\.\d+:$")
-CHANGELOG_BORDER = re.compile(r"^-+$")
-CHANGELOG_HEADER = re.compile(r"^\d+\.\d+\.\d+ - \d\d\d\d-\d\d-\d\d$")
+CHANGELOG_ANCHOR = re.compile(r"^\.\. _v\d+\.\d+\.\d+:$", flags=re.MULTILINE)
+CHANGELOG_BORDER = re.compile(r"^-+$", flags=re.MULTILINE)
+CHANGELOG_HEADER = re.compile(r"^\d+\.\d+\.\d+ - \d\d\d\d-\d\d-\d\d$", flags=re.M)
 
 
 def update_changelog_and_version():
@@ -234,3 +237,16 @@ def latest_version():
 
 def tag_name():
     return PYTHON_TAG_PREFIX + __version__
+
+
+def get_autoupdate_message(domainlist_changed: bool) -> str:
+    if domainlist_changed:
+        return (
+            "This patch updates our vendored `list of top-level domains "
+            "<https://www.iana.org/domains/root/db>`__,\nwhich is used by the "
+            "provisional :func:`~hypothesis.provisional.domains` strategy.\n"
+        )
+    return (
+        "This patch updates our autoformatting tools, "
+        "improving our code style without any API changes."
+    )

@@ -37,7 +37,9 @@ command (`learn more about that here <https://hypofuzz.com/docs/quickstart.html>
 
 import builtins
 import importlib
+import inspect
 import sys
+import types
 from difflib import get_close_matches
 from functools import partial
 from multiprocessing import Pool
@@ -80,10 +82,15 @@ else:
     def obj_name(s: str) -> object:
         """This "type" imports whatever object is named by a dotted string."""
         s = s.strip()
+        if "/" in s or "\\" in s:
+            raise click.UsageError(
+                "Remember that the ghostwriter should be passed the name of a module, not a path."
+            ) from None
         try:
             return importlib.import_module(s)
         except ImportError:
             pass
+        classname = None
         if "." not in s:
             modulename, module, funcname = "builtins", builtins, s
         else:
@@ -91,20 +98,66 @@ else:
             try:
                 module = importlib.import_module(modulename)
             except ImportError as err:
+                try:
+                    modulename, classname = modulename.rsplit(".", 1)
+                    module = importlib.import_module(modulename)
+                except (ImportError, ValueError):
+                    if s.endswith(".py"):
+                        raise click.UsageError(
+                            "Remember that the ghostwriter should be passed the name of a module, not a file."
+                        ) from None
+                    raise click.UsageError(
+                        f"Failed to import the {modulename} module for introspection.  "
+                        "Check spelling and your Python import path, or use the Python API?"
+                    ) from err
+
+        def describe_close_matches(
+            module_or_class: types.ModuleType, objname: str
+        ) -> str:
+            public_names = [
+                name for name in vars(module_or_class) if not name.startswith("_")
+            ]
+            matches = get_close_matches(objname, public_names)
+            if matches:
+                return f"  Closest matches: {matches!r}"
+            else:
+                return ""
+
+        if classname is None:
+            try:
+                return getattr(module, funcname)
+            except AttributeError as err:
+                if funcname == "py":
+                    # Likely attempted to pass a local file (Eg., "myscript.py") instead of a module name
+                    raise click.UsageError(
+                        "Remember that the ghostwriter should be passed the name of a module, not a file."
+                        + f"\n\tTry: hypothesis write {s[:-3]}"
+                    ) from None
                 raise click.UsageError(
-                    f"Failed to import the {modulename} module for introspection.  "
-                    "Check spelling and your Python import path, or use the Python API?"
+                    f"Found the {modulename!r} module, but it doesn't have a "
+                    f"{funcname!r} attribute."
+                    + describe_close_matches(module, funcname)
                 ) from err
-        try:
-            return getattr(module, funcname)
-        except AttributeError as err:
-            public_names = [name for name in vars(module) if not name.startswith("_")]
-            matches = get_close_matches(funcname, public_names)
-            raise click.UsageError(
-                f"Found the {modulename!r} module, but it doesn't have a "
-                f"{funcname!r} attribute."
-                + (f"  Closest matches: {matches!r}" if matches else "")
-            ) from err
+        else:
+            try:
+                func_class = getattr(module, classname)
+            except AttributeError as err:
+                raise click.UsageError(
+                    f"Found the {modulename!r} module, but it doesn't have a "
+                    f"{classname!r} class." + describe_close_matches(module, classname)
+                ) from err
+            try:
+                return getattr(func_class, funcname)
+            except AttributeError as err:
+                if inspect.isclass(func_class):
+                    func_class_is = "class"
+                else:
+                    func_class_is = "attribute"
+                raise click.UsageError(
+                    f"Found the {modulename!r} module and {classname!r} {func_class_is}, "
+                    f"but it doesn't have a {funcname!r} attribute."
+                    + describe_close_matches(func_class, funcname)
+                ) from err
 
     def _refactor(func, fname):
         try:
@@ -216,7 +269,15 @@ else:
         multiple=True,
         help="dotted name of exception(s) to ignore",
     )
-    def write(func, writer, except_, style):  # noqa: D301  # \b disables autowrap
+    @click.option(
+        "--annotate/--no-annotate",
+        default=None,
+        help="force ghostwritten tests to be type-annotated (or not).  "
+        "By default, match the code to test.",
+    )
+    def write(
+        func, writer, except_, style, annotate
+    ):  # noqa: D301  # \b disables autowrap
         """`hypothesis write` writes property-based tests for you!
 
         Type annotations are helpful but not required for our advanced introspection
@@ -225,6 +286,7 @@ else:
         \b
             hypothesis write gzip
             hypothesis write numpy.matmul
+            hypothesis write pandas.from_dummies
             hypothesis write re.compile --except re.error
             hypothesis write --equivalent ast.literal_eval eval
             hypothesis write --roundtrip json.dumps json.loads
@@ -234,7 +296,7 @@ else:
         # NOTE: if you want to call this function from Python, look instead at the
         # ``hypothesis.extra.ghostwriter`` module.  Click-decorated functions have
         # a different calling convention, and raise SystemExit instead of returning.
-        kwargs = {"except_": except_ or (), "style": style}
+        kwargs = {"except_": except_ or (), "style": style, "annotate": annotate}
         if writer is None:
             writer = "magic"
         elif writer == "idempotent" and len(func) > 1:

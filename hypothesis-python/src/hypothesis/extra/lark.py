@@ -22,11 +22,6 @@ Lark already `supports loading grammars
 <https://lark-parser.readthedocs.io/en/latest/nearley.html>`_
 from `nearley.js <https://nearley.js.org/>`_, so you may not have to write
 your own at all.
-
-Note that as Lark is at version 0.x, this module *may* break API compatibility
-in minor releases if supporting the latest version of Lark would otherwise be
-infeasible.  We may also be quite aggressive in bumping the minimum version of
-Lark, unless someone volunteers to either fund or do the maintenance.
 """
 
 from inspect import signature
@@ -34,7 +29,7 @@ from typing import Dict, Optional
 
 import attr
 import lark
-from lark.grammar import NonTerminal, Terminal  # type: ignore
+from lark.grammar import NonTerminal, Terminal
 
 from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument

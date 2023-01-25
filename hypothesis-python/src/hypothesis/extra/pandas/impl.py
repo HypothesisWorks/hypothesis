@@ -88,6 +88,11 @@ def elements_and_dtype(elements, dtype, source=None):
             has_codemod=False,
         )
 
+    if isinstance(dtype, st.SearchStrategy):
+        raise InvalidArgument(
+            f"Passed dtype={dtype!r} is a strategy, but we require a concrete dtype "
+            "here.  See https://stackoverflow.com/q/74355937 for workaround patterns."
+        )
     dtype = try_convert(np.dtype, dtype, "dtype")
 
     if elements is None:
@@ -161,6 +166,7 @@ DEFAULT_MAX_SIZE = 10
 def range_indexes(
     min_size: int = 0,
     max_size: Optional[int] = None,
+    name: st.SearchStrategy[Optional[str]] = st.none(),
 ) -> st.SearchStrategy[pandas.RangeIndex]:
     """Provides a strategy which generates an :class:`~pandas.Index` whose
     values are 0, 1, ..., n for some n.
@@ -170,13 +176,16 @@ def range_indexes(
     * min_size is the smallest number of elements the index can have.
     * max_size is the largest number of elements the index can have. If None
       it will default to some suitable value based on min_size.
+    * name is the name of the index. If st.none(), the index will have no name.
     """
     check_valid_size(min_size, "min_size")
     check_valid_size(max_size, "max_size")
     if max_size is None:
         max_size = min([min_size + DEFAULT_MAX_SIZE, 2**63 - 1])
     check_valid_interval(min_size, max_size, "min_size", "max_size")
-    return st.integers(min_size, max_size).map(pandas.RangeIndex)
+    check_strategy(name)
+
+    return st.builds(pandas.RangeIndex, st.integers(min_size, max_size), name=name)
 
 
 @cacheable
@@ -532,9 +541,8 @@ def data_frames(
                 hash(c.name)
             except TypeError:
                 raise InvalidArgument(
-                    "Column names must be hashable, but columns[%d].name was "
-                    "%r of type %s, which cannot be hashed."
-                    % (i, c.name, type(c.name).__name__)
+                    f"Column names must be hashable, but columns[{i}].name was "
+                    f"{c.name!r} of type {type(c.name).__name__}, which cannot be hashed."
                 ) from None
 
         if c.name in column_names:

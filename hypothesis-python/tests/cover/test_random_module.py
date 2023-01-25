@@ -13,13 +13,11 @@ import random
 
 import pytest
 
-from hypothesis import core, find, given, register_random, reporting, strategies as st
-from hypothesis.errors import InvalidArgument
+from hypothesis import core, find, given, register_random, strategies as st
+from hypothesis.errors import HypothesisWarning, InvalidArgument
 from hypothesis.internal import entropy
 from hypothesis.internal.compat import PYPY
 from hypothesis.internal.entropy import deterministic_PRNG
-
-from tests.common.utils import capture_out
 
 
 def gc_on_pypy():
@@ -32,16 +30,13 @@ def gc_on_pypy():
 
 
 def test_can_seed_random():
-    with capture_out() as out:
-        with reporting.with_reporter(reporting.default):
-            with pytest.raises(AssertionError):
+    @given(st.random_module())
+    def test(r):
+        raise AssertionError
 
-                @given(st.random_module())
-                def test(r):
-                    raise AssertionError
-
-                test()
-    assert "RandomSeeder(0)" in out.getvalue()
+    with pytest.raises(AssertionError) as err:
+        test()
+    assert "RandomSeeder(0)" in "\n".join(err.value.__notes__)
 
 
 @given(st.random_module(), st.random_module())
@@ -59,6 +54,9 @@ def test_cannot_register_non_Random():
         register_random("not a Random instance")
 
 
+@pytest.mark.filterwarnings(
+    "ignore:It looks like `register_random` was passed an object that could be garbage collected"
+)
 def test_registering_a_Random_is_idempotent():
     gc_on_pypy()
     n_registered = len(entropy.RANDOMS_TO_MANAGE)
@@ -149,6 +147,9 @@ def test_find_does_not_pollute_state():
         assert state_a2 != state_b2
 
 
+@pytest.mark.filterwarnings(
+    "ignore:It looks like `register_random` was passed an object that could be garbage collected"
+)
 def test_evil_prng_registration_nonsense():
     gc_on_pypy()
     n_registered = len(entropy.RANDOMS_TO_MANAGE)
@@ -177,3 +178,57 @@ def test_evil_prng_registration_nonsense():
     # Implicit check, no exception was raised in __exit__
     assert r2.getstate() == s2, "reset previously registered random state"
     assert r3.getstate() == s4, "retained state when registered within the context"
+
+
+@pytest.mark.skipif(
+    PYPY, reason="We can't guard against bad no-reference patterns in pypy."
+)
+def test_passing_unreferenced_instance_raises():
+    with pytest.raises(ReferenceError):
+        register_random(random.Random(0))
+
+
+@pytest.mark.skipif(
+    PYPY, reason="We can't guard against bad no-reference patterns in pypy."
+)
+def test_passing_unreferenced_instance_within_function_scope_raises():
+    def f():
+        register_random(random.Random(0))
+
+    with pytest.raises(ReferenceError):
+        f()
+
+
+@pytest.mark.skipif(
+    PYPY, reason="We can't guard against bad no-reference patterns in pypy."
+)
+def test_passing_referenced_instance_within_function_scope_warns():
+    def f():
+        r = random.Random(0)
+        register_random(r)
+
+    with pytest.warns(
+        HypothesisWarning,
+        match="It looks like `register_random` was passed an object that could be"
+        " garbage collected",
+    ):
+        f()
+
+
+@pytest.mark.filterwarnings(
+    "ignore:It looks like `register_random` was passed an object that could be garbage collected"
+)
+@pytest.mark.skipif(
+    PYPY, reason="We can't guard against bad no-reference patterns in pypy."
+)
+def test_register_random_within_nested_function_scope():
+    n_registered = len(entropy.RANDOMS_TO_MANAGE)
+
+    def f():
+        r = random.Random()
+        register_random(r)
+        assert len(entropy.RANDOMS_TO_MANAGE) == n_registered + 1
+
+    f()
+    gc_on_pypy()
+    assert len(entropy.RANDOMS_TO_MANAGE) == n_registered

@@ -45,7 +45,7 @@ def test_slow_generation_fails_a_health_check():
 
 
 def test_slow_generation_inline_fails_a_health_check():
-    @settings(HEALTH_CHECK_SETTINGS, deadline=None)
+    @HEALTH_CHECK_SETTINGS
     @given(st.data())
     def test(data):
         data.draw(st.integers().map(lambda x: time.sleep(0.2)))
@@ -176,7 +176,7 @@ def test_large_base_example_fails_health_check():
     with pytest.raises(FailedHealthCheck) as exc:
         test()
 
-    assert exc.value.health_check == HealthCheck.large_base_example
+    assert str(HealthCheck.large_base_example) in str(exc.value)
 
 
 def test_example_that_shrinks_to_overrun_fails_health_check():
@@ -187,7 +187,7 @@ def test_example_that_shrinks_to_overrun_fails_health_check():
     with pytest.raises(FailedHealthCheck) as exc:
         test()
 
-    assert exc.value.health_check == HealthCheck.large_base_example
+    assert str(HealthCheck.large_base_example) in str(exc.value)
 
 
 def test_it_is_an_error_to_suppress_non_iterables():

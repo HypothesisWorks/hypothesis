@@ -152,6 +152,7 @@ def test_draw_time_percentage(draw_delay, test_delay):
     def s(draw):
         if draw_delay:
             time.sleep(0.05)
+        draw(st.integers())
 
     @given(s())
     def test(_):
@@ -254,3 +255,8 @@ def test_statistics_with_events_and_target():
     stats = describe_statistics(call_for_statistics(test))
     assert "- Events:" in stats
     assert "- Highest target score: " in stats
+
+
+@given(st.booleans())
+def test_event_with_non_weakrefable_keys(b):
+    event((b,))

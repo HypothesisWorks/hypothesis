@@ -1,10 +1,9 @@
-backports.zoneinfo
 black
 click
 coverage
 dpcontracts
 fakeredis
-lark-parser
+lark
 libcst
 numpy
 pandas

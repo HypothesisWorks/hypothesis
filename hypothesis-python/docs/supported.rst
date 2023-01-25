@@ -26,7 +26,7 @@ Python versions
 ---------------
 
 Hypothesis is supported and tested on CPython 3.7+, i.e.
-`all versions of CPython with upstream support <https://devguide.python.org/#status-of-python-branches>`_,
+`all versions of CPython with upstream support <https://devguide.python.org/versions/>`_,
 along with PyPy for the same versions.
 32-bit builds of CPython also work, though we only test them on Windows.
 
@@ -98,6 +98,6 @@ Regularly verifying this
 ------------------------
 
 Everything mentioned above as explicitly supported is checked on every commit
-with :gh-file:`GitHub Actions <actions>`.
+with :gh-link:`GitHub Actions <actions>`.
 Our continuous delivery pipeline runs all of these checks before publishing
 each release, so when we say they're supported we really mean it.

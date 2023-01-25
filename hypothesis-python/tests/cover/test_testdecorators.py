@@ -254,6 +254,7 @@ def test_is_an_endpoint(x):
 def test_breaks_bounds():
     @fails
     @given(x=integers())
+    @settings(derandomize=True, max_examples=10_000)
     def test_is_bounded(t, x):
         assert x < t
 
@@ -406,13 +407,12 @@ def test_when_set_to_no_simplifies_runs_failing_example_twice():
             failing.append(x)
             raise AssertionError
 
-    with raises(AssertionError):
-        with capture_out() as out:
-            foo()
+    with raises(AssertionError) as err:
+        foo()
     assert len(failing) == 2
     assert len(set(failing)) == 1
-    assert "Falsifying example" in out.getvalue()
-    assert "Lo" in out.getvalue()
+    assert "Falsifying example" in "\n".join(err.value.__notes__)
+    assert "Lo" in err.value.__notes__
 
 
 @given(integers().filter(lambda x: x % 4 == 0))
@@ -466,12 +466,9 @@ def test_prints_notes_once_on_failure():
         if sum(xs) <= 100:
             raise ValueError()
 
-    with capture_out() as out:
-        with reporting.with_reporter(reporting.default):
-            with raises(ValueError):
-                test()
-    lines = out.getvalue().strip().splitlines()
-    assert lines.count("Hi there") == 1
+    with raises(ValueError) as err:
+        test()
+    assert err.value.__notes__.count("Hi there") == 1
 
 
 @given(lists(integers(), max_size=0))

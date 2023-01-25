@@ -27,7 +27,7 @@ def test_saves_incremental_steps_in_database():
     database = InMemoryExampleDatabase()
     find(
         st.binary(min_size=10),
-        lambda x: has_a_non_zero_byte(x),
+        has_a_non_zero_byte,
         settings=settings(database=database),
         database_key=key,
     )

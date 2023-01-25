@@ -11,7 +11,7 @@
 import sys
 from collections import defaultdict
 from functools import lru_cache, reduce
-from itertools import groupby
+from os import sep
 from pathlib import Path
 
 from hypothesis._settings import Phase, Verbosity
@@ -43,6 +43,22 @@ class Tracer:
                 current_location = (fname, frame.f_lineno)
                 self.branches.add((self._previous_location, current_location))
                 self._previous_location = current_location
+
+
+UNHELPFUL_LOCATIONS = (
+    # There's a branch which is only taken when an exception is active while exiting
+    # a contextmanager; this is probably after the fault has been triggered.
+    # Similar reasoning applies to a few other standard-library modules: even
+    # if the fault was later, these still aren't useful locations to report!
+    f"{sep}contextlib.py",
+    f"{sep}inspect.py",
+    f"{sep}re.py",
+    f"{sep}re{sep}__init__.py",  # refactored in Python 3.11
+    f"{sep}warnings.py",
+    # Quite rarely, the first AFNP line is in Pytest's internals.
+    f"{sep}_pytest{sep}assertion{sep}rewrite.py",
+    f"{sep}_pytest{sep}_io{sep}saferepr.py",
+)
 
 
 def get_explaining_locations(traces):
@@ -84,7 +100,13 @@ def get_explaining_locations(traces):
             else:
                 queue.update(cf_graphs[origin][src] - seen)
 
-    return explanations
+    # The last step is to filter out explanations that we know would be uninformative.
+    # When this is the first AFNP location, we conclude that Scrutineer missed the
+    # real divergence (earlier in the trace) and drop that unhelpful explanation.
+    return {
+        origin: {loc for loc in afnp_locs if not loc[0].endswith(UNHELPFUL_LOCATIONS)}
+        for origin, afnp_locs in explanations.items()
+    }
 
 
 LIB_DIR = str(Path(sys.executable).parent / "lib")
@@ -92,31 +114,25 @@ EXPLANATION_STUB = (
     "Explanation:",
     "    These lines were always and only run by failing examples:",
 )
-HAD_TRACE = "    We didn't try to explain this, because sys.gettrace()="
 
 
 def make_report(explanations, cap_lines_at=5):
     report = defaultdict(list)
     for origin, locations in explanations.items():
-        assert locations  # or else we wouldn't have stored the key, above.
-        report_lines = [
-            "        {}:{}".format(k, ", ".join(map(str, sorted(l for _, l in v))))
-            for k, v in groupby(locations, lambda kv: kv[0])
-        ]
+        report_lines = [f"        {fname}:{lineno}" for fname, lineno in locations]
         report_lines.sort(key=lambda line: (line.startswith(LIB_DIR), line))
         if len(report_lines) > cap_lines_at + 1:
             msg = "        (and {} more with settings.verbosity >= verbose)"
             report_lines[cap_lines_at:] = [msg.format(len(report_lines[cap_lines_at:]))]
-        report[origin] = list(EXPLANATION_STUB) + report_lines
+        if report_lines:  # We might have filtered out every location as uninformative.
+            report[origin] = list(EXPLANATION_STUB) + report_lines
     return report
 
 
 def explanatory_lines(traces, settings):
     if Phase.explain in settings.phases and sys.gettrace() and not traces:
-        return defaultdict(
-            lambda: [EXPLANATION_STUB[0], HAD_TRACE + repr(sys.gettrace())]
-        )
+        return defaultdict(list)
     # Return human-readable report lines summarising the traces
     explanations = get_explaining_locations(traces)
-    max_lines = 5 if settings.verbosity <= Verbosity.normal else 100
+    max_lines = 5 if settings.verbosity <= Verbosity.normal else float("inf")
     return make_report(explanations, cap_lines_at=max_lines)

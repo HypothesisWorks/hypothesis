@@ -142,13 +142,13 @@ class ChoiceTree:
 
 
 class TreeNode:
-    def __init__(self):
+    def __init__(self) -> None:
         self.children: Dict[int, TreeNode] = defaultdict(TreeNode)
         self.live_child_count: "Optional[int]" = None
         self.n: "Optional[int]" = None
 
     @property
-    def exhausted(self):
+    def exhausted(self) -> bool:
         return self.live_child_count == 0
 
 

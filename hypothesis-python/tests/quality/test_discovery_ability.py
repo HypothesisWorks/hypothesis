@@ -23,6 +23,7 @@ import math
 import re
 
 from hypothesis import HealthCheck, settings as Settings
+from hypothesis.control import BuildContext
 from hypothesis.errors import UnsatisfiedAssumption
 from hypothesis.internal import reflection
 from hypothesis.internal.conjecture.engine import ConjectureRunner
@@ -73,14 +74,15 @@ def define_test(specifier, predicate, condition=None, p=0.5, suppress_health_che
             )
 
         def test_function(data):
-            try:
-                value = data.draw(specifier)
-            except UnsatisfiedAssumption:
-                data.mark_invalid()
-            if not _condition(value):
-                data.mark_invalid()
-            if predicate(value):
-                data.mark_interesting()
+            with BuildContext(data):
+                try:
+                    value = data.draw(specifier)
+                except UnsatisfiedAssumption:
+                    data.mark_invalid()
+                if not _condition(value):
+                    data.mark_invalid()
+                if predicate(value):
+                    data.mark_interesting()
 
         successes = 0
         actual_runs = 0

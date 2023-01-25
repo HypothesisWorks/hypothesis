@@ -8,13 +8,12 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from inspect import getfullargspec
+from inspect import Parameter as P, signature
 
 import attr
 import pytest
 
 from hypothesis import given, strategies as st
-from hypothesis.errors import InvalidArgument
 from hypothesis.internal.reflection import (
     convert_positional_arguments,
     define_function_signature,
@@ -36,17 +35,11 @@ def has_annotation(a: int, *b, c=2) -> None:
 
 
 @pytest.mark.parametrize("f", [has_annotation, lambda *, a: a, lambda *, a=1: a])
-def test_copying_preserves_argspec(f):
-    af = getfullargspec(f)
+def test_copying_preserves_signature(f):
+    af = signature(f)
     t = define_function_signature("foo", "docstring", af)(universal_acceptor)
-    at = getfullargspec(t)
-    assert af.args == at.args[: len(af.args)]
-    assert af.varargs == at.varargs
-    assert af.varkw == at.varkw
-    assert len(af.defaults or ()) == len(at.defaults or ())
-    assert af.kwonlyargs == at.kwonlyargs
-    assert af.kwonlydefaults == at.kwonlydefaults
-    assert af.annotations == at.annotations
+    at = signature(t)
+    assert af.parameters == at.parameters
 
 
 @pytest.mark.parametrize(
@@ -69,8 +62,9 @@ def test_given_notices_missing_kwonly_args():
     def reqs_kwonly(*, a, b):
         pass
 
-    with pytest.raises(InvalidArgument):
+    with pytest.raises(TypeError):
         reqs_kwonly()
+    reqs_kwonly(b=None)
 
 
 def test_converter_handles_kwonly_args():
@@ -78,7 +72,7 @@ def test_converter_handles_kwonly_args():
         pass
 
     out = convert_positional_arguments(f, (), {"a": 1})
-    assert out == ((), {"a": 1, "b": 2})
+    assert out == ((), {"a": 1})
 
 
 def test_converter_notices_missing_kwonly_args():
@@ -89,8 +83,8 @@ def test_converter_notices_missing_kwonly_args():
         assert convert_positional_arguments(f, (), {})
 
 
-def pointless_composite(draw: None, strat: bool, nothing: list) -> int:
-    return 3
+def to_wrap_with_composite(draw: None, strat: bool, nothing: list) -> int:
+    return draw(st.none())
 
 
 def return_annot() -> int:
@@ -102,17 +96,18 @@ def first_annot(draw: None):
 
 
 def test_composite_edits_annotations():
-    spec_comp = getfullargspec(st.composite(pointless_composite))
-    assert spec_comp.annotations["return"] == st.SearchStrategy[int]
-    assert "nothing" in spec_comp.annotations
-    assert "draw" not in spec_comp.annotations
+    sig_comp = signature(st.composite(to_wrap_with_composite))
+    assert sig_comp.return_annotation == st.SearchStrategy[int]
+    assert sig_comp.parameters["nothing"].annotation is not P.empty
+    assert "draw" not in sig_comp.parameters
 
 
 @pytest.mark.parametrize("nargs", [1, 2, 3])
 def test_given_edits_annotations(nargs):
-    spec_given = getfullargspec(given(*(nargs * [st.none()]))(pointless_composite))
-    assert spec_given.annotations.pop("return") is None
-    assert len(spec_given.annotations) == 3 - nargs
+    sig_given = signature(given(*(nargs * [st.none()]))(to_wrap_with_composite))
+    assert sig_given.return_annotation is None
+    assert len(sig_given.parameters) == 3 - nargs
+    assert all(p.annotation is not P.empty for p in sig_given.parameters.values())
 
 
 def a_converter(x) -> int:

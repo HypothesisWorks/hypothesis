@@ -12,7 +12,7 @@ import sys
 
 import pytest
 
-from hypothesis.internal.compat import PYPY, WINDOWS, escape_unicode_characters
+from hypothesis.internal.compat import WINDOWS, escape_unicode_characters
 
 pytest_plugins = "pytester"
 
@@ -48,7 +48,7 @@ def test_emits_unicode():
     @settings(verbosity=Verbosity.verbose)
     @given(text())
     def test_should_emit_unicode(t):
-        assert all(ord(c) <= 1000 for c in t)
+        assert all(ord(c) <= 1000 for c in t), ascii(t)
     with pytest.raises(AssertionError):
         test_should_emit_unicode()
 """
@@ -57,6 +57,7 @@ def test_emits_unicode():
 @pytest.mark.xfail(
     WINDOWS,
     reason="Encoding issues in running the subprocess, possibly pytest's fault",
+    strict=False,  # It's possible, if rare, for this to pass on Windows too.
 )
 def test_output_emitting_unicode(testdir, monkeypatch):
     monkeypatch.setenv("LC_ALL", "C")
@@ -101,16 +102,15 @@ def test_healthcheck_traceback_is_hidden(testdir):
     timeout_token = ": FailedHealthCheck"
     def_line = get_line_num(def_token, result)
     timeout_line = get_line_num(timeout_token, result)
-    seven_min = (3, 9) if PYPY else (3, 8)
-    expected = 6 if sys.version_info[:2] < seven_min else 7
+    expected = 6 if sys.version_info[:2] < (3, 8) else 7
     assert timeout_line - def_line == expected
 
 
 COMPOSITE_IS_NOT_A_TEST = """
-from hypothesis.strategies import composite
+from hypothesis.strategies import composite, none
 @composite
 def test_data_factory(draw):
-    pass
+    return draw(none())
 """
 
 

@@ -11,8 +11,7 @@
 import pytest
 
 from hypothesis import given, strategies as st
-
-from tests.common.utils import capture_out
+from hypothesis.errors import HypothesisWarning
 
 
 def test_error_is_in_finally():
@@ -23,8 +22,17 @@ def test_error_is_in_finally():
         finally:
             raise ValueError()
 
-    with capture_out() as o:
-        with pytest.raises(ValueError):
-            test()
+    with pytest.raises(ValueError) as err:
+        test()
 
-    assert "[0, 1, -1]" in o.getvalue()
+    assert "[0, 1, -1]" in "\n".join(err.value.__notes__)
+
+
+@given(st.data())
+def test_warns_on_bool_strategy(data):
+    with pytest.warns(
+        HypothesisWarning,
+        match=r"bool\(.+\) is always True, did you mean to draw a value\?",
+    ):
+        if st.booleans():  # 'forgot' to draw from the strategy
+            pass

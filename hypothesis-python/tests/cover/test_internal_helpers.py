@@ -10,11 +10,11 @@
 
 import pytest
 
-from hypothesis.internal.floats import sign
+from hypothesis.internal.floats import is_negative
 
 
-def test_sign_gives_good_type_error():
+def test_is_negative_gives_good_type_error():
     x = "foo"
     with pytest.raises(TypeError) as e:
-        sign(x)
+        is_negative(x)
     assert repr(x) in e.value.args[0]

@@ -10,8 +10,10 @@ their individual contributions.
 
 * `Aaron Meurer <https://github.com/asmeurer>`_
 * `Adam Johnson <https://github.com/adamchainz>`_
+* `Adam Matan <https://github.com/adamatan/adamatan>_`
 * `Adam Sven Johnson <https://www.github.com/pkqk>`_
 * `Afrida Tabassum <https://github.com/oxfordhalfblood>`_ (afrida@gmail.com)
+* `Afonso Silva <https://github.com/ajcerejeira>`_ (ajcerejeira@gmail.com)
 * `Akash Suresh <https://www.github.com/akash-suresh>`_ (akashsuresh36@gmail.com)
 * `Alex Gaynor <https://github.com/alex>`_
 * `Alex Stapleton <https://www.github.com/public>`_
@@ -32,6 +34,7 @@ their individual contributions.
 * `Chase Garner <https://www.github.com/chasegarner>`_ (chase@garner.red)
 * `Cheuk Ting Ho <https://github.com/Cheukting>`_
 * `Chris Down  <https://chrisdown.name>`_
+* `Chris van Dronkelaar <https://github.com/Chrisvandr>`_
 * `Christopher Martin <https://www.github.com/chris-martin>`_ (ch.martin@gmail.com)
 * `Claudio Jolowicz <https://github.com/cjolowicz>`_
 * `Conrad Ho <https://www.github.com/conradho>`_ (conrad.alwin.ho@gmail.com)
@@ -47,18 +50,24 @@ their individual contributions.
 * `Derek Gustafson <https://www.github.com/degustaf>`_
 * `Dion Misic <https://www.github.com/kingdion>`_ (dion.misic@gmail.com)
 * `Dmitry Dygalo <https://www.github.com/Stranger6667>`_
+* `Ed Rogers <https://www.github.com/edrogers>`-
 * `Eduardo Enriquez <https://www.github.com/eduzen>`_ (eduardo.a.enriquez@gmail.com)
 * `El Awbery <https://www.github.com/ElAwbery>`_
 * `Emmanuel Leblond <https://www.github.com/touilleMan>`_
+* `Evan Tey <https://github.com/evantey14>`_
+* `Felix Divo <https://www.github.com/felixdivo>`_
 * `Felix Grünewald <https://www.github.com/fgruen>`_
 * `Felix Sheldon <https://www.github.com/darkpaw>`_
 * `Florian Bruhin <https://www.github.com/The-Compiler>`_
 * `follower <https://www.github.com/follower>`_
+* `Gabe Joseph <https://github.com/gjoseph92>`_
 * `Gary Donovan <https://www.github.com/garyd203>`_
+* `George Macon <https://www.github.com/gmacon>`_
 * `Glenn Lehman <https://www.github.com/glnnlhmn>`_
 * `Graham Williamson <https://github.com/00willo>`_
 * `Grant David Bachman <https://github.com/grantbachman>`_ (grantbachman@gmail.com)
 * `Gregory Petrosyan <https://github.com/flyingmutant>`_
+* `Grzegorz Zieba <https://github.com/gzaxel>`_ (g.zieba@erax.pl)
 * `Grigorios Giannakopoulos <https://github.com/grigoriosgiann>`_
 * `Hugo van Kemenade <https://github.com/hugovk>`_
 * `Humberto Rocha <https://github.com/humrochagf>`_
@@ -67,6 +76,7 @@ their individual contributions.
 * `Ivan Tham <https://github.com/pickfire>`_
 * `Jack Massey <https://github.com/massey101>`_
 * `Jakub Nabaglo <https://github.com/nbgl>`_ (j@nab.gl)
+* `James Lamb <https://github.com/jameslamb>`_
 * `Jenny Rouleau <https://github.com/jennyrou>`_
 * `Jeremy Thurgood <https://github.com/jerith>`_
 * `J.J. Green <http://soliton.vm.bytemark.co.uk/pub/jjg/>`_
@@ -111,6 +121,7 @@ their individual contributions.
 * `Munir Abdinur <https://www.github.com/mabdinur>`_
 * `Nicholas Chammas <https://www.github.com/nchammas>`_
 * `Nick Anyos <https://www.github.com/NickAnyos>`_
+* `Nicolas Ganz <https://www.github.com/ThunderKey>`_
 * `Nikita Sobolev <https://github.com/sobolevn>`_ (mail@sobolevn.me)
 * `Oleg Höfling <https://github.com/hoefling>`_ (oleg.hoefling@gmail.com)
 * `Paul Ganssle <https://ganssle.io>`_ (paul@ganssle.io)
@@ -124,18 +135,22 @@ their individual contributions.
 * `Pierre-Jean Campigotto <https://github.com/PJCampi>`_
 * `Przemek Konopko <https://github.com/soutys>`_
 * `Richard Boulton <https://www.github.com/rboulton>`_ (richard@tartarus.org)
+* `Richard Scholtens <https://github.com/richardscholtens>`_ (richardscholtens2@gmail.com)
 * `Robert Howlett <https://github.com/jebob>`_
 * `Robert Knight <https://github.com/robertknight>`_ (robertknight@gmail.com)
+* `Rodrigo Girão Serrão <https://github.com/rodrigogiraoserrao>`_ (rodrigo@mathspp.com)
 * `Rónán Carrigan <https://www.github.com/rcarriga>`_ (rcarriga@tcd.ie)
 * `Ruben Opdebeeck <https://github.com/ROpdebee>`_
 * `Ryan Soklaski <https://www.github.com/rsokl>`_ (rsoklaski@gmail.com)
 * `Ryan Turner <https://github.com/rdturnermtl>`_ (ryan.turner@uber.com)
 * `Sam Bishop (TechDragon) <https://github.com/techdragon>`_ (sam@techdragon.io)
+* `Sam Clamons <https://github.com/sclamons>`_ (sclamons@gmail.com)
 * `Sam Hames <https://www.github.com/SamHames>`_
 * `Sam Watts <https://www.github.com/sam-watts>`_
 * `Sangarshanan <https://www.github.com/sangarshanan>`_ (sangarshanan1998@gmail.com)
 * `Sanyam Khurana <https://github.com/CuriousLearner>`_
 * `Saul Shanabrook <https://www.github.com/saulshanabrook>`_ (s.shanabrook@gmail.com)
+* `Sebastiaan Zeeff <https://github.com/SebastiaanZ>`_ (sebastiaan.zeeff@ordina.nl)
 * `Shlok Gandhi <https://github.com/shlok57>`_ (shlok.gandhi@gmail.com)
 * `Sogata Ray <https://github.com/rayardinanda>`_ (rayardinanda@gmail.com)
 * `Stuart Cook <https://www.github.com/Zalathar>`_
@@ -144,15 +159,17 @@ their individual contributions.
 * `Tariq Khokhar <https://www.github.com/tkb>`_ (tariq@khokhar.net)
 * `Tessa Bradbury <https://www.github.com/tessereth>`_
 * `Thea Koutsoukis <https://www.github.com/theakaterina>`_
+* `Thomas Ball <https://www.github.com/bomtall>`_ (bomtall1@hotmail.com)
 * `Thomas Grainge <https://www.github.com/tgrainge>`_
-* `Tim Martin <https://www.github.com/timmartin>`_ (tim@asymptotic.co.uk)
 * `Thomas Kluyver <https://www.github.com/takluyver>`_ (thomas@kluyver.me.uk)
+* `Tim Martin <https://www.github.com/timmartin>`_ (tim@asymptotic.co.uk)
 * `Tom McDermott <https://www.github.com/sponster-au>`_ (sponster@gmail.com)
 * `Tom Milligan <https://www.github.com/tommilligan>`_ (code@tommilligan.net)
 * `Tyler Gibbons <https://www.github.com/kavec>`_ (tyler.gibbons@flexport.com)
 * `Tyler Nickerson <https://www.github.com/nmbrgts>`_
 * `Vidya Rani <https://www.github.com/vidyarani-dg>`_ (vidyarani.d.g@gmail.com)
 * `Vincent Michel <https://www.github.com/vxgmichel>`_ (vxgmichel@gmail.com)
+* `Viorel Pluta <https://github.com/viopl>`_ (viopluta@gmail.com)
 * `Vytautas Strimaitis <https://www.github.com/vstrimaitis>`_
 * `Will Hall <https://www.github.com/wrhall>`_ (wrsh07@gmail.com)
 * `Will Thompson <https://www.github.com/wjt>`_ (will@willthompson.co.uk)

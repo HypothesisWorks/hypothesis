@@ -17,15 +17,17 @@ import inspect
 import os
 import re
 import sys
+import textwrap
 import types
 from functools import wraps
+from io import StringIO
 from keyword import iskeyword
-from tokenize import detect_encoding
+from tokenize import COMMENT, detect_encoding, generate_tokens, untokenize
 from types import ModuleType
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Any, Callable
 from unittest.mock import _patch as PatchType
 
-from hypothesis.internal.compat import is_typed_named_tuple, update_code_location
+from hypothesis.internal.compat import PYPY, is_typed_named_tuple, update_code_location
 from hypothesis.utils.conventions import not_set
 from hypothesis.vendor.pretty import pretty
 
@@ -47,11 +49,38 @@ def is_mock(obj):
     return hasattr(obj, "hypothesis_internal_is_this_a_mock_check")
 
 
-def getfullargspec_except_self(target):
-    spec = inspect.getfullargspec(target)
-    if inspect.ismethod(target):
-        del spec.args[0]
-    return spec
+def _clean_source(src: str) -> bytes:
+    """Return the source code as bytes, without decorators or comments.
+
+    Because this is part of our database key, we reduce the cache invalidation
+    rate by ignoring decorators, comments, trailing whitespace, and empty lines.
+    We can't just use the (dumped) AST directly because it changes between Python
+    versions (e.g. ast.Constant)
+    """
+    # Get the (one-indexed) line number of the function definition, and drop preceding
+    # lines - i.e. any decorators, so that adding `@example()`s keeps the same key.
+    try:
+        funcdef = ast.parse(src).body[0]
+        if sys.version_info[:2] == (3, 7) or (sys.version_info[:2] == (3, 8) and PYPY):
+            # We can't get a line number of the (async) def here, so as a best-effort
+            # approximation we'll use str.split instead and hope for the best.
+            tag = "async def " if isinstance(funcdef, ast.AsyncFunctionDef) else "def "
+            if tag in src:
+                src = tag + src.split(tag, maxsplit=1)[1]
+        else:
+            src = "".join(src.splitlines(keepends=True)[funcdef.lineno - 1 :])
+    except Exception:
+        pass
+    # Remove blank lines and use the tokenize module to strip out comments,
+    # so that those can be changed without changing the database key.
+    try:
+        src = untokenize(
+            t for t in generate_tokens(StringIO(src).readline) if t.type != COMMENT
+        )
+    except Exception:
+        pass
+    # Finally, remove any trailing whitespace and empty lines as a last cleanup.
+    return "\n".join(x.rstrip() for x in src.splitlines() if x.rstrip()).encode()
 
 
 def function_digest(function):
@@ -63,22 +92,23 @@ def function_digest(function):
     """
     hasher = hashlib.sha384()
     try:
-        hasher.update(inspect.getsource(function).encode())
+        src = inspect.getsource(function)
     except (OSError, TypeError):
+        # If we can't actually get the source code, try for the name as a fallback.
+        try:
+            hasher.update(function.__name__.encode())
+        except AttributeError:
+            pass
+    else:
+        hasher.update(_clean_source(src))
+    try:
+        # This is additional to the source code because it can include the effects
+        # of decorators, or of post-hoc assignment to the .__signature__ attribute.
+        hasher.update(repr(get_signature(function)).encode())
+    except Exception:
         pass
     try:
-        hasher.update(function.__name__.encode())
-    except AttributeError:
-        pass
-    try:
-        hasher.update(function.__module__.__name__.encode())
-    except AttributeError:
-        pass
-    try:
-        hasher.update(repr(getfullargspec_except_self(function)).encode())
-    except TypeError:
-        pass
-    try:
+        # We set this in order to distinguish e.g. @pytest.mark.parametrize cases.
         hasher.update(function._hypothesis_internal_add_digest)
     except AttributeError:
         pass
@@ -97,7 +127,7 @@ def check_signature(sig: inspect.Signature) -> None:
             )
 
 
-def get_signature(target, *, follow_wrapped=True):
+def get_signature(target: Any, *, follow_wrapped: bool = True) -> inspect.Signature:
     # Special case for use of `@unittest.mock.patch` decorator, mimicking the
     # behaviour of getfullargspec instead of reporting unusable arguments.
     patches = getattr(target, "patchings", None)
@@ -176,84 +206,31 @@ def convert_keyword_arguments(function, args, kwargs):
     passed as positional and keyword args to the function. Unless function has
     kwonlyargs or **kwargs the dictionary will always be empty.
     """
-    argspec = getfullargspec_except_self(function)
-    new_args = []
-    kwargs = dict(kwargs)
-
-    defaults = dict(argspec.kwonlydefaults or {})
-
-    if argspec.defaults:
-        for name, value in zip(
-            argspec.args[-len(argspec.defaults) :], argspec.defaults
-        ):
-            defaults[name] = value
-
-    n = max(len(args), len(argspec.args))
-
-    for i in range(n):
-        if i < len(args):
-            new_args.append(args[i])
-        else:
-            arg_name = argspec.args[i]
-            if arg_name in kwargs:
-                new_args.append(kwargs.pop(arg_name))
-            elif arg_name in defaults:
-                new_args.append(defaults[arg_name])
-            else:
-                raise TypeError(f"No value provided for argument {arg_name!r}")
-
-    if kwargs and not (argspec.varkw or argspec.kwonlyargs):
-        if len(kwargs) > 1:
-            raise TypeError(
-                "%s() got unexpected keyword arguments %s"
-                % (function.__name__, ", ".join(map(repr, kwargs)))
-            )
-        else:
-            bad_kwarg = next(iter(kwargs))
-            raise TypeError(
-                f"{function.__name__}() got an unexpected keyword argument {bad_kwarg!r}"
-            )
-    return tuple(new_args), kwargs
+    sig = inspect.signature(function, follow_wrapped=False)
+    bound = sig.bind(*args, **kwargs)
+    return bound.args, bound.kwargs
 
 
 def convert_positional_arguments(function, args, kwargs):
     """Return a tuple (new_args, new_kwargs) where all possible arguments have
     been moved to kwargs.
 
-    new_args will only be non-empty if function has a variadic argument.
+    new_args will only be non-empty if function has pos-only args or *args.
     """
-    argspec = getfullargspec_except_self(function)
-    new_kwargs = dict(argspec.kwonlydefaults or {})
-    new_kwargs.update(kwargs)
-    if not argspec.varkw:
-        for k in new_kwargs.keys():
-            if k not in argspec.args and k not in argspec.kwonlyargs:
-                raise TypeError(
-                    f"{function.__name__}() got an unexpected keyword argument {k!r}"
-                )
-    if len(args) < len(argspec.args):
-        for i in range(len(args), len(argspec.args) - len(argspec.defaults or ())):
-            if argspec.args[i] not in kwargs:
-                raise TypeError(f"No value provided for argument {argspec.args[i]}")
-    for kw in argspec.kwonlyargs:
-        if kw not in new_kwargs:
-            raise TypeError(f"No value provided for argument {kw}")
-
-    if len(args) > len(argspec.args) and not argspec.varargs:
-        raise TypeError(
-            f"{function.__name__}() takes at most {len(argspec.args)} "
-            f"positional arguments ({len(args)} given)"
-        )
-
-    for arg, name in zip(args, argspec.args):
-        if name in new_kwargs:
-            raise TypeError(
-                f"{function.__name__}() got multiple values for keyword argument {name!r}"
-            )
-        else:
-            new_kwargs[name] = arg
-
-    return (tuple(args[len(argspec.args) :]), new_kwargs)
+    sig = inspect.signature(function, follow_wrapped=False)
+    bound = sig.bind(*args, **kwargs)
+    new_args = []
+    new_kwargs = dict(bound.arguments)
+    for p in sig.parameters.values():
+        if p.name in new_kwargs:
+            if p.kind is p.POSITIONAL_ONLY:
+                new_args.append(new_kwargs.pop(p.name))
+            elif p.kind is p.VAR_POSITIONAL:
+                new_args.extend(new_kwargs.pop(p.name))
+            elif p.kind is p.VAR_KEYWORD:
+                assert set(new_kwargs[p.name]).isdisjoint(set(new_kwargs) - {p.name})
+                new_kwargs.update(new_kwargs.pop(p.name))
+    return tuple(new_args), new_kwargs
 
 
 def ast_arguments_matches_signature(args, sig):
@@ -271,6 +248,21 @@ def ast_arguments_matches_signature(args, sig):
     if args.kwarg is not None:
         expected.append((args.kwarg.arg, inspect.Parameter.VAR_KEYWORD))
     return expected == [(p.name, p.kind) for p in sig.parameters.values()]
+
+
+def is_first_param_referenced_in_function(f):
+    """Is the given name referenced within f?"""
+    try:
+        tree = ast.parse(textwrap.dedent(inspect.getsource(f)))
+    except Exception:
+        return True  # Assume it's OK unless we know otherwise
+    name = list(get_signature(f).parameters)[0]
+    return any(
+        isinstance(node, ast.Name)
+        and node.id == name
+        and isinstance(node.ctx, ast.Load)
+        for node in ast.walk(tree)
+    )
 
 
 def extract_all_lambdas(tree, matching_signature):
@@ -314,6 +306,8 @@ def extract_lambda_source(f):
     source = LINE_CONTINUATION.sub(" ", source)
     source = WHITESPACE.sub(" ", source)
     source = source.strip()
+    if "lambda" not in source and sys.platform == "emscripten":  # pragma: no cover
+        return if_confused  # work around Pyodide bug in inspect.getsource()
     assert "lambda" in source
 
     tree = None
@@ -449,6 +443,7 @@ def nicerepr(v):
 
 
 def repr_call(f, args, kwargs, reorder=True):
+    # Note: for multi-line pretty-printing, see RepresentationPrinter.repr_call()
     if reorder:
         args, kwargs = convert_positional_arguments(f, args, kwargs)
 
@@ -489,96 +484,6 @@ def source_exec_as_module(source):
     return result
 
 
-COPY_ARGSPEC_SCRIPT = """
-from hypothesis.utils.conventions import not_set
-
-def accept({funcname}):
-    def {name}({argspec}):
-        return {funcname}({invocation})
-    return {name}
-""".lstrip()
-
-
-def define_function_signature(name, docstring, argspec):
-    """A decorator which sets the name, argspec and docstring of the function
-    passed into it."""
-    if name == "<lambda>":
-        name = "_lambda_"
-    check_valid_identifier(name)
-    for a in argspec.args:
-        check_valid_identifier(a)
-    if argspec.varargs is not None:
-        check_valid_identifier(argspec.varargs)
-    if argspec.varkw is not None:
-        check_valid_identifier(argspec.varkw)
-    n_defaults = len(argspec.defaults or ())
-    if n_defaults:
-        parts = []
-        for a in argspec.args[:-n_defaults]:
-            parts.append(a)
-        for a in argspec.args[-n_defaults:]:
-            parts.append(f"{a}=not_set")
-    else:
-        parts = list(argspec.args)
-    used_names = list(argspec.args) + list(argspec.kwonlyargs)
-    used_names.append(name)
-
-    for a in argspec.kwonlyargs:
-        check_valid_identifier(a)
-
-    def accept(f):
-        fargspec = getfullargspec_except_self(f)
-        must_pass_as_kwargs = []
-        invocation_parts = []
-        for a in argspec.args:
-            if a not in fargspec.args and not fargspec.varargs:
-                must_pass_as_kwargs.append(a)  # pragma: no cover
-            else:
-                invocation_parts.append(a)
-        if argspec.varargs:
-            used_names.append(argspec.varargs)
-            parts.append("*" + argspec.varargs)
-            invocation_parts.append("*" + argspec.varargs)
-        elif argspec.kwonlyargs:
-            parts.append("*")
-        for k in must_pass_as_kwargs:
-            invocation_parts.append(f"{k}={k}")  # pragma: no cover
-
-        for k in argspec.kwonlyargs:
-            invocation_parts.append(f"{k}={k}")
-            if k in (argspec.kwonlydefaults or []):
-                parts.append(f"{k}=not_set")
-            else:
-                parts.append(k)
-        if argspec.varkw:
-            used_names.append(argspec.varkw)
-            parts.append("**" + argspec.varkw)
-            invocation_parts.append("**" + argspec.varkw)
-
-        candidate_names = ["f"] + [f"f_{i}" for i in range(1, len(used_names) + 2)]
-
-        for funcname in candidate_names:  # pragma: no branch
-            if funcname not in used_names:
-                break
-
-        source = COPY_ARGSPEC_SCRIPT.format(
-            name=name,
-            funcname=funcname,
-            argspec=", ".join(parts),
-            invocation=", ".join(invocation_parts),
-        )
-        result = source_exec_as_module(source).accept(f)
-        result.__doc__ = docstring
-        result.__defaults__ = argspec.defaults
-        if argspec.kwonlydefaults:
-            result.__kwdefaults__ = argspec.kwonlydefaults
-        if argspec.annotations:
-            result.__annotations__ = argspec.annotations
-        return result
-
-    return accept
-
-
 COPY_SIGNATURE_SCRIPT = """
 from hypothesis.utils.conventions import not_set
 
@@ -596,13 +501,11 @@ def get_varargs(sig, kind=inspect.Parameter.VAR_POSITIONAL):
     return None
 
 
-def define_function_signature_from_signature(name, docstring, signature):
-    """A decorator which sets the name, argspec and docstring of the function
+def define_function_signature(name, docstring, signature):
+    """A decorator which sets the name, signature and docstring of the function
     passed into it."""
-    # TODO: we will (eventually...) replace the last few uses of getfullargspec
-    # with this version, and then delete the one above.  For now though, this
-    # works for @proxies() and @given() is under stricter constraints anyway.
-
+    if name == "<lambda>":
+        name = "_lambda_"
     check_valid_identifier(name)
     for a in signature.parameters:
         check_valid_identifier(a)
@@ -677,6 +580,8 @@ def define_function_signature_from_signature(name, docstring, signature):
             for p in signature.parameters.values()
             if p.annotation is not signature.empty
         }
+        if signature.return_annotation is not signature.empty:
+            annotations["return"] = signature.return_annotation
         if annotations:
             result.__annotations__ = annotations
         return result
@@ -706,7 +611,7 @@ def impersonate(target):
 
 
 def proxies(target: "T") -> Callable[[Callable], "T"]:
-    replace_sig = define_function_signature_from_signature(
+    replace_sig = define_function_signature(
         target.__name__.replace("<lambda>", "_lambda_"),  # type: ignore
         target.__doc__,
         get_signature(target, follow_wrapped=False),

@@ -6,5 +6,5 @@ from hypothesis import given, strategies as st
 
 
 @given(arg=st.integers())
-def test_fuzz_A_Class_a_classmethod(arg):
+def test_fuzz_A_Class_a_classmethod(arg: int) -> None:
     test_expected_output.A_Class.a_classmethod(arg=arg)

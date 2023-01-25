@@ -1,0 +1,66 @@
+#!/bin/bash
+set -e -o xtrace
+
+HERE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd "$HERE/.."
+
+pip install .
+
+
+PYTEST="python -bb -X dev -m pytest -nauto --durations-min=1.0"
+
+# Run some tests without docstrings or assertions, to catch bugs
+# like issue #822 in one of the test decorators.  See also #1541.
+PYTHONOPTIMIZE=2 $PYTEST \
+    -W'ignore:assertions not in test modules or plugins will be ignored because assert statements are not executed by the underlying Python interpreter:pytest.PytestConfigWarning' \
+    -W'ignore:Module already imported so cannot be rewritten:pytest.PytestAssertRewriteWarning' \
+    tests/cover/test_testdecorators.py
+
+# Run tests for each extra module while the requirements are installed
+pip install ".[pytz, dateutil, zoneinfo]"
+$PYTEST tests/datetime/
+pip uninstall -y pytz python-dateutil
+
+pip install ".[dpcontracts]"
+$PYTEST tests/dpcontracts/
+pip uninstall -y dpcontracts
+
+pip install "$(grep 'fakeredis==' ../requirements/coverage.txt)"
+$PYTEST tests/redis/
+pip uninstall -y redis fakeredis
+
+pip install "$(grep 'typing-extensions==' ../requirements/coverage.txt)"
+$PYTEST tests/typing_extensions/
+if [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 7))')" = "False" ] ; then
+  # Required by importlib_metadata backport, which we don't want to break
+  pip uninstall -y typing_extensions
+fi
+
+pip install ".[lark]"
+pip install "$(grep -oE 'lark>=([0-9.]+)' ../hypothesis-python/setup.py | tr '>' =)"
+$PYTEST -Wignore tests/lark/
+pip install "$(grep 'lark==' ../requirements/coverage.txt)"
+$PYTEST tests/lark/
+pip uninstall -y lark
+
+if [ "$(python -c $'import platform, sys; print(sys.version_info.releaselevel == \'final\' and platform.python_implementation() != "PyPy")')" = "True" ] ; then
+  pip install ".[codemods,cli]"
+  $PYTEST tests/codemods/
+  pip uninstall -y libcst click
+
+  if [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 7))')" = "True" ] ; then
+    # Per NEP-29, this is the last version to support Python 3.7
+    pip install numpy==1.21.5
+  else
+    pip install "$(grep 'numpy==' ../requirements/coverage.txt)"
+  fi
+
+  if [ "$(python -c 'import platform; print(platform.python_implementation())')" != "PyPy" ]; then\
+    $PYTEST tests/array_api
+    $PYTEST tests/numpy
+  fi
+
+  pip install "$(grep 'black==' ../requirements/coverage.txt)"
+  $PYTEST tests/ghostwriter/
+  pip uninstall -y black numpy
+fi

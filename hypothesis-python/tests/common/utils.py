@@ -11,6 +11,7 @@
 import contextlib
 import sys
 from io import StringIO
+from types import SimpleNamespace
 
 from hypothesis import Phase, settings
 from hypothesis.errors import HypothesisDeprecationWarning
@@ -29,9 +30,11 @@ except ModuleNotFoundError:
 
     @contextlib.contextmanager
     def raises(expected_exception, match=None):
+        err = SimpleNamespace(value=None)
         try:
-            yield
+            yield err
         except expected_exception as e:
+            err.value = e
             if match is not None:
                 import re
 
@@ -86,7 +89,7 @@ class ExcInfo:
     pass
 
 
-def fails_with(e):
+def fails_with(e, *, match=None):
     def accepts(f):
         @proxies(f)
         def inverted_test(*arguments, **kwargs):
@@ -95,7 +98,7 @@ def fails_with(e):
             # the `raises` context manager so that any problems in rigging the
             # PRNG don't accidentally count as the expected failure.
             with deterministic_PRNG():
-                with raises(e):
+                with raises(e, match=match):
                     f(*arguments, **kwargs)
 
         return inverted_test
@@ -165,7 +168,7 @@ def counts_calls(func):
 def assert_output_contains_failure(output, test, **kwargs):
     assert test.__name__ + "(" in output
     for k, v in kwargs.items():
-        assert f"{k}={v!r}" in output
+        assert f"{k}={v!r}" in output, (f"{k}={v!r}", output)
 
 
 def assert_falsifying_output(
@@ -175,11 +178,14 @@ def assert_falsifying_output(
         if expected_exception is None:
             # Some tests want to check the output of non-failing runs.
             test()
+            msg = ""
         else:
-            with raises(expected_exception):
+            with raises(expected_exception) as exc_info:
                 test()
+            notes = "\n".join(getattr(exc_info.value, "__notes__", []))
+            msg = str(exc_info.value) + "\n" + notes
 
-    output = out.getvalue()
+    output = out.getvalue() + msg
     assert f"{example_type} example:" in output
     assert_output_contains_failure(output, test, **kwargs)
 

@@ -10,15 +10,15 @@ jobs:
     name: Update pinned dependencies
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python 3.8
+      - uses: actions/checkout@v3
+      - name: Set up Python 3.10
         uses: actions/setup-python@v2
         with:
-          python-version: '3.8'
+          python-version: '3.10'
       - name: Update pinned dependencies
         run: ./build.sh upgrade-requirements
       - name: Open pull request
-        uses: peter-evans/create-pull-request@v3
+        uses: peter-evans/create-pull-request@v4
         with:
           token: ${{secrets.GH_TOKEN}}
           delete-branch: true
@@ -26,5 +26,5 @@ jobs:
           body: |
             Automatically update pinned dependencies
           commit-message: 'Update pinned dependencies'
-          committer: 'CI on behalf of the Hypothesis team <david@drmaciver.com>'
-          author: 'CI on behalf of the Hypothesis team <david@drmaciver.com>'
+          committer: 'CI on behalf of the Hypothesis team <zac@zhd.dev>'
+          author: 'CI on behalf of the Hypothesis team <zac@zhd.dev>'

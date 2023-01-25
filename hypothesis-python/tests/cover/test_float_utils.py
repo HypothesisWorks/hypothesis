@@ -44,6 +44,8 @@ def test_next_float_equal(func, val):
         assert func(val) == val
 
 
+# invalid order -> clamper is None:
+@example(2.0, 1.0, 3.0)
 # exponent comparisons:
 @example(1, float_info.max, 0)
 @example(1, float_info.max, 1)

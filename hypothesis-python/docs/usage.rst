@@ -15,6 +15,7 @@ and was used by `more than 4% of Python users surveyed by the PSF in 2020
 
 * `aur <https://github.com/cdown/aur>`_
 * `argon2_cffi <https://github.com/hynek/argon2-cffi>`_
+* `array-api-tests <https://github.com/data-apis/array-api-tests>`_
 * `attrs <https://github.com/python-attrs/attrs>`_
 * `axelrod <https://github.com/Axelrod-Python/Axelrod>`_
 * `bidict <https://github.com/jab/bidict>`_
@@ -32,12 +33,18 @@ and was used by `more than 4% of Python users surveyed by the PSF in 2020
 * `fusion-index <https://github.com/fusionapp/fusion-index>`_
 * `hyper-h2 <https://github.com/python-hyper/h2>`_
 * `into-dbus-python <https://github.com/stratis-storage/into-dbus-python>`_
+* `ivy <https://github.com/unifyai/ivy>`_
 * `justbases <https://github.com/mulkieran/justbases>`_
 * `justbytes <https://github.com/mulkieran/justbytes>`_
 * `loris <https://github.com/loris-imageserver/loris>`_
 * `mariadb-dyncol <https://github.com/adamchainz/mariadb-dyncol>`_
+* `MDAnalysis <https://github.com/MDAnalysis/mdanalysis>`_
 * `mercurial <https://www.mercurial-scm.org/>`_
+* `napari <https://github.com/napari/napari>`_
 * `natsort <https://github.com/SethMMorton/natsort>`_
+* `numpy <https://github.com/numpy/numpy>`_
+* `pandas <https://github.com/pandas-dev/pandas>`_
+* `pandera <https://github.com/unionai-oss/pandera>`_
 * `poliastro <https://github.com/poliastro/poliastro>`_
 * `pretext <https://github.com/moreati/b-prefix-all-the-doctests>`_
 * `priority <https://github.com/python-hyper/priority>`_
@@ -49,11 +56,13 @@ and was used by `more than 4% of Python users surveyed by the PSF in 2020
 * `qutebrowser <https://github.com/qutebrowser/qutebrowser>`_
 * `RubyMarshal <https://github.com/d9pouces/RubyMarshal>`_
 * `Segpy <https://github.com/sixty-north/segpy>`_
+* `sgkit <https://github.com/pystatgen/sgkit>`_
 * `simoa <https://github.com/andsor/pysimoa>`_
 * `srt <https://github.com/cdown/srt>`_
 * `tchannel <https://github.com/uber/tchannel-python>`_
 * `vdirsyncer <https://github.com/pimutils/vdirsyncer>`_
 * `wcag-contrast-ratio <https://github.com/gsnedders/wcag-contrast-ratio>`_
+* `xarray <https://github.com/pydata/xarray>`_
 * `yacluster <https://github.com/KrzysiekJ/yacluster>`_
 * `yturl <https://github.com/cdown/yturl>`_
 * `zenml <https://github.com/zenml-io/zenml>`_

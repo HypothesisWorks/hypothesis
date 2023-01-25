@@ -59,7 +59,10 @@ def get_reports(file_contents, *, testdir):
         for i, line in enumerate(file_contents.splitlines())
         if line.endswith(BUG_MARKER)
     }
-    expected = ["\n".join(r) for k, r in make_report(explanations).items()]
+    expected = [
+        ("\n".join(r), "\n    | ".join(r))  # single, ExceptionGroup
+        for r in make_report(explanations).values()
+    ]
     return pytest_stdout, expected
 
 
@@ -67,12 +70,34 @@ def get_reports(file_contents, *, testdir):
 def test_explanations(code, testdir):
     pytest_stdout, expected = get_reports(PRELUDE + code, testdir=testdir)
     assert len(expected) == code.count(BUG_MARKER)
-    for report in expected:
-        assert report in pytest_stdout
+    for single, group in expected:
+        assert single in pytest_stdout or group in pytest_stdout
 
 
 @pytest.mark.parametrize("code", FRAGMENTS)
 def test_no_explanations_if_deadline_exceeded(code, testdir):
     code = code.replace("AssertionError", "DeadlineExceeded(timedelta(), timedelta())")
     pytest_stdout, _ = get_reports(DEADLINE_PRELUDE + PRELUDE + code, testdir=testdir)
+    assert "Explanation:" not in pytest_stdout
+
+
+NO_SHOW_CONTEXTLIB = """
+from contextlib import contextmanager
+from hypothesis import given, strategies as st, Phase, settings
+
+@contextmanager
+def ctx():
+    yield
+
+@settings(phases=list(Phase))
+@given(st.integers())
+def test(x):
+    with ctx():
+        assert x < 100
+"""
+
+
+@pytest.mark.skipif(PYPY, reason="Tracing is slow under PyPy")
+def test_skips_uninformative_locations(testdir):
+    pytest_stdout, _ = get_reports(NO_SHOW_CONTEXTLIB, testdir=testdir)
     assert "Explanation:" not in pytest_stdout

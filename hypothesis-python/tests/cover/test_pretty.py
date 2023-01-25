@@ -48,8 +48,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 import re
+import warnings
 from collections import Counter, OrderedDict, defaultdict, deque
-from io import StringIO
 
 import pytest
 
@@ -134,6 +134,13 @@ def test_list():
 def test_dict():
     assert pretty.pretty({}) == "{}"
     assert pretty.pretty({1: 1}) == "{1: 1}"
+    assert pretty.pretty({1: 1, 0: 0}) == "{1: 1, 0: 0}"
+
+    # Check that pretty-printing doesn't trigger a BytesWarning under `python -bb`
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", BytesWarning)
+        x = {"": 0, b"": 0}
+    assert pretty.pretty(x) == "{'': 0, b'': 0}"
 
 
 def test_tuple():
@@ -379,12 +386,10 @@ def test_basic_class():
 
     type_pprint_wrapper.called = False
 
-    stream = StringIO()
-    printer = pretty.RepresentationPrinter(stream)
+    printer = pretty.RepresentationPrinter()
     printer.type_pprinters[type] = type_pprint_wrapper
     printer.pretty(MyObj)
-    printer.flush()
-    output = stream.getvalue()
+    output = printer.getvalue()
 
     assert output == f"{__name__}.MyObj"
     assert type_pprint_wrapper.called
@@ -575,26 +580,6 @@ def test_re_evals():
         assert r.pattern == r2.pattern and r.flags == r2.flags
 
 
-class CustomStuff:
-    def __init__(self):
-        self.hi = 1
-        self.bye = "fish"
-        self.spoon = self
-
-    @property
-    def oops(self):
-        raise AttributeError("Nope")
-
-    def squirrels(self):
-        pass
-
-
-def test_custom():
-    assert "bye" not in pretty.pretty(CustomStuff())
-    assert "bye=" in pretty.pretty(CustomStuff(), verbose=True)
-    assert "squirrels" not in pretty.pretty(CustomStuff(), verbose=True)
-
-
 def test_print_builtin_function():
     assert pretty.pretty(abs) == "abs"
 
@@ -603,19 +588,8 @@ def test_pretty_function():
     assert pretty.pretty(test_pretty_function) == "test_pretty_function"
 
 
-def test_empty_printer():
-    printer = pretty.RepresentationPrinter(
-        StringIO(),
-        singleton_pprinters={},
-        type_pprinters={int: pretty._repr_pprint, list: pretty._repr_pprint},
-        deferred_pprinters={},
-    )
-    printer.pretty([1, 2, 3])
-    assert printer.output.getvalue() == "[1, 2, 3]"
-
-
 def test_breakable_at_group_boundary():
-    assert "\n" in pretty.pretty([[], "000000"], max_width=5)
+    assert "\n" in pretty.pretty([[], "0" * 80])
 
 
 @pytest.mark.parametrize(
@@ -630,3 +604,19 @@ def test_breakable_at_group_boundary():
 )
 def test_nan_reprs(obj, rep):
     assert pretty.pretty(obj) == rep
+
+
+def _repr_call(*args, **kwargs):
+    p = pretty.RepresentationPrinter()
+    p.repr_call(*args, **kwargs)
+    return p.getvalue()
+
+
+@pytest.mark.parametrize("func_name", ["f", "lambda: ...", "lambda *args: ..."])
+def test_repr_call(func_name):
+    fn = f"({func_name})" if func_name.startswith(("lambda:", "lambda ")) else func_name
+    aas = "a" * 100
+    assert _repr_call(func_name, (1, 2), {}) == f"{fn}(1, 2)"
+    assert _repr_call(func_name, (aas,), {}) == f"{fn}(\n    {aas!r},\n)"
+    assert _repr_call(func_name, (), {"a": 1, "b": 2}) == f"{fn}(a=1, b=2)"
+    assert _repr_call(func_name, (), {"x": aas}) == f"{fn}(\n    x={aas!r},\n)"

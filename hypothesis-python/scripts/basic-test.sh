@@ -13,7 +13,7 @@ for k, v in sorted(dict(os.environ).items()):
 pip install .
 
 
-PYTEST="python -bb -X dev -m pytest -nauto"
+PYTEST="python -bb -X dev -m pytest -nauto --durations-min=1.0"
 
 # Run all the no-extra-dependency tests for this version (except slow nocover tests)
 $PYTEST tests/cover tests/pytest
@@ -39,10 +39,11 @@ if [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 7))')" = "False
 fi
 
 pip install ".[lark]"
+pip install "$(grep -oE 'lark>=([0-9.]+)' ../hypothesis-python/setup.py | tr '>' =)"
+$PYTEST -Wignore tests/lark/
+pip install "$(grep 'lark==' ../requirements/coverage.txt)"
 $PYTEST tests/lark/
-pip install "$(grep 'lark-parser==' ../requirements/coverage.txt)"
-$PYTEST tests/lark/
-pip uninstall -y lark-parser
+pip uninstall -y lark
 
 if [ "$(python -c $'import platform, sys; print(sys.version_info.releaselevel == \'final\' and platform.python_implementation() != "PyPy")')" = "True" ] ; then
   pip install ".[codemods,cli]"
@@ -61,7 +62,7 @@ if [ "$(python -c $'import platform, sys; print(sys.version_info.releaselevel ==
   pip uninstall -y black numpy
 fi
 
-if [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 8))')" = "False" ] ; then
+if [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 10))')" = "False" ] ; then
   exit 0
 fi
 
@@ -81,6 +82,7 @@ if [ "$(python -c 'import platform; print(platform.python_implementation())')" !
   pip uninstall -y django pytz
 
   pip install "$(grep 'numpy==' ../requirements/coverage.txt)"
+  $PYTEST tests/array_api
   $PYTEST tests/numpy
 
   pip install "$(grep 'pandas==' ../requirements/coverage.txt)"

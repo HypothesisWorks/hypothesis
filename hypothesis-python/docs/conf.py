@@ -57,15 +57,21 @@ def setup(app):
         app.tags.add("has_release_file")
 
     # patch in mock array_api namespace so we can autodoc it
-    from hypothesis.extra.array_api import make_strategies_namespace, mock_xp
+    from hypothesis.extra.array_api import (
+        RELEASED_VERSIONS,
+        make_strategies_namespace,
+        mock_xp,
+    )
 
     mod = types.ModuleType("xps")
-    mod.__dict__.update(make_strategies_namespace(mock_xp).__dict__)
+    mod.__dict__.update(
+        make_strategies_namespace(mock_xp, api_version=RELEASED_VERSIONS[-1]).__dict__
+    )
     assert "xps" not in sys.modules
     sys.modules["xps"] = mod
 
 
-language = None
+language = "en"
 
 exclude_patterns = ["_build"]
 
@@ -76,6 +82,17 @@ todo_include_todos = False
 # See https://sphinx-hoverxref.readthedocs.io/en/latest/configuration.html
 hoverxref_auto_ref = True
 hoverxref_domains = ["py"]
+hoverxref_role_types = {
+    "attr": "tooltip",
+    "class": "tooltip",
+    "const": "tooltip",
+    "exc": "tooltip",
+    "func": "tooltip",
+    "meth": "tooltip",
+    "mod": "tooltip",
+    "obj": "tooltip",
+    "ref": "tooltip",
+}
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
@@ -89,7 +106,7 @@ intersphinx_mapping = {
     "sphinx": ("https://www.sphinx-doc.org/en/master/", None),
 }
 
-autodoc_mock_imports = ["numpy", "pandas", "redis"]
+autodoc_mock_imports = ["numpy", "pandas", "redis", "django"]
 
 codeautolink_autodoc_inject = False
 codeautolink_global_preface = """
@@ -103,15 +120,15 @@ from hypothesis.strategies import *
 # See http://sphinx-doc.org/ext/extlinks.html
 _repo = "https://github.com/HypothesisWorks/hypothesis/"
 extlinks = {
-    "commit": (_repo + "commit/%s", "commit "),
-    "gh-file": (_repo + "blob/master/%s", ""),
-    "gh-link": (_repo + "%s", ""),
-    "issue": (_repo + "issues/%s", "issue #"),
-    "pull": (_repo + "pull/%s", "pull request #"),
-    "pypi": ("https://pypi.org/project/%s/", ""),
-    "bpo": ("https://bugs.python.org/issue%s", "bpo-"),
-    "xp-ref": ("https://data-apis.org/array-api/latest/API_specification/%s", ""),
-    "wikipedia": ("https://en.wikipedia.org/wiki/%s", ""),
+    "commit": (_repo + "commit/%s", "commit %s"),
+    "gh-file": (_repo + "blob/master/%s", "%s"),
+    "gh-link": (_repo + "%s", "%s"),
+    "issue": (_repo + "issues/%s", "issue #%s"),
+    "pull": (_repo + "pull/%s", "pull request #%s"),
+    "pypi": ("https://pypi.org/project/%s/", "%s"),
+    "bpo": ("https://bugs.python.org/issue%s", "bpo-%s"),
+    "xp-ref": ("https://data-apis.org/array-api/latest/API_specification/%s", "%s"),
+    "wikipedia": ("https://en.wikipedia.org/wiki/%s", "%s"),
 }
 
 # -- Options for HTML output ----------------------------------------------

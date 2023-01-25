@@ -9,18 +9,23 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import dataclasses
+import re
 import sys
 import typing
+from types import SimpleNamespace
 
 import pytest
 
-from hypothesis import given, strategies as st
-from hypothesis.errors import Unsatisfiable
-from hypothesis.internal.reflection import get_pretty_function_description
+from hypothesis import example, given, strategies as st
+from hypothesis.errors import InvalidArgument, Unsatisfiable
+from hypothesis.internal.reflection import (
+    convert_positional_arguments,
+    get_pretty_function_description,
+)
 from hypothesis.strategies import from_type
 
 from tests.common.debug import find_any
-from tests.common.utils import temp_registered
+from tests.common.utils import fails_with, temp_registered
 
 
 @given(st.data())
@@ -149,3 +154,98 @@ def test_can_register_new_type_for_typeddicts():
 def test_posonly_lambda_formatting(lam, source):
     # Testing posonly lambdas, with and without default values
     assert get_pretty_function_description(lam) == source
+
+
+def test_does_not_convert_posonly_to_keyword():
+    args, kws = convert_positional_arguments(lambda x, /: None, (1,), {})
+    assert args
+    assert not kws
+
+
+@given(x=st.booleans())
+def test_given_works_with_keyword_only_params(*, x):
+    pass
+
+
+def test_given_works_with_keyword_only_params_some_unbound():
+    @given(x=st.booleans())
+    def test(*, x, y):
+        assert y is None
+
+    test(y=None)
+
+
+def test_given_works_with_positional_only_params():
+    @given(y=st.booleans())
+    def test(x, /, y):
+        pass
+
+    test(None)
+
+
+def test_cannot_pass_strategies_by_position_if_there_are_posonly_args():
+    @given(st.booleans())
+    def test(x, /, y):
+        pass
+
+    with pytest.raises(InvalidArgument):
+        test(None)
+
+
+@fails_with(InvalidArgument)
+@given(st.booleans())
+def test_cannot_pass_strategies_for_posonly_args(x, /):
+    pass
+
+
+@given(y=st.booleans())
+def has_posonly_args(x, /, y):
+    pass
+
+
+def test_example_argument_validation():
+    example(y=None)(has_posonly_args)(1)  # Basic case is OK
+
+    with pytest.raises(
+        InvalidArgument,
+        match=re.escape(
+            "Cannot pass positional arguments to @example() when decorating "
+            "a test function which has positional-only parameters."
+        ),
+    ):
+        example(None)(has_posonly_args)(1)
+
+    with pytest.raises(
+        InvalidArgument,
+        match=re.escape(
+            "Inconsistent args: @given() got strategies for 'y', "
+            "but @example() got arguments for 'x'"
+        ),
+    ):
+        example(x=None)(has_posonly_args)(1)
+
+
+class FooProtocol(typing.Protocol):
+    def frozzle(self, x):
+        pass
+
+
+class BarProtocol(typing.Protocol):
+    def bazzle(self, y):
+        pass
+
+
+@given(st.data())
+def test_can_resolve_registered_protocol(data):
+    with temp_registered(
+        FooProtocol,
+        st.builds(SimpleNamespace, frozzle=st.functions(like=lambda x: ...)),
+    ):
+        obj = data.draw(st.from_type(FooProtocol))
+    assert obj.frozzle(x=1) is None
+
+
+def test_cannot_resolve_un_registered_protocol():
+    msg = "Instance and class checks can only be used with @runtime_checkable protocols"
+    with pytest.raises(TypeError, match=msg):
+        st.from_type(BarProtocol).example()

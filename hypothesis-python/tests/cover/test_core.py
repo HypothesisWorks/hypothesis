@@ -8,10 +8,13 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import unittest
+
 import pytest
 from _pytest.outcomes import Failed, Skipped
 
-from hypothesis import find, given, reject, settings, strategies as s
+from hypothesis import Phase, example, find, given, reject, settings, strategies as s
+from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.errors import InvalidArgument, NoSuchExample, Unsatisfiable
 
 
@@ -111,3 +114,32 @@ def test_validates_strategies_for_test_method():
     instance = TestStrategyValidation()
     with pytest.raises(InvalidArgument):
         instance.test_method_with_bad_strategy()
+
+
+@example(1)
+@given(s.integers())
+@settings(phases=[Phase.target, Phase.shrink, Phase.explain])
+def no_phases(_):
+    raise Exception
+
+
+@given(s.integers())
+@settings(phases=[Phase.explicit])
+def no_explicit(_):
+    raise Exception
+
+
+@given(s.integers())
+@settings(phases=[Phase.reuse], database=InMemoryExampleDatabase())
+def empty_db(_):
+    raise Exception
+
+
+@pytest.mark.parametrize(
+    "test_fn",
+    [no_phases, no_explicit, empty_db],
+    ids=lambda t: t.__name__,
+)
+def test_non_executed_tests_raise_skipped(test_fn):
+    with pytest.raises(unittest.SkipTest):
+        test_fn()

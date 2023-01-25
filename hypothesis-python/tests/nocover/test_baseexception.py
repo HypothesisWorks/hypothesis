@@ -34,6 +34,9 @@ def test_exception_propagates_fine_from_strategy(e):
     @composite
     def interrupt_eventually(draw):
         raise e
+        # this line will not be executed, but must be here
+        # to pass draw function static reference check
+        return draw(st.none())
 
     @given(interrupt_eventually())
     def test_do_nothing(x):
@@ -69,13 +72,14 @@ def test_baseexception_no_rerun_no_flaky(e):
     "e", [KeyboardInterrupt, SystemExit, GeneratorExit, ValueError]
 )
 def test_baseexception_in_strategy_no_rerun_no_flaky(e):
-    runs = [0]
+    runs = 0
     interrupt = 3
 
     @composite
     def interrupt_eventually(draw):
-        runs[0] += 1
-        if runs[0] == interrupt:
+        nonlocal runs
+        runs += 1
+        if runs == interrupt:
             raise e
         return draw(integers())
 
@@ -87,7 +91,7 @@ def test_baseexception_in_strategy_no_rerun_no_flaky(e):
         with pytest.raises(e):
             test_do_nothing()
 
-        assert runs[0] == interrupt
+        assert runs == interrupt
 
     else:
         # Now SystemExit and GeneratorExit are caught like other exceptions
@@ -101,6 +105,9 @@ from hypothesis import given, note, strategies as st
 @st.composite
 def things(draw):
     raise {exception}
+    # this line will not be executed, but must be here 
+    # to pass draw function static reference check
+    return draw(st.none())
 
 
 @given(st.data(), st.integers())

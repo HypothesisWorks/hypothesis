@@ -16,7 +16,9 @@ import socket
 import unittest
 import unittest.mock
 from decimal import Decimal
-from types import ModuleType
+from pathlib import Path
+from textwrap import dedent
+from types import FunctionType, ModuleType
 from typing import (
     Any,
     FrozenSet,
@@ -32,10 +34,13 @@ from typing import (
 )
 
 import attr
+import click
 import pytest
 
-from hypothesis.errors import InvalidArgument, MultipleFailures, Unsatisfiable
-from hypothesis.extra import ghostwriter
+from hypothesis import assume
+from hypothesis.errors import InvalidArgument, Unsatisfiable
+from hypothesis.extra import cli, ghostwriter
+from hypothesis.internal.compat import BaseExceptionGroup
 from hypothesis.strategies import builds, from_type, just, lists
 from hypothesis.strategies._internal.lazy import LazyStrategy
 
@@ -257,6 +262,34 @@ def test_invalid_func_inputs(gw, args):
         gw(*args)
 
 
+class A:
+    @classmethod
+    def to_json(cls, obj: Union[dict, list]) -> str:
+        return json.dumps(obj)
+
+    @classmethod
+    def from_json(cls, obj: str) -> Union[dict, list]:
+        return json.loads(obj)
+
+    @staticmethod
+    def static_sorter(seq: Sequence[int]) -> List[int]:
+        return sorted(seq)
+
+
+@pytest.mark.parametrize(
+    "gw,args",
+    [
+        (ghostwriter.fuzz, [A.static_sorter]),
+        (ghostwriter.idempotent, [A.static_sorter]),
+        (ghostwriter.roundtrip, [A.to_json, A.from_json]),
+        (ghostwriter.equivalent, [A.to_json, json.dumps]),
+    ],
+)
+def test_class_methods_inputs(gw, args):
+    source_code = gw(*args)
+    get_test_function(source_code)()
+
+
 def test_run_ghostwriter_fuzz():
     # Our strategy-guessing code works for all the arguments to sorted,
     # and we handle positional-only arguments in calls correctly too.
@@ -282,7 +315,12 @@ class MyError(UnicodeDecodeError):
 )
 def test_exception_deduplication(exceptions, output):
     _, body = ghostwriter._make_test_body(
-        lambda: None, ghost="", test_body="pass", except_=exceptions, style="pytest"
+        lambda: None,
+        ghost="",
+        test_body="pass",
+        except_=exceptions,
+        style="pytest",
+        annotate=False,
     )
     assert f"except {output}:" in body
 
@@ -305,7 +343,7 @@ def test_run_ghostwriter_roundtrip():
     )
     try:
         get_test_function(source_code)()
-    except (AssertionError, ValueError, MultipleFailures):
+    except (AssertionError, ValueError, BaseExceptionGroup):
         pass
 
     # Finally, restricting ourselves to finite floats makes the test pass!
@@ -397,3 +435,79 @@ def test_unrepr_identity_elem():
 )
 def test_get_imports_for_strategy(strategy, imports):
     assert ghostwriter._imports_for_strategy(strategy) == imports
+
+
+@pytest.fixture
+def temp_script_file():
+    """Fixture to yield a Path to a temporary file in the local directory. File name will end
+    in .py and will include an importable function.
+    """
+    p = Path("my_temp_script.py")
+    if p.exists():
+        raise FileExistsError(f"Did not expect {p} to exist during testing")
+    p.write_text(
+        dedent(
+            """
+            def say_hello():
+                print("Hello world!")
+            """
+        )
+    )
+    yield p
+    p.unlink()
+
+
+@pytest.fixture
+def temp_script_file_with_py_function():
+    """Fixture to yield a Path to a temporary file in the local directory. File name will end
+    in .py and will include an importable function named "py"
+    """
+    p = Path("my_temp_script_with_py_function.py")
+    if p.exists():
+        raise FileExistsError(f"Did not expect {p} to exist during testing")
+    p.write_text(
+        dedent(
+            """
+            def py():
+                print('A function named "py" has been called')
+            """
+        )
+    )
+    yield p
+    p.unlink()
+
+
+def test_obj_name(temp_script_file, temp_script_file_with_py_function):
+    # Module paths (strings including a "/") should raise a meaningful UsageError
+    with pytest.raises(click.exceptions.UsageError) as e:
+        cli.obj_name("mydirectory/myscript.py")
+    assert e.match(
+        "Remember that the ghostwriter should be passed the name of a module, not a path."
+    )
+    # Windows paths (strings including a "\") should also raise a meaningful UsageError
+    with pytest.raises(click.exceptions.UsageError) as e:
+        cli.obj_name("mydirectory\\myscript.py")
+    assert e.match(
+        "Remember that the ghostwriter should be passed the name of a module, not a path."
+    )
+    # File names of modules (strings ending in ".py") should raise a meaningful UsageError
+    with pytest.raises(click.exceptions.UsageError) as e:
+        cli.obj_name("myscript.py")
+    assert e.match(
+        "Remember that the ghostwriter should be passed the name of a module, not a file."
+    )
+    # File names of modules (strings ending in ".py") that exist should get a suggestion
+    with pytest.raises(click.exceptions.UsageError) as e:
+        cli.obj_name(str(temp_script_file))
+    assert e.match(
+        "Remember that the ghostwriter should be passed the name of a module, not a file."
+        + f"\n\tTry: hypothesis write {temp_script_file.stem}"
+    )
+    # File names of modules (strings ending in ".py") that define a py function should succeed
+    assert isinstance(
+        cli.obj_name(str(temp_script_file_with_py_function)), FunctionType
+    )
+
+
+def test_gets_public_location_not_impl_location():
+    assert ghostwriter._get_module(assume) == "hypothesis"  # not "hypothesis.control"

@@ -89,7 +89,7 @@ Still here?  Here's a note on what to expect in each directory.
 
 ``lark/``
     Tests for the Lark extra for context-free grammars, which depend on the
-    ``lark-parser`` package.
+    ``lark`` package.
 
 ``nocover/``
     More expensive and longer-running tests, typically used to test trickier

@@ -1,0 +1,17 @@
+# This test code was written by the `hypothesis.extra.ghostwriter` module
+# and is provided under the Creative Commons Zero public domain dedication.
+
+from hypothesis import given, strategies as st
+
+
+@given(
+    iterable=st.one_of(st.iterables(st.integers()), st.iterables(st.text())),
+    key=st.none(),
+    reverse=st.booleans(),
+)
+def test_equivalent_sorted_sorted_sorted(iterable, key, reverse) -> None:
+    result_0_sorted = sorted(iterable, key=key, reverse=reverse)
+    result_1_sorted = sorted(iterable, key=key, reverse=reverse)
+    result_2_sorted = sorted(iterable, key=key, reverse=reverse)
+    assert result_0_sorted == result_1_sorted, (result_0_sorted, result_1_sorted)
+    assert result_0_sorted == result_2_sorted, (result_0_sorted, result_2_sorted)

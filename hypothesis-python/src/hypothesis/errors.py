@@ -17,10 +17,6 @@ class _Trimmable(HypothesisException):
     """Hypothesis can trim these tracebacks even if they're raised internally."""
 
 
-class CleanupFailed(HypothesisException):
-    """At least one cleanup task failed and no other exception was raised."""
-
-
 class UnsatisfiedAssumption(HypothesisException):
     """An internal error raised by assume.
 
@@ -97,12 +93,7 @@ class HypothesisWarning(HypothesisException, Warning):
 
 
 class FailedHealthCheck(_Trimmable):
-    """Raised when a test fails a preliminary healthcheck that occurs before
-    execution."""
-
-    def __init__(self, message, check):
-        super().__init__(message)
-        self.health_check = check
+    """Raised when a test fails a healthcheck."""
 
 
 class NonInteractiveExampleWarning(HypothesisWarning):
@@ -128,9 +119,18 @@ class Frozen(HypothesisException):
     after freeze() has been called."""
 
 
-class MultipleFailures(_Trimmable):
-    """Indicates that Hypothesis found more than one distinct bug when testing
-    your code."""
+def __getattr__(name):
+    if name == "MultipleFailures":
+        from hypothesis._settings import note_deprecation
+        from hypothesis.internal.compat import BaseExceptionGroup
+
+        note_deprecation(
+            "MultipleFailures is deprecated; use the builtin `BaseExceptionGroup` type "
+            "instead, or `exceptiongroup.BaseExceptionGroup` before Python 3.11",
+            since="2022-08-02",
+            has_codemod=False,  # This would be a great PR though!
+        )
+        return BaseExceptionGroup
 
 
 class DeadlineExceeded(_Trimmable):
@@ -143,6 +143,9 @@ class DeadlineExceeded(_Trimmable):
         )
         self.runtime = runtime
         self.deadline = deadline
+
+    def __reduce__(self):
+        return (type(self), (self.runtime, self.deadline))
 
 
 class StopTest(BaseException):

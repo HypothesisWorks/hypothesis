@@ -1,7 +1,9 @@
 crate
+damon
 nd
 ned
 nin
 strat
 tread
 rouge
+tey

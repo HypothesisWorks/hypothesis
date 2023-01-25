@@ -18,9 +18,10 @@ def guess_background_color():
     See also https://stackoverflow.com/questions/2507337/ and
     https://unix.stackexchange.com/questions/245378/
     """
-    django_colors = os.getenv("DJANGO_COLORS")
-    if django_colors in ("light", "dark"):
-        return django_colors
+    django_colors = os.getenv("DJANGO_COLORS", "")
+    for theme in ("light", "dark"):
+        if theme in django_colors.split(";"):
+            return theme
     # Guessing based on the $COLORFGBG environment variable
     try:
         fg, *_, bg = os.getenv("COLORFGBG").split(";")

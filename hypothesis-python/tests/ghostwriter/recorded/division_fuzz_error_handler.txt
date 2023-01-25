@@ -6,7 +6,7 @@ from hypothesis import given, reject, strategies as st
 
 
 @given(a=st.integers(), b=st.integers())
-def test_fuzz_divide(a, b):
+def test_fuzz_divide(a: int, b: int) -> None:
     try:
         test_expected_output.divide(a=a, b=b)
     except ZeroDivisionError:
