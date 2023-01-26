@@ -1652,7 +1652,7 @@ def complex_numbers(
     the system ``sqrt`` function.
 
     The width argument specifies the maximum number of bits of precision
-    required to represent the entire generated complex.
+    required to represent the entire generated complex number.
     Valid values are 64 or 128, which correspond to the real and imaginary
     components having width 32 or 64, respectively.
     Passing ``width=64`` will still use the builtin 128-bit
