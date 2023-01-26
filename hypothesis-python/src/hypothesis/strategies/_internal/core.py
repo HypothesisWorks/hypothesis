@@ -1688,9 +1688,12 @@ def complex_numbers(
             f"max_magnitude={max_magnitude!r}"
         )
     check_type(bool, allow_subnormal, "allow_subnormal")
-    if width not in (64, 128):  # We do not support numpy's exotic ones
+    if width not in (64, 128):
         raise InvalidArgument(
-            f"Got width={width!r}, but the only valid values are the integers 64 and 128."
+            f"Got width={width!r}, but the only valid values are the integers 64 and 128. "
+            "Other data types like complex32 or complex256 are not supported."
+            # For numpy, these types would be supported (but not by CPython):
+            # https://numpy.org/doc/stable/reference/arrays.scalars.html#complex-floating-point-types
         )
     # The real and imaginary parts get half of the space each
     width_for_float = width // 2
