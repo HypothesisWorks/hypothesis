@@ -443,11 +443,10 @@ def _guess_strategy_by_argname(name: str) -> st.SearchStrategy:
     return st.nothing()
 
 
-def _get_params(func: Callable, eval_str: bool = False) -> Dict[str, inspect.Parameter]:
+def _get_params(func: Callable) -> Dict[str, inspect.Parameter]:
     """Get non-vararg parameters of `func` as an ordered dict."""
-    var_param_kinds = (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
     try:
-        params = list(get_signature(func, eval_str=eval_str).parameters.values())
+        params = list(get_signature(func).parameters.values())
     except Exception:
         if (
             isinstance(func, (types.BuiltinFunctionType, types.BuiltinMethodType))
@@ -493,6 +492,13 @@ def _get_params(func: Callable, eval_str: bool = False) -> Dict[str, inspect.Par
             # If we haven't managed to recover a signature through the tricks above,
             # we're out of ideas and should just re-raise the exception.
             raise
+    return _params_to_dict(params)
+
+
+def _params_to_dict(
+    params: Iterable[inspect.Parameter],
+) -> Dict[str, inspect.Parameter]:
+    var_param_kinds = (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
     return OrderedDict((p.name, p) for p in params if p.kind not in var_param_kinds)
 
 
@@ -832,12 +838,12 @@ def _annotate_args(
     arg_parameters: DefaultDict[str, Set[Any]] = defaultdict(set)
     for func in funcs:
         try:
-            params = _get_params(func, eval_str=True)
+            params = tuple(get_signature(func, eval_str=True).parameters.values())
         except Exception:
             # don't add parameters if the annotations could not be evaluated
             pass
         else:
-            for key, param in params.items():
+            for key, param in _params_to_dict(params).items():
                 arg_parameters[key].add(param.annotation)
 
     for argname in argnames:
