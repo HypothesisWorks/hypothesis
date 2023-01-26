@@ -1690,8 +1690,8 @@ def complex_numbers(
     check_type(bool, allow_subnormal, "allow_subnormal")
     if width not in (64, 128):
         raise InvalidArgument(
-            f"Got width={width!r}, but the only valid values are the integers 64 and 128. "
-            "Other data types like complex32 or complex256 are not supported."
+            f"width={width!r}, but must be 64 or 128 (other complex dtypes "
+            "such as complex32 or complex256 are not supported)"
             # For numpy, these types would be supported (but not by CPython):
             # https://numpy.org/doc/stable/reference/arrays.scalars.html#complex-floating-point-types
         )
