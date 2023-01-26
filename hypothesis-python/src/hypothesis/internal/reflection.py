@@ -172,7 +172,9 @@ def get_signature(
             target, follow_wrapped=follow_wrapped, eval_str=eval_str
         )
     else:
-        sig = inspect.signature(target, follow_wrapped=follow_wrapped)
+        sig = inspect.signature(
+            target, follow_wrapped=follow_wrapped
+        )  # pragma: no cover
     check_signature(sig)
     return sig
 
