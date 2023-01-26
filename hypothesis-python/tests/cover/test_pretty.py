@@ -50,6 +50,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import re
 import warnings
 from collections import Counter, OrderedDict, defaultdict, deque
+from enum import Enum
 
 import pytest
 
@@ -620,3 +621,11 @@ def test_repr_call(func_name):
     assert _repr_call(func_name, (aas,), {}) == f"{fn}(\n    {aas!r},\n)"
     assert _repr_call(func_name, (), {"a": 1, "b": 2}) == f"{fn}(a=1, b=2)"
     assert _repr_call(func_name, (), {"x": aas}) == f"{fn}(\n    x={aas!r},\n)"
+
+
+class AnEnum(Enum):
+    SOME_MEMBER = 1
+
+
+def test_pretty_prints_enums_as_code():
+    assert pretty.pretty(AnEnum.SOME_MEMBER) == "AnEnum.SOME_MEMBER"
