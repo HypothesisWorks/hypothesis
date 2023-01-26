@@ -25,7 +25,11 @@ from typing import Optional, Sequence, Union
 
 import numpy
 import pytest
-from example_code.future_annotations import add_custom_classes, merge_dicts
+from example_code.future_annotations import (
+    add_custom_classes,
+    invalid_types,
+    merge_dicts,
+)
 
 import hypothesis
 from hypothesis.extra import ghostwriter
@@ -130,6 +134,10 @@ else:
         ),
         pytest.param(
             ("merge_dicts", ghostwriter.magic(merge_dicts)),
+            marks=pytest.mark.skipif("sys.version_info[:2] < (3, 10)"),
+        ),
+        pytest.param(
+            ("invalid_types", ghostwriter.magic(invalid_types)),
             marks=pytest.mark.skipif("sys.version_info[:2] < (3, 10)"),
         ),
         ("magic_base64_roundtrip", ghostwriter.magic(base64.b64encode)),

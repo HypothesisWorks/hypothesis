@@ -831,8 +831,14 @@ def _annotate_args(
 ) -> Iterable[str]:
     arg_parameters: DefaultDict[str, Set[Any]] = defaultdict(set)
     for func in funcs:
-        for key, param in _get_params(func, eval_str=True).items():
-            arg_parameters[key].add(param.annotation)
+        try:
+            params = _get_params(func, eval_str=True)
+        except Exception:
+            # don't add parameters if the annotations could not be evaluated
+            pass
+        else:
+            for key, param in params.items():
+                arg_parameters[key].add(param.annotation)
 
     for argname in argnames:
         parameters = arg_parameters.get(argname)

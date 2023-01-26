@@ -28,3 +28,7 @@ def merge_dicts(
     map1: collections.abc.Mapping[str, int], map2: collections.abc.Mapping[str, int]
 ) -> collections.abc.Mapping[str, int]:
     return {**map1, **map2}
+
+
+def invalid_types(attr1: int, attr2: UnknownClass, attr3: str) -> None:
+    pass
