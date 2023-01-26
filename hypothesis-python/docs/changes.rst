@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.65.1:
+
+-------------------
+6.65.1 - 2023-01-26
+-------------------
+
+This release improves the pretty-printing of enums in falsifying examples,
+so that they print as their full identifier rather than their repr.
+
 .. _v6.65.0:
 
 -------------------
