@@ -166,27 +166,15 @@ def get_signature(
             return sig.replace(
                 parameters=[v for k, v in sig.parameters.items() if k != "self"]
             )
-    sig = _inspect_signature(target, follow_wrapped=follow_wrapped, eval_str=eval_str)
-    check_signature(sig)
-    return sig
-
-
-# eval_str is only supported by Python 3.10 and newer
-if sys.version_info[:2] >= (3, 10):
-
-    def _inspect_signature(
-        target: Any, *, follow_wrapped: bool = True, eval_str: bool = False
-    ) -> inspect.Signature:
-        return inspect.signature(
+    # eval_str is only supported by Python 3.10 and newer
+    if sys.version_info[:2] >= (3, 10):
+        sig = inspect.signature(
             target, follow_wrapped=follow_wrapped, eval_str=eval_str
         )
-
-else:
-
-    def _inspect_signature(
-        target: Any, *, follow_wrapped: bool = True, eval_str: bool = False
-    ) -> inspect.Signature:  # pragma: no cover
-        return inspect.signature(target, follow_wrapped=follow_wrapped)
+    else:
+        sig = inspect.signature(target, follow_wrapped=follow_wrapped)
+    check_signature(sig)
+    return sig
 
 
 def arg_is_required(param):
