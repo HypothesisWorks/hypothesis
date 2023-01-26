@@ -844,15 +844,12 @@ def _annotate_args(
             pass
         else:
             for key, param in _params_to_dict(params).items():
-                arg_parameters[key].add(param.annotation)
+                if param.annotation != inspect.Parameter.empty:
+                    arg_parameters[key].add(param.annotation)
 
     for argname in argnames:
         parameters = arg_parameters.get(argname)
-        annotation = (
-            None
-            if parameters is None
-            else _parameters_to_annotation_name(parameters, imports)
-        )
+        annotation = _parameters_to_annotation_name(parameters, imports)
         if annotation is None:
             yield argname
         else:
@@ -865,15 +862,13 @@ class _AnnotationData(NamedTuple):
 
 
 def _parameters_to_annotation_name(
-    parameters: Iterable[Any], imports: ImportSet
+    parameters: Optional[Iterable[Any]], imports: ImportSet
 ) -> Optional[str]:
+    if parameters is None:
+        return None
     annotations = tuple(
         annotation
-        for annotation in (
-            _parameter_to_annotation(parameter)
-            for parameter in parameters
-            if parameter != inspect.Parameter.empty
-        )
+        for annotation in map(_parameter_to_annotation, parameters)
         if annotation is not None
     )
     if not annotations:
