@@ -21,10 +21,15 @@ import operator
 import pathlib
 import re
 import sys
-from typing import Sequence
+from typing import Optional, Sequence, Union
 
 import numpy
 import pytest
+from example_code.future_annotations import (
+    add_custom_classes,
+    invalid_types,
+    merge_dicts,
+)
 
 import hypothesis
 from hypothesis.extra import ghostwriter
@@ -82,6 +87,25 @@ def divide(a: int, b: int) -> float:
     return a / b
 
 
+def optional_parameter(a: float, b: Optional[float]) -> float:
+    return optional_union_parameter(a, b)
+
+
+def optional_union_parameter(a: float, b: Optional[Union[float, int]]) -> float:
+    return a if b is None else a + b
+
+
+if sys.version_info[:2] >= (3, 10):
+
+    def union_sequence_parameter(items: Sequence[float | int]) -> float:
+        return sum(items)
+
+else:
+
+    def union_sequence_parameter(items: Sequence[Union[float, int]]) -> float:
+        return sum(items)
+
+
 # Note: for some of the `expected` outputs, we replace away some small
 #       parts which vary between minor versions of Python.
 @pytest.mark.parametrize(
@@ -94,6 +118,28 @@ def divide(a: int, b: int) -> float:
         ("fuzz_staticmethod", ghostwriter.fuzz(A_Class.a_staticmethod)),
         ("fuzz_ufunc", ghostwriter.fuzz(numpy.add)),
         ("magic_gufunc", ghostwriter.magic(numpy.matmul)),
+        pytest.param(
+            ("optional_parameter", ghostwriter.magic(optional_parameter)),
+            marks=pytest.mark.skipif("sys.version_info[:2] < (3, 9)"),
+        ),
+        pytest.param(
+            ("optional_parameter_pre_py_3_9", ghostwriter.magic(optional_parameter)),
+            marks=pytest.mark.skipif("sys.version_info[:2] >= (3, 9)"),
+        ),
+        ("optional_union_parameter", ghostwriter.magic(optional_union_parameter)),
+        ("union_sequence_parameter", ghostwriter.magic(union_sequence_parameter)),
+        pytest.param(
+            ("add_custom_classes", ghostwriter.magic(add_custom_classes)),
+            marks=pytest.mark.skipif("sys.version_info[:2] < (3, 10)"),
+        ),
+        pytest.param(
+            ("merge_dicts", ghostwriter.magic(merge_dicts)),
+            marks=pytest.mark.skipif("sys.version_info[:2] < (3, 10)"),
+        ),
+        pytest.param(
+            ("invalid_types", ghostwriter.magic(invalid_types)),
+            marks=pytest.mark.skipif("sys.version_info[:2] < (3, 10)"),
+        ),
         ("magic_base64_roundtrip", ghostwriter.magic(base64.b64encode)),
         (
             "magic_base64_roundtrip_with_annotations",

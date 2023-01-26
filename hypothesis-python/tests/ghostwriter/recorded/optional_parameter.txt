@@ -1,0 +1,11 @@
+# This test code was written by the `hypothesis.extra.ghostwriter` module
+# and is provided under the Creative Commons Zero public domain dedication.
+
+import test_expected_output
+import typing
+from hypothesis import given, strategies as st
+
+
+@given(a=st.floats(), b=st.one_of(st.none(), st.floats()))
+def test_fuzz_optional_parameter(a: float, b: typing.Optional[float]) -> None:
+    test_expected_output.optional_parameter(a=a, b=b)

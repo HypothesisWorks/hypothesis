@@ -1,0 +1,23 @@
+# This test code was written by the `hypothesis.extra.ghostwriter` module
+# and is provided under the Creative Commons Zero public domain dedication.
+
+import collections.abc
+import example_code.future_annotations
+from collections import ChainMap
+from hypothesis import given, strategies as st
+
+
+@given(
+    map1=st.one_of(
+        st.dictionaries(keys=st.text(), values=st.integers()),
+        st.dictionaries(keys=st.text(), values=st.integers()).map(ChainMap),
+    ),
+    map2=st.one_of(
+        st.dictionaries(keys=st.text(), values=st.integers()),
+        st.dictionaries(keys=st.text(), values=st.integers()).map(ChainMap),
+    ),
+)
+def test_fuzz_merge_dicts(
+    map1: collections.abc.Mapping[str, int], map2: collections.abc.Mapping[str, int]
+) -> None:
+    example_code.future_annotations.merge_dicts(map1=map1, map2=map2)

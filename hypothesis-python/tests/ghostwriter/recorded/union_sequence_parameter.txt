@@ -1,0 +1,13 @@
+# This test code was written by the `hypothesis.extra.ghostwriter` module
+# and is provided under the Creative Commons Zero public domain dedication.
+
+import test_expected_output
+import typing
+from hypothesis import given, strategies as st
+
+
+@given(items=st.one_of(st.binary(), st.lists(st.one_of(st.floats(), st.integers()))))
+def test_fuzz_union_sequence_parameter(
+    items: typing.Sequence[typing.Union[float, int]]
+) -> None:
+    test_expected_output.union_sequence_parameter(items=items)

@@ -1,0 +1,12 @@
+# This test code was written by the `hypothesis.extra.ghostwriter` module
+# and is provided under the Creative Commons Zero public domain dedication.
+
+import example_code.future_annotations
+from hypothesis import given, strategies as st
+
+# TODO: replace st.nothing() with appropriate strategies
+
+
+@given(attr1=st.nothing(), attr2=st.nothing(), attr3=st.nothing())
+def test_fuzz_invalid_types(attr1, attr2, attr3) -> None:
+    example_code.future_annotations.invalid_types(attr1=attr1, attr2=attr2, attr3=attr3)
