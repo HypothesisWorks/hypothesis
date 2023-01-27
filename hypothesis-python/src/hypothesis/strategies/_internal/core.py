@@ -1696,7 +1696,7 @@ def complex_numbers(
             # https://numpy.org/doc/stable/reference/arrays.scalars.html#complex-floating-point-types
         )
     # The real and imaginary parts get half of the space each
-    width_for_float = width // 2
+    width_for_floats = width // 2
     allow_kw = {
         "allow_nan": allow_nan,
         "allow_infinity": allow_infinity,
@@ -1704,7 +1704,7 @@ def complex_numbers(
         # then allow_subnormal=True would be an error with the min_value to the floats()
         # strategy for the real part.  We therefore replace True with None.
         "allow_subnormal": None if allow_subnormal else allow_subnormal,
-        "width": width_for_float,
+        "width": width_for_floats,
     }
 
     if min_magnitude == 0 and max_magnitude is None:
