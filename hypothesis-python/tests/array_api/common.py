@@ -29,8 +29,7 @@ __all__ = [
 ]
 
 
-# This should be updated to the next spec release, which should include complex numbers
-MIN_VER_FOR_COMPLEX: NominalVersion = "draft"
+MIN_VER_FOR_COMPLEX: NominalVersion = "2022.12"
 if len(RELEASED_VERSIONS) > 1:
     assert MIN_VER_FOR_COMPLEX == RELEASED_VERSIONS[1]
 

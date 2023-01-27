@@ -69,10 +69,10 @@ __all__ = [
 ]
 
 
-RELEASED_VERSIONS = ("2021.12",)
+RELEASED_VERSIONS = ("2021.12", "2022.12")
 NOMINAL_VERSIONS = RELEASED_VERSIONS + ("draft",)
 assert sorted(NOMINAL_VERSIONS) == list(NOMINAL_VERSIONS)  # sanity check
-NominalVersion = Literal["2021.12", "draft"]
+NominalVersion = Literal["2021.12", "2022.12", "draft"]
 assert get_args(NominalVersion) == NOMINAL_VERSIONS  # sanity check
 
 
@@ -1150,7 +1150,7 @@ if np is not None:
 
     mock_xp = SimpleNamespace(
         __name__="mock",
-        __array_api_version__="2021.12",
+        __array_api_version__="2022.12",
         # Data types
         int8=np.int8,
         int16=np.int16,
