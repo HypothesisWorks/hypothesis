@@ -137,7 +137,7 @@ def column_strategy(draw):
     )
 
 
-@given(pdst.data_frames(pdst.columns(1, dtype=np.dtype("<M8[ns]"))))
+@given(pdst.data_frames(pdst.columns(1, dtype=np.dtype("M8[ns]"))))
 def test_data_frames_with_timestamp_columns(df):
     pass
 
