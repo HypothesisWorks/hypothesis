@@ -16,16 +16,17 @@ import pytest
 from hypothesis import core, find, given, register_random, strategies as st
 from hypothesis.errors import HypothesisWarning, InvalidArgument
 from hypothesis.internal import entropy
-from hypothesis.internal.compat import PYPY
+from hypothesis.internal.compat import GRAALPY, PYPY
 from hypothesis.internal.entropy import deterministic_PRNG
 
 
-def gc_on_pypy():
+def gc_collect():
     # CPython uses reference counting, so objects (without circular refs)
     # are collected immediately on `del`, breaking weak references.
-    # PyPy doesn't, so we use this function in tests before counting the
+    # Python implementations with other garbage collection strategies may
+    # or may not, so we use this function in tests before counting the
     # surviving references to ensure that they're deterministic.
-    if PYPY:
+    if PYPY or GRAALPY:
         gc.collect()
 
 
@@ -58,14 +59,14 @@ def test_cannot_register_non_Random():
     "ignore:It looks like `register_random` was passed an object that could be garbage collected"
 )
 def test_registering_a_Random_is_idempotent():
-    gc_on_pypy()
+    gc_collect()
     n_registered = len(entropy.RANDOMS_TO_MANAGE)
     r = random.Random()
     register_random(r)
     register_random(r)
     assert len(entropy.RANDOMS_TO_MANAGE) == n_registered + 1
     del r
-    gc_on_pypy()
+    gc_collect()
     assert len(entropy.RANDOMS_TO_MANAGE) == n_registered
 
 
@@ -151,7 +152,7 @@ def test_find_does_not_pollute_state():
     "ignore:It looks like `register_random` was passed an object that could be garbage collected"
 )
 def test_evil_prng_registration_nonsense():
-    gc_on_pypy()
+    gc_collect()
     n_registered = len(entropy.RANDOMS_TO_MANAGE)
     r1, r2, r3 = random.Random(1), random.Random(2), random.Random(3)
     s2 = r2.getstate()
@@ -166,7 +167,7 @@ def test_evil_prng_registration_nonsense():
 
     with deterministic_PRNG(0):
         del r1
-        gc_on_pypy()
+        gc_collect()
         assert k not in entropy.RANDOMS_TO_MANAGE, "r1 has been garbage-collected"
         assert len(entropy.RANDOMS_TO_MANAGE) == n_registered + 1
 
@@ -230,5 +231,5 @@ def test_register_random_within_nested_function_scope():
         assert len(entropy.RANDOMS_TO_MANAGE) == n_registered + 1
 
     f()
-    gc_on_pypy()
+    gc_collect()
     assert len(entropy.RANDOMS_TO_MANAGE) == n_registered

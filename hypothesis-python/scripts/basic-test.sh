@@ -45,7 +45,7 @@ pip install "$(grep 'lark==' ../requirements/coverage.txt)"
 $PYTEST tests/lark/
 pip uninstall -y lark
 
-if [ "$(python -c $'import platform, sys; print(sys.version_info.releaselevel == \'final\' and platform.python_implementation() != "PyPy")')" = "True" ] ; then
+if [ "$(python -c $'import platform, sys; print(sys.version_info.releaselevel == \'final\' and platform.python_implementation() not in ("PyPy", "GraalVM"))')" = "True" ] ; then
   pip install ".[codemods,cli]"
   $PYTEST tests/codemods/
   pip uninstall -y libcst click
@@ -75,16 +75,19 @@ PYTHONOPTIMIZE=2 $PYTEST \
     -W'ignore:Module already imported so cannot be rewritten:pytest.PytestAssertRewriteWarning' \
     tests/cover/test_testdecorators.py
 
-if [ "$(python -c 'import platform; print(platform.python_implementation())')" != "PyPy" ]; then
-  pip install .[django]
-  HYPOTHESIS_DJANGO_USETZ=TRUE python -m tests.django.manage test tests.django
-  HYPOTHESIS_DJANGO_USETZ=FALSE python -m tests.django.manage test tests.django
-  pip uninstall -y django pytz
+case "$(python -c 'import platform; print(platform.python_implementation())')" in
+  PyPy|GraalVM)
+    ;;
+  *)
+    pip install .[django]
+    HYPOTHESIS_DJANGO_USETZ=TRUE python -m tests.django.manage test tests.django
+    HYPOTHESIS_DJANGO_USETZ=FALSE python -m tests.django.manage test tests.django
+    pip uninstall -y django pytz
 
-  pip install "$(grep 'numpy==' ../requirements/coverage.txt)"
-  $PYTEST tests/array_api
-  $PYTEST tests/numpy
+    pip install "$(grep 'numpy==' ../requirements/coverage.txt)"
+    $PYTEST tests/array_api
+    $PYTEST tests/numpy
 
-  pip install "$(grep 'pandas==' ../requirements/coverage.txt)"
-  $PYTEST tests/pandas
-fi
+    pip install "$(grep 'pandas==' ../requirements/coverage.txt)"
+    $PYTEST tests/pandas
+esac
