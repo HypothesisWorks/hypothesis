@@ -152,10 +152,11 @@ def fn_ktest(*fnkwargs):
     (ds.complex_numbers, {"max_magnitude": 2, "allow_infinity": True}),
     (ds.complex_numbers, {"max_magnitude": 2, "allow_nan": True}),
     (ds.complex_numbers, {"width": None}),
-    # Common mistakes when misunderstanding width for individual component widths:
+    # Conceivable mistake when misunderstanding width for individual component widths:
     (ds.complex_numbers, {"width": 16}),
-    (ds.complex_numbers, {"width": 32}),
-    (ds.complex_numbers, {"width": 256}),  # Unsupported as of now
+    # Unsupported as of now:
+    (ds.complex_numbers, {"width": 196}),
+    (ds.complex_numbers, {"width": 256}),
     (ds.fixed_dictionaries, {"mapping": "fish"}),
     (ds.fixed_dictionaries, {"mapping": {1: "fish"}}),
     (ds.fixed_dictionaries, {"mapping": {}, "optional": "fish"}),
@@ -253,6 +254,7 @@ def test_validates_keyword_arguments(fn, kwargs):
     (ds.complex_numbers, {"allow_nan": False, "allow_infinity": True}),
     (ds.complex_numbers, {"allow_nan": False, "allow_infinity": False}),
     (ds.complex_numbers, {"max_magnitude": math.inf, "allow_infinity": True}),
+    (ds.complex_numbers, {"width": 32}),
     (ds.complex_numbers, {"width": 64}),
     (ds.complex_numbers, {"width": 128}),
     (ds.sampled_from, {"elements": [1]}),

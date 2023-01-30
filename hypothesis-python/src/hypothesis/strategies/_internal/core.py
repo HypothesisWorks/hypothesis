@@ -1653,8 +1653,8 @@ def complex_numbers(
 
     The width argument specifies the maximum number of bits of precision
     required to represent the entire generated complex number.
-    Valid values are 64 or 128, which correspond to the real and imaginary
-    components having width 32 or 64, respectively.
+    Valid values are 32, 64 or 128, which correspond to the real and imaginary
+    components each having width 16, 32 or 64, respectively.
     Passing ``width=64`` will still use the builtin 128-bit
     :class:`~python:complex` class, but always for values which can be
     exactly represented as two 32-bit floats.
@@ -1688,10 +1688,10 @@ def complex_numbers(
             f"max_magnitude={max_magnitude!r}"
         )
     check_type(bool, allow_subnormal, "allow_subnormal")
-    if width not in (64, 128):
+    if width not in (32, 64, 128):
         raise InvalidArgument(
-            f"width={width!r}, but must be 64 or 128 (other complex dtypes "
-            "such as complex32 or complex256 are not supported)"
+            f"width={width!r}, but must be 32, 64 or 128 (other complex dtypes "
+            "such as complex192 or complex256 are not supported)"
             # For numpy, these types would be supported (but not by CPython):
             # https://numpy.org/doc/stable/reference/arrays.scalars.html#complex-floating-point-types
         )
