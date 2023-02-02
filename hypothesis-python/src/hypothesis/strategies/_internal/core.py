@@ -1644,8 +1644,9 @@ def complex_numbers(
     is an error to enable ``allow_nan``.  If ``max_magnitude`` is finite,
     it is an error to enable ``allow_infinity``.
 
-    ``allow_subnormal`` is applied to each part of the complex number
-    separately, as for :func:`~hypothesis.strategies.floats`.
+    ``allow_infinity``, ``allow_nan``, and ``allow_subnormal`` are
+    applied to each part of the complex number separately, as for
+    :func:`~hypothesis.strategies.floats`.
 
     The magnitude constraints are respected up to a relative error
     of (around) floating-point epsilon, due to implementation via

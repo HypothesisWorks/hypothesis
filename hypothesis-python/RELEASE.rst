@@ -1,4 +1,6 @@
-RELEASE_TYPE: patch
+RELEASE_TYPE: minor
 
-Adds a ``width`` parameter to :func:`hypothesis.strategies.complex_numbers`, analogously to :func:`hypothesis.strategies.floats`.
-Also slightly improves referencing in the documentation.
+This release adds a ``width`` parameter to :func:`hypothesis.strategies.complex_numbers`,
+analogously to :func:`hypothesis.strategies.floats`.
+
+Thanks to Felix Divo for the new feature!
