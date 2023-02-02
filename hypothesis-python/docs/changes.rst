@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.66.0:
+
+-------------------
+6.66.0 - 2023-02-02
+-------------------
+
+This release adds a ``width`` parameter to :func:`hypothesis.strategies.complex_numbers`,
+analogously to :func:`hypothesis.strategies.floats`.
+
+Thanks to Felix Divo for the new feature!
+
 .. _v6.65.2:
 
 -------------------
