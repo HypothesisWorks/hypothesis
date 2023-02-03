@@ -14,9 +14,10 @@ import pytest
 from hypothesis import assume, given, settings, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra import numpy as nps
+from hypothesis.internal.floats import width_smallest_normals
 from hypothesis.strategies._internal import SearchStrategy
 
-from tests.common.debug import find_any
+from tests.common.debug import assert_no_examples, find_any
 
 STANDARD_TYPES = [
     np.dtype(t)
@@ -222,3 +223,36 @@ def test_customize_structured_dtypes(x):
     assert len(name) >= 1
     assert 0 <= age <= 255
     assert not np.isnan(score)
+
+
+@pytest.mark.parametrize("allow_subnormal", [False, True])
+@pytest.mark.parametrize("width", [32, 64])
+def test_float_subnormal_generation(allow_subnormal, width):
+    dtype = np.dtype(f"float{width}")
+    strat = nps.from_dtype(dtype, allow_subnormal=allow_subnormal).filter(
+        lambda n: n != 0
+    )
+    smallest_normal = width_smallest_normals[width]
+    condition = lambda n: -smallest_normal < n < smallest_normal
+    if allow_subnormal:
+        find_any(strat, condition)
+    else:
+        assert_no_examples(strat, condition)
+
+
+@pytest.mark.parametrize("allow_subnormal", [False, True])
+@pytest.mark.parametrize("width", [64, 128])
+def test_complex_subnormal_generation(allow_subnormal, width):
+    dtype = np.dtype(f"complex{width}")
+    strat = nps.from_dtype(dtype, allow_subnormal=allow_subnormal).filter(
+        lambda n: n.real != 0 and n.imag != 0
+    )
+    smallest_normal = width_smallest_normals[width / 2]
+    condition = lambda n: (
+        -smallest_normal < n.real < smallest_normal
+        or -smallest_normal < n.imag < smallest_normal
+    )
+    if allow_subnormal:
+        find_any(strat, condition)
+    else:
+        assert_no_examples(strat, condition)
