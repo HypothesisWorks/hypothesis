@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.66.1:
+
+-------------------
+6.66.1 - 2023-02-03
+-------------------
+
+This makes :func:`hypothesis.extra.numpy.from_dtype` pass through the parameter `allow_subnormal` for complex dtypes.
+
 .. _v6.66.0:
 
 -------------------
