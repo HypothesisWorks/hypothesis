@@ -200,6 +200,9 @@ def test_arrays_gives_useful_error_on_inconsistent_time_unit():
         (complex, {"allow_nan": False}, lambda x: not np.isnan(x)),
         (complex, {"allow_infinity": False}, lambda x: not np.isinf(x)),
         (complex, {"allow_nan": False, "allow_infinity": False}, np.isfinite),
+        (complex, {"min_magnitude": 1e3}, lambda x: np.abs(x) >= 1e3),
+        (complex, {"max_magnitude": 1e2}, lambda x: np.abs(x) <= 1e2),
+        (complex, {"min_magnitude": 1, "max_magnitude": 1e6}, lambda x: 1 <= np.abs(x) <= 1e6),
         # Integer bounds, limited to the representable range
         ("int8", {"min_value": -1, "max_value": 1}, lambda x: -1 <= x <= 1),
         ("uint8", {"min_value": 1, "max_value": 2}, lambda x: 1 <= x <= 2),
