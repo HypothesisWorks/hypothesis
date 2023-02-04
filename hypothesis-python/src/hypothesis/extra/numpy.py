@@ -93,8 +93,7 @@ def from_dtype(
     control the length or contents of strings, or exclude non-finite
     numbers. This is particularly useful when kwargs are passed through from
     :func:`arrays` which allow a variety of numeric dtypes, as it seamlessly
-    handles the ``width`` or representable bounds for you. See :issue:`2552`
-    for more detail.
+    handles the ``width`` or representable bounds for you.
     """
     check_type(np.dtype, dtype, "dtype")
     kwargs = {k: v for k, v in locals().items() if k != "dtype" and v is not None}
