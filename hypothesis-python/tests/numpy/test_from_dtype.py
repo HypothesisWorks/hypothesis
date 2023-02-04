@@ -8,6 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import sys
+
 import numpy as np
 import pytest
 
@@ -197,9 +199,29 @@ def test_arrays_gives_useful_error_on_inconsistent_time_unit():
         (float, {"allow_nan": False}, lambda x: not np.isnan(x)),
         (float, {"allow_infinity": False}, lambda x: not np.isinf(x)),
         (float, {"allow_nan": False, "allow_infinity": False}, np.isfinite),
+        # Complex numbers: bounds and excluding nonfinites
         (complex, {"allow_nan": False}, lambda x: not np.isnan(x)),
         (complex, {"allow_infinity": False}, lambda x: not np.isinf(x)),
         (complex, {"allow_nan": False, "allow_infinity": False}, np.isfinite),
+        (
+            complex,
+            {"min_magnitude": 1e3},
+            lambda x: abs(x) >= 1e3 * (1 - sys.float_info.epsilon),
+        ),
+        (
+            complex,
+            {"max_magnitude": 1e2},
+            lambda x: abs(x) <= 1e2 * (1 + sys.float_info.epsilon),
+        ),
+        (
+            complex,
+            {"min_magnitude": 1, "max_magnitude": 1e6},
+            lambda x: (
+                (1 - sys.float_info.epsilon)
+                <= abs(x)
+                <= 1e6 * (1 + sys.float_info.epsilon)
+            ),
+        ),
         # Integer bounds, limited to the representable range
         ("int8", {"min_value": -1, "max_value": 1}, lambda x: -1 <= x <= 1),
         ("uint8", {"min_value": 1, "max_value": 2}, lambda x: 1 <= x <= 2),
