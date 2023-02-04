@@ -35,6 +35,7 @@ from hypothesis.internal.coverage import check_function
 from hypothesis.internal.reflection import proxies
 from hypothesis.internal.validation import check_type
 from hypothesis.strategies._internal.strategies import T, check_strategy
+from hypothesis.strategies._internal.numbers import Real
 from hypothesis.strategies._internal.utils import defines_strategy
 
 __all__ = [
@@ -81,15 +82,18 @@ def from_dtype(
     allow_subnormal: Optional[bool] = None,
     exclude_min: Optional[bool] = None,
     exclude_max: Optional[bool] = None,
+    min_magnitude: Real = 0,
+    max_magnitude: Optional[Real] = None,
 ) -> st.SearchStrategy[Any]:
     """Creates a strategy which can generate any value of the given dtype.
 
-    Compatible ``**kwargs`` are passed to the inferred strategy function for
-    integers, floats, and strings.  This allows you to customise the min and max
-    values, control the length or contents of strings, or exclude non-finite
-    numbers.  This is particularly useful when kwargs are passed through from
+    Compatible parameters are passed to the inferred strategy function while
+    inapplicable ones are ignored.
+    This allows you, for example, to customise the min and max values,
+    control the length or contents of strings, or exclude non-finite
+    numbers. This is particularly useful when kwargs are passed through from
     :func:`arrays` which allow a variety of numeric dtypes, as it seamlessly
-    handles the ``width`` or representable bounds for you.  See :issue:`2552`
+    handles the ``width`` or representable bounds for you. See :issue:`2552`
     for more detail.
     """
     check_type(np.dtype, dtype, "dtype")
@@ -136,15 +140,16 @@ def from_dtype(
             ),
         )
     elif dtype.kind == "c":
-        # If anyone wants to add a `width` argument to `complex_numbers()`, we would
-        # accept a pull request and add passthrough support for magnitude bounds,
-        # but it's a low priority otherwise.
-        kws = compat_kw("allow_nan", "allow_infinity", "allow_subnormal")
-        if dtype.itemsize == 8:
-            float32 = st.floats(width=32, **kws)
-            result = st.builds(complex, float32, float32)
-        else:
-            result = st.complex_numbers(**kws)
+        result = st.complex_numbers(
+            width=dtype.itemsize,
+            **compat_kw(
+                "min_magnitude",
+                "max_magnitude",
+                "allow_nan",
+                "allow_infinity",
+                "allow_subnormal",
+            ),
+        )
     elif dtype.kind in ("S", "a"):
         # Numpy strings are null-terminated; only allow round-trippable values.
         # `itemsize == 0` means 'fixed length determined at array creation'
@@ -153,8 +158,9 @@ def from_dtype(
             lambda b: b[-1:] != b"\0"
         )
     elif dtype.kind == "u":
-        kw = compat_kw(min_value=0, max_value=2 ** (8 * dtype.itemsize) - 1)
-        result = st.integers(**kw)
+        result = st.integers(
+            **compat_kw(min_value=0, max_value=2 ** (8 * dtype.itemsize) - 1)
+        )
     elif dtype.kind == "i":
         overflow = 2 ** (8 * dtype.itemsize - 1)
         result = st.integers(**compat_kw(min_value=-overflow, max_value=overflow - 1))
