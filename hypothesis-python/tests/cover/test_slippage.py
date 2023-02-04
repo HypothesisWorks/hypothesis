@@ -55,7 +55,7 @@ def test_raises_multiple_failures_with_varying_type():
 
 
 def test_shows_target_scores_with_multiple_failures():
-    @settings(database=None, max_examples=100)
+    @settings(derandomize=True, max_examples=10_000)
     @given(st.integers())
     def test(i):
         target(i)
