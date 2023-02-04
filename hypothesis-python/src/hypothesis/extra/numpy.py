@@ -157,9 +157,8 @@ def from_dtype(
             lambda b: b[-1:] != b"\0"
         )
     elif dtype.kind == "u":
-        result = st.integers(
-            **compat_kw(min_value=0, max_value=2 ** (8 * dtype.itemsize) - 1)
-        )
+        kw = compat_kw(min_value=0, max_value=2 ** (8 * dtype.itemsize) - 1)
+        result = st.integers(**kw)
     elif dtype.kind == "i":
         overflow = 2 ** (8 * dtype.itemsize - 1)
         result = st.integers(**compat_kw(min_value=-overflow, max_value=overflow - 1))
