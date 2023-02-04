@@ -2,23 +2,11 @@
 Health checks
 =============
 
-Hypothesis tries to detect common mistakes and things that will cause difficulty
-at run time in the form of a number of 'health checks'.
+Hypothesis' health checks are designed to detect and warn you about performance
+problems where your tests are slow, inefficient, or generating very large examples.
 
-These include detecting and warning about:
-
-* Strategies with very slow data generation
-* Strategies which filter out too much
-* Recursive strategies which branch too much
-* Tests that are unlikely to complete in a reasonable amount of time.
-
-If any of these scenarios are detected, Hypothesis will emit a warning about them.
-
-The general goal of these health checks is to warn you about things that you are doing that might
-appear to work but will either cause Hypothesis to not work correctly or to perform badly.
-
-To selectively disable health checks, use the
-:obj:`~hypothesis.settings.suppress_health_check` setting.
+If this is expected, e.g. when generating large arrays or dataframes, you can selectively
+disable them with the :obj:`~hypothesis.settings.suppress_health_check` setting.
 The argument for this parameter is a list with elements drawn from any of
 the class-level attributes of the HealthCheck class.
 Using a value of ``HealthCheck.all()`` will disable all health checks.

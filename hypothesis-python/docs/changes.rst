@@ -36,7 +36,8 @@ and thus recursed due to the new pretty reprs in Hypothesis :ref:`v6.65.0`
 6.66.1 - 2023-02-03
 -------------------
 
-This makes :func:`hypothesis.extra.numpy.from_dtype` pass through the parameter `allow_subnormal` for complex dtypes.
+This makes :func:`~hypothesis.extra.numpy.from_dtype` pass through the parameter
+``allow_subnormal`` for complex dtypes.
 
 .. _v6.66.0:
 
@@ -44,8 +45,8 @@ This makes :func:`hypothesis.extra.numpy.from_dtype` pass through the parameter 
 6.66.0 - 2023-02-02
 -------------------
 
-This release adds a ``width`` parameter to :func:`hypothesis.strategies.complex_numbers`,
-analogously to :func:`hypothesis.strategies.floats`.
+This release adds a ``width`` parameter to :func:`~hypothesis.strategies.complex_numbers`,
+analogously to :func:`~hypothesis.strategies.floats`.
 
 Thanks to Felix Divo for the new feature!
 
