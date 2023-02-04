@@ -141,7 +141,7 @@ def from_dtype(
         )
     elif dtype.kind == "c":
         result = st.complex_numbers(
-            width=dtype.itemsize,
+            width=8 * dtype.itemsize,  # convert from bytes to bits
             **compat_kw(
                 "min_magnitude",
                 "max_magnitude",
