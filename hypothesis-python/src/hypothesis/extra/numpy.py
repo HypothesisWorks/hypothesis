@@ -34,8 +34,8 @@ from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.reflection import proxies
 from hypothesis.internal.validation import check_type
-from hypothesis.strategies._internal.strategies import T, check_strategy
 from hypothesis.strategies._internal.numbers import Real
+from hypothesis.strategies._internal.strategies import T, check_strategy
 from hypothesis.strategies._internal.utils import defines_strategy
 
 __all__ = [
