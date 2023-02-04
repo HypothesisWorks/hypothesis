@@ -1221,3 +1221,14 @@ def test_basic_indices_generate_valid_indexers(
 def test_array_owns_memory(x: np.ndarray):
     assert x.base is None
     assert x[...].base is x
+
+
+@given(st.data())
+def test_no_recursion_in_multi_line_reprs_issue_3560(data):
+    data.draw(nps.arrays(shape=(2,), dtype=float).map(lambda x: x))
+    data.draw(
+        nps.arrays(
+            shape=(2,),
+            dtype=float,
+        ).map(lambda x: x)
+    )
