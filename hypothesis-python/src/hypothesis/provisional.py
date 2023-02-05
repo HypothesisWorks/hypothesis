@@ -41,8 +41,10 @@ except (AttributeError, ValueError):  # pragma: no cover  # .files() was added i
     ).splitlines()
 
 assert _tlds[0].startswith("#")
-TOP_LEVEL_DOMAINS = ["COM"] + sorted(_tlds[1:], key=len)
 
+# Remove special-use domain names from the list. For more discussion
+# see https://github.com/HypothesisWorks/hypothesis/pull/3572
+TOP_LEVEL_DOMAINS = ["COM"] + sorted(filter(lambda tld: tld != "ARPA", _tlds[1:]), key=len)
 
 class DomainNameStrategy(st.SearchStrategy):
     @staticmethod
