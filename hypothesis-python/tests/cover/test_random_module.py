@@ -134,7 +134,6 @@ def test_given_does_not_pollute_state():
 
 def test_find_does_not_pollute_state():
     with deterministic_PRNG():
-
         find(st.random_module(), lambda r: True)
         state_a = random.getstate()
         state_a2 = core._hypothesis_global_random.getstate()

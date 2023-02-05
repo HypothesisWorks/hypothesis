@@ -29,7 +29,6 @@ else:
 
 
 class TestAsyncio(TestCase):
-
     timeout = 5
 
     def setUp(self):

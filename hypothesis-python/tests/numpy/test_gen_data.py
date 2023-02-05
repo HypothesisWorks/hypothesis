@@ -964,7 +964,6 @@ def test_mutually_broadcastable_shapes_can_generate_arbitrary_ndims(
 def test_mutually_broadcastable_shapes_can_generate_interesting_singletons(
     base_shape, max_dims
 ):
-
     find_any(
         nps.mutually_broadcastable_shapes(
             num_shapes=2,

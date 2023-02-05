@@ -234,7 +234,6 @@ Initializes are typically useful to populate bundles:
 
 
     class NumberModifier(RuleBasedStateMachine):
-
         folders = Bundle("folders")
         files = Bundle("files")
 
@@ -270,7 +269,6 @@ that returns True or False based on the RuleBasedStateMachine instance.
 
 
     class NumberModifier(RuleBasedStateMachine):
-
         num = 0
 
         @rule()
@@ -307,7 +305,6 @@ decorator that marks a function to be run after every step.
 
 
     class NumberModifier(RuleBasedStateMachine):
-
         num = 0
 
         @rule()

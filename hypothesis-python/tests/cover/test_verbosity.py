@@ -64,7 +64,6 @@ def test_includes_progress_in_verbose_mode():
 
 
 def test_prints_initial_attempts_on_find():
-
     with capture_verbosity() as o:
 
         def foo():

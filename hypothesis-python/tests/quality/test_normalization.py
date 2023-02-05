@@ -36,7 +36,6 @@ def normalize_kwargs(request):
     ids=repr,
 )
 def test_common_strategies_normalize_small_values(strategy, n, normalize_kwargs):
-
     excluded = list(map(repr, islice(iter_values(strategy, unique_by=repr), n)))
 
     def test_function(data):
