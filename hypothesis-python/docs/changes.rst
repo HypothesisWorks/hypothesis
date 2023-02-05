@@ -18,6 +18,18 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.67.0:
+
+-------------------
+6.67.0 - 2023-02-05
+-------------------
+
+This release allows for more precise generation of complex numbers using
+:func:`~hypothesis.extra.numpy.from_dtype`, by supporting the ``width``,
+``min_magnitude``, and ``min_magnitude`` arguments (:issue:`3468`).
+
+Thanks to Felix Divo for this feature!
+
 .. _v6.66.2:
 
 -------------------
