@@ -70,7 +70,6 @@ def test_all_filtered_child():
 
 
 def test_skips_over_exhausted_children():
-
     results = []
 
     def f(chooser):

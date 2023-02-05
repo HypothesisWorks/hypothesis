@@ -68,7 +68,7 @@ class MyList:
             p.text("MyList(...)")
         else:
             with p.group(3, "MyList(", ")"):
-                for (i, child) in enumerate(self.content):
+                for i, child in enumerate(self.content):
                     if i:
                         p.text(",")
                         p.breakable()

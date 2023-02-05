@@ -15,7 +15,6 @@ from hypothesis import assume, given, strategies as st
 
 
 class TestAsyncioRun(TestCase):
-
     timeout = 5
 
     def execute_example(self, f):

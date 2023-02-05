@@ -144,6 +144,7 @@ Falsifying example: inner\(
 def test_reprs_as_created_consistent_calls_despite_indentation():
     aas = "a" * 60
     strat = st.builds(some_foo, st.just(aas))
+
     # If we have multiple calls which return the same object, we can print their
     # nice repr even if varying indentation means that they'll come out different!
     @given(strat, st.builds(Bar, strat))
