@@ -99,8 +99,6 @@ def fn_ktest(*fnkwargs):
     (ds.floats, {"exclude_max": True}),  # because max_value=None
     (ds.floats, {"min_value": 1.8, "width": 32}),
     (ds.floats, {"max_value": 1.8, "width": 32}),
-    (ds.complex_numbers, {"min_magnitude": 1.8, "width": 64}),
-    (ds.complex_numbers, {"max_magnitude": 1.8, "width": 64}),
     (ds.fractions, {"min_value": 2, "max_value": 1}),
     (ds.fractions, {"min_value": math.nan}),
     (ds.fractions, {"max_value": math.nan}),
