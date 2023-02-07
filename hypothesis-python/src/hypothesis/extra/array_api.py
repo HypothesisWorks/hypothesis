@@ -297,30 +297,21 @@ def _from_dtype(
 
         return st.floats(width=finfo.bits, **kw)
     else:
-        # A less-inelegant solution to support complex dtypes exists, but as
-        # this is currently a draft feature, we might as well wait for
-        # discussion of complex inspection to resolve first - a better method
-        # might become available soon enough.
-        # See https://github.com/data-apis/array-api/issues/433
-        for attr in ["float32", "float64", "complex64"]:
-            if not hasattr(xp, attr):
-                raise NotImplementedError(
-                    f"Array module {xp.__name__} has no dtype {attr}, which is "
-                    "currently required for xps.from_dtype() to work with "
-                    "any complex dtype."
-                )
-        component_dtype = xp.float32 if dtype == xp.complex64 else xp.float64
-
-        floats = _from_dtype(
-            xp,
-            api_version,
-            component_dtype,
+        finfo = xp.finfo(dtype)
+        # See above comment on FTZ inference. We explicitly infer with a
+        # complex array, in case complex arrays have different FTZ behaviour
+        # than arrays of the respective composite float.
+        if allow_subnormal is None:
+            subnormal = next_down(finfo.smallest_normal, width=finfo.bits)
+            x = xp.asarray(complex(subnormal, subnormal), dtype=dtype)
+            builtin_x = complex(x)
+            allow_subnormal = builtin_x.real != 0 and builtin_x.imag != 0
+        return st.complex_numbers(
             allow_nan=allow_nan,
             allow_infinity=allow_infinity,
             allow_subnormal=allow_subnormal,
+            width=finfo.bits * 2,
         )
-
-        return st.builds(complex, floats, floats)  # type: ignore[arg-type]
 
 
 class ArrayStrategy(st.SearchStrategy):
