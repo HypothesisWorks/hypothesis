@@ -59,10 +59,6 @@ pandas bug.
 Array API
 ---------
 
-.. tip::
-   The Array API standard is not yet finalised, so this module will make breaking
-   changes if necessary to support newer versions of the standard.
-
 Hypothesis offers strategies for `Array API <https://data-apis.org/>`_ adopting
 libraries in the ``hypothesis.extra.array_api`` package. See :issue:`3037` for
 more details.  If you want to test with :pypi:`CuPy`, :pypi:`Dask`, :pypi:`JAX`,
@@ -74,9 +70,6 @@ or just ``numpy.array_api`` - this is the extension for you!
 The resulting namespace contains all our familiar strategies like
 :func:`~xps.arrays` and :func:`~xps.from_dtype`, but based on the Array API
 standard semantics and returning objects from the ``xp`` module:
-
-..
-    TODO: for next released xp version, include complex_dtypes here
 
 .. automodule:: xps
    :members:
@@ -90,6 +83,7 @@ standard semantics and returning objects from the ``xp`` module:
         integer_dtypes,
         unsigned_integer_dtypes,
         floating_dtypes,
+        complex_dtypes,
         valid_tuple_axes,
         broadcastable_shapes,
         mutually_broadcastable_shapes,
