@@ -194,7 +194,7 @@ def _from_dtype(
     allow_subnormal: Optional[bool] = None,
     exclude_min: Optional[bool] = None,
     exclude_max: Optional[bool] = None,
-) -> st.SearchStrategy[Union[bool, int, float]]:
+) -> st.SearchStrategy[Union[bool, int, float, complex]]:
     """Return a strategy for any value of the given dtype.
 
     Values generated are of the Python scalar which is
@@ -936,7 +936,7 @@ def make_strategies_namespace(
         allow_subnormal: Optional[bool] = None,
         exclude_min: Optional[bool] = None,
         exclude_max: Optional[bool] = None,
-    ) -> st.SearchStrategy[Union[bool, int, float]]:
+    ) -> st.SearchStrategy[Union[bool, int, float, complex]]:
         return _from_dtype(
             xp,
             api_version,  # type: ignore[arg-type]
