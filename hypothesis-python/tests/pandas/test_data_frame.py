@@ -185,7 +185,17 @@ def test_arbitrary_data_frames(data):
         column_name = data_frame_columns[i]
         values = df[column_name]
         if c.unique:
-            assert len(set(values)) == len(values)
+            # NA values should always be treated as unique to each other, so we
+            # just ignore them here. Note NA values in the ecosystem can have
+            # different identity behaviours, e.g.
+            #
+            #     >>> set([float("nan"), float("nan")])
+            #     {nan, nan}
+            #     >>> set([pd.NaT, pd.NaT])
+            #     {NaT}
+            #
+            non_na_values = values.dropna()
+            assert len(set(non_na_values)) == len(non_na_values)
 
 
 @given(
