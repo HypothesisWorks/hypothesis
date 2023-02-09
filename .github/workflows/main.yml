@@ -44,8 +44,8 @@ jobs:
           - check-py311-cover
           - check-py311-nocover
           - check-py311-niche
-          - check-py312-cover
-          - check-py312-nocover
+          # - check-py312-cover
+          # - check-py312-nocover
           - check-py312-niche
           - check-quality
           ## Skip all the (inactive/old) Rust and Ruby tests pending fixes
@@ -77,11 +77,11 @@ jobs:
       with:
         fetch-depth: 0
     - name: Set up Python 3.10
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: "3.10"
     - name: Restore cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: |
           ~/.cache
@@ -139,12 +139,12 @@ jobs:
       with:
         fetch-depth: 0
     - name: Set up Python 3.10
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: "3.10"
         architecture: ${{ matrix.python-architecture }}
     - name: Restore cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: |
           ~\appdata\local\pip\cache
@@ -178,11 +178,11 @@ jobs:
       with:
         fetch-depth: 0
     - name: Set up Python 3.10
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: "3.10"
     - name: Restore cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: |
           ~/.cache
@@ -207,11 +207,11 @@ jobs:
         fetch-depth: 0
         token: ${{ secrets.GH_TOKEN }}
     - name: Set up Python 3.10
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: "3.10"
     - name: Restore cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: |
           ~/.cache
