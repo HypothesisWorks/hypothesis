@@ -14,6 +14,7 @@ their individual contributions.
 * `Adam Sven Johnson <https://www.github.com/pkqk>`_
 * `Afrida Tabassum <https://github.com/oxfordhalfblood>`_ (afrida@gmail.com)
 * `Afonso Silva <https://github.com/ajcerejeira>`_ (ajcerejeira@gmail.com)
+* `Agustín Covarrubias <https://github.com/agucova>`
 * `Akash Suresh <https://www.github.com/akash-suresh>`_ (akashsuresh36@gmail.com)
 * `Alex Gaynor <https://github.com/alex>`_
 * `Alex Stapleton <https://www.github.com/public>`_

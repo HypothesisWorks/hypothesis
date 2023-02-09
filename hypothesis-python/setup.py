@@ -63,6 +63,7 @@ extras = {
     "pytest": ["pytest>=4.6"],
     "dpcontracts": ["dpcontracts>=0.4"],
     "redis": ["redis>=3.0.0"],
+    "github-actions": ["requests >= 2.22.0"],
     # zoneinfo is an odd one: every dependency is conditional, because they're
     # only necessary on old versions of Python or Windows systems.
     "zoneinfo": [
