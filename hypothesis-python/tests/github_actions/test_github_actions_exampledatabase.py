@@ -7,18 +7,31 @@
 # This Source Code Form is subject to the terms of the Mozilla Public License,
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
+
 import os
 
+import pytest
+
+from hypothesis import given, strategies as st
+from hypothesis.database import ReadOnlyDatabase
 from hypothesis.extra.github_actions import GitHubArtifactDatabase
 
-from hypothesis import given
-from hypothesis import strategies as st
 
+def test_require_readonly_wrapping():
+    database = GitHubArtifactDatabase("test", "test")
+    # save, move and delete can only be called when wrapped around ReadonlyDatabase
+    with pytest.raises(RuntimeError):
+        database.save(b"foo", b"bar")
+    with pytest.raises(RuntimeError):
+        database.move(b"foo", b"bar")
+    with pytest.raises(RuntimeError):
+        database.delete(b"foo", b"bar")
 
-def test_readonly_db_is_not_writable():
-    wrapped = GitHubArtifactDatabase("test", "test")
-    wrapped.create(b"key", b"value")
-    assert wrapped.fetch(b"key") is None
+    # check that the database silently ignores writes when wrapped around ReadOnlyDatabase
+    database = ReadOnlyDatabase(database)
+    database.save(b"foo", b"bar")
+    database.move(b"foo", b"bar")
+    database.delete(b"foo", b"bar")
 
 
 @given(st.binary(), st.binary())

@@ -13,6 +13,7 @@ import tempfile
 from os import getenv
 
 import requests
+
 from hypothesis.configuration import mkdir_p, storage_directory
 from hypothesis.database import DirectoryBasedExampleDatabase
 
@@ -50,7 +51,7 @@ class GitHubArtifactDatabase(DirectoryBasedExampleDatabase):
         owner: str,
         repo: str,
         artifact_name: str = "hypofuzz-example-db",
-        path: str = storage_directory("ci")
+        path: str = storage_directory("ci"),
     ):
         self.owner = owner
         self.repo = repo
@@ -140,7 +141,16 @@ class GitHubArtifactDatabase(DirectoryBasedExampleDatabase):
 
     # Read-only interface
     def save(self, key: bytes, value: bytes) -> None:
-        pass
+        raise RuntimeError(
+            "This database is read-only. Please wrap this class with ReadOnlyDatabase, i.e. ReadOnlyDatabase(GitHubArtifactsDatabase(...))."
+        )
+
+    def move(self, key: bytes, value: bytes) -> None:
+        raise RuntimeError(
+            "This database is read-only. Please wrap this class with ReadOnlyDatabase, i.e. ReadOnlyDatabase(GitHubArtifactsDatabase(...))."
+        )
 
     def delete(self, key: bytes, value: bytes) -> None:
-        pass
+        raise RuntimeError(
+            "This database is read-only. Please wrap this class with ReadOnlyDatabase, i.e. ReadOnlyDatabase(GitHubArtifactsDatabase(...))."
+        )
