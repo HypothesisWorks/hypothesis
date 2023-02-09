@@ -18,6 +18,22 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.68.0:
+
+-------------------
+6.68.0 - 2023-02-09
+-------------------
+
+This release adds support for the Array API's `2022.12 release
+<https://data-apis.org/array-api/2022.12/>`_ via the ``api_version`` argument in
+:func:`~hypothesis.extra.array_api.make_strategies_namespace`. Concretely this
+involves complex support in its existing strategies, plus an introduced
+:func:`xps.complex_dtypes` strategy.
+
+Additionally this release now treats :ref:`hypothesis.extra.array_api
+<array-api>` as stable, meaning breaking changes should only happen with major
+releases of Hypothesis.
+
 .. _v6.67.1:
 
 -------------------
