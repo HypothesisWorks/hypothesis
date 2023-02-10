@@ -1,3 +1,7 @@
 RELEASE_TYPE: minor
 
-This release adds support for example databases backed by Github Actions artifacts. These can be used by developers to access the same example databases being used by a CI workflow, in a read-only manner.
+This release adds :class:`GitHubArtifactDatabase`, which allows to set up example databases backed
+by Github Actions artifacts. These can be used by developers to access the examples being found
+continuously by a CI workflow running under GitHub Actions.
+
+Thanks to Agustín Covarrubias for this feature!
