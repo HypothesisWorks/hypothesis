@@ -25,6 +25,8 @@ from zipfile import BadZipFile
 from zipfile import Path as ZipPath
 from zipfile import ZipFile
 
+from typing import Optional
+
 from hypothesis.configuration import mkdir_p, storage_directory
 from hypothesis.errors import HypothesisException, HypothesisWarning
 from hypothesis.utils.conventions import not_set
@@ -372,7 +374,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
         repo: str,
         artifact_name: str = "hypofuzz-example-db",
         cache_timeout: datetime.timedelta = datetime.timedelta(days=1),
-        path: Path = None,
+        path: Optional[Path] = None,
     ):
         self.owner = owner
         self.repo = repo
@@ -383,7 +385,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
 
         # Get the GitHub token from the environment
         # It's unnecessary to use a token if the repo is public
-        self.token: str | None = getenv("GITHUB_TOKEN")
+        self.token: Optional[str] = getenv("GITHUB_TOKEN")
 
         if path is None:
             self.path: Path = Path(
@@ -398,10 +400,10 @@ class GitHubArtifactDatabase(ExampleDatabase):
 
         # This is the path to the artifact in usage
         # .hypothesis/ci/github-artifacts/<artifact-name>/<isoformat>.zip
-        self._artifact: Path | None = None
+        self._artifact: Optional[Path] = None
 
         # This is the FS root for the in-memory zipfile
-        self._root: ZipPath | None = None
+        self._root: Optional[ZipPath] = None
 
     def __repr__(self) -> str:
         return f"GitHubArtifactDatabase(owner={self.owner}, repo={self.repo}, artifact_name={self.artifact_name})"
@@ -466,7 +468,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
 
         self._initialize_io()
 
-    def _fetch_artifact(self) -> Path | None:
+    def _fetch_artifact(self) -> Optional[Path]:
         # Get the list of artifacts from GitHub
         request = Request(
             f"https://api.github.com/repos/{self.owner}/{self.repo}/actions/artifacts",
