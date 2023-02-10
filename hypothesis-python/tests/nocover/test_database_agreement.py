@@ -19,7 +19,7 @@ from zipfile import ZipFile
 from hypothesis.database import (
     DirectoryBasedExampleDatabase,
     InMemoryExampleDatabase,
-    GithubArtifactDatabase,
+    GitHubArtifactDatabase,
     _hash,
 )
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
@@ -27,7 +27,7 @@ from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
 from hypothesis import strategies as st
 
 
-class GithubArtifactMock:
+class GitHubArtifactMock:
     def __init__(self, tempd: str):
         self.tempd = tempd
 
@@ -45,7 +45,7 @@ class GithubArtifactMock:
             zip_file.writestr(".mock", "")
 
         self._ga_root = ZipPath(artifact_path)
-        self.db = GithubArtifactDatabase("mock", "mock", artifact_directory)
+        self.db = GitHubArtifactDatabase("mock", "mock", artifact_directory)
         self.db._initialize_db()
 
         # Check that we have the same artifact path
@@ -83,20 +83,20 @@ class DatabaseComparison(RuleBasedStateMachine):
         self.tempd = tempfile.mkdtemp()
         exampledir = os.path.join(self.tempd, "examples")
 
-        self.ga = GithubArtifactMock(self.tempd)
+        self.ga = GitHubArtifactMock(self.tempd)
 
         self.w_dbs = [
             DirectoryBasedExampleDatabase(exampledir),
             InMemoryExampleDatabase(),
             DirectoryBasedExampleDatabase(exampledir),
-            self.ga
+            self.ga,
         ]
 
         self.r_dbs = [
             DirectoryBasedExampleDatabase(exampledir),
             InMemoryExampleDatabase(),
             DirectoryBasedExampleDatabase(exampledir),
-            self.ga.db
+            self.ga.db,
         ]
 
     keys = Bundle("keys")
