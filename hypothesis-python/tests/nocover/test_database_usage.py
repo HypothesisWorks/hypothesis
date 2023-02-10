@@ -10,12 +10,19 @@
 
 import os.path
 
-from hypothesis import assume, core, find, given, settings, strategies as st
-from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
+import pytest
+from hypothesis.database import (
+    ExampleDatabase,
+    GitHubArtifactDatabase,
+    InMemoryExampleDatabase,
+    ReadOnlyDatabase,
+)
 from hypothesis.errors import NoSuchExample, Unsatisfiable
 from hypothesis.internal.entropy import deterministic_PRNG
-
 from tests.common.utils import all_values, non_covering_examples
+
+from hypothesis import assume, core, find, given, settings
+from hypothesis import strategies as st
 
 
 def has_a_non_zero_byte(x):
@@ -154,3 +161,20 @@ def test_database_not_created_when_not_used(tmp_path_factory, key, value):
     database.save(key, value)
     assert os.path.exists(str(path))
     assert list(database.fetch(key)) == [value]
+
+
+def test_ga_require_readonly_wrapping():
+    database = GitHubArtifactDatabase("test", "test")
+    # save, move and delete can only be called when wrapped around ReadonlyDatabase
+    with pytest.raises(RuntimeError):
+        database.save(b"foo", b"bar")
+    with pytest.raises(RuntimeError):
+        database.move(b"foo", b"bar")
+    with pytest.raises(RuntimeError):
+        database.delete(b"foo", b"bar")
+
+    # check that the database silently ignores writes when wrapped around ReadOnlyDatabase
+    database = ReadOnlyDatabase(database)
+    database.save(b"foo", b"bar")
+    database.move(b"foo", b"bar")
+    database.delete(b"foo", b"bar")
