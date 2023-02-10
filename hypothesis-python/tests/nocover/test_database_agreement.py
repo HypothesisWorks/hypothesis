@@ -54,23 +54,23 @@ class GithubArtifactMock:
     def _value_path(self, key: bytes, value: bytes):
         return self.db._key_path(key) / _hash(value)
 
-    def mock_save(self, key: bytes, value: bytes):
+    def save(self, key: bytes, value: bytes):
         self.db._key_path(key).mkdir(parents=True, exist_ok=True)
         path: Path = self._value_path(key, value)
         if not path.exists():
             path.write_bytes(value)
 
-    def mock_move(self, src: bytes, dest: bytes, value: bytes):
+    def move(self, src: bytes, dest: bytes, value: bytes):
         if src == dest:
-            self.mock_save(src, value)
+            self.save(src, value)
             return
         try:
             self._value_path(src, value).rename(self._value_path(dest, value))
         except OSError:
-            self.mock_delete(src, value)
-            self.mock_save(dest, value)
+            self.delete(src, value)
+            self.save(dest, value)
 
-    def mock_delete(self, key: bytes, value: bytes):
+    def delete(self, key: bytes, value: bytes):
         try:
             self._value_path(key, value).unlink()
         except OSError:
@@ -85,10 +85,11 @@ class DatabaseComparison(RuleBasedStateMachine):
 
         self.ga = GithubArtifactMock(self.tempd)
 
-        self.rw_dbs = [
+        self.w_dbs = [
             DirectoryBasedExampleDatabase(exampledir),
             InMemoryExampleDatabase(),
             DirectoryBasedExampleDatabase(exampledir),
+            self.ga
         ]
 
         self.r_dbs = [
@@ -111,21 +112,18 @@ class DatabaseComparison(RuleBasedStateMachine):
 
     @rule(k=keys, v=values)
     def save(self, k, v):
-        for db in self.rw_dbs:
+        for db in self.w_dbs:
             db.save(k, v)
-        self.ga.mock_save(k, v)
 
     @rule(k=keys, v=values)
     def delete(self, k, v):
-        for db in self.rw_dbs:
+        for db in self.w_dbs:
             db.delete(k, v)
-        self.ga.mock_delete(k, v)
 
     @rule(k1=keys, k2=keys, v=values)
     def move(self, k1, k2, v):
-        for db in self.rw_dbs:
+        for db in self.w_dbs:
             db.move(k1, k2, v)
-        self.ga.mock_move(k1, k2, v)
 
     @rule(k=keys)
     def values_agree(self, k):
