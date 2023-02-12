@@ -87,7 +87,9 @@ class TestCaseProperty:  # pragma: no cover
         raise AttributeError("Cannot delete TestCase")
 
 
-def run_state_machine_as_test(state_machine_factory, *, settings=None):
+def run_state_machine_as_test(
+    state_machine_factory, *, settings=None, _min_stateful_steps=0
+):
     """Run a state machine definition as a test, either silently doing nothing
     or printing a minimal breaking program and raising an exception.
 
@@ -129,7 +131,7 @@ def run_state_machine_as_test(state_machine_factory, *, settings=None):
                 # 2 ** -16 during normal operation but force a stop when we've
                 # generated enough steps.
                 cd.start_example(STATE_MACHINE_RUN_LABEL)
-                if steps_run == 0:
+                if steps_run <= _min_stateful_steps:
                     cd.draw_bits(16, forced=1)
                 elif steps_run >= max_steps:
                     cd.draw_bits(16, forced=0)
