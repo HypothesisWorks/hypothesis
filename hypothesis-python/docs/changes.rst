@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.68.1:
+
+-------------------
+6.68.1 - 2023-02-12
+-------------------
+
+This patch adds some private hooks for use in research on
+`Schemathesis <https://github.com/schemathesis/schemathesis>`__
+(`see our preprint here <https://arxiv.org/abs/2112.10328>`__).
+
 .. _v6.68.0:
 
 -------------------
