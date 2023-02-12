@@ -26,7 +26,7 @@ exceptiongroup==1.1.0 ; python_version < "3.11"
     #   pytest
 execnet==1.9.0
     # via pytest-xdist
-fakeredis==2.7.1
+fakeredis==2.8.0
     # via -r requirements/coverage.in
 iniconfig==2.0.0
     # via pytest
@@ -38,7 +38,7 @@ mypy-extensions==1.0.0
     # via
     #   black
     #   typing-inspect
-numpy==1.24.1
+numpy==1.24.2
     # via
     #   -r requirements/coverage.in
     #   pandas
@@ -52,7 +52,7 @@ pathspec==0.11.0
     # via black
 pexpect==4.8.0
     # via -r requirements/test.in
-platformdirs==2.6.2
+platformdirs==3.0.0
     # via black
 pluggy==1.0.0
     # via pytest
@@ -62,7 +62,7 @@ pytest==7.2.1
     # via
     #   -r requirements/test.in
     #   pytest-xdist
-pytest-xdist==3.1.0
+pytest-xdist==3.2.0
     # via -r requirements/test.in
 python-dateutil==2.8.2
     # via
@@ -74,7 +74,7 @@ pytz==2022.7.1
     #   pandas
 pyyaml==6.0
     # via libcst
-redis==4.4.2
+redis==4.5.1
     # via fakeredis
 six==1.16.0
     # via python-dateutil

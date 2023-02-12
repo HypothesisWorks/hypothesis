@@ -55,7 +55,7 @@ com2ann==0.3.0
     # via shed
 coverage==7.1.0
     # via -r requirements/tools.in
-cryptography==39.0.0
+cryptography==39.0.1
     # via
     #   secretstorage
     #   types-pyopenssl
@@ -66,11 +66,12 @@ distlib==0.3.6
     # via virtualenv
 django==4.1.6
     # via -r requirements/tools.in
-docutils==0.19
+docutils==0.18.1
     # via
     #   readme-renderer
     #   restructuredtext-lint
     #   sphinx
+    #   sphinx-rtd-theme
 dpcontracts==0.6.0
     # via -r requirements/tools.in
 exceptiongroup==1.1.0 ; python_version < "3.11"
@@ -120,7 +121,7 @@ flake8-plugin-utils==1.3.2
     # via
     #   flake8-pytest-style
     #   flake8-return
-flake8-pytest-style==1.6.0
+flake8-pytest-style==1.7.0
     # via -r requirements/tools.in
 flake8-return==1.2.0
     # via -r requirements/tools.in
@@ -140,7 +141,7 @@ importlib-metadata==6.0.0
     #   twine
 iniconfig==2.0.0
     # via pytest
-ipython==8.9.0
+ipython==8.10.0
     # via -r requirements/tools.in
 isort==5.12.0
     # via shed
@@ -174,7 +175,7 @@ mdurl==0.1.2
     # via markdown-it-py
 more-itertools==9.0.0
     # via jaraco-classes
-mypy==0.991
+mypy==1.0.0
     # via -r requirements/tools.in
 mypy-extensions==1.0.0
     # via
@@ -201,13 +202,11 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pip==23.0
-    # via pip-tools
 pip-tools==6.12.2
     # via -r requirements/tools.in
 pkginfo==1.9.6
     # via twine
-platformdirs==2.6.2
+platformdirs==3.0.0
     # via
     #   black
     #   tox
@@ -242,7 +241,7 @@ pyproject-api==1.5.0
     # via tox
 pyproject-hooks==1.0.0
     # via build
-pyright==1.1.292
+pyright==1.1.293
     # via -r requirements/tools.in
 pytest==7.2.1
     # via -r requirements/tools.in
@@ -274,11 +273,6 @@ rich==13.3.1
     # via twine
 secretstorage==3.3.3
     # via keyring
-setuptools==67.1.0
-    # via
-    #   nodeenv
-    #   pip-tools
-    #   sphinxcontrib-jquery
 shed==0.10.9
     # via -r requirements/tools.in
 six==1.16.0
@@ -306,7 +300,7 @@ sphinx-codeautolink==0.14.1
     # via -r requirements/tools.in
 sphinx-hoverxref==1.3.0
     # via -r requirements/tools.in
-sphinx-rtd-theme==0.5.1
+sphinx-rtd-theme==1.2.0
     # via -r requirements/tools.in
 sphinx-selective-exclude==1.0.3
     # via -r requirements/tools.in
@@ -316,8 +310,10 @@ sphinxcontrib-devhelp==1.0.2
     # via sphinx
 sphinxcontrib-htmlhelp==2.0.1
     # via sphinx
-sphinxcontrib-jquery==3.0.0
-    # via sphinx-hoverxref
+sphinxcontrib-jquery==2.0.0
+    # via
+    #   sphinx-hoverxref
+    #   sphinx-rtd-theme
 sphinxcontrib-jsmath==1.0.1
     # via sphinx
 sphinxcontrib-qthelp==1.0.3
@@ -328,7 +324,7 @@ sqlparse==0.4.3
     # via django
 stack-data==0.6.2
     # via ipython
-stevedore==4.1.1
+stevedore==5.0.0
     # via bandit
 tokenize-rt==5.0.0
     # via pyupgrade
@@ -342,7 +338,7 @@ tomli==2.0.1
     #   pyproject-hooks
     #   pytest
     #   tox
-tox==4.4.4
+tox==4.4.5
     # via -r requirements/tools.in
 traitlets==5.9.0
     # via
@@ -358,7 +354,7 @@ types-pyopenssl==23.0.0.2
     # via types-redis
 types-pytz==2022.7.1.0
     # via -r requirements/tools.in
-types-redis==4.4.0.6
+types-redis==4.5.1.0
     # via -r requirements/tools.in
 typing-extensions==4.4.0
     # via
@@ -374,7 +370,7 @@ urllib3==1.26.14
     # via
     #   requests
     #   twine
-virtualenv==20.17.1
+virtualenv==20.19.0
     # via tox
 wcwidth==0.2.6
     # via prompt-toolkit
@@ -382,5 +378,14 @@ webencodings==0.5.1
     # via bleach
 wheel==0.38.4
     # via pip-tools
-zipp==3.12.1
+zipp==3.13.0
     # via importlib-metadata
+
+# The following packages are considered to be unsafe in a requirements file:
+pip==23.0
+    # via pip-tools
+setuptools==67.2.0
+    # via
+    #   nodeenv
+    #   pip-tools
+    #   sphinxcontrib-jquery
