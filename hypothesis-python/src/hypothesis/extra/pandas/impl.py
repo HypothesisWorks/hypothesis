@@ -79,11 +79,17 @@ def elements_and_dtype(elements, dtype, source=None):
             raise InvalidArgument(
                 f"{prefix}dtype is categorical, which is currently unsupported"
             )
-
+    msg = ""
+    if dtype == pandas.datetime:
+        msg = ". Pass an elements strategy or set dtype='datetime64[ns]'"
+    if isinstance(dtype, type) and np.dtype(dtype).kind == "O" and elements is None:
+        raise InvalidArgument(
+                f"No strategy inference for dtype {dtype!r}{msg}."
+            )
     if isinstance(dtype, type) and np.dtype(dtype).kind == "O" and dtype is not object:
         note_deprecation(
             f"Passed dtype={dtype!r} is not a valid Pandas dtype.  We'll treat it as "
-            "dtype=object for now, but this will be an error in a future version.",
+            "dtype=object for now, but this will be an error in a future version{msg}.",
             since="2021-12-31",
             has_codemod=False,
         )
