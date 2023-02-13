@@ -14,7 +14,7 @@ Using a value of ``HealthCheck.all()`` will disable all health checks.
 .. autoclass:: hypothesis.HealthCheck
    :undoc-members:
    :inherited-members:
-   :exclude-members: all
+   :exclude-members: all, return_value, not_a_test_method
 
 
 .. _deprecation-policy:

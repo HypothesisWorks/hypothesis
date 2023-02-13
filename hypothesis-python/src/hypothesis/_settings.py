@@ -489,14 +489,18 @@ class HealthCheck(Enum):
     testing."""
 
     return_value = 5
-    """Checks if your tests return a non-None value (which will be ignored and
+    """Deprecated, now a strict error.
+    
+    Checks if your tests return a non-None value (which will be ignored and
     is unlikely to do what you want)."""
 
     large_base_example = 7
     """Checks if the natural example to shrink towards is very large."""
 
     not_a_test_method = 8
-    """Checks if :func:`@given <hypothesis.given>` has been applied to a
+    """Deprecated, now a strict error.
+
+    Checks if :func:`@given <hypothesis.given>` has been applied to a
     method defined by :class:`python:unittest.TestCase` (i.e. not a test)."""
 
     function_scoped_fixture = 9
