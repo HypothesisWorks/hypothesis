@@ -457,7 +457,17 @@ class HealthCheck(Enum):
 
     @classmethod
     def all(cls) -> List["HealthCheck"]:
-        return list(HealthCheck)
+        attributes = list(HealthCheck)
+        strict_errors = [HealthCheck.return_value, HealthCheck.not_a_test_method]
+
+        for strict_error in strict_errors: 
+            attributes.remove(strict_error)
+
+        return attributes
+    
+    # @classmethod
+    # def __iter__(cls) -> Iterator["HealthCheck"]:
+    #     return iter(cls.all())
 
     data_too_large = 1
     """Checks if too many examples are aborted for being too large.
