@@ -9,16 +9,14 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 from hypothesis.errors import FailedHealthCheck
-from hypothesis._settings import HealthCheck, note_deprecation
+
 
 def fail_health_check(settings, message, label):
     # Tell pytest to omit the body of this function from tracebacks
     # https://docs.pytest.org/en/latest/example/simple.html#writing-well-integrated-assertion-helpers
     __tracebackhide__ = True
 
-    if label in [HealthCheck.return_value, HealthCheck.not_a_test_method]: 
-        note_deprecation("The return_value and not_a_test_method health checks are deprecated, and are now strict errors.", since="2023-02-13", has_codemod=False)
-    elif label in settings.suppress_health_check: # Put if the label == (the two words I'm looking out for)
+    if label in settings.suppress_health_check:
         return
     message += (
         "\nSee https://hypothesis.readthedocs.io/en/latest/health"

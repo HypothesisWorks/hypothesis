@@ -457,17 +457,7 @@ class HealthCheck(Enum):
 
     @classmethod
     def all(cls) -> List["HealthCheck"]:
-        attributes = list(HealthCheck)
-        strict_errors = [HealthCheck.return_value, HealthCheck.not_a_test_method]
-
-        for strict_error in strict_errors: 
-            attributes.remove(strict_error)
-
-        return attributes
-    
-    # @classmethod
-    # def __iter__(cls) -> Iterator["HealthCheck"]:
-    #     return iter(cls.all())
+        return list(HealthCheck)
 
     data_too_large = 1
     """Checks if too many examples are aborted for being too large.
@@ -489,18 +479,14 @@ class HealthCheck(Enum):
     testing."""
 
     return_value = 5
-    """Deprecated, now a strict error.
-    
-    Checks if your tests return a non-None value (which will be ignored and
+    """Checks if your tests return a non-None value (which will be ignored and
     is unlikely to do what you want)."""
 
     large_base_example = 7
     """Checks if the natural example to shrink towards is very large."""
 
     not_a_test_method = 8
-    """Deprecated, now a strict error.
-
-    Checks if :func:`@given <hypothesis.given>` has been applied to a
+    """Checks if :func:`@given <hypothesis.given>` has been applied to a
     method defined by :class:`python:unittest.TestCase` (i.e. not a test)."""
 
     function_scoped_fixture = 9

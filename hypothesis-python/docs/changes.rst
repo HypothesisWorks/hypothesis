@@ -1735,7 +1735,7 @@ in the `Array API standard <https://data-apis.org/>`__ (see :pull:`3065`).
 This release makes :doc:`stateful testing <stateful>` more likely to tell you
 if you do something unexpected and unsupported:
 
-- The ``hypothesis.HealthCheck.return_value`` health check now applies to
+- The :obj:`~hypothesis.HealthCheck.return_value` health check now applies to
   :func:`~hypothesis.stateful.rule` and :func:`~hypothesis.stateful.initialize`
   rules, if they don't have ``target`` bundles, as well as
   :func:`~hypothesis.stateful.invariant`.
@@ -1833,7 +1833,7 @@ Thanks to Ruben Opdebeeck for this contribution!
 This release emits a more useful error message when :func:`@given() <hypothesis.given>`
 is applied to a coroutine function, i.e. one defined using ``async def`` (:issue:`3054`).
 
-This was previously only handled by the generic ``hypothesis.HealthCheck.return_value``
+This was previously only handled by the generic :obj:`~hypothesis.HealthCheck.return_value`
 health check, which doesn't direct you to use either :ref:`a custom executor <custom-function-execution>`
 or a library such as :pypi:`pytest-trio` or :pypi:`pytest-asyncio` to handle it for you.
 
@@ -8981,7 +8981,7 @@ with the standard library :mod:`python:unittest` module:
 
 - Applying :func:`@given <hypothesis.given>` to a non-test method which is
   overridden from :class:`python:unittest.TestCase`, such as ``setUp``,
-  raises a new health check ``<hypothesis.HealthCheck.not_a_test_method>``.
+  raises :attr:`a new health check <hypothesis.HealthCheck.not_a_test_method>`.
   (:issue:`991`)
 - Using :meth:`~python:unittest.TestCase.subTest` within a test decorated
   with :func:`@given <hypothesis.given>` would leak intermediate results
