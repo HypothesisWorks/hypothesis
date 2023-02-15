@@ -455,9 +455,21 @@ class HealthCheck(Enum):
     def __repr__(self):
         return f"{self.__class__.__name__}.{self.name}"
 
+    def __iter__(self):
+        return iter(attribute for attribute in super().__iter__() if attribute.name not in (self._deprecated_names + ["_deprecated_names"]))
+
+    def __getattr__(self, name):
+        if name == "_deprecated_names":
+            return object.__getattr__(self, "_deprecated_names")
+        if name in self._deprecated_names:
+            note_deprecation("The {name} health check is deprecated, and is now an unconditional errors.", since="2023-02-15", has_codemod=False)
+        return super().__getattr__(name)
+
     @classmethod
     def all(cls) -> List["HealthCheck"]:
         return list(HealthCheck)
+
+    _deprecated_names = ["return_value", "not_a_test_method"]
 
     data_too_large = 1
     """Checks if too many examples are aborted for being too large.
@@ -479,14 +491,16 @@ class HealthCheck(Enum):
     testing."""
 
     return_value = 5
-    """Checks if your tests return a non-None value (which will be ignored and
+    """Deprecated; the check is now an unconditional error.
+    Checks if your tests return a non-None value (which will be ignored and
     is unlikely to do what you want)."""
 
     large_base_example = 7
     """Checks if the natural example to shrink towards is very large."""
 
     not_a_test_method = 8
-    """Checks if :func:`@given <hypothesis.given>` has been applied to a
+    """Deprecated; the check is now an unconditional error.
+    Checks if :func:`@given <hypothesis.given>` has been applied to a
     method defined by :class:`python:unittest.TestCase` (i.e. not a test)."""
 
     function_scoped_fixture = 9
