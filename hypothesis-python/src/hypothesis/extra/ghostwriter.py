@@ -603,8 +603,7 @@ def _imports_for_strategy(strategy):
         ):
             return {
                 imp
-                for arg in strategy._LazyStrategy__args
-                + strategy._LazyStrategy__kwargs.values
+                for arg in set(strategy._LazyStrategy__args) | set(strategy._LazyStrategy__kwargs.values())
                 for imp in _imports_for_object(arg)
             }
         elif _get_module(strategy.function).startswith("hypothesis.extra."):
