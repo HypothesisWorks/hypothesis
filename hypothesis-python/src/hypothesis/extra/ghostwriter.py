@@ -598,8 +598,8 @@ def _imports_for_strategy(strategy):
     # error or invalid syntax, import that type and we're done.
     if isinstance(strategy, LazyStrategy):
         if strategy.function.__name__ in (
-                st.from_type.__name__,
-                st.from_regex.__name__,
+            st.from_type.__name__,
+            st.from_regex.__name__,
         ):
             return {
                 imp
