@@ -487,9 +487,13 @@ def test_note_deprecation_checks_has_codemod():
 
 def test_deprecated_settings_warn_on_access():
     with validate_deprecation():
-        HealthCheck.return_value
+        retval = HealthCheck.return_value
     with validate_deprecation():
-        HealthCheck.not_a_test_method
+        method = HealthCheck.not_a_test_method
     # but .all() or iteration *don't* warn
-    list(HealthCheck)
-    HealthCheck.all()
+    ls = list(HealthCheck)
+    al = HealthCheck.all()
+    # finally, check the lists are identical and omit deprecated members
+    assert ls == al
+    assert retval not in ls
+    assert method not in al

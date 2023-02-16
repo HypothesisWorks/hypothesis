@@ -445,9 +445,6 @@ class Phase(IntEnum):
         return f"Phase.{self.name}"
 
 
-__DEPRECATED_HEALTHCHECK_NAMES = ("return_value", "not_a_test_method")
-
-
 @unique
 class HealthCheck(Enum):
     """Arguments for :attr:`~hypothesis.settings.suppress_health_check`.
@@ -462,11 +459,11 @@ class HealthCheck(Enum):
         return iter(
             attribute
             for attribute in super().__iter__()
-            if attribute.name not in __DEPRECATED_HEALTHCHECK_NAMES
+            if attribute.name not in ("return_value", "not_a_test_method")
         )
 
     def __getattr__(self, name):
-        if name in __DEPRECATED_HEALTHCHECK_NAMES:
+        if name in ("return_value", "not_a_test_method"):
             note_deprecation(
                 f"HealthCheck.{name} is deprecated and cannot be suppressed.",
                 since="RELEASEDAY",
