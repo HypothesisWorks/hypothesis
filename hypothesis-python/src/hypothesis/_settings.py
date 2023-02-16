@@ -445,6 +445,9 @@ class Phase(IntEnum):
         return f"Phase.{self.name}"
 
 
+__DEPRECATED_HEALTHCHECK_NAMES = ("return_value", "not_a_test_method")
+
+
 @unique
 class HealthCheck(Enum):
     """Arguments for :attr:`~hypothesis.settings.suppress_health_check`.
@@ -456,20 +459,24 @@ class HealthCheck(Enum):
         return f"{self.__class__.__name__}.{self.name}"
 
     def __iter__(self):
-        return iter(attribute for attribute in super().__iter__() if attribute.name not in (self._deprecated_names + ["_deprecated_names"]))
+        return iter(
+            attribute
+            for attribute in super().__iter__()
+            if attribute.name not in __DEPRECATED_HEALTHCHECK_NAMES
+        )
 
     def __getattr__(self, name):
-        if name == "_deprecated_names":
-            return object.__getattr__(self, "_deprecated_names")
-        if name in self._deprecated_names:
-            note_deprecation("The {name} health check is deprecated, and is now an unconditional errors.", since="2023-02-15", has_codemod=False)
+        if name in __DEPRECATED_HEALTHCHECK_NAMES:
+            note_deprecation(
+                f"HealthCheck.{name} is deprecated and cannot be suppressed.",
+                since="RELEASEDAY",
+                has_codemod=False,
+            )
         return super().__getattr__(name)
 
     @classmethod
     def all(cls) -> List["HealthCheck"]:
         return list(HealthCheck)
-
-    _deprecated_names = ["return_value", "not_a_test_method"]
 
     data_too_large = 1
     """Checks if too many examples are aborted for being too large.
@@ -491,17 +498,14 @@ class HealthCheck(Enum):
     testing."""
 
     return_value = 5
-    """Deprecated; the check is now an unconditional error.
-    Checks if your tests return a non-None value (which will be ignored and
-    is unlikely to do what you want)."""
+    """Deprecated; we always error if a test returns a non-None value."""
 
     large_base_example = 7
     """Checks if the natural example to shrink towards is very large."""
 
     not_a_test_method = 8
-    """Deprecated; the check is now an unconditional error.
-    Checks if :func:`@given <hypothesis.given>` has been applied to a
-    method defined by :class:`python:unittest.TestCase` (i.e. not a test)."""
+    """Deprecated; we always error if :func:`@given <hypothesis.given>` is applied
+    to a method defined by :class:`python:unittest.TestCase` (i.e. not a test)."""
 
     function_scoped_fixture = 9
     """Checks if :func:`@given <hypothesis.given>` has been applied to a test
@@ -687,7 +691,7 @@ settings.lock_further_definitions()
 def note_deprecation(message: str, *, since: str, has_codemod: bool) -> None:
     if since != "RELEASEDAY":
         date = datetime.datetime.strptime(since, "%Y-%m-%d").date()
-        assert datetime.date(2016, 1, 1) <= date
+        assert datetime.date(2021, 1, 1) <= date
     if has_codemod:
         message += (
             "\n    The `hypothesis codemod` command-line tool can automatically "

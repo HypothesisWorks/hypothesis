@@ -17,6 +17,7 @@ import pytest
 
 from hypothesis import example, given, strategies as st
 from hypothesis._settings import (
+    HealthCheck,
     Phase,
     Verbosity,
     default_variable,
@@ -33,7 +34,7 @@ from hypothesis.errors import (
 from hypothesis.stateful import RuleBasedStateMachine, rule
 from hypothesis.utils.conventions import not_set
 
-from tests.common.utils import counts_calls, fails_with
+from tests.common.utils import counts_calls, fails_with, validate_deprecation
 
 
 def test_has_docstrings():
@@ -482,3 +483,13 @@ def test_note_deprecation_checks_has_codemod():
         match="The `hypothesis codemod` command-line tool",
     ):
         note_deprecation("This is bad", since="2021-01-01", has_codemod=True)
+
+
+def test_deprecated_settings_warn_on_access():
+    with validate_deprecation():
+        HealthCheck.return_value
+    with validate_deprecation():
+        HealthCheck.not_a_test_method
+    # but .all() or iteration *don't* warn
+    list(HealthCheck)
+    HealthCheck.all()

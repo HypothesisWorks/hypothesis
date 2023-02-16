@@ -1,4 +1,5 @@
 RELEASE_TYPE: minor
 
-This patch deprecates ``return_value`` and ``not_a_test_method`` health checks and 
-turns them into unconditional errors (:issue:`3568`).
+This release turns ``HealthCheck.return_value`` and ``HealthCheck.not_a_test_method``
+into unconditional errors, and therefore also deprecates access to those attributes.
+(:issue:`3568`).  Thanks to Reagan Lee for the patch!
