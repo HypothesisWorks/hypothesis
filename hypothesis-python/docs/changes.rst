@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.68.2:
+
+-------------------
+6.68.2 - 2023-02-17
+-------------------
+
+This patch fixes missing imports of the :mod:`re` module, when :doc:`ghostwriting <ghostwriter>`
+tests which include compiled patterns or regex flags.
+Thanks to Jens Heinrich for reporting and promptly fixing this bug!
+
 .. _v6.68.1:
 
 -------------------
