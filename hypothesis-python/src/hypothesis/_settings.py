@@ -455,25 +455,15 @@ class HealthCheck(Enum):
     def __repr__(self):
         return f"{self.__class__.__name__}.{self.name}"
 
-    def __iter__(self):
-        return iter(
-            attribute
-            for attribute in super().__iter__()
-            if attribute.name not in ("return_value", "not_a_test_method")
-        )
-
-    def __getattr__(self, name):
-        if name in ("return_value", "not_a_test_method"):
-            note_deprecation(
-                f"HealthCheck.{name} is deprecated and cannot be suppressed.",
-                since="RELEASEDAY",
-                has_codemod=False,
-            )
-        return super().__getattr__(name)
-
     @classmethod
     def all(cls) -> List["HealthCheck"]:
-        return list(HealthCheck)
+        attributes = list(HealthCheck)
+        strict_errors = [HealthCheck.return_value, HealthCheck.not_a_test_method]
+        print("ahaha, all() works")
+        for strict_error in strict_errors: 
+            attributes.remove(strict_error)
+
+        return attributes
 
     data_too_large = 1
     """Checks if too many examples are aborted for being too large.
