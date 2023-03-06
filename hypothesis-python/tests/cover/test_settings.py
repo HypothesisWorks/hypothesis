@@ -484,16 +484,18 @@ def test_note_deprecation_checks_has_codemod():
     ):
         note_deprecation("This is bad", since="2021-01-01", has_codemod=True)
 
+def test_deprecated_settings_warn_on_set_settings():
+    with validate_deprecation(): # pytest.warns(HypothesisDeprecationWarning):
+        settings(suppress_health_check=[HealthCheck.return_value])
+    with validate_deprecation(): # pytest.warns(HypothesisDeprecationWarning):
+        settings(suppress_health_check=[HealthCheck.not_a_test_method])
 
-def test_deprecated_settings_warn_on_access():
-    with validate_deprecation():
-        retval = HealthCheck.return_value
-    with validate_deprecation():
-        method = HealthCheck.not_a_test_method
-    # but .all() or iteration *don't* warn
-    ls = list(HealthCheck)
+def test_deprecated_settings_not_in_settings_all_list():
     al = HealthCheck.all()
-    # finally, check the lists are identical and omit deprecated members
-    assert ls == al
-    assert retval not in ls
-    assert method not in al
+    ls = list(HealthCheck)
+
+    assert HealthCheck.return_value not in al
+    assert HealthCheck.not_a_test_method not in al
+
+    assert HealthCheck.return_value not in ls
+    assert HealthCheck.not_a_test_method not in ls
