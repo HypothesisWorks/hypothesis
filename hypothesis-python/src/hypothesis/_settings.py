@@ -20,7 +20,7 @@ import inspect
 import os
 import warnings
 from enum import Enum, IntEnum, unique
-from typing import TYPE_CHECKING, Any, Collection, Dict, List, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Collection, Dict, Iterator, List, Optional, TypeVar, Union
 
 import attr
 
@@ -459,11 +459,14 @@ class HealthCheck(Enum):
     def all(cls) -> List["HealthCheck"]:
         attributes = list(HealthCheck)
         strict_errors = [HealthCheck.return_value, HealthCheck.not_a_test_method]
-        print("ahaha, all() works")
         for strict_error in strict_errors: 
             attributes.remove(strict_error)
 
         return attributes
+    
+    @classmethod
+    def __iter__(cls) -> Iterator["HealthCheck"]:
+        return super().__iter__(cls.all())
 
     data_too_large = 1
     """Checks if too many examples are aborted for being too large.
