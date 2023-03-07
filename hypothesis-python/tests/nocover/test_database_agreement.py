@@ -13,7 +13,10 @@ import shutil
 import tempfile
 
 from hypothesis import strategies as st
-from hypothesis.database import DirectoryBasedExampleDatabase, InMemoryExampleDatabase
+from hypothesis.database import (
+    DirectoryBasedExampleDatabase,
+    InMemoryExampleDatabase,
+)
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
 
 

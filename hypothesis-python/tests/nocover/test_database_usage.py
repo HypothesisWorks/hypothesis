@@ -24,7 +24,6 @@ from hypothesis import assume, core, find, given, settings
 from hypothesis import strategies as st
 
 
-
 def has_a_non_zero_byte(x):
     return any(bytes(x))
 
@@ -161,6 +160,7 @@ def test_database_not_created_when_not_used(tmp_path_factory, key, value):
     database.save(key, value)
     assert os.path.exists(str(path))
     assert list(database.fetch(key)) == [value]
+
 
 def test_ga_database_not_created_when_not_used(tmp_path_factory):
     path = tmp_path_factory.mktemp("hypothesis") / "github-actions"
