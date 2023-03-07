@@ -158,16 +158,6 @@ def test_the_slow_test_health_only_runs_if_health_checks_are_on():
 
     a()
 
-
-def test_returning_non_none_does_not_fail_if_health_check_disabled():
-    @given(st.integers())
-    @settings(suppress_health_check=HealthCheck.all())
-    def a(x):
-        return 1
-
-    a()
-
-
 def test_large_base_example_fails_health_check():
     @given(st.binary(min_size=7000, max_size=7000))
     def test(b):
