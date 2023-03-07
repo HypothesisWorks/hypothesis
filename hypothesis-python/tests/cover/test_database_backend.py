@@ -15,15 +15,18 @@ from pathlib import Path
 from shutil import make_archive
 
 import pytest
-from hypothesis.database import (DirectoryBasedExampleDatabase,
-                                 ExampleDatabase, GitHubArtifactDatabase,
-                                 InMemoryExampleDatabase, MultiplexedDatabase,
-                                 ReadOnlyDatabase)
+
+from hypothesis import given, settings, strategies as st
+from hypothesis.database import (
+    DirectoryBasedExampleDatabase,
+    ExampleDatabase,
+    GitHubArtifactDatabase,
+    InMemoryExampleDatabase,
+    MultiplexedDatabase,
+    ReadOnlyDatabase,
+)
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
 from hypothesis.strategies import binary, lists, tuples
-
-from hypothesis import given, settings
-from hypothesis import strategies as st
 
 small_settings = settings(max_examples=50)
 
