@@ -53,7 +53,9 @@ def _usable_dir(path):
 
 def _db_for_path(path=None):
     if path is not_set:
-        if os.getenv("HYPOTHESIS_DATABASE_FILE") is not None:  # pragma: no cover
+        if (
+            os.getenv("HYPOTHESIS_DATABASE_FILE") is not None
+        ):  # pragma: no cover
             raise HypothesisException(
                 "The $HYPOTHESIS_DATABASE_FILE environment variable no longer has any "
                 "effect.  Configure your database location via a settings profile instead.\n"
@@ -242,7 +244,9 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
             self.save(src, value)
             return
         try:
-            os.renames(self._value_path(src, value), self._value_path(dest, value))
+            os.renames(
+                self._value_path(src, value), self._value_path(dest, value)
+            )
         except OSError:
             self.delete(src, value)
             self.save(dest, value)
@@ -313,7 +317,9 @@ class MultiplexedDatabase(ExampleDatabase):
         self._wrapped = dbs
 
     def __repr__(self) -> str:
-        return "MultiplexedDatabase({})".format(", ".join(map(repr, self._wrapped)))
+        return "MultiplexedDatabase({})".format(
+            ", ".join(map(repr, self._wrapped))
+        )
 
     def fetch(self, key: bytes) -> Iterable[bytes]:
         seen = set()
@@ -461,7 +467,9 @@ class GitHubArtifactDatabase(ExampleDatabase):
             )
             self._artifact = found_artifact
         else:
-            warnings.warn(HypothesisWarning("Disabling shared database due to errors."))
+            warnings.warn(
+                HypothesisWarning("Disabling shared database due to errors.")
+            )
             self._disabled = True
             return
 
@@ -481,36 +489,27 @@ class GitHubArtifactDatabase(ExampleDatabase):
         try:
             response = urlopen(request)
             artifacts = json.loads(response.read())["artifacts"]
+            warning_message = None
         except HTTPError as e:
             if e.code == 401:
-                warnings.warn(
-                    HypothesisWarning(
-                        "Authorization failed when trying to download artifact from GitHub. "
-                        "Check your $GITHUB_TOKEN environment variable or make the repository public. "
-                    )
+                warning_message = (
+                    "Authorization failed when trying to download artifact from GitHub. "
+                    "Check your $GITHUB_TOKEN environment variable or make the repository public. "
                 )
-                return None
             else:
-                warnings.warn(
-                    HypothesisWarning(
-                        "Could not get the latest artifact from GitHub. "
-                        "This could be because because the repository or artifact does not exist. "
-                    )
+                warning_message = (
+                    "Could not get the latest artifact from GitHub. "
+                    "This could be because because the repository or artifact does not exist. "
                 )
-            return None
         except URLError:
-            warnings.warn(
-                HypothesisWarning(
-                    "Could not connect to GitHub to get the latest artifact. "
-                )
+            warning_message = (
+                "Could not connect to GitHub to get the latest artifact. "
             )
-            return None
         except TimeoutError:
-            warnings.warn(
-                HypothesisWarning(
-                    "Could not connect to GitHub to get the latest artifact (connection timed out). "
-                )
-            )
+            warning_message = "Could not connect to GitHub to get the latest artifact (connection timed out). "
+
+        if warning_message:
+            warnings.warn(HypothesisWarning(warning_message))
             return None
 
         # Get the latest artifact from the list
@@ -532,36 +531,26 @@ class GitHubArtifactDatabase(ExampleDatabase):
         try:
             response = urlopen(request)
             artifact_bytes = response.read()
+            warning_message = None
         except HTTPError as e:
             if e.code == 401:
-                warnings.warn(
-                    HypothesisWarning(
-                        "Authorization failed when trying to download artifact from GitHub. "
-                        "Check your $GITHUB_TOKEN environment variable or make the repository public. "
-                    )
+                warning_message = (
+                    "Authorization failed when trying to download artifact from GitHub. "
+                    "Check your $GITHUB_TOKEN environment variable or make the repository public. "
                 )
-                return None
             else:
-                warnings.warn(
-                    HypothesisWarning(
-                        "Could not get the latest artifact from GitHub. "
-                        "This could be because because the repository or artifact does not exist. "
-                    )
+                warning_message = (
+                    "Could not get the latest artifact from GitHub. "
+                    "This could be because because the repository or artifact does not exist. "
                 )
-            return None
         except URLError:
-            warnings.warn(
-                HypothesisWarning(
-                    "Could not connect to GitHub to get the latest artifact. "
-                )
+            warning_message = (
+                "Could not connect to GitHub to get the latest artifact. "
             )
-            return None
         except TimeoutError:
-            warnings.warn(
-                HypothesisWarning(
-                    "Could not connect to GitHub to get the latest artifact (connection timed out). "
-                )
-            )
+            warning_message = "Could not connect to GitHub to get the latest artifact (connection timed out). "
+        if warning_message is not None:
+            warnings.warn(HypothesisWarning(warning_message))
             return None
 
         # Save the artifact to the cache
@@ -571,7 +560,9 @@ class GitHubArtifactDatabase(ExampleDatabase):
                 f.write(artifact_bytes)
         except OSError:
             warnings.warn(
-                HypothesisWarning("Could not save the latest artifact from GitHub. ")
+                HypothesisWarning(
+                    "Could not save the latest artifact from GitHub. "
+                )
             )
             return None
 
