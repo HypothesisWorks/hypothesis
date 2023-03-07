@@ -593,6 +593,13 @@ def validate_health_check_suppressions(suppressions):
                 f"Non-HealthCheck value {s!r} of type {type(s).__name__} "
                 "is invalid in suppress_health_check."
             )
+        if s in (HealthCheck.return_value, HealthCheck.not_a_test_method):
+            note_deprecation(
+                "The return_value health check is now always enabled, "
+                "and cannot be suppressed.",
+                since="2023-03-06",
+                has_codemod=False,
+            )
     return suppressions
 
 
