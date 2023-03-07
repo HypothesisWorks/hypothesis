@@ -21,9 +21,7 @@ from pathlib import Path
 from typing import Dict, Iterable, Optional
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
-from zipfile import BadZipFile
-from zipfile import Path as ZipPath
-from zipfile import ZipFile
+from zipfile import BadZipFile, Path as ZipPath, ZipFile
 
 from hypothesis.configuration import mkdir_p, storage_directory
 from hypothesis.errors import HypothesisException, HypothesisWarning
@@ -53,9 +51,7 @@ def _usable_dir(path):
 
 def _db_for_path(path=None):
     if path is not_set:
-        if (
-            os.getenv("HYPOTHESIS_DATABASE_FILE") is not None
-        ):  # pragma: no cover
+        if os.getenv("HYPOTHESIS_DATABASE_FILE") is not None:  # pragma: no cover
             raise HypothesisException(
                 "The $HYPOTHESIS_DATABASE_FILE environment variable no longer has any "
                 "effect.  Configure your database location via a settings profile instead.\n"
@@ -245,7 +241,8 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
             return
         try:
             os.renames(
-                self._value_path(src, value), self._value_path(dest, value)
+                self._value_path(src, value),
+                self._value_path(dest, value),
             )
         except OSError:
             self.delete(src, value)
@@ -317,9 +314,7 @@ class MultiplexedDatabase(ExampleDatabase):
         self._wrapped = dbs
 
     def __repr__(self) -> str:
-        return "MultiplexedDatabase({})".format(
-            ", ".join(map(repr, self._wrapped))
-        )
+        return "MultiplexedDatabase({})".format(", ".join(map(repr, self._wrapped)))
 
     def fetch(self, key: bytes) -> Iterable[bytes]:
         seen = set()
@@ -410,6 +405,9 @@ class GitHubArtifactDatabase(ExampleDatabase):
         # This is the FS root for the in-memory zipfile
         self._root: Optional[ZipPath] = None
 
+        # Message to display if user doesn't wrap around ReadOnlyDatabase
+        self._read_only_message = "This database is read-only. Please wrap this class with ReadOnlyDatabase, i.e. ReadOnlyDatabase(GitHubArtifactsDatabase(...))."
+
     def __repr__(self) -> str:
         return f"GitHubArtifactDatabase(owner={self.owner}, repo={self.repo}, artifact_name={self.artifact_name})"
 
@@ -467,9 +465,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
             )
             self._artifact = found_artifact
         else:
-            warnings.warn(
-                HypothesisWarning("Disabling shared database due to errors.")
-            )
+            warnings.warn(HypothesisWarning("Disabling shared database due to errors."))
             self._disabled = True
             return
 
@@ -502,9 +498,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
                     "This could be because because the repository or artifact does not exist. "
                 )
         except URLError:
-            warning_message = (
-                "Could not connect to GitHub to get the latest artifact. "
-            )
+            warning_message = "Could not connect to GitHub to get the latest artifact. "
         except TimeoutError:
             warning_message = "Could not connect to GitHub to get the latest artifact (connection timed out). "
 
@@ -544,9 +538,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
                     "This could be because because the repository or artifact does not exist. "
                 )
         except URLError:
-            warning_message = (
-                "Could not connect to GitHub to get the latest artifact. "
-            )
+            warning_message = "Could not connect to GitHub to get the latest artifact. "
         except TimeoutError:
             warning_message = "Could not connect to GitHub to get the latest artifact (connection timed out). "
         if warning_message is not None:
@@ -560,9 +552,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
                 f.write(artifact_bytes)
         except OSError:
             warnings.warn(
-                HypothesisWarning(
-                    "Could not save the latest artifact from GitHub. "
-                )
+                HypothesisWarning("Could not save the latest artifact from GitHub. ")
             )
             return None
 
@@ -613,16 +603,10 @@ class GitHubArtifactDatabase(ExampleDatabase):
 
     # Read-only interface
     def save(self, key: bytes, value: bytes) -> None:
-        raise RuntimeError(
-            "This database is read-only. Please wrap this class with ReadOnlyDatabase, i.e. ReadOnlyDatabase(GitHubArtifactsDatabase(...))."
-        )
+        raise RuntimeError(self._read_only_message)
 
     def move(self, src: bytes, dest: bytes, value: bytes) -> None:
-        raise RuntimeError(
-            "This database is read-only. Please wrap this class with ReadOnlyDatabase, i.e. ReadOnlyDatabase(GitHubArtifactsDatabase(...))."
-        )
+        raise RuntimeError(self._read_only_message)
 
     def delete(self, key: bytes, value: bytes) -> None:
-        raise RuntimeError(
-            "This database is read-only. Please wrap this class with ReadOnlyDatabase, i.e. ReadOnlyDatabase(GitHubArtifactsDatabase(...))."
-        )
+        raise RuntimeError(self._read_only_message)
