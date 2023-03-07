@@ -11,6 +11,7 @@
 import datetime
 import os
 import tempfile
+import zipfile
 from pathlib import Path
 from shutil import make_archive
 
@@ -25,6 +26,7 @@ from hypothesis.database import (
     MultiplexedDatabase,
     ReadOnlyDatabase,
 )
+from hypothesis.errors import HypothesisWarning
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
 from hypothesis.strategies import binary, lists, tuples
 
@@ -185,6 +187,45 @@ def test_ga_require_readonly_wrapping():
     database.delete(b"foo", b"bar")
 
 
+def ga_mock_empty_artifact() -> Path:
+    temp_dir = tempfile.mkdtemp()
+    path = Path(temp_dir) / "github-artifacts"
+    path.mkdir(parents=True, exist_ok=True)
+    zip_path = path / f"{datetime.datetime.now().isoformat()}.zip"
+
+    with zipfile.ZipFile(zip_path, "w"):
+        pass
+
+    return path
+
+
+def test_ga_empty_read():
+    path = ga_mock_empty_artifact()
+    database = GitHubArtifactDatabase("test", "test", path=path)
+    assert list(database.fetch(b"foo")) == []
+
+
+def test_ga_initialize():
+    path = ga_mock_empty_artifact()
+    database = GitHubArtifactDatabase("test", "test", path=path)
+    # Trigger initialization
+    database.fetch(b"")
+    root1 = database._root
+    # Should not trigger initialization
+    database.fetch(b"")
+    root2 = database._root
+    assert root1 == root2
+
+
+def test_ga_no_artifact():
+    tmp_dir = Path(tempfile.mkdtemp())
+    database = GitHubArtifactDatabase("test", "test", path=tmp_dir)
+    # Check that the database raises a warning
+    with pytest.warns(HypothesisWarning):
+        assert list(database.fetch(b"")) == []
+    assert database._disabled is True
+
+
 class GitHubArtifactMocks(RuleBasedStateMachine):
     def __init__(self):
         super().__init__()
@@ -248,4 +289,3 @@ class GitHubArtifactMocks(RuleBasedStateMachine):
 
 
 TestGADReads = GitHubArtifactMocks.TestCase
-TestGADReads.runTest(TestGADReads)

@@ -450,6 +450,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
             self._initialize_io()
             return
 
+        # pragma: no branch
         # Download the latest artifact from GitHub
         new_artifact = self._fetch_artifact()
 
