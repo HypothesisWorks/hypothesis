@@ -8,19 +8,22 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import datetime
 import os
+import tempfile
+from pathlib import Path
+from shutil import make_archive
 
 import pytest
+from hypothesis.database import (DirectoryBasedExampleDatabase,
+                                 ExampleDatabase, GitHubArtifactDatabase,
+                                 InMemoryExampleDatabase, MultiplexedDatabase,
+                                 ReadOnlyDatabase)
+from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
+from hypothesis.strategies import binary, lists, tuples
 
 from hypothesis import given, settings
-from hypothesis.database import (
-    DirectoryBasedExampleDatabase,
-    ExampleDatabase,
-    InMemoryExampleDatabase,
-    MultiplexedDatabase,
-    ReadOnlyDatabase,
-)
-from hypothesis.strategies import binary, lists, tuples
+from hypothesis import strategies as st
 
 small_settings = settings(max_examples=50)
 
@@ -160,3 +163,86 @@ def test_multiplexed_dbs_read_and_write_all():
     multi.delete(b"c", b"cc")
     for db in (a, b, multi):
         assert set(db.fetch(b"c")) == set()
+
+
+def test_ga_require_readonly_wrapping():
+    database = GitHubArtifactDatabase("test", "test")
+    # save, move and delete can only be called when wrapped around ReadonlyDatabase
+    with pytest.raises(RuntimeError):
+        database.save(b"foo", b"bar")
+    with pytest.raises(RuntimeError):
+        database.move(b"foo", b"bar", b"foobar")
+    with pytest.raises(RuntimeError):
+        database.delete(b"foo", b"bar")
+
+    # check that the database silently ignores writes when wrapped around ReadOnlyDatabase
+    database = ReadOnlyDatabase(database)
+    database.save(b"foo", b"bar")
+    database.move(b"foo", b"bar", b"foobar")
+    database.delete(b"foo", b"bar")
+
+
+class GitHubArtifactMocks(RuleBasedStateMachine):
+    def __init__(self):
+        super().__init__()
+        self.temp_directory = Path(tempfile.mkdtemp())
+        self.path = self.temp_directory / "github-artifacts"
+
+        # This is where we will store the contents for the zip file
+        self.zip_destination = self.path / f"{datetime.datetime.now().isoformat()}.zip"
+
+        # And this is where we want to create it
+        self.zip_content_path = self.path / datetime.datetime.now().isoformat()
+        self.zip_content_path.mkdir(parents=True, exist_ok=True)
+
+        # We use a DirectoryBasedExampleDatabase to create the contents
+        self.directory_db = DirectoryBasedExampleDatabase(str(self.zip_content_path))
+        self.zip_db = GitHubArtifactDatabase("mock", "mock", path=self.path)
+
+        # Create zip file for the first time
+        self._archive_directory_db()
+        self.zip_db._initialize_db()
+
+    def _make_zip(self, tree_path: Path, zip_path: Path, skip_empty_dir=False):
+        destination = zip_path.parent.absolute() / zip_path.stem
+        make_archive(
+            destination,
+            "zip",
+            root_dir=tree_path,
+        )
+
+    def _archive_directory_db(self):
+        # Delete all of the zip files in the directory
+        for file in self.path.glob("*.zip"):
+            file.unlink()
+
+        self._make_zip(self.zip_content_path, self.zip_destination)
+
+    keys = Bundle("keys")
+    values = Bundle("values")
+
+    @rule(target=keys, k=st.binary())
+    def k(self, k):
+        return k
+
+    @rule(target=values, v=st.binary())
+    def v(self, v):
+        return v
+
+    @rule(k=keys, v=values)
+    def save(self, k, v):
+        self.directory_db.save(k, v)
+        self._archive_directory_db()
+        self.zip_db = GitHubArtifactDatabase("mock", "mock", path=self.path)
+        self.zip_db._initialize_db()
+
+    @rule(k=keys)
+    def values_agree(self, k):
+        v1 = list(self.directory_db.fetch(k))
+        v2 = list(self.zip_db.fetch(k))
+
+        assert v1 == v2
+
+
+TestGADReads = GitHubArtifactMocks.TestCase
+TestGADReads.runTest(TestGADReads)

@@ -18,14 +18,12 @@ import warnings
 from hashlib import sha384
 from os import getenv
 from pathlib import Path
-from typing import Dict, Iterable
+from typing import Dict, Iterable, Optional
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 from zipfile import BadZipFile
 from zipfile import Path as ZipPath
 from zipfile import ZipFile
-
-from typing import Optional
 
 from hypothesis.configuration import mkdir_p, storage_directory
 from hypothesis.errors import HypothesisException, HypothesisWarning
@@ -37,6 +35,7 @@ __all__ = [
     "InMemoryExampleDatabase",
     "MultiplexedDatabase",
     "ReadOnlyDatabase",
+    "GitHubArtifactDatabase",
 ]
 
 
@@ -365,7 +364,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
     The database automatically implements a simple file-based cache with a default expiration period
     of 1 day. You can adjust this through the `cache_timeout` property.
 
-    For mono-repo support, you can provide an unique `artifact_name` (e.g. `hypofuzz-example-db-branch`).
+    For mono-repo support, you can provide an unique `artifact_name` (e.g. `hypofuzz-example-db-frontend`).
     """
 
     def __init__(
@@ -389,8 +388,8 @@ class GitHubArtifactDatabase(ExampleDatabase):
 
         if path is None:
             self.path: Path = Path(
-            storage_directory(f"github-artifacts/{self.artifact_name}/")
-        )
+                storage_directory(f"github-artifacts/{self.artifact_name}/")
+            )
         else:
             self.path = path
 
@@ -468,7 +467,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
 
         self._initialize_io()
 
-    def _fetch_artifact(self) -> Optional[Path]:
+    def _fetch_artifact(self) -> Optional[Path]:  # pragma: no cover
         # Get the list of artifacts from GitHub
         request = Request(
             f"https://api.github.com/repos/{self.owner}/{self.repo}/actions/artifacts",
@@ -599,6 +598,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
             return self.keypaths[key]
         except KeyError:
             pass
+
         directory = self._root.joinpath(_hash(key))
         self.keypaths[key] = directory
         return directory
@@ -613,14 +613,12 @@ class GitHubArtifactDatabase(ExampleDatabase):
                 return
 
         kp = self._key_path(key)
+
         if not kp.exists():
             return
         for path in kp.iterdir():
-            try:
-                with path.open("rb") as i:
-                    yield i.read()
-            except OSError:
-                pass
+            with path.open("rb") as i:
+                yield i.read()
 
     # Read-only interface
     def save(self, key: bytes, value: bytes) -> None:
@@ -628,7 +626,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
             "This database is read-only. Please wrap this class with ReadOnlyDatabase, i.e. ReadOnlyDatabase(GitHubArtifactsDatabase(...))."
         )
 
-    def move(self, key: bytes, value: bytes) -> None:
+    def move(self, src: bytes, dest: bytes, value: bytes) -> None:
         raise RuntimeError(
             "This database is read-only. Please wrap this class with ReadOnlyDatabase, i.e. ReadOnlyDatabase(GitHubArtifactsDatabase(...))."
         )
