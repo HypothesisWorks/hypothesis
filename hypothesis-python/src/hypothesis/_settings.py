@@ -19,7 +19,7 @@ import datetime
 import inspect
 import os
 import warnings
-from enum import Enum, IntEnum, unique
+from enum import Enum, EnumMeta, IntEnum, unique
 from typing import TYPE_CHECKING, Any, Collection, Dict, Iterator, List, Optional, TypeVar, Union
 
 import attr
@@ -444,9 +444,16 @@ class Phase(IntEnum):
     def __repr__(self):
         return f"Phase.{self.name}"
 
+class HealthCheckMeta(EnumMeta): 
+    @classmethod
+    def __iter__(cls) -> Iterator["HealthCheck"]:
+        strict_errors = [HealthCheck.return_value, HealthCheck.not_a_test_method]
+        for x in super().__iter__():
+            if x not in strict_errors:
+                yield x
 
 @unique
-class HealthCheck(Enum):
+class HealthCheck(Enum, metaclass=HealthCheckMeta):
     """Arguments for :attr:`~hypothesis.settings.suppress_health_check`.
 
     Each member of this enum is a type of health check to suppress.
@@ -458,15 +465,7 @@ class HealthCheck(Enum):
     @classmethod
     def all(cls) -> List["HealthCheck"]:
         attributes = list(HealthCheck)
-        strict_errors = [HealthCheck.return_value, HealthCheck.not_a_test_method]
-        for strict_error in strict_errors: 
-            attributes.remove(strict_error)
-
         return attributes
-    
-    @classmethod
-    def __iter__(cls) -> Iterator["HealthCheck"]:
-        return super().__iter__(cls.all())
 
     data_too_large = 1
     """Checks if too many examples are aborted for being too large.
