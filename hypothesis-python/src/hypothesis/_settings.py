@@ -445,7 +445,7 @@ class Phase(IntEnum):
         return f"Phase.{self.name}"
 
 class HealthCheckMeta(EnumMeta): 
-    @classmethod
+    # @classmethod
     def __iter__(cls) -> Iterator["HealthCheck"]:
         strict_errors = [HealthCheck.return_value, HealthCheck.not_a_test_method]
         for x in super().__iter__():
