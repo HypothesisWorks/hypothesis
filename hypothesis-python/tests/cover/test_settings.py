@@ -484,11 +484,13 @@ def test_note_deprecation_checks_has_codemod():
     ):
         note_deprecation("This is bad", since="2021-01-01", has_codemod=True)
 
+
 def test_deprecated_settings_warn_on_set_settings():
-    with validate_deprecation(): 
+    with validate_deprecation():
         settings(suppress_health_check=[HealthCheck.return_value])
-    with validate_deprecation(): 
+    with validate_deprecation():
         settings(suppress_health_check=[HealthCheck.not_a_test_method])
+
 
 def test_deprecated_settings_not_in_settings_all_list():
     al = HealthCheck.all()

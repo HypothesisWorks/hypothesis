@@ -20,7 +20,7 @@ import inspect
 import os
 import warnings
 from enum import Enum, EnumMeta, IntEnum, unique
-from typing import TYPE_CHECKING, Any, Collection, Dict, Iterator, List, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Collection, Dict, List, Optional, TypeVar, Union
 
 import attr
 
@@ -444,13 +444,12 @@ class Phase(IntEnum):
     def __repr__(self):
         return f"Phase.{self.name}"
 
-class HealthCheckMeta(EnumMeta): 
-    # @classmethod
-    def __iter__(cls) -> Iterator["HealthCheck"]:
-        strict_errors = [HealthCheck.return_value, HealthCheck.not_a_test_method]
-        for x in super().__iter__():
-            if x not in strict_errors:
-                yield x
+
+class HealthCheckMeta(EnumMeta):
+    def __iter__(self):
+        deprecated = (HealthCheck.return_value, HealthCheck.not_a_test_method)
+        return iter(x for x in super().__iter__() if x not in deprecated)
+
 
 @unique
 class HealthCheck(Enum, metaclass=HealthCheckMeta):
