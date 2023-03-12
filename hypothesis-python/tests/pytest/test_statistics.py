@@ -35,7 +35,7 @@ def test_all_valid(x):
     pass
 
 
-@settings(max_examples=100, suppress_health_check=HealthCheck.all())
+@settings(max_examples=100, suppress_health_check=list(HealthCheck))
 @given(integers())
 def test_iterations(x):
     assume(x == 13)

@@ -21,7 +21,7 @@ SOME_LABEL = calc_label_from_name("some label")
 
 
 TEST_SETTINGS = settings(
-    max_examples=5000, database=None, suppress_health_check=HealthCheck.all()
+    max_examples=5000, database=None, suppress_health_check=list(HealthCheck)
 )
 
 
@@ -56,7 +56,7 @@ def shrinking_from(start):
                 settings=settings(
                     max_examples=5000,
                     database=None,
-                    suppress_health_check=HealthCheck.all(),
+                    suppress_health_check=list(HealthCheck),
                 ),
             )
             runner.cached_test_function(start)

@@ -464,8 +464,9 @@ class HealthCheck(Enum, metaclass=HealthCheckMeta):
 
     @classmethod
     def all(cls) -> List["HealthCheck"]:
-        attributes = list(HealthCheck)
-        return attributes
+        # Skipping of deprecated attributes is handled in HealthCheckMeta.__iter__
+        # TODO: note_deprecation() and write a codemod for HC.all() -> list(HC)
+        return list(HealthCheck)
 
     data_too_large = 1
     """Checks if too many examples are aborted for being too large.

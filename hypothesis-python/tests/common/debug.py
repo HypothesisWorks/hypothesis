@@ -50,7 +50,7 @@ def minimal(definition, condition=lambda x: True, settings=None, timeout_after=1
     @given(definition)
     @Settings(
         parent=settings,
-        suppress_health_check=HealthCheck.all(),
+        suppress_health_check=list(HealthCheck),
         report_multiple_bugs=False,
         derandomize=True,
         database=None,

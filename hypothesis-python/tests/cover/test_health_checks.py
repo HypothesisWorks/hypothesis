@@ -57,7 +57,7 @@ def test_slow_generation_inline_fails_a_health_check():
 def test_default_health_check_can_weaken_specific():
     import random
 
-    @settings(HEALTH_CHECK_SETTINGS, suppress_health_check=HealthCheck.all())
+    @settings(HEALTH_CHECK_SETTINGS, suppress_health_check=list(HealthCheck))
     @given(st.lists(st.integers(), min_size=1))
     def test(x):
         random.choice(x)
@@ -152,11 +152,12 @@ def test_the_slow_test_health_check_can_be_disabled():
 
 def test_the_slow_test_health_only_runs_if_health_checks_are_on():
     @given(st.integers())
-    @settings(suppress_health_check=HealthCheck.all(), deadline=None)
+    @settings(suppress_health_check=list(HealthCheck), deadline=None)
     def a(x):
         time.sleep(1000)
 
     a()
+
 
 def test_large_base_example_fails_health_check():
     @given(st.binary(min_size=7000, max_size=7000))

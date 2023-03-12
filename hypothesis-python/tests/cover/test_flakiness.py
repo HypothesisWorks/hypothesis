@@ -101,7 +101,7 @@ def test_failure_sequence_inducing(building, testing, rnd):
     @settings(
         verbosity=Verbosity.quiet,
         database=None,
-        suppress_health_check=HealthCheck.all(),
+        suppress_health_check=list(HealthCheck),
         phases=no_shrink,
     )
     def test(x):

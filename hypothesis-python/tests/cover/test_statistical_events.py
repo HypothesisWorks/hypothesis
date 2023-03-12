@@ -44,7 +44,7 @@ def unique_events(stats):
 
 def test_notes_hard_to_satisfy():
     @given(st.integers())
-    @settings(suppress_health_check=HealthCheck.all())
+    @settings(suppress_health_check=list(HealthCheck))
     def test(i):
         assume(i == 13)
 

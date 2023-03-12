@@ -42,7 +42,7 @@ def learner_for(strategy):
         settings=settings(
             database=None,
             verbosity=Verbosity.quiet,
-            suppress_health_check=HealthCheck.all(),
+            suppress_health_check=list(HealthCheck),
         ),
         random=Random(0),
         ignore_limits=True,

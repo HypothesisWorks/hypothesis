@@ -29,7 +29,7 @@ def test_pareto_front_contains_different_interesting_reasons():
             settings=settings(
                 max_examples=5000,
                 database=InMemoryExampleDatabase(),
-                suppress_health_check=HealthCheck.all(),
+                suppress_health_check=list(HealthCheck),
             ),
             database_key=b"stuff",
         )
@@ -52,7 +52,7 @@ def test_database_contains_only_pareto_front():
         runner = ConjectureRunner(
             test,
             settings=settings(
-                max_examples=500, database=db, suppress_health_check=HealthCheck.all()
+                max_examples=500, database=db, suppress_health_check=list(HealthCheck)
             ),
             database_key=b"stuff",
         )
@@ -93,7 +93,7 @@ def test_clears_defunct_pareto_front():
             settings=settings(
                 max_examples=10000,
                 database=db,
-                suppress_health_check=HealthCheck.all(),
+                suppress_health_check=list(HealthCheck),
                 phases=[Phase.reuse],
             ),
             database_key=b"stuff",
@@ -121,7 +121,7 @@ def test_down_samples_the_pareto_front():
             settings=settings(
                 max_examples=1000,
                 database=db,
-                suppress_health_check=HealthCheck.all(),
+                suppress_health_check=list(HealthCheck),
                 phases=[Phase.reuse],
             ),
             database_key=b"stuff",
@@ -151,7 +151,7 @@ def test_stops_loading_pareto_front_if_interesting():
             settings=settings(
                 max_examples=1000,
                 database=db,
-                suppress_health_check=HealthCheck.all(),
+                suppress_health_check=list(HealthCheck),
                 phases=[Phase.reuse],
             ),
             database_key=b"stuff",
