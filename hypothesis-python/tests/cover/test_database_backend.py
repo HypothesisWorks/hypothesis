@@ -16,8 +16,8 @@ from pathlib import Path
 from shutil import make_archive
 
 import pytest
-
-from hypothesis import given, settings, strategies as st
+from hypothesis import given, settings
+from hypothesis import strategies as st
 from hypothesis.database import (
     DirectoryBasedExampleDatabase,
     ExampleDatabase,
@@ -210,10 +210,10 @@ def test_ga_initialize():
     database = GitHubArtifactDatabase("test", "test", path=path)
     # Trigger initialization
     database.fetch(b"")
-    root1 = database._root
+    root1 = database._artifact
     # Should not trigger initialization
     database.fetch(b"")
-    root2 = database._root
+    root2 = database._artifact
     assert root1 == root2
 
 
@@ -227,6 +227,10 @@ def test_ga_no_artifact():
 
 
 class GitHubArtifactMocks(RuleBasedStateMachine):
+    """
+    Setups a mock GithubArtifactDatabase from an artifact
+    generated from a DirectoryBasedExampleDatabase.
+    """
     def __init__(self):
         super().__init__()
         self.temp_directory = Path(tempfile.mkdtemp())
@@ -250,7 +254,7 @@ class GitHubArtifactMocks(RuleBasedStateMachine):
     def _make_zip(self, tree_path: Path, zip_path: Path, skip_empty_dir=False):
         destination = zip_path.parent.absolute() / zip_path.stem
         make_archive(
-            destination,
+            str(destination),
             "zip",
             root_dir=tree_path,
         )

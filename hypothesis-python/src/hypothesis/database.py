@@ -17,11 +17,11 @@ import sys
 import warnings
 from hashlib import sha384
 from os import getenv
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Dict, Iterable, Optional
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
-from zipfile import BadZipFile, Path as ZipPath, ZipFile
+from zipfile import BadZipFile, ZipFile
 
 from hypothesis.configuration import mkdir_p, storage_directory
 from hypothesis.errors import HypothesisException, HypothesisWarning
@@ -381,7 +381,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
         self.artifact_name = artifact_name
         self.cache_timeout = cache_timeout
 
-        self.keypaths: Dict[str, ZipPath] = {}
+        self.keypaths: Dict[str, PurePath] = {}
 
         # Get the GitHub token from the environment
         # It's unnecessary to use a token if the repo is public
@@ -402,11 +402,12 @@ class GitHubArtifactDatabase(ExampleDatabase):
         # .hypothesis/ci/github-artifacts/<artifact-name>/<isoformat>.zip
         self._artifact: Optional[Path] = None
 
-        # This is the FS root for the in-memory zipfile
-        self._root: Optional[ZipPath] = None
-
         # Message to display if user doesn't wrap around ReadOnlyDatabase
-        self._read_only_message = "This database is read-only. Please wrap this class with ReadOnlyDatabase, i.e. ReadOnlyDatabase(GitHubArtifactsDatabase(...))."
+        self._read_only_message = (
+            "This database is read-only. "
+            "Please wrap this class with ReadOnlyDatabase"
+            "i.e. ReadOnlyDatabase(GitHubArtifactsDatabase(...))."
+        )
 
     def __repr__(self) -> str:
         return f"GitHubArtifactDatabase(owner={self.owner}, repo={self.repo}, artifact_name={self.artifact_name})"
@@ -418,7 +419,6 @@ class GitHubArtifactDatabase(ExampleDatabase):
         # Load the artifact into memory
         # This root allows us to access the files in the zipfile as if they were on the FS
         # It's compatible with the pathlib Path API
-        self._root = ZipPath(str(self._artifact))
         self._initialized = True
 
     def _initialize_db(self) -> None:
@@ -574,14 +574,13 @@ class GitHubArtifactDatabase(ExampleDatabase):
 
         return artifact_path
 
-    def _key_path(self, key) -> ZipPath:
-        assert self._root is not None
+    def _key_path(self, key) -> PurePath:
         try:
             return self.keypaths[key]
         except KeyError:
             pass
 
-        directory = self._root.joinpath(_hash(key))
+        directory = PurePath(_hash(key) + "/")
         self.keypaths[key] = directory
         return directory
 
@@ -594,13 +593,22 @@ class GitHubArtifactDatabase(ExampleDatabase):
             if self._disabled:
                 return
 
+        assert self._artifact is not None
+
         kp = self._key_path(key)
 
-        if not kp.exists():
-            return
-        for path in kp.iterdir():
-            with path.open("rb") as i:
-                yield i.read()
+        with ZipFile(self._artifact) as zf:
+            # Check if kp exists
+            namelist = zf.namelist()
+            if kp not in (PurePath(p) for p in namelist):
+                return
+
+            # Iterate over files in kp
+            for filename in namelist:
+                fileinfo = zf.getinfo(filename)
+                if not fileinfo.is_dir() and filename.startswith(kp.as_posix()):
+                    with zf.open(filename) as f:
+                        yield f.read()
 
     # Read-only interface
     def save(self, key: bytes, value: bytes) -> None:
