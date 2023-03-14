@@ -10,11 +10,11 @@
 
 import abc
 import binascii
-import datetime
 import json
 import os
 import sys
 import warnings
+from datetime import datetime, timedelta, timezone
 from hashlib import sha384
 from os import getenv
 from pathlib import Path, PurePath
@@ -373,7 +373,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
         owner: str,
         repo: str,
         artifact_name: str = "hypofuzz-example-db",
-        cache_timeout: datetime.timedelta = datetime.timedelta(days=1),
+        cache_timeout: timedelta = timedelta(days=1),
         path: Optional[Path] = None,
     ):
         self.owner = owner
@@ -428,12 +428,12 @@ class GitHubArtifactDatabase(ExampleDatabase):
         # Get all artifacts
         cached_artifacts = sorted(
             self.path.glob("*.zip"),
-            key=lambda a: datetime.datetime.fromisoformat(a.stem),
+            key=lambda a: datetime.fromisoformat(a.stem.replace("_", ":")),
         )
 
         # Remove all but the latest artifact
-        for new_artifact in cached_artifacts[:-1]:
-            new_artifact.unlink()
+        for artifact in cached_artifacts[:-1]:
+            artifact.unlink()
 
         try:
             found_artifact = cached_artifacts[-1]
@@ -442,8 +442,8 @@ class GitHubArtifactDatabase(ExampleDatabase):
 
         # Check if the latest artifact is a cache hit
         if found_artifact is not None and (
-            datetime.datetime.now()
-            - datetime.datetime.fromisoformat(found_artifact.stem)
+            datetime.now(timezone.utc)
+            - datetime.fromisoformat(found_artifact.stem.replace("_", ":"))
             < self.cache_timeout
         ):
             self._artifact = found_artifact
@@ -547,7 +547,10 @@ class GitHubArtifactDatabase(ExampleDatabase):
             return None
 
         # Save the artifact to the cache
-        artifact_path = self.path / f"{datetime.datetime.now().isoformat()}.zip"
+        # We replace ":" with "_" to ensure the filenames are compatible
+        # with Windows filesystems
+        timestamp = datetime.now(timezone.utc).isoformat().replace(":", "-")
+        artifact_path = self.path / f"{timestamp}.zip"
         try:
             with open(artifact_path, "wb") as f:
                 f.write(artifact_bytes)
@@ -574,7 +577,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
 
         return artifact_path
 
-    def _key_path(self, key) -> PurePath:
+    def _key_path(self, key: str) -> PurePath:
         try:
             return self.keypaths[key]
         except KeyError:

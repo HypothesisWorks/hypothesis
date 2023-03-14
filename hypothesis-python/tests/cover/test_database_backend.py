@@ -8,16 +8,16 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import datetime
 import os
 import tempfile
 import zipfile
+from datetime import datetime, timezone
 from pathlib import Path
 from shutil import make_archive
 
 import pytest
-from hypothesis import given, settings
-from hypothesis import strategies as st
+
+from hypothesis import given, settings, strategies as st
 from hypothesis.database import (
     DirectoryBasedExampleDatabase,
     ExampleDatabase,
@@ -191,7 +191,8 @@ def ga_mock_empty_artifact() -> Path:
     temp_dir = tempfile.mkdtemp()
     path = Path(temp_dir) / "github-artifacts"
     path.mkdir(parents=True, exist_ok=True)
-    zip_path = path / f"{datetime.datetime.now().isoformat()}.zip"
+    timestamp = datetime.now(timezone.utc).isoformat().replace(":", "_")
+    zip_path = path / f"{timestamp}.zip"
 
     with zipfile.ZipFile(zip_path, "w"):
         pass
@@ -231,16 +232,18 @@ class GitHubArtifactMocks(RuleBasedStateMachine):
     Setups a mock GithubArtifactDatabase from an artifact
     generated from a DirectoryBasedExampleDatabase.
     """
+
     def __init__(self):
         super().__init__()
         self.temp_directory = Path(tempfile.mkdtemp())
         self.path = self.temp_directory / "github-artifacts"
 
         # This is where we will store the contents for the zip file
-        self.zip_destination = self.path / f"{datetime.datetime.now().isoformat()}.zip"
+        timestamp = datetime.now(timezone.utc).isoformat().replace(":", "_")
+        self.zip_destination = self.path / f"{timestamp}.zip"
 
         # And this is where we want to create it
-        self.zip_content_path = self.path / datetime.datetime.now().isoformat()
+        self.zip_content_path = self.path / timestamp
         self.zip_content_path.mkdir(parents=True, exist_ok=True)
 
         # We use a DirectoryBasedExampleDatabase to create the contents
