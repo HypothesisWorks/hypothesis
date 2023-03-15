@@ -16,7 +16,7 @@ click==8.1.3
     # via
     #   -r requirements/coverage.in
     #   black
-coverage==7.1.0
+coverage==7.2.1
     # via -r requirements/coverage.in
 dpcontracts==0.6.0
     # via -r requirements/coverage.in
@@ -26,7 +26,7 @@ exceptiongroup==1.1.0 ; python_version < "3.11"
     #   pytest
 execnet==1.9.0
     # via pytest-xdist
-fakeredis==2.8.0
+fakeredis==2.10.0
     # via -r requirements/coverage.in
 iniconfig==2.0.0
     # via pytest
@@ -52,13 +52,13 @@ pathspec==0.11.0
     # via black
 pexpect==4.8.0
     # via -r requirements/test.in
-platformdirs==3.0.0
+platformdirs==3.1.1
     # via black
 pluggy==1.0.0
     # via pytest
 ptyprocess==0.7.0
     # via pexpect
-pytest==7.2.1
+pytest==7.2.2
     # via
     #   -r requirements/test.in
     #   pytest-xdist
@@ -86,7 +86,7 @@ tomli==2.0.1
     # via
     #   black
     #   pytest
-typing-extensions==4.4.0
+typing-extensions==4.5.0
     # via
     #   -r requirements/coverage.in
     #   libcst
