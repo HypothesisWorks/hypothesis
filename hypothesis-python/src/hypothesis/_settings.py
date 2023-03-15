@@ -595,7 +595,7 @@ def validate_health_check_suppressions(suppressions):
         if s in (HealthCheck.return_value, HealthCheck.not_a_test_method):
             note_deprecation(
                 f"The {s.name} health check is deprecated, because this is always an error.",
-                since="RELEASEDAY",
+                since="2023-03-15",
                 has_codemod=False,
             )
     return suppressions
