@@ -483,7 +483,7 @@ def test_debug_data(capsys):
         settings=settings(
             max_examples=5000,
             database=None,
-            suppress_health_check=HealthCheck.all(),
+            suppress_health_check=list(HealthCheck),
             verbosity=Verbosity.debug,
         ),
     )
@@ -722,7 +722,7 @@ def test_database_clears_secondary_key():
     runner = ConjectureRunner(
         f,
         settings=settings(
-            max_examples=1, database=database, suppress_health_check=HealthCheck.all()
+            max_examples=1, database=database, suppress_health_check=list(HealthCheck)
         ),
         database_key=key,
     )
@@ -755,7 +755,7 @@ def test_database_uses_values_from_secondary_key():
     runner = ConjectureRunner(
         f,
         settings=settings(
-            max_examples=1, database=database, suppress_health_check=HealthCheck.all()
+            max_examples=1, database=database, suppress_health_check=list(HealthCheck)
         ),
         database_key=key,
     )
@@ -789,7 +789,7 @@ def test_exit_because_max_iterations():
     runner = ConjectureRunner(
         f,
         settings=settings(
-            max_examples=1, database=None, suppress_health_check=HealthCheck.all()
+            max_examples=1, database=None, suppress_health_check=list(HealthCheck)
         ),
     )
 
@@ -1220,7 +1220,7 @@ def test_populates_the_pareto_front():
             settings=settings(
                 max_examples=5000,
                 database=InMemoryExampleDatabase(),
-                suppress_health_check=HealthCheck.all(),
+                suppress_health_check=list(HealthCheck),
             ),
             database_key=b"stuff",
         )
@@ -1241,7 +1241,7 @@ def test_pareto_front_contains_smallest_valid_when_not_targeting():
             settings=settings(
                 max_examples=5000,
                 database=InMemoryExampleDatabase(),
-                suppress_health_check=HealthCheck.all(),
+                suppress_health_check=list(HealthCheck),
             ),
             database_key=b"stuff",
         )
@@ -1262,7 +1262,7 @@ def test_pareto_front_contains_different_interesting_reasons():
             settings=settings(
                 max_examples=5000,
                 database=InMemoryExampleDatabase(),
-                suppress_health_check=HealthCheck.all(),
+                suppress_health_check=list(HealthCheck),
             ),
             database_key=b"stuff",
         )
@@ -1285,7 +1285,7 @@ def test_database_contains_only_pareto_front():
         runner = ConjectureRunner(
             test,
             settings=settings(
-                max_examples=500, database=db, suppress_health_check=HealthCheck.all()
+                max_examples=500, database=db, suppress_health_check=list(HealthCheck)
             ),
             database_key=b"stuff",
         )
@@ -1326,7 +1326,7 @@ def test_clears_defunct_pareto_front():
             settings=settings(
                 max_examples=10000,
                 database=db,
-                suppress_health_check=HealthCheck.all(),
+                suppress_health_check=list(HealthCheck),
                 phases=[Phase.reuse],
             ),
             database_key=b"stuff",

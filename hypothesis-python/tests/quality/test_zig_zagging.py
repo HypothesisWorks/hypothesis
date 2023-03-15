@@ -39,7 +39,7 @@ def problem(draw):
 base_settings = settings(
     database=None,
     deadline=None,
-    suppress_health_check=HealthCheck.all(),
+    suppress_health_check=list(HealthCheck),
     max_examples=10,
     verbosity=Verbosity.normal,
     phases=(Phase.explicit, Phase.generate),

@@ -135,6 +135,7 @@ their individual contributions.
 * `Phillip Schanely <https://github.com/pschanely>`_ (pschanely@gmail.com)
 * `Pierre-Jean Campigotto <https://github.com/PJCampi>`_
 * `Przemek Konopko <https://github.com/soutys>`_
+* `Reagan Lee <https://github.com/reaganjlee>`_
 * `Richard Boulton <https://www.github.com/rboulton>`_ (richard@tartarus.org)
 * `Richard Scholtens <https://github.com/richardscholtens>`_ (richardscholtens2@gmail.com)
 * `Robert Howlett <https://github.com/jebob>`_

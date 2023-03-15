@@ -9,7 +9,7 @@ If this is expected, e.g. when generating large arrays or dataframes, you can se
 disable them with the :obj:`~hypothesis.settings.suppress_health_check` setting.
 The argument for this parameter is a list with elements drawn from any of
 the class-level attributes of the HealthCheck class.
-Using a value of ``HealthCheck.all()`` will disable all health checks.
+Using a value of ``list(HealthCheck)`` will disable all health checks.
 
 .. autoclass:: hypothesis.HealthCheck
    :undoc-members:

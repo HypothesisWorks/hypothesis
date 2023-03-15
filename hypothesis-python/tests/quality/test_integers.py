@@ -47,7 +47,7 @@ def problems(draw):
 @example((1, b"\x00\x00\x06\x01"))
 @example(problem=(32768, b"\x03\x01\x00\x00\x00\x00\x00\x01\x00\x02\x01"))
 @settings(
-    suppress_health_check=HealthCheck.all(),
+    suppress_health_check=list(HealthCheck),
     deadline=None,
     max_examples=10,
     verbosity=Verbosity.normal,
@@ -75,7 +75,7 @@ def test_always_reduces_integers_to_smallest_suitable_sizes(problem):
         f,
         random=Random(0),
         settings=settings(
-            suppress_health_check=HealthCheck.all(),
+            suppress_health_check=list(HealthCheck),
             phases=(Phase.shrink,),
             database=None,
             verbosity=Verbosity.debug,

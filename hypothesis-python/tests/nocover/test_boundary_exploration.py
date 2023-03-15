@@ -18,7 +18,7 @@ from tests.common.utils import no_shrink
 
 
 @pytest.mark.parametrize("strat", [st.text(min_size=5)])
-@settings(phases=no_shrink, deadline=None, suppress_health_check=HealthCheck.all())
+@settings(phases=no_shrink, deadline=None, suppress_health_check=list(HealthCheck))
 @given(st.data())
 def test_explore_arbitrary_function(strat, data):
     cache = {}

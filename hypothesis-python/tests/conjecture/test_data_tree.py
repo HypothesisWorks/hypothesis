@@ -19,7 +19,7 @@ from hypothesis.internal.conjecture.datatree import DataTree
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 
 TEST_SETTINGS = settings(
-    max_examples=5000, database=None, suppress_health_check=HealthCheck.all()
+    max_examples=5000, database=None, suppress_health_check=list(HealthCheck)
 )
 
 

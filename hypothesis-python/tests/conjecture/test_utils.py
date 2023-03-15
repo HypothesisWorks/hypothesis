@@ -118,7 +118,7 @@ def test_too_small_to_be_useful_coin():
 @example([0, 2, 47])
 @settings(
     deadline=None,
-    suppress_health_check=HealthCheck.all(),
+    suppress_health_check=list(HealthCheck),
     phases=[Phase.explicit] if IN_COVERAGE_TESTS else settings.default.phases,
 )
 @given(st.lists(st.fractions(min_value=0, max_value=1), min_size=1))

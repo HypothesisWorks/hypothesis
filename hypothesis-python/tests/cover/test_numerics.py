@@ -31,7 +31,7 @@ from hypothesis.strategies import (
 from tests.common.debug import find_any
 
 
-@settings(suppress_health_check=HealthCheck.all())
+@settings(suppress_health_check=list(HealthCheck))
 @given(data())
 def test_fuzz_floats_bounds(data):
     width = data.draw(sampled_from([64, 32, 16]))

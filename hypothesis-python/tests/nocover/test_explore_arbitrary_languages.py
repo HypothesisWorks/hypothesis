@@ -105,7 +105,7 @@ def run_language_test_for(root, data, seed):
         settings=settings(
             max_examples=1,
             database=None,
-            suppress_health_check=HealthCheck.all(),
+            suppress_health_check=list(HealthCheck),
             verbosity=Verbosity.quiet,
             # Restore the global default phases, so that we don't inherit the
             # phases setting from the outer test.
@@ -121,7 +121,7 @@ def run_language_test_for(root, data, seed):
 
 
 @settings(
-    suppress_health_check=HealthCheck.all(),
+    suppress_health_check=list(HealthCheck),
     deadline=None,
     phases=set(settings.default.phases) - {Phase.shrink},
 )

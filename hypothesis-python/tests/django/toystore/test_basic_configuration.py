@@ -17,7 +17,7 @@ from django.test import TestCase as DjangoTestCase
 from hypothesis import HealthCheck, Verbosity, given, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.django import TestCase, TransactionTestCase
-from hypothesis.internal.compat import PYPY
+from hypothesis.internal.compat import GRAALPY, PYPY
 from hypothesis.strategies import integers
 
 from tests.django.toystore.models import Company
@@ -40,7 +40,7 @@ class TestConstraintsWithTransactions(SomeStuff, TestCase):
     pass
 
 
-if not PYPY:
+if not (PYPY or GRAALPY):
     # xfail
     # This is excessively slow in general, but particularly on pypy. We just
     # disable it altogether there as it's a niche case.
@@ -57,7 +57,7 @@ class TestWorkflow(VanillaTestCase):
         class LocalTest(TestCase):
             @given(integers().map(break_the_db))
             @settings(
-                suppress_health_check=HealthCheck.all(), verbosity=Verbosity.quiet
+                suppress_health_check=list(HealthCheck), verbosity=Verbosity.quiet
             )
             def test_does_not_break_other_things(self, unused):
                 pass

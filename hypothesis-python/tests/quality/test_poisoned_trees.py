@@ -53,7 +53,7 @@ LOTS = 10**6
 
 TEST_SETTINGS = settings(
     database=None,
-    suppress_health_check=HealthCheck.all(),
+    suppress_health_check=list(HealthCheck),
     max_examples=LOTS,
     deadline=None,
 )
