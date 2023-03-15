@@ -106,7 +106,7 @@ intersphinx_mapping = {
     "sphinx": ("https://www.sphinx-doc.org/en/master/", None),
 }
 
-autodoc_mock_imports = ["numpy", "pandas", "redis", "django"]
+autodoc_mock_imports = ["numpy", "pandas", "redis", "django", "pytz"]
 
 codeautolink_autodoc_inject = False
 codeautolink_global_preface = """
