@@ -5,7 +5,10 @@
 version: 2
 
 # Optionally build your docs in additional formats such as PDF and ePub
-formats: all
+formats:
+  - htmlzip
+  - epub
+  # - pdf  # busted by latex crash on unicode U+030A combining ring above, in text() docs
 
 # Optionally set the version of Python and requirements required to build your docs
 build:
