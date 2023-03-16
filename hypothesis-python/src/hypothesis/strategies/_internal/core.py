@@ -2014,20 +2014,20 @@ def deferred(definition: Callable[[], SearchStrategy[Ex]]) -> SearchStrategy[Ex]
 
 def domains():
     import hypothesis.provisional
+
     return hypothesis.provisional.domains()
 
 
 @defines_strategy(force_reusable_values=True)
-def emails(*, domains: SearchStrategy[str] = LazyStrategy(domains, (), {})) -> SearchStrategy[str]:
+def emails(
+    *, domains: SearchStrategy[str] = LazyStrategy(domains, (), {})
+) -> SearchStrategy[str]:
     """A strategy for generating email addresses as unicode strings. The
     address format is specified in :rfc:`5322#section-3.4.1`. Values shrink
     towards shorter local-parts and host domains.
 
     If ``domains`` is given then it must be a strategy that generates domain
-    names for the emails. By default, the internal :func:`hypothesis.provisional.domains` strategy
-    is used that does *not* produce any `special-use domain names
-    <https://www.iana.org/assignments/special-use-domain-names/special-use-domain-names.xhtml>`_
-    (which yield invalid email addresses).
+    names for the emails, defaulting to :func:`~hypothesis.provisional.domains`.
 
     This strategy is useful for generating "user data" for tests, as
     mishandling of email addresses is a common source of bugs.
@@ -2035,7 +2035,7 @@ def emails(*, domains: SearchStrategy[str] = LazyStrategy(domains, (), {})) -> S
     local_chars = string.ascii_letters + string.digits + "!#$%&'*+-/=^_`{|}~"
     local_part = text(local_chars, min_size=1, max_size=64)
     # TODO: include dot-atoms, quoted strings, escaped chars, etc in local part
-    return builds("{}@{}".format, local_part, domains()).filter(
+    return builds("{}@{}".format, local_part, domains).filter(
         lambda addr: len(addr) <= 254
     )
 
