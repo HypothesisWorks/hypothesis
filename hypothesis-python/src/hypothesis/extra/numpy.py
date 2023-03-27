@@ -9,7 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
-from typing import Any, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any, Mapping, Optional, Sequence, Tuple, TypeVar, Union
 
 import numpy as np
 
@@ -37,6 +37,7 @@ from hypothesis.internal.validation import check_type
 from hypothesis.strategies._internal.numbers import Real
 from hypothesis.strategies._internal.strategies import T, check_strategy
 from hypothesis.strategies._internal.utils import defines_strategy
+from numpy.typing import DTypeLike, NDArray
 
 __all__ = [
     "BroadcastableShapes",
@@ -374,15 +375,18 @@ def fill_for(elements, unique, fill, name=""):
     return fill
 
 
+D = TypeVar("D", bound=DTypeLike)
+
+
 @defines_strategy(force_reusable_values=True)
 def arrays(
-    dtype: Any,
+    dtype: D,
     shape: Union[int, st.SearchStrategy[int], Shape, st.SearchStrategy[Shape]],
     *,
     elements: Optional[Union[st.SearchStrategy, Mapping[str, Any]]] = None,
     fill: Optional[st.SearchStrategy[Any]] = None,
     unique: bool = False,
-) -> st.SearchStrategy[np.ndarray]:
+) -> st.SearchStrategy[NDArray[D]]:
     r"""Returns a strategy for generating :class:`numpy:numpy.ndarray`\ s.
 
     * ``dtype`` may be any valid input to :class:`~numpy:numpy.dtype`
@@ -900,8 +904,8 @@ def integer_array_indices(
     shape: Shape,
     *,
     result_shape: st.SearchStrategy[Shape] = array_shapes(),
-    dtype: np.dtype = "int",
-) -> st.SearchStrategy[Tuple[np.ndarray, ...]]:
+    dtype: D = np.int32,
+) -> st.SearchStrategy[Tuple[NDArray[D], ...]]:
     """Return a search strategy for tuples of integer-arrays that, when used
     to index into an array of shape ``shape``, given an array whose shape
     was drawn from ``result_shape``.
