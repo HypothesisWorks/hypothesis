@@ -383,8 +383,8 @@ def arrays(
     dtype: D,
     shape: Union[int, st.SearchStrategy[int], Shape, st.SearchStrategy[Shape]],
     *,
-    elements: Optional[Union[st.SearchStrategy, Mapping[str, Any]]] = None,
-    fill: Optional[st.SearchStrategy[Any]] = None,
+    elements: Optional[Union[st.SearchStrategy[D], Mapping[str, Any]]] = None,
+    fill: Optional[st.SearchStrategy[D]] = None,
     unique: bool = False,
 ) -> st.SearchStrategy[NDArray[D]]:
     r"""Returns a strategy for generating :class:`numpy:numpy.ndarray`\ s.
