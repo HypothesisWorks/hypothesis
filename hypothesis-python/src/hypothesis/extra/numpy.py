@@ -380,7 +380,7 @@ D = TypeVar("D", bound=DTypeLike)
 
 @defines_strategy(force_reusable_values=True)
 def arrays(
-    dtype: D,
+    dtype: Union[D, st.SearchStrategy[D]],
     shape: Union[int, st.SearchStrategy[int], Shape, st.SearchStrategy[Shape]],
     *,
     elements: Optional[Union[st.SearchStrategy[D], Mapping[str, Any]]] = None,
