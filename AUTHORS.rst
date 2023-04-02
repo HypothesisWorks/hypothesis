@@ -19,6 +19,7 @@ their individual contributions.
 * `Alex Stapleton <https://www.github.com/public>`_
 * `Alex Willmer <https://github.com/moreati>`_ (alex@moreati.org.uk)
 * `Andrea Pierré <https://www.github.com/kir0ul>`_
+* `Andrea Reina <https://www.github.com/andreareina>`_
 * `Ben Anhalt <https://github.com/benanhalt>`_
 * `Ben Peterson <https://github.com/killthrush>`_ (killthrush@hotmail.com)
 * `Benjamin Lee <https://github.com/Benjamin-Lee>`_ (benjamindlee@me.com)

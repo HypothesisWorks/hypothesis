@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import re
 import time
 import traceback
 
@@ -145,7 +146,7 @@ def test_flaky_exit():
 
 @pytest.mark.parametrize("draw_delay", [False, True])
 @pytest.mark.parametrize("test_delay", [False, True])
-def test_draw_time_percentage(draw_delay, test_delay):
+def test_draw_timing(draw_delay, test_delay):
     time.freeze()
 
     @st.composite
@@ -161,11 +162,10 @@ def test_draw_time_percentage(draw_delay, test_delay):
 
     stats = describe_statistics(call_for_statistics(test))
     if not draw_delay:
-        assert "~ 0%" in stats
-    elif test_delay:
-        assert "~ 50%" in stats
+        assert "< 1ms" in stats
     else:
-        assert "~ 100%" in stats
+        match = re.search(r"of which ~ (?P<gentime>\d+)", stats)
+        assert 49 <= int(match.group("gentime")) <= 51
 
 
 def test_has_lambdas_in_output():
