@@ -46,16 +46,16 @@ def format_ms(times):
     `times` is a collection of durations in seconds.
     """
     ordered = sorted(times)
-    n = max(0, len(ordered) - 1)
+    n = len(ordered) - 1
+    assert n >= 0
     lower = int(ordered[int(math.floor(n * 0.05))] * 1000)
     upper = int(ordered[int(math.ceil(n * 0.95))] * 1000)
     if upper == 0:
-        ms = "< 1ms"
+        return "< 1ms"
     elif lower == upper:
-        ms = f"~ {lower}ms"
+        return f"~ {lower}ms"
     else:
-        ms = f"~ {lower}-{upper} ms"
-    return ms
+        return f"~ {lower}-{upper} ms"
 
 
 def describe_statistics(stats_dict):
