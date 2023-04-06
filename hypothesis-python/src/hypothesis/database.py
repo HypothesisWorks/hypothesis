@@ -195,7 +195,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
     def __repr__(self) -> str:
         return f"DirectoryBasedExampleDatabase({self.path!r})"
 
-    def _key_path(self, key: bytes):
+    def _key_path(self, key: bytes) -> str:
         try:
             return self.keypaths[key]
         except KeyError:
@@ -341,10 +341,10 @@ class GitHubArtifactDatabase(ExampleDatabase):
     """
     A directory-based database loaded from a GitHub Actions artifact.
 
-    This is useful for sharing example databases between CI runs and developers, allowing the latter
-    to get read-only access to the former. In most cases, this will be used through the
-    :class:`~hypothesis.database.MultiplexedDatabase`, by combining a local directory-based database
-    with this one. For example:
+    This is useful for sharing example databases between CI runs and developers, allowing
+    the latter to get read-only access to the former. In most cases, this will be used
+    through the :class:`~hypothesis.database.MultiplexedDatabase`,
+    by combining a local directory-based database with this one. For example:
 
     .. code-block:: python
 
@@ -353,6 +353,8 @@ class GitHubArtifactDatabase(ExampleDatabase):
 
         settings.register_profile("ci", database=local)
         settings.register_profile("dev", database=MultiplexedDatabase(local, shared))
+        # We don't want to use the shared database in CI, only to populate its local one.
+        # which the workflow should then upload as an artifact.
         settings.load_profile("ci" if os.environ.get("CI") else "dev")
 
     .. note::
@@ -360,7 +362,9 @@ class GitHubArtifactDatabase(ExampleDatabase):
         :class:`ReadOnlyDatabase`.
 
     If you're using a private repository, you must provide `GITHUB_TOKEN` as an environment variable,
-    which would usually be a Personal Access Token with the `repo` scope.
+    which would usually be a
+    `Personal Access Token <https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token>`_
+    with the `repo` scope.
 
     The database automatically implements a simple file-based cache with a default expiration period
     of 1 day. You can adjust this through the `cache_timeout` property.
