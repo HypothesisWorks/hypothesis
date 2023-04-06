@@ -190,12 +190,12 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
 
     def __init__(self, path: str) -> None:
         self.path = path
-        self.keypaths: Dict[str, str] = {}
+        self.keypaths: Dict[bytes, str] = {}
 
     def __repr__(self) -> str:
         return f"DirectoryBasedExampleDatabase({self.path!r})"
 
-    def _key_path(self, key):
+    def _key_path(self, key: bytes):
         try:
             return self.keypaths[key]
         except KeyError:
@@ -381,7 +381,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
         self.artifact_name = artifact_name
         self.cache_timeout = cache_timeout
 
-        self.keypaths: Dict[str, PurePath] = {}
+        self.keypaths: Dict[bytes, PurePath] = {}
 
         # Get the GitHub token from the environment
         # It's unnecessary to use a token if the repo is public
@@ -410,7 +410,10 @@ class GitHubArtifactDatabase(ExampleDatabase):
         )
 
     def __repr__(self) -> str:
-        return f"GitHubArtifactDatabase(owner={self.owner}, repo={self.repo}, artifact_name={self.artifact_name})"
+        return (
+            f"GitHubArtifactDatabase(owner={self.owner!r}, "
+            f"repo={self.repo!r}, artifact_name={self.artifact_name!r})"
+        )
 
     def _initialize_io(self) -> None:
         if self._initialized:
@@ -461,7 +464,8 @@ class GitHubArtifactDatabase(ExampleDatabase):
         elif found_artifact is not None:
             warnings.warn(
                 HypothesisWarning(
-                    "Using an expired artifact as a fallback for the database."
+                    "Using an expired artifact as a fallback for the database: "
+                    f"{found_artifact}"
                 )
             )
             self._artifact = found_artifact
@@ -472,40 +476,54 @@ class GitHubArtifactDatabase(ExampleDatabase):
 
         self._initialize_io()
 
-    def _fetch_artifact(self) -> Optional[Path]:  # pragma: no cover
-        # Get the list of artifacts from GitHub
+    def _get_bytes(self, url: str) -> Optional[bytes]:
         request = Request(
-            f"https://api.github.com/repos/{self.owner}/{self.repo}/actions/artifacts",
+            url,
             headers={
                 "Accept": "application/vnd.github+json",
                 "X-GitHub-Api-Version": "2022-11-28 ",
                 "Authorization": f"Bearer {self.token}",
             },
         )
-
+        response_bytes: Optional[bytes] = None
         try:
             response = urlopen(request)
-            artifacts = json.loads(response.read())["artifacts"]
+            response_bytes = response.read()
             warning_message = None
         except HTTPError as e:
             if e.code == 401:
                 warning_message = (
                     "Authorization failed when trying to download artifact from GitHub. "
-                    "Check your $GITHUB_TOKEN environment variable or make the repository public. "
+                    "Check your $GITHUB_TOKEN environment variable "
+                    "or make the repository public."
                 )
             else:
                 warning_message = (
                     "Could not get the latest artifact from GitHub. "
-                    "This could be because because the repository or artifact does not exist. "
+                    "This could be because because the repository "
+                    "or artifact does not exist. "
                 )
         except URLError:
             warning_message = "Could not connect to GitHub to get the latest artifact. "
         except TimeoutError:
-            warning_message = "Could not connect to GitHub to get the latest artifact (connection timed out). "
+            warning_message = (
+                "Could not connect to GitHub to get the latest artifact "
+                "(connection timed out)."
+            )
 
-        if warning_message:
+        if warning_message is not None:
             warnings.warn(HypothesisWarning(warning_message))
             return None
+
+        return response_bytes
+
+    def _fetch_artifact(self) -> Optional[Path]:  # pragma: no cover
+        # Get the list of artifacts from GitHub
+        url = f"https://api.github.com/repos/{self.owner}/{self.repo}/actions/artifacts"
+        response_bytes = self._get_bytes(url)
+        if response_bytes is None:
+            return None
+        artifacts = json.loads(response_bytes)["artifacts"]
 
         # Get the latest artifact from the list
         artifact = sorted(
@@ -513,37 +531,10 @@ class GitHubArtifactDatabase(ExampleDatabase):
             key=lambda a: a["created_at"],
         )[-1]
 
-        request = Request(
-            artifact["archive_download_url"],
-            headers={
-                "Accept": "application/vnd.github+json",
-                "X-GitHub-Api-Version": "2022-11-28",
-                "Authorization": f"Bearer {self.token}",
-            },
-        )
-
+        url = artifact["archive_download_url"]
         # Download the artifact
-        try:
-            response = urlopen(request)
-            artifact_bytes = response.read()
-            warning_message = None
-        except HTTPError as e:
-            if e.code == 401:
-                warning_message = (
-                    "Authorization failed when trying to download artifact from GitHub. "
-                    "Check your $GITHUB_TOKEN environment variable or make the repository public. "
-                )
-            else:
-                warning_message = (
-                    "Could not get the latest artifact from GitHub. "
-                    "This could be because because the repository or artifact does not exist. "
-                )
-        except URLError:
-            warning_message = "Could not connect to GitHub to get the latest artifact. "
-        except TimeoutError:
-            warning_message = "Could not connect to GitHub to get the latest artifact (connection timed out). "
-        if warning_message is not None:
-            warnings.warn(HypothesisWarning(warning_message))
+        artifact_bytes = self._get_bytes(url)
+        if artifact_bytes is None:
             return None
 
         # Save the artifact to the cache
@@ -577,7 +568,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
 
         return artifact_path
 
-    def _key_path(self, key: str) -> PurePath:
+    def _key_path(self, key: bytes) -> PurePath:
         try:
             return self.keypaths[key]
         except KeyError:
