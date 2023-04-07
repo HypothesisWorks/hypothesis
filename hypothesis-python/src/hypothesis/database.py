@@ -416,7 +416,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
         self._read_only_message = (
             "This database is read-only. "
             "Please wrap this class with ReadOnlyDatabase"
-            "i.e. ReadOnlyDatabase(GitHubArtifactsDatabase(...))."
+            "i.e. ReadOnlyDatabase(GitHubArtifactDatabase(...))."
         )
 
     def __repr__(self) -> str:
