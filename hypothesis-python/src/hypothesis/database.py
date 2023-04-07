@@ -407,7 +407,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
         self._disabled: bool = False
 
         # This is the path to the artifact in usage
-        # .hypothesis/ci/github-artifacts/<artifact-name>/<isoformat>.zip
+        # .hypothesis/github-artifacts/<artifact-name>/<modified_isoformat>.zip
         self._artifact: Optional[Path] = None
         # This caches the artifact structure
         self._access_cache: Optional[Dict[PurePath, Set[PurePath]]] = None
@@ -585,7 +585,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
         # Save the artifact to the cache
         # We replace ":" with "_" to ensure the filenames are compatible
         # with Windows filesystems
-        timestamp = datetime.now(timezone.utc).isoformat().replace(":", "-")
+        timestamp = datetime.now(timezone.utc).isoformat().replace(":", "_")
         artifact_path = self.path / f"{timestamp}.zip"
         try:
             with open(artifact_path, "wb") as f:
