@@ -139,7 +139,7 @@ def test_respects_max_examples_in_database_usage():
 def test_does_not_use_database_when_seed_is_forced(monkeypatch):
     monkeypatch.setattr(core, "global_force_seed", 42)
     database = InMemoryExampleDatabase()
-    database.fetch = None
+    database.fetch = None  # type: ignore
 
     @settings(database=database)
     @given(st.integers())

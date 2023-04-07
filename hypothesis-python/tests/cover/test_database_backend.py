@@ -12,9 +12,11 @@ import os
 import re
 import tempfile
 import zipfile
-from datetime import datetime, timezone
+from contextlib import contextmanager
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from shutil import make_archive
+from shutil import make_archive, rmtree
+from typing import Iterator, Optional, Tuple
 
 import pytest
 
@@ -172,6 +174,7 @@ def test_multiplexed_dbs_read_and_write_all():
 
 
 def test_ga_require_readonly_wrapping():
+    """Test that GitHubArtifactDatabase requires wrapping around ReadOnlyDatabase"""
     database = GitHubArtifactDatabase("test", "test")
     # save, move and delete can only be called when wrapped around ReadonlyDatabase
     with pytest.raises(RuntimeError, match=re.escape(database._read_only_message)):
@@ -188,38 +191,64 @@ def test_ga_require_readonly_wrapping():
     database.delete(b"foo", b"bar")
 
 
-def ga_mock_empty_artifact() -> Path:
-    temp_dir = tempfile.mkdtemp()
-    path = Path(temp_dir) / "github-artifacts"
+@contextmanager
+def ga_empty_artifact(
+    date: Optional[datetime] = None, path: Optional[Path] = None
+) -> Iterator[Tuple[Path, Path]]:
+    """Creates an empty GitHub artifact."""
+    if date:
+        timestamp = date.isoformat().replace(":", "_")
+    else:
+        timestamp = datetime.now(timezone.utc).isoformat().replace(":", "_")
+
+    temp_dir = None
+    if not path:
+        temp_dir = tempfile.mkdtemp()
+        path = Path(temp_dir) / "github-artifacts"
+
     path.mkdir(parents=True, exist_ok=True)
-    timestamp = datetime.now(timezone.utc).isoformat().replace(":", "_")
     zip_path = path / f"{timestamp}.zip"
 
     with zipfile.ZipFile(zip_path, "w"):
         pass
 
-    return path
+    try:
+        yield (path, zip_path)
+    finally:
+        if temp_dir:
+            rmtree(temp_dir)
 
 
 def test_ga_empty_read():
-    path = ga_mock_empty_artifact()
-    database = GitHubArtifactDatabase("test", "test", path=path)
-    assert list(database.fetch(b"foo")) == []
+    """Tests that an inexistent key returns nothing."""
+    with ga_empty_artifact() as (path, _):
+        database = GitHubArtifactDatabase("test", "test", path=path)
+        assert list(database.fetch(b"foo")) == []
 
 
 def test_ga_initialize():
-    path = ga_mock_empty_artifact()
-    database = GitHubArtifactDatabase("test", "test", path=path)
-    # Trigger initialization
-    database.fetch(b"")
-    root1 = database._artifact
-    # Should not trigger initialization
-    database.fetch(b"")
-    root2 = database._artifact
-    assert root1 == root2
+    """
+    Tests that the database is initialized when a new artifact is found.
+    As well that initialization doesn't happen again on the next fetch.
+    """
+    now = datetime.now(timezone.utc)
+    with ga_empty_artifact(date=(now - timedelta(hours=2))) as (path, _):
+        database = GitHubArtifactDatabase("test", "test", path=path)
+        # Trigger initialization
+        list(database.fetch(b""))
+        initial_artifact = database._artifact
+        assert initial_artifact
+        assert database._artifact
+        assert database._access_cache is not None
+        with ga_empty_artifact(date=now, path=path) as (path, _):
+            # Initialization shouldn't happen again
+            list(database.fetch(b""))
+            assert database._initialized
+            assert database._artifact == initial_artifact
 
 
 def test_ga_no_artifact():
+    """Tests that the database is disabled when no artifact is found."""
     tmp_dir = Path(tempfile.mkdtemp())
     database = GitHubArtifactDatabase("test", "test", path=tmp_dir)
     # Check that the database raises a warning
@@ -228,10 +257,93 @@ def test_ga_no_artifact():
     assert database._disabled is True
 
 
+def test_ga_corrupted_artifact():
+    """Tests that corrupted artifacts are properly detected and warned about."""
+    with ga_empty_artifact() as (path, zip_path):
+        # Corrupt the CRC of the zip file
+        with open(zip_path, "rb+") as f:
+            f.write(b"\x00\x01\x00\x01")
+
+        database = GitHubArtifactDatabase("test", "test", path=path)
+        # Check that the database raises a warning
+        with pytest.warns(HypothesisWarning):
+            assert list(database.fetch(b"")) == []
+        assert database._disabled is True
+
+
+def test_ga_deletes_old_artifacts():
+    """Tests that old artifacts are automatically deleted."""
+    now = datetime.now(timezone.utc)
+    with ga_empty_artifact(date=now) as (path, file_now):
+        with ga_empty_artifact(date=now - timedelta(hours=2), path=path) as (
+            _,
+            file_old,
+        ):
+            database = GitHubArtifactDatabase("test", "test", path=path)
+            # Trigger initialization
+            list(database.fetch(b""))
+            assert file_now.exists()
+            assert not file_old.exists()
+
+
+def test_ga_triggers_fetching(monkeypatch):
+    """Tests whether an artifact fetch is triggered, and an expired artifact is deleted."""
+    with ga_empty_artifact() as (_, artifact):
+        # We patch the _fetch_artifact method to return our artifact
+        def fake_fetch_artifact(self) -> Optional[Path]:
+            return artifact
+
+        monkeypatch.setattr(
+            GitHubArtifactDatabase, "_fetch_artifact", fake_fetch_artifact
+        )
+
+        # Now we'll see if the DB picks up the artifact
+        now = datetime.now(timezone.utc)
+        # We create an expired artifact
+        with ga_empty_artifact(date=now - timedelta(days=2)) as (path, _):
+            database = GitHubArtifactDatabase(
+                "test", "test", path=path, cache_timeout=timedelta(days=1)
+            )
+
+        # Trigger initialization
+        list(database.fetch(b""))
+        assert not database._disabled
+        assert database._initialized
+        assert database._artifact == artifact
+
+
+def test_ga_fallback_expired(monkeypatch):
+    """
+    Tests that the fallback to an expired artifact is triggered
+    if fetching a new one fails. This allows for (by example) offline development.
+    """
+    now = datetime.now(timezone.utc)
+    with ga_empty_artifact(date=now - timedelta(days=2)) as (path, artifact):
+        database = GitHubArtifactDatabase(
+            "test", "test", path=path, cache_timeout=timedelta(days=1)
+        )
+
+        # This should trigger the fallback
+        def fake_fetch_artifact(self) -> Optional[Path]:
+            return None
+
+        monkeypatch.setattr(
+            GitHubArtifactDatabase, "_fetch_artifact", fake_fetch_artifact
+        )
+
+        # Trigger initialization
+        with pytest.warns(HypothesisWarning):
+            list(database.fetch(b""))
+
+        assert not database._disabled
+        assert database._initialized
+        assert database._artifact == artifact
+
+
 class GitHubArtifactMocks(RuleBasedStateMachine):
     """
-    Setups a mock GithubArtifactDatabase from an artifact
-    generated from a DirectoryBasedExampleDatabase.
+    This is a state machine that tests agreement of GitHubArtifactDatabase
+    with DirectoryBasedExampleDatabase (as a reference implementation).
     """
 
     def __init__(self):

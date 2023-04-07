@@ -428,14 +428,33 @@ class GitHubArtifactDatabase(ExampleDatabase):
     def _prepare_for_io(self) -> None:
         assert self._artifact is not None, "Artifact not loaded."
 
-        if self._initialized:
+        if self._initialized:  # pragma: no cover
             return
 
         # Test that the artifact is valid
         try:
             with ZipFile(self._artifact) as f:
-                if f.testzip():
+                if f.testzip():  # pragma: no cover
                     raise BadZipFile
+
+            # Turns out that testzip() doesn't work quite well
+            # doing the cache initialization here instead
+            # will give us more coverage of the artifact.
+
+            # Cache the files inside each keypath
+            self._access_cache = {}
+            with ZipFile(self._artifact) as zf:
+                namelist = zf.namelist()
+                # Iterate over files in the artifact
+                for filename in namelist:
+                    fileinfo = zf.getinfo(filename)
+                    if fileinfo.is_dir():
+                        self._access_cache[PurePath(filename)] = set()
+                    else:
+                        # Get the keypath from the filename
+                        keypath = PurePath(filename).parent
+                        # Add the file to the keypath
+                        self._access_cache[keypath].add(PurePath(filename))
         except BadZipFile:
             warnings.warn(
                 HypothesisWarning(
@@ -444,21 +463,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
                     "or because the artifact was not created by Hypothesis. "
                 )
             )
-
-        # Cache the files inside each keypath
-        self._access_cache = {}
-        with ZipFile(self._artifact) as zf:
-            namelist = zf.namelist()
-            # Iterate over files in the artifact
-            for filename in namelist:
-                fileinfo = zf.getinfo(filename)
-                if fileinfo.is_dir():
-                    self._access_cache[PurePath(filename)] = set()
-                else:
-                    # Get the keypath from the filename
-                    keypath = PurePath(filename).parent
-                    # Add the file to the keypath
-                    self._access_cache[keypath].add(PurePath(filename))
+            self._disabled = True
 
         self._initialized = True
 
@@ -488,33 +493,35 @@ class GitHubArtifactDatabase(ExampleDatabase):
             < self.cache_timeout
         ):
             self._artifact = found_artifact
-            self._prepare_for_io()
-            return
-
-        # pragma: no branch
-        # Download the latest artifact from GitHub
-        new_artifact = self._fetch_artifact()
-
-        if new_artifact:
-            if found_artifact is not None:
-                found_artifact.unlink()
-            self._artifact = new_artifact
-        elif found_artifact is not None:
-            warnings.warn(
-                HypothesisWarning(
-                    "Using an expired artifact as a fallback for the database: "
-                    f"{found_artifact}"
-                )
-            )
-            self._artifact = found_artifact
         else:
-            warnings.warn(HypothesisWarning("Disabling shared database due to errors."))
-            self._disabled = True
-            return
+            # Download the latest artifact from GitHub
+            new_artifact = self._fetch_artifact()
+
+            if new_artifact:
+                if found_artifact is not None:
+                    found_artifact.unlink()
+                self._artifact = new_artifact
+            elif found_artifact is not None:
+                warnings.warn(
+                    HypothesisWarning(
+                        "Using an expired artifact as a fallback for the database: "
+                        f"{found_artifact}"
+                    )
+                )
+                self._artifact = found_artifact
+            else:
+                warnings.warn(
+                    HypothesisWarning(
+                        "Couldn't acquire a new or existing artifact. "
+                        "Disabling database."
+                    )
+                )
+                self._disabled = True
+                return
 
         self._prepare_for_io()
 
-    def _get_bytes(self, url: str) -> Optional[bytes]:
+    def _get_bytes(self, url: str) -> Optional[bytes]:  # pragma: no cover
         request = Request(
             url,
             headers={
