@@ -17,8 +17,8 @@ from pathlib import Path
 from shutil import make_archive
 
 import pytest
-from hypothesis import given, settings
-from hypothesis import strategies as st
+
+from hypothesis import given, settings, strategies as st
 from hypothesis.database import (
     DirectoryBasedExampleDatabase,
     ExampleDatabase,
