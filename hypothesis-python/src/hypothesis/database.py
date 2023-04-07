@@ -436,8 +436,6 @@ class GitHubArtifactDatabase(ExampleDatabase):
             with ZipFile(self._artifact) as f:
                 if f.testzip():
                     raise BadZipFile
-                else:
-                    self._initialized = True
         except BadZipFile:
             warnings.warn(
                 HypothesisWarning(
@@ -461,6 +459,8 @@ class GitHubArtifactDatabase(ExampleDatabase):
                     keypath = PurePath(filename).parent
                     # Add the file to the keypath
                     self._access_cache[keypath].add(PurePath(filename))
+
+        self._initialized = True
 
     def _initialize_db(self) -> None:
         # Create the cache directory if it doesn't exist
@@ -611,7 +611,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
                 return
 
         assert self._artifact is not None
-        assert self._access_cache
+        assert self._access_cache is not None
 
         kp = self._key_path(key)
 
