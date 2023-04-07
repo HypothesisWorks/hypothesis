@@ -339,10 +339,15 @@ class MultiplexedDatabase(ExampleDatabase):
 
 class GitHubArtifactDatabase(ExampleDatabase):
     """
-    A directory-based database loaded from a GitHub Actions artifact.
+    A file-based database loaded from a GitHub Actions artifact.
 
-    This is useful for sharing example databases between CI runs and developers, allowing
-    the latter to get read-only access to the former. In most cases, this will be used
+    You can use this for sharing example databases between CI runs and developers, allowing
+    the latter to get read-only access to the former. This is particularly useful for
+    continuous fuzzing (i.e. with `HypoFuzz <https://hypofuzz.com/>`__),
+    where the CI system can upload the resulting database as an artifact after each run,
+    allowing developers to reproduce any failures by just running hypothesis.
+
+    In most cases, this will be used
     through the :class:`~hypothesis.database.MultiplexedDatabase`,
     by combining a local directory-based database with this one. For example:
 
@@ -362,8 +367,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
         :class:`ReadOnlyDatabase`.
 
     If you're using a private repository, you must provide `GITHUB_TOKEN` as an environment variable,
-    which would usually be a
-    `Personal Access Token <https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token>`_
+    which would usually be a `Personal Access Token <https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token>`_
     with the `repo` scope.
 
     The database automatically implements a simple file-based cache with a default expiration period
