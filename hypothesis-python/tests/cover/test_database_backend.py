@@ -247,14 +247,14 @@ def test_ga_initialize():
             assert database._artifact == initial_artifact
 
 
-def test_ga_no_artifact():
+def test_ga_no_artifact(tmp_path):
     """Tests that the database is disabled when no artifact is found."""
-    tmp_dir = Path(tempfile.mkdtemp())
-    database = GitHubArtifactDatabase("test", "test", path=tmp_dir)
+    database = GitHubArtifactDatabase("test", "test", path=tmp_path)
     # Check that the database raises a warning
     with pytest.warns(HypothesisWarning):
         assert list(database.fetch(b"")) == []
     assert database._disabled is True
+    assert list(database.fetch(b"")) == []
 
 
 def test_ga_corrupted_artifact():
@@ -300,16 +300,19 @@ def test_ga_triggers_fetching(monkeypatch):
         # Now we'll see if the DB picks up the artifact
         now = datetime.now(timezone.utc)
         # We create an expired artifact
-        with ga_empty_artifact(date=now - timedelta(days=2)) as (path, _):
+        with ga_empty_artifact(date=now - timedelta(days=2)) as (path, old_artifact):
             database = GitHubArtifactDatabase(
                 "test", "test", path=path, cache_timeout=timedelta(days=1)
             )
 
-        # Trigger initialization
-        list(database.fetch(b""))
-        assert not database._disabled
-        assert database._initialized
-        assert database._artifact == artifact
+            # Trigger initialization
+            list(database.fetch(b""))
+            assert not database._disabled
+            assert database._initialized
+            assert database._artifact == artifact
+
+            # Check that the artifact was deleted
+            assert not old_artifact.exists()
 
 
 def test_ga_fallback_expired(monkeypatch):
