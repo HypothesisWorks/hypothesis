@@ -623,13 +623,8 @@ class GitHubArtifactDatabase(ExampleDatabase):
         kp = self._key_path(key)
 
         with ZipFile(self._artifact) as zf:
-            # Check if kp exists
-            namelist = zf.namelist()
-            if kp not in (PurePath(p) for p in namelist):
-                return
-
-            # Get the filename of the kp from the cache
-            filenames = self._access_cache.get(kp, set())
+            # Get the all files in the the kp from the cache
+            filenames = self._access_cache.get(kp, ())
             for filename in filenames:
                 with zf.open(filename.as_posix()) as f:
                     yield f.read()
