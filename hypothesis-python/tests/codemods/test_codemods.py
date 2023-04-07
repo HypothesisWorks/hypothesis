@@ -131,3 +131,18 @@ class TestFixPositionalKeywonlyArgs(CodemodTest):
             st.sets(st.integers(), 0, 1, True)
         """
         self.assertCodemod(before=before, after=before)
+
+class TestHealthcheckAll(CodemodTest):
+    TRANSFORM = codemods.HypothesisFixHealthcheckAll
+    
+    def test_noop_other_attributes(self):
+        # Test that calls to other attributes of Healthcheck are not modified
+        before = "result = Healthcheck.data_too_large"
+        self.assertCodemod(before=before, after=before)
+
+    def test_substitution(self) -> None:
+        # Test that Healthcheck.all() is replaced with list(Healthcheck)
+        before = "result = Healthcheck.all()"
+        after = "result = list(Healthcheck)"
+        # self.assertEqual(run_codemod(input_code), expected_code)
+        self.assertCodemod(before=before, after=after)
