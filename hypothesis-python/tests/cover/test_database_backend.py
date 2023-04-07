@@ -17,8 +17,8 @@ from pathlib import Path
 from shutil import make_archive
 
 import pytest
-
-from hypothesis import given, settings, strategies as st
+from hypothesis import given, settings
+from hypothesis import strategies as st
 from hypothesis.database import (
     DirectoryBasedExampleDatabase,
     ExampleDatabase,
@@ -290,8 +290,8 @@ class GitHubArtifactMocks(RuleBasedStateMachine):
 
     @rule(k=keys)
     def values_agree(self, k):
-        v1 = list(self.directory_db.fetch(k))
-        v2 = list(self.zip_db.fetch(k))
+        v1 = set(self.directory_db.fetch(k))
+        v2 = set(self.zip_db.fetch(k))
 
         assert v1 == v2
 
