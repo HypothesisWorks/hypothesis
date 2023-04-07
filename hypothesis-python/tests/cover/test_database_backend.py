@@ -19,19 +19,16 @@ from shutil import make_archive, rmtree
 from typing import Iterator, Optional, Tuple
 
 import pytest
-
-from hypothesis import given, settings, strategies as st
-from hypothesis.database import (
-    DirectoryBasedExampleDatabase,
-    ExampleDatabase,
-    GitHubArtifactDatabase,
-    InMemoryExampleDatabase,
-    MultiplexedDatabase,
-    ReadOnlyDatabase,
-)
+from hypothesis.database import (DirectoryBasedExampleDatabase,
+                                 ExampleDatabase, GitHubArtifactDatabase,
+                                 InMemoryExampleDatabase, MultiplexedDatabase,
+                                 ReadOnlyDatabase)
 from hypothesis.errors import HypothesisWarning
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
 from hypothesis.strategies import binary, lists, tuples
+
+from hypothesis import given, settings
+from hypothesis import strategies as st
 
 small_settings = settings(max_examples=50)
 
@@ -286,7 +283,7 @@ def test_ga_deletes_old_artifacts():
             assert not file_old.exists()
 
 
-def test_ga_triggers_fetching(monkeypatch):
+def test_ga_triggers_fetching(monkeypatch, tmp_path):
     """Tests whether an artifact fetch is triggered, and an expired artifact is deleted."""
     with ga_empty_artifact() as (_, artifact):
         # We patch the _fetch_artifact method to return our artifact
@@ -297,12 +294,24 @@ def test_ga_triggers_fetching(monkeypatch):
             GitHubArtifactDatabase, "_fetch_artifact", fake_fetch_artifact
         )
 
-        # Now we'll see if the DB picks up the artifact
+        database = GitHubArtifactDatabase(
+                "test", "test", path=tmp_path, cache_timeout=timedelta(days=1)
+        )
+
+        # Test without an existing artifact
+        list(database.fetch(b""))
+
+        assert not database._disabled
+        assert database._initialized
+        assert database._artifact == artifact
+
+
+        # Now we'll see if the DB also fetched correctly with an expired artifact
         now = datetime.now(timezone.utc)
         # We create an expired artifact
-        with ga_empty_artifact(date=now - timedelta(days=2)) as (path, old_artifact):
+        with ga_empty_artifact(date=now - timedelta(days=2)) as (path_with_artifact, old_artifact):
             database = GitHubArtifactDatabase(
-                "test", "test", path=path, cache_timeout=timedelta(days=1)
+                "test", "test", path=path_with_artifact, cache_timeout=timedelta(days=1)
             )
 
             # Trigger initialization
