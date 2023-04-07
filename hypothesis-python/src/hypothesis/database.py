@@ -458,8 +458,6 @@ class GitHubArtifactDatabase(ExampleDatabase):
                     # Add the file to the keypath
                     self._access_cache[keypath].add(PurePath(filename))
 
-
-
     def _initialize_db(self) -> None:
         # Create the cache directory if it doesn't exist
         mkdir_p(str(self.path))
