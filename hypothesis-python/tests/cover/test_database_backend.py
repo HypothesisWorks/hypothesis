@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import os
+import re
 import tempfile
 import zipfile
 from datetime import datetime, timezone
@@ -173,7 +174,7 @@ def test_multiplexed_dbs_read_and_write_all():
 def test_ga_require_readonly_wrapping():
     database = GitHubArtifactDatabase("test", "test")
     # save, move and delete can only be called when wrapped around ReadonlyDatabase
-    with pytest.raises(RuntimeError):
+    with pytest.raises(RuntimeError, match=re.escape(database._read_only_message)):
         database.save(b"foo", b"bar")
     with pytest.raises(RuntimeError):
         database.move(b"foo", b"bar", b"foobar")

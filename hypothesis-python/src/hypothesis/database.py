@@ -18,7 +18,7 @@ from datetime import datetime, timedelta, timezone
 from hashlib import sha384
 from os import getenv
 from pathlib import Path, PurePath
-from typing import Dict, Iterable, Optional
+from typing import Dict, Iterable, Optional, Set
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 from zipfile import BadZipFile, ZipFile
@@ -405,6 +405,8 @@ class GitHubArtifactDatabase(ExampleDatabase):
         # This is the path to the artifact in usage
         # .hypothesis/ci/github-artifacts/<artifact-name>/<isoformat>.zip
         self._artifact: Optional[Path] = None
+        # This caches the artifact structure
+        self._access_cache: Optional[Dict[PurePath, Set[PurePath]]] = None
 
         # Message to display if user doesn't wrap around ReadOnlyDatabase
         self._read_only_message = (
@@ -419,14 +421,44 @@ class GitHubArtifactDatabase(ExampleDatabase):
             f"repo={self.repo!r}, artifact_name={self.artifact_name!r})"
         )
 
-    def _initialize_io(self) -> None:
+    def _prepare_for_io(self) -> None:
+        assert self._artifact is not None, "Artifact not loaded."
+
         if self._initialized:
             return
 
-        # Load the artifact into memory
-        # This root allows us to access the files in the zipfile as if they were on the FS
-        # It's compatible with the pathlib Path API
-        self._initialized = True
+        # Test that the artifact is valid
+        try:
+            with ZipFile(self._artifact) as f:
+                if f.testzip():
+                    raise BadZipFile
+                else:
+                    self._initialized = True
+        except BadZipFile:
+            warnings.warn(
+                HypothesisWarning(
+                    "The downloaded artifact from GitHub is invalid. "
+                    "This could be because the artifact was corrupted, "
+                    "or because the artifact was not created by Hypothesis. "
+                )
+            )
+
+        # Cache the files inside each keypath
+        self._access_cache = {}
+        with ZipFile(self._artifact) as zf:
+            namelist = zf.namelist()
+            # Iterate over files in the artifact
+            for filename in namelist:
+                fileinfo = zf.getinfo(filename)
+                if fileinfo.is_dir():
+                    self._access_cache[PurePath(filename)] = set()
+                else:
+                    # Get the keypath from the filename
+                    keypath = PurePath(filename).parent
+                    # Add the file to the keypath
+                    self._access_cache[keypath].add(PurePath(filename))
+
+
 
     def _initialize_db(self) -> None:
         # Create the cache directory if it doesn't exist
@@ -454,7 +486,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
             < self.cache_timeout
         ):
             self._artifact = found_artifact
-            self._initialize_io()
+            self._prepare_for_io()
             return
 
         # pragma: no branch
@@ -478,7 +510,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
             self._disabled = True
             return
 
-        self._initialize_io()
+        self._prepare_for_io()
 
     def _get_bytes(self, url: str) -> Optional[bytes]:
         request = Request(
@@ -555,21 +587,6 @@ class GitHubArtifactDatabase(ExampleDatabase):
             )
             return None
 
-        # Test that the artifact is valid
-        try:
-            with ZipFile(artifact_path) as f:
-                if f.testzip():
-                    raise BadZipFile
-        except BadZipFile:
-            warnings.warn(
-                HypothesisWarning(
-                    "The downloaded artifact from GitHub is invalid. "
-                    "This could be because the artifact was corrupted, "
-                    "or because the artifact was not created by Hypothesis. "
-                )
-            )
-            return None
-
         return artifact_path
 
     def _key_path(self, key: bytes) -> PurePath:
@@ -592,6 +609,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
                 return
 
         assert self._artifact is not None
+        assert self._access_cache
 
         kp = self._key_path(key)
 
@@ -601,12 +619,11 @@ class GitHubArtifactDatabase(ExampleDatabase):
             if kp not in (PurePath(p) for p in namelist):
                 return
 
-            # Iterate over files in kp
-            for filename in namelist:
-                fileinfo = zf.getinfo(filename)
-                if not fileinfo.is_dir() and filename.startswith(kp.as_posix()):
-                    with zf.open(filename) as f:
-                        yield f.read()
+            # Get the filename of the kp from the cache
+            filenames = self._access_cache.get(kp, set())
+            for filename in filenames:
+                with zf.open(filename.as_posix()) as f:
+                    yield f.read()
 
     # Read-only interface
     def save(self, key: bytes, value: bytes) -> None:
