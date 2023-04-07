@@ -380,7 +380,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
         self,
         owner: str,
         repo: str,
-        artifact_name: str = "hypofuzz-example-db",
+        artifact_name: str = "hypothesis-example-db",
         cache_timeout: timedelta = timedelta(days=1),
         path: Optional[Path] = None,
     ):
