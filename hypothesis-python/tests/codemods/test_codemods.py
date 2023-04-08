@@ -132,9 +132,10 @@ class TestFixPositionalKeywonlyArgs(CodemodTest):
         """
         self.assertCodemod(before=before, after=before)
 
+
 class TestHealthcheckAll(CodemodTest):
     TRANSFORM = codemods.HypothesisFixHealthcheckAll
-    
+
     def test_noop_other_attributes(self):
         # Test that calls to other attributes of Healthcheck are not modified
         before = "result = Healthcheck.data_too_large"

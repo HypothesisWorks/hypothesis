@@ -493,8 +493,6 @@ def test_deprecated_settings_warn_on_set_settings():
 
 
 def test_deprecated_settings_not_in_settings_all_list():
-    al = HealthCheck.all()
     ls = list(HealthCheck)
-    assert al == ls
     assert HealthCheck.return_value not in ls
     assert HealthCheck.not_a_test_method not in ls
