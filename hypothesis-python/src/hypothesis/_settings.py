@@ -465,8 +465,8 @@ class HealthCheck(Enum, metaclass=HealthCheckMeta):
     def all(cls) -> List["HealthCheck"]:
         # Skipping of deprecated attributes is handled in HealthCheckMeta.__iter__
         note_deprecation(
-            f"The Healthcheck.all() method is deprecated, instead opting for list(HealthCheck)",
-            since="2023-04-07",
+            f"`Healthcheck.all()` is deprecated; use `list(HealthCheck)` instead.",
+            since="RELEASEDAY",
             has_codemod=True,
         )
         return list(HealthCheck)

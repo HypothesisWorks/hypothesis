@@ -1,4 +1,4 @@
-RELEASE_TYPE: patch
+RELEASE_TYPE: minor
 
-This patch adds a codemod to convert deprecated Healthcheck.all() 
-into list(Healthcheck) as a part of issue #3596.
+This release deprecates ``Healthcheck.all()``, and :ref:`adds a codemod <codemods>`
+to automatically replace it with ``list(Healthcheck)`` (:issue:`3596`).
