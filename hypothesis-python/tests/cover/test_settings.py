@@ -34,7 +34,13 @@ from hypothesis.errors import (
 from hypothesis.stateful import RuleBasedStateMachine, rule
 from hypothesis.utils.conventions import not_set
 
-from tests.common.utils import checks_deprecated_behaviour, counts_calls, fails_with, validate_deprecation
+from tests.common.utils import (
+    checks_deprecated_behaviour,
+    counts_calls,
+    fails_with,
+    validate_deprecation,
+)
+
 
 def test_has_docstrings():
     assert settings.verbosity.__doc__
@@ -489,6 +495,7 @@ def test_deprecated_settings_warn_on_set_settings():
         settings(suppress_health_check=[HealthCheck.return_value])
     with validate_deprecation():
         settings(suppress_health_check=[HealthCheck.not_a_test_method])
+
 
 @checks_deprecated_behaviour
 def test_deprecated_settings_not_in_settings_all_list():
