@@ -234,10 +234,7 @@ class HypothesisFixHealthcheckAll(VisitorBasedCodemodCommand):
             updated_node.func,
             m.Attribute(value=m.Name("Healthcheck"), attr=m.Name("all")),
         ):
-            new_node = cst.Call(
-                func=cst.Name("list"), args=[cst.Arg(value=cst.Name("Healthcheck"))]
+            return updated_node.with_changes(
+                func=cst.Name("list"),
+                args=[cst.Arg(value=cst.Name("Healthcheck"))],
             )
-            updated_node = updated_node.with_changes(
-                func=new_node.func, args=new_node.args
-            )
-        return updated_node
