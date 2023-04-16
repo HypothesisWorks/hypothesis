@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.72.0:
+
+-------------------
+6.72.0 - 2023-04-16
+-------------------
+
+This release deprecates ``Healthcheck.all()``, and :ref:`adds a codemod <codemods>`
+to automatically replace it with ``list(Healthcheck)`` (:issue:`3596`).
+
 .. _v6.71.0:
 
 -------------------
