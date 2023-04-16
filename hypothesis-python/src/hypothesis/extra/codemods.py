@@ -229,12 +229,9 @@ class HypothesisFixHealthcheckAll(VisitorBasedCodemodCommand):
 
     DESCRIPTION = "Replace Healthcheck.all() with list(Healthcheck)"
 
-    def leave_Call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.Call:
-        if m.matches(
-            updated_node.func,
-            m.Attribute(value=m.Name("Healthcheck"), attr=m.Name("all")),
-        ):
-            return updated_node.with_changes(
-                func=cst.Name("list"),
-                args=[cst.Arg(value=cst.Name("Healthcheck"))],
-            )
+    @m.leave(m.Call(func=m.Attribute(m.Name("Healthcheck"), m.Name("all")), args=[]))
+    def replace_healthcheck(self, original_node, updated_node):
+        return updated_node.with_changes(
+            func=cst.Name("list"),
+            args=[cst.Arg(value=cst.Name("Healthcheck"))],
+        )
