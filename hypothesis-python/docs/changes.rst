@@ -9708,7 +9708,7 @@ minor warts ranging from indirect imports to typos in comments.
 3.38.0 - 2017-11-18
 -------------------
 
-This release overhauls :doc:`the health check system <healthchecks>`
+This release overhauls :ref:`the health check system <healthchecks>`
 in a variety of small ways.
 It adds no new features, but is nevertheless a minor release because it changes
 which tests are likely to fail health checks.

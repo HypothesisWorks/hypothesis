@@ -225,6 +225,8 @@ by your conftest you can load one with the command line option ``--hypothesis-pr
     $ pytest tests --hypothesis-profile <profile-name>
 
 
+.. _healthchecks:
+
 -------------
 Health checks
 -------------
