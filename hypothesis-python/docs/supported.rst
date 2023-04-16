@@ -21,6 +21,26 @@ noted as provisional, in which case they may be changed in minor releases.
 Undocumented attributes, modules, and behaviour may include breaking
 changes in patch releases.
 
+
+.. _deprecation-policy:
+
+------------
+Deprecations
+------------
+
+Deprecated features will emit warnings for at least six
+months, and then be removed in the following major release.
+
+Note however that not all warnings are subject to this grace period;
+sometimes we strengthen validation by adding a warning and these may
+become errors immediately at a major release.
+
+We use custom exception and warning types, so you can see
+exactly where an error came from, or turn only our warnings into errors.
+
+.. autoclass:: hypothesis.errors.HypothesisDeprecationWarning
+
+
 ---------------
 Python versions
 ---------------

@@ -66,7 +66,6 @@ check out some of the
   ghostwriter
   django
   numpy
-  healthchecks
   database
   stateful
   supported
