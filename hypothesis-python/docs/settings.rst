@@ -223,3 +223,22 @@ by your conftest you can load one with the command line option ``--hypothesis-pr
 .. code:: bash
 
     $ pytest tests --hypothesis-profile <profile-name>
+
+
+-------------
+Health checks
+-------------
+
+Hypothesis' health checks are designed to detect and warn you about performance
+problems where your tests are slow, inefficient, or generating very large examples.
+
+If this is expected, e.g. when generating large arrays or dataframes, you can selectively
+disable them with the :obj:`~hypothesis.settings.suppress_health_check` setting.
+The argument for this parameter is a list with elements drawn from any of
+the class-level attributes of the HealthCheck class.
+Using a value of ``list(HealthCheck)`` will disable all health checks.
+
+.. autoclass:: hypothesis.HealthCheck
+   :undoc-members:
+   :inherited-members:
+   :exclude-members: all
