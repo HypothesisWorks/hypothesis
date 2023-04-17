@@ -8,6 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import sys
+
 import numpy as np
 import pandas
 import pytest
@@ -19,12 +21,20 @@ from hypothesis.extra import numpy as npst, pandas as pdst
 from tests.pandas.helpers import supported_by_pandas
 
 
+# https://pandas.pydata.org/docs/whatsnew/v2.0.0.html#index-can-now-hold-numpy-numeric-dtypes
 @given(pdst.indexes(dtype=int, max_size=0))
 def test_gets_right_dtype_for_empty_indices(ix):
-    assert ix.dtype == np.dtype("int64")
+    is_32bit = sys.maxsize == 2**32 - 1
+    pandas2 = pandas.__version__.startswith("2.")
+    windows = sys.platform == "win32"  # including 64-bit windows, confusingly
+    if pandas2 and (is_32bit or windows):
+        # No, I don't know what this is int32 on 64-bit windows, but here we are.
+        assert ix.dtype == np.dtype("int32")
+    else:
+        assert ix.dtype == np.dtype("int64")
 
 
-@given(pdst.indexes(elements=st.integers(0, 2**63 - 1), max_size=0))
+@given(pdst.indexes(elements=st.integers(0, sys.maxsize), max_size=0))
 def test_gets_right_dtype_for_empty_indices_with_elements(ix):
     assert ix.dtype == np.dtype("int64")
 
@@ -82,8 +92,7 @@ def test_generate_arbitrary_indices(data):
         st.one_of(
             npst.boolean_dtypes(),
             npst.integer_dtypes(endianness="="),
-            npst.floating_dtypes(endianness="="),
-            npst.complex_number_dtypes(endianness="="),
+            npst.floating_dtypes(endianness="=", sizes=(32, 64)),
             npst.datetime64_dtypes(endianness="="),
             npst.timedelta64_dtypes(endianness="="),
         ).filter(supported_by_pandas),

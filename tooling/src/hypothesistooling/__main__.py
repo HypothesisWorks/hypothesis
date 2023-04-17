@@ -443,11 +443,10 @@ standard_tox_task("py39-pytest46", py="3.9")
 standard_tox_task("py39-pytest54", py="3.9")
 standard_tox_task("pytest62")
 
-for n in [32, 40, 41]:
+for n in [32, 41, 42]:
     standard_tox_task(f"django{n}")
 
-standard_tox_task("py39-pandas10", py="3.9")
-for n in [11, 12, 13, 14, 15]:
+for n in [11, 12, 13, 14, 15, 20]:
     standard_tox_task(f"pandas{n}")
 
 standard_tox_task("coverage")
