@@ -16,7 +16,6 @@ attrs==22.2.0
     # via
     #   flake8-bugbear
     #   hypothesis (hypothesis-python/setup.py)
-    #   pytest
 autoflake==2.0.2
     # via shed
 babel==2.12.1
@@ -25,7 +24,7 @@ backcall==0.2.0
     # via ipython
 bandit==1.7.5
     # via flake8-bandit
-beautifulsoup4==4.12.0
+beautifulsoup4==4.12.2
     # via sphinx-codeautolink
 black==23.3.0
     # via shed
@@ -53,9 +52,9 @@ colorama==0.4.6
     # via tox
 com2ann==0.3.0
     # via shed
-coverage==7.2.2
+coverage==7.2.3
     # via -r requirements/tools.in
-cryptography==40.0.1
+cryptography==40.0.2
     # via
     #   secretstorage
     #   types-pyopenssl
@@ -64,7 +63,7 @@ decorator==5.1.1
     # via ipython
 distlib==0.3.6
     # via virtualenv
-django==4.1.7
+django==4.2
     # via -r requirements/tools.in
 docutils==0.18.1
     # via
@@ -80,7 +79,7 @@ exceptiongroup==1.1.1 ; python_version < "3.11"
     #   pytest
 executing==1.2.0
     # via stack-data
-filelock==3.10.7
+filelock==3.11.0
     # via
     #   tox
     #   virtualenv
@@ -105,7 +104,7 @@ flake8-bugbear==23.3.23
     # via -r requirements/tools.in
 flake8-builtins==2.1.0
     # via -r requirements/tools.in
-flake8-comprehensions==3.11.1
+flake8-comprehensions==3.12.0
     # via -r requirements/tools.in
 flake8-datetimez==20.10.0
     # via -r requirements/tools.in
@@ -135,7 +134,7 @@ idna==3.4
     # via requests
 imagesize==1.4.1
     # via sphinx
-importlib-metadata==6.1.0
+importlib-metadata==6.4.1
     # via
     #   keyring
     #   twine
@@ -175,7 +174,7 @@ mdurl==0.1.2
     # via markdown-it-py
 more-itertools==9.1.0
     # via jaraco-classes
-mypy==1.1.1
+mypy==1.2.0
     # via -r requirements/tools.in
 mypy-extensions==1.0.0
     # via
@@ -184,7 +183,7 @@ mypy-extensions==1.0.0
     #   typing-inspect
 nodeenv==1.7.0
     # via pyright
-packaging==23.0
+packaging==23.1
     # via
     #   black
     #   build
@@ -202,7 +201,7 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pip-tools==6.12.3
+pip-tools==6.13.0
     # via -r requirements/tools.in
 pkginfo==1.9.6
     # via twine
@@ -231,7 +230,7 @@ pyflakes==3.0.1
     # via
     #   autoflake
     #   flake8
-pygments==2.14.0
+pygments==2.15.0
     # via
     #   ipython
     #   readme-renderer
@@ -241,9 +240,9 @@ pyproject-api==1.5.1
     # via tox
 pyproject-hooks==1.0.0
     # via build
-pyright==1.1.301
+pyright==1.1.303
     # via -r requirements/tools.in
-pytest==7.2.2
+pytest==7.3.1
     # via -r requirements/tools.in
 python-dateutil==2.8.2
     # via -r requirements/tools.in
@@ -267,7 +266,7 @@ restructuredtext-lint==1.4.0
     # via -r requirements/tools.in
 rfc3986==2.0.0
     # via twine
-rich==13.3.3
+rich==13.3.4
     # via
     #   bandit
     #   twine
@@ -339,7 +338,7 @@ tomli==2.0.1
     #   pyproject-hooks
     #   pytest
     #   tox
-tox==4.4.8
+tox==4.4.12
     # via -r requirements/tools.in
 traitlets==5.9.0
     # via
@@ -351,7 +350,7 @@ types-click==7.1.8
     # via -r requirements/tools.in
 types-pkg-resources==0.1.3
     # via -r requirements/tools.in
-types-pyopenssl==23.1.0.1
+types-pyopenssl==23.1.0.2
     # via types-redis
 types-pytz==2023.3.0.0
     # via -r requirements/tools.in
@@ -383,7 +382,7 @@ zipp==3.15.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-pip==23.0.1
+pip==23.1
     # via pip-tools
 setuptools==67.6.1
     # via
