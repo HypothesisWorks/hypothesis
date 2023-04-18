@@ -382,8 +382,8 @@ PYTHONS = {
     "3.7": "3.7.16",
     "3.8": "3.8.16",
     "3.9": "3.9.16",
-    "3.10": "3.10.10",
-    "3.11": "3.11.2",
+    "3.10": "3.10.11",
+    "3.11": "3.11.3",
     "3.12": "3.12-dev",
     "pypy3.7": "pypy3.7-7.3.9",
     "pypy3.8": "pypy3.8-7.3.11",
@@ -443,11 +443,10 @@ standard_tox_task("py39-pytest46", py="3.9")
 standard_tox_task("py39-pytest54", py="3.9")
 standard_tox_task("pytest62")
 
-for n in [32, 40, 41]:
+for n in [32, 41, 42]:
     standard_tox_task(f"django{n}")
 
-standard_tox_task("py39-pandas10", py="3.9")
-for n in [11, 12, 13, 14, 15]:
+for n in [11, 12, 13, 14, 15, 20]:
     standard_tox_task(f"pandas{n}")
 
 standard_tox_task("coverage")
