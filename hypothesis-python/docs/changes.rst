@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.72.1:
+
+-------------------
+6.72.1 - 2023-04-19
+-------------------
+
+This patch fixes some documentation and prepares for future features.
+
 .. _v6.72.0:
 
 -------------------
