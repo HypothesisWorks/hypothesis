@@ -426,3 +426,11 @@ class GitHubArtifactMocks(RuleBasedStateMachine):
 
 
 TestGADReads = GitHubArtifactMocks.TestCase
+
+
+def test_gadb_coverage():
+    # Ensure that we always cover the nonempty-archive case, which can otherwise
+    # cause rare incomplete-coverage failures.
+    state = GitHubArtifactMocks()
+    state.save(b"key", b"value")
+    state.values_agree(b"key")

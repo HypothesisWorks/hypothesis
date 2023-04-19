@@ -55,9 +55,9 @@ Controlling what runs
 Hypothesis divides tests into logically distinct phases:
 
 1. Running explicit examples :ref:`provided with the @example decorator <providing-explicit-examples>`.
-2. Rerunning a selection of previously failing examples to reproduce a previously seen error
+2. Rerunning a selection of previously failing examples to reproduce a previously seen error.
 3. Generating new examples.
-4. Mutating examples for :ref:`targeted property-based testing <targeted-search>`.
+4. Mutating examples for :ref:`targeted property-based testing <targeted-search>` (requires generate phase).
 5. Attempting to shrink an example found in previous phases (other than phase 1 - explicit examples cannot be shrunk).
    This turns potentially large and complicated examples which may be hard to read into smaller and simpler ones.
 6. Attempting to explain the cause of the failure, by identifying suspicious lines of code
