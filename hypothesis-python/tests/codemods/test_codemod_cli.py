@@ -32,34 +32,35 @@ AFTER += _unchanged
 del _unchanged
 
 
-def run(command, tmpdir=None, input=None):
+def run(command, *, cwd=None, input=None):
     return subprocess.run(
         command,
         input=input,
         capture_output=True,
         shell=True,
         text=True,
-        cwd=tmpdir,
+        cwd=cwd,
+        encoding="utf-8",
     )
 
 
-def test_codemod_single_file(tmpdir):
-    fname = tmpdir / "mycode.py"
-    fname.write(BEFORE)
-    result = run("hypothesis codemod mycode.py", tmpdir)
+def test_codemod_single_file(tmp_path):
+    fname = tmp_path / "mycode.py"
+    fname.write_text(BEFORE, encoding="utf-8")
+    result = run("hypothesis codemod mycode.py", cwd=tmp_path)
     assert result.returncode == 0
-    assert fname.read() == AFTER
+    assert fname.read_text(encoding="utf-8") == AFTER
 
 
-def test_codemod_multiple_files(tmpdir):
+def test_codemod_multiple_files(tmp_path):
     # LibCST had some trouble with multiprocessing on Windows
-    files = [tmpdir / "mycode1.py", tmpdir / "mycode2.py"]
+    files = [tmp_path / "mycode1.py", tmp_path / "mycode2.py"]
     for f in files:
-        f.write(BEFORE)
-    result = run("hypothesis codemod mycode1.py mycode2.py", tmpdir)
+        f.write_text(BEFORE, encoding="utf-8")
+    result = run("hypothesis codemod mycode1.py mycode2.py", cwd=tmp_path)
     assert result.returncode == 0
     for f in files:
-        assert f.read() == AFTER
+        assert f.read_text(encoding="utf-8") == AFTER
 
 
 def test_codemod_from_stdin():

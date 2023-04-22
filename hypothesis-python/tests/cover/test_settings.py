@@ -283,10 +283,9 @@ if __name__ == '__main__':
 """
 
 
-def test_puts_the_database_in_the_home_dir_by_default(tmpdir):
-    script = tmpdir.join("assertlocation.py")
-    script.write(ASSERT_DATABASE_PATH)
-
+def test_puts_the_database_in_the_home_dir_by_default(tmp_path):
+    script = tmp_path.joinpath("assertlocation.py")
+    script.write_text(ASSERT_DATABASE_PATH, encoding="utf-8")
     subprocess.check_call([sys.executable, str(script)])
 
 
