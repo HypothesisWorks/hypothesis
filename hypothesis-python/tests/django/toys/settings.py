@@ -63,6 +63,8 @@ ROOT_URLCONF = "tests.django.toys.urls"
 
 WSGI_APPLICATION = "tests.django.toys.wsgi.application"
 
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
+
 
 # Database
 # https://docs.djangoproject.com/en/1.7/ref/settings/#databases
