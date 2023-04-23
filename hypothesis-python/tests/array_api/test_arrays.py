@@ -10,7 +10,7 @@
 
 import pytest
 
-from hypothesis import given, strategies as st
+from hypothesis import given, settings, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.array_api import COMPLEX_NAMES, REAL_NAMES
 from hypothesis.internal.floats import width_smallest_normals
@@ -94,6 +94,7 @@ def test_draw_arrays_from_dtype_strategies(xp, xps, strat_name):
     find_any(xps.arrays(strat, ()))
 
 
+@settings(deadline=None)
 @given(data=st.data())
 def test_draw_arrays_from_dtype_name_strategies(xp, xps, data):
     """Draw arrays from dtype name strategies."""

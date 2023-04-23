@@ -10,6 +10,7 @@
 
 from hypothesis import (
     HealthCheck,
+    Phase,
     Verbosity,
     given,
     settings as Settings,
@@ -41,7 +42,7 @@ def minimal(definition, condition=lambda x: True, settings=None, timeout_after=1
         return result
 
     if settings is None:
-        settings = Settings(max_examples=50000)
+        settings = Settings(max_examples=50000, phases=(Phase.generate, Phase.shrink))
 
     verbosity = settings.verbosity
     if verbosity == Verbosity.normal:
