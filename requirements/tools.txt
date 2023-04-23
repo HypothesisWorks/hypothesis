@@ -134,7 +134,7 @@ idna==3.4
     # via requests
 imagesize==1.4.1
     # via sphinx
-importlib-metadata==6.5.0
+importlib-metadata==6.6.0
     # via
     #   keyring
     #   twine
@@ -174,7 +174,7 @@ mdurl==0.1.2
     # via markdown-it-py
 more-itertools==9.1.0
     # via jaraco-classes
-mypy==1.1.1
+mypy==1.2.0
     # via -r requirements/tools.in
 mypy-extensions==1.0.0
     # via
@@ -240,7 +240,7 @@ pyproject-api==1.5.1
     # via tox
 pyproject-hooks==1.0.0
     # via build
-pyright==1.1.303
+pyright==1.1.304
     # via -r requirements/tools.in
 pytest==7.3.1
     # via -r requirements/tools.in
@@ -272,7 +272,7 @@ rich==13.3.4
     #   twine
 secretstorage==3.3.3
     # via keyring
-shed==2023.3.1
+shed==2023.4.1
     # via -r requirements/tools.in
 six==1.16.0
     # via
@@ -370,7 +370,7 @@ urllib3==1.26.15
     # via
     #   requests
     #   twine
-virtualenv==20.21.1
+virtualenv==20.22.0
     # via tox
 wcwidth==0.2.6
     # via prompt-toolkit
@@ -382,9 +382,9 @@ zipp==3.15.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-pip==23.1
+pip==23.1.1
     # via pip-tools
-setuptools==67.6.1
+setuptools==67.7.1
     # via
     #   nodeenv
     #   pip-tools
