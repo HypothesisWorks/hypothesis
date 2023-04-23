@@ -37,7 +37,7 @@ import attr
 import click
 import pytest
 
-from hypothesis import assume
+from hypothesis import HealthCheck, assume, settings
 from hypothesis.errors import InvalidArgument, Unsatisfiable
 from hypothesis.extra import cli, ghostwriter
 from hypothesis.internal.compat import BaseExceptionGroup
@@ -48,7 +48,7 @@ from hypothesis.strategies._internal.lazy import LazyStrategy
 varied_excepts = pytest.mark.parametrize("ex", [(), ValueError, (TypeError, re.error)])
 
 
-def get_test_function(source_code):
+def get_test_function(source_code, settings_decorator=lambda fn: fn):
     # A helper function to get the dynamically-defined test function.
     # Note that this also tests that the module is syntatically-valid,
     # AND free from undefined names, import problems, and so on.
@@ -64,7 +64,7 @@ def get_test_function(source_code):
         if k.startswith(("test_", "Test")) and not isinstance(v, ModuleType)
     ]
     assert len(tests) == 1, tests
-    return tests[0]
+    return settings_decorator(tests[0])
 
 
 @pytest.mark.parametrize(
@@ -342,8 +342,9 @@ def test_run_ghostwriter_roundtrip():
         "lambda v: st.lists(v, max_size=2) | st.dictionaries(st.text(), v, max_size=2)"
         ", max_leaves=2)",
     )
+    s = settings(deadline=None, suppress_health_check=[HealthCheck.too_slow])
     try:
-        get_test_function(source_code)()
+        get_test_function(source_code, settings_decorator=s)()
     except (AssertionError, ValueError, BaseExceptionGroup):
         pass
 
@@ -351,7 +352,7 @@ def test_run_ghostwriter_roundtrip():
     source_code = source_code.replace(
         "st.floats()", "st.floats(allow_nan=False, allow_infinity=False)"
     )
-    get_test_function(source_code)()
+    get_test_function(source_code, settings_decorator=s)()
 
 
 @varied_excepts
