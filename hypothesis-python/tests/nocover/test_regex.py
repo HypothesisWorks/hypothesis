@@ -62,7 +62,8 @@ def test_conservative_regex_are_correct_by_construction(data):
     pattern = re.compile(data.draw(CONSERVATIVE_REGEX), flags=data.draw(FLAGS))
     result = data.draw(base_regex_strategy(pattern))
     # We'll skip "capital I with dot above" due to awful casefolding behaviour
-    assume("İ" not in pattern.pattern + result)
+    # and "latin small letter dotless i" for the same reason.
+    assume({"ı", "İ"}.isdisjoint(pattern.pattern + result))
     assert pattern.search(result) is not None
 
 
