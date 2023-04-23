@@ -156,6 +156,7 @@ their individual contributions.
 * `Sanyam Khurana <https://github.com/CuriousLearner>`_
 * `Saul Shanabrook <https://www.github.com/saulshanabrook>`_ (s.shanabrook@gmail.com)
 * `Sebastiaan Zeeff <https://github.com/SebastiaanZ>`_ (sebastiaan.zeeff@ordina.nl)
+* `Sharyar Memon <https://github.com/sharyar>`_ (smemon.cal@gmail.com)
 * `Shlok Gandhi <https://github.com/shlok57>`_ (shlok.gandhi@gmail.com)
 * `Sogata Ray <https://github.com/rayardinanda>`_ (rayardinanda@gmail.com)
 * `Stuart Cook <https://www.github.com/Zalathar>`_
