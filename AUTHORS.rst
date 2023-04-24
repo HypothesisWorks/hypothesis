@@ -183,3 +183,4 @@ their individual contributions.
 * `Yiyang Zhan <https://www.github.com/zhanpon>`_
 * `Zac Hatfield-Dodds <https://www.github.com/Zac-HD>`_ (zac.hatfield.dodds@gmail.com)
 * `Zebulun Arendsee <https://www.github.com/arendsee>`_ (zbwrnz@gmail.com)
+* `Nick Muoh <https://github.com/OdinTech3>`_ (nickspirit3@gmail.com)

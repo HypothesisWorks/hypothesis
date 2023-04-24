@@ -8,11 +8,12 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from typing import Callable
+from typing import Callable, Tuple
+from dataclasses import dataclass
 
 import pytest
 
-from hypothesis import strategies as st
+from hypothesis import given, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import Concatenate, ParamSpec
 from hypothesis.strategies._internal.types import NON_RUNTIME_TYPES
@@ -82,3 +83,23 @@ def test_callable_return_typegard_type():
 
     with pytest.raises(InvalidArgument, match="Cannot register generic type"):
         st.register_type_strategy(Callable[[], TypeGuard[int]], st.none())
+
+
+@dataclass
+class ItWorks:
+    a: dict[Tuple[int, int], str]
+
+
+@dataclass
+class ItDoesnt:
+    a: dict[tuple[int, int], str]
+
+
+@given(st.from_type(ItWorks))
+def test_tuple_from_typing_works(x: ItWorks):
+    assert len(x.a) >= 0
+
+
+@given(st.from_type(ItDoesnt))
+def test_tuple_from_builtin_works(x: ItDoesnt):
+    assert len(x.a) >= 0
