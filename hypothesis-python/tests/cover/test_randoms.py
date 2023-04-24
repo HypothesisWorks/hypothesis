@@ -36,7 +36,7 @@ def test_implements_all_random_methods():
                 assert f.__module__ == "hypothesis.strategies._internal.random", name
 
 
-any_random = st.booleans().flatmap(lambda i: st.randoms(use_true_random=i))
+any_random = st.randoms(use_true_random=False) | st.randoms(use_true_random=True)
 
 beta_param = st.floats(0.01, 1000)
 seq_param = st.lists(st.integers(), min_size=1)
@@ -153,16 +153,20 @@ def test_multiple_randoms_are_unrelated():
         test()
 
 
-@given(any_random, any_random)
-def test_randoms_can_be_synced(r1, r2):
-    assume(type(r1) is type(r2))
+@pytest.mark.parametrize("use_true_random", [False, True])
+@given(data=st.data())
+def test_randoms_can_be_synced(use_true_random, data):
+    r1 = data.draw(st.randoms(use_true_random=use_true_random))
+    r2 = data.draw(st.randoms(use_true_random=use_true_random))
     r2.setstate(r1.getstate())
     assert r1.random() == r2.random()
 
 
-@given(any_random, any_random, any_call())
-def test_seeding_to_same_value_synchronizes(r1, r2, method_call):
-    assume(type(r1) is type(r2))
+@pytest.mark.parametrize("use_true_random", [False, True])
+@given(data=st.data(), method_call=any_call())
+def test_seeding_to_same_value_synchronizes(use_true_random, data, method_call):
+    r1 = data.draw(st.randoms(use_true_random=use_true_random))
+    r2 = data.draw(st.randoms(use_true_random=use_true_random))
     method, args, kwargs = method_call
     r1.seed(0)
     r2.seed(0)

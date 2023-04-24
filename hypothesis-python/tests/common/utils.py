@@ -47,7 +47,7 @@ except ModuleNotFoundError:
             ) from None
 
 
-no_shrink = tuple(set(settings.default.phases) - {Phase.shrink})
+no_shrink = tuple(set(settings.default.phases) - {Phase.shrink, Phase.explain})
 
 
 def flaky(max_runs, min_passes):

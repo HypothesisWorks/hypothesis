@@ -453,6 +453,7 @@ def test_collections_deque():
 
     cases = [
         (deque(), "deque([])"),
+        (deque([1, 2, 3]), "deque([1, 2, 3])"),
         (
             deque(i for i in range(1000, 1020)),
             "deque([1000,\n"
