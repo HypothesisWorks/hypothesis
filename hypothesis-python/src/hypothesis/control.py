@@ -87,10 +87,8 @@ class BuildContext:
         kwargs = {}
         for k, s in all_s:
             obj = self.data.draw(s)
-            if k:
-                kwargs[k] = obj
-            else:
-                args.append(obj)
+            assert k is not None
+            kwargs[k] = obj
         return args, kwargs, arg_labels
 
     def __enter__(self):
