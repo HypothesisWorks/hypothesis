@@ -125,6 +125,7 @@ their individual contributions.
 * `Munir Abdinur <https://www.github.com/mabdinur>`_
 * `Nicholas Chammas <https://www.github.com/nchammas>`_
 * `Nick Anyos <https://www.github.com/NickAnyos>`_
+* `Nick Muoh <https://github.com/OdinTech3>`_ (nickspirit3@gmail.com)
 * `Nicolas Ganz <https://www.github.com/ThunderKey>`_
 * `Nikita Sobolev <https://github.com/sobolevn>`_ (mail@sobolevn.me)
 * `Oleg Höfling <https://github.com/hoefling>`_ (oleg.hoefling@gmail.com)
@@ -183,4 +184,3 @@ their individual contributions.
 * `Yiyang Zhan <https://www.github.com/zhanpon>`_
 * `Zac Hatfield-Dodds <https://www.github.com/Zac-HD>`_ (zac.hatfield.dodds@gmail.com)
 * `Zebulun Arendsee <https://www.github.com/arendsee>`_ (zbwrnz@gmail.com)
-* `Nick Muoh <https://github.com/OdinTech3>`_ (nickspirit3@gmail.com)

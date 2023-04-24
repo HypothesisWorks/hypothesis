@@ -91,3 +91,23 @@ def test_issue_3080():
     s = st.from_type(typing.Union[list[int], int])
     find_any(s, lambda x: isinstance(x, int))
     find_any(s, lambda x: isinstance(x, list))
+
+
+@dataclasses.dataclass
+class TypingTuple:
+    a: dict[typing.Tuple[int, int], str]
+
+
+@dataclasses.dataclass
+class BuiltinTuple:
+    a: dict[tuple[int, int], str]
+
+
+TestDataClass = typing.Union[TypingTuple, BuiltinTuple]
+
+
+@pytest.mark.parametrize("data_class", [TypingTuple, BuiltinTuple])
+@given(data=st.data())
+def test_from_type_with_tuple_works(data, data_class: TestDataClass):
+    value: TestDataClass = data.draw(st.from_type(data_class))
+    assert len(value.a) >= 0
