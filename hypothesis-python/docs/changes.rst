@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.72.2:
+
+-------------------
+6.72.2 - 2023-04-24
+-------------------
+
+This patch refactors our internals to facilitate an upcoming feature.
+
 .. _v6.72.1:
 
 -------------------
