@@ -9,8 +9,8 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import pytest
-
 from _hypothesis_pytestplugin import LOAD_PROFILE_OPTION
+
 from hypothesis.version import __version__
 
 pytest_plugins = "pytester"
