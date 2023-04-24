@@ -12,6 +12,7 @@ import math
 from typing import Any, Mapping, Optional, Sequence, Tuple, TypeVar, Union
 
 import numpy as np
+from numpy.typing import DTypeLike, NDArray
 
 from hypothesis import strategies as st
 from hypothesis._settings import note_deprecation
@@ -37,7 +38,6 @@ from hypothesis.internal.validation import check_type
 from hypothesis.strategies._internal.numbers import Real
 from hypothesis.strategies._internal.strategies import T, check_strategy
 from hypothesis.strategies._internal.utils import defines_strategy
-from numpy.typing import DTypeLike, NDArray
 
 __all__ = [
     "BroadcastableShapes",
@@ -464,6 +464,7 @@ def arrays(
         )
     # From here on, we're only dealing with values and it's relatively simple.
     dtype = np.dtype(dtype)
+    assert isinstance(dtype, np.dtype)  # help mypy out a bit...
     if elements is None or isinstance(elements, Mapping):
         if dtype.kind in ("m", "M") and "[" not in dtype.str:
             # For datetime and timedelta dtypes, we have a tricky situation -
