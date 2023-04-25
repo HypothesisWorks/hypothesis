@@ -102,13 +102,12 @@ def do_release(package):
 
     tag_name = package.tag_name()
 
-    print(f"Creating tag {tag_name}")
-
-    tools.create_tag(tag_name)
-    tools.push_tag(tag_name)
-
     print("Uploading distribution")
     package.upload_distribution()
+
+    print(f"Creating tag {tag_name}")
+    tools.create_tag(tag_name)
+    tools.push_tag(tag_name)
 
 
 @task()
