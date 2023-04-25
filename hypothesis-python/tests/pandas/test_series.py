@@ -9,7 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import numpy as np
-import pandas
+import pandas as pd
 
 from hypothesis import assume, given, strategies as st
 from hypothesis.extra import numpy as npst, pandas as pdst
@@ -25,7 +25,7 @@ def test_can_create_a_series_of_any_dtype(data):
     # Use raw data to work around pandas bug in repr. See
     # https://github.com/pandas-dev/pandas/issues/27484
     series = data.conjecture_data.draw(pdst.series(dtype=dtype))
-    assert series.dtype == pandas.Series([], dtype=dtype).dtype
+    assert series.dtype == pd.Series([], dtype=dtype).dtype
 
 
 @given(pdst.series(dtype=float, index=pdst.range_indexes(min_size=2, max_size=5)))
@@ -61,3 +61,15 @@ def test_unique_series_are_unique(s):
 @given(pdst.series(dtype="int8", name=st.just("test_name")))
 def test_name_passed_on(s):
     assert s.name == "test_name"
+
+
+def test_pandas_nullable_types():
+    st = pdst.series(dtype=pd.core.arrays.integer.Int8Dtype())
+    e = find_any(st, lambda s: s.isna().any())
+    assert type(e.dtype) == pd.core.arrays.integer.Int8Dtype
+
+
+def test_pandas_nullable_types_in_str():
+    st = pdst.series(dtype="Int8")
+    e = find_any(st, lambda s: s.isna().any())
+    assert type(e.dtype) == pd.core.arrays.integer.Int8Dtype
