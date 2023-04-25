@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.72.3:
+
+-------------------
+6.72.3 - 2023-04-25
+-------------------
+
+This patch fixes a bug with :func:`~hypothesis.strategies.from_type()` with ``dict[tuple[int, int], str]``
+(:issue:`3527`).
+
+    Thanks to Nick Muoh at the PyCon Sprints!
+
 .. _v6.72.2:
 
 -------------------
