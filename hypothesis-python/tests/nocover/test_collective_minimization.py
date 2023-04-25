@@ -10,7 +10,7 @@
 
 import pytest
 
-from hypothesis import settings
+from hypothesis import Phase, settings
 from hypothesis.errors import Unsatisfiable
 from hypothesis.strategies import lists
 
@@ -31,7 +31,7 @@ def test_can_collectively_minimize(spec):
         xs = minimal(
             lists(spec, min_size=n, max_size=n),
             lambda x: len(set(map(repr, x))) >= 2,
-            settings(max_examples=2000),
+            settings(max_examples=2000, phases=(Phase.generate, Phase.shrink)),
         )
         assert len(xs) == n
         assert 2 <= len(set(map(repr, xs))) <= 3

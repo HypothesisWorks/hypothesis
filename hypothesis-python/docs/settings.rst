@@ -60,11 +60,36 @@ Hypothesis divides tests into logically distinct phases:
 4. Mutating examples for :ref:`targeted property-based testing <targeted-search>` (requires generate phase).
 5. Attempting to shrink an example found in previous phases (other than phase 1 - explicit examples cannot be shrunk).
    This turns potentially large and complicated examples which may be hard to read into smaller and simpler ones.
-6. Attempting to explain the cause of the failure, by identifying suspicious lines of code
-   (e.g. the earliest lines which are never run on passing inputs, and always run on failures).
+6. Attempting to explain why your test failed (requires shrink phase).
+
+.. note::
+
+   The explain phase has two parts, each of which is best-effort - if Hypothesis can't
+   find a useful explanation, we'll just print the minimal failing example.
+
+   Following the first failure, Hypothesis will (:ref:`usually <phases>`) track which
+   lines of code are always run on failing but never on passing inputs.
    This relies on :func:`python:sys.settrace`, and is therefore automatically disabled on
    PyPy or if you are using :pypi:`coverage` or a debugger.  If there are no clearly
    suspicious lines of code, :pep:`we refuse the temptation to guess <20>`.
+
+   After shrinking to a minimal failing example, Hypothesis will try to find parts of
+   the example -- e.g. separate args to :func:`@given() <hypothesis.given>` -- which
+   can vary freely without changing the result of that minimal failing example.
+   If the automated experiments run without finding a passing variation, we leave a
+   comment in the final report:
+
+   .. code-block:: python
+
+       test_x_divided_by_y(
+           x=0,  # or any other generated value
+           y=0,
+       )
+
+   Just remember that the *lack* of an explanation sometimes just means that Hypothesis
+   couldn't efficiently find one, not that no explanation (or simpler failing example)
+   exists.
+
 
 The phases setting provides you with fine grained control over which of these run,
 with each phase corresponding to a value on the :class:`~hypothesis.Phase` enum:
