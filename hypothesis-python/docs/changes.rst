@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.72.4:
+
+-------------------
+6.72.4 - 2023-04-25
+-------------------
+
+This patch fixes type annotations for the :func:`~hypothesis.extra.numpy.arrays`
+strategy.  Thanks to Francesc Elies for :pull:`3602`.
+
 .. _v6.72.3:
 
 -------------------
