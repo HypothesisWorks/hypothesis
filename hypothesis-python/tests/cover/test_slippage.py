@@ -303,7 +303,7 @@ def test_stops_immediately_if_not_report_multiple_bugs():
 def test_stops_immediately_on_replay():
     seen = set()
 
-    @settings(database=InMemoryExampleDatabase())
+    @settings(database=InMemoryExampleDatabase(), phases=tuple(Phase)[:-1])
     @given(st.integers())
     def test(x):
         seen.add(x)

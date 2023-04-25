@@ -13,7 +13,15 @@ import random
 
 import pytest
 
-from hypothesis import core, find, given, register_random, strategies as st
+from hypothesis import (
+    Phase,
+    core,
+    find,
+    given,
+    register_random,
+    settings,
+    strategies as st,
+)
 from hypothesis.errors import HypothesisWarning, InvalidArgument
 from hypothesis.internal import entropy
 from hypothesis.internal.compat import GRAALPY, PYPY
@@ -31,6 +39,7 @@ def gc_collect():
 
 
 def test_can_seed_random():
+    @settings(phases=(Phase.generate, Phase.shrink))
     @given(st.random_module())
     def test(r):
         raise AssertionError
