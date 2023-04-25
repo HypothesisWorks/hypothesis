@@ -53,6 +53,7 @@ def write_for(mod):
             capture_output=True,
             timeout=10,
             text=True,
+            encoding="utf-8",
         )
     except subprocess.SubprocessError as e:
         # Only report the error if we could load _but not process_ the module
