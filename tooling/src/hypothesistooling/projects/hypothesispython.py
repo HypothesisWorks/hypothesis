@@ -200,7 +200,7 @@ def upload_distribution():
 
     # Create a GitHub release, to trigger Zenodo DOI minting.  See
     # https://developer.github.com/v3/repos/releases/#create-a-release
-    requests.post(
+    resp = requests.post(
         "https://api.github.com/repos/HypothesisWorks/hypothesis/releases",
         headers={
             "Accept": "application/vnd.github+json",
@@ -213,7 +213,15 @@ def upload_distribution():
             "body": changelog_body,
         },
         timeout=120,  # seconds
-    ).raise_for_status()
+    )
+
+    # TODO: work out why this is 404'ing despite success (?!?) and fix it
+    try:
+        resp.raise_for_status()
+    except Exception:
+        import traceback
+
+        traceback.print_exc()
 
 
 def current_version():

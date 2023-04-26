@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.74.0:
+
+-------------------
+6.74.0 - 2023-04-26
+-------------------
+
+This release adds support for `nullable pandas dtypes <https://pandas.pydata.org/docs/user_guide/integer_na.html>`__
+in :func:`~hypothesis.extra.pandas` (:issue:`3604`).
+Thanks to Cheuk Ting Ho for implementing this at the PyCon sprints!
+
 .. _v6.73.0:
 
 -------------------

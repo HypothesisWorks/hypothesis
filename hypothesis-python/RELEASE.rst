@@ -1,5 +1,4 @@
-RELEASE_TYPE: minor
+RELEASE_TYPE: patch
 
-This release adds support for `nullable pandas dtypes <https://pandas.pydata.org/docs/user_guide/integer_na.html>`__
-in :func:`~hypothesis.extra.pandas` (:issue:`3604`).
-Thanks to Cheuk Ting Ho for implementing this at the PyCon sprints!
+This patch restores compatibility with old Numpy versions 1.9 -- 1.20,
+which were broken by a mistake in version 6.72.4 (:issue:`3625`).
