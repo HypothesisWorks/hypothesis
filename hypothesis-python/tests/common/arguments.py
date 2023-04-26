@@ -19,7 +19,7 @@ def e(a, *args, **kwargs):
 
 
 def e_to_str(elt):
-    f, args, kwargs = elt
+    f, args, kwargs = getattr(elt, "values", elt)
     bits = list(map(repr, args))
     bits.extend(sorted(f"{k}={v!r}" for k, v in kwargs.items()))
     return "{}({})".format(f.__name__, ", ".join(bits))
