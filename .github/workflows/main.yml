@@ -71,6 +71,7 @@ jobs:
           - check-pandas13
           - check-pandas12
           - check-pandas11
+          - check-oldest-numpy
       fail-fast: false
     steps:
     - uses: actions/checkout@v3

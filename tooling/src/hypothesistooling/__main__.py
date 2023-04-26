@@ -395,6 +395,7 @@ python_tests = task(
         hp.PYTHON_SRC,
         hp.PYTHON_TESTS,
         os.path.join(tools.ROOT, "pytest.ini"),
+        os.path.join(tools.ROOT, "tooling"),
         os.path.join(hp.HYPOTHESIS_PYTHON, "scripts"),
     )
 )
@@ -447,6 +448,8 @@ for n in [32, 41, 42]:
 
 for n in [11, 12, 13, 14, 15, 20]:
     standard_tox_task(f"pandas{n}")
+
+standard_tox_task("py37-oldestnumpy", py="3.7")
 
 standard_tox_task("coverage")
 standard_tox_task("conjecture-coverage")
