@@ -164,6 +164,7 @@ class RepresentationPrinter:
         # but we report each separately so that's someone else's problem here.
         # Invocations of self.repr_call() can report the slice for each argument,
         # which will then be used to look up the relevant comment if any.
+        self.arg_slices = {}
         if context is None:
             self.known_object_printers = defaultdict(list)
             self.slice_comments = {}
@@ -349,7 +350,6 @@ class RepresentationPrinter:
         """Like enumerate, but with an upper limit on the number of items."""
         for idx, x in enumerate(seq):
             if self.max_seq_length and idx >= self.max_seq_length:
-                self.text(",")
                 self.breakable()
                 self.text("...")
                 return
@@ -515,7 +515,7 @@ class GroupQueue:
             pass
 
 
-def _seq_pprinter_factory(start, end, basetype):
+def _seq_pprinter_factory(start, end, basetype, arg_labels=None):
     """Factory that returns a pprint function useful for sequences.
 
     Used by the default pprint for tuples, dicts, and lists.
@@ -533,17 +533,33 @@ def _seq_pprinter_factory(start, end, basetype):
 
         if cycle:
             return p.text(start + "..." + end)
-        step = len(start)
-        with p.group(step, start, end):
+
+        comments = {
+            k: p.slice_comments[v]
+            for k, v in (arg_labels or {}).items()
+            if v in p.slice_comments
+        }
+        # We have to split one arg per line in order to leave comments on them.
+        force_split = any(k in comments for k, _ in enumerate(obj))
+
+        with p.group(len(start), start, ""):
             for idx, x in p._enumerate(obj):
                 if idx:
-                    p.text(",")
                     p.breakable()
                 p.pretty(x)
-            if len(obj) == 1 and type(obj) is tuple:
-                # Special case for 1-item tuples.
-                p.text(",")
+                if force_split or idx + 1 < len(obj):
+                    p.text(",")
+                elif len(obj) == 1 and type(obj) is tuple:
+                    # Special case for 1-item tuples.
+                    p.text(",")
+                # Optional comments are used to annotate which-parts-matter
+                if idx in comments:
+                    p.text(f"  # {comments[idx]}")
+        if obj and force_split:
+            p.break_()
+        p.text(end)  # after dedent, if any
 
+    inner.arg_labels = arg_labels
     return inner
 
 
@@ -579,44 +595,59 @@ def _set_pprinter_factory(start, end, basetype):
                         pass
                 for idx, x in p._enumerate(items):
                     if idx:
-                        p.text(",")
                         p.breakable()
                     p.pretty(x)
+                    if idx + 1 < len(items):
+                        p.text(",")
 
     return inner
 
 
-def _dict_pprinter_factory(start, end, basetype=None):
+def _dict_pprinter_factory(arg_labels=None):
     """Factory that returns a pprint function used by the default pprint of
     dicts and dict proxies."""
 
     def inner(obj, p, cycle):
         typ = type(obj)
-        if (
-            basetype is not None
-            and typ is not basetype
-            and typ.__repr__ != basetype.__repr__
-        ):
+        if typ is not dict and typ.__repr__ != dict.__repr__:
             # If the subclass provides its own repr, use it instead.
             return p.text(typ.__repr__(obj))
 
         if cycle:
             return p.text("{...}")
-        with p.group(1, start, end):
+
+        comments = {
+            k: p.slice_comments[v]
+            for k, v in (arg_labels or {}).items()
+            if v in p.slice_comments
+        }
+        # We have to split one arg per line in order to leave comments on them.
+        force_split = any(k in comments for k in obj)
+
+        with p.group(1, "{", ""):
             # If the dict contains both "" and b"" (empty string and empty bytes), we
             # ignore the BytesWarning raised by `python -bb` mode.  We can't use
             # `.items()` because it might be a non-`dict` type of mapping.
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", BytesWarning)
                 for idx, key in p._enumerate(obj):
-                    if idx:
-                        p.text(",")
-                        p.breakable()
+                    if force_split:
+                        p.break_()
+                    else:
+                        p.breakable(" " if idx else "")
                     p.pretty(key)
                     p.text(": ")
                     p.pretty(obj[key])
+                    if force_split or idx + 1 < len(obj):
+                        p.text(",")
+                    # Optional comments are used to annotate which-parts-matter
+                    if key in comments:
+                        p.text(f"  # {comments[key]}")
+        if obj and force_split:
+            p.break_()
+        p.text("}")  # after dedent, if any
 
-    inner.__name__ = f"_dict_pprinter_factory({start!r}, {end!r}, {basetype!r})"
+    inner.__name__ = "_dict_pprinter_factory()"
     return inner
 
 
@@ -739,7 +770,7 @@ _type_pprinters = {
     str: _repr_pprint,
     tuple: _seq_pprinter_factory("(", ")", tuple),
     list: _seq_pprinter_factory("[", "]", list),
-    dict: _dict_pprinter_factory("{", "}", dict),
+    dict: _dict_pprinter_factory(),
     set: _set_pprinter_factory("{", "}", set),
     frozenset: _set_pprinter_factory("frozenset({", "})", frozenset),
     super: _super_pprint,

@@ -518,6 +518,11 @@ class Shrinker:
         for start, end in sorted(
             self.shrink_target.arg_slices, key=lambda x: (-(x[1] - x[0]), x)
         ):
+            if any(
+                s <= start and end <= e  # subset of a slice we already know varies
+                for s, e in self.shrink_target.slice_comments
+            ):
+                continue
             # Check for any previous examples that match the prefix and suffix,
             # so we can skip if we found a passing example while shrinking.
             if any(

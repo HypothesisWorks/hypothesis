@@ -93,8 +93,10 @@ class BuildContext:
             start_idx = self.data.index
             obj = self.data.draw(s)
             end_idx = self.data.index
-            assert k is not None
-            kwargs[k] = obj
+            if k:
+                kwargs[k] = obj
+            else:
+                args.append(obj)
 
             # This high up the stack, we can't see or really do much with the conjecture
             # Example objects - not least because they're only materialized after the
