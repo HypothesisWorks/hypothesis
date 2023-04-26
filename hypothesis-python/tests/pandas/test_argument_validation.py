@@ -16,6 +16,7 @@ import pytest
 from hypothesis import given, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra import pandas as pdst
+from hypothesis.extra.pandas.impl import IntegerDtype
 
 from tests.common.arguments import argument_validation_test, e
 from tests.common.debug import find_any
@@ -101,6 +102,9 @@ def test_confusing_object_dtype_aliases():
     pdst.series(elements=st.tuples(st.integers()), dtype=tuple).example()
 
 
+@pytest.mark.skipif(
+    not IntegerDtype, reason="Nullable types not avaliable in this version of Pandas"
+)
 def test_pandas_nullable_types_class():
     with pytest.raises(
         InvalidArgument, match="Otherwise it would be treated as dtype=object"

@@ -10,9 +10,11 @@
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from hypothesis import assume, given, strategies as st
 from hypothesis.extra import numpy as npst, pandas as pdst
+from hypothesis.extra.pandas.impl import IntegerDtype
 
 from tests.common.debug import find_any
 from tests.pandas.helpers import supported_by_pandas
@@ -63,12 +65,18 @@ def test_name_passed_on(s):
     assert s.name == "test_name"
 
 
+@pytest.mark.skipif(
+    not IntegerDtype, reason="Nullable types not avaliable in this version of Pandas"
+)
 def test_pandas_nullable_types():
     st = pdst.series(dtype=pd.core.arrays.integer.Int8Dtype())
     e = find_any(st, lambda s: s.isna().any())
     assert type(e.dtype) == pd.core.arrays.integer.Int8Dtype
 
 
+@pytest.mark.skipif(
+    not IntegerDtype, reason="Nullable types not avaliable in this version of Pandas"
+)
 def test_pandas_nullable_types_in_str():
     st = pdst.series(dtype="Int8")
     e = find_any(st, lambda s: s.isna().any())
