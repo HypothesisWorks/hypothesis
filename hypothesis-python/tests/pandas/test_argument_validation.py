@@ -35,7 +35,7 @@ BAD_ARGS = [
     e(pdst.data_frames, pdst.columns(1, fill=1, dtype=float)),
     e(pdst.data_frames, pdst.columns(["A", "A"], dtype=float)),
     pytest.param(
-        e(pdst.data_frames, pdst.columns(1, elements=st.none(), dtype=int)),
+        *e(pdst.data_frames, pdst.columns(1, elements=st.none(), dtype=int)),
         marks=pytest.mark.skipif(IntegerDtype, reason="works with integer NA"),
     ),
     e(pdst.data_frames, pdst.columns(1, elements=st.text(), dtype=int)),
@@ -73,7 +73,7 @@ BAD_ARGS = [
     e(pdst.indexes, elements="not a strategy"),
     e(pdst.indexes, elements=st.text(), dtype=float),
     pytest.param(
-        e(pdst.indexes, elements=st.none(), dtype=int),
+        *e(pdst.indexes, elements=st.none(), dtype=int),
         marks=pytest.mark.skipif(IntegerDtype, reason="works with integer NA"),
     ),
     e(pdst.indexes, elements=st.text(), dtype=int),
@@ -90,7 +90,7 @@ BAD_ARGS = [
     e(pdst.series, dtype="not a dtype"),
     e(pdst.series, elements="not a strategy"),
     pytest.param(
-        e(pdst.series, elements=st.none(), dtype=int),
+        *e(pdst.series, elements=st.none(), dtype=int),
         marks=pytest.mark.skipif(IntegerDtype, reason="works with integer NA"),
     ),
     e(pdst.series, elements=st.text(), dtype=int),
@@ -118,7 +118,7 @@ def test_confusing_object_dtype_aliases():
 
 
 @pytest.mark.skipif(
-    not IntegerDtype, reason="Nullable types not avaliable in this version of Pandas"
+    not IntegerDtype, reason="Nullable types not available in this version of Pandas"
 )
 def test_pandas_nullable_types_class():
     with pytest.raises(
