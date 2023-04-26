@@ -45,7 +45,7 @@ COMMON = os.path.join(SCRIPTS, "common.sh")
 
 
 def __calc_script_variables():
-    exports = re.compile(r"export ([A-Z_]+)(=|$)")
+    exports = re.compile(r"^export ([A-Z_]+)(=|$)", flags=re.MULTILINE)
 
     with open(COMMON) as i:
         common = i.read()
