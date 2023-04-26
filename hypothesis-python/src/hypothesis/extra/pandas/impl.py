@@ -105,10 +105,8 @@ def elements_and_dtype(elements, dtype, source=None):
             "here.  See https://stackoverflow.com/q/74355937 for workaround patterns."
         )
 
-    pd_dtype_map = {
-        t.name: t for t in getattr(IntegerDtype, "__subclasses__", lambda: [])()
-    }
-
+    _subclasses = getattr(IntegerDtype, "__subclasses__", lambda: [])()
+    pd_dtype_map = {t.name: t() for t in _subclasses}
     dtype = pd_dtype_map.get(dtype, dtype)
 
     if isinstance(dtype, IntegerDtype):
