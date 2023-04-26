@@ -272,7 +272,7 @@ def test_expected_failure_from_omitted_object_dtype(dtype):
 
 
 @pytest.mark.skipif(
-    not IntegerDtype, reason="Nullable types not avaliable in this version of Pandas"
+    not IntegerDtype, reason="Nullable types not available in this version of Pandas"
 )
 def test_pandas_nullable_types():
     st = pdst.data_frames(pdst.columns(2, dtype=pd.core.arrays.integer.Int8Dtype()))

@@ -105,9 +105,8 @@ def elements_and_dtype(elements, dtype, source=None):
             "here.  See https://stackoverflow.com/q/74355937 for workaround patterns."
         )
 
-    _subclasses = getattr(IntegerDtype, "__subclasses__", lambda: [])()
-    pd_dtype_map = {t.name: t() for t in _subclasses}
-    dtype = pd_dtype_map.get(dtype, dtype)
+    _get_subclasses = getattr(IntegerDtype, "__subclasses__", list)
+    dtype = {t.name: t() for t in _get_subclasses()}.get(dtype, dtype)
 
     if isinstance(dtype, IntegerDtype):
         is_na_dtype = True
@@ -125,7 +124,7 @@ def elements_and_dtype(elements, dtype, source=None):
     elif dtype is not None:
 
         def convert_element(value):
-            if value is None:
+            if is_na_dtype and value is None:
                 return None
             name = f"draw({prefix}elements)"
             try:

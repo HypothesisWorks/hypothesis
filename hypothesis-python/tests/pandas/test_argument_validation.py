@@ -34,6 +34,11 @@ BAD_ARGS = [
     e(pdst.data_frames, pdst.columns(1, dtype=float, elements=1)),
     e(pdst.data_frames, pdst.columns(1, fill=1, dtype=float)),
     e(pdst.data_frames, pdst.columns(["A", "A"], dtype=float)),
+    pytest.param(
+        e(pdst.data_frames, pdst.columns(1, elements=st.none(), dtype=int)),
+        marks=pytest.mark.skipif(IntegerDtype, reason="works with integer NA"),
+    ),
+    e(pdst.data_frames, pdst.columns(1, elements=st.text(), dtype=int)),
     e(pdst.data_frames, 1),
     e(pdst.data_frames, [1]),
     e(pdst.data_frames, pdst.columns(1, dtype="category")),
@@ -67,6 +72,11 @@ BAD_ARGS = [
     e(pdst.indexes, dtype="not a dtype"),
     e(pdst.indexes, elements="not a strategy"),
     e(pdst.indexes, elements=st.text(), dtype=float),
+    pytest.param(
+        e(pdst.indexes, elements=st.none(), dtype=int),
+        marks=pytest.mark.skipif(IntegerDtype, reason="works with integer NA"),
+    ),
+    e(pdst.indexes, elements=st.text(), dtype=int),
     e(pdst.indexes, elements=st.integers(0, 10), dtype=st.sampled_from([int, float])),
     e(pdst.indexes, dtype=int, max_size=0, min_size=1),
     e(pdst.indexes, dtype=int, unique="true"),
@@ -79,6 +89,11 @@ BAD_ARGS = [
     e(pdst.series),
     e(pdst.series, dtype="not a dtype"),
     e(pdst.series, elements="not a strategy"),
+    pytest.param(
+        e(pdst.series, elements=st.none(), dtype=int),
+        marks=pytest.mark.skipif(IntegerDtype, reason="works with integer NA"),
+    ),
+    e(pdst.series, elements=st.text(), dtype=int),
     e(pdst.series, dtype="category"),
     e(pdst.series, index="not a strategy"),
 ]
