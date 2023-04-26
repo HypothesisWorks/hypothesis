@@ -19,7 +19,7 @@ import os
 import shutil
 import subprocess
 
-from hypothesistooling import git, scripts
+from hypothesistooling import scripts
 from hypothesistooling.junkdrawer import once
 
 HOME = os.environ["HOME"]

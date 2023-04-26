@@ -36,7 +36,7 @@ from hypothesis.strategies import binary, data, integers, just, lists
 from tests.common.utils import capture_out, validate_deprecation
 from tests.nocover.test_stateful import DepthMachine
 
-NO_BLOB_SETTINGS = Settings(print_blob=False)
+NO_BLOB_SETTINGS = Settings(print_blob=False, phases=tuple(Phase)[:-1])
 
 
 class MultipleRulesSameFuncMachine(RuleBasedStateMachine):
