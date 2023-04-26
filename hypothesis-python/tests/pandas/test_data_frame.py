@@ -9,10 +9,12 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from hypothesis import HealthCheck, given, reject, settings, strategies as st
 from hypothesis.extra import numpy as npst, pandas as pdst
+from hypothesis.extra.pandas.impl import IntegerDtype
 
 from tests.common.debug import find_any
 from tests.pandas.helpers import supported_by_pandas
@@ -267,3 +269,13 @@ def test_expected_failure_from_omitted_object_dtype(dtype):
         assert dtype is None
         with pytest.raises(ValueError, match="Maybe passing dtype=object would help"):
             works_with_object_dtype()
+
+
+@pytest.mark.skipif(
+    not IntegerDtype, reason="Nullable types not available in this version of Pandas"
+)
+def test_pandas_nullable_types():
+    st = pdst.data_frames(pdst.columns(2, dtype=pd.core.arrays.integer.Int8Dtype()))
+    df = find_any(st, lambda s: s.isna().any().any())
+    for s in df.columns:
+        assert type(df[s].dtype) == pd.core.arrays.integer.Int8Dtype

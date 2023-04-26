@@ -11,11 +11,15 @@
 from datetime import datetime
 
 import pandas as pd
+import pytest
 
 from hypothesis import given, strategies as st
+from hypothesis.errors import InvalidArgument
 from hypothesis.extra import pandas as pdst
+from hypothesis.extra.pandas.impl import IntegerDtype
 
 from tests.common.arguments import argument_validation_test, e
+from tests.common.debug import find_any
 from tests.common.utils import checks_deprecated_behaviour
 
 BAD_ARGS = [
@@ -30,7 +34,11 @@ BAD_ARGS = [
     e(pdst.data_frames, pdst.columns(1, dtype=float, elements=1)),
     e(pdst.data_frames, pdst.columns(1, fill=1, dtype=float)),
     e(pdst.data_frames, pdst.columns(["A", "A"], dtype=float)),
-    e(pdst.data_frames, pdst.columns(1, elements=st.none(), dtype=int)),
+    pytest.param(
+        *e(pdst.data_frames, pdst.columns(1, elements=st.none(), dtype=int)),
+        marks=pytest.mark.skipif(IntegerDtype, reason="works with integer NA"),
+    ),
+    e(pdst.data_frames, pdst.columns(1, elements=st.text(), dtype=int)),
     e(pdst.data_frames, 1),
     e(pdst.data_frames, [1]),
     e(pdst.data_frames, pdst.columns(1, dtype="category")),
@@ -64,7 +72,11 @@ BAD_ARGS = [
     e(pdst.indexes, dtype="not a dtype"),
     e(pdst.indexes, elements="not a strategy"),
     e(pdst.indexes, elements=st.text(), dtype=float),
-    e(pdst.indexes, elements=st.none(), dtype=int),
+    pytest.param(
+        *e(pdst.indexes, elements=st.none(), dtype=int),
+        marks=pytest.mark.skipif(IntegerDtype, reason="works with integer NA"),
+    ),
+    e(pdst.indexes, elements=st.text(), dtype=int),
     e(pdst.indexes, elements=st.integers(0, 10), dtype=st.sampled_from([int, float])),
     e(pdst.indexes, dtype=int, max_size=0, min_size=1),
     e(pdst.indexes, dtype=int, unique="true"),
@@ -77,7 +89,11 @@ BAD_ARGS = [
     e(pdst.series),
     e(pdst.series, dtype="not a dtype"),
     e(pdst.series, elements="not a strategy"),
-    e(pdst.series, elements=st.none(), dtype=int),
+    pytest.param(
+        *e(pdst.series, elements=st.none(), dtype=int),
+        marks=pytest.mark.skipif(IntegerDtype, reason="works with integer NA"),
+    ),
+    e(pdst.series, elements=st.text(), dtype=int),
     e(pdst.series, dtype="category"),
     e(pdst.series, index="not a strategy"),
 ]
@@ -99,3 +115,14 @@ def test_timestamp_as_datetime_bounds(dt):
 @checks_deprecated_behaviour
 def test_confusing_object_dtype_aliases():
     pdst.series(elements=st.tuples(st.integers()), dtype=tuple).example()
+
+
+@pytest.mark.skipif(
+    not IntegerDtype, reason="Nullable types not available in this version of Pandas"
+)
+def test_pandas_nullable_types_class():
+    with pytest.raises(
+        InvalidArgument, match="Otherwise it would be treated as dtype=object"
+    ):
+        st = pdst.series(dtype=pd.core.arrays.integer.Int8Dtype)
+        find_any(st, lambda s: s.isna().any())

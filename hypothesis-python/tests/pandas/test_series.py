@@ -9,12 +9,14 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import numpy as np
-import pandas
+import pandas as pd
+import pytest
 
 from hypothesis import assume, given, strategies as st
 from hypothesis.extra import numpy as npst, pandas as pdst
+from hypothesis.extra.pandas.impl import IntegerDtype
 
-from tests.common.debug import find_any
+from tests.common.debug import assert_all_examples, assert_no_examples, find_any
 from tests.pandas.helpers import supported_by_pandas
 
 
@@ -25,7 +27,7 @@ def test_can_create_a_series_of_any_dtype(data):
     # Use raw data to work around pandas bug in repr. See
     # https://github.com/pandas-dev/pandas/issues/27484
     series = data.conjecture_data.draw(pdst.series(dtype=dtype))
-    assert series.dtype == pandas.Series([], dtype=dtype).dtype
+    assert series.dtype == pd.Series([], dtype=dtype).dtype
 
 
 @given(pdst.series(dtype=float, index=pdst.range_indexes(min_size=2, max_size=5)))
@@ -61,3 +63,23 @@ def test_unique_series_are_unique(s):
 @given(pdst.series(dtype="int8", name=st.just("test_name")))
 def test_name_passed_on(s):
     assert s.name == "test_name"
+
+
+@pytest.mark.skipif(
+    not IntegerDtype, reason="Nullable types not available in this version of Pandas"
+)
+@pytest.mark.parametrize(
+    "dtype", ["Int8", pd.core.arrays.integer.Int8Dtype() if IntegerDtype else None]
+)
+def test_pandas_nullable_types(dtype):
+    assert_no_examples(
+        pdst.series(dtype=dtype, elements=st.just(0)),
+        lambda s: s.isna().any(),
+    )
+    assert_all_examples(
+        pdst.series(dtype=dtype, elements=st.none()),
+        lambda s: s.isna().all(),
+    )
+    find_any(pdst.series(dtype=dtype), lambda s: not s.isna().any())
+    e = find_any(pdst.series(dtype=dtype), lambda s: s.isna().any())
+    assert type(e.dtype) == pd.core.arrays.integer.Int8Dtype
