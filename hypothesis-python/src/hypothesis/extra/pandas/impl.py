@@ -129,14 +129,10 @@ def elements_and_dtype(elements, dtype, source=None):
             name = f"draw({prefix}elements)"
             try:
                 return np.array([value], dtype=dtype)[0]
-            except TypeError:
+            except (TypeError, ValueError):
                 raise InvalidArgument(
                     "Cannot convert %s=%r of type %s to dtype %s"
                     % (name, value, type(value).__name__, dtype.str)
-                ) from None
-            except ValueError:
-                raise InvalidArgument(
-                    f"Cannot convert {name}={value!r} to type {dtype.str}"
                 ) from None
 
         elements = elements.map(convert_element)
