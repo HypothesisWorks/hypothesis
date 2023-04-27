@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.73.1:
+
+-------------------
+6.73.1 - 2023-04-27
+-------------------
+
+This patch updates our minimum Numpy version to 1.16, and restores compatibility
+with versions before 1.20, which were broken by a mistake in Hypothesis 6.72.4
+(:issue:`3625`).
+
 .. _v6.74.0:
 
 -------------------
