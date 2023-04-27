@@ -8,7 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from datetime import datetime
+import re
+from datetime import datetime, timedelta
 
 import pandas as pd
 import pytest
@@ -126,3 +127,17 @@ def test_pandas_nullable_types_class():
     ):
         st = pdst.series(dtype=pd.core.arrays.integer.Int8Dtype)
         find_any(st, lambda s: s.isna().any())
+
+
+@pytest.mark.parametrize(
+    "dtype_,expected_unit",
+    [
+        (datetime, "datetime64[ns]"),
+        (pd.Timestamp, "datetime64[ns]"),
+        (timedelta, "timedelta64[ns]"),
+        (pd.Timedelta, "timedelta64[ns]"),
+    ],
+)
+def test_invalid_datetime_or_timedelta_dtype_raises_error(dtype_, expected_unit):
+    with pytest.raises(InvalidArgument, match=re.escape(expected_unit)):
+        pdst.series(dtype=dtype_).example()
