@@ -202,13 +202,17 @@ def upload_distribution():
     # https://developer.github.com/v3/repos/releases/#create-a-release
     requests.post(
         "https://api.github.com/repos/HypothesisWorks/hypothesis/releases",
+        headers={
+            "Accept": "application/vnd.github+json",
+            "Authorization": f"Bearer: {os.environ['GH_TOKEN']}",
+            "X-GitHub-Api-Version": "2022-11-28",
+        },
         json={
             "tag_name": tag_name(),
             "name": "Hypothesis for Python - version " + current_version(),
             "body": changelog_body,
         },
         timeout=120,  # seconds
-        auth=("Zac-HD", os.environ["GH_TOKEN"]),
     ).raise_for_status()
 
 
