@@ -18,16 +18,6 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
-.. _v6.73.1:
-
--------------------
-6.73.1 - 2023-04-27
--------------------
-
-This patch updates our minimum Numpy version to 1.16, and restores compatibility
-with versions before 1.20, which were broken by a mistake in Hypothesis 6.72.4
-(:issue:`3625`).
-
 .. _v6.74.0:
 
 -------------------
@@ -37,6 +27,16 @@ with versions before 1.20, which were broken by a mistake in Hypothesis 6.72.4
 This release adds support for `nullable pandas dtypes <https://pandas.pydata.org/docs/user_guide/integer_na.html>`__
 in :func:`~hypothesis.extra.pandas` (:issue:`3604`).
 Thanks to Cheuk Ting Ho for implementing this at the PyCon sprints!
+
+.. _v6.73.1:
+
+-------------------
+6.73.1 - 2023-04-27
+-------------------
+
+This patch updates our minimum Numpy version to 1.16, and restores compatibility
+with versions before 1.20, which were broken by a mistake in Hypothesis 6.72.4
+(:issue:`3625`).
 
 .. _v6.73.0:
 
