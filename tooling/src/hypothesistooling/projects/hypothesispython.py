@@ -97,6 +97,9 @@ def update_changelog_and_version():
             assert CHANGELOG_BORDER.match(lines[i + 2]), repr(lines[i + 2])
             assert CHANGELOG_HEADER.match(lines[i + 3]), repr(lines[i + 3])
             assert CHANGELOG_BORDER.match(lines[i + 4]), repr(lines[i + 4])
+            assert lines[i + 3].startswith(
+                __version__
+            ), f"{__version__=}   {lines[i + 3]=}"
             beginning = "\n".join(lines[:i])
             rest = "\n".join(lines[i:])
             assert "\n".join((beginning, rest)) == contents
