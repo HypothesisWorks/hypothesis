@@ -70,10 +70,10 @@ def test_can_minimize_large_arrays():
 
 
 @flaky(max_runs=50, min_passes=1)
-@np.errstate(over="ignore", invalid="ignore")
 def test_can_minimize_float_arrays():
-    x = minimal(nps.arrays(float, 50), lambda t: np.nansum(t) >= 1.0)
-    assert x.sum() in (1, 50)
+    with np.errstate(over="ignore", invalid="ignore"):
+        x = minimal(nps.arrays(float, 50), lambda t: np.nansum(t) >= 1.0)
+        assert x.sum() in (1, 50)
 
 
 class Foo:

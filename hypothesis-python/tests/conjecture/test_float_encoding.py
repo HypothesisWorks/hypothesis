@@ -12,7 +12,7 @@ import sys
 
 import pytest
 
-from hypothesis import assume, example, given, strategies as st
+from hypothesis import HealthCheck, assume, example, given, settings, strategies as st
 from hypothesis.internal.compat import ceil, floor, int_from_bytes, int_to_bytes
 from hypothesis.internal.conjecture import floats as flt
 from hypothesis.internal.conjecture.data import ConjectureData
@@ -97,6 +97,7 @@ def test_floats_round_trip(f):
     assert float_to_int(f) == float_to_int(g)
 
 
+@settings(suppress_health_check=[HealthCheck.too_slow])
 @example(1, 0.5)
 @given(st.integers(1, 2**53), st.floats(0, 1).filter(lambda x: x not in (0, 1)))
 def test_floats_order_worse_than_their_integral_part(n, g):
