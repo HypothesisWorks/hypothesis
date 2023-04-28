@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.74.1:
+
+-------------------
+6.74.1 - 2023-04-28
+-------------------
+
+This patch provides better error messages for datetime- and timedelta-related
+invalid dtypes in our Pandas extra (:issue:`3518`).
+Thanks to Nick Muoh at the PyCon Sprints!
+
 .. _v6.74.0:
 
 -------------------
