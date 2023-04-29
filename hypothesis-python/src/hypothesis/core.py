@@ -79,6 +79,7 @@ from hypothesis.internal.conjecture.engine import BUFFER_SIZE, ConjectureRunner
 from hypothesis.internal.conjecture.shrinker import sort_key
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.internal.escalation import (
+    current_pytest_item,
     escalate_hypothesis_internal_error,
     format_exception,
     get_interesting_origin,
@@ -1030,10 +1031,15 @@ def add_note(exc, note):
 
 def _raise_to_user(errors_to_report, settings, target_lines, trailer=""):
     """Helper function for attaching notes and grouping multiple errors."""
-    if settings.verbosity >= Verbosity.normal:
-        for fragments, err in errors_to_report:
-            for note in fragments:
-                add_note(err, note)
+    failing_prefix = "Falsifying example: "
+    ls = []
+    for fragments, err in errors_to_report:
+        for note in fragments:
+            add_note(err, note)
+            if note.startswith(failing_prefix):
+                ls.append(note[len(failing_prefix) :])
+    if current_pytest_item.value:
+        current_pytest_item.value._hypothesis_failing_examples = ls
 
     if len(errors_to_report) == 1:
         _, the_error_hypothesis_found = errors_to_report[0]

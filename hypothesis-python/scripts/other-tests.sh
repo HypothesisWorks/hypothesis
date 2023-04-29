@@ -46,7 +46,9 @@ pip uninstall -y lark
 if [ "$(python -c $'import platform, sys; print(sys.version_info.releaselevel == \'final\' and platform.python_implementation() not in ("PyPy", "GraalVM"))')" = "True" ] ; then
   pip install ".[codemods,cli]"
   $PYTEST tests/codemods/
-  pip uninstall -y libcst click
+  pip install "$(grep 'black==' ../requirements/coverage.txt)"
+  $PYTEST tests/patching/
+  pip uninstall -y libcst
 
   if [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 7))')" = "True" ] ; then
     # Per NEP-29, this is the last version to support Python 3.7
@@ -63,7 +65,6 @@ if [ "$(python -c $'import platform, sys; print(sys.version_info.releaselevel ==
       $PYTEST tests/numpy
   esac
 
-  pip install "$(grep 'black==' ../requirements/coverage.txt)"
   $PYTEST tests/ghostwriter/
   pip uninstall -y black numpy
 fi
