@@ -787,10 +787,12 @@ class StateForActualGivenExecution:
                                     kwargs,
                                     force_split=True,
                                     arg_slices=argslices,
+                                    leading_comment=(
+                                        "# " + context.data.slice_comments[(0, 0)]
+                                        if (0, 0) in context.data.slice_comments
+                                        else None
+                                    ),
                                 )
-                            if (0, 0) in context.data.slice_comments:
-                                printer.break_()
-                                printer.text("# " + context.data.slice_comments[(0, 0)])
                             report(printer.getvalue())
                         return test(*args, **kwargs)
 
