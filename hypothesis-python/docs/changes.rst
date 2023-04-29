@@ -9216,8 +9216,8 @@ This changes only the formatting of our docstrings and should have no user-visib
 what arguments are valid, and additional validation logic to raise a
 clear error early (instead of e.g. silently ignoring a bad argument).
 Categories may be specified as the Unicode 'general category'
-(eg ``u'Nd'``), or as the 'major category' (eg ``[u'N', u'Lu']``
-is equivalent to ``[u'Nd', u'Nl', u'No', u'Lu']``).
+(eg ``'Nd'``), or as the 'major category' (eg ``['N', 'Lu']``
+is equivalent to ``['Nd', 'Nl', 'No', 'Lu']``).
 
 In previous versions, general categories were supported and all other
 input was silently ignored.  Now, major categories are supported in
