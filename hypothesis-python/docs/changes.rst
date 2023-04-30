@@ -18,6 +18,21 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.75.0:
+
+-------------------
+6.75.0 - 2023-04-30
+-------------------
+
+Sick of adding :obj:`@example() <hypothesis.example>`\ s by hand?
+Our Pytest plugin now writes ``.patch`` files to insert them for you, making
+`this workflow <https://blog.nelhage.com/post/property-testing-like-afl/>`__
+easier than ever before.
+
+Note that you'll need :pypi:`LibCST` (via :ref:`codemods`), and that
+:obj:`@example().via() <hypothesis.example.via>` requires :pep:`614`
+(Python 3.9 or later).
+
 .. _v6.74.1:
 
 -------------------
