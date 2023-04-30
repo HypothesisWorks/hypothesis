@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.75.1:
+
+-------------------
+6.75.1 - 2023-04-30
+-------------------
+
+``hypothesis.errors`` will now raise :py:exc:`AttributeError` when attempting
+to access an undefined attribute, rather than returning :py:obj:`None`.
+
 .. _v6.75.0:
 
 -------------------
