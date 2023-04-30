@@ -52,7 +52,7 @@ colorama==0.4.6
     # via tox
 com2ann==0.3.0
     # via shed
-coverage==7.2.3
+coverage==7.2.4
     # via -r requirements/tools.in
 cryptography==40.0.2
     # via
@@ -140,7 +140,7 @@ importlib-metadata==6.6.0
     #   twine
 iniconfig==2.0.0
     # via pytest
-ipython==8.12.0
+ipython==8.13.1
     # via -r requirements/tools.in
 isort==5.12.0
     # via shed
@@ -205,7 +205,7 @@ pip-tools==6.13.0
     # via -r requirements/tools.in
 pkginfo==1.9.6
     # via twine
-platformdirs==3.2.0
+platformdirs==3.5.0
     # via
     #   black
     #   tox
@@ -240,13 +240,13 @@ pyproject-api==1.5.1
     # via tox
 pyproject-hooks==1.0.0
     # via build
-pyright==1.1.304
+pyright==1.1.305
     # via -r requirements/tools.in
 pytest==7.3.1
     # via -r requirements/tools.in
 python-dateutil==2.8.2
     # via -r requirements/tools.in
-pyupgrade==3.3.1
+pyupgrade==3.3.2
     # via shed
 pyyaml==6.0
     # via
@@ -254,7 +254,7 @@ pyyaml==6.0
     #   libcst
 readme-renderer==37.3
     # via twine
-requests==2.28.2
+requests==2.29.0
     # via
     #   -r requirements/tools.in
     #   requests-toolbelt
@@ -266,7 +266,7 @@ restructuredtext-lint==1.4.0
     # via -r requirements/tools.in
 rfc3986==2.0.0
     # via twine
-rich==13.3.4
+rich==13.3.5
     # via
     #   bandit
     #   twine
@@ -289,7 +289,7 @@ sortedcontainers==2.4.0
     # via hypothesis (hypothesis-python/setup.py)
 soupsieve==2.4.1
     # via beautifulsoup4
-sphinx==6.1.3
+sphinx==6.2.1
     # via
     #   -r requirements/tools.in
     #   sphinx-codeautolink
@@ -338,7 +338,7 @@ tomli==2.0.1
     #   pyproject-hooks
     #   pytest
     #   tox
-tox==4.4.12
+tox==4.5.1
     # via -r requirements/tools.in
 traitlets==5.9.0
     # via
@@ -370,7 +370,7 @@ urllib3==1.26.15
     # via
     #   requests
     #   twine
-virtualenv==20.22.0
+virtualenv==20.23.0
     # via tox
 wcwidth==0.2.6
     # via prompt-toolkit
@@ -382,9 +382,9 @@ zipp==3.15.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-pip==23.1.1
+pip==23.1.2
     # via pip-tools
-setuptools==67.7.1
+setuptools==67.7.2
     # via
     #   nodeenv
     #   pip-tools
