@@ -240,7 +240,7 @@ If this variable is not defined the Hypothesis defined defaults will be loaded.
     >>> settings.register_profile("ci", max_examples=1000)
     >>> settings.register_profile("dev", max_examples=10)
     >>> settings.register_profile("debug", max_examples=10, verbosity=Verbosity.verbose)
-    >>> settings.load_profile(os.getenv(u"HYPOTHESIS_PROFILE", "default"))
+    >>> settings.load_profile(os.getenv("HYPOTHESIS_PROFILE", "default"))
 
 If you are using the hypothesis pytest plugin and your profiles are registered
 by your conftest you can load one with the command line option ``--hypothesis-profile``.

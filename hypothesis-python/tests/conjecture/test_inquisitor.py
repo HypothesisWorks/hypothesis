@@ -29,13 +29,13 @@ def fails_with_output(expected, error=AssertionError, **kw):
 @fails_with_output(
     """
 Falsifying example: test_inquisitor_comments_basic_fail_if_either(
+    # The test always failed when commented parts were varied together.
     a=False,  # or any other generated value
     b=True,
     c=[],  # or any other generated value
     d=True,
     e=False,  # or any other generated value
 )
-# The test always failed when commented parts were varied together.
 """
 )
 @given(st.booleans(), st.booleans(), st.lists(st.none()), st.booleans(), st.booleans())
@@ -46,11 +46,11 @@ def test_inquisitor_comments_basic_fail_if_either(a, b, c, d, e):
 @fails_with_output(
     """
 Falsifying example: test_inquisitor_comments_basic_fail_if_not_all(
+    # The test sometimes passed when commented parts were varied together.
     a='',  # or any other generated value
     b='',  # or any other generated value
     c='',  # or any other generated value
 )
-# The test sometimes passed when commented parts were varied together.
 """
 )
 @given(st.text(), st.text(), st.text())
