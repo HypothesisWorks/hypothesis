@@ -570,8 +570,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
             if e.code == 401:
                 warning_message = (
                     "Authorization failed when trying to download artifact from GitHub. "
-                    "Check your $GITHUB_TOKEN environment variable "
-                    "or make the repository public."
+                    "Check that you have a valid GITHUB_TOKEN set in your environment."
                 )
             else:
                 warning_message = (
