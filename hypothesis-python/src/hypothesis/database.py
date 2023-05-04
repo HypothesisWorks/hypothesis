@@ -380,22 +380,22 @@ class GitHubArtifactDatabase(ExampleDatabase):
     .. code-block:: yaml
 
         - name: Download example database
-            uses: dawidd6/action-download-artifact@v2.24.3
-            with:
-                name: hypothesis-example-db
-                path: .hypothesis/examples
-                if_no_artifact_found: warn
-                workflow_conclusion: completed
+          uses: dawidd6/action-download-artifact@v2.24.3
+          with:
+            name: hypothesis-example-db
+            path: .hypothesis/examples
+            if_no_artifact_found: warn
+            workflow_conclusion: completed
 
         - name: Run tests
-            run: pytest
+          run: pytest
 
         - name: Upload example database
-            uses: actions/upload-artifact@v3
-            if: always()
-            with:
-                name: hypothesis-example-db
-                path: .hypothesis/examples
+          uses: actions/upload-artifact@v3
+          if: always()
+          with:
+            name: hypothesis-example-db
+            path: .hypothesis/examples
 
     In this workflow, we use `dawidd6/action-download-artifact <https://github.com/dawidd6/action-download-artifact>`_
     to download the latest artifact given that the official `actions/download-artifact <https://github.com/actions/download-artifact>`_
