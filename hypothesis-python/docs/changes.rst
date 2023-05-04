@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.75.2:
+
+-------------------
+6.75.2 - 2023-05-04
+-------------------
+
+Improved the documentation regarding how to use :class:`~hypothesis.database.GitHubArtifactDatabase`
+and fixed a bug that occurred in repositories with no existing artifacts.
+
+Thanks to Agustín Covarrubias for this contribution.
+
 .. _v6.75.1:
 
 -------------------
