@@ -347,6 +347,14 @@ class GitHubArtifactDatabase(ExampleDatabase):
     where the CI system can upload the resulting database as an artifact after each run,
     allowing developers to reproduce any failures by just running hypothesis.
 
+    .. note::
+        You must provide `GITHUB_TOKEN` as an environment variable. In CI, Github Actions provides
+        this automatically, but you need to set it manually if you're running locally. In a developer machine,
+        this would usually be a `Personal Access Token <https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token>`_.
+        If the repository is private, it's necessary for the token to have `repo` scope
+        in the case of a classic token, or `actions:read` in the case of a fine-grained token.
+
+
     In most cases, this will be used
     through the :class:`~hypothesis.database.MultiplexedDatabase`,
     by combining a local directory-based database with this one. For example:
@@ -365,10 +373,6 @@ class GitHubArtifactDatabase(ExampleDatabase):
     .. note::
         Because this database is read-only, you always need to wrap it with the
         :class:`ReadOnlyDatabase`.
-
-    If you're using a private repository, you must provide `GITHUB_TOKEN` as an environment variable,
-    which would usually be a `Personal Access Token <https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token>`_
-    with the `repo` scope.
 
     The database automatically implements a simple file-based cache with a default expiration period
     of 1 day. You can adjust this through the `cache_timeout` property.
