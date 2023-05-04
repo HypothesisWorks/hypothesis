@@ -378,6 +378,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
     something like the following:
 
     .. code-block:: yaml
+
         - name: Download example database
             uses: dawidd6/action-download-artifact@v2.24.3
             with:
