@@ -568,11 +568,16 @@ class GitHubArtifactDatabase(ExampleDatabase):
         response_bytes = self._get_bytes(url)
         if response_bytes is None:
             return None
+
         artifacts = json.loads(response_bytes)["artifacts"]
+        artifacts = filter(lambda a: a["name"] == self.artifact_name, artifacts)
+
+        if not artifacts:
+            return None
 
         # Get the latest artifact from the list
         artifact = sorted(
-            filter(lambda a: a["name"] == self.artifact_name, artifacts),
+            artifacts,
             key=lambda a: a["created_at"],
         )[-1]
 
