@@ -339,13 +339,13 @@ class MultiplexedDatabase(ExampleDatabase):
 
 class GitHubArtifactDatabase(ExampleDatabase):
     """
-    A file-based database loaded from a GitHub Actions artifact.
+    A file-based database loaded from a `GitHub Actions <https://docs.github.com/en/actions>`_ artifact.
 
     You can use this for sharing example databases between CI runs and developers, allowing
     the latter to get read-only access to the former. This is particularly useful for
-    continuous fuzzing (i.e. with `HypoFuzz <https://hypofuzz.com/>`__),
-    where the CI system can upload the resulting database as an artifact after each run,
-    allowing developers to reproduce any failures by just running hypothesis.
+    continuous fuzzing (i.e. with `HypoFuzz <https://hypofuzz.com/>`_),
+    where the CI system can help find new failing examples through fuzzing,
+    and developers can reproduce them locally without any manual effort.
 
     .. note::
         You must provide `GITHUB_TOKEN` as an environment variable. In CI, Github Actions provides
@@ -374,10 +374,36 @@ class GitHubArtifactDatabase(ExampleDatabase):
         Because this database is read-only, you always need to wrap it with the
         :class:`ReadOnlyDatabase`.
 
+    A setup like this can be paired with a GitHub Actions workflow including
+    something like the following:
+
+    .. code-block:: yaml
+        - name: Download example database
+            uses: dawidd6/action-download-artifact@v2.24.3
+            with:
+                name: hypothesis-example-db
+                path: .hypothesis/examples
+                if_no_artifact_found: warn
+                workflow_conclusion: completed
+
+        - name: Run tests
+            run: pytest
+
+        - name: Upload example database
+            uses: actions/upload-artifact@v3
+            if: always()
+            with:
+                name: hypothesis-example-db
+                path: .hypothesis/examples
+
+    In this workflow, we use `dawidd6/action-download-artifact <https://github.com/dawidd6/action-download-artifact>`_
+    to download the latest artifact given that the official `actions/download-artifact <https://github.com/actions/download-artifact>`_
+    does not support downloading artifacts from previous workflow runs.
+
     The database automatically implements a simple file-based cache with a default expiration period
     of 1 day. You can adjust this through the `cache_timeout` property.
 
-    For mono-repo support, you can provide an unique `artifact_name` (e.g. `hypofuzz-example-db-frontend`).
+    For mono-repo support, you can provide a unique `artifact_name` (e.g. `hypofuzz-example-db-frontend`).
     """
 
     def __init__(
