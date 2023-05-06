@@ -652,8 +652,7 @@ up our type hints.
     Hypothesis' type hints may make breaking changes between minor releases.
 
     Upstream tools and conventions about type hints remain in flux - for
-    example the :mod:`python:typing` module itself is provisional, and Mypy
-    has not yet reached version 1.0 - and we plan to support the latest
+    example the :mod:`python:typing` module itself is provisional - and we plan to support the latest
     version of this ecosystem, as well as older versions where practical.
 
     We may also find more precise ways to describe the type of various
