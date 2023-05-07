@@ -52,7 +52,7 @@ colorama==0.4.6
     # via tox
 com2ann==0.3.0
     # via shed
-coverage==7.2.4
+coverage==7.2.5
     # via -r requirements/tools.in
 cryptography==40.0.2
     # via
@@ -63,7 +63,7 @@ decorator==5.1.1
     # via ipython
 distlib==0.3.6
     # via virtualenv
-django==4.2
+django==4.2.1
     # via -r requirements/tools.in
 docutils==0.18.1
     # via
@@ -96,7 +96,7 @@ flake8==6.0.0
     #   flake8-mutable
     #   flake8-noqa
     #   flake8-simplify
-flake8-2020==1.7.0
+flake8-2020==1.8.0
     # via -r requirements/tools.in
 flake8-bandit==4.1.1
     # via -r requirements/tools.in
@@ -140,7 +140,7 @@ importlib-metadata==6.6.0
     #   twine
 iniconfig==2.0.0
     # via pytest
-ipython==8.13.1
+ipython==8.13.2
     # via -r requirements/tools.in
 isort==5.12.0
     # via shed
@@ -240,13 +240,13 @@ pyproject-api==1.5.1
     # via tox
 pyproject-hooks==1.0.0
     # via build
-pyright==1.1.305
+pyright==1.1.306
     # via -r requirements/tools.in
 pytest==7.3.1
     # via -r requirements/tools.in
 python-dateutil==2.8.2
     # via -r requirements/tools.in
-pyupgrade==3.3.2
+pyupgrade==3.4.0
     # via shed
 pyyaml==6.0
     # via
@@ -254,13 +254,13 @@ pyyaml==6.0
     #   libcst
 readme-renderer==37.3
     # via twine
-requests==2.29.0
+requests==2.30.0
     # via
     #   -r requirements/tools.in
     #   requests-toolbelt
     #   sphinx
     #   twine
-requests-toolbelt==0.10.1
+requests-toolbelt==1.0.0
     # via twine
 restructuredtext-lint==1.4.0
     # via -r requirements/tools.in
@@ -272,7 +272,7 @@ rich==13.3.5
     #   twine
 secretstorage==3.3.3
     # via keyring
-shed==2023.4.1
+shed==2023.5.1
     # via -r requirements/tools.in
 six==1.16.0
     # via
@@ -366,7 +366,7 @@ typing-extensions==4.5.0
     #   typing-inspect
 typing-inspect==0.8.0
     # via libcst
-urllib3==1.26.15
+urllib3==2.0.2
     # via
     #   requests
     #   twine
