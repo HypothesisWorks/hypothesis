@@ -203,6 +203,9 @@ def test_arrays_gives_useful_error_on_inconsistent_time_unit():
         (complex, {"allow_nan": False}, lambda x: not np.isnan(x)),
         (complex, {"allow_infinity": False}, lambda x: not np.isinf(x)),
         (complex, {"allow_nan": False, "allow_infinity": False}, np.isfinite),
+        # Note we accept epsilon errors here as internally sqrt is used to draw
+        # complex numbers. sqrt on some platforms gets epsilon errors, which is
+        # too tricky to filter out and so - for now - we just accept them.
         (
             complex,
             {"min_magnitude": 1e3},
