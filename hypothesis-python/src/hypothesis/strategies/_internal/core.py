@@ -1716,6 +1716,12 @@ def complex_numbers(
 
     @composite
     def constrained_complex(draw):
+        # We downcast drawn floats to the desired (component) width so we
+        # guarantee the resulting complex values are representable. Note
+        # truncating the mantissa bits with float_of() cannot increase the
+        # magnitude of a float, so we are guaranteed to stay within the allowed
+        # range. See https://github.com/HypothesisWorks/hypothesis/issues/3573
+
         # Draw the imaginary part, and determine the maximum real part given
         # this and the max_magnitude
         if max_magnitude is None:
