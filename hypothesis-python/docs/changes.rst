@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.75.3:
+
+-------------------
+6.75.3 - 2023-05-14
+-------------------
+
+This patch fixes :func:`~hypothesis.strategies.complex_numbers` accidentally
+invalidating itself when passed magnitude arguments for 32 and 64-bit widths,
+i.e. 16- and 32-bit floats, due to not internally down-casting numbers (:issue:`3573`).
+
 .. _v6.75.2:
 
 -------------------
