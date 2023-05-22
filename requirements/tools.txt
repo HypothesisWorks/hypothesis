@@ -240,7 +240,7 @@ pyproject-api==1.5.1
     # via tox
 pyproject-hooks==1.0.0
     # via build
-pyright==1.1.308
+pyright==1.1.309
     # via -r requirements/tools.in
 pytest==7.3.1
     # via -r requirements/tools.in
@@ -324,7 +324,7 @@ sqlparse==0.4.4
     # via django
 stack-data==0.6.2
     # via ipython
-stevedore==5.0.0
+stevedore==5.1.0
     # via bandit
 tokenize-rt==5.0.0
     # via pyupgrade
@@ -384,7 +384,7 @@ zipp==3.15.0
 # The following packages are considered to be unsafe in a requirements file:
 pip==23.1.2
     # via pip-tools
-setuptools==67.7.2
+setuptools==67.8.0
     # via
     #   nodeenv
     #   pip-tools
