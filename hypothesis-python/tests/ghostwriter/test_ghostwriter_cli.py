@@ -156,7 +156,7 @@ def test_error_import_from_class(tmp_path, classname, thing, kind):
 
 def test_magic_discovery_from_module(tmp_path):
     (tmp_path / "mycode.py").write_text(CLASS_CODE_TO_TEST, encoding="utf-8")
-    result = run(f"hypothesis write mycode", cwd=tmp_path)
+    result = run("hypothesis write mycode", cwd=tmp_path)
     assert result.returncode == 0
     assert "my_func" in result.stdout
     assert "MyClass.my_staticmethod" in result.stdout
@@ -197,7 +197,7 @@ class OtherClass:
 
 def test_roundtrip_correct_pairs(tmp_path):
     (tmp_path / "mycode.py").write_text(ROUNDTRIP_CODE_TO_TEST, encoding="utf-8")
-    result = run(f"hypothesis write mycode", cwd=tmp_path)
+    result = run("hypothesis write mycode", cwd=tmp_path)
     assert result.returncode == 0
     for scope1, scope2 in itertools.product(
         ["mycode.MyClass", "mycode.OtherClass", "mycode"], repeat=2

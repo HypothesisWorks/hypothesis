@@ -78,7 +78,7 @@ learning languages offline that we can record for later use.
 
 """
 
-import attr
+import attr  # noqa: E402
 
 
 @attr.s(slots=True)

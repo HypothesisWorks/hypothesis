@@ -258,7 +258,7 @@ def test_float_subnormal_generation(allow_subnormal, width):
         lambda n: n != 0
     )
     smallest_normal = width_smallest_normals[width]
-    condition = lambda n: -smallest_normal < n < smallest_normal
+    condition = lambda n: -smallest_normal < n < smallest_normal  # noqa: E731
     if allow_subnormal:
         find_any(strat, condition)
     else:
@@ -273,7 +273,7 @@ def test_complex_subnormal_generation(allow_subnormal, width):
         lambda n: n.real != 0 and n.imag != 0
     )
     smallest_normal = width_smallest_normals[width / 2]
-    condition = lambda n: (
+    condition = lambda n: (  # noqa: E731
         -smallest_normal < n.real < smallest_normal
         or -smallest_normal < n.imag < smallest_normal
     )
