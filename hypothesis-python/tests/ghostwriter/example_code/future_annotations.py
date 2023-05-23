@@ -30,5 +30,5 @@ def merge_dicts(
     return {**map1, **map2}
 
 
-def invalid_types(attr1: int, attr2: UnknownClass, attr3: str) -> None:
+def invalid_types(attr1: int, attr2: UnknownClass, attr3: str) -> None:  # noqa: F821
     pass

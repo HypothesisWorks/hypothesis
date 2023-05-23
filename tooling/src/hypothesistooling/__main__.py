@@ -331,7 +331,7 @@ def upgrade_requirements():
     if has_diff(hp.PYTHON_SRC) and not os.path.isfile(hp.RELEASE_FILE):
         msg = hp.get_autoupdate_message(domainlist_changed=has_diff(hp.DOMAINS_LIST))
         with open(hp.RELEASE_FILE, mode="w") as f:
-            f.write(f"RELEASE_TYPE: patch\n\n" + msg)
+            f.write(f"RELEASE_TYPE: patch\n\n{msg}")
     update_python_versions()
     subprocess.call(["git", "add", "."], cwd=tools.ROOT)
 
