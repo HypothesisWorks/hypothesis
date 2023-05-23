@@ -22,7 +22,7 @@ from hypothesis.extra.array_api import (
 from hypothesis.internal.floats import next_up
 
 __all__ = [
-    "MIN_VER_FOR_COMPLEX:",
+    "MIN_VER_FOR_COMPLEX",
     "installed_array_modules",
     "flushes_to_zero",
     "dtype_name_params",
