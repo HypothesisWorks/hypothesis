@@ -90,6 +90,15 @@ def test_can_mark_invalid():
     assert x.status == Status.INVALID
 
 
+def test_can_mark_invalid_with_why():
+    x = ConjectureData.for_buffer(b"")
+    with pytest.raises(StopTest):
+        x.mark_invalid("some reason")
+    assert x.frozen
+    assert x.status == Status.INVALID
+    assert x.events == {"some reason"}
+
+
 class BoomStrategy(SearchStrategy):
     def do_draw(self, data):
         data.draw_bytes(1)

@@ -936,10 +936,10 @@ class ConjectureData:
         strategy.validate()
 
         if strategy.is_empty:
-            self.mark_invalid()
+            self.mark_invalid("strategy is empty")
 
         if self.depth >= MAX_DEPTH:
-            self.mark_invalid()
+            self.mark_invalid("max depth exceeded")
 
         if label is None:
             assert isinstance(strategy.label, int)
@@ -1132,7 +1132,9 @@ class ConjectureData:
     ) -> None:
         self.conclude_test(Status.INTERESTING, interesting_origin)
 
-    def mark_invalid(self):
+    def mark_invalid(self, why: str | None = None):
+        if why is not None:
+            self.note_event(why)
         self.conclude_test(Status.INVALID)
 
     def mark_overrun(self):

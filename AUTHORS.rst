@@ -31,6 +31,7 @@ their individual contributions.
 * `Bryant Eisenbach <https://github.com/fubuloubu>`_
 * `Buck Evan, copyright Google LLC <https://github.com/bukzor>`_
 * `Cameron McGill <https://www.github.com/Cameron-JM>`_
+* `Carl Meyer <https://www.github.com/carljm>`_
 * `Charles O'Farrell <https://www.github.com/charleso>`_
 * `Charlie Tanksley <https://www.github.com/charlietanksley>`_
 * `Chase Garner <https://www.github.com/chasegarner>`_ (chase@garner.red)
