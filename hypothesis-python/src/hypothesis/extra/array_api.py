@@ -401,21 +401,8 @@ class ArrayStrategy(st.SearchStrategy):
             # our elements strategy to those indices.
 
             fill_val = data.draw(self.fill)
-            try:
-                result = self.xp.full(self.array_size, fill_val, dtype=self.dtype)
-            except Exception as e:
-                raise InvalidArgument(
-                    f"Could not create full array of dtype={self.dtype} "
-                    f"with fill value {fill_val!r}"
-                ) from e
-            sample = result[0]
-            self.check_set_value(fill_val, sample, self.fill)
-            if self.unique and not self.xp.all(self.xp.isnan(result)):
-                raise InvalidArgument(
-                    f"Array module {self.xp.__name__} did not recognise fill "
-                    f"value {fill_val!r} as NaN - instead got {sample!r}. "
-                    "Cannot fill unique array with non-NaN values."
-                )
+            result_obj = [fill_val for _ in range(self.array_size)]
+            fill_mask = [True for _ in range(self.array_size)]
 
             elements = cu.many(
                 data,
@@ -445,15 +432,27 @@ class ArrayStrategy(st.SearchStrategy):
                         continue
                     else:
                         seen.add(val)
-                try:
-                    result[i] = val
-                except Exception as e:
-                    raise InvalidArgument(
-                        f"Could not add generated array element {val!r} "
-                        f"of type {type(val)} to array of dtype {result.dtype}."
-                    ) from e
-                self.check_set_value(val, result[i], self.elements_strategy)
+                result_obj[i] = val
                 assigned.add(i)
+                fill_mask[i] = False
+
+            try:
+                result = self.xp.asarray(result_obj, dtype=self.dtype)
+            except Exception as e:
+                f_expr = f"xp.asarray({result_obj}, dtype={self.dtype})"
+                raise InvalidArgument(f"Could not create array via {f_expr}") from e
+
+            for i, val in enumerate(result_obj):
+                val_0d = result[i]
+                if fill_mask[i] and self.unique:
+                    if not self.xp.isnan(val_0d):
+                        raise InvalidArgument(
+                            f"Array module {self.xp.__name__} did not recognise fill "
+                            f"value {fill_val!r} as NaN - instead got {val_0d!r}. "
+                            "Cannot fill unique array with non-NaN values."
+                        )
+                else:
+                    self.check_set_value(val, val_0d, self.elements_strategy)
 
         result = self.xp.reshape(result, self.shape)
 
