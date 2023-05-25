@@ -1132,7 +1132,7 @@ class ConjectureData:
     ) -> None:
         self.conclude_test(Status.INTERESTING, interesting_origin)
 
-    def mark_invalid(self, why: str | None = None):
+    def mark_invalid(self, why: Optional[str] = None):
         if why is not None:
             self.note_event(why)
         self.conclude_test(Status.INVALID)

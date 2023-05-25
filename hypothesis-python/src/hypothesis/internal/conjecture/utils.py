@@ -452,7 +452,7 @@ class many:
             self.data.stop_example()
             return False
 
-    def reject(self, why: str | None = None):
+    def reject(self, why: Optional[str] = None):
         """Reject the last example (i.e. don't count it towards our budget of
         elements because it's not going to go in the final collection)."""
         assert self.count > 0
