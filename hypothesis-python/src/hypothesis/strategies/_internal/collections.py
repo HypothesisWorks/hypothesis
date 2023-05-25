@@ -274,7 +274,9 @@ class UniqueSampledListStrategy(UniqueListStrategy):
                     value = (value,) + data.draw(self.tuple_suffixes)
                 result.append(value)
             else:
-                should_draw.reject("UniqueSampledListStrategy filter not satisfied or value already seen")
+                should_draw.reject(
+                    "UniqueSampledListStrategy filter not satisfied or value already seen"
+                )
         assert self.max_size >= len(result) >= self.min_size
         return result
 
