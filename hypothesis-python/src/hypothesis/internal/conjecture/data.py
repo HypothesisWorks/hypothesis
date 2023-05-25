@@ -21,6 +21,7 @@ from typing import (
     Iterable,
     Iterator,
     List,
+    NoReturn,
     Optional,
     Sequence,
     Set,
@@ -726,7 +727,7 @@ Overrun = _Overrun()
 global_test_counter = 0
 
 
-MAX_DEPTH = 100
+MAX_DEPTH = 200
 
 
 class DataObserver:
@@ -1119,7 +1120,7 @@ class ConjectureData:
         self,
         status: Status,
         interesting_origin: Optional[InterestingOrigin] = None,
-    ) -> None:
+    ) -> NoReturn:
         assert (interesting_origin is None) or (status == Status.INTERESTING)
         self.__assert_not_frozen("conclude_test")
         self.interesting_origin = interesting_origin
@@ -1129,15 +1130,15 @@ class ConjectureData:
 
     def mark_interesting(
         self, interesting_origin: Optional[InterestingOrigin] = None
-    ) -> None:
+    ) -> NoReturn:
         self.conclude_test(Status.INTERESTING, interesting_origin)
 
-    def mark_invalid(self, why: Optional[str] = None):
+    def mark_invalid(self, why: Optional[str] = None) -> NoReturn:
         if why is not None:
             self.note_event(why)
         self.conclude_test(Status.INVALID)
 
-    def mark_overrun(self):
+    def mark_overrun(self) -> NoReturn:
         self.conclude_test(Status.OVERRUN)
 
 
