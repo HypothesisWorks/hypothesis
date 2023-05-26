@@ -1,13 +1,10 @@
 [tool.ruff]
 select = [
   "ASYNC",  # flake8-async
-  "C90",    # McCabe cyclomatic complexity
   "E",      # pycodestyle
   "G",      # flake8-logging-format
   "INT",    # flake8-gettext
   "PLE",    # Pylint errors
-  "PLR091", # Pylint Refactor just for max-args, max-branches, etc.
-  "PYI",    # flake8-pyi
   "T10",    # flake8-debugger
   "TID",    # flake8-tidy-imports
   "UP",     # pyupgrade
@@ -49,24 +46,10 @@ select = [
   # "S",    # flake8-bandit
   # "SIM",  # flake8-simplify
   # "SLF",  # flake8-self
-  # "T20",  # flake8-print
   # "TCH",  # flake8-type-checking
   # "TD",   # flake8-todos
   # "TRY",  # tryceratops
 ]
-ignore = ["E731", "E741", "UP031"]
+ignore = ["E731", "E741", "S101", "UP031"]
 line-length = 125
 target-version = "py37"
-
-[tool.ruff.mccabe]
-max-complexity = 45
-
-[tool.ruff.pylint]
-max-args = 13
-max-branches = 44
-max-returns = 24
-max-statements = 124
-
-[tool.ruff.per-file-ignores]
-"hypothesis-python/tests/*" = ["S101"]
-"whole-repo-tests/*" = ["S101"]
