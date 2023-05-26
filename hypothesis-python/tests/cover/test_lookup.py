@@ -541,7 +541,7 @@ def test_resolving_recursive_type():
 
 
 class LinkedList:
-    def __init__(self, nxt: typing.Optional["LinkedList"]=None):
+    def __init__(self, nxt: typing.Optional["LinkedList"] = None):
         self.nxt = nxt
 
     def __repr__(self):

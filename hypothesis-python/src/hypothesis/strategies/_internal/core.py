@@ -1054,6 +1054,7 @@ def from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
             force_repr=f"from_type({thing!r})",
         )
 
+
 def _from_type(thing: Type[Ex], recurse_guard: list) -> SearchStrategy[Ex]:
     # TODO: We would like to move this to the top level, but pending some major
     # refactoring it's hard to do without creating circular imports.

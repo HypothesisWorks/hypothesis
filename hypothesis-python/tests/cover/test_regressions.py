@@ -128,6 +128,7 @@ exc_instances = [
     errors.DeadlineExceeded(
         runtime=timedelta(seconds=1.5), deadline=timedelta(seconds=1.0)
     ),
+    errors.RewindRecursive(int),
 ]
 
 
