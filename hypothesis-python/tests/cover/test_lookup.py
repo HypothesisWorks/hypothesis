@@ -873,7 +873,7 @@ def test_signature_is_the_most_important_source(thing):
 
 
 class AnnotatedAndDefault:
-    def __init__(self, foo: bool = None):
+    def __init__(self, foo: typing.Optional[bool] = None):
         self.foo = foo
 
 
