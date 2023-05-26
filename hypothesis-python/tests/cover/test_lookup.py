@@ -540,16 +540,41 @@ def test_resolving_recursive_type():
     assert isinstance(st.builds(Tree).example(), Tree)
 
 
-class LinkedList:
-    def __init__(self, nxt: typing.Optional["LinkedList"] = None):
+class MyList:
+    def __init__(self, nxt: typing.Optional["MyList"] = None):
         self.nxt = nxt
 
     def __repr__(self):
-        return f"LinkedList({self.nxt})"
+        return f"MyList({self.nxt})"
 
 
 def test_resolving_recursive_type_with_defaults():
-    assert isinstance(st.from_type(LinkedList).example(), LinkedList)
+    assert isinstance(st.from_type(MyList).example(), MyList)
+
+
+class A:
+    def __init__(self, nxt: typing.Optional["B"]):
+        self.nxt = nxt
+
+    def __repr__(self):
+        return f"A({self.nxt})"
+
+
+class B:
+    def __init__(self, nxt: typing.Optional["A"]):
+        self.nxt = nxt
+
+    def __repr__(self):
+        return f"B({self.nxt})"
+
+
+def test_resolving_mutually_recursive_types():
+    nxt = st.from_type(A).example()
+    i = 0
+    while nxt:
+        assert isinstance(nxt, [A, B][i % 2])
+        nxt = nxt.nxt
+        i += 1
 
 
 class SomeClass:
