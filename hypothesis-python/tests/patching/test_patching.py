@@ -29,7 +29,7 @@ CASES = (
     'mth(\n    n=100,\n    label="a long label which forces a newline",\n)',
     indent(
         '@example(n=100, label="a long label which forces a newline")'
-        + '.via(\n    "discovered failure"\n)',
+        '.via(\n    "discovered failure"\n)',
         prefix="+    ",
     ),
 )

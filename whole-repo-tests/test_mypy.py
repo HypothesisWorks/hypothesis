@@ -52,7 +52,7 @@ def get_mypy_analysed_type(fname, val):
     return (
         out.split("Revealed type is ")[1]
         .strip()
-        .strip('"' + "'")
+        .strip('"' + "'")  # noqa: ISC003
         .replace("builtins.", "")
         .replace("*", "")
         .replace(
