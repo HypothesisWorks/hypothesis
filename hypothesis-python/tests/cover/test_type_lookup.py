@@ -379,7 +379,7 @@ class ConcreteBar(AbstractBar):
 
 def test_abstract_resolver_fallback():
     # We create our distinct strategies for abstract and concrete types
-    gen_abstractbar = _from_type(AbstractBar)
+    gen_abstractbar = _from_type(AbstractBar, [])
     gen_concretebar = st.builds(ConcreteBar, x=st.none())
     assert gen_abstractbar != gen_concretebar
 

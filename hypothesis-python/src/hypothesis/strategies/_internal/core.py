@@ -47,7 +47,7 @@ import attr
 
 from hypothesis._settings import note_deprecation
 from hypothesis.control import cleanup, current_build_context, note
-from hypothesis.errors import InvalidArgument, ResolutionFailed
+from hypothesis.errors import InvalidArgument, ResolutionFailed, RewindRecursive
 from hypothesis.internal.cathetus import cathetus
 from hypothesis.internal.charmap import as_general_categories
 from hypothesis.internal.compat import (
@@ -1045,17 +1045,16 @@ def from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
     # would prefer to fall back to the default "from_type(...)" repr instead of
     # "deferred(...)" for recursive types or invalid arguments.
     try:
-        return _from_type(thing)
+        return _from_type(thing, [])
     except Exception:
         return LazyStrategy(
-            lambda thing: deferred(lambda: _from_type(thing)),
+            lambda thing: deferred(lambda: _from_type(thing, [])),
             (thing,),
             {},
             force_repr=f"from_type({thing!r})",
         )
 
-
-def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
+def _from_type(thing: Type[Ex], recurse_guard: list) -> SearchStrategy[Ex]:
     # TODO: We would like to move this to the top level, but pending some major
     # refactoring it's hard to do without creating circular imports.
     from hypothesis.strategies._internal import types
@@ -1083,11 +1082,11 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
             # resolve it so, and otherwise resolve as for the base type.
             if thing in types._global_type_lookup:
                 return as_strategy(types._global_type_lookup[thing], thing)
-            return from_type(thing.__supertype__)
+            return _from_type(thing.__supertype__, recurse_guard)
         # Unions are not instances of `type` - but we still want to resolve them!
         if types.is_a_union(thing):
             args = sorted(thing.__args__, key=types.type_sorting_key)
-            return one_of([from_type(t) for t in args])
+            return one_of([_from_type(t, recurse_guard) for t in args])
     if not types.is_a_type(thing):
         if isinstance(thing, str):
             # See https://github.com/HypothesisWorks/hypothesis/issues/3016
@@ -1142,7 +1141,7 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
                     raise InvalidArgument(
                         f"`{k}: {v.__name__}` is not a valid type annotation"
                     ) from None
-            anns[k] = from_type(v)
+            anns[k] = _from_type(v, recurse_guard)
         if (
             (not anns)
             and thing.__annotations__
@@ -1218,7 +1217,16 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
                 and p.default is not Parameter.empty
                 and p.kind in (Parameter.POSITIONAL_OR_KEYWORD, Parameter.KEYWORD_ONLY)
             ):
-                kwargs[k] = just(p.default) | _from_type(hints[k])
+                if hints[k] in recurse_guard:
+                    raise RewindRecursive(hints[k])
+                recurse_guard.append(hints[k])
+                try:
+                    kwargs[k] = just(p.default) | _from_type(hints[k], recurse_guard)
+                except RewindRecursive as rr:
+                    if rr.target != hints[k]:
+                        raise
+                finally:
+                    recurse_guard.pop()
         return builds(thing, **kwargs)
     # And if it's an abstract type, we'll resolve to a union of subclasses instead.
     subclasses = thing.__subclasses__()
@@ -1230,13 +1238,13 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
     subclass_strategies = nothing()
     for sc in subclasses:
         try:
-            subclass_strategies |= _from_type(sc)
+            subclass_strategies |= _from_type(sc, recurse_guard)
         except Exception:
             pass
     if subclass_strategies.is_empty:
         # We're unable to resolve subclasses now, but we might be able to later -
         # so we'll just go back to the mixed distribution.
-        return sampled_from(subclasses).flatmap(from_type)
+        return sampled_from(subclasses).flatmap(lambda t: _from_type(t, recurse_guard))
     return subclass_strategies
 
 
