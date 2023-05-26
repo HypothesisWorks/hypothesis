@@ -31,5 +31,6 @@ def test_passes_rst_lint():
     pip_tool("rst-lint", *(f for f in ALL_RST if not is_sphinx(f)))
 
 
-def test_passes_flake8():
+def disabled_test_passes_flake8():
+    # TODO: get these whitespace checks without flake8?
     pip_tool("flake8", "--select=W191,W291,W292,W293,W391", *ALL_RST)

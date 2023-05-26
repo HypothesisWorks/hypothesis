@@ -1,0 +1,55 @@
+[tool.ruff]
+select = [
+  "ASYNC",  # flake8-async
+  "E",      # pycodestyle
+  "G",      # flake8-logging-format
+  "INT",    # flake8-gettext
+  "PLE",    # Pylint errors
+  "T10",    # flake8-debugger
+  "TID",    # flake8-tidy-imports
+  "UP",     # pyupgrade
+  "W",      # pycodestyle
+  "YTT",    # flake8-2020
+  # "A",    # flake8-builtins
+  # "ANN",  # flake8-annotations
+  # "ARG",  # flake8-unused-arguments
+  # "B",    # flake8-bugbear
+  # "BLE",  # flake8-blind-except
+  # "C4",   # flake8-comprehensions
+  # "COM",  # flake8-commas
+  # "D",    # pydocstyle
+  # "DJ",   # flake8-django
+  # "DTZ",  # flake8-datetimez
+  # "EM",   # flake8-errmsg
+  # "ERA",  # eradicate
+  # "EXE",  # flake8-executable
+  # "F",    # Pyflakes
+  # "FA",   # flake8-future-annotations
+  # "FBT",  # flake8-boolean-trap
+  # "FLY",  # flynt
+  # "I",    # isort
+  # "ICN",  # flake8-import-conventions
+  # "INP",  # flake8-no-pep420
+  # "ISC",  # flake8-implicit-str-concat
+  # "N",    # pep8-naming
+  # "NPY",  # NumPy-specific rules
+  # "PD",   # pandas-vet
+  # "PGH",  # pygrep-hooks
+  # "PIE",  # flake8-pie
+  # "PL",   # Pylint
+  # "PT",   # flake8-pytest-style
+  # "PTH",  # flake8-use-pathlib
+  # "Q",    # flake8-quotes
+  # "RET",  # flake8-return
+  # "RSE",  # flake8-raise
+  # "RUF",  # Ruff-specific rules
+  # "S",    # flake8-bandit
+  # "SIM",  # flake8-simplify
+  # "SLF",  # flake8-self
+  # "TCH",  # flake8-type-checking
+  # "TD",   # flake8-todos
+  # "TRY",  # tryceratops
+]
+ignore = ["E731", "E741", "S101", "UP031"]
+line-length = 125
+target-version = "py37"

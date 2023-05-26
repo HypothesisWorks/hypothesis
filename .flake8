@@ -15,6 +15,6 @@ ignore =
     B008,B011,
     # flake8-bandit security warnings we disagree with or don't mind
     S101,S102,S105,S110,S307,S311,S404,S6
-select =
+extend-select =
     # enable checks for self-or-cls param name, use of raise-from
     B902,B904
