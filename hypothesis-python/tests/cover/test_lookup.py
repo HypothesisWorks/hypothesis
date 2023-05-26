@@ -540,6 +540,18 @@ def test_resolving_recursive_type():
     assert isinstance(st.builds(Tree).example(), Tree)
 
 
+class LinkedList:
+    def __init__(self, nxt: typing.Optional["LinkedList"]=None):
+        self.nxt = nxt
+
+    def __repr__(self):
+        return f"LinkedList({self.nxt})"
+
+
+def test_resolving_recursive_type_with_defaults():
+    assert isinstance(st.from_type(LinkedList).example(), LinkedList)
+
+
 class SomeClass:
     def __init__(self, value: int, next_node: typing.Optional["SomeClass"]) -> None:
         assert value > 0
