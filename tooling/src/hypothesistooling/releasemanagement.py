@@ -175,5 +175,5 @@ def commit_pending_release(project):
         "commit",
         "-m",
         f"Bump {project.PACKAGE_NAME} version to {project.current_version()} "
-        + "and update changelog\n\n[skip ci]",
+        "and update changelog\n\n[skip ci]",
     )
