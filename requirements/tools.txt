@@ -6,13 +6,12 @@
 #
 alabaster==0.7.13
     # via sphinx
-asgiref==3.6.0
+asgiref==3.7.2
     # via django
 asttokens==2.2.1
     # via stack-data
 attrs==23.1.0
-    # via
-    #   hypothesis (hypothesis-python/setup.py)
+    # via hypothesis (hypothesis-python/setup.py)
 autoflake==2.1.1
     # via shed
 babel==2.12.1
@@ -27,7 +26,7 @@ bleach==6.0.0
     # via readme-renderer
 build==0.10.0
     # via pip-tools
-cachetools==5.3.0
+cachetools==5.3.1
     # via tox
 certifi==2023.5.7
     # via requests
@@ -47,7 +46,7 @@ colorama==0.4.6
     # via tox
 com2ann==0.3.0
     # via shed
-coverage==7.2.5
+coverage==7.2.6
     # via -r requirements/tools.in
 cryptography==40.0.2
     # via
@@ -78,11 +77,6 @@ filelock==3.12.0
     # via
     #   tox
     #   virtualenv
-ruff==0.0.269
-gitdb==4.0.10
-    # via gitpython
-gitpython==3.1.31
-    # via bandit
 idna==3.4
     # via requests
 imagesize==1.4.1
@@ -111,7 +105,7 @@ keyring==23.13.1
     # via twine
 lark==1.1.5
     # via -r requirements/tools.in
-libcst==0.4.9
+libcst==1.0.0
     # via
     #   -r requirements/tools.in
     #   shed
@@ -146,8 +140,6 @@ parso==0.8.3
     # via jedi
 pathspec==0.11.1
     # via black
-pbr==5.11.1
-    # via stevedore
 pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
@@ -174,8 +166,7 @@ pure-eval==0.2.2
 pycparser==2.21
     # via cffi
 pyflakes==3.0.1
-    # via
-    #   autoflake
+    # via autoflake
 pygments==2.15.1
     # via
     #   ipython
@@ -186,7 +177,7 @@ pyproject-api==1.5.1
     # via tox
 pyproject-hooks==1.0.0
     # via build
-pyright==1.1.309
+pyright==1.1.310
     # via -r requirements/tools.in
 pytest==7.3.1
     # via -r requirements/tools.in
@@ -195,12 +186,10 @@ python-dateutil==2.8.2
 pyupgrade==3.4.0
     # via shed
 pyyaml==6.0
-    # via
-    #   bandit
-    #   libcst
+    # via libcst
 readme-renderer==37.3
     # via twine
-requests==2.30.0
+requests==2.31.0
     # via
     #   -r requirements/tools.in
     #   requests-toolbelt
@@ -213,24 +202,20 @@ restructuredtext-lint==1.4.0
 rfc3986==2.0.0
     # via twine
 rich==13.3.5
-    # via
-    #   bandit
-    #   twine
+    # via twine
+ruff==0.0.270
+    # via -r requirements/tools.in
 secretstorage==3.3.3
     # via keyring
-shed==2023.5.1
+shed==2023.5.2
     # via -r requirements/tools.in
 six==1.16.0
     # via
     #   asttokens
     #   bleach
     #   python-dateutil
-smmap==5.0.0
-    # via gitdb
 snowballstemmer==2.2.0
-    # via
-    #   pydocstyle
-    #   sphinx
+    # via sphinx
 sortedcontainers==2.4.0
     # via hypothesis (hypothesis-python/setup.py)
 soupsieve==2.4.1
@@ -246,7 +231,7 @@ sphinx-codeautolink==0.15.0
     # via -r requirements/tools.in
 sphinx-hoverxref==1.3.0
     # via -r requirements/tools.in
-sphinx-rtd-theme==1.2.0
+sphinx-rtd-theme==1.2.1
     # via -r requirements/tools.in
 sphinx-selective-exclude==1.0.3
     # via -r requirements/tools.in
@@ -270,8 +255,6 @@ sqlparse==0.4.4
     # via django
 stack-data==0.6.2
     # via ipython
-stevedore==5.1.0
-    # via bandit
 tokenize-rt==5.0.0
     # via pyupgrade
 tomli==2.0.1
@@ -284,7 +267,7 @@ tomli==2.0.1
     #   pyproject-hooks
     #   pytest
     #   tox
-tox==4.5.1
+tox==4.5.2
     # via -r requirements/tools.in
 traitlets==5.9.0
     # via
@@ -302,13 +285,14 @@ types-pytz==2023.3.0.0
     # via -r requirements/tools.in
 types-redis==4.5.5.2
     # via -r requirements/tools.in
-typing-extensions==4.5.0
+typing-extensions==4.6.2
     # via
     #   -r requirements/tools.in
+    #   asgiref
     #   libcst
     #   mypy
     #   typing-inspect
-typing-inspect==0.8.0
+typing-inspect==0.9.0
     # via libcst
 urllib3==2.0.2
     # via
