@@ -13,7 +13,7 @@ import sys
 
 import pytest
 
-from hypothesis import given, reject, strategies as st
+from hypothesis import HealthCheck, given, reject, settings, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import complex_numbers
 
@@ -62,6 +62,7 @@ def test_max_magnitude_zero(val):
     assert val == 0
 
 
+@settings(suppress_health_check=[HealthCheck.too_slow])
 @given(st.data(), st.integers(-5, 5).map(lambda x: 10**x))
 def test_min_magnitude_respected(data, mag):
     c = data.draw(complex_numbers(min_magnitude=mag))
