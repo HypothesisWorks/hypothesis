@@ -242,7 +242,7 @@ def test_will_fill_missing_columns_in_tuple_row(df):
         assert d == 7
 
 
-@settings(suppress_health_check=[HealthCheck.filter_too_much])
+@settings(suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow])
 @given(
     pdst.data_frames(
         index=pdst.range_indexes(10, 10),

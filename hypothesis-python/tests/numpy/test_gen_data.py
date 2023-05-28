@@ -869,6 +869,7 @@ def test_mutually_broadcastable_shapes_shrinking_with_singleton_out_of_bounds(
         assert smallest == (min_side,) * min_dims
 
 
+@settings(suppress_health_check=[HealthCheck.too_slow])
 @given(
     num_shapes=st.integers(1, 4),
     min_dims=st.integers(1, 32),
