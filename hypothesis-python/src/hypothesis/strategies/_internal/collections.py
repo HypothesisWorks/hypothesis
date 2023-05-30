@@ -55,7 +55,7 @@ class TupleStrategy(SearchStrategy):
         return all(recur(e) for e in self.element_strategies)
 
     def do_draw(self, data):
-        return tuple(data.draw(e) for e in self.element_strategies)
+        return tuple(map(data.draw, self.element_strategies))
 
     def calc_is_empty(self, recur):
         return any(recur(e) for e in self.element_strategies)
