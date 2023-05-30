@@ -577,6 +577,35 @@ def test_resolving_mutually_recursive_types():
         i += 1
 
 
+class A_with_default:
+    def __init__(self, nxt: typing.Optional["B_with_default"] = None):
+        self.nxt = nxt
+
+    def __repr__(self):
+        return f"A_with_default({self.nxt})"
+
+
+class B_with_default:
+    def __init__(self, nxt: typing.Optional["A_with_default"] = None):
+        self.nxt = nxt
+
+    def __repr__(self):
+        return f"B_with_default({self.nxt})"
+
+
+def test_resolving_mutually_recursive_types_with_defaults():
+    # This test is required to cover the raise/except part of the recursion
+    # check in from_type, see
+    # https://github.com/HypothesisWorks/hypothesis/issues/3655. If the
+    # skip-nondefaulted-args check is removed, this test becomes redundant.
+    nxt = st.from_type(A_with_default).example()
+    i = 0
+    while nxt:
+        assert isinstance(nxt, [A_with_default, B_with_default][i % 2])
+        nxt = nxt.nxt
+        i += 1
+
+
 class SomeClass:
     def __init__(self, value: int, next_node: typing.Optional["SomeClass"]) -> None:
         assert value > 0
