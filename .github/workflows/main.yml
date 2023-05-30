@@ -122,27 +122,21 @@ jobs:
     strategy:
       matrix:
         include:
-          - task: check-py37-cover
-          - task: check-py37-niche
-          - task: check-py310-cover
-          - task: check-py310-niche
-          - task: check-py310-x86-cover
-            python.architecture: "x86"
-          - task: check-py310-x86-nocover
-            python.architecture: "x86"
-          - task: check-py310-x86-niche
-            python.architecture: "x86"
-          - task: check-py311-cover
-          - task: check-py311-niche
+          - python-version: "3.8"
+          - python-version: "3.9"
+          - python-version: "3.10"
+          - python-version: "3.11"
+          - python-version: "3.11"
+            python-architecture: "x86"
       fail-fast: false
     steps:
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0
-    - name: Set up Python 3.10
+    - name: Set up Python ${{ matrix.python-version }} ${{ matrix.python-architecture }}
       uses: actions/setup-python@v4
       with:
-        python-version: "3.10"
+        python-version: ${{ matrix.python-version }}
         architecture: ${{ matrix.python-architecture }}
     - name: Restore cache
       uses: actions/cache@v3
@@ -151,7 +145,7 @@ jobs:
           ~\appdata\local\pip\cache
           vendor\bundle
           .tox
-        key: deps-${{ runner.os }}-${{ matrix.python-architecture }}-${{ hashFiles('requirements/*.txt') }}-${{ matrix.task }}
+        key: deps-${{ runner.os }}-${{ matrix.python-architecture }}-${{ hashFiles('requirements/*.txt') }}-${{ matrix.python-version }}
         restore-keys: |
           deps-${{ runner.os }}-${{ matrix.python-architecture }}-${{ hashFiles('requirements/*.txt') }}
           deps-${{ runner.os }}-${{ matrix.python-architecture }}
