@@ -29,4 +29,11 @@ class Cases:
         """Indented method with existing example decorator."""
 
 
+@given(st.integers())
+@example(x=2).via("not a literal when repeated " * 2)
+@example(x=1).via("covering example")
+def covered(x):
+    """A test function with a removable explicit example."""
+
+
 # TODO: test function for insertion-order logic, once I get that set up.

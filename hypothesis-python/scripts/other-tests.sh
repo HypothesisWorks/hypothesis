@@ -47,7 +47,9 @@ if [ "$(python -c $'import platform, sys; print(sys.version_info.releaselevel ==
   pip install ".[codemods,cli]"
   $PYTEST tests/codemods/
   pip install "$(grep 'black==' ../requirements/coverage.txt)"
-  $PYTEST tests/patching/
+  if [ "$(python -c 'import sys; print(sys.version_info[:2] >= (3, 9))')" = "True" ] ; then
+    $PYTEST tests/patching/
+  fi
   pip uninstall -y libcst
 
   if [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 7))')" = "True" ] ; then

@@ -207,6 +207,7 @@ def format():
             o.write("\n")
 
     codespell("--write-changes", *files_to_format, *doc_files_to_format)
+    pip_tool("ruff", "--fix-only", "."),
     pip_tool("shed", *files_to_format, *doc_files_to_format)
 
 
