@@ -26,7 +26,7 @@ import pytest
 
 from hypothesis import HealthCheck, assume, given, settings, strategies as st
 from hypothesis.errors import InvalidArgument, ResolutionFailed
-from hypothesis.internal.compat import get_type_hints
+from hypothesis.internal.compat import PYPY, get_type_hints
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies import from_type
 from hypothesis.strategies._internal import types
@@ -536,8 +536,98 @@ class Tree:
         return f"Tree({self.left}, {self.right})"
 
 
-def test_resolving_recursive_type():
-    assert isinstance(st.builds(Tree).example(), Tree)
+@given(tree=st.builds(Tree))
+def test_resolving_recursive_type(tree):
+    assert isinstance(tree, Tree)
+
+
+class TypedTree(typing.TypedDict if sys.version_info[:2] >= (3, 8) else object):
+    nxt: typing.Optional["TypedTree"]
+
+
+@pytest.mark.skipif(
+    sys.version_info[:2] < (3, 8),
+    reason="TypedDict not available in python<3.8",
+)
+def test_resolving_recursive_typeddict():
+    tree = st.from_type(TypedTree).example()
+    assert isinstance(tree, dict)
+    assert len(tree) == 1 and "nxt" in tree
+
+
+class MyList:
+    def __init__(self, nxt: typing.Optional["MyList"] = None):
+        self.nxt = nxt
+
+    def __repr__(self):
+        return f"MyList({self.nxt})"
+
+
+@given(lst=st.from_type(MyList))
+def test_resolving_recursive_type_with_defaults(lst):
+    assert isinstance(lst, MyList)
+
+
+class A:
+    def __init__(self, nxt: typing.Optional["B"]):
+        self.nxt = nxt
+
+    def __repr__(self):
+        return f"A({self.nxt})"
+
+
+class B:
+    def __init__(self, nxt: typing.Optional["A"]):
+        self.nxt = nxt
+
+    def __repr__(self):
+        return f"B({self.nxt})"
+
+
+@pytest.mark.skipif(
+    PYPY and sys.version_info[:2] < (3, 9),
+    reason="mysterious failure on pypy/python<3.9",
+)
+@given(nxt=st.from_type(A))
+def test_resolving_mutually_recursive_types(nxt):
+    i = 0
+    while nxt:
+        assert isinstance(nxt, [A, B][i % 2])
+        nxt = nxt.nxt
+        i += 1
+
+
+class A_with_default:
+    def __init__(self, nxt: typing.Optional["B_with_default"] = None):
+        self.nxt = nxt
+
+    def __repr__(self):
+        return f"A_with_default({self.nxt})"
+
+
+class B_with_default:
+    def __init__(self, nxt: typing.Optional["A_with_default"] = None):
+        self.nxt = nxt
+
+    def __repr__(self):
+        return f"B_with_default({self.nxt})"
+
+
+@pytest.mark.skipif(
+    PYPY and sys.version_info[:2] < (3, 9),
+    reason="mysterious failure on pypy/python<3.9",
+)
+@given(nxt=st.from_type(A_with_default))
+def test_resolving_mutually_recursive_types_with_defaults(nxt):
+    # This test is required to cover the raise/except part of the recursion
+    # check in from_type, see
+    # https://github.com/HypothesisWorks/hypothesis/issues/3655. If the
+    # skip-nondefaulted-args check is removed, this test becomes redundant.
+    i = 0
+    while nxt:
+        assert isinstance(nxt, [A_with_default, B_with_default][i % 2])
+        nxt = nxt.nxt
+        i += 1
 
 
 class SomeClass:
@@ -861,7 +951,7 @@ def test_signature_is_the_most_important_source(thing):
 
 
 class AnnotatedAndDefault:
-    def __init__(self, foo: bool = None):
+    def __init__(self, foo: typing.Optional[bool] = None):
         self.foo = foo
 
 
