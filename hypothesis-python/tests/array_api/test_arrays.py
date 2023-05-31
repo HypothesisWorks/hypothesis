@@ -425,7 +425,7 @@ def test_array_element_rewriting(xp, xps, data, start, size):
             unique=True,
         )
     )
-    x_set_expect = xp.linspace(start, start + size - 1, size, dtype=xp.int64)
+    x_set_expect = xp.arange(start, start + size, dtype=xp.int64)
     x_set = xp.sort(xp.unique_values(x))
     assert xp.all(x_set == x_set_expect)
 

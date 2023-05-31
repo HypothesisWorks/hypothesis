@@ -8,7 +8,6 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import sys
 from copy import copy
 from types import SimpleNamespace
 from typing import Tuple
@@ -48,7 +47,7 @@ def test_warning_on_noncompliant_xp():
 @pytest.mark.filterwarnings(f"ignore:.*{MOCK_WARN_MSG}.*")
 @pytest.mark.parametrize(
     "stratname, args, attr",
-    [("from_dtype", ["int8"], "iinfo"), ("arrays", ["int8", 5], "full")],
+    [("from_dtype", ["int8"], "iinfo"), ("arrays", ["int8", 5], "asarray")],
 )
 def test_error_on_missing_attr(stratname, args, attr):
     """Strategies raise helpful error when using array modules that lack
@@ -137,27 +136,3 @@ def test_raises_on_invalid_dunder_version():
     xp.__array_api_version__ = None
     with pytest.raises(InvalidArgument):
         make_strategies_namespace(xp)
-
-
-@pytest.mark.filterwarnings(f"ignore:.*{MOCK_WARN_MSG}.*")
-def test_patch_torch_full(monkeypatch):
-    """When xp is torch, full() is patched so xps.arrays() can work.
-
-    See https://github.com/HypothesisWorks/hypothesis/pull/3542
-    """
-    xp = make_mock_xp()
-    old_full = copy(xp.full)
-
-    def bad_full(shape, *a, **kw):
-        bad_full.__counter += 1
-        if isinstance(shape, int):
-            raise AttributeError("xp.full() has not been patched correctly")
-        return old_full(shape, *a, **kw)
-
-    bad_full.__counter = 0
-    xp.full = bad_full
-    with monkeypatch.context() as m:
-        m.setitem(sys.modules, "torch", xp)
-        xps = make_strategies_namespace(xp)
-        xps.arrays(xp.int8, 5).example()
-        assert bad_full.__counter > 0  # sanity check

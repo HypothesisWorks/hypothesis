@@ -13,6 +13,7 @@ from inspect import signature
 import pytest
 
 from hypothesis.errors import InvalidArgument
+from hypothesis.extra import array_api
 from hypothesis.extra.array_api import make_strategies_namespace
 
 from tests.array_api.common import MIN_VER_FOR_COMPLEX
@@ -96,8 +97,9 @@ def test_inferred_version_strategies_namespace_repr(xp):
 
 
 @pytest.mark.filterwarnings("ignore::hypothesis.errors.HypothesisWarning")
-def test_specified_version_strategies_namespace_repr(xp):
+def test_specified_version_strategies_namespace_repr(xp, monkeypatch):
     """Strategies namespace has good repr when api_version is specified."""
+    monkeypatch.setattr(array_api, "_args_to_xps", {})  # ignore cached versions
     xps = make_strategies_namespace(xp, api_version="2021.12")
     expected = f"make_strategies_namespace({xp.__name__}, api_version='2021.12')"
     assert repr(xps) == expected
