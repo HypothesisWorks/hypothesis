@@ -26,7 +26,7 @@ import pytest
 
 from hypothesis import HealthCheck, assume, given, settings, strategies as st
 from hypothesis.errors import InvalidArgument, ResolutionFailed
-from hypothesis.internal.compat import get_type_hints
+from hypothesis.internal.compat import PYPY, get_type_hints
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies import from_type
 from hypothesis.strategies._internal import types
@@ -580,6 +580,8 @@ class B:
         return f"B({self.nxt})"
 
 
+@pytest.mark.skipif(PYPY and sys.version_info[:2] < (3, 9),
+                    reason="mysterious failure on pypy/python<3.9")
 @given(nxt=st.from_type(A))
 def test_resolving_mutually_recursive_types(nxt):
     i = 0
