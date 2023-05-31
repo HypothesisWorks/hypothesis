@@ -988,7 +988,7 @@ if sys.version_info[:2] >= (3, 8):
 
 @cacheable
 @defines_strategy(never_lazy=True)
-def from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
+def from_type(thing: Type[Ex], force_defer=False) -> SearchStrategy[Ex]:
     """Looks up the appropriate search strategy for the given type.
 
     ``from_type`` is used internally to fill in missing arguments to
@@ -1040,22 +1040,24 @@ def from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
     This is useful when writing tests which check that invalid input is
     rejected in a certain way.
     """
+    if not force_defer:
+        try:
+            return _from_type(thing, [])
+        except Exception:
+            pass
     # This tricky little dance is because we want to show the repr of the actual
     # underlying strategy wherever possible, as a form of user education, but
     # would prefer to fall back to the default "from_type(...)" repr instead of
     # "deferred(...)" for recursive types or invalid arguments.
-    try:
-        return _from_type(thing, [])
-    except Exception:
-        return LazyStrategy(
-            lambda thing: deferred(lambda: _from_type(thing, [])),
-            (thing,),
-            {},
-            force_repr=f"from_type({thing!r})",
-        )
+    return LazyStrategy(
+        lambda thing: deferred(lambda: _from_type(thing, [])),
+        (thing,),
+        {},
+        force_repr=f"from_type({thing!r})",
+    )
 
 
-def _from_type(thing: Type[Ex], recurse_guard: list) -> SearchStrategy[Ex]:
+def _from_type(thing: Type[Ex], recurse_guard: List[Type[Ex]]) -> SearchStrategy[Ex]:
     # TODO: We would like to move this to the top level, but pending some major
     # refactoring it's hard to do without creating circular imports.
     from hypothesis.strategies._internal import types
@@ -1076,6 +1078,20 @@ def _from_type(thing: Type[Ex], recurse_guard: list) -> SearchStrategy[Ex]:
         if strategy.is_empty:
             raise ResolutionFailed(f"Error: {thing!r} resolved to an empty strategy")
         return strategy
+
+    def defer_recursion(thing, producer):
+        """Returns the result of producer, or ... if recursion on thing is encountered"""
+        if thing in recurse_guard:
+            raise RewindRecursive(thing)
+        recurse_guard.append(thing)
+        try:
+            return producer()
+        except RewindRecursive as rr:
+            if rr.target != thing:
+                raise
+            return ...  # defer resolution
+        finally:
+            recurse_guard.pop()
 
     if not isinstance(thing, type):
         if types.is_a_new_type(thing):
@@ -1142,7 +1158,9 @@ def _from_type(thing: Type[Ex], recurse_guard: list) -> SearchStrategy[Ex]:
                     raise InvalidArgument(
                         f"`{k}: {v.__name__}` is not a valid type annotation"
                     ) from None
-            anns[k] = _from_type(v, recurse_guard)
+            anns[k] = defer_recursion(v, lambda: _from_type(v, recurse_guard))
+            if anns[k] is ...:
+                anns[k] = from_type(v, force_defer=True)
         if (
             (not anns)
             and thing.__annotations__
@@ -1218,17 +1236,9 @@ def _from_type(thing: Type[Ex], recurse_guard: list) -> SearchStrategy[Ex]:
                 and p.default is not Parameter.empty
                 and p.kind in (Parameter.POSITIONAL_OR_KEYWORD, Parameter.KEYWORD_ONLY)
             ):
-                if hints[k] in recurse_guard:
-                    raise RewindRecursive(hints[k])
-                recurse_guard.append(hints[k])
-                try:
-                    kwargs[k] = just(p.default) | _from_type(hints[k], recurse_guard)
-                except RewindRecursive as rr:
-                    if rr.target != hints[k]:
-                        raise
-                    kwargs[k] = ...  # deferred resolution in builds()
-                finally:
-                    recurse_guard.pop()
+                kwargs[k] = defer_recursion(hints[k],
+                                            lambda: just(p.default) | _from_type(hints[k],
+                                                                                 recurse_guard))
         return builds(thing, **kwargs)
     # And if it's an abstract type, we'll resolve to a union of subclasses instead.
     subclasses = thing.__subclasses__()

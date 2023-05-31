@@ -541,6 +541,16 @@ def test_resolving_recursive_type(tree):
     assert isinstance(tree, Tree)
 
 
+class TypedTree(typing.TypedDict):
+    nxt: typing.Optional["TypedTree"]
+
+
+@given(tree=st.from_type(TypedTree))
+def test_resolving_recursive_typeddict(tree):
+    assert isinstance(tree, dict)
+    assert len(tree) == 1 and "nxt" in tree
+
+
 class MyList:
     def __init__(self, nxt: typing.Optional["MyList"] = None):
         self.nxt = nxt
