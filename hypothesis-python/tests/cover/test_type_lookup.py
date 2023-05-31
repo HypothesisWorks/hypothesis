@@ -24,7 +24,6 @@ from hypothesis.errors import (
 from hypothesis.internal.compat import get_type_hints
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies._internal import types
-from hypothesis.strategies._internal.core import _from_type
 from hypothesis.strategies._internal.types import _global_type_lookup
 from hypothesis.strategies._internal.utils import _strategies
 
@@ -379,7 +378,7 @@ class ConcreteBar(AbstractBar):
 
 def test_abstract_resolver_fallback():
     # We create our distinct strategies for abstract and concrete types
-    gen_abstractbar = _from_type(AbstractBar, [])
+    gen_abstractbar = st.from_type(AbstractBar)
     gen_concretebar = st.builds(ConcreteBar, x=st.none())
     assert gen_abstractbar != gen_concretebar
 
