@@ -1226,6 +1226,7 @@ def _from_type(thing: Type[Ex], recurse_guard: list) -> SearchStrategy[Ex]:
                 except RewindRecursive as rr:
                     if rr.target != hints[k]:
                         raise
+                    kwargs[k] = ...  # deferred resolution in builds()
                 finally:
                     recurse_guard.pop()
         return builds(thing, **kwargs)
