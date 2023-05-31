@@ -536,8 +536,9 @@ class Tree:
         return f"Tree({self.left}, {self.right})"
 
 
-def test_resolving_recursive_type():
-    assert isinstance(st.builds(Tree).example(), Tree)
+@given(tree=st.builds(Tree))
+def test_resolving_recursive_type(tree):
+    assert isinstance(tree, Tree)
 
 
 class MyList:
@@ -548,8 +549,9 @@ class MyList:
         return f"MyList({self.nxt})"
 
 
-def test_resolving_recursive_type_with_defaults():
-    assert isinstance(st.from_type(MyList).example(), MyList)
+@given(lst=st.from_type(MyList))
+def test_resolving_recursive_type_with_defaults(lst):
+    assert isinstance(lst, MyList)
 
 
 class A:
@@ -568,8 +570,8 @@ class B:
         return f"B({self.nxt})"
 
 
-def test_resolving_mutually_recursive_types():
-    nxt = st.from_type(A).example()
+@given(nxt=st.from_type(A))
+def test_resolving_mutually_recursive_types(nxt):
     i = 0
     while nxt:
         assert isinstance(nxt, [A, B][i % 2])
@@ -593,12 +595,12 @@ class B_with_default:
         return f"B_with_default({self.nxt})"
 
 
-def test_resolving_mutually_recursive_types_with_defaults():
+@given(nxt=st.from_type(A_with_default))
+def test_resolving_mutually_recursive_types_with_defaults(nxt):
     # This test is required to cover the raise/except part of the recursion
     # check in from_type, see
     # https://github.com/HypothesisWorks/hypothesis/issues/3655. If the
     # skip-nondefaulted-args check is removed, this test becomes redundant.
-    nxt = st.from_type(A_with_default).example()
     i = 0
     while nxt:
         assert isinstance(nxt, [A_with_default, B_with_default][i % 2])
