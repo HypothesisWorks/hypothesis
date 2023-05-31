@@ -988,7 +988,7 @@ if sys.version_info[:2] >= (3, 8):
 
 @cacheable
 @defines_strategy(never_lazy=True)
-def from_type(thing: Type[Ex], force_defer=False) -> SearchStrategy[Ex]:
+def from_type(thing: Type[Ex], *, force_defer: bool = False) -> SearchStrategy[Ex]:
     """Looks up the appropriate search strategy for the given type.
 
     ``from_type`` is used internally to fill in missing arguments to
@@ -1236,9 +1236,10 @@ def _from_type(thing: Type[Ex], recurse_guard: List[Type[Ex]]) -> SearchStrategy
                 and p.default is not Parameter.empty
                 and p.kind in (Parameter.POSITIONAL_OR_KEYWORD, Parameter.KEYWORD_ONLY)
             ):
-                kwargs[k] = defer_recursion(hints[k],
-                                            lambda: just(p.default) | _from_type(hints[k],
-                                                                                 recurse_guard))
+                kwargs[k] = defer_recursion(
+                    hints[k],
+                    lambda: just(p.default) | _from_type(hints[k], recurse_guard),
+                )
         return builds(thing, **kwargs)
     # And if it's an abstract type, we'll resolve to a union of subclasses instead.
     subclasses = thing.__subclasses__()

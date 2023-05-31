@@ -580,8 +580,10 @@ class B:
         return f"B({self.nxt})"
 
 
-@pytest.mark.skipif(PYPY and sys.version_info[:2] < (3, 9),
-                    reason="mysterious failure on pypy/python<3.9")
+@pytest.mark.skipif(
+    PYPY and sys.version_info[:2] < (3, 9),
+    reason="mysterious failure on pypy/python<3.9",
+)
 @given(nxt=st.from_type(A))
 def test_resolving_mutually_recursive_types(nxt):
     i = 0
@@ -607,6 +609,10 @@ class B_with_default:
         return f"B_with_default({self.nxt})"
 
 
+@pytest.mark.skipif(
+    PYPY and sys.version_info[:2] < (3, 9),
+    reason="mysterious failure on pypy/python<3.9",
+)
 @given(nxt=st.from_type(A_with_default))
 def test_resolving_mutually_recursive_types_with_defaults(nxt):
     # This test is required to cover the raise/except part of the recursion
