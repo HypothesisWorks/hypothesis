@@ -1169,7 +1169,6 @@ if np is not None:
         full=np.full,
         zeros=np.zeros,
         ones=np.ones,
-        linspace=np.linspace,
         # Manipulation functions
         reshape=np.reshape,
         # Element-wise functions
