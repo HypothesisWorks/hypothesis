@@ -541,12 +541,16 @@ def test_resolving_recursive_type(tree):
     assert isinstance(tree, Tree)
 
 
-class TypedTree(typing.TypedDict):
+class TypedTree(typing.TypedDict if sys.version_info[:2] >= (3, 8) else object):
     nxt: typing.Optional["TypedTree"]
 
 
-@given(tree=st.from_type(TypedTree))
-def test_resolving_recursive_typeddict(tree):
+@pytest.mark.skipif(
+    sys.version_info[:2] < (3, 8),
+    reason="TypedDict not available in python<3.8",
+)
+def test_resolving_recursive_typeddict():
+    tree = st.from_type(TypedTree).example()
     assert isinstance(tree, dict)
     assert len(tree) == 1 and "nxt" in tree
 
