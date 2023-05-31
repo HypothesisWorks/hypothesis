@@ -539,7 +539,7 @@ def _arrays(
     your tests to run in reasonable time.
     """
     check_xp_attributes(
-        xp, ["finfo", "asarray", "zeros", "full", "all", "isnan", "isfinite", "reshape"]
+        xp, ["finfo", "asarray", "zeros", "all", "isnan", "isfinite", "reshape"]
     )
 
     if isinstance(dtype, st.SearchStrategy):
@@ -949,28 +949,6 @@ def make_strategies_namespace(
             exclude_max=exclude_max,
         )
 
-    # torch.full() does not accept integers as the shape argument (n.b.
-    # technically "size" in torch), but such behaviour is expected in
-    # xps.arrays(), so we copy xp and patch in a working function.
-    if xp is sys.modules.get("torch", object()):
-
-        class PatchedArrayModule:
-            def __getattr__(self, attr):
-                return getattr(xp, attr)
-
-            @property
-            def __name__(self):
-                return "torch<modified>"
-
-            def full(self, shape, *a, **kw):
-                if isinstance(shape, int):
-                    shape = (shape,)
-                return xp.full(shape, *a, **kw)
-
-        arrays_xp = PatchedArrayModule()
-    else:
-        arrays_xp = xp
-
     @defines_strategy(force_reusable_values=True)
     def arrays(
         dtype: Union[
@@ -983,7 +961,7 @@ def make_strategies_namespace(
         unique: bool = False,
     ) -> st.SearchStrategy:
         return _arrays(
-            arrays_xp,
+            xp,
             api_version,  # type: ignore[arg-type]
             dtype,
             shape,
@@ -1166,7 +1144,6 @@ if np is not None:
         arange=np.arange,
         asarray=np.asarray,
         empty=np.empty,
-        full=np.full,
         zeros=np.zeros,
         ones=np.ones,
         # Manipulation functions

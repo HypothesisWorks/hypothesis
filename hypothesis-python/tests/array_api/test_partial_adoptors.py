@@ -47,7 +47,7 @@ def test_warning_on_noncompliant_xp():
 @pytest.mark.filterwarnings(f"ignore:.*{MOCK_WARN_MSG}.*")
 @pytest.mark.parametrize(
     "stratname, args, attr",
-    [("from_dtype", ["int8"], "iinfo"), ("arrays", ["int8", 5], "full")],
+    [("from_dtype", ["int8"], "iinfo"), ("arrays", ["int8", 5], "asarray")],
 )
 def test_error_on_missing_attr(stratname, args, attr):
     """Strategies raise helpful error when using array modules that lack
