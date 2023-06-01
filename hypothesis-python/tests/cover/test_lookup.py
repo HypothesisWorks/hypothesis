@@ -114,7 +114,10 @@ def test_rare_types(data, typ):
 
 class Elem:
     pass
-st.register_type_strategy(Elem, st.builds(Elem))  # Avoids SmallSearchSpaceWarning
+
+
+# To avoid SmallSearchSpaceWarning
+st.register_type_strategy(Elem, st.builds(Elem))
 
 
 @pytest.mark.parametrize(
@@ -151,6 +154,9 @@ def test_specialised_collection_types(data, typ, coll_type):
 
 class ElemValue:
     pass
+
+
+# To avoid SmallSearchSpaceWarning
 st.register_type_strategy(ElemValue, st.builds(ElemValue))
 
 
@@ -702,7 +708,10 @@ class AbstractFoo(abc.ABC):
 class ConcreteFoo(AbstractFoo):
     def foo(self):
         pass
-st.register_type_strategy(ConcreteFoo, st.builds(ConcreteFoo))  # Avoids SmallSearchSpaceWarning
+
+
+# To avoid SmallSearchSpaceWarning
+st.register_type_strategy(ConcreteFoo, st.builds(ConcreteFoo))
 
 
 @given(st.from_type(AbstractFoo))

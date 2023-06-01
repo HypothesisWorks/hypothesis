@@ -1248,12 +1248,13 @@ def _from_type(thing: Type[Ex], recurse_guard: List[Type[Ex]]) -> SearchStrategy
                     kwargs[k] |= just(p.default)
         if not kwargs:
             text_repr = nicerepr(thing)
-            warnings.warn(f"from_type({text_repr}) resolved to builds({text_repr}), "
-                          "because we could not find any (non-varargs) arguments. "
-                          "Use st.register_type_strategy() to resolve to a strategy "
-                          "which can generate more than one value, or silence this "
-                          "warning.",
-                          SmallSearchSpaceWarning)
+            warnings.warn(
+                f"from_type({text_repr}) resolved to builds({text_repr}), because we "
+                "could not find any (non-varargs) arguments. Use "
+                "st.register_type_strategy() to resolve to a strategy which can "
+                "generate more than one value, or silence this warning.",
+                SmallSearchSpaceWarning
+            )
         return builds(thing, **kwargs)
     # And if it's an abstract type, we'll resolve to a union of subclasses instead.
     subclasses = thing.__subclasses__()
