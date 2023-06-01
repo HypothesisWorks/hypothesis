@@ -25,7 +25,7 @@ from numbers import Real
 import pytest
 
 from hypothesis import HealthCheck, assume, given, settings, strategies as st
-from hypothesis.errors import InvalidArgument, ResolutionFailed
+from hypothesis.errors import InvalidArgument, ResolutionFailed, SmallSearchSpaceWarning
 from hypothesis.internal.compat import PYPY, get_type_hints
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies import from_type
@@ -114,6 +114,7 @@ def test_rare_types(data, typ):
 
 class Elem:
     pass
+st.register_type_strategy(Elem, st.builds(Elem))  # Avoids SmallSearchSpaceWarning
 
 
 @pytest.mark.parametrize(
@@ -150,6 +151,7 @@ def test_specialised_collection_types(data, typ, coll_type):
 
 class ElemValue:
     pass
+st.register_type_strategy(ElemValue, st.builds(ElemValue))
 
 
 @pytest.mark.parametrize(
@@ -700,6 +702,7 @@ class AbstractFoo(abc.ABC):
 class ConcreteFoo(AbstractFoo):
     def foo(self):
         pass
+st.register_type_strategy(ConcreteFoo, st.builds(ConcreteFoo))  # Avoids SmallSearchSpaceWarning
 
 
 @given(st.from_type(AbstractFoo))
@@ -962,14 +965,16 @@ def test_from_type_can_be_default_or_annotation():
 
 @pytest.mark.parametrize("t", BUILTIN_TYPES, ids=lambda t: t.__name__)
 def test_resolves_builtin_types(t):
-    v = st.from_type(t).example()
-    assert isinstance(v, t)
+    with pytest.warns():  # some types may warn SmallSearchSpaceWarning
+        v = st.from_type(t).example()
+        assert isinstance(v, t)
 
 
 @pytest.mark.parametrize("t", BUILTIN_TYPES, ids=lambda t: t.__name__)
 def test_resolves_forwardrefs_to_builtin_types(t):
-    v = st.from_type(typing.ForwardRef(t.__name__)).example()
-    assert isinstance(v, t)
+    with pytest.warns():  # some types may warn SmallSearchSpaceWarning
+        v = st.from_type(typing.ForwardRef(t.__name__)).example()
+        assert isinstance(v, t)
 
 
 @pytest.mark.parametrize("t", BUILTIN_TYPES, ids=lambda t: t.__name__)

@@ -16,6 +16,7 @@ import re
 import string
 import sys
 import typing
+import warnings
 from decimal import Context, Decimal, localcontext
 from fractions import Fraction
 from functools import lru_cache, reduce
@@ -47,7 +48,12 @@ import attr
 
 from hypothesis._settings import note_deprecation
 from hypothesis.control import cleanup, current_build_context, note
-from hypothesis.errors import InvalidArgument, ResolutionFailed, RewindRecursive
+from hypothesis.errors import (
+    InvalidArgument,
+    ResolutionFailed,
+    RewindRecursive,
+    SmallSearchSpaceWarning,
+)
 from hypothesis.internal.cathetus import cathetus
 from hypothesis.internal.charmap import as_general_categories
 from hypothesis.internal.compat import (
@@ -988,7 +994,7 @@ if sys.version_info[:2] >= (3, 8):
 
 @cacheable
 @defines_strategy(never_lazy=True)
-def from_type(thing: Type[Ex], *, force_defer: bool = False) -> SearchStrategy[Ex]:
+def from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
     """Looks up the appropriate search strategy for the given type.
 
     ``from_type`` is used internally to fill in missing arguments to
@@ -1040,11 +1046,13 @@ def from_type(thing: Type[Ex], *, force_defer: bool = False) -> SearchStrategy[E
     This is useful when writing tests which check that invalid input is
     rejected in a certain way.
     """
-    if not force_defer:
-        try:
-            return _from_type(thing, [])
-        except Exception:
-            pass
+    try:
+        return _from_type(thing, [])
+    except Exception:
+        return _from_type_deferred(thing)
+
+
+def _from_type_deferred(thing: Type[Ex]) -> SearchStrategy[Ex]:
     # This tricky little dance is because we want to show the repr of the actual
     # underlying strategy wherever possible, as a form of user education, but
     # would prefer to fall back to the default "from_type(...)" repr instead of
@@ -1079,13 +1087,13 @@ def _from_type(thing: Type[Ex], recurse_guard: List[Type[Ex]]) -> SearchStrategy
             raise ResolutionFailed(f"Error: {thing!r} resolved to an empty strategy")
         return strategy
 
-    def defer_recursion(thing, producer):
+    def from_type_guarded(thing):
         """Returns the result of producer, or ... if recursion on thing is encountered"""
         if thing in recurse_guard:
             raise RewindRecursive(thing)
         recurse_guard.append(thing)
         try:
-            return producer()
+            return _from_type(thing, recurse_guard)
         except RewindRecursive as rr:
             if rr.target != thing:
                 raise
@@ -1158,9 +1166,9 @@ def _from_type(thing: Type[Ex], recurse_guard: List[Type[Ex]]) -> SearchStrategy
                     raise InvalidArgument(
                         f"`{k}: {v.__name__}` is not a valid type annotation"
                     ) from None
-            anns[k] = defer_recursion(v, lambda: _from_type(v, recurse_guard))
+            anns[k] = from_type_guarded(v)
             if anns[k] is ...:
-                anns[k] = from_type(v, force_defer=True)
+                anns[k] = _from_type_deferred(v)
         if (
             (not anns)
             and thing.__annotations__
@@ -1227,19 +1235,25 @@ def _from_type(thing: Type[Ex], recurse_guard: List[Type[Ex]]) -> SearchStrategy
             hints = get_type_hints(thing)
             params = get_signature(thing).parameters
         except Exception:
-            return builds(thing)
+            params = {}
         kwargs = {}
         for k, p in params.items():
             if (
                 k in hints
                 and k != "return"
-                and p.default is not Parameter.empty
                 and p.kind in (Parameter.POSITIONAL_OR_KEYWORD, Parameter.KEYWORD_ONLY)
             ):
-                kwargs[k] = defer_recursion(
-                    hints[k],
-                    lambda: just(p.default) | _from_type(hints[k], recurse_guard),
-                )
+                kwargs[k] = from_type_guarded(hints[k])
+                if p.default is not Parameter.empty and kwargs[k] is not ...:
+                    kwargs[k] |= just(p.default)
+        if not kwargs:
+            text_repr = nicerepr(thing)
+            warnings.warn(f"from_type({text_repr}) resolved to builds({text_repr}), "
+                          "because we could not find any (non-varargs) arguments. "
+                          "Use st.register_type_strategy() to resolve to a strategy "
+                          "which can generate more than one value, or silence this "
+                          "warning.",
+                          SmallSearchSpaceWarning)
         return builds(thing, **kwargs)
     # And if it's an abstract type, we'll resolve to a union of subclasses instead.
     subclasses = thing.__subclasses__()

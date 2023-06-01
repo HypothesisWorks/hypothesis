@@ -14,6 +14,7 @@ import attr
 import pytest
 
 from hypothesis import given, strategies as st
+from hypothesis.errors import SmallSearchSpaceWarning
 from hypothesis.internal.reflection import (
     convert_positional_arguments,
     define_function_signature,
@@ -124,6 +125,7 @@ def test_attrs_inference_builds(c):
     pass
 
 
-@given(st.from_type(Inferrables))
-def test_attrs_inference_from_type(c):
-    pass
+with pytest.warns(SmallSearchSpaceWarning):
+    @given(st.from_type(Inferrables))
+    def test_attrs_inference_from_type(c):
+        pass
