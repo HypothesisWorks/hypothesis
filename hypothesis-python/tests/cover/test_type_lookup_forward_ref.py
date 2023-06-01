@@ -27,7 +27,7 @@ from typing import TYPE_CHECKING, ForwardRef, TypeVar
 import pytest
 
 from hypothesis import given, strategies as st
-from hypothesis.errors import ResolutionFailed
+from hypothesis.errors import ResolutionFailed, SmallSearchSpaceWarning
 
 from tests.common import utils
 
@@ -91,10 +91,15 @@ def missing_dot_access_fun(thing: _MissingDotAccess) -> int:
     return 1
 
 
-@given(st.builds(correct_dot_access_fun))
-def test_bound_correct_dot_access_forward_ref(built):
-    """Correct resolution of dot access types."""
-    assert isinstance(built, int)
+def test_bound_correct_dot_access_forward_ref():
+    with pytest.warns(SmallSearchSpaceWarning):
+
+        @given(st.builds(correct_dot_access_fun))
+        def test(built):
+            """Correct resolution of dot access types."""
+            assert isinstance(built, int)
+
+        test()
 
 
 @pytest.mark.parametrize("function", [wrong_dot_access_fun, missing_dot_access_fun])

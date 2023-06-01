@@ -7,7 +7,10 @@ from example_code.future_annotations import CustomClass
 from hypothesis import given, strategies as st
 
 
-@given(c1=st.builds(CustomClass), c2=st.one_of(st.none(), st.builds(CustomClass)))
+@given(
+    c1=st.builds(CustomClass, number=st.integers()),
+    c2=st.one_of(st.none(), st.builds(CustomClass, number=st.integers())),
+)
 def test_fuzz_add_custom_classes(
     c1: example_code.future_annotations.CustomClass,
     c2: typing.Union[example_code.future_annotations.CustomClass, None],

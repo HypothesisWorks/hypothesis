@@ -1215,8 +1215,10 @@ def _from_type(thing: Type[Ex], recurse_guard: List[Type[Ex]]) -> SearchStrategy
         return sampled_from(thing)
     # Handle numpy types through extras
     if thing.__module__ == "numpy":
-        from hypothesis.extra.numpy import from_dtype
         import numpy as np
+
+        from hypothesis.extra.numpy import from_dtype
+
         return from_dtype(np.dtype(thing))
 
     # Finally, try to build an instance by calling the type object.  Unlike builds(),
@@ -1241,7 +1243,7 @@ def _from_type(thing: Type[Ex], recurse_guard: List[Type[Ex]]) -> SearchStrategy
             hints = get_type_hints(thing)
             params = get_signature(thing).parameters
         except Exception:
-            params = {}
+            params = {}  # type: ignore
         kwargs = {}
         for k, p in params.items():
             if (
@@ -1260,7 +1262,7 @@ def _from_type(thing: Type[Ex], recurse_guard: List[Type[Ex]]) -> SearchStrategy
                 "find any (non-varargs) arguments. Use st.register_type_strategy() "
                 "to resolve to a strategy which can generate more than one value, "
                 "or silence this warning.",
-                SmallSearchSpaceWarning
+                SmallSearchSpaceWarning,
             )
         return builds(thing, **kwargs)
     # And if it's an abstract type, we'll resolve to a union of subclasses instead.

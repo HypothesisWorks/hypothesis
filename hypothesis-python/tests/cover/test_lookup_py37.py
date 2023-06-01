@@ -18,7 +18,7 @@ import sys
 
 import pytest
 
-from hypothesis import assume, given
+from hypothesis import assume, given, strategies as st
 
 # On Python 3.7 and 3.8, `from __future__ import annotations` means
 # that the syntax is supported; but the feature fails at runtime.  On Python
@@ -38,6 +38,11 @@ class Elem:
 
 class Value:
     pass
+
+
+# To avoid SmallSearchSpaceWarning
+st.register_type_strategy(Elem, st.builds(Elem))
+st.register_type_strategy(Value, st.builds(Value))
 
 
 def check(t, ex):

@@ -20,6 +20,7 @@ from hypothesis.errors import (
     HypothesisDeprecationWarning,
     InvalidArgument,
     ResolutionFailed,
+    SmallSearchSpaceWarning,
 )
 from hypothesis.internal.compat import get_type_hints
 from hypothesis.internal.reflection import get_pretty_function_description
@@ -204,7 +205,8 @@ def test_uninspectable_builds():
 
 def test_uninspectable_from_type():
     with pytest.raises(TypeError, match="object is not callable"):
-        st.from_type(BrokenClass).example()
+        with pytest.warns(SmallSearchSpaceWarning):
+            st.from_type(BrokenClass).example()
 
 
 def _check_instances(t):
