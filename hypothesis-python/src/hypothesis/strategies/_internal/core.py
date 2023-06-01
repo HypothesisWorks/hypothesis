@@ -1219,7 +1219,9 @@ def _from_type(thing: Type[Ex], recurse_guard: List[Type[Ex]]) -> SearchStrategy
 
         from hypothesis.extra.numpy import from_dtype
 
-        return from_dtype(np.dtype(thing))
+        dtype = np.dtype(thing)
+        if dtype.kind != "O":
+            return from_dtype(dtype)
 
     # Finally, try to build an instance by calling the type object.  Unlike builds(),
     # this block *does* try to infer strategies for arguments with default values.
