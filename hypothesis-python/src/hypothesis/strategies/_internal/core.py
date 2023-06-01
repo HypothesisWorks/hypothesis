@@ -77,6 +77,7 @@ from hypothesis.internal.reflection import (
     get_signature,
     is_first_param_referenced_in_function,
     nicerepr,
+    repr_call,
     required_args,
 )
 from hypothesis.internal.validation import (
@@ -1212,6 +1213,11 @@ def _from_type(thing: Type[Ex], recurse_guard: List[Type[Ex]]) -> SearchStrategy
     # may be able to fall back on type annotations.
     if issubclass(thing, enum.Enum):
         return sampled_from(thing)
+    # Handle numpy types through extras
+    if thing.__module__ == "numpy":
+        from hypothesis.extra.numpy import from_dtype
+        import numpy as np
+        return from_dtype(np.dtype(thing))
 
     # Finally, try to build an instance by calling the type object.  Unlike builds(),
     # this block *does* try to infer strategies for arguments with default values.
@@ -1247,12 +1253,13 @@ def _from_type(thing: Type[Ex], recurse_guard: List[Type[Ex]]) -> SearchStrategy
                 if p.default is not Parameter.empty and kwargs[k] is not ...:
                     kwargs[k] |= just(p.default)
         if not kwargs:
-            text_repr = nicerepr(thing)
+            from_type_repr = repr_call(from_type, (thing,), {})
+            builds_repr = repr_call(builds, (thing,), {})
             warnings.warn(
-                f"from_type({text_repr}) resolved to builds({text_repr}), because we "
-                "could not find any (non-varargs) arguments. Use "
-                "st.register_type_strategy() to resolve to a strategy which can "
-                "generate more than one value, or silence this warning.",
+                f"{from_type_repr} resolved to {builds_repr}, because we could not "
+                "find any (non-varargs) arguments. Use st.register_type_strategy() "
+                "to resolve to a strategy which can generate more than one value, "
+                "or silence this warning.",
                 SmallSearchSpaceWarning
             )
         return builds(thing, **kwargs)
