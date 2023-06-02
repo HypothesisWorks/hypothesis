@@ -287,7 +287,7 @@ def test_complex_subnormal_generation(allow_subnormal, width):
 
 
 @pytest.mark.parametrize("dtype", STANDARD_TYPES)
-def test_resolves_and_varies_numpy_dtype(dtype):
+def test_resolves_and_varies_numpy_type(dtype):
     @given(x=from_type(dtype.type))
     def test_is_resolved_and_varied(x):
         assert isinstance(x, dtype.type)
@@ -296,3 +296,9 @@ def test_resolves_and_varies_numpy_dtype(dtype):
         assume(x != type(x)())
 
     test_is_resolved_and_varied()
+
+
+@pytest.mark.parametrize("typ", [int, np.AxisError, np.max])
+def test_fails_to_resolve_invalid_type(typ):
+    with pytest.raises(InvalidArgument):
+        nps.from_type_internal(typ)

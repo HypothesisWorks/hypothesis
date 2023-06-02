@@ -986,11 +986,14 @@ def from_type_internal(thing: Type[Ex]) -> st.SearchStrategy[Ex]:
     """Called by st.from_type to try to infer a strategy for thing using numpy.
 
     If we can infer a dtype strategy for thing, we return that; otherwise,
-    an unspecified exception is raised.
+    raises InvalidArgument.
     """
     if getattr(thing, "__module__", None) != "numpy":
         raise InvalidArgument(f"{thing!r} is not a numpy type")
-    dtype = np.dtype(thing)
+    try:
+        dtype = np.dtype(thing)
+    except Exception:
+        raise InvalidArgument(f"Failed to create dtype for {thing!r}")
     if dtype.kind in "OV":
         raise InvalidArgument(f"Cannot infer a numpy strategy for {thing!r}")
     return from_dtype(dtype)
