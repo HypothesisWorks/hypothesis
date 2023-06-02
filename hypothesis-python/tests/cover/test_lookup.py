@@ -22,11 +22,15 @@ import typing
 from inspect import signature
 from numbers import Real
 
-import numpy as np
 import pytest
 
 from hypothesis import HealthCheck, assume, given, settings, strategies as st
-from hypothesis.errors import InvalidArgument, ResolutionFailed
+from hypothesis.errors import (
+    InvalidArgument,
+    MissingExtraWarning,
+    ResolutionFailed,
+    SmallSearchSpaceWarning,
+)
 from hypothesis.internal.compat import PYPY, get_type_hints
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies import from_type
@@ -1021,16 +1025,11 @@ def test_builds_mentions_no_type_check():
         st.builds(f).example()
 
 
-def test_valid_numpy_type():
-    # see also test_from_dtype::test_resolves_and_varies_numpy_dtype
-    st.from_type(np.int8).example()
-
-
-def test_invalid_numpy_object():
-    with pytest.raises(ResolutionFailed):
-        st.from_type(np.AxisError).example()
-
-
-def test_invalid_numpy_function():
-    with pytest.raises(InvalidArgument, match="must be a type"):
-        from_type(np.max).example()
+def test_numpy_type():
+    try:
+        import hypothesis.extra.numpy  # noqa: F401
+    except ImportError:
+        with pytest.warns((MissingExtraWarning, SmallSearchSpaceWarning)):
+            st.from_type(np.int8).example()
+    else:
+        st.from_type(np.int8).example()
