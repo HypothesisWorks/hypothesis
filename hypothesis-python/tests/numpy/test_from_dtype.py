@@ -22,7 +22,7 @@ from hypothesis.strategies._internal import SearchStrategy
 
 from tests.common.debug import assert_no_examples, find_any
 
-STANDARD_DTYPES = [
+STANDARD_TYPES = [
     np.dtype(t)
     for t in (
         "int8",
@@ -48,7 +48,7 @@ STANDARD_DTYPES = [
 ]
 for nonstandard_typecode in ["g", "G", "S1", "q", "Q"]:
     try:
-        STANDARD_DTYPES.append(np.dtype(nonstandard_typecode))
+        STANDARD_TYPES.append(np.dtype(nonstandard_typecode))
     except Exception:
         pass
 
@@ -58,7 +58,7 @@ def test_strategies_for_standard_dtypes_have_reusable_values(dtype):
     assert nps.from_dtype(dtype).has_reusable_values
 
 
-@pytest.mark.parametrize("t", STANDARD_DTYPES)
+@pytest.mark.parametrize("t", STANDARD_TYPES)
 def test_produces_instances(t):
     @given(nps.from_dtype(t))
     def test_is_t(x):
@@ -286,7 +286,7 @@ def test_complex_subnormal_generation(allow_subnormal, width):
         assert_no_examples(strat, condition)
 
 
-@pytest.mark.parametrize("dtype", STANDARD_DTYPES)
+@pytest.mark.parametrize("dtype", STANDARD_TYPES)
 def test_resolves_and_varies_numpy_dtype(dtype):
     @given(x=from_type(dtype.type))
     def test_is_resolved_and_varied(x):

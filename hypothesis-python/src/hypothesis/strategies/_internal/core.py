@@ -1214,15 +1214,16 @@ def _from_type(thing: Type[Ex], recurse_guard: List[Type[Ex]]) -> SearchStrategy
     if issubclass(thing, enum.Enum):
         return sampled_from(thing)
     # Handle numpy types through extras
-    if thing.__module__ == "numpy":
+    try:
         import numpy as np
 
         from hypothesis.extra.numpy import from_dtype
 
         dtype = np.dtype(thing)
-        if dtype.kind != "O":
+        if dtype.kind not in "OV":
             return from_dtype(dtype)
-
+    except Exception:  # pragma: no cover
+        pass
     # Finally, try to build an instance by calling the type object.  Unlike builds(),
     # this block *does* try to infer strategies for arguments with default values.
     # That's because of the semantic different; builds() -> "call this with ..."

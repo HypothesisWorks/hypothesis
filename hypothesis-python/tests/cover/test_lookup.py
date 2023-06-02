@@ -22,6 +22,7 @@ import typing
 from inspect import signature
 from numbers import Real
 
+import numpy as np
 import pytest
 
 from hypothesis import HealthCheck, assume, given, settings, strategies as st
@@ -1018,3 +1019,18 @@ def test_builds_mentions_no_type_check():
     msg = "@no_type_check decorator prevented Hypothesis from inferring a strategy"
     with pytest.raises(TypeError, match=msg):
         st.builds(f).example()
+
+
+def test_valid_numpy_type():
+    # see also test_from_dtype::test_resolves_and_varies_numpy_dtype
+    st.from_type(np.int8).example()
+
+
+def test_invalid_numpy_object():
+    with pytest.raises(ResolutionFailed):
+        st.from_type(np.AxisError).example()
+
+
+def test_invalid_numpy_function():
+    with pytest.raises(InvalidArgument, match="must be a type"):
+        from_type(np.max).example()
