@@ -1220,7 +1220,7 @@ def _from_type(thing: Type[Ex], recurse_guard: List[Type[Ex]]) -> SearchStrategy
 
         return from_type_internal(thing)  # pragma: no cover
     except ImportError:
-        if getattr(thing, "__module__", None) == "numpy":
+        if getattr(thing, "__module__", None) == "numpy":  # pragma: no cover
             from_type_repr = repr_call(from_type, (thing,), {})
             warnings.warn(
                 f"{from_type_repr} might be resolved by hypothesis.extra.numpy, "

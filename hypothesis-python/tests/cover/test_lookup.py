@@ -13,6 +13,7 @@ import builtins
 import collections
 import datetime
 import enum
+import importlib
 import inspect
 import io
 import re
@@ -1025,7 +1026,13 @@ def test_builds_mentions_no_type_check():
         st.builds(f).example()
 
 
+@pytest.mark.skipif(
+    importlib.util.find_spec("numpy") is None,
+    reason="numpy is not available",
+)
 def test_numpy_type():
+    import numpy as np
+
     try:
         import hypothesis.extra.numpy  # noqa: F401
     except ImportError:
