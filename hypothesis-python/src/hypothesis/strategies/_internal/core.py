@@ -1048,7 +1048,9 @@ def from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
     rejected in a certain way.
     """
     try:
-        return _from_type(thing, [])
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            return _from_type(thing, [])
     except Exception:
         return _from_type_deferred(thing)
 
@@ -1253,7 +1255,7 @@ def _from_type(thing: Type[Ex], recurse_guard: List[Type[Ex]]) -> SearchStrategy
                 kwargs[k] = from_type_guarded(hints[k])
                 if p.default is not Parameter.empty and kwargs[k] is not ...:
                     kwargs[k] = just(p.default) | kwargs[k]
-        if not kwargs:
+        if not kwargs and params:
             from_type_repr = repr_call(from_type, (thing,), {})
             builds_repr = repr_call(builds, (thing,), {})
             warnings.warn(

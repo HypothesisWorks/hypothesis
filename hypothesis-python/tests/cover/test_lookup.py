@@ -20,6 +20,7 @@ import re
 import string
 import sys
 import typing
+import warnings
 from inspect import signature
 from numbers import Real
 
@@ -121,10 +122,6 @@ class Elem:
     pass
 
 
-# To avoid SmallSearchSpaceWarning
-st.register_type_strategy(Elem, st.builds(Elem))
-
-
 @pytest.mark.parametrize(
     "typ,coll_type",
     [
@@ -159,10 +156,6 @@ def test_specialised_collection_types(data, typ, coll_type):
 
 class ElemValue:
     pass
-
-
-# To avoid SmallSearchSpaceWarning
-st.register_type_strategy(ElemValue, st.builds(ElemValue))
 
 
 @pytest.mark.parametrize(
@@ -722,10 +715,6 @@ class ConcreteFoo(AbstractFoo):
         pass
 
 
-# To avoid SmallSearchSpaceWarning
-st.register_type_strategy(ConcreteFoo, st.builds(ConcreteFoo))
-
-
 @given(st.from_type(AbstractFoo))
 def test_can_resolve_abstract_class(instance):
     assert isinstance(instance, ConcreteFoo)
@@ -986,16 +975,17 @@ def test_from_type_can_be_default_or_annotation():
 
 @pytest.mark.parametrize("t", BUILTIN_TYPES, ids=lambda t: t.__name__)
 def test_resolves_builtin_types(t):
-    with pytest.warns():  # some types may warn SmallSearchSpaceWarning
+    with warnings.catch_warnings():
+        # Some types may warn SmallSearchSpaceWarning, ignore those
+        warnings.simplefilter("ignore")
         v = st.from_type(t).example()
-        assert isinstance(v, t)
+    assert isinstance(v, t)
 
 
 @pytest.mark.parametrize("t", BUILTIN_TYPES, ids=lambda t: t.__name__)
 def test_resolves_forwardrefs_to_builtin_types(t):
-    with pytest.warns():  # some types may warn SmallSearchSpaceWarning
-        v = st.from_type(typing.ForwardRef(t.__name__)).example()
-        assert isinstance(v, t)
+    v = st.from_type(typing.ForwardRef(t.__name__)).example()
+    assert isinstance(v, t)
 
 
 @pytest.mark.parametrize("t", BUILTIN_TYPES, ids=lambda t: t.__name__)

@@ -40,11 +40,6 @@ class Value:
     pass
 
 
-# To avoid SmallSearchSpaceWarning
-st.register_type_strategy(Elem, st.builds(Elem))
-st.register_type_strategy(Value, st.builds(Value))
-
-
 def check(t, ex):
     assert isinstance(ex, t)
     assert all(isinstance(e, Elem) for e in ex)

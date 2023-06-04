@@ -125,8 +125,7 @@ def test_attrs_inference_builds(c):
     pass
 
 
-with pytest.warns(SmallSearchSpaceWarning):
-
-    @given(st.from_type(Inferrables))
-    def test_attrs_inference_from_type(c):
-        pass
+def test_attrs_inference_from_type():
+    s = st.from_type(Inferrables)
+    with pytest.warns(SmallSearchSpaceWarning):
+        s.example()
