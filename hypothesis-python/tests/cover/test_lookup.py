@@ -576,10 +576,17 @@ class MyList:
     def __repr__(self):
         return f"MyList({self.nxt})"
 
+    def __eq__(self, other):
+        return type(self) == type(other) and self.nxt == other.nxt
+
 
 @given(lst=st.from_type(MyList))
 def test_resolving_recursive_type_with_defaults(lst):
     assert isinstance(lst, MyList)
+
+
+def test_recursive_type_with_defaults_minimizes_to_defaults():
+    assert minimal(from_type(MyList), lambda ex: True) == MyList()
 
 
 class A:
