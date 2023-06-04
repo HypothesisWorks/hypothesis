@@ -17,6 +17,7 @@ from hypothesis import assume, given, settings, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra import numpy as nps
 from hypothesis.internal.floats import width_smallest_normals
+from hypothesis.strategies import from_type
 from hypothesis.strategies._internal import SearchStrategy
 
 from tests.common.debug import assert_no_examples, find_any
@@ -283,3 +284,10 @@ def test_complex_subnormal_generation(allow_subnormal, width):
         find_any(strat, condition)
     else:
         assert_no_examples(strat, condition)
+
+
+@pytest.mark.parametrize("dtype", STANDARD_TYPES)
+def test_resolves_and_varies_numpy_type(dtype):
+    # Check that we find an instance that is not equal to the default
+    x = find_any(from_type(dtype.type), lambda x: x != type(x)())
+    assert isinstance(x, dtype.type)

@@ -19,13 +19,14 @@ import re
 import string
 import sys
 import typing
+import warnings
 from inspect import signature
 from numbers import Real
 
 import pytest
 
 from hypothesis import HealthCheck, assume, given, settings, strategies as st
-from hypothesis.errors import InvalidArgument, ResolutionFailed
+from hypothesis.errors import InvalidArgument, ResolutionFailed, SmallSearchSpaceWarning
 from hypothesis.internal.compat import PYPY, get_type_hints
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies import from_type
@@ -562,10 +563,17 @@ class MyList:
     def __repr__(self):
         return f"MyList({self.nxt})"
 
+    def __eq__(self, other):
+        return type(self) == type(other) and self.nxt == other.nxt
+
 
 @given(lst=st.from_type(MyList))
 def test_resolving_recursive_type_with_defaults(lst):
     assert isinstance(lst, MyList)
+
+
+def test_recursive_type_with_defaults_minimizes_to_defaults():
+    assert minimal(from_type(MyList), lambda ex: True) == MyList()
 
 
 class A:
@@ -962,13 +970,17 @@ def test_from_type_can_be_default_or_annotation():
 
 @pytest.mark.parametrize("t", BUILTIN_TYPES, ids=lambda t: t.__name__)
 def test_resolves_builtin_types(t):
-    v = st.from_type(t).example()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", SmallSearchSpaceWarning)
+        v = st.from_type(t).example()
     assert isinstance(v, t)
 
 
 @pytest.mark.parametrize("t", BUILTIN_TYPES, ids=lambda t: t.__name__)
-def test_resolves_forwardrefs_to_builtin_types(t):
-    v = st.from_type(typing.ForwardRef(t.__name__)).example()
+@given(data=st.data())
+def test_resolves_forwardrefs_to_builtin_types(t, data):
+    s = st.from_type(typing.ForwardRef(t.__name__))
+    v = data.draw(s)
     assert isinstance(v, t)
 
 
