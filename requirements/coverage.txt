@@ -14,7 +14,7 @@ click==8.1.3
     # via
     #   -r requirements/coverage.in
     #   black
-coverage==7.2.6
+coverage==7.2.7
     # via -r requirements/coverage.in
 dpcontracts==0.6.0
     # via -r requirements/coverage.in
@@ -44,7 +44,7 @@ packaging==23.1
     # via
     #   black
     #   pytest
-pandas==2.0.1
+pandas==2.0.2
     # via -r requirements/coverage.in
 pathspec==0.11.1
     # via black
@@ -84,7 +84,7 @@ tomli==2.0.1
     # via
     #   black
     #   pytest
-typing-extensions==4.6.2
+typing-extensions==4.6.3
     # via
     #   -r requirements/coverage.in
     #   libcst
