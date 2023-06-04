@@ -1258,7 +1258,7 @@ def _from_type(thing: Type[Ex], recurse_guard: List[Type[Ex]]) -> SearchStrategy
                 kwargs[k] = from_type_guarded(hints[k])
                 if p.default is not Parameter.empty and kwargs[k] is not ...:
                     kwargs[k] = just(p.default) | kwargs[k]
-        if not kwargs and params:
+        if params and not kwargs:
             from_type_repr = repr_call(from_type, (thing,), {})
             builds_repr = repr_call(builds, (thing,), {})
             warnings.warn(

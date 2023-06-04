@@ -32,7 +32,6 @@ from example_code.future_annotations import (
 )
 
 import hypothesis
-from hypothesis.errors import SmallSearchSpaceWarning
 from hypothesis.extra import ghostwriter
 from hypothesis.utils.conventions import not_set
 
@@ -268,11 +267,8 @@ def test_ghostwriter_example_outputs(update_recorded_outputs, data):
 
 
 def test_ghostwriter_on_hypothesis(update_recorded_outputs):
-    with pytest.warns(SmallSearchSpaceWarning):
-        actual = ghostwriter.magic(hypothesis).replace("Strategy[+Ex]", "Strategy")
-        expected = get_recorded(
-            "hypothesis_module_magic", actual * update_recorded_outputs
-        )
-        if sys.version_info[:2] < (3, 10):
-            assert actual == expected
-        exec(expected, {"not_set": not_set})
+    actual = ghostwriter.magic(hypothesis).replace("Strategy[+Ex]", "Strategy")
+    expected = get_recorded("hypothesis_module_magic", actual * update_recorded_outputs)
+    if sys.version_info[:2] < (3, 10):
+        assert actual == expected
+    exec(expected, {"not_set": not_set})

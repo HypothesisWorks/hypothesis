@@ -1,4 +1,4 @@
-RELEASE_TYPE: patch
+RELEASE_TYPE: minor
 
 Warn in :func:`~hypothesis.strategies.from_type` if the inferred strategy
 has no variation (always returning default instances). Also handles numpy

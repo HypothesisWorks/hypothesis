@@ -26,7 +26,7 @@ from numbers import Real
 import pytest
 
 from hypothesis import HealthCheck, assume, given, settings, strategies as st
-from hypothesis.errors import InvalidArgument, ResolutionFailed
+from hypothesis.errors import InvalidArgument, ResolutionFailed, SmallSearchSpaceWarning
 from hypothesis.internal.compat import PYPY, get_type_hints
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies import from_type
@@ -971,15 +971,16 @@ def test_from_type_can_be_default_or_annotation():
 @pytest.mark.parametrize("t", BUILTIN_TYPES, ids=lambda t: t.__name__)
 def test_resolves_builtin_types(t):
     with warnings.catch_warnings():
-        # Some types may warn SmallSearchSpaceWarning, ignore those
-        warnings.simplefilter("ignore")
+        warnings.simplefilter("ignore", SmallSearchSpaceWarning)
         v = st.from_type(t).example()
     assert isinstance(v, t)
 
 
 @pytest.mark.parametrize("t", BUILTIN_TYPES, ids=lambda t: t.__name__)
-def test_resolves_forwardrefs_to_builtin_types(t):
-    v = st.from_type(typing.ForwardRef(t.__name__)).example()
+@given(data=st.data())
+def test_resolves_forwardrefs_to_builtin_types(t, data):
+    s = st.from_type(typing.ForwardRef(t.__name__))
+    v = data.draw(s)
     assert isinstance(v, t)
 
 
