@@ -16,7 +16,6 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
-    Type,
     TypeVar,
     Union,
 )
@@ -45,7 +44,7 @@ from hypothesis.internal.coverage import check_function
 from hypothesis.internal.reflection import proxies
 from hypothesis.internal.validation import check_type
 from hypothesis.strategies._internal.numbers import Real
-from hypothesis.strategies._internal.strategies import Ex, T, check_strategy
+from hypothesis.strategies._internal.strategies import T, check_strategy
 from hypothesis.strategies._internal.utils import defines_strategy
 
 if TYPE_CHECKING:
@@ -979,21 +978,3 @@ def integer_array_indices(
     return result_shape.flatmap(
         lambda index_shape: st.tuples(*(array_for(index_shape, size) for size in shape))
     )
-
-
-@defines_strategy(never_lazy=True)
-def from_type_internal(thing: Type[Ex]) -> st.SearchStrategy[Ex]:
-    """Called by st.from_type to try to infer a strategy for thing using numpy.
-
-    If we can infer a dtype strategy for thing, we return that; otherwise,
-    raises InvalidArgument.
-    """
-    if getattr(thing, "__module__", None) != "numpy":
-        raise InvalidArgument(f"{thing!r} is not a numpy type")
-    try:
-        dtype = np.dtype(thing)
-    except Exception:
-        raise InvalidArgument(f"Failed to create dtype for {thing!r}")
-    if dtype.kind in "OV":
-        raise InvalidArgument(f"Cannot infer a numpy strategy for {thing!r}")
-    return from_dtype(dtype)

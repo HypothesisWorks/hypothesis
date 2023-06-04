@@ -13,7 +13,6 @@ import builtins
 import collections
 import datetime
 import enum
-import importlib
 import inspect
 import io
 import re
@@ -27,11 +26,7 @@ from numbers import Real
 import pytest
 
 from hypothesis import HealthCheck, assume, given, settings, strategies as st
-from hypothesis.errors import (
-    InvalidArgument,
-    ResolutionFailed,
-    SmallSearchSpaceWarning,
-)
+from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.internal.compat import PYPY, get_type_hints
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies import from_type

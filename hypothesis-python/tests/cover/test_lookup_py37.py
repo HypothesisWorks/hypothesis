@@ -18,7 +18,7 @@ import sys
 
 import pytest
 
-from hypothesis import assume, given, strategies as st
+from hypothesis import assume, given
 
 # On Python 3.7 and 3.8, `from __future__ import annotations` means
 # that the syntax is supported; but the feature fails at runtime.  On Python
