@@ -46,9 +46,9 @@ colorama==0.4.6
     # via tox
 com2ann==0.3.0
     # via shed
-coverage==7.2.6
+coverage==7.2.7
     # via -r requirements/tools.in
-cryptography==40.0.2
+cryptography==41.0.1
     # via
     #   secretstorage
     #   types-pyopenssl
@@ -87,7 +87,7 @@ importlib-metadata==6.6.0
     #   twine
 iniconfig==2.0.0
     # via pytest
-ipython==8.13.2
+ipython==8.14.0
     # via -r requirements/tools.in
 isort==5.12.0
     # via shed
@@ -111,7 +111,7 @@ libcst==1.0.0
     #   shed
 markdown-it-py==2.2.0
     # via rich
-markupsafe==2.1.2
+markupsafe==2.1.3
     # via jinja2
 matplotlib-inline==0.1.6
     # via ipython
@@ -177,7 +177,7 @@ pyproject-api==1.5.1
     # via tox
 pyproject-hooks==1.0.0
     # via build
-pyright==1.1.310
+pyright==1.1.311
     # via -r requirements/tools.in
 pytest==7.3.1
     # via -r requirements/tools.in
@@ -201,7 +201,7 @@ restructuredtext-lint==1.4.0
     # via -r requirements/tools.in
 rfc3986==2.0.0
     # via twine
-rich==13.3.5
+rich==13.4.1
     # via twine
 ruff==0.0.270
     # via -r requirements/tools.in
@@ -279,13 +279,13 @@ types-click==7.1.8
     # via -r requirements/tools.in
 types-pkg-resources==0.1.3
     # via -r requirements/tools.in
-types-pyopenssl==23.1.0.3
+types-pyopenssl==23.2.0.0
     # via types-redis
 types-pytz==2023.3.0.0
     # via -r requirements/tools.in
 types-redis==4.5.5.2
     # via -r requirements/tools.in
-typing-extensions==4.6.2
+typing-extensions==4.6.3
     # via
     #   -r requirements/tools.in
     #   asgiref
