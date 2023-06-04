@@ -180,7 +180,3 @@ class RewindRecursive(Exception):
 class SmallSearchSpaceWarning(HypothesisWarning):
     """Indicates that an inferred strategy does not span the search space
     in a meaningful way, for example by only creating default instances."""
-
-
-class MissingExtraWarning(HypothesisWarning):
-    """Indicates that an extra package should be installed to improve functionality."""

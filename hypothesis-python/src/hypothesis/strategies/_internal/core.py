@@ -50,7 +50,6 @@ from hypothesis._settings import note_deprecation
 from hypothesis.control import cleanup, current_build_context, note
 from hypothesis.errors import (
     InvalidArgument,
-    MissingExtraWarning,
     ResolutionFailed,
     RewindRecursive,
     SmallSearchSpaceWarning,
@@ -1218,16 +1217,7 @@ def _from_type(thing: Type[Ex], recurse_guard: List[Type[Ex]]) -> SearchStrategy
     try:
         from hypothesis.extra.numpy import from_type_internal
 
-        return from_type_internal(thing)  # pragma: no cover
-    except ImportError:
-        if getattr(thing, "__module__", None) == "numpy":  # pragma: no cover
-            from_type_repr = repr_call(from_type, (thing,), {})
-            warnings.warn(
-                f"{from_type_repr} might be resolved by hypothesis.extra.numpy, "
-                "but that subpackage is not installed. Consider installing it, "
-                "or use st.register_type_strategy() to silence this warning.",
-                MissingExtraWarning,
-            )
+        return from_type_internal(thing)
     except Exception:  # pragma: no cover
         pass
     # Finally, try to build an instance by calling the type object.  Unlike builds(),

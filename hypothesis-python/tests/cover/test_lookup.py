@@ -28,7 +28,6 @@ import pytest
 from hypothesis import HealthCheck, assume, given, settings, strategies as st
 from hypothesis.errors import (
     InvalidArgument,
-    MissingExtraWarning,
     ResolutionFailed,
     SmallSearchSpaceWarning,
 )
@@ -1031,19 +1030,3 @@ def test_builds_mentions_no_type_check():
     msg = "@no_type_check decorator prevented Hypothesis from inferring a strategy"
     with pytest.raises(TypeError, match=msg):
         st.builds(f).example()
-
-
-@pytest.mark.skipif(
-    importlib.util.find_spec("numpy") is None,
-    reason="numpy is not available",
-)
-def test_numpy_type():
-    import numpy as np
-
-    try:
-        import hypothesis.extra.numpy  # noqa: F401
-    except ImportError:
-        with pytest.warns((MissingExtraWarning, SmallSearchSpaceWarning)):
-            st.from_type(np.int8).example()
-    else:
-        st.from_type(np.int8).example()
