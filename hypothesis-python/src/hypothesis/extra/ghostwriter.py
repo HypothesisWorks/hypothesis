@@ -609,7 +609,6 @@ def _imports_for_strategy(strategy):
                 for imp in _imports_for_object(arg)
             }
         elif _get_module(strategy.function).startswith("hypothesis.extra."):
-            return {(_get_module(strategy.function), strategy.function.__name__)}
             module = _get_module(strategy.function).replace("._array_helpers", ".numpy")
             return {(module, strategy.function.__name__)}
 
