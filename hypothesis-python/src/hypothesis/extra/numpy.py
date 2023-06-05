@@ -12,6 +12,7 @@ import math
 from typing import (
     TYPE_CHECKING,
     Any,
+    List,
     Mapping,
     Optional,
     Sequence,
@@ -994,10 +995,12 @@ def _from_type(thing: Type[Ex]) -> st.SearchStrategy[Ex]:
         return array_dtypes()
 
     if thing == npt.ArrayLike:
-        base_types = [bool, int, float, complex, str, bytes]
+        base_strats = [st.booleans(), st.integers(), st.floats(), st.complex_numbers(), st.text(), st.binary()]
         return st.one_of(
-            st.one_of([st.from_type(typ) for typ in base_types]),
-            st.one_of([st.from_type(Sequence[typ]) for typ in base_types]),
+            st.one_of(base_strats),
+            st.one_of([st.lists(strat) for strat in base_strats]),
+            # Use tuples to get a trivial nested equal-length sequence
+            st.one_of([st.tuples(st.tuples(strat)) for strat in base_strats]),
             _from_type(np.ndarray),
         )
 
@@ -1011,15 +1014,18 @@ def _from_type(thing: Type[Ex]) -> st.SearchStrategy[Ex]:
         elif len(args) == 1:  # Typed, np.ndarray[type]
             shape = Any
             dtype = np.dtype(args[0])
-        elif len(args) == 2:  # npt.NDArray
+        elif len(args) == 2:  # npt.NDArray or np.ndarray[Any, type]
             shape = args[0]
             dtype_args = get_args(args[1])
-            assert len(dtype_args) == 1
-            if isinstance(dtype_args[0], TypeVar):  # Untyped, npt.NDArray
-                assert dtype_args[0].__bound__ == np.generic
-                dtype = scalar_dtypes()
-            else:  # Typed, npt.NDArray[type]
-                dtype = np.dtype(dtype_args[0])
+            if dtype_args:
+                assert len(dtype_args) == 1
+                if isinstance(dtype_args[0], TypeVar):  # Untyped, npt.NDArray
+                    assert dtype_args[0].__bound__ == np.generic
+                    dtype = scalar_dtypes()
+                else:  # Typed, npt.NDArray[type]
+                    dtype = np.dtype(dtype_args[0])
+            else: # np.ndarray[Any, type]
+                dtype = args[1]
         assert shape is Any
         return arrays(dtype, array_shapes(max_dims=2))
 
