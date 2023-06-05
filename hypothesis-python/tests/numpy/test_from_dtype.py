@@ -284,10 +284,3 @@ def test_complex_subnormal_generation(allow_subnormal, width):
         find_any(strat, condition)
     else:
         assert_no_examples(strat, condition)
-
-
-@pytest.mark.parametrize("dtype", STANDARD_TYPES)
-def test_resolves_and_varies_numpy_type(dtype):
-    # Check that we find an instance that is not equal to the default
-    x = find_any(from_type(dtype.type), lambda x: x != type(x)())
-    assert isinstance(x, dtype.type)

@@ -16,11 +16,13 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
+    Type,
     TypeVar,
     Union,
 )
 
 import numpy as np
+import numpy.typing as npt
 
 from hypothesis import strategies as st
 from hypothesis._settings import note_deprecation
@@ -39,12 +41,13 @@ from hypothesis.extra._array_helpers import (
     order_check,
     valid_tuple_axes as _valid_tuple_axes,
 )
+from hypothesis.internal.compat import get_args, get_origin
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.reflection import proxies
 from hypothesis.internal.validation import check_type
 from hypothesis.strategies._internal.numbers import Real
-from hypothesis.strategies._internal.strategies import T, check_strategy
+from hypothesis.strategies._internal.strategies import Ex, T, check_strategy
 from hypothesis.strategies._internal.utils import defines_strategy
 
 if TYPE_CHECKING:
@@ -978,3 +981,51 @@ def integer_array_indices(
     return result_shape.flatmap(
         lambda index_shape: st.tuples(*(array_for(index_shape, size) for size in shape))
     )
+
+
+@defines_strategy(never_lazy=True)
+def _from_type(thing: Type[Ex]) -> st.SearchStrategy[Ex]:
+    """Called by st.from_type to try to infer a strategy for thing using numpy.
+
+    If we can infer a dtype strategy for thing, we return that; otherwise,
+    raises InvalidArgument.
+    """
+    if thing == np.dtype:
+        return array_dtypes()
+
+    if thing == npt.ArrayLike:
+        base_types = [bool, int, float, complex, str, bytes]
+        return st.one_of(
+            st.one_of([st.from_type(typ) for typ in base_types]),
+            st.one_of([st.from_type(Sequence[typ]) for typ in base_types]),
+            _from_type(np.ndarray),
+        )
+
+    if issubclass(thing, np.ndarray):
+        return arrays(scalar_dtypes(), array_shapes(max_dims=2))
+    if hasattr(thing, "__origin__") and issubclass(get_origin(thing), np.ndarray):
+        args = get_args(thing)
+        if len(args) == 0:  # Untyped, np.ndarray
+            shape = Any
+            dtype = scalar_dtypes()
+        elif len(args) == 1:  # Typed, np.ndarray[type]
+            shape = Any
+            dtype = np.dtype(args[0])
+        elif len(args) == 2:  # npt.NDArray
+            shape = args[0]
+            dtype_args = get_args(args[1])
+            assert len(dtype_args) == 1
+            if isinstance(dtype_args[0], TypeVar):  # Untyped, npt.NDArray
+                assert dtype_args[0].__bound__ == np.generic
+                dtype = scalar_dtypes()
+            else:  # Typed, npt.NDArray[type]
+                dtype = np.dtype(dtype_args[0])
+        assert shape is Any
+        return arrays(dtype, array_shapes(max_dims=2))
+
+    if issubclass(thing, np.generic):
+        dtype = np.dtype(thing)
+        if dtype.kind not in "OV":
+            return from_dtype(dtype)
+
+    raise InvalidArgument(f"Cannot infer a numpy strategy for {thing!r}")

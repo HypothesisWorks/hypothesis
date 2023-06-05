@@ -14,6 +14,7 @@ import datetime
 import decimal
 import fractions
 import functools
+import importlib
 import inspect
 import io
 import ipaddress
@@ -594,15 +595,14 @@ if sys.version_info[:2] >= (3, 9):
     _global_type_lookup[os._Environ] = st.just(os.environ)
 
 
-try:  # pragma: no cover
-    import numpy as np
-
-    from hypothesis.extra.numpy import array_dtypes, array_shapes, arrays, scalar_dtypes
-
-    _global_type_lookup[np.dtype] = array_dtypes()
-    _global_type_lookup[np.ndarray] = arrays(scalar_dtypes(), array_shapes(max_dims=2))
-except ImportError:
-    pass
+# These extras define a callable that either resolves to a strategy for this
+# narrowly extra-specific type, or raises any exception to proceed with normal
+# type resolution. The callable will only be called if the module is
+# installed. To avoid the performance hit of importing anything here, we defer
+# it until the method is actually called.
+_global_extra_lookup: typing.Dict[str, typing.Callable[[type], st.SearchStrategy]] = {
+    "numpy": lambda thing: importlib.import_module("hypothesis.extra.numpy")._from_type(thing)
+}
 
 
 _global_type_lookup.update(
