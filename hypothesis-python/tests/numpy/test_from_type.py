@@ -55,12 +55,7 @@ def test_resolves_specified_NDArray_type(typ):
 @given(arr_like=from_type(npt.ArrayLike))
 def test_resolves_ArrayLike_type(arr_like):
     arr = np.array(arr_like)
-    if arr.size:
-        # We can't just check arr.dtype, since f.x. huge integers generate an
-        # array of dtype "O", with instances of int as elements. So check the
-        # dtype associated with the elements' types instead.
-        types = [type(e) for e in arr.flat]
-        assert len(set(types)) == 1
-        assert np.dtype(types[0]) in STANDARD_TYPES
-    else:
-        assert arr.dtype in STANDARD_TYPES
+    assert isinstance(arr, np.ndarray)
+    # The variation is too large to assert anything else about arr, but the
+    # ArrayLike contract just says that it can be coerced intto an array (which
+    # we just did).

@@ -989,49 +989,88 @@ def _from_type(thing: Type[Ex]) -> st.SearchStrategy[Ex]:
     """Called by st.from_type to try to infer a strategy for thing using numpy.
 
     If we can infer a dtype strategy for thing, we return that; otherwise,
-    raises InvalidArgument.
+    returns None (or raises).
     """
+    def unpack_generic(thing):
+        if (real_thing := get_origin(thing)):
+            return (real_thing, get_args(thing))
+        else:
+            return (thing, ())
+
+    def find_dtype_shape(real_thing, args):
+        if real_thing == np._typing._array_like._SupportsArray:
+            assert len(args) <= 1
+            real_thing = np.ndarray
+            dtype = args[0] if args else Any
+            shape = Any
+        elif isinstance(real_thing, type) and issubclass(real_thing, np.ndarray):
+            if len(args) == 0:  # Untyped, np.ndarray or _SupportsArray
+                shape = Any
+                dtype = scalar_dtypes()
+            elif len(args) == 1:  # Typed, np.ndarray[type]
+                shape = Any
+                dtype = scalar_dtypes() if args[0] == Any else np.dtype(args[0])
+            elif len(args) == 2:  # npt.NDArray or np.ndarray[Any, type]
+                shape = args[0]
+                assert shape is Any
+                dtype_args = get_args(args[1])
+                if dtype_args:
+                    assert len(dtype_args) == 1
+                    if isinstance(dtype_args[0], TypeVar):  # Untyped, npt.NDArray
+                        assert dtype_args[0].__bound__ == np.generic
+                        dtype = scalar_dtypes()
+                    else:  # Typed, npt.NDArray[type]
+                        dtype = np.dtype(dtype_args[0])
+                else: # np.ndarray[Any, type]
+                    dtype = args[1]
+        else:
+            dtype = shape = None
+        return (
+            scalar_dtypes() if dtype is Any else dtype,
+            array_shapes(max_dims=2) if shape is Any else shape,
+        )
+
     if thing == np.dtype:
         return array_dtypes()
 
-    if thing == npt.ArrayLike:
-        base_strats = [st.booleans(), st.integers(), st.floats(), st.complex_numbers(), st.text(), st.binary()]
+    real_thing, args = unpack_generic(thing)
+    base_strats = [st.booleans(), st.integers(), st.floats(),
+                   st.complex_numbers(), st.text(), st.binary()]
+
+    if real_thing == np._typing._nested_sequence._NestedSequence:
+        # We have to override the default resolution to ensure sequences are of
+        # equal length. Actually they are still not, due to base_strat possibly
+        # returning arbitrary-shaped arrays - hence the even more special
+        # resolution of ArrayLike, below.
+        assert len(args) <= 1
+        base_strat = st.from_type(args[0]) if args else st.one_of(base_strats)
         return st.one_of(
-            st.one_of(base_strats),
-            st.one_of([st.lists(strat) for strat in base_strats]),
-            # Use tuples to get a trivial nested equal-length sequence
-            st.one_of([st.tuples(st.tuples(strat)) for strat in base_strats]),
-            _from_type(np.ndarray),
+            st.recursive(st.tuples(), st.tuples),
+            st.recursive(st.tuples(base_strat), st.tuples),
+            st.lists(base_strat),
         )
 
-    if issubclass(thing, np.ndarray):
-        return arrays(scalar_dtypes(), array_shapes(max_dims=2))
-    if hasattr(thing, "__origin__") and issubclass(get_origin(thing), np.ndarray):
-        args = get_args(thing)
-        if len(args) == 0:  # Untyped, np.ndarray
-            shape = Any
-            dtype = scalar_dtypes()
-        elif len(args) == 1:  # Typed, np.ndarray[type]
-            shape = Any
-            dtype = np.dtype(args[0])
-        elif len(args) == 2:  # npt.NDArray or np.ndarray[Any, type]
-            shape = args[0]
-            dtype_args = get_args(args[1])
-            if dtype_args:
-                assert len(dtype_args) == 1
-                if isinstance(dtype_args[0], TypeVar):  # Untyped, npt.NDArray
-                    assert dtype_args[0].__bound__ == np.generic
-                    dtype = scalar_dtypes()
-                else:  # Typed, npt.NDArray[type]
-                    dtype = np.dtype(dtype_args[0])
-            else: # np.ndarray[Any, type]
-                dtype = args[1]
-        assert shape is Any
-        return arrays(dtype, array_shapes(max_dims=2))
+    if thing == npt.ArrayLike:
+        # We override the default type resolution to ensure the "coercible to
+        # array" contract is honoured. See
+        # https://github.com/HypothesisWorks/hypothesis/pull/3670#issuecomment-1578140422
+        return st.one_of(
+            st.one_of(base_strats),
+            # Exclude binary() from mixed lists because it can not be combined
+            # with text() -  see comment above
+            st.lists(st.one_of(base_strats[:-1])),
+            # Recurse on tuples to get (trivial or size-1) nested equal-length
+            # sequences
+            st.recursive(st.tuples(), st.tuples),
+            st.recursive(st.one_of(base_strats), st.tuples),
+            st.from_type(np.ndarray),
+         )
 
-    if issubclass(thing, np.generic):
-        dtype = np.dtype(thing)
-        if dtype.kind not in "OV":
-            return from_dtype(dtype)
-
-    raise InvalidArgument(f"Cannot infer a numpy strategy for {thing!r}")
+    if isinstance(real_thing, type):
+        if issubclass(real_thing, np.generic):
+            dtype = np.dtype(real_thing)
+            if dtype.kind not in "OV":
+                return from_dtype(dtype)
+        if issubclass(real_thing, (np.ndarray, np._typing._array_like._SupportsArray)):
+            dtype, shape = find_dtype_shape(real_thing, args)
+            return arrays(dtype, shape)
