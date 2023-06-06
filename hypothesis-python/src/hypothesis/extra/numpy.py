@@ -12,7 +12,6 @@ import math
 from typing import (
     TYPE_CHECKING,
     Any,
-    List,
     Mapping,
     Optional,
     Sequence,
@@ -991,8 +990,9 @@ def _from_type(thing: Type[Ex]) -> st.SearchStrategy[Ex]:
     If we can infer a dtype strategy for thing, we return that; otherwise,
     returns None (or raises).
     """
+
     def unpack_generic(thing):
-        if (real_thing := get_origin(thing)):
+        if real_thing := get_origin(thing):
             return (real_thing, get_args(thing))
         else:
             return (thing, ())
@@ -1021,7 +1021,7 @@ def _from_type(thing: Type[Ex]) -> st.SearchStrategy[Ex]:
                         dtype = scalar_dtypes()
                     else:  # Typed, npt.NDArray[type]
                         dtype = np.dtype(dtype_args[0])
-                else: # np.ndarray[Any, type]
+                else:  # np.ndarray[Any, type]
                     dtype = args[1]
         else:
             dtype = shape = None
@@ -1034,8 +1034,14 @@ def _from_type(thing: Type[Ex]) -> st.SearchStrategy[Ex]:
         return array_dtypes()
 
     real_thing, args = unpack_generic(thing)
-    base_strats = [st.booleans(), st.integers(), st.floats(),
-                   st.complex_numbers(), st.text(), st.binary()]
+    base_strats = [
+        st.booleans(),
+        st.integers(),
+        st.floats(),
+        st.complex_numbers(),
+        st.text(),
+        st.binary(),
+    ]
 
     if real_thing == np._typing._nested_sequence._NestedSequence:
         # We have to override the default resolution to ensure sequences are of
@@ -1064,7 +1070,7 @@ def _from_type(thing: Type[Ex]) -> st.SearchStrategy[Ex]:
             st.recursive(st.tuples(), st.tuples),
             st.recursive(st.one_of(base_strats), st.tuples),
             st.from_type(np.ndarray),
-         )
+        )
 
     if isinstance(real_thing, type):
         if issubclass(real_thing, np.generic):

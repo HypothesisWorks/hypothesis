@@ -68,12 +68,26 @@ def test_resolves_ArrayLike_type(arr_like):
     arr = np.array(arr_like)
     assert isinstance(arr, np.ndarray)
     # The variation is too large to assert anything else about arr, but the
-    # ArrayLike contract just says that it can be coerced intto an array (which
+    # ArrayLike contract just says that it can be coerced into an array (which
     # we just did).
 
 
 @given(seq=from_type(np._typing._nested_sequence._NestedSequence[int]))
-def test_resolves_NestedSequence(seq):
+def test_resolves_specified_NestedSequence(seq):
+    assert hasattr(seq, "__iter__")
+
+    def flatten(lst):
+        for el in lst:
+            try:
+                yield from flatten(el)
+            except TypeError:
+                yield el
+
+    assert all(isinstance(i, int) for i in flatten(seq))
+
+
+@given(seq=from_type(np._typing._nested_sequence._NestedSequence))
+def test_resolves_unspecified_NestedSequence(seq):
     assert hasattr(seq, "__iter__")
 
 

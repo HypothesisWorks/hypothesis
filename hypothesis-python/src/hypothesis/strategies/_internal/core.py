@@ -1107,7 +1107,7 @@ def _from_type(thing: Type[Ex], recurse_guard: List[Type[Ex]]) -> SearchStrategy
     # Let registered extra modules handle their own recognized types first, before
     # e.g. Unions are resolved
     if thing not in types._global_type_lookup:
-        for (module, resolver) in types._global_extra_lookup.items():
+        for module, resolver in types._global_extra_lookup.items():
             if module in sys.modules:
                 strat = resolver(thing)
                 if strat is not None:

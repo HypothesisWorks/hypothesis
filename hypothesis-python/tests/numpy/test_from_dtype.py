@@ -17,7 +17,6 @@ from hypothesis import assume, given, settings, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra import numpy as nps
 from hypothesis.internal.floats import width_smallest_normals
-from hypothesis.strategies import from_type
 from hypothesis.strategies._internal import SearchStrategy
 
 from tests.common.debug import assert_no_examples, find_any

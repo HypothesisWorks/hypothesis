@@ -601,7 +601,9 @@ if sys.version_info[:2] >= (3, 9):
 # avoid the performance hit of importing anything here, we defer it until the
 # method is actually called.
 _global_extra_lookup: typing.Dict[str, typing.Callable[[type], st.SearchStrategy]] = {
-    "numpy": lambda thing: importlib.import_module("hypothesis.extra.numpy")._from_type(thing)
+    "numpy": lambda thing: importlib.import_module("hypothesis.extra.numpy")._from_type(
+        thing
+    ),
 }
 
 
