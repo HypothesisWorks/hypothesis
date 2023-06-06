@@ -10,7 +10,17 @@
 
 import importlib
 import math
-from typing import Any, Mapping, Optional, Sequence, Tuple, Type, TypeVar, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 import numpy as np
 
@@ -31,7 +41,6 @@ from hypothesis.extra._array_helpers import (
     order_check,
     valid_tuple_axes as _valid_tuple_axes,
 )
-from hypothesis.internal.compat import get_args, get_origin
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.reflection import proxies
@@ -50,10 +59,13 @@ def _try_import(fq_name: str) -> Any:
         return None
 
 
-ArrayLike = _try_import("numpy.typing.ArrayLike")
-DTypeLike = _try_import("numpy.typing.DTypeLike")
-NDArray = _try_import("numpy.typing.NDArray")
+if TYPE_CHECKING:
+    from numpy.typing import DTypeLike, NDArray
+else:
+    DTypeLike = _try_import("numpy.typing.DTypeLike")
+    NDArray = _try_import("numpy.typing.NDArray")
 
+ArrayLike = _try_import("numpy.typing.ArrayLike")
 _NestedSequence = _try_import("numpy._typing._nested_sequence._NestedSequence")
 _SupportsArray = _try_import("numpy._typing._array_like._SupportsArray")
 
@@ -996,9 +1008,12 @@ def _from_type(thing: Type[Ex]) -> Optional[st.SearchStrategy[Ex]]:
     """
 
     def unpack_generic(thing):
-        real_thing = get_origin(thing)
+        # get_origin and get_args fail on python<3.9 because (some of) the
+        # relevant types do not inherit from _GenericAlias.  So just pick the
+        # value out directly.
+        real_thing = getattr(thing, "__origin__", None)
         if real_thing is not None:
-            return (real_thing, get_args(thing))
+            return (real_thing, getattr(thing, "__args__", ()))
         else:
             return (thing, ())
 
@@ -1013,7 +1028,7 @@ def _from_type(thing: Type[Ex]) -> Optional[st.SearchStrategy[Ex]]:
             assert len(args) == 2
             shape = args[0]
             assert shape is Any
-            dtype_args = get_args(args[1])
+            dtype_args = getattr(args[1], "__args__", ())
             if dtype_args:
                 assert len(dtype_args) == 1
                 if isinstance(dtype_args[0], TypeVar):
