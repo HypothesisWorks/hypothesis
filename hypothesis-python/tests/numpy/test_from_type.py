@@ -138,3 +138,39 @@ def test_resolves_SupportsArray():
         assert np.asarray(arr).dtype.kind == "i"
 
     test()
+
+
+@pytest.mark.skipif(
+    _NestedSequence is None or _SupportsArray is None,
+    reason="numpy._typing is not available",
+)
+def test_resolve_ArrayLike_equivalent():
+    # This is the current (1.24.3) definition of ArrayLike,
+    # with problematic parts commented out.
+    ArrayLike_like = typing.Union[
+        _SupportsArray,
+        # _NestedSequence[_SupportsArray],
+        bool,
+        int,
+        float,
+        complex,
+        str,
+        bytes,
+        _NestedSequence[
+            typing.Union[
+                bool,
+                int,
+                float,
+                complex,
+                str,
+                # bytes,
+            ]
+        ],
+    ]
+
+    @given(arr_like=from_type(ArrayLike_like))
+    def test(arr_like):
+        arr = np.array(arr_like)
+        assert isinstance(arr, np.ndarray)
+
+    test()
