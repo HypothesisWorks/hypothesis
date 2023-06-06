@@ -31,7 +31,9 @@ def test_resolves_dtype_type(dtype):
 
 @pytest.mark.parametrize("typ", [np.object_, np.void])
 def test_does_not_resolve_nonscalar_types(typ):
-    assert from_type(typ) == builds(typ)
+    # Comparing the objects directly fails on Windows,
+    # so compare their reprs instead.
+    assert repr(from_type(typ)) == repr(builds(typ))
 
 
 @pytest.mark.parametrize("typ", STANDARD_TYPES_TYPE)
