@@ -992,41 +992,38 @@ def _from_type(thing: Type[Ex]) -> st.SearchStrategy[Ex]:
     """
 
     def unpack_generic(thing):
-        if real_thing := get_origin(thing):
+        real_thing = get_origin(thing)
+        if real_thing:
             return (real_thing, get_args(thing))
         else:
             return (thing, ())
 
-    def find_dtype_shape(real_thing, args):
-        if real_thing == np._typing._array_like._SupportsArray:
-            assert len(args) <= 1
-            real_thing = np.ndarray
-            dtype = args[0] if args else Any
+    def find_dtype_shape(args):
+        if len(args) <= 1:
+            # Zero args: np.ndarray, _SupportsArray
+            # One arg: np.ndarray[type], _SupportsArray[type]
             shape = Any
-        elif isinstance(real_thing, type) and issubclass(real_thing, np.ndarray):
-            if len(args) == 0:  # Untyped, np.ndarray or _SupportsArray
-                shape = Any
-                dtype = scalar_dtypes()
-            elif len(args) == 1:  # Typed, np.ndarray[type]
-                shape = Any
-                dtype = scalar_dtypes() if args[0] == Any else np.dtype(args[0])
-            elif len(args) == 2:  # npt.NDArray or np.ndarray[Any, type]
-                shape = args[0]
-                assert shape is Any
-                dtype_args = get_args(args[1])
-                if dtype_args:
-                    assert len(dtype_args) == 1
-                    if isinstance(dtype_args[0], TypeVar):  # Untyped, npt.NDArray
-                        assert dtype_args[0].__bound__ == np.generic
-                        dtype = scalar_dtypes()
-                    else:  # Typed, npt.NDArray[type]
-                        dtype = np.dtype(dtype_args[0])
-                else:  # np.ndarray[Any, type]
-                    dtype = args[1]
+            dtype = args[0] if args else Any
         else:
-            dtype = shape = None
+            # Two args: np.ndarray[shape, type], npt.NDArray[*]
+            assert len(args) == 2
+            shape = args[0]
+            assert shape is Any
+            dtype_args = get_args(args[1])
+            if dtype_args:
+                assert len(dtype_args) == 1
+                if isinstance(dtype_args[0], TypeVar):
+                    # npt.NDArray (dtype is numpy.dtype[+ScalarType])
+                    assert dtype_args[0].__bound__ == np.generic
+                    dtype = Any
+                else:
+                    # npt.NDArray[type]
+                    dtype = dtype_args[0]
+            else:
+                # np.ndarray[shape, type]
+                dtype = args[1]
         return (
-            scalar_dtypes() if dtype is Any else dtype,
+            scalar_dtypes() if dtype is Any else np.dtype(dtype),
             array_shapes(max_dims=2) if shape is Any else shape,
         )
 
@@ -1078,5 +1075,8 @@ def _from_type(thing: Type[Ex]) -> st.SearchStrategy[Ex]:
             if dtype.kind not in "OV":
                 return from_dtype(dtype)
         if issubclass(real_thing, (np.ndarray, np._typing._array_like._SupportsArray)):
-            dtype, shape = find_dtype_shape(real_thing, args)
+            dtype, shape = find_dtype_shape(args)
             return arrays(dtype, shape)
+
+    # We didn't find a type to resolve, continue
+    return None
