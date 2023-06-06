@@ -1024,59 +1024,61 @@ def _from_type(thing: Type[Ex]) -> Optional[st.SearchStrategy[Ex]]:
             array_shapes(max_dims=2) if shape is Any else shape,
         )
 
+    def base_strats():
+        return [
+            st.booleans(),
+            st.integers(),
+            st.floats(),
+            st.complex_numbers(),
+            st.text(),
+            st.binary(),
+        ]
+
     if thing == np.dtype:
         return array_dtypes()
-
-    real_thing, args = unpack_generic(thing)
-    base_strats = [
-        st.booleans(),
-        st.integers(),
-        st.floats(),
-        st.complex_numbers(),
-        st.text(),
-        st.binary(),
-    ]
-
-    if real_thing == _NestedSequence:
-        # We have to override the default resolution to ensure sequences are of
-        # equal length. Actually they are still not, due to base_strat possibly
-        # returning arbitrary-shaped arrays - hence the even more special
-        # resolution of ArrayLike, below.
-        assert len(args) <= 1
-        base_strat = st.from_type(args[0]) if args else st.one_of(base_strats)
-        return st.one_of(
-            st.recursive(st.tuples(), st.tuples),
-            st.recursive(st.tuples(base_strat), st.tuples),
-            st.lists(base_strat),
-        )
 
     if thing == ArrayLike:
         # We override the default type resolution to ensure the "coercible to
         # array" contract is honoured. See
         # https://github.com/HypothesisWorks/hypothesis/pull/3670#issuecomment-1578140422
         return st.one_of(
-            st.one_of(base_strats),
+            st.one_of(base_strats()),
             # Exclude binary() from mixed lists because it can fail when
             # combined with text() - see linked comment above
-            st.lists(st.one_of(base_strats[:-1])),
+            st.lists(st.one_of(base_strats()[:-1])),
             # Recurse on tuples to get (trivial or size-1) nested equal-length
             # sequences
             st.recursive(st.tuples(), st.tuples),
-            st.recursive(st.tuples(st.one_of(base_strats)), st.tuples),
+            st.recursive(st.tuples(st.one_of(base_strats())), st.tuples),
             st.from_type(np.ndarray),
         )
 
-    if isinstance(real_thing, type):
-        if issubclass(real_thing, np.generic):
-            dtype = np.dtype(real_thing)
-            if dtype.kind not in "OV":
-                return from_dtype(dtype)
-        elif issubclass(real_thing, np.ndarray):
-            dtype, shape = find_dtype_shape(args)
-            return arrays(dtype, shape)
-        elif issubclass(real_thing, _SupportsArray):
-            dtype, shape = find_dtype_shape(args)
-            return arrays(dtype, shape)
+    if isinstance(thing, type) and issubclass(thing, np.generic):
+        dtype = np.dtype(thing)
+        return from_dtype(dtype) if dtype.kind not in "OV" else None
+
+    real_thing, args = unpack_generic(thing)
+
+    if real_thing == _NestedSequence:
+        # We have to override the default resolution to ensure sequences are of
+        # equal length. Actually they are still not, due to base_strat possibly
+        # returning arbitrary-shaped arrays - hence the even more special
+        # resolution of ArrayLike, above.
+        assert len(args) <= 1
+        base_strat = st.from_type(args[0]) if args else st.one_of(base_strats())
+        return st.one_of(
+            st.recursive(st.tuples(), st.tuples),
+            st.recursive(st.tuples(base_strat), st.tuples),
+            st.lists(base_strat),
+        )
+
+    if real_thing == _SupportsArray:
+        dtype, shape = find_dtype_shape(args)
+        return arrays(dtype, shape)
+
+    if isinstance(real_thing, type) and issubclass(real_thing, np.ndarray):
+        dtype, shape = find_dtype_shape(args)
+        return arrays(dtype, shape)
 
     # We didn't find a type to resolve, continue
     return None
