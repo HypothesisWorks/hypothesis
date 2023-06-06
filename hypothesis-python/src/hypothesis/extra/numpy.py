@@ -1016,30 +1016,31 @@ def _from_type(thing: Type[Ex]) -> Optional[st.SearchStrategy[Ex]]:
         else:
             return (thing, ())
 
+    def unpack_dtype(dtype):
+        dtype_args = getattr(dtype, "__args__", ())
+        if dtype_args:
+            assert len(dtype_args) == 1
+            if isinstance(dtype_args[0], TypeVar):
+                # numpy.dtype[+ScalarType]
+                assert dtype_args[0].__bound__ == np.generic
+                dtype = Any
+            else:
+                # plain dtype
+                dtype = dtype_args[0]
+        return dtype
+
     def find_dtype_shape(args):
         if len(args) <= 1:
             # Zero args: ndarray, _SupportsArray
             # One arg: ndarray[type], _SupportsArray[type]
             shape = Any
-            dtype = args[0] if args else Any
+            dtype = unpack_dtype(args[0]) if args else Any
         else:
             # Two args: ndarray[shape, type], NDArray[*]
             assert len(args) == 2
             shape = args[0]
             assert shape is Any
-            dtype_args = getattr(args[1], "__args__", ())
-            if dtype_args:
-                assert len(dtype_args) == 1
-                if isinstance(dtype_args[0], TypeVar):
-                    # NDArray (dtype is numpy.dtype[+ScalarType])
-                    assert dtype_args[0].__bound__ == np.generic
-                    dtype = Any
-                else:
-                    # NDArray[type]
-                    dtype = dtype_args[0]
-            else:
-                # ndarray[shape, type]
-                dtype = args[1]
+            dtype = unpack_dtype(args[1])
         return (
             scalar_dtypes() if dtype is Any else np.dtype(dtype),
             array_shapes(max_dims=2) if shape is Any else shape,
