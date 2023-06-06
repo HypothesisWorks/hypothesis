@@ -9,20 +9,9 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import Any, Mapping, Optional, Sequence, Tuple, Type, TypeVar, Union
 
 import numpy as np
-import numpy.typing as npt
 
 from hypothesis import strategies as st
 from hypothesis._settings import note_deprecation
@@ -50,8 +39,16 @@ from hypothesis.strategies._internal.numbers import Real
 from hypothesis.strategies._internal.strategies import Ex, T, check_strategy
 from hypothesis.strategies._internal.utils import defines_strategy
 
-if TYPE_CHECKING:
-    from numpy.typing import DTypeLike, NDArray
+try:
+    from numpy.typing import ArrayLike, DTypeLike, NDArray
+except ImportError:
+    ArrayLike = DTypeLike = NDArray = ()
+
+try:
+    from numpy._typing._array_like import _SupportsArray
+    from numpy._typing._nested_sequence import _NestedSequence
+except ImportError:
+    _NestedSequence = _SupportsArray = ()
 
 __all__ = [
     "BroadcastableShapes",
@@ -984,7 +981,7 @@ def integer_array_indices(
 
 
 @defines_strategy(never_lazy=True)
-def _from_type(thing: Type[Ex]) -> st.SearchStrategy[Ex]:
+def _from_type(thing: Type[Ex]) -> Optional[st.SearchStrategy[Ex]]:
     """Called by st.from_type to try to infer a strategy for thing using numpy.
 
     If we can infer a dtype strategy for thing, we return that; otherwise,
@@ -1000,12 +997,12 @@ def _from_type(thing: Type[Ex]) -> st.SearchStrategy[Ex]:
 
     def find_dtype_shape(args):
         if len(args) <= 1:
-            # Zero args: np.ndarray, _SupportsArray
-            # One arg: np.ndarray[type], _SupportsArray[type]
+            # Zero args: ndarray, _SupportsArray
+            # One arg: ndarray[type], _SupportsArray[type]
             shape = Any
             dtype = args[0] if args else Any
         else:
-            # Two args: np.ndarray[shape, type], npt.NDArray[*]
+            # Two args: ndarray[shape, type], NDArray[*]
             assert len(args) == 2
             shape = args[0]
             assert shape is Any
@@ -1013,14 +1010,14 @@ def _from_type(thing: Type[Ex]) -> st.SearchStrategy[Ex]:
             if dtype_args:
                 assert len(dtype_args) == 1
                 if isinstance(dtype_args[0], TypeVar):
-                    # npt.NDArray (dtype is numpy.dtype[+ScalarType])
+                    # NDArray (dtype is numpy.dtype[+ScalarType])
                     assert dtype_args[0].__bound__ == np.generic
                     dtype = Any
                 else:
-                    # npt.NDArray[type]
+                    # NDArray[type]
                     dtype = dtype_args[0]
             else:
-                # np.ndarray[shape, type]
+                # ndarray[shape, type]
                 dtype = args[1]
         return (
             scalar_dtypes() if dtype is Any else np.dtype(dtype),
@@ -1040,7 +1037,7 @@ def _from_type(thing: Type[Ex]) -> st.SearchStrategy[Ex]:
         st.binary(),
     ]
 
-    if real_thing == np._typing._nested_sequence._NestedSequence:
+    if real_thing == _NestedSequence:
         # We have to override the default resolution to ensure sequences are of
         # equal length. Actually they are still not, due to base_strat possibly
         # returning arbitrary-shaped arrays - hence the even more special
@@ -1053,19 +1050,19 @@ def _from_type(thing: Type[Ex]) -> st.SearchStrategy[Ex]:
             st.lists(base_strat),
         )
 
-    if thing == npt.ArrayLike:
+    if thing == ArrayLike:
         # We override the default type resolution to ensure the "coercible to
         # array" contract is honoured. See
         # https://github.com/HypothesisWorks/hypothesis/pull/3670#issuecomment-1578140422
         return st.one_of(
             st.one_of(base_strats),
-            # Exclude binary() from mixed lists because it can not be combined
-            # with text() -  see comment above
+            # Exclude binary() from mixed lists because it can fail when
+            # combined with text() - see linked comment above
             st.lists(st.one_of(base_strats[:-1])),
             # Recurse on tuples to get (trivial or size-1) nested equal-length
             # sequences
             st.recursive(st.tuples(), st.tuples),
-            st.recursive(st.one_of(base_strats), st.tuples),
+            st.recursive(st.tuples(st.one_of(base_strats)), st.tuples),
             st.from_type(np.ndarray),
         )
 
@@ -1074,7 +1071,10 @@ def _from_type(thing: Type[Ex]) -> st.SearchStrategy[Ex]:
             dtype = np.dtype(real_thing)
             if dtype.kind not in "OV":
                 return from_dtype(dtype)
-        if issubclass(real_thing, (np.ndarray, np._typing._array_like._SupportsArray)):
+        elif issubclass(real_thing, np.ndarray):
+            dtype, shape = find_dtype_shape(args)
+            return arrays(dtype, shape)
+        elif issubclass(real_thing, _SupportsArray):
             dtype, shape = find_dtype_shape(args)
             return arrays(dtype, shape)
 
