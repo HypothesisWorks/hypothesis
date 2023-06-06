@@ -999,7 +999,6 @@ def integer_array_indices(
     )
 
 
-@defines_strategy(never_lazy=True)
 def _from_type(thing: Type[Ex]) -> Optional[st.SearchStrategy[Ex]]:
     """Called by st.from_type to try to infer a strategy for thing using numpy.
 
