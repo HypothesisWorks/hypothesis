@@ -1,3 +1,13 @@
+# This file is part of Hypothesis, which may be found at
+# https://github.com/HypothesisWorks/hypothesis/
+#
+# Copyright the Hypothesis Authors.
+# Individual contributors are listed in AUTHORS.rst and the git log.
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v. 2.0. If a copy of the MPL was not distributed with this file, You can
+# obtain one at https://mozilla.org/MPL/2.0/.
+
 import sys
 import typing
 
@@ -5,13 +15,14 @@ import numpy as np
 import numpy.typing as npt
 import pytest
 
-from hypothesis import assume, given
+from hypothesis import given
 from hypothesis.strategies import from_type
 
+from .test_from_dtype import STANDARD_TYPES
 from tests.common.debug import find_any
 
-from .test_from_dtype import STANDARD_TYPES
 STANDARD_TYPES_TYPE = [dtype.type for dtype in STANDARD_TYPES]
+
 
 @given(dtype=from_type(np.dtype))
 def test_resolves_dtype_type(dtype):
@@ -59,3 +70,19 @@ def test_resolves_ArrayLike_type(arr_like):
     # The variation is too large to assert anything else about arr, but the
     # ArrayLike contract just says that it can be coerced intto an array (which
     # we just did).
+
+
+@given(seq=from_type(np._typing._nested_sequence._NestedSequence[int]))
+def test_resolves_NestedSequence(seq):
+    assert hasattr(seq, "__iter__")
+
+
+@given(arr=from_type(np._typing._array_like._SupportsArray))
+def test_resolves_unspecified_SupportsArray(arr):
+    assert hasattr(arr, "__array__")
+
+
+@given(arr=from_type(np._typing._array_like._SupportsArray[int]))
+def test_resolves_SupportsArray(arr):
+    assert hasattr(arr, "__array__")
+    assert np.asarray(arr).dtype.kind == "i"
