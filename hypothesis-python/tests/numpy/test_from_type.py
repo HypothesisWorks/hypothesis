@@ -15,21 +15,11 @@ import numpy as np
 import pytest
 
 from hypothesis import given
+from hypothesis.extra.numpy import ArrayLike, NDArray, _NestedSequence, _SupportsArray
 from hypothesis.strategies import builds, from_type
 
 from .test_from_dtype import STANDARD_TYPES
 from tests.common.debug import find_any
-
-try:
-    from numpy.typing import ArrayLike, NDArray
-except ImportError:
-    ArrayLike = NDArray = None
-
-try:
-    from numpy import _typing
-except ImportError:
-    _typing = None
-
 
 STANDARD_TYPES_TYPE = [dtype.type for dtype in STANDARD_TYPES]
 
@@ -97,46 +87,52 @@ def test_resolves_ArrayLike_type(arr_like):
 
 
 @pytest.mark.skipif(
-    _typing is None,
+    _NestedSequence is None,
     reason="numpy._typing is not available",
 )
-@given(seq=from_type(_typing._nested_sequence._NestedSequence[int]))
-def test_resolves_specified_NestedSequence(seq):
-    assert hasattr(seq, "__iter__")
+def test_resolves_specified_NestedSequence():
+    @given(seq=from_type(_NestedSequence[int]))
+    def test(seq):
+        assert hasattr(seq, "__iter__")
 
-    def flatten(lst):
-        for el in lst:
-            try:
-                yield from flatten(el)
-            except TypeError:
-                yield el
+        def flatten(lst):
+            for el in lst:
+                try:
+                    yield from flatten(el)
+                except TypeError:
+                    yield el
 
-    assert all(isinstance(i, int) for i in flatten(seq))
+        assert all(isinstance(i, int) for i in flatten(seq))
+
+    test()
 
 
 @pytest.mark.skipif(
-    _typing is None,
+    _NestedSequence is None,
     reason="numpy._typing is not available",
 )
-@given(seq=from_type(_typing._nested_sequence._NestedSequence))
+@given(seq=from_type(_NestedSequence))
 def test_resolves_unspecified_NestedSequence(seq):
     assert hasattr(seq, "__iter__")
 
 
 @pytest.mark.skipif(
-    _typing is None,
+    _SupportsArray is None,
     reason="numpy._typing is not available",
 )
-@given(arr=from_type(_typing._array_like._SupportsArray))
+@given(arr=from_type(_SupportsArray))
 def test_resolves_unspecified_SupportsArray(arr):
     assert hasattr(arr, "__array__")
 
 
 @pytest.mark.skipif(
-    _typing is None,
+    _SupportsArray is None,
     reason="numpy._typing is not available",
 )
-@given(arr=from_type(_typing._array_like._SupportsArray[int]))
-def test_resolves_SupportsArray(arr):
-    assert hasattr(arr, "__array__")
-    assert np.asarray(arr).dtype.kind == "i"
+def test_resolves_SupportsArray():
+    @given(arr=from_type(_SupportsArray[int]))
+    def test(arr):
+        assert hasattr(arr, "__array__")
+        assert np.asarray(arr).dtype.kind == "i"
+
+    test()

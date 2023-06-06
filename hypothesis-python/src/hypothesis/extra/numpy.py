@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import importlib
 import math
 from typing import Any, Mapping, Optional, Sequence, Tuple, Type, TypeVar, Union
 
@@ -39,16 +40,22 @@ from hypothesis.strategies._internal.numbers import Real
 from hypothesis.strategies._internal.strategies import Ex, T, check_strategy
 from hypothesis.strategies._internal.utils import defines_strategy
 
-try:
-    from numpy.typing import ArrayLike, DTypeLike, NDArray
-except ImportError:
-    ArrayLike = DTypeLike = NDArray = ()
 
-try:
-    from numpy._typing._array_like import _SupportsArray
-    from numpy._typing._nested_sequence import _NestedSequence
-except ImportError:
-    _NestedSequence = _SupportsArray = ()
+def _try_import(fq_name: str) -> Any:
+    mod_name, _, attr_name = fq_name.rpartition(".")
+    try:
+        mod = importlib.import_module(mod_name)
+        return getattr(mod, attr_name, None)
+    except ImportError:
+        return None
+
+
+ArrayLike = _try_import("numpy.typing.ArrayLike")
+DTypeLike = _try_import("numpy.typing.DTypeLike")
+NDArray = _try_import("numpy.typing.NDArray")
+
+_NestedSequence = _try_import("numpy._typing._nested_sequence._NestedSequence")
+_SupportsArray = _try_import("numpy._typing._array_like._SupportsArray")
 
 __all__ = [
     "BroadcastableShapes",
@@ -990,7 +997,7 @@ def _from_type(thing: Type[Ex]) -> Optional[st.SearchStrategy[Ex]]:
 
     def unpack_generic(thing):
         real_thing = get_origin(thing)
-        if real_thing:
+        if real_thing is not None:
             return (real_thing, get_args(thing))
         else:
             return (thing, ())
@@ -1041,15 +1048,18 @@ def _from_type(thing: Type[Ex]) -> Optional[st.SearchStrategy[Ex]]:
         # We override the default type resolution to ensure the "coercible to
         # array" contract is honoured. See
         # https://github.com/HypothesisWorks/hypothesis/pull/3670#issuecomment-1578140422
+        base_strat = st.one_of(base_strats())
+        base_strat_ex = st.one_of(base_strats()[:-1])
         return st.one_of(
-            st.one_of(base_strats()),
+            base_strat,
             # Exclude binary() from mixed lists because it can fail when
             # combined with text() - see linked comment above
-            st.lists(st.one_of(base_strats()[:-1])),
-            # Recurse on tuples to get (trivial or size-1) nested equal-length
-            # sequences
+            st.lists(st.one_of(base_strat_ex)),
+            # Recurse on tuples to get (up to size-2) nested equal-length
+            # sequencess
             st.recursive(st.tuples(), st.tuples),
-            st.recursive(st.tuples(st.one_of(base_strats())), st.tuples),
+            st.recursive(st.tuples(base_strat), st.tuples),
+            st.recursive(st.tuples(base_strat_ex, base_strat_ex), st.tuples),
             st.from_type(np.ndarray),
         )
 
@@ -1069,6 +1079,7 @@ def _from_type(thing: Type[Ex]) -> Optional[st.SearchStrategy[Ex]]:
         return st.one_of(
             st.recursive(st.tuples(), st.tuples),
             st.recursive(st.tuples(base_strat), st.tuples),
+            st.recursive(st.tuples(base_strat, base_strat), st.tuples),
             st.lists(base_strat),
         )
 
