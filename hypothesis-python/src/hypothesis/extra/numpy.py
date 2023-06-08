@@ -62,7 +62,6 @@ def _try_import(mod_name: str, attr_name: str) -> Any:
 if TYPE_CHECKING:
     from numpy.typing import DTypeLike, NDArray
 else:
-    DTypeLike = _try_import("numpy.typing", "DTypeLike")
     NDArray = _try_import("numpy.typing", "NDArray")
 
 ArrayLike = _try_import("numpy.typing", "ArrayLike")
@@ -1073,7 +1072,14 @@ def _from_type(thing: Type[Ex]) -> Optional[st.SearchStrategy[Ex]]:
     )
 
     if thing == np.dtype:
-        return array_dtypes()
+        # Note: Parameterized dtypes and DTypeLike are not supported.
+        return st.one_of(
+            scalar_dtypes(),
+            byte_string_dtypes(),
+            unicode_string_dtypes(),
+            array_dtypes(),
+            nested_dtypes(),
+        )
 
     if thing == ArrayLike:
         # We override the default type resolution to ensure the "coercible to
