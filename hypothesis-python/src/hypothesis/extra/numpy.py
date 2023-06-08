@@ -1104,7 +1104,9 @@ def _from_type(thing: Type[Ex]) -> Optional[st.SearchStrategy[Ex]]:
                     st.recursive(
                         arrays(
                             scalar_dtypes(),
-                            array_shapes(min_dims=s, max_dims=s, min_side=s, max_side=s),
+                            array_shapes(
+                                min_dims=s, max_dims=s, min_side=s, max_side=s
+                            ),
                         ),
                         extend=st.tuples,
                     ),

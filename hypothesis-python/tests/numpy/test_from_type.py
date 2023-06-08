@@ -26,6 +26,7 @@ STANDARD_TYPES_TYPE = [dtype.type for dtype in STANDARD_TYPES]
 needs_np_typing = {"reason": "numpy.typing is not available"}
 needs_np_private_typing = {"reason": "numpy._typing is not available"}
 
+
 @given(dtype=from_type(np.dtype))
 def test_resolves_dtype_type(dtype):
     assert isinstance(dtype, np.dtype)
@@ -124,7 +125,9 @@ def test_resolves_SupportsArray():
     test()
 
 
-@pytest.mark.skipif(_NestedSequence is None or _SupportsArray is None, **needs_np_private_typing)
+@pytest.mark.skipif(
+    _NestedSequence is None or _SupportsArray is None, **needs_np_private_typing
+)
 def test_resolve_ArrayLike_equivalent():
     # This is the current (1.24.3) definition of ArrayLike,
     # with problematic parts commented out.

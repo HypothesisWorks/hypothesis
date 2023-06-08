@@ -14,7 +14,6 @@ import datetime
 import decimal
 import fractions
 import functools
-import importlib
 import inspect
 import io
 import ipaddress
@@ -671,13 +670,10 @@ def _from_numpy_type(thing: typing.Type) -> typing.Optional[st.SearchStrategy]:
 
 
 _global_extra_lookup: typing.Dict[
-    str,
-    typing.Callable[[typing.Type], typing.Optional[st.SearchStrategy]]
+    str, typing.Callable[[typing.Type], typing.Optional[st.SearchStrategy]]
 ] = {
     "numpy": _from_numpy_type,
 }
-
-
 
 
 def register(type_, fallback=None, *, module=typing):
