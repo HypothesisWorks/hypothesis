@@ -23,6 +23,8 @@ from tests.common.debug import find_any
 
 STANDARD_TYPES_TYPE = [dtype.type for dtype in STANDARD_TYPES]
 
+needs_np_typing = {"reason": "numpy.typing is not available"}
+needs_np_private_typing = {"reason": "numpy._typing is not available"}
 
 @given(dtype=from_type(np.dtype))
 def test_resolves_dtype_type(dtype):
@@ -64,10 +66,7 @@ def test_resolves_specified_ndarray_type(typ):
     assert arr.dtype.type == typ
 
 
-@pytest.mark.skipif(
-    NDArray is None,
-    reason="numpy.typing is not available",
-)
+@pytest.mark.skipif(NDArray is None, **needs_np_typing)
 @pytest.mark.parametrize("typ", STANDARD_TYPES_TYPE)
 def test_resolves_specified_NDArray_type(typ):
     arr = from_type(NDArray[typ]).example()
@@ -75,10 +74,7 @@ def test_resolves_specified_NDArray_type(typ):
     assert arr.dtype.type == typ
 
 
-@pytest.mark.skipif(
-    ArrayLike is None,
-    reason="numpy.typing is not available",
-)
+@pytest.mark.skipif(ArrayLike is None, **needs_np_typing)
 @given(arr_like=from_type(ArrayLike))
 def test_resolves_ArrayLike_type(arr_like):
     arr = np.array(arr_like)
@@ -88,10 +84,7 @@ def test_resolves_ArrayLike_type(arr_like):
     # we just did).
 
 
-@pytest.mark.skipif(
-    _NestedSequence is None,
-    reason="numpy._typing is not available",
-)
+@pytest.mark.skipif(_NestedSequence is None, **needs_np_private_typing)
 def test_resolves_specified_NestedSequence():
     @given(seq=from_type(_NestedSequence[int]))
     def test(seq):
@@ -109,28 +102,19 @@ def test_resolves_specified_NestedSequence():
     test()
 
 
-@pytest.mark.skipif(
-    _NestedSequence is None,
-    reason="numpy._typing is not available",
-)
+@pytest.mark.skipif(_NestedSequence is None, **needs_np_private_typing)
 @given(seq=from_type(_NestedSequence))
 def test_resolves_unspecified_NestedSequence(seq):
     assert hasattr(seq, "__iter__")
 
 
-@pytest.mark.skipif(
-    _SupportsArray is None,
-    reason="numpy._typing is not available",
-)
+@pytest.mark.skipif(_SupportsArray is None, **needs_np_private_typing)
 @given(arr=from_type(_SupportsArray))
 def test_resolves_unspecified_SupportsArray(arr):
     assert hasattr(arr, "__array__")
 
 
-@pytest.mark.skipif(
-    _SupportsArray is None,
-    reason="numpy._typing is not available",
-)
+@pytest.mark.skipif(_SupportsArray is None, **needs_np_private_typing)
 def test_resolves_SupportsArray():
     @given(arr=from_type(_SupportsArray[int]))
     def test(arr):
@@ -140,10 +124,7 @@ def test_resolves_SupportsArray():
     test()
 
 
-@pytest.mark.skipif(
-    _NestedSequence is None or _SupportsArray is None,
-    reason="numpy._typing is not available",
-)
+@pytest.mark.skipif(_NestedSequence is None or _SupportsArray is None, **needs_np_private_typing)
 def test_resolve_ArrayLike_equivalent():
     # This is the current (1.24.3) definition of ArrayLike,
     # with problematic parts commented out.

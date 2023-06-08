@@ -1059,8 +1059,8 @@ def _from_type(thing: Type[Ex]) -> Optional[st.SearchStrategy[Ex]]:
             st.binary(),
         ]
     )
-    # np.array(arr_like) (1.24.3) fails if mixing strings and non-ascii
-    # bytestrings (ex: ['', b'\x80'])
+    # don't mix strings and non-ascii bytestrings (ex: ['', b'\x80']). See
+    # https://github.com/numpy/numpy/issues/23899.
     base_strats_ascii = st.one_of(
         [
             st.booleans(),
