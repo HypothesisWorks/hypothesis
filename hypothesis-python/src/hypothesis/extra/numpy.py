@@ -50,8 +50,8 @@ from hypothesis.strategies._internal.strategies import Ex, T, check_strategy
 from hypothesis.strategies._internal.utils import defines_strategy
 
 
-def _try_import(fq_name: str) -> Any:
-    mod_name, _, attr_name = fq_name.rpartition(".")
+def _try_import(mod_name: str, attr_name: str) -> Any:
+    assert "." not in attr_name
     try:
         mod = importlib.import_module(mod_name)
         return getattr(mod, attr_name, None)
@@ -62,12 +62,12 @@ def _try_import(fq_name: str) -> Any:
 if TYPE_CHECKING:
     from numpy.typing import DTypeLike, NDArray
 else:
-    DTypeLike = _try_import("numpy.typing.DTypeLike")
-    NDArray = _try_import("numpy.typing.NDArray")
+    DTypeLike = _try_import("numpy.typing", "DTypeLike")
+    NDArray = _try_import("numpy.typing", "NDArray")
 
-ArrayLike = _try_import("numpy.typing.ArrayLike")
-_NestedSequence = _try_import("numpy._typing._nested_sequence._NestedSequence")
-_SupportsArray = _try_import("numpy._typing._array_like._SupportsArray")
+ArrayLike = _try_import("numpy.typing", "ArrayLike")
+_NestedSequence = _try_import("numpy._typing._nested_sequence", "_NestedSequence")
+_SupportsArray = _try_import("numpy._typing._array_like", "_SupportsArray")
 
 __all__ = [
     "BroadcastableShapes",
