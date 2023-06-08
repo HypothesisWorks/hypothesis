@@ -1090,28 +1090,13 @@ def _from_type(thing: Type[Ex]) -> Optional[st.SearchStrategy[Ex]]:
         return st.one_of(
             # *scalars
             base_strats,
-            # _NestedSequence[Union[*scalars]], but excluding non-ascii binary
-            st.lists(base_strats_ascii),
-            # _SupportsArray, use plain ndarrays
-            st.from_type(np.ndarray),
-            # _NestedSequence[_SupportsArray], but guaranteeing equal size
-            st.integers(min_value=0, max_value=4).flatmap(
-                lambda s: st.one_of(
-                    st.recursive(
-                        st.lists(base_strats_ascii, min_size=s, max_size=s),
-                        extend=st.tuples,
-                    ),
-                    st.recursive(
-                        arrays(
-                            scalar_dtypes(),
-                            array_shapes(
-                                min_dims=s, max_dims=s, min_side=s, max_side=s
-                            ),
-                        ),
-                        extend=st.tuples,
-                    ),
-                ),
-            ),
+            # The two recursive strategies below cover the following cases:
+            # - _SupportsArray (using plain ndarrays)
+            # - _NestedSequence[Union[*scalars]] (but excluding non-ascii binary)
+            # - _NestedSequence[_SupportsArray] (but with a single leaf element
+            # .  to avoid the issue of unequally sized leaves)
+            st.recursive(st.lists(base_strats_ascii), extend=st.tuples),
+            st.recursive(st.from_type(np.ndarray), extend=st.tuples),
         )
 
     if isinstance(thing, type) and issubclass(thing, np.generic):
