@@ -1049,24 +1049,28 @@ def _from_type(thing: Type[Ex]) -> Optional[st.SearchStrategy[Ex]]:
     we return None.
     """
 
-    base_strats = st.one_of([
-        st.booleans(),
-        st.integers(),
-        st.floats(),
-        st.complex_numbers(),
-        st.text(),
-        st.binary(),
-    ])
+    base_strats = st.one_of(
+        [
+            st.booleans(),
+            st.integers(),
+            st.floats(),
+            st.complex_numbers(),
+            st.text(),
+            st.binary(),
+        ]
+    )
     # np.array(arr_like) (1.24.3) fails if mixing strings and non-ascii
     # bytestrings (ex: ['', b'\x80'])
-    base_strats_ascii = st.one_of([
-        st.booleans(),
-        st.integers(),
-        st.floats(),
-        st.complex_numbers(),
-        st.text(),
-        st.binary().filter(bytes.isascii),
-    ])
+    base_strats_ascii = st.one_of(
+        [
+            st.booleans(),
+            st.integers(),
+            st.floats(),
+            st.complex_numbers(),
+            st.text(),
+            st.binary().filter(bytes.isascii),
+        ]
+    )
 
     if thing == np.dtype:
         return array_dtypes()
@@ -1093,14 +1097,17 @@ def _from_type(thing: Type[Ex]) -> Optional[st.SearchStrategy[Ex]]:
             # _NestedSequence[_SupportsArray], but guaranteeing equal size
             st.integers(min_value=0, max_value=4).flatmap(
                 lambda s: st.one_of(
-                    st.recursive(st.lists(
-                        base_strats_ascii,
-                        min_size=s, max_size=s
-                    ), extend=st.tuples),
-                    st.recursive(arrays(
-                        scalar_dtypes(),
-                        array_shapes(min_dims=s, max_dims=s, min_side=s, max_side=s),
-                    ), extend=st.tuples),
+                    st.recursive(
+                        st.lists(base_strats_ascii, min_size=s, max_size=s),
+                        extend=st.tuples,
+                    ),
+                    st.recursive(
+                        arrays(
+                            scalar_dtypes(),
+                            array_shapes(min_dims=s, max_dims=s, min_side=s, max_side=s),
+                        ),
+                        extend=st.tuples,
+                    ),
                 ),
             ),
         )
