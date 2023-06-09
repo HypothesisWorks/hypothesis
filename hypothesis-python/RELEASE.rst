@@ -1,5 +1,6 @@
 RELEASE_TYPE: minor
 
-Implement support for :func:`hypothesis.strategies.from_type` to handle generic
-and parameterized numpy array types (:class:`numpy.ndarray[scalar type] <numpy.ndarray>`,
-numpy.typing.ArrayLike, etc).
+:func:`~hypothesis.strategies.from_type` now handles numpy array types:
+:obj:`np.typing.ArrayLike <numpy.typing.ArrayLike>`,
+:obj:`np.typing.NDArray <numpy.typing.NDArray>`, and parameterized
+versions including :class:`np.ndarray[shape, elem_type] <numpy.ndarray>`.
