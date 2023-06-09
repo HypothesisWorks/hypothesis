@@ -73,3 +73,18 @@ def test_can_exclude_branching_with_max_leaves(t):
 @given(st.recursive(st.none(), lambda x: st.one_of(x, x)))
 def test_issue_1502_regression(s):
     pass
+
+
+@pytest.mark.parametrize(
+    "s",
+    [
+        st.recursive(None, st.lists),
+        st.recursive(st.none(), lambda x: None),
+        st.recursive(st.none(), st.lists, max_leaves=-1),
+        st.recursive(st.none(), st.lists, max_leaves=0),
+        st.recursive(st.none(), st.lists, max_leaves=1.0),
+    ],
+)
+def test_invalid_args(s):
+    with pytest.raises(InvalidArgument):
+        s.example()
