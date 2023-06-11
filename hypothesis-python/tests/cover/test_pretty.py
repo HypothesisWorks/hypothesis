@@ -271,7 +271,7 @@ def test_bad_repr():
 
 class BadException(Exception):
     def __str__(self):
-        return -1
+        return -1  # noqa
 
 
 class ReallyBadRepr:
