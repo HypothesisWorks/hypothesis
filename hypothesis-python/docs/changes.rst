@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.78.0:
+
+-------------------
+6.78.0 - 2023-06-11
+-------------------
+
+New input validation for :func:`~hypothesis.strategies.recursive`
+will raise an error rather than hanging indefinitely if passed
+invalid ``max_leaves=`` arguments.
+
 .. _v6.77.0:
 
 -------------------
