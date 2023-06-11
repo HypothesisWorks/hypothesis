@@ -24,13 +24,13 @@ exceptiongroup==1.1.1 ; python_version < "3.11"
     #   pytest
 execnet==1.9.0
     # via pytest-xdist
-fakeredis==2.13.0
+fakeredis==2.14.1
     # via -r requirements/coverage.in
 iniconfig==2.0.0
     # via pytest
 lark==1.1.5
     # via -r requirements/coverage.in
-libcst==1.0.0
+libcst==1.0.1
     # via -r requirements/coverage.in
 mypy-extensions==1.0.0
     # via
@@ -50,13 +50,13 @@ pathspec==0.11.1
     # via black
 pexpect==4.8.0
     # via -r requirements/test.in
-platformdirs==3.5.1
+platformdirs==3.5.3
     # via black
 pluggy==1.0.0
     # via pytest
 ptyprocess==0.7.0
     # via pexpect
-pytest==7.3.1
+pytest==7.3.2
     # via
     #   -r requirements/test.in
     #   pytest-xdist

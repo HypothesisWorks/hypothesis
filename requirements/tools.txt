@@ -57,7 +57,7 @@ decorator==5.1.1
     # via ipython
 distlib==0.3.6
     # via virtualenv
-django==4.2.1
+django==4.2.2
     # via -r requirements/tools.in
 docutils==0.18.1
     # via
@@ -73,7 +73,7 @@ exceptiongroup==1.1.1 ; python_version < "3.11"
     #   pytest
 executing==1.2.0
     # via stack-data
-filelock==3.12.0
+filelock==3.12.1
     # via
     #   tox
     #   virtualenv
@@ -105,7 +105,7 @@ keyring==23.13.1
     # via twine
 lark==1.1.5
     # via -r requirements/tools.in
-libcst==1.0.0
+libcst==1.0.1
     # via
     #   -r requirements/tools.in
     #   shed
@@ -148,7 +148,7 @@ pip-tools==6.13.0
     # via -r requirements/tools.in
 pkginfo==1.9.6
     # via twine
-platformdirs==3.5.1
+platformdirs==3.5.3
     # via
     #   black
     #   tox
@@ -177,13 +177,13 @@ pyproject-api==1.5.1
     # via tox
 pyproject-hooks==1.0.0
     # via build
-pyright==1.1.311
+pyright==1.1.313
     # via -r requirements/tools.in
-pytest==7.3.1
+pytest==7.3.2
     # via -r requirements/tools.in
 python-dateutil==2.8.2
     # via -r requirements/tools.in
-pyupgrade==3.4.0
+pyupgrade==3.6.0
     # via shed
 pyyaml==6.0
     # via libcst
@@ -203,7 +203,7 @@ rfc3986==2.0.0
     # via twine
 rich==13.4.1
     # via twine
-ruff==0.0.270
+ruff==0.0.272
     # via -r requirements/tools.in
 secretstorage==3.3.3
     # via keyring
@@ -231,7 +231,7 @@ sphinx-codeautolink==0.15.0
     # via -r requirements/tools.in
 sphinx-hoverxref==1.3.0
     # via -r requirements/tools.in
-sphinx-rtd-theme==1.2.1
+sphinx-rtd-theme==1.2.2
     # via -r requirements/tools.in
 sphinx-selective-exclude==1.0.3
     # via -r requirements/tools.in
@@ -255,7 +255,7 @@ sqlparse==0.4.4
     # via django
 stack-data==0.6.2
     # via ipython
-tokenize-rt==5.0.0
+tokenize-rt==5.1.0
     # via pyupgrade
 tomli==2.0.1
     # via
@@ -267,7 +267,7 @@ tomli==2.0.1
     #   pyproject-hooks
     #   pytest
     #   tox
-tox==4.5.2
+tox==4.6.0
     # via -r requirements/tools.in
 traitlets==5.9.0
     # via
@@ -294,7 +294,7 @@ typing-extensions==4.6.3
     #   typing-inspect
 typing-inspect==0.9.0
     # via libcst
-urllib3==2.0.2
+urllib3==2.0.3
     # via
     #   requests
     #   twine
