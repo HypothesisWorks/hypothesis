@@ -22,7 +22,7 @@ pluggy==1.0.0
     # via pytest
 ptyprocess==0.7.0
     # via pexpect
-pytest==7.3.1
+pytest==7.3.2
     # via
     #   -r requirements/test.in
     #   pytest-xdist
