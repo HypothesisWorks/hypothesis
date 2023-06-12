@@ -3,13 +3,9 @@
 
 import datetime
 import hypothesis
-import hypothesis._settings
-import hypothesis.strategies
-import hypothesis.strategies._internal.strategies
 import random
 import typing
 from hypothesis import given, settings, strategies as st
-from hypothesis.strategies._internal.strategies import Ex
 from random import Random
 from typing import Hashable
 
@@ -27,16 +23,14 @@ def test_fuzz_event(value: str) -> None:
 
 
 @given(
-    specifier=st.from_type(hypothesis.strategies.SearchStrategy),
+    specifier=st.from_type(st.SearchStrategy),
     condition=st.functions(like=lambda *a, **k: None, returns=st.booleans()),
     settings=st.from_type(typing.Optional[hypothesis.settings]),
     random=st.from_type(typing.Optional[random.Random]),
     database_key=st.one_of(st.none(), st.binary()),
 )
 def test_fuzz_find(
-    specifier: hypothesis.strategies.SearchStrategy[
-        hypothesis.strategies._internal.strategies.Ex
-    ],
+    specifier: st.SearchStrategy,
     condition: typing.Callable[[typing.Any], bool],
     settings: typing.Optional[hypothesis.settings],
     random: typing.Optional[random.Random],
@@ -89,7 +83,7 @@ def test_fuzz_settings(
     max_examples: int,
     derandomize: bool,
     database,
-    verbosity: hypothesis._settings.Verbosity,
+    verbosity: hypothesis.Verbosity,
     phases,
     stateful_step_count: int,
     report_multiple_bugs: bool,
