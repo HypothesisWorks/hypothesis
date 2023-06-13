@@ -3,13 +3,13 @@
 
 import datetime
 import hypothesis
-import hypothesis.strategies
-import hypothesis.strategies._internal.strategies
 import random
 import typing
 from hypothesis import given, settings, strategies as st
-from hypothesis.strategies._internal.strategies import Ex
 from random import Random
+from typing import Hashable
+
+# TODO: replace st.nothing() with an appropriate strategy
 
 
 @given(condition=st.from_type(object))
@@ -23,20 +23,18 @@ def test_fuzz_event(value: str) -> None:
 
 
 @given(
-    specifier=st.from_type(hypothesis.strategies.SearchStrategy),
+    specifier=st.from_type(st.SearchStrategy),
     condition=st.functions(like=lambda *a, **k: None, returns=st.booleans()),
-    settings=st.one_of(st.none(), st.builds(settings)),
-    random=st.one_of(st.none(), st.builds(Random)),
+    settings=st.from_type(typing.Optional[hypothesis.settings]),
+    random=st.from_type(typing.Optional[random.Random]),
     database_key=st.one_of(st.none(), st.binary()),
 )
 def test_fuzz_find(
-    specifier: hypothesis.strategies.SearchStrategy[
-        hypothesis.strategies._internal.strategies.Ex
-    ],
+    specifier: st.SearchStrategy,
     condition: typing.Callable[[typing.Any], bool],
-    settings: typing.Union[hypothesis.settings, None],
-    random: typing.Union[random.Random, None],
-    database_key: typing.Union[bytes, None],
+    settings: typing.Optional[hypothesis.settings],
+    random: typing.Optional[random.Random],
+    database_key: typing.Optional[bytes],
 ) -> None:
     hypothesis.find(
         specifier=specifier,
@@ -52,7 +50,7 @@ def test_fuzz_note(value: str) -> None:
     hypothesis.note(value=value)
 
 
-@given(r=st.builds(Random))
+@given(r=st.nothing())
 def test_fuzz_register_random(r: random.Random) -> None:
     hypothesis.register_random(r=r)
 
@@ -81,11 +79,11 @@ def test_fuzz_seed(seed: typing.Hashable) -> None:
     print_blob=st.just(not_set),
 )
 def test_fuzz_settings(
-    parent: typing.Union[hypothesis.settings, None],
+    parent: typing.Optional[hypothesis.settings],
     max_examples: int,
     derandomize: bool,
     database,
-    verbosity,
+    verbosity: hypothesis.Verbosity,
     phases,
     stateful_step_count: int,
     report_multiple_bugs: bool,
@@ -118,9 +116,9 @@ def test_fuzz_settings_load_profile(name: str) -> None:
     hypothesis.settings.load_profile(name=name)
 
 
-@given(name=st.text(), parent=st.one_of(st.none(), st.builds(settings)))
+@given(name=st.text(), parent=st.from_type(typing.Optional[hypothesis.settings]))
 def test_fuzz_settings_register_profile(
-    name: str, parent: typing.Union[hypothesis.settings, None]
+    name: str, parent: typing.Optional[hypothesis.settings]
 ) -> None:
     hypothesis.settings.register_profile(name=name, parent=parent)
 

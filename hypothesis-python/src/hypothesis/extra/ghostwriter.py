@@ -259,6 +259,13 @@ def _type_from_doc_fragment(token: str) -> Optional[type]:
     return getattr(sys.modules.get(mod, None), name, None)
 
 
+def _strip_typevars(type_):
+    with contextlib.suppress(Exception):
+        if {type(a) for a in get_args(type_)} == {TypeVar}:
+            return get_origin(type_)
+    return type_
+
+
 def _strategy_for(param: inspect.Parameter, docstring: str) -> st.SearchStrategy:
     # Example types in docstrings:
     # - `:type a: sequence of integers`
@@ -294,7 +301,7 @@ def _strategy_for(param: inspect.Parameter, docstring: str) -> st.SearchStrategy
                 t = _type_from_doc_fragment(token)
                 if isinstance(t, type) or is_generic_type(t):
                     assert t is not None
-                    types.append(t)
+                    types.append(_strip_typevars(t))
         if (
             param.default is not inspect.Parameter.empty
             and param.default not in elements
@@ -672,6 +679,15 @@ def _valid_syntax_repr(strategy):
         # Trivial special case because the wrapped repr for text() is terrible.
         if strategy == st.text().wrapped_strategy:
             return set(), "text()"
+        # Remove any typevars; we don't exploit them so they're just clutter here
+        if (
+            isinstance(strategy, LazyStrategy)
+            and strategy.function.__name__ == st.from_type.__name__
+            and strategy._LazyStrategy__representation is None
+        ):
+            strategy._LazyStrategy__args = tuple(
+                _strip_typevars(a) for a in strategy._LazyStrategy__args
+            )
         # Return a syntactically-valid strategy repr, including fixing some
         # strategy reprs and replacing invalid syntax reprs with `"nothing()"`.
         # String-replace to hide the special case in from_type() for Decimal('snan')
@@ -771,7 +787,7 @@ def _st_strategy_names(s: str) -> str:
     sets() too.
     """
     names = "|".join(sorted(st.__all__, key=len, reverse=True))
-    return re.sub(pattern=rf"\b(?:{names})\(", repl=r"st.\g<0>", string=s)
+    return re.sub(pattern=rf"\b(?:{names})\b[^= ]", repl=r"st.\g<0>", string=s)
 
 
 def _make_test_body(
@@ -963,14 +979,14 @@ def _parameter_to_annotation(parameter: Any) -> Optional[_AnnotationData]:
                 set(),
             )
 
-        type_name = f"{parameter.__module__}.{parameter.__name__}"
+        type_name = _get_qualname(parameter, include_module=True)
 
         # the types.UnionType does not support type arguments and needs to be translated
         if type_name == "types.UnionType":
             return _AnnotationData("typing.Union", {"typing"})
     else:
         if hasattr(parameter, "__module__") and hasattr(parameter, "__name__"):
-            type_name = f"{parameter.__module__}.{parameter.__name__}"
+            type_name = _get_qualname(parameter, include_module=True)
         else:
             type_name = str(parameter)
 
@@ -981,6 +997,8 @@ def _parameter_to_annotation(parameter: Any) -> Optional[_AnnotationData]:
         return _AnnotationData(type_name, set(type_name.rsplit(".", maxsplit=1)[:-1]))
 
     arg_types = get_args(parameter)
+    if {type(a) for a in arg_types} == {TypeVar}:
+        arg_types = ()
 
     # typing types get translated to classes that don't support generics
     origin_annotation: Optional[_AnnotationData]
@@ -1017,13 +1035,14 @@ def _make_test(imports: ImportSet, body: str) -> str:
     # Discarding "builtins." and "__main__" probably isn't particularly useful
     # for user code, but important for making a good impression in demos.
     body = body.replace("builtins.", "").replace("__main__.", "")
+    body = body.replace("hypothesis.strategies.", "st.")
     if "st.from_type(typing." in body:
         imports.add("typing")
     imports |= {("hypothesis", "given"), ("hypothesis", "strategies as st")}
     if "        reject()\n" in body:
         imports.add(("hypothesis", "reject"))
 
-    do_not_import = {"builtins", "__main__"}
+    do_not_import = {"builtins", "__main__", "hypothesis.strategies"}
     direct = {f"import {i}" for i in imports - do_not_import if isinstance(i, str)}
     from_imports = defaultdict(set)
     for module, name in {i for i in imports if isinstance(i, tuple)}:
