@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.78.2:
+
+-------------------
+6.78.2 - 2023-06-13
+-------------------
+
+This patch improves Ghostwriter's use of qualified names for re-exported
+functions and classes, and avoids importing useless :obj:`~typing.TypeVar`\ s.
+
 .. _v6.78.1:
 
 -------------------
