@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.78.3:
+
+-------------------
+6.78.3 - 2023-06-15
+-------------------
+
+This release ensures that Ghostwriter does not use the deprecated aliases
+for the ``collections.abc`` classes in ``collections``.
+
 .. _v6.78.2:
 
 -------------------
