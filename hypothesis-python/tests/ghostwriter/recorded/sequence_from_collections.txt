@@ -1,0 +1,11 @@
+# This test code was written by the `hypothesis.extra.ghostwriter` module
+# and is provided under the Creative Commons Zero public domain dedication.
+
+import collections.abc
+import test_expected_output
+from hypothesis import given, strategies as st
+
+
+@given(items=st.one_of(st.binary(), st.lists(st.integers())))
+def test_fuzz_sequence_from_collections(items: collections.abc.Sequence[int]) -> None:
+    test_expected_output.sequence_from_collections(items=items)

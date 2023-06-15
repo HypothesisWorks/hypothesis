@@ -17,6 +17,7 @@ To update the recorded outputs, run `pytest --hypothesis-update-outputs ...`.
 import ast
 import base64
 import builtins
+import collections.abc
 import operator
 import pathlib
 import re
@@ -106,6 +107,17 @@ else:
         return sum(items)
 
 
+if sys.version_info[:2] >= (3, 9):
+    CollectionsSequence = collections.abc.Sequence
+else:
+    # in older versions collections.abc was not generic
+    CollectionsSequence = Sequence
+
+
+def sequence_from_collections(items: CollectionsSequence[int]) -> int:
+    return min(items)
+
+
 # Note: for some of the `expected` outputs, we replace away some small
 #       parts which vary between minor versions of Python.
 @pytest.mark.parametrize(
@@ -128,6 +140,10 @@ else:
         ),
         ("optional_union_parameter", ghostwriter.magic(optional_union_parameter)),
         ("union_sequence_parameter", ghostwriter.magic(union_sequence_parameter)),
+        pytest.param(
+            ("sequence_from_collections", ghostwriter.magic(sequence_from_collections)),
+            marks=pytest.mark.skipif("sys.version_info[:2] < (3, 9)"),
+        ),
         pytest.param(
             ("add_custom_classes", ghostwriter.magic(add_custom_classes)),
             marks=pytest.mark.skipif("sys.version_info[:2] < (3, 10)"),

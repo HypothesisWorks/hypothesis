@@ -128,7 +128,7 @@ their individual contributions.
 * `Nicholas Chammas <https://www.github.com/nchammas>`_
 * `Nick Anyos <https://www.github.com/NickAnyos>`_
 * `Nick Muoh <https://github.com/OdinTech3>`_ (nickspirit3@gmail.com)
-* `Nicolas Ganz <https://www.github.com/ThunderKey>`_
+* `Nicolas Erni <https://www.github.com/ThunderKey>`_
 * `Nikita Sobolev <https://github.com/sobolevn>`_ (mail@sobolevn.me)
 * `Oleg Höfling <https://github.com/hoefling>`_ (oleg.hoefling@gmail.com)
 * `Paul Ganssle <https://ganssle.io>`_ (paul@ganssle.io)
