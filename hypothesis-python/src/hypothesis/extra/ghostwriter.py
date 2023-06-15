@@ -714,6 +714,11 @@ def _get_module_helper(obj):
     # The goal is to show location from which obj should usually be accessed, rather
     # than what we assume is an internal submodule which defined it.
     module_name = obj.__module__
+
+    # if "collections.abc" is used don't use the deprecated aliases in "collections"
+    if module_name == "collections.abc":
+        return module_name
+
     dots = [i for i, c in enumerate(module_name) if c == "."] + [None]
     for idx in dots:
         if getattr(sys.modules.get(module_name[:idx]), obj.__name__, None) is obj:
