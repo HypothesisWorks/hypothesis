@@ -10,6 +10,7 @@
 
 import builtins
 import collections
+import collections.abc
 import datetime
 import decimal
 import fractions
@@ -250,7 +251,7 @@ def is_a_new_type(thing):
         )
     # In 3.10 and later, NewType is actually a class - which simplifies things.
     # See https://bugs.python.org/issue44353 for links to the various patches.
-    return isinstance(thing, typing.NewType)  # pragma: no cover  # on 3.8, anyway
+    return isinstance(thing, typing.NewType)
 
 
 def is_a_union(thing):
@@ -315,7 +316,8 @@ def is_generic_type(type_):
     # We check for `MyClass[T]` and `MyClass[int]` with the first condition,
     # while the second condition is for `MyClass`.
     return isinstance(type_, typing_root_type + (GenericAlias,)) or (
-        isinstance(type_, type) and typing.Generic in type_.__mro__
+        isinstance(type_, type)
+        and (typing.Generic in type_.__mro__ or hasattr(type_, "__class_getitem__"))
     )
 
 
@@ -404,14 +406,22 @@ def from_typing_type(thing):
         for k, v in _global_type_lookup.items()
         if is_generic_type(k) and try_issubclass(k, thing)
     }
-    if typing.Dict in mapping or typing.Set in mapping:
+    # Drop some unusual cases for simplicity
+    for weird in (tuple, getattr(os, "_Environ", None)):
+        if len(mapping) > 1:
+            mapping.pop(weird, None)
+    # After we drop Python 3.8 and can rely on having generic builtin types, we'll
+    # be able to simplify this logic by dropping the typing-module handling.
+    if {dict, set, typing.Dict, typing.Set}.intersection(mapping):
         # ItemsView can cause test_lookup.py::test_specialised_collection_types
         # to fail, due to weird isinstance behaviour around the elements.
+        mapping.pop(collections.abc.ItemsView, None)
         mapping.pop(typing.ItemsView, None)
-    if typing.Deque in mapping and len(mapping) > 1:
+    if {collections.deque, typing.Deque}.intersection(mapping) and len(mapping) > 1:
         # Resolving generic sequences to include a deque is more trouble for e.g.
         # the ghostwriter than it's worth, via undefined names in the repr.
-        mapping.pop(typing.Deque)
+        mapping.pop(collections.deque, None)
+        mapping.pop(typing.Deque, None)
     if len(mapping) > 1:
         # issubclass treats bytestring as a kind of sequence, which it is,
         # but treating it as such breaks everything else when it is presumed
@@ -431,6 +441,8 @@ def from_typing_type(thing):
             isinstance(T, type) and issubclass(int, get_origin(T) or T)
             for T in list(union_elems) + [elem_type]
         ):
+            mapping.pop(bytes, None)
+            mapping.pop(collections.abc.ByteString, None)
             mapping.pop(typing.ByteString, None)
     elif (
         (not mapping)
@@ -438,9 +450,17 @@ def from_typing_type(thing):
         and thing.__forward_arg__ in vars(builtins)
     ):
         return st.from_type(getattr(builtins, thing.__forward_arg__))
+    # Before Python 3.9, we sometimes have e.g. ByteString from both the typing
+    # module, and collections.abc module.  Discard any type which is not it's own
+    # origin, where the origin is also in the mapping.
+    for t in sorted(mapping, key=type_sorting_key):
+        origin = get_origin(t)
+        if origin is not t and origin in mapping:
+            mapping.pop(t)
+    # Sort strategies according to our type-sorting heuristic for stable output
     strategies = [
         v if isinstance(v, st.SearchStrategy) else v(thing)
-        for k, v in mapping.items()
+        for k, v in sorted(mapping.items(), key=lambda kv: type_sorting_key(kv[0]))
         if sum(try_issubclass(k, T) for T in mapping) == 1
     ]
     empty = ", ".join(repr(s) for s in strategies if s.is_empty)
@@ -685,6 +705,7 @@ def register(type_, fallback=None, *, module=typing):
             return lambda f: f
 
     def inner(func):
+        nonlocal type_
         if fallback is None:
             _global_type_lookup[type_] = func
             return func
@@ -696,6 +717,11 @@ def register(type_, fallback=None, *, module=typing):
                 return fallback  # pragma: no cover
             return func(thing)
 
+        if sys.version_info[:2] >= (3, 9):
+            try:
+                type_ = get_origin(type_)
+            except Exception:
+                pass
         _global_type_lookup[type_] = really_inner
         return really_inner
 
@@ -755,6 +781,7 @@ def _from_hashable_type(type_):
 
 
 @register(typing.Set, st.builds(set))
+@register(typing.MutableSet, st.builds(set))
 def resolve_Set(thing):
     return st.sets(_from_hashable_type(thing.__args__[0]))
 
