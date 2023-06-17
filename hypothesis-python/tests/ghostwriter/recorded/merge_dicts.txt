@@ -9,12 +9,12 @@ from hypothesis import given, strategies as st
 
 @given(
     map1=st.one_of(
-        st.dictionaries(keys=st.text(), values=st.integers()),
         st.dictionaries(keys=st.text(), values=st.integers()).map(ChainMap),
+        st.dictionaries(keys=st.text(), values=st.integers()),
     ),
     map2=st.one_of(
-        st.dictionaries(keys=st.text(), values=st.integers()),
         st.dictionaries(keys=st.text(), values=st.integers()).map(ChainMap),
+        st.dictionaries(keys=st.text(), values=st.integers()),
     ),
 )
 def test_fuzz_merge_dicts(

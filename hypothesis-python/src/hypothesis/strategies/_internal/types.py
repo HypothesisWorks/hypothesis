@@ -450,6 +450,14 @@ def from_typing_type(thing):
         and thing.__forward_arg__ in vars(builtins)
     ):
         return st.from_type(getattr(builtins, thing.__forward_arg__))
+    # Before Python 3.9, we sometimes have e.g. ByteString from both the typing
+    # module, and collections.abc module.  Discard any type which is not it's own
+    # origin, where the origin is also in the mapping.
+    for t in sorted(mapping, key=type_sorting_key):
+        origin = get_origin(t)
+        if origin is not t and origin in mapping:
+            mapping.pop(t)
+    # Sort strategies according to our type-sorting heuristic for stable output
     strategies = [
         v if isinstance(v, st.SearchStrategy) else v(thing)
         for k, v in sorted(mapping.items(), key=lambda kv: type_sorting_key(kv[0]))
@@ -611,6 +619,7 @@ _global_type_lookup.update(
         # Note: while ByteString notionally also represents the bytearray and
         # memoryview types, it is a subclass of Hashable and those types are not.
         # We therefore only generate the bytes type.
+        typing.ByteString: st.binary(),
         collections.abc.ByteString: st.binary(),
         # TODO: SupportsAbs and SupportsRound should be covariant, ie have functions.
         typing.SupportsAbs: st.one_of(
