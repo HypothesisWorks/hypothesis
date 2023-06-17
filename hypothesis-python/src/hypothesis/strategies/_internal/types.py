@@ -250,7 +250,7 @@ def is_a_new_type(thing):
         )
     # In 3.10 and later, NewType is actually a class - which simplifies things.
     # See https://bugs.python.org/issue44353 for links to the various patches.
-    return isinstance(thing, typing.NewType)  # pragma: no cover  # on 3.8, anyway
+    return isinstance(thing, typing.NewType)
 
 
 def is_a_union(thing):
