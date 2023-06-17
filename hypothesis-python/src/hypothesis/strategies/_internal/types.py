@@ -406,10 +406,12 @@ def from_typing_type(thing):
         for k, v in _global_type_lookup.items()
         if is_generic_type(k) and try_issubclass(k, thing)
     }
+    # Drop some unusual cases for simplicity
+    for weird in (tuple, getattr(os, "_Environ", None)):
+        if len(mapping) > 1:
+            mapping.pop(weird, None)
     # After we drop Python 3.8 and can rely on having generic builtin types, we'll
     # be able to simplify this logic by dropping the typing-module handling.
-    if len(mapping) > 1:
-        mapping.pop(getattr(os, "_Environ", None), None)
     if {dict, set, typing.Dict, typing.Set}.intersection(mapping):
         # ItemsView can cause test_lookup.py::test_specialised_collection_types
         # to fail, due to weird isinstance behaviour around the elements.
@@ -450,7 +452,7 @@ def from_typing_type(thing):
         return st.from_type(getattr(builtins, thing.__forward_arg__))
     strategies = [
         v if isinstance(v, st.SearchStrategy) else v(thing)
-        for k, v in mapping.items()
+        for k, v in sorted(mapping.items(), key=lambda kv: type_sorting_key(kv[0]))
         if sum(try_issubclass(k, T) for T in mapping) == 1
     ]
     empty = ", ".join(repr(s) for s in strategies if s.is_empty)
@@ -706,10 +708,11 @@ def register(type_, fallback=None, *, module=typing):
                 return fallback  # pragma: no cover
             return func(thing)
 
-        try:
-            type_ = get_origin(type_)
-        except Exception:
-            pass
+        if sys.version_info[:2] >= (3, 9):
+            try:
+                type_ = get_origin(type_)
+            except Exception:
+                pass
         _global_type_lookup[type_] = really_inner
         return really_inner
 
@@ -769,6 +772,7 @@ def _from_hashable_type(type_):
 
 
 @register(typing.Set, st.builds(set))
+@register(typing.MutableSet, st.builds(set))
 def resolve_Set(thing):
     return st.sets(_from_hashable_type(thing.__args__[0]))
 
