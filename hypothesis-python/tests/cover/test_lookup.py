@@ -27,7 +27,7 @@ import pytest
 
 from hypothesis import HealthCheck, assume, given, settings, strategies as st
 from hypothesis.errors import InvalidArgument, ResolutionFailed, SmallSearchSpaceWarning
-from hypothesis.internal.compat import PYPY, get_type_hints
+from hypothesis.internal.compat import PYPY, get_origin, get_type_hints
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies import from_type
 from hypothesis.strategies._internal import types
@@ -232,7 +232,10 @@ def test_lookup_overrides_defaults():
 
 def test_register_generic_typing_strats():
     # I don't expect anyone to do this, but good to check it works as expected
-    with temp_registered(typing.Sequence, types._global_type_lookup[typing.Set]):
+    with temp_registered(
+        typing.Sequence,
+        types._global_type_lookup[get_origin(typing.Set) or typing.Set],
+    ):
         # We register sets for the abstract sequence type, which masks subtypes
         # from supertype resolution but not direct resolution
         assert_all_examples(

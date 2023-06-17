@@ -10,6 +10,7 @@
 
 import builtins
 import collections
+import collections.abc
 import datetime
 import decimal
 import fractions
@@ -315,7 +316,8 @@ def is_generic_type(type_):
     # We check for `MyClass[T]` and `MyClass[int]` with the first condition,
     # while the second condition is for `MyClass`.
     return isinstance(type_, typing_root_type + (GenericAlias,)) or (
-        isinstance(type_, type) and typing.Generic in type_.__mro__
+        isinstance(type_, type)
+        and (typing.Generic in type_.__mro__ or hasattr(type_, "__class_getitem__"))
     )
 
 
@@ -404,14 +406,20 @@ def from_typing_type(thing):
         for k, v in _global_type_lookup.items()
         if is_generic_type(k) and try_issubclass(k, thing)
     }
-    if typing.Dict in mapping or typing.Set in mapping:
+    # After we drop Python 3.8 and can rely on having generic builtin types, we'll
+    # be able to simplify this logic by dropping the typing-module handling.
+    if len(mapping) > 1:
+        mapping.pop(getattr(os, "_Environ", None), None)
+    if {dict, set, typing.Dict, typing.Set}.intersection(mapping):
         # ItemsView can cause test_lookup.py::test_specialised_collection_types
         # to fail, due to weird isinstance behaviour around the elements.
+        mapping.pop(collections.abc.ItemsView, None)
         mapping.pop(typing.ItemsView, None)
-    if typing.Deque in mapping and len(mapping) > 1:
+    if {collections.deque, typing.Deque}.intersection(mapping) and len(mapping) > 1:
         # Resolving generic sequences to include a deque is more trouble for e.g.
         # the ghostwriter than it's worth, via undefined names in the repr.
-        mapping.pop(typing.Deque)
+        mapping.pop(collections.deque, None)
+        mapping.pop(typing.Deque, None)
     if len(mapping) > 1:
         # issubclass treats bytestring as a kind of sequence, which it is,
         # but treating it as such breaks everything else when it is presumed
@@ -431,6 +439,8 @@ def from_typing_type(thing):
             isinstance(T, type) and issubclass(int, get_origin(T) or T)
             for T in list(union_elems) + [elem_type]
         ):
+            mapping.pop(bytes, None)
+            mapping.pop(collections.abc.ByteString, None)
             mapping.pop(typing.ByteString, None)
     elif (
         (not mapping)
@@ -599,7 +609,6 @@ _global_type_lookup.update(
         # Note: while ByteString notionally also represents the bytearray and
         # memoryview types, it is a subclass of Hashable and those types are not.
         # We therefore only generate the bytes type.
-        typing.ByteString: st.binary(),
         collections.abc.ByteString: st.binary(),
         # TODO: SupportsAbs and SupportsRound should be covariant, ie have functions.
         typing.SupportsAbs: st.one_of(
@@ -685,6 +694,7 @@ def register(type_, fallback=None, *, module=typing):
             return lambda f: f
 
     def inner(func):
+        nonlocal type_
         if fallback is None:
             _global_type_lookup[type_] = func
             return func
@@ -696,6 +706,10 @@ def register(type_, fallback=None, *, module=typing):
                 return fallback  # pragma: no cover
             return func(thing)
 
+        try:
+            type_ = get_origin(type_)
+        except Exception:
+            pass
         _global_type_lookup[type_] = really_inner
         return really_inner
 

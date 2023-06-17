@@ -17,7 +17,8 @@ import pytest
 from hypothesis import given, strategies as st
 from hypothesis.errors import InvalidArgument
 
-from tests.common.debug import find_any
+from tests.common.debug import assert_all_examples, find_any
+from tests.common.utils import temp_registered
 
 
 @pytest.mark.parametrize(
@@ -111,3 +112,16 @@ TestDataClass = typing.Union[TypingTuple, BuiltinTuple]
 def test_from_type_with_tuple_works(data, data_class: TestDataClass):
     value: TestDataClass = data.draw(st.from_type(data_class))
     assert len(value.a) >= 0
+
+
+def _shorter_lists(list_type):
+    return st.lists(st.from_type(*typing.get_args(list_type)), max_size=2)
+
+
+def test_can_register_builtin_list():
+    # Regression test for https://github.com/HypothesisWorks/hypothesis/issues/3635
+    with temp_registered(list, _shorter_lists):
+        assert_all_examples(
+            st.from_type(list[int]),
+            lambda ls: len(ls) <= 2 and {type(x) for x in ls}.issubset({int}),
+        )
