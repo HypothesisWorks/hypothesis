@@ -211,7 +211,11 @@ def test_uninspectable_from_type():
 
 def _check_instances(t):
     # See https://github.com/samuelcolvin/pydantic/discussions/2508
-    return t.__module__ != "typing" and not t.__module__.startswith("pydantic")
+    return (
+        t.__module__ != "typing"
+        and t.__name__ != "ByteString"
+        and not t.__module__.startswith("pydantic")
+    )
 
 
 @pytest.mark.parametrize(
