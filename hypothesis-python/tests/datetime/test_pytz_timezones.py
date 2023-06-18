@@ -9,14 +9,13 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import datetime as dt
+import sys
+import warnings
 
 import pytest
-import pytz
-from dateutil.tz import datetime_exists
 
 from hypothesis import assume, given
 from hypothesis.errors import InvalidArgument
-from hypothesis.extra.pytz import timezones
 from hypothesis.strategies import data, datetimes, just, sampled_from, times
 from hypothesis.strategies._internal.datetime import datetime_does_not_exist
 
@@ -26,6 +25,16 @@ from tests.common.debug import (
     find_any,
     minimal,
 )
+
+with warnings.catch_warnings():
+    if sys.version_info[:2] >= (3, 12):
+        # See https://github.com/stub42/pytz/issues/105 and
+        # https://github.com/dateutil/dateutil/pull/1285/
+        warnings.simplefilter("ignore", DeprecationWarning)
+    import pytz
+    from dateutil.tz import datetime_exists
+
+from hypothesis.extra.pytz import timezones
 
 
 def test_utc_is_minimal():
