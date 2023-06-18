@@ -176,7 +176,7 @@ Some notable commands:
 ``./build.sh check-coverage`` will verify 100% code coverage by running a
 curated subset of the test suite.
 
-``./build.sh check-py37`` (etc.) will run most of the test suite against a
+``./build.sh check-py311`` (etc.) will run most of the test suite against a
 particular python version.
 
 ``./build.sh format`` will reformat your code according to the Hypothesis coding style. You should use this before each
@@ -196,13 +196,13 @@ may have to wait a while as the build downloads and installs the right version o
 Running Tests
 ~~~~~~~~~~~~~
 
-The tasks described above will run all of the tests (e.g. ``check-py37``). But
+The tasks described above will run all of the tests (e.g. ``check-py311``). But
 the ``tox`` task will give finer-grained control over the test runner. At a
 high level, the task takes the form:
 
 .. code-block::
 
-    ./build.sh tox py37-custom 3.7.13 [tox args] -- [pytest args]
+    ./build.sh tox py311-custom 3.11.3 [tox args] -- [pytest args]
 
 Namely, first provide the tox environment (see ``tox.ini``), then the python
 version to test with, then any ``tox`` or ``pytest`` args as needed. For

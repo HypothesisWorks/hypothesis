@@ -31,10 +31,7 @@ pip uninstall -y redis fakeredis
 
 pip install "$(grep 'typing-extensions==' ../requirements/coverage.txt)"
 $PYTEST tests/typing_extensions/
-if [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 7))')" = "False" ] ; then
-  # Required by importlib_metadata backport, which we don't want to break
-  pip uninstall -y typing_extensions
-fi
+pip uninstall -y typing_extensions
 
 pip install ".[lark]"
 pip install "$(grep -oE 'lark>=([0-9.]+)' ../hypothesis-python/setup.py | tr '>' =)"
@@ -55,9 +52,6 @@ if [ "$(python -c $'import platform, sys; print(sys.version_info.releaselevel ==
   if [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 8))')" = "True" ] ; then
     # Per NEP-29, this is the last version to support Python 3.8
     pip install numpy==1.24.3
-  elif [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 7))')" = "True" ] ; then
-    # Per NEP-29, this is the last version to support Python 3.7
-    pip install numpy==1.21.5
   else
     pip install "$(grep 'numpy==' ../requirements/coverage.txt)"
   fi

@@ -29,8 +29,6 @@ jobs:
           - check-format
           - check-coverage
           - check-conjecture-coverage
-          - check-py37-cover
-          - check-pypy37-cover
           - check-py38-cover
           - check-py38-nocover
           - check-py38-niche
@@ -73,7 +71,7 @@ jobs:
           - check-pandas13
           - check-pandas12
           - check-pandas11
-          - check-py37-oldestnumpy
+          - check-py38-oldestnumpy
       fail-fast: false
     steps:
     - uses: actions/checkout@v3
@@ -163,7 +161,7 @@ jobs:
     strategy:
       matrix:
         task:
-          - check-py37-cover
+          - check-py38-cover
           - check-py310-cover
           - check-py310-nocover
           - check-py310-niche

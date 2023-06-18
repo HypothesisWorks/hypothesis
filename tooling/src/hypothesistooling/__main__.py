@@ -380,14 +380,12 @@ def run_tox(task, version, *args):
 # When a version is added or removed, manually update the env lists in tox.ini and
 # workflows/main.yml, and the `Programming Language ::` specifiers in setup.py
 PYTHONS = {
-    "3.7": "3.7.17",
     "3.8": "3.8.17",
     "3.9": "3.9.17",
     "3.10": "3.10.12",
     "3.11": "3.11.4",
     "3.12": "3.12-dev",
     "3.13": "3.13-dev",
-    "pypy3.7": "pypy3.7-7.3.9",
     "pypy3.8": "pypy3.8-7.3.11",
     "pypy3.9": "pypy3.9-7.3.12",
     "pypy3.10": "pypy3.10-7.3.12",
@@ -453,7 +451,7 @@ for n in [32, 41, 42]:
 for n in [11, 12, 13, 14, 15, 20]:
     standard_tox_task(f"pandas{n}")
 
-standard_tox_task("py37-oldestnumpy", py="3.7")
+standard_tox_task("py38-oldestnumpy", py="3.8")
 
 standard_tox_task("coverage")
 standard_tox_task("conjecture-coverage")
