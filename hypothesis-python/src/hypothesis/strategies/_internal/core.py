@@ -1123,6 +1123,11 @@ def _from_type(thing: Type[Ex], recurse_guard: List[Type[Ex]]) -> SearchStrategy
         if types.is_a_union(thing):
             args = sorted(thing.__args__, key=types.type_sorting_key)
             return one_of([_from_type(t, recurse_guard) for t in args])
+    # We also have a special case for TypeVars.
+    # They are represented as instances like `~T` when they come here.
+    # We need to work with their type instead.
+    if isinstance(thing, TypeVar) and type(thing) in types._global_type_lookup:
+        return as_strategy(types._global_type_lookup[type(thing)], thing)
     if not types.is_a_type(thing):
         if isinstance(thing, str):
             # See https://github.com/HypothesisWorks/hypothesis/issues/3016
@@ -1190,11 +1195,6 @@ def _from_type(thing: Type[Ex], recurse_guard: List[Type[Ex]]) -> SearchStrategy
             mapping={k: v for k, v in anns.items() if k not in optional},
             optional={k: v for k, v in anns.items() if k in optional},
         )
-    # We also have a special case for TypeVars.
-    # They are represented as instances like `~T` when they come here.
-    # We need to work with their type instead.
-    if isinstance(thing, TypeVar) and type(thing) in types._global_type_lookup:
-        return as_strategy(types._global_type_lookup[type(thing)], thing)
 
     # If there's no explicitly registered strategy, maybe a subtype of thing
     # is registered - if so, we can resolve it to the subclass strategy.
