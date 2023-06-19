@@ -11,7 +11,14 @@
 from hypothesis import given, strategies as st
 from hypothesis.strategies._internal.types import _global_type_lookup
 
-TYPES = sorted((x for x in _global_type_lookup if x.__module__ != "typing"), key=str)
+TYPES = sorted(
+    (
+        x
+        for x in _global_type_lookup
+        if x.__module__ != "typing" and x.__name__ != "ByteString"
+    ),
+    key=str,
+)
 
 
 def everything_except(excluded_types):
