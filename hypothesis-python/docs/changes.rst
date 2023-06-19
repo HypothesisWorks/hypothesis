@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.79.1:
+
+-------------------
+6.79.1 - 2023-06-19
+-------------------
+
+We now test against Python 3.12 beta in CI, and this patch
+fixes some new deprecations.
+
 .. _v6.79.0:
 
 -------------------
