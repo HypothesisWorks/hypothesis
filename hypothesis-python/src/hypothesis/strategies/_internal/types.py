@@ -620,9 +620,9 @@ _global_type_lookup.update(
     {
         # Note: while ByteString notionally also represents the bytearray and
         # memoryview types, it is a subclass of Hashable and those types are not.
-        # We therefore only generate the bytes type.
-        typing.ByteString: st.binary(),
-        collections.abc.ByteString: st.binary(),
+        # We therefore only generate the bytes type. type-ignored due to deprecation.
+        typing.ByteString: st.binary(),  # type: ignore
+        collections.abc.ByteString: st.binary(),  # type: ignore
         # TODO: SupportsAbs and SupportsRound should be covariant, ie have functions.
         typing.SupportsAbs: st.one_of(
             st.booleans(),

@@ -115,12 +115,12 @@ def assert_mypy_errors(fname, expected, python_version=None):
             "one_of(integers(), text(), none(), binary(), builds(list), builds(dict))",
             "Any",
         ),
-        ("tuples()", "Tuple[]"),  # Should be `Tuple[()]`, but this is what mypy prints
-        ("tuples(integers())", "Tuple[int]"),
-        ("tuples(integers(), text())", "Tuple[int, str]"),
+        ("tuples()", "tuple[]"),  # Should be `tuple[()]`, but this is what mypy prints
+        ("tuples(integers())", "tuple[int]"),
+        ("tuples(integers(), text())", "tuple[int, str]"),
         (
             "tuples(integers(), text(), integers(), text(), integers())",
-            "Tuple[int, str, int, str, int]",
+            "tuple[int, str, int, str, int]",
         ),
         (
             "tuples(text(), text(), text(), text(), text(), text())",
