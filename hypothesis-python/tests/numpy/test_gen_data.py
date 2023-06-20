@@ -1074,7 +1074,7 @@ def test_advanced_integer_index_minimizes_as_documented(
 )
 def test_advanced_integer_index_can_generate_any_pattern(shape, data):
     # ensures that generated index-arrays can be used to yield any pattern of elements from an array
-    x = np.arange(np.product(shape)).reshape(shape)
+    x = np.arange(np.prod(shape)).reshape(shape)
 
     target_array = data.draw(
         nps.arrays(

@@ -52,7 +52,10 @@ if [ "$(python -c $'import platform, sys; print(sys.version_info.releaselevel ==
   fi
   pip uninstall -y libcst
 
-  if [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 7))')" = "True" ] ; then
+  if [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 8))')" = "True" ] ; then
+    # Per NEP-29, this is the last version to support Python 3.8
+    pip install numpy==1.24.3
+  elif [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 7))')" = "True" ] ; then
     # Per NEP-29, this is the last version to support Python 3.7
     pip install numpy==1.21.5
   else
