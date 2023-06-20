@@ -9,8 +9,6 @@ from hypothesis import given, settings, strategies as st
 from random import Random
 from typing import Hashable
 
-# TODO: replace st.nothing() with an appropriate strategy
-
 
 @given(condition=st.from_type(object))
 def test_fuzz_assume(condition: object) -> None:
@@ -50,7 +48,7 @@ def test_fuzz_note(value: str) -> None:
     hypothesis.note(value=value)
 
 
-@given(r=st.nothing())
+@given(r=st.from_type(random.Random))
 def test_fuzz_register_random(r: random.Random) -> None:
     hypothesis.register_random(r=r)
 

@@ -15,6 +15,7 @@ import datetime
 import enum
 import inspect
 import io
+import random
 import re
 import string
 import sys
@@ -850,6 +851,11 @@ def test_hashable_type_unhashable_value():
         (int, "integers()"),
         (typing.List[str], "lists(text())"),
         ("not a type", "from_type('not a type')"),
+        (random.Random, "from_type(random.Random)"),
+        (
+            st.SearchStrategy[str],
+            "from_type(hypothesis.strategies.SearchStrategy[str])",
+        ),
     ],
 )
 def test_repr_passthrough(typ, repr_):
