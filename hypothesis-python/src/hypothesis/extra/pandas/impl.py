@@ -104,6 +104,7 @@ def elements_and_dtype(elements, dtype, source=None):
             "dtype=object for now, but this will be an error in a future version.",
             since="2021-12-31",
             has_codemod=False,
+            stacklevel=1,
         )
 
     if isinstance(dtype, st.SearchStrategy):
