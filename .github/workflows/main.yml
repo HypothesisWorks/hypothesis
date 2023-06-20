@@ -40,6 +40,7 @@ jobs:
           - check-py310-cover
           - check-py310-nocover
           - check-py310-niche
+          - check-pypy310-cover
           # - check-py310-pyjion  # see notes in tox.ini
           - check-py311-cover
           - check-py311-nocover
