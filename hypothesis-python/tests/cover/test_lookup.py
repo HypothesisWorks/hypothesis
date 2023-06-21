@@ -15,6 +15,7 @@ import datetime
 import enum
 import inspect
 import io
+import random
 import re
 import string
 import sys
@@ -844,12 +845,23 @@ def test_hashable_type_unhashable_value():
     )
 
 
+class _EmptyClass:
+    def __init__(self, value=-1) -> None:
+        pass
+
+
 @pytest.mark.parametrize(
     "typ,repr_",
     [
         (int, "integers()"),
         (typing.List[str], "lists(text())"),
         ("not a type", "from_type('not a type')"),
+        (random.Random, "randoms()"),
+        (_EmptyClass, "from_type(tests.cover.test_lookup._EmptyClass)"),
+        (
+            st.SearchStrategy[str],
+            "from_type(hypothesis.strategies.SearchStrategy[str])",
+        ),
     ],
 )
 def test_repr_passthrough(typ, repr_):

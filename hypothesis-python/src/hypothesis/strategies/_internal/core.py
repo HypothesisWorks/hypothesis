@@ -1060,11 +1060,16 @@ def _from_type_deferred(thing: Type[Ex]) -> SearchStrategy[Ex]:
     # underlying strategy wherever possible, as a form of user education, but
     # would prefer to fall back to the default "from_type(...)" repr instead of
     # "deferred(...)" for recursive types or invalid arguments.
+    thing_repr = nicerepr(thing)
+    if hasattr(thing, "__module__"):
+        module_prefix = f"{thing.__module__}."
+        if not thing_repr.startswith(module_prefix):
+            thing_repr = module_prefix + thing_repr
     return LazyStrategy(
         lambda thing: deferred(lambda: _from_type(thing, [])),
         (thing,),
         {},
-        force_repr=f"from_type({thing!r})",
+        force_repr=f"from_type({thing_repr})",
     )
 
 
