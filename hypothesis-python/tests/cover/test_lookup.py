@@ -845,6 +845,11 @@ def test_hashable_type_unhashable_value():
     )
 
 
+class _EmptyClass:
+    def __init__(self, value=-1) -> None:
+        pass
+
+
 @pytest.mark.parametrize(
     "typ,repr_",
     [
@@ -852,6 +857,7 @@ def test_hashable_type_unhashable_value():
         (typing.List[str], "lists(text())"),
         ("not a type", "from_type('not a type')"),
         (random.Random, "from_type(random.Random)"),
+        (_EmptyClass, "from_type(tests.cover.test_lookup._EmptyClass)"),
         (
             st.SearchStrategy[str],
             "from_type(hypothesis.strategies.SearchStrategy[str])",
