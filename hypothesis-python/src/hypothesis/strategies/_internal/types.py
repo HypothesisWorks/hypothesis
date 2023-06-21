@@ -20,6 +20,7 @@ import io
 import ipaddress
 import numbers
 import os
+import random
 import re
 import sys
 import typing
@@ -597,6 +598,7 @@ _global_type_lookup: typing.Dict[
     super: st.builds(super, st.from_type(type)),
     re.Match: st.text().map(lambda c: re.match(".", c, flags=re.DOTALL)).filter(bool),
     re.Pattern: st.builds(re.compile, st.sampled_from(["", b""])),
+    random.Random: st.randoms(),
     # Pull requests with more types welcome!
 }
 if zoneinfo is not None:  # pragma: no branch

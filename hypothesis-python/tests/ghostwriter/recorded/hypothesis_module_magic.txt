@@ -6,7 +6,6 @@ import hypothesis
 import random
 import typing
 from hypothesis import given, settings, strategies as st
-from random import Random
 from typing import Hashable
 
 
@@ -24,7 +23,7 @@ def test_fuzz_event(value: str) -> None:
     specifier=st.from_type(st.SearchStrategy),
     condition=st.functions(like=lambda *a, **k: None, returns=st.booleans()),
     settings=st.from_type(typing.Optional[hypothesis.settings]),
-    random=st.from_type(typing.Optional[random.Random]),
+    random=st.one_of(st.none(), st.randoms()),
     database_key=st.one_of(st.none(), st.binary()),
 )
 def test_fuzz_find(
@@ -48,7 +47,7 @@ def test_fuzz_note(value: str) -> None:
     hypothesis.note(value=value)
 
 
-@given(r=st.from_type(random.Random))
+@given(r=st.randoms())
 def test_fuzz_register_random(r: random.Random) -> None:
     hypothesis.register_random(r=r)
 

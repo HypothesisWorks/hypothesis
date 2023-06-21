@@ -856,7 +856,7 @@ class _EmptyClass:
         (int, "integers()"),
         (typing.List[str], "lists(text())"),
         ("not a type", "from_type('not a type')"),
-        (random.Random, "from_type(random.Random)"),
+        (random.Random, "randoms()"),
         (_EmptyClass, "from_type(tests.cover.test_lookup._EmptyClass)"),
         (
             st.SearchStrategy[str],
