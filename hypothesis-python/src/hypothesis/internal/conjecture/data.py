@@ -34,7 +34,11 @@ import attr
 
 from hypothesis.errors import Frozen, InvalidArgument, StopTest
 from hypothesis.internal.compat import int_from_bytes, int_to_bytes
-from hypothesis.internal.conjecture.junkdrawer import ensure_free_stackframes, IntList, uniform
+from hypothesis.internal.conjecture.junkdrawer import (
+    IntList,
+    ensure_free_stackframes,
+    uniform,
+)
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 
 if TYPE_CHECKING:

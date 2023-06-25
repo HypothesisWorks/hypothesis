@@ -9,7 +9,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
-import sys
 import time
 from collections import defaultdict
 from contextlib import contextmanager

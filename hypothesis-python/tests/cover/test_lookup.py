@@ -615,6 +615,7 @@ def test_resolving_mutually_recursive_types_with_limited_stack():
     orig_recursionlimit = sys.getrecursionlimit()
     sys.setrecursionlimit(100)
     try:
+
         @given(nxt=st.from_type(A))
         def test(nxt):
             pass

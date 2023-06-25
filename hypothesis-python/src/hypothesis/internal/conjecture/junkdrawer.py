@@ -280,6 +280,7 @@ class ensure_free_stackframes:
     value of N is chosen to be the recursionlimit at import time, unless
     specified.
     """
+
     lock: Lock = Lock()
     nesting: int = 0
     org_maxdepth: int = sys.getrecursionlimit()
