@@ -602,10 +602,6 @@ class B:
         return f"B({self.nxt})"
 
 
-@pytest.mark.skipif(
-    PYPY and sys.version_info[:2] < (3, 9),
-    reason="mysterious failure on pypy/python<3.9",
-)
 @given(nxt=st.from_type(A))
 def test_resolving_mutually_recursive_types(nxt):
     i = 0
@@ -613,6 +609,23 @@ def test_resolving_mutually_recursive_types(nxt):
         assert isinstance(nxt, [A, B][i % 2])
         nxt = nxt.nxt
         i += 1
+
+
+def test_resolving_mutually_recursive_types_with_limited_stack():
+    @given(nxt=st.from_type(A))
+    def test(nxt):
+        i = 0
+        while nxt:
+            assert isinstance(nxt, [A, B][i % 2])
+            nxt = nxt.nxt
+            i += 1
+
+    orig_recursionlimit = sys.getrecursionlimit()
+    sys.setrecursionlimit(100)
+    try:
+        test()
+    finally:
+        sys.setrecursionlimit(orig_recursionlimit)
 
 
 class A_with_default:
