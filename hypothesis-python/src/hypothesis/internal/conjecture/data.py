@@ -951,11 +951,12 @@ class ConjectureData:
                 return strategy.do_draw(self)
             else:
                 assert start_time is not None
-                try:
-                    with ensure_free_stackframes():
+                with ensure_free_stackframes():
+                    strategy.validate()
+                    try:
                         return strategy.do_draw(self)
-                finally:
-                    self.draw_times.append(time.perf_counter() - start_time)
+                    finally:
+                        self.draw_times.append(time.perf_counter() - start_time)
         finally:
             self.stop_example()
 
