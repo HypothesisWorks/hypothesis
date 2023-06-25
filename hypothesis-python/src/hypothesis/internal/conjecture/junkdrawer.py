@@ -296,7 +296,7 @@ class ensure_free_stackframes:
             self.nesting += 1
             self.cur_maxdepth = sys.getrecursionlimit()
             new_maxdepth = cur_depth + self.requested_free_depth
-            if new_maxdepth > self.cur_maxdepth:
+            if new_maxdepth > self.cur_maxdepth:  # pragma: no branch
                 # Because we add to the recursion limit, to be good citizens we
                 # also add a check for unbounded recursion.  The default limit
                 # is 1000, so this can only ever trigger if something really
@@ -317,7 +317,7 @@ class ensure_free_stackframes:
         # until there are no other callers.
         with self.lock:
             self.nesting -= 1
-            if self.nesting == 0:
+            if self.nesting == 0:  # pragma: no branch
                 if self.new_maxdepth == sys.getrecursionlimit():
                     sys.setrecursionlimit(self.cur_maxdepth)
                 else:  # pragma: nocover
