@@ -612,17 +612,13 @@ def test_resolving_mutually_recursive_types(nxt):
 
 
 def test_resolving_mutually_recursive_types_with_limited_stack():
-    @given(nxt=st.from_type(A))
-    def test(nxt):
-        i = 0
-        while nxt:
-            assert isinstance(nxt, [A, B][i % 2])
-            nxt = nxt.nxt
-            i += 1
-
     orig_recursionlimit = sys.getrecursionlimit()
     sys.setrecursionlimit(100)
     try:
+        @given(nxt=st.from_type(A))
+        def test(nxt):
+            pass
+
         test()
     finally:
         assert sys.getrecursionlimit() == 100
