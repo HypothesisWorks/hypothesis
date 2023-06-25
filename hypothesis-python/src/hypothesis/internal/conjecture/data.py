@@ -34,7 +34,7 @@ import attr
 
 from hypothesis.errors import Frozen, InvalidArgument, StopTest
 from hypothesis.internal.compat import int_from_bytes, int_to_bytes
-from hypothesis.internal.conjecture.junkdrawer import IntList, uniform
+from hypothesis.internal.conjecture.junkdrawer import ensure_free_stackframes, IntList, uniform
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 
 if TYPE_CHECKING:
@@ -951,9 +951,9 @@ class ConjectureData:
                 return strategy.do_draw(self)
             else:
                 assert start_time is not None
-                strategy.validate()
                 try:
-                    return strategy.do_draw(self)
+                    with ensure_free_stackframes():
+                        return strategy.do_draw(self)
                 finally:
                     self.draw_times.append(time.perf_counter() - start_time)
         finally:

@@ -14,7 +14,9 @@ anything that lives here, please move it."""
 
 import array
 import sys
+import warnings
 from random import Random
+from threading import Lock
 from typing import (
     Callable,
     Dict,
@@ -29,6 +31,8 @@ from typing import (
     Union,
     overload,
 )
+
+from hypothesis.errors import HypothesisWarning
 
 ARRAY_CODES = ["B", "H", "I", "L", "Q", "O"]
 
@@ -269,6 +273,58 @@ def stack_depth_of_caller() -> int:
         frame = frame.f_back  # type: ignore[assignment]
         size += 1
     return size
+
+
+class ensure_free_stackframes:
+    """Context manager that ensures there are at least N free stackframes. The
+    value of N is chosen to be the recursionlimit at import time, unless
+    specified.
+    """
+    lock: Lock = Lock()
+    nesting: int = 0
+    org_maxdepth: int = sys.getrecursionlimit()
+
+    def __init__(self, free_depth: Optional[int] = None):
+        self.requested_free_depth = free_depth or self.org_maxdepth
+
+    def __enter__(self):
+        cur_depth = stack_depth_of_caller()
+        # The lock protects against concurrent access to this method, but other
+        # callers of sys.setrecursionlimit() will mess things up.
+        with self.lock:
+            self.nesting += 1
+            self.cur_maxdepth = sys.getrecursionlimit()
+            new_maxdepth = cur_depth + self.requested_free_depth
+            if new_maxdepth > self.cur_maxdepth:
+                # Because we add to the recursion limit, to be good citizens we
+                # also add a check for unbounded recursion.  The default limit
+                # is 1000, so this can only ever trigger if something really
+                # strange is happening and it's hard to imagine an
+                # intentionally-deeply-recursive use of this code.
+                assert cur_depth <= self.org_maxdepth, (
+                    "Hypothesis would usually add %d to the stack depth of %d here, "
+                    "but we are already much deeper than expected.  Aborting now, to "
+                    "avoid extending the stack limit in an infinite loop..."
+                    % (new_maxdepth - self.cur_maxdepth, self.cur_maxdepth)
+                )
+                self.new_maxdepth = new_maxdepth
+                sys.setrecursionlimit(new_maxdepth)
+
+    def __exit__(self, *args, **kwargs):
+        # Because the recursion limit is increased by an amount which
+        # depends on concurrent callers, we can't reset the stack limit
+        # until there are no other callers.
+        with self.lock:
+            self.nesting -= 1
+            if self.nesting == 0:
+                if self.new_maxdepth == sys.getrecursionlimit():
+                    sys.setrecursionlimit(self.cur_maxdepth)
+                else:  # pragma: nocover
+                    warnings.warn(
+                        "The recursion limit will not be reset, since it was "
+                        "changed outside of hypothesis during execution of a test.",
+                        HypothesisWarning,
+                    )
 
 
 def find_integer(f: Callable[[int], bool]) -> int:

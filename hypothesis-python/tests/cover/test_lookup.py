@@ -625,6 +625,7 @@ def test_resolving_mutually_recursive_types_with_limited_stack():
     try:
         test()
     finally:
+        assert sys.getrecursionlimit() == 100
         sys.setrecursionlimit(orig_recursionlimit)
 
 
