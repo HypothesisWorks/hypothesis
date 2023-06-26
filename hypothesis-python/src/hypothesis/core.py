@@ -76,6 +76,7 @@ from hypothesis.internal.compat import (
 )
 from hypothesis.internal.conjecture.data import ConjectureData, Status
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE, ConjectureRunner
+from hypothesis.internal.conjecture.junkdrawer import ensure_free_stackframes
 from hypothesis.internal.conjecture.shrinker import sort_key
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.internal.escalation import (
@@ -614,9 +615,10 @@ def process_arguments_to_given(wrapped_test, arguments, kwargs, given_kwargs, pa
 
     arguments = tuple(arguments)
 
-    for k, s in given_kwargs.items():
-        check_strategy(s, name=k)
-        s.validate()
+    with ensure_free_stackframes():
+        for k, s in given_kwargs.items():
+            check_strategy(s, name=k)
+            s.validate()
 
     stuff = Stuff(selfy=selfy, args=arguments, kwargs=kwargs, given_kwargs=given_kwargs)
 

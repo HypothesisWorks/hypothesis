@@ -9,7 +9,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
-import sys
 import time
 from collections import defaultdict
 from contextlib import contextmanager
@@ -37,7 +36,7 @@ from hypothesis.internal.conjecture.datatree import (
     PreviouslyUnseenBehaviour,
     TreeRecordingObserver,
 )
-from hypothesis.internal.conjecture.junkdrawer import clamp, stack_depth_of_caller
+from hypothesis.internal.conjecture.junkdrawer import clamp, ensure_free_stackframes
 from hypothesis.internal.conjecture.pareto import NO_SCORE, ParetoFront, ParetoOptimiser
 from hypothesis.internal.conjecture.shrinker import Shrinker, sort_key
 from hypothesis.internal.healthcheck import fail_health_check
@@ -133,9 +132,6 @@ class ConjectureRunner:
         # executed test case.
         self.__data_cache = LRUReusedCache(CACHE_SIZE)
 
-        # We ensure that the test has this much stack space remaining, no matter
-        # the size of the stack when called, to de-flake RecursionErrors (#2494).
-        self.__recursion_limit = sys.getrecursionlimit()
         self.__pending_call_explanation = None
 
     def explain_next_call_as(self, explanation):
@@ -169,32 +165,22 @@ class ConjectureRunner:
         """Run ``self._test_function``, but convert a ``StopTest`` exception
         into a normal return and avoid raising Flaky for RecursionErrors.
         """
-        depth = stack_depth_of_caller()
-        # Because we add to the recursion limit, to be good citizens we also add
-        # a check for unbounded recursion.  The default limit is 1000, so this can
-        # only ever trigger if something really strange is happening and it's hard
-        # to imagine an intentionally-deeply-recursive use of this code.
-        assert depth <= 1000, (
-            "Hypothesis would usually add %d to the stack depth of %d here, "
-            "but we are already much deeper than expected.  Aborting now, to "
-            "avoid extending the stack limit in an infinite loop..."
-            % (self.__recursion_limit, depth)
-        )
-        try:
-            sys.setrecursionlimit(depth + self.__recursion_limit)
-            self._test_function(data)
-        except StopTest as e:
-            if e.testcounter == data.testcounter:
-                # This StopTest has successfully stopped its test, and can now
-                # be discarded.
-                pass
-            else:
-                # This StopTest was raised by a different ConjectureData. We
-                # need to re-raise it so that it will eventually reach the
-                # correct engine.
-                raise
-        finally:
-            sys.setrecursionlimit(self.__recursion_limit)
+        # We ensure that the test has this much stack space remaining, no
+        # matter the size of the stack when called, to de-flake RecursionErrors
+        # (#2494, #3671).
+        with ensure_free_stackframes():
+            try:
+                self._test_function(data)
+            except StopTest as e:
+                if e.testcounter == data.testcounter:
+                    # This StopTest has successfully stopped its test, and can now
+                    # be discarded.
+                    pass
+                else:
+                    # This StopTest was raised by a different ConjectureData. We
+                    # need to re-raise it so that it will eventually reach the
+                    # correct engine.
+                    raise
 
     def test_function(self, data):
         if self.__pending_call_explanation is not None:
