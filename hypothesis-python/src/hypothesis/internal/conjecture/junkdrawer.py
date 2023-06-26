@@ -301,9 +301,6 @@ class ensure_free_stackframes:
         sys.setrecursionlimit(self.new_maxdepth)
 
     def __exit__(self, *args, **kwargs):
-        # Because the recursion limit is increased by an amount which
-        # depends on concurrent callers, we can't reset the stack limit
-        # until there are no other callers.
         if self.new_maxdepth == sys.getrecursionlimit():
             sys.setrecursionlimit(self.old_maxdepth)
         else:
