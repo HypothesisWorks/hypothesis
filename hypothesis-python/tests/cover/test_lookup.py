@@ -27,6 +27,7 @@ from numbers import Real
 import pytest
 
 from hypothesis import HealthCheck, assume, given, settings, strategies as st
+from hypothesis.internal.conjecture.junkdrawer import stack_depth_of_caller
 from hypothesis.errors import InvalidArgument, ResolutionFailed, SmallSearchSpaceWarning
 from hypothesis.internal.compat import PYPY, get_origin, get_type_hints
 from hypothesis.internal.reflection import get_pretty_function_description
@@ -613,7 +614,8 @@ def test_resolving_mutually_recursive_types(nxt):
 
 def test_resolving_mutually_recursive_types_with_limited_stack():
     orig_recursionlimit = sys.getrecursionlimit()
-    sys.setrecursionlimit(100)
+    current_stack_depth = stack_depth_of_caller()
+    sys.setrecursionlimit(current_stack_depth + 100)
     try:
 
         @given(nxt=st.from_type(A))
@@ -622,7 +624,7 @@ def test_resolving_mutually_recursive_types_with_limited_stack():
 
         test()
     finally:
-        assert sys.getrecursionlimit() == 100
+        assert sys.getrecursionlimit() == current_stack_depth + 100
         sys.setrecursionlimit(orig_recursionlimit)
 
 

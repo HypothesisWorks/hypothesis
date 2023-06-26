@@ -277,62 +277,41 @@ def stack_depth_of_caller() -> int:
 
 class ensure_free_stackframes:
     """Context manager that ensures there are at least N free stackframes. The
-    value of N is chosen to be the recursionlimit at import time, unless
-    specified.
+    value of N is chosen to be the recursion limit at import time, or at least
+    500.
     """
 
-    lock: Lock = Lock()
-    nesting: int = 0
     initial_maxdepth: int = sys.getrecursionlimit()
-    original_maxdepth: int
-    changed_maxdepth: int
-
-    def __init__(self, free_depth: Optional[int] = None):
-        self.requested_free_depth = free_depth or self.initial_maxdepth
 
     def __enter__(self):
-        cls = type(self)
         cur_depth = stack_depth_of_caller()
-        # The lock protects against concurrent access to this method, but other
-        # callers of sys.setrecursionlimit() will mess things up.
-        with cls.lock:
-            cur_maxdepth = sys.getrecursionlimit()
-            if cls.nesting == 0:
-                cls.original_maxdepth = cur_maxdepth
-            new_maxdepth = cur_depth + self.requested_free_depth
-            if new_maxdepth > cur_maxdepth:  # pragma: no branch
-                # Because we add to the recursion limit, to be good citizens we
-                # also add a check for unbounded recursion.  The default limit
-                # is 1000, so this can only ever trigger if something really
-                # strange is happening and it's hard to imagine an
-                # intentionally-deeply-recursive use of this code.
-                assert cur_depth <= cls.initial_maxdepth, (
-                    "Hypothesis would usually add %d to the stack depth of %d here, "
-                    "but we are already much deeper than expected.  Aborting now, to "
-                    "avoid extending the stack limit in an infinite loop..."
-                    % (new_maxdepth - cur_maxdepth, cur_maxdepth)
-                )
-                cls.changed_maxdepth = new_maxdepth
-                sys.setrecursionlimit(new_maxdepth)
-            cls.nesting += 1
+        self.old_maxdepth = sys.getrecursionlimit()
+        self.new_maxdepth = cur_depth + max(self.initial_maxdepth, 500)
+        # Because we add to the recursion limit, to be good citizens we
+        # also add a check for unbounded recursion.  The default limit
+        # is 1000, so this can only ever trigger if something really
+        # strange is happening and it's hard to imagine an
+        # intentionally-deeply-recursive use of this code.
+        assert cur_depth <= self.initial_maxdepth, (
+            "Hypothesis would usually add %d to the stack depth of %d here, "
+            "but we are already much deeper than expected.  Aborting now, to "
+            "avoid extending the stack limit in an infinite loop..."
+            % (self.new_maxdepth - self.old_maxdepth, self.old_maxdepth)
+        )
+        sys.setrecursionlimit(self.new_maxdepth)
 
     def __exit__(self, *args, **kwargs):
-        cls = type(self)
         # Because the recursion limit is increased by an amount which
         # depends on concurrent callers, we can't reset the stack limit
         # until there are no other callers.
-        assert cls.nesting > 0
-        with cls.lock:
-            cls.nesting -= 1
-            if cls.nesting == 0:  # pragma: no branch
-                if cls.changed_maxdepth == sys.getrecursionlimit():
-                    sys.setrecursionlimit(cls.original_maxdepth)
-                else:  # pragma: nocover
-                    warnings.warn(
-                        "The recursion limit will not be reset, since it was "
-                        "changed outside of hypothesis during execution of a test.",
-                        HypothesisWarning,
-                    )
+        if self.new_maxdepth == sys.getrecursionlimit():
+            sys.setrecursionlimit(self.old_maxdepth)
+        else:
+            warnings.warn(  # pragma: nocover
+                "The recursion limit will not be reset, since it was changed "
+                "from another thread or during execution of a test.",
+                HypothesisWarning,
+            )
 
 
 def find_integer(f: Callable[[int], bool]) -> int:
