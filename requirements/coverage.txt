@@ -24,7 +24,7 @@ exceptiongroup==1.1.1 ; python_version < "3.11"
     #   pytest
 execnet==1.9.0
     # via pytest-xdist
-fakeredis==2.14.1
+fakeredis==2.15.0
     # via -r requirements/coverage.in
 iniconfig==2.0.0
     # via pytest
@@ -36,7 +36,7 @@ mypy-extensions==1.0.0
     # via
     #   black
     #   typing-inspect
-numpy==1.24.3
+numpy==1.25.0
     # via
     #   -r requirements/coverage.in
     #   pandas
@@ -50,13 +50,13 @@ pathspec==0.11.1
     # via black
 pexpect==4.8.0
     # via -r requirements/test.in
-platformdirs==3.5.3
+platformdirs==3.8.0
     # via black
-pluggy==1.0.0
+pluggy==1.2.0
     # via pytest
 ptyprocess==0.7.0
     # via pexpect
-pytest==7.3.2
+pytest==7.4.0
     # via
     #   -r requirements/test.in
     #   pytest-xdist

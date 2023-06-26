@@ -52,11 +52,18 @@ def test_resolves_unspecified_array_type(atype):
         assert isinstance(from_type(atype).example(), np.ndarray)
 
 
+def workaround(dtype):
+    # Total hack to work around https://github.com/numpy/numpy/issues/24043
+    if np.__version__.startswith("1.25.") and dtype == np.dtype("bytes").type:
+        return pytest.param(dtype, marks=[pytest.mark.xfail(strict=False)])
+    return dtype
+
+
 @pytest.mark.skipif(
     sys.version_info[:2] < (3, 9),
     reason="Type subscription requires python >= 3.9",
 )
-@pytest.mark.parametrize("typ", STANDARD_TYPES_TYPE)
+@pytest.mark.parametrize("typ", [workaround(t) for t in STANDARD_TYPES_TYPE])
 def test_resolves_specified_ndarray_type(typ):
     arr = from_type(np.ndarray[typ]).example()
     assert isinstance(arr, np.ndarray)
@@ -68,7 +75,7 @@ def test_resolves_specified_ndarray_type(typ):
 
 
 @pytest.mark.skipif(NDArray is None, **needs_np_typing)
-@pytest.mark.parametrize("typ", STANDARD_TYPES_TYPE)
+@pytest.mark.parametrize("typ", [workaround(t) for t in STANDARD_TYPES_TYPE])
 def test_resolves_specified_NDArray_type(typ):
     arr = from_type(NDArray[typ]).example()
     assert isinstance(arr, np.ndarray)

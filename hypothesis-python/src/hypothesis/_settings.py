@@ -468,6 +468,7 @@ class HealthCheck(Enum, metaclass=HealthCheckMeta):
             "`Healthcheck.all()` is deprecated; use `list(HealthCheck)` instead.",
             since="2023-04-16",
             has_codemod=True,
+            stacklevel=1,
         )
         return list(HealthCheck)
 
@@ -601,6 +602,7 @@ def validate_health_check_suppressions(suppressions):
                 f"The {s.name} health check is deprecated, because this is always an error.",
                 since="2023-03-15",
                 has_codemod=False,
+                stacklevel=2,
             )
     return suppressions
 
@@ -687,7 +689,9 @@ The default is ``True`` if the ``CI`` or ``TF_BUILD`` env vars are set, ``False`
 settings.lock_further_definitions()
 
 
-def note_deprecation(message: str, *, since: str, has_codemod: bool) -> None:
+def note_deprecation(
+    message: str, *, since: str, has_codemod: bool, stacklevel: int = 0
+) -> None:
     if since != "RELEASEDAY":
         date = datetime.datetime.strptime(since, "%Y-%m-%d").date()
         assert datetime.date(2021, 1, 1) <= date
@@ -696,7 +700,7 @@ def note_deprecation(message: str, *, since: str, has_codemod: bool) -> None:
             "\n    The `hypothesis codemod` command-line tool can automatically "
             "refactor your code to fix this warning."
         )
-    warnings.warn(HypothesisDeprecationWarning(message), stacklevel=2)
+    warnings.warn(HypothesisDeprecationWarning(message), stacklevel=2 + stacklevel)
 
 
 settings.register_profile("default", settings())

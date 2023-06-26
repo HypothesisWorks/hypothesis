@@ -938,7 +938,7 @@ def make_strategies_namespace(
     ) -> st.SearchStrategy[Union[bool, int, float, complex]]:
         return _from_dtype(
             xp,
-            api_version,  # type: ignore[arg-type]
+            api_version,
             dtype,
             min_value=min_value,
             max_value=max_value,
@@ -962,7 +962,7 @@ def make_strategies_namespace(
     ) -> st.SearchStrategy:
         return _arrays(
             xp,
-            api_version,  # type: ignore[arg-type]
+            api_version,
             dtype,
             shape,
             elements=elements,
@@ -972,7 +972,7 @@ def make_strategies_namespace(
 
     @defines_strategy()
     def scalar_dtypes() -> st.SearchStrategy[DataType]:
-        return _scalar_dtypes(xp, api_version)  # type: ignore[arg-type]
+        return _scalar_dtypes(xp, api_version)
 
     @defines_strategy()
     def boolean_dtypes() -> st.SearchStrategy[DataType]:
@@ -984,7 +984,7 @@ def make_strategies_namespace(
 
     @defines_strategy()
     def numeric_dtypes() -> st.SearchStrategy[DataType]:
-        return _numeric_dtypes(xp, api_version)  # type: ignore[arg-type]
+        return _numeric_dtypes(xp, api_version)
 
     @defines_strategy()
     def integer_dtypes(

@@ -549,6 +549,7 @@ def _convert_targets(targets, target):
                     "This will be an error in a future version of Hypothesis.",
                     since="2021-09-08",
                     has_codemod=False,
+                    stacklevel=2,
                 )
             t = t.name
         converted_targets.append(t)

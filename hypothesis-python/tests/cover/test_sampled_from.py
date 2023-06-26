@@ -184,7 +184,7 @@ def test_mutability_2(data):
 
 
 class AnnotationsInsteadOfElements(enum.Enum):
-    a: "a"
+    a: "int"
 
 
 def test_suggests_elements_instead_of_annotations():
