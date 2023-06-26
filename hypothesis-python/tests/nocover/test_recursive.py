@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import threading
+import warnings
 
 from hypothesis import HealthCheck, given, settings, strategies as st
 
@@ -140,7 +141,11 @@ def test_drawing_from_recursive_strategy_is_thread_safe():
     @given(data=st.data())
     def test(data):
         try:
-            data.draw(shared_strategy)
+            # We may get a warning here about not resetting recursionlimit,
+            # since it was changed during execution; ignore it.
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                data.draw(shared_strategy)
         except Exception as exc:
             errors.append(exc)
 
