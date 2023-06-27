@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.79.4:
+
+-------------------
+6.79.4 - 2023-06-27
+-------------------
+
+Fixes occasional recursion-limit-exceeded errors when validating
+deeply nested strategies. Closes: :issue:`3671`
+
 .. _v6.79.3:
 
 -------------------
