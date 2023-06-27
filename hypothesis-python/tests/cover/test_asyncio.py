@@ -9,7 +9,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import asyncio
-import sys
 import warnings
 from unittest import TestCase
 
@@ -18,14 +17,11 @@ import pytest
 from hypothesis import assume, given, strategies as st
 from hypothesis.internal.compat import PYPY
 
-if sys.version_info < (3, 8):
-    coro_decorator = asyncio.coroutine
-else:
 
-    def coro_decorator(f):
-        with warnings.catch_warnings():
-            warnings.simplefilter(action="ignore", category=DeprecationWarning)
-            return asyncio.coroutine(f)
+def coro_decorator(f):
+    with warnings.catch_warnings():
+        warnings.simplefilter(action="ignore", category=DeprecationWarning)
+        return asyncio.coroutine(f)
 
 
 class TestAsyncio(TestCase):

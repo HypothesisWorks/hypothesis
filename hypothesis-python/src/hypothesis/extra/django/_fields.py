@@ -53,7 +53,7 @@ def integers_for_field(min_value, max_value):
     return inner
 
 
-@lru_cache()
+@lru_cache
 def timezones():
     # From Django 4.0, the default is to use zoneinfo instead of pytz.
     assert getattr(django.conf.settings, "USE_TZ", False)

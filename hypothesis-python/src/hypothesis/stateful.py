@@ -387,7 +387,7 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
     TestCase = TestCaseProperty()
 
     @classmethod
-    @lru_cache()
+    @lru_cache
     def _to_test_case(cls):
         class StateMachineTestCase(TestCase):
             settings = Settings(deadline=None, suppress_health_check=list(HealthCheck))

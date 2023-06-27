@@ -22,10 +22,7 @@ from hypothesis.errors import HypothesisWarning, InvalidArgument
 from hypothesis.internal.compat import GRAALPY, PYPY
 
 if TYPE_CHECKING:
-    if sys.version_info >= (3, 8):
-        from typing import Protocol
-    else:
-        from typing_extensions import Protocol
+    from typing import Protocol
 
     # we can't use this at runtime until from_type supports
     # protocols -- breaks ghostwriter tests

@@ -126,7 +126,7 @@ class HypothesisFixComplexMinMagnitude(VisitorBasedCodemodCommand):
         return updated_node
 
 
-@functools.lru_cache()
+@functools.lru_cache
 def get_fn(import_path):
     mod, fn = import_path.rsplit(".", 1)
     return getattr(importlib.import_module(mod), fn)

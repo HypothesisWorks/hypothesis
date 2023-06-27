@@ -137,7 +137,7 @@ else:
 if sys.version_info >= (3, 8):
     from typing import Protocol
 elif TYPE_CHECKING:
-    from typing_extensions import Protocol
+    from typing import Protocol
 else:  # pragma: no cover
     Protocol = object
 
