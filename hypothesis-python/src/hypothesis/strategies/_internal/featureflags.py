@@ -102,3 +102,6 @@ class FeatureFlags:
 class FeatureStrategy(SearchStrategy):
     def do_draw(self, data):
         return FeatureFlags(data)
+
+    def __repr__(self):
+        return f"FeatureStrategy()"
