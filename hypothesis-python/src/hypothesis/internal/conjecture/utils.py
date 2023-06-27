@@ -284,6 +284,7 @@ def biased_coin(
                 # (see https://bugs.python.org/issue2506), coverage incorrectly
                 # thinks that this condition is always true.  You can trivially
                 # check by adding `else: assert False` and running the tests.
+                # Note: Fixed in both CPython and PyPy 3.10, with PEP 626
                 data.draw_bits(bits, forced=int(result))
         break
     data.stop_example()
