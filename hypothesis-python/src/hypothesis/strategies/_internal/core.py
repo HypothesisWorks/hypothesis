@@ -20,7 +20,7 @@ import warnings
 from decimal import Context, Decimal, localcontext
 from fractions import Fraction
 from functools import lru_cache, reduce
-from inspect import Parameter, Signature, isabstract, isclass, signature
+from inspect import Parameter, Signature, isabstract, isclass
 from types import FunctionType
 from typing import (
     TYPE_CHECKING,
@@ -888,14 +888,12 @@ class BuildsStrategy(SearchStrategy):
         return f"builds({', '.join(bits)})"
 
 
-# The ideal signature builds(target, /, *args, **kwargs) is unfortunately a
-# SyntaxError before Python 3.8 so we emulate it with manual argument unpacking.
-# Note that for the benefit of documentation and introspection tools, we set the
-# __signature__ attribute to show the semantic rather than actual signature.
 @cacheable
 @defines_strategy()
 def builds(
-    *callable_and_args: Union[Callable[..., Ex], SearchStrategy[Any]],
+    target: Callable[..., Ex],
+    /,
+    *args: SearchStrategy[Any],
     **kwargs: Union[SearchStrategy[Any], EllipsisType],
 ) -> SearchStrategy[Ex]:
     """Generates values by drawing from ``args`` and ``kwargs`` and passing
@@ -919,12 +917,6 @@ def builds(
     Examples from this strategy shrink by shrinking the argument values to
     the callable.
     """
-    if not callable_and_args:
-        raise InvalidArgument(  # pragma: no cover
-            "builds() must be passed a callable as the first positional "
-            "argument, but no positional arguments were given."
-        )
-    target, args = callable_and_args[0], callable_and_args[1:]
     if not callable(target):
         raise InvalidArgument(
             "The first positional argument to builds() must be a callable "
@@ -969,28 +961,6 @@ def builds(
                     # https://github.com/HypothesisWorks/hypothesis/issues/3026
                     kwargs[kw] = deferred(lambda t=t: from_type(t))  # type: ignore
     return BuildsStrategy(target, args, kwargs)
-
-
-if sys.version_info[:2] >= (3, 8):
-    # See notes above definition - this signature is compatible and better
-    # matches the semantics of the function.  Great for documentation!
-    sig = signature(builds)
-    args, kwargs = sig.parameters.values()
-    builds = define_function_signature(
-        name=builds.__name__,
-        docstring=builds.__doc__,
-        signature=sig.replace(
-            parameters=[
-                Parameter(
-                    name="target",
-                    kind=Parameter.POSITIONAL_ONLY,
-                    annotation=Callable[..., Ex],
-                ),
-                args.replace(name="args", annotation=SearchStrategy[Any]),
-                kwargs,
-            ]
-        ),
-    )(builds)
 
 
 @cacheable
