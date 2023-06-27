@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.80.0:
+
+-------------------
+6.80.0 - 2023-06-27
+-------------------
+
+This release drops support for Python 3.7, `which reached end of life on
+2023-06-27 <https://devguide.python.org/versions/>`__.
+
 .. _v6.79.4:
 
 -------------------
