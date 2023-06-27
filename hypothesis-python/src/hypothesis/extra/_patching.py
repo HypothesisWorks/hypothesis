@@ -209,7 +209,7 @@ def make_patch(triples, *, msg="Hypothesis: add explicit examples", when=None):
 
 
 def save_patch(patch: str, *, slug: str = "") -> Path:  # pragma: no cover
-    assert re.fullmatch(r"|[a-z]+-", slug), f"malformed slug={slug!r}"
+    assert re.fullmatch(r"|[a-z]+-", slug), f"malformed {slug=}"
     now = date.today().isoformat()
     cleaned = re.sub(r"^Date: .+?$", "", patch, count=1, flags=re.MULTILINE)
     hash8 = hashlib.sha1(cleaned.encode()).hexdigest()[:8]

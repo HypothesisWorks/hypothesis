@@ -93,7 +93,7 @@ def ip_addresses(
     if v is not None:
         check_type(int, v, "v")
         if v not in (4, 6):
-            raise InvalidArgument(f"v={v!r}, but only v=4 or v=6 are valid")
+            raise InvalidArgument(f"{v=}, but only v=4 or v=6 are valid")
     if network is None:
         # We use the reserved-address registries to boost the chance
         # of generating one of the various special types of address.
@@ -113,6 +113,6 @@ def ip_addresses(
     check_type((IPv4Network, IPv6Network), network, "network")
     assert isinstance(network, (IPv4Network, IPv6Network))  # for Mypy
     if v not in (None, network.version):
-        raise InvalidArgument(f"v={v!r} is incompatible with network={network!r}")
+        raise InvalidArgument(f"{v=} is incompatible with {network=}")
     addr_type = IPv4Address if network.version == 4 else IPv6Address
     return integers(int(network[0]), int(network[-1])).map(addr_type)  # type: ignore

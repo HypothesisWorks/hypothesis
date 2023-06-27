@@ -64,7 +64,7 @@ def _db_for_path(path=None):
                 HypothesisWarning(
                     "The database setting is not configured, and the default "
                     "location is unusable - falling back to an in-memory "
-                    f"database for this session.  path={path!r}"
+                    f"database for this session.  {path=}"
                 )
             )
             return InMemoryExampleDatabase()

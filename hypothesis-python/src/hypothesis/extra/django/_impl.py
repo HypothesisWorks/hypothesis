@@ -92,7 +92,7 @@ def from_model(
     a field which has a default value instead of using the default.
     """
     if not issubclass(model, dm.Model):
-        raise InvalidArgument(f"model={model!r} must be a subtype of Model")
+        raise InvalidArgument(f"{model=} must be a subtype of Model")
 
     fields_by_name = {f.name: f for f in model._meta.concrete_fields}
     for name, value in sorted(field_strategies.items()):
@@ -165,7 +165,7 @@ def from_form(
     # ImageField
     form_kwargs = form_kwargs or {}
     if not issubclass(form, df.BaseForm):
-        raise InvalidArgument(f"form={form!r} must be a subtype of Form")
+        raise InvalidArgument(f"{form=} must be a subtype of Form")
 
     # Forms are a little bit different from models. Model classes have
     # all their fields defined, whereas forms may have different fields

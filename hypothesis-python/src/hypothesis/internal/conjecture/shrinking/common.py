@@ -110,9 +110,7 @@ class Shrinker:
         self.check_invariants(value)
         if not self.left_is_better(value, self.current):
             if value != self.current and (value == value):
-                self.debug(
-                    f"Rejected {value!r} as worse than self.current={self.current!r}"
-                )
+                self.debug(f"Rejected {value!r} as worse than {self.current=}")
             return False
         if value in self.__seen:
             return False

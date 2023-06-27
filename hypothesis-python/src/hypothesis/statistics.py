@@ -32,11 +32,11 @@ def describe_targets(best_targets):
         return []
     elif len(best_targets) == 1:
         label, score = next(iter(best_targets.items()))
-        return [f"Highest target score: {score:g}  (label={label!r})"]
+        return [f"Highest target score: {score:g}  ({label=})"]
     else:
         lines = ["Highest target scores:"]
         for label, score in sorted(best_targets.items(), key=lambda x: x[::-1]):
-            lines.append(f"{score:>16g}  (label={label!r})")
+            lines.append(f"{score:>16g}  ({label=})")
         return lines
 
 

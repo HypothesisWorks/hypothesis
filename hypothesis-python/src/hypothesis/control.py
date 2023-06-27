@@ -206,7 +206,7 @@ def target(observation: Union[int, float], *, label: str = "") -> Union[int, flo
     """
     check_type((int, float), observation, "observation")
     if not math.isfinite(observation):
-        raise InvalidArgument(f"observation={observation!r} must be a finite float.")
+        raise InvalidArgument(f"{observation=} must be a finite float.")
     check_type(str, label, "label")
 
     context = _current_build_context.value
@@ -215,12 +215,12 @@ def target(observation: Union[int, float], *, label: str = "") -> Union[int, flo
             "Calling target() outside of a test is invalid.  "
             "Consider guarding this call with `if currently_in_test_context(): ...`"
         )
-    verbose_report(f"Saw target(observation={observation!r}, label={label!r})")
+    verbose_report(f"Saw target({observation!r}, {label=})")
 
     if label in context.data.target_observations:
         raise InvalidArgument(
-            f"Calling target({observation!r}, label={label!r}) would overwrite "
-            f"target({context.data.target_observations[label]!r}, label={label!r})"
+            f"Calling target({observation!r}, {label=}) would overwrite "
+            f"target({context.data.target_observations[label]!r}, {label=})"
         )
     else:
         context.data.target_observations[label] = observation

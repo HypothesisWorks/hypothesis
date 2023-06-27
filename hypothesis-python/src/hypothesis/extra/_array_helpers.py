@@ -294,7 +294,7 @@ def _hypothesis_parse_gufunc_signature(signature, all_checks=True):
                 "Hypothesis does not yet support generalised ufunc signatures "
                 "with multiple output arrays - mostly because we don't know of "
                 "anyone who uses them!  Please get in touch with us to fix that."
-                f"\n (signature={signature!r})"
+                f"\n ({signature=})"
             )
         if re.match(
             (
@@ -305,7 +305,7 @@ def _hypothesis_parse_gufunc_signature(signature, all_checks=True):
             signature,
         ):
             raise InvalidArgument(
-                f"signature={signature!r} matches Numpy's regex for gufunc signatures, "
+                f"{signature=} matches Numpy's regex for gufunc signatures, "
                 f"but contains shapes with more than {NDIM_MAX} dimensions and is thus invalid."
             )
         raise InvalidArgument(f"{signature!r} is not a valid gufunc signature")

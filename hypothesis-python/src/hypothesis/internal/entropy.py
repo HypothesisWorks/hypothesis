@@ -110,7 +110,7 @@ def register_random(r: RandomLike) -> None:
            register_random(rng)
     """
     if not (hasattr(r, "seed") and hasattr(r, "getstate") and hasattr(r, "setstate")):
-        raise InvalidArgument(f"r={r!r} does not have all the required methods")
+        raise InvalidArgument(f"{r=} does not have all the required methods")
 
     if r in RANDOMS_TO_MANAGE.values():
         return

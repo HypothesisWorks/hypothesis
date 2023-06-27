@@ -261,7 +261,7 @@ def test_rewrite_filter_chains_with_some_unhandled(data, predicates, s):
     # Whatever value we draw is in fact valid for these strategies
     value = data.draw(s)
     for p in predicates:
-        assert p(value), f"p={p!r}, value={value}"
+        assert p(value), f"{p=}, value={value}"
 
     # No matter the order of the filters, we get the same resulting structure
     unwrapped = s.wrapped_strategy

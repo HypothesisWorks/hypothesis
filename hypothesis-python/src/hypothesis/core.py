@@ -200,7 +200,7 @@ class example:
             )
         ):
             raise InvalidArgument(
-                f"raises={raises!r} must be an exception type or tuple of exception types"
+                f"{raises=} must be an exception type or tuple of exception types"
             )
         if condition:
             self._this_example = attr.evolve(
