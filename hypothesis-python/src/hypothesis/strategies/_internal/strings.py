@@ -153,7 +153,7 @@ class TextStrategy(ListStrategy):
     )
 
     def filter(self, condition):
-        if condition in (str.lower, str.title, str.upper):
+        if condition in self._nonempty_filters:
             warnings.warn(
                 f"You applied str.{condition.__name__} as a filter, but this allows "
                 f"all nonempty strings!  Did you mean str.is{condition.__name__}?",
