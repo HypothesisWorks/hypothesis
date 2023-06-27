@@ -215,13 +215,13 @@ def datetimes(
     check_type(dt.datetime, min_value, "min_value")
     check_type(dt.datetime, max_value, "max_value")
     if min_value.tzinfo is not None:
-        raise InvalidArgument(f"min_value={min_value!r} must not have tzinfo")
+        raise InvalidArgument(f"{min_value=} must not have tzinfo")
     if max_value.tzinfo is not None:
-        raise InvalidArgument(f"max_value={max_value!r} must not have tzinfo")
+        raise InvalidArgument(f"{max_value=} must not have tzinfo")
     check_valid_interval(min_value, max_value, "min_value", "max_value")
     if not isinstance(timezones, SearchStrategy):
         raise InvalidArgument(
-            f"timezones={timezones!r} must be a SearchStrategy that can "
+            f"{timezones=} must be a SearchStrategy that can "
             "provide tzinfo for datetimes (either None or dt.tzinfo objects)"
         )
     return DatetimeStrategy(min_value, max_value, timezones, allow_imaginary)
@@ -258,9 +258,9 @@ def times(
     check_type(dt.time, min_value, "min_value")
     check_type(dt.time, max_value, "max_value")
     if min_value.tzinfo is not None:
-        raise InvalidArgument(f"min_value={min_value!r} must not have tzinfo")
+        raise InvalidArgument(f"{min_value=} must not have tzinfo")
     if max_value.tzinfo is not None:
-        raise InvalidArgument(f"max_value={max_value!r} must not have tzinfo")
+        raise InvalidArgument(f"{max_value=} must not have tzinfo")
     check_valid_interval(min_value, max_value, "min_value", "max_value")
     return TimeStrategy(min_value, max_value, timezones)
 

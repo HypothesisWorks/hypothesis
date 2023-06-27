@@ -387,7 +387,7 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
     TestCase = TestCaseProperty()
 
     @classmethod
-    @lru_cache()
+    @lru_cache
     def _to_test_case(cls):
         class StateMachineTestCase(TestCase):
             settings = Settings(deadline=None, suppress_health_check=list(HealthCheck))
@@ -462,7 +462,7 @@ class Bundle(SearchStrategy[Ex]):
         consume = self.__reference_strategy.consume
         if consume is False:
             return f"Bundle(name={self.name!r})"
-        return f"Bundle(name={self.name!r}, consume={consume!r})"
+        return f"Bundle(name={self.name!r}, {consume=})"
 
     def calc_is_empty(self, recur):
         # We assume that a bundle will grow over time

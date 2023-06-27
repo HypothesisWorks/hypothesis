@@ -200,7 +200,7 @@ class example:
             )
         ):
             raise InvalidArgument(
-                f"raises={raises!r} must be an exception type or tuple of exception types"
+                f"{raises=} must be an exception type or tuple of exception types"
             )
         if condition:
             self._this_example = attr.evolve(
@@ -208,7 +208,7 @@ class example:
             )
         return self
 
-    def via(self, *whence: str) -> "example":
+    def via(self, whence: str, /) -> "example":
         """Attach a machine-readable label noting whence this example came.
 
         The idea is that tools will be able to add ``@example()`` cases for you, e.g.
@@ -243,25 +243,10 @@ class example:
                 pass
 
         """
-        if len(whence) != 1 or not isinstance(whence[0], str):
+        if not isinstance(whence, str):
             raise InvalidArgument(".via() must be passed a string")
         # This is deliberately a no-op at runtime; the tools operate on source code.
         return self
-
-    if sys.version_info[:2] >= (3, 8):
-        # We want a positional-only argument, and on Python 3.8+ we'll get it.
-        __sig = get_signature(via)
-        via = define_function_signature(
-            name=via.__name__,
-            docstring=via.__doc__,
-            signature=__sig.replace(
-                parameters=[
-                    p.replace(kind=inspect.Parameter.POSITIONAL_ONLY)
-                    for p in __sig.parameters.values()
-                ]
-            ),
-        )(via)
-        del __sig
 
 
 def seed(seed: Hashable) -> Callable[[TestFunc], TestFunc]:

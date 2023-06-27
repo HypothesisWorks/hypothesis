@@ -162,7 +162,7 @@ class settings(metaclass=settingsMeta):
             if database not in (not_set, None):  # type: ignore
                 raise InvalidArgument(
                     "derandomize=True implies database=None, so passing "
-                    f"database={database!r} too is invalid."
+                    f"{database=} too is invalid."
                 )
             database = None
 
@@ -191,7 +191,7 @@ class settings(metaclass=settingsMeta):
         if not callable(_test):
             raise InvalidArgument(
                 "settings objects can be called as a decorator with @given, "
-                f"but decorated test={test!r} is not callable."
+                f"but decorated {test=} is not callable."
             )
         if inspect.isclass(test):
             from hypothesis.stateful import RuleBasedStateMachine

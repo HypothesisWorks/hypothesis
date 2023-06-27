@@ -14,10 +14,10 @@ import warnings
 
 import setuptools
 
-if sys.version_info[:2] < (3, 7):
+if sys.version_info[:2] < (3, 8):
     raise Exception(
         "You are trying to install Hypothesis using Python "
-        f"{sys.version.split()[0]}, but it requires Python 3.7 or later."
+        f"{sys.version.split()[0]}, but it requires Python 3.8 or later."
         "Update `pip` and `setuptools`, try again, and you will automatically "
         "get the latest compatible version of Hypothesis instead.  "
         "See also https://python3statement.org/practicalities/"
@@ -76,9 +76,7 @@ extras = {
     "django": ["django>=3.2"],
 }
 
-extras["all"] = sorted(
-    set(sum(extras.values(), ["importlib_metadata>=3.6; python_version<'3.8'"]))
-)
+extras["all"] = sorted(set(sum(extras.values(), [])))
 
 
 setuptools.setup(
@@ -105,7 +103,7 @@ setuptools.setup(
         "exceptiongroup>=1.0.0 ; python_version<'3.11'",
         "sortedcontainers>=2.1.0,<3.0.0",
     ],
-    python_requires=">=3.7",
+    python_requires=">=3.8",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Framework :: Hypothesis",
@@ -118,7 +116,6 @@ setuptools.setup(
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",

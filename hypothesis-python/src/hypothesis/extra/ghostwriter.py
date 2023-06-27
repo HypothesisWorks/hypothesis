@@ -103,13 +103,15 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    get_args,
+    get_origin,
 )
 
 import black
 
 from hypothesis import Verbosity, find, settings, strategies as st
 from hypothesis.errors import InvalidArgument, SmallSearchSpaceWarning
-from hypothesis.internal.compat import get_args, get_origin, get_type_hints
+from hypothesis.internal.compat import get_type_hints
 from hypothesis.internal.reflection import get_signature, is_mock
 from hypothesis.internal.validation import check_type
 from hypothesis.provisional import domains
@@ -1329,7 +1331,7 @@ def fuzz(
     or :func:`~hypothesis.strategies.binary`.  After that, you have a test!
     """
     if not callable(func):
-        raise InvalidArgument(f"Got non-callable func={func!r}")
+        raise InvalidArgument(f"Got non-callable {func=}")
     except_ = _check_except(except_)
     _check_style(style)
 
@@ -1389,7 +1391,7 @@ def idempotent(
             assert result == repeat, (result, repeat)
     """
     if not callable(func):
-        raise InvalidArgument(f"Got non-callable func={func!r}")
+        raise InvalidArgument(f"Got non-callable {func=}")
     except_ = _check_except(except_)
     _check_style(style)
 
@@ -1628,14 +1630,14 @@ def binary_operation(
         )
     """
     if not callable(func):
-        raise InvalidArgument(f"Got non-callable func={func!r}")
+        raise InvalidArgument(f"Got non-callable {func=}")
     except_ = _check_except(except_)
     _check_style(style)
     check_type(bool, associative, "associative")
     check_type(bool, commutative, "commutative")
     if distributes_over is not None and not callable(distributes_over):
         raise InvalidArgument(
-            f"distributes_over={distributes_over!r} must be an operation which "
+            f"{distributes_over=} must be an operation which "
             f"distributes over {func.__name__}"
         )
     if not any([associative, commutative, identity, distributes_over]):
@@ -1811,7 +1813,7 @@ def ufunc(
         hypothesis write numpy.matmul
     """
     if not _is_probably_ufunc(func):
-        raise InvalidArgument(f"func={func!r} does not seem to be a ufunc")
+        raise InvalidArgument(f"{func=} does not seem to be a ufunc")
     except_ = _check_except(except_)
     _check_style(style)
 

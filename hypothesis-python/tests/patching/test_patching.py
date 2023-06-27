@@ -196,7 +196,7 @@ def test_pytest_reports_patch_file_location(pytester):
 
     fname_pat = r"\.hypothesis/patches/\d{4}-\d\d-\d\d--[0-9a-f]{8}.patch"
     pattern = f"`git apply ({fname_pat})` to add failing examples to your code\\."
-    print(f"pattern={pattern!r}")
+    print(f"{pattern=}")
     print(f"result.stdout=\n{indent(str(result.stdout), '    ')}")
     fname = re.search(pattern, str(result.stdout)).group(1)
     patch = Path(pytester.path).joinpath(fname).read_text()

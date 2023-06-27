@@ -22,10 +22,7 @@ from hypothesis.errors import HypothesisWarning, InvalidArgument
 from hypothesis.internal.compat import GRAALPY, PYPY
 
 if TYPE_CHECKING:
-    if sys.version_info >= (3, 8):
-        from typing import Protocol
-    else:
-        from typing_extensions import Protocol
+    from typing import Protocol
 
     # we can't use this at runtime until from_type supports
     # protocols -- breaks ghostwriter tests
@@ -113,7 +110,7 @@ def register_random(r: RandomLike) -> None:
            register_random(rng)
     """
     if not (hasattr(r, "seed") and hasattr(r, "getstate") and hasattr(r, "setstate")):
-        raise InvalidArgument(f"r={r!r} does not have all the required methods")
+        raise InvalidArgument(f"{r=} does not have all the required methods")
 
     if r in RANDOMS_TO_MANAGE.values():
         return

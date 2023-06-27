@@ -8,12 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import sys
-
-if sys.version_info[:2] < (3, 8):
-    raise RuntimeError("The Array API standard requires Python 3.8 or later")
-
 import math
+import sys
 from numbers import Real
 from types import SimpleNamespace
 from typing import (
@@ -563,7 +559,7 @@ def _arrays(
         raise InvalidArgument(f"shape={shape} is not a valid shape or strategy")
     check_argument(
         all(isinstance(x, int) and x >= 0 for x in shape),
-        f"shape={shape!r}, but all dimensions must be non-negative integers.",
+        f"{shape=}, but all dimensions must be non-negative integers.",
     )
 
     if elements is None:
@@ -802,7 +798,7 @@ def indices(
     check_type(tuple, shape, "shape")
     check_argument(
         all(isinstance(x, int) and x >= 0 for x in shape),
-        f"shape={shape!r}, but all dimensions must be non-negative integers.",
+        f"{shape=}, but all dimensions must be non-negative integers.",
     )
     check_type(bool, allow_newaxis, "allow_newaxis")
     check_type(bool, allow_ellipsis, "allow_ellipsis")
@@ -896,7 +892,7 @@ def make_strategies_namespace(
         check_argument(
             isinstance(xp.__array_api_version__, str)
             and xp.__array_api_version__ in RELEASED_VERSIONS,
-            f"xp.__array_api_version__={xp.__array_api_version__!r}, but it must "
+            f"{xp.__array_api_version__=}, but it must "
             f"be a valid version string {RELEASED_VERSIONS}. {not_available_msg}",
         )
         api_version = xp.__array_api_version__
@@ -904,7 +900,7 @@ def make_strategies_namespace(
     else:
         check_argument(
             isinstance(api_version, str) and api_version in NOMINAL_VERSIONS,
-            f"api_version={api_version!r}, but it must be None, or a valid version "
+            f"{api_version=}, but it must be None, or a valid version "
             f"string in {RELEASED_VERSIONS}. {not_available_msg}",
         )
         inferred_version = False

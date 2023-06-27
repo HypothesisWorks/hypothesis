@@ -8,8 +8,6 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import sys
-
 import pytest
 
 from hypothesis.internal.compat import WINDOWS, escape_unicode_characters
@@ -102,8 +100,7 @@ def test_healthcheck_traceback_is_hidden(testdir):
     timeout_token = ": FailedHealthCheck"
     def_line = get_line_num(def_token, result)
     timeout_line = get_line_num(timeout_token, result)
-    expected = 6 if sys.version_info[:2] < (3, 8) else 7
-    assert timeout_line - def_line == expected
+    assert timeout_line - def_line == 7
 
 
 COMPOSITE_IS_NOT_A_TEST = """

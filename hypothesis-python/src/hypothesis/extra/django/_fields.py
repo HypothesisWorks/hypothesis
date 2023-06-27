@@ -53,7 +53,7 @@ def integers_for_field(min_value, max_value):
     return inner
 
 
-@lru_cache()
+@lru_cache
 def timezones():
     # From Django 4.0, the default is to use zoneinfo instead of pytz.
     assert getattr(django.conf.settings, "USE_TZ", False)
@@ -186,7 +186,7 @@ def _for_form_ip(field):
         return st.ip_addresses(v=4).map(str)
     if validate_ipv6_address in field.default_validators:
         return _ipv6_strings
-    raise ResolutionFailed(f"No IP version validator on field={field!r}")
+    raise ResolutionFailed(f"No IP version validator on {field=}")
 
 
 @register_for(dm.DecimalField)
@@ -275,11 +275,11 @@ def register_field_strategy(
     ``strategy`` must be a :class:`~hypothesis.strategies.SearchStrategy`.
     """
     if not issubclass(field_type, (dm.Field, df.Field)):
-        raise InvalidArgument(f"field_type={field_type!r} must be a subtype of Field")
+        raise InvalidArgument(f"{field_type=} must be a subtype of Field")
     check_type(st.SearchStrategy, strategy, "strategy")
     if field_type in _global_field_lookup:
         raise InvalidArgument(
-            f"field_type={field_type!r} already has a registered "
+            f"{field_type=} already has a registered "
             f"strategy ({_global_field_lookup[field_type]!r})"
         )
     if issubclass(field_type, dm.AutoField):

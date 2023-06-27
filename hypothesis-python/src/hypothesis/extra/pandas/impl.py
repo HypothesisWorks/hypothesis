@@ -87,12 +87,12 @@ def elements_and_dtype(elements, dtype, source=None):
 
     if isinstance(dtype, type) and issubclass(dtype, IntegerDtype):
         raise InvalidArgument(
-            f"Passed dtype={dtype!r} is a dtype class, please pass in an instance of this class."
+            f"Passed {dtype=} is a dtype class, please pass in an instance of this class."
             "Otherwise it would be treated as dtype=object"
         )
 
     if isinstance(dtype, type) and np.dtype(dtype).kind == "O" and dtype is not object:
-        err_msg = f"Passed dtype={dtype!r} is not a valid Pandas dtype."
+        err_msg = f"Passed {dtype=} is not a valid Pandas dtype."
         if issubclass(dtype, datetime):
             err_msg += ' To generate valid datetimes, pass `dtype="datetime64[ns]"`'
             raise InvalidArgument(err_msg)
@@ -109,7 +109,7 @@ def elements_and_dtype(elements, dtype, source=None):
 
     if isinstance(dtype, st.SearchStrategy):
         raise InvalidArgument(
-            f"Passed dtype={dtype!r} is a strategy, but we require a concrete dtype "
+            f"Passed {dtype=} is a strategy, but we require a concrete dtype "
             "here.  See https://stackoverflow.com/q/74355937 for workaround patterns."
         )
 
@@ -654,7 +654,7 @@ def data_frames(
                                 value, (float, int, str, bool, datetime, timedelta)
                             ):
                                 raise ValueError(
-                                    f"Failed to add value={value!r} to column "
+                                    f"Failed to add {value=} to column "
                                     f"{c.name} with dtype=None.  Maybe passing "
                                     "dtype=object would help?"
                                 ) from err

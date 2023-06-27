@@ -182,12 +182,6 @@ and then tell ``setuptools`` that this is your ``"hypothesis"`` entry point:
 
 And that's all it takes!
 
-.. note::
-    On Python 3.7, where the ``importlib.metadata`` module
-    is not in the standard library, loading entry points requires either the
-    :pypi:`importlib_metadata` (preferred) or :pypi:`setuptools` (fallback)
-    package to be installed.
-
 
 Interaction with :pypi:`pytest-cov`
 -----------------------------------

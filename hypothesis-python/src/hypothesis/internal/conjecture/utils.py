@@ -471,7 +471,7 @@ class many:
 SMALLEST_POSITIVE_FLOAT: float = next_up(0.0) or sys.float_info.min
 
 
-@lru_cache()
+@lru_cache
 def _calc_p_continue(desired_avg: float, max_size: int) -> float:
     """Return the p_continue which will generate the desired average size."""
     assert desired_avg <= max_size, (desired_avg, max_size)

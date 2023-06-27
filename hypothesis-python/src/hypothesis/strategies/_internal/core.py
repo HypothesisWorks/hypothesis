@@ -20,10 +20,9 @@ import warnings
 from decimal import Context, Decimal, localcontext
 from fractions import Fraction
 from functools import lru_cache, reduce
-from inspect import Parameter, Signature, isabstract, isclass, signature
+from inspect import Parameter, Signature, isabstract, isclass
 from types import FunctionType
 from typing import (
-    TYPE_CHECKING,
     Any,
     AnyStr,
     Callable,
@@ -34,12 +33,15 @@ from typing import (
     List,
     Optional,
     Pattern,
+    Protocol,
     Sequence,
     Set,
     Tuple,
     Type,
     TypeVar,
     Union,
+    get_args,
+    get_origin,
     overload,
 )
 from uuid import UUID
@@ -132,14 +134,6 @@ elif typing.TYPE_CHECKING:  # pragma: no cover
     from builtins import ellipsis as EllipsisType
 else:
     EllipsisType = type(Ellipsis)  # pragma: no cover
-
-
-if sys.version_info >= (3, 8):
-    from typing import Protocol
-elif TYPE_CHECKING:
-    from typing_extensions import Protocol
-else:  # pragma: no cover
-    Protocol = object
 
 
 @cacheable
@@ -285,7 +279,7 @@ def lists(
     if unique_by is not None:
         if not (callable(unique_by) or isinstance(unique_by, tuple)):
             raise InvalidArgument(
-                f"unique_by={unique_by!r} is not a callable or tuple of callables"
+                f"{unique_by=} is not a callable or tuple of callables"
             )
         if callable(unique_by):
             unique_by = (unique_by,)
@@ -337,7 +331,7 @@ def lists(
             element_count = len(elements.elements)
             if min_size > element_count:
                 raise InvalidArgument(
-                    f"Cannot create a collection of min_size={min_size!r} unique "
+                    f"Cannot create a collection of {min_size=} unique "
                     f"elements with values drawn from only {element_count} distinct "
                     "elements"
                 )
@@ -580,7 +574,7 @@ def characters(
     ):
         raise InvalidArgument(
             "Nothing is excluded by other arguments, so passing only "
-            f"whitelist_characters={whitelist_characters!r} would have no effect.  "
+            f"{whitelist_characters=} would have no effect.  "
             "Also pass whitelist_categories=(), or use "
             f"sampled_from({whitelist_characters!r}) instead."
         )
@@ -590,8 +584,7 @@ def characters(
     if overlap:
         raise InvalidArgument(
             f"Characters {sorted(overlap)!r} are present in both "
-            f"whitelist_characters={whitelist_characters!r}, and "
-            f"blacklist_characters={blacklist_characters!r}"
+            f"{whitelist_characters=} and {blacklist_characters=}"
         )
     blacklist_categories = as_general_categories(
         blacklist_categories, "blacklist_categories"
@@ -613,8 +606,7 @@ def characters(
     if both_cats:
         raise InvalidArgument(
             f"Categories {sorted(both_cats)!r} are present in both "
-            f"whitelist_categories={whitelist_categories!r}, and "
-            f"blacklist_categories={blacklist_categories!r}"
+            f"{whitelist_categories=} and {blacklist_categories=}"
         )
 
     return OneCharStringStrategy(
@@ -888,14 +880,12 @@ class BuildsStrategy(SearchStrategy):
         return f"builds({', '.join(bits)})"
 
 
-# The ideal signature builds(target, /, *args, **kwargs) is unfortunately a
-# SyntaxError before Python 3.8 so we emulate it with manual argument unpacking.
-# Note that for the benefit of documentation and introspection tools, we set the
-# __signature__ attribute to show the semantic rather than actual signature.
 @cacheable
 @defines_strategy()
 def builds(
-    *callable_and_args: Union[Callable[..., Ex], SearchStrategy[Any]],
+    target: Callable[..., Ex],
+    /,
+    *args: SearchStrategy[Any],
     **kwargs: Union[SearchStrategy[Any], EllipsisType],
 ) -> SearchStrategy[Ex]:
     """Generates values by drawing from ``args`` and ``kwargs`` and passing
@@ -919,12 +909,6 @@ def builds(
     Examples from this strategy shrink by shrinking the argument values to
     the callable.
     """
-    if not callable_and_args:
-        raise InvalidArgument(  # pragma: no cover
-            "builds() must be passed a callable as the first positional "
-            "argument, but no positional arguments were given."
-        )
-    target, args = callable_and_args[0], callable_and_args[1:]
     if not callable(target):
         raise InvalidArgument(
             "The first positional argument to builds() must be a callable "
@@ -969,28 +953,6 @@ def builds(
                     # https://github.com/HypothesisWorks/hypothesis/issues/3026
                     kwargs[kw] = deferred(lambda t=t: from_type(t))  # type: ignore
     return BuildsStrategy(target, args, kwargs)
-
-
-if sys.version_info[:2] >= (3, 8):
-    # See notes above definition - this signature is compatible and better
-    # matches the semantics of the function.  Great for documentation!
-    sig = signature(builds)
-    args, kwargs = sig.parameters.values()
-    builds = define_function_signature(
-        name=builds.__name__,
-        docstring=builds.__doc__,
-        signature=sig.replace(
-            parameters=[
-                Parameter(
-                    name="target",
-                    kind=Parameter.POSITIONAL_ONLY,
-                    annotation=Callable[..., Ex],
-                ),
-                args.replace(name="args", annotation=SearchStrategy[Any]),
-                kwargs,
-            ]
-        ),
-    )(builds)
 
 
 @cacheable
@@ -1142,7 +1104,7 @@ def _from_type(thing: Type[Ex], recurse_guard: List[Type[Ex]]) -> SearchStrategy
                 "`from __future__ import annotations` instead of forward-reference "
                 "strings."
             )
-        raise InvalidArgument(f"thing={thing!r} must be a type")  # pragma: no cover
+        raise InvalidArgument(f"{thing=} must be a type")  # pragma: no cover
     if thing in types.NON_RUNTIME_TYPES:
         # Some code like `st.from_type(TypeAlias)` does not make sense.
         # Because there are types in python that do not exist in runtime.
@@ -1175,7 +1137,7 @@ def _from_type(thing: Type[Ex], recurse_guard: List[Type[Ex]]) -> SearchStrategy
         optional = set(getattr(thing, "__optional_keys__", ()))
         anns = {}
         for k, v in get_type_hints(thing).items():
-            origin = getattr(v, "__origin__", None)
+            origin = get_origin(v)
             if origin in types.RequiredTypes + types.NotRequiredTypes:
                 if origin in types.NotRequiredTypes:
                     optional.add(k)
@@ -1208,8 +1170,8 @@ def _from_type(thing: Type[Ex], recurse_guard: List[Type[Ex]]) -> SearchStrategy
     # subclass and instance checks.
     if isinstance(thing, types.typing_root_type) or (
         sys.version_info[:2] >= (3, 9)
-        and isinstance(getattr(thing, "__origin__", None), type)
-        and getattr(thing, "__args__", None)
+        and isinstance(get_origin(thing), type)
+        and get_args(thing)
     ):
         return types.from_typing_type(thing)
     # If it's not from the typing module, we get all registered types that are
@@ -1326,16 +1288,16 @@ def fractions(
 
     if max_denominator is not None:
         if max_denominator < 1:
-            raise InvalidArgument(f"max_denominator={max_denominator!r} must be >= 1")
+            raise InvalidArgument(f"{max_denominator=} must be >= 1")
         if min_value is not None and min_value.denominator > max_denominator:
             raise InvalidArgument(
-                f"The min_value={min_value!r} has a denominator greater than the "
-                f"max_denominator={max_denominator!r}"
+                f"The {min_value=} has a denominator greater than the "
+                f"{max_denominator=}"
             )
         if max_value is not None and max_value.denominator > max_denominator:
             raise InvalidArgument(
-                f"The max_value={max_value!r} has a denominator greater than the "
-                f"max_denominator={max_denominator!r}"
+                f"The {max_value=} has a denominator greater than the "
+                f"{max_denominator=}"
             )
 
     if min_value is not None and min_value == max_value:
@@ -1395,9 +1357,7 @@ def _as_finite_decimal(
     if value.is_infinite() and (value < 0 if "min" in name else value > 0):
         if allow_infinity or allow_infinity is None:
             return None
-        raise InvalidArgument(
-            f"allow_infinity={allow_infinity!r}, but {name}={value!r}"
-        )
+        raise InvalidArgument(f"{allow_infinity=}, but {name}={value!r}")
     # This could be infinity, quiet NaN, or signalling NaN
     raise InvalidArgument(f"Invalid {name}={value!r}")
 
@@ -1435,7 +1395,7 @@ def decimals(
     # Convert min_value and max_value to Decimal values, and validate args
     check_valid_integer(places, "places")
     if places is not None and places < 0:
-        raise InvalidArgument(f"places={places!r} may not be negative")
+        raise InvalidArgument(f"{places=} may not be negative")
     min_value = _as_finite_decimal(min_value, "min_value", allow_infinity)
     max_value = _as_finite_decimal(max_value, "max_value", allow_infinity)
     check_valid_interval(min_value, max_value, "min_value", "max_value")
@@ -1465,7 +1425,7 @@ def decimals(
         if min_num is not None and max_num is not None and min_num > max_num:
             raise InvalidArgument(
                 f"There are no decimals with {places} places between "
-                f"min_value={min_value!r} and max_value={max_value!r}"
+                f"{min_value=} and {max_value=}"
             )
         strat = integers(min_num, max_num).map(int_to_decimal)
     else:
@@ -1583,7 +1543,7 @@ class DrawFn(Protocol):
     def __init__(self):
         raise TypeError("Protocols cannot be instantiated")  # pragma: no cover
 
-    # On Python 3.8+, Protocol overrides our signature for __init__,
+    # Protocol overrides our signature for __init__,
     # so we override it right back to make the docs look nice.
     __signature__: Signature = Signature(parameters=[])
 
@@ -1731,21 +1691,17 @@ def complex_numbers(
     if allow_infinity is None:
         allow_infinity = bool(max_magnitude is None)
     elif allow_infinity and max_magnitude is not None:
-        raise InvalidArgument(
-            f"Cannot have allow_infinity={allow_infinity!r} with "
-            f"max_magnitude={max_magnitude!r}"
-        )
+        raise InvalidArgument(f"Cannot have {allow_infinity=} with {max_magnitude=}")
     if allow_nan is None:
         allow_nan = bool(min_magnitude == 0 and max_magnitude is None)
     elif allow_nan and not (min_magnitude == 0 and max_magnitude is None):
         raise InvalidArgument(
-            f"Cannot have allow_nan={allow_nan!r}, min_magnitude={min_magnitude!r} "
-            f"max_magnitude={max_magnitude!r}"
+            f"Cannot have {allow_nan=}, {min_magnitude=}, {max_magnitude=}"
         )
     check_type(bool, allow_subnormal, "allow_subnormal")
     if width not in (32, 64, 128):
         raise InvalidArgument(
-            f"width={width!r}, but must be 32, 64 or 128 (other complex dtypes "
+            f"{width=}, but must be 32, 64 or 128 (other complex dtypes "
             "such as complex192 or complex256 are not supported)"
             # For numpy, these types would be supported (but not by CPython):
             # https://numpy.org/doc/stable/reference/arrays.scalars.html#complex-floating-point-types
@@ -1858,7 +1814,7 @@ def uuids(
     check_type(bool, allow_nil, "allow_nil")
     if version not in (None, 1, 2, 3, 4, 5):
         raise InvalidArgument(
-            f"version={version!r}, but version must be in "
+            f"{version=}, but version must be in "
             "(None, 1, 2, 3, 4, 5) to pass to the uuid.UUID constructor."
         )
     random_uuids = shared(
@@ -2005,10 +1961,10 @@ def register_type_strategy(
     from hypothesis.strategies._internal import types
 
     if not types.is_a_type(custom_type):
-        raise InvalidArgument(f"custom_type={custom_type!r} must be a type")
+        raise InvalidArgument(f"{custom_type=} must be a type")
     if custom_type in types.NON_RUNTIME_TYPES:
         raise InvalidArgument(
-            f"custom_type={custom_type!r} is not allowed to be registered, "
+            f"{custom_type=} is not allowed to be registered, "
             f"because there is no such thing as a runtime instance of {custom_type!r}"
         )
     elif not (isinstance(strategy, SearchStrategy) or callable(strategy)):
@@ -2019,12 +1975,11 @@ def register_type_strategy(
     elif isinstance(strategy, SearchStrategy) and strategy.is_empty:
         raise InvalidArgument("strategy=%r must not be empty")
     elif types.has_type_arguments(custom_type):
-        origin = getattr(custom_type, "__origin__", None)
         raise InvalidArgument(
             f"Cannot register generic type {custom_type!r}, because it has type "
             "arguments which would not be handled.  Instead, register a function "
-            f"for {origin!r} which can inspect specific type objects and return a "
-            "strategy."
+            f"for {get_origin(custom_type)!r} which can inspect specific type "
+            "objects and return a strategy."
         )
     if (
         "pydantic.generics" in sys.modules
