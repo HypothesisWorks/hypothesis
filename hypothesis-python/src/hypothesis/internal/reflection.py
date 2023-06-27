@@ -27,7 +27,7 @@ from types import ModuleType
 from typing import TYPE_CHECKING, Any, Callable
 from unittest.mock import _patch as PatchType
 
-from hypothesis.internal.compat import PYPY, is_typed_named_tuple, update_code_location
+from hypothesis.internal.compat import PYPY, is_typed_named_tuple
 from hypothesis.utils.conventions import not_set
 from hypothesis.vendor.pretty import pretty
 
@@ -608,8 +608,11 @@ def impersonate(target):
     """
 
     def accept(f):
-        f.__code__ = update_code_location(
-            f.__code__, target.__code__.co_filename, target.__code__.co_firstlineno
+        # Lie shamelessly about where this code comes from, to hide the hypothesis
+        # internals from pytest, ipython, and other runtime introspection.
+        f.__code__ = f.__code__.replace(
+            co_filename=target.__code__.co_filename,
+            co_firstlineno=target.__code__.co_firstlineno,
         )
         f.__name__ = target.__name__
         f.__module__ = target.__module__
