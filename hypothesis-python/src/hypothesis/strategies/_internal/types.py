@@ -27,7 +27,7 @@ import typing
 import uuid
 from pathlib import PurePath
 from types import FunctionType
-from typing import get_origin
+from typing import get_args, get_origin
 
 from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument, ResolutionFailed
@@ -180,7 +180,7 @@ def type_sorting_key(t):
     """Minimise to None, then non-container types, then container types."""
     if t is None or t is type(None):  # noqa: E721
         return (-1, repr(t))
-    t = getattr(t, "__origin__", t)  # TODO: get_origin?
+    t = get_origin(t) or t
     try:
         is_container = int(issubclass(t, collections.abc.Container))
     except Exception:  # pragma: no cover
@@ -207,11 +207,8 @@ def try_issubclass(thing, superclass):
     try:
         # In this case we're looking at two distinct classes - which might be generics.
         # That brings in some complications:
-        if issubclass(
-            getattr(thing, "__origin__", None) or thing,
-            getattr(superclass, "__origin__", None) or superclass,
-        ):
-            superclass_args = getattr(superclass, "__args__", None)
+        if issubclass(get_origin(thing) or thing, get_origin(superclass) or superclass):
+            superclass_args = get_args(superclass)
             if not superclass_args:
                 # The superclass is not generic, so we're definitely a subclass.
                 return True
@@ -248,10 +245,7 @@ def is_a_new_type(thing):
 
 def is_a_union(thing):
     """Return True if thing is a typing.Union or types.UnionType (in py310)."""
-    return (
-        isinstance(thing, UnionType)
-        or getattr(thing, "__origin__", None) is typing.Union
-    )
+    return isinstance(thing, UnionType) or get_origin(thing) is typing.Union
 
 
 def is_a_type(thing):
@@ -260,11 +254,9 @@ def is_a_type(thing):
 
 
 def is_typing_literal(thing):
-    return (
-        hasattr(typing, "Literal")
-        and getattr(thing, "__origin__", None) == typing.Literal
-        or hasattr(typing_extensions, "Literal")
-        and getattr(thing, "__origin__", None) == typing_extensions.Literal
+    return get_origin(thing) in (
+        typing.Literal,
+        getattr(typing_extensions, "Literal", object()),
     )
 
 
@@ -339,7 +331,7 @@ def from_typing_type(thing):
     # information to sensibly resolve to strategies at runtime.
     # Finally, we run a variation of the subclass lookup in `st.from_type`
     # among generic types in the lookup.
-    if getattr(thing, "__origin__", None) == tuple or isinstance(
+    if get_origin(thing) == tuple or isinstance(
         thing, getattr(typing, "TupleMeta", ())
     ):
         elem_types = getattr(thing, "__tuple_params__", None) or ()
@@ -353,7 +345,7 @@ def from_typing_type(thing):
         elif len(elem_types) == 1 and elem_types[0] == ():
             return st.tuples()  # Empty tuple; see issue #1583
         return st.tuples(*map(st.from_type, elem_types))
-    if getattr(thing, "__origin__", None) == typing.Final:
+    if get_origin(thing) == typing.Final:
         return st.one_of([st.from_type(t) for t in thing.__args__])
     if is_typing_literal(thing):
         args_dfs_stack = list(thing.__args__)
@@ -383,7 +375,7 @@ def from_typing_type(thing):
 
     # Some "generic" classes are not generic *in* anything - for example both
     # Hashable and Sized have `__args__ == ()`
-    origin = getattr(thing, "__origin__", thing)
+    origin = get_origin(thing) or thing
     if (
         origin in vars(collections.abc).values()
         and len(getattr(thing, "__args__", None) or []) == 0
@@ -393,6 +385,7 @@ def from_typing_type(thing):
     # Parametrised generic types have their __origin__ attribute set to the
     # un-parametrised version, which we need to use in the subclass checks.
     # e.g.:     typing.List[int].__origin__ == typing.List
+    # (actually not sure if this is true since Python 3.9 or so)
     mapping = {
         k: v
         for k, v in _global_type_lookup.items()
@@ -704,7 +697,7 @@ def register(type_, fallback=None, *, module=typing):
 
         @functools.wraps(func)
         def really_inner(thing):
-            # This branch is for Python < 3.8, when __args__ was not always tracked
+            # This branch is for Python <= 3.8, when __args__ was not always tracked
             if getattr(thing, "__args__", None) is None:
                 return fallback  # pragma: no cover
             return func(thing)
@@ -724,7 +717,7 @@ def register(type_, fallback=None, *, module=typing):
 @register("Type", module=typing_extensions)
 def resolve_Type(thing):
     if getattr(thing, "__args__", None) is None:
-        # This branch is for Python < 3.8, when __args__ was not always tracked
+        # This branch is for Python <= 3.8, when __args__ was not always tracked
         return st.just(type)  # pragma: no cover
     args = (thing.__args__[0],)
     if is_a_union(args[0]):
@@ -915,7 +908,7 @@ def resolve_Callable(thing):
                 f"Callable type parametrized by {arg!r}.  Consider using an "
                 "explicit strategy, or opening an issue."
             )
-    if getattr(return_type, "__origin__", None) in TypeGuardTypes:
+    if get_origin(return_type) in TypeGuardTypes:
         raise InvalidArgument(
             "Hypothesis cannot yet construct a strategy for callables which "
             f"are PEP-647 TypeGuards (got {return_type!r}).  "

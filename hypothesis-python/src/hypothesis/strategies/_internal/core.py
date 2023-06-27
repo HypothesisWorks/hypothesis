@@ -40,6 +40,8 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    get_args,
+    get_origin,
     overload,
 )
 from uuid import UUID
@@ -1135,7 +1137,7 @@ def _from_type(thing: Type[Ex], recurse_guard: List[Type[Ex]]) -> SearchStrategy
         optional = set(getattr(thing, "__optional_keys__", ()))
         anns = {}
         for k, v in get_type_hints(thing).items():
-            origin = getattr(v, "__origin__", None)
+            origin = get_origin(v)
             if origin in types.RequiredTypes + types.NotRequiredTypes:
                 if origin in types.NotRequiredTypes:
                     optional.add(k)
@@ -1168,8 +1170,8 @@ def _from_type(thing: Type[Ex], recurse_guard: List[Type[Ex]]) -> SearchStrategy
     # subclass and instance checks.
     if isinstance(thing, types.typing_root_type) or (
         sys.version_info[:2] >= (3, 9)
-        and isinstance(getattr(thing, "__origin__", None), type)
-        and getattr(thing, "__args__", None)
+        and isinstance(get_origin(thing), type)
+        and get_args(thing)
     ):
         return types.from_typing_type(thing)
     # If it's not from the typing module, we get all registered types that are
@@ -1973,12 +1975,11 @@ def register_type_strategy(
     elif isinstance(strategy, SearchStrategy) and strategy.is_empty:
         raise InvalidArgument("strategy=%r must not be empty")
     elif types.has_type_arguments(custom_type):
-        origin = getattr(custom_type, "__origin__", None)
         raise InvalidArgument(
             f"Cannot register generic type {custom_type!r}, because it has type "
             "arguments which would not be handled.  Instead, register a function "
-            f"for {origin!r} which can inspect specific type objects and return a "
-            "strategy."
+            f"for {get_origin(custom_type)!r} which can inspect specific type "
+            "objects and return a strategy."
         )
     if (
         "pydantic.generics" in sys.modules
