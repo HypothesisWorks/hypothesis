@@ -14,62 +14,7 @@ import platform
 import sys
 import typing
 from functools import partial
-from typing import Any, ForwardRef, Tuple
-
-try:
-    from typing import get_args as get_args
-except ImportError:
-    # remove at Python 3.7 end-of-life
-    from collections.abc import Callable as _Callable
-
-    def get_args(
-        tp: Any,
-    ) -> Tuple[Any, ...]:  # pragma: no cover
-        """
-        Examples
-        --------
-        >>> assert get_args(int) == ()
-        >>> assert get_args(Dict[str, int]) == (str, int)
-        >>> assert get_args(Union[int, Union[T, int], str][int]) == (int, str)
-        >>> assert get_args(Union[int, Tuple[T, int]][str]) == (int, Tuple[str, int])
-        >>> assert get_args(Callable[[], T][int]) == ([], int)
-        """
-        if hasattr(tp, "__origin__") and hasattr(tp, "__args__"):
-            args = tp.__args__
-            if (
-                getattr(tp, "__origin__", None) is _Callable
-                and args
-                and args[0] is not Ellipsis
-            ):
-                args = (list(args[:-1]), args[-1])
-            return args
-        return ()
-
-
-try:
-    from typing import get_origin as get_origin
-except ImportError:
-    # remove at Python 3.7 end-of-life
-    from collections.abc import Callable as _Callable  # noqa: F811
-
-    def get_origin(tp: Any) -> typing.Optional[Any]:  # type: ignore # pragma: no cover
-        """Get the unsubscripted version of a type.
-        This supports generic types, Callable, Tuple, Union, Literal, Final and ClassVar.
-        Return None for unsupported types. Examples::
-            get_origin(Literal[42]) is Literal
-            get_origin(int) is None
-            get_origin(ClassVar[int]) is ClassVar
-            get_origin(Generic) is Generic
-            get_origin(Generic[T]) is Generic
-            get_origin(Union[T, int]) is Union
-            get_origin(List[Tuple[T, T]][int]) == list
-        """
-        if hasattr(tp, "__origin__"):
-            return tp.__origin__
-        if tp is typing.Generic:
-            return typing.Generic
-        return None
-
+from typing import Any, ForwardRef, get_args
 
 try:
     BaseExceptionGroup = BaseExceptionGroup

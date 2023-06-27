@@ -103,13 +103,15 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    get_args,
+    get_origin,
 )
 
 import black
 
 from hypothesis import Verbosity, find, settings, strategies as st
 from hypothesis.errors import InvalidArgument, SmallSearchSpaceWarning
-from hypothesis.internal.compat import get_args, get_origin, get_type_hints
+from hypothesis.internal.compat import get_type_hints
 from hypothesis.internal.reflection import get_signature, is_mock
 from hypothesis.internal.validation import check_type
 from hypothesis.provisional import domains

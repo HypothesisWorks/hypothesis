@@ -23,7 +23,6 @@ from functools import lru_cache, reduce
 from inspect import Parameter, Signature, isabstract, isclass
 from types import FunctionType
 from typing import (
-    TYPE_CHECKING,
     Any,
     AnyStr,
     Callable,
@@ -34,6 +33,7 @@ from typing import (
     List,
     Optional,
     Pattern,
+    Protocol,
     Sequence,
     Set,
     Tuple,
@@ -132,14 +132,6 @@ elif typing.TYPE_CHECKING:  # pragma: no cover
     from builtins import ellipsis as EllipsisType
 else:
     EllipsisType = type(Ellipsis)  # pragma: no cover
-
-
-if sys.version_info >= (3, 8):
-    from typing import Protocol
-elif TYPE_CHECKING:
-    from typing import Protocol
-else:  # pragma: no cover
-    Protocol = object
 
 
 @cacheable
@@ -1549,7 +1541,7 @@ class DrawFn(Protocol):
     def __init__(self):
         raise TypeError("Protocols cannot be instantiated")  # pragma: no cover
 
-    # On Python 3.8+, Protocol overrides our signature for __init__,
+    # Protocol overrides our signature for __init__,
     # so we override it right back to make the docs look nice.
     __signature__: Signature = Signature(parameters=[])
 

@@ -9,7 +9,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import datetime as dt
-import sys
 from uuid import UUID
 
 from django.conf import settings as django_settings
@@ -196,11 +195,6 @@ class TestPosOnlyArg(TestCase):
         pass
 
     def test_from_model_signature(self):
-        if sys.version_info[:2] <= (3, 7):
-            self.assertRaises(TypeError, from_model().example)
-            self.assertRaises(TypeError, from_model(Car, None).example)
-            self.assertRaises(TypeError, from_model(model=Customer).example)
-        else:
-            self.assertRaises(TypeError, from_model)
-            self.assertRaises(TypeError, from_model, Car, None)
-            self.assertRaises(TypeError, from_model, model=Customer)
+        self.assertRaises(TypeError, from_model)
+        self.assertRaises(TypeError, from_model, Car, None)
+        self.assertRaises(TypeError, from_model, model=Customer)

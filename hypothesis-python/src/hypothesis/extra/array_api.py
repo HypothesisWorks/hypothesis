@@ -8,12 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import sys
-
-if sys.version_info[:2] < (3, 8):
-    raise RuntimeError("The Array API standard requires Python 3.8 or later")
-
 import math
+import sys
 from numbers import Real
 from types import SimpleNamespace
 from typing import (

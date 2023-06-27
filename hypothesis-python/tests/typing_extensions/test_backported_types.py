@@ -9,10 +9,10 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import collections
-import sys
-from typing import Callable, DefaultDict, Dict, List, Literal, NewType, Type, Union
+from typing import Callable, DefaultDict, Dict, List, NewType, Type, Union
 
 import pytest
+import typing_extensions
 from typing_extensions import (
     Annotated,
     Concatenate,
@@ -35,12 +35,12 @@ from tests.common.debug import assert_all_examples, find_any
 
 @pytest.mark.parametrize("value", ["dog", b"goldfish", 42, 63.4, -80.5, False])
 def test_typing_extensions_Literal(value):
-    assert from_type(Literal[value]).example() == value
+    assert from_type(typing_extensions.Literal[value]).example() == value
 
 
 @given(st.data())
 def test_typing_extensions_Literal_nested(data):
-    lit = Literal
+    lit = typing_extensions.Literal
     values = [
         (lit["hamster", 0], ("hamster", 0)),
         (lit[26, False, "bunny", 130], (26, False, "bunny", 130)),
@@ -49,7 +49,7 @@ def test_typing_extensions_Literal_nested(data):
         (lit[1, lit[2], 3], {1, 2, 3}),
         (lit[lit[lit[1], lit[2]], lit[lit[3], lit[4]]], {1, 2, 3, 4}),
         # See https://github.com/HypothesisWorks/hypothesis/pull/2886
-        (Union[Literal["hamster"], Literal["bunny"]], {"hamster", "bunny"}),
+        (Union[lit["hamster"], lit["bunny"]], {"hamster", "bunny"}),  # noqa
         (Union[lit[lit[1], lit[2]], lit[lit[3], lit[4]]], {1, 2, 3, 4}),
     ]
     literal_type, flattened_literals = data.draw(st.sampled_from(values))
@@ -160,7 +160,6 @@ def test_non_runtime_type_cannot_be_registered(non_runtime_type):
         st.register_type_strategy(non_runtime_type, st.none())
 
 
-@pytest.mark.skipif(sys.version_info <= (3, 7), reason="requires python3.8 or higher")
 def test_callable_with_concatenate():
     P = ParamSpec("P")
     func_type = Callable[Concatenate[int, P], None]
@@ -175,7 +174,6 @@ def test_callable_with_concatenate():
         st.register_type_strategy(func_type, st.none())
 
 
-@pytest.mark.skipif(sys.version_info <= (3, 7), reason="requires python3.8 or higher")
 def test_callable_with_paramspec():
     P = ParamSpec("P")
     func_type = Callable[P, None]
@@ -190,7 +188,6 @@ def test_callable_with_paramspec():
         st.register_type_strategy(func_type, st.none())
 
 
-@pytest.mark.skipif(sys.version_info <= (3, 7), reason="requires python3.8 or higher")
 def test_callable_return_typegard_type():
     strategy = st.from_type(Callable[[], TypeGuard[int]])
     with pytest.raises(

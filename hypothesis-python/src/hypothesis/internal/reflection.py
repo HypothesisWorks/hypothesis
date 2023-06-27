@@ -61,7 +61,7 @@ def _clean_source(src: str) -> bytes:
     # lines - i.e. any decorators, so that adding `@example()`s keeps the same key.
     try:
         funcdef = ast.parse(src).body[0]
-        if sys.version_info[:2] == (3, 7) or (sys.version_info[:2] == (3, 8) and PYPY):
+        if sys.version_info[:2] == (3, 8) and PYPY:
             # We can't get a line number of the (async) def here, so as a best-effort
             # approximation we'll use str.split instead and hope for the best.
             tag = "async def " if isinstance(funcdef, ast.AsyncFunctionDef) else "def "

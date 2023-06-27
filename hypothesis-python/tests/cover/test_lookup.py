@@ -28,7 +28,7 @@ import pytest
 
 from hypothesis import HealthCheck, assume, given, settings, strategies as st
 from hypothesis.errors import InvalidArgument, ResolutionFailed, SmallSearchSpaceWarning
-from hypothesis.internal.compat import PYPY, get_origin, get_type_hints
+from hypothesis.internal.compat import PYPY, get_type_hints
 from hypothesis.internal.conjecture.junkdrawer import stack_depth_of_caller
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies import from_type
@@ -242,7 +242,7 @@ def test_register_generic_typing_strats():
     # I don't expect anyone to do this, but good to check it works as expected
     with temp_registered(
         typing.Sequence,
-        types._global_type_lookup[get_origin(typing.Set) or typing.Set],
+        types._global_type_lookup[typing.get_origin(typing.Set) or typing.Set],
     ):
         # We register sets for the abstract sequence type, which masks subtypes
         # from supertype resolution but not direct resolution
@@ -553,14 +553,10 @@ def test_resolving_recursive_type(tree):
     assert isinstance(tree, Tree)
 
 
-class TypedTree(typing.TypedDict if sys.version_info[:2] >= (3, 8) else object):
+class TypedTree(typing.TypedDict):
     nxt: typing.Optional["TypedTree"]
 
 
-@pytest.mark.skipif(
-    sys.version_info[:2] < (3, 8),
-    reason="TypedDict not available in python<3.8",
-)
 def test_resolving_recursive_typeddict():
     tree = st.from_type(TypedTree).example()
     assert isinstance(tree, dict)
