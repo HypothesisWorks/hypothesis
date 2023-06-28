@@ -788,7 +788,7 @@ class StateForActualGivenExecution:
                                     test.__name__,
                                     args,
                                     kwargs,
-                                    force_split=True,
+                                    force_split=None,
                                     arg_slices=argslices,
                                     leading_comment=(
                                         "# " + context.data.slice_comments[(0, 0)]
