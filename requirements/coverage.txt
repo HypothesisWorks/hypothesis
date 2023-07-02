@@ -18,7 +18,7 @@ coverage==7.2.7
     # via -r requirements/coverage.in
 dpcontracts==0.6.0
     # via -r requirements/coverage.in
-exceptiongroup==1.1.1 ; python_version < "3.11"
+exceptiongroup==1.1.2 ; python_version < "3.11"
     # via
     #   hypothesis (hypothesis-python/setup.py)
     #   pytest
@@ -44,7 +44,7 @@ packaging==23.1
     # via
     #   black
     #   pytest
-pandas==2.0.2
+pandas==2.0.3
     # via -r requirements/coverage.in
 pathspec==0.11.1
     # via black
@@ -72,7 +72,7 @@ pytz==2023.3
     #   pandas
 pyyaml==6.0
     # via libcst
-redis==4.5.5
+redis==4.6.0
     # via fakeredis
 six==1.16.0
     # via python-dateutil
@@ -84,7 +84,7 @@ tomli==2.0.1
     # via
     #   black
     #   pytest
-typing-extensions==4.6.3
+typing-extensions==4.7.1
     # via
     #   -r requirements/coverage.in
     #   libcst

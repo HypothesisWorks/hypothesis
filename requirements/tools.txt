@@ -12,7 +12,7 @@ asttokens==2.2.1
     # via stack-data
 attrs==23.1.0
     # via hypothesis (hypothesis-python/setup.py)
-autoflake==2.1.1
+autoflake==2.2.0
     # via shed
 babel==2.12.1
     # via sphinx
@@ -57,7 +57,7 @@ decorator==5.1.1
     # via ipython
 distlib==0.3.6
     # via virtualenv
-django==4.2.2
+django==4.2.3
     # via -r requirements/tools.in
 docutils==0.18.1
     # via
@@ -67,7 +67,7 @@ docutils==0.18.1
     #   sphinx-rtd-theme
 dpcontracts==0.6.0
     # via -r requirements/tools.in
-exceptiongroup==1.1.1 ; python_version < "3.11"
+exceptiongroup==1.1.2 ; python_version < "3.11"
     # via
     #   hypothesis (hypothesis-python/setup.py)
     #   pytest
@@ -119,7 +119,7 @@ mdurl==0.1.2
     # via markdown-it-py
 more-itertools==9.1.0
     # via jaraco-classes
-mypy==1.4.0
+mypy==1.4.1
     # via -r requirements/tools.in
 mypy-extensions==1.0.0
     # via
@@ -144,7 +144,7 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pip-tools==6.13.0
+pip-tools==6.14.0
     # via -r requirements/tools.in
 pkginfo==1.9.6
     # via twine
@@ -177,13 +177,13 @@ pyproject-api==1.5.2
     # via tox
 pyproject-hooks==1.0.0
     # via build
-pyright==1.1.315
+pyright==1.1.316
     # via -r requirements/tools.in
 pytest==7.4.0
     # via -r requirements/tools.in
 python-dateutil==2.8.2
     # via -r requirements/tools.in
-pyupgrade==3.7.0
+pyupgrade==3.8.0
     # via shed
 pyyaml==6.0
     # via libcst
@@ -203,11 +203,11 @@ rfc3986==2.0.0
     # via twine
 rich==13.4.2
     # via twine
-ruff==0.0.275
+ruff==0.0.276
     # via -r requirements/tools.in
 secretstorage==3.3.3
     # via keyring
-shed==2023.5.2
+shed==2023.6.1
     # via -r requirements/tools.in
 six==1.16.0
     # via
@@ -263,6 +263,7 @@ tomli==2.0.1
     #   black
     #   build
     #   mypy
+    #   pip-tools
     #   pyproject-api
     #   pyproject-hooks
     #   pytest
@@ -283,9 +284,9 @@ types-pyopenssl==23.2.0.1
     # via types-redis
 types-pytz==2023.3.0.0
     # via -r requirements/tools.in
-types-redis==4.5.5.2
+types-redis==4.6.0.1
     # via -r requirements/tools.in
-typing-extensions==4.6.3
+typing-extensions==4.7.1
     # via
     #   -r requirements/tools.in
     #   asgiref
