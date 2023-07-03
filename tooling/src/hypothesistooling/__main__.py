@@ -274,12 +274,17 @@ def update_python_versions():
     # pyenv reports available versions in chronological order, so we keep the newest
     # *unless* our current ends with a digit (is stable) and the candidate does not.
     stable = re.compile(r".*3\.\d+.\d+$")
+    min_minor_version = re.search(
+        r'python_requires=">= ?3.(\d+)"',
+        Path("hypothesis-python/setup.py").read_text(),
+    ).group(1)
     best = {}
     for line in map(str.strip, result.splitlines()):
         if m := re.match(r"(?:pypy)?3\.(?:[789]|\d\d)", line):
             key = m.group()
             if stable.match(line) or not stable.match(best.get(key, line)):
-                best[key] = line
+                if int(key.split(".")[-1]) >= int(min_minor_version):
+                    best[key] = line
 
     if best == PYTHONS:
         return

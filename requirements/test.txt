@@ -6,7 +6,7 @@
 #
 attrs==23.1.0
     # via hypothesis (hypothesis-python/setup.py)
-exceptiongroup==1.1.1 ; python_version < "3.11"
+exceptiongroup==1.1.2 ; python_version < "3.11"
     # via
     #   hypothesis (hypothesis-python/setup.py)
     #   pytest
