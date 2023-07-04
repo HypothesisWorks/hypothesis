@@ -16,7 +16,9 @@ from hypothesistooling.__main__ import PYTHONS
 
 ci_checks = "    ".join(
     line.strip()
-    for line in Path(".github/workflows/main.yml").read_text().splitlines()
+    for line in Path(".github/workflows/main.yml")
+    .read_text(encoding="utf-8")
+    .splitlines()
     if "- check-py" in line
 )
 
