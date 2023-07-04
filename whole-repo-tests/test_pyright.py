@@ -250,5 +250,5 @@ def _get_pyright_errors(file: Path) -> list[dict[str, Any]]:
 
 
 def _write_config(config_dir: Path, data: dict[str, Any] | None = None):
-    config = {"extraPaths": [PYTHON_SRC], **(data or {})}
+    config = {"extraPaths": [str(PYTHON_SRC)], **(data or {})}
     (config_dir / "pyrightconfig.json").write_text(json.dumps(config), encoding="utf-8")

@@ -20,7 +20,7 @@ PYTHON_VERSIONS = ["3.8", "3.9", "3.10", "3.11"]
 
 
 def test_mypy_passes_on_hypothesis():
-    pip_tool("mypy", PYTHON_SRC)
+    pip_tool("mypy", str(PYTHON_SRC))
 
 
 @pytest.mark.skip(
@@ -28,7 +28,7 @@ def test_mypy_passes_on_hypothesis():
     "but strict checks for our internals would be a net drag on productivity."
 )
 def test_mypy_passes_on_hypothesis_strict():
-    pip_tool("mypy", "--strict", PYTHON_SRC)
+    pip_tool("mypy", "--strict", str(PYTHON_SRC))
 
 
 def get_mypy_output(fname, *extra_args):
