@@ -52,7 +52,8 @@ def test_pyright_passes_on_basic_test(tmp_path: Path, python_version: str):
             def test_bar(x: str):
                 assert x == x
             """
-        )
+        ),
+        encoding="utf-8",
     )
     _write_config(
         tmp_path, {"typeCheckingMode": "strict", "pythonVersion": python_version}
@@ -72,7 +73,8 @@ def test_given_only_allows_strategies(tmp_path: Path, python_version: str):
             def f():
                 pass
             """
-        )
+        ),
+        encoding="utf-8",
     )
     _write_config(
         tmp_path, {"typeCheckingMode": "strict", "pythonVersion": python_version}
@@ -97,7 +99,8 @@ def test_pyright_issue_3296(tmp_path: Path):
 
             lists(integers()).map(sorted)
             """
-        )
+        ),
+        encoding="utf-8",
     )
     _write_config(tmp_path, {"typeCheckingMode": "strict"})
     assert _get_pyright_errors(file) == []
@@ -115,7 +118,8 @@ def test_pyright_raises_for_mixed_pos_kwargs_in_given(tmp_path: Path):
             def test_bar(x: str):
                 pass
             """
-        )
+        ),
+        encoding="utf-8",
     )
     _write_config(tmp_path, {"typeCheckingMode": "strict"})
     assert (
@@ -141,7 +145,8 @@ def test_pyright_issue_3348(tmp_path: Path):
             st.one_of([st.integers(), st.floats()])  # sequence of strats should be OK
             st.sampled_from([1, 2])
             """
-        )
+        ),
+        encoding="utf-8",
     )
     _write_config(tmp_path, {"typeCheckingMode": "strict"})
     assert _get_pyright_errors(file) == []
@@ -157,7 +162,8 @@ def test_pyright_tuples_pos_args_only(tmp_path: Path):
             st.tuples(a1=st.integers())
             st.tuples(a1=st.integers(), a2=st.integers())
             """
-        )
+        ),
+        encoding="utf-8",
     )
     _write_config(tmp_path, {"typeCheckingMode": "strict"})
     assert (
@@ -181,7 +187,8 @@ def test_pyright_one_of_pos_args_only(tmp_path: Path):
             st.one_of(a1=st.integers())
             st.one_of(a1=st.integers(), a2=st.integers())
             """
-        )
+        ),
+        encoding="utf-8",
     )
     _write_config(tmp_path, {"typeCheckingMode": "strict"})
     assert (
@@ -213,7 +220,8 @@ def test_register_random_protocol(tmp_path: Path):
             register_random(MyRandom())
             register_random(None)  # type: ignore
             """
-        )
+        ),
+        encoding="utf-8",
     )
     _write_config(tmp_path, {"reportUnnecessaryTypeIgnoreComment": True})
     assert _get_pyright_errors(file) == []
@@ -242,5 +250,5 @@ def _get_pyright_errors(file: Path) -> list[dict[str, Any]]:
 
 
 def _write_config(config_dir: Path, data: dict[str, Any] | None = None):
-    config = {"extraPaths": [PYTHON_SRC], **(data or {})}
-    (config_dir / "pyrightconfig.json").write_text(json.dumps(config))
+    config = {"extraPaths": [str(PYTHON_SRC)], **(data or {})}
+    (config_dir / "pyrightconfig.json").write_text(json.dumps(config), encoding="utf-8")

@@ -67,10 +67,10 @@ RECORD_EXAMPLES = <file>
 
 if os.path.exists(RECORD_EXAMPLES):
     target = None
-    with open(RECORD_EXAMPLES, 'r') as i:
+    with open(RECORD_EXAMPLES, "r", encoding="utf-8") as i:
         seen = set(map(int, i.read().strip().split("\\n")))
 else:
-    target = open(RECORD_EXAMPLES, 'w')
+    target = open(RECORD_EXAMPLES, "w", encoding="utf-8")
 
 @given(st.integers())
 def test_failure(i):

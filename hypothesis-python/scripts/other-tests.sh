@@ -43,7 +43,7 @@ pip uninstall -y lark
 if [ "$(python -c $'import platform, sys; print(sys.version_info.releaselevel == \'final\' and platform.python_implementation() not in ("PyPy", "GraalVM"))')" = "True" ] ; then
   pip install ".[codemods,cli]"
   $PYTEST tests/codemods/
-  pip install "$(grep 'black==' ../requirements/coverage.txt)"
+  pip install "$(grep -E 'black(==| @)' ../requirements/coverage.txt)"
   if [ "$(python -c 'import sys; print(sys.version_info[:2] >= (3, 9))')" = "True" ] ; then
     $PYTEST tests/patching/
   fi

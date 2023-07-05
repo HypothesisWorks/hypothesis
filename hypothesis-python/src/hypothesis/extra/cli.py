@@ -161,14 +161,14 @@ else:
 
     def _refactor(func, fname):
         try:
-            with open(fname) as f:
+            with open(fname, encoding="utf-8") as f:
                 oldcode = f.read()
         except (OSError, UnicodeError) as err:
             # Permissions or encoding issue, or file deleted, etc.
             return f"skipping {fname!r} due to {err}"
         newcode = func(oldcode)
         if newcode != oldcode:
-            with open(fname, mode="w") as f:
+            with open(fname, mode="w", encoding="utf-8") as f:
                 f.write(newcode)
 
     @main.command()  # type: ignore  # Click adds the .command attribute

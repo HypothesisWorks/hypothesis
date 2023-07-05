@@ -36,41 +36,35 @@ def preserving_dfas():
         dfas.SHRINKING_DFAS.update(original)
         dfas.update_learned_dfas()
     assert TEST_DFA_NAME not in dfas.SHRINKING_DFAS
-    with open(dfas.learned_dfa_file) as i:
-        assert TEST_DFA_NAME not in i.read()
+    assert TEST_DFA_NAME not in dfas.learned_dfa_file.read_text(encoding="utf-8")
 
 
 def test_updating_the_file_makes_no_changes_normally():
-    with open(dfas.learned_dfa_file) as i:
-        source1 = i.read()
+    source1 = dfas.learned_dfa_file.read_text(encoding="utf-8")
 
     dfas.update_learned_dfas()
 
-    with open(dfas.learned_dfa_file) as i:
-        source2 = i.read()
+    source2 = dfas.learned_dfa_file.read_text(encoding="utf-8")
 
     assert source1 == source2
 
 
 def test_updating_the_file_include_new_shrinkers():
     with preserving_dfas():
-        with open(dfas.learned_dfa_file) as i:
-            source1 = i.read()
+        source1 = dfas.learned_dfa_file.read_text(encoding="utf-8")
 
         dfas.SHRINKING_DFAS[TEST_DFA_NAME] = "hello"
 
         dfas.update_learned_dfas()
 
-        with open(dfas.learned_dfa_file) as i:
-            source2 = i.read()
+        source2 = dfas.learned_dfa_file.read_text(encoding="utf-8")
 
         assert source1 != source2
         assert repr(TEST_DFA_NAME) in source2
 
     assert TEST_DFA_NAME not in dfas.SHRINKING_DFAS
 
-    with open(dfas.learned_dfa_file) as i:
-        assert "test name" not in i.read()
+    assert "test name" not in dfas.learned_dfa_file.read_text(encoding="utf-8")
 
 
 def called_by_shrinker():

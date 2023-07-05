@@ -21,21 +21,19 @@ from hypothesistooling import releasemanagement as rm
 
 PACKAGE_NAME = "hypothesis-python"
 
-HYPOTHESIS_PYTHON = os.path.join(tools.ROOT, PACKAGE_NAME)
+HYPOTHESIS_PYTHON = tools.ROOT / PACKAGE_NAME
 PYTHON_TAG_PREFIX = "hypothesis-python-"
 
 
 BASE_DIR = HYPOTHESIS_PYTHON
 
-PYTHON_SRC = os.path.join(HYPOTHESIS_PYTHON, "src")
-PYTHON_TESTS = os.path.join(HYPOTHESIS_PYTHON, "tests")
-DOMAINS_LIST = os.path.join(
-    PYTHON_SRC, "hypothesis", "vendor", "tlds-alpha-by-domain.txt"
-)
+PYTHON_SRC = HYPOTHESIS_PYTHON / "src"
+PYTHON_TESTS = HYPOTHESIS_PYTHON / "tests"
+DOMAINS_LIST = PYTHON_SRC / "hypothesis" / "vendor" / "tlds-alpha-by-domain.txt"
 
-RELEASE_FILE = os.path.join(HYPOTHESIS_PYTHON, "RELEASE.rst")
+RELEASE_FILE = HYPOTHESIS_PYTHON / "RELEASE.rst"
 
-assert os.path.exists(PYTHON_SRC)
+assert PYTHON_SRC.exists()
 
 
 __version__ = None
@@ -43,7 +41,7 @@ __version_info__ = None
 
 VERSION_FILE = os.path.join(PYTHON_SRC, "hypothesis/version.py")
 
-with open(VERSION_FILE) as o:
+with open(VERSION_FILE, encoding="utf-8") as o:
     exec(o.read())
 
 assert __version__ is not None
@@ -51,7 +49,7 @@ assert __version_info__ is not None
 
 
 def has_release():
-    return os.path.exists(RELEASE_FILE)
+    return RELEASE_FILE.exists()
 
 
 def parse_release_file():
@@ -139,8 +137,7 @@ def update_changelog_and_version():
         rest,
     ]
 
-    with open(CHANGELOG_FILE, "w") as o:
-        o.write("\n".join(new_changelog_parts))
+    CHANGELOG_FILE.write_text("\n".join(new_changelog_parts), encoding="utf-8")
 
     # Replace the `since="RELEASEDAY"` argument to `note_deprecation`
     # with today's date, to record it for future reference.
@@ -148,20 +145,19 @@ def update_changelog_and_version():
     after = before.replace("RELEASEDAY", rm.release_date_string())
     for root, _, files in os.walk(PYTHON_SRC):
         for fname in (os.path.join(root, f) for f in files if f.endswith(".py")):
-            with open(fname) as f:
+            with open(fname, encoding="utf-8") as f:
                 contents = f.read()
             if before in contents:
-                with open(fname, "w") as f:
+                with open(fname, "w", encoding="utf-8") as f:
                     f.write(contents.replace(before, after))
 
 
-CHANGELOG_FILE = os.path.join(HYPOTHESIS_PYTHON, "docs", "changes.rst")
-DIST = os.path.join(HYPOTHESIS_PYTHON, "dist")
+CHANGELOG_FILE = HYPOTHESIS_PYTHON / "docs" / "changes.rst"
+DIST = HYPOTHESIS_PYTHON / "dist"
 
 
 def changelog():
-    with open(CHANGELOG_FILE) as i:
-        return i.read()
+    return CHANGELOG_FILE.read_text(encoding="utf-8")
 
 
 def build_distribution():
@@ -191,7 +187,7 @@ def upload_distribution():
     # with link to canonical source.
     build_docs(builder="text")
     textfile = os.path.join(HYPOTHESIS_PYTHON, "docs", "_build", "text", "changes.txt")
-    with open(textfile) as f:
+    with open(textfile, encoding="utf-8") as f:
         lines = f.readlines()
     entries = [i for i, l in enumerate(lines) if CHANGELOG_HEADER.match(l)]
     anchor = current_version().replace(".", "-")

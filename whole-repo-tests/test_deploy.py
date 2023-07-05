@@ -32,7 +32,7 @@ def test_release_file_exists_and_is_valid(project, monkeypatch):
     try:
         main.do_release(project)
 
-        with open(project.CHANGELOG_FILE) as i:
+        with open(project.CHANGELOG_FILE, encoding="utf-8") as i:
             changelog = i.read()
         assert project.current_version() in changelog
         assert rm.release_date_string() in changelog

@@ -33,7 +33,7 @@ BUILD_FILES = tuple(
 
 
 def task(if_changed=()):
-    if isinstance(if_changed, str):
+    if not isinstance(if_changed, tuple):
         if_changed = (if_changed,)
 
     def accept(fn):
@@ -260,8 +260,8 @@ def compile_requirements(upgrade=False):
             },
         )
         # Check that we haven't added anything to output files without adding to inputs
-        out_pkgs = out_file.read_text()
-        for p in f.read_text().splitlines():
+        out_pkgs = out_file.read_text(encoding="utf-8")
+        for p in f.read_text(encoding="utf-8").splitlines():
             p = p.lower().replace("_", "-")
             if re.fullmatch(r"[a-z-]+", p):
                 assert p + "==" in out_pkgs, f"Package `{p}` deleted from {out_file}"
@@ -276,7 +276,7 @@ def update_python_versions():
     stable = re.compile(r".*3\.\d+.\d+$")
     min_minor_version = re.search(
         r'python_requires=">= ?3.(\d+)"',
-        Path("hypothesis-python/setup.py").read_text(),
+        Path("hypothesis-python/setup.py").read_text(encoding="utf-8"),
     ).group(1)
     best = {}
     for line in map(str.strip, result.splitlines()):
@@ -291,18 +291,18 @@ def update_python_versions():
 
     # Write the new mapping back to this file
     thisfile = pathlib.Path(__file__)
-    before = thisfile.read_text()
+    before = thisfile.read_text(encoding="utf-8")
     after = re.sub(r"\nPYTHONS = \{[^{}]+\}", f"\nPYTHONS = {best}", before)
-    thisfile.write_text(after)
+    thisfile.write_text(after, encoding="utf-8")
     pip_tool("shed", str(thisfile))
 
     # Automatically sync ci_version with the version in build.sh
     build_sh = pathlib.Path(tools.ROOT) / "build.sh"
-    sh_before = build_sh.read_text()
+    sh_before = build_sh.read_text(encoding="utf-8")
     sh_after = re.sub(r"3\.\d\d?\.\d\d?", best[ci_version], sh_before)
     if sh_before != sh_after:
         build_sh.unlink()  # so bash doesn't reload a modified file
-        build_sh.write_text(sh_after)
+        build_sh.write_text(sh_after, encoding="utf-8")
         build_sh.chmod(0o755)
 
 
@@ -321,8 +321,12 @@ def update_vendored_files():
     tz_url = "https://pypi.org/pypi/tzdata/json"
     tzdata_version = requests.get(tz_url).json()["info"]["version"]
     setup = pathlib.Path(hp.BASE_DIR, "setup.py")
-    new = re.sub(r"tzdata>=(.+?) ", f"tzdata>={tzdata_version} ", setup.read_text())
-    setup.write_text(new)
+    new = re.sub(
+        r"tzdata>=(.+?) ",
+        f"tzdata>={tzdata_version} ",
+        setup.read_text(encoding="utf-8"),
+    )
+    setup.write_text(new, encoding="utf-8")
 
 
 def has_diff(file_or_directory):
@@ -337,7 +341,7 @@ def upgrade_requirements():
     subprocess.call(["./build.sh", "format"], cwd=tools.ROOT)  # exits 1 if changed
     if has_diff(hp.PYTHON_SRC) and not os.path.isfile(hp.RELEASE_FILE):
         msg = hp.get_autoupdate_message(domainlist_changed=has_diff(hp.DOMAINS_LIST))
-        with open(hp.RELEASE_FILE, mode="w") as f:
+        with open(hp.RELEASE_FILE, mode="w", encoding="utf-8") as f:
             f.write(f"RELEASE_TYPE: patch\n\n{msg}")
     update_python_versions()
     subprocess.call(["git", "add", "."], cwd=tools.ROOT)

@@ -8,9 +8,9 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import os
 import sys
 import warnings
+from pathlib import Path
 
 import setuptools
 
@@ -25,11 +25,10 @@ if sys.version_info[:2] < (3, 8):
 
 
 def local_file(name):
-    return os.path.relpath(os.path.join(os.path.dirname(__file__), name))
+    return Path(__file__).parent.joinpath(name).relative_to(Path.cwd())
 
 
-SOURCE = local_file("src")
-README = local_file("README.rst")
+SOURCE = str(local_file("src"))
 
 setuptools_version = tuple(map(int, setuptools.__version__.split(".")[:1]))
 
@@ -44,10 +43,7 @@ if setuptools_version < (42,):
 
 # Assignment to placate pyflakes. The actual version is from the exec that follows.
 __version__ = None
-
-with open(local_file("src/hypothesis/version.py")) as o:
-    exec(o.read())
-
+exec(local_file("src/hypothesis/version.py").read_text(encoding="utf-8"))
 assert __version__ is not None
 
 
@@ -131,7 +127,7 @@ setuptools.setup(
         "pytest11": ["hypothesispytest = _hypothesis_pytestplugin"],
         "console_scripts": ["hypothesis = hypothesis.extra.cli:main"],
     },
-    long_description=open(README).read(),
+    long_description=local_file("README.rst").read_text(encoding="utf-8"),
     long_description_content_type="text/x-rst",
     keywords="python testing fuzzing property-based-testing",
 )

@@ -20,7 +20,7 @@ VALIDATE_BRANCH_CHECK = os.path.join(BASE_DIR, "scripts", "validate_branch_check
 
 
 def write_entries(tmp_path, entries):
-    with open(tmp_path / BRANCH_CHECK, "w") as f:
+    with open(tmp_path / BRANCH_CHECK, "w", encoding="utf-8") as f:
         f.writelines([json.dumps(entry) + "\n" for entry in entries])
 
 

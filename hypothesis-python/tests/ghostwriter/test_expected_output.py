@@ -45,8 +45,8 @@ def update_recorded_outputs(request):
 def get_recorded(name, actual=""):
     file_ = pathlib.Path(__file__).parent / "recorded" / f"{name}.txt"
     if actual:
-        file_.write_text(actual)
-    return file_.read_text()
+        file_.write_text(actual, encoding="utf-8")
+    return file_.read_text(encoding="utf-8")
 
 
 def timsort(seq: Sequence[int]) -> Sequence[int]:

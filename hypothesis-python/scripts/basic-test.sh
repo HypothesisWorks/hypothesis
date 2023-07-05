@@ -54,7 +54,7 @@ if [ "$(python -c $'import platform, sys; print(sys.version_info.releaselevel ==
     pip install "$(grep 'numpy==' ../requirements/coverage.txt)"
   fi
 
-  pip install "$(grep 'black==' ../requirements/coverage.txt)"
+  pip install "$(grep -E 'black(==| @)' ../requirements/coverage.txt)"
   $PYTEST tests/ghostwriter/
   pip uninstall -y black numpy
 fi

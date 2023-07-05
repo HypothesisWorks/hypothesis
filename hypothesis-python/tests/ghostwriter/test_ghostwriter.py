@@ -463,7 +463,8 @@ def temp_script_file():
             def say_hello():
                 print("Hello world!")
             """
-        )
+        ),
+        encoding="utf-8",
     )
     yield p
     p.unlink()
@@ -483,7 +484,8 @@ def temp_script_file_with_py_function():
             def py():
                 print('A function named "py" has been called')
             """
-        )
+        ),
+        encoding="utf-8",
     )
     yield p
     p.unlink()
