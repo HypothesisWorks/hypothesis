@@ -209,7 +209,7 @@ def sampled_from(
             repr_ = f"sampled_from({elements.__module__}.{elements.__name__})"
         else:
             repr_ = f"sampled_from({elements!r})"
-    except Exception:
+    except Exception:  # pragma: no cover
         repr_ = None
     if isclass(elements) and issubclass(elements, enum.Flag):
         # Combinations of enum.Flag members are also members.  We generate
@@ -1032,7 +1032,7 @@ def _from_type_deferred(thing: Type[Ex]) -> SearchStrategy[Ex]:
             thing_repr = module_prefix + thing_repr
     try:
         repr_ = f"from_type({thing_repr})"
-    except Exception:
+    except Exception:  # pragma: no cover
         repr_ = None
     return LazyStrategy(
         lambda thing: deferred(lambda: _from_type(thing)),
