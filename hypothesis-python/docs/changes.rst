@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.80.1:
+
+-------------------
+6.80.1 - 2023-07-06
+-------------------
+
+This patch updates some internal code for selftests.
+There is no user-visible change.
+
 .. _v6.80.0:
 
 -------------------
