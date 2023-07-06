@@ -142,11 +142,7 @@ def test_drawing_from_recursive_strategy_is_thread_safe():
     @given(data=st.data())
     def test(data):
         try:
-            # We may get a warning here about not resetting recursionlimit,
-            # since it was changed during execution; ignore it.
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                data.draw(shared_strategy)
+            data.draw(shared_strategy)
         except Exception as exc:
             errors.append(exc)
 
@@ -154,14 +150,19 @@ def test_drawing_from_recursive_strategy_is_thread_safe():
 
     original_recursionlimit = sys.getrecursionlimit()
 
-    for _ in range(4):
-        threads.append(threading.Thread(target=test))
+    # We may get a warning here about not resetting recursionlimit,
+    # since it was changed during execution; ignore it.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
 
-    for thread in threads:
-        thread.start()
+        for _ in range(4):
+            threads.append(threading.Thread(target=test))
 
-    for thread in threads:
-        thread.join()
+        for thread in threads:
+            thread.start()
+
+        for thread in threads:
+            thread.join()
 
     # Cleanup: reset the recursion limit that was (probably) not reset
     # automatically in the threaded test.
