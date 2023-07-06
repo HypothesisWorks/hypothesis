@@ -204,10 +204,13 @@ def sampled_from(
         raise InvalidArgument("Cannot sample from a length-zero sequence.")
     if len(values) == 1:
         return just(values[0])
-    if isinstance(elements, type) and issubclass(elements, enum.Enum):
-        repr_ = f"sampled_from({elements.__module__}.{elements.__name__})"
-    else:
-        repr_ = f"sampled_from({elements!r})"
+    try:
+        if isinstance(elements, type) and issubclass(elements, enum.Enum):
+            repr_ = f"sampled_from({elements.__module__}.{elements.__name__})"
+        else:
+            repr_ = f"sampled_from({elements!r})"
+    except Exception:
+        repr_ = None
     if isclass(elements) and issubclass(elements, enum.Flag):
         # Combinations of enum.Flag members are also members.  We generate
         # these dynamically, because static allocation takes O(2^n) memory.
@@ -1027,15 +1030,19 @@ def _from_type_deferred(thing: Type[Ex]) -> SearchStrategy[Ex]:
         module_prefix = f"{thing.__module__}."
         if not thing_repr.startswith(module_prefix):
             thing_repr = module_prefix + thing_repr
+    try:
+        repr_ = f"from_type({thing_repr})"
+    except Exception:
+        repr_ = None
     return LazyStrategy(
         lambda thing: deferred(lambda: _from_type(thing)),
         (thing,),
         {},
-        force_repr=f"from_type({thing_repr})",
+        force_repr=repr_,
     )
 
 
-_recurse_guard = ContextVar("recurse_guard", default=[])
+_recurse_guard: ContextVar = ContextVar("recurse_guard", default=[])
 
 
 def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
