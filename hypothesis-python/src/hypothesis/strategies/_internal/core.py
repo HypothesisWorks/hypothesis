@@ -17,6 +17,7 @@ import string
 import sys
 import typing
 import warnings
+from contextvars import ContextVar
 from decimal import Context, Decimal, localcontext
 from fractions import Fraction
 from functools import lru_cache, reduce
@@ -1011,7 +1012,7 @@ def from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("error")
-            return _from_type(thing, [])
+            return _from_type(thing)
     except Exception:
         return _from_type_deferred(thing)
 
@@ -1027,14 +1028,17 @@ def _from_type_deferred(thing: Type[Ex]) -> SearchStrategy[Ex]:
         if not thing_repr.startswith(module_prefix):
             thing_repr = module_prefix + thing_repr
     return LazyStrategy(
-        lambda thing: deferred(lambda: _from_type(thing, [])),
+        lambda thing: deferred(lambda: _from_type(thing)),
         (thing,),
         {},
         force_repr=f"from_type({thing_repr})",
     )
 
 
-def _from_type(thing: Type[Ex], recurse_guard: List[Type[Ex]]) -> SearchStrategy[Ex]:
+_recurse_guard = ContextVar("recurse_guard", default=[])
+
+
+def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
     # TODO: We would like to move this to the top level, but pending some major
     # refactoring it's hard to do without creating circular imports.
     from hypothesis.strategies._internal import types
@@ -1058,11 +1062,12 @@ def _from_type(thing: Type[Ex], recurse_guard: List[Type[Ex]]) -> SearchStrategy
 
     def from_type_guarded(thing):
         """Returns the result of producer, or ... if recursion on thing is encountered"""
+        recurse_guard = _recurse_guard.get()
         if thing in recurse_guard:
             raise RewindRecursive(thing)
         recurse_guard.append(thing)
         try:
-            return _from_type(thing, recurse_guard)
+            return _from_type(thing)
         except RewindRecursive as rr:
             if rr.target != thing:
                 raise
@@ -1084,11 +1089,11 @@ def _from_type(thing: Type[Ex], recurse_guard: List[Type[Ex]]) -> SearchStrategy
             # resolve it so, and otherwise resolve as for the base type.
             if thing in types._global_type_lookup:
                 return as_strategy(types._global_type_lookup[thing], thing)
-            return _from_type(thing.__supertype__, recurse_guard)
+            return _from_type(thing.__supertype__)
         # Unions are not instances of `type` - but we still want to resolve them!
         if types.is_a_union(thing):
             args = sorted(thing.__args__, key=types.type_sorting_key)
-            return one_of([_from_type(t, recurse_guard) for t in args])
+            return one_of([_from_type(t) for t in args])
     # We also have a special case for TypeVars.
     # They are represented as instances like `~T` when they come here.
     # We need to work with their type instead.
@@ -1244,13 +1249,13 @@ def _from_type(thing: Type[Ex], recurse_guard: List[Type[Ex]]) -> SearchStrategy
     subclass_strategies = nothing()
     for sc in subclasses:
         try:
-            subclass_strategies |= _from_type(sc, recurse_guard)
+            subclass_strategies |= _from_type(sc)
         except Exception:
             pass
     if subclass_strategies.is_empty:
         # We're unable to resolve subclasses now, but we might be able to later -
         # so we'll just go back to the mixed distribution.
-        return sampled_from(subclasses).flatmap(lambda t: _from_type(t, recurse_guard))
+        return sampled_from(subclasses).flatmap(_from_type)
     return subclass_strategies
 
 
