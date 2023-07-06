@@ -942,14 +942,13 @@ def builds(
             from hypothesis.strategies._internal.types import _global_type_lookup
 
             for kw, t in infer_for.items():
-                if (
-                    getattr(t, "__module__", None) in ("builtins", "typing")
-                    or t in _global_type_lookup
-                ):
+                if t in _global_type_lookup:
                     kwargs[kw] = from_type(t)
                 else:
                     # We defer resolution of these type annotations so that the obvious
-                    # approach to registering recursive types just works.  See
+                    # approach to registering recursive types just works.  I.e.,
+                    # if we're inside `register_type_strategy(cls, builds(cls, ...))`
+                    # and `...` contains recursion on `cls`.  See
                     # https://github.com/HypothesisWorks/hypothesis/issues/3026
                     kwargs[kw] = deferred(lambda t=t: from_type(t))  # type: ignore
     return BuildsStrategy(target, args, kwargs)
