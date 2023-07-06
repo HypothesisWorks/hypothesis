@@ -54,7 +54,7 @@ def test_resolves_unspecified_array_type(atype):
 
 def workaround(dtype):
     # Total hack to work around https://github.com/numpy/numpy/issues/24043
-    if np.__version__.startswith("1.25.") and dtype == np.dtype("bytes").type:
+    if np.__version__ == "1.25.0" and dtype == np.dtype("bytes").type:
         return pytest.param(dtype, marks=[pytest.mark.xfail(strict=False)])
     return dtype
 
