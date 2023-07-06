@@ -61,7 +61,7 @@ jobs:
           - check-py39-nose
           - check-py39-pytest46
           - check-py39-pytest54
-          # - check-pytest62
+          - check-pytest62
           - check-django42
           - check-django41
           - check-django32
