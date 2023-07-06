@@ -671,6 +671,7 @@ def test_resolving_recursive_type_with_registered_constraint():
     with temp_registered(
         SomeClass, st.builds(SomeClass, value=st.integers(min_value=1))
     ):
+
         @given(s=st.from_type(SomeClass))
         def test(s):
             assert isinstance(s, SomeClass)
