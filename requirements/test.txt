@@ -10,10 +10,8 @@ exceptiongroup==1.1.2 ; python_version < "3.11"
     # via
     #   hypothesis (hypothesis-python/setup.py)
     #   pytest
-execnet @ git+https://github.com/pytest-dev/execnet.git@870891d5b853808a050993f397f4e3ed06f61152
-    # via
-    #   -r requirements/test.in
-    #   pytest-xdist
+execnet==2.0.0
+    # via pytest-xdist
 iniconfig==2.0.0
     # via pytest
 packaging==23.1
