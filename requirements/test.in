@@ -1,4 +1,3 @@
 pexpect
 pytest
 pytest-xdist
-git+https://github.com/pytest-dev/execnet.git@870891d5b853808a050993f397f4e3ed06f61152

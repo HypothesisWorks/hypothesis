@@ -34,9 +34,9 @@ cffi==1.15.1
     # via cryptography
 chardet==5.1.0
     # via tox
-charset-normalizer==3.1.0
+charset-normalizer==3.2.0
     # via requests
-click==8.1.3
+click==8.1.4
     # via
     #   black
     #   pip-tools
@@ -81,7 +81,7 @@ idna==3.4
     # via requests
 imagesize==1.4.1
     # via sphinx
-importlib-metadata==6.7.0
+importlib-metadata==6.8.0
     # via
     #   keyring
     #   twine
@@ -148,7 +148,7 @@ pip-tools==6.14.0
     # via -r requirements/tools.in
 pkginfo==1.9.6
     # via twine
-platformdirs==3.8.0
+platformdirs==3.8.1
     # via
     #   black
     #   tox
@@ -157,7 +157,7 @@ pluggy==1.2.0
     # via
     #   pytest
     #   tox
-prompt-toolkit==3.0.38
+prompt-toolkit==3.0.39
     # via ipython
 ptyprocess==0.7.0
     # via pexpect
@@ -173,7 +173,7 @@ pygments==2.15.1
     #   readme-renderer
     #   rich
     #   sphinx
-pyproject-api==1.5.2
+pyproject-api==1.5.3
     # via tox
 pyproject-hooks==1.0.0
     # via build
@@ -203,7 +203,7 @@ rfc3986==2.0.0
     # via twine
 rich==13.4.2
     # via twine
-ruff==0.0.276
+ruff==0.0.277
     # via -r requirements/tools.in
 secretstorage==3.3.3
     # via keyring
@@ -268,7 +268,7 @@ tomli==2.0.1
     #   pyproject-hooks
     #   pytest
     #   tox
-tox==4.6.3
+tox==4.6.4
     # via -r requirements/tools.in
 traitlets==5.9.0
     # via
@@ -284,7 +284,7 @@ types-pyopenssl==23.2.0.1
     # via types-redis
 types-pytz==2023.3.0.0
     # via -r requirements/tools.in
-types-redis==4.6.0.1
+types-redis==4.6.0.2
     # via -r requirements/tools.in
 typing-extensions==4.7.1
     # via
