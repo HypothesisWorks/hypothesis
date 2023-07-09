@@ -33,7 +33,6 @@ from libcst import matchers as m
 from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
 
 from hypothesis.configuration import storage_directory
-from hypothesis.extra.codemods import _native_parser
 from hypothesis.version import __version__
 
 try:
@@ -77,11 +76,9 @@ class AddExamplesCodemod(VisitorBasedCodemodCommand):
         """
         assert not isinstance(strip_via, str), "expected a collection of strings"
         dedented, prefix = dedent(code)
-        with _native_parser():
-            mod = cst.parse_module(dedented)
         modded = (
             cls(CodemodContext(), fn_examples, prefix, strip_via, dec)
-            .transform_module(mod)
+            .transform_module(cst.parse_module(dedented))
             .code
         )
         return indent(modded, prefix=prefix)
