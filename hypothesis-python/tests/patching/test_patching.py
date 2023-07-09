@@ -161,6 +161,14 @@ def test_invalid_syntax_cases_dropped(n):
     assert after.count(expected.lstrip("+")) == n
 
 
+def test_no_example_for_data_strategy():
+    assert get_patch_for(fn, [("fn(data=data(...))", "msg")]) is None
+    assert get_patch_for(fn, [("fn(123, data(...))", "msg")]) is None
+
+    assert get_patch_for(fn, [("fn(data='data(...)')", "msg")]) is not None
+    assert get_patch_for(fn, [("fn(Foo(data=data(...)))", "msg")]) is not None
+
+
 def test_irretrievable_callable():
     # Check that we return None instead of raising an exception
     old_module = fn.__module__

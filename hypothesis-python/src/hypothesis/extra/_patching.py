@@ -159,6 +159,10 @@ def get_patch_for(func, failing_examples, *, strip_via=()):
         with suppress(Exception):
             node = cst.parse_expression(ex)
             assert isinstance(node, cst.Call), node
+            # Check for st.data(), which doesn't support explicit examples
+            data = m.Arg(m.Call(m.Name("data"), args=[m.Arg(m.Ellipsis())]))
+            if m.matches(node, m.Call(args=[m.ZeroOrMore(), data, m.ZeroOrMore()])):
+                return None
             call_nodes.append((node, via))
     if not call_nodes:
         return None
