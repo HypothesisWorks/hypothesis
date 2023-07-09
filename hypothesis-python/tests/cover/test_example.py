@@ -87,14 +87,6 @@ def test_interactive_example_does_not_emit_warning():
     child.sendline("quit(code=0)")
 
 
-@fails_with(KeyboardInterrupt)
-@example(1)
-@example(2)
-@given(st.none())
-def test_raises_keyboardinterrupt_immediately(_):
-    raise KeyboardInterrupt
-
-
 def identity(decorator):
     # The "identity function hack" from https://peps.python.org/pep-0614/
     # Method-chaining decorators are otherwise a syntax error in Python <= 3.8

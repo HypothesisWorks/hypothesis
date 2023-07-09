@@ -592,7 +592,7 @@ def test_inline_given_handles_self():
 def logged(f):
     @wraps(f)
     def wrapper(*a, **kw):
-        print("I was called")
+        # print("I was called")
         return f(*a, **kw)
 
     return wrapper
