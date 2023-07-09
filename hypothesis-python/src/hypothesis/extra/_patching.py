@@ -67,28 +67,17 @@ def indent(text: str, prefix: str) -> str:
 class AddExamplesCodemod(VisitorBasedCodemodCommand):
     DESCRIPTION = "Add explicit examples to failing tests."
 
-    @classmethod
-    def refactor(cls, code, fn_examples, *, strip_via=(), dec="example"):
+    def __init__(self, context, fn_examples, strip_via=(), dec="example", width=88):
         """Add @example() decorator(s) for failing test(s).
 
         `code` is the source code of the module where the test functions are defined.
         `fn_examples` is a dict of function name to list-of-failing-examples.
         """
-        assert not isinstance(strip_via, str), "expected a collection of strings"
-        dedented, prefix = dedent(code)
-        modded = (
-            cls(CodemodContext(), fn_examples, prefix, strip_via, dec)
-            .transform_module(cst.parse_module(dedented))
-            .code
-        )
-        return indent(modded, prefix=prefix)
-
-    def __init__(self, context, fn_examples, prefix="", strip_via=(), dec="example"):
         assert fn_examples, "This codemod does nothing without fn_examples."
         super().__init__(context)
 
         self.decorator_func = cst.parse_expression(dec)
-        self.line_length = 88 - len(prefix)  # to match Black's default formatting
+        self.line_length = width
         value_in_strip_via = m.MatchIfTrue(lambda x: literal_eval(x.value) in strip_via)
         self.strip_matching = m.Call(
             m.Attribute(m.Call(), m.Name("via")),
@@ -176,13 +165,20 @@ def get_patch_for(func, failing_examples, *, strip_via=()):
         decorator_func = "example"
 
     # Do the codemod and return a triple containing location and replacement info.
-    after = AddExamplesCodemod.refactor(
-        before,
+    dedented, prefix = dedent(before)
+    try:
+        node = cst.parse_module(dedented)
+    except Exception:  # pragma: no cover
+        # inspect.getsource() sometimes returns a decorator alone, which is invalid
+        return None
+    after = AddExamplesCodemod(
+        CodemodContext(),
         fn_examples={func.__name__: call_nodes},
         strip_via=strip_via,
         dec=decorator_func,
-    )
-    return (str(fname), before, after)
+        width=88 - len(prefix),  # to match Black's default formatting
+    ).transform_module(node)
+    return (str(fname), before, indent(after.code, prefix=prefix))
 
 
 def make_patch(triples, *, msg="Hypothesis: add explicit examples", when=None):
