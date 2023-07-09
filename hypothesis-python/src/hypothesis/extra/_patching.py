@@ -155,7 +155,7 @@ def get_patch_for(func, failing_examples, *, strip_via=()):
     # The printed examples might include object reprs which are invalid syntax,
     # so we parse here and skip over those.  If _none_ are valid, there's no patch.
     call_nodes = []
-    for ex, via in failing_examples:
+    for ex, via in set(failing_examples):
         with suppress(Exception):
             node = cst.parse_expression(ex)
             assert isinstance(node, cst.Call), node

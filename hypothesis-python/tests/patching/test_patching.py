@@ -147,8 +147,8 @@ def test_make_full_patch(tst, example, expected, body, remove):
 
 @pytest.mark.parametrize("n", [0, 1, 2])
 def test_invalid_syntax_cases_dropped(n):
-    tst, example, expected = SIMPLE
-    example_ls = [example] * n
+    tst, (ex, via), expected = SIMPLE
+    example_ls = [(ex.replace("x=1", f"x={x}"), via) for x in range(n)]
     example_ls.insert(-1, ("fn(\n    x=<__main__.Cls object at 0x>,\n)", FAIL_MSG))
 
     got = get_patch_for(tst, example_ls)
@@ -158,7 +158,7 @@ def test_invalid_syntax_cases_dropped(n):
     where, _, after = got
 
     assert Path(where) == WHERE
-    assert after.count(expected.lstrip("+")) == n
+    assert after.count("@example(x=") == n
 
 
 def test_no_example_for_data_strategy():
@@ -167,6 +167,13 @@ def test_no_example_for_data_strategy():
 
     assert get_patch_for(fn, [("fn(data='data(...)')", "msg")]) is not None
     assert get_patch_for(fn, [("fn(Foo(data=data(...)))", "msg")]) is not None
+
+
+def test_deduplicates_examples():
+    tst, example, expected = SIMPLE
+    where, _, after = get_patch_for(tst, [example, example])
+    assert Path(where) == WHERE
+    assert after.count(expected.lstrip("+")) == 1
 
 
 def test_irretrievable_callable():
