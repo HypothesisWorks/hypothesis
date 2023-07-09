@@ -183,7 +183,7 @@ pytest==7.4.0
     # via -r requirements/tools.in
 python-dateutil==2.8.2
     # via -r requirements/tools.in
-pyupgrade==3.8.0
+pyupgrade==3.9.0
     # via shed
 pyyaml==6.0
     # via libcst
@@ -307,7 +307,7 @@ webencodings==0.5.1
     # via bleach
 wheel==0.40.0
     # via pip-tools
-zipp==3.15.0
+zipp==3.16.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:

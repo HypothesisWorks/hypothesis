@@ -10,7 +10,7 @@ exceptiongroup==1.1.2 ; python_version < "3.11"
     # via
     #   hypothesis (hypothesis-python/setup.py)
     #   pytest
-execnet==2.0.0
+execnet==2.0.1
     # via pytest-xdist
 iniconfig==2.0.0
     # via pytest

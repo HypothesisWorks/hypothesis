@@ -22,7 +22,7 @@ exceptiongroup==1.1.2 ; python_version < "3.11"
     # via
     #   hypothesis (hypothesis-python/setup.py)
     #   pytest
-execnet==2.0.0
+execnet==2.0.1
     # via pytest-xdist
 fakeredis==2.16.0
     # via -r requirements/coverage.in
@@ -36,7 +36,7 @@ mypy-extensions==1.0.0
     # via
     #   black
     #   typing-inspect
-numpy==1.25.0
+numpy==1.25.1
     # via
     #   -r requirements/coverage.in
     #   pandas
