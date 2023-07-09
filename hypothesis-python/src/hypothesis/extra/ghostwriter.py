@@ -83,7 +83,7 @@ import types
 import warnings
 from collections import OrderedDict, defaultdict
 from itertools import permutations, zip_longest
-from keyword import iskeyword
+from keyword import iskeyword as _iskeyword
 from string import ascii_lowercase
 from textwrap import dedent, indent
 from typing import (
@@ -482,7 +482,7 @@ def _get_params(func: Callable) -> Dict[str, inspect.Parameter]:
                 if arg.startswith("*") or arg == "...":
                     kind = inspect.Parameter.KEYWORD_ONLY
                     continue  # we omit *varargs, if there are any
-                if iskeyword(arg.lstrip("*")) or not arg.lstrip("*").isidentifier():
+                if _iskeyword(arg.lstrip("*")) or not arg.lstrip("*").isidentifier():
                     print(repr(args))
                     break  # skip all subsequent params if this name is invalid
                 params.append(inspect.Parameter(name=arg, kind=kind))
