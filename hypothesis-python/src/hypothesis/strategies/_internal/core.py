@@ -1042,7 +1042,7 @@ def _from_type_deferred(thing: Type[Ex]) -> SearchStrategy[Ex]:
     )
 
 
-_recurse_guard: ContextVar = ContextVar("recurse_guard", default=[])
+_recurse_guard: ContextVar = ContextVar("recurse_guard")
 
 
 def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
@@ -1069,7 +1069,12 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
 
     def from_type_guarded(thing):
         """Returns the result of producer, or ... if recursion on thing is encountered"""
-        recurse_guard = _recurse_guard.get()
+        try:
+            recurse_guard = _recurse_guard.get()
+        except LookupError:
+            # We can't simply define the contextvar with default=[], as the
+            # default object would be shared across contexts
+            _recurse_guard.set(recurse_guard := [])
         if thing in recurse_guard:
             raise RewindRecursive(thing)
         recurse_guard.append(thing)
