@@ -279,11 +279,7 @@ def biased_coin(
                 # becomes i > falsey.
                 result = i > falsey
 
-            if i > 1:  # pragma: no branch
-                # Thanks to bytecode optimisations on CPython >= 3.7 and PyPy
-                # (see https://bugs.python.org/issue2506), coverage incorrectly
-                # thinks that this condition is always true.  You can trivially
-                # check by adding `else: assert False` and running the tests.
+            if i > 1:
                 data.draw_bits(bits, forced=int(result))
         break
     data.stop_example()

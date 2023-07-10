@@ -234,7 +234,7 @@ class UniqueListStrategy(ListStrategy):
         while elements.more():
             value = filtered.do_filtered_draw(data)
             if value is filter_not_satisfied:
-                elements.reject("Aborted test because unable to satisfy {filtered!r}")
+                elements.reject(f"Aborted test because unable to satisfy {filtered!r}")
             else:
                 for key, seen in zip(self.keys, seen_sets):
                     seen.add(key(value))

@@ -17,6 +17,7 @@ import string
 import sys
 import typing
 import warnings
+from contextvars import ContextVar
 from decimal import Context, Decimal, localcontext
 from fractions import Fraction
 from functools import lru_cache, reduce
@@ -203,10 +204,13 @@ def sampled_from(
         raise InvalidArgument("Cannot sample from a length-zero sequence.")
     if len(values) == 1:
         return just(values[0])
-    if isinstance(elements, type) and issubclass(elements, enum.Enum):
-        repr_ = f"sampled_from({elements.__module__}.{elements.__name__})"
-    else:
-        repr_ = f"sampled_from({elements!r})"
+    try:
+        if isinstance(elements, type) and issubclass(elements, enum.Enum):
+            repr_ = f"sampled_from({elements.__module__}.{elements.__name__})"
+        else:
+            repr_ = f"sampled_from({elements!r})"
+    except Exception:  # pragma: no cover
+        repr_ = None
     if isclass(elements) and issubclass(elements, enum.Flag):
         # Combinations of enum.Flag members are also members.  We generate
         # these dynamically, because static allocation takes O(2^n) memory.
@@ -942,14 +946,13 @@ def builds(
             from hypothesis.strategies._internal.types import _global_type_lookup
 
             for kw, t in infer_for.items():
-                if (
-                    getattr(t, "__module__", None) in ("builtins", "typing")
-                    or t in _global_type_lookup
-                ):
+                if t in _global_type_lookup:
                     kwargs[kw] = from_type(t)
                 else:
                     # We defer resolution of these type annotations so that the obvious
-                    # approach to registering recursive types just works.  See
+                    # approach to registering recursive types just works.  I.e.,
+                    # if we're inside `register_type_strategy(cls, builds(cls, ...))`
+                    # and `...` contains recursion on `cls`.  See
                     # https://github.com/HypothesisWorks/hypothesis/issues/3026
                     kwargs[kw] = deferred(lambda t=t: from_type(t))  # type: ignore
     return BuildsStrategy(target, args, kwargs)
@@ -1012,7 +1015,7 @@ def from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("error")
-            return _from_type(thing, [])
+            return _from_type(thing)
     except Exception:
         return _from_type_deferred(thing)
 
@@ -1022,20 +1025,27 @@ def _from_type_deferred(thing: Type[Ex]) -> SearchStrategy[Ex]:
     # underlying strategy wherever possible, as a form of user education, but
     # would prefer to fall back to the default "from_type(...)" repr instead of
     # "deferred(...)" for recursive types or invalid arguments.
-    thing_repr = nicerepr(thing)
-    if hasattr(thing, "__module__"):
-        module_prefix = f"{thing.__module__}."
-        if not thing_repr.startswith(module_prefix):
-            thing_repr = module_prefix + thing_repr
+    try:
+        thing_repr = nicerepr(thing)
+        if hasattr(thing, "__module__"):
+            module_prefix = f"{thing.__module__}."
+            if not thing_repr.startswith(module_prefix):
+                thing_repr = module_prefix + thing_repr
+        repr_ = f"from_type({thing_repr})"
+    except Exception:  # pragma: no cover
+        repr_ = None
     return LazyStrategy(
-        lambda thing: deferred(lambda: _from_type(thing, [])),
+        lambda thing: deferred(lambda: _from_type(thing)),
         (thing,),
         {},
-        force_repr=f"from_type({thing_repr})",
+        force_repr=repr_,
     )
 
 
-def _from_type(thing: Type[Ex], recurse_guard: List[Type[Ex]]) -> SearchStrategy[Ex]:
+_recurse_guard: ContextVar = ContextVar("recurse_guard")
+
+
+def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
     # TODO: We would like to move this to the top level, but pending some major
     # refactoring it's hard to do without creating circular imports.
     from hypothesis.strategies._internal import types
@@ -1059,11 +1069,17 @@ def _from_type(thing: Type[Ex], recurse_guard: List[Type[Ex]]) -> SearchStrategy
 
     def from_type_guarded(thing):
         """Returns the result of producer, or ... if recursion on thing is encountered"""
+        try:
+            recurse_guard = _recurse_guard.get()
+        except LookupError:
+            # We can't simply define the contextvar with default=[], as the
+            # default object would be shared across contexts
+            _recurse_guard.set(recurse_guard := [])
         if thing in recurse_guard:
             raise RewindRecursive(thing)
         recurse_guard.append(thing)
         try:
-            return _from_type(thing, recurse_guard)
+            return _from_type(thing)
         except RewindRecursive as rr:
             if rr.target != thing:
                 raise
@@ -1085,11 +1101,11 @@ def _from_type(thing: Type[Ex], recurse_guard: List[Type[Ex]]) -> SearchStrategy
             # resolve it so, and otherwise resolve as for the base type.
             if thing in types._global_type_lookup:
                 return as_strategy(types._global_type_lookup[thing], thing)
-            return _from_type(thing.__supertype__, recurse_guard)
+            return _from_type(thing.__supertype__)
         # Unions are not instances of `type` - but we still want to resolve them!
         if types.is_a_union(thing):
             args = sorted(thing.__args__, key=types.type_sorting_key)
-            return one_of([_from_type(t, recurse_guard) for t in args])
+            return one_of([_from_type(t) for t in args])
     # We also have a special case for TypeVars.
     # They are represented as instances like `~T` when they come here.
     # We need to work with their type instead.
@@ -1245,13 +1261,13 @@ def _from_type(thing: Type[Ex], recurse_guard: List[Type[Ex]]) -> SearchStrategy
     subclass_strategies = nothing()
     for sc in subclasses:
         try:
-            subclass_strategies |= _from_type(sc, recurse_guard)
+            subclass_strategies |= _from_type(sc)
         except Exception:
             pass
     if subclass_strategies.is_empty:
         # We're unable to resolve subclasses now, but we might be able to later -
         # so we'll just go back to the mixed distribution.
-        return sampled_from(subclasses).flatmap(lambda t: _from_type(t, recurse_guard))
+        return sampled_from(subclasses).flatmap(_from_type)
     return subclass_strategies
 
 

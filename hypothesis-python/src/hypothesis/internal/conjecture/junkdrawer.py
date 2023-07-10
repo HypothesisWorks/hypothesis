@@ -275,23 +275,22 @@ def stack_depth_of_caller() -> int:
 
 
 class ensure_free_stackframes:
-    """Context manager that ensures there are at least N free stackframes. The
-    value of N is chosen to be the recursion limit at import time, or at least
-    500.
+    """Context manager that ensures there are at least N free stackframes (for
+    a reasonable value of N).
     """
-
-    initial_maxdepth: int = sys.getrecursionlimit()
 
     def __enter__(self):
         cur_depth = stack_depth_of_caller()
         self.old_maxdepth = sys.getrecursionlimit()
-        self.new_maxdepth = cur_depth + max(self.initial_maxdepth, 500)
-        # Because we add to the recursion limit, to be good citizens we
-        # also add a check for unbounded recursion.  The default limit
-        # is 1000, so this can only ever trigger if something really
-        # strange is happening and it's hard to imagine an
+        # The default CPython recursionlimit is 1000, but pytest seems to bump
+        # it to 3000 during test execution. Let's make it something reasonable:
+        self.new_maxdepth = cur_depth + 2000
+        # Because we add to the recursion limit, to be good citizens we also
+        # add a check for unbounded recursion.  The default limit is typically
+        # 1000/3000, so this can only ever trigger if something really strange
+        # is happening and it's hard to imagine an
         # intentionally-deeply-recursive use of this code.
-        assert cur_depth <= self.initial_maxdepth, (
+        assert cur_depth <= 1000, (
             "Hypothesis would usually add %d to the stack depth of %d here, "
             "but we are already much deeper than expected.  Aborting now, to "
             "avoid extending the stack limit in an infinite loop..."

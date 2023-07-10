@@ -117,6 +117,7 @@ from hypothesis.internal.validation import check_type
 from hypothesis.provisional import domains
 from hypothesis.strategies._internal.collections import ListStrategy
 from hypothesis.strategies._internal.core import BuildsStrategy
+from hypothesis.strategies._internal.deferred import DeferredStrategy
 from hypothesis.strategies._internal.flatmapped import FlatMapStrategy
 from hypothesis.strategies._internal.lazy import LazyStrategy, unwrap_strategies
 from hypothesis.strategies._internal.strategies import (
@@ -668,6 +669,8 @@ def _valid_syntax_repr(strategy):
     # Flatten and de-duplicate any one_of strategies, whether that's from resolving
     # a Union type or combining inputs to multiple functions.
     try:
+        if isinstance(strategy, DeferredStrategy):
+            strategy = strategy.wrapped_strategy
         if isinstance(strategy, OneOfStrategy):
             seen = set()
             elems = []
