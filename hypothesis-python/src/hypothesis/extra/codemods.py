@@ -47,28 +47,12 @@ at the cost of additional configuration (adding ``'hypothesis.extra'`` to the
 
 import functools
 import importlib
-import os
-from contextlib import contextmanager
 from inspect import Parameter, signature
 from typing import List
 
 import libcst as cst
 import libcst.matchers as m
 from libcst.codemod import VisitorBasedCodemodCommand
-
-
-@contextmanager
-def _native_parser():
-    # Only the native parser supports Python 3.9 and later, but for now it's
-    # only active if you set an environment variable.  Very well then:
-    var = os.environ.get("LIBCST_PARSER_TYPE")
-    try:
-        os.environ["LIBCST_PARSER_TYPE"] = "native"
-        yield
-    finally:
-        os.environ.pop("LIBCST_PARSER_TYPE")
-        if var is not None:  # pragma: no cover
-            os.environ["LIBCST_PARSER_TYPE"] = var
 
 
 def refactor(code: str) -> str:
@@ -80,8 +64,7 @@ def refactor(code: str) -> str:
     We recommend using the CLI, but if you want a Python function here it is.
     """
     context = cst.codemod.CodemodContext()
-    with _native_parser():
-        mod = cst.parse_module(code)
+    mod = cst.parse_module(code)
     transforms: List[VisitorBasedCodemodCommand] = [
         HypothesisFixPositionalKeywonlyArgs(context),
         HypothesisFixComplexMinMagnitude(context),

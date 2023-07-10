@@ -64,12 +64,11 @@ jobs:
       continue-on-error: true
       # The timeout ensures that we finish all steps within the six-hour
       # maximum runtime for Github Actions.
-      # Then run the fuzzer on everything, as for our Windows CI.
+      # Then run the fuzzer on everything, as for our Windows CI; avoiding
+      # the --no-dashboard option because that also disables .patch writing.
       run: |
         timeout --preserve-status 5.5h \
-          hypothesis fuzz --no-dashboard -- \
-            hypothesis-python/tests/ \
-            -k "not keyboardinterrupt" \
+          hypothesis fuzz -- hypothesis-python/tests/ \
             --ignore=hypothesis-python/tests/quality/ \
             --ignore=hypothesis-python/tests/ghostwriter/
 
