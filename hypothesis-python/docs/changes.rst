@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.81.1:
+
+-------------------
+6.81.1 - 2023-07-11
+-------------------
+
+Fixes some lingering issues with inference of recursive types
+in `~hypothesis.strategies.from_type`. Closes :issue:`3525`.
+
 .. _v6.81.0:
 
 -------------------
