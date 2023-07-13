@@ -47,5 +47,5 @@ def test_hypothesis_does_not_import_test_runners(tmp_path):
     fname.write_text(SHOULD_NOT_IMPORT_TEST_RUNNERS, encoding="utf-8")
     subprocess.check_call(
         [sys.executable, str(fname)],
-        env=os.environ | {"HYPOTHESIS_NO_ENTRYPOINTS": "1"},
+        env={**os.environ, **{"HYPOTHESIS_NO_ENTRYPOINTS": "1"}},
     )
