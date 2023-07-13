@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import os
 import subprocess
 import sys
 
@@ -44,4 +45,7 @@ def test_hypothesis_does_not_import_test_runners(tmp_path):
     # See https://github.com/HypothesisWorks/hypothesis/pull/2204
     fname = tmp_path / "test.py"
     fname.write_text(SHOULD_NOT_IMPORT_TEST_RUNNERS, encoding="utf-8")
-    subprocess.check_call([sys.executable, str(fname)])
+    subprocess.check_call(
+        [sys.executable, str(fname)],
+        env=os.environ | {"HYPOTHESIS_NO_ENTRYPOINTS": "1"},
+    )

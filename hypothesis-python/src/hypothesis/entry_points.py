@@ -16,6 +16,7 @@ your package.
 """
 
 import importlib.metadata
+import os
 
 
 def get_entry_points():
@@ -29,7 +30,8 @@ def get_entry_points():
 
 
 def run():
-    for entry in get_entry_points():  # pragma: no cover
-        hook = entry.load()
-        if callable(hook):
-            hook()
+    if not os.environ.get("HYPOTHESIS_NO_ENTRYPOINTS"):
+        for entry in get_entry_points():  # pragma: no cover
+            hook = entry.load()
+            if callable(hook):
+                hook()
