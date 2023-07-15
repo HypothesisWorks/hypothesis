@@ -30,7 +30,7 @@ def get_entry_points():
 
 
 def run():
-    if not os.environ.get("HYPOTHESIS_NO_ENTRYPOINTS"):
+    if not os.environ.get("HYPOTHESIS_NO_PLUGINS"):
         for entry in get_entry_points():  # pragma: no cover
             hook = entry.load()
             if callable(hook):
