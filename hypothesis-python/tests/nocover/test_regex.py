@@ -86,6 +86,36 @@ def test_fuzz_stuff(data):
     assert regex.search(ex)
 
 
+@given(st.data())
+def test_regex_atomic_point(data):
+    pattern = "a(?>bc|b)c"
+    flags = 0
+
+    try:
+        regex = re.compile(pattern, flags=flags)
+    except (re.error, FutureWarning):
+        # Possible nested sets, e.g. "[[", trigger a FutureWarning
+        reject()
+
+    ex = data.draw(st.from_regex(regex))
+    assert regex.search(ex)
+
+
+@given(st.data())
+def test_regex_processive(data):
+    pattern = '"[^"]*+"'
+    flags = 0
+
+    try:
+        regex = re.compile(pattern, flags=flags)
+    except (re.error, FutureWarning):
+        # Possible nested sets, e.g. "[[", trigger a FutureWarning
+        reject()
+
+    ex = data.draw(st.from_regex(regex))
+    assert regex.search(ex)
+
+
 # Some preliminaries, to establish what's happening:
 I_WITH_DOT = "\u0130"
 assert I_WITH_DOT.swapcase() == "i\u0307"  # note: string of length two!

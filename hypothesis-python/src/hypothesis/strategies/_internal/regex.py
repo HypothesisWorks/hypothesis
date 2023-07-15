@@ -474,7 +474,7 @@ def _strategy(codes, context, is_unicode):
             # Regex 'a|b|c' (branch)
             return st.one_of([recurse(branch) for branch in value[1]])
 
-        elif code in [sre.MIN_REPEAT, sre.MAX_REPEAT]:
+        elif code in [sre.MIN_REPEAT, sre.MAX_REPEAT, sre.POSSESSIVE_REPEAT]:
             # Regexes 'a?', 'a*', 'a+' and their non-greedy variants
             # (repeaters)
             at_least, at_most, subregex = value
@@ -494,6 +494,8 @@ def _strategy(codes, context, is_unicode):
                 recurse(value[1]),
                 recurse(value[2]) if value[2] else st.just(empty),
             )
+        elif code == sre.ATOMIC_GROUP:
+            return _strategy(value, context, is_unicode)
 
         else:
             # Currently there are no known code points other than handled here.
