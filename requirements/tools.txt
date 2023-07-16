@@ -20,7 +20,7 @@ backcall==0.2.0
     # via ipython
 beautifulsoup4==4.12.2
     # via sphinx-codeautolink
-black==23.3.0
+black==23.7.0
     # via shed
 bleach==6.0.0
     # via readme-renderer
@@ -36,7 +36,7 @@ chardet==5.1.0
     # via tox
 charset-normalizer==3.2.0
     # via requests
-click==8.1.4
+click==8.1.5
     # via
     #   black
     #   pip-tools
@@ -48,7 +48,7 @@ com2ann==0.3.0
     # via shed
 coverage==7.2.7
     # via -r requirements/tools.in
-cryptography==41.0.1
+cryptography==41.0.2
     # via
     #   secretstorage
     #   types-pyopenssl
@@ -91,7 +91,7 @@ ipython==8.14.0
     # via -r requirements/tools.in
 isort==5.12.0
     # via shed
-jaraco-classes==3.2.3
+jaraco-classes==3.3.0
     # via keyring
 jedi==0.18.2
     # via ipython
@@ -144,11 +144,11 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pip-tools==6.14.0
+pip-tools==7.0.0
     # via -r requirements/tools.in
 pkginfo==1.9.6
     # via twine
-platformdirs==3.8.1
+platformdirs==3.9.1
     # via
     #   black
     #   tox
@@ -177,13 +177,13 @@ pyproject-api==1.5.3
     # via tox
 pyproject-hooks==1.0.0
     # via build
-pyright==1.1.316
+pyright==1.1.317
     # via -r requirements/tools.in
 pytest==7.4.0
     # via -r requirements/tools.in
 python-dateutil==2.8.2
     # via -r requirements/tools.in
-pyupgrade==3.8.0
+pyupgrade==3.9.0
     # via shed
 pyyaml==6.0
     # via libcst
@@ -203,7 +203,7 @@ rfc3986==2.0.0
     # via twine
 rich==13.4.2
     # via twine
-ruff==0.0.277
+ruff==0.0.278
     # via -r requirements/tools.in
 secretstorage==3.3.3
     # via keyring
@@ -299,7 +299,7 @@ urllib3==2.0.3
     # via
     #   requests
     #   twine
-virtualenv==20.23.1
+virtualenv==20.24.0
     # via tox
 wcwidth==0.2.6
     # via prompt-toolkit
@@ -307,11 +307,11 @@ webencodings==0.5.1
     # via bleach
 wheel==0.40.0
     # via pip-tools
-zipp==3.15.0
+zipp==3.16.2
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-pip==23.1.2
+pip==23.2
     # via pip-tools
 setuptools==68.0.0
     # via

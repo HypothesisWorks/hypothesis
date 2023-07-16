@@ -810,10 +810,7 @@ class MappedSearchStrategy(SearchStrategy[Ex]):
 
     def __repr__(self):
         if not hasattr(self, "_cached_repr"):
-            self._cached_repr = "{!r}.map({})".format(
-                self.mapped_strategy,
-                get_pretty_function_description(self.pack),
-            )
+            self._cached_repr = f"{self.mapped_strategy!r}.map({get_pretty_function_description(self.pack)})"
         return self._cached_repr
 
     def do_validate(self):
