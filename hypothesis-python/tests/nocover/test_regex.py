@@ -10,9 +10,13 @@
 
 import re
 import string
+import sys
 from functools import reduce
 
-from hypothesis import assume, given, reject, strategies as st
+import pytest
+
+from hypothesis import assume, given, reject
+from hypothesis import strategies as st
 from hypothesis.strategies._internal.regex import base_regex_strategy
 
 
@@ -86,31 +90,25 @@ def test_fuzz_stuff(data):
     assert regex.search(ex)
 
 
+@pytest.mark.skipif(sys.version_info[:2] < (3, 11), reason="new syntax")
 @given(st.data())
 def test_regex_atomic_point(data):
     pattern = "a(?>bc|b)c"
     flags = 0
 
-    try:
-        regex = re.compile(pattern, flags=flags)
-    except (re.error, FutureWarning):
-        # Possible nested sets, e.g. "[[", trigger a FutureWarning
-        reject()
+    regex = re.compile(pattern, flags=flags)
 
     ex = data.draw(st.from_regex(regex))
     assert regex.search(ex)
 
 
+@pytest.mark.skipif(sys.version_info[:2] < (3, 11), reason="new syntax")
 @given(st.data())
 def test_regex_processive(data):
     pattern = '"[^"]*+"'
     flags = 0
 
-    try:
-        regex = re.compile(pattern, flags=flags)
-    except (re.error, FutureWarning):
-        # Possible nested sets, e.g. "[[", trigger a FutureWarning
-        reject()
+    regex = re.compile(pattern, flags=flags)
 
     ex = data.draw(st.from_regex(regex))
     assert regex.search(ex)

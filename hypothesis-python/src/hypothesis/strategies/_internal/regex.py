@@ -10,6 +10,7 @@
 
 import operator
 import re
+import sys
 
 try:  # pragma: no cover
     import re._constants as sre
@@ -18,7 +19,8 @@ except ImportError:  # Python < 3.11
     import sre_constants as sre
     import sre_parse
 
-from hypothesis import reject, strategies as st
+from hypothesis import reject
+from hypothesis import strategies as st
 from hypothesis.internal.charmap import as_general_categories, categories
 from hypothesis.internal.compat import int_to_byte
 
@@ -48,6 +50,14 @@ BYTES_LOOKUP = {
 
 
 GROUP_CACHE_STRATEGY = st.shared(st.builds(dict), key="hypothesis.regex.group_cache")
+
+
+if sys.version_info[:2] < (3, 11):
+    ATOMIC_GROUP = object()
+    POSSESSIVE_REPEAT = object()
+else:
+    ATOMIC_GROUP = sre.ATOMIC_GROUP
+    POSSESSIVE_REPEAT = sre.POSSESSIVE_REPEAT
 
 
 @st.composite
@@ -474,7 +484,7 @@ def _strategy(codes, context, is_unicode):
             # Regex 'a|b|c' (branch)
             return st.one_of([recurse(branch) for branch in value[1]])
 
-        elif code in [sre.MIN_REPEAT, sre.MAX_REPEAT, sre.POSSESSIVE_REPEAT]:
+        elif code in [sre.MIN_REPEAT, sre.MAX_REPEAT, POSSESSIVE_REPEAT]:
             # Regexes 'a?', 'a*', 'a+' and their non-greedy variants
             # (repeaters)
             at_least, at_most, subregex = value
@@ -494,7 +504,7 @@ def _strategy(codes, context, is_unicode):
                 recurse(value[1]),
                 recurse(value[2]) if value[2] else st.just(empty),
             )
-        elif code == sre.ATOMIC_GROUP:
+        elif code == ATOMIC_GROUP:
             return _strategy(value, context, is_unicode)
 
         else:
