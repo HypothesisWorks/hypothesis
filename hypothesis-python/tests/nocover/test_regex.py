@@ -15,8 +15,7 @@ from functools import reduce
 
 import pytest
 
-from hypothesis import assume, given, reject
-from hypothesis import strategies as st
+from hypothesis import assume, given, reject, strategies as st
 from hypothesis.strategies._internal.regex import base_regex_strategy
 
 
@@ -92,26 +91,18 @@ def test_fuzz_stuff(data):
 
 @pytest.mark.skipif(sys.version_info[:2] < (3, 11), reason="new syntax")
 @given(st.data())
-def test_regex_atomic_point(data):
+def test_regex_atomic_group(data):
     pattern = "a(?>bc|b)c"
-    flags = 0
-
-    regex = re.compile(pattern, flags=flags)
-
-    ex = data.draw(st.from_regex(regex))
-    assert regex.search(ex)
+    ex = data.draw(st.from_regex(pattern))
+    assert re.search(pattern, ex)
 
 
 @pytest.mark.skipif(sys.version_info[:2] < (3, 11), reason="new syntax")
 @given(st.data())
-def test_regex_processive(data):
+def test_regex_possessive(data):
     pattern = '"[^"]*+"'
-    flags = 0
-
-    regex = re.compile(pattern, flags=flags)
-
-    ex = data.draw(st.from_regex(regex))
-    assert regex.search(ex)
+    ex = data.draw(st.from_regex(pattern))
+    assert re.search(pattern, ex)
 
 
 # Some preliminaries, to establish what's happening:

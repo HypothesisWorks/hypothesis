@@ -10,17 +10,21 @@
 
 import operator
 import re
-import sys
 
 try:  # pragma: no cover
     import re._constants as sre
     import re._parser as sre_parse
+
+    ATOMIC_GROUP = sre.ATOMIC_GROUP
+    POSSESSIVE_REPEAT = sre.POSSESSIVE_REPEAT
 except ImportError:  # Python < 3.11
     import sre_constants as sre
     import sre_parse
 
-from hypothesis import reject
-from hypothesis import strategies as st
+    ATOMIC_GROUP = object()
+    POSSESSIVE_REPEAT = object()
+
+from hypothesis import reject, strategies as st
 from hypothesis.internal.charmap import as_general_categories, categories
 from hypothesis.internal.compat import int_to_byte
 
@@ -50,14 +54,6 @@ BYTES_LOOKUP = {
 
 
 GROUP_CACHE_STRATEGY = st.shared(st.builds(dict), key="hypothesis.regex.group_cache")
-
-
-if sys.version_info[:2] < (3, 11):
-    ATOMIC_GROUP = object()
-    POSSESSIVE_REPEAT = object()
-else:
-    ATOMIC_GROUP = sre.ATOMIC_GROUP
-    POSSESSIVE_REPEAT = sre.POSSESSIVE_REPEAT
 
 
 @st.composite
@@ -504,10 +500,12 @@ def _strategy(codes, context, is_unicode):
                 recurse(value[1]),
                 recurse(value[2]) if value[2] else st.just(empty),
             )
-        elif code == ATOMIC_GROUP:
+        elif code == ATOMIC_GROUP:  # pragma: no cover  # new in Python 3.11
             return _strategy(value, context, is_unicode)
 
         else:
             # Currently there are no known code points other than handled here.
             # This code is just future proofing
-            raise NotImplementedError(f"Unknown code point: {code!r}")
+            raise NotImplementedError(
+                f"Unknown code point: {code!r}.  Please open an issue."
+            )
