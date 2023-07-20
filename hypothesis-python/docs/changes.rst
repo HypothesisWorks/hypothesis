@@ -18,6 +18,18 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.82.0:
+
+-------------------
+6.82.0 - 2023-07-20
+-------------------
+
+:func:`~hypothesis.strategies.from_regex` now supports the atomic grouping
+(``(?>...)``) and possessive quantifier (``*+``, ``++``, ``?+``, ``{m,n}+``)
+syntax `added in Python 3.11 <https://docs.python.org/3/whatsnew/3.11.html#re>`__.
+
+Thanks to Cheuk Ting Ho for implementing this!
+
 .. _v6.81.2:
 
 -------------------
