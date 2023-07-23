@@ -908,10 +908,7 @@ class RuleStrategy(SearchStrategy):
         )
 
     def __repr__(self):
-        return "{}(machine={}({{...}}))".format(
-            self.__class__.__name__,
-            self.machine.__class__.__name__,
-        )
+        return f"{self.__class__.__name__}(machine={self.machine.__class__.__name__}({{...}}))"
 
     def do_draw(self, data):
         if not any(self.is_valid(rule) for rule in self.rules):

@@ -17,11 +17,11 @@ black @ git+https://github.com/psf/black.git@eedfc3832290b3a32825b3c0f2dfa3f3d7e
     #   -r requirements/coverage.in
     #   hypofuzz
     #   hypothesis
-certifi==2023.5.7
+certifi==2023.7.22
     # via requests
 charset-normalizer==3.2.0
     # via requests
-click==8.1.4
+click==8.1.6
     # via
     #   -r requirements/coverage.in
     #   black
@@ -46,15 +46,15 @@ exceptiongroup==1.1.2 ; python_version < "3.11"
     #   hypothesis
     #   hypothesis (hypothesis-python/setup.py)
     #   pytest
-execnet==2.0.0
+execnet==2.0.2
     # via pytest-xdist
-fakeredis==2.16.0
+fakeredis==2.17.0
     # via -r requirements/coverage.in
 flask==2.2.5
     # via dash
-git+https://github.com/Zac-HD/hypofuzz.git
+hypofuzz==23.7.1
     # via -r requirements/fuzzing.in
-hypothesis[cli]==6.80.1
+hypothesis[cli]==6.82.0
     # via hypofuzz
 idna==3.4
     # via requests
@@ -64,7 +64,7 @@ itsdangerous==2.1.2
     # via flask
 jinja2==3.1.2
     # via flask
-lark==1.1.5
+lark==1.1.7
     # via -r requirements/coverage.in
 libcst==1.0.1
     # via
@@ -84,7 +84,7 @@ mypy-extensions==1.0.0
     #   typing-inspect
 nest-asyncio==1.5.6
     # via dash
-numpy==1.25.0
+numpy==1.25.1
     # via
     #   -r requirements/coverage.in
     #   pandas
@@ -101,7 +101,7 @@ pathspec==0.11.1
     # via black
 pexpect==4.8.0
     # via -r requirements/test.in
-platformdirs==3.8.1
+platformdirs==3.9.1
     # via black
 plotly==5.15.0
     # via dash
@@ -128,7 +128,7 @@ pytz==2023.3
     # via
     #   -r requirements/coverage.in
     #   pandas
-pyyaml==6.0
+pyyaml==6.0.1
     # via libcst
 redis==4.6.0
     # via fakeredis
@@ -165,7 +165,7 @@ typing-inspect==0.9.0
     # via libcst
 tzdata==2023.3
     # via pandas
-urllib3==2.0.3
+urllib3==2.0.4
     # via requests
 werkzeug==2.2.3
     # via

@@ -309,7 +309,7 @@ class Sampler:
     def __init__(self, weights: Sequence[float]):
         n = len(weights)
 
-        table: "list[list[int | float | None]]" = [[i, None, None] for i in range(n)]
+        table: list[list[int | float | None]] = [[i, None, None] for i in range(n)]
 
         total = sum(weights)
 
@@ -318,11 +318,11 @@ class Sampler:
         zero = num_type(0)  # type: ignore
         one = num_type(1)  # type: ignore
 
-        small: "List[int]" = []
-        large: "List[int]" = []
+        small: List[int] = []
+        large: List[int] = []
 
         probabilities = [w / total for w in weights]
-        scaled_probabilities: "List[float]" = []
+        scaled_probabilities: List[float] = []
 
         for i, alternate_chance in enumerate(probabilities):
             scaled = alternate_chance * n
@@ -360,7 +360,7 @@ class Sampler:
         while small:
             table[small.pop()][2] = zero
 
-        self.table: "List[Tuple[int, int, float]]" = []
+        self.table: List[Tuple[int, int, float]] = []
         for base, alternate, alternate_chance in table:  # type: ignore
             assert isinstance(base, int)
             assert isinstance(alternate, int) or alternate is None

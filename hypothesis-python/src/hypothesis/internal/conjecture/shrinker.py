@@ -271,7 +271,7 @@ class Shrinker:
         takes ConjectureData objects.
         """
         assert predicate is not None or allow_transition is not None
-        self.engine: "ConjectureRunner" = engine
+        self.engine: ConjectureRunner = engine
         self.__predicate = predicate or (lambda data: True)
         self.__allow_transition = allow_transition or (lambda source, destination: True)
         self.__derived_values = {}

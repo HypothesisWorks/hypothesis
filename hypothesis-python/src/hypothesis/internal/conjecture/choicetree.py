@@ -56,7 +56,7 @@ class Chooser:
     ):
         self.__selection_order = selection_order
         self.__node_trail = [tree.root]
-        self.__choices: "List[int]" = []
+        self.__choices: List[int] = []
         self.__finished = False
 
     def choose(
@@ -144,8 +144,8 @@ class ChoiceTree:
 class TreeNode:
     def __init__(self) -> None:
         self.children: Dict[int, TreeNode] = defaultdict(TreeNode)
-        self.live_child_count: "Optional[int]" = None
-        self.n: "Optional[int]" = None
+        self.live_child_count: Optional[int] = None
+        self.n: Optional[int] = None
 
     @property
     def exhausted(self) -> bool:

@@ -223,7 +223,7 @@ class ExampleProperty:
     """
 
     def __init__(self, examples: "Examples"):
-        self.example_stack: "List[int]" = []
+        self.example_stack: List[int] = []
         self.examples = examples
         self.bytes_read = 0
         self.example_count = 0
@@ -327,7 +327,7 @@ class ExampleRecord:
 
     def __init__(self) -> None:
         self.labels = [DRAW_BYTES_LABEL]
-        self.__index_of_labels: "Optional[Dict[int, int]]" = {DRAW_BYTES_LABEL: 0}
+        self.__index_of_labels: Optional[Dict[int, int]] = {DRAW_BYTES_LABEL: 0}
         self.trail = IntList()
 
     def freeze(self) -> None:
@@ -372,7 +372,7 @@ class Examples:
             + record.trail.count(DRAW_BITS_RECORD)
         )
         self.blocks = blocks
-        self.__children: "Optional[List[Sequence[int]]]" = None
+        self.__children: Optional[List[Sequence[int]]] = None
 
     class _starts_and_ends(ExampleProperty):
         def begin(self):
@@ -402,7 +402,7 @@ class Examples:
 
     class _discarded(ExampleProperty):
         def begin(self) -> None:
-            self.result: "Set[int]" = set()  # type: ignore  # IntList in parent class
+            self.result: Set[int] = set()  # type: ignore  # IntList in parent class
 
         def finish(self) -> FrozenSet[int]:
             return frozenset(self.result)
@@ -416,7 +416,7 @@ class Examples:
     class _trivial(ExampleProperty):
         def begin(self) -> None:
             self.nontrivial = IntList.of_length(len(self.examples))
-            self.result: "Set[int]" = set()  # type: ignore  # IntList in parent class
+            self.result: Set[int] = set()  # type: ignore  # IntList in parent class
 
         def block(self, i: int) -> None:
             if not self.examples.blocks.trivial(i):
@@ -458,7 +458,7 @@ class Examples:
 
     class _mutator_groups(ExampleProperty):
         def begin(self) -> None:
-            self.groups: "Dict[Tuple[int, int], List[int]]" = defaultdict(list)
+            self.groups: Dict[Tuple[int, int], List[int]] = defaultdict(list)
 
         def start_example(self, i: int, label_index: int) -> None:
             depth = len(self.example_stack)
@@ -645,7 +645,7 @@ class Blocks:
         # stop being sparse and want to use most of the blocks. Switch
         # over to a list at that point.
         if self.__sparse and len(self.__blocks) * 2 >= len(self):
-            new_blocks: "List[Optional[Block]]" = [None] * len(self)
+            new_blocks: List[Optional[Block]] = [None] * len(self)
             assert isinstance(self.__blocks, dict)
             for k, v in self.__blocks.items():
                 new_blocks[k] = v
@@ -702,7 +702,7 @@ class Blocks:
             yield self[i]
 
     def __repr__(self) -> str:
-        parts: "List[str]" = []
+        parts: List[str] = []
         for i in range(len(self)):
             b = self.__known_block(i)
             if b is None:
@@ -826,7 +826,7 @@ class ConjectureData:
         assert random is not None or max_length <= len(prefix)
 
         self.blocks = Blocks(self)
-        self.buffer: "Union[bytes, bytearray]" = bytearray()
+        self.buffer: Union[bytes, bytearray] = bytearray()
         self.index = 0
         self.output = ""
         self.status = Status.VALID
@@ -835,14 +835,14 @@ class ConjectureData:
         self.testcounter = global_test_counter
         global_test_counter += 1
         self.start_time = time.perf_counter()
-        self.events: "Union[Set[Hashable], FrozenSet[Hashable]]" = set()
-        self.forced_indices: "Set[int]" = set()
+        self.events: Union[Set[Hashable], FrozenSet[Hashable]] = set()
+        self.forced_indices: Set[int] = set()
         self.interesting_origin: Optional[InterestingOrigin] = None
-        self.draw_times: "List[float]" = []
+        self.draw_times: List[float] = []
         self.max_depth = 0
         self.has_discards = False
 
-        self.__result: "Optional[ConjectureResult]" = None
+        self.__result: Optional[ConjectureResult] = None
 
         # Observations used for targeted search.  They'll be aggregated in
         # ConjectureRunner.generate_new_examples and fed to TargetSelector.
@@ -850,13 +850,13 @@ class ConjectureData:
 
         # Tags which indicate something about which part of the search space
         # this example is in. These are used to guide generation.
-        self.tags: "Set[StructuralCoverageTag]" = set()
-        self.labels_for_structure_stack: "List[Set[int]]" = []
+        self.tags: Set[StructuralCoverageTag] = set()
+        self.labels_for_structure_stack: List[Set[int]] = []
 
         # Normally unpopulated but we need this in the niche case
         # that self.as_result() is Overrun but we still want the
         # examples for reporting purposes.
-        self.__examples: "Optional[Examples]" = None
+        self.__examples: Optional[Examples] = None
 
         # We want the top level example to have depth 0, so we start
         # at -1.

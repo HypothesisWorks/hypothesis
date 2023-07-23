@@ -10,7 +10,7 @@ attrs==23.1.0
     # via hypothesis (hypothesis-python/setup.py)
 black @ git+https://github.com/psf/black.git@eedfc3832290b3a32825b3c0f2dfa3f3d7ee9d1c
     # via -r requirements/coverage.in
-click==8.1.4
+click==8.1.6
     # via
     #   -r requirements/coverage.in
     #   black
@@ -22,13 +22,13 @@ exceptiongroup==1.1.2 ; python_version < "3.11"
     # via
     #   hypothesis (hypothesis-python/setup.py)
     #   pytest
-execnet==2.0.0
+execnet==2.0.2
     # via pytest-xdist
-fakeredis==2.16.0
+fakeredis==2.17.0
     # via -r requirements/coverage.in
 iniconfig==2.0.0
     # via pytest
-lark==1.1.5
+lark==1.1.7
     # via -r requirements/coverage.in
 libcst==1.0.1
     # via -r requirements/coverage.in
@@ -36,7 +36,7 @@ mypy-extensions==1.0.0
     # via
     #   black
     #   typing-inspect
-numpy==1.25.0
+numpy==1.25.1
     # via
     #   -r requirements/coverage.in
     #   pandas
@@ -50,7 +50,7 @@ pathspec==0.11.1
     # via black
 pexpect==4.8.0
     # via -r requirements/test.in
-platformdirs==3.8.1
+platformdirs==3.9.1
     # via black
 pluggy==1.2.0
     # via pytest
@@ -70,7 +70,7 @@ pytz==2023.3
     # via
     #   -r requirements/coverage.in
     #   pandas
-pyyaml==6.0
+pyyaml==6.0.1
     # via libcst
 redis==4.6.0
     # via fakeredis
