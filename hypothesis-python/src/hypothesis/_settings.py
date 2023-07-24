@@ -519,6 +519,17 @@ class HealthCheck(Enum, metaclass=HealthCheckMeta):
     This check requires the :ref:`Hypothesis pytest plugin<pytest-plugin>`,
     which is enabled by default when running Hypothesis inside pytest."""
 
+    differing_test_runners = 10
+    """Checks if :func:`@given <hypothesis.given>` has been applied to a test
+    which is executed by different test runners. If the test runners have different
+    test behaviour, this leads to flaky or nonreproducible tests.
+
+    The correct fix is often to bring the test runner instance under the control of
+    hypothesis by explicit parametrization over or sampling from subclasses.
+
+    Suppress this health check only if the different runners are known to behave
+    identically during tests; an alternative is to implement __eq__ on the test
+    runner class."""
 
 @unique
 class Verbosity(IntEnum):

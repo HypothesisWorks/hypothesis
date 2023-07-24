@@ -53,6 +53,11 @@ class SomeGivens:
     def assume_in_reify(self, x):
         pass
 
+    def __eq__(self, other):
+        # Avoids having to suppress HealthCheck.differing_test_runners
+        # everywhere
+        return isinstance(other, SomeGivens)
+
 
 class HasSetupAndTeardown(HasSetup, HasTeardown, SomeGivens):
     pass
