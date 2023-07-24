@@ -1250,7 +1250,7 @@ def given(
                     "to ensure that each example is run in a separate "
                     "database transaction."
                 )
-            if "self" in kwargs:
+            if settings.database is not None and "self" in kwargs:
                 nonlocal prev_self
                 if prev_self is None:
                     prev_self = kwargs["self"]
@@ -1258,7 +1258,8 @@ def given(
                     msg = (
                         f"The method {test.__qualname__} was called from multiple "
                         "test runners which do not compare equal. This may lead to "
-                        "flaky tests and nonreproducible errors."
+                        "flaky tests and nonreproducible errors when replaying from "
+                        "database."
                     )
                     fail_health_check(settings, msg, HealthCheck.differing_test_runners)
 
@@ -1490,6 +1491,9 @@ def find(
     )
 
     if database_key is None and settings.database is not None:
+        # Note: The database key is not guaranteed to be unique. If not, replaying
+        # of database examples may fail to reproduce or overrun (raise
+        # HealthCheck.data_too_large) due to being replayed on the wrong condition.
         database_key = function_digest(condition)
 
     if not isinstance(specifier, SearchStrategy):

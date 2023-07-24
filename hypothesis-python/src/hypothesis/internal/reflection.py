@@ -88,17 +88,14 @@ def function_digest(function):
     multiple processes and is prone to changing significantly in response to
     minor changes to the function.
 
-    No guarantee of uniqueness though it usually will be.
+    No guarantee of uniqueness though it usually will be. Digest collisions
+    lead to unfortunate but not fatal problems during database replay. #NOT TRUE
     """
     hasher = hashlib.sha384()
     try:
         src = inspect.getsource(function)
     except (OSError, TypeError):
-        # If we can't actually get the source code, try for the name as a fallback.
-        try:
-            hasher.update(function.__name__.encode())
-        except AttributeError:
-            pass
+        pass
     else:
         hasher.update(_clean_source(src))
     try:
@@ -110,6 +107,12 @@ def function_digest(function):
     try:
         # We set this in order to distinguish e.g. @pytest.mark.parametrize cases.
         hasher.update(function._hypothesis_internal_add_digest)
+    except AttributeError:
+        pass
+    # We add the qualified name to distinguish e.g. identical test methods of
+    # subclasses that call into different overridden methods.
+    try:
+        hasher.update(function.__qualname__.encode())
     except AttributeError:
         pass
     return hasher.digest()
