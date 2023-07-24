@@ -533,6 +533,7 @@ class HealthCheck(Enum, metaclass=HealthCheckMeta):
     identically during tests; alternatively, disable database access or implement "
     "__eq__ on the test runner class."""
 
+
 @unique
 class Verbosity(IntEnum):
     quiet = 0
