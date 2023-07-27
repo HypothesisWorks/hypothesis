@@ -41,6 +41,10 @@ class Float(Shrinker):
         return lex1 < lex2
 
     def short_circuit(self):
+        # We check for a bunch of standard "large" floats. If we're currently
+        # worse than them and the shrink downwards doesn't help, abort early
+        # because there's not much useful we can do here.
+
         for g in [sys.float_info.max, math.inf, math.nan]:
             self.consider(g)
 
@@ -53,10 +57,6 @@ class Float(Shrinker):
         return self.current >= MAX_PRECISE_INTEGER
 
     def run_step(self):
-        # We check for a bunch of standard "large" floats. If we're currently
-        # worse than them and the shrink downwards doesn't help, abort early
-        # because there's not much useful we can do here.
-
         # Finally we get to the important bit: Each of these is a small change
         # to the floating point number that corresponds to a large change in
         # the lexical representation. Trying these ensures that our floating
@@ -65,18 +65,13 @@ class Float(Shrinker):
         # change that would require shifting the exponent while not changing
         # the float value much.
 
-        for g in [math.floor(self.current), math.ceil(self.current)]:
-            self.consider(g)
-
         if self.consider(int(self.current)):
             self.debug("Just an integer now")
             self.delegate(Integer, convert_to=int, convert_from=float)
             return
 
-        m, n = self.current.as_integer_ratio()
-        i, r = divmod(m, n)
+        # Try dropping precision bits
 
-        # Now try to minimize the top part of the fraction as an integer. This
-        # basically splits the float as k + x with 0 <= x < 1 and minimizes
-        # k as an integer, but without the precision issues that would have.
-        self.call_shrinker(Integer, i, lambda k: self.consider((i * n + r) / n))
+        for p in range(5):
+            for truncate in [math.floor, math.ceil]:
+                self.consider(truncate(self.current * 2**p) / 2**p)
