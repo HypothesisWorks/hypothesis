@@ -209,6 +209,10 @@ def test_shrink_down_to_half():
     assert minimal_from(0.75, lambda x: 0 < x < 1) == 0.5
 
 
+def test_shrink_fractional_part():
+    assert minimal_from(2.5, lambda x: divmod(x, 1)[1] == 0.5) == 1.5
+
+
 def test_does_not_shrink_across_one():
     # This is something of an odd special case. Because of our encoding we
     # prefer all numbers >= 1 to all numbers in 0 < x < 1. For the most part

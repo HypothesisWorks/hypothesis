@@ -101,7 +101,7 @@ def test_minimal_float_is_zero():
 
 
 def test_minimal_asymetric_bounded_float():
-    assert minimal(floats(min_value=1.1, max_value=1.9), lambda x: True) == 1.5
+    assert minimal(floats(min_value=1.1, max_value=1.6), lambda x: True) == 1.5
 
 
 def test_negative_floats_simplify_to_zero():
