@@ -70,8 +70,14 @@ class Float(Shrinker):
             self.delegate(Integer, convert_to=int, convert_from=float)
             return
 
-        # Try dropping precision bits
+        # Try dropping precision bits by rounding the scaled value. We try
+        # values ordered from least-precise (integer) to more precise, ie.
+        # approximate lexicographical order. Once we find an acceptable shrink,
+        # self.consider discards the remaining attempts early and skips test
+        # invocation. The loop count sets max fractional bits to keep, and is a
+        # compromise between completeness and performance.
 
-        for p in range(5):
+        for p in range(10):
+            scaled = self.current * 2**p  # note: self.current may change in loop
             for truncate in [math.floor, math.ceil]:
-                self.consider(truncate(self.current * 2**p) / 2**p)
+                self.consider(truncate(scaled) / 2**p)
