@@ -81,3 +81,10 @@ class Float(Shrinker):
             scaled = self.current * 2**p  # note: self.current may change in loop
             for truncate in [math.floor, math.ceil]:
                 self.consider(truncate(scaled) / 2**p)
+
+        # Now try to minimize the top part of the fraction as an integer. This
+        # basically splits the float as k + x with 0 <= x < 1 and minimizes
+        # k as an integer, but without the precision issues that would have.
+        m, n = self.current.as_integer_ratio()
+        i, r = divmod(m, n)
+        self.call_shrinker(Integer, i, lambda k: self.consider((k * n + r) / n))
