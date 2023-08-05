@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.82.1:
+
+-------------------
+6.82.1 - 2023-08-05
+-------------------
+
+Improve shrinking of floats in narrow regions that don't cross an integer
+boundary. Closes :issue:`3357`.
+
 .. _v6.82.0:
 
 -------------------
