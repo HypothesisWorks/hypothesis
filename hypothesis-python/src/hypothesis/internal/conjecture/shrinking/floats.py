@@ -65,13 +65,8 @@ class Float(Shrinker):
         # change that would require shifting the exponent while not changing
         # the float value much.
 
-        if self.consider(int(self.current)):
-            self.debug("Just an integer now")
-            self.delegate(Integer, convert_to=int, convert_from=float)
-            return
-
-        # Try dropping precision bits by rounding the scaled value. We try
-        # values ordered from least-precise (integer) to more precise, ie.
+        # First, try dropping precision bits by rounding the scaled value. We
+        # try values ordered from least-precise (integer) to more precise, ie.
         # approximate lexicographical order. Once we find an acceptable shrink,
         # self.consider discards the remaining attempts early and skips test
         # invocation. The loop count sets max fractional bits to keep, and is a
@@ -81,6 +76,11 @@ class Float(Shrinker):
             scaled = self.current * 2**p  # note: self.current may change in loop
             for truncate in [math.floor, math.ceil]:
                 self.consider(truncate(scaled) / 2**p)
+
+        if self.consider(int(self.current)):
+            self.debug("Just an integer now")
+            self.delegate(Integer, convert_to=int, convert_from=float)
+            return
 
         # Now try to minimize the top part of the fraction as an integer. This
         # basically splits the float as k + x with 0 <= x < 1 and minimizes
