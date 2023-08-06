@@ -50,7 +50,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import re
 import warnings
 from collections import Counter, OrderedDict, defaultdict, deque
-from enum import Enum
+from enum import Enum, Flag
 
 import pytest
 
@@ -628,5 +628,40 @@ class AnEnum(Enum):
     SOME_MEMBER = 1
 
 
-def test_pretty_prints_enums_as_code():
-    assert pretty.pretty(AnEnum.SOME_MEMBER) == "AnEnum.SOME_MEMBER"
+class Options(Flag):
+    A = 1
+    B = 2
+    C = 4
+
+
+class EvilReprOptions(Flag):
+    A = 1
+    B = 2
+
+    def __repr__(self):
+        return "can't parse this nonsense"
+
+
+class LyingReprOptions(Flag):
+    A = 1
+    B = 2
+
+    def __repr__(self):
+        return "LyingReprOptions.A|B|C"
+
+
+@pytest.mark.parametrize(
+    "rep",
+    [
+        "AnEnum.SOME_MEMBER",
+        "Options.A",
+        "Options.A | Options.B",
+        "Options.A | Options.B | Options.C",
+        "EvilReprOptions.A",
+        "LyingReprOptions.A",
+        "EvilReprOptions.A | EvilReprOptions.B",
+        "LyingReprOptions.A | LyingReprOptions.B",
+    ],
+)
+def test_pretty_prints_enums_as_code(rep):
+    assert pretty.pretty(eval(rep)) == rep

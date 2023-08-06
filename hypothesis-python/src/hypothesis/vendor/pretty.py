@@ -69,6 +69,7 @@ import types
 import warnings
 from collections import defaultdict, deque
 from contextlib import contextmanager
+from enum import Flag
 from io import StringIO
 from math import copysign, isnan
 
@@ -801,7 +802,11 @@ def _repr_dataframe(obj, p, cycle):  # pragma: no cover
 
 
 def _repr_enum(obj, p, cycle):
-    p.text(type(obj).__name__ + "." + obj.name)
+    tname = type(obj).__name__
+    if isinstance(obj, Flag):
+        p.text(" | ".join(f"{tname}.{x.name}" for x in type(obj) if x & obj == x))
+    else:
+        p.text(f"{tname}.{obj.name}")
 
 
 for_type_by_name("collections", "defaultdict", _defaultdict_pprint)
