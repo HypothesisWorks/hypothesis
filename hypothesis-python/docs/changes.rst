@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.82.2:
+
+-------------------
+6.82.2 - 2023-08-06
+-------------------
+
+This patch fixes pretty-printing of combinations of :class:`enum.Flag`
+values, which was previously an error (:issue:`3709`).
+
 .. _v6.82.1:
 
 -------------------
