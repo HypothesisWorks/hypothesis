@@ -32,6 +32,7 @@ from typing import (
     Hashable,
     Iterable,
     List,
+    Literal,
     Optional,
     Pattern,
     Protocol,
@@ -529,6 +530,7 @@ def characters(
     min_codepoint: Optional[int] = None,
     max_codepoint: Optional[int] = None,
     whitelist_characters: Optional[Sequence[str]] = None,
+    codec: Optional[Literal["ascii", "utf-8"]] = None,  # type: ignore
 ) -> SearchStrategy[str]:
     r"""Generates characters, length-one :class:`python:str`\ ings,
     following specified filtering rules.
@@ -549,6 +551,8 @@ def characters(
       that list will be not be produced. Any overlap between
       ``whitelist_characters`` and ``blacklist_characters`` will raise an
       exception.
+    - If ``codec`` is specified, only characters in certain `codec encodings`_
+      will be produced. Currently only `ascii` and `utf-8` are accpeted.
 
     The ``_codepoint`` arguments must be integers between zero and
     :obj:`python:sys.maxunicode`.  The ``_characters`` arguments must be
@@ -562,6 +566,7 @@ def characters(
     for characters in any punctuation category.
 
     .. _general category: https://wikipedia.org/wiki/Unicode_character_property
+    .. _codec encodings: https://docs.python.org/3/library/codecs.html#encodings-and-unicode
 
     Examples from this strategy shrink towards the codepoint for ``'0'``,
     or the first allowable codepoint after it if ``'0'`` is excluded.
@@ -613,6 +618,23 @@ def characters(
             f"{whitelist_categories=} and {blacklist_categories=}"
         )
 
+    if codec == "ascii":
+        if (max_codepoint is None) or (max_codepoint > 127):
+            max_codepoint = 127
+    elif codec == "utf-8":
+        if whitelist_categories is not None and "Cs" in whitelist_categories:
+            raise InvalidArgument(
+                "Cannot allow 'Cs' categories in 'utf-8' codec encodings."
+            )
+        if blacklist_categories is None:
+            blacklist_categories = ["Cs"]
+        elif "Cs" not in blacklist_categories:
+            blacklist_categories = blacklist_categories + ("Cs",)
+    elif codec is not None:
+        raise InvalidArgument(
+            "'codec' can only accept 'ascii', 'utf-8' or None as valid values."
+        )
+
     return OneCharStringStrategy(
         whitelist_categories=whitelist_categories,
         blacklist_categories=blacklist_categories,
@@ -639,9 +661,7 @@ def _check_is_single_character(c):
 @cacheable
 @defines_strategy(force_reusable_values=True)
 def text(
-    alphabet: Union[Sequence[str], SearchStrategy[str]] = characters(
-        blacklist_categories=("Cs",)
-    ),
+    alphabet: Union[Sequence[str], SearchStrategy[str]] = characters(codec="utf-8"),
     *,
     min_size: int = 0,
     max_size: Optional[int] = None,

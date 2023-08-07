@@ -143,3 +143,63 @@ def empty_db(_):
 def test_non_executed_tests_raise_skipped(test_fn):
     with pytest.raises(unittest.SkipTest):
         test_fn()
+
+
+@pytest.mark.parametrize(
+    "codec, max_codepoint, blacklist_categories, whitelist_categories",
+    [
+        ("ascii", None, None, None),
+        ("ascii", 128, None, None),
+        ("utf-8", None, None, None),
+        ("utf-8", None, ["Cs"], None),
+        ("utf-8", None, ["N"], None),
+        ("utf-8", None, None, ["Cs"]),
+        ("utf-8", None, None, ["N"]),
+        ("something", None, None, None),
+    ],
+)
+@given(s.data())
+def test_characters_codec(
+    codec, max_codepoint, blacklist_categories, whitelist_categories, data
+):
+    if codec == "something":
+        with pytest.raises(InvalidArgument) as excinfo:
+            example = data.draw(
+                s.characters(
+                    codec=codec,
+                    max_codepoint=max_codepoint,
+                    blacklist_categories=blacklist_categories,
+                    whitelist_categories=whitelist_categories,
+                )
+            )
+            assert (
+                "'codec' can only accept 'ascii', 'utf-8' or None as valid values."
+                in str(excinfo.value)
+            )
+    elif (
+        codec == "utf-8"
+        and whitelist_categories is not None
+        and "Cs" in whitelist_categories
+    ):
+        with pytest.raises(InvalidArgument) as excinfo:
+            example = data.draw(
+                s.characters(
+                    codec=codec,
+                    max_codepoint=max_codepoint,
+                    blacklist_categories=blacklist_categories,
+                    whitelist_categories=whitelist_categories,
+                )
+            )
+            assert "Cannot allow 'Cs' categories in 'utf-8' codec encodings." in str(
+                excinfo.value
+            )
+    else:
+        example = data.draw(
+            s.characters(
+                codec=codec,
+                max_codepoint=max_codepoint,
+                blacklist_categories=blacklist_categories,
+                whitelist_categories=whitelist_categories,
+            )
+        )
+        assert example.encode(encoding=codec).decode(encoding=codec) == example
