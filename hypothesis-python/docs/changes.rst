@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.82.3:
+
+-------------------
+6.82.3 - 2023-08-08
+-------------------
+
+We can now pretty-print combinations of *zero* :class:`enum.Flag`
+values, like ``SomeFlag(0)``, which has never worked before.
+
 .. _v6.82.2:
 
 -------------------
