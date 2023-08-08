@@ -657,6 +657,7 @@ class LyingReprOptions(Flag):
         "Options.A",
         "Options.A | Options.B",
         "Options.A | Options.B | Options.C",
+        "Options(0)",
         "EvilReprOptions.A",
         "LyingReprOptions.A",
         "EvilReprOptions.A | EvilReprOptions.B",
