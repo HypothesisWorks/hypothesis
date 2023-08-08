@@ -804,7 +804,10 @@ def _repr_dataframe(obj, p, cycle):  # pragma: no cover
 def _repr_enum(obj, p, cycle):
     tname = type(obj).__name__
     if isinstance(obj, Flag):
-        p.text(" | ".join(f"{tname}.{x.name}" for x in type(obj) if x & obj == x))
+        p.text(
+            " | ".join(f"{tname}.{x.name}" for x in type(obj) if x & obj == x)
+            or f"{tname}({obj.value!r})"  # if no matching members
+        )
     else:
         p.text(f"{tname}.{obj.name}")
 
