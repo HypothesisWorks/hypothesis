@@ -561,11 +561,11 @@ class GitHubArtifactDatabase(ExampleDatabase):
                 "Authorization": f"Bearer {self.token}",
             },
         )
+        warning_message = None
         response_bytes: Optional[bytes] = None
         try:
-            response = urlopen(request)
-            response_bytes = response.read()
-            warning_message = None
+            with urlopen(request) as response:
+                response_bytes = response.read()
         except HTTPError as e:
             if e.code == 401:
                 warning_message = (
