@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.82.4:
+
+-------------------
+6.82.4 - 2023-08-12
+-------------------
+
+This patch ensures that we always close the download connection in
+:class:`~hypothesis.database.GitHubArtifactDatabase`.
+
 .. _v6.82.3:
 
 -------------------
