@@ -48,9 +48,9 @@ def run():
         v = getattr(x, s.name)
         # Check if it has a dynamically defined default and if so skip comparison.
         if getattr(settings, s.name).show_default:
-            assert v == s.default, "({!r} == x.{}) != (s.{} == {!r})".format(
-                v, s.name, s.name, s.default
-            )
+            assert (
+                v == s.default
+            ), f"({v!r} == x.{s.name}) != (s.{s.name} == {s.default!r})"
 
     settings.register_profile(
         "default",

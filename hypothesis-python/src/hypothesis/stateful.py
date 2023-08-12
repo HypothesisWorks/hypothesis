@@ -220,11 +220,9 @@ class StateMachineMeta(type):
     def __setattr__(cls, name, value):
         if name == "settings" and isinstance(value, Settings):
             raise AttributeError(
-                (
-                    "Assigning {cls}.settings = {value} does nothing. Assign "
-                    "to {cls}.TestCase.settings, or use @{value} as a decorator "
-                    "on the {cls} class."
-                ).format(cls=cls.__name__, value=value)
+                f"Assigning {cls.__name__}.settings = {value} does nothing. Assign "
+                f"to {cls.__name__}.TestCase.settings, or use @{value} as a decorator "
+                f"on the {cls.__name__} class."
             )
         return super().__setattr__(name, value)
 
@@ -908,10 +906,7 @@ class RuleStrategy(SearchStrategy):
         )
 
     def __repr__(self):
-        return "{}(machine={}({{...}}))".format(
-            self.__class__.__name__,
-            self.machine.__class__.__name__,
-        )
+        return f"{self.__class__.__name__}(machine={self.machine.__class__.__name__}({{...}}))"
 
     def do_draw(self, data):
         if not any(self.is_valid(rule) for rule in self.rules):

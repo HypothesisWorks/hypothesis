@@ -20,7 +20,7 @@ backcall==0.2.0
     # via ipython
 beautifulsoup4==4.12.2
     # via sphinx-codeautolink
-black==23.3.0
+black==23.7.0
     # via shed
 bleach==6.0.0
     # via readme-renderer
@@ -28,15 +28,15 @@ build==0.10.0
     # via pip-tools
 cachetools==5.3.1
     # via tox
-certifi==2023.5.7
+certifi==2023.7.22
     # via requests
 cffi==1.15.1
     # via cryptography
-chardet==5.1.0
+chardet==5.2.0
     # via tox
 charset-normalizer==3.2.0
     # via requests
-click==8.1.4
+click==8.1.6
     # via
     #   black
     #   pip-tools
@@ -46,18 +46,18 @@ colorama==0.4.6
     # via tox
 com2ann==0.3.0
     # via shed
-coverage==7.2.7
+coverage==7.3.0
     # via -r requirements/tools.in
-cryptography==41.0.1
+cryptography==41.0.3
     # via
     #   secretstorage
     #   types-pyopenssl
     #   types-redis
 decorator==5.1.1
     # via ipython
-distlib==0.3.6
+distlib==0.3.7
     # via virtualenv
-django==4.2.3
+django==4.2.4
     # via -r requirements/tools.in
 docutils==0.18.1
     # via
@@ -91,9 +91,9 @@ ipython==8.14.0
     # via -r requirements/tools.in
 isort==5.12.0
     # via shed
-jaraco-classes==3.2.3
+jaraco-classes==3.3.0
     # via keyring
-jedi==0.18.2
+jedi==0.19.0
     # via ipython
 jeepney==0.8.0
     # via
@@ -103,7 +103,7 @@ jinja2==3.1.2
     # via sphinx
 keyring==24.2.0
     # via twine
-lark==1.1.5
+lark==1.1.7
     # via -r requirements/tools.in
 libcst==1.0.1
     # via
@@ -117,9 +117,9 @@ matplotlib-inline==0.1.6
     # via ipython
 mdurl==0.1.2
     # via markdown-it-py
-more-itertools==9.1.0
+more-itertools==10.1.0
     # via jaraco-classes
-mypy==1.4.1
+mypy==1.5.0
     # via -r requirements/tools.in
 mypy-extensions==1.0.0
     # via
@@ -138,17 +138,17 @@ packaging==23.1
     #   tox
 parso==0.8.3
     # via jedi
-pathspec==0.11.1
+pathspec==0.11.2
     # via black
 pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pip-tools==6.14.0
+pip-tools==7.3.0
     # via -r requirements/tools.in
 pkginfo==1.9.6
     # via twine
-platformdirs==3.8.1
+platformdirs==3.10.0
     # via
     #   black
     #   tox
@@ -165,9 +165,9 @@ pure-eval==0.2.2
     # via stack-data
 pycparser==2.21
     # via cffi
-pyflakes==3.0.1
+pyflakes==3.1.0
     # via autoflake
-pygments==2.15.1
+pygments==2.16.1
     # via
     #   ipython
     #   readme-renderer
@@ -177,15 +177,15 @@ pyproject-api==1.5.3
     # via tox
 pyproject-hooks==1.0.0
     # via build
-pyright==1.1.316
+pyright==1.1.322
     # via -r requirements/tools.in
 pytest==7.4.0
     # via -r requirements/tools.in
 python-dateutil==2.8.2
     # via -r requirements/tools.in
-pyupgrade==3.8.0
+pyupgrade==3.10.1
     # via shed
-pyyaml==6.0
+pyyaml==6.0.1
     # via libcst
 readme-renderer==40.0
     # via twine
@@ -201,9 +201,9 @@ restructuredtext-lint==1.4.0
     # via -r requirements/tools.in
 rfc3986==2.0.0
     # via twine
-rich==13.4.2
+rich==13.5.2
     # via twine
-ruff==0.0.277
+ruff==0.0.284
     # via -r requirements/tools.in
 secretstorage==3.3.3
     # via keyring
@@ -226,7 +226,12 @@ sphinx==6.2.1
     #   sphinx-codeautolink
     #   sphinx-hoverxref
     #   sphinx-rtd-theme
+    #   sphinxcontrib-applehelp
+    #   sphinxcontrib-devhelp
+    #   sphinxcontrib-htmlhelp
     #   sphinxcontrib-jquery
+    #   sphinxcontrib-qthelp
+    #   sphinxcontrib-serializinghtml
 sphinx-codeautolink==0.15.0
     # via -r requirements/tools.in
 sphinx-hoverxref==1.3.0
@@ -235,11 +240,11 @@ sphinx-rtd-theme==1.2.2
     # via -r requirements/tools.in
 sphinx-selective-exclude==1.0.3
     # via -r requirements/tools.in
-sphinxcontrib-applehelp==1.0.4
+sphinxcontrib-applehelp==1.0.6
     # via sphinx
-sphinxcontrib-devhelp==1.0.2
+sphinxcontrib-devhelp==1.0.4
     # via sphinx
-sphinxcontrib-htmlhelp==2.0.1
+sphinxcontrib-htmlhelp==2.0.3
     # via sphinx
 sphinxcontrib-jquery==4.1
     # via
@@ -247,15 +252,15 @@ sphinxcontrib-jquery==4.1
     #   sphinx-rtd-theme
 sphinxcontrib-jsmath==1.0.1
     # via sphinx
-sphinxcontrib-qthelp==1.0.3
+sphinxcontrib-qthelp==1.0.5
     # via sphinx
-sphinxcontrib-serializinghtml==1.1.5
+sphinxcontrib-serializinghtml==1.1.7
     # via sphinx
 sqlparse==0.4.4
     # via django
 stack-data==0.6.2
     # via ipython
-tokenize-rt==5.1.0
+tokenize-rt==5.2.0
     # via pyupgrade
 tomli==2.0.1
     # via
@@ -268,7 +273,7 @@ tomli==2.0.1
     #   pyproject-hooks
     #   pytest
     #   tox
-tox==4.6.4
+tox==4.8.0
     # via -r requirements/tools.in
 traitlets==5.9.0
     # via
@@ -280,11 +285,11 @@ types-click==7.1.8
     # via -r requirements/tools.in
 types-pkg-resources==0.1.3
     # via -r requirements/tools.in
-types-pyopenssl==23.2.0.1
+types-pyopenssl==23.2.0.2
     # via types-redis
 types-pytz==2023.3.0.0
     # via -r requirements/tools.in
-types-redis==4.6.0.2
+types-redis==4.6.0.3
     # via -r requirements/tools.in
 typing-extensions==4.7.1
     # via
@@ -295,23 +300,23 @@ typing-extensions==4.7.1
     #   typing-inspect
 typing-inspect==0.9.0
     # via libcst
-urllib3==2.0.3
+urllib3==2.0.4
     # via
     #   requests
     #   twine
-virtualenv==20.23.1
+virtualenv==20.24.3
     # via tox
 wcwidth==0.2.6
     # via prompt-toolkit
 webencodings==0.5.1
     # via bleach
-wheel==0.40.0
+wheel==0.41.1
     # via pip-tools
-zipp==3.15.0
+zipp==3.16.2
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-pip==23.1.2
+pip==23.2.1
     # via pip-tools
 setuptools==68.0.0
     # via
