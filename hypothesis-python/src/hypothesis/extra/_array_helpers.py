@@ -275,10 +275,10 @@ def broadcastable_shapes(
 # We are unsure if gufuncs allow frozen dimensions to be optional, but it's
 # easy enough to support here - and so we will unless we learn otherwise.
 _DIMENSION = r"\w+\??"  # Note that \w permits digits too!
-_SHAPE = r"\((?:{0}(?:,{0})".format(_DIMENSION) + r"{0,31})?\)"
-_ARGUMENT_LIST = "{0}(?:,{0})*".format(_SHAPE)
+_SHAPE = rf"\((?:{_DIMENSION}(?:,{_DIMENSION})" + r"{0,31})?\)"
+_ARGUMENT_LIST = f"{_SHAPE}(?:,{_SHAPE})*"
 _SIGNATURE = rf"^{_ARGUMENT_LIST}->{_SHAPE}$"
-_SIGNATURE_MULTIPLE_OUTPUT = r"^{0}->{0}$".format(_ARGUMENT_LIST)
+_SIGNATURE_MULTIPLE_OUTPUT = rf"^{_ARGUMENT_LIST}->{_ARGUMENT_LIST}$"
 
 
 class _GUfuncSig(NamedTuple):
