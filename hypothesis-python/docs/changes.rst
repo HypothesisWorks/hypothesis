@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.82.5:
+
+-------------------
+6.82.5 - 2023-08-18
+-------------------
+
+Fixes the error message for missing ``[cli]`` extra.
+
 .. _v6.82.4:
 
 -------------------
