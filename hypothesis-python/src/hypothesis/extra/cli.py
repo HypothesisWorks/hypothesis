@@ -53,7 +53,7 @@ MESSAGE = """
 The Hypothesis command-line interface requires the `{}` package,
 which you do not have installed.  Run:
 
-    python -m pip install --upgrade hypothesis[cli]
+    python -m pip install --upgrade 'hypothesis[cli]'
 
 and try again.
 """
