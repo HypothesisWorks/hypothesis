@@ -356,7 +356,8 @@ def test_is_in_bounds(x):
 
 @given(ds.fractions(min_value=-1, max_value=1, max_denominator=1000))
 def test_fraction_is_in_bounds(x):
-    assert -1 <= x <= 1 and abs(x.denominator) <= 1000
+    assert -1 <= x <= 1
+    assert abs(x.denominator) <= 1000
 
 
 @given(ds.fractions(min_value=fractions.Fraction(1, 2)))
@@ -489,7 +490,8 @@ def test_data_explicitly_rejects_non_strategies(data, value, label):
 
 @given(ds.integers().filter(bool).filter(lambda x: x % 3))
 def test_chained_filter(x):
-    assert x and x % 3
+    assert x
+    assert x % 3
 
 
 def test_chained_filter_tracks_all_conditions():

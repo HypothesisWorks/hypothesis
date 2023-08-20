@@ -14,15 +14,18 @@ import json
 import operator
 import re
 import subprocess
+import sys
 
 import pytest
 
+from hypothesis import strategies as st
 from hypothesis.errors import StopTest
 from hypothesis.extra.ghostwriter import (
     binary_operation,
     equivalent,
     fuzz,
     idempotent,
+    magic,
     roundtrip,
 )
 
@@ -49,7 +52,11 @@ def run(cmd, *, cwd=None):
             lambda: roundtrip(json.loads, json.dumps, except_=ValueError),
         ),
         # Imports submodule (importlib.import_module passes; __import__ fails)
-        ("hypothesis.errors.StopTest", lambda: fuzz(StopTest)),
+        pytest.param(
+            "hypothesis.strategies",
+            lambda: magic(st),
+            marks=pytest.mark.skipif(sys.version_info[:2] != (3, 10), reason="varies"),
+        ),
         # We can write tests for classes even without classmethods or staticmethods
         ("hypothesis.errors.StopTest", lambda: fuzz(StopTest)),
         # Search for identity element does not print e.g. "You can use @seed ..."

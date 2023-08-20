@@ -63,15 +63,15 @@ with warnings.catch_warnings():
                 "HYPOTHESIS_TEST_ARRAY_API='all', but no entry points where found"
             )
         xp_and_xps_pairs = [(mock_xp, mock_xps)]
-        for name, ep in name_to_entry_point.items():
+        for ep in name_to_entry_point.values():
             xp = ep.load()
             try:
                 xps = make_strategies_namespace(xp, api_version=api_version)
             except InvalidArgument as e:
-                warnings.warn(str(e), InvalidArgumentWarning)
+                warnings.warn(str(e), InvalidArgumentWarning, stacklevel=1)
             else:
                 xp_and_xps_pairs.append((xp, xps))
-    elif test_xp_option in name_to_entry_point.keys():
+    elif test_xp_option in name_to_entry_point:
         ep = name_to_entry_point[test_xp_option]
         xp = ep.load()
         xps = make_strategies_namespace(xp, api_version=api_version)

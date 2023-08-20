@@ -178,7 +178,7 @@ for name in (
 
 def type_sorting_key(t):
     """Minimise to None, then non-container types, then container types."""
-    if t is None or t is type(None):  # noqa: E721
+    if t is None or t is type(None):
         return (-1, repr(t))
     t = get_origin(t) or t
     try:

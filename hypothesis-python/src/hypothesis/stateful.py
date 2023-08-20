@@ -447,7 +447,8 @@ class BundleReferenceStrategy(SearchStrategy):
 
 
 class Bundle(SearchStrategy[Ex]):
-    def __init__(self, name: str, consume: bool = False) -> None:
+    # TODO: deprecate passing `consume` as a positional argument
+    def __init__(self, name: str, consume: bool = False) -> None:  # noqa  # bool posarg
         self.name = name
         self.__reference_strategy = BundleReferenceStrategy(name, consume)
 

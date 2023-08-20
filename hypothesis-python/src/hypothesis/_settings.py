@@ -231,6 +231,7 @@ class settings(metaclass=settingsMeta):
         cls,
         name,
         description,
+        *,
         default,
         options=None,
         validator=None,

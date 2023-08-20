@@ -134,7 +134,8 @@ def test_minimise_array_shapes(min_dims, dim_range, min_side, side_range):
             max_side=min_side + side_range,
         )
     )
-    assert len(smallest) == min_dims and all(k == min_side for k in smallest)
+    assert len(smallest) == min_dims
+    assert all(k == min_side for k in smallest)
 
 
 @pytest.mark.parametrize(
@@ -194,7 +195,8 @@ def test_minimise_array_strategy():
             nps.array_shapes(max_dims=3, max_side=3),
         )
     )
-    assert smallest.dtype == np.dtype("bool") and not smallest.any()
+    assert smallest.dtype == np.dtype("bool")
+    assert not smallest.any()
 
 
 @given(nps.array_dtypes(allow_subarrays=False))
@@ -475,7 +477,8 @@ def test_minimize_tuple_axes(ndim, data):
     min_size = data.draw(st.integers(0, ndim), label="min_size")
     max_size = data.draw(st.integers(min_size, ndim), label="max_size")
     smallest = minimal(nps.valid_tuple_axes(ndim, min_size=min_size, max_size=max_size))
-    assert len(smallest) == min_size and all(k > -1 for k in smallest)
+    assert len(smallest) == min_size
+    assert all(k > -1 for k in smallest)
 
 
 @settings(deadline=None, max_examples=10)
@@ -522,7 +525,8 @@ def test_broadcastable_shape_bounds_are_satisfied(shape, data):
     if max_side is None:
         max_side = max(tuple(shape[::-1][:max_dims]) + (min_side,)) + 2
 
-    assert isinstance(bshape, tuple) and all(isinstance(s, int) for s in bshape)
+    assert isinstance(bshape, tuple)
+    assert all(isinstance(s, int) for s in bshape)
     assert min_dims <= len(bshape) <= max_dims
     assert all(min_side <= s <= max_side for s in bshape)
 
@@ -566,12 +570,13 @@ def test_mutually_broadcastable_shape_bounds_are_satisfied(
     assert all(isinstance(s, int) for s in result)
 
     for bshape in shapes:
-        assert isinstance(bshape, tuple) and all(isinstance(s, int) for s in bshape)
+        assert isinstance(bshape, tuple)
+        assert all(isinstance(s, int) for s in bshape)
         assert min_dims <= len(bshape) <= max_dims
         assert all(min_side <= s <= max_side for s in bshape)
 
 
-def _draw_valid_bounds(data, shape, max_dims, permit_none=True):
+def _draw_valid_bounds(data, shape, max_dims, *, permit_none=True):
     if max_dims == 0 or not shape:
         return 0, None
 
@@ -801,7 +806,8 @@ def test_mutually_broadcastable_shape_adjusts_max_dim_with_default_bounds(
         )
     except InvalidArgument:
         # There is no satisfiable `max_dims` for us to tune
-        assert min_dims == 4 and (max_side == 3 or base_shape[0] == 0)
+        assert min_dims == 4
+        assert max_side == 3 or base_shape[0] == 0
         return
 
     if max_side == 3 or base_shape[0] == 0:

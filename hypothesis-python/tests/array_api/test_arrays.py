@@ -276,14 +276,14 @@ def test_may_fill_unique_arrays_with_nan(xp, xps):
 
 def test_may_not_fill_unique_array_with_non_nan(xp, xps):
     """Unique strategy with just fill elements of 0.0 raises helpful error."""
+    strat = xps.arrays(
+        dtype=xp.float32,
+        shape=10,
+        elements={"allow_nan": False},
+        unique=True,
+        fill=st.just(0.0),
+    )
     with pytest.raises(InvalidArgument):
-        strat = xps.arrays(
-            dtype=xp.float32,
-            shape=10,
-            elements={"allow_nan": False},
-            unique=True,
-            fill=st.just(0.0),
-        )
         strat.example()
 
 

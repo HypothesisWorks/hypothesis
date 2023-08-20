@@ -420,7 +420,7 @@ class RepresentationPrinter:
 
 class Printable:
     def output(self, stream, output_width):  # pragma: no cover
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class Text(Printable):

@@ -164,7 +164,7 @@ def test_does_not_catch_interrupt_during_falsify():
     def flaky_base_exception(x):
         if not calls[0]:
             calls[0] = 1
-            raise KeyboardInterrupt()
+            raise KeyboardInterrupt
 
     with raises(KeyboardInterrupt):
         flaky_base_exception()
@@ -336,7 +336,7 @@ def test_can_run_with_database_in_thread():
 
     @given(integers())
     def test_blah(x):
-        raise ValueError()
+        raise ValueError
 
     def run_test():
         try:
@@ -464,7 +464,7 @@ def test_prints_notes_once_on_failure():
     def test(xs):
         note("Hi there")
         if sum(xs) <= 100:
-            raise ValueError()
+            raise ValueError
 
     with raises(ValueError) as err:
         test()
@@ -479,4 +479,5 @@ def test_empty_lists(xs):
 def test_given_usable_inline_on_lambdas():
     xs = []
     given(booleans())(lambda x: xs.append(x))()
-    assert len(xs) == 2 and set(xs) == {False, True}
+    assert len(xs) == 2
+    assert set(xs) == {False, True}

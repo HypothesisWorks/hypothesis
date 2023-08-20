@@ -339,7 +339,7 @@ def test_generic_origin_concrete_builds():
 
 
 class AbstractFoo(abc.ABC):
-    def __init__(self, x):
+    def __init__(self, x):  # noqa: B027
         pass
 
     @abc.abstractmethod
@@ -369,7 +369,7 @@ def test_gen_abstract(foo):
 
 
 class AbstractBar(abc.ABC):
-    def __init__(self, x):
+    def __init__(self, x):  # noqa: B027
         pass
 
     @abc.abstractmethod

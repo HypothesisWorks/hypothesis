@@ -37,7 +37,8 @@ if setuptools_version < (42,):
     warnings.warn(
         "This version of setuptools is too old to handle license_files "
         "metadata key.  For more info, see:  "
-        "https://setuptools.pypa.io/en/latest/userguide/declarative_config.html#metadata"
+        "https://setuptools.pypa.io/en/latest/userguide/declarative_config.html#metadata",
+        stacklevel=1,
     )
 
 

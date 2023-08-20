@@ -196,11 +196,10 @@ def test_no_single_floats_in_range():
     low = 2.0**25 + 1
     high = low + 2
     st.floats(low, high).validate()  # Note: OK for 64bit floats
-    with pytest.raises(InvalidArgument):
-        """Unrepresentable bounds are deprecated; but we're not testing that
-        here."""
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
+    with warnings.catch_warnings():
+        # Unrepresentable bounds are deprecated, but we're not testing that here
+        warnings.simplefilter("ignore")
+        with pytest.raises(InvalidArgument):
             st.floats(low, high, width=32).validate()
 
 

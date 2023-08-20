@@ -306,6 +306,7 @@ class ensure_free_stackframes:
                 "The recursion limit will not be reset, since it was changed "
                 "from another thread or during execution of a test.",
                 HypothesisWarning,
+                stacklevel=2,
             )
 
 

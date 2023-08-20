@@ -61,11 +61,11 @@ def _db_for_path(path=None):
         path = storage_directory("examples")
         if not _usable_dir(path):  # pragma: no cover
             warnings.warn(
-                HypothesisWarning(
-                    "The database setting is not configured, and the default "
-                    "location is unusable - falling back to an in-memory "
-                    f"database for this session.  {path=}"
-                )
+                "The database setting is not configured, and the default "
+                "location is unusable - falling back to an in-memory "
+                f"database for this session.  {path=}",
+                HypothesisWarning,
+                stacklevel=3,
             )
             return InMemoryExampleDatabase()
     if path in (None, ":memory:"):
@@ -488,11 +488,11 @@ class GitHubArtifactDatabase(ExampleDatabase):
                         self._access_cache[keypath].add(PurePath(filename))
         except BadZipFile:
             warnings.warn(
-                HypothesisWarning(
-                    "The downloaded artifact from GitHub is invalid. "
-                    "This could be because the artifact was corrupted, "
-                    "or because the artifact was not created by Hypothesis. "
-                )
+                "The downloaded artifact from GitHub is invalid. "
+                "This could be because the artifact was corrupted, "
+                "or because the artifact was not created by Hypothesis. ",
+                HypothesisWarning,
+                stacklevel=3,
             )
             self._disabled = True
 
@@ -534,18 +534,17 @@ class GitHubArtifactDatabase(ExampleDatabase):
                 self._artifact = new_artifact
             elif found_artifact is not None:
                 warnings.warn(
-                    HypothesisWarning(
-                        "Using an expired artifact as a fallback for the database: "
-                        f"{found_artifact}"
-                    )
+                    "Using an expired artifact as a fallback for the database: "
+                    f"{found_artifact}",
+                    HypothesisWarning,
+                    stacklevel=2,
                 )
                 self._artifact = found_artifact
             else:
                 warnings.warn(
-                    HypothesisWarning(
-                        "Couldn't acquire a new or existing artifact. "
-                        "Disabling database."
-                    )
+                    "Couldn't acquire a new or existing artifact. Disabling database.",
+                    HypothesisWarning,
+                    stacklevel=2,
                 )
                 self._disabled = True
                 return
@@ -587,7 +586,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
             )
 
         if warning_message is not None:
-            warnings.warn(HypothesisWarning(warning_message))
+            warnings.warn(warning_message, HypothesisWarning, stacklevel=4)
             return None
 
         return response_bytes
@@ -624,7 +623,9 @@ class GitHubArtifactDatabase(ExampleDatabase):
                 f.write(artifact_bytes)
         except OSError:
             warnings.warn(
-                HypothesisWarning("Could not save the latest artifact from GitHub. ")
+                "Could not save the latest artifact from GitHub. ",
+                HypothesisWarning,
+                stacklevel=3,
             )
             return None
 

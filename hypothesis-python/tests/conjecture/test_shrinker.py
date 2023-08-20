@@ -112,14 +112,13 @@ def test_can_zero_subintervals(monkeypatch):
 
 def test_can_pass_to_an_indirect_descendant(monkeypatch):
     def tree(data):
-        data.start_example(1)
+        data.start_example(label=1)
         n = data.draw_bits(1)
-        label = data.draw_bits(8)
+        data.draw_bits(8)
         if n:
             tree(data)
             tree(data)
-        data.stop_example(1)
-        return label
+        data.stop_example(discard=True)
 
     initial = bytes([1, 10, 0, 0, 1, 0, 0, 10, 0, 0])
     target = bytes([0, 10])
@@ -186,10 +185,10 @@ def test_can_reorder_examples():
     def shrinker(data):
         total = 0
         for _ in range(5):
-            data.start_example(0)
+            data.start_example(label=0)
             if data.draw_bits(8):
                 total += data.draw_bits(9)
-            data.stop_example(0)
+            data.stop_example()
         if total == 2:
             data.mark_interesting()
 
@@ -286,7 +285,7 @@ def test_finding_a_minimal_balanced_binary_tree():
 
     def tree(data):
         # Returns height of a binary tree and whether it is height balanced.
-        data.start_example("tree")
+        data.start_example(label=0)
         n = data.draw_bits(1)
         if n == 0:
             result = (1, True)
@@ -294,7 +293,7 @@ def test_finding_a_minimal_balanced_binary_tree():
             h1, b1 = tree(data)
             h2, b2 = tree(data)
             result = (1 + max(h1, h2), b1 and b2 and abs(h1 - h2) <= 1)
-        data.stop_example("tree")
+        data.stop_example()
         return result
 
     # Starting from an unbalanced tree of depth six

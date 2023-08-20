@@ -132,7 +132,7 @@ def test_int_list_equality():
 
     assert ls != x
     assert x != ls
-    assert not (x == ls)
+    assert not (x == ls)  # noqa
     assert x == x
     assert x == y
 

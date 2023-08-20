@@ -112,7 +112,7 @@ def test_raises_error_if_cleanup_fails_but_block_does_not():
         with bc():
 
             def foo():
-                raise ValueError()
+                raise ValueError
 
             cleanup(foo)
     assert _current_build_context.value is None

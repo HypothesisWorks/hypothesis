@@ -16,7 +16,7 @@ from hypothesis import given, strategies as st
 from tests.common.debug import find_any
 
 
-def use_this_signature(self, a: int, b: bool = None, *, x: float, y: str):
+def use_this_signature(self, a: int, b: list = None, *, x: float, y: str):
     pass
 
 
@@ -43,7 +43,7 @@ class ModelForFromType(Model):
     def __init__(self, **kwargs):
         assert set(kwargs) == {"a", "b", "x", "y"}
         self.b = kwargs["b"]
-        assert self.b is None or isinstance(self.b, bool)
+        assert self.b is None or isinstance(self.b, list)
 
 
 @given(st.from_type(ModelForFromType))
@@ -53,7 +53,7 @@ def test_from_type_uses_signature_attribute(val):
 
 def test_from_type_can_be_default_or_annotation():
     find_any(st.from_type(ModelForFromType), lambda m: m.b is None)
-    find_any(st.from_type(ModelForFromType), lambda m: isinstance(m.b, bool))
+    find_any(st.from_type(ModelForFromType), lambda m: isinstance(m.b, list))
 
 
 def use_annotations(
@@ -105,7 +105,7 @@ def test_build_with_non_types_in_signature(val):
 
 
 class UnconventionalSignature:
-    def __init__(x: int = 0, self: bool = True):  # noqa: B902
+    def __init__(x: int = 0, self: bool = True):  # noqa
         assert not isinstance(x, int)
         x.self = self
 

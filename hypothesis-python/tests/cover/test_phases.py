@@ -60,7 +60,7 @@ def test_does_not_reuse_saved_examples_if_reuse_not_in_phases():
             pass
 
         def fetch(self, key):
-            raise ValueError()
+            raise ValueError
 
         def close(self):
             pass
@@ -81,7 +81,7 @@ def test_will_save_when_reuse_not_in_phases():
     @settings(database=database, phases=(Phase.generate,))
     @given(st.integers())
     def test_usage(i):
-        raise ValueError()
+        raise ValueError
 
     with pytest.raises(ValueError):
         test_usage()

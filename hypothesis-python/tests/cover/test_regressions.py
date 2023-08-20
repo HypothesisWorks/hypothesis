@@ -97,7 +97,7 @@ def test_regression_issue_1230():
     @given(strategy)
     def test_false_is_false(params):
         assume(params.get("0") not in ("", "\x00"))
-        raise ValueError()
+        raise ValueError
 
     with pytest.raises(ValueError):
         test_false_is_false()

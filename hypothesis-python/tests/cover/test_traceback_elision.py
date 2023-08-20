@@ -20,7 +20,7 @@ def test_tracebacks_omit_hypothesis_internals(verbosity):
     @settings(verbosity=verbosity)
     @given(st.just(False))
     def simplest_failure(x):
-        raise ValueError()
+        raise ValueError
 
     try:
         simplest_failure()

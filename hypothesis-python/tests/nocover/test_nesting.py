@@ -25,7 +25,7 @@ def test_nesting_1():
         )
         def test_nest(y):
             if y >= x:
-                raise ValueError()
+                raise ValueError
 
         with raises(ValueError):
             test_nest()

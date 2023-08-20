@@ -10,7 +10,7 @@
 
 
 def default_executor(function):  # pragma: nocover
-    raise NotImplementedError()  # We don't actually use this any more
+    raise NotImplementedError  # We don't actually use this any more
 
 
 def setup_teardown_executor(setup, teardown):

@@ -420,8 +420,7 @@ def extract_lambda_source(f):
     source = WHITESPACE.sub(" ", source)
     source = SPACE_FOLLOWS_OPEN_BRACKET.sub("(", source)
     source = SPACE_PRECEDES_CLOSE_BRACKET.sub(")", source)
-    source = source.strip()
-    return source
+    return source.strip()
 
 
 def get_pretty_function_description(f):

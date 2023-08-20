@@ -369,7 +369,7 @@ def test_one_dead_branch():
 
 def test_does_not_save_on_interrupt():
     def interrupts(data):
-        raise KeyboardInterrupt()
+        raise KeyboardInterrupt
 
     db = InMemoryExampleDatabase()
 
@@ -1014,7 +1014,7 @@ def test_discards_kill_branches():
             while True:
                 data.start_example(1)
                 b = data.draw_bits(8)
-                data.stop_example(b != 0)
+                data.stop_example(discard=b != 0)
                 if len(data.buffer) == 1:
                     s = bytes(data.buffer)
                     assert s not in starts

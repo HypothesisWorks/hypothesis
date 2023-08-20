@@ -153,7 +153,7 @@ def test_can_handle_race_between_exist_and_create(monkeypatch):
 
 def test_exception_in_write_does_not_lead_to_broken_charmap(monkeypatch):
     def broken(*args, **kwargs):
-        raise ValueError()
+        raise ValueError
 
     cm._charmap = None
     monkeypatch.setattr(os.path, "exists", lambda p: False)
@@ -180,7 +180,7 @@ def test_exclude_characters_are_included_in_key():
 
 def test_error_writing_charmap_file_is_suppressed(monkeypatch):
     def broken_mkstemp(dir):
-        raise RuntimeError()
+        raise RuntimeError
 
     monkeypatch.setattr(tempfile, "mkstemp", broken_mkstemp)
 

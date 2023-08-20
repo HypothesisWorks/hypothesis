@@ -91,7 +91,7 @@ if tuple(map(int, pytest.__version__.split(".")[:2])) < (4, 6):  # pragma: no co
         Note that the pytest developers no longer support your version either!
         Disabling the Hypothesis pytest plugin...
     """
-    warnings.warn(PYTEST_TOO_OLD_MESSAGE % (pytest.__version__,))
+    warnings.warn(PYTEST_TOO_OLD_MESSAGE % (pytest.__version__,), stacklevel=1)
 
 else:
 

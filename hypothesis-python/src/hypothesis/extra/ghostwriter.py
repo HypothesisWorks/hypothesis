@@ -435,10 +435,9 @@ def _guess_strategy_by_argname(name: str) -> st.SearchStrategy:
         return st.nothing()
 
     if (
-        name.endswith("_name")
+        name.endswith(("_name", "label"))
         or (name.endswith("name") and "_" not in name)
         or ("string" in name and "as" not in name)
-        or name.endswith("label")
         or name in STRING_NAMES
     ):
         return st.text()
@@ -747,7 +746,7 @@ def _get_module(obj):
     raise RuntimeError(f"Could not find module for ufunc {obj.__name__} ({obj!r}")
 
 
-def _get_qualname(obj, include_module=False):
+def _get_qualname(obj, *, include_module=False):
     # Replacing angle-brackets for objects defined in `.<locals>.`
     qname = getattr(obj, "__qualname__", obj.__name__)
     qname = qname.replace("<", "_").replace(">", "_").replace(" ", "")

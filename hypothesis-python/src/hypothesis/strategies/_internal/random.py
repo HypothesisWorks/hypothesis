@@ -40,16 +40,16 @@ class HypothesisRandom(Random):
         return self.__copy__()
 
     def __repr__(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def seed(self, seed):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def getstate(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def setstate(self, state):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def _hypothesis_log_random(self, method, kwargs, result):
         if not (self.__note_method_calls and should_note()):
@@ -62,7 +62,7 @@ class HypothesisRandom(Random):
         report(f"{self!r}.{method}({argstr}) -> {result!r}")
 
     def _hypothesis_do_random(self, method, kwargs):
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 RANDOM_METHODS = [
@@ -97,15 +97,15 @@ RANDOM_METHODS = [
 
 # Fake shims to get a good signature
 def getrandbits(self, n: int) -> int:  # type: ignore
-    raise NotImplementedError()
+    raise NotImplementedError
 
 
 def random(self) -> float:  # type: ignore
-    raise NotImplementedError()
+    raise NotImplementedError
 
 
 def _randbelow(self, n: int) -> int:  # type: ignore
-    raise NotImplementedError()
+    raise NotImplementedError
 
 
 STUBS = {f.__name__: f for f in [getrandbits, random, _randbelow]}
@@ -212,7 +212,7 @@ class ArtificialRandom(HypothesisRandom):
             original = list(seq)
             for i, i2 in enumerate(result):
                 seq[i] = original[i2]
-            return
+            return None
         return result
 
     def _hypothesis_do_random(self, method, kwargs):

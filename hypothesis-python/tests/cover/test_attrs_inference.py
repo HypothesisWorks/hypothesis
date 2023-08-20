@@ -50,7 +50,7 @@ class Inferrables:
     typing_list = attr.ib(type=typing.List[int])
     typing_list_of_list = attr.ib(type=typing.List[typing.List[int]])
     typing_dict = attr.ib(type=typing.Dict[str, int])
-    typing_union = attr.ib(type=typing.Optional[bool])
+    typing_optional = attr.ib(type=typing.Optional[bool])
     typing_union = attr.ib(type=typing.Union[str, int])
 
     has_default = attr.ib(default=0)

@@ -173,7 +173,7 @@ def test_does_not_print_reproduction_for_large_data_examples_by_default():
     def test(data):
         b = data.draw(st.binary(min_size=1000, max_size=1000))
         if len(zlib.compress(b)) > 1000:
-            raise ValueError()
+            raise ValueError
 
     with capture_out() as o:
         with pytest.raises(ValueError):
@@ -190,7 +190,7 @@ def test_does_not_print_reproduction_if_told_not_to():
     @settings(print_blob=False)
     @given(st.integers().map(lambda x: Foo()))
     def test(i):
-        raise ValueError()
+        raise ValueError
 
     with capture_out() as o:
         with pytest.raises(ValueError):

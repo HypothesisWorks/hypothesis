@@ -694,6 +694,7 @@ class StateForActualGivenExecution:
     def execute_once(
         self,
         data,
+        *,
         print_example=False,
         is_final=False,
         expected_failure=None,
@@ -1493,7 +1494,7 @@ def find(
     def test(v):
         if condition(v):
             last[:] = [v]
-            raise Found()
+            raise Found
 
     if random is not None:
         test = seed(random.getrandbits(64))(test)

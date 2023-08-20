@@ -32,5 +32,5 @@ setuptools.setup(
     license="MPL v2",
     description="A library for property-based testing",
     python_requires=">=3.7",
-    long_description=open(README).read(),
+    long_description=open(README).read(),  # noqa
 )
