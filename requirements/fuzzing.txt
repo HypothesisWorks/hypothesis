@@ -21,7 +21,7 @@ certifi==2023.7.22
     # via requests
 charset-normalizer==3.2.0
     # via requests
-click==8.1.6
+click==8.1.7
     # via
     #   -r requirements/coverage.in
     #   black
@@ -31,7 +31,7 @@ coverage==7.3.0
     # via
     #   -r requirements/coverage.in
     #   hypofuzz
-dash==2.11.1
+dash==2.12.1
     # via hypofuzz
 dash-core-components==2.0.0
     # via dash
@@ -41,20 +41,20 @@ dash-table==5.0.0
     # via dash
 dpcontracts==0.6.0
     # via -r requirements/coverage.in
-exceptiongroup==1.1.2 ; python_version < "3.11"
+exceptiongroup==1.1.3 ; python_version < "3.11"
     # via
     #   hypothesis
     #   hypothesis (hypothesis-python/setup.py)
     #   pytest
 execnet==2.0.2
     # via pytest-xdist
-fakeredis==2.17.0
+fakeredis==2.18.0
     # via -r requirements/coverage.in
 flask==2.2.5
     # via dash
-git+https://github.com/Zac-HD/hypofuzz.git
+hypofuzz==23.7.1
     # via -r requirements/fuzzing.in
-hypothesis[cli]==6.82.3
+hypothesis[cli]==6.82.5
     # via hypofuzz
 idna==3.4
     # via requests
@@ -103,7 +103,7 @@ pexpect==4.8.0
     # via -r requirements/test.in
 platformdirs==3.10.0
     # via black
-plotly==5.16.0
+plotly==5.16.1
     # via dash
 pluggy==1.2.0
     # via pytest
@@ -130,7 +130,7 @@ pytz==2023.3
     #   pandas
 pyyaml==6.0.1
     # via libcst
-redis==4.6.0
+redis==5.0.0
     # via fakeredis
 requests==2.31.0
     # via
@@ -149,7 +149,7 @@ sortedcontainers==2.4.0
     #   fakeredis
     #   hypothesis
     #   hypothesis (hypothesis-python/setup.py)
-tenacity==8.2.2
+tenacity==8.2.3
     # via plotly
 tomli==2.0.1
     # via
@@ -171,3 +171,7 @@ werkzeug==2.2.3
     # via
     #   dash
     #   flask
+
+# The following packages are considered to be unsafe in a requirements file:
+setuptools==68.1.2
+    # via dash
