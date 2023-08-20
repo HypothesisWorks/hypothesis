@@ -549,7 +549,7 @@ class ConjectureRunner:
             self.statistics["targets"] = dict(self.best_observed_targets)
         self.debug(f"exit_with({reason.name})")
         self.exit_reason = reason
-        raise RunIsComplete()
+        raise RunIsComplete
 
     def should_generate_more(self):
         # End the generation phase where we would have ended it if no bugs had
@@ -1014,7 +1014,7 @@ class ConjectureRunner:
 
             class DiscardObserver(DataObserver):
                 def kill_branch(self):
-                    raise ContainsDiscard()
+                    raise ContainsDiscard
 
             observer = DiscardObserver()
         else:

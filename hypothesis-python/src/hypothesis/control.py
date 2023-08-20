@@ -24,7 +24,7 @@ from hypothesis.vendor.pretty import IDKey
 
 
 def reject() -> NoReturn:
-    raise UnsatisfiedAssumption()
+    raise UnsatisfiedAssumption
 
 
 def assume(condition: object) -> bool:
@@ -35,7 +35,7 @@ def assume(condition: object) -> bool:
     true, and let Hypothesis try to avoid similar examples in future.
     """
     if not condition:
-        raise UnsatisfiedAssumption()
+        raise UnsatisfiedAssumption
     return True
 
 
@@ -62,7 +62,7 @@ def current_build_context() -> "BuildContext":
 
 
 class BuildContext:
-    def __init__(self, data, is_final=False, close_on_capture=True):
+    def __init__(self, data, *, is_final=False, close_on_capture=True):
         assert isinstance(data, ConjectureData)
         self.data = data
         self.tasks = []

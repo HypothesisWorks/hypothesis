@@ -76,7 +76,7 @@ def test_suppressing_filtering_health_check():
     @HEALTH_CHECK_SETTINGS
     @given(st.integers().filter(unhealthy_filter))
     def test1(x):
-        raise ValueError()
+        raise ValueError
 
     with raises(FailedHealthCheck):
         test1()
@@ -86,7 +86,7 @@ def test_suppressing_filtering_health_check():
     @settings(suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow])
     @given(st.integers().filter(unhealthy_filter))
     def test2(x):
-        raise ValueError()
+        raise ValueError
 
     with raises(ValueError):
         test2()

@@ -50,13 +50,12 @@ def test_signature_mismatch_error_message():
     def bad_test():
         pass
 
-    try:
+    with pytest.raises(
+        InvalidArgument,
+        match=r"bad_test\(\) got an unexpected keyword argument 'x', "
+        r"from `x=integers\(\)` in @given",
+    ):
         bad_test()
-    except InvalidArgument as e:
-        assert (
-            str(e) == "bad_test() got an unexpected keyword argument 'x', "
-            "from `x=integers()` in @given"
-        )
 
 
 @given(data=st.data(), keys=st.lists(st.integers(), unique=True))

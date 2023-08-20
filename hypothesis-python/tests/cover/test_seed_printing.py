@@ -66,7 +66,7 @@ def test_uses_global_force(monkeypatch):
 
     @given(st.integers())
     def test(i):
-        raise ValueError()
+        raise ValueError
 
     output = []
 
@@ -89,7 +89,7 @@ def test_does_print_on_reuse_from_database():
     @given(st.integers())
     def test(i):
         assume(passes_healthcheck)
-        raise ValueError()
+        raise ValueError
 
     with capture_out() as o:
         with pytest.raises(FailedHealthCheck):

@@ -837,7 +837,7 @@ class MappedSearchStrategy(SearchStrategy[Ex]):
                     return result
                 except UnsatisfiedAssumption:
                     data.stop_example(discard=True)
-        raise UnsatisfiedAssumption()
+        raise UnsatisfiedAssumption
 
     @property
     def branches(self) -> List[SearchStrategy[Ex]]:

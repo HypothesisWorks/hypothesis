@@ -1249,6 +1249,7 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
                 "to resolve to a strategy which can generate more than one value, "
                 "or silence this warning.",
                 SmallSearchSpaceWarning,
+                stacklevel=2,
             )
         return builds(thing, **kwargs)
     # And if it's an abstract type, we'll resolve to a union of subclasses instead.

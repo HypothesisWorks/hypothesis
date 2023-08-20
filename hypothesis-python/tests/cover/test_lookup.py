@@ -443,7 +443,8 @@ def test_raises_for_arg_with_unresolvable_annotation():
 
 @given(a=..., b=...)
 def test_can_use_type_hints(a: int, b: float):
-    assert isinstance(a, int) and isinstance(b, float)
+    assert isinstance(a, int)
+    assert isinstance(b, float)
 
 
 def test_error_if_has_unresolvable_hints():
@@ -534,8 +535,8 @@ def test_override_args_for_namedtuple(thing):
 
 @pytest.mark.parametrize("thing", [typing.Optional, typing.List, typing.Type])
 def test_cannot_resolve_bare_forward_reference(thing):
+    t = thing["ConcreteFoo"]
     with pytest.raises(InvalidArgument):
-        t = thing["ConcreteFoo"]
         st.from_type(t).example()
 
 
@@ -560,7 +561,8 @@ class TypedTree(typing.TypedDict):
 def test_resolving_recursive_typeddict():
     tree = st.from_type(TypedTree).example()
     assert isinstance(tree, dict)
-    assert len(tree) == 1 and "nxt" in tree
+    assert len(tree) == 1
+    assert "nxt" in tree
 
 
 class MyList:

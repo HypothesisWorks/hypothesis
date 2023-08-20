@@ -46,7 +46,7 @@ def test_mostly_does_not_duplicate_blocks_even_when_failing(n):
     def test(b):
         counts[b] += 1
         if len(counts) > 3:
-            raise ValueError()
+            raise ValueError
 
     try:
         test()

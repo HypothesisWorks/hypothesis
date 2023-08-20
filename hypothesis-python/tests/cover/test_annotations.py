@@ -84,7 +84,7 @@ def test_converter_notices_missing_kwonly_args():
         assert convert_positional_arguments(f, (), {})
 
 
-def to_wrap_with_composite(draw: None, strat: bool, nothing: list) -> int:
+def to_wrap_with_composite(draw: None, strat: float, nothing: list) -> int:
     return draw(st.none())
 
 

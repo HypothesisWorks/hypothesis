@@ -412,7 +412,7 @@ class Shrinker:
         result = self.engine.cached_test_function(buffer)
         self.incorporate_test_data(result)
         if self.calls - self.calls_at_last_shrink >= self.max_stall:
-            raise StopShrinking()
+            raise StopShrinking
         return result
 
     def debug(self, msg):

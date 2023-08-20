@@ -73,7 +73,7 @@ def codespell(*files):
 
 @task()
 def lint():
-    pip_tool("ruff", "."),
+    pip_tool("ruff", ".")
     codespell(*(f for f in tools.all_files() if not f.endswith("by-domain.txt")))
 
 
@@ -207,7 +207,7 @@ def format():
             o.write("\n")
 
     codespell("--write-changes", *files_to_format, *doc_files_to_format)
-    pip_tool("ruff", "--fix-only", "."),
+    pip_tool("ruff", "--fix-only", ".")
     pip_tool("shed", *files_to_format, *doc_files_to_format)
 
 
@@ -236,7 +236,7 @@ def check_not_changed():
 
 
 @task()
-def compile_requirements(upgrade=False):
+def compile_requirements(*, upgrade=False):
     if upgrade:
         extra = ["--upgrade", "--rebuild"]
     else:

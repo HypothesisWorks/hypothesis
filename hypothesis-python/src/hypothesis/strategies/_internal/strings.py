@@ -158,6 +158,7 @@ class TextStrategy(ListStrategy):
                 f"You applied str.{condition.__name__} as a filter, but this allows "
                 f"all nonempty strings!  Did you mean str.is{condition.__name__}?",
                 HypothesisWarning,
+                stacklevel=2,
             )
         # We use ListStrategy filter logic for the conditions that *only* imply
         # the string is nonempty.  Here, we increment the min_size but still apply

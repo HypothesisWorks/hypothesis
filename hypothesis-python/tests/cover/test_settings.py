@@ -204,7 +204,7 @@ def test_database_type_must_be_ExampleDatabase(db, bad_db):
 
 def test_cannot_define_settings_once_locked():
     with pytest.raises(InvalidState):
-        settings._define_setting("hi", "there", 4)
+        settings._define_setting("hi", "there", default=4)
 
 
 def test_cannot_assign_default():
@@ -344,19 +344,25 @@ def test_deadline_given_none():
 def test_deadline_given_valid_int():
     x = settings(deadline=1000).deadline
     assert isinstance(x, datetime.timedelta)
-    assert x.days == 0 and x.seconds == 1 and x.microseconds == 0
+    assert x.days == 0
+    assert x.seconds == 1
+    assert x.microseconds == 0
 
 
 def test_deadline_given_valid_float():
     x = settings(deadline=2050.25).deadline
     assert isinstance(x, datetime.timedelta)
-    assert x.days == 0 and x.seconds == 2 and x.microseconds == 50250
+    assert x.days == 0
+    assert x.seconds == 2
+    assert x.microseconds == 50250
 
 
 def test_deadline_given_valid_timedelta():
     x = settings(deadline=datetime.timedelta(days=1, microseconds=15030000)).deadline
     assert isinstance(x, datetime.timedelta)
-    assert x.days == 1 and x.seconds == 15 and x.microseconds == 30000
+    assert x.days == 1
+    assert x.seconds == 15
+    assert x.microseconds == 30000
 
 
 @pytest.mark.parametrize(
@@ -419,13 +425,12 @@ def test_settings_decorator_applied_to_non_state_machine_class_raises_error():
 
 
 def test_assigning_to_settings_attribute_on_state_machine_raises_error():
+    class StateMachine(RuleBasedStateMachine):
+        @rule(x=st.none())
+        def a_rule(self, x):
+            assert x is None
+
     with pytest.raises(AttributeError):
-
-        class StateMachine(RuleBasedStateMachine):
-            @rule(x=st.none())
-            def a_rule(self, x):
-                assert x is None
-
         StateMachine.settings = settings()
 
     state_machine_instance = StateMachine()

@@ -114,6 +114,7 @@ def warn_on_missing_dtypes(xp: Any, stubs: List[str]) -> None:
         f"Array module {xp.__name__} does not have the following "
         f"dtypes in its namespace: {f_stubs}",
         HypothesisWarning,
+        stacklevel=3,
     )
 
 
@@ -450,9 +451,7 @@ class ArrayStrategy(st.SearchStrategy):
                 else:
                     self.check_set_value(val, val_0d, self.elements_strategy)
 
-        result = self.xp.reshape(result, self.shape)
-
-        return result
+        return self.xp.reshape(result, self.shape)
 
 
 def _arrays(
@@ -911,6 +910,7 @@ def make_strategies_namespace(
         warn(
             f"Could not determine whether module {xp.__name__} is an Array API library",
             HypothesisWarning,
+            stacklevel=2,
         )
 
     try:
@@ -1013,7 +1013,7 @@ def make_strategies_namespace(
     class StrategiesNamespace(SimpleNamespace):
         def __init__(self, **kwargs):
             for attr in ["name", "api_version"]:
-                if attr not in kwargs.keys():
+                if attr not in kwargs:
                     raise ValueError(f"'{attr}' kwarg required")
             super().__init__(**kwargs)
 

@@ -127,7 +127,7 @@ def test_generate_valid_indices(xp, xps, allow_newaxis, allow_ellipsis, data):
         assert None not in _indexer  # i.e. xp.newaxis
     # Check index is composed of valid objects
     for i in _indexer:
-        assert isinstance(i, int) or isinstance(i, slice) or i is None or i == Ellipsis
+        assert isinstance(i, (int, slice)) or i is None or i == Ellipsis
     # Check indexer does not flat index
     nonexpanding_indexer = [i for i in _indexer if i is not None]
     if Ellipsis in _indexer:

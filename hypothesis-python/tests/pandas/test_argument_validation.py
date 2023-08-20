@@ -122,10 +122,10 @@ def test_confusing_object_dtype_aliases():
     not IntegerDtype, reason="Nullable types not available in this version of Pandas"
 )
 def test_pandas_nullable_types_class():
+    st = pdst.series(dtype=pd.core.arrays.integer.Int8Dtype)
     with pytest.raises(
         InvalidArgument, match="Otherwise it would be treated as dtype=object"
     ):
-        st = pdst.series(dtype=pd.core.arrays.integer.Int8Dtype)
         find_any(st, lambda s: s.isna().any())
 
 

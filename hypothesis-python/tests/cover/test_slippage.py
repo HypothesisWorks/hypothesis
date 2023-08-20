@@ -47,7 +47,7 @@ def test_raises_multiple_failures_with_varying_type():
             assume(1003 < abs(i))
             target[0] = i
         exc_class = TypeError if target[0] == i else ValueError
-        raise exc_class()
+        raise exc_class
 
     output = capture_reports(test)
     assert "TypeError" in output
@@ -96,7 +96,7 @@ def test_replays_both_failing_values():
         if target[0] is None:
             target[0] = i
         exc_class = TypeError if target[0] == i else ValueError
-        raise exc_class()
+        raise exc_class
 
     with pytest.raises(ExceptionGroup):
         test()
@@ -120,13 +120,13 @@ def test_replays_slipped_examples_once_initial_bug_is_fixed(fix):
         if i == target[0]:
             if bug_fixed and fix == TypeError:
                 return
-            raise TypeError()
+            raise TypeError
         if len(target) == 1:
             target.append(i)
         if bug_fixed and fix == ValueError:
             return
         if i == target[1]:
-            raise ValueError()
+            raise ValueError
 
     with pytest.raises(ExceptionGroup):
         test()
@@ -153,11 +153,11 @@ def test_garbage_collects_the_secondary_key():
         if not target:
             target.append(i)
         if i == target[0]:
-            raise TypeError()
+            raise TypeError
         if len(target) == 1:
             target.append(i)
         if i == target[1]:
-            raise ValueError()
+            raise ValueError
 
     with pytest.raises(ExceptionGroup):
         test()
@@ -216,28 +216,24 @@ def test_handles_flaky_tests_where_only_one_is_flaky():
         if not target:
             target.append(i)
         if i == target[0]:
-            raise TypeError()
+            raise TypeError
         if flaky_failed_once[0] and not flaky_fixed:
             return
         if len(target) == 1:
             target.append(i)
         if i == target[1]:
             flaky_failed_once[0] = True
-            raise ValueError()
+            raise ValueError
 
-    try:
+    with pytest.raises(ExceptionGroup) as err:
         test()
-        raise AssertionError("Expected test() to raise an error")
-    except ExceptionGroup as err:
-        assert any(isinstance(e, Flaky) for e in err.exceptions)
+    assert any(isinstance(e, Flaky) for e in err.value.exceptions)
 
     flaky_fixed = True
 
-    try:
+    with pytest.raises(ExceptionGroup) as err:
         test()
-        raise AssertionError("Expected test() to raise an error")
-    except ExceptionGroup as err:
-        assert not any(isinstance(e, Flaky) for e in err.exceptions)
+    assert not any(isinstance(e, Flaky) for e in err.value.exceptions)
 
 
 @pytest.mark.parametrize("allow_multi", [True, False])

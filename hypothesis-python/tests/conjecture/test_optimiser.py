@@ -67,8 +67,8 @@ def test_optimises_when_last_element_is_empty():
 
         def test(data):
             data.target_observations["n"] = data.draw_bits(8)
-            data.start_example(1)
-            data.stop_example(1)
+            data.start_example(label=1)
+            data.stop_example()
 
         runner = ConjectureRunner(test, settings=TEST_SETTINGS)
         runner.cached_test_function([250])

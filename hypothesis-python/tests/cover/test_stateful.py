@@ -166,7 +166,8 @@ TestMachineWithConsumingRule = MachineWithConsumingRule.TestCase
 def test_multiple():
     none = multiple()
     some = multiple(1, 2.01, "3", b"4", 5)
-    assert len(none.values) == 0 and len(some.values) == 5
+    assert len(none.values) == 0
+    assert len(some.values) == 5
     assert set(some.values) == {1, 2.01, "3", b"4", 5}
 
 
@@ -424,7 +425,7 @@ def test_can_explicitly_call_functions_when_precondition_not_satisfied():
         @precondition(lambda self: False)
         @rule()
         def test_blah(self):
-            raise ValueError()
+            raise ValueError
 
         @rule()
         def test_foo(self):
@@ -443,7 +444,7 @@ def test_invariant():
 
         @invariant()
         def test_blah(self):
-            raise ValueError()
+            raise ValueError
 
         @rule()
         def do_stuff(self):
@@ -485,12 +486,12 @@ def test_invariant_precondition():
         @invariant()
         @precondition(lambda _: False)
         def an_invariant(self):
-            raise ValueError()
+            raise ValueError
 
         @precondition(lambda _: False)
         @invariant()
         def another_invariant(self):
-            raise ValueError()
+            raise ValueError
 
         @rule()
         def do_stuff(self):
@@ -560,7 +561,7 @@ def test_multiple_invariants():
         @precondition(lambda self: self.first_invariant_ran)
         @invariant()
         def invariant_2(self):
-            raise ValueError()
+            raise ValueError
 
         @rule()
         def do_stuff(self):
@@ -581,7 +582,7 @@ def test_explicit_invariant_call_with_precondition():
         @precondition(lambda self: False)
         @invariant()
         def test_blah(self):
-            raise ValueError()
+            raise ValueError
 
         @rule()
         def test_foo(self):
@@ -602,7 +603,7 @@ def test_invariant_checks_initial_state_if_no_initialize_rules():
         @invariant()
         def test_blah(self):
             if self.num == 0:
-                raise ValueError()
+                raise ValueError
 
         @rule()
         def test_foo(self):
@@ -621,7 +622,7 @@ def test_invariant_failling_present_in_falsifying_example():
 
         @invariant()
         def invariant_1(self):
-            raise ValueError()
+            raise ValueError
 
         @rule()
         def rule_1(self):
@@ -671,7 +672,7 @@ def test_invariant_present_in_falsifying_example():
         def rule_1(self):
             self.num += 1
             if self.num == 2:
-                raise ValueError()
+                raise ValueError
 
     with pytest.raises(ValueError) as err:
         run_state_machine_as_test(BadRuleWithGoodInvariants)
@@ -971,7 +972,7 @@ def test_steps_printed_despite_pytest_fail():
     class RaisesProblem(RuleBasedStateMachine):
         @rule()
         def oops(self):
-            pytest.fail()
+            pytest.fail("note that this raises a BaseException")
 
     with pytest.raises(Failed) as err:
         run_state_machine_as_test(RaisesProblem)

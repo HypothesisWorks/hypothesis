@@ -35,7 +35,7 @@ def minimal(definition, condition=lambda x: True, settings=None, timeout_after=1
             if runtime:
                 runtime[0] += TIME_INCREMENT
                 if runtime[0] >= timeout_after:
-                    raise Timeout()
+                    raise Timeout
         result = condition(x)
         if result and not runtime:
             runtime.append(0.0)

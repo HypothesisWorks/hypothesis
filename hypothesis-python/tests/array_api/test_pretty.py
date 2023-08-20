@@ -50,7 +50,7 @@ def test_namespaced_methods_meta(xp, xps, name):
     # function signatures. make_strategies_namespace() exists to wrap these
     # top-level methods by binding the passed xp argument, and so the namespace
     # it returns should not expose xp in any of its function signatures.
-    assert "xp" not in signature(func).parameters.keys()
+    assert "xp" not in signature(func).parameters
 
 
 @pytest.mark.parametrize(

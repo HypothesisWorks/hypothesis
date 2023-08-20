@@ -168,7 +168,8 @@ def integers(
 
 SMALLEST_SUBNORMAL = next_up(0.0)
 SIGNALING_NAN = int_to_float(0x7FF8_0000_0000_0001)  # nonzero mantissa
-assert math.isnan(SIGNALING_NAN) and math.copysign(1, SIGNALING_NAN) == 1
+assert math.isnan(SIGNALING_NAN)
+assert math.copysign(1, SIGNALING_NAN) == 1
 
 NASTY_FLOATS = sorted(
     [
@@ -263,11 +264,15 @@ class FloatStrategy(SearchStrategy):
         if _sign_aware_lte(0.0, max_value):
             pos_min = max(min_value, smallest_nonzero_magnitude)
             allow_zero = _sign_aware_lte(min_value, 0.0)
-            self.pos_clamper = make_float_clamper(pos_min, max_value, allow_zero)
+            self.pos_clamper = make_float_clamper(
+                pos_min, max_value, allow_zero=allow_zero
+            )
         if _sign_aware_lte(min_value, -0.0):
             neg_max = min(max_value, -smallest_nonzero_magnitude)
             allow_zero = _sign_aware_lte(-0.0, max_value)
-            self.neg_clamper = make_float_clamper(-neg_max, -min_value, allow_zero)
+            self.neg_clamper = make_float_clamper(
+                -neg_max, -min_value, allow_zero=allow_zero
+            )
 
         self.forced_sign_bit: Optional[int] = None
         if (self.pos_clamper is None) != (self.neg_clamper is None):
@@ -506,7 +511,8 @@ def floats(
         min_value = next_up_normal(min_value, width, assumed_allow_subnormal)
         if min_value == min_arg:
             assert min_value == min_arg == 0
-            assert is_negative(min_arg) and not is_negative(min_value)
+            assert is_negative(min_arg)
+            assert not is_negative(min_value)
             min_value = next_up_normal(min_value, width, assumed_allow_subnormal)
         assert min_value > min_arg  # type: ignore
     if max_value is not None and (
@@ -515,7 +521,8 @@ def floats(
         max_value = next_down_normal(max_value, width, assumed_allow_subnormal)
         if max_value == max_arg:
             assert max_value == max_arg == 0
-            assert is_negative(max_value) and not is_negative(max_arg)
+            assert is_negative(max_value)
+            assert not is_negative(max_arg)
             max_value = next_down_normal(max_value, width, assumed_allow_subnormal)
         assert max_value < max_arg  # type: ignore
 

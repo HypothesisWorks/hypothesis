@@ -32,7 +32,6 @@ def kw(marks=(), **kwargs):
     "kwargs",
     [
         kw(min_value=1),
-        kw(min_value=1),
         kw(max_value=-1),
         kw(min_value=float_info.min),
         kw(min_value=next_down(float_info.min), exclude_min=True),

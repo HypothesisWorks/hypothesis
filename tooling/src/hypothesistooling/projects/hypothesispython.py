@@ -100,7 +100,7 @@ def update_changelog_and_version():
             ), f"{__version__=}   {lines[i + 3]=}"
             beginning = "\n".join(lines[:i])
             rest = "\n".join(lines[i:])
-            assert "\n".join((beginning, rest)) == contents
+            assert f"{beginning}\n{rest}" == contents
             break
 
     release_type, release_contents = parse_release_file()
@@ -120,7 +120,7 @@ def update_changelog_and_version():
 
     rm.replace_assignment(VERSION_FILE, "__version_info__", repr(new_version_info))
 
-    heading_for_new_version = " - ".join((new_version_string, rm.release_date_string()))
+    heading_for_new_version = f"{new_version_string} - {rm.release_date_string()}"
     border_for_new_version = "-" * len(heading_for_new_version)
 
     new_changelog_parts = [
@@ -250,7 +250,7 @@ def tag_name():
     return PYTHON_TAG_PREFIX + __version__
 
 
-def get_autoupdate_message(domainlist_changed: bool) -> str:
+def get_autoupdate_message(domainlist_changed):
     if domainlist_changed:
         return (
             "This patch updates our vendored `list of top-level domains "

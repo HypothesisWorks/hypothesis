@@ -55,7 +55,8 @@ Falsifying example: test_inquisitor_comments_basic_fail_if_not_all(
 )
 @given(st.text(), st.text(), st.text())
 def test_inquisitor_comments_basic_fail_if_not_all(a, b, c):
-    assert a and b and c
+    condition = a and b and c
+    assert condition
 
 
 @fails_with_output(

@@ -43,7 +43,7 @@ class Customish(models.Model):
 class Customer(models.Model):
     name = models.CharField(max_length=100, unique=True)
     email = models.EmailField(max_length=100, unique=True)
-    gender = models.CharField(max_length=50, null=True)
+    gender = models.CharField(max_length=50, null=True)  # noqa  # avoid nullable strs
     age = models.IntegerField()
     birthday = models.DateTimeField()
 
@@ -103,7 +103,7 @@ class MandatoryComputed(models.Model):
 
     def __init__(self, **kw):
         if "company" in kw:
-            raise RuntimeError()
+            raise RuntimeError
         cname = kw["name"] + "_company"
         kw["company"] = Company.objects.create(name=cname)
         super().__init__(**kw)

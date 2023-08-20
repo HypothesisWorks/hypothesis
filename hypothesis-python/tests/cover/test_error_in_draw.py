@@ -20,7 +20,7 @@ def test_error_is_in_finally():
         try:
             d.draw(st.lists(st.integers(), min_size=3, unique=True))
         finally:
-            raise ValueError()
+            raise ValueError
 
     with pytest.raises(ValueError) as err:
         test()

@@ -85,8 +85,9 @@ def test_overflow_in_simplify():
 def test_timezones_arg_to_datetimes_must_be_search_strategy():
     with pytest.raises(InvalidArgument):
         datetimes(timezones=pytz.all_timezones).validate()
+
+    tz = [pytz.timezone(t) for t in pytz.all_timezones]
     with pytest.raises(InvalidArgument):
-        tz = [pytz.timezone(t) for t in pytz.all_timezones]
         datetimes(timezones=tz).validate()
 
 

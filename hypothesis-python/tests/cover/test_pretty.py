@@ -282,7 +282,7 @@ class ReallyBadRepr:
         raise ValueError("I am horrible")
 
     def __repr__(self):
-        raise BadException()
+        raise BadException
 
 
 def test_really_bad_repr():
@@ -579,7 +579,8 @@ def test_re_evals():
         re.compile("foo", re.MULTILINE | re.UNICODE),
     ]:
         r2 = eval(pretty.pretty(r), globals())
-        assert r.pattern == r2.pattern and r.flags == r2.flags
+        assert r.pattern == r2.pattern
+        assert r.flags == r2.flags
 
 
 def test_print_builtin_function():
