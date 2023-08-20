@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.82.6:
+
+-------------------
+6.82.6 - 2023-08-20
+-------------------
+
+This patch enables and fixes many more of :pypi:`ruff`\ 's lint rules.
+
 .. _v6.82.5:
 
 -------------------
