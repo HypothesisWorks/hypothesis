@@ -379,7 +379,7 @@ class Examples:
             self.starts = IntList.of_length(len(self.examples))
             self.ends = IntList.of_length(len(self.examples))
 
-        def start_example(self, i: int, *, label_index: int) -> None:
+        def start_example(self, i: int, label_index: int) -> None:
             self.starts[i] = self.bytes_read
 
         def stop_example(self, i: int, *, discarded: bool) -> None:
