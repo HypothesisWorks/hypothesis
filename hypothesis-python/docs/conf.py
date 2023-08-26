@@ -55,6 +55,14 @@ def setup(app):
     if root.joinpath("RELEASE.rst").is_file():
         app.tags.add("has_release_file")
 
+    # Workaround for partial-initialization problem when autodoc imports libcst
+    import libcst
+
+    import hypothesis.extra.codemods
+
+    assert libcst
+    assert hypothesis.extra.codemods
+
     # patch in mock array_api namespace so we can autodoc it
     from hypothesis.extra.array_api import (
         RELEASED_VERSIONS,
