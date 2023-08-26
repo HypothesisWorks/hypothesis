@@ -67,7 +67,7 @@ def unicode_regex(pattern):
 def _test_matching_pattern(pattern, *, isvalidchar, is_unicode=False):
     r = unicode_regex(pattern) if is_unicode else ascii_regex(pattern)
 
-    codepoints = range(0, sys.maxunicode + 1) if is_unicode else range(1, 128)
+    codepoints = range(sys.maxunicode + 1) if is_unicode else range(1, 128)
     for c in [chr(x) for x in codepoints]:
         if isvalidchar(c):
             msg = "%r supposed to match %r (%r, category %r), but it doesn't"

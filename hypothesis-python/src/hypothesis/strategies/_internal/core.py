@@ -327,7 +327,7 @@ def lists(
             elements = SampledFromStrategy(
                 sorted(range(elements.start, elements.end + 1), key=abs)
                 if elements.end < 0 or elements.start > 0
-                else list(range(0, elements.end + 1))
+                else list(range(elements.end + 1))
                 + list(range(-1, elements.start - 1, -1))
             )
 
