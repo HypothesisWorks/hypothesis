@@ -779,6 +779,9 @@ def randoms(
       would occur with very low probability when it is set to True, and this
       flag should only be set to True when your code relies on the distribution
       of values for correctness.
+
+    For managing global state, see the :func:`~hypothesis.strategies.random_module`
+    strategy and :func:`~hypothesis.register_random` function.
     """
     check_type(bool, note_method_calls, "note_method_calls")
     check_type(bool, use_true_random, "use_true_random")
@@ -814,16 +817,16 @@ class RandomModule(SearchStrategy):
 @cacheable
 @defines_strategy()
 def random_module() -> SearchStrategy[RandomSeeder]:
-    """The Hypothesis engine handles PRNG state for the stdlib and Numpy random
-    modules internally, always seeding them to zero and restoring the previous
-    state after the test.
+    """Hypothesis always seeds global PRNGs before running a test, and restores the
+    previous state afterwards.
 
     If having a fixed seed would unacceptably weaken your tests, and you
     cannot use a ``random.Random`` instance provided by
     :func:`~hypothesis.strategies.randoms`, this strategy calls
     :func:`python:random.seed` with an arbitrary integer and passes you
     an opaque object whose repr displays the seed value for debugging.
-    If ``numpy.random`` is available, that state is also managed.
+    If ``numpy.random`` is available, that state is also managed, as is anything
+    managed by :func:`hypothesis.register_random`.
 
     Examples from these strategy shrink to seeds closer to zero.
     """
