@@ -19,7 +19,7 @@ from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.floats import float_to_int
 
-EXPONENTS = list(range(0, flt.MAX_EXPONENT + 1))
+EXPONENTS = list(range(flt.MAX_EXPONENT + 1))
 assert len(EXPONENTS) == 2**11
 
 

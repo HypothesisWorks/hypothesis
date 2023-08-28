@@ -32,7 +32,7 @@ one_to_twenty_strategies = [
     st.integers(1, 20),
     st.integers(0, 19).map(lambda x: x + 1),
     st.sampled_from(range(1, 21)),
-    st.sampled_from(range(0, 20)).map(lambda x: x + 1),
+    st.sampled_from(range(20)).map(lambda x: x + 1),
 ]
 
 

@@ -52,7 +52,7 @@ pexpect==4.8.0
     # via -r requirements/test.in
 platformdirs==3.10.0
     # via black
-pluggy==1.2.0
+pluggy==1.3.0
     # via pytest
 ptyprocess==0.7.0
     # via pexpect

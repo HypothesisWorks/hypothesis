@@ -153,7 +153,7 @@ platformdirs==3.10.0
     #   black
     #   tox
     #   virtualenv
-pluggy==1.2.0
+pluggy==1.3.0
     # via
     #   pytest
     #   tox
@@ -177,7 +177,7 @@ pyproject-api==1.5.4
     # via tox
 pyproject-hooks==1.0.0
     # via build
-pyright==1.1.323
+pyright==1.1.324
     # via -r requirements/tools.in
 pytest==7.4.0
     # via -r requirements/tools.in
@@ -203,7 +203,7 @@ rfc3986==2.0.0
     # via twine
 rich==13.5.2
     # via twine
-ruff==0.0.285
+ruff==0.0.286
     # via -r requirements/tools.in
 secretstorage==3.3.3
     # via keyring
@@ -220,7 +220,7 @@ sortedcontainers==2.4.0
     # via hypothesis (hypothesis-python/setup.py)
 soupsieve==2.4.1
     # via beautifulsoup4
-sphinx==6.2.1
+sphinx==7.2.3
     # via
     #   -r requirements/tools.in
     #   sphinx-codeautolink
@@ -236,7 +236,7 @@ sphinx-codeautolink==0.15.0
     # via -r requirements/tools.in
 sphinx-hoverxref==1.3.0
     # via -r requirements/tools.in
-sphinx-rtd-theme==1.2.2
+sphinx-rtd-theme==1.3.0
     # via -r requirements/tools.in
 sphinx-selective-exclude==1.0.3
     # via -r requirements/tools.in
@@ -254,7 +254,7 @@ sphinxcontrib-jsmath==1.0.1
     # via sphinx
 sphinxcontrib-qthelp==1.0.6
     # via sphinx
-sphinxcontrib-serializinghtml==1.1.8
+sphinxcontrib-serializinghtml==1.1.9
     # via sphinx
 sqlparse==0.4.4
     # via django
@@ -273,7 +273,7 @@ tomli==2.0.1
     #   pyproject-hooks
     #   pytest
     #   tox
-tox==4.9.0
+tox==4.10.0
     # via -r requirements/tools.in
 traitlets==5.9.0
     # via
@@ -289,7 +289,7 @@ types-pyopenssl==23.2.0.2
     # via types-redis
 types-pytz==2023.3.0.1
     # via -r requirements/tools.in
-types-redis==4.6.0.4
+types-redis==4.6.0.5
     # via -r requirements/tools.in
 typing-extensions==4.7.1
     # via
@@ -310,7 +310,7 @@ wcwidth==0.2.6
     # via prompt-toolkit
 webencodings==0.5.1
     # via bleach
-wheel==0.41.1
+wheel==0.41.2
     # via pip-tools
 zipp==3.16.2
     # via importlib-metadata
