@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import codecs
 import enum
 import math
 import operator
@@ -27,6 +28,7 @@ from typing import (
     Any,
     AnyStr,
     Callable,
+    Collection,
     Dict,
     FrozenSet,
     Hashable,
@@ -524,13 +526,13 @@ def dictionaries(
 @defines_strategy(force_reusable_values=True)
 def characters(
     *,
-    whitelist_categories: Optional[Sequence[str]] = None,
-    blacklist_categories: Optional[Sequence[str]] = None,
-    blacklist_characters: Optional[Sequence[str]] = None,
+    whitelist_categories: Optional[Collection[str]] = None,
+    blacklist_categories: Optional[Collection[str]] = None,
+    blacklist_characters: Optional[Collection[str]] = None,
     min_codepoint: Optional[int] = None,
     max_codepoint: Optional[int] = None,
-    whitelist_characters: Optional[Sequence[str]] = None,
-    codec: Optional[Literal["ascii", "utf-8"]] = None,  # type: ignore
+    whitelist_characters: Optional[Collection[str]] = None,
+    codec: Optional[Literal["ascii", "utf-8"]] = None,
 ) -> SearchStrategy[str]:
     r"""Generates characters, length-one :class:`python:str`\ ings,
     following specified filtering rules.
@@ -552,7 +554,11 @@ def characters(
       ``whitelist_characters`` and ``blacklist_characters`` will raise an
       exception.
     - If ``codec`` is specified, only characters in certain `codec encodings`_
-      will be produced. Currently only `ascii` and `utf-8` are accpeted.
+      will be produced. Currently only `ascii` and `utf-8` are supported.
+      ``whitelist_characters`` which cannot be encoded using this codec will
+      raise an exception.  If non-encodable codepoints or categories are
+      explicitly allowed, the ``codec`` argument will exclude them without
+      raising an exception.
 
     The ``_codepoint`` arguments must be integers between zero and
     :obj:`python:sys.maxunicode`.  The ``_characters`` arguments must be
@@ -580,6 +586,7 @@ def characters(
         and whitelist_categories is None
         and blacklist_categories is None
         and whitelist_characters is not None
+        and codec is None
     ):
         raise InvalidArgument(
             "Nothing is excluded by other arguments, so passing only "
@@ -618,22 +625,41 @@ def characters(
             f"{whitelist_categories=} and {blacklist_categories=}"
         )
 
-    if codec == "ascii":
-        if (max_codepoint is None) or (max_codepoint > 127):
-            max_codepoint = 127
-    elif codec == "utf-8":
-        if whitelist_categories is not None and "Cs" in whitelist_categories:
-            raise InvalidArgument(
-                "Cannot allow 'Cs' categories in 'utf-8' codec encodings."
-            )
-        if blacklist_categories is None:
-            blacklist_categories = ["Cs"]
-        elif "Cs" not in blacklist_categories:
-            blacklist_categories = blacklist_categories + ("Cs",)
-    elif codec is not None:
-        raise InvalidArgument(
-            "'codec' can only accept 'ascii', 'utf-8' or None as valid values."
-        )
+    if codec is not None:
+        try:
+            codecs.lookup(codec)
+        except LookupError:
+            raise InvalidArgument(f"{codec=} is not valid on this system") from None
+        except TypeError:
+            raise InvalidArgument(f"{codec=} is not a valid codec") from None
+
+        for char in whitelist_characters:
+            try:
+                char.encode(encoding=codec, errors="strict")
+            except UnicodeEncodeError:
+                raise InvalidArgument(
+                    f"Character {char!r} in {whitelist_characters=} "
+                    f"cannot be encoded with {codec=}"
+                ) from None
+
+        # ascii and utf-8 are sufficient common that we have faster special handling
+        if codec == "ascii":
+            if (max_codepoint is None) or (max_codepoint > 127):
+                max_codepoint = 127
+        elif codec == "utf-8":
+            if whitelist_categories is not None:
+                whitelist_categories = tuple(
+                    c for c in whitelist_categories if c != "Cs"
+                )
+            if blacklist_categories is None:
+                blacklist_categories = ("Cs",)
+            elif "Cs" not in blacklist_categories:
+                blacklist_categories = tuple(blacklist_categories) + ("Cs",)
+        else:
+            # TODO: handle all other codecs.  We'll probably want to do this inside
+            #       `OneCharStringStrategy`, by checking which intervals are supported,
+            #       caching that, and taking the intersection of their intervals.
+            raise InvalidArgument(f"{codec=} must be one of 'ascii', 'utf-8', or None")
 
     return OneCharStringStrategy(
         whitelist_categories=whitelist_categories,
@@ -661,7 +687,7 @@ def _check_is_single_character(c):
 @cacheable
 @defines_strategy(force_reusable_values=True)
 def text(
-    alphabet: Union[Sequence[str], SearchStrategy[str]] = characters(codec="utf-8"),
+    alphabet: Union[Collection[str], SearchStrategy[str]] = characters(codec="utf-8"),
     *,
     min_size: int = 0,
     max_size: Optional[int] = None,

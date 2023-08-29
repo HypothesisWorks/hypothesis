@@ -180,6 +180,11 @@ def fn_ktest(*fnkwargs):
     (ds.characters, {"max_codepoint": "1"}),
     (ds.characters, {"whitelist_categories": []}),
     (ds.characters, {"whitelist_categories": ["Nd"], "blacklist_categories": ["Nd"]}),
+    (ds.characters, {"codec": 100}),
+    (ds.characters, {"codec": "cp861"}),  # not yet implemented
+    (ds.characters, {"codec": "this is not a valid codec name"}),
+    (ds.characters, {"codec": "ascii", "whitelist_characters": "é"}),
+    (ds.characters, {"codec": "utf-8", "whitelist_categories": "Cs"}),
     (ds.slices, {"size": None}),
     (ds.slices, {"size": "chips"}),
     (ds.slices, {"size": -1}),
