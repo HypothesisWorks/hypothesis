@@ -31,7 +31,7 @@ coverage==7.3.0
     # via
     #   -r requirements/coverage.in
     #   hypofuzz
-dash==2.12.1
+dash==2.13.0
     # via hypofuzz
 dash-core-components==2.0.0
     # via dash
@@ -54,7 +54,7 @@ flask==2.2.5
     # via dash
 hypofuzz==23.7.1
     # via -r requirements/fuzzing.in
-hypothesis[cli]==6.82.6
+hypothesis[cli]==6.83.0
     # via hypofuzz
 idna==3.4
     # via requests
@@ -93,7 +93,7 @@ packaging==23.1
     #   black
     #   plotly
     #   pytest
-pandas==2.0.3
+pandas==2.1.0
     # via
     #   -r requirements/coverage.in
     #   hypofuzz
@@ -113,7 +113,7 @@ ptyprocess==0.7.0
     # via pexpect
 pygments==2.16.1
     # via rich
-pytest==7.4.0
+pytest==7.4.1
     # via
     #   -r requirements/test.in
     #   hypofuzz
