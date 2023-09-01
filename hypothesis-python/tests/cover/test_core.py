@@ -143,3 +143,29 @@ def empty_db(_):
 def test_non_executed_tests_raise_skipped(test_fn):
     with pytest.raises(unittest.SkipTest):
         test_fn()
+
+
+@pytest.mark.parametrize(
+    "codec, max_codepoint, blacklist_categories, whitelist_categories",
+    [
+        ("ascii", None, None, None),
+        ("ascii", 128, None, None),
+        ("ascii", 100, None, None),
+        ("utf-8", None, None, None),
+        ("utf-8", None, ["Cs"], None),
+        ("utf-8", None, ["N"], None),
+        ("utf-8", None, None, ["N"]),
+    ],
+)
+@given(s.data())
+def test_characters_codec(
+    codec, max_codepoint, blacklist_categories, whitelist_categories, data
+):
+    strategy = s.characters(
+        codec=codec,
+        max_codepoint=max_codepoint,
+        blacklist_categories=blacklist_categories,
+        whitelist_categories=whitelist_categories,
+    )
+    example = data.draw(strategy)
+    assert example.encode(encoding=codec).decode(encoding=codec) == example
