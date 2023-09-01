@@ -18,6 +18,18 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.83.0:
+
+-------------------
+6.83.0 - 2023-09-01
+-------------------
+
+Adds a new ``codec=`` option in :func:`~hypothesis.strategies.characters`, making it
+convenient to produce only characters which can be encoded as ``ascii`` or ``utf-8``
+bytestrings.
+
+Support for other codecs will be added in a future release.
+
 .. _v6.82.7:
 
 -------------------
