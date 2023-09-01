@@ -35,16 +35,6 @@ from hypothesis.strategies._internal.strategies import Ex, check_strategy
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 
 try:
-    from pandas.api.types import is_categorical_dtype
-except ImportError:
-
-    def is_categorical_dtype(dt):
-        if isinstance(dt, np.dtype):
-            return False
-        return dt == "category"
-
-
-try:
     from pandas.core.arrays.integer import IntegerDtype
 except ImportError:
     IntegerDtype = ()
@@ -79,8 +69,8 @@ def elements_and_dtype(elements, dtype, source=None):
                     f"At least one of {prefix}elements or {prefix}dtype must be provided."
                 )
 
-    with check("is_categorical_dtype"):
-        if is_categorical_dtype(dtype):
+    with check("isinstance(dtype, CategoricalDtype)"):
+        if pandas.api.types.CategoricalDtype.is_dtype(dtype):
             raise InvalidArgument(
                 f"{prefix}dtype is categorical, which is currently unsupported"
             )
