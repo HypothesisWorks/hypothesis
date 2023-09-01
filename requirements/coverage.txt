@@ -8,7 +8,7 @@ async-timeout==4.0.3
     # via redis
 attrs==23.1.0
     # via hypothesis (hypothesis-python/setup.py)
-black @ git+https://github.com/psf/black.git@eedfc3832290b3a32825b3c0f2dfa3f3d7ee9d1c
+black==23.7.0
     # via -r requirements/coverage.in
 click==8.1.7
     # via

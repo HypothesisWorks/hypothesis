@@ -1,4 +1,4 @@
-git+https://github.com/psf/black.git@eedfc3832290b3a32825b3c0f2dfa3f3d7ee9d1c
+black
 click
 coverage
 dpcontracts
