@@ -158,7 +158,6 @@ except {exceptions}:
 
 Except = Union[Type[Exception], Tuple[Type[Exception], ...]]
 ImportSet = Set[Union[str, Tuple[str, str]]]
-RE_TYPES = (type(re.compile(".")), type(re.match(".", "abc")))
 _quietly_settings = settings(
     database=None,
     deadline=None,
@@ -587,7 +586,7 @@ def _assert_eq(style: str, a: str, b: str) -> str:
 
 def _imports_for_object(obj):
     """Return the imports for `obj`, which may be empty for e.g. lambdas"""
-    if isinstance(obj, RE_TYPES):
+    if isinstance(obj, (re.Pattern, re.Match)):
         return {"re"}
     try:
         if is_generic_type(obj):

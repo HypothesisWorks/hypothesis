@@ -81,9 +81,6 @@ __all__ = [
 ]
 
 
-_re_pattern_type = type(re.compile(""))
-
-
 def _safe_getattr(obj, attr, default=None):
     """Safe version of getattr.
 
@@ -746,7 +743,7 @@ _type_pprinters = {
     set: _set_pprinter_factory("{", "}", set),
     frozenset: _set_pprinter_factory("frozenset({", "})", frozenset),
     super: _super_pprint,
-    _re_pattern_type: _re_pattern_pprint,
+    re.Pattern: _re_pattern_pprint,
     type: _type_pprint,
     types.FunctionType: _function_pprint,
     types.BuiltinFunctionType: _function_pprint,
