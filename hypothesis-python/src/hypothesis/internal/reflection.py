@@ -98,7 +98,7 @@ def function_digest(function):
         # If we can't actually get the source code, try for the name as a fallback.
         # NOTE: We might want to change this to always adding function.__qualname__,
         # to differentiate f.x. two classes having the same function implementation
-        # with class-dependend behaviour.
+        # with class-dependent behaviour.
         try:
             hasher.update(function.__name__.encode())
         except AttributeError:

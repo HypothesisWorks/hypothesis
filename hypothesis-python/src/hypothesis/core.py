@@ -1252,6 +1252,7 @@ def given(
                 )
             if settings.database is not None:
                 nonlocal prev_self
+                # Check selfy really is self (not e.g. a mock) before we health-check
                 cur_self = (
                     stuff.selfy
                     if getattr(type(stuff.selfy), test.__name__, None) is wrapped_test
