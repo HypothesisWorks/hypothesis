@@ -661,7 +661,7 @@ def characters(
             #       caching that, and taking the intersection of their intervals.
             raise InvalidArgument(f"{codec=} must be one of 'ascii', 'utf-8', or None")
 
-    return OneCharStringStrategy(
+    return OneCharStringStrategy.from_characters_args(
         whitelist_categories=whitelist_categories,
         blacklist_categories=blacklist_categories,
         blacklist_characters=blacklist_characters,
@@ -742,10 +742,32 @@ def text(
     return TextStrategy(char_strategy, min_size=min_size, max_size=max_size)
 
 
+@overload
+def from_regex(
+    regex: Union[bytes, Pattern[bytes]],
+    *,
+    fullmatch: bool = False,
+) -> SearchStrategy[bytes]:  # pragma: no cover
+    ...
+
+
+@overload
+def from_regex(
+    regex: Union[str, Pattern[str]],
+    *,
+    fullmatch: bool = False,
+    alphabet: Union[str, SearchStrategy[str]] = characters(codec="utf-8"),
+) -> SearchStrategy[str]:  # pragma: no cover
+    ...
+
+
 @cacheable
 @defines_strategy()
 def from_regex(
-    regex: Union[AnyStr, Pattern[AnyStr]], *, fullmatch: bool = False
+    regex: Union[AnyStr, Pattern[AnyStr]],
+    *,
+    fullmatch: bool = False,
+    alphabet: Union[str, SearchStrategy[str], None] = None,
 ) -> SearchStrategy[AnyStr]:
     r"""Generates strings that contain a match for the given regex (i.e. ones
     for which :func:`python:re.search` will return a non-None result).
@@ -771,15 +793,42 @@ def from_regex(
     Alternatively, passing ``fullmatch=True`` will ensure that the whole
     string is a match, as if you had used the ``\A`` and ``\Z`` markers.
 
+    The ``alphabet=`` argument constrains the characters in the generated
+    string, as for :func:`text`, and is only supported for unicode strings.
+
     Examples from this strategy shrink towards shorter strings and lower
     character values, with exact behaviour that may depend on the pattern.
     """
+    check_type((str, bytes, re.Pattern), regex, "regex")
     check_type(bool, fullmatch, "fullmatch")
+    pattern = regex.pattern if isinstance(regex, re.Pattern) else regex
+    if alphabet is not None:
+        check_type((str, SearchStrategy), alphabet, "alphabet")
+        if not isinstance(pattern, str):
+            raise InvalidArgument("alphabet= is not supported for bytestrings")
+
+        if isinstance(alphabet, str):
+            alphabet = characters(
+                whitelist_categories=(), whitelist_characters=alphabet
+            )
+        char_strategy = unwrap_strategies(alphabet)
+        if isinstance(char_strategy, SampledFromStrategy):
+            alphabet = characters(
+                whitelist_categories=(),
+                whitelist_characters=alphabet.elements,  # type: ignore
+            )
+        elif not isinstance(char_strategy, OneCharStringStrategy):
+            raise InvalidArgument(
+                f"{alphabet=} must be a sampled_from() or characters() strategy"
+            )
+    elif isinstance(pattern, str):
+        alphabet = characters(codec="utf-8")
+
     # TODO: We would like to move this to the top level, but pending some major
     # refactoring it's hard to do without creating circular imports.
     from hypothesis.strategies._internal.regex import regex_strategy
 
-    return regex_strategy(regex, fullmatch)
+    return regex_strategy(regex, fullmatch, alphabet=alphabet)
 
 
 @cacheable
