@@ -2035,11 +2035,11 @@ def register_type_strategy(
         )
     elif not (isinstance(strategy, SearchStrategy) or callable(strategy)):
         raise InvalidArgument(
-            "strategy=%r must be a SearchStrategy, or a function that takes "
+            f"{strategy=} must be a SearchStrategy, or a function that takes "
             "a generic type and returns a specific SearchStrategy"
         )
     elif isinstance(strategy, SearchStrategy) and strategy.is_empty:
-        raise InvalidArgument("strategy=%r must not be empty")
+        raise InvalidArgument(f"{strategy=} must not be empty")
     elif types.has_type_arguments(custom_type):
         raise InvalidArgument(
             f"Cannot register generic type {custom_type!r}, because it has type "
