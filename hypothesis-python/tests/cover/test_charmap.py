@@ -16,6 +16,7 @@ import unicodedata
 
 from hypothesis import assume, given, strategies as st
 from hypothesis.internal import charmap as cm
+from hypothesis.internal.intervalsets import IntervalSet
 
 
 def test_charmap_contains_all_unicode():
@@ -47,7 +48,7 @@ def assert_valid_range_list(ls):
     st.sets(st.sampled_from(cm.categories())) | st.none(),
 )
 def test_query_matches_categories(exclude, include):
-    values = cm.query(exclude, include)
+    values = cm.query(exclude, include).intervals
     assert_valid_range_list(values)
     for u, v in values:
         for i in (u, v, (u + v) // 2):
@@ -65,7 +66,7 @@ def test_query_matches_categories(exclude, include):
 )
 def test_query_matches_categories_codepoints(exclude, include, m1, m2):
     m1, m2 = sorted((m1, m2))
-    values = cm.query(exclude, include, min_codepoint=m1, max_codepoint=m2)
+    values = cm.query(exclude, include, min_codepoint=m1, max_codepoint=m2).intervals
     assert_valid_range_list(values)
     for u, v in values:
         assert m1 <= u
@@ -76,7 +77,7 @@ def test_query_matches_categories_codepoints(exclude, include, m1, m2):
 def test_exclude_only_excludes_from_that_category(cat, i):
     c = chr(i)
     assume(unicodedata.category(c) != cat)
-    intervals = cm.query(exclude_categories=(cat,))
+    intervals = cm.query(exclude_categories=(cat,)).intervals
     assert any(a <= i <= b for a, b in intervals)
 
 
@@ -115,30 +116,34 @@ def test_uses_cached_charmap():
     assert statinfo.st_mtime == mtime
 
 
+def _union_intervals(x, y):
+    return IntervalSet(x).union(IntervalSet(y)).intervals
+
+
 def test_union_empty():
-    assert cm._union_intervals([], []) == ()
-    assert cm._union_intervals([], [[1, 2]]) == ((1, 2),)
-    assert cm._union_intervals([[1, 2]], []) == ((1, 2),)
+    assert _union_intervals([], []) == ()
+    assert _union_intervals([], [[1, 2]]) == ((1, 2),)
+    assert _union_intervals([[1, 2]], []) == ((1, 2),)
 
 
 def test_union_handles_totally_overlapped_gap():
     #   < xx  >  Imagine the intervals x and y as bit strings.
     # | <yy yy>  The bit at position n is set if n falls inside that interval.
     # = <zzzzz>  In this model _union_intervals() performs bit-wise or.
-    assert cm._union_intervals([[2, 3]], [[1, 2], [4, 5]]) == ((1, 5),)
+    assert _union_intervals([[2, 3]], [[1, 2], [4, 5]]) == ((1, 5),)
 
 
 def test_union_handles_partially_overlapped_gap():
     #   <  x  >  Imagine the intervals x and y as bit strings.
     # | <yy  y>  The bit at position n is set if n falls inside that interval.
     # = <zzz z>  In this model _union_intervals() performs bit-wise or.
-    assert cm._union_intervals([[3, 3]], [[1, 2], [5, 5]]) == ((1, 3), (5, 5))
+    assert _union_intervals([[3, 3]], [[1, 2], [5, 5]]) == ((1, 3), (5, 5))
 
 
 def test_successive_union():
     x = []
     for v in cm.charmap().values():
-        x = cm._union_intervals(x, v)
+        x = _union_intervals(x, v)
     assert x == ((0, sys.maxunicode),)
 
 
@@ -175,7 +180,7 @@ def test_regenerate_broken_charmap_file():
 
 
 def test_exclude_characters_are_included_in_key():
-    assert cm.query() != cm.query(exclude_characters="0")
+    assert cm.query().intervals != cm.query(exclude_characters="0").intervals
 
 
 def test_error_writing_charmap_file_is_suppressed(monkeypatch):

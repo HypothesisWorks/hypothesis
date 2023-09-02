@@ -11,7 +11,6 @@
 import pytest
 
 from hypothesis import HealthCheck, assume, example, given, settings, strategies as st
-from hypothesis.internal.charmap import _subtract_intervals
 from hypothesis.internal.intervalsets import IntervalSet
 
 
@@ -58,7 +57,7 @@ def test_intervals_match_indexes(intervals):
 
 @example(intervals=IntervalSet(((1, 1),)), v=0)
 @example(intervals=IntervalSet(()), v=0)
-@given(Intervals, st.integers())
+@given(Intervals, st.integers(0, 0x10FFFF))
 def test_error_for_index_of_not_present_value(intervals, v):
     assume(v not in intervals)
     with pytest.raises(ValueError):
@@ -98,8 +97,15 @@ def test_subtraction_of_intervals(x, y):
     xs = intervals_to_set(x)
     ys = intervals_to_set(y)
     assume(not xs.isdisjoint(ys))
-    z = _subtract_intervals(x, y)
+    z = IntervalSet(x).difference(IntervalSet(y)).intervals
     assert z == tuple(sorted(z))
     for a, b in z:
         assert a <= b
     assert intervals_to_set(z) == intervals_to_set(x) - intervals_to_set(y)
+
+
+@given(Intervals, Intervals)
+def test_interval_intersection(x, y):
+    print(f"{set(x)=} {set(y)=} {set(x)-(set(y)-set(x))=}")
+    assert set(x & y) == set(x) & set(y)
+    assert set(x.intersection(y)) == set(x).intersection(y)
