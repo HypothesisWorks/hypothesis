@@ -144,7 +144,7 @@ help narrow down any particularly weird bugs in complex environments.
 -------------------
 
 Fixes some lingering issues with inference of recursive types
-in `~hypothesis.strategies.from_type`. Closes :issue:`3525`.
+in :func:`~hypothesis.strategies.from_type`. Closes :issue:`3525`.
 
 .. _v6.81.0:
 
@@ -335,8 +335,8 @@ is strongly recommended.  You can ensure you have the dependencies with
 -------------------
 
 This patch continues the work started in :pull:`3651` by adding
-:pypi:`ruff` linter rules for pyflakes, flake8-comprehensions, and
-flake8-implicit-str-concat.
+:pypi:`ruff` linter rules for :pypi:`pyflakes`, :pypi:`flake8-comprehensions`,
+and :pypi:`flake8-implicit-str-concat`.
 
 .. _v6.75.5:
 
@@ -1184,7 +1184,7 @@ is really annoying.  See :issue:`2701` for details.
 6.48.0 - 2022-06-27
 -------------------
 
-This release raises :class:`~unittest.SkipTest` for which never executed any
+This release raises :class:`~unittest.SkipTest` for tests which never executed any
 examples, for example because the :obj:`~hypothesis.settings.phases` setting
 excluded the :obj:`~hypothesis.Phase.explicit`, :obj:`~hypothesis.Phase.reuse`,
 and :obj:`~hypothesis.Phase.generate` phases.  This helps to avoid cases where
