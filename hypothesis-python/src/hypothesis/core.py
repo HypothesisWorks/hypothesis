@@ -1187,7 +1187,7 @@ def given(
                 )
             given_kwargs[name] = st.from_type(hints[name])
 
-        prev_self = None
+        prev_runner = Unset = object()
 
         @impersonate(test)
         @define_function_signature(test.__name__, test.__doc__, new_signature)
@@ -1250,18 +1250,17 @@ def given(
                     "to ensure that each example is run in a separate "
                     "database transaction."
                 )
-            if settings.database is not None and "self" in kwargs:
-                nonlocal prev_self
-                if prev_self is None:
-                    prev_self = kwargs["self"]
-                elif prev_self != kwargs["self"]:
+            if settings.database is not None:
+                nonlocal prev_runner
+                if prev_runner is Unset:
+                    prev_runner = runner
+                elif runner is not prev_runner:
                     msg = (
                         f"The method {test.__qualname__} was called from multiple "
-                        "test runners which do not compare equal. This may lead to "
-                        "flaky tests and nonreproducible errors when replaying from "
-                        "database."
+                        "different executors. This may lead to flaky tests and "
+                        "nonreproducible errors when replaying from database."
                     )
-                    fail_health_check(settings, msg, HealthCheck.differing_test_runners)
+                    fail_health_check(settings, msg, HealthCheck.differing_executors)
 
             state = StateForActualGivenExecution(
                 test_runner, stuff, test, settings, random, wrapped_test

@@ -1,5 +1,5 @@
 RELEASE_TYPE: patch
 
-Disable all health checks during replay of db examples, so that we
-don't produce spurious failures when there are db-key collisions.
-Also adds a health check to detect one source of such collisions.
+Add a health check that detects if the same test is executed
+several times by :ref:`different executors<custom-function-execution>`.
+This can lead to various difficult-to-debug problems.

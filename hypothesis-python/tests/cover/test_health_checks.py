@@ -182,24 +182,17 @@ def test_example_that_shrinks_to_overrun_fails_health_check():
 
 
 class sample_test_runner:
-    def __init__(self, i):
-        self.i = i
-
     @given(st.none())
     def test(self, _):
         pass
 
-    def __eq__(self, other):
-        return self.i == other.i
 
-
-def test_differing_test_runners_fails_health_check():
-    sample_test_runner(0).test()
-    sample_test_runner(0).test()
+def test_differing_executors_fails_health_check():
+    sample_test_runner().test()
     with pytest.raises(FailedHealthCheck) as exc:
-        sample_test_runner(1).test()
+        sample_test_runner().test()
 
-    assert str(HealthCheck.differing_test_runners) in str(exc.value)
+    assert str(HealthCheck.differing_executors) in str(exc.value)
 
 
 def test_it_is_an_error_to_suppress_non_iterables():

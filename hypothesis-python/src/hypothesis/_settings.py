@@ -519,19 +519,17 @@ class HealthCheck(Enum, metaclass=HealthCheckMeta):
     This check requires the :ref:`Hypothesis pytest plugin<pytest-plugin>`,
     which is enabled by default when running Hypothesis inside pytest."""
 
-    differing_test_runners = 10
+    differing_executors = 10
     """Checks if :func:`@given <hypothesis.given>` has been applied to a test
-    which is executed by different test runners. If the test runners have different
-    test behaviour, this leads to flaky or nonreproducible tests when replaying from
-    the database.
+    which is executed by :ref:`different executors<custom-function-execution>`.
+    If your test function is defined as a method on a class, that class will be
+    your executor, and subclasses executing an inherited test is a common way
+    for things to go wrong.
 
-    The correct fix is often to bring the test runner instance under the control of
-    hypothesis by explicit parametrization over or sampling from subclasses, or to
-    refactor so that :func:`@given <hypothesis.given>` is specified on leaf subclasses.
-
-    Suppress this health check only if the different runners are known to behave
-    identically during tests; alternatively, disable database access or implement "
-    "__eq__ on the test runner class."""
+    The correct fix is often to bring the executor instance under the control
+    of hypothesis by explicit parametrization over, or sampling from,
+    subclasses, or to refactor so that :func:`@given <hypothesis.given>` is
+    specified on leaf subclasses."""
 
 
 @unique

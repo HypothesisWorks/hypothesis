@@ -28,6 +28,7 @@ class HasTeardown:
 
 class SomeGivens:
     @given(integers())
+    @settings(suppress_health_check=[HealthCheck.differing_executors])
     def give_me_an_int(self, x):
         pass
 
@@ -52,11 +53,6 @@ class SomeGivens:
     @given(integers().filter(lambda x: x > 0))
     def assume_in_reify(self, x):
         pass
-
-    def __eq__(self, other):
-        # Avoids having to suppress HealthCheck.differing_test_runners
-        # everywhere
-        return isinstance(other, SomeGivens)
 
 
 class HasSetupAndTeardown(HasSetup, HasTeardown, SomeGivens):
