@@ -1187,7 +1187,7 @@ def given(
                 )
             given_kwargs[name] = st.from_type(hints[name])
 
-        prev_runner = Unset = object()
+        prev_self = Unset = object()
 
         @impersonate(test)
         @define_function_signature(test.__name__, test.__doc__, new_signature)
@@ -1251,10 +1251,15 @@ def given(
                     "database transaction."
                 )
             if settings.database is not None:
-                nonlocal prev_runner
-                if prev_runner is Unset:
-                    prev_runner = runner
-                elif runner is not prev_runner:
+                nonlocal prev_self
+                cur_self = (
+                    stuff.selfy
+                    if wrapped_test in type(stuff.selfy).__dict__.values()
+                    else None
+                )
+                if prev_self is Unset:
+                    prev_self = cur_self
+                elif cur_self is not prev_self:
                     msg = (
                         f"The method {test.__qualname__} was called from multiple "
                         "different executors. This may lead to flaky tests and "

@@ -521,7 +521,7 @@ class HealthCheck(Enum, metaclass=HealthCheckMeta):
 
     differing_executors = 10
     """Checks if :func:`@given <hypothesis.given>` has been applied to a test
-    which is executed by :ref:`different executors<custom-function-execution>`.
+    which is executed by different :ref:`executors<custom-function-execution>`.
     If your test function is defined as a method on a class, that class will be
     your executor, and subclasses executing an inherited test is a common way
     for things to go wrong.

@@ -89,7 +89,7 @@ def function_digest(function):
     minor changes to the function.
 
     No guarantee of uniqueness though it usually will be. Digest collisions
-    lead to unfortunate but not fatal problems during database replay. #NOT TRUE
+    lead to unfortunate but not fatal problems during database replay.
     """
     hasher = hashlib.sha384()
     try:
