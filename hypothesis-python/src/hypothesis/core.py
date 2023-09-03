@@ -1491,8 +1491,8 @@ def find(
 
     if database_key is None and settings.database is not None:
         # Note: The database key is not guaranteed to be unique. If not, replaying
-        # of database examples may fail to reproduce or overrun (raise
-        # HealthCheck.data_too_large) due to being replayed on the wrong condition.
+        # of database examples may fail to reproduce due to being replayed on the
+        # wrong condition.
         database_key = function_digest(condition)
 
     if not isinstance(specifier, SearchStrategy):
