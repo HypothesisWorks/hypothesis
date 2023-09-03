@@ -182,7 +182,7 @@ class ConjectureRunner:
                     # correct engine.
                     raise
 
-    def test_function(self, data):
+    def test_function(self, data, healthcheck_ignore=False):
         if self.__pending_call_explanation is not None:
             self.debug(self.__pending_call_explanation)
             self.__pending_call_explanation = None
@@ -302,7 +302,8 @@ class ConjectureRunner:
         if self.__tree_is_exhausted():
             self.exit_with(ExitReason.finished)
 
-        self.record_for_health_check(data)
+        if not healthcheck_ignore:
+            self.record_for_health_check(data)
 
     def on_pareto_evict(self, data):
         self.settings.database.delete(self.pareto_key, data.buffer)
@@ -520,7 +521,7 @@ class ConjectureRunner:
                 corpus.extend(extra)
 
             for existing in corpus:
-                data = self.cached_test_function(existing)
+                data = self.cached_test_function(existing, healthcheck_ignore=True)
                 if data.status != Status.INTERESTING:
                     self.settings.database.delete(self.database_key, existing)
                     self.settings.database.delete(self.secondary_key, existing)
@@ -535,7 +536,7 @@ class ConjectureRunner:
                 pareto_corpus.sort(key=sort_key)
 
                 for existing in pareto_corpus:
-                    data = self.cached_test_function(existing)
+                    data = self.cached_test_function(existing, healthcheck_ignore=True)
                     if data not in self.pareto_front:
                         self.settings.database.delete(self.pareto_key, existing)
                     if data.status == Status.INTERESTING:
@@ -979,7 +980,9 @@ class ConjectureRunner:
             explain=Phase.explain in self.settings.phases,
         )
 
-    def cached_test_function(self, buffer, error_on_discard=False, extend=0):
+    def cached_test_function(
+        self, buffer, error_on_discard=False, extend=0, healthcheck_ignore=False
+    ):
         """Checks the tree to see if we've tested this buffer, and returns the
         previous result if we have.
 
@@ -1048,7 +1051,7 @@ class ConjectureRunner:
         data = self.new_conjecture_data(
             prefix=max((buffer, dummy_data.buffer), key=len), max_length=max_length
         )
-        self.test_function(data)
+        self.test_function(data, healthcheck_ignore=healthcheck_ignore)
         result = check_result(data.as_result())
         if extend == 0 or (result is not Overrun and len(result.buffer) <= len(buffer)):
             self.__data_cache[buffer] = result
