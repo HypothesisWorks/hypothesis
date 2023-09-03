@@ -95,7 +95,14 @@ def function_digest(function):
     try:
         src = inspect.getsource(function)
     except (OSError, TypeError):
-        pass
+        # If we can't actually get the source code, try for the name as a fallback.
+        # NOTE: We might want to change this to always adding __qualname__, to
+        # differentiate f.x. two classes having the same function implementation with
+        # class-dependend behaviour.
+        try:
+            hasher.update(function.__name__.encode())
+        except AttributeError:
+            pass
     else:
         hasher.update(_clean_source(src))
     try:
@@ -107,12 +114,6 @@ def function_digest(function):
     try:
         # We set this in order to distinguish e.g. @pytest.mark.parametrize cases.
         hasher.update(function._hypothesis_internal_add_digest)
-    except AttributeError:
-        pass
-    # We add the qualified name to distinguish e.g. identical test methods of
-    # subclasses that call into different overridden methods.
-    try:
-        hasher.update(function.__qualname__.encode())
     except AttributeError:
         pass
     return hasher.digest()
