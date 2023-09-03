@@ -1254,7 +1254,7 @@ def given(
                 nonlocal prev_self
                 cur_self = (
                     stuff.selfy
-                    if wrapped_test in type(stuff.selfy).__dict__.values()
+                    if getattr(type(stuff.selfy), test.__name__, None) is wrapped_test
                     else None
                 )
                 if prev_self is Unset:
