@@ -667,3 +667,19 @@ class LyingReprOptions(Flag):
 )
 def test_pretty_prints_enums_as_code(rep):
     assert pretty.pretty(eval(rep)) == rep
+
+
+class Obj:
+    def _repr_pretty_(self, p, cycle):
+        """Exercise the IPython callback interface."""
+        assert not cycle
+        with p.indent(2):
+            p.text("abc,")
+            p.breakable(" ")
+            p.break_()
+        p.begin_group(8, "<")
+        p.end_group(8, ">")
+
+
+def test_supports_ipython_callback():
+    assert pretty.pretty(Obj()) == "abc, \n  <>"

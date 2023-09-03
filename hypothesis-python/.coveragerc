@@ -27,4 +27,4 @@ exclude_lines =
     if PYPY:
     if TYPE_CHECKING:
     if sys\.version_info
-    if "\w+" in sys\.modules:
+    if "[\w\.]+" in sys\.modules:

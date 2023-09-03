@@ -65,6 +65,7 @@ Inheritance diagram:
 import datetime
 import re
 import struct
+import sys
 import types
 import warnings
 from collections import defaultdict, deque
@@ -78,9 +79,6 @@ __all__ = [
     "IDKey",
     "RepresentationPrinter",
 ]
-
-
-_re_pattern_type = type(re.compile(""))
 
 
 def _safe_getattr(obj, attr, default=None):
@@ -147,9 +145,19 @@ class RepresentationPrinter:
         self.snans = 0
 
         self.stack = []
-        self.singleton_pprinters = _singleton_pprinters.copy()
-        self.type_pprinters = _type_pprinters.copy()
-        self.deferred_pprinters = _deferred_type_pprinters.copy()
+        self.singleton_pprinters = {}
+        self.type_pprinters = {}
+        self.deferred_pprinters = {}
+        # If IPython has been imported, load up their pretty-printer registry
+        if "IPython.lib.pretty" in sys.modules:
+            ipp = sys.modules["IPython.lib.pretty"]
+            self.singleton_pprinters.update(ipp._singleton_pprinters)
+            self.type_pprinters.update(ipp._type_pprinters)
+            self.deferred_pprinters.update(ipp._deferred_pprinters)
+        # If there's overlap between our pprinters and IPython's, we'll use ours.
+        self.singleton_pprinters.update(_singleton_pprinters)
+        self.type_pprinters.update(_type_pprinters)
+        self.deferred_pprinters.update(_deferred_type_pprinters)
 
         # for which-parts-matter, we track a mapping from the (start_idx, end_idx)
         # of slices into the minimal failing example; this is per-interesting_origin
@@ -309,21 +317,33 @@ class RepresentationPrinter:
         (usually the width of the opening text), the second and third the
         opening and closing delimiters.
         """
+        self.begin_group(indent=indent, open=open)
+        try:
+            yield
+        finally:
+            self.end_group(dedent=indent, close=close)
+
+    def begin_group(self, indent=0, open=""):
+        """Use the `with group(...) context manager instead.
+
+        The begin_group() and end_group() methods are for IPython compatibility only;
+        see https://github.com/HypothesisWorks/hypothesis/issues/3721 for details.
+        """
         if open:
             self.text(open)
         group = Group(self.group_stack[-1].depth + 1)
         self.group_stack.append(group)
         self.group_queue.enq(group)
         self.indentation += indent
-        try:
-            yield
-        finally:
-            self.indentation -= indent
-            group = self.group_stack.pop()
-            if not group.breakables:
-                self.group_queue.remove(group)
-            if close:
-                self.text(close)
+
+    def end_group(self, dedent=0, close=""):
+        """See begin_group()."""
+        self.indentation -= dedent
+        group = self.group_stack.pop()
+        if not group.breakables:
+            self.group_queue.remove(group)
+        if close:
+            self.text(close)
 
     def _enumerate(self, seq):
         """Like enumerate, but with an upper limit on the number of items."""
@@ -723,7 +743,7 @@ _type_pprinters = {
     set: _set_pprinter_factory("{", "}", set),
     frozenset: _set_pprinter_factory("frozenset({", "})", frozenset),
     super: _super_pprint,
-    _re_pattern_type: _re_pattern_pprint,
+    re.Pattern: _re_pattern_pprint,
     type: _type_pprint,
     types.FunctionType: _function_pprint,
     types.BuiltinFunctionType: _function_pprint,

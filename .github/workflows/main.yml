@@ -148,6 +148,10 @@ jobs:
         restore-keys: |
           deps-${{ runner.os }}-${{ matrix.python-architecture }}-${{ hashFiles('requirements/*.txt') }}
           deps-${{ runner.os }}-${{ matrix.python-architecture }}
+    - name: Use old pandas on win32
+      if: matrix.python-architecture
+      # See https://github.com/pandas-dev/pandas/issues/54979
+      run: (Get-Content .\requirements\coverage.txt) -replace 'pandas==[0-9.]+', 'pandas==2.0.3' | Out-File .\requirements\coverage.txt
     - name: Install dependencies
       run: |
         pip install --upgrade setuptools pip wheel

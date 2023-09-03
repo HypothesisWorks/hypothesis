@@ -12,6 +12,7 @@ import gc
 import random
 import sys
 import time as time_module
+from functools import wraps
 
 import pytest
 
@@ -81,10 +82,13 @@ def _consistently_increment_time(monkeypatch):
     def freeze():
         frozen[0] = True
 
-    monkeypatch.setattr(time_module, "time", time)
-    monkeypatch.setattr(time_module, "monotonic", time)
-    monkeypatch.setattr(time_module, "perf_counter", time)
-    monkeypatch.setattr(time_module, "sleep", sleep)
+    def _patch(name, fn):
+        monkeypatch.setattr(time_module, name, wraps(getattr(time_module, name))(fn))
+
+    _patch("time", time)
+    _patch("monotonic", time)
+    _patch("perf_counter", time)
+    _patch("sleep", sleep)
     monkeypatch.setattr(time_module, "freeze", freeze, raising=False)
 
 
