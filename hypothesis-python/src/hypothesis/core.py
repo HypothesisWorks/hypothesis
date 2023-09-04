@@ -70,6 +70,7 @@ from hypothesis.executors import default_new_style_executor, new_style_executor
 from hypothesis.internal.compat import (
     PYPY,
     BaseExceptionGroup,
+    add_note,
     bad_django_TestCase,
     get_type_hints,
     int_from_bytes,
@@ -1006,15 +1007,6 @@ class StateForActualGivenExecution:
                 ran_example.freeze()  # pragma: no branch
                 # No branch is possible here because we never have an active exception.
         _raise_to_user(errors_to_report, self.settings, report_lines)
-
-
-def add_note(exc, note):
-    try:
-        exc.add_note(note)
-    except AttributeError:
-        if not hasattr(exc, "__notes__"):
-            exc.__notes__ = []
-        exc.__notes__.append(note)
 
 
 def _raise_to_user(errors_to_report, settings, target_lines, trailer=""):

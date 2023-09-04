@@ -153,7 +153,7 @@ class RepresentationPrinter:
             ipp = sys.modules["IPython.lib.pretty"]
             self.singleton_pprinters.update(ipp._singleton_pprinters)
             self.type_pprinters.update(ipp._type_pprinters)
-            self.deferred_pprinters.update(ipp._deferred_pprinters)
+            self.deferred_pprinters.update(ipp._deferred_type_pprinters)
         # If there's overlap between our pprinters and IPython's, we'll use ours.
         self.singleton_pprinters.update(_singleton_pprinters)
         self.type_pprinters.update(_type_pprinters)

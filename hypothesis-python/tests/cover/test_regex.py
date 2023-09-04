@@ -134,12 +134,16 @@ def test_matching(category, predicate, invert, is_unicode):
         "[^\\S]",  # categories
     ],
 )
-@pytest.mark.parametrize("encode", [False, True])
+@pytest.mark.parametrize("encode", [None, False, True])
 def test_can_generate(pattern, encode):
+    alphabet = st.characters(max_codepoint=1000) if encode is None else None
     if encode:
         pattern = pattern.encode("ascii")
     with local_settings(settings(suppress_health_check=[HealthCheck.data_too_large])):
-        assert_all_examples(st.from_regex(pattern), re.compile(pattern).search)
+        assert_all_examples(
+            st.from_regex(pattern, alphabet=alphabet),
+            re.compile(pattern).search,
+        )
 
 
 @pytest.mark.parametrize(
@@ -268,8 +272,8 @@ def test_groupref_not_shared_between_regex():
 @given(st.data())
 def test_group_ref_is_not_shared_between_identical_regex(data):
     pattern = re.compile("^(.+)\\1\\Z", re.UNICODE)
-    x = data.draw(base_regex_strategy(pattern))
-    y = data.draw(base_regex_strategy(pattern))
+    x = data.draw(base_regex_strategy(pattern, alphabet=st.characters()))
+    y = data.draw(base_regex_strategy(pattern, alphabet=st.characters()))
     assume(x != y)
     assert pattern.match(x).end() == len(x)
     assert pattern.match(y).end() == len(y)
@@ -277,9 +281,11 @@ def test_group_ref_is_not_shared_between_identical_regex(data):
 
 @given(st.data())
 def test_does_not_leak_groups(data):
-    a = data.draw(base_regex_strategy(re.compile("^(a)\\Z")))
+    a = data.draw(base_regex_strategy(re.compile("^(a)\\Z"), alphabet=st.characters()))
     assert a == "a"
-    b = data.draw(base_regex_strategy(re.compile("^(?(1)a|b)(.)\\Z")))
+    b = data.draw(
+        base_regex_strategy(re.compile("^(?(1)a|b)(.)\\Z"), alphabet=st.characters())
+    )
     assert b[0] == "b"
 
 
@@ -469,6 +475,11 @@ def test_internals_can_disable_newline_from_dollar_for_jsonschema():
     pattern = "^abc$"
     find_any(st.from_regex(pattern), lambda s: s == "abc\n")
     assert_all_examples(
-        regex_strategy(pattern, False, _temp_jsonschema_hack_no_end_newline=True),
+        regex_strategy(
+            pattern,
+            False,
+            alphabet=st.characters(),
+            _temp_jsonschema_hack_no_end_newline=True,
+        ),
         lambda s: s == "abc",
     )

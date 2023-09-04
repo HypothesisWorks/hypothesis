@@ -12,7 +12,7 @@ from hypothesis.strategies._internal.strings import OneCharStringStrategy
 
 
 def test_rewriting_integers_covers_right_range():
-    strategy = OneCharStringStrategy()
+    strategy = OneCharStringStrategy.from_characters_args()
 
     rewritten = [strategy.rewrite_integer(i) for i in range(256)]
     assert sorted(rewritten) == sorted(range(256))
