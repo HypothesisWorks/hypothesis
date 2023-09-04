@@ -181,6 +181,20 @@ def test_example_that_shrinks_to_overrun_fails_health_check():
     assert str(HealthCheck.large_base_example) in str(exc.value)
 
 
+class sample_test_runner:
+    @given(st.none())
+    def test(self, _):
+        pass
+
+
+def test_differing_executors_fails_health_check():
+    sample_test_runner().test()
+    with pytest.raises(FailedHealthCheck) as exc:
+        sample_test_runner().test()
+
+    assert str(HealthCheck.differing_executors) in str(exc.value)
+
+
 def test_it_is_an_error_to_suppress_non_iterables():
     with raises(InvalidArgument):
         settings(suppress_health_check=1)

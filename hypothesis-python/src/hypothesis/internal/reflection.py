@@ -88,13 +88,17 @@ def function_digest(function):
     multiple processes and is prone to changing significantly in response to
     minor changes to the function.
 
-    No guarantee of uniqueness though it usually will be.
+    No guarantee of uniqueness though it usually will be. Digest collisions
+    lead to unfortunate but not fatal problems during database replay.
     """
     hasher = hashlib.sha384()
     try:
         src = inspect.getsource(function)
     except (OSError, TypeError):
         # If we can't actually get the source code, try for the name as a fallback.
+        # NOTE: We might want to change this to always adding function.__qualname__,
+        # to differentiate f.x. two classes having the same function implementation
+        # with class-dependent behaviour.
         try:
             hasher.update(function.__name__.encode())
         except AttributeError:

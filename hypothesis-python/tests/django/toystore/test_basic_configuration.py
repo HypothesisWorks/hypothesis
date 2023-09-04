@@ -24,7 +24,9 @@ from tests.django.toystore.models import Company
 
 
 class SomeStuff:
-    @settings(suppress_health_check=[HealthCheck.too_slow])
+    @settings(
+        suppress_health_check=[HealthCheck.too_slow, HealthCheck.differing_executors]
+    )
     @given(integers())
     def test_is_blank_slate(self, unused):
         Company.objects.create(name="MickeyCo")

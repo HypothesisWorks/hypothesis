@@ -28,6 +28,7 @@ class HasTeardown:
 
 class SomeGivens:
     @given(integers())
+    @settings(suppress_health_check=[HealthCheck.differing_executors])
     def give_me_an_int(self, x):
         pass
 
