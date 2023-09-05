@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.84.1:
+
+-------------------
+6.84.1 - 2023-09-05
+-------------------
+
+This patch by Reagan Lee makes ``st.text(...).filter(str.isidentifier)``
+return an efficient custom strategy (:issue:`3480`).
+
 .. _v6.84.0:
 
 -------------------
