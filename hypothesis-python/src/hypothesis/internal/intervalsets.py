@@ -210,9 +210,21 @@ class IntervalSet:
         return IntervalSet(map(tuple, result))
 
     def intersection(self, other):
-        """Set intersection for lists of intervals.
-
-        Conveniently, this is trivial to define in terms of difference.
-        """
+        """Set intersection for lists of intervals."""
         assert isinstance(other, type(self)), other
-        return self.difference(other - self).difference(self - other)
+        intervals = []
+        i = j = 0
+        while i < len(self.intervals) and j < len(other.intervals):
+            u, v = self.intervals[i]
+            U, V = other.intervals[j]
+            if u > V:
+                j += 1
+            elif U > v:
+                i += 1
+            else:
+                intervals.append((max(u, U), min(v, V)))
+                if v < V:
+                    i += 1
+                else:
+                    j += 1
+        return IntervalSet(intervals)

@@ -9,13 +9,16 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import copy
+import re
 import warnings
+from functools import lru_cache
 
 from hypothesis.errors import HypothesisWarning, InvalidArgument
 from hypothesis.internal import charmap
 from hypothesis.internal.conjecture.utils import biased_coin, integer_range
 from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.strategies._internal.collections import ListStrategy
+from hypothesis.strategies._internal.lazy import unwrap_strategies
 from hypothesis.strategies._internal.strategies import SearchStrategy
 
 
@@ -166,6 +169,28 @@ class TextStrategy(ListStrategy):
                 HypothesisWarning,
                 stacklevel=2,
             )
+        elems = unwrap_strategies(self.element_strategy)
+        if (
+            condition is str.isidentifier
+            and self.max_size >= 1
+            and isinstance(elems, OneCharStringStrategy)
+        ):
+            from hypothesis.strategies import builds, nothing
+
+            id_start, id_continue = _identifier_characters()
+            if not (elems.intervals & id_start):
+                return nothing()
+            return builds(
+                "{}{}".format,
+                OneCharStringStrategy(elems.intervals & id_start),
+                TextStrategy(
+                    OneCharStringStrategy(elems.intervals & id_continue),
+                    min_size=max(0, self.min_size - 1),
+                    max_size=self.max_size - 1,
+                ),
+                # Filter to ensure that NFKC normalization keeps working in future
+            ).filter(str.isidentifier)
+
         # We use ListStrategy filter logic for the conditions that *only* imply
         # the string is nonempty.  Here, we increment the min_size but still apply
         # the filter for conditions that imply nonempty *and specific contents*.
@@ -176,6 +201,59 @@ class TextStrategy(ListStrategy):
             return ListStrategy.filter(self, condition)
 
         return super().filter(condition)
+
+
+# Excerpted from https://www.unicode.org/Public/15.0.0/ucd/PropList.txt
+# Python updates it's Unicode version between minor releases, but fortunately
+# these properties do not change between the Unicode versions in question.
+_PROPLIST = """
+# ================================================
+
+1885..1886    ; Other_ID_Start # Mn   [2] MONGOLIAN LETTER ALI GALI BALUDA..MONGOLIAN LETTER ALI GALI THREE BALUDA
+2118          ; Other_ID_Start # Sm       SCRIPT CAPITAL P
+212E          ; Other_ID_Start # So       ESTIMATED SYMBOL
+309B..309C    ; Other_ID_Start # Sk   [2] KATAKANA-HIRAGANA VOICED SOUND MARK..KATAKANA-HIRAGANA SEMI-VOICED SOUND MARK
+
+# Total code points: 6
+
+# ================================================
+
+00B7          ; Other_ID_Continue # Po       MIDDLE DOT
+0387          ; Other_ID_Continue # Po       GREEK ANO TELEIA
+1369..1371    ; Other_ID_Continue # No   [9] ETHIOPIC DIGIT ONE..ETHIOPIC DIGIT NINE
+19DA          ; Other_ID_Continue # No       NEW TAI LUE THAM DIGIT ONE
+
+# Total code points: 12
+"""
+
+
+@lru_cache
+def _identifier_characters():
+    """See https://docs.python.org/3/reference/lexical_analysis.html#identifiers"""
+    # Start by computing the set of special characters
+    chars = {"Other_ID_Start": "", "Other_ID_Continue": ""}
+    for line in _PROPLIST.splitlines():
+        if m := re.match(r"([0-9A-F.]+) +; (\w+) # ", line):
+            codes, prop = m.groups()
+            span = range(int(codes[:4], base=16), int(codes[-4:], base=16) + 1)
+            chars[prop] += "".join(chr(x) for x in span)
+
+    # Then get the basic set by Unicode category and known extras
+    id_start = charmap.query(
+        include_categories=("Lu", "Ll", "Lt", "Lm", "Lo", "Nl"),
+        include_characters="_" + chars["Other_ID_Start"],
+    )
+    id_start -= IntervalSet.from_string(
+        # Magic value: the characters which NFKC-normalize to be invalid identifiers.
+        # Conveniently they're all in `id_start`, so we only need to do this once.
+        "\u037a\u0e33\u0eb3\u2e2f\u309b\u309c\ufc5e\ufc5f\ufc60\ufc61\ufc62\ufc63"
+        "\ufdfa\ufdfb\ufe70\ufe72\ufe74\ufe76\ufe78\ufe7a\ufe7c\ufe7e\uff9e\uff9f"
+    )
+    id_continue = id_start | charmap.query(
+        include_categories=("Mn", "Mc", "Nd", "Pc"),
+        include_characters=chars["Other_ID_Continue"],
+    )
+    return id_start, id_continue
 
 
 class FixedSizeBytes(SearchStrategy):

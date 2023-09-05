@@ -21,6 +21,7 @@ from hypothesis import given, strategies as st
 from hypothesis.errors import HypothesisWarning, Unsatisfiable
 from hypothesis.internal.floats import next_down, next_up
 from hypothesis.internal.reflection import get_pretty_function_description
+from hypothesis.strategies._internal.core import data
 from hypothesis.strategies._internal.lazy import LazyStrategy, unwrap_strategies
 from hypothesis.strategies._internal.numbers import FloatStrategy, IntegersStrategy
 from hypothesis.strategies._internal.strategies import FilteredStrategy
@@ -343,12 +344,31 @@ def test_warns_on_suspicious_string_methods(method):
     assert fs.min_size == 1
 
 
-@pytest.mark.parametrize("method", [str.isidentifier, str.isalnum])
+@pytest.mark.parametrize("method", [str.isalnum])
 def test_bumps_min_size_and_filters_for_content_str_methods(method):
     s = unwrap_strategies(st.text())
     fs = s.filter(method)
     assert fs.filtered_strategy.min_size == 1
     assert fs.flat_conditions == (method,)
+
+
+# Should we deterministically check whether ascii or not or st.characters fine?
+@pytest.mark.parametrize("al", [None, "cdef123", "cd12¥¦§©"])
+@given(data())
+def test_isidentifier_filter_properly_rewritten(al, data):
+    if al is None:
+        example = data.draw(st.text().filter(str.isidentifier))
+    else:
+        example = data.draw(st.text(alphabet=al).filter(str.isidentifier))
+        assert set(example).issubset(al)
+    assert example.isidentifier()
+
+
+@pytest.mark.parametrize("al", ["¥¦§©"])
+def test_isidentifer_filter_unsatisfiable(al):
+    fs = st.text(alphabet=al).filter(str.isidentifier)
+    with pytest.raises(Unsatisfiable):
+        fs.example()
 
 
 @pytest.mark.parametrize(
