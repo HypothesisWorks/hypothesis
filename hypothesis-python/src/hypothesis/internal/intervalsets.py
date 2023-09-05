@@ -8,8 +8,6 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from hypothesis.errors import InvalidArgument
-
 
 class IntervalSet:
     @classmethod
@@ -229,6 +227,4 @@ class IntervalSet:
                     i += 1
                 else:
                     j += 1
-        if not intervals:
-            raise InvalidArgument
         return IntervalSet(intervals)
