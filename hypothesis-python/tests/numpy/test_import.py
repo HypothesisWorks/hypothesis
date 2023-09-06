@@ -27,7 +27,7 @@ def test_hypothesis_is_not_the_first_to_import_numpy(testdir):
 # We check the wildcard import works on the module level because that's the only
 # place Python actually allows us to use them.
 try:
-    from hypothesis.extra.numpy import *  # noqa: F401, F403
+    from hypothesis.extra.numpy import *  # noqa: F403
 
     star_import_works = True
 except AttributeError:

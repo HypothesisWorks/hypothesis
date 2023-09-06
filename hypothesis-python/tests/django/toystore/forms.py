@@ -107,11 +107,11 @@ class TemporalFieldForm(ReprForm):
 
 
 class WithValidatorsForm(ReprForm):
-    num_validators = [MinValueValidator(1), MaxValueValidator(5)]
+    num_validators = (MinValueValidator(1), MaxValueValidator(5))
     _int_one_to_five = forms.IntegerField(validators=num_validators)
     _decimal_one_to_five = forms.FloatField(validators=num_validators)
     _float_one_to_five = forms.FloatField(validators=num_validators)
-    len_validators = [MinLengthValidator(5), MaxLengthValidator(10)]
+    len_validators = (MinLengthValidator(5), MaxLengthValidator(10))
     _string_five_to_ten = forms.CharField(validators=len_validators)
 
 

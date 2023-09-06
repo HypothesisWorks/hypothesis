@@ -124,7 +124,7 @@ def any_call_of_method(draw, method):
 @st.composite
 def any_call(draw):
     method = draw(st.sampled_from(RANDOM_METHODS))
-    return (method,) + draw(any_call_of_method(method))
+    return (method, *draw(any_call_of_method(method)))
 
 
 @pytest.mark.parametrize("method", RANDOM_METHODS)

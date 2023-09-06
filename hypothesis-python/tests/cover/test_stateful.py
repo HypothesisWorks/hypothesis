@@ -10,6 +10,7 @@
 
 import base64
 from collections import defaultdict
+from typing import ClassVar
 
 import pytest
 from _pytest.outcomes import Failed, Skipped
@@ -795,7 +796,7 @@ def test_prints_equal_values_with_correct_variable_name():
 def test_initialize_rule():
     @Settings(max_examples=1000)
     class WithInitializeRules(RuleBasedStateMachine):
-        initialized = []
+        initialized: ClassVar = []
 
         @initialize()
         def initialize_a(self):
@@ -908,7 +909,7 @@ def test_initialize_rule_cannot_be_double_applied():
 
 def test_initialize_rule_in_state_machine_with_inheritance():
     class ParentStateMachine(RuleBasedStateMachine):
-        initialized = []
+        initialized: ClassVar = []
 
         @initialize()
         def initialize_a(self):

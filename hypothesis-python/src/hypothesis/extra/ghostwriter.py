@@ -819,7 +819,7 @@ def _make_test_body(
         given_strategies = given_strategies or _get_strategies(
             *funcs, pass_result_to_next_func=ghost in ("idempotent", "roundtrip")
         )
-        reprs = [((k,) + _valid_syntax_repr(v)) for k, v in given_strategies.items()]
+        reprs = [((k, *_valid_syntax_repr(v))) for k, v in given_strategies.items()]
         imports = imports.union(*(imp for _, imp, _ in reprs))
         given_args = ", ".join(f"{k}={v}" for k, _, v in reprs)
     given_args = _st_strategy_names(given_args)

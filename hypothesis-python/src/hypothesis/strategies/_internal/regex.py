@@ -120,7 +120,7 @@ class CharactersBuilder:
     :param flags: Regex flags. They affect how and which characters are matched
     """
 
-    def __init__(self, negate=False, flags=0, *, alphabet):
+    def __init__(self, *, negate=False, flags=0, alphabet):
         self._categories = set()
         self._whitelist_chars = set()
         self._blacklist_chars = set()
@@ -189,7 +189,7 @@ class CharactersBuilder:
 
 
 class BytesBuilder(CharactersBuilder):
-    def __init__(self, negate=False, flags=0):
+    def __init__(self, *, negate=False, flags=0):
         self._whitelist_chars = set()
         self._blacklist_chars = set()
         self._negate = negate
@@ -436,9 +436,11 @@ def _strategy(codes, context, is_unicode, *, alphabet):
             # Regex '[abc0-9]' (set of characters)
             negate = value[0][0] == sre.NEGATE
             if is_unicode:
-                builder = CharactersBuilder(negate, context.flags, alphabet=alphabet)
+                builder = CharactersBuilder(
+                    flags=context.flags, negate=negate, alphabet=alphabet
+                )
             else:
-                builder = BytesBuilder(negate, context.flags)
+                builder = BytesBuilder(flags=context.flags, negate=negate)
 
             for charset_code, charset_value in value:
                 if charset_code == sre.NEGATE:

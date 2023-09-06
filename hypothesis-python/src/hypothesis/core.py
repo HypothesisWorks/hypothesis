@@ -166,7 +166,7 @@ class example:
 
     def xfail(
         self,
-        condition: bool = True,
+        condition: bool = True,  # noqa: FBT002
         *,
         reason: str = "",
         raises: Union[
@@ -868,7 +868,8 @@ class StateForActualGivenExecution:
         except (
             HypothesisDeprecationWarning,
             FailedHealthCheck,
-        ) + skip_exceptions_to_reraise():
+            *skip_exceptions_to_reraise(),
+        ):
             # These are fatal errors or control exceptions that should stop the
             # engine, so we re-raise them.
             raise

@@ -332,7 +332,7 @@ def _hypothesis_parse_gufunc_signature(signature, *, all_checks=True):
         )
         names_in = {n.strip("?") for shp in input_shapes for n in shp}
         names_out = {n.strip("?") for n in result_shape}
-        for shape in input_shapes + (result_shape,):
+        for shape in (*input_shapes, result_shape):
             for name in shape:
                 try:
                     int(name.strip("?"))
@@ -408,7 +408,7 @@ def mutually_broadcastable_shapes(
             )
         check_type(str, signature, "signature")
         parsed_signature = _hypothesis_parse_gufunc_signature(signature)
-        all_shapes = parsed_signature.input_shapes + (parsed_signature.result_shape,)
+        all_shapes = (*parsed_signature.input_shapes, parsed_signature.result_shape)
         sig_dims = min(len(s) for s in all_shapes)
         num_shapes = len(parsed_signature.input_shapes)
 
@@ -540,7 +540,7 @@ class MutuallyBroadcastableShapesStrategy(st.SearchStrategy):
         # that we can do an accurate per-shape length cap.
         dims = {}
         shapes = []
-        for shape in self.signature.input_shapes + (self.signature.result_shape,):
+        for shape in (*self.signature.input_shapes, self.signature.result_shape):
             shapes.append([])
             for name in shape:
                 if name.isdigit():
@@ -614,7 +614,7 @@ class MutuallyBroadcastableShapesStrategy(st.SearchStrategy):
             if not any(use):
                 break
 
-        result_shape = result_shape[: max(map(len, [self.base_shape] + shapes))]
+        result_shape = result_shape[: max(map(len, [self.base_shape, *shapes]))]
 
         assert len(shapes) == self.num_shapes
         assert all(self.min_dims <= len(s) <= self.max_dims for s in shapes)

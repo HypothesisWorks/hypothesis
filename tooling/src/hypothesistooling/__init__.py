@@ -86,7 +86,7 @@ def last_committer():
 
 
 def git(*args):
-    subprocess.check_call(("git",) + args)
+    subprocess.check_call(("git", *args))
 
 
 TOOLING_COMMITER_NAME = "CI on behalf of the Hypothesis team"

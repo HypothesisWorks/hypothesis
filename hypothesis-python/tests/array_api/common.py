@@ -65,7 +65,7 @@ def flushes_to_zero(xp, width: int) -> bool:
     return bool(xp.asarray(next_up(0.0, width=width), dtype=dtype) == 0)
 
 
-dtype_name_params = ["bool"] + list(REAL_NAMES)
+dtype_name_params = ["bool", *REAL_NAMES]
 for name in COMPLEX_NAMES:
     param = pytest.param(name, marks=pytest.mark.xp_min_version(MIN_VER_FOR_COMPLEX))
     dtype_name_params.append(param)

@@ -168,7 +168,7 @@ else:
             and Phase.explain not in settings.default.phases
         ):
             name = f"{settings._current_profile}-with-explain-phase"
-            phases = settings.default.phases + (Phase.explain,)
+            phases = (*settings.default.phases, Phase.explain)
             settings.register_profile(name, phases=phases)
             settings.load_profile(name)
 
@@ -221,7 +221,7 @@ else:
                 ("reproduce_example", "_hypothesis_internal_use_reproduce_failure"),
             ]:
                 if hasattr(item.obj, attribute):
-                    from hypothesis.errors import InvalidArgument  # noqa: F811
+                    from hypothesis.errors import InvalidArgument
 
                     raise_hypothesis_usage_error(message % (name,))
             yield
@@ -329,8 +329,9 @@ else:
             # If there's an HTML report, include our summary stats for each test
             pytest_html = item.config.pluginmanager.getplugin("html")
             if pytest_html is not None:  # pragma: no cover
-                report.extra = getattr(report, "extra", []) + [
-                    pytest_html.extras.text(stats, name="Hypothesis stats")
+                report.extra = [
+                    *getattr(report, "extra", []),
+                    pytest_html.extras.text(stats, name="Hypothesis stats"),
                 ]
 
         # This doesn't intrinsically have anything to do with the terminalreporter;

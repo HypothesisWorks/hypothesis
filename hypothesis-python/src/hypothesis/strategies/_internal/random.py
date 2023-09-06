@@ -223,7 +223,7 @@ class ArtificialRandom(HypothesisRandom):
         elif method == "shuffle":
             key = (method, len(kwargs["x"]))
         else:
-            key = (method,) + tuple(sorted(kwargs))
+            key = (method, *sorted(kwargs))
 
         try:
             result, self.__state = self.__state.next_states[key]

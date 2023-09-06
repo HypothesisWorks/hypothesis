@@ -74,7 +74,7 @@ def escalate_hypothesis_internal_error():
 
     filepath = None if tb is None else traceback.extract_tb(tb)[-1][0]
     if is_hypothesis_file(filepath) and not isinstance(
-        e, (HypothesisException,) + HYPOTHESIS_CONTROL_EXCEPTIONS
+        e, (HypothesisException, *HYPOTHESIS_CONTROL_EXCEPTIONS)
     ):
         raise
 

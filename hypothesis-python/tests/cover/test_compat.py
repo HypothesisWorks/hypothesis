@@ -91,7 +91,7 @@ def test_resolve_fwd_refs(obj, expected):
     assert get_type_hints(obj)["x"] == expected
 
 
-def func(a, b: int, *c: str, d: int = None):
+def func(a, b: int, *c: str, d: Optional[int] = None):
     pass
 
 

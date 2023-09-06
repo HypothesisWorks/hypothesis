@@ -114,7 +114,7 @@ class TestCases:
         assert isinstance(self, TestCases)
 
     @given(x=integers())
-    def test_abs_non_negative_varargs_kwargs_only(*args, **kw):  # noqa: B902
+    def test_abs_non_negative_varargs_kwargs_only(*args, **kw):
         assert abs(kw["x"]) >= 0
         assert isinstance(args[0], TestCases)
 

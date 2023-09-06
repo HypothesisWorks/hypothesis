@@ -24,7 +24,7 @@ from tests.common import utils
 @given(st.data())
 def test_mutually_recursive_types_with_typevar(data):
     # The previously-failing example from the issue
-    A = Dict[bool, "B"]  # noqa: F821 - an undefined name is the whole point!
+    A = Dict[bool, "B"]
     B = Union[List[bool], A]
 
     with pytest.raises(ResolutionFailed, match=r"Could not resolve ForwardRef\('B'\)"):
@@ -44,7 +44,7 @@ def test_mutually_recursive_types_with_typevar(data):
 def test_mutually_recursive_types_with_typevar_alternate(data):
     # It's not particularly clear why this version passed when the previous
     # test failed, but different behaviour means we add both to the suite.
-    C = Union[List[bool], "D"]  # noqa: F821 - an undefined name is the whole point!
+    C = Union[List[bool], "D"]
     D = Dict[bool, C]
 
     with pytest.raises(ResolutionFailed, match=r"Could not resolve ForwardRef\('D'\)"):

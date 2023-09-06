@@ -8,12 +8,14 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import codecs
 import gzip
 import json
 import os
 import sys
 import tempfile
 import unicodedata
+from functools import lru_cache
 from typing import Dict, Tuple
 
 from hypothesis.configuration import mkdir_p, storage_directory
@@ -21,12 +23,12 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.internal.intervalsets import IntervalSet
 
 intervals = Tuple[Tuple[int, int], ...]
-cache_type = Dict[Tuple[Tuple[str, ...], int, int, intervals], intervals]
+cache_type = Dict[Tuple[Tuple[str, ...], int, int, intervals], IntervalSet]
 
 
-def charmap_file():
+def charmap_file(fname="charmap"):
     return storage_directory(
-        "unicode_data", unicodedata.unidata_version, "charmap.json.gz"
+        "unicode_data", unicodedata.unidata_version, f"{fname}.json.gz"
     )
 
 
@@ -94,6 +96,43 @@ def charmap():
 
     assert _charmap is not None
     return _charmap
+
+
+@lru_cache(maxsize=None)
+def intervals_from_codec(codec_name: str) -> IntervalSet:  # pragma: no cover
+    """Return an IntervalSet of characters which are part of this codec."""
+    assert codec_name == codecs.lookup(codec_name).name
+    fname = charmap_file(f"codec-{codec_name}")
+    try:
+        with gzip.GzipFile(fname) as gzf:
+            encodable_intervals = json.load(gzf)
+
+    except Exception:
+        # This loop is kinda slow, but hopefully we don't need to do it very often!
+        encodable_intervals = []
+        for i in range(sys.maxunicode + 1):
+            try:
+                chr(i).encode(codec_name)
+            except Exception:  # usually _but not always_ UnicodeEncodeError
+                pass
+            else:
+                encodable_intervals.append((i, i))
+
+    res = IntervalSet(encodable_intervals)
+    res = res.union(res)
+    try:
+        # Write the Unicode table atomically
+        tmpdir = storage_directory("tmp")
+        mkdir_p(tmpdir)
+        fd, tmpfile = tempfile.mkstemp(dir=tmpdir)
+        os.close(fd)
+        # Explicitly set the mtime to get reproducible output
+        with gzip.GzipFile(tmpfile, "wb", mtime=1) as o:
+            o.write(json.dumps(res.intervals).encode())
+        os.renames(tmpfile, fname)
+    except Exception:
+        pass
+    return res
 
 
 _categories = None

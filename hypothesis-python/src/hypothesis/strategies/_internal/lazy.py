@@ -125,7 +125,7 @@ class LazyStrategy(SearchStrategy):
             self.function,
             self.__args,
             self.__kwargs,
-            self.__filters + (condition,),
+            (*self.__filters, condition),
             force_repr=repr_,
         )
 

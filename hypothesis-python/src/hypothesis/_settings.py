@@ -20,7 +20,17 @@ import inspect
 import os
 import warnings
 from enum import Enum, EnumMeta, IntEnum, unique
-from typing import TYPE_CHECKING, Any, Collection, Dict, List, Optional, TypeVar, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Collection,
+    Dict,
+    List,
+    Optional,
+    TypeVar,
+    Union,
+)
 
 import attr
 
@@ -128,7 +138,7 @@ class settings(metaclass=settingsMeta):
     """
 
     __definitions_are_locked = False
-    _profiles: Dict[str, "settings"] = {}
+    _profiles: ClassVar[Dict[str, "settings"]] = {}
     __module__ = "hypothesis"
 
     def __getattr__(self, name):
@@ -706,7 +716,7 @@ def note_deprecation(
     message: str, *, since: str, has_codemod: bool, stacklevel: int = 0
 ) -> None:
     if since != "RELEASEDAY":
-        date = datetime.datetime.strptime(since, "%Y-%m-%d").date()
+        date = datetime.date.fromisoformat(since)
         assert datetime.date(2021, 1, 1) <= date
     if has_codemod:
         message += (

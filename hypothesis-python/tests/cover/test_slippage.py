@@ -29,7 +29,7 @@ def capture_reports(test):
 
     return o.getvalue() + "\n\n".join(
         f"{e!r}\n" + "\n".join(getattr(e, "__notes__", []))
-        for e in (err.value,) + err.value.exceptions
+        for e in (err.value, *err.value.exceptions)
     )
 
 

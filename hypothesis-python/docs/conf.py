@@ -42,7 +42,7 @@ master_doc = "index"
 # General information about the project.
 project = "Hypothesis"
 author = "David R. MacIver"
-copyright = f"2013-{datetime.datetime.utcnow().year}, {author}"
+copyright = f"2013-{datetime.date.today().year}, {author}"
 
 _d = {}
 _version_file = root.joinpath("src", "hypothesis", "version.py")
