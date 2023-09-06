@@ -193,7 +193,6 @@ def fn_ktest(*fnkwargs):
     (ds.characters, {"whitelist_categories": []}),
     (ds.characters, {"whitelist_categories": ["Nd"], "blacklist_categories": ["Nd"]}),
     (ds.characters, {"codec": 100}),
-    (ds.characters, {"codec": "cp861"}),  # not yet implemented
     (ds.characters, {"codec": "this is not a valid codec name"}),
     (ds.characters, {"codec": "ascii", "whitelist_characters": "é"}),
     (ds.characters, {"codec": "utf-8", "whitelist_categories": "Cs"}),
@@ -282,6 +281,8 @@ def test_validates_keyword_arguments(fn, kwargs):
     (ds.text, {"alphabet": ds.just("a")}),
     (ds.text, {"alphabet": ds.sampled_from("abc")}),
     (ds.text, {"alphabet": ds.builds(lambda: "a")}),
+    (ds.characters, {"codec": "ascii"}),
+    (ds.characters, {"codec": "latin1"}),
     (ds.characters, {"whitelist_categories": ["N"]}),
     (ds.characters, {"blacklist_categories": []}),
     (ds.from_regex, {"regex": "abc", "alphabet": "abc"}),

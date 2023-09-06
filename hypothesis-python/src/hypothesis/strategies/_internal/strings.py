@@ -43,6 +43,7 @@ class OneCharStringStrategy(SearchStrategy):
         min_codepoint=None,
         max_codepoint=None,
         whitelist_characters=None,
+        codec=None,
     ):
         assert set(whitelist_categories or ()).issubset(charmap.categories())
         assert set(blacklist_categories or ()).issubset(charmap.categories())
@@ -54,6 +55,8 @@ class OneCharStringStrategy(SearchStrategy):
             include_characters=whitelist_characters,
             exclude_characters=blacklist_characters,
         )
+        if codec is not None:
+            intervals &= charmap.intervals_from_codec(codec)
         _arg_repr = ", ".join(
             f"{k}={v!r}"
             for k, v in [
@@ -63,6 +66,7 @@ class OneCharStringStrategy(SearchStrategy):
                 ("blacklist_characters", blacklist_characters),
                 ("min_codepoint", min_codepoint),
                 ("max_codepoint", max_codepoint),
+                ("codec", codec),
             ]
             if not (v in (None, "") or (k == "blacklist_categories" and v == ("Cs",)))
         )

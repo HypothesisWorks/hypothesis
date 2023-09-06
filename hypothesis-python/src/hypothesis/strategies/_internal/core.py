@@ -34,7 +34,6 @@ from typing import (
     Hashable,
     Iterable,
     List,
-    Literal,
     Optional,
     Pattern,
     Protocol,
@@ -532,7 +531,7 @@ def characters(
     min_codepoint: Optional[int] = None,
     max_codepoint: Optional[int] = None,
     whitelist_characters: Optional[Collection[str]] = None,
-    codec: Optional[Literal["ascii", "utf-8"]] = None,
+    codec: Optional[str] = None,
 ) -> SearchStrategy[str]:
     r"""Generates characters, length-one :class:`python:str`\ ings,
     following specified filtering rules.
@@ -553,12 +552,8 @@ def characters(
       that list will be not be produced. Any overlap between
       ``whitelist_characters`` and ``blacklist_characters`` will raise an
       exception.
-    - If ``codec`` is specified, only characters in certain `codec encodings`_
-      will be produced. Currently only `ascii` and `utf-8` are supported.
-      ``whitelist_characters`` which cannot be encoded using this codec will
-      raise an exception.  If non-encodable codepoints or categories are
-      explicitly allowed, the ``codec`` argument will exclude them without
-      raising an exception.
+    - If ``codec`` is specified, only characters in the specified `codec encodings`_
+      will be produced.
 
     The ``_codepoint`` arguments must be integers between zero and
     :obj:`python:sys.maxunicode`.  The ``_characters`` arguments must be
@@ -571,8 +566,17 @@ def characters(
     can be given to match all corresponding categories, for example ``'P'``
     for characters in any punctuation category.
 
+    We allow codecs from the :mod:`codecs` module and their aliases, platform
+    specific and user-registered codecs if they are available, and
+    `python-specific text encodings`_ (but not text or binary transforms).
+    ``whitelist_characters`` which cannot be encoded using this codec will
+    raise an exception.  If non-encodable codepoints or categories are
+    explicitly allowed, the ``codec`` argument will exclude them without
+    raising an exception.
+
     .. _general category: https://wikipedia.org/wiki/Unicode_character_property
     .. _codec encodings: https://docs.python.org/3/library/codecs.html#encodings-and-unicode
+    .. _python-specific text encodings: https://docs.python.org/3/library/codecs.html#python-specific-encodings
 
     Examples from this strategy shrink towards the codepoint for ``'0'``,
     or the first allowable codepoint after it if ``'0'`` is excluded.
@@ -627,10 +631,13 @@ def characters(
 
     if codec is not None:
         try:
-            codecs.lookup(codec)
+            codec = codecs.lookup(codec).name
+            # Check this is not a str-to-str or bytes-to-bytes codec; see
+            # https://docs.python.org/3/library/codecs.html#binary-transforms
+            "".encode(codec)
         except LookupError:
             raise InvalidArgument(f"{codec=} is not valid on this system") from None
-        except TypeError:
+        except Exception:
             raise InvalidArgument(f"{codec=} is not a valid codec") from None
 
         for char in whitelist_characters:
@@ -646,6 +653,7 @@ def characters(
         if codec == "ascii":
             if (max_codepoint is None) or (max_codepoint > 127):
                 max_codepoint = 127
+            codec = None
         elif codec == "utf-8":
             if whitelist_categories is not None:
                 whitelist_categories = tuple(
@@ -655,11 +663,7 @@ def characters(
                 blacklist_categories = ("Cs",)
             elif "Cs" not in blacklist_categories:
                 blacklist_categories = (*blacklist_categories, "Cs")
-        else:
-            # TODO: handle all other codecs.  We'll probably want to do this inside
-            #       `OneCharStringStrategy`, by checking which intervals are supported,
-            #       caching that, and taking the intersection of their intervals.
-            raise InvalidArgument(f"{codec=} must be one of 'ascii', 'utf-8', or None")
+            codec = None
 
     return OneCharStringStrategy.from_characters_args(
         whitelist_categories=whitelist_categories,
@@ -668,6 +672,7 @@ def characters(
         min_codepoint=min_codepoint,
         max_codepoint=max_codepoint,
         whitelist_characters=whitelist_characters,
+        codec=codec,
     )
 
 

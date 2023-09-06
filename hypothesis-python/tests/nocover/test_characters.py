@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import string
+from encodings.aliases import aliases
 
 from hypothesis import given, strategies as st
 
@@ -32,3 +33,21 @@ def test_arbitrary_blacklist(data):
         )
     )
     assert c not in blacklist
+
+
+def _enc(cdc):
+    try:
+        "".encode(cdc)
+        return True
+    except Exception:
+        return False
+
+
+lots_of_encodings = sorted(x for x in set(aliases).union(aliases.values()) if _enc(x))
+assert len(lots_of_encodings) > 100  # sanity-check
+
+
+@given(data=st.data(), codec=st.sampled_from(lots_of_encodings))
+def test_can_constrain_characters_to_codec(data, codec):
+    s = data.draw(st.text(st.characters(codec=codec), min_size=100))
+    s.encode(codec)
