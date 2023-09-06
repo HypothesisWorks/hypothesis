@@ -80,6 +80,7 @@ class ConjectureRunner:
     def __init__(
         self,
         test_function,
+        *,
         settings=None,
         random=None,
         database_key=None,
@@ -979,7 +980,7 @@ class ConjectureRunner:
             explain=Phase.explain in self.settings.phases,
         )
 
-    def cached_test_function(self, buffer, error_on_discard=False, extend=0):
+    def cached_test_function(self, buffer, *, error_on_discard=False, extend=0):
         """Checks the tree to see if we've tested this buffer, and returns the
         previous result if we have.
 

@@ -411,7 +411,7 @@ def timezone_keys(
             "Run `pip install hypothesis[zoneinfo]` and try again."
         )
 
-    available_timezones = ("UTC",) + tuple(sorted(zoneinfo.available_timezones()))
+    available_timezones = ("UTC", *sorted(zoneinfo.available_timezones()))
 
     # TODO: filter out alias and deprecated names if disallowed
 

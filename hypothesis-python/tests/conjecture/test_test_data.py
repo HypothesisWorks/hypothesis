@@ -138,7 +138,7 @@ def test_triviality():
     d.freeze()
 
     def eg(u, v):
-        return [ex for ex in d.examples if ex.start == u and ex.end == v][0]
+        return next(ex for ex in d.examples if ex.start == u and ex.end == v)
 
     assert not eg(0, 2).trivial
     assert not eg(0, 1).trivial
@@ -242,7 +242,7 @@ def test_can_observe_draws():
 
         def conclude_test(self, *args):
             assert x.frozen
-            self.log.append(("concluded",) + args)
+            self.log.append(("concluded", *args))
 
     observer = LoggingObserver()
     x = ConjectureData.for_buffer(bytes([1, 2, 3]), observer=observer)

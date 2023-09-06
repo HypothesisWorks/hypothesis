@@ -523,7 +523,7 @@ def test_broadcastable_shape_bounds_are_satisfied(shape, data):
         max_dims = max(len(shape), min_dims) + 2
 
     if max_side is None:
-        max_side = max(tuple(shape[::-1][:max_dims]) + (min_side,)) + 2
+        max_side = max((*shape[::-1][:max_dims], min_side)) + 2
 
     assert isinstance(bshape, tuple)
     assert all(isinstance(s, int) for s in bshape)
@@ -563,7 +563,7 @@ def test_mutually_broadcastable_shape_bounds_are_satisfied(
         max_dims = max(len(base_shape), min_dims) + 2
 
     if max_side is None:
-        max_side = max(tuple(base_shape[::-1][:max_dims]) + (min_side,)) + 2
+        max_side = max((*base_shape[::-1][:max_dims], min_side)) + 2
 
     assert isinstance(shapes, tuple)
     assert isinstance(result, tuple)

@@ -66,7 +66,7 @@ __all__ = [
 
 
 RELEASED_VERSIONS = ("2021.12", "2022.12")
-NOMINAL_VERSIONS = RELEASED_VERSIONS + ("draft",)
+NOMINAL_VERSIONS = (*RELEASED_VERSIONS, "draft")
 assert sorted(NOMINAL_VERSIONS) == list(NOMINAL_VERSIONS)  # sanity check
 NominalVersion = Literal["2021.12", "2022.12", "draft"]
 assert get_args(NominalVersion) == NOMINAL_VERSIONS  # sanity check
@@ -79,7 +79,7 @@ FLOAT_NAMES = ("float32", "float64")
 REAL_NAMES = ALL_INT_NAMES + FLOAT_NAMES
 COMPLEX_NAMES = ("complex64", "complex128")
 NUMERIC_NAMES = REAL_NAMES + COMPLEX_NAMES
-DTYPE_NAMES = ("bool",) + NUMERIC_NAMES
+DTYPE_NAMES = ("bool", *NUMERIC_NAMES)
 
 DataType = TypeVar("DataType")
 

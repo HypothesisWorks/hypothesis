@@ -17,14 +17,15 @@ def test_find_uses_provided_random():
     prev = None
 
     for _ in range(3):
-        seen = []
+        seen = None
 
         def test(v):
             if len(v) > 5:
-                if seen:
-                    return v == seen[0]
+                nonlocal seen
+                if seen is not None:
+                    return v == seen
                 else:
-                    seen.append(v)
+                    seen = v
                     return True
 
         result = find(

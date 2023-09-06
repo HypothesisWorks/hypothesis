@@ -98,7 +98,7 @@ def test_draw_arrays_from_dtype_strategies(xp, xps, strat_name):
 @given(data=st.data())
 def test_draw_arrays_from_dtype_name_strategies(xp, xps, data):
     """Draw arrays from dtype name strategies."""
-    all_names = ("bool",) + REAL_NAMES
+    all_names = ("bool", *REAL_NAMES)
     if xps.api_version > "2021.12":
         all_names += COMPLEX_NAMES
     sample_names = data.draw(

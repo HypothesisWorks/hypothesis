@@ -244,7 +244,7 @@ class Shrinker:
 
     """
 
-    def derived_value(fn):  # noqa: B902
+    def derived_value(fn):
         """It's useful during shrinking to have access to derived values of
         the current shrink target.
 
@@ -308,7 +308,7 @@ class Shrinker:
 
     def cached(self, *keys):
         def accept(f):
-            cache_key = (f.__name__,) + keys
+            cache_key = (f.__name__, *keys)
             try:
                 return self.cached_calculations[cache_key]
             except KeyError:
@@ -1553,7 +1553,7 @@ class ShrinkPass:
     shrinks = attr.ib(default=0)
     deletions = attr.ib(default=0)
 
-    def step(self, random_order=False):
+    def step(self, *, random_order=False):
         tree = self.shrinker.shrink_pass_choice_trees[self]
         if tree.exhausted:
             return False

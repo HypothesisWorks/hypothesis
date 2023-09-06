@@ -23,6 +23,7 @@ from io import StringIO
 from typing import (
     Any,
     Callable,
+    ClassVar,
     Dict,
     Iterable,
     List,
@@ -237,9 +238,9 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
     executed.
     """
 
-    _rules_per_class: Dict[type, List[classmethod]] = {}
-    _invariants_per_class: Dict[type, List[classmethod]] = {}
-    _initializers_per_class: Dict[type, List[classmethod]] = {}
+    _rules_per_class: ClassVar[Dict[type, List[classmethod]]] = {}
+    _invariants_per_class: ClassVar[Dict[type, List[classmethod]]] = {}
+    _initializers_per_class: ClassVar[Dict[type, List[classmethod]]] = {}
 
     def __init__(self) -> None:
         if not self.rules():
@@ -416,7 +417,7 @@ class Rule:
             if isinstance(v, Bundle):
                 bundles.append(v)
                 consume = isinstance(v, BundleConsumer)
-                arguments[k] = BundleReferenceStrategy(v.name, consume)
+                arguments[k] = BundleReferenceStrategy(v.name, consume=consume)
             else:
                 arguments[k] = v
         self.bundles = tuple(bundles)
@@ -427,7 +428,7 @@ self_strategy = st.runner()
 
 
 class BundleReferenceStrategy(SearchStrategy):
-    def __init__(self, name, consume=False):
+    def __init__(self, name: str, *, consume: bool = False):
         self.name = name
         self.consume = consume
 
@@ -447,10 +448,9 @@ class BundleReferenceStrategy(SearchStrategy):
 
 
 class Bundle(SearchStrategy[Ex]):
-    # TODO: deprecate passing `consume` as a positional argument
-    def __init__(self, name: str, consume: bool = False) -> None:  # noqa  # bool posarg
+    def __init__(self, name: str, *, consume: bool = False) -> None:
         self.name = name
-        self.__reference_strategy = BundleReferenceStrategy(name, consume)
+        self.__reference_strategy = BundleReferenceStrategy(name, consume=consume)
 
     def do_draw(self, data):
         machine = data.draw(self_strategy)
@@ -524,7 +524,7 @@ def _convert_targets(targets, target):
         if targets:
             raise InvalidArgument(
                 "Passing both targets=%r and target=%r is redundant - pass "
-                "targets=%r instead." % (targets, target, tuple(targets) + (target,))
+                "targets=%r instead." % (targets, target, (*targets, target))
             )
         targets = (target,)
 
@@ -801,19 +801,19 @@ def precondition(precond: Callable[[Any], bool]) -> Callable[[TestFunc], TestFun
         invariant = getattr(f, INVARIANT_MARKER, None)
         if rule is not None:
             assert invariant is None
-            new_rule = attr.evolve(rule, preconditions=rule.preconditions + (precond,))
+            new_rule = attr.evolve(rule, preconditions=(*rule.preconditions, precond))
             setattr(precondition_wrapper, RULE_MARKER, new_rule)
         elif invariant is not None:
             assert rule is None
             new_invariant = attr.evolve(
-                invariant, preconditions=invariant.preconditions + (precond,)
+                invariant, preconditions=(*invariant.preconditions, precond)
             )
             setattr(precondition_wrapper, INVARIANT_MARKER, new_invariant)
         else:
             setattr(
                 precondition_wrapper,
                 PRECONDITIONS_MARKER,
-                getattr(f, PRECONDITIONS_MARKER, ()) + (precond,),
+                (*getattr(f, PRECONDITIONS_MARKER, ()), precond),
             )
 
         return precondition_wrapper

@@ -275,9 +275,7 @@ else:
         help="force ghostwritten tests to be type-annotated (or not).  "
         "By default, match the code to test.",
     )
-    def write(
-        func, writer, except_, style, annotate
-    ):  # noqa: D301  # \b disables autowrap
+    def write(func, writer, except_, style, annotate):  # \b disables autowrap
         """`hypothesis write` writes property-based tests for you!
 
         Type annotations are helpful but not required for our advanced introspection

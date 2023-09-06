@@ -42,8 +42,8 @@ def test_our_floor_and_ceil_avoid_numpy_rounding(value):
         c = ceil(a)
 
     # Check *exact* type - we don't want to allow a subclass of int here
-    assert type(f) == int  # noqa
-    assert type(c) == int  # noqa
+    assert type(f) == int
+    assert type(c) == int
 
     # Using math.floor or math.ceil for these values would give an incorrect result.
     with warnings.catch_warnings():

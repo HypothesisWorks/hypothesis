@@ -84,7 +84,7 @@ def is_typed_named_tuple(cls):
 
 
 def _hint_and_args(x):
-    return (x,) + get_args(x)
+    return (x, *get_args(x))
 
 
 def get_type_hints(thing):

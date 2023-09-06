@@ -34,7 +34,7 @@ def test_can_copy_signature_of_unicode_name():
     assert bar() == 2
 
 
-is_approx_π = lambda x: x == 3.1415  # noqa: E731
+is_approx_π = lambda x: x == 3.1415
 
 
 def test_can_handle_unicode_identifier_in_same_line_as_lambda_def():

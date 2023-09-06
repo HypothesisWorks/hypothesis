@@ -57,7 +57,7 @@ def update_changelog_and_version():
 def cargo(*args):
     install.ensure_rustup()
     with in_dir(BASE_DIR):
-        subprocess.check_call(("cargo",) + args)
+        subprocess.check_call(("cargo", *args))
 
 
 IN_TEST = False

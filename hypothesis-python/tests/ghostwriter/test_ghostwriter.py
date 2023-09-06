@@ -223,7 +223,7 @@ def test_ghostwriter_unittest_style(func, ex):
     assert issubclass(get_test_function(source_code), unittest.TestCase)
 
 
-def no_annotations(foo=None, bar=False):
+def no_annotations(foo=None, *, bar=False):
     pass
 
 

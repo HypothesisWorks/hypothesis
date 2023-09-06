@@ -140,12 +140,12 @@ def test_does_not_change_arguments(data, ls):
 class ClsWithStrategyMethods:
     @classmethod
     @st.composite
-    def st_classmethod_then_composite(draw, cls):  # noqa: B902
+    def st_classmethod_then_composite(draw, cls):
         return draw(st.integers(0, 10))
 
     @st.composite
     @classmethod
-    def st_composite_then_classmethod(draw, cls):  # noqa: B902
+    def st_composite_then_classmethod(draw, cls):
         return draw(st.integers(0, 10))
 
     @staticmethod
@@ -159,7 +159,7 @@ class ClsWithStrategyMethods:
         return draw(st.integers(0, 10))
 
     @st.composite
-    def st_composite_method(draw, self):  # noqa: B902
+    def st_composite_method(draw, self):
         return draw(st.integers(0, 10))
 
 

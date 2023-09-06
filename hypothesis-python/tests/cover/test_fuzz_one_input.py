@@ -65,7 +65,7 @@ def test_fuzz_one_input(buffer_type):
     # recent seed that we tried or the pruned-and-canonicalised form of it.
     (saved_examples,) = db.data.values()
     assert len(saved_examples) == 1
-    assert sort_key(seeds[-1]) >= sort_key(list(saved_examples)[0])
+    assert sort_key(seeds[-1]) >= sort_key(next(iter(saved_examples)))
 
     # Now that we have a failure in `db`, re-running our test is sufficient to
     # reproduce it, *and shrink to a minimal example*.

@@ -32,7 +32,7 @@ from hypothesis.errors import ResolutionFailed
 from tests.common import utils
 
 if TYPE_CHECKING:
-    from tests.common.utils import ExcInfo  # we just need any type  # noqa: F401
+    from tests.common.utils import ExcInfo  # we just need any type
 
 # Correct:
 

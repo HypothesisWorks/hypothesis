@@ -540,7 +540,7 @@ def test_required_args(target, args, kwargs, expected):
 
 
 # fmt: off
-pi = "π"; is_str_pi = lambda x: x == pi  # noqa: E702,E731
+pi = "π"; is_str_pi = lambda x: x == pi  # noqa: E702
 # fmt: on
 
 

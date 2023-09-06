@@ -156,20 +156,20 @@ def sampled_from(elements: Sequence[T]) -> SearchStrategy[T]:  # pragma: no cove
     ...
 
 
-@overload  # noqa: F811
+@overload
 def sampled_from(elements: Type[enum.Enum]) -> SearchStrategy[Any]:  # pragma: no cover
     # `SearchStrategy[Enum]` is unreliable due to metaclass issues.
     ...
 
 
-@overload  # noqa: F811
+@overload
 def sampled_from(
     elements: Union[Type[enum.Enum], Sequence[Any]]
 ) -> SearchStrategy[Any]:  # pragma: no cover
     ...
 
 
-@defines_strategy(try_non_lazy=True)  # noqa: F811
+@defines_strategy(try_non_lazy=True)
 def sampled_from(
     elements: Union[Type[enum.Enum], Sequence[Any]]
 ) -> SearchStrategy[Any]:
@@ -654,7 +654,7 @@ def characters(
             if blacklist_categories is None:
                 blacklist_categories = ("Cs",)
             elif "Cs" not in blacklist_categories:
-                blacklist_categories = tuple(blacklist_categories) + ("Cs",)
+                blacklist_categories = (*blacklist_categories, "Cs")
         else:
             # TODO: handle all other codecs.  We'll probably want to do this inside
             #       `OneCharStringStrategy`, by checking which intervals are supported,
@@ -1148,7 +1148,7 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
     # refactoring it's hard to do without creating circular imports.
     from hypothesis.strategies._internal import types
 
-    def as_strategy(strat_or_callable, thing, final=True):
+    def as_strategy(strat_or_callable, thing):
         # User-provided strategies need some validation, and callables even more
         # of it.  We do this in three places, hence the helper function
         if not isinstance(strat_or_callable, SearchStrategy):
@@ -1293,7 +1293,7 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
     # type.  For example, `Number -> integers() | floats()`, but bools() is
     # not included because bool is a subclass of int as well as Number.
     strategies = [
-        as_strategy(v, thing, final=False)
+        as_strategy(v, thing)
         for k, v in sorted(types._global_type_lookup.items(), key=repr)
         if isinstance(k, type)
         and issubclass(k, thing)

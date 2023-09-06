@@ -329,7 +329,7 @@ def test_distinct_typevars_same_constraint():
     B = typing.TypeVar("B", int, str)
     find_any(
         st.tuples(st.from_type(A), st.from_type(B)),
-        lambda ab: type(ab[0]) != type(ab[1]),  # noqa
+        lambda ab: type(ab[0]) != type(ab[1]),
     )
 
 
@@ -339,7 +339,7 @@ def test_distinct_typevars_distinct_type():
     B = typing.TypeVar("B")
     find_any(
         st.tuples(st.from_type(A), st.from_type(B)),
-        lambda ab: type(ab[0]) != type(ab[1]),  # noqa
+        lambda ab: type(ab[0]) != type(ab[1]),
     )
 
 
@@ -895,7 +895,7 @@ def test_resolves_forward_references_outside_annotations(t):
     assert isinstance(t, TreeForwardRefs)
 
 
-def constructor(a: str = None):
+def constructor(a: str = None):  # noqa  # deprecated implicit optional, for testing
     pass
 
 

@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
     for c, vs in sorted(checks.items()):
         if len(vs) < 2:
-            v = list(vs)[0]
+            v = next(iter(vs))
             assert v in (False, True)
             if v:
                 always_true.append(c)

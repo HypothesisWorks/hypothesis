@@ -299,7 +299,7 @@ def is_generic_type(type_):
     # The ugly truth is that `MyClass`, `MyClass[T]`, and `MyClass[int]` are very different.
     # We check for `MyClass[T]` and `MyClass[int]` with the first condition,
     # while the second condition is for `MyClass`.
-    return isinstance(type_, typing_root_type + (GenericAlias,)) or (
+    return isinstance(type_, (*typing_root_type, GenericAlias)) or (
         isinstance(type_, type)
         and (typing.Generic in type_.__mro__ or hasattr(type_, "__class_getitem__"))
     )
@@ -424,7 +424,7 @@ def from_typing_type(thing):
             union_elems = ()
         if not any(
             isinstance(T, type) and issubclass(int, get_origin(T) or T)
-            for T in list(union_elems) + [elem_type]
+            for T in [*union_elems, elem_type]
         ):
             mapping.pop(bytes, None)
             mapping.pop(collections.abc.ByteString, None)
@@ -592,7 +592,7 @@ if PYPY:
 
 
 _global_type_lookup[type] = st.sampled_from(
-    [type(None)] + sorted(_global_type_lookup, key=str)
+    [type(None), *sorted(_global_type_lookup, key=str)]
 )
 if sys.version_info[:2] >= (3, 9):
     # subclass of MutableMapping, and in Python 3.9 we resolve to a union

@@ -50,7 +50,7 @@ def test_all_generated_scalar_dtypes_are_scalar(xp, xps):
     if xps.api_version > "2021.12":
         dtypes = [getattr(xp, n) for n in DTYPE_NAMES]
     else:
-        dtypes = [getattr(xp, n) for n in ("bool",) + REAL_NAMES]
+        dtypes = [getattr(xp, n) for n in ("bool", *REAL_NAMES)]
     assert_all_examples(xps.scalar_dtypes(), lambda dtype: dtype in dtypes)
 
 

@@ -533,7 +533,7 @@ def audit_rust_in_ruby():
 
 @task()
 def python(*args):
-    os.execv(sys.executable, (sys.executable,) + args)
+    os.execv(sys.executable, (sys.executable, *args))
 
 
 @task()

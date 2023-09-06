@@ -129,7 +129,8 @@ class TextStrategy(ListStrategy):
 
     # See https://docs.python.org/3/library/stdtypes.html#string-methods
     # These methods always return Truthy values for any nonempty string.
-    _nonempty_filters = ListStrategy._nonempty_filters + (
+    _nonempty_filters = (
+        *ListStrategy._nonempty_filters,
         str,
         str.capitalize,
         str.casefold,

@@ -137,7 +137,7 @@ def ensure_bundler():
 def cargo(*args):
     install.ensure_rustup()
     with in_dir(BASE_DIR):
-        subprocess.check_call(("cargo",) + args)
+        subprocess.check_call(("cargo", *args))
 
 
 RUBY_TO_PRINT_VERSION = f"""

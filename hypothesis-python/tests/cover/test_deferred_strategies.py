@@ -29,7 +29,7 @@ def test_mutual_recursion():
     b = st.deferred(lambda: st.none() | st.tuples(st.just("b"), a))
 
     for c in ("a", "b"):
-        assert minimal(t, lambda x: x is not None and x[0] == c) == (c, None)
+        assert minimal(t, lambda x: x is not None and x[0] == c) == (c, None)  # noqa
 
 
 def test_errors_on_non_function_define():
@@ -122,7 +122,7 @@ def test_very_deep_deferral():
     # see any because this loop isn't infinite, just long.
     def strat(i):
         if i == 0:
-            return st.deferred(lambda: st.one_of(strategies + [st.none()]))
+            return st.deferred(lambda: st.one_of([*strategies, st.none()]))
         else:
             return st.deferred(lambda: st.tuples(strategies[(i + 1) % len(strategies)]))
 

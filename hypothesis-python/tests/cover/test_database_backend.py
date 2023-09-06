@@ -137,7 +137,7 @@ def test_can_handle_disappearing_files(tmpdir, monkeypatch):
     db.save(b"foo", b"bar")
     base_listdir = os.listdir
     monkeypatch.setattr(
-        os, "listdir", lambda d: base_listdir(d) + ["this-does-not-exist"]
+        os, "listdir", lambda d: [*base_listdir(d), "this-does-not-exist"]
     )
     assert list(db.fetch(b"foo")) == [b"bar"]
 
@@ -384,7 +384,7 @@ class GitHubArtifactMocks(RuleBasedStateMachine):
         self._archive_directory_db()
         self.zip_db._initialize_db()
 
-    def _make_zip(self, tree_path: Path, zip_path: Path, skip_empty_dir=False):
+    def _make_zip(self, tree_path: Path, zip_path: Path):
         destination = zip_path.parent.absolute() / zip_path.stem
         make_archive(
             str(destination),
