@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.84.3:
+
+-------------------
+6.84.3 - 2023-09-10
+-------------------
+
+This patch automatically disables the :obj:`~hypothesis.HealthCheck.differing_executors`
+health check for methods which are also pytest parametrized tests, because
+those were mostly false alarms (:issue:`3733`).
+
 .. _v6.84.2:
 
 -------------------
