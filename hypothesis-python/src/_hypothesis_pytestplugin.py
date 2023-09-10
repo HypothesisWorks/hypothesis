@@ -191,9 +191,9 @@ else:
         from hypothesis.internal.detection import is_hypothesis_test
 
         # See https://github.com/pytest-dev/pytest/issues/9159
-        # TODO: add `pytest_version >= (7, 2) or` once the issue above is fixed.
         core.pytest_shows_exceptiongroups = (
-            item.config.getoption("tbstyle", "auto") == "native"
+            getattr(pytest, "version_tuple", ())[:2] >= (7, 2)
+            or item.config.getoption("tbstyle", "auto") == "native"
         )
         core.running_under_pytest = True
 
