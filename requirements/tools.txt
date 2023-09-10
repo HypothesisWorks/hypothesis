@@ -8,7 +8,7 @@ alabaster==0.7.13
     # via sphinx
 asgiref==3.7.2
     # via django
-asttokens==2.3.0
+asttokens==2.4.0
     # via stack-data
 attrs==23.1.0
     # via hypothesis (hypothesis-python/setup.py)
@@ -20,11 +20,9 @@ backcall==0.2.0
     # via ipython
 beautifulsoup4==4.12.2
     # via sphinx-codeautolink
-black==23.7.0
+black==23.9.0
     # via shed
-bleach==6.0.0
-    # via readme-renderer
-build==1.0.0
+build==1.0.3
     # via pip-tools
 cachetools==5.3.1
     # via tox
@@ -46,7 +44,7 @@ colorama==0.4.6
     # via tox
 com2ann==0.3.0
     # via shed
-coverage==7.3.0
+coverage==7.3.1
     # via -r requirements/tools.in
 cryptography==41.0.3
     # via
@@ -57,7 +55,7 @@ decorator==5.1.1
     # via ipython
 distlib==0.3.7
     # via virtualenv
-django==4.2.4
+django==4.2.5
     # via -r requirements/tools.in
 docutils==0.18.1
     # via
@@ -127,6 +125,8 @@ mypy-extensions==1.0.0
     #   black
     #   mypy
     #   typing-inspect
+nh3==0.2.14
+    # via readme-renderer
 nodeenv==1.8.0
     # via pyright
 packaging==23.1
@@ -178,9 +178,9 @@ pyproject-api==1.6.1
     # via tox
 pyproject-hooks==1.0.0
     # via build
-pyright==1.1.325
+pyright==1.1.326
     # via -r requirements/tools.in
-pytest==7.4.1
+pytest==7.4.2
     # via -r requirements/tools.in
 python-dateutil==2.8.2
     # via -r requirements/tools.in
@@ -188,7 +188,7 @@ pyupgrade==3.10.1
     # via shed
 pyyaml==6.0.1
     # via libcst
-readme-renderer==41.0
+readme-renderer==42.0
     # via twine
 requests==2.31.0
     # via
@@ -213,7 +213,6 @@ shed==2023.6.1
 six==1.16.0
     # via
     #   asttokens
-    #   bleach
     #   python-dateutil
 snowballstemmer==2.2.0
     # via sphinx
@@ -274,7 +273,7 @@ tomli==2.0.1
     #   pyproject-hooks
     #   pytest
     #   tox
-tox==4.11.1
+tox==4.11.3
     # via -r requirements/tools.in
 traitlets==5.9.0
     # via
@@ -296,6 +295,7 @@ typing-extensions==4.7.1
     # via
     #   -r requirements/tools.in
     #   asgiref
+    #   black
     #   filelock
     #   libcst
     #   mypy
@@ -306,12 +306,10 @@ urllib3==2.0.4
     # via
     #   requests
     #   twine
-virtualenv==20.24.4
+virtualenv==20.24.5
     # via tox
 wcwidth==0.2.6
     # via prompt-toolkit
-webencodings==0.5.1
-    # via bleach
 wheel==0.41.2
     # via pip-tools
 zipp==3.16.2
@@ -320,7 +318,7 @@ zipp==3.16.2
 # The following packages are considered to be unsafe in a requirements file:
 pip==23.2.1
     # via pip-tools
-setuptools==68.1.2
+setuptools==68.2.0
     # via
     #   nodeenv
     #   pip-tools
