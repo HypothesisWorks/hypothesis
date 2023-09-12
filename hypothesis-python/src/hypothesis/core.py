@@ -188,6 +188,21 @@ class example:
             @example(...).xfail(condition=sys.platform != "linux", raises=OSError)
             def test(x):
                 pass
+
+        Note that this "method chaining" syntax requires Python 3.9 or later, for
+        :pep:`614` relaxing grammar restrictions on decorators.  If you need to
+        support older versions of Python, you can use an identity function:
+
+        .. code-block:: python
+
+            def identity(x):
+                return x
+
+
+            @identity(example(...).xfail())
+            def test(x):
+                pass
+
         """
         check_type(bool, condition, "condition")
         check_type(str, reason, "reason")
