@@ -13,6 +13,7 @@ import sys
 from numbers import Real
 from types import SimpleNamespace
 from typing import (
+    TYPE_CHECKING,
     Any,
     Iterable,
     Iterator,
@@ -59,6 +60,9 @@ from hypothesis.internal.validation import (
 )
 from hypothesis.strategies._internal.strategies import check_strategy
 from hypothesis.strategies._internal.utils import defines_strategy
+
+if TYPE_CHECKING:
+    from typing import TypeAlias
 
 __all__ = [
     "make_strategies_namespace",
@@ -654,8 +658,13 @@ def numeric_dtype_names(base_name: str, sizes: Sequence[int]) -> Iterator[str]:
         yield f"{base_name}{size}"
 
 
+IntSize: "TypeAlias" = Literal[8, 16, 32, 64]
+FltSize: "TypeAlias" = Literal[32, 64]
+CpxSize: "TypeAlias" = Literal[64, 128]
+
+
 def _integer_dtypes(
-    xp: Any, *, sizes: Union[int, Sequence[int]] = (8, 16, 32, 64)
+    xp: Any, *, sizes: Union[IntSize, Sequence[IntSize]] = (8, 16, 32, 64)
 ) -> st.SearchStrategy[DataType]:
     """Return a strategy for signed integer dtype objects.
 
@@ -673,7 +682,7 @@ def _integer_dtypes(
 
 
 def _unsigned_integer_dtypes(
-    xp: Any, *, sizes: Union[int, Sequence[int]] = (8, 16, 32, 64)
+    xp: Any, *, sizes: Union[IntSize, Sequence[IntSize]] = (8, 16, 32, 64)
 ) -> st.SearchStrategy[DataType]:
     """Return a strategy for unsigned integer dtype objects.
 
@@ -693,7 +702,7 @@ def _unsigned_integer_dtypes(
 
 
 def _floating_dtypes(
-    xp: Any, *, sizes: Union[int, Sequence[int]] = (32, 64)
+    xp: Any, *, sizes: Union[FltSize, Sequence[FltSize]] = (32, 64)
 ) -> st.SearchStrategy[DataType]:
     """Return a strategy for real-valued floating-point dtype objects.
 
@@ -711,7 +720,7 @@ def _floating_dtypes(
 
 
 def _complex_dtypes(
-    xp: Any, *, sizes: Union[int, Sequence[int]] = (64, 128)
+    xp: Any, *, sizes: Union[CpxSize, Sequence[CpxSize]] = (64, 128)
 ) -> st.SearchStrategy[DataType]:
     """Return a strategy for complex dtype objects.
 
@@ -984,19 +993,19 @@ def make_strategies_namespace(
 
     @defines_strategy()
     def integer_dtypes(
-        *, sizes: Union[int, Sequence[int]] = (8, 16, 32, 64)
+        *, sizes: Union[IntSize, Sequence[IntSize]] = (8, 16, 32, 64)
     ) -> st.SearchStrategy[DataType]:
         return _integer_dtypes(xp, sizes=sizes)
 
     @defines_strategy()
     def unsigned_integer_dtypes(
-        *, sizes: Union[int, Sequence[int]] = (8, 16, 32, 64)
+        *, sizes: Union[IntSize, Sequence[IntSize]] = (8, 16, 32, 64)
     ) -> st.SearchStrategy[DataType]:
         return _unsigned_integer_dtypes(xp, sizes=sizes)
 
     @defines_strategy()
     def floating_dtypes(
-        *, sizes: Union[int, Sequence[int]] = (32, 64)
+        *, sizes: Union[FltSize, Sequence[FltSize]] = (32, 64)
     ) -> st.SearchStrategy[DataType]:
         return _floating_dtypes(xp, sizes=sizes)
 
@@ -1057,7 +1066,7 @@ def make_strategies_namespace(
 
         @defines_strategy()
         def complex_dtypes(
-            *, sizes: Union[int, Sequence[int]] = (64, 128)
+            *, sizes: Union[CpxSize, Sequence[CpxSize]] = (64, 128)
         ) -> st.SearchStrategy[DataType]:
             return _complex_dtypes(xp, sizes=sizes)
 
