@@ -246,9 +246,7 @@ def _for_text(field):
     # If there are no (usable) regexes, we use a standard text strategy.
     min_size, max_size = length_bounds_from_validators(field)
     strategy = st.text(
-        alphabet=st.characters(
-            blacklist_characters="\x00", blacklist_categories=("Cs",)
-        ),
+        alphabet=st.characters(exclude_characters="\x00", exclude_categories=("Cs",)),
         min_size=min_size,
         max_size=max_size,
     ).filter(lambda s: min_size <= len(s.strip()))

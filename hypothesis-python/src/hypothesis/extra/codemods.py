@@ -48,7 +48,7 @@ at the cost of additional configuration (adding ``'hypothesis.extra'`` to the
 import functools
 import importlib
 from inspect import Parameter, signature
-from typing import List
+from typing import ClassVar, List
 
 import libcst as cst
 import libcst.matchers as m
@@ -68,6 +68,8 @@ def refactor(code: str) -> str:
     transforms: List[VisitorBasedCodemodCommand] = [
         HypothesisFixPositionalKeywonlyArgs(context),
         HypothesisFixComplexMinMagnitude(context),
+        HypothesisFixHealthcheckAll(context),
+        HypothesisFixCharactersArguments(context),
     ]
     for transform in transforms:
         mod = transform.transform_module(mod)
@@ -235,3 +237,48 @@ class HypothesisFixHealthcheckAll(VisitorBasedCodemodCommand):
             func=cst.Name("list"),
             args=[cst.Arg(value=cst.Name("Healthcheck"))],
         )
+
+
+class HypothesisFixCharactersArguments(VisitorBasedCodemodCommand):
+    """Fix deprecated white/blacklist arguments to characters::
+
+        st.characters(whitelist_categories=...) -> st.characters(categories=...)
+        st.characters(blacklist_categories=...) -> st.characters(exclude_categories=...)
+        st.characters(whitelist_characters=...) -> st.characters(include_characters=...)
+        st.characters(blacklist_characters=...) -> st.characters(exclude_characters=...)
+
+    Additionally, we drop `exclude_categories=` if `categories=` is present,
+    because this argument is always redundant (or an error).
+    """
+
+    DESCRIPTION = "Fix deprecated white/blacklist arguments to characters."
+    METADATA_DEPENDENCIES = (cst.metadata.QualifiedNameProvider,)
+
+    _replacements: ClassVar = {
+        "whitelist_categories": "categories",
+        "blacklist_categories": "exclude_categories",
+        "whitelist_characters": "include_characters",
+        "blacklist_characters": "exclude_characters",
+    }
+
+    @m.leave(
+        m.Call(
+            metadata=match_qualname("hypothesis.strategies.characters"),
+            args=[
+                m.ZeroOrMore(),
+                m.Arg(keyword=m.OneOf(*map(m.Name, _replacements))),
+                m.ZeroOrMore(),
+            ],
+        ),
+    )
+    def fn(self, original_node, updated_node):
+        # Update to the new names
+        newargs = []
+        for arg in updated_node.args:
+            kw = self._replacements.get(arg.keyword.value, arg.keyword.value)
+            newargs.append(arg.with_changes(keyword=cst.Name(kw)))
+        # Drop redundant exclude_categories, which is now an error
+        if any(m.matches(arg, m.Arg(keyword=m.Name("categories"))) for arg in newargs):
+            ex = m.Arg(keyword=m.Name("exclude_categories"))
+            newargs = [a for a in newargs if m.matches(a, ~ex)]
+        return updated_node.with_changes(args=newargs)

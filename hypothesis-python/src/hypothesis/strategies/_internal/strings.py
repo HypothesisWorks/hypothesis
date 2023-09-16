@@ -37,38 +37,35 @@ class OneCharStringStrategy(SearchStrategy):
     @classmethod
     def from_characters_args(
         cls,
-        whitelist_categories=None,
-        blacklist_categories=None,
-        blacklist_characters=None,
+        *,
+        codec=None,
         min_codepoint=None,
         max_codepoint=None,
-        whitelist_characters=None,
-        codec=None,
+        categories=None,
+        exclude_characters=None,
+        include_characters=None,
     ):
-        assert set(whitelist_categories or ()).issubset(charmap.categories())
-        assert set(blacklist_categories or ()).issubset(charmap.categories())
+        assert set(categories or ()).issubset(charmap.categories())
         intervals = charmap.query(
-            include_categories=whitelist_categories,
-            exclude_categories=blacklist_categories,
             min_codepoint=min_codepoint,
             max_codepoint=max_codepoint,
-            include_characters=whitelist_characters,
-            exclude_characters=blacklist_characters,
+            categories=categories,
+            exclude_characters=exclude_characters,
+            include_characters=include_characters,
         )
         if codec is not None:
             intervals &= charmap.intervals_from_codec(codec)
         _arg_repr = ", ".join(
             f"{k}={v!r}"
             for k, v in [
-                ("whitelist_categories", whitelist_categories),
-                ("blacklist_categories", blacklist_categories),
-                ("whitelist_characters", whitelist_characters),
-                ("blacklist_characters", blacklist_characters),
+                ("codec", codec),
                 ("min_codepoint", min_codepoint),
                 ("max_codepoint", max_codepoint),
-                ("codec", codec),
+                ("categories", categories),
+                ("exclude_characters", exclude_characters),
+                ("include_characters", include_characters),
             ]
-            if not (v in (None, "") or (k == "blacklist_categories" and v == ("Cs",)))
+            if v not in (None, "", set(charmap.categories()) - {"Cs"})
         )
         if not intervals:
             raise InvalidArgument(
@@ -245,7 +242,7 @@ def _identifier_characters():
 
     # Then get the basic set by Unicode category and known extras
     id_start = charmap.query(
-        include_categories=("Lu", "Ll", "Lt", "Lm", "Lo", "Nl"),
+        categories=("Lu", "Ll", "Lt", "Lm", "Lo", "Nl"),
         include_characters="_" + chars["Other_ID_Start"],
     )
     id_start -= IntervalSet.from_string(
@@ -255,7 +252,7 @@ def _identifier_characters():
         "\ufdfa\ufdfb\ufe70\ufe72\ufe74\ufe76\ufe78\ufe7a\ufe7c\ufe7e\uff9e\uff9f"
     )
     id_continue = id_start | charmap.query(
-        include_categories=("Mn", "Mc", "Nd", "Pc"),
+        categories=("Mn", "Mc", "Nd", "Pc"),
         include_characters=chars["Other_ID_Continue"],
     )
     return id_start, id_continue

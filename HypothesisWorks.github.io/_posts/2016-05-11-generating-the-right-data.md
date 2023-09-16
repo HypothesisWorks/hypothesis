@@ -77,11 +77,11 @@ strategy, which gives you a flexible way of describing a strategy for single-cha
 text strings, to do that.
 
 ```pycon
-i>>> characters(min_codepoint=1, max_codepoint=1000, blacklist_categories=('Cc', 'Cs')).example()
+i>>> characters(min_codepoint=1, max_codepoint=1000, exclude_categories=('Cc', 'Cs')).example()
 '²'
->>> characters(min_codepoint=1, max_codepoint=1000, blacklist_categories=('Cc', 'Cs')).example()
+>>> characters(min_codepoint=1, max_codepoint=1000, exclude_categories=('Cc', 'Cs')).example()
 'E'
->>> characters(min_codepoint=1, max_codepoint=1000, blacklist_categories=('Cc', 'Cs')).example()
+>>> characters(min_codepoint=1, max_codepoint=1000, exclude_categories=('Cc', 'Cs')).example()
 '̺'
 
 ```
@@ -114,7 +114,7 @@ need to exclude them yourself.
 So we can put that together with text() to get a name matching our requirements:
 
 ```pycon
->>> names = text(characters(max_codepoint=1000, blacklist_categories=('Cc', 'Cs')), min_size=1)
+>>> names = text(characters(max_codepoint=1000, exclude_categories=('Cc', 'Cs')), min_size=1)
 ```
 
 But this is still not quite right: We've allowed spaces in names, but we don't really want
@@ -132,7 +132,7 @@ To do this we're going to use the strategy's *map* method which lets you compose
 an arbitrary function to post-process the results into the for you want:
 
 ```pycon
->>> names = text(characters(max_codepoint=1000, blacklist_categories=('Cc', 'Cs')), min_size=1).map(
+>>> names = text(characters(max_codepoint=1000, exclude_categories=('Cc', 'Cs')), min_size=1).map(
 ...     lambda x: x.strip())
 ```
 
@@ -167,7 +167,7 @@ We can fix this using the strategy's *filter* function, which restricts to only 
 things which satisfy some condition:
 
 ```pycon
->>> names = text(characters(max_codepoint=1000, blacklist_categories=('Cc', 'Cs')), min_size=1).map(
+>>> names = text(characters(max_codepoint=1000, exclude_categories=('Cc', 'Cs')), min_size=1).map(
 ...     lambda s: s.strip()).filter(lambda s: len(s) > 0)
 ```
 
@@ -202,7 +202,7 @@ from hypothesis import given
 from hypothesis.strategies import characters, text
 
 names = (
-    text(characters(max_codepoint=1000, blacklist_categories=("Cc", "Cs")), min_size=1)
+    text(characters(max_codepoint=1000, exclude_categories=("Cc", "Cs")), min_size=1)
     .map(lambda s: s.strip())
     .filter(lambda s: len(s) > 0)
 )

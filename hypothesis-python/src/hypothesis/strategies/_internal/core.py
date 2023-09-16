@@ -60,7 +60,10 @@ from hypothesis.errors import (
     SmallSearchSpaceWarning,
 )
 from hypothesis.internal.cathetus import cathetus
-from hypothesis.internal.charmap import as_general_categories
+from hypothesis.internal.charmap import (
+    as_general_categories,
+    categories as all_categories,
+)
 from hypothesis.internal.compat import (
     Concatenate,
     ParamSpec,
@@ -525,13 +528,18 @@ def dictionaries(
 @defines_strategy(force_reusable_values=True)
 def characters(
     *,
-    whitelist_categories: Optional[Collection[str]] = None,
-    blacklist_categories: Optional[Collection[str]] = None,
-    blacklist_characters: Optional[Collection[str]] = None,
+    codec: Optional[str] = None,
     min_codepoint: Optional[int] = None,
     max_codepoint: Optional[int] = None,
+    categories: Optional[Collection[str]] = None,
+    exclude_categories: Optional[Collection[str]] = None,
+    exclude_characters: Optional[Collection[str]] = None,
+    include_characters: Optional[Collection[str]] = None,
+    # Note: these arguments are deprecated aliases for backwards compatibility
+    blacklist_categories: Optional[Collection[str]] = None,
+    whitelist_categories: Optional[Collection[str]] = None,
+    blacklist_characters: Optional[Collection[str]] = None,
     whitelist_characters: Optional[Collection[str]] = None,
-    codec: Optional[str] = None,
 ) -> SearchStrategy[str]:
     r"""Generates characters, length-one :class:`python:str`\ ings,
     following specified filtering rules.
@@ -539,18 +547,18 @@ def characters(
     - When no filtering rules are specified, any character can be produced.
     - If ``min_codepoint`` or ``max_codepoint`` is specified, then only
       characters having a codepoint in that range will be produced.
-    - If ``whitelist_categories`` is specified, then only characters from those
+    - If ``categories`` is specified, then only characters from those
       Unicode categories will be produced. This is a further restriction,
       characters must also satisfy ``min_codepoint`` and ``max_codepoint``.
-    - If ``blacklist_categories`` is specified, then any character from those
-      categories will not be produced.  Any overlap between
-      ``whitelist_categories`` and ``blacklist_categories`` will raise an
-      exception, as each character can only belong to a single class.
-    - If ``whitelist_characters`` is specified, then any additional characters
+    - If ``exclude_categories`` is specified, then any character from those
+      categories will not be produced.  You must not pass both ``categories``
+      and ``exclude_categories``; these arguments are alternative ways to
+      specify exactly the same thing.
+    - If ``include_characters`` is specified, then any additional characters
       in that list will also be produced.
-    - If ``blacklist_characters`` is specified, then any characters in
+    - If ``exclude_characters`` is specified, then any characters in
       that list will be not be produced. Any overlap between
-      ``whitelist_characters`` and ``blacklist_characters`` will raise an
+      ``include_characters`` and ``exclude_characters`` will raise an
       exception.
     - If ``codec`` is specified, only characters in the specified `codec encodings`_
       will be produced.
@@ -569,7 +577,7 @@ def characters(
     We allow codecs from the :mod:`codecs` module and their aliases, platform
     specific and user-registered codecs if they are available, and
     `python-specific text encodings`_ (but not text or binary transforms).
-    ``whitelist_characters`` which cannot be encoded using this codec will
+    ``include_characters`` which cannot be encoded using this codec will
     raise an exception.  If non-encodable codepoints or categories are
     explicitly allowed, the ``codec`` argument will exclude them without
     raising an exception.
@@ -584,50 +592,72 @@ def characters(
     check_valid_size(min_codepoint, "min_codepoint")
     check_valid_size(max_codepoint, "max_codepoint")
     check_valid_interval(min_codepoint, max_codepoint, "min_codepoint", "max_codepoint")
+
+    if categories is not None and exclude_categories is not None:
+        raise InvalidArgument(
+            f"Pass at most one of {categories=} and {exclude_categories=} - "
+            "these arguments both specify which categories are allowed, so it "
+            "doesn't make sense to use both in a single call."
+        )
+
+    # Handle deprecation of whitelist/blacklist arguments
+    has_old_arg = any(v is not None for k, v in locals().items() if "list" in k)
+    has_new_arg = any(v is not None for k, v in locals().items() if "lude" in k)
+    if has_old_arg and has_new_arg:
+        raise InvalidArgument(
+            "The deprecated blacklist/whitelist arguments cannot be used in "
+            "the same call as their replacement include/exclude arguments."
+        )
+    if blacklist_categories is not None:
+        exclude_categories = blacklist_categories
+    if whitelist_categories is not None:
+        categories = whitelist_categories
+    if blacklist_characters is not None:
+        exclude_characters = blacklist_characters
+    if whitelist_characters is not None:
+        include_characters = whitelist_characters
+
     if (
         min_codepoint is None
         and max_codepoint is None
-        and whitelist_categories is None
-        and blacklist_categories is None
-        and whitelist_characters is not None
+        and categories is None
+        and exclude_categories is None
+        and include_characters is not None
         and codec is None
     ):
         raise InvalidArgument(
             "Nothing is excluded by other arguments, so passing only "
-            f"{whitelist_characters=} would have no effect.  "
-            "Also pass whitelist_categories=(), or use "
-            f"sampled_from({whitelist_characters!r}) instead."
+            f"{include_characters=} would have no effect.  "
+            "Also pass categories=(), or use "
+            f"sampled_from({include_characters!r}) instead."
         )
-    blacklist_characters = blacklist_characters or ""
-    whitelist_characters = whitelist_characters or ""
-    overlap = set(blacklist_characters).intersection(whitelist_characters)
+    exclude_characters = exclude_characters or ""
+    include_characters = include_characters or ""
+    overlap = set(exclude_characters).intersection(include_characters)
     if overlap:
         raise InvalidArgument(
             f"Characters {sorted(overlap)!r} are present in both "
-            f"{whitelist_characters=} and {blacklist_characters=}"
+            f"{include_characters=} and {exclude_characters=}"
         )
-    blacklist_categories = as_general_categories(
-        blacklist_categories, "blacklist_categories"
-    )
-    if (
-        whitelist_categories is not None
-        and not whitelist_categories
-        and not whitelist_characters
-    ):
+    categories = as_general_categories(categories, "categories")
+    exclude_categories = as_general_categories(exclude_categories, "exclude_categories")
+    if categories is not None and not categories and not include_characters:
         raise InvalidArgument(
-            "When whitelist_categories is an empty collection and there are "
-            "no characters specified in whitelist_characters, nothing can "
+            "When `categories` is an empty collection and there are "
+            "no characters specified in include_characters, nothing can "
             "be generated by the characters() strategy."
         )
-    whitelist_categories = as_general_categories(
-        whitelist_categories, "whitelist_categories"
-    )
-    both_cats = set(blacklist_categories or ()).intersection(whitelist_categories or ())
+    both_cats = set(exclude_categories or ()).intersection(categories or ())
     if both_cats:
+        # Note: we check that exactly one of `categories` or `exclude_categories` is
+        # passed above, but retain this older check for the deprecated arguments.
         raise InvalidArgument(
             f"Categories {sorted(both_cats)!r} are present in both "
-            f"{whitelist_categories=} and {blacklist_categories=}"
+            f"{categories=} and {exclude_categories=}"
         )
+    elif exclude_categories is not None:
+        categories = set(all_categories()) - set(exclude_categories)
+    del exclude_categories
 
     if codec is not None:
         try:
@@ -640,12 +670,12 @@ def characters(
         except Exception:
             raise InvalidArgument(f"{codec=} is not a valid codec") from None
 
-        for char in whitelist_characters:
+        for char in include_characters:
             try:
                 char.encode(encoding=codec, errors="strict")
             except UnicodeEncodeError:
                 raise InvalidArgument(
-                    f"Character {char!r} in {whitelist_characters=} "
+                    f"Character {char!r} in {include_characters=} "
                     f"cannot be encoded with {codec=}"
                 ) from None
 
@@ -655,25 +685,24 @@ def characters(
                 max_codepoint = 127
             codec = None
         elif codec == "utf-8":
-            if whitelist_categories is not None:
-                whitelist_categories = tuple(
-                    c for c in whitelist_categories if c != "Cs"
-                )
-            if blacklist_categories is None:
-                blacklist_categories = ("Cs",)
-            elif "Cs" not in blacklist_categories:
-                blacklist_categories = (*blacklist_categories, "Cs")
-            codec = None
+            if categories is None:
+                categories = all_categories()
+            categories = tuple(c for c in categories if c != "Cs")
 
     return OneCharStringStrategy.from_characters_args(
-        whitelist_categories=whitelist_categories,
-        blacklist_categories=blacklist_categories,
-        blacklist_characters=blacklist_characters,
+        categories=categories,
+        exclude_characters=exclude_characters,
         min_codepoint=min_codepoint,
         max_codepoint=max_codepoint,
-        whitelist_characters=whitelist_characters,
+        include_characters=include_characters,
         codec=codec,
     )
+
+
+# Hide the deprecated aliases from documentation and casual inspection
+characters.__signature__ = (__sig := get_signature(characters)).replace(  # type: ignore
+    parameters=[p for p in __sig.parameters.values() if "list" not in p.name]
+)
 
 
 # Cache size is limited by sys.maxunicode, but passing None makes it slightly faster.
@@ -738,7 +767,7 @@ def text(
                 f"which leads to violation of size constraints:  {not_one_char!r}"
             )
         char_strategy = (
-            characters(whitelist_categories=(), whitelist_characters=alphabet)
+            characters(categories=(), include_characters=alphabet)
             if alphabet
             else nothing()
         )
@@ -813,14 +842,12 @@ def from_regex(
             raise InvalidArgument("alphabet= is not supported for bytestrings")
 
         if isinstance(alphabet, str):
-            alphabet = characters(
-                whitelist_categories=(), whitelist_characters=alphabet
-            )
+            alphabet = characters(categories=(), include_characters=alphabet)
         char_strategy = unwrap_strategies(alphabet)
         if isinstance(char_strategy, SampledFromStrategy):
             alphabet = characters(
-                whitelist_categories=(),
-                whitelist_characters=alphabet.elements,  # type: ignore
+                categories=(),
+                include_characters=alphabet.elements,  # type: ignore
             )
         elif not isinstance(char_strategy, OneCharStringStrategy):
             raise InvalidArgument(

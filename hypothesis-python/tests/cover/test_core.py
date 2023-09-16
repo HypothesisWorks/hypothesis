@@ -146,7 +146,7 @@ def test_non_executed_tests_raise_skipped(test_fn):
 
 
 @pytest.mark.parametrize(
-    "codec, max_codepoint, blacklist_categories, whitelist_categories",
+    "codec, max_codepoint, exclude_categories, categories",
     [
         ("ascii", None, None, None),
         ("ascii", 128, None, None),
@@ -158,14 +158,12 @@ def test_non_executed_tests_raise_skipped(test_fn):
     ],
 )
 @given(s.data())
-def test_characters_codec(
-    codec, max_codepoint, blacklist_categories, whitelist_categories, data
-):
+def test_characters_codec(codec, max_codepoint, exclude_categories, categories, data):
     strategy = s.characters(
         codec=codec,
         max_codepoint=max_codepoint,
-        blacklist_categories=blacklist_categories,
-        whitelist_categories=whitelist_categories,
+        exclude_categories=exclude_categories,
+        categories=categories,
     )
     example = data.draw(strategy)
     assert example.encode(encoding=codec).decode(encoding=codec) == example

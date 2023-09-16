@@ -140,7 +140,7 @@ class CharactersBuilder:
         white_chars = self._whitelist_chars - self._blacklist_chars
         multi_chars = {c for c in white_chars if len(c) > 1}
         intervals = charmap.query(
-            include_categories=self._categories,
+            categories=self._categories,
             exclude_characters=self._blacklist_chars,
             include_characters=white_chars - multi_chars,
         )

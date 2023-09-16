@@ -14,7 +14,7 @@ import tempfile
 import time
 import unicodedata
 
-from hypothesis import assume, given, strategies as st
+from hypothesis import given, strategies as st
 from hypothesis.internal import charmap as cm
 from hypothesis.internal.intervalsets import IntervalSet
 
@@ -43,42 +43,27 @@ def assert_valid_range_list(ls):
         assert ls[i][-1] < ls[i + 1][0]
 
 
-@given(
-    st.sets(st.sampled_from(cm.categories())),
-    st.sets(st.sampled_from(cm.categories())) | st.none(),
-)
-def test_query_matches_categories(exclude, include):
-    values = cm.query(exclude, include).intervals
+@given(st.sets(st.sampled_from(cm.categories())))
+def test_query_matches_categories(cats):
+    values = cm.query(categories=cats).intervals
     assert_valid_range_list(values)
     for u, v in values:
         for i in (u, v, (u + v) // 2):
-            cat = unicodedata.category(chr(i))
-            if include is not None:
-                assert cat in include
-            assert cat not in exclude
+            assert unicodedata.category(chr(i)) in cats
 
 
 @given(
-    st.sets(st.sampled_from(cm.categories())),
     st.sets(st.sampled_from(cm.categories())) | st.none(),
     st.integers(0, sys.maxunicode),
     st.integers(0, sys.maxunicode),
 )
-def test_query_matches_categories_codepoints(exclude, include, m1, m2):
+def test_query_matches_categories_codepoints(cats, m1, m2):
     m1, m2 = sorted((m1, m2))
-    values = cm.query(exclude, include, min_codepoint=m1, max_codepoint=m2).intervals
+    values = cm.query(categories=cats, min_codepoint=m1, max_codepoint=m2).intervals
     assert_valid_range_list(values)
     for u, v in values:
         assert m1 <= u
         assert v <= m2
-
-
-@given(st.sampled_from(cm.categories()), st.integers(0, sys.maxunicode))
-def test_exclude_only_excludes_from_that_category(cat, i):
-    c = chr(i)
-    assume(unicodedata.category(c) != cat)
-    intervals = cm.query(exclude_categories=(cat,)).intervals
-    assert any(a <= i <= b for a, b in intervals)
 
 
 def test_reload_charmap():
