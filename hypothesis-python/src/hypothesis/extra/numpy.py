@@ -13,6 +13,7 @@ import math
 from typing import (
     TYPE_CHECKING,
     Any,
+    Literal,
     Mapping,
     Optional,
     Sequence,
@@ -578,7 +579,9 @@ def dtype_factory(kind, sizes, valid_sizes, endianness):
 
 @defines_dtype_strategy
 def unsigned_integer_dtypes(
-    *, endianness: str = "?", sizes: Sequence[int] = (8, 16, 32, 64)
+    *,
+    endianness: str = "?",
+    sizes: Sequence[Literal[8, 16, 32, 64]] = (8, 16, 32, 64),
 ) -> st.SearchStrategy[np.dtype]:
     """Return a strategy for unsigned integer dtypes.
 
@@ -594,7 +597,9 @@ def unsigned_integer_dtypes(
 
 @defines_dtype_strategy
 def integer_dtypes(
-    *, endianness: str = "?", sizes: Sequence[int] = (8, 16, 32, 64)
+    *,
+    endianness: str = "?",
+    sizes: Sequence[Literal[8, 16, 32, 64]] = (8, 16, 32, 64),
 ) -> st.SearchStrategy[np.dtype]:
     """Return a strategy for signed integer dtypes.
 
@@ -606,7 +611,9 @@ def integer_dtypes(
 
 @defines_dtype_strategy
 def floating_dtypes(
-    *, endianness: str = "?", sizes: Sequence[int] = (16, 32, 64)
+    *,
+    endianness: str = "?",
+    sizes: Sequence[Literal[16, 32, 64, 96, 128]] = (16, 32, 64),
 ) -> st.SearchStrategy[np.dtype]:
     """Return a strategy for floating-point dtypes.
 
@@ -622,7 +629,9 @@ def floating_dtypes(
 
 @defines_dtype_strategy
 def complex_number_dtypes(
-    *, endianness: str = "?", sizes: Sequence[int] = (64, 128)
+    *,
+    endianness: str = "?",
+    sizes: Sequence[Literal[64, 128, 192, 256]] = (64, 128),
 ) -> st.SearchStrategy[np.dtype]:
     """Return a strategy for complex-number dtypes.
 

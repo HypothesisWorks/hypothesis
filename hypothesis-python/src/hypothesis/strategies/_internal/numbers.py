@@ -12,7 +12,7 @@ import math
 from decimal import Decimal
 from fractions import Fraction
 from sys import float_info
-from typing import Optional, Union
+from typing import Literal, Optional, Union
 
 from hypothesis.control import reject
 from hypothesis.errors import InvalidArgument
@@ -383,7 +383,7 @@ def floats(
     allow_nan: Optional[bool] = None,
     allow_infinity: Optional[bool] = None,
     allow_subnormal: Optional[bool] = None,
-    width: int = 64,
+    width: Literal[16, 32, 64] = 64,
     exclude_min: bool = False,
     exclude_max: bool = False,
 ) -> SearchStrategy[float]:

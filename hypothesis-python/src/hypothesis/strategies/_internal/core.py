@@ -34,6 +34,7 @@ from typing import (
     Hashable,
     Iterable,
     List,
+    Literal,
     Optional,
     Pattern,
     Protocol,
@@ -136,8 +137,11 @@ from hypothesis.vendor.pretty import RepresentationPrinter
 
 if sys.version_info >= (3, 10):
     from types import EllipsisType as EllipsisType
+    from typing import TypeAlias as TypeAlias
 elif typing.TYPE_CHECKING:  # pragma: no cover
     from builtins import ellipsis as EllipsisType
+
+    from typing_extensions import TypeAlias
 else:
     EllipsisType = type(Ellipsis)  # pragma: no cover
 
@@ -524,6 +528,48 @@ def dictionaries(
     ).map(dict_class)
 
 
+# See https://en.wikipedia.org/wiki/Unicode_character_property#General_Category
+CategoryName: "TypeAlias" = Literal[
+    "L",  #  Letter
+    "Lu",  # Letter, uppercase
+    "Ll",  # Letter, lowercase
+    "Lt",  # Letter, titlecase
+    "Lm",  # Letter, modifier
+    "Lo",  # Letter, other
+    "M",  #  Mark
+    "Mn",  # Mark, nonspacing
+    "Mc",  # Mark, spacing combining
+    "Me",  # Mark, enclosing
+    "N",  #  Number
+    "Nd",  # Number, decimal digit
+    "Nl",  # Number, letter
+    "No",  # Number, other
+    "P",  #  Punctuation
+    "Pc",  # Punctuation, connector
+    "Pd",  # Punctuation, dash
+    "Ps",  # Punctuation, open
+    "Pe",  # Punctuation, close
+    "Pi",  # Punctuation, initial quote
+    "Pf",  # Punctuation, final quote
+    "Po",  # Punctuation, other
+    "S",  #  Symbol
+    "Sm",  # Symbol, math
+    "Sc",  # Symbol, currency
+    "Sk",  # Symbol, modifier
+    "So",  # Symbol, other
+    "Z",  #  Separator
+    "Zs",  # Separator, space
+    "Zl",  # Separator, line
+    "Zp",  # Separator, paragraph
+    "C",  #  Other
+    "Cc",  # Other, control
+    "Cf",  # Other, format
+    "Cs",  # Other, surrogate
+    "Co",  # Other, private use
+    "Cn",  # Other, not assigned
+]
+
+
 @cacheable
 @defines_strategy(force_reusable_values=True)
 def characters(
@@ -531,13 +577,13 @@ def characters(
     codec: Optional[str] = None,
     min_codepoint: Optional[int] = None,
     max_codepoint: Optional[int] = None,
-    categories: Optional[Collection[str]] = None,
-    exclude_categories: Optional[Collection[str]] = None,
+    categories: Optional[Collection[CategoryName]] = None,
+    exclude_categories: Optional[Collection[CategoryName]] = None,
     exclude_characters: Optional[Collection[str]] = None,
     include_characters: Optional[Collection[str]] = None,
     # Note: these arguments are deprecated aliases for backwards compatibility
-    blacklist_categories: Optional[Collection[str]] = None,
-    whitelist_categories: Optional[Collection[str]] = None,
+    blacklist_categories: Optional[Collection[CategoryName]] = None,
+    whitelist_categories: Optional[Collection[CategoryName]] = None,
     blacklist_characters: Optional[Collection[str]] = None,
     whitelist_characters: Optional[Collection[str]] = None,
 ) -> SearchStrategy[str]:
@@ -1791,7 +1837,7 @@ def complex_numbers(
     allow_infinity: Optional[bool] = None,
     allow_nan: Optional[bool] = None,
     allow_subnormal: bool = True,
-    width: int = 128,
+    width: Literal[32, 64, 128] = 128,
 ) -> SearchStrategy[complex]:
     """Returns a strategy that generates :class:`~python:complex`
     numbers.
@@ -1944,7 +1990,7 @@ def _maybe_nil_uuids(draw, uuid):
 @cacheable
 @defines_strategy(force_reusable_values=True)
 def uuids(
-    *, version: Optional[int] = None, allow_nil: bool = False
+    *, version: Optional[Literal[1, 2, 3, 4, 5]] = None, allow_nil: bool = False
 ) -> SearchStrategy[UUID]:
     """Returns a strategy that generates :class:`UUIDs <uuid.UUID>`.
 

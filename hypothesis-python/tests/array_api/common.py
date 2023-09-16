@@ -9,7 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 from importlib.metadata import EntryPoint, entry_points  # type: ignore
-from typing import Dict
+from typing import Dict, Literal
 
 import pytest
 
@@ -52,7 +52,7 @@ def installed_array_modules() -> Dict[str, EntryPoint]:
     return {ep.name: ep for ep in eps}
 
 
-def flushes_to_zero(xp, width: int) -> bool:
+def flushes_to_zero(xp, width: Literal[32, 64]) -> bool:
     """Infer whether build of array module has its float dtype of the specified
     width flush subnormals to zero
 
