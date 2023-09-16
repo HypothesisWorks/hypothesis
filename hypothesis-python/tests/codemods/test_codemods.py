@@ -147,3 +147,23 @@ class TestHealthcheckAll(CodemodTest):
         after = "result = list(Healthcheck)"
         # self.assertEqual(run_codemod(input_code), expected_code)
         self.assertCodemod(before=before, after=after)
+
+
+class TestFixCharactersArguments(CodemodTest):
+    TRANSFORM = codemods.HypothesisFixCharactersArguments
+
+    def test_substitution(self) -> None:
+        for in_, out in codemods.HypothesisFixCharactersArguments._replacements.items():
+            before = f"""
+                import hypothesis.strategies as st
+                st.characters({in_}=...)
+            """
+            self.assertCodemod(before=before, after=before.replace(in_, out))
+
+    def test_remove_redundant_exclude_categories(self) -> None:
+        args = "blacklist_categories=OUT, whitelist_categories=IN"
+        before = f"""
+                import hypothesis.strategies as st
+                st.characters({args})
+            """
+        self.assertCodemod(before=before, after=before.replace(args, "categories=IN"))
