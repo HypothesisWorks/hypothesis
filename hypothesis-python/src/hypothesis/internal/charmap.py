@@ -189,7 +189,7 @@ def as_general_categories(cats, name="cats"):
 category_index_cache = {(): ()}
 
 
-def _category_key(exclude, include):
+def _category_key(cats):
     """Return a normalised tuple of all Unicode categories that are in
     `include`, but not in `exclude`.
 
@@ -200,15 +200,9 @@ def _category_key(exclude, include):
     ('Me', 'Lu', 'Cs')
     """
     cs = categories()
-    if include is None:
-        include = set(cs)
-    else:
-        include = set(include)
-    exclude = set(exclude or ())
-    assert include.issubset(cs)
-    assert exclude.issubset(cs)
-    include -= exclude
-    return tuple(c for c in cs if c in include)
+    if cats is None:
+        cats = set(cs)
+    return tuple(c for c in cs if c in cats)
 
 
 def _query_for_key(key):
@@ -240,25 +234,23 @@ limited_category_index_cache: cache_type = {}
 
 
 def query(
-    exclude_categories=(),
-    include_categories=None,
+    *,
+    categories=None,
     min_codepoint=None,
     max_codepoint=None,
     include_characters="",
     exclude_characters="",
 ):
     """Return a tuple of intervals covering the codepoints for all characters
-    that meet the criteria (min_codepoint <= codepoint(c) <= max_codepoint and
-    any(cat in include_categories for cat in categories(c)) and all(cat not in
-    exclude_categories for cat in categories(c)) or (c in include_characters)
+    that meet the criteria.
 
     >>> query()
     ((0, 1114111),)
     >>> query(min_codepoint=0, max_codepoint=128)
     ((0, 128),)
-    >>> query(min_codepoint=0, max_codepoint=128, include_categories=['Lu'])
+    >>> query(min_codepoint=0, max_codepoint=128, categories=['Lu'])
     ((65, 90),)
-    >>> query(min_codepoint=0, max_codepoint=128, include_categories=['Lu'],
+    >>> query(min_codepoint=0, max_codepoint=128, categories=['Lu'],
     ...       include_characters='☃')
     ((65, 90), (9731, 9731))
     """
@@ -266,7 +258,7 @@ def query(
         min_codepoint = 0
     if max_codepoint is None:
         max_codepoint = sys.maxunicode
-    catkey = _category_key(exclude_categories, include_categories)
+    catkey = _category_key(categories)
     character_intervals = IntervalSet.from_string(include_characters or "")
     exclude_intervals = IntervalSet.from_string(exclude_characters or "")
     qkey = (

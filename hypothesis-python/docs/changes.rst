@@ -6156,7 +6156,7 @@ at the SciPy 2019 sprints!
 
 This patch improves the behaviour of the :func:`~hypothesis.strategies.text`
 strategy when passed an ``alphabet`` which is not a strategy.  The value is
-now interpreted as ``whitelist_characters`` to :func:`~hypothesis.strategies.characters`
+now interpreted as ``include_characters`` to :func:`~hypothesis.strategies.characters`
 instead of a sequence for :func:`~hypothesis.strategies.sampled_from`, which
 standardises the distribution of examples and the shrinking behaviour.
 
@@ -7855,7 +7855,7 @@ Thanks to ccxcz for reporting :issue:`1656`.
 -------------------
 
 The ``alphabet`` argument for :func:`~hypothesis.strategies.text` now
-uses its default value of ``characters(blacklist_categories=('Cs',))``
+uses its default value of ``characters(exclude_categories=('Cs',))``
 directly, instead of hiding that behind ``alphabet=None`` and replacing
 it within the function.  Passing ``None`` is therefore deprecated.
 
@@ -10191,7 +10191,7 @@ behaviour for Hypothesis's strategies.
 -------------------
 
 This release improves the performance of
-:func:`~hypothesis.strategies.characters` when using ``blacklist_characters``
+:func:`~hypothesis.strategies.characters` when using ``exclude_characters``
 and :func:`~hypothesis.strategies.from_regex` when using negative character
 classes.
 
@@ -11132,7 +11132,7 @@ as well.
 -------------------
 
 This release fixes a bug introduced in :ref:`3.18.0 <v3.18.0>`. If the arguments
-``whitelist_characters`` and ``blacklist_characters`` to
+``include_characters`` and ``exclude_characters`` to
 :func:`~hypothesis.strategies.characters` contained overlapping elements, then an
 ``InvalidArgument`` exception would be raised.
 
@@ -11158,7 +11158,7 @@ if it was :func:`~hypothesis.strategies.just`).
 This is a feature release:
 
 * :func:`~hypothesis.strategies.characters` now accepts
-  ``whitelist_characters``, particular characters which will be added to those
+  ``include_characters``, particular characters which will be added to those
   it produces. (:issue:`668`)
 * A bug fix for the internal function ``_union_interval_lists()``, and a rename
   to ``_union_intervals()``. It now correctly handles all cases where intervals

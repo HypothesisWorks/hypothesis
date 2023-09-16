@@ -84,12 +84,12 @@ def test_can_encode_as_utf8(s):
     s.encode()
 
 
-@given(text(characters(blacklist_characters="\n")))
+@given(text(characters(exclude_characters="\n")))
 def test_can_blacklist_newlines(s):
     assert "\n" not in s
 
 
-@given(text(characters(blacklist_categories=("Cc", "Cs"))))
+@given(text(characters(exclude_categories=("Cc", "Cs"))))
 def test_can_exclude_newlines_by_category(s):
     assert "\n" not in s
 

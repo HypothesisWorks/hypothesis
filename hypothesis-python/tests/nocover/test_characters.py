@@ -16,7 +16,7 @@ from hypothesis import given, strategies as st
 IDENTIFIER_CHARS = string.ascii_letters + string.digits + "_"
 
 
-@given(st.characters(blacklist_characters=IDENTIFIER_CHARS))
+@given(st.characters(exclude_characters=IDENTIFIER_CHARS))
 def test_large_blacklist(c):
     assert c not in IDENTIFIER_CHARS
 
@@ -27,7 +27,7 @@ def test_arbitrary_blacklist(data):
     ords = list(map(ord, blacklist))
     c = data.draw(
         st.characters(
-            blacklist_characters=blacklist,
+            exclude_characters=blacklist,
             min_codepoint=max(0, min(ords) - 1),
             max_codepoint=max(0, max(ords) + 1),
         )
