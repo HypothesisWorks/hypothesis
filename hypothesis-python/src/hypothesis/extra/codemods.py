@@ -68,6 +68,7 @@ def refactor(code: str) -> str:
     transforms: List[VisitorBasedCodemodCommand] = [
         HypothesisFixPositionalKeywonlyArgs(context),
         HypothesisFixComplexMinMagnitude(context),
+        HypothesisFixHealthcheckAll(context),
     ]
     for transform in transforms:
         mod = transform.transform_module(mod)
