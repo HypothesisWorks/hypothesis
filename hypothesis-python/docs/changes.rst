@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.85.1:
+
+-------------------
+6.85.1 - 2023-09-16
+-------------------
+
+This patch switches some of our type annotations to use :obj:`typing.Literal`
+when only a few specific values are allowed, such as UUID or IP address versions.
+
 .. _v6.85.0:
 
 -------------------
