@@ -18,6 +18,7 @@ import pytest
 from hypothesis import example, find, given, strategies as st
 from hypothesis.errors import (
     HypothesisException,
+    HypothesisWarning,
     InvalidArgument,
     NonInteractiveExampleWarning,
     Unsatisfiable,
@@ -194,3 +195,22 @@ def test_error_on_unexpected_pass_single_elem_tuple(x):
 @given(st.none())
 def test_error_on_unexpected_pass_multi(x):
     pass
+
+
+def test_generating_xfailed_examples_warns():
+    @given(st.integers())
+    @example(1)
+    @identity(example(0).xfail(raises=ZeroDivisionError))
+    def foo(x):
+        assert 1 / x
+
+    with pytest.warns(
+        HypothesisWarning,
+        match=r"Revise the strategy to avoid this overlap",
+    ) as wrec:
+        with pytest.raises(ZeroDivisionError):
+            foo()
+
+        warning_locations = sorted(w.filename for w in wrec.list)
+        # See the reference in core.py to this test
+        assert __file__ in warning_locations, "probable stacklevel bug"
