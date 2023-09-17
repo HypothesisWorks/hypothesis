@@ -474,7 +474,7 @@ def test_invalid_parent():
 
 
 def test_show_changed():
-    s = settings(max_examples=999, database=None, phases=tuple(Phase)[:-1])
+    s = settings(max_examples=999, database=None)
     assert s.show_changed() == "database=None, max_examples=999"
 
 

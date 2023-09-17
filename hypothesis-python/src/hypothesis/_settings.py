@@ -572,9 +572,7 @@ def _validate_phases(phases):
 
 settings._define_setting(
     "phases",
-    # We leave the `explain` phase disabled by default, for speed and brevity
-    # TODO: consider default-enabling this in CI?
-    default=_validate_phases(set(Phase) - {Phase.explain}),
+    default=tuple(Phase),
     description=(
         "Control which phases should be run. "
         "See :ref:`the full documentation for more details <phases>`"

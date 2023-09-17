@@ -11,6 +11,7 @@
 import math
 from collections import Counter
 
+from hypothesis._settings import Phase
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
 collector = DynamicVariable(None)
@@ -73,7 +74,7 @@ def describe_statistics(stats_dict):
     """
     lines = [stats_dict["nodeid"] + ":\n"] if "nodeid" in stats_dict else []
     prev_failures = 0
-    for phase in ["reuse", "generate", "shrink"]:
+    for phase in (p.name for p in list(Phase)[1:]):
         d = stats_dict.get(phase + "-phase", {})
         # Basic information we report for every phase
         cases = d.get("test-cases", [])
