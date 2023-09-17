@@ -247,7 +247,7 @@ def test_statistics_for_threshold_problem():
 
 
 def test_statistics_with_events_and_target():
-    @given(st.sampled_from("1234"))
+    @given(st.integers(0, 10_000))
     def test(value):
         event(value)
         target(float(value), label="a target")
