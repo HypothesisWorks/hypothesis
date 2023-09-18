@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.86.2:
+
+-------------------
+6.86.2 - 2023-09-18
+-------------------
+
+Hotfix for :issue:`3747`, a bug in explain mode which is so rare that
+we missed it in six months of dogfooding.  Thanks to :pypi:`mygrad`
+for discovering and promptly reporting this!
+
 .. _v6.86.1:
 
 -------------------
