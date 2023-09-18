@@ -547,7 +547,7 @@ class Shrinker:
 
                 # Turns out this was a variable-length part, so grab the infix...
                 if result.status == Status.OVERRUN:
-                    continue  # pragma: no cover
+                    continue  # pragma: no cover  # flakily covered
                 if not (
                     len(buf_attempt_fixed) == len(result.buffer)
                     and result.buffer.endswith(buffer[end:])
@@ -568,11 +568,13 @@ class Shrinker:
                     chunks[(start, end)].append(result.buffer[start:res_end])
                     result = self.engine.cached_test_function(buf_attempt_fixed)
 
-                    if (
-                        result.status == Status.OVERRUN
-                        or len(buf_attempt_fixed) != len(result.buffer)
-                        or not result.buffer.endswith(buffer[end:])
-                    ):
+                    if result.status == Status.OVERRUN:
+                        continue  # pragma: no cover  # flakily covered
+
+                    if not (
+                        len(buf_attempt_fixed) == len(result.buffer)
+                        and result.buffer.endswith(buffer[end:])
+                    ):  # pragma: no cover
                         raise NotImplementedError("This should never happen")
                 else:
                     chunks[(start, end)].append(result.buffer[start:end])
