@@ -24,6 +24,13 @@ from hypothesis.vendor.pretty import IDKey
 
 
 def reject() -> NoReturn:
+    context = _current_build_context.value
+    if context is None:
+        note_deprecation(
+            "Using `reject` outside a test is deprecated",
+            since="2023-09-18",
+            has_codemod=False,
+        )
     raise UnsatisfiedAssumption
 
 
@@ -34,6 +41,13 @@ def assume(condition: object) -> bool:
     This allows you to specify properties that you *assume* will be
     true, and let Hypothesis try to avoid similar examples in future.
     """
+    context = _current_build_context.value
+    if context is None:
+        note_deprecation(
+            "Using `assume` outside a test is deprecated",
+            since="2023-09-18",
+            has_codemod=False,
+        )
     if not condition:
         raise UnsatisfiedAssumption
     return True
