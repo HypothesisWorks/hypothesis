@@ -319,9 +319,10 @@ class FixedKeysDictStrategy(MappedSearchStrategy):
         result = self.dict_type(zip(self.keys, value))
         known_printers = current_build_context().known_object_printers
         arg_labels = known_printers[IDKey(value)][-1].arg_labels
-        known_printers[IDKey(result)].append(
-            _dict_pprinter_factory({k: arg_labels[i] for i, k in enumerate(self.keys)})
-        )
+        # `if i in arg_labels` because some, e.g. generated with st.just(), don't have
+        # a corresponding part of the underlying buffer and therefore have no label.
+        klabels = {k: arg_labels[i] for i, k in enumerate(self.keys) if i in arg_labels}
+        known_printers[IDKey(result)].append(_dict_pprinter_factory(klabels))
         return result
 
 

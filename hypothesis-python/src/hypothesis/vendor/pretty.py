@@ -554,9 +554,9 @@ def _seq_pprinter_factory(start, end, basetype, arg_labels=None):
                     p.text(",")
                 # Optional comments are used to annotate which-parts-matter
                 if idx in comments:
-                    p.text(f"  # {comments[idx]}")
+                    p.text(f"  # {comments[idx]}")  # FIXME: uncovered
         if obj and force_split:
-            p.break_()
+            p.break_()  # FIXME: uncovered
         p.text(end)  # after dedent, if any
 
     inner.arg_labels = arg_labels
@@ -632,7 +632,7 @@ def _dict_pprinter_factory(arg_labels=None):
                 warnings.simplefilter("ignore", BytesWarning)
                 for idx, key in p._enumerate(obj):
                     if force_split:
-                        p.break_()
+                        p.break_()  # FIXME: uncovered
                     else:
                         p.breakable(" " if idx else "")
                     p.pretty(key)
@@ -642,9 +642,9 @@ def _dict_pprinter_factory(arg_labels=None):
                         p.text(",")
                     # Optional comments are used to annotate which-parts-matter
                     if key in comments:
-                        p.text(f"  # {comments[key]}")
+                        p.text(f"  # {comments[key]}")  # FIXME: uncovered
         if obj and force_split:
-            p.break_()
+            p.break_()  # FIXME: uncovered
         p.text("}")  # after dedent, if any
 
     inner.__name__ = "_dict_pprinter_factory()"
