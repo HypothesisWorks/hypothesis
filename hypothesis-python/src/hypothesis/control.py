@@ -28,7 +28,7 @@ def reject() -> NoReturn:
     if context is None:
         note_deprecation(
             "Using `reject` outside a test is deprecated",
-            since="2023-09-18",
+            since="RELEASEDAY",
             has_codemod=False,
         )
     raise UnsatisfiedAssumption
@@ -45,7 +45,7 @@ def assume(condition: object) -> bool:
     if context is None:
         note_deprecation(
             "Using `assume` outside a test is deprecated",
-            since="2023-09-18",
+            since="RELEASEDAY",
             has_codemod=False,
         )
     if not condition:
