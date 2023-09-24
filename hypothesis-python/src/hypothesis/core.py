@@ -1146,7 +1146,16 @@ class HypothesisHandle:
 
 @overload
 def given(
-    *_given_arguments: Union[SearchStrategy[Any], EllipsisType],
+    _: EllipsisType, /
+) -> Callable[
+    [Callable[..., Optional[Coroutine[Any, Any, None]]]], Callable[[], None]
+]:  # pragma: no cover
+    ...
+
+
+@overload
+def given(
+    *_given_arguments: SearchStrategy[Any],
 ) -> Callable[
     [Callable[..., Optional[Coroutine[Any, Any, None]]]], Callable[..., None]
 ]:  # pragma: no cover
