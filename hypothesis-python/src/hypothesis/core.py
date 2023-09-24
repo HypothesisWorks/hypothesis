@@ -66,7 +66,6 @@ from hypothesis.errors import (
     Unsatisfiable,
     UnsatisfiedAssumption,
 )
-from hypothesis.executors import default_new_style_executor, new_style_executor
 from hypothesis.internal.compat import (
     PYPY,
     BaseExceptionGroup,
@@ -635,8 +634,6 @@ def process_arguments_to_given(wrapped_test, arguments, kwargs, given_kwargs, pa
     if is_mock(selfy):
         selfy = None
 
-    test_runner = new_style_executor(selfy)
-
     arguments = tuple(arguments)
 
     with ensure_free_stackframes():
@@ -646,7 +643,7 @@ def process_arguments_to_given(wrapped_test, arguments, kwargs, given_kwargs, pa
 
     stuff = Stuff(selfy=selfy, args=arguments, kwargs=kwargs, given_kwargs=given_kwargs)
 
-    return arguments, kwargs, test_runner, stuff
+    return arguments, kwargs, stuff
 
 
 def skip_exceptions_to_reraise():
@@ -704,9 +701,38 @@ def new_given_signature(original_sig, given_kwargs):
     )
 
 
+def default_executor(data, function):
+    return function(data)
+
+
+def get_executor(runner):
+    try:
+        execute_example = runner.execute_example
+    except AttributeError:
+        pass
+    else:
+        return lambda data, function: execute_example(partial(function, data))
+
+    if hasattr(runner, "setup_example") or hasattr(runner, "teardown_example"):
+        setup = getattr(runner, "setup_example", None) or (lambda: None)
+        teardown = getattr(runner, "teardown_example", None) or (lambda ex: None)
+
+        def execute(data, function):
+            token = None
+            try:
+                token = setup()
+                return function(data)
+            finally:
+                teardown(token)
+
+        return execute
+
+    return default_executor
+
+
 class StateForActualGivenExecution:
-    def __init__(self, test_runner, stuff, test, settings, random, wrapped_test):
-        self.test_runner = test_runner
+    def __init__(self, stuff, test, settings, random, wrapped_test):
+        self.test_runner = get_executor(stuff.selfy)
         self.stuff = stuff
         self.settings = settings
         self.last_exception = None
@@ -1264,14 +1290,13 @@ def given(
 
             random = get_random_for_wrapped_test(test, wrapped_test)
 
-            processed_args = process_arguments_to_given(
+            arguments, kwargs, stuff = process_arguments_to_given(
                 wrapped_test, arguments, kwargs, given_kwargs, new_signature.parameters
             )
-            arguments, kwargs, test_runner, stuff = processed_args
 
             if (
                 inspect.iscoroutinefunction(test)
-                and test_runner is default_new_style_executor
+                and get_executor(stuff.selfy) is default_executor
             ):
                 # See https://github.com/HypothesisWorks/hypothesis/issues/3054
                 # If our custom executor doesn't handle coroutines, or we return an
@@ -1322,7 +1347,7 @@ def given(
                     fail_health_check(settings, msg, HealthCheck.differing_executors)
 
             state = StateForActualGivenExecution(
-                test_runner, stuff, test, settings, random, wrapped_test
+                stuff, test, settings, random, wrapped_test
             )
 
             reproduce_failure = wrapped_test._hypothesis_internal_use_reproduce_failure
@@ -1465,13 +1490,13 @@ def given(
                 parent=wrapped_test._hypothesis_internal_use_settings, deadline=None
             )
             random = get_random_for_wrapped_test(test, wrapped_test)
-            _args, _kwargs, test_runner, stuff = process_arguments_to_given(
+            _args, _kwargs, stuff = process_arguments_to_given(
                 wrapped_test, (), {}, given_kwargs, new_signature.parameters
             )
             assert not _args
             assert not _kwargs
             state = StateForActualGivenExecution(
-                test_runner, stuff, test, settings, random, wrapped_test
+                stuff, test, settings, random, wrapped_test
             )
             digest = function_digest(test)
             # We track the minimal-so-far example for each distinct origin, so
