@@ -54,7 +54,7 @@ flask==2.2.5
     # via dash
 hypofuzz==23.7.1
     # via -r requirements/fuzzing.in
-hypothesis[cli]==6.85.1
+hypothesis[cli]==6.86.2
     # via hypofuzz
 idna==3.4
     # via requests
@@ -82,7 +82,7 @@ mypy-extensions==1.0.0
     # via
     #   black
     #   typing-inspect
-nest-asyncio==1.5.7
+nest-asyncio==1.5.8
     # via dash
 numpy==1.26.0
     # via
@@ -93,7 +93,7 @@ packaging==23.1
     #   black
     #   plotly
     #   pytest
-pandas==2.1.0
+pandas==2.1.1
     # via
     #   -r requirements/coverage.in
     #   hypofuzz
@@ -138,7 +138,7 @@ requests==2.31.0
     #   hypofuzz
 retrying==1.3.4
     # via dash
-rich==13.5.2
+rich==13.5.3
     # via hypothesis
 six==1.16.0
     # via
@@ -155,7 +155,7 @@ tomli==2.0.1
     # via
     #   black
     #   pytest
-typing-extensions==4.7.1
+typing-extensions==4.8.0
     # via
     #   -r requirements/coverage.in
     #   black
@@ -166,7 +166,7 @@ typing-inspect==0.9.0
     # via libcst
 tzdata==2023.3
     # via pandas
-urllib3==2.0.4
+urllib3==2.0.5
     # via requests
 werkzeug==2.2.3
     # via
