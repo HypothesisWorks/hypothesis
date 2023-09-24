@@ -9,10 +9,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 
-def default_executor(function):  # pragma: nocover
-    raise NotImplementedError  # We don't actually use this any more
-
-
 def setup_teardown_executor(setup, teardown):
     setup = setup or (lambda: None)
     teardown = teardown or (lambda ex: None)
@@ -40,26 +36,17 @@ def executor(runner):
             getattr(runner, "teardown_example", None),
         )
 
-    return default_executor
-
 
 def default_new_style_executor(data, function):
     return function(data)
 
 
-class ConjectureRunner:
-    def hypothesis_execute_example_with_data(self, data, function):
-        return function(data)
-
-
 def new_style_executor(runner):
     if runner is None:
         return default_new_style_executor
-    if isinstance(runner, ConjectureRunner):
-        return runner.hypothesis_execute_example_with_data
 
     old_school = executor(runner)
-    if old_school is default_executor:
+    if old_school is None:
         return default_new_style_executor
     else:
         return lambda data, function: old_school(lambda: function(data))
