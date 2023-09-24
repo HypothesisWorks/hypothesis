@@ -44,7 +44,7 @@ packaging==23.1
     # via
     #   black
     #   pytest
-pandas==2.1.0
+pandas==2.1.1
     # via -r requirements/coverage.in
 pathspec==0.11.2
     # via black
@@ -84,7 +84,7 @@ tomli==2.0.1
     # via
     #   black
     #   pytest
-typing-extensions==4.7.1
+typing-extensions==4.8.0
     # via
     #   -r requirements/coverage.in
     #   black
