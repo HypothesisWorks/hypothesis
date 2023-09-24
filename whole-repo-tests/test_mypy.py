@@ -126,6 +126,10 @@ def assert_mypy_errors(fname, expected, python_version=None):
             "tuples(text(), text(), text(), text(), text(), text())",
             "tuple[Any, ...]",
         ),
+        (
+            "from_type(type).flatmap(from_type).filter(lambda x: not isinstance(x, int))",
+            "Ex_Inv`-1",
+        ),
     ],
 )
 def test_revealed_types(tmpdir, val, expect):

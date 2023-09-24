@@ -1,5 +1,6 @@
 RELEASE_TYPE: minor
 
-Deprecate use of :func:`~hypothesis.assume` and ``reject()``
+This release deprecates use of :func:`~hypothesis.assume` and ``reject()``
 outside of property-based tests, because these functions work by raising a
-special exception (:issue:`3743`).
+special exception (:issue:`3743`).  It also fixes some type annotations
+(:issue:`3753`).
