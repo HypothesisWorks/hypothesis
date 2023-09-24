@@ -780,63 +780,65 @@ class StateForActualGivenExecution:
 
         def run(data):
             # Set up dynamic context needed by a single test run.
-            with local_settings(self.settings):
-                with deterministic_PRNG():
-                    with BuildContext(data, is_final=is_final) as context:
-                        if self.stuff.selfy is not None:
-                            data.hypothesis_runner = self.stuff.selfy
-                        # Generate all arguments to the test function.
-                        args = self.stuff.args
-                        kwargs = dict(self.stuff.kwargs)
-                        if example_kwargs is None:
-                            a, kw, argslices = context.prep_args_kwargs_from_strategies(
-                                (), self.stuff.given_kwargs
-                            )
-                            assert not a, "strategies all moved to kwargs by now"
-                        else:
-                            kw = example_kwargs
-                            argslices = {}
-                        kwargs.update(kw)
-                        if expected_failure is not None:
-                            nonlocal text_repr
-                            text_repr = repr_call(test, args, kwargs)
-                            if text_repr in self.xfail_example_reprs:
-                                warnings.warn(
-                                    f"We generated {text_repr}, which seems identical "
-                                    "to one of your `@example(...).xfail()` cases.  "
-                                    "Revise the strategy to avoid this overlap?",
-                                    HypothesisWarning,
-                                    # Checked in test_generating_xfailed_examples_warns!
-                                    stacklevel=6,
-                                )
+            if self.stuff.selfy is not None:
+                data.hypothesis_runner = self.stuff.selfy
+            # Generate all arguments to the test function.
+            args = self.stuff.args
+            kwargs = dict(self.stuff.kwargs)
+            if example_kwargs is None:
+                a, kw, argslices = context.prep_args_kwargs_from_strategies(
+                    (), self.stuff.given_kwargs
+                )
+                assert not a, "strategies all moved to kwargs by now"
+            else:
+                kw = example_kwargs
+                argslices = {}
+            kwargs.update(kw)
+            if expected_failure is not None:
+                nonlocal text_repr
+                text_repr = repr_call(test, args, kwargs)
+                if text_repr in self.xfail_example_reprs:
+                    warnings.warn(
+                        f"We generated {text_repr}, which seems identical "
+                        "to one of your `@example(...).xfail()` cases.  "
+                        "Revise the strategy to avoid this overlap?",
+                        HypothesisWarning,
+                        # Checked in test_generating_xfailed_examples_warns!
+                        stacklevel=6,
+                    )
 
-                        if print_example or current_verbosity() >= Verbosity.verbose:
-                            printer = RepresentationPrinter(context=context)
-                            if print_example:
-                                printer.text("Falsifying example:")
-                            else:
-                                printer.text("Trying example:")
+            if print_example or current_verbosity() >= Verbosity.verbose:
+                printer = RepresentationPrinter(context=context)
+                if print_example:
+                    printer.text("Falsifying example:")
+                else:
+                    printer.text("Trying example:")
 
-                            if self.print_given_args:
-                                printer.text(" ")
-                                printer.repr_call(
-                                    test.__name__,
-                                    args,
-                                    kwargs,
-                                    force_split=True,
-                                    arg_slices=argslices,
-                                    leading_comment=(
-                                        "# " + context.data.slice_comments[(0, 0)]
-                                        if (0, 0) in context.data.slice_comments
-                                        else None
-                                    ),
-                                )
-                            report(printer.getvalue())
-                        return test(*args, **kwargs)
+                if self.print_given_args:
+                    printer.text(" ")
+                    printer.repr_call(
+                        test.__name__,
+                        args,
+                        kwargs,
+                        force_split=True,
+                        arg_slices=argslices,
+                        leading_comment=(
+                            "# " + context.data.slice_comments[(0, 0)]
+                            if (0, 0) in context.data.slice_comments
+                            else None
+                        ),
+                    )
+                report(printer.getvalue())
+            return test(*args, **kwargs)
 
-        # Run the test function once, via the executor hook.
-        # In most cases this will delegate straight to `run(data)`.
-        result = self.test_runner(data, run)
+        # self.test_runner can include the execute_example method, or setup/teardown
+        # _example, so it's important to get the PRNG and build context in place first.
+        with local_settings(self.settings):
+            with deterministic_PRNG():
+                with BuildContext(data, is_final=is_final) as context:
+                    # Run the test function once, via the executor hook.
+                    # In most cases this will delegate straight to `run(data)`.
+                    result = self.test_runner(data, run)
 
         # If a failure was expected, it should have been raised already, so
         # instead raise an appropriate diagnostic error.

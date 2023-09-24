@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import hypothesis.strategies as st
+from hypothesis.control import BuildContext
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.strategies._internal.strategies import FilteredStrategy
 
@@ -19,7 +20,8 @@ def test_filter_iterations_are_marked_as_discarded():
 
     data = ConjectureData.for_buffer([0, 2, 1, 0])
 
-    assert data.draw(x) == 0
+    with BuildContext(data):
+        assert data.draw(x) == 0
 
     assert data.has_discards
 
