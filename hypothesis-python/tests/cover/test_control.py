@@ -10,7 +10,7 @@
 
 import pytest
 
-from hypothesis import Verbosity, given, reporting, settings
+from hypothesis import Verbosity, assume, given, reject, reporting, settings
 from hypothesis.control import (
     BuildContext,
     _current_build_context,
@@ -20,7 +20,11 @@ from hypothesis.control import (
     event,
     note,
 )
-from hypothesis.errors import InvalidArgument
+from hypothesis.errors import (
+    HypothesisDeprecationWarning,
+    InvalidArgument,
+    UnsatisfiedAssumption,
+)
 from hypothesis.internal.compat import ExceptionGroup
 from hypothesis.internal.conjecture.data import ConjectureData as TD
 from hypothesis.stateful import RuleBasedStateMachine, rule
@@ -121,6 +125,23 @@ def test_raises_error_if_cleanup_fails_but_block_does_not():
 def test_raises_if_note_out_of_context():
     with pytest.raises(InvalidArgument):
         note("Hi")
+
+
+def test_deprecation_warning_if_assume_out_of_context():
+    with pytest.warns(
+        HypothesisDeprecationWarning,
+        match="Using `assume` outside a property-based test is deprecated",
+    ):
+        assume(True)
+
+
+def test_deprecation_warning_if_reject_out_of_context():
+    with pytest.warns(
+        HypothesisDeprecationWarning,
+        match="Using `reject` outside a property-based test is deprecated",
+    ):
+        with pytest.raises(UnsatisfiedAssumption):
+            reject()
 
 
 def test_raises_if_current_build_context_out_of_context():

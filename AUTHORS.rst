@@ -127,6 +127,7 @@ their individual contributions.
 * `Munir Abdinur <https://www.github.com/mabdinur>`_
 * `Nicholas Chammas <https://www.github.com/nchammas>`_
 * `Nick Anyos <https://www.github.com/NickAnyos>`_
+* `Nick Collins <https://github.com/nickcollins>` _
 * `Nick Muoh <https://github.com/OdinTech3>`_ (nickspirit3@gmail.com)
 * `Nicolas Erni <https://www.github.com/ThunderKey>`_
 * `Nikita Sobolev <https://github.com/sobolevn>`_ (mail@sobolevn.me)

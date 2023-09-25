@@ -122,6 +122,7 @@ from hypothesis.strategies._internal.recursive import RecursiveStrategy
 from hypothesis.strategies._internal.shared import SharedStrategy
 from hypothesis.strategies._internal.strategies import (
     Ex,
+    Ex_Inv,
     SampledFromStrategy,
     T,
     one_of,
@@ -1136,7 +1137,7 @@ def builds(
 
 @cacheable
 @defines_strategy(never_lazy=True)
-def from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
+def from_type(thing: Type[Ex_Inv]) -> SearchStrategy[Ex_Inv]:
     """Looks up the appropriate search strategy for the given type.
 
     ``from_type`` is used internally to fill in missing arguments to

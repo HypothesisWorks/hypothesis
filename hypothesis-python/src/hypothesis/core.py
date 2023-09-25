@@ -66,7 +66,6 @@ from hypothesis.errors import (
     Unsatisfiable,
     UnsatisfiedAssumption,
 )
-from hypothesis.executors import default_new_style_executor, new_style_executor
 from hypothesis.internal.compat import (
     PYPY,
     BaseExceptionGroup,
@@ -635,8 +634,6 @@ def process_arguments_to_given(wrapped_test, arguments, kwargs, given_kwargs, pa
     if is_mock(selfy):
         selfy = None
 
-    test_runner = new_style_executor(selfy)
-
     arguments = tuple(arguments)
 
     with ensure_free_stackframes():
@@ -646,7 +643,7 @@ def process_arguments_to_given(wrapped_test, arguments, kwargs, given_kwargs, pa
 
     stuff = Stuff(selfy=selfy, args=arguments, kwargs=kwargs, given_kwargs=given_kwargs)
 
-    return arguments, kwargs, test_runner, stuff
+    return arguments, kwargs, stuff
 
 
 def skip_exceptions_to_reraise():
@@ -704,9 +701,38 @@ def new_given_signature(original_sig, given_kwargs):
     )
 
 
+def default_executor(data, function):
+    return function(data)
+
+
+def get_executor(runner):
+    try:
+        execute_example = runner.execute_example
+    except AttributeError:
+        pass
+    else:
+        return lambda data, function: execute_example(partial(function, data))
+
+    if hasattr(runner, "setup_example") or hasattr(runner, "teardown_example"):
+        setup = getattr(runner, "setup_example", None) or (lambda: None)
+        teardown = getattr(runner, "teardown_example", None) or (lambda ex: None)
+
+        def execute(data, function):
+            token = None
+            try:
+                token = setup()
+                return function(data)
+            finally:
+                teardown(token)
+
+        return execute
+
+    return default_executor
+
+
 class StateForActualGivenExecution:
-    def __init__(self, test_runner, stuff, test, settings, random, wrapped_test):
-        self.test_runner = test_runner
+    def __init__(self, stuff, test, settings, random, wrapped_test):
+        self.test_runner = get_executor(stuff.selfy)
         self.stuff = stuff
         self.settings = settings
         self.last_exception = None
@@ -780,63 +806,65 @@ class StateForActualGivenExecution:
 
         def run(data):
             # Set up dynamic context needed by a single test run.
-            with local_settings(self.settings):
-                with deterministic_PRNG():
-                    with BuildContext(data, is_final=is_final) as context:
-                        if self.stuff.selfy is not None:
-                            data.hypothesis_runner = self.stuff.selfy
-                        # Generate all arguments to the test function.
-                        args = self.stuff.args
-                        kwargs = dict(self.stuff.kwargs)
-                        if example_kwargs is None:
-                            a, kw, argslices = context.prep_args_kwargs_from_strategies(
-                                (), self.stuff.given_kwargs
-                            )
-                            assert not a, "strategies all moved to kwargs by now"
-                        else:
-                            kw = example_kwargs
-                            argslices = {}
-                        kwargs.update(kw)
-                        if expected_failure is not None:
-                            nonlocal text_repr
-                            text_repr = repr_call(test, args, kwargs)
-                            if text_repr in self.xfail_example_reprs:
-                                warnings.warn(
-                                    f"We generated {text_repr}, which seems identical "
-                                    "to one of your `@example(...).xfail()` cases.  "
-                                    "Revise the strategy to avoid this overlap?",
-                                    HypothesisWarning,
-                                    # Checked in test_generating_xfailed_examples_warns!
-                                    stacklevel=6,
-                                )
+            if self.stuff.selfy is not None:
+                data.hypothesis_runner = self.stuff.selfy
+            # Generate all arguments to the test function.
+            args = self.stuff.args
+            kwargs = dict(self.stuff.kwargs)
+            if example_kwargs is None:
+                a, kw, argslices = context.prep_args_kwargs_from_strategies(
+                    (), self.stuff.given_kwargs
+                )
+                assert not a, "strategies all moved to kwargs by now"
+            else:
+                kw = example_kwargs
+                argslices = {}
+            kwargs.update(kw)
+            if expected_failure is not None:
+                nonlocal text_repr
+                text_repr = repr_call(test, args, kwargs)
+                if text_repr in self.xfail_example_reprs:
+                    warnings.warn(
+                        f"We generated {text_repr}, which seems identical "
+                        "to one of your `@example(...).xfail()` cases.  "
+                        "Revise the strategy to avoid this overlap?",
+                        HypothesisWarning,
+                        # Checked in test_generating_xfailed_examples_warns!
+                        stacklevel=6,
+                    )
 
-                        if print_example or current_verbosity() >= Verbosity.verbose:
-                            printer = RepresentationPrinter(context=context)
-                            if print_example:
-                                printer.text("Falsifying example:")
-                            else:
-                                printer.text("Trying example:")
+            if print_example or current_verbosity() >= Verbosity.verbose:
+                printer = RepresentationPrinter(context=context)
+                if print_example:
+                    printer.text("Falsifying example:")
+                else:
+                    printer.text("Trying example:")
 
-                            if self.print_given_args:
-                                printer.text(" ")
-                                printer.repr_call(
-                                    test.__name__,
-                                    args,
-                                    kwargs,
-                                    force_split=True,
-                                    arg_slices=argslices,
-                                    leading_comment=(
-                                        "# " + context.data.slice_comments[(0, 0)]
-                                        if (0, 0) in context.data.slice_comments
-                                        else None
-                                    ),
-                                )
-                            report(printer.getvalue())
-                        return test(*args, **kwargs)
+                if self.print_given_args:
+                    printer.text(" ")
+                    printer.repr_call(
+                        test.__name__,
+                        args,
+                        kwargs,
+                        force_split=True,
+                        arg_slices=argslices,
+                        leading_comment=(
+                            "# " + context.data.slice_comments[(0, 0)]
+                            if (0, 0) in context.data.slice_comments
+                            else None
+                        ),
+                    )
+                report(printer.getvalue())
+            return test(*args, **kwargs)
 
-        # Run the test function once, via the executor hook.
-        # In most cases this will delegate straight to `run(data)`.
-        result = self.test_runner(data, run)
+        # self.test_runner can include the execute_example method, or setup/teardown
+        # _example, so it's important to get the PRNG and build context in place first.
+        with local_settings(self.settings):
+            with deterministic_PRNG():
+                with BuildContext(data, is_final=is_final) as context:
+                    # Run the test function once, via the executor hook.
+                    # In most cases this will delegate straight to `run(data)`.
+                    result = self.test_runner(data, run)
 
         # If a failure was expected, it should have been raised already, so
         # instead raise an appropriate diagnostic error.
@@ -1146,7 +1174,16 @@ class HypothesisHandle:
 
 @overload
 def given(
-    *_given_arguments: Union[SearchStrategy[Any], EllipsisType],
+    _: EllipsisType, /
+) -> Callable[
+    [Callable[..., Optional[Coroutine[Any, Any, None]]]], Callable[[], None]
+]:  # pragma: no cover
+    ...
+
+
+@overload
+def given(
+    *_given_arguments: SearchStrategy[Any],
 ) -> Callable[
     [Callable[..., Optional[Coroutine[Any, Any, None]]]], Callable[..., None]
 ]:  # pragma: no cover
@@ -1253,14 +1290,13 @@ def given(
 
             random = get_random_for_wrapped_test(test, wrapped_test)
 
-            processed_args = process_arguments_to_given(
+            arguments, kwargs, stuff = process_arguments_to_given(
                 wrapped_test, arguments, kwargs, given_kwargs, new_signature.parameters
             )
-            arguments, kwargs, test_runner, stuff = processed_args
 
             if (
                 inspect.iscoroutinefunction(test)
-                and test_runner is default_new_style_executor
+                and get_executor(stuff.selfy) is default_executor
             ):
                 # See https://github.com/HypothesisWorks/hypothesis/issues/3054
                 # If our custom executor doesn't handle coroutines, or we return an
@@ -1311,7 +1347,7 @@ def given(
                     fail_health_check(settings, msg, HealthCheck.differing_executors)
 
             state = StateForActualGivenExecution(
-                test_runner, stuff, test, settings, random, wrapped_test
+                stuff, test, settings, random, wrapped_test
             )
 
             reproduce_failure = wrapped_test._hypothesis_internal_use_reproduce_failure
@@ -1454,13 +1490,13 @@ def given(
                 parent=wrapped_test._hypothesis_internal_use_settings, deadline=None
             )
             random = get_random_for_wrapped_test(test, wrapped_test)
-            _args, _kwargs, test_runner, stuff = process_arguments_to_given(
+            _args, _kwargs, stuff = process_arguments_to_given(
                 wrapped_test, (), {}, given_kwargs, new_signature.parameters
             )
             assert not _args
             assert not _kwargs
             state = StateForActualGivenExecution(
-                test_runner, stuff, test, settings, random, wrapped_test
+                stuff, test, settings, random, wrapped_test
             )
             digest = function_digest(test)
             # We track the minimal-so-far example for each distinct origin, so

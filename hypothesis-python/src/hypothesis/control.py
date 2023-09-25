@@ -13,6 +13,7 @@ from collections import defaultdict
 from typing import NoReturn, Union
 
 from hypothesis import Verbosity, settings
+from hypothesis._settings import note_deprecation
 from hypothesis.errors import InvalidArgument, UnsatisfiedAssumption
 from hypothesis.internal.compat import BaseExceptionGroup
 from hypothesis.internal.conjecture.data import ConjectureData
@@ -24,6 +25,12 @@ from hypothesis.vendor.pretty import IDKey
 
 
 def reject() -> NoReturn:
+    if _current_build_context.value is None:
+        note_deprecation(
+            "Using `reject` outside a property-based test is deprecated",
+            since="RELEASEDAY",
+            has_codemod=False,
+        )
     raise UnsatisfiedAssumption
 
 
@@ -34,6 +41,12 @@ def assume(condition: object) -> bool:
     This allows you to specify properties that you *assume* will be
     true, and let Hypothesis try to avoid similar examples in future.
     """
+    if _current_build_context.value is None:
+        note_deprecation(
+            "Using `assume` outside a property-based test is deprecated",
+            since="RELEASEDAY",
+            has_codemod=False,
+        )
     if not condition:
         raise UnsatisfiedAssumption
     return True
