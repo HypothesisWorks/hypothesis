@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.87.0:
+
+-------------------
+6.87.0 - 2023-09-25
+-------------------
+
+This release deprecates use of :func:`~hypothesis.assume` and ``reject()``
+outside of property-based tests, because these functions work by raising a
+special exception (:issue:`3743`).  It also fixes some type annotations
+(:issue:`3753`).
+
 .. _v6.86.2:
 
 -------------------

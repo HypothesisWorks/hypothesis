@@ -28,7 +28,7 @@ def reject() -> NoReturn:
     if _current_build_context.value is None:
         note_deprecation(
             "Using `reject` outside a property-based test is deprecated",
-            since="RELEASEDAY",
+            since="2023-09-25",
             has_codemod=False,
         )
     raise UnsatisfiedAssumption
@@ -44,7 +44,7 @@ def assume(condition: object) -> bool:
     if _current_build_context.value is None:
         note_deprecation(
             "Using `assume` outside a property-based test is deprecated",
-            since="RELEASEDAY",
+            since="2023-09-25",
             has_codemod=False,
         )
     if not condition:
