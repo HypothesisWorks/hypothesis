@@ -570,12 +570,6 @@ class Shrinker:
 
                     if result.status == Status.OVERRUN:
                         continue  # pragma: no cover  # flakily covered
-
-                    if not (
-                        len(buf_attempt_fixed) == len(result.buffer)
-                        and result.buffer.endswith(buffer[end:])
-                    ):  # pragma: no cover
-                        raise NotImplementedError("This should never happen")
                 else:
                     chunks[(start, end)].append(result.buffer[start:end])
 

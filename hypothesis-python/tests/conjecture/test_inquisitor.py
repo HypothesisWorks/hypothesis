@@ -12,6 +12,8 @@ import pytest
 
 from hypothesis import given, settings, strategies as st
 
+from tests.common.utils import fails_with
+
 
 def fails_with_output(expected, error=AssertionError, **kw):
     def _inner(f):
@@ -70,3 +72,11 @@ Falsifying example: test_inquisitor_no_together_comment_if_single_argument(
 @given(st.text(), st.text())
 def test_inquisitor_no_together_comment_if_single_argument(a, b):
     assert a
+
+
+@fails_with(ZeroDivisionError)
+@settings(database=None)
+@given(start_date=st.datetimes(), data=st.data())
+def test_issue_3755_regression(start_date, data):
+    data.draw(st.datetimes(min_value=start_date))
+    raise ZeroDivisionError
