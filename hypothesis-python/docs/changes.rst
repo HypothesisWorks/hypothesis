@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.87.1:
+
+-------------------
+6.87.1 - 2023-10-01
+-------------------
+
+Fixes :issue:`3755`, where an internal condition turns out
+to be reachable after all.
+
 .. _v6.87.0:
 
 -------------------
