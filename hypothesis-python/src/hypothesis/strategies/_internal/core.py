@@ -1311,7 +1311,7 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
     # lookup may be a strategy or a function from type -> strategy; and we
     # convert empty results into an explicit error.
     try:
-        if thing in types._global_type_lookup:
+        if get_origin(thing) in types._global_type_lookup:
             return as_strategy(types._global_type_lookup[thing], thing)
     except TypeError:  # pragma: no cover
         # This is due to a bizarre divergence in behaviour under Python 3.9.0:
