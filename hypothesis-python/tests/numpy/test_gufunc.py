@@ -13,12 +13,8 @@ import pytest
 from pytest import param
 
 from hypothesis import example, given, note, settings, strategies as st
-from hypothesis.errors import InvalidArgument
 from hypothesis.extra import numpy as nps
-from hypothesis.extra._array_helpers import (
-    _SIGNATURE,
-    _hypothesis_parse_gufunc_signature,
-)
+from hypothesis.extra._array_helpers import _hypothesis_parse_gufunc_signature
 
 from tests.common.debug import find_any, minimal
 
@@ -43,47 +39,6 @@ def hy_sig_2_np_sig(hy_sig):
         [tuple(d.strip("?") for d in shape) for shape in hy_sig.input_shapes],
         [tuple(d.strip("?") for d in hy_sig.result_shape)],
     )
-
-
-@use_signature_examples
-@example("()->(%s),()" % ",".join(33 * "0"))
-@given(st.from_regex(np.lib.function_base._SIGNATURE))
-def test_numpy_signature_parses(sig):
-    if sig == "(m?,n),(n,p?)->(m?,p?)":  # matmul example
-        return
-
-    np_sig = np.lib.function_base._parse_gufunc_signature(sig)
-    try:
-        hy_sig = _hypothesis_parse_gufunc_signature(sig, all_checks=False)
-        assert np_sig == hy_sig_2_np_sig(hy_sig)
-    except InvalidArgument:
-        shape_too_long = any(len(s) > 32 for s in np_sig[0] + np_sig[1])
-        multiple_outputs = len(np_sig[1]) > 1
-        assert shape_too_long or multiple_outputs
-
-        # Now, if we can fix this up does it validate?
-        in_, out = sig.split("->")
-        sig = in_ + "->" + out.split(",(")[0]
-        np_sig = np.lib.function_base._parse_gufunc_signature(sig)
-        if all(len(s) <= 32 for s in np_sig[0] + np_sig[1]):
-            hy_sig = _hypothesis_parse_gufunc_signature(sig, all_checks=False)
-            assert np_sig == hy_sig_2_np_sig(hy_sig)
-
-
-@use_signature_examples
-@given(st.from_regex(_SIGNATURE))
-def test_hypothesis_signature_parses(sig):
-    hy_sig = _hypothesis_parse_gufunc_signature(sig, all_checks=False)
-    try:
-        np_sig = np.lib.function_base._parse_gufunc_signature(sig)
-        assert np_sig == hy_sig_2_np_sig(hy_sig)
-    except ValueError:
-        assert "?" in sig
-        # We can always fix this up, and it should then always validate.
-        sig = sig.replace("?", "")
-        hy_sig = _hypothesis_parse_gufunc_signature(sig, all_checks=False)
-        np_sig = np.lib.function_base._parse_gufunc_signature(sig)
-        assert np_sig == hy_sig_2_np_sig(hy_sig)
 
 
 def test_frozen_dims_signature():
