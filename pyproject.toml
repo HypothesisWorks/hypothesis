@@ -25,7 +25,6 @@ select = [
   "UP",     # pyupgrade
   "W",      # pycodestyle
   "YTT",    # flake8-2020
-  # "PTH",  # flake8-use-pathlib
   "RUF",    # Ruff-specific rules
 ]
 ignore = [

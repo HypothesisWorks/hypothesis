@@ -30,7 +30,7 @@ def test_does_not_use_explicit_examples(i):
     assert isinstance(i, bool)
 
 
-@settings(phases=(Phase.reuse, Phase.shrink))
+@settings(phases=(Phase.reuse, Phase.shrink), database=InMemoryExampleDatabase())
 @given(st.booleans())
 def test_this_would_fail_if_you_ran_it(b):
     raise AssertionError
