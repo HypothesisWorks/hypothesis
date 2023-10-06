@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.87.3:
+
+-------------------
+6.87.3 - 2023-10-06
+-------------------
+
+This patch ensures that the :ref:`hypothesis codemod <codemods>` CLI
+will print a warning instead of stopping with an internal error if
+one of your files contains invalid syntax (:issue:`3759`).
+
 .. _v6.87.2:
 
 -------------------
