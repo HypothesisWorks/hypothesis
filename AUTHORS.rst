@@ -116,6 +116,7 @@ their individual contributions.
 * `marekventur <https://www.github.com/marekventur>`_
 * `Marius Gedminas <https://www.github.com/mgedmin>`_ (marius@gedmin.as)
 * `Markus Unterwaditzer <https://github.com/untitaker>`_ (markus@unterwaditzer.net)
+* `Mateusz Sokół <https://github.com/mtsokol>`_
 * `Mathieu Paturel <https://github.com/math2001>`_ (mathieu.paturel@gmail.com)
 * `Matt Bachmann <https://www.github.com/bachmann1234>`_ (bachmann.matt@gmail.com)
 * `Matthew Barber <https://www.github.com/honno>`_ (quitesimplymatt@gmail.com)
