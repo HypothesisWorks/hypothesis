@@ -9,10 +9,10 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import datetime as dt
-import os.path
 from calendar import monthrange
 from functools import lru_cache
 from importlib import resources
+from pathlib import Path
 from typing import Optional
 
 from hypothesis.errors import InvalidArgument
@@ -342,7 +342,7 @@ def timedeltas(
 def _valid_key_cacheable(tzpath, key):
     assert isinstance(tzpath, tuple)  # zoneinfo changed, better update this function!
     for root in tzpath:
-        if os.path.exists(os.path.join(root, key)):  # pragma: no branch
+        if Path(root).joinpath(key).exists():  # pragma: no branch
             # No branch because most systems only have one TZPATH component.
             return True
     else:  # pragma: no cover

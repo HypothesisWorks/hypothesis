@@ -43,6 +43,7 @@ import types
 from difflib import get_close_matches
 from functools import partial
 from multiprocessing import Pool
+from pathlib import Path
 
 try:
     import pytest
@@ -161,8 +162,7 @@ else:
 
     def _refactor(func, fname):
         try:
-            with open(fname, encoding="utf-8") as f:
-                oldcode = f.read()
+            oldcode = Path(fname).read_text(encoding="utf-8")
         except (OSError, UnicodeError) as err:
             # Permissions or encoding issue, or file deleted, etc.
             return f"skipping {fname!r} due to {err}"
@@ -183,8 +183,7 @@ else:
             raise
 
         if newcode != oldcode:
-            with open(fname, mode="w", encoding="utf-8") as f:
-                f.write(newcode)
+            Path(fname).write_text(newcode, encoding="utf-8")
 
     @main.command()  # type: ignore  # Click adds the .command attribute
     @click.argument("path", type=str, required=True, nargs=-1)

@@ -8,8 +8,6 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import os.path
-
 from hypothesis import assume, core, find, given, settings, strategies as st
 from hypothesis.database import (
     ExampleDatabase,
@@ -152,17 +150,17 @@ def test_does_not_use_database_when_seed_is_forced(monkeypatch):
 @given(st.binary(), st.binary())
 def test_database_not_created_when_not_used(tmp_path_factory, key, value):
     path = tmp_path_factory.mktemp("hypothesis") / "examples"
-    assert not os.path.exists(str(path))
+    assert not path.exists()
     database = ExampleDatabase(path)
     assert not list(database.fetch(key))
-    assert not os.path.exists(str(path))
+    assert not path.exists()
     database.save(key, value)
-    assert os.path.exists(str(path))
+    assert path.exists()
     assert list(database.fetch(key)) == [value]
 
 
 def test_ga_database_not_created_when_not_used(tmp_path_factory):
     path = tmp_path_factory.mktemp("hypothesis") / "github-actions"
-    assert not os.path.exists(str(path))
+    assert not path.exists()
     ReadOnlyDatabase(GitHubArtifactDatabase("mock", "mock", path=path))
-    assert not os.path.exists(str(path))
+    assert not path.exists()

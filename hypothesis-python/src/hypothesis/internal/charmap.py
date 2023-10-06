@@ -18,7 +18,7 @@ import unicodedata
 from functools import lru_cache
 from typing import Dict, Tuple
 
-from hypothesis.configuration import mkdir_p, storage_directory
+from hypothesis.configuration import storage_directory
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.intervalsets import IntervalSet
 
@@ -70,7 +70,7 @@ def charmap():
             try:
                 # Write the Unicode table atomically
                 tmpdir = storage_directory("tmp")
-                mkdir_p(tmpdir)
+                tmpdir.mkdir(exist_ok=True, parents=True)
                 fd, tmpfile = tempfile.mkstemp(dir=tmpdir)
                 os.close(fd)
                 # Explicitly set the mtime to get reproducible output
@@ -123,7 +123,7 @@ def intervals_from_codec(codec_name: str) -> IntervalSet:  # pragma: no cover
     try:
         # Write the Unicode table atomically
         tmpdir = storage_directory("tmp")
-        mkdir_p(tmpdir)
+        tmpdir.mkdir(exist_ok=True, parents=True)
         fd, tmpfile = tempfile.mkstemp(dir=tmpdir)
         os.close(fd)
         # Explicitly set the mtime to get reproducible output

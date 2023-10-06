@@ -279,7 +279,8 @@ if __name__ == '__main__':
     set_hypothesis_home_dir(new_home)
     db = settings.default.database
     assert isinstance(db, DirectoryBasedExampleDatabase), db
-    assert db.path.startswith(new_home), (db.path, new_home)
+    # TODO: use .is_relative_to() when we drop Python 3.8
+    assert str(db.path).startswith(new_home), (db.path, new_home)
 """
 
 

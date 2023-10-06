@@ -81,7 +81,7 @@ def test_recreate_charmap():
     x = cm.charmap()
     assert x is cm.charmap()
     cm._charmap = None
-    os.unlink(cm.charmap_file())
+    cm.charmap_file().unlink()
     y = cm.charmap()
     assert x is not y
     assert x == y
@@ -93,13 +93,13 @@ def test_uses_cached_charmap():
     # Reset the last-modified time of the cache file to a point in the past.
     mtime = int(time.time() - 1000)
     os.utime(cm.charmap_file(), (mtime, mtime))
-    statinfo = os.stat(cm.charmap_file())
+    statinfo = cm.charmap_file().stat()
     assert statinfo.st_mtime == mtime
 
     # Force reload of charmap from cache file and check that mtime is unchanged.
     cm._charmap = None
     cm.charmap()
-    statinfo = os.stat(cm.charmap_file())
+    statinfo = cm.charmap_file().stat()
     assert statinfo.st_mtime == mtime
 
 
@@ -157,10 +157,8 @@ def test_exception_in_write_does_not_lead_to_broken_charmap(monkeypatch):
 
 def test_regenerate_broken_charmap_file():
     cm.charmap()
-    file_loc = cm.charmap_file()
 
-    with open(file_loc, "wb"):
-        pass
+    cm.charmap_file().write_bytes(b"")  # overwrite with empty file
 
     cm._charmap = None
     cm.charmap()
@@ -181,7 +179,7 @@ def test_error_writing_charmap_file_is_suppressed(monkeypatch):
         # somebody tries to use it.
         saved = cm._charmap
         cm._charmap = None
-        os.unlink(cm.charmap_file())
+        cm.charmap_file().unlink()
 
         cm.charmap()
     finally:
