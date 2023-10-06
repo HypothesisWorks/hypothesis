@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.87.2:
+
+-------------------
+6.87.2 - 2023-10-06
+-------------------
+
+This patch makes some small changes to our NumPy integration to ensure forward
+compatibility.  Thanks to Mateusz Sokół for :pull:`3761`.
+
 .. _v6.87.1:
 
 -------------------
