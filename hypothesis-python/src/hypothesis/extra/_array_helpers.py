@@ -286,7 +286,7 @@ class _GUfuncSig(NamedTuple):
     result_shape: Shape
 
 
-def _hypothesis_parse_gufunc_signature(signature, *, all_checks=True):
+def _hypothesis_parse_gufunc_signature(signature):
     # Disable all_checks to better match the Numpy version, for testing
     if not re.match(_SIGNATURE, signature):
         if re.match(_SIGNATURE_MULTIPLE_OUTPUT, signature):
@@ -315,34 +315,29 @@ def _hypothesis_parse_gufunc_signature(signature, *, all_checks=True):
     )
     assert len(output_shapes) == 1
     result_shape = output_shapes[0]
-    if all_checks:
-        # Check that there are no names in output shape that do not appear in inputs.
-        # (kept out of parser function for easier generation of test values)
-        # We also disallow frozen optional dimensions - this is ambiguous as there is
-        # no way to share an un-named dimension between shapes.  Maybe just padding?
-        # Anyway, we disallow it pending clarification from upstream.
-        frozen_optional_err = (
-            "Got dimension %r, but handling of frozen optional dimensions "
-            "is ambiguous.  If you known how this should work, please "
-            "contact us to get this fixed and documented (signature=%r)."
-        )
-        only_out_err = (
-            "The %r dimension only appears in the output shape, and is "
-            "not frozen, so the size is not determined (signature=%r)."
-        )
-        names_in = {n.strip("?") for shp in input_shapes for n in shp}
-        names_out = {n.strip("?") for n in result_shape}
-        for shape in (*input_shapes, result_shape):
-            for name in shape:
-                try:
-                    int(name.strip("?"))
-                    if "?" in name:
-                        raise InvalidArgument(frozen_optional_err % (name, signature))
-                except ValueError:
-                    if name.strip("?") in (names_out - names_in):
-                        raise InvalidArgument(
-                            only_out_err % (name, signature)
-                        ) from None
+    # Check that there are no names in output shape that do not appear in inputs.
+    # (kept out of parser function for easier generation of test values)
+    # We also disallow frozen optional dimensions - this is ambiguous as there is
+    # no way to share an un-named dimension between shapes.  Maybe just padding?
+    # Anyway, we disallow it pending clarification from upstream.
+    for shape in (*input_shapes, result_shape):
+        for name in shape:
+            try:
+                int(name.strip("?"))
+                if "?" in name:
+                    raise InvalidArgument(
+                        f"Got dimension {name!r}, but handling of frozen optional dimensions "
+                        "is ambiguous.  If you known how this should work, please "
+                        "contact us to get this fixed and documented ({signature=})."
+                    )
+            except ValueError:
+                names_in = {n.strip("?") for shp in input_shapes for n in shp}
+                names_out = {n.strip("?") for n in result_shape}
+                if name.strip("?") in (names_out - names_in):
+                    raise InvalidArgument(
+                        "The {name!r} dimension only appears in the output shape, and is "
+                        "not frozen, so the size is not determined ({signature=})."
+                    ) from None
     return _GUfuncSig(input_shapes=input_shapes, result_shape=result_shape)
 
 
