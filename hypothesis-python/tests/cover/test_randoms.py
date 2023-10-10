@@ -381,3 +381,8 @@ def test_can_sample_from_large_subset(rnd):
     ys = rnd.sample(xs, n)
     assert set(ys).issubset(set(xs))
     assert len(ys) == len(set(ys)) == n
+
+
+@given(st.randoms(use_true_random=False))
+def test_can_draw_empty_from_empty_sequence(rnd):
+    assert rnd.sample([], 0) == []

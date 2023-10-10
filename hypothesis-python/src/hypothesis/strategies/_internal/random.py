@@ -296,14 +296,17 @@ class ArtificialRandom(HypothesisRandom):
                     f"Sample size {k} not in expected range 0 <= k <= {len(seq)}"
                 )
 
-            result = self.__data.draw(
-                lists(
-                    sampled_from(range(len(seq))),
-                    min_size=k,
-                    max_size=k,
-                    unique=True,
+            if k == 0:
+                result = []
+            else:
+                result = self.__data.draw(
+                    lists(
+                        sampled_from(range(len(seq))),
+                        min_size=k,
+                        max_size=k,
+                        unique=True,
+                    )
                 )
-            )
 
         elif method == "getrandbits":
             result = self.__data.draw_bits(kwargs["n"])
