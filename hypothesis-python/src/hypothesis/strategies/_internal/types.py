@@ -407,6 +407,22 @@ def from_typing_type(thing):
         # the ghostwriter than it's worth, via undefined names in the repr.
         mapping.pop(collections.deque, None)
         mapping.pop(typing.Deque, None)
+    # namedtuples are, strictly speaking, generic. However, users treat them as
+    # dataclasses or structs, not as a generically typed collection, so we
+    # don't want to provide generic instantiations of these.
+    #
+    # Namedtuples aren't an actual type, so we'll check for internal attributes
+    # set by collections.namedtuple and hope nobody sets these on their own
+    # tuple subclass.
+    for t in sorted(mapping, key=type_sorting_key):
+        if (
+            isinstance(t, type)
+            and issubclass(t, tuple)
+            and hasattr(t, "_fields")
+            and hasattr(t, "_asdict")
+        ):
+            mapping.pop(t)
+
     if len(mapping) > 1:
         # issubclass treats bytestring as a kind of sequence, which it is,
         # but treating it as such breaks everything else when it is presumed
