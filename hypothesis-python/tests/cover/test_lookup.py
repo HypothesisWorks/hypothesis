@@ -1064,7 +1064,7 @@ def test_namedtuple_is_not_a_sequence():
     # users don't expect this behavior.
     # see https://github.com/HypothesisWorks/hypothesis/issues/3767.
     with temp_registered(NotAnIntSequence, st.builds(NotAnIntSequence)):
-        seq_type = collections.abc.Sequence[int]
+        seq_type = typing.Sequence[int]
 
         @given(st.from_type(seq_type))
         def f(val):
