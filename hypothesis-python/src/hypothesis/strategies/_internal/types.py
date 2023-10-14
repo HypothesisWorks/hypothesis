@@ -391,10 +391,18 @@ def from_typing_type(thing):
         for k, v in _global_type_lookup.items()
         if is_generic_type(k) and try_issubclass(k, thing)
     }
-    # Drop some unusual cases for simplicity
-    for weird in (tuple, getattr(os, "_Environ", None)):
-        if len(mapping) > 1:
-            mapping.pop(weird, None)
+    # Drop some unusual cases for simplicity, including tuples or its
+    # subclasses (e.g. namedtuple)
+    if len(mapping) > 1:
+        _Environ = getattr(os, "_Environ", None)
+        mapping.pop(_Environ, None)
+    tuple_types = [
+        t for t in mapping if isinstance(t, type) and issubclass(t, tuple)
+    ]
+    if len(mapping) > len(tuple_types):
+        for tuple_type in tuple_types:
+            mapping.pop(tuple_type)
+
     # After we drop Python 3.8 and can rely on having generic builtin types, we'll
     # be able to simplify this logic by dropping the typing-module handling.
     if {dict, set, typing.Dict, typing.Set}.intersection(mapping):
@@ -407,21 +415,6 @@ def from_typing_type(thing):
         # the ghostwriter than it's worth, via undefined names in the repr.
         mapping.pop(collections.deque, None)
         mapping.pop(typing.Deque, None)
-    # namedtuples are, strictly speaking, generic. However, users treat them as
-    # dataclasses or structs, not as a generically typed collection, so we
-    # don't want to provide generic instantiations of these.
-    #
-    # Namedtuples aren't an actual type, so we'll check for internal attributes
-    # set by collections.namedtuple and hope nobody sets these on their own
-    # tuple subclass.
-    for t in sorted(mapping, key=type_sorting_key):
-        if (
-            isinstance(t, type)
-            and issubclass(t, tuple)
-            and hasattr(t, "_fields")
-            and hasattr(t, "_asdict")
-        ):
-            mapping.pop(t)
 
     if len(mapping) > 1:
         # issubclass treats bytestring as a kind of sequence, which it is,

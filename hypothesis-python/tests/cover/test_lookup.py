@@ -1055,19 +1055,14 @@ def test_builds_mentions_no_type_check():
         st.builds(f).example()
 
 
-class NotAnIntSequence(collections.namedtuple("NotAnIntSequence", [])):
+class TupleSubtype(tuple):
     pass
 
 
-def test_namedtuple_is_not_a_sequence():
-    # namedtuples are a subclass of tuple and are technically a sequence, but
-    # users don't expect this behavior.
+def test_tuple_subclasses_not_generic_sequences():
     # see https://github.com/HypothesisWorks/hypothesis/issues/3767.
-    with temp_registered(NotAnIntSequence, st.builds(NotAnIntSequence)):
-        seq_type = typing.Sequence[int]
-
-        @given(st.from_type(seq_type))
+    with temp_registered(TupleSubtype, st.builds(TupleSubtype)):
+        @given(st.from_type(typing.Sequence[int]))
         def f(val):
-            assert type(val) is not NotAnIntSequence
-
+            assert not isinstance(val, tuple)
         f()
