@@ -34,7 +34,12 @@ from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies import from_type
 from hypothesis.strategies._internal import types
 
-from tests.common.debug import assert_all_examples, find_any, minimal
+from tests.common.debug import (
+    assert_all_examples,
+    assert_no_examples,
+    find_any,
+    minimal,
+)
 from tests.common.utils import fails_with, temp_registered
 
 sentinel = object()
@@ -1062,9 +1067,29 @@ class TupleSubtype(tuple):
 def test_tuple_subclasses_not_generic_sequences():
     # see https://github.com/HypothesisWorks/hypothesis/issues/3767.
     with temp_registered(TupleSubtype, st.builds(TupleSubtype)):
+        s = st.from_type(typing.Sequence[int])
+        assert_no_examples(s, lambda x: isinstance(x, tuple))
 
-        @given(st.from_type(typing.Sequence[int]))
-        def f(val):
-            assert not isinstance(val, tuple)
 
-        f()
+T = typing.TypeVar("T")
+
+
+@typing.runtime_checkable
+class Fooable(typing.Protocol[T]):
+    def foo(self):
+        ...
+
+
+class FooableConcrete(tuple):
+    def foo(self):
+        pass
+
+
+def test_only_tuple_subclasses_in_typing_type():
+    # A generic typing type (such as Fooable) whose only concrete
+    # instantiations are tuples should still generate tuples. This is in
+    # contrast to test_tuple_subclasses_not_generic_sequences, which discards
+    # tuples if there are any alternatives.
+    with temp_registered(FooableConcrete, st.builds(FooableConcrete)):
+        s = st.from_type(Fooable[int])
+        assert_all_examples(s, lambda x: type(x) is FooableConcrete)
