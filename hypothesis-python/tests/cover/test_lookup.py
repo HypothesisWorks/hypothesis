@@ -1062,7 +1062,9 @@ class TupleSubtype(tuple):
 def test_tuple_subclasses_not_generic_sequences():
     # see https://github.com/HypothesisWorks/hypothesis/issues/3767.
     with temp_registered(TupleSubtype, st.builds(TupleSubtype)):
+
         @given(st.from_type(typing.Sequence[int]))
         def f(val):
             assert not isinstance(val, tuple)
+
         f()
