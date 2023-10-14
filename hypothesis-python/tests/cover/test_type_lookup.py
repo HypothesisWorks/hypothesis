@@ -95,10 +95,19 @@ def test_lookup_keys_are_types():
     assert "int" not in types._global_type_lookup
 
 
-def test_lookup_values_are_strategies():
+@pytest.mark.parametrize(
+    "typ, not_a_strategy",
+    [
+        (int, 42),  # Values must be strategies
+        # Can't register NotImplemented directly, even though strategy functions
+        # can return it.
+        (int, NotImplemented),
+    ],
+)
+def test_lookup_values_are_strategies(typ, not_a_strategy):
     with pytest.raises(InvalidArgument):
-        st.register_type_strategy(int, 42)
-    assert 42 not in types._global_type_lookup.values()
+        st.register_type_strategy(typ, not_a_strategy)
+    assert not_a_strategy not in types._global_type_lookup.values()
 
 
 @pytest.mark.parametrize("typ", sorted(types_with_core_strat, key=str))
@@ -145,6 +154,24 @@ def test_custom_type_resolution_with_function_non_strategy():
             st.from_type(UnknownType).example()
         with pytest.raises(ResolutionFailed):
             st.from_type(ParentUnknownType).example()
+
+
+@pytest.mark.parametrize("strategy_returned", [True, False])
+def test_conditional_type_resolution_with_function(strategy_returned):
+    sentinel = object()
+
+    def resolve_strategy(thing):
+        assert thing == UnknownType
+        if strategy_returned:
+            return st.just(sentinel)
+        return NotImplemented
+
+    with temp_registered(UnknownType, resolve_strategy):
+        if strategy_returned:
+            assert st.from_type(UnknownType).example() is sentinel
+        else:
+            with pytest.raises(ResolutionFailed):
+                st.from_type(UnknownType).example()
 
 
 def test_errors_if_generic_resolves_empty():

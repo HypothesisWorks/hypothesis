@@ -444,9 +444,13 @@ def from_typing_type(thing):
             mapping.pop(t)
     # Sort strategies according to our type-sorting heuristic for stable output
     strategies = [
-        v if isinstance(v, st.SearchStrategy) else v(thing)
-        for k, v in sorted(mapping.items(), key=lambda kv: type_sorting_key(kv[0]))
-        if sum(try_issubclass(k, T) for T in mapping) == 1
+        s
+        for s in (
+            v if isinstance(v, st.SearchStrategy) else v(thing)
+            for k, v in sorted(mapping.items(), key=lambda kv: type_sorting_key(kv[0]))
+            if sum(try_issubclass(k, T) for T in mapping) == 1
+        )
+        if s != NotImplemented
     ]
     empty = ", ".join(repr(s) for s in strategies if s.is_empty)
     if empty or not strategies:
@@ -484,6 +488,14 @@ utc_offsets = st.builds(
 # As a general rule, we try to limit this to scalars because from_type()
 # would have to decide on arbitrary collection elements, and we'd rather
 # not (with typing module generic types and some builtins as exceptions).
+#
+# Strategy Callables may return NotImplemented, which should be treated in the
+# same way as if the type was not registered.
+#
+# Note that NotImplemented cannot be typed in Python 3.8 because there's no type
+# exposed for it, and NotImplemented itself is typed as Any so that it can be
+# returned without being listed in a function signature:
+# https://github.com/python/mypy/issues/6710#issuecomment-485580032
 _global_type_lookup: typing.Dict[
     type, typing.Union[st.SearchStrategy, typing.Callable[[type], st.SearchStrategy]]
 ] = {
