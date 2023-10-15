@@ -54,7 +54,7 @@ def test_bound_correct_forward_ref(built):
     assert isinstance(built, int)
 
 
-# Alises:
+# Aliases:
 
 _Alias = TypeVar("_Alias ", bound="OurAlias")
 
