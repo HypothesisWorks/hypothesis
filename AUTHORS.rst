@@ -108,6 +108,7 @@ their individual contributions.
 * `Lampros Mountrakis <https://www.github.com/lmount>`_
 * `Lea Provenzano <https://github.com/leaprovenzano>`_
 * `Lee Begg <https://www.github.com/llnz2>`_
+* `Liam DeVoe <https://github.com/tybug>`_
 * `Libor Martínek <https://github.com/bibajz>`_
 * `Lisa Goeller <https://www.github.com/lgoeller>`_
 * `Louis Taylor <https://github.com/kragniz>`_

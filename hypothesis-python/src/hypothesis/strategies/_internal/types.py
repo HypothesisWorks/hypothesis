@@ -391,10 +391,16 @@ def from_typing_type(thing):
         for k, v in _global_type_lookup.items()
         if is_generic_type(k) and try_issubclass(k, thing)
     }
-    # Drop some unusual cases for simplicity
-    for weird in (tuple, getattr(os, "_Environ", None)):
-        if len(mapping) > 1:
-            mapping.pop(weird, None)
+    # Drop some unusual cases for simplicity, including tuples or its
+    # subclasses (e.g. namedtuple)
+    if len(mapping) > 1:
+        _Environ = getattr(os, "_Environ", None)
+        mapping.pop(_Environ, None)
+    tuple_types = [t for t in mapping if isinstance(t, type) and issubclass(t, tuple)]
+    if len(mapping) > len(tuple_types):
+        for tuple_type in tuple_types:
+            mapping.pop(tuple_type)
+
     # After we drop Python 3.8 and can rely on having generic builtin types, we'll
     # be able to simplify this logic by dropping the typing-module handling.
     if {dict, set, typing.Dict, typing.Set}.intersection(mapping):
@@ -407,6 +413,7 @@ def from_typing_type(thing):
         # the ghostwriter than it's worth, via undefined names in the repr.
         mapping.pop(collections.deque, None)
         mapping.pop(typing.Deque, None)
+
     if len(mapping) > 1:
         # issubclass treats bytestring as a kind of sequence, which it is,
         # but treating it as such breaks everything else when it is presumed

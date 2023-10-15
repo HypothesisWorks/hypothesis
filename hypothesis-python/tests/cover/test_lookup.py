@@ -36,7 +36,12 @@ from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies import from_type
 from hypothesis.strategies._internal import types
 
-from tests.common.debug import assert_all_examples, find_any, minimal
+from tests.common.debug import (
+    assert_all_examples,
+    assert_no_examples,
+    find_any,
+    minimal,
+)
 from tests.common.utils import fails_with, temp_registered
 
 sentinel = object()
@@ -1144,6 +1149,17 @@ def test_builds_mentions_no_type_check():
     msg = "@no_type_check decorator prevented Hypothesis from inferring a strategy"
     with pytest.raises(TypeError, match=msg):
         st.builds(f).example()
+
+
+class TupleSubtype(tuple):
+    pass
+
+
+def test_tuple_subclasses_not_generic_sequences():
+    # see https://github.com/HypothesisWorks/hypothesis/issues/3767.
+    with temp_registered(TupleSubtype, st.builds(TupleSubtype)):
+        s = st.from_type(typing.Sequence[int])
+        assert_no_examples(s, lambda x: isinstance(x, tuple))
 
 
 def test_custom_strategy_function_resolves_types_conditionally():
