@@ -38,7 +38,7 @@ Colour palette in GIMP format
 
 A `colour palette in GIMP format <hypothesis.gpl>`__ (``.gpl``) is also provided
 with the intent of making it easier to produce graphics and documents which
-re-use the colours in the Hypothesis Dragonfly logo by Libby Berrie.
+reuse the colours in the Hypothesis Dragonfly logo by Libby Berrie.
 
 The ``hypothesis.gpl`` file should be copied or imported to the appropriate
 location on your filesystem. For example:

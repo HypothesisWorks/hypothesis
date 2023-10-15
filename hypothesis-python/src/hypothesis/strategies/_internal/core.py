@@ -1235,6 +1235,8 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
             strategy = strat_or_callable(thing)
         else:
             strategy = strat_or_callable
+        if strategy is NotImplemented:
+            return NotImplemented
         if not isinstance(strategy, SearchStrategy):
             raise ResolutionFailed(
                 f"Error: {thing} was registered for {nicerepr(strat_or_callable)}, "
@@ -1277,7 +1279,9 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
             # Check if we have an explicitly registered strategy for this thing,
             # resolve it so, and otherwise resolve as for the base type.
             if thing in types._global_type_lookup:
-                return as_strategy(types._global_type_lookup[thing], thing)
+                strategy = as_strategy(types._global_type_lookup[thing], thing)
+                if strategy is not NotImplemented:
+                    return strategy
             return _from_type(thing.__supertype__)
         # Unions are not instances of `type` - but we still want to resolve them!
         if types.is_a_union(thing):
@@ -1287,7 +1291,9 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
     # They are represented as instances like `~T` when they come here.
     # We need to work with their type instead.
     if isinstance(thing, TypeVar) and type(thing) in types._global_type_lookup:
-        return as_strategy(types._global_type_lookup[type(thing)], thing)
+        strategy = as_strategy(types._global_type_lookup[type(thing)], thing)
+        if strategy is not NotImplemented:
+            return strategy
     if not types.is_a_type(thing):
         if isinstance(thing, str):
             # See https://github.com/HypothesisWorks/hypothesis/issues/3016
@@ -1312,7 +1318,9 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
     # convert empty results into an explicit error.
     try:
         if thing in types._global_type_lookup:
-            return as_strategy(types._global_type_lookup[thing], thing)
+            strategy = as_strategy(types._global_type_lookup[thing], thing)
+            if strategy is not NotImplemented:
+                return strategy
     except TypeError:  # pragma: no cover
         # This is due to a bizarre divergence in behaviour under Python 3.9.0:
         # typing.Callable[[], foo] has __args__ = (foo,) but collections.abc.Callable
@@ -1372,11 +1380,16 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
     # type.  For example, `Number -> integers() | floats()`, but bools() is
     # not included because bool is a subclass of int as well as Number.
     strategies = [
-        as_strategy(v, thing)
-        for k, v in sorted(types._global_type_lookup.items(), key=repr)
-        if isinstance(k, type)
-        and issubclass(k, thing)
-        and sum(types.try_issubclass(k, typ) for typ in types._global_type_lookup) == 1
+        s
+        for s in (
+            as_strategy(v, thing)
+            for k, v in sorted(types._global_type_lookup.items(), key=repr)
+            if isinstance(k, type)
+            and issubclass(k, thing)
+            and sum(types.try_issubclass(k, typ) for typ in types._global_type_lookup)
+            == 1
+        )
+        if s is not NotImplemented
     ]
     if any(not s.is_empty for s in strategies):
         return one_of(strategies)
@@ -2142,7 +2155,10 @@ def register_type_strategy(
     for an argument with a default value.
 
     ``strategy`` may be a search strategy, or a function that takes a type and
-    returns a strategy (useful for generic types).
+    returns a strategy (useful for generic types). The function may return
+    :data:`NotImplemented` to conditionally not provide a strategy for the type
+    (the type will still be resolved by other methods, if possible, as if the
+    function was not registered).
 
     Note that you may not register a parametrised generic type (such as
     ``MyCollection[int]``) directly, because the resolution logic does not

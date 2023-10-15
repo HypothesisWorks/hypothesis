@@ -11,6 +11,7 @@
 import abc
 import builtins
 import collections
+import contextlib
 import datetime
 import enum
 import inspect
@@ -21,6 +22,7 @@ import string
 import sys
 import typing
 import warnings
+from dataclasses import dataclass
 from inspect import signature
 from numbers import Real
 
@@ -376,6 +378,25 @@ def test_typevars_can_be_redefine_with_factory():
         assert_all_examples(st.from_type(A), lambda obj: obj == "A")
 
 
+def test_typevars_can_be_resolved_conditionally():
+    sentinel = object()
+    A = typing.TypeVar("A")
+    B = typing.TypeVar("B")
+
+    def resolve_type_var(thing):
+        assert thing in (A, B)
+        if thing == A:
+            return st.just(sentinel)
+        return NotImplemented
+
+    with temp_registered(typing.TypeVar, resolve_type_var):
+        assert st.from_type(A).example() is sentinel
+        # We've re-defined the default TypeVar resolver, so there is no fallback.
+        # This causes the lookup to fail.
+        with pytest.raises(InvalidArgument):
+            st.from_type(B).example()
+
+
 def annotated_func(a: int, b: int = 2, *, c: int, d: int = 4):
     return a + b + c + d
 
@@ -468,6 +489,24 @@ def test_resolves_NewType():
     assert isinstance(from_type(typ).example(), int)
     assert isinstance(from_type(nested).example(), int)
     assert isinstance(from_type(uni).example(), (int, type(None)))
+
+
+@pytest.mark.parametrize("is_handled", [True, False])
+def test_resolves_NewType_conditionally(is_handled):
+    sentinel = object()
+    typ = typing.NewType("T", int)
+
+    def resolve_custom_strategy(thing):
+        assert thing is typ
+        if is_handled:
+            return st.just(sentinel)
+        return NotImplemented
+
+    with temp_registered(typ, resolve_custom_strategy):
+        if is_handled:
+            assert st.from_type(typ).example() is sentinel
+        else:
+            assert isinstance(st.from_type(typ).example(), int)
 
 
 E = enum.Enum("E", "a b c")
@@ -807,6 +846,58 @@ def test_supportsop_types_support_protocol(protocol, data):
     assert issubclass(type(value), protocol)
 
 
+@pytest.mark.parametrize("restrict_custom_strategy", [True, False])
+def test_generic_aliases_can_be_conditionally_resolved_by_registered_function(
+    restrict_custom_strategy,
+):
+    # Check that a custom strategy function may provide no strategy for a
+    # generic alias request like Container[T]. We test this under two scenarios:
+    # - where CustomContainer CANNOT be generated from requests for Container[T]
+    #   (only for requests for exactly CustomContainer[T])
+    # - where CustomContainer CAN be generated from requests for Container[T]
+    T = typing.TypeVar("T")
+
+    @dataclass
+    class CustomContainer(typing.Container[T]):
+        content: T
+
+        def __contains__(self, value: object) -> bool:
+            return self.content == value
+
+    def get_custom_container_strategy(thing):
+        if restrict_custom_strategy and typing.get_origin(thing) != CustomContainer:
+            return NotImplemented
+        return st.builds(
+            CustomContainer, content=st.from_type(typing.get_args(thing)[0])
+        )
+
+    with temp_registered(CustomContainer, get_custom_container_strategy):
+
+        def is_custom_container_with_str(example):
+            return isinstance(example, CustomContainer) and isinstance(
+                example.content, str
+            )
+
+        def is_non_custom_container(example):
+            return isinstance(example, typing.Container) and not isinstance(
+                example, CustomContainer
+            )
+
+        assert_all_examples(
+            st.from_type(CustomContainer[str]), is_custom_container_with_str
+        )
+        # If the strategy function is restricting, it doesn't return a strategy
+        # for requests for Container[...], so it's never generated. When not
+        # restricting, it is generated.
+        if restrict_custom_strategy:
+            assert_all_examples(
+                st.from_type(typing.Container[str]), is_non_custom_container
+            )
+        else:
+            find_any(st.from_type(typing.Container[str]), is_custom_container_with_str)
+            find_any(st.from_type(typing.Container[str]), is_non_custom_container)
+
+
 @pytest.mark.parametrize(
     "protocol, typ",
     [
@@ -1069,3 +1160,31 @@ def test_tuple_subclasses_not_generic_sequences():
     with temp_registered(TupleSubtype, st.builds(TupleSubtype)):
         s = st.from_type(typing.Sequence[int])
         assert_no_examples(s, lambda x: isinstance(x, tuple))
+
+
+def test_custom_strategy_function_resolves_types_conditionally():
+    sentinel = object()
+
+    class A:
+        pass
+
+    class B(A):
+        pass
+
+    class C(A):
+        pass
+
+    def resolve_custom_strategy_for_b(thing):
+        if thing == B:
+            return st.just(sentinel)
+        return NotImplemented
+
+    with contextlib.ExitStack() as stack:
+        stack.enter_context(temp_registered(B, resolve_custom_strategy_for_b))
+        stack.enter_context(temp_registered(C, st.builds(C)))
+
+        # C's strategy can be used for A, but B's cannot because its function
+        # only returns a strategy for requests for exactly B.
+        assert_all_examples(st.from_type(A), lambda example: type(example) == C)
+        assert_all_examples(st.from_type(B), lambda example: example is sentinel)
+        assert_all_examples(st.from_type(C), lambda example: type(example) == C)

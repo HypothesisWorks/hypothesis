@@ -73,6 +73,7 @@ their individual contributions.
 * `Gregory Petrosyan <https://github.com/flyingmutant>`_
 * `Grzegorz Zieba <https://github.com/gzaxel>`_ (g.zieba@erax.pl)
 * `Grigorios Giannakopoulos <https://github.com/grigoriosgiann>`_
+* `Hal Blackburn <https://github.com/h4l>`_
 * `Hugo van Kemenade <https://github.com/hugovk>`_
 * `Humberto Rocha <https://github.com/humrochagf>`_
 * `Ilya Lebedev <https://github.com/melevir>`_ (melevir@gmail.com)

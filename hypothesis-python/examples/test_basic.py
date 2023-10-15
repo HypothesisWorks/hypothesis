@@ -20,7 +20,7 @@ class Product:
         return self.price * (discount_percentage / 100)
 
 
-# The @given decorater generates examples for us!
+# The @given decorator generates examples for us!
 @given(
     price=st.floats(min_value=0, allow_nan=False, allow_infinity=False),
     discount_percentage=st.floats(
