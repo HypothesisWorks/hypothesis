@@ -71,7 +71,7 @@ def test_typing_extensions_Type_int():
     assert from_type(Type[int]).example() is int
 
 
-@given(from_type(Type[Union[str, list]]))
+@given(from_type(Union[Type[str], Type[list]]))
 def test_typing_extensions_Type_Union(ex):
     assert ex in (str, list)
 
