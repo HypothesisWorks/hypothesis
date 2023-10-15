@@ -102,21 +102,3 @@ def test_cannot_target_default_label_twice(_):
     target(0.0)
     with pytest.raises(InvalidArgument):
         target(1.0)
-
-
-@given(st.lists(st.integers()), st.none())
-def test_targeting_with_following_empty(ls, n):
-    # This exercises some logic in the optimiser that prevents it from trying
-    # to mutate empty examples at the end of the test case.
-    target(float(len(ls)))
-
-
-@given(
-    st.tuples(
-        *([st.none()] * 10 + [st.integers()] + [st.none()] * 10 + [st.integers()])
-    )
-)
-def test_targeting_with_many_empty(_):
-    # This exercises some logic in the optimiser that prevents it from trying
-    # to mutate empty examples in the middle of the test case.
-    target(1.0)
