@@ -14,7 +14,7 @@ attrs==23.1.0
     # via hypothesis (hypothesis-python/setup.py)
 autoflake==2.2.1
     # via shed
-babel==2.12.1
+babel==2.13.0
     # via sphinx
 backcall==0.2.0
     # via ipython
@@ -38,13 +38,13 @@ click==8.1.7
     # via
     #   black
     #   pip-tools
-codespell==2.2.5
+codespell==2.2.6
     # via -r requirements/tools.in
 colorama==0.4.6
     # via tox
 com2ann==0.3.0
     # via shed
-coverage==7.3.1
+coverage==7.3.2
     # via -r requirements/tools.in
 cryptography==41.0.4
     # via
@@ -55,7 +55,7 @@ decorator==5.1.1
     # via ipython
 distlib==0.3.7
     # via virtualenv
-django==4.2.5
+django==4.2.6
     # via -r requirements/tools.in
 docutils==0.18.1
     # via
@@ -86,13 +86,13 @@ importlib-metadata==6.8.0
     #   twine
 iniconfig==2.0.0
     # via pytest
-ipython==8.16.0
+ipython==8.16.1
     # via -r requirements/tools.in
 isort==5.12.0
     # via shed
 jaraco-classes==3.3.0
     # via keyring
-jedi==0.19.0
+jedi==0.19.1
     # via ipython
 jeepney==0.8.0
     # via
@@ -104,7 +104,7 @@ keyring==24.2.0
     # via twine
 lark==1.1.7
     # via -r requirements/tools.in
-libcst==1.0.1
+libcst==1.1.0
     # via
     #   -r requirements/tools.in
     #   shed
@@ -118,7 +118,7 @@ mdurl==0.1.2
     # via markdown-it-py
 more-itertools==10.1.0
     # via jaraco-classes
-mypy==1.5.1
+mypy==1.6.0
     # via -r requirements/tools.in
 mypy-extensions==1.0.0
     # via
@@ -129,7 +129,7 @@ nh3==0.2.14
     # via readme-renderer
 nodeenv==1.8.0
     # via pyright
-packaging==23.1
+packaging==23.2
     # via
     #   black
     #   build
@@ -149,7 +149,7 @@ pip-tools==7.3.0
     # via -r requirements/tools.in
 pkginfo==1.9.6
     # via twine
-platformdirs==3.10.0
+platformdirs==3.11.0
     # via
     #   black
     #   tox
@@ -178,13 +178,13 @@ pyproject-api==1.6.1
     # via tox
 pyproject-hooks==1.0.0
     # via build
-pyright==1.1.329
+pyright==1.1.331
     # via -r requirements/tools.in
 pytest==7.4.2
     # via -r requirements/tools.in
 python-dateutil==2.8.2
     # via -r requirements/tools.in
-pyupgrade==3.13.0
+pyupgrade==3.15.0
     # via shed
 pyyaml==6.0.1
     # via libcst
@@ -204,7 +204,7 @@ rfc3986==2.0.0
     # via twine
 rich==13.6.0
     # via twine
-ruff==0.0.291
+ruff==0.0.292
     # via -r requirements/tools.in
 secretstorage==3.3.3
     # via keyring
@@ -275,7 +275,7 @@ tomli==2.0.1
     #   tox
 tox==4.11.3
     # via -r requirements/tools.in
-traitlets==5.10.1
+traitlets==5.11.2
     # via
     #   ipython
     #   matplotlib-inline
@@ -301,7 +301,7 @@ typing-extensions==4.8.0
     #   typing-inspect
 typing-inspect==0.9.0
     # via libcst
-urllib3==2.0.5
+urllib3==2.0.6
     # via
     #   requests
     #   twine

@@ -391,7 +391,7 @@ def test_generate_unique_arrays_without_fill(xp, xps):
 
     Covers the collision-related branches for fully dense unique arrays.
     Choosing 25 of 256 possible values means we're almost certain to see
-    colisions thanks to the birthday paradox, but finding unique values should
+    collisions thanks to the birthday paradox, but finding unique values should
     still be easy.
     """
     skip_on_missing_unique_values(xp)

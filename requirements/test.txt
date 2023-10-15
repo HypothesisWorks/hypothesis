@@ -14,7 +14,7 @@ execnet==2.0.2
     # via pytest-xdist
 iniconfig==2.0.0
     # via pytest
-packaging==23.1
+packaging==23.2
     # via pytest
 pexpect==4.8.0
     # via -r requirements/test.in
