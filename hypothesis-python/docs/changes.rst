@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.88.0:
+
+-------------------
+6.88.0 - 2023-10-15
+-------------------
+
+This release allows strategy-generating functions registered with
+:func:`~hypothesis.strategies.register_type_strategy` to conditionally not
+return a strategy, by returning :data:`NotImplemented` (:issue:`3767`).
+
 .. _v6.87.4:
 
 -------------------
