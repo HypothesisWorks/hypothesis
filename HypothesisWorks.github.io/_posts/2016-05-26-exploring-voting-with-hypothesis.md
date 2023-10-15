@@ -87,7 +87,7 @@ some point). If we have zero, that's a draw. If we have one, that's a
 victory.
 
 It seems pretty plausible that these would not produce the same answer
-all the time (it would be surpising if they did!), but it's maybe not
+all the time (it would be surprising if they did!), but it's maybe not
 obvious how you would go about constructing an example that shows it.
 
 Fortunately, we don't have to because Hypothesis can do it for us!

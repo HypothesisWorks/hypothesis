@@ -439,7 +439,7 @@ def test_unique_array_with_fill_can_use_all_elements(arr):
 @given(nps.arrays(dtype="uint8", shape=25, unique=True, fill=st.nothing()))
 def test_unique_array_without_fill(arr):
     # This test covers the collision-related branches for fully dense unique arrays.
-    # Choosing 25 of 256 possible elements means we're almost certain to see colisions
+    # Choosing 25 of 256 possible elements means we're almost certain to see collisions
     # thanks to the 'birthday paradox', but finding unique elemennts is still easy.
     assume(len(set(arr)) == arr.size)
 
