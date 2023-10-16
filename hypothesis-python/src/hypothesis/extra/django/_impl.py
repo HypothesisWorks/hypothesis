@@ -11,7 +11,7 @@
 import sys
 import unittest
 from functools import partial
-from typing import TYPE_CHECKING, Optional, Type, Union
+from typing import TYPE_CHECKING, Optional, Type, TypeVar, Union
 
 from django import forms as df, test as dt
 from django.contrib.staticfiles import testing as dst
@@ -29,6 +29,8 @@ elif TYPE_CHECKING:
     from builtins import ellipsis as EllipsisType
 else:
     EllipsisType = type(Ellipsis)
+
+ModelT = TypeVar("ModelT", bound=dm.Model)
 
 
 class HypothesisTestCase:
@@ -64,8 +66,8 @@ class StaticLiveServerTestCase(HypothesisTestCase, dst.StaticLiveServerTestCase)
 
 @defines_strategy()
 def from_model(
-    model: Type[dm.Model], /, **field_strategies: Union[st.SearchStrategy, EllipsisType]
-) -> st.SearchStrategy:
+    model: Type[ModelT], /, **field_strategies: Union[st.SearchStrategy, EllipsisType]
+) -> st.SearchStrategy[ModelT]:
     """Return a strategy for examples of ``model``.
 
     .. warning::
