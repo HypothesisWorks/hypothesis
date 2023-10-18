@@ -1,4 +1,13 @@
-AUTHOR = "Hypothesis developers"
+# This file is part of Hypothesis, which may be found at
+# https://github.com/HypothesisWorks/hypothesis/
+#
+# Copyright the Hypothesis Authors.
+# Individual contributors are listed in AUTHORS.rst and the git log.
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v. 2.0. If a copy of the MPL was not distributed with this file, You can
+# obtain one at https://mozilla.org/MPL/2.0/.
+
 SITENAME = "Hypothesis"
 SITEURL = ""
 
@@ -20,7 +29,7 @@ ARTICLE_SAVE_AS = "{category}/{slug}/index.html"
 DEFAULT_CATEGORY = "articles"
 DISPLAY_PAGES_ON_MENU = False
 
-FILENAME_METADATA = "(?P<date>\d{4}-\d{2}-\d{2})-(?P<slug>.+)"
+FILENAME_METADATA = r"(?P<date>\d{4}-\d{2}-\d{2})-(?P<slug>.+)"
 
 STATIC_PATHS = ["../../brand/favicon.ico"]
 EXTRA_PATH_METADATA = {

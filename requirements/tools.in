@@ -6,6 +6,7 @@ ipython
 lark
 libcst
 mypy
+pelican[markdown]
 pip-tools
 pyright
 pytest
