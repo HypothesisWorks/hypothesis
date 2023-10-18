@@ -1,7 +1,6 @@
 ---
-title: Hypothesis
-layout: page
-date: 2015-04-23 22:03
+title:
+date: 2015-04-23
 URL:
 save_as: index.html
 ---
@@ -16,10 +15,8 @@ your problem domain with machine intelligence to improve the quality of your tes
 Don't believe us? Here's what some of our users have to say:
 
 <blockquote class="testimonial blockquote-reverse pull">
-<p>
 At Lyst we've used it in a wide variety of situations, from testing APIs to machine learning algorithms and in all
 cases it's given us a great deal more confidence in that code.
-</p>
 <footer><a href="/testimonials/#alex-stapleton">Alex Stapleton</a>, Lead Backend Engineer at <a href="https://www.lyst.com/">Lyst</a></footer>
 </blockquote>
 

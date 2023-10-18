@@ -9,13 +9,15 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 SITENAME = "Hypothesis"
-SITEURL = ""
+SITEURL = "https://hypothesis.works"
 
 PATH = "content"
 
 TIMEZONE = "UTC"
 
 DEFAULT_LANG = "en"
+
+DELETE_OUTPUT_DIRECTORY = True
 
 # Feed generation is usually not desired when developing
 FEED_ALL_ATOM = None
@@ -37,8 +39,9 @@ EXTRA_PATH_METADATA = {
 }
 
 MENUITEMS = (
+    ("Articles", "/category/articles/"),
     ("Documentation", "https://hypothesis.readthedocs.io/en/latest/"),
-    ("GitHub repo", "https://github.com/HypothesisWorks/hypothesis/"),
+    ("GitHub", "https://github.com/HypothesisWorks/hypothesis/"),
     ("PyPI", "https://pypi.org/project/hypothesis/"),
 )
 
