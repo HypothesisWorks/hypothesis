@@ -49,8 +49,7 @@ in your code that you would otherwise have missed. It then turns them into simpl
 that save you time and money compared to fixing them if they slipped through the cracks and a user had run into
 them instead.
 
-Hypothesis currently has [a fully featured open source Python implementation](https://github.com/HypothesisWorks/hypothesis-python/) and [a proof of concept Java implementation](https://github.com/HypothesisWorks/hypothesis-java) that we are looking for customers to partner with to turn into a finished project.
-Plans for C and C++ support are also in the works.
+Hypothesis currently has [a fully featured open source Python implementation](https://github.com/HypothesisWorks/hypothesis-python/).
 
 ## How do I use it?
 

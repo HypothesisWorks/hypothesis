@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="{{ DEFAULT_LANG }}">
+
+  <head>
+    {% block head %}
+      <title>{% block title %}{{ SITENAME }}{% endblock title %}</title>
+      <link rel="stylesheet" type="text/css" href="{{ SITEURL }}/theme/style.css"/>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      {% if FEED_ATOM %}
+        <link href="/{{ FEED_ATOM }}" type="application/atom+xml" rel="alternate" title="{{ SITENAME }} Atom Feed" />
+      {% endif %}
+      {% if FEED_RSS %}
+        <link href="/{{ FEED_RSS }}" type="application/rss+xml" rel="alternate" title="{{ SITENAME }} RSS Feed" />
+      {% endif %}
+    {% endblock head %}
+  </head>
+
+  <body id="index">
+    <!-- header -->
+    <!-- <header class="siteheader"> -->
+      <!-- site image -->
+      {% if PROFILE_IMAGE_URL %}
+        <div class= "siteimage">
+          <a class="nodec" href={{ PROFILE_IMAGE_URL }}>
+            <img width="200" height="200" style="float: right;" src={{ PROFILE_IMAGE_URL }}>
+          </a>
+        </div>
+      {% endif %}
+
+      <div class="sitebanner">
+	      <h1><span class="bold-initial">Hypothesis</span></h1>
+        <h1 class ="sitesubtitle">{{ SITESUBTITLE }}</h1>
+        <!-- nav -->
+      </div> <!-- sitebanner -->
+      <div class="navmenuitems">
+        <nav class="menu">
+          <ul>
+            <!-- menu items-->
+            {% for title, link in MENUITEMS %}
+              <li><a class="nodec" href="{{ link }}">{{ title }}</a></li>
+            {% endfor %}
+            <!--pages-->
+            {% if DISPLAY_PAGES_ON_MENU %}
+              {% for p in PAGES %}
+                <li{% if p == page %} class="active"{% endif %}><a class="nodec" href="{{ SITEURL }}/{{ p.url }}">{{ p.title }}</a></li>
+              {% endfor %}
+            {% endif %}
+          </ul>
+        </nav>
+      </div>
+    <!-- </header> -->
+    <hr>
+
+    <!-- content -->
+    {% block content %}
+    {% endblock %}
+
+    <hr>
+  </body>
+</html>

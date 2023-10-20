@@ -8,8 +8,11 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-SITENAME = "Hypothesis"
-SITEURL = "https://hypothesis.works"
+from os.path import basename
+
+SITENAME = AUTHOR = "Hypothesis"
+SITESUBTITLE = "property-based testing for Python"
+# SITEURL = "https://hypothesis.works"
 
 PATH = "content"
 
@@ -30,15 +33,20 @@ ARTICLE_URL = "{category}/{slug}/"
 ARTICLE_SAVE_AS = "{category}/{slug}/index.html"
 DEFAULT_CATEGORY = "articles"
 DISPLAY_PAGES_ON_MENU = False
+SHOW_ARTICLE_AUTHOR = True
 
 FILENAME_METADATA = r"(?P<date>\d{4}-\d{2}-\d{2})-(?P<slug>.+)"
 
-STATIC_PATHS = ["../../brand/favicon.ico"]
-EXTRA_PATH_METADATA = {
-    "../../brand/favicon.ico": {"path": "favicon.ico"},
-}
+THEME = "./theme/"
+STATIC_PATHS = [
+    "../../brand/favicon.ico",
+    "../../brand/dragonfly-rainbow.svg",
+]
+EXTRA_PATH_METADATA = {k: {"path": basename(k)} for k in STATIC_PATHS}
+PROFILE_IMAGE_URL = "/dragonfly-rainbow.svg"
 
 MENUITEMS = (
+    ("Home", "/"),
     ("Articles", "/category/articles/"),
     ("Documentation", "https://hypothesis.readthedocs.io/en/latest/"),
     ("GitHub", "https://github.com/HypothesisWorks/hypothesis/"),

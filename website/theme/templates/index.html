@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<section class="content">
+
+  <ul id="postlist">
+
+    {% for article in articles_page.object_list %}
+    {% if article.category in IGNORE_CATEGORIES_ON_MAIN or article.name == '_index' %}
+    {% else %}
+    <li class="post">
+        <header class="posttitle">
+          <h3><a href="{{ SITEURL }}/{{ article.url }}"
+                  rel="bookmark"
+                  class="nodec"
+                  title="Permalink to {{ article.title|striptags }}">{{ article.title }}</a>
+          </h3>
+        </header>
+
+        <div class="postinfo">
+          <p class="published" title="{{ article.date.isoformat() }}"> {{ article.locale_date }} </p>
+          {% if article.author and SHOW_ARTICLE_AUTHOR %}
+          <address class="vcard author">By <a "nodec" href="{{ SITEURL }}/{{ article.author.url }}">{{ article.author }}</a></address>
+          {% endif %}
+        </div><!-- /.postinfo -->
+
+        <div class="postsummary"> {{ article.summary }} </div>
+    </li>
+    {% endif %}
+    {% endfor %}
+
+  </ul><!-- /#post-list -->
+
+  {% include 'pagination.html' %}
+
+</section><!-- /#content -->
+
+{% endblock content %}
