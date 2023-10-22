@@ -20,7 +20,7 @@ backcall==0.2.0
     # via ipython
 beautifulsoup4==4.12.2
     # via sphinx-codeautolink
-black==23.9.1
+black==23.10.0
     # via shed
 build==1.0.3
     # via pip-tools
@@ -118,7 +118,7 @@ mdurl==0.1.2
     # via markdown-it-py
 more-itertools==10.1.0
     # via jaraco-classes
-mypy==1.6.0
+mypy==1.6.1
     # via -r requirements/tools.in
 mypy-extensions==1.0.0
     # via
@@ -178,7 +178,7 @@ pyproject-api==1.6.1
     # via tox
 pyproject-hooks==1.0.0
     # via build
-pyright==1.1.331
+pyright==1.1.332
     # via -r requirements/tools.in
 pytest==7.4.2
     # via -r requirements/tools.in
@@ -204,7 +204,7 @@ rfc3986==2.0.0
     # via twine
 rich==13.6.0
     # via twine
-ruff==0.0.292
+ruff==0.1.1
     # via -r requirements/tools.in
 secretstorage==3.3.3
     # via keyring
@@ -301,7 +301,7 @@ typing-extensions==4.8.0
     #   typing-inspect
 typing-inspect==0.9.0
     # via libcst
-urllib3==2.0.6
+urllib3==2.0.7
     # via
     #   requests
     #   twine
@@ -315,7 +315,7 @@ zipp==3.17.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-pip==23.2.1
+pip==23.3.1
     # via pip-tools
 setuptools==68.2.2
     # via
