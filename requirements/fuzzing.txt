@@ -12,7 +12,7 @@ attrs==23.1.0
     # via
     #   hypothesis
     #   hypothesis (hypothesis-python/setup.py)
-black==23.9.1
+black==23.10.0
     # via
     #   -r requirements/coverage.in
     #   hypofuzz
@@ -48,13 +48,13 @@ exceptiongroup==1.1.3 ; python_version < "3.11"
     #   pytest
 execnet==2.0.2
     # via pytest-xdist
-fakeredis==2.19.0
+fakeredis==2.20.0
     # via -r requirements/coverage.in
 flask==2.2.5
     # via dash
 hypofuzz==23.7.1
     # via -r requirements/fuzzing.in
-hypothesis[cli]==6.87.4
+hypothesis[cli]==6.88.1
     # via hypofuzz
 idna==3.4
     # via requests
@@ -109,7 +109,7 @@ plotly==5.17.0
     # via dash
 pluggy==1.3.0
     # via pytest
-psutil==5.9.5
+psutil==5.9.6
     # via hypofuzz
 ptyprocess==0.7.0
     # via pexpect
@@ -168,7 +168,7 @@ typing-inspect==0.9.0
     # via libcst
 tzdata==2023.3
     # via pandas
-urllib3==2.0.6
+urllib3==2.0.7
     # via requests
 werkzeug==2.2.3
     # via
