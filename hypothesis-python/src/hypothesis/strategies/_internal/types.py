@@ -267,19 +267,29 @@ def is_annotated_type(thing):
     )
 
 
-def find_annotated_strategy(annotated_type):  # pragma: no cover
-    flattened_meta = []
+def find_annotated_strategy(annotated_type):
+    # Annotated[None, ...].__origin__ is `NoneType`, so `None`
+    # can safely be used as a default value:
+    origin = getattr(annotated_type, "__origin__", None)
+    metadata = getattr(annotated_type, "__metadata__", ())
 
-    all_args = (
-        *getattr(annotated_type, "__args__", ()),
-        *getattr(annotated_type, "__metadata__", ()),
-    )
-    for arg in all_args:
-        if is_annotated_type(arg):
-            flattened_meta.append(find_annotated_strategy(arg))
+    if origin is None or metadata == ():
+        return None
+
+    if any(is_annotated_type(arg) for arg in metadata):
+        # We are in the case where one of the metadata argument
+        # is itself an annotated type. Although supported at runtime,
+        # This shouldn't be allowed: we prefer to raise here
+        raise ResolutionFailed(
+            f"Failed to resolve strategy for the following Annotated type: {annotated_type}."
+            "Arguments to the Annotated type cannot be Annotated."
+        )
+
+    for arg in reversed(metadata):
         if isinstance(arg, st.SearchStrategy):
-            flattened_meta.append(arg)
-    return flattened_meta[-1] if flattened_meta else None
+            return arg
+
+    # TODO annotated-types
 
 
 def has_type_arguments(type_):
