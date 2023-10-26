@@ -99,7 +99,12 @@ from hypothesis.internal.reflection import (
     proxies,
     repr_call,
 )
-from hypothesis.internal.scrutineer import Tracer, explanatory_lines
+from hypothesis.internal.scrutineer import (
+    Tracer,
+    explanatory_lines,
+    removetracer,
+    settracer,
+)
 from hypothesis.internal.validation import check_type
 from hypothesis.reporting import (
     current_verbosity,
@@ -917,12 +922,12 @@ class StateForActualGivenExecution:
                 # settrace() contention *not* by our coverage tests.  Ah well.
                 tracer = Tracer()
                 try:
-                    sys.settrace(tracer.trace)
+                    settracer(tracer)
                     result = self.execute_once(data)
                     if data.status == Status.VALID:
                         self.explain_traces[None].add(frozenset(tracer.branches))
                 finally:
-                    sys.settrace(None)
+                    removetracer()
                     trace = frozenset(tracer.branches)
             else:
                 result = self.execute_once(data)

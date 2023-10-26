@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import sys
+import types
 from collections import defaultdict
 from functools import lru_cache, reduce
 from os import sep
@@ -38,11 +39,45 @@ class Tracer:
         if event == "call":
             return self.trace
         elif event == "line":
-            fname = frame.f_code.co_filename
-            if should_trace_file(fname):
-                current_location = (fname, frame.f_lineno)
-                self.branches.add((self._previous_location, current_location))
-                self._previous_location = current_location
+            self.trace_line(frame.f_code, frame.f_lineno)
+
+    def trace_line(self, code: types.CodeType, line_number: int):
+        fname = code.co_filename
+        if should_trace_file(fname):
+            current_location = (fname, line_number)
+            self.branches.add((self._previous_location, current_location))
+            self._previous_location = current_location
+
+
+# where possible, we'll use 3.12's new sys.monitoring module for low-overhead
+# coverage instrumentation. Otherwise, we'll default to sys.settrace.
+# This can be simplified once we drop 3.11.
+# tool_id = 2 is designated for coverage.
+MONITORING_TOOL_ID = 2
+if sys.version_info[:2] >= (3, 12):
+    MONITORING_EVENTS = {sys.monitoring.events.LINE: "trace_line"}
+
+
+def settracer(tracer: Tracer):
+    if sys.version_info[:2] < (3, 12):
+        sys.settrace(tracer.trace)
+        return
+
+    sys.monitoring.use_tool_id(MONITORING_TOOL_ID, "scrutineer")
+    for event, callback_name in MONITORING_EVENTS.items():
+        sys.monitoring.set_events(MONITORING_TOOL_ID, event)
+        callback = getattr(tracer, callback_name)
+        sys.monitoring.register_callback(MONITORING_TOOL_ID, event, callback)
+
+
+def removetracer():
+    if sys.version_info[:2] < (3, 12):
+        sys.settrace(None)
+        return
+
+    sys.monitoring.free_tool_id(MONITORING_TOOL_ID)
+    for event in MONITORING_EVENTS:
+        sys.monitoring.register_callback(MONITORING_TOOL_ID, event, None)
 
 
 UNHELPFUL_LOCATIONS = (
