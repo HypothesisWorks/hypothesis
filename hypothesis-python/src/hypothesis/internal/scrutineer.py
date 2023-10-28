@@ -52,8 +52,9 @@ class Tracer:
 # where possible, we'll use 3.12's new sys.monitoring module for low-overhead
 # coverage instrumentation. Otherwise, we'll default to sys.settrace.
 # This can be simplified once we drop 3.11.
-# tool_id = 2 is designated for coverage.
-MONITORING_TOOL_ID = 2
+# tool_id = 2 is designated for coverage, but we intentionally choose a
+# non-reserved tool id so we can co-exist with coverage tools.
+MONITORING_TOOL_ID = 3
 if sys.version_info[:2] >= (3, 12):
     MONITORING_EVENTS = {sys.monitoring.events.LINE: "trace_line"}
 
