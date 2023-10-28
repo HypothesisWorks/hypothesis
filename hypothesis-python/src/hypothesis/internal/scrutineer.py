@@ -26,6 +26,16 @@ def should_trace_file(fname):
     return not (is_hypothesis_file(fname) or fname.startswith("<"))
 
 
+# where possible, we'll use 3.12's new sys.monitoring module for low-overhead
+# coverage instrumentation. Otherwise, we'll default to sys.settrace.
+# This can be simplified once we drop 3.11.
+# tool_id = 2 is designated for coverage, but we intentionally choose a
+# non-reserved tool id so we can co-exist with coverage tools.
+MONITORING_TOOL_ID = 3
+if sys.version_info[:2] >= (3, 12):
+    MONITORING_EVENTS = {sys.monitoring.events.LINE: "trace_line"}
+
+
 class Tracer:
     """A super-simple branch coverage tracer."""
 
@@ -48,37 +58,27 @@ class Tracer:
             self.branches.add((self._previous_location, current_location))
             self._previous_location = current_location
 
+    def __enter__(self):
+        if sys.version_info[:2] < (3, 12):
+            sys.settrace(self.trace)
+            return self
 
-# where possible, we'll use 3.12's new sys.monitoring module for low-overhead
-# coverage instrumentation. Otherwise, we'll default to sys.settrace.
-# This can be simplified once we drop 3.11.
-# tool_id = 2 is designated for coverage, but we intentionally choose a
-# non-reserved tool id so we can co-exist with coverage tools.
-MONITORING_TOOL_ID = 3
-if sys.version_info[:2] >= (3, 12):
-    MONITORING_EVENTS = {sys.monitoring.events.LINE: "trace_line"}
+        sys.monitoring.use_tool_id(MONITORING_TOOL_ID, "scrutineer")
+        for event, callback_name in MONITORING_EVENTS.items():
+            sys.monitoring.set_events(MONITORING_TOOL_ID, event)
+            callback = getattr(self, callback_name)
+            sys.monitoring.register_callback(MONITORING_TOOL_ID, event, callback)
 
+        return self
 
-def settracer(tracer: Tracer):
-    if sys.version_info[:2] < (3, 12):
-        sys.settrace(tracer.trace)
-        return
+    def __exit__(self, *args, **kwargs):
+        if sys.version_info[:2] < (3, 12):
+            sys.settrace(None)
+            return
 
-    sys.monitoring.use_tool_id(MONITORING_TOOL_ID, "scrutineer")
-    for event, callback_name in MONITORING_EVENTS.items():
-        sys.monitoring.set_events(MONITORING_TOOL_ID, event)
-        callback = getattr(tracer, callback_name)
-        sys.monitoring.register_callback(MONITORING_TOOL_ID, event, callback)
-
-
-def removetracer():
-    if sys.version_info[:2] < (3, 12):
-        sys.settrace(None)
-        return
-
-    sys.monitoring.free_tool_id(MONITORING_TOOL_ID)
-    for event in MONITORING_EVENTS:
-        sys.monitoring.register_callback(MONITORING_TOOL_ID, event, None)
+        sys.monitoring.free_tool_id(MONITORING_TOOL_ID)
+        for event in MONITORING_EVENTS:
+            sys.monitoring.register_callback(MONITORING_TOOL_ID, event, None)
 
 
 UNHELPFUL_LOCATIONS = (

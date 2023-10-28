@@ -99,12 +99,7 @@ from hypothesis.internal.reflection import (
     proxies,
     repr_call,
 )
-from hypothesis.internal.scrutineer import (
-    Tracer,
-    explanatory_lines,
-    removetracer,
-    settracer,
-)
+from hypothesis.internal.scrutineer import Tracer, explanatory_lines
 from hypothesis.internal.validation import check_type
 from hypothesis.reporting import (
     current_verbosity,
@@ -920,15 +915,13 @@ class StateForActualGivenExecution:
             ):  # pragma: no cover
                 # This is in fact covered by our *non-coverage* tests, but due to the
                 # settrace() contention *not* by our coverage tests.  Ah well.
-                tracer = Tracer()
-                try:
-                    settracer(tracer)
-                    result = self.execute_once(data)
-                    if data.status == Status.VALID:
-                        self.explain_traces[None].add(frozenset(tracer.branches))
-                finally:
-                    removetracer()
-                    trace = frozenset(tracer.branches)
+                with Tracer() as tracer:
+                    try:
+                        result = self.execute_once(data)
+                        if data.status == Status.VALID:
+                            self.explain_traces[None].add(frozenset(tracer.branches))
+                    finally:
+                        trace = frozenset(tracer.branches)
             else:
                 result = self.execute_once(data)
             if result is not None:
