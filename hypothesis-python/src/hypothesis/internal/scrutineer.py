@@ -51,7 +51,7 @@ class Tracer:
         elif event == "line":
             self.trace_line(frame.f_code, frame.f_lineno)
 
-    def trace_line(self, code: types.CodeType, line_number: int):
+    def trace_line(self, code: types.CodeType, line_number: int) -> None:
         fname = code.co_filename
         if should_trace_file(fname):
             current_location = (fname, line_number)
