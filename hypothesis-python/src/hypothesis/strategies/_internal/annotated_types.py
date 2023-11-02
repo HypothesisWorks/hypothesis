@@ -1,4 +1,5 @@
 import operator
+import warnings
 from datetime import datetime, time, timezone
 from functools import partial
 from typing import Any, Callable, Iterator, List, Protocol, Tuple, Type, TypeVar
@@ -7,6 +8,7 @@ import annotated_types as at
 
 import hypothesis.strategies as st
 from hypothesis.errors import InvalidArgument
+from hypothesis.reporting import debug_report
 
 try:
     import zoneinfo
@@ -57,12 +59,17 @@ def _get_constraints(args: Tuple[Any, ...]) -> Iterator[at.BaseMetadata]:
             yield from at.Len(arg.start or 0, arg.stop)
 
 
-def _infer_strategy(type_: Type[Ex], constraints: List[at.BaseMetadata]) -> st.SearchStrategy[Ex]:
+def _infer_strategy(
+    type_: Type[Ex], constraints: List[at.BaseMetadata]
+) -> st.SearchStrategy[Ex]:
     tz_constraint = next((c for c in constraints if isinstance(c, at.Timezone)), None)
     if tz_constraint is not None:
         if type_ not in [datetime, time]:
-            raise InvalidArgument(f"Annotated type {type_} is not applicable with constraint {tz_constraint}")
+            raise InvalidArgument(
+                f"Annotated type {type_} is not applicable with constraint {tz_constraint}"
+            )
 
+        constraints.remove(tz_constraint)
         constructor = st.datetimes if type_ is datetime else st.times
         tz_attr = tz_constraint.tz
 
@@ -81,22 +88,46 @@ def _infer_strategy(type_: Type[Ex], constraints: List[at.BaseMetadata]) -> st.S
                 )
             return constructor(timezones=st.just(zoneinfo.ZoneInfo(tz_attr)))
         else:
-            raise InvalidArgument(f"Unknown argument for annotated_types.Timezone: {tz_attr!r}")
+            raise InvalidArgument(
+                f"Unknown argument for annotated_types.Timezone: {tz_attr!r}"
+            )
 
     return st.from_type(type_)
 
 
-def from_annotated_types(type_: Type[Ex], args: Tuple[Any, ...]) -> st.SearchStrategy[Ex]:
+def from_annotated_types(
+    type_: Type[Ex], args: Tuple[Any, ...]
+) -> st.SearchStrategy[Ex]:
+    # `constraints` elements can be "consumed" by the next following calls/instructions
     constraints = list(_get_constraints(args))
+
+    multipleof_constraint = next(
+        (c for c in constraints if isinstance(c, at.MultipleOf)), None
+    )
+    if multipleof_constraint is not None:
+        warnings.warn(
+            f"{multipleof_constraint} is currently not supported and will be ignored.",
+            UserWarning,
+            stacklevel=2,
+        )
+        constraints.remove(multipleof_constraint)
+
     base_strategy = _infer_strategy(type_, constraints)
 
     filter_conditions: List[Callable[[Any], Any]] = []
     for constraint in constraints:
         if type(constraint) in CONSTRAINTS_FILTER_MAP:
-            condition = CONSTRAINTS_FILTER_MAP[type(constraint)]
-            filter_conditions.append(condition(constraint))
+            condition = CONSTRAINTS_FILTER_MAP[type(constraint)](constraint)
+            filter_conditions.append(condition)
+            constraints.remove(constraint)
 
     for filter_condition in filter_conditions:
         base_strategy = base_strategy.filter(filter_condition)
+
+    if constraints:
+        debug_report(
+            "WARNING: the following constraints are unknown and will be ignored: "
+            f"{', '.join(constraints)}"
+        )
 
     return base_strategy
