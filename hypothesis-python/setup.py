@@ -14,7 +14,7 @@ from pathlib import Path
 
 import setuptools
 
-if sys.version_info[:2] < (3, 8):
+if sys.version_info[:2] < (3, 8):  # noqa  # "unreachable" sanity check
     raise Exception(
         "You are trying to install Hypothesis using Python "
         f"{sys.version.split()[0]}, but it requires Python 3.8 or later."
