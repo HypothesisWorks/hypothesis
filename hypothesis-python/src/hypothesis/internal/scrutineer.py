@@ -27,9 +27,8 @@ def should_trace_file(fname):
 
 
 # where possible, we'll use 3.12's new sys.monitoring module for low-overhead
-# coverage instrumentation. Otherwise, we'll default to sys.settrace.
-# This can be simplified once we drop 3.11.
-# tool_id = 2 is designated for coverage, but we intentionally choose a
+# coverage instrumentation; on older python versions we'll use sys.settrace.
+# tool_id = 1 is designated for coverage, but we intentionally choose a
 # non-reserved tool id so we can co-exist with coverage tools.
 MONITORING_TOOL_ID = 3
 if sys.version_info[:2] >= (3, 12):
@@ -49,13 +48,10 @@ class Tracer:
         if event == "call":
             return self.trace
         elif event == "line":
-            code = frame.f_code
-            line_number = frame.f_lineno
-
             # manual inlining of self.trace_line for performance.
-            fname = code.co_filename
+            fname = frame.f_code.co_filename
             if should_trace_file(fname):
-                current_location = (fname, line_number)
+                current_location = (fname, frame.f_lineno)
                 self.branches.add((self._previous_location, current_location))
                 self._previous_location = current_location
 
@@ -68,6 +64,7 @@ class Tracer:
 
     def __enter__(self):
         if sys.version_info[:2] < (3, 12):
+            assert sys.gettrace() is None  # caller checks in core.py
             sys.settrace(self.trace)
             return self
 

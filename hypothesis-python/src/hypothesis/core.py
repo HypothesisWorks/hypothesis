@@ -910,7 +910,7 @@ class StateForActualGivenExecution:
                 and not self.failed_due_to_deadline
                 and Phase.shrink in self.settings.phases
                 and Phase.explain in self.settings.phases
-                and sys.gettrace() is None
+                and (sys.gettrace() is None or sys.version_info[:2] >= (3, 12))
                 and not PYPY
             ):  # pragma: no cover
                 # This is in fact covered by our *non-coverage* tests, but due to the
