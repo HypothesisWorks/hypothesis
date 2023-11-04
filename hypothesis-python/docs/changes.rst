@@ -47,7 +47,7 @@ return a strategy, by returning :data:`NotImplemented` (:issue:`3767`).
 When :func:`~hypothesis.strategies.randoms` was called with ``use_true_randoms=False``,
 calling ``r.sample([], 0)`` would result in an error,
 when it should have returned an empty sequence to agree with the normal behaviour of
-:meth:`random.Random.sample`. This fixes that discrepancy (:issue:`3765`).
+:func:`random.sample`. This fixes that discrepancy (:issue:`3765`).
 
 .. _v6.87.3:
 
