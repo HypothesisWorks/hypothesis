@@ -132,7 +132,7 @@ from hypothesis.strategies._internal.strings import (
     OneCharStringStrategy,
     TextStrategy,
 )
-from hypothesis.strategies._internal.utils import cacheable, defines_strategy
+from hypothesis.strategies._internal.utils import cacheable, defines_strategy, as_strategy
 from hypothesis.utils.conventions import not_set
 from hypothesis.vendor.pretty import RepresentationPrinter
 
@@ -1227,25 +1227,6 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
     # refactoring it's hard to do without creating circular imports.
     from hypothesis.strategies._internal import types
 
-    def as_strategy(strat_or_callable, thing):
-        # User-provided strategies need some validation, and callables even more
-        # of it.  We do this in three places, hence the helper function
-        if not isinstance(strat_or_callable, SearchStrategy):
-            assert callable(strat_or_callable)  # Validated in register_type_strategy
-            strategy = strat_or_callable(thing)
-        else:
-            strategy = strat_or_callable
-        if strategy is NotImplemented:
-            return NotImplemented
-        if not isinstance(strategy, SearchStrategy):
-            raise ResolutionFailed(
-                f"Error: {thing} was registered for {nicerepr(strat_or_callable)}, "
-                f"but returned non-strategy {strategy!r}"
-            )
-        if strategy.is_empty:
-            raise ResolutionFailed(f"Error: {thing!r} resolved to an empty strategy")
-        return strategy
-
     def from_type_guarded(thing):
         """Returns the result of producer, or ... if recursion on thing is encountered"""
         try:
@@ -1364,6 +1345,10 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
             optional={k: v for k, v in anns.items() if k in optional},
         )
 
+    # Special case for thing == tuple - get_origin(thing) == tuple is handled
+    # in the check below
+    if thing is tuple:
+      return builds(tuple)
     # If there's no explicitly registered strategy, maybe a subtype of thing
     # is registered - if so, we can resolve it to the subclass strategy.
     # We'll start by checking if thing is from from the typing module,

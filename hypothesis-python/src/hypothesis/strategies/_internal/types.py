@@ -41,6 +41,7 @@ from hypothesis.strategies._internal.ipaddress import (
 )
 from hypothesis.strategies._internal.lazy import unwrap_strategies
 from hypothesis.strategies._internal.strategies import OneOfStrategy
+from hypothesis.strategies._internal.utils import as_strategy
 
 GenericAlias: typing.Any
 UnionType: typing.Any
@@ -334,6 +335,13 @@ def from_typing_type(thing):
     if get_origin(thing) == tuple or isinstance(
         thing, getattr(typing, "TupleMeta", ())
     ):
+        # First check to see if there is a user registered strategy for tuples
+        if get_origin(thing) in _global_type_lookup:
+            registration = _global_type_lookup[get_origin(thing)]
+            strategy = as_strategy(registration, thing)
+            if strategy is not NotImplemented:
+                return strategy
+        # If no registered strategy, use default flow
         elem_types = getattr(thing, "__tuple_params__", None) or ()
         elem_types += getattr(thing, "__args__", None) or ()
         if (
@@ -522,7 +530,7 @@ _global_type_lookup: typing.Dict[
     datetime.timezone: st.builds(datetime.timezone, offset=utc_offsets)
     | st.builds(datetime.timezone, offset=utc_offsets, name=st.text(st.characters())),
     uuid.UUID: st.uuids(),
-    tuple: st.builds(tuple),
+    tuple: lambda _: NotImplemented,
     list: st.builds(list),
     set: st.builds(set),
     collections.abc.MutableSet: st.builds(set),

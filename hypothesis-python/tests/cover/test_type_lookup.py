@@ -118,6 +118,14 @@ def test_lookup_overrides_defaults(typ):
     assert st.from_type(typ).example() is not sentinel
 
 
+def test_lookup_registered_tuple():
+    sentinel = object()
+    typ = tuple[int]
+    with temp_registered(tuple, st.just(sentinel)):
+        assert st.from_type(typ).example() is sentinel
+    assert st.from_type(typ).example() is not sentinel
+
+
 class ParentUnknownType:
     pass
 
@@ -329,9 +337,11 @@ def test_generic_origin_with_type_args(generic, strategy):
         Callable,
         List,
         Sequence,
+        tuple,
         # you can register types with all generic parameters
         List[T],
         Sequence[T],
+        tuple[T],
         # User-defined generics should also work
         MyGeneric,
         MyGeneric[T],

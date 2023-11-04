@@ -14,7 +14,8 @@ from typing import TYPE_CHECKING, Callable, Dict
 
 from hypothesis.internal.cache import LRUReusedCache
 from hypothesis.internal.floats import float_to_int
-from hypothesis.internal.reflection import proxies
+from hypothesis.internal.reflection import proxies, nicerepr
+from hypothesis.errors import ResolutionFailed
 
 if TYPE_CHECKING:
     from hypothesis.strategies._internal.strategies import SearchStrategy, T
@@ -144,3 +145,25 @@ def defines_strategy(
         return accept
 
     return decorator
+
+
+def as_strategy(strat_or_callable, thing):
+    from hypothesis.strategies._internal.strategies import SearchStrategy
+
+    # User-provided strategies need some validation, and callables even more
+    # of it.  We do this in at least three places, hence the helper function
+    if not isinstance(strat_or_callable, SearchStrategy):
+        assert callable(strat_or_callable)  # Validated in register_type_strategy
+        strategy = strat_or_callable(thing)
+    else:
+        strategy = strat_or_callable
+    if strategy is NotImplemented:
+        return NotImplemented
+    if not isinstance(strategy, SearchStrategy):
+        raise ResolutionFailed(
+            f"Error: {thing} was registered for {nicerepr(strat_or_callable)}, "
+            f"but returned non-strategy {strategy!r}"
+        )
+    if strategy.is_empty:
+        raise ResolutionFailed(f"Error: {thing!r} resolved to an empty strategy")
+    return strategy
