@@ -49,7 +49,15 @@ class Tracer:
         if event == "call":
             return self.trace
         elif event == "line":
-            self.trace_line(frame.f_code, frame.f_lineno)
+            code = frame.f_code
+            line_number = frame.f_lineno
+
+            # manual inlining of self.trace_line for performance.
+            fname = code.co_filename
+            if should_trace_file(fname):
+                current_location = (fname, line_number)
+                self.branches.add((self._previous_location, current_location))
+                self._previous_location = current_location
 
     def trace_line(self, code: types.CodeType, line_number: int) -> None:
         fname = code.co_filename
