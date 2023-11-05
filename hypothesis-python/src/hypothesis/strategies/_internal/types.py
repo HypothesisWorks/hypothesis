@@ -381,7 +381,11 @@ def from_typing_type(thing):
     if len(mapping) > 1:
         _Environ = getattr(os, "_Environ", None)
         mapping.pop(_Environ, None)
-    tuple_types = [t for t in mapping if isinstance(t, type) and issubclass(t, tuple)]
+    tuple_types = [
+        t
+        for t in mapping
+        if (isinstance(t, type) and issubclass(t, tuple)) or t is typing.Tuple
+    ]
     if len(mapping) > len(tuple_types):
         for tuple_type in tuple_types:
             mapping.pop(tuple_type)
