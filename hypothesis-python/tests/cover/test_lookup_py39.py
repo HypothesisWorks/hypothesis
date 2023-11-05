@@ -149,3 +149,11 @@ def test_only_tuple_subclasses_in_typing_type():
     with temp_registered(FooableConcrete, st.builds(FooableConcrete)):
         s = st.from_type(Fooable[int])
         assert_all_examples(s, lambda x: type(x) is FooableConcrete)
+
+
+def test_lookup_registered_tuple():
+    sentinel = object()
+    typ = tuple[int]
+    with temp_registered(tuple, st.just(sentinel)):
+        assert st.from_type(typ).example() is sentinel
+    assert st.from_type(typ).example() is not sentinel
