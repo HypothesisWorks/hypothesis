@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.88.2:
+
+-------------------
+6.88.2 - 2023-11-05
+-------------------
+
+This patch improves the speed of the explain phase on python 3.12+, by using the new
+:mod:`sys.monitoring` module to collect coverage, instead of :obj:`sys.settrace`.
+
+Thanks to Liam DeVoe for :pull:`3776`!
+
 .. _v6.88.1:
 
 -------------------
