@@ -16,8 +16,8 @@ from typing import Any, Callable, Iterator, List, Protocol, Tuple, Type, TypeVar
 import annotated_types as at
 
 import hypothesis.strategies as st
+from hypothesis.errors import HypothesisWarning
 from hypothesis.reporting import debug_report
-
 
 Ex = TypeVar("Ex", covariant=True)
 
@@ -72,7 +72,7 @@ def from_annotated_types(
             f"{', '.join(unsupported_constraints)} ",
             f"{'is' if len(unsupported_constraints) == 1 else 'are'} ",
             "currently not supported and will be ignored.",
-            UserWarning,
+            HypothesisWarning,
             stacklevel=2,
         )
         for c in unsupported_constraints:
@@ -93,7 +93,7 @@ def from_annotated_types(
     if constraints:
         debug_report(
             "WARNING: the following constraints are unknown and will be ignored: "
-            f"{', '.join(constraints)}"
+            f"{', '.join(constraints)}."
         )
 
     return base_strategy
