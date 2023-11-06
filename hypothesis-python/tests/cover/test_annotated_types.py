@@ -14,6 +14,7 @@ import pytest
 
 from hypothesis import strategies as st
 from hypothesis.errors import ResolutionFailed, HypothesisWarning
+from hypothesis.strategies._internal.strategies import FilteredStrategy
 
 try:
     import annotated_types as at
@@ -88,3 +89,13 @@ def test_unknown_constraint(capsys):
 def test_annotated_type_int(annotated_type, expected_strategy_repr):
     strategy = st.from_type(annotated_type)
     assert repr(strategy.wrapped_strategy) == expected_strategy_repr
+
+
+def test_predicate_constraint():
+
+    def func(_):
+        return True
+
+    strategy = st.from_type(Annotated[int, at.Predicate(func)])
+    assert isinstance(strategy, FilteredStrategy)
+    assert strategy.flat_conditions == (func,)
