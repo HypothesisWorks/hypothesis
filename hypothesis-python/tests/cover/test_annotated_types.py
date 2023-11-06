@@ -13,7 +13,7 @@ from typing import Annotated
 import pytest
 
 from hypothesis import strategies as st
-from hypothesis.errors import ResolutionFailed, HypothesisWarning
+from hypothesis.errors import HypothesisWarning, ResolutionFailed
 from hypothesis.strategies._internal.strategies import FilteredStrategy
 
 try:
