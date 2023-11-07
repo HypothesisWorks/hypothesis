@@ -33,6 +33,10 @@ pip install "$(grep 'typing-extensions==' ../requirements/coverage.txt)"
 $PYTEST tests/typing_extensions/
 pip uninstall -y typing_extensions
 
+pip install "$(grep 'annotated-types==' ../requirements/coverage.txt)"
+$PYTEST tests/test_annotated_types.py
+pip uninstall -y annotated-types
+
 pip install ".[lark]"
 pip install "$(grep -oE 'lark>=([0-9.]+)' ../hypothesis-python/setup.py | tr '>' =)"
 $PYTEST -Wignore tests/lark/

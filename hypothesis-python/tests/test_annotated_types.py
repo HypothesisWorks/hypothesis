@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import re
 from typing import Annotated
 
 import pytest
@@ -56,8 +57,9 @@ def test_invalid_annotated_type():
     ],
 )
 def test_unsupported_constraints(unsupported_constraints, message):
-    with pytest.warns(HypothesisWarning, match=message):
+    with pytest.warns(HypothesisWarning, match=re.escape(message)):
         # Calling __class_getitem__ as Annotated[int, *args] is not supported <3.11
+        # TODO find another solution, this will most likely break since from 3.13 Annotated is a SpecialForm
         st.from_type(Annotated.__class_getitem__((int, *unsupported_constraints)))
 
 
@@ -69,10 +71,8 @@ def test_unknown_constraint(capsys):
     st.from_type(Annotated[int, Unknown()])
 
     captured = capsys.readouterr()
-    assert (
-        captured.out
-        == "WARNING: the following constraints are unknown and will be ignored: unknown."
-    )
+    expected = "WARNING: the following constraints are unknown and will be ignored: unknown."
+    assert captured.out == expected
 
 
 @pytest.mark.parametrize(

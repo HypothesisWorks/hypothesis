@@ -42,13 +42,6 @@ from hypothesis.strategies._internal.ipaddress import (
 from hypothesis.strategies._internal.lazy import unwrap_strategies
 from hypothesis.strategies._internal.strategies import OneOfStrategy
 
-try:
-    import annotated_types  # noqa: F401
-
-    has_annotated_types = True
-except ImportError:
-    has_annotated_types = False
-
 GenericAlias: typing.Any
 UnionType: typing.Any
 try:
@@ -296,7 +289,7 @@ def find_annotated_strategy(annotated_type):
         if isinstance(arg, st.SearchStrategy):
             return arg
 
-    if has_annotated_types:
+    if "annotated_types" in sys.modules:
         from .annotated_types import from_annotated_types
 
         return from_annotated_types(origin, metadata)

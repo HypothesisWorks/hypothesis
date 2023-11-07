@@ -66,10 +66,11 @@ def from_annotated_types(
     unsupported_constraints = [
         c for c in constraints if isinstance(c, (at.MultipleOf, at.Timezone))
     ]
+    unknown_constraints = []
 
     if unsupported_constraints:
         warnings.warn(
-            f"{', '.join(unsupported_constraints)} ",
+            f"{', '.join(map(repr, unsupported_constraints))} ",
             f"{'is' if len(unsupported_constraints) == 1 else 'are'} ",
             "currently not supported and will be ignored.",
             HypothesisWarning,
@@ -85,15 +86,16 @@ def from_annotated_types(
         if type(constraint) in CONSTRAINTS_FILTER_MAP:
             condition = CONSTRAINTS_FILTER_MAP[type(constraint)](constraint)
             filter_conditions.append(condition)
-            constraints.remove(constraint)
+        else:
+            unknown_constraints.append(constraint)
 
     for filter_condition in filter_conditions:
         base_strategy = base_strategy.filter(filter_condition)
 
-    if constraints:
+    if unknown_constraints:
         debug_report(
             "WARNING: the following constraints are unknown and will be ignored: "
-            f"{', '.join(constraints)}."
+            f"{', '.join(map(repr, unknown_constraints))}."
         )
 
     return base_strategy
