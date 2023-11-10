@@ -992,7 +992,6 @@ class PrimitiveProvider:
     def draw_float(
         self,
         *,
-        forced: Optional[float] = None,
         min_value: Optional[float] = None,
         max_value: Optional[float] = None,
         allow_nan: bool = True,
@@ -1006,7 +1005,6 @@ class PrimitiveProvider:
     def draw_string(
         self,
         *,
-        forced: Optional[str] = None,
         # Should we use `regex: str = ".*"` instead of alphabet and sizes?
         alphabet: ... = ...,
         min_size: int = 0,
@@ -1132,7 +1130,6 @@ class ConjectureData:
     def draw_float(
         self,
         *,
-        forced: Optional[float] = None,
         min_value: Optional[float] = None,
         max_value: Optional[float] = None,
         allow_nan: bool = True,
@@ -1141,10 +1138,6 @@ class ConjectureData:
         width: Literal[16, 32, 64] = 64,
         # exclude_min and exclude_max handled higher up
     ):
-        if forced is not None and not math.isnan(forced):
-            assert min_value is None or min_value <= forced
-            assert max_value is None or forced <= max_value
-
         # FIXME assertions about infinity/subnormal
         raise NotImplementedError()
 
