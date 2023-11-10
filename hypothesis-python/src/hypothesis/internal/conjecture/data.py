@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import math
 import time
 from collections import defaultdict
 from enum import IntEnum
@@ -28,6 +29,7 @@ from typing import (
     Tuple,
     Type,
     Union,
+    Literal
 )
 
 import attr
@@ -35,7 +37,8 @@ import attr
 from hypothesis.errors import Frozen, InvalidArgument, StopTest
 from hypothesis.internal.compat import int_from_bytes, int_to_bytes
 from hypothesis.internal.conjecture.junkdrawer import IntList, uniform
-from hypothesis.internal.conjecture.utils import calc_label_from_name
+from hypothesis.internal.conjecture.utils import calc_label_from_name, biased_coin, unbounded_integers, integer_range, Sampler
+
 
 if TYPE_CHECKING:
     from typing_extensions import dataclass_transform
@@ -50,6 +53,7 @@ else:
 
         return wrapper
 
+ONE_BOUND_INTEGERS_LABEL = calc_label_from_name("trying a one-bound int allowing 0")
 
 TOP_LABEL = calc_label_from_name("top")
 DRAW_BYTES_LABEL = calc_label_from_name("draw_bytes() in ConjectureData")
@@ -796,6 +800,117 @@ BYTE_MASKS = [(1 << n) - 1 for n in range(8)]
 BYTE_MASKS[0] = 255
 
 
+class PrimitiveProvider:
+    # This is the low-level interface which would also be implemented
+    # by e.g. CrossHair, by an Atheris-hypothesis integration, etc.
+    # We'd then build the structured tree handling, database and replay
+    # support, etc. on top of this - so all backends get those for free.
+
+    def __init__(self, conjecturedata: "ConjectureData", /) -> None:
+        self._cd = conjecturedata
+
+    def draw_boolean(self, *, p: float = 0.5, forced: Optional[bool] = None):
+        # Note that this could also be implemented in terms of draw_integer().
+        return biased_coin(self._cd, p=p, forced=forced)
+
+    def draw_integer(
+        self,
+        *,
+        forced: Optional[int] = None,
+        min_value: Optional[int] = None,
+        max_value: Optional[int] = None,
+        # weights are for choosing an element index from a bounded range
+        weights: Optional[Sequence[float]] = None,
+        shrink_towards: int = 0,
+    ):
+        # This is easy to build on top of our existing conjecture utils,
+        # and it's easy to build sampled_from and weighted_coin on this.
+        if weights is not None:
+            sampler = Sampler(weights)
+            assert forced is None  # FIXME: handle forced values here
+            idx = sampler.sample(self._cd)
+            assert shrink_towards <= min_value  # FIXME: reorder for good shrinking
+            return range(min_value, max_value + 1)[idx]
+
+        if min_value is None and max_value is None:
+            return unbounded_integers(self._cd, forced=forced)
+
+        if min_value is None:
+            if max_value <= shrink_towards:
+                return max_value - abs(unbounded_integers(self._cd, forced=forced))
+            else:
+                probe = max_value + 1
+                while max_value < probe:
+                    self._cd.start_example(ONE_BOUND_INTEGERS_LABEL)
+                    probe = unbounded_integers(self._cd, forced=forced)
+                    self._cd.stop_example(discard=max_value < probe)
+                return probe
+
+        if max_value is None:
+            if min_value >= shrink_towards:
+                return min_value + abs(unbounded_integers(self._cd, forced=forced))
+            else:
+                probe = min_value - 1
+                while probe < min_value:
+                    self._cd.start_example(ONE_BOUND_INTEGERS_LABEL)
+                    probe = unbounded_integers(self._cd, forced=forced)
+                    self._cd.stop_example(discard=probe < min_value)
+                return probe
+
+        # For bounded integers, make the bounds and near-bounds more likely.
+        if max_value - min_value > 127:
+            bits = self._cd.draw_bits(7, forced=0 if forced is not None else None)
+            forced = {
+                122: min_value,
+                123: min_value,
+                124: max_value,
+                125: max_value,
+                126: min_value + 1,
+                127: max_value - 1,
+            }.get(bits, forced)
+
+        return integer_range(
+            self._cd,
+            min_value,
+            max_value,
+            center=shrink_towards,
+            forced=forced,
+        )
+
+    def draw_float(
+        self,
+        *,
+        forced: Optional[float] = None,
+        min_value: Optional[float] = None,
+        max_value: Optional[float] = None,
+        allow_nan: bool = True,
+        allow_infinity: bool = True,
+        allow_subnormal: bool = True,
+        width: Literal[16, 32, 64] = 64,
+        # exclude_min and exclude_max handled higher up
+    ):
+        ...
+
+    def draw_string(
+        self,
+        *,
+        forced: Optional[str] = None,
+        # Should we use `regex: str = ".*"` instead of alphabet and sizes?
+        alphabet: ... = ...,
+        min_size: int = 0,
+        max_size: Optional[int] = None,
+    ):
+        ...
+
+    def draw_bytes(
+        self,
+        *,
+        forced: Optional[bytes] = None,
+        min_size: int = 0,
+        max_size: Optional[int] = None,
+    ):
+        return self._cd.draw_bytes
+
 class ConjectureData:
     @classmethod
     def for_buffer(
@@ -841,6 +956,7 @@ class ConjectureData:
         self.draw_times: "List[float]" = []
         self.max_depth = 0
         self.has_discards = False
+        self.provider = PrimitiveProvider(self)
 
         self.__result: "Optional[ConjectureResult]" = None
 
@@ -878,6 +994,72 @@ class ConjectureData:
             len(self.buffer),
             ", frozen" if self.frozen else "",
         )
+
+    def draw_integer(
+        self,
+        *,
+        forced: Optional[int] = None,
+        min_value: Optional[int] = None,
+        max_value: Optional[int] = None,
+        # weights are for choosing an element index from a bounded range
+        weights: Optional[Sequence[float]] = None,
+        shrink_towards: int = 0,
+    ):
+        # Validate arguments
+        if weights is not None:
+            assert min_value is not None
+            assert max_value is not None
+            assert (max_value - min_value) <= 1024  # arbitrary practical limit
+        if forced is not None:
+            assert min_value is None or min_value <= forced
+            assert max_value is None or forced <= max_value
+
+        return self.provider.draw_integer(forced=forced, min_value=min_value,
+            max_value=max_value, weights=weights, shrink_towards=shrink_towards)
+
+    def draw_float(
+        self,
+        *,
+        forced: Optional[float] = None,
+        min_value: Optional[float] = None,
+        max_value: Optional[float] = None,
+        allow_nan: bool = True,
+        allow_infinity: bool = True,
+        allow_subnormal: bool = True,
+        width: Literal[16, 32, 64] = 64,
+        # exclude_min and exclude_max handled higher up
+    ):
+        if forced is not None and not math.isnan(forced):
+            assert min_value is None or min_value <= forced
+            assert max_value is None or forced <= max_value
+
+        # FIXME assertions about infinity/subnormal
+        raise NotImplementedError()
+
+
+    def draw_string(
+        self,
+        *,
+        forced: Optional[str] = None,
+        # Should we use `regex: str = ".*"` instead of alphabet and sizes?
+        alphabet: ... = ...,
+        min_size: int = 0,
+        max_size: Optional[int] = None,
+    ):
+        raise NotImplementedError()
+
+    def draw_bytes(
+        self,
+        *,
+        forced: Optional[bytes] = None,
+        min_size: int = 0,
+        max_size: Optional[int] = None,
+    ):
+        if forced is not None:
+            assert min_size is None or min_size <= len(forced)
+            assert max_size is None or len(forced) <= max_size
+        return self.provider.draw_bytes(forced=forced, min_size=min_size,
+            max_size=max_size)
 
     def as_result(self) -> Union[ConjectureResult, _Overrun]:
         """Convert the result of running this test into
