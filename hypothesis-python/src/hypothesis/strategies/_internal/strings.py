@@ -79,7 +79,7 @@ class OneCharStringStrategy(SearchStrategy):
 
     def do_draw(self, data):
         if len(self.intervals) > 256:
-            if biased_coin(data, 0.2):
+            if data.draw_boolean(0.2):
                 i = integer_range(data, 256, len(self.intervals) - 1)
             else:
                 i = integer_range(data, 0, 255)

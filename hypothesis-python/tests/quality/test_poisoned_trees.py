@@ -34,7 +34,7 @@ class PoisonedTree(SearchStrategy):
         self.__p = p
 
     def do_draw(self, data):
-        if cu.biased_coin(data, self.__p):
+        if data.draw_boolean(self.__p):
             return data.draw(self) + data.draw(self)
         else:
             # We draw n as two separate calls so that it doesn't show up as a

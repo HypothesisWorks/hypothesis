@@ -35,7 +35,7 @@ from typing import (
 import attr
 
 from hypothesis.errors import Frozen, InvalidArgument, StopTest
-from hypothesis.internal.compat import int_from_bytes, int_to_bytes
+from hypothesis.internal.compat import int_from_bytes, int_to_bytes, floor
 from hypothesis.internal.conjecture.junkdrawer import IntList, uniform
 from hypothesis.internal.conjecture.utils import calc_label_from_name, biased_coin, unbounded_integers, integer_range, Sampler
 
@@ -54,6 +54,8 @@ else:
         return wrapper
 
 ONE_BOUND_INTEGERS_LABEL = calc_label_from_name("trying a one-bound int allowing 0")
+BIASED_COIN_LABEL = calc_label_from_name("biased_coin()")
+BIASED_COIN_INNER_LABEL = calc_label_from_name("inside biased_coin()")
 
 TOP_LABEL = calc_label_from_name("top")
 DRAW_BYTES_LABEL = calc_label_from_name("draw_bytes() in ConjectureData")
@@ -809,9 +811,119 @@ class PrimitiveProvider:
     def __init__(self, conjecturedata: "ConjectureData", /) -> None:
         self._cd = conjecturedata
 
-    def draw_boolean(self, *, p: float = 0.5, forced: Optional[bool] = None):
+    def draw_boolean(self, p: float = 0.5, *, forced: Optional[bool] = None):
         # Note that this could also be implemented in terms of draw_integer().
-        return biased_coin(self._cd, p=p, forced=forced)
+        """Return True with probability p (assuming a uniform generator),
+        shrinking towards False. If ``forced`` is set to a non-None value, this
+        will always return that value but will write choices appropriate to having
+        drawn that value randomly."""
+
+        # NB this function is vastly more complicated than it may seem reasonable
+        # for it to be. This is because it is used in a lot of places and it's
+        # important for it to shrink well, so it's worth the engineering effort.
+
+        if p <= 0 or p >= 1:
+            bits = 1
+        else:
+            # When there is a meaningful draw, in order to shrink well we will
+            # set things up so that 0 and 1 always correspond to False and True
+            # respectively. This means we want enough bits available that in a
+            # draw we will always have at least one truthy value and one falsey
+            # value.
+            bits = math.ceil(-math.log(min(p, 1 - p), 2))
+        # In order to avoid stupidly large draws where the probability is
+        # effectively zero or one, we treat probabilities of under 2^-64 to be
+        # effectively zero.
+        if bits > 64:
+            # There isn't enough precision near one for this to occur for values
+            # far from 0.
+            p = 0.0
+            bits = 1
+
+        size = 2**bits
+
+        self._cd.start_example(BIASED_COIN_LABEL)
+        while True:
+            # The logic here is a bit complicated and special cased to make it
+            # play better with the shrinker.
+
+            # We imagine partitioning the real interval [0, 1] into 2**n equal parts
+            # and looking at each part and whether its interior is wholly <= p
+            # or wholly >= p. At most one part can be neither.
+
+            # We then pick a random part. If it's wholly on one side or the other
+            # of p then we use that as the answer. If p is contained in the
+            # interval then we start again with a new probability that is given
+            # by the fraction of that interval that was <= our previous p.
+
+            # We then take advantage of the fact that we have control of the
+            # labelling to make this shrink better, using the following tricks:
+
+            # If p is <= 0 or >= 1 the result of this coin is certain. We make sure
+            # to write a byte to the data stream anyway so that these don't cause
+            # difficulties when shrinking.
+            if p <= 0:
+                self._cd.draw_bits(1, forced=0)
+                result = False
+            elif p >= 1:
+                self._cd.draw_bits(1, forced=1)
+                result = True
+            else:
+                falsey = floor(size * (1 - p))
+                truthy = floor(size * p)
+                remainder = size * p - truthy
+
+                if falsey + truthy == size:
+                    partial = False
+                else:
+                    partial = True
+
+                if forced is None:
+                    # We want to get to the point where True is represented by
+                    # 1 and False is represented by 0 as quickly as possible, so
+                    # we use the remove_discarded machinery in the shrinker to
+                    # achieve that by discarding any draws that are > 1 and writing
+                    # a suitable draw into the choice sequence at the end of the
+                    # loop.
+                    self._cd.start_example(BIASED_COIN_INNER_LABEL)
+                    i = self._cd.draw_bits(bits)
+                    self._cd.stop_example(discard=i > 1)
+                else:
+                    i = self._cd.draw_bits(bits, forced=int(forced))
+
+                # We always choose the region that causes us to repeat the loop as
+                # the maximum value, so that shrinking the drawn bits never causes
+                # us to need to draw more self._cd.
+                if partial and i == size - 1:
+                    p = remainder
+                    continue
+                if falsey == 0:
+                    # Every other partition is truthy, so the result is true
+                    result = True
+                elif truthy == 0:
+                    # Every other partition is falsey, so the result is false
+                    result = False
+                elif i <= 1:
+                    # We special case so that zero is always false and 1 is always
+                    # true which makes shrinking easier because we can always
+                    # replace a truthy block with 1. This has the slightly weird
+                    # property that shrinking from 2 to 1 can cause the result to
+                    # grow, but the shrinker always tries 0 and 1 first anyway, so
+                    # this will usually be fine.
+                    result = bool(i)
+                else:
+                    # Originally everything in the region 0 <= i < falsey was false
+                    # and everything above was true. We swapped one truthy element
+                    # into this region, so the region becomes 0 <= i <= falsey
+                    # except for i = 1. We know i > 1 here, so the test for truth
+                    # becomes i > falsey.
+                    result = i > falsey
+
+                if i > 1:
+                    self._cd.draw_bits(bits, forced=int(result))
+            break
+        self._cd.stop_example()
+        return result
 
     def draw_integer(
         self,
@@ -1060,6 +1172,9 @@ class ConjectureData:
             assert max_size is None or len(forced) <= max_size
         return self.provider.draw_bytes(forced=forced, min_size=min_size,
             max_size=max_size)
+
+    def draw_boolean(self, p: float = 0.5, *, forced: Optional[bool] = None):
+        return self.provider.draw_boolean(p, forced=forced)
 
     def as_result(self) -> Union[ConjectureResult, _Overrun]:
         """Convert the result of running this test into

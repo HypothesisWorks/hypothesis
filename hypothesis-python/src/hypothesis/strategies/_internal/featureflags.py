@@ -81,8 +81,8 @@ class FeatureFlags:
         # of the test case where we originally decided, the next point at
         # which we make this decision just makes the decision it previously
         # made.
-        is_disabled = cu.biased_coin(
-            self.__data, self.__p_disabled, forced=self.__is_disabled.get(name)
+        is_disabled = self.__data.draw_boolean(
+            self.__p_disabled, forced=self.__is_disabled.get(name)
         )
         self.__is_disabled[name] = is_disabled
         data.stop_example()

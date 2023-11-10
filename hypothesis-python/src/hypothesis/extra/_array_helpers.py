@@ -596,8 +596,8 @@ class MutuallyBroadcastableShapesStrategy(st.SearchStrategy):
                 # shape-tuple even if it is no longer being added to.
                 # This helps to ensure more stable shrinking behavior.
                 if self.min_dims < dim_count:
-                    use[shape_id] &= cu.biased_coin(
-                        data, 1 - 1 / (1 + self.max_dims - dim)
+                    use[shape_id] &= data.draw_boolean(
+                        p=1 - 1 / (1 + self.max_dims - dim)
                     )
 
                 if use[shape_id]:

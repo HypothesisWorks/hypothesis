@@ -28,7 +28,7 @@ class Poisoned(SearchStrategy):
         self.__ints = st.integers(0, 10)
 
     def do_draw(self, data):
-        if cu.biased_coin(data, self.__poison_chance):
+        if data.draw_boolean(self.__poison_chance):
             return POISON
         else:
             return data.draw(self.__ints)

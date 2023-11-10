@@ -140,7 +140,7 @@ def run_state_machine_as_test(state_machine_factory, *, settings=None, _min_step
                     must_stop = True
                 elif steps_run <= _min_steps:
                     must_stop = False
-                if cu.biased_coin(cd, 2**-16, forced=must_stop):
+                if cd.draw_boolean(p=2**-16, forced=must_stop):
                     break
                 steps_run += 1
 

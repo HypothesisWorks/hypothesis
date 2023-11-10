@@ -46,8 +46,6 @@ def combine_labels(*labels: int) -> int:
 
 
 INTEGER_RANGE_DRAW_LABEL = calc_label_from_name("another draw in integer_range()")
-BIASED_COIN_LABEL = calc_label_from_name("biased_coin()")
-BIASED_COIN_INNER_LABEL = calc_label_from_name("inside biased_coin()")
 SAMPLE_IN_SAMPLER_LABEL = calc_label_from_name("a sample() in Sampler")
 ONE_FROM_MANY_LABEL = calc_label_from_name("one more from many()")
 
@@ -178,112 +176,7 @@ def biased_coin(
     will always return that value but will write choices appropriate to having
     drawn that value randomly."""
 
-    # NB this function is vastly more complicated than it may seem reasonable
-    # for it to be. This is because it is used in a lot of places and it's
-    # important for it to shrink well, so it's worth the engineering effort.
-
-    if p <= 0 or p >= 1:
-        bits = 1
-    else:
-        # When there is a meaningful draw, in order to shrink well we will
-        # set things up so that 0 and 1 always correspond to False and True
-        # respectively. This means we want enough bits available that in a
-        # draw we will always have at least one truthy value and one falsey
-        # value.
-        bits = math.ceil(-math.log(min(p, 1 - p), 2))
-    # In order to avoid stupidly large draws where the probability is
-    # effectively zero or one, we treat probabilities of under 2^-64 to be
-    # effectively zero.
-    if bits > 64:
-        # There isn't enough precision near one for this to occur for values
-        # far from 0.
-        p = 0.0
-        bits = 1
-
-    size = 2**bits
-
-    data.start_example(BIASED_COIN_LABEL)
-    while True:
-        # The logic here is a bit complicated and special cased to make it
-        # play better with the shrinker.
-
-        # We imagine partitioning the real interval [0, 1] into 2**n equal parts
-        # and looking at each part and whether its interior is wholly <= p
-        # or wholly >= p. At most one part can be neither.
-
-        # We then pick a random part. If it's wholly on one side or the other
-        # of p then we use that as the answer. If p is contained in the
-        # interval then we start again with a new probability that is given
-        # by the fraction of that interval that was <= our previous p.
-
-        # We then take advantage of the fact that we have control of the
-        # labelling to make this shrink better, using the following tricks:
-
-        # If p is <= 0 or >= 1 the result of this coin is certain. We make sure
-        # to write a byte to the data stream anyway so that these don't cause
-        # difficulties when shrinking.
-        if p <= 0:
-            data.draw_bits(1, forced=0)
-            result = False
-        elif p >= 1:
-            data.draw_bits(1, forced=1)
-            result = True
-        else:
-            falsey = floor(size * (1 - p))
-            truthy = floor(size * p)
-            remainder = size * p - truthy
-
-            if falsey + truthy == size:
-                partial = False
-            else:
-                partial = True
-
-            if forced is None:
-                # We want to get to the point where True is represented by
-                # 1 and False is represented by 0 as quickly as possible, so
-                # we use the remove_discarded machinery in the shrinker to
-                # achieve that by discarding any draws that are > 1 and writing
-                # a suitable draw into the choice sequence at the end of the
-                # loop.
-                data.start_example(BIASED_COIN_INNER_LABEL)
-                i = data.draw_bits(bits)
-                data.stop_example(discard=i > 1)
-            else:
-                i = data.draw_bits(bits, forced=int(forced))
-
-            # We always choose the region that causes us to repeat the loop as
-            # the maximum value, so that shrinking the drawn bits never causes
-            # us to need to draw more data.
-            if partial and i == size - 1:
-                p = remainder
-                continue
-            if falsey == 0:
-                # Every other partition is truthy, so the result is true
-                result = True
-            elif truthy == 0:
-                # Every other partition is falsey, so the result is false
-                result = False
-            elif i <= 1:
-                # We special case so that zero is always false and 1 is always
-                # true which makes shrinking easier because we can always
-                # replace a truthy block with 1. This has the slightly weird
-                # property that shrinking from 2 to 1 can cause the result to
-                # grow, but the shrinker always tries 0 and 1 first anyway, so
-                # this will usually be fine.
-                result = bool(i)
-            else:
-                # Originally everything in the region 0 <= i < falsey was false
-                # and everything above was true. We swapped one truthy element
-                # into this region, so the region becomes 0 <= i <= falsey
-                # except for i = 1. We know i > 1 here, so the test for truth
-                # becomes i > falsey.
-                result = i > falsey
-
-            if i > 1:
-                data.draw_bits(bits, forced=int(result))
-        break
-    data.stop_example()
-    return result
+    raise Exception("should not be called")
 
 
 class Sampler:
@@ -375,7 +268,7 @@ class Sampler:
     def sample(self, data: "ConjectureData") -> int:
         data.start_example(SAMPLE_IN_SAMPLER_LABEL)
         base, alternate, alternate_chance = choice(data, self.table)
-        use_alternate = biased_coin(data, alternate_chance)
+        use_alternate = data.draw_boolean(alternate_chance)
         data.stop_example()
         if use_alternate:
             return alternate
@@ -437,8 +330,8 @@ class many:
                 forced_result = True
             elif self.count >= self.max_size:
                 forced_result = False
-            should_continue = biased_coin(
-                self.data, self.p_continue, forced=forced_result
+            should_continue = self.data.draw_boolean(
+                self.p_continue, forced=forced_result
             )
 
         if should_continue:
