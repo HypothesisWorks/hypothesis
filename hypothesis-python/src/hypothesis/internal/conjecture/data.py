@@ -37,7 +37,7 @@ import attr
 from hypothesis.errors import Frozen, InvalidArgument, StopTest
 from hypothesis.internal.compat import int_from_bytes, int_to_bytes, floor
 from hypothesis.internal.conjecture.junkdrawer import IntList, uniform
-from hypothesis.internal.conjecture.utils import calc_label_from_name, biased_coin, unbounded_integers, integer_range, Sampler
+from hypothesis.internal.conjecture.utils import calc_label_from_name, unbounded_integers, integer_range, Sampler
 
 
 if TYPE_CHECKING:

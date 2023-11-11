@@ -11,14 +11,13 @@
 import enum
 import hashlib
 import heapq
-import math
 import sys
 from collections import OrderedDict, abc
 from functools import lru_cache
 from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Type, TypeVar, Union
 
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import floor, int_from_bytes
+from hypothesis.internal.compat import int_from_bytes
 from hypothesis.internal.floats import int_to_float, next_up
 
 if TYPE_CHECKING:
@@ -166,17 +165,6 @@ FULL_FLOAT = int_to_float(FLOAT_PREFIX | ((2 << 53) - 1)) - 1
 
 def fractional_float(data: "ConjectureData") -> float:
     return (int_to_float(FLOAT_PREFIX | data.draw_bits(52)) - 1) / FULL_FLOAT
-
-
-def biased_coin(
-    data: "ConjectureData", p: float, *, forced: Optional[bool] = None
-) -> bool:
-    """Return True with probability p (assuming a uniform generator),
-    shrinking towards False. If ``forced`` is set to a non-None value, this
-    will always return that value but will write choices appropriate to having
-    drawn that value randomly."""
-
-    raise Exception("should not be called")
 
 
 class Sampler:

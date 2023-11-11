@@ -15,7 +15,7 @@ from functools import lru_cache
 
 from hypothesis.errors import HypothesisWarning, InvalidArgument
 from hypothesis.internal import charmap
-from hypothesis.internal.conjecture.utils import biased_coin, integer_range
+from hypothesis.internal.conjecture.utils import integer_range
 from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.strategies._internal.collections import ListStrategy
 from hypothesis.strategies._internal.lazy import unwrap_strategies
