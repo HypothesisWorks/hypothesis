@@ -10,10 +10,10 @@
 
 import math
 import time
-from sys import float_info
 from collections import defaultdict
 from enum import IntEnum
 from random import Random
+from sys import float_info
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -30,23 +30,23 @@ from typing import (
     Tuple,
     Type,
     Union,
-    Literal
 )
 
 import attr
 
 from hypothesis.errors import Frozen, InvalidArgument, StopTest
-from hypothesis.internal.compat import int_from_bytes, int_to_bytes, floor
-from hypothesis.internal.conjecture.junkdrawer import IntList, uniform
-from hypothesis.internal.conjecture.utils import calc_label_from_name, Sampler
-from hypothesis.internal.floats import next_up, next_down, SIGNALING_NAN
+from hypothesis.internal.compat import floor, int_from_bytes, int_to_bytes
 from hypothesis.internal.conjecture.floats import float_to_lex, lex_to_float
+from hypothesis.internal.conjecture.junkdrawer import IntList, uniform
+from hypothesis.internal.conjecture.utils import Sampler, calc_label_from_name
 from hypothesis.internal.floats import (
-    sign_aware_lte,
-    make_float_clamper,
+    SIGNALING_NAN,
     float_to_int,
+    make_float_clamper,
+    next_down,
+    next_up,
+    sign_aware_lte,
 )
-
 
 if TYPE_CHECKING:
     from typing_extensions import dataclass_transform
@@ -60,6 +60,7 @@ else:
             return tp
 
         return wrapper
+
 
 ONE_BOUND_INTEGERS_LABEL = calc_label_from_name("trying a one-bound int allowing 0")
 INTEGER_RANGE_DRAW_LABEL = calc_label_from_name("another draw in integer_range()")
@@ -1075,9 +1076,7 @@ class PrimitiveProvider:
             next_down(max_value),
             max_value,
         ]
-        nasty_floats = [
-            f for f in NASTY_FLOATS + boundary_values if permitted(f)
-        ]
+        nasty_floats = [f for f in NASTY_FLOATS + boundary_values if permitted(f)]
         weights = [0.2 * len(nasty_floats)] + [0.8] * len(nasty_floats)
         sampler = Sampler(weights) if nasty_floats else None
 
@@ -1085,9 +1084,7 @@ class PrimitiveProvider:
         if sign_aware_lte(0.0, max_value):
             pos_min = max(min_value, smallest_nonzero_magnitude)
             allow_zero = sign_aware_lte(min_value, 0.0)
-            pos_clamper = make_float_clamper(
-                pos_min, max_value, allow_zero=allow_zero
-            )
+            pos_clamper = make_float_clamper(pos_min, max_value, allow_zero=allow_zero)
         if sign_aware_lte(min_value, -0.0):
             neg_max = min(max_value, -smallest_nonzero_magnitude)
             allow_zero = sign_aware_lte(-0.0, max_value)
@@ -1100,7 +1097,6 @@ class PrimitiveProvider:
             forced_sign_bit = 1 if neg_clamper else 0
 
         # MARK: end initialization
-
 
         while True:
             self._cd.start_example(FLOAT_STRATEGY_DO_DRAW_LABEL)
@@ -1139,6 +1135,7 @@ class PrimitiveProvider:
 
     def draw_bytes(self, size: int):
         return self._cd.draw_bits(8 * size).to_bytes(size, "big")
+
 
 class ConjectureData:
     @classmethod
@@ -1239,8 +1236,12 @@ class ConjectureData:
             assert max_value is not None
             assert (max_value - min_value) <= 1024  # arbitrary practical limit
 
-        return self.provider.draw_integer(min_value=min_value,
-            max_value=max_value, weights=weights, shrink_towards=shrink_towards)
+        return self.provider.draw_integer(
+            min_value=min_value,
+            max_value=max_value,
+            weights=weights,
+            shrink_towards=shrink_towards,
+        )
 
     def draw_float(
         self,
@@ -1255,11 +1256,12 @@ class ConjectureData:
         # exclude_min and exclude_max handled higher up
     ):
         # FIXME assertions about forced w.r.t min_value, max_value, allow_nan
-        return self.provider.draw_float(min_value=min_value,
-            max_value=max_value, allow_nan=allow_nan,
-            smallest_nonzero_magnitude=smallest_nonzero_magnitude
+        return self.provider.draw_float(
+            min_value=min_value,
+            max_value=max_value,
+            allow_nan=allow_nan,
+            smallest_nonzero_magnitude=smallest_nonzero_magnitude,
         )
-
 
     def draw_string(
         self,
@@ -1270,7 +1272,7 @@ class ConjectureData:
         min_size: int = 0,
         max_size: Optional[int] = None,
     ):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def draw_bytes(self, size: int):
         return self.provider.draw_bytes(size)
@@ -1286,7 +1288,6 @@ class ConjectureData:
         if sign:
             r = -r
         return int(r)
-
 
     def integer_range(
         self,
@@ -1368,7 +1369,6 @@ class ConjectureData:
         sign = float_to_int(f) >> 63
         self.draw_bits(1, forced=sign)
         self.draw_bits(64, forced=float_to_lex(abs(f)))
-
 
     def as_result(self) -> Union[ConjectureResult, _Overrun]:
         """Convert the result of running this test into

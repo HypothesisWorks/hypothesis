@@ -20,6 +20,7 @@ from hypothesis.internal.filtering import (
     get_integer_predicate_bounds,
 )
 from hypothesis.internal.floats import (
+    SMALLEST_SUBNORMAL,
     float_of,
     float_to_int,
     int_to_float,
@@ -28,9 +29,8 @@ from hypothesis.internal.floats import (
     next_down_normal,
     next_up,
     next_up_normal,
-    width_smallest_normals,
     sign_aware_lte,
-    SMALLEST_SUBNORMAL
+    width_smallest_normals,
 )
 from hypothesis.internal.validation import (
     check_type,
@@ -176,9 +176,11 @@ class FloatStrategy(SearchStrategy):
         return sign_aware_lte(self.min_value, f) and sign_aware_lte(f, self.max_value)
 
     def do_draw(self, data):
-        return data.draw_float(min_value=self.min_value,
-            max_value=self.max_value, allow_nan=self.allow_nan,
-            smallest_nonzero_magnitude=self.smallest_nonzero_magnitude
+        return data.draw_float(
+            min_value=self.min_value,
+            max_value=self.max_value,
+            allow_nan=self.allow_nan,
+            smallest_nonzero_magnitude=self.smallest_nonzero_magnitude,
         )
 
     def filter(self, condition):

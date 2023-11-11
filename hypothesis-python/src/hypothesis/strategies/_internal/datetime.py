@@ -16,7 +16,6 @@ from pathlib import Path
 from typing import Optional
 
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.conjecture import utils
 from hypothesis.internal.validation import check_type, check_valid_interval
 from hypothesis.strategies._internal.core import sampled_from
 from hypothesis.strategies._internal.misc import just, none

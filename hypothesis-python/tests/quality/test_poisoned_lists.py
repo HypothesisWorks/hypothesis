@@ -14,7 +14,6 @@ import pytest
 
 from hypothesis import settings, strategies as st
 from hypothesis.internal.compat import ceil
-from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.engine import ConjectureData, ConjectureRunner
 from hypothesis.strategies._internal import SearchStrategy
 

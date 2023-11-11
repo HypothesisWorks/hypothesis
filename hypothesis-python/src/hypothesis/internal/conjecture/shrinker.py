@@ -19,11 +19,13 @@ from hypothesis.internal.conjecture.choicetree import (
     prefix_selection_order,
     random_selection_order,
 )
-from hypothesis.internal.conjecture.data import ConjectureData, ConjectureResult, Status, DRAW_FLOAT_LABEL
-from hypothesis.internal.conjecture.floats import (
-    float_to_lex,
-    lex_to_float,
+from hypothesis.internal.conjecture.data import (
+    DRAW_FLOAT_LABEL,
+    ConjectureData,
+    ConjectureResult,
+    Status,
 )
+from hypothesis.internal.conjecture.floats import float_to_lex, lex_to_float
 from hypothesis.internal.conjecture.junkdrawer import (
     binary_search,
     find_integer,

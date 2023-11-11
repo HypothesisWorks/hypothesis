@@ -73,10 +73,7 @@ from hypothesis.internal.compat import (
     get_type_hints,
     is_typed_named_tuple,
 )
-from hypothesis.internal.conjecture.utils import (
-    calc_label_from_cls,
-    check_sample,
-)
+from hypothesis.internal.conjecture.utils import calc_label_from_cls, check_sample
 from hypothesis.internal.entropy import get_seeder_and_restorer
 from hypothesis.internal.floats import float_of
 from hypothesis.internal.reflection import (

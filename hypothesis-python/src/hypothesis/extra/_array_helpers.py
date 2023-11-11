@@ -13,7 +13,6 @@ from typing import NamedTuple, Optional, Tuple, Union
 
 from hypothesis import assume, strategies as st
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.validation import check_type, check_valid_interval
 from hypothesis.strategies._internal.utils import defines_strategy

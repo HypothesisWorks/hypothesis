@@ -16,7 +16,6 @@ from typing import Dict
 import attr
 
 from hypothesis.control import should_note
-from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.reflection import define_function_signature
 from hypothesis.reporting import report
 from hypothesis.strategies._internal.core import (
