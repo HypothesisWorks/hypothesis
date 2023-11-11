@@ -10,6 +10,7 @@
 
 import math
 import time
+from sys import float_info
 from collections import defaultdict
 from enum import IntEnum
 from random import Random
@@ -37,7 +38,14 @@ import attr
 from hypothesis.errors import Frozen, InvalidArgument, StopTest
 from hypothesis.internal.compat import int_from_bytes, int_to_bytes, floor
 from hypothesis.internal.conjecture.junkdrawer import IntList, uniform
-from hypothesis.internal.conjecture.utils import calc_label_from_name, unbounded_integers, integer_range, Sampler
+from hypothesis.internal.conjecture.utils import calc_label_from_name, Sampler
+from hypothesis.internal.floats import next_up, next_down, SIGNALING_NAN
+from hypothesis.internal.conjecture.floats import float_to_lex, lex_to_float
+from hypothesis.internal.floats import (
+    sign_aware_lte,
+    make_float_clamper,
+    float_to_int,
+)
 
 
 if TYPE_CHECKING:
@@ -54,12 +62,16 @@ else:
         return wrapper
 
 ONE_BOUND_INTEGERS_LABEL = calc_label_from_name("trying a one-bound int allowing 0")
+INTEGER_RANGE_DRAW_LABEL = calc_label_from_name("another draw in integer_range()")
 BIASED_COIN_LABEL = calc_label_from_name("biased_coin()")
 BIASED_COIN_INNER_LABEL = calc_label_from_name("inside biased_coin()")
 
 TOP_LABEL = calc_label_from_name("top")
 DRAW_BYTES_LABEL = calc_label_from_name("draw_bytes() in ConjectureData")
-
+DRAW_FLOAT_LABEL = calc_label_from_name("drawing a float")
+FLOAT_STRATEGY_DO_DRAW_LABEL = calc_label_from_name(
+    "getting another float in FloatStrategy"
+)
 
 InterestingOrigin = Tuple[
     Type[BaseException], str, int, Tuple[Any, ...], Tuple[Tuple[Any, ...], ...]
@@ -104,6 +116,41 @@ def structural_coverage(label: int) -> StructuralCoverageTag:
         return STRUCTURAL_COVERAGE_CACHE[label]
     except KeyError:
         return STRUCTURAL_COVERAGE_CACHE.setdefault(label, StructuralCoverageTag(label))
+
+
+INT_SIZES = (8, 16, 32, 64, 128)
+INT_SIZES_SAMPLER = Sampler((4.0, 8.0, 1.0, 1.0, 0.5))
+
+
+NASTY_FLOATS = sorted(
+    [
+        0.0,
+        0.5,
+        1.1,
+        1.5,
+        1.9,
+        1.0 / 3,
+        10e6,
+        10e-6,
+        1.175494351e-38,
+        next_up(0.0),
+        float_info.min,
+        float_info.max,
+        3.402823466e38,
+        9007199254740992,
+        1 - 10e-6,
+        2 + 10e-6,
+        1.192092896e-07,
+        2.2204460492503131e-016,
+    ]
+    + [2.0**-n for n in (24, 14, 149, 126)]  # minimum (sub)normals for float16,32
+    + [float_info.min / n for n in (2, 10, 1000, 100_000)]  # subnormal in float64
+    + [math.inf, math.nan] * 5
+    + [SIGNALING_NAN],
+    key=float_to_lex,
+)
+NASTY_FLOATS = list(map(float, NASTY_FLOATS))
+NASTY_FLOATS.extend([-x for x in NASTY_FLOATS])
 
 
 class Example:
@@ -993,12 +1040,92 @@ class PrimitiveProvider:
         min_value: Optional[float] = None,
         max_value: Optional[float] = None,
         allow_nan: bool = True,
-        allow_infinity: bool = True,
-        allow_subnormal: bool = True,
-        width: Literal[16, 32, 64] = 64,
+        smallest_nonzero_magnitude: Optional[float] = None,
+        # TODO: consider supporting these float widths at the IR level in the
+        # future.
+        # width: Literal[16, 32, 64] = 64,
         # exclude_min and exclude_max handled higher up
     ):
-        ...
+        # TODO: this does a decent bit of initialization logic *on every draw*,
+        # which is probably going to be expensive.
+        # Previously, this cost was paid per-strategy init on StringsStrategy.
+        if smallest_nonzero_magnitude == 0.0:  # pragma: no cover
+            raise FloatingPointError(
+                "Got allow_subnormal=True, but we can't represent subnormal floats "
+                "right now, in violation of the IEEE-754 floating-point "
+                "specification.  This is usually because something was compiled with "
+                "-ffast-math or a similar option, which sets global processor state.  "
+                "See https://simonbyrne.github.io/notes/fastmath/ for a more detailed "
+                "writeup - and good luck!"
+            )
+
+        def permitted(f):
+            assert isinstance(f, float)
+            if math.isnan(f):
+                return allow_nan
+            if 0 < abs(f) < smallest_nonzero_magnitude:
+                return False
+            return sign_aware_lte(min_value, f) and sign_aware_lte(f, max_value)
+
+        boundary_values = [
+            min_value,
+            next_up(min_value),
+            min_value + 1,
+            max_value - 1,
+            next_down(max_value),
+            max_value,
+        ]
+        nasty_floats = [
+            f for f in NASTY_FLOATS + boundary_values if permitted(f)
+        ]
+        weights = [0.2 * len(nasty_floats)] + [0.8] * len(nasty_floats)
+        sampler = Sampler(weights) if nasty_floats else None
+
+        pos_clamper = neg_clamper = None
+        if sign_aware_lte(0.0, max_value):
+            pos_min = max(min_value, smallest_nonzero_magnitude)
+            allow_zero = sign_aware_lte(min_value, 0.0)
+            pos_clamper = make_float_clamper(
+                pos_min, max_value, allow_zero=allow_zero
+            )
+        if sign_aware_lte(min_value, -0.0):
+            neg_max = min(max_value, -smallest_nonzero_magnitude)
+            allow_zero = sign_aware_lte(-0.0, max_value)
+            neg_clamper = make_float_clamper(
+                -neg_max, -min_value, allow_zero=allow_zero
+            )
+
+        forced_sign_bit: Optional[int] = None
+        if (pos_clamper is None) != (neg_clamper is None):
+            forced_sign_bit = 1 if neg_clamper else 0
+
+        # MARK: end initialization
+
+
+        while True:
+            self._cd.start_example(FLOAT_STRATEGY_DO_DRAW_LABEL)
+            i = sampler.sample(self._cd) if sampler else 0
+            self._cd.start_example(DRAW_FLOAT_LABEL)
+            if i == 0:
+                result = self._cd.draw_float_actual(forced_sign_bit=forced_sign_bit)
+                is_negative = float_to_int(result) >> 63
+                if is_negative:
+                    clamped = -neg_clamper(-result)
+                else:
+                    clamped = pos_clamper(result)
+                if clamped != result:
+                    self._cd.stop_example(discard=True)
+                    self._cd.start_example(DRAW_FLOAT_LABEL)
+                    self._cd.write_float(clamped)
+                    result = clamped
+            else:
+                result = nasty_floats[i - 1]
+
+                self._cd.write_float(result)
+
+            self._cd.stop_example()  # (DRAW_FLOAT_LABEL)
+            self._cd.stop_example()  # (FLOAT_STRATEGY_DO_DRAW_LABEL)
+            return result
 
     def draw_string(
         self,
@@ -1121,13 +1248,17 @@ class ConjectureData:
         min_value: Optional[float] = None,
         max_value: Optional[float] = None,
         allow_nan: bool = True,
-        allow_infinity: bool = True,
-        allow_subnormal: bool = True,
-        width: Literal[16, 32, 64] = 64,
+        smallest_nonzero_magnitude: Optional[float] = None,
+        # TODO: consider supporting these float widths at the IR level in the
+        # future.
+        # width: Literal[16, 32, 64] = 64,
         # exclude_min and exclude_max handled higher up
     ):
-        # FIXME assertions about infinity/subnormal
-        raise NotImplementedError()
+        # FIXME assertions about forced w.r.t min_value, max_value, allow_nan
+        return self.provider.draw_float(min_value=min_value,
+            max_value=max_value, allow_nan=allow_nan,
+            smallest_nonzero_magnitude=smallest_nonzero_magnitude
+        )
 
 
     def draw_string(
@@ -1147,8 +1278,7 @@ class ConjectureData:
     def draw_boolean(self, p: float = 0.5, *, forced: Optional[bool] = None):
         return self.provider.draw_boolean(p, forced=forced)
 
-    def unbounded_integers(self, *, forced: Optional[int] = None) -> int:
-        # FIXME: handle forced values here
+    def unbounded_integers(self) -> int:
         size = INT_SIZES[INT_SIZES_SAMPLER.sample(self)]
         r = self.draw_bits(size)
         sign = r & 1
@@ -1220,6 +1350,25 @@ class ConjectureData:
         assert lower <= result <= upper
         assert forced is None or result == forced, (result, forced, center, above)
         return result
+
+    def draw_float_actual(self, forced_sign_bit: Optional[int] = None) -> float:
+        """
+        Helper for draw_float which draws a random 64-bit float.
+        """
+        try:
+            # FIXME: move start_example out of the try block
+            self.start_example(DRAW_FLOAT_LABEL)
+            is_negative = self.draw_bits(1, forced=forced_sign_bit)
+            f = lex_to_float(self.draw_bits(64))
+            return -f if is_negative else f
+        finally:
+            self.stop_example()
+
+    def write_float(self, f: float) -> None:
+        sign = float_to_int(f) >> 63
+        self.draw_bits(1, forced=sign)
+        self.draw_bits(64, forced=float_to_lex(abs(f)))
+
 
     def as_result(self) -> Union[ConjectureResult, _Overrun]:
         """Convert the result of running this test into

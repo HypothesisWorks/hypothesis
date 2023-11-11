@@ -316,7 +316,7 @@ def test_float_shrink_can_run_when_canonicalisation_does_not_work(monkeypatch):
 
     @shrinking_from(base_buf)
     def shrinker(data):
-        flt.draw_float(data)
+        data.draw_float_actual()
         if bytes(data.buffer) == base_buf:
             data.mark_interesting()
 

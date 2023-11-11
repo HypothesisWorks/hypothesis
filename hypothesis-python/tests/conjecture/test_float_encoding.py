@@ -68,9 +68,9 @@ def test_double_reverse(i):
 @given(st.floats())
 def test_draw_write_round_trip(f):
     d = ConjectureData.for_buffer(bytes(10))
-    flt.write_float(d, f)
+    d.write_float(f)
     d2 = ConjectureData.for_buffer(d.buffer)
-    g = flt.draw_float(d2)
+    g = d2.draw_float_actual()
 
     if f == f:
         assert f == g
@@ -78,7 +78,7 @@ def test_draw_write_round_trip(f):
     assert float_to_int(f) == float_to_int(g)
 
     d3 = ConjectureData.for_buffer(d2.buffer)
-    flt.draw_float(d3)
+    d3.draw_float_actual()
     assert d3.buffer == d2.buffer
 
 
@@ -153,7 +153,7 @@ def float_runner(start, condition):
         return flt.lex_to_float(int_from_bytes(b))
 
     def test_function(data):
-        f = flt.draw_float(data)
+        f = data.draw_float_actual()
         if condition(f):
             data.mark_interesting()
 
@@ -167,7 +167,8 @@ def minimal_from(start, condition):
     runner = float_runner(start, condition)
     runner.shrink_interesting_examples()
     (v,) = runner.interesting_examples.values()
-    result = flt.draw_float(ConjectureData.for_buffer(v.buffer))
+    data = ConjectureData.for_buffer(v.buffer)
+    result = data.draw_float_actual()
     assert condition(result)
     return result
 
