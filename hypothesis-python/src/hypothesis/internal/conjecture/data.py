@@ -1012,14 +1012,8 @@ class PrimitiveProvider:
     ):
         ...
 
-    def draw_bytes(
-        self,
-        *,
-        forced: Optional[bytes] = None,
-        min_size: int = 0,
-        max_size: Optional[int] = None,
-    ):
-        return self._cd.draw_bytes
+    def draw_bytes(self, size: int):
+        return self._cd.draw_bits(8 * size).to_bytes(size, "big")
 
 class ConjectureData:
     @classmethod
@@ -1153,18 +1147,8 @@ class ConjectureData:
     ):
         raise NotImplementedError()
 
-    def draw_bytes(
-        self,
-        *,
-        forced: Optional[bytes] = None,
-        min_size: int = 0,
-        max_size: Optional[int] = None,
-    ):
-        if forced is not None:
-            assert min_size is None or min_size <= len(forced)
-            assert max_size is None or len(forced) <= max_size
-        return self.provider.draw_bytes(forced=forced, min_size=min_size,
-            max_size=max_size)
+    def draw_bytes(self, size: int):
+        return self.provider.draw_bytes(size)
 
     def draw_boolean(self, p: float = 0.5, *, forced: Optional[bool] = None):
         return self.provider.draw_boolean(p, forced=forced)
