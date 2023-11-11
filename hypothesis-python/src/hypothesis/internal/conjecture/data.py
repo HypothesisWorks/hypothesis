@@ -935,6 +935,8 @@ class PrimitiveProvider:
         weights: Optional[Sequence[float]] = None,
         shrink_towards: int = 0,
     ):
+        assert forced is None  # FIXME: handle forced values in unbounded_integers
+
         # This is easy to build on top of our existing conjecture utils,
         # and it's easy to build sampled_from and weighted_coin on this.
         if weights is not None:
@@ -945,27 +947,27 @@ class PrimitiveProvider:
             return range(min_value, max_value + 1)[idx]
 
         if min_value is None and max_value is None:
-            return unbounded_integers(self._cd, forced=forced)
+            return self._cd.unbounded_integers(forced=forced)
 
         if min_value is None:
             if max_value <= shrink_towards:
-                return max_value - abs(unbounded_integers(self._cd, forced=forced))
+                return max_value - abs(self._cd.unbounded_integers(forced=forced))
             else:
                 probe = max_value + 1
                 while max_value < probe:
                     self._cd.start_example(ONE_BOUND_INTEGERS_LABEL)
-                    probe = unbounded_integers(self._cd, forced=forced)
+                    probe = self._cd.unbounded_integers(forced=forced)
                     self._cd.stop_example(discard=max_value < probe)
                 return probe
 
         if max_value is None:
             if min_value >= shrink_towards:
-                return min_value + abs(unbounded_integers(self._cd, forced=forced))
+                return min_value + abs(self._cd.unbounded_integers(forced=forced))
             else:
                 probe = min_value - 1
                 while probe < min_value:
                     self._cd.start_example(ONE_BOUND_INTEGERS_LABEL)
-                    probe = unbounded_integers(self._cd, forced=forced)
+                    probe = self._cd.unbounded_integers(forced=forced)
                     self._cd.stop_example(discard=probe < min_value)
                 return probe
 
@@ -981,8 +983,7 @@ class PrimitiveProvider:
                 127: max_value - 1,
             }.get(bits, forced)
 
-        return integer_range(
-            self._cd,
+        return self._cd.integer_range(
             min_value,
             max_value,
             center=shrink_towards,
@@ -1152,6 +1153,80 @@ class ConjectureData:
 
     def draw_boolean(self, p: float = 0.5, *, forced: Optional[bool] = None):
         return self.provider.draw_boolean(p, forced=forced)
+
+    def unbounded_integers(self, *, forced: Optional[int] = None) -> int:
+        # FIXME: handle forced values here
+        size = INT_SIZES[INT_SIZES_SAMPLER.sample(self)]
+        r = self.draw_bits(size)
+        sign = r & 1
+        r >>= 1
+        if sign:
+            r = -r
+        return int(r)
+
+
+    def integer_range(
+        self,
+        lower: int,
+        upper: int,
+        *,
+        center: Optional[int] = None,
+        forced: Optional[int] = None,
+    ) -> int:
+        assert lower <= upper
+        assert forced is None or lower <= forced <= upper
+        if lower == upper:
+            # Write a value even when this is trivial so that when a bound depends
+            # on other values we don't suddenly disappear when the gap shrinks to
+            # zero - if that happens then often the data stream becomes misaligned
+            # and we fail to shrink in cases where we really should be able to.
+            self.draw_bits(1, forced=0)
+            return int(lower)
+
+        if center is None:
+            center = lower
+        center = min(max(center, lower), upper)
+
+        if center == upper:
+            above = False
+        elif center == lower:
+            above = True
+        else:
+            force_above = None if forced is None else forced < center
+            above = not self.draw_bits(1, forced=force_above)
+
+        if above:
+            gap = upper - center
+        else:
+            gap = center - lower
+
+        assert gap > 0
+
+        bits = gap.bit_length()
+        probe = gap + 1
+
+        if bits > 24 and self.draw_bits(3, forced=None if forced is None else 0):
+            # For large ranges, we combine the uniform random distribution from draw_bits
+            # with a weighting scheme with moderate chance.  Cutoff at 2 ** 24 so that our
+            # choice of unicode characters is uniform but the 32bit distribution is not.
+            idx = INT_SIZES_SAMPLER.sample(self)
+            bits = min(bits, INT_SIZES[idx])
+
+        while probe > gap:
+            self.start_example(INTEGER_RANGE_DRAW_LABEL)
+            probe = self.draw_bits(
+                bits, forced=None if forced is None else abs(forced - center)
+            )
+            self.stop_example(discard=probe > gap)
+
+        if above:
+            result = center + probe
+        else:
+            result = center - probe
+
+        assert lower <= result <= upper
+        assert forced is None or result == forced, (result, forced, center, above)
+        return result
 
     def as_result(self) -> Union[ConjectureResult, _Overrun]:
         """Convert the result of running this test into

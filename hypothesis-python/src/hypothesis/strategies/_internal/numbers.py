@@ -48,7 +48,6 @@ from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 
 # See https://github.com/python/mypy/issues/3186 - numbers.Real is wrong!
 Real = Union[int, float, Fraction, Decimal]
-ONE_BOUND_INTEGERS_LABEL = d.calc_label_from_name("trying a one-bound int allowing 0")
 
 
 class IntegersStrategy(SearchStrategy):
@@ -69,44 +68,7 @@ class IntegersStrategy(SearchStrategy):
         return f"integers({self.start}, {self.end})"
 
     def do_draw(self, data):
-        if self.start is None and self.end is None:
-            return d.unbounded_integers(data)
-
-        if self.start is None:
-            if self.end <= 0:
-                return self.end - abs(d.unbounded_integers(data))
-            else:
-                probe = self.end + 1
-                while self.end < probe:
-                    data.start_example(ONE_BOUND_INTEGERS_LABEL)
-                    probe = d.unbounded_integers(data)
-                    data.stop_example(discard=self.end < probe)
-                return probe
-
-        if self.end is None:
-            if self.start >= 0:
-                return self.start + abs(d.unbounded_integers(data))
-            else:
-                probe = self.start - 1
-                while probe < self.start:
-                    data.start_example(ONE_BOUND_INTEGERS_LABEL)
-                    probe = d.unbounded_integers(data)
-                    data.stop_example(discard=probe < self.start)
-                return probe
-
-        # For bounded integers, make the bounds and near-bounds more likely.
-        forced = None
-        if self.end - self.start > 127:
-            forced = {
-                122: self.start,
-                123: self.start,
-                124: self.end,
-                125: self.end,
-                126: self.start + 1,
-                127: self.end - 1,
-            }.get(data.draw_bits(7))
-
-        return d.integer_range(data, self.start, self.end, center=0, forced=forced)
+        return data.draw_integer(min_value=self.start, max_value=self.end)
 
     def filter(self, condition):
         if condition is math.isfinite:

@@ -11,7 +11,6 @@
 import pytest
 
 from hypothesis import given, settings
-from hypothesis.internal.conjecture.utils import integer_range
 from hypothesis.strategies import integers
 from hypothesis.strategies._internal.strategies import SearchStrategy
 
@@ -25,7 +24,7 @@ class interval(SearchStrategy):
         self.center = center
 
     def do_draw(self, data):
-        return integer_range(data, self.lower, self.upper, center=self.center)
+        return data.integer_range(self.lower, self.upper, center=self.center)
 
 
 @pytest.mark.parametrize(

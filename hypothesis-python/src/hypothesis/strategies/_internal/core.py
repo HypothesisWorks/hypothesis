@@ -76,7 +76,6 @@ from hypothesis.internal.compat import (
 from hypothesis.internal.conjecture.utils import (
     calc_label_from_cls,
     check_sample,
-    integer_range,
 )
 from hypothesis.internal.entropy import get_seeder_and_restorer
 from hypothesis.internal.floats import float_of
@@ -1700,7 +1699,7 @@ class PermutationStrategy(SearchStrategy):
         # change.  We don't consider the last element as it's always a no-op.
         result = list(self.values)
         for i in range(len(result) - 1):
-            j = integer_range(data, i, len(result) - 1)
+            j = data.integer_range(i, len(result) - 1)
             result[i], result[j] = result[j], result[i]
         return result
 

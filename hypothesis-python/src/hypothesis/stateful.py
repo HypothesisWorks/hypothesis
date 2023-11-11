@@ -440,7 +440,7 @@ class BundleReferenceStrategy(SearchStrategy):
         # Shrink towards the right rather than the left. This makes it easier
         # to delete data generated earlier, as when the error is towards the
         # end there can be a lot of hard to remove padding.
-        position = cu.integer_range(data, 0, len(bundle) - 1, center=len(bundle))
+        position = data.integer_range(0, len(bundle) - 1, center=len(bundle))
         if self.consume:
             return bundle.pop(position)
         else:

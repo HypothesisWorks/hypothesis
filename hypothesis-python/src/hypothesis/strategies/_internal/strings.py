@@ -15,7 +15,6 @@ from functools import lru_cache
 
 from hypothesis.errors import HypothesisWarning, InvalidArgument
 from hypothesis.internal import charmap
-from hypothesis.internal.conjecture.utils import integer_range
 from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.strategies._internal.collections import ListStrategy
 from hypothesis.strategies._internal.lazy import unwrap_strategies
@@ -80,11 +79,11 @@ class OneCharStringStrategy(SearchStrategy):
     def do_draw(self, data):
         if len(self.intervals) > 256:
             if data.draw_boolean(0.2):
-                i = integer_range(data, 256, len(self.intervals) - 1)
+                i = data.integer_range(256, len(self.intervals) - 1)
             else:
-                i = integer_range(data, 0, 255)
+                i = data.integer_range(0, 255)
         else:
-            i = integer_range(data, 0, len(self.intervals) - 1)
+            i = data.integer_range(0, len(self.intervals) - 1)
 
         i = self.rewrite_integer(i)
 

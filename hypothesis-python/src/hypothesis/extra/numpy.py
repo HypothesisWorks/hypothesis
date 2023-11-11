@@ -330,7 +330,7 @@ class ArrayStrategy(st.SearchStrategy):
             seen = set()
 
             while elements.more():
-                i = cu.integer_range(data, 0, self.array_size - 1)
+                i = data.integer_range(0, self.array_size - 1)
                 if not needs_fill[i]:
                     elements.reject()
                     continue

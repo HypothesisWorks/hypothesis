@@ -233,7 +233,7 @@ class ArtificialRandom(HypothesisRandom):
             return self.__convert_result(method, kwargs, result)
 
         if method == "_randbelow":
-            result = cu.integer_range(self.__data, 0, kwargs["n"] - 1)
+            result = self.__data.integer_range(0, kwargs["n"] - 1)
         elif method in ("betavariate", "random"):
             result = self.__data.draw(UNIFORM)
         elif method == "uniform":
@@ -266,18 +266,18 @@ class ArtificialRandom(HypothesisRandom):
                 if (start - stop) % step == 0:
                     endpoint -= 1
 
-                i = cu.integer_range(self.__data, 0, endpoint)
+                i = self.__data.integer_range(0, endpoint)
                 result = start + i * step
             else:
-                result = cu.integer_range(self.__data, start, stop - 1)
+                result = self.__data.integer_range(start, stop - 1)
         elif method == "randint":
-            result = cu.integer_range(self.__data, kwargs["a"], kwargs["b"])
+            result = self.__data.integer_range(kwargs["a"], kwargs["b"])
         # New in Python 3.12, so not taken by our coverage job
         elif method == "binomialvariate":  # pragma: no cover
-            result = cu.integer_range(self.__data, 0, kwargs["n"])
+            result = self.__data.integer_range(0, kwargs["n"])
         elif method == "choice":
             seq = kwargs["seq"]
-            result = cu.integer_range(self.__data, 0, len(seq) - 1)
+            result = self.__data.integer_range(0, len(seq) - 1)
         elif method == "choices":
             k = kwargs["k"]
             result = self.__data.draw(
