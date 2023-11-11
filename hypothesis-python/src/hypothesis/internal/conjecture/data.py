@@ -859,7 +859,7 @@ class PrimitiveProvider:
     def __init__(self, conjecturedata: "ConjectureData", /) -> None:
         self._cd = conjecturedata
 
-    def draw_boolean(self, p: float = 0.5, *, forced: Optional[bool] = None):
+    def draw_boolean(self, p: float = 0.5, *, forced: Optional[bool] = None) -> bool:
         # Note that this could also be implemented in terms of draw_integer().
         """Return True with probability p (assuming a uniform generator),
         shrinking towards False. If ``forced`` is set to a non-None value, this
@@ -981,7 +981,7 @@ class PrimitiveProvider:
         # weights are for choosing an element index from a bounded range
         weights: Optional[Sequence[float]] = None,
         shrink_towards: int = 0,
-    ):
+    ) -> int:
         # This is easy to build on top of our existing conjecture utils,
         # and it's easy to build sampled_from and weighted_coin on this.
         if weights is not None:
@@ -1046,7 +1046,7 @@ class PrimitiveProvider:
         # future.
         # width: Literal[16, 32, 64] = 64,
         # exclude_min and exclude_max handled higher up
-    ):
+    ) -> float:
         # TODO: this does a decent bit of initialization logic *on every draw*,
         # which is probably going to be expensive.
         # Previously, this cost was paid per-strategy init on StringsStrategy.
@@ -1130,10 +1130,10 @@ class PrimitiveProvider:
         alphabet: ... = ...,
         min_size: int = 0,
         max_size: Optional[int] = None,
-    ):
+    ) -> str:
         ...
 
-    def draw_bytes(self, size: int):
+    def draw_bytes(self, size: int) -> bytes:
         return self._cd.draw_bits(8 * size).to_bytes(size, "big")
 
 
