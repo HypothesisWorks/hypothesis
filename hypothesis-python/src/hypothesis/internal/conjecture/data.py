@@ -1373,10 +1373,6 @@ class ConjectureData:
         assert result.bit_length() <= n
         return result
 
-    def draw_bytes(self, n: int) -> bytes:
-        """Draw n bytes from the underlying source."""
-        return int_to_bytes(self.draw_bits(8 * n), n)
-
     def write(self, string: bytes) -> Optional[bytes]:
         """Write ``string`` to the output buffer."""
         self.__assert_not_frozen("write")
