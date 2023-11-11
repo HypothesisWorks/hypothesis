@@ -928,52 +928,49 @@ class PrimitiveProvider:
     def draw_integer(
         self,
         *,
-        forced: Optional[int] = None,
         min_value: Optional[int] = None,
         max_value: Optional[int] = None,
         # weights are for choosing an element index from a bounded range
         weights: Optional[Sequence[float]] = None,
         shrink_towards: int = 0,
     ):
-        assert forced is None  # FIXME: handle forced values in unbounded_integers
-
         # This is easy to build on top of our existing conjecture utils,
         # and it's easy to build sampled_from and weighted_coin on this.
         if weights is not None:
             sampler = Sampler(weights)
-            assert forced is None  # FIXME: handle forced values here
             idx = sampler.sample(self._cd)
             assert shrink_towards <= min_value  # FIXME: reorder for good shrinking
             return range(min_value, max_value + 1)[idx]
 
         if min_value is None and max_value is None:
-            return self._cd.unbounded_integers(forced=forced)
+            return self._cd.unbounded_integers()
 
         if min_value is None:
             if max_value <= shrink_towards:
-                return max_value - abs(self._cd.unbounded_integers(forced=forced))
+                return max_value - abs(self._cd.unbounded_integers())
             else:
                 probe = max_value + 1
                 while max_value < probe:
                     self._cd.start_example(ONE_BOUND_INTEGERS_LABEL)
-                    probe = self._cd.unbounded_integers(forced=forced)
+                    probe = self._cd.unbounded_integers()
                     self._cd.stop_example(discard=max_value < probe)
                 return probe
 
         if max_value is None:
             if min_value >= shrink_towards:
-                return min_value + abs(self._cd.unbounded_integers(forced=forced))
+                return min_value + abs(self._cd.unbounded_integers())
             else:
                 probe = min_value - 1
                 while probe < min_value:
                     self._cd.start_example(ONE_BOUND_INTEGERS_LABEL)
-                    probe = self._cd.unbounded_integers(forced=forced)
+                    probe = self._cd.unbounded_integers()
                     self._cd.stop_example(discard=probe < min_value)
                 return probe
 
         # For bounded integers, make the bounds and near-bounds more likely.
+        forced = None
         if max_value - min_value > 127:
-            bits = self._cd.draw_bits(7, forced=0 if forced is not None else None)
+            bits = self._cd.draw_bits(7)
             forced = {
                 122: min_value,
                 123: min_value,
@@ -981,7 +978,7 @@ class PrimitiveProvider:
                 125: max_value,
                 126: min_value + 1,
                 127: max_value - 1,
-            }.get(bits, forced)
+            }.get(bits)
 
         return self._cd.integer_range(
             min_value,
@@ -1103,7 +1100,6 @@ class ConjectureData:
     def draw_integer(
         self,
         *,
-        forced: Optional[int] = None,
         min_value: Optional[int] = None,
         max_value: Optional[int] = None,
         # weights are for choosing an element index from a bounded range
@@ -1115,11 +1111,8 @@ class ConjectureData:
             assert min_value is not None
             assert max_value is not None
             assert (max_value - min_value) <= 1024  # arbitrary practical limit
-        if forced is not None:
-            assert min_value is None or min_value <= forced
-            assert max_value is None or forced <= max_value
 
-        return self.provider.draw_integer(forced=forced, min_value=min_value,
+        return self.provider.draw_integer(min_value=min_value,
             max_value=max_value, weights=weights, shrink_towards=shrink_towards)
 
     def draw_float(
