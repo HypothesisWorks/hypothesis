@@ -38,7 +38,7 @@ from hypothesis.errors import Frozen, InvalidArgument, StopTest
 from hypothesis.internal.compat import floor, int_from_bytes, int_to_bytes
 from hypothesis.internal.conjecture.floats import float_to_lex, lex_to_float
 from hypothesis.internal.conjecture.junkdrawer import IntList, uniform
-from hypothesis.internal.conjecture.utils import Sampler, calc_label_from_name
+from hypothesis.internal.conjecture.utils import Sampler, calc_label_from_name, INT_SIZES, INT_SIZES_SAMPLER
 from hypothesis.internal.floats import (
     SIGNALING_NAN,
     float_to_int,
@@ -117,10 +117,6 @@ def structural_coverage(label: int) -> StructuralCoverageTag:
         return STRUCTURAL_COVERAGE_CACHE[label]
     except KeyError:
         return STRUCTURAL_COVERAGE_CACHE.setdefault(label, StructuralCoverageTag(label))
-
-
-INT_SIZES = (8, 16, 32, 64, 128)
-INT_SIZES_SAMPLER = Sampler((4.0, 8.0, 1.0, 1.0, 0.5))
 
 
 NASTY_FLOATS = sorted(
