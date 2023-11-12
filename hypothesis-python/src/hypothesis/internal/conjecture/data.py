@@ -856,11 +856,11 @@ class PrimitiveProvider:
         self._cd = conjecturedata
 
     def draw_boolean(self, p: float = 0.5, *, forced: Optional[bool] = None) -> bool:
-        # Note that this could also be implemented in terms of draw_integer().
         """Return True with probability p (assuming a uniform generator),
         shrinking towards False. If ``forced`` is set to a non-None value, this
         will always return that value but will write choices appropriate to having
         drawn that value randomly."""
+        # Note that this could also be implemented in terms of draw_integer().
 
         # NB this function is vastly more complicated than it may seem reasonable
         # for it to be. This is because it is used in a lot of places and it's
