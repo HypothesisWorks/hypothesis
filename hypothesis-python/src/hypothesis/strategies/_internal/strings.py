@@ -28,10 +28,6 @@ class OneCharStringStrategy(SearchStrategy):
         assert isinstance(intervals, IntervalSet)
         self.intervals = intervals
         self._force_repr = force_repr
-        self.zero_point = self.intervals.index_above(ord("0"))
-        self.Z_point = min(
-            self.intervals.index_above(ord("Z")), len(self.intervals) - 1
-        )
 
     @classmethod
     def from_characters_args(
@@ -77,40 +73,7 @@ class OneCharStringStrategy(SearchStrategy):
         return self._force_repr or f"OneCharStringStrategy({self.intervals!r})"
 
     def do_draw(self, data):
-        if len(self.intervals) > 256:
-            if data.draw_boolean(0.2):
-                i = data.integer_range(256, len(self.intervals) - 1)
-            else:
-                i = data.integer_range(0, 255)
-        else:
-            i = data.integer_range(0, len(self.intervals) - 1)
-
-        i = self.rewrite_integer(i)
-
-        return chr(self.intervals[i])
-
-    def rewrite_integer(self, i):
-        # We would like it so that, where possible, shrinking replaces
-        # characters with simple ascii characters, so we rejig this
-        # bit so that the smallest values are 0, 1, 2, ..., Z.
-        #
-        # Imagine that numbers are laid out as abc0yyyZ...
-        # this rearranges them so that they are laid out as
-        # 0yyyZcba..., which gives a better shrinking order.
-        if i <= self.Z_point:
-            # We want to rewrite the integers [0, n] inclusive
-            # to [zero_point, Z_point].
-            n = self.Z_point - self.zero_point
-            if i <= n:
-                i += self.zero_point
-            else:
-                # We want to rewrite the integers [n + 1, Z_point] to
-                # [zero_point, 0] (reversing the order so that codepoints below
-                # zero_point shrink upwards).
-                i = self.zero_point - (i - n)
-                assert i < self.zero_point
-            assert 0 <= i <= self.Z_point
-        return i
+        return data.draw_string(self.intervals, min_size=1, max_size=1)
 
 
 class TextStrategy(ListStrategy):

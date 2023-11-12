@@ -14,6 +14,7 @@ from collections import defaultdict
 from enum import IntEnum
 from random import Random
 from sys import float_info
+from hypothesis.internal.intervalsets import IntervalSet
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -37,8 +38,8 @@ import attr
 from hypothesis.errors import Frozen, InvalidArgument, StopTest
 from hypothesis.internal.compat import floor, int_from_bytes, int_to_bytes
 from hypothesis.internal.conjecture.floats import float_to_lex, lex_to_float
-from hypothesis.internal.conjecture.junkdrawer import IntList, uniform
-from hypothesis.internal.conjecture.utils import Sampler, calc_label_from_name, INT_SIZES, INT_SIZES_SAMPLER
+from hypothesis.internal.conjecture.junkdrawer import IntList, uniform, zero_point, Z_point, char_rewrite_integer
+from hypothesis.internal.conjecture.utils import Sampler, calc_label_from_name, INT_SIZES, INT_SIZES_SAMPLER, many
 from hypothesis.internal.floats import (
     SIGNALING_NAN,
     float_to_int,
@@ -1121,13 +1122,27 @@ class PrimitiveProvider:
 
     def draw_string(
         self,
+        intervals: IntervalSet,
         *,
-        # Should we use `regex: str = ".*"` instead of alphabet and sizes?
-        alphabet: ... = ...,
         min_size: int = 0,
         max_size: Optional[int] = None,
     ) -> str:
-        ...
+        average_size = min(
+            max(min_size * 2, min_size + 5),
+            0.5 * (min_size + max_size),
+        )
+
+        chars = []
+        elements = many(
+            self._cd,
+            min_size=min_size,
+            max_size=max_size,
+            average_size=average_size,
+        )
+        while elements.more():
+            chars.append(self._cd.draw_character(intervals))
+
+        return "".join(chars)
 
     def draw_bytes(self, size: int) -> bytes:
         return self._cd.draw_bits(8 * size).to_bytes(size, "big")
@@ -1261,20 +1276,38 @@ class ConjectureData:
 
     def draw_string(
         self,
+        intervals: IntervalSet,
         *,
-        forced: Optional[str] = None,
-        # Should we use `regex: str = ".*"` instead of alphabet and sizes?
-        alphabet: ... = ...,
         min_size: int = 0,
         max_size: Optional[int] = None,
-    ):
-        raise NotImplementedError
+    ) -> str:
+        return self.provider.draw_string(intervals, min_size=min_size,
+            max_size=max_size)
 
     def draw_bytes(self, size: int):
         return self.provider.draw_bytes(size)
 
     def draw_boolean(self, p: float = 0.5, *, forced: Optional[bool] = None):
         return self.provider.draw_boolean(p, forced=forced)
+
+    def draw_character(
+        self,
+        intervals: IntervalSet
+    ) -> chr:
+        if len(intervals) > 256:
+            if self.draw_boolean(0.2):
+                i = self.integer_range(256, len(intervals) - 1)
+            else:
+                i = self.integer_range(0, 255)
+        else:
+            i = self.integer_range(0, len(intervals) - 1)
+
+        i = char_rewrite_integer(
+            i,
+            zero_point=zero_point(intervals),
+            Z_point=Z_point(intervals)
+         )
+        return chr(intervals[i])
 
     def unbounded_integers(self) -> int:
         size = INT_SIZES[INT_SIZES_SAMPLER.sample(self)]
