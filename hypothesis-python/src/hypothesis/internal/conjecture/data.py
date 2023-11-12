@@ -14,7 +14,6 @@ from collections import defaultdict
 from enum import IntEnum
 from random import Random
 from sys import float_info
-from hypothesis.internal.intervalsets import IntervalSet
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -38,8 +37,20 @@ import attr
 from hypothesis.errors import Frozen, InvalidArgument, StopTest
 from hypothesis.internal.compat import floor, int_from_bytes, int_to_bytes
 from hypothesis.internal.conjecture.floats import float_to_lex, lex_to_float
-from hypothesis.internal.conjecture.junkdrawer import IntList, uniform, zero_point, Z_point, char_rewrite_integer
-from hypothesis.internal.conjecture.utils import Sampler, calc_label_from_name, INT_SIZES, INT_SIZES_SAMPLER, many
+from hypothesis.internal.conjecture.junkdrawer import (
+    IntList,
+    Z_point,
+    char_rewrite_integer,
+    uniform,
+    zero_point,
+)
+from hypothesis.internal.conjecture.utils import (
+    INT_SIZES,
+    INT_SIZES_SAMPLER,
+    Sampler,
+    calc_label_from_name,
+    many,
+)
 from hypothesis.internal.floats import (
     SIGNALING_NAN,
     float_to_int,
@@ -48,6 +59,7 @@ from hypothesis.internal.floats import (
     next_up,
     sign_aware_lte,
 )
+from hypothesis.internal.intervalsets import IntervalSet
 
 if TYPE_CHECKING:
     from typing_extensions import dataclass_transform
@@ -1281,8 +1293,9 @@ class ConjectureData:
         min_size: int = 0,
         max_size: Optional[int] = None,
     ) -> str:
-        return self.provider.draw_string(intervals, min_size=min_size,
-            max_size=max_size)
+        return self.provider.draw_string(
+            intervals, min_size=min_size, max_size=max_size
+        )
 
     def draw_bytes(self, size: int):
         return self.provider.draw_bytes(size)
@@ -1290,10 +1303,7 @@ class ConjectureData:
     def draw_boolean(self, p: float = 0.5, *, forced: Optional[bool] = None):
         return self.provider.draw_boolean(p, forced=forced)
 
-    def draw_character(
-        self,
-        intervals: IntervalSet
-    ) -> chr:
+    def draw_character(self, intervals: IntervalSet) -> chr:
         if len(intervals) > 256:
             if self.draw_boolean(0.2):
                 i = self.integer_range(256, len(intervals) - 1)
@@ -1303,10 +1313,8 @@ class ConjectureData:
             i = self.integer_range(0, len(intervals) - 1)
 
         i = char_rewrite_integer(
-            i,
-            zero_point=zero_point(intervals),
-            Z_point=Z_point(intervals)
-         )
+            i, zero_point=zero_point(intervals), Z_point=Z_point(intervals)
+        )
         return chr(intervals[i])
 
     def unbounded_integers(self) -> int:

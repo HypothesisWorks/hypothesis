@@ -403,8 +403,10 @@ class SelfOrganisingList(Generic[T]):
 def zero_point(intervals: IntervalSet):
     return intervals.index_above(ord("0"))
 
+
 def Z_point(intervals: IntervalSet):
     return min(intervals.index_above(ord("Z")), len(intervals) - 1)
+
 
 def char_rewrite_integer(i: int, *, zero_point: int, Z_point: int) -> int:
     # We would like it so that, where possible, shrinking replaces
