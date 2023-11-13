@@ -158,7 +158,7 @@ jobs:
         pip install -r requirements/coverage.txt
         pip install hypothesis-python/[all]
     - name: Run tests
-      run: python -m pytest --numprocesses auto hypothesis-python/tests/ --ignore=hypothesis-python/tests/quality/ --ignore=hypothesis-python/tests/ghostwriter/  --ignore=hypothesis-python/tests/test_annotated_types.py
+      run: python -m pytest --numprocesses auto hypothesis-python/tests/ --ignore=hypothesis-python/tests/quality/ --ignore=hypothesis-python/tests/ghostwriter/
 
   test-osx:
     runs-on: macos-latest

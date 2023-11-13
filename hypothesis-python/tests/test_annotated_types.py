@@ -9,22 +9,21 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import re
-from typing import Annotated
+import sys
 
 import pytest
 
 from hypothesis import strategies as st
 from hypothesis.errors import HypothesisWarning, ResolutionFailed
+from hypothesis.strategies._internal.lazy import unwrap_strategies
 from hypothesis.strategies._internal.strategies import FilteredStrategy
 
 try:
+    from typing import Annotated  # new in Python 3.9
+
     import annotated_types as at
 except ImportError:
-    at = None
-
-pytestmark = pytest.mark.skipif(
-    at is None, reason="Requires annotated_types to be installed."
-)
+    pytest.skip()
 
 
 def test_strategy_priority_over_constraints():
@@ -36,43 +35,28 @@ def test_strategy_priority_over_constraints():
 
 def test_invalid_annotated_type():
     with pytest.raises(ResolutionFailed):
-        st.from_type(Annotated[None, "dummy", Annotated[int, "dummy"]])
+        st.from_type(Annotated[None, "dummy", Annotated[int, "dummy"]]).example()
 
 
 @pytest.mark.parametrize(
     "unsupported_constraints,message",
     [
-        (
-            (at.Timezone(None),),
-            "Timezone(tz=None) is currently not supported and will be ignored.",
-        ),
-        (
-            (at.MultipleOf(1),),
-            "MultipleOf(multiple_of=1) is currently not supported and will be ignored.",
-        ),
+        ((at.Timezone(None),), "Ignoring unsupported Timezone(tz=None)"),
+        ((at.MultipleOf(1),), "Ignoring unsupported MultipleOf(multiple_of=1)"),
         (
             (at.Timezone(None), at.MultipleOf(1)),
-            "Timezone(tz=None), MultipleOf(multiple_of=1) are currently not supported and will be ignored.",
+            "Ignoring unsupported Timezone(tz=None), MultipleOf(multiple_of=1)",
         ),
     ],
 )
 def test_unsupported_constraints(unsupported_constraints, message):
+    if sys.version_info >= (3, 11):
+        # This is the preferred format, but also a SyntaxError on Python <= 3.10
+        t = eval("Annotated[int, *unsupported_constraints]", globals(), locals())
+    else:
+        t = Annotated.__class_getitem__((int, *unsupported_constraints))
     with pytest.warns(HypothesisWarning, match=re.escape(message)):
-        # Calling __class_getitem__ as Annotated[int, *args] is not supported <3.11
-        # TODO find another solution, this will most likely break since from 3.13 Annotated is a SpecialForm
-        st.from_type(Annotated.__class_getitem__((int, *unsupported_constraints)))
-
-
-def test_unknown_constraint(capsys):
-    class Unknown(at.BaseMetadata):
-        def __str__(self):
-            return "unknown"
-
-    st.from_type(Annotated[int, Unknown()])
-
-    captured = capsys.readouterr()
-    expected = "WARNING: the following constraints are unknown and will be ignored: unknown."
-    assert captured.out == expected
+        st.from_type(t).example()
 
 
 @pytest.mark.parametrize(
@@ -82,20 +66,19 @@ def test_unknown_constraint(capsys):
         (Annotated[int, at.Ge(1)], "integers(min_value=1)"),
         (Annotated[int, at.Lt(1)], "integers(max_value=0)"),
         (Annotated[int, at.Le(1)], "integers(max_value=1)"),
-        (Annotated[int, at.Interval(ge=1, le=3)], "integers(min_value=1, max_value=3)"),
+        (Annotated[int, at.Interval(ge=1, le=3)], "integers(1, 3)"),
         (Annotated[int, at.Interval(ge=1), at.Ge(2)], "integers(min_value=2)"),
     ],
 )
 def test_annotated_type_int(annotated_type, expected_strategy_repr):
-    strategy = st.from_type(annotated_type)
-    assert repr(strategy.wrapped_strategy) == expected_strategy_repr
+    strategy = unwrap_strategies(st.from_type(annotated_type))
+    assert repr(strategy) == expected_strategy_repr
 
 
 def test_predicate_constraint():
-
     def func(_):
         return True
 
-    strategy = st.from_type(Annotated[int, at.Predicate(func)])
+    strategy = unwrap_strategies(st.from_type(Annotated[int, at.Predicate(func)]))
     assert isinstance(strategy, FilteredStrategy)
     assert strategy.flat_conditions == (func,)
