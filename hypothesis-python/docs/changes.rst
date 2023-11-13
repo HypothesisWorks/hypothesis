@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.88.4:
+
+-------------------
+6.88.4 - 2023-11-13
+-------------------
+
+This patch adds a warning when :func:`@st.composite <hypothesis.strategies.composite>`
+wraps a function annotated as returning a :class:`~hypothesis.strategies.SearchStrategy`,
+since this is usually an error (:issue:`3786`).  The function should return a value,
+and the decorator will convert it to a function which returns a strategy.
+
 .. _v6.88.3:
 
 -------------------
