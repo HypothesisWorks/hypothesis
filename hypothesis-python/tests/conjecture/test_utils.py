@@ -175,7 +175,7 @@ def test_integer_range_lower_equals_upper():
 
 def test_integer_range_center_default():
     data = ConjectureData.for_buffer([0])
-    assert data.integer_range(lower=0, upper=10, center=None)
+    assert data.integer_range(lower=0, upper=10, center=None) == 0
 
 
 def test_center_in_middle_below():
