@@ -152,7 +152,7 @@ for r in RANDOM_METHODS:
 
 @attr.s(slots=True)
 class RandomState:
-    next_states = attr.ib(default=attr.Factory(dict))
+    next_states: dict = attr.ib(factory=dict)
     state_id = attr.ib(default=None)
 
 

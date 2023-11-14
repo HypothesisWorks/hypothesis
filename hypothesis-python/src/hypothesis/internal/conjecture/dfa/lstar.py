@@ -105,7 +105,7 @@ class DistinguishedState:
 
     # A cache of transitions out of this state, mapping bytes to the states
     # that they lead to.
-    transitions = attr.ib(default=attr.Factory(dict))
+    transitions: dict = attr.ib(factory=dict)
 
 
 class LStar:
