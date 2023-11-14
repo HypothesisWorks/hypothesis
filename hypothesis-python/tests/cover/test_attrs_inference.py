@@ -54,9 +54,9 @@ class Inferrables:
     typing_union = attr.ib(type=typing.Union[str, int])
 
     has_default = attr.ib(default=0)
-    has_default_factory = attr.ib(factory=list)
+    has_default_factory = attr.ib(default=attr.Factory(list))
     has_default_factory_takes_self = attr.ib(  # uninferrable but has default
-        factory=lambda _: [], takes_self=True
+        default=attr.Factory(lambda _: [], takes_self=True)
     )
 
 

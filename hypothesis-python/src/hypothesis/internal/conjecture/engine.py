@@ -976,7 +976,7 @@ class ConjectureRunner:
             self,
             example,
             predicate,
-            allow_transition,
+            allow_transition=allow_transition,
             explain=Phase.explain in self.settings.phases,
         )
 

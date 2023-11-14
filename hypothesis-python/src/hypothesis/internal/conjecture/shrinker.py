@@ -267,6 +267,7 @@ class Shrinker:
         engine: "ConjectureRunner",
         initial: ConjectureData,
         predicate: Optional[Callable[..., bool]],
+        *,
         allow_transition: bool,
         explain: bool,
     ):
@@ -282,7 +283,7 @@ class Shrinker:
         self.engine = engine
         self.__predicate = predicate or (lambda data: True)
         self.__allow_transition = allow_transition or (lambda source, destination: True)
-        self.__derived_values = {}
+        self.__derived_values: dict = {}
         self.__pending_shrink_explanation = None
 
         self.initial_size = len(initial.buffer)
@@ -479,7 +480,7 @@ class Shrinker:
                         self.debug("Useless passes:")
                     self.debug("")
                     for p in sorted(
-                        self.passes_by_name,
+                        self.passes_by_name.values(),
                         key=lambda t: (-t.calls, t.deletions, t.shrinks),
                     ):
                         if p.calls == 0:

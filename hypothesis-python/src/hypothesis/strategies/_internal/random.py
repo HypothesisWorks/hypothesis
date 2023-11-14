@@ -11,7 +11,7 @@
 import inspect
 import math
 from random import Random
-from typing import Dict
+from typing import Any, Dict
 
 import attr
 
@@ -153,7 +153,7 @@ for r in RANDOM_METHODS:
 @attr.s(slots=True)
 class RandomState:
     next_states: dict = attr.ib(factory=dict)
-    state_id = attr.ib(default=None)
+    state_id: Any = attr.ib(default=None)
 
 
 def state_for_seed(data, seed):

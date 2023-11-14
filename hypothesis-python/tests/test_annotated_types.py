@@ -23,7 +23,7 @@ try:
 
     import annotated_types as at
 except ImportError:
-    pytest.skip()
+    pytest.skip(allow_module_level=True)
 
 
 def test_strategy_priority_over_constraints():

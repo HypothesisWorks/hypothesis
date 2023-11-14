@@ -30,17 +30,7 @@ import warnings
 from functools import partial
 from pathlib import PurePath
 from types import FunctionType
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Collection,
-    Iterator,
-    List,
-    Tuple,
-    get_args,
-    get_origin,
-)
+from typing import TYPE_CHECKING, Any, Collection, Iterator, Tuple, get_args, get_origin
 
 from hypothesis import strategies as st
 from hypothesis.errors import HypothesisWarning, InvalidArgument, ResolutionFailed
