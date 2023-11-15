@@ -296,7 +296,7 @@ def _get_constraints(args: Tuple[Any, ...]) -> Iterator["at.BaseMetadata"]:
                 yield arg
             elif getattr(arg, "__is_annotated_types_grouped_metadata__", False):
                 yield from arg
-            elif isinstance(arg, slice) and arg.step == 1:
+            elif isinstance(arg, slice) and arg.step in (1, None):
                 yield from at.Len(arg.start or 0, arg.stop)
 
 
@@ -316,16 +316,13 @@ def find_annotated_strategy(annotated_type):
             return arg
 
     filter_conditions = []
-    if at := sys.modules.get("annotated_types"):  # pragma: no branch
-        # `constraints` elements can be "consumed" by the next following calls/instructions
-        constraints = list(_get_constraints(metadata))
-
+    if "annotated_types" in sys.modules:
         unsupported = []
-        for constraint in constraints:
-            if isinstance(constraint, (at.MultipleOf, at.Timezone)):
-                unsupported.append(constraint)
-            elif convert := get_constraints_filter_map().get(type(constraint)):
+        for constraint in _get_constraints(metadata):
+            if convert := get_constraints_filter_map().get(type(constraint)):
                 filter_conditions.append(convert(constraint))
+            else:
+                unsupported.append(constraint)
         if unsupported:
             msg = f"Ignoring unsupported {', '.join(map(repr, unsupported))}"
             warnings.warn(msg, HypothesisWarning, stacklevel=2)
