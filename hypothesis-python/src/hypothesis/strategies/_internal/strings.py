@@ -78,6 +78,17 @@ class OneCharStringStrategy(SearchStrategy):
 
 class TextStrategy(ListStrategy):
     def do_draw(self, data):
+        # if our element strategy is OneCharStringStrategy, we can skip the
+        # ListStrategy draw and jump right to our nice IR string draw.
+        # Doing so for user-provided element strategies is not correct in
+        # general, as they may define a different distribution than our IR.
+        elems = unwrap_strategies(self.element_strategy)
+        if isinstance(elems, OneCharStringStrategy):
+            return data.draw_string(
+                elems.intervals,
+                min_size=self.min_size,
+                max_size=self.max_size
+            )
         return "".join(super().do_draw(data))
 
     def __repr__(self):
