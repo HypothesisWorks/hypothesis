@@ -10,10 +10,11 @@
 
 import re
 import sys
+from typing import List, Set
 
 import pytest
 
-from hypothesis import strategies as st
+from hypothesis import given, strategies as st
 from hypothesis.errors import HypothesisWarning, ResolutionFailed
 from hypothesis.strategies._internal.lazy import unwrap_strategies
 from hypothesis.strategies._internal.strategies import FilteredStrategy
@@ -82,3 +83,32 @@ def test_predicate_constraint():
     strategy = unwrap_strategies(st.from_type(Annotated[int, at.Predicate(func)]))
     assert isinstance(strategy, FilteredStrategy)
     assert strategy.flat_conditions == (func,)
+
+
+class MyCollection:
+    def __init__(self, values: List[int]) -> None:
+        self._values = values
+
+    def __len__(self) -> int:
+        return len(self._values)
+
+
+@pytest.mark.parametrize("lo", [0, 1])
+@pytest.mark.parametrize("hi", [None, 10])
+@pytest.mark.parametrize("type_", [List[int], Set[int], MyCollection])
+@given(data=st.data())
+def test_collection_sizes(data, lo, hi, type_):
+    print(f"{type_=} {lo=} {hi=}")
+    assert lo < (hi or 11)
+    t = Annotated[type_, at.Len(min_length=lo, max_length=hi)]
+    s = st.from_type(t)
+    value = data.draw(s)
+    assert lo is None or lo <= len(value)
+    assert hi is None or len(value) <= hi
+
+
+@given(st.data())
+def test_collection_size_from_slice(data):
+    t = Annotated[MyCollection, "we just ignore this", slice(1, 10)]
+    value = data.draw(st.from_type(t))
+    assert 1 <= len(value) <= 10

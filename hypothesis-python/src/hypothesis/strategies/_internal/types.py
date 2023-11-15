@@ -30,12 +30,13 @@ import warnings
 from functools import partial
 from pathlib import PurePath
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, Collection, Iterator, Tuple, get_args, get_origin
+from typing import TYPE_CHECKING, Any, Iterator, Tuple, get_args, get_origin
 
 from hypothesis import strategies as st
 from hypothesis.errors import HypothesisWarning, InvalidArgument, ResolutionFailed
 from hypothesis.internal.compat import PYPY, BaseExceptionGroup, ExceptionGroup
 from hypothesis.internal.conjecture.utils import many as conjecture_utils_many
+from hypothesis.internal.filtering import max_len, min_len
 from hypothesis.strategies._internal.datetime import zoneinfo  # type: ignore
 from hypothesis.strategies._internal.ipaddress import (
     SPECIAL_IPv4_RANGES,
@@ -273,14 +274,6 @@ def is_annotated_type(thing):
     )
 
 
-def max_len(element: Collection, max_length: int) -> bool:
-    return len(element) <= max_length
-
-
-def min_len(element: Collection, min_length: int) -> bool:
-    return len(element) >= min_length
-
-
 def get_constraints_filter_map():
     if at := sys.modules.get("annotated_types"):  # pragma: no branch
         return {
@@ -289,15 +282,11 @@ def get_constraints_filter_map():
             at.Ge: lambda constraint: partial(operator.le, constraint.ge),
             at.Lt: lambda constraint: partial(operator.gt, constraint.lt),
             at.Le: lambda constraint: partial(operator.ge, constraint.le),
-            at.MaxLen: lambda constraint: partial(
-                max_len, max_length=constraint.max_length
-            ),
-            at.MinLen: lambda constraint: partial(
-                min_len, max_length=constraint.min_length
-            ),
+            at.MinLen: lambda constraint: partial(min_len, constraint.min_length),
+            at.MaxLen: lambda constraint: partial(max_len, constraint.max_length),
             at.Predicate: lambda constraint: constraint.func,
         }
-    return {}
+    return {}  # pragma: no cover
 
 
 def _get_constraints(args: Tuple[Any, ...]) -> Iterator["at.BaseMetadata"]:
