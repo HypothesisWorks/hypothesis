@@ -1000,27 +1000,27 @@ class PrimitiveProvider:
             return range(min_value, max_value + 1)[idx]
 
         if min_value is None and max_value is None:
-            return self._cd.unbounded_integers()
+            return self._draw_unbounded_integer()
 
         if min_value is None:
             if max_value <= shrink_towards:
-                return max_value - abs(self._cd.unbounded_integers())
+                return max_value - abs(self._draw_unbounded_integer())
             else:
                 probe = max_value + 1
                 while max_value < probe:
                     self._cd.start_example(ONE_BOUND_INTEGERS_LABEL)
-                    probe = self._cd.unbounded_integers()
+                    probe = self._draw_unbounded_integer()
                     self._cd.stop_example(discard=max_value < probe)
                 return probe
 
         if max_value is None:
             if min_value >= shrink_towards:
-                return min_value + abs(self._cd.unbounded_integers())
+                return min_value + abs(self._draw_unbounded_integer())
             else:
                 probe = min_value - 1
                 while probe < min_value:
                     self._cd.start_example(ONE_BOUND_INTEGERS_LABEL)
-                    probe = self._cd.unbounded_integers()
+                    probe = self._draw_unbounded_integer()
                     self._cd.stop_example(discard=probe < min_value)
                 return probe
 
@@ -1112,7 +1112,7 @@ class PrimitiveProvider:
             i = sampler.sample(self._cd) if sampler else 0
             self._cd.start_example(DRAW_FLOAT_LABEL)
             if i == 0:
-                result = self._cd.draw_float_actual(forced_sign_bit=forced_sign_bit)
+                result = self._draw_float(forced_sign_bit=forced_sign_bit)
                 is_negative = float_to_int(result) >> 63
                 if is_negative:
                     clamped = -neg_clamper(-result)
@@ -1121,12 +1121,12 @@ class PrimitiveProvider:
                 if clamped != result:
                     self._cd.stop_example(discard=True)
                     self._cd.start_example(DRAW_FLOAT_LABEL)
-                    self._cd.write_float(clamped)
+                    self._write_float(clamped)
                     result = clamped
             else:
                 result = nasty_floats[i - 1]
 
-                self._cd.write_float(result)
+                self._write_float(result)
 
             self._cd.stop_example()  # (DRAW_FLOAT_LABEL)
             self._cd.stop_example()  # (FLOAT_STRATEGY_DO_DRAW_LABEL)
@@ -1152,13 +1152,53 @@ class PrimitiveProvider:
             average_size=average_size,
         )
         while elements.more():
-            chars.append(self._cd.draw_character(intervals))
+            chars.append(self._draw_character(intervals))
 
         return "".join(chars)
 
     def draw_bytes(self, size: int) -> bytes:
         return self._cd.draw_bits(8 * size).to_bytes(size, "big")
 
+    def _draw_float(self, forced_sign_bit: Optional[int] = None) -> float:
+        """
+        Helper for draw_float which draws a random 64-bit float.
+        """
+        try:
+            # FIXME: move start_example out of the try block
+            self._cd.start_example(DRAW_FLOAT_LABEL)
+            is_negative = self._cd.draw_bits(1, forced=forced_sign_bit)
+            f = lex_to_float(self._cd.draw_bits(64))
+            return -f if is_negative else f
+        finally:
+            self._cd.stop_example()
+
+    def _write_float(self, f: float) -> None:
+        sign = float_to_int(f) >> 63
+        self._cd.draw_bits(1, forced=sign)
+        self._cd.draw_bits(64, forced=float_to_lex(abs(f)))
+
+    def _draw_character(self, intervals: IntervalSet) -> chr:
+        if len(intervals) > 256:
+            if self.draw_boolean(0.2):
+                i = self._cd.integer_range(256, len(intervals) - 1)
+            else:
+                i = self._cd.integer_range(0, 255)
+        else:
+            i = self._cd.integer_range(0, len(intervals) - 1)
+
+        i = char_rewrite_integer(
+            i, zero_point=zero_point(intervals), Z_point=Z_point(intervals)
+        )
+        return chr(intervals[i])
+
+    def _draw_unbounded_integer(self) -> int:
+        size = INT_SIZES[INT_SIZES_SAMPLER.sample(self._cd)]
+        r = self._cd.draw_bits(size)
+        sign = r & 1
+        r >>= 1
+        if sign:
+            r = -r
+        return int(r)
 
 class ConjectureData:
     @classmethod
@@ -1303,29 +1343,6 @@ class ConjectureData:
     def draw_boolean(self, p: float = 0.5, *, forced: Optional[bool] = None):
         return self.provider.draw_boolean(p, forced=forced)
 
-    def draw_character(self, intervals: IntervalSet) -> chr:
-        if len(intervals) > 256:
-            if self.draw_boolean(0.2):
-                i = self.integer_range(256, len(intervals) - 1)
-            else:
-                i = self.integer_range(0, 255)
-        else:
-            i = self.integer_range(0, len(intervals) - 1)
-
-        i = char_rewrite_integer(
-            i, zero_point=zero_point(intervals), Z_point=Z_point(intervals)
-        )
-        return chr(intervals[i])
-
-    def unbounded_integers(self) -> int:
-        size = INT_SIZES[INT_SIZES_SAMPLER.sample(self)]
-        r = self.draw_bits(size)
-        sign = r & 1
-        r >>= 1
-        if sign:
-            r = -r
-        return int(r)
-
     def integer_range(
         self,
         lower: int,
@@ -1388,24 +1405,6 @@ class ConjectureData:
         assert lower <= result <= upper
         assert forced is None or result == forced, (result, forced, center, above)
         return result
-
-    def draw_float_actual(self, forced_sign_bit: Optional[int] = None) -> float:
-        """
-        Helper for draw_float which draws a random 64-bit float.
-        """
-        try:
-            # FIXME: move start_example out of the try block
-            self.start_example(DRAW_FLOAT_LABEL)
-            is_negative = self.draw_bits(1, forced=forced_sign_bit)
-            f = lex_to_float(self.draw_bits(64))
-            return -f if is_negative else f
-        finally:
-            self.stop_example()
-
-    def write_float(self, f: float) -> None:
-        sign = float_to_int(f) >> 63
-        self.draw_bits(1, forced=sign)
-        self.draw_bits(64, forced=float_to_lex(abs(f)))
 
     def as_result(self) -> Union[ConjectureResult, _Overrun]:
         """Convert the result of running this test into
