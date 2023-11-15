@@ -1177,7 +1177,7 @@ class PrimitiveProvider:
         self._cd.draw_bits(1, forced=sign)
         self._cd.draw_bits(64, forced=float_to_lex(abs(f)))
 
-    def _draw_character(self, intervals: IntervalSet) -> chr:
+    def _draw_character(self, intervals: IntervalSet) -> str:
         if len(intervals) > 256:
             if self.draw_boolean(0.2):
                 i = self._cd.integer_range(256, len(intervals) - 1)
