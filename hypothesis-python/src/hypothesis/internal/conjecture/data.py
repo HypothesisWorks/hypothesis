@@ -39,10 +39,7 @@ from hypothesis.internal.compat import floor, int_from_bytes, int_to_bytes
 from hypothesis.internal.conjecture.floats import float_to_lex, lex_to_float
 from hypothesis.internal.conjecture.junkdrawer import (
     IntList,
-    Z_point,
-    char_rewrite_integer,
     uniform,
-    zero_point,
 )
 from hypothesis.internal.conjecture.utils import (
     INT_SIZES,
@@ -1188,10 +1185,7 @@ class PrimitiveProvider:
         else:
             i = self._cd.integer_range(0, len(intervals) - 1)
 
-        i = char_rewrite_integer(
-            i, zero_point=zero_point(intervals), Z_point=Z_point(intervals)
-        )
-        return chr(intervals[i])
+        return intervals.char_in_shrink_order(i)
 
     def _draw_unbounded_integer(self) -> int:
         size = INT_SIZES[INT_SIZES_SAMPLER.sample(self._cd)]

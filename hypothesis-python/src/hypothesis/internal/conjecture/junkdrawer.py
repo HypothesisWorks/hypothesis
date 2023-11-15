@@ -398,35 +398,3 @@ class SelfOrganisingList(Generic[T]):
                 self.__values.append(value)
                 return value
         raise NotFound("No values satisfying condition")
-
-
-def zero_point(intervals: IntervalSet):
-    return intervals.index_above(ord("0"))
-
-
-def Z_point(intervals: IntervalSet):
-    return min(intervals.index_above(ord("Z")), len(intervals) - 1)
-
-
-def char_rewrite_integer(i: int, *, zero_point: int, Z_point: int) -> int:
-    # We would like it so that, where possible, shrinking replaces
-    # characters with simple ascii characters, so we rejig this
-    # bit so that the smallest values are 0, 1, 2, ..., Z.
-    #
-    # Imagine that numbers are laid out as abc0yyyZ...
-    # this rearranges them so that they are laid out as
-    # 0yyyZcba..., which gives a better shrinking order.
-    if i <= Z_point:
-        # We want to rewrite the integers [0, n] inclusive
-        # to [zero_point, Z_point].
-        n = Z_point - zero_point
-        if i <= n:
-            i += zero_point
-        else:
-            # We want to rewrite the integers [n + 1, Z_point] to
-            # [zero_point, 0] (reversing the order so that codepoints below
-            # zero_point shrink upwards).
-            i = zero_point - (i - n)
-            assert i < zero_point
-        assert 0 <= i <= Z_point
-    return i
