@@ -85,9 +85,7 @@ class TextStrategy(ListStrategy):
         elems = unwrap_strategies(self.element_strategy)
         if isinstance(elems, OneCharStringStrategy):
             return data.draw_string(
-                elems.intervals,
-                min_size=self.min_size,
-                max_size=self.max_size
+                elems.intervals, min_size=self.min_size, max_size=self.max_size
             )
         return "".join(super().do_draw(data))
 

@@ -37,10 +37,7 @@ import attr
 from hypothesis.errors import Frozen, InvalidArgument, StopTest
 from hypothesis.internal.compat import floor, int_from_bytes, int_to_bytes
 from hypothesis.internal.conjecture.floats import float_to_lex, lex_to_float
-from hypothesis.internal.conjecture.junkdrawer import (
-    IntList,
-    uniform,
-)
+from hypothesis.internal.conjecture.junkdrawer import IntList, uniform
 from hypothesis.internal.conjecture.utils import (
     INT_SIZES,
     INT_SIZES_SAMPLER,
@@ -1195,6 +1192,7 @@ class PrimitiveProvider:
         if sign:
             r = -r
         return int(r)
+
 
 class ConjectureData:
     @classmethod

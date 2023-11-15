@@ -32,7 +32,6 @@ from typing import (
 )
 
 from hypothesis.errors import HypothesisWarning
-from hypothesis.internal.intervalsets import IntervalSet
 
 ARRAY_CODES = ["B", "H", "I", "L", "Q", "O"]
 
