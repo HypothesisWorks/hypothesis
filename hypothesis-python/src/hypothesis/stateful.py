@@ -442,7 +442,7 @@ class BundleReferenceStrategy(SearchStrategy):
         # end there can be a lot of hard to remove padding.
         position = data.integer_range(0, len(bundle) - 1, center=len(bundle))
         if self.consume:
-            return bundle.pop(position)
+            return bundle.pop(position)  # pragma: no cover  # coverage is flaky here
         else:
             return bundle[position]
 

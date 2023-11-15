@@ -51,6 +51,7 @@ import re
 import warnings
 from collections import Counter, OrderedDict, defaultdict, deque
 from enum import Enum, Flag
+from functools import partial
 
 import pytest
 
@@ -683,3 +684,11 @@ class Obj:
 
 def test_supports_ipython_callback():
     assert pretty.pretty(Obj()) == "abc, \n  <>"
+
+
+def test_pretty_partial_with_cycle():
+    ls = []
+    p = partial(bool, ls)
+    assert pretty.pretty(p) == "functools.partial(bool, [])"
+    ls.append(p)
+    assert pretty.pretty(p) == "functools.partial(bool, [functools.partial(bool, ...)])"

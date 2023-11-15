@@ -18,6 +18,52 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.89.0:
+
+-------------------
+6.89.0 - 2023-11-16
+-------------------
+
+This release teaches :func:`~hypothesis.strategies.from_type` to handle constraints
+implied by the :pypi:`annotated-types` package - as used by e.g. :pypi:`Pydantic`.
+This is usually efficient, but falls back to filtering in a few remaining cases.
+
+Thanks to Viicos for :pull:`3780`!
+
+.. _v6.88.4:
+
+-------------------
+6.88.4 - 2023-11-13
+-------------------
+
+This patch adds a warning when :func:`@st.composite <hypothesis.strategies.composite>`
+wraps a function annotated as returning a :class:`~hypothesis.strategies.SearchStrategy`,
+since this is usually an error (:issue:`3786`).  The function should return a value,
+and the decorator will convert it to a function which returns a strategy.
+
+.. _v6.88.3:
+
+-------------------
+6.88.3 - 2023-11-05
+-------------------
+
+This patch refactors ``from_type(typing.Tuple)``, allowing
+:func:`~hypothesis.strategies.register_type_strategy` to take effect
+for tuples instead of being silently ignored (:issue:`3750`).
+
+Thanks to Nick Collins for reporting and extensive work on this issue.
+
+.. _v6.88.2:
+
+-------------------
+6.88.2 - 2023-11-05
+-------------------
+
+This patch improves the speed of the explain phase on python 3.12+, by using the new
+:mod:`sys.monitoring` module to collect coverage, instead of :obj:`sys.settrace`.
+
+Thanks to Liam DeVoe for :pull:`3776`!
+
 .. _v6.88.1:
 
 -------------------
@@ -44,12 +90,10 @@ return a strategy, by returning :data:`NotImplemented` (:issue:`3767`).
 6.87.4 - 2023-10-12
 -------------------
 
-When :func:`~hypothesis.strategies.randoms` was called with `use_true_randoms=False`,
-calling `sample` on it with an empty sequence and 0 elements would result in an error,
+When :func:`~hypothesis.strategies.randoms` was called with ``use_true_randoms=False``,
+calling ``r.sample([], 0)`` would result in an error,
 when it should have returned an empty sequence to agree with the normal behaviour of
-`random.Random`. This fixes that discrepancy.
-
-Fixes :issue:`3765``
+:func:`random.sample`. This fixes that discrepancy (:issue:`3765`).
 
 .. _v6.87.3:
 
