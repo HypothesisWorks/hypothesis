@@ -18,6 +18,18 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.89.0:
+
+-------------------
+6.89.0 - 2023-11-16
+-------------------
+
+This release teaches :func:`~hypothesis.strategies.from_type` to handle constraints
+implied by the :pypi:`annotated-types` package - as used by e.g. :pypi:`Pydantic`.
+This is usually efficient, but falls back to filtering in a few remaining cases.
+
+Thanks to Viicos for :pull:`3780`!
+
 .. _v6.88.4:
 
 -------------------
