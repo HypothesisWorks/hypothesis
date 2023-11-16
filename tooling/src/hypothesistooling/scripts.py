@@ -53,7 +53,10 @@ def __calc_script_variables():
         globals()[name] = os.environ[name]
 
 
-__calc_script_variables()
+try:
+    __calc_script_variables()
+except Exception:
+    pass
 
 
 def tool_path(name):

@@ -45,7 +45,7 @@ class Write:
 @attr.s()
 class Branch:
     bits = attr.ib()
-    children = attr.ib(default=attr.Factory(dict))
+    children = attr.ib(factory=dict)
 
 
 @attr.s()
