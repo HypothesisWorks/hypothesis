@@ -109,3 +109,12 @@ def test_interval_intersection(x, y):
     print(f"{set(x)=} {set(y)=} {set(x)-(set(y)-set(x))=}")
     assert set(x & y) == set(x) & set(y)
     assert set(x.intersection(y)) == set(x).intersection(y)
+
+
+def test_char_in_shrink_order():
+    xs = IntervalSet([(0, 256)])
+    assert xs[xs._idx_of_zero] == ord("0")
+    assert xs[xs._idx_of_Z] == ord("Z")
+    rewritten = [ord(xs.char_in_shrink_order(i)) for i in range(256)]
+    assert rewritten != list(range(256))
+    assert sorted(rewritten) == sorted(range(256))

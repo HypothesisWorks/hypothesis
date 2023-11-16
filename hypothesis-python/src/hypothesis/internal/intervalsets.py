@@ -27,7 +27,7 @@ class IntervalSet:
             self.offsets.append(self.offsets[-1] + v - u + 1)
         self.size = self.offsets.pop()
         self._idx_of_zero = self.index_above(ord("0"))
-        self._idx_of_Z = min(self.index_above(ord("Z")), len(self.intervals) - 1)
+        self._idx_of_Z = min(self.index_above(ord("Z")), len(self) - 1)
 
     def __len__(self):
         return self.size
