@@ -980,12 +980,13 @@ class PrimitiveProvider:
 
     def draw_integer(
         self,
-        *,
         min_value: Optional[int] = None,
         max_value: Optional[int] = None,
+        *,
         # weights are for choosing an element index from a bounded range
         weights: Optional[Sequence[float]] = None,
         shrink_towards: int = 0,
+        forced: Optional[int] = None,
     ) -> int:
         # This is easy to build on top of our existing conjecture utils,
         # and it's easy to build sampled_from and weighted_coin on this.
@@ -1020,20 +1021,7 @@ class PrimitiveProvider:
                     self._cd.stop_example(discard=probe < min_value)
                 return probe
 
-        # For bounded integers, make the bounds and near-bounds more likely.
-        forced = None
-        if max_value - min_value > 127:
-            bits = self._cd.draw_bits(7)
-            forced = {
-                122: min_value,
-                123: min_value,
-                124: max_value,
-                125: max_value,
-                126: min_value + 1,
-                127: max_value - 1,
-            }.get(bits)
-
-        return self._cd.integer_range(
+        return self._draw_bounded_integer(
             min_value,
             max_value,
             center=shrink_towards,
@@ -1176,11 +1164,11 @@ class PrimitiveProvider:
     def _draw_character(self, intervals: IntervalSet) -> str:
         if len(intervals) > 256:
             if self.draw_boolean(0.2):
-                i = self._cd.integer_range(256, len(intervals) - 1)
+                i = self._draw_bounded_integer(256, len(intervals) - 1)
             else:
-                i = self._cd.integer_range(0, 255)
+                i = self._draw_bounded_integer(0, 255)
         else:
-            i = self._cd.integer_range(0, len(intervals) - 1)
+            i = self._draw_bounded_integer(0, len(intervals) - 1)
 
         return intervals.char_in_shrink_order(i)
 
@@ -1192,6 +1180,69 @@ class PrimitiveProvider:
         if sign:
             r = -r
         return int(r)
+
+    def _draw_bounded_integer(
+        self,
+        lower: int,
+        upper: int,
+        *,
+        center: Optional[int] = None,
+        forced: Optional[int] = None,
+    ) -> int:
+        assert lower <= upper
+        assert forced is None or lower <= forced <= upper
+        if lower == upper:
+            # Write a value even when this is trivial so that when a bound depends
+            # on other values we don't suddenly disappear when the gap shrinks to
+            # zero - if that happens then often the data stream becomes misaligned
+            # and we fail to shrink in cases where we really should be able to.
+            self._cd.draw_bits(1, forced=0)
+            return int(lower)
+
+        if center is None:
+            center = lower
+        center = min(max(center, lower), upper)
+
+        if center == upper:
+            above = False
+        elif center == lower:
+            above = True
+        else:
+            force_above = None if forced is None else forced < center
+            above = not self._cd.draw_bits(1, forced=force_above)
+
+        if above:
+            gap = upper - center
+        else:
+            gap = center - lower
+
+        assert gap > 0
+
+        bits = gap.bit_length()
+        probe = gap + 1
+
+        if bits > 24 and self._cd.draw_bits(3, forced=None if forced is None else 0):
+            # For large ranges, we combine the uniform random distribution from draw_bits
+            # with a weighting scheme with moderate chance.  Cutoff at 2 ** 24 so that our
+            # choice of unicode characters is uniform but the 32bit distribution is not.
+            idx = INT_SIZES_SAMPLER.sample(self._cd)
+            bits = min(bits, INT_SIZES[idx])
+
+        while probe > gap:
+            self._cd.start_example(INTEGER_RANGE_DRAW_LABEL)
+            probe = self._cd.draw_bits(
+                bits, forced=None if forced is None else abs(forced - center)
+            )
+            self._cd.stop_example(discard=probe > gap)
+
+        if above:
+            result = center + probe
+        else:
+            result = center - probe
+
+        assert lower <= result <= upper
+        assert forced is None or result == forced, (result, forced, center, above)
+        return result
 
 
 class ConjectureData:
@@ -1280,12 +1331,13 @@ class ConjectureData:
 
     def draw_integer(
         self,
-        *,
         min_value: Optional[int] = None,
         max_value: Optional[int] = None,
+        *,
         # weights are for choosing an element index from a bounded range
         weights: Optional[Sequence[float]] = None,
         shrink_towards: int = 0,
+        forced: Optional[int] = None,
     ):
         # Validate arguments
         if weights is not None:
@@ -1293,11 +1345,15 @@ class ConjectureData:
             assert max_value is not None
             assert (max_value - min_value) <= 1024  # arbitrary practical limit
 
+        if forced is not None:
+            assert min_value is not None and max_value is not None
+
         return self.provider.draw_integer(
             min_value=min_value,
             max_value=max_value,
             weights=weights,
             shrink_towards=shrink_towards,
+            forced=forced,
         )
 
     def draw_float(
@@ -1336,69 +1392,6 @@ class ConjectureData:
 
     def draw_boolean(self, p: float = 0.5, *, forced: Optional[bool] = None):
         return self.provider.draw_boolean(p, forced=forced)
-
-    def integer_range(
-        self,
-        lower: int,
-        upper: int,
-        *,
-        center: Optional[int] = None,
-        forced: Optional[int] = None,
-    ) -> int:
-        assert lower <= upper
-        assert forced is None or lower <= forced <= upper
-        if lower == upper:
-            # Write a value even when this is trivial so that when a bound depends
-            # on other values we don't suddenly disappear when the gap shrinks to
-            # zero - if that happens then often the data stream becomes misaligned
-            # and we fail to shrink in cases where we really should be able to.
-            self.draw_bits(1, forced=0)
-            return int(lower)
-
-        if center is None:
-            center = lower
-        center = min(max(center, lower), upper)
-
-        if center == upper:
-            above = False
-        elif center == lower:
-            above = True
-        else:
-            force_above = None if forced is None else forced < center
-            above = not self.draw_bits(1, forced=force_above)
-
-        if above:
-            gap = upper - center
-        else:
-            gap = center - lower
-
-        assert gap > 0
-
-        bits = gap.bit_length()
-        probe = gap + 1
-
-        if bits > 24 and self.draw_bits(3, forced=None if forced is None else 0):
-            # For large ranges, we combine the uniform random distribution from draw_bits
-            # with a weighting scheme with moderate chance.  Cutoff at 2 ** 24 so that our
-            # choice of unicode characters is uniform but the 32bit distribution is not.
-            idx = INT_SIZES_SAMPLER.sample(self)
-            bits = min(bits, INT_SIZES[idx])
-
-        while probe > gap:
-            self.start_example(INTEGER_RANGE_DRAW_LABEL)
-            probe = self.draw_bits(
-                bits, forced=None if forced is None else abs(forced - center)
-            )
-            self.stop_example(discard=probe > gap)
-
-        if above:
-            result = center + probe
-        else:
-            result = center - probe
-
-        assert lower <= result <= upper
-        assert forced is None or result == forced, (result, forced, center, above)
-        return result
 
     def as_result(self) -> Union[ConjectureResult, _Overrun]:
         """Convert the result of running this test into

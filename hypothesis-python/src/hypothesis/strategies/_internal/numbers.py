@@ -66,7 +66,26 @@ class IntegersStrategy(SearchStrategy):
         return f"integers({self.start}, {self.end})"
 
     def do_draw(self, data):
-        return data.draw_integer(min_value=self.start, max_value=self.end)
+        # For bounded integers, make the bounds and near-bounds more likely.
+        forced = None
+        if (
+            self.end is not None
+            and self.start is not None
+            and self.end - self.start > 127
+        ):
+            bits = data.draw_bits(7)
+            forced = {
+                122: self.start,
+                123: self.start,
+                124: self.end,
+                125: self.end,
+                126: self.start + 1,
+                127: self.end - 1,
+            }.get(bits)
+
+        return data.draw_integer(
+            min_value=self.start, max_value=self.end, forced=forced
+        )
 
     def filter(self, condition):
         if condition is math.isfinite:
