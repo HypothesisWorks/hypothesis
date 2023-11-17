@@ -14,6 +14,7 @@ import pytest
 
 from hypothesis.internal.compat import int_to_bytes
 from hypothesis.internal.conjecture import floats as flt
+from hypothesis.internal.conjecture.data import PrimitiveProvider
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.shrinker import (
     Shrinker,
@@ -316,7 +317,8 @@ def test_float_shrink_can_run_when_canonicalisation_does_not_work(monkeypatch):
 
     @shrinking_from(base_buf)
     def shrinker(data):
-        data.draw_float_actual()
+        pp = PrimitiveProvider(data)
+        pp._draw_float()
         if bytes(data.buffer) == base_buf:
             data.mark_interesting()
 
