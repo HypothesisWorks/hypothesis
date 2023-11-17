@@ -82,7 +82,7 @@ def check_sample(
 
 
 def choice(data: "ConjectureData", values: Sequence[T]) -> T:
-    return values[data.integer_range(0, len(values) - 1)]
+    return values[data.draw_integer(0, len(values) - 1)]
 
 
 FLOAT_PREFIX = 0b1111111111 << 52

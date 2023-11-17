@@ -1703,7 +1703,7 @@ class PermutationStrategy(SearchStrategy):
         # change.  We don't consider the last element as it's always a no-op.
         result = list(self.values)
         for i in range(len(result) - 1):
-            j = data.integer_range(i, len(result) - 1)
+            j = data.draw_integer(i, len(result) - 1)
             result[i], result[j] = result[j], result[i]
         return result
 

@@ -544,7 +544,7 @@ class SampledFromStrategy(SearchStrategy):
         # Start with ordinary rejection sampling. It's fast if it works, and
         # if it doesn't work then it was only a small amount of overhead.
         for _ in range(3):
-            i = data.integer_range(0, len(self.elements) - 1)
+            i = data.draw_integer(0, len(self.elements) - 1)
             if i not in known_bad_indices:
                 element = self.get_element(i)
                 if element is not filter_not_satisfied:
@@ -570,7 +570,7 @@ class SampledFromStrategy(SearchStrategy):
         # Before building the list of allowed indices, speculatively choose
         # one of them. We don't yet know how many allowed indices there will be,
         # so this choice might be out-of-bounds, but that's OK.
-        speculative_index = data.integer_range(0, max_good_indices - 1)
+        speculative_index = data.draw_integer(0, max_good_indices - 1)
 
         # Calculate the indices of allowed values, so that we can choose one
         # of them at random. But if we encounter the speculatively-chosen one,

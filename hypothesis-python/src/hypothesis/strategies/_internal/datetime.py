@@ -112,9 +112,9 @@ def draw_capped_multipart(
         if name == "day" and not cap_high:
             _, high = monthrange(**result)
         if name == "year":
-            val = data.integer_range(low, high, center=2000)
+            val = data.draw_integer(low, high, shrink_towards=2000)
         else:
-            val = data.integer_range(low, high)
+            val = data.draw_integer(low, high)
         result[name] = val
         cap_low = cap_low and val == low
         cap_high = cap_high and val == high
@@ -124,7 +124,7 @@ def draw_capped_multipart(
         # the logic above, and be very sensitive to the specific timezone
         # (at the cost of efficient shrinking and mutation), so at least for
         # now we stick with the status quo and generate it independently.
-        result["fold"] = data.integer_range(0, 1)
+        result["fold"] = data.draw_integer(0, 1)
     return result
 
 
@@ -311,7 +311,7 @@ class TimedeltaStrategy(SearchStrategy):
         for name in ("days", "seconds", "microseconds"):
             low = getattr(self.min_value if low_bound else dt.timedelta.min, name)
             high = getattr(self.max_value if high_bound else dt.timedelta.max, name)
-            val = data.integer_range(low, high, center=0)
+            val = data.draw_integer(low, high, shrink_towards=0)
             result[name] = val
             low_bound = low_bound and val == low
             high_bound = high_bound and val == high

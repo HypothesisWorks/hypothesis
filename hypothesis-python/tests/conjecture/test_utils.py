@@ -32,7 +32,7 @@ from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 
 def test_does_draw_data_for_empty_range():
     data = ConjectureData.for_buffer(b"\1")
-    assert data.integer_range(1, 1) == 1
+    assert data.draw_integer(1, 1) == 1
     data.freeze()
     assert data.buffer == b"\0"
 
@@ -157,40 +157,40 @@ def test_sampler_does_not_draw_minimum_if_zero():
 
 def test_integer_range_center_upper():
     data = ConjectureData.for_buffer([0])
-    assert data.integer_range(lower=0, upper=10, center=10) == 10
+    assert data.draw_integer(lower=0, upper=10, shrink_towards=10) == 10
 
 
 def test_integer_range_center_lower():
     data = ConjectureData.for_buffer([0])
-    assert data.integer_range(lower=0, upper=10, center=0) == 0
+    assert data.draw_integer(lower=0, upper=10, shrink_towards=0) == 0
 
 
 def test_integer_range_lower_equals_upper():
     data = ConjectureData.for_buffer([0])
 
-    assert data.integer_range(lower=0, upper=0, center=0) == 0
+    assert data.draw_integer(lower=0, upper=0, shrink_towards=0) == 0
 
     assert len(data.buffer) == 1
 
 
 def test_integer_range_center_default():
     data = ConjectureData.for_buffer([0])
-    assert data.integer_range(lower=0, upper=10, center=None) == 0
+    assert data.draw_integer(lower=0, upper=10, shrink_towards=None) == 0
 
 
 def test_center_in_middle_below():
     data = ConjectureData.for_buffer([0, 0])
-    assert data.integer_range(lower=0, upper=10, center=5) == 5
+    assert data.draw_integer(lower=0, upper=10, shrink_towards=5) == 5
 
 
 def test_center_in_middle_above():
     data = ConjectureData.for_buffer([1, 0])
-    assert data.integer_range(lower=0, upper=10, center=5) == 5
+    assert data.draw_integer(lower=0, upper=10, shrink_towards=5) == 5
 
 
 def test_restricted_bits():
     data = ConjectureData.for_buffer([1, 0, 0, 0, 0])
-    assert data.integer_range(lower=0, upper=2**64 - 1) == 0
+    assert data.draw_integer(lower=0, upper=2**64 - 1) == 0
 
 
 def test_sampler_shrinks():

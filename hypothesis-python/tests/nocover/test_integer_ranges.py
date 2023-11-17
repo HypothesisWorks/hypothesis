@@ -24,7 +24,7 @@ class interval(SearchStrategy):
         self.center = center
 
     def do_draw(self, data):
-        return data.integer_range(self.lower, self.upper, center=self.center)
+        return data.draw_integer(self.lower, self.upper, shrink_towards=self.center)
 
 
 @pytest.mark.parametrize(
