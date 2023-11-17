@@ -1338,7 +1338,7 @@ class ConjectureData:
         weights: Optional[Sequence[float]] = None,
         shrink_towards: int = 0,
         forced: Optional[int] = None,
-    ):
+    ) -> int:
         # Validate arguments
         if weights is not None:
             assert min_value is not None
@@ -1368,8 +1368,7 @@ class ConjectureData:
         # future.
         # width: Literal[16, 32, 64] = 64,
         # exclude_min and exclude_max handled higher up
-    ):
-        # FIXME assertions about forced w.r.t min_value, max_value, allow_nan
+    ) -> float:
         return self.provider.draw_float(
             min_value=min_value,
             max_value=max_value,
@@ -1388,10 +1387,10 @@ class ConjectureData:
             intervals, min_size=min_size, max_size=max_size
         )
 
-    def draw_bytes(self, size: int):
+    def draw_bytes(self, size: int) -> bytes:
         return self.provider.draw_bytes(size)
 
-    def draw_boolean(self, p: float = 0.5, *, forced: Optional[bool] = None):
+    def draw_boolean(self, p: float = 0.5, *, forced: Optional[bool] = None) -> bool:
         return self.provider.draw_boolean(p, forced=forced)
 
     def as_result(self) -> Union[ConjectureResult, _Overrun]:
