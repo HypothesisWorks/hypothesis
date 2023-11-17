@@ -1346,7 +1346,8 @@ class ConjectureData:
             assert (max_value - min_value) <= 1024  # arbitrary practical limit
 
         if forced is not None:
-            assert min_value is not None and max_value is not None
+            assert min_value is not None
+            assert max_value is not None
 
         return self.provider.draw_integer(
             min_value=min_value,
