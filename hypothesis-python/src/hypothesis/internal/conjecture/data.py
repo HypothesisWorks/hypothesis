@@ -1123,6 +1123,9 @@ class PrimitiveProvider:
         min_size: int = 0,
         max_size: Optional[int] = None,
     ) -> str:
+        if max_size is None:
+            max_size = float("inf")
+
         average_size = min(
             max(min_size * 2, min_size + 5),
             0.5 * (min_size + max_size),
