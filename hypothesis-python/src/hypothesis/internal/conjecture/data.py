@@ -859,7 +859,7 @@ class PrimitiveProvider:
     # We'd then build the structured tree handling, database and replay
     # support, etc. on top of this - so all backends get those for free.
     #
-    # See https://github.com/HypothesisWorks/hypothesis/issues/3086.
+    # See https://github.com/HypothesisWorks/hypothesis/issues/3086
 
     def __init__(self, conjecturedata: "ConjectureData", /) -> None:
         self._cd = conjecturedata
