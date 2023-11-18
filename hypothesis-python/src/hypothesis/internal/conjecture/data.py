@@ -991,6 +991,9 @@ class PrimitiveProvider:
         # This is easy to build on top of our existing conjecture utils,
         # and it's easy to build sampled_from and weighted_coin on this.
         if weights is not None:
+            assert min_value is not None
+            assert max_value is not None
+
             sampler = Sampler(weights)
             idx = sampler.sample(self._cd)
             assert shrink_towards <= min_value  # FIXME: reorder for good shrinking
@@ -1036,12 +1039,17 @@ class PrimitiveProvider:
         min_value: Optional[float] = None,
         max_value: Optional[float] = None,
         allow_nan: bool = True,
-        smallest_nonzero_magnitude: Optional[float] = None,
+        smallest_nonzero_magnitude: float,
         # TODO: consider supporting these float widths at the IR level in the
         # future.
         # width: Literal[16, 32, 64] = 64,
         # exclude_min and exclude_max handled higher up
     ) -> float:
+        if min_value is None:
+            min_value = float("-inf")
+        if max_value is None:
+            max_value = float("inf")
+
         # TODO: this does a decent bit of initialization logic *on every draw*,
         # which is probably going to be expensive.
         # Previously, this cost was paid per-strategy init on StringsStrategy.
@@ -1101,8 +1109,10 @@ class PrimitiveProvider:
                 result = self._draw_float(forced_sign_bit=forced_sign_bit)
                 is_negative = float_to_int(result) >> 63
                 if is_negative:
+                    assert neg_clamper is not None
                     clamped = -neg_clamper(-result)
                 else:
+                    assert pos_clamper is not None
                     clamped = pos_clamper(result)
                 if clamped != result:
                     self._cd.stop_example(discard=True)
@@ -1123,7 +1133,7 @@ class PrimitiveProvider:
         intervals: IntervalSet,
         *,
         min_size: int = 0,
-        max_size: Optional[int] = None,
+        max_size: Optional[int | float] = None,
     ) -> str:
         if max_size is None:
             max_size = float("inf")
@@ -1368,7 +1378,7 @@ class ConjectureData:
         min_value: Optional[float] = None,
         max_value: Optional[float] = None,
         allow_nan: bool = True,
-        smallest_nonzero_magnitude: Optional[float] = None,
+        smallest_nonzero_magnitude: float,
         # TODO: consider supporting these float widths at the IR level in the
         # future.
         # width: Literal[16, 32, 64] = 64,
