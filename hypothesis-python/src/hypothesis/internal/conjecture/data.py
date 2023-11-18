@@ -1133,7 +1133,7 @@ class PrimitiveProvider:
         intervals: IntervalSet,
         *,
         min_size: int = 0,
-        max_size: Optional[int | float] = None,
+        max_size: Optional[Union[int, float]] = None,
     ) -> str:
         if max_size is None:
             max_size = float("inf")
