@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Type, TypeVar
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import int_from_bytes
-from hypothesis.internal.floats import int_to_float, next_up
+from hypothesis.internal.floats import next_up
 
 if TYPE_CHECKING:
     from hypothesis.internal.conjecture.data import ConjectureData
@@ -83,14 +83,6 @@ def check_sample(
 
 def choice(data: "ConjectureData", values: Sequence[T]) -> T:
     return values[data.draw_integer(0, len(values) - 1)]
-
-
-FLOAT_PREFIX = 0b1111111111 << 52
-FULL_FLOAT = int_to_float(FLOAT_PREFIX | ((2 << 53) - 1)) - 1
-
-
-def fractional_float(data: "ConjectureData") -> float:
-    return (int_to_float(FLOAT_PREFIX | data.draw_bits(52)) - 1) / FULL_FLOAT
 
 
 class Sampler:

@@ -37,18 +37,6 @@ def test_does_draw_data_for_empty_range():
     assert data.buffer == b"\0"
 
 
-def test_uniform_float_shrinks_to_zero():
-    d = ConjectureData.for_buffer(bytes(7))
-    assert cu.fractional_float(d) == 0.0
-    assert len(d.buffer) == 7
-
-
-def test_uniform_float_can_draw_1():
-    d = ConjectureData.for_buffer(bytes([255] * 7))
-    assert cu.fractional_float(d) == 1.0
-    assert len(d.buffer) == 7
-
-
 def test_coin_biased_towards_truth():
     p = 1 - 1.0 / 500
 
@@ -224,10 +212,6 @@ def test_valid_list_sample():
 
 def test_choice():
     assert cu.choice(ConjectureData.for_buffer([1]), [1, 2, 3]) == 2
-
-
-def test_fractional_float():
-    assert cu.fractional_float(ConjectureData.for_buffer([0] * 8)) == 0.0
 
 
 def test_fixed_size_draw_many():
