@@ -1000,6 +1000,7 @@ class PrimitiveProvider:
             return self._draw_unbounded_integer()
 
         if min_value is None:
+            assert max_value is not None # make mypy happy
             if max_value <= shrink_towards:
                 return max_value - abs(self._draw_unbounded_integer())
             else:
@@ -1011,6 +1012,7 @@ class PrimitiveProvider:
                 return probe
 
         if max_value is None:
+            assert min_value is not None
             if min_value >= shrink_towards:
                 return min_value + abs(self._draw_unbounded_integer())
             else:
