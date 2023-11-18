@@ -150,20 +150,25 @@ def test_integer_range_center_upper():
 
 def test_integer_range_center_lower():
     data = ConjectureData.for_buffer([0])
-    assert data.draw_integer(0, 10, shrink_towards=0) == 0
+    assert data.draw_integer(0, 10) == 0
+
+
+def test_integer_range_negative_center_upper():
+    data = ConjectureData.for_buffer([0])
+    assert data.draw_integer(-10, 0) == 0
 
 
 def test_integer_range_lower_equals_upper():
     data = ConjectureData.for_buffer([0])
 
-    assert data.draw_integer(0, 0, shrink_towards=0) == 0
+    assert data.draw_integer(0, 0) == 0
 
     assert len(data.buffer) == 1
 
 
 def test_integer_range_center_default():
     data = ConjectureData.for_buffer([0])
-    assert data.draw_integer(0, 10, shrink_towards=None) == 0
+    assert data.draw_integer(0, 10) == 0
 
 
 def test_center_in_middle_below():

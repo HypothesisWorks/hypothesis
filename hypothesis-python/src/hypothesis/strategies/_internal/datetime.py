@@ -311,7 +311,7 @@ class TimedeltaStrategy(SearchStrategy):
         for name in ("days", "seconds", "microseconds"):
             low = getattr(self.min_value if low_bound else dt.timedelta.min, name)
             high = getattr(self.max_value if high_bound else dt.timedelta.max, name)
-            val = data.draw_integer(low, high, shrink_towards=0)
+            val = data.draw_integer(low, high)
             result[name] = val
             low_bound = low_bound and val == low
             high_bound = high_bound and val == high

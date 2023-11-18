@@ -544,7 +544,7 @@ class MutuallyBroadcastableShapesStrategy(st.SearchStrategy):
                 if name not in dims:
                     dim = name.strip("?")
                     dims[dim] = data.draw(self.side_strat)
-                    if self.min_dims == 0 and not data.draw_bits(3):
+                    if self.min_dims == 0 and not data.draw_boolean(7 / 8):
                         dims[dim + "?"] = None
                     else:
                         dims[dim + "?"] = dims[dim]

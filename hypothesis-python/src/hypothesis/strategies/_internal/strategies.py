@@ -558,10 +558,6 @@ class SampledFromStrategy(SearchStrategy):
         if not max_good_indices:
             return filter_not_satisfied
 
-        # Figure out the bit-length of the index that we will write back after
-        # choosing an allowed element.
-        write_length = len(self.elements).bit_length()
-
         # Impose an arbitrary cutoff to prevent us from wasting too much time
         # on very large element lists.
         cutoff = 10000
@@ -585,14 +581,14 @@ class SampledFromStrategy(SearchStrategy):
                     if len(allowed) > speculative_index:
                         # Early-exit case: We reached the speculative index, so
                         # we just return the corresponding element.
-                        data.draw_bits(write_length, forced=i)
+                        data.draw_integer(0, len(self.elements) - 1, forced=i)
                         return element
 
         # The speculative index didn't work out, but at this point we've built
         # and can choose from the complete list of allowed indices and elements.
         if allowed:
             i, element = cu.choice(data, allowed)
-            data.draw_bits(write_length, forced=i)
+            data.draw_integer(0, len(self.elements) - 1, forced=i)
             return element
         # If there are no allowed indices, the filter couldn't be satisfied.
         return filter_not_satisfied

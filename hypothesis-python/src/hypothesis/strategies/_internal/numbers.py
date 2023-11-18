@@ -73,7 +73,7 @@ class IntegersStrategy(SearchStrategy):
             and self.start is not None
             and self.end - self.start > 127
         ):
-            bits = data.draw_bits(7)
+            bits = data.draw_integer(0, 127)
             forced = {
                 122: self.start,
                 123: self.start,
@@ -520,7 +520,7 @@ class NanStrategy(SearchStrategy):
     def do_draw(self, data):
         # Nans must have all exponent bits and the first mantissa bit set, so
         # we generate by taking 64 random bits and setting the required ones.
-        sign_bit = data.draw_bits(1) << 63
+        sign_bit = int(data.draw_boolean()) << 63
         nan_bits = float_to_int(math.nan)
-        mantissa_bits = data.draw_bits(52)
+        mantissa_bits = data.draw_integer(0, 2**52 - 1)
         return int_to_float(sign_bit | nan_bits | mantissa_bits)

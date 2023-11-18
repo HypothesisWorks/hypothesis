@@ -2007,7 +2007,7 @@ def shared(
 @composite
 def _maybe_nil_uuids(draw, uuid):
     # Equivalent to `random_uuids | just(...)`, with a stronger bias to the former.
-    if draw(data()).conjecture_data.draw_bits(6) == 63:
+    if draw(data()).conjecture_data.draw_boolean(1 / 64):
         return UUID("00000000-0000-0000-0000-000000000000")
     return uuid
 

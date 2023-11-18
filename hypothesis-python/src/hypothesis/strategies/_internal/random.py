@@ -308,14 +308,14 @@ class ArtificialRandom(HypothesisRandom):
                 )
 
         elif method == "getrandbits":
-            result = self.__data.draw_bits(kwargs["n"])
+            result = self.__data.draw_integer(0, 2 ** kwargs["n"] - 1)
         elif method == "triangular":
             low = normalize_zero(kwargs["low"])
             high = normalize_zero(kwargs["high"])
             mode = normalize_zero(kwargs["mode"])
             if mode is None:
                 result = self.__data.draw(floats(low, high))
-            elif self.__data.draw_bits(1):
+            elif self.__data.draw_boolean(0.5):
                 result = self.__data.draw(floats(mode, high))
             else:
                 result = self.__data.draw(floats(low, mode))
@@ -435,7 +435,7 @@ class RandomStrategy(SearchStrategy):
 
     def do_draw(self, data):
         if self.__use_true_random:
-            seed = data.draw_bits(64)
+            seed = data.draw_integer(0, 2**64 - 1)
             return TrueRandom(seed=seed, note_method_calls=self.__note_method_calls)
         else:
             return ArtificialRandom(
