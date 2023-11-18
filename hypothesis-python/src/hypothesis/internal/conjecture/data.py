@@ -17,12 +17,14 @@ from sys import float_info
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
     FrozenSet,
     Hashable,
     Iterable,
     Iterator,
     List,
+    Literal,
     NoReturn,
     Optional,
     Sequence,
@@ -35,6 +37,7 @@ from typing import (
 import attr
 
 from hypothesis.errors import Frozen, InvalidArgument, StopTest
+from hypothesis.internal.cache import LRUReusedCache
 from hypothesis.internal.compat import floor, int_from_bytes, int_to_bytes
 from hypothesis.internal.conjecture.floats import float_to_lex, lex_to_float
 from hypothesis.internal.conjecture.junkdrawer import IntList, uniform
@@ -155,6 +158,8 @@ NASTY_FLOATS = sorted(
 )
 NASTY_FLOATS = list(map(float, NASTY_FLOATS))
 NASTY_FLOATS.extend([-x for x in NASTY_FLOATS])
+
+FLOAT_INIT_LOGIC_CACHE = LRUReusedCache(4096)
 
 
 class Example:
@@ -1003,7 +1008,7 @@ class PrimitiveProvider:
             return self._draw_unbounded_integer()
 
         if min_value is None:
-            assert max_value is not None # make mypy happy
+            assert max_value is not None  # make mypy happy
             if max_value <= shrink_towards:
                 return max_value - abs(self._draw_unbounded_integer())
             else:
@@ -1050,56 +1055,18 @@ class PrimitiveProvider:
         if max_value is None:
             max_value = float("inf")
 
-        # TODO: this does a decent bit of initialization logic *on every draw*,
-        # which is probably going to be expensive.
-        # Previously, this cost was paid per-strategy init on StringsStrategy.
-        if smallest_nonzero_magnitude == 0.0:  # pragma: no cover
-            raise FloatingPointError(
-                "Got allow_subnormal=True, but we can't represent subnormal floats "
-                "right now, in violation of the IEEE-754 floating-point "
-                "specification.  This is usually because something was compiled with "
-                "-ffast-math or a similar option, which sets global processor state.  "
-                "See https://simonbyrne.github.io/notes/fastmath/ for a more detailed "
-                "writeup - and good luck!"
-            )
-
-        def permitted(f):
-            assert isinstance(f, float)
-            if math.isnan(f):
-                return allow_nan
-            if 0 < abs(f) < smallest_nonzero_magnitude:
-                return False
-            return sign_aware_lte(min_value, f) and sign_aware_lte(f, max_value)
-
-        boundary_values = [
-            min_value,
-            next_up(min_value),
-            min_value + 1,
-            max_value - 1,
-            next_down(max_value),
-            max_value,
-        ]
-        nasty_floats = [f for f in NASTY_FLOATS + boundary_values if permitted(f)]
-        weights = [0.2 * len(nasty_floats)] + [0.8] * len(nasty_floats)
-        sampler = Sampler(weights) if nasty_floats else None
-
-        pos_clamper = neg_clamper = None
-        if sign_aware_lte(0.0, max_value):
-            pos_min = max(min_value, smallest_nonzero_magnitude)
-            allow_zero = sign_aware_lte(min_value, 0.0)
-            pos_clamper = make_float_clamper(pos_min, max_value, allow_zero=allow_zero)
-        if sign_aware_lte(min_value, -0.0):
-            neg_max = min(max_value, -smallest_nonzero_magnitude)
-            allow_zero = sign_aware_lte(-0.0, max_value)
-            neg_clamper = make_float_clamper(
-                -neg_max, -min_value, allow_zero=allow_zero
-            )
-
-        forced_sign_bit: Optional[int] = None
-        if (pos_clamper is None) != (neg_clamper is None):
-            forced_sign_bit = 1 if neg_clamper else 0
-
-        # MARK: end initialization
+        (
+            sampler,
+            forced_sign_bit,
+            neg_clamper,
+            pos_clamper,
+            nasty_floats,
+        ) = self._draw_float_init_logic(
+            min_value=min_value,
+            max_value=max_value,
+            allow_nan=allow_nan,
+            smallest_nonzero_magnitude=smallest_nonzero_magnitude,
+        )
 
         while True:
             self._cd.start_example(FLOAT_STRATEGY_DO_DRAW_LABEL)
@@ -1258,6 +1225,107 @@ class PrimitiveProvider:
         assert lower <= result <= upper
         assert forced is None or result == forced, (result, forced, center, above)
         return result
+
+    @classmethod
+    def _draw_float_init_logic(
+        cls,
+        *,
+        min_value: float,
+        max_value: float,
+        allow_nan: bool,
+        smallest_nonzero_magnitude: float,
+    ) -> Tuple[
+        Optional[Sampler],
+        Optional[Literal[0, 1]],
+        Optional[Callable[[float], float]],
+        Optional[Callable[[float], float]],
+        List[float],
+    ]:
+        """
+        Caches initialization logic for draw_float, as an alternative to
+        computing this for *every* float draw.
+        """
+        # float_to_int allows us to distinguish between e.g. -0.0 and 0.0,
+        # even in light of hash(-0.0) == hash(0.0) and -0.0 == 0.0.
+        key = (
+            float_to_int(min_value),
+            float_to_int(max_value),
+            allow_nan,
+            float_to_int(smallest_nonzero_magnitude),
+        )
+        if key in FLOAT_INIT_LOGIC_CACHE:
+            return FLOAT_INIT_LOGIC_CACHE[key]
+
+        result = cls._compute_draw_float_init_logic(
+            min_value=min_value,
+            max_value=max_value,
+            allow_nan=allow_nan,
+            smallest_nonzero_magnitude=smallest_nonzero_magnitude,
+        )
+        FLOAT_INIT_LOGIC_CACHE[key] = result
+        return result
+
+    @staticmethod
+    def _compute_draw_float_init_logic(
+        *,
+        min_value: float,
+        max_value: float,
+        allow_nan: bool,
+        smallest_nonzero_magnitude: float,
+    ) -> Tuple[
+        Optional[Sampler],
+        Optional[Literal[0, 1]],
+        Optional[Callable[[float], float]],
+        Optional[Callable[[float], float]],
+        List[float],
+    ]:
+        if smallest_nonzero_magnitude == 0.0:  # pragma: no cover
+            raise FloatingPointError(
+                "Got allow_subnormal=True, but we can't represent subnormal floats "
+                "right now, in violation of the IEEE-754 floating-point "
+                "specification.  This is usually because something was compiled with "
+                "-ffast-math or a similar option, which sets global processor state.  "
+                "See https://simonbyrne.github.io/notes/fastmath/ for a more detailed "
+                "writeup - and good luck!"
+            )
+
+        def permitted(f):
+            assert isinstance(f, float)
+            if math.isnan(f):
+                return allow_nan
+            if 0 < abs(f) < smallest_nonzero_magnitude:
+                return False
+            return sign_aware_lte(min_value, f) and sign_aware_lte(f, max_value)
+
+        boundary_values = [
+            min_value,
+            next_up(min_value),
+            min_value + 1,
+            max_value - 1,
+            next_down(max_value),
+            max_value,
+        ]
+        nasty_floats = [f for f in NASTY_FLOATS + boundary_values if permitted(f)]
+        weights = [0.2 * len(nasty_floats)] + [0.8] * len(nasty_floats)
+        sampler = Sampler(weights) if nasty_floats else None
+
+        pos_clamper = neg_clamper = None
+        if sign_aware_lte(0.0, max_value):
+            pos_min = max(min_value, smallest_nonzero_magnitude)
+            allow_zero = sign_aware_lte(min_value, 0.0)
+            pos_clamper = make_float_clamper(pos_min, max_value, allow_zero=allow_zero)
+        if sign_aware_lte(min_value, -0.0):
+            neg_max = min(max_value, -smallest_nonzero_magnitude)
+            allow_zero = sign_aware_lte(-0.0, max_value)
+            neg_clamper = make_float_clamper(
+                -neg_max, -min_value, allow_zero=allow_zero
+            )
+
+        forced_sign_bit: Optional[Literal[0, 1]] = None
+        if (pos_clamper is None) != (neg_clamper is None):
+            forced_sign_bit = 1 if neg_clamper else 0
+
+        return (sampler, forced_sign_bit, neg_clamper, pos_clamper, nasty_floats)
 
 
 class ConjectureData:
