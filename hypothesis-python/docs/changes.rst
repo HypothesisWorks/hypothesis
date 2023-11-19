@@ -18,6 +18,19 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.89.1:
+
+-------------------
+6.89.1 - 2023-11-19
+-------------------
+
+This patch refactors some internals.  There is no user-visible change,
+but we hope to improve performance and unlock support for alternative
+backends such as :pypi:`symbolic execution with crosshair <crosshair-tool>`
+in future (:issue:`3086`).
+
+Thanks to Liam DeVoe for this fantastic contribution!
+
 .. _v6.89.0:
 
 -------------------
