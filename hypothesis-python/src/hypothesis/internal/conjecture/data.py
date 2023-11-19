@@ -50,6 +50,7 @@ from hypothesis.internal.conjecture.utils import (
 )
 from hypothesis.internal.floats import (
     SIGNALING_NAN,
+    SMALLEST_SUBNORMAL,
     float_to_int,
     make_float_clamper,
     next_down,
@@ -1001,8 +1002,17 @@ class PrimitiveProvider:
 
             sampler = Sampler(weights)
             idx = sampler.sample(self._cd)
-            assert shrink_towards <= min_value  # FIXME: reorder for good shrinking
-            return range(min_value, max_value + 1)[idx]
+
+            if shrink_towards <= min_value:
+                return min_value + idx
+            elif max_value <= shrink_towards:
+                return max_value - idx
+            else:
+                # For range -2..2, interpret idx = 0..4 as [0, 1, 2, -1, -2]
+                if idx <= (gap := max_value - shrink_towards):
+                    return shrink_towards + idx
+                else:
+                    return shrink_towards - (idx - gap)
 
         if min_value is None and max_value is None:
             return self._draw_unbounded_integer()
@@ -1041,8 +1051,8 @@ class PrimitiveProvider:
     def draw_float(
         self,
         *,
-        min_value: Optional[float] = None,
-        max_value: Optional[float] = None,
+        min_value: float = -math.inf,
+        max_value: float = math.inf,
         allow_nan: bool = True,
         smallest_nonzero_magnitude: float,
         # TODO: consider supporting these float widths at the IR level in the
@@ -1050,11 +1060,6 @@ class PrimitiveProvider:
         # width: Literal[16, 32, 64] = 64,
         # exclude_min and exclude_max handled higher up
     ) -> float:
-        if min_value is None:
-            min_value = float("-inf")
-        if max_value is None:
-            max_value = float("inf")
-
         (
             sampler,
             forced_sign_bit,
@@ -1074,8 +1079,7 @@ class PrimitiveProvider:
             self._cd.start_example(DRAW_FLOAT_LABEL)
             if i == 0:
                 result = self._draw_float(forced_sign_bit=forced_sign_bit)
-                is_negative = float_to_int(result) >> 63
-                if is_negative:
+                if math.copysign(1.0, result) == -1:
                     assert neg_clamper is not None
                     clamped = -neg_clamper(-result)
                 else:
@@ -1100,10 +1104,10 @@ class PrimitiveProvider:
         intervals: IntervalSet,
         *,
         min_size: int = 0,
-        max_size: Optional[Union[int, float]] = None,
+        max_size: Optional[int] = None,
     ) -> str:
         if max_size is None:
-            max_size = float("inf")
+            max_size = 10**10  # "arbitrarily large"
 
         average_size = min(
             max(min_size * 2, min_size + 5),
@@ -1118,7 +1122,15 @@ class PrimitiveProvider:
             average_size=average_size,
         )
         while elements.more():
-            chars.append(self._draw_character(intervals))
+            if len(intervals) > 256:
+                if self.draw_boolean(0.2):
+                    i = self._draw_bounded_integer(256, len(intervals) - 1)
+                else:
+                    i = self._draw_bounded_integer(0, 255)
+            else:
+                i = self._draw_bounded_integer(0, len(intervals) - 1)
+
+            chars.append(intervals.char_in_shrink_order(i))
 
         return "".join(chars)
 
@@ -1129,9 +1141,8 @@ class PrimitiveProvider:
         """
         Helper for draw_float which draws a random 64-bit float.
         """
+        self._cd.start_example(DRAW_FLOAT_LABEL)
         try:
-            # FIXME: move start_example out of the try block
-            self._cd.start_example(DRAW_FLOAT_LABEL)
             is_negative = self._cd.draw_bits(1, forced=forced_sign_bit)
             f = lex_to_float(self._cd.draw_bits(64))
             return -f if is_negative else f
@@ -1142,17 +1153,6 @@ class PrimitiveProvider:
         sign = float_to_int(f) >> 63
         self._cd.draw_bits(1, forced=sign)
         self._cd.draw_bits(64, forced=float_to_lex(abs(f)))
-
-    def _draw_character(self, intervals: IntervalSet) -> str:
-        if len(intervals) > 256:
-            if self.draw_boolean(0.2):
-                i = self._draw_bounded_integer(256, len(intervals) - 1)
-            else:
-                i = self._draw_bounded_integer(0, 255)
-        else:
-            i = self._draw_bounded_integer(0, len(intervals) - 1)
-
-        return intervals.char_in_shrink_order(i)
 
     def _draw_unbounded_integer(self) -> int:
         size = INT_SIZES[INT_SIZES_SAMPLER.sample(self._cd)]
@@ -1442,16 +1442,17 @@ class ConjectureData:
 
     def draw_float(
         self,
-        *,
         min_value: Optional[float] = None,
         max_value: Optional[float] = None,
+        *,
         allow_nan: bool = True,
-        smallest_nonzero_magnitude: float,
+        smallest_nonzero_magnitude: float = SMALLEST_SUBNORMAL,
         # TODO: consider supporting these float widths at the IR level in the
         # future.
         # width: Literal[16, 32, 64] = 64,
         # exclude_min and exclude_max handled higher up
     ) -> float:
+        assert smallest_nonzero_magnitude > 0
         return self.provider.draw_float(
             min_value=min_value,
             max_value=max_value,

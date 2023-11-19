@@ -28,6 +28,7 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.data import ConjectureData, Status, StopTest
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
+from hypothesis.internal.intervalsets import IntervalSet
 
 
 def test_does_draw_data_for_empty_range():
@@ -184,6 +185,32 @@ def test_center_in_middle_above():
 def test_restricted_bits():
     data = ConjectureData.for_buffer([1, 0, 0, 0, 0])
     assert data.draw_integer(0, 2**64 - 1) == 0
+
+
+@pytest.mark.parametrize(
+    "lo,hi,to",
+    [(0, None, 0), (None, 1, 0), (None, 1, 1), (-1, 1, 0)],
+)
+def test_single_bounds(lo, hi, to):
+    data = ConjectureData.for_buffer([0] * 100)
+    assert data.draw_integer(lo, hi, shrink_towards=to) == to
+
+
+def test_draw_string():
+    data = ConjectureData.for_buffer([0] * 10)
+    assert data.draw_string(IntervalSet([(0, 1024)]), min_size=1) == "0"
+
+
+def test_draw_float():
+    data = ConjectureData.for_buffer([0] * 16)
+    x = data.draw_float(0.0, 2.0, allow_nan=False, smallest_nonzero_magnitude=1.0)
+    assert x == 0 or 1 <= x <= 2
+
+
+def test_draw_negative_float():
+    data = ConjectureData.for_buffer([0] * 100)
+    x = data.draw_float(-2.0, -1.0, allow_nan=False, smallest_nonzero_magnitude=0.5)
+    assert -2 <= x <= -1
 
 
 def test_sampler_shrinks():

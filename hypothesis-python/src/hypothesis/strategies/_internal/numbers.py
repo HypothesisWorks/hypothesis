@@ -29,7 +29,6 @@ from hypothesis.internal.floats import (
     next_down_normal,
     next_up,
     next_up_normal,
-    sign_aware_lte,
     width_smallest_normals,
 )
 from hypothesis.internal.validation import (
@@ -186,14 +185,6 @@ class FloatStrategy(SearchStrategy):
             self.smallest_nonzero_magnitude,
         )
 
-    def permitted(self, f):
-        assert isinstance(f, float)
-        if math.isnan(f):
-            return self.allow_nan
-        if 0 < abs(f) < self.smallest_nonzero_magnitude:
-            return False
-        return sign_aware_lte(self.min_value, f) and sign_aware_lte(f, self.max_value)
-
     def do_draw(self, data):
         return data.draw_float(
             min_value=self.min_value,
@@ -212,10 +203,13 @@ class FloatStrategy(SearchStrategy):
                 smallest_nonzero_magnitude=self.smallest_nonzero_magnitude,
             )
         if condition is math.isinf:
-            permitted_infs = [x for x in (-math.inf, math.inf) if self.permitted(x)]
-            if not permitted_infs:
-                return nothing()
-            return SampledFromStrategy(permitted_infs)
+            if permitted_infs := [
+                x
+                for x in (-math.inf, math.inf)
+                if self.min_value <= x <= self.max_value
+            ]:
+                return SampledFromStrategy(permitted_infs)
+            return nothing()
         if condition is math.isnan:
             if not self.allow_nan:
                 return nothing()
