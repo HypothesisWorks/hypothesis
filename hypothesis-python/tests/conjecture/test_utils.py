@@ -28,34 +28,25 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.data import ConjectureData, Status, StopTest
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
+from hypothesis.internal.intervalsets import IntervalSet
 
 
 def test_does_draw_data_for_empty_range():
     data = ConjectureData.for_buffer(b"\1")
-    assert cu.integer_range(data, 1, 1) == 1
+    assert data.draw_integer(1, 1) == 1
     data.freeze()
     assert data.buffer == b"\0"
-
-
-def test_uniform_float_shrinks_to_zero():
-    d = ConjectureData.for_buffer(bytes(7))
-    assert cu.fractional_float(d) == 0.0
-    assert len(d.buffer) == 7
-
-
-def test_uniform_float_can_draw_1():
-    d = ConjectureData.for_buffer(bytes([255] * 7))
-    assert cu.fractional_float(d) == 1.0
-    assert len(d.buffer) == 7
 
 
 def test_coin_biased_towards_truth():
     p = 1 - 1.0 / 500
 
     for i in range(1, 255):
-        assert cu.biased_coin(ConjectureData.for_buffer([0, i, 0, 0]), p)
+        data = ConjectureData.for_buffer([0, i, 0, 0])
+        assert data.draw_boolean(p)
 
-    assert not cu.biased_coin(ConjectureData.for_buffer([0, 0, 0, 1]), p)
+    data = ConjectureData.for_buffer([0, 0, 0, 1])
+    assert not data.draw_boolean(p)
 
 
 def test_coin_biased_towards_falsehood():
@@ -63,8 +54,10 @@ def test_coin_biased_towards_falsehood():
 
     for i in range(255):
         if i != 1:
-            assert not cu.biased_coin(ConjectureData.for_buffer([0, i, 0, 1]), p)
-    assert cu.biased_coin(ConjectureData.for_buffer([0, 1, 0, 0]), p)
+            data = ConjectureData.for_buffer([0, i, 0, 1])
+            assert not data.draw_boolean(p)
+    data = ConjectureData.for_buffer([0, 1, 0, 0])
+    assert data.draw_boolean(p)
 
 
 def test_unbiased_coin_has_no_second_order():
@@ -73,7 +66,7 @@ def test_unbiased_coin_has_no_second_order():
     for i in range(256):
         buf = bytes([i])
         data = ConjectureData.for_buffer(buf)
-        result = cu.biased_coin(data, 0.5)
+        result = data.draw_boolean()
         if data.buffer == buf:
             counts[result] += 1
 
@@ -83,14 +76,14 @@ def test_unbiased_coin_has_no_second_order():
 def test_drawing_certain_coin_still_writes():
     data = ConjectureData.for_buffer([0, 1])
     assert not data.buffer
-    assert cu.biased_coin(data, 1)
+    assert data.draw_boolean(1)
     assert data.buffer
 
 
 def test_drawing_impossible_coin_still_writes():
     data = ConjectureData.for_buffer([1, 0])
     assert not data.buffer
-    assert not cu.biased_coin(data, 0)
+    assert not data.draw_boolean(0)
     assert data.buffer
 
 
@@ -101,13 +94,15 @@ def test_drawing_an_exact_fraction_coin():
     for i in range(4):
         for j in range(4):
             total += 1
-            if cu.biased_coin(ConjectureData.for_buffer([i, j, 0]), p):
+            data = ConjectureData.for_buffer([i, j, 0])
+            if data.draw_boolean(p):
                 count += 1
     assert p == Fraction(count, total)
 
 
 def test_too_small_to_be_useful_coin():
-    assert not cu.biased_coin(ConjectureData.for_buffer([1]), 0.5**65)
+    data = ConjectureData.for_buffer([1])
+    assert not data.draw_boolean(0.5**65)
 
 
 @example([Fraction(1, 3), Fraction(1, 3), Fraction(1, 3)])
@@ -150,55 +145,82 @@ def test_sampler_does_not_draw_minimum_if_zero():
 
 
 def test_integer_range_center_upper():
-    assert (
-        cu.integer_range(ConjectureData.for_buffer([0]), lower=0, upper=10, center=10)
-        == 10
-    )
+    data = ConjectureData.for_buffer([0])
+    assert data.draw_integer(0, 10, shrink_towards=10) == 10
 
 
 def test_integer_range_center_lower():
-    assert (
-        cu.integer_range(ConjectureData.for_buffer([0]), lower=0, upper=10, center=0)
-        == 0
-    )
+    data = ConjectureData.for_buffer([0])
+    assert data.draw_integer(0, 10) == 0
+
+
+def test_integer_range_negative_center_upper():
+    data = ConjectureData.for_buffer([0])
+    assert data.draw_integer(-10, 0) == 0
 
 
 def test_integer_range_lower_equals_upper():
     data = ConjectureData.for_buffer([0])
 
-    assert cu.integer_range(data, lower=0, upper=0, center=0) == 0
+    assert data.draw_integer(0, 0) == 0
 
     assert len(data.buffer) == 1
 
 
 def test_integer_range_center_default():
-    assert (
-        cu.integer_range(ConjectureData.for_buffer([0]), lower=0, upper=10, center=None)
-        == 0
-    )
+    data = ConjectureData.for_buffer([0])
+    assert data.draw_integer(0, 10) == 0
 
 
 def test_center_in_middle_below():
-    assert (
-        cu.integer_range(ConjectureData.for_buffer([0, 0]), lower=0, upper=10, center=5)
-        == 5
-    )
+    data = ConjectureData.for_buffer([0, 0])
+    assert data.draw_integer(0, 10, shrink_towards=5) == 5
 
 
 def test_center_in_middle_above():
-    assert (
-        cu.integer_range(ConjectureData.for_buffer([1, 0]), lower=0, upper=10, center=5)
-        == 5
-    )
+    data = ConjectureData.for_buffer([1, 0])
+    assert data.draw_integer(0, 10, shrink_towards=5) == 5
 
 
 def test_restricted_bits():
-    assert (
-        cu.integer_range(
-            ConjectureData.for_buffer([1, 0, 0, 0, 0]), lower=0, upper=2**64 - 1
-        )
-        == 0
-    )
+    data = ConjectureData.for_buffer([1, 0, 0, 0, 0])
+    assert data.draw_integer(0, 2**64 - 1) == 0
+
+
+@pytest.mark.parametrize(
+    "lo,hi,to",
+    [(1, None, 1), (1, None, 2), (None, 2, 1), (None, 1, 1), (-1, 1, 0)],
+)
+def test_single_bounds(lo, hi, to):
+    data = ConjectureData.for_buffer([0] * 100)
+    assert data.draw_integer(lo, hi, shrink_towards=to) == to
+
+
+def test_bounds_and_weights():
+    for to in (0, 1, 2):
+        data = ConjectureData.for_buffer([0] * 100 + [2] * 100)
+        val = data.draw_integer(0, 2, shrink_towards=to, weights=[1, 1, 1])
+        assert val == to, to
+
+
+def test_draw_string():
+    data = ConjectureData.for_buffer([0] * 10)
+    assert data.draw_string(IntervalSet([(0, 127)]), min_size=1) == "0"
+
+    data = ConjectureData.for_buffer([0] * 10)
+    assert data.draw_string(IntervalSet([(0, 1024)]), min_size=1) == "0"
+
+
+def test_draw_float():
+    data = ConjectureData.for_buffer([0] * 16)
+    x = data.draw_float(0.0, 2.0, allow_nan=False, smallest_nonzero_magnitude=1.0)
+    assert x == 0 or 1 <= x <= 2
+
+
+def test_draw_negative_float():
+    data = ConjectureData.for_buffer([0] * 100)
+    x = data.draw_float(-2.0, -1.0, allow_nan=False, smallest_nonzero_magnitude=0.5)
+    assert -2 <= x <= -1
 
 
 def test_sampler_shrinks():
@@ -232,10 +254,6 @@ def test_valid_list_sample():
 
 def test_choice():
     assert cu.choice(ConjectureData.for_buffer([1]), [1, 2, 3]) == 2
-
-
-def test_fractional_float():
-    assert cu.fractional_float(ConjectureData.for_buffer([0] * 8)) == 0.0
 
 
 def test_fixed_size_draw_many():
@@ -302,12 +320,16 @@ def test_many_with_max_size():
 
 
 def test_biased_coin_can_be_forced():
-    assert cu.biased_coin(ConjectureData.for_buffer([0]), p=0.5, forced=True)
-    assert not cu.biased_coin(ConjectureData.for_buffer([1]), p=0.5, forced=False)
+    data = ConjectureData.for_buffer([0])
+    assert data.draw_boolean(0.5, forced=True)
+
+    data = ConjectureData.for_buffer([1])
+    assert not data.draw_boolean(0.5, forced=False)
 
 
 def test_assert_biased_coin_always_treats_one_as_true():
-    assert cu.biased_coin(ConjectureData.for_buffer([0, 1]), p=1.0 / 257)
+    data = ConjectureData.for_buffer([0, 1])
+    assert data.draw_boolean(1.0 / 257)
 
 
 @example(p=0.31250000000000006, b=b"\x03\x03\x00")
@@ -315,7 +337,8 @@ def test_assert_biased_coin_always_treats_one_as_true():
 @given(st.floats(0, 1), st.binary())
 def test_can_draw_arbitrary_fractions(p, b):
     try:
-        cu.biased_coin(ConjectureData.for_buffer(b), p)
+        data = ConjectureData.for_buffer(b)
+        data.draw_boolean(p)
     except StopTest:
         reject()
 

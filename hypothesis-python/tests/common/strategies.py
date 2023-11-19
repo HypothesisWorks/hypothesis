@@ -29,7 +29,7 @@ class HardToShrink(SearchStrategy):
         self.accepted = set()
 
     def do_draw(self, data):
-        x = bytes(data.draw_bits(8) for _ in range(100))
+        x = bytes(data.draw_integer(0, 255) for _ in range(100))
         if x in self.accepted:
             return True
         ls = self.__last

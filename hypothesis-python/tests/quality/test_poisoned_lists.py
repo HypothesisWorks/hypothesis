@@ -14,7 +14,6 @@ import pytest
 
 from hypothesis import settings, strategies as st
 from hypothesis.internal.compat import ceil
-from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.engine import ConjectureData, ConjectureRunner
 from hypothesis.strategies._internal import SearchStrategy
 
@@ -28,7 +27,7 @@ class Poisoned(SearchStrategy):
         self.__ints = st.integers(0, 10)
 
     def do_draw(self, data):
-        if cu.biased_coin(data, self.__poison_chance):
+        if data.draw_boolean(self.__poison_chance):
             return POISON
         else:
             return data.draw(self.__ints)

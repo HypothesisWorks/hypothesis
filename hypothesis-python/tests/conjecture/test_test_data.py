@@ -90,6 +90,21 @@ def test_can_mark_invalid():
     assert x.status == Status.INVALID
 
 
+@given(st.data(), st.integers(1, 100))
+def test_can_draw_weighted_integer_range(data, n):
+    weights = [1] * n + [0] * n
+    for _ in range(10):
+        # If the weights are working, then we'll never draw a value with weight=0
+        x = data.conjecture_data.draw_integer(1, 2 * n, weights=weights)
+        assert x <= n
+
+
+@given(st.binary(min_size=10))
+def test_can_draw_weighted_integer_range_2(buffer):
+    data = ConjectureData.for_buffer(buffer)
+    data.draw_integer(0, 7, weights=[1] * 8, shrink_towards=6)
+
+
 def test_can_mark_invalid_with_why():
     x = ConjectureData.for_buffer(b"")
     with pytest.raises(StopTest):

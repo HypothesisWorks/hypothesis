@@ -56,7 +56,7 @@ from functools import partial
 import pytest
 
 from hypothesis.internal.compat import PYPY
-from hypothesis.strategies._internal.numbers import SIGNALING_NAN
+from hypothesis.internal.floats import SIGNALING_NAN
 from hypothesis.vendor import pretty
 
 

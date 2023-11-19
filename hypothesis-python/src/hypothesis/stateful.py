@@ -140,7 +140,7 @@ def run_state_machine_as_test(state_machine_factory, *, settings=None, _min_step
                     must_stop = True
                 elif steps_run <= _min_steps:
                     must_stop = False
-                if cu.biased_coin(cd, 2**-16, forced=must_stop):
+                if cd.draw_boolean(p=2**-16, forced=must_stop):
                     break
                 steps_run += 1
 
@@ -440,7 +440,7 @@ class BundleReferenceStrategy(SearchStrategy):
         # Shrink towards the right rather than the left. This makes it easier
         # to delete data generated earlier, as when the error is towards the
         # end there can be a lot of hard to remove padding.
-        position = cu.integer_range(data, 0, len(bundle) - 1, center=len(bundle))
+        position = data.draw_integer(0, len(bundle) - 1, shrink_towards=len(bundle))
         if self.consume:
             return bundle.pop(position)  # pragma: no cover  # coverage is flaky here
         else:

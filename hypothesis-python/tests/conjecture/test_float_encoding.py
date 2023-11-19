@@ -15,7 +15,7 @@ import pytest
 from hypothesis import HealthCheck, assume, example, given, settings, strategies as st
 from hypothesis.internal.compat import ceil, floor, int_from_bytes, int_to_bytes
 from hypothesis.internal.conjecture import floats as flt
-from hypothesis.internal.conjecture.data import ConjectureData
+from hypothesis.internal.conjecture.data import ConjectureData, PrimitiveProvider
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.floats import float_to_int
 
@@ -68,9 +68,12 @@ def test_double_reverse(i):
 @given(st.floats())
 def test_draw_write_round_trip(f):
     d = ConjectureData.for_buffer(bytes(10))
-    flt.write_float(d, f)
+    pp = PrimitiveProvider(d)
+    pp._write_float(f)
+
     d2 = ConjectureData.for_buffer(d.buffer)
-    g = flt.draw_float(d2)
+    pp2 = PrimitiveProvider(d2)
+    g = pp2._draw_float()
 
     if f == f:
         assert f == g
@@ -78,7 +81,8 @@ def test_draw_write_round_trip(f):
     assert float_to_int(f) == float_to_int(g)
 
     d3 = ConjectureData.for_buffer(d2.buffer)
-    flt.draw_float(d3)
+    pp3 = PrimitiveProvider(d3)
+    pp3._draw_float()
     assert d3.buffer == d2.buffer
 
 
@@ -153,7 +157,8 @@ def float_runner(start, condition):
         return flt.lex_to_float(int_from_bytes(b))
 
     def test_function(data):
-        f = flt.draw_float(data)
+        pp = PrimitiveProvider(data)
+        f = pp._draw_float()
         if condition(f):
             data.mark_interesting()
 
@@ -167,7 +172,9 @@ def minimal_from(start, condition):
     runner = float_runner(start, condition)
     runner.shrink_interesting_examples()
     (v,) = runner.interesting_examples.values()
-    result = flt.draw_float(ConjectureData.for_buffer(v.buffer))
+    data = ConjectureData.for_buffer(v.buffer)
+    pp = PrimitiveProvider(data)
+    result = pp._draw_float()
     assert condition(result)
     return result
 

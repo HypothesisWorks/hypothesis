@@ -29,7 +29,6 @@ from hypothesis.internal.conjecture.engine import (
 )
 from hypothesis.internal.conjecture.pareto import DominanceRelation, dominance
 from hypothesis.internal.conjecture.shrinker import Shrinker, block_program
-from hypothesis.internal.conjecture.utils import integer_range
 from hypothesis.internal.entropy import deterministic_PRNG
 
 from tests.common.strategies import SLOW, HardToShrink
@@ -1033,7 +1032,7 @@ def test_number_of_examples_in_integer_range_is_bounded(n):
 
         def test(data):
             assert runner.call_count <= 2 * n
-            integer_range(data, 0, n)
+            data.draw_integer(0, n)
 
         runner = ConjectureRunner(test, settings=SMALL_COUNT_SETTINGS)
         runner.run()
