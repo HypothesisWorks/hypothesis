@@ -100,7 +100,7 @@ def test_can_draw_weighted_integer_range(data, n):
 
 
 @given(st.binary(min_size=10))
-def test_can_draw_weighted_integer_range(buffer):
+def test_can_draw_weighted_integer_range_2(buffer):
     data = ConjectureData.for_buffer(buffer)
     data.draw_integer(0, 7, weights=[1] * 8, shrink_towards=6)
 
