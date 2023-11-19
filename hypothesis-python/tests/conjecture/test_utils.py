@@ -189,14 +189,24 @@ def test_restricted_bits():
 
 @pytest.mark.parametrize(
     "lo,hi,to",
-    [(0, None, 0), (None, 1, 0), (None, 1, 1), (-1, 1, 0)],
+    [(1, None, 1), (1, None, 2), (None, 2, 1), (None, 1, 1), (-1, 1, 0)],
 )
 def test_single_bounds(lo, hi, to):
     data = ConjectureData.for_buffer([0] * 100)
     assert data.draw_integer(lo, hi, shrink_towards=to) == to
 
 
+def test_bounds_and_weights():
+    for to in (0, 1, 2):
+        data = ConjectureData.for_buffer([0] * 100 + [2] * 100)
+        val = data.draw_integer(0, 2, shrink_towards=to, weights=[1, 1, 1])
+        assert val == to, to
+
+
 def test_draw_string():
+    data = ConjectureData.for_buffer([0] * 10)
+    assert data.draw_string(IntervalSet([(0, 127)]), min_size=1) == "0"
+
     data = ConjectureData.for_buffer([0] * 10)
     assert data.draw_string(IntervalSet([(0, 1024)]), min_size=1) == "0"
 

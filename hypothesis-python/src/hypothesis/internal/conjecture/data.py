@@ -1025,7 +1025,7 @@ class PrimitiveProvider:
                 probe = max_value + 1
                 while max_value < probe:
                     self._cd.start_example(ONE_BOUND_INTEGERS_LABEL)
-                    probe = self._draw_unbounded_integer()
+                    probe = self._draw_unbounded_integer() + shrink_towards
                     self._cd.stop_example(discard=max_value < probe)
                 return probe
 
@@ -1037,7 +1037,7 @@ class PrimitiveProvider:
                 probe = min_value - 1
                 while probe < min_value:
                     self._cd.start_example(ONE_BOUND_INTEGERS_LABEL)
-                    probe = self._draw_unbounded_integer()
+                    probe = self._draw_unbounded_integer() + shrink_towards
                     self._cd.stop_example(discard=probe < min_value)
                 return probe
 
@@ -1442,8 +1442,8 @@ class ConjectureData:
 
     def draw_float(
         self,
-        min_value: Optional[float] = None,
-        max_value: Optional[float] = None,
+        min_value: float = -math.inf,
+        max_value: float = math.inf,
         *,
         allow_nan: bool = True,
         smallest_nonzero_magnitude: float = SMALLEST_SUBNORMAL,
