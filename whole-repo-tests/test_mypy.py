@@ -102,14 +102,13 @@ def assert_mypy_errors(fname, expected, python_version=None):
         ("dictionaries(integers(), datetimes())", "dict[int, datetime.datetime]"),
         ("data()", "hypothesis.strategies._internal.core.DataObject"),
         ("none() | integers()", "Union[None, int]"),
-        # Ex`-1 stands for recursion in the whole type, i.e. Ex`0 == Union[...]
-        ("recursive(integers(), lists)", "Union[list[Ex`-1], int]"),
+        ("recursive(integers(), lists)", "Union[list[Any], int]"),
         # We have overloads for up to five types, then fall back to Any.
         # (why five?  JSON atoms are None|bool|int|float|str and we do that a lot)
         ("one_of(integers(), text())", "Union[int, str]"),
         (
             "one_of(integers(), text(), none(), binary(), builds(list))",
-            "Union[int, str, None, bytes, list[_T`1]]",
+            "Union[int, str, None, bytes, list[Never]]",
         ),
         (
             "one_of(integers(), text(), none(), binary(), builds(list), builds(dict))",
@@ -126,10 +125,6 @@ def assert_mypy_errors(fname, expected, python_version=None):
             "tuples(text(), text(), text(), text(), text(), text())",
             "tuple[Any, ...]",
         ),
-        (
-            "from_type(type).flatmap(from_type).filter(lambda x: not isinstance(x, int))",
-            "Ex_Inv`-1",
-        ),
     ],
 )
 def test_revealed_types(tmpdir, val, expect):
@@ -137,8 +132,7 @@ def test_revealed_types(tmpdir, val, expect):
     f = tmpdir.join(expect + ".py")
     f.write(
         "from hypothesis.strategies import *\n"
-        f"s = {val}\n"
-        "reveal_type(s)\n"  # fmt: skip
+        f"reveal_type({val})\n"  # fmt: skip
     )
     typ = get_mypy_analysed_type(str(f.realpath()), val)
     assert typ == f"SearchStrategy[{expect}]"

@@ -1215,3 +1215,19 @@ def test_min_steps_argument():
 
     # (oh, and it's OK if you ask for more than we're actually going to take)
     run_state_machine_as_test(MinStepsMachine, _min_steps=20)
+
+
+class ErrorsOnClassAttributeSettings(RuleBasedStateMachine):
+    settings = Settings(derandomize=True)
+
+    @rule()
+    def step(self):
+        pass
+
+
+def test_fails_on_settings_class_attribute():
+    with pytest.raises(
+        InvalidDefinition,
+        match="Assigning .+ as a class attribute does nothing",
+    ):
+        run_state_machine_as_test(ErrorsOnClassAttributeSettings)

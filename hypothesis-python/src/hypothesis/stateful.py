@@ -220,9 +220,10 @@ def run_state_machine_as_test(state_machine_factory, *, settings=None, _min_step
 class StateMachineMeta(type):
     def __setattr__(cls, name, value):
         if name == "settings" and isinstance(value, Settings):
+            descr = f"settings({value.show_changed()})"
             raise AttributeError(
-                f"Assigning {cls.__name__}.settings = {value} does nothing. Assign "
-                f"to {cls.__name__}.TestCase.settings, or use @{value} as a decorator "
+                f"Assigning {cls.__name__}.settings = {descr} does nothing. Assign "
+                f"to {cls.__name__}.TestCase.settings, or use @{descr} as a decorator "
                 f"on the {cls.__name__} class."
             )
         return super().__setattr__(name, value)
@@ -254,6 +255,15 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         )
         self._initialize_rules_to_run = copy(self.initialize_rules())
         self._rules_strategy = RuleStrategy(self)
+
+        if isinstance(s := vars(type(self)).get("settings"), Settings):
+            tname = type(self).__name__
+            descr = f"settings({s.show_changed()})"
+            raise InvalidDefinition(
+                f"Assigning settings = {descr} as a class attribute does nothing. "
+                f"Assign to {tname}.TestCase.settings, or use @{descr} as a decorator "
+                f"on the {tname} class."
+            )
 
     def _pretty_print(self, value):
         if isinstance(value, VarReference):

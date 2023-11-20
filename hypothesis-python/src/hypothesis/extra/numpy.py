@@ -756,7 +756,7 @@ def array_dtypes(
         field_names,
         st.tuples(field_names, field_names).filter(lambda ns: ns[0] != ns[1]),
     )
-    elements = st.tuples(name_titles, subtype_strategy)
+    elements: st.SearchStrategy[tuple] = st.tuples(name_titles, subtype_strategy)
     if allow_subarrays:
         elements |= st.tuples(
             name_titles, subtype_strategy, array_shapes(max_dims=2, max_side=2)
