@@ -40,7 +40,7 @@ def task(if_changed=()):
         def wrapped(*args, **kwargs):
             if if_changed and tools.IS_PULL_REQUEST:
                 if not tools.has_changes(if_changed + BUILD_FILES):
-                    changed = ", ".join(if_changed)
+                    changed = ", ".join(map(str, if_changed))
                     print(f"Skipping task due to no changes in {changed}")
                     return
             fn(*args, **kwargs)
