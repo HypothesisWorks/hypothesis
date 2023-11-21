@@ -76,6 +76,6 @@ The organisation of the tests is described in the :gh-file:`hypothesis-python/te
 Examples
 --------
 
-* `arch linux <https://archlinux.org/packages/community/any/python-hypothesis/>`_
+* `arch linux <https://archlinux.org/packages/extra/any/python-hypothesis/>`_
 * `fedora <https://src.fedoraproject.org/rpms/python-hypothesis>`_
 * `gentoo <https://packages.gentoo.org/packages/dev-python/hypothesis>`_
