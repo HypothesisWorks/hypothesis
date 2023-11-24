@@ -1105,9 +1105,12 @@ class PrimitiveProvider:
         *,
         min_size: int = 0,
         max_size: Optional[int] = None,
+        forced: Optional[str] = None
     ) -> str:
         if max_size is None:
             max_size = 10**10  # "arbitrarily large"
+
+        assert forced is None or min_size <= len(forced) <= max_size
 
         average_size = min(
             max(min_size * 2, min_size + 5),
@@ -1120,15 +1123,21 @@ class PrimitiveProvider:
             min_size=min_size,
             max_size=max_size,
             average_size=average_size,
+            forced=None if forced is None else len(forced)
         )
         while elements.more():
+            forced_i: Optional[int] = None
+            if forced is not None:
+                c = forced[elements.count - 1]
+                forced_i = intervals.index_from_char_in_shrink_order(c)
+
             if len(intervals) > 256:
-                if self.draw_boolean(0.2):
-                    i = self._draw_bounded_integer(256, len(intervals) - 1)
+                if self.draw_boolean(0.2, forced=None if forced_i is None else forced_i > 256):
+                    i = self._draw_bounded_integer(256, len(intervals) - 1, forced=forced_i)
                 else:
-                    i = self._draw_bounded_integer(0, 255)
+                    i = self._draw_bounded_integer(0, 255, forced=forced_i)
             else:
-                i = self._draw_bounded_integer(0, len(intervals) - 1)
+                i = self._draw_bounded_integer(0, len(intervals) - 1, forced=forced_i)
 
             chars.append(intervals.char_in_shrink_order(i))
 
@@ -1466,9 +1475,11 @@ class ConjectureData:
         *,
         min_size: int = 0,
         max_size: Optional[int] = None,
+        forced: Optional[str] = None
     ) -> str:
+        assert forced is None or min_size <= len(forced)
         return self.provider.draw_string(
-            intervals, min_size=min_size, max_size=max_size
+            intervals, min_size=min_size, max_size=max_size, forced=forced
         )
 
     def draw_bytes(self, size: int) -> bytes:
