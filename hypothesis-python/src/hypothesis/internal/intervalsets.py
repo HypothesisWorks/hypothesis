@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+from typing import Union
 
 class IntervalSet:
     @classmethod
@@ -61,17 +62,16 @@ class IntervalSet:
         assert r <= v
         return r
 
-    def __contains__(self, elem):
+    def __contains__(self, elem: Union[str, int]):
         if isinstance(elem, str):
             elem = ord(elem)
-        assert isinstance(elem, int)
         assert 0 <= elem <= 0x10FFFF
         return any(start <= elem <= end for start, end in self.intervals)
 
     def __repr__(self):
         return f"IntervalSet({self.intervals!r})"
 
-    def index(self, value):
+    def index(self, value: int):
         for offset, (u, v) in zip(self.offsets, self.intervals):
             if u == value:
                 return offset
@@ -81,7 +81,7 @@ class IntervalSet:
                 return offset + (value - u)
         raise ValueError(f"{value} is not in list")
 
-    def index_above(self, value):
+    def index_above(self, value: int):
         for offset, (u, v) in zip(self.offsets, self.intervals):
             if u >= value:
                 return offset
