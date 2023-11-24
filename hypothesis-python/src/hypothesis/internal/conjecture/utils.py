@@ -204,11 +204,15 @@ class many:
         min_size: int,
         max_size: Union[int, float],
         average_size: Union[int, float],
+        *,
+        forced: Optional[int] = None
     ) -> None:
         assert 0 <= min_size <= average_size <= max_size
+        assert forced is None or min_size <= forced <= max_size
         self.min_size = min_size
         self.max_size = max_size
         self.data = data
+        self.forced_size = forced
         self.p_continue = _calc_p_continue(average_size - min_size, max_size - min_size)
         self.count = 0
         self.rejections = 0
@@ -227,15 +231,22 @@ class many:
         self.data.start_example(ONE_FROM_MANY_LABEL)
 
         if self.min_size == self.max_size:
+            # if we have to hit an exact size, draw unconditionally until that
+            # point, and no further.
             should_continue = self.count < self.min_size
         else:
             forced_result = None
             if self.force_stop:
+                # if our size is forced, we can't reject in a way that would
+                # cause us to differ from the forced size.
+                assert self.forced_size is None or self.count == self.forced_size
                 forced_result = False
             elif self.count < self.min_size:
                 forced_result = True
             elif self.count >= self.max_size:
                 forced_result = False
+            elif self.forced_size is not None:
+                forced_result = self.count < self.forced_size
             should_continue = self.data.draw_boolean(
                 self.p_continue, forced=forced_result
             )
