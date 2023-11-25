@@ -81,8 +81,12 @@ def check_sample(
     return tuple(values)
 
 
-def choice(data: "ConjectureData", values: Sequence[T]) -> T:
-    return values[data.draw_integer(0, len(values) - 1)]
+def choice(
+    data: "ConjectureData", values: Sequence[T], *, forced: Optional[T] = None
+) -> T:
+    forced_i = None if forced is None else values.index(forced)
+    i = data.draw_integer(0, len(values) - 1, forced=forced_i)
+    return values[i]
 
 
 class Sampler:
@@ -171,10 +175,17 @@ class Sampler:
                 self.table.append((base, alternate, alternate_chance))
         self.table.sort()
 
-    def sample(self, data: "ConjectureData") -> int:
+    def sample(self, data: "ConjectureData", forced: Optional[int] = None) -> int:
         data.start_example(SAMPLE_IN_SAMPLER_LABEL)
-        base, alternate, alternate_chance = choice(data, self.table)
-        use_alternate = data.draw_boolean(alternate_chance)
+        forced_choice = (
+            None
+            if forced is None
+            else next((b, a, a_c) for (b, a, a_c) in self.table if forced in (b, a))
+        )
+        base, alternate, alternate_chance = choice(
+            data, self.table, forced=forced_choice
+        )
+        use_alternate = data.draw_boolean(alternate_chance, forced=forced == alternate)
         data.stop_example()
         if use_alternate:
             return alternate
