@@ -1161,7 +1161,7 @@ class PrimitiveProvider:
 
             if len(intervals) > 256:
                 if self.draw_boolean(
-                    0.2, forced=None if forced_i is None else forced_i > 256
+                    0.2, forced=None if forced_i is None else forced_i > 255
                 ):
                     i = self._draw_bounded_integer(
                         256, len(intervals) - 1, forced=forced_i
