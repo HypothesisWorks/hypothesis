@@ -169,7 +169,7 @@ def note(value: str) -> None:
 
 
 def event(value: str) -> None:
-    """Record an event that occurred this test. Statistics on number of test
+    """Record an event that occurred during this test. Statistics on number of test
     runs with each event will be reported at the end if you run Hypothesis in
     statistics reporting mode.
 
