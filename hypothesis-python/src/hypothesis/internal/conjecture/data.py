@@ -1159,8 +1159,13 @@ class PrimitiveProvider:
 
         return "".join(chars)
 
-    def draw_bytes(self, size: int) -> bytes:
-        return self._cd.draw_bits(8 * size).to_bytes(size, "big")
+    def draw_bytes(self, size: int, *, forced: Optional[bytes] = None) -> bytes:
+        forced_i = None
+        if forced is not None:
+            forced_i = int_from_bytes(forced)
+            size = len(forced)
+
+        return self._cd.draw_bits(8 * size, forced=forced_i).to_bytes(size, "big")
 
     def _draw_float(self, forced_sign_bit: Optional[int] = None) -> float:
         """
@@ -1526,8 +1531,9 @@ class ConjectureData:
             intervals, min_size=min_size, max_size=max_size, forced=forced
         )
 
-    def draw_bytes(self, size: int) -> bytes:
-        return self.provider.draw_bytes(size)
+    def draw_bytes(self, size: int, *, forced: Optional[bytes] = None) -> bytes:
+        assert forced is None or len(forced) <= size
+        return self.provider.draw_bytes(size, forced=forced)
 
     def draw_boolean(self, p: float = 0.5, *, forced: Optional[bool] = None) -> bool:
         return self.provider.draw_boolean(p, forced=forced)

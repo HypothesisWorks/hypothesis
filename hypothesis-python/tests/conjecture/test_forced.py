@@ -115,3 +115,10 @@ def test_forced_string(min_size_s, max_size_s):
         )
 
     inner_test()
+
+
+@given(st.data(), st.integers(min_value=0), st.binary())
+@settings(database=None)
+def test_forced_bytes(data, size, forced):
+    assume(len(forced) <= size)
+    assert data.conjecture_data.draw_bytes(size, forced=forced) == forced
