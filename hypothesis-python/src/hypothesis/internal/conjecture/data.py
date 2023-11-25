@@ -1015,29 +1015,57 @@ class PrimitiveProvider:
                     return shrink_towards - (idx - gap)
 
         if min_value is None and max_value is None:
-            return self._draw_unbounded_integer()
+            return self._draw_unbounded_integer(forced=forced)
 
         if min_value is None:
             assert max_value is not None  # make mypy happy
             if max_value <= shrink_towards:
-                return max_value - abs(self._draw_unbounded_integer())
+                return max_value - abs(
+                    self._draw_unbounded_integer(
+                        # no need to worry about the outer abs here:
+                        # forced <= max_value      ->
+                        # forced - max_value <= 0  ->
+                        # -forced + max_value >= 0
+                        forced=None
+                        if forced is None
+                        else -forced + max_value
+                    )
+                )
             else:
                 probe = max_value + 1
                 while max_value < probe:
                     self._cd.start_example(ONE_BOUND_INTEGERS_LABEL)
-                    probe = self._draw_unbounded_integer() + shrink_towards
+                    probe = (
+                        self._draw_unbounded_integer(
+                            forced=None if forced is None else forced - shrink_towards
+                        )
+                        + shrink_towards
+                    )
                     self._cd.stop_example(discard=max_value < probe)
                 return probe
 
         if max_value is None:
             assert min_value is not None
             if min_value >= shrink_towards:
-                return min_value + abs(self._draw_unbounded_integer())
+                return min_value + abs(
+                    self._draw_unbounded_integer(
+                        # no need to worry the outer abs here:
+                        # forced >= min_value -> forced - min_value >= 0
+                        forced=None
+                        if forced is None
+                        else forced - min_value
+                    )
+                )
             else:
                 probe = min_value - 1
                 while probe < min_value:
                     self._cd.start_example(ONE_BOUND_INTEGERS_LABEL)
-                    probe = self._draw_unbounded_integer() + shrink_towards
+                    probe = (
+                        self._draw_unbounded_integer(
+                            forced=None if forced is None else forced - shrink_towards
+                        )
+                        + shrink_towards
+                    )
                     self._cd.stop_example(discard=probe < min_value)
                 return probe
 
@@ -1167,14 +1195,37 @@ class PrimitiveProvider:
         self._cd.draw_bits(1, forced=sign)
         self._cd.draw_bits(64, forced=float_to_lex(abs(f)))
 
-    def _draw_unbounded_integer(self) -> int:
-        size = INT_SIZES[INT_SIZES_SAMPLER.sample(self._cd)]
-        r = self._cd.draw_bits(size)
+    def _draw_unbounded_integer(self, *, forced: Optional[int] = None) -> int:
+        forced_i = None
+        if forced is not None:
+            # Using any bucket large enough to contain this integer would be a
+            # valid way to force it. This is because an n bit integer could have
+            # been drawn from a bucket of size n, or from any bucket of size
+            # m > n.
+            # We'll always choose the smallest eligible bucket here.
+
+            # We need an extra bit to handle forced signed integers. INT_SIZES
+            # is interpreted as unsigned sizes.
+            bit_size = forced.bit_length() + 1
+            size = min(size for size in INT_SIZES if bit_size <= size)
+            forced_i = INT_SIZES.index(size)
+
+        size = INT_SIZES[INT_SIZES_SAMPLER.sample(self._cd, forced=forced_i)]
+
+        forced_r = None
+        if forced is not None:
+            forced_r = forced
+            forced_r <<= 1
+            if forced < 0:
+                forced_r = -forced_r
+                forced_r |= 1
+
+        r = self._cd.draw_bits(size, forced=forced_r)
         sign = r & 1
         r >>= 1
         if sign:
             r = -r
-        return int(r)
+        return r
 
     def _draw_bounded_integer(
         self,
@@ -1443,9 +1494,10 @@ class ConjectureData:
             assert max_value is not None
             assert (max_value - min_value) <= 1024  # arbitrary practical limit
 
-        if forced is not None:
-            assert min_value is not None
-            assert max_value is not None
+        if forced is not None and min_value is not None:
+            assert min_value <= forced
+        if forced is not None and max_value is not None:
+            assert forced <= max_value
 
         return self.provider.draw_integer(
             min_value=min_value,
