@@ -10,14 +10,15 @@
 
 import pytest
 
+import hypothesis.strategies as st
 from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.data import ConjectureData
-from hypothesis.strategies import integers, none
+from hypothesis.strategies._internal.lazy import unwrap_strategies
 
 
 @settings(database=None, suppress_health_check=[HealthCheck.filter_too_much])
-@given(integers(0, 100), integers(0, 100), integers(0, 100))
+@given(st.integers(0, 100), st.integers(0, 100), st.integers(0, 100))
 def test_forced_many(min_size, max_size, forced):
     assume(min_size <= forced <= max_size)
 
@@ -45,14 +46,14 @@ def test_biased_coin_can_be_forced():
 @pytest.mark.parametrize(
     "min_value_s, max_value_s, shrink_towards_s, forced_s",
     [
-        (integers(), integers(), integers(), integers()),
-        (integers(), integers(), none(), integers()),
-        (integers(), none(), integers(), integers()),
-        (none(), integers(), integers(), integers()),
-        (none(), none(), integers(), integers()),
-        (none(), integers(), none(), integers()),
-        (integers(), none(), none(), integers()),
-        (none(), none(), none(), integers()),
+        (st.integers(), st.integers(), st.integers(), st.integers()),
+        (st.integers(), st.integers(), st.none(), st.integers()),
+        (st.integers(), st.none(), st.integers(), st.integers()),
+        (st.none(), st.integers(), st.integers(), st.integers()),
+        (st.none(), st.none(), st.integers(), st.integers()),
+        (st.none(), st.integers(), st.none(), st.integers()),
+        (st.integers(), st.none(), st.none(), st.integers()),
+        (st.none(), st.none(), st.none(), st.integers()),
     ],
 )
 def test_integers_forced(min_value_s, max_value_s, shrink_towards_s, forced_s):
@@ -75,5 +76,18 @@ def test_integers_forced(min_value_s, max_value_s, shrink_towards_s, forced_s):
             )
             == forced
         )
+
+    inner_test()
+
+
+def test_strings_forced():
+    s = st.text()
+    intervals = unwrap_strategies(s).element_strategy.intervals
+
+    @given(s)
+    @settings(database=None)
+    def inner_test(forced):
+        data = ConjectureData.for_buffer([0] * 200)
+        assert data.draw_string(intervals=intervals, forced=forced) == forced
 
     inner_test()
