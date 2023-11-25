@@ -1105,7 +1105,7 @@ class PrimitiveProvider:
         *,
         min_size: int = 0,
         max_size: Optional[int] = None,
-        forced: Optional[str] = None
+        forced: Optional[str] = None,
     ) -> str:
         if max_size is None:
             max_size = 10**10  # "arbitrarily large"
@@ -1123,7 +1123,7 @@ class PrimitiveProvider:
             min_size=min_size,
             max_size=max_size,
             average_size=average_size,
-            forced=None if forced is None else len(forced)
+            forced=None if forced is None else len(forced),
         )
         while elements.more():
             forced_i: Optional[int] = None
@@ -1132,8 +1132,12 @@ class PrimitiveProvider:
                 forced_i = intervals.index_from_char_in_shrink_order(c)
 
             if len(intervals) > 256:
-                if self.draw_boolean(0.2, forced=None if forced_i is None else forced_i > 256):
-                    i = self._draw_bounded_integer(256, len(intervals) - 1, forced=forced_i)
+                if self.draw_boolean(
+                    0.2, forced=None if forced_i is None else forced_i > 256
+                ):
+                    i = self._draw_bounded_integer(
+                        256, len(intervals) - 1, forced=forced_i
+                    )
                 else:
                     i = self._draw_bounded_integer(0, 255, forced=forced_i)
             else:
