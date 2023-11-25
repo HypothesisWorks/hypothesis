@@ -1006,10 +1006,18 @@ class PrimitiveProvider:
             assert max_value is not None
 
             sampler = Sampler(weights)
-            idx = sampler.sample(self._cd)
+            gap = max_value - shrink_towards
+
+            forced_idx = None
+            if forced is not None:
+                if forced >= shrink_towards:
+                    forced_idx = forced - shrink_towards
+                else:
+                    forced_idx = shrink_towards + gap - forced
+            idx = sampler.sample(self._cd, forced=forced_idx)
 
             # For range -2..2, interpret idx = 0..4 as [0, 1, 2, -1, -2]
-            if idx <= (gap := max_value - shrink_towards):
+            if idx <= gap:
                 return shrink_towards + idx
             else:
                 return shrink_towards - (idx - gap)
@@ -1468,7 +1476,9 @@ class ConjectureData:
         if weights is not None:
             assert min_value is not None
             assert max_value is not None
-            assert (max_value - min_value) <= 1024  # arbitrary practical limit
+            width = max_value - min_value + 1
+            assert width <= 1024  # arbitrary practical limit
+            assert len(weights) == width
 
         if forced is not None and min_value is not None:
             assert min_value <= forced

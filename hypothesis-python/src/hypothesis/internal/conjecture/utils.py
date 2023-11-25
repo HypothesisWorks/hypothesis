@@ -190,8 +190,10 @@ class Sampler:
         )
         data.stop_example()
         if use_alternate:
+            assert forced is None or alternate == forced
             return alternate
         else:
+            assert forced is None or base == forced
             return base
 
 
