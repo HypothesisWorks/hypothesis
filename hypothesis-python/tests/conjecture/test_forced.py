@@ -38,7 +38,7 @@ def test_forced_many(data, min_size, max_size, forced):
     assert not many.more()
 
 
-def test_boolean_forced():
+def test_forced_boolean():
     data = ConjectureData.for_buffer([0])
     assert data.draw_boolean(0.5, forced=True)
 
@@ -59,7 +59,7 @@ def test_boolean_forced():
         (st.none(), st.none(), st.none(), st.integers()),
     ],
 )
-def test_integers_forced(min_value_s, max_value_s, shrink_towards_s, forced_s):
+def test_forced_integer(min_value_s, max_value_s, shrink_towards_s, forced_s):
     @given(st.data(), min_value_s, max_value_s, shrink_towards_s, forced_s)
     @settings(database=None)
     def inner_test(data, min_value, max_value, shrink_towards, forced):
@@ -90,7 +90,7 @@ def test_integers_forced(min_value_s, max_value_s, shrink_towards_s, forced_s):
         (st.integers(min_value=0), st.integers(min_value=0)),
     ],
 )
-def test_strings_forced(min_size_s, max_size_s):
+def test_forced_string(min_size_s, max_size_s):
     forced_s = st.text()
     intervals = unwrap_strategies(forced_s).element_strategy.intervals
 
