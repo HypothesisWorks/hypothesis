@@ -17,7 +17,7 @@ from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.strategies._internal.lazy import unwrap_strategies
 
 
-@settings(database=None, suppress_health_check=[HealthCheck.filter_too_much])
+@settings(database=None, suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow])
 @given(st.integers(0, 100), st.integers(0, 100), st.integers(0, 100))
 def test_forced_many(min_size, max_size, forced):
     assume(min_size <= forced <= max_size)
@@ -80,14 +80,38 @@ def test_integers_forced(min_value_s, max_value_s, shrink_towards_s, forced_s):
     inner_test()
 
 
-def test_strings_forced():
-    s = st.text()
-    intervals = unwrap_strategies(s).element_strategy.intervals
+@pytest.mark.parametrize(
+    "min_size_s, max_size_s",
+    [
+        (st.none(), st.none()),
+        (st.integers(min_value=0), st.none()),
+        (st.none(), st.integers(min_value=0)),
+        (st.integers(min_value=0), st.integers(min_value=0)),
+    ],
+)
+def test_strings_forced(min_size_s, max_size_s):
+    forced_s = st.text()
+    intervals = unwrap_strategies(forced_s).element_strategy.intervals
 
-    @given(s)
-    @settings(database=None)
-    def inner_test(forced):
+    @given(min_size_s, max_size_s, forced_s)
+    @settings(
+        database=None,
+        suppress_health_check=[HealthCheck.too_slow, HealthCheck.filter_too_much],
+    )
+    def inner_test(min_size, max_size, forced):
+        if min_size is None:
+            min_size = 0
+
+        assume(min_size <= len(forced))
+        if max_size is not None:
+            assume(len(forced) <= max_size)
+
         data = ConjectureData.for_buffer([0] * 200)
-        assert data.draw_string(intervals=intervals, forced=forced) == forced
+        assert (
+            data.draw_string(
+                intervals=intervals, forced=forced, min_size=min_size, max_size=max_size
+            )
+            == forced
+        )
 
     inner_test()
