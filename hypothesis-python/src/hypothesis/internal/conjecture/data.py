@@ -994,6 +994,11 @@ class PrimitiveProvider:
         shrink_towards: int = 0,
         forced: Optional[int] = None,
     ) -> int:
+        if min_value is not None:
+            shrink_towards = max(min_value, shrink_towards)
+        if max_value is not None:
+            shrink_towards = min(max_value, shrink_towards)
+
         # This is easy to build on top of our existing conjecture utils,
         # and it's easy to build sampled_from and weighted_coin on this.
         if weights is not None:
@@ -1003,71 +1008,42 @@ class PrimitiveProvider:
             sampler = Sampler(weights)
             idx = sampler.sample(self._cd)
 
-            if shrink_towards <= min_value:
-                return min_value + idx
-            elif max_value <= shrink_towards:
-                return max_value - idx
+            # For range -2..2, interpret idx = 0..4 as [0, 1, 2, -1, -2]
+            if idx <= (gap := max_value - shrink_towards):
+                return shrink_towards + idx
             else:
-                # For range -2..2, interpret idx = 0..4 as [0, 1, 2, -1, -2]
-                if idx <= (gap := max_value - shrink_towards):
-                    return shrink_towards + idx
-                else:
-                    return shrink_towards - (idx - gap)
+                return shrink_towards - (idx - gap)
 
         if min_value is None and max_value is None:
             return self._draw_unbounded_integer(forced=forced)
 
         if min_value is None:
             assert max_value is not None  # make mypy happy
-            if max_value <= shrink_towards:
-                return max_value - abs(
+            probe = max_value + 1
+            while max_value < probe:
+                self._cd.start_example(ONE_BOUND_INTEGERS_LABEL)
+                probe = (
                     self._draw_unbounded_integer(
-                        # no need to worry about the outer abs here:
-                        # forced <= max_value      ->
-                        # forced - max_value <= 0  ->
-                        # -forced + max_value >= 0
-                        forced=None
-                        if forced is None
-                        else -forced + max_value
+                        forced=None if forced is None else forced - shrink_towards
                     )
+                    + shrink_towards
                 )
-            else:
-                probe = max_value + 1
-                while max_value < probe:
-                    self._cd.start_example(ONE_BOUND_INTEGERS_LABEL)
-                    probe = (
-                        self._draw_unbounded_integer(
-                            forced=None if forced is None else forced - shrink_towards
-                        )
-                        + shrink_towards
-                    )
-                    self._cd.stop_example(discard=max_value < probe)
-                return probe
+                self._cd.stop_example(discard=max_value < probe)
+            return probe
 
         if max_value is None:
             assert min_value is not None
-            if min_value >= shrink_towards:
-                return min_value + abs(
+            probe = min_value - 1
+            while probe < min_value:
+                self._cd.start_example(ONE_BOUND_INTEGERS_LABEL)
+                probe = (
                     self._draw_unbounded_integer(
-                        # no need to worry the outer abs here:
-                        # forced >= min_value -> forced - min_value >= 0
-                        forced=None
-                        if forced is None
-                        else forced - min_value
+                        forced=None if forced is None else forced - shrink_towards
                     )
+                    + shrink_towards
                 )
-            else:
-                probe = min_value - 1
-                while probe < min_value:
-                    self._cd.start_example(ONE_BOUND_INTEGERS_LABEL)
-                    probe = (
-                        self._draw_unbounded_integer(
-                            forced=None if forced is None else forced - shrink_towards
-                        )
-                        + shrink_towards
-                    )
-                    self._cd.stop_example(discard=probe < min_value)
-                return probe
+                self._cd.stop_example(discard=probe < min_value)
+            return probe
 
         return self._draw_bounded_integer(
             min_value,
