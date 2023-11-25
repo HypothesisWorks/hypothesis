@@ -185,7 +185,9 @@ class Sampler:
         base, alternate, alternate_chance = choice(
             data, self.table, forced=forced_choice
         )
-        use_alternate = data.draw_boolean(alternate_chance, forced=forced == alternate)
+        use_alternate = data.draw_boolean(
+            alternate_chance, forced=None if forced is None else forced == alternate
+        )
         data.stop_example()
         if use_alternate:
             return alternate
