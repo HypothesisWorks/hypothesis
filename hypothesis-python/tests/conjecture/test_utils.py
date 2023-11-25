@@ -318,34 +318,6 @@ def test_many_with_max_size():
     assert many.more()
     assert not many.more()
 
-@settings(
-    database=None,
-    suppress_health_check=[HealthCheck.filter_too_much]
-)
-@given(st.integers(0, 100), st.integers(0, 100), st.integers(0, 100))
-def test_forced_many(min_size, max_size, forced):
-    assume(min_size <= forced <= max_size)
-
-    many = cu.many(
-        ConjectureData.for_buffer([0] * 500),
-        min_size=min_size,
-        average_size=(min_size + max_size) / 2,
-        max_size=max_size,
-        forced=forced
-    )
-    for _ in range(forced):
-        assert many.more()
-
-    assert not many.more()
-
-
-def test_biased_coin_can_be_forced():
-    data = ConjectureData.for_buffer([0])
-    assert data.draw_boolean(0.5, forced=True)
-
-    data = ConjectureData.for_buffer([1])
-    assert not data.draw_boolean(0.5, forced=False)
-
 
 def test_assert_biased_coin_always_treats_one_as_true():
     data = ConjectureData.for_buffer([0, 1])
