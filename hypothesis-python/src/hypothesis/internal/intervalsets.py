@@ -10,6 +10,7 @@
 
 from typing import Union
 
+
 class IntervalSet:
     @classmethod
     def from_string(cls, s):

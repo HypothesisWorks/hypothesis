@@ -9,15 +9,12 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 from hypothesis import HealthCheck, assume, given, settings
-from hypothesis.strategies import integers
-from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture import utils as cu
+from hypothesis.internal.conjecture.data import ConjectureData
+from hypothesis.strategies import integers
 
 
-@settings(
-    database=None,
-    suppress_health_check=[HealthCheck.filter_too_much]
-)
+@settings(database=None, suppress_health_check=[HealthCheck.filter_too_much])
 @given(integers(0, 100), integers(0, 100), integers(0, 100))
 def test_forced_many(min_size, max_size, forced):
     assume(min_size <= forced <= max_size)
@@ -27,7 +24,7 @@ def test_forced_many(min_size, max_size, forced):
         min_size=min_size,
         average_size=(min_size + max_size) / 2,
         max_size=max_size,
-        forced=forced
+        forced=forced,
     )
     for _ in range(forced):
         assert many.more()

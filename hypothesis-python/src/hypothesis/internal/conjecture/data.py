@@ -1212,7 +1212,9 @@ class PrimitiveProvider:
         bits = gap.bit_length()
         probe = gap + 1
 
-        if bits > 24 and self._cd.draw_bits(3, forced=None if forced is None else 0):
+        if bits > 24 and self.draw_boolean(
+            7 / 8, forced=None if forced is None else False
+        ):
             # For large ranges, we combine the uniform random distribution from draw_bits
             # with a weighting scheme with moderate chance.  Cutoff at 2 ** 24 so that our
             # choice of unicode characters is uniform but the 32bit distribution is not.
@@ -1475,7 +1477,7 @@ class ConjectureData:
         *,
         min_size: int = 0,
         max_size: Optional[int] = None,
-        forced: Optional[str] = None
+        forced: Optional[str] = None,
     ) -> str:
         assert forced is None or min_size <= len(forced)
         return self.provider.draw_string(
