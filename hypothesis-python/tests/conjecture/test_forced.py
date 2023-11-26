@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import math
 from random import Random
 
 import pytest
@@ -163,11 +164,13 @@ def test_forced_bytes(forced):
     assert data.draw_bytes(len(forced)) == forced
 
 
-@given(st.floats(allow_nan=False))
+@given(st.floats())
 @settings(database=None)
 def test_forced_floats(forced):
     data = fresh_data()
-    assert data.draw_float(forced=forced) == forced
+    drawn = data.draw_float(forced=forced)
+    assert drawn == forced or (math.isnan(drawn) and math.isnan(forced))
 
     data = ConjectureData.for_buffer(data.buffer)
-    assert data.draw_float() == forced
+    drawn = data.draw_float()
+    assert drawn == forced or (math.isnan(drawn) and math.isnan(forced))

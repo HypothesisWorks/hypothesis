@@ -1537,8 +1537,8 @@ class ConjectureData:
         assert not math.isnan(max_value)
 
         if forced is not None:
-            assert not math.isnan(forced)
-            assert min_value <= forced <= max_value
+            assert allow_nan or not math.isnan(forced)
+            assert math.isnan(forced) or min_value <= forced <= max_value
 
         return self.provider.draw_float(
             min_value=min_value,
