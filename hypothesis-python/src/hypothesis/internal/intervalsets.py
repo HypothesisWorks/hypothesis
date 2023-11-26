@@ -63,7 +63,7 @@ class IntervalSet:
         assert r <= v
         return r
 
-    def __contains__(self, elem: Union[str, int]):
+    def __contains__(self, elem: Union[str, int]) -> bool:
         if isinstance(elem, str):
             elem = ord(elem)
         assert 0 <= elem <= 0x10FFFF
@@ -72,7 +72,7 @@ class IntervalSet:
     def __repr__(self):
         return f"IntervalSet({self.intervals!r})"
 
-    def index(self, value: int):
+    def index(self, value: int) -> int:
         for offset, (u, v) in zip(self.offsets, self.intervals):
             if u == value:
                 return offset
@@ -82,7 +82,7 @@ class IntervalSet:
                 return offset + (value - u)
         raise ValueError(f"{value} is not in list")
 
-    def index_above(self, value: int):
+    def index_above(self, value: int) -> int:
         for offset, (u, v) in zip(self.offsets, self.intervals):
             if u >= value:
                 return offset
