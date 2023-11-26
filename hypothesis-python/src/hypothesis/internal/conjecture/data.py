@@ -1562,7 +1562,7 @@ class ConjectureData:
         )
 
     def draw_bytes(self, size: int, *, forced: Optional[bytes] = None) -> bytes:
-        assert forced is None or len(forced) <= size
+        assert forced is None or len(forced) == size
         return self.provider.draw_bytes(size, forced=forced)
 
     def draw_boolean(self, p: float = 0.5, *, forced: Optional[bool] = None) -> bool:
