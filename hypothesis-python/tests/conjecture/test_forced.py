@@ -122,3 +122,9 @@ def test_forced_string(min_size_s, max_size_s):
 def test_forced_bytes(data, size, forced):
     assume(len(forced) <= size)
     assert data.conjecture_data.draw_bytes(size, forced=forced) == forced
+
+
+@given(st.data(), st.floats(allow_nan=False))
+@settings(database=None)
+def test_forced_floats(data, forced):
+    assert data.conjecture_data.draw_float(forced=forced) == forced

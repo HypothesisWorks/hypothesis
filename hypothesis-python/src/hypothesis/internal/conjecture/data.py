@@ -1070,7 +1070,8 @@ class PrimitiveProvider:
         # TODO: consider supporting these float widths at the IR level in the
         # future.
         # width: Literal[16, 32, 64] = 64,
-        # exclude_min and exclude_max handled higher up
+        # exclude_min and exclude_max handled higher up,
+        forced: Optional[float] = None,
     ) -> float:
         (
             sampler,
@@ -1087,10 +1088,18 @@ class PrimitiveProvider:
 
         while True:
             self._cd.start_example(FLOAT_STRATEGY_DO_DRAW_LABEL)
-            i = sampler.sample(self._cd) if sampler else 0
+            forced_i = None
+            if forced is not None:
+                forced_i = (
+                    nasty_floats.index(forced) + 1 if forced in nasty_floats else 0
+                )
+
+            i = sampler.sample(self._cd, forced=forced_i) if sampler else 0
             self._cd.start_example(DRAW_FLOAT_LABEL)
             if i == 0:
-                result = self._draw_float(forced_sign_bit=forced_sign_bit)
+                result = self._draw_float(
+                    forced_sign_bit=forced_sign_bit, forced=forced
+                )
                 if math.copysign(1.0, result) == -1:
                     assert neg_clamper is not None
                     clamped = -neg_clamper(-result)
@@ -1167,14 +1176,26 @@ class PrimitiveProvider:
 
         return self._cd.draw_bits(8 * size, forced=forced_i).to_bytes(size, "big")
 
-    def _draw_float(self, forced_sign_bit: Optional[int] = None) -> float:
+    def _draw_float(
+        self, forced_sign_bit: Optional[int] = None, *, forced: Optional[float] = None
+    ) -> float:
         """
         Helper for draw_float which draws a random 64-bit float.
         """
+        if forced is not None:
+            forced_sign_bit = int(sign_aware_lte(forced, 0.0))
+
         self._cd.start_example(DRAW_FLOAT_LABEL)
         try:
             is_negative = self._cd.draw_bits(1, forced=forced_sign_bit)
-            f = lex_to_float(self._cd.draw_bits(64))
+            f = lex_to_float(
+                self._cd.draw_bits(
+                    64,
+                    forced=None
+                    if forced is None
+                    else float_to_lex(-forced if is_negative else forced),
+                )
+            )
             return -f if is_negative else f
         finally:
             self._cd.stop_example()
@@ -1508,14 +1529,23 @@ class ConjectureData:
         # TODO: consider supporting these float widths at the IR level in the
         # future.
         # width: Literal[16, 32, 64] = 64,
-        # exclude_min and exclude_max handled higher up
+        # exclude_min and exclude_max handled higher up,
+        forced: Optional[float] = None,
     ) -> float:
         assert smallest_nonzero_magnitude > 0
+        assert not math.isnan(min_value)
+        assert not math.isnan(max_value)
+
+        if forced is not None:
+            assert not math.isnan(forced)
+            assert min_value <= forced <= max_value
+
         return self.provider.draw_float(
             min_value=min_value,
             max_value=max_value,
             allow_nan=allow_nan,
             smallest_nonzero_magnitude=smallest_nonzero_magnitude,
+            forced=forced,
         )
 
     def draw_string(
