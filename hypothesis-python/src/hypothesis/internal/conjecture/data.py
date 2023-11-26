@@ -1277,9 +1277,7 @@ class PrimitiveProvider:
         bits = gap.bit_length()
         probe = gap + 1
 
-        if bits > 24 and self.draw_boolean(
-            7 / 8, forced=None if forced is None else False
-        ):
+        if bits > 24 and self._cd.draw_bits(3, forced=None if forced is None else 0):
             # For large ranges, we combine the uniform random distribution from draw_bits
             # with a weighting scheme with moderate chance.  Cutoff at 2 ** 24 so that our
             # choice of unicode characters is uniform but the 32bit distribution is not.
