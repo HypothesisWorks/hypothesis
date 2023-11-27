@@ -78,4 +78,22 @@ def test_errors_attribute_error():
 
 
 def test_handles_null_traceback():
-    esc.get_interesting_origin(Exception())
+    esc.InterestingOrigin.from_exception(Exception())
+
+
+def test_handles_context():
+    e = ValueError()
+    e.__context__ = KeyError()
+    origin = esc.InterestingOrigin.from_exception(e)
+    assert "ValueError at " in str(origin)
+    assert "  context: " in str(origin)
+    assert "KeyError at " in str(origin)
+
+
+def test_handles_groups():
+    origin = esc.InterestingOrigin.from_exception(
+        BaseExceptionGroup("message", [ValueError("msg2")])
+    )
+    assert "ExceptionGroup at " in str(origin)
+    assert "child exception" in str(origin)
+    assert "ValueError at " in str(origin)
