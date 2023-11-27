@@ -111,7 +111,7 @@ def test_can_mark_invalid_with_why():
         x.mark_invalid("some reason")
     assert x.frozen
     assert x.status == Status.INVALID
-    assert x.events == {"some reason"}
+    assert x.events == {"invalid because": "some reason"}
 
 
 class BoomStrategy(SearchStrategy):
@@ -416,7 +416,7 @@ def test_trivial_before_force_agrees_with_trivial_after():
 
 def test_events_are_noted():
     d = ConjectureData.for_buffer(())
-    d.note_event("hello")
+    d.events["hello"] = ""
     assert "hello" in d.events
 
 
