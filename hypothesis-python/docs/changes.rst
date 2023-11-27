@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.91.0:
+
+-------------------
+6.91.0 - 2023-11-27
+-------------------
+
+This release adds an optional ``payload`` argument to :func:`hypothesis.event`,
+so that you can clearly express the difference between the label and the value
+of an observation.  :ref:`statistics` will still summarize it as a string, but
+future observability options can preserve the distinction.
+
 .. _v6.90.1:
 
 -------------------
