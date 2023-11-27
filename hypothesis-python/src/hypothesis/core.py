@@ -1037,7 +1037,9 @@ class StateForActualGivenExecution:
             info = falsifying_example.extra_information
             fragments = []
 
-            ran_example = ConjectureData.for_buffer(falsifying_example.buffer)
+            ran_example = runner.new_conjecture_data_for_buffer(
+                falsifying_example.buffer
+            )
             ran_example.slice_comments = falsifying_example.slice_comments
             assert info.__expected_exception is not None
             try:
