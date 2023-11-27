@@ -186,3 +186,18 @@ def test_bad_machines_fail(machine):
         notes = err.__notes__
     steps = [l for l in notes if "Step " in l or "state." in l]
     assert 1 <= len(steps) <= 50
+
+
+class MyStatefulMachine(RuleBasedStateMachine):
+    def __init__(self):
+        self.n_steps = 0
+        super().__init__()
+
+    @rule()
+    def step(self):
+        self.n_steps += 1
+        assert self.n_steps <= 10
+
+
+class TestMyStatefulMachine(MyStatefulMachine.TestCase):
+    settings = Settings(derandomize=True, stateful_step_count=5)
