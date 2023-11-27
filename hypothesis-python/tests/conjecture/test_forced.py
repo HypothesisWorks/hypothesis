@@ -25,14 +25,16 @@ from hypothesis.strategies._internal.lazy import unwrap_strategies
 def fresh_data():
     return ConjectureData(8 * 1024, prefix=b"", random=Random())
 
-
+@given(st.data())
 @settings(
     database=None,
     suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow],
 )
-@given(st.integers(0, 100), st.integers(0, 100), st.integers(0, 100))
-def test_forced_many(min_size, max_size, forced):
-    assume(min_size <= forced <= max_size)
+def test_forced_many(data):
+    forced = data.draw(st.integers(0, 100))
+    min_size = data.draw(st.integers(0, forced))
+    max_size = data.draw(st.integers(forced, 100))
+    assert min_size <= forced <= max_size  # by construction
 
     data = fresh_data()
     many = cu.many(
@@ -70,88 +72,106 @@ def test_forced_boolean():
 
 
 @pytest.mark.parametrize(
-    "min_value_s, max_value_s, shrink_towards_s, forced_s",
+    "use_min_value, use_max_value, use_shrink_towards, use_weights",
     [
-        (st.integers(), st.integers(), st.integers(), st.integers()),
-        (st.integers(), st.integers(), st.none(), st.integers()),
-        (st.integers(), st.none(), st.integers(), st.integers()),
-        (st.none(), st.integers(), st.integers(), st.integers()),
-        (st.none(), st.none(), st.integers(), st.integers()),
-        (st.none(), st.integers(), st.none(), st.integers()),
-        (st.integers(), st.none(), st.none(), st.integers()),
-        (st.none(), st.none(), st.none(), st.integers()),
+        (True, True, True, True),
+        (True, True, True, False),
+        (True, True, False, True),
+        (True, True, False, False),
+        (True, False, True, False),
+        (False, True, True, False),
+        (False, False, True, False),
+        (False, True, False, False),
+        (True, False, False, False),
+        (False, False, False, False),
     ],
 )
-def test_forced_integer(min_value_s, max_value_s, shrink_towards_s, forced_s):
-    @given(min_value_s, max_value_s, shrink_towards_s, forced_s)
-    @settings(database=None)
-    def inner_test(min_value, max_value, shrink_towards, forced):
-        if min_value is not None:
-            assume(min_value <= forced)
-        if max_value is not None:
-            assume(forced <= max_value)
-        # default shrink_towards param
-        if shrink_towards is None:
-            shrink_towards = 0
+@given(st.data())
+@settings(database=None)
+def test_forced_integer(
+    use_min_value, use_max_value, use_shrink_towards, use_weights, data
+):
+    min_value = None
+    max_value = None
+    shrink_towards = 0
+    weights = None
 
-        data = fresh_data()
-        assert (
-            data.draw_integer(
-                min_value, max_value, shrink_towards=shrink_towards, forced=forced
+    forced = data.draw(st.integers())
+    if use_min_value:
+        min_value = data.draw(st.integers(max_value=forced))
+    if use_max_value:
+        max_value = data.draw(st.integers(min_value=forced))
+    if use_shrink_towards:
+        shrink_towards = data.draw(st.integers())
+    if use_weights:
+        assert use_max_value and use_min_value
+
+        width = max_value - min_value + 1
+        assume(width <= 1024)
+
+        weights = data.draw(
+            st.lists(
+                # weights doesn't play well with super small floats.
+                st.floats(min_value=0.1, max_value=1),
+                min_size=width,
+                max_size=width,
             )
-            == forced
         )
 
-        data = ConjectureData.for_buffer(data.buffer)
-        assert (
-            data.draw_integer(min_value, max_value, shrink_towards=shrink_towards)
-            == forced
+    data = fresh_data()
+    assert (
+        data.draw_integer(
+            min_value,
+            max_value,
+            shrink_towards=shrink_towards,
+            weights=weights,
+            forced=forced,
         )
+        == forced
+    )
 
-    inner_test()
+    data = ConjectureData.for_buffer(data.buffer)
+    assert (
+        data.draw_integer(
+            min_value, max_value, shrink_towards=shrink_towards, weights=weights
+        )
+        == forced
+    )
 
 
-@pytest.mark.parametrize(
-    "min_size_s, max_size_s",
-    [
-        (st.none(), st.none()),
-        (st.integers(min_value=0), st.none()),
-        (st.none(), st.integers(min_value=0)),
-        (st.integers(min_value=0), st.integers(min_value=0)),
-    ],
+@pytest.mark.parametrize("use_min_size", [True, False])
+@pytest.mark.parametrize("use_max_size", [True, False])
+@given(st.data())
+@settings(
+    database=None,
+    suppress_health_check=[HealthCheck.too_slow, HealthCheck.filter_too_much],
 )
-def test_forced_string(min_size_s, max_size_s):
+def test_forced_string(use_min_size, use_max_size, data):
     forced_s = st.text()
     intervals = unwrap_strategies(forced_s).element_strategy.intervals
 
-    @given(min_size_s, max_size_s, forced_s)
-    @settings(
-        database=None,
-        suppress_health_check=[HealthCheck.too_slow, HealthCheck.filter_too_much],
+    forced = data.draw(forced_s)
+    min_size = 0
+    max_size = None
+    if use_min_size:
+        min_size = data.draw(st.integers(0, len(forced)))
+
+    if use_max_size:
+        max_size = data.draw(st.integers(min_value=len(forced)))
+
+    data = fresh_data()
+    assert (
+        data.draw_string(
+            intervals=intervals, min_size=min_size, max_size=max_size, forced=forced
+        )
+        == forced
     )
-    def inner_test(min_size, max_size, forced):
-        if min_size is None:
-            min_size = 0
 
-        assume(min_size <= len(forced))
-        if max_size is not None:
-            assume(len(forced) <= max_size)
-
-        data = fresh_data()
-        assert (
-            data.draw_string(
-                intervals=intervals, min_size=min_size, max_size=max_size, forced=forced
-            )
-            == forced
-        )
-
-        data = ConjectureData.for_buffer(data.buffer)
-        assert (
-            data.draw_string(intervals=intervals, min_size=min_size, max_size=max_size)
-            == forced
-        )
-
-    inner_test()
+    data = ConjectureData.for_buffer(data.buffer)
+    assert (
+        data.draw_string(intervals=intervals, min_size=min_size, max_size=max_size)
+        == forced
+    )
 
 
 @given(st.binary())
