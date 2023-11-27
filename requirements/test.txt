@@ -6,7 +6,7 @@
 #
 attrs==23.1.0
     # via hypothesis (hypothesis-python/setup.py)
-exceptiongroup==1.1.3 ; python_version < "3.11"
+exceptiongroup==1.2.0 ; python_version < "3.11"
     # via
     #   hypothesis (hypothesis-python/setup.py)
     #   pytest
@@ -16,7 +16,7 @@ iniconfig==2.0.0
     # via pytest
 packaging==23.2
     # via pytest
-pexpect==4.8.0
+pexpect==4.9.0
     # via -r requirements/test.in
 pluggy==1.3.0
     # via pytest
@@ -26,7 +26,7 @@ pytest==7.4.3
     # via
     #   -r requirements/test.in
     #   pytest-xdist
-pytest-xdist==3.4.0
+pytest-xdist==3.5.0
     # via -r requirements/test.in
 sortedcontainers==2.4.0
     # via hypothesis (hypothesis-python/setup.py)
