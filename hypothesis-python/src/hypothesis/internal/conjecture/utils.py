@@ -222,7 +222,7 @@ class many:
         *,
         forced: Optional[int] = None,
     ) -> None:
-        assert 0 <= min_size <= average_size <= max_size, (min_size, average_size, max_size)
+        assert 0 <= min_size <= average_size <= max_size
         assert forced is None or min_size <= forced <= max_size
         self.min_size = min_size
         self.max_size = max_size

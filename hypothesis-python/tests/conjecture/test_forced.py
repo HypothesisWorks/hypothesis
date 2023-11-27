@@ -25,6 +25,7 @@ from hypothesis.strategies._internal.lazy import unwrap_strategies
 def fresh_data():
     return ConjectureData(8 * 1024, prefix=b"", random=Random())
 
+
 @given(st.data())
 @settings(
     database=None,
