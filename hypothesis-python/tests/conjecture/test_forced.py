@@ -105,7 +105,8 @@ def test_forced_integer(
     if use_shrink_towards:
         shrink_towards = data.draw(st.integers())
     if use_weights:
-        assert use_max_value and use_min_value
+        assert use_max_value
+        assert use_min_value
 
         width = max_value - min_value + 1
         assume(width <= 1024)
