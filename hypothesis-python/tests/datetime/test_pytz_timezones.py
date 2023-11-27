@@ -15,16 +15,12 @@ import warnings
 import pytest
 
 from hypothesis import assume, given
-from hypothesis.errors import InvalidArgument
-from hypothesis.strategies import data, datetimes, just, sampled_from, times
+from hypothesis.errors import InvalidArgument, StopTest
+from hypothesis.internal.conjecture.data import ConjectureData
+from hypothesis.strategies import binary, data, datetimes, just, sampled_from, times
 from hypothesis.strategies._internal.datetime import datetime_does_not_exist
 
-from tests.common.debug import (
-    assert_all_examples,
-    assert_can_trigger_event,
-    find_any,
-    minimal,
-)
+from tests.common.debug import assert_all_examples, find_any, minimal
 
 with warnings.catch_warnings():
     if sys.version_info[:2] >= (3, 12):
@@ -116,10 +112,15 @@ def test_time_bounds_must_be_naive(name, val):
     ],
 )
 def test_can_trigger_error_in_draw_near_boundary(bound):
-    assert_can_trigger_event(
-        datetimes(**bound, timezones=timezones()),
-        lambda event: "Failed to draw a datetime" in event,
-    )
+    def test(buf):
+        data = ConjectureData.for_buffer(buf)
+        try:
+            data.draw(datetimes(**bound, timezones=timezones()))
+        except StopTest:
+            pass
+        return "Failed to draw a datetime" in data.events.get("invalid because", "")
+
+    find_any(binary(), test)
 
 
 @given(data(), datetimes(), datetimes())

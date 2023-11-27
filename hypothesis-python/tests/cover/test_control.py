@@ -14,6 +14,7 @@ from hypothesis import Verbosity, assume, given, reject, reporting, settings
 from hypothesis.control import (
     BuildContext,
     _current_build_context,
+    _event_to_string,
     cleanup,
     current_build_context,
     currently_in_test_context,
@@ -191,3 +192,7 @@ class ContextMachine(RuleBasedStateMachine):
 
 
 test_currently_in_stateful_test = ContextMachine.TestCase
+
+
+def test_can_convert_non_weakref_types_to_event_strings():
+    _event_to_string(())

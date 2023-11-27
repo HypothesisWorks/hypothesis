@@ -15,7 +15,7 @@ import textwrap
 import traceback
 from inspect import getframeinfo
 from pathlib import Path
-from typing import Dict, NamedTuple, Type
+from typing import Dict, NamedTuple, Optional, Type
 
 import hypothesis
 from hypothesis.errors import (
@@ -114,8 +114,8 @@ class InterestingOrigin(NamedTuple):
     # blocks and understand the __cause__ (`raise x from y`) or __context__ that
     # first raised an exception as well as PEP-654 exception groups.
     exc_type: Type[BaseException]
-    filename: str
-    lineno: int
+    filename: Optional[str]
+    lineno: Optional[int]
     context: "InterestingOrigin | tuple[()]"
     group_elems: "tuple[InterestingOrigin, ...]"
 

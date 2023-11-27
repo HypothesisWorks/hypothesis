@@ -1586,8 +1586,3 @@ def test_can_be_set_to_ignore_limits():
             runner.cached_test_function([c])
 
         assert runner.tree.is_exhausted
-
-
-def test_can_convert_non_weakref_types_to_event_strings():
-    runner = ConjectureRunner(lambda data: None)
-    runner.event_to_string(())

@@ -14,9 +14,9 @@ def test_fuzz_assume(condition: object) -> None:
     hypothesis.assume(condition=condition)
 
 
-@given(value=st.text())
-def test_fuzz_event(value: str) -> None:
-    hypothesis.event(value=value)
+@given(value=st.text(), payload=st.one_of(st.floats(), st.integers(), st.text()))
+def test_fuzz_event(value: str, payload: typing.Union[str, int, float]) -> None:
+    hypothesis.event(value=value, payload=payload)
 
 
 @given(

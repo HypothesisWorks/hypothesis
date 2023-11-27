@@ -8,16 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from hypothesis import (
-    HealthCheck,
-    Phase,
-    Verbosity,
-    given,
-    settings as Settings,
-    strategies as st,
-)
+from hypothesis import HealthCheck, Phase, Verbosity, given, settings as Settings
 from hypothesis.errors import Found, NoSuchExample, Unsatisfiable
-from hypothesis.internal.conjecture.data import ConjectureData, StopTest
 from hypothesis.internal.reflection import get_pretty_function_description
 
 from tests.common.utils import no_shrink
@@ -107,15 +99,3 @@ def assert_all_examples(strategy, predicate):
         assert predicate(s), msg
 
     assert_examples()
-
-
-def assert_can_trigger_event(strategy, predicate):
-    def test(buf):
-        data = ConjectureData.for_buffer(buf)
-        try:
-            data.draw(strategy)
-        except StopTest:
-            pass
-        return any(predicate(e) for e in data.events)
-
-    find_any(st.binary(), test)
