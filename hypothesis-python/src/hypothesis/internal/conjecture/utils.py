@@ -177,7 +177,7 @@ class Sampler:
 
     def sample(self, data: "ConjectureData", forced: Optional[int] = None) -> int:
         data.start_example(SAMPLE_IN_SAMPLER_LABEL)
-        forced_choice = (
+        forced_choice = (  # pragma: no branch # https://github.com/nedbat/coveragepy/issues/1617
             None
             if forced is None
             else next((b, a, a_c) for (b, a, a_c) in self.table if forced in (b, a))
