@@ -76,7 +76,6 @@ else:
 ONE_BOUND_INTEGERS_LABEL = calc_label_from_name("trying a one-bound int allowing 0")
 INTEGER_RANGE_DRAW_LABEL = calc_label_from_name("another draw in integer_range()")
 BIASED_COIN_LABEL = calc_label_from_name("biased_coin()")
-BIASED_COIN_INNER_LABEL = calc_label_from_name("inside biased_coin()")
 
 TOP_LABEL = calc_label_from_name("top")
 DRAW_BYTES_LABEL = calc_label_from_name("draw_bytes() in ConjectureData")
@@ -937,18 +936,9 @@ class PrimitiveProvider:
                 else:
                     partial = True
 
-                if forced is None:
-                    # We want to get to the point where True is represented by
-                    # 1 and False is represented by 0 as quickly as possible, so
-                    # we use the remove_discarded machinery in the shrinker to
-                    # achieve that by discarding any draws that are > 1 and writing
-                    # a suitable draw into the choice sequence at the end of the
-                    # loop.
-                    self._cd.start_example(BIASED_COIN_INNER_LABEL)
-                    i = self._cd.draw_bits(bits)
-                    self._cd.stop_example(discard=i > 1)
-                else:
-                    i = self._cd.draw_bits(bits, forced=int(forced))
+                i = self._cd.draw_bits(
+                    bits, forced=None if forced is None else int(forced)
+                )
 
                 # We always choose the region that causes us to repeat the loop as
                 # the maximum value, so that shrinking the drawn bits never causes
@@ -978,8 +968,6 @@ class PrimitiveProvider:
                     # becomes i > falsey.
                     result = i > falsey
 
-                if i > 1:
-                    self._cd.draw_bits(bits, forced=int(result))
             break
         self._cd.stop_example()
         return result
