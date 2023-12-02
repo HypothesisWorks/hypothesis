@@ -1494,6 +1494,12 @@ class ConjectureData:
             assert width <= 1024  # arbitrary practical limit
             assert len(weights) == width
 
+        if forced is not None:
+            # We draw `forced=forced - shrink_towards` internally. If that grows
+            # larger than a 128 bit signed integer, we can't represent it.
+            # Disallow this combination for now.
+            # Note that bit_length() = 128 -> signed bit size = 129.
+            assert (forced - shrink_towards).bit_length() < 128
         if forced is not None and min_value is not None:
             assert min_value <= forced
         if forced is not None and max_value is not None:
