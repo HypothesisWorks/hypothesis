@@ -110,7 +110,6 @@ def test_forced_integer(
 
         width = max_value - min_value + 1
         assume(width <= 1024)
-        assume((forced - shrink_towards).bit_length() < 128)
 
         weights = data.draw(
             st.lists(
@@ -120,6 +119,8 @@ def test_forced_integer(
                 max_size=width,
             )
         )
+
+    assume((forced - shrink_towards).bit_length() < 128)
 
     data = fresh_data()
     assert (
