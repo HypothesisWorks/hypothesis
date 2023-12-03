@@ -116,7 +116,7 @@ def test_unicode_string_dtypes_need_not_be_utf8():
         except UnicodeEncodeError:
             return True
 
-    find_any(nps.from_dtype(np.dtype("U")), cannot_encode, settings(max_examples=2000))
+    find_any(nps.from_dtype(np.dtype("U")), cannot_encode, settings(max_examples=5000))
 
 
 @given(st.data())
