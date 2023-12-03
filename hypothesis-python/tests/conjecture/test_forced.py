@@ -88,7 +88,7 @@ def test_forced_boolean():
     ],
 )
 @given(st.data())
-@settings(database=None)
+@settings(database=None, suppress_health_check=[HealthCheck.too_slow])
 def test_forced_integer(
     use_min_value, use_max_value, use_shrink_towards, use_weights, data
 ):
