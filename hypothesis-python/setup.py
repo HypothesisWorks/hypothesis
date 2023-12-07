@@ -96,7 +96,7 @@ setuptools.setup(
     zip_safe=False,
     extras_require=extras,
     install_requires=[
-        "attrs>=19.2.0",
+        "attrs>=22.2.0",
         "exceptiongroup>=1.0.0 ; python_version<'3.11'",
         "sortedcontainers>=2.1.0,<3.0.0",
     ],
