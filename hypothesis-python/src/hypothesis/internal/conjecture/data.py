@@ -1172,10 +1172,7 @@ class PrimitiveProvider:
             is_negative = self._cd.draw_bits(1, forced=forced_sign_bit)
             f = lex_to_float(
                 self._cd.draw_bits(
-                    64,
-                    forced=None
-                    if forced is None
-                    else float_to_lex(-forced if is_negative else forced),
+                    64, forced=None if forced is None else float_to_lex(abs(forced))
                 )
             )
             return -f if is_negative else f
