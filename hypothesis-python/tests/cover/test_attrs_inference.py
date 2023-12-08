@@ -89,3 +89,37 @@ def test_cannot_infer(c):
 def test_cannot_infer_takes_self():
     with pytest.raises(ResolutionFailed):
         st.builds(Inferrables, has_default_factory_takes_self=...).example()
+
+
+@attr.s
+class HasPrivateAttribute:
+    _x: int = attr.ib()
+
+
+@pytest.mark.parametrize("s", [st.just(42), ...])
+def test_private_attribute(s):
+    st.builds(HasPrivateAttribute, x=s).example()
+
+
+def test_private_attribute_underscore_fails():
+    with pytest.raises(TypeError, match="unexpected keyword argument '_x'"):
+        st.builds(HasPrivateAttribute, _x=st.just(42)).example()
+
+
+def test_private_attribute_underscore_infer_fails():
+    # this has a slightly different failure case, because it goes through
+    # attrs-specific resolution logic.
+    with pytest.raises(
+        TypeError, match="Unexpected keyword argument _x for attrs class"
+    ):
+        st.builds(HasPrivateAttribute, _x=...).example()
+
+
+@attr.s
+class HasAliasedAttribute:
+    x: int = attr.ib(alias="crazyname")
+
+
+@pytest.mark.parametrize("s", [st.just(42), ...])
+def test_aliased_attribute(s):
+    st.builds(HasAliasedAttribute, crazyname=s).example()
