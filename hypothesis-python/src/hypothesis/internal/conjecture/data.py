@@ -1088,7 +1088,7 @@ class PrimitiveProvider:
                 else:
                     assert pos_clamper is not None
                     clamped = pos_clamper(result)
-                if clamped != result and not math.isnan(result):
+                if clamped != result and not (math.isnan(result) and allow_nan):
                     self._cd.stop_example(discard=True)
                     self._cd.start_example(DRAW_FLOAT_LABEL)
                     self._write_float(clamped)
