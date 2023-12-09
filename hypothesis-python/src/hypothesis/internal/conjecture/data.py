@@ -1165,7 +1165,9 @@ class PrimitiveProvider:
         Helper for draw_float which draws a random 64-bit float.
         """
         if forced is not None:
-            forced_sign_bit = int(sign_aware_lte(forced, -0.0))
+            # sign_aware_lte(forced, -0.0) does not correctly handle the
+            # math.nan case here.
+            forced_sign_bit = math.copysign(1, forced) == -1
 
         self._cd.start_example(DRAW_FLOAT_LABEL)
         try:
