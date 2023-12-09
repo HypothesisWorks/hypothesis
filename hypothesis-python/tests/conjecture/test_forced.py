@@ -10,7 +10,6 @@
 
 import math
 from random import Random
-from hypothesis.internal.floats import SIGNALING_NAN, SMALLEST_SUBNORMAL
 
 import pytest
 
@@ -19,6 +18,7 @@ from hypothesis import HealthCheck, assume, example, given, settings
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.floats import float_to_lex
+from hypothesis.internal.floats import SIGNALING_NAN, SMALLEST_SUBNORMAL
 from hypothesis.strategies._internal.lazy import unwrap_strategies
 
 
