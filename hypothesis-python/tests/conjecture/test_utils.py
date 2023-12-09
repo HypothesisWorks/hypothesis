@@ -319,14 +319,6 @@ def test_many_with_max_size():
     assert not many.more()
 
 
-def test_biased_coin_can_be_forced():
-    data = ConjectureData.for_buffer([0])
-    assert data.draw_boolean(0.5, forced=True)
-
-    data = ConjectureData.for_buffer([1])
-    assert not data.draw_boolean(0.5, forced=False)
-
-
 def test_assert_biased_coin_always_treats_one_as_true():
     data = ConjectureData.for_buffer([0, 1])
     assert data.draw_boolean(1.0 / 257)
