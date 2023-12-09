@@ -10,13 +10,15 @@
 
 import math
 from random import Random
+from hypothesis.internal.floats import SIGNALING_NAN, SMALLEST_SUBNORMAL
 
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import HealthCheck, assume, given, settings
+from hypothesis import HealthCheck, assume, example, given, settings
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.data import ConjectureData
+from hypothesis.internal.conjecture.floats import float_to_lex
 from hypothesis.strategies._internal.lazy import unwrap_strategies
 
 
@@ -188,13 +190,29 @@ def test_forced_bytes(forced):
     assert data.draw_bytes(len(forced)) == forced
 
 
+@example(0.0)
+@example(-0.0)
+@example(1.0)
+@example(1.2345)
+@example(SMALLEST_SUBNORMAL)
+@example(-SMALLEST_SUBNORMAL)
+@example(100 * SMALLEST_SUBNORMAL)
+@example(math.nan)
+@example(-math.nan)
+@example(SIGNALING_NAN)
+@example(-SIGNALING_NAN)
+@example(1e999)
+@example(-1e999)
 @given(st.floats())
 @settings(database=None)
 def test_forced_floats(forced):
     data = fresh_data()
     drawn = data.draw_float(forced=forced)
-    assert drawn == forced or (math.isnan(drawn) and math.isnan(forced))
+    # Bitwise equality check to handle nan, snan, -nan, +0, -0, etc.
+    assert math.copysign(1, drawn) == math.copysign(1, forced)
+    assert float_to_lex(abs(drawn)) == float_to_lex(abs(forced))
 
     data = ConjectureData.for_buffer(data.buffer)
     drawn = data.draw_float()
-    assert drawn == forced or (math.isnan(drawn) and math.isnan(forced))
+    assert math.copysign(1, drawn) == math.copysign(1, forced)
+    assert float_to_lex(abs(drawn)) == float_to_lex(abs(forced))
