@@ -1,0 +1,15 @@
+/* override table width restrictions */
+/* thanks to https://github.com/readthedocs/sphinx_rtd_theme/issues/117#issuecomment-153083280 */
+@media screen and (min-width: 767px) {
+
+    .wy-table-responsive table td {
+        /* !important prevents the common CSS stylesheets from
+            overriding this as on RTD they are loaded after this stylesheet */
+        white-space: normal !important;
+    }
+
+    .wy-table-responsive {
+        overflow: visible !important;
+    }
+
+}
