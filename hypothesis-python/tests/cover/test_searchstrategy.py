@@ -16,6 +16,7 @@ import pytest
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.strategies import booleans, integers, just, none, tuples
+from hypothesis.strategies._internal.utils import to_jsonable
 
 from tests.common.debug import assert_no_examples
 
@@ -85,3 +86,7 @@ def test_can_flatmap_nameless():
 def test_flatmap_with_invalid_expand():
     with pytest.raises(InvalidArgument):
         just(100).flatmap(lambda n: "a").example()
+
+
+def test_jsonable():
+    assert isinstance(to_jsonable(object()), str)

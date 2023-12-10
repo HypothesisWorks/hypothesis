@@ -60,6 +60,7 @@ docutils==0.20.1
     #   readme-renderer
     #   restructuredtext-lint
     #   sphinx
+    #   sphinx-jsonschema
     #   sphinx-rtd-theme
 dpcontracts==0.6.0
     # via -r requirements/tools.in
@@ -98,6 +99,8 @@ jeepney==0.8.0
     #   secretstorage
 jinja2==3.1.2
     # via sphinx
+jsonpointer==2.4
+    # via sphinx-jsonschema
 keyring==24.3.0
     # via twine
 lark==1.1.8
@@ -183,7 +186,9 @@ python-dateutil==2.8.2
 pyupgrade==3.15.0
     # via shed
 pyyaml==6.0.1
-    # via libcst
+    # via
+    #   libcst
+    #   sphinx-jsonschema
 readme-renderer==42.0
     # via twine
 requests==2.31.0
@@ -191,6 +196,7 @@ requests==2.31.0
     #   -r requirements/tools.in
     #   requests-toolbelt
     #   sphinx
+    #   sphinx-jsonschema
     #   twine
 requests-toolbelt==1.0.0
     # via twine
@@ -231,6 +237,8 @@ sphinx==7.2.6
 sphinx-codeautolink==0.15.0
     # via -r requirements/tools.in
 sphinx-hoverxref==1.3.0
+    # via -r requirements/tools.in
+sphinx-jsonschema==1.19.1
     # via -r requirements/tools.in
 sphinx-rtd-theme==2.0.0
     # via -r requirements/tools.in
