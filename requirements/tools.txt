@@ -6,6 +6,8 @@
 #
 alabaster==0.7.13
     # via sphinx
+annotated-types==0.6.0
+    # via pydantic
 asgiref==3.7.2
     # via django
 asttokens==2.4.1
@@ -24,6 +26,8 @@ build==1.0.3
     # via pip-tools
 cachetools==5.3.2
     # via tox
+cerberus==1.3.5
+    # via plette
 certifi==2023.11.17
     # via requests
 cffi==1.16.0
@@ -52,9 +56,13 @@ cryptography==41.0.7
 decorator==5.1.1
     # via ipython
 distlib==0.3.7
-    # via virtualenv
-django==4.2.7
+    # via
+    #   requirementslib
+    #   virtualenv
+django==5.0
     # via -r requirements/tools.in
+docopt==0.6.2
+    # via pipreqs
 docutils==0.20.1
     # via
     #   readme-renderer
@@ -78,7 +86,7 @@ idna==3.6
     # via requests
 imagesize==1.4.1
     # via sphinx
-importlib-metadata==6.9.0
+importlib-metadata==7.0.0
     # via
     #   keyring
     #   twine
@@ -86,7 +94,7 @@ iniconfig==2.0.0
     # via pytest
 ipython==8.18.1
     # via -r requirements/tools.in
-isort==5.12.0
+isort==5.13.0
     # via shed
 jaraco-classes==3.3.0
     # via keyring
@@ -123,7 +131,7 @@ mypy-extensions==1.0.0
     #   black
     #   mypy
     #   typing-inspect
-nh3==0.2.14
+nh3==0.2.15
     # via readme-renderer
 nodeenv==1.8.0
     # via pyright
@@ -137,19 +145,28 @@ packaging==23.2
     #   tox
 parso==0.8.3
     # via jedi
-pathspec==0.11.2
+pathspec==0.12.0
     # via black
+pep517==0.13.1
+    # via requirementslib
 pexpect==4.9.0
     # via ipython
+pip-api==0.0.30
+    # via isort
 pip-tools==7.3.0
     # via -r requirements/tools.in
+pipreqs==0.4.13
+    # via isort
 pkginfo==1.9.6
     # via twine
-platformdirs==4.0.0
+platformdirs==4.1.0
     # via
     #   black
+    #   requirementslib
     #   tox
     #   virtualenv
+plette[validation]==0.4.4
+    # via requirementslib
 pluggy==1.3.0
     # via
     #   pytest
@@ -162,6 +179,10 @@ pure-eval==0.2.2
     # via stack-data
 pycparser==2.21
     # via cffi
+pydantic==2.5.2
+    # via requirementslib
+pydantic-core==2.14.5
+    # via pydantic
 pyflakes==3.1.0
     # via autoflake
 pygments==2.17.2
@@ -174,7 +195,7 @@ pyproject-api==1.6.1
     # via tox
 pyproject-hooks==1.0.0
     # via build
-pyright==1.1.338
+pyright==1.1.339
     # via -r requirements/tools.in
 pytest==7.4.3
     # via -r requirements/tools.in
@@ -190,17 +211,21 @@ requests==2.31.0
     # via
     #   -r requirements/tools.in
     #   requests-toolbelt
+    #   requirementslib
     #   sphinx
     #   twine
+    #   yarg
 requests-toolbelt==1.0.0
     # via twine
+requirementslib==3.0.0
+    # via isort
 restructuredtext-lint==1.4.0
     # via -r requirements/tools.in
 rfc3986==2.0.0
     # via twine
 rich==13.7.0
     # via twine
-ruff==0.1.6
+ruff==0.1.7
     # via -r requirements/tools.in
 secretstorage==3.3.3
     # via keyring
@@ -264,11 +289,16 @@ tomli==2.0.1
     #   black
     #   build
     #   mypy
+    #   pep517
     #   pip-tools
     #   pyproject-api
     #   pyproject-hooks
     #   pytest
     #   tox
+tomlkit==0.12.3
+    # via
+    #   plette
+    #   requirementslib
 tox==4.11.4
     # via -r requirements/tools.in
 traitlets==5.14.0
@@ -294,6 +324,8 @@ typing-extensions==4.8.0
     #   black
     #   libcst
     #   mypy
+    #   pydantic
+    #   pydantic-core
     #   typing-inspect
 typing-inspect==0.9.0
     # via libcst
@@ -307,13 +339,19 @@ wcwidth==0.2.12
     # via prompt-toolkit
 wheel==0.42.0
     # via pip-tools
+yarg==0.1.9
+    # via pipreqs
 zipp==3.17.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 pip==23.3.1
-    # via pip-tools
+    # via
+    #   pip-api
+    #   pip-tools
+    #   requirementslib
 setuptools==69.0.2
     # via
     #   nodeenv
     #   pip-tools
+    #   requirementslib
