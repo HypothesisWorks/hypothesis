@@ -56,15 +56,15 @@ fakeredis==2.20.0
     # via -r requirements/coverage.in
 flask==3.0.0
     # via dash
-hypofuzz==23.7.1
+hypofuzz==23.12.1
     # via -r requirements/fuzzing.in
-hypothesis[cli]==6.91.0
+hypothesis[cli]==6.91.2
     # via
     #   hypofuzz
     #   hypothesis
 idna==3.6
     # via requests
-importlib-metadata==6.9.0
+importlib-metadata==7.0.0
     # via dash
 iniconfig==2.0.0
     # via pytest
@@ -101,15 +101,15 @@ packaging==23.2
     #   black
     #   plotly
     #   pytest
-pandas==2.1.3
+pandas==2.1.4
     # via
     #   -r requirements/coverage.in
     #   hypofuzz
-pathspec==0.11.2
+pathspec==0.12.0
     # via black
 pexpect==4.9.0
     # via -r requirements/test.in
-platformdirs==4.0.0
+platformdirs==4.1.0
     # via black
 plotly==5.18.0
     # via dash
