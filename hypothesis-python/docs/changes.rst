@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.92.0:
+
+-------------------
+6.92.0 - 2023-12-10
+-------------------
+
+This release adds an experimental :wikipedia:`observability <Observability_(software)>`
+mode.  :doc:`You can read the docs about it here <observability>`.
+
 .. _v6.91.2:
 
 -------------------
