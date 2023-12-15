@@ -212,17 +212,10 @@ if sys.version_info[:2] >= (3, 12):
 
 def _asdict_inner(obj, dict_factory):
     if dataclasses._is_dataclass_instance(obj):
-        if dict_factory is dict:
-            return {
-                f.name: _asdict_inner(getattr(obj, f.name), dict)
-                for f in dataclasses.fields(obj)
-            }
-        else:  # pragma: no cover
-            result = []
-            for f in dataclasses.fields(obj):
-                value = _asdict_inner(getattr(obj, f.name), dict_factory)
-                result.append((f.name, value))
-            return dict_factory(result)
+        return dict_factory(
+            (f.name, _asdict_inner(getattr(obj, f.name), dict_factory))
+            for f in dataclasses.fields(obj)
+        )
     elif isinstance(obj, tuple) and hasattr(obj, "_fields"):
         return type(obj)(*[_asdict_inner(v, dict_factory) for v in obj])
     elif isinstance(obj, (list, tuple)):
