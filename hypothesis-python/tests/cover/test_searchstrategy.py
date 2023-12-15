@@ -8,8 +8,9 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import dataclasses
 import functools
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 
 import pytest
 
@@ -90,3 +91,15 @@ def test_flatmap_with_invalid_expand():
 
 def test_jsonable():
     assert isinstance(to_jsonable(object()), str)
+
+
+@dataclasses.dataclass()
+class HasDefaultDict:
+    x: defaultdict
+
+
+def test_jsonable_defaultdict():
+    obj = HasDefaultDict(defaultdict(list))
+    obj.x["a"] = [42]
+    json = to_jsonable(obj)
+    assert json == {"x": {"a": [42]}}

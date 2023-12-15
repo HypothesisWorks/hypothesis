@@ -9,9 +9,12 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import codecs
+import copy
+import dataclasses
 import inspect
 import platform
 import sys
+import types
 import typing
 from functools import partial
 from typing import Any, ForwardRef, get_args
@@ -188,3 +191,68 @@ def bad_django_TestCase(runner):
         from hypothesis.extra.django._impl import HypothesisTestCase
 
         return not isinstance(runner, HypothesisTestCase)
+
+
+# _ATOMIC_TYPES was introduced as an optimization in 3.12's dataclasses.
+_ATOMIC_TYPES = frozenset(
+    {
+        types.NoneType,
+        bool,
+        int,
+        float,
+        str,
+        complex,
+        bytes,
+        types.EllipsisType,
+        types.NotImplementedType,
+        types.CodeType,
+        types.BuiltinFunctionType,
+        types.FunctionType,
+        type,
+        range,
+        property,
+    }
+)
+
+
+def dataclass_asdict(obj, *, dict_factory=dict):
+    """
+    A vendored variant of dataclasses.asdict. Includes the bugfix for
+    defaultdicts (cpython/32056) for all versions. See also issues/3812.
+    """
+    if not dataclasses._is_dataclass_instance(obj):
+        raise TypeError("asdict() should be called on dataclass instances")
+    return _asdict_inner(obj, dict_factory)
+
+
+def _asdict_inner(obj, dict_factory):
+    if type(obj) in _ATOMIC_TYPES:
+        return obj
+    elif dataclasses._is_dataclass_instance(obj):
+        if dict_factory is dict:
+            return {
+                f.name: _asdict_inner(getattr(obj, f.name), dict)
+                for f in dataclasses.fields(obj)
+            }
+        else:
+            result = []
+            for f in dataclasses.fields(obj):
+                value = _asdict_inner(getattr(obj, f.name), dict_factory)
+                result.append((f.name, value))
+            return dict_factory(result)
+    elif isinstance(obj, tuple) and hasattr(obj, "_fields"):
+        return type(obj)(*[_asdict_inner(v, dict_factory) for v in obj])
+    elif isinstance(obj, (list, tuple)):
+        return type(obj)(_asdict_inner(v, dict_factory) for v in obj)
+    elif isinstance(obj, dict):
+        if hasattr(type(obj), "default_factory"):
+            result = type(obj)(obj.default_factory)
+            for k, v in obj.items():
+                result[_asdict_inner(k, dict_factory)] = _asdict_inner(v, dict_factory)
+            return result
+        return type(obj)(
+            (_asdict_inner(k, dict_factory), _asdict_inner(v, dict_factory))
+            for k, v in obj.items()
+        )
+    else:
+        return copy.deepcopy(obj)
