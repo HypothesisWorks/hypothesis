@@ -178,7 +178,11 @@ def to_jsonable(obj: object) -> object:
         and dcs.is_dataclass(obj)
         and not isinstance(obj, type)
     ):
-        return to_jsonable(dataclass_asdict(obj))
+        if sys.version_info[:2] < (3, 12):
+            # see issue #3812
+            return to_jsonable(dataclass_asdict(obj))
+        else:
+            return to_jsonable(dcs.asdict(obj))
     if attr.has(type(obj)):
         return to_jsonable(attr.asdict(obj, recurse=False))  # type: ignore
     if (pyd := sys.modules.get("pydantic")) and isinstance(obj, pyd.BaseModel):
