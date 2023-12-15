@@ -98,18 +98,22 @@ def test_jsonable():
 class HasDefaultDict:
     x: defaultdict
 
+
 @attr.s
 class AttrsClass:
     n = attr.ib()
+
 
 def test_jsonable_defaultdict():
     obj = HasDefaultDict(defaultdict(list))
     obj.x["a"] = [42]
     assert to_jsonable(obj) == {"x": {"a": [42]}}
 
+
 def test_jsonable_attrs():
     obj = AttrsClass(n=10)
     assert to_jsonable(obj) == {"n": 10}
+
 
 def test_jsonable_namedtuple():
     Obj = namedtuple("Obj", ("x"))
