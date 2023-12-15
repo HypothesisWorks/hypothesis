@@ -220,7 +220,7 @@ def dataclass_asdict(obj, *, dict_factory=dict):
     A vendored variant of dataclasses.asdict. Includes the bugfix for
     defaultdicts (cpython/32056) for all versions. See also issues/3812.
     """
-    if not dataclasses._is_dataclass_instance(obj):
+    if not dataclasses._is_dataclass_instance(obj):  # pragma: no cover
         raise TypeError("asdict() should be called on dataclass instances")
     return _asdict_inner(obj, dict_factory)
 
