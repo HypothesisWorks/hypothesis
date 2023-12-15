@@ -205,6 +205,11 @@ def dataclass_asdict(obj, *, dict_factory=dict):
     return _asdict_inner(obj, dict_factory)
 
 
+if sys.version_info[:2] >= (3, 12):
+    # see issue #3812
+    dataclass_asdict = dataclasses.asdict
+
+
 def _asdict_inner(obj, dict_factory):
     if dataclasses._is_dataclass_instance(obj):
         if dict_factory is dict:
