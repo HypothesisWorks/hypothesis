@@ -192,21 +192,22 @@ def bad_django_TestCase(runner):
         return not isinstance(runner, HypothesisTestCase)
 
 
-def dataclass_asdict(obj, *, dict_factory=dict):
-    """
-    A vendored variant of dataclasses.asdict. Includes the bugfix for
-    defaultdicts (cpython/32056) for all versions. See also issues/3812.
+# see issue #3812
+if sys.version_info[:2] < (3, 12):
 
-    This should be removed whenever we drop support for 3.11. We can use the
-    standard dataclasses.asdict after that point.
-    """
-    if not dataclasses._is_dataclass_instance(obj):  # pragma: no cover
-        raise TypeError("asdict() should be called on dataclass instances")
-    return _asdict_inner(obj, dict_factory)
+    def dataclass_asdict(obj, *, dict_factory=dict):
+        """
+        A vendored variant of dataclasses.asdict. Includes the bugfix for
+        defaultdicts (cpython/32056) for all versions. See also issues/3812.
 
+        This should be removed whenever we drop support for 3.11. We can use the
+        standard dataclasses.asdict after that point.
+        """
+        if not dataclasses._is_dataclass_instance(obj):  # pragma: no cover
+            raise TypeError("asdict() should be called on dataclass instances")
+        return _asdict_inner(obj, dict_factory)
 
-if sys.version_info[:2] >= (3, 12):
-    # see issue #3812
+else:
     dataclass_asdict = dataclasses.asdict
 
 
