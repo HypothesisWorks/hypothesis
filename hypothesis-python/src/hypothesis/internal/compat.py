@@ -212,7 +212,7 @@ def _asdict_inner(obj, dict_factory):
                 f.name: _asdict_inner(getattr(obj, f.name), dict)
                 for f in dataclasses.fields(obj)
             }
-        else:
+        else:  # pragma: no cover
             result = []
             for f in dataclasses.fields(obj):
                 value = _asdict_inner(getattr(obj, f.name), dict_factory)
