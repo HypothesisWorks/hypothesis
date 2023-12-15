@@ -14,7 +14,6 @@ import dataclasses
 import inspect
 import platform
 import sys
-import types
 import typing
 from functools import partial
 from typing import Any, ForwardRef, get_args
@@ -193,28 +192,6 @@ def bad_django_TestCase(runner):
         return not isinstance(runner, HypothesisTestCase)
 
 
-# _ATOMIC_TYPES was introduced as an optimization in 3.12's dataclasses.
-_ATOMIC_TYPES = frozenset(
-    {
-        types.NoneType,
-        bool,
-        int,
-        float,
-        str,
-        complex,
-        bytes,
-        types.EllipsisType,
-        types.NotImplementedType,
-        types.CodeType,
-        types.BuiltinFunctionType,
-        types.FunctionType,
-        type,
-        range,
-        property,
-    }
-)
-
-
 def dataclass_asdict(obj, *, dict_factory=dict):
     """
     A vendored variant of dataclasses.asdict. Includes the bugfix for
@@ -226,9 +203,7 @@ def dataclass_asdict(obj, *, dict_factory=dict):
 
 
 def _asdict_inner(obj, dict_factory):
-    if type(obj) in _ATOMIC_TYPES:
-        return obj
-    elif dataclasses._is_dataclass_instance(obj):
+    if dataclasses._is_dataclass_instance(obj):
         if dict_factory is dict:
             return {
                 f.name: _asdict_inner(getattr(obj, f.name), dict)
