@@ -207,7 +207,7 @@ if sys.version_info[:2] < (3, 12):
             raise TypeError("asdict() should be called on dataclass instances")
         return _asdict_inner(obj, dict_factory)
 
-else:
+else:  # pragma: no cover
     dataclass_asdict = dataclasses.asdict
 
 
