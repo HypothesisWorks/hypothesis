@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.92.1:
+
+-------------------
+6.92.1 - 2023-12-16
+-------------------
+
+This patch fixes a bug introduced in :ref:`version 6.92.0 <v6.92.0>`, where using :func:`~python:dataclasses.dataclass` with a :class:`~python:collections.defaultdict` field as a strategy argument would error.
+
 .. _v6.92.0:
 
 -------------------
