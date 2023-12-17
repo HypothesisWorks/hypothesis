@@ -177,7 +177,6 @@ SELF_REF = st.recursive(
 )
 
 
-@settings(suppress_health_check=[HealthCheck.too_slow, HealthCheck.filter_too_much])
 @given(SELF_REF)
 def test_self_ref_regression(_):
     # See https://github.com/HypothesisWorks/hypothesis/issues/2794
