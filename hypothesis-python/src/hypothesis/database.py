@@ -69,7 +69,7 @@ def _db_for_path(path=None):
                 stacklevel=3,
             )
             return InMemoryExampleDatabase()
-    if path in (None, ":memory:"):
+    if path in (None, ":memory:") or not os.access(path, os.R_OK | os.W_OK | os.X_OK):
         return InMemoryExampleDatabase()
     return DirectoryBasedExampleDatabase(str(path))
 
