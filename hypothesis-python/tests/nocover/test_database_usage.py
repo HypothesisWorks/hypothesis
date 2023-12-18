@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import os.path
+import pytest
 
 from hypothesis import assume, core, find, given, settings, strategies as st
 from hypothesis.database import (
@@ -16,6 +17,7 @@ from hypothesis.database import (
     GitHubArtifactDatabase,
     InMemoryExampleDatabase,
     ReadOnlyDatabase,
+    DirectoryBasedExampleDatabase,
 )
 from hypothesis.errors import NoSuchExample, Unsatisfiable
 from hypothesis.internal.entropy import deterministic_PRNG
@@ -166,3 +168,13 @@ def test_ga_database_not_created_when_not_used(tmp_path_factory):
     assert not os.path.exists(str(path))
     ReadOnlyDatabase(GitHubArtifactDatabase("mock", "mock", path=path))
     assert not os.path.exists(str(path))
+
+
+@pytest.mark.parametrize("db_cls", [ExampleDatabase, DirectoryBasedExampleDatabase])
+def test_database_handles_permissions_correctly(db_cls, tmp_path):
+    tmp_path.chmod(0o000)
+    try:
+        database = db_cls(tmp_path)
+        database.save(b"fizz", b"buzz")
+    finally:
+        tmp_path.chmod(0o777)
