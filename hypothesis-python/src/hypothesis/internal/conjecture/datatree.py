@@ -11,14 +11,7 @@
 import attr
 
 from hypothesis.errors import Flaky, HypothesisException, StopTest
-from hypothesis.internal.compat import int_to_bytes
-from hypothesis.internal.conjecture.data import (
-    ConjectureData,
-    DataObserver,
-    Status,
-    bits_to_bytes,
-)
-from hypothesis.internal.conjecture.junkdrawer import IntList
+from hypothesis.internal.conjecture.data import ConjectureData, DataObserver, Status
 
 
 class PreviouslyUnseenBehaviour(HypothesisException):
@@ -51,12 +44,13 @@ class Branch:
     """Represents a transition where multiple choices can be made as to what
     to drawn."""
 
-    bit_length = attr.ib()
+    kwargs = attr.ib()
+    ir_type = attr.ib()
     children = attr.ib(repr=False)
 
     @property
     def max_children(self):
-        return 1 << self.bit_length
+        return compute_max_children(self.kwargs, self.ir_type)
 
 
 @attr.s(slots=True, frozen=True)
@@ -65,6 +59,59 @@ class Conclusion:
 
     status = attr.ib()
     interesting_origin = attr.ib()
+
+
+def compute_max_children(kwargs, ir_type):
+    if ir_type == "integer":
+        min_value = kwargs["min_value"]
+        max_value = kwargs["max_value"]
+        if min_value is not None and max_value is not None:
+            return max_value - min_value + 1
+        if min_value is not None:
+            return (2**127) - min_value
+        if max_value is not None:
+            return (2**127) + max_value
+        return 2**128 - 1
+    elif ir_type == "boolean":
+        return 2
+    elif ir_type == "bytes":
+        return 2 ** (8 * kwargs["size"])
+    elif ir_type == "string":
+        min_size = kwargs["min_size"]
+        max_size = kwargs["max_size"]
+        intervals = kwargs["intervals"]
+
+        if max_size is None:
+            # TODO extract this magic value out now that it's used in two places.
+            max_size = 10**10
+
+        # special cases for empty string, which has a single possibility.
+        if min_size == 0 and max_size == 0:
+            return 1
+
+        count = 0
+        if min_size == 0:
+            # empty string case.
+            count += 1
+            min_size = 1
+
+        count += len(intervals) ** (max_size - min_size + 1)
+        return count
+    elif ir_type == "float":
+        import ctypes
+
+        # number of 64 bit floating point values in [a, b].
+        # TODO this is wrong for [-0.0, +0.0], or anything that crosses the 0.0
+        # boundary.
+        # it also seems maybe wrong for [0, math.inf] but I haven't verified.
+        def binary(num):
+            # rely on the fact that adjacent floating point numbers are adjacent
+            # in their bitwise representation (except for -0.0 and +0.0).
+            return ctypes.c_uint64.from_buffer(ctypes.c_double(num)).value
+
+        return binary(kwargs["max_value"]) - binary(kwargs["min_value"]) + 1
+    else:
+        raise ValueError(f"unhandled ir_type {ir_type}")
 
 
 @attr.s(slots=True)
@@ -88,8 +135,9 @@ class TreeNode:
     # with the ``n_bits`` argument going in ``bit_lengths`` and the
     # values seen in ``values``. These should always have the same
     # length.
-    bit_lengths = attr.ib(factory=IntList)
-    values = attr.ib(factory=IntList)
+    kwargs = attr.ib(factory=list)
+    values = attr.ib(factory=list)
+    ir_types = attr.ib(factory=list)
 
     # The indices of of the calls to ``draw_bits`` that we have stored
     # where  ``forced`` is not None. Stored as None if no indices
@@ -150,18 +198,22 @@ class TreeNode:
         key = self.values[i]
 
         child = TreeNode(
-            bit_lengths=self.bit_lengths[i + 1 :],
+            ir_types=self.ir_types[i + 1 :],
+            kwargs=self.kwargs[i + 1 :],
             values=self.values[i + 1 :],
             transition=self.transition,
         )
-        self.transition = Branch(bit_length=self.bit_lengths[i], children={key: child})
+        self.transition = Branch(
+            kwargs=self.kwargs[i], ir_type=self.ir_types[i], children={key: child}
+        )
         if self.__forced is not None:
             child.__forced = {j - i - 1 for j in self.__forced if j > i}
             self.__forced = {j for j in self.__forced if j < i}
         child.check_exhausted()
+        del self.ir_types[i:]
         del self.values[i:]
-        del self.bit_lengths[i:]
-        assert len(self.values) == len(self.bit_lengths) == i
+        del self.kwargs[i:]
+        assert len(self.values) == len(self.kwargs) == len(self.ir_types) == i
 
     def check_exhausted(self):
         """Recalculates ``self.is_exhausted`` if necessary then returns
@@ -204,22 +256,41 @@ class DataTree:
         assert not self.is_exhausted
         novel_prefix = bytearray()
 
-        def append_int(n_bits, value):
-            novel_prefix.extend(int_to_bytes(value, bits_to_bytes(n_bits)))
+        BUFFER_SIZE = 8 * 1024
+
+        def draw(ir_type, kwargs, *, forced=None):
+            cd = ConjectureData(max_length=BUFFER_SIZE, prefix=b"", random=random)
+            draw_func = getattr(cd, f"draw_{ir_type}")
+            value = draw_func(**kwargs, forced=forced)
+            return (value, cd.buffer)
+
+        def draw_buf(ir_type, kwargs, *, forced):
+            (_, buf) = draw(ir_type, kwargs, forced=forced)
+            return buf
+
+        def draw_value(ir_type, kwargs):
+            (value, _) = draw(ir_type, kwargs)
+            return value
+
+        def append_value(ir_type, kwargs, *, forced):
+            novel_prefix.extend(draw_buf(ir_type, kwargs, forced=forced))
+
+        def append_buf(buf):
+            novel_prefix.extend(buf)
 
         current_node = self.root
         while True:
             assert not current_node.is_exhausted
-            for i, (n_bits, value) in enumerate(
-                zip(current_node.bit_lengths, current_node.values)
+            for i, (ir_type, kwargs, value) in enumerate(
+                zip(current_node.ir_types, current_node.kwargs, current_node.values)
             ):
                 if i in current_node.forced:
-                    append_int(n_bits, value)
+                    append_value(ir_type, kwargs, forced=value)
                 else:
                     while True:
-                        k = random.getrandbits(n_bits)
-                        if k != value:
-                            append_int(n_bits, k)
+                        (v, buf) = draw(ir_type, kwargs)
+                        if v != value:
+                            append_buf(buf)
                             break
                     # We've now found a value that is allowed to
                     # vary, so what follows is not fixed.
@@ -230,18 +301,17 @@ class DataTree:
                     return bytes(novel_prefix)
                 branch = current_node.transition
                 assert isinstance(branch, Branch)
-                n_bits = branch.bit_length
 
                 check_counter = 0
                 while True:
-                    k = random.getrandbits(n_bits)
+                    (v, buf) = draw(branch.ir_type, branch.kwargs)
                     try:
-                        child = branch.children[k]
+                        child = branch.children[v]
                     except KeyError:
-                        append_int(n_bits, k)
+                        append_buf(buf)
                         return bytes(novel_prefix)
                     if not child.is_exhausted:
-                        append_int(n_bits, k)
+                        append_buf(buf)
                         current_node = child
                         break
                     check_counter += 1
@@ -250,7 +320,7 @@ class DataTree:
                     # on, hence the pragma.
                     assert (  # pragma: no cover
                         check_counter != 1000
-                        or len(branch.children) < (2**n_bits)
+                        or len(branch.children) < branch.max_children
                         or any(not v.is_exhausted for v in branch.children.values())
                     )
 
@@ -276,11 +346,12 @@ class DataTree:
         node = self.root
         try:
             while True:
-                for i, (n_bits, previous) in enumerate(
-                    zip(node.bit_lengths, node.values)
+                for i, (ir_type, kwargs, previous) in enumerate(
+                    zip(node.ir_types, node.kwargs, node.values)
                 ):
-                    v = data.draw_bits(
-                        n_bits, forced=node.values[i] if i in node.forced else None
+                    draw_func = getattr(data, f"draw_{ir_type}")
+                    v = draw_func(
+                        **kwargs, forced=previous if i in node.forced else None
                     )
                     if v != previous:
                         raise PreviouslyUnseenBehaviour
@@ -290,7 +361,8 @@ class DataTree:
                 elif node.transition is None:
                     raise PreviouslyUnseenBehaviour
                 elif isinstance(node.transition, Branch):
-                    v = data.draw_bits(node.transition.bit_length)
+                    draw_func = getattr(data, f"draw_{node.transition.ir_type}")
+                    v = draw_func(**node.transition.kwargs)
                     try:
                         node = node.transition.children[v]
                     except KeyError as err:
@@ -313,13 +385,30 @@ class TreeRecordingObserver(DataObserver):
         self.__trail = [self.__current_node]
         self.killed = False
 
-    def draw_bits(self, n_bits, forced, value):
+    def draw_integer(self, value: int, forced: bool, *, kwargs: dict) -> None:
+        self.draw_value("integer", value, forced, kwargs=kwargs)
+
+    def draw_float(self, value: float, forced: bool, *, kwargs: dict) -> None:
+        self.draw_value("float", value, forced, kwargs=kwargs)
+
+    def draw_string(self, value: str, forced: bool, *, kwargs: dict) -> None:
+        self.draw_value("string", value, forced, kwargs=kwargs)
+
+    def draw_bytes(self, value: bytes, forced: bool, *, kwargs: dict) -> None:
+        self.draw_value("bytes", value, forced, kwargs=kwargs)
+
+    def draw_boolean(self, value: bool, forced: bool, *, kwargs: dict) -> None:
+        self.draw_value("boolean", value, forced, kwargs=kwargs)
+
+    # TODO proper value: IR_TYPE typing
+    def draw_value(self, ir_type, value, forced: bool, *, kwargs: dict = {}) -> None:
         i = self.__index_in_current_node
         self.__index_in_current_node += 1
         node = self.__current_node
-        assert len(node.bit_lengths) == len(node.values)
-        if i < len(node.bit_lengths):
-            if n_bits != node.bit_lengths[i]:
+
+        assert len(node.kwargs) == len(node.values) == len(node.ir_types)
+        if i < len(node.values):
+            if ir_type != node.ir_types[i] or kwargs != node.kwargs[i]:
                 inconsistent_generation()
             # Note that we don't check whether a previously
             # forced value is now free. That will be caught
@@ -333,17 +422,29 @@ class TreeRecordingObserver(DataObserver):
                 node.split_at(i)
                 assert i == len(node.values)
                 new_node = TreeNode()
-                branch = node.transition
-                branch.children[value] = new_node
+                node.transition.children[value] = new_node
                 self.__current_node = new_node
                 self.__index_in_current_node = 0
         else:
             trans = node.transition
             if trans is None:
-                node.bit_lengths.append(n_bits)
+                node.ir_types.append(ir_type)
+                node.kwargs.append(kwargs)
                 node.values.append(value)
                 if forced:
                     node.mark_forced(i)
+                # generate_novel_prefix assumes the following invariant: any one
+                # of the series of draws in a particular node can vary. This is
+                # true if all nodes have more than one possibility, which was
+                # true when the underlying representation was bits (lowest was
+                # n=1 bits with m=2 choices).
+                # However, with the ir, e.g. integers(0, 0) has only a single
+                # value. To retain the invariant, we forcefully split such cases
+                # into a transition.
+                if compute_max_children(kwargs, ir_type) == 1:
+                    node.split_at(i)
+                    self.__current_node = node.transition.children[value]
+                    self.__index_in_current_node = 0
             elif isinstance(trans, Conclusion):
                 assert trans.status != Status.OVERRUN
                 # We tried to draw where history says we should have
@@ -351,7 +452,7 @@ class TreeRecordingObserver(DataObserver):
                 inconsistent_generation()
             else:
                 assert isinstance(trans, Branch), trans
-                if n_bits != trans.bit_length:
+                if ir_type != trans.ir_type or kwargs != trans.kwargs:
                     inconsistent_generation()
                 try:
                     self.__current_node = trans.children[value]
