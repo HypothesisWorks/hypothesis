@@ -348,8 +348,6 @@ def test_will_generate_novel_prefix_to_avoid_exhausted_branches():
     assert prefix[0] == 0
 
 
-# TODO no longer fails because we don't kill_branch on discard anymore. Will this
-# be a problem?
 def test_will_mark_changes_in_discard_as_flaky():
     tree = DataTree()
     data = ConjectureData.for_buffer([1, 1], observer=tree.new_observer())
