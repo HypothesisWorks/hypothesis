@@ -214,6 +214,10 @@ def sampled_from(
                 "so maybe you tried to write an enum as if it was a dataclass?"
             )
         raise InvalidArgument("Cannot sample from a length-zero sequence.")
+    elif all(isinstance(x, SearchStrategy) for x in values):
+        warnings.warn(
+            "sample_from was given a collection of strategies; was one_of intended?"
+        )
     if len(values) == 1:
         return just(values[0])
     try:

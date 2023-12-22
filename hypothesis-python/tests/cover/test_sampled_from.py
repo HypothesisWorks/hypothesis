@@ -190,3 +190,13 @@ class AnnotationsInsteadOfElements(enum.Enum):
 def test_suggests_elements_instead_of_annotations():
     with pytest.raises(InvalidArgument, match="Cannot sample.*annotations.*dataclass"):
         st.sampled_from(AnnotationsInsteadOfElements).example()
+
+
+@pytest.mark.parametrize("wrap", [list, tuple])
+def test_warns_when_given_entirely_strategies_as_elements(wrap):
+    elements = wrap([st.booleans(), st.decimals(), st.integers(), st.text()])
+    with pytest.warns(
+        UserWarning,
+        match="sample_from was given a collection of strategies; was one_of intended?",
+    ):
+        st.sampled_from(elements)
