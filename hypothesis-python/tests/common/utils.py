@@ -10,6 +10,7 @@
 
 import contextlib
 import sys
+import warnings
 from io import StringIO
 from types import SimpleNamespace
 
@@ -83,6 +84,16 @@ def capture_out():
             yield new_out
     finally:
         sys.stdout = old_out
+
+
+class catch_sampled_from_strategies_warning(warnings.catch_warnings):
+    def __enter__(self):
+        warnings.filterwarnings(
+            action="ignore",
+            message="sample_from was given a collection of strategies; was one_of intended?",
+            category=UserWarning,
+        )
+        super().__enter__()
 
 
 class ExcInfo:

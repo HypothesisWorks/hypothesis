@@ -16,6 +16,8 @@ from hypothesis import given, strategies as st
 from hypothesis.control import reject
 from hypothesis.errors import HypothesisDeprecationWarning, InvalidArgument
 
+from tests.common.utils import catch_sampled_from_strategies_warning
+
 
 def foo(x):
     pass
@@ -51,39 +53,39 @@ size_strategies = {
 
 values = st.integers() | st.text()
 
-
-Strategies = st.recursive(
-    st.one_of(
-        st.sampled_from(
-            [
-                st.none(),
-                st.booleans(),
-                st.randoms(use_true_random=True),
-                st.complex_numbers(),
-                st.randoms(use_true_random=True),
-                st.fractions(),
-                st.decimals(),
-            ]
+with catch_sampled_from_strategies_warning():
+    Strategies = st.recursive(
+        st.one_of(
+            st.sampled_from(
+                [
+                    st.none(),
+                    st.booleans(),
+                    st.randoms(use_true_random=True),
+                    st.complex_numbers(),
+                    st.randoms(use_true_random=True),
+                    st.fractions(),
+                    st.decimals(),
+                ]
+            ),
+            st.builds(st.just, values),
+            st.builds(st.sampled_from, st.lists(values, min_size=1)),
+            builds_ignoring_invalid(st.floats, st.floats(), st.floats()),
         ),
-        st.builds(st.just, values),
-        st.builds(st.sampled_from, st.lists(values, min_size=1)),
-        builds_ignoring_invalid(st.floats, st.floats(), st.floats()),
-    ),
-    lambda x: st.one_of(
-        builds_ignoring_invalid(st.lists, x, **size_strategies),
-        builds_ignoring_invalid(st.sets, x, **size_strategies),
-        builds_ignoring_invalid(lambda v: st.tuples(*v), st.lists(x)),
-        builds_ignoring_invalid(lambda v: st.one_of(*v), st.lists(x, min_size=1)),
-        builds_ignoring_invalid(
-            st.dictionaries,
-            x,
-            x,
-            dict_class=st.sampled_from([dict, OrderedDict]),
-            **size_strategies,
+        lambda x: st.one_of(
+            builds_ignoring_invalid(st.lists, x, **size_strategies),
+            builds_ignoring_invalid(st.sets, x, **size_strategies),
+            builds_ignoring_invalid(lambda v: st.tuples(*v), st.lists(x)),
+            builds_ignoring_invalid(lambda v: st.one_of(*v), st.lists(x, min_size=1)),
+            builds_ignoring_invalid(
+                st.dictionaries,
+                x,
+                x,
+                dict_class=st.sampled_from([dict, OrderedDict]),
+                **size_strategies,
+            ),
+            st.builds(lambda s, f: s.map(f), x, st.sampled_from(fns)),
         ),
-        st.builds(lambda s, f: s.map(f), x, st.sampled_from(fns)),
-    ),
-)
+    )
 
 
 strategy_globals = {k: getattr(st, k) for k in dir(st)}

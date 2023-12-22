@@ -13,6 +13,8 @@ import pytest
 from hypothesis import example, given, strategies as st
 from hypothesis.errors import InvalidArgument
 
+from tests.common.utils import catch_sampled_from_strategies_warning
+
 # Be aware that tests in this file pass strategies as arguments to @example.
 # That's normally a mistake, but for these tests it's intended.
 # If one of these tests fails, Hypothesis will complain about the
@@ -45,24 +47,25 @@ base_reusable_strategies = (
 def reusable():
     """Meta-strategy that produces strategies that should have
     ``.has_reusable_values == True``."""
-    return st.one_of(
-        # This looks like it should be `one_of`, but `sampled_from` is correct
-        # because we want this meta-strategy to yield strategies as its values.
-        st.sampled_from(base_reusable_strategies),
-        # This sometimes produces invalid combinations of arguments, which
-        # we filter out further down with an explicit validation check.
-        st.builds(
-            st.floats,
-            min_value=st.none() | st.floats(allow_nan=False),
-            max_value=st.none() | st.floats(allow_nan=False),
-            allow_infinity=st.booleans(),
-            allow_nan=st.booleans(),
-        ),
-        st.builds(st.just, st.builds(list)),
-        st.builds(st.sampled_from, st.lists(st.builds(list), min_size=1)),
-        st.lists(reusable).map(st.one_of),
-        st.lists(reusable).map(lambda ls: st.tuples(*ls)),
-    )
+    with catch_sampled_from_strategies_warning():
+        return st.one_of(
+            # This looks like it should be `one_of`, but `sampled_from` is correct
+            # because we want this meta-strategy to yield strategies as its values.
+            st.sampled_from(base_reusable_strategies),
+            # This sometimes produces invalid combinations of arguments, which
+            # we filter out further down with an explicit validation check.
+            st.builds(
+                st.floats,
+                min_value=st.none() | st.floats(allow_nan=False),
+                max_value=st.none() | st.floats(allow_nan=False),
+                allow_infinity=st.booleans(),
+                allow_nan=st.booleans(),
+            ),
+            st.builds(st.just, st.builds(list)),
+            st.builds(st.sampled_from, st.lists(st.builds(list), min_size=1)),
+            st.lists(reusable).map(st.one_of),
+            st.lists(reusable).map(lambda ls: st.tuples(*ls)),
+        )
 
 
 def is_valid(s):
