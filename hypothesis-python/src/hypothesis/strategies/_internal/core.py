@@ -216,7 +216,8 @@ def sampled_from(
         raise InvalidArgument("Cannot sample from a length-zero sequence.")
     elif all(isinstance(x, SearchStrategy) for x in values):
         warnings.warn(
-            "sample_from was given a collection of strategies; was one_of intended?"
+            "sample_from was given a collection of strategies; was one_of intended?",
+            stacklevel=1,
         )
     if len(values) == 1:
         return just(values[0])
