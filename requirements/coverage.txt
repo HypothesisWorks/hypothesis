@@ -10,13 +10,13 @@ async-timeout==4.0.3
     # via redis
 attrs==23.1.0
     # via hypothesis (hypothesis-python/setup.py)
-black==23.11.0
+black==23.12.1
     # via -r requirements/coverage.in
 click==8.1.7
     # via
     #   -r requirements/coverage.in
     #   black
-coverage==7.3.2
+coverage==7.3.4
     # via -r requirements/coverage.in
 dpcontracts==0.6.0
     # via -r requirements/coverage.in
@@ -26,7 +26,7 @@ exceptiongroup==1.2.0 ; python_version < "3.11"
     #   pytest
 execnet==2.0.2
     # via pytest-xdist
-fakeredis==2.20.0
+fakeredis==2.20.1
     # via -r requirements/coverage.in
 iniconfig==2.0.0
     # via pytest
@@ -48,7 +48,7 @@ packaging==23.2
     #   pytest
 pandas==2.1.4
     # via -r requirements/coverage.in
-pathspec==0.12.0
+pathspec==0.12.1
     # via black
 pexpect==4.9.0
     # via -r requirements/test.in
@@ -86,7 +86,7 @@ tomli==2.0.1
     # via
     #   black
     #   pytest
-typing-extensions==4.8.0
+typing-extensions==4.9.0
     # via
     #   -r requirements/coverage.in
     #   black
