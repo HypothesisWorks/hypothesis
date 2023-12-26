@@ -34,8 +34,6 @@ from hypothesis.strategies import (
     tuples,
 )
 
-from tests.common.utils import catch_sampled_from_strategies_warning
-
 AVERAGE_LIST_LENGTH = 2
 
 
@@ -185,8 +183,7 @@ class HypothesisSpec(RuleBasedStateMachine):
 
 MAIN = __name__ == "__main__"
 
-with catch_sampled_from_strategies_warning():
-    TestHypothesis = HypothesisSpec.TestCase
+TestHypothesis = HypothesisSpec.TestCase
 
 TestHypothesis.settings = settings(
     TestHypothesis.settings,
@@ -196,5 +193,4 @@ TestHypothesis.settings = settings(
 )
 
 if MAIN:
-    with catch_sampled_from_strategies_warning():
-        TestHypothesis().runTest()
+    TestHypothesis().runTest()

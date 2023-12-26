@@ -42,11 +42,7 @@ from tests.common.debug import (
     find_any,
     minimal,
 )
-from tests.common.utils import (
-    catch_sampled_from_strategies_warning,
-    fails_with,
-    temp_registered,
-)
+from tests.common.utils import fails_with, temp_registered
 
 sentinel = object()
 BUILTIN_TYPES = tuple(
@@ -319,24 +315,19 @@ st.register_type_strategy(Baz, st.builds(Baz, st.integers()))
     [
         # Expect a warning exactly when the type constraint/bound should trigger
         # passing a strategy to sampled_from.
-        (typing.TypeVar("V"), object, False),
-        (typing.TypeVar("V", bound=int), int, False),
-        (typing.TypeVar("V", bound=Foo), (Bar, Baz), True),
-        (typing.TypeVar("V", bound=typing.Union[int, str]), (int, str), True),
-        (typing.TypeVar("V", int, str), (int, str), False),
+        (typing.TypeVar("V"), object),
+        (typing.TypeVar("V", bound=int), int),
+        (typing.TypeVar("V", bound=Foo), (Bar, Baz)),
+        (typing.TypeVar("V", bound=typing.Union[int, str]), (int, str)),
+        (typing.TypeVar("V", int, str), (int, str)),
     ],
 )
 @settings(suppress_health_check=[HealthCheck.too_slow])
 @given(data=st.data())
-def test_typevar_type_is_consistent(data, var, expected, exp_warn):
+def test_typevar_type_is_consistent(data, var, expected):
     strat = st.from_type(var)
-    if exp_warn:
-        with catch_sampled_from_strategies_warning():
-            v1 = data.draw(strat)
-            v2 = data.draw(strat)
-    else:
-        v1 = data.draw(strat)
-        v2 = data.draw(strat)
+    v1 = data.draw(strat)
+    v2 = data.draw(strat)
     assume(v1 != v2)  # Values may vary, just not types
     assert type(v1) == type(v2)
     assert isinstance(v1, expected)
