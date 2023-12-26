@@ -192,11 +192,113 @@ def test_suggests_elements_instead_of_annotations():
         st.sampled_from(AnnotationsInsteadOfElements).example()
 
 
-@pytest.mark.parametrize("wrap", [list, tuple])
-def test_warns_when_given_entirely_strategies_as_elements(wrap):
-    elements = wrap([st.booleans(), st.decimals(), st.integers(), st.text()])
-    with pytest.warns(
-        UserWarning,
-        match="sample_from was given a collection of strategies; was one_of intended?",
+class TestErrorNoteBehavior3819:
+    elements = (st.booleans(), st.decimals(), st.integers(), st.text())
+
+    def execute_expecting_error(test_func):
+        with pytest.raises(TypeError) as err_ctx:
+            test_func()
+        obs_notes = getattr(err_ctx.value, "__notes__", [])
+        assert obs_notes[-1] == exp_msg
+
+    @staticmethod
+    @given(st.sampled_from(elements))
+    def args_with_type_error_with_message_substring(_):
+        raise TypeError("SearchStrategy")
+
+    @staticmethod
+    @given(all_strat_sample=st.sampled_from(elements))
+    def kwargs_with_type_error_with_message_substring(all_strat_sample):
+        raise TypeError("SearchStrategy")
+
+    @staticmethod
+    @given(st.sampled_from(elements))
+    def args_with_type_error_without_message_substring(_):
+        raise TypeError("Substring not in message!")
+
+    @staticmethod
+    @given(st.sampled_from(elements))
+    def kwargs_with_type_error_without_message_substring(_):
+        raise TypeError("Substring not in message!")
+
+    @staticmethod
+    @given(st.sampled_from(elements))
+    def type_error_but_not_all_strategies_args(_):
+        raise TypeError("SearchStrategy, but should not trigger note addition!")
+
+    @staticmethod
+    @given(all_strat_sample=st.sampled_from(elements))
+    def type_error_but_not_all_strategies_kwargs(all_strat_sample):
+        raise TypeError("SearchStrategy, but should not trigger note addition!")
+
+    @staticmethod
+    @given(st.sampled_from(elements))
+    def non_type_error_args(_):
+        raise Exception("SearchStrategy, but should not trigger note addition!")
+
+    @staticmethod
+    @given(all_strat_sample=st.sampled_from(elements))
+    def non_type_error_kwargs(all_strat_sample):
+        raise Exception("SearchStrategy, but should not trigger note addition!")
+
+    @staticmethod
+    @given(st.sampled_from(elements))
+    def args_without_error(_):
+        return
+
+    @staticmethod
+    @given(all_strat_sample=st.sampled_from(elements))
+    def kwargs_without_error(all_strat_sample):
+        return
+
+    @pytest.mark.parametrize(
+        ["func_to_call", "exp_err_cls", "should_exp_msg"],
+        [
+            (f, TypeError, True)
+            for f in (
+                args_with_type_error_with_message_substring,
+                kwargs_with_type_error_with_message_substring,
+            )
+        ]
+        + [
+            (f, TypeError, False)
+            for f in (
+                args_with_type_error_without_message_substring,
+                kwargs_with_type_error_without_message_substring,
+            )
+        ]
+        + [
+            (f, TypeError, False)
+            for f in (
+                type_error_but_not_all_strategies_args,
+                type_error_but_not_all_strategies_kwargs,
+            )
+        ]
+        + [(f, Exception, False) for f in (non_type_error_args, non_type_error_kwargs)]
+        + [(f, None, False) for f in (args_without_error, kwargs_without_error)],
+    )
+    def test_error_appropriate_error_note_3819(
+        self, func_to_call, exp_err_cls, should_exp_msg
     ):
-        st.sampled_from(elements)
+        if exp_err_cls is None:
+            try:
+                func_to_call()
+            except BaseException as e:
+                pytest.fail(f"Expected call to succeed but got error: {e}")
+            else:
+                assert True
+        else:
+            with pytest.raises(Exception) as err_ctx:
+                func_to_call()
+            err = err_ctx.value
+            assert type(err) is exp_err_cls
+            notes = getattr(err, "__notes__", [])
+            msg_in_notes = (
+                "sample_from was given a collection of strategies; was one_of intended?"
+                in notes
+            )
+            assert (
+                should_exp_msg
+                and msg_in_notes
+                or (not should_exp_msg and not should_exp_msg)
+            )

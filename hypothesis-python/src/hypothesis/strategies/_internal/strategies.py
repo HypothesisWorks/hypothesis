@@ -477,6 +477,9 @@ class SampledFromStrategy(SearchStrategy):
         super().__init__()
         self.elements = cu.check_sample(elements, "sampled_from")
         assert self.elements
+        self.sampling_is_from_a_collection_of_strategies = all(
+            isinstance(x, SearchStrategy) for x in self.elements
+        )
         self.repr_ = repr_
         self._transformations = transformations
 

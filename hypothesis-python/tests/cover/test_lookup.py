@@ -311,10 +311,8 @@ st.register_type_strategy(Baz, st.builds(Baz, st.integers()))
 
 
 @pytest.mark.parametrize(
-    "var,expected,exp_warn",
+    "var,expected",
     [
-        # Expect a warning exactly when the type constraint/bound should trigger
-        # passing a strategy to sampled_from.
         (typing.TypeVar("V"), object),
         (typing.TypeVar("V", bound=int), int),
         (typing.TypeVar("V", bound=Foo), (Bar, Baz)),
