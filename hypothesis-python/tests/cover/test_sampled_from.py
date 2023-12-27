@@ -195,12 +195,6 @@ def test_suggests_elements_instead_of_annotations():
 class TestErrorNoteBehavior3819:
     elements = (st.booleans(), st.decimals(), st.integers(), st.text())
 
-    def execute_expecting_error(test_func):
-        with pytest.raises(TypeError) as err_ctx:
-            test_func()
-        obs_notes = getattr(err_ctx.value, "__notes__", [])
-        assert obs_notes[-1] == exp_msg
-
     @staticmethod
     @given(st.sampled_from(elements))
     def args_with_type_error_with_message_substring(_):
@@ -222,12 +216,12 @@ class TestErrorNoteBehavior3819:
         raise TypeError("Substring not in message!")
 
     @staticmethod
-    @given(st.sampled_from(elements))
+    @given(st.sampled_from((*elements, False, True)))
     def type_error_but_not_all_strategies_args(_):
         raise TypeError("SearchStrategy, but should not trigger note addition!")
 
     @staticmethod
-    @given(all_strat_sample=st.sampled_from(elements))
+    @given(all_strat_sample=st.sampled_from((*elements, False, True)))
     def type_error_but_not_all_strategies_kwargs(all_strat_sample):
         raise TypeError("SearchStrategy, but should not trigger note addition!")
 
@@ -254,28 +248,34 @@ class TestErrorNoteBehavior3819:
     @pytest.mark.parametrize(
         ["func_to_call", "exp_err_cls", "should_exp_msg"],
         [
-            (f, TypeError, True)
-            for f in (
-                args_with_type_error_with_message_substring,
-                kwargs_with_type_error_with_message_substring,
-            )
-        ]
-        + [
-            (f, TypeError, False)
-            for f in (
-                args_with_type_error_without_message_substring,
-                kwargs_with_type_error_without_message_substring,
-            )
-        ]
-        + [
-            (f, TypeError, False)
-            for f in (
-                type_error_but_not_all_strategies_args,
-                type_error_but_not_all_strategies_kwargs,
-            )
-        ]
-        + [(f, Exception, False) for f in (non_type_error_args, non_type_error_kwargs)]
-        + [(f, None, False) for f in (args_without_error, kwargs_without_error)],
+            pytest.param(f.__func__, err, msg_exp, id=f.__func__.__name__)
+            for f, err, msg_exp in [
+                (f, TypeError, True)
+                for f in (
+                    args_with_type_error_with_message_substring,
+                    kwargs_with_type_error_with_message_substring,
+                )
+            ]
+            + [
+                (f, TypeError, False)
+                for f in (
+                    args_with_type_error_without_message_substring,
+                    kwargs_with_type_error_without_message_substring,
+                )
+            ]
+            + [
+                (f, TypeError, False)
+                for f in (
+                    type_error_but_not_all_strategies_args,
+                    type_error_but_not_all_strategies_kwargs,
+                )
+            ]
+            + [
+                (f, Exception, False)
+                for f in (non_type_error_args, non_type_error_kwargs)
+            ]
+            + [(f, None, False) for f in (args_without_error, kwargs_without_error)]
+        ],
     )
     def test_error_appropriate_error_note_3819(
         self, func_to_call, exp_err_cls, should_exp_msg
@@ -297,8 +297,7 @@ class TestErrorNoteBehavior3819:
                 "sample_from was given a collection of strategies; was one_of intended?"
                 in notes
             )
-            assert (
-                should_exp_msg
-                and msg_in_notes
-                or (not should_exp_msg and not should_exp_msg)
-            )
+            if should_exp_msg:
+                assert msg_in_notes
+            else:
+                assert not msg_in_notes
