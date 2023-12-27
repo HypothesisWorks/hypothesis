@@ -88,6 +88,7 @@ from hypothesis.internal.escalation import (
 )
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.internal.observability import (
+    OBSERVABILITY_COLLECT_COVERAGE,
     TESTCASE_CALLBACKS,
     deliver_json_blob,
     make_testcase,
@@ -968,7 +969,7 @@ class StateForActualGivenExecution:
             _can_trace = (
                 sys.gettrace() is None or sys.version_info[:2] >= (3, 12)
             ) and not PYPY
-            _trace_obs = TESTCASE_CALLBACKS
+            _trace_obs = TESTCASE_CALLBACKS and OBSERVABILITY_COLLECT_COVERAGE
             _trace_failure = (
                 self.failed_normally
                 and not self.failed_due_to_deadline

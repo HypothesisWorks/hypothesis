@@ -19,6 +19,7 @@ from hypothesis.configuration import storage_directory
 from hypothesis.internal.conjecture.data import ConjectureData, Status
 
 TESTCASE_CALLBACKS: List[Callable[[dict], None]] = []
+OBSERVABILITY_COLLECT_COVERAGE = True
 
 
 def deliver_json_blob(value: dict) -> None:
@@ -90,3 +91,6 @@ if "HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY" in os.environ:  # pragma: no cover
     for f in storage_directory("observed").glob("*.jsonl"):
         if f.stem < max_age:  # pragma: no branch
             f.unlink(missing_ok=True)
+
+if "HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY_NOCOVER" in os.environ:  # pragma: no cover
+    OBSERVABILITY_COLLECT_COVERAGE = False
