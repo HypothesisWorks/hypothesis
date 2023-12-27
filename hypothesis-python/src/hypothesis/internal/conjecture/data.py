@@ -30,6 +30,7 @@ from typing import (
     Set,
     Tuple,
     Type,
+    TypeVar,
     Union,
 )
 
@@ -84,6 +85,8 @@ InterestingOrigin = Tuple[
     Type[BaseException], str, int, Tuple[Any, ...], Tuple[Tuple[Any, ...], ...]
 ]
 TargetObservations = Dict[Optional[str], Union[int, float]]
+
+T = TypeVar("T")
 
 
 class ExtraInformation:
@@ -1733,6 +1736,17 @@ class ConjectureData:
 
         self.buffer = bytes(self.buffer)
         self.observer.conclude_test(self.status, self.interesting_origin)
+
+    def choice(
+        self,
+        values: Sequence[T],
+        *,
+        forced: Optional[T] = None,
+        observe=True,
+    ) -> T:
+        forced_i = None if forced is None else values.index(forced)
+        i = self.draw_integer(0, len(values) - 1, forced=forced_i, observe=observe)
+        return values[i]
 
     def draw_bits(self, n: int, *, forced: Optional[int] = None) -> int:
         """Return an ``n``-bit integer from the underlying source of

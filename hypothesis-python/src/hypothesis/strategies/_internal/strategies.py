@@ -586,7 +586,7 @@ class SampledFromStrategy(SearchStrategy):
         # The speculative index didn't work out, but at this point we've built
         # and can choose from the complete list of allowed indices and elements.
         if allowed:
-            i, element = cu.choice(data, allowed, observe=True)
+            i, element = data.choice(data, allowed)
             data.draw_integer(0, len(self.elements) - 1, forced=i)
             return element
         # If there are no allowed indices, the filter couldn't be satisfied.

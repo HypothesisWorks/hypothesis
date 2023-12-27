@@ -81,19 +81,6 @@ def check_sample(
     return tuple(values)
 
 
-# TODO probably move this to a method on ConjectureData
-def choice(
-    data: "ConjectureData",
-    values: Sequence[T],
-    *,
-    forced: Optional[T] = None,
-    observe=True,
-) -> T:
-    forced_i = None if forced is None else values.index(forced)
-    i = data.draw_integer(0, len(values) - 1, forced=forced_i, observe=observe)
-    return values[i]
-
-
 class Sampler:
     """Sampler based on Vose's algorithm for the alias method. See
     http://www.keithschwarz.com/darts-dice-coins/ for a good explanation.
@@ -186,8 +173,8 @@ class Sampler:
             if forced is None
             else next((b, a, a_c) for (b, a, a_c) in self.table if forced in (b, a))
         )
-        base, alternate, alternate_chance = choice(
-            data, self.table, forced=forced_choice, observe=self.observe
+        base, alternate, alternate_chance = data.choice(
+            self.table, forced=forced_choice, observe=self.observe
         )
         use_alternate = data.draw_boolean(
             alternate_chance,
