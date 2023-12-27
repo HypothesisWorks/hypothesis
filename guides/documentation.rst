@@ -58,7 +58,7 @@ That means every contributor gets to write their changelog!
 A changelog entry should be written in a new ``RELEASE.rst`` file in
 the `hypothesis-python` directory, or ``RELEASE.md`` for the Ruby and Rust
 versions.  Note that any change to ``conjecture-rust`` is automatically also
-and change for our Ruby package, and therefore requires *two* release files!
+a change for our Ruby package, and therefore requires *two* release files!
 
 The first line of the file specifies the component
 of the version number that will be updated, according to our
