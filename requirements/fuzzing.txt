@@ -6,7 +6,7 @@
 #
 annotated-types==0.6.0
     # via -r requirements/coverage.in
-ansi2html==1.8.0
+ansi2html==1.9.1
     # via dash
 async-timeout==4.0.3
     # via redis
@@ -14,7 +14,7 @@ attrs==23.1.0
     # via
     #   hypothesis
     #   hypothesis (hypothesis-python/setup.py)
-black==23.11.0
+black==23.12.1
     # via
     #   -r requirements/coverage.in
     #   hypofuzz
@@ -31,7 +31,7 @@ click==8.1.7
     #   black
     #   flask
     #   hypothesis
-coverage==7.3.2
+coverage==7.3.4
     # via
     #   -r requirements/coverage.in
     #   hypofuzz
@@ -52,19 +52,19 @@ exceptiongroup==1.2.0 ; python_version < "3.11"
     #   pytest
 execnet==2.0.2
     # via pytest-xdist
-fakeredis==2.20.0
+fakeredis==2.20.1
     # via -r requirements/coverage.in
 flask==3.0.0
     # via dash
 hypofuzz==23.12.1
     # via -r requirements/fuzzing.in
-hypothesis[cli]==6.91.2
+hypothesis[cli]==6.92.1
     # via
     #   hypofuzz
     #   hypothesis
 idna==3.6
     # via requests
-importlib-metadata==7.0.0
+importlib-metadata==7.0.1
     # via dash
 iniconfig==2.0.0
     # via pytest
@@ -105,7 +105,7 @@ pandas==2.1.4
     # via
     #   -r requirements/coverage.in
     #   hypofuzz
-pathspec==0.12.0
+pathspec==0.12.1
     # via black
 pexpect==4.9.0
     # via -r requirements/test.in
@@ -115,7 +115,7 @@ plotly==5.18.0
     # via dash
 pluggy==1.3.0
     # via pytest
-psutil==5.9.6
+psutil==5.9.7
     # via hypofuzz
 ptyprocess==0.7.0
     # via pexpect
@@ -163,7 +163,7 @@ tomli==2.0.1
     # via
     #   black
     #   pytest
-typing-extensions==4.8.0
+typing-extensions==4.9.0
     # via
     #   -r requirements/coverage.in
     #   black
@@ -184,5 +184,5 @@ zipp==3.17.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-setuptools==69.0.2
+setuptools==69.0.3
     # via dash
