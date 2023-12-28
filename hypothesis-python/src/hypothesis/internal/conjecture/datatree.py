@@ -12,6 +12,7 @@ import attr
 
 from hypothesis.errors import Flaky, HypothesisException, StopTest
 from hypothesis.internal.conjecture.data import ConjectureData, DataObserver, Status
+from hypothesis.internal.floats import count_between_floats
 
 
 class PreviouslyUnseenBehaviour(HypothesisException):
@@ -98,18 +99,7 @@ def compute_max_children(kwargs, ir_type):
         count += len(intervals) ** (max_size - min_size + 1)
         return count
     elif ir_type == "float":
-        import ctypes
-
-        # number of 64 bit floating point values in [a, b].
-        # TODO this is wrong for [-0.0, +0.0], or anything that crosses the 0.0
-        # boundary.
-        # it also seems maybe wrong for [0, math.inf] but I haven't verified.
-        def binary(num):
-            # rely on the fact that adjacent floating point numbers are adjacent
-            # in their bitwise representation (except for -0.0 and +0.0).
-            return ctypes.c_uint64.from_buffer(ctypes.c_double(num)).value
-
-        return binary(kwargs["max_value"]) - binary(kwargs["min_value"]) + 1
+        return count_between_floats(kwargs["min_value"], kwargs["max_value"])
     else:
         raise ValueError(f"unhandled ir_type {ir_type}")
 
