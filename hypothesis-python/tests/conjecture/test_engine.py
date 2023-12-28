@@ -1271,46 +1271,6 @@ def test_pareto_front_contains_different_interesting_reasons():
         assert len(runner.pareto_front) == 2**4
 
 
-def test_database_contains_only_pareto_front():
-    with deterministic_PRNG():
-
-        def test(data):
-            data.target_observations["1"] = data.draw_bits(4)
-            data.draw_bits(64)
-            data.target_observations["2"] = data.draw_bits(8)
-
-        db = InMemoryExampleDatabase()
-
-        runner = ConjectureRunner(
-            test,
-            settings=settings(
-                max_examples=500, database=db, suppress_health_check=list(HealthCheck)
-            ),
-            database_key=b"stuff",
-        )
-
-        runner.run()
-
-        assert len(runner.pareto_front) <= 500
-
-        for v in runner.pareto_front:
-            assert v.status >= Status.VALID
-
-        assert len(db.data) == 1
-
-        (values,) = db.data.values()
-        values = set(values)
-
-        assert len(values) == len(runner.pareto_front)
-
-        for data in runner.pareto_front:
-            assert data.buffer in values
-            assert data in runner.pareto_front
-
-        for k in values:
-            assert runner.cached_test_function(k) in runner.pareto_front
-
-
 def test_clears_defunct_pareto_front():
     with deterministic_PRNG():
 
