@@ -73,6 +73,9 @@ def convert(node: ast.AST, argname: str) -> object:
         if node.id != argname:
             raise ValueError("Non-local variable")
         return ARG
+    if isinstance(node, ast.Call):
+        if node.func.id == "len":
+            return ARG
     return ast.literal_eval(node)
 
 
@@ -86,27 +89,40 @@ def comp_to_kwargs(x: ast.AST, op: ast.AST, y: ast.AST, *, argname: str) -> dict
         # (and we can't even do `arg == arg`, because what if it's NaN?)
         raise ValueError("Can't analyse this comparison")
 
+    kwargs = {}
+    if isinstance(x, ast.Call) and x.func.id == "len":
+        kwargs["len_func"] = True
+    if isinstance(y, ast.Call) and y.func.id == "len":
+        kwargs["len_func"] = True
+
     if isinstance(op, ast.Lt):
         if a is ARG:
-            return {"max_value": b, "exclude_max": True}
-        return {"min_value": a, "exclude_min": True}
+            kwargs.update({"max_value": b, "exclude_max": True})
+        else:
+            kwargs.update({"min_value": a, "exclude_min": True})
     elif isinstance(op, ast.LtE):
         if a is ARG:
-            return {"max_value": b}
-        return {"min_value": a}
+            kwargs.update({"max_value": b})
+        else:
+            kwargs.update({"min_value": a})
     elif isinstance(op, ast.Eq):
         if a is ARG:
-            return {"min_value": b, "max_value": b}
-        return {"min_value": a, "max_value": a}
+            kwargs.update({"min_value": b, "max_value": b})
+        else:
+            kwargs.update({"min_value": a, "max_value": a})
     elif isinstance(op, ast.GtE):
         if a is ARG:
-            return {"min_value": b}
-        return {"max_value": a}
+            kwargs.update({"min_value": b})
+        else:
+            kwargs.update({"max_value": a})
     elif isinstance(op, ast.Gt):
         if a is ARG:
-            return {"min_value": b, "exclude_min": True}
-        return {"max_value": a, "exclude_max": True}
-    raise ValueError("Unhandled comparison operator")  # e.g. ast.Ne
+            kwargs.update({"min_value": b, "exclude_min": True})
+        else:
+            kwargs.update({"max_value": a, "exclude_max": True})
+    else:
+        raise ValueError("Unhandled comparison operator")  # e.g. ast.Ne
+    return kwargs
 
 
 def merge_preds(*con_predicates: ConstructivePredicate) -> ConstructivePredicate:
@@ -117,6 +133,7 @@ def merge_preds(*con_predicates: ConstructivePredicate) -> ConstructivePredicate
         "max_value": math.inf,
         "exclude_min": False,
         "exclude_max": False,
+        "len_func": False,
     }
     predicate = None
     for kw, p in con_predicates:
@@ -133,6 +150,8 @@ def merge_preds(*con_predicates: ConstructivePredicate) -> ConstructivePredicate
                 base["max_value"] = kw["max_value"]
             elif kw["max_value"] == base["max_value"]:
                 base["exclude_max"] |= kw.get("exclude_max", False)
+        if "len_func" in kw:
+            base["len_func"] |= kw.get("len_func", False)
 
     if not base["exclude_min"]:
         del base["exclude_min"]
@@ -142,6 +161,8 @@ def merge_preds(*con_predicates: ConstructivePredicate) -> ConstructivePredicate
         del base["exclude_max"]
         if base["max_value"] == math.inf:
             del base["max_value"]
+    if not base["len_func"]:
+        del base["len_func"]
     return ConstructivePredicate(base, predicate)
 
 
@@ -154,6 +175,8 @@ def numeric_bounds_from_ast(
     {"min_value": 0}, None
     >>> lambda x: x < 10
     {"max_value": 10, "exclude_max": True}, None
+    >>> lambda x: len(x) >= 5
+    {"min_value": 5, "len_func": True}, None
     >>> lambda x: x >= y
     {}, lambda x: x >= y
 
@@ -270,7 +293,8 @@ def get_integer_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
         elif kwargs.get("exclude_max", False):
             kwargs["max_value"] = int(kwargs["max_value"]) - 1
 
-    kwargs = {k: v for k, v in kwargs.items() if k in {"min_value", "max_value"}}
+    kw_categories = {"min_value", "max_value", "len_func"}
+    kwargs = {k: v for k, v in kwargs.items() if k in kw_categories}
     return ConstructivePredicate(kwargs, predicate)
 
 
