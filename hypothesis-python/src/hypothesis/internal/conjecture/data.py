@@ -74,7 +74,7 @@ else:
 
 
 TOP_LABEL = calc_label_from_name("top")
-DRAW_BYTES_LABEL = calc_label_from_name("draw_bytes() in ConjectureData")
+DRAW_BYTES_LABEL_CD = calc_label_from_name("draw_bytes() in ConjectureData")
 DRAW_FLOAT_LABEL = calc_label_from_name("draw_float() in PrimitiveProvider")
 DRAW_INTEGER_LABEL = calc_label_from_name("draw_integer() in PrimitiveProvider")
 DRAW_STRING_LABEL = calc_label_from_name("draw_string() in PrimitiveProvider")
@@ -387,8 +387,8 @@ class ExampleRecord:
     """
 
     def __init__(self) -> None:
-        self.labels = [DRAW_BYTES_LABEL]
-        self.__index_of_labels: "Optional[Dict[int, int]]" = {DRAW_BYTES_LABEL: 0}
+        self.labels = [DRAW_BYTES_LABEL_CD]
+        self.__index_of_labels: "Optional[Dict[int, int]]" = {DRAW_BYTES_LABEL_CD: 0}
         self.trail = IntList()
 
     def freeze(self) -> None:
