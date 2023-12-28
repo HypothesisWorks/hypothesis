@@ -29,7 +29,7 @@ import operator
 from decimal import Decimal
 from fractions import Fraction
 from functools import partial
-from typing import Any, Callable, Collection, Dict, NamedTuple, Optional, TypeVar
+from typing import Any, Callable, Collection, Dict, NamedTuple, Optional, TypeVar, Union
 
 from hypothesis.internal.compat import ceil, floor
 from hypothesis.internal.floats import next_down, next_up
@@ -74,7 +74,8 @@ def convert(node: ast.AST, argname: str) -> object:
             raise ValueError("Non-local variable")
         return ARG
     if isinstance(node, ast.Call):
-        if node.func.id == "len":
+        # if node.func.id == "len":
+        if isinstance(node.func, ast.Name) and node.func.id == "len":
             return ARG
     return ast.literal_eval(node)
 
@@ -89,7 +90,7 @@ def comp_to_kwargs(x: ast.AST, op: ast.AST, y: ast.AST, *, argname: str) -> dict
         # (and we can't even do `arg == arg`, because what if it's NaN?)
         raise ValueError("Can't analyse this comparison")
 
-    kwargs = {}
+    kwargs: Dict[str, Union[Any, bool]] = {}
     if isinstance(x, ast.Call) and x.func.id == "len":
         kwargs["len_func"] = True
     if isinstance(y, ast.Call) and y.func.id == "len":
