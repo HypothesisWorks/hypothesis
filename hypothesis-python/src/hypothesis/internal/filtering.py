@@ -91,9 +91,9 @@ def comp_to_kwargs(x: ast.AST, op: ast.AST, y: ast.AST, *, argname: str) -> dict
         raise ValueError("Can't analyse this comparison")
 
     kwargs: Dict[str, Union[Any, bool]] = {}
-    if isinstance(x, ast.Call) and x.func.id == "len":
+    if isinstance(x, ast.Call) and isinstance(x.func, ast.Name) and x.func.id == "len":
         kwargs["len_func"] = True
-    if isinstance(y, ast.Call) and y.func.id == "len":
+    if isinstance(y, ast.Call) and isinstance(y.func, ast.Name) and y.func.id == "len":
         kwargs["len_func"] = True
 
     if isinstance(op, ast.Lt):
