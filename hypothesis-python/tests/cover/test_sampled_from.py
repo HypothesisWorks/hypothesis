@@ -196,54 +196,29 @@ class TestErrorNoteBehavior3819:
     elements = (st.booleans(), st.decimals(), st.integers(), st.text())
 
     @staticmethod
-    @given(st.sampled_from(elements))
-    def args_with_type_error_with_message_substring(_):
-        raise TypeError("SearchStrategy")
-
-    @staticmethod
-    @given(all_strat_sample=st.sampled_from(elements))
-    def kwargs_with_type_error_with_message_substring(all_strat_sample):
-        raise TypeError("SearchStrategy")
-
-    @staticmethod
-    @given(st.sampled_from(elements))
-    def args_with_type_error_without_message_substring(_):
-        raise TypeError("Substring not in message!")
-
-    @staticmethod
-    @given(st.sampled_from(elements))
-    def kwargs_with_type_error_without_message_substring(_):
-        raise TypeError("Substring not in message!")
-
-    @staticmethod
-    @given(st.sampled_from((*elements, False, True)))
-    def type_error_but_not_all_strategies_args(_):
-        raise TypeError("SearchStrategy, but should not trigger note addition!")
-
-    @staticmethod
-    @given(all_strat_sample=st.sampled_from((*elements, False, True)))
-    def type_error_but_not_all_strategies_kwargs(all_strat_sample):
-        raise TypeError("SearchStrategy, but should not trigger note addition!")
-
-    @staticmethod
-    @given(st.sampled_from(elements))
-    def non_type_error_args(_):
-        raise Exception("SearchStrategy, but should not trigger note addition!")
-
-    @staticmethod
-    @given(all_strat_sample=st.sampled_from(elements))
-    def non_type_error_kwargs(all_strat_sample):
-        raise Exception("SearchStrategy, but should not trigger note addition!")
-
-    @staticmethod
-    @given(st.sampled_from(elements))
-    def args_without_error(_):
+    @given(st.lists(st.sampled_from(elements)))
+    def indirect_without_error(_):
         return
 
     @staticmethod
-    @given(all_strat_sample=st.sampled_from(elements))
-    def kwargs_without_error(all_strat_sample):
-        return
+    @given(st.lists(st.sampled_from(elements)))
+    def indirect_with_non_type_error(_):
+        raise Exception("Contains SearchStrategy, but no note addition!")
+
+    @staticmethod
+    @given(st.lists(st.sampled_from(elements)))
+    def indirect_with_type_error_without_substring(_):
+        raise TypeError("Substring not in message!")
+
+    @staticmethod
+    @given(st.lists(st.sampled_from((*elements, False, True))))
+    def indirect_with_type_error_with_substring_but_not_all_strategies(_):
+        raise TypeError("Contains SearchStrategy, but no note addition!")
+
+    @staticmethod
+    @given(st.lists(st.sampled_from(elements)))
+    def indirect_all_strategies_with_type_error_with_substring(_):
+        raise TypeError("Contains SearchStrategy in message")
 
     @pytest.mark.parametrize(
         ["func_to_call", "exp_err_cls", "should_exp_msg"],
@@ -254,6 +229,7 @@ class TestErrorNoteBehavior3819:
                 for f in (
                     args_with_type_error_with_message_substring,
                     kwargs_with_type_error_with_message_substring,
+                    indirect_all_strategies_with_type_error_with_substring,
                 )
             ]
             + [
@@ -261,20 +237,28 @@ class TestErrorNoteBehavior3819:
                 for f in (
                     args_with_type_error_without_message_substring,
                     kwargs_with_type_error_without_message_substring,
-                )
-            ]
-            + [
-                (f, TypeError, False)
-                for f in (
                     type_error_but_not_all_strategies_args,
                     type_error_but_not_all_strategies_kwargs,
+                    indirect_with_type_error_without_substring,
+                    indirect_with_type_error_with_substring_but_not_all_strategies,
                 )
             ]
             + [
                 (f, Exception, False)
-                for f in (non_type_error_args, non_type_error_kwargs)
+                for f in (
+                    non_type_error_args,
+                    non_type_error_kwargs,
+                    indirect_with_non_type_error,
+                )
             ]
-            + [(f, None, False) for f in (args_without_error, kwargs_without_error)]
+            + [
+                (f, None, False)
+                for f in (
+                    args_without_error,
+                    kwargs_without_error,
+                    indirect_without_error,
+                )
+            ]
         ],
     )
     def test_error_appropriate_error_note_3819(
