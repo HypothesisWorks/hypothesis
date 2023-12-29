@@ -196,6 +196,35 @@ class TestErrorNoteBehavior3819:
     elements = (st.booleans(), st.decimals(), st.integers(), st.text())
 
     @staticmethod
+    @given(st.data())
+    def direct_without_error(data):
+        data.draw(st.sampled_from((st.floats(), st.binary())))
+
+    @staticmethod
+    @given(st.data())
+    def direct_with_non_type_error(data):
+        data.draw(st.sampled_from(st.characters(), st.floats()))
+        raise Exception("Contains SearchStrategy, but no note addition!")
+
+    @staticmethod
+    @given(st.data())
+    def direct_with_type_error_without_substring(data):
+        data.draw(st.sampled_from(st.booleans(), st.binary()))
+        raise TypeError("Substring not in message!")
+
+    @staticmethod
+    @given(st.data())
+    def direct_with_type_error_with_substring_but_not_all_strategies(data):
+        data.draw(st.sampled_from(st.booleans(), False, True))
+        raise TypeError("Contains SearchStrategy, but no note addition!")
+
+    @staticmethod
+    @given(st.data())
+    def direct_all_strategies_with_type_error_with_substring(data):
+        data.draw(st.sampled_from((st.dates(), st.datetimes())))
+        raise TypeError("This message contains SearchStrategy as substring!")
+
+    @staticmethod
     @given(st.lists(st.sampled_from(elements)))
     def indirect_without_error(_):
         return
@@ -216,9 +245,9 @@ class TestErrorNoteBehavior3819:
         raise TypeError("Contains SearchStrategy, but no note addition!")
 
     @staticmethod
-    @given(st.lists(st.sampled_from(elements)))
-    def indirect_all_strategies_with_type_error_with_substring(_):
-        raise TypeError("Contains SearchStrategy in message")
+    @given(st.lists(st.sampled_from(elements), min_size=1))
+    def indirect_all_strategies_with_type_error_with_substring(objs):
+        raise TypeError("Contains SearchStrategy in message, trigger note!")
 
     @pytest.mark.parametrize(
         ["func_to_call", "exp_err_cls", "should_exp_msg"],
@@ -227,18 +256,15 @@ class TestErrorNoteBehavior3819:
             for f, err, msg_exp in [
                 (f, TypeError, True)
                 for f in (
-                    args_with_type_error_with_message_substring,
-                    kwargs_with_type_error_with_message_substring,
+                    direct_all_strategies_with_type_error_with_substring,
                     indirect_all_strategies_with_type_error_with_substring,
                 )
             ]
             + [
                 (f, TypeError, False)
                 for f in (
-                    args_with_type_error_without_message_substring,
-                    kwargs_with_type_error_without_message_substring,
-                    type_error_but_not_all_strategies_args,
-                    type_error_but_not_all_strategies_kwargs,
+                    direct_with_type_error_without_substring,
+                    direct_with_type_error_with_substring_but_not_all_strategies,
                     indirect_with_type_error_without_substring,
                     indirect_with_type_error_with_substring_but_not_all_strategies,
                 )
@@ -246,16 +272,14 @@ class TestErrorNoteBehavior3819:
             + [
                 (f, Exception, False)
                 for f in (
-                    non_type_error_args,
-                    non_type_error_kwargs,
+                    direct_with_non_type_error,
                     indirect_with_non_type_error,
                 )
             ]
             + [
                 (f, None, False)
                 for f in (
-                    args_without_error,
-                    kwargs_without_error,
+                    direct_without_error,
                     indirect_without_error,
                 )
             ]
@@ -272,11 +296,9 @@ class TestErrorNoteBehavior3819:
             else:
                 assert True
         else:
-            with pytest.raises(Exception) as err_ctx:
+            with pytest.raises(exp_err_cls) as err_ctx:
                 func_to_call()
-            err = err_ctx.value
-            assert type(err) is exp_err_cls
-            notes = getattr(err, "__notes__", [])
+            notes = getattr(err_ctx.value, "__notes__", [])
             msg_in_notes = (
                 "sample_from was given a collection of strategies; was one_of intended?"
                 in notes
