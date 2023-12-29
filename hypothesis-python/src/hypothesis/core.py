@@ -1165,6 +1165,12 @@ class StateForActualGivenExecution:
                 err.__cause__ = err.__context__ = e
                 errors_to_report.append((fragments, err))
             except BaseException as e:
+                try:
+                    notes = info._expected_exception.__notes__
+                except AttributeError:
+                    pass
+                else:
+                    e.__notes__ = notes
                 # If we have anything for explain-mode, this is the time to report.
                 fragments.extend(explanations[falsifying_example.interesting_origin])
                 errors_to_report.append(
@@ -1238,6 +1244,7 @@ def _raise_to_user(errors_to_report, settings, target_lines, trailer=""):
     if settings.verbosity >= Verbosity.normal:
         for line in target_lines:
             add_note(the_error_hypothesis_found, line)
+
     raise the_error_hypothesis_found
 
 
