@@ -289,12 +289,8 @@ class TestErrorNoteBehavior3819:
         self, func_to_call, exp_err_cls, should_exp_msg
     ):
         if exp_err_cls is None:
-            try:
-                func_to_call()
-            except BaseException as e:
-                pytest.fail(f"Expected call to succeed but got error: {e}")
-            else:
-                assert True
+            # Here we only care that no exception was raised, so nothing to assert.
+            func_to_call()
         else:
             with pytest.raises(exp_err_cls) as err_ctx:
                 func_to_call()
