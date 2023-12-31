@@ -528,12 +528,10 @@ class SampledFromStrategy(SearchStrategy):
 
     def do_draw(self, data):
         result = self.do_filtered_draw(data)
-        if (
-            isinstance(result, SearchStrategy)
-            and not hasattr(data, "sampling_is_from_a_collection_of_strategies")
-            and all(isinstance(x, SearchStrategy) for x in self.elements)
+        if isinstance(result, SearchStrategy) and all(
+            isinstance(x, SearchStrategy) for x in self.elements
         ):
-            data.sampling_is_from_a_collection_of_strategies = True
+            data._sampled_from_strategy_repr = repr(self)
         if result is filter_not_satisfied:
             data.mark_invalid(f"Aborted test because unable to satisfy {self!r}")
         return result

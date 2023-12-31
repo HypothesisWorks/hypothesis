@@ -295,11 +295,10 @@ class TestErrorNoteBehavior3819:
             with pytest.raises(exp_err_cls) as err_ctx:
                 func_to_call()
             notes = getattr(err_ctx.value, "__notes__", [])
-            msg_in_notes = (
-                "sample_from was given a collection of strategies; was one_of intended?"
-                in notes
-            )
-            if should_exp_msg:
-                assert msg_in_notes
-            else:
-                assert not msg_in_notes
+            matching_messages = [
+                n
+                for n in notes
+                if n.startswith("sample_from was given a collection of strategies")
+                and n.endswith("Was one_of intended?")
+            ]
+            assert len(matching_messages) == (1 if should_exp_msg else 0)

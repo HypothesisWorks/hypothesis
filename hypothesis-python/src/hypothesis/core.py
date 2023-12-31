@@ -1024,17 +1024,16 @@ class StateForActualGivenExecution:
                 # The test failed by raising an exception, so we inform the
                 # engine that this test run was interesting. This is the normal
                 # path for test runs that fail.
-                if (
-                    isinstance(e, TypeError)
-                    and "SearchStrategy" in str(e)
-                    and getattr(
-                        data, "sampling_is_from_a_collection_of_strategies", False
-                    )
-                ):
-                    add_note(
-                        e,
-                        "sample_from was given a collection of strategies; was one_of intended?",
-                    )
+                if isinstance(e, TypeError) and "SearchStrategy" in str(e):
+                    try:
+                        bad_strat_repr = data._sampled_from_strategy_repr
+                    except AttributeError:
+                        pass
+                    else:
+                        add_note(
+                            e,
+                            f"sample_from was given a collection of strategies: {bad_strat_repr}. Was one_of intended?",
+                        )
                 tb = get_trimmed_traceback()
                 info = data.extra_information
                 info._expected_traceback = format_exception(e, tb)  # type: ignore
