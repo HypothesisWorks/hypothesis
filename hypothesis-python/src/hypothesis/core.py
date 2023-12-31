@@ -1026,7 +1026,7 @@ class StateForActualGivenExecution:
                 # path for test runs that fail.
                 if isinstance(e, TypeError) and "SearchStrategy" in str(e):
                     try:
-                        bad_strat_repr = data._sampled_from_strategy_repr
+                        bad_strat_repr = data._sampled_from_strategy_repr  # type: ignore[attr-defined]
                     except AttributeError:
                         pass
                     else:
