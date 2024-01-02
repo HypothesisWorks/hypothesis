@@ -10,16 +10,18 @@
 
 """Observability tools to spit out analysis-ready tables, one row per test case."""
 
+import warnings
+import sys
 import json
 import os
 from datetime import date, timedelta
 from typing import Callable, Dict, List, Optional
 
 from hypothesis.configuration import storage_directory
+from hypothesis.errors import HypothesisWarning
 from hypothesis.internal.conjecture.data import ConjectureData, Status
 
 TESTCASE_CALLBACKS: List[Callable[[dict], None]] = []
-OBSERVABILITY_COLLECT_COVERAGE = True
 
 
 def deliver_json_blob(value: dict) -> None:
@@ -83,7 +85,15 @@ def _deliver_to_file(value):  # pragma: no cover
         f.write(json.dumps(value) + "\n")
 
 
-if "HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY" in os.environ:  # pragma: no cover
+OBSERVABILITY_COLLECT_COVERAGE = "HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY_NOCOVER" not in os.environ
+if OBSERVABILITY_COLLECT_COVERAGE is False and sys.version_info[:2] >= (3, 12):  # pragma: no cover
+    warnings.warn(
+        "Coverage data collection should be quite fast in Python 3.12 or later "
+        "so there should be no need to turn coverage reporting off.",
+        HypothesisWarning,
+        stacklevel=2,
+    )
+if "HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY" in os.environ or OBSERVABILITY_COLLECT_COVERAGE is False:  # pragma: no cover
     TESTCASE_CALLBACKS.append(_deliver_to_file)
 
     # Remove files more than a week old, to cap the size on disk
@@ -91,6 +101,3 @@ if "HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY" in os.environ:  # pragma: no cover
     for f in storage_directory("observed").glob("*.jsonl"):
         if f.stem < max_age:  # pragma: no branch
             f.unlink(missing_ok=True)
-
-if "HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY_NOCOVER" in os.environ:  # pragma: no cover
-    OBSERVABILITY_COLLECT_COVERAGE = False

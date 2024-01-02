@@ -44,6 +44,10 @@ or by using the :pypi:`sqlite-utils` and :pypi:`datasette` libraries::
     sqlite-utils insert testcases.db testcases .hypothesis/observed/*_testcases.jsonl --nl --flatten
     datasette serve testcases.db
 
+If you are experiencing a significant slow-down, you can try setting
+``HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY_NOCOVER`` instead; this will disable coverage information
+collection. This should not be necessary on Python 3.12 or later.
+
 
 Collecting more information
 ---------------------------
