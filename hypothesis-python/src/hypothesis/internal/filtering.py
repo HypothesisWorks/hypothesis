@@ -74,8 +74,14 @@ def convert(node: ast.AST, argname: str) -> object:
             raise ValueError("Non-local variable")
         return ARG
     if isinstance(node, ast.Call):
-        # if node.func.id == "len":
-        if isinstance(node.func, ast.Name) and node.func.id == "len":
+        if (
+            isinstance(node.func, ast.Name)
+            and node.func.id == "len"
+            and len(node.args) == 1
+        ):
+            convert(
+                node.args[0], argname
+            )  # comparison must be to len *of the lambda arg*
             return ARG
     return ast.literal_eval(node)
 
@@ -91,10 +97,7 @@ def comp_to_kwargs(x: ast.AST, op: ast.AST, y: ast.AST, *, argname: str) -> dict
         raise ValueError("Can't analyse this comparison")
 
     kwargs: Dict[str, Union[Any, bool]] = {}
-    if isinstance(x, ast.Call) and isinstance(x.func, ast.Name) and x.func.id == "len":
-        kwargs["len_func"] = True
-    if isinstance(y, ast.Call) and isinstance(y.func, ast.Name) and y.func.id == "len":
-        kwargs["len_func"] = True
+    of_len = {"len": True} if isinstance(x, ast.Call) or isinstance(y, ast.Call) else {}
 
     if isinstance(op, ast.Lt):
         if a is ARG:
@@ -123,7 +126,7 @@ def comp_to_kwargs(x: ast.AST, op: ast.AST, y: ast.AST, *, argname: str) -> dict
             kwargs.update({"max_value": a, "exclude_max": True})
     else:
         raise ValueError("Unhandled comparison operator")  # e.g. ast.Ne
-    return kwargs
+    return {**kwargs, **of_len}
 
 
 def merge_preds(*con_predicates: ConstructivePredicate) -> ConstructivePredicate:
@@ -134,7 +137,7 @@ def merge_preds(*con_predicates: ConstructivePredicate) -> ConstructivePredicate
         "max_value": math.inf,
         "exclude_min": False,
         "exclude_max": False,
-        "len_func": False,
+        "len": False,
     }
     predicate = None
     for kw, p in con_predicates:
@@ -151,8 +154,8 @@ def merge_preds(*con_predicates: ConstructivePredicate) -> ConstructivePredicate
                 base["max_value"] = kw["max_value"]
             elif kw["max_value"] == base["max_value"]:
                 base["exclude_max"] |= kw.get("exclude_max", False)
-        if "len_func" in kw:
-            base["len_func"] |= kw.get("len_func", False)
+        if "len" in kw:
+            base["len"] = True
 
     if not base["exclude_min"]:
         del base["exclude_min"]
@@ -162,8 +165,6 @@ def merge_preds(*con_predicates: ConstructivePredicate) -> ConstructivePredicate
         del base["exclude_max"]
         if base["max_value"] == math.inf:
             del base["max_value"]
-    if not base["len_func"]:
-        del base["len_func"]
     return ConstructivePredicate(base, predicate)
 
 
@@ -177,7 +178,7 @@ def numeric_bounds_from_ast(
     >>> lambda x: x < 10
     {"max_value": 10, "exclude_max": True}, None
     >>> lambda x: len(x) >= 5
-    {"min_value": 5, "len_func": True}, None
+    {"min_value": 5, "len": True}, None
     >>> lambda x: x >= y
     {}, lambda x: x >= y
 
@@ -294,7 +295,7 @@ def get_integer_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
         elif kwargs.get("exclude_max", False):
             kwargs["max_value"] = int(kwargs["max_value"]) - 1
 
-    kw_categories = {"min_value", "max_value", "len_func"}
+    kw_categories = {"min_value", "max_value", "len"}
     kwargs = {k: v for k, v in kwargs.items() if k in kw_categories}
     return ConstructivePredicate(kwargs, predicate)
 

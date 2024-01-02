@@ -11,11 +11,10 @@
 import copy
 import re
 import warnings
-from functools import lru_cache, partial
+from functools import lru_cache
 
 from hypothesis.errors import HypothesisWarning, InvalidArgument
 from hypothesis.internal import charmap
-from hypothesis.internal.filtering import get_integer_predicate_bounds, max_len, min_len
 from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.strategies._internal.collections import ListStrategy
 from hypothesis.strategies._internal.lazy import unwrap_strategies
@@ -143,31 +142,7 @@ class TextStrategy(ListStrategy):
                 HypothesisWarning,
                 stacklevel=2,
             )
-
         elems = unwrap_strategies(self.element_strategy)
-
-        kwargs, pred = get_integer_predicate_bounds(condition)
-
-        min_value, max_value = None, None
-        if "len_func" in kwargs and kwargs["len_func"]:
-            min_value = kwargs.get("min_value")
-            max_value = kwargs.get("max_value")
-        if isinstance(condition, partial) and len(condition.args) == 1:
-            min_value = condition.args[0] if condition.func is min_len else None
-            max_value = condition.args[0] if condition.func is max_len else None
-        if min_value is not None or max_value is not None:
-            self.min_size = (
-                max(self.min_size, min_value)
-                if min_value is not None
-                else self.min_size
-            )
-            self.max_size = (
-                min(self.max_size, max_value)
-                if max_value is not None
-                else self.max_size
-            )
-            if isinstance(condition, partial):
-                return self
 
         if (
             condition is str.isidentifier

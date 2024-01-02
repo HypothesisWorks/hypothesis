@@ -10,11 +10,13 @@
 
 import copy
 from typing import Any, Iterable, Tuple, overload
+from functools import partial
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.junkdrawer import LazySequenceCopy
 from hypothesis.internal.conjecture.utils import combine_labels
+from hypothesis.internal.filtering import get_integer_predicate_bounds, max_len, min_len
 from hypothesis.internal.reflection import is_identity_function
 from hypothesis.strategies._internal.strategies import (
     T3,
@@ -199,7 +201,34 @@ class ListStrategy(SearchStrategy):
             new = copy.copy(self)
             new.min_size = 1
             return new
-        return super().filter(condition)
+
+        kwargs, pred = get_integer_predicate_bounds(condition)
+
+        min_value, max_value = None, None
+        if "len" in kwargs and kwargs["len"]:
+            min_value = kwargs.get("min_value")
+            max_value = kwargs.get("max_value")
+        if isinstance(condition, partial) and len(condition.args) == 1:
+            min_value = condition.args[0] if condition.func is min_len else None
+            max_value = condition.args[0] if condition.func is max_len else None
+        min_value = (
+            max(self.min_size, min_value) if min_value is not None else self.min_size
+        )
+        max_value = (
+            min(self.max_size, max_value) if max_value is not None else self.max_size
+        )
+        strat_keywords = {
+            "elements": self.element_strategy,
+            "min_size": min_value,
+            "max_size": max_value,
+        }
+        if type(self) in (UniqueListStrategy, UniqueSampledListStrategy):
+            strat_keywords["keys"] = self.unique_by
+            strat_keywords["tuple_suffixes"] = self.tuple_suffixes
+        modified_strat = type(self)(**strat_keywords)
+        if isinstance(condition, partial):
+            return modified_strat
+        return SearchStrategy.filter(modified_strat, condition)
 
 
 class UniqueListStrategy(ListStrategy):
