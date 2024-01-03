@@ -1026,7 +1026,7 @@ class StateForActualGivenExecution:
                 # path for test runs that fail.
                 if isinstance(e, TypeError) and "SearchStrategy" in str(e):
                     try:
-                        suggestion = data._sampled_from_all_strategies_elements_message
+                        suggestion = data._sampled_from_all_strategies_elements_message  # type: ignore[attr-defined]
                     except AttributeError:
                         pass
                     else:
