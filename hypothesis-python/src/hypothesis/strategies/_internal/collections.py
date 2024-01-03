@@ -9,8 +9,8 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import copy
-from typing import Any, Iterable, Tuple, overload
 from functools import partial
+from typing import Any, Iterable, Tuple, overload
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import utils as cu
@@ -223,7 +223,7 @@ class ListStrategy(SearchStrategy):
             "max_size": max_value,
         }
         if type(self) in (UniqueListStrategy, UniqueSampledListStrategy):
-            strat_keywords["keys"] = self.unique_by
+            strat_keywords["keys"] = self.keys
             strat_keywords["tuple_suffixes"] = self.tuple_suffixes
         modified_strat = type(self)(**strat_keywords)
         if isinstance(condition, partial):
