@@ -149,7 +149,7 @@ def test_triviality():
     d.draw_boolean()
     d.stop_example()
 
-    d.write(bytes([2]))
+    d.draw_bytes(forced=bytes([2]))
     d.freeze()
 
     def eg(u, v):
@@ -200,10 +200,10 @@ def test_has_cached_examples_even_when_overrun():
     assert d.examples is d.examples
 
 
-def test_can_write_empty_string():
+def test_can_write_empty_bytes():
     d = ConjectureData.for_buffer([1, 1, 1])
     d.draw_boolean()
-    d.write(b"")
+    d.draw_bytes(forced=b"")
     d.draw_boolean()
     d.draw_boolean(forced=False)
     d.draw_boolean()

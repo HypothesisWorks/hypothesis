@@ -87,8 +87,8 @@ def test_regression_1():
     # problem.
     @run_to_buffer
     def x(data):
-        data.write(b"\x01\x02")
-        data.write(b"\x01\x00")
+        data.draw_bytes(2, forced=b"\x01\x02")
+        data.draw_bytes(2, forced=b"\x01\x00")
         v = data.draw_bits(41)
         if v >= 512 or v == 254:
             data.mark_interesting()
