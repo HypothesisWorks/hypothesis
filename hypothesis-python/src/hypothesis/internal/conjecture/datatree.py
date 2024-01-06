@@ -331,10 +331,38 @@ class DataTree:
                         value = int_to_float(value)
                     append_value(ir_type, kwargs, forced=value)
                 else:
+                    attempts = 0
                     while True:
                         (v, buf) = draw(ir_type, kwargs)
                         if v != value:
                             append_buf(buf)
+                            break
+
+                        # it may be that drawing a previously unseen value here is
+                        # extremely unlikely given the ir_type and kwargs. E.g.
+                        # consider draw_boolean(p=0.0001), where the False branch
+                        # has already been explored. Generating True here with
+                        # rejection sampling could take many thousands of loops.
+                        #
+                        # If we draw the same previously-seen value more than 5
+                        # times, we'll go back to the unweighted variant of the
+                        # kwargs, depending on the ir_type. Rejection sampling
+                        # produces an unseen value here within a reasonable time
+                        # for all current ir types - two or three draws, at worst.
+                        attempts += 1
+                        if attempts > 5:
+                            kwargs = {
+                                k: v
+                                for k, v in kwargs.items()
+                                # draw_boolean: p
+                                # draw_integer: weights
+                                if k not in {"p", "weights"}
+                            }
+                            while True:
+                                (v, buf) = draw(ir_type, kwargs)
+                                if v != value:
+                                    append_buf(buf)
+                                    break
                             break
                     # We've now found a value that is allowed to
                     # vary, so what follows is not fixed.
