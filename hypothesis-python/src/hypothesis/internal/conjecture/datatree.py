@@ -14,7 +14,7 @@ import attr
 
 from hypothesis.errors import Flaky, HypothesisException, StopTest
 from hypothesis.internal.conjecture.data import ConjectureData, DataObserver, Status
-from hypothesis.internal.floats import count_between_floats
+from hypothesis.internal.floats import count_between_floats, float_to_int, int_to_float
 
 
 class PreviouslyUnseenBehaviour(HypothesisException):
@@ -292,6 +292,18 @@ class DataTree:
             cd = ConjectureData(max_length=BUFFER_SIZE, prefix=b"", random=random)
             draw_func = getattr(cd, f"draw_{ir_type}")
             value = draw_func(**kwargs, forced=forced)
+            # using floats as keys into branch.children breaks things, because
+            # e.g. hash(0.0) == hash(-0.0) would collide as keys when they are
+            # in fact distinct child branches.
+            # To distinguish floats here we'll use their bits representation. This
+            # entails some bookkeeping such that we're careful about when the
+            # float key is in its bits form (as a key into branch.children) and
+            # when it is in its float form (as a value we want to write to the
+            # buffer), and converting between the two forms as appropriate.
+            # TODO write a test for this to confirm my intuition of breakage is
+            # correct.
+            if ir_type == "float":
+                value = float_to_int(value)
             return (value, cd.buffer)
 
         def draw_buf(ir_type, kwargs, *, forced):
@@ -315,6 +327,8 @@ class DataTree:
                 zip(current_node.ir_types, current_node.kwargs, current_node.values)
             ):
                 if i in current_node.forced:
+                    if ir_type == "float":
+                        value = int_to_float(value)
                     append_value(ir_type, kwargs, forced=value)
                 else:
                     while True:
@@ -435,6 +449,9 @@ class TreeRecordingObserver(DataObserver):
         i = self.__index_in_current_node
         self.__index_in_current_node += 1
         node = self.__current_node
+
+        if isinstance(value, float):
+            value = float_to_int(value)
 
         assert len(node.kwargs) == len(node.values) == len(node.ir_types)
         if i < len(node.values):
