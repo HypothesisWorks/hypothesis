@@ -51,6 +51,9 @@ class Branch:
     ir_type = attr.ib()
     children = attr.ib(repr=False)
 
+    # I'd really like to use cached_property here, but it requires attrs >= 23.2.0,
+    # which is almost certainly too recent for our tastes.
+    # https://github.com/python-attrs/attrs/releases/tag/23.2.0
     @property
     def max_children(self):
         return compute_max_children(self.kwargs, self.ir_type)
