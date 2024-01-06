@@ -1571,6 +1571,9 @@ class ConjectureData:
         assert forced is None or len(forced) == size
 
         kwargs = {"size": size}
+        # TODO we already track byte draws via DRAW_BYTES_LABEL_CD, and this is
+        # an exact duplicate of that example. Will this be a problem for
+        # performance?
         self.start_example(DRAW_BYTES_LABEL)
         value = self.provider.draw_bytes(**kwargs, forced=forced)
         self.stop_example()
