@@ -40,7 +40,7 @@ class PoisonedTree(SearchStrategy):
             # single block. If it did, the heuristics that allow us to move
             # blocks around would fire and it would move right, which would
             # then allow us to shrink it more easily.
-            n = (data.draw_bits(16) << 16) | data.draw_bits(16)
+            n = (data.draw_integer(0, 2**16 - 1) << 16) | data.draw_integer(0, 2**16 - 1)
             if n == MAX_INT:
                 return (POISON,)
             else:

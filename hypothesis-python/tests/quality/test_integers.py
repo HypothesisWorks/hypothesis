@@ -35,7 +35,7 @@ def problems(draw):
         try:
             d = ConjectureData.for_buffer(buf)
             k = d.draw(st.integers())
-            stop = d.draw_bits(8)
+            stop = d.draw_integer(0, 2**8 - 1)
         except (StopTest, IndexError):
             pass
         else:
@@ -68,7 +68,7 @@ def test_always_reduces_integers_to_smallest_suitable_sizes(problem):
     def f(data):
         k = data.draw(st.integers())
         data.output = repr(k)
-        if data.draw_bits(8) == stop and k >= n:
+        if data.draw_integer(0, 2**8 - 1) == stop and k >= n:
             data.mark_interesting()
 
     runner = ConjectureRunner(
