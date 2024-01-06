@@ -263,8 +263,11 @@ def test_can_observe_draws():
         def __init__(self):
             self.log = []
 
-        def draw_bits(self, n_bits: int, *, forced: bool, value: int) -> None:
-            self.log.append(("draw", n_bits, forced, value))
+        def draw_boolean(self, value: bool, forced: bool, *, kwargs: dict):
+            self.log.append(("draw_boolean", value, forced))
+
+        def draw_integer(self, value: bool, forced: bool, *, kwargs: dict):
+            self.log.append(("draw_integer", value, forced))
 
         def conclude_test(self, *args):
             assert x.frozen
@@ -280,9 +283,9 @@ def test_can_observe_draws():
         x.conclude_test(Status.INTERESTING, interesting_origin="neat")
 
     assert observer.log == [
-        ("draw", 1, False, 1),
-        ("draw", 7, True, 10),
-        ("draw", 8, False, 3),
+        ("draw_boolean", True, False),
+        ("draw_integer", 10, True),
+        ("draw_integer", 3, False),
         ("concluded", Status.INTERESTING, "neat"),
     ]
 
