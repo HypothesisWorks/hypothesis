@@ -8,6 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import math
+
 import attr
 
 from hypothesis.errors import Flaky, HypothesisException, StopTest
@@ -62,6 +64,31 @@ class Conclusion:
     interesting_origin = attr.ib()
 
 
+# The number of max children where, beyond this, it is practically impossible
+# for hypothesis to saturate / explore all children nodes in a reasonable time
+# frame. We use this to bail out of expensive max children computations early,
+# where the numbers involved are so large that we know they will be larger than
+# this number.
+#
+# Note that it's ok for us to underestimate the number of max children of a node
+# by using this. We just may think the node is exhausted when in fact it has more
+# possible children to be explored. This has the potential to finish generation
+# early due to exhausting the entire tree, but that is quite unlikely: (1) the
+# number of examples would have to be quite high, and (2) the tree would have to
+# contain only one or two nodes, or generate_novel_prefix would simply switch to
+# exploring another non-exhausted node.
+#
+# Also note that we may sometimes compute max children above this value. In other
+# words, this is *not* a hard maximum on the computed max children. It's the point
+# where further computation is not beneficial - but sometimes doing that computation
+# unconditionally is cheaper than estimating against this value.
+#
+# The one case where this may be detrimental is fuzzing, where the throughput of
+# examples is so high that it really may saturate important nodes. We'll cross
+# that bridge when we come to it.
+MAX_CHILDREN_EFFECTIVELY_INFINITE = 100_000
+
+
 def compute_max_children(kwargs, ir_type):
     if ir_type == "integer":
         min_value = kwargs["min_value"]
@@ -96,7 +123,17 @@ def compute_max_children(kwargs, ir_type):
             count += 1
             min_size = 1
 
-        count += len(intervals) ** (max_size - min_size + 1)
+        x = len(intervals)
+        y = max_size - min_size + 1
+        # we want to know if x**y > n without computing a potentially extremely
+        # expensive pow. We have:
+        #     x**y > n
+        # <=> log(x**y)  > log(n)
+        # <=> y * log(x) > log(n)
+        if y * math.log(x) > math.log(MAX_CHILDREN_EFFECTIVELY_INFINITE):
+            count = MAX_CHILDREN_EFFECTIVELY_INFINITE
+        else:
+            count += x**y
         return count
     elif ir_type == "float":
         return count_between_floats(kwargs["min_value"], kwargs["max_value"])
