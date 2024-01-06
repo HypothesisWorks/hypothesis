@@ -76,6 +76,7 @@ else:
 TOP_LABEL = calc_label_from_name("top")
 DRAW_BYTES_LABEL_CD = calc_label_from_name("draw_bytes() in ConjectureData")
 DRAW_FLOAT_LABEL = calc_label_from_name("draw_float() in PrimitiveProvider")
+DRAW_FLOAT_INNER_LABEL = calc_label_from_name("_draw_float() in PrimitiveProvider")
 DRAW_INTEGER_LABEL = calc_label_from_name("draw_integer() in PrimitiveProvider")
 DRAW_STRING_LABEL = calc_label_from_name("draw_string() in PrimitiveProvider")
 DRAW_BYTES_LABEL = calc_label_from_name("draw_bytes() in PrimitiveProvider")
@@ -1074,6 +1075,7 @@ class PrimitiveProvider:
         # logic is simpler if we assume this choice.
         forced_i = None if forced is None else 0
         i = sampler.sample(self._cd, forced=forced_i) if sampler else 0
+        self._cd.start_example(DRAW_FLOAT_INNER_LABEL)
         if i == 0:
             result = self._draw_float(forced_sign_bit=forced_sign_bit, forced=forced)
             if math.copysign(1.0, result) == -1:
@@ -1086,6 +1088,20 @@ class PrimitiveProvider:
                 result = clamped
         else:
             result = nasty_floats[i - 1]
+            # Write the drawn float back to the bitstream in the i != 0 case.
+            # This (and the DRAW_FLOAT_INNER_LABEL) causes the float shrinker to
+            # recognize this as a valid float and shrink it appropriately.
+            # I suspect the reason float shrinks don't work well without this is
+            # that doing so requires shrinking i to 0 *and* shrinking _draw_float
+            # simultaneously. Simultaneous block programs exist but are
+            # extraordinarily unlikely to shrink _draw_float in a meaningful way
+            # — which is why we have a float-specific shrinker in the first
+            # place.
+            # (TODO) In any case, this, and the entire DRAW_FLOAT_INNER_LABEL
+            # example, can be removed once the shrinker is migrated to the IR
+            # and doesn't need to care about the underlying bitstream.
+            self._draw_float(forced=result)
+        self._cd.stop_example()
 
         return result
 
