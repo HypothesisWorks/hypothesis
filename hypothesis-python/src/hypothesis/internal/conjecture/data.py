@@ -1780,15 +1780,6 @@ class ConjectureData:
         assert result.bit_length() <= n
         return result
 
-    def write(self, string: bytes) -> Optional[bytes]:
-        """Write ``string`` to the output buffer."""
-        self.__assert_not_frozen("write")
-        string = bytes(string)
-        if not string:
-            return None
-        self.draw_bits(len(string) * 8, forced=int_from_bytes(string))
-        return self.buffer[-len(string) :]
-
     def __check_capacity(self, n: int) -> None:
         if self.index + n > self.max_length:
             self.mark_overrun()
