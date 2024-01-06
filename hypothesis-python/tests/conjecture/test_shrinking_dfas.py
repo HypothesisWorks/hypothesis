@@ -85,7 +85,7 @@ def a_bad_test_function():
     cache = {0: False}
 
     def test_function(data):
-        n = data.draw_bits(64)
+        n = data.draw_integer(0, 2**64 - 1)
         if n < 1000:
             return
 
@@ -131,16 +131,16 @@ def non_normalized_test_function(data):
     is hard to move between. It's basically unreasonable for
     our shrinker to be able to transform from one to the other
     because of how different they are."""
-    data.draw_bits(8)
-    if data.draw_bits(1):
-        n = data.draw_bits(10)
+    data.draw_integer(0, 2**8 - 1)
+    if data.draw_boolean():
+        n = data.draw_integer(0, 2**10 - 1)
         if 100 < n < 1000:
-            data.draw_bits(8)
+            data.draw_integer(0, 2**8 - 1)
             data.mark_interesting()
     else:
-        n = data.draw_bits(64)
+        n = data.draw_integer(0, 2**64 - 1)
         if n > 10000:
-            data.draw_bits(8)
+            data.draw_integer(0, 2**8 - 1)
             data.mark_interesting()
 
 
@@ -157,12 +157,12 @@ def test_can_learn_to_normalize_the_unnormalized():
 
 def test_will_error_on_uninteresting_test():
     with pytest.raises(AssertionError):
-        dfas.normalize(TEST_DFA_NAME, lambda data: data.draw_bits(64))
+        dfas.normalize(TEST_DFA_NAME, lambda data: data.draw_integer(0, 2**64 - 1))
 
 
 def test_makes_no_changes_if_already_normalized():
     def test_function(data):
-        if data.draw_bits(16) >= 1000:
+        if data.draw_integer(0, 2**16 - 1) >= 1000:
             data.mark_interesting()
 
     with preserving_dfas():
@@ -177,8 +177,8 @@ def test_makes_no_changes_if_already_normalized():
 
 def test_learns_to_bridge_only_two():
     def test_function(data):
-        m = data.draw_bits(8)
-        n = data.draw_bits(8)
+        m = data.draw_integer(0, 2**8 - 1)
+        n = data.draw_integer(0, 2**8 - 1)
 
         if (m, n) in ((10, 100), (2, 8)):
             data.mark_interesting()
@@ -205,7 +205,7 @@ def test_learns_to_bridge_only_two_with_overlap():
 
     def test_function(data):
         for i in range(len(u)):
-            c = data.draw_bits(8)
+            c = data.draw_integer(0, 2**8 - 1)
             if c != u[i]:
                 if c != v[i]:
                     return
@@ -213,7 +213,7 @@ def test_learns_to_bridge_only_two_with_overlap():
         else:
             data.mark_interesting()
         for j in range(i + 1, len(v)):
-            if data.draw_bits(8) != v[j]:
+            if data.draw_integer(0, 2**8 - 1) != v[j]:
                 return
 
         data.mark_interesting()
@@ -232,15 +232,15 @@ def test_learns_to_bridge_only_two_with_suffix():
     v = [0] * 10 + [7]
 
     def test_function(data):
-        n = data.draw_bits(8)
+        n = data.draw_integer(0, 2**8 - 1)
         if n == 7:
             data.mark_interesting()
         elif n != 0:
             return
         for _ in range(9):
-            if data.draw_bits(8) != 0:
+            if data.draw_integer(0, 2**8 - 1) != 0:
                 return
-        if data.draw_bits(8) == 7:
+        if data.draw_integer(0, 2**8 - 1) == 7:
             data.mark_interesting()
 
     runner = ConjectureRunner(
