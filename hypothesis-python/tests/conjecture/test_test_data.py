@@ -456,17 +456,17 @@ def test_child_indices():
 
     d.start_example(0)  # examples[1]
     d.start_example(0)  # examples[2]
-    d.draw_boolean()  # examples[3]
-    d.draw_boolean()  # examples[4]
+    d.draw_boolean()  # examples[3] + draw_bits (examples[4])
+    d.draw_boolean()  # examples[5] + draw_bits (examples[6])
     d.stop_example()
     d.stop_example()
-    d.draw_boolean()  # examples[5]
-    d.draw_boolean()  # examples[6]
+    d.draw_boolean()  # examples[7] + draw_bits (examples[8])
+    d.draw_boolean()  # examples[9] + draw_bits (examples[10])
     d.freeze()
 
-    assert list(d.examples.children[0]) == [1, 5, 6]
+    assert list(d.examples.children[0]) == [1, 7, 9]
     assert list(d.examples.children[1]) == [2]
-    assert list(d.examples.children[2]) == [3, 4]
+    assert list(d.examples.children[2]) == [3, 5]
 
     assert d.examples[0].parent is None
     for ex in list(d.examples)[1:]:
