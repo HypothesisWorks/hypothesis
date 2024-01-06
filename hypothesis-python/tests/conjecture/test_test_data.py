@@ -434,10 +434,10 @@ def test_blocks_end_points():
 
 def test_blocks_lengths():
     d = ConjectureData.for_buffer(bytes(7))
-    d.draw_integer(0, 2**32 - 1)
+    d.draw_integer(0, 2**24 - 1)
     d.draw_integer(0, 2**16 - 1)
     d.draw_boolean()
-    assert [b.length for b in d.blocks] == [4, 2, 1]
+    assert [b.length for b in d.blocks] == [3, 2, 1]
 
 
 def test_child_indices():
