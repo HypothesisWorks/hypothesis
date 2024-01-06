@@ -313,7 +313,7 @@ def test_handles_start_indices_like_a_list():
 
 
 def test_last_block_length():
-    d = ConjectureData.for_buffer([0] * 15)
+    d = ConjectureData.for_buffer([0] * 20)
 
     with pytest.raises(IndexError):
         d.blocks.last_block_length
