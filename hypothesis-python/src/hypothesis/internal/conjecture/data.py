@@ -1498,6 +1498,16 @@ class ConjectureData:
         if forced is not None and max_value is not None:
             assert forced <= max_value
 
+        # if there is only one possible choice, do not observe, start
+        # examples, or write anything to the bitstream. This should be
+        # a silent operation from the perspective of the datatree.
+        # TODO add a test for all ir nodes that we didn't write to the bytestream
+        # iff compute_max_children == 1. Getting this correct is nontrivial for
+        # e.g. floats, where nan/infs are in play.
+        if min_value is not None and max_value is not None:
+            if min_value == max_value:
+                return min_value
+
         kwargs = {
             "min_value": min_value,
             "max_value": max_value,
@@ -1533,6 +1543,11 @@ class ConjectureData:
             assert allow_nan or not math.isnan(forced)
             assert math.isnan(forced) or min_value <= forced <= max_value
 
+        # TODO is this correct for nan/inf? conversely, do we need to strengthen
+        # this condition to catch nan/inf?
+        if min_value == max_value:
+            return min_value
+
         kwargs = {
             "min_value": min_value,
             "max_value": max_value,
@@ -1557,6 +1572,13 @@ class ConjectureData:
     ) -> str:
         assert forced is None or min_size <= len(forced)
 
+        if max_size is not None:
+            if min_size == 0 and max_size == 0:
+                return ""
+
+            if min_size == max_size and len(intervals) == 1:
+                return chr(intervals[0])
+
         kwargs = {"intervals": intervals, "min_size": min_size, "max_size": max_size}
         self.start_example(DRAW_STRING_LABEL)
         value = self.provider.draw_string(**kwargs, forced=forced)
@@ -1569,6 +1591,9 @@ class ConjectureData:
         self, size: int, *, forced: Optional[bytes] = None, observe: bool = True
     ) -> bytes:
         assert forced is None or len(forced) == size
+
+        if size == 0:
+            return b""
 
         kwargs = {"size": size}
         # TODO we already track byte draws via DRAW_BYTES_LABEL_CD, and this is

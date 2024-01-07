@@ -516,10 +516,11 @@ class TreeRecordingObserver(DataObserver):
                 # However, with the ir, e.g. integers(0, 0) has only a single
                 # value. To retain the invariant, we forcefully split such cases
                 # into a transition.
-                if compute_max_children(kwargs, ir_type) == 1:
-                    node.split_at(i)
-                    self.__current_node = node.transition.children[value]
-                    self.__index_in_current_node = 0
+
+                # TODO enforce this somewhere else and rewrite the outdated comment
+                # above. computing this here is probably too expensive.
+                # (where to enforce?)
+                assert compute_max_children(kwargs, ir_type) > 1, (kwargs, ir_type)
             elif isinstance(trans, Conclusion):
                 assert trans.status != Status.OVERRUN
                 # We tried to draw where history says we should have
