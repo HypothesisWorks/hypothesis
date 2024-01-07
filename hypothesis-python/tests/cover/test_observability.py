@@ -65,3 +65,16 @@ def test_observability():
     assert {t["property"] for t in testcases} == {do_it_all.__name__}
     assert len({t["run_start"] for t in testcases}) == 2
     assert {t["status"] for t in testcases} == {"gave_up", "passed", "failed"}
+
+
+def test_assume_has_status_reason():
+    @given(st.booleans())
+    def f(b):
+        assume(b)
+
+    with capture_observations() as ls:
+        f()
+
+    gave_ups = [t for t in ls if t["type"] == "test_case" and t["status"] == "gave_up"]
+    for gave_up in gave_ups:
+        assert gave_up["status_reason"] == "failed to satisfy assume()"
