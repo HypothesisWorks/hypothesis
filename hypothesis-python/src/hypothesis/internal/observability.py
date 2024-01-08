@@ -79,7 +79,7 @@ _WROTE_TO = set()
 def _deliver_to_file(value):  # pragma: no cover
     kind = "testcases" if value["type"] == "test_case" else "info"
     fname = storage_directory("observed", f"{date.today().isoformat()}_{kind}.jsonl")
-    fname.parent.mkdir(exist_ok=True)
+    fname.parent.mkdir(exist_ok=True, parents=True)
     _WROTE_TO.add(fname)
     with fname.open(mode="a") as f:
         f.write(json.dumps(value) + "\n")
