@@ -402,51 +402,68 @@ def test_filter_floats_can_skip_subnormals(op, attr, value, expected):
         (st.text(), partial(min_len, 3), 3, math.inf),
         (st.text(), partial(max_len, 3), 0, 3),
     ],
+    ids=get_pretty_function_description,
 )
 @given(data=st.data())
 def test_filter_rewriting_text_partial_len(data, strategy, predicate, start, end):
     s = strategy.filter(predicate)
 
     assert isinstance(s, LazyStrategy)
-    assert isinstance(s.wrapped_strategy, TextStrategy)
-    assert s.wrapped_strategy.min_size == start
-    assert s.wrapped_strategy.max_size == end
+    assert isinstance(inner := unwrap_strategies(s), TextStrategy)
+    assert inner.min_size == start
+    assert inner.max_size == end
     value = data.draw(s)
     assert predicate(value)
 
 
 @pytest.mark.parametrize(
-    "strategy, predicate, start, end",
+    "predicate, start, end",
     [
         # Simple lambdas
-        (st.text(), lambda x: len(x) < 3, 0, 2),
-        (st.text(), lambda x: len(x) <= 3, 0, 3),
-        (st.text(), lambda x: len(x) == 3, 3, 3),
-        (st.text(), lambda x: len(x) >= 3, 3, math.inf),
-        (st.text(), lambda x: len(x) > 3, 4, math.inf),
+        (lambda x: len(x) < 3, 0, 2),
+        (lambda x: len(x) <= 3, 0, 3),
+        (lambda x: len(x) == 3, 3, 3),
+        (lambda x: len(x) >= 3, 3, math.inf),
+        (lambda x: len(x) > 3, 4, math.inf),
         # Simple lambdas, reverse comparison
-        (st.text(), lambda x: 3 > len(x), 0, 2),
-        (st.text(), lambda x: 3 >= len(x), 0, 3),
-        (st.text(), lambda x: 3 == len(x), 3, 3),
-        (st.text(), lambda x: 3 <= len(x), 3, math.inf),
-        (st.text(), lambda x: 3 < len(x), 4, math.inf),
+        (lambda x: 3 > len(x), 0, 2),
+        (lambda x: 3 >= len(x), 0, 3),
+        (lambda x: 3 == len(x), 3, 3),
+        (lambda x: 3 <= len(x), 3, math.inf),
+        (lambda x: 3 < len(x), 4, math.inf),
         # More complicated lambdas
-        (st.text(), lambda x: 0 < len(x) < 5, 1, 4),
-        (st.text(), lambda x: 0 < len(x) >= 1, 1, math.inf),
-        (st.text(), lambda x: 1 > len(x) <= 0, 0, 0),
-        (st.text(), lambda x: len(x) > 0 and len(x) > 0, 1, math.inf),
-        (st.text(), lambda x: len(x) < 1 and len(x) < 1, 0, 0),
-        (st.text(), lambda x: len(x) > 1 and len(x) > 0, 2, math.inf),
-        (st.text(), lambda x: len(x) < 1 and len(x) < 2, 0, 0),
+        (lambda x: 0 < len(x) < 5, 1, 4),
+        (lambda x: 0 < len(x) >= 1, 1, math.inf),
+        (lambda x: 1 > len(x) <= 0, 0, 0),
+        (lambda x: len(x) > 0 and len(x) > 0, 1, math.inf),
+        (lambda x: len(x) < 1 and len(x) < 1, 0, 0),
+        (lambda x: len(x) > 1 and len(x) > 0, 2, math.inf),
+        (lambda x: len(x) < 1 and len(x) < 2, 0, 0),
+    ],
+    ids=get_pretty_function_description,
+)
+@pytest.mark.parametrize(
+    "strategy",
+    [
+        st.text(),
+        st.lists(st.integers()),
+        st.lists(st.integers(), unique=True),
+        st.lists(st.sampled_from([1, 2, 3]), unique=True),
+        # TODO: support more collection types.  Might require messing around with
+        #       strategy internals, e.g. in MappedStrategy/FilteredStrategy.
+        # st.binary(),
+        # st.binary.map(bytearray),
+        # st.sets(st.integers()),
+        # st.dictionaries(st.integers(), st.none()),
     ],
     ids=get_pretty_function_description,
 )
 @given(data=st.data())
 def test_filter_rewriting_text_lambda_len(data, strategy, predicate, start, end):
     s = strategy.filter(predicate)
-    unwrapped = s.wrapped_strategy
+    unwrapped = unwrap_strategies(s)
     assert isinstance(unwrapped, FilteredStrategy)
-    assert isinstance(unwrapped.filtered_strategy, TextStrategy)
+    assert isinstance(unwrapped.filtered_strategy, type(unwrap_strategies(strategy)))
     for pred in unwrapped.flat_conditions:
         assert pred.__name__ == "<lambda>"
 

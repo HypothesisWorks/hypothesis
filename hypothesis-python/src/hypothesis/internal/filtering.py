@@ -29,7 +29,7 @@ import operator
 from decimal import Decimal
 from fractions import Fraction
 from functools import partial
-from typing import Any, Callable, Collection, Dict, NamedTuple, Optional, TypeVar, Union
+from typing import Any, Callable, Collection, Dict, NamedTuple, Optional, TypeVar
 
 from hypothesis.internal.compat import ceil, floor
 from hypothesis.internal.floats import next_down, next_up

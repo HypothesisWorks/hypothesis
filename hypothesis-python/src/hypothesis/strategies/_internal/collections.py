@@ -206,6 +206,11 @@ class ListStrategy(SearchStrategy):
             new = copy.copy(self)
             new.min_size = max(self.min_size, kwargs.get("min_value", self.min_size))
             new.max_size = min(self.max_size, kwargs.get("max_value", self.max_size))
+            # Recompute average size; this is cheaper than making it into a property.
+            new.average_size = min(
+                max(new.min_size * 2, new.min_size + 5),
+                0.5 * (new.min_size + new.max_size),
+            )
             # Note that it's possible for `len` to be redefined in the enclosing scope,
             # so we *always* have to apply the condition as a filter, in addition to
             # our filter-rewriting tricks (which are *usually* all we need).
