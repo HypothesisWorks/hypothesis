@@ -925,7 +925,7 @@ class StateForActualGivenExecution:
                 # TypeError, *AND that exception mentions SearchStrategy*, add a note:
                 if "SearchStrategy" in str(e):
                     try:
-                        add_note(e, data._sampled_from_all_strategies_elements_message)  # type: ignore
+                        add_note(e, data._sampled_from_all_strategies_elements_message)
                     except AttributeError:
                         pass
                 raise
