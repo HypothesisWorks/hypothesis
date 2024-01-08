@@ -917,7 +917,18 @@ class StateForActualGivenExecution:
                     **dict(enumerate(map(to_jsonable, args))),
                     **{k: to_jsonable(v) for k, v in kwargs.items()},
                 }
-            return test(*args, **kwargs)
+
+            try:
+                return test(*args, **kwargs)
+            except TypeError as e:
+                # If we sampled from a sequence of strategies, AND failed with a
+                # TypeError, *AND that exception mentions SearchStrategy*, add a note:
+                if "SearchStrategy" in str(e):
+                    try:
+                        add_note(e, data._sampled_from_all_strategies_elements_message)
+                    except AttributeError:
+                        pass
+                raise
 
         # self.test_runner can include the execute_example method, or setup/teardown
         # _example, so it's important to get the PRNG and build context in place first.
@@ -1024,7 +1035,6 @@ class StateForActualGivenExecution:
                 # The test failed by raising an exception, so we inform the
                 # engine that this test run was interesting. This is the normal
                 # path for test runs that fail.
-
                 tb = get_trimmed_traceback()
                 info = data.extra_information
                 info._expected_traceback = format_exception(e, tb)  # type: ignore
