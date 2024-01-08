@@ -9,14 +9,13 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import copy
-from functools import partial
 from typing import Any, Iterable, Tuple, overload
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.junkdrawer import LazySequenceCopy
 from hypothesis.internal.conjecture.utils import combine_labels
-from hypothesis.internal.filtering import get_integer_predicate_bounds, max_len, min_len
+from hypothesis.internal.filtering import get_integer_predicate_bounds
 from hypothesis.internal.reflection import is_identity_function
 from hypothesis.strategies._internal.strategies import (
     T3,
@@ -202,33 +201,17 @@ class ListStrategy(SearchStrategy):
             new.min_size = 1
             return new
 
-        kwargs, pred = get_integer_predicate_bounds(condition)
+        kwargs, _ = get_integer_predicate_bounds(condition)
+        if kwargs.get("len") and ("min_value" in kwargs or "max_value" in kwargs):
+            new = copy.copy(self)
+            new.min_size = max(self.min_size, kwargs.get("min_value", self.min_size))
+            new.max_size = min(self.max_size, kwargs.get("max_value", self.max_size))
+            # Note that it's possible for `len` to be redefined in the enclosing scope,
+            # so we *always* have to apply the condition as a filter, in addition to
+            # our filter-rewriting tricks (which are *usually* all we need).
+            return SearchStrategy.filter(new, condition)
 
-        min_value, max_value = None, None
-        if "len" in kwargs and kwargs["len"]:
-            min_value = kwargs.get("min_value")
-            max_value = kwargs.get("max_value")
-        if isinstance(condition, partial) and len(condition.args) == 1:
-            min_value = condition.args[0] if condition.func is min_len else None
-            max_value = condition.args[0] if condition.func is max_len else None
-        min_value = (
-            max(self.min_size, min_value) if min_value is not None else self.min_size
-        )
-        max_value = (
-            min(self.max_size, max_value) if max_value is not None else self.max_size
-        )
-        strat_keywords = {
-            "elements": self.element_strategy,
-            "min_size": min_value,
-            "max_size": max_value,
-        }
-        if type(self) in (UniqueListStrategy, UniqueSampledListStrategy):
-            strat_keywords["keys"] = self.keys
-            strat_keywords["tuple_suffixes"] = self.tuple_suffixes
-        modified_strat = type(self)(**strat_keywords)
-        if isinstance(condition, partial):
-            return modified_strat
-        return SearchStrategy.filter(modified_strat, condition)
+        return SearchStrategy.filter(self, condition)
 
 
 class UniqueListStrategy(ListStrategy):

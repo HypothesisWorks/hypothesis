@@ -143,7 +143,6 @@ class TextStrategy(ListStrategy):
                 stacklevel=2,
             )
         elems = unwrap_strategies(self.element_strategy)
-
         if (
             condition is str.isidentifier
             and self.max_size >= 1

@@ -79,10 +79,8 @@ def convert(node: ast.AST, argname: str) -> object:
             and node.func.id == "len"
             and len(node.args) == 1
         ):
-            convert(
-                node.args[0], argname
-            )  # comparison must be to len *of the lambda arg*
-            return ARG
+            # error unless comparison is to the len *of the lambda arg*
+            return convert(node.args[0], argname)
     return ast.literal_eval(node)
 
 
@@ -96,37 +94,29 @@ def comp_to_kwargs(x: ast.AST, op: ast.AST, y: ast.AST, *, argname: str) -> dict
         # (and we can't even do `arg == arg`, because what if it's NaN?)
         raise ValueError("Can't analyse this comparison")
 
-    kwargs: Dict[str, Union[Any, bool]] = {}
     of_len = {"len": True} if isinstance(x, ast.Call) or isinstance(y, ast.Call) else {}
 
     if isinstance(op, ast.Lt):
         if a is ARG:
-            kwargs.update({"max_value": b, "exclude_max": True})
-        else:
-            kwargs.update({"min_value": a, "exclude_min": True})
+            return {"max_value": b, "exclude_max": True, **of_len}
+        return {"min_value": a, "exclude_min": True, **of_len}
     elif isinstance(op, ast.LtE):
         if a is ARG:
-            kwargs.update({"max_value": b})
-        else:
-            kwargs.update({"min_value": a})
+            return {"max_value": b, **of_len}
+        return {"min_value": a, **of_len}
     elif isinstance(op, ast.Eq):
         if a is ARG:
-            kwargs.update({"min_value": b, "max_value": b})
-        else:
-            kwargs.update({"min_value": a, "max_value": a})
+            return {"min_value": b, "max_value": b, **of_len}
+        return {"min_value": a, "max_value": a, **of_len}
     elif isinstance(op, ast.GtE):
         if a is ARG:
-            kwargs.update({"min_value": b})
-        else:
-            kwargs.update({"max_value": a})
+            return {"min_value": b, **of_len}
+        return {"max_value": a, **of_len}
     elif isinstance(op, ast.Gt):
         if a is ARG:
-            kwargs.update({"min_value": b, "exclude_min": True})
-        else:
-            kwargs.update({"max_value": a, "exclude_max": True})
-    else:
-        raise ValueError("Unhandled comparison operator")  # e.g. ast.Ne
-    return {**kwargs, **of_len}
+            return {"min_value": b, "exclude_min": True, **of_len}
+        return {"max_value": a, "exclude_max": True, **of_len}
+    raise ValueError("Unhandled comparison operator")  # e.g. ast.Ne
 
 
 def merge_preds(*con_predicates: ConstructivePredicate) -> ConstructivePredicate:
@@ -137,10 +127,10 @@ def merge_preds(*con_predicates: ConstructivePredicate) -> ConstructivePredicate
         "max_value": math.inf,
         "exclude_min": False,
         "exclude_max": False,
-        "len": False,
     }
     predicate = None
     for kw, p in con_predicates:
+        assert not p or not predicate, "Can't merge two partially-constructive preds"
         predicate = p or predicate
         if "min_value" in kw:
             if kw["min_value"] > base["min_value"]:
@@ -154,8 +144,11 @@ def merge_preds(*con_predicates: ConstructivePredicate) -> ConstructivePredicate
                 base["max_value"] = kw["max_value"]
             elif kw["max_value"] == base["max_value"]:
                 base["exclude_max"] |= kw.get("exclude_max", False)
-        if "len" in kw:
-            base["len"] = True
+
+    has_len = {"len" in kw for kw, _ in con_predicates}
+    assert len(has_len) == 1, "can't mix numeric with length constraints"
+    if has_len == {True}:
+        base["len"] = True
 
     if not base["exclude_min"]:
         del base["exclude_min"]
@@ -234,6 +227,9 @@ def get_numeric_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
             operator.eq: {"min_value": arg, "max_value": arg},  # lambda x: arg == x
             operator.ge: {"max_value": arg},  # lambda x: arg >= x
             operator.gt: {"max_value": arg, "exclude_max": True},  # lambda x: arg > x
+            # Special-case our default predicates for length bounds
+            min_len: {"min_value": arg, "len": True},
+            max_len: {"max_value": arg, "len": True},
         }
         if predicate.func in options:
             return ConstructivePredicate(options[predicate.func], None)
