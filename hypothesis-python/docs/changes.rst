@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.92.4:
+
+-------------------
+6.92.4 - 2024-01-08
+-------------------
+
+This patch fixes an error when writing :doc:`observability <observability>` reports without a pre-existing ``.hypothesis`` directory.
+
 .. _v6.92.3:
 
 -------------------
