@@ -917,7 +917,18 @@ class StateForActualGivenExecution:
                     **dict(enumerate(map(to_jsonable, args))),
                     **{k: to_jsonable(v) for k, v in kwargs.items()},
                 }
-            return test(*args, **kwargs)
+
+            try:
+                return test(*args, **kwargs)
+            except TypeError as e:
+                # If we sampled from a sequence of strategies, AND failed with a
+                # TypeError, *AND that exception mentions SearchStrategy*, add a note:
+                if "SearchStrategy" in str(e):
+                    try:
+                        add_note(e, data._sampled_from_all_strategies_elements_message)  # type: ignore
+                    except AttributeError:
+                        pass
+                raise
 
         # self.test_runner can include the execute_example method, or setup/teardown
         # _example, so it's important to get the PRNG and build context in place first.
@@ -1024,13 +1035,6 @@ class StateForActualGivenExecution:
                 # The test failed by raising an exception, so we inform the
                 # engine that this test run was interesting. This is the normal
                 # path for test runs that fail.
-                if isinstance(e, TypeError) and "SearchStrategy" in str(e):
-                    try:
-                        suggestion = data._sampled_from_all_strategies_elements_message  # type: ignore[attr-defined]
-                    except AttributeError:
-                        pass
-                    else:
-                        add_note(e, suggestion)
                 tb = get_trimmed_traceback()
                 info = data.extra_information
                 info._expected_traceback = format_exception(e, tb)  # type: ignore
@@ -1161,12 +1165,6 @@ class StateForActualGivenExecution:
                 err.__cause__ = err.__context__ = e
                 errors_to_report.append((fragments, err))
             except BaseException as e:
-                try:
-                    notes = info._expected_exception.__notes__
-                except AttributeError:
-                    pass
-                else:
-                    e.__notes__ = notes
                 # If we have anything for explain-mode, this is the time to report.
                 fragments.extend(explanations[falsifying_example.interesting_origin])
                 errors_to_report.append(
@@ -1240,7 +1238,6 @@ def _raise_to_user(errors_to_report, settings, target_lines, trailer=""):
     if settings.verbosity >= Verbosity.normal:
         for line in target_lines:
             add_note(the_error_hypothesis_found, line)
-
     raise the_error_hypothesis_found
 
 
