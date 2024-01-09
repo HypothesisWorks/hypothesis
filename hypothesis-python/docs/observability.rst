@@ -74,6 +74,11 @@ describing either a test case or an information message.  The tables below are d
 from :download:`this machine-readable JSON schema <schema_observations.json>`, to
 provide both readable and verifiable specifications.
 
+Note that we use :func:`python:json.dumps` and can therefore emit non-standard JSON
+which includes infinities and NaN.  This is valid in `JSON5 <https://json5.org/>`__,
+and supported by `some JSON parsers <https://evanhahn.com/pythons-nonstandard-json-encoding/>`__
+including Gson in Java, ``JSON.parse()`` in Ruby, and of course in Python.
+
 .. jsonschema:: ./schema_observations.json#/oneOf/0
    :hide_key: /additionalProperties, /type
 .. jsonschema:: ./schema_observations.json#/oneOf/1
