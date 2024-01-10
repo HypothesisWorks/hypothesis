@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import inspect
 import math
 from collections import defaultdict
 from typing import NoReturn, Union
@@ -32,7 +33,8 @@ def reject() -> NoReturn:
             since="2023-09-25",
             has_codemod=False,
         )
-    raise UnsatisfiedAssumption
+    f = inspect.stack()[1].function
+    raise UnsatisfiedAssumption(reason=f"reject() in {f}")
 
 
 def assume(condition: object) -> bool:
@@ -48,8 +50,9 @@ def assume(condition: object) -> bool:
             since="2023-09-25",
             has_codemod=False,
         )
+    f = inspect.stack()[1].function
     if not condition:
-        raise UnsatisfiedAssumption
+        raise UnsatisfiedAssumption(reason=f"failed to satisfy assume() in {f}")
     return True
 
 
