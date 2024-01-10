@@ -1078,8 +1078,8 @@ def test_does_not_shrink_multiple_bugs_when_told_not_to():
 
 def test_does_not_keep_generating_when_multiple_bugs():
     def test(data):
-        if data.draw_integer(0, 2**64 - 1) > 0:
-            data.draw_integer(0, 2**64 - 1)
+        if data.draw_integer(0, 2**20 - 1) > 0:
+            data.draw_integer(0, 2**20 - 1)
             data.mark_interesting()
 
     with deterministic_PRNG():
