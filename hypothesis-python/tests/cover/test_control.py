@@ -27,7 +27,7 @@ from hypothesis.errors import (
     UnsatisfiedAssumption,
 )
 from hypothesis.internal.compat import ExceptionGroup
-from hypothesis.internal.conjecture.data import ConjectureData as TD
+from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.stateful import RuleBasedStateMachine, rule
 from hypothesis.strategies import integers
 
@@ -35,7 +35,7 @@ from tests.common.utils import capture_out
 
 
 def bc():
-    return BuildContext(TD.for_buffer(b""))
+    return BuildContext(ConjectureData.for_buffer(b""))
 
 
 def test_cannot_cleanup_with_no_context():
