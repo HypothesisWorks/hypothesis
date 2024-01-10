@@ -77,4 +77,4 @@ def test_assume_has_status_reason():
 
     gave_ups = [t for t in ls if t["type"] == "test_case" and t["status"] == "gave_up"]
     for gave_up in gave_ups:
-        assert gave_up["status_reason"] == "failed to satisfy assume()"
+        assert gave_up["status_reason"] == "failed to satisfy assume() in f"
