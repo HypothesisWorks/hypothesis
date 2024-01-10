@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.92.7:
+
+-------------------
+6.92.7 - 2024-01-10
+-------------------
+
+This introduces the rewriting of length filters on some collection strategies (:issue:`3791`).
+
+Thanks to Reagan Lee for implementing this feature!
+
 .. _v6.92.6:
 
 -------------------
