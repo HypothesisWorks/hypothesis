@@ -13,6 +13,7 @@ import functools
 from collections import defaultdict, namedtuple
 
 import attr
+from hypothesis.internal.reflection import get_pretty_function_description
 import pytest
 
 from hypothesis.errors import InvalidArgument
@@ -77,12 +78,12 @@ def nameless_const(x):
 
 def test_can_map_nameless():
     f = nameless_const(2)
-    assert repr(f) in repr(integers().map(f))
+    assert get_pretty_function_description(f) in repr(integers().map(f))
 
 
 def test_can_flatmap_nameless():
     f = nameless_const(just(3))
-    assert repr(f) in repr(integers().flatmap(f))
+    assert get_pretty_function_description(f) in repr(integers().flatmap(f))
 
 
 def test_flatmap_with_invalid_expand():
