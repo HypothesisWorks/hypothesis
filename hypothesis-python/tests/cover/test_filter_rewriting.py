@@ -480,29 +480,19 @@ def test_filter_rewriting_text_lambda_len(data, strategy, predicate, start, end)
         (lambda x: len(x) < 3, 0, 2),
         (lambda x: len(x) <= 3, 0, 3),
         (lambda x: len(x) == 3, 3, 3),
-        (lambda x: len(x) >= 3, 3, 3),  # Due to set size
-        # (
-        #     lambda x: len(x) > 3,
-        #     4,
-        #     3,
-        # ),  # Due to set size, output nothing()? or just take this out
+        (lambda x: len(x) >= 3, 3, 3),  # max element_count=3
         # Simple lambdas, reverse comparison
         (lambda x: 3 > len(x), 0, 2),
         (lambda x: 3 >= len(x), 0, 3),
         (lambda x: 3 == len(x), 3, 3),
-        (lambda x: 3 <= len(x), 3, 3),  # Due to set size
-        # (
-        #     lambda x: 3 < len(x),
-        #     4,
-        #     3,
-        # ),  # Due to set size, output nothing()? or just take this out
+        (lambda x: 3 <= len(x), 3, 3),  # max element_count=3
         # More complicated lambdas
-        (lambda x: 0 < len(x) < 5, 1, 3),  # Due to set size
-        (lambda x: 0 < len(x) >= 1, 1, 3),  # Due to set size
+        (lambda x: 0 < len(x) < 5, 1, 3),  # max element_count=3
+        (lambda x: 0 < len(x) >= 1, 1, 3),  # max element_count=3
         (lambda x: 1 > len(x) <= 0, 0, 0),
-        (lambda x: len(x) > 0 and len(x) > 0, 1, 3),  # Due to set size
+        (lambda x: len(x) > 0 and len(x) > 0, 1, 3),  # max element_count=3
         (lambda x: len(x) < 1 and len(x) < 1, 0, 0),
-        (lambda x: len(x) > 1 and len(x) > 0, 2, 3),  # Due to set size
+        (lambda x: len(x) > 1 and len(x) > 0, 2, 3),  # max element_count=3
         (lambda x: len(x) < 1 and len(x) < 2, 0, 0),
     ],
     ids=get_pretty_function_description,
