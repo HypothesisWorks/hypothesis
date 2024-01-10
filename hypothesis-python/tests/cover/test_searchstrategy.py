@@ -13,11 +13,11 @@ import functools
 from collections import defaultdict, namedtuple
 
 import attr
-from hypothesis.internal.reflection import get_pretty_function_description
 import pytest
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture.data import ConjectureData
+from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies import booleans, integers, just, none, tuples
 from hypothesis.strategies._internal.utils import to_jsonable
 
