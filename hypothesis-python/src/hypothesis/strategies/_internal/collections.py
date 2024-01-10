@@ -201,7 +201,7 @@ class ListStrategy(SearchStrategy):
             new.min_size = 1
             return new
 
-        kwargs, _ = get_integer_predicate_bounds(condition)
+        kwargs, pred = get_integer_predicate_bounds(condition)
         if kwargs.get("len") and ("min_value" in kwargs or "max_value" in kwargs):
             new = copy.copy(self)
             new.min_size = max(self.min_size, kwargs.get("min_value", self.min_size))
@@ -211,9 +211,8 @@ class ListStrategy(SearchStrategy):
                 max(new.min_size * 2, new.min_size + 5),
                 0.5 * (new.min_size + new.max_size),
             )
-            # Note that it's possible for `len` to be redefined in the enclosing scope,
-            # so we *always* have to apply the condition as a filter, in addition to
-            # our filter-rewriting tricks (which are *usually* all we need).
+            if pred is None:
+                return new
             return SearchStrategy.filter(new, condition)
 
         return SearchStrategy.filter(self, condition)

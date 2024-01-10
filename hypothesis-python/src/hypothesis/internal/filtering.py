@@ -130,7 +130,9 @@ def merge_preds(*con_predicates: ConstructivePredicate) -> ConstructivePredicate
     }
     predicate = None
     for kw, p in con_predicates:
-        assert not p or not predicate, "Can't merge two partially-constructive preds"
+        assert (
+            not p or not predicate or p is predicate
+        ), "Can't merge two partially-constructive preds"
         predicate = p or predicate
         if "min_value" in kw:
             if kw["min_value"] > base["min_value"]:
@@ -187,7 +189,10 @@ def numeric_bounds_from_ast(
         for comp in comparisons:
             try:
                 kwargs = comp_to_kwargs(*comp, argname=argname)
-                bounds.append(ConstructivePredicate(kwargs, None))
+                # Because `len` could be redefined in the enclosing scope, we *always*
+                # have to apply the condition as a filter, in addition to rewriting.
+                pred = fallback.predicate if "len" in kwargs else None
+                bounds.append(ConstructivePredicate(kwargs, pred))
             except ValueError:
                 bounds.append(fallback)
         return merge_preds(*bounds)

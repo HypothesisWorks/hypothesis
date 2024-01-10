@@ -416,6 +416,23 @@ def test_filter_rewriting_text_partial_len(data, strategy, predicate, start, end
     assert predicate(value)
 
 
+@given(data=st.data())
+def test_can_rewrite_multiple_length_filters_if_not_lambdas(data):
+    # This is a key capability for efficient rewriting using the `annotated-types`
+    # package, although unfortunately we can't do it for lambdas.
+    s = (
+        st.text(min_size=1, max_size=5)
+        .filter(partial(min_len, 2))
+        .filter(partial(max_len, 4))
+    )
+    assert isinstance(s, LazyStrategy)
+    assert isinstance(inner := unwrap_strategies(s), TextStrategy)
+    assert inner.min_size == 2
+    assert inner.max_size == 4
+    value = data.draw(s)
+    assert 2 <= len(value) <= 4
+
+
 @pytest.mark.parametrize(
     "predicate, start, end",
     [
