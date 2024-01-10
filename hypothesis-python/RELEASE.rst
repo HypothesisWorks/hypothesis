@@ -1,5 +1,5 @@
 RELEASE_TYPE: patch
 
-This patch adds a note when an ``UnsatisfiedAssumption`` is raised (e.g. via :func:`assume <hypothesis.assume>` in user code), for use in both :ref:`test statistics <statistics>` and :doc:`observability <observability>`.
+This patch adds a :ref:`test statistics <statistics>` event when a generated example is rejected via :func:`assume <hypothesis.assume>` or :func:`reject <hypothesis.reject>`.
 
-See also :issue:`3827`.
+This may also help with distinguishing ``gave_up`` examples in :doc:`observability <observability>` (:issue:`3827`).
