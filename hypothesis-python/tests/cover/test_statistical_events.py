@@ -271,8 +271,8 @@ def test_assume_adds_event_with_function_origin():
     stats = call_for_statistics(very_distinguishable_name)
 
     for tc in stats["generate-phase"]["test-cases"]:
-        for event in tc["events"]:
-            assert "failed to satisfy assume() in very_distinguishable_name" in event
+        for e in tc["events"]:
+            assert "failed to satisfy assume() in very_distinguishable_name" in e
 
 
 def test_reject_adds_event_with_function_origin():
@@ -284,5 +284,5 @@ def test_reject_adds_event_with_function_origin():
     stats = call_for_statistics(very_distinguishable_name)
 
     for tc in stats["generate-phase"]["test-cases"]:
-        for event in tc["events"]:
-            assert "reject() in very_distinguishable_name" in event
+        for e in tc["events"]:
+            assert "reject() in very_distinguishable_name" in e
