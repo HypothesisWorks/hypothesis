@@ -26,8 +26,8 @@ from hypothesis.utils.dynamicvariables import DynamicVariable
 from hypothesis.vendor.pretty import IDKey
 
 
-def _get_calling_function_name():
-    return inspect.currentframe().f_back.f_code.co_name
+def _calling_function_name(frame):
+    return frame.f_back.f_code.co_name
 
 
 def reject() -> NoReturn:
@@ -37,7 +37,7 @@ def reject() -> NoReturn:
             since="2023-09-25",
             has_codemod=False,
         )
-    f = _get_calling_function_name()
+    f = _calling_function_name(inspect.currentframe())
     raise UnsatisfiedAssumption(f"reject() in {f}")
 
 
@@ -55,7 +55,7 @@ def assume(condition: object) -> bool:
             has_codemod=False,
         )
     if not condition:
-        f = _get_calling_function_name()
+        f = _calling_function_name(inspect.currentframe())
         raise UnsatisfiedAssumption(f"failed to satisfy assume() in {f}")
     return True
 
