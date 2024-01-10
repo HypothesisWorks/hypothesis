@@ -319,7 +319,7 @@ def test_last_block_length():
         d.blocks.last_block_length
 
     for n in range(1, 5 + 1):
-        d.draw_bits(n * 8)
+        d.draw_integer(0, 2 ** (n * 8) - 1)
         assert d.blocks.last_block_length == n
 
 
