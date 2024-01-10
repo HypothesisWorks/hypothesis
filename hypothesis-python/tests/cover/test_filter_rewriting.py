@@ -19,12 +19,14 @@ import pytest
 
 from hypothesis import given, strategies as st
 from hypothesis.errors import HypothesisWarning, Unsatisfiable
+from hypothesis.internal.filtering import max_len, min_len
 from hypothesis.internal.floats import next_down, next_up
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies._internal.core import data
 from hypothesis.strategies._internal.lazy import LazyStrategy, unwrap_strategies
 from hypothesis.strategies._internal.numbers import FloatStrategy, IntegersStrategy
 from hypothesis.strategies._internal.strategies import FilteredStrategy
+from hypothesis.strategies._internal.strings import TextStrategy
 
 from tests.common.utils import fails_with
 
@@ -383,3 +385,154 @@ def test_isidentifer_filter_unsatisfiable(al):
 def test_filter_floats_can_skip_subnormals(op, attr, value, expected):
     base = st.floats(allow_subnormal=False).filter(partial(op, value))
     assert getattr(base.wrapped_strategy, attr) == expected
+
+
+@pytest.mark.parametrize(
+    "strategy, predicate, start, end",
+    [
+        # text with integer bounds
+        (st.text(min_size=1, max_size=5), partial(min_len, 3), 3, 5),
+        (st.text(min_size=1, max_size=5), partial(max_len, 3), 1, 3),
+        # text with only one bound
+        (st.text(min_size=1), partial(min_len, 3), 3, math.inf),
+        (st.text(min_size=1), partial(max_len, 3), 1, 3),
+        (st.text(max_size=5), partial(min_len, 3), 3, 5),
+        (st.text(max_size=5), partial(max_len, 3), 0, 3),
+        # Unbounded text
+        (st.text(), partial(min_len, 3), 3, math.inf),
+        (st.text(), partial(max_len, 3), 0, 3),
+    ],
+    ids=get_pretty_function_description,
+)
+@given(data=st.data())
+def test_filter_rewriting_text_partial_len(data, strategy, predicate, start, end):
+    s = strategy.filter(predicate)
+
+    assert isinstance(s, LazyStrategy)
+    assert isinstance(inner := unwrap_strategies(s), TextStrategy)
+    assert inner.min_size == start
+    assert inner.max_size == end
+    value = data.draw(s)
+    assert predicate(value)
+
+
+@given(data=st.data())
+def test_can_rewrite_multiple_length_filters_if_not_lambdas(data):
+    # This is a key capability for efficient rewriting using the `annotated-types`
+    # package, although unfortunately we can't do it for lambdas.
+    s = (
+        st.text(min_size=1, max_size=5)
+        .filter(partial(min_len, 2))
+        .filter(partial(max_len, 4))
+    )
+    assert isinstance(s, LazyStrategy)
+    assert isinstance(inner := unwrap_strategies(s), TextStrategy)
+    assert inner.min_size == 2
+    assert inner.max_size == 4
+    value = data.draw(s)
+    assert 2 <= len(value) <= 4
+
+
+@pytest.mark.parametrize(
+    "predicate, start, end",
+    [
+        # Simple lambdas
+        (lambda x: len(x) < 3, 0, 2),
+        (lambda x: len(x) <= 3, 0, 3),
+        (lambda x: len(x) == 3, 3, 3),
+        (lambda x: len(x) >= 3, 3, math.inf),
+        (lambda x: len(x) > 3, 4, math.inf),
+        # Simple lambdas, reverse comparison
+        (lambda x: 3 > len(x), 0, 2),
+        (lambda x: 3 >= len(x), 0, 3),
+        (lambda x: 3 == len(x), 3, 3),
+        (lambda x: 3 <= len(x), 3, math.inf),
+        (lambda x: 3 < len(x), 4, math.inf),
+        # More complicated lambdas
+        (lambda x: 0 < len(x) < 5, 1, 4),
+        (lambda x: 0 < len(x) >= 1, 1, math.inf),
+        (lambda x: 1 > len(x) <= 0, 0, 0),
+        (lambda x: len(x) > 0 and len(x) > 0, 1, math.inf),
+        (lambda x: len(x) < 1 and len(x) < 1, 0, 0),
+        (lambda x: len(x) > 1 and len(x) > 0, 2, math.inf),
+        (lambda x: len(x) < 1 and len(x) < 2, 0, 0),
+    ],
+    ids=get_pretty_function_description,
+)
+@pytest.mark.parametrize(
+    "strategy",
+    [
+        st.text(),
+        st.lists(st.integers()),
+        st.lists(st.integers(), unique=True),
+        st.lists(st.sampled_from([1, 2, 3])),
+        # TODO: support more collection types.  Might require messing around with
+        #       strategy internals, e.g. in MappedStrategy/FilteredStrategy.
+        # st.binary(),
+        # st.binary.map(bytearray),
+        # st.sets(st.integers()),
+        # st.dictionaries(st.integers(), st.none()),
+    ],
+    ids=get_pretty_function_description,
+)
+@given(data=st.data())
+def test_filter_rewriting_text_lambda_len(data, strategy, predicate, start, end):
+    s = strategy.filter(predicate)
+    unwrapped = unwrap_strategies(s)
+    assert isinstance(unwrapped, FilteredStrategy)
+    assert isinstance(unwrapped.filtered_strategy, type(unwrap_strategies(strategy)))
+    for pred in unwrapped.flat_conditions:
+        assert pred.__name__ == "<lambda>"
+
+    assert unwrapped.filtered_strategy.min_size == start
+    assert unwrapped.filtered_strategy.max_size == end
+    value = data.draw(s)
+    assert predicate(value)
+
+
+@pytest.mark.parametrize(
+    "predicate, start, end",
+    [
+        # Simple lambdas
+        (lambda x: len(x) < 3, 0, 2),
+        (lambda x: len(x) <= 3, 0, 3),
+        (lambda x: len(x) == 3, 3, 3),
+        (lambda x: len(x) >= 3, 3, 3),  # input max element_count=3
+        # Simple lambdas, reverse comparison
+        (lambda x: 3 > len(x), 0, 2),
+        (lambda x: 3 >= len(x), 0, 3),
+        (lambda x: 3 == len(x), 3, 3),
+        (lambda x: 3 <= len(x), 3, 3),  # input max element_count=3
+        # More complicated lambdas
+        (lambda x: 0 < len(x) < 5, 1, 3),  # input max element_count=3
+        (lambda x: 0 < len(x) >= 1, 1, 3),  # input max element_count=3
+        (lambda x: 1 > len(x) <= 0, 0, 0),
+        (lambda x: len(x) > 0 and len(x) > 0, 1, 3),  # input max element_count=3
+        (lambda x: len(x) < 1 and len(x) < 1, 0, 0),
+        (lambda x: len(x) > 1 and len(x) > 0, 2, 3),  # input max element_count=3
+        (lambda x: len(x) < 1 and len(x) < 2, 0, 0),
+    ],
+    ids=get_pretty_function_description,
+)
+@pytest.mark.parametrize(
+    "strategy",
+    [
+        st.lists(st.sampled_from([1, 2, 3]), unique=True),
+    ],
+    ids=get_pretty_function_description,
+)
+@given(data=st.data())
+def test_filter_rewriting_text_lambda_len_unique_elements(
+    data, strategy, predicate, start, end
+):
+    s = strategy.filter(predicate)
+    unwrapped = unwrap_strategies(s)
+    assert isinstance(unwrapped, FilteredStrategy)
+    assert isinstance(unwrapped.filtered_strategy, type(unwrap_strategies(strategy)))
+    for pred in unwrapped.flat_conditions:
+        assert pred.__name__ == "<lambda>"
+
+    assert unwrapped.filtered_strategy.min_size == start
+    assert unwrapped.filtered_strategy.max_size == end
+    value = data.draw(s)
+    assert predicate(value)
