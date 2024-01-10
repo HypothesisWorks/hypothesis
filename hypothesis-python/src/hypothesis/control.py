@@ -34,7 +34,7 @@ def reject() -> NoReturn:
             has_codemod=False,
         )
     f = inspect.stack()[1].function
-    raise UnsatisfiedAssumption(reason=f"reject() in {f}")
+    raise UnsatisfiedAssumption(f"reject() in {f}")
 
 
 def assume(condition: object) -> bool:
@@ -52,7 +52,7 @@ def assume(condition: object) -> bool:
         )
     f = inspect.stack()[1].function
     if not condition:
-        raise UnsatisfiedAssumption(reason=f"failed to satisfy assume() in {f}")
+        raise UnsatisfiedAssumption(f"failed to satisfy assume() in {f}")
     return True
 
 

@@ -23,7 +23,7 @@ class UnsatisfiedAssumption(HypothesisException):
     If you're seeing this error something has gone wrong.
     """
 
-    def __init__(self, *, reason=None):
+    def __init__(self, reason=None):
         self.reason = reason
 
 
