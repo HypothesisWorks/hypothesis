@@ -275,10 +275,10 @@ def test_dependent_block_pairs_is_up_to_shrinking_integers():
     @shrinking_from(b"\x03\x01\x00\x00\x00\x00\x00\x01\x00\x02\x01")
     def shrinker(data):
         size = sizes[distribution.sample(data)]
-        result = data.draw_integer(0, 2**size - 1)
+        result = data.draw_bits(size)
         sign = (-1) ** (result & 1)
         result = (result >> 1) * sign
-        cap = data.draw_integer(0, 2**8 - 1)
+        cap = data.draw_bits(8)
 
         if result >= 32768 and cap == 1:
             data.mark_interesting()

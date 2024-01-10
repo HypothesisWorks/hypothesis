@@ -79,7 +79,7 @@ def test_can_mark_interesting():
 
 def test_drawing_zero_bits_is_free():
     x = ConjectureData.for_buffer(b"")
-    assert x.draw_integer(0, 0) == 0
+    assert x.draw_bits(0) == 0
 
 
 def test_can_mark_invalid():
@@ -202,11 +202,11 @@ def test_has_cached_examples_even_when_overrun():
 
 def test_can_write_empty_string():
     d = ConjectureData.for_buffer([1, 1, 1])
-    d.draw_boolean()
+    d.draw_bits(1)
     d.write(b"")
-    d.draw_boolean()
-    d.draw_boolean(forced=False)
-    d.draw_boolean()
+    d.draw_bits(1)
+    d.draw_bits(0, forced=0)
+    d.draw_bits(1)
     assert d.buffer == bytes([1, 1, 1])
 
 

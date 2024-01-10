@@ -75,10 +75,10 @@ def test_avoids_zig_zag_trap(p):
     n_bits = 8 * (len(b) + 1)
 
     def test_function(data):
-        m = data.draw_integer(0, 2**n_bits - 1)
+        m = data.draw_bits(n_bits)
         if m < lower_bound:
             data.mark_invalid()
-        n = data.draw_integer(0, 2**n_bits - 1)
+        n = data.draw_bits(n_bits)
         if data.draw_bytes(len(marker)) != marker:
             data.mark_invalid()
         if abs(m - n) == 1:
@@ -101,8 +101,8 @@ def test_avoids_zig_zag_trap(p):
 
     data = ConjectureData.for_buffer(v.buffer)
 
-    m = data.draw_integer(0, 2**n_bits - 1)
-    n = data.draw_integer(0, 2**n_bits - 1)
+    m = data.draw_bits(n_bits)
+    n = data.draw_bits(n_bits)
     assert m == lower_bound
     if m == 0:
         assert n == 1
