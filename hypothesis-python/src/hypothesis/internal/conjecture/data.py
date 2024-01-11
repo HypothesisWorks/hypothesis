@@ -1607,7 +1607,12 @@ class ConjectureData:
         return value
 
     def draw_bytes(
-        self, size: int, *, forced: Optional[bytes] = None, observe: bool = True
+        self,
+        # TODO move to min_size and max_size here.
+        size: int,
+        *,
+        forced: Optional[bytes] = None,
+        observe: bool = True,
     ) -> bytes:
         assert forced is None or len(forced) == size
 
