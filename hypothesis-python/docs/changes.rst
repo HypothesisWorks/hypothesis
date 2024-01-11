@@ -18,6 +18,28 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.92.2:
+
+-------------------
+6.92.2 - 2023-12-27
+-------------------
+
+This patch updates our vendored `list of top-level domains <https://www.iana.org/domains/root/db>`__,
+which is used by the provisional :func:`~hypothesis.provisional.domains` strategy.
+
+.. _v6.92.1:
+
+-------------------
+6.92.1 - 2023-12-16
+-------------------
+
+This patch fixes a bug introduced in :ref:`version 6.92.0 <v6.92.0>`,
+where using the :func:`~hypothesis.strategies.data` strategy would fail
+to draw a :func:`~python:dataclasses.dataclass` with a
+:class:`~python:collections.defaultdict` field.  This was due to a bug
+in the standard library which `was fixed in 3.12
+<https://github.com/python/cpython/pull/32056>`__, so we've vendored the fix.
+
 .. _v6.92.0:
 
 -------------------

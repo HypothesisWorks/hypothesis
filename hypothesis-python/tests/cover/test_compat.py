@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
+from collections import defaultdict, namedtuple
 from dataclasses import dataclass
 from functools import partial
 from inspect import Parameter, Signature, signature
@@ -16,7 +17,7 @@ from typing import ForwardRef, Optional, Union
 
 import pytest
 
-from hypothesis.internal.compat import ceil, floor, get_type_hints
+from hypothesis.internal.compat import ceil, dataclass_asdict, floor, get_type_hints
 
 floor_ceil_values = [
     -10.7,
@@ -106,3 +107,24 @@ def func(a, b: int, *c: str, d: Optional[int] = None):
 )
 def test_get_hints_through_partial(pf, names):
     assert set(get_type_hints(pf)) == set(names.split())
+
+
+@dataclass
+class FilledWithStuff:
+    a: list
+    b: tuple
+    c: namedtuple
+    d: dict
+    e: defaultdict
+
+
+def test_dataclass_asdict():
+    ANamedTuple = namedtuple("ANamedTuple", ("with_some_field"))
+    obj = FilledWithStuff(a=[1], b=(2), c=ANamedTuple(3), d={4: 5}, e=defaultdict(list))
+    assert dataclass_asdict(obj) == {
+        "a": [1],
+        "b": (2),
+        "c": ANamedTuple(3),
+        "d": {4: 5},
+        "e": {},
+    }
