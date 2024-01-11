@@ -16,6 +16,7 @@ from itertools import islice
 import pytest
 
 from hypothesis import settings
+from hypothesis.internal import charmap
 from hypothesis.internal.conjecture.data import Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.shrinking import dfas
@@ -138,8 +139,9 @@ def non_normalized_test_function(data):
             data.draw_integer(0, 2**8 - 1)
             data.mark_interesting()
     else:
-        n = data.draw_integer(0, 2**64 - 1)
-        if n > 10000:
+        # ascii
+        s = data.draw_string(charmap.query(min_codepoint=0, max_codepoint=127))
+        if "\n" in s:
             data.draw_integer(0, 2**8 - 1)
             data.mark_interesting()
 
