@@ -129,6 +129,7 @@ exc_instances = [
         runtime=timedelta(seconds=1.5), deadline=timedelta(seconds=1.0)
     ),
     errors.RewindRecursive(int),
+    errors.UnsatisfiedAssumption("reason for unsatisfied"),
 ]
 
 
