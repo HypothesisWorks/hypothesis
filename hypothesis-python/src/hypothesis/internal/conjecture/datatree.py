@@ -96,13 +96,13 @@ def compute_max_children(kwargs, ir_type):
     if ir_type == "integer":
         min_value = kwargs["min_value"]
         max_value = kwargs["max_value"]
-        if min_value is not None and max_value is not None:
-            return max_value - min_value + 1
-        if min_value is not None:
-            return (2**127) - min_value
-        if max_value is not None:
-            return (2**127) + max_value
-        return 2**128 - 1
+
+        if min_value is None:
+            min_value = -(2**127) + 1
+        if max_value is None:
+            max_value = 2**127 - 1
+
+        return max_value - min_value + 1
     elif ir_type == "boolean":
         return 2
     elif ir_type == "bytes":
