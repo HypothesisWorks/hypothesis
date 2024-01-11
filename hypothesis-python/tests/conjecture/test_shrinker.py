@@ -65,7 +65,7 @@ def test_duplicate_blocks_that_go_away():
     @run_to_buffer
     def base_buf(data):
         x = data.draw_integer(0, 2**24 - 1, forced=1234567)
-        y = data.draw_integer(0, 2**24 - 1, forced=1234567)
+        _y = data.draw_integer(0, 2**24 - 1, forced=1234567)
         for _ in range(x & 255):
             data.draw_bytes(1)
         data.mark_interesting()
