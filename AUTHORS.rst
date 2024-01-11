@@ -181,6 +181,7 @@ their individual contributions.
 * `Tyler Gibbons <https://www.github.com/kavec>`_ (tyler.gibbons@flexport.com)
 * `Tyler Nickerson <https://www.github.com/nmbrgts>`_
 * `Vidya Rani <https://www.github.com/vidyarani-dg>`_ (vidyarani.d.g@gmail.com)
+* `Vince Reuter <https://github.com/vreuter>`_ (vince.reuter@gmail.com)
 * `Vincent Michel <https://www.github.com/vxgmichel>`_ (vxgmichel@gmail.com)
 * `Viorel Pluta <https://github.com/viopl>`_ (viopluta@gmail.com)
 * `Vytautas Strimaitis <https://www.github.com/vstrimaitis>`_

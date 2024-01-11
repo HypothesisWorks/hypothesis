@@ -20,6 +20,7 @@ from hypothesis import (
     event,
     example,
     given,
+    reject,
     settings,
     stateful,
     strategies as st,
@@ -260,3 +261,28 @@ def test_statistics_with_events_and_target():
 @given(st.booleans())
 def test_event_with_non_weakrefable_keys(b):
     event((b,))
+
+
+def test_assume_adds_event_with_function_origin():
+    @given(st.integers())
+    def very_distinguishable_name(n):
+        assume(n > 100)
+
+    stats = call_for_statistics(very_distinguishable_name)
+
+    for tc in stats["generate-phase"]["test-cases"]:
+        for e in tc["events"]:
+            assert "failed to satisfy assume() in very_distinguishable_name" in e
+
+
+def test_reject_adds_event_with_function_origin():
+    @given(st.integers())
+    def very_distinguishable_name(n):
+        if n > 100:
+            reject()
+
+    stats = call_for_statistics(very_distinguishable_name)
+
+    for tc in stats["generate-phase"]["test-cases"]:
+        for e in tc["events"]:
+            assert "reject() in very_distinguishable_name" in e

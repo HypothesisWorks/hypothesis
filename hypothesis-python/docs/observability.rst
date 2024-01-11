@@ -44,6 +44,10 @@ or by using the :pypi:`sqlite-utils` and :pypi:`datasette` libraries::
     sqlite-utils insert testcases.db testcases .hypothesis/observed/*_testcases.jsonl --nl --flatten
     datasette serve testcases.db
 
+If you are experiencing a significant slow-down, you can try setting
+``HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY_NOCOVER`` instead; this will disable coverage information
+collection. This should not be necessary on Python 3.12 or later.
+
 
 Collecting more information
 ---------------------------
@@ -69,6 +73,11 @@ We dump observations in `json lines format <https://jsonlines.org/>`__, with eac
 describing either a test case or an information message.  The tables below are derived
 from :download:`this machine-readable JSON schema <schema_observations.json>`, to
 provide both readable and verifiable specifications.
+
+Note that we use :func:`python:json.dumps` and can therefore emit non-standard JSON
+which includes infinities and NaN.  This is valid in `JSON5 <https://json5.org/>`__,
+and supported by `some JSON parsers <https://evanhahn.com/pythons-nonstandard-json-encoding/>`__
+including Gson in Java, ``JSON.parse()`` in Ruby, and of course in Python.
 
 .. jsonschema:: ./schema_observations.json#/oneOf/0
    :hide_key: /additionalProperties, /type

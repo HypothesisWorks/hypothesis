@@ -190,3 +190,115 @@ class AnnotationsInsteadOfElements(enum.Enum):
 def test_suggests_elements_instead_of_annotations():
     with pytest.raises(InvalidArgument, match="Cannot sample.*annotations.*dataclass"):
         st.sampled_from(AnnotationsInsteadOfElements).example()
+
+
+class TestErrorNoteBehavior3819:
+    elements = (st.booleans(), st.decimals(), st.integers(), st.text())
+
+    @staticmethod
+    @given(st.data())
+    def direct_without_error(data):
+        data.draw(st.sampled_from((st.floats(), st.binary())))
+
+    @staticmethod
+    @given(st.data())
+    def direct_with_non_type_error(data):
+        data.draw(st.sampled_from(st.characters(), st.floats()))
+        raise Exception("Contains SearchStrategy, but no note addition!")
+
+    @staticmethod
+    @given(st.data())
+    def direct_with_type_error_without_substring(data):
+        data.draw(st.sampled_from(st.booleans(), st.binary()))
+        raise TypeError("Substring not in message!")
+
+    @staticmethod
+    @given(st.data())
+    def direct_with_type_error_with_substring_but_not_all_strategies(data):
+        data.draw(st.sampled_from(st.booleans(), False, True))
+        raise TypeError("Contains SearchStrategy, but no note addition!")
+
+    @staticmethod
+    @given(st.data())
+    def direct_all_strategies_with_type_error_with_substring(data):
+        data.draw(st.sampled_from((st.dates(), st.datetimes())))
+        raise TypeError("This message contains SearchStrategy as substring!")
+
+    @staticmethod
+    @given(st.lists(st.sampled_from(elements)))
+    def indirect_without_error(_):
+        return
+
+    @staticmethod
+    @given(st.lists(st.sampled_from(elements)))
+    def indirect_with_non_type_error(_):
+        raise Exception("Contains SearchStrategy, but no note addition!")
+
+    @staticmethod
+    @given(st.lists(st.sampled_from(elements)))
+    def indirect_with_type_error_without_substring(_):
+        raise TypeError("Substring not in message!")
+
+    @staticmethod
+    @given(st.lists(st.sampled_from((*elements, False, True))))
+    def indirect_with_type_error_with_substring_but_not_all_strategies(_):
+        raise TypeError("Contains SearchStrategy, but no note addition!")
+
+    @staticmethod
+    @given(st.lists(st.sampled_from(elements), min_size=1))
+    def indirect_all_strategies_with_type_error_with_substring(objs):
+        raise TypeError("Contains SearchStrategy in message, trigger note!")
+
+    @pytest.mark.parametrize(
+        ["func_to_call", "exp_err_cls", "should_exp_msg"],
+        [
+            pytest.param(f.__func__, err, msg_exp, id=f.__func__.__name__)
+            for f, err, msg_exp in [
+                (f, TypeError, True)
+                for f in (
+                    direct_all_strategies_with_type_error_with_substring,
+                    indirect_all_strategies_with_type_error_with_substring,
+                )
+            ]
+            + [
+                (f, TypeError, False)
+                for f in (
+                    direct_with_type_error_without_substring,
+                    direct_with_type_error_with_substring_but_not_all_strategies,
+                    indirect_with_type_error_without_substring,
+                    indirect_with_type_error_with_substring_but_not_all_strategies,
+                )
+            ]
+            + [
+                (f, Exception, False)
+                for f in (
+                    direct_with_non_type_error,
+                    indirect_with_non_type_error,
+                )
+            ]
+            + [
+                (f, None, False)
+                for f in (
+                    direct_without_error,
+                    indirect_without_error,
+                )
+            ]
+        ],
+    )
+    def test_error_appropriate_error_note_3819(
+        self, func_to_call, exp_err_cls, should_exp_msg
+    ):
+        if exp_err_cls is None:
+            # Here we only care that no exception was raised, so nothing to assert.
+            func_to_call()
+        else:
+            with pytest.raises(exp_err_cls) as err_ctx:
+                func_to_call()
+            notes = getattr(err_ctx.value, "__notes__", [])
+            matching_messages = [
+                n
+                for n in notes
+                if n.startswith("sample_from was given a collection of strategies")
+                and n.endswith("Was one_of intended?")
+            ]
+            assert len(matching_messages) == (1 if should_exp_msg else 0)

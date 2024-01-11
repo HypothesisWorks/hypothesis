@@ -18,6 +18,69 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.92.8:
+
+-------------------
+6.92.8 - 2024-01-11
+-------------------
+
+This patch adds a :ref:`test statistics <statistics>` event when a generated example is rejected via :func:`assume <hypothesis.assume>`.
+
+This may also help with distinguishing ``gave_up`` examples in :doc:`observability <observability>` (:issue:`3827`).
+
+.. _v6.92.7:
+
+-------------------
+6.92.7 - 2024-01-10
+-------------------
+
+This introduces the rewriting of length filters on some collection strategies (:issue:`3791`).
+
+Thanks to Reagan Lee for implementing this feature!
+
+.. _v6.92.6:
+
+-------------------
+6.92.6 - 2024-01-08
+-------------------
+
+If a test uses :func:`~hypothesis.strategies.sampled_from` on a sequence of
+strategies, and raises a ``TypeError``, we now :pep:`add a note <678>` asking
+whether you meant to use :func:`~hypothesis.strategies.one_of`.
+
+Thanks to Vince Reuter for suggesting and implementing this hint!
+
+.. _v6.92.5:
+
+-------------------
+6.92.5 - 2024-01-08
+-------------------
+
+This patch registers explicit strategies for a handful of builtin types,
+motivated by improved introspection in PyPy 7.3.14 triggering existing
+internal warnings.
+Thanks to Carl Friedrich Bolz-Tereick for helping us work out what changed!
+
+.. _v6.92.4:
+
+-------------------
+6.92.4 - 2024-01-08
+-------------------
+
+This patch fixes an error when writing :doc:`observability <observability>` reports without a pre-existing ``.hypothesis`` directory.
+
+.. _v6.92.3:
+
+-------------------
+6.92.3 - 2024-01-08
+-------------------
+
+This patch adds a new environment variable ``HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY_NOCOVER``,
+which turns on :doc:`observability <observability>` data collection without collecting
+code coverage data, which may be faster on Python 3.11 and earlier.
+
+Thanks to Harrison Goldstein for reporting and fixing :issue:`3821`.
+
 .. _v6.92.2:
 
 -------------------
