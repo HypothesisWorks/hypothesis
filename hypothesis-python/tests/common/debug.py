@@ -22,15 +22,20 @@ class Timeout(BaseException):
 
 
 def minimal(definition, condition=lambda x: True, settings=None, timeout_after=10):
+    definition.validate()
+    runtime = None
+    result = None
+
     def wrapped_condition(x):
+        nonlocal runtime
         if timeout_after is not None:
             if runtime:
-                runtime[0] += TIME_INCREMENT
-                if runtime[0] >= timeout_after:
+                runtime += TIME_INCREMENT
+                if runtime >= timeout_after:
                     raise Timeout
         result = condition(x)
         if result and not runtime:
-            runtime.append(0.0)
+            runtime = 0.0
         return result
 
     if settings is None:
@@ -51,16 +56,14 @@ def minimal(definition, condition=lambda x: True, settings=None, timeout_after=1
     )
     def inner(x):
         if wrapped_condition(x):
-            result[:] = [x]
+            nonlocal result
+            result = x
             raise Found
 
-    definition.validate()
-    runtime = []
-    result = []
     try:
         inner()
     except Found:
-        return result[0]
+        return result
     raise Unsatisfiable(
         "Could not find any examples from %r that satisfied %s"
         % (definition, get_pretty_function_description(condition))

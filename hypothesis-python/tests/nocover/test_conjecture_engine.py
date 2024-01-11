@@ -101,7 +101,7 @@ def test_regression_1():
 @given(st.integers(0, 255), st.integers(0, 255))
 def test_cached_with_masked_byte_agrees_with_results(byte_a, byte_b):
     def f(data):
-        data.draw_bits(2)
+        data.draw_integer(0, 3)
 
     runner = ConjectureRunner(f)
 
@@ -125,7 +125,7 @@ def test_block_programs_fail_efficiently(monkeypatch):
     def shrinker(data):
         values = set()
         for _ in range(256):
-            v = data.draw_bits(8)
+            v = data.draw_integer(0, 2**8 - 1)
             values.add(v)
         if len(values) == 256:
             data.mark_interesting()

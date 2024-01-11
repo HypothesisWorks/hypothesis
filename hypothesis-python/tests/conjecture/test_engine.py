@@ -155,7 +155,7 @@ def recur(i, data):
 
 def test_recursion_error_is_not_flaky():
     def tf(data):
-        i = data.draw_bits(16)
+        i = data.draw_integer(0, 2**16 - 1)
         try:
             recur(i, data)
         except RecursionError:
@@ -248,7 +248,7 @@ def test_stops_after_max_examples_when_generating_more_bugs(examples):
     bad = [False, False]
 
     def f(data):
-        seen.append(data.draw_bits(32))
+        seen.append(data.draw_integer(0, 2**32 - 1))
         # Rare, potentially multi-error conditions
         if seen[-1] > 2**31:
             bad[0] = True
@@ -312,7 +312,7 @@ def test_reuse_phase_runs_for_max_examples_if_generation_is_disabled():
         seen = set()
 
         def test(data):
-            seen.add(data.draw_bits(8))
+            seen.add(data.draw_integer(0, 2**8 - 1))
 
         ConjectureRunner(
             test,
@@ -425,7 +425,7 @@ def test_fails_health_check_for_large_base():
 def test_fails_health_check_for_large_non_base():
     @fails_health_check(HealthCheck.data_too_large)
     def _(data):
-        if data.draw_bits(8):
+        if data.draw_integer(0, 2**8 - 1):
             data.draw_bytes(10**6)
 
 
@@ -471,7 +471,7 @@ def test_debug_data(capsys):
 
     def f(data):
         for x in bytes(buf):
-            if data.draw_bits(8) != x:
+            if data.draw_integer(0, 2**8 - 1) != x:
                 data.mark_invalid()
             data.start_example(1)
             data.stop_example()
@@ -498,7 +498,7 @@ def test_can_write_bytes_towards_the_end():
     buf = b"\1\2\3"
 
     def f(data):
-        if data.draw_bits(1):
+        if data.draw_boolean():
             data.draw_bytes(5)
             data.write(bytes(buf))
             assert bytes(data.buffer[-len(buf) :]) == buf
@@ -512,7 +512,7 @@ def test_uniqueness_is_preserved_when_writing_at_beginning():
 
     def f(data):
         data.write(bytes(1))
-        n = data.draw_bits(3)
+        n = data.draw_integer(0, 2**3 - 1)
         assert n not in seen
         seen.add(n)
 
@@ -537,7 +537,7 @@ def test_clears_out_its_database_on_shrinking(
     db = InMemoryExampleDatabase()
 
     def f(data):
-        if data.draw_bits(8) >= 127:
+        if data.draw_integer(0, 2**8 - 1) >= 127:
             data.mark_interesting()
 
     runner = ConjectureRunner(
@@ -584,7 +584,7 @@ def test_shrinks_both_interesting_examples(monkeypatch):
     )
 
     def f(data):
-        n = data.draw_bits(8)
+        n = data.draw_integer(0, 2**8 - 1)
         data.mark_interesting(n & 1)
 
     runner = ConjectureRunner(f, database_key=b"key")
@@ -606,7 +606,7 @@ def test_discarding(monkeypatch):
         count = 0
         while count < 10:
             data.start_example(SOME_LABEL)
-            b = data.draw_bits(1)
+            b = data.draw_boolean()
             if b:
                 count += 1
             data.stop_example(discard=not b)
@@ -620,7 +620,7 @@ def test_can_remove_discarded_data():
     def shrinker(data):
         while True:
             data.start_example(SOME_LABEL)
-            b = data.draw_bits(8)
+            b = data.draw_integer(0, 2**8 - 1)
             data.stop_example(discard=(b == 0))
             if b == 11:
                 break
@@ -634,9 +634,9 @@ def test_discarding_iterates_to_fixed_point():
     @shrinking_from(bytes(list(range(100, -1, -1))))
     def shrinker(data):
         data.start_example(0)
-        data.draw_bits(8)
+        data.draw_integer(0, 2**8 - 1)
         data.stop_example(discard=True)
-        while data.draw_bits(8):
+        while data.draw_integer(0, 2**8 - 1):
             pass
         data.mark_interesting()
 
@@ -647,10 +647,10 @@ def test_discarding_iterates_to_fixed_point():
 def test_discarding_is_not_fooled_by_empty_discards():
     @shrinking_from(bytes([1, 1]))
     def shrinker(data):
-        data.draw_bits(1)
+        data.draw_integer(0, 2**1 - 1)
         data.start_example(0)
         data.stop_example(discard=True)
-        data.draw_bits(1)
+        data.draw_integer(0, 2**1 - 1)
         data.mark_interesting()
 
     shrinker.remove_discarded()
@@ -661,7 +661,7 @@ def test_discarding_can_fail(monkeypatch):
     @shrinking_from(bytes([1]))
     def shrinker(data):
         data.start_example(0)
-        data.draw_bits(1)
+        data.draw_boolean()
         data.stop_example(discard=True)
         data.mark_interesting()
 
@@ -678,7 +678,7 @@ def test_shrinking_from_mostly_zero(monkeypatch):
 
     @run_to_buffer
     def x(data):
-        s = [data.draw_bits(8) for _ in range(6)]
+        s = [data.draw_integer(0, 2**8 - 1) for _ in range(6)]
         if any(s):
             data.mark_interesting()
 
@@ -697,9 +697,9 @@ def test_handles_nesting_of_discard_correctly(monkeypatch):
     def x(data):
         while True:
             data.start_example(SOME_LABEL)
-            succeeded = data.draw_bits(1)
+            succeeded = data.draw_boolean()
             data.start_example(SOME_LABEL)
-            data.draw_bits(1)
+            data.draw_boolean()
             data.stop_example(discard=not succeeded)
             data.stop_example(discard=not succeeded)
             if succeeded:
@@ -713,7 +713,7 @@ def test_database_clears_secondary_key():
     database = InMemoryExampleDatabase()
 
     def f(data):
-        if data.draw_bits(8) == 10:
+        if data.draw_integer(0, 2**8 - 1) == 10:
             data.mark_interesting()
         else:
             data.mark_invalid()
@@ -746,7 +746,7 @@ def test_database_uses_values_from_secondary_key():
     database = InMemoryExampleDatabase()
 
     def f(data):
-        if data.draw_bits(8) >= 5:
+        if data.draw_integer(0, 2**8 - 1) >= 5:
             data.mark_interesting()
         else:
             data.mark_invalid()
@@ -782,7 +782,7 @@ def test_database_uses_values_from_secondary_key():
 
 def test_exit_because_max_iterations():
     def f(data):
-        data.draw_bits(64)
+        data.draw_integer(0, 2**64 - 1)
         data.mark_invalid()
 
     runner = ConjectureRunner(
@@ -806,7 +806,7 @@ def test_exit_because_shrink_phase_timeout(monkeypatch):
         return val[0]
 
     def f(data):
-        if data.draw_bits(64) > 2**33:
+        if data.draw_integer(0, 2**64 - 1) > 2**33:
             data.mark_interesting()
 
     monkeypatch.setattr(time, "perf_counter", fast_time)
@@ -819,10 +819,10 @@ def test_exit_because_shrink_phase_timeout(monkeypatch):
 def test_dependent_block_pairs_can_lower_to_zero():
     @shrinking_from([1, 0, 1])
     def shrinker(data):
-        if data.draw_bits(1):
-            n = data.draw_bits(16)
+        if data.draw_boolean():
+            n = data.draw_integer(0, 2**16 - 1)
         else:
-            n = data.draw_bits(8)
+            n = data.draw_integer(0, 2**8 - 1)
 
         if n == 1:
             data.mark_interesting()
@@ -834,11 +834,11 @@ def test_dependent_block_pairs_can_lower_to_zero():
 def test_handle_size_too_large_during_dependent_lowering():
     @shrinking_from([1, 255, 0])
     def shrinker(data):
-        if data.draw_bits(1):
-            data.draw_bits(16)
+        if data.draw_boolean():
+            data.draw_integer(0, 2**16 - 1)
             data.mark_interesting()
         else:
-            data.draw_bits(8)
+            data.draw_integer(0, 2**8 - 1)
 
     shrinker.fixate_shrink_passes(["minimize_individual_blocks"])
 
@@ -848,12 +848,12 @@ def test_block_may_grow_during_lexical_shrinking():
 
     @shrinking_from(initial)
     def shrinker(data):
-        n = data.draw_bits(8)
+        n = data.draw_integer(0, 2**8 - 1)
         if n == 2:
-            data.draw_bits(8)
-            data.draw_bits(8)
+            data.draw_integer(0, 2**8 - 1)
+            data.draw_integer(0, 2**8 - 1)
         else:
-            data.draw_bits(16)
+            data.draw_integer(0, 2**16 - 1)
         data.mark_interesting()
 
     shrinker.fixate_shrink_passes(["minimize_individual_blocks"])
@@ -863,10 +863,10 @@ def test_block_may_grow_during_lexical_shrinking():
 def test_lower_common_block_offset_does_nothing_when_changed_blocks_are_zero():
     @shrinking_from([1, 0, 1, 0])
     def shrinker(data):
-        data.draw_bits(1)
-        data.draw_bits(1)
-        data.draw_bits(1)
-        data.draw_bits(1)
+        data.draw_boolean()
+        data.draw_boolean()
+        data.draw_boolean()
+        data.draw_boolean()
         data.mark_interesting()
 
     shrinker.mark_changed(1)
@@ -878,9 +878,9 @@ def test_lower_common_block_offset_does_nothing_when_changed_blocks_are_zero():
 def test_lower_common_block_offset_ignores_zeros():
     @shrinking_from([2, 2, 0])
     def shrinker(data):
-        n = data.draw_bits(8)
-        data.draw_bits(8)
-        data.draw_bits(8)
+        n = data.draw_integer(0, 2**8 - 1)
+        data.draw_integer(0, 2**8 - 1)
+        data.draw_integer(0, 2**8 - 1)
         if n > 0:
             data.mark_interesting()
 
@@ -893,13 +893,13 @@ def test_lower_common_block_offset_ignores_zeros():
 def test_pandas_hack():
     @shrinking_from([2, 1, 1, 7])
     def shrinker(data):
-        n = data.draw_bits(8)
-        m = data.draw_bits(8)
+        n = data.draw_integer(0, 2**8 - 1)
+        m = data.draw_integer(0, 2**8 - 1)
         if n == 1:
             if m == 7:
                 data.mark_interesting()
-        data.draw_bits(8)
-        if data.draw_bits(8) == 7:
+        data.draw_integer(0, 2**8 - 1)
+        if data.draw_integer(0, 2**8 - 1) == 7:
             data.mark_interesting()
 
     shrinker.fixate_shrink_passes([block_program("-XX")])
@@ -911,7 +911,7 @@ def test_cached_test_function_returns_right_value():
 
     def tf(data):
         count[0] += 1
-        data.draw_bits(2)
+        data.draw_integer(0, 3)
         data.mark_interesting()
 
     with deterministic_PRNG():
@@ -929,9 +929,9 @@ def test_cached_test_function_does_not_reinvoke_on_prefix():
 
     def test_function(data):
         call_count[0] += 1
-        data.draw_bits(8)
+        data.draw_integer(0, 2**8 - 1)
         data.write(bytes([7]))
-        data.draw_bits(8)
+        data.draw_integer(0, 2**8 - 1)
 
     with deterministic_PRNG():
         runner = ConjectureRunner(test_function, settings=TEST_SETTINGS)
@@ -969,11 +969,11 @@ def test_branch_ending_in_write():
 
     def tf(data):
         count = 0
-        while data.draw_bits(1):
+        while data.draw_boolean():
             count += 1
 
         if count > 1:
-            data.draw_bits(1, forced=0)
+            data.draw_boolean(forced=False)
 
         b = bytes(data.buffer)
         assert b not in seen
@@ -993,7 +993,7 @@ def test_branch_ending_in_write():
 def test_exhaust_space():
     with deterministic_PRNG():
         runner = ConjectureRunner(
-            lambda data: data.draw_bits(1), settings=TEST_SETTINGS
+            lambda data: data.draw_boolean(), settings=TEST_SETTINGS
         )
         runner.run()
         assert runner.tree.is_exhausted
@@ -1012,7 +1012,7 @@ def test_discards_kill_branches():
             assert runner.call_count <= 256
             while True:
                 data.start_example(1)
-                b = data.draw_bits(8)
+                b = data.draw_integer(0, 2**8 - 1)
                 data.stop_example(discard=b != 0)
                 if len(data.buffer) == 1:
                     s = bytes(data.buffer)
@@ -1045,7 +1045,7 @@ def test_prefix_cannot_exceed_buffer_size(monkeypatch):
     with deterministic_PRNG():
 
         def test(data):
-            while data.draw_bits(1):
+            while data.draw_boolean():
                 assert len(data.buffer) <= buffer_size
             assert len(data.buffer) <= buffer_size
 
@@ -1056,8 +1056,8 @@ def test_prefix_cannot_exceed_buffer_size(monkeypatch):
 
 def test_does_not_shrink_multiple_bugs_when_told_not_to():
     def test(data):
-        m = data.draw_bits(8)
-        n = data.draw_bits(8)
+        m = data.draw_integer(0, 2**8 - 1)
+        n = data.draw_integer(0, 2**8 - 1)
 
         if m > 0:
             data.mark_interesting(1)
@@ -1078,8 +1078,8 @@ def test_does_not_shrink_multiple_bugs_when_told_not_to():
 
 def test_does_not_keep_generating_when_multiple_bugs():
     def test(data):
-        if data.draw_bits(64) > 0:
-            data.draw_bits(64)
+        if data.draw_integer(0, 2**20 - 1) > 0:
+            data.draw_integer(0, 2**20 - 1)
             data.mark_interesting()
 
     with deterministic_PRNG():
@@ -1110,7 +1110,7 @@ def test_shrink_after_max_examples():
         if bad:
             post_failure_calls[0] += 1
 
-        value = data.draw_bits(8)
+        value = data.draw_integer(0, 2**8 - 1)
 
         if value in seen and value not in bad:
             return
@@ -1167,7 +1167,7 @@ def test_shrink_after_max_iterations():
         if bad:
             post_failure_calls[0] += 1
 
-        value = data.draw_bits(16)
+        value = data.draw_integer(0, 2**16 - 1)
 
         if value in invalid:
             data.mark_invalid()
@@ -1212,7 +1212,7 @@ def test_populates_the_pareto_front():
     with deterministic_PRNG():
 
         def test(data):
-            data.target_observations[""] = data.draw_bits(4)
+            data.target_observations[""] = data.draw_integer(0, 2**4 - 1)
 
         runner = ConjectureRunner(
             test,
@@ -1233,7 +1233,7 @@ def test_pareto_front_contains_smallest_valid_when_not_targeting():
     with deterministic_PRNG():
 
         def test(data):
-            data.draw_bits(4)
+            data.draw_integer(0, 2**4 - 1)
 
         runner = ConjectureRunner(
             test,
@@ -1254,7 +1254,7 @@ def test_pareto_front_contains_different_interesting_reasons():
     with deterministic_PRNG():
 
         def test(data):
-            data.mark_interesting(data.draw_bits(4))
+            data.mark_interesting(data.draw_integer(0, 2**4 - 1))
 
         runner = ConjectureRunner(
             test,
@@ -1271,52 +1271,12 @@ def test_pareto_front_contains_different_interesting_reasons():
         assert len(runner.pareto_front) == 2**4
 
 
-def test_database_contains_only_pareto_front():
-    with deterministic_PRNG():
-
-        def test(data):
-            data.target_observations["1"] = data.draw_bits(4)
-            data.draw_bits(64)
-            data.target_observations["2"] = data.draw_bits(8)
-
-        db = InMemoryExampleDatabase()
-
-        runner = ConjectureRunner(
-            test,
-            settings=settings(
-                max_examples=500, database=db, suppress_health_check=list(HealthCheck)
-            ),
-            database_key=b"stuff",
-        )
-
-        runner.run()
-
-        assert len(runner.pareto_front) <= 500
-
-        for v in runner.pareto_front:
-            assert v.status >= Status.VALID
-
-        assert len(db.data) == 1
-
-        (values,) = db.data.values()
-        values = set(values)
-
-        assert len(values) == len(runner.pareto_front)
-
-        for data in runner.pareto_front:
-            assert data.buffer in values
-            assert data in runner.pareto_front
-
-        for k in values:
-            assert runner.cached_test_function(k) in runner.pareto_front
-
-
 def test_clears_defunct_pareto_front():
     with deterministic_PRNG():
 
         def test(data):
-            data.draw_bits(8)
-            data.draw_bits(8)
+            data.draw_integer(0, 2**8 - 1)
+            data.draw_integer(0, 2**8 - 1)
 
         db = InMemoryExampleDatabase()
 
@@ -1341,8 +1301,8 @@ def test_clears_defunct_pareto_front():
 
 def test_replaces_all_dominated():
     def test(data):
-        data.target_observations["m"] = 3 - data.draw_bits(2)
-        data.target_observations["n"] = 3 - data.draw_bits(2)
+        data.target_observations["m"] = 3 - data.draw_integer(0, 3)
+        data.target_observations["n"] = 3 - data.draw_integer(0, 3)
 
     runner = ConjectureRunner(
         test,
@@ -1366,7 +1326,7 @@ def test_replaces_all_dominated():
 
 def test_does_not_duplicate_elements():
     def test(data):
-        data.target_observations["m"] = data.draw_bits(8)
+        data.target_observations["m"] = data.draw_integer(0, 2**8 - 1)
 
     runner = ConjectureRunner(
         test,
@@ -1390,7 +1350,7 @@ def test_does_not_duplicate_elements():
 
 def test_includes_right_hand_side_targets_in_dominance():
     def test(data):
-        if data.draw_bits(8):
+        if data.draw_integer(0, 2**8 - 1):
             data.target_observations[""] = 10
 
     runner = ConjectureRunner(
@@ -1407,7 +1367,7 @@ def test_includes_right_hand_side_targets_in_dominance():
 
 def test_smaller_interesting_dominates_larger_valid():
     def test(data):
-        if data.draw_bits(8) == 0:
+        if data.draw_integer(0, 2**8 - 1) == 0:
             data.mark_interesting()
 
     runner = ConjectureRunner(
@@ -1423,7 +1383,7 @@ def test_smaller_interesting_dominates_larger_valid():
 
 def test_runs_full_set_of_examples():
     def test(data):
-        data.draw_bits(64)
+        data.draw_integer(0, 2**64 - 1)
 
     runner = ConjectureRunner(
         test,
@@ -1437,7 +1397,7 @@ def test_runs_full_set_of_examples():
 
 def test_runs_optimisation_even_if_not_generating():
     def test(data):
-        data.target_observations["n"] = data.draw_bits(16)
+        data.target_observations["n"] = data.draw_integer(0, 2**16 - 1)
 
     with deterministic_PRNG():
         runner = ConjectureRunner(
@@ -1453,7 +1413,7 @@ def test_runs_optimisation_even_if_not_generating():
 
 def test_runs_optimisation_once_when_generating():
     def test(data):
-        data.target_observations["n"] = data.draw_bits(16)
+        data.target_observations["n"] = data.draw_integer(0, 2**16 - 1)
 
     with deterministic_PRNG():
         runner = ConjectureRunner(
@@ -1470,7 +1430,7 @@ def test_runs_optimisation_once_when_generating():
 
 def test_does_not_run_optimisation_when_max_examples_is_small():
     def test(data):
-        data.target_observations["n"] = data.draw_bits(16)
+        data.target_observations["n"] = data.draw_integer(0, 2**16 - 1)
 
     with deterministic_PRNG():
         runner = ConjectureRunner(
@@ -1487,7 +1447,7 @@ def test_does_not_run_optimisation_when_max_examples_is_small():
 
 def test_does_not_cache_extended_prefix():
     def test(data):
-        data.draw_bits(64)
+        data.draw_bytes(8)
 
     with deterministic_PRNG():
         runner = ConjectureRunner(test, settings=TEST_SETTINGS)
@@ -1504,7 +1464,7 @@ def test_does_cache_if_extend_is_not_used():
 
     def test(data):
         calls[0] += 1
-        data.draw_bits(8)
+        data.draw_bytes(1)
 
     with deterministic_PRNG():
         runner = ConjectureRunner(test, settings=TEST_SETTINGS)
@@ -1521,7 +1481,7 @@ def test_does_result_for_reuse():
 
     def test(data):
         calls[0] += 1
-        data.draw_bits(8)
+        data.draw_bytes(1)
 
     with deterministic_PRNG():
         runner = ConjectureRunner(test, settings=TEST_SETTINGS)
@@ -1535,7 +1495,7 @@ def test_does_result_for_reuse():
 
 def test_does_not_cache_overrun_if_extending():
     def test(data):
-        data.draw_bits(64)
+        data.draw_bytes(8)
 
     with deterministic_PRNG():
         runner = ConjectureRunner(test, settings=TEST_SETTINGS)
@@ -1548,8 +1508,8 @@ def test_does_not_cache_overrun_if_extending():
 
 def test_does_cache_overrun_if_not_extending():
     def test(data):
-        data.draw_bits(64)
-        data.draw_bits(64)
+        data.draw_bytes(8)
+        data.draw_bytes(8)
 
     with deterministic_PRNG():
         runner = ConjectureRunner(test, settings=TEST_SETTINGS)
@@ -1562,7 +1522,7 @@ def test_does_cache_overrun_if_not_extending():
 
 def test_does_not_cache_extended_prefix_if_overrun():
     def test(data):
-        data.draw_bits(64)
+        data.draw_bytes(8)
 
     with deterministic_PRNG():
         runner = ConjectureRunner(test, settings=TEST_SETTINGS)
@@ -1575,7 +1535,7 @@ def test_does_not_cache_extended_prefix_if_overrun():
 
 def test_can_be_set_to_ignore_limits():
     def test(data):
-        data.draw_bits(8)
+        data.draw_bytes(1)
 
     with deterministic_PRNG():
         runner = ConjectureRunner(

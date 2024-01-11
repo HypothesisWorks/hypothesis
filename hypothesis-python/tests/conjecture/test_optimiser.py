@@ -23,7 +23,7 @@ def test_optimises_to_maximum():
     with deterministic_PRNG():
 
         def test(data):
-            data.target_observations["m"] = data.draw_bits(8)
+            data.target_observations["m"] = data.draw_integer(0, 2**8 - 1)
 
         runner = ConjectureRunner(test, settings=TEST_SETTINGS)
         runner.cached_test_function([0])
@@ -40,8 +40,8 @@ def test_optimises_multiple_targets():
     with deterministic_PRNG():
 
         def test(data):
-            n = data.draw_bits(8)
-            m = data.draw_bits(8)
+            n = data.draw_integer(0, 2**8 - 1)
+            m = data.draw_integer(0, 2**8 - 1)
             if n + m > 256:
                 data.mark_invalid()
             data.target_observations["m"] = m
@@ -66,7 +66,7 @@ def test_optimises_when_last_element_is_empty():
     with deterministic_PRNG():
 
         def test(data):
-            data.target_observations["n"] = data.draw_bits(8)
+            data.target_observations["n"] = data.draw_integer(0, 2**8 - 1)
             data.start_example(label=1)
             data.stop_example()
 
@@ -86,8 +86,8 @@ def test_can_optimise_last_with_following_empty():
 
         def test(data):
             for _ in range(100):
-                data.draw_bits(2)
-            data.target_observations[""] = data.draw_bits(8)
+                data.draw_integer(0, 3)
+            data.target_observations[""] = data.draw_integer(0, 2**8 - 1)
             data.start_example(1)
             data.stop_example()
 
@@ -107,7 +107,7 @@ def test_can_find_endpoints_of_a_range(lower, upper, score_up):
     with deterministic_PRNG():
 
         def test(data):
-            n = data.draw_bits(16)
+            n = data.draw_integer(0, 2**16 - 1)
             if n < lower or n > upper:
                 data.mark_invalid()
             if not score_up:
@@ -134,7 +134,10 @@ def test_targeting_can_drive_length_very_high():
 
         def test(data):
             count = 0
-            while data.draw_bits(2) == 3:
+            # TODO this test fails with data.draw_boolean(0.25). Does the hill
+            # climbing optimizer just not like the bit representation of boolean
+            # draws, or do we have a deeper bug here?
+            while data.draw_integer(0, 3) == 3:
                 count += 1
             data.target_observations[""] = min(count, 100)
 
@@ -153,10 +156,10 @@ def test_optimiser_when_test_grows_buffer_to_invalid():
     with deterministic_PRNG():
 
         def test(data):
-            m = data.draw_bits(8)
+            m = data.draw_integer(0, 2**8 - 1)
             data.target_observations["m"] = m
             if m > 100:
-                data.draw_bits(16)
+                data.draw_integer(0, 2**16 - 1)
                 data.mark_invalid()
 
         runner = ConjectureRunner(test, settings=TEST_SETTINGS)
@@ -175,13 +178,13 @@ def test_can_patch_up_examples():
 
         def test(data):
             data.start_example(42)
-            m = data.draw_bits(6)
+            m = data.draw_integer(0, 2**6 - 1)
             data.target_observations["m"] = m
             for _ in range(m):
-                data.draw_bits(1)
+                data.draw_boolean()
             data.stop_example()
             for i in range(4):
-                if i != data.draw_bits(8):
+                if i != data.draw_integer(0, 2**8 - 1):
                     data.mark_invalid()
 
         runner = ConjectureRunner(test, settings=TEST_SETTINGS)
@@ -201,10 +204,10 @@ def test_optimiser_when_test_grows_buffer_to_overflow():
         with buffer_size_limit(2):
 
             def test(data):
-                m = data.draw_bits(8)
+                m = data.draw_integer(0, 2**8 - 1)
                 data.target_observations["m"] = m
                 if m > 100:
-                    data.draw_bits(64)
+                    data.draw_integer(0, 2**64 - 1)
                     data.mark_invalid()
 
             runner = ConjectureRunner(test, settings=TEST_SETTINGS)

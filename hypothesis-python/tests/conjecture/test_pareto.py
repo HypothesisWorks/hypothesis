@@ -22,7 +22,7 @@ def test_pareto_front_contains_different_interesting_reasons():
     with deterministic_PRNG():
 
         def test(data):
-            data.mark_interesting(data.draw_bits(4))
+            data.mark_interesting(data.draw_integer(0, 2**4 - 1))
 
         runner = ConjectureRunner(
             test,
@@ -43,9 +43,9 @@ def test_database_contains_only_pareto_front():
     with deterministic_PRNG():
 
         def test(data):
-            data.target_observations["1"] = data.draw_bits(4)
-            data.draw_bits(64)
-            data.target_observations["2"] = data.draw_bits(8)
+            data.target_observations["1"] = data.draw_integer(0, 2**4 - 1)
+            data.draw_integer(0, 2**64 - 1)
+            data.target_observations["2"] = data.draw_integer(0, 2**8 - 1)
 
         db = InMemoryExampleDatabase()
 
@@ -83,8 +83,8 @@ def test_clears_defunct_pareto_front():
     with deterministic_PRNG():
 
         def test(data):
-            data.draw_bits(8)
-            data.draw_bits(8)
+            data.draw_integer(0, 2**8 - 1)
+            data.draw_integer(0, 2**8 - 1)
 
         db = InMemoryExampleDatabase()
 
@@ -111,8 +111,8 @@ def test_down_samples_the_pareto_front():
     with deterministic_PRNG():
 
         def test(data):
-            data.draw_bits(8)
-            data.draw_bits(8)
+            data.draw_integer(0, 2**8 - 1)
+            data.draw_integer(0, 2**8 - 1)
 
         db = InMemoryExampleDatabase()
 
@@ -140,8 +140,8 @@ def test_stops_loading_pareto_front_if_interesting():
     with deterministic_PRNG():
 
         def test(data):
-            data.draw_bits(8)
-            data.draw_bits(8)
+            data.draw_integer(0, 2**8 - 1)
+            data.draw_integer(0, 2**8 - 1)
             data.mark_interesting()
 
         db = InMemoryExampleDatabase()
@@ -169,9 +169,9 @@ def test_uses_tags_in_calculating_pareto_front():
     with deterministic_PRNG():
 
         def test(data):
-            if data.draw_bits(1):
+            if data.draw_boolean():
                 data.start_example(11)
-                data.draw_bits(8)
+                data.draw_integer(0, 2**8 - 1)
                 data.stop_example()
 
         runner = ConjectureRunner(
@@ -188,7 +188,7 @@ def test_uses_tags_in_calculating_pareto_front():
 def test_optimises_the_pareto_front():
     def test(data):
         count = 0
-        while data.draw_bits(8):
+        while data.draw_integer(0, 2**8 - 1):
             count += 1
 
         data.target_observations[""] = min(count, 5)
@@ -210,7 +210,7 @@ def test_optimises_the_pareto_front():
 
 def test_does_not_optimise_the_pareto_front_if_interesting():
     def test(data):
-        n = data.draw_bits(8)
+        n = data.draw_integer(0, 2**8 - 1)
         data.target_observations[""] = n
         if n == 255:
             data.mark_interesting()
@@ -234,7 +234,7 @@ def test_stops_optimising_once_interesting():
     hi = 2**16 - 1
 
     def test(data):
-        n = data.draw_bits(16)
+        n = data.draw_integer(0, 2**16 - 1)
         data.target_observations[""] = n
         if n < hi:
             data.mark_interesting()

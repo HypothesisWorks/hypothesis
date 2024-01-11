@@ -253,7 +253,7 @@ def test_valid_list_sample():
 
 
 def test_choice():
-    assert cu.choice(ConjectureData.for_buffer([1]), [1, 2, 3]) == 2
+    assert ConjectureData.for_buffer([1]).choice([1, 2, 3]) == 2
 
 
 def test_fixed_size_draw_many():
