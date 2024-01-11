@@ -457,23 +457,23 @@ class TreeRecordingObserver(DataObserver):
         self.__trail = [self.__current_node]
         self.killed = False
 
-    def draw_integer(self, value: int, forced: bool, *, kwargs: dict) -> None:
-        self.draw_value("integer", value, forced, kwargs=kwargs)
+    def draw_integer(self, value: int, was_forced: bool, *, kwargs: dict) -> None:
+        self.draw_value("integer", value, was_forced, kwargs=kwargs)
 
-    def draw_float(self, value: float, forced: bool, *, kwargs: dict) -> None:
-        self.draw_value("float", value, forced, kwargs=kwargs)
+    def draw_float(self, value: float, was_forced: bool, *, kwargs: dict) -> None:
+        self.draw_value("float", value, was_forced, kwargs=kwargs)
 
-    def draw_string(self, value: str, forced: bool, *, kwargs: dict) -> None:
-        self.draw_value("string", value, forced, kwargs=kwargs)
+    def draw_string(self, value: str, was_forced: bool, *, kwargs: dict) -> None:
+        self.draw_value("string", value, was_forced, kwargs=kwargs)
 
-    def draw_bytes(self, value: bytes, forced: bool, *, kwargs: dict) -> None:
-        self.draw_value("bytes", value, forced, kwargs=kwargs)
+    def draw_bytes(self, value: bytes, was_forced: bool, *, kwargs: dict) -> None:
+        self.draw_value("bytes", value, was_forced, kwargs=kwargs)
 
-    def draw_boolean(self, value: bool, forced: bool, *, kwargs: dict) -> None:
-        self.draw_value("boolean", value, forced, kwargs=kwargs)
+    def draw_boolean(self, value: bool, was_forced: bool, *, kwargs: dict) -> None:
+        self.draw_value("boolean", value, was_forced, kwargs=kwargs)
 
     # TODO proper value: IR_TYPE typing
-    def draw_value(self, ir_type, value, forced: bool, *, kwargs: dict = {}) -> None:
+    def draw_value(self, ir_type, value, was_forced: bool, *, kwargs: dict = {}) -> None:
         i = self.__index_in_current_node
         self.__index_in_current_node += 1
         node = self.__current_node
@@ -491,7 +491,7 @@ class TreeRecordingObserver(DataObserver):
             # may pass silently. This is acceptable because it
             # means we skip a hash set lookup on every
             # draw and that's a pretty niche failure mode.
-            if forced and i not in node.forced:
+            if was_forced and i not in node.forced:
                 inconsistent_generation()
             if value != node.values[i]:
                 node.split_at(i)
@@ -506,7 +506,7 @@ class TreeRecordingObserver(DataObserver):
                 node.ir_types.append(ir_type)
                 node.kwargs.append(kwargs)
                 node.values.append(value)
-                if forced:
+                if was_forced:
                     node.mark_forced(i)
                 # generate_novel_prefix assumes the following invariant: any one
                 # of the series of draws in a particular node can vary. This is

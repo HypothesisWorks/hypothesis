@@ -811,19 +811,19 @@ class DataObserver:
     def kill_branch(self) -> None:
         """Mark this part of the tree as not worth re-exploring."""
 
-    def draw_integer(self, value: int, forced: bool, *, kwargs: dict) -> None:
+    def draw_integer(self, value: int, was_forced: bool, *, kwargs: dict) -> None:
         pass
 
-    def draw_float(self, value: float, forced: bool, *, kwargs: dict) -> None:
+    def draw_float(self, value: float, was_forced: bool, *, kwargs: dict) -> None:
         pass
 
-    def draw_string(self, value: str, forced: bool, *, kwargs: dict) -> None:
+    def draw_string(self, value: str, was_forced: bool, *, kwargs: dict) -> None:
         pass
 
-    def draw_bytes(self, value: bytes, forced: bool, *, kwargs: dict) -> None:
+    def draw_bytes(self, value: bytes, was_forced: bool, *, kwargs: dict) -> None:
         pass
 
-    def draw_boolean(self, value: bool, forced: bool, *, kwargs: dict) -> None:
+    def draw_boolean(self, value: bool, was_forced: bool, *, kwargs: dict) -> None:
         pass
 
 
@@ -1518,7 +1518,7 @@ class ConjectureData:
         value = self.provider.draw_integer(**kwargs, forced=forced)
         self.stop_example()
         if observe:
-            self.observer.draw_integer(value, forced=forced is not None, kwargs=kwargs)
+            self.observer.draw_integer(value, was_forced=forced is not None, kwargs=kwargs)
         return value
 
     def draw_float(
@@ -1558,7 +1558,7 @@ class ConjectureData:
         value = self.provider.draw_float(**kwargs, forced=forced)
         self.stop_example()
         if observe:
-            self.observer.draw_float(value, kwargs=kwargs, forced=forced is not None)
+            self.observer.draw_float(value, kwargs=kwargs, was_forced=forced is not None)
         return value
 
     def draw_string(
@@ -1584,7 +1584,7 @@ class ConjectureData:
         value = self.provider.draw_string(**kwargs, forced=forced)
         self.stop_example()
         if observe:
-            self.observer.draw_string(value, kwargs=kwargs, forced=forced is not None)
+            self.observer.draw_string(value, kwargs=kwargs, was_forced=forced is not None)
         return value
 
     def draw_bytes(
@@ -1603,7 +1603,7 @@ class ConjectureData:
         value = self.provider.draw_bytes(**kwargs, forced=forced)
         self.stop_example()
         if observe:
-            self.observer.draw_bytes(value, kwargs=kwargs, forced=forced is not None)
+            self.observer.draw_bytes(value, kwargs=kwargs, was_forced=forced is not None)
         return value
 
     def draw_boolean(
@@ -1614,7 +1614,7 @@ class ConjectureData:
         value = self.provider.draw_boolean(**kwargs, forced=forced)
         self.stop_example()
         if observe:
-            self.observer.draw_boolean(value, kwargs=kwargs, forced=forced is not None)
+            self.observer.draw_boolean(value, kwargs=kwargs, was_forced=forced is not None)
         return value
 
     def as_result(self) -> Union[ConjectureResult, _Overrun]:
