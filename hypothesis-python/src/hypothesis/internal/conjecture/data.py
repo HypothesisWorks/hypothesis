@@ -1518,7 +1518,9 @@ class ConjectureData:
         value = self.provider.draw_integer(**kwargs, forced=forced)
         self.stop_example()
         if observe:
-            self.observer.draw_integer(value, was_forced=forced is not None, kwargs=kwargs)
+            self.observer.draw_integer(
+                value, was_forced=forced is not None, kwargs=kwargs
+            )
         return value
 
     def draw_float(
@@ -1558,7 +1560,9 @@ class ConjectureData:
         value = self.provider.draw_float(**kwargs, forced=forced)
         self.stop_example()
         if observe:
-            self.observer.draw_float(value, kwargs=kwargs, was_forced=forced is not None)
+            self.observer.draw_float(
+                value, kwargs=kwargs, was_forced=forced is not None
+            )
         return value
 
     def draw_string(
@@ -1584,7 +1588,9 @@ class ConjectureData:
         value = self.provider.draw_string(**kwargs, forced=forced)
         self.stop_example()
         if observe:
-            self.observer.draw_string(value, kwargs=kwargs, was_forced=forced is not None)
+            self.observer.draw_string(
+                value, kwargs=kwargs, was_forced=forced is not None
+            )
         return value
 
     def draw_bytes(
@@ -1603,7 +1609,9 @@ class ConjectureData:
         value = self.provider.draw_bytes(**kwargs, forced=forced)
         self.stop_example()
         if observe:
-            self.observer.draw_bytes(value, kwargs=kwargs, was_forced=forced is not None)
+            self.observer.draw_bytes(
+                value, kwargs=kwargs, was_forced=forced is not None
+            )
         return value
 
     def draw_boolean(
@@ -1614,7 +1622,9 @@ class ConjectureData:
         value = self.provider.draw_boolean(**kwargs, forced=forced)
         self.stop_example()
         if observe:
-            self.observer.draw_boolean(value, kwargs=kwargs, was_forced=forced is not None)
+            self.observer.draw_boolean(
+                value, kwargs=kwargs, was_forced=forced is not None
+            )
         return value
 
     def as_result(self) -> Union[ConjectureResult, _Overrun]:
