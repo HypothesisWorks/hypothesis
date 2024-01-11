@@ -12,6 +12,8 @@ import time
 
 import pytest
 
+from hypothesis.internal.compat import int_to_bytes
+from hypothesis.internal.conjecture import floats as flt
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.shrinker import (
     Shrinker,
@@ -19,6 +21,7 @@ from hypothesis.internal.conjecture.shrinker import (
     StopShrinking,
     block_program,
 )
+from hypothesis.internal.conjecture.shrinking import Float
 from hypothesis.internal.conjecture.utils import Sampler
 
 from tests.conjecture.common import SOME_LABEL, run_to_buffer, shrinking_from
@@ -316,11 +319,17 @@ def test_finding_a_minimal_balanced_binary_tree():
     assert list(shrinker.shrink_target.buffer) == [1, 0, 1, 0, 1, 0, 0]
 
 
-def test_float_shrink_can_run_when_canonicalisation_does_not_work():
-    @run_to_buffer
-    def base_buf(data):
-        data.draw_float(forced=1000.0)
-        data.mark_interesting()
+def test_float_shrink_can_run_when_canonicalisation_does_not_work(monkeypatch):
+    # This should be an error when called
+    monkeypatch.setattr(Float, "shrink", None)
+
+    # The zero byte prefixes are for, in order:
+    # [0] sampler.sample -> data.choice  -> draw_integer
+    # [1] sampler.sample -> draw_boolean
+    # [2] _draw_float    -> draw_bits(1)    [drawing the sign]
+    # This is heavily dependent on internal implementation details and may
+    # change in the future.
+    base_buf = bytes(3) + int_to_bytes(flt.base_float_to_lex(1000.0), 8)
 
     @shrinking_from(base_buf)
     def shrinker(data):
