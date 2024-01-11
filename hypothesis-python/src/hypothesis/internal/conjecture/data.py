@@ -1468,6 +1468,19 @@ class ConjectureData:
             ", frozen" if self.frozen else "",
         )
 
+    # A bit of explanation of the `observe` argument in our draw_* functions.
+    #
+    # There are two types of draws: sub-ir and super-ir. For instance, some ir
+    # nodes use `many`, which in turn calls draw_boolean. But some strategies
+    # also use many, at the super-ir level. We don't want to write sub-ir draws
+    # to the DataTree (and consequently use them when computing novel prefixes),
+    # since they are fully recorded by writing the ir node itself.
+    # But super-ir draws are not included in the ir node, so we do want to write
+    # these to the tree.
+    #
+    # `observe` formalizes this distinction. The draw will only be written to
+    # the DataTree if observe is True.
+
     def draw_integer(
         self,
         min_value: Optional[int] = None,
