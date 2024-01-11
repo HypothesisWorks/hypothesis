@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.92.8:
+
+-------------------
+6.92.8 - 2024-01-11
+-------------------
+
+This patch adds a :ref:`test statistics <statistics>` event when a generated example is rejected via :func:`assume <hypothesis.assume>`.
+
+This may also help with distinguishing ``gave_up`` examples in :doc:`observability <observability>` (:issue:`3827`).
+
 .. _v6.92.7:
 
 -------------------
