@@ -2204,9 +2204,9 @@ def register_type_strategy(
             "a generic type and returns a specific SearchStrategy"
         )
     if isinstance(strategy, SearchStrategy):
-        with warnings.catch_warnings(
-            action="error", category=HypothesisImportSideeffectWarning
-        ):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", HypothesisImportSideeffectWarning)
+
             # Calling is_empty forces materialization of lazy strategies. If this is done at import
             # time, lazy strategies will warn about it; here, we force that warning to raise to
             # avoid the materialization. Ideally, we'd just check if the strategy is lazy, but the
