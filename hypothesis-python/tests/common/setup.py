@@ -39,9 +39,6 @@ def run():
     # User-facing warning which does not apply to our own tests
     filterwarnings("ignore", category=NonInteractiveExampleWarning)
 
-    # Freely cause side effects during initialization
-    filterwarnings("ignore", category=HypothesisSideeffectWarning)
-
     # We do a smoke test here before we mess around with settings.
     x = settings()
 
