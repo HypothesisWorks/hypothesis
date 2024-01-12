@@ -13,7 +13,7 @@ from warnings import filterwarnings
 
 from hypothesis import Phase, Verbosity, settings
 from hypothesis._settings import not_set
-from hypothesis.errors import NonInteractiveExampleWarning, HypothesisSideeffectWarning
+from hypothesis.errors import NonInteractiveExampleWarning
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 
 

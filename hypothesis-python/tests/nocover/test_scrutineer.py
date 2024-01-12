@@ -9,9 +9,9 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import sys
+import warnings
 
 import pytest
-import warnings
 
 from hypothesis.errors import HypothesisSideeffectWarning
 from hypothesis.internal.compat import PYPY
@@ -57,7 +57,9 @@ def get_reports(file_contents, *, testdir):
     with warnings.catch_warnings():
         # running inprocess, side effects will be present from the beginning
         warnings.simplefilter("ignore", HypothesisSideeffectWarning)
-        pytest_stdout = str(testdir.runpytest_inprocess(test_file, "--tb=native").stdout)
+        pytest_stdout = str(
+            testdir.runpytest_inprocess(test_file, "--tb=native").stdout
+        )
 
     explanations = {
         i: {(test_file, i)}

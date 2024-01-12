@@ -8,9 +8,9 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import warnings
 from inspect import signature
 from typing import MutableMapping
-import warnings
 from weakref import WeakKeyDictionary
 
 from hypothesis.configuration import sideeffect_should_warn
