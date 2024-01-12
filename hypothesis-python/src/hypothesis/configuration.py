@@ -9,7 +9,12 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import os
+import sys
+import warnings
 from pathlib import Path
+
+import hypothesis
+from hypothesis.errors import HypothesisImportSideeffectWarning
 
 __hypothesis_home_directory_default = Path.cwd() / ".hypothesis"
 
@@ -22,6 +27,16 @@ def set_hypothesis_home_dir(directory):
 
 
 def storage_directory(*names):
+    if is_import_inprogress():
+        warnings.warn(
+            "Accessing the storage directory at import time is discouraged, "
+            "as it may cause the .hypothesis directory to be created even if "
+            "hypothesis is not actually used. Typically, the fix will be to "
+            "defer initialization of strategies.",
+            HypothesisImportSideeffectWarning,
+            stacklevel=2,
+        )
+
     global __hypothesis_home_directory
     if not __hypothesis_home_directory:
         if where := os.getenv("HYPOTHESIS_STORAGE_DIRECTORY"):
@@ -29,3 +44,7 @@ def storage_directory(*names):
     if not __hypothesis_home_directory:
         __hypothesis_home_directory = __hypothesis_home_directory_default
     return __hypothesis_home_directory.joinpath(*names)
+
+
+def is_import_inprogress():
+    return hasattr(hypothesis, "_is_importing")

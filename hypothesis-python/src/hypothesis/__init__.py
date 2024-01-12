@@ -15,6 +15,10 @@ It verifies your code against a wide range of input and minimizes any
 failing examples it finds.
 """
 
+
+_is_importing = True  # noqa
+
+
 from hypothesis._settings import HealthCheck, Phase, Verbosity, settings
 from hypothesis.control import (
     assume,
@@ -54,3 +58,4 @@ __all__ = [
 
 run()
 del run
+del _is_importing

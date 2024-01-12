@@ -117,6 +117,13 @@ class HypothesisDeprecationWarning(HypothesisWarning, FutureWarning):
     """
 
 
+class HypothesisImportSideeffectWarning(HypothesisDeprecationWarning):
+    """A warning issued by Hypothesis when it sees actions that are
+    discouraged at import time because they have user-visible side
+    effects.
+    """
+
+
 class Frozen(HypothesisException):
     """Raised when a mutation method has been called on a ConjectureData object
     after freeze() has been called."""

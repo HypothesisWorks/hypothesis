@@ -53,8 +53,10 @@ from uuid import UUID
 import attr
 
 from hypothesis._settings import note_deprecation
+from hypothesis.configuration import is_import_inprogress
 from hypothesis.control import cleanup, current_build_context, note
 from hypothesis.errors import (
+    HypothesisImportSideeffectWarning,
     HypothesisWarning,
     InvalidArgument,
     ResolutionFailed,
@@ -2196,14 +2198,25 @@ def register_type_strategy(
             f"{custom_type=} is not allowed to be registered, "
             f"because there is no such thing as a runtime instance of {custom_type!r}"
         )
-    elif not (isinstance(strategy, SearchStrategy) or callable(strategy)):
+    if not (isinstance(strategy, SearchStrategy) or callable(strategy)):
         raise InvalidArgument(
             f"{strategy=} must be a SearchStrategy, or a function that takes "
             "a generic type and returns a specific SearchStrategy"
         )
-    elif isinstance(strategy, SearchStrategy) and strategy.is_empty:
-        raise InvalidArgument(f"{strategy=} must not be empty")
-    elif types.has_type_arguments(custom_type):
+    if isinstance(strategy, SearchStrategy):
+        with warnings.catch_warnings(
+            action="error", category=HypothesisImportSideeffectWarning
+        ):
+            # Calling is_empty forces materialization of lazy strategies. If this is done at import
+            # time, lazy strategies will warn about it; here, we force that warning to raise to
+            # avoid the materialization. Ideally, we'd just check if the strategy is lazy, but the
+            # lazy strategy may be wrapped underneath another strategy so that's complicated.
+            try:
+                if strategy.is_empty:
+                    raise InvalidArgument(f"{strategy=} must not be empty")
+            except HypothesisImportSideeffectWarning:
+                pass
+    if types.has_type_arguments(custom_type):
         raise InvalidArgument(
             f"Cannot register generic type {custom_type!r}, because it has type "
             "arguments which would not be handled.  Instead, register a function "
