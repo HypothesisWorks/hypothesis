@@ -13,7 +13,7 @@ from warnings import filterwarnings
 
 from hypothesis import Phase, Verbosity, settings
 from hypothesis._settings import not_set
-from hypothesis.errors import NonInteractiveExampleWarning
+from hypothesis.errors import NonInteractiveExampleWarning, HypothesisSideeffectWarning
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 
 
@@ -38,6 +38,9 @@ def run():
 
     # User-facing warning which does not apply to our own tests
     filterwarnings("ignore", category=NonInteractiveExampleWarning)
+
+    # Freely cause side effects during initialization
+    filterwarnings("ignore", category=HypothesisSideeffectWarning)
 
     # We do a smoke test here before we mess around with settings.
     x = settings()

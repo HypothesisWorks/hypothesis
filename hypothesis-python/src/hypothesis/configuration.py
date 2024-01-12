@@ -26,8 +26,8 @@ def set_hypothesis_home_dir(directory):
     __hypothesis_home_directory = None if directory is None else Path(directory)
 
 
-def storage_directory(*names):
-    if sideeffect_should_warn():
+def storage_directory(*names, intent_to_write=True):
+    if intent_to_write and sideeffect_should_warn():
         warnings.warn(
             "Accessing the storage directory during import or initialization is "
             "discouraged, as it may cause the .hypothesis directory to be created "
