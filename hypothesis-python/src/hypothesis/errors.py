@@ -117,10 +117,10 @@ class HypothesisDeprecationWarning(HypothesisWarning, FutureWarning):
     """
 
 
-class HypothesisImportSideeffectWarning(HypothesisDeprecationWarning):
+class HypothesisSideeffectWarning(HypothesisDeprecationWarning):
     """A warning issued by Hypothesis when it sees actions that are
-    discouraged at import time because they have user-visible side
-    effects.
+    discouraged at import or initialization time because they have
+    user-visible side effects.
     """
 
 

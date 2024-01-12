@@ -22,6 +22,7 @@ See https://github.com/HypothesisWorks/hypothesis/issues/3140 for details.
 import base64
 import json
 import sys
+import warnings
 from inspect import signature
 
 import pytest
@@ -406,6 +407,23 @@ else:
         for item in items:
             if isinstance(item, pytest.Function) and is_hypothesis_test(item.obj):
                 item.add_marker("hypothesis")
+
+    def pytest_sessionstart(session):
+        if "hypothesis" not in sys.modules:
+            return
+
+        from hypothesis.configuration import (
+            has_sideeffect_should_warn_been_called_after_import,
+        )
+        from hypothesis.errors import HypothesisSideeffectWarning
+
+        if has_sideeffect_should_warn_been_called_after_import():
+            warnings.warn(
+                "A plugin (or conftest.py) has caused hypothesis to perform undesired work during "
+                "initialization, possibly causing slowdown or creation of files. To pinpoint and explain "
+                "the problem, execute with environment 'PYTHONWARNINGS=error HYPOTHESIS_WARN_SIDEEFFECT=1'",
+                HypothesisSideeffectWarning,
+            )
 
     # Monkeypatch some internals to prevent applying @pytest.fixture() to a
     # function which has already been decorated with @hypothesis.given().

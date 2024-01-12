@@ -53,10 +53,9 @@ from uuid import UUID
 import attr
 
 from hypothesis._settings import note_deprecation
-from hypothesis.configuration import is_import_inprogress
 from hypothesis.control import cleanup, current_build_context, note
 from hypothesis.errors import (
-    HypothesisImportSideeffectWarning,
+    HypothesisSideeffectWarning,
     HypothesisWarning,
     InvalidArgument,
     ResolutionFailed,
@@ -2205,7 +2204,7 @@ def register_type_strategy(
         )
     if isinstance(strategy, SearchStrategy):
         with warnings.catch_warnings():
-            warnings.simplefilter("error", HypothesisImportSideeffectWarning)
+            warnings.simplefilter("error", HypothesisSideeffectWarning)
 
             # Calling is_empty forces materialization of lazy strategies. If this is done at import
             # time, lazy strategies will warn about it; here, we force that warning to raise to
@@ -2214,7 +2213,7 @@ def register_type_strategy(
             try:
                 if strategy.is_empty:
                     raise InvalidArgument(f"{strategy=} must not be empty")
-            except HypothesisImportSideeffectWarning:
+            except HypothesisSideeffectWarning:
                 pass
     if types.has_type_arguments(custom_type):
         raise InvalidArgument(

@@ -14,7 +14,7 @@ import warnings
 from pathlib import Path
 
 import hypothesis
-from hypothesis.errors import HypothesisImportSideeffectWarning
+from hypothesis.errors import HypothesisSideeffectWarning
 
 __hypothesis_home_directory_default = Path.cwd() / ".hypothesis"
 
@@ -27,13 +27,13 @@ def set_hypothesis_home_dir(directory):
 
 
 def storage_directory(*names):
-    if is_import_inprogress():
+    if sideeffect_should_warn():
         warnings.warn(
-            "Accessing the storage directory at import time is discouraged, "
-            "as it may cause the .hypothesis directory to be created even if "
-            "hypothesis is not actually used. Typically, the fix will be to "
-            "defer initialization of strategies.",
-            HypothesisImportSideeffectWarning,
+            "Accessing the storage directory during import or initialization is "
+            "discouraged, as it may cause the .hypothesis directory to be created "
+            "even if hypothesis is not actually used. Typically, the fix will be "
+            "to defer initialization of strategies.",
+            HypothesisSideeffectWarning,
             stacklevel=2,
         )
 
@@ -46,5 +46,30 @@ def storage_directory(*names):
     return __hypothesis_home_directory.joinpath(*names)
 
 
-def is_import_inprogress():
-    return hasattr(hypothesis, "_is_importing")
+def _sideeffect_never_warn():
+    return False
+
+
+if os.environ.get("HYPOTHESIS_WARN_SIDEEFFECT"):
+
+    def sideeffect_should_warn():
+        return True
+
+else:
+
+    def sideeffect_should_warn():
+        if hasattr(hypothesis, "_is_importing"):
+            return True
+        else:
+            # We are no longer importing, patch this method to always return False from now on.
+            global sideeffect_should_warn
+            sideeffect_should_warn = _sideeffect_never_warn
+            return False
+
+
+def has_sideeffect_should_warn_been_called_after_import():
+    """We warn automatically if sideeffects are induced during import.
+    For sideeffects during initialization but after import, e.g. in pytest
+    plugins, this method can be used to show a catch-all warning at
+    start of session."""
+    return sideeffect_should_warn == _sideeffect_never_warn

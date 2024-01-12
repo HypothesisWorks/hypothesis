@@ -13,8 +13,8 @@ from typing import MutableMapping
 import warnings
 from weakref import WeakKeyDictionary
 
-from hypothesis.configuration import is_import_inprogress
-from hypothesis.errors import HypothesisImportSideeffectWarning
+from hypothesis.configuration import sideeffect_should_warn
+from hypothesis.errors import HypothesisSideeffectWarning
 from hypothesis.internal.reflection import (
     convert_keyword_arguments,
     convert_positional_arguments,
@@ -103,11 +103,12 @@ class LazyStrategy(SearchStrategy):
     @property
     def wrapped_strategy(self):
         if self.__wrapped_strategy is None:
-            if is_import_inprogress():
+            if sideeffect_should_warn():
                 warnings.warn(
-                    "Materializing lazy strategies at import time is discouraged, "
-                    "as it may cause the import to slow down.",
-                    HypothesisImportSideeffectWarning,
+                    "Materializing lazy strategies at import or initialization time is "
+                    "discouraged, as it may cause a slowdown even when not actively "
+                    "using hypothesis.",
+                    HypothesisSideeffectWarning,
                     stacklevel=2,
                 )
 
