@@ -16,7 +16,6 @@ from itertools import islice
 import pytest
 
 from hypothesis import settings
-from hypothesis.internal import charmap
 from hypothesis.internal.conjecture.data import Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.shrinking import dfas
@@ -132,16 +131,14 @@ def non_normalized_test_function(data):
     is hard to move between. It's basically unreasonable for
     our shrinker to be able to transform from one to the other
     because of how different they are."""
-    data.draw_integer(0, 2**8 - 1)
     if data.draw_boolean():
         n = data.draw_integer(0, 2**10 - 1)
         if 100 < n < 1000:
             data.draw_integer(0, 2**8 - 1)
             data.mark_interesting()
     else:
-        # ascii
-        s = data.draw_string(charmap.query(min_codepoint=0, max_codepoint=127))
-        if "\n" in s:
+        n = data.draw_integer(0, 2**10 - 1)
+        if n > 500:
             data.draw_integer(0, 2**8 - 1)
             data.mark_interesting()
 
