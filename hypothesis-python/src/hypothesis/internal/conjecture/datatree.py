@@ -479,7 +479,9 @@ class TreeRecordingObserver(DataObserver):
         self.draw_value("boolean", value, was_forced, kwargs=kwargs)
 
     # TODO proper value: IR_TYPE typing
-    def draw_value(self, ir_type, value, was_forced: bool, *, kwargs: dict = {}) -> None:
+    def draw_value(
+        self, ir_type, value, was_forced: bool, *, kwargs: dict = {}
+    ) -> None:
         i = self.__index_in_current_node
         self.__index_in_current_node += 1
         node = self.__current_node

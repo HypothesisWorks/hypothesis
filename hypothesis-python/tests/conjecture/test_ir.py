@@ -8,10 +8,18 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from hypothesis import given, example
+from hypothesis import example, given
 from hypothesis.internal.conjecture.datatree import compute_max_children
-from tests.conjecture.common import draw_integer_kwargs, fresh_data, draw_bytes_kwargs, draw_float_kwargs, draw_string_kwargs, draw_boolean_kwargs
 from hypothesis.internal.intervalsets import IntervalSet
+
+from tests.conjecture.common import (
+    draw_boolean_kwargs,
+    draw_bytes_kwargs,
+    draw_float_kwargs,
+    draw_integer_kwargs,
+    draw_string_kwargs,
+    fresh_data,
+)
 
 
 def _test_empty_range(ir_type, kwargs):
