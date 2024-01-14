@@ -47,21 +47,21 @@ def runner_for(*examples):
 def test_can_lookup_cached_examples():
     @runner_for(b"\0\0", b"\0\1")
     def runner(data):
-        data.draw_integer(0, 8)
-        data.draw_integer(0, 8)
+        data.draw_integer(0, 2**8 - 1)
+        data.draw_integer(0, 2**8 - 1)
 
 
 def test_can_lookup_cached_examples_with_forced():
     @runner_for(b"\0\0", b"\0\1")
     def runner(data):
-        data.draw_integer(0, 8, forced=1)
-        data.draw_integer(0, 8)
+        data.draw_integer(0, 2**8 - 1, forced=1)
+        data.draw_integer(0, 2**8 - 1)
 
 
 def test_can_detect_when_tree_is_exhausted():
     @runner_for(b"\0", b"\1")
     def runner(data):
-        data.draw_integer(0, 1)
+        data.draw_boolean()
 
     assert runner.tree.is_exhausted
 
