@@ -87,7 +87,7 @@ def run_language_test_for(root, data, seed):
                 node = node.child
             else:
                 assert isinstance(node, Branch)
-                c = local_data.draw_integer(0, 2**node.bits-1)
+                c = local_data.draw_integer(0, 2**node.bits - 1)
                 try:
                     node = node.children[c]
                 except KeyError:
