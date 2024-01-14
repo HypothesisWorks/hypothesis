@@ -1615,6 +1615,7 @@ class ConjectureData:
         observe: bool = True,
     ) -> bytes:
         assert forced is None or len(forced) == size
+        assert size >= 0
 
         if size == 0:
             return b""
