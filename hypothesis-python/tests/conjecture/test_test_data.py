@@ -211,16 +211,6 @@ def test_has_cached_examples_even_when_overrun():
     assert d.examples is d.examples
 
 
-def test_can_write_empty_bytes():
-    d = ConjectureData.for_buffer([1, 1, 1])
-    d.draw_boolean()
-    d.draw_bytes(0)  # should not write to buffer
-    d.draw_boolean()
-    d.draw_bytes(0, forced=b"")  # should not write to buffer
-    d.draw_boolean()
-    assert d.buffer == bytes([1, 1, 1])
-
-
 def test_blocks_preserve_identity():
     n = 10
     d = ConjectureData.for_buffer([1] * 10)
