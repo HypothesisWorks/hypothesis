@@ -13,18 +13,18 @@ import math
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import HealthCheck, example, given, settings, assume
+from hypothesis import HealthCheck, assume, example, given, settings
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.floats import float_to_lex
 from hypothesis.internal.floats import SIGNALING_NAN, SMALLEST_SUBNORMAL
 
 from tests.conjecture.common import (
+    draw_boolean_kwargs,
     draw_bytes_kwargs,
     draw_float_kwargs,
     draw_integer_kwargs,
     draw_string_kwargs,
-    draw_boolean_kwargs,
     fresh_data,
 )
 

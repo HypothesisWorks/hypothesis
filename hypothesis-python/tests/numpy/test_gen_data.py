@@ -1112,7 +1112,7 @@ def test_advanced_integer_index_can_generate_any_pattern(shape, data):
         lambda ix: isinstance(ix, tuple) and np.newaxis in ix,
         lambda ix: isinstance(ix, tuple) and np.newaxis not in ix,
         lambda ix: ix is Ellipsis,
-        lambda ix: ix == np.newaxis
+        lambda ix: ix == np.newaxis,
     ],
 )
 def test_basic_indices_options(condition):
