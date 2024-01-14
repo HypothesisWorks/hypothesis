@@ -9,13 +9,16 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 from contextlib import contextmanager
+from random import Random
 
-from hypothesis import HealthCheck, settings
+from hypothesis import HealthCheck, assume, settings, strategies as st
 from hypothesis.internal.conjecture import engine as engine_module
-from hypothesis.internal.conjecture.data import Status
-from hypothesis.internal.conjecture.engine import ConjectureRunner
+from hypothesis.internal.conjecture.data import ConjectureData, Status
+from hypothesis.internal.conjecture.engine import BUFFER_SIZE, ConjectureRunner
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.entropy import deterministic_PRNG
+
+from tests.common.strategies import Intervals
 
 SOME_LABEL = calc_label_from_name("some label")
 
@@ -67,3 +70,117 @@ def shrinking_from(start):
             )
 
     return accept
+
+
+def fresh_data():
+    return ConjectureData(BUFFER_SIZE, prefix=b"", random=Random())
+
+
+# TODO we should probably look into making this faster at some point, so we
+# don't have to suppress too_slow and filter_too_much at usage sites.
+@st.composite
+def draw_integer_kwargs(
+    draw,
+    *,
+    use_min_value=True,
+    use_max_value=True,
+    use_shrink_towards=True,
+    use_weights=True,
+    use_forced=False,
+):
+    min_value = None
+    max_value = None
+    shrink_towards = 0
+    weights = None
+
+    forced = draw(st.integers()) if use_forced else None
+    if use_min_value:
+        min_value = draw(st.integers(max_value=forced))
+    if use_max_value:
+        min_vals = []
+        if min_value is not None:
+            min_vals.append(min_value)
+        if forced is not None:
+            min_vals.append(forced)
+        min_val = max(min_vals) if min_vals else None
+        max_value = draw(st.integers(min_value=min_val))
+    if use_shrink_towards:
+        shrink_towards = draw(st.integers())
+    if use_weights:
+        assert use_max_value
+        assert use_min_value
+
+        width = max_value - min_value + 1
+        assume(width <= 1024)
+
+        weights = draw(
+            st.lists(
+                # weights doesn't play well with super small floats.
+                st.floats(min_value=0.1, max_value=1),
+                min_size=width,
+                max_size=width,
+            )
+        )
+
+    if forced is not None:
+        assume((forced - shrink_towards).bit_length() < 128)
+
+    return {
+        "min_value": min_value,
+        "max_value": max_value,
+        "shrink_towards": shrink_towards,
+        "weights": weights,
+        "forced": forced,
+    }
+
+
+@st.composite
+def draw_string_kwargs(draw, *, use_min_size=True, use_max_size=True, use_forced=False):
+    intervals = draw(Intervals)
+    alphabet = [chr(c) for c in intervals]
+    forced = draw(st.text(alphabet)) if use_forced else None
+    min_size = 0
+    max_size = None
+
+    if use_min_size:
+        min_size = draw(st.integers(0, None if forced is None else len(forced)))
+
+    if use_max_size:
+        min_value = min_size if forced is None else max(min_size, len(forced))
+        max_size = draw(st.integers(min_value=min_value))
+
+    return {
+        "intervals": intervals,
+        "min_size": min_size,
+        "max_size": max_size,
+        "forced": forced,
+    }
+
+
+@st.composite
+def draw_bytes_kwargs(draw, *, use_forced=False):
+    forced = draw(st.binary()) if use_forced else None
+    # be reasonable with the number of bytes we ask for. We only have BUFFER_SIZE
+    # to work with before we overrun.
+    size = (
+        draw(st.integers(min_value=0, max_value=100)) if forced is None else len(forced)
+    )
+
+    return {"size": size, "forced": forced}
+
+
+@st.composite
+def draw_float_kwargs(draw, *, use_forced=False):
+    forced = draw(st.floats()) if use_forced else None
+    min_value = draw(st.floats(allow_nan=False))
+    max_value = draw(st.floats(min_value=min_value, allow_nan=False))
+
+    return {"min_value": min_value, "max_value": max_value, "forced": forced}
+
+
+@st.composite
+def draw_boolean_kwargs(draw, *, use_forced=False):
+    forced = draw(st.booleans()) if use_forced else None
+    p = draw(st.floats(0, 1, allow_nan=False, allow_infinity=False))
+
+    return {"p": p, "forced": forced}
