@@ -143,11 +143,18 @@ def draw_string_kwargs(draw, *, use_min_size=True, use_max_size=True, use_forced
     max_size = None
 
     if use_min_size:
-        min_size = draw(st.integers(0, None if forced is None else len(forced)))
+        # cap to some reasonable min size to avoid overruns.
+        n = 100
+        if forced is not None:
+            n = min(n, len(forced))
+
+        min_size = draw(st.integers(0, n))
 
     if use_max_size:
-        min_value = min_size if forced is None else max(min_size, len(forced))
-        max_size = draw(st.integers(min_value=min_value))
+        n = min_size if forced is None else max(min_size, len(forced))
+        max_size = draw(st.integers(min_value=n))
+        # cap to some reasonable max size to avoid overruns.
+        max_size = min(max_size, min_size + 100)
 
     return {
         "intervals": intervals,
