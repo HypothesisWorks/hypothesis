@@ -116,7 +116,7 @@ def run_language_test_for(root, data, seed):
         runner.run()
     finally:
         if data is not None:
-            note(root)
+            note(str(root))
     assume(runner.interesting_examples)
 
 
