@@ -30,7 +30,7 @@ fakeredis==2.20.1
     # via -r requirements/coverage.in
 iniconfig==2.0.0
     # via pytest
-lark==1.1.8
+lark==1.1.9
     # via -r requirements/coverage.in
 libcst==1.1.0
     # via -r requirements/coverage.in
