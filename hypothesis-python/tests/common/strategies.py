@@ -10,6 +10,8 @@
 
 import time
 
+from hypothesis import strategies as st
+from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.strategies._internal import SearchStrategy
 
 
@@ -48,3 +50,27 @@ class HardToShrink(SearchStrategy):
                 self.accepted.add(x)
                 return True
         return False
+
+
+def build_intervals(ls):
+    ls.sort()
+    result = []
+    for u, l in ls:
+        v = u + l
+        if result:
+            a, b = result[-1]
+            if u <= b + 1:
+                result[-1] = (a, v)
+                continue
+        result.append((u, v))
+    return result
+
+
+def IntervalLists(min_size=0):
+    return st.lists(
+        st.tuples(st.integers(0, 200), st.integers(0, 20)),
+        min_size=min_size,
+    ).map(build_intervals)
+
+
+Intervals = st.builds(IntervalSet, IntervalLists())
