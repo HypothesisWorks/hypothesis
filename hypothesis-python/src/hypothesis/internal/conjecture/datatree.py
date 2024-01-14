@@ -128,6 +128,12 @@ def compute_max_children(kwargs, ir_type):
 
         x = len(intervals)
         y = max_size - min_size + 1
+
+        if x == 0:
+            # Another empty string case (here, when drawing from the empty
+            # alphabet). Compute early to avoid an error in math.log(0).
+            return 1
+
         # we want to know if x**y > n without computing a potentially extremely
         # expensive pow. We have:
         #     x**y > n
