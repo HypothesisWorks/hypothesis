@@ -286,7 +286,6 @@ def test_dependent_block_pairs_is_up_to_shrinking_integers():
         if result >= 32768 and cap == 1:
             data.mark_interesting()
 
-
     @shrinking_from(buf)
     def shrinker(data):
         size = sizes[distribution.sample(data)]
