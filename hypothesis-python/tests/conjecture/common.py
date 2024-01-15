@@ -147,7 +147,7 @@ def draw_string_kwargs(draw, *, use_min_size=True, use_max_size=True, use_forced
         # cap to some reasonable min size to avoid overruns.
         n = 100
         if forced is not None:
-            n = max(n, len(forced))
+            n = min(n, len(forced))
 
         min_size = draw(st.integers(0, n))
 
