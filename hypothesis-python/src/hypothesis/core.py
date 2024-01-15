@@ -1187,9 +1187,8 @@ class StateForActualGivenExecution:
                     "how_generated": "minimal failing example",
                     "features": {
                         **{
-                            k: v
+                            f"target:{k}".strip(":"): v
                             for k, v in ran_example.target_observations.items()
-                            if isinstance(k, str)
                         },
                         **ran_example.events,
                         **self._timing_features,
