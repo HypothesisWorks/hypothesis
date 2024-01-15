@@ -1088,11 +1088,10 @@ class PrimitiveProvider:
                     # if we drew a nan, and we don't allow nans, let's resample.
                     # if we do allow nans, great! take that as our result.
                     if not allow_nan:
-                        self._cd.stop_example(discard=True)  # (DRAW_FLOAT_LABEL)
-                        self._cd.stop_example(
-                            discard=True
-                        )  # (FLOAT_STRATEGY_DO_DRAW_LABEL)
-                        forced = None
+                        # (DRAW_FLOAT_LABEL)
+                        self._cd.stop_example(discard=True)
+                        # (FLOAT_STRATEGY_DO_DRAW_LABEL)
+                        self._cd.stop_example(discard=True)
                         continue
                 else:
                     # if we *didn't* draw a nan, see if we drew a value outside
