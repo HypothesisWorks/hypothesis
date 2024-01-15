@@ -172,14 +172,28 @@ class Sampler:
         forced_choice = (  # pragma: no branch # https://github.com/nedbat/coveragepy/issues/1617
             None
             if forced is None
-            else next((b, a, a_c) for (b, a, a_c) in self.table if forced in (b, a))
+            else next(
+                (b, a, a_c)
+                for (b, a, a_c) in self.table
+                if forced == b or (forced == a and a_c > 0)
+            )
         )
         base, alternate, alternate_chance = data.choice(
             self.table, forced=forced_choice
         )
-        use_alternate = data.draw_boolean(
-            alternate_chance, forced=None if forced is None else forced == alternate
-        )
+        forced_bool = None
+        if forced is not None:
+            # we maintain this invariant when picking forced_choice above.
+            # This song and dance about alternate_chance > 0 is to avoid forcing
+            # e.g. draw_boolean(p=0, forced=True), which is an error.
+            assert forced == base or (forced == alternate and alternate_chance > 0)
+            forced_bool = forced == alternate and alternate_chance > 0
+            # if alternate_chance == 0 (so the above conditional fails), we must
+            # have been equal to base.
+            if not forced_bool:
+                assert forced == base
+
+        use_alternate = data.draw_boolean(alternate_chance, forced=forced_bool)
         data.stop_example()
         if use_alternate:
             assert forced is None or alternate == forced, (forced, alternate)
