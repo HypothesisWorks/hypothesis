@@ -1107,10 +1107,12 @@ def test_advanced_integer_index_can_generate_any_pattern(shape, data):
 @pytest.mark.parametrize(
     "condition",
     [
-        lambda ix: Ellipsis in ix,
-        lambda ix: Ellipsis not in ix,
-        lambda ix: np.newaxis in ix,
-        lambda ix: np.newaxis not in ix,
+        lambda ix: isinstance(ix, tuple) and Ellipsis in ix,
+        lambda ix: isinstance(ix, tuple) and Ellipsis not in ix,
+        lambda ix: isinstance(ix, tuple) and np.newaxis in ix,
+        lambda ix: isinstance(ix, tuple) and np.newaxis not in ix,
+        lambda ix: ix is Ellipsis,
+        lambda ix: ix == np.newaxis,
     ],
 )
 def test_basic_indices_options(condition):

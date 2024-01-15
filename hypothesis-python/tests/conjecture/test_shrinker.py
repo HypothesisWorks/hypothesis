@@ -275,19 +275,33 @@ def test_dependent_block_pairs_is_up_to_shrinking_integers():
 
     sizes = [8, 16, 32, 64, 128]
 
-    @shrinking_from(b"\x03\x01\x00\x00\x00\x00\x00\x01\x00\x02\x01")
-    def shrinker(data):
-        size = sizes[distribution.sample(data)]
-        result = data.draw_bits(size)
+    @run_to_buffer
+    def buf(data):
+        size = sizes[distribution.sample(data, forced=3)]
+        result = data.draw_integer(0, 2**size - 1, forced=65538)
         sign = (-1) ** (result & 1)
         result = (result >> 1) * sign
-        cap = data.draw_bits(8)
+        cap = data.draw_integer(0, 2**8 - 1, forced=1)
+
+        if result >= 32768 and cap == 1:
+            data.mark_interesting()
+
+    @shrinking_from(buf)
+    def shrinker(data):
+        size = sizes[distribution.sample(data)]
+        result = data.draw_integer(0, 2**size - 1)
+        sign = (-1) ** (result & 1)
+        result = (result >> 1) * sign
+        cap = data.draw_integer(0, 2**8 - 1)
 
         if result >= 32768 and cap == 1:
             data.mark_interesting()
 
     shrinker.fixate_shrink_passes(["minimize_individual_blocks"])
-    assert list(shrinker.shrink_target.buffer) == [1, 1, 0, 1, 0, 0, 1]
+    # the minimal bitstream here is actually b'\x01\x01\x00\x00\x01\x00\x00\x01',
+    # but the shrinker can't discover that it can shrink the size down from 64
+    # to 32...
+    assert list(shrinker.shrink_target.buffer) == [3, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]
 
 
 def test_finding_a_minimal_balanced_binary_tree():
