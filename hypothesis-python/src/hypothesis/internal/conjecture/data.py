@@ -923,9 +923,11 @@ class PrimitiveProvider:
             # to write a byte to the data stream anyway so that these don't cause
             # difficulties when shrinking.
             if p <= 0:
-                result = self._cd.draw_bits(1, forced=0 if forced is None else forced)
+                self._cd.draw_bits(1, forced=0)
+                return False
             elif p >= 1:
-                result = self._cd.draw_bits(1, forced=1 if forced is None else forced)
+                self._cd.draw_bits(1, forced=1)
+                return True
             else:
                 falsey = floor(size * (1 - p))
                 truthy = floor(size * p)
@@ -1573,6 +1575,18 @@ class ConjectureData:
         return self.provider.draw_bytes(size, forced=forced)
 
     def draw_boolean(self, p: float = 0.5, *, forced: Optional[bool] = None) -> bool:
+        # Internally, we treat probabilities lower than 1 / 2**64 as
+        # unconditionally false. These conditionals should be checking against
+        # 64 bits, but we need some extra bits of safety in practice, likely due
+        # to internal floating point errors during computation.
+        #
+        # Note that even if we lift this 64 bit restriction in the future, p
+        # cannot be 0 (1) when forced is True (False).
+        if forced is True:
+            assert p > 2 ** (-62)
+        if forced is False:
+            assert p < (1 - 2 ** (-62))
+
         return self.provider.draw_boolean(p, forced=forced)
 
     def as_result(self) -> Union[ConjectureResult, _Overrun]:
