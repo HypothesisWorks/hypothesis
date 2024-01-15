@@ -923,11 +923,9 @@ class PrimitiveProvider:
             # to write a byte to the data stream anyway so that these don't cause
             # difficulties when shrinking.
             if p <= 0:
-                self._cd.draw_bits(1, forced=0)
-                result = False
+                result = self._cd.draw_bits(1, forced=0 if forced is None else forced)
             elif p >= 1:
-                self._cd.draw_bits(1, forced=1)
-                result = True
+                result = self._cd.draw_bits(1, forced=1 if forced is None else forced)
             else:
                 falsey = floor(size * (1 - p))
                 truthy = floor(size * p)
