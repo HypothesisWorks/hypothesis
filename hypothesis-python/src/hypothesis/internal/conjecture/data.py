@@ -1429,7 +1429,7 @@ class ConjectureData:
         self.events: Dict[str, Union[str, int, float]] = {}
         self.forced_indices: "Set[int]" = set()
         self.interesting_origin: Optional[InterestingOrigin] = None
-        self.draw_times: "List[float]" = []
+        self.draw_times: "Dict[str, float]" = {}
         self.max_depth = 0
         self.has_discards = False
         self.provider = PrimitiveProvider(self)
@@ -1599,7 +1599,12 @@ class ConjectureData:
             value = repr(value)
         self.output += value
 
-    def draw(self, strategy: "SearchStrategy[Ex]", label: Optional[int] = None) -> "Ex":
+    def draw(
+        self,
+        strategy: "SearchStrategy[Ex]",
+        label: Optional[int] = None,
+        observe_as: Optional[str] = None,
+    ) -> "Ex":
         if self.is_find and not strategy.supports_find:
             raise InvalidArgument(
                 f"Cannot use strategy {strategy!r} within a call to find "
@@ -1636,7 +1641,8 @@ class ConjectureData:
                 try:
                     return strategy.do_draw(self)
                 finally:
-                    self.draw_times.append(time.perf_counter() - start_time)
+                    key = observe_as or f"unlabeled_{len(self.draw_times)}"
+                    self.draw_times[key] = time.perf_counter() - start_time
         finally:
             self.stop_example()
 

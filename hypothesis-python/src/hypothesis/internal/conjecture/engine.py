@@ -53,7 +53,13 @@ class HealthCheckState:
     valid_examples: int = attr.ib(default=0)
     invalid_examples: int = attr.ib(default=0)
     overrun_examples: int = attr.ib(default=0)
-    draw_times: list = attr.ib(factory=list)
+    draw_times: "defaultdict[str, list[float]]" = attr.ib(
+        factory=lambda: defaultdict(list)
+    )
+
+    @property
+    def total_draw_time(self):
+        return math.fsum(sum(self.draw_times.values(), start=[]))
 
 
 class ExitReason(Enum):
@@ -205,7 +211,7 @@ class ConjectureRunner:
                 call_stats = {
                     "status": data.status.name.lower(),
                     "runtime": data.finish_time - data.start_time,
-                    "drawtime": math.fsum(data.draw_times),
+                    "drawtime": math.fsum(data.draw_times.values()),
                     "events": sorted(
                         k if v == "" else f"{k}: {v}" for k, v in data.events.items()
                     ),
@@ -328,7 +334,8 @@ class ConjectureRunner:
         if state is None:
             return
 
-        state.draw_times.extend(data.draw_times)
+        for k, v in data.draw_times.items():
+            state.draw_times[k].append(v)
 
         if data.status == Status.VALID:
             state.valid_examples += 1
@@ -371,7 +378,7 @@ class ConjectureRunner:
                 HealthCheck.filter_too_much,
             )
 
-        draw_time = sum(state.draw_times)
+        draw_time = state.total_draw_time
 
         # Allow at least the greater of one second or 5x the deadline.  If deadline
         # is None, allow 30s - the user can disable the healthcheck too if desired.

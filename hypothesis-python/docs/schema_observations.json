@@ -33,7 +33,7 @@
                 },
                 "features": {
                     "type": "object",
-                    "description": "Runtime observations which might help explain what this test case did.  Hypothesis includes target() scores, tags from event(), time spent generating data and running user code, and so on."
+                    "description": "Runtime observations which might help explain what this test case did.  Hypothesis includes target() scores, tags from event(), and so on."
                 },
                 "coverage": {
                     "type": ["object", "null"],
@@ -42,6 +42,14 @@
                         "type": "array",
                         "items": {"type": "integer", "minimum": 1},
                         "uniqueItems": true
+                    }
+                },
+                "timing": {
+                    "type": "object",
+                    "description": "The time in seconds taken by non-overlapping parts of this test case.  Hypothesis reports execute_test, and generate:{argname} for each argument.",
+                    "additionalProperties": {
+                        "type": "number",
+                        "minimum": 0
                     }
                 },
                 "metadata": {
@@ -57,7 +65,7 @@
                     "description": "unix timestamp at which we started running this test function, so that later analysis can group test cases by run."
                 }
             },
-            "required": ["type", "status", "status_reason", "representation", "arguments", "how_generated", "features", "coverage", "metadata", "property", "run_start"],
+            "required": ["type", "status", "status_reason", "representation", "arguments", "how_generated", "features", "coverage", "timing", "metadata", "property", "run_start"],
             "additionalProperties": false
         },
         {
