@@ -2213,7 +2213,7 @@ def register_type_strategy(
             try:
                 if strategy.is_empty:
                     raise InvalidArgument(f"{strategy=} must not be empty")
-            except HypothesisSideeffectWarning:
+            except HypothesisSideeffectWarning:  # pragma: no cover
                 pass
     if types.has_type_arguments(custom_type):
         raise InvalidArgument(
