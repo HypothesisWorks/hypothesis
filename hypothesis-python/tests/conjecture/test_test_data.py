@@ -203,9 +203,9 @@ def test_has_cached_examples_even_when_overrun():
 def test_can_write_empty_bytes():
     d = ConjectureData.for_buffer([1, 1, 1])
     d.draw_boolean()
-    d.draw_bytes(0, forced=b"")
+    d.draw_bytes(0)
     d.draw_boolean()
-    d.draw_boolean(forced=False)
+    d.draw_bytes(0, forced=b"")
     d.draw_boolean()
     assert d.buffer == bytes([1, 1, 1])
 
