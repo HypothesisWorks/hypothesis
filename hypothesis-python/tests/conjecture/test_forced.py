@@ -13,7 +13,7 @@ import math
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import HealthCheck, assume, example, given, settings
+from hypothesis import HealthCheck, example, given, settings
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.floats import float_to_lex
@@ -70,13 +70,6 @@ def test_forced_many(data):
 @given(draw_boolean_kwargs(use_forced=True))
 def test_forced_boolean(kwargs):
     data = fresh_data()
-    # For forced=True, p=0.0, we *should* return True. We don't currently,
-    # and changing it is going to be annoying until we migrate more stuff onto
-    # the ir.
-    # This hasn't broken anything yet, so let's hold off for now and revisit
-    # later.
-    # (TODO)
-    assume(0.01 <= kwargs["p"] <= 0.99)
     assert data.draw_boolean(**kwargs) == kwargs["forced"]
 
     data = ConjectureData.for_buffer(data.buffer)
