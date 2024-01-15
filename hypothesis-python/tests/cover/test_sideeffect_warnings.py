@@ -36,8 +36,9 @@ def _extend_initialization(monkeypatch):
 @pytest.mark.parametrize(
     "sideeffect, warning_text",
     [
-        (lambda: st.builds(lambda: None).wrapped_strategy, "lazy evaluation"),  # guaranteed not cached
-        (lambda: st.deferred(st.integers).wrapped_strategy, "deferred evaluation"),
+        # the inner lambda ensures the lazy strategy can't be cached
+        (lambda: st.builds(lambda: None).wrapped_strategy, "lazy evaluation"),
+        (lambda: st.deferred(st.none).wrapped_strategy, "deferred evaluation"),
         (fs.storage_directory, "accessing storage"),
     ],
 )

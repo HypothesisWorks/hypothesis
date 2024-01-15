@@ -8,6 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import pytest
+
 pytest_plugins = "pytester"
 
 TEST_SCRIPT = """
@@ -26,6 +28,10 @@ from hypothesis import strategies as st
 """
 
 
+@pytest.mark.skipif(
+    tuple(map(int, pytest.__version__.split(".")[:2])) <= (6, 1),
+    reason="Older pytest don't capture these warnings during runpytest setup",
+)
 def test_sideeffect_warning(testdir):
     testdir.makeconftest(SIDEEFFECT_SCRIPT)
     script = testdir.makepyfile(TEST_SCRIPT)
