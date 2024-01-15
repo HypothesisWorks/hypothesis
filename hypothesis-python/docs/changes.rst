@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.93.1:
+
+-------------------
+6.93.1 - 2024-01-15
+-------------------
+
+This patch refactors some internals, continuing our work on supporting alternative backends
+(:issue:`3086`). There is no user-visible change.
+
 .. _v6.93.0:
 
 -------------------
