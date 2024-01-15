@@ -153,11 +153,9 @@ def test_integer_range_negative_center_upper():
 
 
 def test_integer_range_lower_equals_upper():
-    data = ConjectureData.for_buffer([0])
-
+    data = ConjectureData.for_buffer(b"")
     assert data.draw_integer(0, 0) == 0
-
-    assert len(data.buffer) == 1
+    assert len(data.buffer) == 0
 
 
 def test_integer_range_center_default():
