@@ -13,7 +13,7 @@ from inspect import signature
 from typing import MutableMapping
 from weakref import WeakKeyDictionary
 
-from hypothesis.configuration import sideeffect_should_warn
+from hypothesis.configuration import check_sideeffect_during_initialization
 from hypothesis.errors import HypothesisSideeffectWarning
 from hypothesis.internal.reflection import (
     convert_keyword_arguments,
@@ -103,14 +103,7 @@ class LazyStrategy(SearchStrategy):
     @property
     def wrapped_strategy(self):
         if self.__wrapped_strategy is None:
-            if sideeffect_should_warn():
-                warnings.warn(
-                    "Materializing lazy strategies at import or initialization time is "
-                    "discouraged, as it may cause a slowdown even when not actively "
-                    "using hypothesis.",
-                    HypothesisSideeffectWarning,
-                    stacklevel=2,
-                )
+            check_sideeffect_during_initialization(f"lazy evaluation of {self!r}")
 
             unwrapped_args = tuple(unwrap_strategies(s) for s in self.__args)
             unwrapped_kwargs = {

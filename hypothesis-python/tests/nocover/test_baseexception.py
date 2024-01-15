@@ -8,12 +8,10 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import warnings
-
 import pytest
 
 from hypothesis import given
-from hypothesis.errors import Flaky, HypothesisSideeffectWarning
+from hypothesis.errors import Flaky
 from hypothesis.strategies import composite, integers, none
 
 
@@ -127,11 +125,6 @@ def test_explanations(testdir, exc_name, use_composite):
         exception=exc_name, strategy="things()" if use_composite else "st.none()"
     )
     test_file = str(testdir.makepyfile(code))
-    with warnings.catch_warnings():
-        # running inprocess, side effects will be present from the beginning
-        warnings.simplefilter("ignore", HypothesisSideeffectWarning)
-        pytest_stdout = str(
-            testdir.runpytest_inprocess(test_file, "--tb=native").stdout
-        )
+    pytest_stdout = str(testdir.runpytest_inprocess(test_file, "--tb=native").stdout)
     assert "x=101" in pytest_stdout
     assert exc_name in pytest_stdout

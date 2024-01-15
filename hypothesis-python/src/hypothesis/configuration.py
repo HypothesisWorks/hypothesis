@@ -12,6 +12,7 @@ import os
 import warnings
 from pathlib import Path
 
+import _hypothesis_globals
 import hypothesis
 from hypothesis.errors import HypothesisSideeffectWarning
 
@@ -26,14 +27,9 @@ def set_hypothesis_home_dir(directory):
 
 
 def storage_directory(*names, intent_to_write=True):
-    if intent_to_write and sideeffect_should_warn():
-        warnings.warn(
-            "Accessing the storage directory during import or initialization is "
-            "discouraged, as it may cause the .hypothesis directory to be created "
-            "even if hypothesis is not actually used. Typically, the fix will be "
-            "to defer initialization of strategies.",
-            HypothesisSideeffectWarning,
-            stacklevel=2,
+    if intent_to_write:
+        check_sideeffect_during_initialization(
+            f"accessing storage for {'/'.join(names)}"
         )
 
     global __hypothesis_home_directory
@@ -45,30 +41,43 @@ def storage_directory(*names, intent_to_write=True):
     return __hypothesis_home_directory.joinpath(*names)
 
 
-def _sideeffect_never_warn():
-    return False
+_first_postinit_what = None
 
 
-if os.environ.get("HYPOTHESIS_WARN_SIDEEFFECT"):
+def check_sideeffect_during_initialization(what: str, extra: str = "") -> None:
+    """Called from locations that should not be executed during initialization, for example
+    touching disk or materializing lazy/deferred strategies from plugins. If initialization
+    is in progress, a warning is emitted."""
+    global _first_postinit_what
+    # This is not a particularly hot path, but neither is it doing productive work, so we want to
+    # minimize the cost by returning immediately. The drawback is that we require
+    # notice_initialization_restarted() to be called if in_initialization changes away from zero.
+    if _first_postinit_what is not None:
+        return
+    elif _hypothesis_globals.in_initialization:
+        # Note: -Werror is insufficient under pytest, as doesn't take effect until
+        # test session start.
+        warnings.warn(
+            f"Slow code in plugin: avoid {what} at import time!  Set PYTHONWARNINGS=error "
+            "to get a traceback and show which plugin is responsible." + extra,
+            HypothesisSideeffectWarning,
+            stacklevel=3,
+        )
+    else:
+        _first_postinit_what = what
 
-    def sideeffect_should_warn():
-        return True
 
-else:
-
-    def sideeffect_should_warn():
-        if hasattr(hypothesis, "_is_importing"):
-            return True
-        else:
-            # We are no longer importing, patch this method to always return False from now on.
-            global sideeffect_should_warn
-            sideeffect_should_warn = _sideeffect_never_warn
-            return False
-
-
-def has_sideeffect_should_warn_been_called_after_import():
-    """We warn automatically if sideeffects are induced during import.
-    For sideeffects during initialization but after import, e.g. in pytest
-    plugins, this method can be used to show a catch-all warning at
-    start of session."""
-    return sideeffect_should_warn == _sideeffect_never_warn
+def notice_initialization_restarted(warn: bool = True) -> None:
+    """Reset _first_postinit_what, so that we don't think we're in post-init. Additionally, if it
+    was set that means that there has been a sideeffect that we haven't warned about, so do that
+    now (the warning text will be correct, and we also hint that the stacktrace can be improved).
+    """
+    global _first_postinit_what
+    if _first_postinit_what is not None:
+        what = _first_postinit_what
+        _first_postinit_what = None
+        if warn:
+            check_sideeffect_during_initialization(
+                what,
+                " Additionally, set HYPOTHESIS_EXTEND_INITIALIZATION=1 to pinpoint the exact location.",
+            )

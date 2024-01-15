@@ -9,11 +9,9 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import sys
-import warnings
 
 import pytest
 
-from hypothesis.errors import HypothesisSideeffectWarning
 from hypothesis.internal.compat import PYPY
 from hypothesis.internal.scrutineer import make_report
 
@@ -54,12 +52,7 @@ def get_reports(file_contents, *, testdir):
     # multi-line report strings which we expect to see in explain-mode output.
     # The list length is the number of explainable bugs, usually one.
     test_file = str(testdir.makepyfile(file_contents))
-    with warnings.catch_warnings():
-        # running inprocess, side effects will be present from the beginning
-        warnings.simplefilter("ignore", HypothesisSideeffectWarning)
-        pytest_stdout = str(
-            testdir.runpytest_inprocess(test_file, "--tb=native").stdout
-        )
+    pytest_stdout = str(testdir.runpytest_inprocess(test_file, "--tb=native").stdout)
 
     explanations = {
         i: {(test_file, i)}

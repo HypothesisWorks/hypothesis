@@ -8,9 +8,6 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from pathlib import Path
-
-
 pytest_plugins = "pytester"
 
 TEST_SCRIPT = """
@@ -18,42 +15,42 @@ def test_noop():
     pass
 """
 
-SIDEEFFECT_SCRIPT = """
-import hypothesis.strategies as st
+LAZY_STRATEGY = "integers()"
 
-st.from_regex(".").is_empty
+SIDEEFFECT_STATEMENT = f"st.{LAZY_STRATEGY}.is_empty"
+
+SIDEEFFECT_SCRIPT = f"""
+from hypothesis import strategies as st
+
+{SIDEEFFECT_STATEMENT}
 """
 
 
-def test_conftest_sideeffect_warning(testdir):
+def test_sideeffect_warning(testdir):
     testdir.makeconftest(SIDEEFFECT_SCRIPT)
     script = testdir.makepyfile(TEST_SCRIPT)
     result = testdir.runpytest_subprocess(script)
-    result.assert_outcomes(passed=1)
-    assert "HypothesisSideeffectWarning" in "\n".join(result.errlines)
+    assert "HypothesisSideeffectWarning" in "\n".join(result.outlines)
+    assert LAZY_STRATEGY in "\n".join(result.outlines)
 
 
 def test_conftest_sideeffect_pinpoint_error(testdir, monkeypatch):
+    # -Werror is not sufficient since warning is emitted before session start.
     monkeypatch.setenv("PYTHONWARNINGS", "error")
-    monkeypatch.setenv("HYPOTHESIS_WARN_SIDEEFFECT", "1")
     testdir.makeconftest(SIDEEFFECT_SCRIPT)
     script = testdir.makepyfile(TEST_SCRIPT)
     result = testdir.runpytest_subprocess(script)
-    assert "st.from_regex" in "\n".join(result.errlines)
-
-
-def test_plugin_sideeffect_warning(testdir):
-    testdir.makepyfile(sideeffect_plugin=SIDEEFFECT_SCRIPT)
-    script = testdir.makepyfile(TEST_SCRIPT)
-    result = testdir.runpytest_subprocess(script, "-p", "sideeffect_plugin")
-    result.assert_outcomes(passed=1)
     assert "HypothesisSideeffectWarning" in "\n".join(result.errlines)
+    assert SIDEEFFECT_STATEMENT in "\n".join(result.errlines)
 
 
 def test_plugin_sideeffect_pinpoint_error(testdir, monkeypatch):
+    # -Werror is not sufficient since warning is emitted before session start.
     monkeypatch.setenv("PYTHONWARNINGS", "error")
-    monkeypatch.setenv("HYPOTHESIS_WARN_SIDEEFFECT", "1")
+    # Ensure we see the correct stacktrace regardless of plugin load order
+    monkeypatch.setenv("HYPOTHESIS_EXTEND_INITIALIZATION", "1")
     testdir.makepyfile(sideeffect_plugin=SIDEEFFECT_SCRIPT)
     script = testdir.makepyfile(TEST_SCRIPT)
     result = testdir.runpytest_subprocess(script, "-p", "sideeffect_plugin")
-    assert "st.from_regex" in "\n".join(result.errlines)
+    assert "HypothesisSideeffectWarning" in "\n".join(result.errlines)
+    assert SIDEEFFECT_STATEMENT in "\n".join(result.errlines)
