@@ -25,6 +25,7 @@ from hypothesis.internal.conjecture.engine import (
     MIN_TEST_CALLS,
     ConjectureRunner,
     ExitReason,
+    HealthCheckState,
     RunIsComplete,
 )
 from hypothesis.internal.conjecture.pareto import DominanceRelation, dominance
@@ -1546,3 +1547,30 @@ def test_can_be_set_to_ignore_limits():
             runner.cached_test_function([c])
 
         assert runner.tree.is_exhausted
+
+
+def test_too_slow_report():
+    state = HealthCheckState()
+    assert state.timing_report() == ""  # no draws recorded -> no report
+    state.draw_times = {
+        "generate:a": [2.0, 0.356789, 0.0],
+        "generate:b": [0.1111111, 0.0, 0.002345678, 0.05, 0.123456, 0.1, 0.1, 0.1],
+        "generate:c": [0.03, 0.05, 0.2],
+        "generate:d": [0.04],
+        "generate:e": [0.05, 0.01],
+        "generate:f": [0.06],
+        "generate:g": [0.07],
+        "generate:h": [0.08],
+        "generate:i": [0.09, 0.00001],
+    }
+    expected = """
+      count | fraction |    slowest draws (seconds)
+  a |    3  |     65%  |      --      --      --   0.357,  2.000
+  b |    8  |     16%  |   0.100,  0.100,  0.100,  0.111,  0.123
+  c |    3  |      8%  |      --      --   0.030,  0.050,  0.200
+  i |    2  |      2%  |      --      --      --      --   0.090
+  h |    1  |      2%  |      --      --      --      --   0.080
+  (skipped 4 rows of fast draws)"""
+    got = state.timing_report()
+    print(got)
+    assert expected == got

@@ -61,6 +61,32 @@ class HealthCheckState:
     def total_draw_time(self):
         return math.fsum(sum(self.draw_times.values(), start=[]))
 
+    def timing_report(self):
+        """Return a terminal report describing what was slow."""
+        if not self.draw_times:
+            return ""
+        width = max(len(k[len("generate:") :].strip(": ")) for k in self.draw_times)
+        out = [f"\n  {'':^{width}}   count | fraction |    slowest draws (seconds)"]
+        args_in_order = sorted(self.draw_times.items(), key=lambda kv: -sum(kv[1]))
+        for i, (argname, times) in enumerate(args_in_order):  # pragma: no branch
+            # If we have very many unique keys, which can happen due to interactive
+            # draws with computed labels, we'll skip uninformative rows.
+            if (
+                5 <= i < (len(self.draw_times) - 2)
+                and math.fsum(times) * 20 < self.total_draw_time
+            ):
+                out.append(f"  (skipped {len(self.draw_times) - i} rows of fast draws)")
+                break
+            # Compute the row to report, omitting times <1ms to focus on slow draws
+            reprs = [f"{t:>6.3f}," for t in sorted(times)[-5:] if t > 5e-4]
+            desc = " ".join((["    -- "] * 5 + reprs)[-5:]).rstrip(",")
+            arg = argname[len("generate:") :].strip(": ")  # removeprefix in py3.9
+            out.append(
+                f"  {arg:^{width}} | {len(times):>4}  | "
+                f"{math.fsum(times)/self.total_draw_time:>7.0%}  |  {desc}"
+            )
+        return "\n".join(out)
+
 
 class ExitReason(Enum):
     max_examples = "settings.max_examples={s.max_examples}"
@@ -390,7 +416,8 @@ class ConjectureRunner:
                 f"{state.valid_examples} valid examples in {draw_time:.2f} seconds "
                 f"({state.invalid_examples} invalid ones and {state.overrun_examples} "
                 "exceeded maximum size). Try decreasing size of the data you're "
-                "generating (with e.g. max_size or max_leaves parameters).",
+                "generating (with e.g. max_size or max_leaves parameters)."
+                + state.timing_report(),
                 HealthCheck.too_slow,
             )
 
