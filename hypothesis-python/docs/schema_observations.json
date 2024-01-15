@@ -25,7 +25,7 @@
                 },
                 "arguments": {
                     "type": "object",
-                    "description": "A structured json-encoded representation of the input.  Hypothesis always provides a dictionary of argument names to json-ified values, including interactive draws from the :func:`~hypothesis.strategies.data` strategy.  In other libraries this can be any object."
+                    "description": "A structured json-encoded representation of the input.  Hypothesis provides a dictionary of argument names to json-ified values, including interactive draws from the :func:`~hypothesis.strategies.data` strategy.  If 'status' is 'gave_up', this may be absent or incomplete.  In other libraries this can be any object."
                 },
                 "how_generated": {
                     "type": ["string", "null"],
