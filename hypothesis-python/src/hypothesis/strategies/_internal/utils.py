@@ -184,5 +184,11 @@ def to_jsonable(obj: object) -> object:
     if (pyd := sys.modules.get("pydantic")) and isinstance(obj, pyd.BaseModel):
         return to_jsonable(obj.model_dump())
 
+    # Hey, might as well try this convention - it works for Pandas!
+    try:
+        return to_jsonable(obj.to_json())  # type: ignore
+    except Exception:
+        pass
+
     # If all else fails, we'll just pretty-print as a string.
     return pretty(obj)
