@@ -386,7 +386,7 @@ def test_returns_written():
 
     @run_to_buffer
     def written(data):
-        data.write(value)
+        data.draw_bytes(len(value), forced=value)
         data.mark_interesting()
 
     assert value == written
@@ -500,8 +500,8 @@ def test_can_write_bytes_towards_the_end():
     def f(data):
         if data.draw_boolean():
             data.draw_bytes(5)
-            data.write(bytes(buf))
-            assert bytes(data.buffer[-len(buf) :]) == buf
+            data.draw_bytes(len(buf), forced=buf)
+            assert data.buffer[-len(buf) :] == buf
 
     with buffer_size_limit(10):
         ConjectureRunner(f).run()
@@ -511,7 +511,7 @@ def test_uniqueness_is_preserved_when_writing_at_beginning():
     seen = set()
 
     def f(data):
-        data.write(bytes(1))
+        data.draw_bytes(1, forced=bytes(1))
         n = data.draw_integer(0, 2**3 - 1)
         assert n not in seen
         seen.add(n)
@@ -930,7 +930,7 @@ def test_cached_test_function_does_not_reinvoke_on_prefix():
     def test_function(data):
         call_count[0] += 1
         data.draw_integer(0, 2**8 - 1)
-        data.write(bytes([7]))
+        data.draw_bytes(1, forced=bytes([7]))
         data.draw_integer(0, 2**8 - 1)
 
     with deterministic_PRNG():

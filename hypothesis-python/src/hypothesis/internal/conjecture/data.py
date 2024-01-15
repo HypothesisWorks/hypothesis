@@ -1553,6 +1553,8 @@ class ConjectureData:
 
     def draw_bytes(self, size: int, *, forced: Optional[bytes] = None) -> bytes:
         assert forced is None or len(forced) == size
+        assert size >= 0
+
         return self.provider.draw_bytes(size, forced=forced)
 
     def draw_boolean(self, p: float = 0.5, *, forced: Optional[bool] = None) -> bool:
@@ -1777,15 +1779,6 @@ class ConjectureData:
 
         assert result.bit_length() <= n
         return result
-
-    def write(self, string: bytes) -> Optional[bytes]:
-        """Write ``string`` to the output buffer."""
-        self.__assert_not_frozen("write")
-        string = bytes(string)
-        if not string:
-            return None
-        self.draw_bits(len(string) * 8, forced=int_from_bytes(string))
-        return self.buffer[-len(string) :]
 
     def __check_capacity(self, n: int) -> None:
         if self.index + n > self.max_length:
