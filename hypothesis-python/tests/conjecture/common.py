@@ -200,4 +200,13 @@ def draw_boolean_kwargs(draw, *, use_forced=False):
     forced = draw(st.booleans()) if use_forced else None
     p = draw(st.floats(0, 1, allow_nan=False, allow_infinity=False))
 
+    # avoid invalid forced combinations
+    assume(p > 0 or forced is False)
+    assume(p < 1 or forced is True)
+
+    if 0 < p < 1:
+        # match internal assumption about avoiding large draws
+        bits = math.ceil(-math.log(min(p, 1 - p), 2))
+        assume(bits <= 62)
+
     return {"p": p, "forced": forced}
