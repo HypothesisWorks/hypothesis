@@ -77,8 +77,6 @@ def fresh_data():
     return ConjectureData(BUFFER_SIZE, prefix=b"", random=Random())
 
 
-# TODO we should probably look into making this faster at some point, so we
-# don't have to suppress too_slow and filter_too_much at usage sites.
 @st.composite
 def draw_integer_kwargs(
     draw,
@@ -112,12 +110,19 @@ def draw_integer_kwargs(
         assert use_min_value
 
         width = max_value - min_value + 1
+        # TODO this assumption can be pretty slow. To improve speed here, we
+        # should consider this 1024 limit when drawing min_value and
+        # max_value.
+        # This will allow us to remove too_slow and filter_too_much suppressions
+        # at usage sites.
         assume(width <= 1024)
 
         weights = draw(
             st.lists(
                 # weights doesn't play well with super small floats.
-                st.floats(min_value=0.1, max_value=1),
+                st.floats(
+                    min_value=0.1, max_value=1, allow_nan=False, allow_infinity=False
+                ),
                 min_size=width,
                 max_size=width,
             )
