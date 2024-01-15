@@ -924,10 +924,10 @@ class PrimitiveProvider:
             # difficulties when shrinking.
             if p <= 0:
                 self._cd.draw_bits(1, forced=0)
-                return False
+                result = False
             elif p >= 1:
                 self._cd.draw_bits(1, forced=1)
-                return True
+                result = True
             else:
                 falsey = floor(size * (1 - p))
                 truthy = floor(size * p)
