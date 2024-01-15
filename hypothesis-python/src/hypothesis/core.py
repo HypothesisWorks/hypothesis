@@ -1182,6 +1182,7 @@ class StateForActualGivenExecution:
                     "status": "passed" if sys.exc_info()[0] else "failed",
                     "status_reason": str(origin or "unexpected/flaky pass"),
                     "representation": self._string_repr,
+                    "arguments": self._jsonable_arguments,
                     "how_generated": "minimal failing example",
                     "features": {
                         **{
