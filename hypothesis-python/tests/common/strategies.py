@@ -15,7 +15,7 @@ from hypothesis.strategies._internal import SearchStrategy
 
 class _Slow(SearchStrategy):
     def do_draw(self, data):
-        time.sleep(1.0)
+        time.sleep(1.01)
         data.draw_bytes(2)
         return None
 
