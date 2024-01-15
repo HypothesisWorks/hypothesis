@@ -1082,18 +1082,21 @@ class PrimitiveProvider:
                 result = self._draw_float(
                     forced_sign_bit=forced_sign_bit, forced=forced
                 )
-                if math.isnan(result):
-                    # if we drew a nan, and we don't allow nans, let's resample.
-                    # if we do allow nans, great! take that as our result.
-                    if not allow_nan:
-                        # (DRAW_FLOAT_LABEL)
-                        self._cd.stop_example(discard=True)
-                        # (FLOAT_STRATEGY_DO_DRAW_LABEL)
-                        self._cd.stop_example(discard=True)
-                        continue
+                # if we drew a nan and we allow nans, great! take that as our
+                # result.
+                if math.isnan(result) and allow_nan:
+                    pass
                 else:
-                    # if we *didn't* draw a nan, see if we drew a value outside
-                    # our allowed range by clamping.
+                    # if we drew a nan, and we don't allow nans, clamp it to
+                    # inf/ninf (depending on sign). Then clamp it further
+                    # based on our clampers.
+                    # This is to be explicit about weird nan interactions with
+                    # our clampers.
+                    if math.isnan(result) and not allow_nan:
+                        result = math.inf * math.copysign(1.0, result)
+
+                    # see if we drew a value outside our allowed range by
+                    # clamping.
                     if math.copysign(1.0, result) == -1:
                         assert neg_clamper is not None
                         clamped = -neg_clamper(-result)
