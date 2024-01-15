@@ -1084,17 +1084,32 @@ class PrimitiveProvider:
                 result = self._draw_float(
                     forced_sign_bit=forced_sign_bit, forced=forced
                 )
-                if math.copysign(1.0, result) == -1:
-                    assert neg_clamper is not None
-                    clamped = -neg_clamper(-result)
+                if math.isnan(result):
+                    # if we drew a nan, and we don't allow nans, let's resample.
+                    # if we do allow nans, great! take that as our result.
+                    if not allow_nan:
+                        self._cd.stop_example(discard=True)  # (DRAW_FLOAT_LABEL)
+                        self._cd.stop_example(
+                            discard=True
+                        )  # (FLOAT_STRATEGY_DO_DRAW_LABEL)
+                        forced = None
+                        continue
                 else:
-                    assert pos_clamper is not None
-                    clamped = pos_clamper(result)
-                if clamped != result and not (math.isnan(result) and allow_nan):
-                    self._cd.stop_example(discard=True)
-                    self._cd.start_example(DRAW_FLOAT_LABEL)
-                    self._write_float(clamped)
-                    result = clamped
+                    # if we *didn't* draw a nan, see if we drew a value outside
+                    # our allowed range by clamping.
+                    if math.copysign(1.0, result) == -1:
+                        assert neg_clamper is not None
+                        clamped = -neg_clamper(-result)
+                    else:
+                        assert pos_clamper is not None
+                        clamped = pos_clamper(result)
+                    # if we drew something outside of our allowed range, discard
+                    # what we originally drew and write the clamped version.
+                    if clamped != result:
+                        self._cd.stop_example(discard=True)
+                        self._cd.start_example(DRAW_FLOAT_LABEL)
+                        self._write_float(clamped)
+                        result = clamped
             else:
                 result = nasty_floats[i - 1]
 
