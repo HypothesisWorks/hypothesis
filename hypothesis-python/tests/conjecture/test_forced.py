@@ -161,6 +161,8 @@ def test_forced_bytes(data):
 @example({"forced": -SIGNALING_NAN})
 @example({"forced": 1e999})
 @example({"forced": -1e999})
+# previously errored on our {pos, neg}_clamper logic not considering nans.
+@example({"min_value": -1 * math.inf, "max_value": -1 * math.inf, "forced": math.nan})
 @given(draw_float_kwargs(use_forced=True))
 def test_forced_floats(kwargs):
     forced = kwargs["forced"]
