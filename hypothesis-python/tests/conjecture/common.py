@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import math
 from contextlib import contextmanager
 from random import Random
 
@@ -179,8 +180,12 @@ def draw_bytes_kwargs(draw, *, use_forced=False):
 @st.composite
 def draw_float_kwargs(draw, *, use_forced=False):
     forced = draw(st.floats()) if use_forced else None
-    min_value = draw(st.floats(allow_nan=False))
-    max_value = draw(st.floats(min_value=min_value, allow_nan=False))
+
+    max_n = forced if not math.isnan(forced) else None
+    min_value = draw(st.floats(max_value=max_n, allow_nan=False))
+
+    min_n = min_value if forced is None else max(min_value, forced)
+    max_value = draw(st.floats(min_value=min_n, allow_nan=False))
 
     return {"min_value": min_value, "max_value": max_value, "forced": forced}
 
