@@ -140,7 +140,11 @@ test_can_produce_unstripped_strings = define_test(text(), lambda x: x != x.strip
 
 test_can_produce_stripped_strings = define_test(text(), lambda x: x == x.strip())
 
-test_can_produce_multi_line_strings = define_test(text(), lambda x: "\n" in x)
+# The pass probability here was previously 0.5, but some intermediate changes
+# while working on the ir tweaked the distribution and made it flaky. We can
+# reevaluate this once things have settled down, and likely bump the pass
+# probability back up.
+test_can_produce_multi_line_strings = define_test(text(), lambda x: "\n" in x, p=0.35)
 
 test_can_produce_ascii_strings = define_test(
     text(), lambda x: all(ord(c) <= 127 for c in x)

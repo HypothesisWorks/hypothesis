@@ -125,7 +125,7 @@ def test_overruns_if_not_enough_bytes_for_block():
 
 def test_overruns_if_prefix():
     runner = ConjectureRunner(
-        lambda data: [data.draw_integer(0, 1) for _ in range(2)],
+        lambda data: [data.draw_boolean() for _ in range(2)],
         settings=TEST_SETTINGS,
         random=Random(0),
     )
@@ -137,7 +137,7 @@ def test_stores_the_tree_flat_until_needed():
     @runner_for(bytes(10))
     def runner(data):
         for _ in range(10):
-            data.draw_integer(0, 1)
+            data.draw_boolean()
         data.mark_interesting()
 
     root = runner.tree.root

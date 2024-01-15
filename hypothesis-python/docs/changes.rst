@@ -18,6 +18,38 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.93.1:
+
+-------------------
+6.93.1 - 2024-01-15
+-------------------
+
+This patch refactors some internals, continuing our work on supporting alternative backends
+(:issue:`3086`). There is no user-visible change.
+
+.. _v6.93.0:
+
+-------------------
+6.93.0 - 2024-01-13
+-------------------
+
+The :func:`~hypothesis.extra.lark.from_lark` strategy now accepts an ``alphabet=``
+argument, which is passed through to :func:`~hypothesis.strategies.from_regex`,
+so that you can e.g. constrain the generated strings to a particular codec.
+
+In support of this feature, :func:`~hypothesis.strategies.from_regex` will avoid
+generating optional parts which do not fit the alphabet.  For example,
+``from_regex(r"abc|def", alphabet="abcd")`` was previously an error, and will now
+generate only ``'abc'``.  Cases where there are no valid strings remain an error.
+
+.. _v6.92.9:
+
+-------------------
+6.92.9 - 2024-01-12
+-------------------
+
+This patch refactors some internals, continuing our work on supporting alternative backends (:issue:`3086`). There is no user-visible change.
+
 .. _v6.92.8:
 
 -------------------
