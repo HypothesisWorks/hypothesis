@@ -26,9 +26,8 @@ import sys
 import warnings
 from inspect import signature
 
-import pytest
-
 import _hypothesis_globals
+import pytest
 
 try:
     from _pytest.junitxml import xml_key

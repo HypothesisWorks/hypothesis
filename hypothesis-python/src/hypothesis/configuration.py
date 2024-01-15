@@ -13,7 +13,7 @@ import warnings
 from pathlib import Path
 
 import _hypothesis_globals
-import hypothesis
+
 from hypothesis.errors import HypothesisSideeffectWarning
 
 __hypothesis_home_directory_default = Path.cwd() / ".hypothesis"
@@ -67,7 +67,7 @@ def check_sideeffect_during_initialization(what: str, extra: str = "") -> None:
         _first_postinit_what = what
 
 
-def notice_initialization_restarted(warn: bool = True) -> None:
+def notice_initialization_restarted(*, warn: bool = True) -> None:
     """Reset _first_postinit_what, so that we don't think we're in post-init. Additionally, if it
     was set that means that there has been a sideeffect that we haven't warned about, so do that
     now (the warning text will be correct, and we also hint that the stacktrace can be improved).

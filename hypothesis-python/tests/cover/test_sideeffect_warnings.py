@@ -8,15 +8,11 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from pathlib import Path
-import warnings
-
+import _hypothesis_globals
 import pytest
 
-import _hypothesis_globals
-from hypothesis import configuration as fs
+from hypothesis import configuration as fs, strategies as st
 from hypothesis.errors import HypothesisSideeffectWarning
-from hypothesis import strategies as st
 
 IN_INITIALIZATION_ATTR = "in_initialization"
 
@@ -30,7 +26,7 @@ IN_INITIALIZATION_ATTR = "in_initialization"
 
 
 @pytest.fixture
-def extend_initialization(monkeypatch):
+def _extend_initialization(monkeypatch):
     assert getattr(_hypothesis_globals, IN_INITIALIZATION_ATTR) == 0
     monkeypatch.setattr(_hypothesis_globals, IN_INITIALIZATION_ATTR, 1)
     fs.notice_initialization_restarted(warn=False)
@@ -40,19 +36,19 @@ def extend_initialization(monkeypatch):
 @pytest.mark.parametrize(
     "sideeffect, warning_text",
     [
-        (lambda: st.integers().wrapped_strategy, "lazy evaluation"),
+        (lambda: st.builds(lambda: None).wrapped_strategy, "lazy evaluation"),  # guaranteed not cached
         (lambda: st.deferred(st.integers).wrapped_strategy, "deferred evaluation"),
         (fs.storage_directory, "accessing storage"),
     ],
 )
-def test_sideeffect_warning(sideeffect, warning_text, extend_initialization):
+def test_sideeffect_warning(sideeffect, warning_text, _extend_initialization):
     with pytest.warns(HypothesisSideeffectWarning, match=warning_text):
         sideeffect()
 
 
-def test_sideeffect_delayed_warning(monkeypatch, extend_initialization):
+def test_sideeffect_delayed_warning(monkeypatch, _extend_initialization):
     what = "synthetic side-effect"
-    # extend_initialization ensures we start at known clean slate (no delayed warnings).
+    # _extend_initialization ensures we start at known clean slate (no delayed warnings).
     # Then: stop initialization, check a side-effect operation, and restart it.
     monkeypatch.setattr(_hypothesis_globals, IN_INITIALIZATION_ATTR, 0)
     fs.check_sideeffect_during_initialization(what)

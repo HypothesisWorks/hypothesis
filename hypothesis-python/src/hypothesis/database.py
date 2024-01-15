@@ -495,8 +495,9 @@ class GitHubArtifactDatabase(ExampleDatabase):
         self._initialized = True
 
     def _initialize_db(self) -> None:
+        # Trigger warning that we suppressed earlier by intent_to_write=False
+        storage_directory(self.path.name)
         # Create the cache directory if it doesn't exist
-        storage_directory(self.path.name)  # trigger warning that we suppressed earlier with intent_to_write=False
         self.path.mkdir(exist_ok=True, parents=True)
 
         # Get all artifacts

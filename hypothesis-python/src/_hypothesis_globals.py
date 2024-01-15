@@ -15,7 +15,6 @@ depending on either. This file should have no imports outside of stdlib.
 
 import os
 
-
 in_initialization = 1
 """If nonzero, indicates that hypothesis is still initializing (importing or loading
 the test environment). `import hypothesis` will cause this number to be decremented,
