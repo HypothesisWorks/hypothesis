@@ -17,7 +17,7 @@ def test_noop():
 
 LAZY_STRATEGY = "integers()"
 
-SIDEEFFECT_STATEMENT = f"st.{LAZY_STRATEGY}.is_empty"
+SIDEEFFECT_STATEMENT = f"st.{LAZY_STRATEGY}.wrapped_strategy"
 
 SIDEEFFECT_SCRIPT = f"""
 from hypothesis import strategies as st

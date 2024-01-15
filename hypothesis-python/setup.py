@@ -124,7 +124,7 @@ setuptools.setup(
         "Topic :: Software Development :: Testing",
         "Typing :: Typed",
     ],
-    py_modules=["_hypothesis_pytestplugin", "_hypothesis_ftz_detector"],
+    py_modules=["_hypothesis_pytestplugin", "_hypothesis_ftz_detector", "_hypothesis_globals"],
     entry_points={
         "pytest11": ["hypothesispytest = _hypothesis_pytestplugin"],
         "console_scripts": ["hypothesis = hypothesis.extra.cli:main"],

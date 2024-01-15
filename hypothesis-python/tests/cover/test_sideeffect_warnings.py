@@ -20,24 +20,34 @@ from hypothesis import strategies as st
 
 IN_INITIALIZATION_ATTR = "in_initialization"
 
+# These tests use the pytest plugin enabling infrastructure to restart the side-effect warnings,
+# rather than trying to induce side-effects during import (and entrypoint loading) itself, which is
+# hard to do.  Manual verification of behaviour during initial import can be done by just injecting
+# one of the side-effect-inducing statements below directly into hypothesis.entry_points.run().
+# Manual validation can also be done by inspecting the relevant state during import and verify that
+# it is the same as tested here
+# (_hypothesis_globals.in_initialization > 0, hypothesis.configuration._first_postinit_what is None)
+
 
 @pytest.fixture
 def extend_initialization(monkeypatch):
+    assert getattr(_hypothesis_globals, IN_INITIALIZATION_ATTR) == 0
     monkeypatch.setattr(_hypothesis_globals, IN_INITIALIZATION_ATTR, 1)
     fs.notice_initialization_restarted(warn=False)
+    assert fs._first_postinit_what is None  # validates state as given in comment above
 
 
 @pytest.mark.parametrize(
-    "sideeffect_script, warning_text",
+    "sideeffect, warning_text",
     [
-        ("st.integers().is_empty", "lazy evaluation"),
-        ("st.deferred(st.integers).is_empty", "deferred evaluation"),
-        ("fs.storage_directory()", "accessing storage"),
+        (lambda: st.integers().wrapped_strategy, "lazy evaluation"),
+        (lambda: st.deferred(st.integers).wrapped_strategy, "deferred evaluation"),
+        (fs.storage_directory, "accessing storage"),
     ],
 )
-def test_sideeffect_warning(sideeffect_script, warning_text, extend_initialization):
+def test_sideeffect_warning(sideeffect, warning_text, extend_initialization):
     with pytest.warns(HypothesisSideeffectWarning, match=warning_text):
-        exec(sideeffect_script)
+        sideeffect()
 
 
 def test_sideeffect_delayed_warning(monkeypatch, extend_initialization):
