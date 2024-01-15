@@ -16,7 +16,7 @@ from lark.lark import Lark
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.lark import from_lark
-from hypothesis.strategies import data, just
+from hypothesis.strategies import characters, data, just
 
 from tests.common.debug import find_any
 
@@ -44,7 +44,7 @@ EBNF_GRAMMAR = r"""
 
 LIST_GRAMMAR = r"""
 list : "[" [NUMBER ("," NUMBER)*] "]"
-NUMBER: /[0-9]+/
+NUMBER: /[0-9]|[1-9][0-9]*/
 """
 
 
@@ -101,12 +101,12 @@ def test_cannot_convert_EBNF_to_strategy_directly():
         from_lark(Lark(LIST_GRAMMAR, start="list"), explicit=[]).example()
 
 
-def test_undefined_terminals_require_explicit_strategies():
+def test_required_undefined_terminals_require_explicit_strategies():
     elem_grammar = r"""
-    list : "[" [ELEMENT ("," ELEMENT)*] "]"
+    list : "[" ELEMENT ("," ELEMENT)* "]"
     %declare ELEMENT
     """
-    with pytest.raises(InvalidArgument):
+    with pytest.raises(InvalidArgument, match=r"%declare"):
         from_lark(Lark(elem_grammar, start="list")).example()
     strategy = {"ELEMENT": just("200")}
     from_lark(Lark(elem_grammar, start="list"), explicit=strategy).example()
@@ -131,3 +131,30 @@ def test_non_string_explicit_strategies_are_invalid():
 )
 def test_can_override_defined_terminal(string):
     assert sum(json.loads(string)) == 0
+
+
+@given(string=from_lark(Lark(LIST_GRAMMAR, start="list"), alphabet="[0,]"))
+def test_can_generate_from_limited_alphabet(string):
+    assert sum(json.loads(string)) == 0
+
+
+@given(string=from_lark(Lark(LIST_GRAMMAR, start="list"), alphabet="[9]"))
+def test_can_generate_from_limited_alphabet_no_comma(string):
+    assert len(json.loads(string)) <= 1
+
+
+@given(
+    string=from_lark(
+        Lark(EBNF_GRAMMAR, start="value"),
+        alphabet=characters(codec="ascii", exclude_characters=","),
+    )
+)
+def test_can_generate_from_limited_alphabet_no_comma_json(string):
+    assert "," not in string
+
+
+def test_error_if_alphabet_bans_all_start_rules():
+    with pytest.raises(
+        InvalidArgument, match=r"No start rule .+ is allowed by alphabet="
+    ):
+        from_lark(Lark(LIST_GRAMMAR, start="list"), alphabet="abc").example()
