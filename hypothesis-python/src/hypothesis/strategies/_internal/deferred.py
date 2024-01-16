@@ -28,7 +28,7 @@ class DeferredStrategy(SearchStrategy):
     @property
     def wrapped_strategy(self):
         if self.__wrapped_strategy is None:
-            check_sideeffect_during_initialization(f"deferred evaluation of {self!r}")
+            check_sideeffect_during_initialization("deferred evaluation of {!r}", self)
 
             if not inspect.isfunction(self.__definition):
                 raise InvalidArgument(

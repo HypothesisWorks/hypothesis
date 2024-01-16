@@ -101,7 +101,7 @@ class LazyStrategy(SearchStrategy):
     @property
     def wrapped_strategy(self):
         if self.__wrapped_strategy is None:
-            check_sideeffect_during_initialization(f"lazy evaluation of {self!r}")
+            check_sideeffect_during_initialization("lazy evaluation of {!r}", self)
 
             unwrapped_args = tuple(unwrap_strategies(s) for s in self.__args)
             unwrapped_kwargs = {

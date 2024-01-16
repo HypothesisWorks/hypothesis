@@ -29,7 +29,7 @@ def set_hypothesis_home_dir(directory):
 def storage_directory(*names, intent_to_write=True):
     if intent_to_write:
         check_sideeffect_during_initialization(
-            f"accessing storage for {'/'.join(names)}"
+            "accessing storage for {}", "/".join(names)
         )
 
     global __hypothesis_home_directory
@@ -44,10 +44,16 @@ def storage_directory(*names, intent_to_write=True):
 _first_postinit_what = None
 
 
-def check_sideeffect_during_initialization(what: str, extra: str = "") -> None:
+def check_sideeffect_during_initialization(
+    what: str, *fmt_args: object, extra: str = ""
+) -> None:
     """Called from locations that should not be executed during initialization, for example
     touching disk or materializing lazy/deferred strategies from plugins. If initialization
-    is in progress, a warning is emitted."""
+    is in progress, a warning is emitted.
+
+    Note that computing the repr can take nontrivial time or memory, so we avoid doing so
+    unless (and until) we're actually emitting the warning.
+    """
     global _first_postinit_what
     # This is not a particularly hot path, but neither is it doing productive work, so we want to
     # minimize the cost by returning immediately. The drawback is that we require
@@ -57,14 +63,15 @@ def check_sideeffect_during_initialization(what: str, extra: str = "") -> None:
     elif _hypothesis_globals.in_initialization:
         # Note: -Werror is insufficient under pytest, as doesn't take effect until
         # test session start.
+        msg = what.format(*fmt_args)
         warnings.warn(
-            f"Slow code in plugin: avoid {what} at import time!  Set PYTHONWARNINGS=error "
+            f"Slow code in plugin: avoid {msg} at import time!  Set PYTHONWARNINGS=error "
             "to get a traceback and show which plugin is responsible." + extra,
             HypothesisSideeffectWarning,
             stacklevel=3,
         )
     else:
-        _first_postinit_what = what
+        _first_postinit_what = (what, fmt_args)
 
 
 def notice_initialization_restarted(*, warn: bool = True) -> None:
@@ -74,10 +81,11 @@ def notice_initialization_restarted(*, warn: bool = True) -> None:
     """
     global _first_postinit_what
     if _first_postinit_what is not None:
-        what = _first_postinit_what
+        what, *fmt_args = _first_postinit_what
         _first_postinit_what = None
         if warn:
             check_sideeffect_during_initialization(
                 what,
-                " Additionally, set HYPOTHESIS_EXTEND_INITIALIZATION=1 to pinpoint the exact location.",
+                *fmt_args,
+                extra=" Additionally, set HYPOTHESIS_EXTEND_INITIALIZATION=1 to pinpoint the exact location.",
             )
