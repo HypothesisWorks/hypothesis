@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.94.0:
+
+-------------------
+6.94.0 - 2024-01-16
+-------------------
+
+This release avoids creating a ``.hypothesis`` directory when using
+:func:`~hypothesis.strategies.register_type_strategy` (:issue:`3836`),
+and adds warnings for plugins which do so by other means or have
+other unintended side-effects.
+
 .. _v6.93.2:
 
 -------------------
