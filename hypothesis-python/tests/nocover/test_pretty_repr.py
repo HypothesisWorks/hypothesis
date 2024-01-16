@@ -19,7 +19,6 @@ from hypothesis.errors import (
     HypothesisWarning,
     InvalidArgument,
 )
-from hypothesis.strategies._internal.types import _global_type_lookup
 from hypothesis.strategies._internal.lazy import LazyStrategy
 
 
@@ -124,4 +123,4 @@ def test_sampled_transform_reprs(r):
 
 def test_overlong_repr_warns():
     with pytest.warns(HypothesisWarning, match="overly large"):
-        repr(LazyStrategy(st.one_of, _global_type_lookup.values(), {}))
+        repr(LazyStrategy(st.one_of, [st.none()] * 10000, {}))
