@@ -19,6 +19,7 @@ import re
 import sys
 import textwrap
 import types
+import warnings
 from functools import partial, wraps
 from io import StringIO
 from keyword import iskeyword
@@ -27,6 +28,7 @@ from types import ModuleType
 from typing import TYPE_CHECKING, Any, Callable
 from unittest.mock import _patch as PatchType
 
+from hypothesis.errors import HypothesisWarning
 from hypothesis.internal.compat import PYPY, is_typed_named_tuple
 from hypothesis.utils.conventions import not_set
 from hypothesis.vendor.pretty import pretty
@@ -478,6 +480,8 @@ def repr_call(f, args, kwargs, *, reorder=True):
     rep = nicerepr(f)
     if rep.startswith("lambda") and ":" in rep:
         rep = f"({rep})"
+    if len(rep) + sum(len(b) for b in bits) > 10000:
+        warnings.warn("Generating overly large repr", HypothesisWarning, stacklevel=2)
     return rep + "(" + ", ".join(bits) + ")"
 
 
