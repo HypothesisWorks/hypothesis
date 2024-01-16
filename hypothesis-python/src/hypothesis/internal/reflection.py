@@ -480,8 +480,15 @@ def repr_call(f, args, kwargs, *, reorder=True):
     rep = nicerepr(f)
     if rep.startswith("lambda") and ":" in rep:
         rep = f"({rep})"
-    if len(rep) + sum(len(b) for b in bits) > 10000:
-        warnings.warn("Generating overly large repr", HypothesisWarning, stacklevel=2)
+    repr_len = len(rep) + sum(len(b) for b in bits)  # approx
+    if repr_len > 30000:
+        warnings.warn(
+            "Generating overly large repr. This is an expensive operation, and with "
+            f"a length of {repr_len//1000} kB is is unlikely to be useful. Use -Wignore "
+            "to ignore the warning, or -Werror to get a traceback.",
+            HypothesisWarning,
+            stacklevel=2,
+        )
     return rep + "(" + ", ".join(bits) + ")"
 
 
