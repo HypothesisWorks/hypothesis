@@ -533,7 +533,8 @@ class SampledFromStrategy(SearchStrategy):
         ):
             data._sampled_from_all_strategies_elements_message = (
                 "sample_from was given a collection of strategies: "
-                "{!r}. Was one_of intended?", self.elements
+                "{!r}. Was one_of intended?",
+                self.elements,
             )
         if result is filter_not_satisfied:
             data.mark_invalid(f"Aborted test because unable to satisfy {self!r}")
