@@ -93,9 +93,11 @@ def draw_integer_kwargs(
     weights = None
 
     # this generation is complicated to deal with maintaining any combination of
-    # the following two invariants, depending on which parameters are passed:
+    # the following invariants, depending on which parameters are passed:
+    #
     # (1) min_value <= forced <= max_value
     # (2) max_value - min_value + 1 == len(weights)
+    # (3) len(weights) <= 1024
 
     forced = draw(st.integers()) if use_forced else None
     if use_weights:
