@@ -67,6 +67,7 @@ def test_forced_many(data):
     assert not many.more()
 
 
+@example({"p": 1e-19, "forced": True})  # 64 bit p
 @example({"p": 3e-19, "forced": True})  # 62 bit p
 @given(draw_boolean_kwargs(use_forced=True))
 def test_forced_boolean(kwargs):

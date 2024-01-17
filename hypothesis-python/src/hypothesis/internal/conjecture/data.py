@@ -1576,16 +1576,14 @@ class ConjectureData:
 
     def draw_boolean(self, p: float = 0.5, *, forced: Optional[bool] = None) -> bool:
         # Internally, we treat probabilities lower than 1 / 2**64 as
-        # unconditionally false. These conditionals should be checking against
-        # 64 bits, but we need some extra bits of safety in practice, likely due
-        # to internal floating point errors during computation.
+        # unconditionally false.
         #
         # Note that even if we lift this 64 bit restriction in the future, p
         # cannot be 0 (1) when forced is True (False).
         if forced is True:
-            assert p > 2 ** (-62)
+            assert p > 2 ** (-64)
         if forced is False:
-            assert p < (1 - 2 ** (-62))
+            assert p < (1 - 2 ** (-64))
 
         return self.provider.draw_boolean(p, forced=forced)
 
