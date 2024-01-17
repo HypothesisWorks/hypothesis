@@ -1078,14 +1078,31 @@ class PrimitiveProvider:
         self._cd.start_example(DRAW_FLOAT_INNER_LABEL)
         if i == 0:
             result = self._draw_float(forced_sign_bit=forced_sign_bit, forced=forced)
-            if math.copysign(1.0, result) == -1:
-                assert neg_clamper is not None
-                clamped = -neg_clamper(-result)
+            # if we drew a nan and we allow nans, great! take that as our
+            # result.
+            if math.isnan(result) and allow_nan:
+                pass
             else:
-                assert pos_clamper is not None
-                clamped = pos_clamper(result)
-            if clamped != result and not (math.isnan(result) and allow_nan):
-                result = clamped
+                # if we drew a nan, and we don't allow nans, clamp it to
+                # inf/ninf (depending on sign). Then clamp it further
+                # based on our clampers.
+                # This is to be explicit about weird nan interactions with
+                # our clampers.
+                if math.isnan(result) and not allow_nan:
+                    result = math.inf * math.copysign(1.0, result)
+
+                # see if we drew a value outside our allowed range by
+                # clamping.
+                if math.copysign(1.0, result) == -1:
+                    assert neg_clamper is not None
+                    clamped = -neg_clamper(-result)
+                else:
+                    assert pos_clamper is not None
+                    clamped = pos_clamper(result)
+                # if we drew something outside of our allowed range, use the
+                # clamped version
+                if clamped != result:
+                    result = clamped
         else:
             result = nasty_floats[i - 1]
             # Write the drawn float back to the bitstream in the i != 0 case.
@@ -1377,7 +1394,10 @@ class PrimitiveProvider:
             )
 
         forced_sign_bit: Optional[Literal[0, 1]] = None
-        if (pos_clamper is None) != (neg_clamper is None):
+        # if we allow nans, then all forced sign logic is out the window. We may
+        # generate e.g. -math.nan with bounds of (0, 1], and forcing the sign
+        # to positive in this case would be incorrect.
+        if ((pos_clamper is None) != (neg_clamper is None)) and not allow_nan:
             forced_sign_bit = 1 if neg_clamper else 0
 
         return (sampler, forced_sign_bit, neg_clamper, pos_clamper, nasty_floats)
@@ -1634,6 +1654,16 @@ class ConjectureData:
     def draw_boolean(
         self, p: float = 0.5, *, forced: Optional[bool] = None, observe: bool = True
     ) -> bool:
+        # Internally, we treat probabilities lower than 1 / 2**64 as
+        # unconditionally false.
+        #
+        # Note that even if we lift this 64 bit restriction in the future, p
+        # cannot be 0 (1) when forced is True (False).
+        if forced is True:
+            assert p > 2 ** (-64)
+        if forced is False:
+            assert p < (1 - 2 ** (-64))
+
         kwargs = {"p": p}
         self.start_example(DRAW_BOOLEAN_LABEL)
         value = self.provider.draw_boolean(**kwargs, forced=forced)
