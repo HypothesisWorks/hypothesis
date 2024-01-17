@@ -93,7 +93,6 @@ def test_forced_boolean(kwargs):
     ],
 )
 @given(st.data())
-@settings(suppress_health_check=[HealthCheck.too_slow, HealthCheck.filter_too_much])
 def test_forced_integer(
     use_min_value, use_max_value, use_shrink_towards, use_weights, data
 ):
