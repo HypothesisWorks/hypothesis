@@ -71,11 +71,16 @@ def test_forced_many(data):
 @example({"p": 3e-19, "forced": True})  # 62 bit p
 @given(draw_boolean_kwargs(use_forced=True))
 def test_forced_boolean(kwargs):
-    data = fresh_data()
-    assert data.draw_boolean(**kwargs) == kwargs["forced"]
+    forced = kwargs["forced"]
 
+    data = fresh_data()
+    assert data.draw_boolean(**kwargs) == forced
+
+    # now make sure the written buffer reproduces the forced value, even without
+    # specifying forced=.
+    del kwargs["forced"]
     data = ConjectureData.for_buffer(data.buffer)
-    assert data.draw_boolean(**kwargs) == kwargs["forced"]
+    assert data.draw_boolean(**kwargs) == forced
 
 
 @pytest.mark.parametrize(
@@ -106,12 +111,14 @@ def test_forced_integer(
             use_forced=True,
         )
     )
+    forced = kwargs["forced"]
 
     data = fresh_data()
-    assert data.draw_integer(**kwargs) == kwargs["forced"]
+    assert data.draw_integer(**kwargs) == forced
 
+    del kwargs["forced"]
     data = ConjectureData.for_buffer(data.buffer)
-    assert data.draw_integer(**kwargs) == kwargs["forced"]
+    assert data.draw_integer(**kwargs) == forced
 
 
 @pytest.mark.parametrize("use_min_size", [True, False])
@@ -123,23 +130,27 @@ def test_forced_string(use_min_size, use_max_size, data):
             use_min_size=use_min_size, use_max_size=use_max_size, use_forced=True
         )
     )
+    forced = kwargs["forced"]
 
     data = fresh_data()
-    assert data.draw_string(**kwargs) == kwargs["forced"]
+    assert data.draw_string(**kwargs) == forced
 
+    del kwargs["forced"]
     data = ConjectureData.for_buffer(data.buffer)
-    assert data.draw_string(**kwargs) == kwargs["forced"]
+    assert data.draw_string(**kwargs) == forced
 
 
 @given(st.data())
 def test_forced_bytes(data):
     kwargs = data.draw(draw_bytes_kwargs(use_forced=True))
+    forced = kwargs["forced"]
 
     data = fresh_data()
-    assert data.draw_bytes(**kwargs) == kwargs["forced"]
+    assert data.draw_bytes(**kwargs) == forced
 
+    del kwargs["forced"]
     data = ConjectureData.for_buffer(data.buffer)
-    assert data.draw_bytes(**kwargs) == kwargs["forced"]
+    assert data.draw_bytes(**kwargs) == forced
 
 
 @example({"forced": 0.0})
@@ -167,6 +178,7 @@ def test_forced_floats(kwargs):
     assert math.copysign(1, drawn) == math.copysign(1, forced)
     assert float_to_lex(abs(drawn)) == float_to_lex(abs(forced))
 
+    del kwargs["forced"]
     data = ConjectureData.for_buffer(data.buffer)
     drawn = data.draw_float(**kwargs)
     assert math.copysign(1, drawn) == math.copysign(1, forced)
