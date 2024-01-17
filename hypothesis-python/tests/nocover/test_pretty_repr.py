@@ -14,10 +14,7 @@ import pytest
 
 from hypothesis import given, strategies as st
 from hypothesis.control import reject
-from hypothesis.errors import (
-    HypothesisDeprecationWarning,
-    InvalidArgument,
-)
+from hypothesis.errors import HypothesisDeprecationWarning, InvalidArgument
 
 
 def foo(x):
