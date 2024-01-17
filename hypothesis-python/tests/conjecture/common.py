@@ -213,6 +213,6 @@ def draw_boolean_kwargs(draw, *, use_forced=False):
     if 0 < p < 1:
         # match internal assumption about avoiding large draws
         bits = math.ceil(-math.log(min(p, 1 - p), 2))
-        assume(bits <= 62)
+        assume(bits <= 64)
 
     return {"p": p, "forced": forced}
