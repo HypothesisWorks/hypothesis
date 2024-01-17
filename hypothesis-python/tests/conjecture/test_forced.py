@@ -77,7 +77,7 @@ def test_forced_boolean(kwargs):
     assert data.draw_boolean(**kwargs) == forced
 
     # now make sure the written buffer reproduces the forced value, even without
-    # specify forced=.
+    # specifying forced=.
     del kwargs["forced"]
     data = ConjectureData.for_buffer(data.buffer)
     assert data.draw_boolean(**kwargs) == forced
