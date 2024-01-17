@@ -98,11 +98,8 @@ def test_forced_boolean(kwargs):
         (False, False, False, False),
     ],
 )
-@given(st.data())
-def test_forced_integer(
-    use_min_value, use_max_value, use_shrink_towards, use_weights, data
-):
-    kwargs = data.draw(
+def test_forced_integer(use_min_value, use_max_value, use_shrink_towards, use_weights):
+    @given(
         draw_integer_kwargs(
             use_min_value=use_min_value,
             use_max_value=use_max_value,
@@ -111,33 +108,38 @@ def test_forced_integer(
             use_forced=True,
         )
     )
-    forced = kwargs["forced"]
+    def test(kwargs):
+        forced = kwargs["forced"]
 
-    data = fresh_data()
-    assert data.draw_integer(**kwargs) == forced
+        data = fresh_data()
+        assert data.draw_integer(**kwargs) == forced
 
-    del kwargs["forced"]
-    data = ConjectureData.for_buffer(data.buffer)
-    assert data.draw_integer(**kwargs) == forced
+        del kwargs["forced"]
+        data = ConjectureData.for_buffer(data.buffer)
+        assert data.draw_integer(**kwargs) == forced
+
+    test()
 
 
 @pytest.mark.parametrize("use_min_size", [True, False])
 @pytest.mark.parametrize("use_max_size", [True, False])
-@given(st.data())
-def test_forced_string(use_min_size, use_max_size, data):
-    kwargs = data.draw(
+def test_forced_string(use_min_size, use_max_size):
+    @given(
         draw_string_kwargs(
             use_min_size=use_min_size, use_max_size=use_max_size, use_forced=True
         )
     )
-    forced = kwargs["forced"]
+    def test(kwargs):
+        forced = kwargs["forced"]
 
-    data = fresh_data()
-    assert data.draw_string(**kwargs) == forced
+        data = fresh_data()
+        assert data.draw_string(**kwargs) == forced
 
-    del kwargs["forced"]
-    data = ConjectureData.for_buffer(data.buffer)
-    assert data.draw_string(**kwargs) == forced
+        del kwargs["forced"]
+        data = ConjectureData.for_buffer(data.buffer)
+        assert data.draw_string(**kwargs) == forced
+
+    test()
 
 
 @given(st.data())
