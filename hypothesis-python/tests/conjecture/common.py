@@ -102,29 +102,19 @@ def draw_integer_kwargs(
 
     forced = draw(st.integers()) if use_forced else None
     if use_weights:
-        # handle the weights case entirely independently from the non-weights
-        # case. We'll treat the weight width here as our "master" draw and base
-        # all other draws around that result.
         assert use_max_value
         assert use_min_value
+        # handle the weights case entirely independently from the non-weights case.
+        # We'll treat the weights as our "key" draw and base all other draws on that.
 
-        width = draw(st.integers(1, 1024))
-        weights = draw(
-            st.lists(
-                # weights doesn't play well with super small floats.
-                st.floats(
-                    min_value=0.1, max_value=1, allow_nan=False, allow_infinity=False
-                ),
-                min_size=width,
-                max_size=width,
-            )
-        )
+        # weights doesn't play well with super small floats, so exclude <.01
+        weights = draw(st.lists(st.floats(0.01, 1), min_size=1, max_size=1024))
+
+        # we additionally pick a central value (if not forced), and then the index
+        # into the weights at which it can be found - aka the min-value offset.
         center = forced if use_forced else draw(st.integers())
-        # pick a random pivot point in the width to split into left and right
-        # segments, for min and max value.
-        pivot = draw(st.integers(0, width - 1))
-        min_value = center - pivot
-        max_value = center + (width - pivot - 1)
+        min_value = center - draw(st.integers(0, len(weights) - 1))
+        max_value = min_value + len(weights) - 1
     else:
         if use_min_value:
             min_value = draw(st.integers(max_value=forced))
