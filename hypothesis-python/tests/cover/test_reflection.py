@@ -20,6 +20,7 @@ import pytest
 from pytest import raises
 
 from hypothesis import given, strategies as st
+from hypothesis.errors import HypothesisWarning
 from hypothesis.internal import reflection
 from hypothesis.internal.reflection import (
     convert_keyword_arguments,
@@ -35,6 +36,7 @@ from hypothesis.internal.reflection import (
     required_args,
     source_exec_as_module,
 )
+from hypothesis.strategies._internal.lazy import LazyStrategy
 
 
 def do_conversion_test(f, args, kwargs):
@@ -710,3 +712,8 @@ def _prep_source(*pairs):
 )
 def test_clean_source(src, clean):
     assert reflection._clean_source(src).splitlines() == clean.splitlines()
+
+
+def test_overlong_repr_warns():
+    with pytest.warns(HypothesisWarning, match="overly large"):
+        repr(LazyStrategy(st.one_of, [st.none()] * 10000, {}))

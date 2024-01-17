@@ -16,10 +16,8 @@ from hypothesis import given, strategies as st
 from hypothesis.control import reject
 from hypothesis.errors import (
     HypothesisDeprecationWarning,
-    HypothesisWarning,
     InvalidArgument,
 )
-from hypothesis.strategies._internal.lazy import LazyStrategy
 
 
 def foo(x):
@@ -119,8 +117,3 @@ def test_repr_evals_to_thing_with_same_repr(strategy):
 )
 def test_sampled_transform_reprs(r):
     assert repr(eval(r, strategy_globals)) == r
-
-
-def test_overlong_repr_warns():
-    with pytest.warns(HypothesisWarning, match="overly large"):
-        repr(LazyStrategy(st.one_of, [st.none()] * 10000, {}))
