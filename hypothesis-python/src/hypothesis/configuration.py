@@ -69,7 +69,10 @@ def check_sideeffect_during_initialization(
             "HYPOTHESIS_EXTEND_INITIALIZATION"
         ):
             when = "during pytest plugin or conftest initialization"
-        else:
+        else:  # pragma: no cover
+            # This can be triggered by Hypothesis plugins, but is really annoying
+            # to test automatically - drop st.text().example() in hypothesis.run()
+            # to manually confirm that we get the warning.
             when = "at import time"
         # Note: -Werror is insufficient under pytest, as doesn't take effect until
         # test session start.
