@@ -20,7 +20,7 @@ from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.strategies._internal.strings import OneCharStringStrategy, TextStrategy
 
-from tests.common.strategies import Intervals
+from tests.common.strategies import intervals
 
 SOME_LABEL = calc_label_from_name("some label")
 
@@ -144,11 +144,11 @@ def draw_integer_kwargs(
 
 @st.composite
 def draw_string_kwargs(draw, *, use_min_size=True, use_max_size=True, use_forced=False):
-    intervals = draw(Intervals)
+    interval_set = draw(intervals())
     # TODO relax this restriction once we handle empty pseudo-choices in the ir
-    assume(len(intervals) > 0)
+    assume(len(interval_set) > 0)
     forced = (
-        draw(TextStrategy(OneCharStringStrategy(intervals))) if use_forced else None
+        draw(TextStrategy(OneCharStringStrategy(interval_set))) if use_forced else None
     )
 
     min_size = 0
@@ -169,7 +169,7 @@ def draw_string_kwargs(draw, *, use_min_size=True, use_max_size=True, use_forced
         max_size = min(max_size, min_size + 100)
 
     return {
-        "intervals": intervals,
+        "intervals": interval_set,
         "min_size": min_size,
         "max_size": max_size,
         "forced": forced,
