@@ -189,14 +189,20 @@ def draw_bytes_kwargs(draw, *, use_forced=False):
 
 
 @st.composite
-def draw_float_kwargs(draw, *, use_forced=False):
+def draw_float_kwargs(
+    draw, *, use_min_value=True, use_max_value=True, use_forced=False
+):
     forced = draw(st.floats()) if use_forced else None
+    pivot = forced if not math.isnan(forced) else None
+    min_value = -math.inf
+    max_value = math.inf
 
-    max_n = forced if not math.isnan(forced) else None
-    min_value = draw(st.floats(max_value=max_n, allow_nan=False))
+    if use_min_value:
+        min_value = draw(st.floats(max_value=pivot, allow_nan=False))
 
-    min_n = min_value if forced is None else max(min_value, forced)
-    max_value = draw(st.floats(min_value=min_n, allow_nan=False))
+    if use_max_value:
+        min_val = min_value if not pivot is not None else max(min_value, pivot)
+        max_value = draw(st.floats(min_value=min_val, allow_nan=False))
 
     return {"min_value": min_value, "max_value": max_value, "forced": forced}
 
