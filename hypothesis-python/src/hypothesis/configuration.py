@@ -60,7 +60,7 @@ def check_sideeffect_during_initialization(
     # notice_initialization_restarted() to be called if in_initialization changes away from zero.
     if _first_postinit_what is not None:
         return
-    elif _hypothesis_globals.in_initialization:
+    elif _hypothesis_globals.in_initialization > 0:
         # Note: -Werror is insufficient under pytest, as doesn't take effect until
         # test session start.
         msg = what.format(*fmt_args)
