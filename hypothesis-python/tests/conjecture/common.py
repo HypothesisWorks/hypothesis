@@ -201,8 +201,8 @@ def draw_boolean_kwargs(draw, *, use_forced=False):
     p = draw(st.floats(0, 1, allow_nan=False, allow_infinity=False))
 
     # avoid invalid forced combinations
-    assume(not (p == 0 and forced is True))
-    assume(not (p == 1 and forced is False))
+    assume(p > 0 or forced is False)
+    assume(p < 1 or forced is True)
 
     if 0 < p < 1:
         # match internal assumption about avoiding large draws
