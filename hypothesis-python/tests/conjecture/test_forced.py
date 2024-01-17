@@ -155,33 +155,44 @@ def test_forced_bytes(data):
     assert data.draw_bytes(**kwargs) == forced
 
 
-@example({"forced": 0.0})
-@example({"forced": -0.0})
-@example({"forced": 1.0})
-@example({"forced": 1.2345})
-@example({"forced": SMALLEST_SUBNORMAL})
-@example({"forced": -SMALLEST_SUBNORMAL})
-@example({"forced": 100 * SMALLEST_SUBNORMAL})
-@example({"forced": math.nan})
-@example({"forced": -math.nan})
-@example({"forced": SIGNALING_NAN})
-@example({"forced": -SIGNALING_NAN})
-@example({"forced": 1e999})
-@example({"forced": -1e999})
-# previously errored on our {pos, neg}_clamper logic not considering nans.
-@example({"min_value": -1 * math.inf, "max_value": -1 * math.inf, "forced": math.nan})
-@given(draw_float_kwargs(use_forced=True))
-def test_forced_floats(kwargs):
-    forced = kwargs["forced"]
+@pytest.mark.parametrize("use_min_value", [True, False])
+@pytest.mark.parametrize("use_max_value", [True, False])
+def test_forced_floats(use_min_value, use_max_value):
+    @example({"forced": 0.0})
+    @example({"forced": -0.0})
+    @example({"forced": 1.0})
+    @example({"forced": 1.2345})
+    @example({"forced": SMALLEST_SUBNORMAL})
+    @example({"forced": -SMALLEST_SUBNORMAL})
+    @example({"forced": 100 * SMALLEST_SUBNORMAL})
+    @example({"forced": math.nan})
+    @example({"forced": -math.nan})
+    @example({"forced": SIGNALING_NAN})
+    @example({"forced": -SIGNALING_NAN})
+    @example({"forced": 1e999})
+    @example({"forced": -1e999})
+    # previously errored on our {pos, neg}_clamper logic not considering nans.
+    @example(
+        {"min_value": -1 * math.inf, "max_value": -1 * math.inf, "forced": math.nan}
+    )
+    @given(
+        draw_float_kwargs(
+            use_min_value=use_min_value, use_max_value=use_max_value, use_forced=True
+        )
+    )
+    def test(kwargs):
+        forced = kwargs["forced"]
 
-    data = fresh_data()
-    drawn = data.draw_float(**kwargs)
-    # Bitwise equality check to handle nan, snan, -nan, +0, -0, etc.
-    assert math.copysign(1, drawn) == math.copysign(1, forced)
-    assert float_to_lex(abs(drawn)) == float_to_lex(abs(forced))
+        data = fresh_data()
+        drawn = data.draw_float(**kwargs)
+        # Bitwise equality check to handle nan, snan, -nan, +0, -0, etc.
+        assert math.copysign(1, drawn) == math.copysign(1, forced)
+        assert float_to_lex(abs(drawn)) == float_to_lex(abs(forced))
 
-    del kwargs["forced"]
-    data = ConjectureData.for_buffer(data.buffer)
-    drawn = data.draw_float(**kwargs)
-    assert math.copysign(1, drawn) == math.copysign(1, forced)
-    assert float_to_lex(abs(drawn)) == float_to_lex(abs(forced))
+        del kwargs["forced"]
+        data = ConjectureData.for_buffer(data.buffer)
+        drawn = data.draw_float(**kwargs)
+        assert math.copysign(1, drawn) == math.copysign(1, forced)
+        assert float_to_lex(abs(drawn)) == float_to_lex(abs(forced))
+
+    test()
