@@ -21,7 +21,6 @@ class _Slow(SearchStrategy):
     def do_draw(self, data):
         time.sleep(1.01)
         data.draw_bytes(2)
-        return None
 
 
 SLOW = _Slow()
@@ -66,12 +65,13 @@ def build_intervals(intervals):
         yield batch
 
 
-def IntervalLists(min_size=0):
+def interval_lists(min_codepoint=0, max_codepoint=sys.maxunicode):
     return (
-        st.lists(st.integers(min_size, sys.maxunicode), unique=True)
+        st.lists(st.integers(min_codepoint, max_codepoint), unique=True)
         .map(sorted)
         .map(build_intervals)
     )
 
 
-Intervals = st.builds(IntervalSet, IntervalLists())
+def intervals(min_codepoint=0, max_codepoint=sys.maxunicode):
+    return st.builds(IntervalSet, interval_lists(min_codepoint, max_codepoint))
