@@ -92,31 +92,22 @@ def draw_integer_kwargs(
     shrink_towards = 0
     weights = None
 
+    # this generation is complicated to deal with maintaining any combination of
+    # the following invariants, depending on which parameters are passed:
+    #
+    # (1) min_value <= forced <= max_value
+    # (2) max_value - min_value + 1 == len(weights)
+    # (3) len(weights) <= 1024
+
     forced = draw(st.integers()) if use_forced else None
-    if use_min_value:
-        min_value = draw(st.integers(max_value=forced))
-    if use_max_value:
-        min_vals = []
-        if min_value is not None:
-            min_vals.append(min_value)
-        if forced is not None:
-            min_vals.append(forced)
-        min_val = max(min_vals) if min_vals else None
-        max_value = draw(st.integers(min_value=min_val))
-    if use_shrink_towards:
-        shrink_towards = draw(st.integers())
     if use_weights:
+        # handle the weights case entirely independently from the non-weights
+        # case. We'll treat the weight width here as our "master" draw and base
+        # all other draws around that result.
         assert use_max_value
         assert use_min_value
 
-        width = max_value - min_value + 1
-        # TODO this assumption can be pretty slow. To improve speed here, we
-        # should consider this 1024 limit when drawing min_value and
-        # max_value.
-        # This will allow us to remove too_slow and filter_too_much suppressions
-        # at usage sites.
-        assume(width <= 1024)
-
+        width = draw(st.integers(1, 1024))
         weights = draw(
             st.lists(
                 # weights doesn't play well with super small floats.
@@ -127,6 +118,26 @@ def draw_integer_kwargs(
                 max_size=width,
             )
         )
+        center = forced if use_forced else draw(st.integers())
+        # pick a random pivot point in the width to split into left and right
+        # segments, for min and max value.
+        pivot = draw(st.integers(0, width - 1))
+        min_value = center - pivot
+        max_value = center + (width - pivot - 1)
+    else:
+        if use_min_value:
+            min_value = draw(st.integers(max_value=forced))
+        if use_max_value:
+            min_vals = []
+            if min_value is not None:
+                min_vals.append(min_value)
+            if forced is not None:
+                min_vals.append(forced)
+            min_val = max(min_vals) if min_vals else None
+            max_value = draw(st.integers(min_value=min_val))
+
+    if use_shrink_towards:
+        shrink_towards = draw(st.integers())
 
     if forced is not None:
         assume((forced - shrink_towards).bit_length() < 128)
