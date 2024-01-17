@@ -3,6 +3,7 @@ branch = True
 omit =
     **/_hypothesis_ftz_detector.py
     **/_hypothesis_pytestplugin.py
+    **/_hypothesis_globals.py
     **/extra/array_api.py
     **/extra/cli.py
     **/extra/django/*.py

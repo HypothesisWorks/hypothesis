@@ -42,8 +42,8 @@ def test_fuzz_find(
     )
 
 
-@given(value=st.text())
-def test_fuzz_note(value: str) -> None:
+@given(value=st.from_type(object))
+def test_fuzz_note(value: object) -> None:
     hypothesis.note(value=value)
 
 

@@ -38,7 +38,7 @@ def capture_observations():
 
 @seed("deterministic so we don't miss some combination of features")
 @example(a=0, x=4, data=None)
-@settings(database=InMemoryExampleDatabase())
+@settings(database=InMemoryExampleDatabase(), deadline=None)
 @given(st.integers(), st.integers(), st.data())
 def do_it_all(a, x, data):
     event(f"{x%2=}")
@@ -65,6 +65,12 @@ def test_observability():
     assert {t["property"] for t in testcases} == {do_it_all.__name__}
     assert len({t["run_start"] for t in testcases}) == 2
     assert {t["status"] for t in testcases} == {"gave_up", "passed", "failed"}
+    for t in testcases:
+        if t["status"] != "gave_up":
+            assert t["timing"]
+            assert ("interactive" in t["arguments"]) == (
+                "generate:interactive" in t["timing"]
+            )
 
 
 def test_assume_has_status_reason():

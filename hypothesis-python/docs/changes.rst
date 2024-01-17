@@ -18,6 +18,59 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.96.0:
+
+-------------------
+6.96.0 - 2024-01-17
+-------------------
+
+Warns when constructing a `repr` that is overly long. This can
+happen by accident if stringifying arbitrary strategies, and
+is expensive in time and memory. The associated deferring of
+these long strings in :func:`~hypothesis.strategies.sampled_from`
+should also lead to improved performance.
+
+.. _v6.95.0:
+
+-------------------
+6.95.0 - 2024-01-17
+-------------------
+
+This release adds the ability to pass any object to :func:`~hypothesis.note`, instead of just strings. The pretty-printed representation of the object will be used.
+
+See also :issue:`3843`.
+
+.. _v6.94.0:
+
+-------------------
+6.94.0 - 2024-01-16
+-------------------
+
+This release avoids creating a ``.hypothesis`` directory when using
+:func:`~hypothesis.strategies.register_type_strategy` (:issue:`3836`),
+and adds warnings for plugins which do so by other means or have
+other unintended side-effects.
+
+.. _v6.93.2:
+
+-------------------
+6.93.2 - 2024-01-15
+-------------------
+
+This patch improves :doc:`observability <observability>` reports by moving
+timing information from ``metadata`` to a new ``timing`` key, and supporting
+conversion of additional argument types to json rather than string reprs
+via a ``.to_json()`` method (including e.g. Pandas dataframes).
+
+Additionally, the :obj:`~hypothesis.HealthCheck.too_slow` health check will
+now report *which* strategies were slow, e.g. for strategies a, b, c, ...::
+
+        count | fraction |    slowest draws (seconds)
+    a |    3  |     65%  |      --      --      --   0.357,  2.000
+    b |    8  |     16%  |   0.100,  0.100,  0.100,  0.111,  0.123
+    c |    3  |      8%  |      --      --   0.030,  0.050,  0.200
+    (skipped 2 rows of fast draws)
+
 .. _v6.93.1:
 
 -------------------

@@ -100,7 +100,7 @@ def test_healthcheck_traceback_is_hidden(testdir):
     timeout_token = ": FailedHealthCheck"
     def_line = get_line_num(def_token, result)
     timeout_line = get_line_num(timeout_token, result)
-    assert timeout_line - def_line == 7
+    assert timeout_line - def_line == 9
 
 
 COMPOSITE_IS_NOT_A_TEST = """

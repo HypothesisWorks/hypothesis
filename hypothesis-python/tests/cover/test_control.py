@@ -8,6 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+from dataclasses import dataclass
+
 import pytest
 
 from hypothesis import Verbosity, assume, given, reject, reporting, settings
@@ -174,6 +176,26 @@ def test_prints_all_notes_in_verbose_mode():
     v = out.getvalue()
     for x in sorted(messages):
         assert x in v
+
+
+@dataclass
+class CanBePrettyPrinted:
+    n: int
+
+
+def test_note_pretty_prints():
+    reports = []
+
+    @given(integers(1, 10))
+    def test(n):
+        with reporting.with_reporter(reports.append):
+            note(CanBePrettyPrinted(n))
+        assert n != 5
+
+    with pytest.raises(AssertionError):
+        test()
+
+    assert reports == ["CanBePrettyPrinted(n=5)"]
 
 
 def test_not_currently_in_hypothesis():

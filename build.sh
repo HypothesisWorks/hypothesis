@@ -4,6 +4,8 @@
 # version of Python, then hand over to the actual Hypothesis build runner (which
 # is written in Python instead of bash).
 
+if [ -n "${CI:-}" ] ; then echo "::group::Build setup" ; fi
+
 set -o xtrace
 set -o errexit
 set -o nounset
@@ -43,5 +45,7 @@ if ! "$TOOL_PYTHON" -m hypothesistooling check-installed ; then
   "$PYTHON" -m virtualenv "$TOOL_VIRTUALENV"
   "$TOOL_PYTHON" -m pip install --no-warn-script-location -r requirements/tools.txt
 fi
+
+if [ -n "${CI:-}" ] ; then echo "::endgroup::" ; fi
 
 "$TOOL_PYTHON" -m hypothesistooling "$@"
