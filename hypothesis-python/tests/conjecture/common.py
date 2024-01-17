@@ -18,6 +18,7 @@ from hypothesis.internal.conjecture.data import ConjectureData, Status
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE, ConjectureRunner
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.entropy import deterministic_PRNG
+from hypothesis.strategies._internal.strings import OneCharStringStrategy, TextStrategy
 
 from tests.common.strategies import Intervals
 
@@ -154,8 +155,12 @@ def draw_integer_kwargs(
 @st.composite
 def draw_string_kwargs(draw, *, use_min_size=True, use_max_size=True, use_forced=False):
     intervals = draw(Intervals)
-    alphabet = [chr(c) for c in intervals]
-    forced = draw(st.text(alphabet)) if use_forced else None
+    # TODO relax this restriction once we handle empty pseudo-choices in the ir
+    assume(len(intervals) > 0)
+    forced = (
+        draw(TextStrategy(OneCharStringStrategy(intervals))) if use_forced else None
+    )
+
     min_size = 0
     max_size = None
 
