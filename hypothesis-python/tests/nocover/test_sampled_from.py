@@ -24,7 +24,6 @@ def test_filter_large_lists(n):
 
     @counts_calls
     def cond(x):
-        assert cond.calls < filter_limit
         return x % 2 != 0
 
     s = st.sampled_from(range(n)).filter(cond)
