@@ -9,12 +9,15 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
+from typing import TypeAlias, Union
 
 import attr
 
 from hypothesis.errors import Flaky, HypothesisException, StopTest
 from hypothesis.internal.conjecture.data import ConjectureData, DataObserver, Status
 from hypothesis.internal.floats import count_between_floats, float_to_int, int_to_float
+
+IRType: TypeAlias = Union[int, str, bool, float, bytes]
 
 
 class PreviouslyUnseenBehaviour(HypothesisException):
@@ -483,9 +486,8 @@ class TreeRecordingObserver(DataObserver):
     def draw_boolean(self, value: bool, was_forced: bool, *, kwargs: dict) -> None:
         self.draw_value("boolean", value, was_forced, kwargs=kwargs)
 
-    # TODO proper value: IR_TYPE typing
     def draw_value(
-        self, ir_type, value, was_forced: bool, *, kwargs: dict = {}
+        self, ir_type, value: IRType, was_forced: bool, *, kwargs: dict = {}
     ) -> None:
         i = self.__index_in_current_node
         self.__index_in_current_node += 1
