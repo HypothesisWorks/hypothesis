@@ -299,10 +299,12 @@ class DataTree:
         for it to be uniform at random, but previous attempts to do that
         have proven too expensive.
         """
+        # we should possibly pull out BUFFER_SIZE to a common file to avoid this
+        # circular import.
+        from hypothesis.internal.conjecture.engine import BUFFER_SIZE
+
         assert not self.is_exhausted
         novel_prefix = bytearray()
-
-        BUFFER_SIZE = 8 * 1024
 
         def draw(ir_type, kwargs, *, forced=None):
             cd = ConjectureData(max_length=BUFFER_SIZE, prefix=b"", random=random)
