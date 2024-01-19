@@ -1609,7 +1609,7 @@ class ConjectureData:
                 return ""
 
             if min_size == max_size and len(intervals) == 1:
-                return chr(intervals[0])
+                return chr(intervals[0]) * min_size
 
         if len(intervals) == 0:
             return ""

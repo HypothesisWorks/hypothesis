@@ -103,3 +103,10 @@ def ir_types_and_kwargs(draw):
 def test_compute_max_children(ir_type_and_kwargs):
     (ir_type, kwargs) = ir_type_and_kwargs
     assert compute_max_children(kwargs, ir_type) >= 0
+
+
+@given(st.text(min_size=1, max_size=1), st.integers(0, 100))
+def test_draw_string_single_interval_with_equal_bounds(s, n):
+    data = fresh_data()
+    intervals = IntervalSet.from_string(s)
+    assert data.draw_string(intervals, min_size=n, max_size=n) == s * n
