@@ -228,8 +228,8 @@ def sampled_from(
         # Combinations of enum.Flag members are also members.  We generate
         # these dynamically, because static allocation takes O(2^n) memory.
         # LazyStrategy is used for the ease of force_repr.
-        inner = sets(sampled_from(list(values)), min_size=1).map(
-            lambda s: reduce(operator.or_, s)
+        inner = sets(sampled_from(list(values))).map(
+            lambda s: reduce(operator.or_, s, elements(0))
         )
         return LazyStrategy(lambda: inner, args=[], kwargs={}, force_repr=repr_)
     return SampledFromStrategy(values, repr_)

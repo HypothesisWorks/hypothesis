@@ -9,6 +9,9 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import enum
+import functools
+import itertools
+import operator
 
 import pytest
 
@@ -16,6 +19,7 @@ from hypothesis import given, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies._internal.strategies import SampledFromStrategy
 
+from tests.common.debug import minimal
 from tests.common.utils import fails_with
 
 
@@ -84,3 +88,25 @@ class AFlag(enum.Flag):
 def test_flag_enum_repr_uses_class_not_a_list():
     lazy_repr = repr(st.sampled_from(AFlag))
     assert lazy_repr == "sampled_from(tests.nocover.test_sampled_from.AFlag)"
+
+
+def test_exhaustive_flags():
+    # Generate powerset of flag combinations. There are four of them with two values,
+    # so we can reasonably expect that they are all are found.
+    unseen_flags = {
+        functools.reduce(operator.or_, flaglist, AFlag(0))
+        for r in range(len(AFlag) + 1)
+        for flaglist in itertools.combinations(AFlag, r)
+    }
+
+    @given(st.sampled_from(AFlag))
+    def test_it(flag):
+        unseen_flags.discard(flag)
+
+    test_it()
+
+    assert not unseen_flags
+
+
+def test_flags_minimize_to_empty():
+    assert minimal(st.sampled_from(AFlag)) == AFlag(0)
