@@ -320,17 +320,6 @@ class DataTree:
                 value = float_to_int(value)
             return (value, cd.buffer)
 
-        def draw_buf(ir_type, kwargs, *, forced):
-            (_, buf) = draw(ir_type, kwargs, forced=forced)
-            return buf
-
-        def draw_value(ir_type, kwargs):
-            (value, _) = draw(ir_type, kwargs)
-            return value
-
-        def append_value(ir_type, kwargs, *, forced):
-            novel_prefix.extend(draw_buf(ir_type, kwargs, forced=forced))
-
         def append_buf(buf):
             novel_prefix.extend(buf)
 
@@ -343,7 +332,8 @@ class DataTree:
                 if i in current_node.forced:
                     if ir_type == "float":
                         value = int_to_float(value)
-                    append_value(ir_type, kwargs, forced=value)
+                    (_value, buf) = draw(ir_type, kwargs, forced=value)
+                    append_buf(buf)
                 else:
                     attempts = 0
                     while True:
