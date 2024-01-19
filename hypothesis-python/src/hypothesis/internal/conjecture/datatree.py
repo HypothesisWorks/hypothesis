@@ -313,8 +313,6 @@ class DataTree:
             # float key is in its bits form (as a key into branch.children) and
             # when it is in its float form (as a value we want to write to the
             # buffer), and converting between the two forms as appropriate.
-            # TODO write a test for this to confirm my intuition of breakage is
-            # correct.
             if ir_type == "float":
                 value = float_to_int(value)
             return (value, cd.buffer)

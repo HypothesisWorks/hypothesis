@@ -15,8 +15,11 @@ import pytest
 from hypothesis import HealthCheck, settings
 from hypothesis.errors import Flaky
 from hypothesis.internal.conjecture.data import ConjectureData, Status, StopTest
-from hypothesis.internal.conjecture.datatree import DataTree
+from hypothesis.internal.conjecture.datatree import Branch, DataTree
 from hypothesis.internal.conjecture.engine import ConjectureRunner
+from hypothesis.internal.conjecture.floats import float_to_int
+
+from tests.conjecture.common import run_to_buffer
 
 TEST_SETTINGS = settings(
     max_examples=5000, database=None, suppress_health_check=list(HealthCheck)
@@ -363,3 +366,41 @@ def test_will_mark_changes_in_discard_as_flaky():
 
     with pytest.raises(Flaky):
         data.stop_example(discard=True)
+
+
+def test_is_not_flaky_on_positive_zero_and_negative_zero():
+    # if we store floats in a naive way, the 0.0 and -0.0 draws will be treated
+    # equivalently and will lead to flaky errors when they diverge on the boolean
+    # draw.
+    tree = DataTree()
+
+    @run_to_buffer
+    def buf1(data):
+        data.draw_float(forced=0.0)
+        # the value drawn here doesn't actually matter, since we'll force it
+        # latter. we just want to avoid buffer overruns.
+        data.draw_boolean()
+        data.mark_interesting()
+
+    @run_to_buffer
+    def buf2(data):
+        data.draw_float(forced=-0.0)
+        data.draw_boolean()
+        data.mark_interesting()
+
+    data = ConjectureData.for_buffer(buf1, observer=tree.new_observer())
+    f = data.draw_float()
+    assert float_to_int(f) == float_to_int(0.0)
+    data.draw_boolean(forced=False)
+    data.freeze()
+
+    data = ConjectureData.for_buffer(buf2, observer=tree.new_observer())
+    f = data.draw_float()
+    assert float_to_int(f) == float_to_int(-0.0)
+    data.draw_boolean(forced=True)
+    data.freeze()
+
+    assert isinstance(tree.root.transition, Branch)
+    children = tree.root.transition.children
+    assert children[float_to_int(0.0)].values == [False]
+    assert children[float_to_int(-0.0)].values == [True]
