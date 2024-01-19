@@ -97,12 +97,19 @@ def compute_max_children(kwargs, ir_type):
         min_value = kwargs["min_value"]
         max_value = kwargs["max_value"]
 
-        if min_value is None:
-            min_value = -(2**127) + 1
-        if max_value is None:
-            max_value = 2**127 - 1
+        if min_value is None and max_value is None:
+            # full 128 bit range.
+            return 2**128 - 1
+        if min_value is not None and max_value is not None:
+            # count between min/max value.
+            return max_value - min_value + 1
 
-        return max_value - min_value + 1
+        # hard case: only one bound was specified. Here we probe either upwards
+        # or downwards with our full 128 bit generation, but only half of these
+        # (plus one for the case of generating zero) result in a probe in the
+        # direction we want. ((2**128 - 1) // 2) + 1 == 2 ** 127
+        assert (min_value is None) ^ (max_value is None)
+        return 2**127
     elif ir_type == "boolean":
         return 2
     elif ir_type == "bytes":

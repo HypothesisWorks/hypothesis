@@ -8,7 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from hypothesis import example, given
+from hypothesis import example, given, strategies as st
 from hypothesis.internal.conjecture.datatree import compute_max_children
 from hypothesis.internal.intervalsets import IntervalSet
 
@@ -29,12 +29,11 @@ def _test_empty_range(ir_type, kwargs):
     the bitstream iff there were multiple valid choices to begin with.
 
     This possibility is present in almost every ir node:
-    1. draw_integer(n, n)
-    2. draw_bytes(0)
-    3. draw_float(n, n)
-    4. draw_string(max_size=0)
-    5. draw_boolean(p=0)
-
+    - draw_integer(n, n)
+    - draw_bytes(0)
+    - draw_float(n, n)
+    - draw_string(max_size=0)
+    - draw_boolean(p=0)
     """
     data = fresh_data()
     draw_func = getattr(data, f"draw_{ir_type}")
@@ -77,3 +76,30 @@ def test_empty_range_string(kwargs):
 @given(draw_boolean_kwargs())
 def test_empty_range_boolean(kwargs):
     _test_empty_range("boolean", kwargs)
+
+
+@st.composite
+def ir_types_and_kwargs(draw):
+    ir_type = draw(st.sampled_from(["integer", "bytes", "float", "string", "boolean"]))
+    kwargs_strategy = {
+        "integer": draw_integer_kwargs(),
+        "bytes": draw_bytes_kwargs(),
+        "float": draw_float_kwargs(),
+        "string": draw_string_kwargs(),
+        "boolean": draw_boolean_kwargs(),
+    }[ir_type]
+    kwargs = draw(kwargs_strategy)
+
+    return (ir_type, kwargs)
+
+
+# we max out at 128 bit integers in the *unbounded* case, but someone may
+# specify a bound with a larger magnitude. Ensure we calculate max children for
+# those cases correctly.
+@example(("integer", {"min_value": None, "max_value": -(2**200)}))
+@example(("integer", {"min_value": 2**200, "max_value": None}))
+@example(("integer", {"min_value": -(2**200), "max_value": 2**200}))
+@given(ir_types_and_kwargs())
+def test_compute_max_children(ir_type_and_kwargs):
+    (ir_type, kwargs) = ir_type_and_kwargs
+    assert compute_max_children(kwargs, ir_type) >= 0
