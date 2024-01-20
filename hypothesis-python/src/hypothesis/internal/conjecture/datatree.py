@@ -64,7 +64,19 @@ class Branch:
     # https://github.com/python-attrs/attrs/releases/tag/23.2.0
     @property
     def max_children(self):
-        return compute_max_children(self.kwargs, self.ir_type)
+        # generate_novel_prefix assumes the following invariant: any one of the
+        # series of draws in a particular node can vary, i.e. the max number of
+        # children is at least 2. However, some draws are pseudo-choices and
+        # only have a single value, such as integers(0, 0).
+        #
+        # Currently, we address this by not writing such choices to the tree at
+        # all, and thus can guarantee each node has at least 2 max children.
+        #
+        # An alternative is to forcefully split such single-valued nodes into a
+        # transition whenever we see them.
+        max_children = compute_max_children(self.kwargs, self.ir_type)
+        assert max_children >= 2
+        return max_children
 
 
 @attr.s(slots=True, frozen=True)
@@ -729,19 +741,6 @@ class TreeRecordingObserver(DataObserver):
                 node.values.append(value)
                 if was_forced:
                     node.mark_forced(i)
-                # generate_novel_prefix assumes the following invariant: any one
-                # of the series of draws in a particular node can vary. This is
-                # true if all nodes have more than one possibility, which was
-                # true when the underlying representation was bits (lowest was
-                # n=1 bits with m=2 choices).
-                # However, with the ir, e.g. integers(0, 0) has only a single
-                # value. To retain the invariant, we forcefully split such cases
-                # into a transition.
-
-                # TODO enforce this somewhere else and rewrite the outdated comment
-                # above. computing this here is probably too expensive.
-                # (where to enforce?)
-                assert compute_max_children(kwargs, ir_type) > 1, (kwargs, ir_type)
             elif isinstance(trans, Conclusion):
                 assert trans.status != Status.OVERRUN
                 # We tried to draw where history says we should have
