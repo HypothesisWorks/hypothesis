@@ -9,13 +9,18 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
-from typing import TypeAlias, Union
+from typing import TYPE_CHECKING, Union
 
 import attr
 
 from hypothesis.errors import Flaky, HypothesisException, StopTest
 from hypothesis.internal.conjecture.data import ConjectureData, DataObserver, Status
 from hypothesis.internal.floats import count_between_floats, float_to_int, int_to_float
+
+if TYPE_CHECKING:
+    from typing import TypeAlias
+else:
+    TypeAlias = object
 
 IRType: TypeAlias = Union[int, str, bool, float, bytes]
 
