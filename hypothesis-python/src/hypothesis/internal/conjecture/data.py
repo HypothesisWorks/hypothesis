@@ -161,6 +161,8 @@ NASTY_FLOATS.extend([-x for x in NASTY_FLOATS])
 
 FLOAT_INIT_LOGIC_CACHE = LRUReusedCache(4096)
 
+DRAW_STRING_DEFAULT_MAX_SIZE = 10**10  # "arbitrarily large"
+
 
 class Example:
     """Examples track the hierarchical structure of draws from the byte stream,
@@ -1131,7 +1133,7 @@ class PrimitiveProvider:
         forced: Optional[str] = None,
     ) -> str:
         if max_size is None:
-            max_size = 10**10  # "arbitrarily large"
+            max_size = DRAW_STRING_DEFAULT_MAX_SIZE
 
         assert forced is None or min_size <= len(forced) <= max_size
 

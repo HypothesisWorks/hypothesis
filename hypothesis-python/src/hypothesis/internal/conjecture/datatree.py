@@ -101,6 +101,8 @@ MAX_CHILDREN_EFFECTIVELY_INFINITE = 100_000
 
 
 def compute_max_children(kwargs, ir_type):
+    from hypothesis.internal.conjecture.data import DRAW_STRING_DEFAULT_MAX_SIZE
+
     if ir_type == "integer":
         min_value = kwargs["min_value"]
         max_value = kwargs["max_value"]
@@ -128,8 +130,7 @@ def compute_max_children(kwargs, ir_type):
         intervals = kwargs["intervals"]
 
         if max_size is None:
-            # TODO extract this magic value out now that it's used in two places.
-            max_size = 10**10
+            max_size = DRAW_STRING_DEFAULT_MAX_SIZE
 
         # special cases for empty string, which has a single possibility.
         if min_size == 0 and max_size == 0:
