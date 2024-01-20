@@ -162,59 +162,94 @@ def compute_max_children(kwargs, ir_type):
 
 @attr.s(slots=True)
 class TreeNode:
-    """Node in a tree that corresponds to previous interactions with
-    a ``ConjectureData`` object according to some fixed test function.
+    """
+    A node, or collection of directly descended nodes, in a DataTree.
 
-    This is functionally a variant patricia trie.
-    See https://en.wikipedia.org/wiki/Radix_tree for the general idea,
-    but what this means in particular here is that we have a very deep
-    but very lightly branching tree and rather than store this as a fully
-    recursive structure we flatten prefixes and long branches into
-    lists. This significantly compacts the storage requirements.
+    We store the DataTree as a radix tree (https://en.wikipedia.org/wiki/Radix_tree),
+    which means that nodes that are the only child of their parent are collapsed
+    into their parent to save space.
 
-    A single ``TreeNode`` corresponds to a previously seen sequence
-    of calls to ``ConjectureData`` which we have never seen branch,
-    followed by a ``transition`` which describes what happens next.
+    Conceptually, you can unfold a single TreeNode storing n values in its lists
+    into a sequence of n nodes, each a child of the last. In other words,
+    (kwargs[i], values[i], ir_types[i]) corresponds to the single node at index
+    i.
+
+    Note that if a TreeNode represents a choice (i.e. the nodes cannot be compacted
+    via the radix tree definition), then its lists will be empty and it will
+    store a `Branch` representing that choce in its `transition`.
+
+    Examples
+    --------
+
+    Consider sequentially drawing a boolean, then an integer.
+
+            data.draw_boolean()
+            data.draw_integer(1, 3)
+
+    If we draw True and then 2, the tree may conceptually look like this.
+
+                      ┌──────┐
+                      │ root │
+                      └──┬───┘
+                      ┌──┴───┐
+                      │ True │
+                      └──┬───┘
+                      ┌──┴───┐
+                      │  2   │
+                      └──────┘
+
+    But since 2 is the only child of True, we will compact these nodes and store
+    them as a single TreeNode.
+
+                      ┌──────┐
+                      │ root │
+                      └──┬───┘
+                    ┌────┴──────┐
+                    │ [True, 2] │
+                    └───────────┘
+
+    If we then draw True and then 3, True will have multiple children and we
+    can no longer store this compacted representation. We would call split_at(0)
+    on the [True, 2] node to indicate that we need to add a choice at 0-index
+    node (True).
+
+                      ┌──────┐
+                      │ root │
+                      └──┬───┘
+                      ┌──┴───┐
+                    ┌─┤ True ├─┐
+                    │ └──────┘ │
+                  ┌─┴─┐      ┌─┴─┐
+                  │ 2 │      │ 3 │
+                  └───┘      └───┘
     """
 
-    # Records the previous sequence of calls to ``data.draw_bits``,
-    # with the ``n_bits`` argument going in ``bit_lengths`` and the
-    # values seen in ``values``. These should always have the same
-    # length.
+    # The kwargs, value, and ir_types of the nodes stored here. These always
+    # have the same length. The values at index i belong to node i.
     kwargs = attr.ib(factory=list)
     values = attr.ib(factory=list)
     ir_types = attr.ib(factory=list)
 
-    # The indices of of the calls to ``draw_bits`` that we have stored
-    # where  ``forced`` is not None. Stored as None if no indices
-    # have been forced, purely for space saving reasons (we force
-    # quite rarely).
+    # The indices of nodes which had forced values.
+    #
+    # Stored as None if no indices have been forced, purely for space saving
+    # reasons (we force quite rarely).
     __forced = attr.ib(default=None, init=False)
 
-    # What happens next after observing this sequence of calls.
-    # Either:
+    # What happens next after drawing these nodes. (conceptually, "what is the
+    # child/children of the last node stored here").
     #
-    # * ``None``, indicating we don't know yet.
-    # * A ``Branch`` object indicating that there is a ``draw_bits``
-    #   call that we have seen take multiple outcomes there.
-    # * A ``Conclusion`` object indicating that ``conclude_test``
-    #   was called here.
+    # One of:
+    # - None (we don't know yet)
+    # - Branch (we have seen multiple possible outcomes here)
+    # - Conclusion (ConjectureData.conclude_test was called here)
     transition = attr.ib(default=None)
 
-    # A tree node is exhausted if every possible sequence of
-    # draws below it has been explored. We store this information
-    # on a field and update it when performing operations that
-    # could change the answer.
+    # A tree node is exhausted if every possible sequence of draws below it has
+    # been explored. We only update this when performing operations that could
+    # change the answer.
     #
-    # A node may start exhausted, e.g. because it it leads
-    # immediately to a conclusion, but can only go from
-    # non-exhausted to exhausted when one of its children
-    # becomes exhausted or it is marked as a conclusion.
-    #
-    # Therefore we only need to check whether we need to update
-    # this field when the node is first created in ``split_at``
-    # or when we have walked a path through this node to a
-    # conclusion in ``TreeRecordingObserver``.
+    # See also TreeNode.check_exhausted.
     is_exhausted = attr.ib(default=False, init=False)
 
     @property
@@ -224,17 +259,21 @@ class TreeNode:
         return self.__forced
 
     def mark_forced(self, i):
-        """Note that the value at index ``i`` was forced."""
+        """
+        Note that the draw at node i was forced.
+        """
         assert 0 <= i < len(self.values)
         if self.__forced is None:
             self.__forced = set()
         self.__forced.add(i)
 
     def split_at(self, i):
-        """Splits the tree so that it can incorporate
-        a decision at the ``draw_bits`` call corresponding
-        to position ``i``, or raises ``Flaky`` if that was
-        meant to be a forced node."""
+        """
+        Splits the tree so that it can incorporate a decision at the draw call
+        corresponding to the node at position i.
+
+        Raises Flaky if node i was forced.
+        """
 
         if i in self.forced:
             inconsistent_generation()
@@ -262,12 +301,39 @@ class TreeNode:
         assert len(self.values) == len(self.kwargs) == len(self.ir_types) == i
 
     def check_exhausted(self):
-        """Recalculates ``self.is_exhausted`` if necessary then returns
-        it."""
+        """
+        Recalculates is_exhausted if necessary, and then returns it.
+
+        A node is exhausted if:
+        - Its transition is Conclusion or Killed
+        - It has the maximum number of children (i.e. we have found all of its
+          possible children), and all its children are exhausted
+
+        Therefore, we only need to compute this for a node when:
+        - We first create it in split_at
+        - We set its transition to either Conclusion or Killed
+          (TreeRecordingObserver.conclude_test or TreeRecordingObserver.kill_branch)
+        - We exhaust any of its children
+        """
+
         if (
+            # a node cannot go from is_exhausted -> not is_exhausted.
             not self.is_exhausted
-            and len(self.forced) == len(self.values)
+            # if we don't know what happens after this node, we don't have
+            # enough information to tell if it's exhausted.
             and self.transition is not None
+            # if there are still any nodes left which are the only child of their
+            # parent (len(self.values) > 0), then this TreeNode must be not
+            # exhausted, unless all of those nodes were forced.
+            #
+            # This is because we maintain an invariant of only adding nodes to
+            # DataTree which have at least 2 possible values, so we know that if
+            # they do not have any siblings that we still have more choices to
+            # discover.
+            #
+            # For example, we do not add pseudo-choice nodes like
+            # draw_integer(0, 0) to the tree.
+            and len(self.forced) == len(self.values)
         ):
             if isinstance(self.transition, (Conclusion, Killed)):
                 self.is_exhausted = True
@@ -279,16 +345,158 @@ class TreeNode:
 
 
 class DataTree:
-    """Tracks the tree structure of a collection of ConjectureData
-    objects, for use in ConjectureRunner."""
+    """
+    A DataTree tracks the structured history of draws in some test function,
+    across multiple ConjectureData objects.
+
+    This information is used by ConjectureRunner to generate novel prefixes of
+    this tree (see generate_novel_prefix). A novel prefix is a sequence of draws
+    which the tree has not seen before, and therefore the ConjectureRunner has
+    not generated as an input to the test function before.
+
+    DataTree tracks the following:
+
+    - Draws, at the ir level (with some ir_type, e.g. "integer")
+      - ConjectureData.draw_integer()
+      - ConjectureData.draw_float()
+      - ConjectureData.draw_string()
+      - ConjectureData.draw_boolean()
+      - ConjectureData.draw_bytes()
+    - Test conclusions (with some Status, e.g. Status.VALID)
+      - ConjectureData.conclude_test()
+
+    A DataTree is — surprise — a *tree*. A node in this tree is either a draw with
+    some value, a test conclusion with some Status, or a special `Killed` value,
+    which denotes that further draws may exist beyond this node but should not be
+    considered worth exploring when generating novel prefixes. A node is a leaf
+    iff it is a conclusion or Killed.
+
+    A branch from node A to node B indicates that we have previously seen some
+    sequence (a, b) of draws, where a and b are the values in nodes A and B.
+    Similar intuition holds for conclusion and Killed nodes.
+
+    Examples
+    --------
+
+    To see how a DataTree gets built through successive sets of draws, consider
+    the following code that calls through to some ConjecutreData object `data`.
+    The first call can be either True or False, and the second call can be any
+    integer in the range [1, 3].
+
+        data.draw_boolean()
+        data.draw_integer(1, 3)
+
+    To start, the corresponding DataTree object is completely empty.
+
+                      ┌──────┐
+                      │ root │
+                      └──────┘
+
+    We happen to draw True and then 2 in the above code. The tree tracks this.
+    (2 also connects to a child Conclusion node with Status.VALID since it's the
+    final draw in the code. I'll omit Conclusion nodes in diagrams for brevity.)
+
+                      ┌──────┐
+                      │ root │
+                      └──┬───┘
+                      ┌──┴───┐
+                      │ True │
+                      └──┬───┘
+                      ┌──┴───┐
+                      │  2   │
+                      └──────┘
+
+    This is a very boring tree so far! But now we happen to draw False and
+    then 1. This causes a split in the tree. Remember, DataTree tracks history
+    over all invocations of a function, not just one. The end goal is to know
+    what invocations haven't been tried yet, after all.
+
+                      ┌──────┐
+                  ┌───┤ root ├───┐
+                  │   └──────┘   │
+               ┌──┴───┐        ┌─┴─────┐
+               │ True │        │ False │
+               └──┬───┘        └──┬────┘
+                ┌─┴─┐           ┌─┴─┐
+                │ 2 │           │ 1 │
+                └───┘           └───┘
+
+    If we were to ask DataTree for a novel prefix at this point, it might
+    generate any of (True, 1), (True, 3), (False, 2), or (False, 3).
+
+    Note that the novel prefix stops as soon as it generates a novel node. For
+    instance, if we had generated a novel prefix back when the tree was only
+    root -> True -> 2, we could have gotten any of (True, 1), (True, 3), or
+    (False). But we could *not* have gotten (False, n), because both False and
+    n were novel at that point, and we stop at the first novel node — False.
+
+    I won't belabor this example. Here's what the tree looks like when fully
+    explored:
+
+                      ┌──────┐
+               ┌──────┤ root ├──────┐
+               │      └──────┘      │
+            ┌──┴───┐              ┌─┴─────┐
+         ┌──┤ True ├──┐       ┌───┤ False ├──┐
+         │  └──┬───┘  │       │   └──┬────┘  │
+       ┌─┴─┐ ┌─┴─┐  ┌─┴─┐   ┌─┴─┐  ┌─┴─┐   ┌─┴─┐
+       │ 1 │ │ 2 │  │ 3 │   │ 1 │  │ 2 │   │ 3 │
+       └───┘ └───┘  └───┘   └───┘  └───┘   └───┘
+
+    You could imagine much more complicated trees than this arising in practice,
+    and indeed they do. In particular, the tree need not be balanced or 'nice'
+    like the tree above. For instance,
+
+        b = data.draw_boolean()
+        if b:
+            data.draw_integer(1, 3)
+
+    results in a tree with the entire right part lopped off, and False leading
+    straight to a conclusion node with Status.VALID. As another example,
+
+        n = data.draw_integers()
+        assume(n >= 3)
+        data.draw_string()
+
+    results in a tree with the 0, 1, and 2 nodes leading straight to a
+    conclusion node with Status.INVALID, and the rest branching off into all
+    the possibilities of draw_string.
+
+    Notes
+    -----
+
+    The above examples are slightly simplified and are intended to convey
+    intuition. In practice, there are some implementation details to be aware
+    of.
+
+    - In draw nodes, we store the kwargs used in addition to the value drawn.
+      E.g. the node corresponding to data.draw_float(min_value=1.0, max_value=1.5)
+      would store {"min_value": 1.0, "max_value": 1.5, ...} (default values for
+      other kwargs omitted).
+
+      The kwargs parameters have the potential to change both the range of
+      possible outputs of a node, and the probability distribution within that
+      range, so we need to use these when drawing in DataTree as well. We draw
+      values using these kwargs when (1) generating a novel value for a node
+      and (2) choosing a random child when traversing the tree.
+
+    - For space efficiency, rather than tracking the full tree structure, we
+      store DataTree as a radix tree. This is conceptually equivalent (radix
+      trees can always be "unfolded" to the full tree) but it means the internal
+      representation may differ in practice.
+
+      See TreeNode for more information.
+    """
 
     def __init__(self):
         self.root = TreeNode()
 
     @property
     def is_exhausted(self):
-        """Returns True if every possible node is dead and thus the language
-        described must have been fully explored."""
+        """
+        Returns True if every node is exhausted, and therefore the tree has
+        been fully explored.
+        """
         return self.root.is_exhausted
 
     def generate_novel_prefix(self, random):
