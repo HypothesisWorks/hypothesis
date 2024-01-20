@@ -689,23 +689,23 @@ class TreeRecordingObserver(DataObserver):
         self.__trail = [self.__current_node]
         self.killed = False
 
-    def draw_integer(self, value: int, was_forced: bool, *, kwargs: dict) -> None:
-        self.draw_value("integer", value, was_forced, kwargs=kwargs)
+    def draw_integer(self, value: int, *, was_forced: bool, kwargs: dict) -> None:
+        self.draw_value("integer", value, was_forced=was_forced, kwargs=kwargs)
 
-    def draw_float(self, value: float, was_forced: bool, *, kwargs: dict) -> None:
-        self.draw_value("float", value, was_forced, kwargs=kwargs)
+    def draw_float(self, value: float, *, was_forced: bool, kwargs: dict) -> None:
+        self.draw_value("float", value, was_forced=was_forced, kwargs=kwargs)
 
-    def draw_string(self, value: str, was_forced: bool, *, kwargs: dict) -> None:
-        self.draw_value("string", value, was_forced, kwargs=kwargs)
+    def draw_string(self, value: str, *, was_forced: bool, kwargs: dict) -> None:
+        self.draw_value("string", value, was_forced=was_forced, kwargs=kwargs)
 
-    def draw_bytes(self, value: bytes, was_forced: bool, *, kwargs: dict) -> None:
-        self.draw_value("bytes", value, was_forced, kwargs=kwargs)
+    def draw_bytes(self, value: bytes, *, was_forced: bool, kwargs: dict) -> None:
+        self.draw_value("bytes", value, was_forced=was_forced, kwargs=kwargs)
 
-    def draw_boolean(self, value: bool, was_forced: bool, *, kwargs: dict) -> None:
-        self.draw_value("boolean", value, was_forced, kwargs=kwargs)
+    def draw_boolean(self, value: bool, *, was_forced: bool, kwargs: dict) -> None:
+        self.draw_value("boolean", value, was_forced=was_forced, kwargs=kwargs)
 
     def draw_value(
-        self, ir_type, value: IRType, was_forced: bool, *, kwargs: dict = {}
+        self, ir_type, value: IRType, *, was_forced: bool, kwargs: dict = {}
     ) -> None:
         i = self.__index_in_current_node
         self.__index_in_current_node += 1

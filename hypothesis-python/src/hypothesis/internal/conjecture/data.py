@@ -813,19 +813,19 @@ class DataObserver:
     def kill_branch(self) -> None:
         """Mark this part of the tree as not worth re-exploring."""
 
-    def draw_integer(self, value: int, was_forced: bool, *, kwargs: dict) -> None:
+    def draw_integer(self, value: int, *, was_forced: bool, kwargs: dict) -> None:
         pass
 
-    def draw_float(self, value: float, was_forced: bool, *, kwargs: dict) -> None:
+    def draw_float(self, value: float, *, was_forced: bool, kwargs: dict) -> None:
         pass
 
-    def draw_string(self, value: str, was_forced: bool, *, kwargs: dict) -> None:
+    def draw_string(self, value: str, *, was_forced: bool, kwargs: dict) -> None:
         pass
 
-    def draw_bytes(self, value: bytes, was_forced: bool, *, kwargs: dict) -> None:
+    def draw_bytes(self, value: bytes, *, was_forced: bool, kwargs: dict) -> None:
         pass
 
-    def draw_boolean(self, value: bool, was_forced: bool, *, kwargs: dict) -> None:
+    def draw_boolean(self, value: bool, *, was_forced: bool, kwargs: dict) -> None:
         pass
 
 
