@@ -1641,9 +1641,10 @@ class ConjectureData:
             return b""
 
         kwargs = {"size": size}
-        # TODO we already track byte draws via DRAW_BYTES_LABEL_CD, and this is
-        # an exact duplicate of that example. Will this be a problem for
-        # performance?
+        # we already track byte draws via DRAW_BYTES_LABEL_CD, and this is
+        # an exact duplicate of that example. Not a huge performance concern,
+        # but we may want to clean this up (i.e. remove one example) in the
+        # future.
         self.start_example(DRAW_BYTES_LABEL)
         value = self.provider.draw_bytes(**kwargs, forced=forced)
         self.stop_example()
