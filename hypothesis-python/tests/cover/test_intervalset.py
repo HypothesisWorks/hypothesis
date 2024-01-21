@@ -13,32 +13,14 @@ import pytest
 from hypothesis import HealthCheck, assume, example, given, settings, strategies as st
 from hypothesis.internal.intervalsets import IntervalSet
 
+from tests.common.strategies import interval_lists, intervals
 
-def build_intervals(ls):
-    ls.sort()
-    result = []
-    for u, l in ls:
-        v = u + l
-        if result:
-            a, b = result[-1]
-            if u <= b + 1:
-                result[-1] = (a, v)
-                continue
-        result.append((u, v))
-    return result
+# various tests in this file impose a max_codepoint restriction on intervals,
+# for performance. There may be possibilities for performance improvements in
+# IntervalSet itself as well.
 
 
-def IntervalLists(min_size=0):
-    return st.lists(
-        st.tuples(st.integers(0, 200), st.integers(0, 20)),
-        min_size=min_size,
-    ).map(build_intervals)
-
-
-Intervals = st.builds(IntervalSet, IntervalLists())
-
-
-@given(Intervals)
+@given(intervals(max_codepoint=200))
 def test_intervals_are_equivalent_to_their_lists(intervals):
     ls = list(intervals)
     assert len(ls) == len(intervals)
@@ -48,7 +30,7 @@ def test_intervals_are_equivalent_to_their_lists(intervals):
         assert ls[-i] == intervals[-i]
 
 
-@given(Intervals)
+@given(intervals(max_codepoint=200))
 def test_intervals_match_indexes(intervals):
     ls = list(intervals)
     for v in ls:
@@ -57,7 +39,7 @@ def test_intervals_match_indexes(intervals):
 
 @example(intervals=IntervalSet(((1, 1),)), v=0)
 @example(intervals=IntervalSet(()), v=0)
-@given(Intervals, st.integers(0, 0x10FFFF))
+@given(intervals(), st.integers(0, 0x10FFFF))
 def test_error_for_index_of_not_present_value(intervals, v):
     assume(v not in intervals)
     with pytest.raises(ValueError):
@@ -92,7 +74,7 @@ def intervals_to_set(ints):
 @example(x=[(0, 1), (3, 3)], y=[(1, 3)])
 @example(x=[(0, 1)], y=[(0, 0), (1, 1)])
 @example(x=[(0, 1)], y=[(1, 1)])
-@given(IntervalLists(min_size=1), IntervalLists(min_size=1))
+@given(interval_lists(max_codepoint=200), interval_lists(max_codepoint=200))
 def test_subtraction_of_intervals(x, y):
     xs = intervals_to_set(x)
     ys = intervals_to_set(y)
@@ -104,9 +86,8 @@ def test_subtraction_of_intervals(x, y):
     assert intervals_to_set(z) == intervals_to_set(x) - intervals_to_set(y)
 
 
-@given(Intervals, Intervals)
+@given(intervals(max_codepoint=200), intervals(max_codepoint=200))
 def test_interval_intersection(x, y):
-    print(f"{set(x)=} {set(y)=} {set(x)-(set(y)-set(x))=}")
     assert set(x & y) == set(x) & set(y)
     assert set(x.intersection(y)) == set(x).intersection(y)
 
