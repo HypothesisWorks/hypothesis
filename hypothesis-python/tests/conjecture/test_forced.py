@@ -13,7 +13,7 @@ import math
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import HealthCheck, example, given, settings, assume
+from hypothesis import HealthCheck, assume, example, given, settings
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.floats import float_to_lex

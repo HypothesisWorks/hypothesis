@@ -1396,10 +1396,7 @@ class PrimitiveProvider:
             )
 
         forced_sign_bit: Optional[Literal[0, 1]] = None
-        # if we allow nans, then all forced sign logic is out the window. We may
-        # generate e.g. -math.nan with bounds of (0, 1], and forcing the sign
-        # to positive in this case would be incorrect.
-        if ((pos_clamper is None) != (neg_clamper is None)) and not allow_nan:
+        if (pos_clamper is None) != (neg_clamper is None):
             forced_sign_bit = 1 if neg_clamper else 0
 
         return (sampler, forced_sign_bit, neg_clamper, pos_clamper, nasty_floats)
