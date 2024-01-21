@@ -1080,31 +1080,14 @@ class PrimitiveProvider:
         self._cd.start_example(DRAW_FLOAT_INNER_LABEL)
         if i == 0:
             result = self._draw_float(forced_sign_bit=forced_sign_bit, forced=forced)
-            # if we drew a nan and we allow nans, great! take that as our
-            # result.
-            if math.isnan(result) and allow_nan:
-                pass
+            if math.copysign(1.0, result) == -1:
+                assert neg_clamper is not None
+                clamped = -neg_clamper(-result)
             else:
-                # if we drew a nan, and we don't allow nans, clamp it to
-                # inf/ninf (depending on sign). Then clamp it further
-                # based on our clampers.
-                # This is to be explicit about weird nan interactions with
-                # our clampers.
-                if math.isnan(result) and not allow_nan:
-                    result = math.inf * math.copysign(1.0, result)
-
-                # see if we drew a value outside our allowed range by
-                # clamping.
-                if math.copysign(1.0, result) == -1:
-                    assert neg_clamper is not None
-                    clamped = -neg_clamper(-result)
-                else:
-                    assert pos_clamper is not None
-                    clamped = pos_clamper(result)
-                # if we drew something outside of our allowed range, use the
-                # clamped version
-                if clamped != result:
-                    result = clamped
+                assert pos_clamper is not None
+                clamped = pos_clamper(result)
+            if clamped != result and not (math.isnan(result) and allow_nan):
+                result = clamped
         else:
             result = nasty_floats[i - 1]
             # Write the drawn float back to the bitstream in the i != 0 case.
