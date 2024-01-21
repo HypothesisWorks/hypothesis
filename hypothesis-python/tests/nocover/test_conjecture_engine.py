@@ -98,7 +98,7 @@ def test_regression_1():
         if v >= 512 or v == 254:
             data.mark_interesting()
 
-    assert list(x)[:-2] == [1, 2, 1, 0, 0, 0, 0, 0]
+    assert list(x)[:-2] == [1, 2, 1, 0, 0, 0, 0, 0, 0]
 
     assert int_from_bytes(x[-2:]) in (254, 512)
 
