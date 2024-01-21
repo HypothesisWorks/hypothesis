@@ -50,6 +50,8 @@ def test_conftest_sideeffect_pinpoint_error(testdir, monkeypatch):
     script = testdir.makepyfile(TEST_SCRIPT)
     result = testdir.runpytest_subprocess(script)
     assert "HypothesisSideeffectWarning" in "\n".join(result.errlines)
+    # Plugin is always loaded before conftest, so "during pytest plugin initialization"
+    assert "during pytest" in "\n".join(result.errlines)
     assert SIDEEFFECT_STATEMENT in "\n".join(result.errlines)
 
 
@@ -62,4 +64,6 @@ def test_plugin_sideeffect_pinpoint_error(testdir, monkeypatch):
     script = testdir.makepyfile(TEST_SCRIPT)
     result = testdir.runpytest_subprocess(script, "-p", "sideeffect_plugin")
     assert "HypothesisSideeffectWarning" in "\n".join(result.errlines)
+    # Plugin order unknown, but certainly not at import time
+    assert "at import time" not in "\n".join(result.errlines)
     assert SIDEEFFECT_STATEMENT in "\n".join(result.errlines)

@@ -54,6 +54,7 @@ def test_sideeffect_delayed_warning(monkeypatch, _extend_initialization):
     monkeypatch.setattr(_hypothesis_globals, IN_INITIALIZATION_ATTR, 0)
     fs.check_sideeffect_during_initialization(what)
     fs.check_sideeffect_during_initialization("ignored since not first")
-    with pytest.warns(HypothesisSideeffectWarning, match=what):
+    # The warning should identify itself as happening after import but before plugin load
+    with pytest.warns(HypothesisSideeffectWarning, match=what + ".*between import"):
         monkeypatch.setattr(_hypothesis_globals, IN_INITIALIZATION_ATTR, 1)
         fs.notice_initialization_restarted()

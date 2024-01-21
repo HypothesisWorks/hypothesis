@@ -811,7 +811,7 @@ def test_exit_because_shrink_phase_timeout(monkeypatch):
             data.mark_interesting()
 
     monkeypatch.setattr(time, "perf_counter", fast_time)
-    runner = ConjectureRunner(f, settings=settings(database=None))
+    runner = ConjectureRunner(f, settings=settings(database=None, max_examples=100_000))
     runner.run()
     assert runner.exit_reason == ExitReason.very_slow_shrinking
     assert runner.statistics["stopped-because"] == "shrinking was very slow"

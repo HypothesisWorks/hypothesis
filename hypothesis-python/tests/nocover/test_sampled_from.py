@@ -14,28 +14,25 @@ import pytest
 
 from hypothesis import given, strategies as st
 from hypothesis.errors import InvalidArgument
+from hypothesis.strategies._internal.strategies import SampledFromStrategy
 
-from tests.common.utils import counts_calls, fails_with
+from tests.common.utils import fails_with
 
 
-@pytest.mark.parametrize("n", [100, 10**5, 10**6, 2**25])
-def test_filter_large_lists(n):
-    filter_limit = 100 * 10000
+@pytest.mark.parametrize("size", [100, 10**5, 10**6, 2**25])
+@given(data=st.data())
+def test_filter_large_lists(data, size):
+    n_calls = 0
 
-    @counts_calls
     def cond(x):
-        assert cond.calls < filter_limit
+        nonlocal n_calls
+        n_calls += 1
         return x % 2 != 0
 
-    s = st.sampled_from(range(n)).filter(cond)
+    s = data.draw(st.sampled_from(range(size)).filter(cond))
 
-    @given(s)
-    def run(x):
-        assert x % 2 != 0
-
-    run()
-
-    assert cond.calls < filter_limit
+    assert s % 2 != 0
+    assert n_calls <= SampledFromStrategy._MAX_FILTER_CALLS
 
 
 def rare_value_strategy(n, target):

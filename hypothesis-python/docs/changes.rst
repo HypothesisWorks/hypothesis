@@ -18,6 +18,24 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.96.2:
+
+-------------------
+6.96.2 - 2024-01-21
+-------------------
+
+This patch refactors some more internals, continuing our work on supporting alternative backends (:issue:`3086`). There is no user-visible change.
+
+.. _v6.96.1:
+
+-------------------
+6.96.1 - 2024-01-18
+-------------------
+
+Fix a spurious warning seen when running pytest's test
+suite, caused by never realizing we got out of
+initialization due to imbalanced hook calls.
+
 .. _v6.96.0:
 
 -------------------

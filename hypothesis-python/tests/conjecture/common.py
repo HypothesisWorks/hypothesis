@@ -98,7 +98,7 @@ def draw_integer_kwargs(
     #
     # (1) min_value <= forced <= max_value
     # (2) max_value - min_value + 1 == len(weights)
-    # (3) len(weights) <= 1024
+    # (3) len(weights) <= 255
 
     forced = draw(st.integers()) if use_forced else None
     if use_weights:
@@ -108,7 +108,7 @@ def draw_integer_kwargs(
         # We'll treat the weights as our "key" draw and base all other draws on that.
 
         # weights doesn't play well with super small floats, so exclude <.01
-        weights = draw(st.lists(st.floats(0.01, 1), min_size=1, max_size=1024))
+        weights = draw(st.lists(st.floats(0.01, 1), min_size=1, max_size=255))
 
         # we additionally pick a central value (if not forced), and then the index
         # into the weights at which it can be found - aka the min-value offset.
