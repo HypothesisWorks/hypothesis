@@ -177,6 +177,7 @@ def test_example_depth_marking():
     depths = {(ex.length, ex.depth) for ex in d.examples}
     assert depths == {(2, 1), (3, 2), (6, 2), (9, 1), (12, 1), (23, 0)}
 
+
 def test_has_examples_even_when_empty():
     d = ConjectureData.for_buffer(b"")
     d.draw(st.just(False))

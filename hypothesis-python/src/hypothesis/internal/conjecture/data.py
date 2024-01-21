@@ -1774,7 +1774,6 @@ class ConjectureData:
             # have explored the entire tree (up to redundancy).
 
             self.observer.kill_branch()
-            pass
 
     @property
     def examples(self) -> Examples:
