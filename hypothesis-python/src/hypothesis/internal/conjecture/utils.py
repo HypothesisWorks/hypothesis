@@ -235,14 +235,20 @@ class many:
         self.p_continue = _calc_p_continue(average_size - min_size, max_size - min_size)
         self.count = 0
         self.rejections = 0
+        self.drawn = False
         self.force_stop = False
         self.rejected = False
         self.observe = observe
 
     def more(self) -> bool:
         """Should I draw another element to add to the collection?"""
+        if self.drawn:
+            self.data.stop_example()
+
+        self.drawn = True
         self.rejected = False
 
+        self.data.start_example(ONE_FROM_MANY_LABEL)
         if self.min_size == self.max_size:
             # if we have to hit an exact size, draw unconditionally until that
             # point, and no further.
@@ -268,6 +274,7 @@ class many:
             self.count += 1
             return True
         else:
+            self.data.stop_example()
             return False
 
     def reject(self, why: Optional[str] = None) -> None:

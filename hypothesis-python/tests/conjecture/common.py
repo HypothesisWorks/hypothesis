@@ -193,7 +193,7 @@ def draw_float_kwargs(
     draw, *, use_min_value=True, use_max_value=True, use_forced=False
 ):
     forced = draw(st.floats()) if use_forced else None
-    pivot = forced if not math.isnan(forced) else None
+    pivot = forced if (use_forced and not math.isnan(forced)) else None
     min_value = -math.inf
     max_value = math.inf
 

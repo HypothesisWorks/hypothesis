@@ -79,7 +79,7 @@ def test_can_mark_interesting():
 
 def test_drawing_zero_bits_is_free():
     x = ConjectureData.for_buffer(b"")
-    assert x.draw_integer(0, 0) == 0
+    assert x.draw_bits(0) == 0
 
 
 def test_can_mark_invalid():
@@ -163,7 +163,6 @@ def test_triviality():
 
 def test_example_depth_marking():
     d = ConjectureData.for_buffer(bytes(24))
-
     # These draw sizes are chosen so that each example has a unique length.
     d.draw_bytes(2)
     d.start_example("inner")
@@ -173,22 +172,10 @@ def test_example_depth_marking():
     d.draw_bytes(12)
     d.freeze()
 
-    assert len(d.examples) == 10
+    assert len(d.examples) == 6
 
     depths = {(ex.length, ex.depth) for ex in d.examples}
-    assert depths == {
-        (23, 0),  # top
-        (2, 1),  # draw_bytes(2)
-        (2, 2),  # draw_bits (from draw_bytes(2))
-        (9, 1),  # inner example
-        (3, 2),  # draw_bytes(3)
-        (3, 3),  # draw_bits (from draw_bytes(3))
-        (6, 2),  # draw_bytes(6)
-        (6, 3),  # draw_bits (from draw_bytes(6))
-        (12, 1),  # draw_bytes(12)
-        (12, 2),  # draw_bits (from draw_bytes(12))
-    }
-
+    assert depths == {(2, 1), (3, 2), (6, 2), (9, 1), (12, 1), (23, 0)}
 
 def test_has_examples_even_when_empty():
     d = ConjectureData.for_buffer(b"")

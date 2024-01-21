@@ -20,7 +20,7 @@ from hypothesis.internal.conjecture.choicetree import (
     random_selection_order,
 )
 from hypothesis.internal.conjecture.data import (
-    DRAW_FLOAT_INNER_LABEL,
+    DRAW_FLOAT_LABEL,
     ConjectureData,
     ConjectureResult,
     Status,
@@ -1201,7 +1201,7 @@ class Shrinker:
         ex = chooser.choose(
             self.examples,
             lambda ex: (
-                ex.label == DRAW_FLOAT_INNER_LABEL
+                ex.label == DRAW_FLOAT_LABEL
                 and len(ex.children) == 2
                 and ex.children[1].length == 8
             ),
