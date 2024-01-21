@@ -1487,7 +1487,7 @@ class ConjectureData:
             assert min_value is not None
             assert max_value is not None
             width = max_value - min_value + 1
-            assert width <= 1024  # arbitrary practical limit
+            assert width <= 255  # arbitrary practical limit
             assert len(weights) == width
 
         if forced is not None and (min_value is None or max_value is None):
