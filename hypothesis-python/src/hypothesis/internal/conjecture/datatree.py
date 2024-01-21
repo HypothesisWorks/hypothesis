@@ -178,6 +178,15 @@ def compute_max_children(kwargs, ir_type):
         raise ValueError(f"unhandled ir_type {ir_type}")
 
 
+def unbiased_kwargs(ir_type, kwargs):
+    unbiased_kw = kwargs.copy()
+    if ir_type == "integer":
+        del unbiased_kw["weights"]
+    if ir_type == "boolean":
+        del unbiased_kw["p"]
+    return unbiased_kw
+
+
 @attr.s(slots=True)
 class TreeNode:
     """
@@ -532,10 +541,33 @@ class DataTree:
         assert not self.is_exhausted
         novel_prefix = bytearray()
 
-        def draw(ir_type, kwargs, *, forced=None):
+        def draw(ir_type, kwargs, *, forced=None, unbiased=False):
             cd = ConjectureData(max_length=BUFFER_SIZE, prefix=b"", random=random)
             draw_func = getattr(cd, f"draw_{ir_type}")
-            value = draw_func(**kwargs, forced=forced)
+
+            if unbiased:
+                # use kwargs which don't bias the distribution. e.g. this drops
+                # p or weight for boolean and integer respectively.
+                unbiased_kw = unbiased_kwargs(ir_type, kwargs)
+                value = draw_func(**unbiased_kw, forced=forced)
+            else:
+                value = draw_func(**kwargs, forced=forced)
+
+            buf = cd.buffer
+
+            if unbiased:
+                # if we drew an unbiased value, then the buffer is invalid,
+                # because the semantics of the buffer is dependent on the
+                # particular kwarg passed (which we just modified to make it
+                # unbiased).
+                # We'll redraw here with the biased kwargs and force the value
+                # we just drew in order to get the correct buffer for that value.
+                # This isn't *great* for performance, but I suspect we require
+                # unbiased calls quite rarely in the first place, and all of
+                # this cruft goes away when we move off the bitstream for
+                # shrinking.
+                (_value, buf) = draw(ir_type, kwargs, forced=value)
+
             # using floats as keys into branch.children breaks things, because
             # e.g. hash(0.0) == hash(-0.0) would collide as keys when they are
             # in fact distinct child branches.
@@ -546,7 +578,7 @@ class DataTree:
             # buffer), and converting between the two forms as appropriate.
             if ir_type == "float":
                 value = float_to_int(value)
-            return (value, cd.buffer)
+            return (value, buf)
 
         def append_buf(buf):
             novel_prefix.extend(buf)
@@ -565,11 +597,6 @@ class DataTree:
                 else:
                     attempts = 0
                     while True:
-                        (v, buf) = draw(ir_type, kwargs)
-                        if v != value:
-                            append_buf(buf)
-                            break
-
                         # it may be that drawing a previously unseen value here is
                         # extremely unlikely given the ir_type and kwargs. E.g.
                         # consider draw_boolean(p=0.0001), where the False branch
@@ -578,24 +605,30 @@ class DataTree:
                         #
                         # If we draw the same previously-seen value more than 5
                         # times, we'll go back to the unweighted variant of the
-                        # kwargs, depending on the ir_type. Rejection sampling
-                        # produces an unseen value here within a reasonable time
-                        # for all current ir types - two or three draws, at worst.
-                        attempts += 1
-                        if attempts > 5:
-                            kwargs = {
-                                k: v
-                                for k, v in kwargs.items()
-                                # draw_boolean: p
-                                # draw_integer: weights
-                                if k not in {"p", "weights"}
-                            }
-                            while True:
-                                (v, buf) = draw(ir_type, kwargs)
-                                if v != value:
-                                    append_buf(buf)
-                                    break
+                        # kwargs, depending on the ir_type. This is still
+                        # rejection sampling, but is enormously more likely to
+                        # converge efficiently.
+                        #
+                        # TODO we can do better than rejection sampling by
+                        # redistributing the probability of the previously chosen
+                        # value to other values, such that we will always choose
+                        # a new value (while still respecting any other existing
+                        # distributions not involving the chosen value).
+
+                        # TODO we may want to intentionally choose to use the
+                        # unbiased distribution here some percentage of the time,
+                        # irrespective of how many failed attempts there have
+                        # been. The rational is that programmers are rather bad
+                        # at choosing good distributions for bug finding, and
+                        # we want to encourage diverse inputs when testing as
+                        # much as possible.
+                        # https://github.com/HypothesisWorks/hypothesis/pull/3818#discussion_r1452253583.
+                        unbiased = attempts >= 5
+                        (v, buf) = draw(ir_type, kwargs, unbiased=unbiased)
+                        if v != value:
+                            append_buf(buf)
                             break
+                        attempts += 1
                     # We've now found a value that is allowed to
                     # vary, so what follows is not fixed.
                     return bytes(novel_prefix)
@@ -606,9 +639,11 @@ class DataTree:
                 branch = current_node.transition
                 assert isinstance(branch, Branch)
 
-                check_counter = 0
+                attempts = 0
                 while True:
-                    (v, buf) = draw(branch.ir_type, branch.kwargs)
+                    (v, buf) = draw(
+                        branch.ir_type, branch.kwargs, unbiased=attempts >= 5
+                    )
                     try:
                         child = branch.children[v]
                     except KeyError:
@@ -618,12 +653,12 @@ class DataTree:
                         append_buf(buf)
                         current_node = child
                         break
-                    check_counter += 1
+                    attempts += 1
                     # We don't expect this assertion to ever fire, but coverage
                     # wants the loop inside to run if you have branch checking
                     # on, hence the pragma.
                     assert (  # pragma: no cover
-                        check_counter != 1000
+                        attempts != 1000
                         or len(branch.children) < branch.max_children
                         or any(not v.is_exhausted for v in branch.children.values())
                     )

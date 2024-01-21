@@ -404,3 +404,23 @@ def test_is_not_flaky_on_positive_zero_and_negative_zero():
     children = tree.root.transition.children
     assert children[float_to_int(0.0)].values == [False]
     assert children[float_to_int(-0.0)].values == [True]
+
+
+def test_low_probabilities_are_still_explored():
+    @run_to_buffer
+    def true_buf(data):
+        data.draw_boolean(p=1e-10, forced=True)
+        data.mark_interesting()
+
+    @run_to_buffer
+    def false_buf(data):
+        data.draw_boolean(p=1e-10, forced=False)
+        data.mark_interesting()
+
+    tree = DataTree()
+
+    data = ConjectureData.for_buffer(false_buf, observer=tree.new_observer())
+    data.draw_boolean(p=1e-10)  # False
+
+    v = tree.generate_novel_prefix(Random())
+    assert v == true_buf
