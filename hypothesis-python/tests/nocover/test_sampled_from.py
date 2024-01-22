@@ -90,6 +90,12 @@ class AFlag(enum.Flag):
 LargeFlag = enum.Flag("LargeFlag", {f"bit{i}": enum.auto() for i in range(64)})
 
 
+class UnnamedFlag(enum.Flag):
+    # Would fail under EnumCheck.NAMED_FLAGS
+    a = 0
+    b = 7
+
+
 def test_flag_enum_repr_uses_class_not_a_list():
     lazy_repr = repr(st.sampled_from(AFlag))
     assert lazy_repr == "sampled_from(tests.nocover.test_sampled_from.AFlag)"
@@ -127,3 +133,11 @@ def test_flags_minimizes_bit_count():
 
 def test_flags_finds_all_bits_set():
     assert find_any(st.sampled_from(LargeFlag), lambda f: f == ~LargeFlag(0))
+
+
+def test_sample_unnamed_alias():
+    assert find_any(st.sampled_from(UnnamedFlag), lambda f: f == UnnamedFlag.b)
+
+
+def test_shrink_to_named_empty():
+    assert minimal(st.sampled_from(UnnamedFlag)) == UnnamedFlag(0)

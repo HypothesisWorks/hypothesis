@@ -213,18 +213,40 @@ def sampled_from(
         # Combinations of enum.Flag members (including empty) are also members.  We generate these
         # dynamically, because static allocation takes O(2^n) memory.  LazyStrategy is used for the
         # ease of force_repr.
-        empty = elements(0)
+        flags = list(values)  # flag bits
+        # Add all named combinations (for shrinking as well as coverage)
+        aliases = [v for v in elements.__members__.values() if not v in flags]
+        # Finally, add the empty state if it is constructible
+        empties = []
+        try:
+            empty = elements(0)
+            if empty in aliases:
+                # Empty is named, so shift it to front as shrink target
+                flags.insert(0, empty)
+                aliases.remove(empty)
+            else:
+                empties.append(empty)
+        except TypeError:
+            # On some python versions, the empty element can only be constructed if
+            # the flags class has at least one member (even if it is zero).
+            pass
+        named = flags + aliases
+        if not named and not empties:
+            raise InvalidArgument(
+                f"Cannot sample from {elements.__module__}.{elements.__name__} "
+                "because it cannot be constructed (even as empty)."
+            )
         inner = [
-            # Consider one or no flags set, with shrink-to-named-flag behaviour.
-            # If values is empty, this collapses into just(empty) below.
-            sampled_from([*values, empty]),
+            # Consider one or no named flags set, with shrink-to-named-flag behaviour.
+            sampled_from(named + empties),
         ]
-        if len(values) > 1:
+        if len(named) > 1:
             inner += [
-                # Uniform distribution over number of flag-bits set. The overlap at r=1 is
-                # intentional, it may lead to oversampling but gives consistent shrinking behaviour.
-                integers(min_value=1, max_value=len(values))
-                .flatmap(lambda r: sets(sampled_from(values), min_size=r, max_size=r))
+                # Uniform distribution over number of named flags or combinations set. The overlap
+                # at r=1 is intentional, it may lead to oversampling but gives consistent shrinking
+                # behaviour.
+                integers(min_value=1, max_value=len(named))
+                .flatmap(lambda r: sets(sampled_from(named), min_size=r, max_size=r))
                 .map(lambda s: elements(reduce(operator.or_, s))),
             ]
         return LazyStrategy(one_of, args=inner, kwargs={}, force_repr=repr_)

@@ -10,6 +10,7 @@
 
 import collections
 import enum
+import sys
 
 import pytest
 
@@ -32,7 +33,7 @@ from tests.common.utils import fails_with
 
 an_enum = enum.Enum("A", "a b c")
 a_flag = enum.Flag("A", "a b c")
-an_empty_flag = enum.Flag("EmptyFlag", {})
+an_empty_flag = enum.Flag("EmptyFlag", {"a": 0})
 
 an_ordereddict = collections.OrderedDict([("a", 1), ("b", 2), ("c", 3)])
 
@@ -57,6 +58,13 @@ def test_can_sample_enums(enum_class):
         assert isinstance(member, enum_class)
 
     test_it()
+
+
+@pytest.mark.skipif(sys.version_info[:2] < (3, 12), reason="behaviour change")
+def test_invalid_enum():
+    not_constructible_enum = enum.Flag("invalid", ())
+    with pytest.raises(InvalidArgument):
+        st.sampled_from(not_constructible_enum).example()
 
 
 @fails_with(FailedHealthCheck)
