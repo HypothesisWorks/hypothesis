@@ -8,6 +8,7 @@ lark
 libcst
 numpy
 pandas
+pyarrow  # Silence warning from Pandas >=2.2, <3 - see https://github.com/pandas-dev/pandas/issues/54466
 python-dateutil
 pytz
 typing-extensions
