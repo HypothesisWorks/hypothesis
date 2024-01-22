@@ -99,6 +99,9 @@ def test_forced_boolean(kwargs):
     ],
 )
 def test_forced_integer(use_min_value, use_max_value, use_shrink_towards, use_weights):
+    healthchecks = list(HealthCheck) * (use_min_value and use_max_value and use_weights)
+
+    @settings(derandomize=True, suppress_health_check=healthchecks)
     @given(
         draw_integer_kwargs(
             use_min_value=use_min_value,
