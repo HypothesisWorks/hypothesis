@@ -21,19 +21,20 @@ from hypothesis import (
     settings,
     strategies as st,
 )
-from hypothesis.internal.compat import ceil, int_from_bytes
+from hypothesis.internal.compat import ceil
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 
+from tests.conjecture.common import run_to_buffer
+
 
 @st.composite
-def problem(draw):
-    b = draw(st.binary(min_size=1, max_size=8))
-    m = int_from_bytes(b) * 256
+def problems(draw):
+    m = draw(st.integers(256, 2**64 - 1))
     assume(m > 0)
     marker = draw(st.binary(max_size=8))
     bound = draw(st.integers(0, m - 1))
-    return (b, marker, bound)
+    return (m, marker, bound)
 
 
 base_settings = settings(
@@ -46,17 +47,17 @@ base_settings = settings(
 )
 
 
-@example((b"\x10\x00\x00\x00\x00\x00", b"", 2861143707951135))
-@example((b"\x05Cn", b"%\x1b\xa0\xfa", 12394667))
-@example((b"\x179 f", b"\xf5|", 24300326997))
-@example((b"\x05*\xf5\xe5\nh", b"", 1076887621690235))
-@example((b"=", b"", 2508))
-@example((b"\x01\x00", b"", 20048))
-@example((b"\x01", b"", 0))
-@example((b"\x02", b"", 258))
-@example((b"\x08", b"", 1792))
-@example((b"\x0c", b"", 0))
-@example((b"\x01", b"", 1))
+@example((4503599627370496, b"", 2861143707951135))
+@example((88305152, b"%\x1b\xa0\xfa", 12394667))
+@example((99742672384, b"\xf5|", 24300326997))
+@example((1454610481571840, b"", 1076887621690235))
+@example((15616, b"", 2508))
+@example((65536, b"", 20048))
+@example((256, b"", 0))
+@example((512, b"", 258))
+@example((2048, b"", 1792))
+@example((3072, b"", 0))
+@example((256, b"", 1))
 @settings(
     base_settings,
     verbosity=Verbosity.normal,
@@ -68,11 +69,17 @@ base_settings = settings(
     ),
     max_examples=20,
 )
-@given(problem())
+@given(problems())
 def test_avoids_zig_zag_trap(p):
-    b, marker, lower_bound = p
+    m, marker, lower_bound = p
+    n_bits = m.bit_length() + 1
 
-    n_bits = 8 * (len(b) + 1)
+    @run_to_buffer
+    def buf(data):
+        _m = data.draw_integer(0, 2**n_bits - 1, forced=m)
+        _n = data.draw_integer(0, 2**n_bits - 1, forced=m + 1)
+        _marker = data.draw_bytes(len(marker), forced=marker)
+        data.mark_interesting()
 
     def test_function(data):
         m = data.draw_integer(0, 2**n_bits - 1)
@@ -91,14 +98,10 @@ def test_avoids_zig_zag_trap(p):
         random=Random(0),
     )
 
-    runner.cached_test_function(b + bytes([0]) + b + bytes([1]) + marker)
-
+    runner.cached_test_function(buf)
     assert runner.interesting_examples
-
     runner.run()
-
     (v,) = runner.interesting_examples.values()
-
     data = ConjectureData.for_buffer(v.buffer)
 
     m = data.draw_integer(0, 2**n_bits - 1)
@@ -110,5 +113,4 @@ def test_avoids_zig_zag_trap(p):
         assert n == m - 1
 
     budget = 2 * n_bits * ceil(log(n_bits, 2)) + 2
-
     assert runner.shrinks <= budget
