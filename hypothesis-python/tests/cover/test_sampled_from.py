@@ -31,6 +31,8 @@ from hypothesis.strategies._internal.strategies import (
 from tests.common.utils import fails_with
 
 an_enum = enum.Enum("A", "a b c")
+a_flag = enum.Flag("A", "a b c")
+an_empty_flag = enum.Flag("EmptyFlag", {})
 
 an_ordereddict = collections.OrderedDict([("a", 1), ("b", 2), ("c", 3)])
 
@@ -48,9 +50,13 @@ def test_can_sample_ordereddict_without_warning():
     sampled_from(an_ordereddict).example()
 
 
-@given(sampled_from(an_enum))
-def test_can_sample_enums(member):
-    assert isinstance(member, an_enum)
+@pytest.mark.parametrize("enum_class", [an_enum, a_flag, an_empty_flag])
+def test_can_sample_enums(enum_class):
+    @given(sampled_from(enum_class))
+    def test_it(member):
+        assert isinstance(member, enum_class)
+
+    test_it()
 
 
 @fails_with(FailedHealthCheck)

@@ -87,7 +87,6 @@ class AFlag(enum.Flag):
     c = enum.auto()
 
 
-EmptyFlag = enum.Flag("EmptyFlag", {})
 LargeFlag = enum.Flag("LargeFlag", {f"bit{i}": enum.auto() for i in range(64)})
 
 
@@ -112,11 +111,6 @@ def test_exhaustive_flags():
     accept()
 
     assert not unseen_flags
-
-
-@given(st.sampled_from(EmptyFlag))
-def test_empty_flag(empty):
-    assert empty == EmptyFlag(0)
 
 
 def test_flags_minimize_to_first_named_flag():
