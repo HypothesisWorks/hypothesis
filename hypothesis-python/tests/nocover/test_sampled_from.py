@@ -12,6 +12,7 @@ import enum
 import functools
 import itertools
 import operator
+import sys
 
 import pytest
 
@@ -80,16 +81,13 @@ def test_enum_repr_uses_class_not_a_list():
     assert lazy_repr == "sampled_from(tests.nocover.test_sampled_from.AnEnum)"
 
 
-class EmptyFlag(enum.Flag):
-    pass
-
-
 class AFlag(enum.Flag):
     a = enum.auto()
     b = enum.auto()
     c = enum.auto()
 
 
+EmptyFlag = enum.Flag("EmptyFlag", {})
 LargeFlag = enum.Flag("LargeFlag", {f"bit{i}": enum.auto() for i in range(64)})
 
 
@@ -125,6 +123,7 @@ def test_flags_minimize_to_first_named_flag():
     assert minimal(st.sampled_from(LargeFlag)) == LargeFlag.bit0
 
 
+@pytest.mark.skipif(sys.version_info[:2] < (3, 9), reason="bit_count")
 def test_flags_minimizes_bit_count():
     shrunk = minimal(st.sampled_from(LargeFlag), lambda f: f.value.bit_count() > 1)
     # Ideal would be (bit0 | bit1), but:
