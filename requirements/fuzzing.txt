@@ -58,7 +58,7 @@ flask==3.0.1
     # via dash
 hypofuzz==23.12.1
     # via -r requirements/fuzzing.in
-hypothesis[cli]==6.96.1
+hypothesis[cli]==6.96.2
     # via
     #   hypofuzz
     #   hypothesis
@@ -90,12 +90,13 @@ mypy-extensions==1.0.0
     # via
     #   black
     #   typing-inspect
-nest-asyncio==1.5.9
+nest-asyncio==1.6.0
     # via dash
 numpy==1.26.3
     # via
     #   -r requirements/coverage.in
     #   pandas
+    #   pyarrow
 packaging==23.2
     # via
     #   black
@@ -119,6 +120,8 @@ psutil==5.9.8
     # via hypofuzz
 ptyprocess==0.7.0
     # via pexpect
+pyarrow==15.0.0
+    # via -r requirements/coverage.in
 pygments==2.17.2
     # via rich
 pytest==7.4.4

@@ -42,6 +42,7 @@ numpy==1.26.3
     # via
     #   -r requirements/coverage.in
     #   pandas
+    #   pyarrow
 packaging==23.2
     # via
     #   black
@@ -58,6 +59,8 @@ pluggy==1.3.0
     # via pytest
 ptyprocess==0.7.0
     # via pexpect
+pyarrow==15.0.0
+    # via -r requirements/coverage.in
 pytest==7.4.4
     # via
     #   -r requirements/test.in

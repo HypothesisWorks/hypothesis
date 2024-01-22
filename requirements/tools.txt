@@ -177,7 +177,7 @@ pyproject-api==1.6.1
     # via tox
 pyproject-hooks==1.0.0
     # via build
-pyright==1.1.347
+pyright==1.1.348
     # via -r requirements/tools.in
 pytest==7.4.4
     # via -r requirements/tools.in
