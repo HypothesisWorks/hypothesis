@@ -15,7 +15,7 @@ import operator
 
 import pytest
 
-from hypothesis import given, settings, strategies as st
+from hypothesis import given, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies._internal.strategies import SampledFromStrategy
 
