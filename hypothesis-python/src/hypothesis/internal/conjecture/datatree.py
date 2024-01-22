@@ -161,7 +161,7 @@ def compute_max_children(kwargs, ir_type):
         return count
     elif ir_type == "float":
         return count_between_floats(kwargs["min_value"], kwargs["max_value"])
-    else:
+    else:  # pragma: no cover
         raise ValueError(f"unhandled ir_type {ir_type}")
 
 
