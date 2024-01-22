@@ -15,11 +15,11 @@ import operator
 
 import pytest
 
-from hypothesis import given, strategies as st
+from hypothesis import given, settings, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies._internal.strategies import SampledFromStrategy
 
-from tests.common.debug import minimal
+from tests.common.debug import find_any, minimal
 from tests.common.utils import fails_with
 
 
@@ -80,9 +80,17 @@ def test_enum_repr_uses_class_not_a_list():
     assert lazy_repr == "sampled_from(tests.nocover.test_sampled_from.AnEnum)"
 
 
+class EmptyFlag(enum.Flag):
+    pass
+
+
 class AFlag(enum.Flag):
     a = enum.auto()
     b = enum.auto()
+    c = enum.auto()
+
+
+LargeFlag = enum.Flag("LargeFlag", {f"bit{i}": enum.auto() for i in range(64)})
 
 
 def test_flag_enum_repr_uses_class_not_a_list():
@@ -91,8 +99,8 @@ def test_flag_enum_repr_uses_class_not_a_list():
 
 
 def test_exhaustive_flags():
-    # Generate powerset of flag combinations. There are four of them with two values,
-    # so we can reasonably expect that they are all are found.
+    # Generate powerset of flag combinations. There are only 2^3 of them, so
+    # we can reasonably expect that they are all are found.
     unseen_flags = {
         functools.reduce(operator.or_, flaglist, AFlag(0))
         for r in range(len(AFlag) + 1)
@@ -100,13 +108,29 @@ def test_exhaustive_flags():
     }
 
     @given(st.sampled_from(AFlag))
-    def test_it(flag):
+    def accept(flag):
         unseen_flags.discard(flag)
 
-    test_it()
+    accept()
 
     assert not unseen_flags
 
 
-def test_flags_minimize_to_empty():
-    assert minimal(st.sampled_from(AFlag)) == AFlag(0)
+@given(st.sampled_from(EmptyFlag))
+def test_empty_flag(empty):
+    assert empty == EmptyFlag(0)
+
+
+def test_flags_minimize_to_first_named_flag():
+    assert minimal(st.sampled_from(LargeFlag)) == LargeFlag.bit0
+
+
+def test_flags_minimizes_bit_count():
+    shrunk = minimal(st.sampled_from(LargeFlag), lambda f: f.value.bit_count() > 1)
+    # Ideal would be (bit0 | bit1), but:
+    # minimal(st.sets(st.sampled_from(range(10)), min_size=3)) == {0, 8, 9}  # not {0, 1, 2}
+    assert shrunk == LargeFlag.bit0 | LargeFlag.bit63  # documents actual behaviour
+
+
+def test_flags_finds_all_bits_set():
+    assert find_any(st.sampled_from(LargeFlag), lambda f: f == ~LargeFlag(0))

@@ -202,6 +202,32 @@ def sampled_from(
     that behaviour, use ``sampled_from(seq) if seq else nothing()``.
     """
     values = check_sample(elements, "sampled_from")
+    try:
+        if isinstance(elements, type) and issubclass(elements, enum.Enum):
+            repr_ = f"sampled_from({elements.__module__}.{elements.__name__})"
+        else:
+            repr_ = f"sampled_from({elements!r})"
+    except Exception:  # pragma: no cover
+        repr_ = None
+    if isclass(elements) and issubclass(elements, enum.Flag):
+        # Combinations of enum.Flag members (including empty) are also members.  We generate these
+        # dynamically, because static allocation takes O(2^n) memory.  LazyStrategy is used for the
+        # ease of force_repr.
+        empty = elements(0)
+        inner = [
+            # Consider one or no flags set, with shrink-to-named-flag behaviour.
+            # If values is empty, this collapses into just(empty) below.
+            sampled_from([*values, empty]),
+        ]
+        if len(values) > 1:
+            inner += [
+                # Uniform distribution over number of flag-bits set. The overlap at r=1 is
+                # intentional, it may lead to oversampling but gives consistent shrinking behaviour.
+                integers(min_value=1, max_value=len(values))
+                .flatmap(lambda r: sets(sampled_from(values), min_size=r, max_size=r))
+                .map(lambda s: elements(reduce(operator.or_, s))),
+            ]
+        return LazyStrategy(one_of, args=inner, kwargs={}, force_repr=repr_)
     if not values:
         if (
             isinstance(elements, type)
@@ -217,21 +243,6 @@ def sampled_from(
         raise InvalidArgument("Cannot sample from a length-zero sequence.")
     if len(values) == 1:
         return just(values[0])
-    try:
-        if isinstance(elements, type) and issubclass(elements, enum.Enum):
-            repr_ = f"sampled_from({elements.__module__}.{elements.__name__})"
-        else:
-            repr_ = f"sampled_from({elements!r})"
-    except Exception:  # pragma: no cover
-        repr_ = None
-    if isclass(elements) and issubclass(elements, enum.Flag):
-        # Combinations of enum.Flag members are also members.  We generate
-        # these dynamically, because static allocation takes O(2^n) memory.
-        # LazyStrategy is used for the ease of force_repr.
-        inner = sets(sampled_from(list(values))).map(
-            lambda s: reduce(operator.or_, s, elements(0))
-        )
-        return LazyStrategy(lambda: inner, args=[], kwargs={}, force_repr=repr_)
     return SampledFromStrategy(values, repr_)
 
 
