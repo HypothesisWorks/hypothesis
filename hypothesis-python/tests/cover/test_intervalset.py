@@ -99,3 +99,18 @@ def test_char_in_shrink_order():
     rewritten = [ord(xs.char_in_shrink_order(i)) for i in range(256)]
     assert rewritten != list(range(256))
     assert sorted(rewritten) == sorted(range(256))
+
+
+def test_index_from_char_in_shrink_order():
+    xs = IntervalSet([(0, 256)])
+    for i in xs:
+        assert xs.index_from_char_in_shrink_order(xs.char_in_shrink_order(i)) == i
+
+
+def test_intervalset_equal():
+    xs1 = IntervalSet([(0, 256)])
+    xs2 = IntervalSet([(0, 256)])
+    assert xs1 == xs2
+
+    xs3 = IntervalSet([(0, 255)])
+    assert xs2 != xs3
