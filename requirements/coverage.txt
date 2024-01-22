@@ -46,7 +46,7 @@ packaging==23.2
     # via
     #   black
     #   pytest
-pandas==2.1.4
+pandas==2.2.0
     # via -r requirements/coverage.in
 pathspec==0.12.1
     # via black
