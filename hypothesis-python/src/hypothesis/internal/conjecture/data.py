@@ -1170,18 +1170,13 @@ class PrimitiveProvider:
             # sign_aware_lte(forced, -0.0) does not correctly handle the
             # math.nan case here.
             forced_sign_bit = math.copysign(1, forced) == -1
-
-        self._cd.start_example(DRAW_FLOAT_LABEL)
-        try:
-            is_negative = self._cd.draw_bits(1, forced=forced_sign_bit)
-            f = lex_to_float(
-                self._cd.draw_bits(
-                    64, forced=None if forced is None else float_to_lex(abs(forced))
-                )
+        is_negative = self._cd.draw_bits(1, forced=forced_sign_bit)
+        f = lex_to_float(
+            self._cd.draw_bits(
+                64, forced=None if forced is None else float_to_lex(abs(forced))
             )
-            return -f if is_negative else f
-        finally:
-            self._cd.stop_example()
+        )
+        return -f if is_negative else f
 
     def _draw_unbounded_integer(self, *, forced: Optional[int] = None) -> int:
         forced_i = None
