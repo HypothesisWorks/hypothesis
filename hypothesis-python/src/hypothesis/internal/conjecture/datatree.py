@@ -777,12 +777,16 @@ class TreeRecordingObserver(DataObserver):
                 # integers(0, 0).
                 #
                 # Currently, we address this by forcefully splitting such
-                # single-valued nodes into a transition when we see them.
+                # single-valued nodes into a transition when we see them. An
+                # exception to this is if it was forced: forced pseudo-choices
+                # do not cause the above issue because they inherently cannot
+                # vary, and moreover they trip other invariants about never
+                # splitting forced nodes.
                 #
                 # An alternative is not writing such choices to the tree at
                 # all, and thus guaranteeing that each node has at least 2 max
                 # children.
-                if compute_max_children(kwargs, ir_type) == 1:
+                if compute_max_children(kwargs, ir_type) == 1 and not was_forced:
                     node.split_at(i)
                     self.__current_node = node.transition.children[value]
                     self.__index_in_current_node = 0
