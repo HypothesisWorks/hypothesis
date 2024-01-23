@@ -442,8 +442,8 @@ def test_can_shrink_variable_draws(n_large):
 
     @run_to_data
     def data(data):
-        n = data.draw_bits(4)
-        b = [data.draw_bits(8) for _ in range(n)]
+        n = data.draw_integer(0, 15)
+        b = [data.draw_integer(0, 255) for _ in range(n)]
         if sum(b) >= target:
             data.mark_interesting()
 

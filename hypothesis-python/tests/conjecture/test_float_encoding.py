@@ -13,11 +13,13 @@ import sys
 import pytest
 
 from hypothesis import HealthCheck, assume, example, given, settings, strategies as st
-from hypothesis.internal.compat import ceil, floor, int_from_bytes, int_to_bytes
+from hypothesis.internal.compat import ceil, floor, int_to_bytes
 from hypothesis.internal.conjecture import floats as flt
-from hypothesis.internal.conjecture.data import ConjectureData, PrimitiveProvider
+from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.floats import float_to_int
+
+from tests.conjecture.common import run_to_buffer
 
 EXPONENTS = list(range(flt.MAX_EXPONENT + 1))
 assert len(EXPONENTS) == 2**11
@@ -130,17 +132,18 @@ def test_reverse_bits_table_has_right_elements():
 
 
 def float_runner(start, condition):
-    def parse_buf(b):
-        return flt.lex_to_float(int_from_bytes(b))
+    @run_to_buffer
+    def buf(data):
+        data.draw_float(forced=start)
+        data.mark_interesting()
 
     def test_function(data):
-        pp = PrimitiveProvider(data)
-        f = pp._draw_float()
+        f = data.draw_float()
         if condition(f):
             data.mark_interesting()
 
     runner = ConjectureRunner(test_function)
-    runner.cached_test_function(bytes(1) + int_to_bytes(flt.float_to_lex(start), 8))
+    runner.cached_test_function(buf)
     assert runner.interesting_examples
     return runner
 
@@ -150,8 +153,7 @@ def minimal_from(start, condition):
     runner.shrink_interesting_examples()
     (v,) = runner.interesting_examples.values()
     data = ConjectureData.for_buffer(v.buffer)
-    pp = PrimitiveProvider(data)
-    result = pp._draw_float()
+    result = data.draw_float()
     assert condition(result)
     return result
 
