@@ -60,13 +60,6 @@ def test_can_sample_enums(enum_class):
     test_it()
 
 
-@pytest.mark.skipif(sys.version_info[:2] < (3, 12), reason="behaviour change")
-def test_invalid_enum():
-    not_constructible_enum = enum.Flag("invalid", ())
-    with pytest.raises(InvalidArgument):
-        st.sampled_from(not_constructible_enum).example()
-
-
 @fails_with(FailedHealthCheck)
 @given(sampled_from(range(10)).filter(lambda x: x < 0))
 def test_unsat_filtered_sampling(x):

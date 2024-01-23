@@ -181,6 +181,7 @@ def ceil(x):
 
 
 def extract_bits(x: int, /, width: Optional[int] = None) -> List[int]:
+    assert x >= 0
     result = []
     while x:
         result.append(x & 1)
@@ -192,7 +193,10 @@ def extract_bits(x: int, /, width: Optional[int] = None) -> List[int]:
 
 
 # int.bit_count was added sometime around python 3.9
-bit_count = getattr(int, "bit_count", lambda x: sum(extract_bits(x)))
+try:
+    bit_count = int.bit_count
+except AttributeError:  # pragma: no cover
+    bit_count = lambda x: sum(extract_bits(abs(x)))
 
 
 def bad_django_TestCase(runner):

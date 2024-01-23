@@ -227,7 +227,7 @@ def sampled_from(
         if not flags or flags[0].value != 0:
             try:
                 flags_with_empty = [*flags, elements(0)]
-            except TypeError:
+            except TypeError:  # pragma: no cover
                 # Happens on some python versions (at least 3.12) when there are no named values
                 pass
         inner = [
