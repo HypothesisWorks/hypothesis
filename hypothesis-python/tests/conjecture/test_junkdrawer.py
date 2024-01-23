@@ -144,6 +144,19 @@ def test_int_list_extend():
     assert list(x) == [0, 0, 0, n]
 
 
+def test_int_list_slice():
+    x = IntList([1, 2])
+    assert x[:1] == IntList([1])
+    assert x[0:2] == IntList([1, 2])
+    assert x[1:] == IntList([2])
+
+
+def test_int_list_del():
+    x = IntList([1, 2])
+    del x[0]
+    assert x == IntList([2])
+
+
 @pytest.mark.parametrize("n", [0, 1, 30, 70])
 def test_binary_search(n):
     i = binary_search(0, 100, lambda i: i <= n)
