@@ -522,9 +522,9 @@ def test_resolves_flag_enum(resolver):
     # Storing all combinations takes O(2^n) memory.  Using an enum of 52
     # members in this test ensures that we won't try!
     F = enum.Flag("F", " ".join(string.ascii_letters))
-    # Filter to check that we can generate compound members of enum.Flags
 
-    @given(resolver(F).filter(lambda ex: ex not in tuple(F)))
+    # Checks for combination coverage are found in nocover/test_sampled_from
+    @given(resolver(F))
     def inner(ex):
         assert isinstance(ex, F)
 
