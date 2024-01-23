@@ -12,14 +12,26 @@ from random import Random
 
 import pytest
 
-from hypothesis import HealthCheck, settings
+from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.errors import Flaky
 from hypothesis.internal.conjecture.data import ConjectureData, Status, StopTest
-from hypothesis.internal.conjecture.datatree import Branch, DataTree
+from hypothesis.internal.conjecture.datatree import (
+    Branch,
+    DataTree,
+    compute_max_children,
+)
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.floats import float_to_int
 
-from tests.conjecture.common import run_to_buffer
+from tests.conjecture.common import (
+    draw_boolean_kwargs,
+    draw_bytes_kwargs,
+    draw_float_kwargs,
+    draw_integer_kwargs,
+    draw_string_kwargs,
+    fresh_data,
+    run_to_buffer,
+)
 
 TEST_SETTINGS = settings(
     max_examples=5000, database=None, suppress_health_check=list(HealthCheck)
@@ -424,3 +436,66 @@ def test_low_probabilities_are_still_explored():
 
     v = tree.generate_novel_prefix(Random())
     assert v == true_buf
+
+
+def _test_observed_draws_are_recorded_in_tree(ir_type):
+    kwargs_strategy = {
+        "integer": draw_integer_kwargs(),
+        "bytes": draw_bytes_kwargs(),
+        "float": draw_float_kwargs(),
+        "string": draw_string_kwargs(),
+        "boolean": draw_boolean_kwargs(),
+    }[ir_type]
+
+    @given(kwargs_strategy)
+    def test(kwargs):
+        # we currently split pseudo-choices with a single child into their
+        # own transition, which clashes with our asserts below. If we ever
+        # change this (say, by not writing pseudo choices to the ir at all),
+        # this restriction can be relaxed.
+        assume(compute_max_children(kwargs, ir_type) > 1)
+
+        tree = DataTree()
+        data = fresh_data(observer=tree.new_observer())
+        draw_func = getattr(data, f"draw_{ir_type}")
+        draw_func(**kwargs)
+
+        assert tree.root.transition is None
+        assert tree.root.ir_types == [ir_type]
+
+    test()
+
+
+def _test_non_observed_draws_are_not_recorded_in_tree(ir_type):
+    kwargs_strategy = {
+        "integer": draw_integer_kwargs(),
+        "bytes": draw_bytes_kwargs(),
+        "float": draw_float_kwargs(),
+        "string": draw_string_kwargs(),
+        "boolean": draw_boolean_kwargs(),
+    }[ir_type]
+
+    @given(kwargs_strategy)
+    def test(kwargs):
+        assume(compute_max_children(kwargs, ir_type) > 1)
+
+        tree = DataTree()
+        data = fresh_data(observer=tree.new_observer())
+        draw_func = getattr(data, f"draw_{ir_type}")
+        draw_func(**kwargs, observe=False)
+
+        root = tree.root
+        assert root.transition is None
+        assert root.kwargs == root.values == root.ir_types == []
+
+    test()
+
+
+@pytest.mark.parametrize("ir_type", ["integer", "float", "boolean", "string", "bytes"])
+def test_observed_ir_type_draw(ir_type):
+    _test_observed_draws_are_recorded_in_tree(ir_type)
+
+
+@pytest.mark.parametrize("ir_type", ["integer", "float", "boolean", "string", "bytes"])
+def test_non_observed_ir_type_draw(ir_type):
+    _test_non_observed_draws_are_not_recorded_in_tree(ir_type)
