@@ -16,7 +16,10 @@ from functools import reduce
 import pytest
 
 from hypothesis import assume, given, reject, strategies as st
-from hypothesis.strategies._internal.regex import base_regex_strategy
+from hypothesis.strategies._internal.regex import (
+    IncompatibleWithAlphabet,
+    base_regex_strategy,
+)
 
 
 @st.composite
@@ -85,7 +88,17 @@ def test_fuzz_stuff(data):
         # Possible nested sets, e.g. "[[", trigger a FutureWarning
         reject()
 
-    ex = data.draw(st.from_regex(regex))
+    try:
+        ex = data.draw(st.from_regex(regex))
+    except IncompatibleWithAlphabet:
+        if isinstance(pattern, str) and flags & re.ASCII:
+            with pytest.raises(UnicodeEncodeError):
+                pattern.encode("ascii")
+            regex = re.compile(pattern, flags=flags ^ re.ASCII)
+            ex = data.draw(st.from_regex(regex))
+        else:
+            raise
+
     assert regex.search(ex)
 
 
