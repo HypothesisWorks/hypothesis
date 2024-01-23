@@ -196,7 +196,7 @@ def extract_bits(x: int, /, width: Optional[int] = None) -> List[int]:
 try:
     bit_count = int.bit_count
 except AttributeError:  # pragma: no cover
-    bit_count = lambda x: sum(extract_bits(abs(x)))
+    bit_count = lambda self: sum(extract_bits(abs(self)))
 
 
 def bad_django_TestCase(runner):

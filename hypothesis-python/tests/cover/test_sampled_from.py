@@ -10,7 +10,6 @@
 
 import collections
 import enum
-import sys
 
 import pytest
 
