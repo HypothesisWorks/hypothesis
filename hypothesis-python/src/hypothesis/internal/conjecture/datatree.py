@@ -131,34 +131,41 @@ def compute_max_children(kwargs, ir_type):
         if max_size is None:
             max_size = DRAW_STRING_DEFAULT_MAX_SIZE
 
-        # special cases for empty string, which has a single possibility.
-        if min_size == 0 and max_size == 0:
+        if len(intervals) == 0:
+            # Special-case the empty alphabet to avoid an error in math.log(0).
+            # Only possibility is the empty string.
             return 1
 
-        count = 0
-        if min_size == 0:
-            # empty string case.
-            count += 1
-            min_size = 1
-
-        x = len(intervals)
-        y = max_size - min_size + 1
-
-        if x == 0:
-            # Another empty string case (here, when drawing from the empty
-            # alphabet). Compute early to avoid an error in math.log(0).
-            return 1
-
-        # we want to know if x**y > n without computing a potentially extremely
-        # expensive pow. We have:
+        # We want to estimate if we're going to have more children than
+        # MAX_CHILDREN_EFFECTIVELY_INFINITE, without computing a potentially
+        # extremely expensive pow. We'll check if the number of strings in
+        # the largest string size alone is enough to put us over this limit.
+        # We'll also employ a trick of estimating against log, which is cheaper
+        # than computing a pow.
+        #
+        # x = max_size
+        # y = len(intervals)
+        # n = MAX_CHILDREN_EFFECTIVELY_INFINITE
+        #
         #     x**y > n
         # <=> log(x**y)  > log(n)
         # <=> y * log(x) > log(n)
-        if y * math.log(x) > math.log(MAX_CHILDREN_EFFECTIVELY_INFINITE):
-            count = MAX_CHILDREN_EFFECTIVELY_INFINITE
+
+        # avoid math.log(1) == 0 and incorrectly failing the below estimate,
+        # even when we definitely are too large.
+        if len(intervals) == 1:
+            definitely_too_large = max_size > MAX_CHILDREN_EFFECTIVELY_INFINITE
         else:
-            count += x**y
-        return count
+            definitely_too_large = max_size * math.log(len(intervals)) > math.log(
+                MAX_CHILDREN_EFFECTIVELY_INFINITE
+            )
+
+        if definitely_too_large:
+            return MAX_CHILDREN_EFFECTIVELY_INFINITE
+
+        # number of strings of length k, for each k in [min_size, max_size].
+        return sum(len(intervals) ** k for k in range(min_size, max_size + 1))
+
     elif ir_type == "float":
         return count_between_floats(kwargs["min_value"], kwargs["max_value"])
     else:  # pragma: no cover

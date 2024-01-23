@@ -9,7 +9,10 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 from hypothesis import example, given, strategies as st
-from hypothesis.internal.conjecture.datatree import compute_max_children
+from hypothesis.internal.conjecture.datatree import (
+    MAX_CHILDREN_EFFECTIVELY_INFINITE,
+    compute_max_children,
+)
 from hypothesis.internal.intervalsets import IntervalSet
 
 from tests.conjecture.common import (
@@ -47,6 +50,50 @@ def ir_types_and_kwargs(draw):
 def test_compute_max_children_is_positive(ir_type_and_kwargs):
     (ir_type, kwargs) = ir_type_and_kwargs
     assert compute_max_children(kwargs, ir_type) >= 0
+
+
+def test_compute_max_children_string_unbounded_max_size():
+    kwargs = {
+        "min_size": 0,
+        "max_size": None,
+        "intervals": IntervalSet.from_string("a"),
+    }
+    assert compute_max_children(kwargs, "string") == MAX_CHILDREN_EFFECTIVELY_INFINITE
+
+
+def test_compute_max_children_string_empty_intervals():
+    kwargs = {"min_size": 0, "max_size": 100, "intervals": IntervalSet.from_string("")}
+    # only possibility is the empty string
+    assert compute_max_children(kwargs, "string") == 1
+
+
+def test_compute_max_children_string_reasonable_size():
+    kwargs = {"min_size": 8, "max_size": 8, "intervals": IntervalSet.from_string("abc")}
+    # 3 possibilities for each character, 8 characters, 3 ** 8 possibilities.
+    assert compute_max_children(kwargs, "string") == 3**8
+
+    kwargs = {
+        "min_size": 2,
+        "max_size": 8,
+        "intervals": IntervalSet.from_string("abcd"),
+    }
+    assert compute_max_children(kwargs, "string") == sum(
+        4**k for k in range(2, 8 + 1)
+    )
+
+
+def test_compute_max_children_empty_string():
+    kwargs = {"min_size": 0, "max_size": 0, "intervals": IntervalSet.from_string("abc")}
+    assert compute_max_children(kwargs, "string") == 1
+
+
+def test_compute_max_children_string_very_large():
+    kwargs = {
+        "min_size": 0,
+        "max_size": 10_000,
+        "intervals": IntervalSet.from_string("abcdefg"),
+    }
+    assert compute_max_children(kwargs, "string") == MAX_CHILDREN_EFFECTIVELY_INFINITE
 
 
 @given(st.text(min_size=1, max_size=1), st.integers(0, 100))
