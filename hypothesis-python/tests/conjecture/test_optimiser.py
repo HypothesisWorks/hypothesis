@@ -134,15 +134,15 @@ def test_targeting_can_drive_length_very_high():
 
         def test(data):
             count = 0
-            # TODO this test fails with data.draw_boolean(0.25). Does the hill
-            # climbing optimizer just not like the bit representation of boolean
-            # draws, or do we have a deeper bug here?
-            while data.draw_integer(0, 3) == 3:
+            while data.draw_boolean(0.25):
                 count += 1
             data.target_observations[""] = min(count, 100)
 
         runner = ConjectureRunner(test, settings=TEST_SETTINGS)
-        runner.cached_test_function(bytes(10))
+        # extend here to ensure we get a valid (non-overrun) test case. The
+        # outcome of the test case doesn't really matter as long as we have
+        # something for the runner to optimize.
+        runner.cached_test_function(b"", extend=50)
 
         try:
             runner.optimise_targets()
