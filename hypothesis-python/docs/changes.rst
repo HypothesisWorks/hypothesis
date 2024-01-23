@@ -18,6 +18,22 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.96.4:
+
+-------------------
+6.96.4 - 2024-01-23
+-------------------
+
+This patch slightly refactors some internals. There is no user-visible change.
+
+.. _v6.96.3:
+
+-------------------
+6.96.3 - 2024-01-22
+-------------------
+
+This patch fixes a spurious warning about slow imports when ``HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY`` was set.
+
 .. _v6.96.2:
 
 -------------------
