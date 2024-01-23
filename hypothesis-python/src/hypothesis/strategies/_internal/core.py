@@ -70,6 +70,7 @@ from hypothesis.internal.charmap import (
 from hypothesis.internal.compat import (
     Concatenate,
     ParamSpec,
+    bit_count,
     ceil,
     floor,
     get_type_hints,
@@ -213,40 +214,34 @@ def sampled_from(
         # Combinations of enum.Flag members (including empty) are also members.  We generate these
         # dynamically, because static allocation takes O(2^n) memory.  LazyStrategy is used for the
         # ease of force_repr.
-        flags = list(values)  # flag bits
-        # Add all named combinations (for shrinking as well as coverage)
-        aliases = [v for v in elements.__members__.values() if not v in flags]
-        # Finally, add the empty state if it is constructible
-        empties = []
-        try:
-            empty = elements(0)
-            if empty in aliases:
-                # Empty is named, so shift it to front as shrink target
-                flags.insert(0, empty)
-                aliases.remove(empty)
-            else:
-                empties.append(empty)
-        except TypeError:
-            # On some python versions, the empty element can only be constructed if
-            # the flags class has at least one member (even if it is zero).
-            pass
-        named = flags + aliases
-        if not named and not empties:
-            raise InvalidArgument(
-                f"Cannot sample from {elements.__module__}.{elements.__name__} "
-                "because it cannot be constructed (even as empty)."
-            )
+        # Add all named values, both flag bits (== list(elements)) and aliases. The aliases are
+        # necessary for full coverage for flags that would fail enum.NAMED_FLAGS check, and they
+        # are also nice values to shrink to.
+        flags = sorted(
+            set(elements.__members__.values()),
+            key=lambda v: (bit_count(v.value), v.value),
+        )
+        # Finally, try to construct the empty state if it is not named. It's placed at the
+        # end so that we shrink to named values.
+        flags_with_empty = flags
+        if not flags or flags[0].value != 0:
+            try:
+                flags_with_empty = [*flags, elements(0)]
+            except TypeError:
+                # Happens on some python versions (at least 3.12) when there are no named values
+                pass
         inner = [
             # Consider one or no named flags set, with shrink-to-named-flag behaviour.
-            sampled_from(named + empties),
+            # Special cases (length zero or one) are handled by the inner sampled_from.
+            sampled_from(flags_with_empty),
         ]
-        if len(named) > 1:
+        if len(flags) > 1:
             inner += [
                 # Uniform distribution over number of named flags or combinations set. The overlap
                 # at r=1 is intentional, it may lead to oversampling but gives consistent shrinking
                 # behaviour.
-                integers(min_value=1, max_value=len(named))
-                .flatmap(lambda r: sets(sampled_from(named), min_size=r, max_size=r))
+                integers(min_value=1, max_value=len(flags))
+                .flatmap(lambda r: sets(sampled_from(flags), min_size=r, max_size=r))
                 .map(lambda s: elements(reduce(operator.or_, s))),
             ]
         return LazyStrategy(one_of, args=inner, kwargs={}, force_repr=repr_)

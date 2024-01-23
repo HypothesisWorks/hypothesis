@@ -12,12 +12,12 @@ import enum
 import functools
 import itertools
 import operator
-import sys
 
 import pytest
 
 from hypothesis import given, strategies as st
 from hypothesis.errors import InvalidArgument
+from hypothesis.internal.compat import bit_count
 from hypothesis.strategies._internal.strategies import SampledFromStrategy
 
 from tests.common.debug import find_any, minimal
@@ -123,9 +123,8 @@ def test_flags_minimize_to_first_named_flag():
     assert minimal(st.sampled_from(LargeFlag)) == LargeFlag.bit0
 
 
-@pytest.mark.skipif(sys.version_info[:2] < (3, 9), reason="bit_count")
 def test_flags_minimizes_bit_count():
-    shrunk = minimal(st.sampled_from(LargeFlag), lambda f: f.value.bit_count() > 1)
+    shrunk = minimal(st.sampled_from(LargeFlag), lambda f: bit_count(f.value) > 1)
     # Ideal would be (bit0 | bit1), but:
     # minimal(st.sets(st.sampled_from(range(10)), min_size=3)) == {0, 8, 9}  # not {0, 1, 2}
     assert shrunk == LargeFlag.bit0 | LargeFlag.bit63  # documents actual behaviour
