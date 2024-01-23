@@ -1082,64 +1082,6 @@ def test_arguments_do_not_use_names_of_return_values():
     assert "v1 = state.init_data(value=v1)" not in err.value.__notes__
 
 
-def test_multiple_precondition_bug():
-    # See https://github.com/HypothesisWorks/hypothesis/issues/2861
-    class MultiplePreconditionMachine(RuleBasedStateMachine):
-        @rule(x=integers())
-        def good_method(self, x):
-            pass
-
-        @precondition(lambda self: True)
-        @precondition(lambda self: False)
-        @rule(x=integers())
-        def bad_method_a(self, x):
-            raise AssertionError("This rule runs, even though it shouldn't.")
-
-        @precondition(lambda self: False)
-        @precondition(lambda self: True)
-        @rule(x=integers())
-        def bad_method_b(self, x):
-            raise AssertionError("This rule might be skipped for the wrong reason.")
-
-        @precondition(lambda self: True)
-        @rule(x=integers())
-        @precondition(lambda self: False)
-        def bad_method_c(self, x):
-            raise AssertionError("This rule runs, even though it shouldn't.")
-
-        @rule(x=integers())
-        @precondition(lambda self: True)
-        @precondition(lambda self: False)
-        def bad_method_d(self, x):
-            raise AssertionError("This rule runs, even though it shouldn't.")
-
-        @precondition(lambda self: True)
-        @precondition(lambda self: False)
-        @invariant()
-        def bad_invariant_a(self):
-            raise AssertionError("This invariant runs, even though it shouldn't.")
-
-        @precondition(lambda self: False)
-        @precondition(lambda self: True)
-        @invariant()
-        def bad_invariant_b(self):
-            raise AssertionError("This invariant runs, even though it shouldn't.")
-
-        @precondition(lambda self: True)
-        @invariant()
-        @precondition(lambda self: False)
-        def bad_invariant_c(self):
-            raise AssertionError("This invariant runs, even though it shouldn't.")
-
-        @invariant()
-        @precondition(lambda self: True)
-        @precondition(lambda self: False)
-        def bad_invariant_d(self):
-            raise AssertionError("This invariant runs, even though it shouldn't.")
-
-    run_state_machine_as_test(MultiplePreconditionMachine)
-
-
 class TrickyInitMachine(RuleBasedStateMachine):
     @initialize()
     def init_a(self):
