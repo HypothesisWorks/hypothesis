@@ -648,6 +648,34 @@ class DataTree:
                         current_node = child
                         break
                     attempts += 1
+
+                    # rejection sampling has a pitfall here. Consider the case
+                    # where we have a single unexhausted node left to
+                    # explore, and all its commonly-generatable children have
+                    # already been generated. We will then spend a significant
+                    # amount of time here trying to find its rare children
+                    # (which are the only new ones left). This manifests in e.g.
+                    # lists(just("a")).
+                    #
+                    # We can't modify our search distribution dynamically to
+                    # guide towards these rare children, unless we *also* write
+                    # that modification to the bitstream.
+                    #
+                    # We can do fancier things like "pass already seen elements
+                    # to the ir and have ir-specific logic that avoids drawing
+                    # them again" once we migrate off the bitstream.
+                    #
+                    # As a temporary solution, we will flat out give up if it's
+                    # too hard to discover a new node. This means that
+                    # generate_novel_prefix may sometimes generate prefixes that
+                    # are *not* novel, but luckily the rest of our engine does
+                    # not explicitly rely on this.
+                    # (TODO: except our engine *does* rely on this when killing
+                    # branches, and maybe more...see test_discards_kill_branches
+                    # failure).
+                    if attempts >= 20:
+                        return bytes(novel_prefix)
+
                     # We don't expect this assertion to ever fire, but coverage
                     # wants the loop inside to run if you have branch checking
                     # on, hence the pragma.
