@@ -357,11 +357,11 @@ def test_one_dead_branch():
 
         @run_to_buffer
         def x(data):
-            i = data.draw_bytes(1)[0]
+            i = data.draw_integer(0, 25)
             if i > 0:
                 data.mark_invalid()
-            i = data.draw_bytes(1)[0]
-            if len(seen) < 255:
+            i = data.draw_integer(0, 25)
+            if len(seen) < 25:
                 seen.add(i)
             elif i not in seen:
                 data.mark_interesting()
