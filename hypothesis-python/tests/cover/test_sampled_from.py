@@ -33,8 +33,8 @@ from tests.common.utils import fails_with
 
 an_enum = enum.Enum("A", "a b c")
 a_flag = enum.Flag("A", "a b c")
+# named zero state is required for empty flags from around py3.11/3.12
 an_empty_flag = enum.Flag("EmptyFlag", {"a": 0})
-empty_unnamed_flag = enum.Flag("EmptyUnnamed", "")
 
 an_ordereddict = collections.OrderedDict([("a", 1), ("b", 2), ("c", 3)])
 
@@ -52,9 +52,7 @@ def test_can_sample_ordereddict_without_warning():
     sampled_from(an_ordereddict).example()
 
 
-@pytest.mark.parametrize(
-    "enum_class", [an_enum, a_flag, an_empty_flag, empty_unnamed_flag]
-)
+@pytest.mark.parametrize("enum_class", [an_enum, a_flag, an_empty_flag])
 def test_can_sample_enums(enum_class):
     assert_all_examples(sampled_from(enum_class), lambda x: isinstance(x, enum_class))
 
