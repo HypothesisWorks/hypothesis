@@ -677,7 +677,7 @@ class DataTree:
                     # But this caused flaky errors, particularly with discards /
                     # killed branches. The two approaches aren't that different
                     # in test coverage anyway.
-                    if attempts >= 20:
+                    if attempts >= 150:
                         raise TooHard
 
                     # We don't expect this assertion to ever fire, but coverage
