@@ -29,6 +29,10 @@ class PreviouslyUnseenBehaviour(HypothesisException):
     pass
 
 
+class TooHard(HypothesisException):
+    pass
+
+
 def inconsistent_generation():
     raise Flaky(
         "Inconsistent data generation! Data generation behaved differently "
@@ -666,15 +670,15 @@ class DataTree:
                     # them again" once we migrate off the bitstream.
                     #
                     # As a temporary solution, we will flat out give up if it's
-                    # too hard to discover a new node. This means that
-                    # generate_novel_prefix may sometimes generate prefixes that
-                    # are *not* novel, but luckily the rest of our engine does
-                    # not explicitly rely on this.
-                    # (TODO: except our engine *does* rely on this when killing
-                    # branches, and maybe more...see test_discards_kill_branches
-                    # failure).
+                    # too hard to discover a new node.
+                    #
+                    # An alternative here is `return bytes(novel_prefix)` (so
+                    # we at least try *some* buffer, even if it's not novel).
+                    # But this caused flaky errors, particularly with discards /
+                    # killed branches. The two approaches aren't that different
+                    # in test coverage anyway.
                     if attempts >= 20:
-                        return bytes(novel_prefix)
+                        raise TooHard
 
                     # We don't expect this assertion to ever fire, but coverage
                     # wants the loop inside to run if you have branch checking
