@@ -1796,7 +1796,7 @@ class ConjectureData:
         values: Sequence[T],
         *,
         forced: Optional[T] = None,
-        observe=True,
+        observe: bool = True,
     ) -> T:
         forced_i = None if forced is None else values.index(forced)
         i = self.draw_integer(0, len(values) - 1, forced=forced_i, observe=observe)

@@ -224,7 +224,7 @@ class many:
         average_size: Union[int, float],
         *,
         forced: Optional[int] = None,
-        observe=True,
+        observe: bool = True,
     ) -> None:
         assert 0 <= min_size <= average_size <= max_size
         assert forced is None or min_size <= forced <= max_size
