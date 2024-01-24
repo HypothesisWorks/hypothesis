@@ -96,6 +96,15 @@ def test_compute_max_children_string_very_large():
     assert compute_max_children(kwargs, "string") == MAX_CHILDREN_EFFECTIVELY_INFINITE
 
 
+def test_compute_max_children_boolean():
+    assert compute_max_children({"p": 0.0}, "boolean") == 1
+    assert compute_max_children({"p": 1.0}, "boolean") == 1
+
+    assert compute_max_children({"p": 0.5}, "boolean") == 2
+    assert compute_max_children({"p": 0.001}, "boolean") == 2
+    assert compute_max_children({"p": 0.999}, "boolean") == 2
+
+
 @given(st.text(min_size=1, max_size=1), st.integers(0, 100))
 def test_draw_string_single_interval_with_equal_bounds(s, n):
     data = fresh_data()

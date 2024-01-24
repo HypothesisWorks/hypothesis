@@ -124,6 +124,10 @@ def compute_max_children(kwargs, ir_type):
         assert (min_value is None) ^ (max_value is None)
         return 2**127
     elif ir_type == "boolean":
+        p = kwargs["p"]
+        # probabilities of 0 or 1 (or effectively 0 or 1) only have one choice.
+        if p <= 2 ** (-64) or p >= (1 - 2 ** (-64)):
+            return 1
         return 2
     elif ir_type == "bytes":
         return 2 ** (8 * kwargs["size"])
