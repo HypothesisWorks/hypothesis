@@ -176,30 +176,36 @@ def test_garbage_collects_the_secondary_key():
 
 
 def test_shrinks_both_failures():
-    first_has_failed = [False]
+    first_has_failed = False
     duds = set()
-    second_target = [None]
+    second_target = None
 
     @settings(database=None, max_examples=1000)
-    @given(st.integers(min_value=0).map(int))
+    @given(st.integers(min_value=0))
     def test(i):
+        nonlocal first_has_failed, duds, second_target
+
         if i >= 10000:
-            first_has_failed[0] = True
+            first_has_failed = True
             raise AssertionError
+
         assert i < 10000
-        if first_has_failed[0]:
-            if second_target[0] is None:
+        if first_has_failed:
+            if second_target is None:
                 for j in range(10000):
                     if j not in duds:
-                        second_target[0] = j
+                        second_target = j
                         break
-            assert i < second_target[0]
+            # to avoid flaky errors, don't error on an input that we previously
+            # passed.
+            if i not in duds:
+                assert i < second_target
         else:
             duds.add(i)
 
     output = capture_reports(test)
     assert_output_contains_failure(output, test, i=10000)
-    assert_output_contains_failure(output, test, i=second_target[0])
+    assert_output_contains_failure(output, test, i=second_target)
 
 
 def test_handles_flaky_tests_where_only_one_is_flaky():
