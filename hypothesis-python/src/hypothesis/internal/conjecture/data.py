@@ -30,6 +30,7 @@ from typing import (
     Set,
     Tuple,
     Type,
+    TypedDict,
     TypeVar,
     Union,
 )
@@ -796,6 +797,34 @@ global_test_counter = 0
 MAX_DEPTH = 100
 
 
+class IntegerKWargs(TypedDict):
+    min_value: Optional[int]
+    max_value: Optional[int]
+    weights: Optional[Sequence[float]]
+    shrink_towards: int
+
+
+class FloatKWargs(TypedDict):
+    min_value: float
+    max_value: float
+    allow_nan: bool
+    smallest_nonzero_magnitude: float
+
+
+class StringKWargs(TypedDict):
+    intervals: IntervalSet
+    min_size: int
+    max_size: Optional[int]
+
+
+class BytesKWargs(TypedDict):
+    size: int
+
+
+class BooleanKWargs(TypedDict):
+    p: float
+
+
 class DataObserver:
     """Observer class for recording the behaviour of a
     ConjectureData object, primarily used for tracking
@@ -815,19 +844,29 @@ class DataObserver:
     def kill_branch(self) -> None:
         """Mark this part of the tree as not worth re-exploring."""
 
-    def draw_integer(self, value: int, *, was_forced: bool, kwargs: dict) -> None:
+    def draw_integer(
+        self, value: int, *, was_forced: bool, kwargs: IntegerKWargs
+    ) -> None:
         pass
 
-    def draw_float(self, value: float, *, was_forced: bool, kwargs: dict) -> None:
+    def draw_float(
+        self, value: float, *, was_forced: bool, kwargs: FloatKWargs
+    ) -> None:
         pass
 
-    def draw_string(self, value: str, *, was_forced: bool, kwargs: dict) -> None:
+    def draw_string(
+        self, value: str, *, was_forced: bool, kwargs: StringKWargs
+    ) -> None:
         pass
 
-    def draw_bytes(self, value: bytes, *, was_forced: bool, kwargs: dict) -> None:
+    def draw_bytes(
+        self, value: bytes, *, was_forced: bool, kwargs: BytesKWargs
+    ) -> None:
         pass
 
-    def draw_boolean(self, value: bool, *, was_forced: bool, kwargs: dict) -> None:
+    def draw_boolean(
+        self, value: bool, *, was_forced: bool, kwargs: BooleanKWargs
+    ) -> None:
         pass
 
 
@@ -1514,7 +1553,7 @@ class ConjectureData:
         if forced is not None and max_value is not None:
             assert forced <= max_value
 
-        kwargs = {
+        kwargs: IntegerKWargs = {
             "min_value": min_value,
             "max_value": max_value,
             "weights": weights,
@@ -1549,7 +1588,7 @@ class ConjectureData:
             assert allow_nan or not math.isnan(forced)
             assert math.isnan(forced) or min_value <= forced <= max_value
 
-        kwargs = {
+        kwargs: FloatKWargs = {
             "min_value": min_value,
             "max_value": max_value,
             "allow_nan": allow_nan,
@@ -1573,7 +1612,11 @@ class ConjectureData:
     ) -> str:
         assert forced is None or min_size <= len(forced)
 
-        kwargs = {"intervals": intervals, "min_size": min_size, "max_size": max_size}
+        kwargs: StringKWargs = {
+            "intervals": intervals,
+            "min_size": min_size,
+            "max_size": max_size,
+        }
         value = self.provider.draw_string(**kwargs, forced=forced)
         if observe:
             self.observer.draw_string(
@@ -1592,7 +1635,7 @@ class ConjectureData:
         assert forced is None or len(forced) == size
         assert size >= 0
 
-        kwargs = {"size": size}
+        kwargs: BytesKWargs = {"size": size}
         value = self.provider.draw_bytes(**kwargs, forced=forced)
         if observe:
             self.observer.draw_bytes(
@@ -1613,7 +1656,7 @@ class ConjectureData:
         if forced is False:
             assert p < (1 - 2 ** (-64))
 
-        kwargs = {"p": p}
+        kwargs: BooleanKWargs = {"p": p}
         value = self.provider.draw_boolean(**kwargs, forced=forced)
         if observe:
             self.observer.draw_boolean(

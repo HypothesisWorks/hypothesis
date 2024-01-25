@@ -14,8 +14,18 @@ from typing import TYPE_CHECKING, Union
 import attr
 
 from hypothesis.errors import Flaky, HypothesisException, StopTest
-from hypothesis.internal.conjecture.data import ConjectureData, DataObserver, Status
+from hypothesis.internal.conjecture.data import (
+    BooleanKWargs,
+    BytesKWargs,
+    ConjectureData,
+    DataObserver,
+    FloatKWargs,
+    IntegerKWargs,
+    Status,
+    StringKWargs,
+)
 from hypothesis.internal.floats import count_between_floats, float_to_int, int_to_float
+from typing import Literal, List
 
 if TYPE_CHECKING:
     from typing import TypeAlias
@@ -23,6 +33,11 @@ else:
     TypeAlias = object
 
 IRType: TypeAlias = Union[int, str, bool, float, bytes]
+IRKWargsType: TypeAlias = Union[
+    IntegerKWargs, FloatKWargs, StringKWargs, BytesKWargs, BooleanKWargs
+]
+# this would be "IRTypeType", but that's just confusing.
+IRLiteralType: TypeAlias = Union[Literal["integer"], Literal["string"], Literal["boolean"], Literal["float"], Literal["bytes"]]
 
 
 class PreviouslyUnseenBehaviour(HypothesisException):
@@ -255,9 +270,9 @@ class TreeNode:
 
     # The kwargs, value, and ir_types of the nodes stored here. These always
     # have the same length. The values at index i belong to node i.
-    kwargs = attr.ib(factory=list)
-    values = attr.ib(factory=list)
-    ir_types = attr.ib(factory=list)
+    kwargs: List[IRKWargsType] = attr.ib(factory=list)
+    values: List[IRType] = attr.ib(factory=list)
+    ir_types: List[IRLiteralType] = attr.ib(factory=list)
 
     # The indices of nodes which had forced values.
     #
@@ -761,23 +776,33 @@ class TreeRecordingObserver(DataObserver):
         self.__trail = [self.__current_node]
         self.killed = False
 
-    def draw_integer(self, value: int, *, was_forced: bool, kwargs: dict) -> None:
+    def draw_integer(
+        self, value: int, *, was_forced: bool, kwargs: IntegerKWargs
+    ) -> None:
         self.draw_value("integer", value, was_forced=was_forced, kwargs=kwargs)
 
-    def draw_float(self, value: float, *, was_forced: bool, kwargs: dict) -> None:
+    def draw_float(
+        self, value: float, *, was_forced: bool, kwargs: FloatKWargs
+    ) -> None:
         self.draw_value("float", value, was_forced=was_forced, kwargs=kwargs)
 
-    def draw_string(self, value: str, *, was_forced: bool, kwargs: dict) -> None:
+    def draw_string(
+        self, value: str, *, was_forced: bool, kwargs: StringKWargs
+    ) -> None:
         self.draw_value("string", value, was_forced=was_forced, kwargs=kwargs)
 
-    def draw_bytes(self, value: bytes, *, was_forced: bool, kwargs: dict) -> None:
+    def draw_bytes(
+        self, value: bytes, *, was_forced: bool, kwargs: BytesKWargs
+    ) -> None:
         self.draw_value("bytes", value, was_forced=was_forced, kwargs=kwargs)
 
-    def draw_boolean(self, value: bool, *, was_forced: bool, kwargs: dict) -> None:
+    def draw_boolean(
+        self, value: bool, *, was_forced: bool, kwargs: BooleanKWargs
+    ) -> None:
         self.draw_value("boolean", value, was_forced=was_forced, kwargs=kwargs)
 
     def draw_value(
-        self, ir_type, value: IRType, *, was_forced: bool, kwargs: dict = {}
+        self, ir_type: IRLiteralType, value: IRType, *, was_forced: bool, kwargs: IRKWargsType
     ) -> None:
         i = self.__index_in_current_node
         self.__index_in_current_node += 1
