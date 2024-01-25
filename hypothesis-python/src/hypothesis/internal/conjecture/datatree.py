@@ -9,7 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, List, Literal, Union
 
 import attr
 
@@ -25,7 +25,6 @@ from hypothesis.internal.conjecture.data import (
     StringKWargs,
 )
 from hypothesis.internal.floats import count_between_floats, float_to_int, int_to_float
-from typing import Literal, List
 
 if TYPE_CHECKING:
     from typing import TypeAlias
@@ -37,7 +36,13 @@ IRKWargsType: TypeAlias = Union[
     IntegerKWargs, FloatKWargs, StringKWargs, BytesKWargs, BooleanKWargs
 ]
 # this would be "IRTypeType", but that's just confusing.
-IRLiteralType: TypeAlias = Union[Literal["integer"], Literal["string"], Literal["boolean"], Literal["float"], Literal["bytes"]]
+IRLiteralType: TypeAlias = Union[
+    Literal["integer"],
+    Literal["string"],
+    Literal["boolean"],
+    Literal["float"],
+    Literal["bytes"],
+]
 
 
 class PreviouslyUnseenBehaviour(HypothesisException):
@@ -802,7 +807,12 @@ class TreeRecordingObserver(DataObserver):
         self.draw_value("boolean", value, was_forced=was_forced, kwargs=kwargs)
 
     def draw_value(
-        self, ir_type: IRLiteralType, value: IRType, *, was_forced: bool, kwargs: IRKWargsType
+        self,
+        ir_type: IRLiteralType,
+        value: IRType,
+        *,
+        was_forced: bool,
+        kwargs: IRKWargsType,
     ) -> None:
         i = self.__index_in_current_node
         self.__index_in_current_node += 1
