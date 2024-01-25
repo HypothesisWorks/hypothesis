@@ -77,4 +77,4 @@ exclude = [
 "hypothesis-python/tests/numpy/test_randomness.py" = ["NPY002"]
 "hypothesis-python/src/hypothesis/internal/conjecture/*" = ["B023"]
 "hypothesis-python/tests/conjecture/test_data_tree.py" = ["B023"]
-"hypothesis-python/tests/conjecture/test_test_data.py" = ["B023"]
+"hypothesis-python/tests/conjecture/test_test_data.py" = ["FBT001"]
