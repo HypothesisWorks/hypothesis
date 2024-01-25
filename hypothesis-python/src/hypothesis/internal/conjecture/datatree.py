@@ -382,8 +382,9 @@ class TreeNode:
             # they do not have any siblings that we still have more choices to
             # discover.
             #
-            # For example, we do not add pseudo-choice nodes like
-            # draw_integer(0, 0) to the tree.
+            # (We actually *do* currently add single-valued nodes to the tree,
+            # but immediately split them into a transition to avoid falsifying
+            # this check. this is a bit of a hack.)
             and len(self.forced) == len(self.values)
         ):
             if isinstance(self.transition, (Conclusion, Killed)):
