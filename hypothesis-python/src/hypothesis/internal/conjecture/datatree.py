@@ -713,15 +713,21 @@ class DataTree:
         or ``start_example`` as these are not currently recorded in the
         tree. This will likely change in future."""
         node = self.root
+
+        def draw(ir_type, kwargs, *, forced=None):
+            draw_func = getattr(data, f"draw_{ir_type}")
+            value = draw_func(**kwargs, forced=forced)
+
+            if ir_type == "float":
+                value = float_to_int(value)
+            return value
+
         try:
             while True:
                 for i, (ir_type, kwargs, previous) in enumerate(
                     zip(node.ir_types, node.kwargs, node.values)
                 ):
-                    draw_func = getattr(data, f"draw_{ir_type}")
-                    v = draw_func(
-                        **kwargs, forced=previous if i in node.forced else None
-                    )
+                    v = draw(ir_type, kwargs, forced=previous if i in node.forced else None)
                     if v != previous:
                         raise PreviouslyUnseenBehaviour
                 if isinstance(node.transition, Conclusion):
@@ -730,8 +736,7 @@ class DataTree:
                 elif node.transition is None:
                     raise PreviouslyUnseenBehaviour
                 elif isinstance(node.transition, Branch):
-                    draw_func = getattr(data, f"draw_{node.transition.ir_type}")
-                    v = draw_func(**node.transition.kwargs)
+                    v = draw(node.transition.ir_type, node.transition.kwargs)
                     try:
                         node = node.transition.children[v]
                     except KeyError as err:
