@@ -258,7 +258,7 @@ def test_can_disable_multiple_error_reporting(allow_multi):
 
 
 def test_finds_multiple_failures_in_generation():
-    special = []
+    special = None
     seen = set()
 
     @settings(phases=[Phase.generate, Phase.shrink], max_examples=100)
@@ -269,14 +269,19 @@ def test_finds_multiple_failures_in_generation():
         is larger than it is a different failure. This demonstrates that we
         can keep generating larger examples and still find new bugs after that
         point."""
+        nonlocal special
         if not special:
-            if len(seen) >= 10 and x <= 1000:
-                special.append(x)
+            # don't mark duplicate inputs as special and thus erroring, to avoid
+            # flakiness where we passed the input the first time but failed it the
+            # second.
+            if len(seen) >= 10 and x <= 1000 and x not in seen:
+                special = x
             else:
                 seen.add(x)
+
         if special:
-            assert x in seen or (x <= special[0])
-        assert x not in special
+            assert x in seen or x <= special
+        assert x != special
 
     with pytest.raises(ExceptionGroup):
         test()
