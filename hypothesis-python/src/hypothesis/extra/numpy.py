@@ -128,7 +128,7 @@ def from_dtype(
     handles the ``width`` or representable bounds for you.
 
     If ``typed`` is false, the returned strategy will return values with the
-    correct bounds but not necessarily of the correct type. This is useful as
+    correct bounds but not necessarily of the exact type. This is useful as
     a performance optimization when generating array elements, and allows
     certain optimizations in combined strategies that are not possible on
     derived types.
