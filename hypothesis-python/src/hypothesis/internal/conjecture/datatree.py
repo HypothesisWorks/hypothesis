@@ -9,7 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
-from typing import TYPE_CHECKING, List, Literal, Union
+from typing import TYPE_CHECKING, List, Literal, Optional, Union
 
 import attr
 
@@ -283,7 +283,7 @@ class TreeNode:
     #
     # Stored as None if no indices have been forced, purely for space saving
     # reasons (we force quite rarely).
-    __forced = attr.ib(default=None, init=False)
+    __forced: Optional[set] = attr.ib(default=None, init=False)
 
     # What happens next after drawing these nodes. (conceptually, "what is the
     # child/children of the last node stored here").
@@ -292,14 +292,16 @@ class TreeNode:
     # - None (we don't know yet)
     # - Branch (we have seen multiple possible outcomes here)
     # - Conclusion (ConjectureData.conclude_test was called here)
-    transition = attr.ib(default=None)
+    # - Killed (this branch is valid and may even have children, but should not
+    #   be explored when generating novel prefixes)
+    transition: Union[None, Branch, Conclusion, Killed] = attr.ib(default=None)
 
     # A tree node is exhausted if every possible sequence of draws below it has
     # been explored. We only update this when performing operations that could
     # change the answer.
     #
     # See also TreeNode.check_exhausted.
-    is_exhausted = attr.ib(default=False, init=False)
+    is_exhausted: bool = attr.ib(default=False, init=False)
 
     @property
     def forced(self):
