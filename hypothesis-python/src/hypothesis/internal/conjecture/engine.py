@@ -696,7 +696,7 @@ class ConjectureRunner:
         while self.should_generate_more():
             try:
                 prefix = self.generate_novel_prefix()
-            except TooHard:
+            except TooHard:  # pragma: no cover
                 break
             assert len(prefix) <= BUFFER_SIZE
             if (
