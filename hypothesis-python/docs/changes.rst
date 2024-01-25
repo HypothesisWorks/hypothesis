@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.97.0:
+
+-------------------
+6.97.0 - 2024-01-25
+-------------------
+
+Changes the distribution of :func:`~hypothesis.strategies.sampled_from` when
+sampling from a :class:`~python:enum.Flag`. Previously, no-flags-set values would
+never be generated, and all-flags-set values would be unlikely for large enums.
+With this change, the distribution is more uniform in the number of flags set.
+
 .. _v6.96.4:
 
 -------------------
