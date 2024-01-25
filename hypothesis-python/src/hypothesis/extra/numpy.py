@@ -46,8 +46,14 @@ from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.reflection import proxies
 from hypothesis.internal.validation import check_type
+from hypothesis.strategies._internal.lazy import unwrap_strategies
 from hypothesis.strategies._internal.numbers import Real
-from hypothesis.strategies._internal.strategies import Ex, T, check_strategy
+from hypothesis.strategies._internal.strategies import (
+    Ex,
+    MappedSearchStrategy,
+    T,
+    check_strategy,
+)
 from hypothesis.strategies._internal.utils import defines_strategy
 
 
@@ -115,7 +121,6 @@ def from_dtype(
     exclude_max: Optional[bool] = None,
     min_magnitude: Real = 0,
     max_magnitude: Optional[Real] = None,
-    typed: bool = True,
 ) -> st.SearchStrategy[Any]:
     """Creates a strategy which can generate any value of the given dtype.
 
@@ -126,12 +131,6 @@ def from_dtype(
     numbers. This is particularly useful when kwargs are passed through from
     :func:`arrays` which allow a variety of numeric dtypes, as it seamlessly
     handles the ``width`` or representable bounds for you.
-
-    If ``typed`` is false, the returned strategy will return values with the
-    correct bounds but not necessarily of the exact type. This is useful as
-    a performance optimization when generating array elements, and allows
-    certain optimizations in combined strategies that are not possible on
-    derived types.
     """
     check_type(np.dtype, dtype, "dtype")
     kwargs = {k: v for k, v in locals().items() if k != "dtype" and v is not None}
@@ -219,9 +218,7 @@ def from_dtype(
         result = st.builds(dtype.type, st.integers(-(2**63), 2**63 - 1), res)
     else:
         raise InvalidArgument(f"No strategy inference for {dtype}")
-    if typed:
-        result = result.map(dtype.type)
-    return result
+    return result.map(dtype.type)
 
 
 class ArrayStrategy(st.SearchStrategy):
@@ -515,8 +512,15 @@ def arrays(
                 .map((dtype.str + "[{}]").format)
                 .flatmap(lambda d: arrays(d, shape=shape, fill=fill, unique=unique))
             )
-        kwargs = {k: v for k, v in elements.items() if k != "typed"} if elements else {}
-        elements = from_dtype(dtype, typed=False, **kwargs)
+        elements = from_dtype(dtype, **(elements or {}))
+        # from_dtype may return a MappedStrategy to return values of the correct dtype. When
+        # we're populating dtyped array elements with it, this is redundant. Worse, it's
+        # actively bad since it may preclude certain optimizations like fast unique sampling.
+        # So: just prune the mapping.
+        elements = unwrap_strategies(elements)
+        if isinstance(elements, MappedSearchStrategy):
+            assert isinstance(elements.pack, type), "expected a type mapping"
+            elements = elements.mapped_strategy
     check_strategy(elements, "elements")
     if isinstance(shape, int):
         shape = (shape,)
