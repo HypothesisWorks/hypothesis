@@ -727,7 +727,9 @@ class DataTree:
                 for i, (ir_type, kwargs, previous) in enumerate(
                     zip(node.ir_types, node.kwargs, node.values)
                 ):
-                    v = draw(ir_type, kwargs, forced=previous if i in node.forced else None)
+                    v = draw(
+                        ir_type, kwargs, forced=previous if i in node.forced else None
+                    )
                     if v != previous:
                         raise PreviouslyUnseenBehaviour
                 if isinstance(node.transition, Conclusion):
