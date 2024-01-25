@@ -12,7 +12,7 @@ import sys
 
 import pytest
 
-from hypothesis import assume, given, strategies as st
+from hypothesis import HealthCheck, assume, given, settings, strategies as st
 from hypothesis.errors import (
     HypothesisDeprecationWarning,
     HypothesisWarning,
@@ -47,6 +47,7 @@ def draw_ordered_with_assume(draw):
 
 
 @given(draw_ordered_with_assume())
+@settings(suppress_health_check=[HealthCheck.filter_too_much])
 def test_can_assume_in_draw(xy):
     assert xy[0] < xy[1]
 
