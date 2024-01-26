@@ -469,27 +469,27 @@ def _test_observed_draws_are_recorded_in_tree(ir_type):
 
 
 def test_novel_prefix_gives_up_when_too_hard():
-    # force [0, 498] to be chosen such that generate_novel_prefix can only
-    # generate 499 or 500. This is a 2/500 = 0.4% chance via rejection sampling.
+    # force [0, 999] to be chosen such that generate_novel_prefix can only
+    # generate 1000. This is a 1/1000 = 0.1% chance via rejection sampling.
     # If our sampling approach is naive (which it is), this is too hard to
     # achieve in a reasonable time frame, and we will give up.
 
     tree = DataTree()
-    for i in range(499):
+    for i in range(1000):
 
         @run_to_buffer
         def buf(data):
-            data.draw_integer(0, 500, forced=i)
+            data.draw_integer(0, 1000, forced=i)
             data.mark_interesting()
 
         data = ConjectureData.for_buffer(buf, observer=tree.new_observer())
-        data.draw_integer(0, 500)
+        data.draw_integer(0, 1000)
         data.freeze()
 
     with raises(TooHard):
-        # give it 5 tries to raise in case we get really lucky and draw
+        # give it n tries to raise in case we get really lucky and draw
         # the right value early. This value can be raised if this test flakes.
-        for _ in range(5):
+        for _ in range(10):
             tree.generate_novel_prefix(Random())
 
 
