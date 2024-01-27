@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.97.1:
+
+-------------------
+6.97.1 - 2024-01-27
+-------------------
+
+Improves the performance of the :func:`~hypothesis.extra.numpy.arrays`
+strategy when generating unique values.
+
 .. _v6.97.0:
 
 -------------------
