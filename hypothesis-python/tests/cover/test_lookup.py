@@ -1048,8 +1048,7 @@ def test_constructor_is_more_important(data):
     data.draw(st.builds(AnnotatedConstructor))
 
 
-def use_signature(self, value: str) -> None:
-    ...
+def use_signature(self, value: str) -> None: ...
 
 
 class AnnotatedConstructorWithSignature(typing.Generic[_ValueType]):
@@ -1062,8 +1061,7 @@ class AnnotatedConstructorWithSignature(typing.Generic[_ValueType]):
         assert isinstance(value, str)
 
 
-def selfless_signature(value: str) -> None:
-    ...
+def selfless_signature(value: str) -> None: ...
 
 
 class AnnotatedConstructorWithSelflessSignature(AnnotatedConstructorWithSignature):

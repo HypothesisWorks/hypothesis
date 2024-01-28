@@ -178,16 +178,12 @@ def test_any_doesnt_generate_newline():
 
 @pytest.mark.parametrize("pattern", [re.compile("\\A.\\Z", re.DOTALL), "(?s)\\A.\\Z"])
 def test_any_with_dotall_generate_newline(pattern):
-    find_any(
-        st.from_regex(pattern), lambda s: s == "\n", settings(max_examples=10**6)
-    )
+    find_any(st.from_regex(pattern), lambda s: s == "\n", settings(max_examples=10**6))
 
 
 @pytest.mark.parametrize("pattern", [re.compile(b"\\A.\\Z", re.DOTALL), b"(?s)\\A.\\Z"])
 def test_any_with_dotall_generate_newline_binary(pattern):
-    find_any(
-        st.from_regex(pattern), lambda s: s == b"\n", settings(max_examples=10**6)
-    )
+    find_any(st.from_regex(pattern), lambda s: s == b"\n", settings(max_examples=10**6))
 
 
 @pytest.mark.parametrize(
