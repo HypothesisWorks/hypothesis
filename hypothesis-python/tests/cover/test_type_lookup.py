@@ -66,7 +66,7 @@ for thing in (
 ):
     for n in range(3):
         try:
-            ex = check_can_generate_examples(thing(*([st.nothing()] * n)))
+            ex = find_any(thing(*([st.nothing()] * n)))
             types_with_core_strat.add(type(ex))
             break
         except (TypeError, InvalidArgument, HypothesisDeprecationWarning):

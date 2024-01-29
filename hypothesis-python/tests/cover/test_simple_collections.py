@@ -155,11 +155,11 @@ def test_can_find_unique_lists_of_non_set_order():
 
 
 def test_can_draw_empty_list_from_unsatisfiable_strategy():
-    find_any(lists(integers().filter(lambda s: False)), lambda v: v == [])
+    assert find_any(lists(integers().filter(lambda s: False))) == []
 
 
 def test_can_draw_empty_set_from_unsatisfiable_strategy():
-    find_any(sets(integers().filter(lambda s: False)), lambda v: v == set())
+    assert find_any(sets(integers().filter(lambda s: False))) == set()
 
 
 @given(lists(sets(none()), min_size=10))
