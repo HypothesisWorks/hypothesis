@@ -28,7 +28,7 @@ from hypothesis.strategies import (
     tuples,
 )
 
-from tests.common.debug import find_any
+from tests.common.debug import check_can_generate_examples, find_any
 
 
 @settings(suppress_health_check=list(HealthCheck))
@@ -167,10 +167,10 @@ def test_issue_739_regression(x):
 def test_consistent_decimal_error():
     bad = "invalid argument to Decimal"
     with pytest.raises(InvalidArgument) as excinfo:
-        decimals(bad).example()
+        check_can_generate_examples(decimals(bad))
     with pytest.raises(InvalidArgument) as excinfo2:
         with decimal.localcontext(decimal.Context(traps=[])):
-            decimals(bad).example()
+            check_can_generate_examples(decimals(bad))
     assert str(excinfo.value) == str(excinfo2.value)
 
 

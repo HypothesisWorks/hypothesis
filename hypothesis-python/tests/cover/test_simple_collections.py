@@ -28,7 +28,7 @@ from hypothesis.strategies import (
     tuples,
 )
 
-from tests.common.debug import find_any, minimal
+from tests.common.debug import assert_simple_property, find_any, minimal
 from tests.common.utils import flaky
 
 
@@ -83,8 +83,10 @@ def test_ordered_dictionaries_preserve_keys():
     r = Random()
     keys = list(range(100))
     r.shuffle(keys)
-    x = fixed_dictionaries(OrderedDict([(k, booleans()) for k in keys])).example()
-    assert list(x.keys()) == keys
+    assert_simple_property(
+        fixed_dictionaries(OrderedDict([(k, booleans()) for k in keys])),
+        lambda x: list(x.keys()) == keys,
+    )
 
 
 @given(fixed_dictionaries({}, optional={0: booleans(), 1: nothing(), 2: booleans()}))
@@ -153,11 +155,11 @@ def test_can_find_unique_lists_of_non_set_order():
 
 
 def test_can_draw_empty_list_from_unsatisfiable_strategy():
-    assert find_any(lists(integers().filter(lambda s: False))) == []
+    find_any(lists(integers().filter(lambda s: False)), lambda v: v == [])
 
 
 def test_can_draw_empty_set_from_unsatisfiable_strategy():
-    assert find_any(sets(integers().filter(lambda s: False))) == set()
+    find_any(sets(integers().filter(lambda s: False)), lambda v: v == set())
 
 
 @given(lists(sets(none()), min_size=10))

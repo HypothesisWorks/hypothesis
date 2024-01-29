@@ -28,7 +28,12 @@ from hypothesis.strategies._internal.regex import (
     regex_strategy,
 )
 
-from tests.common.debug import assert_all_examples, assert_no_examples, find_any
+from tests.common.debug import (
+    assert_all_examples,
+    assert_no_examples,
+    check_can_generate_examples,
+    find_any,
+)
 
 
 def is_ascii(s):
@@ -262,7 +267,9 @@ def test_can_handle_boundaries_nested(s):
 def test_groupref_not_shared_between_regex():
     # If group references are (incorrectly!) shared between regex, this would
     # fail as the would only be one reference.
-    st.tuples(st.from_regex("(a)\\1"), st.from_regex("(b)\\1")).example()
+    check_can_generate_examples(
+        st.tuples(st.from_regex("(a)\\1"), st.from_regex("(b)\\1"))
+    )
 
 
 @pytest.mark.skipif(
@@ -294,7 +301,7 @@ def test_positive_lookbehind():
 
 
 def test_positive_lookahead():
-    st.from_regex("a(?=bc).*").filter(lambda s: s.startswith("abc")).example()
+    find_any(st.from_regex("a(?=bc).*"), lambda s: s.startswith("abc"))
 
 
 def test_negative_lookbehind():

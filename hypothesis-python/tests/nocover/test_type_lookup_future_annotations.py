@@ -17,6 +17,8 @@ import pytest
 from hypothesis import given, strategies as st
 from hypothesis.errors import InvalidArgument
 
+from tests.common.debug import check_can_generate_examples
+
 alias = Union[int, str]
 
 
@@ -45,4 +47,4 @@ def test_complex_forward_ref_in_typed_dict_local():
 
     c_strategy = st.from_type(C)
     with pytest.raises(InvalidArgument):
-        c_strategy.example()
+        check_can_generate_examples(c_strategy)

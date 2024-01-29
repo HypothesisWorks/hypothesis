@@ -26,6 +26,7 @@ from hypothesis.extra.django import (
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.strategies import binary, just, lists
 
+from tests.common.debug import check_can_generate_examples
 from tests.django.toystore.models import (
     Car,
     Company,
@@ -104,7 +105,7 @@ class TestGetsBasicModels(TestCase):
 
     def test_mandatory_computed_fields_are_mandatory(self):
         with self.assertRaises(InvalidArgument):
-            from_model(MandatoryComputed).example()
+            check_can_generate_examples(from_model(MandatoryComputed))
 
     def test_mandatory_computed_fields_may_not_be_provided(self):
         mc = from_model(MandatoryComputed, company=from_model(Company))
@@ -163,7 +164,7 @@ class TestGetsBasicModels(TestCase):
 class TestsNeedingRollback(TransactionTestCase):
     def test_can_get_examples(self):
         for _ in range(200):
-            from_model(Company).example()
+            check_can_generate_examples(from_model(Company))
 
 
 class TestRestrictedFields(TestCase):

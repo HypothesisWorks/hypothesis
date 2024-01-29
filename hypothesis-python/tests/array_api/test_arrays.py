@@ -20,7 +20,12 @@ from tests.array_api.common import (
     dtype_name_params,
     flushes_to_zero,
 )
-from tests.common.debug import assert_all_examples, find_any, minimal
+from tests.common.debug import (
+    assert_all_examples,
+    check_can_generate_examples,
+    find_any,
+    minimal,
+)
 from tests.common.utils import flaky
 
 
@@ -222,13 +227,17 @@ def test_cannot_draw_unique_arrays_with_too_small_elements(xp, xps):
     """Unique strategy with elements strategy range smaller than its size raises
     helpful error."""
     with pytest.raises(InvalidArgument):
-        xps.arrays(xp.int8, 10, elements=st.integers(0, 5), unique=True).example()
+        check_can_generate_examples(
+            xps.arrays(xp.int8, 10, elements=st.integers(0, 5), unique=True)
+        )
 
 
 def test_cannot_fill_arrays_with_non_castable_value(xp, xps):
     """Strategy with fill not castable to dtype raises helpful error."""
     with pytest.raises(InvalidArgument):
-        xps.arrays(xp.int8, 10, fill=st.just("not a castable value")).example()
+        check_can_generate_examples(
+            xps.arrays(xp.int8, 10, fill=st.just("not a castable value"))
+        )
 
 
 def test_generate_unique_arrays_with_high_collision_elements(xp, xps):
@@ -284,7 +293,7 @@ def test_may_not_fill_unique_array_with_non_nan(xp, xps):
         fill=st.just(0.0),
     )
     with pytest.raises(InvalidArgument):
-        strat.example()
+        check_can_generate_examples(strat)
 
 
 @pytest.mark.parametrize(
@@ -298,7 +307,7 @@ def test_may_not_use_overflowing_integers(xp, xps, kwargs):
     """Strategy with elements strategy range outside the dtype's bounds raises
     helpful error."""
     with pytest.raises(InvalidArgument):
-        xps.arrays(dtype=xp.int8, shape=1, **kwargs).example()
+        check_can_generate_examples(xps.arrays(dtype=xp.int8, shape=1, **kwargs))
 
 
 @pytest.mark.parametrize("fill", [False, True])
@@ -321,7 +330,7 @@ def test_may_not_use_unrepresentable_elements(xp, xps, fill, dtype, strat):
     else:
         kw = {"elements": strat}
     with pytest.raises(InvalidArgument):
-        xps.arrays(dtype=dtype, shape=1, **kw).example()
+        check_can_generate_examples(xps.arrays(dtype=dtype, shape=1, **kw))
 
 
 def test_floats_can_be_constrained(xp, xps):
@@ -507,6 +516,6 @@ def test_subnormal_elements_validation(xp, xps):
     strat = xps.arrays(xp.float32, 10, elements=elements)
     if flushes_to_zero(xp, width=32):
         with pytest.raises(InvalidArgument, match="Generated subnormal float"):
-            strat.example()
+            check_can_generate_examples(strat)
     else:
-        strat.example()
+        check_can_generate_examples(strat)

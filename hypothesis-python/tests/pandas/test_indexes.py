@@ -18,6 +18,7 @@ from hypothesis import HealthCheck, given, reject, settings, strategies as st
 from hypothesis.errors import Unsatisfiable
 from hypothesis.extra import numpy as npst, pandas as pdst
 
+from tests.common.debug import check_can_generate_examples
 from tests.pandas.helpers import supported_by_pandas
 
 
@@ -41,7 +42,7 @@ def test_gets_right_dtype_for_empty_indices_with_elements(ix):
 
 def test_does_not_generate_impossible_conditions():
     with pytest.raises(Unsatisfiable):
-        pdst.indexes(min_size=3, max_size=3, dtype=bool).example()
+        check_can_generate_examples(pdst.indexes(min_size=3, max_size=3, dtype=bool))
 
 
 @given(pdst.indexes(dtype=bool, unique=True))

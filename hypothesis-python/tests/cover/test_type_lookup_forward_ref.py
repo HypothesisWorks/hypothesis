@@ -30,6 +30,7 @@ from hypothesis import given, strategies as st
 from hypothesis.errors import ResolutionFailed
 
 from tests.common import utils
+from tests.common.debug import check_can_generate_examples
 
 if TYPE_CHECKING:
     from tests.common.utils import ExcInfo  # we just need any type
@@ -101,7 +102,7 @@ def test_bound_correct_dot_access_forward_ref(built):
 def test_bound_missing_dot_access_forward_ref(function):
     """Resolution of missing type in dot access."""
     with pytest.raises(ResolutionFailed):
-        st.builds(function).example()
+        check_can_generate_examples(st.builds(function))
 
 
 # Missing:
@@ -116,7 +117,7 @@ def missing_fun(thing: _Missing) -> int:
 def test_bound_missing_forward_ref():
     """We should raise proper errors on missing types."""
     with pytest.raises(ResolutionFailed):
-        st.builds(missing_fun).example()
+        check_can_generate_examples(st.builds(missing_fun))
 
 
 # Type checking only:
@@ -131,11 +132,11 @@ def typechecking_only_fun(thing: _TypeChecking) -> int:
 def test_bound_type_cheking_only_forward_ref():
     """We should fallback to registering explicit ``ForwardRef`` when we have to."""
     with utils.temp_registered(ForwardRef("ExcInfo"), st.just(1)):
-        st.builds(typechecking_only_fun).example()
+        check_can_generate_examples(st.builds(typechecking_only_fun))
 
 
 def test_bound_type_checking_only_forward_ref_wrong_type():
     """We should check ``ForwardRef`` parameter name correctly."""
     with utils.temp_registered(ForwardRef("WrongType"), st.just(1)):
         with pytest.raises(ResolutionFailed):
-            st.builds(typechecking_only_fun).example()
+            check_can_generate_examples(st.builds(typechecking_only_fun))

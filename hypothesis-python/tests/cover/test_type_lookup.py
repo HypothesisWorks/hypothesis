@@ -20,7 +20,6 @@ from hypothesis.errors import (
     HypothesisDeprecationWarning,
     InvalidArgument,
     ResolutionFailed,
-    SmallSearchSpaceWarning,
 )
 from hypothesis.internal.compat import get_type_hints
 from hypothesis.internal.reflection import get_pretty_function_description
@@ -28,7 +27,12 @@ from hypothesis.strategies._internal import types
 from hypothesis.strategies._internal.types import _global_type_lookup
 from hypothesis.strategies._internal.utils import _strategies
 
-from tests.common.debug import assert_all_examples, find_any
+from tests.common.debug import (
+    assert_all_examples,
+    assert_simple_property,
+    check_can_generate_examples,
+    find_any,
+)
 from tests.common.utils import fails_with, temp_registered
 
 # Build a set of all types output by core strategies
@@ -62,7 +66,7 @@ for thing in (
 ):
     for n in range(3):
         try:
-            ex = thing(*([st.nothing()] * n)).example()
+            ex = check_can_generate_examples(thing(*([st.nothing()] * n)))
             types_with_core_strat.add(type(ex))
             break
         except (TypeError, InvalidArgument, HypothesisDeprecationWarning):
@@ -114,8 +118,8 @@ def test_lookup_values_are_strategies(typ, not_a_strategy):
 def test_lookup_overrides_defaults(typ):
     sentinel = object()
     with temp_registered(typ, st.just(sentinel)):
-        assert st.from_type(typ).example() is sentinel
-    assert st.from_type(typ).example() is not sentinel
+        assert_simple_property(st.from_type(typ), lambda v: v is sentinel)
+    assert_simple_property(st.from_type(typ), lambda v: v is not sentinel)
 
 
 class ParentUnknownType:
@@ -130,30 +134,30 @@ class UnknownType(ParentUnknownType):
 def test_custom_type_resolution_fails_without_registering():
     fails = st.from_type(UnknownType)
     with pytest.raises(ResolutionFailed):
-        fails.example()
+        check_can_generate_examples(fails)
 
 
 def test_custom_type_resolution():
     sentinel = object()
     with temp_registered(UnknownType, st.just(sentinel)):
-        assert st.from_type(UnknownType).example() is sentinel
+        assert_simple_property(st.from_type(UnknownType), lambda v: v is sentinel)
         # Also covered by registration of child class
-        assert st.from_type(ParentUnknownType).example() is sentinel
+        assert_simple_property(st.from_type(ParentUnknownType), lambda v: v is sentinel)
 
 
 def test_custom_type_resolution_with_function():
     sentinel = object()
     with temp_registered(UnknownType, lambda _: st.just(sentinel)):
-        assert st.from_type(UnknownType).example() is sentinel
-        assert st.from_type(ParentUnknownType).example() is sentinel
+        assert_simple_property(st.from_type(UnknownType), lambda v: v is sentinel)
+        assert_simple_property(st.from_type(ParentUnknownType), lambda v: v is sentinel)
 
 
 def test_custom_type_resolution_with_function_non_strategy():
     with temp_registered(UnknownType, lambda _: None):
         with pytest.raises(ResolutionFailed):
-            st.from_type(UnknownType).example()
+            check_can_generate_examples(st.from_type(UnknownType))
         with pytest.raises(ResolutionFailed):
-            st.from_type(ParentUnknownType).example()
+            check_can_generate_examples(st.from_type(ParentUnknownType))
 
 
 @pytest.mark.parametrize("strategy_returned", [True, False])
@@ -168,20 +172,20 @@ def test_conditional_type_resolution_with_function(strategy_returned):
 
     with temp_registered(UnknownType, resolve_strategy):
         if strategy_returned:
-            assert st.from_type(UnknownType).example() is sentinel
+            assert_simple_property(st.from_type(UnknownType), lambda v: v is sentinel)
         else:
             with pytest.raises(ResolutionFailed):
-                st.from_type(UnknownType).example()
+                check_can_generate_examples(st.from_type(UnknownType))
 
 
 def test_errors_if_generic_resolves_empty():
     with temp_registered(UnknownType, lambda _: st.nothing()):
         fails_1 = st.from_type(UnknownType)
         with pytest.raises(ResolutionFailed):
-            fails_1.example()
+            check_can_generate_examples(fails_1)
         fails_2 = st.from_type(ParentUnknownType)
         with pytest.raises(ResolutionFailed):
-            fails_2.example()
+            check_can_generate_examples(fails_2)
 
 
 def test_cannot_register_empty():
@@ -190,15 +194,15 @@ def test_cannot_register_empty():
         st.register_type_strategy(UnknownType, st.nothing())
     fails = st.from_type(UnknownType)
     with pytest.raises(ResolutionFailed):
-        fails.example()
+        check_can_generate_examples(fails)
     assert UnknownType not in types._global_type_lookup
 
 
 def test_pulic_interface_works():
-    st.from_type(int).example()
+    check_can_generate_examples(st.from_type(int))
     fails = st.from_type("not a type or annotated function")
     with pytest.raises(InvalidArgument):
-        fails.example()
+        check_can_generate_examples(fails)
 
 
 @pytest.mark.parametrize("infer_token", [infer, ...])
@@ -227,13 +231,12 @@ class BrokenClass:
 
 def test_uninspectable_builds():
     with pytest.raises(TypeError, match="object is not callable"):
-        st.builds(BrokenClass).example()
+        check_can_generate_examples(st.builds(BrokenClass))
 
 
 def test_uninspectable_from_type():
     with pytest.raises(TypeError, match="object is not callable"):
-        with pytest.warns(SmallSearchSpaceWarning):
-            st.from_type(BrokenClass).example()
+        check_can_generate_examples(st.from_type(BrokenClass))
 
 
 def _check_instances(t):
@@ -284,7 +287,7 @@ def using_concrete_generic(instance: MyGeneric[int]) -> int:
 
 def test_generic_origin_empty():
     with pytest.raises(ResolutionFailed):
-        find_any(st.builds(using_generic))
+        check_can_generate_examples(st.builds(using_generic))
 
 
 def test_issue_2951_regression():
@@ -355,7 +358,7 @@ def test_generic_origin_without_type_args(generic):
 )
 def test_generic_origin_from_type(strat, type_):
     with temp_registered(MyGeneric, st.builds(MyGeneric)):
-        find_any(strat(type_))
+        check_can_generate_examples(strat(type_))
 
 
 def test_generic_origin_concrete_builds():
@@ -418,14 +421,14 @@ def test_abstract_resolver_fallback():
     # And trying to generate an instance of the abstract type fails,
     # UNLESS the concrete type is currently resolvable
     with pytest.raises(ResolutionFailed):
-        gen_abstractbar.example()
+        check_can_generate_examples(gen_abstractbar)
     with temp_registered(ConcreteBar, gen_concretebar):
-        gen = gen_abstractbar.example()
+        # which in turn means we resolve to the concrete subtype.
+        assert_simple_property(
+            gen_abstractbar, lambda gen: isinstance(gen, ConcreteBar)
+        )
     with pytest.raises(ResolutionFailed):
-        gen_abstractbar.example()
-
-    # which in turn means we resolve to the concrete subtype.
-    assert isinstance(gen, ConcreteBar)
+        check_can_generate_examples(gen_abstractbar)
 
 
 def _one_arg(x: int):

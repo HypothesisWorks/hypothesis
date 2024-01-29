@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import warnings
 from inspect import Parameter as P, signature
 
 import attr
@@ -20,6 +21,8 @@ from hypothesis.internal.reflection import (
     define_function_signature,
     get_pretty_function_description,
 )
+
+from tests.common.debug import check_can_generate_examples
 
 
 @given(st.integers())
@@ -127,5 +130,6 @@ def test_attrs_inference_builds(c):
 
 def test_attrs_inference_from_type():
     s = st.from_type(Inferrables)
-    with pytest.warns(SmallSearchSpaceWarning):
-        s.example()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", SmallSearchSpaceWarning)
+        check_can_generate_examples(s)

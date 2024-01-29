@@ -15,7 +15,7 @@ import pytest
 from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument
 
-from tests.common.debug import assert_no_examples, find_any
+from tests.common.debug import assert_no_examples, check_can_generate_examples, find_any
 
 
 def test_no_nil_uuid_by_default():
@@ -27,8 +27,8 @@ def test_can_generate_nil_uuid():
 
 
 def test_can_only_allow_nil_uuid_with_none_version():
-    st.uuids(version=None, allow_nil=True).example()
+    check_can_generate_examples(st.uuids(version=None, allow_nil=True))
     with pytest.raises(InvalidArgument):
-        st.uuids(version=4, allow_nil=True).example()
+        check_can_generate_examples(st.uuids(version=4, allow_nil=True))
     with pytest.raises(InvalidArgument):
-        st.uuids(version=None, allow_nil="not a bool").example()
+        check_can_generate_examples(st.uuids(version=None, allow_nil="not a bool"))

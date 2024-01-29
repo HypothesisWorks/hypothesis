@@ -20,7 +20,7 @@ from hypothesis.extra import pandas as pdst
 from hypothesis.extra.pandas.impl import IntegerDtype
 
 from tests.common.arguments import argument_validation_test, e
-from tests.common.debug import find_any
+from tests.common.debug import check_can_generate_examples
 from tests.common.utils import checks_deprecated_behaviour
 
 BAD_ARGS = [
@@ -115,7 +115,9 @@ def test_timestamp_as_datetime_bounds(dt):
 
 @checks_deprecated_behaviour
 def test_confusing_object_dtype_aliases():
-    pdst.series(elements=st.tuples(st.integers()), dtype=tuple).example()
+    check_can_generate_examples(
+        pdst.series(elements=st.tuples(st.integers()), dtype=tuple)
+    )
 
 
 @pytest.mark.skipif(
@@ -126,7 +128,7 @@ def test_pandas_nullable_types_class():
     with pytest.raises(
         InvalidArgument, match="Otherwise it would be treated as dtype=object"
     ):
-        find_any(st, lambda s: s.isna().any())
+        check_can_generate_examples(st, lambda s: s.isna().any())
 
 
 @pytest.mark.parametrize(
@@ -140,4 +142,4 @@ def test_pandas_nullable_types_class():
 )
 def test_invalid_datetime_or_timedelta_dtype_raises_error(dtype_, expected_unit):
     with pytest.raises(InvalidArgument, match=re.escape(expected_unit)):
-        pdst.series(dtype=dtype_).example()
+        check_can_generate_examples(pdst.series(dtype=dtype_))
