@@ -89,7 +89,7 @@ def assert_no_examples(strategy, condition=lambda _: True):
         pass
 
 
-def assert_all_examples(strategy, predicate):
+def assert_all_examples(strategy, predicate, settings=None):
     """Asserts that all examples of the given strategy match the predicate.
 
     :param strategy: Hypothesis strategy to check
@@ -97,8 +97,38 @@ def assert_all_examples(strategy, predicate):
     """
 
     @given(strategy)
+    @Settings(parent=settings)
     def assert_examples(s):
         msg = f"Found {s!r} using strategy {strategy} which does not match"
         assert predicate(s), msg
 
     assert_examples()
+
+
+def assert_simple_property(strategy, predicate, settings=None):
+    """Like assert_all_examples, intended as a self-documenting shortcut for simple constant
+    properties (`is`, `isinstance`, `==`, ...) that can be adequately verified in just a few
+    examples.
+
+    For more thorough checking, use assert_all_examples.
+    """
+
+    assert_all_examples(strategy, predicate, Settings(parent=settings, max_examples=15))
+
+
+def check_can_generate_examples(strategy, settings=None):
+    """Tries to generate a small number of examples from the strategy, to verify that it can
+      do so without raising.
+
+    Nothing is returned, it only checks that no error is raised.
+    """
+
+    assert_simple_property(
+        strategy,
+        lambda _: True,
+        settings=Settings(
+            parent=settings,
+            phases=(Phase.generate,),
+            suppress_health_check=list(HealthCheck),
+        ),
+    )
