@@ -85,7 +85,7 @@ class Branch:
 
     @property
     def max_children(self):
-        max_children = compute_max_children(self.kwargs, self.ir_type)
+        max_children = compute_max_children(self.ir_type, self.kwargs)
         assert max_children > 0
         return max_children
 
@@ -123,7 +123,7 @@ class Conclusion:
 MAX_CHILDREN_EFFECTIVELY_INFINITE = 100_000
 
 
-def compute_max_children(kwargs, ir_type):
+def compute_max_children(ir_type, kwargs):
     from hypothesis.internal.conjecture.data import DRAW_STRING_DEFAULT_MAX_SIZE
 
     if ir_type == "integer":
@@ -867,7 +867,7 @@ class TreeRecordingObserver(DataObserver):
                 # An alternative is not writing such choices to the tree at
                 # all, and thus guaranteeing that each node has at least 2 max
                 # children.
-                if compute_max_children(kwargs, ir_type) == 1 and not was_forced:
+                if compute_max_children(ir_type, kwargs) == 1 and not was_forced:
                     node.split_at(i)
                     self.__current_node = node.transition.children[value]
                     self.__index_in_current_node = 0

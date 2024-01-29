@@ -455,7 +455,7 @@ def _test_observed_draws_are_recorded_in_tree(ir_type):
         # own transition, which clashes with our asserts below. If we ever
         # change this (say, by not writing pseudo choices to the ir at all),
         # this restriction can be relaxed.
-        assume(compute_max_children(kwargs, ir_type) > 1)
+        assume(compute_max_children(ir_type, kwargs) > 1)
 
         tree = DataTree()
         data = fresh_data(observer=tree.new_observer())
@@ -504,7 +504,7 @@ def _test_non_observed_draws_are_not_recorded_in_tree(ir_type):
 
     @given(kwargs_strategy)
     def test(kwargs):
-        assume(compute_max_children(kwargs, ir_type) > 1)
+        assume(compute_max_children(ir_type, kwargs) > 1)
 
         tree = DataTree()
         data = fresh_data(observer=tree.new_observer())
