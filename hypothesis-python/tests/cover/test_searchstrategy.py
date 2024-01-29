@@ -15,17 +15,13 @@ from collections import defaultdict, namedtuple
 import attr
 import pytest
 
-from hypothesis.errors import InvalidArgument
+from hypothesis.errors import InvalidArgument, Unsatisfiable
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies import booleans, integers, just, none, tuples
 from hypothesis.strategies._internal.utils import to_jsonable
 
-from tests.common.debug import (
-    assert_no_examples,
-    assert_simple_property,
-    check_can_generate_examples,
-)
+from tests.common.debug import assert_simple_property, check_can_generate_examples
 
 
 def test_or_errors_when_given_non_strategy():
@@ -70,7 +66,8 @@ def test_can_map():
 
 
 def test_example_raises_unsatisfiable_when_too_filtered():
-    assert_no_examples(integers().filter(lambda x: False))
+    with pytest.raises(Unsatisfiable):
+        check_can_generate_examples(integers().filter(lambda x: False))
 
 
 def nameless_const(x):

@@ -118,7 +118,7 @@ def assert_simple_property(strategy, predicate, settings=None):
 
 def check_can_generate_examples(strategy, settings=None):
     """Tries to generate a small number of examples from the strategy, to verify that it can
-      do so without raising.
+    do so without raising.
 
     Nothing is returned, it only checks that no error is raised.
     """

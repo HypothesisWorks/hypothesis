@@ -32,7 +32,7 @@ from hypothesis.strategies import (
 )
 from hypothesis.strategies._internal.strategies import check_strategy
 
-from tests.common.debug import check_can_generate_examples
+from tests.common.debug import check_can_generate_examples, find_any
 from tests.common.utils import fails_with
 
 
@@ -132,10 +132,10 @@ def test_float_finite_range_and_allow_infinity_cannot_both_be_enabled():
 
 
 def test_does_not_error_if_min_size_is_bigger_than_default_size():
-    check_can_generate_examples(lists(integers(), min_size=50))
-    check_can_generate_examples(sets(integers(), min_size=50))
-    check_can_generate_examples(frozensets(integers(), min_size=50))
-    check_can_generate_examples(lists(integers(), min_size=50, unique=True))
+    find_any(lists(integers(), min_size=50))
+    find_any(sets(integers(), min_size=50))
+    find_any(frozensets(integers(), min_size=50))
+    find_any(lists(integers(), min_size=50, unique=True))
 
 
 def test_list_unique_and_unique_by_cannot_both_be_enabled():
