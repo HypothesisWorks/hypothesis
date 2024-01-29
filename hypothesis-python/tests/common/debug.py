@@ -97,7 +97,7 @@ def assert_all_examples(strategy, predicate, settings=None):
     """
 
     @given(strategy)
-    @Settings(parent=settings)
+    @Settings(parent=settings, database=None)
     def assert_examples(s):
         msg = f"Found {s!r} using strategy {strategy} which does not match"
         assert predicate(s), msg
