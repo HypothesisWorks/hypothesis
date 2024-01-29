@@ -20,7 +20,7 @@ from hypothesis.extra import pandas as pdst
 from hypothesis.extra.pandas.impl import IntegerDtype
 
 from tests.common.arguments import argument_validation_test, e
-from tests.common.debug import check_can_generate_examples
+from tests.common.debug import check_can_generate_examples, find_any
 from tests.common.utils import checks_deprecated_behaviour
 
 BAD_ARGS = [
@@ -124,11 +124,11 @@ def test_confusing_object_dtype_aliases():
     not IntegerDtype, reason="Nullable types not available in this version of Pandas"
 )
 def test_pandas_nullable_types_class():
-    st = pdst.series(dtype=pd.core.arrays.integer.Int8Dtype)
     with pytest.raises(
         InvalidArgument, match="Otherwise it would be treated as dtype=object"
     ):
-        check_can_generate_examples(st, lambda s: s.isna().any())
+        st = pdst.series(dtype=pd.core.arrays.integer.Int8Dtype)
+        find_any(st, lambda s: s.isna().any())
 
 
 @pytest.mark.parametrize(

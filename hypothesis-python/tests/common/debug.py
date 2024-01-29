@@ -113,7 +113,15 @@ def assert_simple_property(strategy, predicate, settings=None):
     For more thorough checking, use assert_all_examples.
     """
 
-    assert_all_examples(strategy, predicate, Settings(parent=settings, max_examples=15))
+    assert_all_examples(
+        strategy,
+        predicate,
+        Settings(
+            parent=settings,
+            max_examples=15,
+            suppress_health_check=list(HealthCheck),
+        ),
+    )
 
 
 def check_can_generate_examples(strategy, settings=None):
@@ -129,6 +137,5 @@ def check_can_generate_examples(strategy, settings=None):
         settings=Settings(
             parent=settings,
             phases=(Phase.generate,),
-            suppress_health_check=list(HealthCheck),
         ),
     )
