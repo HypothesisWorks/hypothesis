@@ -33,7 +33,6 @@ from hypothesis.internal.conjecture.data import (
 from hypothesis.internal.conjecture.datatree import (
     DataTree,
     PreviouslyUnseenBehaviour,
-    TooHard,
     TreeRecordingObserver,
 )
 from hypothesis.internal.conjecture.junkdrawer import clamp, ensure_free_stackframes
@@ -694,10 +693,7 @@ class ConjectureRunner:
         ran_optimisations = False
 
         while self.should_generate_more():
-            try:
-                prefix = self.generate_novel_prefix()
-            except TooHard:  # pragma: no cover
-                break
+            prefix = self.generate_novel_prefix()
             assert len(prefix) <= BUFFER_SIZE
             if (
                 self.valid_examples <= small_example_cap

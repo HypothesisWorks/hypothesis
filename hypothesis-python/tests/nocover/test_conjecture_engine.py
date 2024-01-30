@@ -23,7 +23,7 @@ def test_lot_of_dead_nodes():
     @run_to_buffer
     def x(data):
         for i in range(4):
-            if data.draw_integer(0, 10) != i:
+            if data.draw_bytes(1)[0] != i:
                 data.mark_invalid()
         data.mark_interesting()
 

@@ -357,11 +357,11 @@ def test_one_dead_branch():
 
         @run_to_buffer
         def x(data):
-            i = data.draw_integer(0, 25)
+            i = data.draw_bytes(1)[0]
             if i > 0:
                 data.mark_invalid()
-            i = data.draw_integer(0, 25)
-            if len(seen) < 25:
+            i = data.draw_bytes(1)[0]
+            if len(seen) < 255:
                 seen.add(i)
             elif i not in seen:
                 data.mark_interesting()
@@ -1024,10 +1024,7 @@ def test_discards_kill_branches():
 
         runner = ConjectureRunner(test, settings=SMALL_COUNT_SETTINGS)
         runner.run()
-        # hits TooHard in generate_novel_prefix. ideally we would generate all
-        # 256 integers in exactly 256 calls here, but in practice we bail out
-        # early.
-        assert runner.call_count >= 200
+        assert runner.call_count == 256
 
 
 @pytest.mark.parametrize("n", range(1, 32))

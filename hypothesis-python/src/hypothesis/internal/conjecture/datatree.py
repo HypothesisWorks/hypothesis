@@ -8,12 +8,15 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import itertools
 import math
 from typing import TYPE_CHECKING, List, Literal, Optional, Union
 
 import attr
 
 from hypothesis.errors import Flaky, HypothesisException, StopTest
+from hypothesis.internal import floats as flt
+from hypothesis.internal.compat import int_to_bytes
 from hypothesis.internal.conjecture.data import (
     BooleanKWargs,
     BytesKWargs,
@@ -46,10 +49,6 @@ IRLiteralType: TypeAlias = Union[
 
 
 class PreviouslyUnseenBehaviour(HypothesisException):
-    pass
-
-
-class TooHard(HypothesisException):
     pass
 
 
@@ -200,13 +199,62 @@ def compute_max_children(ir_type, kwargs):
         raise ValueError(f"unhandled ir_type {ir_type}")
 
 
-def unbiased_kwargs(ir_type, kwargs):
-    unbiased_kw = kwargs.copy()
+# In theory, this is a strict superset of the functionality of compute_max_children;
+#
+#   assert len(all_children(ir_type, kwargs)) == compute_max_children(ir_type, kwargs)
+#
+# In practice, we maintain two distinct implementations for efficiency and space
+# reasons. If you just need the number of children, it is cheaper to use
+# compute_max_children than reify the list of children (only to immediately
+# throw it away).
+def all_children(ir_type, kwargs):
     if ir_type == "integer":
-        del unbiased_kw["weights"]
+        min_value = kwargs["min_value"]
+        max_value = kwargs["max_value"]
+
+        # it's a bit annoying (but completely feasible) to implement the cases
+        # other than "both sides bounded" here. We haven't needed to yet because
+        # in practice we don't struggled with unbounded integer generation.
+        assert min_value is not None and max_value is not None
+        yield from range(min_value, max_value + 1)
     if ir_type == "boolean":
-        del unbiased_kw["p"]
-    return unbiased_kw
+        p = kwargs["p"]
+        if p <= 2 ** (-64):
+            yield False
+        elif p >= (1 - 2 ** (-64)):
+            yield True
+        else:
+            yield from [False, True]
+    if ir_type == "bytes":
+        size = kwargs["size"]
+        yield from (int_to_bytes(i, size) for i in range(2 ** (8 * size)))
+    if ir_type == "string":
+        min_size = kwargs["min_size"]
+        max_size = kwargs["max_size"]
+        intervals = kwargs["intervals"]
+
+        size = min_size
+        while size <= max_size:
+            for ords in itertools.product(intervals, repeat=size):
+                yield "".join(chr(n) for n in ords)
+            size += 1
+    if ir_type == "float":
+
+        def floats_between(a, b):
+            for n in range(float_to_int(a), float_to_int(b) + 1):
+                yield int_to_float(n)
+
+        min_value = kwargs["min_value"]
+        max_value = kwargs["max_value"]
+
+        if flt.is_negative(min_value):
+            if flt.is_negative(max_value):
+                yield from floats_between(max_value, min_value)
+            else:
+                yield from floats_between(min_value, -0.0)
+                yield from floats_between(0.0, max_value)
+        else:
+            yield from floats_between(min_value, max_value)
 
 
 @attr.s(slots=True)
@@ -542,6 +590,7 @@ class DataTree:
 
     def __init__(self):
         self.root = TreeNode()
+        self._children_cache = {}
 
     @property
     def is_exhausted(self):
@@ -559,51 +608,9 @@ class DataTree:
         for it to be uniform at random, but previous attempts to do that
         have proven too expensive.
         """
-        # we should possibly pull out BUFFER_SIZE to a common file to avoid this
-        # circular import.
-        from hypothesis.internal.conjecture.engine import BUFFER_SIZE
 
         assert not self.is_exhausted
         novel_prefix = bytearray()
-
-        def draw(ir_type, kwargs, *, forced=None, unbiased=False):
-            cd = ConjectureData(max_length=BUFFER_SIZE, prefix=b"", random=random)
-            draw_func = getattr(cd, f"draw_{ir_type}")
-
-            if unbiased:
-                # use kwargs which don't bias the distribution. e.g. this drops
-                # p or weight for boolean and integer respectively.
-                unbiased_kw = unbiased_kwargs(ir_type, kwargs)
-                value = draw_func(**unbiased_kw, forced=forced)
-            else:
-                value = draw_func(**kwargs, forced=forced)
-
-            buf = cd.buffer
-
-            if unbiased:
-                # if we drew an unbiased value, then the buffer is invalid,
-                # because the semantics of the buffer is dependent on the
-                # particular kwarg passed (which we just modified to make it
-                # unbiased).
-                # We'll redraw here with the biased kwargs and force the value
-                # we just drew in order to get the correct buffer for that value.
-                # This isn't *great* for performance, but I suspect we require
-                # unbiased calls quite rarely in the first place, and all of
-                # this cruft goes away when we move off the bitstream for
-                # shrinking.
-                (_value, buf) = draw(ir_type, kwargs, forced=value)
-
-            # using floats as keys into branch.children breaks things, because
-            # e.g. hash(0.0) == hash(-0.0) would collide as keys when they are
-            # in fact distinct child branches.
-            # To distinguish floats here we'll use their bits representation. This
-            # entails some bookkeeping such that we're careful about when the
-            # float key is in its bits form (as a key into branch.children) and
-            # when it is in its float form (as a value we want to write to the
-            # buffer), and converting between the two forms as appropriate.
-            if ir_type == "float":
-                value = float_to_int(value)
-            return (value, buf)
 
         def append_buf(buf):
             novel_prefix.extend(buf)
@@ -617,43 +624,27 @@ class DataTree:
                 if i in current_node.forced:
                     if ir_type == "float":
                         value = int_to_float(value)
-                    (_value, buf) = draw(ir_type, kwargs, forced=value)
+                    (_value, buf) = self._draw(
+                        ir_type, kwargs, forced=value, random=random
+                    )
                     append_buf(buf)
                 else:
                     attempts = 0
                     while True:
-                        # it may be that drawing a previously unseen value here is
-                        # extremely unlikely given the ir_type and kwargs. E.g.
-                        # consider draw_boolean(p=0.0001), where the False branch
-                        # has already been explored. Generating True here with
-                        # rejection sampling could take many thousands of loops.
-                        #
-                        # If we draw the same previously-seen value more than 5
-                        # times, we'll go back to the unweighted variant of the
-                        # kwargs, depending on the ir_type. This is still
-                        # rejection sampling, but is enormously more likely to
-                        # converge efficiently.
-                        #
-                        # TODO we can do better than rejection sampling by
-                        # redistributing the probability of the previously chosen
-                        # value to other values, such that we will always choose
-                        # a new value (while still respecting any other existing
-                        # distributions not involving the chosen value).
+                        if attempts <= 10:
+                            (v, buf) = self._draw(ir_type, kwargs, random=random)
+                        else:
+                            (v, buf) = self._draw_from_cache(
+                                ir_type, kwargs, key=id(current_node), random=random
+                            )
 
-                        # TODO we may want to intentionally choose to use the
-                        # unbiased distribution here some percentage of the time,
-                        # irrespective of how many failed attempts there have
-                        # been. The rational is that programmers are rather bad
-                        # at choosing good distributions for bug finding, and
-                        # we want to encourage diverse inputs when testing as
-                        # much as possible.
-                        # https://github.com/HypothesisWorks/hypothesis/pull/3818#discussion_r1452253583.
-                        unbiased = attempts >= 5
-                        (v, buf) = draw(ir_type, kwargs, unbiased=unbiased)
                         if v != value:
                             append_buf(buf)
                             break
                         attempts += 1
+                        self._reject_child(
+                            ir_type, kwargs, child=v, key=id(current_node)
+                        )
                     # We've now found a value that is allowed to
                     # vary, so what follows is not fixed.
                     return bytes(novel_prefix)
@@ -666,9 +657,14 @@ class DataTree:
 
                 attempts = 0
                 while True:
-                    (v, buf) = draw(
-                        branch.ir_type, branch.kwargs, unbiased=attempts >= 5
-                    )
+                    if attempts <= 10:
+                        (v, buf) = self._draw(
+                            branch.ir_type, branch.kwargs, random=random
+                        )
+                    else:
+                        (v, buf) = self._draw_from_cache(
+                            branch.ir_type, branch.kwargs, key=id(branch), random=random
+                        )
                     try:
                         child = branch.children[v]
                     except KeyError:
@@ -679,33 +675,9 @@ class DataTree:
                         current_node = child
                         break
                     attempts += 1
-
-                    # rejection sampling has a pitfall here. Consider the case
-                    # where we have a single unexhausted node left to
-                    # explore, and all its commonly-generatable children have
-                    # already been generated. We will then spend a significant
-                    # amount of time here trying to find its rare children
-                    # (which are the only new ones left). This manifests in e.g.
-                    # lists(just("a")).
-                    #
-                    # We can't modify our search distribution dynamically to
-                    # guide towards these rare children, unless we *also* write
-                    # that modification to the bitstream.
-                    #
-                    # We can do fancier things like "pass already seen elements
-                    # to the ir and have ir-specific logic that avoids drawing
-                    # them again" once we migrate off the bitstream.
-                    #
-                    # As a temporary solution, we will flat out give up if it's
-                    # too hard to discover a new node.
-                    #
-                    # An alternative here is `return bytes(novel_prefix)` (so
-                    # we at least try *some* buffer, even if it's not novel).
-                    # But this caused flaky errors, particularly with discards /
-                    # killed branches. The two approaches aren't that different
-                    # in test coverage anyway.
-                    if attempts >= 150:
-                        raise TooHard
+                    self._reject_child(
+                        branch.ir_type, branch.kwargs, child=v, key=id(branch)
+                    )
 
                     # We don't expect this assertion to ever fire, but coverage
                     # wants the loop inside to run if you have branch checking
@@ -775,6 +747,91 @@ class DataTree:
 
     def new_observer(self):
         return TreeRecordingObserver(self)
+
+    def _draw(self, ir_type, kwargs, *, random, forced=None):
+        # we should possibly pull out BUFFER_SIZE to a common file to avoid this
+        # circular import.
+        from hypothesis.internal.conjecture.engine import BUFFER_SIZE
+
+        cd = ConjectureData(max_length=BUFFER_SIZE, prefix=b"", random=random)
+        draw_func = getattr(cd, f"draw_{ir_type}")
+
+        value = draw_func(**kwargs, forced=forced)
+        buf = cd.buffer
+
+        # using floats as keys into branch.children breaks things, because
+        # e.g. hash(0.0) == hash(-0.0) would collide as keys when they are
+        # in fact distinct child branches.
+        # To distinguish floats here we'll use their bits representation. This
+        # entails some bookkeeping such that we're careful about when the
+        # float key is in its bits form (as a key into branch.children) and
+        # when it is in its float form (as a value we want to write to the
+        # buffer), and converting between the two forms as appropriate.
+        if ir_type == "float":
+            value = float_to_int(value)
+        return (value, buf)
+
+    def _get_children_cache(self, ir_type, kwargs, *, key):
+        # cache the state of the children generator per node/branch (passed as
+        # `key` here), such that we track which children we've already tried
+        # for this branch across draws.
+        # We take advantage of python generators here as one-way iterables,
+        # so each time we iterate we implicitly store our position in the
+        # children generator and don't re-draw children. `children` is the
+        # concrete list of children draw from the generator that we will work
+        # with. Whenever we need to top up this list, we will draw a new value
+        # from the generator.
+        if key not in self._children_cache:
+            generator = all_children(ir_type, kwargs)
+            children = []
+            rejected = set()
+            self._children_cache[key] = (generator, children, rejected)
+
+        return self._children_cache[key]
+
+    def _draw_from_cache(self, ir_type, kwargs, *, key, random):
+        (generator, children, rejected) = self._get_children_cache(
+            ir_type, kwargs, key=key
+        )
+        # Keep a stock of 100 potentially-valid children at all times.
+        # This number is chosen to balance memory/speed vs randomness. Ideally
+        # we would sample uniformly from all not-yet-rejected children, but
+        # computing and storing said children is not free.
+        if len(children) < 100:
+            for v in generator:
+                if v in rejected:
+                    continue
+                children.append(v)
+                if len(children) >= 100:
+                    break
+
+        forced = random.choice(children)
+        (value, buf) = self._draw(ir_type, kwargs, forced=forced, random=random)
+        return (value, buf)
+
+    def _reject_child(self, ir_type, kwargs, *, child, key):
+        (_generator, children, rejected) = self._get_children_cache(
+            ir_type, kwargs, key=key
+        )
+        rejected.add(child)
+        # we remove a child from the list of possible children *only* when it is
+        # rejected, and not when it is initially drawn in _draw_from_cache. The
+        # reason is that a child being drawn does not guarantee that child will
+        # be used in a way such that it is written back to the tree, so it needs
+        # to be available for future draws until we are certain it has been
+        # used.
+        #
+        # For instance, if we generated novel prefixes in a loop (but never used
+        # those prefixes to generate new values!) then we don't want to remove
+        # the drawn children from the available pool until they are actually
+        # used.
+        #
+        # This does result in a small inefficiency: we may draw a child,
+        # immediately use it (so we know it cannot be drawn again), but still
+        # wait to draw and reject it here, because DataTree cannot guarantee
+        # the drawn child has been used.
+        if child in children:
+            children.remove(child)
 
 
 class TreeRecordingObserver(DataObserver):
