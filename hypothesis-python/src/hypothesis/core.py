@@ -1054,7 +1054,9 @@ class StateForActualGivenExecution:
             if TESTCASE_CALLBACKS:
                 if self.failed_normally or self.failed_due_to_deadline:
                     phase = "shrink"
-                else:
+                elif runner := getattr(self, "_runner", None):
+                    phase = runner._current_phase
+                else:  # pragma: no cover  # in case of messing with internals
                     phase = "unknown"
                 tc = make_testcase(
                     start_timestamp=self._start_timestamp,
@@ -1084,7 +1086,7 @@ class StateForActualGivenExecution:
             else:
                 database_key = None
 
-        runner = ConjectureRunner(
+        runner = self._runner = ConjectureRunner(
             self._execute_once_for_engine,
             settings=self.settings,
             random=self.random,
@@ -1510,8 +1512,7 @@ def given(
                 except UnsatisfiedAssumption:
                     raise DidNotReproduce(
                         "The test data failed to satisfy an assumption in the "
-                        "test. Have you added it since this blob was "
-                        "generated?"
+                        "test. Have you added it since this blob was generated?"
                     ) from None
 
             # There was no @reproduce_failure, so start by running any explicit
