@@ -129,6 +129,7 @@ class ConjectureRunner:
 
         # Global dict of per-phase statistics, and a list of per-call stats
         # which transfer to the global dict at the end of each phase.
+        self._current_phase = "(not a phase)"
         self.statistics = {}
         self.stats_per_test_case = []
 
@@ -887,7 +888,8 @@ class ConjectureRunner:
             if any_improvements:
                 continue
 
-            self.pareto_optimise()
+            if self.best_observed_targets:
+                self.pareto_optimise()
 
             if prev_calls == self.call_count:
                 break
@@ -1015,6 +1017,7 @@ class ConjectureRunner:
             predicate,
             allow_transition=allow_transition,
             explain=Phase.explain in self.settings.phases,
+            in_target_phase=self._current_phase == "target",
         )
 
     def cached_test_function(self, buffer, *, error_on_discard=False, extend=0):

@@ -8,3 +8,6 @@ as well continue running the test!
 
 Because we now finish running a few more examples for affected tests, this
 might be a slight slowdown - but correspondingly more likely to find a bug.
+
+We've also applied similar tricks to the :ref:`target phase <phases>`, where
+they are a pure performance improvement for affected tests.

@@ -1056,7 +1056,7 @@ class StateForActualGivenExecution:
                     phase = "shrink"
                 elif runner := getattr(self, "_runner", None):
                     phase = runner._current_phase
-                else:
+                else:  # pragma: no cover  # in case of messing with internals
                     phase = "unknown"
                 tc = make_testcase(
                     start_timestamp=self._start_timestamp,
