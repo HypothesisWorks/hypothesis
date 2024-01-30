@@ -175,6 +175,7 @@ class ConjectureRunner:
         self.stats_per_test_case.clear()
         start_time = time.perf_counter()
         try:
+            self._current_phase = phase
             yield
         finally:
             self.statistics[phase + "-phase"] = {
@@ -693,6 +694,7 @@ class ConjectureRunner:
         ran_optimisations = False
 
         while self.should_generate_more():
+            self._current_phase = "generate"
             prefix = self.generate_novel_prefix()
             assert len(prefix) <= BUFFER_SIZE
             if (
@@ -763,6 +765,7 @@ class ConjectureRunner:
                 and not ran_optimisations
             ):
                 ran_optimisations = True
+                self._current_phase = "target"
                 self.optimise_targets()
 
     def generate_mutations_from(self, data):
@@ -902,6 +905,7 @@ class ConjectureRunner:
             # but if we've been asked to run it but not generation then we have to
             # run it explciitly on its own here.
             if Phase.generate not in self.settings.phases:
+                self._current_phase = "target"
                 self.optimise_targets()
         with self._log_phase_statistics("shrink"):
             self.shrink_interesting_examples()

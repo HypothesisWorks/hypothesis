@@ -1054,6 +1054,8 @@ class StateForActualGivenExecution:
             if TESTCASE_CALLBACKS:
                 if self.failed_normally or self.failed_due_to_deadline:
                     phase = "shrink"
+                elif runner := getattr(self, "_runner", None):
+                    phase = runner._current_phase
                 else:
                     phase = "unknown"
                 tc = make_testcase(
@@ -1084,7 +1086,7 @@ class StateForActualGivenExecution:
             else:
                 database_key = None
 
-        runner = ConjectureRunner(
+        runner = self._runner = ConjectureRunner(
             self._execute_once_for_engine,
             settings=self.settings,
             random=self.random,
