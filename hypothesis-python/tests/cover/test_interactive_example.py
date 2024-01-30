@@ -27,6 +27,8 @@ from hypothesis.internal.compat import WINDOWS
 from tests.common.debug import find_any
 from tests.common.utils import fails_with
 
+pytest_plugins = "pytester"
+
 
 # Allow calling .example() without warnings for all tests in this module
 @pytest.fixture(scope="function", autouse=True)
@@ -82,6 +84,27 @@ def test_non_interactive_example_emits_warning():
         warnings.simplefilter("always")
         with pytest.warns(NonInteractiveExampleWarning):
             st.text().example()
+
+
+EXAMPLE_GENERATING_TEST = """
+from hypothesis import strategies as st
+
+def test_interactive_example():
+    st.integers().example()
+"""
+
+
+def test_selftests_exception_contains_note(pytester):
+    # The note is added by a pytest hook, so we need to run it under pytest in a
+    # subenvironment with (effectively) the same toplevel conftest.
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+
+        pytester.makeconftest("from tests.conftest import *")
+        result = pytester.runpytest_inprocess(
+            pytester.makepyfile(EXAMPLE_GENERATING_TEST)
+        )
+        assert "helper methods in tests.common.debug" in "\n".join(result.outlines)
 
 
 @pytest.mark.skipif(WINDOWS, reason="pexpect.spawn not supported on Windows")
