@@ -13,7 +13,7 @@ import pytest
 from hypothesis import given, strategies as st
 from hypothesis.errors import InvalidArgument
 
-from tests.common.debug import find_any, minimal
+from tests.common.debug import check_can_generate_examples, find_any, minimal
 
 
 @given(st.recursive(st.booleans(), st.lists, max_leaves=10))
@@ -38,13 +38,13 @@ def test_can_find_nested():
 
 def test_recursive_call_validates_expand_returns_strategies():
     with pytest.raises(InvalidArgument):
-        st.recursive(st.booleans(), lambda x: 1).example()
+        check_can_generate_examples(st.recursive(st.booleans(), lambda x: 1))
 
 
 def test_recursive_call_validates_base_is_strategy():
     x = st.recursive(1, lambda x: st.none())
     with pytest.raises(InvalidArgument):
-        x.example()
+        check_can_generate_examples(x)
 
 
 def test_can_find_exactly_max_leaves():
@@ -87,4 +87,4 @@ def test_issue_1502_regression(s):
 )
 def test_invalid_args(s):
     with pytest.raises(InvalidArgument):
-        s.example()
+        check_can_generate_examples(s)

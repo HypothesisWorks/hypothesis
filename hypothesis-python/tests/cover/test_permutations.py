@@ -12,7 +12,7 @@ from hypothesis import given
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import permutations
 
-from tests.common.debug import minimal
+from tests.common.debug import check_can_generate_examples, minimal
 from tests.common.utils import fails_with
 
 
@@ -35,4 +35,4 @@ def test_empty_permutations_are_empty(xs):
 
 @fails_with(InvalidArgument)
 def test_cannot_permute_non_sequence_types():
-    permutations(set()).example()
+    check_can_generate_examples(permutations(set()))

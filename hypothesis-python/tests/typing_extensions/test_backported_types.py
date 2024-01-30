@@ -28,14 +28,21 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import from_type
 from hypothesis.strategies._internal.types import NON_RUNTIME_TYPES
 
-from tests.common.debug import assert_all_examples, find_any
+from tests.common.debug import (
+    assert_all_examples,
+    assert_simple_property,
+    check_can_generate_examples,
+    find_any,
+)
 
 # See also nocover/test_type_lookup.py
 
 
 @pytest.mark.parametrize("value", ["dog", b"goldfish", 42, 63.4, -80.5, False])
 def test_typing_extensions_Literal(value):
-    assert from_type(typing_extensions.Literal[value]).example() == value
+    assert_simple_property(
+        from_type(typing_extensions.Literal[value]), lambda v: v == value
+    )
 
 
 @given(st.data())
@@ -68,7 +75,7 @@ def test_simple_typeddict(value):
 
 
 def test_typing_extensions_Type_int():
-    assert from_type(Type[int]).example() is int
+    assert_simple_property(from_type(Type[int]), lambda v: v is int)
 
 
 @given(from_type(Union[Type[str], Type[list]]))
@@ -80,9 +87,11 @@ def test_resolves_NewType():
     typ = NewType("T", int)
     nested = NewType("NestedT", typ)
     uni = NewType("UnionT", Union[int, None])
-    assert isinstance(from_type(typ).example(), int)
-    assert isinstance(from_type(nested).example(), int)
-    assert isinstance(from_type(uni).example(), (int, type(None)))
+    assert_simple_property(from_type(typ), lambda x: isinstance(x, int))
+    assert_simple_property(from_type(nested), lambda x: isinstance(x, int))
+    assert_simple_property(from_type(uni), lambda x: isinstance(x, (int, type(None))))
+    find_any(from_type(uni), lambda x: isinstance(x, int))
+    find_any(from_type(uni), lambda x: isinstance(x, type(None)))
 
 
 @given(from_type(DefaultDict[int, int]))
@@ -149,7 +158,7 @@ def test_non_runtime_type_cannot_be_resolved(non_runtime_type):
     with pytest.raises(
         InvalidArgument, match="there is no such thing as a runtime instance"
     ):
-        strategy.example()
+        check_can_generate_examples(strategy)
 
 
 @pytest.mark.parametrize("non_runtime_type", NON_RUNTIME_TYPES)
@@ -168,7 +177,7 @@ def test_callable_with_concatenate():
         InvalidArgument,
         match="Hypothesis can't yet construct a strategy for instances of a Callable type",
     ):
-        strategy.example()
+        check_can_generate_examples(strategy)
 
     with pytest.raises(InvalidArgument, match="Cannot register generic type"):
         st.register_type_strategy(func_type, st.none())
@@ -182,7 +191,7 @@ def test_callable_with_paramspec():
         InvalidArgument,
         match="Hypothesis can't yet construct a strategy for instances of a Callable type",
     ):
-        strategy.example()
+        check_can_generate_examples(strategy)
 
     with pytest.raises(InvalidArgument, match="Cannot register generic type"):
         st.register_type_strategy(func_type, st.none())
@@ -195,7 +204,7 @@ def test_callable_return_typegard_type():
         match="Hypothesis cannot yet construct a strategy for callables "
         "which are PEP-647 TypeGuards",
     ):
-        strategy.example()
+        check_can_generate_examples(strategy)
 
     with pytest.raises(InvalidArgument, match="Cannot register generic type"):
         st.register_type_strategy(Callable[[], TypeGuard[int]], st.none())

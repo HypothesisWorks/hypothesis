@@ -17,7 +17,7 @@ from hypothesis.internal.floats import next_down, next_up
 from hypothesis.strategies import floats
 from hypothesis.strategies._internal.numbers import next_down_normal, next_up_normal
 
-from tests.common.debug import assert_no_examples, find_any
+from tests.common.debug import assert_no_examples, check_can_generate_examples, find_any
 from tests.common.utils import PYTHON_FTZ
 
 pytestmark = [pytest.mark.skipif(PYTHON_FTZ, reason="broken by unsafe compiler flags")]
@@ -42,7 +42,7 @@ def kw(marks=(), **kwargs):
 def test_subnormal_validation(kwargs):
     strat = floats(**kwargs, allow_subnormal=True)
     with pytest.raises(InvalidArgument):
-        strat.example()
+        check_can_generate_examples(strat)
 
 
 @pytest.mark.parametrize(

@@ -24,7 +24,11 @@ from hypothesis.internal.reflection import (
 )
 from hypothesis.strategies import from_type
 
-from tests.common.debug import find_any
+from tests.common.debug import (
+    assert_simple_property,
+    check_can_generate_examples,
+    find_any,
+)
 from tests.common.utils import fails_with, temp_registered
 
 
@@ -36,7 +40,7 @@ def test_typing_Final(data):
 
 @pytest.mark.parametrize("value", ["dog", b"goldfish", 42, 63.4, -80.5, False])
 def test_typing_Literal(value):
-    assert from_type(typing.Literal[value]).example() == value
+    assert_simple_property(from_type(typing.Literal[value]), lambda v: v == value)
 
 
 @given(st.data())
@@ -141,7 +145,7 @@ def test_can_resolve_recursive_dataclass(val):
 def test_can_register_new_type_for_typeddicts():
     sentinel = object()
     with temp_registered(C, st.just(sentinel)):
-        assert st.from_type(C).example() is sentinel
+        assert_simple_property(st.from_type(C), lambda v: v is sentinel)
 
 
 @pytest.mark.parametrize(
@@ -248,4 +252,4 @@ def test_can_resolve_registered_protocol(data):
 def test_cannot_resolve_un_registered_protocol():
     msg = "Instance and class checks can only be used with @runtime_checkable protocols"
     with pytest.raises(TypeError, match=msg):
-        st.from_type(BarProtocol).example()
+        check_can_generate_examples(st.from_type(BarProtocol))

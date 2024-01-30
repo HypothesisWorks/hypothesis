@@ -15,7 +15,7 @@ import pytest
 from hypothesis import given, strategies as st
 from hypothesis.errors import ResolutionFailed
 
-from tests.common.debug import find_any
+from tests.common.debug import check_can_generate_examples, find_any
 from tests.common.utils import temp_registered
 
 # Primitives:
@@ -199,4 +199,4 @@ def wrong_generic_func2(obj: _SecondBase[None, bool]):
 def test_several_generic_bases_wrong_functions(func):
     with temp_registered(AllConcrete, st.builds(AllConcrete)):
         with pytest.raises(ResolutionFailed):
-            st.builds(func).example()
+            check_can_generate_examples(st.builds(func))

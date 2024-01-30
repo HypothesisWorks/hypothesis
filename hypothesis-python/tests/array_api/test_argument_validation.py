@@ -16,6 +16,7 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.extra.array_api import NominalVersion, make_strategies_namespace
 
 from tests.array_api.common import MIN_VER_FOR_COMPLEX
+from tests.common.debug import check_can_generate_examples
 
 
 def e(name, *, _min_version: Optional[NominalVersion] = None, **kwargs):
@@ -225,7 +226,7 @@ def test_raise_invalid_argument(xp, xps, strat_name, kwargs):
     strat_func = getattr(xps, strat_name)
     strat = strat_func(**kwargs)
     with pytest.raises(InvalidArgument):
-        strat.example()
+        check_can_generate_examples(strat)
 
 
 @pytest.mark.parametrize("api_version", [..., "latest", "1970.01", 42])

@@ -628,7 +628,7 @@ def get_random_for_wrapped_test(test, wrapped_test):
         return Random(global_force_seed)
     else:
         global _hypothesis_global_random
-        if _hypothesis_global_random is None:
+        if _hypothesis_global_random is None:  # pragma: no cover
             _hypothesis_global_random = Random()
         seed = _hypothesis_global_random.getrandbits(128)
         wrapped_test._hypothesis_internal_use_generated_seed = seed

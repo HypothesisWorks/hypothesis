@@ -13,13 +13,14 @@ import pytest
 from hypothesis.strategies import lists
 
 from tests.common import standard_types
+from tests.common.debug import check_can_generate_examples
 
 
 @pytest.mark.parametrize("spec", standard_types, ids=list(map(repr, standard_types)))
 def test_single_example(spec):
-    spec.example()
+    check_can_generate_examples(spec)
 
 
 @pytest.mark.parametrize("spec", standard_types, ids=list(map(repr, standard_types)))
 def test_list_example(spec):
-    lists(spec).example()
+    check_can_generate_examples(lists(spec))

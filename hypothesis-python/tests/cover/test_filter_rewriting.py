@@ -28,6 +28,7 @@ from hypothesis.strategies._internal.numbers import FloatStrategy, IntegersStrat
 from hypothesis.strategies._internal.strategies import FilteredStrategy
 from hypothesis.strategies._internal.strings import TextStrategy
 
+from tests.common.debug import check_can_generate_examples
 from tests.common.utils import fails_with
 
 
@@ -183,7 +184,7 @@ def test_rewrite_unsatisfiable_filter(s, pred):
 @pytest.mark.parametrize("s", [st.integers(1, 5), st.floats(1, 5)])
 @fails_with(Unsatisfiable)
 def test_erroring_rewrite_unsatisfiable_filter(s, pred):
-    s.filter(pred).example()
+    check_can_generate_examples(s.filter(pred))
 
 
 @pytest.mark.parametrize(
@@ -224,7 +225,7 @@ def test_rewriting_does_not_compare_decimal_snan():
     s = st.integers(1, 5).filter(partial(operator.eq, decimal.Decimal("snan")))
     s.wrapped_strategy
     with pytest.raises(decimal.InvalidOperation):
-        s.example()
+        check_can_generate_examples(s)
 
 
 @pytest.mark.parametrize("strategy", [st.integers(0, 1), st.floats(0, 1)], ids=repr)
@@ -370,7 +371,7 @@ def test_isidentifier_filter_properly_rewritten(al, data):
 def test_isidentifer_filter_unsatisfiable(al):
     fs = st.text(alphabet=al).filter(str.isidentifier)
     with pytest.raises(Unsatisfiable):
-        fs.example()
+        check_can_generate_examples(fs)
 
 
 @pytest.mark.parametrize(

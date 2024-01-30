@@ -13,7 +13,7 @@ import pytest
 from hypothesis import given, strategies as st
 from hypothesis.errors import InvalidArgument
 
-from tests.common.debug import assert_no_examples, minimal
+from tests.common.debug import assert_no_examples, check_can_generate_examples, minimal
 
 
 def test_binary_tree():
@@ -35,19 +35,19 @@ def test_mutual_recursion():
 def test_errors_on_non_function_define():
     x = st.deferred(1)
     with pytest.raises(InvalidArgument):
-        x.example()
+        check_can_generate_examples(x)
 
 
 def test_errors_if_define_does_not_return_search_strategy():
     x = st.deferred(lambda: 1)
     with pytest.raises(InvalidArgument):
-        x.example()
+        check_can_generate_examples(x)
 
 
 def test_errors_on_definition_as_self():
     x = st.deferred(lambda: x)
     with pytest.raises(InvalidArgument):
-        x.example()
+        check_can_generate_examples(x)
 
 
 def test_branches_pass_through_deferred():

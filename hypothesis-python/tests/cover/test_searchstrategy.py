@@ -15,13 +15,13 @@ from collections import defaultdict, namedtuple
 import attr
 import pytest
 
-from hypothesis.errors import InvalidArgument
+from hypothesis.errors import InvalidArgument, Unsatisfiable
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies import booleans, integers, just, none, tuples
 from hypothesis.strategies._internal.utils import to_jsonable
 
-from tests.common.debug import assert_no_examples
+from tests.common.debug import assert_simple_property, check_can_generate_examples
 
 
 def test_or_errors_when_given_non_strategy():
@@ -62,11 +62,12 @@ def test_none_strategy_does_not_draw():
 
 def test_can_map():
     s = integers().map(pack=lambda t: "foo")
-    assert s.example() == "foo"
+    assert_simple_property(s, lambda v: v == "foo")
 
 
 def test_example_raises_unsatisfiable_when_too_filtered():
-    assert_no_examples(integers().filter(lambda x: False))
+    with pytest.raises(Unsatisfiable):
+        check_can_generate_examples(integers().filter(lambda x: False))
 
 
 def nameless_const(x):
@@ -88,7 +89,7 @@ def test_can_flatmap_nameless():
 
 def test_flatmap_with_invalid_expand():
     with pytest.raises(InvalidArgument):
-        just(100).flatmap(lambda n: "a").example()
+        check_can_generate_examples(just(100).flatmap(lambda n: "a"))
 
 
 def test_jsonable():

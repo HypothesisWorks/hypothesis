@@ -25,7 +25,7 @@ from hypothesis.strategies import (
     tuples,
 )
 
-from tests.common.debug import minimal
+from tests.common.debug import find_any, minimal
 
 ConstantLists = integers().flatmap(lambda i: lists(just(i)))
 
@@ -76,7 +76,7 @@ def test_flatmap_retrieve_from_db():
 
 def test_flatmap_does_not_reuse_strategies():
     s = builds(list).flatmap(just)
-    assert s.example() is not s.example()
+    assert find_any(s) is not find_any(s)
 
 
 def test_flatmap_has_original_strategy_repr():

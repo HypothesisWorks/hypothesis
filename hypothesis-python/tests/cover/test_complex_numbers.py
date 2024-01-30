@@ -17,7 +17,12 @@ from hypothesis import HealthCheck, given, reject, settings, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import complex_numbers
 
-from tests.common.debug import assert_no_examples, find_any, minimal
+from tests.common.debug import (
+    assert_no_examples,
+    check_can_generate_examples,
+    find_any,
+    minimal,
+)
 
 
 def test_minimal():
@@ -129,4 +134,4 @@ def test_allow_subnormal(allow_subnormal, min_magnitude, max_magnitude):
 @pytest.mark.parametrize("allow_subnormal", [1, 0.0, "False"])
 def test_allow_subnormal_validation(allow_subnormal):
     with pytest.raises(InvalidArgument):
-        complex_numbers(allow_subnormal=allow_subnormal).example()
+        check_can_generate_examples(complex_numbers(allow_subnormal=allow_subnormal))

@@ -27,7 +27,7 @@ from hypothesis import (
 from hypothesis.errors import InvalidArgument, UnsatisfiedAssumption
 from hypothesis.extra import numpy as nps
 
-from tests.common.debug import find_any, minimal
+from tests.common.debug import check_can_generate_examples, find_any, minimal
 from tests.common.utils import fails_with, flaky
 
 ANY_SHAPE = nps.array_shapes(min_dims=0, max_dims=32, min_side=0, max_side=32)
@@ -142,7 +142,7 @@ def test_minimise_array_shapes(min_dims, dim_range, min_side, side_range):
     "kwargs", [{"min_side": 100}, {"min_dims": 15}, {"min_dims": 32}]
 )
 def test_interesting_array_shapes_argument(kwargs):
-    nps.array_shapes(**kwargs).example()
+    check_can_generate_examples(nps.array_shapes(**kwargs))
 
 
 @given(nps.scalar_dtypes())
@@ -257,7 +257,7 @@ def test_array_values_are_unique(arr):
 def test_cannot_generate_unique_array_of_too_many_elements():
     strat = nps.arrays(dtype=int, elements=st.integers(0, 5), shape=10, unique=True)
     with pytest.raises(InvalidArgument):
-        strat.example()
+        check_can_generate_examples(strat)
 
 
 @given(

@@ -26,6 +26,8 @@ from hypothesis.extra.array_api import (
     mock_xp,
 )
 
+from tests.common.debug import check_can_generate_examples
+
 MOCK_WARN_MSG = f"determine.*{mock_xp.__name__}.*Array API"
 
 
@@ -56,7 +58,7 @@ def test_error_on_missing_attr(stratname, args, attr):
     xps = make_strategies_namespace(xp, api_version="draft")
     func = getattr(xps, stratname)
     with pytest.raises(InvalidArgument, match=f"{mock_xp.__name__}.*required.*{attr}"):
-        func(*args).example()
+        check_can_generate_examples(func(*args))
 
 
 dtypeless_xp = make_mock_xp(exclude=tuple(DTYPE_NAMES))
@@ -82,7 +84,7 @@ def test_error_on_missing_dtypes(stratname):
     required dtypes."""
     func = getattr(dtypeless_xps, stratname)
     with pytest.raises(InvalidArgument, match=f"{mock_xp.__name__}.*dtype.*namespace"):
-        func().example()
+        check_can_generate_examples(func())
 
 
 @pytest.mark.filterwarnings(f"ignore:.*{MOCK_WARN_MSG}.*")

@@ -15,32 +15,41 @@ import pytest
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import characters
 
-from tests.common.debug import assert_no_examples, find_any, minimal
+from tests.common.debug import (
+    assert_no_examples,
+    check_can_generate_examples,
+    find_any,
+    minimal,
+)
 from tests.common.utils import fails_with
 
 
 @fails_with(InvalidArgument)
 def test_nonexistent_category_argument():
-    characters(exclude_categories=["foo"]).example()
+    check_can_generate_examples(characters(exclude_categories=["foo"]))
 
 
 def test_bad_codepoint_arguments():
     with pytest.raises(InvalidArgument):
-        characters(min_codepoint=42, max_codepoint=24).example()
+        check_can_generate_examples(characters(min_codepoint=42, max_codepoint=24))
 
 
 def test_exclude_all_available_range():
     with pytest.raises(InvalidArgument):
-        characters(
-            min_codepoint=ord("0"), max_codepoint=ord("0"), exclude_characters="0"
-        ).example()
+        check_can_generate_examples(
+            characters(
+                min_codepoint=ord("0"), max_codepoint=ord("0"), exclude_characters="0"
+            )
+        )
 
 
 def test_when_nothing_could_be_produced():
     with pytest.raises(InvalidArgument):
-        characters(
-            categories=["Cc"], min_codepoint=ord("0"), max_codepoint=ord("9")
-        ).example()
+        check_can_generate_examples(
+            characters(
+                categories=["Cc"], min_codepoint=ord("0"), max_codepoint=ord("9")
+            )
+        )
 
 
 def test_characters_of_specific_groups():
@@ -90,19 +99,21 @@ def test_find_something_rare():
 
 def test_whitelisted_characters_alone():
     with pytest.raises(InvalidArgument):
-        characters(include_characters="te02тест49st").example()
+        check_can_generate_examples(characters(include_characters="te02тест49st"))
 
 
 def test_whitelisted_characters_overlap_blacklisted_characters():
     good_chars = "te02тест49st"
     bad_chars = "ts94тсет"
     with pytest.raises(InvalidArgument) as exc:
-        characters(
-            min_codepoint=ord("0"),
-            max_codepoint=ord("9"),
-            include_characters=good_chars,
-            exclude_characters=bad_chars,
-        ).example()
+        check_can_generate_examples(
+            characters(
+                min_codepoint=ord("0"),
+                max_codepoint=ord("9"),
+                include_characters=good_chars,
+                exclude_characters=bad_chars,
+            )
+        )
     assert repr(good_chars) in str(exc)
     assert repr(bad_chars) in str(exc)
 

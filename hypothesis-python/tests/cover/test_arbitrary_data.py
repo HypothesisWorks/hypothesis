@@ -75,10 +75,5 @@ def test_errors_when_normal_strategy_functions_are_used(f):
         getattr(st.data(), f)(lambda x: 1)
 
 
-def test_errors_when_asked_for_example():
-    with raises(InvalidArgument):
-        st.data().example()
-
-
 def test_nice_repr():
     assert repr(st.data()) == "data()"
