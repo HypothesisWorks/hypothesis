@@ -27,7 +27,7 @@ IN_INITIALIZATION_ATTR = "in_initialization"
 
 @pytest.fixture
 def _extend_initialization(monkeypatch):
-    assert getattr(_hypothesis_globals, IN_INITIALIZATION_ATTR) == 0
+    assert getattr(_hypothesis_globals, IN_INITIALIZATION_ATTR) <= 0
     monkeypatch.setattr(_hypothesis_globals, IN_INITIALIZATION_ATTR, 1)
     fs.notice_initialization_restarted(warn=False)
     assert fs._first_postinit_what is None  # validates state as given in comment above

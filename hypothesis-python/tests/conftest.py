@@ -133,7 +133,7 @@ def pytest_runtest_call(item):
             random_states_after_tests[after] = item.nodeid
 
     # Annotate usage of .example() with a hint about alternatives
-    if isinstance(outcome.exception, NonInteractiveExampleWarning):
+    if isinstance(getattr(outcome, "exception", None), NonInteractiveExampleWarning):
         add_note(
             outcome.exception,
             "For hypothesis' own test suite, consider using one of the helper "
