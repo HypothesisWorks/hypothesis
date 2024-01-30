@@ -1510,8 +1510,7 @@ def given(
                 except UnsatisfiedAssumption:
                     raise DidNotReproduce(
                         "The test data failed to satisfy an assumption in the "
-                        "test. Have you added it since this blob was "
-                        "generated?"
+                        "test. Have you added it since this blob was generated?"
                     ) from None
 
             # There was no @reproduce_failure, so start by running any explicit

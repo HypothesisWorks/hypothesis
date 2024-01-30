@@ -554,7 +554,7 @@ class ConjectureRunner:
                 corpus.extend(extra)
 
             for existing in corpus:
-                data = self.cached_test_function(existing)
+                data = self.cached_test_function(existing, extend=BUFFER_SIZE)
                 if data.status != Status.INTERESTING:
                     self.settings.database.delete(self.database_key, existing)
                     self.settings.database.delete(self.secondary_key, existing)
@@ -569,7 +569,7 @@ class ConjectureRunner:
                 pareto_corpus.sort(key=sort_key)
 
                 for existing in pareto_corpus:
-                    data = self.cached_test_function(existing)
+                    data = self.cached_test_function(existing, extend=BUFFER_SIZE)
                     if data not in self.pareto_front:
                         self.settings.database.delete(self.pareto_key, existing)
                     if data.status == Status.INTERESTING:
