@@ -798,7 +798,9 @@ class DataTree:
         # This number is chosen to balance memory/speed vs randomness. Ideally
         # we would sample uniformly from all not-yet-rejected children, but
         # computing and storing said children is not free.
-        if len(children) < 100:
+        # no-branch because coverage of the fall-through case here is a bit
+        # annoying.
+        if len(children) < 100:  # pragma: no branch
             for v in generator:
                 if v in rejected:
                     continue
