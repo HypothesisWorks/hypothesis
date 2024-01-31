@@ -45,13 +45,21 @@ def ir_types_and_kwargs(draw):
 # we max out at 128 bit integers in the *unbounded* case, but someone may
 # specify a bound with a larger magnitude. Ensure we calculate max children for
 # those cases correctly.
-@example(("integer", {"min_value": None, "max_value": -(2**200)}))
-@example(("integer", {"min_value": 2**200, "max_value": None}))
-@example(("integer", {"min_value": -(2**200), "max_value": 2**200}))
+@example(("integer", {"min_value": None, "max_value": -(2**200), "weights": None}))
+@example(("integer", {"min_value": 2**200, "max_value": None, "weights": None}))
+@example(("integer", {"min_value": -(2**200), "max_value": 2**200, "weights": None}))
 @given(ir_types_and_kwargs())
 def test_compute_max_children_is_positive(ir_type_and_kwargs):
     (ir_type, kwargs) = ir_type_and_kwargs
     assert compute_max_children(ir_type, kwargs) >= 0
+
+
+def test_compute_max_children_integer_zero_weight():
+    kwargs = {"min_value": 1, "max_value": 2, "weights": [0, 1]}
+    assert compute_max_children("integer", kwargs) == 1
+
+    kwargs = {"min_value": 1, "max_value": 4, "weights": [0, 0.5, 0, 0.5]}
+    assert compute_max_children("integer", kwargs) == 2
 
 
 def test_compute_max_children_string_unbounded_max_size():
@@ -135,6 +143,7 @@ def test_draw_string_single_interval_with_equal_bounds(s, n):
 @example(("float", {"min_value": next_down(-0.0), "max_value": -0.0}))
 @example(("float", {"min_value": next_down(-0.0), "max_value": next_up(0.0)}))
 @example(("float", {"min_value": 0.0, "max_value": next_up(0.0)}))
+@example(("integer", {"min_value": 1, "max_value": 2, "weights": [0, 1]}))
 @given(ir_types_and_kwargs())
 def test_compute_max_children_and_all_children_agree(ir_type_and_kwargs):
     (ir_type, kwargs) = ir_type_and_kwargs

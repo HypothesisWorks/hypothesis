@@ -128,13 +128,18 @@ def compute_max_children(ir_type, kwargs):
     if ir_type == "integer":
         min_value = kwargs["min_value"]
         max_value = kwargs["max_value"]
+        weights = kwargs["weights"]
 
         if min_value is None and max_value is None:
             # full 128 bit range.
             return 2**128 - 1
         if min_value is not None and max_value is not None:
             # count between min/max value.
-            return max_value - min_value + 1
+            n = max_value - min_value + 1
+            # remove any values with a zero probability of being drawn (weight=0).
+            if weights is not None:
+                n -= sum(weight == 0 for weight in weights)
+            return n
 
         # hard case: only one bound was specified. Here we probe either upwards
         # or downwards with our full 128 bit generation, but only half of these
@@ -211,12 +216,21 @@ def all_children(ir_type, kwargs):
     if ir_type == "integer":
         min_value = kwargs["min_value"]
         max_value = kwargs["max_value"]
-
+        weights = kwargs["weights"]
         # it's a bit annoying (but completely feasible) to implement the cases
         # other than "both sides bounded" here. We haven't needed to yet because
         # in practice we don't struggled with unbounded integer generation.
         assert min_value is not None and max_value is not None
-        yield from range(min_value, max_value + 1)
+
+        if weights is None:
+            yield from range(min_value, max_value + 1)
+        else:
+            # skip any values with a corresponding weight of 0 (can never be drawn).
+            for weight, n in zip(weights, range(min_value, max_value + 1)):
+                if weight == 0:
+                    continue
+                yield n
+
     if ir_type == "boolean":
         p = kwargs["p"]
         if p <= 2 ** (-64):
