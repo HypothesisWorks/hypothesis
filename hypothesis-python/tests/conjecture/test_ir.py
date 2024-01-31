@@ -8,11 +8,13 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from hypothesis import example, given, strategies as st
+from hypothesis import assume, example, given, strategies as st
 from hypothesis.internal.conjecture.datatree import (
     MAX_CHILDREN_EFFECTIVELY_INFINITE,
+    all_children,
     compute_max_children,
 )
+from hypothesis.internal.floats import next_down, next_up
 from hypothesis.internal.intervalsets import IntervalSet
 
 from tests.conjecture.common import (
@@ -110,3 +112,38 @@ def test_draw_string_single_interval_with_equal_bounds(s, n):
     data = fresh_data()
     intervals = IntervalSet.from_string(s)
     assert data.draw_string(intervals, min_size=n, max_size=n) == s * n
+
+
+@example(("boolean", {"p": 2**-65}))
+@example(("boolean", {"p": 1 - 2**-65}))
+@example(
+    (
+        "string",
+        {"min_size": 0, "max_size": 0, "intervals": IntervalSet.from_string("abc")},
+    )
+)
+@example(
+    ("string", {"min_size": 0, "max_size": 3, "intervals": IntervalSet.from_string("")})
+)
+@example(
+    (
+        "string",
+        {"min_size": 0, "max_size": 3, "intervals": IntervalSet.from_string("a")},
+    )
+)
+# all combinations of float signs
+@example(("float", {"min_value": next_down(-0.0), "max_value": -0.0}))
+@example(("float", {"min_value": next_down(-0.0), "max_value": next_up(0.0)}))
+@example(("float", {"min_value": 0.0, "max_value": next_up(0.0)}))
+@given(ir_types_and_kwargs())
+def test_compute_max_children_and_all_children_agree(ir_type_and_kwargs):
+    (ir_type, kwargs) = ir_type_and_kwargs
+    max_children = compute_max_children(ir_type, kwargs)
+
+    # avoid slowdowns / OOM when reifying extremely large all_children generators.
+    # We also hard cap at MAX_CHILDREN_EFFECTIVELY_INFINITE, because max_children
+    # returns approximations after this value and so will disagree with
+    # all_children.
+    cap = min(100_000, MAX_CHILDREN_EFFECTIVELY_INFINITE)
+    assume(max_children < cap)
+    assert len(list(all_children(ir_type, kwargs))) == max_children

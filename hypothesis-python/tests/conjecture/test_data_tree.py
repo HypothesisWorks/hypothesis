@@ -499,3 +499,26 @@ def test_observed_ir_type_draw(ir_type):
 @pytest.mark.parametrize("ir_type", ["integer", "float", "boolean", "string", "bytes"])
 def test_non_observed_ir_type_draw(ir_type):
     _test_non_observed_draws_are_not_recorded_in_tree(ir_type)
+
+
+def test_can_generate_hard_values():
+    tree = DataTree()
+
+    # set up `tree` such that [0, 999] have been drawn and only n=1000 remains.
+    for i in range(1000):
+
+        @run_to_buffer
+        def buf(data):
+            data.draw_integer(0, 1000, forced=i)
+            data.mark_interesting()
+
+        data = ConjectureData.for_buffer(buf, observer=tree.new_observer())
+        data.draw_integer(0, 1000)
+        data.freeze()
+
+    # now the only novel prefix is n=1000. This is hard to draw randomly, so
+    # we are almost certain to have to compute and use our child cache.
+    # Give it a few tries in case we get really lucky, to ensure we do actually
+    # exercise this logic.
+    for _ in range(5):
+        tree.generate_novel_prefix(Random())
