@@ -7269,7 +7269,7 @@ This release makes it an explicit error to call
 as there are no possible values that can be generated (:issue:`1859`).
 
 :func:`floats(min_value=0.0, max_value=-0.0) <hypothesis.strategies.floats>`
-is now deprecated.  While `0. == -0.` and we could thus generate either if
+is now deprecated.  While ``0. == -0.`` and we could thus generate either if
 comparing by value, violating the sequence ordering of floats is a special
 case we don't want or need.
 
@@ -7601,7 +7601,7 @@ one.  These shapes are rare and have some odd behavior, but are particularly
 important to test for just that reason!
 
 In a related bigfix, :func:`~hypothesis.extra.numpy.arrays` now supports generating
-zero-dimensional arrays with `dtype=object` and a strategy for iterable elements.
+zero-dimensional arrays with ``dtype=object`` and a strategy for iterable elements.
 Previously, the array element would incorrectly be set to the first item in the
 generated iterable.
 
@@ -8066,7 +8066,7 @@ This release has no user visible changes but updates our URLs to use HTTPS.
 -------------------
 
 Hypothesis can now automatically generate values for Django models with a
-`URLfield`, thanks to a new provisional strategy for URLs (:issue:`1388`).
+`~django.db.models.URLField`, thanks to a new provisional strategy for URLs (:issue:`1388`).
 
 .. _v3.86.6:
 

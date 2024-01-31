@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import datetime
+import re
 import sys
 import types
 from pathlib import Path
@@ -18,9 +19,15 @@ import sphinx_rtd_theme
 root = Path(__file__).parent.parent
 sys.path.append(str(root / "src"))
 
+needs_sphinx = re.search(
+    r"sphinx==([0-9\.]+)", root.joinpath("../requirements/tools.txt").read_text()
+).group(1)
+default_role = "py:obj"
+nitpicky = True
 
 autodoc_member_order = "bysource"
 autodoc_typehints = "none"
+maximum_signature_line_length = 60  # either one line, or one param per line
 
 extensions = [
     "sphinx.ext.autodoc",
@@ -113,6 +120,7 @@ intersphinx_mapping = {
     "attrs": ("https://www.attrs.org/en/stable/", None),
     "sphinx": ("https://www.sphinx-doc.org/en/master/", None),
     "IPython": ("https://ipython.readthedocs.io/en/stable/", None),
+    "lark": ("https://lark-parser.readthedocs.io/en/stable/", None),
 }
 
 autodoc_mock_imports = ["numpy", "pandas", "redis", "django", "pytz"]
@@ -148,7 +156,7 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 html_static_path = ["_static"]
 
-html_css_files = ["wrap-in-tables.css"]
+html_css_files = ["better-signatures.css", "wrap-in-tables.css"]
 
 htmlhelp_basename = "Hypothesisdoc"
 
