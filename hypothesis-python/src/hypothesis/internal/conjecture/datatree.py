@@ -249,9 +249,10 @@ def all_children(ir_type, kwargs):
 
         if flt.is_negative(min_value):
             if flt.is_negative(max_value):
+                # if both are negative, have to invert order
                 yield from floats_between(max_value, min_value)
             else:
-                yield from floats_between(min_value, -0.0)
+                yield from floats_between(-0.0, min_value)
                 yield from floats_between(0.0, max_value)
         else:
             yield from floats_between(min_value, max_value)
