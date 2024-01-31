@@ -47,7 +47,9 @@ def ir_types_and_kwargs(draw):
 # those cases correctly.
 @example(("integer", {"min_value": None, "max_value": -(2**200), "weights": None}))
 @example(("integer", {"min_value": 2**200, "max_value": None, "weights": None}))
-@example(("integer", {"min_value": -(2**200), "max_value": 2**200, "weights": None}))
+@example(
+    ("integer", {"min_value": -(2**200), "max_value": 2**200, "weights": None})
+)
 @given(ir_types_and_kwargs())
 def test_compute_max_children_is_positive(ir_type_and_kwargs):
     (ir_type, kwargs) = ir_type_and_kwargs
