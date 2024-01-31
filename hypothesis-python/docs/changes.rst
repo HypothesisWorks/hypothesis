@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.97.4:
+
+-------------------
+6.97.4 - 2024-01-31
+-------------------
+
+This patch improves formatting and adds some cross-references to our docs.
+
 .. _v6.97.3:
 
 -------------------
