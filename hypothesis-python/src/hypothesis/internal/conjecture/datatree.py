@@ -220,7 +220,8 @@ def all_children(ir_type, kwargs):
         # it's a bit annoying (but completely feasible) to implement the cases
         # other than "both sides bounded" here. We haven't needed to yet because
         # in practice we don't struggled with unbounded integer generation.
-        assert min_value is not None and max_value is not None
+        assert min_value is not None
+        assert max_value is not None
 
         if weights is None:
             yield from range(min_value, max_value + 1)
