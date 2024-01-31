@@ -1,0 +1,25 @@
+/* don't use italics for param names; looks bad with "|" for unions */
+.rst-content dl .sig-param {
+  font-style: normal;
+}
+
+/* Take out pointless vertical whitespace in the signatures.
+ * See also https://github.com/readthedocs/sphinx_rtd_theme/pull/1450 */
+.rst-content dl .sig dl,
+.rst-content dl .sig dd {
+  margin-bottom: 0;
+}
+
+/* Make signature boxes full-width, with view-source and header links right-aligned. */
+.rst-content dl .sig {
+  width: -webkit-fill-available;
+}
+.rst-content .viewcode-link {
+  display: inline-flex;
+  float: inline-end;
+  margin-right: 1.5em;
+}
+.rst-content .headerlink {
+  position: absolute;
+  right: 0.5em;
+}

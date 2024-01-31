@@ -65,7 +65,6 @@ def build_docs(builder="html"):
     # (unfortunately most options only have the short flag version)
     tools.scripts.pip_tool(
         "sphinx-build",
-        "-n",
         "-W",
         "--keep-going",
         "-T",

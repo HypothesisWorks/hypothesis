@@ -230,7 +230,7 @@ specific tests.
 
 Optionally, you may define the environment variable to load a profile for you.
 This is the suggested pattern for running your tests on CI.
-The code below should run in a `conftest.py` or any setup/initialization section of your test suite.
+The code below should run in a ``conftest.py`` or any setup/initialization section of your test suite.
 If this variable is not defined the Hypothesis defined defaults will be loaded.
 
 .. code-block:: pycon
