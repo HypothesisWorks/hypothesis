@@ -817,6 +817,8 @@ class DataTree:
         # annoying.
         if len(children) < 100:  # pragma: no branch
             for v in generator:
+                if ir_type == "float":
+                    v = float_to_int(v)
                 if v in rejected:
                     continue
                 children.append(v)
@@ -824,6 +826,8 @@ class DataTree:
                     break
 
         forced = random.choice(children)
+        if ir_type == "float":
+            forced = int_to_float(forced)
         (value, buf) = self._draw(ir_type, kwargs, forced=forced, random=random)
         return (value, buf)
 
