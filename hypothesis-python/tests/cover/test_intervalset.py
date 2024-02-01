@@ -70,7 +70,7 @@ def intervals_to_set(ints):
     return set(IntervalSet(ints))
 
 
-@settings(suppress_health_check=[HealthCheck.filter_too_much])
+@settings(suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow])
 @example(x=[(0, 1), (3, 3)], y=[(1, 3)])
 @example(x=[(0, 1)], y=[(0, 0), (1, 1)])
 @example(x=[(0, 1)], y=[(1, 1)])
