@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import itertools
 from random import Random
 
 import pytest
@@ -22,6 +23,7 @@ from hypothesis.internal.conjecture.datatree import (
 )
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.floats import float_to_int
+from hypothesis.internal.floats import next_up
 
 from tests.conjecture.common import (
     draw_boolean_kwargs,
@@ -504,21 +506,67 @@ def test_non_observed_ir_type_draw(ir_type):
 def test_can_generate_hard_values():
     tree = DataTree()
 
+    min_value = 0
+    max_value = 1000
     # set up `tree` such that [0, 999] have been drawn and only n=1000 remains.
-    for i in range(1000):
+    for i in range(max_value):
 
         @run_to_buffer
         def buf(data):
-            data.draw_integer(0, 1000, forced=i)
+            data.draw_integer(min_value, max_value, forced=i)
             data.mark_interesting()
 
         data = ConjectureData.for_buffer(buf, observer=tree.new_observer())
-        data.draw_integer(0, 1000)
+        data.draw_integer(min_value, max_value)
         data.freeze()
 
-    # now the only novel prefix is n=1000. This is hard to draw randomly, so
-    # we are almost certain to have to compute and use our child cache.
-    # Give it a few tries in case we get really lucky, to ensure we do actually
-    # exercise this logic.
+    @run_to_buffer
+    def expected_buf(data):
+        data.draw_integer(min_value, max_value, forced=max_value)
+        data.mark_interesting()
+
+    # this test doubles as conjecture coverage for using our child cache, so
+    # ensure we don't miss that logic by getting lucky and drawing the correct
+    # value once or twice.
     for _ in range(5):
-        tree.generate_novel_prefix(Random())
+        assert tree.generate_novel_prefix(Random()) == expected_buf
+
+
+def test_can_generate_hard_floats():
+    # similar to test_can_generate_hard_values, but exercises float-specific
+    # logic for handling e.g. 0.0 vs -0.0 as different keys.
+    tree = DataTree()
+
+    def next_up_n(f, n):
+        for _ in range(n):
+            f = next_up(f)
+        return f
+
+    min_value = -0.0
+    max_value = next_up_n(min_value, 100)
+    # we want to leave out a single value, such that we can assert
+    # generate_novel_prefix is equal to the buffer that would produce that value.
+    # The problem is, for floats, values which are in NASTY_FLOATS have multiple
+    # valid buffer representations. Due to clamping, this includes endpoints. So
+    # to maintain a deterministic test buffer we pick a random middlepoint (n=50)
+    # to be the value we leave out, rather than the endpoint.
+    for n in itertools.chain(range(49), range(50, 101)):
+
+        @run_to_buffer
+        def buf(data):
+            f = next_up_n(min_value, n)
+            data.draw_float(min_value, max_value, forced=f, allow_nan=False)
+            data.mark_interesting()
+
+        data = ConjectureData.for_buffer(buf, observer=tree.new_observer())
+        data.draw_float(min_value, max_value, allow_nan=False)
+        data.freeze()
+
+    @run_to_buffer
+    def expected_buf(data):
+        forced = next_up_n(min_value, 49)
+        data.draw_float(min_value, max_value, forced=forced, allow_nan=False)
+        data.mark_interesting()
+
+    for _ in range(5):
+        assert tree.generate_novel_prefix(Random()) == expected_buf
