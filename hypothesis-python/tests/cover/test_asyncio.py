@@ -67,7 +67,13 @@ class TestAsyncioRun(TestCase):
 
     @given(x=st.text())
     @coro_decorator
-    def test_foo(self, x):
+    def test_foo_yield_from(self, x):
         assume(x)
         yield from asyncio.sleep(0.001)
+        assert x
+
+    @given(st.text())
+    async def test_foo_await(self, x):
+        assume(x)
+        await asyncio.sleep(0.001)
         assert x
