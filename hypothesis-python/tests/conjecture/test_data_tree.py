@@ -8,7 +8,6 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import itertools
 from random import Random
 
 import pytest
@@ -544,13 +543,7 @@ def test_can_generate_hard_floats():
 
     min_value = -0.0
     max_value = next_up_n(min_value, 100)
-    # we want to leave out a single value, such that we can assert
-    # generate_novel_prefix is equal to the buffer that would produce that value.
-    # The problem is, for floats, values which are in NASTY_FLOATS have multiple
-    # valid buffer representations. Due to clamping, this includes endpoints. So
-    # to maintain a deterministic test buffer we pick a random middlepoint (n=50)
-    # to be the value we leave out, rather than the endpoint.
-    for n in itertools.chain(range(49), range(50, 101)):
+    for n in range(100):
 
         @run_to_buffer
         def buf(data):
@@ -562,11 +555,14 @@ def test_can_generate_hard_floats():
         data.draw_float(min_value, max_value, allow_nan=False)
         data.freeze()
 
-    @run_to_buffer
-    def expected_buf(data):
-        forced = next_up_n(min_value, 49)
-        data.draw_float(min_value, max_value, forced=forced, allow_nan=False)
-        data.mark_interesting()
+    # we want to leave out a single value, such that we can assert
+    # generate_novel_prefix is equal to the buffer that would produce that value.
+    # The problem is that floats have multiple valid buffer representations due
+    # to clamping. Making the test buffer deterministic is annoying/impossible,
+    # and the buffer representation is going away soon anyway, so just make
+    # sure we generate the expected value (not necessarily buffer).
 
-    for _ in range(5):
-        assert tree.generate_novel_prefix(Random()) == expected_buf
+    expected_value = next_up_n(min_value, 100)
+    prefix = tree.generate_novel_prefix(Random())
+    data = ConjectureData.for_buffer(prefix)
+    assert data.draw_float(min_value, max_value, allow_nan=False) == expected_value
