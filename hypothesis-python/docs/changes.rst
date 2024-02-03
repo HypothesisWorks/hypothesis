@@ -18,6 +18,18 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.97.5:
+
+-------------------
+6.97.5 - 2024-02-03
+-------------------
+
+This patch adds some :doc:`observability information <observability>`
+about how many times predicates in :func:`~hypothesis.assume` or
+:func:`~hypothesis.stateful.precondition` were satisfied, so that
+downstream tools can warn you if some were *never* satisfied by
+any test case.
+
 .. _v6.97.4:
 
 -------------------
