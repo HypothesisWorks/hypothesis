@@ -12,7 +12,6 @@ import sys
 import warnings
 from decimal import Decimal
 
-import pexpect
 import pytest
 
 from hypothesis import example, find, given, strategies as st
@@ -25,7 +24,7 @@ from hypothesis.errors import (
 from hypothesis.internal.compat import WINDOWS
 
 from tests.common.debug import find_any
-from tests.common.utils import fails_with
+from tests.common.utils import fails_with, skipif_emscripten
 
 pytest_plugins = "pytester"
 
@@ -107,8 +106,11 @@ def test_selftests_exception_contains_note(pytester):
         assert "helper methods in tests.common.debug" in "\n".join(result.outlines)
 
 
+@skipif_emscripten
 @pytest.mark.skipif(WINDOWS, reason="pexpect.spawn not supported on Windows")
 def test_interactive_example_does_not_emit_warning():
+    import pexpect
+
     try:
         child = pexpect.spawn(f"{sys.executable} -Werror")
         child.expect(">>> ", timeout=10)

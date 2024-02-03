@@ -13,6 +13,7 @@
 .runtimes
 /hypothesis-python/branch-check
 /pythonpython3.*
+.pyodide-xbuildenv
 
 # python
 

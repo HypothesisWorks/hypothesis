@@ -297,13 +297,40 @@ def update_python_versions():
     pip_tool("shed", str(thisfile))
 
     # Automatically sync ci_version with the version in build.sh
-    build_sh = pathlib.Path(tools.ROOT) / "build.sh"
+    build_sh = tools.ROOT / "build.sh"
     sh_before = build_sh.read_text(encoding="utf-8")
     sh_after = re.sub(r"3\.\d\d?\.\d\d?", best[ci_version], sh_before)
     if sh_before != sh_after:
         build_sh.unlink()  # so bash doesn't reload a modified file
         build_sh.write_text(sh_after, encoding="utf-8")
         build_sh.chmod(0o755)
+
+
+def update_pyodide_versions():
+    vers_re = r"(\d+\.\d+\.\d+)"
+    pyodide_version = max(
+        # Don't just pick the most recent version; find the highest stable version.
+        re.findall(
+            f"pyodide_build-{vers_re}-py3-none-any.whl",  # excludes pre-releases
+            requests.get("https://pypi.org/simple/pyodide-build/").text,
+        ),
+        key=lambda version: tuple(int(x) for x in version.split(".")),
+    )
+    makefile_url = f"https://raw.githubusercontent.com/pyodide/pyodide/{pyodide_version}/Makefile.envs"
+    python_version, emscripten_version = re.search(
+        rf"export PYVERSION \?= {vers_re}\nexport PYODIDE_EMSCRIPTEN_VERSION \?= {vers_re}\n",
+        requests.get(makefile_url).text,
+    ).groups()
+
+    ci_file = tools.ROOT / ".github/workflows/main.yml"
+    config = ci_file.read_text(encoding="utf-8")
+    for name, var in [
+        ("PYODIDE", pyodide_version),
+        ("PYTHON", python_version),
+        ("EMSCRIPTEN", emscripten_version),
+    ]:
+        config = re.sub(f"{name}_VERSION: {vers_re}", f"{name}_VERSION: {var}", config)
+    ci_file.write_text(config, encoding="utf-8")
 
 
 def update_vendored_files():
@@ -317,7 +344,8 @@ def update_vendored_files():
     if fname.read_bytes().splitlines()[1:] != new.splitlines()[1:]:
         fname.write_bytes(new)
 
-    # Always require the latest version of the tzdata package
+    # Always require the most recent version of tzdata - we don't need to worry about
+    # pre-releases because tzdata is a 'latest data' package  (unlike pyodide-build).
     tz_url = "https://pypi.org/pypi/tzdata/json"
     tzdata_version = requests.get(tz_url).json()["info"]["version"]
     setup = pathlib.Path(hp.BASE_DIR, "setup.py")
@@ -344,6 +372,7 @@ def upgrade_requirements():
         with open(hp.RELEASE_FILE, mode="w", encoding="utf-8") as f:
             f.write(f"RELEASE_TYPE: patch\n\n{msg}")
     update_python_versions()
+    update_pyodide_versions()
     subprocess.call(["git", "add", "."], cwd=tools.ROOT)
 
 

@@ -129,6 +129,7 @@ class FlakyRatchettingMachine(RuleBasedStateMachine):
         raise AssertionError
 
 
+@Settings(stateful_step_count=10, max_examples=30)  # speed this up
 class MachineWithConsumingRule(RuleBasedStateMachine):
     b1 = Bundle("b1")
     b2 = Bundle("b2")
@@ -152,7 +153,7 @@ class MachineWithConsumingRule(RuleBasedStateMachine):
         self.consumed_counter += 1
         return consumed
 
-    @rule(consumed=lists(consumes(b1)))
+    @rule(consumed=lists(consumes(b1), max_size=3))
     def depopulate_b1_multiple(self, consumed):
         self.consumed_counter += len(consumed)
 

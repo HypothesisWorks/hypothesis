@@ -25,6 +25,8 @@ from hypothesis import (
 )
 from hypothesis.internal.cache import GenericCache, LRUReusedCache
 
+from tests.common.utils import skipif_emscripten
+
 
 class LRUCache(GenericCache):
     __slots__ = ("__tick",)
@@ -299,6 +301,7 @@ def test_iterates_over_remaining_keys():
     assert sorted(cache) == [1, 2]
 
 
+@skipif_emscripten
 def test_cache_is_threadsafe_issue_2433_regression():
     errors = []
 
