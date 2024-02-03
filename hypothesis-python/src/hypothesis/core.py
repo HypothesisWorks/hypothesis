@@ -1195,7 +1195,10 @@ class StateForActualGivenExecution:
                     },
                     "timing": self._timing_features,
                     "coverage": None,  # Not recorded when we're replaying the MFE
-                    "metadata": {"traceback": tb},
+                    "metadata": {
+                        "traceback": tb,
+                        "predicates": ran_example._observability_predicates,
+                    },
                 }
                 deliver_json_blob(tc)
                 # Whether or not replay actually raised the exception again, we want

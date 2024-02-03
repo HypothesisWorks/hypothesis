@@ -70,6 +70,7 @@ def make_testcase(
         "metadata": {
             **(metadata or {}),
             "traceback": getattr(data.extra_information, "_expected_traceback", None),
+            "predicates": data._observability_predicates,
         },
         "coverage": coverage,
     }
