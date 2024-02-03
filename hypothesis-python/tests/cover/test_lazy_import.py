@@ -12,6 +12,8 @@ import os
 import subprocess
 import sys
 
+from tests.common.utils import skipif_emscripten
+
 SHOULD_NOT_IMPORT_TEST_RUNNERS = """
 import sys
 import unittest
@@ -37,6 +39,7 @@ if __name__ == '__main__':
 """
 
 
+@skipif_emscripten
 def test_hypothesis_does_not_import_test_runners(tmp_path):
     # We obviously can't use pytest to check that pytest is not imported,
     # so for consistency we use unittest for all three non-stdlib test runners.
