@@ -53,7 +53,13 @@ from uuid import UUID
 import attr
 
 from hypothesis._settings import note_deprecation
-from hypothesis.control import cleanup, current_build_context, note
+from hypothesis.control import (
+    RandomSeeder,
+    cleanup,
+    current_build_context,
+    deprecate_random_in_strategy,
+    note,
+)
 from hypothesis.errors import (
     HypothesisSideeffectWarning,
     HypothesisWarning,
@@ -996,14 +1002,6 @@ def randoms(
     return RandomStrategy(
         use_true_random=use_true_random, note_method_calls=note_method_calls
     )
-
-
-class RandomSeeder:
-    def __init__(self, seed):
-        self.seed = seed
-
-    def __repr__(self):
-        return f"RandomSeeder({self.seed!r})"
 
 
 class RandomModule(SearchStrategy):
@@ -2136,7 +2134,8 @@ class DataObject:
         self.count += 1
         printer = RepresentationPrinter(context=current_build_context())
         desc = f"Draw {self.count}{'' if label is None else f' ({label})'}: "
-        result = self.conjecture_data.draw(strategy, observe_as=f"generate:{desc}")
+        with deprecate_random_in_strategy(f"{desc}from {strategy!r}", stacklevel=1):
+            result = self.conjecture_data.draw(strategy, observe_as=f"generate:{desc}")
         if TESTCASE_CALLBACKS:
             self.conjecture_data._observability_args[desc] = to_jsonable(result)
 
