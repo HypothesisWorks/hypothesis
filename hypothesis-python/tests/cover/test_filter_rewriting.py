@@ -410,7 +410,8 @@ def test_filter_rewriting_text_partial_len(data, strategy, predicate, start, end
     s = strategy.filter(predicate)
 
     assert isinstance(s, LazyStrategy)
-    assert isinstance(inner := unwrap_strategies(s), TextStrategy)
+    inner = unwrap_strategies(s)
+    assert isinstance(inner, TextStrategy)
     assert inner.min_size == start
     assert inner.max_size == end
     value = data.draw(s)
@@ -427,7 +428,8 @@ def test_can_rewrite_multiple_length_filters_if_not_lambdas(data):
         .filter(partial(max_len, 4))
     )
     assert isinstance(s, LazyStrategy)
-    assert isinstance(inner := unwrap_strategies(s), TextStrategy)
+    inner = unwrap_strategies(s)
+    assert isinstance(inner, TextStrategy)
     assert inner.min_size == 2
     assert inner.max_size == 4
     value = data.draw(s)
