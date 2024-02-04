@@ -41,6 +41,7 @@ IRKWargsType: TypeAlias = Union[
 # this would be "IRTypeType", but that's just confusing.
 IRLiteralType: TypeAlias = Literal["integer", "string", "boolean", "float", "bytes"]
 
+
 class PreviouslyUnseenBehaviour(HypothesisException):
     pass
 
@@ -193,8 +194,8 @@ def compute_max_children(ir_type, kwargs):
 
     elif ir_type == "float":
         return count_between_floats(kwargs["min_value"], kwargs["max_value"])
-    else:  # pragma: no cover
-        raise ValueError(f"unhandled ir_type {ir_type}")
+
+    raise NotImplementedError(f"unhandled ir_type {ir_type}")
 
 
 # In theory, this is a strict superset of the functionality of compute_max_children;
