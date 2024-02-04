@@ -10,18 +10,21 @@
 
 import dataclasses
 import functools
+import random
 from collections import defaultdict, namedtuple
 
 import attr
 import pytest
 
+from hypothesis import given
 from hypothesis.errors import InvalidArgument, Unsatisfiable
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.reflection import get_pretty_function_description
-from hypothesis.strategies import booleans, integers, just, none, tuples
+from hypothesis.strategies import booleans, data, integers, just, lists, none, tuples
 from hypothesis.strategies._internal.utils import to_jsonable
 
 from tests.common.debug import assert_simple_property, check_can_generate_examples
+from tests.common.utils import checks_deprecated_behaviour
 
 
 def test_or_errors_when_given_non_strategy():
@@ -90,6 +93,23 @@ def test_can_flatmap_nameless():
 def test_flatmap_with_invalid_expand():
     with pytest.raises(InvalidArgument):
         check_can_generate_examples(just(100).flatmap(lambda n: "a"))
+
+
+_bad_random_strategy = lists(integers(), min_size=1).map(random.choice)
+
+
+@checks_deprecated_behaviour
+def test_use_of_global_random_is_deprecated_in_given():
+    check_can_generate_examples(_bad_random_strategy)
+
+
+@checks_deprecated_behaviour
+def test_use_of_global_random_is_deprecated_in_interactive_draws():
+    @given(data())
+    def inner(d):
+        d.draw(_bad_random_strategy)
+
+    inner()
 
 
 def test_jsonable():
