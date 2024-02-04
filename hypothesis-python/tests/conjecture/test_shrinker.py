@@ -438,8 +438,7 @@ def test_zero_irregular_examples():
         data.stop_example()
         data.start_example(1)
         interesting = (
-            data.draw_integer(0, 2**8 - 1) > 0
-            and data.draw_integer(0, 2**16 - 1) > 0
+            data.draw_integer(0, 2**8 - 1) > 0 and data.draw_integer(0, 2**16 - 1) > 0
         )
         data.stop_example()
         if interesting:

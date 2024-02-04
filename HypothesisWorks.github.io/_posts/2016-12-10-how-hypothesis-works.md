@@ -61,8 +61,7 @@ bytes from:
 
 ```python
 class TestData:
-    def draw_bytes(self, n):
-        ...
+    def draw_bytes(self, n): ...
 ```
 
 (note: The Python code in this article isn't an exact copy of what's
@@ -237,8 +236,7 @@ distribution hint:
 
 ```python
 class TestData:
-    def draw_bytes(self, n, distribution=None):
-        ...
+    def draw_bytes(self, n, distribution=None): ...
 ```
 
 Where a distribution function takes a Random object
@@ -328,14 +326,11 @@ looks like this:
 
 ```python
 class TestData:
-    def start_interval(self):
-        ...
+    def start_interval(self): ...
 
-    def stop_interval(self):
-        ...
+    def stop_interval(self): ...
 
-    def draw_bytes(self, n):
-        ...
+    def draw_bytes(self, n): ...
 
     def draw(self, strategy):
         self.start_interval()
