@@ -39,14 +39,7 @@ IRKWargsType: TypeAlias = Union[
     IntegerKWargs, FloatKWargs, StringKWargs, BytesKWargs, BooleanKWargs
 ]
 # this would be "IRTypeType", but that's just confusing.
-IRLiteralType: TypeAlias = Union[
-    Literal["integer"],
-    Literal["string"],
-    Literal["boolean"],
-    Literal["float"],
-    Literal["bytes"],
-]
-
+IRLiteralType: TypeAlias = Literal["integer", "string", "boolean", "float", "bytes"]
 
 class PreviouslyUnseenBehaviour(HypothesisException):
     pass
