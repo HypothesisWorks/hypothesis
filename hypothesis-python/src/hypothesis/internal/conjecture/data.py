@@ -1498,6 +1498,9 @@ class ConjectureData:
         self.arg_slices: Set[Tuple[int, int]] = set()
         self.slice_comments: Dict[Tuple[int, int], str] = {}
         self._observability_args: Dict[str, Any] = {}
+        self._observability_predicates: defaultdict = defaultdict(
+            lambda: {"satisfied": 0, "unsatisfied": 0}
+        )
 
         self.extra_information = ExtraInformation()
 
@@ -1679,9 +1682,11 @@ class ConjectureData:
                 examples=self.examples,
                 blocks=self.blocks,
                 output=self.output,
-                extra_information=self.extra_information
-                if self.extra_information.has_information()
-                else None,
+                extra_information=(
+                    self.extra_information
+                    if self.extra_information.has_information()
+                    else None
+                ),
                 has_discards=self.has_discards,
                 target_observations=self.target_observations,
                 tags=frozenset(self.tags),

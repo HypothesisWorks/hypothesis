@@ -28,7 +28,7 @@ from hypothesis.strategies import (
     tuples,
 )
 
-from tests.common.debug import find_any, minimal
+from tests.common.debug import assert_simple_property, find_any, minimal
 from tests.common.utils import flaky
 
 
@@ -83,8 +83,10 @@ def test_ordered_dictionaries_preserve_keys():
     r = Random()
     keys = list(range(100))
     r.shuffle(keys)
-    x = fixed_dictionaries(OrderedDict([(k, booleans()) for k in keys])).example()
-    assert list(x.keys()) == keys
+    assert_simple_property(
+        fixed_dictionaries(OrderedDict([(k, booleans()) for k in keys])),
+        lambda x: list(x.keys()) == keys,
+    )
 
 
 @given(fixed_dictionaries({}, optional={0: booleans(), 1: nothing(), 2: booleans()}))

@@ -17,6 +17,8 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import Concatenate, ParamSpec
 from hypothesis.strategies._internal.types import NON_RUNTIME_TYPES
 
+from tests.common.debug import check_can_generate_examples
+
 try:
     from typing import TypeGuard  # new in 3.10
 except ImportError:
@@ -29,7 +31,7 @@ def test_non_runtime_type_cannot_be_resolved(non_runtime_type):
     with pytest.raises(
         InvalidArgument, match="there is no such thing as a runtime instance"
     ):
-        strategy.example()
+        check_can_generate_examples(strategy)
 
 
 @pytest.mark.parametrize("non_runtime_type", NON_RUNTIME_TYPES)
@@ -49,7 +51,7 @@ def test_callable_with_concatenate():
         InvalidArgument,
         match="Hypothesis can't yet construct a strategy for instances of a Callable type",
     ):
-        strategy.example()
+        check_can_generate_examples(strategy)
 
     with pytest.raises(InvalidArgument, match="Cannot register generic type"):
         st.register_type_strategy(func_type, st.none())
@@ -64,7 +66,7 @@ def test_callable_with_paramspec():
         InvalidArgument,
         match="Hypothesis can't yet construct a strategy for instances of a Callable type",
     ):
-        strategy.example()
+        check_can_generate_examples(strategy)
 
     with pytest.raises(InvalidArgument, match="Cannot register generic type"):
         st.register_type_strategy(func_type, st.none())
@@ -78,7 +80,7 @@ def test_callable_return_typegard_type():
         match="Hypothesis cannot yet construct a strategy for callables "
         "which are PEP-647 TypeGuards",
     ):
-        strategy.example()
+        check_can_generate_examples(strategy)
 
     with pytest.raises(InvalidArgument, match="Cannot register generic type"):
         st.register_type_strategy(Callable[[], TypeGuard[int]], st.none())

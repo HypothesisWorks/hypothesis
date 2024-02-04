@@ -17,7 +17,13 @@ from typing import ForwardRef, Optional, Union
 
 import pytest
 
-from hypothesis.internal.compat import ceil, dataclass_asdict, floor, get_type_hints
+from hypothesis.internal.compat import (
+    ceil,
+    dataclass_asdict,
+    extract_bits,
+    floor,
+    get_type_hints,
+)
 
 floor_ceil_values = [
     -10.7,
@@ -128,3 +134,12 @@ def test_dataclass_asdict():
         "d": {4: 5},
         "e": {},
     }
+
+
+@pytest.mark.parametrize("width", [None, 8])
+@pytest.mark.parametrize("x", [0, 2, 123])
+def test_extract_bits_roundtrip(width, x):
+    bits = extract_bits(x, width=width)
+    if width is not None:
+        assert len(bits) == width
+    assert x == sum(v << p for p, v in enumerate(reversed(bits)))

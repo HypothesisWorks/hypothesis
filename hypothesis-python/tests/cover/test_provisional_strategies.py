@@ -22,7 +22,7 @@ from hypothesis.provisional import (
     urls,
 )
 
-from tests.common.debug import find_any
+from tests.common.debug import check_can_generate_examples, find_any
 
 
 @given(urls())
@@ -51,13 +51,17 @@ def test_is_URL(url):
 @pytest.mark.parametrize("max_element_length", [-1, 0, 4.0, 64, 128])
 def test_invalid_domain_arguments(max_length, max_element_length):
     with pytest.raises(InvalidArgument):
-        domains(max_length=max_length, max_element_length=max_element_length).example()
+        check_can_generate_examples(
+            domains(max_length=max_length, max_element_length=max_element_length)
+        )
 
 
 @pytest.mark.parametrize("max_length", [None, 4, 8, 255])
 @pytest.mark.parametrize("max_element_length", [None, 1, 2, 4, 8, 63])
 def test_valid_domains_arguments(max_length, max_element_length):
-    domains(max_length=max_length, max_element_length=max_element_length).example()
+    check_can_generate_examples(
+        domains(max_length=max_length, max_element_length=max_element_length)
+    )
 
 
 @pytest.mark.parametrize("strategy", [domains(), urls()])

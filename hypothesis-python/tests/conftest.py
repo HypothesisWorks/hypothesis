@@ -17,6 +17,8 @@ from functools import wraps
 import pytest
 
 from hypothesis._settings import is_in_ci
+from hypothesis.errors import NonInteractiveExampleWarning
+from hypothesis.internal.compat import add_note
 from hypothesis.internal.detection import is_hypothesis_test
 
 from tests.common import TIME_INCREMENT
@@ -106,20 +108,20 @@ def pytest_runtest_call(item):
     # This hookwrapper checks for PRNG state leaks from Hypothesis tests.
     # See: https://github.com/HypothesisWorks/hypothesis/issues/1919
     if not (hasattr(item, "obj") and is_hypothesis_test(item.obj)):
-        yield
+        outcome = yield
     elif "pytest_randomly" in sys.modules:
         # See https://github.com/HypothesisWorks/hypothesis/issues/3041 - this
         # branch exists to make it easier on external contributors, but should
         # never run in our CI (because that would disable the check entirely).
         assert not is_in_ci()
-        yield
+        outcome = yield
     else:
         # We start by peturbing the state of the PRNG, because repeatedly
         # leaking PRNG state resets state_after to the (previously leaked)
         # state_before, and that just shows as "no use of random".
         random.seed(independent_random.randrange(2**32))
         before = random.getstate()
-        yield
+        outcome = yield
         after = random.getstate()
         if before != after:
             if after in random_states_after_tests:
@@ -129,3 +131,11 @@ def pytest_runtest_call(item):
                     "same global `random.getstate()`; this is probably a nasty bug!"
                 )
             random_states_after_tests[after] = item.nodeid
+
+    # Annotate usage of .example() with a hint about alternatives
+    if isinstance(getattr(outcome, "exception", None), NonInteractiveExampleWarning):
+        add_note(
+            outcome.exception,
+            "For hypothesis' own test suite, consider using one of the helper "
+            "methods in tests.common.debug instead.",
+        )

@@ -61,9 +61,9 @@ extras = {
     "dpcontracts": ["dpcontracts>=0.4"],
     "redis": ["redis>=3.0.0"],
     # zoneinfo is an odd one: every dependency is conditional, because they're
-    # only necessary on old versions of Python or Windows systems.
+    # only necessary on old versions of Python or Windows systems or emscripten.
     "zoneinfo": [
-        "tzdata>=2023.4 ; sys_platform == 'win32'",
+        "tzdata>=2023.4 ; sys_platform == 'win32' or sys_platform == 'emscripten'",
         "backports.zoneinfo>=0.2.1 ; python_version<'3.9'",
     ],
     # We only support Django versions with upstream support - see

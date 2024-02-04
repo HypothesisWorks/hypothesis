@@ -17,6 +17,8 @@ from hypothesis.errors import InvalidArgument, InvalidState
 from hypothesis.reporting import with_reporter
 from hypothesis.strategies import booleans, functions, integers
 
+from tests.common.debug import check_can_generate_examples
+
 
 def func_a():
     pass
@@ -81,7 +83,7 @@ def test_functions_lambda_with_arg(f):
 )
 def test_invalid_arguments(like, returns, pure):
     with pytest.raises(InvalidArgument):
-        functions(like=like, returns=returns, pure=pure).example()
+        check_can_generate_examples(functions(like=like, returns=returns, pure=pure))
 
 
 def func_returns_str() -> str:

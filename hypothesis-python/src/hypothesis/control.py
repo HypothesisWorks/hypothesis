@@ -10,8 +10,10 @@
 
 import inspect
 import math
+import random
 from collections import defaultdict
-from typing import NoReturn, Union
+from contextlib import contextmanager
+from typing import Any, NoReturn, Union
 from weakref import WeakKeyDictionary
 
 from hypothesis import Verbosity, settings
@@ -19,6 +21,7 @@ from hypothesis._settings import note_deprecation
 from hypothesis.errors import InvalidArgument, UnsatisfiedAssumption
 from hypothesis.internal.compat import BaseExceptionGroup
 from hypothesis.internal.conjecture.data import ConjectureData
+from hypothesis.internal.observability import TESTCASE_CALLBACKS
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.internal.validation import check_type
 from hypothesis.reporting import report, verbose_report
@@ -26,8 +29,9 @@ from hypothesis.utils.dynamicvariables import DynamicVariable
 from hypothesis.vendor.pretty import IDKey, pretty
 
 
-def _calling_function_name(frame):
-    return frame.f_back.f_code.co_name
+def _calling_function_location(what: str, frame: Any) -> str:
+    where = frame.f_back
+    return f"{what}() in {where.f_code.co_name} (line {where.f_lineno})"
 
 
 def reject() -> NoReturn:
@@ -37,8 +41,11 @@ def reject() -> NoReturn:
             since="2023-09-25",
             has_codemod=False,
         )
-    f = _calling_function_name(inspect.currentframe())
-    raise UnsatisfiedAssumption(f"reject() in {f}")
+    where = _calling_function_location("reject", inspect.currentframe())
+    if currently_in_test_context():
+        count = current_build_context().data._observability_predicates[where]
+        count["unsatisfied"] += 1
+    raise UnsatisfiedAssumption(where)
 
 
 def assume(condition: object) -> bool:
@@ -54,9 +61,13 @@ def assume(condition: object) -> bool:
             since="2023-09-25",
             has_codemod=False,
         )
-    if not condition:
-        f = _calling_function_name(inspect.currentframe())
-        raise UnsatisfiedAssumption(f"failed to satisfy assume() in {f}")
+    if TESTCASE_CALLBACKS or not condition:
+        where = _calling_function_location("assume", inspect.currentframe())
+        if TESTCASE_CALLBACKS and currently_in_test_context():
+            predicates = current_build_context().data._observability_predicates
+            predicates[where]["satisfied" if condition else "unsatisfied"] += 1
+        if not condition:
+            raise UnsatisfiedAssumption(f"failed to satisfy {where}")
     return True
 
 
@@ -80,6 +91,38 @@ def current_build_context() -> "BuildContext":
     if context is None:
         raise InvalidArgument("No build context registered")
     return context
+
+
+class RandomSeeder:
+    def __init__(self, seed):
+        self.seed = seed
+
+    def __repr__(self):
+        return f"RandomSeeder({self.seed!r})"
+
+
+class _Checker:
+    def __init__(self) -> None:
+        self.saw_global_random = False
+
+    def __call__(self, x):
+        self.saw_global_random |= isinstance(x, RandomSeeder)
+        return x
+
+
+@contextmanager
+def deprecate_random_in_strategy(fmt, *args):
+    _global_rand_state = random.getstate()
+    yield (checker := _Checker())
+    if _global_rand_state != random.getstate() and not checker.saw_global_random:
+        # raise InvalidDefinition
+        note_deprecation(
+            "Do not use the `random` module inside strategies; instead "
+            "consider  `st.randoms()`, `st.sampled_from()`, etc.  " + fmt.format(*args),
+            since="2024-02-05",
+            has_codemod=False,
+            stacklevel=1,
+        )
 
 
 class BuildContext:
@@ -110,7 +153,8 @@ class BuildContext:
         kwargs = {}
         for k, s in kwarg_strategies.items():
             start_idx = self.data.index
-            obj = self.data.draw(s, observe_as=f"generate:{k}")
+            with deprecate_random_in_strategy("from {}={!r}", k, s) as check:
+                obj = check(self.data.draw(s, observe_as=f"generate:{k}"))
             end_idx = self.data.index
             kwargs[k] = obj
 

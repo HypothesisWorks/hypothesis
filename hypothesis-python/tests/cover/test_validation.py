@@ -32,6 +32,7 @@ from hypothesis.strategies import (
 )
 from hypothesis.strategies._internal.strategies import check_strategy
 
+from tests.common.debug import check_can_generate_examples, find_any
 from tests.common.utils import fails_with
 
 
@@ -113,28 +114,28 @@ def test_can_put_arguments_in_the_middle():
 
 def test_float_ranges():
     with pytest.raises(InvalidArgument):
-        floats(float("nan"), 0).example()
+        check_can_generate_examples(floats(float("nan"), 0))
     with pytest.raises(InvalidArgument):
-        floats(1, -1).example()
+        check_can_generate_examples(floats(1, -1))
 
 
 def test_float_range_and_allow_nan_cannot_both_be_enabled():
     with pytest.raises(InvalidArgument):
-        floats(min_value=1, allow_nan=True).example()
+        check_can_generate_examples(floats(min_value=1, allow_nan=True))
     with pytest.raises(InvalidArgument):
-        floats(max_value=1, allow_nan=True).example()
+        check_can_generate_examples(floats(max_value=1, allow_nan=True))
 
 
 def test_float_finite_range_and_allow_infinity_cannot_both_be_enabled():
     with pytest.raises(InvalidArgument):
-        floats(0, 1, allow_infinity=True).example()
+        check_can_generate_examples(floats(0, 1, allow_infinity=True))
 
 
 def test_does_not_error_if_min_size_is_bigger_than_default_size():
-    lists(integers(), min_size=50).example()
-    sets(integers(), min_size=50).example()
-    frozensets(integers(), min_size=50).example()
-    lists(integers(), min_size=50, unique=True).example()
+    find_any(lists(integers(), min_size=50))
+    find_any(sets(integers(), min_size=50))
+    find_any(frozensets(integers(), min_size=50))
+    find_any(lists(integers(), min_size=50, unique=True))
 
 
 def test_list_unique_and_unique_by_cannot_both_be_enabled():

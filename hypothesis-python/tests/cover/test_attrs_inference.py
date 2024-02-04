@@ -16,6 +16,8 @@ import pytest
 from hypothesis import given, strategies as st
 from hypothesis.errors import ResolutionFailed
 
+from tests.common.debug import check_can_generate_examples
+
 
 @attr.s
 class Inferrables:
@@ -83,12 +85,14 @@ def test_attrs_inference_from_type(c):
 @pytest.mark.parametrize("c", [Required, UnhelpfulConverter])
 def test_cannot_infer(c):
     with pytest.raises(ResolutionFailed):
-        st.builds(c).example()
+        check_can_generate_examples(st.builds(c))
 
 
 def test_cannot_infer_takes_self():
     with pytest.raises(ResolutionFailed):
-        st.builds(Inferrables, has_default_factory_takes_self=...).example()
+        check_can_generate_examples(
+            st.builds(Inferrables, has_default_factory_takes_self=...)
+        )
 
 
 @attr.s
@@ -98,12 +102,12 @@ class HasPrivateAttribute:
 
 @pytest.mark.parametrize("s", [st.just(42), ...])
 def test_private_attribute(s):
-    st.builds(HasPrivateAttribute, x=s).example()
+    check_can_generate_examples(st.builds(HasPrivateAttribute, x=s))
 
 
 def test_private_attribute_underscore_fails():
     with pytest.raises(TypeError, match="unexpected keyword argument '_x'"):
-        st.builds(HasPrivateAttribute, _x=st.just(42)).example()
+        check_can_generate_examples(st.builds(HasPrivateAttribute, _x=st.just(42)))
 
 
 def test_private_attribute_underscore_infer_fails():
@@ -112,7 +116,7 @@ def test_private_attribute_underscore_infer_fails():
     with pytest.raises(
         TypeError, match="Unexpected keyword argument _x for attrs class"
     ):
-        st.builds(HasPrivateAttribute, _x=...).example()
+        check_can_generate_examples(st.builds(HasPrivateAttribute, _x=...))
 
 
 @attr.s
@@ -122,4 +126,4 @@ class HasAliasedAttribute:
 
 @pytest.mark.parametrize("s", [st.just(42), ...])
 def test_aliased_attribute(s):
-    st.builds(HasAliasedAttribute, crazyname=s).example()
+    check_can_generate_examples(st.builds(HasAliasedAttribute, crazyname=s))

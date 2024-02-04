@@ -100,13 +100,11 @@ same examples each time they are executed, thanks to ``@seed()``:
 
     @seed(1234)
     @given(x=...)
-    def test(x):
-        ...
+    def test(x): ...
 
 
     @seed(6789)
-    class MyModel(RuleBasedStateMachine):
-        ...
+    class MyModel(RuleBasedStateMachine): ...
 
 The seed will not be printed if you could simply use ``@example`` instead.
 

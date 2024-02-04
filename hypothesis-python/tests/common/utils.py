@@ -47,6 +47,20 @@ except ModuleNotFoundError:
             ) from None
 
 
+try:
+    from pytest import mark
+except ModuleNotFoundError:
+
+    def skipif_emscripten(f):
+        return f
+
+else:
+    skipif_emscripten = mark.skipif(
+        sys.platform == "emscripten",
+        reason="threads, processes, etc. are not available in the browser",
+    )
+
+
 no_shrink = tuple(set(settings.default.phases) - {Phase.shrink, Phase.explain})
 
 

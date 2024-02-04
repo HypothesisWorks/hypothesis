@@ -36,6 +36,7 @@ from tests.common.utils import (
     fails_with,
     no_shrink,
     raises,
+    skipif_emscripten,
 )
 
 # This particular test file is run under both pytest and nose, so it can't
@@ -331,6 +332,7 @@ def test_can_run_without_database():
         test_blah()
 
 
+@skipif_emscripten
 def test_can_run_with_database_in_thread():
     results = []
 

@@ -19,6 +19,8 @@ from hypothesis.errors import HypothesisWarning, ResolutionFailed
 from hypothesis.strategies._internal.lazy import unwrap_strategies
 from hypothesis.strategies._internal.strategies import FilteredStrategy
 
+from tests.common.debug import check_can_generate_examples
+
 try:
     from typing import Annotated  # new in Python 3.9
 
@@ -36,7 +38,9 @@ def test_strategy_priority_over_constraints():
 
 def test_invalid_annotated_type():
     with pytest.raises(ResolutionFailed):
-        st.from_type(Annotated[None, "dummy", Annotated[int, "dummy"]]).example()
+        check_can_generate_examples(
+            st.from_type(Annotated[None, "dummy", Annotated[int, "dummy"]])
+        )
 
 
 @pytest.mark.parametrize(
@@ -57,7 +61,7 @@ def test_unsupported_constraints(unsupported_constraints, message):
     else:
         t = Annotated.__class_getitem__((int, *unsupported_constraints))
     with pytest.warns(HypothesisWarning, match=re.escape(message)):
-        st.from_type(t).example()
+        check_can_generate_examples(st.from_type(t))
 
 
 @pytest.mark.parametrize(

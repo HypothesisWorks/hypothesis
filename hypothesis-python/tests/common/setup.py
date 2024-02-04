@@ -13,7 +13,6 @@ from warnings import filterwarnings
 
 from hypothesis import Phase, Verbosity, settings
 from hypothesis._settings import not_set
-from hypothesis.errors import NonInteractiveExampleWarning
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 
 
@@ -35,9 +34,6 @@ def run():
         ),
         category=UserWarning,
     )
-
-    # User-facing warning which does not apply to our own tests
-    filterwarnings("ignore", category=NonInteractiveExampleWarning)
 
     # We do a smoke test here before we mess around with settings.
     x = settings()

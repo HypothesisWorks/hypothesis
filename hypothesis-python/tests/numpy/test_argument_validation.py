@@ -15,6 +15,7 @@ from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra import numpy as nps
 
+from tests.common.debug import check_can_generate_examples
 from tests.common.utils import checks_deprecated_behaviour
 
 
@@ -274,7 +275,7 @@ def e(a, **kwargs):
 )
 def test_raise_invalid_argument(function, kwargs):
     with pytest.raises(InvalidArgument):
-        function(**kwargs).example()
+        check_can_generate_examples(function(**kwargs))
 
 
 @pytest.mark.parametrize(
@@ -287,4 +288,4 @@ def test_raise_invalid_argument(function, kwargs):
 @checks_deprecated_behaviour
 def test_raise_invalid_argument_deprecated(function, kwargs):
     with pytest.raises(InvalidArgument):
-        function(**kwargs).example()
+        check_can_generate_examples(function(**kwargs))

@@ -38,6 +38,7 @@ from tests.common.utils import (
     checks_deprecated_behaviour,
     counts_calls,
     fails_with,
+    skipif_emscripten,
     validate_deprecation,
 )
 
@@ -231,7 +232,7 @@ def test_settings_alone():
 
 def test_settings_alone(testdir):
     script = testdir.makepyfile(TEST_SETTINGS_ALONE)
-    result = testdir.runpytest(script)
+    result = testdir.runpytest_inprocess(script)
     out = "\n".join(result.stdout.lines)
     assert (
         "Using `@settings` on a test without `@given` is completely pointless." in out
@@ -284,6 +285,7 @@ if __name__ == '__main__':
 """
 
 
+@skipif_emscripten
 def test_puts_the_database_in_the_home_dir_by_default(tmp_path):
     script = tmp_path.joinpath("assertlocation.py")
     script.write_text(ASSERT_DATABASE_PATH, encoding="utf-8")

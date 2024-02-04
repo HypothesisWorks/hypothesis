@@ -17,7 +17,7 @@ import pytest
 from hypothesis import given, strategies as st
 from hypothesis.errors import FailedHealthCheck, HypothesisWarning
 
-from tests.common.utils import fails_with
+from tests.common.utils import fails_with, skipif_emscripten
 
 
 class Thing_with_a_subThing(unittest.TestCase):
@@ -65,6 +65,7 @@ if __name__ == "__main__":
 """
 
 
+@skipif_emscripten
 @pytest.mark.parametrize("err", [[], ["-Werror"]])
 def test_subTest_no_self(testdir, err):
     # https://github.com/HypothesisWorks/hypothesis/issues/2462

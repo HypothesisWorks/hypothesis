@@ -14,6 +14,8 @@ from hypothesis import find, given, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies._internal.core import defines_strategy
 
+from tests.common.debug import check_can_generate_examples
+
 
 def test_does_not_error_on_initial_calculation():
     st.floats(max_value=float("nan"))
@@ -25,9 +27,9 @@ def test_does_not_error_on_initial_calculation():
 def test_errors_each_time():
     s = st.integers(max_value=1, min_value=3)
     with pytest.raises(InvalidArgument):
-        s.example()
+        check_can_generate_examples(s)
     with pytest.raises(InvalidArgument):
-        s.example()
+        check_can_generate_examples(s)
 
 
 def test_errors_on_test_invocation():
@@ -48,7 +50,7 @@ def test_errors_on_find():
 def test_errors_on_example():
     s = st.floats(min_value=2.0, max_value=1.0)
     with pytest.raises(InvalidArgument):
-        s.example()
+        check_can_generate_examples(s)
 
 
 def test_does_not_recalculate_the_strategy():
@@ -61,7 +63,7 @@ def test_does_not_recalculate_the_strategy():
 
     f = foo()
     assert calls == [0]
-    f.example()
+    check_can_generate_examples(f)
     assert calls == [1]
-    f.example()
+    check_can_generate_examples(f)
     assert calls == [1]

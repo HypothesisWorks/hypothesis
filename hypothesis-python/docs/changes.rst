@@ -18,6 +18,100 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.98.0:
+
+-------------------
+6.98.0 - 2024-02-05
+-------------------
+
+This release deprecates use of the global random number generator while drawing
+from a strategy, because this makes test cases less diverse and prevents us
+from reporting minimal counterexamples (:issue:`3810`).
+
+If you see this new warning, you can get a quick fix by using
+:func:`~hypothesis.strategies.randoms`; or use more idiomatic strategies
+:func:`~hypothesis.strategies.sampled_from`, :func:`~hypothesis.strategies.floats`,
+:func:`~hypothesis.strategies.integers`, and so on.
+
+Note that the same problem applies to e.g. ``numpy.random``, but
+for performance reasons we only check the stdlib :mod:`random` module -
+ignoring even other sources passed to :func:`~hypothesis.register_random`.
+
+.. _v6.97.6:
+
+-------------------
+6.97.6 - 2024-02-04
+-------------------
+
+This patch updates our vendored `list of top-level domains <https://www.iana.org/domains/root/db>`__,
+which is used by the provisional :func:`~hypothesis.provisional.domains` strategy.
+
+.. _v6.97.5:
+
+-------------------
+6.97.5 - 2024-02-03
+-------------------
+
+This patch adds some :doc:`observability information <observability>`
+about how many times predicates in :func:`~hypothesis.assume` or
+:func:`~hypothesis.stateful.precondition` were satisfied, so that
+downstream tools can warn you if some were *never* satisfied by
+any test case.
+
+.. _v6.97.4:
+
+-------------------
+6.97.4 - 2024-01-31
+-------------------
+
+This patch improves formatting and adds some cross-references to our docs.
+
+.. _v6.97.3:
+
+-------------------
+6.97.3 - 2024-01-30
+-------------------
+
+Internal test refactoring.
+
+.. _v6.97.2:
+
+-------------------
+6.97.2 - 2024-01-30
+-------------------
+
+This patch slightly changes how we replay examples from
+:doc:`the database <database>`: if the behavior of the saved example has
+changed, we now keep running the test case instead of aborting at the size
+of the saved example.  While we know it's not the *same* example, we might
+as well continue running the test!
+
+Because we now finish running a few more examples for affected tests, this
+might be a slight slowdown - but correspondingly more likely to find a bug.
+
+We've also applied similar tricks to the :ref:`target phase <phases>`, where
+they are a pure performance improvement for affected tests.
+
+.. _v6.97.1:
+
+-------------------
+6.97.1 - 2024-01-27
+-------------------
+
+Improves the performance of the :func:`~hypothesis.extra.numpy.arrays`
+strategy when generating unique values.
+
+.. _v6.97.0:
+
+-------------------
+6.97.0 - 2024-01-25
+-------------------
+
+Changes the distribution of :func:`~hypothesis.strategies.sampled_from` when
+sampling from a :class:`~python:enum.Flag`. Previously, no-flags-set values would
+never be generated, and all-flags-set values would be unlikely for large enums.
+With this change, the distribution is more uniform in the number of flags set.
+
 .. _v6.96.4:
 
 -------------------
@@ -7223,7 +7317,7 @@ This release makes it an explicit error to call
 as there are no possible values that can be generated (:issue:`1859`).
 
 :func:`floats(min_value=0.0, max_value=-0.0) <hypothesis.strategies.floats>`
-is now deprecated.  While `0. == -0.` and we could thus generate either if
+is now deprecated.  While ``0. == -0.`` and we could thus generate either if
 comparing by value, violating the sequence ordering of floats is a special
 case we don't want or need.
 
@@ -7555,7 +7649,7 @@ one.  These shapes are rare and have some odd behavior, but are particularly
 important to test for just that reason!
 
 In a related bigfix, :func:`~hypothesis.extra.numpy.arrays` now supports generating
-zero-dimensional arrays with `dtype=object` and a strategy for iterable elements.
+zero-dimensional arrays with ``dtype=object`` and a strategy for iterable elements.
 Previously, the array element would incorrectly be set to the first item in the
 generated iterable.
 
@@ -8020,7 +8114,7 @@ This release has no user visible changes but updates our URLs to use HTTPS.
 -------------------
 
 Hypothesis can now automatically generate values for Django models with a
-`URLfield`, thanks to a new provisional strategy for URLs (:issue:`1388`).
+`~django.db.models.URLField`, thanks to a new provisional strategy for URLs (:issue:`1388`).
 
 .. _v3.86.6:
 

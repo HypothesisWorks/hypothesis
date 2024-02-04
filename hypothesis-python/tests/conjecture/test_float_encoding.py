@@ -13,7 +13,7 @@ import sys
 import pytest
 
 from hypothesis import HealthCheck, assume, example, given, settings, strategies as st
-from hypothesis.internal.compat import ceil, floor, int_to_bytes
+from hypothesis.internal.compat import ceil, extract_bits, floor, int_to_bytes
 from hypothesis.internal.conjecture import floats as flt
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.engine import ConjectureRunner
@@ -115,16 +115,8 @@ def test_fractional_floats_are_worse_than_one(f):
 
 
 def test_reverse_bits_table_reverses_bits():
-    def bits(x):
-        result = []
-        for _ in range(8):
-            result.append(x & 1)
-            x >>= 1
-        result.reverse()
-        return result
-
     for i, b in enumerate(flt.REVERSE_BITS_TABLE):
-        assert bits(i) == list(reversed(bits(b)))
+        assert extract_bits(i, width=8) == list(reversed(extract_bits(b, width=8)))
 
 
 def test_reverse_bits_table_has_right_elements():

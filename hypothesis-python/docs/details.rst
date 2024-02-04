@@ -524,8 +524,7 @@ transformation before applying :func:`@given <hypothesis.given>`.
 
     @given(x=integers())
     @pytest.mark.trio
-    async def test(x):
-        ...
+    async def test(x): ...
 
 
     # Illustrative code, inside the pytest-trio plugin
@@ -677,8 +676,7 @@ supported use-case, again on a best-effort provisional basis.  For example:
 
 .. code:: python
 
-    def foo_strategy() -> SearchStrategy[Foo]:
-        ...
+    def foo_strategy() -> SearchStrategy[Foo]: ...
 
 .. class:: hypothesis.strategies.SearchStrategy
 
@@ -752,8 +750,7 @@ converting bytestrings into your objects by hand?
 .. code:: python
 
     @given(st.text())
-    def test_foo(s):
-        ...
+    def test_foo(s): ...
 
 
     # This is a traditional fuzz target - call it with a bytestring,

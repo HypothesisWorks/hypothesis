@@ -17,7 +17,12 @@ import pytest
 from hypothesis import given, strategies as st
 from hypothesis.errors import InvalidArgument
 
-from tests.common.debug import assert_all_examples, find_any
+from tests.common.debug import (
+    assert_all_examples,
+    assert_simple_property,
+    check_can_generate_examples,
+    find_any,
+)
 from tests.common.utils import temp_registered
 
 
@@ -84,7 +89,7 @@ def test_string_forward_ref_message():
     # See https://github.com/HypothesisWorks/hypothesis/issues/3016
     s = st.builds(User)
     with pytest.raises(InvalidArgument, match="`from __future__ import annotations`"):
-        s.example()
+        check_can_generate_examples(s)
 
 
 def test_issue_3080():
@@ -132,8 +137,7 @@ T = typing.TypeVar("T")
 
 @typing.runtime_checkable
 class Fooable(typing.Protocol[T]):
-    def foo(self):
-        ...
+    def foo(self): ...
 
 
 class FooableConcrete(tuple):
@@ -155,5 +159,5 @@ def test_lookup_registered_tuple():
     sentinel = object()
     typ = tuple[int]
     with temp_registered(tuple, st.just(sentinel)):
-        assert st.from_type(typ).example() is sentinel
-    assert st.from_type(typ).example() is not sentinel
+        assert_simple_property(st.from_type(typ), lambda v: v is sentinel)
+    assert_simple_property(st.from_type(typ), lambda v: v is not sentinel)

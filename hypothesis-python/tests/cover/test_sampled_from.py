@@ -28,29 +28,37 @@ from hypothesis.strategies._internal.strategies import (
     filter_not_satisfied,
 )
 
+from tests.common.debug import (
+    assert_all_examples,
+    assert_simple_property,
+    check_can_generate_examples,
+)
 from tests.common.utils import fails_with
 
 an_enum = enum.Enum("A", "a b c")
+a_flag = enum.Flag("A", "a b c")
+# named zero state is required for empty flags from around py3.11/3.12
+an_empty_flag = enum.Flag("EmptyFlag", {"a": 0})
 
 an_ordereddict = collections.OrderedDict([("a", 1), ("b", 2), ("c", 3)])
 
 
 @fails_with(InvalidArgument)
 def test_cannot_sample_sets():
-    sampled_from(set("abc")).example()
+    check_can_generate_examples(sampled_from(set("abc")))
 
 
 def test_can_sample_sequence_without_warning():
-    sampled_from([1, 2, 3]).example()
+    check_can_generate_examples(sampled_from([1, 2, 3]))
 
 
 def test_can_sample_ordereddict_without_warning():
-    sampled_from(an_ordereddict).example()
+    check_can_generate_examples(sampled_from(an_ordereddict))
 
 
-@given(sampled_from(an_enum))
-def test_can_sample_enums(member):
-    assert isinstance(member, an_enum)
+@pytest.mark.parametrize("enum_class", [an_enum, a_flag, an_empty_flag])
+def test_can_sample_enums(enum_class):
+    assert_all_examples(sampled_from(enum_class), lambda x: isinstance(x, enum_class))
 
 
 @fails_with(FailedHealthCheck)
@@ -68,8 +76,9 @@ def test_unsat_filtered_sampling_in_rejection_stage(x):
 
 
 def test_easy_filtered_sampling():
-    x = sampled_from(range(100)).filter(lambda x: x == 0).example()
-    assert x == 0
+    assert_simple_property(
+        sampled_from(range(100)).filter(lambda x: x == 0), lambda x: x == 0
+    )
 
 
 @given(sampled_from(range(100)).filter(lambda x: x == 99))
@@ -189,7 +198,7 @@ class AnnotationsInsteadOfElements(enum.Enum):
 
 def test_suggests_elements_instead_of_annotations():
     with pytest.raises(InvalidArgument, match="Cannot sample.*annotations.*dataclass"):
-        st.sampled_from(AnnotationsInsteadOfElements).example()
+        check_can_generate_examples(st.sampled_from(AnnotationsInsteadOfElements))
 
 
 class TestErrorNoteBehavior3819:

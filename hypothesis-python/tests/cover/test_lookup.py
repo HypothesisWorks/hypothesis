@@ -39,6 +39,8 @@ from hypothesis.strategies._internal import types
 from tests.common.debug import (
     assert_all_examples,
     assert_no_examples,
+    assert_simple_property,
+    check_can_generate_examples,
     find_any,
     minimal,
 )
@@ -85,7 +87,7 @@ def test_resolve_typing_module(data, typ):
 @pytest.mark.parametrize("typ", [typing.Any, typing.Union])
 def test_does_not_resolve_special_cases(typ):
     with pytest.raises(InvalidArgument):
-        from_type(typ).example()
+        check_can_generate_examples(from_type(typ))
 
 
 @pytest.mark.parametrize(
@@ -99,7 +101,7 @@ def test_specialised_scalar_types(data, typ, instance_of):
 
 
 def test_typing_Type_int():
-    assert from_type(typing.Type[int]).example() is int
+    assert_simple_property(from_type(typing.Type[int]), lambda x: x is int)
 
 
 @given(from_type(typing.Type[typing.Union[str, list]]))
@@ -225,7 +227,7 @@ def test_Optional_minimises_to_None():
 @pytest.mark.parametrize("n", range(10))
 def test_variable_length_tuples(n):
     type_ = typing.Tuple[int, ...]
-    from_type(type_).filter(lambda ex: len(ex) == n).example()
+    check_can_generate_examples(from_type(type_).filter(lambda ex: len(ex) == n))
 
 
 def test_lookup_overrides_defaults():
@@ -290,7 +292,7 @@ def if_available(name):
     ids=get_pretty_function_description,
 )
 def test_resolves_weird_types(typ):
-    from_type(typ).example()
+    check_can_generate_examples(from_type(typ))
 
 
 class Foo:
@@ -390,11 +392,11 @@ def test_typevars_can_be_resolved_conditionally():
         return NotImplemented
 
     with temp_registered(typing.TypeVar, resolve_type_var):
-        assert st.from_type(A).example() is sentinel
+        assert_simple_property(st.from_type(A), lambda x: x is sentinel)
         # We've re-defined the default TypeVar resolver, so there is no fallback.
         # This causes the lookup to fail.
         with pytest.raises(InvalidArgument):
-            st.from_type(B).example()
+            check_can_generate_examples(st.from_type(B))
 
 
 def annotated_func(a: int, b: int = 2, *, c: int, d: int = 4):
@@ -403,7 +405,7 @@ def annotated_func(a: int, b: int = 2, *, c: int, d: int = 4):
 
 def test_issue_946_regression():
     # Turned type hints into kwargs even if the required posarg was passed
-    st.builds(annotated_func, st.integers()).example()
+    check_can_generate_examples(st.builds(annotated_func, st.integers()))
 
 
 @pytest.mark.parametrize(
@@ -431,14 +433,14 @@ def non_annotated_func(a, b=2, *, c, d=4):
 
 def test_cannot_pass_infer_as_posarg():
     with pytest.raises(InvalidArgument):
-        st.builds(annotated_func, ...).example()
+        check_can_generate_examples(st.builds(annotated_func, ...))
 
 
 def test_cannot_force_inference_for_unannotated_arg():
     with pytest.raises(InvalidArgument):
-        st.builds(non_annotated_func, a=..., c=st.none()).example()
+        check_can_generate_examples(st.builds(non_annotated_func, a=..., c=st.none()))
     with pytest.raises(InvalidArgument):
-        st.builds(non_annotated_func, a=st.none(), c=...).example()
+        check_can_generate_examples(st.builds(non_annotated_func, a=st.none(), c=...))
 
 
 class UnknownType:
@@ -462,9 +464,11 @@ def unknown_annotated_func(a: UnknownType, b=2, *, c: UnknownType, d=4):
 
 def test_raises_for_arg_with_unresolvable_annotation():
     with pytest.raises(ResolutionFailed):
-        st.builds(unknown_annotated_func).example()
+        check_can_generate_examples(st.builds(unknown_annotated_func))
     with pytest.raises(ResolutionFailed):
-        st.builds(unknown_annotated_func, a=st.none(), c=...).example()
+        check_can_generate_examples(
+            st.builds(unknown_annotated_func, a=st.none(), c=...)
+        )
 
 
 @given(a=..., b=...)
@@ -486,9 +490,11 @@ def test_resolves_NewType():
     typ = typing.NewType("T", int)
     nested = typing.NewType("NestedT", typ)
     uni = typing.NewType("UnionT", typing.Optional[int])
-    assert isinstance(from_type(typ).example(), int)
-    assert isinstance(from_type(nested).example(), int)
-    assert isinstance(from_type(uni).example(), (int, type(None)))
+    assert_simple_property(from_type(typ), lambda x: isinstance(x, int))
+    assert_simple_property(from_type(nested), lambda x: isinstance(x, int))
+    assert_simple_property(from_type(uni), lambda x: isinstance(x, (int, type(None))))
+    find_any(from_type(uni), lambda x: isinstance(x, int))
+    find_any(from_type(uni), lambda x: isinstance(x, type(None)))
 
 
 @pytest.mark.parametrize("is_handled", [True, False])
@@ -504,9 +510,9 @@ def test_resolves_NewType_conditionally(is_handled):
 
     with temp_registered(typ, resolve_custom_strategy):
         if is_handled:
-            assert st.from_type(typ).example() is sentinel
+            assert_simple_property(st.from_type(typ), lambda x: x is sentinel)
         else:
-            assert isinstance(st.from_type(typ).example(), int)
+            assert_simple_property(st.from_type(typ), lambda x: isinstance(x, int))
 
 
 E = enum.Enum("E", "a b c")
@@ -522,9 +528,9 @@ def test_resolves_flag_enum(resolver):
     # Storing all combinations takes O(2^n) memory.  Using an enum of 52
     # members in this test ensures that we won't try!
     F = enum.Flag("F", " ".join(string.ascii_letters))
-    # Filter to check that we can generate compound members of enum.Flags
 
-    @given(resolver(F).filter(lambda ex: ex not in tuple(F)))
+    # Checks for combination coverage are found in nocover/test_sampled_from
+    @given(resolver(F))
     def inner(ex):
         assert isinstance(ex, F)
 
@@ -553,9 +559,11 @@ class AnnotatedTarget:
 )
 def test_required_args(target, args, kwargs):
     # Mostly checking that `self` (and only self) is correctly excluded
-    st.builds(
-        target, *map(st.just, args), **{k: st.just(v) for k, v in kwargs.items()}
-    ).example()
+    check_can_generate_examples(
+        st.builds(
+            target, *map(st.just, args), **{k: st.just(v) for k, v in kwargs.items()}
+        )
+    )
 
 
 class AnnotatedNamedTuple(typing.NamedTuple):
@@ -581,7 +589,7 @@ def test_override_args_for_namedtuple(thing):
 def test_cannot_resolve_bare_forward_reference(thing):
     t = thing["ConcreteFoo"]
     with pytest.raises(InvalidArgument):
-        st.from_type(t).example()
+        check_can_generate_examples(st.from_type(t))
 
 
 class Tree:
@@ -603,10 +611,10 @@ class TypedTree(typing.TypedDict):
 
 
 def test_resolving_recursive_typeddict():
-    tree = st.from_type(TypedTree).example()
-    assert isinstance(tree, dict)
-    assert len(tree) == 1
-    assert "nxt" in tree
+    assert_simple_property(
+        st.from_type(TypedTree),
+        lambda tree: isinstance(tree, dict) and len(tree) == 1 and "nxt" in tree,
+    )
 
 
 class MyList:
@@ -743,7 +751,7 @@ def test_resolves_empty_Tuple_issue_1583_regression(ex):
 def test_can_register_NewType():
     Name = typing.NewType("Name", str)
     st.register_type_strategy(Name, st.just("Eric Idle"))
-    assert st.from_type(Name).example() == "Eric Idle"
+    assert_simple_property(st.from_type(Name), lambda x: x == "Eric Idle")
 
 
 @given(st.from_type(typing.Callable))
@@ -1048,8 +1056,7 @@ def test_constructor_is_more_important(data):
     data.draw(st.builds(AnnotatedConstructor))
 
 
-def use_signature(self, value: str) -> None:
-    ...
+def use_signature(self, value: str) -> None: ...
 
 
 class AnnotatedConstructorWithSignature(typing.Generic[_ValueType]):
@@ -1062,8 +1069,7 @@ class AnnotatedConstructorWithSignature(typing.Generic[_ValueType]):
         assert isinstance(value, str)
 
 
-def selfless_signature(value: str) -> None:
-    ...
+def selfless_signature(value: str) -> None: ...
 
 
 class AnnotatedConstructorWithSelflessSignature(AnnotatedConstructorWithSignature):
@@ -1088,7 +1094,7 @@ really_takes_str.__signature__ = signature(selfless_signature)
 )
 def test_signature_is_the_most_important_source(thing):
     """Signature types should take precedence over all other annotations."""
-    find_any(st.builds(thing))
+    check_can_generate_examples(st.builds(thing))
 
 
 class AnnotatedAndDefault:
@@ -1105,8 +1111,7 @@ def test_from_type_can_be_default_or_annotation():
 def test_resolves_builtin_types(t):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", SmallSearchSpaceWarning)
-        v = st.from_type(t).example()
-    assert isinstance(v, t)
+        assert_simple_property(st.from_type(t), lambda v: isinstance(v, t))
 
 
 @pytest.mark.parametrize("t", BUILTIN_TYPES, ids=lambda t: t.__name__)
@@ -1119,8 +1124,7 @@ def test_resolves_forwardrefs_to_builtin_types(t, data):
 
 @pytest.mark.parametrize("t", BUILTIN_TYPES, ids=lambda t: t.__name__)
 def test_resolves_type_of_builtin_types(t):
-    v = st.from_type(typing.Type[t.__name__]).example()
-    assert v is t
+    assert_simple_property(st.from_type(typing.Type[t.__name__]), lambda v: v is t)
 
 
 @given(st.from_type(typing.Type[typing.Union["str", "int"]]))
@@ -1133,9 +1137,9 @@ def test_builds_suggests_from_type(type_):
     with pytest.raises(
         InvalidArgument, match=re.escape(f"try using from_type({type_!r})")
     ):
-        st.builds(type_).example()
+        check_can_generate_examples(st.builds(type_))
     try:
-        st.builds(type_, st.just("has an argument")).example()
+        check_can_generate_examples(st.builds(type_, st.just("has an argument")))
         raise AssertionError("Expected strategy to raise an error")
     except TypeError as err:
         assert not isinstance(err, InvalidArgument)
@@ -1148,7 +1152,7 @@ def test_builds_mentions_no_type_check():
 
     msg = "@no_type_check decorator prevented Hypothesis from inferring a strategy"
     with pytest.raises(TypeError, match=msg):
-        st.builds(f).example()
+        check_can_generate_examples(st.builds(f))
 
 
 class TupleSubtype(tuple):

@@ -91,6 +91,7 @@ from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.internal.observability import (
     OBSERVABILITY_COLLECT_COVERAGE,
     TESTCASE_CALLBACKS,
+    _system_metadata,
     deliver_json_blob,
     make_testcase,
 )
@@ -628,7 +629,7 @@ def get_random_for_wrapped_test(test, wrapped_test):
         return Random(global_force_seed)
     else:
         global _hypothesis_global_random
-        if _hypothesis_global_random is None:
+        if _hypothesis_global_random is None:  # pragma: no cover
             _hypothesis_global_random = Random()
         seed = _hypothesis_global_random.getrandbits(128)
         wrapped_test._hypothesis_internal_use_generated_seed = seed
@@ -1054,7 +1055,9 @@ class StateForActualGivenExecution:
             if TESTCASE_CALLBACKS:
                 if self.failed_normally or self.failed_due_to_deadline:
                     phase = "shrink"
-                else:
+                elif runner := getattr(self, "_runner", None):
+                    phase = runner._current_phase
+                else:  # pragma: no cover  # in case of messing with internals
                     phase = "unknown"
                 tc = make_testcase(
                     start_timestamp=self._start_timestamp,
@@ -1064,7 +1067,6 @@ class StateForActualGivenExecution:
                     string_repr=self._string_repr,
                     arguments={**self._jsonable_arguments, **data._observability_args},
                     timing=self._timing_features,
-                    metadata={},
                     coverage=tractable_coverage_report(trace) or None,
                 )
                 deliver_json_blob(tc)
@@ -1084,7 +1086,7 @@ class StateForActualGivenExecution:
             else:
                 database_key = None
 
-        runner = ConjectureRunner(
+        runner = self._runner = ConjectureRunner(
             self._execute_once_for_engine,
             settings=self.settings,
             random=self.random,
@@ -1193,7 +1195,11 @@ class StateForActualGivenExecution:
                     },
                     "timing": self._timing_features,
                     "coverage": None,  # Not recorded when we're replaying the MFE
-                    "metadata": {"traceback": tb},
+                    "metadata": {
+                        "traceback": tb,
+                        "predicates": ran_example._observability_predicates,
+                        **_system_metadata(),
+                    },
                 }
                 deliver_json_blob(tc)
                 # Whether or not replay actually raised the exception again, we want
@@ -1510,8 +1516,7 @@ def given(
                 except UnsatisfiedAssumption:
                     raise DidNotReproduce(
                         "The test data failed to satisfy an assumption in the "
-                        "test. Have you added it since this blob was "
-                        "generated?"
+                        "test. Have you added it since this blob was generated?"
                     ) from None
 
             # There was no @reproduce_failure, so start by running any explicit

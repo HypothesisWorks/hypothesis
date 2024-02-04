@@ -22,7 +22,7 @@ from hypothesis import given, settings, strategies as ds
 from hypothesis.errors import InvalidArgument
 from hypothesis.vendor.pretty import pretty
 
-from tests.common.debug import minimal
+from tests.common.debug import check_can_generate_examples, minimal
 
 # Use `pretty` instead of `repr` for building test names, so that set and dict
 # parameters print consistently across multiple worker processes with different
@@ -214,7 +214,7 @@ def fn_ktest(*fnkwargs):
 )
 def test_validates_keyword_arguments(fn, kwargs):
     with pytest.raises(InvalidArgument):
-        fn(**kwargs).example()
+        check_can_generate_examples(fn(**kwargs))
 
 
 @fn_ktest(
@@ -311,7 +311,7 @@ def test_validates_keyword_arguments(fn, kwargs):
     (ds.ip_addresses, {"v": 6, "network": IPv6Network("::/64")}),
 )
 def test_produces_valid_examples_from_keyword(fn, kwargs):
-    fn(**kwargs).example()
+    check_can_generate_examples(fn(**kwargs))
 
 
 @fn_test(
@@ -321,7 +321,7 @@ def test_produces_valid_examples_from_keyword(fn, kwargs):
 )
 def test_validates_args(fn, args):
     with pytest.raises(InvalidArgument):
-        fn(*args).example()
+        check_can_generate_examples(fn(*args))
 
 
 @fn_test(
@@ -332,23 +332,25 @@ def test_validates_args(fn, args):
     (ds.builds, (lambda x, y: x + y, ds.integers(), ds.integers())),
 )
 def test_produces_valid_examples_from_args(fn, args):
-    fn(*args).example()
+    check_can_generate_examples(fn(*args))
 
 
 def test_build_class_with_target_kwarg():
     NamedTupleWithTargetField = collections.namedtuple("Something", ["target"])
-    ds.builds(NamedTupleWithTargetField, target=ds.integers()).example()
+    check_can_generate_examples(
+        ds.builds(NamedTupleWithTargetField, target=ds.integers())
+    )
 
 
 def test_builds_raises_with_no_target():
     with pytest.raises(TypeError):
-        ds.builds().example()
+        check_can_generate_examples(ds.builds())
 
 
 @pytest.mark.parametrize("non_callable", [1, "abc", ds.integers()])
 def test_builds_raises_if_non_callable_as_target_kwarg(non_callable):
     with pytest.raises(TypeError):
-        ds.builds(target=non_callable).example()
+        check_can_generate_examples(ds.builds(target=non_callable))
 
 
 @pytest.mark.parametrize("non_callable", [1, "abc", ds.integers()])
@@ -356,7 +358,7 @@ def test_builds_raises_if_non_callable_as_first_arg(non_callable):
     # If there are any positional arguments, then the target (which must be
     # callable) must be specified as the first one.
     with pytest.raises(InvalidArgument):
-        ds.builds(non_callable, target=lambda x: x).example()
+        check_can_generate_examples(ds.builds(non_callable, target=lambda x: x))
 
 
 def test_tuples_raise_error_on_bad_kwargs():
