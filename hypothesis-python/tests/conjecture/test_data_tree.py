@@ -562,7 +562,11 @@ def test_can_generate_hard_floats():
     # and the buffer representation is going away soon anyway, so just make
     # sure we generate the expected value (not necessarily buffer).
 
-    expected_value = next_up_n(min_value, 100)
-    prefix = tree.generate_novel_prefix(Random())
-    data = ConjectureData.for_buffer(prefix)
-    assert data.draw_float(min_value, max_value, allow_nan=False) == expected_value
+    # this test doubles as conjecture coverage for drawing floats from the
+    # children cache. Draw a few times to ensure we hit that logic (as opposed
+    # to getting lucky and drawing the correct value the first time).
+    for _ in range(5):
+        expected_value = next_up_n(min_value, 100)
+        prefix = tree.generate_novel_prefix(Random())
+        data = ConjectureData.for_buffer(prefix)
+        assert data.draw_float(min_value, max_value, allow_nan=False) == expected_value
