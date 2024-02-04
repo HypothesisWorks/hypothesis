@@ -203,7 +203,7 @@ def compute_max_children(ir_type, kwargs):
 #
 # In practice, we maintain two distinct implementations for efficiency and space
 # reasons. If you just need the number of children, it is cheaper to use
-# compute_max_children than reify the list of children (only to immediately
+# compute_max_children than to reify the list of children (only to immediately
 # throw it away).
 def all_children(ir_type, kwargs):
     if ir_type == "integer":
@@ -212,7 +212,7 @@ def all_children(ir_type, kwargs):
         weights = kwargs["weights"]
         # it's a bit annoying (but completely feasible) to implement the cases
         # other than "both sides bounded" here. We haven't needed to yet because
-        # in practice we don't struggled with unbounded integer generation.
+        # in practice we don't struggle with unbounded integer generation.
         assert min_value is not None
         assert max_value is not None
 
