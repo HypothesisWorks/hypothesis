@@ -47,9 +47,7 @@ def ir_types_and_kwargs(draw):
 # those cases correctly.
 @example(("integer", {"min_value": None, "max_value": -(2**200), "weights": None}))
 @example(("integer", {"min_value": 2**200, "max_value": None, "weights": None}))
-@example(
-    ("integer", {"min_value": -(2**200), "max_value": 2**200, "weights": None})
-)
+@example(("integer", {"min_value": -(2**200), "max_value": 2**200, "weights": None}))
 @given(ir_types_and_kwargs())
 def test_compute_max_children_is_positive(ir_type_and_kwargs):
     (ir_type, kwargs) = ir_type_and_kwargs
@@ -89,9 +87,7 @@ def test_compute_max_children_string_reasonable_size():
         "max_size": 8,
         "intervals": IntervalSet.from_string("abcd"),
     }
-    assert compute_max_children("string", kwargs) == sum(
-        4**k for k in range(2, 8 + 1)
-    )
+    assert compute_max_children("string", kwargs) == sum(4**k for k in range(2, 8 + 1))
 
 
 def test_compute_max_children_empty_string():
