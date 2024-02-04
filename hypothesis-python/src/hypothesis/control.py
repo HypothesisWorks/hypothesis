@@ -111,17 +111,17 @@ class _Checker:
 
 
 @contextmanager
-def deprecate_random_in_strategy(where, stacklevel=0):
+def deprecate_random_in_strategy(fmt, *args):
     _global_rand_state = random.getstate()
     yield (checker := _Checker())
     if _global_rand_state != random.getstate() and not checker.saw_global_random:
         # raise InvalidDefinition
         note_deprecation(
             "Do not use the `random` module inside strategies; instead "
-            "consider  `st.randoms()`, `st.sampled_from()`, etc.  " + where,
+            "consider  `st.randoms()`, `st.sampled_from()`, etc.  " + fmt.format(*args),
             since="RELEASEDAY",
             has_codemod=False,
-            stacklevel=stacklevel + 1,
+            stacklevel=1,
         )
 
 
@@ -153,7 +153,7 @@ class BuildContext:
         kwargs = {}
         for k, s in kwarg_strategies.items():
             start_idx = self.data.index
-            with deprecate_random_in_strategy(f"from {k}={s!r}", stacklevel=1) as check:
+            with deprecate_random_in_strategy("from {}={!r}", k, s) as check:
                 obj = check(self.data.draw(s, observe_as=f"generate:{k}"))
             end_idx = self.data.index
             kwargs[k] = obj
