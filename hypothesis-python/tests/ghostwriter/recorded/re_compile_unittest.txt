@@ -7,6 +7,7 @@ from hypothesis import given, strategies as st
 
 
 class TestFuzzCompile(unittest.TestCase):
+
     @given(pattern=st.text(), flags=st.just(0))
     def test_fuzz_compile(self, pattern, flags):
         re.compile(pattern=pattern, flags=flags)

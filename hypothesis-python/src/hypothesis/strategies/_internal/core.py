@@ -1835,9 +1835,11 @@ def _composite(f):
         params = params[1:]
     newsig = sig.replace(
         parameters=params,
-        return_annotation=SearchStrategy
-        if sig.return_annotation is sig.empty
-        else SearchStrategy[sig.return_annotation],
+        return_annotation=(
+            SearchStrategy
+            if sig.return_annotation is sig.empty
+            else SearchStrategy[sig.return_annotation]
+        ),
     )
 
     @defines_strategy()

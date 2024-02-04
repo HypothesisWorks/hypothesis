@@ -137,8 +137,7 @@ T = typing.TypeVar("T")
 
 @typing.runtime_checkable
 class Fooable(typing.Protocol[T]):
-    def foo(self):
-        ...
+    def foo(self): ...
 
 
 class FooableConcrete(tuple):

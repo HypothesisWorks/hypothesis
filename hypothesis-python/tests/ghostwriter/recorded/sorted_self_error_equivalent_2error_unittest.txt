@@ -6,6 +6,7 @@ from hypothesis import given, reject, strategies as st, target
 
 
 class TestEquivalentSortedSorted(unittest.TestCase):
+
     @given(
         iterable=st.one_of(st.iterables(st.integers()), st.iterables(st.text())),
         key=st.none(),
