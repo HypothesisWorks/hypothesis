@@ -119,7 +119,7 @@ def deprecate_random_in_strategy(fmt, *args):
         note_deprecation(
             "Do not use the `random` module inside strategies; instead "
             "consider  `st.randoms()`, `st.sampled_from()`, etc.  " + fmt.format(*args),
-            since="RELEASEDAY",
+            since="2024-02-05",
             has_codemod=False,
             stacklevel=1,
         )
