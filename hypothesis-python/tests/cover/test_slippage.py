@@ -176,30 +176,36 @@ def test_garbage_collects_the_secondary_key():
 
 
 def test_shrinks_both_failures():
-    first_has_failed = [False]
+    first_has_failed = False
     duds = set()
-    second_target = [None]
+    second_target = None
 
     @settings(database=None, max_examples=1000)
-    @given(st.integers(min_value=0).map(int))
+    @given(st.integers(min_value=0))
     def test(i):
+        nonlocal first_has_failed, duds, second_target
+
         if i >= 10000:
-            first_has_failed[0] = True
+            first_has_failed = True
             raise AssertionError
+
         assert i < 10000
-        if first_has_failed[0]:
-            if second_target[0] is None:
+        if first_has_failed:
+            if second_target is None:
                 for j in range(10000):
                     if j not in duds:
-                        second_target[0] = j
+                        second_target = j
                         break
-            assert i < second_target[0]
+            # to avoid flaky errors, don't error on an input that we previously
+            # passed.
+            if i not in duds:
+                assert i < second_target
         else:
             duds.add(i)
 
     output = capture_reports(test)
     assert_output_contains_failure(output, test, i=10000)
-    assert_output_contains_failure(output, test, i=second_target[0])
+    assert_output_contains_failure(output, test, i=second_target)
 
 
 def test_handles_flaky_tests_where_only_one_is_flaky():
@@ -258,7 +264,7 @@ def test_can_disable_multiple_error_reporting(allow_multi):
 
 
 def test_finds_multiple_failures_in_generation():
-    special = []
+    special = None
     seen = set()
 
     @settings(phases=[Phase.generate, Phase.shrink], max_examples=100)
@@ -269,14 +275,19 @@ def test_finds_multiple_failures_in_generation():
         is larger than it is a different failure. This demonstrates that we
         can keep generating larger examples and still find new bugs after that
         point."""
+        nonlocal special
         if not special:
-            if len(seen) >= 10 and x <= 1000:
-                special.append(x)
+            # don't mark duplicate inputs as special and thus erroring, to avoid
+            # flakiness where we passed the input the first time but failed it the
+            # second.
+            if len(seen) >= 10 and x <= 1000 and x not in seen:
+                special = x
             else:
                 seen.add(x)
+
         if special:
-            assert x in seen or (x <= special[0])
-        assert x not in special
+            assert x in seen or x <= special
+        assert x != special
 
     with pytest.raises(ExceptionGroup):
         test()

@@ -163,7 +163,6 @@ def test_triviality():
 
 def test_example_depth_marking():
     d = ConjectureData.for_buffer(bytes(24))
-
     # These draw sizes are chosen so that each example has a unique length.
     d.draw_bytes(2)
     d.start_example("inner")
@@ -198,16 +197,6 @@ def test_has_cached_examples_even_when_overrun():
     assert d.status == Status.OVERRUN
     assert any(ex.label == 3 and ex.length == 1 for ex in d.examples)
     assert d.examples is d.examples
-
-
-def test_can_write_empty_bytes():
-    d = ConjectureData.for_buffer([1, 1, 1])
-    d.draw_boolean()
-    d.draw_bytes(0)
-    d.draw_boolean()
-    d.draw_bytes(0, forced=b"")
-    d.draw_boolean()
-    assert d.buffer == bytes([1, 1, 1])
 
 
 def test_blocks_preserve_identity():
@@ -252,8 +241,11 @@ def test_can_observe_draws():
         def __init__(self):
             self.log = []
 
-        def draw_bits(self, n_bits: int, *, forced: bool, value: int) -> None:
-            self.log.append(("draw", n_bits, forced, value))
+        def draw_boolean(self, value: bool, *, was_forced: bool, kwargs: dict):
+            self.log.append(("draw_boolean", value, was_forced))
+
+        def draw_integer(self, value: int, *, was_forced: bool, kwargs: dict):
+            self.log.append(("draw_integer", value, was_forced))
 
         def conclude_test(self, *args):
             assert x.frozen
@@ -269,9 +261,9 @@ def test_can_observe_draws():
         x.conclude_test(Status.INTERESTING, interesting_origin="neat")
 
     assert observer.log == [
-        ("draw", 1, False, 1),
-        ("draw", 7, True, 10),
-        ("draw", 8, False, 3),
+        ("draw_boolean", True, False),
+        ("draw_integer", 10, True),
+        ("draw_integer", 3, False),
         ("concluded", Status.INTERESTING, "neat"),
     ]
 

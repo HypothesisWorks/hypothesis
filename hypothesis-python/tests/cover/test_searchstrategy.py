@@ -141,3 +141,15 @@ def test_jsonable_namedtuple():
     Obj = namedtuple("Obj", ("x"))
     obj = Obj(10)
     assert to_jsonable(obj) == {"x": 10}
+
+
+def test_jsonable_small_ints_are_ints():
+    n = 2**62
+    assert isinstance(to_jsonable(n), int)
+    assert to_jsonable(n) == n
+
+
+def test_jsonable_large_ints_are_floats():
+    n = 2**63
+    assert isinstance(to_jsonable(n), float)
+    assert to_jsonable(n) == float(n)

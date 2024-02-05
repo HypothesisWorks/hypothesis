@@ -12,11 +12,27 @@ from random import Random
 
 import pytest
 
-from hypothesis import HealthCheck, settings
+from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.errors import Flaky
 from hypothesis.internal.conjecture.data import ConjectureData, Status, StopTest
-from hypothesis.internal.conjecture.datatree import DataTree
+from hypothesis.internal.conjecture.datatree import (
+    Branch,
+    DataTree,
+    compute_max_children,
+)
 from hypothesis.internal.conjecture.engine import ConjectureRunner
+from hypothesis.internal.conjecture.floats import float_to_int
+from hypothesis.internal.floats import next_up
+
+from tests.conjecture.common import (
+    draw_boolean_kwargs,
+    draw_bytes_kwargs,
+    draw_float_kwargs,
+    draw_integer_kwargs,
+    draw_string_kwargs,
+    fresh_data,
+    run_to_buffer,
+)
 
 TEST_SETTINGS = settings(
     max_examples=5000, database=None, suppress_health_check=list(HealthCheck)
@@ -141,7 +157,7 @@ def test_stores_the_tree_flat_until_needed():
         data.mark_interesting()
 
     root = runner.tree.root
-    assert len(root.bit_lengths) == 10
+    assert len(root.kwargs) == 10
     assert len(root.values) == 10
     assert root.transition.status == Status.INTERESTING
 
@@ -155,7 +171,7 @@ def test_split_in_the_middle():
         data.mark_interesting()
 
     root = runner.tree.root
-    assert len(root.bit_lengths) == len(root.values) == 1
+    assert len(root.kwargs) == len(root.values) == 1
     assert list(root.transition.children[0].values) == [2]
     assert list(root.transition.children[1].values) == [3]
 
@@ -328,7 +344,7 @@ def test_child_becomes_exhausted_after_split():
     data.freeze()
 
     assert not tree.is_exhausted
-    assert tree.root.transition.children[0].is_exhausted
+    assert tree.root.transition.children[b"\0"].is_exhausted
 
 
 def test_will_generate_novel_prefix_to_avoid_exhausted_branches():
@@ -363,3 +379,194 @@ def test_will_mark_changes_in_discard_as_flaky():
 
     with pytest.raises(Flaky):
         data.stop_example(discard=True)
+
+
+def test_is_not_flaky_on_positive_zero_and_negative_zero():
+    # if we store floats in a naive way, the 0.0 and -0.0 draws will be treated
+    # equivalently and will lead to flaky errors when they diverge on the boolean
+    # draw.
+    tree = DataTree()
+
+    @run_to_buffer
+    def buf1(data):
+        data.draw_float(forced=0.0)
+        # the value drawn here doesn't actually matter, since we'll force it
+        # latter. we just want to avoid buffer overruns.
+        data.draw_boolean()
+        data.mark_interesting()
+
+    @run_to_buffer
+    def buf2(data):
+        data.draw_float(forced=-0.0)
+        data.draw_boolean()
+        data.mark_interesting()
+
+    data = ConjectureData.for_buffer(buf1, observer=tree.new_observer())
+    f = data.draw_float()
+    assert float_to_int(f) == float_to_int(0.0)
+    data.draw_boolean(forced=False)
+    data.freeze()
+
+    data = ConjectureData.for_buffer(buf2, observer=tree.new_observer())
+    f = data.draw_float()
+    assert float_to_int(f) == float_to_int(-0.0)
+    data.draw_boolean(forced=True)
+    data.freeze()
+
+    assert isinstance(tree.root.transition, Branch)
+    children = tree.root.transition.children
+    assert children[float_to_int(0.0)].values == [False]
+    assert children[float_to_int(-0.0)].values == [True]
+
+
+def test_low_probabilities_are_still_explored():
+    @run_to_buffer
+    def true_buf(data):
+        data.draw_boolean(p=1e-10, forced=True)
+        data.mark_interesting()
+
+    @run_to_buffer
+    def false_buf(data):
+        data.draw_boolean(p=1e-10, forced=False)
+        data.mark_interesting()
+
+    tree = DataTree()
+
+    data = ConjectureData.for_buffer(false_buf, observer=tree.new_observer())
+    data.draw_boolean(p=1e-10)  # False
+
+    v = tree.generate_novel_prefix(Random())
+    assert v == true_buf
+
+
+def _test_observed_draws_are_recorded_in_tree(ir_type):
+    kwargs_strategy = {
+        "integer": draw_integer_kwargs(),
+        "bytes": draw_bytes_kwargs(),
+        "float": draw_float_kwargs(),
+        "string": draw_string_kwargs(),
+        "boolean": draw_boolean_kwargs(),
+    }[ir_type]
+
+    @given(kwargs_strategy)
+    def test(kwargs):
+        # we currently split pseudo-choices with a single child into their
+        # own transition, which clashes with our asserts below. If we ever
+        # change this (say, by not writing pseudo choices to the ir at all),
+        # this restriction can be relaxed.
+        assume(compute_max_children(ir_type, kwargs) > 1)
+
+        tree = DataTree()
+        data = fresh_data(observer=tree.new_observer())
+        draw_func = getattr(data, f"draw_{ir_type}")
+        draw_func(**kwargs)
+
+        assert tree.root.transition is None
+        assert tree.root.ir_types == [ir_type]
+
+    test()
+
+
+def _test_non_observed_draws_are_not_recorded_in_tree(ir_type):
+    kwargs_strategy = {
+        "integer": draw_integer_kwargs(),
+        "bytes": draw_bytes_kwargs(),
+        "float": draw_float_kwargs(),
+        "string": draw_string_kwargs(),
+        "boolean": draw_boolean_kwargs(),
+    }[ir_type]
+
+    @given(kwargs_strategy)
+    def test(kwargs):
+        assume(compute_max_children(ir_type, kwargs) > 1)
+
+        tree = DataTree()
+        data = fresh_data(observer=tree.new_observer())
+        draw_func = getattr(data, f"draw_{ir_type}")
+        draw_func(**kwargs, observe=False)
+
+        root = tree.root
+        assert root.transition is None
+        assert root.kwargs == root.values == root.ir_types == []
+
+    test()
+
+
+@pytest.mark.parametrize("ir_type", ["integer", "float", "boolean", "string", "bytes"])
+def test_observed_ir_type_draw(ir_type):
+    _test_observed_draws_are_recorded_in_tree(ir_type)
+
+
+@pytest.mark.parametrize("ir_type", ["integer", "float", "boolean", "string", "bytes"])
+def test_non_observed_ir_type_draw(ir_type):
+    _test_non_observed_draws_are_not_recorded_in_tree(ir_type)
+
+
+def test_can_generate_hard_values():
+    tree = DataTree()
+
+    min_value = 0
+    max_value = 1000
+    # set up `tree` such that [0, 999] have been drawn and only n=1000 remains.
+    for i in range(max_value):
+
+        @run_to_buffer
+        def buf(data):
+            data.draw_integer(min_value, max_value, forced=i)
+            data.mark_interesting()
+
+        data = ConjectureData.for_buffer(buf, observer=tree.new_observer())
+        data.draw_integer(min_value, max_value)
+        data.freeze()
+
+    @run_to_buffer
+    def expected_buf(data):
+        data.draw_integer(min_value, max_value, forced=max_value)
+        data.mark_interesting()
+
+    # this test doubles as conjecture coverage for using our child cache, so
+    # ensure we don't miss that logic by getting lucky and drawing the correct
+    # value once or twice.
+    for _ in range(5):
+        assert tree.generate_novel_prefix(Random()) == expected_buf
+
+
+def test_can_generate_hard_floats():
+    # similar to test_can_generate_hard_values, but exercises float-specific
+    # logic for handling e.g. 0.0 vs -0.0 as different keys.
+    tree = DataTree()
+
+    def next_up_n(f, n):
+        for _ in range(n):
+            f = next_up(f)
+        return f
+
+    min_value = -0.0
+    max_value = next_up_n(min_value, 100)
+    for n in range(100):
+
+        @run_to_buffer
+        def buf(data):
+            f = next_up_n(min_value, n)
+            data.draw_float(min_value, max_value, forced=f, allow_nan=False)
+            data.mark_interesting()
+
+        data = ConjectureData.for_buffer(buf, observer=tree.new_observer())
+        data.draw_float(min_value, max_value, allow_nan=False)
+        data.freeze()
+
+    # we want to leave out a single value, such that we can assert
+    # generate_novel_prefix is equal to the buffer that would produce that value.
+    # The problem is that floats have multiple valid buffer representations due
+    # to clamping. Making the test buffer deterministic is annoying/impossible,
+    # and the buffer representation is going away soon anyway, so just make
+    # sure we generate the expected value (not necessarily buffer).
+
+    # this test doubles as conjecture coverage for drawing floats from the
+    # children cache. Draw a few times to ensure we hit that logic (as opposed
+    # to getting lucky and drawing the correct value the first time).
+    for _ in range(5):
+        expected_value = next_up_n(min_value, 100)
+        prefix = tree.generate_novel_prefix(Random())
+        data = ConjectureData.for_buffer(prefix)
+        assert data.draw_float(min_value, max_value, allow_nan=False) == expected_value

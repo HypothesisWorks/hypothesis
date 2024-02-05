@@ -31,13 +31,6 @@ from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 from hypothesis.internal.intervalsets import IntervalSet
 
 
-def test_does_draw_data_for_empty_range():
-    data = ConjectureData.for_buffer(b"\1")
-    assert data.draw_integer(1, 1) == 1
-    data.freeze()
-    assert data.buffer == b"\0"
-
-
 def test_coin_biased_towards_truth():
     p = 1 - 1.0 / 500
 
