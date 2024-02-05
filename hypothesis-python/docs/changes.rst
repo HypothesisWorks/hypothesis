@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.98.2:
+
+-------------------
+6.98.2 - 2024-02-05
+-------------------
+
+This patch refactors some internals. There is no user-visible change.
+
 .. _v6.98.1:
 
 -------------------
