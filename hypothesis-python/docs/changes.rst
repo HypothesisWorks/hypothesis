@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.98.1:
+
+-------------------
+6.98.1 - 2024-02-05
+-------------------
+
+This release improves our distribution of generated values for all strategies, by doing a better job of tracking which values we have generated before and avoiding generating them again.
+
+For example, ``st.lists(st.integers())`` previously generated ~5 each of ``[]`` ``[0]`` in 100 examples. In this release, each of ``[]`` and ``[0]`` are generated ~1-2 times each.
+
 .. _v6.98.0:
 
 -------------------
