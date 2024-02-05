@@ -242,6 +242,7 @@ def all_children(ir_type, kwargs):
         max_size = kwargs["max_size"]
         intervals = kwargs["intervals"]
 
+        # written unidiomatically in order to handle the case of max_size=inf.
         size = min_size
         while size <= max_size:
             for ords in itertools.product(intervals, repeat=size):
