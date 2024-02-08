@@ -527,7 +527,7 @@ def test_can_generate_hard_values():
     # this test doubles as conjecture coverage for using our child cache, so
     # ensure we don't miss that logic by getting lucky and drawing the correct
     # value once or twice.
-    for _ in range(5):
+    for _ in range(20):
         assert tree.generate_novel_prefix(Random()) == expected_buf
 
 
@@ -565,7 +565,7 @@ def test_can_generate_hard_floats():
     # this test doubles as conjecture coverage for drawing floats from the
     # children cache. Draw a few times to ensure we hit that logic (as opposed
     # to getting lucky and drawing the correct value the first time).
-    for _ in range(5):
+    for _ in range(20):
         expected_value = next_up_n(min_value, 100)
         prefix = tree.generate_novel_prefix(Random())
         data = ConjectureData.for_buffer(prefix)
