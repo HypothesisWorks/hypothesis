@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.98.3:
+
+-------------------
+6.98.3 - 2024-02-08
+-------------------
+
+This patch fixes an error when generating :doc:`observability <observability>` reports involving large (``n > 1e308``) integers.
+
 .. _v6.98.2:
 
 -------------------
