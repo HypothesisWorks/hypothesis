@@ -11,6 +11,7 @@
 import dataclasses
 import functools
 import random
+import sys
 from collections import defaultdict, namedtuple
 
 import attr
@@ -153,3 +154,9 @@ def test_jsonable_large_ints_are_floats():
     n = 2**63
     assert isinstance(to_jsonable(n), float)
     assert to_jsonable(n) == float(n)
+
+
+def test_jsonable_very_large_ints():
+    # previously caused OverflowError when casting to float.
+    n = 2**1024
+    assert to_jsonable(n) == sys.float_info.max
