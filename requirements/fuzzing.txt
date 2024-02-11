@@ -54,9 +54,9 @@ fakeredis==2.21.0
     # via -r requirements/coverage.in
 flask==3.0.2
     # via dash
-hypofuzz==24.2.1
+hypofuzz==24.2.2
     # via -r requirements/fuzzing.in
-hypothesis[cli]==6.97.5
+hypothesis[cli]==6.98.3
     # via
     #   hypofuzz
     #   hypothesis
@@ -90,7 +90,7 @@ mypy-extensions==1.0.0
     #   typing-inspect
 nest-asyncio==1.6.0
     # via dash
-numpy==1.26.3
+numpy==1.26.4
     # via
     #   -r requirements/coverage.in
     #   pandas

@@ -53,7 +53,7 @@ decorator==5.1.1
     # via ipython
 distlib==0.3.8
     # via virtualenv
-django==5.0.1
+django==5.0.2
     # via -r requirements/tools.in
 docutils==0.20.1
     # via
@@ -89,7 +89,7 @@ ipython==8.21.0
     # via -r requirements/tools.in
 isort==5.13.2
     # via shed
-jaraco-classes==3.3.0
+jaraco-classes==3.3.1
     # via keyring
 jedi==0.19.1
     # via ipython
@@ -177,7 +177,7 @@ pyproject-api==1.6.1
     # via tox
 pyproject-hooks==1.0.0
     # via build
-pyright==1.1.349
+pyright==1.1.350
     # via -r requirements/tools.in
 pytest==8.0.0
     # via -r requirements/tools.in
@@ -206,7 +206,7 @@ rfc3986==2.0.0
     # via twine
 rich==13.7.0
     # via twine
-ruff==0.2.0
+ruff==0.2.1
     # via -r requirements/tools.in
 secretstorage==3.3.3
     # via keyring
