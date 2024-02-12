@@ -394,6 +394,16 @@ def documentation():
         )
 
 
+@task()
+def website():
+    subprocess.call(["pelican"], cwd=tools.ROOT / "website")
+
+
+@task()
+def live_website():
+    subprocess.call(["pelican", "--autoreload", "--listen"], cwd=tools.ROOT / "website")
+
+
 def run_tox(task, version, *args):
     python = install.python_executable(version)
 
