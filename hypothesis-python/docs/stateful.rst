@@ -88,7 +88,8 @@ can simply use instance variables. If you do need to draw values that depend
 on the machine's state, Bundles provide a fairly straightforward way to do
 this. If you need rules that draw values that depend on the machine's state
 in some more complicated way, you will have to abandon bundles and use 
-:func:`~hypothesis.strategies.data`; this comes with its own complexities.
+:func:`~hypothesis.strategies.data` to work with instance variables; this 
+comes with its own complexities.
 
 The following rule based state machine example is a simplified version of a
 test for Hypothesis's example database implementation. An example database
@@ -155,7 +156,13 @@ in both cases also updating the model of what *should* be in the database.
 ``values_agree`` then checks that the contents of the database agrees with the
 model for a particular key.
 
-We can then integrate this into our test suite by getting a unittest TestCase
+While this could have been simplified by not using bundles, generating
+keys and values directly in the `save` and `delete` rules, using bundles 
+encourages `hypothesis` to choose the same keys and values for multiple 
+operations. The bundle operations establish a "universe" of keys and values 
+that are necessary to trigger the behavior.
+
+We can now integrate this into our test suite by getting a unittest TestCase
 from it:
 
 .. code:: python
