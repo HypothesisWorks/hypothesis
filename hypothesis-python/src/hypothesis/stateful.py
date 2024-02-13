@@ -638,7 +638,7 @@ def rule(
     ``targets`` will define where the end result of this function should go. If
     both are empty then the end result will be discarded.
 
-    ``target`` must be a Bundle, or if the result should go to multiple
+    ``target`` must be a Bundle, or if the result should be replicated to multiple
     bundles you can pass a tuple of them as the ``targets`` argument.
     It is invalid to use both arguments for a single rule.  If the result
     should go to exactly one of several bundles, define a separate rule for
