@@ -233,11 +233,12 @@ class StateMachineMeta(type):
 class RuleBasedStateMachine(metaclass=StateMachineMeta):
     """A RuleBasedStateMachine gives you a structured way to define state machines.
 
-    The idea is that a state machine carries a bunch of types of data
-    divided into Bundles, and has a set of rules which may read data
-    from bundles (or just from normal strategies) and push data onto
-    bundles. At any given point a random applicable rule will be
-    executed.
+    The idea is that a state machine carries the system under test and some supporting
+    data. This data can be stored in instance variables or
+    divided into Bundles. The state machine has a set of rules which may read data
+    from bundles (or just from normal strategies), push data onto
+    bundles, change the state of the machine, or verify properties.
+    At any given point a random applicable rule will be executed.
     """
 
     _rules_per_class: ClassVar[Dict[type, List[classmethod]]] = {}

@@ -68,7 +68,7 @@ Rules can take normal strategies as arguments, but normal strategies, with
 the exception of :func:`~hypothesis.strategies.data`, cannot take into account
 the current state of the machine. This is where bundles come in.
 
-A rule can, in place of a normal strategy, take a Bundle. 
+A rule can, in place of a normal strategy, take a :class:`~hypothesis.stateful.Bundle`. 
 A Bundle is a named collection of generated values that can
 be reused by other operations in the test.
 They are populated with the results of rules, and may be used as arguments to
