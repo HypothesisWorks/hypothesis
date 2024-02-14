@@ -1,5 +1,5 @@
 RELEASE_TYPE: patch
 
-This patch changes the resolution order used by `to_jsonable()` to allow custom
-classes to control their json representation by providing a `to_json()` even
-when a more general resolution strategy might apply.
+This patch improves argument-to-json conversion for :doc:`observability <observability>`
+output.  Checking for a ``.to_json()`` method on the object *before* a few other
+options like dataclass support allows better user control of the process (:issue:`3880`).
