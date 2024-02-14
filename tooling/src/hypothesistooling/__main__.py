@@ -394,6 +394,16 @@ def documentation():
         )
 
 
+@task()
+def website():
+    subprocess.call(["pelican"], cwd=tools.ROOT / "website")
+
+
+@task()
+def live_website():
+    subprocess.call(["pelican", "--autoreload", "--listen"], cwd=tools.ROOT / "website")
+
+
 def run_tox(task, version, *args):
     python = install.python_executable(version)
 
@@ -421,12 +431,12 @@ PYTHONS = {
     "3.8": "3.8.18",
     "3.9": "3.9.18",
     "3.10": "3.10.13",
-    "3.11": "3.11.8",
-    "3.12": "3.12.2",
-    "3.13": "3.13.0a3",
+    "3.11": "3.11.6",
+    "3.12": "3.12.0",
+    "3.13": "3.13.0a2",
     "pypy3.8": "pypy3.8-7.3.11",
-    "pypy3.9": "pypy3.9-7.3.15",
-    "pypy3.10": "pypy3.10-7.3.15",
+    "pypy3.9": "pypy3.9-7.3.13",
+    "pypy3.10": "pypy3.10-7.3.13",
 }
 ci_version = "3.10"  # Keep this in sync with GH Actions main.yml and .readthedocs.yml
 

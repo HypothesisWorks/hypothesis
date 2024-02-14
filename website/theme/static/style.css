@@ -1,0 +1,165 @@
+body {
+  margin: 1em auto;
+  max-width: 45em;
+  font: 1.1em/1.6 sans-serif;
+  padding: 0 0.62em;
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.2;
+}
+
+code {
+  font: 1.2em monospace;
+}
+
+pre code {
+  display: inline-block;
+  margin-left: 2em;
+}
+
+.slide {
+  max-width: 100%;
+}
+
+.profile {
+  float: right;
+  max-width: 38%;
+  margin-left: 1.5em;
+  margin-bottom: 1em;
+}
+
+.bold-initial {
+  font: 3em sans-serif;
+}
+
+blockquote footer {
+  text-align: right;
+}
+
+.navmenuitems {
+  position: sticky;
+  top: 0;
+  background: white;
+}
+nav ul {
+  padding: 0.5em;
+  display: flex;
+  justify-content: space-between;
+  gap: 1em;
+  font-weight: bold;
+}
+nav ul li {
+  display: inline;
+}
+
+.postinfo {
+  background-color: #96e1f6;
+  display: inline-block;
+  font: 0.8em/1 sans-serif;
+  border-radius: 0.4em;
+}
+
+@media only screen and (max-width: 25em) {
+  .profile {
+    max-width: 100%;
+  }
+}
+
+@media print {
+  body {
+    max-width: none;
+  }
+}
+
+/* PrismJS 1.17.1  https://prismjs.com/download.html#themes=prism&languages=python
+* prism.js default theme for JavaScript, CSS and HTML by Lea Verou, based on dabblet.com
+* Modified by Zac Hatfield-Dodds; removed background etc.
+*/
+
+pre[class*="language-"]::-moz-selection,
+pre[class*="language-"] ::-moz-selection {
+  text-shadow: none;
+}
+
+@media print {
+  pre[class*="language-"] {
+    text-shadow: none;
+  }
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+  margin: 2em;
+  overflow: auto;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: slategray;
+}
+
+.token.punctuation {
+  color: #999;
+}
+
+.namespace {
+  opacity: 0.7;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+  color: #905;
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+  color: #690;
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string {
+  color: #9a6e3a;
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+  color: #07a;
+}
+
+.token.function,
+.token.class-name {
+  color: #dd4a68;
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+  color: #e90;
+}
+
+.token.important,
+.token.bold {
+  font-weight: bold;
+}
+
+.token.italic {
+  font-style: italic;
+}

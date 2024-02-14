@@ -12,7 +12,7 @@ attrs==23.2.0
     # via
     #   hypothesis
     #   hypothesis (hypothesis-python/setup.py)
-black==24.1.1
+black==24.2.0
     # via
     #   -r requirements/coverage.in
     #   hypofuzz
@@ -56,7 +56,7 @@ flask==3.0.2
     # via dash
 hypofuzz==24.2.2
     # via -r requirements/fuzzing.in
-hypothesis[cli]==6.98.3
+hypothesis[cli]==6.98.4
     # via
     #   hypofuzz
     #   hypothesis
@@ -173,7 +173,7 @@ typing-extensions==4.9.0
     #   typing-inspect
 typing-inspect==0.9.0
     # via libcst
-tzdata==2023.4
+tzdata==2024.1
     # via pandas
 urllib3==2.2.0
     # via requests
@@ -185,5 +185,5 @@ zipp==3.17.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-setuptools==69.0.3
+setuptools==69.1.0
     # via dash

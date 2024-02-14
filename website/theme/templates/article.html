@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<section class="content">
+
+  <h1 class="posttitle">
+    {{ article.title }}
+  </h1>
+
+  <div class="postinfo">
+    <p class="published" title="{{ article.date.isoformat() }}">
+      published {{ article.date.strftime('%Y-%m-%d') }}
+    </p>
+
+    {% if article.author and SHOW_ARTICLE_AUTHOR %}
+    <address class="vcard author">
+      By <a class="nodec" href="{{ SITEURL }}/{{ article.author.url }}">{{ article.author }}</a>
+    </address>
+    {% endif  %}
+  </div><!-- .postinfo -->
+
+  <div class="article">
+    {{ article.content }}
+  </div><!-- .content -->
+
+</section>
+
+{% endblock %}
