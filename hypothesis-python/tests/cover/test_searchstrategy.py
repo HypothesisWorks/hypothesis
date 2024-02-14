@@ -161,12 +161,14 @@ def test_jsonable_very_large_ints():
     n = 2**1024
     assert to_jsonable(n) == sys.float_info.max
 
+
 @dataclasses.dataclass()
 class HasCustomJsonFormat:
     x: str
 
     def to_json(self):
         return "surprise!"
+
 
 def test_jsonable_override():
     obj = HasCustomJsonFormat("expected")
