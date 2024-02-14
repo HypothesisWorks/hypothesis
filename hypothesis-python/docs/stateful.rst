@@ -59,7 +59,8 @@ Rule-based state machines
 .. autoclass:: hypothesis.stateful.RuleBasedStateMachine
 
 A rule is very similar to a normal ``@given`` based test in that it takes
-values drawn from strategies and passes them to a user defined test function.
+values drawn from strategies and passes them to a user defined test function,
+which may use assertions to check the system's behavior.
 The key difference is that where ``@given`` based tests must be independent,
 rules can be chained together - a single test run may involve multiple rule
 invocations, which may interact in various ways.
@@ -82,18 +83,20 @@ as a strategy will draw a value from that bundle.  A rule can also specify
 that an argument chooses a value from a bundle and removes that value by using
 :func:`~hypothesis.stateful.consumes` as in ``an_argument=consumes(a_bundle)``. 
 
-There is some overlap between what you can do with Bundles and what you can
-do with instance variables. Both represent state that rules can manipulate.
-If you do not need to draw values that depend on the machine's state, you
-can simply use instance variables. If you do need to draw values that depend
-on the machine's state, Bundles provide a fairly straightforward way to do
-this. If you need rules that draw values that depend on the machine's state
-in some more complicated way, you will have to abandon bundles. You can use
-:func:`~hypothesis.strategies.runner` to access the instance from a rule: 
-the strategy ``runner().flatmap(lambda self: st.sampled_from(self.a_list))``
-will draw from the instance variable ``a_list``. If you need something more 
-complicated still, you can use  :func:`~hypothesis.strategies.data` to 
-draw data from the instance (or anywhere else) based on logic in the rule.
+.. note::
+    There is some overlap between what you can do with Bundles and what you can
+    do with instance variables. Both represent state that rules can manipulate.
+    If you do not need to draw values that depend on the machine's state, you
+    can simply use instance variables. If you do need to draw values that depend
+    on the machine's state, Bundles provide a fairly straightforward way to do
+    this. If you need rules that draw values that depend on the machine's state
+    in some more complicated way, you will have to abandon bundles. You can use
+    :func:`~hypothesis.strategies.runner` and :func:`~hypothesis.strategies.flatmap`
+    to access the instance from a rule: the strategy 
+    ``runner().flatmap(lambda self: sampled_from(self.a_list))``
+    will draw from the instance variable ``a_list``. If you need something more 
+    complicated still, you can use  :func:`~hypothesis.strategies.data` to 
+    draw data from the instance (or anywhere else) based on logic in the rule.
 
 The following rule based state machine example is a simplified version of a
 test for Hypothesis's example database implementation. An example database
@@ -160,11 +163,12 @@ in both cases also updating the model of what *should* be in the database.
 ``values_agree`` then checks that the contents of the database agrees with the
 model for a particular key.
 
-While this could have been simplified by not using bundles, generating
-keys and values directly in the `save` and `delete` rules, using bundles 
-encourages `hypothesis` to choose the same keys and values for multiple 
-operations. The bundle operations establish a "universe" of keys and values 
-that are necessary to trigger the behavior.
+.. note::
+    While this could have been simplified by not using bundles, generating
+    keys and values directly in the `save` and `delete` rules, using bundles 
+    encourages `hypothesis` to choose the same keys and values for multiple 
+    operations. The bundle operations establish a "universe" of keys and values
+    that are used in the rules.
 
 We can now integrate this into our test suite by getting a unittest TestCase
 from it:

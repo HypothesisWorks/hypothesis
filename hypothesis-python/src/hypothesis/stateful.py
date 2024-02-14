@@ -464,6 +464,21 @@ class Bundle(SearchStrategy[Ex]):
 
     Bundles are easily added to by rules and used instead of strategies
     as inputs to future rules.
+
+    The ``name`` argument they are passed is the they are referred to
+    internally by the state machine; no two bundles can safely have
+    the same name. It is probably a good idea to use the attribute
+    being assigned to as the name of the Bundle::
+
+        class MyStateMachine(RuleBasedStateMachine):
+            keys = Bundle("keys")
+
+    Bundles can contain the same value more than once; this becomes
+    relevant when using :func:`~hypothesis.stateful.consumes` to remove
+    values again.
+
+    If the ``consume`` argument is set to True, then all values that are
+    drawn from this bundle will be consumed (as above) when requested.
     """
 
     def __init__(self, name: str, *, consume: bool = False) -> None:
