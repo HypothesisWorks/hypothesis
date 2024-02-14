@@ -244,7 +244,7 @@ Initializes
 -----------
 
 Initializes are a special case of rules, which are guaranteed to be run exactly
-before any normal rule is called.
+once before any normal rule is called.
 Note if multiple initialize rules are defined, they will all be called but in any order,
 and that order will vary from run to run.
 
