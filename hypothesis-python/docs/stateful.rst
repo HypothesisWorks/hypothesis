@@ -66,12 +66,12 @@ rules can be chained together - a single test run may involve multiple rule
 invocations, which may interact in various ways.
 
 Rules can take normal strategies as arguments, but normal strategies, with
-the exception of  :func:`~hypothesis.strategies.runner` and 
+the exception of  :func:`~hypothesis.strategies.runner` and
 :func:`~hypothesis.strategies.data`, cannot take into account
 the current state of the machine. This is where bundles come in.
 
-A rule can, in place of a normal strategy, take a Bundle. 
-A Bundle is a named collection of generated values that can
+A rule can, in place of a normal strategy, take a :class:`~hypothesis.stateful.Bundle`.
+A :class:`hypothesis.stateful.Bundle` is a named collection of generated values that can
 be reused by other operations in the test.
 They are populated with the results of rules, and may be used as arguments to
 rules, allowing data to flow from one rule to another, and rules to work on
@@ -81,7 +81,7 @@ Specifically, a rule that specifies ``target=a_bundle`` will cause its return
 value to be added to that bundle. A rule that specifies ``an_argument=a_bundle``
 as a strategy will draw a value from that bundle.  A rule can also specify
 that an argument chooses a value from a bundle and removes that value by using
-:func:`~hypothesis.stateful.consumes` as in ``an_argument=consumes(a_bundle)``. 
+:func:`~hypothesis.stateful.consumes` as in ``an_argument=consumes(a_bundle)``.
 
 .. note::
     There is some overlap between what you can do with Bundles and what you can
@@ -91,11 +91,11 @@ that an argument chooses a value from a bundle and removes that value by using
     on the machine's state, Bundles provide a fairly straightforward way to do
     this. If you need rules that draw values that depend on the machine's state
     in some more complicated way, you will have to abandon bundles. You can use
-    :func:`~hypothesis.strategies.runner` and :func:`~hypothesis.strategies.flatmap`
-    to access the instance from a rule: the strategy 
+    :func:`~hypothesis.strategies.runner` and :ref:`.flatmap() <flatmap>`
+    to access the instance from a rule: the strategy
     ``runner().flatmap(lambda self: sampled_from(self.a_list))``
-    will draw from the instance variable ``a_list``. If you need something more 
-    complicated still, you can use  :func:`~hypothesis.strategies.data` to 
+    will draw from the instance variable ``a_list``. If you need something more
+    complicated still, you can use  :func:`~hypothesis.strategies.data` to
     draw data from the instance (or anywhere else) based on logic in the rule.
 
 The following rule based state machine example is a simplified version of a
@@ -165,8 +165,8 @@ model for a particular key.
 
 .. note::
     While this could have been simplified by not using bundles, generating
-    keys and values directly in the `save` and `delete` rules, using bundles 
-    encourages `hypothesis` to choose the same keys and values for multiple 
+    keys and values directly in the ``save`` and ``delete`` rules, using bundles
+    encourages Hypothesis to choose the same keys and values for multiple
     operations. The bundle operations establish a "universe" of keys and values
     that are used in the rules.
 
@@ -182,9 +182,7 @@ from it:
       unittest.main()
 
 This test currently passes, but if we comment out the line where we call ``self.model[k].discard(v)``,
-we would see the following output when run under pytest:
-
-::
+we would see the following output when run under pytest::
 
     AssertionError: assert set() == {b''}
 
@@ -245,8 +243,8 @@ instead.
 Initializes
 -----------
 
-Initializes are a special case of rules that are guaranteed to be run exactly
-once at the beginning of a run (i.e. before any normal rule is called).
+Initializes are a special case of rules, which are guaranteed to be run exactly
+before any normal rule is called.
 Note if multiple initialize rules are defined, they will all be called but in any order,
 and that order will vary from run to run.
 

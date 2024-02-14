@@ -462,12 +462,12 @@ class BundleReferenceStrategy(SearchStrategy):
 class Bundle(SearchStrategy[Ex]):
     """A collection of values for use in stateful testing.
 
-    Bundles are easily added to by rules and used instead of strategies
-    as inputs to future rules.
+    Bundles are a kind of strategy where values can be added by rules,
+    and (like any strategy) used as inputs to future rules.
 
     The ``name`` argument they are passed is the they are referred to
-    internally by the state machine; no two bundles can safely have
-    the same name. It is probably a good idea to use the attribute
+    internally by the state machine; no two bundles may have
+    the same name. It is idiomatic to use the attribute
     being assigned to as the name of the Bundle::
 
         class MyStateMachine(RuleBasedStateMachine):

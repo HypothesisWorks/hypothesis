@@ -1,3 +1,3 @@
 RELEASE_TYPE: patch
-Attempt to clarify documentation around stateful testing, 
-in particular deficiencies raised in :issue:`#3511`.
+
+This patch clarifies the documentation on stateful testing (:issue:`3511`).
