@@ -460,6 +460,12 @@ class BundleReferenceStrategy(SearchStrategy):
 
 
 class Bundle(SearchStrategy[Ex]):
+    """A collection of values for use in stateful testing.
+
+    Bundles are easily added to by rules and used instead of strategies
+    as inputs to future rules.
+    """
+
     def __init__(self, name: str, *, consume: bool = False) -> None:
         self.name = name
         self.__reference_strategy = BundleReferenceStrategy(name, consume=consume)

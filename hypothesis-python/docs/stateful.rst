@@ -235,6 +235,8 @@ instead.
 
 .. autofunction:: hypothesis.stateful.multiple
 
+.. autoclass:: hypothesis.stateful.Bundle
+
 -----------
 Initializes
 -----------
