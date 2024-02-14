@@ -28,7 +28,7 @@ from numbers import Real
 
 import pytest
 
-from hypothesis import HealthCheck, assume, given, settings, strategies as st, Verbosity
+from hypothesis import HealthCheck, Verbosity, assume, given, settings, strategies as st
 from hypothesis.errors import InvalidArgument, ResolutionFailed, SmallSearchSpaceWarning
 from hypothesis.internal.compat import PYPY, get_type_hints
 from hypothesis.internal.conjecture.junkdrawer import stack_depth_of_caller
