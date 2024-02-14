@@ -65,10 +65,11 @@ rules can be chained together - a single test run may involve multiple rule
 invocations, which may interact in various ways.
 
 Rules can take normal strategies as arguments, but normal strategies, with
-the exception of :func:`~hypothesis.strategies.data`, cannot take into account
+the exception of  :func:`~hypothesis.strategies.runner` and 
+:func:`~hypothesis.strategies.data`, cannot take into account
 the current state of the machine. This is where bundles come in.
 
-A rule can, in place of a normal strategy, take a :class:`~hypothesis.stateful.Bundle`. 
+A rule can, in place of a normal strategy, take a Bundle. 
 A Bundle is a named collection of generated values that can
 be reused by other operations in the test.
 They are populated with the results of rules, and may be used as arguments to
@@ -76,8 +77,8 @@ rules, allowing data to flow from one rule to another, and rules to work on
 the results of previous computations or actions.
 
 Specifically, a rule that specifies ``target=a_bundle`` will cause its return
-value to be added to that bundle. A rule that specifies ``a_bundle`` as an
-argument (strategy) will draw a value from that bundle.  A rule can also specify 
+value to be added to that bundle. A rule that specifies ``an_argument=a_bundle``
+as a strategy will draw a value from that bundle.  A rule can also specify
 that an argument chooses a value from a bundle and removes that value by using
 :func:`~hypothesis.stateful.consumes` as in ``an_argument=consumes(a_bundle)``. 
 
@@ -87,9 +88,12 @@ If you do not need to draw values that depend on the machine's state, you
 can simply use instance variables. If you do need to draw values that depend
 on the machine's state, Bundles provide a fairly straightforward way to do
 this. If you need rules that draw values that depend on the machine's state
-in some more complicated way, you will have to abandon bundles and use 
-:func:`~hypothesis.strategies.data` to work with instance variables; this 
-comes with its own complexities.
+in some more complicated way, you will have to abandon bundles. You can use
+:func:`~hypothesis.strategies.runner` to access the instance from a rule: 
+the strategy ``runner().flatmap(lambda self: st.sampled_from(self.a_list))``
+will draw from the instance variable ``a_list``. If you need something more 
+complicated still, you can use  :func:`~hypothesis.strategies.data` to 
+draw data from the instance (or anywhere else) based on logic in the rule.
 
 The following rule based state machine example is a simplified version of a
 test for Hypothesis's example database implementation. An example database
