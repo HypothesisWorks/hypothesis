@@ -19,6 +19,10 @@ from hypothesis.internal.floats import (
     make_float_clamper,
     next_down,
     next_up,
+    sign_aware_lte,
+    sign_aware_max,
+    sign_aware_min,
+    float_to_int,
 )
 
 
@@ -81,3 +85,33 @@ def test_float_clamper_with_allowed_zeros(min_value, max_value, input_value):
         assert input_value == clamped
     else:
         assert min_value <= clamped <= max_value
+
+
+@pytest.mark.parametrize(
+    "x, y, expected",
+    [
+        (-1, 1, True),
+        (1, -1, False),
+        (0.0, 0.0, True),
+        (-0.0, 0.0, True),
+        (0.0, -0.0, False),
+    ],
+)
+def test_sign_aware_lte(x, y, expected):
+    assert sign_aware_lte(x, y) is expected
+
+
+@pytest.mark.parametrize(
+    "x, y, expected",
+    [(-1, 1, 1), (1, -1, 1), (0.0, 0.0, 0.0), (-0.0, 0.0, 0.0), (0.0, -0.0, 0.0)],
+)
+def test_sign_aware_max(x, y, expected):
+    assert float_to_int(sign_aware_max(x, y)) == float_to_int(expected)
+
+
+@pytest.mark.parametrize(
+    "x, y, expected",
+    [(-1, 1, -1), (1, -1, -1), (0.0, 0.0, 0.0), (-0.0, 0.0, -0.0), (0.0, -0.0, -0.0)],
+)
+def test_sign_aware_min(x, y, expected):
+    assert float_to_int(sign_aware_min(x, y)) == float_to_int(expected)

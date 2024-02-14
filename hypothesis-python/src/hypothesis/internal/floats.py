@@ -159,6 +159,30 @@ def sign_aware_lte(x: float, y: float) -> bool:
         return x <= y
 
 
+def sign_aware_max(x: float, y: float) -> float:
+    """
+    builtin max(), but strictly orders -0.0 and 0.0.
+
+    Compare max(-0.0, 0.0) == -0.0 but max(0.0, -0.0) == 0.0.
+    """
+    if x == 0.0 == y:
+        return y if math.copysign(1.0, x) <= math.copysign(1.0, y) else x
+    else:
+        return max(x, y)
+
+
+def sign_aware_min(x: float, y: float) -> float:
+    """
+    builtin min(), but strictly orders -0.0 and 0.0.
+
+    Compare min(0.0, -0.0) == 0.0 but min(-0.0, 0.0) == -0.0.
+    """
+    if x == 0.0 == y:
+        return x if math.copysign(1.0, x) <= math.copysign(1.0, y) else y
+    else:
+        return min(x, y)
+
+
 SMALLEST_SUBNORMAL = next_up(0.0)
 SIGNALING_NAN = int_to_float(0x7FF8_0000_0000_0001)  # nonzero mantissa
 assert math.isnan(SIGNALING_NAN)
