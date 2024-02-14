@@ -16,13 +16,13 @@ import pytest
 from hypothesis import example, given, strategies as st
 from hypothesis.internal.floats import (
     count_between_floats,
+    float_to_int,
     make_float_clamper,
     next_down,
     next_up,
     sign_aware_lte,
     sign_aware_max,
     sign_aware_min,
-    float_to_int,
 )
 
 

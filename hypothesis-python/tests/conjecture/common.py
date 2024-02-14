@@ -18,8 +18,8 @@ from hypothesis.internal.conjecture.data import ConjectureData, Status
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE, ConjectureRunner
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.entropy import deterministic_PRNG
-from hypothesis.strategies._internal.strings import OneCharStringStrategy, TextStrategy
 from hypothesis.internal.floats import sign_aware_max
+from hypothesis.strategies._internal.strings import OneCharStringStrategy, TextStrategy
 
 from tests.common.strategies import intervals
 
