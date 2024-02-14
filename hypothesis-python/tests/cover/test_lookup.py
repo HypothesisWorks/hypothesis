@@ -28,7 +28,7 @@ from numbers import Real
 
 import pytest
 
-from hypothesis import HealthCheck, assume, given, settings, strategies as st
+from hypothesis import HealthCheck, assume, given, settings, strategies as st, Verbosity
 from hypothesis.errors import InvalidArgument, ResolutionFailed, SmallSearchSpaceWarning
 from hypothesis.internal.compat import PYPY, get_type_hints
 from hypothesis.internal.conjecture.junkdrawer import stack_depth_of_caller
@@ -944,7 +944,8 @@ def test_timezone_lookup(type_):
         typing.Dict[typing.Hashable, int],
     ],
 )
-@settings(suppress_health_check=[HealthCheck.data_too_large])
+# temporary verbosity=debug to narrow down this flake.
+@settings(suppress_health_check=[HealthCheck.data_too_large], verbosity=Verbosity.debug)
 @given(data=st.data())
 def test_generic_collections_only_use_hashable_elements(typ, data):
     data.draw(from_type(typ))
