@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.98.6:
+
+-------------------
+6.98.6 - 2024-02-15
+-------------------
+
+This patch clarifies the documentation on stateful testing (:issue:`3511`).
+
 .. _v6.98.5:
 
 -------------------
