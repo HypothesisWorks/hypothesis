@@ -59,24 +59,44 @@ Rule-based state machines
 .. autoclass:: hypothesis.stateful.RuleBasedStateMachine
 
 A rule is very similar to a normal ``@given`` based test in that it takes
-values drawn from strategies and passes them to a user defined test function.
+values drawn from strategies and passes them to a user defined test function,
+which may use assertions to check the system's behavior.
 The key difference is that where ``@given`` based tests must be independent,
 rules can be chained together - a single test run may involve multiple rule
 invocations, which may interact in various ways.
 
-Rules can take normal strategies as arguments, or a specific kind of strategy
-called a Bundle.  A Bundle is a named collection of generated values that can
+Rules can take normal strategies as arguments, but normal strategies, with
+the exception of  :func:`~hypothesis.strategies.runner` and
+:func:`~hypothesis.strategies.data`, cannot take into account
+the current state of the machine. This is where bundles come in.
+
+A rule can, in place of a normal strategy, take a :class:`~hypothesis.stateful.Bundle`.
+A :class:`hypothesis.stateful.Bundle` is a named collection of generated values that can
 be reused by other operations in the test.
 They are populated with the results of rules, and may be used as arguments to
 rules, allowing data to flow from one rule to another, and rules to work on
 the results of previous computations or actions.
 
-You can think of each value that gets added to any Bundle as being assigned to
-a new variable.  Drawing a value from the bundle strategy means choosing one of
-the corresponding variables and using that value, and
-:func:`~hypothesis.stateful.consumes` as a ``del`` statement for that variable.
-If you can replace use of Bundles with instance attributes of the class that
-is often simpler, but often Bundles are strictly more powerful.
+Specifically, a rule that specifies ``target=a_bundle`` will cause its return
+value to be added to that bundle. A rule that specifies ``an_argument=a_bundle``
+as a strategy will draw a value from that bundle.  A rule can also specify
+that an argument chooses a value from a bundle and removes that value by using
+:func:`~hypothesis.stateful.consumes` as in ``an_argument=consumes(a_bundle)``.
+
+.. note::
+    There is some overlap between what you can do with Bundles and what you can
+    do with instance variables. Both represent state that rules can manipulate.
+    If you do not need to draw values that depend on the machine's state, you
+    can simply use instance variables. If you do need to draw values that depend
+    on the machine's state, Bundles provide a fairly straightforward way to do
+    this. If you need rules that draw values that depend on the machine's state
+    in some more complicated way, you will have to abandon bundles. You can use
+    :func:`~hypothesis.strategies.runner` and :ref:`.flatmap() <flatmap>`
+    to access the instance from a rule: the strategy
+    ``runner().flatmap(lambda self: sampled_from(self.a_list))``
+    will draw from the instance variable ``a_list``. If you need something more
+    complicated still, you can use  :func:`~hypothesis.strategies.data` to
+    draw data from the instance (or anywhere else) based on logic in the rule.
 
 The following rule based state machine example is a simplified version of a
 test for Hypothesis's example database implementation. An example database
@@ -143,7 +163,14 @@ in both cases also updating the model of what *should* be in the database.
 ``values_agree`` then checks that the contents of the database agrees with the
 model for a particular key.
 
-We can then integrate this into our test suite by getting a unittest TestCase
+.. note::
+    While this could have been simplified by not using bundles, generating
+    keys and values directly in the ``save`` and ``delete`` rules, using bundles
+    encourages Hypothesis to choose the same keys and values for multiple
+    operations. The bundle operations establish a "universe" of keys and values
+    that are used in the rules.
+
+We can now integrate this into our test suite by getting a unittest TestCase
 from it:
 
 .. code:: python
@@ -155,9 +182,7 @@ from it:
       unittest.main()
 
 This test currently passes, but if we comment out the line where we call ``self.model[k].discard(v)``,
-we would see the following output when run under pytest:
-
-::
+we would see the following output when run under pytest::
 
     AssertionError: assert set() == {b''}
 
@@ -212,13 +237,15 @@ instead.
 
 .. autofunction:: hypothesis.stateful.multiple
 
+.. autoclass:: hypothesis.stateful.Bundle
+
 -----------
 Initializes
 -----------
 
-Initializes are a special case of rules that are guaranteed to be run at most
-once at the beginning of a run (i.e. before any normal rule is called).
-Note if multiple initialize rules are defined, they may be called in any order,
+Initializes are a special case of rules, which are guaranteed to be run exactly
+once before any normal rule is called.
+Note if multiple initialize rules are defined, they will all be called but in any order,
 and that order will vary from run to run.
 
 Initializes are typically useful to populate bundles:
@@ -249,6 +276,11 @@ Initializes are typically useful to populate bundles:
         def create_file(self, parent, name):
             return f"{parent}/{name}"
 
+Initializes can also allow you to initialize the system under test in a way that depends on
+values chosen from a strategy. You could do this by putting an instance variable in the
+state machine that indicates whether the system under test has been initialized or not,
+and then using preconditions (below) to ensure that exactly one of the rules that
+initialize it get run before any rules that depend on it being initialized.
 
 -------------
 Preconditions
