@@ -18,6 +18,7 @@ from hypothesis.internal.conjecture.data import ConjectureData, Status
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE, ConjectureRunner
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.entropy import deterministic_PRNG
+from hypothesis.internal.floats import sign_aware_lte
 from hypothesis.strategies._internal.strings import OneCharStringStrategy, TextStrategy
 
 from tests.common.strategies import intervals
@@ -201,7 +202,10 @@ def draw_float_kwargs(
         min_value = draw(st.floats(max_value=pivot, allow_nan=False))
 
     if use_max_value:
-        min_val = min_value if not pivot is not None else max(min_value, pivot)
+        if pivot is None:
+            min_val = min_value
+        else:
+            min_val = pivot if sign_aware_lte(min_value, pivot) else min_value
         max_value = draw(st.floats(min_value=min_val, allow_nan=False))
 
     return {"min_value": min_value, "max_value": max_value, "forced": forced}
