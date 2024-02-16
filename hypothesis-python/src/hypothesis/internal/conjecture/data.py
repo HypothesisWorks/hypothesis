@@ -61,11 +61,14 @@ from hypothesis.internal.floats import (
 from hypothesis.internal.intervalsets import IntervalSet
 
 if TYPE_CHECKING:
+    from typing import TypeAlias
+
     from typing_extensions import dataclass_transform
 
     from hypothesis.strategies import SearchStrategy
     from hypothesis.strategies._internal.strategies import Ex
 else:
+    TypeAlias = object
 
     def dataclass_transform():
         def wrapper(tp):
@@ -91,6 +94,42 @@ InterestingOrigin = Tuple[
 TargetObservations = Dict[Optional[str], Union[int, float]]
 
 T = TypeVar("T")
+
+
+class IntegerKWargs(TypedDict):
+    min_value: Optional[int]
+    max_value: Optional[int]
+    weights: Optional[Sequence[float]]
+    shrink_towards: int
+
+
+class FloatKWargs(TypedDict):
+    min_value: float
+    max_value: float
+    allow_nan: bool
+    smallest_nonzero_magnitude: float
+
+
+class StringKWargs(TypedDict):
+    intervals: IntervalSet
+    min_size: int
+    max_size: Optional[int]
+
+
+class BytesKWargs(TypedDict):
+    size: int
+
+
+class BooleanKWargs(TypedDict):
+    p: float
+
+
+IRType: TypeAlias = Union[int, str, bool, float, bytes]
+IRKWargsType: TypeAlias = Union[
+    IntegerKWargs, FloatKWargs, StringKWargs, BytesKWargs, BooleanKWargs
+]
+# this would be "IRTypeType", but that's just confusing.
+IRLiteralType: TypeAlias = Literal["integer", "string", "boolean", "float", "bytes"]
 
 
 class ExtraInformation:
@@ -1425,21 +1464,39 @@ class PrimitiveProvider:
         return (sampler, forced_sign_bit, neg_clamper, pos_clamper, nasty_floats)
 
 
+# The set of available `PrimitiveProvider`s, by name.  Other libraries, such as
+# crosshair, can implement this interface and add themselves; at which point users
+# can configure which backend to use via settings.   Keys are the name of the library,
+# which doubles as the backend= setting, and values are importable class names.
+#
+# NOTE: this is a temporary interface.  We DO NOT promise to continue supporting it!
+#       (but if you want to experiment and don't mind breakage, here you go)
+AVAILABLE_PROVIDERS = {
+    "hypothesis": "hypothesis.internal.conjecture.data.PrimitiveProvider",
+}
+
+
 class ConjectureData:
     @classmethod
     def for_buffer(
         cls,
         buffer: Union[List[int], bytes],
+        *,
         observer: Optional[DataObserver] = None,
+        provider: type = PrimitiveProvider,
     ) -> "ConjectureData":
-        return cls(len(buffer), buffer, random=None, observer=observer)
+        return cls(
+            len(buffer), buffer, random=None, observer=observer, provider=provider
+        )
 
     def __init__(
         self,
         max_length: int,
         prefix: Union[List[int], bytes, bytearray],
+        *,
         random: Optional[Random],
         observer: Optional[DataObserver] = None,
+        provider: type = PrimitiveProvider,
     ) -> None:
         if observer is None:
             observer = DataObserver()
@@ -1470,7 +1527,7 @@ class ConjectureData:
         self.draw_times: "Dict[str, float]" = {}
         self.max_depth = 0
         self.has_discards = False
-        self.provider = PrimitiveProvider(self)
+        self.provider = provider(self)
 
         self.__result: "Optional[ConjectureResult]" = None
 
@@ -1504,7 +1561,6 @@ class ConjectureData:
 
         self.extra_information = ExtraInformation()
 
-        self.start_example(TOP_LABEL)
 
     def __repr__(self):
         return "ConjectureData(%s, %d bytes%s)" % (
@@ -1567,6 +1623,7 @@ class ConjectureData:
             self.observer.draw_integer(
                 value, was_forced=forced is not None, kwargs=kwargs
             )
+            self.record_ir_value("integer", value, kwargs)
         return value
 
     def draw_float(
@@ -1604,6 +1661,7 @@ class ConjectureData:
             self.observer.draw_float(
                 value, kwargs=kwargs, was_forced=forced is not None
             )
+            self.record_ir_value("float", value, kwargs)
         return value
 
     def draw_string(
@@ -1627,6 +1685,7 @@ class ConjectureData:
             self.observer.draw_string(
                 value, kwargs=kwargs, was_forced=forced is not None
             )
+            self.record_ir_value("string", value, kwargs)
         return value
 
     def draw_bytes(
@@ -1646,6 +1705,7 @@ class ConjectureData:
             self.observer.draw_bytes(
                 value, kwargs=kwargs, was_forced=forced is not None
             )
+            self.record_ir_value("bytes", value, kwargs)
         return value
 
     def draw_boolean(
@@ -1667,6 +1727,7 @@ class ConjectureData:
             self.observer.draw_boolean(
                 value, kwargs=kwargs, was_forced=forced is not None
             )
+            self.record_ir_value("boolean", value, kwargs)
         return value
 
     def as_result(self) -> Union[ConjectureResult, _Overrun]:
@@ -1709,6 +1770,27 @@ class ConjectureData:
         if not isinstance(value, str):
             value = repr(value)
         self.output += value
+
+    def record_ir_value(
+        self, ir_type: IRLiteralType, value: IRType, kwargs: IRKWargsType
+    ):
+        if isinstance(self.provider, PrimitiveProvider):
+            return
+        from hypothesis.internal.conjecture.engine import BUFFER_SIZE
+
+        cd = ConjectureData(
+            max_length=BUFFER_SIZE, prefix=b"", random=self.__random
+        )
+        # calling this will write to cd.buffer.
+        draw_func = getattr(cd, f"draw_{ir_type}")
+        draw_func(**kwargs, forced=value, observe=False)
+        forced_i = int_from_bytes(cd.buffer)
+        size = len(cd.buffer)
+        # drive this through draw_bits so the appropriate examples and blocks
+        # are created.
+        # fake_forced is so we force this value to be drawn, but still create
+        # examples and blocks as if it wasn't forced.
+        self.draw_bits(8 * size, forced=forced_i, fake_forced=True)
 
     def draw(
         self,
@@ -1852,7 +1934,9 @@ class ConjectureData:
         i = self.draw_integer(0, len(values) - 1, forced=forced_i, observe=observe)
         return values[i]
 
-    def draw_bits(self, n: int, *, forced: Optional[int] = None) -> int:
+    def draw_bits(
+        self, n: int, *, forced: Optional[int] = None, fake_forced=False
+    ) -> int:
         """Return an ``n``-bit integer from the underlying source of
         bytes. If ``forced`` is set to an integer will instead
         ignore the underlying source and simulate a draw as if it had
@@ -1886,7 +1970,7 @@ class ConjectureData:
         buf = bytes(buf)
         result = int_from_bytes(buf)
 
-        self.__example_record.draw_bits(n, forced)
+        self.__example_record.draw_bits(n, forced and not fake_forced)
 
         initial = self.index
 
@@ -1894,7 +1978,7 @@ class ConjectureData:
         self.buffer.extend(buf)
         self.index = len(self.buffer)
 
-        if forced is not None:
+        if forced is not None and not fake_forced:
             self.forced_indices.update(range(initial, self.index))
 
         self.blocks.add_endpoint(self.index)

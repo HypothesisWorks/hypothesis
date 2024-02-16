@@ -10,7 +10,7 @@
 
 import itertools
 import math
-from typing import TYPE_CHECKING, List, Literal, Optional, Union
+from typing import List, Optional, Union
 
 import attr
 
@@ -24,22 +24,13 @@ from hypothesis.internal.conjecture.data import (
     DataObserver,
     FloatKWargs,
     IntegerKWargs,
+    IRKWargsType,
+    IRLiteralType,
+    IRType,
     Status,
     StringKWargs,
 )
 from hypothesis.internal.floats import count_between_floats, float_to_int, int_to_float
-
-if TYPE_CHECKING:
-    from typing import TypeAlias
-else:
-    TypeAlias = object
-
-IRType: TypeAlias = Union[int, str, bool, float, bytes]
-IRKWargsType: TypeAlias = Union[
-    IntegerKWargs, FloatKWargs, StringKWargs, BytesKWargs, BooleanKWargs
-]
-# this would be "IRTypeType", but that's just confusing.
-IRLiteralType: TypeAlias = Literal["integer", "string", "boolean", "float", "bytes"]
 
 
 class PreviouslyUnseenBehaviour(HypothesisException):

@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import importlib
 import math
 import time
 from collections import defaultdict
@@ -24,10 +25,12 @@ from hypothesis.errors import StopTest
 from hypothesis.internal.cache import LRUReusedCache
 from hypothesis.internal.compat import ceil, int_from_bytes
 from hypothesis.internal.conjecture.data import (
+    AVAILABLE_PROVIDERS,
     ConjectureData,
     ConjectureResult,
     DataObserver,
     Overrun,
+    PrimitiveProvider,
     Status,
 )
 from hypothesis.internal.conjecture.datatree import (
@@ -164,6 +167,7 @@ class ConjectureRunner:
         self.__data_cache = LRUReusedCache(CACHE_SIZE)
 
         self.__pending_call_explanation = None
+        self._switch_to_primitive_provider = False
 
     def explain_next_call_as(self, explanation):
         self.__pending_call_explanation = explanation
@@ -191,7 +195,7 @@ class ConjectureRunner:
         return Phase.target in self.settings.phases
 
     def __tree_is_exhausted(self):
-        return self.tree.is_exhausted
+        return self.tree.is_exhausted and self.settings.backend == "hypothesis"
 
     def __stoppable_test_function(self, data):
         """Run ``self._test_function``, but convert a ``StopTest`` exception
@@ -695,6 +699,14 @@ class ConjectureRunner:
         ran_optimisations = False
 
         while self.should_generate_more():
+            # There's no convenient way to track redundancy for custom backends
+            # yet. Will possibly improved when everything moves to the ir and we
+            # can use the DataTree for all backends?
+            if self.settings.backend != "hypothesis":
+                data = self.new_conjecture_data(prefix=b"", max_length=BUFFER_SIZE)
+                self.test_function(data)
+                continue
+
             self._current_phase = "generate"
             prefix = self.generate_novel_prefix()
             assert len(prefix) <= BUFFER_SIZE
@@ -805,14 +817,12 @@ class ConjectureRunner:
                     break
 
                 group = self.random.choice(groups)
-
                 ex1, ex2 = (
                     data.examples[i] for i in sorted(self.random.sample(group, 2))
                 )
                 assert ex1.end <= ex2.start
 
                 replacements = [data.buffer[e.start : e.end] for e in [ex1, ex2]]
-
                 replacement = self.random.choice(replacements)
 
                 try:
@@ -822,7 +832,7 @@ class ConjectureRunner:
                     # wrong - labels matching are only a best guess as to
                     # whether the two are equivalent - but it doesn't
                     # really matter. It may not achieve the desired result
-                    # but it's still a perfectly acceptable choice sequence.
+                    # but it's still a perfectly acceptable choice sequence
                     # to try.
                     new_data = self.cached_test_function(
                         data.buffer[: ex1.start]
@@ -899,8 +909,12 @@ class ConjectureRunner:
             ParetoOptimiser(self).run()
 
     def _run(self):
+        # have to use the primitive provider to interpret database bits...
+        self._switch_to_primitive_provider = True
         with self._log_phase_statistics("reuse"):
             self.reuse_existing_examples()
+        # ...but we should use the supplied provider when generating...
+        self._switch_to_primitive_provider = False
         with self._log_phase_statistics("generate"):
             self.generate_new_examples()
             # We normally run the targeting phase mixed in with the generate phase,
@@ -909,20 +923,29 @@ class ConjectureRunner:
             if Phase.generate not in self.settings.phases:
                 self._current_phase = "target"
                 self.optimise_targets()
+        # ...and back to the primitive provider when shrinking.
+        self._switch_to_primitive_provider = True
         with self._log_phase_statistics("shrink"):
             self.shrink_interesting_examples()
         self.exit_with(ExitReason.finished)
 
     def new_conjecture_data(self, prefix, max_length=BUFFER_SIZE, observer=None):
+        if self.settings.backend == "hypothesis" or self._switch_to_primitive_provider:
+            provider_cls = PrimitiveProvider
+        else:
+            mname, cname = AVAILABLE_PROVIDERS[self.settings.backend].rsplit(".", 1)
+            provider_cls = getattr(importlib.import_module(mname), cname)
+
         return ConjectureData(
             prefix=prefix,
             max_length=max_length,
             random=self.random,
             observer=observer or self.tree.new_observer(),
+            provider=provider_cls,
         )
 
     def new_conjecture_data_for_buffer(self, buffer):
-        return ConjectureData.for_buffer(buffer, observer=self.tree.new_observer())
+        return self.new_conjecture_data(buffer, max_length=len(buffer))
 
     def shrink_interesting_examples(self):
         """If we've found interesting examples, try to replace each of them
