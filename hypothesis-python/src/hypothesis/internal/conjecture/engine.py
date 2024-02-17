@@ -811,9 +811,8 @@ class ConjectureRunner:
                 )
                 assert ex1.end <= ex2.start
 
-                replacements = [data.buffer[e.start : e.end] for e in [ex1, ex2]]
-
-                replacement = self.random.choice(replacements)
+                e = self.random.choice([ex1, ex2])
+                replacement = data.buffer[e.start : e.end]
 
                 try:
                     # We attempt to replace both the the examples with
@@ -822,7 +821,7 @@ class ConjectureRunner:
                     # wrong - labels matching are only a best guess as to
                     # whether the two are equivalent - but it doesn't
                     # really matter. It may not achieve the desired result
-                    # but it's still a perfectly acceptable choice sequence.
+                    # but it's still a perfectly acceptable choice sequence
                     # to try.
                     new_data = self.cached_test_function(
                         data.buffer[: ex1.start]
@@ -922,7 +921,7 @@ class ConjectureRunner:
         )
 
     def new_conjecture_data_for_buffer(self, buffer):
-        return ConjectureData.for_buffer(buffer, observer=self.tree.new_observer())
+        return self.new_conjecture_data(buffer, max_length=len(buffer))
 
     def shrink_interesting_examples(self):
         """If we've found interesting examples, try to replace each of them
