@@ -482,7 +482,6 @@ def _get_params(func: Callable) -> Dict[str, inspect.Parameter]:
                     kind = inspect.Parameter.KEYWORD_ONLY
                     continue  # we omit *varargs, if there are any
                 if _iskeyword(arg.lstrip("*")) or not arg.lstrip("*").isidentifier():
-                    print(repr(args))
                     break  # skip all subsequent params if this name is invalid
                 params.append(inspect.Parameter(name=arg, kind=kind))
 
@@ -588,6 +587,8 @@ def _imports_for_object(obj):
     """Return the imports for `obj`, which may be empty for e.g. lambdas"""
     if isinstance(obj, (re.Pattern, re.Match)):
         return {"re"}
+    if isinstance(obj, st.SearchStrategy):
+        return _imports_for_strategy(obj)
     try:
         if is_generic_type(obj):
             if isinstance(obj, TypeVar):
@@ -606,19 +607,19 @@ def _imports_for_strategy(strategy):
     # If we have a lazy from_type strategy, because unwrapping it gives us an
     # error or invalid syntax, import that type and we're done.
     if isinstance(strategy, LazyStrategy):
-        if strategy.function.__name__ in (
-            st.from_type.__name__,
-            st.from_regex.__name__,
-        ):
-            return {
-                imp
-                for arg in set(strategy._LazyStrategy__args)
-                | set(strategy._LazyStrategy__kwargs.values())
-                for imp in _imports_for_object(arg)
-            }
+        imports = {
+            imp
+            for arg in set(strategy._LazyStrategy__args)
+            | set(strategy._LazyStrategy__kwargs.values())
+            for imp in _imports_for_object(_strip_typevars(arg))
+        }
+        if re.match(r"from_(type|regex)\(", repr(strategy)):
+            if repr(strategy).startswith("from_type("):
+                return {module for module, _ in imports}
+            return imports
         elif _get_module(strategy.function).startswith("hypothesis.extra."):
             module = _get_module(strategy.function).replace("._array_helpers", ".numpy")
-            return {(module, strategy.function.__name__)}
+            return {(module, strategy.function.__name__)} | imports
 
     imports = set()
     with warnings.catch_warnings():
@@ -672,6 +673,9 @@ def _valid_syntax_repr(strategy):
         if isinstance(strategy, OneOfStrategy):
             seen = set()
             elems = []
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", SmallSearchSpaceWarning)
+                strategy.element_strategies  # might warn on first access
             for s in strategy.element_strategies:
                 if isinstance(s, SampledFromStrategy) and s.elements == (os.environ,):
                     continue
@@ -694,7 +698,11 @@ def _valid_syntax_repr(strategy):
         # Return a syntactically-valid strategy repr, including fixing some
         # strategy reprs and replacing invalid syntax reprs with `"nothing()"`.
         # String-replace to hide the special case in from_type() for Decimal('snan')
-        r = repr(strategy).replace(".filter(_can_hash)", "")
+        r = (
+            repr(strategy)
+            .replace(".filter(_can_hash)", "")
+            .replace("hypothesis.strategies.", "")
+        )
         # Replace <unknown> with ... in confusing lambdas
         r = re.sub(r"(lambda.*?: )(<unknown>)([,)])", r"\1...\3", r)
         compile(r, "<string>", "eval")
@@ -1000,6 +1008,9 @@ def _parameter_to_annotation(parameter: Any) -> Optional[_AnnotationData]:
         else:
             type_name = str(parameter)
 
+    if type_name.startswith("hypothesis.strategies."):
+        return _AnnotationData(type_name.replace("hypothesis.strategies", "st"), set())
+
     origin_type = get_origin(parameter)
 
     # if not generic or no generic arguments
@@ -1045,9 +1056,6 @@ def _make_test(imports: ImportSet, body: str) -> str:
     # Discarding "builtins." and "__main__" probably isn't particularly useful
     # for user code, but important for making a good impression in demos.
     body = body.replace("builtins.", "").replace("__main__.", "")
-    body = body.replace("hypothesis.strategies.", "st.")
-    if "st.from_type(typing." in body:
-        imports.add("typing")
     imports |= {("hypothesis", "given"), ("hypothesis", "strategies as st")}
     if "        reject()\n" in body:
         imports.add(("hypothesis", "reject"))
