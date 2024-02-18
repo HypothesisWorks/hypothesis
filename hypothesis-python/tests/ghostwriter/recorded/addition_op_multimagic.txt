@@ -1,16 +1,16 @@
 # This test code was written by the `hypothesis.extra.ghostwriter` module
 # and is provided under the Creative Commons Zero public domain dedication.
 
-import _operator
 import numpy
+import operator
 import test_expected_output
 from hypothesis import given, strategies as st
 
 
 @given(a=st.floats(), b=st.floats())
 def test_equivalent_add_add_add(a: float, b: float) -> None:
-    result_0_add = _operator.add(a, b)
-    result_1_add = numpy.add(a, b)
+    result_0_add = numpy.add(a, b)
+    result_1_add = operator.add(a, b)
     result_2_add = test_expected_output.add(a=a, b=b)
     assert result_0_add == result_1_add, (result_0_add, result_1_add)
     assert result_0_add == result_2_add, (result_0_add, result_2_add)

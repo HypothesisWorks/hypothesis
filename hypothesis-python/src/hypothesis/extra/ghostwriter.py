@@ -732,9 +732,10 @@ def _get_module_helper(obj):
 
     dots = [i for i, c in enumerate(module_name) if c == "."] + [None]
     for idx in dots:
-        if getattr(sys.modules.get(module_name[:idx]), obj.__name__, None) is obj:
-            KNOWN_FUNCTION_LOCATIONS[obj] = module_name[:idx]
-            return module_name[:idx]
+        for candidate in (module_name[:idx].lstrip("_"), module_name[:idx]):
+            if getattr(sys.modules.get(candidate), obj.__name__, None) is obj:
+                KNOWN_FUNCTION_LOCATIONS[obj] = candidate
+                return candidate
     return module_name
 
 
