@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.98.8:
+
+-------------------
+6.98.8 - 2024-02-18
+-------------------
+
+This patch improves :doc:`the Ghostwriter <ghostwriter>` for binary operators.
+
 .. _v6.98.7:
 
 -------------------
