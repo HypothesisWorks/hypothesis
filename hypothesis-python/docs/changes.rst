@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.98.7:
+
+-------------------
+6.98.7 - 2024-02-18
+-------------------
+
+This patch improves import-detection in :doc:`the Ghostwriter <ghostwriter>`
+(:issue:`3884`), particularly for :func:`~hypothesis.strategies.from_type`
+and strategies from ``hypothesis.extra.*``.
+
 .. _v6.98.6:
 
 -------------------
