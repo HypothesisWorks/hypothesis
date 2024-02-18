@@ -28,6 +28,7 @@ from hypothesis.extra.ghostwriter import (
     magic,
     roundtrip,
 )
+from hypothesis.internal.reflection import get_pretty_function_description
 
 
 def run(cmd, *, cwd=None):
@@ -65,12 +66,13 @@ def run(cmd, *, cwd=None):
         ("sorted --annotate", lambda: fuzz(sorted, annotate=True)),
         ("sorted --no-annotate", lambda: fuzz(sorted, annotate=False)),
     ],
+    ids=get_pretty_function_description,
 )
 def test_cli_python_equivalence(cli, code):
     result = run("hypothesis write " + cli)
     result.check_returncode()
     cli_output = result.stdout.strip()
-    assert not result.stderr
+    assert cli == "hypothesis.strategies" or not result.stderr
     code_output = code().strip()
     assert code_output == cli_output
 

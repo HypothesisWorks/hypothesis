@@ -5,8 +5,7 @@ import datetime
 import hypothesis
 import random
 import typing
-from hypothesis import given, settings, strategies as st
-from typing import Hashable
+from hypothesis import given, strategies as st
 
 
 @given(condition=st.from_type(object))
