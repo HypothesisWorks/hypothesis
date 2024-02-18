@@ -47,6 +47,13 @@ MUTATION_POOL_SIZE = 100
 MIN_TEST_CALLS = 10
 BUFFER_SIZE = 8 * 1024
 
+# If the shrinking phase takes more than five minutes, abort it early and print
+# a warning.   Many CI systems will kill a build after around ten minutes with
+# no output, and appearing to hang isn't great for interactive use either -
+# showing partially-shrunk examples is better than quitting with no examples!
+# (but make it monkeypatchable, for the rare users who need to keep on shrinking)
+MAX_SHRINKING_SECONDS = 300
+
 
 @attr.s
 class HealthCheckState:
@@ -934,12 +941,7 @@ class ConjectureRunner:
             return
 
         self.debug("Shrinking interesting examples")
-
-        # If the shrinking phase takes more than five minutes, abort it early and print
-        # a warning.   Many CI systems will kill a build after around ten minutes with
-        # no output, and appearing to hang isn't great for interactive use either -
-        # showing partially-shrunk examples is better than quitting with no examples!
-        self.finish_shrinking_deadline = time.perf_counter() + 300
+        self.finish_shrinking_deadline = time.perf_counter() + MAX_SHRINKING_SECONDS
 
         for prev_data in sorted(
             self.interesting_examples.values(), key=lambda d: sort_key(d.buffer)
