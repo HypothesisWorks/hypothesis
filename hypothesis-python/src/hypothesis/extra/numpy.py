@@ -21,6 +21,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    overload,
 )
 
 import numpy as np
@@ -411,6 +412,31 @@ def fill_for(elements, unique, fill, name=""):
 
 
 D = TypeVar("D", bound="DTypeLike")
+G = TypeVar("G", bound="np.generic")
+
+
+@overload
+@defines_strategy(force_reusable_values=True)
+def arrays(
+    dtype: Union[np.dtype[G], st.SearchStrategy[np.dtype[G]]],
+    shape: Union[int, st.SearchStrategy[int], Shape, st.SearchStrategy[Shape]],
+    *,
+    elements: Optional[Union[st.SearchStrategy[Any], Mapping[str, Any]]] = None,
+    fill: Optional[st.SearchStrategy[Any]] = None,
+    unique: bool = False,
+) -> "st.SearchStrategy[NDArray[G]]": ...
+
+
+@overload
+@defines_strategy(force_reusable_values=True)
+def arrays(
+    dtype: Union[D, st.SearchStrategy[D]],
+    shape: Union[int, st.SearchStrategy[int], Shape, st.SearchStrategy[Shape]],
+    *,
+    elements: Optional[Union[st.SearchStrategy[Any], Mapping[str, Any]]] = None,
+    fill: Optional[st.SearchStrategy[Any]] = None,
+    unique: bool = False,
+) -> "st.SearchStrategy[NDArray[Any]]": ...
 
 
 @defines_strategy(force_reusable_values=True)
@@ -421,7 +447,7 @@ def arrays(
     elements: Optional[Union[st.SearchStrategy[Any], Mapping[str, Any]]] = None,
     fill: Optional[st.SearchStrategy[Any]] = None,
     unique: bool = False,
-) -> "st.SearchStrategy[NDArray[D]]":
+) -> "st.SearchStrategy[NDArray[Any]]":
     r"""Returns a strategy for generating :class:`numpy:numpy.ndarray`\ s.
 
     * ``dtype`` may be any valid input to :class:`~numpy:numpy.dtype`
