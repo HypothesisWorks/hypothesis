@@ -48,7 +48,7 @@ com2ann==0.3.0
     # via shed
 coverage==7.4.1
     # via -r requirements/tools.in
-cryptography==42.0.2
+cryptography==42.0.3
     # via
     #   secretstorage
     #   types-pyopenssl
@@ -162,7 +162,7 @@ pelican[markdown]==4.9.1
     # via -r requirements/tools.in
 pexpect==4.9.0
     # via ipython
-pip-tools==7.3.0
+pip-tools==7.4.0
     # via -r requirements/tools.in
 pkginfo==1.9.6
     # via twine
@@ -195,10 +195,12 @@ pygments==2.17.2
 pyproject-api==1.6.1
     # via tox
 pyproject-hooks==1.0.0
-    # via build
+    # via
+    #   build
+    #   pip-tools
 pyright==1.1.350
     # via -r requirements/tools.in
-pytest==8.0.0
+pytest==8.0.1
     # via -r requirements/tools.in
 python-dateutil==2.8.2
     # via
@@ -231,7 +233,7 @@ rich==13.7.0
     # via
     #   pelican
     #   twine
-ruff==0.2.1
+ruff==0.2.2
     # via -r requirements/tools.in
 secretstorage==3.3.3
     # via keyring
@@ -299,7 +301,7 @@ tomli==2.0.1
     #   pyproject-hooks
     #   pytest
     #   tox
-tox==4.12.1
+tox==4.13.0
     # via -r requirements/tools.in
 traitlets==5.14.1
     # via
