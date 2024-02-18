@@ -418,7 +418,7 @@ G = TypeVar("G", bound="np.generic")
 @overload
 @defines_strategy(force_reusable_values=True)
 def arrays(
-    dtype: Union[np.dtype[G], st.SearchStrategy[np.dtype[G]]],
+    dtype: Union["np.dtype[G]", st.SearchStrategy["np.dtype[G]"]],
     shape: Union[int, st.SearchStrategy[int], Shape, st.SearchStrategy[Shape]],
     *,
     elements: Optional[Union[st.SearchStrategy[Any], Mapping[str, Any]]] = None,
