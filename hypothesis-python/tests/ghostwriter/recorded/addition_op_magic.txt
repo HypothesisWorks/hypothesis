@@ -23,4 +23,6 @@ def test_commutative_binary_operation_add(a: float, b: float) -> None:
 
 @given(a=add_operands)
 def test_identity_binary_operation_add(a: float) -> None:
-    assert a == test_expected_output.add(a=a, b=0.0)
+    identity = 0.0
+    assert a == test_expected_output.add(a=a, b=identity)
+    assert a == test_expected_output.add(a=identity, b=a)

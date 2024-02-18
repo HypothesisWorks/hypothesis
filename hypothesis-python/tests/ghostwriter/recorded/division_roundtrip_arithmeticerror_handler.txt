@@ -1,7 +1,7 @@
 # This test code was written by the `hypothesis.extra.ghostwriter` module
 # and is provided under the Creative Commons Zero public domain dedication.
 
-import _operator
+import operator
 import test_expected_output
 from hypothesis import given, reject, strategies as st
 
@@ -10,7 +10,7 @@ from hypothesis import given, reject, strategies as st
 def test_roundtrip_divide_mul(a: int, b: int) -> None:
     try:
         value0 = test_expected_output.divide(a=a, b=b)
-        value1 = _operator.mul(value0, b)
+        value1 = operator.mul(value0, b)
     except ArithmeticError:
         reject()
     assert a == value1, (a, value1)

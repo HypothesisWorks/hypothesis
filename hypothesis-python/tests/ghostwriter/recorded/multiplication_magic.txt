@@ -25,7 +25,7 @@ def test_commutative_binary_operation_mul(a, b):
 
 @given(a=mul_operands)
 def test_identity_binary_operation_mul(a):
-    identity = 1
+    identity = "identity element here"
     assert a == operator.mul(a, identity)
     assert a == operator.mul(identity, a)
 
