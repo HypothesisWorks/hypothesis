@@ -186,6 +186,8 @@ def sequence_from_collections(items: CollectionsSequence[int]) -> int:
             ghostwriter.equivalent(sorted, sorted, sorted, annotate=True),
         ),
         ("addition_op_magic", ghostwriter.magic(add)),
+        ("multiplication_magic", ghostwriter.magic(operator.mul)),
+        ("matmul_magic", ghostwriter.magic(operator.matmul)),
         ("addition_op_multimagic", ghostwriter.magic(add, operator.add, numpy.add)),
         ("division_fuzz_error_handler", ghostwriter.fuzz(divide)),
         (

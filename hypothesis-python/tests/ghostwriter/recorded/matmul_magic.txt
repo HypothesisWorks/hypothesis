@@ -1,0 +1,34 @@
+# This test code was written by the `hypothesis.extra.ghostwriter` module
+# and is provided under the Creative Commons Zero public domain dedication.
+
+import operator
+from hypothesis import given, strategies as st
+
+# TODO: replace st.nothing() with an appropriate strategy
+
+matmul_operands = st.nothing()
+
+
+@given(a=matmul_operands, b=matmul_operands, c=matmul_operands)
+def test_associative_binary_operation_matmul(a, b, c):
+    left = operator.matmul(a, operator.matmul(b, c))
+    right = operator.matmul(operator.matmul(a, b), c)
+    assert left == right, (left, right)
+
+
+@given(a=matmul_operands)
+def test_identity_binary_operation_matmul(a):
+    identity = "identity element here"
+    assert a == operator.matmul(a, identity)
+    assert a == operator.matmul(identity, a)
+
+
+@given(a=matmul_operands, b=matmul_operands, c=matmul_operands)
+def test_add_distributes_over_binary_operation_matmul(a, b, c):
+    left = operator.matmul(a, operator.add(b, c))
+    ldist = operator.add(operator.matmul(a, b), operator.matmul(a, c))
+    assert ldist == left, (ldist, left)
+
+    right = operator.matmul(operator.add(a, b), c)
+    rdist = operator.add(operator.matmul(a, c), operator.matmul(b, c))
+    assert rdist == right, (rdist, right)

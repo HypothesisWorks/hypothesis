@@ -11,4 +11,6 @@ truediv_operands = st.nothing()
 
 @given(a=truediv_operands)
 def test_identity_binary_operation_truediv(a):
-    assert a == operator.truediv(a, "identity element here")
+    identity = "identity element here"
+    assert a == operator.truediv(a, identity)
+    assert a == operator.truediv(identity, a)

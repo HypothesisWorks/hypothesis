@@ -764,7 +764,7 @@ def _get_qualname(obj, *, include_module=False):
 
 
 def _write_call(
-    func: Callable, *pass_variables: str, except_: Except, assign: str = ""
+    func: Callable, *pass_variables: str, except_: Except = Exception, assign: str = ""
 ) -> str:
     """Write a call to `func` with explicit and implicit arguments.
 
@@ -1269,11 +1269,29 @@ def magic(
         hints = get_type_hints(func)
         hints.pop("return", None)
         params = _get_params(func)
-        if len(hints) == len(params) == 2:
-            a, b = hints.values()
+        if (len(hints) == len(params) == 2) or (
+            _get_module(func) == "operator"
+            and "item" not in func.__name__
+            and tuple(params) in [("a", "b"), ("x", "y")]
+        ):
+            a, b = hints.values() or [Any, Any]
             arg1, arg2 = params
             if a == b and len(arg1) == len(arg2) <= 3:
-                make_(_make_binop_body, func, annotate=annotate)
+                # https://en.wikipedia.org/wiki/Distributive_property#Other_examples
+                known = {
+                    "mul": "add",
+                    "matmul": "add",
+                    "or_": "and_",
+                    "and_": "or_",
+                }.get(func.__name__, "")
+                distributes_over = getattr(sys.modules[_get_module(func)], known, None)
+                make_(
+                    _make_binop_body,
+                    func,
+                    commutative=func.__name__ != "matmul",
+                    distributes_over=distributes_over,
+                    annotate=annotate,
+                )
                 del by_name[name]
 
     # Look for Numpy ufuncs or gufuncs, and write array-oriented tests for them.
@@ -1478,10 +1496,17 @@ def roundtrip(
     return _make_test(*_make_roundtrip_body(funcs, except_, style, annotate))
 
 
-def _make_equiv_body(funcs, except_, style, annotate):
+def _get_varnames(funcs):
     var_names = [f"result_{f.__name__}" for f in funcs]
     if len(set(var_names)) < len(var_names):
-        var_names = [f"result_{i}_{ f.__name__}" for i, f in enumerate(funcs)]
+        var_names = [f"result_{f.__name__}_{_get_module(f)}" for f in funcs]
+    if len(set(var_names)) < len(var_names):
+        var_names = [f"result_{i}_{f.__name__}" for i, f in enumerate(funcs)]
+    return var_names
+
+
+def _make_equiv_body(funcs, except_, style, annotate):
+    var_names = _get_varnames(funcs)
     test_lines = [
         _write_call(f, assign=vname, except_=except_)
         for vname, f in zip(var_names, funcs)
@@ -1521,10 +1546,7 @@ else:
 
 
 def _make_equiv_errors_body(funcs, except_, style, annotate):
-    var_names = [f"result_{f.__name__}" for f in funcs]
-    if len(set(var_names)) < len(var_names):
-        var_names = [f"result_{i}_{ f.__name__}" for i, f in enumerate(funcs)]
-
+    var_names = _get_varnames(funcs)
     first, *rest = funcs
     first_call = _write_call(first, assign=var_names[0], except_=except_)
     extra_imports, suppress = _exception_string(except_)
@@ -1724,18 +1746,11 @@ def _make_binop_body(
         maker(
             "associative",
             "abc",
+            _write_call(func, "a", _write_call(func, "b", "c"), assign="left"),
             _write_call(
                 func,
-                "a",
-                _write_call(func, "b", "c", except_=Exception),
-                except_=Exception,
-                assign="left",
-            ),
-            _write_call(
-                func,
-                _write_call(func, "a", "b", except_=Exception),
+                _write_call(func, "a", "b"),
                 "c",
-                except_=Exception,
                 assign="right",
             ),
         )
@@ -1743,8 +1758,8 @@ def _make_binop_body(
         maker(
             "commutative",
             "ab",
-            _write_call(func, "a", "b", except_=Exception, assign="left"),
-            _write_call(func, "b", "a", except_=Exception, assign="right"),
+            _write_call(func, "a", "b", assign="left"),
+            _write_call(func, "b", "a", assign="right"),
         )
     if identity is not None:
         # Guess that the identity element is the minimal example from our operands
@@ -1766,34 +1781,42 @@ def _make_binop_body(
             compile(repr(identity), "<string>", "exec")
         except SyntaxError:
             identity = repr(identity)  # type: ignore
-        maker(
-            "identity",
-            "a",
+        identity_parts = [
+            f"{identity = }",
             _assert_eq(
                 style,
                 "a",
-                _write_call(func, "a", repr(identity), except_=Exception),
+                _write_call(func, "a", "identity"),
             ),
-        )
-    if distributes_over:
-        maker(
-            distributes_over.__name__ + "_distributes_over",
-            "abc",
-            _write_call(
-                distributes_over,
-                _write_call(func, "a", "b", except_=Exception),
-                _write_call(func, "a", "c", except_=Exception),
-                except_=Exception,
-                assign="left",
-            ),
-            _write_call(
-                func,
+            _assert_eq(
+                style,
                 "a",
-                _write_call(distributes_over, "b", "c", except_=Exception),
-                except_=Exception,
-                assign="right",
+                _write_call(func, "identity", "a"),
             ),
-        )
+        ]
+        maker("identity", "a", "\n".join(identity_parts))
+    if distributes_over:
+        do = distributes_over
+        dist_parts = [
+            _write_call(func, "a", _write_call(do, "b", "c"), assign="left"),
+            _write_call(
+                do,
+                _write_call(func, "a", "b"),
+                _write_call(func, "a", "c"),
+                assign="ldist",
+            ),
+            _assert_eq(style, "ldist", "left"),
+            "\n",
+            _write_call(func, _write_call(do, "a", "b"), "c", assign="right"),
+            _write_call(
+                do,
+                _write_call(func, "a", "c"),
+                _write_call(func, "b", "c"),
+                assign="rdist",
+            ),
+            _assert_eq(style, "rdist", "right"),
+        ]
+        maker(do.__name__ + "_distributes_over", "abc", "\n".join(dist_parts))
 
     _, operands_repr = _valid_syntax_repr(operands)
     operands_repr = _st_strategy_names(operands_repr)
