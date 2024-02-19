@@ -16,7 +16,14 @@ import pytest
 from _pytest.outcomes import Failed, Skipped
 from pytest import raises
 
-from hypothesis import Phase, __version__, reproduce_failure, seed, settings as Settings
+from hypothesis import (
+    HealthCheck,
+    Phase,
+    __version__,
+    reproduce_failure,
+    seed,
+    settings as Settings,
+)
 from hypothesis.control import current_build_context
 from hypothesis.database import ExampleDatabase
 from hypothesis.errors import DidNotReproduce, Flaky, InvalidArgument, InvalidDefinition
@@ -766,7 +773,7 @@ def test_removes_needless_steps():
 
 
 def test_prints_equal_values_with_correct_variable_name():
-    @Settings(max_examples=100)
+    @Settings(max_examples=100, suppress_health_check=list(HealthCheck))
     class MovesBetweenBundles(RuleBasedStateMachine):
         b1 = Bundle("b1")
         b2 = Bundle("b2")

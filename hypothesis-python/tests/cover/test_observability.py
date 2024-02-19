@@ -119,3 +119,9 @@ def test_observability_captures_stateful_reprs():
         r = x["representation"]
         assert "state.limits()" in r
         assert "state.inc()" in r or "state.dec()" in r  # or both
+
+        t = x["timing"]
+        assert "execute:invariant:limits" in t
+        has_inc = "generate:rule:inc" in t and "execute:rule:inc" in t
+        has_dec = "generate:rule:dec" in t and "execute:rule:dec" in t
+        assert has_inc or has_dec

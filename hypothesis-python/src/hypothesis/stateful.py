@@ -20,6 +20,7 @@ import inspect
 from copy import copy
 from functools import lru_cache
 from io import StringIO
+from time import perf_counter
 from typing import (
     Any,
     Callable,
@@ -132,7 +133,7 @@ def run_state_machine_as_test(state_machine_factory, *, settings=None, _min_step
 
         try:
             output(f"state = {machine.__class__.__name__}()")
-            machine.check_invariants(settings, output)
+            machine.check_invariants(settings, output, cd._stateful_run_times)
             max_steps = settings.stateful_step_count
             steps_run = 0
 
@@ -149,6 +150,8 @@ def run_state_machine_as_test(state_machine_factory, *, settings=None, _min_step
                     must_stop = True
                 elif steps_run <= _min_steps:
                     must_stop = False
+
+                start_draw = perf_counter()
                 if cd.draw_boolean(p=2**-16, forced=must_stop):
                     break
                 steps_run += 1
@@ -164,6 +167,9 @@ def run_state_machine_as_test(state_machine_factory, *, settings=None, _min_step
                     machine._initialize_rules_to_run.remove(rule)
                 else:
                     rule, data = cd.draw(machine._rules_strategy)
+                draw_label = f"generate:rule:{rule.function.__name__}"
+                cd.draw_times.setdefault(draw_label, 0.0)
+                cd.draw_times[draw_label] += perf_counter() - start_draw
 
                 # Pretty-print the values this rule was called with *before* calling
                 # _add_result_to_targets, to avoid printing arguments which are also
@@ -181,7 +187,12 @@ def run_state_machine_as_test(state_machine_factory, *, settings=None, _min_step
                     for k, v in list(data.items()):
                         if isinstance(v, VarReference):
                             data[k] = machine.names_to_values[v.name]
+
+                    label = f"execute:rule:{rule.function.__name__}"
+                    start = perf_counter()
                     result = rule.function(machine, **data)
+                    cd._stateful_run_times[label] += perf_counter() - start
+
                     if rule.targets:
                         if isinstance(result, MultipleResults):
                             for single_result in result.values:
@@ -203,7 +214,7 @@ def run_state_machine_as_test(state_machine_factory, *, settings=None, _min_step
                         # If it does, and the result is a 'MultipleResult',
                         # then 'print_step' prints a multi-variable assignment.
                         output(machine._repr_step(rule, data_to_print, result))
-                machine.check_invariants(settings, output)
+                machine.check_invariants(settings, output, cd._stateful_run_times)
                 cd.stop_example()
         finally:
             output("state.teardown()")
@@ -369,19 +380,22 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         for target in targets:
             self.bundles.setdefault(target, []).append(VarReference(name))
 
-    def check_invariants(self, settings, output):
+    def check_invariants(self, settings, output, runtimes):
         for invar in self.invariants():
             if self._initialize_rules_to_run and not invar.check_during_init:
                 continue
             if not all(precond(self) for precond in invar.preconditions):
                 continue
+            name = invar.function.__name__
             if (
                 current_build_context().is_final
                 or settings.verbosity >= Verbosity.debug
                 or TESTCASE_CALLBACKS
             ):
-                output(f"state.{invar.function.__name__}()")
+                output(f"state.{name}()")
+            start = perf_counter()
             result = invar.function(self)
+            runtimes[f"execute:invariant:{name}"] += perf_counter() - start
             if result is not None:
                 fail_health_check(
                     settings,
