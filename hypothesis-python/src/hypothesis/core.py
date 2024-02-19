@@ -1076,6 +1076,7 @@ class StateForActualGivenExecution:
                     arguments={**self._jsonable_arguments, **data._observability_args},
                     timing=self._timing_features,
                     coverage=tractable_coverage_report(trace) or None,
+                    phase=phase,
                 )
                 deliver_json_blob(tc)
             self._timing_features = {}
