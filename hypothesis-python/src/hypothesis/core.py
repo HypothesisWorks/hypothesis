@@ -927,6 +927,9 @@ class StateForActualGivenExecution:
                     msg, format_arg = data._sampled_from_all_strategies_elements_message
                     add_note(e, msg.format(format_arg))
                 raise
+            finally:
+                if parts := getattr(data, "_stateful_repr_parts", None):
+                    self._string_repr = "\n".join(parts)
 
         # self.test_runner can include the execute_example method, or setup/teardown
         # _example, so it's important to get the PRNG and build context in place first.
