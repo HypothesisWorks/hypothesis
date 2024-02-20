@@ -403,7 +403,7 @@ def test_settings_attribute_is_validated():
 def test_saves_failing_example_in_database():
     db = ExampleDatabase(":memory:")
     ss = Settings(
-        database=db, max_examples=100, suppress_health_check=list(HealthCheck)
+        database=db, max_examples=1000, suppress_health_check=list(HealthCheck)
     )
     with raises(AssertionError):
         run_state_machine_as_test(DepthMachine, settings=ss)
