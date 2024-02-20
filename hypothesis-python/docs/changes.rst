@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.98.9:
+
+-------------------
+6.98.9 - 2024-02-20
+-------------------
+
+This patch ensures that :doc:`observability <observability>` outputs include
+an informative repr for :class:`~hypothesis.stateful.RuleBasedStateMachine`
+stateful tests, along with more detailed timing information.
+
 .. _v6.98.8:
 
 -------------------
