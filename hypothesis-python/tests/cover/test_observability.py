@@ -24,6 +24,12 @@ from hypothesis import (
 )
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.internal.observability import TESTCASE_CALLBACKS
+from hypothesis.stateful import (
+    RuleBasedStateMachine,
+    invariant,
+    rule,
+    run_state_machine_as_test,
+)
 
 
 @contextlib.contextmanager
@@ -84,3 +90,38 @@ def test_assume_has_status_reason():
     gave_ups = [t for t in ls if t["type"] == "test_case" and t["status"] == "gave_up"]
     for gave_up in gave_ups:
         assert gave_up["status_reason"].startswith("failed to satisfy assume() in f")
+
+
+@settings(max_examples=20, stateful_step_count=5)
+class UltraSimpleMachine(RuleBasedStateMachine):
+    value = 0
+
+    @rule()
+    def inc(self):
+        self.value += 1
+
+    @rule()
+    def dec(self):
+        self.value -= 1
+
+    @invariant()
+    def limits(self):
+        assert abs(self.value) <= 100
+
+
+def test_observability_captures_stateful_reprs():
+    with capture_observations() as ls:
+        run_state_machine_as_test(UltraSimpleMachine)
+
+    for x in ls:
+        if x["type"] != "test_case" or x["status"] == "gave_up":
+            continue
+        r = x["representation"]
+        assert "state.limits()" in r
+        assert "state.inc()" in r or "state.dec()" in r  # or both
+
+        t = x["timing"]
+        assert "execute:invariant:limits" in t
+        has_inc = "generate:rule:inc" in t and "execute:rule:inc" in t
+        has_dec = "generate:rule:dec" in t and "execute:rule:dec" in t
+        assert has_inc or has_dec
