@@ -50,6 +50,13 @@ MUTATION_POOL_SIZE = 100
 MIN_TEST_CALLS = 10
 BUFFER_SIZE = 8 * 1024
 
+# If the shrinking phase takes more than five minutes, abort it early and print
+# a warning.   Many CI systems will kill a build after around ten minutes with
+# no output, and appearing to hang isn't great for interactive use either -
+# showing partially-shrunk examples is better than quitting with no examples!
+# (but make it monkeypatchable, for the rare users who need to keep on shrinking)
+MAX_SHRINKING_SECONDS = 300
+
 
 @attr.s
 class HealthCheckState:
@@ -223,7 +230,7 @@ class ConjectureRunner:
             self.debug(self.__pending_call_explanation)
             self.__pending_call_explanation = None
 
-        assert isinstance(data.observer, TreeRecordingObserver)
+        # assert isinstance(data.observer, TreeRecordingObserver)
         self.call_count += 1
 
         interrupted = False
@@ -298,6 +305,13 @@ class ConjectureRunner:
                     changed = True
 
             if changed:
+                if self.settings.backend != "hypothesis":
+                    existing_ir_tree = data.ir_tree
+                    data = ConjectureData.for_ir_tree(existing_ir_tree)
+                    self.__stoppable_test_function(data)
+                    self.__data_cache[data.buffer] = data.as_result()
+                    print(f"ran to buffer {data.buffer}")
+                    print(f"from ir tree {[l.value for l in existing_ir_tree.leaves()]}")
                 self.save_buffer(data.buffer)
                 self.interesting_examples[key] = data.as_result()
                 self.__data_cache.pin(data.buffer)
@@ -822,8 +836,8 @@ class ConjectureRunner:
                 )
                 assert ex1.end <= ex2.start
 
-                replacements = [data.buffer[e.start : e.end] for e in [ex1, ex2]]
-                replacement = self.random.choice(replacements)
+                e = self.random.choice([ex1, ex2])
+                replacement = data.buffer[e.start : e.end]
 
                 try:
                     # We attempt to replace both the the examples with
@@ -936,11 +950,15 @@ class ConjectureRunner:
             mname, cname = AVAILABLE_PROVIDERS[self.settings.backend].rsplit(".", 1)
             provider_cls = getattr(importlib.import_module(mname), cname)
 
+        observer = observer or self.tree.new_observer()
+        if self.settings.backend != "hypothesis": # replace with wants_datatree
+            observer = DataObserver()
+
         return ConjectureData(
             prefix=prefix,
             max_length=max_length,
             random=self.random,
-            observer=observer or self.tree.new_observer(),
+            observer=observer,
             provider=provider_cls,
         )
 
@@ -958,12 +976,7 @@ class ConjectureRunner:
             return
 
         self.debug("Shrinking interesting examples")
-
-        # If the shrinking phase takes more than five minutes, abort it early and print
-        # a warning.   Many CI systems will kill a build after around ten minutes with
-        # no output, and appearing to hang isn't great for interactive use either -
-        # showing partially-shrunk examples is better than quitting with no examples!
-        self.finish_shrinking_deadline = time.perf_counter() + 300
+        self.finish_shrinking_deadline = time.perf_counter() + MAX_SHRINKING_SECONDS
 
         for prev_data in sorted(
             self.interesting_examples.values(), key=lambda d: sort_key(d.buffer)
@@ -1088,20 +1101,21 @@ class ConjectureRunner:
             prefix=buffer, max_length=max_length, observer=observer
         )
 
-        try:
-            self.tree.simulate_test_function(dummy_data)
-        except PreviouslyUnseenBehaviour:
-            pass
-        else:
-            if dummy_data.status > Status.OVERRUN:
-                dummy_data.freeze()
-                try:
-                    return self.__data_cache[dummy_data.buffer]
-                except KeyError:
-                    pass
+        if self.settings.backend == "hypothesis": # replace with wants_datatree
+            try:
+                self.tree.simulate_test_function(dummy_data)
+            except PreviouslyUnseenBehaviour:
+                pass
             else:
-                self.__data_cache[buffer] = Overrun
-                return Overrun
+                if dummy_data.status > Status.OVERRUN:
+                    dummy_data.freeze()
+                    try:
+                        return self.__data_cache[dummy_data.buffer]
+                    except KeyError:
+                        pass
+                else:
+                    self.__data_cache[buffer] = Overrun
+                    return Overrun
 
         # We didn't find a match in the tree, so we need to run the test
         # function normally. Note that test_function will automatically

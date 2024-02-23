@@ -1,7 +1,7 @@
 # This test code was written by the `hypothesis.extra.ghostwriter` module
 # and is provided under the Creative Commons Zero public domain dedication.
 
-import _operator
+import operator
 from hypothesis import given, strategies as st
 
 # TODO: replace st.nothing() with an appropriate strategy
@@ -11,4 +11,6 @@ truediv_operands = st.nothing()
 
 @given(a=truediv_operands)
 def test_identity_binary_operation_truediv(a):
-    assert a == _operator.truediv(a, "identity element here")
+    identity = "identity element here"
+    assert a == operator.truediv(a, identity)
+    assert a == operator.truediv(identity, a)

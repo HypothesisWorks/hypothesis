@@ -18,6 +18,34 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.98.9:
+
+-------------------
+6.98.9 - 2024-02-20
+-------------------
+
+This patch ensures that :doc:`observability <observability>` outputs include
+an informative repr for :class:`~hypothesis.stateful.RuleBasedStateMachine`
+stateful tests, along with more detailed timing information.
+
+.. _v6.98.8:
+
+-------------------
+6.98.8 - 2024-02-18
+-------------------
+
+This patch improves :doc:`the Ghostwriter <ghostwriter>` for binary operators.
+
+.. _v6.98.7:
+
+-------------------
+6.98.7 - 2024-02-18
+-------------------
+
+This patch improves import-detection in :doc:`the Ghostwriter <ghostwriter>`
+(:issue:`3884`), particularly for :func:`~hypothesis.strategies.from_type`
+and strategies from ``hypothesis.extra.*``.
+
 .. _v6.98.6:
 
 -------------------

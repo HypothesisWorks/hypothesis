@@ -9,10 +9,10 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
+import sys
 from contextlib import contextmanager
 from random import Random
 from typing import Optional, Sequence
-import sys
 
 import pytest
 
@@ -78,8 +78,7 @@ class PrngProvider:
 
         if allow_nan and self.prng.random() < 1 / 32:
             nans = [math.nan, -math.nan, SIGNALING_NAN, -SIGNALING_NAN]
-            value = self.prng.choice(nans)
-            return value
+            return self.prng.choice(nans)
 
         # small chance of inf values, if they are in bounds
         if min_value <= math.inf <= max_value and self.prng.random() < 1 / 32:
@@ -139,7 +138,7 @@ def temp_register_backend():
         st.integers(0, 10),
         st.floats(allow_nan=False),
         st.text(max_size=5),
-        st.binary(),
+        st.binary(max_size=5),
     ],
     ids=repr,
 )

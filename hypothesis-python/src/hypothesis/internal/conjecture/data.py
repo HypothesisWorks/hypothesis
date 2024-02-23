@@ -18,6 +18,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    DefaultDict,
     Dict,
     FrozenSet,
     Iterable,
@@ -641,7 +642,9 @@ class Block:
 
     @property
     def trivial(self) -> bool:
-        return self.forced or self.all_zero
+        # return self.forced or self.all_zero
+        # TODO need a fake_forced for shrinking.
+        return self.all_zero
 
 
 class Blocks:
@@ -836,34 +839,6 @@ global_test_counter = 0
 MAX_DEPTH = 100
 
 
-class IntegerKWargs(TypedDict):
-    min_value: Optional[int]
-    max_value: Optional[int]
-    weights: Optional[Sequence[float]]
-    shrink_towards: int
-
-
-class FloatKWargs(TypedDict):
-    min_value: float
-    max_value: float
-    allow_nan: bool
-    smallest_nonzero_magnitude: float
-
-
-class StringKWargs(TypedDict):
-    intervals: IntervalSet
-    min_size: int
-    max_size: Optional[int]
-
-
-class BytesKWargs(TypedDict):
-    size: int
-
-
-class BooleanKWargs(TypedDict):
-    p: float
-
-
 class DataObserver:
     """Observer class for recording the behaviour of a
     ConjectureData object, primarily used for tracking
@@ -909,6 +884,104 @@ class DataObserver:
         pass
 
 
+class IRTreeLeaf:
+    def __init__(self, *, ir_type: IRLiteralType, value: IRType, kwargs: IRKWargsType):
+        self.ir_type = ir_type
+        self.value = value
+        self.kwargs = kwargs
+
+    def _repr_pretty_(self, p, cycle):
+        assert cycle is False
+        p.text(f"{self.ir_type} {self.value} {self.kwargs}")
+
+
+class IRTreeNode:
+    def __init__(
+        self,
+        *,
+        label: int,
+        parent: Optional["IRTreeNode"],
+        index_in_parent: Optional[int] = None,
+    ):
+        self.parent = parent
+        self.index_in_parent = index_in_parent
+        self.label = label
+        self.children: List[Union[IRTreeNode, IRTreeLeaf]] = []
+
+    def _repr_pretty_(self, p, cycle):
+        assert cycle is False
+        p.text(str(self.label))
+        with p.indent(1):
+            for child in self.children:
+                p.break_()
+                p.pretty(child)
+
+
+class IRTree:
+    def __init__(self):
+        # only None when the top example hasn't been started yet
+        self.root: Optional[IRTreeNode] = None
+        self.current_node: Optional[IRTreeNode] = None
+
+    def _repr_pretty_(self, p, cycle):
+        assert cycle is False
+        p.pretty(self.root)
+
+    def leaves(self) -> List[IRTreeLeaf]:
+        def _leaves(node):
+            leaves = []
+            for child in node.children:
+                if isinstance(child, IRTreeNode):
+                    leaves += _leaves(child)
+                else:
+                    assert isinstance(child, IRTreeLeaf)
+                    leaves.append(child)
+            return leaves
+
+        return _leaves(self.root)
+
+    def start_example(self, label):
+        if self.root is None:
+            assert label == TOP_LABEL
+            self.root = IRTreeNode(label=TOP_LABEL, parent=None, index_in_parent=None)
+            self.current_node = self.root
+            return
+
+        node = IRTreeNode(
+            label=label,
+            parent=self.current_node,
+            index_in_parent=len(self.current_node.children) + 1,
+        )
+        self.current_node.children.append(node)
+        self.current_node = node
+
+    def stop_example(self):
+        if self.current_node.parent is None:
+            assert self.current_node.label == TOP_LABEL
+
+        self.current_node = self.current_node.parent
+
+    def draw_value(self, ir_type: IRLiteralType, value: IRType, kwargs: IRKWargsType):
+        assert self.current_node is not None
+        leaf = IRTreeLeaf(ir_type=ir_type, value=value, kwargs=kwargs)
+        self.current_node.children.append(leaf)
+
+    def draw_integer(self, value: int, kwargs: IntegerKWargs):
+        self.draw_value("integer", value, kwargs)
+
+    def draw_float(self, value: float, kwargs: FloatKWargs):
+        self.draw_value("float", value, kwargs)
+
+    def draw_string(self, value: str, kwargs: StringKWargs):
+        self.draw_value("string", value, kwargs)
+
+    def draw_bytes(self, value: bytes, kwargs: BytesKWargs):
+        self.draw_value("bytes", value, kwargs)
+
+    def draw_boolean(self, value: bool, kwargs: BooleanKWargs):
+        self.draw_value("boolean", value, kwargs)
+
+
 @dataclass_transform()
 @attr.s(slots=True)
 class ConjectureResult:
@@ -919,6 +992,7 @@ class ConjectureResult:
     status: Status = attr.ib()
     interesting_origin: Optional[InterestingOrigin] = attr.ib()
     buffer: bytes = attr.ib()
+    ir_tree: IRTree = attr.ib()
     blocks: Blocks = attr.ib()
     output: str = attr.ib()
     extra_information: Optional[ExtraInformation] = attr.ib()
@@ -1489,6 +1563,16 @@ class ConjectureData:
             len(buffer), buffer, random=None, observer=observer, provider=provider
         )
 
+    @classmethod
+    def for_ir_tree(
+        cls,
+        ir_tree_prefix: IRTree,
+        *,
+        observer: Optional[DataObserver] = None,
+        provider: type = PrimitiveProvider,
+    ) -> "ConjectureData":
+        return cls(8 * 1024, b"", random=None, ir_tree_prefix=ir_tree_prefix, observer=observer, provider=provider)
+
     def __init__(
         self,
         max_length: int,
@@ -1497,6 +1581,7 @@ class ConjectureData:
         random: Optional[Random],
         observer: Optional[DataObserver] = None,
         provider: type = PrimitiveProvider,
+        ir_tree_prefix: Optional[IRTree] = None,
     ) -> None:
         if observer is None:
             observer = DataObserver()
@@ -1509,7 +1594,8 @@ class ConjectureData:
         self.__prefix = bytes(prefix)
         self.__random = random
 
-        assert random is not None or max_length <= len(prefix)
+        if ir_tree_prefix is None:
+            assert random is not None or max_length <= len(prefix)
 
         self.blocks = Blocks(self)
         self.buffer: "Union[bytes, bytearray]" = bytearray()
@@ -1525,6 +1611,7 @@ class ConjectureData:
         self.forced_indices: "Set[int]" = set()
         self.interesting_origin: Optional[InterestingOrigin] = None
         self.draw_times: "Dict[str, float]" = {}
+        self._stateful_run_times: "DefaultDict[str, float]" = defaultdict(float)
         self.max_depth = 0
         self.has_discards = False
         self.provider = provider(self)
@@ -1560,6 +1647,11 @@ class ConjectureData:
         )
 
         self.extra_information = ExtraInformation()
+
+        self.ir_tree = IRTree()
+        self.ir_tree_leaves = None if ir_tree_prefix is None else ir_tree_prefix.leaves()
+        self.ir_tree_leaves_index = 0
+        self.start_example(TOP_LABEL)
 
 
     def __repr__(self):
@@ -1618,12 +1710,22 @@ class ConjectureData:
             "weights": weights,
             "shrink_towards": shrink_towards,
         }
+        if self.ir_tree_leaves is not None:
+            forced = self.ir_tree_leaves[self.ir_tree_leaves_index].value
+            self.ir_tree_leaves_index += 1
+            # assert isinstance(self.ir_current_node, IRTreeNode)
+            # leaf = self.ir_current_node.children[self.ir_index_in_current_node]
+            # forced = leaf.value
+            # # no flakiness
+            # assert leaf.kwargs == kwargs
+            # self.ir_index_in_current_node += 1
+
         value = self.provider.draw_integer(**kwargs, forced=forced)
         if observe:
             self.observer.draw_integer(
                 value, was_forced=forced is not None, kwargs=kwargs
             )
-            self.record_ir_value("integer", value, kwargs)
+            self.ir_tree.draw_integer(value, kwargs)
         return value
 
     def draw_float(
@@ -1661,7 +1763,7 @@ class ConjectureData:
             self.observer.draw_float(
                 value, kwargs=kwargs, was_forced=forced is not None
             )
-            self.record_ir_value("float", value, kwargs)
+            self.ir_tree.draw_float(value, kwargs)
         return value
 
     def draw_string(
@@ -1685,7 +1787,7 @@ class ConjectureData:
             self.observer.draw_string(
                 value, kwargs=kwargs, was_forced=forced is not None
             )
-            self.record_ir_value("string", value, kwargs)
+            self.ir_tree.draw_string(value, kwargs)
         return value
 
     def draw_bytes(
@@ -1705,7 +1807,7 @@ class ConjectureData:
             self.observer.draw_bytes(
                 value, kwargs=kwargs, was_forced=forced is not None
             )
-            self.record_ir_value("bytes", value, kwargs)
+            self.ir_tree.draw_bytes(value, kwargs)
         return value
 
     def draw_boolean(
@@ -1727,7 +1829,7 @@ class ConjectureData:
             self.observer.draw_boolean(
                 value, kwargs=kwargs, was_forced=forced is not None
             )
-            self.record_ir_value("boolean", value, kwargs)
+            self.ir_tree.draw_boolean(value, kwargs)
         return value
 
     def as_result(self) -> Union[ConjectureResult, _Overrun]:
@@ -1742,6 +1844,7 @@ class ConjectureData:
                 status=self.status,
                 interesting_origin=self.interesting_origin,
                 buffer=self.buffer,
+                ir_tree=self.ir_tree,
                 examples=self.examples,
                 blocks=self.blocks,
                 output=self.output,
@@ -1771,26 +1874,6 @@ class ConjectureData:
             value = repr(value)
         self.output += value
 
-    def record_ir_value(
-        self, ir_type: IRLiteralType, value: IRType, kwargs: IRKWargsType
-    ):
-        if isinstance(self.provider, PrimitiveProvider):
-            return
-        from hypothesis.internal.conjecture.engine import BUFFER_SIZE
-
-        cd = ConjectureData(
-            max_length=BUFFER_SIZE, prefix=b"", random=self.__random
-        )
-        # calling this will write to cd.buffer.
-        draw_func = getattr(cd, f"draw_{ir_type}")
-        draw_func(**kwargs, forced=value, observe=False)
-        forced_i = int_from_bytes(cd.buffer)
-        size = len(cd.buffer)
-        # drive this through draw_bits so the appropriate examples and blocks
-        # are created.
-        # fake_forced is so we force this value to be drawn, but still create
-        # examples and blocks as if it wasn't forced.
-        self.draw_bits(8 * size, forced=forced_i, fake_forced=True)
 
     def draw(
         self,
@@ -1834,7 +1917,7 @@ class ConjectureData:
                 try:
                     return strategy.do_draw(self)
                 finally:
-                    key = observe_as or f"unlabeled_{len(self.draw_times)}"
+                    key = observe_as or f"generate:unlabeled_{len(self.draw_times)}"
                     self.draw_times[key] = time.perf_counter() - start_time
         finally:
             self.stop_example()
@@ -1852,6 +1935,7 @@ class ConjectureData:
             self.max_depth = self.depth
         self.__example_record.start_example(label)
         self.labels_for_structure_stack.append({label})
+        self.ir_tree.start_example(label)
 
     def stop_example(self, *, discard: bool = False) -> None:
         if self.frozen:
@@ -1896,6 +1980,8 @@ class ConjectureData:
             # have explored the entire tree (up to redundancy).
 
             self.observer.kill_branch()
+
+        self.ir_tree.stop_example()
 
     @property
     def examples(self) -> Examples:

@@ -69,6 +69,8 @@ from hypothesis import note, settings
 from hypothesis.stateful import RuleBasedStateMachine, invariant, rule
 
 
+# The default is not always enough for Hypothesis to find a failing example.
+@settings(max_examples=2000)
 class DieHardProblem(RuleBasedStateMachine):
     small = 0
     big = 0
@@ -112,10 +114,7 @@ class DieHardProblem(RuleBasedStateMachine):
         assert self.big != 4
 
 
-# The default of 200 is sometimes not enough for Hypothesis to find
-# a falsifying example.
-with settings(max_examples=2000):
-    DieHardTest = DieHardProblem.TestCase
+DieHardTest = DieHardProblem.TestCase
 ```
 
 Calling `pytest` on this file quickly digs up a solution:
