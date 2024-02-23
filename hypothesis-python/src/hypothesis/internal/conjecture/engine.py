@@ -306,12 +306,10 @@ class ConjectureRunner:
 
             if changed:
                 if self.settings.backend != "hypothesis":
-                    existing_ir_tree = data.ir_tree
-                    data = ConjectureData.for_ir_tree(existing_ir_tree)
+                    data = ConjectureData.for_ir_tree(data.ir_tree)
                     self.__stoppable_test_function(data)
                     self.__data_cache[data.buffer] = data.as_result()
                     print(f"ran to buffer {data.buffer}")
-                    print(f"from ir tree {[l.value for l in existing_ir_tree.leaves()]}")
                 self.save_buffer(data.buffer)
                 self.interesting_examples[key] = data.as_result()
                 self.__data_cache.pin(data.buffer)
