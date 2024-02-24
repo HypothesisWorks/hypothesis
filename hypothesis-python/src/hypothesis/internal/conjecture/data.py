@@ -960,24 +960,24 @@ class IRTree:
 
         self.current_node = self.current_node.parent
 
-    def draw_value(self, ir_type: IRTypeName, value: IRType, kwargs: IRKWargsType):
+    def draw_value(self, ir_type: IRTypeName, value: IRType, kwargs: IRKWargsType) -> None:
         assert self.current_node is not None
         leaf = IRTreeLeaf(ir_type=ir_type, value=value, kwargs=kwargs)
         self.current_node.children.append(leaf)
 
-    def draw_integer(self, value: int, kwargs: IntegerKWargs):
+    def draw_integer(self, value: int, kwargs: IntegerKWargs) -> None:
         self.draw_value("integer", value, kwargs)
 
-    def draw_float(self, value: float, kwargs: FloatKWargs):
+    def draw_float(self, value: float, kwargs: FloatKWargs) -> None:
         self.draw_value("float", value, kwargs)
 
-    def draw_string(self, value: str, kwargs: StringKWargs):
+    def draw_string(self, value: str, kwargs: StringKWargs) -> None:
         self.draw_value("string", value, kwargs)
 
-    def draw_bytes(self, value: bytes, kwargs: BytesKWargs):
+    def draw_bytes(self, value: bytes, kwargs: BytesKWargs) -> None:
         self.draw_value("bytes", value, kwargs)
 
-    def draw_boolean(self, value: bool, kwargs: BooleanKWargs):
+    def draw_boolean(self, value: bool, kwargs: BooleanKWargs) -> None:
         self.draw_value("boolean", value, kwargs)
 
 
@@ -1853,7 +1853,8 @@ class ConjectureData:
             self.ir_tree.draw_boolean(value, kwargs)
         return value
 
-    def _pop_ir_tree_value(self, ir_type: IRTypeName, kwargs: IRKWargsType):
+    def _pop_ir_tree_value(self, ir_type: IRTypeName, kwargs: IRKWargsType) -> IRType:
+        assert self.ir_tree_leaves is not None
         leaf = self.ir_tree_leaves[self.ir_tree_leaves_index]
         assert leaf.ir_type == ir_type
         assert kwargs == leaf.kwargs
@@ -2052,7 +2053,7 @@ class ConjectureData:
         return values[i]
 
     def draw_bits(
-        self, n: int, *, forced: Optional[int] = None, fake_forced=False
+        self, n: int, *, forced: Optional[int] = None, fake_forced: bool = False
     ) -> int:
         """Return an ``n``-bit integer from the underlying source of
         bytes. If ``forced`` is set to an integer will instead
