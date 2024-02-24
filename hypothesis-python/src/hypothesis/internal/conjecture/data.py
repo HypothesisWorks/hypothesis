@@ -958,7 +958,9 @@ class IRTree:
 
         self.current_node = self.current_node.parent
 
-    def draw_value(self, ir_type: IRTypeName, value: IRType, kwargs: IRKWargsType) -> None:
+    def draw_value(
+        self, ir_type: IRTypeName, value: IRType, kwargs: IRKWargsType
+    ) -> None:
         assert self.current_node is not None
         leaf = IRTreeLeaf(ir_type=ir_type, value=value, kwargs=kwargs)
         self.current_node.children.append(leaf)
