@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.98.11:
+
+--------------------
+6.98.11 - 2024-02-24
+--------------------
+
+This patch makes stateful testing somewhat less likely to get stuck
+when there are only a few possible rules.
+
 .. _v6.98.10:
 
 --------------------
