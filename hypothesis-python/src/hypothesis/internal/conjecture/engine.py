@@ -284,6 +284,26 @@ class ConjectureRunner:
             self.valid_examples += 1
 
         if data.status == Status.INTERESTING:
+            if self.settings.backend != "hypothesis":
+                for node in data.ir_tree.leaves():
+                    node.value = data.provider.post_test_case_hook(node.value)
+
+                # drive the ir tree through the test function to convert it
+                # to a buffer
+                data = ConjectureData.for_ir_tree(data.ir_tree)
+                self.__stoppable_test_function(data)
+
+                # ir tree conversion works by using forced=. This works great,
+                # but has the side effect of causing *all* blocks to be marked
+                # as forced. The shrinker in turn thinks these blocks are
+                # trivial and avoids shrinking them.
+                # We'll drive the buffer through the test function one more
+                # time to set up the blocks correctly for the shrinker.
+                data = ConjectureData.for_buffer(data.buffer)
+                self.__stoppable_test_function(data)
+
+                self.__data_cache[data.buffer] = data.as_result()
+
             key = data.interesting_origin
             changed = False
             try:
@@ -301,12 +321,6 @@ class ConjectureRunner:
                     changed = True
 
             if changed:
-                if self.settings.backend != "hypothesis":
-                    for node in data.ir_tree.leaves():
-                        node.value = data.provider.post_test_case_hook(node.value)
-                    data = ConjectureData.for_ir_tree(data.ir_tree)
-                    self.__stoppable_test_function(data)
-                    self.__data_cache[data.buffer] = data.as_result()
                 self.save_buffer(data.buffer)
                 self.interesting_examples[key] = data.as_result()
                 self.__data_cache.pin(data.buffer)
@@ -826,6 +840,7 @@ class ConjectureRunner:
                     break
 
                 group = self.random.choice(groups)
+
                 ex1, ex2 = (
                     data.examples[i] for i in sorted(self.random.sample(group, 2))
                 )

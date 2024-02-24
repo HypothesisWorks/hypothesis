@@ -641,9 +641,7 @@ class Block:
 
     @property
     def trivial(self) -> bool:
-        # return self.forced or self.all_zero
-        # TODO need a fake_forced for shrinking.
-        return self.all_zero
+        return self.forced or self.all_zero
 
 
 class Blocks:
@@ -2052,9 +2050,7 @@ class ConjectureData:
         i = self.draw_integer(0, len(values) - 1, forced=forced_i, observe=observe)
         return values[i]
 
-    def draw_bits(
-        self, n: int, *, forced: Optional[int] = None, fake_forced: bool = False
-    ) -> int:
+    def draw_bits(self, n: int, *, forced: Optional[int] = None) -> int:
         """Return an ``n``-bit integer from the underlying source of
         bytes. If ``forced`` is set to an integer will instead
         ignore the underlying source and simulate a draw as if it had
@@ -2088,7 +2084,7 @@ class ConjectureData:
         buf = bytes(buf)
         result = int_from_bytes(buf)
 
-        self.__example_record.draw_bits(n, forced and not fake_forced)
+        self.__example_record.draw_bits(n, forced)
 
         initial = self.index
 
@@ -2096,7 +2092,7 @@ class ConjectureData:
         self.buffer.extend(buf)
         self.index = len(self.buffer)
 
-        if forced is not None and not fake_forced:
+        if forced is not None:
             self.forced_indices.update(range(initial, self.index))
 
         self.blocks.add_endpoint(self.index)
