@@ -358,7 +358,6 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         return cls._invariants_per_class[cls]
 
     def _repr_step(self, rule, data, result):
-        self.step_count = getattr(self, "step_count", 0) + 1
         output_assignment = ""
         if rule.targets:
             if isinstance(result, MultipleResults):
