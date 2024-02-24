@@ -58,7 +58,9 @@ class PrngProvider(PrimitiveProvider):
             assert min_value is not None
             assert max_value is not None
             # use .choices so we can use the weights= param.
-            choices = self.prng.choices(range(min_value, max_value + 1), weights=weights, k=1)
+            choices = self.prng.choices(
+                range(min_value, max_value + 1), weights=weights, k=1
+            )
             return choices[0]
 
         if min_value is None and max_value is None:

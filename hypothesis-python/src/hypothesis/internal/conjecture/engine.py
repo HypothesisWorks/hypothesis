@@ -33,11 +33,7 @@ from hypothesis.internal.conjecture.data import (
     PrimitiveProvider,
     Status,
 )
-from hypothesis.internal.conjecture.datatree import (
-    DataTree,
-    PreviouslyUnseenBehaviour,
-    TreeRecordingObserver,
-)
+from hypothesis.internal.conjecture.datatree import DataTree, PreviouslyUnseenBehaviour
 from hypothesis.internal.conjecture.junkdrawer import clamp, ensure_free_stackframes
 from hypothesis.internal.conjecture.pareto import NO_SCORE, ParetoFront, ParetoOptimiser
 from hypothesis.internal.conjecture.shrinker import Shrinker, sort_key
@@ -950,7 +946,7 @@ class ConjectureRunner:
             provider_cls = getattr(importlib.import_module(mname), cname)
 
         observer = observer or self.tree.new_observer()
-        if self.settings.backend != "hypothesis": # replace with wants_datatree
+        if self.settings.backend != "hypothesis":  # replace with wants_datatree
             observer = DataObserver()
 
         return ConjectureData(
@@ -1100,7 +1096,7 @@ class ConjectureRunner:
             prefix=buffer, max_length=max_length, observer=observer
         )
 
-        if self.settings.backend == "hypothesis": # replace with wants_datatree
+        if self.settings.backend == "hypothesis":  # replace with wants_datatree
             try:
                 self.tree.simulate_test_function(dummy_data)
             except PreviouslyUnseenBehaviour:
