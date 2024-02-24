@@ -78,3 +78,8 @@ def test_repr_can_be_evalled(data):
 
     for f in more_features:
         assert flags2.is_enabled(f)
+
+
+@given(FeatureStrategy(at_least_one_of={"a", "b", "c"}))
+def test_can_avoid_disabling_every_flag(flags):
+    assert any(flags.is_enabled(k) for k in {"a", "b", "c"})
