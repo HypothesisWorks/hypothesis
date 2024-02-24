@@ -1725,10 +1725,7 @@ class ConjectureData:
             "shrink_towards": shrink_towards,
         }
         if self.ir_tree_leaves is not None and observe:
-            leaf = self.ir_tree_leaves[self.ir_tree_leaves_index]
-            forced = leaf.value
-            assert kwargs == leaf.kwargs
-            self.ir_tree_leaves_index += 1
+            forced = self._pop_ir_tree_value("integer", kwargs)
 
         value = self.provider.draw_integer(**kwargs, forced=forced)
         if observe:
@@ -1768,6 +1765,9 @@ class ConjectureData:
             "allow_nan": allow_nan,
             "smallest_nonzero_magnitude": smallest_nonzero_magnitude,
         }
+        if self.ir_tree_leaves is not None and observe:
+            forced = self._pop_ir_tree_value("float", kwargs)
+
         value = self.provider.draw_float(**kwargs, forced=forced)
         if observe:
             self.observer.draw_float(
@@ -1792,6 +1792,9 @@ class ConjectureData:
             "min_size": min_size,
             "max_size": max_size,
         }
+        if self.ir_tree_leaves is not None and observe:
+            forced = self._pop_ir_tree_value("string", kwargs)
+
         value = self.provider.draw_string(**kwargs, forced=forced)
         if observe:
             self.observer.draw_string(
@@ -1812,6 +1815,10 @@ class ConjectureData:
         assert size >= 0
 
         kwargs: BytesKWargs = {"size": size}
+
+        if self.ir_tree_leaves is not None and observe:
+            forced = self._pop_ir_tree_value("bytes", kwargs)
+
         value = self.provider.draw_bytes(**kwargs, forced=forced)
         if observe:
             self.observer.draw_bytes(
@@ -1834,6 +1841,10 @@ class ConjectureData:
             assert p < (1 - 2 ** (-64))
 
         kwargs: BooleanKWargs = {"p": p}
+
+        if self.ir_tree_leaves is not None and observe:
+            forced = self._pop_ir_tree_value("boolean", kwargs)
+
         value = self.provider.draw_boolean(**kwargs, forced=forced)
         if observe:
             self.observer.draw_boolean(
@@ -1841,6 +1852,14 @@ class ConjectureData:
             )
             self.ir_tree.draw_boolean(value, kwargs)
         return value
+
+    def _pop_ir_tree_value(self, ir_type: IRTypeName, kwargs: IRKWargsType):
+        leaf = self.ir_tree_leaves[self.ir_tree_leaves_index]
+        assert leaf.ir_type == ir_type
+        assert kwargs == leaf.kwargs
+
+        self.ir_tree_leaves_index += 1
+        return leaf.value
 
     def as_result(self) -> Union[ConjectureResult, _Overrun]:
         """Convert the result of running this test into
