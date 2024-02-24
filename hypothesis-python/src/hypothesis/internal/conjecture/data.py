@@ -1710,8 +1710,10 @@ class ConjectureData:
             "weights": weights,
             "shrink_towards": shrink_towards,
         }
-        if self.ir_tree_leaves is not None:
-            forced = self.ir_tree_leaves[self.ir_tree_leaves_index].value
+        if self.ir_tree_leaves is not None and observe:
+            leaf = self.ir_tree_leaves[self.ir_tree_leaves_index]
+            forced = leaf.value
+            assert kwargs == leaf.kwargs
             self.ir_tree_leaves_index += 1
             # assert isinstance(self.ir_current_node, IRTreeNode)
             # leaf = self.ir_current_node.children[self.ir_index_in_current_node]

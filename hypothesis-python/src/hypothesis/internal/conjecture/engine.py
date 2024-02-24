@@ -306,6 +306,8 @@ class ConjectureRunner:
 
             if changed:
                 if self.settings.backend != "hypothesis":
+                    for node in data.ir_tree.leaves():
+                        node.value = data.provider.export_value(node.value)
                     data = ConjectureData.for_ir_tree(data.ir_tree)
                     self.__stoppable_test_function(data)
                     self.__data_cache[data.buffer] = data.as_result()
