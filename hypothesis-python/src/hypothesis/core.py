@@ -1185,7 +1185,7 @@ class StateForActualGivenExecution:
                                 info._expected_exception,
                                 info._expected_traceback,
                             ),
-                            per_case_context_fn=per_case_context_fn
+                            per_case_context_fn=per_case_context_fn,
                         )
             except (UnsatisfiedAssumption, StopTest) as e:
                 err = Flaky(

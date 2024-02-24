@@ -1570,7 +1570,14 @@ class ConjectureData:
         observer: Optional[DataObserver] = None,
         provider: type = PrimitiveProvider,
     ) -> "ConjectureData":
-        return cls(8 * 1024, b"", random=None, ir_tree_prefix=ir_tree_prefix, observer=observer, provider=provider)
+        return cls(
+            8 * 1024,
+            b"",
+            random=None,
+            ir_tree_prefix=ir_tree_prefix,
+            observer=observer,
+            provider=provider,
+        )
 
     def __init__(
         self,
@@ -1648,10 +1655,11 @@ class ConjectureData:
         self.extra_information = ExtraInformation()
 
         self.ir_tree = IRTree()
-        self.ir_tree_leaves = None if ir_tree_prefix is None else ir_tree_prefix.leaves()
+        self.ir_tree_leaves = (
+            None if ir_tree_prefix is None else ir_tree_prefix.leaves()
+        )
         self.ir_tree_leaves_index = 0
         self.start_example(TOP_LABEL)
-
 
     def __repr__(self):
         return "ConjectureData(%s, %d bytes%s)" % (
@@ -1714,12 +1722,6 @@ class ConjectureData:
             forced = leaf.value
             assert kwargs == leaf.kwargs
             self.ir_tree_leaves_index += 1
-            # assert isinstance(self.ir_current_node, IRTreeNode)
-            # leaf = self.ir_current_node.children[self.ir_index_in_current_node]
-            # forced = leaf.value
-            # # no flakiness
-            # assert leaf.kwargs == kwargs
-            # self.ir_index_in_current_node += 1
 
         value = self.provider.draw_integer(**kwargs, forced=forced)
         if observe:
@@ -1874,7 +1876,6 @@ class ConjectureData:
         if not isinstance(value, str):
             value = repr(value)
         self.output += value
-
 
     def draw(
         self,
