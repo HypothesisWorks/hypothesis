@@ -1030,6 +1030,13 @@ class PrimitiveProvider:
     def __init__(self, conjecturedata: "ConjectureData", /) -> None:
         self._cd = conjecturedata
 
+    def post_test_case_hook(self, value):
+        # hook for providers to modify values returned by draw_* after a full
+        # test case concludes. Originally exposed for crosshair to reify its
+        # symbolic values into actual values.
+        # I'm not tied to this exact function name or design.
+        return value
+
     def draw_boolean(self, p: float = 0.5, *, forced: Optional[bool] = None) -> bool:
         """Return True with probability p (assuming a uniform generator),
         shrinking towards False. If ``forced`` is set to a non-None value, this

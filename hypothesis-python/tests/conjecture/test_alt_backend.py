@@ -18,12 +18,16 @@ import pytest
 
 from hypothesis import given, settings, strategies as st
 from hypothesis.database import InMemoryExampleDatabase
-from hypothesis.internal.conjecture.data import AVAILABLE_PROVIDERS, ConjectureData
+from hypothesis.internal.conjecture.data import (
+    AVAILABLE_PROVIDERS,
+    ConjectureData,
+    PrimitiveProvider,
+)
 from hypothesis.internal.floats import SIGNALING_NAN
 from hypothesis.internal.intervalsets import IntervalSet
 
 
-class PrngProvider:
+class PrngProvider(PrimitiveProvider):
     # A test-only implementation of the PrimitiveProvider interface, which uses
     # a very simple PRNG to choose each value.  Dumb but efficient, and entirely
     # independent of our real backend
