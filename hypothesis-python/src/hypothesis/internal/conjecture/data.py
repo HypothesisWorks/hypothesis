@@ -884,7 +884,7 @@ class DataObserver:
 
 
 class IRTreeLeaf:
-    def __init__(self, *, ir_type: IRLiteralType, value: IRType, kwargs: IRKWargsType):
+    def __init__(self, *, ir_type: IRTypeName, value: IRType, kwargs: IRKWargsType):
         self.ir_type = ir_type
         self.value = value
         self.kwargs = kwargs
@@ -960,7 +960,7 @@ class IRTree:
 
         self.current_node = self.current_node.parent
 
-    def draw_value(self, ir_type: IRLiteralType, value: IRType, kwargs: IRKWargsType):
+    def draw_value(self, ir_type: IRTypeName, value: IRType, kwargs: IRKWargsType):
         assert self.current_node is not None
         leaf = IRTreeLeaf(ir_type=ir_type, value=value, kwargs=kwargs)
         self.current_node.children.append(leaf)
