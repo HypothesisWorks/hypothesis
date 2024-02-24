@@ -47,6 +47,7 @@ from hypothesis._settings import (
 from hypothesis.control import _current_build_context, current_build_context
 from hypothesis.core import TestFunc, given
 from hypothesis.errors import InvalidArgument, InvalidDefinition
+from hypothesis.internal.compat import add_note
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.internal.observability import TESTCASE_CALLBACKS
@@ -357,7 +358,6 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         return cls._invariants_per_class[cls]
 
     def _repr_step(self, rule, data, result):
-        self.step_count = getattr(self, "step_count", 0) + 1
         output_assignment = ""
         if rule.targets:
             if isinstance(result, MultipleResults):
@@ -430,7 +430,7 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         return StateMachineTestCase
 
 
-@attr.s()
+@attr.s(repr=False)
 class Rule:
     targets = attr.ib()
     function = attr.ib(repr=get_pretty_function_description)
@@ -439,18 +439,21 @@ class Rule:
     bundles = attr.ib(init=False)
 
     def __attrs_post_init__(self):
-        arguments = {}
+        self.arguments_strategies = {}
         bundles = []
         for k, v in sorted(self.arguments.items()):
             assert not isinstance(v, BundleReferenceStrategy)
             if isinstance(v, Bundle):
                 bundles.append(v)
                 consume = isinstance(v, BundleConsumer)
-                arguments[k] = BundleReferenceStrategy(v.name, consume=consume)
-            else:
-                arguments[k] = v
+                v = BundleReferenceStrategy(v.name, consume=consume)
+            self.arguments_strategies[k] = v
         self.bundles = tuple(bundles)
-        self.arguments_strategy = st.fixed_dictionaries(arguments)
+
+    def __repr__(self) -> str:
+        rep = get_pretty_function_description
+        bits = [f"{k}={rep(v)}" for k, v in attr.asdict(self).items() if v]
+        return f"{self.__class__.__name__}({', '.join(bits)})"
 
 
 self_strategy = st.runner()
@@ -938,7 +941,8 @@ class RuleStrategy(SearchStrategy):
         self.rules = list(machine.rules())
 
         self.enabled_rules_strategy = st.shared(
-            FeatureStrategy(), key=("enabled rules", machine)
+            FeatureStrategy(at_least_one_of={r.function.__name__ for r in self.rules}),
+            key=("enabled rules", machine),
         )
 
         # The order is a bit arbitrary. Primarily we're trying to group rules
@@ -966,19 +970,26 @@ class RuleStrategy(SearchStrategy):
 
         feature_flags = data.draw(self.enabled_rules_strategy)
 
-        # Note: The order of the filters here is actually quite important,
-        # because checking is_enabled makes choices, so increases the size of
-        # the choice sequence. This means that if we are in a case where many
-        # rules are invalid we will make a lot more choices if we ask if they
-        # are enabled before we ask if they are valid, so our test cases will
-        # be artificially large.
-        rule = data.draw(
-            st.sampled_from(self.rules)
-            .filter(self.is_valid)
-            .filter(lambda r: feature_flags.is_enabled(r.function.__name__))
-        )
+        def rule_is_enabled(r):
+            # Note: The order of the filters here is actually quite important,
+            # because checking is_enabled makes choices, so increases the size of
+            # the choice sequence. This means that if we are in a case where many
+            # rules are invalid we would make a lot more choices if we ask if they
+            # are enabled before we ask if they are valid, so our test cases would
+            # be artificially large.
+            return self.is_valid(r) and feature_flags.is_enabled(r.function.__name__)
 
-        return (rule, data.draw(rule.arguments_strategy))
+        rule = data.draw(st.sampled_from(self.rules).filter(rule_is_enabled))
+
+        arguments = {}
+        for k, strat in rule.arguments_strategies.items():
+            try:
+                arguments[k] = data.draw(strat)
+            except Exception as err:
+                rname = rule.function.__name__
+                add_note(err, f"while generating {k!r} from {strat!r} for rule {rname}")
+                raise
+        return (rule, arguments)
 
     def is_valid(self, rule):
         predicates = self.machine._observability_predicates

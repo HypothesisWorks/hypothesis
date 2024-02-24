@@ -18,6 +18,24 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.98.11:
+
+--------------------
+6.98.11 - 2024-02-24
+--------------------
+
+This patch makes stateful testing somewhat less likely to get stuck
+when there are only a few possible rules.
+
+.. _v6.98.10:
+
+--------------------
+6.98.10 - 2024-02-22
+--------------------
+
+This patch :pep:`adds a note <678>` to errors which occur while drawing from
+a strategy, to make it easier to tell why your test failed in such cases.
+
 .. _v6.98.9:
 
 -------------------

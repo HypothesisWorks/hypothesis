@@ -25,8 +25,8 @@ from hypothesis.internal.conjecture.data import (
     FloatKWargs,
     IntegerKWargs,
     IRKWargsType,
-    IRLiteralType,
     IRType,
+    IRTypeName,
     Status,
     StringKWargs,
 )
@@ -327,7 +327,7 @@ class TreeNode:
     # have the same length. The values at index i belong to node i.
     kwargs: List[IRKWargsType] = attr.ib(factory=list)
     values: List[IRType] = attr.ib(factory=list)
-    ir_types: List[IRLiteralType] = attr.ib(factory=list)
+    ir_types: List[IRTypeName] = attr.ib(factory=list)
 
     # The indices of nodes which had forced values.
     #
@@ -876,7 +876,7 @@ class TreeRecordingObserver(DataObserver):
 
     def draw_value(
         self,
-        ir_type: IRLiteralType,
+        ir_type: IRTypeName,
         value: IRType,
         *,
         was_forced: bool,
