@@ -60,7 +60,7 @@ T5 = TypeVar("T5")
 calculating = UniqueIdentifier("calculating")
 
 MAPPED_SEARCH_STRATEGY_DO_DRAW_LABEL = calc_label_from_name(
-    "another attempted draw in MappedSearchStrategy"
+    "another attempted draw in MappedStrategy"
 )
 
 FILTERED_SEARCH_STRATEGY_DO_DRAW_LABEL = calc_label_from_name(
@@ -346,7 +346,7 @@ class SearchStrategy(Generic[Ex]):
         """
         if is_identity_function(pack):
             return self  # type: ignore  # Mypy has no way to know that `Ex == T`
-        return MappedSearchStrategy(pack=pack, strategy=self)
+        return MappedStrategy(self, pack=pack)
 
     def flatmap(
         self, expand: Callable[[Ex], "SearchStrategy[T]"]
@@ -468,9 +468,6 @@ class SampledFromStrategy(SearchStrategy):
     """A strategy which samples from a set of elements. This is essentially
     equivalent to using a OneOfStrategy over Just strategies but may be more
     efficient and convenient.
-
-    The conditional distribution chooses uniformly at random from some
-    non-empty subset of the elements.
     """
 
     _MAX_FILTER_CALLS = 10_000
@@ -794,18 +791,17 @@ def one_of(
     return OneOfStrategy(args)
 
 
-class MappedSearchStrategy(SearchStrategy[Ex]):
+class MappedStrategy(SearchStrategy[Ex]):
     """A strategy which is defined purely by conversion to and from another
     strategy.
 
     Its parameter and distribution come from that other strategy.
     """
 
-    def __init__(self, strategy, pack=None):
+    def __init__(self, strategy, pack):
         super().__init__()
         self.mapped_strategy = strategy
-        if pack is not None:
-            self.pack = pack
+        self.pack = pack
 
     def calc_is_empty(self, recur):
         return recur(self.mapped_strategy)
@@ -820,11 +816,6 @@ class MappedSearchStrategy(SearchStrategy[Ex]):
 
     def do_validate(self):
         self.mapped_strategy.validate()
-
-    def pack(self, x):
-        """Take a value produced by the underlying mapped_strategy and turn it
-        into a value suitable for outputting from this strategy."""
-        raise NotImplementedError(f"{self.__class__.__name__}.pack()")
 
     def do_draw(self, data: ConjectureData) -> Any:
         with warnings.catch_warnings():
@@ -847,7 +838,7 @@ class MappedSearchStrategy(SearchStrategy[Ex]):
     @property
     def branches(self) -> List[SearchStrategy[Ex]]:
         return [
-            MappedSearchStrategy(pack=self.pack, strategy=strategy)
+            MappedStrategy(strategy, pack=self.pack)
             for strategy in self.mapped_strategy.branches
         ]
 

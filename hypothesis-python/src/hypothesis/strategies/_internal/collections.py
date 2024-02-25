@@ -23,7 +23,7 @@ from hypothesis.strategies._internal.strategies import (
     T4,
     T5,
     Ex,
-    MappedSearchStrategy,
+    MappedStrategy,
     SearchStrategy,
     T,
     check_strategy,
@@ -302,7 +302,7 @@ class UniqueSampledListStrategy(UniqueListStrategy):
         return result
 
 
-class FixedKeysDictStrategy(MappedSearchStrategy):
+class FixedKeysDictStrategy(MappedStrategy):
     """A strategy which produces dicts with a fixed set of keys, given a
     strategy for each of their equivalent values.
 
@@ -311,18 +311,18 @@ class FixedKeysDictStrategy(MappedSearchStrategy):
     """
 
     def __init__(self, strategy_dict):
-        self.dict_type = type(strategy_dict)
+        dict_type = type(strategy_dict)
         self.keys = tuple(strategy_dict.keys())
-        super().__init__(strategy=TupleStrategy(strategy_dict[k] for k in self.keys))
+        super().__init__(
+            strategy=TupleStrategy(strategy_dict[k] for k in self.keys),
+            pack=lambda value: dict_type(zip(self.keys, value)),
+        )
 
     def calc_is_empty(self, recur):
         return recur(self.mapped_strategy)
 
     def __repr__(self):
         return f"FixedKeysDictStrategy({self.keys!r}, {self.mapped_strategy!r})"
-
-    def pack(self, value):
-        return self.dict_type(zip(self.keys, value))
 
 
 class FixedAndOptionalKeysDictStrategy(SearchStrategy):
