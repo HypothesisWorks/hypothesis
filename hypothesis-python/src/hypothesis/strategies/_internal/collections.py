@@ -211,6 +211,9 @@ class ListStrategy(SearchStrategy):
             new = copy.copy(self)
             new.min_size = max(self.min_size, kwargs.get("min_value", self.min_size))
             new.max_size = min(self.max_size, kwargs.get("max_value", self.max_size))
+            # Unsatisfiable filters are easiest to understand without rewriting.
+            if new.min_size > new.max_size:
+                return SearchStrategy.filter(self, condition)
             # Recompute average size; this is cheaper than making it into a property.
             new.average_size = min(
                 max(new.min_size * 2, new.min_size + 5),
