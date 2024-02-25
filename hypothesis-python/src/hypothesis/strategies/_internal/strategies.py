@@ -852,7 +852,7 @@ class MappedStrategy(SearchStrategy[Ex]):
         ListStrategy = _list_strategy_type()
         if not isinstance(self.mapped_strategy, ListStrategy) or not (
             (isinstance(self.pack, type) and issubclass(self.pack, abc.Collection))
-            or self.pack is sorted
+            or self.pack in _collection_ish_functions()
         ):
             return super().filter(condition)
 
@@ -872,6 +872,36 @@ def _list_strategy_type():
     from hypothesis.strategies._internal.collections import ListStrategy
 
     return ListStrategy
+
+
+def _collection_ish_functions():
+    funcs = [sorted]
+    if np := sys.modules.get("numpy"):
+        # c.f. https://numpy.org/doc/stable/reference/routines.array-creation.html
+        # Probably only `np.array` and `np.asarray` will be used in practice,
+        # but why should that stop us when we've already gone this far?
+        funcs += [
+            np.empty_like,
+            np.eye,
+            np.identity,
+            np.ones_like,
+            np.zeros_like,
+            np.array,
+            np.asarray,
+            np.asanyarray,
+            np.ascontiguousarray,
+            np.asmatrix,
+            np.copy,
+            np.rec.array,
+            np.rec.fromarrays,
+            np.rec.fromrecords,
+            np.diag,
+            # bonus undocumented functions from tab-completion:
+            np.asarray_chkfinite,
+            np.asfarray,
+            np.asfortranarray,
+        ]
+    return funcs
 
 
 filter_not_satisfied = UniqueIdentifier("filter not satisfied")
