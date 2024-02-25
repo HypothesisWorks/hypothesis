@@ -16,7 +16,7 @@ click==8.1.7
     # via
     #   -r requirements/coverage.in
     #   black
-coverage==7.4.1
+coverage==7.4.3
     # via -r requirements/coverage.in
 dpcontracts==0.6.0
     # via -r requirements/coverage.in
@@ -32,7 +32,7 @@ iniconfig==2.0.0
     # via pytest
 lark==1.1.9
     # via -r requirements/coverage.in
-libcst==1.1.0
+libcst==1.2.0
     # via -r requirements/coverage.in
 mypy-extensions==1.0.0
     # via
@@ -47,7 +47,7 @@ packaging==23.2
     # via
     #   black
     #   pytest
-pandas==2.2.0
+pandas==2.2.1
     # via -r requirements/coverage.in
 pathspec==0.12.1
     # via black
@@ -61,7 +61,7 @@ ptyprocess==0.7.0
     # via pexpect
 pyarrow==15.0.0
     # via -r requirements/coverage.in
-pytest==8.0.1
+pytest==8.0.2
     # via
     #   -r requirements/test.in
     #   pytest-xdist
