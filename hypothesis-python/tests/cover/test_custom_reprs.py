@@ -79,7 +79,7 @@ class Bar(Foo):
 
 def test_reprs_as_created():
     @given(foo=st.builds(Foo), bar=st.from_type(Bar), baz=st.none().map(Foo))
-    @settings(print_blob=False, max_examples=10_000)
+    @settings(print_blob=False, max_examples=10_000, derandomize=True)
     def inner(foo, bar, baz):
         assert baz.x is None
         assert foo.x <= 0 or bar.x >= 0
