@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.98.12:
+
+--------------------
+6.98.12 - 2024-02-25
+--------------------
+
+This patch implements filter-rewriting for most length filters on some
+additional collection types (:issue:`3795`), and fixes several latent
+bugs where unsatisfiable or partially-infeasible rewrites could trigger
+internal errors.
+
 .. _v6.98.11:
 
 --------------------
