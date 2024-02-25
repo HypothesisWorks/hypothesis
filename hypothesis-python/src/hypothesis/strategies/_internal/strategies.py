@@ -519,7 +519,10 @@ class SampledFromStrategy(SearchStrategy):
         # Used in UniqueSampledListStrategy
         for name, f in self._transformations:
             if name == "map":
-                element = f(element)
+                result = f(element)
+                if build_context := _current_build_context.value:
+                    build_context.record_call(result, f, [element], {})
+                element = result
             else:
                 assert name == "filter"
                 if not f(element):
