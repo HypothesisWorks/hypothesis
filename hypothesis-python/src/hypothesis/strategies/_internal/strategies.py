@@ -11,6 +11,7 @@
 import sys
 import warnings
 from collections import abc, defaultdict
+from functools import lru_cache
 from random import shuffle
 from typing import (
     Any,
@@ -841,6 +842,33 @@ class MappedStrategy(SearchStrategy[Ex]):
             MappedStrategy(strategy, pack=self.pack)
             for strategy in self.mapped_strategy.branches
         ]
+
+    def filter(self, condition: Callable[[Ex], Any]) -> "SearchStrategy[Ex]":
+        # Includes a special case so that we can rewrite filters on collection
+        # lengths, when most collections are `st.lists(...).map(the_type)`.
+        ListStrategy = _list_strategy_type()
+        if not isinstance(self.mapped_strategy, ListStrategy) or not (
+            (isinstance(self.pack, type) and issubclass(self.pack, abc.Collection))
+            or self.pack is sorted
+        ):
+            return super().filter(condition)
+
+        # Check whether our inner list strategy can rewrite this filter condition.
+        # If not, discard the result and _only_ apply a new outer filter.
+        new = ListStrategy.filter(self.mapped_strategy, condition)
+        if getattr(new, "filtered_strategy", None) is self.mapped_strategy:
+            return super().filter(condition)  # didn't rewrite
+
+        # Apply a new outer filter even though we rewrote the inner strategy,
+        # because some collections can change the list length (dict, set, etc).
+        return FilteredStrategy(type(self)(new, self.pack), conditions=(condition,))
+
+
+@lru_cache
+def _list_strategy_type():
+    from hypothesis.strategies._internal.collections import ListStrategy
+
+    return ListStrategy
 
 
 filter_not_satisfied = UniqueIdentifier("filter not satisfied")

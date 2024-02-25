@@ -17,7 +17,7 @@ from sys import float_info
 
 import pytest
 
-from hypothesis import given, strategies as st
+from hypothesis import given, settings, strategies as st
 from hypothesis.errors import HypothesisWarning, Unsatisfiable
 from hypothesis.internal.filtering import max_len, min_len
 from hypothesis.internal.floats import next_down, next_up
@@ -25,7 +25,7 @@ from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies._internal.core import data
 from hypothesis.strategies._internal.lazy import LazyStrategy, unwrap_strategies
 from hypothesis.strategies._internal.numbers import FloatStrategy, IntegersStrategy
-from hypothesis.strategies._internal.strategies import FilteredStrategy
+from hypothesis.strategies._internal.strategies import FilteredStrategy, MappedStrategy
 from hypothesis.strategies._internal.strings import TextStrategy
 
 from tests.common.debug import check_can_generate_examples
@@ -469,23 +469,34 @@ def test_can_rewrite_multiple_length_filters_if_not_lambdas(data):
         st.lists(st.integers()),
         st.lists(st.integers(), unique=True),
         st.lists(st.sampled_from([1, 2, 3])),
-        # TODO: support more collection types.  Might require messing around with
-        #       strategy internals, e.g. in MappedStrategy/FilteredStrategy.
-        # st.binary(),
-        # st.binary.map(bytearray),
-        # st.sets(st.integers()),
-        # st.dictionaries(st.integers(), st.none()),
+        st.binary(),
+        st.sets(st.integers()),
+        st.frozensets(st.integers()),
+        st.dictionaries(st.integers(), st.none()),
+        st.lists(st.integers(), unique_by=lambda x: x % 17).map(tuple),
     ],
     ids=get_pretty_function_description,
 )
+@settings(max_examples=15)
 @given(data=st.data())
 def test_filter_rewriting_text_lambda_len(data, strategy, predicate, start, end):
     s = strategy.filter(predicate)
+    unwrapped_nofilter = unwrap_strategies(strategy)
     unwrapped = unwrap_strategies(s)
-    assert isinstance(unwrapped, FilteredStrategy)
-    assert isinstance(unwrapped.filtered_strategy, type(unwrap_strategies(strategy)))
+
+    if was_mapped := isinstance(unwrapped, MappedStrategy):
+        unwrapped = unwrapped.mapped_strategy
+
+    assert isinstance(unwrapped, FilteredStrategy), f"{unwrapped=} {type(unwrapped)=}"
+    assert isinstance(
+        unwrapped.filtered_strategy,
+        type(unwrapped_nofilter.mapped_strategy if was_mapped else unwrapped_nofilter),
+    )
     for pred in unwrapped.flat_conditions:
         assert pred.__name__ == "<lambda>"
+
+    if isinstance(unwrapped.filtered_strategy, MappedStrategy):
+        unwrapped = unwrapped.filtered_strategy.mapped_strategy
 
     assert unwrapped.filtered_strategy.min_size == start
     assert unwrapped.filtered_strategy.max_size == end
