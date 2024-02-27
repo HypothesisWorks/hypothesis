@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.98.13:
+
+--------------------
+6.98.13 - 2024-02-27
+--------------------
+
+This patch implements filter-rewriting for :func:`~hypothesis.strategies.text`
+and :func:`~hypothesis.strategies.binary` with the :meth:`~re.Pattern.search`,
+:meth:`~re.Pattern.match`, or :meth:`~re.Pattern.fullmatch` method of a
+:func:`re.compile`\ d regex.
+
 .. _v6.98.12:
 
 --------------------
