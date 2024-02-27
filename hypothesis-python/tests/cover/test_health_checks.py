@@ -18,6 +18,7 @@ from hypothesis.control import assume
 from hypothesis.errors import FailedHealthCheck, InvalidArgument
 from hypothesis.internal.compat import int_from_bytes
 from hypothesis.internal.conjecture.data import ConjectureData
+from hypothesis.internal.conjecture.engine import BUFFER_SIZE
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.stateful import (
     RuleBasedStateMachine,
@@ -121,8 +122,12 @@ def test_filtering_most_things_fails_a_health_check():
     assert "filter" in e.value.args[0]
 
 
+large_strategy = st.binary(min_size=7000, max_size=7000)
+too_large_strategy = st.tuples(large_strategy, large_strategy)
+
+
 def test_large_data_will_fail_a_health_check():
-    @given(st.none() | st.binary(min_size=10**5, max_size=10**5))
+    @given(st.none() | too_large_strategy)
     @settings(database=None)
     def test(x):
         pass
@@ -160,7 +165,7 @@ def test_the_slow_test_health_only_runs_if_health_checks_are_on():
 
 
 def test_large_base_example_fails_health_check():
-    @given(st.binary(min_size=7000, max_size=7000))
+    @given(large_strategy)
     def test(b):
         pass
 
@@ -171,7 +176,7 @@ def test_large_base_example_fails_health_check():
 
 
 def test_example_that_shrinks_to_overrun_fails_health_check():
-    @given(st.binary(min_size=9000, max_size=9000) | st.none())
+    @given(too_large_strategy | st.none())
     def test(b):
         pass
 
@@ -260,7 +265,9 @@ def test_does_not_trigger_health_check_when_most_examples_are_small(monkeypatch)
             @settings(database=None, max_examples=11, phases=[Phase.generate])
             @given(
                 st.integers(0, 100).flatmap(
-                    lambda n: st.binary(min_size=n * 100, max_size=n * 100)
+                    lambda n: st.binary(
+                        min_size=min(n * 100, BUFFER_SIZE), max_size=n * 100
+                    )
                 )
             )
             def test(b):
