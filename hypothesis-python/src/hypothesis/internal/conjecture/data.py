@@ -916,7 +916,7 @@ class IRTreeLeaf:
 
 @attr.s(slots=True)
 class IRTreeNode:
-    parent: Optional["IRTreeNode"] = attr.ib(eq=False)
+    parent: Optional["IRTreeNode"] = attr.ib(eq=False, repr=False)
     depth: int = attr.ib()
     label: int = attr.ib()
     index_in_parent: int = attr.ib()
