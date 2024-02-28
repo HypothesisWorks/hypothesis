@@ -856,27 +856,27 @@ class DataObserver:
         """Mark this part of the tree as not worth re-exploring."""
 
     def draw_integer(
-        self, value: int, *, was_forced: bool, kwargs: IntegerKWargs
+        self, value: int, *, kwargs: IntegerKWargs, was_forced: bool
     ) -> None:
         pass
 
     def draw_float(
-        self, value: float, *, was_forced: bool, kwargs: FloatKWargs
+        self, value: float, *, kwargs: FloatKWargs, was_forced: bool
     ) -> None:
         pass
 
     def draw_string(
-        self, value: str, *, was_forced: bool, kwargs: StringKWargs
+        self, value: str, *, kwargs: StringKWargs, was_forced: bool
     ) -> None:
         pass
 
     def draw_bytes(
-        self, value: bytes, *, was_forced: bool, kwargs: BytesKWargs
+        self, value: bytes, *, kwargs: BytesKWargs, was_forced: bool
     ) -> None:
         pass
 
     def draw_boolean(
-        self, value: bool, *, was_forced: bool, kwargs: BooleanKWargs
+        self, value: bool, *, kwargs: BooleanKWargs, was_forced: bool
     ) -> None:
         pass
 
@@ -1579,7 +1579,7 @@ class ConjectureData:
         value = self.provider.draw_integer(**kwargs, forced=forced)
         if observe:
             self.observer.draw_integer(
-                value, was_forced=forced is not None, kwargs=kwargs
+                value, kwargs=kwargs, was_forced=forced is not None
             )
         return value
 
