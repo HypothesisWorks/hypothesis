@@ -108,6 +108,7 @@ from hypothesis.internal.reflection import (
     repr_call,
 )
 from hypothesis.internal.scrutineer import (
+    MONITORING_TOOL_ID,
     Trace,
     Tracer,
     explanatory_lines,
@@ -984,7 +985,11 @@ class StateForActualGivenExecution:
         trace: Trace = set()
         try:
             _can_trace = (
-                sys.gettrace() is None or sys.version_info[:2] >= (3, 12)
+                (sys.version_info[:2] < (3, 12) and sys.gettrace() is None)
+                or (
+                    sys.version_info[:2] >= (3, 12)
+                    and sys.monitoring.get_tool(MONITORING_TOOL_ID) is None
+                )
             ) and not PYPY
             _trace_obs = TESTCASE_CALLBACKS and OBSERVABILITY_COLLECT_COVERAGE
             _trace_failure = (
