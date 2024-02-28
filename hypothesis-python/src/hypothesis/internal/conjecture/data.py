@@ -881,6 +881,193 @@ class DataObserver:
         pass
 
 
+IRTreeNodeType: TypeAlias = Union["IRTreeNode", "IRTreeLeaf"]
+LocationType: TypeAlias = Tuple[int, int]
+
+
+@attr.s(slots=True)
+class IRTreeLeaf:
+    ir_type: IRTypeName = attr.ib()
+    value: IRType = attr.ib()
+    kwargs: IRKWargsType = attr.ib()
+    was_forced: bool = attr.ib()
+    depth: int = attr.ib()
+    index_in_parent: int = attr.ib()
+
+    location: LocationType = attr.ib(init=False)
+
+    def __attrs_post_init__(self):
+        self.location = (self.depth, self.index_in_parent)
+
+    def __repr__(self):
+        return f"{self.ir_type} {self.value} {self.kwargs}"
+
+    def copy(self, *, with_value: Optional[IRType] = None) -> "IRTreeLeaf":
+        value = self.value if with_value is None else with_value
+        return IRTreeLeaf(
+            ir_type=self.ir_type,
+            value=value,
+            kwargs=self.kwargs,
+            was_forced=self.was_forced,
+            depth=self.depth,
+            index_in_parent=self.index_in_parent,
+        )
+
+
+@attr.s(slots=True)
+class IRTreeNode:
+    parent: Optional["IRTreeNode"] = attr.ib(eq=False)
+    depth: int = attr.ib()
+    label: int = attr.ib()
+    index_in_parent: int = attr.ib()
+
+    children: List[IRTreeNodeType] = attr.ib(init=False, factory=list)
+    location: LocationType = attr.ib(init=False)
+
+    def __attrs_post_init__(self):
+        self.location = (self.depth, self.index_in_parent)
+
+    def copy(
+        self,
+        *,
+        replacing_nodes: List[Tuple[LocationType, IRTreeNodeType]] = [],
+    ) -> "IRTreeNode":
+        children = []
+        for child in self.children:
+            for location, node in replacing_nodes:
+                if child.location == location:
+                    child = node
+                    break
+            else:
+                if isinstance(child, IRTreeNode):
+                    child = child.copy(replacing_nodes=replacing_nodes)
+                elif isinstance(child, IRTreeLeaf):
+                    child = child.copy()
+                else:
+                    raise NotImplementedError
+
+            children.append(child)
+
+        node = IRTreeNode(
+            label=self.label,
+            parent=self.parent,
+            depth=self.depth,
+            index_in_parent=self.index_in_parent,
+        )
+        node.children = children
+        return node
+
+    def _repr_pretty_(self, p, cycle):
+        assert cycle is False
+        p.text(str(self.label))
+        with p.indent(1):
+            for child in self.children:
+                p.break_()
+                p.pretty(child)
+
+
+@attr.s(slots=True)
+class IRTree:
+    # these are only None when the top example hasn't been started yet
+    root: Optional[IRTreeNode] = attr.ib(init=False, default=None)
+    current_node: Optional[IRTreeNode] = attr.ib(init=False, default=None, eq=False)
+
+    def copy(
+        self,
+        *,
+        replacing_nodes: List[Tuple[LocationType, IRTreeNodeType]] = [],
+    ) -> "IRTree":
+        tree = IRTree()
+        if self.root is None:
+            return tree
+        tree.root = self.root.copy(replacing_nodes=replacing_nodes)
+        return tree
+
+    def leaves(self) -> List[IRTreeLeaf]:
+        def _leaves(node):
+            leaves = []
+            for child in node.children:
+                if isinstance(child, IRTreeNode):
+                    leaves += _leaves(child)
+                else:
+                    assert isinstance(child, IRTreeLeaf)
+                    leaves.append(child)
+            return leaves
+
+        return _leaves(self.root)
+
+    def start_example(self, label):
+        if self.root is None:
+            assert label == TOP_LABEL
+            self.root = IRTreeNode(
+                label=TOP_LABEL, parent=None, depth=0, index_in_parent=None
+            )
+            self.current_node = self.root
+            return
+
+        node = IRTreeNode(
+            label=label,
+            parent=self.current_node,
+            depth=self.current_node.depth + 1,
+            index_in_parent=len(self.current_node.children) + 1,
+        )
+        self.current_node.children.append(node)
+        self.current_node = node
+
+    def stop_example(self):
+        if self.current_node.parent is None:
+            assert self.current_node.label == TOP_LABEL
+
+        self.current_node = self.current_node.parent
+
+    def draw_value(
+        self,
+        ir_type: IRTypeName,
+        value: IRType,
+        kwargs: IRKWargsType,
+        was_forced: bool,
+    ) -> None:
+        assert self.current_node is not None
+        leaf = IRTreeLeaf(
+            ir_type=ir_type,
+            value=value,
+            kwargs=kwargs,
+            was_forced=was_forced,
+            depth=self.current_node.depth + 1,
+            index_in_parent=len(self.current_node.children) + 1,
+        )
+        self.current_node.children.append(leaf)
+
+    def draw_integer(
+        self, value: int, *, kwargs: IntegerKWargs, was_forced: bool
+    ) -> None:
+        self.draw_value("integer", value, kwargs, was_forced)
+
+    def draw_float(
+        self, value: float, *, kwargs: FloatKWargs, was_forced: bool
+    ) -> None:
+        self.draw_value("float", value, kwargs, was_forced)
+
+    def draw_string(
+        self, value: str, *, kwargs: StringKWargs, was_forced: bool
+    ) -> None:
+        self.draw_value("string", value, kwargs, was_forced)
+
+    def draw_bytes(
+        self, value: bytes, *, kwargs: BytesKWargs, was_forced: bool
+    ) -> None:
+        self.draw_value("bytes", value, kwargs, was_forced)
+
+    def draw_boolean(
+        self, value: bool, *, kwargs: BooleanKWargs, was_forced: bool
+    ) -> None:
+        self.draw_value("boolean", value, kwargs, was_forced)
+
+    def _repr_pretty_(self, p, cycle):
+        assert cycle is False
+        p.pretty(self.root)
+
+
 @dataclass_transform()
 @attr.s(slots=True)
 class ConjectureResult:
@@ -891,6 +1078,7 @@ class ConjectureResult:
     status: Status = attr.ib()
     interesting_origin: Optional[InterestingOrigin] = attr.ib()
     buffer: bytes = attr.ib()
+    ir_tree: IRTree = attr.ib()
     blocks: Blocks = attr.ib()
     output: str = attr.ib()
     extra_information: Optional[ExtraInformation] = attr.ib()
@@ -1517,6 +1705,7 @@ class ConjectureData:
         )
 
         self.extra_information = ExtraInformation()
+        self.ir_tree = IRTree()
 
         self.start_example(TOP_LABEL)
 
@@ -1581,6 +1770,9 @@ class ConjectureData:
             self.observer.draw_integer(
                 value, kwargs=kwargs, was_forced=forced is not None
             )
+            self.ir_tree.draw_integer(
+                value, kwargs=kwargs, was_forced=forced is not None
+            )
         return value
 
     def draw_float(
@@ -1618,6 +1810,7 @@ class ConjectureData:
             self.observer.draw_float(
                 value, kwargs=kwargs, was_forced=forced is not None
             )
+            self.ir_tree.draw_float(value, kwargs=kwargs, was_forced=forced is not None)
         return value
 
     def draw_string(
@@ -1641,6 +1834,9 @@ class ConjectureData:
             self.observer.draw_string(
                 value, kwargs=kwargs, was_forced=forced is not None
             )
+            self.ir_tree.draw_string(
+                value, kwargs=kwargs, was_forced=forced is not None
+            )
         return value
 
     def draw_bytes(
@@ -1660,6 +1856,7 @@ class ConjectureData:
             self.observer.draw_bytes(
                 value, kwargs=kwargs, was_forced=forced is not None
             )
+            self.ir_tree.draw_bytes(value, kwargs=kwargs, was_forced=forced is not None)
         return value
 
     def draw_boolean(
@@ -1681,6 +1878,9 @@ class ConjectureData:
             self.observer.draw_boolean(
                 value, kwargs=kwargs, was_forced=forced is not None
             )
+            self.ir_tree.draw_boolean(
+                value, kwargs=kwargs, was_forced=forced is not None
+            )
         return value
 
     def as_result(self) -> Union[ConjectureResult, _Overrun]:
@@ -1695,6 +1895,7 @@ class ConjectureData:
                 status=self.status,
                 interesting_origin=self.interesting_origin,
                 buffer=self.buffer,
+                ir_tree=self.ir_tree,
                 examples=self.examples,
                 blocks=self.blocks,
                 output=self.output,
@@ -1787,6 +1988,7 @@ class ConjectureData:
             self.max_depth = self.depth
         self.__example_record.start_example(label)
         self.labels_for_structure_stack.append({label})
+        self.ir_tree.start_example(label)
 
     def stop_example(self, *, discard: bool = False) -> None:
         if self.frozen:
@@ -1831,6 +2033,7 @@ class ConjectureData:
             # have explored the entire tree (up to redundancy).
 
             self.observer.kill_branch()
+        self.ir_tree.stop_example()
 
     @property
     def examples(self) -> Examples:
