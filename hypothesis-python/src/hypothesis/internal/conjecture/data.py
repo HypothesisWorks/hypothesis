@@ -921,7 +921,9 @@ class IRTreeNode:
     label: int = attr.ib()
     index_in_parent: int = attr.ib()
 
-    children: List[IRTreeNodeType] = attr.ib(init=False, factory=list)
+    children: List[IRTreeNodeType] = attr.ib(
+        init=False, factory=list, repr=lambda children: f"{len(children)} children"
+    )
     location: LocationType = attr.ib(init=False)
 
     def __attrs_post_init__(self):
