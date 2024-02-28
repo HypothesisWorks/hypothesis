@@ -75,8 +75,13 @@ def shrinking_from(start):
     return accept
 
 
-def fresh_data(*, observer=None) -> ConjectureData:
-    return ConjectureData(BUFFER_SIZE, prefix=b"", random=Random(), observer=observer)
+def fresh_data(*, random=None, observer=None) -> ConjectureData:
+    return ConjectureData(
+        BUFFER_SIZE,
+        prefix=b"",
+        random=Random() if random is None else random,
+        observer=observer,
+    )
 
 
 @st.composite
