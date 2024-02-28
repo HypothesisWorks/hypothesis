@@ -932,9 +932,10 @@ class IRTreeNode:
     def copy(
         self,
         *,
-        replacing_nodes: List[Tuple[LocationType, IRTreeNodeType]] = [],
+        replacing_nodes: Optional[List[Tuple[LocationType, IRTreeNodeType]]] = None,
     ) -> "IRTreeNode":
         children = []
+        replacing_nodes = [] if replacing_nodes is None else replacing_nodes
         for child in self.children:
             for location, node in replacing_nodes:
                 if child.location == location:
@@ -977,7 +978,7 @@ class IRTree:
     def copy(
         self,
         *,
-        replacing_nodes: List[Tuple[LocationType, IRTreeNodeType]] = [],
+        replacing_nodes: Optional[List[Tuple[LocationType, IRTreeNodeType]]] = None,
     ) -> "IRTree":
         tree = IRTree()
         if self.root is None:
