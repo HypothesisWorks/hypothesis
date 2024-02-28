@@ -454,7 +454,7 @@ class ExampleRecord:
         else:
             self.trail.append(STOP_EXAMPLE_NO_DISCARD_RECORD)
 
-    def draw_bits(self, n: int, forced: Optional[int]) -> None:
+    def draw_bits(self) -> None:
         self.trail.append(DRAW_BITS_RECORD)
 
 
@@ -1903,7 +1903,7 @@ class ConjectureData:
         buf = bytes(buf)
         result = int_from_bytes(buf)
 
-        self.__example_record.draw_bits(n, forced)
+        self.__example_record.draw_bits()
 
         initial = self.index
 
