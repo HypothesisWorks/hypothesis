@@ -1142,7 +1142,9 @@ class PrimitiveProvider:
                 result = self._draw_float(
                     forced_sign_bit=forced_sign_bit, forced=forced
                 )
-                if math.copysign(1.0, result) == -1:
+                if allow_nan and math.isnan(result):
+                    clamped = result
+                elif math.copysign(1.0, result) == -1:
                     assert neg_clamper is not None
                     clamped = -neg_clamper(-result)
                 else:

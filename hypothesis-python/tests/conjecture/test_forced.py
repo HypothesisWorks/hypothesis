@@ -205,3 +205,22 @@ def test_forced_floats(use_min_value, use_max_value):
         assert float_to_lex(abs(drawn)) == float_to_lex(abs(forced))
 
     test()
+
+
+@pytest.mark.parametrize("sign", [1, -1])
+@pytest.mark.parametrize(
+    "min_value, max_value",
+    [
+        (0.0, 0.0),
+        (-0.0, -0.0),
+        (0.0, 100.0),
+        (-100.0, -0.0),
+        (5.0, 10.0),
+        (-10.0, -5.0),
+    ],
+)
+def test_forced_floats_with_nan(sign, min_value, max_value):
+    # nans with a sign opposite of both bounds previously gave us trouble
+    # trying to use float clampers that didn't exist when drawing.
+    data = fresh_data()
+    data.draw_float(min_value=min_value, max_value=max_value, forced=sign * math.nan)
