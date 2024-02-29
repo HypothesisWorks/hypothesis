@@ -8,27 +8,26 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+from hypothesis import given, settings, strategies as st
 from hypothesis.internal.conjecture.data import IRTree, IRTreeLeaf
-from hypothesis.internal.floats import SMALLEST_SUBNORMAL
+from hypothesis.internal.floats import SMALLEST_SUBNORMAL, float_to_int
 from hypothesis.internal.intervalsets import IntervalSet
-from hypothesis import given, strategies as st, settings
 from hypothesis.stateful import (
     RuleBasedStateMachine,
-    rule,
+    initialize,
     invariant,
     precondition,
-    initialize,
+    rule,
 )
-from hypothesis.internal.floats import float_to_int
 
 from tests.conjecture.common import (
+    draw_boolean_kwargs,
+    draw_bytes_kwargs,
+    draw_float_kwargs,
+    draw_integer_kwargs,
+    draw_string_kwargs,
     fresh_data,
     ir_types_and_kwargs,
-    draw_integer_kwargs,
-    draw_float_kwargs,
-    draw_boolean_kwargs,
-    draw_string_kwargs,
-    draw_bytes_kwargs,
 )
 
 
