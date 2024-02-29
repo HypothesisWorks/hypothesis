@@ -286,7 +286,10 @@ class ConjectureRunner:
         if data.status == Status.INTERESTING:
             if self.settings.backend != "hypothesis":
                 for node in data.ir_tree.leaves():
-                    node.value = data.provider.post_test_case_hook(node.value)
+                    value = data.provider.post_test_case_hook(node.value)
+                    # require providers to return something valid here.
+                    assert node.value is not None
+                    node.value = value
 
                 # drive the ir tree through the test function to convert it
                 # to a buffer
