@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import sys
 from contextlib import contextmanager
 
 import pytest
@@ -15,7 +16,7 @@ import pytest
 from hypothesis import given, strategies as st
 from hypothesis.errors import HypothesisWarning
 from hypothesis.internal.scrutineer import MONITORING_TOOL_ID
-import sys
+
 
 @contextmanager
 def using_tool_id(tool_id, tool_name):

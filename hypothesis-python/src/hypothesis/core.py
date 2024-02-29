@@ -984,14 +984,10 @@ class StateForActualGivenExecution:
         """
         trace: Trace = set()
         try:
-
-            def _trace_available_on_3_12():
-                return (
-                    sys.version_info[:2] >= (3, 12)
-                    and sys.monitoring.get_tool(MONITORING_TOOL_ID) is None
-                )
-
-            if not _trace_available_on_3_12():
+            if (
+                sys.version_info[:2] >= (3, 12)
+                and sys.monitoring.get_tool(MONITORING_TOOL_ID) is not None
+            ):
                 warnings.warn(
                     "avoiding tracing test function because tool id "
                     f"{MONITORING_TOOL_ID} is already taken by tool "
@@ -1004,7 +1000,10 @@ class StateForActualGivenExecution:
 
             _can_trace = (
                 (sys.version_info[:2] < (3, 12) and sys.gettrace() is None)
-                or _trace_available_on_3_12()
+                or (
+                    sys.version_info[:2] >= (3, 12)
+                    and sys.monitoring.get_tool(MONITORING_TOOL_ID) is None
+                )
             ) and not PYPY
             _trace_obs = TESTCASE_CALLBACKS and OBSERVABILITY_COLLECT_COVERAGE
             _trace_failure = (
