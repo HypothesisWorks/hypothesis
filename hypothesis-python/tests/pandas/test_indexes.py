@@ -25,7 +25,7 @@ from tests.pandas.helpers import supported_by_pandas
 # https://pandas.pydata.org/docs/whatsnew/v2.0.0.html#index-can-now-hold-numpy-numeric-dtypes
 @given(pdst.indexes(dtype=int, max_size=0))
 def test_gets_right_dtype_for_empty_indices(ix):
-    is_32bit = sys.maxsize == 2**32 - 1
+    is_32bit = sys.maxsize == 2**31 - 1
     pandas2 = pandas.__version__.startswith("2.")
     windows = sys.platform == "win32"  # including 64-bit windows, confusingly
     if pandas2 and (is_32bit or windows):
