@@ -225,12 +225,12 @@ def test_multiple_variables_printed():
     assignment_line = err.value.__notes__[2]
     # 'populate_bundle()' returns 2 values, so should be
     # expanded to 2 variables.
-    assert assignment_line == "v1, v2 = state.populate_bundle()"
+    assert assignment_line == "b_0, b_1 = state.populate_bundle()"
 
     # Make sure MultipleResult is iterable so the printed code is valid.
     # See https://github.com/HypothesisWorks/hypothesis/issues/2311
     state = ProducesMultiple()
-    v1, v2 = state.populate_bundle()
+    b_0, b_1 = state.populate_bundle()
     with raises(AssertionError):
         state.fail_fast()
 
@@ -252,7 +252,7 @@ def test_multiple_variables_printed_single_element():
         run_state_machine_as_test(ProducesMultiple)
 
     assignment_line = err.value.__notes__[2]
-    assert assignment_line == "(v1,) = state.populate_bundle()"
+    assert assignment_line == "(b_0,) = state.populate_bundle()"
 
     state = ProducesMultiple()
     (v1,) = state.populate_bundle()
@@ -797,9 +797,9 @@ def test_prints_equal_values_with_correct_variable_name():
     result = "\n".join(err.value.__notes__)
     for m in ["create", "transfer", "fail"]:
         assert result.count("state." + m) == 1
-    assert "v1 = state.create()" in result
-    assert "v2 = state.transfer(source=v1)" in result
-    assert "state.fail(source=v2)" in result
+    assert "b1_0 = state.create()" in result
+    assert "b2_0 = state.transfer(source=b1_0)" in result
+    assert "state.fail(source=b2_0)" in result
 
 
 def test_initialize_rule():
@@ -845,7 +845,7 @@ def test_initialize_rule_populate_bundle():
 
         @initialize(target=a, dep=just("dep"))
         def initialize_a(self, dep):
-            return f"a v1 with ({dep})"
+            return f"a a_0 with ({dep})"
 
         @rule(param=a)
         def fail_fast(self, param):
@@ -861,8 +861,8 @@ def test_initialize_rule_populate_bundle():
         == """
 Falsifying example:
 state = WithInitializeBundleRules()
-v1 = state.initialize_a(dep='dep')
-state.fail_fast(param=v1)
+a_0 = state.initialize_a(dep='dep')
+state.fail_fast(param=a_0)
 state.teardown()
 """.strip()
     )
@@ -1087,8 +1087,8 @@ def test_arguments_do_not_use_names_of_return_values():
 
     with pytest.raises(AssertionError) as err:
         run_state_machine_as_test(TrickyPrintingMachine)
-    assert "v1 = state.init_data(value=0)" in err.value.__notes__
-    assert "v1 = state.init_data(value=v1)" not in err.value.__notes__
+    assert "data_0 = state.init_data(value=0)" in err.value.__notes__
+    assert "data_0 = state.init_data(value=data_0)" not in err.value.__notes__
 
 
 class TrickyInitMachine(RuleBasedStateMachine):
@@ -1182,3 +1182,109 @@ def test_fails_on_settings_class_attribute():
         match="Assigning .+ as a class attribute does nothing",
     ):
         run_state_machine_as_test(ErrorsOnClassAttributeSettings)
+
+
+def test_single_target_multiple():
+    class Machine(RuleBasedStateMachine):
+        a = Bundle("a")
+
+        @initialize(target=a)
+        def initialize(self):
+            return multiple("ret1", "ret2", "ret3")
+
+        @rule(param=a)
+        def fail_fast(self, param):
+            raise AssertionError
+
+    Machine.TestCase.settings = NO_BLOB_SETTINGS
+    with pytest.raises(AssertionError) as err:
+        run_state_machine_as_test(Machine)
+
+    result = "\n".join(err.value.__notes__)
+    assert (
+        result
+        == """
+Falsifying example:
+state = Machine()
+a_0, a_1, a_2 = state.initialize()
+state.fail_fast(param=a_2)
+state.teardown()
+""".strip()
+    )
+
+
+def test_multiple_targets():
+    class Machine(RuleBasedStateMachine):
+        a = Bundle("a")
+        b = Bundle("b")
+
+        @initialize(targets=(a, b))
+        def initialize(self):
+            return multiple("ret1", "ret2", "ret3")
+
+        @rule(
+            a1=consumes(a),
+            a2=consumes(a),
+            a3=consumes(a),
+            b1=consumes(b),
+            b2=consumes(b),
+            b3=consumes(b),
+        )
+        def fail_fast(self, a1, a2, a3, b1, b2, b3):
+            raise AssertionError
+
+    Machine.TestCase.settings = NO_BLOB_SETTINGS
+    with pytest.raises(AssertionError) as err:
+        run_state_machine_as_test(Machine)
+
+    result = "\n".join(err.value.__notes__)
+    assert (
+        result
+        == """
+Falsifying example:
+state = Machine()
+a_0, b_0, a_1, b_1, a_2, b_2 = state.initialize()
+state.fail_fast(a1=a_2, a2=a_1, a3=a_0, b1=b_2, b2=b_1, b3=b_0)
+state.teardown()
+""".strip()
+    )
+
+
+def test_multiple_common_targets():
+    class Machine(RuleBasedStateMachine):
+        a = Bundle("a")
+        b = Bundle("b")
+
+        @initialize(targets=(a, b, a))
+        def initialize(self):
+            return multiple("ret1", "ret2", "ret3")
+
+        @rule(
+            a1=consumes(a),
+            a2=consumes(a),
+            a3=consumes(a),
+            a4=consumes(a),
+            a5=consumes(a),
+            a6=consumes(a),
+            b1=consumes(b),
+            b2=consumes(b),
+            b3=consumes(b),
+        )
+        def fail_fast(self, a1, a2, a3, a4, a5, a6, b1, b2, b3):
+            raise AssertionError
+
+    Machine.TestCase.settings = NO_BLOB_SETTINGS
+    with pytest.raises(AssertionError) as err:
+        run_state_machine_as_test(Machine)
+
+    result = "\n".join(err.value.__notes__)
+    assert (
+        result
+        == """
+Falsifying example:
+state = Machine()
+a_0, b_0, a_1, a_2, b_1, a_3, a_4, b_2, a_5 = state.initialize()
+state.fail_fast(a1=a_5, a2=a_4, a3=a_3, a4=a_2, a5=a_1, a6=a_0, b1=b_2, b2=b_1, b3=b_0)
+state.teardown()
+""".strip()
+    )
