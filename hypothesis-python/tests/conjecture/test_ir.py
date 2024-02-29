@@ -17,29 +17,7 @@ from hypothesis.internal.conjecture.datatree import (
 from hypothesis.internal.floats import next_down, next_up
 from hypothesis.internal.intervalsets import IntervalSet
 
-from tests.conjecture.common import (
-    draw_boolean_kwargs,
-    draw_bytes_kwargs,
-    draw_float_kwargs,
-    draw_integer_kwargs,
-    draw_string_kwargs,
-    fresh_data,
-)
-
-
-@st.composite
-def ir_types_and_kwargs(draw):
-    ir_type = draw(st.sampled_from(["integer", "bytes", "float", "string", "boolean"]))
-    kwargs_strategy = {
-        "integer": draw_integer_kwargs(),
-        "bytes": draw_bytes_kwargs(),
-        "float": draw_float_kwargs(),
-        "string": draw_string_kwargs(),
-        "boolean": draw_boolean_kwargs(),
-    }[ir_type]
-    kwargs = draw(kwargs_strategy)
-
-    return (ir_type, kwargs)
+from tests.conjecture.common import fresh_data, ir_types_and_kwargs
 
 
 # we max out at 128 bit integers in the *unbounded* case, but someone may

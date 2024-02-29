@@ -231,3 +231,18 @@ def draw_boolean_kwargs(draw, *, use_forced=False):
         assume(bits <= 64)
 
     return {"p": p, "forced": forced}
+
+
+@st.composite
+def ir_types_and_kwargs(draw):
+    ir_type = draw(st.sampled_from(["integer", "bytes", "float", "string", "boolean"]))
+    kwargs_strategy = {
+        "integer": draw_integer_kwargs(),
+        "bytes": draw_bytes_kwargs(),
+        "float": draw_float_kwargs(),
+        "string": draw_string_kwargs(),
+        "boolean": draw_boolean_kwargs(),
+    }[ir_type]
+    kwargs = draw(kwargs_strategy)
+
+    return (ir_type, kwargs)
