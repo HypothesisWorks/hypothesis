@@ -26,6 +26,7 @@ def using_tool_id(tool_id, tool_name):
     finally:
         sys.monitoring.free_tool_id(tool_id)
 
+
 @pytest.mark.skipif(sys.version_info[:2] < (3, 12), reason="new namespace")
 def test_monitoring_warns_on_registered_tool_id():
 
