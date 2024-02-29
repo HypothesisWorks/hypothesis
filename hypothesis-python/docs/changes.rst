@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.98.14:
+
+--------------------
+6.98.14 - 2024-02-29
+--------------------
+
+This patch adjusts the printing of bundle values to correspond
+with their names when using stateful testing.
+
 .. _v6.98.13:
 
 --------------------
