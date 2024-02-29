@@ -984,12 +984,27 @@ class StateForActualGivenExecution:
         """
         trace: Trace = set()
         try:
-            _can_trace = (
-                (sys.version_info[:2] < (3, 12) and sys.gettrace() is None)
-                or (
+
+            def _trace_available_on_3_12():
+                return (
                     sys.version_info[:2] >= (3, 12)
                     and sys.monitoring.get_tool(MONITORING_TOOL_ID) is None
                 )
+
+            if not _trace_available_on_3_12():
+                warnings.warn(
+                    "avoiding tracing test function because tool id "
+                    f"{MONITORING_TOOL_ID} is already taken by tool "
+                    f"{sys.monitoring.get_tool(MONITORING_TOOL_ID)}.",
+                    HypothesisWarning,
+                    # I'm not sure computing a correct stacklevel is reasonable
+                    # given the number of entry points here.
+                    stacklevel=1,
+                )
+
+            _can_trace = (
+                (sys.version_info[:2] < (3, 12) and sys.gettrace() is None)
+                or _trace_available_on_3_12()
             ) and not PYPY
             _trace_obs = TESTCASE_CALLBACKS and OBSERVABILITY_COLLECT_COVERAGE
             _trace_failure = (
