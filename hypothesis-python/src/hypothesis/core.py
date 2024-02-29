@@ -1178,18 +1178,15 @@ class StateForActualGivenExecution:
             assert info._expected_exception is not None
             try:
                 with with_reporter(fragments.append):
-                    # TODO double check this is necessary.
-                    with hacky_patchable_run_context_yielding_per_test_case_context() as per_case_context_fn:
-                        self.execute_once(
-                            ran_example,
-                            print_example=not self.is_find,
-                            is_final=True,
-                            expected_failure=(
-                                info._expected_exception,
-                                info._expected_traceback,
-                            ),
-                            per_case_context_fn=per_case_context_fn,
-                        )
+                    self.execute_once(
+                        ran_example,
+                        print_example=not self.is_find,
+                        is_final=True,
+                        expected_failure=(
+                            info._expected_exception,
+                            info._expected_traceback,
+                        ),
+                    )
             except (UnsatisfiedAssumption, StopTest) as e:
                 err = Flaky(
                     "Unreliable assumption: An example which satisfied "
