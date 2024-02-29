@@ -11,69 +11,140 @@
 from hypothesis.internal.conjecture.data import IRTree, IRTreeLeaf
 from hypothesis.internal.floats import SMALLEST_SUBNORMAL
 from hypothesis.internal.intervalsets import IntervalSet
+from hypothesis import given, strategies as st, settings
+from hypothesis.stateful import (
+    RuleBasedStateMachine,
+    rule,
+    invariant,
+    precondition,
+    initialize,
+)
+from hypothesis.internal.floats import float_to_int
 
-from tests.conjecture.common import fresh_data
+from tests.conjecture.common import (
+    fresh_data,
+    ir_types_and_kwargs,
+    draw_integer_kwargs,
+    draw_float_kwargs,
+    draw_boolean_kwargs,
+    draw_string_kwargs,
+    draw_bytes_kwargs,
+)
 
 
-def test_copy_leaf():
-    leaf = IRTreeLeaf(
-        ir_type="integer",
-        value=10,
-        kwargs={"min_value": 0, "max_value": 100, "weights": None, "shrink_towards": 0},
-        was_forced=False,
-        depth=1,
-        index_in_parent=3,
+def draw_ir_value(ir_type, kwargs):
+    data = fresh_data()
+    return getattr(data, f"draw_{ir_type}")(**kwargs)
+
+
+def ir_value_eq(ir_type, v1, v2):
+    if ir_type == "float":
+        # correctly handle -0.0 == 0.0 and nan == nan
+        return float_to_int(v1) == float_to_int(v2)
+    return v1 == v2
+
+
+@st.composite
+def leaves(draw):
+    (ir_type, kwargs) = draw(ir_types_and_kwargs())
+    return IRTreeLeaf(
+        ir_type=ir_type,
+        value=draw_ir_value(ir_type, kwargs),
+        kwargs=kwargs,
+        was_forced=draw(st.booleans()),
+        depth=draw(st.integers(min_value=0)),
+        index_in_parent=draw(st.integers(min_value=0)),
     )
+
+
+@given(leaves())
+def test_copy_leaf_is_equal(leaf):
     assert leaf == leaf.copy()
 
 
-def test_copy_leaf_with_value():
-    leaf = IRTreeLeaf(
-        ir_type="integer",
-        value=10,
-        kwargs={"min_value": 0, "max_value": 100, "weights": None, "shrink_towards": 0},
-        was_forced=False,
-        depth=1,
-        index_in_parent=3,
-    )
-    leaf2 = leaf.copy(with_value=20)
-    assert leaf != leaf2
-    assert leaf2.value == 20
+@given(leaves())
+def test_copy_leaf_with_value(leaf):
+    ir_type = leaf.ir_type
+    new_value = draw_ir_value(ir_type, leaf.kwargs)
+    leaf2 = leaf.copy(with_value=new_value)
+
+    # the copied leaf should have a value of new_value.
+    assert ir_value_eq(ir_type, new_value, leaf2.value)
+    # if we chose a value different from the original leaf, they should no
+    # longer be equal.
+    if not ir_value_eq(ir_type, leaf.value, new_value):
+        assert leaf != leaf2
 
 
 def test_copy_empty_ir_tree():
     ir_tree = IRTree()
     assert ir_tree.root is None
-    assert ir_tree == ir_tree.copy()
-    assert ir_tree.copy().root is None
+
+    copied = ir_tree.copy()
+    assert ir_tree == copied
+    assert copied.root is None
 
 
-def test_copy_ir_tree():
-    data = fresh_data()
-    data.draw_boolean(p=0.75)
-    data.start_example(42)
-    data.draw_integer()
-    data.stop_example()
+# avoid slowdowns or overruns
+@settings(max_examples=20, stateful_step_count=10)
+class CopyIRTreeIsEqual(RuleBasedStateMachine):
+    def __init__(self):
+        super().__init__()
+        self.data = fresh_data()
+        self.data_strategy = None
 
-    assert data.ir_tree == data.ir_tree.copy()
+    # this init rule is a total hack to allow us to draw from strategies inside
+    # @invariant.
+    @initialize(data=st.data())
+    def set_up_data_strategy(self, data):
+        self.data_strategy = data
+
+    @rule(kwargs=draw_integer_kwargs())
+    def draw_integer(self, kwargs):
+        self.data.draw_integer(**kwargs)
+
+    @rule(kwargs=draw_string_kwargs())
+    def draw_string(self, kwargs):
+        self.data.draw_string(**kwargs)
+
+    @rule(kwargs=draw_boolean_kwargs())
+    def draw_boolean(self, kwargs):
+        self.data.draw_boolean(**kwargs)
+
+    @rule(kwargs=draw_bytes_kwargs())
+    def draw_bytes(self, kwargs):
+        self.data.draw_bytes(**kwargs)
+
+    @rule(kwargs=draw_float_kwargs())
+    def draw_float(self, kwargs):
+        self.data.draw_float(**kwargs)
+
+    @invariant()
+    def copying_ir_tree_is_equal(self):
+        assert self.data.ir_tree == self.data.ir_tree.copy()
+
+    @precondition(lambda self: len(self.data.ir_tree.leaves()) > 0)
+    @invariant()
+    def copying_ir_tree_while_replacing_nodes(self):
+        tree = self.data.ir_tree
+        leaves = tree.leaves()
+        i = self.data_strategy.draw(st.integers(0, len(leaves) - 1))
+        leaf = leaves[i]
+        new_value = draw_ir_value(leaf.ir_type, leaf.kwargs)
+
+        tree2 = tree.copy(
+            replacing_nodes=[(leaf.location, leaf.copy(with_value=new_value))]
+        )
+        leaves2 = tree2.leaves()
+
+        assert len(leaves) == len(leaves2)
+        assert ir_value_eq(leaf.ir_type, leaves2[i].value, new_value)
+
+        if not ir_value_eq(leaf.ir_type, leaf.value, new_value):
+            assert tree != tree2
 
 
-def test_copy_ir_tree_replacing_nodes():
-    data = fresh_data()
-    data.draw_boolean(p=0)
-    data.start_example(42)
-    data.draw_integer()
-    data.stop_example()
-
-    tree = data.ir_tree
-    node = tree.leaves()[0]
-    assert node.ir_type == "boolean"
-    assert node.value is False
-
-    tree2 = tree.copy(replacing_nodes=[(node.location, node.copy(with_value=True))])
-
-    assert tree != tree2
-    assert tree2.leaves()[0].value is True
+TestCopyIRTreeIsEqual = CopyIRTreeIsEqual.TestCase
 
 
 def test_leaves():
