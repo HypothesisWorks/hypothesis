@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import contextlib
 import math
 import time
 from collections import defaultdict
@@ -1036,6 +1037,9 @@ class PrimitiveProvider:
         # symbolic values into actual values.
         # I'm not tied to this exact function name or design.
         return value
+
+    def per_test_case_context_manager(self):
+        return contextlib.nullcontext()
 
     def draw_boolean(self, p: float = 0.5, *, forced: Optional[bool] = None) -> bool:
         """Return True with probability p (assuming a uniform generator),

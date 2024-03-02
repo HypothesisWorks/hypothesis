@@ -758,15 +758,6 @@ def get_executor(runner):
     return default_executor
 
 
-# This is hacky solution gives the experimental Crosshair backend a way to wrap
-# a context manager around all of the test cases generated for some test function,
-# and _that_ context can return a function for a context manager which will be
-# wrapped around each individual test case.  It's ugly, but it works.
-hacky_patchable_run_context_yielding_per_test_case_context = partial(
-    contextlib.nullcontext, enter_result=contextlib.nullcontext
-)
-
-
 class StateForActualGivenExecution:
     def __init__(self, stuff, test, settings, random, wrapped_test):
         self.test_runner = get_executor(stuff.selfy)
@@ -811,7 +802,6 @@ class StateForActualGivenExecution:
         is_final=False,
         expected_failure=None,
         example_kwargs=None,
-        per_case_context_fn=contextlib.nullcontext,
     ):
         """Run the test function once, using ``data`` as input.
 
@@ -950,7 +940,7 @@ class StateForActualGivenExecution:
                     # providers may throw in per_case_context_fn, and we'd like
                     # `result` to still be set in these cases.
                     result = None
-                    with per_case_context_fn():
+                    with data.provider.per_test_case_context_manager():
                         # Run the test function once, via the executor hook.
                         # In most cases this will delegate straight to `run(data)`.
                         result = self.test_runner(data, run)
@@ -987,9 +977,7 @@ class StateForActualGivenExecution:
             ) from exception
         return result
 
-    def _execute_once_for_engine(
-        self, data: ConjectureData, *, per_case_context_fn: Any
-    ) -> None:
+    def _execute_once_for_engine(self, data: ConjectureData) -> None:
         """Wrapper around ``execute_once`` that intercepts test failure
         exceptions and single-test control exceptions, and turns them into
         appropriate method calls to `data` instead.
@@ -1013,17 +1001,13 @@ class StateForActualGivenExecution:
                 # settrace() contention *not* by our coverage tests.  Ah well.
                 with Tracer() as tracer:
                     try:
-                        result = self.execute_once(
-                            data, per_case_context_fn=per_case_context_fn
-                        )
+                        result = self.execute_once(data)
                         if data.status == Status.VALID:
                             self.explain_traces[None].add(frozenset(tracer.branches))
                     finally:
                         trace = tracer.branches
             else:
-                result = self.execute_once(
-                    data, per_case_context_fn=per_case_context_fn
-                )
+                result = self.execute_once(data)
             if result is not None:
                 fail_health_check(
                     self.settings,
@@ -1115,16 +1099,15 @@ class StateForActualGivenExecution:
             else:
                 database_key = None
 
-        with hacky_patchable_run_context_yielding_per_test_case_context() as ctx_fn:
-            runner = ConjectureRunner(
-                partial(self._execute_once_for_engine, per_case_context_fn=ctx_fn),
-                settings=self.settings,
-                random=self.random,
-                database_key=database_key,
-            )
-            # Use the Conjecture engine to run the test function many times
-            # on different inputs.
-            runner.run()
+        runner = ConjectureRunner(
+            self._execute_once_for_engine,
+            settings=self.settings,
+            random=self.random,
+            database_key=database_key,
+        )
+        # Use the Conjecture engine to run the test function many times
+        # on different inputs.
+        runner.run()
         note_statistics(runner.statistics)
         deliver_json_blob(
             {

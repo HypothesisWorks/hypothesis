@@ -226,7 +226,6 @@ class ConjectureRunner:
             self.debug(self.__pending_call_explanation)
             self.__pending_call_explanation = None
 
-        # assert isinstance(data.observer, TreeRecordingObserver)
         self.call_count += 1
 
         interrupted = False
