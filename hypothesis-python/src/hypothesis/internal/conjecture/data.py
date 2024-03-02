@@ -886,54 +886,61 @@ LocationType: TypeAlias = Tuple[int, int]
 
 
 @attr.s(slots=True)
-class IRTreeLeaf:
+class IRTreeNode:
+    location: Optional[LocationType] = attr.ib(init=False, default=None, eq=False)
+
+    @property
+    def depth(self) -> Optional[int]:
+        if self.location is None:
+            return None
+        return self.location[0]
+
+    @property
+    def index_in_parent(self) -> Optional[int]:
+        if self.location is None:
+            return None
+        return self.location[1]
+
+
+@attr.s(slots=True)
+class IRTreeLeaf(IRTreeNode):
     ir_type: IRTypeName = attr.ib()
     value: IRType = attr.ib()
     kwargs: IRKWargsType = attr.ib()
     was_forced: bool = attr.ib()
-    depth: int = attr.ib()
-    index_in_parent: int = attr.ib()
-
-    location: LocationType = attr.ib(init=False)
-
-    def __attrs_post_init__(self):
-        self.location = (self.depth, self.index_in_parent)
 
     def __repr__(self):
         return f"{self.ir_type} {self.value} {self.kwargs}"
 
     def copy(self, *, with_value: Optional[IRType] = None) -> "IRTreeLeaf":
+        # it doesn't make too much sense to modify a leaf if its value was forced,
+        # at least for the shrinker. we may want to allow this combination in the
+        # future.
+        assert not (with_value is not None and self.was_forced)
+
         value = self.value if with_value is None else with_value
         return IRTreeLeaf(
             ir_type=self.ir_type,
             value=value,
             kwargs=self.kwargs,
             was_forced=self.was_forced,
-            depth=self.depth,
-            index_in_parent=self.index_in_parent,
         )
 
 
 @attr.s(slots=True)
-class IRTreeNode:
-    parent: Optional["IRTreeNode"] = attr.ib(eq=False, repr=False)
-    depth: int = attr.ib()
+class IRTreeBranch(IRTreeNode):
+    parent: Optional["IRTreeBranch"] = attr.ib(eq=False, repr=False)
     label: int = attr.ib()
-    index_in_parent: int = attr.ib()
 
     children: List[IRTreeNodeType] = attr.ib(
         init=False, factory=list, repr=lambda children: f"{len(children)} children"
     )
-    location: LocationType = attr.ib(init=False)
-
-    def __attrs_post_init__(self):
-        self.location = (self.depth, self.index_in_parent)
 
     def copy(
         self,
         *,
         replacing_nodes: Optional[List[Tuple[LocationType, IRTreeNodeType]]] = None,
-    ) -> "IRTreeNode":
+    ) -> "IRTreeBranch":
         children = []
         replacing_nodes = [] if replacing_nodes is None else replacing_nodes
         for child in self.children:
@@ -942,7 +949,7 @@ class IRTreeNode:
                     child = node
                     break
             else:
-                if isinstance(child, IRTreeNode):
+                if isinstance(child, IRTreeBranch):
                     child = child.copy(replacing_nodes=replacing_nodes)
                 elif isinstance(child, IRTreeLeaf):
                     child = child.copy()
@@ -951,11 +958,9 @@ class IRTreeNode:
 
             children.append(child)
 
-        node = IRTreeNode(
+        node = IRTreeBranch(
             label=self.label,
             parent=self.parent,
-            depth=self.depth,
-            index_in_parent=self.index_in_parent,
         )
         node.children = children
         return node
@@ -972,8 +977,8 @@ class IRTreeNode:
 @attr.s(slots=True)
 class IRTree:
     # these are only None when the top example hasn't been started yet
-    root: Optional[IRTreeNode] = attr.ib(init=False, default=None)
-    current_node: Optional[IRTreeNode] = attr.ib(init=False, default=None, eq=False)
+    root: Optional[IRTreeBranch] = attr.ib(init=False, default=None)
+    current_node: Optional[IRTreeBranch] = attr.ib(init=False, default=None, eq=False)
 
     def copy(
         self,
@@ -984,13 +989,14 @@ class IRTree:
         if self.root is None:
             return tree
         tree.root = self.root.copy(replacing_nodes=replacing_nodes)
+        tree.update_locations()
         return tree
 
     def leaves(self) -> List[IRTreeLeaf]:
         def _leaves(node):
             leaves = []
             for child in node.children:
-                if isinstance(child, IRTreeNode):
+                if isinstance(child, IRTreeBranch):
                     leaves += _leaves(child)
                 else:
                     assert isinstance(child, IRTreeLeaf)
@@ -999,20 +1005,31 @@ class IRTree:
 
         return _leaves(self.root)
 
+    def update_locations(self):
+        def _update_locations(node, *, depth):
+            for index_in_parent, child in enumerate(node.children):
+                child.location = (depth, index_in_parent)
+
+                if isinstance(child, IRTreeBranch):
+                    _update_locations(child, depth=depth + 1)
+
+        # root has depth 0, but all its children have depth 1.
+        self.root.location = (0, None)
+        _update_locations(self.root, depth=1)
+
     def start_example(self, label):
         if self.root is None:
             assert label == TOP_LABEL
-            self.root = IRTreeNode(
-                label=TOP_LABEL, parent=None, depth=0, index_in_parent=None
+            self.root = IRTreeBranch(
+                label=TOP_LABEL,
+                parent=None,
             )
             self.current_node = self.root
             return
 
-        node = IRTreeNode(
+        node = IRTreeBranch(
             label=label,
             parent=self.current_node,
-            depth=self.current_node.depth + 1,
-            index_in_parent=len(self.current_node.children) + 1,
         )
         self.current_node.children.append(node)
         self.current_node = node
@@ -1036,8 +1053,6 @@ class IRTree:
             value=value,
             kwargs=kwargs,
             was_forced=was_forced,
-            depth=self.current_node.depth + 1,
-            index_in_parent=len(self.current_node.children) + 1,
         )
         self.current_node.children.append(leaf)
 
@@ -2063,6 +2078,7 @@ class ConjectureData:
 
         self.buffer = bytes(self.buffer)
         self.observer.conclude_test(self.status, self.interesting_origin)
+        self.ir_tree.update_locations()
 
     def choice(
         self,
