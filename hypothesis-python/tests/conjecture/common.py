@@ -10,9 +10,10 @@
 
 import math
 from contextlib import contextmanager
-from random import Random
 
 from hypothesis import HealthCheck, assume, settings, strategies as st
+from hypothesis.control import current_build_context
+from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import engine as engine_module
 from hypothesis.internal.conjecture.data import ConjectureData, Status
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE, ConjectureRunner
@@ -76,10 +77,27 @@ def shrinking_from(start):
 
 
 def fresh_data(*, random=None, observer=None) -> ConjectureData:
+    if random is None:
+        try:
+            context = current_build_context()
+        except InvalidArgument:
+            # ensure usage of fresh_data() is not flaky outside of property tests.
+            raise ValueError(
+                "must pass a seeded Random instance to fresh_data() when "
+                "outside of a build context"
+            )
+
+        # within property tests, ensure fresh_data uses a controlled source of
+        # randomness.
+        # drawing this from the current build context is almost *too* magical. But
+        # the alternative is an extra @given(st.randoms()) everywhere we use
+        # fresh_data, so eh.
+        random = context.data.draw(st.randoms())
+
     return ConjectureData(
         BUFFER_SIZE,
         prefix=b"",
-        random=Random() if random is None else random,
+        random=random,
         observer=observer,
     )
 

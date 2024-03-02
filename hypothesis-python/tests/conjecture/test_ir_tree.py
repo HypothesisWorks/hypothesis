@@ -154,8 +154,9 @@ def test_new_leaves_have_no_location(leaf):
     assert leaf.index_in_parent is None
 
 
-def test_leaves():
-    data = fresh_data()
+@given(st.randoms())
+def test_leaves(random):
+    data = fresh_data(random=random)
     data.draw_float(min_value=-10.0, max_value=10.0, forced=5.0)
     data.draw_boolean(forced=True)
 
