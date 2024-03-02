@@ -881,7 +881,6 @@ class DataObserver:
         pass
 
 
-IRTreeNodeType: TypeAlias = Union["IRTreeNode", "IRTreeLeaf"]
 LocationType: TypeAlias = Tuple[int, int]
 
 
@@ -932,14 +931,14 @@ class IRTreeBranch(IRTreeNode):
     parent: Optional["IRTreeBranch"] = attr.ib(eq=False, repr=False)
     label: int = attr.ib()
 
-    children: List[IRTreeNodeType] = attr.ib(
+    children: List[IRTreeNode] = attr.ib(
         init=False, factory=list, repr=lambda children: f"{len(children)} children"
     )
 
     def copy(
         self,
         *,
-        replacing_nodes: Optional[List[Tuple[LocationType, IRTreeNodeType]]] = None,
+        replacing_nodes: Optional[List[Tuple[LocationType, IRTreeNode]]] = None,
     ) -> "IRTreeBranch":
         children = []
         replacing_nodes = [] if replacing_nodes is None else replacing_nodes
@@ -983,7 +982,7 @@ class IRTree:
     def copy(
         self,
         *,
-        replacing_nodes: Optional[List[Tuple[LocationType, IRTreeNodeType]]] = None,
+        replacing_nodes: Optional[List[Tuple[LocationType, IRTreeNode]]] = None,
     ) -> "IRTree":
         tree = IRTree()
         if self.root is None:
