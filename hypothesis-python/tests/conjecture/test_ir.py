@@ -9,12 +9,13 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 from hypothesis import assume, example, given, strategies as st
+from hypothesis.internal.conjecture.data import IRNode
 from hypothesis.internal.conjecture.datatree import (
     MAX_CHILDREN_EFFECTIVELY_INFINITE,
     all_children,
     compute_max_children,
 )
-from hypothesis.internal.floats import next_down, next_up
+from hypothesis.internal.floats import SMALLEST_SUBNORMAL, next_down, next_up
 from hypothesis.internal.intervalsets import IntervalSet
 
 from tests.conjecture.common import fresh_data, ir_types_and_kwargs
@@ -132,3 +133,66 @@ def test_compute_max_children_and_all_children_agree(ir_type_and_kwargs):
     cap = min(100_000, MAX_CHILDREN_EFFECTIVELY_INFINITE)
     assume(max_children < cap)
     assert len(list(all_children(ir_type, kwargs))) == max_children
+
+
+@given(st.randoms())
+def test_ir_nodes(random):
+    data = fresh_data(random=random)
+    data.draw_float(min_value=-10.0, max_value=10.0, forced=5.0)
+    data.draw_boolean(forced=True)
+
+    data.start_example(42)
+    data.draw_string(IntervalSet.from_string("abcd"), forced="abbcccdddd")
+    data.draw_bytes(8, forced=bytes(8))
+    data.stop_example()
+
+    data.draw_integer(0, 100, forced=50)
+
+    data.freeze()
+    expected_tree_nodes = [
+        IRNode(
+            ir_type="float",
+            value=5.0,
+            kwargs={
+                "min_value": -10.0,
+                "max_value": 10.0,
+                "allow_nan": True,
+                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+            },
+            was_forced=True,
+        ),
+        IRNode(
+            ir_type="boolean",
+            value=True,
+            kwargs={"p": 0.5},
+            was_forced=True,
+        ),
+        IRNode(
+            ir_type="string",
+            value="abbcccdddd",
+            kwargs={
+                "intervals": IntervalSet.from_string("abcd"),
+                "min_size": 0,
+                "max_size": None,
+            },
+            was_forced=True,
+        ),
+        IRNode(
+            ir_type="bytes",
+            value=bytes(8),
+            kwargs={"size": 8},
+            was_forced=True,
+        ),
+        IRNode(
+            ir_type="integer",
+            value=50,
+            kwargs={
+                "min_value": 0,
+                "max_value": 100,
+                "weights": None,
+                "shrink_towards": 0,
+            },
+            was_forced=True,
+        ),
+    ]
+    assert data.examples.ir_tree_nodes == expected_tree_nodes
