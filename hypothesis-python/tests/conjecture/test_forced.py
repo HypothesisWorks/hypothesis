@@ -219,8 +219,9 @@ def test_forced_floats(use_min_value, use_max_value):
         (-10.0, -5.0),
     ],
 )
-def test_forced_floats_with_nan(sign, min_value, max_value):
+@given(random=st.randoms())
+def test_forced_floats_with_nan(random, sign, min_value, max_value):
     # nans with a sign opposite of both bounds previously gave us trouble
     # trying to use float clampers that didn't exist when drawing.
-    data = fresh_data()
+    data = fresh_data(random=random)
     data.draw_float(min_value=min_value, max_value=max_value, forced=sign * math.nan)
