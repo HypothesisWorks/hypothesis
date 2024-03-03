@@ -21,6 +21,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    cast,
     overload,
 )
 
@@ -137,7 +138,7 @@ def from_dtype(
     kwargs = {k: v for k, v in locals().items() if k != "dtype" and v is not None}
 
     # Compound datatypes, eg 'f4,f4,f4'
-    if dtype.names is not None:
+    if dtype.names is not None and dtype.fields is not None:
         # mapping np.void.type over a strategy is nonsense, so return now.
         subs = [from_dtype(dtype.fields[name][0], **kwargs) for name in dtype.names]
         return st.tuples(*subs)
@@ -165,7 +166,7 @@ def from_dtype(
         result: st.SearchStrategy[Any] = st.booleans()
     elif dtype.kind == "f":
         result = st.floats(
-            width=min(8 * dtype.itemsize, 64),
+            width=cast(Literal[16, 32, 64], min(8 * dtype.itemsize, 64)),
             **compat_kw(
                 "min_value",
                 "max_value",
@@ -178,7 +179,7 @@ def from_dtype(
         )
     elif dtype.kind == "c":
         result = st.complex_numbers(
-            width=min(8 * dtype.itemsize, 128),  # convert from bytes to bits
+            width=cast(Literal[32, 64, 128], min(8 * dtype.itemsize, 128)),  # convert from bytes to bits
             **compat_kw(
                 "min_magnitude",
                 "max_magnitude",
@@ -524,7 +525,7 @@ def arrays(
             lambda s: arrays(dtype, s, elements=elements, fill=fill, unique=unique)
         )
     # From here on, we're only dealing with values and it's relatively simple.
-    dtype = np.dtype(dtype)
+    dtype = np.dtype(dtype)  # type: ignore[arg-type,assignment]
     assert isinstance(dtype, np.dtype)  # help mypy out a bit...
     if elements is None or isinstance(elements, Mapping):
         if dtype.kind in ("m", "M") and "[" not in dtype.str:
@@ -580,8 +581,8 @@ def defines_dtype_strategy(strat: T) -> T:
 
 
 @defines_dtype_strategy
-def boolean_dtypes() -> st.SearchStrategy[np.dtype]:
-    return st.just("?")
+def boolean_dtypes() -> st.SearchStrategy[np.dtype[np.bool_]]:
+    return st.just("?")  # type: ignore[arg-type]
 
 
 def dtype_factory(kind, sizes, valid_sizes, endianness):
@@ -797,7 +798,7 @@ def array_dtypes(
         elements |= st.tuples(
             name_titles, subtype_strategy, array_shapes(max_dims=2, max_side=2)
         )
-    return st.lists(
+    return st.lists(  # type: ignore[return-value]
         elements=elements,
         min_size=min_size,
         max_size=max_size,
@@ -973,14 +974,34 @@ def basic_indices(
         allow_fewer_indices_than_dims=True,
     )
 
+I = TypeVar("I", bound=np.integer)
+
+@overload
+@defines_strategy()
+def integer_array_indices(
+    shape: Shape,
+    *,
+    result_shape: st.SearchStrategy[Shape] = array_shapes(),
+) -> "st.SearchStrategy[Tuple[NDArray[np.signedinteger[Any]], ...]]":
+    ...
+
+@overload
+@defines_strategy()
+def integer_array_indices(
+    shape: Shape,
+    *,
+    result_shape: st.SearchStrategy[Shape] = array_shapes(),
+    dtype: "np.dtype[I]",
+) -> "st.SearchStrategy[Tuple[NDArray[I], ...]]":
+    ...
 
 @defines_strategy()
 def integer_array_indices(
     shape: Shape,
     *,
     result_shape: st.SearchStrategy[Shape] = array_shapes(),
-    dtype: D = np.dtype(int),
-) -> "st.SearchStrategy[Tuple[NDArray[D], ...]]":
+    dtype: "np.dtype[I] | np.dtype[np.signedinteger[Any]]" = np.dtype(int),
+) -> "st.SearchStrategy[Tuple[NDArray[I], ...]]":
     """Return a search strategy for tuples of integer-arrays that, when used
     to index into an array of shape ``shape``, given an array whose shape
     was drawn from ``result_shape``.
@@ -1172,7 +1193,7 @@ def _from_type(thing: Type[Ex]) -> Optional[st.SearchStrategy[Ex]]:
 
     if real_thing in [np.ndarray, _SupportsArray]:
         dtype, shape = _dtype_and_shape_from_args(args)
-        return arrays(dtype, shape)
+        return arrays(dtype, shape)  # type: ignore[return-value]
 
     # We didn't find a type to resolve, continue
     return None
