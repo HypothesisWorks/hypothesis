@@ -447,7 +447,7 @@ class ExampleRecord:
         self.labels = [DRAW_BYTES_LABEL]
         self.__index_of_labels: "Optional[Dict[int, int]]" = {DRAW_BYTES_LABEL: 0}
         self.trail = IntList()
-        self.ir_nodes = []
+        self.ir_nodes: List[IRNode] = []
 
     def freeze(self) -> None:
         self.__index_of_labels = None
