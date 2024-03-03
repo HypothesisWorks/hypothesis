@@ -59,6 +59,8 @@ def get_mypy_analysed_type(fname):
             "hypothesis.strategies._internal.strategies.SearchStrategy",
             "SearchStrategy",
         )
+        .replace("numpy._typing.", "")
+        .replace("numpy.", "")
     )
 
 
