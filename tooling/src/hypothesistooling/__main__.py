@@ -519,14 +519,7 @@ def check_examples3(*args):
 def check_whole_repo_tests(*args):
     install.ensure_shellcheck()
     subprocess.check_call(
-        [
-            sys.executable,
-            "-m",
-            "pip",
-            "install",
-            "--upgrade",
-            str(hp.HYPOTHESIS_PYTHON) + "[numpy]",
-        ]
+        [sys.executable, "-m", "pip", "install", "--upgrade", hp.HYPOTHESIS_PYTHON]
     )
 
     if not args:
