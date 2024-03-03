@@ -1962,7 +1962,7 @@ class ConjectureData:
                 v = v if v is None else tuple(v)
             key.append((k, v))
 
-        key = hash(tuple(key))
+        key = tuple(key)
 
         try:
             return POOLED_KWARGS_CACHE[key]
