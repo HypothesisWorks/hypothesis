@@ -152,7 +152,7 @@ def test_pyright_issue_3348(tmp_path: Path):
     _write_config(tmp_path, {"typeCheckingMode": "strict"})
     assert _get_pyright_errors(file) == []
 
-
+@pytest.mark.xfail(reason="Pyright doesn't resolve the numpy import")
 def test_numpy_arrays_strategy(tmp_path: Path):
     file = tmp_path / "test.py"
     file.write_text(
@@ -172,6 +172,7 @@ def test_numpy_arrays_strategy(tmp_path: Path):
     assert errors == []
 
 
+@pytest.mark.xfail(reason="Pyright doesn't resolve the numpy import")
 @pytest.mark.parametrize(
     "val,expect",
     [
