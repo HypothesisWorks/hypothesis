@@ -336,7 +336,7 @@ class ExampleProperty:
         self.bytes_read = 0
         self.example_count = 0
         self.block_count = 0
-        self.ir_draw_count = 0
+        self.ir_node_count = 0
 
     def run(self) -> Any:
         """Rerun the test case with this visitor and return the
@@ -350,10 +350,10 @@ class ExampleProperty:
                 self.block(self.block_count)
                 self.block_count += 1
                 self.__pop(discarded=False)
-            elif record == IR_DRAW_RECORD:
-                data = self.examples.ir_draws[self.ir_draw_count]
-                self.ir_draw(data)
-                self.ir_draw_count += 1
+            elif record == IR_NODE_RECORD:
+                data = self.examples.ir_nodes[self.ir_node_count]
+                self.ir_node(data)
+                self.ir_node_count += 1
             elif record >= START_EXAMPLE_RECORD:
                 self.__push(record - START_EXAMPLE_RECORD)
             else:
@@ -394,8 +394,8 @@ class ExampleProperty:
         index of the example and ``discarded`` being ``True`` if ``stop_example``
         was called with ``discard=True``."""
 
-    def ir_draw(self, data) -> None:
-        pass
+    def ir_node(self, node: "IRNode") -> None:
+        """Called when an ir node is drawn."""
 
     def finish(self) -> Any:
         return self.result
@@ -429,7 +429,7 @@ STOP_EXAMPLE_DISCARD_RECORD = 1
 STOP_EXAMPLE_NO_DISCARD_RECORD = 2
 START_EXAMPLE_RECORD = 3
 
-IR_DRAW_RECORD = calc_label_from_name("ir draw record")
+IR_NODE_RECORD = calc_label_from_name("ir draw record")
 
 
 class ExampleRecord:
@@ -447,14 +447,17 @@ class ExampleRecord:
         self.labels = [DRAW_BYTES_LABEL]
         self.__index_of_labels: "Optional[Dict[int, int]]" = {DRAW_BYTES_LABEL: 0}
         self.trail = IntList()
-        self.ir_draws = []
+        self.ir_nodes = []
 
     def freeze(self) -> None:
         self.__index_of_labels = None
 
     def record_ir_draw(self, ir_type, value, *, kwargs, was_forced):
-        self.trail.append(IR_DRAW_RECORD)
-        self.ir_draws.append((ir_type, value, kwargs, was_forced))
+        self.trail.append(IR_NODE_RECORD)
+        node = IRNode(
+            ir_type=ir_type, value=value, kwargs=kwargs, was_forced=was_forced
+        )
+        self.ir_nodes.append(node)
 
     def start_example(self, label: int) -> None:
         assert self.__index_of_labels is not None
@@ -488,7 +491,7 @@ class Examples:
 
     def __init__(self, record: ExampleRecord, blocks: "Blocks") -> None:
         self.trail = record.trail
-        self.ir_draws = record.ir_draws
+        self.ir_nodes = record.ir_nodes
         self.labels = record.labels
         self.__length = (
             self.trail.count(STOP_EXAMPLE_DISCARD_RECORD)
@@ -574,17 +577,14 @@ class Examples:
 
     depths: IntList = calculated_example_property(_depths)
 
-    class _ir_tree_leaves(ExampleProperty):
+    class _ir_tree_nodes(ExampleProperty):
         def begin(self):
             self.result = []
 
-        def ir_draw(self, data):
-            (ir_type, value, kwargs, was_forced) = data
-            self.result.append(
-                IRTreeLeaf(ir_type=ir_type, value=value, kwargs=kwargs, was_forced=was_forced)
-            )
+        def ir_node(self, ir_node):
+            self.result.append(ir_node)
 
-    ir_tree_leaves: "List[IRTreeLeaf]" = calculated_example_property(_ir_tree_leaves)
+    ir_tree_nodes: "List[IRNode]" = calculated_example_property(_ir_tree_nodes)
 
     class _label_indices(ExampleProperty):
         def start_example(self, i: int, label_index: int) -> None:
@@ -912,7 +912,7 @@ class DataObserver:
 
 
 @attr.s(slots=True)
-class IRTreeLeaf:
+class IRNode:
     ir_type: IRTypeName = attr.ib()
     value: IRType = attr.ib()
     kwargs: IRKWargsType = attr.ib()
