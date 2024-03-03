@@ -1,3 +1,7 @@
 RELEASE_TYPE: patch
 
-Fix and improve the type signature of hypothesis.extra.numpy functions.
+This patch improves the type annotations in :mod:`hypothesis.extra.numpy`,
+which makes inferred types more precise for both :pypi:`mypy` and
+:pypi:`pyright`, and fixes some strict-mode errors on the latter.
+
+Thanks to Jonathan Plasse for reporting and fixing this in :pull:`3889`!
