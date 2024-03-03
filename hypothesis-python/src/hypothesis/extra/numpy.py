@@ -581,7 +581,7 @@ def defines_dtype_strategy(strat: T) -> T:
 
 
 @defines_dtype_strategy
-def boolean_dtypes() -> st.SearchStrategy[np.dtype[np.bool_]]:
+def boolean_dtypes() -> st.SearchStrategy["np.dtype[np.bool_]"]:
     return st.just("?")  # type: ignore[arg-type]
 
 
@@ -619,7 +619,7 @@ def unsigned_integer_dtypes(
     *,
     endianness: str = "?",
     sizes: Sequence[Literal[8, 16, 32, 64]] = (8, 16, 32, 64),
-) -> st.SearchStrategy[np.dtype]:
+) -> st.SearchStrategy["np.dtype[np.unsignedinteger[Any]]"]:
     """Return a strategy for unsigned integer dtypes.
 
     endianness may be ``<`` for little-endian, ``>`` for big-endian,
@@ -637,7 +637,7 @@ def integer_dtypes(
     *,
     endianness: str = "?",
     sizes: Sequence[Literal[8, 16, 32, 64]] = (8, 16, 32, 64),
-) -> st.SearchStrategy[np.dtype]:
+) -> st.SearchStrategy["np.dtype[np.signedinteger[Any]]"]:
     """Return a strategy for signed integer dtypes.
 
     endianness and sizes are treated as for
@@ -651,7 +651,7 @@ def floating_dtypes(
     *,
     endianness: str = "?",
     sizes: Sequence[Literal[16, 32, 64, 96, 128]] = (16, 32, 64),
-) -> st.SearchStrategy[np.dtype]:
+) -> st.SearchStrategy["np.dtype[np.floating[Any]]"]:
     """Return a strategy for floating-point dtypes.
 
     sizes is the size in bits of floating-point number.  Some machines support
@@ -669,7 +669,7 @@ def complex_number_dtypes(
     *,
     endianness: str = "?",
     sizes: Sequence[Literal[64, 128, 192, 256]] = (64, 128),
-) -> st.SearchStrategy[np.dtype]:
+) -> st.SearchStrategy["np.dtype[np.complexfloating[Any, Any]]"]:
     """Return a strategy for complex-number dtypes.
 
     sizes is the total size in bits of a complex number, which consists
@@ -708,7 +708,7 @@ def validate_time_slice(max_period, min_period):
 @defines_dtype_strategy
 def datetime64_dtypes(
     *, max_period: str = "Y", min_period: str = "ns", endianness: str = "?"
-) -> st.SearchStrategy[np.dtype]:
+) -> st.SearchStrategy["np.dtype[np.datetime64]"]:
     """Return a strategy for datetime64 dtypes, with various precisions from
     year to attosecond."""
     return dtype_factory(
@@ -722,7 +722,7 @@ def datetime64_dtypes(
 @defines_dtype_strategy
 def timedelta64_dtypes(
     *, max_period: str = "Y", min_period: str = "ns", endianness: str = "?"
-) -> st.SearchStrategy[np.dtype]:
+) -> st.SearchStrategy["np.dtype[np.timedelta64]"]:
     """Return a strategy for timedelta64 dtypes, with various precisions from
     year to attosecond."""
     return dtype_factory(
@@ -736,7 +736,7 @@ def timedelta64_dtypes(
 @defines_dtype_strategy
 def byte_string_dtypes(
     *, endianness: str = "?", min_len: int = 1, max_len: int = 16
-) -> st.SearchStrategy[np.dtype]:
+) -> st.SearchStrategy["np.dtype[np.bytes_]"]:
     """Return a strategy for generating bytestring dtypes, of various lengths
     and byteorder.
 
@@ -751,7 +751,7 @@ def byte_string_dtypes(
 @defines_dtype_strategy
 def unicode_string_dtypes(
     *, endianness: str = "?", min_len: int = 1, max_len: int = 16
-) -> st.SearchStrategy[np.dtype]:
+) -> st.SearchStrategy["np.dtype[np.str_]"]:
     """Return a strategy for generating unicode string dtypes, of various
     lengths and byteorder.
 
