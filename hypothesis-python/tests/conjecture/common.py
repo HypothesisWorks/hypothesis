@@ -85,7 +85,7 @@ def fresh_data(*, random=None, observer=None) -> ConjectureData:
             raise ValueError(
                 "must pass a seeded Random instance to fresh_data() when "
                 "outside of a build context"
-            )
+            ) from None
 
         # within property tests, ensure fresh_data uses a controlled source of
         # randomness.
