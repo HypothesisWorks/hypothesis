@@ -574,27 +574,17 @@ class Examples:
 
     depths: IntList = calculated_example_property(_depths)
 
-    class _ir_tree(ExampleProperty):
+    class _ir_tree_leaves(ExampleProperty):
         def begin(self):
-            self.ir_tree = IRTree()
+            self.result = []
 
         def ir_draw(self, data):
             (ir_type, value, kwargs, was_forced) = data
-            draw = getattr(self.ir_tree, f"draw_{ir_type}")
-            draw(value, kwargs=kwargs, was_forced=was_forced)
+            self.result.append(
+                IRTreeLeaf(ir_type=ir_type, value=value, kwargs=kwargs, was_forced=was_forced)
+            )
 
-        def start_example(self, i: int, label_index: int) -> None:
-            label = self.examples.labels[label_index]
-            self.ir_tree.start_example(label)
-
-        def stop_example(self, i: int, *, discarded: bool) -> None:
-            self.ir_tree.stop_example()
-
-        def finish(self):
-            self.ir_tree.update_locations()
-            return self.ir_tree
-
-    ir_tree: "IRTree" = calculated_example_property(_ir_tree)
+    ir_tree_leaves: "List[IRTreeLeaf]" = calculated_example_property(_ir_tree_leaves)
 
     class _label_indices(ExampleProperty):
         def start_example(self, i: int, label_index: int) -> None:
@@ -921,208 +911,12 @@ class DataObserver:
         pass
 
 
-LocationType: TypeAlias = Tuple[int, int]
-
-
 @attr.s(slots=True)
-class IRTreeNode:
-    location: Optional[LocationType] = attr.ib(init=False, default=None, eq=False)
-
-    @property
-    def depth(self) -> Optional[int]:
-        if self.location is None:
-            return None
-        return self.location[0]
-
-    @property
-    def index_in_parent(self) -> Optional[int]:
-        if self.location is None:
-            return None
-        return self.location[1]
-
-
-@attr.s(slots=True)
-class IRTreeLeaf(IRTreeNode):
+class IRTreeLeaf:
     ir_type: IRTypeName = attr.ib()
     value: IRType = attr.ib()
     kwargs: IRKWargsType = attr.ib()
     was_forced: bool = attr.ib()
-
-    def __repr__(self):
-        return f"{self.ir_type} {self.value} {self.kwargs}"
-
-    def copy(self, *, with_value: Optional[IRType] = None) -> "IRTreeLeaf":
-        # it doesn't make too much sense to modify a leaf if its value was forced,
-        # at least for the shrinker. we may want to allow this combination in the
-        # future.
-        assert not (with_value is not None and self.was_forced)
-
-        value = self.value if with_value is None else with_value
-        return IRTreeLeaf(
-            ir_type=self.ir_type,
-            value=value,
-            kwargs=self.kwargs,
-            was_forced=self.was_forced,
-        )
-
-
-@attr.s(slots=True)
-class IRTreeBranch(IRTreeNode):
-    parent: Optional["IRTreeBranch"] = attr.ib(eq=False, repr=False)
-    label: int = attr.ib()
-
-    children: List[IRTreeNode] = attr.ib(
-        init=False, factory=list, repr=lambda children: f"{len(children)} children"
-    )
-
-    def copy(
-        self,
-        *,
-        replacing_nodes: Optional[List[Tuple[LocationType, IRTreeNode]]] = None,
-    ) -> "IRTreeBranch":
-        children = []
-        replacing_nodes = [] if replacing_nodes is None else replacing_nodes
-        for child in self.children:
-            for location, node in replacing_nodes:
-                if child.location == location:
-                    child = node
-                    break
-            else:
-                if isinstance(child, IRTreeBranch):
-                    child = child.copy(replacing_nodes=replacing_nodes)
-                elif isinstance(child, IRTreeLeaf):
-                    child = child.copy()
-                else:
-                    raise NotImplementedError
-
-            children.append(child)
-
-        node = IRTreeBranch(
-            label=self.label,
-            parent=self.parent,
-        )
-        node.children = children
-        return node
-
-    def _repr_pretty_(self, p, cycle):
-        assert cycle is False
-        p.text(str(self.label))
-        with p.indent(1):
-            for child in self.children:
-                p.break_()
-                p.pretty(child)
-
-
-@attr.s(slots=True)
-class IRTree:
-    # these are only None when the top example hasn't been started yet
-    root: Optional[IRTreeBranch] = attr.ib(init=False, default=None)
-    current_node: Optional[IRTreeBranch] = attr.ib(init=False, default=None, eq=False)
-
-    def copy(
-        self,
-        *,
-        replacing_nodes: Optional[List[Tuple[LocationType, IRTreeNode]]] = None,
-    ) -> "IRTree":
-        tree = IRTree()
-        if self.root is None:
-            return tree
-        tree.root = self.root.copy(replacing_nodes=replacing_nodes)
-        tree.update_locations()
-        return tree
-
-    def leaves(self) -> List[IRTreeLeaf]:
-        def _leaves(node):
-            leaves = []
-            for child in node.children:
-                if isinstance(child, IRTreeBranch):
-                    leaves += _leaves(child)
-                else:
-                    assert isinstance(child, IRTreeLeaf)
-                    leaves.append(child)
-            return leaves
-
-        return _leaves(self.root)
-
-    def update_locations(self):
-        def _update_locations(node, *, depth):
-            for index_in_parent, child in enumerate(node.children):
-                child.location = (depth, index_in_parent)
-
-                if isinstance(child, IRTreeBranch):
-                    _update_locations(child, depth=depth + 1)
-
-        # root has depth 0, but all its children have depth 1.
-        self.root.location = (0, None)
-        _update_locations(self.root, depth=1)
-
-    def start_example(self, label):
-        if self.root is None:
-            assert label == TOP_LABEL
-            self.root = IRTreeBranch(
-                label=TOP_LABEL,
-                parent=None,
-            )
-            self.current_node = self.root
-            return
-
-        node = IRTreeBranch(
-            label=label,
-            parent=self.current_node,
-        )
-        self.current_node.children.append(node)
-        self.current_node = node
-
-    def stop_example(self):
-        if self.current_node.parent is None:
-            assert self.current_node.label == TOP_LABEL
-
-        self.current_node = self.current_node.parent
-
-    def draw_value(
-        self,
-        ir_type: IRTypeName,
-        value: IRType,
-        kwargs: IRKWargsType,
-        was_forced: bool,
-    ) -> None:
-        assert self.current_node is not None
-        leaf = IRTreeLeaf(
-            ir_type=ir_type,
-            value=value,
-            kwargs=kwargs,
-            was_forced=was_forced,
-        )
-        self.current_node.children.append(leaf)
-
-    def draw_integer(
-        self, value: int, *, kwargs: IntegerKWargs, was_forced: bool
-    ) -> None:
-        self.draw_value("integer", value, kwargs, was_forced)
-
-    def draw_float(
-        self, value: float, *, kwargs: FloatKWargs, was_forced: bool
-    ) -> None:
-        self.draw_value("float", value, kwargs, was_forced)
-
-    def draw_string(
-        self, value: str, *, kwargs: StringKWargs, was_forced: bool
-    ) -> None:
-        self.draw_value("string", value, kwargs, was_forced)
-
-    def draw_bytes(
-        self, value: bytes, *, kwargs: BytesKWargs, was_forced: bool
-    ) -> None:
-        self.draw_value("bytes", value, kwargs, was_forced)
-
-    def draw_boolean(
-        self, value: bool, *, kwargs: BooleanKWargs, was_forced: bool
-    ) -> None:
-        self.draw_value("boolean", value, kwargs, was_forced)
-
-    def _repr_pretty_(self, p, cycle):
-        assert cycle is False
-        p.pretty(self.root)
 
 
 @dataclass_transform()
