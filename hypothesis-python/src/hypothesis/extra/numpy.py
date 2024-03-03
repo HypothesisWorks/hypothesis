@@ -411,6 +411,8 @@ def fill_for(elements, unique, fill, name=""):
     return fill
 
 
+# See https://github.com/HypothesisWorks/hypothesis/pull/3889
+# mypy: disable-error-code="misc"
 D = TypeVar("D", bound="DTypeLike")
 G = TypeVar("G", bound="np.generic")
 

@@ -40,7 +40,7 @@ def get_mypy_output(fname, *extra_args):
     ).stdout
 
 
-def get_mypy_analysed_type(fname, val):
+def get_mypy_analysed_type(fname):
     out = get_mypy_output(fname).rstrip()
     msg = "Success: no issues found in 1 source file"
     if out.endswith(msg):
@@ -125,16 +125,23 @@ def assert_mypy_errors(fname, expected, python_version=None):
             "tuples(text(), text(), text(), text(), text(), text())",
             "tuple[Any, ...]",
         ),
+        (
+            'arrays(dtype=np.dtype("int32"), shape=1)',
+            "ndarray[Any, dtype[signedinteger[_32Bit]]]",
+        ),
+        # Note: keep this in sync with the equivalent test for Pyright
     ],
 )
 def test_revealed_types(tmpdir, val, expect):
     """Check that Mypy picks up the expected `X` in SearchStrategy[`X`]."""
     f = tmpdir.join(expect + ".py")
     f.write(
+        "import numpy as np\n"
+        "from hypothesis.extra.numpy import *\n"
         "from hypothesis.strategies import *\n"
         f"reveal_type({val})\n"  # fmt: skip
     )
-    typ = get_mypy_analysed_type(str(f.realpath()), val)
+    typ = get_mypy_analysed_type(str(f.realpath()))
     assert typ == f"SearchStrategy[{expect}]"
 
 
@@ -146,7 +153,7 @@ def test_data_object_type_tracing(tmpdir):
         "s = d.draw(integers())\n"
         "reveal_type(s)\n"
     )
-    got = get_mypy_analysed_type(str(f.realpath()), "data().draw(integers())")
+    got = get_mypy_analysed_type(str(f.realpath()))
     assert got == "int"
 
 
@@ -159,7 +166,7 @@ def test_drawfn_type_tracing(tmpdir):
         "    reveal_type(s)\n"
         "    return s\n"
     )
-    got = get_mypy_analysed_type(str(f.realpath()), ...)
+    got = get_mypy_analysed_type(str(f.realpath()))
     assert got == "str"
 
 
@@ -172,7 +179,7 @@ def test_composite_type_tracing(tmpdir):
         "    return x\n"
         "reveal_type(comp)\n"
     )
-    got = get_mypy_analysed_type(str(f.realpath()), ...)
+    got = get_mypy_analysed_type(str(f.realpath()))
     assert got == "def (x: int) -> SearchStrategy[int]"
 
 
@@ -193,7 +200,7 @@ def test_functions_type_tracing(tmpdir, source, expected):
         f"g = functions({source}).example()\n"
         "reveal_type(g)\n"
     )
-    got = get_mypy_analysed_type(str(f.realpath()), ...)
+    got = get_mypy_analysed_type(str(f.realpath()))
     assert got == expected, (got, expected)
 
 
@@ -206,7 +213,7 @@ def test_settings_preserves_type(tmpdir):
         "    return x\n"
         "reveal_type(f)\n"
     )
-    got = get_mypy_analysed_type(str(f.realpath()), ...)
+    got = get_mypy_analysed_type(str(f.realpath()))
     assert got == "def (x: int) -> int"
 
 
@@ -217,7 +224,7 @@ def test_stateful_bundle_generic_type(tmpdir):
         "b: Bundle[int] = Bundle('test')\n"
         "reveal_type(b.example())\n"
     )
-    got = get_mypy_analysed_type(str(f.realpath()), ...)
+    got = get_mypy_analysed_type(str(f.realpath()))
     assert got == "int"
 
 
@@ -375,7 +382,7 @@ def test_stateful_consumes_type_tracing(tmpdir, wrapper, expected):
         f"s = {wrapped}\n"
         "reveal_type(s.example())\n"
     )
-    got = get_mypy_analysed_type(str(f.realpath()), ...)
+    got = get_mypy_analysed_type(str(f.realpath()))
     assert got == expected
 
 
