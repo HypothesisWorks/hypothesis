@@ -179,7 +179,9 @@ def from_dtype(
         )
     elif dtype.kind == "c":
         result = st.complex_numbers(
-            width=cast(Literal[32, 64, 128], min(8 * dtype.itemsize, 128)),  # convert from bytes to bits
+            width=cast(
+                Literal[32, 64, 128], min(8 * dtype.itemsize, 128)
+            ),  # convert from bytes to bits
             **compat_kw(
                 "min_magnitude",
                 "max_magnitude",
@@ -974,7 +976,9 @@ def basic_indices(
         allow_fewer_indices_than_dims=True,
     )
 
+
 I = TypeVar("I", bound=np.integer)
+
 
 @overload
 @defines_strategy()
@@ -982,8 +986,8 @@ def integer_array_indices(
     shape: Shape,
     *,
     result_shape: st.SearchStrategy[Shape] = array_shapes(),
-) -> "st.SearchStrategy[Tuple[NDArray[np.signedinteger[Any]], ...]]":
-    ...
+) -> "st.SearchStrategy[Tuple[NDArray[np.signedinteger[Any]], ...]]": ...
+
 
 @overload
 @defines_strategy()
@@ -992,8 +996,8 @@ def integer_array_indices(
     *,
     result_shape: st.SearchStrategy[Shape] = array_shapes(),
     dtype: "np.dtype[I]",
-) -> "st.SearchStrategy[Tuple[NDArray[I], ...]]":
-    ...
+) -> "st.SearchStrategy[Tuple[NDArray[I], ...]]": ...
+
 
 @defines_strategy()
 def integer_array_indices(
