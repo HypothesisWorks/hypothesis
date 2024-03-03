@@ -203,6 +203,8 @@ NASTY_FLOATS.extend([-x for x in NASTY_FLOATS])
 
 FLOAT_INIT_LOGIC_CACHE = LRUReusedCache(4096)
 
+POOLED_KWARGS_CACHE = LRUReusedCache(4096)
+
 DRAW_STRING_DEFAULT_MAX_SIZE = 10**10  # "arbitrarily large"
 
 
@@ -334,6 +336,7 @@ class ExampleProperty:
         self.bytes_read = 0
         self.example_count = 0
         self.block_count = 0
+        self.ir_draw_count = 0
 
     def run(self) -> Any:
         """Rerun the test case with this visitor and return the
@@ -347,6 +350,10 @@ class ExampleProperty:
                 self.block(self.block_count)
                 self.block_count += 1
                 self.__pop(discarded=False)
+            elif record == IR_DRAW_RECORD:
+                data = self.examples.ir_draws[self.ir_draw_count]
+                self.ir_draw(data)
+                self.ir_draw_count += 1
             elif record >= START_EXAMPLE_RECORD:
                 self.__push(record - START_EXAMPLE_RECORD)
             else:
@@ -387,6 +394,9 @@ class ExampleProperty:
         index of the example and ``discarded`` being ``True`` if ``stop_example``
         was called with ``discard=True``."""
 
+    def ir_draw(self, data) -> None:
+        pass
+
     def finish(self) -> Any:
         return self.result
 
@@ -419,6 +429,8 @@ STOP_EXAMPLE_DISCARD_RECORD = 1
 STOP_EXAMPLE_NO_DISCARD_RECORD = 2
 START_EXAMPLE_RECORD = 3
 
+IR_DRAW_RECORD = calc_label_from_name("ir draw record")
+
 
 class ExampleRecord:
     """Records the series of ``start_example``, ``stop_example``, and
@@ -435,9 +447,14 @@ class ExampleRecord:
         self.labels = [DRAW_BYTES_LABEL]
         self.__index_of_labels: "Optional[Dict[int, int]]" = {DRAW_BYTES_LABEL: 0}
         self.trail = IntList()
+        self.ir_draws = []
 
     def freeze(self) -> None:
         self.__index_of_labels = None
+
+    def record_ir_draw(self, ir_type, value, *, kwargs, was_forced):
+        self.trail.append(IR_DRAW_RECORD)
+        self.ir_draws.append((ir_type, value, kwargs, was_forced))
 
     def start_example(self, label: int) -> None:
         assert self.__index_of_labels is not None
@@ -471,6 +488,7 @@ class Examples:
 
     def __init__(self, record: ExampleRecord, blocks: "Blocks") -> None:
         self.trail = record.trail
+        self.ir_draws = record.ir_draws
         self.labels = record.labels
         self.__length = (
             self.trail.count(STOP_EXAMPLE_DISCARD_RECORD)
@@ -555,6 +573,28 @@ class Examples:
             self.result[i] = len(self.example_stack)
 
     depths: IntList = calculated_example_property(_depths)
+
+    class _ir_tree(ExampleProperty):
+        def begin(self):
+            self.ir_tree = IRTree()
+
+        def ir_draw(self, data):
+            (ir_type, value, kwargs, was_forced) = data
+            draw = getattr(self.ir_tree, f"draw_{ir_type}")
+            draw(value, kwargs=kwargs, was_forced=was_forced)
+
+        def start_example(self, i: int, label_index: int) -> None:
+            label = self.examples.labels[label_index]
+            self.ir_tree.start_example(label)
+
+        def stop_example(self, i: int, *, discarded: bool) -> None:
+            self.ir_tree.stop_example()
+
+        def finish(self):
+            self.ir_tree.update_locations()
+            return self.ir_tree
+
+    ir_tree: "IRTree" = calculated_example_property(_ir_tree)
 
     class _label_indices(ExampleProperty):
         def start_example(self, i: int, label_index: int) -> None:
@@ -1095,7 +1135,6 @@ class ConjectureResult:
     status: Status = attr.ib()
     interesting_origin: Optional[InterestingOrigin] = attr.ib()
     buffer: bytes = attr.ib()
-    ir_tree: IRTree = attr.ib()
     blocks: Blocks = attr.ib()
     output: str = attr.ib()
     extra_information: Optional[ExtraInformation] = attr.ib()
@@ -1722,7 +1761,6 @@ class ConjectureData:
         )
 
         self.extra_information = ExtraInformation()
-        self.ir_tree = IRTree()
 
         self.start_example(TOP_LABEL)
 
@@ -1776,19 +1814,22 @@ class ConjectureData:
         if forced is not None and max_value is not None:
             assert forced <= max_value
 
-        kwargs: IntegerKWargs = {
-            "min_value": min_value,
-            "max_value": max_value,
-            "weights": weights,
-            "shrink_towards": shrink_towards,
-        }
+        kwargs: IntegerKWargs = self._pooled_kwargs(
+            "integer",
+            {
+                "min_value": min_value,
+                "max_value": max_value,
+                "weights": weights,
+                "shrink_towards": shrink_towards,
+            },
+        )
         value = self.provider.draw_integer(**kwargs, forced=forced)
         if observe:
             self.observer.draw_integer(
                 value, kwargs=kwargs, was_forced=forced is not None
             )
-            self.ir_tree.draw_integer(
-                value, kwargs=kwargs, was_forced=forced is not None
+            self.__example_record.record_ir_draw(
+                "integer", value, kwargs=kwargs, was_forced=forced is not None
             )
         return value
 
@@ -1816,18 +1857,23 @@ class ConjectureData:
                 sign_aware_lte(min_value, forced) and sign_aware_lte(forced, max_value)
             )
 
-        kwargs: FloatKWargs = {
-            "min_value": min_value,
-            "max_value": max_value,
-            "allow_nan": allow_nan,
-            "smallest_nonzero_magnitude": smallest_nonzero_magnitude,
-        }
+        kwargs: FloatKWargs = self._pooled_kwargs(
+            "float",
+            {
+                "min_value": min_value,
+                "max_value": max_value,
+                "allow_nan": allow_nan,
+                "smallest_nonzero_magnitude": smallest_nonzero_magnitude,
+            },
+        )
         value = self.provider.draw_float(**kwargs, forced=forced)
         if observe:
             self.observer.draw_float(
                 value, kwargs=kwargs, was_forced=forced is not None
             )
-            self.ir_tree.draw_float(value, kwargs=kwargs, was_forced=forced is not None)
+            self.__example_record.record_ir_draw(
+                "float", value, kwargs=kwargs, was_forced=forced is not None
+            )
         return value
 
     def draw_string(
@@ -1841,18 +1887,21 @@ class ConjectureData:
     ) -> str:
         assert forced is None or min_size <= len(forced)
 
-        kwargs: StringKWargs = {
-            "intervals": intervals,
-            "min_size": min_size,
-            "max_size": max_size,
-        }
+        kwargs: StringKWargs = self._pooled_kwargs(
+            "string",
+            {
+                "intervals": intervals,
+                "min_size": min_size,
+                "max_size": max_size,
+            },
+        )
         value = self.provider.draw_string(**kwargs, forced=forced)
         if observe:
             self.observer.draw_string(
                 value, kwargs=kwargs, was_forced=forced is not None
             )
-            self.ir_tree.draw_string(
-                value, kwargs=kwargs, was_forced=forced is not None
+            self.__example_record.record_ir_draw(
+                "string", value, kwargs=kwargs, was_forced=forced is not None
             )
         return value
 
@@ -1867,13 +1916,15 @@ class ConjectureData:
         assert forced is None or len(forced) == size
         assert size >= 0
 
-        kwargs: BytesKWargs = {"size": size}
+        kwargs: BytesKWargs = self._pooled_kwargs("bytes", {"size": size})
         value = self.provider.draw_bytes(**kwargs, forced=forced)
         if observe:
             self.observer.draw_bytes(
                 value, kwargs=kwargs, was_forced=forced is not None
             )
-            self.ir_tree.draw_bytes(value, kwargs=kwargs, was_forced=forced is not None)
+            self.__example_record.record_ir_draw(
+                "bytes", value, kwargs=kwargs, was_forced=forced is not None
+            )
         return value
 
     def draw_boolean(
@@ -1889,16 +1940,33 @@ class ConjectureData:
         if forced is False:
             assert p < (1 - 2 ** (-64))
 
-        kwargs: BooleanKWargs = {"p": p}
+        kwargs: BooleanKWargs = self._pooled_kwargs("boolean", {"p": p})
         value = self.provider.draw_boolean(**kwargs, forced=forced)
         if observe:
             self.observer.draw_boolean(
                 value, kwargs=kwargs, was_forced=forced is not None
             )
-            self.ir_tree.draw_boolean(
-                value, kwargs=kwargs, was_forced=forced is not None
+            self.__example_record.record_ir_draw(
+                "boolean", value, kwargs=kwargs, was_forced=forced is not None
             )
         return value
+
+    def _pooled_kwargs(self, ir_type, kwargs):
+        key = []
+        for k, v in kwargs.items():
+            if ir_type == "float" and k in ["min_value", "max_value"]:
+                v = float_to_int(v)
+            if ir_type == "integer" and k == "weights":
+                v = v if v is None else tuple(v)
+            key.append((k, v))
+
+        key = hash(tuple(key))
+
+        try:
+            return POOLED_KWARGS_CACHE[key]
+        except KeyError:
+            POOLED_KWARGS_CACHE[key] = kwargs
+            return kwargs
 
     def as_result(self) -> Union[ConjectureResult, _Overrun]:
         """Convert the result of running this test into
@@ -1912,7 +1980,6 @@ class ConjectureData:
                 status=self.status,
                 interesting_origin=self.interesting_origin,
                 buffer=self.buffer,
-                ir_tree=self.ir_tree,
                 examples=self.examples,
                 blocks=self.blocks,
                 output=self.output,
@@ -2005,7 +2072,6 @@ class ConjectureData:
             self.max_depth = self.depth
         self.__example_record.start_example(label)
         self.labels_for_structure_stack.append({label})
-        self.ir_tree.start_example(label)
 
     def stop_example(self, *, discard: bool = False) -> None:
         if self.frozen:
@@ -2050,7 +2116,6 @@ class ConjectureData:
             # have explored the entire tree (up to redundancy).
 
             self.observer.kill_branch()
-        self.ir_tree.stop_example()
 
     @property
     def examples(self) -> Examples:
@@ -2077,7 +2142,6 @@ class ConjectureData:
 
         self.buffer = bytes(self.buffer)
         self.observer.conclude_test(self.status, self.interesting_origin)
-        self.ir_tree.update_locations()
 
     def choice(
         self,

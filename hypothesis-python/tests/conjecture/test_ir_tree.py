@@ -14,7 +14,7 @@ from hypothesis import given, settings, strategies as st
 from hypothesis.internal.conjecture.data import IRTree, IRTreeLeaf
 from hypothesis.internal.floats import SMALLEST_SUBNORMAL, float_to_int
 from hypothesis.internal.intervalsets import IntervalSet
-from hypothesis.stateful import RuleBasedStateMachine, invariant, rule
+from hypothesis.stateful import RuleBasedStateMachine, precondition, rule
 
 from tests.conjecture.common import (
     draw_boolean_kwargs,
@@ -92,39 +92,51 @@ class CopyIRTreeIsEqual(RuleBasedStateMachine):
     def __init__(self):
         super().__init__()
         self.data = fresh_data()
+        # constructing the ir tree requires us to freeze data first. this means
+        # any rule that makes assertions over the ir tree has to be a teriminal
+        # rule.
+        self.frozen = False
 
+    @precondition(lambda self: not self.data.frozen)
     @rule(kwargs=draw_integer_kwargs())
     def draw_integer(self, kwargs):
         self.data.draw_integer(**kwargs)
 
+    @precondition(lambda self: not self.data.frozen)
     @rule(kwargs=draw_string_kwargs())
     def draw_string(self, kwargs):
         self.data.draw_string(**kwargs)
 
+    @precondition(lambda self: not self.data.frozen)
     @rule(kwargs=draw_boolean_kwargs())
     def draw_boolean(self, kwargs):
         self.data.draw_boolean(**kwargs)
 
+    @precondition(lambda self: not self.data.frozen)
     @rule(kwargs=draw_bytes_kwargs())
     def draw_bytes(self, kwargs):
         self.data.draw_bytes(**kwargs)
 
+    @precondition(lambda self: not self.data.frozen)
     @rule(kwargs=draw_float_kwargs())
     def draw_float(self, kwargs):
         self.data.draw_float(**kwargs)
 
-    @invariant()
+    @precondition(lambda self: not self.data.frozen)
+    @rule()
     def copying_ir_tree_is_equal(self):
-        assert self.data.ir_tree == self.data.ir_tree.copy()
+        self.data.freeze()
+        assert self.data.examples.ir_tree == self.data.examples.ir_tree.copy()
 
+    @precondition(lambda self: not self.data.frozen)
     @rule(data_strategy=st.data())
     def invariant_copying_ir_tree_while_replacing_nodes(self, data_strategy):
-        # this function is morally an invariant, but is implemented as an @rule
-        # in order to access st.data() to draw a random leaf.
-        if not self.data.ir_tree.leaves():
+        self.data.freeze()
+
+        if not self.data.examples.ir_tree.leaves():
             return
 
-        tree = self.data.ir_tree
+        tree = self.data.examples.ir_tree
         tree.update_locations()
 
         leaves = tree.leaves()
@@ -167,8 +179,10 @@ def test_leaves(random):
 
     data.draw_integer(0, 100, forced=50)
 
-    data.ir_tree.update_locations()
-    leaves = data.ir_tree.leaves()
+    data.freeze()
+
+    data.examples.ir_tree.update_locations()
+    leaves = data.examples.ir_tree.leaves()
     expected = [
         IRTreeLeaf(
             ir_type="float",
