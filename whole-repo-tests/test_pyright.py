@@ -327,7 +327,7 @@ def _get_pyright_errors(file: Path) -> list[dict[str, Any]]:
 
 def get_pyright_analysed_type(fname):
     out, *rest = _get_pyright_errors(fname)
-    print(rest)
+    print(out, rest)
     assert not rest
     assert out["severity"] == "information"
     return re.fullmatch(r'Type of ".+" is "(.+)"', out["message"]).group(1)
