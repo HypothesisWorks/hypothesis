@@ -158,6 +158,7 @@ def test_numpy_arrays_strategy(tmp_path: Path):
     file.write_text(
         textwrap.dedent(
             """
+            import numpy as np
             from hypothesis.extra.numpy import arrays
 
             x = arrays(dtype=np.dtype("int32"), shape=1)
