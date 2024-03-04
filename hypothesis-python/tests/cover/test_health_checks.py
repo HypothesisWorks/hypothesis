@@ -237,9 +237,9 @@ def test_does_not_trigger_health_check_on_simple_strategies(monkeypatch):
     # We need to make drawing data artificially slow in order to trigger this
     # effect. This isn't actually slow because time is fake in our CI, but
     # we need it to pretend to be.
-    def draw_bits(self, n, forced=None):
+    def draw_bits(self, n, forced=None, fake_forced=False):
         time.sleep(0.001)
-        return existing_draw_bits(self, n, forced=forced)
+        return existing_draw_bits(self, n, forced=forced, fake_forced=fake_forced)
 
     monkeypatch.setattr(ConjectureData, "draw_bits", draw_bits)
 

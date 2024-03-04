@@ -35,7 +35,13 @@ class PrngProvider(PrimitiveProvider):
     def __init__(self, conjecturedata: "ConjectureData", /) -> None:
         self.prng = Random(conjecturedata.buffer or None)
 
-    def draw_boolean(self, p: float = 0.5, *, forced: Optional[bool] = None) -> bool:
+    def draw_boolean(
+        self,
+        p: float = 0.5,
+        *,
+        forced: Optional[bool] = None,
+        fake_forced: bool = False,
+    ) -> bool:
         if forced is not None:
             return forced
         return self.prng.random() < p
@@ -49,6 +55,7 @@ class PrngProvider(PrimitiveProvider):
         weights: Optional[Sequence[float]] = None,
         shrink_towards: int = 0,
         forced: Optional[int] = None,
+        fake_forced: bool = False,
     ) -> int:
         assert isinstance(shrink_towards, int)  # otherwise ignored here
         if forced is not None:
@@ -80,6 +87,7 @@ class PrngProvider(PrimitiveProvider):
         allow_nan: bool = True,
         smallest_nonzero_magnitude: float,
         forced: Optional[float] = None,
+        fake_forced: bool = False,
     ) -> float:
         if forced is not None:
             return forced
@@ -116,6 +124,7 @@ class PrngProvider(PrimitiveProvider):
         min_size: int = 0,
         max_size: Optional[int] = None,
         forced: Optional[str] = None,
+        fake_forced: bool = False,
     ) -> str:
         if forced is not None:
             return forced
@@ -124,7 +133,9 @@ class PrngProvider(PrimitiveProvider):
         )
         return "".join(map(chr, self.prng.choices(intervals, k=size)))
 
-    def draw_bytes(self, size: int, *, forced: Optional[bytes] = None) -> bytes:
+    def draw_bytes(
+        self, size: int, *, forced: Optional[bytes] = None, fake_forced: bool = False
+    ) -> bytes:
         if forced is not None:
             return forced
         return self.prng.randbytes(size)

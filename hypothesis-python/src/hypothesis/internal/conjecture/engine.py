@@ -295,15 +295,6 @@ class ConjectureRunner:
                 data = ConjectureData.for_ir_tree(data.examples.ir_tree_nodes)
                 self.__stoppable_test_function(data)
 
-                # ir tree conversion works by using forced=. This works great,
-                # but has the side effect of causing *all* blocks to be marked
-                # as forced. The shrinker in turn thinks these blocks are
-                # trivial and avoids shrinking them.
-                # We'll drive the buffer through the test function one more
-                # time to set up the blocks correctly for the shrinker.
-                data = ConjectureData.for_buffer(data.buffer)
-                self.__stoppable_test_function(data)
-
                 self.__data_cache[data.buffer] = data.as_result()
 
             key = data.interesting_origin
