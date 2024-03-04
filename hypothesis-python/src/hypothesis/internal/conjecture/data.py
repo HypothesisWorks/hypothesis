@@ -1746,17 +1746,18 @@ class ConjectureData:
         return value
 
     def _pooled_kwargs(self, ir_type, kwargs):
+        """Memoize common dictionary objects to reduce memory pressure."""
         key = []
         for k, v in kwargs.items():
             if ir_type == "float" and k in ["min_value", "max_value"]:
                 # handle -0.0 vs 0.0, etc.
                 v = float_to_int(v)
-            if ir_type == "integer" and k == "weights":
+            elif ir_type == "integer" and k == "weights":
                 # make hashable
                 v = v if v is None else tuple(v)
             key.append((k, v))
 
-        key = tuple(key)
+        key = (ir_type, *sorted(key))
 
         try:
             return POOLED_KWARGS_CACHE[key]
