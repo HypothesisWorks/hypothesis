@@ -984,10 +984,11 @@ class StateForActualGivenExecution:
         """
         trace: Trace = set()
         try:
+            # this is actually covered by our tests, but only on >= 3.12.
             if (
                 sys.version_info[:2] >= (3, 12)
                 and sys.monitoring.get_tool(MONITORING_TOOL_ID) is not None
-            ):
+            ):  # pragma: no cover
                 warnings.warn(
                     "avoiding tracing test function because tool id "
                     f"{MONITORING_TOOL_ID} is already taken by tool "
