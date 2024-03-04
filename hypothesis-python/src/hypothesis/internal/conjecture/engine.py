@@ -284,7 +284,7 @@ class ConjectureRunner:
 
         if data.status == Status.INTERESTING:
             if self.settings.backend != "hypothesis":
-                for node in data.ir_tree.leaves():
+                for node in data.examples.ir_tree_nodes:
                     value = data.provider.post_test_case_hook(node.value)
                     # require providers to return something valid here.
                     assert node.value is not None
@@ -292,7 +292,7 @@ class ConjectureRunner:
 
                 # drive the ir tree through the test function to convert it
                 # to a buffer
-                data = ConjectureData.for_ir_tree(data.ir_tree)
+                data = ConjectureData.for_ir_tree(data.examples.ir_tree_nodes)
                 self.__stoppable_test_function(data)
 
                 # ir tree conversion works by using forced=. This works great,

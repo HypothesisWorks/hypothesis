@@ -930,7 +930,6 @@ class ConjectureResult:
     status: Status = attr.ib()
     interesting_origin: Optional[InterestingOrigin] = attr.ib()
     buffer: bytes = attr.ib()
-    ir_tree: IRTree = attr.ib()
     blocks: Blocks = attr.ib()
     output: str = attr.ib()
     extra_information: Optional[ExtraInformation] = attr.ib()
@@ -1516,7 +1515,7 @@ class ConjectureData:
     @classmethod
     def for_ir_tree(
         cls,
-        ir_tree_prefix: IRTree,
+        ir_tree_prefix: List[IRNode],
         *,
         observer: Optional[DataObserver] = None,
         provider: type = PrimitiveProvider,
@@ -1538,7 +1537,7 @@ class ConjectureData:
         random: Optional[Random],
         observer: Optional[DataObserver] = None,
         provider: type = PrimitiveProvider,
-        ir_tree_prefix: Optional[IRTree] = None,
+        ir_tree_prefix: Optional[List[IRNode]] = None,
     ) -> None:
         if observer is None:
             observer = DataObserver()
@@ -1605,11 +1604,7 @@ class ConjectureData:
 
         self.extra_information = ExtraInformation()
 
-        self.ir_tree = IRTree()
-        self.ir_tree_leaves = (
-            None if ir_tree_prefix is None else ir_tree_prefix.leaves()
-        )
-        self.ir_tree_leaves_index = 0
+        self.ir_tree_nodes = ir_tree_prefix
         self.start_example(TOP_LABEL)
 
     def __repr__(self):
@@ -1672,7 +1667,7 @@ class ConjectureData:
             },
         )
 
-        if self.ir_tree_leaves is not None and observe:
+        if self.ir_tree_nodes is not None and observe:
             forced = self._pop_ir_tree_value("integer", kwargs)
 
         value = self.provider.draw_integer(**kwargs, forced=forced)
@@ -1719,7 +1714,7 @@ class ConjectureData:
             },
         )
 
-        if self.ir_tree_leaves is not None and observe:
+        if self.ir_tree_nodes is not None and observe:
             forced = self._pop_ir_tree_value("float", kwargs)
 
         value = self.provider.draw_float(**kwargs, forced=forced)
@@ -1751,7 +1746,7 @@ class ConjectureData:
                 "max_size": max_size,
             },
         )
-        if self.ir_tree_leaves is not None and observe:
+        if self.ir_tree_nodes is not None and observe:
             forced = self._pop_ir_tree_value("string", kwargs)
 
         value = self.provider.draw_string(**kwargs, forced=forced)
@@ -1777,7 +1772,7 @@ class ConjectureData:
 
         kwargs: BytesKWargs = self._pooled_kwargs("bytes", {"size": size})
 
-        if self.ir_tree_leaves is not None and observe:
+        if self.ir_tree_nodes is not None and observe:
             forced = self._pop_ir_tree_value("bytes", kwargs)
 
         value = self.provider.draw_bytes(**kwargs, forced=forced)
@@ -1805,7 +1800,7 @@ class ConjectureData:
 
         kwargs: BooleanKWargs = self._pooled_kwargs("boolean", {"p": p})
 
-        if self.ir_tree_leaves is not None and observe:
+        if self.ir_tree_nodes is not None and observe:
             forced = self._pop_ir_tree_value("boolean", kwargs)
 
         value = self.provider.draw_boolean(**kwargs, forced=forced)
@@ -1839,13 +1834,12 @@ class ConjectureData:
             return kwargs
 
     def _pop_ir_tree_value(self, ir_type: IRTypeName, kwargs: IRKWargsType) -> IRType:
-        assert self.ir_tree_leaves is not None
-        leaf = self.ir_tree_leaves[self.ir_tree_leaves_index]
-        assert leaf.ir_type == ir_type
-        assert kwargs == leaf.kwargs
+        assert self.ir_tree_nodes is not None
+        node = self.ir_tree_nodes.pop(0)
+        assert node.ir_type == ir_type
+        assert kwargs == node.kwargs
 
-        self.ir_tree_leaves_index += 1
-        return leaf.value
+        return node.value
 
     def as_result(self) -> Union[ConjectureResult, _Overrun]:
         """Convert the result of running this test into
@@ -1859,7 +1853,6 @@ class ConjectureData:
                 status=self.status,
                 interesting_origin=self.interesting_origin,
                 buffer=self.buffer,
-                ir_tree=self.ir_tree,
                 examples=self.examples,
                 blocks=self.blocks,
                 output=self.output,
@@ -1952,7 +1945,6 @@ class ConjectureData:
             self.max_depth = self.depth
         self.__example_record.start_example(label)
         self.labels_for_structure_stack.append({label})
-        self.ir_tree.start_example(label)
 
     def stop_example(self, *, discard: bool = False) -> None:
         if self.frozen:
@@ -1997,8 +1989,6 @@ class ConjectureData:
             # have explored the entire tree (up to redundancy).
 
             self.observer.kill_branch()
-
-        self.ir_tree.stop_example()
 
     @property
     def examples(self) -> Examples:
