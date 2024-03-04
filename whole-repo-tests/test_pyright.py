@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 import re
 import subprocess
+import sys
 import textwrap
 from pathlib import Path
 from typing import Any
@@ -308,7 +309,7 @@ def test_register_random_protocol(tmp_path: Path):
 
 def _get_pyright_output(file: Path) -> dict[str, Any]:
     proc = subprocess.run(
-        [tool_path("pyright"), "--outputjson"],
+        [tool_path("pyright"), "--outputjson", f"--pythonpath={sys.executable}"],
         cwd=file.parent,
         encoding="utf-8",
         text=True,
