@@ -18,7 +18,7 @@ from sys import float_info
 
 import pytest
 
-from hypothesis import given, settings, strategies as st
+from hypothesis import HealthCheck, given, settings, strategies as st
 from hypothesis.errors import HypothesisWarning, Unsatisfiable
 from hypothesis.internal.filtering import max_len, min_len
 from hypothesis.internal.floats import next_down, next_up
@@ -262,6 +262,7 @@ Y = 2**20
         ]
     ),
 )
+@settings(suppress_health_check=[HealthCheck.too_slow])
 def test_rewrite_filter_chains_with_some_unhandled(data, predicates, s):
     # Set up our strategy
     for p in predicates:
