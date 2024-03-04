@@ -144,6 +144,8 @@ nh3==0.2.15
     # via readme-renderer
 nodeenv==1.8.0
     # via pyright
+numpy==1.26.4
+    # via -r requirements/tools.in
 ordered-set==4.1.0
     # via pelican
 packaging==23.2
@@ -164,7 +166,7 @@ pexpect==4.9.0
     # via ipython
 pip-tools==7.4.0
     # via -r requirements/tools.in
-pkginfo==1.9.6
+pkginfo==1.10.0
     # via twine
 platformdirs==4.2.0
     # via
@@ -200,7 +202,7 @@ pyproject-hooks==1.0.0
     #   pip-tools
 pyright==1.1.352
     # via -r requirements/tools.in
-pytest==8.0.2
+pytest==8.1.0
     # via -r requirements/tools.in
 python-dateutil==2.9.0.post0
     # via

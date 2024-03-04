@@ -31,3 +31,4 @@ exclude_lines =
     if sys\.version_info
     if "[\w\.]+" in sys\.modules:
     if .+ := sys\.modules\.get\("[\w\.]+"\)
+    @overload

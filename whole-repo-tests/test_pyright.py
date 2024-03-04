@@ -11,7 +11,9 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
+import sys
 import textwrap
 from pathlib import Path
 from typing import Any
@@ -152,6 +154,81 @@ def test_pyright_issue_3348(tmp_path: Path):
     assert _get_pyright_errors(file) == []
 
 
+def test_numpy_arrays_strategy(tmp_path: Path):
+    file = tmp_path / "test.py"
+    file.write_text(
+        textwrap.dedent(
+            """
+            import numpy as np
+            from hypothesis.extra.numpy import arrays
+
+            x = arrays(dtype=np.dtype("int32"), shape=1)
+            """
+        ),
+        encoding="utf-8",
+    )
+    _write_config(tmp_path, {"typeCheckingMode": "strict"})
+    errors = _get_pyright_errors(file)
+    print(errors)
+    assert errors == []
+
+
+@pytest.mark.parametrize(
+    "val,expect",
+    [
+        ("integers()", "int"),
+        ("text()", "str"),
+        ("integers().map(str)", "str"),
+        ("booleans().filter(bool)", "bool"),
+        ("lists(none())", "List[None]"),
+        ("dictionaries(integers(), datetimes())", "Dict[int, datetime]"),
+        ("data()", "DataObject"),
+        ("none() | integers()", "int | None"),
+        ("recursive(integers(), lists)", "List[Any] | int"),
+        # We have overloads for up to five types, then fall back to Any.
+        # (why five?  JSON atoms are None|bool|int|float|str and we do that a lot)
+        ("one_of(integers(), text())", "int | str"),
+        (
+            "one_of(integers(), text(), none(), binary(), builds(list))",
+            "int | str | bytes | list[Unknown] | None",
+        ),
+        (
+            "one_of(integers(), text(), none(), binary(), builds(list), builds(dict))",
+            "Any",
+        ),
+        ("tuples()", "Tuple[()]"),
+        ("tuples(integers())", "Tuple[int]"),
+        ("tuples(integers(), text())", "Tuple[int, str]"),
+        (
+            "tuples(integers(), text(), integers(), text(), integers())",
+            "Tuple[int, str, int, str, int]",
+        ),
+        (
+            "tuples(text(), text(), text(), text(), text(), text())",
+            "Tuple[Any, ...]",
+        ),
+        (
+            'arrays(dtype=np.dtype("int32"), shape=1)',
+            "ndarray[Any, dtype[signedinteger[_32Bit]]]",
+        ),
+        # Note: keep this in sync with the equivalent test for Mypy
+    ],
+)
+def test_revealed_types(tmp_path, val, expect):
+    """Check that Pyright picks up the expected `X` in SearchStrategy[`X`]."""
+    f = tmp_path / (expect + ".py")
+    f.write_text(
+        "import numpy as np\n"
+        "from hypothesis.extra.numpy import *\n"
+        "from hypothesis.strategies import *\n"
+        f"reveal_type({val})\n",  # fmt: skip
+        encoding="utf-8",
+    )
+    _write_config(tmp_path, {"reportWildcardImportFromLibrary ": "none"})
+    typ = get_pyright_analysed_type(f)
+    assert typ == f"SearchStrategy[{expect}]"
+
+
 def test_pyright_tuples_pos_args_only(tmp_path: Path):
     file = tmp_path / "test.py"
     file.write_text(
@@ -232,7 +309,7 @@ def test_register_random_protocol(tmp_path: Path):
 
 def _get_pyright_output(file: Path) -> dict[str, Any]:
     proc = subprocess.run(
-        [tool_path("pyright"), "--outputjson"],
+        [tool_path("pyright"), "--outputjson", f"--pythonpath={sys.executable}"],
         cwd=file.parent,
         encoding="utf-8",
         text=True,
@@ -247,6 +324,14 @@ def _get_pyright_output(file: Path) -> dict[str, Any]:
 
 def _get_pyright_errors(file: Path) -> list[dict[str, Any]]:
     return _get_pyright_output(file)["generalDiagnostics"]
+
+
+def get_pyright_analysed_type(fname):
+    out, *rest = _get_pyright_errors(fname)
+    print(out, rest)
+    assert not rest
+    assert out["severity"] == "information"
+    return re.fullmatch(r'Type of ".+" is "(.+)"', out["message"]).group(1)
 
 
 def _write_config(config_dir: Path, data: dict[str, Any] | None = None):
