@@ -20,6 +20,7 @@ exclude_lines =
     pragma: no cover
     raise NotImplementedError
     def __repr__
+    def _repr_pretty_
     def __ne__
     def __copy__
     def __deepcopy__
