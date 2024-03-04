@@ -18,6 +18,7 @@ from typing import ForwardRef, Optional, Union
 import pytest
 
 from hypothesis.internal.compat import (
+    add_note,
     ceil,
     dataclass_asdict,
     extract_bits,
@@ -143,3 +144,12 @@ def test_extract_bits_roundtrip(width, x):
     if width is not None:
         assert len(bits) == width
     assert x == sum(v << p for p, v in enumerate(reversed(bits)))
+
+
+@dataclass(frozen=True)
+class ImmutableError:
+    msg: str
+
+
+def test_add_note_fails_gracefully_on_frozen_instance():
+    add_note(ImmutableError("msg"), "some note")

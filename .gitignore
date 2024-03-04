@@ -13,6 +13,7 @@
 .runtimes
 /hypothesis-python/branch-check
 /pythonpython3.*
+/pythonpypy3.*
 .pyodide-xbuildenv
 
 # python
@@ -104,3 +105,4 @@ __pycache__
 HypothesisWorks.github.io.iml
 jekyll.log
 /website/output/
+/t.py

@@ -347,7 +347,7 @@ def test_can_override_label():
 def test_will_mark_too_deep_examples_as_invalid():
     d = ConjectureData.for_buffer(bytes(0))
 
-    s = st.none()
+    s = st.integers()
     for _ in range(MAX_DEPTH + 1):
         s = s.map(lambda x: None)
 

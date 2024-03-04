@@ -11,13 +11,14 @@
 import decimal
 import math
 import operator
+import re
 from fractions import Fraction
 from functools import partial
 from sys import float_info
 
 import pytest
 
-from hypothesis import given, strategies as st
+from hypothesis import HealthCheck, given, settings, strategies as st
 from hypothesis.errors import HypothesisWarning, Unsatisfiable
 from hypothesis.internal.filtering import max_len, min_len
 from hypothesis.internal.floats import next_down, next_up
@@ -25,11 +26,13 @@ from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies._internal.core import data
 from hypothesis.strategies._internal.lazy import LazyStrategy, unwrap_strategies
 from hypothesis.strategies._internal.numbers import FloatStrategy, IntegersStrategy
-from hypothesis.strategies._internal.strategies import FilteredStrategy
+from hypothesis.strategies._internal.strategies import FilteredStrategy, MappedStrategy
 from hypothesis.strategies._internal.strings import TextStrategy
 
 from tests.common.debug import check_can_generate_examples
 from tests.common.utils import fails_with
+
+A_FEW = 15  # speed up massively-parametrized tests
 
 
 @pytest.mark.parametrize(
@@ -84,6 +87,7 @@ from tests.common.utils import fails_with
     ],
     ids=get_pretty_function_description,
 )
+@settings(max_examples=A_FEW)
 @given(data=st.data())
 def test_filter_rewriting_ints(data, strategy, predicate, start, end):
     s = strategy.filter(predicate)
@@ -147,6 +151,7 @@ def test_filter_rewriting_ints(data, strategy, predicate, start, end):
     ],
     ids=get_pretty_function_description,
 )
+@settings(max_examples=A_FEW)
 @given(data=st.data())
 def test_filter_rewriting_floats(data, strategy, predicate, min_value, max_value):
     s = strategy.filter(predicate)
@@ -257,6 +262,7 @@ Y = 2**20
         ]
     ),
 )
+@settings(suppress_health_check=[HealthCheck.too_slow])
 def test_rewrite_filter_chains_with_some_unhandled(data, predicates, s):
     # Set up our strategy
     for p in predicates:
@@ -405,6 +411,7 @@ def test_filter_floats_can_skip_subnormals(op, attr, value, expected):
     ],
     ids=get_pretty_function_description,
 )
+@settings(max_examples=A_FEW)
 @given(data=st.data())
 def test_filter_rewriting_text_partial_len(data, strategy, predicate, start, end):
     s = strategy.filter(predicate)
@@ -469,28 +476,42 @@ def test_can_rewrite_multiple_length_filters_if_not_lambdas(data):
         st.lists(st.integers()),
         st.lists(st.integers(), unique=True),
         st.lists(st.sampled_from([1, 2, 3])),
-        # TODO: support more collection types.  Might require messing around with
-        #       strategy internals, e.g. in MappedStrategy/FilteredStrategy.
-        # st.binary(),
-        # st.binary.map(bytearray),
-        # st.sets(st.integers()),
-        # st.dictionaries(st.integers(), st.none()),
+        st.binary(),
+        st.sets(st.integers()),
+        st.frozensets(st.integers()),
+        st.dictionaries(st.integers(), st.none()),
+        st.lists(st.integers(), unique_by=lambda x: x % 17).map(tuple),
     ],
     ids=get_pretty_function_description,
 )
+@settings(max_examples=A_FEW)
 @given(data=st.data())
 def test_filter_rewriting_text_lambda_len(data, strategy, predicate, start, end):
     s = strategy.filter(predicate)
+    unwrapped_nofilter = unwrap_strategies(strategy)
     unwrapped = unwrap_strategies(s)
-    assert isinstance(unwrapped, FilteredStrategy)
-    assert isinstance(unwrapped.filtered_strategy, type(unwrap_strategies(strategy)))
+
+    if was_mapped := isinstance(unwrapped, MappedStrategy):
+        unwrapped = unwrapped.mapped_strategy
+
+    assert isinstance(unwrapped, FilteredStrategy), f"{unwrapped=} {type(unwrapped)=}"
+    assert isinstance(
+        unwrapped.filtered_strategy,
+        type(unwrapped_nofilter.mapped_strategy if was_mapped else unwrapped_nofilter),
+    )
     for pred in unwrapped.flat_conditions:
         assert pred.__name__ == "<lambda>"
+
+    if isinstance(unwrapped.filtered_strategy, MappedStrategy):
+        unwrapped = unwrapped.filtered_strategy.mapped_strategy
 
     assert unwrapped.filtered_strategy.min_size == start
     assert unwrapped.filtered_strategy.max_size == end
     value = data.draw(s)
     assert predicate(value)
+
+
+two = 2
 
 
 @pytest.mark.parametrize(
@@ -514,6 +535,9 @@ def test_filter_rewriting_text_lambda_len(data, strategy, predicate, start, end)
         (lambda x: len(x) < 1 and len(x) < 1, 0, 0),
         (lambda x: len(x) > 1 and len(x) > 0, 2, 3),  # input max element_count=3
         (lambda x: len(x) < 1 and len(x) < 2, 0, 0),
+        # Comparisons involving one literal and one variable
+        (lambda x: 1 <= len(x) <= two, 1, 3),
+        (lambda x: two <= len(x) <= 4, 0, 3),
     ],
     ids=get_pretty_function_description,
 )
@@ -524,8 +548,9 @@ def test_filter_rewriting_text_lambda_len(data, strategy, predicate, start, end)
     ],
     ids=get_pretty_function_description,
 )
+@settings(max_examples=A_FEW)
 @given(data=st.data())
-def test_filter_rewriting_text_lambda_len_unique_elements(
+def test_filter_rewriting_lambda_len_unique_elements(
     data, strategy, predicate, start, end
 ):
     s = strategy.filter(predicate)
@@ -539,3 +564,56 @@ def test_filter_rewriting_text_lambda_len_unique_elements(
     assert unwrapped.filtered_strategy.max_size == end
     value = data.draw(s)
     assert predicate(value)
+
+
+@pytest.mark.parametrize(
+    "predicate",
+    [
+        (lambda x: len(x) < 3),
+        (lambda x: len(x) > 5),
+    ],
+    ids=get_pretty_function_description,
+)
+def test_does_not_rewrite_unsatisfiable_len_filter(predicate):
+    strategy = st.lists(st.none(), min_size=4, max_size=4).filter(predicate)
+    with pytest.raises(Unsatisfiable):
+        check_can_generate_examples(strategy)
+    # Rewriting to nothing() would correctly express the constraint.  However
+    # we don't want _only rewritable strategies_ to work in e.g. one_of, so:
+    assert not strategy.is_empty
+
+
+@pytest.mark.parametrize(
+    "method", ["match", "search", "findall", "fullmatch", "finditer", "split"]
+)
+@pytest.mark.parametrize(
+    "strategy, pattern",
+    [
+        (st.text(), "ab+c"),
+        (st.text(alphabet="abcdef"), "ab+c"),
+        (st.text(min_size=5, max_size=10), "ab+c"),
+        (st.binary(), b"ab+c"),
+        (st.binary(min_size=5, max_size=10), b"ab+c"),
+    ],
+    ids=repr,
+)
+@settings(max_examples=A_FEW)
+@given(data=st.data())
+def test_regex_filter_rewriting(data, strategy, pattern, method):
+    # This would raise a HealthCheck without rewriting, so checking that
+    # we can draw a valid value is sufficient.
+    predicate = getattr(re.compile(pattern), method)
+    s = strategy.filter(predicate)
+    if method in ("finditer", "split"):
+        msg = r"You applied re.compile\(.+?\).\w+ as a filter, but this allows"
+        with pytest.warns(HypothesisWarning, match=msg):
+            value = data.draw(s)
+    else:
+        value = data.draw(s)
+    assert predicate(value)
+
+
+@fails_with(TypeError)
+@given(st.text().filter(re.compile("abc").sub))
+def test_error_on_method_which_requires_multiple_args(_):
+    pass

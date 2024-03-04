@@ -6,6 +6,7 @@ ipython
 lark
 libcst
 mypy
+numpy
 pelican[markdown]
 pip-tools
 pyright

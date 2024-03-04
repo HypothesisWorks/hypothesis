@@ -18,6 +18,70 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.98.17:
+
+--------------------
+6.98.17 - 2024-03-04
+--------------------
+
+This patch improves the type annotations in :mod:`hypothesis.extra.numpy`,
+which makes inferred types more precise for both :pypi:`mypy` and
+:pypi:`pyright`, and fixes some strict-mode errors on the latter.
+
+Thanks to Jonathan Plasse for reporting and fixing this in :pull:`3889`!
+
+.. _v6.98.16:
+
+--------------------
+6.98.16 - 2024-03-04
+--------------------
+
+This patch paves the way for future shrinker improvements. There is no user-visible change.
+
+.. _v6.98.15:
+
+--------------------
+6.98.15 - 2024-02-29
+--------------------
+
+This release adds support for the Array API's `2023.12 release
+<https://data-apis.org/array-api/2023.12/>`_ via the ``api_version`` argument in
+:func:`~hypothesis.extra.array_api.make_strategies_namespace`. The API additions
+and modifications in the ``2023.12`` spec do not necessitate any changes in the
+Hypothesis strategies, hence there is no distinction between a ``2022.12`` and
+``2023.12`` strategies namespace.
+
+.. _v6.98.14:
+
+--------------------
+6.98.14 - 2024-02-29
+--------------------
+
+This patch adjusts the printing of bundle values to correspond
+with their names when using stateful testing.
+
+.. _v6.98.13:
+
+--------------------
+6.98.13 - 2024-02-27
+--------------------
+
+This patch implements filter-rewriting for :func:`~hypothesis.strategies.text`
+and :func:`~hypothesis.strategies.binary` with the :meth:`~re.Pattern.search`,
+:meth:`~re.Pattern.match`, or :meth:`~re.Pattern.fullmatch` method of a
+:func:`re.compile`\ d regex.
+
+.. _v6.98.12:
+
+--------------------
+6.98.12 - 2024-02-25
+--------------------
+
+This patch implements filter-rewriting for most length filters on some
+additional collection types (:issue:`3795`), and fixes several latent
+bugs where unsatisfiable or partially-infeasible rewrites could trigger
+internal errors.
+
 .. _v6.98.11:
 
 --------------------
