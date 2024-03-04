@@ -26,6 +26,8 @@ from hypothesis.internal.conjecture.data import (
 from hypothesis.internal.floats import SIGNALING_NAN
 from hypothesis.internal.intervalsets import IntervalSet
 
+from tests.common.debug import minimal
+
 
 class PrngProvider(PrimitiveProvider):
     # A test-only implementation of the PrimitiveProvider interface, which uses
@@ -182,3 +184,12 @@ def test_find_with_backend_then_convert_to_buffer_shrink_and_replay(strategy):
     assert db.data
     buffers = {x for x in db.data[next(iter(db.data))] if x}
     assert buffers, db.data
+
+
+def test_backend_can_shrink():
+    with temp_register_backend():
+        n = minimal(
+            st.integers(), lambda n: n >= 123456, settings=settings(backend="prng")
+        )
+
+    assert n == 123456
