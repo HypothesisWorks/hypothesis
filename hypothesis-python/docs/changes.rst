@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.98.16:
+
+--------------------
+6.98.16 - 2024-03-04
+--------------------
+
+This patch paves the way for future shrinker improvements. There is no user-visible change.
+
 .. _v6.98.15:
 
 --------------------
