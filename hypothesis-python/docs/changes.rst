@@ -18,6 +18,18 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.98.17:
+
+--------------------
+6.98.17 - 2024-03-04
+--------------------
+
+This patch improves the type annotations in :mod:`hypothesis.extra.numpy`,
+which makes inferred types more precise for both :pypi:`mypy` and
+:pypi:`pyright`, and fixes some strict-mode errors on the latter.
+
+Thanks to Jonathan Plasse for reporting and fixing this in :pull:`3889`!
+
 .. _v6.98.16:
 
 --------------------
