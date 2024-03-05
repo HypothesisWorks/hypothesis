@@ -733,9 +733,13 @@ class ConjectureRunner:
         ran_optimisations = False
 
         while self.should_generate_more():
-            # There's no convenient way to track redundancy for custom backends
-            # yet. Will possibly improved when everything moves to the ir and we
-            # can use the DataTree for all backends?
+            # we'd love to use datatree to deduplicate inputs for the ir.
+            # Unfortunately its exhaustion logic is tighly coupled to the bounds
+            # of the HypothesisProvider, and this mismatch between what the
+            # datatree thinks is possible to generate and what non-hypothesis
+            # providers can actually generate can lead to e.g. infinite loops.
+            # We likely need a proper api for backends to communicate the size
+            # of their ir pools before we can use the datatree here.
             if self.settings.backend != "hypothesis":
                 data = self.new_conjecture_data(prefix=b"", max_length=BUFFER_SIZE)
                 self.test_function(data)
