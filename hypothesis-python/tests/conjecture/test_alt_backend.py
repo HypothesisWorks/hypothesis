@@ -345,30 +345,3 @@ def test_case_lifetime():
             <= test_case_lifetime_init_count
             <= test_function_count + 10
         )
-
-
-class TrackRedundant(TrivialProvider):
-    track_redundant_inputs = True
-
-
-class NoTrackRedundant(TrivialProvider):
-    track_redundant_inputs = False
-
-
-@pytest.mark.parametrize("track_redundancy", [True, False])
-def test_tracks_redundant_inputs(track_redundancy):
-    provider = TrackRedundant if track_redundancy else NoTrackRedundant
-
-    def test_function(data):
-        data.draw_integer()
-
-    with temp_register_backend("maybe_redundant", provider):
-        runner = ConjectureRunner(
-            test_function, settings=settings(backend="maybe_redundant")
-        )
-        runner.run()
-
-    if track_redundancy:
-        assert len(runner.tree.root.values) > 0
-    else:
-        assert len(runner.tree.root.values) == 0

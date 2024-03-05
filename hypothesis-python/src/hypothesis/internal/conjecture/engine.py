@@ -734,7 +734,7 @@ class ConjectureRunner:
 
         while self.should_generate_more():
             # we'd love to use datatree to deduplicate inputs for the ir.
-            # Unfortunately its exhaustion logic is tighly coupled to the bounds
+            # Unfortunately its exhaustion logic is tightly coupled to the bounds
             # of the HypothesisProvider, and this mismatch between what the
             # datatree thinks is possible to generate and what non-hypothesis
             # providers can actually generate can lead to e.g. infinite loops.
@@ -973,7 +973,7 @@ class ConjectureRunner:
             HypothesisProvider if self._switch_to_hypothesis_provider else self.provider
         )
         observer = observer or self.tree.new_observer()
-        if not self.provider.track_redundant_inputs:
+        if self.settings.backend != "hypothesis":
             observer = DataObserver()
 
         return ConjectureData(
@@ -1123,7 +1123,7 @@ class ConjectureRunner:
             prefix=buffer, max_length=max_length, observer=observer
         )
 
-        if self.provider.track_redundant_inputs:
+        if self.settings.backend == "hypothesis":
             try:
                 self.tree.simulate_test_function(dummy_data)
             except PreviouslyUnseenBehaviour:

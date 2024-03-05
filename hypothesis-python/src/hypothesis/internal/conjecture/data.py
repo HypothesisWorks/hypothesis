@@ -985,22 +985,6 @@ class PrimitiveProvider(abc.ABC):
     # Non-hypothesis providers probably want to set a lifetime of test_case.
     lifetime = "test_function"
 
-    # Whether values provided by this provider should be tracked by hypothesis
-    # such that we do not try the same input to the test function twice. Defaults
-    # to True.
-    #
-    # Providers may want to disable this if they are tracking redundant input
-    # themselves in a way that is not compatible with hypothesis, or in a way
-    # that is compatible but results in duplicated work if both were enabled.
-    #
-    # At the moment, providers which provide "symbolic" values a la
-    # hypothesis_crosshair may also want to disable this to prevent hypothesis'
-    # redundancy tracking from reifing values earlier than desired. (note for
-    # hypothesis devs: we may be able to improve this interaction in the future
-    # by updating DataTree at the end of the test case, when we can safely reify,
-    # as opposed to the middle. But this requires a significant refactoring.)
-    track_redundant_inputs = True
-
     def __init__(self, conjecturedata: Optional["ConjectureData"], /) -> None:
         self._cd = conjecturedata
 
