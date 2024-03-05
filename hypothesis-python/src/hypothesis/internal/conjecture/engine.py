@@ -733,13 +733,10 @@ class ConjectureRunner:
         ran_optimisations = False
 
         while self.should_generate_more():
-            # we'd love to use datatree to deduplicate inputs for the ir.
-            # Unfortunately its exhaustion logic is tightly coupled to the bounds
-            # of the HypothesisProvider, and this mismatch between what the
-            # datatree thinks is possible to generate and what non-hypothesis
-            # providers can actually generate can lead to e.g. infinite loops.
-            # We likely need a proper api for backends to communicate the size
-            # of their ir pools before we can use the datatree here.
+            # Unfortunately generate_novel_prefix still operates in terms of
+            # a buffer and uses HypothesisProvider as its backing provider,
+            # not whatever is specified by the backend. We can improve this
+            # once more things are on the ir.
             if self.settings.backend != "hypothesis":
                 data = self.new_conjecture_data(prefix=b"", max_length=BUFFER_SIZE)
                 self.test_function(data)
