@@ -967,7 +967,7 @@ class ConjectureRunner:
             HypothesisProvider if self._switch_to_hypothesis_provider else self.provider
         )
         observer = observer or self.tree.new_observer()
-        if self.settings.backend != "hypothesis":  # replace with wants_datatree
+        if not self.provider.track_redundant_inputs:
             observer = DataObserver()
 
         return ConjectureData(
@@ -1117,7 +1117,7 @@ class ConjectureRunner:
             prefix=buffer, max_length=max_length, observer=observer
         )
 
-        if self.settings.backend == "hypothesis":  # replace with wants_datatree
+        if self.provider.track_redundant_inputs:
             try:
                 self.tree.simulate_test_function(dummy_data)
             except PreviouslyUnseenBehaviour:
