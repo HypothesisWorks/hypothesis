@@ -1022,7 +1022,7 @@ class PrimitiveProvider(abc.ABC):
         forced: Optional[bool] = None,
         fake_forced: bool = False,
     ) -> bool:
-        pass
+        raise NotImplementedError
 
     @abc.abstractmethod
     def draw_integer(
@@ -1036,7 +1036,7 @@ class PrimitiveProvider(abc.ABC):
         forced: Optional[int] = None,
         fake_forced: bool = False,
     ) -> int:
-        pass
+        raise NotImplementedError
 
     @abc.abstractmethod
     def draw_float(
@@ -1053,7 +1053,7 @@ class PrimitiveProvider(abc.ABC):
         forced: Optional[float] = None,
         fake_forced: bool = False,
     ) -> float:
-        pass
+        raise NotImplementedError
 
     @abc.abstractmethod
     def draw_string(
@@ -1065,13 +1065,13 @@ class PrimitiveProvider(abc.ABC):
         forced: Optional[str] = None,
         fake_forced: bool = False,
     ) -> str:
-        pass
+        raise NotImplementedError
 
     @abc.abstractmethod
     def draw_bytes(
         self, size: int, *, forced: Optional[bytes] = None, fake_forced: bool = False
     ) -> bytes:
-        pass
+        raise NotImplementedError
 
 
 class HypothesisProvider(PrimitiveProvider):
