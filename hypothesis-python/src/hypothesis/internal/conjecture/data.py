@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import abc
 import contextlib
 import math
 import time
@@ -957,7 +958,7 @@ BYTE_MASKS = [(1 << n) - 1 for n in range(8)]
 BYTE_MASKS[0] = 255
 
 
-class PrimitiveProvider:
+class PrimitiveProvider(abc.ABC):
     # This is the low-level interface which would also be implemented
     # by e.g. CrossHair, by an Atheris-hypothesis integration, etc.
     # We'd then build the structured tree handling, database and replay
@@ -965,7 +966,26 @@ class PrimitiveProvider:
     #
     # See https://github.com/HypothesisWorks/hypothesis/issues/3086
 
-    def __init__(self, conjecturedata: "ConjectureData", /) -> None:
+    # How long a provider instance is used for. One of test_function or
+    # test_case. Defaults to test_function.
+    #
+    # If test_function, a single provider instance will be instantiated and used
+    # for the entirety of each test function. I.e., roughly one provider per
+    # @given annotation. This can be useful if you need to track state over many
+    # executions to a test function.
+    #
+    # This lifetime will cause None to be passed for the ConjectureData object
+    # in PrimitiveProvider.__init__, because that object is instantiated per
+    # test case.
+    #
+    # If test_case, a new provider instance will be instantiated and used each
+    # time hypothesis tries to generate a new input to the test function. This
+    # lifetime can access the passed ConjectureData object.
+    #
+    # Non-hypothesis providers probably want to set a lifetime of test_case.
+    lifetime = "test_function"
+
+    def __init__(self, conjecturedata: Optional["ConjectureData"], /) -> None:
         self._cd = conjecturedata
 
     def post_test_case_hook(self, value):
@@ -977,6 +997,73 @@ class PrimitiveProvider:
 
     def per_test_case_context_manager(self):
         return contextlib.nullcontext()
+
+    @abc.abstractmethod
+    def draw_boolean(
+        self,
+        p: float = 0.5,
+        *,
+        forced: Optional[bool] = None,
+        fake_forced: bool = False,
+    ) -> bool:
+        pass
+
+    @abc.abstractmethod
+    def draw_integer(
+        self,
+        min_value: Optional[int] = None,
+        max_value: Optional[int] = None,
+        *,
+        # weights are for choosing an element index from a bounded range
+        weights: Optional[Sequence[float]] = None,
+        shrink_towards: int = 0,
+        forced: Optional[int] = None,
+        fake_forced: bool = False,
+    ) -> int:
+        pass
+
+    @abc.abstractmethod
+    def draw_float(
+        self,
+        *,
+        min_value: float = -math.inf,
+        max_value: float = math.inf,
+        allow_nan: bool = True,
+        smallest_nonzero_magnitude: float,
+        # TODO: consider supporting these float widths at the IR level in the
+        # future.
+        # width: Literal[16, 32, 64] = 64,
+        # exclude_min and exclude_max handled higher up,
+        forced: Optional[float] = None,
+        fake_forced: bool = False,
+    ) -> float:
+        pass
+
+    @abc.abstractmethod
+    def draw_string(
+        self,
+        intervals: IntervalSet,
+        *,
+        min_size: int = 0,
+        max_size: Optional[int] = None,
+        forced: Optional[str] = None,
+        fake_forced: bool = False,
+    ) -> str:
+        pass
+
+    @abc.abstractmethod
+    def draw_bytes(
+        self, size: int, *, forced: Optional[bytes] = None, fake_forced: bool = False
+    ) -> bytes:
+        pass
+
+
+class HypothesisProvider(PrimitiveProvider):
+    lifetime = "test_case"
+
+    def __init__(self, conjecturedata: Optional["ConjectureData"], /):
+        assert conjecturedata is not None
+        super().__init__(conjecturedata)
 
     def draw_boolean(
         self,
@@ -1546,7 +1633,7 @@ class PrimitiveProvider:
 # NOTE: this is a temporary interface.  We DO NOT promise to continue supporting it!
 #       (but if you want to experiment and don't mind breakage, here you go)
 AVAILABLE_PROVIDERS = {
-    "hypothesis": "hypothesis.internal.conjecture.data.PrimitiveProvider",
+    "hypothesis": "hypothesis.internal.conjecture.data.HypothesisProvider",
 }
 
 
@@ -1557,7 +1644,7 @@ class ConjectureData:
         buffer: Union[List[int], bytes],
         *,
         observer: Optional[DataObserver] = None,
-        provider: type = PrimitiveProvider,
+        provider: Union[type, PrimitiveProvider] = HypothesisProvider,
     ) -> "ConjectureData":
         return cls(
             len(buffer), buffer, random=None, observer=observer, provider=provider
@@ -1569,7 +1656,7 @@ class ConjectureData:
         ir_tree_prefix: List[IRNode],
         *,
         observer: Optional[DataObserver] = None,
-        provider: type = PrimitiveProvider,
+        provider: Union[type, PrimitiveProvider] = HypothesisProvider,
     ) -> "ConjectureData":
         return cls(
             8 * 1024,
@@ -1587,7 +1674,7 @@ class ConjectureData:
         *,
         random: Optional[Random],
         observer: Optional[DataObserver] = None,
-        provider: type = PrimitiveProvider,
+        provider: Union[type, PrimitiveProvider] = HypothesisProvider,
         ir_tree_prefix: Optional[List[IRNode]] = None,
     ) -> None:
         if observer is None:
@@ -1621,7 +1708,9 @@ class ConjectureData:
         self._stateful_run_times: "DefaultDict[str, float]" = defaultdict(float)
         self.max_depth = 0
         self.has_discards = False
-        self.provider = provider(self)
+
+        self.provider = provider(self) if isinstance(provider, type) else provider
+        assert isinstance(self.provider, PrimitiveProvider)
 
         self.__result: "Optional[ConjectureResult]" = None
 

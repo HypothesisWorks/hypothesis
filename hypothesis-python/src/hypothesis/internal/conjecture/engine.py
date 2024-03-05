@@ -21,7 +21,7 @@ import attr
 
 from hypothesis import HealthCheck, Phase, Verbosity, settings as Settings
 from hypothesis._settings import local_settings
-from hypothesis.errors import StopTest
+from hypothesis.errors import InvalidArgument, StopTest
 from hypothesis.internal.cache import LRUReusedCache
 from hypothesis.internal.compat import ceil, int_from_bytes
 from hypothesis.internal.conjecture.data import (
@@ -29,8 +29,8 @@ from hypothesis.internal.conjecture.data import (
     ConjectureData,
     ConjectureResult,
     DataObserver,
+    HypothesisProvider,
     Overrun,
-    PrimitiveProvider,
     Status,
 )
 from hypothesis.internal.conjecture.datatree import DataTree, PreviouslyUnseenBehaviour
@@ -113,6 +113,19 @@ class RunIsComplete(Exception):
     pass
 
 
+def _get_provider(backend):
+    mname, cname = AVAILABLE_PROVIDERS[backend].rsplit(".", 1)
+    provider_cls = getattr(importlib.import_module(mname), cname)
+    if provider_cls.lifetime == "test_function":
+        return provider_cls(None)
+    elif provider_cls.lifetime == "test_case":
+        return provider_cls
+    else:
+        raise InvalidArgument(
+            f"invalid lifetime {provider_cls.lifetime} for provider {provider_cls.__name__}. Expected one of 'test_function', 'test_case'."
+        )
+
+
 class ConjectureRunner:
     def __init__(
         self,
@@ -150,6 +163,8 @@ class ConjectureRunner:
 
         self.tree = DataTree()
 
+        self.provider = _get_provider(self.settings.backend)
+
         self.best_observed_targets = defaultdict(lambda: NO_SCORE)
         self.best_examples_of_observed_targets = {}
 
@@ -170,7 +185,7 @@ class ConjectureRunner:
         self.__data_cache = LRUReusedCache(CACHE_SIZE)
 
         self.__pending_call_explanation = None
-        self._switch_to_primitive_provider = False
+        self._switch_to_hypothesis_provider = False
 
     def explain_next_call_as(self, explanation):
         self.__pending_call_explanation = explanation
@@ -928,32 +943,29 @@ class ConjectureRunner:
 
     def _run(self):
         # have to use the primitive provider to interpret database bits...
-        self._switch_to_primitive_provider = True
+        self._switch_to_hypothesis_provider = True
         with self._log_phase_statistics("reuse"):
             self.reuse_existing_examples()
         # ...but we should use the supplied provider when generating...
-        self._switch_to_primitive_provider = False
+        self._switch_to_hypothesis_provider = False
         with self._log_phase_statistics("generate"):
             self.generate_new_examples()
             # We normally run the targeting phase mixed in with the generate phase,
             # but if we've been asked to run it but not generation then we have to
-            # run it explciitly on its own here.
+            # run it explicitly on its own here.
             if Phase.generate not in self.settings.phases:
                 self._current_phase = "target"
                 self.optimise_targets()
         # ...and back to the primitive provider when shrinking.
-        self._switch_to_primitive_provider = True
+        self._switch_to_hypothesis_provider = True
         with self._log_phase_statistics("shrink"):
             self.shrink_interesting_examples()
         self.exit_with(ExitReason.finished)
 
     def new_conjecture_data(self, prefix, max_length=BUFFER_SIZE, observer=None):
-        if self.settings.backend == "hypothesis" or self._switch_to_primitive_provider:
-            provider_cls = PrimitiveProvider
-        else:
-            mname, cname = AVAILABLE_PROVIDERS[self.settings.backend].rsplit(".", 1)
-            provider_cls = getattr(importlib.import_module(mname), cname)
-
+        provider = (
+            HypothesisProvider if self._switch_to_hypothesis_provider else self.provider
+        )
         observer = observer or self.tree.new_observer()
         if self.settings.backend != "hypothesis":  # replace with wants_datatree
             observer = DataObserver()
@@ -963,7 +975,7 @@ class ConjectureRunner:
             max_length=max_length,
             random=self.random,
             observer=observer,
-            provider=provider_cls,
+            provider=provider,
         )
 
     def new_conjecture_data_for_buffer(self, buffer):
