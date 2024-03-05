@@ -169,6 +169,7 @@ class Sampler:
     def sample(
         self,
         data: "ConjectureData",
+        *,
         forced: Optional[int] = None,
         fake_forced: bool = False,
     ) -> int:

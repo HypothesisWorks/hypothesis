@@ -124,7 +124,8 @@ def _get_provider(backend: str) -> Union[type, PrimitiveProvider]:
         return provider_cls
     else:
         raise InvalidArgument(
-            f"invalid lifetime {provider_cls.lifetime} for provider {provider_cls.__name__}. Expected one of 'test_function', 'test_case'."
+            f"invalid lifetime {provider_cls.lifetime} for provider {provider_cls.__name__}. "
+            "Expected one of 'test_function', 'test_case'."
         )
 
 
