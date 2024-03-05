@@ -287,14 +287,15 @@ class ConjectureRunner:
                 for node in data.examples.ir_tree_nodes:
                     value = data.provider.post_test_case_hook(node.value)
                     # require providers to return something valid here.
-                    assert node.value is not None
+                    assert (
+                        value is not None
+                    ), "providers must return a non-null value from post_test_case_hook"
                     node.value = value
 
                 # drive the ir tree through the test function to convert it
                 # to a buffer
                 data = ConjectureData.for_ir_tree(data.examples.ir_tree_nodes)
                 self.__stoppable_test_function(data)
-
                 self.__data_cache[data.buffer] = data.as_result()
 
             key = data.interesting_origin
