@@ -18,11 +18,14 @@ import pytest
 
 from hypothesis import given, settings, strategies as st
 from hypothesis.database import InMemoryExampleDatabase
+from hypothesis.errors import InvalidArgument
+from hypothesis.internal.compat import int_to_bytes
 from hypothesis.internal.conjecture.data import (
     AVAILABLE_PROVIDERS,
     ConjectureData,
     PrimitiveProvider,
 )
+from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.floats import SIGNALING_NAN
 from hypothesis.internal.intervalsets import IntervalSet
 
@@ -149,12 +152,12 @@ class PrngProvider(PrimitiveProvider):
 
 
 @contextmanager
-def temp_register_backend():
+def temp_register_backend(name, cls):
     try:
-        AVAILABLE_PROVIDERS["prng"] = f"{__name__}.{PrngProvider.__name__}"
+        AVAILABLE_PROVIDERS[name] = f"{__name__}.{cls.__name__}"
         yield
     finally:
-        AVAILABLE_PROVIDERS.pop("prng")
+        AVAILABLE_PROVIDERS.pop(name)
 
 
 @pytest.mark.parametrize(
@@ -172,7 +175,7 @@ def test_find_with_backend_then_convert_to_buffer_shrink_and_replay(strategy):
     db = InMemoryExampleDatabase()
     assert not db.data
 
-    with temp_register_backend():
+    with temp_register_backend("prng", PrngProvider):
 
         @settings(database=db, backend="prng")
         @given(strategy)
@@ -190,10 +193,182 @@ def test_find_with_backend_then_convert_to_buffer_shrink_and_replay(strategy):
     assert buffers, db.data
 
 
-def test_backend_can_shrink():
-    with temp_register_backend():
+def test_backend_can_shrink_integers():
+    with temp_register_backend("prng", PrngProvider):
         n = minimal(
-            st.integers(), lambda n: n >= 123456, settings=settings(backend="prng")
+            st.integers(),
+            lambda n: n >= 123456,
+            settings=settings(backend="prng", database=None),
         )
 
     assert n == 123456
+
+
+def test_backend_can_shrink_bytes():
+    with temp_register_backend("prng", PrngProvider):
+        b = minimal(
+            # this test doubles as coverage for popping draw_bytes ir nodes,
+            # and that path is only taken with fixed size for the moment. can
+            # be removed when we support variable length binary at the ir level.
+            st.binary(min_size=2, max_size=2),
+            lambda b: len(b) >= 2 and b[1] >= 10,
+            settings=settings(backend="prng", database=None),
+        )
+
+    assert b == int_to_bytes(10, size=2)
+
+
+def test_backend_can_shrink_strings():
+    with temp_register_backend("prng", PrngProvider):
+        s = minimal(
+            st.text(),
+            lambda s: len(s) >= 10,
+            settings=settings(backend="prng", database=None),
+        )
+
+    assert len(s) == 10
+
+
+def test_backend_can_shrink_booleans():
+    with temp_register_backend("prng", PrngProvider):
+        b = minimal(
+            st.booleans(), lambda b: b, settings=settings(backend="prng", database=None)
+        )
+
+    assert b
+
+
+def test_backend_can_shrink_floats():
+    with temp_register_backend("prng", PrngProvider):
+        f = minimal(
+            st.floats(),
+            lambda f: f >= 100.5,
+            settings=settings(backend="prng", database=None),
+        )
+
+    assert f == 101.0
+
+
+# trivial provider for tests which don't care about drawn distributions.
+class TrivialProvider(PrimitiveProvider):
+    def draw_integer(self, *args, **kwargs):
+        return 1
+
+    def draw_boolean(self, *args, **kwargs):
+        return True
+
+    def draw_float(self, *args, **kwargs):
+        return 1.0
+
+    def draw_bytes(self, *args, **kwargs):
+        return b""
+
+    def draw_string(self, *args, **kwargs):
+        return ""
+
+
+class InvalidLifetime(TrivialProvider):
+
+    lifetime = "forever and a day!"
+
+
+def test_invalid_lifetime():
+    with temp_register_backend("invalid_lifetime", InvalidLifetime):
+        with pytest.raises(InvalidArgument):
+            ConjectureRunner(
+                lambda: True, settings=settings(backend="invalid_lifetime")
+            )
+
+
+function_lifetime_init_count = 0
+
+
+class LifetimeTestFunction(TrivialProvider):
+    lifetime = "test_function"
+
+    def __init__(self, conjecturedata):
+        super().__init__(conjecturedata)
+        # hacky, but no easy alternative.
+        global function_lifetime_init_count
+        function_lifetime_init_count += 1
+
+
+def test_function_lifetime():
+    with temp_register_backend("lifetime_function", LifetimeTestFunction):
+
+        @given(st.integers())
+        @settings(backend="lifetime_function")
+        def test_function(n):
+            pass
+
+        assert function_lifetime_init_count == 0
+        test_function()
+        assert function_lifetime_init_count == 1
+        test_function()
+        assert function_lifetime_init_count == 2
+
+
+test_case_lifetime_init_count = 0
+
+
+class LifetimeTestCase(TrivialProvider):
+    lifetime = "test_case"
+
+    def __init__(self, conjecturedata):
+        super().__init__(conjecturedata)
+        global test_case_lifetime_init_count
+        test_case_lifetime_init_count += 1
+
+
+def test_case_lifetime():
+    test_function_count = 0
+
+    with temp_register_backend("lifetime_case", LifetimeTestCase):
+
+        @given(st.integers())
+        @settings(backend="lifetime_case")
+        def test_function(n):
+            nonlocal test_function_count
+            test_function_count += 1
+
+        assert test_case_lifetime_init_count == 0
+        test_function()
+
+        # we create a new provider each time we *try* to generate an input to the
+        # test function, but this could be filtered out, discarded as duplicate,
+        # etc. We also sometimes try predetermined inputs to the test function,
+        # such as the zero buffer, which does not entail creating providers.
+        # These two facts combined mean that the number of inits could be
+        # anywhere reasonably close to the number of function calls.
+        assert (
+            test_function_count - 10
+            <= test_case_lifetime_init_count
+            <= test_function_count + 10
+        )
+
+
+class TrackRedundant(TrivialProvider):
+    track_redundant_inputs = True
+
+
+class NoTrackRedundant(TrivialProvider):
+    track_redundant_inputs = False
+
+
+@pytest.mark.parametrize("track_redundancy", [True, False])
+def test_tracks_redundant_inputs(track_redundancy):
+    provider = TrackRedundant if track_redundancy else NoTrackRedundant
+
+    def test_function(data):
+        data.draw_integer()
+
+    with temp_register_backend("maybe_redundant", provider):
+        runner = ConjectureRunner(
+            test_function, settings=settings(backend="maybe_redundant")
+        )
+        runner.run()
+
+    if track_redundancy:
+        assert len(runner.tree.root.values) > 0
+    else:
+        assert len(runner.tree.root.values) == 0
