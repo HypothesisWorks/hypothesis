@@ -1119,7 +1119,7 @@ class StateForActualGivenExecution:
             else:
                 database_key = None
 
-        runner = ConjectureRunner(
+        runner = self._runner = ConjectureRunner(
             self._execute_once_for_engine,
             settings=self.settings,
             random=self.random,
