@@ -1094,6 +1094,7 @@ class HypothesisProvider(PrimitiveProvider):
         drawn that value randomly."""
         # Note that this could also be implemented in terms of draw_integer().
 
+        assert self._cd is not None
         # NB this function is vastly more complicated than it may seem reasonable
         # for it to be. This is because it is used in a lot of places and it's
         # important for it to shrink well, so it's worth the engineering effort.
@@ -1203,6 +1204,8 @@ class HypothesisProvider(PrimitiveProvider):
         forced: Optional[int] = None,
         fake_forced: bool = False,
     ) -> int:
+        assert self._cd is not None
+
         if min_value is not None:
             shrink_towards = max(min_value, shrink_towards)
         if max_value is not None:
@@ -1293,6 +1296,8 @@ class HypothesisProvider(PrimitiveProvider):
             smallest_nonzero_magnitude=smallest_nonzero_magnitude,
         )
 
+        assert self._cd is not None
+
         while True:
             self._cd.start_example(FLOAT_STRATEGY_DO_DRAW_LABEL)
             # If `forced in nasty_floats`, then `forced` was *probably*
@@ -1348,6 +1353,7 @@ class HypothesisProvider(PrimitiveProvider):
             max_size = DRAW_STRING_DEFAULT_MAX_SIZE
 
         assert forced is None or min_size <= len(forced) <= max_size
+        assert self._cd is not None
 
         average_size = min(
             max(min_size * 2, min_size + 5),
@@ -1403,6 +1409,7 @@ class HypothesisProvider(PrimitiveProvider):
             forced_i = int_from_bytes(forced)
             size = len(forced)
 
+        assert self._cd is not None
         return self._cd.draw_bits(
             8 * size, forced=forced_i, fake_forced=fake_forced
         ).to_bytes(size, "big")
@@ -1417,6 +1424,8 @@ class HypothesisProvider(PrimitiveProvider):
         """
         Helper for draw_float which draws a random 64-bit float.
         """
+        assert self._cd is not None
+
         if forced is not None:
             # sign_aware_lte(forced, -0.0) does not correctly handle the
             # math.nan case here.
@@ -1436,6 +1445,7 @@ class HypothesisProvider(PrimitiveProvider):
     def _draw_unbounded_integer(
         self, *, forced: Optional[int] = None, fake_forced: bool = False
     ) -> int:
+        assert self._cd is not None
         forced_i = None
         if forced is not None:
             # Using any bucket large enough to contain this integer would be a
@@ -1480,6 +1490,7 @@ class HypothesisProvider(PrimitiveProvider):
     ) -> int:
         assert lower <= upper
         assert forced is None or lower <= forced <= upper
+        assert self._cd is not None
         if lower == upper:
             # Write a value even when this is trivial so that when a bound depends
             # on other values we don't suddenly disappear when the gap shrinks to

@@ -16,6 +16,7 @@ from contextlib import contextmanager
 from datetime import timedelta
 from enum import Enum
 from random import Random, getrandbits
+from typing import Union
 
 import attr
 
@@ -31,6 +32,7 @@ from hypothesis.internal.conjecture.data import (
     DataObserver,
     HypothesisProvider,
     Overrun,
+    PrimitiveProvider,
     Status,
 )
 from hypothesis.internal.conjecture.datatree import DataTree, PreviouslyUnseenBehaviour
@@ -113,7 +115,7 @@ class RunIsComplete(Exception):
     pass
 
 
-def _get_provider(backend):
+def _get_provider(backend: str) -> Union[type, PrimitiveProvider]:
     mname, cname = AVAILABLE_PROVIDERS[backend].rsplit(".", 1)
     provider_cls = getattr(importlib.import_module(mname), cname)
     if provider_cls.lifetime == "test_function":
