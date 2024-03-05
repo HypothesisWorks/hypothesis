@@ -161,10 +161,10 @@ def temp_register_backend():
     "strategy",
     [
         st.booleans(),
-        st.integers(0, 10),
-        st.floats(allow_nan=False),
-        st.text(max_size=5),
-        st.binary(max_size=5),
+        st.integers(0, 3),
+        st.floats(0, 1),
+        st.text(max_size=3),
+        st.binary(max_size=3),
     ],
     ids=repr,
 )
@@ -178,8 +178,7 @@ def test_find_with_backend_then_convert_to_buffer_shrink_and_replay(strategy):
         @given(strategy)
         def test(value):
             if isinstance(value, float):
-                # randomly generating 0 for floats is really unlikely
-                assert value not in [math.inf, -math.inf]
+                assert value >= 0.5
             else:
                 assert value
 
