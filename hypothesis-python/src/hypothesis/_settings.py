@@ -165,7 +165,7 @@ class settings(metaclass=settingsMeta):
         suppress_health_check: Collection["HealthCheck"] = not_set,  # type: ignore
         deadline: Union[int, float, datetime.timedelta, None] = not_set,  # type: ignore
         print_blob: bool = not_set,  # type: ignore
-        backend: str = not_set,
+        backend: str = not_set,  # type: ignore
     ) -> None:
         if parent is not None:
             check_type(settings, parent, "parent")
