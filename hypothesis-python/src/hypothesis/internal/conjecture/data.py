@@ -1669,8 +1669,10 @@ class ConjectureData:
         observer: Optional[DataObserver] = None,
         provider: Union[type, PrimitiveProvider] = HypothesisProvider,
     ) -> "ConjectureData":
+        from hypothesis.internal.conjecture.engine import BUFFER_SIZE
+
         return cls(
-            8 * 1024,
+            BUFFER_SIZE,
             b"",
             random=None,
             ir_tree_prefix=ir_tree_prefix,
