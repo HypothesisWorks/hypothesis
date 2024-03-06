@@ -233,7 +233,7 @@ a solver-backed test might look something like:
     from hypothesis import given, settings, strategies as st
 
 
-    @settings(backend="crosshair", database=None)
+    @settings(backend="crosshair")
     @given(st.integers())
     def test_needs_solver(x):
         assert x != 123456789
