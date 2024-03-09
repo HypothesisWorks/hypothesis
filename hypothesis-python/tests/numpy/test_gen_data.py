@@ -26,6 +26,7 @@ from hypothesis import (
 )
 from hypothesis.errors import InvalidArgument, UnsatisfiedAssumption
 from hypothesis.extra import numpy as nps
+from hypothesis.strategies._internal.lazy import unwrap_strategies
 
 from tests.common.debug import check_can_generate_examples, find_any, minimal
 from tests.common.utils import fails_with, flaky
@@ -1240,3 +1241,19 @@ def test_no_recursion_in_multi_line_reprs_issue_3560(data):
             dtype=float,
         ).map(lambda x: x)
     )
+
+
+def test_infers_elements_and_fill():
+    # Regression test for https://github.com/HypothesisWorks/hypothesis/issues/3900
+    # We only infer a fill strategy if the elements_strategy has reusable values,
+    # and the interaction of two performance fixes broke this.  Oops...
+    s = unwrap_strategies(nps.arrays(dtype=np.uint32, shape=1))
+    assert isinstance(s, nps.ArrayStrategy)
+    assert repr(s.element_strategy) == f"integers(0, {2**32-1})"
+    assert repr(s.fill) == f"integers(0, {2**32-1})"
+
+    # But we _don't_ infer a fill if the elements strategy is non-reusable
+    elems = st.builds(lambda x: x * 2, st.integers(1, 10)).map(np.uint32)
+    assert not elems.has_reusable_values
+    s = unwrap_strategies(nps.arrays(dtype=np.uint32, shape=1, elements=elems))
+    assert s.fill.is_empty
