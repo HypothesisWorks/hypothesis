@@ -1251,3 +1251,9 @@ def test_infers_elements_and_fill():
     assert isinstance(s, nps.ArrayStrategy)
     assert repr(s.element_strategy) == f"integers(0, {2**32-1})"
     assert repr(s.fill) == f"integers(0, {2**32-1})"
+
+    # But we _don't_ infer a fill if the elements strategy is non-reusable
+    elems = st.builds(lambda x: x * 2, st.integers(1, 10)).map(np.uint32)
+    assert not elems.has_reusable_values
+    s = unwrap_strategies(nps.arrays(dtype=np.uint32, shape=1, elements=elems))
+    assert s.fill.is_empty
