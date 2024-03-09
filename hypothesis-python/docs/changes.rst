@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.99.0:
+
+-------------------
+6.99.0 - 2024-03-09
+-------------------
+
+This release adds the **experimental and unstable** :obj:`~hypothesis.settings.backend`
+setting.  See :ref:`alternative-backends` for details.
+
 .. _v6.98.18:
 
 --------------------
