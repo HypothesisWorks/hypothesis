@@ -456,6 +456,7 @@ def test_derandomise_with_explicit_database_is_invalid():
         {"deadline": 0},
         {"deadline": True},
         {"deadline": False},
+        {"backend": "this_backend_does_not_exist"},
     ],
 )
 def test_invalid_settings_are_errors(kwargs):

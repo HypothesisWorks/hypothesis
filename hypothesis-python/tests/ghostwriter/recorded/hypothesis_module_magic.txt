@@ -73,6 +73,7 @@ def test_fuzz_seed(seed: typing.Hashable) -> None:
     suppress_health_check=st.just(not_set),
     deadline=st.just(not_set),
     print_blob=st.just(not_set),
+    backend=st.just(not_set),
 )
 def test_fuzz_settings(
     parent: typing.Optional[hypothesis.settings],
@@ -86,6 +87,7 @@ def test_fuzz_settings(
     suppress_health_check,
     deadline: typing.Union[int, float, datetime.timedelta, None],
     print_blob: bool,
+    backend: str,
 ) -> None:
     hypothesis.settings(
         parent=parent,
@@ -99,6 +101,7 @@ def test_fuzz_settings(
         suppress_health_check=suppress_health_check,
         deadline=deadline,
         print_blob=print_blob,
+        backend=backend,
     )
 
 

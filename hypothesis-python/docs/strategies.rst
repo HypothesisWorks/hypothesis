@@ -204,3 +204,36 @@ loading our pytest plugin from your ``conftest.py`` instead::
 
     echo "pytest_plugins = ['hypothesis.extra.pytestplugin']\n" > tests/conftest.py
     pytest -p "no:hypothesispytest" ...
+
+
+.. _alternative-backends:
+
+-----------------------------------
+Alternative backends for Hypothesis
+-----------------------------------
+
+.. warning::
+
+   EXPERIMENTAL AND UNSTABLE.
+
+The importable name of a backend which Hypothesis should use to generate primitive
+types.  We aim to support heuristic-random, solver-based, and fuzzing-based backends.
+
+See :issue:`3086` for details, e.g. if you're interested in writing your own backend.
+(note that there is *no stable interface* for this; you'd be helping us work out
+what that should eventually look like, and we're likely to make regular breaking
+changes for some time to come)
+
+Using the prototype :pypi:`crosshair-tool` backend `via this plugin
+<https://github.com/pschanely/hypothesis-crosshair>`__,
+a solver-backed test might look something like:
+
+.. code-block:: python
+
+    from hypothesis import given, settings, strategies as st
+
+
+    @settings(backend="crosshair")
+    @given(st.integers())
+    def test_needs_solver(x):
+        assert x != 123456789
