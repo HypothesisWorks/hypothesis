@@ -982,7 +982,7 @@ class PrimitiveProvider(abc.ABC):
     # time hypothesis tries to generate a new input to the test function. This
     # lifetime can access the passed ConjectureData object.
     #
-    # Non-hypothesis providers probably want to set a lifetime of test_case.
+    # Non-hypothesis providers probably want to set a lifetime of test_function.
     lifetime = "test_function"
 
     def __init__(self, conjecturedata: Optional["ConjectureData"], /) -> None:
