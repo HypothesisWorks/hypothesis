@@ -37,13 +37,9 @@ class PrngProvider(PrimitiveProvider):
     # a very simple PRNG to choose each value. Dumb but efficient, and entirely
     # independent of our real backend
 
-    # this could easily be test_function as well, if there's an alternative to
-    # seeding the prng with the buffer?
-    lifetime = "test_case"
-
     def __init__(self, conjecturedata: "ConjectureData", /) -> None:
         super().__init__(conjecturedata)
-        self.prng = Random(conjecturedata.buffer or None)
+        self.prng = Random()
 
     def draw_boolean(
         self,
