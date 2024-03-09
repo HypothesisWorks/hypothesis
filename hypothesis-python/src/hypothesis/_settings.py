@@ -718,8 +718,13 @@ def _backend_validator(value):
     from hypothesis.internal.conjecture.data import AVAILABLE_PROVIDERS
 
     if value not in AVAILABLE_PROVIDERS:
-        msg = f"Invalid backend, {value!r}. Valid options: {sorted(AVAILABLE_PROVIDERS)!r}"
-        raise InvalidArgument(msg)
+        if value == "crosshair":  # pragma: no cover
+            install = '`pip install "hypothesis[crosshair]"` and try again.'
+            raise InvalidArgument(f"backend={value!r} is not available.  {install}")
+        raise InvalidArgument(
+            f"backend={value!r} is not available - maybe you need to install a plugin?"
+            f"\n    Installed backends: {sorted(AVAILABLE_PROVIDERS)!r}"
+        )
     return value
 
 

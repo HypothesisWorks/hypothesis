@@ -224,7 +224,7 @@ See :issue:`3086` for details, e.g. if you're interested in writing your own bac
 what that should eventually look like, and we're likely to make regular breaking
 changes for some time to come)
 
-Using the prototype :pypi:`crosshair-tool` backend `via this schemathesis
+Using the prototype :pypi:`crosshair-tool` backend `via this plugin
 <https://github.com/pschanely/hypothesis-crosshair>`__,
 a solver-backed test might look something like:
 

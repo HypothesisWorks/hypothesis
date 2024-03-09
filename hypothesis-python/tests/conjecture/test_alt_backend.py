@@ -322,7 +322,7 @@ def test_case_lifetime():
     with temp_register_backend("lifetime_case", LifetimeTestCase):
 
         @given(st.integers())
-        @settings(backend="lifetime_case")
+        @settings(backend="lifetime_case", database=InMemoryExampleDatabase())
         def test_function(n):
             nonlocal test_function_count
             test_function_count += 1
