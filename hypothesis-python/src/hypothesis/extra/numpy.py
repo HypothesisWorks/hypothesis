@@ -235,6 +235,12 @@ class ArrayStrategy(st.SearchStrategy):
         self.unique = unique
         self._check_elements = dtype.kind not in ("O", "V")
 
+    def __repr__(self):
+        return (
+            f"ArrayStrategy({self.element_strategy!r}, shape={self.shape}, "
+            f"dtype={self.dtype!r}, fill={self.fill!r}, unique={self.unique!r})"
+        )
+
     def set_element(self, val, result, idx, *, fill=False):
         try:
             result[idx] = val
