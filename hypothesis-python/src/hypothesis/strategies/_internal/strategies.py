@@ -28,7 +28,7 @@ from typing import (
 )
 
 from hypothesis._settings import HealthCheck, Phase, Verbosity, settings
-from hypothesis.control import _current_build_context, assume
+from hypothesis.control import _current_build_context
 from hypothesis.errors import (
     HypothesisException,
     HypothesisWarning,
