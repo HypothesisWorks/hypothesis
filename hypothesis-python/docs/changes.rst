@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.98.18:
+
+--------------------
+6.98.18 - 2024-03-09
+--------------------
+
+This patch fixes :issue:`3900`, a performance regression for
+:func:`~hypothesis.extra.numpy.arrays` due to the interaction of
+:ref:`v6.98.12` and :ref:`v6.97.1`.
+
 .. _v6.98.17:
 
 --------------------
