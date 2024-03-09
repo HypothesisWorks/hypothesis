@@ -133,7 +133,7 @@ def assert_mypy_errors(fname, expected, python_version=None):
         ),
         (
             "arrays(dtype=np.dtype(int), shape=1)",
-            "ndarray[Any, dtype[Any]]",
+            "ndarray[Any, dtype[signedinteger[Any]]]",
         ),
         (
             "boolean_dtypes()",
@@ -233,15 +233,15 @@ def assert_mypy_errors(fname, expected, python_version=None):
         ),
         (
             "integer_array_indices(shape=(2, 3))",
-            "Tuple[ndarray[Any, dtype[signedinteger[Any]]",
+            "tuple[ndarray[Any, dtype[signedinteger[Any], ...]",
         ),
         (
             'integer_array_indices(shape=(2, 3), dtype=np.dtype("int32"))',
-            "Tuple[ndarray[Any, dtype[signedinteger[_32Bit]]",
+            "tuple[ndarray[Any, dtype[signedinteger[_32Bit], ...]",
         ),
         (
             'integer_array_indices(shape=(2, 3), dtype=np.dtype("uint8"))',
-            "Tuple[ndarray[Any, dtype[unsignedinteger[_8Bit]]",
+            "tuple[ndarray[Any, dtype[unsignedinteger[_8Bit], ...]",
         ),
         # Note: keep this in sync with the equivalent test for Pyright
     ],

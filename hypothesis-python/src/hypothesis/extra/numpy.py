@@ -741,7 +741,7 @@ def integer_dtypes(
 def integer_dtypes(
     *,
     endianness: str = "?",
-    sizes: Union[Literal[8, 16, 32, 64] | Sequence[Literal[8, 16, 32, 64]]] = (
+    sizes: Union[Literal[8, 16, 32, 64], Sequence[Literal[8, 16, 32, 64]]] = (
         8,
         16,
         32,

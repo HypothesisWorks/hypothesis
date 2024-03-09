@@ -213,7 +213,7 @@ def test_numpy_arrays_strategy(tmp_path: Path):
         ),
         (
             "arrays(dtype=np.dtype(int), shape=1)",
-            "ndarray[Any, dtype[Any]]",
+            "ndarray[Any, dtype[signedinteger[Any]]]",
         ),
         (
             "boolean_dtypes()",
@@ -313,15 +313,15 @@ def test_numpy_arrays_strategy(tmp_path: Path):
         ),
         (
             "integer_array_indices(shape=(2, 3))",
-            "Tuple[ndarray[Any, dtype[signedinteger[Any]]",
+            "Tuple[ndarray[Any, dtype[signedinteger[Any], ...]",
         ),
         (
             'integer_array_indices(shape=(2, 3), dtype=np.dtype("int32"))',
-            "Tuple[ndarray[Any, dtype[signedinteger[_32Bit]]",
+            "Tuple[ndarray[Any, dtype[signedinteger[_32Bit], ...]",
         ),
         (
             'integer_array_indices(shape=(2, 3), dtype=np.dtype("uint8"))',
-            "Tuple[ndarray[Any, dtype[unsignedinteger[_8Bit]]",
+            "Tuple[ndarray[Any, dtype[unsignedinteger[_8Bit], ...]",
         ),
         # Note: keep this in sync with the equivalent test for Mypy
     ],
