@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.99.2:
+
+-------------------
+6.99.2 - 2024-03-10
+-------------------
+
+Simplify the type annotation of :func:`~hypothesis.extra.pandas.column` and
+:func:`~hypothesis.extra.pandas.columns` by using :pep:`696` to avoid overloading.
+
 .. _v6.99.1:
 
 -------------------
