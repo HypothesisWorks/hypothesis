@@ -920,6 +920,17 @@ class IRNode:
     kwargs: IRKWargsType = attr.ib()
     was_forced: bool = attr.ib()
 
+    def copy(self, *, with_value: IRType) -> "IRNode":
+        # we may want to allow this combination in the future, but for now it's
+        # a footgun.
+        assert not self.was_forced, "modifying a forced node doesn't make sense"
+        return IRNode(
+            ir_type=self.ir_type,
+            value=with_value,
+            kwargs=self.kwargs,
+            was_forced=self.was_forced,
+        )
+
 
 @dataclass_transform()
 @attr.s(slots=True)
@@ -2049,9 +2060,20 @@ class ConjectureData:
 
     def _pop_ir_tree_node(self, ir_type: IRTypeName, kwargs: IRKWargsType) -> IRNode:
         assert self.ir_tree_nodes is not None
+
+        if self.ir_tree_nodes == []:
+            self.mark_overrun()
+
         node = self.ir_tree_nodes.pop(0)
-        assert node.ir_type == ir_type
-        assert kwargs == node.kwargs
+        if node.ir_type != ir_type or node.kwargs != kwargs:
+            # Unlike buffers, not every ir tree is a valid choice sequence. If
+            # we want to maintain determinism we don't have many options here
+            # beyond giving up when a modified tree becomes misaligned.
+            #
+            # For what it's worth, misaligned buffers — albeit valid — are rather
+            # unlikely to be *useful* buffers, so this isn't an enormous
+            # downgrade.
+            self.mark_overrun()
 
         return node
 
