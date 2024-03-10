@@ -78,13 +78,13 @@ some stuff happened
 """
 
 
-def test_update_changelog(tmpdir):
-    path = tmpdir.join("CHANGELOG.md")
-    path.write("# some previous log entry\n")
+def test_update_changelog(tmp_path):
+    path = tmp_path / "CHANGELOG.md"
+    path.write_text("# some previous log entry\n", encoding="utf-8")
     update_markdown_changelog(
         str(path), "A test project", "1.2.3", "some stuff happened"
     )
-    assert path.read().strip() == TEST_CHANGELOG.strip()
+    assert path.read_text(encoding="utf-8").strip() == TEST_CHANGELOG.strip()
 
 
 def test_changelog_parsing_strips_trailing_whitespace():

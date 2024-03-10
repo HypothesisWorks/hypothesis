@@ -82,9 +82,9 @@ def test_failure(i):
 """
 
 
-def test_repeats_healthcheck_when_following_seed_instruction(testdir, tmpdir):
+def test_repeats_healthcheck_when_following_seed_instruction(testdir, tmp_path):
     health_check_test = HEALTH_CHECK_FAILURE.replace(
-        "<file>", repr(str(tmpdir.join("seen")))
+        "<file>", repr(str(tmp_path / "seen"))
     )
 
     script = testdir.makepyfile(health_check_test)
