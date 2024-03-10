@@ -1991,8 +1991,8 @@ class ConjectureData:
         p: float = 0.5,
         *,
         forced: Optional[bool] = None,
-        observe: bool = True,
         fake_forced: bool = False,
+        observe: bool = True,
     ) -> bool:
         # Internally, we treat probabilities lower than 1 / 2**64 as
         # unconditionally false.
