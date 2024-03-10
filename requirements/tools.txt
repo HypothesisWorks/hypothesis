@@ -57,7 +57,7 @@ decorator==5.1.1
     # via ipython
 distlib==0.3.8
     # via virtualenv
-django==5.0.2
+django==5.0.3
     # via -r requirements/tools.in
 docutils==0.20.1
     # via
@@ -89,13 +89,13 @@ idna==3.6
     #   requests
 imagesize==1.4.1
     # via sphinx
-importlib-metadata==7.0.1
+importlib-metadata==7.0.2
     # via
     #   keyring
     #   twine
 iniconfig==2.0.0
     # via pytest
-ipython==8.22.1
+ipython==8.22.2
     # via -r requirements/tools.in
 isort==5.13.2
     # via shed
@@ -133,7 +133,7 @@ mdurl==0.1.2
     # via markdown-it-py
 more-itertools==10.2.0
     # via jaraco-classes
-mypy==1.8.0
+mypy==1.9.0
     # via -r requirements/tools.in
 mypy-extensions==1.0.0
     # via
@@ -148,7 +148,7 @@ numpy==1.26.4
     # via -r requirements/tools.in
 ordered-set==4.1.0
     # via pelican
-packaging==23.2
+packaging==24.0
     # via
     #   black
     #   build
@@ -164,7 +164,7 @@ pelican[markdown]==4.9.1
     # via -r requirements/tools.in
 pexpect==4.9.0
     # via ipython
-pip-tools==7.4.0
+pip-tools==7.4.1
     # via -r requirements/tools.in
 pkginfo==1.10.0
     # via twine
@@ -200,9 +200,9 @@ pyproject-hooks==1.0.0
     # via
     #   build
     #   pip-tools
-pyright==1.1.352
+pyright==1.1.353
     # via -r requirements/tools.in
-pytest==8.1.0
+pytest==8.1.1
     # via -r requirements/tools.in
 python-dateutil==2.9.0.post0
     # via
@@ -235,7 +235,7 @@ rich==13.7.1
     # via
     #   pelican
     #   twine
-ruff==0.3.0
+ruff==0.3.2
     # via -r requirements/tools.in
 secretstorage==3.3.3
     # via keyring
@@ -303,7 +303,7 @@ tomli==2.0.1
     #   pyproject-hooks
     #   pytest
     #   tox
-tox==4.13.0
+tox==4.14.1
     # via -r requirements/tools.in
 traitlets==5.14.1
     # via

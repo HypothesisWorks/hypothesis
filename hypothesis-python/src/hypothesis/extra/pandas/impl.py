@@ -11,7 +11,7 @@
 from collections import OrderedDict, abc
 from copy import copy
 from datetime import datetime, timedelta
-from typing import Any, Generic, List, Optional, Sequence, Set, Union, overload
+from typing import Any, Generic, List, Optional, Sequence, Set, Union
 
 import attr
 import numpy as np
@@ -357,7 +357,7 @@ def series(
     return result()
 
 
-@attr.s(slots=True, init=False)
+@attr.s(slots=True)
 class column(Generic[Ex]):
     """Data object for describing a column in a DataFrame.
 
@@ -380,63 +380,6 @@ class column(Generic[Ex]):
     dtype: Any = attr.ib(default=None, repr=get_pretty_function_description)
     fill: Optional[st.SearchStrategy[Ex]] = attr.ib(default=None)
     unique: bool = attr.ib(default=False)
-
-    @overload
-    def __init__(
-        self: "column[Any]",
-        name: Optional[Union[str, int]] = ...,
-        elements: None = ...,
-        dtype: Any = ...,
-        fill: None = ...,
-        unique: bool = ...,  # noqa: FBT001
-    ) -> None: ...
-
-    @overload
-    def __init__(
-        self: "column[Ex]",
-        name: Optional[Union[str, int]] = ...,
-        elements: Optional[st.SearchStrategy[Ex]] = ...,
-        dtype: Any = ...,
-        fill: Optional[st.SearchStrategy[Ex]] = ...,
-        unique: bool = ...,  # noqa: FBT001
-    ) -> None: ...
-
-    def __init__(
-        self,
-        name: Optional[Union[str, int]] = None,
-        elements: Optional[st.SearchStrategy[Ex]] = None,
-        dtype: Any = None,
-        fill: Optional[st.SearchStrategy[Ex]] = None,
-        unique: bool = False,  # noqa: FBT001,FBT002
-    ) -> None:
-        super().__init__()
-        self.name = name
-        self.elements = elements
-        self.dtype = dtype
-        self.fill = fill
-        self.unique = unique
-
-
-@overload
-def columns(
-    names_or_number: Union[int, Sequence[str]],
-    *,
-    dtype: Any = ...,
-    elements: None = ...,
-    fill: None = ...,
-    unique: bool = ...,
-) -> List[column[Any]]: ...
-
-
-@overload
-def columns(
-    names_or_number: Union[int, Sequence[str]],
-    *,
-    dtype: Any = ...,
-    elements: Optional[st.SearchStrategy[Ex]] = ...,
-    fill: Optional[st.SearchStrategy[Ex]] = ...,
-    unique: bool = ...,
-) -> List[column[Ex]]: ...
 
 
 def columns(

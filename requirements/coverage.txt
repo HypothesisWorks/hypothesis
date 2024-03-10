@@ -43,7 +43,7 @@ numpy==1.26.4
     #   -r requirements/coverage.in
     #   pandas
     #   pyarrow
-packaging==23.2
+packaging==24.0
     # via
     #   black
     #   pytest
@@ -59,9 +59,9 @@ pluggy==1.4.0
     # via pytest
 ptyprocess==0.7.0
     # via pexpect
-pyarrow==15.0.0
+pyarrow==15.0.1
     # via -r requirements/coverage.in
-pytest==8.1.0
+pytest==8.1.1
     # via
     #   -r requirements/test.in
     #   pytest-xdist
@@ -77,7 +77,7 @@ pytz==2024.1
     #   pandas
 pyyaml==6.0.1
     # via libcst
-redis==5.0.2
+redis==5.0.3
     # via fakeredis
 six==1.16.0
     # via python-dateutil
