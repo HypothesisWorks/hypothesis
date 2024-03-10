@@ -224,8 +224,7 @@ See :issue:`3086` for details, e.g. if you're interested in writing your own bac
 what that should eventually look like, and we're likely to make regular breaking
 changes for some time to come)
 
-Using the prototype :pypi:`crosshair-tool` backend `via this plugin
-<https://github.com/pschanely/hypothesis-crosshair>`__,
+Using the prototype :pypi:`crosshair-tool` backend via :pypi:`hypothesis-crosshair`,
 a solver-backed test might look something like:
 
 .. code-block:: python
@@ -233,7 +232,7 @@ a solver-backed test might look something like:
     from hypothesis import given, settings, strategies as st
 
 
-    @settings(backend="crosshair")
+    @settings(backend="crosshair")  # pip install hypothesis[crosshair]
     @given(st.integers())
     def test_needs_solver(x):
         assert x != 123456789
