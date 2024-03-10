@@ -55,7 +55,7 @@ from hypothesis.utils.conventions import UniqueIdentifier
 if sys.version_info >= (3, 13):
     Ex = TypeVar("Ex", covariant=True, default=Any)
 elif TYPE_CHECKING:
-    from typing_extensions import TypeVar
+    from typing_extensions import TypeVar  # type: ignore[assignment]
 
     Ex = TypeVar("Ex", covariant=True, default=Any)
 else:
