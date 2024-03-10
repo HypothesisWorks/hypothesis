@@ -245,7 +245,7 @@ def test_pandas_column(tmp_path, val, expect):
         textwrap.dedent(
             f"""
             from hypothesis.extra.pandas import column
-            from hypothesis.strategies import floats, text
+            from hypothesis.strategies import *
 
             x = column(name="test", unique=True, dtype=None, {val})
             reveal_type(x)
@@ -253,7 +253,10 @@ def test_pandas_column(tmp_path, val, expect):
         ),
         encoding="utf-8",
     )
-    _write_config(tmp_path, {"typeCheckingMode": "strict"})
+    _write_config(
+        tmp_path,
+        {"typeCheckingMode": "strict", "reportWildcardImportFromLibrary ": "none"},
+    )
     typ = get_pyright_analysed_type(f)
     assert typ == f"column[{expect}]"
 

@@ -171,7 +171,7 @@ def test_pandas_column(tmp_path, val, expect):
         ),
         encoding="utf-8",
     )
-    typ = get_mypy_analysed_type(str(f.realpath()))
+    typ = get_mypy_analysed_type(str(f))
     assert typ == f"column[{expect}]"
 
 

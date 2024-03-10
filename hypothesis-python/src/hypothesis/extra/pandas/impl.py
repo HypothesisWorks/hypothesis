@@ -388,7 +388,7 @@ class column(Generic[Ex]):
         elements: None = ...,
         dtype: Any = ...,
         fill: None = ...,
-        unique: bool = ...,
+        unique: bool = ...,  # noqa: FBT001
     ) -> None: ...
 
     @overload
@@ -398,7 +398,7 @@ class column(Generic[Ex]):
         elements: Optional[st.SearchStrategy[Ex]] = ...,
         dtype: Any = ...,
         fill: Optional[st.SearchStrategy[Ex]] = ...,
-        unique: bool = ...,
+        unique: bool = ...,  # noqa: FBT001
     ) -> None: ...
 
     def __init__(
@@ -407,7 +407,7 @@ class column(Generic[Ex]):
         elements: Optional[st.SearchStrategy[Ex]] = None,
         dtype: Any = None,
         fill: Optional[st.SearchStrategy[Ex]] = None,
-        unique: bool = False,
+        unique: bool = False,  # noqa: FBT001,FBT002
     ) -> None:
         super().__init__()
         self.name = name
