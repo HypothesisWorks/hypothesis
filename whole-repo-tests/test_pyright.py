@@ -173,6 +173,26 @@ def test_numpy_arrays_strategy(tmp_path: Path):
     assert errors == []
 
 
+def test_pandas_column(tmp_path: Path):
+    file = tmp_path / "test.py"
+    file.write_text(
+        textwrap.dedent(
+            """
+            from hypothesis.extra.pandas import column
+            from hypothesis.strategies import floats
+
+            x = column(name="test", elements=floats(), fill=None, unique=True)
+            y = column(name="test", dtype=float, fill=None, unique=True)
+            """
+        ),
+        encoding="utf-8",
+    )
+    _write_config(tmp_path, {"typeCheckingMode": "strict"})
+    errors = _get_pyright_errors(file)
+    print(errors)
+    assert errors == []
+
+
 @pytest.mark.parametrize(
     "val,expect",
     [
