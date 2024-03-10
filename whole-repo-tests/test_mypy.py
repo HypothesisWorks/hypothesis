@@ -33,7 +33,7 @@ def test_mypy_passes_on_hypothesis_strict():
 
 def get_mypy_output(fname, *extra_args):
     return subprocess.run(
-        [tool_path("mypy"), *extra_args, fname],
+        [tool_path("mypy"), *extra_args, str(fname)],
         encoding="utf-8",
         capture_output=True,
         text=True,
@@ -45,7 +45,7 @@ def get_mypy_analysed_type(fname):
     msg = "Success: no issues found in 1 source file"
     if out.endswith(msg):
         out = out[: -len(msg)]
-    assert len(out.splitlines()) == 1
+    assert len(out.splitlines()) == 1, out
     # See https://mypy.readthedocs.io/en/latest/common_issues.html#reveal-type
     # The shell output for `reveal_type([1, 2, 3])` looks like a literal:
     # file.py:2: error: Revealed type is 'builtins.list[builtins.int*]'
@@ -134,54 +134,86 @@ def assert_mypy_errors(fname, expected, python_version=None):
         # Note: keep this in sync with the equivalent test for Pyright
     ],
 )
-def test_revealed_types(tmpdir, val, expect):
+def test_revealed_types(tmp_path, val, expect):
     """Check that Mypy picks up the expected `X` in SearchStrategy[`X`]."""
-    f = tmpdir.join(expect + ".py")
-    f.write(
+    f = tmp_path / "check.py"
+    f.write_text(
         "import numpy as np\n"
         "from hypothesis.extra.numpy import *\n"
         "from hypothesis.strategies import *\n"
-        f"reveal_type({val})\n"  # fmt: skip
+        f"reveal_type({val})\n",
+        encoding="utf-8",
     )
-    typ = get_mypy_analysed_type(str(f.realpath()))
+    typ = get_mypy_analysed_type(f)
     assert typ == f"SearchStrategy[{expect}]"
 
 
-def test_data_object_type_tracing(tmpdir):
-    f = tmpdir.join("check_mypy_on_st_data.py")
-    f.write(
+@pytest.mark.parametrize(
+    "val,expect",
+    [
+        ("elements=None, fill=None", "Any"),
+        ("elements=None, fill=floats()", "float"),
+        ("elements=floats(), fill=None", "float"),
+        ("elements=floats(), fill=text()", "object"),
+        # Note: keep this in sync with the equivalent test for Mypy
+    ],
+)
+def test_pandas_column(tmp_path, val, expect):
+    f = tmp_path / "test.py"
+    f.write_text(
+        textwrap.dedent(
+            f"""
+            from hypothesis.extra.pandas import column
+            from hypothesis.strategies import floats, text
+
+            x = column(name="test", unique=True, dtype=None, {val})
+            reveal_type(x)
+            """
+        ),
+        encoding="utf-8",
+    )
+    typ = get_mypy_analysed_type(f)
+    assert typ == f"hypothesis.extra.pandas.impl.column[{expect}]"
+
+
+def test_data_object_type_tracing(tmp_path):
+    f = tmp_path / "check_mypy_on_st_data.py"
+    f.write_text(
         "from hypothesis.strategies import data, integers\n"
         "d = data().example()\n"
         "s = d.draw(integers())\n"
-        "reveal_type(s)\n"
+        "reveal_type(s)\n",
+        encoding="utf-8",
     )
-    got = get_mypy_analysed_type(str(f.realpath()))
+    got = get_mypy_analysed_type(f)
     assert got == "int"
 
 
-def test_drawfn_type_tracing(tmpdir):
-    f = tmpdir.join("check_mypy_on_st_drawfn.py")
-    f.write(
+def test_drawfn_type_tracing(tmp_path):
+    f = tmp_path / "check_mypy_on_st_drawfn.py"
+    f.write_text(
         "from hypothesis.strategies import DrawFn, text\n"
         "def comp(draw: DrawFn) -> str:\n"
         "    s = draw(text(), 123)\n"
         "    reveal_type(s)\n"
-        "    return s\n"
+        "    return s\n",
+        encoding="utf-8",
     )
-    got = get_mypy_analysed_type(str(f.realpath()))
+    got = get_mypy_analysed_type(f)
     assert got == "str"
 
 
-def test_composite_type_tracing(tmpdir):
-    f = tmpdir.join("check_mypy_on_st_composite.py")
-    f.write(
+def test_composite_type_tracing(tmp_path):
+    f = tmp_path / "check_mypy_on_st_composite.py"
+    f.write_text(
         "from hypothesis.strategies import composite, DrawFn\n"
         "@composite\n"
         "def comp(draw: DrawFn, x: int) -> int:\n"
         "    return x\n"
-        "reveal_type(comp)\n"
+        "reveal_type(comp)\n",
+        encoding="utf-8",
     )
-    got = get_mypy_analysed_type(str(f.realpath()))
+    got = get_mypy_analysed_type(f)
     assert got == "def (x: int) -> SearchStrategy[int]"
 
 
@@ -194,39 +226,42 @@ def test_composite_type_tracing(tmpdir):
         ("like=f, returns=booleans()", "def (x: int) -> bool"),
     ],
 )
-def test_functions_type_tracing(tmpdir, source, expected):
-    f = tmpdir.join("check_mypy_on_st_composite.py")
-    f.write(
+def test_functions_type_tracing(tmp_path, source, expected):
+    f = tmp_path / "check_mypy_on_st_composite.py"
+    f.write_text(
         "from hypothesis.strategies import booleans, functions\n"
         "def f(x: int) -> int: return x\n"
         f"g = functions({source}).example()\n"
-        "reveal_type(g)\n"
+        "reveal_type(g)\n",
+        encoding="utf-8",
     )
-    got = get_mypy_analysed_type(str(f.realpath()))
+    got = get_mypy_analysed_type(f)
     assert got == expected, (got, expected)
 
 
-def test_settings_preserves_type(tmpdir):
-    f = tmpdir.join("check_mypy_on_settings.py")
-    f.write(
+def test_settings_preserves_type(tmp_path):
+    f = tmp_path / "check_mypy_on_settings.py"
+    f.write_text(
         "from hypothesis import settings\n"
         "@settings(max_examples=10)\n"
         "def f(x: int) -> int:\n"
         "    return x\n"
-        "reveal_type(f)\n"
+        "reveal_type(f)\n",
+        encoding="utf-8",
     )
-    got = get_mypy_analysed_type(str(f.realpath()))
+    got = get_mypy_analysed_type(f)
     assert got == "def (x: int) -> int"
 
 
-def test_stateful_bundle_generic_type(tmpdir):
-    f = tmpdir.join("check_mypy_on_stateful_bundle.py")
-    f.write(
+def test_stateful_bundle_generic_type(tmp_path):
+    f = tmp_path / "check_mypy_on_stateful_bundle.py"
+    f.write_text(
         "from hypothesis.stateful import Bundle\n"
         "b: Bundle[int] = Bundle('test')\n"
-        "reveal_type(b.example())\n"
+        "reveal_type(b.example())\n",
+        encoding="utf-8",
     )
-    got = get_mypy_analysed_type(str(f.realpath()))
+    got = get_mypy_analysed_type(f)
     assert got == "int"
 
 
@@ -240,45 +275,48 @@ def test_stateful_bundle_generic_type(tmpdir):
     ],
 )
 @pytest.mark.parametrize("returns", ["int", "MultipleResults[int]"])
-def test_stateful_rule_targets(tmpdir, decorator, target_args, returns):
-    f = tmpdir.join("check_mypy_on_stateful_rule.py")
-    f.write(
+def test_stateful_rule_targets(tmp_path, decorator, target_args, returns):
+    f = tmp_path / "check_mypy_on_stateful_rule.py"
+    f.write_text(
         "from hypothesis.stateful import *\n"
         "b1: Bundle[int] = Bundle('b1')\n"
         "b2: Bundle[int] = Bundle('b2')\n"
         f"@{decorator}({target_args})\n"
         f"def my_rule() -> {returns}:\n"
-        "    ...\n"
+        "    ...\n",
+        encoding="utf-8",
     )
-    assert_mypy_errors(str(f.realpath()), [])
+    assert_mypy_errors(f, [])
 
 
 @pytest.mark.parametrize("decorator", ["rule", "initialize"])
-def test_stateful_rule_no_targets(tmpdir, decorator):
-    f = tmpdir.join("check_mypy_on_stateful_rule.py")
-    f.write(
+def test_stateful_rule_no_targets(tmp_path, decorator):
+    f = tmp_path / "check_mypy_on_stateful_rule.py"
+    f.write_text(
         "from hypothesis.stateful import *\n"
         f"@{decorator}()\n"
         "def my_rule() -> None:\n"
-        "    ...\n"
+        "    ...\n",
+        encoding="utf-8",
     )
-    assert_mypy_errors(str(f.realpath()), [])
+    assert_mypy_errors(f, [])
 
 
 @pytest.mark.parametrize("decorator", ["rule", "initialize"])
-def test_stateful_target_params_mutually_exclusive(tmpdir, decorator):
-    f = tmpdir.join("check_mypy_on_stateful_rule.py")
-    f.write(
+def test_stateful_target_params_mutually_exclusive(tmp_path, decorator):
+    f = tmp_path / "check_mypy_on_stateful_rule.py"
+    f.write_text(
         "from hypothesis.stateful import *\n"
         "b1: Bundle[int] = Bundle('b1')\n"
         f"@{decorator}(target=b1, targets=(b1,))\n"
         "def my_rule() -> int:\n"
-        "    ...\n"
+        "    ...\n",
+        encoding="utf-8",
     )
     # Also outputs "misc" error "Untyped decorator makes function "my_rule"
     # untyped, due to the inability to resolve to an appropriate overloaded
     # variant
-    assert_mypy_errors(str(f.realpath()), [(3, "call-overload"), (3, "misc")])
+    assert_mypy_errors(f, [(3, "call-overload"), (3, "misc")])
 
 
 @pytest.mark.parametrize("decorator", ["rule", "initialize"])
@@ -292,35 +330,37 @@ def test_stateful_target_params_mutually_exclusive(tmpdir, decorator):
     ],
 )
 @pytest.mark.parametrize("returns", ["int", "MultipleResults[int]"])
-def test_stateful_target_params_return_type(tmpdir, decorator, target_args, returns):
-    f = tmpdir.join("check_mypy_on_stateful_rule.py")
-    f.write(
+def test_stateful_target_params_return_type(tmp_path, decorator, target_args, returns):
+    f = tmp_path / "check_mypy_on_stateful_rule.py"
+    f.write_text(
         "from hypothesis.stateful import *\n"
         "b1: Bundle[str] = Bundle('b1')\n"
         "b2: Bundle[str] = Bundle('b2')\n"
         f"@{decorator}({target_args})\n"
         f"def my_rule() -> {returns}:\n"
-        "    ...\n"
+        "    ...\n",
+        encoding="utf-8",
     )
-    assert_mypy_errors(str(f.realpath()), [(4, "arg-type")])
+    assert_mypy_errors(f, [(4, "arg-type")])
 
 
 @pytest.mark.parametrize("decorator", ["rule", "initialize"])
-def test_stateful_no_target_params_return_type(tmpdir, decorator):
-    f = tmpdir.join("check_mypy_on_stateful_rule.py")
-    f.write(
+def test_stateful_no_target_params_return_type(tmp_path, decorator):
+    f = tmp_path / "check_mypy_on_stateful_rule.py"
+    f.write_text(
         "from hypothesis.stateful import *\n"
         f"@{decorator}()\n"
         "def my_rule() -> int:\n"
-        "    ...\n"
+        "    ...\n",
+        encoding="utf-8",
     )
-    assert_mypy_errors(str(f.realpath()), [(2, "arg-type")])
+    assert_mypy_errors(f, [(2, "arg-type")])
 
 
 @pytest.mark.parametrize("decorator", ["rule", "initialize"])
 @pytest.mark.parametrize("use_multi", [True, False])
-def test_stateful_bundle_variance(tmpdir, decorator, use_multi):
-    f = tmpdir.join("check_mypy_on_stateful_bundle.py")
+def test_stateful_bundle_variance(tmp_path, decorator, use_multi):
+    f = tmp_path / "check_mypy_on_stateful_bundle.py"
     if use_multi:
         return_type = "MultipleResults[Dog]"
         return_expr = "multiple(dog, dog)"
@@ -328,7 +368,7 @@ def test_stateful_bundle_variance(tmpdir, decorator, use_multi):
         return_type = "Dog"
         return_expr = "dog"
 
-    f.write(
+    f.write_text(
         "from hypothesis.stateful import *\n"
         "class Animal: pass\n"
         "class Dog(Animal): pass\n"
@@ -336,35 +376,38 @@ def test_stateful_bundle_variance(tmpdir, decorator, use_multi):
         "d: Bundle[Dog] = Bundle('dog')\n"
         f"@{decorator}(target=a, dog=d)\n"
         f"def my_rule(dog: Dog) -> {return_type}:\n"
-        f"    return {return_expr}\n"
+        f"    return {return_expr}\n",
+        encoding="utf-8",
     )
-    assert_mypy_errors(str(f.realpath()), [])
+    assert_mypy_errors(f, [])
 
 
 @pytest.mark.parametrize("decorator", ["rule", "initialize"])
-def test_stateful_multiple_return(tmpdir, decorator):
-    f = tmpdir.join("check_mypy_on_stateful_multiple.py")
-    f.write(
+def test_stateful_multiple_return(tmp_path, decorator):
+    f = tmp_path / "check_mypy_on_stateful_multiple.py"
+    f.write_text(
         "from hypothesis.stateful import *\n"
         "b: Bundle[int] = Bundle('b')\n"
         f"@{decorator}(target=b)\n"
         "def my_rule() -> MultipleResults[int]:\n"
-        "    return multiple(1, 2, 3)\n"
+        "    return multiple(1, 2, 3)\n",
+        encoding="utf-8",
     )
-    assert_mypy_errors(str(f.realpath()), [])
+    assert_mypy_errors(f, [])
 
 
 @pytest.mark.parametrize("decorator", ["rule", "initialize"])
-def test_stateful_multiple_return_invalid(tmpdir, decorator):
-    f = tmpdir.join("check_mypy_on_stateful_multiple.py")
-    f.write(
+def test_stateful_multiple_return_invalid(tmp_path, decorator):
+    f = tmp_path / "check_mypy_on_stateful_multiple.py"
+    f.write_text(
         "from hypothesis.stateful import *\n"
         "b: Bundle[str] = Bundle('b')\n"
         f"@{decorator}(target=b)\n"
         "def my_rule() -> MultipleResults[int]:\n"
-        "    return multiple(1, 2, 3)\n"
+        "    return multiple(1, 2, 3)\n",
+        encoding="utf-8",
     )
-    assert_mypy_errors(str(f.realpath()), [(3, "arg-type")])
+    assert_mypy_errors(f, [(3, "arg-type")])
 
 
 @pytest.mark.parametrize(
@@ -374,28 +417,30 @@ def test_stateful_multiple_return_invalid(tmpdir, decorator):
         ("st.lists({})", "list[int]"),
     ],
 )
-def test_stateful_consumes_type_tracing(tmpdir, wrapper, expected):
-    f = tmpdir.join("check_mypy_on_stateful_rule.py")
+def test_stateful_consumes_type_tracing(tmp_path, wrapper, expected):
+    f = tmp_path / "check_mypy_on_stateful_rule.py"
     wrapped = wrapper.format("consumes(b)")
-    f.write(
+    f.write_text(
         "from hypothesis.stateful import *\n"
         "from hypothesis import strategies as st\n"
         "b: Bundle[int] = Bundle('b')\n"
         f"s = {wrapped}\n"
-        "reveal_type(s.example())\n"
+        "reveal_type(s.example())\n",
+        encoding="utf-8",
     )
-    got = get_mypy_analysed_type(str(f.realpath()))
+    got = get_mypy_analysed_type(f)
     assert got == expected
 
 
-def test_stateful_consumed_bundle_cannot_be_target(tmpdir):
-    f = tmpdir.join("check_mypy_on_stateful_rule.py")
-    f.write(
+def test_stateful_consumed_bundle_cannot_be_target(tmp_path):
+    f = tmp_path / "check_mypy_on_stateful_rule.py"
+    f.write_text(
         "from hypothesis.stateful import *\n"
         "b: Bundle[int] = Bundle('b')\n"
-        "rule(target=consumes(b))\n"
+        "rule(target=consumes(b))\n",
+        encoding="utf-8",
     )
-    assert_mypy_errors(str(f.realpath()), [(3, "call-overload")])
+    assert_mypy_errors(f, [(3, "call-overload")])
 
 
 @pytest.mark.parametrize(
@@ -405,34 +450,36 @@ def test_stateful_consumed_bundle_cannot_be_target(tmpdir):
         ("0", [(2, "arg-type"), (2, "return-value")]),
     ],
 )
-def test_stateful_precondition_requires_predicate(tmpdir, return_val, errors):
-    f = tmpdir.join("check_mypy_on_stateful_precondition.py")
-    f.write(
+def test_stateful_precondition_requires_predicate(tmp_path, return_val, errors):
+    f = tmp_path / "check_mypy_on_stateful_precondition.py"
+    f.write_text(
         "from hypothesis.stateful import *\n"
         f"@precondition(lambda self: {return_val})\n"
-        "def my_rule() -> None: ...\n"
+        "def my_rule() -> None: ...\n",
+        encoding="utf-8",
     )
-    assert_mypy_errors(str(f.realpath()), errors)
+    assert_mypy_errors(f, errors)
 
 
-def test_stateful_precondition_lambda(tmpdir):
-    f = tmpdir.join("check_mypy_on_stateful_precondition.py")
-    f.write(
+def test_stateful_precondition_lambda(tmp_path):
+    f = tmp_path / "check_mypy_on_stateful_precondition.py"
+    f.write_text(
         "from hypothesis.stateful import *\n"
         "class MyMachine(RuleBasedStateMachine):\n"
         "  valid: bool\n"
         "  @precondition(lambda self: self.valid)\n"
         "  @rule()\n"
-        "  def my_rule(self) -> None: ...\n"
+        "  def my_rule(self) -> None: ...\n",
+        encoding="utf-8",
     )
     # Note that this doesn't fully check the code because of the `Any` parameter
     # type. `lambda self: self.invalid` would unfortunately pass too
-    assert_mypy_errors(str(f.realpath()), [])
+    assert_mypy_errors(f, [])
 
 
-def test_stateful_precondition_instance_method(tmpdir):
-    f = tmpdir.join("check_mypy_on_stateful_precondition.py")
-    f.write(
+def test_stateful_precondition_instance_method(tmp_path):
+    f = tmp_path / "check_mypy_on_stateful_precondition.py"
+    f.write_text(
         "from hypothesis.stateful import *\n"
         "class MyMachine(RuleBasedStateMachine):\n"
         "  valid: bool\n"
@@ -440,28 +487,30 @@ def test_stateful_precondition_instance_method(tmpdir):
         "    return self.valid\n"
         "  @precondition(check)\n"
         "  @rule()\n"
-        "  def my_rule(self) -> None: ...\n"
+        "  def my_rule(self) -> None: ...\n",
+        encoding="utf-8",
     )
-    assert_mypy_errors(str(f.realpath()), [])
+    assert_mypy_errors(f, [])
 
 
-def test_stateful_precondition_precond_requires_one_arg(tmpdir):
-    f = tmpdir.join("check_mypy_on_stateful_precondition.py")
-    f.write(
+def test_stateful_precondition_precond_requires_one_arg(tmp_path):
+    f = tmp_path / "check_mypy_on_stateful_precondition.py"
+    f.write_text(
         "from hypothesis.stateful import *\n"
         "precondition(lambda: True)\n"
-        "precondition(lambda a, b: True)\n"
+        "precondition(lambda a, b: True)\n",
+        encoding="utf-8",
     )
     # Additional "Cannot infer type of lambda" errors
     assert_mypy_errors(
-        str(f.realpath()),
+        f,
         [(2, "arg-type"), (2, "misc"), (3, "arg-type"), (3, "misc")],
     )
 
 
-def test_pos_only_args(tmpdir):
-    f = tmpdir.join("check_mypy_on_pos_arg_only_strats.py")
-    f.write(
+def test_pos_only_args(tmp_path):
+    f = tmp_path / "check_mypy_on_pos_arg_only_strats.py"
+    f.write_text(
         textwrap.dedent(
             """
             import hypothesis.strategies as st
@@ -472,10 +521,11 @@ def test_pos_only_args(tmpdir):
             st.one_of(a1=st.integers())
             st.one_of(a1=st.integers(), a2=st.integers())
             """
-        )
+        ),
+        encoding="utf-8",
     )
     assert_mypy_errors(
-        str(f.realpath()),
+        f,
         [
             (4, "call-overload"),
             (5, "call-overload"),
@@ -486,9 +536,9 @@ def test_pos_only_args(tmpdir):
 
 
 @pytest.mark.parametrize("python_version", PYTHON_VERSIONS)
-def test_mypy_passes_on_basic_test(tmpdir, python_version):
-    f = tmpdir.join("check_mypy_on_basic_tests.py")
-    f.write(
+def test_mypy_passes_on_basic_test(tmp_path, python_version):
+    f = tmp_path / "check_mypy_on_basic_tests.py"
+    f.write_text(
         textwrap.dedent(
             """
             import hypothesis
@@ -505,15 +555,16 @@ def test_mypy_passes_on_basic_test(tmpdir, python_version):
             def test_bar(x: str) -> None:
                 assert x == x
             """
-        )
+        ),
+        encoding="utf-8",
     )
-    assert_mypy_errors(str(f.realpath()), [], python_version=python_version)
+    assert_mypy_errors(f, [], python_version=python_version)
 
 
 @pytest.mark.parametrize("python_version", PYTHON_VERSIONS)
-def test_given_only_allows_strategies(tmpdir, python_version):
-    f = tmpdir.join("check_mypy_given_expects_strategies.py")
-    f.write(
+def test_given_only_allows_strategies(tmp_path, python_version):
+    f = tmp_path / "check_mypy_given_expects_strategies.py"
+    f.write_text(
         textwrap.dedent(
             """
             from hypothesis import given
@@ -522,17 +573,16 @@ def test_given_only_allows_strategies(tmpdir, python_version):
             def f():
                 pass
             """
-        )
+        ),
+        encoding="utf-8",
     )
-    assert_mypy_errors(
-        str(f.realpath()), [(4, "call-overload")], python_version=python_version
-    )
+    assert_mypy_errors(f, [(4, "call-overload")], python_version=python_version)
 
 
 @pytest.mark.parametrize("python_version", PYTHON_VERSIONS)
-def test_raises_for_mixed_pos_kwargs_in_given(tmpdir, python_version):
-    f = tmpdir.join("raises_for_mixed_pos_kwargs_in_given.py")
-    f.write(
+def test_raises_for_mixed_pos_kwargs_in_given(tmp_path, python_version):
+    f = tmp_path / "raises_for_mixed_pos_kwargs_in_given.py"
+    f.write_text(
         textwrap.dedent(
             """
             from hypothesis import given
@@ -542,16 +592,15 @@ def test_raises_for_mixed_pos_kwargs_in_given(tmpdir, python_version):
             def test_bar(x):
                 ...
             """
-        )
+        ),
+        encoding="utf-8",
     )
-    assert_mypy_errors(
-        str(f.realpath()), [(5, "call-overload")], python_version=python_version
-    )
+    assert_mypy_errors(f, [(5, "call-overload")], python_version=python_version)
 
 
-def test_register_random_interface(tmpdir):
-    f = tmpdir.join("check_mypy_on_pos_arg_only_strats.py")
-    f.write(
+def test_register_random_interface(tmp_path):
+    f = tmp_path / "check_mypy_on_pos_arg_only_strats.py"
+    f.write_text(
         textwrap.dedent(
             """
             from random import Random
@@ -567,6 +616,7 @@ def test_register_random_interface(tmpdir):
             register_random(MyRandom())
             register_random(None)  # type: ignore[arg-type]
             """
-        )
+        ),
+        encoding="utf-8",
     )
-    assert_mypy_errors(str(f.realpath()), [])
+    assert_mypy_errors(f, [])

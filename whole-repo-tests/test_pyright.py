@@ -229,6 +229,38 @@ def test_revealed_types(tmp_path, val, expect):
     assert typ == f"SearchStrategy[{expect}]"
 
 
+@pytest.mark.parametrize(
+    "val,expect",
+    [
+        ("elements=None, fill=None", "Any"),
+        ("elements=None, fill=floats()", "float"),
+        ("elements=floats(), fill=None", "float"),
+        ("elements=floats(), fill=text()", "float | str"),
+        # Note: keep this in sync with the equivalent test for Mypy
+    ],
+)
+def test_pandas_column(tmp_path, val, expect):
+    f = tmp_path / "test.py"
+    f.write_text(
+        textwrap.dedent(
+            f"""
+            from hypothesis.extra.pandas import column
+            from hypothesis.strategies import *
+
+            x = column(name="test", unique=True, dtype=None, {val})
+            reveal_type(x)
+            """
+        ),
+        encoding="utf-8",
+    )
+    _write_config(
+        tmp_path,
+        {"typeCheckingMode": "strict", "reportWildcardImportFromLibrary ": "none"},
+    )
+    typ = get_pyright_analysed_type(f)
+    assert typ == f"column[{expect}]"
+
+
 def test_pyright_tuples_pos_args_only(tmp_path: Path):
     file = tmp_path / "test.py"
     file.write_text(

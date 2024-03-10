@@ -25,7 +25,7 @@ assert not core.running_under_pytest
 
 
 def test_is_not_running_under_pytest(tmp_path):
-    pyfile = tmp_path.joinpath("test.py")
+    pyfile = tmp_path / "test.py"
     pyfile.write_text(FILE_TO_RUN, encoding="utf-8")
     subprocess.check_call([sys.executable, str(pyfile)])
 

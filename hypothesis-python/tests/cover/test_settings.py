@@ -287,7 +287,7 @@ if __name__ == '__main__':
 
 @skipif_emscripten
 def test_puts_the_database_in_the_home_dir_by_default(tmp_path):
-    script = tmp_path.joinpath("assertlocation.py")
+    script = tmp_path / "assertlocation.py"
     script.write_text(ASSERT_DATABASE_PATH, encoding="utf-8")
     subprocess.check_call([sys.executable, str(script)])
 

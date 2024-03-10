@@ -63,29 +63,23 @@ def test_default_database_is_in_memory():
     assert isinstance(ExampleDatabase(), InMemoryExampleDatabase)
 
 
-def test_default_on_disk_database_is_dir(tmpdir):
+def test_default_on_disk_database_is_dir(tmp_path):
     assert isinstance(
-        ExampleDatabase(tmpdir.join("foo")), DirectoryBasedExampleDatabase
+        ExampleDatabase(tmp_path.joinpath("foo")), DirectoryBasedExampleDatabase
     )
 
 
-def test_selects_directory_based_if_already_directory(tmpdir):
-    path = str(tmpdir.join("hi.sqlite3"))
-    DirectoryBasedExampleDatabase(path).save(b"foo", b"bar")
-    assert isinstance(ExampleDatabase(path), DirectoryBasedExampleDatabase)
-
-
-def test_does_not_error_when_fetching_when_not_exist(tmpdir):
-    db = DirectoryBasedExampleDatabase(tmpdir.join("examples"))
+def test_does_not_error_when_fetching_when_not_exist(tmp_path):
+    db = DirectoryBasedExampleDatabase(tmp_path / "examples")
     db.fetch(b"foo")
 
 
 @pytest.fixture(scope="function", params=["memory", "directory"])
-def exampledatabase(request, tmpdir):
+def exampledatabase(request, tmp_path):
     if request.param == "memory":
         return ExampleDatabase()
     assert request.param == "directory"
-    return DirectoryBasedExampleDatabase(str(tmpdir.join("examples")))
+    return DirectoryBasedExampleDatabase(tmp_path / "examples")
 
 
 def test_can_delete_a_key_that_is_not_present(exampledatabase):
@@ -120,10 +114,9 @@ def test_an_absent_value_is_present_after_it_moves_to_self(exampledatabase):
     assert next(exampledatabase.fetch(b"a")) == b"b"
 
 
-def test_two_directory_databases_can_interact(tmpdir):
-    path = str(tmpdir)
-    db1 = DirectoryBasedExampleDatabase(path)
-    db2 = DirectoryBasedExampleDatabase(path)
+def test_two_directory_databases_can_interact(tmp_path):
+    db1 = DirectoryBasedExampleDatabase(tmp_path)
+    db2 = DirectoryBasedExampleDatabase(tmp_path)
     db1.save(b"foo", b"bar")
     assert list(db2.fetch(b"foo")) == [b"bar"]
     db2.save(b"foo", b"bar")
@@ -131,9 +124,8 @@ def test_two_directory_databases_can_interact(tmpdir):
     assert sorted(db1.fetch(b"foo")) == [b"bar", b"baz"]
 
 
-def test_can_handle_disappearing_files(tmpdir, monkeypatch):
-    path = str(tmpdir)
-    db = DirectoryBasedExampleDatabase(path)
+def test_can_handle_disappearing_files(tmp_path, monkeypatch):
+    db = DirectoryBasedExampleDatabase(tmp_path)
     db.save(b"foo", b"bar")
     base_listdir = os.listdir
     monkeypatch.setattr(
