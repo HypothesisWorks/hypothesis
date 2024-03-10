@@ -45,7 +45,7 @@ def get_mypy_analysed_type(fname):
     msg = "Success: no issues found in 1 source file"
     if out.endswith(msg):
         out = out[: -len(msg)]
-    assert len(out.splitlines()) == 1
+    assert len(out.splitlines()) == 1, out
     # See https://mypy.readthedocs.io/en/latest/common_issues.html#reveal-type
     # The shell output for `reveal_type([1, 2, 3])` looks like a literal:
     # file.py:2: error: Revealed type is 'builtins.list[builtins.int*]'
@@ -154,7 +154,7 @@ def test_revealed_types(tmp_path, val, expect):
         ("elements=None, fill=None", "Any"),
         ("elements=None, fill=floats()", "float"),
         ("elements=floats(), fill=None", "float"),
-        ("elements=floats(), fill=text()", "float | str"),
+        ("elements=floats(), fill=text()", "object"),
         # Note: keep this in sync with the equivalent test for Mypy
     ],
 )
@@ -173,7 +173,7 @@ def test_pandas_column(tmp_path, val, expect):
         encoding="utf-8",
     )
     typ = get_mypy_analysed_type(f)
-    assert typ == f"column[{expect}]"
+    assert typ == f"hypothesis.extra.pandas.impl.column[{expect}]"
 
 
 def test_data_object_type_tracing(tmp_path):
