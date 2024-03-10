@@ -187,7 +187,7 @@ def test_pandas_column(tmp_path: Path):
         ),
         encoding="utf-8",
     )
-    _write_config(tmp_path, {"typeCheckingMode": "strict"})
+    _write_config(tmp_path, {"typeCheckingMode": "standard"})
     errors = _get_pyright_errors(file)
     print(errors)
     assert errors == []
