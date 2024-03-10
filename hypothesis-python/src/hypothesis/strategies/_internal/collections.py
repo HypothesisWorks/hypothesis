@@ -196,9 +196,7 @@ class ListStrategy(SearchStrategy):
         return result
 
     def __repr__(self):
-        return "{}({!r}, min_size={:_}, max_size={:_})".format(
-            self.__class__.__name__, self.element_strategy, self.min_size, self.max_size
-        )
+        return f"{self.__class__.__name__}({self.element_strategy!r}, min_size={self.min_size:_}, max_size={self.max_size:_})"
 
     def filter(self, condition):
         if condition in self._nonempty_filters or is_identity_function(condition):

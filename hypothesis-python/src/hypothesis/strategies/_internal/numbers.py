@@ -177,13 +177,7 @@ class FloatStrategy(SearchStrategy):
         self.smallest_nonzero_magnitude = smallest_nonzero_magnitude
 
     def __repr__(self):
-        return "{}(min_value={}, max_value={}, allow_nan={}, smallest_nonzero_magnitude={})".format(
-            self.__class__.__name__,
-            self.min_value,
-            self.max_value,
-            self.allow_nan,
-            self.smallest_nonzero_magnitude,
-        )
+        return f"{self.__class__.__name__}(min_value={self.min_value}, max_value={self.max_value}, allow_nan={self.allow_nan}, smallest_nonzero_magnitude={self.smallest_nonzero_magnitude})"
 
     def do_draw(self, data):
         return data.draw_float(

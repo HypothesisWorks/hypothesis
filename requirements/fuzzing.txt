@@ -33,7 +33,7 @@ coverage==7.4.3
     # via
     #   -r requirements/coverage.in
     #   hypofuzz
-dash==2.16.0
+dash==2.16.1
     # via hypofuzz
 dash-core-components==2.0.0
     # via dash
@@ -56,11 +56,11 @@ flask==3.0.2
     # via dash
 hypofuzz==24.2.3
     # via -r requirements/fuzzing.in
-hypothesis[cli]==6.98.15
+hypothesis[cli]==6.99.0
     # via hypofuzz
 idna==3.6
     # via requests
-importlib-metadata==7.0.1
+importlib-metadata==7.0.2
     # via dash
 iniconfig==2.0.0
     # via pytest
@@ -116,11 +116,11 @@ psutil==5.9.8
     # via hypofuzz
 ptyprocess==0.7.0
     # via pexpect
-pyarrow==15.0.0
+pyarrow==15.0.1
     # via -r requirements/coverage.in
 pygments==2.17.2
     # via rich
-pytest==8.1.0
+pytest==8.1.1
     # via
     #   -r requirements/test.in
     #   hypofuzz
