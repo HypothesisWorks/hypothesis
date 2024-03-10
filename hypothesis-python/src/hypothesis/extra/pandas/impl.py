@@ -11,7 +11,7 @@
 from collections import OrderedDict, abc
 from copy import copy
 from datetime import datetime, timedelta
-from typing import Any, Generic, List, Optional, Sequence, Set, Union
+from typing import Any, Generic, List, Optional, Sequence, Set, Union, overload
 
 import attr
 import numpy as np
@@ -357,7 +357,7 @@ def series(
     return result()
 
 
-@attr.s(slots=True)
+@attr.s(slots=True, init=False)
 class column(Generic[Ex]):
     """Data object for describing a column in a DataFrame.
 
@@ -381,6 +381,63 @@ class column(Generic[Ex]):
     fill: Optional[st.SearchStrategy[Ex]] = attr.ib(default=None)
     unique: bool = attr.ib(default=False)
 
+    @overload
+    def __init__(
+        self: "column[Any]",
+        name: Optional[Union[str, int]] = ...,
+        elements: None = ...,
+        dtype: Any = ...,
+        fill: None = ...,
+        unique: bool = ...,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self: "column[Ex]",
+        name: Optional[Union[str, int]] = ...,
+        elements: Optional[st.SearchStrategy[Ex]] = ...,
+        dtype: Any = ...,
+        fill: Optional[st.SearchStrategy[Ex]] = ...,
+        unique: bool = ...,
+    ) -> None: ...
+
+    def __init__(
+        self,
+        name: Optional[Union[str, int]] = None,
+        elements: Optional[st.SearchStrategy[Ex]] = None,
+        dtype: Any = None,
+        fill: Optional[st.SearchStrategy[Ex]] = None,
+        unique: bool = False,
+    ) -> None:
+        super().__init__()
+        self.name = name
+        self.elements = elements
+        self.dtype = dtype
+        self.fill = fill
+        self.unique = unique
+
+
+@overload
+def columns(
+    names_or_number: Union[int, Sequence[str]],
+    *,
+    dtype: Any = ...,
+    elements: None = ...,
+    fill: None = ...,
+    unique: bool = ...,
+) -> List[column[Any]]: ...
+
+
+@overload
+def columns(
+    names_or_number: Union[int, Sequence[str]],
+    *,
+    dtype: Any = ...,
+    elements: Optional[st.SearchStrategy[Ex]] = ...,
+    fill: Optional[st.SearchStrategy[Ex]] = ...,
+    unique: bool = ...,
+) -> List[column[Ex]]: ...
+
 
 def columns(
     names_or_number: Union[int, Sequence[str]],
@@ -389,7 +446,7 @@ def columns(
     elements: Optional[st.SearchStrategy[Ex]] = None,
     fill: Optional[st.SearchStrategy[Ex]] = None,
     unique: bool = False,
-) -> List[column]:
+) -> List[column[Ex]]:
     """A convenience function for producing a list of :class:`column` objects
     of the same general shape.
 

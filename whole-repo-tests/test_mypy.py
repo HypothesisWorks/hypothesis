@@ -147,6 +147,34 @@ def test_revealed_types(tmpdir, val, expect):
     assert typ == f"SearchStrategy[{expect}]"
 
 
+@pytest.mark.parametrize(
+    "val,expect",
+    [
+        ("elements=None, fill=None", "Any"),
+        ("elements=None, fill=floats()", "float"),
+        ("elements=floats(), fill=None", "float"),
+        ("elements=floats(), fill=text()", "float | str"),
+        # Note: keep this in sync with the equivalent test for Mypy
+    ],
+)
+def test_pandas_column(tmp_path, val, expect):
+    f = tmp_path / "test.py"
+    f.write_text(
+        textwrap.dedent(
+            f"""
+            from hypothesis.extra.pandas import column
+            from hypothesis.strategies import floats, text
+
+            x = column(name="test", unique=True, dtype=None, {val})
+            reveal_type(x)
+            """
+        ),
+        encoding="utf-8",
+    )
+    typ = get_mypy_analysed_type(str(f.realpath()))
+    assert typ == f"column[{expect}]"
+
+
 def test_data_object_type_tracing(tmpdir):
     f = tmpdir.join("check_mypy_on_st_data.py")
     f.write(
