@@ -14,6 +14,7 @@ from collections import abc, defaultdict
 from functools import lru_cache
 from random import shuffle
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     ClassVar,
@@ -21,6 +22,7 @@ from typing import (
     Generic,
     List,
     Sequence,
+    TypeVar,
     Union,
     cast,
     overload,
@@ -51,11 +53,14 @@ from hypothesis.strategies._internal.utils import defines_strategy
 from hypothesis.utils.conventions import UniqueIdentifier
 
 if sys.version_info >= (3, 13):
-    from typing import TypeVar
-else:
+    Ex = TypeVar("Ex", covariant=True, default=Any)
+elif TYPE_CHECKING:
     from typing_extensions import TypeVar
 
-Ex = TypeVar("Ex", covariant=True, default=Any)
+    Ex = TypeVar("Ex", covariant=True, default=Any)
+else:
+    Ex = TypeVar("Ex", covariant=True)
+
 Ex_Inv = TypeVar("Ex_Inv")
 T = TypeVar("T")
 T3 = TypeVar("T3")
