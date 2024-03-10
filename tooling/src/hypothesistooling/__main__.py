@@ -73,7 +73,7 @@ def codespell(*files):
 
 @task()
 def lint():
-    pip_tool("ruff", ".")
+    pip_tool("ruff", "check", ".")
     codespell(*(f for f in tools.all_files() if not f.endswith("by-domain.txt")))
 
 
@@ -207,7 +207,7 @@ def format():
             o.write("\n")
 
     codespell("--write-changes", *files_to_format, *doc_files_to_format)
-    pip_tool("ruff", "--fix-only", ".")
+    pip_tool("ruff", "check", "--fix-only", ".")
     pip_tool("shed", *files_to_format, *doc_files_to_format)
 
 
