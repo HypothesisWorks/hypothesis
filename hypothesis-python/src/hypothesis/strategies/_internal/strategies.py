@@ -21,7 +21,6 @@ from typing import (
     Generic,
     List,
     Sequence,
-    TypeVar,
     Union,
     cast,
     overload,
@@ -51,7 +50,12 @@ from hypothesis.internal.reflection import (
 from hypothesis.strategies._internal.utils import defines_strategy
 from hypothesis.utils.conventions import UniqueIdentifier
 
-Ex = TypeVar("Ex", covariant=True)
+if sys.version_info >= (3, 13):
+    from typing import TypeVar
+else:
+    from typing_extensions import TypeVar
+
+Ex = TypeVar("Ex", covariant=True, default=Any)
 Ex_Inv = TypeVar("Ex_Inv")
 T = TypeVar("T")
 T3 = TypeVar("T3")
