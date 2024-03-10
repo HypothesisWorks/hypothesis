@@ -346,14 +346,13 @@ def update_vendored_files():
 
     # Always require the most recent version of tzdata - we don't need to worry about
     # pre-releases because tzdata is a 'latest data' package  (unlike pyodide-build).
-    tz_url = "https://pypi.org/pypi/tzdata/json"
-    tzdata_version = requests.get(tz_url).json()["info"]["version"]
+    # Our crosshair extra is research-grade, so we require latest versions there too.
     setup = pathlib.Path(hp.BASE_DIR, "setup.py")
-    new = re.sub(
-        r"tzdata>=(.+?) ",
-        f"tzdata>={tzdata_version} ",
-        setup.read_text(encoding="utf-8"),
-    )
+    new = setup.read_text(encoding="utf-8")
+    for pkgname in ("tzdata", "crosshair-tool", "hypothesis-crosshair"):
+        pkg_url = f"https://pypi.org/pypi/{pkgname}/json"
+        pkg_version = requests.get(pkg_url).json()["info"]["version"]
+        new = re.sub(rf"{pkgname}>=([a-z0-9.]+)", f"{pkgname}>={pkg_version}", new)
     setup.write_text(new, encoding="utf-8")
 
 
