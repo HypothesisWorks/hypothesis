@@ -8,8 +8,11 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import pytest
+
 from hypothesis import assume, example, given, strategies as st
-from hypothesis.internal.conjecture.data import IRNode
+from hypothesis.errors import StopTest
+from hypothesis.internal.conjecture.data import ConjectureData, IRNode, Status
 from hypothesis.internal.conjecture.datatree import (
     MAX_CHILDREN_EFFECTIVELY_INFINITE,
     all_children,
@@ -19,6 +22,11 @@ from hypothesis.internal.floats import SMALLEST_SUBNORMAL, next_down, next_up
 from hypothesis.internal.intervalsets import IntervalSet
 
 from tests.conjecture.common import fresh_data, ir_types_and_kwargs
+
+
+def draw_value(ir_type, kwargs):
+    data = fresh_data()
+    return getattr(data, f"draw_{ir_type}")(**kwargs)
 
 
 # we max out at 128 bit integers in the *unbounded* case, but someone may
@@ -196,3 +204,47 @@ def test_ir_nodes(random):
         ),
     ]
     assert data.examples.ir_tree_nodes == expected_tree_nodes
+
+
+@st.composite
+def ir_nodes(draw):
+    (ir_type, kwargs) = draw(ir_types_and_kwargs())
+    value = draw_value(ir_type, kwargs)
+
+    return IRNode(
+        ir_type=ir_type, value=value, kwargs=kwargs, was_forced=draw(st.booleans())
+    )
+
+
+@given(ir_nodes())
+def test_copy_ir_node(node):
+    assert node == node
+
+    assume(not node.was_forced)
+    new_value = draw_value(node.ir_type, node.kwargs)
+    # if we drew the same value as before, the node should still be equal.
+    assert (node.copy(with_value=new_value) == node) is (new_value == node.value)
+
+
+def test_data_with_empty_ir_tree_is_overrun():
+    data = ConjectureData.for_ir_tree([])
+    with pytest.raises(StopTest):
+        data.draw_integer()
+
+    assert data.status is Status.OVERRUN
+
+
+@given(st.data())
+def test_data_with_misaligned_ir_tree_is_overrun(data):
+    node = data.draw(ir_nodes())
+    (ir_type, kwargs) = data.draw(ir_types_and_kwargs())
+
+    data = ConjectureData.for_ir_tree([node])
+    draw_func = getattr(data, f"draw_{ir_type}")
+    # a misalignment occurs when we try and draw a node with a different ir
+    # type than we have in our prefix, or with different kwargs.
+    assume(ir_type != node.ir_type or kwargs != node.kwargs)
+    with pytest.raises(StopTest):
+        draw_func(**kwargs)
+
+    assert data.status is Status.OVERRUN
