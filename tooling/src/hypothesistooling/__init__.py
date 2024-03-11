@@ -37,7 +37,7 @@ ROOT = Path(
     .decode("ascii")
     .strip()
 )
-REPO_TESTS = ROOT / "whole-repo-tests"
+REPO_TESTS = ROOT / "whole_repo_tests"
 
 
 def hash_for_name(name):

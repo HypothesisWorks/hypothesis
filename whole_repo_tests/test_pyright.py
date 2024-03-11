@@ -23,6 +23,8 @@ import pytest
 from hypothesistooling.projects.hypothesispython import HYPOTHESIS_PYTHON, PYTHON_SRC
 from hypothesistooling.scripts import pip_tool, tool_path
 
+from .revealed_types import NUMPY_REVEALED_TYPES, REVEALED_TYPES
+
 PYTHON_VERSIONS = ["3.7", "3.8", "3.9", "3.10", "3.11"]
 
 
@@ -176,10 +178,7 @@ def test_numpy_arrays_strategy(tmp_path: Path):
 @pytest.mark.parametrize(
     "val,expect",
     [
-        ("integers()", "int"),
-        ("text()", "str"),
-        ("integers().map(str)", "str"),
-        ("booleans().filter(bool)", "bool"),
+        *REVEALED_TYPES,  # shared with Mypy
         ("lists(none())", "List[None]"),
         ("dictionaries(integers(), datetimes())", "Dict[int, datetime]"),
         ("data()", "DataObject"),
@@ -196,21 +195,6 @@ def test_numpy_arrays_strategy(tmp_path: Path):
             "one_of(integers(), text(), none(), binary(), builds(list), builds(dict))",
             "Any",
         ),
-        ("tuples()", "Tuple[()]"),
-        ("tuples(integers())", "Tuple[int]"),
-        ("tuples(integers(), text())", "Tuple[int, str]"),
-        (
-            "tuples(integers(), text(), integers(), text(), integers())",
-            "Tuple[int, str, int, str, int]",
-        ),
-        (
-            "tuples(text(), text(), text(), text(), text(), text())",
-            "Tuple[Any, ...]",
-        ),
-        (
-            'arrays(dtype=np.dtype("int32"), shape=1)',
-            "ndarray[Any, dtype[signedinteger[_32Bit]]]",
-        ),
         # Note: keep this in sync with the equivalent test for Mypy
     ],
 )
@@ -218,10 +202,30 @@ def test_revealed_types(tmp_path, val, expect):
     """Check that Pyright picks up the expected `X` in SearchStrategy[`X`]."""
     f = tmp_path / (expect + ".py")
     f.write_text(
-        "import numpy as np\n"
-        "from hypothesis.extra.numpy import *\n"
-        "from hypothesis.strategies import *\n"
-        f"reveal_type({val})\n",  # fmt: skip
+        textwrap.dedent(
+            f"""
+            from hypothesis.strategies import *
+            reveal_type({val})
+            """
+        ),
+        encoding="utf-8",
+    )
+    _write_config(tmp_path, {"reportWildcardImportFromLibrary ": "none"})
+    typ = get_pyright_analysed_type(f)
+    assert typ == f"SearchStrategy[{expect}]"
+
+
+@pytest.mark.parametrize("val,expect", NUMPY_REVEALED_TYPES)
+def test_numpy_revealed_types(tmp_path, val, expect):
+    f = tmp_path / (expect + ".py")
+    f.write_text(
+        textwrap.dedent(
+            f"""
+            import numpy as np
+            from hypothesis.extra.numpy import *
+            reveal_type({val})
+            """
+        ),
         encoding="utf-8",
     )
     _write_config(tmp_path, {"reportWildcardImportFromLibrary ": "none"})

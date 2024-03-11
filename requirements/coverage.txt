@@ -26,7 +26,7 @@ exceptiongroup==1.2.0 ; python_version < "3.11"
     #   pytest
 execnet==2.0.2
     # via pytest-xdist
-fakeredis==2.21.1
+fakeredis==2.21.2
     # via -r requirements/coverage.in
 iniconfig==2.0.0
     # via pytest

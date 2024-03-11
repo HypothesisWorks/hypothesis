@@ -8,6 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import uuid
+
 import pytest
 from fakeredis import FakeRedis
 
@@ -46,10 +48,8 @@ def test_all_methods():
 class DatabaseComparison(RuleBasedStateMachine):
     def __init__(self):
         super().__init__()
-        self.dbs = [
-            InMemoryExampleDatabase(),
-            RedisExampleDatabase(FakeRedis()),
-        ]
+        server = FakeRedis(host=uuid.uuid4().hex)  # Different (fake) server each time
+        self.dbs = [InMemoryExampleDatabase(), RedisExampleDatabase(server)]
 
     keys = Bundle("keys")
     values = Bundle("values")

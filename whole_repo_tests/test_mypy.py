@@ -16,6 +16,8 @@ import pytest
 from hypothesistooling.projects.hypothesispython import PYTHON_SRC
 from hypothesistooling.scripts import pip_tool, tool_path
 
+from .revealed_types import NUMPY_REVEALED_TYPES, REVEALED_TYPES
+
 PYTHON_VERSIONS = ["3.8", "3.9", "3.10", "3.11"]
 
 
@@ -61,6 +63,7 @@ def get_mypy_analysed_type(fname):
         )
         .replace("numpy._typing.", "")
         .replace("numpy.", "")
+        .replace("tuple", "Tuple")
     )
 
 
@@ -96,12 +99,8 @@ def assert_mypy_errors(fname, expected, python_version=None):
 @pytest.mark.parametrize(
     "val,expect",
     [
-        ("integers()", "int"),
-        ("text()", "str"),
-        ("integers().map(str)", "str"),
-        ("booleans().filter(bool)", "bool"),
+        *REVEALED_TYPES,  # shared with Pyright
         ("lists(none())", "list[None]"),
-        ("dictionaries(integers(), datetimes())", "dict[int, datetime.datetime]"),
         ("data()", "hypothesis.strategies._internal.core.DataObject"),
         ("none() | integers()", "Union[None, int]"),
         ("recursive(integers(), lists)", "Union[list[Any], int]"),
@@ -116,21 +115,6 @@ def assert_mypy_errors(fname, expected, python_version=None):
             "one_of(integers(), text(), none(), binary(), builds(list), builds(dict))",
             "Any",
         ),
-        ("tuples()", "tuple[()]"),
-        ("tuples(integers())", "tuple[int]"),
-        ("tuples(integers(), text())", "tuple[int, str]"),
-        (
-            "tuples(integers(), text(), integers(), text(), integers())",
-            "tuple[int, str, int, str, int]",
-        ),
-        (
-            "tuples(text(), text(), text(), text(), text(), text())",
-            "tuple[Any, ...]",
-        ),
-        (
-            'arrays(dtype=np.dtype("int32"), shape=1)',
-            "ndarray[Any, dtype[signedinteger[_32Bit]]]",
-        ),
         # Note: keep this in sync with the equivalent test for Pyright
     ],
 )
@@ -138,10 +122,29 @@ def test_revealed_types(tmp_path, val, expect):
     """Check that Mypy picks up the expected `X` in SearchStrategy[`X`]."""
     f = tmp_path / "check.py"
     f.write_text(
-        "import numpy as np\n"
-        "from hypothesis.extra.numpy import *\n"
-        "from hypothesis.strategies import *\n"
-        f"reveal_type({val})\n",
+        textwrap.dedent(
+            f"""
+            from hypothesis.strategies import *
+            reveal_type({val})
+            """
+        ),
+        encoding="utf-8",
+    )
+    typ = get_mypy_analysed_type(f)
+    assert typ == f"SearchStrategy[{expect}]"
+
+
+@pytest.mark.parametrize("val,expect", NUMPY_REVEALED_TYPES)
+def test_numpy_revealed_types(tmp_path, val, expect):
+    f = tmp_path / "check.py"
+    f.write_text(
+        textwrap.dedent(
+            f"""
+            import numpy as np
+            from hypothesis.extra.numpy import *
+            reveal_type({val})
+            """
+        ),
         encoding="utf-8",
     )
     typ = get_mypy_analysed_type(f)
