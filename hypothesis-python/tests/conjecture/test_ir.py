@@ -8,6 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+from math import isnan
+
 import pytest
 
 from hypothesis import assume, example, given, strategies as st
@@ -222,7 +224,8 @@ def test_copy_ir_node(node):
 
     assume(not node.was_forced)
     new_value = draw_value(node.ir_type, node.kwargs)
-    # if we drew the same value as before, the node should still be equal.
+    # if we drew the same value as before, the node should still be equal (unless nan)
+    assume(node.ir_type != "float" or not (isnan(new_value) or isnan(node.value)))
     assert (node.copy(with_value=new_value) == node) is (new_value == node.value)
 
 
