@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.99.3:
+
+-------------------
+6.99.3 - 2024-03-11
+-------------------
+
+This patch further improves the type annotations in :mod:`hypothesis.extra.numpy`.
+
 .. _v6.99.2:
 
 -------------------
