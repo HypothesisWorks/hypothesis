@@ -58,7 +58,7 @@ if sys.version_info >= (3, 13, 0, "final"):
 elif TYPE_CHECKING:
     from typing_extensions import TypeVar  # type: ignore[assignment]
 
-    Ex = TypeVar("Ex", covariant=True, default=Any)
+    Ex = TypeVar("Ex", covariant=True, default=Any)  # type: ignore[call-arg,misc]
 else:
     Ex = TypeVar("Ex", covariant=True)
 
