@@ -141,7 +141,7 @@ def test_numpy_revealed_types(tmp_path, val, expect):
         textwrap.dedent(
             f"""
             import numpy as np
-            "from hypothesis.extra.numpy import *
+            from hypothesis.extra.numpy import *
             reveal_type({val})
             """
         ),
