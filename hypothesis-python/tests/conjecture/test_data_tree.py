@@ -519,16 +519,13 @@ def test_can_generate_hard_values():
         data.draw_integer(min_value, max_value)
         data.freeze()
 
-    @run_to_buffer
-    def expected_buf(data):
-        data.draw_integer(min_value, max_value, forced=max_value)
-        data.mark_interesting()
-
     # this test doubles as conjecture coverage for using our child cache, so
     # ensure we don't miss that logic by getting lucky and drawing the correct
     # value once or twice.
     for _ in range(20):
-        assert tree.generate_novel_prefix(Random()) == expected_buf
+        prefix = tree.generate_novel_prefix(Random())
+        data = ConjectureData.for_buffer(prefix)
+        assert data.draw_integer(min_value, max_value) == 1000
 
 
 def test_can_generate_hard_floats():
