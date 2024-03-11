@@ -23,7 +23,7 @@ import pytest
 from hypothesistooling.projects.hypothesispython import HYPOTHESIS_PYTHON, PYTHON_SRC
 from hypothesistooling.scripts import pip_tool, tool_path
 
-from .revealed_types import NUMPY_REVEALED_TYPES
+from .revealed_types import NUMPY_REVEALED_TYPES, REVEALED_TYPES
 
 PYTHON_VERSIONS = ["3.7", "3.8", "3.9", "3.10", "3.11"]
 
@@ -178,10 +178,7 @@ def test_numpy_arrays_strategy(tmp_path: Path):
 @pytest.mark.parametrize(
     "val,expect",
     [
-        ("integers()", "int"),
-        ("text()", "str"),
-        ("integers().map(str)", "str"),
-        ("booleans().filter(bool)", "bool"),
+        *REVEALED_TYPES,  # shared with Mypy
         ("lists(none())", "List[None]"),
         ("dictionaries(integers(), datetimes())", "Dict[int, datetime]"),
         ("data()", "DataObject"),
@@ -197,17 +194,6 @@ def test_numpy_arrays_strategy(tmp_path: Path):
         (
             "one_of(integers(), text(), none(), binary(), builds(list), builds(dict))",
             "Any",
-        ),
-        ("tuples()", "Tuple[()]"),
-        ("tuples(integers())", "Tuple[int]"),
-        ("tuples(integers(), text())", "Tuple[int, str]"),
-        (
-            "tuples(integers(), text(), integers(), text(), integers())",
-            "Tuple[int, str, int, str, int]",
-        ),
-        (
-            "tuples(text(), text(), text(), text(), text(), text())",
-            "Tuple[Any, ...]",
         ),
         # Note: keep this in sync with the equivalent test for Mypy
     ],

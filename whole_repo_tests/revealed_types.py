@@ -8,6 +8,24 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+REVEALED_TYPES = [
+    ("integers()", "int"),
+    ("text()", "str"),
+    ("integers().map(str)", "str"),
+    ("booleans().filter(bool)", "bool"),
+    ("tuples()", "Tuple[()]"),
+    ("tuples(integers())", "Tuple[int]"),
+    ("tuples(integers(), text())", "Tuple[int, str]"),
+    (
+        "tuples(integers(), text(), integers(), text(), integers())",
+        "Tuple[int, str, int, str, int]",
+    ),
+    (
+        "tuples(text(), text(), text(), text(), text(), text())",
+        "Tuple[Any, ...]",
+    ),
+]
+
 NUMPY_REVEALED_TYPES = [
     (
         'arrays(dtype=np.dtype("int32"), shape=1)',

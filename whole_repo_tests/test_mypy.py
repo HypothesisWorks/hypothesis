@@ -16,7 +16,7 @@ import pytest
 from hypothesistooling.projects.hypothesispython import PYTHON_SRC
 from hypothesistooling.scripts import pip_tool, tool_path
 
-from .revealed_types import NUMPY_REVEALED_TYPES
+from .revealed_types import NUMPY_REVEALED_TYPES, REVEALED_TYPES
 
 PYTHON_VERSIONS = ["3.8", "3.9", "3.10", "3.11"]
 
@@ -99,12 +99,8 @@ def assert_mypy_errors(fname, expected, python_version=None):
 @pytest.mark.parametrize(
     "val,expect",
     [
-        ("integers()", "int"),
-        ("text()", "str"),
-        ("integers().map(str)", "str"),
-        ("booleans().filter(bool)", "bool"),
+        *REVEALED_TYPES,  # shared with Pyright
         ("lists(none())", "list[None]"),
-        ("dictionaries(integers(), datetimes())", "dict[int, datetime.datetime]"),
         ("data()", "hypothesis.strategies._internal.core.DataObject"),
         ("none() | integers()", "Union[None, int]"),
         ("recursive(integers(), lists)", "Union[list[Any], int]"),
@@ -118,17 +114,6 @@ def assert_mypy_errors(fname, expected, python_version=None):
         (
             "one_of(integers(), text(), none(), binary(), builds(list), builds(dict))",
             "Any",
-        ),
-        ("tuples()", "tuple[()]"),
-        ("tuples(integers())", "tuple[int]"),
-        ("tuples(integers(), text())", "tuple[int, str]"),
-        (
-            "tuples(integers(), text(), integers(), text(), integers())",
-            "tuple[int, str, int, str, int]",
-        ),
-        (
-            "tuples(text(), text(), text(), text(), text(), text())",
-            "tuple[Any, ...]",
         ),
         # Note: keep this in sync with the equivalent test for Pyright
     ],
