@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.99.4:
+
+-------------------
+6.99.4 - 2024-03-11
+-------------------
+
+Fix regression caused by using :pep:`696` default in TypeVar with Python 3.13.0a3.
+
 .. _v6.99.3:
 
 -------------------
