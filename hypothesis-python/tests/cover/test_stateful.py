@@ -1288,3 +1288,13 @@ state.fail_fast(a1=a_5, a2=a_4, a3=a_3, a4=a_2, a5=a_1, a6=a_0, b1=b_2, b2=b_1, 
 state.teardown()
 """.strip()
     )
+
+
+class LotsOfEntropyPerStepMachine(RuleBasedStateMachine):
+    # Regression tests for https://github.com/HypothesisWorks/hypothesis/issues/3618
+    @rule(data=binary(min_size=512, max_size=512))
+    def rule1(self, data):
+        assert data
+
+
+TestLotsOfEntropyPerStepMachine = LotsOfEntropyPerStepMachine.TestCase
