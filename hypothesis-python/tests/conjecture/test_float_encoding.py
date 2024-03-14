@@ -123,14 +123,16 @@ def test_reverse_bits_table_has_right_elements():
     assert sorted(flt.REVERSE_BITS_TABLE) == list(range(256))
 
 
-def float_runner(start, condition):
+def float_runner(start, condition, *, kwargs=None):
+    kwargs = {} if kwargs is None else kwargs
+
     @run_to_buffer
     def buf(data):
-        data.draw_float(forced=start)
+        data.draw_float(forced=start, **kwargs)
         data.mark_interesting()
 
     def test_function(data):
-        f = data.draw_float()
+        f = data.draw_float(**kwargs)
         if condition(f):
             data.mark_interesting()
 
@@ -140,12 +142,14 @@ def float_runner(start, condition):
     return runner
 
 
-def minimal_from(start, condition):
-    runner = float_runner(start, condition)
+def minimal_from(start, condition, *, kwargs=None):
+    kwargs = {} if kwargs is None else kwargs
+
+    runner = float_runner(start, condition, kwargs=kwargs)
     runner.shrink_interesting_examples()
     (v,) = runner.interesting_examples.values()
     data = ConjectureData.for_buffer(v.buffer)
-    result = data.draw_float()
+    result = data.draw_float(**kwargs)
     assert condition(result)
     return result
 
@@ -211,3 +215,10 @@ def test_converts_floats_to_integer_form(f):
     runner.shrink_interesting_examples()
     (v,) = runner.interesting_examples.values()
     assert v.buffer[:-1] < buf
+
+
+def test_reject_out_of_bounds_floats_while_shrinking():
+    # coverage test for rejecting out of bounds floats while shrinking
+    kwargs = {"min_value": 103.0}
+    g = minimal_from(103.1, lambda x: x >= 100, kwargs=kwargs)
+    assert g == 103.0

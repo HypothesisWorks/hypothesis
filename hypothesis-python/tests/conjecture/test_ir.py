@@ -8,8 +8,18 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import math
+
+import pytest
+
 from hypothesis import assume, example, given, strategies as st
-from hypothesis.internal.conjecture.data import IRNode
+from hypothesis.errors import StopTest
+from hypothesis.internal.conjecture.data import (
+    ConjectureData,
+    IRNode,
+    Status,
+    ir_value_permitted,
+)
 from hypothesis.internal.conjecture.datatree import (
     MAX_CHILDREN_EFFECTIVELY_INFINITE,
     all_children,
@@ -19,6 +29,11 @@ from hypothesis.internal.floats import SMALLEST_SUBNORMAL, next_down, next_up
 from hypothesis.internal.intervalsets import IntervalSet
 
 from tests.conjecture.common import fresh_data, ir_types_and_kwargs
+
+
+def draw_value(ir_type, kwargs):
+    data = fresh_data()
+    return getattr(data, f"draw_{ir_type}")(**kwargs)
 
 
 # we max out at 128 bit integers in the *unbounded* case, but someone may
@@ -33,63 +48,136 @@ def test_compute_max_children_is_positive(ir_type_and_kwargs):
     assert compute_max_children(ir_type, kwargs) >= 0
 
 
-def test_compute_max_children_integer_zero_weight():
-    kwargs = {"min_value": 1, "max_value": 2, "weights": [0, 1]}
-    assert compute_max_children("integer", kwargs) == 1
-
-    kwargs = {"min_value": 1, "max_value": 4, "weights": [0, 0.5, 0, 0.5]}
-    assert compute_max_children("integer", kwargs) == 2
-
-
-def test_compute_max_children_string_unbounded_max_size():
-    kwargs = {
-        "min_size": 0,
-        "max_size": None,
-        "intervals": IntervalSet.from_string("a"),
-    }
-    assert compute_max_children("string", kwargs) == MAX_CHILDREN_EFFECTIVELY_INFINITE
-
-
-def test_compute_max_children_string_empty_intervals():
-    kwargs = {"min_size": 0, "max_size": 100, "intervals": IntervalSet.from_string("")}
-    # only possibility is the empty string
-    assert compute_max_children("string", kwargs) == 1
-
-
-def test_compute_max_children_string_reasonable_size():
-    kwargs = {"min_size": 8, "max_size": 8, "intervals": IntervalSet.from_string("abc")}
-    # 3 possibilities for each character, 8 characters, 3 ** 8 possibilities.
-    assert compute_max_children("string", kwargs) == 3**8
-
-    kwargs = {
-        "min_size": 2,
-        "max_size": 8,
-        "intervals": IntervalSet.from_string("abcd"),
-    }
-    assert compute_max_children("string", kwargs) == sum(4**k for k in range(2, 8 + 1))
-
-
-def test_compute_max_children_empty_string():
-    kwargs = {"min_size": 0, "max_size": 0, "intervals": IntervalSet.from_string("abc")}
-    assert compute_max_children("string", kwargs) == 1
-
-
-def test_compute_max_children_string_very_large():
-    kwargs = {
-        "min_size": 0,
-        "max_size": 10_000,
-        "intervals": IntervalSet.from_string("abcdefg"),
-    }
-    assert compute_max_children("string", kwargs) == MAX_CHILDREN_EFFECTIVELY_INFINITE
-
-
-def test_compute_max_children_boolean():
-    assert compute_max_children("boolean", {"p": 0.0}) == 1
-    assert compute_max_children("boolean", {"p": 1.0}) == 1
-
-    assert compute_max_children("boolean", {"p": 0.5}) == 2
-    assert compute_max_children("boolean", {"p": 0.001}) == 2
-    assert compute_max_children("boolean", {"p": 0.999}) == 2
+@pytest.mark.parametrize(
+    "ir_type, kwargs, count_children",
+    [
+        ("integer", {"min_value": 1, "max_value": 2, "weights": [0, 1]}, 1),
+        ("integer", {"min_value": 1, "max_value": 4, "weights": [0, 0.5, 0, 0.5]}, 2),
+        # only possibility is the empty string
+        (
+            "string",
+            {"min_size": 0, "max_size": 100, "intervals": IntervalSet.from_string("")},
+            1,
+        ),
+        (
+            "string",
+            {"min_size": 0, "max_size": 0, "intervals": IntervalSet.from_string("abc")},
+            1,
+        ),
+        # 3 possibilities for each character, 8 characters, 3 ** 8 possibilities.
+        (
+            "string",
+            {"min_size": 8, "max_size": 8, "intervals": IntervalSet.from_string("abc")},
+            3**8,
+        ),
+        (
+            "string",
+            {
+                "min_size": 2,
+                "max_size": 8,
+                "intervals": IntervalSet.from_string("abcd"),
+            },
+            sum(4**k for k in range(2, 8 + 1)),
+        ),
+        (
+            "string",
+            {
+                "min_size": 0,
+                "max_size": None,
+                "intervals": IntervalSet.from_string("a"),
+            },
+            MAX_CHILDREN_EFFECTIVELY_INFINITE,
+        ),
+        (
+            "string",
+            {
+                "min_size": 0,
+                "max_size": 10_000,
+                "intervals": IntervalSet.from_string("abcdefg"),
+            },
+            MAX_CHILDREN_EFFECTIVELY_INFINITE,
+        ),
+        ("boolean", {"p": 0.0}, 1),
+        ("boolean", {"p": 1.0}, 1),
+        ("boolean", {"p": 0.5}, 2),
+        ("boolean", {"p": 0.001}, 2),
+        ("boolean", {"p": 0.999}, 2),
+        (
+            "float",
+            {
+                "min_value": 0.0,
+                "max_value": 0.0,
+                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+            },
+            1,
+        ),
+        (
+            "float",
+            {
+                "min_value": -0.0,
+                "max_value": -0.0,
+                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+            },
+            1,
+        ),
+        (
+            "float",
+            {
+                "min_value": -0.0,
+                "max_value": 0.0,
+                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+            },
+            2,
+        ),
+        (
+            "float",
+            {
+                "min_value": next_down(-0.0),
+                "max_value": next_up(0.0),
+                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+            },
+            4,
+        ),
+        (
+            "float",
+            {
+                "min_value": next_down(next_down(-0.0)),
+                "max_value": next_up(next_up(0.0)),
+                "smallest_nonzero_magnitude": next_up(SMALLEST_SUBNORMAL),
+            },
+            4,
+        ),
+        (
+            "float",
+            {
+                "min_value": -math.inf,
+                "max_value": math.inf,
+                "smallest_nonzero_magnitude": next_down(math.inf),
+            },
+            6,
+        ),
+        (
+            "float",
+            {
+                "min_value": 1,
+                "max_value": 10,
+                "smallest_nonzero_magnitude": 11.0,
+            },
+            0,
+        ),
+        (
+            "float",
+            {
+                "min_value": -3,
+                "max_value": -2,
+                "smallest_nonzero_magnitude": 4.0,
+            },
+            0,
+        ),
+    ],
+)
+def test_compute_max_children(ir_type, kwargs, count_children):
+    assert compute_max_children(ir_type, kwargs) == count_children
 
 
 @given(st.text(min_size=1, max_size=1), st.integers(0, 100))
@@ -117,10 +205,51 @@ def test_draw_string_single_interval_with_equal_bounds(s, n):
     )
 )
 # all combinations of float signs
-@example(("float", {"min_value": next_down(-0.0), "max_value": -0.0}))
-@example(("float", {"min_value": next_down(-0.0), "max_value": next_up(0.0)}))
-@example(("float", {"min_value": 0.0, "max_value": next_up(0.0)}))
-@example(("integer", {"min_value": 1, "max_value": 2, "weights": [0, 1]}))
+@example(
+    (
+        "float",
+        {
+            "min_value": next_down(-0.0),
+            "max_value": -0.0,
+            "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+        },
+    )
+)
+@example(
+    (
+        "float",
+        {
+            "min_value": next_down(-0.0),
+            "max_value": next_up(0.0),
+            "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+        },
+    )
+)
+@example(
+    (
+        "float",
+        {
+            "min_value": 0.0,
+            "max_value": next_up(0.0),
+            "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+        },
+    )
+)
+# using a smallest_nonzero_magnitude which happens to filter out everything
+@example(
+    ("float", {"min_value": 1.0, "max_value": 2.0, "smallest_nonzero_magnitude": 3.0})
+)
+@example(
+    (
+        "integer",
+        {
+            "min_value": 1,
+            "max_value": 2,
+            "weights": [0, 1],
+            "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+        },
+    )
+)
 @given(ir_types_and_kwargs())
 def test_compute_max_children_and_all_children_agree(ir_type_and_kwargs):
     (ir_type, kwargs) = ir_type_and_kwargs
@@ -196,3 +325,164 @@ def test_ir_nodes(random):
         ),
     ]
     assert data.examples.ir_tree_nodes == expected_tree_nodes
+
+
+@st.composite
+def ir_nodes(draw):
+    (ir_type, kwargs) = draw(ir_types_and_kwargs())
+    value = draw_value(ir_type, kwargs)
+
+    return IRNode(
+        ir_type=ir_type, value=value, kwargs=kwargs, was_forced=draw(st.booleans())
+    )
+
+
+@given(ir_nodes())
+def test_copy_ir_node(node):
+    assert node == node
+
+    assume(not node.was_forced)
+    new_value = draw_value(node.ir_type, node.kwargs)
+    # if we drew the same value as before, the node should still be equal (unless nan)
+    assume(
+        node.ir_type != "float" or not (math.isnan(new_value) or math.isnan(node.value))
+    )
+    assert (node.copy(with_value=new_value) == node) is (new_value == node.value)
+
+
+def test_data_with_empty_ir_tree_is_overrun():
+    data = ConjectureData.for_ir_tree([])
+    with pytest.raises(StopTest):
+        data.draw_integer()
+
+    assert data.status is Status.OVERRUN
+
+
+@given(st.data())
+def test_data_with_misaligned_ir_tree_is_invalid(data):
+    node = data.draw(ir_nodes())
+    (ir_type, kwargs) = data.draw(ir_types_and_kwargs())
+
+    data = ConjectureData.for_ir_tree([node])
+    draw_func = getattr(data, f"draw_{ir_type}")
+    # a misalignment occurs when we try and draw a node with a different ir
+    # type, or with the same ir type but a non-compatible value.
+    assume(
+        ir_type != node.ir_type
+        or not ir_value_permitted(node.value, node.ir_type, kwargs)
+    )
+
+    with pytest.raises(StopTest):
+        draw_func(**kwargs)
+
+    assert data.status is Status.INVALID
+
+
+@given(ir_types_and_kwargs())
+def test_all_children_are_permitted_values(ir_type_and_kwargs):
+    (ir_type, kwargs) = ir_type_and_kwargs
+    max_children = compute_max_children(ir_type, kwargs)
+
+    cap = min(100_000, MAX_CHILDREN_EFFECTIVELY_INFINITE)
+    assume(max_children < cap)
+
+    # test that all_children -> ir_value_permitted (but not necessarily the converse.)
+    for value in all_children(ir_type, kwargs):
+        assert ir_value_permitted(value, ir_type, kwargs), value
+
+
+@pytest.mark.parametrize(
+    "value, ir_type, kwargs, permitted",
+    [
+        (0, "integer", {"min_value": 1, "max_value": 2}, False),
+        (2, "integer", {"min_value": 0, "max_value": 1}, False),
+        (10, "integer", {"min_value": 0, "max_value": 20}, True),
+        (
+            math.nan,
+            "float",
+            {"min_value": 0.0, "max_value": 0.0, "allow_nan": True},
+            True,
+        ),
+        (
+            math.nan,
+            "float",
+            {"min_value": 0.0, "max_value": 0.0, "allow_nan": False},
+            False,
+        ),
+        (
+            2.0,
+            "float",
+            {
+                "min_value": 1.0,
+                "max_value": 3.0,
+                "allow_nan": True,
+                "smallest_nonzero_magnitude": 2.5,
+            },
+            False,
+        ),
+        (
+            -2.0,
+            "float",
+            {
+                "min_value": -3.0,
+                "max_value": -1.0,
+                "allow_nan": True,
+                "smallest_nonzero_magnitude": 2.5,
+            },
+            False,
+        ),
+        (
+            1.0,
+            "float",
+            {
+                "min_value": 1.0,
+                "max_value": 1.0,
+                "allow_nan": True,
+                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+            },
+            True,
+        ),
+        (
+            "abcd",
+            "string",
+            {
+                "min_size": 10,
+                "max_size": 20,
+                "intervals": IntervalSet.from_string("abcd"),
+            },
+            False,
+        ),
+        (
+            "abcd",
+            "string",
+            {
+                "min_size": 1,
+                "max_size": 3,
+                "intervals": IntervalSet.from_string("abcd"),
+            },
+            False,
+        ),
+        (
+            "abcd",
+            "string",
+            {"min_size": 1, "max_size": 10, "intervals": IntervalSet.from_string("e")},
+            False,
+        ),
+        (
+            "e",
+            "string",
+            {"min_size": 1, "max_size": 10, "intervals": IntervalSet.from_string("e")},
+            True,
+        ),
+        (b"a", "bytes", {"size": 2}, False),
+        (b"aa", "bytes", {"size": 2}, True),
+        (True, "boolean", {"p": 0}, False),
+        (False, "boolean", {"p": 0}, True),
+        (True, "boolean", {"p": 1}, True),
+        (False, "boolean", {"p": 1}, False),
+        (True, "boolean", {"p": 0.5}, True),
+        (False, "boolean", {"p": 0.5}, True),
+    ],
+)
+def test_ir_value_permitted(value, ir_type, kwargs, permitted):
+    assert ir_value_permitted(value, ir_type, kwargs) == permitted

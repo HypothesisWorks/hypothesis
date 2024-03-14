@@ -19,7 +19,7 @@ from hypothesis.internal.conjecture.data import ConjectureData, Status
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE, ConjectureRunner
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.entropy import deterministic_PRNG
-from hypothesis.internal.floats import sign_aware_lte
+from hypothesis.internal.floats import SMALLEST_SUBNORMAL, sign_aware_lte
 from hypothesis.strategies._internal.strings import OneCharStringStrategy, TextStrategy
 
 from tests.common.strategies import intervals
@@ -220,6 +220,8 @@ def draw_float_kwargs(
     pivot = forced if (use_forced and not math.isnan(forced)) else None
     min_value = -math.inf
     max_value = math.inf
+    smallest_nonzero_magnitude = SMALLEST_SUBNORMAL
+    allow_nan = True if (use_forced and math.isnan(forced)) else draw(st.booleans())
 
     if use_min_value:
         min_value = draw(st.floats(max_value=pivot, allow_nan=False))
@@ -231,7 +233,31 @@ def draw_float_kwargs(
             min_val = pivot if sign_aware_lte(min_value, pivot) else min_value
         max_value = draw(st.floats(min_value=min_val, allow_nan=False))
 
-    return {"min_value": min_value, "max_value": max_value, "forced": forced}
+    largest_magnitude = max(abs(min_value), abs(max_value))
+    # can't force something smaller than our smallest magnitude.
+    if pivot is not None and pivot != 0.0:
+        largest_magnitude = min(largest_magnitude, pivot)
+
+    # avoid drawing from an empty range
+    if largest_magnitude > 0:
+        smallest_nonzero_magnitude = draw(
+            st.floats(
+                min_value=0,
+                # smallest_nonzero_magnitude breaks internal clamper invariants if
+                # it is allowed to be larger than the magnitude of {min, max}_value.
+                max_value=largest_magnitude,
+                allow_nan=False,
+                exclude_min=True,
+                allow_infinity=False,
+            )
+        )
+    return {
+        "min_value": min_value,
+        "max_value": max_value,
+        "forced": forced,
+        "allow_nan": allow_nan,
+        "smallest_nonzero_magnitude": smallest_nonzero_magnitude,
+    }
 
 
 @st.composite
