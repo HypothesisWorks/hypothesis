@@ -14,7 +14,12 @@ import pytest
 
 from hypothesis import assume, example, given, strategies as st
 from hypothesis.errors import StopTest
-from hypothesis.internal.conjecture.data import ConjectureData, IRNode, Status
+from hypothesis.internal.conjecture.data import (
+    ConjectureData,
+    IRNode,
+    Status,
+    ir_value_permitted,
+)
 from hypothesis.internal.conjecture.datatree import (
     MAX_CHILDREN_EFFECTIVELY_INFINITE,
     all_children,
@@ -361,9 +366,123 @@ def test_data_with_misaligned_ir_tree_is_overrun(data):
     data = ConjectureData.for_ir_tree([node])
     draw_func = getattr(data, f"draw_{ir_type}")
     # a misalignment occurs when we try and draw a node with a different ir
-    # type than we have in our prefix, or with different kwargs.
-    assume(ir_type != node.ir_type or kwargs != node.kwargs)
+    # type, or with the same ir type but a non-compatible value.
+    assume(
+        ir_type != node.ir_type
+        or not ir_value_permitted(node.value, node.ir_type, kwargs)
+    )
+
     with pytest.raises(StopTest):
         draw_func(**kwargs)
 
     assert data.status is Status.OVERRUN
+
+
+@given(ir_types_and_kwargs())
+def test_all_children_are_permitted_values(ir_type_and_kwargs):
+    (ir_type, kwargs) = ir_type_and_kwargs
+    max_children = compute_max_children(ir_type, kwargs)
+
+    cap = min(100_000, MAX_CHILDREN_EFFECTIVELY_INFINITE)
+    assume(max_children < cap)
+
+    # test that all_children -> ir_value_permitted (but not necessarily the converse.)
+    for value in all_children(ir_type, kwargs):
+        assert ir_value_permitted(value, ir_type, kwargs), value
+
+
+@pytest.mark.parametrize(
+    "value, ir_type, kwargs, permitted",
+    [
+        (0, "integer", {"min_value": 1, "max_value": 2}, False),
+        (2, "integer", {"min_value": 0, "max_value": 1}, False),
+        (10, "integer", {"min_value": 0, "max_value": 20}, True),
+        (
+            math.nan,
+            "float",
+            {"min_value": 0.0, "max_value": 0.0, "allow_nan": True},
+            True,
+        ),
+        (
+            math.nan,
+            "float",
+            {"min_value": 0.0, "max_value": 0.0, "allow_nan": False},
+            False,
+        ),
+        (
+            2.0,
+            "float",
+            {
+                "min_value": 1.0,
+                "max_value": 3.0,
+                "allow_nan": True,
+                "smallest_nonzero_magnitude": 2.5,
+            },
+            False,
+        ),
+        (
+            -2.0,
+            "float",
+            {
+                "min_value": -3.0,
+                "max_value": -1.0,
+                "allow_nan": True,
+                "smallest_nonzero_magnitude": 2.5,
+            },
+            False,
+        ),
+        (
+            1.0,
+            "float",
+            {
+                "min_value": 1.0,
+                "max_value": 1.0,
+                "allow_nan": True,
+                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+            },
+            True,
+        ),
+        (
+            "abcd",
+            "string",
+            {
+                "min_size": 10,
+                "max_size": 20,
+                "intervals": IntervalSet.from_string("abcd"),
+            },
+            False,
+        ),
+        (
+            "abcd",
+            "string",
+            {
+                "min_size": 1,
+                "max_size": 3,
+                "intervals": IntervalSet.from_string("abcd"),
+            },
+            False,
+        ),
+        (
+            "abcd",
+            "string",
+            {"min_size": 1, "max_size": 10, "intervals": IntervalSet.from_string("e")},
+            False,
+        ),
+        (
+            "e",
+            "string",
+            {"min_size": 1, "max_size": 10, "intervals": IntervalSet.from_string("e")},
+            True,
+        ),
+        (b"a", "bytes", {"size": 2}, False),
+        (b"aa", "bytes", {"size": 2}, True),
+        (True, "boolean", {"p": 0}, False),
+        (False, "boolean", {"p": 0}, True),
+        (True, "boolean", {"p": 1}, True),
+        (False, "boolean", {"p": 1}, False),
+        (True, "boolean", {"p": 0.5}, True),
+        (False, "boolean", {"p": 0.5}, True),
+    ],
+)
+def test_ir_value_permitted(value, ir_type, kwargs, permitted):
+    assert ir_value_permitted(value, ir_type, kwargs) == permitted

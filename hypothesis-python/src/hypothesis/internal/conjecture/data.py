@@ -932,6 +932,39 @@ class IRNode:
         )
 
 
+def ir_value_permitted(value, ir_type, kwargs):
+    if ir_type == "integer":
+        if kwargs["min_value"] is not None and value < kwargs["min_value"]:
+            return False
+        if kwargs["max_value"] is not None and value > kwargs["max_value"]:
+            return False
+
+        return True
+    elif ir_type == "float":
+        if math.isnan(value):
+            return kwargs["allow_nan"]
+        return (
+            sign_aware_lte(kwargs["min_value"], value)
+            and sign_aware_lte(value, kwargs["max_value"])
+        ) and not (0 < abs(value) < kwargs["smallest_nonzero_magnitude"])
+    elif ir_type == "string":
+        if len(value) < kwargs["min_size"]:
+            return False
+        if kwargs["max_size"] is not None and len(value) > kwargs["max_size"]:
+            return False
+        return all(ord(c) in kwargs["intervals"] for c in value)
+    elif ir_type == "bytes":
+        return len(value) == kwargs["size"]
+    elif ir_type == "boolean":
+        if value and kwargs["p"] <= 2 ** (-64):
+            return False
+        if not value and kwargs["p"] >= (1 - 2 ** (-64)):
+            return False
+        return True
+
+    raise NotImplementedError(f"unhandled type {type(value)} of ir value {value}")
+
+
 @dataclass_transform()
 @attr.s(slots=True)
 class ConjectureResult:
@@ -2065,14 +2098,20 @@ class ConjectureData:
             self.mark_overrun()
 
         node = self.ir_tree_nodes.pop(0)
-        if node.ir_type != ir_type or node.kwargs != kwargs:
-            # Unlike buffers, not every ir tree is a valid choice sequence. If
-            # we want to maintain determinism we don't have many options here
-            # beyond giving up when a modified tree becomes misaligned.
-            #
-            # For what it's worth, misaligned buffers — albeit valid — are rather
-            # unlikely to be *useful* buffers, so this isn't an enormous
-            # downgrade.
+        # Unlike buffers, not every ir tree is a valid choice sequence. We
+        # don't have many options here beyond giving up when a modified tree
+        # becomes misaligned.
+        #
+        # For what it's worth, misaligned buffers — albeit valid — are rather
+        # unlikely to be *useful* buffers, so this isn't an enormous
+        # downgrade.
+        if node.ir_type != ir_type:
+            self.mark_overrun()
+
+        # if a node has different kwargs (and so is misaligned), but has a value
+        # that is allowed by the expected kwargs, then we can coerce this node
+        # into an aligned one by using its value. It's unclear how useful this is.
+        if not ir_value_permitted(node.value, node.ir_type, kwargs):
             self.mark_overrun()
 
         return node

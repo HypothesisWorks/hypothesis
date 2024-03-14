@@ -11,10 +11,10 @@
 import math
 import sys
 
+from hypothesis.internal.conjecture.data import ir_value_permitted
 from hypothesis.internal.conjecture.floats import float_to_lex
 from hypothesis.internal.conjecture.shrinking.common import Shrinker
 from hypothesis.internal.conjecture.shrinking.integer import Integer
-from hypothesis.internal.floats import sign_aware_lte
 
 MAX_PRECISE_INTEGER = 2**53
 
@@ -28,9 +28,7 @@ class Float(Shrinker):
     def consider(self, value):
         min_value = self.node.kwargs["min_value"]
         max_value = self.node.kwargs["max_value"]
-        if not math.isnan(value) and not (
-            sign_aware_lte(min_value, value) and sign_aware_lte(value, max_value)
-        ):
+        if not ir_value_permitted(value, "float", self.node.kwargs):
             self.debug(
                 f"rejecting {value} as out of bounds for [{min_value}, {max_value}]"
             )
