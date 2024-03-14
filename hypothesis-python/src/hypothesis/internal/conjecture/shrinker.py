@@ -1214,13 +1214,13 @@ class Shrinker:
         """
 
         node = chooser.choose(
-            self.nodes, lambda node: node.ir_type == "float" and not node.was_forced
+            self.nodes,
+            lambda node: node.ir_type == "float" and not node.was_forced
+            # avoid shrinking integer-valued floats. In our current ordering, these
+            # are already simpler than all other floats, so it's better to shrink
+            # them in other passes.
+            and not is_simple(node.value),
         )
-        # avoid shrinking integer-valued floats. In our current ordering, these
-        # are already simpler than all other floats, so it's better to shrink
-        # them in other passes.
-        if is_simple(node.value):
-            return
 
         i = self.nodes.index(node)
         # the Float shrinker was only built to handle positive floats. We'll

@@ -26,12 +26,8 @@ class Float(Shrinker):
         self.node = node
 
     def consider(self, value):
-        min_value = self.node.kwargs["min_value"]
-        max_value = self.node.kwargs["max_value"]
         if not ir_value_permitted(value, "float", self.node.kwargs):
-            self.debug(
-                f"rejecting {value} as out of bounds for [{min_value}, {max_value}]"
-            )
+            self.debug(f"rejecting {value} as disallowed for {self.node.kwargs}")
             return False
         return super().consider(value)
 

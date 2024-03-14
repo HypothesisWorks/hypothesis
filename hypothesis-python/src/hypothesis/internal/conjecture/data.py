@@ -956,10 +956,10 @@ def ir_value_permitted(value, ir_type, kwargs):
     elif ir_type == "bytes":
         return len(value) == kwargs["size"]
     elif ir_type == "boolean":
-        if value and kwargs["p"] <= 2 ** (-64):
-            return False
-        if not value and kwargs["p"] >= (1 - 2 ** (-64)):
-            return False
+        if kwargs["p"] <= 2 ** (-64):
+            return value is False
+        if kwargs["p"] >= (1 - 2 ** (-64)):
+            return value is True
         return True
 
     raise NotImplementedError(f"unhandled type {type(value)} of ir value {value}")
@@ -2098,21 +2098,25 @@ class ConjectureData:
             self.mark_overrun()
 
         node = self.ir_tree_nodes.pop(0)
-        # Unlike buffers, not every ir tree is a valid choice sequence. We
-        # don't have many options here beyond giving up when a modified tree
-        # becomes misaligned.
+        # If we're trying to draw a different ir type at the same location, then
+        # this ir tree has become badly misaligned. We don't have many good/simple
+        # options here for realigning beyond giving up.
         #
-        # For what it's worth, misaligned buffers — albeit valid — are rather
-        # unlikely to be *useful* buffers, so this isn't an enormous
-        # downgrade.
+        # This is more of an issue for ir nodes while shrinking than it was for
+        # buffers: misaligned buffers are still usually valid, just interpreted
+        # differently. This would be somewhat like drawing a random value for
+        # the new ir type here. For what it's worth, misaligned buffers are
+        # rather unlikely to be *useful* buffers, so giving up isn't a big downgrade.
+        # (in fact, it is possible that giving up early here results in more time
+        # for useful shrinks to run).
         if node.ir_type != ir_type:
-            self.mark_overrun()
+            self.mark_invalid()
 
         # if a node has different kwargs (and so is misaligned), but has a value
         # that is allowed by the expected kwargs, then we can coerce this node
         # into an aligned one by using its value. It's unclear how useful this is.
         if not ir_value_permitted(node.value, node.ir_type, kwargs):
-            self.mark_overrun()
+            self.mark_invalid()
 
         return node
 

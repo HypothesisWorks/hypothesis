@@ -359,7 +359,7 @@ def test_data_with_empty_ir_tree_is_overrun():
 
 
 @given(st.data())
-def test_data_with_misaligned_ir_tree_is_overrun(data):
+def test_data_with_misaligned_ir_tree_is_invalid(data):
     node = data.draw(ir_nodes())
     (ir_type, kwargs) = data.draw(ir_types_and_kwargs())
 
@@ -375,7 +375,7 @@ def test_data_with_misaligned_ir_tree_is_overrun(data):
     with pytest.raises(StopTest):
         draw_func(**kwargs)
 
-    assert data.status is Status.OVERRUN
+    assert data.status is Status.INVALID
 
 
 @given(ir_types_and_kwargs())
