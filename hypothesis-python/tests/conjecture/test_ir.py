@@ -8,7 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from math import isnan
+import math
 
 import pytest
 
@@ -43,63 +43,136 @@ def test_compute_max_children_is_positive(ir_type_and_kwargs):
     assert compute_max_children(ir_type, kwargs) >= 0
 
 
-def test_compute_max_children_integer_zero_weight():
-    kwargs = {"min_value": 1, "max_value": 2, "weights": [0, 1]}
-    assert compute_max_children("integer", kwargs) == 1
-
-    kwargs = {"min_value": 1, "max_value": 4, "weights": [0, 0.5, 0, 0.5]}
-    assert compute_max_children("integer", kwargs) == 2
-
-
-def test_compute_max_children_string_unbounded_max_size():
-    kwargs = {
-        "min_size": 0,
-        "max_size": None,
-        "intervals": IntervalSet.from_string("a"),
-    }
-    assert compute_max_children("string", kwargs) == MAX_CHILDREN_EFFECTIVELY_INFINITE
-
-
-def test_compute_max_children_string_empty_intervals():
-    kwargs = {"min_size": 0, "max_size": 100, "intervals": IntervalSet.from_string("")}
-    # only possibility is the empty string
-    assert compute_max_children("string", kwargs) == 1
-
-
-def test_compute_max_children_string_reasonable_size():
-    kwargs = {"min_size": 8, "max_size": 8, "intervals": IntervalSet.from_string("abc")}
-    # 3 possibilities for each character, 8 characters, 3 ** 8 possibilities.
-    assert compute_max_children("string", kwargs) == 3**8
-
-    kwargs = {
-        "min_size": 2,
-        "max_size": 8,
-        "intervals": IntervalSet.from_string("abcd"),
-    }
-    assert compute_max_children("string", kwargs) == sum(4**k for k in range(2, 8 + 1))
-
-
-def test_compute_max_children_empty_string():
-    kwargs = {"min_size": 0, "max_size": 0, "intervals": IntervalSet.from_string("abc")}
-    assert compute_max_children("string", kwargs) == 1
-
-
-def test_compute_max_children_string_very_large():
-    kwargs = {
-        "min_size": 0,
-        "max_size": 10_000,
-        "intervals": IntervalSet.from_string("abcdefg"),
-    }
-    assert compute_max_children("string", kwargs) == MAX_CHILDREN_EFFECTIVELY_INFINITE
-
-
-def test_compute_max_children_boolean():
-    assert compute_max_children("boolean", {"p": 0.0}) == 1
-    assert compute_max_children("boolean", {"p": 1.0}) == 1
-
-    assert compute_max_children("boolean", {"p": 0.5}) == 2
-    assert compute_max_children("boolean", {"p": 0.001}) == 2
-    assert compute_max_children("boolean", {"p": 0.999}) == 2
+@pytest.mark.parametrize(
+    "ir_type, kwargs, count_children",
+    [
+        ("integer", {"min_value": 1, "max_value": 2, "weights": [0, 1]}, 1),
+        ("integer", {"min_value": 1, "max_value": 4, "weights": [0, 0.5, 0, 0.5]}, 2),
+        # only possibility is the empty string
+        (
+            "string",
+            {"min_size": 0, "max_size": 100, "intervals": IntervalSet.from_string("")},
+            1,
+        ),
+        (
+            "string",
+            {"min_size": 0, "max_size": 0, "intervals": IntervalSet.from_string("abc")},
+            1,
+        ),
+        # 3 possibilities for each character, 8 characters, 3 ** 8 possibilities.
+        (
+            "string",
+            {"min_size": 8, "max_size": 8, "intervals": IntervalSet.from_string("abc")},
+            3**8,
+        ),
+        (
+            "string",
+            {
+                "min_size": 2,
+                "max_size": 8,
+                "intervals": IntervalSet.from_string("abcd"),
+            },
+            sum(4**k for k in range(2, 8 + 1)),
+        ),
+        (
+            "string",
+            {
+                "min_size": 0,
+                "max_size": None,
+                "intervals": IntervalSet.from_string("a"),
+            },
+            MAX_CHILDREN_EFFECTIVELY_INFINITE,
+        ),
+        (
+            "string",
+            {
+                "min_size": 0,
+                "max_size": 10_000,
+                "intervals": IntervalSet.from_string("abcdefg"),
+            },
+            MAX_CHILDREN_EFFECTIVELY_INFINITE,
+        ),
+        ("boolean", {"p": 0.0}, 1),
+        ("boolean", {"p": 1.0}, 1),
+        ("boolean", {"p": 0.5}, 2),
+        ("boolean", {"p": 0.001}, 2),
+        ("boolean", {"p": 0.999}, 2),
+        (
+            "float",
+            {
+                "min_value": 0.0,
+                "max_value": 0.0,
+                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+            },
+            1,
+        ),
+        (
+            "float",
+            {
+                "min_value": -0.0,
+                "max_value": -0.0,
+                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+            },
+            1,
+        ),
+        (
+            "float",
+            {
+                "min_value": -0.0,
+                "max_value": 0.0,
+                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+            },
+            2,
+        ),
+        (
+            "float",
+            {
+                "min_value": next_down(-0.0),
+                "max_value": next_up(0.0),
+                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+            },
+            4,
+        ),
+        (
+            "float",
+            {
+                "min_value": next_down(next_down(-0.0)),
+                "max_value": next_up(next_up(0.0)),
+                "smallest_nonzero_magnitude": next_up(SMALLEST_SUBNORMAL),
+            },
+            4,
+        ),
+        (
+            "float",
+            {
+                "min_value": -math.inf,
+                "max_value": math.inf,
+                "smallest_nonzero_magnitude": next_down(math.inf),
+            },
+            6,
+        ),
+        (
+            "float",
+            {
+                "min_value": 1,
+                "max_value": 10,
+                "smallest_nonzero_magnitude": 11.0,
+            },
+            0,
+        ),
+        (
+            "float",
+            {
+                "min_value": -3,
+                "max_value": -2,
+                "smallest_nonzero_magnitude": 4.0,
+            },
+            0,
+        ),
+    ],
+)
+def test_compute_max_children(ir_type, kwargs, count_children):
+    assert compute_max_children(ir_type, kwargs) == count_children
 
 
 @given(st.text(min_size=1, max_size=1), st.integers(0, 100))
@@ -127,10 +200,51 @@ def test_draw_string_single_interval_with_equal_bounds(s, n):
     )
 )
 # all combinations of float signs
-@example(("float", {"min_value": next_down(-0.0), "max_value": -0.0}))
-@example(("float", {"min_value": next_down(-0.0), "max_value": next_up(0.0)}))
-@example(("float", {"min_value": 0.0, "max_value": next_up(0.0)}))
-@example(("integer", {"min_value": 1, "max_value": 2, "weights": [0, 1]}))
+@example(
+    (
+        "float",
+        {
+            "min_value": next_down(-0.0),
+            "max_value": -0.0,
+            "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+        },
+    )
+)
+@example(
+    (
+        "float",
+        {
+            "min_value": next_down(-0.0),
+            "max_value": next_up(0.0),
+            "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+        },
+    )
+)
+@example(
+    (
+        "float",
+        {
+            "min_value": 0.0,
+            "max_value": next_up(0.0),
+            "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+        },
+    )
+)
+# using a smallest_nonzero_magnitude which happens to filter out everything
+@example(
+    ("float", {"min_value": 1.0, "max_value": 2.0, "smallest_nonzero_magnitude": 3.0})
+)
+@example(
+    (
+        "integer",
+        {
+            "min_value": 1,
+            "max_value": 2,
+            "weights": [0, 1],
+            "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+        },
+    )
+)
 @given(ir_types_and_kwargs())
 def test_compute_max_children_and_all_children_agree(ir_type_and_kwargs):
     (ir_type, kwargs) = ir_type_and_kwargs
@@ -225,7 +339,9 @@ def test_copy_ir_node(node):
     assume(not node.was_forced)
     new_value = draw_value(node.ir_type, node.kwargs)
     # if we drew the same value as before, the node should still be equal (unless nan)
-    assume(node.ir_type != "float" or not (isnan(new_value) or isnan(node.value)))
+    assume(
+        node.ir_type != "float" or not (math.isnan(new_value) or math.isnan(node.value))
+    )
     assert (node.copy(with_value=new_value) == node) is (new_value == node.value)
 
 
