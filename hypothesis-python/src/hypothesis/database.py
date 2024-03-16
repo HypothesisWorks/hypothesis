@@ -40,7 +40,7 @@ __all__ = [
 
 def _usable_dir(path: Path) -> bool:
     """
-    Returns True iff the desired path can be used as database path because
+    Returns True if the desired path can be used as database path because
     either the directory exists and can be used, or its root directory can
     be used and we can make the directory as needed.
     """
@@ -48,6 +48,23 @@ def _usable_dir(path: Path) -> bool:
         # Loop terminates because the root dir ('/' on unix) always exists.
         path = path.parent
     return path.is_dir() and os.access(path, os.R_OK | os.W_OK | os.X_OK)
+
+
+def _usable_explicit_dir(path: os.PathLike) -> bool:
+    """
+    Returns True if the desired path can be used as database path because
+    either the directory exists and can be used, or its parent directory can
+    be used and we can make the directory as needed.
+    """
+    path = Path(path)
+    try:
+        if path.exists():
+            return path.is_dir() and os.access(path, os.R_OK | os.W_OK | os.X_OK)
+        return path.parent.is_dir() and os.access(
+            path.parent, os.R_OK | os.W_OK | os.X_OK
+        )
+    except PermissionError:
+        return False
 
 
 def _db_for_path(path=None):
@@ -70,6 +87,8 @@ def _db_for_path(path=None):
             )
             return InMemoryExampleDatabase()
     if path in (None, ":memory:"):
+        return InMemoryExampleDatabase()
+    if not _usable_explicit_dir(path):  # pragma: no cover
         return InMemoryExampleDatabase()
     return DirectoryBasedExampleDatabase(path)
 

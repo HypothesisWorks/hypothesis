@@ -164,3 +164,15 @@ def test_ga_database_not_created_when_not_used(tmp_path_factory):
     assert not path.exists()
     ReadOnlyDatabase(GitHubArtifactDatabase("mock", "mock", path=path))
     assert not path.exists()
+
+
+def test_database_directory_inaccessible(tmp_path):
+    tmp_path.chmod(0o000)
+    database = ExampleDatabase(tmp_path)
+    database.save(b"fizz", b"buzz")
+
+
+def test_database_directory_dont_exist_and_parent_directory_inaccessible(tmp_path):
+    tmp_path.chmod(0o000)
+    database = ExampleDatabase(tmp_path / "foo")
+    database.save(b"fizz", b"buzz")
