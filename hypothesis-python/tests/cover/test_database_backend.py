@@ -426,3 +426,15 @@ def test_gadb_coverage():
     state = GitHubArtifactMocks()
     state.save(b"key", b"value")
     state.values_agree(b"key")
+
+
+def test_database_directory_inaccessible(tmp_path):
+    tmp_path.chmod(0o000)
+    database = ExampleDatabase(tmp_path)
+    database.save(b"fizz", b"buzz")
+
+
+def test_database_directory_dont_exist_and_parent_directory_inaccessible(tmp_path):
+    tmp_path.chmod(0o000)
+    database = ExampleDatabase(tmp_path / "foo")
+    database.save(b"fizz", b"buzz")

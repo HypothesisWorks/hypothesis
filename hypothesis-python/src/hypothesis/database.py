@@ -38,31 +38,18 @@ __all__ = [
 ]
 
 
-def _usable_dir(path: Path) -> bool:
+def _usable_dir(path: os.PathLike) -> bool:
     """
     Returns True if the desired path can be used as database path because
     either the directory exists and can be used, or its root directory can
     be used and we can make the directory as needed.
     """
-    while not path.exists():
-        # Loop terminates because the root dir ('/' on unix) always exists.
-        path = path.parent
-    return path.is_dir() and os.access(path, os.R_OK | os.W_OK | os.X_OK)
-
-
-def _usable_explicit_dir(path: os.PathLike) -> bool:
-    """
-    Returns True if the desired path can be used as database path because
-    either the directory exists and can be used, or its parent directory can
-    be used and we can make the directory as needed.
-    """
     path = Path(path)
     try:
-        if path.exists():
-            return path.is_dir() and os.access(path, os.R_OK | os.W_OK | os.X_OK)
-        return path.parent.is_dir() and os.access(
-            path.parent, os.R_OK | os.W_OK | os.X_OK
-        )
+        while not path.exists():
+            # Loop terminates because the root dir ('/' on unix) always exists.
+            path = path.parent
+        return path.is_dir() and os.access(path, os.R_OK | os.W_OK | os.X_OK)
     except PermissionError:
         return False
 
@@ -77,7 +64,7 @@ def _db_for_path(path=None):
             )
 
         path = storage_directory("examples", intent_to_write=False)
-        if not _usable_dir(path):  # pragma: no cover
+        if not _usable_dir(path):
             warnings.warn(
                 "The database setting is not configured, and the default "
                 "location is unusable - falling back to an in-memory "
@@ -86,9 +73,8 @@ def _db_for_path(path=None):
                 stacklevel=3,
             )
             return InMemoryExampleDatabase()
-    if path in (None, ":memory:"):
-        return InMemoryExampleDatabase()
-    if not _usable_explicit_dir(path):  # pragma: no cover
+        return DirectoryBasedExampleDatabase(path)
+    if path in (None, ":memory:") or not _usable_dir(path):
         return InMemoryExampleDatabase()
     return DirectoryBasedExampleDatabase(path)
 
