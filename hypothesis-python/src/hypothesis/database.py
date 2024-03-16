@@ -71,7 +71,7 @@ def _db_for_path(path=None):
             return InMemoryExampleDatabase()
     if path in (None, ":memory:"):
         return InMemoryExampleDatabase()
-    return DirectoryBasedExampleDatabase(str(path))
+    return DirectoryBasedExampleDatabase(path)
 
 
 class _EDMeta(abc.ABCMeta):
