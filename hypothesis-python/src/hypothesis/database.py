@@ -64,7 +64,7 @@ def _db_for_path(path=None):
             )
 
         path = storage_directory("examples", intent_to_write=False)
-        if not _usable_dir(path):
+        if not _usable_dir(path):  # pragma: no cover
             warnings.warn(
                 "The database setting is not configured, and the default "
                 "location is unusable - falling back to an in-memory "
