@@ -910,7 +910,7 @@ class DataObserver:
         pass
 
 
-@attr.s(slots=True)
+@attr.s(slots=True, repr=False)
 class IRNode:
     ir_type: IRTypeName = attr.ib()
     value: IRType = attr.ib()
@@ -927,6 +927,11 @@ class IRNode:
             kwargs=self.kwargs,
             was_forced=self.was_forced,
         )
+
+    def __repr__(self):
+        # repr to avoid "BytesWarning: str() on a bytes instance" for bytes nodes
+        forced_marker = " [forced]" if self.was_forced else ""
+        return f"{self.ir_type} {self.value!r}{forced_marker} {self.kwargs!r}"
 
 
 def ir_value_permitted(value, ir_type, kwargs):
