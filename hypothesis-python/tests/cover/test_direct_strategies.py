@@ -443,7 +443,7 @@ def test_non_float_decimal():
 
 def test_produces_dictionaries_of_at_least_minimum_size():
     t = minimal(
-        ds.dictionaries(ds.booleans(), ds.integers(), min_size=2), lambda x: True
+        ds.dictionaries(ds.booleans(), ds.integers(), min_size=2),
     )
     assert t == {False: 0, True: 0}
 

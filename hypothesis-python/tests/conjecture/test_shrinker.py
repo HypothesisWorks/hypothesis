@@ -193,6 +193,7 @@ def test_handle_empty_draws():
 
 
 def test_can_reorder_examples():
+    # grouped by iteration: (1, 0, 1) (1, 0, 1) (0) (0) (0)
     @shrinking_from([1, 0, 1, 1, 0, 1, 0, 0, 0])
     def shrinker(data):
         total = 0
