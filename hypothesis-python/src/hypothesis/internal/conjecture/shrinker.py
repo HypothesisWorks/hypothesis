@@ -20,7 +20,13 @@ from hypothesis.internal.conjecture.choicetree import (
     prefix_selection_order,
     random_selection_order,
 )
-from hypothesis.internal.conjecture.data import ConjectureData, ConjectureResult, Status
+from hypothesis.internal.conjecture.data import (
+    ConjectureData,
+    ConjectureResult,
+    Status,
+    bits_to_bytes,
+    ir_value_permitted,
+)
 from hypothesis.internal.conjecture.dfa import ConcreteDFA
 from hypothesis.internal.conjecture.floats import is_simple
 from hypothesis.internal.conjecture.junkdrawer import (
@@ -1241,32 +1247,50 @@ class Shrinker:
         to exceed some bound, lowering one of them requires raising the
         other. This pass enables that."""
 
-        block = chooser.choose(self.blocks, lambda b: not b.all_zero)
+        node = chooser.choose(
+            self.nodes, lambda node: node.ir_type == "integer" and not node.trivial
+        )
 
-        for j in range(block.index + 1, len(self.blocks)):
-            next_block = self.blocks[j]
-            if next_block.length == block.length:
+        # The preconditions for this pass are that the two integer draws are only
+        # separated by non-integer nodes, and have the same size value in bytes.
+        #
+        # This isn't particularly principled. For instance, this wouldn't reduce
+        # e.g. @given(integers(), integers(), integers()) where the sum property
+        # involves the first and last integers.
+        #
+        # A better approach may be choosing *two* such integer nodes arbitrarily
+        # from the list, instead of conditionally scanning forward.
+
+        for j in range(node.index + 1, len(self.nodes)):
+            next_node = self.nodes[j]
+            if next_node.ir_type == "integer" and bits_to_bytes(
+                node.value.bit_length()
+            ) == bits_to_bytes(next_node.value.bit_length()):
                 break
         else:
             return
 
-        buffer = self.buffer
-
-        m = int_from_bytes(buffer[block.start : block.end])
-        n = int_from_bytes(buffer[next_block.start : next_block.end])
+        m = node.value
+        n = next_node.value
 
         def boost(k):
             if k > m:
                 return False
-            attempt = bytearray(buffer)
-            attempt[block.start : block.end] = int_to_bytes(m - k, block.length)
-            try:
-                attempt[next_block.start : next_block.end] = int_to_bytes(
-                    n + k, next_block.length
-                )
-            except OverflowError:
+
+            node_value = m - k
+            next_node_value = n + k
+            if (not ir_value_permitted(node_value, "integer", node.kwargs)) or (
+                not ir_value_permitted(next_node_value, "integer", next_node.kwargs)
+            ):
                 return False
-            return self.consider_new_buffer(attempt)
+
+            return self.consider_new_tree(
+                self.nodes[: node.index]
+                + [node.copy(with_value=node_value)]
+                + self.nodes[node.index + 1 : next_node.index]
+                + [next_node.copy(with_value=next_node_value)]
+                + self.nodes[next_node.index + 1 :]
+            )
 
         find_integer(boost)
 
