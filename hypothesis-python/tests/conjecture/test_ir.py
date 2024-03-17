@@ -563,3 +563,61 @@ def test_all_children_are_permitted_values(ir_type_and_kwargs):
 )
 def test_ir_value_permitted(value, ir_type, kwargs, permitted):
     assert ir_value_permitted(value, ir_type, kwargs) == permitted
+
+
+@given(ir_nodes(was_forced=True))
+def test_forced_nodes_are_trivial(node):
+    assert node.trivial
+
+
+@pytest.mark.parametrize(
+    "node",
+    [
+        IRNode(
+            ir_type="float",
+            value=5.0,
+            kwargs={
+                "min_value": 5.0,
+                "max_value": 10.0,
+                "allow_nan": True,
+                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+            },
+            was_forced=False,
+        ),
+        IRNode(
+            ir_type="boolean",
+            value=False,
+            kwargs={"p": 0.5},
+            was_forced=False,
+        ),
+        IRNode(
+            ir_type="string",
+            value="",
+            kwargs={
+                "intervals": IntervalSet.from_string("abcd"),
+                "min_size": 0,
+                "max_size": None,
+            },
+            was_forced=False,
+        ),
+        IRNode(
+            ir_type="bytes",
+            value=bytes(8),
+            kwargs={"size": 8},
+            was_forced=False,
+        ),
+        IRNode(
+            ir_type="integer",
+            value=50,
+            kwargs={
+                "min_value": 50,
+                "max_value": 100,
+                "weights": None,
+                "shrink_towards": 0,
+            },
+            was_forced=False,
+        ),
+    ],
+)
+def test_trivial_nodes(node):
+    assert node.trivial

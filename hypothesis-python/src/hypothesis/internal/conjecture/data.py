@@ -967,6 +967,41 @@ class IRNode:
             was_forced=self.was_forced,
         )
 
+    @property
+    def trivial(self):
+        """
+        A node is trivial if it cannot be simplified any further. This does not
+        mean that modifying a trivial node can't produce simpler test cases when
+        viewing the tree as a whole. Just that when viewing this node in
+        isolation, this is the simplest the node can get.
+        """
+        if self.was_forced:
+            return True
+
+        if self.ir_type == "integer":
+            return self.value == self.kwargs["min_value"]
+        if self.ir_type == "float":
+            return float_to_int(self.value) == float_to_int(self.kwargs["min_value"])
+        if self.ir_type == "boolean":
+            return self.value is False
+        if self.ir_type == "string":
+            # we can do better here with "length is equal to min_size and value is
+            # filled with simplest-in-shrink-order characters". This requires
+            # computing what the simplest character in a given IntervalSet is,
+            # and since we redefine the shrink order for characters, that requires
+            # computing the order for all characters in an IntervalSet. Which
+            # may be expensive for large intervals. (would @cached_property be
+            # good enough here?)
+            #
+            # This naive check is hopefully good enough for now? I'm trying to
+            # avoid doing more work than we save when computing `trivial`.
+            return self.value == ""
+        if self.ir_type == "bytes":
+            # smallest size and all-zero value.
+            return len(self.value) == self.kwargs["size"] and not any(self.value)
+
+        raise NotImplementedError(f"unhandled ir_type {self.ir_type}")
+
     def __eq__(self, other):
         if not isinstance(other, IRNode):
             return NotImplemented
