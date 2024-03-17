@@ -376,8 +376,7 @@ class Shrinker:
         return self.engine.call_count
 
     def consider_new_tree(self, tree):
-        data = ConjectureData.for_ir_tree(tree)
-        self.engine.test_function(data)
+        data = self.engine.ir_tree_to_data(tree)
 
         return self.consider_new_buffer(data.buffer)
 
