@@ -9,15 +9,17 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
+from copy import deepcopy
 
 import pytest
 
-from hypothesis import assume, example, given, strategies as st
+from hypothesis import HealthCheck, assume, example, given, settings, strategies as st
 from hypothesis.errors import StopTest
 from hypothesis.internal.conjecture.data import (
     ConjectureData,
     IRNode,
     Status,
+    ir_value_equal,
     ir_value_permitted,
 )
 from hypothesis.internal.conjecture.datatree import (
@@ -328,13 +330,12 @@ def test_ir_nodes(random):
 
 
 @st.composite
-def ir_nodes(draw):
+def ir_nodes(draw, *, was_forced=None):
     (ir_type, kwargs) = draw(ir_types_and_kwargs())
     value = draw_value(ir_type, kwargs)
+    was_forced = draw(st.booleans()) if was_forced is None else was_forced
 
-    return IRNode(
-        ir_type=ir_type, value=value, kwargs=kwargs, was_forced=draw(st.booleans())
-    )
+    return IRNode(ir_type=ir_type, value=value, kwargs=kwargs, was_forced=was_forced)
 
 
 @given(ir_nodes())
@@ -343,11 +344,17 @@ def test_copy_ir_node(node):
 
     assume(not node.was_forced)
     new_value = draw_value(node.ir_type, node.kwargs)
-    # if we drew the same value as before, the node should still be equal (unless nan)
-    assume(
-        node.ir_type != "float" or not (math.isnan(new_value) or math.isnan(node.value))
+    # if we drew the same value as before, the node should still be equal
+    assert (node.copy(with_value=new_value) == node) is (
+        ir_value_equal(node.ir_type, new_value, node.value)
     )
-    assert (node.copy(with_value=new_value) == node) is (new_value == node.value)
+
+
+@given(ir_nodes())
+def test_ir_node_equality(node):
+    assert node == node
+    # for coverage on our NotImplemented return, more than anything.
+    assert node != 42
 
 
 def test_data_with_empty_ir_tree_is_overrun():
@@ -376,6 +383,60 @@ def test_data_with_misaligned_ir_tree_is_invalid(data):
         draw_func(**kwargs)
 
     assert data.status is Status.INVALID
+
+
+@given(st.data())
+def test_data_with_changed_was_forced_is_invalid(data):
+    # we had a normal node and then tried to draw a different forced value from it.
+    # ir tree: v1 [was_forced=False]
+    # drawing:    [forced=v2]
+    node = data.draw(ir_nodes(was_forced=False))
+    data = ConjectureData.for_ir_tree([node])
+
+    draw_func = getattr(data, f"draw_{node.ir_type}")
+    kwargs = deepcopy(node.kwargs)
+    kwargs["forced"] = draw_value(node.ir_type, node.kwargs)
+    assume(not ir_value_equal(node.ir_type, kwargs["forced"], node.value))
+
+    with pytest.raises(StopTest):
+        draw_func(**kwargs)
+
+    assert data.status is Status.INVALID
+
+
+@given(st.data())
+@settings(suppress_health_check=[HealthCheck.too_slow])
+def test_data_with_changed_forced_value_is_invalid(data):
+    # we had a forced node and then tried to draw a different forced value from it.
+    # ir tree: v1 [was_forced=True]
+    # drawing:    [forced=v2]
+    node = data.draw(ir_nodes(was_forced=True))
+    data = ConjectureData.for_ir_tree([node])
+
+    draw_func = getattr(data, f"draw_{node.ir_type}")
+    kwargs = deepcopy(node.kwargs)
+    kwargs["forced"] = draw_value(node.ir_type, node.kwargs)
+    assume(not ir_value_equal(node.ir_type, kwargs["forced"], node.value))
+
+    with pytest.raises(StopTest):
+        draw_func(**kwargs)
+
+    assert data.status is Status.INVALID
+
+
+@given(st.data())
+def test_data_with_same_forced_value_is_valid(data):
+    # we had a forced node and then drew the same forced value. This is totally
+    # fine!
+    # ir tree: v1 [was_forced=True]
+    # drawing:    [forced=v1]
+    node = data.draw(ir_nodes(was_forced=True))
+    data = ConjectureData.for_ir_tree([node])
+    draw_func = getattr(data, f"draw_{node.ir_type}")
+
+    kwargs = deepcopy(node.kwargs)
+    kwargs["forced"] = node.value
+    draw_func(**kwargs)
 
 
 @given(ir_types_and_kwargs())

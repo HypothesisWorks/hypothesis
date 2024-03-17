@@ -910,7 +910,7 @@ class DataObserver:
         pass
 
 
-@attr.s(slots=True, repr=False)
+@attr.s(slots=True, repr=False, eq=False)
 class IRNode:
     ir_type: IRTypeName = attr.ib()
     value: IRType = attr.ib()
@@ -926,6 +926,17 @@ class IRNode:
             value=with_value,
             kwargs=self.kwargs,
             was_forced=self.was_forced,
+        )
+
+    def __eq__(self, other):
+        if not isinstance(other, IRNode):
+            return NotImplemented
+
+        return (
+            self.ir_type == other.ir_type
+            and ir_value_equal(self.ir_type, self.value, other.value)
+            and ir_kwargs_equal(self.ir_type, self.kwargs, other.kwargs)
+            and self.was_forced == other.was_forced
         )
 
     def __repr__(self):
@@ -965,6 +976,24 @@ def ir_value_permitted(value, ir_type, kwargs):
         return True
 
     raise NotImplementedError(f"unhandled type {type(value)} of ir value {value}")
+
+
+def ir_value_equal(ir_type, v1, v2):
+    if ir_type != "float":
+        return v1 == v2
+    return float_to_int(v1) == float_to_int(v2)
+
+
+def ir_kwargs_equal(ir_type, kwargs1, kwargs2):
+    if ir_type != "float":
+        return kwargs1 == kwargs2
+    return (
+        float_to_int(kwargs1["min_value"]) == float_to_int(kwargs2["min_value"])
+        and float_to_int(kwargs1["max_value"]) == float_to_int(kwargs2["max_value"])
+        and kwargs1["allow_nan"] == kwargs2["allow_nan"]
+        and kwargs1["smallest_nonzero_magnitude"]
+        == kwargs2["smallest_nonzero_magnitude"]
+    )
 
 
 @dataclass_transform()
@@ -1880,7 +1909,7 @@ class ConjectureData:
         )
 
         if self.ir_tree_nodes is not None and observe:
-            node = self._pop_ir_tree_node("integer", kwargs)
+            node = self._pop_ir_tree_node("integer", kwargs, forced=forced)
             assert isinstance(node.value, int)
             forced = node.value
             fake_forced = not node.was_forced
@@ -1936,7 +1965,7 @@ class ConjectureData:
         )
 
         if self.ir_tree_nodes is not None and observe:
-            node = self._pop_ir_tree_node("float", kwargs)
+            node = self._pop_ir_tree_node("float", kwargs, forced=forced)
             assert isinstance(node.value, float)
             forced = node.value
             fake_forced = not node.was_forced
@@ -1977,7 +2006,7 @@ class ConjectureData:
             },
         )
         if self.ir_tree_nodes is not None and observe:
-            node = self._pop_ir_tree_node("string", kwargs)
+            node = self._pop_ir_tree_node("string", kwargs, forced=forced)
             assert isinstance(node.value, str)
             forced = node.value
             fake_forced = not node.was_forced
@@ -2012,7 +2041,7 @@ class ConjectureData:
         kwargs: BytesKWargs = self._pooled_kwargs("bytes", {"size": size})
 
         if self.ir_tree_nodes is not None and observe:
-            node = self._pop_ir_tree_node("bytes", kwargs)
+            node = self._pop_ir_tree_node("bytes", kwargs, forced=forced)
             assert isinstance(node.value, bytes)
             forced = node.value
             fake_forced = not node.was_forced
@@ -2053,7 +2082,7 @@ class ConjectureData:
         kwargs: BooleanKWargs = self._pooled_kwargs("boolean", {"p": p})
 
         if self.ir_tree_nodes is not None and observe:
-            node = self._pop_ir_tree_node("boolean", kwargs)
+            node = self._pop_ir_tree_node("boolean", kwargs, forced=forced)
             assert isinstance(node.value, bool)
             forced = node.value
             fake_forced = not node.was_forced
@@ -2093,7 +2122,9 @@ class ConjectureData:
             POOLED_KWARGS_CACHE[key] = kwargs
             return kwargs
 
-    def _pop_ir_tree_node(self, ir_type: IRTypeName, kwargs: IRKWargsType) -> IRNode:
+    def _pop_ir_tree_node(
+        self, ir_type: IRTypeName, kwargs: IRKWargsType, *, forced: Optional[IRType]
+    ) -> IRNode:
         assert self.ir_tree_nodes is not None
 
         if self.ir_tree_nodes == []:
@@ -2119,6 +2150,32 @@ class ConjectureData:
         # into an aligned one by using its value. It's unclear how useful this is.
         if not ir_value_permitted(node.value, node.ir_type, kwargs):
             self.mark_invalid()  # pragma: no cover  # FIXME @tybug
+
+        if forced is not None:
+            # if we expected a forced node but are instead returning a non-forced
+            # node, something has gone terribly wrong. If we allowed this combination,
+            # we risk violating core invariants that rely on forced draws being,
+            # well, forced to a particular value.
+            #
+            # In particular, this can manifest while shrinking. Consider the tree
+            #   [boolean True [forced] {"p": 0.5}]
+            #   [boolean False {"p": 0.5}]
+            #
+            # and the shrinker tries to reorder these to
+            #   [boolean False {"p": 0.5}]
+            #   [boolean True [forced] {"p": 0.5}].
+            #
+            # However, maybe we got lucky and the non-forced node is returning
+            # the same value that was expected from the forced draw. We lucked
+            # into an aligned tree in this case and can let it slide.
+            if not node.was_forced and not ir_value_equal(ir_type, forced, node.value):
+                self.mark_invalid()
+
+            # similarly, if we expected a forced node with a certain value, and
+            # are returning a forced node with a different value, this is an
+            # equally bad misalignment.
+            if node.was_forced and not ir_value_equal(ir_type, forced, node.value):
+                self.mark_invalid()
 
         return node
 
