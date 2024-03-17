@@ -386,7 +386,7 @@ def test_data_with_misaligned_ir_tree_is_invalid(data):
 
 
 @given(st.data())
-def test_data_with_changed_was_forced_is_invalid(data):
+def test_data_with_changed_was_forced(data):
     # we had a normal node and then tried to draw a different forced value from it.
     # ir tree: v1 [was_forced=False]
     # drawing:    [forced=v2]
@@ -398,18 +398,19 @@ def test_data_with_changed_was_forced_is_invalid(data):
     kwargs["forced"] = draw_value(node.ir_type, node.kwargs)
     assume(not ir_value_equal(node.ir_type, kwargs["forced"], node.value))
 
-    with pytest.raises(StopTest):
-        draw_func(**kwargs)
-
-    assert data.status is Status.INVALID
+    assert ir_value_equal(node.ir_type, draw_func(**kwargs), kwargs["forced"])
 
 
 @given(st.data())
 @settings(suppress_health_check=[HealthCheck.too_slow])
-def test_data_with_changed_forced_value_is_invalid(data):
+def test_data_with_changed_forced_value(data):
     # we had a forced node and then tried to draw a different forced value from it.
     # ir tree: v1 [was_forced=True]
     # drawing:    [forced=v2]
+    #
+    # This is actually fine; we'll just ignore the forced node (v1) and return
+    # what the draw expects (v2).
+
     node = data.draw(ir_nodes(was_forced=True))
     data = ConjectureData.for_ir_tree([node])
 
@@ -418,10 +419,7 @@ def test_data_with_changed_forced_value_is_invalid(data):
     kwargs["forced"] = draw_value(node.ir_type, node.kwargs)
     assume(not ir_value_equal(node.ir_type, kwargs["forced"], node.value))
 
-    with pytest.raises(StopTest):
-        draw_func(**kwargs)
-
-    assert data.status is Status.INVALID
+    assert ir_value_equal(node.ir_type, draw_func(**kwargs), kwargs["forced"])
 
 
 @given(st.data())
@@ -436,7 +434,7 @@ def test_data_with_same_forced_value_is_valid(data):
 
     kwargs = deepcopy(node.kwargs)
     kwargs["forced"] = node.value
-    draw_func(**kwargs)
+    assert ir_value_equal(node.ir_type, draw_func(**kwargs), kwargs["forced"])
 
 
 @given(ir_types_and_kwargs())
