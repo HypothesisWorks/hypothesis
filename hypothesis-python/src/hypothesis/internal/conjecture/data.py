@@ -290,6 +290,14 @@ class Example:
         return self.owner.ends[self.index]
 
     @property
+    def ir_start(self) -> int:
+        return self.owner.ir_starts[self.index]
+
+    @property
+    def ir_end(self) -> int:
+        return self.owner.ir_ends[self.index]
+
+    @property
     def depth(self):
         """Depth of this example in the example tree. The top-level example has a
         depth of 0."""
@@ -528,6 +536,32 @@ class Examples:
     @property
     def ends(self) -> IntList:
         return self.starts_and_ends[1]
+
+    class _ir_starts_and_ends(ExampleProperty):
+        def begin(self):
+            self.starts = IntList.of_length(len(self.examples))
+            self.ends = IntList.of_length(len(self.examples))
+
+        def start_example(self, i: int, label_index: int) -> None:
+            self.starts[i] = self.ir_node_count
+
+        def stop_example(self, i: int, *, discarded: bool) -> None:
+            self.ends[i] = self.ir_node_count
+
+        def finish(self) -> Tuple[IntList, IntList]:
+            return (self.starts, self.ends)
+
+    ir_starts_and_ends: "Tuple[IntList, IntList]" = calculated_example_property(
+        _ir_starts_and_ends
+    )
+
+    @property
+    def ir_starts(self) -> IntList:
+        return self.ir_starts_and_ends[0]
+
+    @property
+    def ir_ends(self) -> IntList:
+        return self.ir_starts_and_ends[1]
 
     class _discarded(ExampleProperty):
         def begin(self) -> None:
