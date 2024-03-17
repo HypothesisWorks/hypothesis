@@ -1230,10 +1230,11 @@ def test_populates_the_pareto_front():
         assert len(runner.pareto_front) == 2**4
 
 
-def test_pareto_front_contains_smallest_valid_when_not_targeting():
+def test_pareto_front_contains_smallest_valid():
     with deterministic_PRNG():
 
         def test(data):
+            data.target_observations[""] = 1
             data.draw_integer(0, 2**4 - 1)
 
         runner = ConjectureRunner(
@@ -1249,55 +1250,6 @@ def test_pareto_front_contains_smallest_valid_when_not_targeting():
         runner.run()
 
         assert len(runner.pareto_front) == 1
-
-
-def test_pareto_front_contains_different_interesting_reasons():
-    with deterministic_PRNG():
-
-        def test(data):
-            data.mark_interesting(data.draw_integer(0, 2**4 - 1))
-
-        runner = ConjectureRunner(
-            test,
-            settings=settings(
-                max_examples=5000,
-                database=InMemoryExampleDatabase(),
-                suppress_health_check=list(HealthCheck),
-            ),
-            database_key=b"stuff",
-        )
-
-        runner.run()
-
-        assert len(runner.pareto_front) == 2**4
-
-
-def test_clears_defunct_pareto_front():
-    with deterministic_PRNG():
-
-        def test(data):
-            data.draw_integer(0, 2**8 - 1)
-            data.draw_integer(0, 2**8 - 1)
-
-        db = InMemoryExampleDatabase()
-
-        runner = ConjectureRunner(
-            test,
-            settings=settings(
-                max_examples=10000,
-                database=db,
-                suppress_health_check=list(HealthCheck),
-                phases=[Phase.reuse],
-            ),
-            database_key=b"stuff",
-        )
-
-        for i in range(256):
-            db.save(runner.pareto_key, bytes([i, 0]))
-
-        runner.run()
-
-        assert len(list(db.fetch(runner.pareto_key))) == 1
 
 
 def test_replaces_all_dominated():

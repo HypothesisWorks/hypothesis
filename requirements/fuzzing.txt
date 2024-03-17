@@ -12,7 +12,7 @@ attrs==23.2.0
     # via
     #   hypothesis
     #   hypothesis (hypothesis-python/setup.py)
-black==24.2.0
+black==24.3.0
     # via
     #   -r requirements/coverage.in
     #   hypofuzz
@@ -29,7 +29,7 @@ click==8.1.7
     #   black
     #   flask
     #   hypothesis
-coverage==7.4.3
+coverage==7.4.4
     # via
     #   -r requirements/coverage.in
     #   hypofuzz
@@ -50,13 +50,13 @@ exceptiongroup==1.2.0 ; python_version < "3.11"
     #   pytest
 execnet==2.0.2
     # via pytest-xdist
-fakeredis==2.21.2
+fakeredis==2.21.3
     # via -r requirements/coverage.in
 flask==3.0.2
     # via dash
 hypofuzz==24.2.3
     # via -r requirements/fuzzing.in
-hypothesis[cli]==6.99.1
+hypothesis[cli]==6.99.6
     # via hypofuzz
 idna==3.6
     # via requests
@@ -108,7 +108,7 @@ pexpect==4.9.0
     # via -r requirements/test.in
 platformdirs==4.2.0
     # via black
-plotly==5.19.0
+plotly==5.20.0
     # via dash
 pluggy==1.4.0
     # via pytest
@@ -179,9 +179,9 @@ werkzeug==3.0.1
     # via
     #   dash
     #   flask
-zipp==3.17.0
+zipp==3.18.1
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-setuptools==69.1.1
+setuptools==69.2.0
     # via dash

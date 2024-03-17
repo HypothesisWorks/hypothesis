@@ -856,9 +856,6 @@ class _Overrun:
     def __repr__(self):
         return "Overrun"
 
-    def as_result(self) -> "_Overrun":
-        return self
-
 
 Overrun = _Overrun()
 
@@ -2116,7 +2113,7 @@ class ConjectureData:
         # that is allowed by the expected kwargs, then we can coerce this node
         # into an aligned one by using its value. It's unclear how useful this is.
         if not ir_value_permitted(node.value, node.ir_type, kwargs):
-            self.mark_invalid()
+            self.mark_invalid()  # pragma: no cover  # FIXME @tybug
 
         return node
 

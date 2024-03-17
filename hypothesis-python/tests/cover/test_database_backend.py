@@ -12,15 +12,17 @@ import os
 import re
 import tempfile
 import zipfile
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from shutil import make_archive, rmtree
 from typing import Iterator, Optional, Tuple
+from hypothesis.internal.compat import WINDOWS
 
 import pytest
 
-from hypothesis import given, settings, strategies as st
+from hypothesis import configuration, given, settings, strategies as st
+from hypothesis.utils.conventions import not_set
 from hypothesis.database import (
     DirectoryBasedExampleDatabase,
     ExampleDatabase,
@@ -426,3 +428,18 @@ def test_gadb_coverage():
     state = GitHubArtifactMocks()
     state.save(b"key", b"value")
     state.values_agree(b"key")
+
+
+@pytest.mark.parametrize("dirs", [[], ["subdir"]])
+def test_database_directory_inaccessible(dirs, tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        configuration, "__hypothesis_home_directory", tmp_path.joinpath(*dirs)
+    )
+    tmp_path.chmod(0o000)
+    with (
+        nullcontext()
+        if WINDOWS
+        else pytest.warns(HypothesisWarning, match=".*the default location is unusable")
+    ):
+        database = ExampleDatabase(not_set)
+    database.save(b"fizz", b"buzz")

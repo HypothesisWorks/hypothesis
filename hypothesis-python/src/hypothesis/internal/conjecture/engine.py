@@ -273,7 +273,11 @@ class ConjectureRunner:
 
         self.debug_data(data)
 
-        if self.pareto_front is not None and self.pareto_front.add(data.as_result()):
+        if (
+            data.target_observations
+            and self.pareto_front is not None
+            and self.pareto_front.add(data.as_result())
+        ):
             self.save_buffer(data.buffer, sub_key=b"pareto")
 
         assert len(data.buffer) <= BUFFER_SIZE
