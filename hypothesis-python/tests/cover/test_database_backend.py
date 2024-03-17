@@ -20,7 +20,8 @@ from typing import Iterator, Optional, Tuple
 
 import pytest
 
-from hypothesis import given, settings, strategies as st
+from hypothesis import configuration, given, settings, strategies as st
+from hypothesis.utils.conventions import not_set
 from hypothesis.database import (
     DirectoryBasedExampleDatabase,
     ExampleDatabase,
@@ -428,13 +429,12 @@ def test_gadb_coverage():
     state.values_agree(b"key")
 
 
-def test_database_directory_inaccessible(tmp_path):
+@pytest.mark.parametrize("dirs", [[], ["subdir"]])
+def test_database_directory_inaccessible(dirs, tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        configuration, "__hypothesis_home_directory", tmp_path.joinpath(*dirs)
+    )
     tmp_path.chmod(0o000)
-    database = ExampleDatabase(tmp_path)
-    database.save(b"fizz", b"buzz")
-
-
-def test_database_directory_dont_exist_and_parent_directory_inaccessible(tmp_path):
-    tmp_path.chmod(0o000)
-    database = ExampleDatabase(tmp_path / "foo")
+    with pytest.warns(HypothesisWarning, match=".*the default location is unusable"):
+        database = ExampleDatabase(not_set)
     database.save(b"fizz", b"buzz")
