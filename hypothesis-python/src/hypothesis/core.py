@@ -1366,7 +1366,7 @@ def given(
     _given_argument1: SearchStrategy[T1],
     /,
 ) -> Callable[
-    [Callable["Concatenate[T1, P]", Optional[Coroutine[Any, Any, None]]]],
+    ["Callable[Concatenate[T1, P], Optional[Coroutine[Any, Any, None]]]"],
     Callable[..., None],
 ]: ...
 
@@ -1377,7 +1377,7 @@ def given(
     _given_argument2: SearchStrategy[T2],
     /,
 ) -> Callable[
-    [Callable["Concatenate[T1, T2, P]", Optional[Coroutine[Any, Any, None]]]],
+    ["Callable[Concatenate[T1, T2, P], Optional[Coroutine[Any, Any, None]]]"],
     Callable[..., None],
 ]: ...
 
@@ -1389,7 +1389,7 @@ def given(
     _given_argument3: SearchStrategy[T3],
     /,
 ) -> Callable[
-    [Callable["Concatenate[T1, T2, T3, P]", Optional[Coroutine[Any, Any, None]]]],
+    ["Callable[Concatenate[T1, T2, T3, P], Optional[Coroutine[Any, Any, None]]]"],
     Callable[..., None],
 ]: ...
 
@@ -1402,7 +1402,7 @@ def given(
     _given_argument4: SearchStrategy[T4],
     /,
 ) -> Callable[
-    [Callable["Concatenate[T1, T2, T3, T4, P]", Optional[Coroutine[Any, Any, None]]]],
+    ["Callable[Concatenate[T1, T2, T3, T4, P], Optional[Coroutine[Any, Any, None]]]"],
     Callable[..., None],
 ]: ...
 
@@ -1417,9 +1417,7 @@ def given(
     /,
 ) -> Callable[
     [
-        Callable[
-            "Concatenate[T1, T2, T3, T4, T5, P]", Optional[Coroutine[Any, Any, None]]
-        ]
+        "Callable[Concatenate[T1, T2, T3, T4, T5, P], Optional[Coroutine[Any, Any, None]]]"
     ],
     Callable[..., None],
 ]: ...
@@ -1436,10 +1434,7 @@ def given(
     /,
 ) -> Callable[
     [
-        Callable[
-            "Concatenate[T1, T2, T3, T4, T5, T6, P]",
-            Optional[Coroutine[Any, Any, None]],
-        ]
+        "Callable[Concatenate[T1, T2, T3, T4, T5, T6, P], Optional[Coroutine[Any, Any, None]]]"
     ],
     Callable[..., None],
 ]: ...
@@ -1457,10 +1452,7 @@ def given(
     /,
 ) -> Callable[
     [
-        Callable[
-            "Concatenate[T1, T2, T3, T4, T5, T6, T7, P]",
-            Optional[Coroutine[Any, Any, None]],
-        ]
+        "Callable[Concatenate[T1, T2, T3, T4, T5, T6, T7, P], Optional[Coroutine[Any, Any, None]]]"
     ],
     Callable[..., None],
 ]: ...
@@ -1479,10 +1471,7 @@ def given(
     /,
 ) -> Callable[
     [
-        Callable[
-            "Concatenate[T1, T2, T3, T4, T5, T6, T7, T8, P]",
-            Optional[Coroutine[Any, Any, None]],
-        ]
+        "Callable[Concatenate[T1, T2, T3, T4, T5, T6, T7, T8, P], Optional[Coroutine[Any, Any, None]]]"
     ],
     Callable[..., None],
 ]: ...
@@ -1502,10 +1491,7 @@ def given(
     /,
 ) -> Callable[
     [
-        Callable[
-            "Concatenate[T1, T2, T3, T4, T5, T6, T7, T8, T9, P]",
-            Optional[Coroutine[Any, Any, None]],
-        ]
+        "Callable[Concatenate[T1, T2, T3, T4, T5, T6, T7, T8, T9, P], Optional[Coroutine[Any, Any, None]]]"
     ],
     Callable[..., None],
 ]: ...
@@ -1526,10 +1512,7 @@ def given(
     /,
 ) -> Callable[
     [
-        Callable[
-            "Concatenate[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, P]",
-            Optional[Coroutine[Any, Any, None]],
-        ]
+        "Callable[Concatenate[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, P], Optional[Coroutine[Any, Any, None]]]"
     ],
     Callable[..., None],
 ]: ...
