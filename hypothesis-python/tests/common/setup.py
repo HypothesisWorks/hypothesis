@@ -61,7 +61,7 @@ def run():
 
     settings.register_profile("debug", settings(verbosity=Verbosity.debug))
 
-    settings.load_profile(os.getenv("HYPOTHESIS_PROFILE", "default"))
-
     for backend in set(AVAILABLE_PROVIDERS) - {"hypothesis"}:
         settings.register_profile(backend, backend=backend)  # e.g. "crosshair"
+
+    settings.load_profile(os.getenv("HYPOTHESIS_PROFILE", "default"))

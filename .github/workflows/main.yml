@@ -73,6 +73,9 @@ jobs:
           - check-pandas13
           - check-pandas12
           - check-pandas11
+          - check-crosshair-cover
+          - check-crosshair-nocover
+          - check-crosshair-niche
           - check-py38-oldestnumpy
       fail-fast: false
     steps:

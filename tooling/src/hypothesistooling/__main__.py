@@ -498,6 +498,9 @@ for n in [32, 41, 42]:
 for n in [11, 12, 13, 14, 15, 20]:
     standard_tox_task(f"pandas{n}")
 
+for kind in ("cover", "nocover", "niche"):
+    standard_tox_task(f"crosshair-{kind}")
+
 standard_tox_task("py38-oldestnumpy", py="3.8")
 
 standard_tox_task("coverage")
