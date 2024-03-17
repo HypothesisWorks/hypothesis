@@ -30,7 +30,7 @@ from hypothesis.internal.conjecture.datatree import (
 from hypothesis.internal.floats import SMALLEST_SUBNORMAL, next_down, next_up
 from hypothesis.internal.intervalsets import IntervalSet
 
-from tests.conjecture.common import fresh_data, ir_types_and_kwargs
+from tests.conjecture.common import fresh_data, ir_types_and_kwargs, kwargs_strategy
 
 
 def draw_value(ir_type, kwargs):
@@ -366,19 +366,33 @@ def test_data_with_empty_ir_tree_is_overrun():
 
 
 @given(st.data())
-def test_data_with_misaligned_ir_tree_is_invalid(data):
+@settings(suppress_health_check=[HealthCheck.too_slow])
+def test_node_with_different_ir_type_is_invalid(data):
     node = data.draw(ir_nodes())
     (ir_type, kwargs) = data.draw(ir_types_and_kwargs())
 
+    # drawing a node with a different ir type should cause a misalignment.
+    assume(ir_type != node.ir_type)
+
     data = ConjectureData.for_ir_tree([node])
     draw_func = getattr(data, f"draw_{ir_type}")
-    # a misalignment occurs when we try and draw a node with a different ir
-    # type, or with the same ir type but a non-compatible value.
-    assume(
-        ir_type != node.ir_type
-        or not ir_value_permitted(node.value, node.ir_type, kwargs)
-    )
+    with pytest.raises(StopTest):
+        draw_func(**kwargs)
 
+    assert data.status is Status.INVALID
+
+
+@given(st.data())
+def test_node_with_same_ir_type_but_different_value_is_invalid(data):
+    node = data.draw(ir_nodes())
+    kwargs = data.draw(kwargs_strategy(node.ir_type))
+
+    # drawing a node with the same ir type, but a non-compatible value, should
+    # also cause a misalignment.
+    assume(not ir_value_permitted(node.value, node.ir_type, kwargs))
+
+    data = ConjectureData.for_ir_tree([node])
+    draw_func = getattr(data, f"draw_{node.ir_type}")
     with pytest.raises(StopTest):
         draw_func(**kwargs)
 
