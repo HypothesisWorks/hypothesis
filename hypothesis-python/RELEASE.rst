@@ -1,4 +1,4 @@
 RELEASE_TYPE: patch
 
-This release resolves :py:exc:`PermissionError` that come from
-creating databases on inaccessible paths.
+Improve type annotations of :func:`~hypothesis.given` when using positional-only strategy arguments.
+Type-checkers will now detect the given strategies do not match the test function signature.
