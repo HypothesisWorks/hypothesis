@@ -73,8 +73,7 @@ def _db_for_path(path=None):
                 stacklevel=3,
             )
             return InMemoryExampleDatabase()
-        return DirectoryBasedExampleDatabase(path)
-    if path in (None, ":memory:") or not _usable_dir(path):
+    if path in (None, ":memory:"):
         return InMemoryExampleDatabase()
     return DirectoryBasedExampleDatabase(path)
 
@@ -225,7 +224,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
     def save(self, key: bytes, value: bytes) -> None:
         # Note: we attempt to create the dir in question now. We
         # already checked for permissions, but there can still be other issues,
-        # e.g. the disk is full
+        # e.g. the disk is full, or permissions might have been changed.
         self._key_path(key).mkdir(exist_ok=True, parents=True)
         path = self._value_path(key, value)
         if not path.exists():
