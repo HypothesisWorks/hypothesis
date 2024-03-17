@@ -470,7 +470,11 @@ class ExampleRecord:
     def record_ir_draw(self, ir_type, value, *, kwargs, was_forced):
         self.trail.append(IR_NODE_RECORD)
         node = IRNode(
-            ir_type=ir_type, value=value, kwargs=kwargs, was_forced=was_forced
+            ir_type=ir_type,
+            value=value,
+            kwargs=kwargs,
+            was_forced=was_forced,
+            index=len(self.ir_nodes),
         )
         self.ir_nodes.append(node)
 
@@ -955,11 +959,15 @@ class IRNode:
     value: IRType = attr.ib()
     kwargs: IRKWargsType = attr.ib()
     was_forced: bool = attr.ib()
+    index: Optional[int] = attr.ib(default=None)
 
     def copy(self, *, with_value: IRType) -> "IRNode":
         # we may want to allow this combination in the future, but for now it's
         # a footgun.
         assert not self.was_forced, "modifying a forced node doesn't make sense"
+        # explicitly not copying index. node indices are only assigned via
+        # ExampleRecord. This prevents footguns with relying on stale indices
+        # after copying.
         return IRNode(
             ir_type=self.ir_type,
             value=with_value,
