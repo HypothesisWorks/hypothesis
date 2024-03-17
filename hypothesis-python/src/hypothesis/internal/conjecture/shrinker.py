@@ -377,7 +377,6 @@ class Shrinker:
 
     def consider_new_tree(self, tree):
         data = self.engine.ir_tree_to_data(tree)
-
         return self.consider_new_buffer(data.buffer)
 
     def consider_new_buffer(self, buffer):
@@ -825,12 +824,10 @@ class Shrinker:
         )
 
         ls = self.examples_by_label[label]
-
         i = chooser.choose(range(len(ls) - 1))
-
         ancestor = ls[i]
 
-        if i + 1 == len(ls) or ls[i + 1].start >= ancestor.end:
+        if i + 1 == len(ls) or ls[i + 1].ir_start >= ancestor.ir_end:
             return
 
         @self.cached(label, i)
@@ -839,22 +836,22 @@ class Shrinker:
             hi = len(ls)
             while lo + 1 < hi:
                 mid = (lo + hi) // 2
-                if ls[mid].start >= ancestor.end:
+                if ls[mid].ir_start >= ancestor.ir_end:
                     hi = mid
                 else:
                     lo = mid
-            return [t for t in ls[i + 1 : hi] if t.length < ancestor.length]
+            return [t for t in ls[i + 1 : hi] if t.ir_length < ancestor.ir_length]
 
-        descendant = chooser.choose(descendants, lambda ex: ex.length > 0)
+        descendant = chooser.choose(descendants, lambda ex: ex.ir_length > 0)
 
-        assert ancestor.start <= descendant.start
-        assert ancestor.end >= descendant.end
-        assert descendant.length < ancestor.length
+        assert ancestor.ir_start <= descendant.ir_start
+        assert ancestor.ir_end >= descendant.ir_end
+        assert descendant.ir_length < ancestor.ir_length
 
-        self.incorporate_new_buffer(
-            self.buffer[: ancestor.start]
-            + self.buffer[descendant.start : descendant.end]
-            + self.buffer[ancestor.end :]
+        self.consider_new_tree(
+            self.nodes[: ancestor.ir_start]
+            + self.nodes[descendant.ir_start : descendant.ir_end]
+            + self.nodes[ancestor.ir_end :]
         )
 
     def lower_common_block_offset(self):

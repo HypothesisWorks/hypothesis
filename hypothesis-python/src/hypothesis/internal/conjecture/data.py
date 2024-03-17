@@ -325,6 +325,11 @@ class Example:
         return self.end - self.start
 
     @property
+    def ir_length(self) -> int:
+        """The number of ir nodes in this example."""
+        return self.ir_end - self.ir_start
+
+    @property
     def children(self) -> "List[Example]":
         """The list of all examples with this as a parent, in increasing index
         order."""
