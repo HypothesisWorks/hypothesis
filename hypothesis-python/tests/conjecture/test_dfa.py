@@ -14,7 +14,16 @@ from math import inf
 
 import pytest
 
-from hypothesis import assume, example, given, note, reject, settings, strategies as st
+from hypothesis import (
+    HealthCheck,
+    assume,
+    example,
+    given,
+    note,
+    reject,
+    settings,
+    strategies as st,
+)
 from hypothesis.internal.conjecture.dfa import DEAD, ConcreteDFA
 
 
@@ -112,7 +121,8 @@ def test_canonicalised_matches_same_strings(dfa, via_repr):
     )
 
 
-@settings(max_examples=20)
+# filters about 80% of examples. should potentially improve at some point.
+@settings(max_examples=20, suppress_health_check=[HealthCheck.filter_too_much])
 @given(dfas())
 def test_has_string_of_max_length(dfa):
     length = dfa.max_length(dfa.start)
