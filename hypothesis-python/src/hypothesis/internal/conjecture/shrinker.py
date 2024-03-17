@@ -1218,7 +1218,6 @@ class Shrinker:
             and not is_simple(node.value),
         )
 
-        i = self.nodes.index(node)
         # the Float shrinker was only built to handle positive floats. We'll
         # shrink the positive portion and reapply the sign after, which is
         # equivalent to this shrinker's previous behavior. We'll want to refactor
@@ -1228,9 +1227,9 @@ class Shrinker:
         Float.shrink(
             abs(node.value),
             lambda val: self.consider_new_tree(
-                self.nodes[:i]
+                self.nodes[: node.index]
                 + [node.copy(with_value=sign * val)]
-                + self.nodes[i + 1 :]
+                + self.nodes[node.index + 1 :]
             ),
             random=self.random,
             node=node,
