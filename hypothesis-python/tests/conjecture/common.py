@@ -277,12 +277,18 @@ def draw_boolean_kwargs(draw, *, use_forced=False):
     return {"p": p, "forced": forced}
 
 
+def kwargs_strategy(ir_type):
+    return {
+        "boolean": draw_boolean_kwargs(),
+        "integer": draw_integer_kwargs(),
+        "float": draw_float_kwargs(),
+        "bytes": draw_bytes_kwargs(),
+        "string": draw_string_kwargs(),
+    }[ir_type]
+
+
 def ir_types_and_kwargs():
-    options = [
-        ("boolean", draw_boolean_kwargs()),
-        ("integer", draw_integer_kwargs()),
-        ("float", draw_float_kwargs()),
-        ("bytes", draw_bytes_kwargs()),
-        ("string", draw_string_kwargs()),
-    ]
-    return st.one_of(st.tuples(st.just(name), kws) for name, kws in options)
+    options = ["boolean", "integer", "float", "bytes", "string"]
+    return st.one_of(
+        st.tuples(st.just(name), kwargs_strategy(name)) for name in options
+    )
