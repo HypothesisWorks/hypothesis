@@ -578,3 +578,24 @@ def test_can_simultaneously_lower_non_duplicated_nearby_blocks(n_gap):
     shrinker.fixate_shrink_passes(["lower_blocks_together"])
 
     assert list(shrinker.buffer) == [1, 0] + [0] * n_gap + [0, 1]
+
+
+def test_redistribute_block_pairs_with_forced_node():
+    @run_to_buffer
+    def buf(data):
+        data.draw_integer(0, 100, forced=15)
+        data.draw_integer(0, 100, forced=10)
+        data.mark_interesting()
+
+    @shrinking_from(buf)
+    def shrinker(data):
+        n1 = data.draw_integer(0, 100)
+        n2 = data.draw_integer(0, 100, forced=10)
+        if n1 + n2 > 20:
+            data.mark_interesting()
+
+    shrinker.fixate_shrink_passes(["redistribute_block_pairs"])
+    # redistribute_block_pairs shouldn't try modifying forced nodes while
+    # shrinking. Since the second draw is forced, this isn't possible to shrink
+    # with just this pass.
+    assert shrinker.buffer == buf

@@ -1271,7 +1271,7 @@ class Shrinker:
             return
 
         if next_node.was_forced:
-            # avoid modifying a forced node! Note that it's fine for next_node
+            # avoid modifying a forced node. Note that it's fine for next_node
             # to be trivial, because we're going to explicitly make it *not*
             # trivial by adding to its value.
             return
