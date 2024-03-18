@@ -683,6 +683,17 @@ def test_forced_nodes_are_trivial(node):
             },
             was_forced=False,
         ),
+        IRNode(
+            ir_type="integer",
+            value=0,
+            kwargs={
+                "min_value": None,
+                "max_value": None,
+                "weights": None,
+                "shrink_towards": 0,
+            },
+            was_forced=False,
+        ),
     ],
 )
 def test_trivial_nodes(node):
@@ -750,6 +761,17 @@ def test_trivial_nodes(node):
             kwargs={
                 "min_value": -10,
                 "max_value": 10,
+                "weights": None,
+                "shrink_towards": 0,
+            },
+            was_forced=False,
+        ),
+        IRNode(
+            ir_type="integer",
+            value=42,
+            kwargs={
+                "min_value": None,
+                "max_value": None,
                 "weights": None,
                 "shrink_towards": 0,
             },
