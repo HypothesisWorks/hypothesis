@@ -30,6 +30,7 @@ from hypothesis.internal.conjecture.datatree import (
 from hypothesis.internal.floats import SMALLEST_SUBNORMAL, next_down, next_up
 from hypothesis.internal.intervalsets import IntervalSet
 
+from tests.common.debug import minimal
 from tests.conjecture.common import fresh_data, ir_types_and_kwargs, kwargs_strategy
 
 
@@ -585,6 +586,17 @@ def test_forced_nodes_are_trivial(node):
             was_forced=False,
         ),
         IRNode(
+            ir_type="float",
+            value=0.0,
+            kwargs={
+                "min_value": -5.0,
+                "max_value": 5.0,
+                "allow_nan": True,
+                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+            },
+            was_forced=False,
+        ),
+        IRNode(
             ir_type="boolean",
             value=False,
             kwargs={"p": 0.5},
@@ -596,6 +608,16 @@ def test_forced_nodes_are_trivial(node):
             kwargs={
                 "intervals": IntervalSet.from_string("abcd"),
                 "min_size": 0,
+                "max_size": None,
+            },
+            was_forced=False,
+        ),
+        IRNode(
+            ir_type="string",
+            value="aaaa",
+            kwargs={
+                "intervals": IntervalSet.from_string("bcda"),
+                "min_size": 4,
                 "max_size": None,
             },
             was_forced=False,
@@ -617,7 +639,131 @@ def test_forced_nodes_are_trivial(node):
             },
             was_forced=False,
         ),
+        IRNode(
+            ir_type="integer",
+            value=0,
+            kwargs={
+                "min_value": -10,
+                "max_value": 10,
+                "weights": None,
+                "shrink_towards": 0,
+            },
+            was_forced=False,
+        ),
+        IRNode(
+            ir_type="integer",
+            value=2,
+            kwargs={
+                "min_value": -10,
+                "max_value": 10,
+                "weights": None,
+                "shrink_towards": 2,
+            },
+            was_forced=False,
+        ),
+        IRNode(
+            ir_type="integer",
+            value=-10,
+            kwargs={
+                "min_value": -10,
+                "max_value": 10,
+                "weights": None,
+                "shrink_towards": -12,
+            },
+            was_forced=False,
+        ),
+        IRNode(
+            ir_type="integer",
+            value=10,
+            kwargs={
+                "min_value": -10,
+                "max_value": 10,
+                "weights": None,
+                "shrink_towards": 12,
+            },
+            was_forced=False,
+        ),
     ],
 )
 def test_trivial_nodes(node):
     assert node.trivial
+
+    @st.composite
+    def values(draw):
+        data = draw(st.data()).conjecture_data
+        return getattr(data, f"draw_{node.ir_type}")(**node.kwargs)
+
+    # if we're trivial, then shrinking should produce the same value.
+    assert ir_value_equal(node.ir_type, minimal(values()), node.value)
+
+
+@pytest.mark.parametrize(
+    "node",
+    [
+        IRNode(
+            ir_type="float",
+            value=6.0,
+            kwargs={
+                "min_value": 5.0,
+                "max_value": 10.0,
+                "allow_nan": True,
+                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+            },
+            was_forced=False,
+        ),
+        IRNode(
+            ir_type="float",
+            value=-5.0,
+            kwargs={
+                "min_value": -5.0,
+                "max_value": 5.0,
+                "allow_nan": True,
+                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+            },
+            was_forced=False,
+        ),
+        IRNode(
+            ir_type="boolean",
+            value=True,
+            kwargs={"p": 0.5},
+            was_forced=False,
+        ),
+        IRNode(
+            ir_type="string",
+            value="d",
+            kwargs={
+                "intervals": IntervalSet.from_string("abcd"),
+                "min_size": 1,
+                "max_size": None,
+            },
+            was_forced=False,
+        ),
+        IRNode(
+            ir_type="bytes",
+            value=b"\x01",
+            kwargs={"size": 1},
+            was_forced=False,
+        ),
+        IRNode(
+            ir_type="integer",
+            value=-10,
+            kwargs={
+                "min_value": -10,
+                "max_value": 10,
+                "weights": None,
+                "shrink_towards": 0,
+            },
+            was_forced=False,
+        ),
+    ],
+)
+def test_nontrivial_nodes(node):
+    assert not node.trivial
+
+    @st.composite
+    def values(draw):
+        data = draw(st.data()).conjecture_data
+        return getattr(data, f"draw_{node.ir_type}")(**node.kwargs)
+
+    # if we're nontrivial, then shrinking should produce something different.
+    assert not ir_value_equal(node.ir_type, minimal(values()), node.value)
