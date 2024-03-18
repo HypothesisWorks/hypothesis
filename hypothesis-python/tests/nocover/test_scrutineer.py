@@ -54,6 +54,10 @@ def get_reports(file_contents, *, testdir):
     test_file = str(testdir.makepyfile(file_contents))
     pytest_stdout = str(testdir.runpytest_inprocess(test_file, "--tb=native").stdout)
 
+    crash = "AttributeError: module 'blib2to3.pygram' has no attribute 'python_symbols'"
+    if crash in pytest_stdout:
+        pytest.xfail(reason="upstream error in Black")
+
     explanations = {
         i: {(test_file, i)}
         for i, line in enumerate(file_contents.splitlines())
