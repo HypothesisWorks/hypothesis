@@ -365,6 +365,10 @@ def test_data_with_empty_ir_tree_is_overrun():
     assert data.status is Status.OVERRUN
 
 
+# root cause of too_slow is filtering too much via assume in kwargs strategies.
+# exacerbated in this test because we draw kwargs twice.
+# TODO revisit and improve the kwargs strategies at some point, once the ir
+# is further along we can maybe remove e.g. a string assumption.
 @given(st.data())
 @settings(suppress_health_check=[HealthCheck.too_slow])
 def test_node_with_different_ir_type_is_invalid(data):
