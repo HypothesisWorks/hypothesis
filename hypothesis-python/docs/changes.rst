@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.99.9:
+
+-------------------
+6.99.9 - 2024-03-19
+-------------------
+
+This patch continues our work on refactoring the shrinker (:issue:`3921`).
+
 .. _v6.99.8:
 
 -------------------
