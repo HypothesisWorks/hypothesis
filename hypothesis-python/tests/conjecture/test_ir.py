@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
+import sys
 from copy import deepcopy
 
 import pytest
@@ -420,9 +421,9 @@ def test_data_with_changed_was_forced(data):
     assert ir_value_equal(node.ir_type, draw_func(**kwargs), kwargs["forced"])
 
 
-@given(st.data())
+@given(ir_nodes(was_forced=True))
 @settings(suppress_health_check=[HealthCheck.too_slow])
-def test_data_with_changed_forced_value(data):
+def test_data_with_changed_forced_value(node):
     # we had a forced node and then tried to draw a different forced value from it.
     # ir tree: v1 [was_forced=True]
     # drawing:    [forced=v2]
@@ -430,7 +431,6 @@ def test_data_with_changed_forced_value(data):
     # This is actually fine; we'll just ignore the forced node (v1) and return
     # what the draw expects (v2).
 
-    node = data.draw(ir_nodes(was_forced=True))
     data = ConjectureData.for_ir_tree([node])
 
     draw_func = getattr(data, f"draw_{node.ir_type}")
@@ -441,13 +441,67 @@ def test_data_with_changed_forced_value(data):
     assert ir_value_equal(node.ir_type, draw_func(**kwargs), kwargs["forced"])
 
 
-@given(st.data())
-def test_data_with_same_forced_value_is_valid(data):
+# ensure we hit bare-minimum coverage for all ir types.
+@example(
+    IRNode(
+        ir_type="float",
+        value=0.0,
+        kwargs={
+            "min_value": -math.inf,
+            "max_value": math.inf,
+            "allow_nan": True,
+            "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+        },
+        was_forced=True,
+    )
+)
+@example(
+    IRNode(
+        ir_type="boolean",
+        value=False,
+        kwargs={"p": 0.5},
+        was_forced=True,
+    )
+)
+@example(
+    IRNode(
+        ir_type="integer",
+        value=50,
+        kwargs={
+            "min_value": 50,
+            "max_value": 100,
+            "weights": None,
+            "shrink_towards": 0,
+        },
+        was_forced=True,
+    )
+)
+@example(
+    IRNode(
+        ir_type="string",
+        value="aaaa",
+        kwargs={
+            "intervals": IntervalSet.from_string("bcda"),
+            "min_size": 4,
+            "max_size": None,
+        },
+        was_forced=True,
+    )
+)
+@example(
+    IRNode(
+        ir_type="bytes",
+        value=bytes(8),
+        kwargs={"size": 8},
+        was_forced=True,
+    )
+)
+@given(ir_nodes(was_forced=True))
+def test_data_with_same_forced_value_is_valid(node):
     # we had a forced node and then drew the same forced value. This is totally
     # fine!
     # ir tree: v1 [was_forced=True]
     # drawing:    [forced=v1]
-    node = data.draw(ir_nodes(was_forced=True))
     data = ConjectureData.for_ir_tree([node])
     draw_func = getattr(data, f"draw_{node.ir_type}")
 
@@ -597,6 +651,17 @@ def test_forced_nodes_are_trivial(node):
             was_forced=False,
         ),
         IRNode(
+            ir_type="float",
+            value=0.0,
+            kwargs={
+                "min_value": -math.inf,
+                "max_value": math.inf,
+                "allow_nan": True,
+                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+            },
+            was_forced=False,
+        ),
+        IRNode(
             ir_type="boolean",
             value=False,
             kwargs={"p": 0.5},
@@ -734,6 +799,17 @@ def test_trivial_nodes(node):
             was_forced=False,
         ),
         IRNode(
+            ir_type="float",
+            value=1.0,
+            kwargs={
+                "min_value": -math.inf,
+                "max_value": math.inf,
+                "allow_nan": True,
+                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+            },
+            was_forced=False,
+        ),
+        IRNode(
             ir_type="boolean",
             value=True,
             kwargs={"p": 0.5},
@@ -789,3 +865,76 @@ def test_nontrivial_nodes(node):
 
     # if we're nontrivial, then shrinking should produce something different.
     assert not ir_value_equal(node.ir_type, minimal(values()), node.value)
+
+
+@pytest.mark.parametrize(
+    "node",
+    [
+        IRNode(
+            ir_type="float",
+            value=1.5,
+            kwargs={
+                "min_value": 1.1,
+                "max_value": 1.6,
+                "allow_nan": True,
+                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+            },
+            was_forced=False,
+        ),
+        IRNode(
+            ir_type="float",
+            value=math.floor(sys.float_info.max),
+            kwargs={
+                "min_value": sys.float_info.max - 1,
+                "max_value": math.inf,
+                "allow_nan": True,
+                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+            },
+            was_forced=False,
+        ),
+        IRNode(
+            ir_type="float",
+            value=math.ceil(-sys.float_info.max),
+            kwargs={
+                "min_value": -math.inf,
+                "max_value": -sys.float_info.max + 1,
+                "allow_nan": True,
+                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+            },
+            was_forced=False,
+        ),
+        IRNode(
+            ir_type="float",
+            value=math.inf,
+            kwargs={
+                "min_value": math.inf,
+                "max_value": math.inf,
+                "allow_nan": True,
+                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+            },
+            was_forced=False,
+        ),
+        IRNode(
+            ir_type="float",
+            value=-math.inf,
+            kwargs={
+                "min_value": -math.inf,
+                "max_value": -math.inf,
+                "allow_nan": True,
+                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+            },
+            was_forced=False,
+        ),
+    ],
+)
+def test_conservative_nontrivial_nodes(node):
+    # these nodes actually are trivial, but our analysis doesn't compute them
+    # as such. We'd like to improve this in the future!
+    assert not node.trivial
+
+    @st.composite
+    def values(draw):
+        data = draw(st.data()).conjecture_data
+        return getattr(data, f"draw_{node.ir_type}")(**node.kwargs)
+
+    assert ir_value_equal(node.ir_type, minimal(values()), node.value)
