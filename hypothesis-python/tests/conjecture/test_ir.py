@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
+import sys
 from copy import deepcopy
 
 import pytest
@@ -597,6 +598,17 @@ def test_forced_nodes_are_trivial(node):
             was_forced=False,
         ),
         IRNode(
+            ir_type="float",
+            value=0.0,
+            kwargs={
+                "min_value": -math.inf,
+                "max_value": math.inf,
+                "allow_nan": True,
+                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+            },
+            was_forced=False,
+        ),
+        IRNode(
             ir_type="boolean",
             value=False,
             kwargs={"p": 0.5},
@@ -734,6 +746,17 @@ def test_trivial_nodes(node):
             was_forced=False,
         ),
         IRNode(
+            ir_type="float",
+            value=1.0,
+            kwargs={
+                "min_value": -math.inf,
+                "max_value": math.inf,
+                "allow_nan": True,
+                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+            },
+            was_forced=False,
+        ),
+        IRNode(
             ir_type="boolean",
             value=True,
             kwargs={"p": 0.5},
@@ -789,3 +812,76 @@ def test_nontrivial_nodes(node):
 
     # if we're nontrivial, then shrinking should produce something different.
     assert not ir_value_equal(node.ir_type, minimal(values()), node.value)
+
+
+@pytest.mark.parametrize(
+    "node",
+    [
+        IRNode(
+            ir_type="float",
+            value=1.5,
+            kwargs={
+                "min_value": 1.1,
+                "max_value": 1.6,
+                "allow_nan": True,
+                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+            },
+            was_forced=False,
+        ),
+        IRNode(
+            ir_type="float",
+            value=math.floor(sys.float_info.max),
+            kwargs={
+                "min_value": sys.float_info.max - 1,
+                "max_value": math.inf,
+                "allow_nan": True,
+                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+            },
+            was_forced=False,
+        ),
+        IRNode(
+            ir_type="float",
+            value=math.ceil(-sys.float_info.max),
+            kwargs={
+                "min_value": -math.inf,
+                "max_value": -sys.float_info.max + 1,
+                "allow_nan": True,
+                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+            },
+            was_forced=False,
+        ),
+        IRNode(
+            ir_type="float",
+            value=math.inf,
+            kwargs={
+                "min_value": math.inf,
+                "max_value": math.inf,
+                "allow_nan": True,
+                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+            },
+            was_forced=False,
+        ),
+        IRNode(
+            ir_type="float",
+            value=-math.inf,
+            kwargs={
+                "min_value": -math.inf,
+                "max_value": -math.inf,
+                "allow_nan": True,
+                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+            },
+            was_forced=False,
+        ),
+    ],
+)
+def test_conservative_nontrivial_nodes(node):
+    # these nodes actually are trivial, but our analysis doesn't compute them
+    # as such. We'd like to improve this in the future!
+    assert not node.trivial
+
+    @st.composite
+    def values(draw):
+        data = draw(st.data()).conjecture_data
+        return getattr(data, f"draw_{node.ir_type}")(**node.kwargs)
+
+    assert ir_value_equal(node.ir_type, minimal(values()), node.value)

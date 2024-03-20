@@ -998,13 +998,29 @@ class IRNode:
 
             return self.value == shrink_towards
         if self.ir_type == "float":
-            # floats shrink "like integers" (for now, anyway), except shrink_towards
-            # is not configurable and is always 0.
+            min_value = self.kwargs["min_value"]
+            max_value = self.kwargs["max_value"]
             shrink_towards = 0
-            shrink_towards = max(self.kwargs["min_value"], shrink_towards)
-            shrink_towards = min(self.kwargs["max_value"], shrink_towards)
 
-            return ir_value_equal("float", self.value, shrink_towards)
+            if min_value == -math.inf and max_value == math.inf:
+                return ir_value_equal("float", self.value, shrink_towards)
+
+            if (
+                not math.isinf(min_value)
+                and not math.isinf(max_value)
+                and math.ceil(min_value) <= math.floor(max_value)
+            ):
+                # the interval contains an integer. the simplest integer is the
+                # one closest to shrink_towards
+                shrink_towards = max(math.ceil(min_value), shrink_towards)
+                shrink_towards = min(math.floor(max_value), shrink_towards)
+                return ir_value_equal("float", self.value, shrink_towards)
+
+            # the real answer here is "the value in [min_value, max_value] with
+            # the lowest denominator when represented as a fraction".
+            # It would be good to compute this correctly in the future, but it's
+            # also not incorrect to be conservative here.
+            return False
         if self.ir_type == "boolean":
             return self.value is False
         if self.ir_type == "string":
