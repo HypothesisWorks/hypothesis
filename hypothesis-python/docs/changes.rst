@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.99.11:
+
+--------------------
+6.99.11 - 2024-03-20
+--------------------
+
+This release improves an internal invariant.
+
 .. _v6.99.10:
 
 --------------------
