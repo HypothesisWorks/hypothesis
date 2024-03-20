@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.99.10:
+
+--------------------
+6.99.10 - 2024-03-20
+--------------------
+
+This patch fixes Hypothesis sometimes raising a ``Flaky`` error when generating collections of unique floats containing ``nan``. See :issue:`3926` for more details.
+
 .. _v6.99.9:
 
 -------------------
