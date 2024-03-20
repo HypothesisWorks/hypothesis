@@ -44,3 +44,14 @@ def test_note_deprecation_blames_right_code_issue_652():
 )
 def test_performance_issue_2027(x, y):
     pass
+
+
+# if this test ever fails with a flaky error, #3926 has regressed.
+@given(
+    st.lists(
+        st.floats(allow_infinity=False),
+        unique=True,
+    )
+)
+def test_unique_floats_with_nan_is_not_flaky_3926(ls):
+    pass

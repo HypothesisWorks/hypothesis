@@ -56,6 +56,7 @@ from hypothesis.internal.floats import (
     SIGNALING_NAN,
     SMALLEST_SUBNORMAL,
     float_to_int,
+    int_to_float,
     make_float_clamper,
     next_down,
     next_up,
@@ -1481,6 +1482,27 @@ class HypothesisProvider(PrimitiveProvider):
                     result = clamped
             else:
                 result = nasty_floats[i - 1]
+                # nan values generated via int_to_float break list membership:
+                #
+                #  >>> n = 18444492273895866368
+                # >>> assert math.isnan(int_to_float(n))
+                # >>> assert int_to_float(n) not in [int_to_float(n)]
+                #
+                # because int_to_float nans are not equal in the sense of either
+                # `a == b` or `a is b`.
+                #
+                # This can lead to flaky errors when collections require unique
+                # floats. I think what is happening is that in some places we
+                # provide math.nan, and in others we provide
+                # int_to_float(float_to_int(math.nan)), and which one gets used
+                # is not deterministic across test iterations.
+                #
+                # As a (temporary?) fix, we'll *always* generate nan values which
+                # are not equal in the identity sense.
+                #
+                # see also https://github.com/HypothesisWorks/hypothesis/issues/3926.
+                if math.isnan(result):
+                    result = int_to_float(float_to_int(result))
 
                 self._draw_float(forced=result, fake_forced=fake_forced)
 
