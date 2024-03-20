@@ -1194,7 +1194,6 @@ class Shrinker:
             block,
             lambda b: self.try_shrinking_blocks(targets, b),
             random=self.random,
-            full=False,
         )
 
     @defines_shrink_pass()
@@ -1364,7 +1363,6 @@ class Shrinker:
             self.shrink_target.buffer[u:v],
             lambda b: self.try_shrinking_blocks((i,), b),
             random=self.random,
-            full=False,
         )
 
         if self.shrink_target is not initial:
