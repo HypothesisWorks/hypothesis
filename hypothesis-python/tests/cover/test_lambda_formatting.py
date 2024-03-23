@@ -8,10 +8,6 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import sys
-
-import pytest
-
 from hypothesis.internal.reflection import get_pretty_function_description
 
 
@@ -19,7 +15,6 @@ def test_bracket_whitespace_is_striped():
     assert get_pretty_function_description(lambda x: (x + 1)) == "lambda x: (x + 1)"
 
 
-@pytest.mark.skipif(sys.version_info[:2] == (3, 13), reason="FIXME-3.13")
 def test_no_whitespace_before_colon_with_no_args():
     assert get_pretty_function_description(eval("lambda: None")) == "lambda: <unknown>"
 
@@ -63,7 +58,6 @@ def test_variable_names_are_not_pretty():
     assert get_pretty_function_description(t) == "lambda x: True"
 
 
-@pytest.mark.skipif(sys.version_info[:2] == (3, 13), reason="FIXME-3.13")
 def test_does_not_error_on_dynamically_defined_functions():
     x = eval("lambda t: 1")
     get_pretty_function_description(x)

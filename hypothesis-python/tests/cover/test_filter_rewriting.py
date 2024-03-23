@@ -12,7 +12,6 @@ import decimal
 import math
 import operator
 import re
-import sys
 from fractions import Fraction
 from functools import partial
 from sys import float_info
@@ -34,10 +33,6 @@ from tests.common.debug import check_can_generate_examples
 from tests.common.utils import fails_with
 
 A_FEW = 15  # speed up massively-parametrized tests
-
-# FIXME-3.13: something about get_lambda_source not working with pytest-xdist?
-if sys.version_info[:2] == (3, 13) and sys.version_info.releaselevel < "final":
-    pytest.skip(allow_module_level=True)
 
 
 @pytest.mark.parametrize(
