@@ -1,7 +1,6 @@
 annotated-types
 black
 click
-coverage
 dpcontracts
 fakeredis
 lark
@@ -13,3 +12,5 @@ python-dateutil
 pytz
 typing-extensions
 -r test.in
+# Need the unreleased compatibility fix for pytest-xdist rsyncdirs deprecation
+git+https://github.com/pytest-dev/pytest-cov.git@9757222e2e044361e70125ebdd96e5eb87395983
