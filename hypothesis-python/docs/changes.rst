@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.99.12:
+
+--------------------
+6.99.12 - 2024-03-23
+--------------------
+
+If you were running Python 3.13 (currently in alpha) with :pypi:`pytest-xdist`
+and then attempted to pretty-print a ``lambda`` functions which was created
+using the :func:`eval` builtin, it would have raised an AssertionError.
+Now you'll get ``"lambda ...: <unknown>"``, as expected.
+
 .. _v6.99.11:
 
 --------------------
