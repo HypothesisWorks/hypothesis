@@ -481,9 +481,9 @@ def tox(*args):
     run_tox(*args)
 
 
-def standard_tox_task(name, *args, py=ci_version):
+def standard_tox_task(name, py=ci_version):
     TASKS["check-" + name] = python_tests(
-        lambda: run_tox(name, PYTHONS.get(py, py), *args)
+        lambda *args: run_tox(name, PYTHONS.get(py, py), *args)
     )
 
 
@@ -497,6 +497,9 @@ for n in [32, 41, 42]:
 
 for n in [11, 12, 13, 14, 15, 20]:
     standard_tox_task(f"pandas{n}")
+
+for kind in ("cover", "nocover", "niche"):
+    standard_tox_task(f"crosshair-{kind}")
 
 standard_tox_task("py38-oldestnumpy", py="3.8")
 
