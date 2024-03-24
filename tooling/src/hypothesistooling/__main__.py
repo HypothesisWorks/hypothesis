@@ -426,17 +426,7 @@ def run_tox(task, version, *args):
 # update_python_versions(), above, keeps the contents of this dict up to date.
 # When a version is added or removed, manually update the env lists in tox.ini and
 # workflows/main.yml, and the `Programming Language ::` specifiers in setup.py
-PYTHONS = {
-    "3.8": "3.8.18",
-    "3.9": "3.9.18",
-    "3.10": "3.10.13",
-    "3.11": "3.11.8",
-    "3.12": "3.12.2",
-    "3.13": "3.13.0a5",
-    "pypy3.8": "pypy3.8-7.3.11",
-    "pypy3.9": "pypy3.9-7.3.15",
-    "pypy3.10": "pypy3.10-7.3.15",
-}
+PYTHONS = {'3.8': '3.8.19', '3.9': '3.9.19', '3.10': '3.10.14', '3.11': '3.11.8', '3.12': '3.12.2', '3.13': '3.13.0a5', 'pypy3.8': 'pypy3.8-7.3.11', 'pypy3.9': 'pypy3.9-7.3.15', 'pypy3.10': 'pypy3.10-7.3.15'}
 ci_version = "3.10"  # Keep this in sync with GH Actions main.yml and .readthedocs.yml
 
 python_tests = task(

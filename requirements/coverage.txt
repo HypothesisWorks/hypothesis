@@ -59,7 +59,7 @@ pluggy==1.4.0
     # via pytest
 ptyprocess==0.7.0
     # via pexpect
-pyarrow==15.0.1
+pyarrow==15.0.2
     # via -r requirements/coverage.in
 pytest==8.1.1
     # via
