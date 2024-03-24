@@ -117,7 +117,7 @@ jobs:
         path: |
           hypothesis-python/.coverage*
           !hypothesis-python/.coveragerc
-          hypothesis-python/branch-check
+          hypothesis-python/branch-check*
 
   test-win:
     runs-on: windows-latest
