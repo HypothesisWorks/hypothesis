@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.99.13:
+
+--------------------
+6.99.13 - 2024-03-24
+--------------------
+
+This patch includes the :obj:`~hypothesis.settings.backend` setting in the
+``how_generated`` field of our :doc:`observability output <observability>`.
+
 .. _v6.99.12:
 
 --------------------
