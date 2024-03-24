@@ -73,6 +73,9 @@ jobs:
           - check-pandas13
           - check-pandas12
           - check-pandas11
+          # - check-crosshair-cover
+          # - check-crosshair-nocover
+          # - check-crosshair-niche
           - check-py38-oldestnumpy
       fail-fast: false
     steps:
@@ -117,28 +120,30 @@ jobs:
         path: |
           hypothesis-python/.coverage*
           !hypothesis-python/.coveragerc
-          hypothesis-python/branch-check
+          hypothesis-python/branch-check*
 
   test-win:
     runs-on: windows-latest
     strategy:
       matrix:
-        include:
-          - python-version: "3.9"
-          - python-version: "3.10"
-          - python-version: "3.11"
-          - python-version: "3.11"
-            python-architecture: "x86"
+        python:
+          - version: "3.9"
+          - version: "3.11"
+          - version: "3.11"
+            architecture: "x86"
+        whichtests:
+          - nocover
+          - cover+rest
       fail-fast: false
     steps:
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0
-    - name: Set up Python ${{ matrix.python-version }} ${{ matrix.python-architecture }}
+    - name: Set up Python ${{ matrix.python.version }} ${{ matrix.python.architecture }}
       uses: actions/setup-python@v4
       with:
-        python-version: ${{ matrix.python-version }}
-        architecture: ${{ matrix.python-architecture }}
+        python-version: ${{ matrix.python.version }}
+        architecture: ${{ matrix.python.architecture }}
     - name: Restore cache
       uses: actions/cache@v3
       with:
@@ -146,12 +151,12 @@ jobs:
           ~\appdata\local\pip\cache
           vendor\bundle
           .tox
-        key: deps-${{ runner.os }}-${{ matrix.python-architecture }}-${{ hashFiles('requirements/*.txt') }}-${{ matrix.python-version }}
+        key: deps-${{ runner.os }}-${{ matrix.python.architecture }}-${{ hashFiles('requirements/*.txt') }}-${{ matrix.python.version }}
         restore-keys: |
-          deps-${{ runner.os }}-${{ matrix.python-architecture }}-${{ hashFiles('requirements/*.txt') }}
-          deps-${{ runner.os }}-${{ matrix.python-architecture }}
+          deps-${{ runner.os }}-${{ matrix.python.architecture }}-${{ hashFiles('requirements/*.txt') }}
+          deps-${{ runner.os }}-${{ matrix.python.architecture }}
     - name: Use old pandas on win32
-      if: matrix.python-architecture
+      if: matrix.python.architecture
       # See https://github.com/pandas-dev/pandas/issues/54979
       run: |
         (Get-Content .\requirements\coverage.txt) -replace 'pandas==[0-9.]+', 'pandas==2.0.3' | Out-File .\requirements\coverage.txt
@@ -162,7 +167,7 @@ jobs:
         pip install -r requirements/coverage.txt
         pip install hypothesis-python/[all]
     - name: Run tests
-      run: python -m pytest --numprocesses auto hypothesis-python/tests/ --ignore=hypothesis-python/tests/quality/ --ignore=hypothesis-python/tests/ghostwriter/ --ignore=hypothesis-python/tests/patching/
+      run: python -m pytest --numprocesses auto ${{ matrix.whichtests == 'nocover' && 'hypothesis-python/tests/nocover' || 'hypothesis-python/tests/ --ignore=hypothesis-python/tests/nocover/ --ignore=hypothesis-python/tests/quality/ --ignore=hypothesis-python/tests/ghostwriter/ --ignore=hypothesis-python/tests/patching/' }}
 
   test-osx:
     runs-on: macos-latest

@@ -11,10 +11,12 @@
 import json
 import sys
 from collections import defaultdict
+from pathlib import Path
 
 if __name__ == "__main__":
-    with open("branch-check", encoding="utf-8") as i:
-        data = [json.loads(l) for l in i]
+    data = []
+    for p in Path.cwd().glob("branch-check*"):
+        data.extend(json.loads(l) for l in p.read_text("utf-8").splitlines())
 
     checks = defaultdict(set)
 
