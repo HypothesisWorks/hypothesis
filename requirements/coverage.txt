@@ -16,8 +16,8 @@ click==8.1.7
     # via
     #   -r requirements/coverage.in
     #   black
-coverage==7.4.4
-    # via -r requirements/coverage.in
+coverage[toml]==7.4.4
+    # via pytest-cov
 dpcontracts==0.6.0
     # via -r requirements/coverage.in
 exceptiongroup==1.2.0 ; python_version < "3.11"
@@ -59,12 +59,15 @@ pluggy==1.4.0
     # via pytest
 ptyprocess==0.7.0
     # via pexpect
-pyarrow==15.0.1
+pyarrow==15.0.2
     # via -r requirements/coverage.in
 pytest==8.1.1
     # via
     #   -r requirements/test.in
+    #   pytest-cov
     #   pytest-xdist
+pytest-cov @ git+https://github.com/pytest-dev/pytest-cov.git@9757222e2e044361e70125ebdd96e5eb87395983
+    # via -r requirements/coverage.in
 pytest-xdist==3.5.0
     # via -r requirements/test.in
 python-dateutil==2.9.0.post0
@@ -88,6 +91,7 @@ sortedcontainers==2.4.0
 tomli==2.0.1
     # via
     #   black
+    #   coverage
     #   pytest
 typing-extensions==4.10.0
     # via
