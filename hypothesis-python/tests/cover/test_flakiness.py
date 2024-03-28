@@ -9,13 +9,12 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import pytest
+from tests.common.utils import no_shrink
 
 from hypothesis import HealthCheck, Verbosity, assume, example, given, reject, settings
 from hypothesis.errors import Flaky, Unsatisfiable, UnsatisfiedAssumption
 from hypothesis.internal.conjecture.engine import MIN_TEST_CALLS
 from hypothesis.strategies import booleans, composite, integers, lists, random_module
-
-from tests.common.utils import no_shrink
 
 
 class Nope(Exception):
@@ -122,3 +121,20 @@ def test_failure_sequence_inducing(building, testing, rnd):
         pass
     except UnsatisfiedAssumption:
         raise SatisfyMe from None
+
+
+def test_changing_number_of_exceptions_is_not_flaky():
+    exceptions = []
+
+    @given(integers())
+    def test_fails_with_different_numbers_of_exceptions(i):
+        try:
+            raise ValueError
+        except Exception as e:
+            exceptions.append(e)
+        raise ExceptionGroup("Lots of exceptions", exceptions)
+
+    try:
+        test_fails_with_different_numbers_of_exceptions()
+    except* ValueError:
+        pass

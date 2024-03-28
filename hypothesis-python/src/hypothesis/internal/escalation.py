@@ -119,6 +119,23 @@ class InterestingOrigin(NamedTuple):
     context: "InterestingOrigin | tuple[()]"
     group_elems: "tuple[InterestingOrigin, ...]"
 
+    def __eq__(self, other):
+        if not isinstance(other, InterestingOrigin):
+            return NotImplemented
+        return self.__eq_tuple() == other.__eq_tuple()
+
+    def __hash__(self):
+        return hash(self.__eq_tuple())
+
+    def __eq_tuple(self):
+        return (
+            self.exc_type,
+            self.filename,
+            self.lineno,
+            self.context,
+            frozenset(self.group_elems),
+        )
+
     def __str__(self) -> str:
         ctx = ""
         if self.context:

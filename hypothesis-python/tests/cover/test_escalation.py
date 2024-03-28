@@ -97,3 +97,14 @@ def test_handles_groups():
     assert "ExceptionGroup at " in str(origin)
     assert "child exception" in str(origin)
     assert "ValueError at " in str(origin)
+
+
+def test_conflates_repeat_exceptions_for_equality():
+    errors = [ValueError(""), ValueError("")]
+
+    o1 = esc.InterestingOrigin.from_exception(BaseExceptionGroup("message", errors))
+    o2 = esc.InterestingOrigin.from_exception(BaseExceptionGroup("message", errors[:1]))
+
+    assert o1.group_elems != o2.group_elems
+    assert o1 == o2
+    assert hash(o1) == hash(o2)
