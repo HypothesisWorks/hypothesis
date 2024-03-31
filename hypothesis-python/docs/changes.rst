@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.100.0:
+
+--------------------
+6.100.0 - 2024-03-31
+--------------------
+
+The :func:`~hypothesis.extra.numpy.from_dtype` function no longer generates
+``NaT`` ("not-a-time") values for the ``datetime64`` or ``timedelta64`` dtypes
+if passed ``allow_nan=False`` (:issue:`3943`).
+
 .. _v6.99.13:
 
 --------------------
