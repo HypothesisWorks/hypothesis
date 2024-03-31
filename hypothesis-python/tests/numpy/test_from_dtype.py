@@ -181,6 +181,13 @@ def test_arrays_selects_consistent_time_unit(data, dtype_str):
     assert (dtype_str + "[") in arr.dtype.str
 
 
+@pytest.mark.parametrize("dtype", ["m8", "M8"])
+def test_from_dtype_can_include_or_exclude_nat(dtype):
+    find_any(nps.from_dtype(np.dtype(dtype), allow_nan=None), np.isnat)
+    find_any(nps.from_dtype(np.dtype(dtype), allow_nan=True), np.isnat)
+    assert_no_examples(nps.from_dtype(np.dtype(dtype), allow_nan=False), np.isnat)
+
+
 def test_arrays_gives_useful_error_on_inconsistent_time_unit():
     with pytest.raises(InvalidArgument, match="mismatch of time units in dtypes"):
         check_can_generate_examples(
