@@ -22,7 +22,7 @@ black==24.3.0
     # via shed
 blinker==1.7.0
     # via pelican
-build==1.1.1
+build==1.2.1
     # via pip-tools
 cachetools==5.3.3
     # via tox
@@ -77,7 +77,7 @@ executing==2.0.1
     # via stack-data
 feedgenerator==2.1.0
     # via pelican
-filelock==3.13.1
+filelock==3.13.3
     # via
     #   tox
     #   virtualenv
@@ -142,7 +142,7 @@ mypy-extensions==1.0.0
     #   black
     #   mypy
     #   typing-inspect
-nh3==0.2.15
+nh3==0.2.17
     # via readme-renderer
 nodeenv==1.8.0
     # via pyright
@@ -185,7 +185,7 @@ ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.2
     # via stack-data
-pycparser==2.21
+pycparser==2.22
     # via cffi
 pygments==2.17.2
     # via
@@ -200,7 +200,7 @@ pyproject-hooks==1.0.0
     # via
     #   build
     #   pip-tools
-pyright==1.1.355
+pyright==1.1.356
     # via -r requirements/tools.in
 pytest==8.1.1
     # via -r requirements/tools.in
@@ -210,7 +210,7 @@ python-dateutil==2.9.0.post0
     #   pelican
 pytz==2024.1
     # via feedgenerator
-pyupgrade==3.15.1
+pyupgrade==3.15.2
     # via shed
 pyyaml==6.0.1
     # via
@@ -235,7 +235,7 @@ rich==13.7.1
     # via
     #   pelican
     #   twine
-ruff==0.3.3
+ruff==0.3.4
     # via
     #   -r requirements/tools.in
     #   shed
