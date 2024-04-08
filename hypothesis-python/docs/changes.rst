@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.100.1:
+
+--------------------
+6.100.1 - 2024-04-08
+--------------------
+
+This patch improve a rare error message for flaky tests (:issue:`3940`).
+
 .. _v6.100.0:
 
 --------------------
