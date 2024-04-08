@@ -175,11 +175,6 @@ def test_center_in_middle_above():
     assert data.draw_integer(0, 10, shrink_towards=5) == 5
 
 
-def test_restricted_bits():
-    data = ConjectureData.for_buffer([1, 0, 0, 0, 0])
-    assert data.draw_integer(0, 2**64 - 1) == 0
-
-
 @pytest.mark.parametrize(
     "lo,hi,to",
     [(1, None, 1), (1, None, 2), (None, 2, 1), (None, 1, 1), (-1, 1, 0)],

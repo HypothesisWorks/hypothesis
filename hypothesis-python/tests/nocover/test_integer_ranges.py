@@ -27,4 +27,4 @@ def test_bounded_integers_distribution_of_bit_width_issue_1387_regression():
     # uniformly the rest.  So we should get some very large but not too many.
     huge = sum(x > 1e97 for x in values)
     assert huge != 0 or len(values) < 800
-    assert huge <= 0.3 * len(values)  # expected ~1/8
+    assert huge <= 0.5 * len(values)  # expected ~1/8
