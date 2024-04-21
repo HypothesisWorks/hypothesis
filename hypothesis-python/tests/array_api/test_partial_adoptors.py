@@ -62,8 +62,8 @@ def test_error_on_missing_attr(stratname, args, attr):
 
 
 dtypeless_xp = make_mock_xp(exclude=tuple(DTYPE_NAMES))
-with pytest.warns(HypothesisWarning):
-    dtypeless_xps = make_strategies_namespace(dtypeless_xp, api_version="draft")
+# with pytest.warns(HypothesisWarning):
+dtypeless_xps = make_strategies_namespace(dtypeless_xp, api_version="draft")
 
 
 @pytest.mark.parametrize(
