@@ -296,6 +296,23 @@ def test_may_not_fill_unique_array_with_non_nan(xp, xps):
         check_can_generate_examples(strat)
 
 
+def test_floating_point_array():
+    from hypothesis.extra.array_api import make_strategies_namespace
+
+    try:
+        import numpy.array_api as nxp
+    except ModuleNotFoundError:
+        import numpy as np
+    xps = make_strategies_namespace(np)
+    dtypes= xps.floating_dtypes()
+
+    strat = xps.arrays(
+        dtype=dtypes,
+        shape=10
+    )
+
+    check_can_generate_examples(strat)
+
 @pytest.mark.parametrize(
     "kwargs",
     [
