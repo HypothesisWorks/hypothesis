@@ -11,6 +11,7 @@
 from copy import copy
 from types import SimpleNamespace
 from typing import Tuple
+import warnings
 
 import pytest
 
@@ -62,8 +63,9 @@ def test_error_on_missing_attr(stratname, args, attr):
 
 
 dtypeless_xp = make_mock_xp(exclude=tuple(DTYPE_NAMES))
-# with pytest.warns(HypothesisWarning):
-dtypeless_xps = make_strategies_namespace(dtypeless_xp, api_version="draft")
+with warnings.catch_warnings():
+    warnings.filterwarning("ignore", category=HypothesisWarning)
+    dtypeless_xps = make_strategies_namespace(dtypeless_xp, api_version="draft")
 
 
 @pytest.mark.parametrize(
