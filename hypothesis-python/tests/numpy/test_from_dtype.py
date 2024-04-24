@@ -133,7 +133,7 @@ def test_byte_string_dtypes_generate_unicode_strings(data):
     [
         "U",
         "S",
-        pytest.param("a", marks=pytest.mark.skipif(np_version >= (2, 0))),
+        pytest.param("a", marks=pytest.mark.skipif(np_version >= (2, 0), reason="not supported on `numpy>=2.0`")),
     ],
 )
 def test_unsized_strings_length_gt_one(dtype):
