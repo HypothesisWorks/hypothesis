@@ -10,6 +10,8 @@
 
 import sys
 
+from packaging import Version
+
 import numpy as np
 import pytest
 
@@ -126,7 +128,16 @@ def test_byte_string_dtypes_generate_unicode_strings(data):
     assert isinstance(result, bytes)
 
 
-@pytest.mark.parametrize("dtype", ["U", "S", "a"])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        "U",
+        "S",
+        pytest.param(
+            "a", marks=pytest.mark.skipif(Version(np.__version__) >= Version("2.0"))
+        ),
+    ],
+)
 def test_unsized_strings_length_gt_one(dtype):
     # See https://github.com/HypothesisWorks/hypothesis/issues/2229
     find_any(nps.arrays(dtype=dtype, shape=1), lambda arr: len(arr[0]) >= 2)
