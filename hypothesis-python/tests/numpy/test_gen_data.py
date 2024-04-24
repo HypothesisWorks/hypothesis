@@ -348,7 +348,11 @@ np_version = tuple(int(x) for x in np.__version__.split(".")[:2])
 
 @pytest.mark.parametrize("fill", [False, True])
 # Overflowing elements deprecated upstream in Numpy 1.24 :-)
-@fails_with(InvalidArgument if np_version < (1, 24) else DeprecationWarning)
+@fails_with(
+    InvalidArgument
+    if np_version < (1, 24)
+    else (DeprecationWarning if np_version < (2, 0) else OverflowError)
+)
 @given(st.data())
 def test_overflowing_integers_are_deprecated(fill, data):
     kw = {"elements": st.just(300)}
