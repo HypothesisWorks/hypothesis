@@ -307,7 +307,7 @@ def test_floating_point_array():
     except ModuleNotFoundError:
         import numpy as nxp
     xps = make_strategies_namespace(nxp)
-    dtypes= xps.floating_dtypes()
+    dtypes= xps.floating_dtypes() | xps.complex_dtypes()
 
     strat = xps.arrays(
         dtype=dtypes,
