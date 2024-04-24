@@ -502,6 +502,7 @@ for kind in ("cover", "nocover", "niche"):
     standard_tox_task(f"crosshair-{kind}")
 
 standard_tox_task("py38-oldestnumpy", py="3.8")
+standard_tox_task("numpy-nightly")
 
 standard_tox_task("coverage")
 standard_tox_task("conjecture-coverage")
