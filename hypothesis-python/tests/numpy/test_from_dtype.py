@@ -10,8 +10,6 @@
 
 import sys
 
-from packaging import Version
-
 import numpy as np
 import pytest
 
@@ -22,6 +20,8 @@ from hypothesis.internal.floats import width_smallest_normals
 from hypothesis.strategies._internal import SearchStrategy
 
 from tests.common.debug import assert_no_examples, check_can_generate_examples, find_any
+
+np_version = tuple(int(x) for x in np.__version__.split(".")[:2])
 
 STANDARD_TYPES = [
     np.dtype(t)
@@ -133,9 +133,7 @@ def test_byte_string_dtypes_generate_unicode_strings(data):
     [
         "U",
         "S",
-        pytest.param(
-            "a", marks=pytest.mark.skipif(Version(np.__version__) >= Version("2.0"))
-        ),
+        pytest.param("a", marks=pytest.mark.skipif(np_version >= (2, 0))),
     ],
 )
 def test_unsized_strings_length_gt_one(dtype):
