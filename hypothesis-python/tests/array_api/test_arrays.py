@@ -297,13 +297,16 @@ def test_may_not_fill_unique_array_with_non_nan(xp, xps):
 
 
 def test_floating_point_array():
+    import warnings
     from hypothesis.extra.array_api import make_strategies_namespace
 
     try:
-        import numpy.array_api as nxp
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            import numpy.array_api as nxp
     except ModuleNotFoundError:
-        import numpy as np
-    xps = make_strategies_namespace(np)
+        import numpy as nxp
+    xps = make_strategies_namespace(nxp)
     dtypes= xps.floating_dtypes()
 
     strat = xps.arrays(
