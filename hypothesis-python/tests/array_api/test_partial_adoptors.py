@@ -78,7 +78,7 @@ def make_mock_xp(*, exclude: Tuple[str, ...] = (), exclude_methods: Tuple[str, .
 
 def test_warning_on_noncompliant_xp():
     """Using non-compliant array modules raises helpful warning"""
-    xp = make_mock_xp()
+    xp = make_mock_xp(exclude_methods=("__array_namespace__",))
     with pytest.warns(HypothesisWarning, match=MOCK_WARN_MSG):
         make_strategies_namespace(xp, api_version="draft")
 
