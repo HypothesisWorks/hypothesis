@@ -11,6 +11,7 @@
 from copy import copy
 from types import SimpleNamespace
 from typing import Tuple
+import functools
 import warnings
 
 import pytest
@@ -32,11 +33,46 @@ from tests.common.debug import check_can_generate_examples
 MOCK_WARN_MSG = f"determine.*{mock_xp.__name__}.*Array API"
 
 
-def make_mock_xp(*, exclude: Tuple[str, ...] = ()) -> SimpleNamespace:
+class MockedArray:
+    def __init__(self, wrapped, *, exclude=()):
+        self.wrapped = wrapped
+        self.exclude = exclude
+
+    def __getattribute__(self, name):
+        if name in self.exclude:
+            raise AttributeError(f"removed on the mock: {name}")
+
+        return super().__getattribute__(self, name)
+
+
+def wrap_array(func: callable, exclude: Tuple[str, ...] =()) -> callable:
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        result = func(*args, **kwargs)
+
+        if isinstance(result, tuple):
+            return tuple(MockedArray(arr, exclude=exclude) for arr in result)
+
+        return MockedArray(result, exclude=exclude)
+
+    return wrapped
+
+def make_mock_xp(*, exclude: Tuple[str, ...] = (), exclude_methods: Tuple[str, ...] = ()) -> SimpleNamespace:
     xp = copy(mock_xp)
     assert isinstance(exclude, tuple)  # sanity check
+    assert isinstance(exclude_methods, tuple)  # sanity check
     for attr in exclude:
         delattr(xp, attr)
+
+    array_returning_funcs = ("astype", "broadcast_arrays", "arange", "asarray", "empty", "zeros", "ones", "reshape", "isnan", "isfinite", "logical_or", "sum", "nonzero", "sort", "unique_values", "any", "all")
+
+    for name in array_returning_funcs:
+        func = getattr(xp, name, None)
+        if func is None:
+            # removed in the step before
+            continue
+        setattr(xp, name, wrap_array(func, exclude=exclude_methods))
+
     return xp
 
 
