@@ -45,7 +45,7 @@ class MockedArray:
         return super().__getattribute__(self, name)
 
 
-def wrap_array(func: callable, exclude: Tuple[str, ...] =()) -> callable:
+def wrap_array(func: callable, exclude: Tuple[str, ...] = ()) -> callable:
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
         result = func(*args, **kwargs)
@@ -57,14 +57,35 @@ def wrap_array(func: callable, exclude: Tuple[str, ...] =()) -> callable:
 
     return wrapped
 
-def make_mock_xp(*, exclude: Tuple[str, ...] = (), exclude_methods: Tuple[str, ...] = ()) -> SimpleNamespace:
+
+def make_mock_xp(
+    *, exclude: Tuple[str, ...] = (), exclude_methods: Tuple[str, ...] = ()
+) -> SimpleNamespace:
     xp = copy(mock_xp)
     assert isinstance(exclude, tuple)  # sanity check
     assert isinstance(exclude_methods, tuple)  # sanity check
     for attr in exclude:
         delattr(xp, attr)
 
-    array_returning_funcs = ("astype", "broadcast_arrays", "arange", "asarray", "empty", "zeros", "ones", "reshape", "isnan", "isfinite", "logical_or", "sum", "nonzero", "sort", "unique_values", "any", "all")
+    array_returning_funcs = (
+        "astype",
+        "broadcast_arrays",
+        "arange",
+        "asarray",
+        "empty",
+        "zeros",
+        "ones",
+        "reshape",
+        "isnan",
+        "isfinite",
+        "logical_or",
+        "sum",
+        "nonzero",
+        "sort",
+        "unique_values",
+        "any",
+        "all",
+    )
 
     for name in array_returning_funcs:
         func = getattr(xp, name, None)
