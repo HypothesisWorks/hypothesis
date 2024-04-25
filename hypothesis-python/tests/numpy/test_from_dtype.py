@@ -128,18 +128,11 @@ def test_byte_string_dtypes_generate_unicode_strings(data):
     assert isinstance(result, bytes)
 
 
+skipif_np2 = pytest.mark.skipif(np_version >= (2, 0), reason="removed in new version")
+
 @pytest.mark.parametrize(
     "dtype",
-    [
-        "U",
-        "S",
-        pytest.param(
-            "a",
-            marks=pytest.mark.skipif(
-                np_version >= (2, 0), reason="not supported on `numpy>=2.0`"
-            ),
-        ),
-    ],
+    ["U", "S", pytest.param("a", marks=skipif_np2)],
 )
 def test_unsized_strings_length_gt_one(dtype):
     # See https://github.com/HypothesisWorks/hypothesis/issues/2229
