@@ -42,7 +42,7 @@ class MockedArray:
         if name in self.exclude:
             raise AttributeError(f"removed on the mock: {name}")
 
-        return super().__getattribute__(self, name)
+        return object.__getattribute__(self, name)
 
 
 def wrap_array(func: callable, exclude: Tuple[str, ...] = ()) -> callable:
