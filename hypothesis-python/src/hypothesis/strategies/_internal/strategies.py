@@ -910,8 +910,9 @@ def _collection_ish_functions():
             np.asarray_chkfinite,
             np.asfortranarray,
         ]
-        np_version = tuple(np.__version__.split(".", maxsplit=2)[:2])
+        np_version = tuple(int(_) for _ in np.__version__.split(".", maxsplit=2)[:2])
         if np_version < (2, 0):
+            # removed in numpy>=2.0
             funcs += [np.asfarray]
 
     return funcs
