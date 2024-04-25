@@ -908,9 +908,12 @@ def _collection_ish_functions():
             np.diag,
             # bonus undocumented functions from tab-completion:
             np.asarray_chkfinite,
-            np.asfarray,
             np.asfortranarray,
         ]
+        np_version = tuple(np.__version__.split(".", maxsplit=2)[:2])
+        if np_version < (2, 0):
+            funcs += [np.asfarray]
+
     return funcs
 
 
