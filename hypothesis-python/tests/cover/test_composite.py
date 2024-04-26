@@ -34,8 +34,8 @@ def test_simplify_draws():
 
 
 def test_can_pass_through_arguments():
-    assert minimal(badly_draw_lists(5), lambda x: True) == [0] * 5
-    assert minimal(badly_draw_lists(m=6), lambda x: True) == [0] * 6
+    assert minimal(badly_draw_lists(5)) == [0] * 5
+    assert minimal(badly_draw_lists(m=6)) == [0] * 6
 
 
 @st.composite
@@ -95,7 +95,7 @@ def test_can_use_pure_args():
     def stuff(*args):
         return args[0](st.sampled_from(args[1:]))
 
-    assert minimal(stuff(1, 2, 3, 4, 5), lambda x: True) == 1
+    assert minimal(stuff(1, 2, 3, 4, 5)) == 1
 
 
 def test_composite_of_lists():

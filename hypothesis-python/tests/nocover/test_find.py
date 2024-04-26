@@ -20,7 +20,7 @@ from tests.common.debug import minimal
 
 
 def test_can_find_an_int():
-    assert minimal(integers(), lambda x: True) == 0
+    assert minimal(integers()) == 0
     assert minimal(integers(), lambda x: x >= 13) == 13
 
 

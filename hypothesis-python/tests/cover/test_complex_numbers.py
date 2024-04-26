@@ -26,7 +26,7 @@ from tests.common.debug import (
 
 
 def test_minimal():
-    assert minimal(complex_numbers(), lambda x: True) == 0
+    assert minimal(complex_numbers()) == 0
 
 
 def test_minimal_nonzero_real():
@@ -80,17 +80,15 @@ def test_min_magnitude_respected(data, mag):
 
 
 def test_minimal_min_magnitude_zero():
-    assert minimal(complex_numbers(min_magnitude=0), lambda x: True) == 0
+    assert minimal(complex_numbers(min_magnitude=0)) == 0
 
 
 def test_minimal_min_magnitude_positive():
-    assert minimal(complex_numbers(min_magnitude=0.5), lambda x: True) in (0.5, 1)
+    assert minimal(complex_numbers(min_magnitude=0.5)) in (0.5, 1)
 
 
 def test_minimal_minmax_magnitude():
-    assert minimal(
-        complex_numbers(min_magnitude=0.5, max_magnitude=1.5), lambda x: True
-    ) in (0.5, 1)
+    assert minimal(complex_numbers(min_magnitude=0.5, max_magnitude=1.5)) in (0.5, 1)
 
 
 @given(st.data(), st.floats(0, 10e300, allow_infinity=False, allow_nan=False))
