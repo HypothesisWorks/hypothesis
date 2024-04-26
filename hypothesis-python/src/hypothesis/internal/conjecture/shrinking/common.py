@@ -155,7 +155,6 @@ class Shrinker:
 
         Does nothing by default.
         """
-        raise NotImplementedError
 
     def short_circuit(self):
         """Possibly attempt to do some shrinking.
@@ -163,7 +162,7 @@ class Shrinker:
         If this returns True, the ``run`` method will terminate early
         without doing any more work.
         """
-        raise NotImplementedError
+        return False
 
     def left_is_better(self, left, right):
         """Returns True if the left is strictly simpler than the right

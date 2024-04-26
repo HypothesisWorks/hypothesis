@@ -49,11 +49,6 @@ class Lexical(Shrinker):
     def partial_sort(self):
         Ordering.shrink(self.current, self.consider, random=self.random)
 
-    def short_circuit(self):
-        """This is just an assemblage of other shrinkers, so we rely on their
-        short circuiting."""
-        return False
-
     def run_step(self):
         self.minimize_as_integer()
         self.partial_sort()
