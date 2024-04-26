@@ -43,11 +43,10 @@ class Lexical(Shrinker):
         Integer.shrink(
             self.current_int,
             lambda c: c == self.current_int or self.incorporate_int(c),
-            random=self.random,
         )
 
     def partial_sort(self):
-        Ordering.shrink(self.current, self.consider, random=self.random)
+        Ordering.shrink(self.current, self.consider)
 
     def run_step(self):
         self.minimize_as_integer()
