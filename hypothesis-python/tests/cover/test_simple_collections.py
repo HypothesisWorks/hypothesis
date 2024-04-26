@@ -112,9 +112,7 @@ def test_sets_of_fixed_length(n):
 
 @pytest.mark.parametrize("n", range(10))
 def test_dictionaries_of_fixed_length(n):
-    x = set(
-        minimal(dictionaries(integers(), booleans(), min_size=n, max_size=n)).keys()
-    )
+    x = set(minimal(dictionaries(integers(), booleans(), min_size=n, max_size=n)))
 
     if not n:
         assert x == set()
@@ -166,10 +164,8 @@ def test_small_sized_sets(x):
 
 
 def test_minimize_dicts_with_incompatible_keys():
-    assert minimal(fixed_dictionaries({1: booleans(), "hi": lists(booleans())})) == {
-        1: False,
-        "hi": [],
-    }
+    strat = fixed_dictionaries({1: booleans(), "hi": lists(booleans())})
+    assert minimal(strat) == {1: False, "hi": []}
 
 
 @given(
