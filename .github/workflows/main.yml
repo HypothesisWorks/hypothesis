@@ -77,6 +77,7 @@ jobs:
           # - check-crosshair-nocover
           # - check-crosshair-niche
           - check-py38-oldestnumpy
+          - check-numpy-nightly
       fail-fast: false
     steps:
     - uses: actions/checkout@v3

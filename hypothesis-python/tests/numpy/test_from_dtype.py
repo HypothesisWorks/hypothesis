@@ -21,6 +21,8 @@ from hypothesis.strategies._internal import SearchStrategy
 
 from tests.common.debug import assert_no_examples, check_can_generate_examples, find_any
 
+np_version = tuple(int(x) for x in np.__version__.split(".")[:2])
+
 STANDARD_TYPES = [
     np.dtype(t)
     for t in (
@@ -126,7 +128,12 @@ def test_byte_string_dtypes_generate_unicode_strings(data):
     assert isinstance(result, bytes)
 
 
-@pytest.mark.parametrize("dtype", ["U", "S", "a"])
+skipif_np2 = pytest.mark.skipif(np_version >= (2, 0), reason="removed in new version")
+
+@pytest.mark.parametrize(
+    "dtype",
+    ["U", "S", pytest.param("a", marks=skipif_np2)],
+)
 def test_unsized_strings_length_gt_one(dtype):
     # See https://github.com/HypothesisWorks/hypothesis/issues/2229
     find_any(nps.arrays(dtype=dtype, shape=1), lambda arr: len(arr[0]) >= 2)
