@@ -593,6 +593,7 @@ def test_datatree_repr(bool_kwargs, int_kwargs):
     observer = tree.new_observer()
     observer.draw_boolean(False, was_forced=False, kwargs=bool_kwargs)
     observer.draw_integer(0, was_forced=False, kwargs=int_kwargs)
+    observer.draw_boolean(False, was_forced=True, kwargs=bool_kwargs)
     observer.conclude_test(Status.INTERESTING, interesting_origin=origin)
 
     assert (
@@ -605,7 +606,8 @@ def test_datatree_repr(bool_kwargs, int_kwargs):
           integer 42 {int_kwargs}
             Conclusion (Status.VALID)
           integer 0 {int_kwargs}
-            Conclusion (Status.INTERESTING, {origin})
+            boolean False [forced] {bool_kwargs}
+              Conclusion (Status.INTERESTING, {origin})
         """
         ).strip()
     )
