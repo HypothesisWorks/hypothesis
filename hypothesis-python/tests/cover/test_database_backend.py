@@ -17,12 +17,10 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from shutil import make_archive, rmtree
 from typing import Iterator, Optional, Tuple
-from hypothesis.internal.compat import WINDOWS
 
 import pytest
 
 from hypothesis import configuration, given, settings, strategies as st
-from hypothesis.utils.conventions import not_set
 from hypothesis.database import (
     DirectoryBasedExampleDatabase,
     ExampleDatabase,
@@ -32,8 +30,10 @@ from hypothesis.database import (
     ReadOnlyDatabase,
 )
 from hypothesis.errors import HypothesisWarning
+from hypothesis.internal.compat import WINDOWS
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
 from hypothesis.strategies import binary, lists, tuples
+from hypothesis.utils.conventions import not_set
 
 small_settings = settings(max_examples=50)
 

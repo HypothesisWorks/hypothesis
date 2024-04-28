@@ -6,11 +6,11 @@
 #
 attrs==23.2.0
     # via hypothesis (hypothesis-python/setup.py)
-exceptiongroup==1.2.0 ; python_version < "3.11"
+exceptiongroup==1.2.1 ; python_version < "3.11"
     # via
     #   hypothesis (hypothesis-python/setup.py)
     #   pytest
-execnet==2.0.2
+execnet==2.1.1
     # via pytest-xdist
 iniconfig==2.0.0
     # via pytest
@@ -18,11 +18,11 @@ packaging==24.0
     # via pytest
 pexpect==4.9.0
     # via -r requirements/test.in
-pluggy==1.4.0
+pluggy==1.5.0
     # via pytest
 ptyprocess==0.7.0
     # via pexpect
-pytest==8.1.1
+pytest==8.2.0
     # via
     #   -r requirements/test.in
     #   pytest-xdist

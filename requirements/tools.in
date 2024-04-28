@@ -15,7 +15,7 @@ python-dateutil
 requests
 restructuredtext-lint
 ruff
-shed
+shed==2024.1.1
 sphinx
 sphinx-codeautolink
 sphinx-hoverxref
