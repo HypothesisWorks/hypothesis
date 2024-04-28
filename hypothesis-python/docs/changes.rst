@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.100.2:
+
+--------------------
+6.100.2 - 2024-04-28
+--------------------
+
+Explicitly cast :obj:`numpy.finfo.smallest_normal` to builtin `float` in
+preparation for the :pypi:`numpy==2.0 <numpy>` release (:issue:`3950`)
+
 .. _v6.100.1:
 
 --------------------
