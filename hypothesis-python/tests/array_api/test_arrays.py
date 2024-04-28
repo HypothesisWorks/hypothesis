@@ -301,6 +301,7 @@ def test_may_not_fill_unique_array_with_non_nan(xp, xps):
 @pytest.mark.skipif(sys.version_info[:2] <= (3, 8), reason="no complex")
 def test_floating_point_array():
     import warnings
+
     from hypothesis.extra.array_api import make_strategies_namespace
 
     try:

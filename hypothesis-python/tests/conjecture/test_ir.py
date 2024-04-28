@@ -406,6 +406,7 @@ def test_node_with_same_ir_type_but_different_value_is_invalid(data):
 
 
 @given(st.data())
+@settings(suppress_health_check=[HealthCheck.too_slow])
 def test_data_with_changed_was_forced(data):
     # we had a normal node and then tried to draw a different forced value from it.
     # ir tree: v1 [was_forced=False]

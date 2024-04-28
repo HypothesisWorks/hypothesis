@@ -130,6 +130,7 @@ def test_byte_string_dtypes_generate_unicode_strings(data):
 
 skipif_np2 = pytest.mark.skipif(np_version >= (2, 0), reason="removed in new version")
 
+
 @pytest.mark.parametrize(
     "dtype",
     ["U", "S", pytest.param("a", marks=skipif_np2)],

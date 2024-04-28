@@ -208,7 +208,7 @@ jobs:
       NODE_VERSION: 18
       # Note that the versions below must be updated in sync; we've automated
       # that with `update_pyodide_versions()` in our weekly cronjob.
-      PYODIDE_VERSION: 0.25.0
+      PYODIDE_VERSION: 0.25.1
       PYTHON_VERSION: 3.11.3
       EMSCRIPTEN_VERSION: 3.1.46
     steps:
