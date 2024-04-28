@@ -479,7 +479,7 @@ def test_iterables_are_exhaustible(it):
 
 
 def test_minimal_iterable():
-    assert list(minimal(ds.iterables(ds.integers()), lambda x: True)) == []
+    assert list(minimal(ds.iterables(ds.integers()))) == []
 
 
 @pytest.mark.parametrize("parameter_name", ["min_value", "max_value"])

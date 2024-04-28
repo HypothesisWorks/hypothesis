@@ -85,7 +85,7 @@ def test_exclude_characters_of_major_categories():
 
 
 def test_find_one():
-    char = minimal(characters(min_codepoint=48, max_codepoint=48), lambda _: True)
+    char = minimal(characters(min_codepoint=48, max_codepoint=48))
     assert char == "0"
 
 
@@ -138,7 +138,7 @@ def test_blacklisted_characters():
         min_codepoint=ord("0"), max_codepoint=ord("9"), exclude_characters=bad_chars
     )
 
-    assert "1" == minimal(st, lambda c: True)
+    assert "1" == minimal(st)
 
     assert_no_examples(st, lambda c: c in bad_chars)
 

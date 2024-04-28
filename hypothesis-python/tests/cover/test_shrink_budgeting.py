@@ -10,7 +10,6 @@
 
 import math
 import sys
-from random import Random
 
 import pytest
 
@@ -18,7 +17,7 @@ from hypothesis.internal.conjecture.shrinking import Integer, Lexical, Ordering
 
 
 def measure_baseline(cls, value, **kwargs):
-    shrinker = cls(value, lambda x: x == value, random=Random(0), **kwargs)
+    shrinker = cls(value, lambda x: x == value, **kwargs)
     shrinker.run()
     return shrinker.calls
 

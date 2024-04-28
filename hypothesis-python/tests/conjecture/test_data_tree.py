@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import textwrap
 from random import Random
 
 import pytest
@@ -22,7 +23,9 @@ from hypothesis.internal.conjecture.datatree import (
 )
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.floats import float_to_int
+from hypothesis.internal.escalation import InterestingOrigin
 from hypothesis.internal.floats import next_up
+from hypothesis.vendor import pretty
 
 from tests.conjecture.common import (
     draw_boolean_kwargs,
@@ -567,3 +570,44 @@ def test_can_generate_hard_floats():
         prefix = tree.generate_novel_prefix(Random())
         data = ConjectureData.for_buffer(prefix)
         assert data.draw_float(min_value, max_value, allow_nan=False) == expected_value
+
+
+@given(draw_boolean_kwargs(), draw_integer_kwargs())
+def test_datatree_repr(bool_kwargs, int_kwargs):
+    tree = DataTree()
+
+    try:
+        int("not an int")
+    except ValueError as e:
+        origin = InterestingOrigin.from_exception(e)
+
+    observer = tree.new_observer()
+    observer.draw_boolean(True, was_forced=False, kwargs=bool_kwargs)
+    observer.conclude_test(Status.INVALID, interesting_origin=None)
+
+    observer = tree.new_observer()
+    observer.draw_boolean(False, was_forced=False, kwargs=bool_kwargs)
+    observer.draw_integer(42, was_forced=False, kwargs=int_kwargs)
+    observer.conclude_test(Status.VALID, interesting_origin=None)
+
+    observer = tree.new_observer()
+    observer.draw_boolean(False, was_forced=False, kwargs=bool_kwargs)
+    observer.draw_integer(0, was_forced=False, kwargs=int_kwargs)
+    observer.draw_boolean(False, was_forced=True, kwargs=bool_kwargs)
+    observer.conclude_test(Status.INTERESTING, interesting_origin=origin)
+
+    assert (
+        pretty.pretty(tree)
+        == textwrap.dedent(
+            f"""
+        boolean True {bool_kwargs}
+          Conclusion (Status.INVALID)
+        boolean False {bool_kwargs}
+          integer 42 {int_kwargs}
+            Conclusion (Status.VALID)
+          integer 0 {int_kwargs}
+            boolean False [forced] {bool_kwargs}
+              Conclusion (Status.INTERESTING, {origin})
+        """
+        ).strip()
+    )
