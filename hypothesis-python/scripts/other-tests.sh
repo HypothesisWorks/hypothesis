@@ -26,10 +26,10 @@ $PYTEST tests/dpcontracts/
 pip uninstall -y dpcontracts
 
 pip install "$(grep 'fakeredis==' ../requirements/coverage.txt)"
+pip install "$(grep 'typing-extensions==' ../requirements/coverage.txt)"
 $PYTEST tests/redis/
 pip uninstall -y redis fakeredis
 
-pip install "$(grep 'typing-extensions==' ../requirements/coverage.txt)"
 $PYTEST tests/typing_extensions/
 pip uninstall -y typing_extensions
 
