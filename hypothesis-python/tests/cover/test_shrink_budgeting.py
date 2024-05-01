@@ -8,28 +8,24 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import math
 import sys
 
 import pytest
 
-from hypothesis.internal.conjecture.shrinking import Integer, Lexical, Ordering
+from hypothesis.internal.conjecture.shrinking import Integer, Ordering
 
 
-def measure_baseline(cls, value, **kwargs):
-    shrinker = cls(value, lambda x: x == value, **kwargs)
+@pytest.mark.parametrize(
+    "Shrinker, value",
+    [
+        (Integer, 2**16),
+        (Integer, int(sys.float_info.max)),
+        (Ordering, [[100] * 10]),
+        (Ordering, [i * 100 for i in (range(5))]),
+        (Ordering, [i * 100 for i in reversed(range(5))]),
+    ],
+)
+def test_meets_budgetary_requirements(Shrinker, value):
+    shrinker = Shrinker(value, lambda x: x == value)
     shrinker.run()
-    return shrinker.calls
-
-
-@pytest.mark.parametrize("cls", [Lexical, Ordering])
-@pytest.mark.parametrize("example", [[255] * 8])
-def test_meets_budgetary_requirements(cls, example):
-    # Somewhat arbitrary but not unreasonable budget.
-    n = len(example)
-    budget = n * math.ceil(math.log(n, 2)) + 5
-    assert measure_baseline(cls, example) <= budget
-
-
-def test_integer_shrinking_is_parsimonious():
-    assert measure_baseline(Integer, int(sys.float_info.max)) <= 10
+    assert shrinker.calls <= 10

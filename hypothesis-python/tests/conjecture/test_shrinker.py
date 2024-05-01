@@ -12,16 +12,13 @@ import time
 
 import pytest
 
-from hypothesis.internal.compat import int_to_bytes
-from hypothesis.internal.conjecture import floats as flt
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.shrinker import (
     Shrinker,
     ShrinkPass,
     StopShrinking,
-    block_program,
+    node_program,
 )
-from hypothesis.internal.conjecture.shrinking import Float
 from hypothesis.internal.conjecture.utils import Sampler
 
 from tests.conjecture.common import SOME_LABEL, run_to_buffer, shrinking_from
@@ -36,7 +33,7 @@ def test_can_shrink_variable_draws_with_just_deletion(n):
         if any(b):
             data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["minimize_individual_blocks"])
+    shrinker.fixate_shrink_passes(["minimize_individual_nodes"])
 
     assert list(shrinker.shrink_target.buffer) == [1, 1]
 
@@ -45,7 +42,7 @@ def test_deletion_and_lowering_fails_to_shrink(monkeypatch):
     monkeypatch.setattr(
         Shrinker,
         "shrink",
-        lambda self: self.fixate_shrink_passes(["minimize_individual_blocks"]),
+        lambda self: self.fixate_shrink_passes(["minimize_individual_nodes"]),
     )
 
     def gen(self):
@@ -83,7 +80,7 @@ def test_duplicate_blocks_that_go_away():
         if len(set(b)) <= 1:
             data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["minimize_duplicated_blocks"])
+    shrinker.fixate_shrink_passes(["minimize_duplicated_nodes"])
     # 24 bits for each integer = (24 * 2) / 8 = 6 bytes, which should all get
     # reduced to 0.
     assert shrinker.shrink_target.buffer == bytes(6)
@@ -102,8 +99,9 @@ def test_accidental_duplication():
         if len(set(b)) == 1:
             data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["minimize_duplicated_blocks"])
-    assert list(shrinker.buffer) == [5] * 7
+    shrinker.fixate_shrink_passes(["minimize_duplicated_nodes"])
+    # x=5 y=5 b=[b'\x00', b'\x00', b'\x00', b'\x00', b'\x00']
+    assert list(shrinker.buffer) == [5] * 2 + [0] * 5
 
 
 def test_can_zero_subintervals():
@@ -112,7 +110,8 @@ def test_can_zero_subintervals():
         for _ in range(10):
             data.start_example(SOME_LABEL)
             n = data.draw_integer(0, 2**8 - 1)
-            data.draw_bytes(n)
+            for _ in range(n):
+                data.draw_integer(0, 2**8 - 1)
             data.stop_example()
             if data.draw_integer(0, 2**8 - 1) != 1:
                 return
@@ -169,7 +168,7 @@ def test_shrinking_blocks_from_common_offset():
 
     shrinker.mark_changed(0)
     shrinker.mark_changed(1)
-    shrinker.lower_common_block_offset()
+    shrinker.lower_common_node_offset()
 
     x = shrinker.shrink_target.buffer
 
@@ -240,34 +239,8 @@ def test_block_deletion_can_delete_short_ranges():
             if n == 4:
                 data.mark_interesting()
 
-    shrinker.fixate_shrink_passes([block_program("X" * i) for i in range(1, 5)])
+    shrinker.fixate_shrink_passes([node_program("X" * i) for i in range(1, 5)])
     assert list(shrinker.shrink_target.buffer) == [0, 4] * 5
-
-
-def test_try_shrinking_blocks_ignores_overrun_blocks(monkeypatch):
-    monkeypatch.setattr(
-        ConjectureRunner,
-        "generate_new_examples",
-        lambda runner: runner.cached_test_function([3, 3, 0, 1]),
-    )
-
-    monkeypatch.setattr(
-        Shrinker,
-        "shrink",
-        lambda self: self.try_shrinking_blocks((0, 1, 5), bytes([2])),
-    )
-
-    @run_to_buffer
-    def x(data):
-        n1 = data.draw_integer(0, 2**8 - 1)
-        data.draw_integer(0, 2**8 - 1)
-        if n1 == 3:
-            data.draw_integer(0, 2**8 - 1)
-        k = data.draw_integer(0, 2**8 - 1)
-        if k == 1:
-            data.mark_interesting()
-
-    assert list(x) == [2, 2, 1]
 
 
 def test_dependent_block_pairs_is_up_to_shrinking_integers():
@@ -298,11 +271,8 @@ def test_dependent_block_pairs_is_up_to_shrinking_integers():
         if result >= 32768 and cap == 1:
             data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["minimize_individual_blocks"])
-    # the minimal bitstream here is actually b'\x01\x01\x00\x00\x01\x00\x00\x01',
-    # but the shrinker can't discover that it can shrink the size down from 64
-    # to 32...
-    assert list(shrinker.shrink_target.buffer) == [3, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]
+    shrinker.fixate_shrink_passes(["minimize_individual_nodes"])
+    assert list(shrinker.shrink_target.buffer) == [1, 1, 0, 0, 1, 0, 0, 1]
 
 
 def test_finding_a_minimal_balanced_binary_tree():
@@ -334,46 +304,14 @@ def test_finding_a_minimal_balanced_binary_tree():
     assert list(shrinker.shrink_target.buffer) == [1, 0, 1, 0, 1, 0, 0]
 
 
-def test_float_shrink_can_run_when_canonicalisation_does_not_work(monkeypatch):
-    # This should be an error when called
-    monkeypatch.setattr(Float, "shrink", None)
-
-    # The zero byte prefixes are for, in order:
-    # [0] sampler.sample -> data.choice  -> draw_integer
-    # [1] sampler.sample -> draw_boolean
-    # [2] _draw_float    -> draw_bits(1)    [drawing the sign]
-    # This is heavily dependent on internal implementation details and may
-    # change in the future.
-    base_buf = bytes(3) + int_to_bytes(flt.base_float_to_lex(1000.0), 8)
-
-    @shrinking_from(base_buf)
-    def shrinker(data):
-        data.draw_float()
-        if bytes(data.buffer) == base_buf:
-            data.mark_interesting()
-
-    shrinker.fixate_shrink_passes(["minimize_floats"])
-
-    assert shrinker.shrink_target.buffer == base_buf
-
-
-def test_try_shrinking_blocks_out_of_bounds():
-    @shrinking_from(bytes([1]))
-    def shrinker(data):
-        data.draw_boolean()
-        data.mark_interesting()
-
-    assert not shrinker.try_shrinking_blocks((1,), bytes([1]))
-
-
-def test_block_programs_are_adaptive():
+def test_node_programs_are_adaptive():
     @shrinking_from(bytes(1000) + bytes([1]))
     def shrinker(data):
         while not data.draw_boolean():
             pass
         data.mark_interesting()
 
-    p = shrinker.add_new_pass(block_program("X"))
+    p = shrinker.add_new_pass(node_program("X"))
     shrinker.fixate_shrink_passes([p.name])
 
     assert len(shrinker.shrink_target.buffer) == 1
@@ -425,9 +363,53 @@ def test_zig_zags_quickly():
         if abs(m - n) <= 10:
             data.mark_interesting(1)
 
-    shrinker.fixate_shrink_passes(["minimize_individual_blocks"])
+    shrinker.fixate_shrink_passes(["minimize_individual_nodes"])
     assert shrinker.engine.valid_examples <= 100
     assert list(shrinker.shrink_target.buffer) == [0, 1, 0, 1]
+
+
+@pytest.mark.parametrize(
+    "min_value, max_value, forced, shrink_towards, expected_values",
+    [
+        # this test disallows interesting values in radius 10 interval around shrink_towards
+        # to avoid trivial shrinks messing with things, which is why the expected
+        # values are ±10 from shrink_towards.
+        (-100, 0, -100, 0, [-10, -10]),
+        (-100, 0, -100, -35, [-25, -25]),
+        (0, 100, 100, 0, [10, 10]),
+        (0, 100, 100, 65, [75, 75]),
+    ],
+)
+def test_zig_zags_quickly_with_shrink_towards(
+    min_value, max_value, forced, shrink_towards, expected_values
+):
+    # we should be able to efficiently incorporate shrink_towards when dealing
+    # with zig zags.
+
+    @run_to_buffer
+    def buf(data):
+        m = data.draw_integer(
+            min_value, max_value, shrink_towards=shrink_towards, forced=forced
+        )
+        n = data.draw_integer(
+            min_value, max_value, shrink_towards=shrink_towards, forced=forced
+        )
+        if abs(m - n) <= 1:
+            data.mark_interesting()
+
+    @shrinking_from(buf)
+    def shrinker(data):
+        m = data.draw_integer(min_value, max_value, shrink_towards=shrink_towards)
+        n = data.draw_integer(min_value, max_value, shrink_towards=shrink_towards)
+        # avoid trivial counterexamples
+        if abs(m - shrink_towards) < 10 or abs(n - shrink_towards) < 10:
+            data.mark_invalid()
+        if abs(m - n) <= 1:
+            data.mark_interesting()
+
+    shrinker.fixate_shrink_passes(["minimize_individual_nodes"])
+    assert shrinker.engine.valid_examples <= 40
+    assert [node.value for node in shrinker.nodes] == expected_values
 
 
 def test_zero_irregular_examples():
@@ -516,7 +498,7 @@ def test_shrink_pass_method_is_idempotent():
         data.draw_integer(0, 2**8 - 1)
         data.mark_interesting()
 
-    sp = shrinker.shrink_pass(block_program("X"))
+    sp = shrinker.shrink_pass(node_program("X"))
     assert isinstance(sp, ShrinkPass)
     assert shrinker.shrink_pass(sp) is sp
 
@@ -552,7 +534,7 @@ def test_will_let_fixate_shrink_passes_do_a_full_run_through():
 
     shrinker.max_stall = 5
 
-    passes = [block_program("X" * i) for i in range(1, 11)]
+    passes = [node_program("X" * i) for i in range(1, 11)]
 
     with pytest.raises(StopShrinking):
         shrinker.fixate_shrink_passes(passes)

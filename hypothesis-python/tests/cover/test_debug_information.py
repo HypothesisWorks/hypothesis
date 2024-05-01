@@ -29,7 +29,7 @@ def test_reports_passes():
 
     value = out.getvalue()
 
-    assert "minimize_individual_blocks" in value
+    assert "minimize_individual_nodes" in value
     assert "calls" in value
     assert "shrinks" in value
 

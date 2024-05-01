@@ -186,6 +186,7 @@ class ConjectureRunner:
         # shrinking where we need to know about the structure of the
         # executed test case.
         self.__data_cache = LRUReusedCache(CACHE_SIZE)
+        self.__data_cache_ir = LRUReusedCache(CACHE_SIZE)
 
         self.__pending_call_explanation = None
         self._switch_to_hypothesis_provider = False
@@ -239,10 +240,45 @@ class ConjectureRunner:
                     # correct engine.
                     raise
 
-    def ir_tree_to_data(self, ir_tree_nodes):
+    def _cache(self, data):
+        result = data.as_result()
+        # when we shrink, we try out of bounds things, which can lead to the same
+        # data.buffer having multiple outcomes. eg data.buffer=b'' is Status.OVERRUN
+        # in normal circumstances, but a data with
+        # ir_nodes=[integer -5 {min_value: 0, max_value: 10}] will also have
+        # data.buffer=b'' but will be Status.INVALID instead.
+        #
+        # I think this indicates that we should be mark_overrun internally in
+        # these cases instead? alternatively, we'll map Status.INVALID to Overrun
+        # when caching.
+        if data.invalid_at is not None:
+            assert data.status is Status.INVALID
+            result = Overrun
+        self.__data_cache[data.buffer] = result
+        self.__data_cache_ir[tuple(data.examples.ir_tree_nodes)] = result
+
+    def cached_test_function_ir(self, ir_tree_nodes):
+        try:
+            return self.__data_cache_ir[tuple(ir_tree_nodes)]
+        except KeyError:
+            try:
+                trial_data = ConjectureData.for_ir_tree(ir_tree_nodes)
+                self.tree.simulate_test_function(trial_data)
+            except PreviouslyUnseenBehaviour:
+                pass
+            else:
+                trial_data.freeze()
+                try:
+                    return self.__data_cache_ir[
+                        tuple(trial_data.examples.ir_tree_nodes)
+                    ]
+                except KeyError:
+                    pass
+
         data = ConjectureData.for_ir_tree(ir_tree_nodes)
-        self.__stoppable_test_function(data)
-        return data
+        self.test_function(data)
+        self._cache(data)
+        return data.as_result()
 
     def test_function(self, data):
         if self.__pending_call_explanation is not None:
@@ -274,7 +310,7 @@ class ConjectureRunner:
                     ),
                 }
                 self.stats_per_test_case.append(call_stats)
-                self.__data_cache[data.buffer] = data.as_result()
+                self._cache(data)
 
         self.debug_data(data)
 
@@ -321,8 +357,9 @@ class ConjectureRunner:
 
                 # drive the ir tree through the test function to convert it
                 # to a buffer
-                data = self.ir_tree_to_data(data.examples.ir_tree_nodes)
-                self.__data_cache[data.buffer] = data.as_result()
+                data = ConjectureData.for_ir_tree(data.examples.ir_tree_nodes)
+                self.__stoppable_test_function(data)
+                self._cache(data)
 
             key = data.interesting_origin
             changed = False

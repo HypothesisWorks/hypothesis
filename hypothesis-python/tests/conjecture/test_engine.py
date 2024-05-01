@@ -15,7 +15,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from hypothesis import HealthCheck, Phase, Verbosity, settings
+from hypothesis import HealthCheck, Phase, Verbosity, settings, strategies as st
 from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
 from hypothesis.errors import FailedHealthCheck, Flaky
 from hypothesis.internal.compat import int_from_bytes
@@ -29,9 +29,10 @@ from hypothesis.internal.conjecture.engine import (
     RunIsComplete,
 )
 from hypothesis.internal.conjecture.pareto import DominanceRelation, dominance
-from hypothesis.internal.conjecture.shrinker import Shrinker, block_program
+from hypothesis.internal.conjecture.shrinker import Shrinker
 from hypothesis.internal.entropy import deterministic_PRNG
 
+from tests.common.debug import minimal
 from tests.common.strategies import SLOW, HardToShrink
 from tests.common.utils import no_shrink
 from tests.conjecture.common import (
@@ -39,7 +40,6 @@ from tests.conjecture.common import (
     TEST_SETTINGS,
     buffer_size_limit,
     run_to_buffer,
-    run_to_data,
     shrinking_from,
 )
 
@@ -440,17 +440,14 @@ def test_fails_health_check_for_slow_draws():
 def test_can_shrink_variable_draws(n_large):
     target = 128 * n_large
 
-    @run_to_data
-    def data(data):
-        n = data.draw_integer(0, 15)
-        b = [data.draw_integer(0, 255) for _ in range(n)]
-        if sum(b) >= target:
-            data.mark_interesting()
+    @st.composite
+    def strategy(draw):
+        n = draw(st.integers(0, 15))
+        return [draw(st.integers(0, 255)) for _ in range(n)]
 
-    x = data.buffer
-
-    assert x.count(0) == 0
-    assert sum(x[1:]) == target
+    ints = minimal(strategy(), lambda ints: sum(ints) >= target)
+    # should look like [4, 255, 255, 255]
+    assert ints == [target % 255] + [255] * (len(ints) - 1)
 
 
 def test_run_nothing():
@@ -828,7 +825,7 @@ def test_dependent_block_pairs_can_lower_to_zero():
         if n == 1:
             data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["minimize_individual_blocks"])
+    shrinker.fixate_shrink_passes(["minimize_individual_nodes"])
     assert list(shrinker.shrink_target.buffer) == [0, 1]
 
 
@@ -841,7 +838,7 @@ def test_handle_size_too_large_during_dependent_lowering():
         else:
             data.draw_integer(0, 2**8 - 1)
 
-    shrinker.fixate_shrink_passes(["minimize_individual_blocks"])
+    shrinker.fixate_shrink_passes(["minimize_individual_nodes"])
 
 
 def test_block_may_grow_during_lexical_shrinking():
@@ -857,11 +854,11 @@ def test_block_may_grow_during_lexical_shrinking():
             data.draw_integer(0, 2**16 - 1)
         data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["minimize_individual_blocks"])
+    shrinker.fixate_shrink_passes(["minimize_individual_nodes"])
     assert list(shrinker.shrink_target.buffer) == [0, 0, 0]
 
 
-def test_lower_common_block_offset_does_nothing_when_changed_blocks_are_zero():
+def test_lower_common_node_offset_does_nothing_when_changed_blocks_are_zero():
     @shrinking_from([1, 0, 1, 0])
     def shrinker(data):
         data.draw_boolean()
@@ -872,11 +869,11 @@ def test_lower_common_block_offset_does_nothing_when_changed_blocks_are_zero():
 
     shrinker.mark_changed(1)
     shrinker.mark_changed(3)
-    shrinker.lower_common_block_offset()
+    shrinker.lower_common_node_offset()
     assert list(shrinker.shrink_target.buffer) == [1, 0, 1, 0]
 
 
-def test_lower_common_block_offset_ignores_zeros():
+def test_lower_common_node_offset_ignores_zeros():
     @shrinking_from([2, 2, 0])
     def shrinker(data):
         n = data.draw_integer(0, 2**8 - 1)
@@ -887,24 +884,8 @@ def test_lower_common_block_offset_ignores_zeros():
 
     for i in range(3):
         shrinker.mark_changed(i)
-    shrinker.lower_common_block_offset()
+    shrinker.lower_common_node_offset()
     assert list(shrinker.shrink_target.buffer) == [1, 1, 0]
-
-
-def test_pandas_hack():
-    @shrinking_from([2, 1, 1, 7])
-    def shrinker(data):
-        n = data.draw_integer(0, 2**8 - 1)
-        m = data.draw_integer(0, 2**8 - 1)
-        if n == 1:
-            if m == 7:
-                data.mark_interesting()
-        data.draw_integer(0, 2**8 - 1)
-        if data.draw_integer(0, 2**8 - 1) == 7:
-            data.mark_interesting()
-
-    shrinker.fixate_shrink_passes([block_program("-XX")])
-    assert list(shrinker.shrink_target.buffer) == [1, 7]
 
 
 def test_cached_test_function_returns_right_value():

@@ -11,7 +11,6 @@
 import math
 import sys
 
-from hypothesis.internal.conjecture.data import ir_value_permitted
 from hypothesis.internal.conjecture.floats import float_to_lex
 from hypothesis.internal.conjecture.shrinking.common import Shrinker
 from hypothesis.internal.conjecture.shrinking.integer import Integer
@@ -20,16 +19,9 @@ MAX_PRECISE_INTEGER = 2**53
 
 
 class Float(Shrinker):
-    def setup(self, node):
+    def setup(self):
         self.NAN = math.nan
         self.debugging_enabled = True
-        self.node = node
-
-    def consider(self, value):
-        if not ir_value_permitted(value, "float", self.node.kwargs):
-            self.debug(f"rejecting {value} as disallowed for {self.node.kwargs}")
-            return False
-        return super().consider(value)
 
     def make_immutable(self, f):
         f = float(f)
@@ -60,11 +52,13 @@ class Float(Shrinker):
         if not math.isfinite(self.current):
             return True
 
-        # If its too large to represent as an integer, bail out here. It's
-        # better to try shrinking it in the main representation.
-        return self.current >= MAX_PRECISE_INTEGER
-
     def run_step(self):
+        # we previously didn't shrink here until it was an int. should we shrink
+        # like an int in the beginning as well as the end to get a performance
+        # boost? or does it actually not matter because we shrink to an int
+        # at the same rate anyway and then finish it off with an Integer.shrink
+        # anyway?
+
         # Finally we get to the important bit: Each of these is a small change
         # to the floating point number that corresponds to a large change in
         # the lexical representation. Trying these ensures that our floating
@@ -82,6 +76,10 @@ class Float(Shrinker):
 
         for p in range(10):
             scaled = self.current * 2**p  # note: self.current may change in loop
+            # floats close to math.inf can overflow in this intermediate step.
+            # probably something we should fix?
+            if math.isinf(scaled):
+                continue
             for truncate in [math.floor, math.ceil]:
                 self.consider(truncate(scaled) / 2**p)
 

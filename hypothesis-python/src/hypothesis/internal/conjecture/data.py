@@ -777,10 +777,6 @@ class Blocks:
         """Equivalent to self[i].end."""
         return self.endpoints[i]
 
-    def bounds(self, i: int) -> Tuple[int, int]:
-        """Equivalent to self[i].bounds."""
-        return (self.start(i), self.end(i))
-
     def all_bounds(self) -> Iterable[Tuple[int, int]]:
         """Equivalent to [(b.start, b.end) for b in self]."""
         prev = 0
@@ -965,7 +961,12 @@ class IRNode:
     was_forced: bool = attr.ib()
     index: Optional[int] = attr.ib(default=None)
 
-    def copy(self, *, with_value: IRType) -> "IRNode":
+    def copy(
+        self,
+        *,
+        with_value: Optional[IRType] = None,
+        with_kwargs: Optional[IRKWargsType] = None,
+    ) -> "IRNode":
         # we may want to allow this combination in the future, but for now it's
         # a footgun.
         assert not self.was_forced, "modifying a forced node doesn't make sense"
@@ -974,8 +975,8 @@ class IRNode:
         # after copying.
         return IRNode(
             ir_type=self.ir_type,
-            value=with_value,
-            kwargs=self.kwargs,
+            value=self.value if with_value is None else with_value,
+            kwargs=self.kwargs if with_kwargs is None else with_kwargs,
             was_forced=self.was_forced,
         )
 
@@ -1048,6 +1049,16 @@ class IRNode:
             and self.was_forced == other.was_forced
         )
 
+    def __hash__(self):
+        return hash(
+            (
+                self.ir_type,
+                ir_value_key(self.ir_type, self.value),
+                ir_kwargs_key(self.ir_type, self.kwargs),
+                self.was_forced,
+            )
+        )
+
     def __repr__(self):
         # repr to avoid "BytesWarning: str() on a bytes instance" for bytes nodes
         forced_marker = " [forced]" if self.was_forced else ""
@@ -1087,22 +1098,36 @@ def ir_value_permitted(value, ir_type, kwargs):
     raise NotImplementedError(f"unhandled type {type(value)} of ir value {value}")
 
 
+def ir_value_key(ir_type, v):
+    if ir_type == "float":
+        return float_to_int(v)
+    return v
+
+
+def ir_kwargs_key(ir_type, kwargs):
+    if ir_type == "float":
+        return (
+            float_to_int(kwargs["min_value"]),
+            float_to_int(kwargs["max_value"]),
+            kwargs["allow_nan"],
+            kwargs["smallest_nonzero_magnitude"],
+        )
+    if ir_type == "integer":
+        return (
+            kwargs["min_value"],
+            kwargs["max_value"],
+            None if kwargs["weights"] is None else tuple(kwargs["weights"]),
+            kwargs["shrink_towards"],
+        )
+    return tuple(kwargs[key] for key in sorted(kwargs))
+
+
 def ir_value_equal(ir_type, v1, v2):
-    if ir_type != "float":
-        return v1 == v2
-    return float_to_int(v1) == float_to_int(v2)
+    return ir_value_key(ir_type, v1) == ir_value_key(ir_type, v2)
 
 
 def ir_kwargs_equal(ir_type, kwargs1, kwargs2):
-    if ir_type != "float":
-        return kwargs1 == kwargs2
-    return (
-        float_to_int(kwargs1["min_value"]) == float_to_int(kwargs2["min_value"])
-        and float_to_int(kwargs1["max_value"]) == float_to_int(kwargs2["max_value"])
-        and kwargs1["allow_nan"] == kwargs2["allow_nan"]
-        and kwargs1["smallest_nonzero_magnitude"]
-        == kwargs2["smallest_nonzero_magnitude"]
-    )
+    return ir_kwargs_key(ir_type, kwargs1) == ir_kwargs_key(ir_type, kwargs2)
 
 
 @dataclass_transform()
@@ -1115,16 +1140,25 @@ class ConjectureResult:
     status: Status = attr.ib()
     interesting_origin: Optional[InterestingOrigin] = attr.ib()
     buffer: bytes = attr.ib()
-    blocks: Blocks = attr.ib()
+    # some ConjectureDatas pass through the ir and some pass through buffers.
+    # the ir does not drive its result through the buffer, which means blocks/examples
+    # may differ (I think for forced values?) even when the buffer is the same.
+    # I don't *think* anything was relying on anything but .buffer for result equality,
+    # though that assumption may be leaning on flakiness detection invariants.
+    #
+    # If we don't do this, multiple (semantically, but not pythonically) equivalent results
+    # get stored in the pareto front.
+    blocks: Blocks = attr.ib(eq=False)
     output: str = attr.ib()
     extra_information: Optional[ExtraInformation] = attr.ib()
     has_discards: bool = attr.ib()
     target_observations: TargetObservations = attr.ib()
     tags: FrozenSet[StructuralCoverageTag] = attr.ib()
     forced_indices: FrozenSet[int] = attr.ib(repr=False)
-    examples: Examples = attr.ib(repr=False)
+    examples: Examples = attr.ib(repr=False, eq=False)
     arg_slices: Set[Tuple[int, int]] = attr.ib(repr=False)
     slice_comments: Dict[Tuple[int, int], str] = attr.ib(repr=False)
+    invalid_at: Optional[Tuple[IRTypeName, IRKWargsType]] = attr.ib(repr=False)
 
     index: int = attr.ib(init=False)
 
@@ -1977,6 +2011,7 @@ class ConjectureData:
         self.extra_information = ExtraInformation()
 
         self.ir_tree_nodes = ir_tree_prefix
+        self.invalid_at: Optional[Tuple[IRTypeName, IRKWargsType]] = None
         self._node_index = 0
         self.start_example(TOP_LABEL)
 
@@ -2292,12 +2327,16 @@ class ConjectureData:
         # (in fact, it is possible that giving up early here results in more time
         # for useful shrinks to run).
         if node.ir_type != ir_type:
+            # needed for try_shrinking_nodes to see what node was *attempted*
+            # to be drawn.
+            self.invalid_at = (ir_type, kwargs)
             self.mark_invalid(f"(internal) want a {ir_type} but have a {node.ir_type}")
 
         # if a node has different kwargs (and so is misaligned), but has a value
         # that is allowed by the expected kwargs, then we can coerce this node
         # into an aligned one by using its value. It's unclear how useful this is.
         if not ir_value_permitted(node.value, node.ir_type, kwargs):
+            self.invalid_at = (ir_type, kwargs)
             self.mark_invalid(f"(internal) got a {ir_type} but outside the valid range")
 
         return node
@@ -2328,6 +2367,7 @@ class ConjectureData:
                 forced_indices=frozenset(self.forced_indices),
                 arg_slices=self.arg_slices,
                 slice_comments=self.slice_comments,
+                invalid_at=self.invalid_at,
             )
             assert self.__result is not None
             self.blocks.transfer_ownership(self.__result)
