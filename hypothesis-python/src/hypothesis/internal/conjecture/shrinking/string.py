@@ -20,5 +20,5 @@ class String(Collection):
             to_order=intervals.index_from_char_in_shrink_order,
             from_order=intervals.char_in_shrink_order,
             ElementShrinker=Integer,
-            **kwargs
+            **kwargs,
         )

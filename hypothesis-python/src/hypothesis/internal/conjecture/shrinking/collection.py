@@ -17,9 +17,7 @@ def identity(v):
 
 
 class Collection(Shrinker):
-    def setup(
-        self, *, ElementShrinker, to_order=identity, from_order=identity
-    ):
+    def setup(self, *, ElementShrinker, to_order=identity, from_order=identity):
         self.ElementShrinker = ElementShrinker
         self.to_order = to_order
         self.from_order = from_order

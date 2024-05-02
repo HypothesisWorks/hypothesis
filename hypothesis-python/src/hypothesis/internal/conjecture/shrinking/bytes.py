@@ -8,8 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from hypothesis.internal.conjecture.shrinking.integer import Integer
 from hypothesis.internal.compat import int_from_bytes, int_to_bytes
+from hypothesis.internal.conjecture.shrinking.integer import Integer
 
 
 class Bytes(Integer):
@@ -20,5 +20,5 @@ class Bytes(Integer):
         super().__init__(
             int_from_bytes(initial),
             lambda n: predicate(int_to_bytes(n, len(initial))),
-            **kwargs
+            **kwargs,
         )
