@@ -1104,48 +1104,49 @@ class Shrinker:
                 )
 
         lost_nodes = len(self.nodes) - len(attempt.examples.ir_tree_nodes)
-        if lost_nodes > 0:
-            index = nodes[-1].index
-            # We now look for contiguous regions to delete that might help fix up
-            # this failed shrink. We only look for contiguous regions of the right
-            # lengths because doing anything more than that starts to get very
-            # expensive. See minimize_individual_blocks for where we
-            # try to be more aggressive.
-            regions_to_delete = {(index + 1, index + 1 + lost_nodes)}
+        if lost_nodes <= 0:
+            return False
 
-            for ex in self.shrink_target.examples:
-                if ex.ir_start > index:
-                    continue
-                if ex.ir_end <= index + 1:
-                    continue
+        start = nodes[0].index
+        end = nodes[-1].index + 1
+        # We now look for contiguous regions to delete that might help fix up
+        # this failed shrink. We only look for contiguous regions of the right
+        # lengths because doing anything more than that starts to get very
+        # expensive. See minimize_individual_blocks for where we
+        # try to be more aggressive.
+        regions_to_delete = {(end, end + lost_nodes)}
 
-                # TODO convince myself this check is reasonable and not hiding a bug
-                if ex.index >= len(attempt.examples):
-                    continue
+        for ex in self.examples:
+            if ex.ir_start > start:
+                continue
+            if ex.ir_end <= end:
+                continue
 
-                replacement = attempt.examples[ex.index]
-                in_original = [c for c in ex.children if c.index > index]
-                in_replaced = [c for c in replacement.children if c.index > index]
+            # TODO convince myself this check is reasonable and not hiding a bug
+            if ex.index >= len(attempt.examples):
+                continue
 
-                if len(in_replaced) >= len(in_original) or not in_replaced:
-                    continue
+            replacement = attempt.examples[ex.index]
+            in_original = [c for c in ex.children if c.ir_start >= end]
+            in_replaced = [c for c in replacement.children if c.ir_start >= end]
 
-                # We've found an example where some of the children went missing
-                # as a result of this change, and just replacing it with the data
-                # it would have had and removing the spillover didn't work. This
-                # means that some of its children towards the right must be
-                # important, so we try to arrange it so that it retains its
-                # rightmost children instead of its leftmost.
-                regions_to_delete.add(
-                    (in_original[0].index, in_original[-len(in_replaced)].index)
-                )
+            if len(in_replaced) >= len(in_original) or not in_replaced:
+                continue
 
-            for u, v in sorted(
-                regions_to_delete, key=lambda x: x[1] - x[0], reverse=True
-            ):
-                try_with_deleted = initial_attempt[:u] + initial_attempt[v:]
-                if self.consider_new_tree(try_with_deleted):
-                    return True
+            # We've found an example where some of the children went missing
+            # as a result of this change, and just replacing it with the data
+            # it would have had and removing the spillover didn't work. This
+            # means that some of its children towards the right must be
+            # important, so we try to arrange it so that it retains its
+            # rightmost children instead of its leftmost.
+            regions_to_delete.add(
+                (in_original[0].ir_start, in_original[-len(in_replaced)].ir_start)
+            )
+
+        for u, v in sorted(regions_to_delete, key=lambda x: x[1] - x[0], reverse=True):
+            try_with_deleted = initial_attempt[:u] + initial_attempt[v:]
+            if self.consider_new_tree(try_with_deleted):
+                return True
 
         return False
 
