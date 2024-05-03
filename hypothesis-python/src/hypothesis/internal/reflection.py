@@ -21,7 +21,7 @@ import sys
 import textwrap
 import types
 import warnings
-from functools import partial, wraps
+from functools import lru_cache, partial, wraps
 from io import StringIO
 from keyword import iskeyword
 from random import _inst as global_random_instance
@@ -303,6 +303,7 @@ SPACE_FOLLOWS_OPEN_BRACKET = re.compile(r"\( ")
 SPACE_PRECEDES_CLOSE_BRACKET = re.compile(r" \)")
 
 
+@lru_cache(maxsize=1024)
 def extract_lambda_source(f):
     """Extracts a single lambda expression from the string source. Returns a
     string indicating an unknown body if it gets confused in any way.
