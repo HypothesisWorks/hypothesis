@@ -57,6 +57,12 @@ Or some other custom integration, such as a :ref:`"hypothesis" entry point <entr
 Other cool things
 -----------------
 
+`Tyche <https://marketplace.visualstudio.com/items?itemName=HarrisonGoldstein.tyche>`__
+(`source <https://github.com/tyche-pbt>`__) is a VSCode extension which provides live
+insights into your property-based tests, including the distribution of generated inputs
+and the resulting code coverage.  You can `read the research paper here
+<https://harrisongoldste.in/papers/uist23.pdf>`__.
+
 :pypi:`schemathesis` is a tool for testing web applications built with `Open API / Swagger specifications <https://swagger.io/>`_.
 It reads the schema and generates test cases which will ensure that the application is compliant with its schema.
 The application under test could be written in any language, the only thing you need is a valid API schema in a supported format.
