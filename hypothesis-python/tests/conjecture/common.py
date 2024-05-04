@@ -168,9 +168,9 @@ def draw_integer_kwargs(
 
 @st.composite
 def draw_string_kwargs(draw, *, use_min_size=True, use_max_size=True, use_forced=False):
-    interval_set = draw(intervals())
-    # TODO relax this restriction once we handle empty pseudo-choices in the ir
-    assume(len(interval_set) > 0)
+    # TODO also sample empty intervals, ie remove this min_size, once we handle empty
+    # pseudo-choices in the ir
+    interval_set = draw(intervals(min_size=1))
     forced = (
         draw(TextStrategy(OneCharStringStrategy(interval_set))) if use_forced else None
     )

@@ -65,13 +65,22 @@ def build_intervals(intervals):
         yield batch
 
 
-def interval_lists(min_codepoint=0, max_codepoint=sys.maxunicode):
+def interval_lists(*, min_codepoint=0, max_codepoint=sys.maxunicode, min_size=0):
     return (
-        st.lists(st.integers(min_codepoint, max_codepoint), unique=True)
+        st.lists(
+            st.integers(min_codepoint, max_codepoint),
+            unique=True,
+            min_size=min_size * 2,
+        )
         .map(sorted)
         .map(build_intervals)
     )
 
 
-def intervals(min_codepoint=0, max_codepoint=sys.maxunicode):
-    return st.builds(IntervalSet, interval_lists(min_codepoint, max_codepoint))
+def intervals(*, min_codepoint=0, max_codepoint=sys.maxunicode, min_size=0):
+    return st.builds(
+        IntervalSet,
+        interval_lists(
+            min_codepoint=min_codepoint, max_codepoint=max_codepoint, min_size=min_size
+        ),
+    )
