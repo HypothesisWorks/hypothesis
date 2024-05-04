@@ -689,7 +689,6 @@ class Shrinker:
                 "redistribute_block_pairs",
                 "lower_blocks_together",
             ]
-            + [dfa_replacement(n) for n in SHRINKING_DFAS]
         )
 
     @derived_value  # type: ignore
