@@ -258,26 +258,33 @@ class ConjectureRunner:
         self.__data_cache_ir[tuple(data.examples.ir_tree_nodes)] = result
 
     def cached_test_function_ir(self, ir_tree_nodes):
+        key = tuple(ir_tree_nodes)
         try:
-            return self.__data_cache_ir[tuple(ir_tree_nodes)]
+            return self.__data_cache_ir[key]
         except KeyError:
+            pass
+
+        try:
+            trial_data = ConjectureData.for_ir_tree(ir_tree_nodes)
+            self.tree.simulate_test_function(trial_data)
+        except PreviouslyUnseenBehaviour:
+            pass
+        else:
+            trial_data.freeze()
             try:
-                trial_data = ConjectureData.for_ir_tree(ir_tree_nodes)
-                self.tree.simulate_test_function(trial_data)
-            except PreviouslyUnseenBehaviour:
+                return self.__data_cache_ir[tuple(trial_data.examples.ir_tree_nodes)]
+            except KeyError:
                 pass
-            else:
-                trial_data.freeze()
-                try:
-                    return self.__data_cache_ir[
-                        tuple(trial_data.examples.ir_tree_nodes)
-                    ]
-                except KeyError:
-                    pass
 
         data = ConjectureData.for_ir_tree(ir_tree_nodes)
         self.test_function(data)
         self._cache(data)
+        # This covers slightly different cases than caching `data`. If the ir
+        # nodes (1) are not in our cache, (2) are not in our DataTree, and (3)
+        # running `data` through the test function concludes before consuming
+        # all ir nodes (eg because of misaligned ir nodes), the initial ir nodes
+        # will not be cached and we may continue to miss them.
+        self.__data_cache_ir[key] = data.as_result()
         return data.as_result()
 
     def test_function(self, data):
