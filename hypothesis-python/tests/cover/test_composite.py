@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import sys
+import typing
 
 import pytest
 
@@ -204,3 +205,18 @@ def test_warns_on_strategy_annotation():
 
     assert len(w.list) == 1
     assert w.list[0].filename == __file__  # check stacklevel points to user code
+
+
+def test_composite_allows_overload_without_draw():
+    # See https://github.com/HypothesisWorks/hypothesis/issues/3970
+    @st.composite
+    @typing.overload
+    def overloaded(draw: st.DrawFn, *, x: int) -> typing.Literal[True]: ...
+
+    @st.composite
+    @typing.overload
+    def overloaded(draw: st.DrawFn, *, x: str) -> typing.Literal[False]: ...
+
+    @st.composite
+    def overloaded(draw: st.DrawFn, *, x: typing.Union[int, str]) -> bool:
+        return draw(st.just(isinstance(x, int)))
