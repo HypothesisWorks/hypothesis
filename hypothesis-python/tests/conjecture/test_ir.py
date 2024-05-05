@@ -32,12 +32,13 @@ from hypothesis.internal.floats import SMALLEST_SUBNORMAL, next_down, next_up
 from hypothesis.internal.intervalsets import IntervalSet
 
 from tests.common.debug import minimal
-from tests.conjecture.common import fresh_data, ir_types_and_kwargs, kwargs_strategy
-
-
-def draw_value(ir_type, kwargs):
-    data = fresh_data()
-    return getattr(data, f"draw_{ir_type}")(**kwargs)
+from tests.conjecture.common import (
+    draw_value,
+    fresh_data,
+    ir_nodes,
+    ir_types_and_kwargs,
+    kwargs_strategy,
+)
 
 
 # we max out at 128 bit integers in the *unbounded* case, but someone may
@@ -329,15 +330,6 @@ def test_ir_nodes(random):
         ),
     ]
     assert data.examples.ir_tree_nodes == expected_tree_nodes
-
-
-@st.composite
-def ir_nodes(draw, *, was_forced=None):
-    (ir_type, kwargs) = draw(ir_types_and_kwargs())
-    value = draw_value(ir_type, kwargs)
-    was_forced = draw(st.booleans()) if was_forced is None else was_forced
-
-    return IRNode(ir_type=ir_type, value=value, kwargs=kwargs, was_forced=was_forced)
 
 
 @given(ir_nodes())

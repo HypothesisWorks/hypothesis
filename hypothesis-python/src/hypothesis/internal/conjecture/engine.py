@@ -255,7 +255,13 @@ class ConjectureRunner:
             assert data.status is Status.INVALID
             result = Overrun
         self.__data_cache[data.buffer] = result
-        self.__data_cache_ir[tuple(data.examples.ir_tree_nodes)] = result
+        key = tuple(data.examples.ir_tree_nodes)
+        # if we're overwriting an entry (eg because a buffer ran to the same ir
+        # tree), it better be the same data as we had before, or something is
+        # wrong with our logic/flaky detection.
+        if key in self.__data_cache_ir:
+            assert self.__data_cache_ir[key].status is result.status
+        self.__data_cache_ir[key] = result
 
     def cached_test_function_ir(self, ir_tree_nodes):
         key = tuple(ir_tree_nodes)
@@ -265,7 +271,7 @@ class ConjectureRunner:
             pass
 
         try:
-            trial_data = ConjectureData.for_ir_tree(ir_tree_nodes)
+            trial_data = self.new_conjecture_data_ir(ir_tree_nodes)
             self.tree.simulate_test_function(trial_data)
         except PreviouslyUnseenBehaviour:
             pass
@@ -276,15 +282,10 @@ class ConjectureRunner:
             except KeyError:
                 pass
 
-        data = ConjectureData.for_ir_tree(ir_tree_nodes)
+        data = self.new_conjecture_data_ir(ir_tree_nodes)
+        # note that calling test_function caches `data` for us, for both an ir
+        # tree key and a buffer key.
         self.test_function(data)
-        self._cache(data)
-        # This covers slightly different cases than caching `data`. If the ir
-        # nodes (1) are not in our cache, (2) are not in our DataTree, and (3)
-        # running `data` through the test function concludes before consuming
-        # all ir nodes (eg because of misaligned ir nodes), the initial ir nodes
-        # will not be cached and we may continue to miss them.
-        self.__data_cache_ir[key] = data.as_result()
         return data.as_result()
 
     def test_function(self, data):
@@ -1026,6 +1027,18 @@ class ConjectureRunner:
         with self._log_phase_statistics("shrink"):
             self.shrink_interesting_examples()
         self.exit_with(ExitReason.finished)
+
+    def new_conjecture_data_ir(self, ir_tree_prefix, *, observer=None):
+        provider = (
+            HypothesisProvider if self._switch_to_hypothesis_provider else self.provider
+        )
+        observer = observer or self.tree.new_observer()
+        if self.settings.backend != "hypothesis":
+            observer = DataObserver()
+
+        return ConjectureData.for_ir_tree(
+            ir_tree_prefix, observer=observer, provider=provider
+        )
 
     def new_conjecture_data(self, prefix, max_length=BUFFER_SIZE, observer=None):
         provider = (

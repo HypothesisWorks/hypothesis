@@ -2515,7 +2515,34 @@ class ConjectureData:
         self.frozen = True
 
         self.buffer = bytes(self.buffer)
-        self.observer.conclude_test(self.status, self.interesting_origin)
+
+        # if we were invalid because of a misalignment in the tree, we don't
+        # want to tell the DataTree that. Doing so would lead to inconsistent behavior.
+        # Given an empty DataTree
+        #               ┌──────┐
+        #               │ root │
+        #               └──────┘
+        # and supposing the very first draw is misaligned, concluding here would
+        # tell the datatree that the *only* possibility at the root node is Status.INVALID:
+        #               ┌──────┐
+        #               │ root │
+        #               └──┬───┘
+        #      ┌───────────┴───────────────┐
+        #      │ Conclusion(Status.INVALID)│
+        #      └───────────────────────────┘
+        # when in fact this is only the case when we try to draw a misaligned node.
+        # For instance, suppose we come along in the second test case and try a
+        # valid node as the first draw from the root. The DataTree thinks this
+        # is flaky (because root must lead to Status.INVALID in the tree) while
+        # in fact nothing in the test function has changed and the only change
+        # is in the ir tree prefix we are supplying.
+        #
+        # From the perspective of DataTree, it is safe not to conclude here. This
+        # tells the datatree that we don't know what happens after this node - which
+        # is true! We are aborting early here because the ir tree became misaligned,
+        # which is a semantically different invalidity than an assume or filter failing.
+        if self.invalid_at is None:
+            self.observer.conclude_test(self.status, self.interesting_origin)
 
     def choice(
         self,
