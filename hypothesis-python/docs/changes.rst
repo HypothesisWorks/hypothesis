@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.100.4:
+
+--------------------
+6.100.4 - 2024-05-05
+--------------------
+
+This patch turns off a warning for functions decorated with
+:func:`typing.overload` and then :func:`~hypothesis.strategies.composite`,
+although only in that order (:issue:`3970`).
+
 .. _v6.100.3:
 
 --------------------
