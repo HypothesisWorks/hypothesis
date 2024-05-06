@@ -19,7 +19,7 @@ from weakref import WeakValueDictionary
 
 import hypothesis.core
 from hypothesis.errors import HypothesisWarning, InvalidArgument
-from hypothesis.internal.compat import GRAALPY, PYPY, FREE_THREADED_CPYTHON
+from hypothesis.internal.compat import FREE_THREADED_CPYTHON, GRAALPY, PYPY
 
 if TYPE_CHECKING:
     from typing import Protocol
