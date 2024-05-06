@@ -127,21 +127,20 @@ def register_random(r: RandomLike) -> None:
                     "PRNG. See the docs for `register_random` for more "
                     "details."
                 )
-            else:
-                if not FREE_THREADED_CPYTHON:
-                    # On CPython, check for the free-threaded build because
-                    # gc.get_referrers() ignores objects with immortal
-                    # refcounts and objects are immortalized in the Python 3.13
-                    # free-threading implementation at runtime.
+            elif not FREE_THREADED_CPYTHON:
+                # On CPython, check for the free-threaded build because
+                # gc.get_referrers() ignores objects with immortal refcounts
+                # and objects are immortalized in the Python 3.13
+                # free-threading implementation at runtime.
 
-                    warnings.warn(
-                        "It looks like `register_random` was passed an object that could "
-                        "be garbage collected immediately after `register_random` creates "
-                        "a weakref to it. This will prevent Hypothesis from managing this "
-                        "PRNG. See the docs for `register_random` for more details.",
-                        HypothesisWarning,
-                        stacklevel=2,
-                    )
+                warnings.warn(
+                    "It looks like `register_random` was passed an object that could "
+                    "be garbage collected immediately after `register_random` creates "
+                    "a weakref to it. This will prevent Hypothesis from managing this "
+                    "PRNG. See the docs for `register_random` for more details.",
+                    HypothesisWarning,
+                    stacklevel=2,
+                )
 
     RANDOMS_TO_MANAGE[next(_RKEY)] = r
 
