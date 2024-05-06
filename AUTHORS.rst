@@ -130,6 +130,7 @@ their individual contributions.
 * `Michel Alexandre Salim <https://github.com/michel-slm>`_ (michel@michel-slm.name)
 * `mulkieran <https://www.github.com/mulkieran>`_
 * `Munir Abdinur <https://www.github.com/mabdinur>`_
+* `Nathan Goldbaum <https://www/github.com/ngoldbaum>`_
 * `Nicholas Chammas <https://www.github.com/nchammas>`_
 * `Nick Anyos <https://www.github.com/NickAnyos>`_
 * `Nick Collins <https://github.com/nickcollins>` _
