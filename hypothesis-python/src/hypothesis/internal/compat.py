@@ -14,6 +14,7 @@ import dataclasses
 import inspect
 import platform
 import sys
+import sysconfig
 import typing
 from functools import partial
 from typing import Any, ForwardRef, List, Optional, get_args
@@ -43,6 +44,8 @@ else:
 PYPY = platform.python_implementation() == "PyPy"
 GRAALPY = platform.python_implementation() == "GraalVM"
 WINDOWS = platform.system() == "Windows"
+# First defined in CPython 3.13, defaults to False
+FREE_THREADED_BUILD = bool(sysconfig.get_config_var("Py_GIL_DISABLED"))
 
 
 def add_note(exc, note):
@@ -255,3 +258,14 @@ def _asdict_inner(obj, dict_factory):
         )
     else:
         return copy.deepcopy(obj)
+
+
+def is_gil_disabled_cpython():
+    if not FREE_THREADED_BUILD or sys.version_info < (3, 13):
+        return False
+    try:
+        return not sys._is_gil_enabled()
+    except AttributeError:
+        # early Python 3.13 pre-releases don't have sys._is_gil_enabled(),
+        # assume GIL is enabled
+        return False

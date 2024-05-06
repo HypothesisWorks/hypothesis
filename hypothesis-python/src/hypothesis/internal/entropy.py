@@ -19,7 +19,7 @@ from weakref import WeakValueDictionary
 
 import hypothesis.core
 from hypothesis.errors import HypothesisWarning, InvalidArgument
-from hypothesis.internal.compat import GRAALPY, PYPY
+from hypothesis.internal.compat import GRAALPY, PYPY, is_gil_disabled_cpython
 
 if TYPE_CHECKING:
     from typing import Protocol
@@ -116,7 +116,7 @@ def register_random(r: RandomLike) -> None:
         return
 
     if not (PYPY or GRAALPY):  # pragma: no branch
-        # PYPY and GRAALPY do not have `sys.getrefcount`
+        # PYPY and GRAALPY do not have `sys.getrefcount`.
         gc.collect()
         if not gc.get_referrers(r):
             if sys.getrefcount(r) <= _PLATFORM_REF_COUNT:
@@ -128,14 +128,20 @@ def register_random(r: RandomLike) -> None:
                     "details."
                 )
             else:
-                warnings.warn(
-                    "It looks like `register_random` was passed an object that could "
-                    "be garbage collected immediately after `register_random` creates "
-                    "a weakref to it. This will prevent Hypothesis from managing this "
-                    "PRNG. See the docs for `register_random` for more details.",
-                    HypothesisWarning,
-                    stacklevel=2,
-                )
+                if not is_gil_disabled_cpython():
+                    # On CPython, check if the GIL is disabled because
+                    # gc.get_referrers() ignores objects with immortal
+                    # refcounts and objects are immortalized in the Python 3.13
+                    # free-threading implementation at runtime.
+
+                    warnings.warn(
+                        "It looks like `register_random` was passed an object that could "
+                        "be garbage collected immediately after `register_random` creates "
+                        "a weakref to it. This will prevent Hypothesis from managing this "
+                        "PRNG. See the docs for `register_random` for more details.",
+                        HypothesisWarning,
+                        stacklevel=2,
+                    )
 
     RANDOMS_TO_MANAGE[next(_RKEY)] = r
 
