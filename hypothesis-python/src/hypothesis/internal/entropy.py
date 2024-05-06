@@ -19,7 +19,7 @@ from weakref import WeakValueDictionary
 
 import hypothesis.core
 from hypothesis.errors import HypothesisWarning, InvalidArgument
-from hypothesis.internal.compat import GRAALPY, PYPY, is_gil_disabled_cpython
+from hypothesis.internal.compat import GRAALPY, PYPY, FREE_THREADED_CPYTHON
 
 if TYPE_CHECKING:
     from typing import Protocol
@@ -128,8 +128,8 @@ def register_random(r: RandomLike) -> None:
                     "details."
                 )
             else:
-                if not is_gil_disabled_cpython():
-                    # On CPython, check if the GIL is disabled because
+                if not FREE_THREADED_CPYTHON:
+                    # On CPython, check for the free-threaded build because
                     # gc.get_referrers() ignores objects with immortal
                     # refcounts and objects are immortalized in the Python 3.13
                     # free-threading implementation at runtime.
