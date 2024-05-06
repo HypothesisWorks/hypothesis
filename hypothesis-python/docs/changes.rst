@@ -18,6 +18,19 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.100.5:
+
+--------------------
+6.100.5 - 2024-05-06
+--------------------
+
+This patch turns off a check in :func:`~hypothesis.register_random` for possibly
+unreferenced RNG instances on the free-threaded build of CPython 3.13 because
+this check has a much higher false positive rate in the free-threaded build
+(:issue:`3965`).
+
+Thanks to Nathan Goldbaum for this patch.
+
 .. _v6.100.4:
 
 --------------------
