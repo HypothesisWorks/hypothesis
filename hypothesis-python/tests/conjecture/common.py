@@ -300,8 +300,11 @@ def draw_value(ir_type, kwargs):
 
 
 @st.composite
-def ir_nodes(draw, *, was_forced=None):
-    (ir_type, kwargs) = draw(ir_types_and_kwargs())
+def ir_nodes(draw, *, was_forced=None, ir_type=None):
+    if ir_type is None:
+        (ir_type, kwargs) = draw(ir_types_and_kwargs())
+    else:
+        kwargs = draw(kwargs_strategy(ir_type))
     # ir nodes don't include forced in their kwargs. see was_forced attribute
     del kwargs["forced"]
     value = draw_value(ir_type, kwargs)

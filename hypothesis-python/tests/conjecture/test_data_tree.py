@@ -667,3 +667,18 @@ def test_misaligned_nodes_before_valid_draw(data):
     cd.freeze()
     assert cd.status is Status.VALID
     assert cd.examples.ir_tree_nodes == [node]
+
+
+@given(ir_nodes(was_forced=True, ir_type="float"))
+def test_simulate_forced_floats(node):
+    tree = DataTree()
+
+    cd = ConjectureData.for_ir_tree([node], observer=tree.new_observer())
+    cd.draw_float(**node.kwargs, forced=node.value)
+    with pytest.raises(StopTest):
+        cd.conclude_test(Status.VALID)
+
+    cd = ConjectureData.for_ir_tree([node], observer=tree.new_observer())
+    tree.simulate_test_function(cd)
+    cd.freeze()
+    assert cd.examples.ir_tree_nodes == [node]

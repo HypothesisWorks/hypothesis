@@ -928,3 +928,8 @@ def test_conservative_nontrivial_nodes(node):
         return getattr(data, f"draw_{node.ir_type}")(**node.kwargs)
 
     assert ir_value_equal(node.ir_type, minimal(values()), node.value)
+
+
+@given(ir_nodes())
+def test_ir_node_is_hashable(ir_node):
+    hash(ir_node)
