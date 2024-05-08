@@ -15,12 +15,20 @@ from unittest.mock import Mock
 
 import pytest
 
-from hypothesis import HealthCheck, Phase, Verbosity, settings
+from hypothesis import (
+    HealthCheck,
+    Phase,
+    Verbosity,
+    assume,
+    given,
+    settings,
+    strategies as st,
+)
 from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
 from hypothesis.errors import FailedHealthCheck, Flaky
 from hypothesis.internal.compat import int_from_bytes
 from hypothesis.internal.conjecture import engine as engine_module
-from hypothesis.internal.conjecture.data import ConjectureData, Overrun, Status
+from hypothesis.internal.conjecture.data import ConjectureData, Overrun, Status, IRNode
 from hypothesis.internal.conjecture.engine import (
     MIN_TEST_CALLS,
     ConjectureRunner,
@@ -31,6 +39,7 @@ from hypothesis.internal.conjecture.engine import (
 from hypothesis.internal.conjecture.pareto import DominanceRelation, dominance
 from hypothesis.internal.conjecture.shrinker import Shrinker, block_program
 from hypothesis.internal.entropy import deterministic_PRNG
+from hypothesis.internal.conjecture.datatree import compute_max_children
 
 from tests.common.debug import minimal
 from tests.common.strategies import SLOW, HardToShrink
@@ -39,6 +48,7 @@ from tests.conjecture.common import (
     SOME_LABEL,
     TEST_SETTINGS,
     buffer_size_limit,
+    ir_nodes,
     run_to_buffer,
     shrinking_from,
 )
@@ -1523,3 +1533,96 @@ def test_too_slow_report():
     got = state.timing_report()
     print(got)
     assert expected == got
+
+
+def _draw(cd, node):
+    return getattr(cd, f"draw_{node.ir_type}")(**node.kwargs)
+
+
+@given(st.data())
+# drawing a second node with a different ir_type is hard to satisfy, as hypothesis
+# biases towards the first defined ir_type early on.
+@settings(suppress_health_check=[HealthCheck.too_slow, HealthCheck.filter_too_much])
+def test_extensions_of_misaligned_trees_are_cached(data):
+    # ConjectureData treats all ir node prefixes as if they were not forced,
+    # so was_forced doesn't make a difference when drawing. In fact, was_forced
+    # will always be False after running a tree through ConjectureData, so comparing
+    # for equality before and after is easiest if was_forced is always False.
+    node = data.draw(ir_nodes(was_forced=False))
+    misaligned_node = data.draw(ir_nodes(was_forced=False))
+    assume(node.ir_type != misaligned_node.ir_type)
+    # avoid trivial nodes resulting in exhausting the tree extremely early
+    assume(compute_max_children(node.ir_type, node.kwargs) > 100)
+
+    def test(cd):
+        _draw(cd, node)
+        _draw(cd, node)
+
+    runner = ConjectureRunner(test)
+
+    def _assert_cached(cd):
+        assert runner.call_count == 1
+        assert cd.status is Status.INVALID
+        assert cd.examples.ir_tree_nodes == [node]
+
+    assert runner.call_count == 0
+
+    cd = runner.cached_test_function_ir([node, misaligned_node])
+    _assert_cached(cd)
+
+    cd = runner.cached_test_function_ir([node, misaligned_node])
+    _assert_cached(cd)
+
+    extension = data.draw(st.lists(ir_nodes(was_forced=False)))
+    cd = runner.cached_test_function_ir([node, misaligned_node] + extension)
+    _assert_cached(cd)
+
+
+@given(ir_nodes(was_forced=False), ir_nodes(was_forced=False))
+@settings(suppress_health_check=[HealthCheck.too_slow, HealthCheck.filter_too_much])
+def test_misaligned_tree_does_not_clobber_cache(node, misaligned_node):
+    assume(node.ir_type != misaligned_node.ir_type)
+    assume(compute_max_children(node.ir_type, node.kwargs) > 100)
+
+    def test(cd):
+        _draw(cd, node)
+
+    runner = ConjectureRunner(test)
+    assert runner.call_count == 0
+
+    data_buffer = runner.cached_test_function(b"")
+    assert runner.call_count == 1
+    assert data_buffer.status is Status.OVERRUN
+
+    data_ir = runner.cached_test_function_ir([misaligned_node])
+    assert data_ir.status is Status.INVALID
+    assert data_ir.buffer == b""
+    assert runner.call_count == 2
+
+    result = runner.cached_test_function(b"")
+    assert runner.call_count == 2
+    assert result == data_buffer
+
+
+@pytest.mark.parametrize("forced_first", [True, False])
+@given(node=ir_nodes(was_forced=False))
+def test_cache_ignores_was_forced(forced_first, node):
+    assume(compute_max_children(node.ir_type, node.kwargs) > 100)
+    forced_node = IRNode(
+        ir_type=node.ir_type,
+        value=node.value,
+        kwargs=node.kwargs,
+        was_forced=True,
+    )
+
+    def test(cd):
+        _draw(cd, node)
+
+    runner = ConjectureRunner(test)
+    assert runner.call_count == 0
+
+    runner.cached_test_function_ir([forced_node] if forced_first else [node])
+    assert runner.call_count == 1
+
+    runner.cached_test_function_ir([node] if forced_first else [forced_node])
+    assert runner.call_count == 1

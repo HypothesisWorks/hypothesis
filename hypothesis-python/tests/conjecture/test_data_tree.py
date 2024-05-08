@@ -13,7 +13,7 @@ from random import Random
 
 import pytest
 
-from hypothesis import HealthCheck, assume, given, settings
+from hypothesis import HealthCheck, assume, given, settings, strategies as st
 from hypothesis.errors import Flaky
 from hypothesis.internal.conjecture.data import ConjectureData, Status, StopTest
 from hypothesis.internal.conjecture.datatree import (
@@ -34,6 +34,7 @@ from tests.conjecture.common import (
     draw_integer_kwargs,
     draw_string_kwargs,
     fresh_data,
+    ir_nodes,
     run_to_buffer,
 )
 
@@ -611,3 +612,58 @@ def test_datatree_repr(bool_kwargs, int_kwargs):
         """
         ).strip()
     )
+
+
+def _draw(cd, node):
+    return getattr(cd, f"draw_{node.ir_type}")(**node.kwargs)
+
+
+@given(st.data())
+@settings(suppress_health_check=[HealthCheck.too_slow])
+def test_misaligned_nodes_after_valid_draw(data):
+    # if we run a valid tree through a test function, the datatree should still
+    # be able to return a Status.INVALID when a node in that tree becomes misaligned.
+    tree = DataTree()
+    node = data.draw(ir_nodes())
+
+    cd = ConjectureData.for_ir_tree([node], observer=tree.new_observer())
+    _draw(cd, node)
+    assert cd.status is Status.VALID
+
+    misaligned_node = data.draw(ir_nodes())
+    assume(misaligned_node.ir_type != node.ir_type)
+
+    cd = ConjectureData.for_ir_tree([misaligned_node])
+    tree.simulate_test_function(cd)
+    assert cd.status is Status.INVALID
+
+    assert cd.invalid_at == (node.ir_type, node.kwargs)
+
+
+@given(st.data())
+@settings(suppress_health_check=[HealthCheck.too_slow])
+def test_misaligned_nodes_before_valid_draw(data):
+    # if we run a misaligned tree through a test function, we should still get
+    # the correct response when running the aligned version of the tree through
+    # the test function afterwards.
+    tree = DataTree()
+    node = data.draw(ir_nodes(was_forced=False))
+    misaligned_node = data.draw(ir_nodes(was_forced=False))
+    assume(misaligned_node.ir_type != node.ir_type)
+
+    cd = ConjectureData.for_ir_tree([node], observer=tree.new_observer())
+
+    with pytest.raises(StopTest):
+        _draw(cd, misaligned_node)
+    cd.freeze()
+    assert cd.status is Status.INVALID
+    assert cd.examples.ir_tree_nodes == []
+
+    # make sure the tree is tracking that `node` leads to Status.INVALID only
+    # when trying to draw a misaligned node. If we try to draw something that
+    # is valid for that node, then it's a valid draw and should lead to Status.VALID.
+    cd = ConjectureData.for_ir_tree([node], observer=tree.new_observer())
+    _draw(cd, node)
+    cd.freeze()
+    assert cd.status is Status.VALID
+    assert cd.examples.ir_tree_nodes == [node]

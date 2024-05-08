@@ -15,7 +15,7 @@ from hypothesis import HealthCheck, assume, settings, strategies as st
 from hypothesis.control import current_build_context
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import engine as engine_module
-from hypothesis.internal.conjecture.data import ConjectureData, Status
+from hypothesis.internal.conjecture.data import ConjectureData, IRNode, Status
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE, ConjectureRunner
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.entropy import deterministic_PRNG
@@ -292,3 +292,19 @@ def ir_types_and_kwargs():
     return st.one_of(
         st.tuples(st.just(name), kwargs_strategy(name)) for name in options
     )
+
+
+def draw_value(ir_type, kwargs):
+    data = fresh_data()
+    return getattr(data, f"draw_{ir_type}")(**kwargs)
+
+
+@st.composite
+def ir_nodes(draw, *, was_forced=None):
+    (ir_type, kwargs) = draw(ir_types_and_kwargs())
+    # ir nodes don't include forced in their kwargs. see was_forced attribute
+    del kwargs["forced"]
+    value = draw_value(ir_type, kwargs)
+    was_forced = draw(st.booleans()) if was_forced is None else was_forced
+
+    return IRNode(ir_type=ir_type, value=value, kwargs=kwargs, was_forced=was_forced)
