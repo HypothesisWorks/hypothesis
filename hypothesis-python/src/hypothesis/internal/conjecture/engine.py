@@ -254,7 +254,7 @@ class ConjectureRunner:
 
         # intentionally drop was_forced from equality here, because the was_forced
         # of node prefixes on ConjectureData has no impact on that data's result
-        key = tuple(
+        return tuple(
             (
                 node.ir_type,
                 ir_value_key(node.ir_type, node.value),
@@ -262,7 +262,6 @@ class ConjectureRunner:
             )
             for node in nodes + extension
         )
-        return key
 
     def _cache(self, data):
         result = data.as_result()

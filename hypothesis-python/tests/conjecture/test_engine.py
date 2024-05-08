@@ -28,7 +28,8 @@ from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
 from hypothesis.errors import FailedHealthCheck, Flaky
 from hypothesis.internal.compat import int_from_bytes
 from hypothesis.internal.conjecture import engine as engine_module
-from hypothesis.internal.conjecture.data import ConjectureData, Overrun, Status, IRNode
+from hypothesis.internal.conjecture.data import ConjectureData, IRNode, Overrun, Status
+from hypothesis.internal.conjecture.datatree import compute_max_children
 from hypothesis.internal.conjecture.engine import (
     MIN_TEST_CALLS,
     ConjectureRunner,
@@ -39,7 +40,6 @@ from hypothesis.internal.conjecture.engine import (
 from hypothesis.internal.conjecture.pareto import DominanceRelation, dominance
 from hypothesis.internal.conjecture.shrinker import Shrinker, block_program
 from hypothesis.internal.entropy import deterministic_PRNG
-from hypothesis.internal.conjecture.datatree import compute_max_children
 
 from tests.common.debug import minimal
 from tests.common.strategies import SLOW, HardToShrink
