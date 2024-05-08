@@ -32,6 +32,7 @@ from hypothesis.internal.conjecture.pareto import DominanceRelation, dominance
 from hypothesis.internal.conjecture.shrinker import Shrinker, block_program
 from hypothesis.internal.entropy import deterministic_PRNG
 
+from tests.common.debug import minimal
 from tests.common.strategies import SLOW, HardToShrink
 from tests.common.utils import no_shrink
 from tests.conjecture.common import (
@@ -39,7 +40,6 @@ from tests.conjecture.common import (
     TEST_SETTINGS,
     buffer_size_limit,
     run_to_buffer,
-    run_to_data,
     shrinking_from,
 )
 
@@ -440,17 +440,14 @@ def test_fails_health_check_for_slow_draws():
 def test_can_shrink_variable_draws(n_large):
     target = 128 * n_large
 
-    @run_to_data
-    def data(data):
-        n = data.draw_integer(0, 15)
-        b = [data.draw_integer(0, 255) for _ in range(n)]
-        if sum(b) >= target:
-            data.mark_interesting()
+    @st.composite
+    def strategy(draw):
+        n = draw(st.integers(0, 15))
+        return [draw(st.integers(0, 255)) for _ in range(n)]
 
-    x = data.buffer
-
-    assert x.count(0) == 0
-    assert sum(x[1:]) == target
+    ints = minimal(strategy(), lambda ints: sum(ints) >= target)
+    # should look like [4, 255, 255, 255]
+    assert ints == [target % 255] + [255] * (len(ints) - 1)
 
 
 def test_run_nothing():
