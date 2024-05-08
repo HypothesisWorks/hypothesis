@@ -811,6 +811,9 @@ class DataTree:
         node = self.root
 
         def draw(ir_type, kwargs, *, forced=None):
+            if ir_type == "float" and forced is not None:
+                forced = int_to_float(forced)
+
             draw_func = getattr(data, f"draw_{ir_type}")
             value = draw_func(**kwargs, forced=forced)
 
