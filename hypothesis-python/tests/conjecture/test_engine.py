@@ -1574,7 +1574,7 @@ def test_extensions_of_misaligned_trees_are_cached(data):
     _assert_cached(cd)
 
     extension = data.draw(st.lists(ir_nodes(was_forced=False)))
-    cd = runner.cached_test_function_ir([node, misaligned_node] + extension)
+    cd = runner.cached_test_function_ir([node, misaligned_node, *extension])
     _assert_cached(cd)
 
 
