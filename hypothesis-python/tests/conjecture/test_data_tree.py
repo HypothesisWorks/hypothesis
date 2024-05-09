@@ -614,71 +614,66 @@ def test_datatree_repr(bool_kwargs, int_kwargs):
     )
 
 
-def _draw(cd, node):
-    return getattr(cd, f"draw_{node.ir_type}")(**node.kwargs)
+def _draw(data, node):
+    return getattr(data, f"draw_{node.ir_type}")(**node.kwargs)
 
 
-@given(st.data())
+@given(ir_nodes(), ir_nodes())
 @settings(suppress_health_check=[HealthCheck.too_slow])
-def test_misaligned_nodes_after_valid_draw(data):
+def test_misaligned_nodes_after_valid_draw(node, misaligned_node):
     # if we run a valid tree through a test function, the datatree should still
     # be able to return a Status.INVALID when a node in that tree becomes misaligned.
-    tree = DataTree()
-    node = data.draw(ir_nodes())
-
-    cd = ConjectureData.for_ir_tree([node], observer=tree.new_observer())
-    _draw(cd, node)
-    assert cd.status is Status.VALID
-
-    misaligned_node = data.draw(ir_nodes())
     assume(misaligned_node.ir_type != node.ir_type)
+    tree = DataTree()
 
-    cd = ConjectureData.for_ir_tree([misaligned_node])
-    tree.simulate_test_function(cd)
-    assert cd.status is Status.INVALID
+    data = ConjectureData.for_ir_tree([node], observer=tree.new_observer())
+    _draw(data, node)
+    assert data.status is Status.VALID
 
-    assert cd.invalid_at == (node.ir_type, node.kwargs)
+    data = ConjectureData.for_ir_tree([misaligned_node])
+    tree.simulate_test_function(data)
+    assert data.status is Status.INVALID
+
+    assert data.invalid_at == (node.ir_type, node.kwargs)
 
 
-@given(st.data())
+@given(ir_nodes(was_forced=False), ir_nodes(was_forced=False))
 @settings(suppress_health_check=[HealthCheck.too_slow])
-def test_misaligned_nodes_before_valid_draw(data):
+def test_misaligned_nodes_before_valid_draw(node, misaligned_node):
     # if we run a misaligned tree through a test function, we should still get
     # the correct response when running the aligned version of the tree through
     # the test function afterwards.
-    tree = DataTree()
-    node = data.draw(ir_nodes(was_forced=False))
-    misaligned_node = data.draw(ir_nodes(was_forced=False))
     assume(misaligned_node.ir_type != node.ir_type)
+    tree = DataTree()
 
-    cd = ConjectureData.for_ir_tree([node], observer=tree.new_observer())
+    data = ConjectureData.for_ir_tree([node], observer=tree.new_observer())
 
     with pytest.raises(StopTest):
-        _draw(cd, misaligned_node)
-    cd.freeze()
-    assert cd.status is Status.INVALID
-    assert cd.examples.ir_tree_nodes == []
+        _draw(data, misaligned_node)
+    data.freeze()
+    assert data.status is Status.INVALID
+    assert data.examples.ir_tree_nodes == []
 
     # make sure the tree is tracking that `node` leads to Status.INVALID only
     # when trying to draw a misaligned node. If we try to draw something that
     # is valid for that node, then it's a valid draw and should lead to Status.VALID.
-    cd = ConjectureData.for_ir_tree([node], observer=tree.new_observer())
-    _draw(cd, node)
-    cd.freeze()
-    assert cd.status is Status.VALID
-    assert cd.examples.ir_tree_nodes == [node]
+    data = ConjectureData.for_ir_tree([node], observer=tree.new_observer())
+    _draw(data, node)
+    data.freeze()
+    assert data.status is Status.VALID
+    assert data.examples.ir_tree_nodes == [node]
 
 
 @given(ir_nodes(was_forced=True, ir_type="float"))
 def test_simulate_forced_floats(node):
     tree = DataTree()
 
-    cd = ConjectureData.for_ir_tree([node], observer=tree.new_observer())
-    cd.draw_float(**node.kwargs, forced=node.value)
+    data = ConjectureData.for_ir_tree([node], observer=tree.new_observer())
+    data.draw_float(**node.kwargs, forced=node.value)
     with pytest.raises(StopTest):
-        cd.conclude_test(Status.VALID)
+        data.conclude_test(Status.VALID)
 
-    cd = ConjectureData.for_ir_tree([node], observer=tree.new_observer())
-    tree.simulate_test_function(cd)
-    cd.freeze()
-    assert cd.examples.ir_tree_nodes == [node]
+    data = ConjectureData.for_ir_tree([node], observer=tree.new_observer())
+    tree.simulate_test_function(data)
+    data.freeze()
+    assert data.examples.ir_tree_nodes == [node]
