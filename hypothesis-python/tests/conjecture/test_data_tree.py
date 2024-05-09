@@ -13,12 +13,13 @@ from random import Random
 
 import pytest
 
-from hypothesis import HealthCheck, assume, given, settings, strategies as st
+from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.errors import Flaky
 from hypothesis.internal.conjecture.data import ConjectureData, Status, StopTest
 from hypothesis.internal.conjecture.datatree import (
     Branch,
     DataTree,
+    PreviouslyUnseenBehaviour,
     compute_max_children,
 )
 from hypothesis.internal.conjecture.engine import ConjectureRunner
@@ -677,3 +678,28 @@ def test_simulate_forced_floats(node):
     tree.simulate_test_function(data)
     data.freeze()
     assert data.examples.ir_tree_nodes == [node]
+
+
+@given(ir_nodes(), ir_nodes())
+@settings(suppress_health_check=[HealthCheck.too_slow])
+def test_simulate_non_invalid_conclude_is_unseen_behavior(node, misaligned_node):
+    # coverage test for the case where we have a node invalid at some draw, and
+    # simulating that draw should lead to some conclusion other than invalid.
+    assume(misaligned_node.ir_type != node.ir_type)
+    tree = DataTree()
+
+    # set up an invalid draw. the transition for node is now None in the tree
+    data = ConjectureData.for_ir_tree(
+        [node, misaligned_node], observer=tree.new_observer()
+    )
+    with pytest.raises(StopTest):
+        _draw(data, node)
+        _draw(data, node)
+
+    # try simulating something that will take the transition path for node, but
+    # end in something other than a misaligned/invalid result, such as an overrun
+    data = ConjectureData.for_ir_tree([node], observer=tree.new_observer())
+    with pytest.raises(PreviouslyUnseenBehaviour):
+        tree.simulate_test_function(data)
+
+    assert data.status is Status.OVERRUN
