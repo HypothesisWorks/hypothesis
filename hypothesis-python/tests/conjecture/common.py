@@ -168,9 +168,9 @@ def draw_integer_kwargs(
 
 @st.composite
 def draw_string_kwargs(draw, *, use_min_size=True, use_max_size=True, use_forced=False):
-    interval_set = draw(intervals())
-    # TODO relax this restriction once we handle empty pseudo-choices in the ir
-    assume(len(interval_set) > 0)
+    # TODO also sample empty intervals, ie remove this min_size, once we handle empty
+    # pseudo-choices in the ir
+    interval_set = draw(intervals(min_size=1))
     forced = (
         draw(TextStrategy(OneCharStringStrategy(interval_set))) if use_forced else None
     )
@@ -300,8 +300,13 @@ def draw_value(ir_type, kwargs):
 
 
 @st.composite
-def ir_nodes(draw, *, was_forced=None):
-    (ir_type, kwargs) = draw(ir_types_and_kwargs())
+def ir_nodes(draw, *, was_forced=None, ir_type=None):
+    if ir_type is None:
+        (ir_type, kwargs) = draw(ir_types_and_kwargs())
+    else:
+        kwargs = draw(kwargs_strategy(ir_type))
+    # ir nodes don't include forced in their kwargs. see was_forced attribute
+    del kwargs["forced"]
     value = draw_value(ir_type, kwargs)
     was_forced = draw(st.booleans()) if was_forced is None else was_forced
 

@@ -14,7 +14,7 @@ from copy import deepcopy
 
 import pytest
 
-from hypothesis import HealthCheck, assume, example, given, settings, strategies as st
+from hypothesis import assume, example, given, strategies as st
 from hypothesis.errors import StopTest
 from hypothesis.internal.conjecture.data import (
     ConjectureData,
@@ -359,12 +359,7 @@ def test_data_with_empty_ir_tree_is_overrun():
     assert data.status is Status.OVERRUN
 
 
-# root cause of too_slow is filtering too much via assume in kwargs strategies.
-# exacerbated in this test because we draw kwargs twice.
-# TODO revisit and improve the kwargs strategies at some point, once the ir
-# is further along we can maybe remove e.g. a string assumption.
 @given(st.data())
-@settings(suppress_health_check=[HealthCheck.too_slow])
 def test_node_with_different_ir_type_is_invalid(data):
     node = data.draw(ir_nodes())
     (ir_type, kwargs) = data.draw(ir_types_and_kwargs())
@@ -398,7 +393,6 @@ def test_node_with_same_ir_type_but_different_value_is_invalid(data):
 
 
 @given(st.data())
-@settings(suppress_health_check=[HealthCheck.too_slow])
 def test_data_with_changed_was_forced(data):
     # we had a normal node and then tried to draw a different forced value from it.
     # ir tree: v1 [was_forced=False]
@@ -415,7 +409,6 @@ def test_data_with_changed_was_forced(data):
 
 
 @given(ir_nodes(was_forced=True))
-@settings(suppress_health_check=[HealthCheck.too_slow])
 def test_data_with_changed_forced_value(node):
     # we had a forced node and then tried to draw a different forced value from it.
     # ir tree: v1 [was_forced=True]
@@ -931,3 +924,8 @@ def test_conservative_nontrivial_nodes(node):
         return getattr(data, f"draw_{node.ir_type}")(**node.kwargs)
 
     assert ir_value_equal(node.ir_type, minimal(values()), node.value)
+
+
+@given(ir_nodes())
+def test_ir_node_is_hashable(ir_node):
+    hash(ir_node)

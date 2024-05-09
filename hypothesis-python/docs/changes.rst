@@ -18,6 +18,37 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.100.5:
+
+--------------------
+6.100.5 - 2024-05-06
+--------------------
+
+This patch turns off a check in :func:`~hypothesis.register_random` for possibly
+unreferenced RNG instances on the free-threaded build of CPython 3.13 because
+this check has a much higher false positive rate in the free-threaded build
+(:issue:`3965`).
+
+Thanks to Nathan Goldbaum for this patch.
+
+.. _v6.100.4:
+
+--------------------
+6.100.4 - 2024-05-05
+--------------------
+
+This patch turns off a warning for functions decorated with
+:func:`typing.overload` and then :func:`~hypothesis.strategies.composite`,
+although only in that order (:issue:`3970`).
+
+.. _v6.100.3:
+
+--------------------
+6.100.3 - 2024-05-04
+--------------------
+
+This patch fixes a significant slowdown when using the :func:`~hypothesis.stateful.precondition` decorator in some cases, due to expensive repr formatting internally (:issue:`3963`).
+
 .. _v6.100.2:
 
 --------------------

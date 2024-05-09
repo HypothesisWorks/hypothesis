@@ -34,6 +34,8 @@ from hypothesis.internal.conjecture.data import (
     Overrun,
     PrimitiveProvider,
     Status,
+    ir_kwargs_key,
+    ir_value_key,
 )
 from hypothesis.internal.conjecture.datatree import DataTree, PreviouslyUnseenBehaviour
 from hypothesis.internal.conjecture.junkdrawer import clamp, ensure_free_stackframes
@@ -240,49 +242,66 @@ class ConjectureRunner:
                     # correct engine.
                     raise
 
+    def _cache_key_ir(self, *, nodes=None, data=None):
+        assert (nodes is not None) ^ (data is not None)
+        extension = []
+        if data is not None:
+            nodes = data.examples.ir_tree_nodes
+            if data.invalid_at is not None:
+                # if we're invalid then we should have at least one node left (the invalid one).
+                assert data._node_index < len(data.ir_tree_nodes)
+                extension = [data.ir_tree_nodes[data._node_index]]
+
+        # intentionally drop was_forced from equality here, because the was_forced
+        # of node prefixes on ConjectureData has no impact on that data's result
+        return tuple(
+            (
+                node.ir_type,
+                ir_value_key(node.ir_type, node.value),
+                ir_kwargs_key(node.ir_type, node.kwargs),
+            )
+            for node in nodes + extension
+        )
+
     def _cache(self, data):
         result = data.as_result()
         # when we shrink, we try out of bounds things, which can lead to the same
         # data.buffer having multiple outcomes. eg data.buffer=b'' is Status.OVERRUN
         # in normal circumstances, but a data with
         # ir_nodes=[integer -5 {min_value: 0, max_value: 10}] will also have
-        # data.buffer=b'' but will be Status.INVALID instead.
+        # data.buffer=b'' but will be Status.INVALID instead. We do not want to
+        # change the cached value to INVALID in this case.
         #
-        # I think this indicates that we should be mark_overrun internally in
-        # these cases instead? alternatively, we'll map Status.INVALID to Overrun
-        # when caching.
-        if data.invalid_at is not None:
-            assert data.status is Status.INVALID
-            result = Overrun
-        self.__data_cache[data.buffer] = result
-        key = tuple(data.examples.ir_tree_nodes)
-        # if we're overwriting an entry (eg because a buffer ran to the same ir
-        # tree), it better be the same data as we had before, or something is
-        # wrong with our logic/flaky detection.
-        if key in self.__data_cache_ir:
-            assert self.__data_cache_ir[key].status is result.status
+        # We handle this specially for the ir cache by keying off the misaligned node
+        # as well, but we cannot do the same for buffers as we do not know ahead of
+        # time what buffer a node maps to. I think it's largely fine that we don't
+        # write to the buffer cache here as we move more things to the ir cache.
+        if data.invalid_at is None:
+            self.__data_cache[data.buffer] = result
+        key = self._cache_key_ir(data=data)
         self.__data_cache_ir[key] = result
 
-    def cached_test_function_ir(self, ir_tree_nodes):
-        key = tuple(ir_tree_nodes)
+    def cached_test_function_ir(self, nodes):
+        key = self._cache_key_ir(nodes=nodes)
         try:
             return self.__data_cache_ir[key]
         except KeyError:
             pass
 
         try:
-            trial_data = self.new_conjecture_data_ir(ir_tree_nodes)
+            trial_data = self.new_conjecture_data_ir(nodes)
             self.tree.simulate_test_function(trial_data)
         except PreviouslyUnseenBehaviour:
             pass
         else:
             trial_data.freeze()
+            key = self._cache_key_ir(data=trial_data)
             try:
-                return self.__data_cache_ir[tuple(trial_data.examples.ir_tree_nodes)]
+                return self.__data_cache_ir[key]
             except KeyError:
                 pass
 
-        data = self.new_conjecture_data_ir(ir_tree_nodes)
+        data = self.new_conjecture_data_ir(nodes)
         # note that calling test_function caches `data` for us, for both an ir
         # tree key and a buffer key.
         self.test_function(data)

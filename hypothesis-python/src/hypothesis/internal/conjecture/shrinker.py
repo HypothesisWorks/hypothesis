@@ -454,7 +454,6 @@ class Shrinker:
         that the result is either an Overrun object (if the buffer is
         too short to be a valid test case) or a ConjectureData object
         with status >= INVALID that would result from running this buffer."""
-
         buffer = bytes(buffer)
         result = self.engine.cached_test_function(buffer, extend=self.__extend)
         self.incorporate_test_data(result)
