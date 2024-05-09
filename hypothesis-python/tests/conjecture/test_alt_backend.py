@@ -30,6 +30,7 @@ from hypothesis.internal.floats import SIGNALING_NAN
 from hypothesis.internal.intervalsets import IntervalSet
 
 from tests.common.debug import minimal
+from tests.conjecture.common import ir_nodes
 
 
 class PrngProvider(PrimitiveProvider):
@@ -243,6 +244,18 @@ def test_backend_can_shrink_floats():
         )
 
     assert f == 101.0
+
+
+# mostly a shoehorned coverage test until the shrinker is migrated to the ir
+# and calls cached_test_function_ir with backends consistently.
+@given(ir_nodes())
+def test_new_conjecture_data_ir_with_backend(node):
+    def test(data):
+        getattr(data, f"draw_{node.ir_type}")(**node.kwargs)
+
+    with temp_register_backend("prng", PrngProvider):
+        runner = ConjectureRunner(test, settings=settings(backend="prng"))
+        runner.cached_test_function_ir([node])
 
 
 # trivial provider for tests which don't care about drawn distributions.

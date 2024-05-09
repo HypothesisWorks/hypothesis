@@ -19,6 +19,7 @@ from hypothesis.internal.conjecture.data import ConjectureData, Status, StopTest
 from hypothesis.internal.conjecture.datatree import (
     Branch,
     DataTree,
+    PreviouslyUnseenBehaviour,
     compute_max_children,
 )
 from hypothesis.internal.conjecture.engine import ConjectureRunner
@@ -34,6 +35,7 @@ from tests.conjecture.common import (
     draw_integer_kwargs,
     draw_string_kwargs,
     fresh_data,
+    ir_nodes,
     run_to_buffer,
 )
 
@@ -611,3 +613,93 @@ def test_datatree_repr(bool_kwargs, int_kwargs):
         """
         ).strip()
     )
+
+
+def _draw(data, node):
+    return getattr(data, f"draw_{node.ir_type}")(**node.kwargs)
+
+
+@given(ir_nodes(), ir_nodes())
+@settings(suppress_health_check=[HealthCheck.too_slow])
+def test_misaligned_nodes_after_valid_draw(node, misaligned_node):
+    # if we run a valid tree through a test function, the datatree should still
+    # be able to return a Status.INVALID when a node in that tree becomes misaligned.
+    assume(misaligned_node.ir_type != node.ir_type)
+    tree = DataTree()
+
+    data = ConjectureData.for_ir_tree([node], observer=tree.new_observer())
+    _draw(data, node)
+    assert data.status is Status.VALID
+
+    data = ConjectureData.for_ir_tree([misaligned_node])
+    tree.simulate_test_function(data)
+    assert data.status is Status.INVALID
+
+    assert data.invalid_at == (node.ir_type, node.kwargs)
+
+
+@given(ir_nodes(was_forced=False), ir_nodes(was_forced=False))
+@settings(suppress_health_check=[HealthCheck.too_slow])
+def test_misaligned_nodes_before_valid_draw(node, misaligned_node):
+    # if we run a misaligned tree through a test function, we should still get
+    # the correct response when running the aligned version of the tree through
+    # the test function afterwards.
+    assume(misaligned_node.ir_type != node.ir_type)
+    tree = DataTree()
+
+    data = ConjectureData.for_ir_tree([node], observer=tree.new_observer())
+
+    with pytest.raises(StopTest):
+        _draw(data, misaligned_node)
+    data.freeze()
+    assert data.status is Status.INVALID
+    assert data.examples.ir_tree_nodes == []
+
+    # make sure the tree is tracking that `node` leads to Status.INVALID only
+    # when trying to draw a misaligned node. If we try to draw something that
+    # is valid for that node, then it's a valid draw and should lead to Status.VALID.
+    data = ConjectureData.for_ir_tree([node], observer=tree.new_observer())
+    _draw(data, node)
+    data.freeze()
+    assert data.status is Status.VALID
+    assert data.examples.ir_tree_nodes == [node]
+
+
+@given(ir_nodes(was_forced=True, ir_type="float"))
+def test_simulate_forced_floats(node):
+    tree = DataTree()
+
+    data = ConjectureData.for_ir_tree([node], observer=tree.new_observer())
+    data.draw_float(**node.kwargs, forced=node.value)
+    with pytest.raises(StopTest):
+        data.conclude_test(Status.VALID)
+
+    data = ConjectureData.for_ir_tree([node], observer=tree.new_observer())
+    tree.simulate_test_function(data)
+    data.freeze()
+    assert data.examples.ir_tree_nodes == [node]
+
+
+@given(ir_nodes(), ir_nodes())
+@settings(suppress_health_check=[HealthCheck.too_slow])
+def test_simulate_non_invalid_conclude_is_unseen_behavior(node, misaligned_node):
+    # coverage test for the case where we have a node invalid at some draw, and
+    # simulating that draw should lead to some conclusion other than invalid.
+    assume(misaligned_node.ir_type != node.ir_type)
+    tree = DataTree()
+
+    # set up an invalid draw. the transition for node is now None in the tree
+    data = ConjectureData.for_ir_tree(
+        [node, misaligned_node], observer=tree.new_observer()
+    )
+    with pytest.raises(StopTest):
+        _draw(data, node)
+        _draw(data, node)
+
+    # try simulating something that will take the transition path for node, but
+    # end in something other than a misaligned/invalid result, such as an overrun
+    data = ConjectureData.for_ir_tree([node], observer=tree.new_observer())
+    with pytest.raises(PreviouslyUnseenBehaviour):
+        tree.simulate_test_function(data)
+
+    assert data.status is Status.OVERRUN
