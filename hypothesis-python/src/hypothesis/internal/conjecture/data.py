@@ -2425,6 +2425,7 @@ class ConjectureData:
             # where we cache something expensive, this led to Flaky deadline errors!
             # See https://github.com/HypothesisWorks/hypothesis/issues/2108
             start_time = time.perf_counter()
+            gc_start_time = gc_cumulative_time()
 
         strategy.validate()
 
@@ -2448,7 +2449,10 @@ class ConjectureData:
                 try:
                     return strategy.do_draw(self)
                 finally:
-                    self.draw_times[key] = time.perf_counter() - start_time
+                    # Subtract the time spent in GC to avoid overcounting, as it is
+                    # accounted for at the overall example level.
+                    in_gctime = gc_cumulative_time() - gc_start_time
+                    self.draw_times[key] = time.perf_counter() - start_time - in_gctime
             except Exception as err:
                 add_note(err, f"while generating {key[9:]!r} from {strategy!r}")
                 raise
