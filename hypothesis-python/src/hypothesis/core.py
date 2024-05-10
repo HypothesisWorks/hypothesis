@@ -842,7 +842,7 @@ class StateForActualGivenExecution:
                     )
                     self._timing_features = {
                         "execute:test": runtime.total_seconds(),
-                        "execute:gc": in_gctime,
+                        "overall:gc": in_gctime,
                         **data.draw_times,
                         **data._stateful_run_times,
                     }

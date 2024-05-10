@@ -46,7 +46,7 @@
                 },
                 "timing": {
                     "type": "object",
-                    "description": "The time in seconds taken by non-overlapping parts of this test case.  Hypothesis reports execute:test, and generate:{argname} for each argument.",
+                    "description": "The time in seconds taken by non-overlapping parts of this test case.  Hypothesis reports execute:test, overall:gc, and generate:{argname} for each argument.",
                     "additionalProperties": {
                         "type": "number",
                         "minimum": 0
