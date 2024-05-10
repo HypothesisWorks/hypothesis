@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import gc
 import time
 
 import pytest
@@ -134,3 +135,21 @@ def test_should_only_fail_a_deadline_if_the_test_is_slow(slow_strategy, slow_tes
             test()
     else:
         test()
+
+
+def test_should_not_fail_deadline_due_to_gc():
+
+    @settings(max_examples=1, deadline=50)
+    @given(st.integers())
+    def test(i):
+        gc.collect()
+
+    def delay(phase, _info):
+        if phase == "start":
+            time.sleep(0.1)
+
+    try:
+        gc.callbacks.append(delay)
+        test()
+    finally:
+        gc.callbacks.remove(delay)
