@@ -430,6 +430,7 @@ class ConjectureRunner:
                     "status": data.status.name.lower(),
                     "runtime": data.finish_time - data.start_time,
                     "drawtime": math.fsum(data.draw_times.values()),
+                    "gctime": data.gc_finish_time - data.gc_start_time,
                     "events": sorted(
                         k if v == "" else f"{k}: {v}" for k, v in data.events.items()
                     ),

@@ -138,7 +138,6 @@ def test_should_only_fail_a_deadline_if_the_test_is_slow(slow_strategy, slow_tes
 
 
 def test_should_not_fail_deadline_due_to_gc():
-
     @settings(max_examples=1, deadline=50)
     @given(st.integers())
     def test(i):

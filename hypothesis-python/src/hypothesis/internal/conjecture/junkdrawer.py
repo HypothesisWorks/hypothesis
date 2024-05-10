@@ -13,7 +13,9 @@ obviously belong anywhere else. If you spot a better home for
 anything that lives here, please move it."""
 
 import array
+import gc
 import sys
+import time
 import warnings
 from random import Random
 from typing import (
@@ -413,3 +415,21 @@ class SelfOrganisingList(Generic[T]):
                 self.__values.append(value)
                 return value
         raise NotFound("No values satisfying condition")
+
+
+_gc_start = 0
+_gc_cumulative_time = 0
+
+
+def _gc_callback(phase, _info):
+    global _gc_start, _gc_cumulative_time
+    if phase == "start":
+        _gc_start = time.perf_counter()
+    elif phase == "stop":
+        _gc_cumulative_time += time.perf_counter() - _gc_start
+
+
+def gc_cumulative_time() -> float:
+    if not _gc_callback in gc.callbacks:
+        gc.callbacks.insert(0, _gc_callback)
+    return _gc_cumulative_time
