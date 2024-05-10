@@ -341,10 +341,11 @@ def find_annotated_strategy(annotated_type):
             return arg
 
     filter_conditions = []
+    filter_map = get_constraints_filter_map()
     if "annotated_types" in sys.modules:
         unsupported = []
         for constraint in _get_constraints(metadata):
-            if convert := get_constraints_filter_map().get(type(constraint)):
+            if convert := filter_map.get(type(constraint)):
                 filter_conditions.append(convert(constraint))
             else:
                 unsupported.append(constraint)
