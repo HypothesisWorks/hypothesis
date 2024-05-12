@@ -255,7 +255,6 @@ def test_draw_string_single_interval_with_equal_bounds(s, n):
             "min_value": 1,
             "max_value": 2,
             "weights": [0, 1],
-            "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
         },
     )
 )
