@@ -272,6 +272,19 @@ def test_compute_max_children_and_all_children_agree(ir_type_and_kwargs):
     assert len(list(all_children(ir_type, kwargs))) == max_children
 
 
+# it's very hard to test that unbounded integer ranges agree with
+# compute_max_children, because they by necessity require iterating over 2**127
+# or more elements. We do the not great approximation of checking just the first
+# element is what we expect.
+@pytest.mark.parametrize(
+    "min_value, max_value, first",
+    [(None, None, -(2**127) + 1), (None, 42, (-(2**127) + 1) + 42), (42, None, 42)],
+)
+def test_compute_max_children_unbounded_integer_ranges(min_value, max_value, first):
+    kwargs = {"min_value": min_value, "max_value": max_value, "weights": None}
+    assert first == next(all_children("integer", kwargs))
+
+
 @given(st.randoms())
 def test_ir_nodes(random):
     data = fresh_data(random=random)
