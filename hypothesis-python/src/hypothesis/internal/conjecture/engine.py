@@ -17,6 +17,7 @@ from datetime import timedelta
 from enum import Enum
 from random import Random, getrandbits
 from typing import (
+    Any,
     Callable,
     Dict,
     Final,
@@ -27,6 +28,7 @@ from typing import (
     NoReturn,
     Optional,
     Set,
+    Tuple,
     Union,
     overload,
 )
@@ -217,9 +219,7 @@ class ConjectureRunner:
         self.stats_per_test_case: List[CallStats] = []
 
         # At runtime, the keys are only ever type `InterestingOrigin`, but can be `None` during tests.
-        self.interesting_examples: Dict[
-            Optional[InterestingOrigin], ConjectureResult
-        ] = {}
+        self.interesting_examples: Dict[InterestingOrigin, ConjectureResult] = {}
         # We use call_count because there may be few possible valid_examples.
         self.first_bug_found_at: Optional[int] = None
         self.last_bug_found_at: Optional[int] = None
@@ -317,15 +317,18 @@ class ConjectureRunner:
         *,
         nodes: Optional[List[IRNode]] = None,
         data: Union[ConjectureData, ConjectureResult, None] = None,
-    ):
+    ) -> Tuple[Tuple[Any, ...], ...]:
         assert (nodes is not None) ^ (data is not None)
         extension = []
         if data is not None:
             nodes = data.examples.ir_tree_nodes
             if data.invalid_at is not None:
                 # if we're invalid then we should have at least one node left (the invalid one).
+                assert isinstance(data, ConjectureData)
+                assert data.ir_tree_nodes is not None
                 assert data._node_index < len(data.ir_tree_nodes)
                 extension = [data.ir_tree_nodes[data._node_index]]
+        assert nodes is not None
 
         # intentionally drop was_forced from equality here, because the was_forced
         # of node prefixes on ConjectureData has no impact on that data's result
@@ -356,7 +359,9 @@ class ConjectureRunner:
         key = self._cache_key_ir(data=data)
         self.__data_cache_ir[key] = result
 
-    def cached_test_function_ir(self, nodes: List[IRNode]) -> ConjectureResult:
+    def cached_test_function_ir(
+        self, nodes: List[IRNode]
+    ) -> Union[ConjectureResult, _Overrun]:
         key = self._cache_key_ir(nodes=nodes)
         try:
             return self.__data_cache_ir[key]
@@ -427,7 +432,6 @@ class ConjectureRunner:
 
         if data.status >= Status.VALID:
             for k, v in data.target_observations.items():
-                assert k is not None
                 self.best_observed_targets[k] = max(self.best_observed_targets[k], v)
 
                 if k not in self.best_examples_of_observed_targets:
@@ -471,7 +475,7 @@ class ConjectureRunner:
             key = data.interesting_origin
             changed = False
             try:
-                existing = self.interesting_examples[key]
+                existing = self.interesting_examples[key]  # type: ignore
             except KeyError:
                 changed = True
                 self.last_bug_found_at = self.call_count
@@ -1153,7 +1157,7 @@ class ConjectureRunner:
         ir_tree_prefix: List[IRNode],
         *,
         observer: Optional[DataObserver] = None,
-    ):
+    ) -> ConjectureData:
         provider = (
             HypothesisProvider if self._switch_to_hypothesis_provider else self.provider
         )
