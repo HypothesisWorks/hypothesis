@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.100.7:
+
+--------------------
+6.100.7 - 2024-05-12
+--------------------
+
+This patch fixes a rare internal error when using :func:`~hypothesis.strategies.integers` with a high ``max_examples`` setting (:issue:`3974`).
+
 .. _v6.100.6:
 
 --------------------
