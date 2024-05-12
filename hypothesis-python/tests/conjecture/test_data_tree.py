@@ -13,7 +13,7 @@ from random import Random
 
 import pytest
 
-from hypothesis import HealthCheck, assume, given, settings, strategies as st
+from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.errors import Flaky
 from hypothesis.internal.conjecture.data import ConjectureData, Status, StopTest
 from hypothesis.internal.conjecture.datatree import (
