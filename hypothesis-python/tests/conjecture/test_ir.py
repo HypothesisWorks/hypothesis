@@ -255,7 +255,6 @@ def test_draw_string_single_interval_with_equal_bounds(s, n):
             "min_value": 1,
             "max_value": 2,
             "weights": [0, 1],
-            "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
         },
     )
 )
@@ -271,6 +270,19 @@ def test_compute_max_children_and_all_children_agree(ir_type_and_kwargs):
     cap = min(100_000, MAX_CHILDREN_EFFECTIVELY_INFINITE)
     assume(max_children < cap)
     assert len(list(all_children(ir_type, kwargs))) == max_children
+
+
+# it's very hard to test that unbounded integer ranges agree with
+# compute_max_children, because they by necessity require iterating over 2**127
+# or more elements. We do the not great approximation of checking just the first
+# element is what we expect.
+@pytest.mark.parametrize(
+    "min_value, max_value, first",
+    [(None, None, -(2**127) + 1), (None, 42, (-(2**127) + 1) + 42), (42, None, 42)],
+)
+def test_compute_max_children_unbounded_integer_ranges(min_value, max_value, first):
+    kwargs = {"min_value": min_value, "max_value": max_value, "weights": None}
+    assert first == next(all_children("integer", kwargs))
 
 
 @given(st.randoms())
