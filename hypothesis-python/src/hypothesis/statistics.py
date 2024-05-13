@@ -84,10 +84,10 @@ def describe_statistics(stats_dict):
         runtime_ms = format_ms(t["runtime"] for t in cases)
         drawtime_ms = format_ms(t["drawtime"] for t in cases)
         gctime_ms = format_ms(t["gctime"] for t in cases)
+        gctime_txt = "" if gctime_ms[0] == "<" else f"and {gctime_ms} in gc"
         lines.append(
             f"  - during {phase} phase ({d['duration-seconds']:.2f} seconds):\n"
-            f"    - Typical runtimes: {runtime_ms}, of which {drawtime_ms} in data generation"
-            f" and {gctime_ms} in gc\n"
+            f"    - Typical runtimes: {runtime_ms}, of which {drawtime_ms} in data generation {gctime_txt}\n"
             f"    - {statuses['valid']} passing examples, {statuses['interesting']} "
             f"failing examples, {statuses['invalid'] + statuses['overrun']} invalid examples"
         )
