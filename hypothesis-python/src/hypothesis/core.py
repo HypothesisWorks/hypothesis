@@ -837,11 +837,9 @@ class StateForActualGivenExecution:
                     finish = time.perf_counter()
                     in_gctime = gc_cumulative_time() - arg_gctime
                     in_drawtime = math.fsum(data.draw_times.values()) - arg_drawtime
-                    runtime = datetime.timedelta(
-                        seconds=finish - start - in_drawtime - in_gctime
-                    )
+                    runtime = finish - start - in_drawtime - in_gctime
                     self._timing_features = {
-                        "execute:test": runtime.total_seconds(),
+                        "execute:test": runtime,
                         "overall:gc": in_gctime,
                         **data.draw_times,
                         **data._stateful_run_times,
@@ -850,8 +848,8 @@ class StateForActualGivenExecution:
                 if (current_deadline := self.settings.deadline) is not None:
                     if not is_final:
                         current_deadline = (current_deadline // 4) * 5
-                    if runtime >= current_deadline:
-                        raise DeadlineExceeded(runtime, self.settings.deadline)
+                    if runtime >= current_deadline.total_seconds():
+                        raise DeadlineExceeded(datetime.timedelta(seconds=runtime), self.settings.deadline)
                 return result
 
         def run(data):
