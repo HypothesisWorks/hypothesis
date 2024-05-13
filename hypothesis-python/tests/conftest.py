@@ -103,14 +103,14 @@ def _consistently_increment_time(monkeypatch):
     # non-determinism due to GC running at arbitrary times, we patch the GC observer
     # to NOT increment time.
 
-    orig_callback = junkdrawer._gc_callback_impl
+    orig_callback = junkdrawer._gc_callback
 
     def patched_callback(*args):
         with monkeypatch.context() as mp:
             mp.setitem(frozen, 0, True)
             orig_callback(*args)
 
-    monkeypatch.setattr(junkdrawer, "_gc_callback_impl", patched_callback)
+    monkeypatch.setattr(junkdrawer, "_gc_callback", patched_callback)
 
 
 random_states_after_tests = {}

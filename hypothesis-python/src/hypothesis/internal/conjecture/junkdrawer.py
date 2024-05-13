@@ -417,11 +417,12 @@ class SelfOrganisingList(Generic[T]):
         raise NotFound("No values satisfying condition")
 
 
+_gc_initialized = False
 _gc_start = 0
 _gc_cumulative_time = 0
 
 
-def _gc_callback_impl(phase, _info):
+def _gc_callback(phase, _info):
     global _gc_start, _gc_cumulative_time
     if phase == "start":
         _gc_start = time.perf_counter()
@@ -429,14 +430,13 @@ def _gc_callback_impl(phase, _info):
         _gc_cumulative_time += time.perf_counter() - _gc_start
 
 
-def _gc_callback(phase, info):
-    # Indirection to simplify monkeypatching of the actual callback, because gc.callbacks
-    # can't be reassigned and hence is not suitable for monkeypatching directly. Don't
-    # remove this without considering implications in tests/conftest.py.
-    _gc_callback_impl(phase, info)
-
-
 def gc_cumulative_time() -> float:
-    if not _gc_callback in gc.callbacks:
-        gc.callbacks.insert(0, _gc_callback)
+    global _gc_initialized
+    if not _gc_initialized:
+        # Indirection via lambda to simplify monkeypatching of the callback fn
+        # - gc.callbacks can't be reassigned and hence is not suitable for
+        # monkeypatching directly. Don't remove this lambda without considering
+        # implications in tests/conftest.py.
+        gc.callbacks.insert(0, lambda *args: _gc_callback(*args))
+        _gc_initialized = True
     return _gc_cumulative_time
