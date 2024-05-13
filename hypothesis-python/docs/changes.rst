@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.102.1:
+
+--------------------
+6.102.1 - 2024-05-13
+--------------------
+
+This patch fixes an overly strict internal type assertion.
+
 .. _v6.102.0:
 
 --------------------
