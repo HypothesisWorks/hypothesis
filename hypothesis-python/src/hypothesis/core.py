@@ -829,15 +829,17 @@ class StateForActualGivenExecution:
             @proxies(self.test)
             def test(*args, **kwargs):
                 arg_drawtime = math.fsum(data.draw_times.values())
+                arg_stateful = math.fsum(data._stateful_run_times.values())
                 arg_gctime = gc_cumulative_time()
                 start = time.perf_counter()
                 try:
                     result = self.test(*args, **kwargs)
                 finally:
                     finish = time.perf_counter()
-                    in_gctime = gc_cumulative_time() - arg_gctime
                     in_drawtime = math.fsum(data.draw_times.values()) - arg_drawtime
-                    runtime = finish - start - in_drawtime - in_gctime
+                    in_stateful = math.fsum(data._stateful_run_times.values()) - arg_stateful
+                    in_gctime = gc_cumulative_time() - arg_gctime
+                    runtime = finish - start - in_drawtime - in_stateful - in_gctime
                     self._timing_features = {
                         "execute:test": runtime,
                         "overall:gc": in_gctime,
