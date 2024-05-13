@@ -199,8 +199,10 @@ def run_state_machine_as_test(state_machine_factory, *, settings=None, _min_step
 
                     label = f"execute:rule:{rule.function.__name__}"
                     start = perf_counter()
+                    start_gc = gc_cumulative_time()
                     result = rule.function(machine, **data)
-                    cd._stateful_run_times[label] += perf_counter() - start
+                    in_gctime = gc_cumulative_time() - start_gc
+                    cd._stateful_run_times[label] += perf_counter() - start - in_gctime
 
                     if rule.targets:
                         if isinstance(result, MultipleResults):
