@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.100.8:
+
+--------------------
+6.100.8 - 2024-05-13
+--------------------
+
+This patch adds some internal type annotations (:issue:`3074`).
+Thanks to Andrew Sansom for his contribution!
+
 .. _v6.100.7:
 
 --------------------
