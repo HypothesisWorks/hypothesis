@@ -203,13 +203,11 @@ class LazySequenceCopy:
     in O(1) time. The full list API is not supported yet but there's no reason
     in principle it couldn't be."""
 
-    __mask: Optional[Dict[int, int]]
-
     def __init__(self, values: Sequence[int]):
         self.__values = values
         self.__len = len(values)
-        self.__mask = None
-        self.__popped_indices = None
+        self.__mask: Optional[Dict[int, int]] = None
+        self.__popped_indices: Optional[SortedList] = None
 
     def __len__(self) -> int:
         if self.__popped_indices is None:
