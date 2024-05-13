@@ -422,7 +422,7 @@ _gc_start = 0
 _gc_cumulative_time = 0
 
 
-def _gc_callback(phase, _info):
+def _gc_callback(phase, _info):  # pragma: no cover  # called outside coverage by gc
     global _gc_start, _gc_cumulative_time
     if phase == "start":
         _gc_start = time.perf_counter()

@@ -168,6 +168,7 @@ class CallStats(TypedDict):
     status: str
     runtime: float
     drawtime: float
+    gctime: float
     events: List[str]
 
 
