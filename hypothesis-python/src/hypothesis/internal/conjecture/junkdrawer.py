@@ -15,7 +15,7 @@ anything that lives here, please move it."""
 import array
 import sys
 import warnings
-from itertools import chain, pairwise
+from itertools import chain
 from random import Random
 from typing import (
     Callable,
@@ -35,6 +35,7 @@ from typing import (
 from sortedcontainers import SortedList
 
 from hypothesis.errors import HypothesisWarning
+from hypothesis.internal.compat import pairwise
 
 ARRAY_CODES = ["B", "H", "I", "L", "Q", "O"]
 
