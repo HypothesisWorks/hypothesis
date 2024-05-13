@@ -421,12 +421,19 @@ _gc_start = 0
 _gc_cumulative_time = 0
 
 
-def _gc_callback(phase, _info):
+def _gc_callback_impl(phase, _info):
     global _gc_start, _gc_cumulative_time
     if phase == "start":
         _gc_start = time.perf_counter()
     elif phase == "stop":
         _gc_cumulative_time += time.perf_counter() - _gc_start
+
+
+def _gc_callback(phase, info):
+    # Indirection to simplify monkeypatching of the actual callback, because gc.callbacks
+    # can't be reassigned and hence is not suitable for monkeypatching directly. Don't
+    # remove this without considering implications in tests/conftest.py.
+    _gc_callback_impl(phase, info)
 
 
 def gc_cumulative_time() -> float:
