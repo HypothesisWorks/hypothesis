@@ -145,3 +145,7 @@ class CompanyExtension(models.Model):
     company = models.OneToOneField(Company, primary_key=True, on_delete=models.CASCADE)
 
     self_modifying = SelfModifyingField()
+
+
+class UserSpecifiedAutoId(models.Model):
+    my_id = models.AutoField(primary_key=True)
