@@ -19,6 +19,7 @@ import pytest
 from hypothesis._settings import is_in_ci
 from hypothesis.errors import NonInteractiveExampleWarning
 from hypothesis.internal.compat import add_note
+from hypothesis.internal.conjecture import junkdrawer
 from hypothesis.internal.detection import is_hypothesis_test
 
 from tests.common import TIME_INCREMENT
@@ -74,7 +75,7 @@ def _consistently_increment_time(monkeypatch):
 
     Replacing time with a fake version under our control avoids this problem.
     """
-    frozen = [False]
+    frozen = {0: False}  # dict to make it a valid monkeypatch target
 
     current_time = [time_module.time()]
 
@@ -97,6 +98,20 @@ def _consistently_increment_time(monkeypatch):
     _patch("perf_counter", time)
     _patch("sleep", sleep)
     monkeypatch.setattr(time_module, "freeze", freeze, raising=False)
+
+    # In the patched time regime, observing it causes it to increment. To avoid reintroducing
+    # non-determinism due to GC running at arbitrary times, we patch the GC observer
+    # to NOT increment time.
+
+    orig_callback = junkdrawer._gc_callback
+
+    def patched_callback(*args):
+        with monkeypatch.context() as mp:
+            mp.setitem(frozen, 0, True)
+            orig_callback(*args)
+
+    monkeypatch.setattr(junkdrawer, "_gc_callback", patched_callback)
+    monkeypatch.setattr(gc, "callbacks", [cb for cb in gc.callbacks if cb != orig_callback])
 
 
 random_states_after_tests = {}
