@@ -391,14 +391,6 @@ def find_integer(f: Callable[[int], bool]) -> int:
     return lo
 
 
-def pop_random(random: Random, seq: LazySequenceCopy) -> int:
-    """Remove and return a random element of seq. This runs in O(1) but leaves
-    the sequence in an arbitrary order."""
-    i = random.randrange(0, len(seq))
-    swap(seq, i, len(seq) - 1)
-    return seq.pop()
-
-
 class NotFound(Exception):
     pass
 
