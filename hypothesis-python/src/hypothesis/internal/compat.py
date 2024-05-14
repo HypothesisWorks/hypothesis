@@ -12,7 +12,6 @@ import codecs
 import copy
 import dataclasses
 import inspect
-import itertools
 import platform
 import sys
 import sysconfig
@@ -251,20 +250,6 @@ def bad_django_TestCase(runner):
 
         return not isinstance(runner, HypothesisTestCase)
 
-
-if sys.version_info[:2] < (3, 10):
-
-    # copied straight from
-    # https://docs.python.org/3/library/itertools.html#itertools.pairwise
-    def pairwise(iterable):
-        iterator = iter(iterable)
-        a = next(iterator, None)
-        for b in iterator:
-            yield a, b
-            a = b
-
-else:
-    pairwise = itertools.pairwise
 
 # see issue #3812
 if sys.version_info[:2] < (3, 12):

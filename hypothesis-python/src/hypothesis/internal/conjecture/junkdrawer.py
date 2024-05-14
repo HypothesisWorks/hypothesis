@@ -15,7 +15,6 @@ anything that lives here, please move it."""
 import array
 import sys
 import warnings
-from itertools import chain
 from random import Random
 from typing import (
     Callable,
@@ -35,7 +34,6 @@ from typing import (
 from sortedcontainers import SortedList
 
 from hypothesis.errors import HypothesisWarning
-from hypothesis.internal.compat import pairwise
 
 ARRAY_CODES = ["B", "H", "I", "L", "Q", "O"]
 
@@ -254,37 +252,21 @@ class LazySequenceCopy:
         assert 0 <= i < n
 
         if self.__popped_indices is not None:
-            i = self.__underlying_index_for_pops(i)
+            # given an index i in the popped representation of the list, compute
+            # its corresponding index in the underlying list. given
+            #   l = [1, 4, 2, 10, 188]
+            #   l.pop(3)
+            #   l.pop(1)
+            #   assert l == [1, 2, 188]
+            #
+            # we want l[i] == self.__values[f(i)], where f is this function.
+            assert len(self.__popped_indices) <= len(self.__values)
 
+            for idx in self.__popped_indices:
+                if idx > i:
+                    break
+                i += 1
         return i
-
-    def __underlying_index_for_pops(self, i):
-        # given an index i in the popped representation of the list, compute
-        # its corresponding index in the underlying list. given
-        #   l = [1, 4, 2, 10, 188]
-        #   l.pop(3)
-        #   l.pop(1)
-        #   assert l == [1, 2, 188]
-        #
-        # we want l[i] == self.__values[f(i)], where f is this function.
-        assert len(self.__popped_indices) <= len(self.__values)
-
-        # we know what indices have been popped. count the total gap (number of
-        # "free indices") between these these, which is the elements remaining.
-        # stop whenever the gap is bigger than we need it to be and compute
-        # exactly where in the gap the expected index would be.
-        #
-        # This relies on popped_indices being sorted.
-        gap = 0
-        for n1, n2 in pairwise(
-            chain([-1], self.__popped_indices, [len(self.__values)])
-        ):
-            prev_gap = gap
-            gap += n2 - n1 - 1
-            if gap > i:
-                return n1 + (i - prev_gap) + 1
-
-        raise NotImplementedError("unreachable")
 
 
 def clamp(lower: float, value: float, upper: float) -> float:
