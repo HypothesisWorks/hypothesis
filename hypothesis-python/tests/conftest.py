@@ -101,7 +101,7 @@ def _consistently_increment_time(monkeypatch):
 
     # In the patched time regime, observing it causes it to increment. To avoid reintroducing
     # non-determinism due to GC running at arbitrary times, we patch the GC observer
-    # to NOT increment time.
+    # to NOT increment time. NOTE: This is not necessary, and has no effect, outside of CPython.
 
     orig_callback = junkdrawer._gc_callback
 

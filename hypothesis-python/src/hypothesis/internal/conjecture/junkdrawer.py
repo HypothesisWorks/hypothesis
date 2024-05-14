@@ -433,10 +433,28 @@ def _gc_callback(phase, _info):  # pragma: no cover  # called outside coverage b
 def gc_cumulative_time() -> float:
     global _gc_initialized
     if not _gc_initialized:
-        # Indirection via lambda to simplify monkeypatching of the callback fn
-        # - gc.callbacks can't be reassigned and hence is not suitable for
-        # monkeypatching directly. Don't remove this lambda without considering
-        # implications in tests/conftest.py.
-        gc.callbacks.insert(0, lambda *args: _gc_callback(*args))
+        if hasattr(gc, "callbacks"):
+            # CPython
+            #
+            # Indirection via lambda to simplify monkeypatching of the callback fn
+            # - gc.callbacks can't be reassigned and hence is not suitable for
+            # monkeypatching directly. Don't remove this lambda without considering
+            # implications in tests/conftest.py.
+            gc.callbacks.insert(0, lambda *args: _gc_callback(*args))
+        elif hasattr(gc, "hooks"):  # pragma: no cover  # pypy only
+            # PyPy
+            #
+            # No monkeypatching support, we get the duration directly so it's not
+            # needed. Best effort, don't overwrite preexisting hooks.
+            def hook(stats):
+                global _gc_cumulative_time
+                _gc_cumulative_time += stats.duration
+
+            if gc.hooks.on_gc_minor is None:
+                gc.hooks.on_gc_minor = hook
+            if gc.hooks.on_gc_collect_step is None:
+                gc.hooks.on_gc_collect_step = hook
+
         _gc_initialized = True
+
     return _gc_cumulative_time
