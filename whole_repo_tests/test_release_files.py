@@ -20,7 +20,8 @@ def test_release_file_exists_and_is_valid(project):
     if project.has_source_changes():
         assert project.has_release(), (
             "There are source changes but no RELEASE.rst. Please create "
-            "one to describe your changes."
+            "one to describe your changes. An example can be found in "
+            "RELEASE-sample.rst."
         )
         rm.parse_release_file(project.RELEASE_FILE)
 

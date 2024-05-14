@@ -10,7 +10,8 @@ Just tell me how to make a pull request
 
 1. Make your change and ensure it has adequate tests
 2. Create ``hypothesis-python/RELEASE.rst`` with ``RELEASE_TYPE: patch``
-   for small bugfixes, or ``minor`` for new features.  See recent PRs for examples.
+   for small bugfixes, or ``minor`` for new features.  See ``RELEASE-sample.rst``
+   as an example.
 3. Add yourself to the list in ``AUTHORS.rst`` and open a PR!
 
 For more detail, read on; for even more, continue to the ``guides/`` directory!
