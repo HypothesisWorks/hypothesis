@@ -165,6 +165,7 @@ def recur(i, data):
         recur(i - 1, data)
 
 
+@pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
 def test_recursion_error_is_not_flaky():
     def tf(data):
         i = data.draw_integer(0, 2**16 - 1)
