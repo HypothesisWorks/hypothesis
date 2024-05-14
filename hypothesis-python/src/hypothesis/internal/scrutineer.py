@@ -114,6 +114,16 @@ UNHELPFUL_LOCATIONS = (
     f"{sep}_pytest{sep}assertion{sep}rewrite.py",
     f"{sep}_pytest{sep}_io{sep}saferepr.py",
     f"{sep}pluggy{sep}_result.py",
+    # These are triggered by gc callbacks
+    f"{sep}reprlib.py",
+    f"{sep}_pytest{sep}assertion{sep}util.py",
+    f"{sep}_pytest{sep}config{sep}__init__.py",
+    f"{sep}pluggy{sep}_result.py",
+    f"{sep}pluggy{sep}_manager.py",
+    f"{sep}typing.py",
+    f"{sep}pluggy{sep}_callers.py",
+    f"{sep}pluggy{sep}_hooks.py",
+    f"{sep}_pytest{sep}pytester.py",
 )
 
 
