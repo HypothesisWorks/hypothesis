@@ -4,7 +4,7 @@ This patch improves import-detection in :doc:`the Ghostwriter <ghostwriter>`
 (:issue:`3884`), particularly for :func:`~hypothesis.strategies.from_type`
 and strategies from ``hypothesis.extra.*``.
 
-Thanks to <contribtor's name or handle> for this <contribution/fix/feature>!
+Thanks to <contributor's name or handle> for this <contribution/fix/feature>!
 
 ---
 
@@ -23,8 +23,9 @@ which should:
   :class:`package.class` for link to classes (abbreviated: as above)
   :issue:`issue-number` for issues
   :doc:`link text <chapter#anchor>` for documentation references (``https://hypothesis.readthedocs.io/en/latest/<chapter>.html#<anchor>``)
-- finish with a note of thanks from the maintainers:
-  "Thanks to <your name> for this bug fix / feature / contribution"
-  (depending on which it is).  If this is your first contribution,
-  don't forget to add yourself to AUTHORS.rst!
+- finish with a note of thanks from the maintainers. If this is your first
+  contribution, don't forget to add yourself to AUTHORS.rst!
 
+After the PR is merged, the contents of this file (except the first line)
+are automatically added to ``docs/changes.rst``. More examples are found
+in that file.
