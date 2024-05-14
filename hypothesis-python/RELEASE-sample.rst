@@ -1,7 +1,14 @@
 RELEASE_TYPE: patch
 
-"patch" should be replaced by "minor" if changes are visible in the
-public API, or "major" if there are breaking changes.
+This patch improves import-detection in :doc:`the Ghostwriter <ghostwriter>`
+(:issue:`3884`), particularly for :func:`~hypothesis.strategies.from_type`
+and strategies from ``hypothesis.extra.*``.
+
+---
+
+In the example above, "patch" on the first line should be replaced by
+"minor" if changes are visible in the public API, or "major" if there
+are breaking changes.
 
 The remaining lines are the actual changelog text for this release,
 which should:
@@ -19,8 +26,3 @@ which should:
   (depending on which it is).  If this is your first contribution,
   don't forget to add yourself to AUTHORS.rst!
 
-Here's a concrete example:
-
-This patch improves import-detection in :doc:`the Ghostwriter <ghostwriter>`
-(:issue:`3884`), particularly for :func:`~hypothesis.strategies.from_type`
-and strategies from ``hypothesis.extra.*``.
