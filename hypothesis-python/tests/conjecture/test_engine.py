@@ -1626,3 +1626,38 @@ def test_cache_ignores_was_forced(forced_first, node):
 
     runner.cached_test_function_ir([node] if forced_first else [forced_node])
     assert runner.call_count == 1
+
+
+def test_simulate_to_evicted_data(monkeypatch):
+    # test that we do not rely on the false invariant that correctly simulating
+    # a data to a result means we have that result in the cache, due to e.g.
+    # cache evictions (but also potentially other trickery).
+    monkeypatch.setattr(engine_module, "CACHE_SIZE", 1)
+
+    node_0 = IRNode(
+        ir_type="integer",
+        value=0,
+        kwargs={
+            "min_value": None,
+            "max_value": None,
+            "weights": None,
+            "shrink_towards": 0,
+        },
+        was_forced=False,
+    )
+    node_1 = node_0.copy(with_value=1)
+
+    def test(data):
+        data.draw_integer()
+
+    runner = ConjectureRunner(test)
+    runner.cached_test_function_ir([node_0])
+    # cache size is 1 so this evicts node_0
+    runner.cached_test_function_ir([node_1])
+    assert runner.call_count == 2
+
+    # we dont throw PreviouslyUnseenBehavior when simulating, but the result
+    # was evicted to the cache so we will still call through to the test function.
+    runner.tree.simulate_test_function(ConjectureData.for_ir_tree([node_0]))
+    runner.cached_test_function_ir([node_0])
+    assert runner.call_count == 3
