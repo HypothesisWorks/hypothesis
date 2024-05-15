@@ -436,16 +436,27 @@ def gc_cumulative_time() -> float:
         if hasattr(gc, "callbacks"):
             # CPython
             #
-            # Indirection via lambda to simplify monkeypatching of the callback fn
+            # Indirection to simplify monkeypatching of the callback fn
             # - gc.callbacks can't be reassigned and hence is not suitable for
-            # monkeypatching directly. Don't remove this lambda without considering
-            # implications in tests/conftest.py.
-            gc.callbacks.insert(0, lambda *args: _gc_callback(*args))
+            # monkeypatching directly.
+            def gc_callback(phase, info):
+                try:
+                    _gc_callback(phase, info)
+                except RecursionError:  # pragma: no cover
+                    # Try hard to avoid flakiness via UnraisableException, which
+                    # is caught by pytest. It's probably not a 100% guarantee
+                    # since we still require *this* stack frame, but the risk is
+                    # small. Anyway, we should hit the same error on "start"
+                    # and "stop", so we don't bother to fix up anything, just
+                    # accept that this particular GC cycle is not counted.
+                    pass
+
+            gc.callbacks.insert(0, gc_callback)
         elif hasattr(gc, "hooks"):  # pragma: no cover  # pypy only
             # PyPy
             #
             # No monkeypatching support, we get the duration directly so it's not
-            # needed. Best effort, don't overwrite preexisting hooks.
+            # needed. Best effort: don't overwrite preexisting hooks.
             def hook(stats):
                 global _gc_cumulative_time
                 _gc_cumulative_time += stats.duration
