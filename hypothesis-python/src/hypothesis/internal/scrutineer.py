@@ -10,6 +10,7 @@
 
 import functools
 import os
+import re
 import subprocess
 import sys
 import types
@@ -107,28 +108,36 @@ UNHELPFUL_LOCATIONS = (
     # a contextmanager; this is probably after the fault has been triggered.
     # Similar reasoning applies to a few other standard-library modules: even
     # if the fault was later, these still aren't useful locations to report!
-    f"{sep}contextlib.py",
-    f"{sep}inspect.py",
-    f"{sep}re.py",
-    f"{sep}re{sep}__init__.py",  # refactored in Python 3.11
-    f"{sep}warnings.py",
+    # Note: The list is post-processed, so use plain "/" for separator here.
+    "/contextlib.py",
+    "/inspect.py",
+    "/re.py",
+    "/re/__init__.py",  # refactored in Python 3.11
+    "/warnings.py",
     # Quite rarely, the first AFNP line is in Pytest's internals.
-    f"{sep}_pytest{sep}assertion{sep}__init__.py",
-    f"{sep}_pytest{sep}assertion{sep}rewrite.py",
-    f"{sep}_pytest{sep}_io{sep}saferepr.py",
-    f"{sep}pluggy{sep}_result.py",
-    # These are triggered by gc callbacks
-    f"{sep}reprlib.py",
-    f"{sep}_pytest{sep}assertion{sep}util.py",
-    f"{sep}_pytest{sep}config{sep}__init__.py",
-    f"{sep}pluggy{sep}_result.py",
-    f"{sep}pluggy{sep}_manager.py",
-    f"{sep}typing.py",
-    f"{sep}pluggy{sep}_callers.py",
-    f"{sep}pluggy{sep}_hooks.py",
-    f"{sep}_pytest{sep}pytester.py",
-    f"{sep}tests{sep}conftest.py",
+    "/_pytest/_io/saferepr.py",
+    "/_pytest/assertion/*.py",
+    "/_pytest/config/__init__.py",
+    "/_pytest/pytester.py",
+    "/pluggy/_*.py",
+    "/reprlib.py",
+    "/typing.py",
+    "/conftest.py",
 )
+
+
+def _glob_to_re(locs):
+    """Translate a list of glob patterns to a combined regular expression.
+    Only * and ** wildcards are supported, and patterns including special
+    characters will only work by chance."""
+    # fnmatch.translate is not an option since its "*" consumes path sep
+    return "|".join(
+        loc.replace("*", r"[^/]+")
+        .replace(".", re.escape("."))
+        .replace("/", re.escape(sep))
+        + r"\Z"  # right anchored
+        for loc in locs
+    )
 
 
 def get_explaining_locations(traces):
@@ -173,8 +182,9 @@ def get_explaining_locations(traces):
     # The last step is to filter out explanations that we know would be uninformative.
     # When this is the first AFNP location, we conclude that Scrutineer missed the
     # real divergence (earlier in the trace) and drop that unhelpful explanation.
+    filter_regex = re.compile(_glob_to_re(UNHELPFUL_LOCATIONS))
     return {
-        origin: {loc for loc in afnp_locs if not loc[0].endswith(UNHELPFUL_LOCATIONS)}
+        origin: {loc for loc in afnp_locs if not filter_regex.search(loc[0])}
         for origin, afnp_locs in explanations.items()
     }
 
