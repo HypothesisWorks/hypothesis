@@ -142,7 +142,9 @@ def test_should_not_fail_deadline_due_to_gc():
     @settings(max_examples=1, deadline=50)
     @given(st.integers())
     def test(i):
+        before = time.perf_counter()
         gc.collect()
+        assert time.perf_counter() - before >= 0.1  # verify that we're slow
 
     def delay(phase, _info):
         if phase == "start":
