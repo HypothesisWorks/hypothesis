@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.102.3:
+
+--------------------
+6.102.3 - 2024-05-15
+--------------------
+
+This patch improves our shrinking of unique collections, such as  :func:`~hypothesis.strategies.dictionaries`,
+:func:`~hypothesis.strategies.sets`, and :func:`~hypothesis.strategies.lists` with ``unique=True``.
+
 .. _v6.102.2:
 
 --------------------
