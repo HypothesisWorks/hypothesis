@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.102.4:
+
+--------------------
+6.102.4 - 2024-05-15
+--------------------
+
+Internal developer documentation, no user-visible changes.
+
 .. _v6.102.3:
 
 --------------------
