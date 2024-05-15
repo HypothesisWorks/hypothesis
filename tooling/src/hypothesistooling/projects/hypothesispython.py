@@ -32,6 +32,7 @@ PYTHON_TESTS = HYPOTHESIS_PYTHON / "tests"
 DOMAINS_LIST = PYTHON_SRC / "hypothesis" / "vendor" / "tlds-alpha-by-domain.txt"
 
 RELEASE_FILE = HYPOTHESIS_PYTHON / "RELEASE.rst"
+RELEASE_SAMPLE_FILE = HYPOTHESIS_PYTHON / "RELEASE-sample.rst"
 
 assert PYTHON_SRC.exists()
 
@@ -50,6 +51,10 @@ assert __version_info__ is not None
 
 def has_release():
     return RELEASE_FILE.exists()
+
+
+def has_release_sample():
+    return RELEASE_SAMPLE_FILE.exists()
 
 
 def parse_release_file():

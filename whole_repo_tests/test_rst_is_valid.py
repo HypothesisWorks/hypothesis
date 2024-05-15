@@ -23,7 +23,8 @@ def is_sphinx(f):
 ALL_RST = [
     f
     for f in tools.all_files()
-    if os.path.basename(f) != "RELEASE.rst" and f.endswith(".rst")
+    if os.path.basename(f) not in ["RELEASE.rst", "RELEASE-sample.rst"]
+    and f.endswith(".rst")
 ]
 
 
