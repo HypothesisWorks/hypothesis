@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.102.2:
+
+--------------------
+6.102.2 - 2024-05-15
+--------------------
+
+This patch fixes a rare internal error when generating very large elements from strategies (:issue:`3874`).
+
 .. _v6.102.1:
 
 --------------------
