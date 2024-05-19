@@ -1,13 +1,24 @@
-# This program adds two numbers
+# Python program to check if year is a leap year or not
 
-num1 = 1.5
-num2 = 6.3
+year = 2000
 
-# Add two numbers
-sum = num1 + num2
+# To get year (integer input) from the user
+# year = int(input("Enter a year: "))
 
-# Display the sum
-print('The sum of {0} and {1} is {2}'.format(num1, num2, sum))
+# divided by 100 means century year (ending with 00)
+# century year divided by 400 is leap year
+if (year % 400 == 0) and (year % 100 == 0):
+    print("{0} is a leap year".format(year))
+
+# not divided by 100 means not a century year
+# year divided by 4 is a leap year
+elif (year % 4 ==0) and (year % 100 != 0):
+    print("{0} is a leap year".format(year))
+
+# if not divided by both 400 (century year) and 4 (not century year)
+# year is not leap year
+else:
+    print("{0} is not a leap year".format(year))
 
 def greet():
 print('Hello, World!')
