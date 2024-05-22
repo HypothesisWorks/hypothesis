@@ -230,13 +230,13 @@ def test_settings_alone():
 """
 
 
-def test_settings_alone(testdir):
-    script = testdir.makepyfile(TEST_SETTINGS_ALONE)
-    result = testdir.runpytest_inprocess(script)
+def test_settings_alone(pytester):
+    # Disable cacheprovider, since we don't need it and it's flaky on pyodide
+    script = pytester.makepyfile(TEST_SETTINGS_ALONE)
+    result = pytester.runpytest_inprocess(script, "-p", "no:cacheprovider")
     out = "\n".join(result.stdout.lines)
-    assert (
-        "Using `@settings` on a test without `@given` is completely pointless." in out
-    )
+    msg = "Using `@settings` on a test without `@given` is completely pointless."
+    assert msg in out
     assert "InvalidArgument" in out
     assert result.ret == 1
 
