@@ -1010,7 +1010,8 @@ class TreeRecordingObserver(DataObserver):
         self.draw_value("boolean", value, was_forced=was_forced, kwargs=kwargs)
 
     def mark_invalid(self, invalid_at: InvalidAt) -> None:
-        self.__current_node.invalid_at = invalid_at
+        if self.__current_node.transition is None:
+            self.__current_node.invalid_at = invalid_at
 
     def draw_value(
         self,
