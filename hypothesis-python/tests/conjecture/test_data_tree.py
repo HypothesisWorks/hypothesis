@@ -598,6 +598,10 @@ def test_datatree_repr(bool_kwargs, int_kwargs):
     observer.draw_boolean(False, was_forced=True, kwargs=bool_kwargs)
     observer.conclude_test(Status.INTERESTING, interesting_origin=origin)
 
+    observer = tree.new_observer()
+    observer.draw_boolean(False, was_forced=False, kwargs=bool_kwargs)
+    observer.draw_integer(5, was_forced=False, kwargs=int_kwargs)
+
     assert (
         pretty.pretty(tree)
         == textwrap.dedent(
@@ -610,6 +614,8 @@ def test_datatree_repr(bool_kwargs, int_kwargs):
           integer 0 {int_kwargs}
             boolean False [forced] {bool_kwargs}
               Conclusion (Status.INTERESTING, {origin})
+          integer 5 {int_kwargs}
+            unknown
         """
         ).strip()
     )
