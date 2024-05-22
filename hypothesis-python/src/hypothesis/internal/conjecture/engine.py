@@ -419,7 +419,7 @@ class ConjectureRunner:
                 }
                 self.stats_per_test_case.append(call_stats)
                 self._cache(data)
-                if data.invalid_at is not None:
+                if data.invalid_at is not None:  # pragma: no branch # coverage bug?
                     self.misaligned_count += 1
 
         self.debug_data(data)
