@@ -1059,7 +1059,7 @@ class Shrinker:
             # helps because this antipattern is fairly common.
 
             node = self.nodes[len(attempt.examples.ir_tree_nodes)]
-            (attempt_ir_type, attempt_kwargs) = attempt.invalid_at
+            (attempt_ir_type, attempt_kwargs, _attempt_forced) = attempt.invalid_at
             if node.ir_type != attempt_ir_type:
                 return False
             if node.was_forced:

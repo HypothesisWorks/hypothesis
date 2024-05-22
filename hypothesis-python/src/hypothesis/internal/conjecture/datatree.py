@@ -832,8 +832,8 @@ class DataTree:
         tree. This will likely change in future."""
         node = self.root
 
-        def draw(ir_type, kwargs, *, forced=None):
-            if ir_type == "float" and forced is not None:
+        def draw(ir_type, kwargs, *, forced=None, convert_forced=True):
+            if ir_type == "float" and forced is not None and convert_forced:
                 forced = int_to_float(forced)
 
             draw_func = getattr(data, f"draw_{ir_type}")
@@ -858,9 +858,9 @@ class DataTree:
                     data.conclude_test(t.status, t.interesting_origin)
                 elif node.transition is None:
                     if node.invalid_at is not None:
-                        (ir_type, kwargs) = node.invalid_at
+                        (ir_type, kwargs, forced) = node.invalid_at
                         try:
-                            draw(ir_type, kwargs)
+                            draw(ir_type, kwargs, forced=forced, convert_forced=False)
                         except StopTest:
                             if data.invalid_at is not None:
                                 raise

@@ -703,3 +703,37 @@ def test_simulate_non_invalid_conclude_is_unseen_behavior(node, misaligned_node)
         tree.simulate_test_function(data)
 
     assert data.status is Status.OVERRUN
+
+
+@given(ir_nodes(), ir_nodes())
+@settings(suppress_health_check=[HealthCheck.too_slow])
+def test_simulating_inherits_invalid_forced_status(node, misaligned_node):
+    assume(misaligned_node.ir_type != node.ir_type)
+
+    # we have some logic in DataTree.simulate_test_function to "peak ahead" and
+    # make sure it simulates invalid nodes correctly. But if it does so without
+    # respecting whether the invalid node was forced or not, and this simulation
+    # is observed by an observer, this can cause flaky errors later due to a node
+    # going from unforced to forced.
+
+    tree = DataTree()
+
+    def test_function(ir_nodes):
+        data = ConjectureData.for_ir_tree(ir_nodes, observer=tree.new_observer())
+        _draw(data, node)
+        _draw(data, node, forced=node.value)
+
+    # (1) set up a misaligned node at index 1
+    with pytest.raises(StopTest):
+        test_function([node, misaligned_node])
+
+    # (2) simulate an aligned tree. the datatree peaks ahead here using invalid_at
+    # due to (1).
+    data = ConjectureData.for_ir_tree([node, node], observer=tree.new_observer())
+    with pytest.raises(PreviouslyUnseenBehaviour):
+        tree.simulate_test_function(data)
+
+    # (3) run the same aligned tree without simulating. this uses the actual test
+    # function's draw and forced value. This would flaky error if it did not match
+    # what the datatree peaked ahead with in (2).
+    test_function([node, node])
