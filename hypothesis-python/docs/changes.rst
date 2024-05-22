@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.102.5:
+
+--------------------
+6.102.5 - 2024-05-22
+--------------------
+
+This patch fixes some introspection errors new in Python 3.11.9 and
+3.13.0b1, for the Ghostwriter and :func:`~hypothesis.strategies.from_type`.
+
 .. _v6.102.4:
 
 --------------------
