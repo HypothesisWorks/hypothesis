@@ -11,6 +11,11 @@ def test_fuzz_abs(x):
     abs(x)
 
 
+@given(async_iterable=st.nothing())
+def test_fuzz_aiter(async_iterable):
+    aiter(async_iterable)
+
+
 @given(iterable=st.one_of(st.iterables(st.integers()), st.iterables(st.text())))
 def test_fuzz_all(iterable):
     all(iterable)
@@ -147,7 +152,7 @@ def test_fuzz_id(obj):
     id(obj)
 
 
-@given(prompt=st.none())
+@given(prompt=st.just(""))
 def test_fuzz_input(prompt):
     input(prompt)
 

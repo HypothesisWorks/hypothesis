@@ -101,7 +101,7 @@ def test_selftests_exception_contains_note(pytester):
 
         pytester.makeconftest("from tests.conftest import *")
         result = pytester.runpytest_inprocess(
-            pytester.makepyfile(EXAMPLE_GENERATING_TEST)
+            pytester.makepyfile(EXAMPLE_GENERATING_TEST), "-p", "no:cacheprovider"
         )
         assert "helper methods in tests.common.debug" in "\n".join(result.outlines)
 

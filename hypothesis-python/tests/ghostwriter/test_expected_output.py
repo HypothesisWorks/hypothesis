@@ -269,8 +269,8 @@ def sequence_from_collections(items: CollectionsSequence[int]) -> int:
             ("magic_builtins", ghostwriter.magic(builtins)),
             marks=[
                 pytest.mark.skipif(
-                    sys.version_info[:2] not in [(3, 8), (3, 9)],
-                    reason="compile arg new in 3.8, aiter and anext new in 3.10",
+                    sys.version_info[:2] != (3, 10),
+                    reason="often small changes",
                 )
             ],
         ),
