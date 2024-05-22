@@ -43,6 +43,7 @@ from tests.django.toystore.models import (
     RestrictedFields,
     SelfLoop,
     Store,
+    UserSpecifiedAutoId,
 )
 
 register_field_strategy(CustomishField, just("a"))
@@ -202,3 +203,10 @@ class TestPosOnlyArg(TestCase):
         self.assertRaises(TypeError, from_model)
         self.assertRaises(TypeError, from_model, Car, None)
         self.assertRaises(TypeError, from_model, model=Customer)
+
+
+class TestUserSpecifiedAutoId(TestCase):
+    @given(from_model(UserSpecifiedAutoId))
+    def test_user_specified_auto_id(self, user_specified_auto_id):
+        self.assertIsInstance(user_specified_auto_id, UserSpecifiedAutoId)
+        self.assertIsNotNone(user_specified_auto_id.pk)

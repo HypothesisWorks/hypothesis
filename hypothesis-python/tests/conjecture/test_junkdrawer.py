@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import copy
 import inspect
 
 import pytest
@@ -79,22 +80,31 @@ def test_clamp(lower, value, upper):
         assert clamped == upper
 
 
-def test_pop_without_mask():
-    y = [1, 2, 3]
-    x = LazySequenceCopy(y)
-    x.pop()
-    assert list(x) == [1, 2]
-    assert y == [1, 2, 3]
+# this would be more robust as a stateful test, where each rule is a list operation
+# on (1) the canonical python list and (2) its LazySequenceCopy. We would assert
+# that the return values and lists match after each rule, and the original list
+# is unmodified.
+@pytest.mark.parametrize("should_mask", [True, False])
+@given(lst=st.lists(st.integers(), min_size=1), data=st.data())
+def test_pop_sequence_copy(lst, data, should_mask):
+    original = copy.copy(lst)
+    pop_i = data.draw(st.integers(0, len(lst) - 1))
+    if should_mask:
+        mask_i = data.draw(st.integers(0, len(lst) - 1))
+        mask_value = data.draw(st.integers())
 
+    def pop(l):
+        if should_mask:
+            l[mask_i] = mask_value
+        return l.pop(pop_i)
 
-def test_pop_with_mask():
-    y = [1, 2, 3]
-    x = LazySequenceCopy(y)
-    x[-1] = 5
-    t = x.pop()
-    assert t == 5
-    assert list(x) == [1, 2]
-    assert y == [1, 2, 3]
+    expected = copy.copy(lst)
+    l = LazySequenceCopy(lst)
+
+    assert pop(expected) == pop(l)
+    assert list(l) == expected
+    # modifications to the LazySequenceCopy should not modify the original list
+    assert original == lst
 
 
 def test_assignment():

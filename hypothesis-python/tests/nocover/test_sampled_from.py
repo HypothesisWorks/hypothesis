@@ -124,10 +124,10 @@ def test_flags_minimize_to_first_named_flag():
 
 
 def test_flags_minimizes_bit_count():
-    shrunk = minimal(st.sampled_from(LargeFlag), lambda f: bit_count(f.value) > 1)
-    # Ideal would be (bit0 | bit1), but:
-    # minimal(st.sets(st.sampled_from(range(10)), min_size=3)) == {0, 8, 9}  # not {0, 1, 2}
-    assert shrunk == LargeFlag.bit0 | LargeFlag.bit63  # documents actual behaviour
+    assert (
+        minimal(st.sampled_from(LargeFlag), lambda f: bit_count(f.value) > 1)
+        == LargeFlag.bit0 | LargeFlag.bit1
+    )
 
 
 def test_flags_finds_all_bits_set():

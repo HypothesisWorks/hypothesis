@@ -107,6 +107,10 @@ def test_minimize_sets_of_sets():
             assert any(s != t and t.issubset(s) for t in set_of_sets)
 
 
+def test_minimize_sets_sampled_from():
+    assert minimal(st.sets(st.sampled_from(range(10)), min_size=3)) == {0, 1, 2}
+
+
 def test_can_simplify_flatmap_with_bounded_left_hand_size():
     assert (
         minimal(booleans().flatmap(lambda x: lists(just(x))), lambda x: len(x) >= 10)

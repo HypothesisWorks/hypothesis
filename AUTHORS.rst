@@ -21,6 +21,7 @@ their individual contributions.
 * `Alex Willmer <https://github.com/moreati>`_ (alex@moreati.org.uk)
 * `Andrea Pierré <https://www.github.com/kir0ul>`_
 * `Andrea Reina <https://www.github.com/andreareina>`_
+* `Andrew Sansom <https://www.github.com/qthequartermasterman>`_
 * `Anne Archibald <https://www.github.com/td-anne>`_
 * `Ben Anhalt <https://github.com/benanhalt>`_
 * `Ben Peterson <https://github.com/killthrush>`_ (killthrush@hotmail.com)

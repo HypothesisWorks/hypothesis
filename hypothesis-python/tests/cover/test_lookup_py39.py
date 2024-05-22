@@ -45,7 +45,7 @@ def test_typing_Annotated(annotated_type, expected_strategy_repr):
 
 
 PositiveInt = typing.Annotated[int, st.integers(min_value=1)]
-MoreThenTenInt = typing.Annotated[PositiveInt, st.integers(min_value=10 + 1)]
+MoreThanTenInt = typing.Annotated[PositiveInt, st.integers(min_value=10 + 1)]
 WithTwoStrategies = typing.Annotated[int, st.integers(), st.none()]
 ExtraAnnotationNoStrategy = typing.Annotated[PositiveInt, "metadata"]
 
@@ -54,7 +54,7 @@ def arg_positive(x: PositiveInt):
     assert x > 0
 
 
-def arg_more_than_ten(x: MoreThenTenInt):
+def arg_more_than_ten(x: MoreThanTenInt):
     assert x > 10
 
 
@@ -161,3 +161,18 @@ def test_lookup_registered_tuple():
     with temp_registered(tuple, st.just(sentinel)):
         assert_simple_property(st.from_type(typ), lambda v: v is sentinel)
     assert_simple_property(st.from_type(typ), lambda v: v is not sentinel)
+
+
+sentinel = object()
+
+
+class LazyStrategyAnnotation:
+    __is_annotated_types_grouped_metadata__ = True
+
+    def __iter__(self):
+        return iter([st.just(sentinel)])
+
+
+@given(...)
+def test_grouped_protocol_strategy(x: typing.Annotated[int, LazyStrategyAnnotation()]):
+    assert x is sentinel
