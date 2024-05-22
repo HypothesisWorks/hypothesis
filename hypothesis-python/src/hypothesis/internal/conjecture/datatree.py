@@ -555,16 +555,13 @@ class TreeNode:
                 p.text(_node_pretty(ir_type, value, kwargs, forced=i in self.forced))
             indent += 2
 
-        if isinstance(self.transition, Branch):
+        with p.indent(indent):
             if len(self.values) > 0:
                 p.break_()
-            p.pretty(self.transition)
-
-        if isinstance(self.transition, (Killed, Conclusion)):
-            with p.indent(indent):
-                if len(self.values) > 0:
-                    p.break_()
+            if self.transition is not None:
                 p.pretty(self.transition)
+            else:
+                p.text("unknown")
 
 
 class DataTree:
