@@ -393,6 +393,12 @@ class Shrinker:
             raise StopShrinking
 
     def cached_test_function_ir(self, tree):
+        # sometimes our shrinking passes try obviously invalid things. We handle
+        # discarding them in one place here.
+        for node in tree:
+            if not ir_value_permitted(node.value, node.ir_type, node.kwargs):
+                return None
+
         result = self.engine.cached_test_function_ir(tree)
         self.incorporate_test_data(result)
         self.check_calls()
@@ -1046,6 +1052,10 @@ class Shrinker:
         )
 
         attempt = self.cached_test_function_ir(initial_attempt)
+
+        if attempt is None:
+            return False
+
         if attempt is self.shrink_target:
             # if the initial shrink was a success, try lowering offsets.
             self.lower_common_node_offset()
@@ -1299,10 +1309,6 @@ class Shrinker:
 
             node_value = m - k
             next_node_value = n + k
-            if (not ir_value_permitted(node_value, "integer", node.kwargs)) or (
-                not ir_value_permitted(next_node_value, "integer", next_node.kwargs)
-            ):
-                return False
 
             return self.consider_new_tree(
                 self.nodes[: node.index]
@@ -1462,7 +1468,8 @@ class Shrinker:
         )
         attempt = self.cached_test_function_ir(lowered)
         if (
-            attempt.status < Status.VALID
+            attempt is None
+            or attempt.status < Status.VALID
             or len(attempt.examples.ir_tree_nodes) == len(self.nodes)
             or len(attempt.examples.ir_tree_nodes) == node.index + 1
         ):
