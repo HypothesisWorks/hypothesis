@@ -34,7 +34,7 @@ htmlcov
 build
 dist
 .doctrees/
-.venv/
+.v*/
 
 # encrypted files
 secrets.tar
