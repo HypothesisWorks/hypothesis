@@ -250,7 +250,7 @@ jobs:
       - name: Run tests
         run: |
           source .venv-pyodide/bin/activate
-          python -m pytest hypothesis-python/tests/cover
+          python -m pytest -p no:cacheprovider hypothesis-python/tests/cover
 
   deploy:
     if: "github.event_name == 'push' && github.repository == 'HypothesisWorks/hypothesis'"
