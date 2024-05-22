@@ -332,7 +332,7 @@ types-redis==4.6.0.20240425
     # via -r requirements/tools.in
 types-setuptools==69.5.0.20240518
     # via types-cffi
-typing-extensions==4.11.0
+typing-extensions==4.12.0rc1
     # via
     #   -r requirements/tools.in
     #   anyio

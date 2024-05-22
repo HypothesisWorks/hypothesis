@@ -49,6 +49,9 @@ jobs:
           - check-py313-cover
           - check-py313-nocover
           - check-py313-niche
+          # - check-py314-cover
+          # - check-py314-nocover
+          # - check-py314-niche
           - check-quality
           ## Skip all the (inactive/old) Rust and Ruby tests pending fixes
           # - lint-ruby
