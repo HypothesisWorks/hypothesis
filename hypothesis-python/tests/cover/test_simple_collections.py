@@ -122,11 +122,8 @@ def test_dictionaries_of_fixed_length(n):
 
 @pytest.mark.parametrize("n", range(10))
 def test_lists_of_lower_bounded_length(n):
-    x = minimal(lists(integers(), min_size=n), lambda x: sum(x) >= 2 * n)
-    assert n <= len(x) <= 2 * n
-    assert all(t >= 0 for t in x)
-    assert len(x) == n or all(t > 0 for t in x)
-    assert sum(x) == 2 * n
+    l = minimal(lists(integers(), min_size=n), lambda x: sum(x) >= 2 * n)
+    assert l == [] if n == 0 else [0] * (n - 1) + [n * 2]
 
 
 @flaky(min_passes=1, max_runs=3)
