@@ -1348,8 +1348,12 @@ class Shrinker:
         )
 
         if ir_type == "integer":
-            # try shrinking from both sides towards shrink_towards
             shrink_towards = kwargs["shrink_towards"]
+            # try shrinking from both sides towards shrink_towards.
+            # we're starting from n = abs(shrink_towards - value). Because the
+            # shrinker will not check its starting value, we need to try
+            # shrinking to n first.
+            self.try_shrinking_nodes(nodes, abs(shrink_towards - value))
             Integer.shrink(
                 abs(shrink_towards - value),
                 lambda n: self.try_shrinking_nodes(nodes, shrink_towards + n),
@@ -1359,6 +1363,7 @@ class Shrinker:
                 lambda n: self.try_shrinking_nodes(nodes, shrink_towards - n),
             )
         elif ir_type == "float":
+            self.try_shrinking_nodes(nodes, abs(value))
             Float.shrink(
                 abs(value),
                 lambda val: self.try_shrinking_nodes(nodes, val),
