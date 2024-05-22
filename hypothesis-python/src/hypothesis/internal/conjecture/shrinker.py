@@ -492,6 +492,15 @@ class Shrinker:
             self.explain()
             return
 
+        # There are multiple buffers that represent the same counterexample, eg
+        # n=2 (from the 16 bit integer bucket) and n=2 (from the 32 bit integer
+        # bucket). Before we start shrinking, we need to normalize to the minimal
+        # such buffer, else a buffer-smaller but ir-larger value may be chosen
+        # as the minimal counterexample.
+        data = self.engine.new_conjecture_data_ir(self.nodes)
+        self.engine.test_function(data)
+        self.incorporate_test_data(data.as_result())
+
         try:
             self.greedy_shrink()
         except StopShrinking:
