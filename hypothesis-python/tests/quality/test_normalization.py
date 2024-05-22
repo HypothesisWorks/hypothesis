@@ -35,6 +35,7 @@ def normalize_kwargs(request):
     [st.floats(), st.text(), st.datetimes()],
     ids=repr,
 )
+@pytest.mark.skip("dfa shrinking disabled (pull/3962)")
 def test_common_strategies_normalize_small_values(strategy, n, normalize_kwargs):
     excluded = list(map(repr, islice(iter_values(strategy, unique_by=repr), n)))
 
@@ -51,6 +52,7 @@ def test_common_strategies_normalize_small_values(strategy, n, normalize_kwargs)
 
 
 @pytest.mark.parametrize("strategy", [st.emails(), st.complex_numbers()], ids=repr)
+@pytest.mark.skip("dfa shrinking disabled (pull/3962)")
 def test_harder_strategies_normalize_to_minimal(strategy, normalize_kwargs):
     def test_function(data):
         with BuildContext(data):

@@ -143,6 +143,7 @@ def non_normalized_test_function(data):
             data.mark_interesting()
 
 
+@pytest.mark.skip("dfa shrinking disabled (pull/3962)")
 def test_can_learn_to_normalize_the_unnormalized():
     with preserving_dfas():
         prev = len(dfas.SHRINKING_DFAS)
