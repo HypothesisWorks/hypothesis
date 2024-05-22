@@ -615,8 +615,8 @@ def test_datatree_repr(bool_kwargs, int_kwargs):
     )
 
 
-def _draw(data, node):
-    return getattr(data, f"draw_{node.ir_type}")(**node.kwargs)
+def _draw(data, node, *, forced=None):
+    return getattr(data, f"draw_{node.ir_type}")(**node.kwargs, forced=forced)
 
 
 @given(ir_nodes(), ir_nodes())
@@ -635,7 +635,7 @@ def test_misaligned_nodes_after_valid_draw(node, misaligned_node):
     tree.simulate_test_function(data)
     assert data.status is Status.INVALID
 
-    assert data.invalid_at == (node.ir_type, node.kwargs)
+    assert data.invalid_at == (node.ir_type, node.kwargs, None)
 
 
 @given(ir_nodes(was_forced=False), ir_nodes(was_forced=False))
