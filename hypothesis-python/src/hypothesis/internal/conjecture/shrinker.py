@@ -1321,7 +1321,7 @@ class Shrinker:
 
     @defines_shrink_pass()
     def lower_blocks_together(self, chooser):
-        block = chooser.choose(self.blocks, lambda b: not b.all_zero)
+        block = chooser.choose(self.blocks, lambda b: not b.trivial)
 
         # Choose the next block to be up to eight blocks onwards. We don't
         # want to go too far (to avoid quadratic time) but it's worth a
@@ -1330,7 +1330,7 @@ class Shrinker:
         next_block = self.blocks[
             chooser.choose(
                 range(block.index + 1, min(len(self.blocks), block.index + 9)),
-                lambda j: not self.blocks[j].all_zero,
+                lambda j: not self.blocks[j].trivial,
             )
         ]
 
