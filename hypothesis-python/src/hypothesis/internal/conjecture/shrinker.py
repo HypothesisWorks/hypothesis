@@ -1025,6 +1025,12 @@ class Shrinker:
         that occurs after the end of the nodes. This is useful for cases where
         there is some size dependency on the value of a node.
         """
+        # If the length of the shrink target has changed from under us such that
+        # the indices are out of bounds, give up on the replacement.
+        # we probably want to narrow down the root cause here at some point.
+        if any(node.index >= len(self.nodes) for node in nodes):
+            return
+
         initial_attempt = replace_all(
             self.nodes,
             [(node.index, node.index + 1, [node.copy(with_value=n)]) for node in nodes],
