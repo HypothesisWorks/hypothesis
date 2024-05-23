@@ -49,6 +49,9 @@ jobs:
           - check-py313-cover
           - check-py313-nocover
           - check-py313-niche
+          # - check-py314-cover
+          # - check-py314-nocover
+          # - check-py314-niche
           - check-quality
           ## Skip all the (inactive/old) Rust and Ruby tests pending fixes
           # - lint-ruby
@@ -247,7 +250,7 @@ jobs:
       - name: Run tests
         run: |
           source .venv-pyodide/bin/activate
-          python -m pytest hypothesis-python/tests/cover
+          python -m pytest -p no:cacheprovider hypothesis-python/tests/cover
 
   deploy:
     if: "github.event_name == 'push' && github.repository == 'HypothesisWorks/hypothesis'"

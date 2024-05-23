@@ -550,17 +550,9 @@ class Shrinker:
                             continue
 
                         self.debug(
-                            "  * %s made %d call%s of which "
-                            "%d shrank and %d were misaligned, deleting %d byte%s."
-                            % (
-                                p.name,
-                                p.calls,
-                                s(p.calls),
-                                p.shrinks,
-                                p.misaligned,
-                                p.deletions,
-                                s(p.deletions),
-                            )
+                            f"  * {p.name} made {p.calls} call{s(p.calls)} of which "
+                            f"{p.shrinks} shrank and {p.misaligned} were misaligned, "
+                            f"deleting {p.deletions} byte{s(p.deletions)}."
                         )
                 self.debug("")
         self.explain()
@@ -1324,7 +1316,7 @@ class Shrinker:
 
     @defines_shrink_pass()
     def lower_blocks_together(self, chooser):
-        block = chooser.choose(self.blocks, lambda b: not b.all_zero)
+        block = chooser.choose(self.blocks, lambda b: not b.trivial)
 
         # Choose the next block to be up to eight blocks onwards. We don't
         # want to go too far (to avoid quadratic time) but it's worth a
@@ -1333,7 +1325,7 @@ class Shrinker:
         next_block = self.blocks[
             chooser.choose(
                 range(block.index + 1, min(len(self.blocks), block.index + 9)),
-                lambda j: not self.blocks[j].all_zero,
+                lambda j: not self.blocks[j].trivial,
             )
         ]
 

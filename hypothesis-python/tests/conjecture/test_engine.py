@@ -1645,3 +1645,12 @@ def test_simulate_to_evicted_data(monkeypatch):
     runner.tree.simulate_test_function(ConjectureData.for_ir_tree([node_0]))
     runner.cached_test_function_ir([node_0])
     assert runner.call_count == 3
+
+
+def test_mildly_complicated_strategy():
+    # there are some code paths in engine.py that are easily covered by any mildly
+    # compliated strategy and aren't worth testing explicitly for. This covers
+    # those.
+    n = 5
+    s = st.lists(st.integers(), min_size=n)
+    assert minimal(s, lambda x: sum(x) >= 2 * n) == [0, 0, 0, 0, n * 2]

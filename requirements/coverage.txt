@@ -16,7 +16,7 @@ click==8.1.7
     # via
     #   -r requirements/coverage.in
     #   black
-coverage[toml]==7.5.0
+coverage[toml]==7.5.1
     # via pytest-cov
 dpcontracts==0.6.0
     # via -r requirements/coverage.in
@@ -26,7 +26,7 @@ exceptiongroup==1.2.1 ; python_version < "3.11"
     #   pytest
 execnet==2.1.1
     # via pytest-xdist
-fakeredis==2.22.0
+fakeredis==2.23.2
     # via -r requirements/coverage.in
 iniconfig==2.0.0
     # via pytest
@@ -51,13 +51,13 @@ pathspec==0.12.1
     # via black
 pexpect==4.9.0
     # via -r requirements/test.in
-platformdirs==4.2.1
+platformdirs==4.2.2
     # via black
 pluggy==1.5.0
     # via pytest
 ptyprocess==0.7.0
     # via pexpect
-pyarrow==16.0.0
+pyarrow==16.1.0
     # via -r requirements/coverage.in
 pytest==8.2.0
     # via
@@ -66,7 +66,7 @@ pytest==8.2.0
     #   pytest-xdist
 pytest-cov @ git+https://github.com/pytest-dev/pytest-cov.git@9757222e2e044361e70125ebdd96e5eb87395983
     # via -r requirements/coverage.in
-pytest-xdist==3.5.0
+pytest-xdist==3.6.1
     # via -r requirements/test.in
 python-dateutil==2.9.0.post0
     # via
@@ -91,9 +91,10 @@ tomli==2.0.1
     #   black
     #   coverage
     #   pytest
-typing-extensions==4.11.0
+typing-extensions==4.12.0rc1
     # via
     #   -r requirements/coverage.in
     #   black
+    #   fakeredis
 tzdata==2024.1
     # via pandas
