@@ -443,10 +443,11 @@ def gc_cumulative_time() -> float:
                 try:
                     _gc_callback(phase, info)
                 except RecursionError:  # pragma: no cover
-                    # Try hard to avoid flakiness via UnraisableException, which
-                    # is caught by pytest. It's probably not a 100% guarantee
-                    # since we still require *this* stack frame, but the risk is
-                    # small. Anyway, we should hit the same error on "start"
+                    # Avoid flakiness via UnraisableException, which is caught and
+                    # warned by pytest. The actual callback (this function) is
+                    # validated to never trigger a RecursionError itself when
+                    # when called by gc.collect.
+                    # Anyway, we should hit the same error on "start"
                     # and "stop", so we don't bother to fix up anything, just
                     # accept that this particular GC cycle is not counted.
                     pass
