@@ -17,6 +17,7 @@ import gc
 import sys
 import time
 import warnings
+from math import nan as NaN
 from random import Random
 from typing import (
     Callable,
@@ -450,7 +451,8 @@ def gc_cumulative_time() -> float:
                     # Anyway, we should hit the same error on "start"
                     # and "stop", so we don't bother to fix up anything, just
                     # accept that this particular GC cycle is not counted.
-                    pass
+                    global _gc_cumulative_time
+                    _gc_cumulative_time = NaN
 
             gc.callbacks.insert(0, gc_callback)
         elif hasattr(gc, "hooks"):  # pragma: no cover  # pypy only

@@ -58,15 +58,18 @@ class Tracer:
         self._previous_location = None
 
     def trace(self, frame, event, arg):
-        if event == "call":
-            return self.trace
-        elif event == "line":
-            # manual inlining of self.trace_line for performance.
-            fname = frame.f_code.co_filename
-            if should_trace_file(fname):
-                current_location = (fname, frame.f_lineno)
-                self.branches.add((self._previous_location, current_location))
-                self._previous_location = current_location
+        try:
+            if event == "call":
+                return self.trace
+            elif event == "line":
+                # manual inlining of self.trace_line for performance.
+                fname = frame.f_code.co_filename
+                if should_trace_file(fname):
+                    current_location = (fname, frame.f_lineno)
+                    self.branches.add((self._previous_location, current_location))
+                    self._previous_location = current_location
+        except RecursionError:
+            pass
 
     def trace_line(self, code: types.CodeType, line_number: int) -> None:
         fname = code.co_filename

@@ -9,12 +9,15 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import gc
+import math
 import time
 
 import pytest
 
 from hypothesis import given, settings, strategies as st
 from hypothesis.errors import DeadlineExceeded, Flaky, InvalidArgument
+from hypothesis.internal.conjecture import junkdrawer
+from hypothesis.internal.observability import TESTCASE_CALLBACKS
 
 from tests.common.utils import assert_falsifying_output, fails_with
 
@@ -155,3 +158,39 @@ def test_should_not_fail_deadline_due_to_gc():
         test()
     finally:
         gc.callbacks.remove(delay)
+
+
+@pytest.mark.skipif(not hasattr(gc, "callbacks"), reason="CPython specific gc delay")
+def test_gc_hooks_do_not_fail_due_to_recursionerror():
+    # We were concerned in #3979 that we might see bad results from a RecursionError
+    # inside the GC hook, if the stack was already deep and someone (e.g. Pytest)
+    # had installed a sys.unraisablehook which raises that later.  Even if there's
+    # no such hook, we'd get the measured time wrong, so we set that to NaN.
+
+    def recurse(i=1):
+        return recurse(i + 1)
+
+    def _gc_callback(phase, _info):
+        if phase == "start":
+            junkdrawer._gc_start = time.perf_counter()
+            recurse()  # exceed the allowed stack depth!
+        elif phase == "stop":
+            junkdrawer._gc_cumulative_time += time.perf_counter() - junkdrawer._gc_start
+
+    @given(st.booleans())
+    def inner_test(_):
+        gc.collect()
+
+    observations = []
+    orig = junkdrawer._gc_callback
+    try:
+        junkdrawer._gc_callback = _gc_callback
+        TESTCASE_CALLBACKS.append(observations.append)
+        inner_test()
+    finally:
+        junkdrawer._gc_callback = orig
+        popped = TESTCASE_CALLBACKS.pop()
+        assert popped == observations.append, (popped, observations.append)
+
+    timings = [t.get("timing", {}).get("overall:gc", 0.0) for t in observations]
+    assert any(math.isnan(v) for v in timings), timings

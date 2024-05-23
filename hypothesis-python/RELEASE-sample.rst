@@ -25,7 +25,7 @@ which should:
   - :func:`package.function` for link to functions, where the link text will
     be ``package.function``, or :func:`~package.function` to show ``function``.
   - :class:`package.class` for link to classes (abbreviated as above).
-  - :issue:`issue-number` for referencing issues or PRs.
+  - :issue:`issue-number` for referencing issues or :pull:`pr-number` for PRs.
   - :doc:`link text <chapter#anchor>` for documentation references.
   - `link text <https://hypothesis.readthedocs.io/en/latest/chapter.html#anchor>`__
     is the same link, for general web addresses.
