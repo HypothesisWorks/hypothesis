@@ -75,7 +75,7 @@ def _consistently_increment_time(monkeypatch):
 
     Replacing time with a fake version under our control avoids this problem.
     """
-    frozen = {0: False}  # dict to make it a valid monkeypatch target
+    frozen = [False]
 
     current_time = [time_module.time()]
 
@@ -101,16 +101,30 @@ def _consistently_increment_time(monkeypatch):
 
     # In the patched time regime, observing it causes it to increment. To avoid reintroducing
     # non-determinism due to GC running at arbitrary times, we patch the GC observer
-    # to NOT increment time. NOTE: This is not necessary, and has no effect, outside of CPython.
+    # to NOT increment time.
 
-    orig_callback = junkdrawer._gc_callback
+    if hasattr(gc, "callbacks"):
+        # ensure timer callback is added, then bracket it by freeze/unfreeze below
+        junkdrawer.gc_cumulative_time()
 
-    def patched_callback(*args):
-        with monkeypatch.context() as mp:
-            mp.setitem(frozen, 0, True)
-            orig_callback(*args)
+        _was_frozen = [False]
 
-    monkeypatch.setattr(junkdrawer, "_gc_callback", patched_callback)
+        def _freezer(*_):
+            _was_frozen[0] = frozen[0]
+            frozen[0] = True
+
+        def _unfreezer(*_):
+            frozen[0] = _was_frozen[0]
+
+        gc.callbacks.insert(0, _freezer)  # freeze before gc callback
+        gc.callbacks.append(_unfreezer)  # unfreeze after
+
+        yield
+
+        assert gc.callbacks.pop(0) == _freezer
+        assert gc.callbacks.pop() == _unfreezer
+    else:  # pragma: no cover # branch never taken in CPython
+        yield
 
 
 random_states_after_tests = {}

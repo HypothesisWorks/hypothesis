@@ -161,47 +161,59 @@ def test_should_not_fail_deadline_due_to_gc():
         gc.callbacks.remove(delay)
 
 
-@pytest.mark.skipif(not hasattr(gc, "callbacks"), reason="CPython specific gc delay")
+@pytest.mark.skipif(not hasattr(gc, "callbacks"), reason="CPython specific")
 def test_gc_hooks_do_not_fail_due_to_recursionerror():
     # We were concerned in #3979 that we might see bad results from a RecursionError
     # inside the GC hook, if the stack was already deep and someone (e.g. Pytest)
     # had installed a sys.unraisablehook which raises that later.  Even if there's
     # no such hook, we'd get the measured time wrong, so we set that to NaN.
 
-    def recurse():
+    def probe_depth():
         try:
-            stack_frames_remaining = recurse() + 1
+            return probe_depth() + 1
         except RecursionError:
-            # We are at the recursion limit
-            stack_frames_remaining = 0
-        if stack_frames_remaining < 5:
-            try:
-                gc.collect()
-            except RecursionError:
-                raise RuntimeError()
-        return stack_frames_remaining
+            return 0
+
+    collections = 0
+
+    def collect_at(depth):
+        if depth == 0:
+            # We are at the recursion limit, no free stack frames. Generate reference
+            # cycles until a background collection is observed. Beware: there is not
+            # even room for raising new exceptions here.
+            orig_collections = collections
+            n_iter = 0
+            while n_iter < 100_000:
+                if collections > orig_collections:
+                    return True  # successfully triggered collection at stack limit
+                a = [None]
+                b = [a]
+                a[0] = b
+                n_iter += 1
+            return False
+        else:
+            return collect_at(depth - 1)
 
     @given(st.booleans())
     def inner_test(_):
-        orig_lim = sys.getrecursionlimit()
-        cur_depth = junkdrawer.stack_depth_of_caller()
-        try:
-            sys.setrecursionlimit(cur_depth + 50)
-            assert recurse() <= 50
-            # If the exception is raised inside gc callback, we will see an
-            # UnraisableException instead. If it happens at the call to
-            # collect, we get RuntimeError - which isn't a huge problem,
-            # but it implies the test may not test what it's meant to.
-        finally:
-            sys.setrecursionlimit(orig_lim)
+        max_depth = probe_depth()
+        assert collect_at(max_depth)
 
     observations = []
     try:
         TESTCASE_CALLBACKS.append(observations.append)
+        def gc_count_collections(*_):
+            nonlocal collections
+            collections += 1
+        gc.callbacks.append(gc_count_collections)
         inner_test()
     finally:
+        gc.callbacks.remove(gc_count_collections)
         popped = TESTCASE_CALLBACKS.pop()
         assert popped == observations.append, (popped, observations.append)
 
     timings = [t.get("timing", {}).get("overall:gc", 0.0) for t in observations]
     assert any(math.isnan(v) for v in timings), timings
+
+    gc.collect()  # should clear any NaN state
+    assert not math.isnan(junkdrawer.gc_cumulative_time())

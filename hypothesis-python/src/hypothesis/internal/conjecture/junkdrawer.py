@@ -423,46 +423,39 @@ _gc_start = 0
 _gc_cumulative_time = 0
 
 
-def _gc_callback(phase, _info):  # pragma: no cover  # called outside coverage by gc
-    global _gc_start, _gc_cumulative_time
-    if phase == "start":
-        _gc_start = time.perf_counter()
-    elif phase == "stop":
-        _gc_cumulative_time += time.perf_counter() - _gc_start
-
-
 def gc_cumulative_time() -> float:
     global _gc_initialized
     if not _gc_initialized:
         if hasattr(gc, "callbacks"):
             # CPython
-            #
-            # Indirection to simplify monkeypatching of the callback fn
-            # - gc.callbacks can't be reassigned and hence is not suitable for
-            # monkeypatching directly.
             def gc_callback(phase, info):
+                global _gc_start, _gc_cumulative_time
                 try:
-                    _gc_callback(phase, info)
-                except RecursionError:  # pragma: no cover
+                    now = time.perf_counter()
+                    if phase == "start":
+                        _gc_start = now
+                    elif phase == "stop" and _gc_start > 0:
+                        _gc_cumulative_time += now - _gc_start
+                except RecursionError:
                     # Avoid flakiness via UnraisableException, which is caught and
                     # warned by pytest. The actual callback (this function) is
                     # validated to never trigger a RecursionError itself when
                     # when called by gc.collect.
                     # Anyway, we should hit the same error on "start"
-                    # and "stop", so we don't bother to fix up anything, just
-                    # accept that this particular GC cycle is not counted.
-                    global _gc_cumulative_time
-                    _gc_cumulative_time = NaN
+                    # and "stop", but to ensure we don't get out of sync we just
+                    # signal that there is no matching start.
+                    _gc_start = -1
+                    return
 
             gc.callbacks.insert(0, gc_callback)
         elif hasattr(gc, "hooks"):  # pragma: no cover  # pypy only
             # PyPy
-            #
-            # No monkeypatching support, we get the duration directly so it's not
-            # needed. Best effort: don't overwrite preexisting hooks.
             def hook(stats):
                 global _gc_cumulative_time
-                _gc_cumulative_time += stats.duration
+                try:
+                    _gc_cumulative_time += stats.duration
+                except RecursionError:
+                    pass
 
             if gc.hooks.on_gc_minor is None:
                 gc.hooks.on_gc_minor = hook
