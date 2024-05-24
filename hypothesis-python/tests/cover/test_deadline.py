@@ -10,6 +10,7 @@
 
 import gc
 import math
+import sys
 import time
 
 import pytest
@@ -167,28 +168,38 @@ def test_gc_hooks_do_not_fail_due_to_recursionerror():
     # had installed a sys.unraisablehook which raises that later.  Even if there's
     # no such hook, we'd get the measured time wrong, so we set that to NaN.
 
-    def recurse(i=1):
-        return recurse(i + 1)
-
-    def _gc_callback(phase, _info):
-        if phase == "start":
-            junkdrawer._gc_start = time.perf_counter()
-            recurse()  # exceed the allowed stack depth!
-        elif phase == "stop":
-            junkdrawer._gc_cumulative_time += time.perf_counter() - junkdrawer._gc_start
+    def recurse():
+        try:
+            stack_frames_remaining = recurse() + 1
+        except RecursionError:
+            # We are at the recursion limit
+            stack_frames_remaining = 0
+        if stack_frames_remaining < 5:
+            try:
+                gc.collect()
+            except RecursionError:
+                raise RuntimeError()
+        return stack_frames_remaining
 
     @given(st.booleans())
     def inner_test(_):
-        gc.collect()
+        orig_lim = sys.getrecursionlimit()
+        cur_depth = junkdrawer.stack_depth_of_caller()
+        try:
+            sys.setrecursionlimit(cur_depth + 50)
+            assert recurse() <= 50
+            # If the exception is raised inside gc callback, we will see an
+            # UnraisableException instead. If it happens at the call to
+            # collect, we get RuntimeError - which isn't a huge problem,
+            # but it implies the test may not test what it's meant to.
+        finally:
+            sys.setrecursionlimit(orig_lim)
 
     observations = []
-    orig = junkdrawer._gc_callback
     try:
-        junkdrawer._gc_callback = _gc_callback
         TESTCASE_CALLBACKS.append(observations.append)
         inner_test()
     finally:
-        junkdrawer._gc_callback = orig
         popped = TESTCASE_CALLBACKS.pop()
         assert popped == observations.append, (popped, observations.append)
 
