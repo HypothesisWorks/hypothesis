@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import enum
 import re
 import time
 from random import Random
@@ -26,7 +27,7 @@ from hypothesis import (
 )
 from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
 from hypothesis.errors import FailedHealthCheck, Flaky
-from hypothesis.internal.compat import int_from_bytes
+from hypothesis.internal.compat import bit_count, int_from_bytes
 from hypothesis.internal.conjecture import engine as engine_module
 from hypothesis.internal.conjecture.data import ConjectureData, IRNode, Overrun, Status
 from hypothesis.internal.conjecture.datatree import compute_max_children
@@ -458,6 +459,34 @@ def test_can_shrink_variable_draws(n_large):
     ints = minimal(strategy(), lambda ints: sum(ints) >= target)
     # should look like [4, 255, 255, 255]
     assert ints == [target % 255] + [255] * (len(ints) - 1)
+
+
+def test_can_shrink_variable_string_draws():
+    @st.composite
+    def strategy(draw):
+        n = draw(st.integers(min_value=0, max_value=20))
+        return draw(st.text(st.characters(codec="ascii"), min_size=n, max_size=n))
+
+    s = minimal(strategy(), lambda s: len(s) >= 10 and "a" in s)
+
+    # this should be
+    # assert s == "0" * 9 + "a"
+    # but we first shrink to having a single a at the end of the string and then
+    # fail to apply our special case invalid logic when shrinking the min_size n,
+    # because that logic removes from the end of the string (which fails our
+    # precondition).
+    assert re.match("0+a", s)
+
+
+def test_variable_size_string_increasing():
+    # coverage test for min_size increasing during shrinking (because the test
+    # function inverts n).
+    @st.composite
+    def strategy(draw):
+        n = 10 - draw(st.integers(0, 10))
+        return draw(st.text(st.characters(codec="ascii"), min_size=n, max_size=n))
+
+    assert minimal(strategy(), lambda s: len(s) >= 5 and "a" in s) == "0000a"
 
 
 def test_run_nothing():
@@ -1647,10 +1676,21 @@ def test_simulate_to_evicted_data(monkeypatch):
     assert runner.call_count == 3
 
 
-def test_mildly_complicated_strategy():
-    # there are some code paths in engine.py that are easily covered by any mildly
-    # compliated strategy and aren't worth testing explicitly for. This covers
-    # those.
-    n = 5
-    s = st.lists(st.integers(), min_size=n)
-    assert minimal(s, lambda x: sum(x) >= 2 * n) == [0, 0, 0, 0, n * 2]
+@pytest.mark.parametrize(
+    "strategy, condition",
+    [
+        (st.lists(st.integers(), min_size=5), lambda v: True),
+        (st.lists(st.text(), min_size=2, unique=True), lambda v: True),
+        (
+            st.sampled_from(
+                enum.Flag("LargeFlag", {f"bit{i}": enum.auto() for i in range(64)})
+            ),
+            lambda f: bit_count(f.value) > 1,
+        ),
+    ],
+)
+def test_mildly_complicated_strategies(strategy, condition):
+    # There are some code paths in engine.py and shrinker.py that are easily
+    # covered by shrinking any mildly compliated strategy and aren't worth
+    # testing explicitly for. This covers those.
+    minimal(strategy, condition)

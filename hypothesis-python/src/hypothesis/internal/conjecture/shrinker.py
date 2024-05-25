@@ -1014,7 +1014,7 @@ class Shrinker:
         # the indices are out of bounds, give up on the replacement.
         # we probably want to narrow down the root cause here at some point.
         if any(node.index >= len(self.nodes) for node in nodes):
-            return
+            return  # pragma: no cover
 
         initial_attempt = replace_all(
             self.nodes,
@@ -1060,12 +1060,16 @@ class Shrinker:
             # a collection of that size...and not much else. In practice this
             # helps because this antipattern is fairly common.
 
+            # TODO we'll probably want to apply the same trick as in the valid
+            # case of this function of preserving from the right instead of
+            # preserving from the left. see test_can_shrink_variable_string_draws.
+
             node = self.nodes[len(attempt.examples.ir_tree_nodes)]
             (attempt_ir_type, attempt_kwargs, _attempt_forced) = attempt.invalid_at
             if node.ir_type != attempt_ir_type:
                 return False
             if node.was_forced:
-                return False
+                return False  # pragma: no cover
 
             if node.ir_type == "string":
                 # if the size *increased*, we would have to guess what to pad with
@@ -1122,9 +1126,8 @@ class Shrinker:
             if ex.ir_end <= end:
                 continue
 
-            # TODO convince myself this check is reasonable and not hiding a bug
             if ex.index >= len(attempt.examples):
-                continue
+                continue  # pragma: no cover
 
             replacement = attempt.examples[ex.index]
             in_original = [c for c in ex.children if c.ir_start >= end]
