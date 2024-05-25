@@ -53,11 +53,10 @@ class Float(Shrinker):
             return True
 
     def run_step(self):
-        # we previously didn't shrink here until it was an int. should we shrink
-        # like an int in the beginning as well as the end to get a performance
-        # boost? or does it actually not matter because we shrink to an int
-        # at the same rate anyway and then finish it off with an Integer.shrink
-        # anyway?
+        # above MAX_PRECISE_INTEGER, all floats are integers. Shrink like one.
+        if self.current > MAX_PRECISE_INTEGER:
+            self.delegate(Integer, convert_to=int, convert_from=float)
+            return
 
         # Finally we get to the important bit: Each of these is a small change
         # to the floating point number that corresponds to a large change in
@@ -76,10 +75,6 @@ class Float(Shrinker):
 
         for p in range(10):
             scaled = self.current * 2**p  # note: self.current may change in loop
-            # floats close to math.inf can overflow in this intermediate step.
-            # probably something we should fix?
-            if math.isinf(scaled):
-                continue
             for truncate in [math.floor, math.ceil]:
                 self.consider(truncate(scaled) / 2**p)
 
