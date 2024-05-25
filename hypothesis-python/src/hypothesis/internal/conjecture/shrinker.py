@@ -28,7 +28,6 @@ from hypothesis.internal.conjecture.data import (
     ir_value_key,
     ir_value_permitted,
 )
-from hypothesis.internal.conjecture.dfa import ConcreteDFA
 from hypothesis.internal.conjecture.junkdrawer import find_integer, replace_all
 from hypothesis.internal.conjecture.shrinking import (
     Bytes,
@@ -37,7 +36,6 @@ from hypothesis.internal.conjecture.shrinking import (
     Ordering,
     String,
 )
-from hypothesis.internal.conjecture.shrinking.learned_dfas import SHRINKING_DFAS
 
 if TYPE_CHECKING:
     from hypothesis.internal.conjecture.engine import ConjectureRunner
@@ -313,10 +311,6 @@ class Shrinker:
 
         self.passes_by_name: Dict[str, ShrinkPass] = {}
 
-        # Extra DFAs that may be installed. This is used solely for
-        # testing and learning purposes.
-        self.extra_dfas: Dict[str, ConcreteDFA] = {}
-
         # Because the shrinker is also used to `pareto_optimise` in the target phase,
         # we sometimes want to allow extending buffers instead of aborting at the end.
         if in_target_phase:
@@ -361,24 +355,6 @@ class Shrinker:
         if name not in self.passes_by_name:
             self.add_new_pass(name)
         return self.passes_by_name[name]
-
-    @derived_value  # type: ignore
-    def match_cache(self):
-        return {}
-
-    def matching_regions(self, dfa):
-        """Returns all pairs (u, v) such that self.buffer[u:v] is accepted
-        by this DFA."""
-
-        try:
-            return self.match_cache[dfa]
-        except KeyError:
-            pass
-        results = dfa.all_matching_regions(self.buffer)
-        results.sort(key=lambda t: (t[1] - t[0], t[1]))
-        assert all(dfa.matches(self.buffer[u:v]) for u, v in results)
-        self.match_cache[dfa] = results
-        return results
 
     @property
     def calls(self):
@@ -1637,33 +1613,6 @@ def node_program(self, chooser, description):
     find_integer(
         lambda k: self.run_node_program(i, description, original=original, repeats=k)
     )
-
-
-@shrink_pass_family
-def dfa_replacement(self, chooser, dfa_name):
-    """Use one of our previously learned shrinking DFAs to reduce
-    the current test case. This works by finding a match of the DFA in the
-    current buffer that is not already minimal and attempting to replace it
-    with the minimal string matching that DFA.
-    """
-
-    try:
-        dfa = SHRINKING_DFAS[dfa_name]
-    except KeyError:
-        dfa = self.extra_dfas[dfa_name]
-
-    matching_regions = self.matching_regions(dfa)
-    minimal = next(dfa.all_matching_strings())
-    u, v = chooser.choose(
-        matching_regions, lambda t: self.buffer[t[0] : t[1]] != minimal
-    )
-    p = self.buffer[u:v]
-    assert sort_key(minimal) < sort_key(p)
-    replaced = self.buffer[:u] + minimal + self.buffer[v:]
-
-    assert sort_key(replaced) < sort_key(self.buffer)
-
-    self.consider_new_buffer(replaced)
 
 
 @attr.s(slots=True, eq=False)

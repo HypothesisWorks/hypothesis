@@ -68,10 +68,6 @@ ignore = [
   "UP031",
 ]
 
-exclude = [
-  "hypothesis-python/src/hypothesis/internal/conjecture/shrinking/learned_dfas.py",
-]
-
 [tool.ruff.lint.per-file-ignores]
 "hypothesis-python/src/hypothesis/core.py" = ["B030", "B904", "FBT001"]
 "hypothesis-python/src/hypothesis/internal/compat.py" = ["F401"]
