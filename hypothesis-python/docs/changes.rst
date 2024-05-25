@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.102.6:
+
+--------------------
+6.102.6 - 2024-05-23
+--------------------
+
+This patch fixes one of our shrinking passes getting into a rare ``O(n)`` case instead of ``O(log(n))``.
+
 .. _v6.102.5:
 
 --------------------
