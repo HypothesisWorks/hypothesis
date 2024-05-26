@@ -1151,8 +1151,8 @@ class ConjectureResult:
     # I don't *think* anything was relying on anything but .buffer for result equality,
     # though that assumption may be leaning on flakiness detection invariants.
     #
-    # If we don't do this, multiple (semantically, but not pythonically) equivalent results
-    # get stored in the pareto front.
+    # If we consider blocks or examples in equality checks, multiple semantically equal
+    # results get stored in e.g. the pareto front.
     blocks: Blocks = attr.ib(eq=False)
     output: str = attr.ib()
     extra_information: Optional[ExtraInformation] = attr.ib()
