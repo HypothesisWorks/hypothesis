@@ -469,7 +469,7 @@ def test_can_shrink_variable_string_draws():
 
     s = minimal(strategy(), lambda s: len(s) >= 10 and "a" in s)
 
-    # this should be
+    # TODO_BETTER_SHRINK: this should be
     # assert s == "0" * 9 + "a"
     # but we first shrink to having a single a at the end of the string and then
     # fail to apply our special case invalid logic when shrinking the min_size n,

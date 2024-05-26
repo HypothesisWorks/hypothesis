@@ -1012,7 +1012,7 @@ class Shrinker:
         """
         # If the length of the shrink target has changed from under us such that
         # the indices are out of bounds, give up on the replacement.
-        # we probably want to narrow down the root cause here at some point.
+        # TODO_BETTER_SHRINK: we probably want to narrow down the root cause here at some point.
         if any(node.index >= len(self.nodes) for node in nodes):
             return  # pragma: no cover
 
@@ -1231,8 +1231,8 @@ class Shrinker:
             return
 
         # no point in lowering nodes together if one is already trivial.
-        # (we could potentially just drop trivial nodes here in the future
-        # and carry on with nontrivial ones?)
+        # TODO_BETTER_SHRINK: we could potentially just drop the trivial nodes
+        # here and carry on with nontrivial ones?
         if any(node.trivial for node in nodes):
             return
 

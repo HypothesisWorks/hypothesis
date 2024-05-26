@@ -54,6 +54,10 @@ class Float(Shrinker):
 
     def run_step(self):
         # above MAX_PRECISE_INTEGER, all floats are integers. Shrink like one.
+        # TODO_BETTER_SHRINK: at 2 * MAX_PRECISE_INTEGER, n - 1 == n - 2, and
+        # Integer.shrink will likely perform badly. We should have a specialized
+        # big-float shrinker, which mostly follows Integer.shrink but replaces
+        # n - 1 with next_down(n).
         if self.current > MAX_PRECISE_INTEGER:
             self.delegate(Integer, convert_to=int, convert_from=float)
             return

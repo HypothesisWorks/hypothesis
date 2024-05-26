@@ -26,8 +26,8 @@ def test_non_trivial_json():
     objects = st.dictionaries(st.text(), json)
 
     assert minimal(json) is None
-    # the minimal here is [None], but the shrinker often fails to slip to an earlier
-    # choice in the one_of and gets stuck on st.text.
+    # TODO_BETTER_SHRINK: the minimal here is [None], but the shrinker often fails
+    # to slip to an earlier choice in the one_of and gets stuck on st.text.
     assert minimal(json, lambda x: isinstance(x, list) and x) in ([None], [""])
     assert minimal(
         json, lambda x: isinstance(x, dict) and isinstance(x.get(""), list)

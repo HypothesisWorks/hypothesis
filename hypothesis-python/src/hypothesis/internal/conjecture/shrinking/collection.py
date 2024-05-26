@@ -42,6 +42,8 @@ class Collection(Shrinker):
 
     def run_step(self):
         # try deleting each element in turn, starting from the back
+        # TODO_BETTER_SHRINK: adaptively delete here by deleting larger chunks at once
+        # if early deletes succeed. use find_integer. turns O(n) into O(log(n))
         for i in reversed(range(len(self.current))):
             self.consider(self.current[:i] + self.current[i + 1 :])
 
