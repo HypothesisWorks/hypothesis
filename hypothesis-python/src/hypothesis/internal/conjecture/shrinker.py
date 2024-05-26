@@ -922,21 +922,19 @@ class Shrinker:
 
         st = self.shrink_target
 
+        def offset_node(node, n):
+            return (
+                node.index,
+                node.index + 1,
+                [node.copy(with_value=node.kwargs["shrink_towards"] + n)],
+            )
+
         def consider(n, sign):
             return self.consider_new_tree(
                 replace_all(
                     st.examples.ir_tree_nodes,
                     [
-                        (
-                            node.index,
-                            node.index + 1,
-                            [
-                                node.copy(
-                                    with_value=node.kwargs["shrink_towards"]
-                                    + sign * (n + v)
-                                )
-                            ],
-                        )
+                        offset_node(node, sign * (n + v))
                         for node, v in zip(changed, ints)
                     ],
                 )
