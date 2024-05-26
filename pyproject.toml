@@ -66,6 +66,7 @@ ignore = [
   "SIM117",
   "SIM300",
   "UP031",
+  "UP037",
 ]
 
 exclude = [
