@@ -869,7 +869,7 @@ class Shrinker:
 
     def lower_common_node_offset(self):
         """Sometimes we find ourselves in a situation where changes to one part
-        of the byte stream unlock changes to other parts. Sometimes this is
+        of the choice sequence unlock changes to other parts. Sometimes this is
         good, but sometimes this can cause us to exhibit exponential slow
         downs!
 
@@ -886,9 +886,9 @@ class Shrinker:
         This will take us O(m) iterations to complete, which is exponential in
         the data size, as we gradually zig zag our way towards zero.
 
-        This can only happen if we're failing to reduce the size of the byte
-        stream: The number of iterations that reduce the length of the byte
-        stream is bounded by that length.
+        This can only happen if we're failing to reduce the size of the choice
+        sequence: The number of iterations that reduce the length of the choice
+        sequence is bounded by that length.
 
         So what we do is this: We keep track of which blocks are changing, and
         then if there's some non-zero common offset to them we try and minimize

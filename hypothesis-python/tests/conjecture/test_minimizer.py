@@ -50,13 +50,13 @@ def test_can_sort_bytes_by_reordering_partially2():
         lambda x: Counter(x) == Counter(start) and x[0] > x[2],
         full=True,
     )
-    assert bytes(finish) <= bytes([1, 2, 0, 3, 4, 5])
+    assert bytes(finish) == bytes([1, 2, 0, 3, 4, 5])
 
 
 def test_can_sort_bytes_by_reordering_partially_not_cross_stationary_element():
     start = bytes([5, 3, 0, 2, 1, 4])
     finish = Ordering.shrink(start, lambda x: set(x) == set(start) and x[3] == 2)
-    assert bytes(finish) <= bytes([0, 3, 5, 2, 1, 4])
+    assert bytes(finish) == bytes([0, 1, 3, 2, 4, 5])
 
 
 @pytest.mark.parametrize(
