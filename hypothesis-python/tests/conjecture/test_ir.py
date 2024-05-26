@@ -404,12 +404,11 @@ def test_node_with_same_ir_type_but_different_value_is_invalid(data):
     assert data.status is Status.INVALID
 
 
-@given(st.data())
-def test_data_with_changed_was_forced(data):
+@given(ir_nodes(was_forced=False))
+def test_data_with_changed_was_forced(node):
     # we had a normal node and then tried to draw a different forced value from it.
     # ir tree: v1 [was_forced=False]
     # drawing:    [forced=v2]
-    node = data.draw(ir_nodes(was_forced=False))
     data = ConjectureData.for_ir_tree([node])
 
     draw_func = getattr(data, f"draw_{node.ir_type}")

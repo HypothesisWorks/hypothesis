@@ -973,9 +973,8 @@ class Shrinker:
             assert len(prev_nodes) == len(new_nodes)
             for i, (n1, n2) in enumerate(zip(prev_nodes, new_nodes)):
                 assert n1.ir_type == n2.ir_type
-                if ir_value_equal(n1.ir_type, n1.value, n2.value):
-                    continue
-                self.__all_changed_nodes.add(i)
+                if not ir_value_equal(n1.ir_type, n1.value, n2.value):
+                    self.__all_changed_nodes.add(i)
 
         return self.__all_changed_nodes
 
