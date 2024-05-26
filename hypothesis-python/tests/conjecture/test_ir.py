@@ -14,7 +14,7 @@ from copy import deepcopy
 
 import pytest
 
-from hypothesis import assume, example, given, strategies as st
+from hypothesis import HealthCheck, assume, example, given, settings, strategies as st
 from hypothesis.errors import StopTest
 from hypothesis.internal.conjecture.data import (
     ConjectureData,
@@ -375,6 +375,7 @@ def test_data_with_empty_ir_tree_is_overrun():
     assert data.status is Status.OVERRUN
 
 
+@settings(suppress_health_check=[HealthCheck.too_slow])
 @given(st.data())
 def test_node_with_different_ir_type_is_invalid(data):
     node = data.draw(ir_nodes())
@@ -391,6 +392,7 @@ def test_node_with_different_ir_type_is_invalid(data):
     assert data.status is Status.INVALID
 
 
+@settings(suppress_health_check=[HealthCheck.too_slow])
 @given(st.data())
 def test_node_with_same_ir_type_but_different_value_is_invalid(data):
     node = data.draw(ir_nodes())

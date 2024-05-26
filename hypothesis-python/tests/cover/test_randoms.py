@@ -15,7 +15,7 @@ from copy import copy
 
 import pytest
 
-from hypothesis import assume, given, strategies as st
+from hypothesis import HealthCheck, assume, given, settings, strategies as st
 from hypothesis.internal.compat import ExceptionGroup
 from hypothesis.strategies._internal.random import (
     RANDOM_METHODS,
@@ -341,6 +341,7 @@ def test_can_manage_very_long_ranges_with_step(rnd):
     assert i in range(0, 2**256, 3)
 
 
+@settings(suppress_health_check=[HealthCheck.too_slow])
 @given(any_random, st.data())
 def test_range_with_arbitrary_step_is_in_range(rnd, data):
     endpoints = st.integers(-100, 100)

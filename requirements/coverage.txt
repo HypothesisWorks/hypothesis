@@ -4,7 +4,7 @@
 #
 #    ./build.sh upgrade-requirements
 #
-annotated-types==0.6.0
+annotated-types==0.7.0
     # via -r requirements/coverage.in
 async-timeout==4.0.3
     # via redis
@@ -32,7 +32,7 @@ iniconfig==2.0.0
     # via pytest
 lark==1.1.9
     # via -r requirements/coverage.in
-libcst==1.3.1
+libcst==1.4.0
     # via -r requirements/coverage.in
 mypy-extensions==1.0.0
     # via black
@@ -59,7 +59,7 @@ ptyprocess==0.7.0
     # via pexpect
 pyarrow==16.1.0
     # via -r requirements/coverage.in
-pytest==8.2.0
+pytest==8.2.1
     # via
     #   -r requirements/test.in
     #   pytest-cov
@@ -91,7 +91,7 @@ tomli==2.0.1
     #   black
     #   coverage
     #   pytest
-typing-extensions==4.12.0rc1
+typing-extensions==4.12.0
     # via
     #   -r requirements/coverage.in
     #   black
