@@ -1072,9 +1072,17 @@ class IRNode:
 
 def ir_value_permitted(value, ir_type, kwargs):
     if ir_type == "integer":
-        if kwargs["min_value"] is not None and value < kwargs["min_value"]:
+        min_value = kwargs["min_value"]
+        max_value = kwargs["max_value"]
+        shrink_towards = kwargs["shrink_towards"]
+        if min_value is not None and value < min_value:
             return False
-        if kwargs["max_value"] is not None and value > kwargs["max_value"]:
+        if max_value is not None and value > max_value:
+            return False
+
+        if (max_value is None or min_value is None) and (
+            value - shrink_towards
+        ).bit_length() >= 128:
             return False
 
         return True

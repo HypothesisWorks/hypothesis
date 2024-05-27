@@ -523,9 +523,21 @@ def test_all_children_are_permitted_values(ir_type_and_kwargs):
 @pytest.mark.parametrize(
     "value, ir_type, kwargs, permitted",
     [
-        (0, "integer", {"min_value": 1, "max_value": 2}, False),
-        (2, "integer", {"min_value": 0, "max_value": 1}, False),
-        (10, "integer", {"min_value": 0, "max_value": 20}, True),
+        (0, "integer", {"min_value": 1, "max_value": 2, "shrink_towards": 0}, False),
+        (2, "integer", {"min_value": 0, "max_value": 1, "shrink_towards": 0}, False),
+        (10, "integer", {"min_value": 0, "max_value": 20, "shrink_towards": 0}, True),
+        (
+            int(2**128 / 2) - 1,
+            "integer",
+            {"min_value": None, "max_value": None, "shrink_towards": 0},
+            True,
+        ),
+        (
+            int(2**128 / 2),
+            "integer",
+            {"min_value": None, "max_value": None, "shrink_towards": 0},
+            False,
+        ),
         (
             math.nan,
             "float",
