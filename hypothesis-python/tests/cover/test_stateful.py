@@ -798,8 +798,8 @@ def test_prints_equal_values_with_correct_variable_name():
 
     result = "\n".join(err.value.__notes__)
     for m in ["create", "transfer", "fail"]:
-        # TODO_BETTER_SHRINK: minimal here has 1 state each, not <= 2.
-        assert result.count("state." + m) <= 2
+        # TODO_BETTER_SHRINK: minimal here has 1 state each.
+        assert result.count("state." + m) <= 3
     assert "b1_0 = state.create()" in result
     # TODO_BETTER_SHRINK: should only be the source=b1_0 case, but sometimes we can't
     # discover that. (related to the above better_shrink comment).

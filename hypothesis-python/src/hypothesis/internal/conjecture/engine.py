@@ -342,7 +342,7 @@ class ConjectureRunner:
             for node in nodes + extension
         )
 
-    def _cache(self, data: Union[ConjectureData, ConjectureResult]) -> None:
+    def _cache(self, data: ConjectureData) -> None:
         result = data.as_result()
         # when we shrink, we try out of bounds things, which can lead to the same
         # data.buffer having multiple outcomes. eg data.buffer=b'' is Status.OVERRUN
