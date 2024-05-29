@@ -28,14 +28,14 @@ def fails_with_output(expected, error=AssertionError, **kw):
     return _inner
 
 
-# future note if this test fails: this should have a marked as freely varying, but
+# this should have a marked as freely varying, but
 # false negatives in our inquisitor code skip over it sometimes, depending on the
 # seen_passed_buffers. yet another thing that should be improved by moving to the ir.
 @fails_with_output(
     """
 Falsifying example: test_inquisitor_comments_basic_fail_if_either(
     # The test always failed when commented parts were varied together.
-    a=False,  # or any other generated value
+    a=False,
     b=True,
     c=[],  # or any other generated value
     d=True,

@@ -640,16 +640,16 @@ class Examples:
 
     class _mutator_groups(ExampleProperty):
         def begin(self) -> None:
-            self.groups: "Dict[Tuple[int, int], List[int]]" = defaultdict(list)
+            self.groups: "Dict[Tuple[int, int], List[int]]" = defaultdict(set)
 
         def start_example(self, i: int, label_index: int) -> None:
-            depth = len(self.example_stack)
-            self.groups[label_index, depth].append(i)
+            key = (self.examples[i].ir_start, self.examples[i].ir_end)
+            self.groups[label_index].add(key)
 
         def finish(self) -> Iterable[Iterable[int]]:
             # Discard groups with only one example, since the mutator can't
             # do anything useful with them.
-            return [g for g in self.groups.values() if len(g) >= 2]
+            return [list(g) for g in self.groups.values() if len(g) >= 2]
 
     mutator_groups: List[List[int]] = calculated_example_property(_mutator_groups)
 
@@ -1913,12 +1913,13 @@ class ConjectureData:
         *,
         observer: Optional[DataObserver] = None,
         provider: Union[type, PrimitiveProvider] = HypothesisProvider,
+        max_length: Optional[int] = None,
     ) -> "ConjectureData":
         from hypothesis.internal.conjecture.engine import BUFFER_SIZE
 
         return cls(
-            BUFFER_SIZE,
-            b"",
+            max_length=BUFFER_SIZE if max_length is None else max_length,
+            prefix=b"",
             random=None,
             ir_tree_prefix=ir_tree_prefix,
             observer=observer,

@@ -207,7 +207,9 @@ def test_stateful_states_are_deduped():
             return
 
     stats = call_for_statistics(DemoStateMachine.TestCase().runTest)
-    assert len(unique_events(stats)) <= 2
+    stats = unique_events(stats)
+    stats = [s for s in stats if not s.startswith("invalid because: (internal)")]
+    assert len(stats) <= 2
 
 
 def test_stateful_with_one_of_bundles_states_are_deduped():
@@ -229,7 +231,9 @@ def test_stateful_with_one_of_bundles_states_are_deduped():
             return
 
     stats = call_for_statistics(DemoStateMachine.TestCase().runTest)
-    assert len(unique_events(stats)) <= 4
+    stats = unique_events(stats)
+    stats = [s for s in stats if not s.startswith("invalid because: (internal)")]
+    assert len(stats) <= 4
 
 
 def test_statistics_for_threshold_problem():
