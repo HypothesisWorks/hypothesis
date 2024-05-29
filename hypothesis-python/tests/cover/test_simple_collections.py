@@ -104,7 +104,7 @@ def test_sets_of_fixed_length(n):
     x = minimal(sets(integers(), min_size=n, max_size=n))
     assert len(x) == n
 
-    if not n:
+    if n == 0:
         assert x == set()
     else:
         assert x == set(range(min(x), min(x) + n))

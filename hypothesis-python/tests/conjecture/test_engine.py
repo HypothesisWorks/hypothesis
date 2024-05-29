@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import enum
 import re
 import time
 from random import Random
@@ -26,7 +27,7 @@ from hypothesis import (
 )
 from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
 from hypothesis.errors import FailedHealthCheck, Flaky
-from hypothesis.internal.compat import int_from_bytes
+from hypothesis.internal.compat import bit_count, int_from_bytes
 from hypothesis.internal.conjecture import engine as engine_module
 from hypothesis.internal.conjecture.data import ConjectureData, IRNode, Overrun, Status
 from hypothesis.internal.conjecture.datatree import compute_max_children
@@ -38,7 +39,7 @@ from hypothesis.internal.conjecture.engine import (
     RunIsComplete,
 )
 from hypothesis.internal.conjecture.pareto import DominanceRelation, dominance
-from hypothesis.internal.conjecture.shrinker import Shrinker, block_program
+from hypothesis.internal.conjecture.shrinker import Shrinker
 from hypothesis.internal.entropy import deterministic_PRNG
 
 from tests.common.debug import minimal
@@ -460,6 +461,34 @@ def test_can_shrink_variable_draws(n_large):
     assert ints == [target % 255] + [255] * (len(ints) - 1)
 
 
+def test_can_shrink_variable_string_draws():
+    @st.composite
+    def strategy(draw):
+        n = draw(st.integers(min_value=0, max_value=20))
+        return draw(st.text(st.characters(codec="ascii"), min_size=n, max_size=n))
+
+    s = minimal(strategy(), lambda s: len(s) >= 10 and "a" in s)
+
+    # TODO_BETTER_SHRINK: this should be
+    # assert s == "0" * 9 + "a"
+    # but we first shrink to having a single a at the end of the string and then
+    # fail to apply our special case invalid logic when shrinking the min_size n,
+    # because that logic removes from the end of the string (which fails our
+    # precondition).
+    assert re.match("0+a", s)
+
+
+def test_variable_size_string_increasing():
+    # coverage test for min_size increasing during shrinking (because the test
+    # function inverts n).
+    @st.composite
+    def strategy(draw):
+        n = 10 - draw(st.integers(0, 10))
+        return draw(st.text(st.characters(codec="ascii"), min_size=n, max_size=n))
+
+    assert minimal(strategy(), lambda s: len(s) >= 5 and "a" in s) == "0000a"
+
+
 def test_run_nothing():
     def f(data):
         raise AssertionError
@@ -835,7 +864,7 @@ def test_dependent_block_pairs_can_lower_to_zero():
         if n == 1:
             data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["minimize_individual_blocks"])
+    shrinker.fixate_shrink_passes(["minimize_individual_nodes"])
     assert list(shrinker.shrink_target.buffer) == [0, 1]
 
 
@@ -848,7 +877,7 @@ def test_handle_size_too_large_during_dependent_lowering():
         else:
             data.draw_integer(0, 2**8 - 1)
 
-    shrinker.fixate_shrink_passes(["minimize_individual_blocks"])
+    shrinker.fixate_shrink_passes(["minimize_individual_nodes"])
 
 
 def test_block_may_grow_during_lexical_shrinking():
@@ -864,11 +893,11 @@ def test_block_may_grow_during_lexical_shrinking():
             data.draw_integer(0, 2**16 - 1)
         data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["minimize_individual_blocks"])
+    shrinker.fixate_shrink_passes(["minimize_individual_nodes"])
     assert list(shrinker.shrink_target.buffer) == [0, 0, 0]
 
 
-def test_lower_common_block_offset_does_nothing_when_changed_blocks_are_zero():
+def test_lower_common_node_offset_does_nothing_when_changed_blocks_are_zero():
     @shrinking_from([1, 0, 1, 0])
     def shrinker(data):
         data.draw_boolean()
@@ -879,11 +908,11 @@ def test_lower_common_block_offset_does_nothing_when_changed_blocks_are_zero():
 
     shrinker.mark_changed(1)
     shrinker.mark_changed(3)
-    shrinker.lower_common_block_offset()
+    shrinker.lower_common_node_offset()
     assert list(shrinker.shrink_target.buffer) == [1, 0, 1, 0]
 
 
-def test_lower_common_block_offset_ignores_zeros():
+def test_lower_common_node_offset_ignores_zeros():
     @shrinking_from([2, 2, 0])
     def shrinker(data):
         n = data.draw_integer(0, 2**8 - 1)
@@ -894,24 +923,8 @@ def test_lower_common_block_offset_ignores_zeros():
 
     for i in range(3):
         shrinker.mark_changed(i)
-    shrinker.lower_common_block_offset()
+    shrinker.lower_common_node_offset()
     assert list(shrinker.shrink_target.buffer) == [1, 1, 0]
-
-
-def test_pandas_hack():
-    @shrinking_from([2, 1, 1, 7])
-    def shrinker(data):
-        n = data.draw_integer(0, 2**8 - 1)
-        m = data.draw_integer(0, 2**8 - 1)
-        if n == 1:
-            if m == 7:
-                data.mark_interesting()
-        data.draw_integer(0, 2**8 - 1)
-        if data.draw_integer(0, 2**8 - 1) == 7:
-            data.mark_interesting()
-
-    shrinker.fixate_shrink_passes([block_program("-XX")])
-    assert list(shrinker.shrink_target.buffer) == [1, 7]
 
 
 def test_cached_test_function_returns_right_value():
@@ -1663,10 +1676,21 @@ def test_simulate_to_evicted_data(monkeypatch):
     assert runner.call_count == 3
 
 
-def test_mildly_complicated_strategy():
-    # there are some code paths in engine.py that are easily covered by any mildly
-    # compliated strategy and aren't worth testing explicitly for. This covers
-    # those.
-    n = 5
-    s = st.lists(st.integers(), min_size=n)
-    assert minimal(s, lambda x: sum(x) >= 2 * n) == [0, 0, 0, 0, n * 2]
+@pytest.mark.parametrize(
+    "strategy, condition",
+    [
+        (st.lists(st.integers(), min_size=5), lambda v: True),
+        (st.lists(st.text(), min_size=2, unique=True), lambda v: True),
+        (
+            st.sampled_from(
+                enum.Flag("LargeFlag", {f"bit{i}": enum.auto() for i in range(64)})
+            ),
+            lambda f: bit_count(f.value) > 1,
+        ),
+    ],
+)
+def test_mildly_complicated_strategies(strategy, condition):
+    # There are some code paths in engine.py and shrinker.py that are easily
+    # covered by shrinking any mildly compliated strategy and aren't worth
+    # testing explicitly for. This covers those.
+    minimal(strategy, condition)

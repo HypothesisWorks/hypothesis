@@ -33,16 +33,12 @@ from hypothesis.internal.intervalsets import IntervalSet
 
 from tests.common.debug import minimal
 from tests.conjecture.common import (
+    draw_value,
     fresh_data,
     ir_nodes,
     ir_types_and_kwargs,
     kwargs_strategy,
 )
-
-
-def draw_value(ir_type, kwargs):
-    data = fresh_data()
-    return getattr(data, f"draw_{ir_type}")(**kwargs)
 
 
 # we max out at 128 bit integers in the *unbounded* case, but someone may
@@ -410,12 +406,11 @@ def test_node_with_same_ir_type_but_different_value_is_invalid(data):
     assert data.status is Status.INVALID
 
 
-@given(st.data())
-def test_data_with_changed_was_forced(data):
+@given(ir_nodes(was_forced=False))
+def test_data_with_changed_was_forced(node):
     # we had a normal node and then tried to draw a different forced value from it.
     # ir tree: v1 [was_forced=False]
     # drawing:    [forced=v2]
-    node = data.draw(ir_nodes(was_forced=False))
     data = ConjectureData.for_ir_tree([node])
 
     draw_func = getattr(data, f"draw_{node.ir_type}")
@@ -530,9 +525,21 @@ def test_all_children_are_permitted_values(ir_type_and_kwargs):
 @pytest.mark.parametrize(
     "value, ir_type, kwargs, permitted",
     [
-        (0, "integer", {"min_value": 1, "max_value": 2}, False),
-        (2, "integer", {"min_value": 0, "max_value": 1}, False),
-        (10, "integer", {"min_value": 0, "max_value": 20}, True),
+        (0, "integer", {"min_value": 1, "max_value": 2, "shrink_towards": 0}, False),
+        (2, "integer", {"min_value": 0, "max_value": 1, "shrink_towards": 0}, False),
+        (10, "integer", {"min_value": 0, "max_value": 20, "shrink_towards": 0}, True),
+        (
+            int(2**128 / 2) - 1,
+            "integer",
+            {"min_value": None, "max_value": None, "shrink_towards": 0},
+            True,
+        ),
+        (
+            int(2**128 / 2),
+            "integer",
+            {"min_value": None, "max_value": None, "shrink_towards": 0},
+            False,
+        ),
         (
             math.nan,
             "float",

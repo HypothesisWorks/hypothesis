@@ -396,3 +396,9 @@ def test_calculator_benchmark():
     x = minimal(expression, is_failing)
 
     assert x == ("/", 0, ("+", 0, 0))
+
+
+def test_one_of_slip():
+    # TODO_BETTER_SHRINK: minimal here is 101, but we almost always fail to slip from
+    # 0 when shrinking.
+    assert minimal(st.integers(101, 200) | st.integers(0, 100)) in {101, 0}

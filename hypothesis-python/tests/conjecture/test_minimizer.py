@@ -9,51 +9,84 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 from collections import Counter
-from random import Random
 
-from hypothesis.internal.conjecture.shrinking import Lexical
+import pytest
+
+from hypothesis.internal.compat import int_from_bytes
+from hypothesis.internal.conjecture.shrinking import (
+    Bytes,
+    Collection,
+    Integer,
+    Ordering,
+    String,
+)
+from hypothesis.internal.intervalsets import IntervalSet
 
 
 def test_shrink_to_zero():
-    assert Lexical.shrink(bytes([255] * 8), lambda x: True) == bytes(8)
+    assert Integer.shrink(2**16, lambda n: True) == 0
 
 
 def test_shrink_to_smallest():
-    assert Lexical.shrink(bytes([255] * 8), lambda x: sum(x) > 10) == bytes(
-        [0] * 7 + [11]
-    )
-
-
-def test_float_hack_fails():
-    assert Lexical.shrink(bytes([255] * 8), lambda x: x[0] >> 7) == bytes(
-        [128] + [0] * 7
-    )
+    assert Integer.shrink(2**16, lambda n: n > 10) == 11
 
 
 def test_can_sort_bytes_by_reordering():
     start = bytes([5, 4, 3, 2, 1, 0])
-    finish = Lexical.shrink(start, lambda x: set(x) == set(start))
-    assert finish == bytes([0, 1, 2, 3, 4, 5])
+    finish = Ordering.shrink(start, lambda x: set(x) == set(start))
+    assert bytes(finish) == bytes([0, 1, 2, 3, 4, 5])
 
 
 def test_can_sort_bytes_by_reordering_partially():
     start = bytes([5, 4, 3, 2, 1, 0])
-    finish = Lexical.shrink(start, lambda x: set(x) == set(start) and x[0] > x[-1])
-    assert finish == bytes([1, 2, 3, 4, 5, 0])
+    finish = Ordering.shrink(start, lambda x: set(x) == set(start) and x[0] > x[-1])
+    assert bytes(finish) == bytes([1, 2, 3, 4, 5, 0])
 
 
 def test_can_sort_bytes_by_reordering_partially2():
     start = bytes([5, 4, 3, 2, 1, 0])
-    finish = Lexical.shrink(
+    finish = Ordering.shrink(
         start,
         lambda x: Counter(x) == Counter(start) and x[0] > x[2],
-        random=Random(0),
         full=True,
     )
-    assert finish <= bytes([1, 2, 0, 3, 4, 5])
+    assert bytes(finish) == bytes([1, 2, 0, 3, 4, 5])
 
 
 def test_can_sort_bytes_by_reordering_partially_not_cross_stationary_element():
     start = bytes([5, 3, 0, 2, 1, 4])
-    finish = Lexical.shrink(start, lambda x: set(x) == set(start) and x[3] == 2)
-    assert finish <= bytes([0, 3, 5, 2, 1, 4])
+    finish = Ordering.shrink(start, lambda x: set(x) == set(start) and x[3] == 2)
+    assert bytes(finish) == bytes([0, 1, 3, 2, 4, 5])
+
+
+@pytest.mark.parametrize(
+    "initial, predicate, intervals, expected",
+    [
+        ("f" * 10, lambda s: True, IntervalSet.from_string("abcdefg"), ""),
+        ("f" * 10, lambda s: len(s) >= 3, IntervalSet.from_string("abcdefg"), "aaa"),
+        (
+            "f" * 10,
+            lambda s: len(s) >= 3 and "a" not in s,
+            IntervalSet.from_string("abcdefg"),
+            "bbb",
+        ),
+    ],
+)
+def test_shrink_strings(initial, predicate, intervals, expected):
+    assert String.shrink(initial, predicate, intervals=intervals) == tuple(expected)
+
+
+@pytest.mark.parametrize(
+    "initial, predicate, expected",
+    [
+        (b"\x18\x12", lambda v: True, b"\x00\x00"),
+        (b"\x01\x10", lambda v: v[0] == 1, b"\x01\x00"),
+    ],
+)
+def test_shrink_bytes(initial, predicate, expected):
+    assert Bytes.shrink(initial, predicate) == int_from_bytes(expected)
+
+
+def test_collection_left_is_better():
+    shrinker = Collection([1, 2, 3], lambda v: True, ElementShrinker=Integer)
+    assert not shrinker.left_is_better([1, 2, 3], [1, 2, 3])
