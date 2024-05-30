@@ -823,7 +823,12 @@ class StateForActualGivenExecution:
         self._string_repr = ""
         text_repr = None
         if self.settings.deadline is None and not TESTCASE_CALLBACKS:
-            test = self.test
+
+            @proxies(self.test)
+            def test(*args, **kwargs):
+                with ensure_free_stackframes():
+                    return self.test(*args, **kwargs)
+
         else:
 
             @proxies(self.test)
@@ -833,7 +838,8 @@ class StateForActualGivenExecution:
                 arg_gctime = gc_cumulative_time()
                 start = time.perf_counter()
                 try:
-                    result = self.test(*args, **kwargs)
+                    with ensure_free_stackframes():
+                        result = self.test(*args, **kwargs)
                 finally:
                     finish = time.perf_counter()
                     in_drawtime = math.fsum(data.draw_times.values()) - arg_drawtime
