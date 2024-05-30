@@ -9,16 +9,12 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import gc
-import math
-import sys
 import time
 
 import pytest
 
 from hypothesis import given, settings, strategies as st
 from hypothesis.errors import DeadlineExceeded, Flaky, InvalidArgument
-from hypothesis.internal.conjecture import junkdrawer
-from hypothesis.internal.observability import TESTCASE_CALLBACKS
 
 from tests.common.utils import assert_falsifying_output, fails_with
 
@@ -161,7 +157,9 @@ def test_should_not_fail_deadline_due_to_gc():
         gc.callbacks.remove(delay)
 
 
-@pytest.mark.skipif(not hasattr(gc, "callbacks"), reason="PyPy has weird stack-limit behaviour")
+@pytest.mark.skipif(
+    not hasattr(gc, "callbacks"), reason="PyPy has weird stack-limit behaviour"
+)
 def test_gc_hooks_do_not_cause_unraisable_recursionerror():
     # We were concerned in #3979 that we might see bad results from a RecursionError
     # inside the GC hook, if the stack was already deep and someone (e.g. Pytest)
@@ -217,8 +215,9 @@ def test_gc_hooks_do_not_cause_unraisable_recursionerror():
                 break
 
         # Verify limits w/o any gc interfering
-        gen_cycles_at_depth(max_depth - 1, gc_disable=True)  # this line raises RecursionError on Pypy
-        gen_cycles_at_depth(max_depth, gc_disable=True)  # while this line doesn't
+        gen_cycles_at_depth(max_depth - 1, gc_disable=True)
+        # the previous line raises RecursionError on Pypy, while the next doesn't (!)
+        gen_cycles_at_depth(max_depth, gc_disable=True)
         with pytest.raises(RecursionError):
             gen_cycles_at_depth(max_depth + 1, gc_disable=True)
 

@@ -17,7 +17,6 @@ import gc
 import sys
 import time
 import warnings
-from math import nan as NaN
 from random import Random
 from typing import (
     Callable,
