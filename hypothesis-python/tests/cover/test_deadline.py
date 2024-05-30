@@ -161,12 +161,13 @@ def test_should_not_fail_deadline_due_to_gc():
         gc.callbacks.remove(delay)
 
 
-@pytest.mark.skipif(not hasattr(gc, "callbacks"), reason="CPython specific")
-def test_gc_hooks_do_not_fail_due_to_recursionerror():
+@pytest.mark.skipif(not hasattr(gc, "callbacks"), reason="PyPy has weird stack-limit behaviour")
+def test_gc_hooks_do_not_cause_unraisable_recursionerror():
     # We were concerned in #3979 that we might see bad results from a RecursionError
     # inside the GC hook, if the stack was already deep and someone (e.g. Pytest)
-    # had installed a sys.unraisablehook which raises that later.  Even if there's
-    # no such hook, we'd get the measured time wrong, so we set that to NaN.
+    # had installed a sys.unraisablehook which raises that later.
+
+    NUM_CYCLES = 10_000
 
     def probe_depth():
         try:
@@ -174,46 +175,57 @@ def test_gc_hooks_do_not_fail_due_to_recursionerror():
         except RecursionError:
             return 0
 
-    collections = 0
-
-    def collect_at(depth):
-        if depth == 0:
-            # We are at the recursion limit, no free stack frames. Generate reference
-            # cycles until a background collection is observed. Beware: there is not
-            # even room for raising new exceptions here.
-            orig_collections = collections
-            n_iter = 0
-            while n_iter < 100_000:
-                if collections > orig_collections:
-                    return True  # successfully triggered collection at stack limit
-                a = [None]
-                b = [a]
-                a[0] = b
-                n_iter += 1
-            return False
+    def at_depth(depth, fn):
+        if depth <= 1:
+            return fn()
         else:
-            return collect_at(depth - 1)
+            # Recurse towards requested depth
+            return at_depth(depth - 1, fn)
+
+    def gen_cycles():
+        # We may be at the recursion limit, no free stack frames. Generate lots
+        # of reference cycles. Beware: there may not even be room for raising new
+        # exceptions here, anything will end up as a RecursionError.
+        for i in range(NUM_CYCLES):
+            a = [None]
+            b = [a]
+            a[0] = b
+
+    def gen_cycles_at_depth(depth, *, gc_disable):
+        try:
+            if gc_disable:
+                gc.disable()
+            at_depth(depth, gen_cycles)
+            if gc_disable:
+                assert gc.collect() >= 2 * NUM_CYCLES
+            else:
+                assert gc.collect() < 2 * NUM_CYCLES  # collection was triggered
+        finally:
+            gc.enable()
 
     @given(st.booleans())
     def inner_test(_):
-        max_depth = probe_depth()
-        assert collect_at(max_depth)
+        max_depth = probe_depth()  # would have to be called twice on PyPy
 
-    observations = []
-    try:
-        TESTCASE_CALLBACKS.append(observations.append)
-        def gc_count_collections(*_):
-            nonlocal collections
-            collections += 1
-        gc.callbacks.append(gc_count_collections)
-        inner_test()
-    finally:
-        gc.callbacks.remove(gc_count_collections)
-        popped = TESTCASE_CALLBACKS.pop()
-        assert popped == observations.append, (popped, observations.append)
+        # Lower the limit to where we can successfully generate cycles
+        while True:
+            try:
+                gen_cycles_at_depth(max_depth, gc_disable=True)
+            except RecursionError:
+                max_depth -= 1
+            else:
+                break
 
-    timings = [t.get("timing", {}).get("overall:gc", 0.0) for t in observations]
-    assert any(math.isnan(v) for v in timings), timings
+        # Verify limits w/o any gc interfering
+        gen_cycles_at_depth(max_depth - 1, gc_disable=True)  # this line raises RecursionError on Pypy
+        gen_cycles_at_depth(max_depth, gc_disable=True)  # while this line doesn't
+        with pytest.raises(RecursionError):
+            gen_cycles_at_depth(max_depth + 1, gc_disable=True)
 
-    gc.collect()  # should clear any NaN state
-    assert not math.isnan(junkdrawer.gc_cumulative_time())
+        # Check that the limit is unchanged with gc enabled
+        gen_cycles_at_depth(max_depth - 1, gc_disable=False)
+        gen_cycles_at_depth(max_depth, gc_disable=False)
+        with pytest.raises(RecursionError):
+            gen_cycles_at_depth(max_depth + 1, gc_disable=False)
+
+    inner_test()
