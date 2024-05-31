@@ -16,12 +16,14 @@ from tests.common.utils import fails_with
 
 
 def fails_with_output(expected, error=AssertionError, **kw):
+    expected = [expected] if isinstance(expected, str) else expected
+
     def _inner(f):
         def _new():
             with pytest.raises(error) as err:
                 settings(print_blob=False, derandomize=True, **kw)(f)()
             got = "\n".join(err.value.__notes__).strip() + "\n"
-            assert got == expected.strip() + "\n"
+            assert any(got == s.strip() + "\n" for s in expected)
 
         return _new
 
@@ -32,7 +34,8 @@ def fails_with_output(expected, error=AssertionError, **kw):
 # false negatives in our inquisitor code skip over it sometimes, depending on the
 # seen_passed_buffers. yet another thing that should be improved by moving to the ir.
 @fails_with_output(
-    """
+    [
+        """
 Falsifying example: test_inquisitor_comments_basic_fail_if_either(
     # The test always failed when commented parts were varied together.
     a=False,
@@ -41,7 +44,18 @@ Falsifying example: test_inquisitor_comments_basic_fail_if_either(
     d=True,
     e=False,  # or any other generated value
 )
-"""
+""",
+        """
+Falsifying example: test_inquisitor_comments_basic_fail_if_either(
+    # The test always failed when commented parts were varied together.
+    a=False,  # or any other generated value
+    b=True,
+    c=[],  # or any other generated value
+    d=True,
+    e=False,  # or any other generated value
+)
+""",
+    ]
 )
 @given(st.booleans(), st.booleans(), st.lists(st.none()), st.booleans(), st.booleans())
 def test_inquisitor_comments_basic_fail_if_either(a, b, c, d, e):
