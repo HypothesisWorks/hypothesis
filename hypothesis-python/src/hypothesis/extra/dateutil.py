@@ -21,7 +21,7 @@ and :func:`~hypothesis.strategies.times` produce timezone-aware values.
 
 import datetime as dt
 
-from dateutil import tz, zoneinfo  # type: ignore
+from dateutil import tz, zoneinfo
 
 from hypothesis import strategies as st
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy

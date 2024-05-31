@@ -462,7 +462,7 @@ class ExampleRecord:
     """
 
     def __init__(self) -> None:
-        self.labels = []
+        self.labels: List[int] = []
         self.__index_of_labels: "Optional[Dict[int, int]]" = {}
         self.trail = IntList()
         self.ir_nodes: List[IRNode] = []
@@ -640,18 +640,20 @@ class Examples:
 
     class _mutator_groups(ExampleProperty):
         def begin(self) -> None:
-            self.groups: "Dict[Tuple[int, int], List[int]]" = defaultdict(set)
+            self.groups: "Dict[int, Set[Tuple[int, int]]]" = defaultdict(set)
 
         def start_example(self, i: int, label_index: int) -> None:
             key = (self.examples[i].ir_start, self.examples[i].ir_end)
             self.groups[label_index].add(key)
 
-        def finish(self) -> Iterable[Iterable[int]]:
+        def finish(self) -> Iterable[List[Tuple[int, int]]]:
             # Discard groups with only one example, since the mutator can't
             # do anything useful with them.
             return [list(g) for g in self.groups.values() if len(g) >= 2]
 
-    mutator_groups: List[List[int]] = calculated_example_property(_mutator_groups)
+    mutator_groups: List[List[Tuple[int, int]]] = calculated_example_property(
+        _mutator_groups
+    )
 
     @property
     def children(self) -> List[Sequence[int]]:
