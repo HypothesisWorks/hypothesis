@@ -512,7 +512,7 @@ def test_debug_data(capsys):
 
     def f(data):
         for x in bytes(buf):
-            if data.draw_integer(0, 2**8 - 1) != x:
+            if data.draw(st.integers(0, 100)) != x:
                 data.mark_invalid()
             data.start_example(1)
             data.stop_example()
