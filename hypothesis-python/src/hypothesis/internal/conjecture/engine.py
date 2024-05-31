@@ -386,7 +386,11 @@ class ConjectureRunner:
         except KeyError:
             pass
 
-        observer: Optional[DataObserver] = None
+        # explicitly use a no-op DataObserver here instead of a TreeRecordingObserver.
+        # The reason is we don't expect simulate_test_function to explore new choices
+        # and write back to the tree, so we don't want the overhead of the
+        # TreeRecordingObserver tracking those calls.
+        trial_observer: Optional[DataObserver] = DataObserver()
         if error_on_discard:
 
             class DiscardObserver(DataObserver):
@@ -394,10 +398,10 @@ class ConjectureRunner:
                 def kill_branch(self) -> NoReturn:
                     raise ContainsDiscard
 
-            observer = DiscardObserver()
+            trial_observer = DiscardObserver()
 
         try:
-            trial_data = self.new_conjecture_data_ir(nodes, observer=observer)
+            trial_data = self.new_conjecture_data_ir(nodes, observer=trial_observer)
             self.tree.simulate_test_function(trial_data)
         except PreviouslyUnseenBehaviour:
             pass
