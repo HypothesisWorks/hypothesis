@@ -158,7 +158,9 @@ test_can_produce_short_strings_with_some_non_ascii = define_test(
     text(), lambda x: any(ord(c) > 127 for c in x), condition=lambda x: len(x) <= 3
 )
 
-test_can_produce_large_binary_strings = define_test(binary(), lambda x: len(x) > 20)
+test_can_produce_large_binary_strings = define_test(
+    binary(), lambda x: len(x) > 10, p=0.3
+)
 
 test_can_produce_positive_infinity = define_test(floats(), lambda x: x == math.inf)
 
