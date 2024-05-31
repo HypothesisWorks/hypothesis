@@ -195,10 +195,11 @@ def test_gc_hooks_do_not_cause_unraisable_recursionerror():
 
     # This test is potentially flaky, because the stack usage of a function is not
     # constant. Regardless, if the test passes just once that's sufficient proof that
-    # it's not the GC (or accounting of it) that is at fault.
+    # it's not the GC (or accounting of it) that is at fault. Note, I haven't actually
+    # seen it fail/flake, but I believe it could happen in principle.
 
-    # The number of cycles sufficient to reliably trigger a GC cycle, experimentally
-    # found to be a few hundred on CPython. Multiply by 10 for safety margin.
+    # The number of cycles sufficient to reliably trigger GC, experimentally found
+    # to be a few hundred on CPython. Multiply by 10 for safety margin.
     NUM_CYCLES = 5_000
 
     def probe_depth():
@@ -251,12 +252,16 @@ def test_gc_hooks_do_not_cause_unraisable_recursionerror():
                 max_depth -= 1
             else:
                 break
-        # Note that PyPy is a bit weird, in that it raises RecursionError at
-        # (maxdepth - n) for small positive n, but not at exactly (maxdepth).
-        # In general, it is really finicky to get the details right in this
-        # test, so be careful.
+            # Note that PyPy is a bit weird, in that it raises RecursionError at
+            # (maxdepth - n) for small positive n, but not at exactly (maxdepth).
+            # In general, it is really finicky to get the details right in this
+            # test, so be careful.
 
-        # Now check that the limit is unchanged with gc enabled
+        # Now check that the limit is unchanged with gc enabled, and also that
+        # leaving a few frames for the callbacks does not fail.
+        if hasattr(gc, "callbacks"):  # see comment above
+            for n in range(1, 4):
+                gen_cycles_at_depth(max_depth - n, gc_disable=False)
         gen_cycles_at_depth(max_depth, gc_disable=False)
         with pytest.raises(RecursionError):
             gen_cycles_at_depth(max_depth + 1, gc_disable=False)
