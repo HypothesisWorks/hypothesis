@@ -216,7 +216,7 @@ def test_gc_hooks_do_not_cause_unraisable_recursionerror():
         # of reference cycles, to trigger GC (if enabled). Beware: there may not
         # even be room for raising new exceptions here, anything will end up as
         # a RecursionError.
-        for i in range(NUM_CYCLES):
+        for _ in range(NUM_CYCLES):
             a = [None]
             b = [a]
             a[0] = b

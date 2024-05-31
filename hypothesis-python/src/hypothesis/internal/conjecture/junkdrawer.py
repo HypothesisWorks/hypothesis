@@ -435,7 +435,7 @@ def gc_cumulative_time() -> float:
                         _gc_start = now
                     elif phase == "stop" and _gc_start > 0:
                         _gc_cumulative_time += now - _gc_start
-                except RecursionError:
+                except RecursionError:  # pragma: no cover
                     # Avoid flakiness via UnraisableException, which is caught and
                     # warned by pytest. The actual callback (this function) is
                     # validated to never trigger a RecursionError itself when
@@ -443,7 +443,7 @@ def gc_cumulative_time() -> float:
                     # Anyway, we should hit the same error on "start"
                     # and "stop", but to ensure we don't get out of sync we just
                     # signal that there is no matching start.
-                    _gc_start = -1
+                    _gc_start = 0
                     return
 
             gc.callbacks.insert(0, gc_callback)
