@@ -197,7 +197,9 @@ def test_gc_hooks_do_not_cause_unraisable_recursionerror():
     # constant. Regardless, if the test passes just once that's sufficient proof that
     # it's not the GC (or accounting of it) that is at fault.
 
-    NUM_CYCLES = 10_000
+    # The number of cycles sufficient to reliably trigger a GC cycle, experimentally
+    # found to be a few hundred on CPython. Multiply by 10 for safety margin.
+    NUM_CYCLES = 5_000
 
     def probe_depth():
         try:
@@ -213,11 +215,7 @@ def test_gc_hooks_do_not_cause_unraisable_recursionerror():
             return at_depth(depth - 1, fn)
 
     def gen_cycles():
-        # We may be at the recursion limit, no free stack frames. Generate lots
-        # of reference cycles, to trigger GC (if enabled). Beware: there may not
-        # even be room for raising new exceptions here, anything will end up as
-        # a RecursionError.
-        for _ in range(NUM_CYCLES):
+        for i in range(NUM_CYCLES):
             a = [None]
             b = [a]
             a[0] = b
@@ -228,37 +226,37 @@ def test_gc_hooks_do_not_cause_unraisable_recursionerror():
                 gc.disable()
             at_depth(depth, gen_cycles)
             dead_objects = gc.collect()
-            if dead_objects is not None:  # == None on PyPy
+            if dead_objects is not None:  # is None on PyPy
                 if gc_disable:
                     assert dead_objects >= 2 * NUM_CYCLES
                 else:
-                    assert dead_objects < 2 * NUM_CYCLES  # collection was triggered
+                    # collection was triggered
+                    assert dead_objects < 2 * NUM_CYCLES
         finally:
             gc.enable()
+
+    # Warmup to de-flake PyPy (the first run has much lower effective limits)
+    probe_depth()
 
     @given(st.booleans())
     def inner_test(_):
         max_depth = probe_depth()
-        max_depth = probe_depth()  # Executing probe twice de-flakes PyPy
 
+        # Lower the limit to where we can successfully generate cycles
+        # when no gc is performed
         while True:
-            # Lower the limit to where we can successfully generate cycles
             try:
                 gen_cycles_at_depth(max_depth, gc_disable=True)
             except RecursionError:
                 max_depth -= 1
             else:
                 break
+        # Note that PyPy is a bit weird, in that it raises RecursionError at
+        # (maxdepth - n) for small positive n, but not at exactly (maxdepth).
+        # In general, it is really finicky to get the details right in this
+        # test, so be careful.
 
-        # Verify limits w/o any gc interfering
-
-        # gen_cycles_at_depth(max_depth - 1, gc_disable=True)  # RecursionError on PyPy (!)
-        gen_cycles_at_depth(max_depth, gc_disable=True)
-        with pytest.raises(RecursionError):
-            gen_cycles_at_depth(max_depth + 1, gc_disable=True)
-
-        # Check that the limit is unchanged with gc enabled
-
+        # Now check that the limit is unchanged with gc enabled
         gen_cycles_at_depth(max_depth, gc_disable=False)
         with pytest.raises(RecursionError):
             gen_cycles_at_depth(max_depth + 1, gc_disable=False)
