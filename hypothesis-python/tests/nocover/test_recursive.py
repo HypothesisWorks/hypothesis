@@ -216,7 +216,7 @@ def test_gc_hooks_do_not_cause_unraisable_recursionerror():
             return at_depth(depth - 1, fn)
 
     def gen_cycles():
-        for i in range(NUM_CYCLES):
+        for _ in range(NUM_CYCLES):
             a = [None]
             b = [a]
             a[0] = b
