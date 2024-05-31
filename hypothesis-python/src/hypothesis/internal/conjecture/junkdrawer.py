@@ -434,7 +434,7 @@ def gc_cumulative_time() -> float:
                     if phase == "start":
                         _gc_start = now
                     elif phase == "stop" and _gc_start > 0:
-                        _gc_cumulative_time += now - _gc_start
+                        _gc_cumulative_time += now - _gc_start  # pragma: no cover # ??
                 except RecursionError:  # pragma: no cover
                     # Avoid flakiness via UnraisableException, which is caught and
                     # warned by pytest. The actual callback (this function) is

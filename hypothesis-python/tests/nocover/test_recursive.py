@@ -13,8 +13,9 @@ import sys
 import threading
 import warnings
 
-from hypothesis import HealthCheck, given, settings, strategies as st
 import pytest
+
+from hypothesis import HealthCheck, given, settings, strategies as st
 
 from tests.common.debug import find_any, minimal
 from tests.common.utils import flaky

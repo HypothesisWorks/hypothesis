@@ -127,6 +127,7 @@ UNHELPFUL_LOCATIONS = (
     f"{sep}pluggy{sep}_callers.py",
     f"{sep}pluggy{sep}_hooks.py",
     f"{sep}_pytest{sep}pytester.py",
+    f"{sep}tests{sep}conftest.py",
 )
 
 
