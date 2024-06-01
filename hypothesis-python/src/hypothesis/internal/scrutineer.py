@@ -128,7 +128,7 @@ UNHELPFUL_LOCATIONS = (
 
 def _glob_to_re(locs):
     """Translate a list of glob patterns to a combined regular expression.
-    Only * and ** wildcards are supported, and patterns including special
+    Only the * wildcard is supported, and patterns including special
     characters will only work by chance."""
     # fnmatch.translate is not an option since its "*" consumes path sep
     return "|".join(
