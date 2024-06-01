@@ -13,6 +13,7 @@ import contextlib
 import pytest
 
 from hypothesis import (
+    Verbosity,
     assume,
     event,
     example,
@@ -44,7 +45,9 @@ def capture_observations():
 
 @seed("deterministic so we don't miss some combination of features")
 @example(a=0, x=4, data=None)
-@settings(database=InMemoryExampleDatabase(), deadline=None)
+@settings(
+    database=InMemoryExampleDatabase(), deadline=None, verbosity=Verbosity.verbose
+)
 @given(st.integers(), st.integers(), st.data())
 def do_it_all(a, x, data):
     event(f"{x%2=}")
