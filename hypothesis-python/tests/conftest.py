@@ -19,6 +19,7 @@ import pytest
 from hypothesis._settings import is_in_ci
 from hypothesis.errors import NonInteractiveExampleWarning
 from hypothesis.internal.compat import add_note
+from hypothesis.internal.conjecture import junkdrawer
 from hypothesis.internal.detection import is_hypothesis_test
 
 from tests.common import TIME_INCREMENT
@@ -97,6 +98,33 @@ def _consistently_increment_time(monkeypatch):
     _patch("perf_counter", time)
     _patch("sleep", sleep)
     monkeypatch.setattr(time_module, "freeze", freeze, raising=False)
+
+    # In the patched time regime, observing it causes it to increment. To avoid reintroducing
+    # non-determinism due to GC running at arbitrary times, we patch the GC observer
+    # to NOT increment time.
+
+    if hasattr(gc, "callbacks"):
+        # ensure timer callback is added, then bracket it by freeze/unfreeze below
+        junkdrawer.gc_cumulative_time()
+
+        _was_frozen = [False]
+
+        def _freezer(*_):
+            _was_frozen[0] = frozen[0]
+            frozen[0] = True
+
+        def _unfreezer(*_):
+            frozen[0] = _was_frozen[0]
+
+        gc.callbacks.insert(0, _freezer)  # freeze before gc callback
+        gc.callbacks.append(_unfreezer)  # unfreeze after
+
+        yield
+
+        assert gc.callbacks.pop(0) == _freezer
+        assert gc.callbacks.pop() == _unfreezer
+    else:  # pragma: no cover # branch never taken in CPython
+        yield
 
 
 random_states_after_tests = {}

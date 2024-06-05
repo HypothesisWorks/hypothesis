@@ -8,9 +8,12 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import gc
 import sys
 import threading
 import warnings
+
+import pytest
 
 from hypothesis import HealthCheck, given, settings, strategies as st
 
@@ -182,3 +185,85 @@ SELF_REF = st.recursive(
 def test_self_ref_regression(_):
     # See https://github.com/HypothesisWorks/hypothesis/issues/2794
     pass
+
+
+@flaky(min_passes=1, max_runs=2)
+def test_gc_hooks_do_not_cause_unraisable_recursionerror():
+    # We were concerned in #3979 that we might see bad results from a RecursionError
+    # inside the GC hook, if the stack was already deep and someone (e.g. Pytest)
+    # had installed a sys.unraisablehook which raises that later.
+
+    # This test is potentially flaky, because the stack usage of a function is not
+    # constant. Regardless, if the test passes just once that's sufficient proof that
+    # it's not the GC (or accounting of it) that is at fault. Note, I haven't actually
+    # seen it fail/flake, but I believe it could happen in principle.
+
+    # The number of cycles sufficient to reliably trigger GC, experimentally found
+    # to be a few hundred on CPython. Multiply by 10 for safety margin.
+    NUM_CYCLES = 5_000
+
+    def probe_depth():
+        try:
+            return probe_depth() + 1
+        except RecursionError:
+            return 0
+
+    def at_depth(depth, fn):
+        if depth <= 1:
+            return fn()
+        else:
+            # Recurse towards requested depth
+            return at_depth(depth - 1, fn)
+
+    def gen_cycles():
+        for _ in range(NUM_CYCLES):
+            a = [None]
+            b = [a]
+            a[0] = b
+
+    def gen_cycles_at_depth(depth, *, gc_disable):
+        try:
+            if gc_disable:
+                gc.disable()
+            at_depth(depth, gen_cycles)
+            dead_objects = gc.collect()
+            if dead_objects is not None:  # is None on PyPy
+                if gc_disable:
+                    assert dead_objects >= 2 * NUM_CYCLES
+                else:
+                    # collection was triggered
+                    assert dead_objects < 2 * NUM_CYCLES
+        finally:
+            gc.enable()
+
+    # Warmup to de-flake PyPy (the first run has much lower effective limits)
+    probe_depth()
+
+    @given(st.booleans())
+    def inner_test(_):
+        max_depth = probe_depth()
+
+        # Lower the limit to where we can successfully generate cycles
+        # when no gc is performed
+        while True:
+            try:
+                gen_cycles_at_depth(max_depth, gc_disable=True)
+            except RecursionError:
+                max_depth -= 1
+            else:
+                break
+            # Note that PyPy is a bit weird, in that it raises RecursionError at
+            # (maxdepth - n) for small positive n, but not at exactly (maxdepth).
+            # In general, it is really finicky to get the details right in this
+            # test, so be careful.
+
+        # Now check that the limit is unchanged with gc enabled, and also that
+        # leaving a few frames for the callbacks does not fail.
+        if hasattr(gc, "callbacks"):  # see comment above
+            for n in range(1, 4):
+                gen_cycles_at_depth(max_depth - n, gc_disable=False)
+        gen_cycles_at_depth(max_depth, gc_disable=False)
+        with pytest.raises(RecursionError):
+            gen_cycles_at_depth(max_depth + 1, gc_disable=False)
+
+    inner_test()
