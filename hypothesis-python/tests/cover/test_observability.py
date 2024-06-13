@@ -13,7 +13,6 @@ import contextlib
 import pytest
 
 from hypothesis import (
-    Verbosity,
     assume,
     event,
     example,
@@ -45,9 +44,8 @@ def capture_observations():
 
 @seed("deterministic so we don't miss some combination of features")
 @example(a=0, x=4, data=None)
-@settings(
-    database=InMemoryExampleDatabase(), deadline=None, verbosity=Verbosity.verbose
-)
+# explicitly set max_examples=100 to override our lower example limit for coverage tests.
+@settings(database=InMemoryExampleDatabase(), deadline=None, max_examples=100)
 @given(st.integers(), st.integers(), st.data())
 def do_it_all(a, x, data):
     event(f"{x%2=}")
