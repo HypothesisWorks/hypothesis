@@ -631,6 +631,9 @@ class Examples:
             self.groups: "Dict[int, Set[Tuple[int, int]]]" = defaultdict(set)
 
         def start_example(self, i: int, label_index: int) -> None:
+            # TODO should we discard start == end cases? occurs for eg st.data()
+            # which is conditionally or never drawn from. arguably swapping
+            # nodes with the empty list is a useful mutation enabled by start == end?
             key = (self.examples[i].ir_start, self.examples[i].ir_end)
             self.groups[label_index].add(key)
 
