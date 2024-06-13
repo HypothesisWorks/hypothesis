@@ -81,19 +81,7 @@ else:
         return wrapper
 
 
-ONE_BOUND_INTEGERS_LABEL = calc_label_from_name("trying a one-bound int allowing 0")
-INTEGER_RANGE_DRAW_LABEL = calc_label_from_name("another draw in integer_range()")
-BIASED_COIN_LABEL = calc_label_from_name("biased_coin()")
-
 TOP_LABEL = calc_label_from_name("top")
-DRAW_FLOAT_LABEL = calc_label_from_name("drawing a float")
-FLOAT_STRATEGY_DO_DRAW_LABEL = calc_label_from_name(
-    "getting another float in FloatStrategy"
-)
-INTEGER_WEIGHTED_DISTRIBUTION = calc_label_from_name(
-    "drawing from a weighted distribution in integers"
-)
-
 InterestingOrigin = Tuple[
     Type[BaseException], str, int, Tuple[Any, ...], Tuple[Tuple[Any, ...], ...]
 ]
