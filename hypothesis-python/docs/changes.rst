@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.103.2:
+
+--------------------
+6.103.2 - 2024-06-14
+--------------------
+
+This patch improves our deduplication tracking across all strategies (:pull:`4007`). Hypothesis is now less likely to generate the same input twice.
+
 .. _v6.103.1:
 
 --------------------
