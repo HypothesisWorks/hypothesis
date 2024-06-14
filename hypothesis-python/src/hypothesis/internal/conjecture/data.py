@@ -640,7 +640,7 @@ class Examples:
         def finish(self) -> Iterable[List[Tuple[int, int]]]:
             # Discard groups with only one example, since the mutator can't
             # do anything useful with them.
-            return [list(g) for g in self.groups.values() if len(g) >= 2]
+            return [g for g in self.groups.values() if len(g) >= 2]
 
     mutator_groups: List[List[Tuple[int, int]]] = calculated_example_property(
         _mutator_groups
