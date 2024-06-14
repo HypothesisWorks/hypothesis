@@ -637,12 +637,12 @@ class Examples:
             key = (self.examples[i].ir_start, self.examples[i].ir_end)
             self.groups[label_index].add(key)
 
-        def finish(self) -> Iterable[List[Tuple[int, int]]]:
+        def finish(self) -> Iterable[Set[Tuple[int, int]]]:
             # Discard groups with only one example, since the mutator can't
             # do anything useful with them.
             return [g for g in self.groups.values() if len(g) >= 2]
 
-    mutator_groups: List[List[Tuple[int, int]]] = calculated_example_property(
+    mutator_groups: List[Set[Tuple[int, int]]] = calculated_example_property(
         _mutator_groups
     )
 
