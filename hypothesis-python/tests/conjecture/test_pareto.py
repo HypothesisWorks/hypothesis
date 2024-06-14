@@ -10,7 +10,7 @@
 
 import pytest
 
-from hypothesis import HealthCheck, Phase, settings
+from hypothesis import HealthCheck, Phase, settings, strategies as st
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.internal.compat import int_to_bytes
 from hypothesis.internal.conjecture.data import Status
@@ -68,9 +68,9 @@ def test_database_contains_only_pareto_front():
     with deterministic_PRNG():
 
         def test(data):
-            data.target_observations["1"] = data.draw_integer(0, 2**4 - 1)
-            data.draw_integer(0, 2**64 - 1)
-            data.target_observations["2"] = data.draw_integer(0, 2**8 - 1)
+            data.target_observations["1"] = data.draw(st.integers(0, 2**4 - 1))
+            data.draw(st.integers(0, 2**64 - 1))
+            data.target_observations["2"] = data.draw(st.integers(0, 2**8 - 1))
 
         db = InMemoryExampleDatabase()
 

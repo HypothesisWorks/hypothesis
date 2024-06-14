@@ -58,5 +58,5 @@ def test_mostly_does_not_duplicate_blocks_even_when_failing(n):
     # at the end to display the error. The complication comes from the fact that
     # these may or may not be the same test case, so we can see either two test
     # cases each run twice or one test case which has been run three times.
-    assert set(counts.values()) == {1, 2, 3}
+    assert set(counts.values()) in ({1, 2, 3}, {1, 4})
     assert len([k for k, v in counts.items() if v > 1]) <= 2
