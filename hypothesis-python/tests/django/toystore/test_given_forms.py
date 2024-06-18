@@ -8,8 +8,15 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from hypothesis import given
-from hypothesis.extra.django import TestCase, from_form, register_field_strategy
+from django import forms
+
+from hypothesis import assume, given
+from hypothesis.extra.django import (
+    TestCase,
+    from_field,
+    from_form,
+    register_field_strategy,
+)
 from hypothesis.strategies import booleans, sampled_from
 
 from tests.django.toystore.forms import (
@@ -27,12 +34,14 @@ from tests.django.toystore.forms import (
     RegexFieldForm,
     ShortStringForm,
     SlugFieldForm,
+    StoreForm,
     TemporalFieldForm,
     URLFieldForm,
     UsernameForm,
     UUIDFieldForm,
     WithValidatorsForm,
 )
+from tests.django.toystore.models import Company
 
 register_field_strategy(
     BroadBooleanField, booleans() | sampled_from(["1", "0", "True", "False"])
@@ -127,3 +136,45 @@ class TestGetsBasicForms(TestCase):
     @given(from_form(UsernameForm))
     def test_read_only_password_hash_field_form(self, password_form):
         self.assertTrue(password_form.is_valid())
+
+
+class TestFormsWithModelChoices(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+
+        # Set up example Company records to use as choices for
+        # Store.company. These must exist before creating a strategy
+        # for the ModelChoiceField.
+        cls.company_names = ("Bill's Flowers", "Jane's Sporting Goods")
+        for name in cls.company_names:
+            Company.objects.create(name=name)
+
+    @given(
+        choice=from_field(
+            forms.ModelChoiceField(queryset=Company.objects.order_by("name"))
+        )
+    )
+    def test_from_model_choices_field(self, choice):
+        assume(choice != "")  # Skip the empty choice.
+        self.assertIsInstance(choice, int)
+        Company.objects.get(id=choice)
+
+    @given(
+        choice=from_field(
+            forms.ModelChoiceField(
+                queryset=Company.objects.order_by("name"), empty_label=None
+            )
+        )
+    )
+    def test_from_model_choices_field_no_empty_choice(self, choice):
+        Company.objects.get(id=choice)
+
+    @given(choice=from_field(forms.ModelChoiceField(queryset=Company.objects.none())))
+    def test_from_model_choices_field_empty(self, choice):
+        self.assertEqual(choice, "")
+
+    @given(form=from_form(StoreForm))
+    def test_valid_store(self, form):
+        assume(form.data["company"])
+        self.assertTrue(form.is_valid())

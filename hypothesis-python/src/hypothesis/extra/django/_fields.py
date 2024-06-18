@@ -262,6 +262,40 @@ def _for_form_boolean(field):
     return st.booleans()
 
 
+@register_for(df.ModelChoiceField)
+def _for_model_choice(field):
+    def _strategy():
+        if field.choices is None:
+            # The field was instantiated with queryset=None, and not
+            # subsequently updated.
+            raise InvalidArgument(
+                "Cannot create strategy for ModelChoicesField with no choices"
+            )
+        elif hasattr(field, "_choices"):
+            # The choices property was set manually.
+            choices = field._choices
+        else:
+            # choices is not None, and was not set manually, so we
+            # must have a QuerySet.
+            choices = field.queryset
+
+        if not choices.ordered:
+            raise InvalidArgument("QuerySet must have explicit ordering")
+
+        return st.sampled_from(
+            [
+                (
+                    choice.value
+                    if isinstance(choice, df.models.ModelChoiceIteratorValue)
+                    else choice  # Empty value, if included.
+                )
+                for choice, _ in field.choices
+            ]
+        )
+
+    return st.deferred(_strategy)
+
+
 def register_field_strategy(
     field_type: Type[AnyField], strategy: st.SearchStrategy
 ) -> None:
@@ -299,7 +333,7 @@ def from_field(field: F) -> st.SearchStrategy[Union[F, None]]:
     instance attributes such as string length and validators.
     """
     check_type((dm.Field, df.Field), field, "field")
-    if getattr(field, "choices", False):
+    if not isinstance(field, df.ModelChoiceField) and getattr(field, "choices", False):
         choices: list = []
         for value, name_or_optgroup in field.choices:
             if isinstance(name_or_optgroup, (list, tuple)):
