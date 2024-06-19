@@ -81,14 +81,6 @@ class GenericCache:
             self._threadlocal.data = []
             return self._threadlocal.data
 
-    @property
-    def __pinned_entry_count(self):
-        return getattr(self._threadlocal, "_pinned_entry_count", 0)
-
-    @__pinned_entry_count.setter
-    def __pinned_entry_count(self, value):
-        self._threadlocal._pinned_entry_count = value
-
     def __len__(self):
         assert len(self.keys_to_indices) == len(self.data)
         return len(self.data)
@@ -116,14 +108,13 @@ class GenericCache:
         try:
             i = self.keys_to_indices[key]
         except KeyError:
-            if self.max_size == self.__pinned_entry_count:
-                raise ValueError(
-                    "Cannot increase size of cache where all keys have been pinned."
-                ) from None
             entry = Entry(key, value, self.new_entry(key, value))
             if len(self.data) >= self.max_size:
                 evicted = self.data[0]
-                assert evicted.pins == 0
+                if evicted.pins > 0:
+                    raise ValueError(
+                        "Cannot increase size of cache where all keys have been pinned."
+                    ) from None
                 del self.keys_to_indices[evicted.key]
                 i = 0
                 self.data[0] = entry
@@ -155,8 +146,6 @@ class GenericCache:
         entry = self.data[i]
         entry.pins += 1
         if entry.pins == 1:
-            self.__pinned_entry_count += 1
-            assert self.__pinned_entry_count <= self.max_size
             self.__balance(i)
 
     def unpin(self, key):
@@ -168,7 +157,6 @@ class GenericCache:
             raise ValueError(f"Key {key!r} has not been pinned")
         entry.pins -= 1
         if entry.pins == 0:
-            self.__pinned_entry_count -= 1
             self.__balance(i)
 
     def is_pinned(self, key):
@@ -180,7 +168,6 @@ class GenericCache:
         """Remove all keys, regardless of their pinned status."""
         del self.data[:]
         self.keys_to_indices.clear()
-        self.__pinned_entry_count = 0
 
     def __repr__(self):
         return "{" + ", ".join(f"{e.key!r}: {e.value!r}" for e in self.data) + "}"
@@ -225,7 +212,7 @@ class GenericCache:
         self.keys_to_indices[self.data[j].key] = j
 
     def __balance(self, i):
-        """When we have made a modification to the heap such that means that
+        """When we have made a modification to the heap such that
         the heap property has been violated locally around i but previously
         held for all other indexes (and no other values have been modified),
         this fixes the heap so that the heap property holds everywhere."""

@@ -237,6 +237,9 @@ def test_will_error_instead_of_evicting_pin():
     with pytest.raises(ValueError):
         cache[2] = 2
 
+    assert 1 in cache
+    assert 2 not in cache
+
 
 def test_will_error_for_bad_unpin():
     cache = LRUReusedCache(max_size=1)
