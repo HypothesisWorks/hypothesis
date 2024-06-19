@@ -30,6 +30,7 @@ from tests.django.toystore.forms import (
     ManyMultiValueForm,
     ManyNumericsForm,
     ManyTimesForm,
+    MultipleCompaniesForm,
     OddFieldsForm,
     RegexFieldForm,
     ShortStringForm,
@@ -175,6 +176,20 @@ class TestFormsWithModelChoices(TestCase):
         self.assertEqual(choice, "")
 
     @given(form=from_form(StoreForm))
-    def test_valid_store(self, form):
+    def test_store_form_valid(self, form):
         assume(form.data["company"])
+        self.assertTrue(form.is_valid())
+
+    @given(
+        choice=from_field(
+            forms.ModelMultipleChoiceField(queryset=Company.objects.order_by("name"))
+        )
+    )
+    def test_from_model_multiple_choices_field(self, choice):
+        n_choices = len(choice)
+        self.assertEqual(n_choices, len(set(choice)))
+        self.assertEqual(n_choices, Company.objects.filter(pk__in=choice).count())
+
+    @given(form=from_form(MultipleCompaniesForm))
+    def test_multiple_companies_form_valid(self, form):
         self.assertTrue(form.is_valid())

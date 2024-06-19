@@ -231,3 +231,9 @@ class StoreForm(ReprModelForm):
     class Meta:
         model = Store
         fields = "__all__"
+
+
+class MultipleCompaniesForm(ReprForm):
+    companies = forms.ModelMultipleChoiceField(
+        queryset=Company.objects.order_by("name")
+    )

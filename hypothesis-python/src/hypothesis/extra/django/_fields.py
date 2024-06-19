@@ -262,8 +262,7 @@ def _for_form_boolean(field):
     return st.booleans()
 
 
-@register_for(df.ModelChoiceField)
-def _for_model_choice(field):
+def _model_choice_strategy(field):
     def _strategy():
         if field.choices is None:
             # The field was instantiated with queryset=None, and not
@@ -293,7 +292,19 @@ def _for_model_choice(field):
             ]
         )
 
+    # Accessing field.choices causes database access, so defer the strategy.
     return st.deferred(_strategy)
+
+
+@register_for(df.ModelChoiceField)
+def _for_model_choice(field):
+    return _model_choice_strategy(field)
+
+
+@register_for(df.ModelMultipleChoiceField)
+def _for_model_multiple_choice(field):
+    min_size = 1 if field.required else 0
+    return st.sets(_model_choice_strategy(field), min_size=min_size).map(list)
 
 
 def register_field_strategy(
