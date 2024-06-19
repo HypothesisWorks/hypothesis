@@ -45,7 +45,7 @@ class GenericCache:
        self.new_entry(key, value)
     2. whenever an existing key is read or written, self.on_access(key, value,
        score) is called. This returns a new score for the key.
-    3. When a key is evicted, self.on_evict(key, value, score) is called.
+    3. After a key is evicted, self.on_evict(key, value, score) is called.
 
     The cache will be in a valid state in all of these cases.
 
@@ -96,11 +96,17 @@ class GenericCache:
     def __contains__(self, key):
         return key in self.keys_to_indices
 
+    def __entry_was_accessed(self, entry, i):
+        new_score = self.on_access(entry.key, entry.value, entry.score)
+        if new_score != entry.score:
+            entry.score = new_score
+            if entry.pins == 0:
+                self.__balance(i)
+
     def __getitem__(self, key):
         i = self.keys_to_indices[key]
         result = self.data[i]
-        self.on_access(result.key, result.value, result.score)
-        self.__balance(i)
+        self.__entry_was_accessed(result, i)
         return result.value
 
     def __setitem__(self, key, value):
@@ -125,13 +131,12 @@ class GenericCache:
                 i = len(self.data)
                 self.data.append(entry)
             self.keys_to_indices[key] = i
+            self.__balance(i)
         else:
             entry = self.data[i]
             assert entry.key == key
             entry.value = value
-            entry.score = self.on_access(entry.key, entry.value, entry.score)
-
-        self.__balance(i)
+            self.__entry_was_accessed(entry, i)
 
         if evicted is not None:
             if self.data[0] is not entry:
@@ -172,7 +177,7 @@ class GenericCache:
         return self.data[i].pins > 0
 
     def clear(self):
-        """Remove all keys, clearing their pinned status."""
+        """Remove all keys, regardless of their pinned status."""
         del self.data[:]
         self.keys_to_indices.clear()
         self.__pinned_entry_count = 0
@@ -258,10 +263,10 @@ class LRUReusedCache(GenericCache):
     """The only concrete implementation of GenericCache we use outside of tests
     currently.
 
-    Adopts a modified least-frequently used eviction policy: It evicts the key
+    Adopts a modified least-recently used eviction policy: It evicts the key
     that has been used least recently, but it will always preferentially evict
-    keys that have only ever been accessed once. Among keys that have been
-    accessed more than once, it ignores the number of accesses.
+    keys that have never been accessed after insertion. Among keys that have been
+    accessed, it ignores the number of accesses.
 
     This retains most of the benefits of an LRU cache, but adds an element of
     scan-resistance to the process: If we end up scanning through a large
@@ -280,12 +285,10 @@ class LRUReusedCache(GenericCache):
         return self.__tick
 
     def new_entry(self, key, value):
-        return [1, self.tick()]
+        return (1, self.tick())
 
     def on_access(self, key, value, score):
-        score[0] = 2
-        score[1] = self.tick()
-        return score
+        return (2, self.tick())
 
     def pin(self, key):
         try:
