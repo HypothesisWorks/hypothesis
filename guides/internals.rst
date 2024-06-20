@@ -98,7 +98,7 @@ the `testing guide <testing-hypothesis.rst>`_, but there are a couple
 of areas that it's worth specifically highlighting for making changes
 to the engine:
 
-The first is `tests/conjecture/test_conjecture_engine.py <https://github.com/HypothesisWorks/hypothesis/blob/master/hypothesis-python/tests/conjecture/test_conjecture_engine.py>`_,
+The first is `tests/conjecture/ <https://github.com/HypothesisWorks/hypothesis/tree/master/hypothesis-python/tests/conjecture>`_,
 which is a set of unit tests designed to put the engine into particular scenarios to exercise specific behaviours,
 with a goal of achieving 100% coverage on it in isolation (though it currently does not quite achieve that for some specific edge cases.
 We may fix and enforce this later).
