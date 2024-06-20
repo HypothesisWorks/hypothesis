@@ -334,7 +334,9 @@ def test_pin_and_unpin_are_noops_if_dropped():
         cache[i] = False
 
     assert 30 not in cache
-    cache.pin(30)
-    assert 30 not in cache
-    cache.unpin(30)
-    assert 30 not in cache
+    with pytest.raises(KeyError):
+        cache.pin(30)
+
+    cache.pin(30, False)
+    assert 30 in cache
+    assert cache.is_pinned(30)

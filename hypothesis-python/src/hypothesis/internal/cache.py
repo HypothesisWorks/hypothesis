@@ -30,6 +30,8 @@ class Entry:
             # worry about their relative order.
             return (1,)
 
+Unset = object()
+
 
 class GenericCache:
     """Generic supertype for cache implementations.
@@ -137,11 +139,18 @@ class GenericCache:
     def __iter__(self):
         return iter(self.keys_to_indices)
 
-    def pin(self, key):
+    def pin(self, key, value=Unset):
         """Mark ``key`` as pinned. That is, it may not be evicted until
         ``unpin(key)`` has been called. The same key may be pinned multiple
         times and will not be unpinned until the same number of calls to
-        unpin have been made."""
+        unpin have been made.
+
+        If value is set, an atomic set-and-pin operation will be performed.
+        Otherwise, KeyError is raised if the key has already been evicted.
+        """
+        if value is not Unset:
+            self[key] = value
+
         i = self.keys_to_indices[key]
         entry = self.data[i]
         entry.pins += 1
@@ -276,16 +285,3 @@ class LRUReusedCache(GenericCache):
 
     def on_access(self, key, value, score):
         return (2, self.tick())
-
-    def pin(self, key):
-        try:
-            super().pin(key)
-        except KeyError:
-            # The whole point of an LRU cache is that it might drop things for you
-            assert key not in self.keys_to_indices
-
-    def unpin(self, key):
-        try:
-            super().unpin(key)
-        except KeyError:
-            assert key not in self.keys_to_indices
