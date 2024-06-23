@@ -308,20 +308,24 @@ def update_python_versions():
 
 def update_pyodide_versions():
     vers_re = r"(\d+\.\d+\.\d+)"
-    pyodide_version = max(
-        # Don't just pick the most recent version; find the highest stable version.
-        re.findall(
+    all_versions = re.findall(
             f"pyodide_build-{vers_re}-py3-none-any.whl",  # excludes pre-releases
             requests.get("https://pypi.org/simple/pyodide-build/").text,
-        ),
+        )
+    for pyodide_version in sorted(
+        # Don't just pick the most recent version; find the highest stable version.
+        set(all_versions),
         key=lambda version: tuple(int(x) for x in version.split(".")),
-    )
-    makefile_url = f"https://raw.githubusercontent.com/pyodide/pyodide/{pyodide_version}/Makefile.envs"
-    python_version, emscripten_version = re.search(
-        rf"export PYVERSION \?= {vers_re}\nexport PYODIDE_EMSCRIPTEN_VERSION \?= {vers_re}\n",
-        requests.get(makefile_url).text,
-    ).groups()
-
+        reverse=True
+    ):
+        makefile_url = f"https://raw.githubusercontent.com/pyodide/pyodide/{pyodide_version}/Makefile.envs"
+        match = re.search(
+            rf"export PYVERSION \?= {vers_re}\nexport PYODIDE_EMSCRIPTEN_VERSION \?= {vers_re}\n",
+            requests.get(makefile_url).text,
+        )
+        if match is not None:
+            python_version, emscripten_version = match.groups()
+            break
     ci_file = tools.ROOT / ".github/workflows/main.yml"
     config = ci_file.read_text(encoding="utf-8")
     for name, var in [
