@@ -309,14 +309,14 @@ def update_python_versions():
 def update_pyodide_versions():
     vers_re = r"(\d+\.\d+\.\d+)"
     all_versions = re.findall(
-            f"pyodide_build-{vers_re}-py3-none-any.whl",  # excludes pre-releases
-            requests.get("https://pypi.org/simple/pyodide-build/").text,
-        )
+        f"pyodide_build-{vers_re}-py3-none-any.whl",  # excludes pre-releases
+        requests.get("https://pypi.org/simple/pyodide-build/").text,
+    )
     for pyodide_version in sorted(
         # Don't just pick the most recent version; find the highest stable version.
         set(all_versions),
         key=lambda version: tuple(int(x) for x in version.split(".")),
-        reverse=True
+        reverse=True,
     ):
         makefile_url = f"https://raw.githubusercontent.com/pyodide/pyodide/{pyodide_version}/Makefile.envs"
         match = re.search(
@@ -436,7 +436,7 @@ PYTHONS = {
     "3.10": "3.10.14",
     "3.11": "3.11.9",
     "3.12": "3.12.3",
-    "3.13": "3.13.0b2",
+    "3.13": "3.13.0b1",
     "3.14": "3.14-dev",
     "pypy3.8": "pypy3.8-7.3.11",
     "pypy3.9": "pypy3.9-7.3.16",
