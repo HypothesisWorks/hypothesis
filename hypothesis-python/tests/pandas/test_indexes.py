@@ -27,9 +27,10 @@ from tests.pandas.helpers import supported_by_pandas
 def test_gets_right_dtype_for_empty_indices(ix):
     is_32bit = sys.maxsize == 2**31 - 1
     pandas2 = pandas.__version__.startswith("2.")
+    numpy1 = np.__version__.startswith("1.")
     windows = sys.platform == "win32"  # including 64-bit windows, confusingly
-    if pandas2 and (is_32bit or windows):
-        # No, I don't know what this is int32 on 64-bit windows, but here we are.
+    if pandas2 and (is_32bit or (windows and numpy1)):
+        # No, I don't know what this is int32 on 64-bit windows until Numpy 2.0
         assert ix.dtype == np.dtype("int32")
     else:
         assert ix.dtype == np.dtype("int64")

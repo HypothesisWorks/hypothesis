@@ -165,6 +165,7 @@ jobs:
       if: matrix.python.architecture
       # See https://github.com/pandas-dev/pandas/issues/54979
       run: |
+        (Get-Content .\requirements\coverage.txt) -replace 'numpy==[0-9.]+', 'numpy==1.26.4' | Out-File .\requirements\coverage.txt
         (Get-Content .\requirements\coverage.txt) -replace 'pandas==[0-9.]+', 'pandas==2.0.3' | Out-File .\requirements\coverage.txt
         (Get-Content .\requirements\coverage.txt) -replace 'pyarrow==[0-9.]+', '# omitted' | Out-File .\requirements\coverage.txt
     - name: Install dependencies
@@ -235,7 +236,7 @@ jobs:
           actions-cache-folder: emsdk-cache
       - name: Build
         run: |
-          pip install "pydantic<2" pyodide-build==$PYODIDE_VERSION
+          pip install pyodide-build==$PYODIDE_VERSION
           cd hypothesis-python/
           CFLAGS=-g2 LDFLAGS=-g2 pyodide build
       - name: Set up Pyodide venv and install dependencies
