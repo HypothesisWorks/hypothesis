@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.104.0:
+
+--------------------
+6.104.0 - 2024-06-24
+--------------------
+
+This release adds strategies for Django's ``ModelChoiceField`` and
+``ModelMultipleChoiceField`` (:issue:`4010`).
+
+Thanks to Joshua Munn for this contribution.
+
 .. _v6.103.5:
 
 --------------------
