@@ -76,8 +76,8 @@ jobs:
           - check-pandas15
           - check-pandas14
           - check-pandas13
-          - check-pandas12
-          - check-pandas11
+          - check-py39-pandas12
+          - check-py39-pandas11
           # - check-crosshair-cover
           # - check-crosshair-nocover
           # - check-crosshair-niche

@@ -500,8 +500,10 @@ standard_tox_task("pytest62")
 for n in [32, 41, 42]:
     standard_tox_task(f"django{n}")
 
-for n in [11, 12, 13, 14, 15, 20, 21, 22]:
+for n in [13, 14, 15, 20, 21, 22]:
     standard_tox_task(f"pandas{n}")
+standard_tox_task("py39-pandas11", py="3.9")
+standard_tox_task("py39-pandas12", py="3.9")
 
 for kind in ("cover", "nocover", "niche"):
     standard_tox_task(f"crosshair-{kind}")
