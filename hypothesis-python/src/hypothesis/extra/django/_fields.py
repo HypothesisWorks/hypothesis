@@ -344,6 +344,12 @@ def from_field(field: F) -> st.SearchStrategy[Union[F, None]]:
     instance attributes such as string length and validators.
     """
     check_type((dm.Field, df.Field), field, "field")
+
+    # The following isinstance check must occur *before* the getattr
+    # check. In the case of ModelChoicesField, evaluating
+    # field.choices causes database access, which we want to avoid if
+    # we don't have a connection (the generated strategies for
+    # ModelChoicesField defer evaluation of `choices').
     if not isinstance(field, df.ModelChoiceField) and getattr(field, "choices", False):
         choices: list = []
         for value, name_or_optgroup in field.choices:
