@@ -304,7 +304,7 @@ def _for_model_choice(field):
 @register_for(df.ModelMultipleChoiceField)
 def _for_model_multiple_choice(field):
     min_size = 1 if field.required else 0
-    return st.sets(_model_choice_strategy(field), min_size=min_size).map(list)
+    return st.lists(_model_choice_strategy(field), min_size=min_size, unique=True)
 
 
 def register_field_strategy(
