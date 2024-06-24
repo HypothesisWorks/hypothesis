@@ -19,11 +19,13 @@ from django.core.validators import (
 from django.forms import widgets
 
 from tests.django.toystore.models import (
+    Company,
     CouldBeCharming,
     Customer,
     ManyNumerics,
     ManyTimes,
     OddFields,
+    Store,
 )
 
 
@@ -221,3 +223,17 @@ class UsernameForm(ReprForm):
 
 class ReadOnlyPasswordHashFieldForm(ReprForm):
     password = ReadOnlyPasswordHashField()
+
+
+class StoreForm(ReprModelForm):
+    company = forms.ModelChoiceField(queryset=Company.objects.order_by("name"))
+
+    class Meta:
+        model = Store
+        fields = "__all__"
+
+
+class MultipleCompaniesForm(ReprForm):
+    companies = forms.ModelMultipleChoiceField(
+        queryset=Company.objects.order_by("name")
+    )
