@@ -279,7 +279,11 @@ def _model_choice_strategy(field):
             choices = field.queryset
 
         if not choices.ordered:
-            raise InvalidArgument("QuerySet must have explicit ordering")
+            raise InvalidArgument(
+                f"Cannot create strategy for {field.__class__.__name__} with a choices "
+                "attribute derived from a QuerySet without an explicit ordering - this may "
+                "cause Hypothesis to produce unstable results between runs."
+            )
 
         return st.sampled_from(
             [
