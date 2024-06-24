@@ -114,6 +114,24 @@ def test_flaky_draw_less_raises_flaky():
         FlakyDrawLessMachine.TestCase().runTest()
 
 
+def test_result_is_added_to_target():
+    class TargetStateMachine(RuleBasedStateMachine):
+        nodes = Bundle("nodes")
+
+        @rule(target=nodes, source=lists(nodes))
+        def bunch(self, source):
+            assert len(source) == 0
+            return source
+
+    test_class = TargetStateMachine.TestCase
+    try:
+        test_class().runTest()
+        raise RuntimeError("Expected an assertion error")
+    except AssertionError as err:
+        notes = err.__notes__
+    assert "state.bunch(source=[nodes_0])" in notes
+
+
 class FlakyStateMachine(RuleBasedStateMachine):
     @rule()
     def action(self):
