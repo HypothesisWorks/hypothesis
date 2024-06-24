@@ -30,6 +30,7 @@ class Entry:
             # worry about their relative order.
             return (1,)
 
+
 Unset = object()
 
 
