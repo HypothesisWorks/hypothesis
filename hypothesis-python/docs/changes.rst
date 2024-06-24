@@ -18,6 +18,17 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.103.5:
+
+--------------------
+6.103.5 - 2024-06-24
+--------------------
+
+Fixes and reinstates full coverage of internal tests, which was accidentally
+disabled in :pull:`3935`.
+
+Closes :issue:`4003`.
+
 .. _v6.103.4:
 
 --------------------
