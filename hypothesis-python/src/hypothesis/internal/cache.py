@@ -12,6 +12,8 @@ import threading
 
 import attr
 
+from hypothesis.utils.conventions import not_set
+
 
 @attr.s(slots=True)
 class Entry:
@@ -29,9 +31,6 @@ class Entry:
             # Pinned entries sort after unpinned ones. Beyond that, we don't
             # worry about their relative order.
             return (1,)
-
-
-Unset = object()
 
 
 class GenericCache:
@@ -140,16 +139,17 @@ class GenericCache:
     def __iter__(self):
         return iter(self.keys_to_indices)
 
-    def pin(self, key, value=Unset):
+    def pin(self, key, value=not_set):
         """Mark ``key`` as pinned. That is, it may not be evicted until
         ``unpin(key)`` has been called. The same key may be pinned multiple
         times and will not be unpinned until the same number of calls to
         unpin have been made.
 
         If value is set, an atomic set-and-pin operation will be performed.
-        Otherwise, KeyError is raised if the key has already been evicted.
+        Otherwise, KeyError is raised if the key is not present (due to
+        early eviction for example).
         """
-        if value is not Unset:
+        if value is not not_set:
             self[key] = value
 
         i = self.keys_to_indices[key]
