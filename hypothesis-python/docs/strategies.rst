@@ -212,6 +212,26 @@ loading our pytest plugin from your ``conftest.py`` instead::
     echo "pytest_plugins = ['hypothesis.extra.pytestplugin']\n" > tests/conftest.py
     pytest -p "no:hypothesispytest" ...
 
+Another alternative, which we in fact use in our CI self-tests because it works
+well also with parallel tests, is to automatically start coverage early for all
+new processes if an environment variable is set.
+This automatic starting is set up by the PyPi package :pypi:`coverage_enable_subprocess`.
+
+This means all configuration must be done in ``.coveragerc``, and not on the
+command line::
+
+    [run]
+    parallel = True
+    source = ...
+
+Then, set the relevant environment variable and run normally::
+
+    python -m pip install coverage_enable_subprocess
+    export COVERAGE_PROCESS_START=$PATH/.coveragerc
+    pytest [-n auto] ...
+    coverage combine
+    coverage report
+
 
 .. _alternative-backends:
 

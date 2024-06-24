@@ -1,5 +1,7 @@
 [run]
+parallel = True
 branch = True
+source = hypothesis
 omit =
     **/_hypothesis_ftz_detector.py
     **/_hypothesis_pytestplugin.py
