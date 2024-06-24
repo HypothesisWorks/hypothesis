@@ -8,6 +8,13 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+try:
+    from numpy import __version__ as np_version
+except ImportError:
+    NP1 = False
+else:
+    NP1 = np_version.startswith("1.")
+
 REVEALED_TYPES = [
     ("integers()", "int"),
     ("text()", "str"),
@@ -37,7 +44,7 @@ NUMPY_REVEALED_TYPES = [
     ),
     (
         "boolean_dtypes()",
-        "dtype[bool_]",
+        "dtype[bool_]" if NP1 else "dtype[bool]",
     ),
     (
         "unsigned_integer_dtypes(sizes=8)",

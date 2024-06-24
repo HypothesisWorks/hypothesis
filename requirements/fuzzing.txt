@@ -19,7 +19,7 @@ black==24.4.2
     #   hypothesis
 blinker==1.8.2
     # via flask
-certifi==2024.2.2
+certifi==2024.6.2
     # via requests
 charset-normalizer==3.3.2
     # via requests
@@ -29,11 +29,11 @@ click==8.1.7
     #   black
     #   flask
     #   hypothesis
-coverage[toml]==7.5.1
+coverage[toml]==7.5.4
     # via
     #   hypofuzz
     #   pytest-cov
-dash==2.17.0
+dash==2.17.1
     # via hypofuzz
 dash-core-components==2.0.0
     # via dash
@@ -56,11 +56,11 @@ flask==3.0.3
     # via dash
 hypofuzz==24.2.3
     # via -r requirements/fuzzing.in
-hypothesis[cli]==6.102.6
+hypothesis[cli]==6.103.2
     # via hypofuzz
 idna==3.7
     # via requests
-importlib-metadata==7.1.0
+importlib-metadata==7.2.1
     # via dash
 iniconfig==2.0.0
     # via pytest
@@ -86,12 +86,12 @@ mypy-extensions==1.0.0
     # via black
 nest-asyncio==1.6.0
     # via dash
-numpy==1.26.4
+numpy==2.0.0
     # via
     #   -r requirements/coverage.in
     #   pandas
     #   pyarrow
-packaging==24.0
+packaging==24.1
     # via
     #   black
     #   plotly
@@ -110,7 +110,7 @@ plotly==5.22.0
     # via dash
 pluggy==1.5.0
     # via pytest
-psutil==5.9.8
+psutil==6.0.0
     # via hypofuzz
 ptyprocess==0.7.0
     # via pexpect
@@ -118,7 +118,7 @@ pyarrow==16.1.0
     # via -r requirements/coverage.in
 pygments==2.18.0
     # via rich
-pytest==8.2.1
+pytest==8.2.2
     # via
     #   -r requirements/test.in
     #   hypofuzz
@@ -138,9 +138,9 @@ pytz==2024.1
     #   pandas
 pyyaml==6.0.1
     # via libcst
-redis==5.0.4
+redis==5.0.6
     # via fakeredis
-requests==2.32.2
+requests==2.32.3
     # via
     #   dash
     #   hypofuzz
@@ -157,14 +157,14 @@ sortedcontainers==2.4.0
     #   fakeredis
     #   hypothesis
     #   hypothesis (hypothesis-python/setup.py)
-tenacity==8.3.0
+tenacity==8.4.1
     # via plotly
 tomli==2.0.1
     # via
     #   black
     #   coverage
     #   pytest
-typing-extensions==4.12.0
+typing-extensions==4.12.2
     # via
     #   -r requirements/coverage.in
     #   black
@@ -172,15 +172,15 @@ typing-extensions==4.12.0
     #   fakeredis
 tzdata==2024.1
     # via pandas
-urllib3==2.2.1
+urllib3==2.2.2
     # via requests
 werkzeug==3.0.3
     # via
     #   dash
     #   flask
-zipp==3.18.2
+zipp==3.19.2
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-setuptools==70.0.0
+setuptools==70.1.0
     # via dash

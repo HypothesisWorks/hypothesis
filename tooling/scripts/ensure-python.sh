@@ -62,7 +62,9 @@ if [ ! -e "$TARGET/bin/python" ] ; then
         if "$BASE/pyenv/plugins/python-build/bin/python-build" "$VERSION" "$TARGET" ; then
             exit 0
         fi
-        echo "Command failed. Retrying..."
+        echo "Command failed. For a possible solution, visit"
+        echo "https://github.com/pyenv/pyenv/wiki#suggested-build-environment."
+        echo "Retrying..."
         sleep $(( ( RANDOM % 10 )  + 1 )).$(( RANDOM % 100 ))s
     done
 fi
