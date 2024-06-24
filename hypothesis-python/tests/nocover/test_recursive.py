@@ -8,12 +8,9 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import gc
 import sys
 import threading
 import warnings
-
-import pytest
 
 from hypothesis import HealthCheck, given, settings, strategies as st
 
@@ -188,7 +185,7 @@ def test_self_ref_regression(_):
 
 
 @flaky(min_passes=1, max_runs=2)
-def test_gc_hooks_do_not_cause_unraisable_recursionerror():
+def test_gc_hooks_do_not_cause_unraisable_recursionerror(testdir):
     # We were concerned in #3979 that we might see bad results from a RecursionError
     # inside the GC hook, if the stack was already deep and someone (e.g. Pytest)
     # had installed a sys.unraisablehook which raises that later.
@@ -197,6 +194,14 @@ def test_gc_hooks_do_not_cause_unraisable_recursionerror():
     # constant. Regardless, if the test passes just once that's sufficient proof that
     # it's not the GC (or accounting of it) that is at fault. Note, I haven't actually
     # seen it fail/flake, but I believe it could happen in principle.
+    #
+    # What we *have* seen on CI with xdist is flaky segmentation faults. Hence, the
+    # test is executed in a subprocess.
+    script = """
+    import gc
+    import pytest
+
+    from hypothesis import given, strategies as st
 
     # The number of cycles sufficient to reliably trigger GC, experimentally found
     # to be a few hundred on CPython. Multiply by 10 for safety margin.
@@ -240,7 +245,7 @@ def test_gc_hooks_do_not_cause_unraisable_recursionerror():
     probe_depth()
 
     @given(st.booleans())
-    def inner_test(_):
+    def test_gc_hooks_recursive(_):
         max_depth = probe_depth()
 
         # Lower the limit to where we can successfully generate cycles
@@ -265,5 +270,6 @@ def test_gc_hooks_do_not_cause_unraisable_recursionerror():
         gen_cycles_at_depth(max_depth, gc_disable=False)
         with pytest.raises(RecursionError):
             gen_cycles_at_depth(max_depth + 1, gc_disable=False)
-
-    inner_test()
+    """
+    testdir.makepyfile(script)
+    testdir.runpytest_subprocess().assert_outcomes(passed=1)
