@@ -96,6 +96,7 @@ their individual contributions.
 * `Jonathan Gayvallet <https://github.com/Meallia>`_ (jonathan.gayvallet@orange.com)
 * `Jonty Wareing <https://www.github.com/Jonty>`_ (jonty@jonty.co.uk)
 * `Joshua Boone <https://www.github.com/patchedwork>`_ (joshuaboone4190@gmail.com)
+* `Joshua Munn <https://www.github.com/jams2>`_ (public@elysee-munn.family)
 * `jmhsi <https://www.github.com/jmhsi>`_
 * `Justus Magin <https://github.com/keewis>`_
 * `jwg4 <https://www.github.com/jwg4>`_
