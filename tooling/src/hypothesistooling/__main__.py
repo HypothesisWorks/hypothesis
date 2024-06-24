@@ -500,7 +500,7 @@ standard_tox_task("pytest62")
 for n in [32, 41, 42]:
     standard_tox_task(f"django{n}")
 
-for n in [11, 12, 13, 14, 15, 20]:
+for n in [11, 12, 13, 14, 15, 20, 21, 22]:
     standard_tox_task(f"pandas{n}")
 
 for kind in ("cover", "nocover", "niche"):

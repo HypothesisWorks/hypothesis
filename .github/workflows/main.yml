@@ -70,6 +70,8 @@ jobs:
           - check-django42
           - check-django41
           - check-django32
+          - check-pandas22
+          - check-pandas21
           - check-pandas20
           - check-pandas15
           - check-pandas14
