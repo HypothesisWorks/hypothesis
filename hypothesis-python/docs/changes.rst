@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.103.4:
+
+--------------------
+6.103.4 - 2024-06-24
+--------------------
+
+This release prevents a race condition inside internal cache implementation.
+
 .. _v6.103.3:
 
 --------------------
