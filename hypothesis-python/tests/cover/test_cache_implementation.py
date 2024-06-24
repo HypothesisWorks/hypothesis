@@ -186,13 +186,6 @@ def test_can_clear_a_cache():
     assert len(x) == 0
 
 
-def test_max_size_cache_ignores():
-    x = ValueScored(0)
-    x[0] = 1
-    with pytest.raises(KeyError):
-        x[0]
-
-
 def test_pinning_prevents_eviction():
     cache = LRUReusedCache(max_size=10)
     cache[20] = 1

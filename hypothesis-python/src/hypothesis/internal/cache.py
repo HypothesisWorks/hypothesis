@@ -58,6 +58,9 @@ class GenericCache:
     __slots__ = ("max_size", "_threadlocal")
 
     def __init__(self, max_size):
+        if max_size <= 0:
+            raise ValueError("Cache size must be nonzero.")
+
         self.max_size = max_size
 
         # Implementation: We store a binary heap of Entry objects in self.data,
@@ -104,8 +107,6 @@ class GenericCache:
         return result.value
 
     def __setitem__(self, key, value):
-        if self.max_size == 0:
-            return
         evicted = None
         try:
             i = self.keys_to_indices[key]
