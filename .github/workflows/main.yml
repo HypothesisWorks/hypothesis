@@ -253,7 +253,11 @@ jobs:
       - name: Run tests
         run: |
           source .venv-pyodide/bin/activate
-          python -m pytest -p no:cacheprovider hypothesis-python/tests/cover
+          # pyodide can't run multiple processes internally, so parallelize explicitly over
+          # discovered test files instead (20 at a time)
+          TEST_FILES=$(python -m pytest -p no:cacheprovider --setup-plan hypothesis-python/tests/cover | grep ^hypothesis-python/ | cut -d " " -f 1)
+          parallel --max-procs 100% --max-args 20 --keep-order --line-buffer \
+            python -m pytest -p no:cacheprovider <<< $TEST_FILES
 
   deploy:
     if: "github.event_name == 'push' && github.repository == 'HypothesisWorks/hypothesis'"

@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import base64
+import re
 from collections import defaultdict
 from typing import ClassVar
 
@@ -112,6 +113,25 @@ class FlakyDrawLessMachine(RuleBasedStateMachine):
 def test_flaky_draw_less_raises_flaky():
     with raises(Flaky):
         FlakyDrawLessMachine.TestCase().runTest()
+
+
+def test_result_is_added_to_target():
+    class TargetStateMachine(RuleBasedStateMachine):
+        nodes = Bundle("nodes")
+
+        @rule(target=nodes, source=lists(nodes))
+        def bunch(self, source):
+            assert len(source) == 0
+            return source
+
+    test_class = TargetStateMachine.TestCase
+    try:
+        test_class().runTest()
+        raise RuntimeError("Expected an assertion error")
+    except AssertionError as err:
+        notes = err.__notes__
+    regularized_notes = [re.sub(r"[0-9]+", "i", note) for note in notes]
+    assert "state.bunch(source=[nodes_i])" in regularized_notes
 
 
 class FlakyStateMachine(RuleBasedStateMachine):
