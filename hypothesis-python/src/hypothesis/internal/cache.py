@@ -12,6 +12,7 @@ import threading
 
 import attr
 
+from hypothesis.errors import InvalidArgument
 from hypothesis.utils.conventions import not_set
 
 
@@ -39,7 +40,8 @@ class GenericCache:
     Defines a dict-like mapping with a maximum size, where as well as mapping
     to a value, each key also maps to a score. When a write would cause the
     dict to exceed its maximum size, it first evicts the existing key with
-    the smallest score, then adds the new key to the map.
+    the smallest score, then adds the new key to the map. If due to pinning
+    no key can be evicted, ValueError is raised.
 
     A key has the following lifecycle:
 
@@ -59,7 +61,7 @@ class GenericCache:
 
     def __init__(self, max_size):
         if max_size <= 0:
-            raise ValueError("Cache size must be nonzero.")
+            raise InvalidArgument("Cache size must be nonzero.")
 
         self.max_size = max_size
 
@@ -93,17 +95,10 @@ class GenericCache:
     def __contains__(self, key):
         return key in self.keys_to_indices
 
-    def __entry_was_accessed(self, entry, i):
-        new_score = self.on_access(entry.key, entry.value, entry.score)
-        if new_score != entry.score:
-            entry.score = new_score
-            if entry.pins == 0:
-                self.__balance(i)
-
     def __getitem__(self, key):
         i = self.keys_to_indices[key]
         result = self.data[i]
-        self.__entry_was_accessed(result, i)
+        self.__entry_was_accessed(i)
         return result.value
 
     def __setitem__(self, key, value):
@@ -130,7 +125,7 @@ class GenericCache:
             entry = self.data[i]
             assert entry.key == key
             entry.value = value
-            self.__entry_was_accessed(entry, i)
+            self.__entry_was_accessed(i)
 
         if evicted is not None:
             if self.data[0] is not entry:
@@ -214,6 +209,14 @@ class GenericCache:
             for j in [i * 2 + 1, i * 2 + 2]:
                 if j < len(self.data):
                     assert e.score <= self.data[j].score, self.data
+
+    def __entry_was_accessed(self, i):
+        entry = self.data[i]
+        new_score = self.on_access(entry.key, entry.value, entry.score)
+        if new_score != entry.score:
+            entry.score = new_score
+            if entry.pins == 0:
+                self.__balance(i)
 
     def __swap(self, i, j):
         assert i < j

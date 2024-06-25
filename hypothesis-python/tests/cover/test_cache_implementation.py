@@ -23,6 +23,7 @@ from hypothesis import (
     settings,
     strategies as st,
 )
+from hypothesis.errors import InvalidArgument
 from hypothesis.internal.cache import GenericCache, LRUReusedCache
 
 from tests.common.utils import skipif_emscripten
@@ -184,6 +185,11 @@ def test_can_clear_a_cache():
     assert len(x) == 1
     x.clear()
     assert len(x) == 0
+
+
+def test_max_size_must_be_positive():
+    with pytest.raises(InvalidArgument):
+        ValueScored(max_size=0)
 
 
 def test_pinning_prevents_eviction():
