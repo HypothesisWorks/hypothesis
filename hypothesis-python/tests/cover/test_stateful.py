@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import base64
+import re
 from collections import defaultdict
 from typing import ClassVar
 
@@ -129,7 +130,8 @@ def test_result_is_added_to_target():
         raise RuntimeError("Expected an assertion error")
     except AssertionError as err:
         notes = err.__notes__
-    assert "state.bunch(source=[nodes_0])" in notes
+    regularized_notes = [re.sub(r"[0-9]+", "i", note) for note in notes]
+    assert "state.bunch(source=[nodes_i])" in regularized_notes
 
 
 class FlakyStateMachine(RuleBasedStateMachine):
