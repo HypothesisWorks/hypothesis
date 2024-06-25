@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.104.1:
+
+--------------------
+6.104.1 - 2024-06-25
+--------------------
+
+Improves internal test coverage.
+
 .. _v6.104.0:
 
 --------------------
