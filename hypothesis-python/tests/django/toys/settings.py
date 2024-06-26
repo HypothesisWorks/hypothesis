@@ -19,6 +19,8 @@ https://docs.djangoproject.com/en/1.7/ref/settings/
 
 import os
 
+import django
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
@@ -85,7 +87,8 @@ TIME_ZONE = "UTC"
 
 USE_I18N = True
 
-USE_L10N = True
+if django.VERSION < (5, 0, 0):
+    USE_L10N = True
 
 USE_TZ = os.environ.get("HYPOTHESIS_DJANGO_USETZ", "TRUE") == "TRUE"
 
@@ -121,3 +124,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+# Transitional setting until 6.0. See
+# https://docs.djangoproject.com/en/5.0/ref/forms/fields/#django.forms.URLField.assume_scheme
+FORMS_URLFIELD_ASSUME_HTTPS = True
