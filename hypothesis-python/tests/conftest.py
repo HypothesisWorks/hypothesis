@@ -12,6 +12,8 @@ import gc
 import random
 import sys
 import time as time_module
+import warnings
+from contextlib import contextmanager
 from functools import wraps
 
 import pytest
@@ -56,6 +58,25 @@ def pytest_addoption(parser):
     arg = "--durations-min"
     if arg not in sum((a._long_opts for g in parser._groups for a in g.options), []):
         parser.addoption(arg, action="store", default=1.0)
+
+
+@pytest.fixture(params=["warns", "raises"])
+def warns_or_raises(request):
+    """This runs the test twice: first to check that a warning is emitted
+    and execution continues successfully despite the warning; then to check
+    that the raised warning is handled properly.
+    """
+    if request.param == "raises":
+
+        @contextmanager
+        def raises(*args, **kwargs):
+            with warnings.catch_warnings(), pytest.raises(*args, **kwargs) as r:
+                warnings.simplefilter("error")
+                yield r
+
+        return raises
+    else:
+        return pytest.warns
 
 
 @pytest.fixture(scope="function", autouse=True)
