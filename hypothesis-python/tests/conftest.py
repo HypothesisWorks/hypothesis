@@ -69,10 +69,11 @@ def warns_or_raises(request):
     if request.param == "raises":
 
         @contextmanager
-        def raises(*args, **kwargs):
-            with warnings.catch_warnings(), pytest.raises(*args, **kwargs) as r:
-                warnings.simplefilter("error")
-                yield r
+        def raises(expected_warning, *args, **kwargs):
+            with pytest.raises(expected_warning, *args, **kwargs) as r:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("error", category=expected_warning)
+                    yield r
 
         return raises
     else:
