@@ -12,8 +12,6 @@ import gc
 import random
 import sys
 import time as time_module
-import warnings
-from contextlib import contextmanager
 from functools import wraps
 
 import pytest
@@ -26,6 +24,7 @@ from hypothesis.internal.detection import is_hypothesis_test
 
 from tests.common import TIME_INCREMENT
 from tests.common.setup import run
+from tests.common.utils import raises_warning
 
 run()
 
@@ -60,22 +59,14 @@ def pytest_addoption(parser):
         parser.addoption(arg, action="store", default=1.0)
 
 
-@pytest.fixture(params=["warns", "raises"])
+@pytest.fixture(scope="function", params=["warns", "raises"])
 def warns_or_raises(request):
     """This runs the test twice: first to check that a warning is emitted
     and execution continues successfully despite the warning; then to check
     that the raised warning is handled properly.
     """
     if request.param == "raises":
-
-        @contextmanager
-        def raises(expected_warning, *args, **kwargs):
-            with pytest.raises(expected_warning, *args, **kwargs) as r:
-                with warnings.catch_warnings():
-                    warnings.simplefilter("error", category=expected_warning)
-                    yield r
-
-        return raises
+        return raises_warning
     else:
         return pytest.warns
 
