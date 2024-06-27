@@ -508,6 +508,11 @@ class ConjectureRunner:
                 # to a buffer
                 data = ConjectureData.for_ir_tree(data.examples.ir_tree_nodes)
                 self.__stoppable_test_function(data)
+                data.freeze()
+                # should we raise Flaky here instead?
+                if data.status != Status.INTERESTING:
+                    self.exit_with(ExitReason.flaky)
+
                 self._cache(data)
 
             key = data.interesting_origin
