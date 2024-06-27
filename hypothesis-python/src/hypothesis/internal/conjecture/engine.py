@@ -453,6 +453,14 @@ class ConjectureRunner:
                     ),
                 }
                 self.stats_per_test_case.append(call_stats)
+                if self.settings.backend != "hypothesis":
+                    for node in data.examples.ir_tree_nodes:
+                        value = data.provider.post_test_case_hook(node.value)
+                        assert (
+                            value is not None
+                        ), "providers must return a non-null value from post_test_case_hook"
+                        node.value = value
+
                 self._cache(data)
                 if data.invalid_at is not None:  # pragma: no branch # coverage bug?
                     self.misaligned_count += 1
@@ -496,14 +504,6 @@ class ConjectureRunner:
 
         if data.status == Status.INTERESTING:
             if self.settings.backend != "hypothesis":
-                for node in data.examples.ir_tree_nodes:
-                    value = data.provider.post_test_case_hook(node.value)
-                    # require providers to return something valid here.
-                    assert (
-                        value is not None
-                    ), "providers must return a non-null value from post_test_case_hook"
-                    node.value = value
-
                 # drive the ir tree through the test function to convert it
                 # to a buffer
                 data = ConjectureData.for_ir_tree(data.examples.ir_tree_nodes)
