@@ -38,7 +38,7 @@ import attr
 from hypothesis import HealthCheck, Phase, Verbosity, settings as Settings
 from hypothesis._settings import local_settings
 from hypothesis.database import ExampleDatabase
-from hypothesis.errors import InvalidArgument, StopTest
+from hypothesis.errors import Flaky, InvalidArgument, StopTest
 from hypothesis.internal.cache import LRUReusedCache
 from hypothesis.internal.compat import (
     NotRequired,
@@ -506,12 +506,20 @@ class ConjectureRunner:
             if self.settings.backend != "hypothesis":
                 # drive the ir tree through the test function to convert it
                 # to a buffer
+                initial_origin = data.interesting_origin
                 data = ConjectureData.for_ir_tree(data.examples.ir_tree_nodes)
                 self.__stoppable_test_function(data)
                 data.freeze()
-                # should we raise Flaky here instead?
+                # we'd like to use expected_failure machinery here from
+                # StateForActualGivenExecution for better diagnostic reports of eg
+                # flaky deadlines, but we're too low down in the engine for that.
+                # for now a worse generic flaky error will have to do.
                 if data.status != Status.INTERESTING:
-                    self.exit_with(ExitReason.flaky)
+                    raise Flaky(
+                        f"Inconsistent results from replaying a failing test case!\n"
+                        f"  last: {Status.INTERESTING.name} from {initial_origin}\n"
+                        f"  this: {data.status.name}"
+                    )
 
                 self._cache(data)
 
