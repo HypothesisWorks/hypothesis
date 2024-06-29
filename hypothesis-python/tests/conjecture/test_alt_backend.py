@@ -18,7 +18,7 @@ import pytest
 
 from hypothesis import given, settings, strategies as st
 from hypothesis.database import InMemoryExampleDatabase
-from hypothesis.errors import InvalidArgument
+from hypothesis.errors import Flaky, HypothesisException, InvalidArgument
 from hypothesis.internal.compat import int_to_bytes
 from hypothesis.internal.conjecture.data import (
     AVAILABLE_PROVIDERS,
@@ -354,3 +354,39 @@ def test_case_lifetime():
             <= test_case_lifetime_init_count
             <= test_function_count + 10
         )
+
+
+def test_flaky_with_backend():
+    with temp_register_backend("trivial", TrivialProvider):
+
+        calls = 0
+
+        @given(st.integers())
+        @settings(backend="trivial", database=None)
+        def test_function(n):
+            nonlocal calls
+            calls += 1
+            assert n != calls % 2
+
+        with pytest.raises(Flaky):
+            test_function()
+
+
+class BadPostTestCaseHookProvider(TrivialProvider):
+    def post_test_case_hook(self, value):
+        return None
+
+
+def test_bad_post_test_case_hook():
+    with temp_register_backend("bad_hook", BadPostTestCaseHookProvider):
+
+        @given(st.integers())
+        @settings(backend="bad_hook")
+        def test_function(n):
+            pass
+
+        with pytest.raises(
+            HypothesisException,
+            match="expected .* from BadPostTestCaseHookProvider.post_test_case_hook",
+        ):
+            test_function()
