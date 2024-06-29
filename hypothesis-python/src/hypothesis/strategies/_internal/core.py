@@ -16,6 +16,7 @@ import random
 import re
 import string
 import sys
+import traceback
 import typing
 import warnings
 from contextvars import ContextVar
@@ -82,8 +83,10 @@ from hypothesis.internal.compat import (
     get_type_hints,
     is_typed_named_tuple,
 )
+from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 from hypothesis.internal.conjecture.utils import calc_label_from_cls, check_sample
 from hypothesis.internal.entropy import get_seeder_and_restorer
+from hypothesis.internal.escalation import is_hypothesis_file
 from hypothesis.internal.floats import float_of
 from hypothesis.internal.observability import TESTCASE_CALLBACKS
 from hypothesis.internal.reflection import (
@@ -1819,12 +1822,27 @@ def _composite(f):
         )
     if get_origin(sig.return_annotation) is SearchStrategy:
         ret_repr = repr(sig.return_annotation).replace("hypothesis.strategies.", "st.")
-        warnings.warn(
+
+        stacklevel = 3 if sys.version_info[:2] >= (3, 12) else 5
+
+        stack = traceback.extract_stack()
+        frame = stack[-(stacklevel + 1)]
+        filename = frame.filename
+        lineno = frame.lineno
+
+        message = (
             f"Return-type annotation is `{ret_repr}`, but the decorated "
-            "function should return a value (not a strategy)",
-            HypothesisWarning,
-            stacklevel=3 if sys.version_info[:2] > (3, 9) else 5,  # ugh
+            "function should return a value (not a strategy)"
         )
+        if is_hypothesis_file(filename) and IN_COVERAGE_TESTS:
+            message += f"\nMessage is from {filename}, line {lineno}"
+
+        warnings.warn(
+            message,
+            HypothesisWarning,
+            stacklevel=stacklevel,  # ugh
+        )
+
     if params[0].kind.name != "VAR_POSITIONAL":
         params = params[1:]
     newsig = sig.replace(
