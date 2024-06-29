@@ -38,7 +38,7 @@ import attr
 from hypothesis import HealthCheck, Phase, Verbosity, settings as Settings
 from hypothesis._settings import local_settings
 from hypothesis.database import ExampleDatabase
-from hypothesis.errors import Flaky, InvalidArgument, StopTest
+from hypothesis.errors import Flaky, HypothesisException, InvalidArgument, StopTest
 from hypothesis.internal.cache import LRUReusedCache
 from hypothesis.internal.compat import (
     NotRequired,
@@ -456,9 +456,19 @@ class ConjectureRunner:
                 if self.settings.backend != "hypothesis":
                     for node in data.examples.ir_tree_nodes:
                         value = data.provider.post_test_case_hook(node.value)
-                        assert (
-                            value is not None
-                        ), "providers must return a non-null value from post_test_case_hook"
+                        expected_type = {
+                            "string": str,
+                            "float": float,
+                            "integer": int,
+                            "boolean": bool,
+                            "bytes": bytes,
+                        }[node.ir_type]
+                        if type(value) is not expected_type:
+                            raise HypothesisException(
+                                f"expected {expected_type} from "
+                                f"{data.provider.post_test_case_hook.__qualname__}, "
+                                f"got {type(value)} ({value})"
+                            )
                         node.value = value
 
                 self._cache(data)

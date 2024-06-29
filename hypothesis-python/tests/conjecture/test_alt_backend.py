@@ -18,7 +18,7 @@ import pytest
 
 from hypothesis import given, settings, strategies as st
 from hypothesis.database import InMemoryExampleDatabase
-from hypothesis.errors import Flaky, InvalidArgument
+from hypothesis.errors import Flaky, HypothesisException, InvalidArgument
 from hypothesis.internal.compat import int_to_bytes
 from hypothesis.internal.conjecture.data import (
     AVAILABLE_PROVIDERS,
@@ -369,4 +369,24 @@ def test_flaky_with_backend():
             assert n != calls % 2
 
         with pytest.raises(Flaky):
+            test_function()
+
+
+class BadPostTestCaseHookProvider(TrivialProvider):
+    def post_test_case_hook(self, value):
+        return None
+
+
+def test_bad_post_test_case_hook():
+    with temp_register_backend("bad_hook", BadPostTestCaseHookProvider):
+
+        @given(st.integers())
+        @settings(backend="bad_hook")
+        def test_function(n):
+            pass
+
+        with pytest.raises(
+            HypothesisException,
+            match="expected .* from BadPostTestCaseHookProvider.post_test_case_hook",
+        ):
             test_function()
