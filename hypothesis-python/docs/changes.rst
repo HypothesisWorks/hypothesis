@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.104.2:
+
+--------------------
+6.104.2 - 2024-06-29
+--------------------
+
+This patch fixes an issue when realizing symbolics with our experimental :obj:`~hypothesis.settings.backend` setting.
+
 .. _v6.104.1:
 
 --------------------
