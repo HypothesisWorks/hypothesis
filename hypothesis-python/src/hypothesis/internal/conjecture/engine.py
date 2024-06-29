@@ -467,7 +467,7 @@ class ConjectureRunner:
                             raise HypothesisException(
                                 f"expected {expected_type} from "
                                 f"{data.provider.post_test_case_hook.__qualname__}, "
-                                f"got {type(value)} ({value})"
+                                f"got {type(value)} ({value!r})"
                             )
                         node.value = value
 
