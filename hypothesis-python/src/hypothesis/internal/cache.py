@@ -215,6 +215,8 @@ class GenericCache:
         new_score = self.on_access(entry.key, entry.value, entry.score)
         if new_score != entry.score:
             entry.score = new_score
+            # changing the score of a pinned entry cannot unbalance the heap, as
+            # we place all pinned entries after unpinned ones, regardless of score.
             if entry.pins == 0:
                 self.__balance(i)
 
