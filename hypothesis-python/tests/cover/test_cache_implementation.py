@@ -194,8 +194,7 @@ def test_max_size_must_be_positive():
 
 def test_pinning_prevents_eviction():
     cache = LRUReusedCache(max_size=10)
-    cache[20] = 1
-    cache.pin(20)
+    cache.pin(20, 1)
     for i in range(20):
         cache[i] = 0
     assert cache[20] == 1
@@ -203,8 +202,7 @@ def test_pinning_prevents_eviction():
 
 def test_unpinning_allows_eviction():
     cache = LRUReusedCache(max_size=10)
-    cache[20] = True
-    cache.pin(20)
+    cache.pin(20, True)
     for i in range(20):
         cache[i] = False
 
@@ -218,21 +216,22 @@ def test_unpinning_allows_eviction():
 
 def test_unpins_must_match_pins():
     cache = LRUReusedCache(max_size=2)
-    cache[1] = 1
-    cache.pin(1)
+    cache.pin(1, 1)
     assert cache.is_pinned(1)
-    cache.pin(1)
+    assert cache[1] == 1
+    cache.pin(1, 2)
     assert cache.is_pinned(1)
+    assert cache[1] == 2
     cache.unpin(1)
     assert cache.is_pinned(1)
+    assert cache[1] == 2
     cache.unpin(1)
     assert not cache.is_pinned(1)
 
 
 def test_will_error_instead_of_evicting_pin():
     cache = LRUReusedCache(max_size=1)
-    cache[1] = 1
-    cache.pin(1)
+    cache.pin(1, 1)
     with pytest.raises(ValueError):
         cache[2] = 2
 
@@ -277,19 +276,17 @@ def test_does_insert_if_score_is_better():
     assert len(cache) == 1
 
 
-def test_double_pinning_does_not_increase_pin_count():
+def test_double_pinning_does_not_add_entry():
     cache = LRUReusedCache(2)
-    cache[0] = 0
-    cache.pin(0)
-    cache.pin(0)
+    cache.pin(0, 0)
+    cache.pin(0, 1)
     cache[1] = 1
     assert len(cache) == 2
 
 
 def test_can_add_new_keys_after_unpinning():
     cache = LRUReusedCache(1)
-    cache[0] = 0
-    cache.pin(0)
+    cache.pin(0, 0)
     cache.unpin(0)
     cache[1] = 1
     assert len(cache) == 1
@@ -321,21 +318,3 @@ def test_cache_is_threadsafe_issue_2433_regression():
         worker.join()
 
     assert not errors
-
-
-def test_pin_and_unpin_are_noops_if_dropped():
-    # See https://github.com/HypothesisWorks/hypothesis/issues/3169
-    cache = LRUReusedCache(max_size=10)
-    cache[30] = True
-    assert 30 in cache
-
-    for i in range(20):
-        cache[i] = False
-
-    assert 30 not in cache
-    with pytest.raises(KeyError):
-        cache.pin(30)
-
-    cache.pin(30, False)
-    assert 30 in cache
-    assert cache.is_pinned(30)

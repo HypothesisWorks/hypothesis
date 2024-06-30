@@ -79,7 +79,7 @@ class CacheRules(RuleBasedStateMachine):
     @rule(key=keys)
     def pin_key(self, key):
         if key in self.cache:
-            self.cache.pin(key)
+            self.cache.pin(key, self.__values[key])
             if self.__pins[key] == 0:
                 self.__total_pins += 1
             self.__pins[key] += 1

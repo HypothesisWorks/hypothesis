@@ -13,7 +13,6 @@ import threading
 import attr
 
 from hypothesis.errors import InvalidArgument
-from hypothesis.utils.conventions import not_set
 
 
 @attr.s(slots=True)
@@ -135,18 +134,13 @@ class GenericCache:
     def __iter__(self):
         return iter(self.keys_to_indices)
 
-    def pin(self, key, value=not_set):
-        """Mark ``key`` as pinned. That is, it may not be evicted until
-        ``unpin(key)`` has been called. The same key may be pinned multiple
-        times and will not be unpinned until the same number of calls to
-        unpin have been made.
-
-        If value is set, an atomic set-and-pin operation will be performed.
-        Otherwise, KeyError is raised if the key is not present (due to
-        early eviction for example).
+    def pin(self, key, value):
+        """Mark ``key`` as pinned (with the given value). That is, it may not
+        be evicted until ``unpin(key)`` has been called. The same key may be
+        pinned multiple times, possibly changing its value, and will not be
+        unpinned until the same number of calls to unpin have been made.
         """
-        if value is not not_set:
-            self[key] = value
+        self[key] = value
 
         i = self.keys_to_indices[key]
         entry = self.data[i]
