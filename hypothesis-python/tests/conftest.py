@@ -24,6 +24,7 @@ from hypothesis.internal.detection import is_hypothesis_test
 
 from tests.common import TIME_INCREMENT
 from tests.common.setup import run
+from tests.common.utils import raises_warning
 
 run()
 
@@ -56,6 +57,18 @@ def pytest_addoption(parser):
     arg = "--durations-min"
     if arg not in sum((a._long_opts for g in parser._groups for a in g.options), []):
         parser.addoption(arg, action="store", default=1.0)
+
+
+@pytest.fixture(scope="function", params=["warns", "raises"])
+def warns_or_raises(request):
+    """This runs the test twice: first to check that a warning is emitted
+    and execution continues successfully despite the warning; then to check
+    that the raised warning is handled properly.
+    """
+    if request.param == "raises":
+        return raises_warning
+    else:
+        return pytest.warns
 
 
 @pytest.fixture(scope="function", autouse=True)
