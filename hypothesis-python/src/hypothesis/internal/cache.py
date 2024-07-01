@@ -128,7 +128,7 @@ class GenericCache:
 
         if evicted is not None:
             if self.data[0] is not entry:
-                assert evicted.score <= self.data[0].score
+                assert evicted.sort_key <= self.data[0].sort_key
             self.on_evict(evicted.key, evicted.value, evicted.score)
 
     def __iter__(self):
@@ -202,7 +202,7 @@ class GenericCache:
             assert self.keys_to_indices[e.key] == i
             for j in [i * 2 + 1, i * 2 + 2]:
                 if j < len(self.data):
-                    assert e.score <= self.data[j].score, self.data
+                    assert e.sort_key <= self.data[j].sort_key, self.data
 
     def __entry_was_accessed(self, i):
         entry = self.data[i]
@@ -238,7 +238,8 @@ class GenericCache:
         while True:
             children = [j for j in (2 * i + 1, 2 * i + 2) if j < len(self.data)]
             if len(children) == 2:
-                children.sort(key=lambda j: self.data[j].score)
+                # try smallest child first
+                children.sort(key=lambda j: self.data[j].sort_key)
             for j in children:
                 if self.__out_of_order(i, j):
                     self.__swap(i, j)
