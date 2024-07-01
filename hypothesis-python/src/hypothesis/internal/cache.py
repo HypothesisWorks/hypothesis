@@ -232,9 +232,7 @@ class GenericCache:
                 self.__swap(parent, i)
                 i = parent
             else:
-                # This branch is never taken on versions of Python where dicts
-                # preserve their insertion order (pypy or cpython >= 3.7)
-                break  # pragma: no cover
+                break
         while True:
             children = [j for j in (2 * i + 1, 2 * i + 2) if j < len(self.data)]
             if len(children) == 2:
