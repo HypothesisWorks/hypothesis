@@ -11,6 +11,7 @@
 import datetime as dt
 from uuid import UUID
 
+import django
 from django.conf import settings as django_settings
 from django.contrib.auth.models import User
 
@@ -210,3 +211,19 @@ class TestUserSpecifiedAutoId(TestCase):
     def test_user_specified_auto_id(self, user_specified_auto_id):
         self.assertIsInstance(user_specified_auto_id, UserSpecifiedAutoId)
         self.assertIsNotNone(user_specified_auto_id.pk)
+
+
+if django.VERSION >= (5, 0, 0):
+    from tests.django.toystore.models import Pizza
+
+    class TestModelWithGeneratedField(TestCase):
+        @given(from_model(Pizza))
+        def test_create_pizza(self, pizza):
+            """
+            Strategies are not inferred for GeneratedField.
+            """
+
+            pizza.full_clean()
+            # Check the expected types of the generated fields.
+            self.assertIsInstance(pizza.slice_area, float)
+            self.assertIsInstance(pizza.total_area, float)

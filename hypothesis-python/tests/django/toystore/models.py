@@ -8,7 +8,9 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import django
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 from django.db import models
 
 
@@ -149,3 +151,23 @@ class CompanyExtension(models.Model):
 
 class UserSpecifiedAutoId(models.Model):
     my_id = models.AutoField(primary_key=True)
+
+
+if django.VERSION >= (5, 0, 0):
+    import math
+
+    class Pizza(models.Model):
+        AREA = math.pi * models.F("radius") ** 2
+
+        radius = models.IntegerField(validators=[MinValueValidator(1)])
+        slices = models.PositiveIntegerField(validators=[MinValueValidator(2)])
+        total_area = models.GeneratedField(
+            expression=AREA,
+            output_field=models.FloatField(),
+            db_persist=True,
+        )
+        slice_area = models.GeneratedField(
+            expression=AREA / models.F("slices"),
+            output_field=models.FloatField(),
+            db_persist=False,
+        )
