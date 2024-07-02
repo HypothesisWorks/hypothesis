@@ -198,6 +198,7 @@ class GenericCache:
         Asserts that all of the cache's invariants hold. When everything
         is working correctly this should be an expensive no-op.
         """
+        assert len(self.keys_to_indices) == len(self.data)
         for i, e in enumerate(self.data):
             assert self.keys_to_indices[e.key] == i
             for j in [i * 2 + 1, i * 2 + 2]:
@@ -226,23 +227,19 @@ class GenericCache:
         the heap property has been violated locally around i but previously
         held for all other indexes (and no other values have been modified),
         this fixes the heap so that the heap property holds everywhere."""
-        while i > 0:
-            parent = (i - 1) // 2
+        # bubble up (if score is too low for current position)
+        while (parent := (i - 1) // 2) >= 0:
             if self.__out_of_order(parent, i):
                 self.__swap(parent, i)
                 i = parent
             else:
                 break
-        while True:
-            children = [j for j in (2 * i + 1, 2 * i + 2) if j < len(self.data)]
-            if len(children) == 2:
-                # try smallest child first
-                children.sort(key=lambda j: self.data[j].sort_key)
-            for j in children:
-                if self.__out_of_order(i, j):
-                    self.__swap(i, j)
-                    i = j
-                    break
+        # or bubble down (if score is too high for current position)
+        while children := [j for j in (2 * i + 1, 2 * i + 2) if j < len(self.data)]:
+            smallest_child = min(children, key=lambda j: self.data[j].sort_key)
+            if self.__out_of_order(i, smallest_child):
+                self.__swap(i, smallest_child)
+                i = smallest_child
             else:
                 break
 
