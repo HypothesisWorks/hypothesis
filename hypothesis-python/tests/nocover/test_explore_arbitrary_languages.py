@@ -23,17 +23,8 @@ from hypothesis import (
     settings,
     strategies as st,
 )
-from hypothesis.internal import escalation as esc
 from hypothesis.internal.conjecture.data import Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner
-
-
-def setup_module(module):
-    esc.PREVENT_ESCALATION = True
-
-
-def teardown_module(module):
-    esc.PREVENT_ESCALATION = False
 
 
 @attr.s()
