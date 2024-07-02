@@ -1823,7 +1823,10 @@ def _composite(f):
     if get_origin(sig.return_annotation) is SearchStrategy:
         ret_repr = repr(sig.return_annotation).replace("hypothesis.strategies.", "st.")
 
-        stacklevel = 3 if sys.version_info[:2] >= (3, 12) else 1
+        if sys.version_info[:2] >= (3, 12) or sys.platform == "win32":
+            stacklevel = 3
+        else:
+            stacklevel = 5
 
         stack = traceback.extract_stack()
         frame = stack[-(stacklevel + 1)]
