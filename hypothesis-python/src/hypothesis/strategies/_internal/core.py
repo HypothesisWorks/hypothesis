@@ -1837,7 +1837,7 @@ def _composite(f):
             f"Return-type annotation is `{ret_repr}`, but the decorated "
             "function should return a value (not a strategy)"
         )
-        if is_hypothesis_file(filename) and IN_COVERAGE_TESTS:
+        if is_hypothesis_file(filename) and IN_COVERAGE_TESTS:  # pragma: no cover
             message += f"\nMessage is from {filename}, line {lineno}"
 
         warnings.warn(
