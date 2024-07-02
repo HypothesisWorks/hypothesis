@@ -106,9 +106,7 @@ def from_model(
             name not in field_strategies
             and not field.auto_created
             and not isinstance(field, dm.AutoField)
-            and not (
-                django.VERSION >= (5, 0, 0) and isinstance(field, dm.GeneratedField)
-            )
+            and not isinstance(field, getattr(dm, "GeneratedField", ()))
             and field.default is dm.fields.NOT_PROVIDED
         ):
             field_strategies[name] = from_field(field)
