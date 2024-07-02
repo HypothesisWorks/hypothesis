@@ -13,7 +13,6 @@ import unittest
 from functools import partial
 from typing import TYPE_CHECKING, Optional, Type, TypeVar, Union
 
-import django
 from django import forms as df, test as dt
 from django.contrib.staticfiles import testing as dst
 from django.core.exceptions import ValidationError
