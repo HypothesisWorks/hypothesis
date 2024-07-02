@@ -73,8 +73,9 @@ class CacheRules(RuleBasedStateMachine):
 
     @invariant()
     def check_values(self):
-        for k in getattr(self, "cache", ()):
-            assert self.__values[k] == self.cache[k]
+        self.cache.check_valid()
+        for key in self.cache:
+            assert self.__values[key] == self.cache[key]
 
     @rule(key=keys)
     def pin_key(self, key):
