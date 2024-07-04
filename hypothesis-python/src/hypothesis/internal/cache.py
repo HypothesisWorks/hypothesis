@@ -149,8 +149,8 @@ class GenericCache:
             self.__balance(i)
 
     def unpin(self, key):
-        """Undo one previous call to ``pin(key)``. Once all calls are
-        undone this key may be evicted as normal."""
+        """Undo one previous call to ``pin(key)``. The value stays the same.
+        Once all calls are undone this key may be evicted as normal."""
         i = self.keys_to_indices[key]
         entry = self.data[i]
         if entry.pins == 0:
