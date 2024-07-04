@@ -19,7 +19,7 @@ black==24.4.2
     #   hypothesis
 blinker==1.8.2
     # via flask
-certifi==2024.6.2
+certifi==2024.7.4
     # via requests
 charset-normalizer==3.3.2
     # via requests
@@ -50,17 +50,17 @@ exceptiongroup==1.2.1 ; python_version < "3.11"
     #   pytest
 execnet==2.1.1
     # via pytest-xdist
-fakeredis==2.23.2
+fakeredis==2.23.3
     # via -r requirements/coverage.in
 flask==3.0.3
     # via dash
 hypofuzz==24.2.3
     # via -r requirements/fuzzing.in
-hypothesis[cli]==6.103.2
+hypothesis[cli]==6.104.2
     # via hypofuzz
 idna==3.7
     # via requests
-importlib-metadata==7.2.1
+importlib-metadata==8.0.0
     # via dash
 iniconfig==2.0.0
     # via pytest
@@ -138,7 +138,7 @@ pytz==2024.1
     #   pandas
 pyyaml==6.0.1
     # via libcst
-redis==5.0.6
+redis==5.0.7
     # via fakeredis
 requests==2.32.3
     # via
@@ -157,7 +157,7 @@ sortedcontainers==2.4.0
     #   fakeredis
     #   hypothesis
     #   hypothesis (hypothesis-python/setup.py)
-tenacity==8.4.1
+tenacity==8.4.2
     # via plotly
 tomli==2.0.1
     # via
@@ -182,5 +182,5 @@ zipp==3.19.2
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-setuptools==70.1.0
+setuptools==70.2.0
     # via dash

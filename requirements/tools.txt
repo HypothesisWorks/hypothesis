@@ -30,7 +30,7 @@ build==1.2.1
     # via pip-tools
 cachetools==5.3.3
     # via tox
-certifi==2024.6.2
+certifi==2024.7.4
     # via requests
 cffi==1.16.0
     # via cryptography
@@ -91,13 +91,13 @@ idna==3.7
     #   requests
 imagesize==1.4.1
     # via sphinx
-importlib-metadata==7.2.1
+importlib-metadata==8.0.0
     # via
     #   keyring
     #   twine
 iniconfig==2.0.0
     # via pytest
-ipython==8.25.0
+ipython==8.26.0
     # via -r requirements/tools.in
 isort==5.13.2
     # via shed
@@ -141,7 +141,7 @@ more-itertools==10.3.0
     # via
     #   jaraco-classes
     #   jaraco-functools
-mypy==1.10.0
+mypy==1.10.1
     # via -r requirements/tools.in
 mypy-extensions==1.0.0
     # via
@@ -173,7 +173,7 @@ pexpect==4.9.0
     # via ipython
 pip-tools==7.4.1
     # via -r requirements/tools.in
-pkginfo==1.11.1
+pkginfo==1.10.0
     # via twine
 platformdirs==4.2.2
     # via
@@ -207,7 +207,7 @@ pyproject-hooks==1.1.0
     # via
     #   build
     #   pip-tools
-pyright==1.1.368
+pyright==1.1.370
     # via -r requirements/tools.in
 pytest==8.2.2
     # via -r requirements/tools.in
@@ -242,7 +242,7 @@ rich==13.7.1
     # via
     #   pelican
     #   twine
-ruff==0.4.10
+ruff==0.5.0
     # via -r requirements/tools.in
 secretstorage==3.3.3
     # via keyring
@@ -310,13 +310,13 @@ tomli==2.0.1
     #   pytest
     #   sphinx
     #   tox
-tox==4.15.1
+tox==4.16.0
     # via -r requirements/tools.in
 traitlets==5.14.3
     # via
     #   ipython
     #   matplotlib-inline
-twine==5.1.0
+twine==5.1.1
     # via -r requirements/tools.in
 types-cffi==1.16.0.20240331
     # via types-pyopenssl
@@ -330,7 +330,7 @@ types-pytz==2024.1.0.20240417
     # via -r requirements/tools.in
 types-redis==4.6.0.20240425
     # via -r requirements/tools.in
-types-setuptools==70.0.0.20240524
+types-setuptools==70.2.0.20240704
     # via types-cffi
 typing-extensions==4.12.2
     # via
@@ -358,7 +358,7 @@ zipp==3.19.2
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-pip==24.1
+pip==24.1.1
     # via pip-tools
-setuptools==70.1.0
+setuptools==70.2.0
     # via pip-tools
