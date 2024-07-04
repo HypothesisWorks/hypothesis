@@ -1225,7 +1225,16 @@ class PrimitiveProvider(abc.ABC):
     def per_test_case_context_manager(self):
         return contextlib.nullcontext()
 
-    def realize(self, value):
+    def realize(self, value: T) -> T:
+        """
+        Called whenever hypothesis requires a concrete (non-symbolic) value from
+        a potentially symbolic value. Hypothesis will not check that `value` is
+        symbolic before calling `realize`, so you should handle the case where
+        `value` is non-symbolic.
+
+        The returned value should be non-symbolic.
+        """
+
         return value
 
     @abc.abstractmethod
@@ -1895,6 +1904,14 @@ class HypothesisProvider(PrimitiveProvider):
 AVAILABLE_PROVIDERS = {
     "hypothesis": "hypothesis.internal.conjecture.data.HypothesisProvider",
 }
+
+
+# eventually we'll want to expose this publicly, but for now it lives as psuedo-internal.
+def realize(value: object) -> object:
+    from hypothesis.control import current_build_context
+
+    context = current_build_context()
+    return context.data.provider.realize(value)
 
 
 class ConjectureData:

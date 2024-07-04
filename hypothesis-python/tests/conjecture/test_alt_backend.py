@@ -24,6 +24,7 @@ from hypothesis.internal.conjecture.data import (
     AVAILABLE_PROVIDERS,
     ConjectureData,
     PrimitiveProvider,
+    realize,
 )
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.floats import SIGNALING_NAN
@@ -390,3 +391,27 @@ def test_bad_realize():
             match="expected .* from BadRealizeProvider.realize",
         ):
             test_function()
+
+
+class RealizeProvider(TrivialProvider):
+    avoid_realization = True
+
+    def realize(self, value):
+        if isinstance(value, int):
+            return 42
+        return value
+
+
+def test_realize():
+    with temp_register_backend("realize", RealizeProvider):
+
+        values = []
+
+        @given(st.integers())
+        @settings(backend="realize")
+        def test_function(n):
+            values.append(realize(n))
+
+        test_function()
+
+        assert all(n == 42 for n in values)

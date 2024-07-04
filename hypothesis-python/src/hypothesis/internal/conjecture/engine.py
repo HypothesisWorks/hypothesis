@@ -30,6 +30,7 @@ from typing import (
     Set,
     Tuple,
     Union,
+    cast,
     overload,
 )
 
@@ -56,6 +57,7 @@ from hypothesis.internal.conjecture.data import (
     Example,
     HypothesisProvider,
     InterestingOrigin,
+    IRKWargsType,
     IRNode,
     Overrun,
     PrimitiveProvider,
@@ -470,10 +472,15 @@ class ConjectureRunner:
                                 f"got {type(value)}"
                             )
 
+                        kwargs = cast(
+                            IRKWargsType,
+                            {
+                                k: data.provider.realize(v)
+                                for k, v in node.kwargs.items()
+                            },
+                        )
                         node.value = value
-                        node.kwargs = {
-                            k: data.provider.realize(v) for k, v in node.kwargs.items()
-                        }
+                        node.kwargs = kwargs
 
                 self._cache(data)
                 if data.invalid_at is not None:  # pragma: no branch # coverage bug?

@@ -22,7 +22,6 @@ import string
 from importlib import resources
 
 from hypothesis import strategies as st
-from hypothesis.control import current_build_context
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.strategies._internal.utils import defines_strategy
@@ -181,8 +180,3 @@ def urls() -> st.SearchStrategy[str]:
         paths,
         st.just("") | _url_fragments_strategy,
     )
-
-
-def realize(value):
-    context = current_build_context()
-    return context.data.provider.realize(value)
