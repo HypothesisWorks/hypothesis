@@ -455,7 +455,7 @@ class ConjectureRunner:
                 self.stats_per_test_case.append(call_stats)
                 if self.settings.backend != "hypothesis":
                     for node in data.examples.ir_tree_nodes:
-                        value = data.provider.post_test_case_hook(node.value)
+                        value = data.provider.realize(node.value)
                         expected_type = {
                             "string": str,
                             "float": float,
@@ -466,10 +466,14 @@ class ConjectureRunner:
                         if type(value) is not expected_type:
                             raise HypothesisException(
                                 f"expected {expected_type} from "
-                                f"{data.provider.post_test_case_hook.__qualname__}, "
-                                f"got {type(value)} ({value!r})"
+                                f"{data.provider.realize.__qualname__}, "
+                                f"got {type(value)}"
                             )
+
                         node.value = value
+                        node.kwargs = {
+                            k: data.provider.realize(v) for k, v in node.kwargs.items()
+                        }
 
                 self._cache(data)
                 if data.invalid_at is not None:  # pragma: no branch # coverage bug?

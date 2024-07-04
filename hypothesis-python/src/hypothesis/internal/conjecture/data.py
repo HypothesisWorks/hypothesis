@@ -1211,15 +1211,11 @@ class PrimitiveProvider(abc.ABC):
     def __init__(self, conjecturedata: Optional["ConjectureData"], /) -> None:
         self._cd = conjecturedata
 
-    def post_test_case_hook(self, value: IRType) -> IRType:
-        # hook for providers to modify values returned by draw_* after a full
-        # test case concludes. Originally exposed for crosshair to reify its
-        # symbolic values into actual values.
-        # I'm not tied to this exact function name or design.
-        return value
-
     def per_test_case_context_manager(self):
         return contextlib.nullcontext()
+
+    def realize(self, value):
+        return value
 
     @abc.abstractmethod
     def draw_boolean(
@@ -2074,10 +2070,10 @@ class ConjectureData:
         kwargs: IntegerKWargs = self._pooled_kwargs(
             "integer",
             {
-                "min_value": min_value,
-                "max_value": max_value,
-                "weights": weights,
-                "shrink_towards": shrink_towards,
+                "min_value": self.provider.realize(min_value),
+                "max_value": self.provider.realize(max_value),
+                "weights": self.provider.realize(weights),
+                "shrink_towards": self.provider.realize(shrink_towards),
             },
         )
 
@@ -2131,10 +2127,12 @@ class ConjectureData:
         kwargs: FloatKWargs = self._pooled_kwargs(
             "float",
             {
-                "min_value": min_value,
-                "max_value": max_value,
-                "allow_nan": allow_nan,
-                "smallest_nonzero_magnitude": smallest_nonzero_magnitude,
+                "min_value": self.provider.realize(min_value),
+                "max_value": self.provider.realize(max_value),
+                "allow_nan": self.provider.realize(allow_nan),
+                "smallest_nonzero_magnitude": self.provider.realize(
+                    smallest_nonzero_magnitude
+                ),
             },
         )
 
@@ -2175,9 +2173,9 @@ class ConjectureData:
         kwargs: StringKWargs = self._pooled_kwargs(
             "string",
             {
-                "intervals": intervals,
-                "min_size": min_size,
-                "max_size": max_size,
+                "intervals": self.provider.realize(intervals),
+                "min_size": self.provider.realize(min_size),
+                "max_size": self.provider.realize(max_size),
             },
         )
         if self.ir_tree_nodes is not None and observe:
@@ -2214,7 +2212,9 @@ class ConjectureData:
         assert forced is None or len(forced) == size
         assert size >= 0
 
-        kwargs: BytesKWargs = self._pooled_kwargs("bytes", {"size": size})
+        kwargs: BytesKWargs = self._pooled_kwargs(
+            "bytes", {"size": self.provider.realize(size)}
+        )
 
         if self.ir_tree_nodes is not None and observe:
             node = self._pop_ir_tree_node("bytes", kwargs, forced=forced)
@@ -2256,7 +2256,9 @@ class ConjectureData:
         if forced is False:
             assert p < (1 - 2 ** (-64))
 
-        kwargs: BooleanKWargs = self._pooled_kwargs("boolean", {"p": p})
+        kwargs: BooleanKWargs = self._pooled_kwargs(
+            "boolean", {"p": self.provider.realize(p)}
+        )
 
         if self.ir_tree_nodes is not None and observe:
             node = self._pop_ir_tree_node("boolean", kwargs, forced=forced)

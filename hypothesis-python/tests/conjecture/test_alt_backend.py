@@ -372,21 +372,21 @@ def test_flaky_with_backend():
             test_function()
 
 
-class BadPostTestCaseHookProvider(TrivialProvider):
-    def post_test_case_hook(self, value):
+class BadRealizeProvider(TrivialProvider):
+    def realize(self, value):
         return None
 
 
-def test_bad_post_test_case_hook():
-    with temp_register_backend("bad_hook", BadPostTestCaseHookProvider):
+def test_bad_realize():
+    with temp_register_backend("bad_realize", BadRealizeProvider):
 
         @given(st.integers())
-        @settings(backend="bad_hook")
+        @settings(backend="bad_realize")
         def test_function(n):
             pass
 
         with pytest.raises(
             HypothesisException,
-            match="expected .* from BadPostTestCaseHookProvider.post_test_case_hook",
+            match="expected .* from BadRealizeProvider.realize",
         ):
             test_function()
