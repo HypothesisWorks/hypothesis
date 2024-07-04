@@ -60,7 +60,7 @@ class GenericCache:
 
     def __init__(self, max_size):
         if max_size <= 0:
-            raise InvalidArgument("Cache size must be nonzero.")
+            raise InvalidArgument("Cache size must be at least one.")
 
         self.max_size = max_size
 
