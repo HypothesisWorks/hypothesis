@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.104.4:
+
+--------------------
+6.104.4 - 2024-07-04
+--------------------
+
+Clean up internal cache implementation.
+
 .. _v6.104.3:
 
 --------------------
