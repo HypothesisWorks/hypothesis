@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.105.0:
+
+--------------------
+6.105.0 - 2024-07-04
+--------------------
+
+This release improves support for Django 5.0, and drops support for end-of-life Django versions (< 4.2).
+
+Thanks to Joshua Munn for this contribution.
+
 .. _v6.104.4:
 
 --------------------
