@@ -512,7 +512,7 @@ standard_tox_task("py39-pytest46", py="3.9")
 standard_tox_task("py39-pytest54", py="3.9")
 standard_tox_task("pytest62")
 
-for n in [32, 41, 42]:
+for n in [42, 50]:
     standard_tox_task(f"django{n}")
 
 for n in [13, 14, 15, 20, 21, 22]:

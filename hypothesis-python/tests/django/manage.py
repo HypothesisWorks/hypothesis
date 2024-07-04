@@ -38,6 +38,12 @@ if __name__ == "__main__":
     except ImportError:
         RemovedInDjango50Warning = ()
 
+    try:
+        from django.utils.deprecation import RemovedInDjango60Warning
+    except ImportError:
+        RemovedInDjango60Warning = ()
+
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=RemovedInDjango50Warning)
+        warnings.simplefilter("ignore", category=RemovedInDjango60Warning)
         execute_from_command_line(sys.argv)
