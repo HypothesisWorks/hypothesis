@@ -415,3 +415,16 @@ def test_realize():
         test_function()
 
         assert all(n == 42 for n in values)
+
+
+def test_realize_dependent_draw():
+    with temp_register_backend("realize", RealizeProvider):
+
+        @given(st.data())
+        @settings(backend="realize")
+        def test_function(data):
+            n1 = data.draw(st.integers())
+            n2 = data.draw(st.integers(n1, n1 + 10))
+            assert n1 <= n2
+
+        test_function()
