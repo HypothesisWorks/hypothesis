@@ -71,10 +71,9 @@ def cacheable(fn: "T") -> "T":
     @proxies(fn)
     def cached_strategy(*args, **kwargs):
         context = _current_build_context.value
-        if context is not None:
-            realize = context.data.provider.realize
-            args = (realize(v) for v in args)
-            kwargs = {k: realize(v) for k, v in kwargs.items()}
+        if context is not None and context.data.provider.avoid_realization:
+            return fn(*args, **kwargs)
+
         try:
             kwargs_cache_key = {(k, convert_value(v)) for k, v in kwargs.items()}
         except TypeError:

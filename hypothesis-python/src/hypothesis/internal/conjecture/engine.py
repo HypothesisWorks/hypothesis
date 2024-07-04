@@ -471,6 +471,9 @@ class ConjectureRunner:
                             )
 
                         node.value = value
+                        node.kwargs = {
+                            k: data.provider.realize(v) for k, v in node.kwargs.items()
+                        }
 
                 self._cache(data)
                 if data.invalid_at is not None:  # pragma: no branch # coverage bug?

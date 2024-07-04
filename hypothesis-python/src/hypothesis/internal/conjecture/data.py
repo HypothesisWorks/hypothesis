@@ -1208,6 +1208,17 @@ class PrimitiveProvider(abc.ABC):
     # Non-hypothesis providers probably want to set a lifetime of test_function.
     lifetime = "test_function"
 
+    # Solver-based backends such as hypothesis-crosshair use symbolic values
+    # which record operations performed on them in order to discover new paths.
+    # If avoid_realization is set to True, hypothesis will avoid interacting with
+    # ir values (symbolics) returned by the provider in any way that would force the
+    # solver to narrow the range of possible values for that symbolic.
+    #
+    # Setting this to True disables some hypothesis features, such as
+    # DataTree-based deduplication, and some internal optimizations, such as
+    # caching kwargs. Only enable this if it is necessary for your backend.
+    avoid_realization = False
+
     def __init__(self, conjecturedata: Optional["ConjectureData"], /) -> None:
         self._cd = conjecturedata
 
@@ -2070,10 +2081,10 @@ class ConjectureData:
         kwargs: IntegerKWargs = self._pooled_kwargs(
             "integer",
             {
-                "min_value": self.provider.realize(min_value),
-                "max_value": self.provider.realize(max_value),
-                "weights": self.provider.realize(weights),
-                "shrink_towards": self.provider.realize(shrink_towards),
+                "min_value": min_value,
+                "max_value": max_value,
+                "weights": weights,
+                "shrink_towards": shrink_towards,
             },
         )
 
@@ -2127,12 +2138,10 @@ class ConjectureData:
         kwargs: FloatKWargs = self._pooled_kwargs(
             "float",
             {
-                "min_value": self.provider.realize(min_value),
-                "max_value": self.provider.realize(max_value),
-                "allow_nan": self.provider.realize(allow_nan),
-                "smallest_nonzero_magnitude": self.provider.realize(
-                    smallest_nonzero_magnitude
-                ),
+                "min_value": min_value,
+                "max_value": max_value,
+                "allow_nan": allow_nan,
+                "smallest_nonzero_magnitude": smallest_nonzero_magnitude,
             },
         )
 
@@ -2173,9 +2182,9 @@ class ConjectureData:
         kwargs: StringKWargs = self._pooled_kwargs(
             "string",
             {
-                "intervals": self.provider.realize(intervals),
-                "min_size": self.provider.realize(min_size),
-                "max_size": self.provider.realize(max_size),
+                "intervals": intervals,
+                "min_size": min_size,
+                "max_size": max_size,
             },
         )
         if self.ir_tree_nodes is not None and observe:
@@ -2212,9 +2221,7 @@ class ConjectureData:
         assert forced is None or len(forced) == size
         assert size >= 0
 
-        kwargs: BytesKWargs = self._pooled_kwargs(
-            "bytes", {"size": self.provider.realize(size)}
-        )
+        kwargs: BytesKWargs = self._pooled_kwargs("bytes", {"size": size})
 
         if self.ir_tree_nodes is not None and observe:
             node = self._pop_ir_tree_node("bytes", kwargs, forced=forced)
@@ -2256,9 +2263,7 @@ class ConjectureData:
         if forced is False:
             assert p < (1 - 2 ** (-64))
 
-        kwargs: BooleanKWargs = self._pooled_kwargs(
-            "boolean", {"p": self.provider.realize(p)}
-        )
+        kwargs: BooleanKWargs = self._pooled_kwargs("boolean", {"p": p})
 
         if self.ir_tree_nodes is not None and observe:
             node = self._pop_ir_tree_node("boolean", kwargs, forced=forced)
@@ -2284,6 +2289,10 @@ class ConjectureData:
 
     def _pooled_kwargs(self, ir_type, kwargs):
         """Memoize common dictionary objects to reduce memory pressure."""
+        # caching runs afoul of nondeterminism checks
+        if self.provider.avoid_realization:
+            return kwargs
+
         key = []
         for k, v in kwargs.items():
             if ir_type == "float" and k in ["min_value", "max_value"]:
