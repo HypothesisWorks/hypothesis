@@ -24,6 +24,7 @@ from hypothesis.internal.conjecture.data import (
     AVAILABLE_PROVIDERS,
     ConjectureData,
     PrimitiveProvider,
+    realize,
 )
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.floats import SIGNALING_NAN
@@ -372,21 +373,58 @@ def test_flaky_with_backend():
             test_function()
 
 
-class BadPostTestCaseHookProvider(TrivialProvider):
-    def post_test_case_hook(self, value):
+class BadRealizeProvider(TrivialProvider):
+    def realize(self, value):
         return None
 
 
-def test_bad_post_test_case_hook():
-    with temp_register_backend("bad_hook", BadPostTestCaseHookProvider):
+def test_bad_realize():
+    with temp_register_backend("bad_realize", BadRealizeProvider):
 
         @given(st.integers())
-        @settings(backend="bad_hook")
+        @settings(backend="bad_realize")
         def test_function(n):
             pass
 
         with pytest.raises(
             HypothesisException,
-            match="expected .* from BadPostTestCaseHookProvider.post_test_case_hook",
+            match="expected .* from BadRealizeProvider.realize",
         ):
             test_function()
+
+
+class RealizeProvider(TrivialProvider):
+    avoid_realization = True
+
+    def realize(self, value):
+        if isinstance(value, int):
+            return 42
+        return value
+
+
+def test_realize():
+    with temp_register_backend("realize", RealizeProvider):
+
+        values = []
+
+        @given(st.integers())
+        @settings(backend="realize")
+        def test_function(n):
+            values.append(realize(n))
+
+        test_function()
+
+        assert all(n == 42 for n in values)
+
+
+def test_realize_dependent_draw():
+    with temp_register_backend("realize", RealizeProvider):
+
+        @given(st.data())
+        @settings(backend="realize")
+        def test_function(data):
+            n1 = data.draw(st.integers())
+            n2 = data.draw(st.integers(n1, n1 + 10))
+            assert n1 <= n2
+
+        test_function()
