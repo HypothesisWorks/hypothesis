@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.105.1:
+
+--------------------
+6.105.1 - 2024-07-07
+--------------------
+
+This patch iterates on our experimental support for alternative backends (:ref:`alternative-backends`). See :pull:`4029` for details.
+
 .. _v6.105.0:
 
 --------------------
