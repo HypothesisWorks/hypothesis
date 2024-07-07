@@ -56,7 +56,7 @@ flask==3.0.3
     # via dash
 hypofuzz==24.2.3
     # via -r requirements/fuzzing.in
-hypothesis[cli]==6.104.2
+hypothesis[cli]==6.105.0
     # via hypofuzz
 idna==3.7
     # via requests
@@ -157,7 +157,7 @@ sortedcontainers==2.4.0
     #   fakeredis
     #   hypothesis
     #   hypothesis (hypothesis-python/setup.py)
-tenacity==8.4.2
+tenacity==8.5.0
     # via plotly
 tomli==2.0.1
     # via

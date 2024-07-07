@@ -242,7 +242,7 @@ rich==13.7.1
     # via
     #   pelican
     #   twine
-ruff==0.5.0
+ruff==0.5.1
     # via -r requirements/tools.in
 secretstorage==3.3.3
     # via keyring
