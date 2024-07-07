@@ -59,7 +59,10 @@ generics = sorted(
         # We ignore TypeVar, because it is not a Generic type:
         if isinstance(t, types.typing_root_type)
         and t != typing.TypeVar
-        and (sys.version_info[:2] <= (3, 11) or t != typing.ByteString)
+        and (
+            sys.version_info[:2] <= (3, 11)
+            or t != getattr(typing, "ByteString", object())
+        )
     ),
     key=str,
 )
@@ -112,7 +115,10 @@ def test_typing_Type_Union(ex):
 @pytest.mark.parametrize(
     "typ",
     [
-        collections.abc.ByteString,
+        pytest.param(
+            getattr(collections.abc, "ByteString", ...),
+            marks=pytest.mark.skipif(sys.version_info[:2] >= (3, 14), reason="removed"),
+        ),
         typing.Match,
         typing.Pattern,
         re.Match,
@@ -833,6 +839,7 @@ def test_bytestring_not_treated_as_generic_sequence(val):
         assert isinstance(x, set)
 
 
+@pytest.mark.skipif(sys.version_info[:2] >= (3, 14), reason="FIXME-py314")
 @pytest.mark.parametrize(
     "type_", [int, Real, object, typing.Union[int, str], typing.Union[Real, str]]
 )

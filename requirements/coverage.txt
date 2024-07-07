@@ -26,7 +26,7 @@ exceptiongroup==1.2.1 ; python_version < "3.11"
     #   pytest
 execnet==2.1.1
     # via pytest-xdist
-fakeredis==2.23.2
+fakeredis==2.23.3
     # via -r requirements/coverage.in
 iniconfig==2.0.0
     # via pytest
@@ -78,7 +78,7 @@ pytz==2024.1
     #   pandas
 pyyaml==6.0.1
     # via libcst
-redis==5.0.6
+redis==5.0.7
     # via fakeredis
 six==1.16.0
     # via python-dateutil

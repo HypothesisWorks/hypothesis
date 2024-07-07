@@ -73,13 +73,14 @@ class CacheRules(RuleBasedStateMachine):
 
     @invariant()
     def check_values(self):
-        for k in getattr(self, "cache", ()):
-            assert self.__values[k] == self.cache[k]
+        self.cache.check_valid()
+        for key in self.cache:
+            assert self.__values[key] == self.cache[key]
 
     @rule(key=keys)
     def pin_key(self, key):
         if key in self.cache:
-            self.cache.pin(key)
+            self.cache.pin(key, self.__values[key])
             if self.__pins[key] == 0:
                 self.__total_pins += 1
             self.__pins[key] += 1
