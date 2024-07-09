@@ -65,11 +65,21 @@ def _gc_before_each_test():
     gc.collect()
 
 
-@pytest.fixture(scope="function")
-@item_scoped
-def monkeypatch_item():
-    with pytest.MonkeyPatch.context() as monkeypatch:
-        yield monkeypatch
+if hasattr(pytest, "MonkeyPatch"):
+    @pytest.fixture(scope="function")
+    @item_scoped
+    def monkeypatch_item():
+        with pytest.MonkeyPatch.context() as mp:
+            yield mp
+else:
+    @pytest.fixture(scope="function")
+    @item_scoped
+    def monkeypatch_item(request):
+        from _pytest.monkeypatch import monkeypatch
+
+        mp = monkeypatch()
+        request.addfinalizer(mp.undo)
+        return mp
 
 
 @pytest.fixture(scope="function", autouse=True)

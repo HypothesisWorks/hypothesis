@@ -878,7 +878,7 @@ class StateForActualGivenExecution:
                     self.test,
                     "_hypothesis_internal_reset_fixtures",
                     None
-                )):
+                )):  # pragma: no cover  # covered in our pytest integration tests
                     fixture_vals = reset_fixtures()
                     for key in fixture_vals.keys() & kwargs.keys():
                         kwargs[key] = fixture_vals[key]
