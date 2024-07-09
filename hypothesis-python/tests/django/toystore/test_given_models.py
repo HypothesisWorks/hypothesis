@@ -223,7 +223,13 @@ if django.VERSION >= (5, 0, 0):
             Strategies are not inferred for GeneratedField.
             """
 
+            # Check we generate valid objects.
             pizza.full_clean()
+
+            # Refresh the instance from the database to make sure the
+            # generated fields are populated correctly.
+            pizza.refresh_from_db()
+
             # Check the expected types of the generated fields.
             self.assertIsInstance(pizza.slice_area, float)
             self.assertIsInstance(pizza.total_area, float)
