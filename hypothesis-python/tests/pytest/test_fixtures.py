@@ -12,7 +12,8 @@ from unittest.mock import Mock, create_autospec
 
 import pytest
 
-from hypothesis import example, given
+from _hypothesis_pytestplugin import item_scoped
+from hypothesis import Phase, example, given, settings
 from hypothesis.strategies import integers
 
 from tests.common.utils import fails
@@ -77,81 +78,106 @@ def test_can_inject_autospecced_mock_via_fixture(spec_fixture, xs):
     assert xs <= spec_fixture.bar()
 
 
-TESTSUITE = """
-import pytest
-from hypothesis import given, strategies as st
+num_func = num_item = num_param = num_ex = num_test = 0
 
-@pytest.fixture(scope="function", autouse=True)
-def autofix(request):
-    pass
-
-@given(x=st.integers())
-def test_requests_function_scoped_fixture(capsys, x):
-    pass
-
-@pytest.mark.parametrize("percent", ["%", "%s"])
-@given(x=st.integers())
-def test_requests_function_scoped_fixture_percent_parametrized(capsys, x, percent):
-    # See https://github.com/HypothesisWorks/hypothesis/issues/2469
-    pass
-
-class TestClass:
-    @given(x=st.integers())
-    def test_requests_method_scoped_fixture(capsys, x):
-        pass
-
-@given(x=st.integers())
-def test_autouse_function_scoped_fixture(x):
-    pass
-"""
+@pytest.fixture()
+def fixture_func():
+    """once per example"""
+    global num_func
+    num_func += 1
+    print("->func")
+    return num_func
 
 
-def test_given_plus_function_scoped_non_autouse_fixtures_are_deprecated(testdir):
-    script = testdir.makepyfile(TESTSUITE)
-    testdir.runpytest(script).assert_outcomes(passed=1, failed=4)
+@pytest.fixture()
+@item_scoped
+def fixture_item():
+    """once per test item"""
+    global num_item
+    num_item += 1
+    print("->item")
+    return num_item
 
 
-CONFTEST_SUPPRESS = """
-from hypothesis import HealthCheck, settings
+@pytest.fixture()
+def fixture_func_item(fixture_func, fixture_item):
+    """mixed-scope transitivity"""
+    return (fixture_func, fixture_item)
 
-settings.register_profile(
-    "suppress",
-    suppress_health_check=[HealthCheck.function_scoped_fixture],
+
+@pytest.fixture()
+def fixture_test(fixture_test):
+    """overrides conftest fixture of same name"""
+    global num_test
+    num_test += 1
+    print("->test")
+    return (fixture_test, num_test)
+
+
+@pytest.fixture(params=range(1, 4))
+def fixture_param(request):
+    """parameterized, per-example"""
+    global num_param
+    print("->param")
+    num_param += 1
+    return (num_param, request.param)
+
+
+@given(integers())
+@settings(
+    phases=[Phase.generate],
+    max_examples=4,
 )
-"""
+def test_function_scoped_fixtures(fixture_func_item, fixture_test, fixture_param, fixture_test_2, _):
+    global num_ex
+    num_ex += 1
+
+    # All these should be used only by this test, to avoid counter headaches
+    print(f"{fixture_func_item=} {fixture_test=} {fixture_param=} {fixture_test_2=}")
+
+    # 1. fixture_test is a tuple (num_conftest_calls, num_module_calls), and
+    #    both are function-scoped so should be called per-example
+    assert fixture_test == (num_ex, num_ex)
+    # 2. fixture_test_2 should have picked up the module-level fixture_test, not
+    #    the conftest-level one
+    assert fixture_test_2 == fixture_test
+    # 3. check that the parameterized fixture was also re-executed for each example
+    assert fixture_param[0] == num_ex
+    # 4. number of calls to _func should be the same as number of examples, while
+    #    number of calls to _item should be the number of parametrized items (which
+    #    is supplied by fixture_param[1] which is (1, 2, ...))
+    assert fixture_func_item == (num_ex, fixture_param[1])
+    #
+    print("---------")
 
 
-def test_suppress_fixture_health_check_via_profile(testdir):
-    script = testdir.makepyfile(TESTSUITE)
-    testdir.makeconftest(CONFTEST_SUPPRESS)
-
-    testdir.runpytest(script).assert_outcomes(passed=1, failed=4)
-    testdir.runpytest(script, "--hypothesis-profile=suppress").assert_outcomes(passed=5)
+@pytest.fixture
+def fixt_1(fixt_1, fixt_2):
+    return f"f1_m({fixt_1}, {fixt_2})"
 
 
-TESTSCRIPT_SUPPRESS_FIXTURE = """
-import pytest
-from hypothesis import HealthCheck, given, settings, strategies as st
-
-@given(x=st.integers())
-def test_fails_health_check(capsys, x):
-    pass
-
-@settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
-@given(x=st.integers())
-def test_suppresses_health_check(capsys, x):
-    pass
-
-@given(x=st.integers())
-@settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
-def test_suppresses_health_check_2(capsys, x):
-    pass
-"""
+@pytest.fixture
+def fixt_2(fixt_1, fixt_2):
+    return f"f2_m({fixt_1}, {fixt_2})"
 
 
-def test_suppress_health_check_function_scoped_fixture(testdir):
-    script = testdir.makepyfile(TESTSCRIPT_SUPPRESS_FIXTURE)
-    testdir.runpytest(script).assert_outcomes(passed=2, failed=1)
+@pytest.fixture
+def fixt_3(fixt_1, fixt_3):
+    return f"f3_m({fixt_1}, {fixt_3})"
+
+
+@pytest.mark.xfail(strict=True)
+@given(integers())
+#@settings(phases=[Phase.generate])  # uncomment for worse error reporting
+def test_cyclic_fixture_dependency(fixt_1, fixt_2, fixt_3):
+    # The below, which is the result without @given, looks arbitrary.
+    # Notice how fixt_2 and fixt_3 resolve different values for fixt_1
+    # (module.fixt_2 receives conftest.fixt_1, while
+    #  module.fixt_3 receives module.fixt_1).
+    assert fixt_1 == "f1_m(f1_c, f2_m(f1_c, f2_c(f1_c)))"
+    assert fixt_2 == "f2_m(f1_c, f2_c(f1_c))"
+    assert fixt_3 == "f3_m(f1_m(f1_c, f2_m(f1_c, f2_c(f1_c))), f3_c(f1_m(f1_c, f2_m(f1_c, f2_c(f1_c)))))"
+
 
 
 TESTSCRIPT_OVERRIDE_FIXTURE = """

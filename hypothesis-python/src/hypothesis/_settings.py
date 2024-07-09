@@ -520,13 +520,9 @@ class HealthCheck(Enum, metaclass=HealthCheckMeta):
 
     function_scoped_fixture = 9
     """Checks if :func:`@given <hypothesis.given>` has been applied to a test
-    with a pytest function-scoped fixture. Function-scoped fixtures run once
-    for the whole function, not once per example, and this is usually not what
-    you want.
+    with a pytest function-scoped fixture.
 
-    Because of this limitation, tests that need to set up or reset
-    state for every example need to do so manually within the test itself,
-    typically using an appropriate context manager.
+    TODO rewrite or deprecate
 
     Suppress this health check only in the rare case that you are using a
     function-scoped fixture that does not need to be reset between individual

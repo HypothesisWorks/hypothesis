@@ -772,7 +772,7 @@ class StateForActualGivenExecution:
         self.last_exception = None
         self.falsifying_examples = ()
         self.random = random
-        self.ever_executed = False
+        self.ever_executed = 0
 
         self.is_find = getattr(wrapped_test, "_hypothesis_internal_is_find", False)
         self.wrapped_test = wrapped_test
@@ -819,7 +819,7 @@ class StateForActualGivenExecution:
         swallowed the corresponding control exception.
         """
 
-        self.ever_executed = True
+        self.ever_executed += 1
         data.is_find = self.is_find
 
         self._string_repr = ""
@@ -871,8 +871,17 @@ class StateForActualGivenExecution:
             if self.stuff.selfy is not None:
                 data.hypothesis_runner = self.stuff.selfy
             # Generate all arguments to the test function.
-            args = self.stuff.args
+            args = self.stuff.args  # includes fixtures
             kwargs = dict(self.stuff.kwargs)
+            if self.ever_executed > 1:
+                if (reset_fixtures := getattr(
+                    self.test,
+                    "_hypothesis_internal_reset_fixtures",
+                    None
+                )):
+                    fixture_vals = reset_fixtures()
+                    for key in fixture_vals.keys() & kwargs.keys():
+                        kwargs[key] = fixture_vals[key]
             if example_kwargs is None:
                 kw, argslices = context.prep_args_kwargs_from_strategies(
                     self.stuff.given_kwargs

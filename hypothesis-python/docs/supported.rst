@@ -90,12 +90,11 @@ In terms of what's actually *known* to work:
     and this is verified as part of the CI.
   * :pypi:`pytest` fixtures work in the usual way for tests that have been decorated
     with :func:`@given <hypothesis.given>` - just avoid passing a strategy for
-    each argument that will be supplied by a fixture.  However, each fixture
-    will run once for the whole function, not once per example.  Decorating a
-    fixture function with :func:`@given <hypothesis.given>` is meaningless.
+    each argument that will be supplied by a fixture.
+    Decorating a fixture function with :func:`@given <hypothesis.given>` is meaningless.
   * The :func:`python:unittest.mock.patch` decorator works with
     :func:`@given <hypothesis.given>`, but we recommend using it as a context
-    manager within the decorated test to ensure that the mock is per-test-case
+    manager within the decorated test to ensure that the mock is per-example
     and avoid poor interactions with Pytest fixtures.
   * Nose works fine with Hypothesis, and this is tested as part of the CI. ``yield`` based
     tests simply won't work.
@@ -104,6 +103,19 @@ In terms of what's actually *known* to work:
     database once per test rather than once per example, which is not what you want.
   * :pypi:`Coverage` works out of the box with Hypothesis; our own test suite has
     100% branch coverage.
+
+.. note::
+
+   When executing under :func:`@given <hypothesis.given>`, :pypi:`pytest`
+   fixtures with the default ``scope="function"`` are reset between example
+   executions.
+
+   If performance is a concern, and you are confident that your test will work
+   correctly even though the fixture is not reset between generated examples, you
+   can decorate the fixture with ``@_hypothesis_pytestplugin.item_scoped``.
+   For example, we provide a fixture ``monkeypatch_item``, decorated thusly, which
+   can be used to monkeypatch for the duration of the test item (across example
+   executions).
 
 -----------------
 Optional packages
