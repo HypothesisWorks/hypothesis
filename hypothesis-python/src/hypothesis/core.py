@@ -60,7 +60,6 @@ from hypothesis.errors import (
     FailedHealthCheck,
     Flaky,
     Found,
-    HypothesisDeprecationWarning,
     HypothesisException,
     HypothesisWarning,
     InvalidArgument,
@@ -1063,7 +1062,7 @@ class StateForActualGivenExecution:
             # OK to re-raise it.
             raise
         except (
-            HypothesisDeprecationWarning,
+            HypothesisWarning,
             FailedHealthCheck,
             *skip_exceptions_to_reraise(),
         ):
