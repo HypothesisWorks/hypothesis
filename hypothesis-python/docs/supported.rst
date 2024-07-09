@@ -112,10 +112,18 @@ In terms of what's actually *known* to work:
 
    If performance is a concern, and you are confident that your test will work
    correctly even though the fixture is not reset between generated examples, you
-   can decorate the fixture with ``@_hypothesis_pytestplugin.item_scoped``.
-   For example, we provide a fixture ``monkeypatch_item``, decorated thusly, which
-   can be used to monkeypatch for the duration of the test item (across example
-   executions).
+   can decorate the fixture with ``@_hypothesis_pytestplugin.item_scoped``:
+
+   ```
+   import pytest
+   from _hypothesis_pytestplugin import item_scoped
+
+   @item_scoped
+   @pytest.fixture(scope="function")
+   def monkeypatch_item():
+       with pytest.MonkeyPatch.context() as mp:
+            yield mp
+   ```
 
 -----------------
 Optional packages

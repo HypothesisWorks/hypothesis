@@ -65,6 +65,13 @@ def _gc_before_each_test():
     gc.collect()
 
 
+@pytest.fixture(scope="function")
+@item_scoped
+def monkeypatch_item():
+    with pytest.MonkeyPatch.context() as monkeypatch:
+        yield monkeypatch
+
+
 @pytest.fixture(scope="function", autouse=True)
 @item_scoped
 def _consistently_increment_time(monkeypatch_item):

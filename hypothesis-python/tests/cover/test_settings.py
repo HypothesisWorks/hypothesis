@@ -15,6 +15,7 @@ from unittest import TestCase
 
 import pytest
 
+from _hypothesis_pytestplugin import item_scoped
 from hypothesis import example, given, strategies as st
 from hypothesis._settings import (
     HealthCheck,
@@ -50,7 +51,9 @@ def test_has_docstrings():
 original_default = settings.get_profile("default").max_examples
 
 
-def setup_function(fn):
+@pytest.fixture(autouse=True)
+@item_scoped  # don't override @settings decorator
+def reset_settings():
     settings.load_profile("default")
     settings.register_profile("test_settings", settings())
     settings.load_profile("test_settings")

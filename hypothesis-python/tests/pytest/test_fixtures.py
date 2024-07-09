@@ -79,6 +79,7 @@ def test_can_inject_autospecced_mock_via_fixture(spec_fixture, xs):
 
 
 num_func = num_item = num_param = num_ex = num_test = 0
+params_seen = set()
 
 @pytest.fixture()
 def fixture_func():
@@ -114,7 +115,7 @@ def fixture_test(fixture_test):
     return (fixture_test, num_test)
 
 
-@pytest.fixture(params=range(1, 4))
+@pytest.fixture(params=range(4))
 def fixture_param(request):
     """parameterized, per-example"""
     global num_param
@@ -144,9 +145,9 @@ def test_function_scoped_fixtures(fixture_func_item, fixture_test, fixture_param
     # 3. check that the parameterized fixture was also re-executed for each example
     assert fixture_param[0] == num_ex
     # 4. number of calls to _func should be the same as number of examples, while
-    #    number of calls to _item should be the number of parametrized items (which
-    #    is supplied by fixture_param[1] which is (1, 2, ...))
-    assert fixture_func_item == (num_ex, fixture_param[1])
+    #    number of calls to _item should be the number of parametrized items seen
+    params_seen.add(fixture_param[1])
+    assert fixture_func_item == (num_ex, len(params_seen))
     #
     print("---------")
 

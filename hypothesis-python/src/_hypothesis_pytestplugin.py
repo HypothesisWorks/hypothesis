@@ -568,12 +568,5 @@ def item_scoped(fn):
     return fn
 
 
-@pytest.fixture(scope="function")
-@item_scoped
-def monkeypatch_item():
-    with pytest.MonkeyPatch.context() as monkeypatch:
-        yield monkeypatch
-
-
 def load():
     """Required for `pluggy` to load a plugin from setuptools entrypoints."""
