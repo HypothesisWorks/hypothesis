@@ -36,6 +36,7 @@ def test_monitoring_warns_on_registered_tool_id(warns_or_raises):
 
             @given(st.integers())
             def f(n):
-                assert True
+                raise AssertionError()
 
-            f()
+            with pytest.raises(AssertionError):
+                f()

@@ -9,10 +9,14 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import pytest
+import sys
+import warnings
 
 from hypothesis import HealthCheck, Verbosity, assume, example, given, reject, settings
+from hypothesis.core import StateForActualGivenExecution
 from hypothesis.errors import Flaky, Unsatisfiable, UnsatisfiedAssumption
 from hypothesis.internal.conjecture.engine import MIN_TEST_CALLS
+from hypothesis.internal.scrutineer import Tracer
 from hypothesis.strategies import booleans, composite, integers, lists, random_module
 
 from tests.common.utils import no_shrink
@@ -31,7 +35,7 @@ def test_fails_only_once_is_flaky():
             first_call[0] = False
             raise Nope
 
-    with pytest.raises(Flaky):
+    with pytest.raises(Flaky, match="Falsified on the first call but"):
         rude()
 
 
@@ -45,8 +49,26 @@ def test_gives_flaky_error_if_assumption_is_flaky():
         seen.add(s)
         raise AssertionError
 
-    with pytest.raises(Flaky):
+    with pytest.raises(Flaky, match="Inconsistent results from replaying"):
         oops()
+
+
+@pytest.mark.skipif(sys.version_info[:2] < (3, 12), reason="no warning before 3.12")
+def test_flaky_with_context_when_fails_only_under_tracing(monkeypatch):
+    # make anything fail under tracing
+    monkeypatch.setattr(Tracer, "__enter__", lambda *_: 1/0)
+    # ensure tracing is always entered inside _execute_once_for_engine
+    monkeypatch.setattr(StateForActualGivenExecution, "_should_trace", lambda _: True)
+
+    @given(integers())
+    def test(x):
+        pass
+
+    with pytest.raises(Flaky, match="failed on the first run now succeeds") as e:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            test()
+    assert isinstance(e.value.__context__, ZeroDivisionError)
 
 
 def test_does_not_attempt_to_shrink_flaky_errors():
