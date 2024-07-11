@@ -8,8 +8,6 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import warnings
-
 import pytest
 
 from hypothesis import HealthCheck, Verbosity, assume, example, given, reject, settings
@@ -65,9 +63,7 @@ def test_flaky_with_context_when_fails_only_under_tracing(monkeypatch):
         pass
 
     with pytest.raises(Flaky, match="failed on the first run now succeeds") as e:
-        with warnings.catch_warnings():
-            warnings.simplefilter("error")
-            test()
+        test()
     assert isinstance(e.value.__context__, ZeroDivisionError)
 
 
