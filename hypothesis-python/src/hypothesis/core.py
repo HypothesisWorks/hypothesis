@@ -1015,14 +1015,7 @@ class StateForActualGivenExecution:
         """
         trace: Trace = set()
         try:
-            _can_trace = (
-                (sys.version_info[:2] < (3, 12) and sys.gettrace() is None)
-                or (
-                    sys.version_info[:2] >= (3, 12)
-                    and sys.monitoring.get_tool(MONITORING_TOOL_ID) is None
-                )
-            ) and not PYPY
-            if _can_trace and self._should_trace():  # pragma: no cover
+            if self._should_trace() and Tracer.can_trace():  # pragma: no cover
                 # This is in fact covered by our *non-coverage* tests, but due to the
                 # settrace() contention *not* by our coverage tests.  Ah well.
                 with Tracer() as tracer:
@@ -1169,12 +1162,13 @@ class StateForActualGivenExecution:
                 rep = get_pretty_function_description(self.test)
                 raise Unsatisfiable(f"Unable to satisfy assumptions of {rep}")
 
-        # If we have not traced executions, warn about that now (but only
-        # on >=3.12, since otherwise we'd always warn when running coverage)
+        # If we have not traced executions, warn about that now (but only when
+        # we'd expect to do so reliably, i.e. on CPython>=3.12)
         if (
-            self._should_trace()
-            and sys.version_info[:2] >= (3, 12)
-            and sys.monitoring.get_tool(MONITORING_TOOL_ID) is not None
+            sys.version_info[:2] >= (3, 12)
+            and not PYPY
+            and self._should_trace()
+            and not Tracer.can_trace()
         ):  # pragma: no cover
             # actually covered by our tests, but only on >= 3.12
             warnings.warn(
