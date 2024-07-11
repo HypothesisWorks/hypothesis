@@ -8,9 +8,10 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import pytest
 import sys
 import warnings
+
+import pytest
 
 from hypothesis import HealthCheck, Verbosity, assume, example, given, reject, settings
 from hypothesis.core import StateForActualGivenExecution
@@ -53,10 +54,9 @@ def test_gives_flaky_error_if_assumption_is_flaky():
         oops()
 
 
-@pytest.mark.skipif(sys.version_info[:2] < (3, 12), reason="no warning before 3.12")
 def test_flaky_with_context_when_fails_only_under_tracing(monkeypatch):
     # make anything fail under tracing
-    monkeypatch.setattr(Tracer, "__enter__", lambda *_: 1/0)
+    monkeypatch.setattr(Tracer, "__enter__", lambda *_: 1 / 0)
     # ensure tracing is always entered inside _execute_once_for_engine
     monkeypatch.setattr(StateForActualGivenExecution, "_should_trace", lambda _: True)
 
