@@ -423,6 +423,7 @@ class RepresentationPrinter:
                         self.text(leading_comment)
                     self.break_()
                 else:
+                    assert leading_comment is None  # only passed by top-level report
                     self.breakable(" " if i else "")
                 if k:
                     self.text(f"{k}=")
