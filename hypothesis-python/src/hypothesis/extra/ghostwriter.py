@@ -609,6 +609,8 @@ def _imports_for_object(obj):
         return {"re"}
     if isinstance(obj, st.SearchStrategy):
         return _imports_for_strategy(obj)
+    if isinstance(obj, getattr(sys.modules.get("numpy"), "dtype", ())):
+        return {("numpy", "dtype")}
     try:
         if is_generic_type(obj):
             if isinstance(obj, TypeVar):
