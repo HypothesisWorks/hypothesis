@@ -603,6 +603,8 @@ def _assert_eq(style: str, a: str, b: str) -> str:
 
 def _imports_for_object(obj):
     """Return the imports for `obj`, which may be empty for e.g. lambdas"""
+    if type(obj) is getattr(types, "UnionType", object()):
+        return {mod for mod, _ in set().union(*map(_imports_for_object, obj.__args__))}
     if isinstance(obj, (re.Pattern, re.Match)):
         return {"re"}
     if isinstance(obj, st.SearchStrategy):
