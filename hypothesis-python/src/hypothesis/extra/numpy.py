@@ -526,7 +526,7 @@ def arrays(
     """
     # Our dtype argument might be a union, e.g. `np.float64 | np.complex64`; we handle
     # that by turning it into a strategy up-front.
-    if type(dtype) in (types.UnionType, Union):
+    if type(dtype) in (getattr(types, "UnionType", object()), Union):
         dtype = st.one_of(*(from_dtype(np.dtype(d)) for d in dtype.__args__))
 
     # We support passing strategies as arguments for convenience, or at least
@@ -1285,7 +1285,7 @@ def _unpack_generic(thing):
 
 def _unpack_dtype(dtype):
     dtype_args = getattr(dtype, "__args__", ())
-    if dtype_args and type(dtype) not in (types.UnionType, Union):
+    if dtype_args and type(dtype) not in (getattr(types, "UnionType", object()), Union):
         assert len(dtype_args) == 1
         if isinstance(dtype_args[0], TypeVar):
             # numpy.dtype[+ScalarType]
@@ -1310,7 +1310,7 @@ def _dtype_from_args(args):
 
     if dtype is Any:
         return scalar_dtypes()
-    elif type(dtype) in (types.UnionType, Union):
+    elif type(dtype) in (getattr(types, "UnionType", object()), Union):
         return dtype
     return np.dtype(dtype)
 
