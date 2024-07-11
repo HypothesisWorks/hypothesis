@@ -120,12 +120,17 @@ def sequence_from_collections(items: CollectionsSequence[int]) -> int:
     return min(items)
 
 
-def various_numpy_annotations(
-    f: numpy.typing.NDArray[numpy.float64],
-    fc: numpy.typing.NDArray[numpy.float64 | numpy.complex128],
-    union: numpy.typing.NDArray[numpy.float64 | numpy.complex128] | None,
-):
-    pass
+if sys.version_info[:2] >= (3, 10):
+
+    def various_numpy_annotations(
+        f: numpy.typing.NDArray[numpy.float64],
+        fc: numpy.typing.NDArray[numpy.float64 | numpy.complex128],
+        union: numpy.typing.NDArray[numpy.float64 | numpy.complex128] | None,
+    ):
+        pass
+
+else:
+    various_numpy_annotations = add
 
 
 # Note: for some of the `expected` outputs, we replace away some small
@@ -284,7 +289,13 @@ def various_numpy_annotations(
                 )
             ],
         ),
-        ("magic_numpy", ghostwriter.magic(various_numpy_annotations, annotate=False)),
+        pytest.param(
+            (
+                "magic_numpy",
+                ghostwriter.magic(various_numpy_annotations, annotate=False),
+            ),
+            marks=pytest.mark.skipif(various_numpy_annotations is add, reason="<=3.9"),
+        ),
     ],
     ids=lambda x: x[0],
 )

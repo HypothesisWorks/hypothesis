@@ -527,7 +527,7 @@ def arrays(
     # Our dtype argument might be a union, e.g. `np.float64 | np.complex64`; we handle
     # that by turning it into a strategy up-front.
     if type(dtype) in (getattr(types, "UnionType", object()), Union):
-        dtype = st.one_of(*(from_dtype(np.dtype(d)) for d in dtype.__args__))
+        dtype = st.one_of(*(from_dtype(np.dtype(d)) for d in dtype.__args__))  # type: ignore
 
     # We support passing strategies as arguments for convenience, or at least
     # for legacy reasons, but don't want to pay the perf cost of a composite

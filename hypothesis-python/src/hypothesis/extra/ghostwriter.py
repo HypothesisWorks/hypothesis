@@ -776,7 +776,7 @@ def _get_module(obj):
     raise RuntimeError(f"Could not find module for ufunc {obj.__name__} ({obj!r}")
 
 
-def _get_qualname(obj: object, *, include_module: bool = False) -> str:
+def _get_qualname(obj: Any, *, include_module: bool = False) -> str:
     # Replacing angle-brackets for objects defined in `.<locals>.`
     qname = getattr(obj, "__qualname__", obj.__name__)
     qname = qname.replace("<", "_").replace(">", "_").replace(" ", "")
@@ -1224,7 +1224,7 @@ def magic(
         by_name.update(found := _get_testable_functions(thing))
         if (not found) and isinstance(thing, types.ModuleType):
             msg = f"# Found no testable functions in {thing.__name__} (from {thing.__file__!r})"
-            mods = []
+            mods: list = []
             for k in sorted(sys.modules, key=len):
                 if (
                     k.startswith(f"{thing.__name__}.")
