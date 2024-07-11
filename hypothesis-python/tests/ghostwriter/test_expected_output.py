@@ -25,6 +25,7 @@ import sys
 from typing import Optional, Sequence, Union
 
 import numpy
+import numpy.typing
 import pytest
 from example_code.future_annotations import (
     add_custom_classes,
@@ -116,6 +117,14 @@ else:
 
 def sequence_from_collections(items: CollectionsSequence[int]) -> int:
     return min(items)
+
+
+def various_numpy_annotations(
+    f: numpy.typing.NDArray[numpy.float64],
+    fc: numpy.typing.NDArray[numpy.float64 | numpy.complex128],
+    union: numpy.typing.NDArray[numpy.float64 | numpy.complex128] | None,
+):
+    pass
 
 
 # Note: for some of the `expected` outputs, we replace away some small
@@ -274,6 +283,7 @@ def sequence_from_collections(items: CollectionsSequence[int]) -> int:
                 )
             ],
         ),
+        ("magic_numpy", ghostwriter.magic(various_numpy_annotations, annotate=False)),
     ],
     ids=lambda x: x[0],
 )

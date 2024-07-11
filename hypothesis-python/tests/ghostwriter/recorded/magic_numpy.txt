@@ -1,0 +1,20 @@
+# This test code was written by the `hypothesis.extra.ghostwriter` module
+# and is provided under the Creative Commons Zero public domain dedication.
+
+import numpy
+import test_expected_output
+from hypothesis import given, strategies as st
+from hypothesis.extra.numpy import array_shapes, arrays
+from numpy import dtype
+
+
+@given(
+    f=arrays(dtype=dtype("float64"), shape=array_shapes(max_dims=2)),
+    fc=arrays(dtype=numpy.float64 | numpy.complex128, shape=array_shapes(max_dims=2)),
+    union=st.one_of(
+        st.none(),
+        arrays(dtype=numpy.float64 | numpy.complex128, shape=array_shapes(max_dims=2)),
+    ),
+)
+def test_fuzz_various_numpy_annotations(f, fc, union):
+    test_expected_output.various_numpy_annotations(f=f, fc=fc, union=union)
