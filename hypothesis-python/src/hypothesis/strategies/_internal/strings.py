@@ -17,11 +17,29 @@ from hypothesis.errors import HypothesisWarning, InvalidArgument
 from hypothesis.internal import charmap
 from hypothesis.internal.filtering import max_len, min_len
 from hypothesis.internal.intervalsets import IntervalSet
+from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies._internal.collections import ListStrategy
 from hypothesis.strategies._internal.lazy import unwrap_strategies
 from hypothesis.strategies._internal.numbers import IntegersStrategy
-from hypothesis.strategies._internal.strategies import SearchStrategy
+from hypothesis.strategies._internal.strategies import (
+    OneOfStrategy,
+    SampledFromStrategy,
+    SearchStrategy,
+)
 from hypothesis.vendor.pretty import pretty
+
+
+# Cache size is limited by sys.maxunicode, but passing None makes it slightly faster.
+@lru_cache(maxsize=None)
+def _check_is_single_character(c):
+    # In order to mitigate the performance cost of this check, we use a shared cache,
+    # even at the cost of showing the culprit strategy in the error message.
+    if not isinstance(c, str):
+        type_ = get_pretty_function_description(type(c))
+        raise InvalidArgument(f"Got non-string {c!r} (type {type_})")
+    if len(c) != 1:
+        raise InvalidArgument(f"Got {c!r} (length {len(c)} != 1)")
+    return c
 
 
 class OneCharStringStrategy(SearchStrategy):
@@ -71,6 +89,31 @@ class OneCharStringStrategy(SearchStrategy):
                 f"combination of arguments: {_arg_repr}"
             )
         return cls(intervals, force_repr=f"characters({_arg_repr})")
+
+    @classmethod
+    def from_alphabet(cls, alphabet):
+        if isinstance(alphabet, str):
+            return cls.from_characters_args(categories=(), include_characters=alphabet)
+
+        assert isinstance(alphabet, SearchStrategy)
+        char_strategy = unwrap_strategies(alphabet)
+        if isinstance(char_strategy, cls):
+            return char_strategy
+        elif isinstance(char_strategy, SampledFromStrategy):
+            for c in char_strategy.elements:
+                _check_is_single_character(c)
+            return cls.from_characters_args(
+                categories=(),
+                include_characters=char_strategy.elements,
+            )
+        elif isinstance(char_strategy, OneOfStrategy):
+            intervals = IntervalSet()
+            for s in char_strategy.element_strategies:
+                intervals = intervals.union(cls.from_alphabet(s).intervals)
+            return cls(intervals, force_repr=repr(alphabet))
+        raise InvalidArgument(
+            f"{alphabet=} must be a sampled_from() or characters() strategy"
+        )
 
     def __repr__(self):
         return self._force_repr or f"OneCharStringStrategy({self.intervals!r})"
