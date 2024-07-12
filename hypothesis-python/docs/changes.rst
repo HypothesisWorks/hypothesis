@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.106.0:
+
+--------------------
+6.106.0 - 2024-07-12
+--------------------
+
+This release improves support for unions of :pypi:`numpy` dtypes such as
+``np.float64 | np.complex128`` in :func:`~hypothesis.strategies.from_type`
+and :func:`~hypothesis.extra.numpy.arrays` (:issue:`4041`).
+
 .. _v6.105.2:
 
 --------------------
