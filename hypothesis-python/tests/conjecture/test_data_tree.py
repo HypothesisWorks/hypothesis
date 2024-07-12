@@ -14,7 +14,7 @@ from random import Random
 import pytest
 
 from hypothesis import HealthCheck, assume, given, settings
-from hypothesis.errors import Flaky
+from hypothesis.errors import Inconsistent
 from hypothesis.internal.conjecture.data import ConjectureData, Status, StopTest
 from hypothesis.internal.conjecture.datatree import (
     Branch,
@@ -223,7 +223,7 @@ def test_going_from_interesting_to_invalid_is_flaky():
         data.conclude_test(Status.INTERESTING)
 
     data = ConjectureData.for_buffer(b"", observer=tree.new_observer())
-    with pytest.raises(Flaky):
+    with pytest.raises(Inconsistent):
         data.conclude_test(Status.INVALID)
 
 
@@ -235,7 +235,7 @@ def test_concluding_at_prefix_is_flaky():
         data.conclude_test(Status.INTERESTING)
 
     data = ConjectureData.for_buffer(b"", observer=tree.new_observer())
-    with pytest.raises(Flaky):
+    with pytest.raises(Inconsistent):
         data.conclude_test(Status.INVALID)
 
 
@@ -259,7 +259,7 @@ def test_changing_n_bits_is_flaky_in_prefix():
         data.conclude_test(Status.INTERESTING)
 
     data = ConjectureData.for_buffer(b"\1", observer=tree.new_observer())
-    with pytest.raises(Flaky):
+    with pytest.raises(Inconsistent):
         data.draw_integer(0, 3)
 
 
@@ -273,7 +273,7 @@ def test_changing_n_bits_is_flaky_in_branch():
             data.conclude_test(Status.INTERESTING)
 
     data = ConjectureData.for_buffer(b"\1", observer=tree.new_observer())
-    with pytest.raises(Flaky):
+    with pytest.raises(Inconsistent):
         data.draw_integer(0, 3)
 
 
@@ -287,7 +287,7 @@ def test_extending_past_conclusion_is_flaky():
     data = ConjectureData.for_buffer(b"\1\0", observer=tree.new_observer())
     data.draw_integer(0, 1)
 
-    with pytest.raises(Flaky):
+    with pytest.raises(Inconsistent):
         data.draw_integer(0, 1)
 
 
@@ -300,7 +300,7 @@ def test_changing_to_forced_is_flaky():
 
     data = ConjectureData.for_buffer(b"\1\0", observer=tree.new_observer())
 
-    with pytest.raises(Flaky):
+    with pytest.raises(Inconsistent):
         data.draw_integer(0, 1, forced=0)
 
 
@@ -313,7 +313,7 @@ def test_changing_value_of_forced_is_flaky():
 
     data = ConjectureData.for_buffer(b"\1\0", observer=tree.new_observer())
 
-    with pytest.raises(Flaky):
+    with pytest.raises(Inconsistent):
         data.draw_integer(0, 1, forced=0)
 
 
@@ -382,7 +382,7 @@ def test_will_mark_changes_in_discard_as_flaky():
     data.start_example(10)
     data.draw_integer(0, 1)
 
-    with pytest.raises(Flaky):
+    with pytest.raises(Inconsistent):
         data.stop_example(discard=True)
 
 

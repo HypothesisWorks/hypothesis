@@ -51,10 +51,65 @@ class Unsatisfiable(_Trimmable):
     """
 
 
-class Flaky(_Trimmable):
+class Inconsistent(_Trimmable):
+    """Base class for indeterministic failures. Usually one of the more
+    specific subclasses (Flaky or InconsistentGeneration) is raised."""
+    pass
+
+
+class FlakyGeneration(Inconsistent):
+    """Internal error raised by the conjecture engine if flakiness is detected
+    during replay.
+
+    Carries information allowing the runner to reconstruct the flakiness as a
+    Flaky exception group for final presentation..
+    """
+
+    def __init__(self, reason, interesting_origins=None):
+        super().__init__(reason)
+        self.reason = reason
+        self._interesting_origins = interesting_origins
+
+
+class InconsistentGeneration(Inconsistent):
+    """This function appears to cause inconsistent data generation.
+
+    Common causes for this problem are:
+        1. ...
+    """
+    pass
+
+
+def __getattr__(name):
+    if name in ["BaseExceptionGroup", "ExceptionGroup"]:
+        from hypothesis.internal import compat
+
+        return getattr(compat, name)
+
+    if name == "MultipleFailures":
+        from hypothesis._settings import note_deprecation
+
+        note_deprecation(
+            "MultipleFailures is deprecated; use the builtin `BaseExceptionGroup` type "
+            "instead, or `exceptiongroup.BaseExceptionGroup` before Python 3.11",
+            since="2022-08-02",
+            has_codemod=False,  # This would be a great PR though!
+            stacklevel=1,
+        )
+        return BaseExceptionGroup
+
+    raise AttributeError(f"Module 'hypothesis.errors' has no attribute {name}")
+
+
+class _WrappedBaseException(Exception):
+    """Used internally for wrapping BaseExceptions as components of Flaky."""
+    pass
+
+
+class Flaky(ExceptionGroup, Inconsistent):
     """This function appears to fail non-deterministically: We have seen it
     fail when passed this example at least once, but a subsequent invocation
-    did not fail.
+    did not fail, or caused a distinct error.
 
     Common causes for this problem are:
         1. The function depends on external state. e.g. it uses an external
@@ -66,6 +121,18 @@ class Flaky(_Trimmable):
            how long it takes. Try breaking it up into smaller functions which
            don't do that and testing those instead.
     """
+    def __new__(cls, msg, group):
+        # The Exception mixin forces this an ExceptionGroup (only accepting
+        # Exceptions, not BaseException). Usually BaseException is raised
+        # directly and will hence not be part of a Flaky, but I'm not sure
+        # that this assumption holds everywhere. So wrap any BaseExceptions.
+        group = list(group)
+        for i, exc in enumerate(group):
+            if not isinstance(exc, Exception):
+                err = _WrappedBaseException()
+                err.__cause__ = err.__context__ = exc
+                group[i] = err
+        return ExceptionGroup.__new__(cls, msg, group)
 
 
 class InvalidArgument(_Trimmable, TypeError):
@@ -127,23 +194,6 @@ class HypothesisSideeffectWarning(HypothesisWarning):
 class Frozen(HypothesisException):
     """Raised when a mutation method has been called on a ConjectureData object
     after freeze() has been called."""
-
-
-def __getattr__(name):
-    if name == "MultipleFailures":
-        from hypothesis._settings import note_deprecation
-        from hypothesis.internal.compat import BaseExceptionGroup
-
-        note_deprecation(
-            "MultipleFailures is deprecated; use the builtin `BaseExceptionGroup` type "
-            "instead, or `exceptiongroup.BaseExceptionGroup` before Python 3.11",
-            since="2022-08-02",
-            has_codemod=False,  # This would be a great PR though!
-            stacklevel=1,
-        )
-        return BaseExceptionGroup
-
-    raise AttributeError(f"Module 'hypothesis.errors' has no attribute {name}")
 
 
 class DeadlineExceeded(_Trimmable):

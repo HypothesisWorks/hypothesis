@@ -11,7 +11,7 @@
 import pytest
 
 from hypothesis import given
-from hypothesis.errors import Flaky
+from hypothesis.errors import Flaky, Inconsistent
 from hypothesis.strategies import composite, integers, none
 
 
@@ -95,7 +95,7 @@ def test_baseexception_in_strategy_no_rerun_no_flaky(e):
 
     else:
         # Now SystemExit and GeneratorExit are caught like other exceptions
-        with pytest.raises(Flaky):
+        with pytest.raises(Inconsistent):
             test_do_nothing()
 
 

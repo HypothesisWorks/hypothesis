@@ -12,7 +12,7 @@ import pytest
 
 from hypothesis import HealthCheck, Verbosity, assume, example, given, reject, settings
 from hypothesis.core import StateForActualGivenExecution
-from hypothesis.errors import Flaky, Unsatisfiable, UnsatisfiedAssumption
+from hypothesis.errors import Flaky, Inconsistent, Unsatisfiable, UnsatisfiedAssumption
 from hypothesis.internal.conjecture.engine import MIN_TEST_CALLS
 from hypothesis.internal.scrutineer import Tracer
 from hypothesis.strategies import booleans, composite, integers, lists, random_module
@@ -33,8 +33,11 @@ def test_fails_only_once_is_flaky():
             first_call[0] = False
             raise Nope
 
-    with pytest.raises(Flaky, match="Falsified on the first call but"):
+    with pytest.raises(Flaky, match="Falsified on the first call but") as e:
         rude()
+    exceptions = e.value.exceptions
+    assert len(exceptions) == 1
+    assert isinstance(exceptions[0], Nope)
 
 
 def test_gives_flaky_error_if_assumption_is_flaky():
@@ -47,9 +50,12 @@ def test_gives_flaky_error_if_assumption_is_flaky():
         seen.add(s)
         raise AssertionError
 
-    with pytest.raises(Flaky, match="Inconsistent results from replaying"):
+    with pytest.raises(Flaky, match="Inconsistent results from replaying") as e:
         oops()
-
+    exceptions = e.value.exceptions
+    assert len(exceptions) == 2
+    assert isinstance(exceptions[0], AssertionError)
+    assert isinstance(exceptions[1], UnsatisfiedAssumption)
 
 def test_flaky_with_context_when_fails_only_under_tracing(monkeypatch):
     # make anything fail under tracing
@@ -62,9 +68,10 @@ def test_flaky_with_context_when_fails_only_under_tracing(monkeypatch):
     def test(x):
         pass
 
-    with pytest.raises(Flaky, match="failed on the first run now succeeds") as e:
+    with pytest.raises(Flaky, match="failed on the first run but now succeeds") as e:
         test()
-    assert isinstance(e.value.__context__, ZeroDivisionError)
+    exceptions = e.value.exceptions
+    assert len(exceptions) == 1 and isinstance(exceptions[0], ZeroDivisionError)
 
 
 def test_does_not_attempt_to_shrink_flaky_errors():
@@ -136,7 +143,7 @@ def test_failure_sequence_inducing(building, testing, rnd):
 
     try:
         test()
-    except (Nope, Unsatisfiable, Flaky):
+    except (Nope, Inconsistent, Unsatisfiable):
         pass
     except UnsatisfiedAssumption:
         raise SatisfyMe from None

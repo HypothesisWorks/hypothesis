@@ -27,7 +27,13 @@ from hypothesis import (
 )
 from hypothesis.control import current_build_context
 from hypothesis.database import ExampleDatabase
-from hypothesis.errors import DidNotReproduce, Flaky, InvalidArgument, InvalidDefinition
+from hypothesis.errors import (
+    DidNotReproduce,
+    Flaky,
+    Inconsistent,
+    InvalidArgument,
+    InvalidDefinition,
+)
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.stateful import (
     Bundle,
@@ -111,7 +117,7 @@ class FlakyDrawLessMachine(RuleBasedStateMachine):
 
 
 def test_flaky_draw_less_raises_flaky():
-    with raises(Flaky):
+    with raises(Inconsistent):
         FlakyDrawLessMachine.TestCase().runTest()
 
 
@@ -141,7 +147,7 @@ class FlakyStateMachine(RuleBasedStateMachine):
 
 
 def test_flaky_raises_flaky():
-    with raises(Flaky):
+    with raises(Inconsistent):
         FlakyStateMachine.TestCase().runTest()
 
 
@@ -311,7 +317,7 @@ def test_consumes_typecheck():
 
 
 def test_ratchetting_raises_flaky():
-    with raises(Flaky):
+    with raises(Inconsistent):
         FlakyRatchettingMachine.TestCase().runTest()
 
 
