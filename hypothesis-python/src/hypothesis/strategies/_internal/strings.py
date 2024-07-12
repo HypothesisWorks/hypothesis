@@ -189,13 +189,10 @@ def _string_filter_rewrite(self, kind, condition):
     ):
         from hypothesis.strategies._internal.regex import regex_strategy
 
-        print(f"{condition=}")
-        print(f"{condition.__name__=}")
-
         if condition.__name__ == "match":
             # Replace with an easier-to-handle equivalent condition
-            caret = "^" if kind is str else b"^"
-            pattern = re.compile(caret + pattern.pattern, flags=pattern.flags)
+            caret, close = ("^(?:", ")") if kind is str else (b"^(?:", b")")
+            pattern = re.compile(caret + pattern.pattern + close, flags=pattern.flags)
             condition = pattern.search
 
         if condition.__name__ in ("search", "findall", "fullmatch"):
