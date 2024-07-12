@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.105.2:
+
+--------------------
+6.105.2 - 2024-07-12
+--------------------
+
+This patch improves the reporting of certain flaky errors.
+
 .. _v6.105.1:
 
 --------------------
