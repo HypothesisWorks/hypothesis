@@ -30,7 +30,7 @@ from hypothesis.database import ExampleDatabase
 from hypothesis.errors import (
     DidNotReproduce,
     Flaky,
-    Inconsistent,
+    FlakyFailure,
     InvalidArgument,
     InvalidDefinition,
 )
@@ -117,7 +117,7 @@ class FlakyDrawLessMachine(RuleBasedStateMachine):
 
 
 def test_flaky_draw_less_raises_flaky():
-    with raises(Inconsistent):
+    with raises(Flaky):
         FlakyDrawLessMachine.TestCase().runTest()
 
 
@@ -147,7 +147,7 @@ class FlakyStateMachine(RuleBasedStateMachine):
 
 
 def test_flaky_raises_flaky():
-    with raises(Inconsistent):
+    with raises(Flaky):
         FlakyStateMachine.TestCase().runTest()
 
 
@@ -317,7 +317,7 @@ def test_consumes_typecheck():
 
 
 def test_ratchetting_raises_flaky():
-    with raises(Inconsistent):
+    with raises(Flaky):
         FlakyRatchettingMachine.TestCase().runTest()
 
 

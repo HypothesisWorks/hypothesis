@@ -12,7 +12,7 @@ import pytest
 
 from hypothesis import HealthCheck, Verbosity, assume, example, given, reject, settings
 from hypothesis.core import StateForActualGivenExecution
-from hypothesis.errors import Flaky, Inconsistent, Unsatisfiable, UnsatisfiedAssumption
+from hypothesis.errors import FlakyFailure, Flaky, Unsatisfiable, UnsatisfiedAssumption
 from hypothesis.internal.conjecture.engine import MIN_TEST_CALLS
 from hypothesis.internal.scrutineer import Tracer
 from hypothesis.strategies import booleans, composite, integers, lists, random_module
@@ -33,7 +33,7 @@ def test_fails_only_once_is_flaky():
             first_call[0] = False
             raise Nope
 
-    with pytest.raises(Flaky, match="Falsified on the first call but") as e:
+    with pytest.raises(FlakyFailure, match="Falsified on the first call but") as e:
         rude()
     exceptions = e.value.exceptions
     assert len(exceptions) == 1
@@ -50,7 +50,7 @@ def test_gives_flaky_error_if_assumption_is_flaky():
         seen.add(s)
         raise AssertionError
 
-    with pytest.raises(Flaky, match="Inconsistent results from replaying") as e:
+    with pytest.raises(FlakyFailure, match="Inconsistent results from replaying") as e:
         oops()
     exceptions = e.value.exceptions
     assert len(exceptions) == 2
@@ -68,7 +68,7 @@ def test_flaky_with_context_when_fails_only_under_tracing(monkeypatch):
     def test(x):
         pass
 
-    with pytest.raises(Flaky, match="failed on the first run but now succeeds") as e:
+    with pytest.raises(FlakyFailure, match="failed on the first run but now succeeds") as e:
         test()
     exceptions = e.value.exceptions
     assert len(exceptions) == 1 and isinstance(exceptions[0], ZeroDivisionError)
@@ -83,7 +83,7 @@ def test_does_not_attempt_to_shrink_flaky_errors():
         values.append(x)
         assert len(values) != 1
 
-    with pytest.raises(Flaky):
+    with pytest.raises(FlakyFailure):
         test()
     # We try a total of ten calls in the generation phase, each usually a
     # unique value, looking briefly (and unsuccessfully) for another bug.
@@ -143,7 +143,7 @@ def test_failure_sequence_inducing(building, testing, rnd):
 
     try:
         test()
-    except (Nope, Inconsistent, Unsatisfiable):
+    except (Nope, Flaky, Unsatisfiable):
         pass
     except UnsatisfiedAssumption:
         raise SatisfyMe from None

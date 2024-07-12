@@ -51,18 +51,17 @@ class Unsatisfiable(_Trimmable):
     """
 
 
-class Inconsistent(_Trimmable):
+class Flaky(_Trimmable):
     """Base class for indeterministic failures. Usually one of the more
-    specific subclasses (Flaky or InconsistentGeneration) is raised."""
-    pass
+    specific subclasses (FlakyFailure or FlakyData) is raised."""
 
 
-class FlakyGeneration(Inconsistent):
-    """Internal error raised by the conjecture engine if flakiness is detected
-    during replay.
+class FlakyReplay(Flaky):
+    """Internal error raised by the conjecture engine if flaky failures are
+    detected during replay.
 
-    Carries information allowing the runner to reconstruct the flakiness as a
-    Flaky exception group for final presentation..
+    Carries information allowing the runner to reconstruct the flakiness as
+    a FlakyFailure exception group for final presentation.
     """
 
     def __init__(self, reason, interesting_origins=None):
@@ -71,13 +70,14 @@ class FlakyGeneration(Inconsistent):
         self._interesting_origins = interesting_origins
 
 
-class InconsistentGeneration(Inconsistent):
+class FlakyData(Flaky):
     """This function appears to cause inconsistent data generation.
 
     Common causes for this problem are:
-        1. ...
+        1. The strategy depends on external state. e.g. it uses an external
+           random number generator. Try to make a version that passes all the
+           relevant state in from Hypothesis.
     """
-    pass
 
 
 def __getattr__(name):
@@ -102,11 +102,10 @@ def __getattr__(name):
 
 
 class _WrappedBaseException(Exception):
-    """Used internally for wrapping BaseExceptions as components of Flaky."""
-    pass
+    """Used internally for wrapping BaseExceptions as components of FlakyFailure."""
 
 
-class Flaky(ExceptionGroup, Inconsistent):
+class FlakyFailure(ExceptionGroup, Flaky):
     """This function appears to fail non-deterministically: We have seen it
     fail when passed this example at least once, but a subsequent invocation
     did not fail, or caused a distinct error.
@@ -121,11 +120,12 @@ class Flaky(ExceptionGroup, Inconsistent):
            how long it takes. Try breaking it up into smaller functions which
            don't do that and testing those instead.
     """
+
     def __new__(cls, msg, group):
         # The Exception mixin forces this an ExceptionGroup (only accepting
         # Exceptions, not BaseException). Usually BaseException is raised
-        # directly and will hence not be part of a Flaky, but I'm not sure
-        # that this assumption holds everywhere. So wrap any BaseExceptions.
+        # directly and will hence not be part of a FlakyFailure, but I'm not
+        # sure this assumption holds everywhere. So wrap any BaseExceptions.
         group = list(group)
         for i, exc in enumerate(group):
             if not isinstance(exc, Exception):

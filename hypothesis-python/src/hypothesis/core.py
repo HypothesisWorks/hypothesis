@@ -58,12 +58,11 @@ from hypothesis.errors import (
     DeadlineExceeded,
     DidNotReproduce,
     FailedHealthCheck,
-    Flaky,
-    FlakyGeneration,
+    FlakyFailure,
+    FlakyReplay,
     Found,
     HypothesisException,
     HypothesisWarning,
-    Inconsistent,
     InvalidArgument,
     NoSuchExample,
     StopTest,
@@ -1001,25 +1000,25 @@ class StateForActualGivenExecution:
                 )
             else:
                 report("Failed to reproduce exception. Expected: \n" + traceback)
-            raise Flaky(
+            raise FlakyFailure(
                 f"Hypothesis {text_repr} produces unreliable results: "
                 "Falsified on the first call but did not on a subsequent one",
-                [exception]
+                [exception],
             )
         return result
 
-    def _flaky_from_generator(self, err, context):
+    def _flaky_replay_to_failure(self, err, context):
         interesting_examples = [
             self._runner.interesting_examples[io]
-            for io in err._interesting_origins if io
+            for io in err._interesting_origins
+            if io
         ]
         exceptions = [
-            ie.extra_information._expected_exception
-            for ie in interesting_examples
+            ie.extra_information._expected_exception for ie in interesting_examples
         ]
         if context is not None:
             exceptions.append(context)  # the offending assume or whatever
-        return Flaky(err.reason, exceptions)
+        return FlakyFailure(err.reason, exceptions)
 
     def _execute_once_for_engine(self, data: ConjectureData) -> None:
         """Wrapper around ``execute_once`` that intercepts test failure
@@ -1055,10 +1054,10 @@ class StateForActualGivenExecution:
             # this test run was invalid.
             try:
                 data.mark_invalid(e.reason)
-            except FlakyGeneration as err:
-                # This was unexpected, meaning that assume was flaky. Report it
-                # as such.
-                raise self._flaky_from_generator(err, e) from None
+            except FlakyReplay as err:
+                # This was unexpected, meaning that the assume was flaky.
+                # Report it as such.
+                raise self._flaky_replay_to_failure(err, e) from None
         except StopTest:
             # The engine knows how to handle this control exception, so it's
             # OK to re-raise it.
@@ -1247,18 +1246,18 @@ class StateForActualGivenExecution:
                 # failed until the final non-traced replay, and something was
                 # exhausted? Possibly a FIXME, but sufficiently weird to
                 # ignore for now.
-                err = Flaky(
+                err = FlakyFailure(
                     "Inconsistent results: An example failed on the "
                     "first run but now succeeds (or fails with another "
                     "error, or is for some reason not runnable).",
-                    [info._expected_exception or e]  # (note: e is a BaseException)
+                    [info._expected_exception or e],  # (note: e is a BaseException)
                 )
                 errors_to_report.append((fragments, err))
             except UnsatisfiedAssumption as e:
-                err = Flaky(
+                err = FlakyFailure(
                     "Unreliable assumption: An example which satisfied "
                     "assumptions on the first run now fails it.",
-                    [e]
+                    [e],
                 )
                 errors_to_report.append((fragments, err))
             except BaseException as e:

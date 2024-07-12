@@ -14,7 +14,7 @@ import time
 import pytest
 
 from hypothesis import given, settings, strategies as st
-from hypothesis.errors import DeadlineExceeded, Flaky, InvalidArgument
+from hypothesis.errors import DeadlineExceeded, FlakyFailure, InvalidArgument
 
 from tests.common.utils import assert_falsifying_output, fails_with
 
@@ -56,7 +56,7 @@ def test_raises_flaky_if_a_test_becomes_fast_on_rerun():
             once[0] = False
             time.sleep(1)
 
-    with pytest.raises(Flaky):
+    with pytest.raises(FlakyFailure):
         test_flaky_slow()
 
 
@@ -110,7 +110,7 @@ def test_gives_a_deadline_specific_flaky_error_message():
             once[0] = False
             time.sleep(0.2)
 
-    with pytest.raises(Flaky) as err:
+    with pytest.raises(FlakyFailure) as err:
         slow_once()
     assert "Unreliable test timing" in "\n".join(err.value.__notes__)
     assert "took 2" in "\n".join(err.value.__notes__)

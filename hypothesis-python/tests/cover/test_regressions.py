@@ -131,11 +131,11 @@ exc_instances = [
     ),
     errors.RewindRecursive(int),
     errors.UnsatisfiedAssumption("reason for unsatisfied"),
-    errors.FlakyGeneration(
+    errors.FlakyReplay(
         "reason",
         interesting_origins=[InterestingOrigin.from_exception(BaseException())]
     ),
-    errors.Flaky("check with BaseException", [BaseException()]),
+    errors.FlakyFailure("check with BaseException", [BaseException()]),
 ]
 
 

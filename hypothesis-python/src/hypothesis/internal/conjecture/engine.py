@@ -40,7 +40,7 @@ from hypothesis import HealthCheck, Phase, Verbosity, settings as Settings
 from hypothesis._settings import local_settings
 from hypothesis.database import ExampleDatabase
 from hypothesis.errors import (
-    FlakyGeneration,
+    FlakyReplay,
     HypothesisException,
     InvalidArgument,
     StopTest,
@@ -540,14 +540,14 @@ class ConjectureRunner:
                 # StateForActualGivenExecution for better diagnostic reports of eg
                 # flaky deadlines, but we're too low down in the engine for that.
                 # for now a worse generic flaky error will have to do.
-                # TODO: Convert to Flaky on the way out. Should same-origin also
-                #       be checked?
+                # TODO: Convert to FlakyFailure on the way out. Should same-origin
+                #       also be checked?
                 if data.status != Status.INTERESTING:
-                    raise FlakyGeneration(
+                    raise FlakyReplay(
                         f"Inconsistent results from replaying a failing test case!\n"
                         f"  last: {Status.INTERESTING.name} from {initial_origin}\n"
                         f"  this: {data.status.name}",
-                        interesting_origins=[initial_origin]
+                        interesting_origins=[initial_origin],
                     )
 
                 self._cache(data)

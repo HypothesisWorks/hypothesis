@@ -15,8 +15,8 @@ from typing import List, Optional, Union
 import attr
 
 from hypothesis.errors import (
-    FlakyGeneration,
-    InconsistentGeneration,
+    FlakyData,
+    FlakyReplay,
     HypothesisException,
     StopTest,
 )
@@ -50,7 +50,7 @@ class PreviouslyUnseenBehaviour(HypothesisException):
 
 
 def inconsistent_generation():
-    raise InconsistentGeneration(
+    raise FlakyData(
         "Inconsistent data generation! Data generation behaved differently "
         "between different runs. Is your data generation depending on external "
         "state?"
@@ -474,7 +474,7 @@ class TreeNode:
         Splits the tree so that it can incorporate a decision at the draw call
         corresponding to the node at position i.
 
-        Raises InconsistentGeneration if node i was forced.
+        Raises FlakyData if node i was forced.
         """
 
         if i in self.forced:
@@ -1149,11 +1149,11 @@ class TreeRecordingObserver(DataObserver):
             ):
                 old_origin = node.transition.interesting_origin
                 new_origin = new_transition.interesting_origin
-                raise FlakyGeneration(
+                raise FlakyReplay(
                     f"Inconsistent results from replaying a test case!\n"
                     f"  last: {node.transition.status.name} from {old_origin}\n"
                     f"  this: {new_transition.status.name} from {new_origin}",
-                    (old_origin, new_origin)
+                    (old_origin, new_origin),
                 )
         else:
             node.transition = new_transition

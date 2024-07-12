@@ -18,7 +18,7 @@ import pytest
 
 from hypothesis import given, settings, strategies as st
 from hypothesis.database import InMemoryExampleDatabase
-from hypothesis.errors import Inconsistent, HypothesisException, InvalidArgument
+from hypothesis.errors import Flaky, HypothesisException, InvalidArgument
 from hypothesis.internal.compat import int_to_bytes
 from hypothesis.internal.conjecture.data import (
     AVAILABLE_PROVIDERS,
@@ -369,7 +369,7 @@ def test_flaky_with_backend():
             calls += 1
             assert n != calls % 2
 
-        with pytest.raises(Inconsistent):
+        with pytest.raises(Flaky):
             test_function()
 
 

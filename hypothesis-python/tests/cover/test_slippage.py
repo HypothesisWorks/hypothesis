@@ -12,7 +12,7 @@ import pytest
 
 from hypothesis import Phase, assume, given, settings, strategies as st, target
 from hypothesis.database import InMemoryExampleDatabase
-from hypothesis.errors import Flaky
+from hypothesis.errors import FlakyFailure
 from hypothesis.internal.compat import ExceptionGroup
 from hypothesis.internal.conjecture.engine import MIN_TEST_CALLS
 
@@ -233,13 +233,13 @@ def test_handles_flaky_tests_where_only_one_is_flaky():
 
     with pytest.raises(ExceptionGroup) as err:
         test()
-    assert any(isinstance(e, Flaky) for e in err.value.exceptions)
+    assert any(isinstance(e, FlakyFailure) for e in err.value.exceptions)
 
     flaky_fixed = True
 
     with pytest.raises(ExceptionGroup) as err:
         test()
-    assert not any(isinstance(e, Flaky) for e in err.value.exceptions)
+    assert not any(isinstance(e, FlakyFailure) for e in err.value.exceptions)
 
 
 @pytest.mark.parametrize("allow_multi", [True, False])
