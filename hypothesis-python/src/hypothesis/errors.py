@@ -8,6 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+from hypothesis.internal.compat import ExceptionGroup
+
 
 class HypothesisException(Exception):
     """Generic parent class for exceptions thrown by Hypothesis."""
@@ -78,27 +80,6 @@ class FlakyData(Flaky):
            random number generator. Try to make a version that passes all the
            relevant state in from Hypothesis.
     """
-
-
-def __getattr__(name):
-    if name in ["BaseExceptionGroup", "ExceptionGroup"]:
-        from hypothesis.internal import compat
-
-        return getattr(compat, name)
-
-    if name == "MultipleFailures":
-        from hypothesis._settings import note_deprecation
-
-        note_deprecation(
-            "MultipleFailures is deprecated; use the builtin `BaseExceptionGroup` type "
-            "instead, or `exceptiongroup.BaseExceptionGroup` before Python 3.11",
-            since="2022-08-02",
-            has_codemod=False,  # This would be a great PR though!
-            stacklevel=1,
-        )
-        return BaseExceptionGroup
-
-    raise AttributeError(f"Module 'hypothesis.errors' has no attribute {name}")
 
 
 class _WrappedBaseException(Exception):
@@ -194,6 +175,23 @@ class HypothesisSideeffectWarning(HypothesisWarning):
 class Frozen(HypothesisException):
     """Raised when a mutation method has been called on a ConjectureData object
     after freeze() has been called."""
+
+
+def __getattr__(name):
+    if name == "MultipleFailures":
+        from hypothesis._settings import note_deprecation
+        from hypothesis.internal.compat import BaseExceptionGroup
+
+        note_deprecation(
+            "MultipleFailures is deprecated; use the builtin `BaseExceptionGroup` type "
+            "instead, or `exceptiongroup.BaseExceptionGroup` before Python 3.11",
+            since="2022-08-02",
+            has_codemod=False,  # This would be a great PR though!
+            stacklevel=1,
+        )
+        return BaseExceptionGroup
+
+    raise AttributeError(f"Module 'hypothesis.errors' has no attribute {name}")
 
 
 class DeadlineExceeded(_Trimmable):

@@ -1007,7 +1007,9 @@ class StateForActualGivenExecution:
             )
         return result
 
-    def _flaky_replay_to_failure(self, err, context):
+    def _flaky_replay_to_failure(
+        self, err: FlakyReplay, context: BaseException
+    ) -> FlakyFailure:
         interesting_examples = [
             self._runner.interesting_examples[io]
             for io in err._interesting_origins
@@ -1016,8 +1018,7 @@ class StateForActualGivenExecution:
         exceptions = [
             ie.extra_information._expected_exception for ie in interesting_examples
         ]
-        if context is not None:
-            exceptions.append(context)  # the offending assume or whatever
+        exceptions.append(context)  # the offending assume (or whatever)
         return FlakyFailure(err.reason, exceptions)
 
     def _execute_once_for_engine(self, data: ConjectureData) -> None:

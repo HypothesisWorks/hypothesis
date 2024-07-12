@@ -27,13 +27,7 @@ from hypothesis import (
 )
 from hypothesis.control import current_build_context
 from hypothesis.database import ExampleDatabase
-from hypothesis.errors import (
-    DidNotReproduce,
-    Flaky,
-    FlakyFailure,
-    InvalidArgument,
-    InvalidDefinition,
-)
+from hypothesis.errors import DidNotReproduce, Flaky, InvalidArgument, InvalidDefinition
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.stateful import (
     Bundle,

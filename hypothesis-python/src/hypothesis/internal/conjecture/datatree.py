@@ -14,12 +14,7 @@ from typing import List, Optional, Union
 
 import attr
 
-from hypothesis.errors import (
-    FlakyData,
-    FlakyReplay,
-    HypothesisException,
-    StopTest,
-)
+from hypothesis.errors import FlakyData, FlakyReplay, HypothesisException, StopTest
 from hypothesis.internal import floats as flt
 from hypothesis.internal.compat import int_to_bytes
 from hypothesis.internal.conjecture.data import (

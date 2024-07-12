@@ -12,7 +12,7 @@ import pytest
 
 from hypothesis import HealthCheck, Verbosity, assume, example, given, reject, settings
 from hypothesis.core import StateForActualGivenExecution
-from hypothesis.errors import FlakyFailure, Flaky, Unsatisfiable, UnsatisfiedAssumption
+from hypothesis.errors import Flaky, FlakyFailure, Unsatisfiable, UnsatisfiedAssumption
 from hypothesis.internal.conjecture.engine import MIN_TEST_CALLS
 from hypothesis.internal.scrutineer import Tracer
 from hypothesis.strategies import booleans, composite, integers, lists, random_module
@@ -57,6 +57,7 @@ def test_gives_flaky_error_if_assumption_is_flaky():
     assert isinstance(exceptions[0], AssertionError)
     assert isinstance(exceptions[1], UnsatisfiedAssumption)
 
+
 def test_flaky_with_context_when_fails_only_under_tracing(monkeypatch):
     # make anything fail under tracing
     monkeypatch.setattr(Tracer, "can_trace", lambda: True)
@@ -68,10 +69,13 @@ def test_flaky_with_context_when_fails_only_under_tracing(monkeypatch):
     def test(x):
         pass
 
-    with pytest.raises(FlakyFailure, match="failed on the first run but now succeeds") as e:
+    with pytest.raises(
+        FlakyFailure, match="failed on the first run but now succeeds"
+    ) as e:
         test()
     exceptions = e.value.exceptions
-    assert len(exceptions) == 1 and isinstance(exceptions[0], ZeroDivisionError)
+    assert len(exceptions) == 1
+    assert isinstance(exceptions[0], ZeroDivisionError)
 
 
 def test_does_not_attempt_to_shrink_flaky_errors():
