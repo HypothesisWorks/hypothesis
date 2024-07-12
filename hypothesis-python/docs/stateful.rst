@@ -268,11 +268,11 @@ Initializes are typically useful to populate bundles:
         def init_folders(self):
             return "/"
 
-        @rule(target=folders, name=name_strategy)
+        @rule(target=folders, parent=folders, name=name_strategy)
         def create_folder(self, parent, name):
             return f"{parent}/{name}"
 
-        @rule(target=files, name=name_strategy)
+        @rule(target=files, parent=folders, name=name_strategy)
         def create_file(self, parent, name):
             return f"{parent}/{name}"
 
