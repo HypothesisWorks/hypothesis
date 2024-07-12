@@ -21,10 +21,12 @@ import collections.abc
 import operator
 import pathlib
 import re
+import subprocess
 import sys
 from typing import Optional, Sequence, Union
 
 import numpy
+import numpy.typing
 import pytest
 from example_code.future_annotations import (
     add_custom_classes,
@@ -116,6 +118,19 @@ else:
 
 def sequence_from_collections(items: CollectionsSequence[int]) -> int:
     return min(items)
+
+
+if sys.version_info[:2] >= (3, 10):
+
+    def various_numpy_annotations(
+        f: numpy.typing.NDArray[numpy.float64],
+        fc: numpy.typing.NDArray[numpy.float64 | numpy.complex128],
+        union: numpy.typing.NDArray[numpy.float64 | numpy.complex128] | None,
+    ):
+        pass
+
+else:
+    various_numpy_annotations = add
 
 
 # Note: for some of the `expected` outputs, we replace away some small
@@ -274,6 +289,13 @@ def sequence_from_collections(items: CollectionsSequence[int]) -> int:
                 )
             ],
         ),
+        pytest.param(
+            (
+                "magic_numpy",
+                ghostwriter.magic(various_numpy_annotations, annotate=False),
+            ),
+            marks=pytest.mark.skipif(various_numpy_annotations is add, reason="<=3.9"),
+        ),
     ],
     ids=lambda x: x[0],
 )
@@ -290,3 +312,25 @@ def test_ghostwriter_on_hypothesis(update_recorded_outputs):
     if sys.version_info[:2] == (3, 10):
         assert actual == expected
     exec(expected, {"not_set": not_set})
+
+
+def test_ghostwriter_suggests_submodules_for_empty_toplevel(
+    tmp_path, update_recorded_outputs
+):
+    foo = tmp_path / "foo"
+    foo.mkdir()
+    (foo / "__init__.py").write_text("from . import bar\n", encoding="utf-8")
+    (foo / "bar.py").write_text("def baz(x: int): ...\n", encoding="utf-8")
+
+    proc = subprocess.run(
+        ["hypothesis", "write", "foo"],
+        check=True,
+        capture_output=True,
+        encoding="utf-8",
+        cwd=tmp_path,
+    )
+    actual = proc.stdout.replace(re.search(r"from '(.+)foo/", proc.stdout).group(1), "")
+
+    expected = get_recorded("nothing_found", actual * update_recorded_outputs)
+    assert actual == expected  # We got the expected source code
+    exec(expected, {})  # and there are no SyntaxError or NameErrors

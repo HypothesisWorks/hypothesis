@@ -1,0 +1,3 @@
+# Found no testable functions in foo (from 'foo/__init__.py')
+# Try writing tests for submodules, e.g. by using:
+#     hypothesis write foo.bar

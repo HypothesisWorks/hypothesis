@@ -85,6 +85,14 @@ def test_resolves_specified_NDArray_type(typ):
     )
 
 
+@pytest.mark.skipif(sys.version_info[:2] <= (3, 9), reason="union op for types")
+@pytest.mark.skipif(NDArray is None, **needs_np_typing)
+def test_resolves_NDArray_with_dtype_union():
+    strat = from_type(NDArray[np.float64 | np.complex128])
+    find_any(strat, lambda arr: arr.dtype == np.dtype("float64"))
+    find_any(strat, lambda arr: arr.dtype == np.dtype("complex128"))
+
+
 @pytest.mark.skipif(ArrayLike is None, **needs_np_typing)
 @given(arr_like=from_type(ArrayLike))
 def test_resolves_ArrayLike_type(arr_like):
