@@ -18,6 +18,35 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.107.0:
+
+--------------------
+6.107.0 - 2024-07-13
+--------------------
+
+The ``alphabet=`` argument to :func:`~hypothesis.strategies.from_regex`
+now accepts unions of :func:`~hypothesis.strategies.characters` and
+:func:`~hypothesis.strategies.sampled_from` strategies, in addition to
+accepting each individually.
+
+This patch also fixes a bug where ``text(...).filter(re.compile(...).match)``
+could generate non-matching instances if the regex pattern contained ``|``
+(:issue:`4008`).
+
+.. _v6.106.1:
+
+--------------------
+6.106.1 - 2024-07-12
+--------------------
+
+This patch improves our pretty-printer (:issue:`4037`).
+
+It also fixes the codemod for ``HealthCheck.all()`` from
+:ref:`version 6.72 <v6.72.0>`, which was instead trying to
+fix ``Healthcheck.all()`` - note the lower-case ``c``!
+Since our tests had the same typo, it all looked good...
+until :issue:`4030`.
+
 .. _v6.106.0:
 
 --------------------

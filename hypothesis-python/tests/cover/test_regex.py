@@ -486,3 +486,8 @@ def test_internals_can_disable_newline_from_dollar_for_jsonschema():
         ),
         lambda s: s == "abc",
     )
+
+
+@given(st.from_regex(r"[^.].*", alphabet=st.sampled_from("abc") | st.just(".")))
+def test_can_pass_union_for_alphabet(_):
+    pass

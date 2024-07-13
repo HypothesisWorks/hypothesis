@@ -1254,7 +1254,7 @@ class StateForActualGivenExecution:
                     [info._expected_exception or e],  # (note: e is a BaseException)
                 )
                 errors_to_report.append((fragments, err))
-            except UnsatisfiedAssumption as e:
+            except UnsatisfiedAssumption as e:  # pragma: no cover  # ironically flaky
                 err = FlakyFailure(
                     "Unreliable assumption: An example which satisfied "
                     "assumptions on the first run now fails it.",

@@ -55,6 +55,8 @@ from functools import partial
 
 import pytest
 
+from hypothesis import given, strategies as st
+from hypothesis.control import current_build_context
 from hypothesis.internal.compat import PYPY
 from hypothesis.internal.floats import SIGNALING_NAN
 from hypothesis.vendor import pretty
@@ -692,3 +694,33 @@ def test_pretty_partial_with_cycle():
     assert pretty.pretty(p) == "functools.partial(bool, [])"
     ls.append(p)
     assert pretty.pretty(p) == "functools.partial(bool, [functools.partial(bool, ...)])"
+
+
+class InvalidSyntaxRepr:
+    def __init__(self, val=None) -> None:
+        self.val = val
+
+    def __repr__(self):
+        return "invalid syntax"
+
+
+class ValidSyntaxRepr:
+    def __init__(self, val=None) -> None:
+        self.val = val
+
+    def __repr__(self):
+        return "ValidSyntaxRepr(...)"
+
+
+@given(st.none().map(InvalidSyntaxRepr))
+def test_pprint_with_call_or_repr_as_call(x):
+    p = pretty.RepresentationPrinter(context=current_build_context())
+    p.pretty(x)
+    assert p.getvalue() == "InvalidSyntaxRepr(None)"
+
+
+@given(st.just(InvalidSyntaxRepr()).map(ValidSyntaxRepr))
+def test_pprint_with_call_or_repr_as_repr(x):
+    p = pretty.RepresentationPrinter(context=current_build_context())
+    p.pretty(x)
+    assert p.getvalue() == "ValidSyntaxRepr(...)"
