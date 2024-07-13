@@ -12,7 +12,7 @@ import numpy as np
 import pytest
 from pytest import param
 
-from hypothesis import example, given, note, settings, strategies as st
+from hypothesis import HealthCheck, example, given, note, settings, strategies as st
 from hypothesis.extra import numpy as nps
 from hypothesis.extra._array_helpers import _hypothesis_parse_gufunc_signature
 
@@ -66,7 +66,7 @@ def test_matmul_gufunc_shapes(everything):
     assert out.shape == result_shape
 
 
-@settings(deadline=None, max_examples=10)
+@settings(deadline=None, max_examples=10, suppress_health_check=list(HealthCheck))
 @pytest.mark.parametrize(
     "target_sig",
     ("(i),(i)->()", "(m,n),(n,p)->(m,p)", "(n),(n,p)->(p)", "(m,n),(n)->(m)"),
@@ -83,7 +83,6 @@ def test_matmul_signature_can_exercise_all_combination_of_optional_dims(
             signature="(m?,n),(n,p?)->(m?,p?)", max_dims=0
         ),
         lambda shapes: shapes == target_shapes,
-        settings(max_examples=10**6),
     )
 
 

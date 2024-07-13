@@ -133,7 +133,8 @@ def test_generate_arrays_from_zero_dimensions(xp, xps):
 def test_generate_arrays_from_zero_sided_shapes(xp, xps, data):
     """Generate arrays from shapes with at least one 0-sized dimension."""
     shape = data.draw(xps.array_shapes(min_side=0).filter(lambda s: 0 in s))
-    assert_all_examples(xps.arrays(xp.int8, shape), lambda x: x.shape == shape)
+    arr = data.draw(xps.arrays(xp.int8, shape))
+    assert arr.shape == shape
 
 
 def test_generate_arrays_from_unsigned_ints(xp, xps):

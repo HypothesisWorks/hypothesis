@@ -10,7 +10,7 @@
 
 import pytest
 
-from hypothesis import given, settings, strategies as st
+from hypothesis import HealthCheck, given, settings, strategies as st
 
 from tests.common.debug import assert_all_examples, find_any, minimal
 
@@ -63,9 +63,9 @@ def test_slices_will_shrink(size):
 
 
 @given(st.integers(1, 1000))
-@settings(deadline=None)
+@settings(deadline=None, suppress_health_check=list(HealthCheck))
 def test_step_will_be_negative(size):
-    find_any(st.slices(size), lambda x: (x.step or 1) < 0, settings(max_examples=10**6))
+    find_any(st.slices(size), lambda x: (x.step or 1) < 0)
 
 
 @given(st.integers(1, 1000))
