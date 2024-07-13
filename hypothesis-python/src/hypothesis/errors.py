@@ -55,7 +55,7 @@ class Unsatisfiable(_Trimmable):
 
 class Flaky(_Trimmable):
     """Base class for indeterministic failures. Usually one of the more
-    specific subclasses (FlakyFailure or FlakyData) is raised."""
+    specific subclasses (FlakyFailure or FlakyStrategyDefinition) is raised."""
 
 
 class FlakyReplay(Flaky):
@@ -72,7 +72,7 @@ class FlakyReplay(Flaky):
         self._interesting_origins = interesting_origins
 
 
-class FlakyData(Flaky):
+class FlakyStrategyDefinition(Flaky):
     """This function appears to cause inconsistent data generation.
 
     Common causes for this problem are:

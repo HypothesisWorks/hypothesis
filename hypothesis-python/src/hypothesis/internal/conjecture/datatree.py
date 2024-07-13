@@ -14,7 +14,12 @@ from typing import List, Optional, Union
 
 import attr
 
-from hypothesis.errors import FlakyData, FlakyReplay, HypothesisException, StopTest
+from hypothesis.errors import (
+    FlakyReplay,
+    FlakyStrategyDefinition,
+    HypothesisException,
+    StopTest,
+)
 from hypothesis.internal import floats as flt
 from hypothesis.internal.compat import int_to_bytes
 from hypothesis.internal.conjecture.data import (
@@ -45,7 +50,7 @@ class PreviouslyUnseenBehaviour(HypothesisException):
 
 
 def inconsistent_generation():
-    raise FlakyData(
+    raise FlakyStrategyDefinition(
         "Inconsistent data generation! Data generation behaved differently "
         "between different runs. Is your data generation depending on external "
         "state?"
@@ -469,7 +474,7 @@ class TreeNode:
         Splits the tree so that it can incorporate a decision at the draw call
         corresponding to the node at position i.
 
-        Raises FlakyData if node i was forced.
+        Raises FlakyStrategyDefinition if node i was forced.
         """
 
         if i in self.forced:
