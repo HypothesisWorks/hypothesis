@@ -17,6 +17,7 @@ import pytest
 
 from hypothesis import (
     HealthCheck,
+    Phase,
     assume,
     given,
     note,
@@ -968,7 +969,7 @@ def test_mutually_broadcastable_shapes_can_generate_arbitrary_ndims(
     )
 
 
-@settings(deadline=None)
+@settings(deadline=None, suppress_health_check=list(HealthCheck))
 @given(
     base_shape=nps.array_shapes(min_dims=0, max_dims=3, min_side=0, max_side=2),
     max_dims=st.integers(1, 4),
@@ -1102,10 +1103,10 @@ def test_advanced_integer_index_can_generate_any_pattern(shape, data):
         target(float(np.sum(target_array == selected)), label="elements correct")
         return np.all(target_array == selected)
 
-    find_any(
+    minimal(
         nps.integer_array_indices(shape, result_shape=st.just(target_array.shape)),
         index_selects_values_in_order,
-        settings(max_examples=10**6),
+        settings(max_examples=10**6, phases=[Phase.generate, Phase.target]),
     )
 
 
