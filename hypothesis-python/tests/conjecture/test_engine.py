@@ -26,7 +26,7 @@ from hypothesis import (
     strategies as st,
 )
 from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
-from hypothesis.errors import FailedHealthCheck, Flaky
+from hypothesis.errors import FailedHealthCheck, FlakyStrategyDefinition
 from hypothesis.internal.compat import bit_count, int_from_bytes
 from hypothesis.internal.conjecture import engine as engine_module
 from hypothesis.internal.conjecture.data import ConjectureData, IRNode, Overrun, Status
@@ -338,7 +338,7 @@ def test_reuse_phase_runs_for_max_examples_if_generation_is_disabled():
 def test_erratic_draws():
     n = [0]
 
-    with pytest.raises(Flaky):
+    with pytest.raises(FlakyStrategyDefinition):
 
         @run_to_buffer
         def x(data):
