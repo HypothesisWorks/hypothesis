@@ -11,7 +11,7 @@
 import os
 from warnings import filterwarnings
 
-from hypothesis import Phase, Verbosity, settings
+from hypothesis import HealthCheck, Phase, Verbosity, settings
 from hypothesis._settings import not_set
 from hypothesis.internal.conjecture.data import AVAILABLE_PROVIDERS
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
@@ -61,7 +61,17 @@ def run():
 
     settings.register_profile("debug", settings(verbosity=Verbosity.debug))
 
-    for backend in set(AVAILABLE_PROVIDERS) - {"hypothesis"}:
-        settings.register_profile(backend, backend=backend)  # e.g. "crosshair"
+    if "crosshair" in AVAILABLE_PROVIDERS:
+        settings.register_profile(
+            "crosshair",
+            backend="crosshair",
+            max_examples=20,
+            deadline=None,
+            suppress_health_check=list(HealthCheck),
+            report_multiple_bugs=False,
+        )
+
+    for backend in set(AVAILABLE_PROVIDERS) - {"hypothesis", "crosshair"}:
+        settings.register_profile(backend, backend=backend)
 
     settings.load_profile(os.getenv("HYPOTHESIS_PROFILE", "default"))
