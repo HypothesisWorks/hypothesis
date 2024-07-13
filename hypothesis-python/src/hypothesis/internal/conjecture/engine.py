@@ -534,7 +534,7 @@ class ConjectureRunner:
                 # drive the ir tree through the test function to convert it
                 # to a buffer
                 initial_origin = data.interesting_origin
-                initial_traceback = data.extra_information._expected_traceback
+                initial_traceback = data.extra_information._expected_traceback  # type: ignore
                 data = ConjectureData.for_ir_tree(data.examples.ir_tree_nodes)
                 self.__stoppable_test_function(data)
                 data.freeze()
