@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.108.0:
+
+--------------------
+6.108.0 - 2024-07-13
+--------------------
+
+This patch changes most Flaky errors to use an ExceptionGroup, which
+makes the representation of these errors easier to understand.
+
 .. _v6.107.0:
 
 --------------------
