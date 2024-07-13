@@ -34,3 +34,4 @@ exclude_lines =
     if "[\w\.]+" in sys\.modules:
     if .+ := sys\.modules\.get\("[\w\.]+"\)
     @overload
+    if .*\bnot .*provider.avoid_realization
