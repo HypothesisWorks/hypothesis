@@ -10,6 +10,7 @@
 
 import abc
 import enum
+import functools
 import sys
 from inspect import Parameter as P, Signature
 from typing import Callable, Dict, Generic, List, Sequence, TypeVar, Union
@@ -59,19 +60,32 @@ blocklist = {
     "timezones",
 }
 assert set(_strategies).issuperset(blocklist), blocklist.difference(_strategies)
-types_with_core_strat = set()
-for thing in (
+core_strategies = [
     getattr(st, name)
-    for name in sorted(_strategies)
+    for name in sorted(_strategies, key=str)
     if name in dir(st) and name not in blocklist
-):
+]
+
+sentinel = object()
+
+
+@functools.lru_cache
+def _get_return_type(strat):
     for n in range(3):
         try:
-            ex = find_any(thing(*([st.nothing()] * n)))
-            types_with_core_strat.add(type(ex))
-            break
+            ex = find_any(strat(*([st.nothing()] * n)))
+            return type(ex)
         except (TypeError, InvalidArgument, HypothesisDeprecationWarning):
             continue
+
+    return sentinel
+
+
+def get_return_type(strat, *, skip=True):
+    typ = _get_return_type(strat)
+    if typ is sentinel and skip:
+        pytest.skip(f"failed to instantiate {strat}")
+    return typ
 
 
 @pytest.mark.skipif(sys.version_info[:2] >= (3, 14), reason="FIXME-py314")
@@ -81,8 +95,10 @@ def test_generic_sequence_of_integers_may_be_lists_or_bytes():
     find_any(strat, lambda x: isinstance(x, list))
 
 
-@pytest.mark.parametrize("typ", sorted(types_with_core_strat, key=str))
-def test_resolve_core_strategies(typ):
+@pytest.mark.parametrize("strat", core_strategies)
+def test_resolve_core_strategies(strat):
+    typ = get_return_type(strat)
+
     @given(st.from_type(typ))
     def inner(ex):
         assert isinstance(ex, typ)
@@ -91,7 +107,13 @@ def test_resolve_core_strategies(typ):
 
 
 def test_lookup_knows_about_all_core_strategies():
-    cannot_lookup = types_with_core_strat - set(types._global_type_lookup)
+    core_return_types = set()
+    for s in core_strategies:
+        typ = get_return_type(s, skip=False)
+        if typ is sentinel:
+            continue
+        core_return_types.add(get_return_type(s))
+    cannot_lookup = core_return_types - set(types._global_type_lookup)
     assert not cannot_lookup
 
 
@@ -116,8 +138,9 @@ def test_lookup_values_are_strategies(typ, not_a_strategy):
     assert not_a_strategy not in types._global_type_lookup.values()
 
 
-@pytest.mark.parametrize("typ", sorted(types_with_core_strat, key=str))
-def test_lookup_overrides_defaults(typ):
+@pytest.mark.parametrize("strat", core_strategies)
+def test_lookup_overrides_defaults(strat):
+    typ = get_return_type(strat)
     sentinel = object()
     with temp_registered(typ, st.just(sentinel)):
         assert_simple_property(st.from_type(typ), lambda v: v is sentinel)
