@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.108.2:
+
+--------------------
+6.108.2 - 2024-07-15
+--------------------
+
+This patch disables :func:`hypothesis.target` on alternative
+backends where it would not work.
+
 .. _v6.108.1:
 
 --------------------
