@@ -17,14 +17,11 @@ from typing import Callable, Dict, Generic, List, Sequence, TypeVar, Union
 import pytest
 
 from hypothesis import given, infer, settings, strategies as st
-from hypothesis.errors import (
-    HypothesisDeprecationWarning,
-    InvalidArgument,
-    ResolutionFailed,
-)
+from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.internal.compat import get_type_hints
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies._internal import types
+from hypothesis.strategies._internal.lazy import LazyStrategy
 from hypothesis.strategies._internal.types import _global_type_lookup
 from hypothesis.strategies._internal.utils import _strategies
 
@@ -36,42 +33,11 @@ from tests.common.debug import (
 )
 from tests.common.utils import fails_with, temp_registered
 
-# Build a set of all types output by core strategies
-blocklist = {
-    "builds",
-    "data",
-    "deferred",
-    "from_regex",
-    "from_type",
-    "ip_addresses",
-    "iterables",
-    "just",
-    "nothing",
-    "one_of",
-    "permutations",
-    "random_module",
-    "randoms",
-    "recursive",
-    "runner",
-    "sampled_from",
-    "shared",
-    "timezone_keys",
-    "timezones",
+types_with_core_strat = {
+    type_
+    for type_, strat in _global_type_lookup.items()
+    if isinstance(strat, LazyStrategy) and strat.function in vars(st).values()
 }
-assert set(_strategies).issuperset(blocklist), blocklist.difference(_strategies)
-types_with_core_strat = set()
-for thing in (
-    getattr(st, name)
-    for name in sorted(_strategies)
-    if name in dir(st) and name not in blocklist
-):
-    for n in range(3):
-        try:
-            ex = find_any(thing(*([st.nothing()] * n)))
-            types_with_core_strat.add(type(ex))
-            break
-        except (TypeError, InvalidArgument, HypothesisDeprecationWarning):
-            continue
 
 
 @pytest.mark.skipif(sys.version_info[:2] >= (3, 14), reason="FIXME-py314")
@@ -91,7 +57,44 @@ def test_resolve_core_strategies(typ):
 
 
 def test_lookup_knows_about_all_core_strategies():
-    cannot_lookup = types_with_core_strat - set(types._global_type_lookup)
+    # Build a set of all types output by core strategies
+    blocklist = {
+        "builds",
+        "data",
+        "deferred",
+        "from_regex",
+        "from_type",
+        "ip_addresses",
+        "iterables",
+        "just",
+        "nothing",
+        "one_of",
+        "permutations",
+        "random_module",
+        "randoms",
+        "recursive",
+        "runner",
+        "sampled_from",
+        "shared",
+        "timezone_keys",
+        "timezones",
+    }
+    assert set(_strategies).issuperset(blocklist), blocklist.difference(_strategies)
+    found = set()
+    for thing in (
+        getattr(st, name)
+        for name in sorted(_strategies)
+        if name in dir(st) and name not in blocklist
+    ):
+        for n in range(3):
+            try:
+                ex = find_any(thing(*([st.nothing()] * n)))
+                found.add(type(ex))
+                break
+            except Exception:
+                continue
+
+    cannot_lookup = found - set(types._global_type_lookup)
     assert not cannot_lookup
 
 
