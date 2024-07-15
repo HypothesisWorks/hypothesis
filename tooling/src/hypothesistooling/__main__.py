@@ -520,7 +520,7 @@ for n in [13, 14, 15, 20, 21, 22]:
 standard_tox_task("py39-pandas11", py="3.9")
 standard_tox_task("py39-pandas12", py="3.9")
 
-for kind in ("cover", "nocover", "niche"):
+for kind in ("cover", "nocover", "niche", "custom"):
     standard_tox_task(f"crosshair-{kind}")
 
 standard_tox_task("py38-oldestnumpy", py="3.8")
