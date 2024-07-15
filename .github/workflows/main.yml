@@ -83,7 +83,12 @@ jobs:
           - check-pandas13
           - check-py39-pandas12
           - check-py39-pandas11
-          # - check-crosshair-cover
+          ## `-cover` is too slow under crosshair; use a custom split
+          # - check-crosshair-custom-cover/test_[a-d]*
+          # - check-crosshair-custom-cover/test_[e-i]*
+          # - check-crosshair-custom-cover/test_[j-r]*
+          # - check-crosshair-custom-cover/test_[s-z]*
+          # - check-crosshair-custom-pytest/test_*
           # - check-crosshair-nocover
           # - check-crosshair-niche
           - check-py38-oldestnumpy
@@ -121,7 +126,14 @@ jobs:
           sudo apt-get update && \
           sudo apt-get install -y dotnet-sdk-6.0
     - name: Run tests
-      run: TASK=${{ matrix.task }} ./build.sh
+      run: |
+        export TASK=${{ matrix.task }}
+        if [[ $TASK == check-crosshair-custom-* ]]; then
+          GROUP="${TASK#check-crosshair-custom-}"
+          ./build.sh check-crosshair-custom -- -n auto $(cd hypothesis-python ; echo tests/$GROUP)
+        else
+          ./build.sh
+        fi
     - name: Upload coverage data
       uses: actions/upload-artifact@v2
       # Invoke the magic `always` function to run on both success and failure.
