@@ -10,7 +10,6 @@
 
 from hypothesis import given, settings, strategies as st
 from hypothesis.database import InMemoryExampleDatabase
-from hypothesis.internal.compat import int_from_bytes
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.shrinker import Shrinker, node_program
@@ -78,29 +77,6 @@ def test_can_discard(monkeypatch):
         data.mark_interesting()
 
     assert len(x) == n
-
-
-def test_regression_1():
-    # This is a really hard to reproduce bug that previously triggered a very
-    # specific exception inside one of the shrink passes. It's unclear how
-    # useful this regression test really is, but nothing else caught the
-    # problem.
-    #
-    # update 2024-01-15: we've since changed generation and are about to
-    # change shrinking, so it's unclear if the failure case this test was aimed
-    # at (1) is still being covered or (2) even exists anymore.
-    # we can probably safely remove this once the shrinker is rebuilt.
-    @run_to_buffer
-    def x(data):
-        data.draw_bytes(2, forced=b"\x01\x02")
-        data.draw_bytes(2, forced=b"\x01\x00")
-        v = data.draw_integer(0, 2**41 - 1)
-        if v >= 512 or v == 254:
-            data.mark_interesting()
-
-    assert list(x)[:-2] == [1, 2, 1, 0, 0, 0, 0, 0, 0]
-
-    assert int_from_bytes(x[-2:]) in (254, 512)
 
 
 @given(st.integers(0, 255), st.integers(0, 255))

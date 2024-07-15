@@ -16,17 +16,11 @@ from hypothesis.strategies import lists
 
 from tests.common import standard_types
 from tests.common.debug import minimal
-from tests.common.utils import flaky
 
 
 @pytest.mark.parametrize("spec", standard_types, ids=list(map(repr, standard_types)))
-@flaky(min_passes=1, max_runs=2)
 def test_can_collectively_minimize(spec):
-    """This should generally exercise strategies' strictly_simpler heuristic by
-    putting us in a state where example cloning is required to get to the
-    answer fast enough."""
     n = 10
-
     try:
         xs = minimal(
             lists(spec, min_size=n, max_size=n),
