@@ -27,7 +27,7 @@ from hypothesis.errors import DeadlineExceeded, HypothesisWarning, InvalidArgume
 from hypothesis.internal.compat import ExceptionGroup
 from hypothesis.strategies import floats, integers, text
 
-from tests.common.utils import assert_falsifying_output, capture_out
+from tests.common.utils import assert_falsifying_output, capture_out, fails_with
 
 
 class TestInstanceMethods(TestCase):
@@ -222,15 +222,12 @@ def test_must_agree_with_number_of_arguments():
         test()
 
 
-def test_runs_deadline_for_examples():
-    @example(10)
-    @settings(phases=[Phase.explicit])
-    @given(integers())
-    def test(x):
-        time.sleep(10)
-
-    with pytest.raises(DeadlineExceeded):
-        test()
+@fails_with(DeadlineExceeded)
+@example(10)
+@settings(phases=[Phase.explicit])
+@given(integers())
+def test(x):
+    time.sleep(10)
 
 
 @given(value=floats(0, 1))
