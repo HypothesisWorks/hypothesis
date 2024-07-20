@@ -18,7 +18,7 @@ from tests.common import standard_types
 from tests.common.debug import minimal
 
 
-@pytest.mark.parametrize("spec", standard_types, ids=list(map(repr, standard_types)))
+@pytest.mark.parametrize("spec", standard_types, ids=repr)
 def test_can_collectively_minimize(spec):
     n = 10
     try:
