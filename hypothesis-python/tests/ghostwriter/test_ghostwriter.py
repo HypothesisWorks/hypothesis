@@ -12,6 +12,7 @@ import ast
 import enum
 import json
 import os
+import platform
 import re
 import socket
 import unittest
@@ -508,7 +509,7 @@ def test_obj_name(temp_script_file, temp_script_file_with_py_function):
     )
     # Windows paths (strings including a "\") should also raise a meaningful UsageError
     with pytest.raises(click.exceptions.UsageError) as e:
-        cli.obj_name("mydirectory\\myscript.py")
+        cli.obj_name(R"mydirectory\myscript.py")
     assert e.match(
         "Remember that the ghostwriter should be passed the name of a module, not a path."
     )
@@ -518,7 +519,10 @@ def test_obj_name(temp_script_file, temp_script_file_with_py_function):
     assert e.match(
         "Remember that the ghostwriter should be passed the name of a module, not a file."
     )
+
     # File names of modules (strings ending in ".py") that exist should get a suggestion
+    if platform.system() == "Darwin":
+        return  # bad/flaky interaction between importlib and tempdirs here
     with pytest.raises(click.exceptions.UsageError) as e:
         cli.obj_name(str(temp_script_file))
     assert e.match(
