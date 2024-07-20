@@ -60,7 +60,7 @@ extras = {
     "pytest": ["pytest>=4.6"],
     "dpcontracts": ["dpcontracts>=0.4"],
     "redis": ["redis>=3.0.0"],
-    "crosshair": ["hypothesis-crosshair>=0.0.7", "crosshair-tool>=0.0.61"],
+    "crosshair": ["hypothesis-crosshair>=0.0.8", "crosshair-tool>=0.0.62"],
     # zoneinfo is an odd one: every dependency is conditional, because they're
     # only necessary on old versions of Python or Windows systems or emscripten.
     "zoneinfo": [

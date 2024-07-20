@@ -16,11 +16,11 @@ from tests.common import standard_types
 from tests.common.debug import check_can_generate_examples
 
 
-@pytest.mark.parametrize("spec", standard_types, ids=list(map(repr, standard_types)))
+@pytest.mark.parametrize("spec", standard_types, ids=repr)
 def test_single_example(spec):
     check_can_generate_examples(spec)
 
 
-@pytest.mark.parametrize("spec", standard_types, ids=list(map(repr, standard_types)))
+@pytest.mark.parametrize("spec", standard_types, ids=repr)
 def test_list_example(spec):
     check_can_generate_examples(lists(spec))

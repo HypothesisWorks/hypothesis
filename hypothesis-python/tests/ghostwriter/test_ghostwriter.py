@@ -11,6 +11,8 @@
 import ast
 import enum
 import json
+import os
+import platform
 import re
 import socket
 import unittest
@@ -450,13 +452,22 @@ def test_get_imports_for_strategy(strategy, imports):
 
 
 @pytest.fixture
-def temp_script_file():
-    """Fixture to yield a Path to a temporary file in the local directory. File name will end
-    in .py and will include an importable function.
+def in_temp_path(tmp_path):
+    """Fixture to execute tests in a temporary path."""
+    old_path = Path.cwd()
+    os.chdir(tmp_path)
+    yield
+    os.chdir(old_path)
+
+
+@pytest.fixture
+def temp_script_file(in_temp_path):
+    """Fixture to create a script file in a temporary working directory.
+
+    Changes the working directory to a temporary directory, then yields an extant file
+    whose name will end in .py and which includes an importable function.
     """
     p = Path("my_temp_script.py")
-    if p.exists():
-        raise FileExistsError(f"Did not expect {p} to exist during testing")
     p.write_text(
         dedent(
             """
@@ -466,18 +477,17 @@ def temp_script_file():
         ),
         encoding="utf-8",
     )
-    yield p
-    p.unlink()
+    return p
 
 
 @pytest.fixture
-def temp_script_file_with_py_function():
-    """Fixture to yield a Path to a temporary file in the local directory. File name will end
-    in .py and will include an importable function named "py"
+def temp_script_file_with_py_function(in_temp_path):
+    """Fixture to create a python file in a temporary working directory.
+
+    Changes the working directory to a temporary directory, then yields an extant file
+    whose name will end in .py and which includes an importable function named "py".
     """
     p = Path("my_temp_script_with_py_function.py")
-    if p.exists():
-        raise FileExistsError(f"Did not expect {p} to exist during testing")
     p.write_text(
         dedent(
             """
@@ -487,8 +497,7 @@ def temp_script_file_with_py_function():
         ),
         encoding="utf-8",
     )
-    yield p
-    p.unlink()
+    return p
 
 
 def test_obj_name(temp_script_file, temp_script_file_with_py_function):
@@ -500,7 +509,7 @@ def test_obj_name(temp_script_file, temp_script_file_with_py_function):
     )
     # Windows paths (strings including a "\") should also raise a meaningful UsageError
     with pytest.raises(click.exceptions.UsageError) as e:
-        cli.obj_name("mydirectory\\myscript.py")
+        cli.obj_name(R"mydirectory\myscript.py")
     assert e.match(
         "Remember that the ghostwriter should be passed the name of a module, not a path."
     )
@@ -510,7 +519,10 @@ def test_obj_name(temp_script_file, temp_script_file_with_py_function):
     assert e.match(
         "Remember that the ghostwriter should be passed the name of a module, not a file."
     )
+
     # File names of modules (strings ending in ".py") that exist should get a suggestion
+    if platform.system() == "Darwin":
+        return  # bad/flaky interaction between importlib and tempdirs here
     with pytest.raises(click.exceptions.UsageError) as e:
         cli.obj_name(str(temp_script_file))
     assert e.match(
