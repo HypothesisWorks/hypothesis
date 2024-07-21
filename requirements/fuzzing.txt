@@ -56,7 +56,7 @@ flask==3.0.3
     # via dash
 hypofuzz==24.2.3
     # via -r requirements/fuzzing.in
-hypothesis[cli]==6.108.0
+hypothesis[cli]==6.108.2
     # via hypofuzz
 idna==3.7
     # via requests
@@ -114,11 +114,11 @@ psutil==6.0.0
     # via hypofuzz
 ptyprocess==0.7.0
     # via pexpect
-pyarrow==16.1.0
+pyarrow==17.0.0
     # via -r requirements/coverage.in
 pygments==2.18.0
     # via rich
-pytest==8.2.2
+pytest==8.3.1
     # via
     #   -r requirements/test.in
     #   hypofuzz
@@ -182,5 +182,5 @@ zipp==3.19.2
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-setuptools==70.3.0
+setuptools==71.0.4
     # via dash
