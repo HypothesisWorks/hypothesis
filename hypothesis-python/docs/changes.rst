@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.108.4:
+
+--------------------
+6.108.4 - 2024-07-22
+--------------------
+
+This patch addresses the issue of hypothesis potentially accessing
+mocked ``time.perf_counter`` during test execution (:issue:`4051`).
+
 .. _v6.108.3:
 
 --------------------
