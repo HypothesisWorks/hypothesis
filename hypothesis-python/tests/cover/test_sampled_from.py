@@ -14,7 +14,7 @@ import sys
 
 import pytest
 
-from hypothesis import given, strategies as st
+from hypothesis import given, settings, strategies as st
 from hypothesis.errors import (
     FailedHealthCheck,
     InvalidArgument,
@@ -63,12 +63,14 @@ def test_can_sample_enums(enum_class):
 
 
 @fails_with(FailedHealthCheck)
+@settings(suppress_health_check=[])
 @given(sampled_from(range(10)).filter(lambda x: x < 0))
 def test_unsat_filtered_sampling(x):
     raise AssertionError
 
 
 @fails_with(Unsatisfiable)
+@settings(suppress_health_check=[])
 @given(sampled_from(range(2)).filter(lambda x: x < 0))
 def test_unsat_filtered_sampling_in_rejection_stage(x):
     # Rejecting all possible indices before we calculate the allowed indices

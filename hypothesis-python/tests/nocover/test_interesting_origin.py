@@ -23,7 +23,7 @@ def go_wrong_naive(a, b):
     except Exception:
         # Hiding the actual problem is terrible, but this pattern can make sense
         # if you're raising a library-specific or semantically meaningful error.
-        raise ValueError("Something went wrong") from None
+        raise ValueError("Something went wrong")  # noqa
 
 
 def go_wrong_with_cause(a, b):
@@ -53,7 +53,7 @@ def go_wrong_coverup(a, b):
 @flaky(max_runs=3, min_passes=1)
 def test_can_generate_specified_version(function):
     @given(st.integers(), st.integers())
-    @settings(database=None)
+    @settings(database=None, report_multiple_bugs=True)
     def test_fn(x, y):
         # Indirection to fix https://github.com/HypothesisWorks/hypothesis/issues/2888
         return function(x, y)

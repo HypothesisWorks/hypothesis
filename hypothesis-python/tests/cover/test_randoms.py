@@ -294,6 +294,7 @@ def test_invalid_sample():
 
 
 def test_triangular_modes():
+    @settings(report_multiple_bugs=True)
     @given(st.randoms(use_true_random=False))
     def test(rnd):
         x = rnd.triangular(0.0, 1.0, mode=0.5)

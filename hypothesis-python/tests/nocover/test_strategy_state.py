@@ -13,7 +13,7 @@ import math
 from random import Random
 
 from hypothesis import Verbosity, assume, settings
-from hypothesis.database import ExampleDatabase
+from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.internal.compat import PYPY
 from hypothesis.internal.floats import float_to_int, int_to_float, is_negative
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
@@ -71,7 +71,7 @@ class HypothesisSpec(RuleBasedStateMachine):
     @rule()
     def set_database(self):
         self.teardown()
-        self.database = ExampleDatabase()
+        self.database = InMemoryExampleDatabase()
 
     @rule(
         target=strategies,

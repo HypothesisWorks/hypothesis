@@ -36,7 +36,7 @@ def capture_reports(test):
 def test_raises_multiple_failures_with_varying_type():
     target = [None]
 
-    @settings(database=None, max_examples=100)
+    @settings(database=None, max_examples=100, report_multiple_bugs=True)
     @given(st.integers())
     def test(i):
         if abs(i) < 1000:
@@ -68,7 +68,7 @@ def test_shows_target_scores_with_multiple_failures():
 def test_raises_multiple_failures_when_position_varies():
     target = [None]
 
-    @settings(max_examples=100)
+    @settings(max_examples=100, report_multiple_bugs=True)
     @given(st.integers())
     def test(i):
         if abs(i) < 1000:
@@ -88,7 +88,9 @@ def test_raises_multiple_failures_when_position_varies():
 def test_replays_both_failing_values():
     target = [None]
 
-    @settings(database=InMemoryExampleDatabase(), max_examples=500)
+    @settings(
+        database=InMemoryExampleDatabase(), max_examples=500, report_multiple_bugs=True
+    )
     @given(st.integers())
     def test(i):
         if abs(i) < 1000:
@@ -110,7 +112,9 @@ def test_replays_slipped_examples_once_initial_bug_is_fixed(fix):
     target = []
     bug_fixed = False
 
-    @settings(database=InMemoryExampleDatabase(), max_examples=500)
+    @settings(
+        database=InMemoryExampleDatabase(), max_examples=500, report_multiple_bugs=True
+    )
     @given(st.integers())
     def test(i):
         if abs(i) < 1000:
@@ -143,7 +147,7 @@ def test_garbage_collects_the_secondary_key():
 
     db = InMemoryExampleDatabase()
 
-    @settings(database=db, max_examples=500)
+    @settings(database=db, max_examples=500, report_multiple_bugs=True)
     @given(st.integers())
     def test(i):
         if bug_fixed:
@@ -180,7 +184,7 @@ def test_shrinks_both_failures():
     duds = set()
     second_target = None
 
-    @settings(database=None, max_examples=1000)
+    @settings(database=None, max_examples=1000, report_multiple_bugs=True)
     @given(st.integers(min_value=0))
     def test(i):
         nonlocal first_has_failed, duds, second_target
@@ -214,7 +218,9 @@ def test_handles_flaky_tests_where_only_one_is_flaky():
     target = []
     flaky_failed_once = [False]
 
-    @settings(database=InMemoryExampleDatabase(), max_examples=1000)
+    @settings(
+        database=InMemoryExampleDatabase(), max_examples=1000, report_multiple_bugs=True
+    )
     @given(st.integers())
     def test(i):
         if abs(i) < 1000:
@@ -267,7 +273,11 @@ def test_finds_multiple_failures_in_generation():
     special = None
     seen = set()
 
-    @settings(phases=[Phase.generate, Phase.shrink], max_examples=100)
+    @settings(
+        phases=[Phase.generate, Phase.shrink],
+        max_examples=100,
+        report_multiple_bugs=True,
+    )
     @given(st.integers(min_value=0))
     def test(x):
         """Constructs a test so the 10th largeish example we've seen is a

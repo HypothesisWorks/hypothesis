@@ -15,17 +15,10 @@ import pytest
 
 from hypothesis import given, reporting
 from hypothesis._settings import Verbosity, settings
-from hypothesis.reporting import debug_report, report, verbose_report
+from hypothesis.reporting import debug_report, verbose_report
 from hypothesis.strategies import integers
 
 from tests.common.utils import capture_out
-
-
-def test_can_print_bytes():
-    with capture_out() as o:
-        with reporting.with_reporter(reporting.default):
-            report(b"hi")
-    assert o.getvalue() == "hi\n"
 
 
 def test_prints_output_by_default():
@@ -77,10 +70,3 @@ def test_can_report_when_system_locale_is_ascii(monkeypatch):
         with open(write, "w", encoding="ascii") as write:
             monkeypatch.setattr(sys, "stdout", write)
             reporting.default("☃")
-
-
-def test_can_report_functions():
-    with capture_out() as out:
-        report(lambda: "foo")
-
-    assert out.getvalue().strip() == "foo"

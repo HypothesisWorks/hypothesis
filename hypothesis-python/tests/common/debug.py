@@ -11,6 +11,7 @@
 from unittest import SkipTest
 
 from hypothesis import HealthCheck, Phase, Verbosity, given, settings as Settings
+from hypothesis._settings import local_settings
 from hypothesis.control import _current_build_context
 from hypothesis.errors import Found, NoSuchExample, Unsatisfiable
 from hypothesis.internal.reflection import get_pretty_function_description
@@ -110,10 +111,11 @@ def assert_all_examples(strategy, predicate, settings=None):
     :param predicate: (callable) Predicate that takes example and returns bool
     """
     if context := _current_build_context.value:
-        for _ in range(20):
-            s = context.data.draw(strategy)
-            msg = f"Found {s!r} using strategy {strategy} which does not match"
-            assert predicate(s), msg
+        with local_settings(Settings(parent=settings)):
+            for _ in range(20):
+                s = context.data.draw(strategy)
+                msg = f"Found {s!r} using strategy {strategy} which does not match"
+                assert predicate(s), msg
 
     else:
 

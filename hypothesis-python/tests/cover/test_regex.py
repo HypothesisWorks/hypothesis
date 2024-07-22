@@ -15,7 +15,6 @@ import unicodedata
 import pytest
 
 from hypothesis import HealthCheck, assume, given, settings, strategies as st
-from hypothesis._settings import local_settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import PYPY
 from hypothesis.strategies._internal.regex import (
@@ -144,11 +143,11 @@ def test_can_generate(pattern, encode):
     alphabet = st.characters(max_codepoint=1000) if encode is None else None
     if encode:
         pattern = pattern.encode("ascii")
-    with local_settings(settings(suppress_health_check=[HealthCheck.data_too_large])):
-        assert_all_examples(
-            st.from_regex(pattern, alphabet=alphabet),
-            re.compile(pattern).search,
-        )
+    assert_all_examples(
+        st.from_regex(pattern, alphabet=alphabet),
+        re.compile(pattern).search,
+        settings=settings(suppress_health_check=[HealthCheck.data_too_large]),
+    )
 
 
 @pytest.mark.parametrize(
