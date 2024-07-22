@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.108.3:
+
+--------------------
+6.108.3 - 2024-07-22
+--------------------
+
+Minor internal-only cleanups to some error-handling and reporting code.
+
 .. _v6.108.2:
 
 --------------------
