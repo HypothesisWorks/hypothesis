@@ -915,7 +915,7 @@ def test_mutually_broadcastable_shapes_only_singleton_is_valid(
         assert all(i == 1 for i in shape[-len(base_shape) :])
 
 
-@settings(deadline=None)
+@settings(deadline=None, suppress_health_check=[HealthCheck.too_slow])
 @given(
     shape=nps.array_shapes(min_dims=0, max_dims=3, min_side=0, max_side=5),
     max_dims=st.integers(0, 6),

@@ -39,7 +39,7 @@ def test_prints_seed_only_on_healthcheck(
     else:
         expected_exc = AssertionError
 
-    @settings(database=None, verbosity=verbosity)
+    @settings(database=None, verbosity=verbosity, suppress_health_check=())
     @given(strategy)
     def test(i):
         assert fail_healthcheck
@@ -85,7 +85,7 @@ def test_does_print_on_reuse_from_database():
 
     database = InMemoryExampleDatabase()
 
-    @settings(database=database)
+    @settings(database=database, suppress_health_check=[])
     @given(st.integers())
     def test(i):
         assume(passes_healthcheck)

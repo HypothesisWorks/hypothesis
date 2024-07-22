@@ -67,7 +67,7 @@ def run():
             backend="crosshair",
             max_examples=20,
             deadline=None,
-            suppress_health_check=list(HealthCheck),
+            suppress_health_check=(HealthCheck.too_slow, HealthCheck.filter_too_much),
             report_multiple_bugs=False,
         )
 
