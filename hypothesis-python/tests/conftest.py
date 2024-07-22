@@ -116,6 +116,8 @@ def _consistently_increment_time(monkeypatch):
     # non-determinism due to GC running at arbitrary times, we patch the GC observer
     # to NOT increment time.
 
+    monkeypatch.setattr(junkdrawer, "_perf_counter", time)
+
     if hasattr(gc, "callbacks"):
         # ensure timer callback is added, then bracket it by freeze/unfreeze below
         junkdrawer.gc_cumulative_time()
