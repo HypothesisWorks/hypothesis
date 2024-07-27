@@ -33,6 +33,7 @@ from hypothesis.internal.intervalsets import IntervalSet
 
 from tests.common.debug import minimal
 from tests.conjecture.common import (
+    draw_integer_kwargs,
     draw_value,
     fresh_data,
     ir_nodes,
@@ -272,13 +273,33 @@ def test_compute_max_children_and_all_children_agree(ir_type_and_kwargs):
 # compute_max_children, because they by necessity require iterating over 2**127
 # or more elements. We do the not great approximation of checking just the first
 # element is what we expect.
-@pytest.mark.parametrize(
-    "min_value, max_value, first",
-    [(None, None, -(2**127) + 1), (None, 42, (-(2**127) + 1) + 42), (42, None, 42)],
-)
-def test_compute_max_children_unbounded_integer_ranges(min_value, max_value, first):
-    kwargs = {"min_value": min_value, "max_value": max_value, "weights": None}
-    assert first == next(all_children("integer", kwargs))
+
+
+@pytest.mark.parametrize("use_min_value", [True, False])
+@pytest.mark.parametrize("use_max_value", [True, False])
+def test_compute_max_children_unbounded_integer_ranges(use_min_value, use_max_value):
+    @given(
+        draw_integer_kwargs(
+            use_min_value=use_min_value,
+            use_max_value=use_max_value,
+            use_weights=use_min_value and use_max_value,
+        )
+    )
+    def f(kwargs):
+        if kwargs["min_value"] is not None:
+            expected = kwargs["min_value"]
+        else:
+            offset = (
+                0
+                if kwargs["max_value"] is None
+                else min(kwargs["max_value"], kwargs["shrink_towards"])
+            )
+            expected = offset - (2**127) + 1
+
+        first = next(all_children("integer", kwargs))
+        assert expected == first, (expected, first)
+
+    f()
 
 
 @given(st.randoms())
