@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.108.5:
+
+--------------------
+6.108.5 - 2024-07-28
+--------------------
+
+This patch fixes a rare internal error when using :func:`~hypothesis.strategies.integers` with a high number of examples and certain ``{min, max}_value`` parameters (:pull:`4059`).
+
 .. _v6.108.4:
 
 --------------------
