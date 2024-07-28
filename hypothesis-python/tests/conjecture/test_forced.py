@@ -225,3 +225,23 @@ def test_forced_floats_with_nan(random, sign, min_value, max_value):
     # trying to use float clampers that didn't exist when drawing.
     data = fresh_data(random=random)
     data.draw_float(min_value=min_value, max_value=max_value, forced=sign * math.nan)
+
+
+@given(st.data())
+def test_forced_with_large_magnitude_integers(data):
+    bound_offset = data.draw(st.integers(min_value=0))
+    # forced_offset = bound_offset + st.integers(min_value=0) may look cleaner, but
+    # has subtly different maximum value semantics as it is twice the range of a
+    # single draw
+    forced_offset = data.draw(st.integers(min_value=bound_offset))
+
+    half_range = 2**127 + 1
+    cd = fresh_data()
+    cd.draw_integer(
+        min_value=half_range + bound_offset, forced=half_range + forced_offset
+    )
+
+    cd = fresh_data()
+    cd.draw_integer(
+        max_value=-(half_range + bound_offset), forced=-(half_range + forced_offset)
+    )
