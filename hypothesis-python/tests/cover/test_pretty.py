@@ -712,8 +712,13 @@ class ValidSyntaxRepr:
         return "ValidSyntaxRepr(...)"
 
 
-@given(st.none().map(InvalidSyntaxRepr))
-def test_pprint_with_call_or_repr_as_call(x):
+@given(st.data())
+def test_pprint_with_call_or_repr_as_call(data):
+    # mapped pprint repr only triggers for failing examples - which makes an
+    # end to end test given hypothesis difficult. fake our way around it.
+    current_build_context().is_final = True
+
+    x = data.draw(st.none().map(InvalidSyntaxRepr))
     p = pretty.RepresentationPrinter(context=current_build_context())
     p.pretty(x)
     assert p.getvalue() == "InvalidSyntaxRepr(None)"
@@ -721,6 +726,16 @@ def test_pprint_with_call_or_repr_as_call(x):
 
 @given(st.just(InvalidSyntaxRepr()).map(ValidSyntaxRepr))
 def test_pprint_with_call_or_repr_as_repr(x):
+    p = pretty.RepresentationPrinter(context=current_build_context())
+    p.pretty(x)
+    assert p.getvalue() == "ValidSyntaxRepr(...)"
+
+
+@given(st.data())
+def test_pprint_map_with_cycle(data):
+    current_build_context().is_final = True
+    x = data.draw(st.just(ValidSyntaxRepr()).map(lambda x: x))
+
     p = pretty.RepresentationPrinter(context=current_build_context())
     p.pretty(x)
     assert p.getvalue() == "ValidSyntaxRepr(...)"
