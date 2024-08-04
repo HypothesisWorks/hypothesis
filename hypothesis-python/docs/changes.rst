@@ -18,6 +18,23 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.108.7:
+
+--------------------
+6.108.7 - 2024-08-04
+--------------------
+
+This patch improves our pretty-printer for unusual numbers.
+
+- Signalling NaNs are now represented by using the :mod:`struct` module
+  to show the exact value by converting from a hexadecimal integer
+
+- CPython `limits integer-to-string conversions
+  <https://docs.python.org/3/library/stdtypes.html#integer-string-conversion-length-limitation>`__
+  to mitigate DDOS attacks.  We now use hexadecimal for very large
+  integers, and include underscore separators for integers with ten
+  or more digits.
+
 .. _v6.108.6:
 
 --------------------
