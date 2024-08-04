@@ -91,7 +91,7 @@ def test_suppressing_filtering_health_check():
 
 def test_filtering_everything_fails_a_health_check():
     @given(st.integers().filter(lambda x: False))
-    @settings(database=None)
+    @settings(database=None, suppress_health_check=())
     def test(x):
         pass
 

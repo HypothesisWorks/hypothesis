@@ -41,12 +41,10 @@ except ImportError:
         (-sys.float_info.max, sys.float_info.max),
     ],
 )
-def test_floats_are_in_range(lower, upper):
-    @given(st.floats(lower, upper))
-    def test_is_in_range(t):
-        assert lower <= t <= upper
-
-    test_is_in_range()
+@given(data=st.data())
+def test_floats_are_in_range(data, lower, upper):
+    t = data.draw(st.floats(lower, upper))
+    assert lower <= t <= upper
 
 
 @pytest.mark.parametrize("sign", [-1, 1])
