@@ -73,22 +73,14 @@ def test_can_find_quite_broad_lists():
 
 
 def test_drawing_many_near_boundary():
-    target = 4
-
-    ls = minimal(
-        st.lists(
-            st.recursive(
-                st.booleans(),
-                lambda x: st.lists(
-                    x, min_size=2 * (target - 1), max_size=2 * target
-                ).map(tuple),
-                max_leaves=2 * target - 1,
-            )
-        ),
-        lambda x: len(set(x)) >= target,
-        timeout_after=None,
+    size = 4
+    elems = st.recursive(
+        st.booleans(),
+        lambda x: st.lists(x, min_size=2 * (size - 1), max_size=2 * size).map(tuple),
+        max_leaves=2 * size - 1,
     )
-    assert len(ls) == target
+    ls = minimal(st.lists(elems), lambda x: len(set(x)) >= size, timeout_after=None)
+    assert len(ls) == size
 
 
 def test_can_use_recursive_data_in_sets():

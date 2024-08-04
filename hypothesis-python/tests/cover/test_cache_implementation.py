@@ -56,14 +56,18 @@ class LFUCache(GenericCache):
 
 
 @st.composite
-def write_pattern(draw, min_size=0):
-    keys = draw(st.lists(st.integers(0, 1000), unique=True, min_size=1))
-    values = draw(st.lists(st.integers(), unique=True, min_size=1))
-    return draw(
-        st.lists(
-            st.tuples(st.sampled_from(keys), st.sampled_from(values)), min_size=min_size
-        )
+def write_pattern(draw, min_distinct_keys=0):
+    keys = draw(
+        st.lists(st.integers(0, 1000), unique=True, min_size=max(min_distinct_keys, 1))
     )
+    values = draw(st.lists(st.integers(), unique=True, min_size=1))
+    s = st.lists(
+        st.tuples(st.sampled_from(keys), st.sampled_from(values)),
+        min_size=min_distinct_keys,
+    )
+    if min_distinct_keys > 0:
+        s = s.filter(lambda ls: len({k for k, _ in ls}) >= min_distinct_keys)
+    return draw(s)
 
 
 class ValueScored(GenericCache):
@@ -111,8 +115,12 @@ def test_behaves_like_a_dict_with_losses(implementation, writes, size):
         assert len(target) <= min(len(model), size)
 
 
-@settings(suppress_health_check=[HealthCheck.too_slow], deadline=None)
-@given(write_pattern(min_size=2), st.data())
+@settings(
+    suppress_health_check={HealthCheck.too_slow}
+    | set(settings.get_profile(settings._current_profile).suppress_health_check),
+    deadline=None,
+)
+@given(write_pattern(min_distinct_keys=2), st.data())
 def test_always_evicts_the_lowest_scoring_value(writes, data):
     scores = {}
 

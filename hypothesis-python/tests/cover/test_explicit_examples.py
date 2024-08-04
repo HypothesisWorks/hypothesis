@@ -224,7 +224,7 @@ def test_must_agree_with_number_of_arguments():
 
 @fails_with(DeadlineExceeded)
 @example(10)
-@settings(phases=[Phase.explicit])
+@settings(phases=[Phase.explicit], deadline=1)
 @given(integers())
 def test(x):
     time.sleep(10)
