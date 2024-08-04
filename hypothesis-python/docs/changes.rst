@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.108.8:
+
+--------------------
+6.108.8 - 2024-08-04
+--------------------
+
+This patch improves our example generation performance by adjusting our internal cache implementation.
+
 .. _v6.108.7:
 
 --------------------
