@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.108.6:
+
+--------------------
+6.108.6 - 2024-08-04
+--------------------
+
+This patch improves generation speed in some cases by avoiding pretty-printing overhead for non-failing examples.
+
 .. _v6.108.5:
 
 --------------------
