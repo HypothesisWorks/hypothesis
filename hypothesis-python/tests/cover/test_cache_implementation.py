@@ -24,12 +24,12 @@ from hypothesis import (
     strategies as st,
 )
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.cache import GenericCache, LRUReusedCache
+from hypothesis.internal.cache import GenericCache, LRUCache, LRUReusedCache
 
 from tests.common.utils import skipif_emscripten
 
 
-class LRUCache(GenericCache):
+class LRUCacheAlternative(GenericCache):
     __slots__ = ("__tick",)
 
     def __init__(self, max_size):
@@ -88,7 +88,8 @@ class RandomCache(GenericCache):
 
 
 @pytest.mark.parametrize(
-    "implementation", [LRUCache, LFUCache, LRUReusedCache, ValueScored, RandomCache]
+    "implementation",
+    [LRUCache, LFUCache, LRUReusedCache, ValueScored, RandomCache, LRUCacheAlternative],
 )
 @example(writes=[(0, 0), (3, 0), (1, 0), (2, 0), (2, 0), (1, 0)], size=4)
 @example(writes=[(0, 0)], size=1)
@@ -306,6 +307,15 @@ def test_iterates_over_remaining_keys():
     for i in range(3):
         cache[i] = "hi"
     assert sorted(cache) == [1, 2]
+
+
+def test_lru_cache_is_actually_lru():
+    cache = LRUCache(2)
+    cache[1] = 1  # [1]
+    cache[2] = 2  # [1, 2]
+    cache[1]  # [2, 1]
+    cache[3] = 2  # [2, 1, 3] -> drop least recently used -> [1, 3]
+    assert list(cache) == [1, 3]
 
 
 @skipif_emscripten
