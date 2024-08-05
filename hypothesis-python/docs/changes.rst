@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.108.9:
+
+--------------------
+6.108.9 - 2024-08-05
+--------------------
+
+This patch removes an assertion which was in fact possible in rare circumstances involving a small number of very large draws.
+
 .. _v6.108.8:
 
 --------------------
