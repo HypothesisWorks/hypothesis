@@ -8,15 +8,15 @@ annotated-types==0.7.0
     # via -r requirements/coverage.in
 async-timeout==4.0.3
     # via redis
-attrs==23.2.0
+attrs==24.1.0
     # via hypothesis (hypothesis-python/setup.py)
-black==24.4.2
+black==24.8.0
     # via -r requirements/coverage.in
 click==8.1.7
     # via
     #   -r requirements/coverage.in
     #   black
-coverage[toml]==7.6.0
+coverage[toml]==7.6.1
     # via pytest-cov
 dpcontracts==0.6.0
     # via -r requirements/coverage.in
@@ -26,7 +26,7 @@ exceptiongroup==1.2.2 ; python_version < "3.11"
     #   pytest
 execnet==2.1.1
     # via pytest-xdist
-fakeredis==2.23.3
+fakeredis==2.23.5
     # via -r requirements/coverage.in
 iniconfig==2.0.0
     # via pytest
@@ -36,7 +36,7 @@ libcst==1.4.0
     # via -r requirements/coverage.in
 mypy-extensions==1.0.0
     # via black
-numpy==2.0.0
+numpy==2.0.1
     # via
     #   -r requirements/coverage.in
     #   pandas
@@ -57,9 +57,9 @@ pluggy==1.5.0
     # via pytest
 ptyprocess==0.7.0
     # via pexpect
-pyarrow==16.1.0
+pyarrow==17.0.0
     # via -r requirements/coverage.in
-pytest==8.2.2
+pytest==8.3.2
     # via
     #   -r requirements/test.in
     #   pytest-cov
@@ -78,7 +78,7 @@ pytz==2024.1
     #   pandas
 pyyaml==6.0.1
     # via libcst
-redis==5.0.7
+redis==5.0.8
     # via fakeredis
 six==1.16.0
     # via python-dateutil

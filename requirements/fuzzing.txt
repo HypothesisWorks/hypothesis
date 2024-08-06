@@ -8,11 +8,11 @@ annotated-types==0.7.0
     # via -r requirements/coverage.in
 async-timeout==4.0.3
     # via redis
-attrs==23.2.0
+attrs==24.1.0
     # via
     #   hypothesis
     #   hypothesis (hypothesis-python/setup.py)
-black==24.4.2
+black==24.8.0
     # via
     #   -r requirements/coverage.in
     #   hypofuzz
@@ -29,7 +29,7 @@ click==8.1.7
     #   black
     #   flask
     #   hypothesis
-coverage[toml]==7.6.0
+coverage[toml]==7.6.1
     # via
     #   hypofuzz
     #   pytest-cov
@@ -50,17 +50,17 @@ exceptiongroup==1.2.2 ; python_version < "3.11"
     #   pytest
 execnet==2.1.1
     # via pytest-xdist
-fakeredis==2.23.3
+fakeredis==2.23.5
     # via -r requirements/coverage.in
 flask==3.0.3
     # via dash
 hypofuzz==24.2.3
     # via -r requirements/fuzzing.in
-hypothesis[cli]==6.108.0
+hypothesis[cli]==6.108.9
     # via hypofuzz
 idna==3.7
     # via requests
-importlib-metadata==8.0.0
+importlib-metadata==8.2.0
     # via dash
 iniconfig==2.0.0
     # via pytest
@@ -86,7 +86,7 @@ mypy-extensions==1.0.0
     # via black
 nest-asyncio==1.6.0
     # via dash
-numpy==2.0.0
+numpy==2.0.1
     # via
     #   -r requirements/coverage.in
     #   pandas
@@ -106,7 +106,7 @@ pexpect==4.9.0
     # via -r requirements/test.in
 platformdirs==4.2.2
     # via black
-plotly==5.22.0
+plotly==5.23.0
     # via dash
 pluggy==1.5.0
     # via pytest
@@ -114,11 +114,11 @@ psutil==6.0.0
     # via hypofuzz
 ptyprocess==0.7.0
     # via pexpect
-pyarrow==16.1.0
+pyarrow==17.0.0
     # via -r requirements/coverage.in
 pygments==2.18.0
     # via rich
-pytest==8.2.2
+pytest==8.3.2
     # via
     #   -r requirements/test.in
     #   hypofuzz
@@ -138,7 +138,7 @@ pytz==2024.1
     #   pandas
 pyyaml==6.0.1
     # via libcst
-redis==5.0.7
+redis==5.0.8
     # via fakeredis
 requests==2.32.3
     # via
@@ -157,7 +157,7 @@ sortedcontainers==2.4.0
     #   fakeredis
     #   hypothesis
     #   hypothesis (hypothesis-python/setup.py)
-tenacity==8.5.0
+tenacity==9.0.0
     # via plotly
 tomli==2.0.1
     # via
@@ -182,5 +182,5 @@ zipp==3.19.2
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-setuptools==70.3.0
+setuptools==72.1.0
     # via dash

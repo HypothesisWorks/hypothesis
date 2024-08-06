@@ -49,7 +49,7 @@ if [ ! -e "$TARGET/bin/python" ] ; then
 
     if [ ! -d "$PYENV/.git" ]; then
       rm -rf "$PYENV"
-      git clone https://github.com/yyuu/pyenv.git "$PYENV"
+      git clone https://github.com/pyenv/pyenv.git "$PYENV"
     else
       back=$PWD
       cd "$PYENV"

@@ -25,7 +25,6 @@ sphinx-selective-exclude
 tox
 twine
 types-click
-types-pkg_resources
 types-pytz
 types-redis
 typing-extensions

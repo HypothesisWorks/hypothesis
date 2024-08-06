@@ -14,11 +14,8 @@ from dpcontracts import require
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.dpcontracts import fulfill
+from hypothesis.internal.conjecture.utils import identity
 from hypothesis.strategies import builds, integers
-
-
-def identity(x):
-    return x
 
 
 @require("division is undefined for zero", lambda args: args.n != 0)

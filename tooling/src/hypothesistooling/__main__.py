@@ -290,10 +290,12 @@ def update_python_versions():
     ).group(1)
     best = {}
     for line in map(str.strip, result.splitlines()):
-        if m := re.match(r"(?:pypy)?3\.(?:[789]|\d\dt?)", line):
+        if m := re.match(r"(?:pypy)?3\.(?:[89]|\d\dt?)", line):
             key = m.group()
+            curr = best.get(key, line)
             if (
-                (stable.match(line) or not stable.match(best.get(key, line)))
+                (stable.match(line) or not stable.match(curr))
+                and not (line.endswith("-dev") and not curr.endswith("-dev"))
                 and int(key.split(".")[-1].rstrip("t")) >= int(min_minor_version)
                 and key.endswith("t") == line.endswith(("t", "t-dev"))
             ):
@@ -449,7 +451,7 @@ PYTHONS = {
     "3.10": "3.10.14",
     "3.11": "3.11.9",
     "3.12": "3.12.4",
-    "3.13": "3.13.0b3",
+    "3.13": "3.13.0rc1",
     "3.13t": "3.13t-dev",
     "3.14": "3.14-dev",
     "3.14t": "3.14t-dev",

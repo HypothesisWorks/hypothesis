@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+from hypothesis.internal.conjecture.utils import identity
 from hypothesis.internal.reflection import get_pretty_function_description
 
 
@@ -163,10 +164,6 @@ def to_brackets():
 
 def test_can_handle_brackets_in_decorator_argument():
     assert get_pretty_function_description(to_brackets[0]) == "lambda: ()"
-
-
-def identity(x):
-    return x
 
 
 @arg_decorator(identity(lambda x: x + 1))
