@@ -1381,12 +1381,12 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
         )
         anns = {}
         for k, v in get_type_hints(thing).items():
-            qs, v = _get_typeddict_qualifiers(k, v)
+            qualifiers, v = _get_typeddict_qualifiers(k, v)
             # We ignore `ReadOnly` type for now, only unwrap it.
-            if types.RequiredTypes in qs:
+            if types.RequiredTypes in qualifiers:
                 optional.discard(k)
                 required.add(k)
-            if types.NotRequiredTypes in qs:
+            if types.NotRequiredTypes in qualifiers:
                 optional.add(k)
                 required.discard(k)
 
@@ -1395,6 +1395,9 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
                 anns[k] = _from_type_deferred(v)
 
         if not required.isdisjoint(optional):  # pragma: no cover
+            # It is impossible to cover, because `typing.py` or `typing-extensions`
+            # won't allow creating incorrect TypedDicts,
+            # this is just a sanity check from our side.
             raise InvalidArgument(
                 f"Required keys overlap with optional keys in a TypedDict:"
                 f" {required=}, {optional=}"

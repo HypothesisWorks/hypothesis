@@ -151,7 +151,7 @@ ReadOnlyTypes: tuple = ()
 try:
     ReadOnlyTypes += (typing.ReadOnly,)  # type: ignore
 except AttributeError:  # pragma: no cover
-    pass  # Is missing for `python<3.12`
+    pass  # Is missing for `python<3.13`
 try:
     ReadOnlyTypes += (typing_extensions.ReadOnly,)
 except AttributeError:  # pragma: no cover
