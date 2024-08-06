@@ -12,14 +12,9 @@ import pytest
 
 from hypothesis import example, given, strategies as st
 from hypothesis.errors import HypothesisWarning, InvalidArgument
+from hypothesis.internal.conjecture.utils import identity
 
 from tests.common.utils import fails_with
-
-
-def identity(decorator):
-    # The "identity function hack" from https://peps.python.org/pep-0614/
-    # Method-chaining decorators are otherwise a syntax error in Python <= 3.8
-    return decorator
 
 
 @identity(example(False).via("Manually specified"))
