@@ -194,9 +194,9 @@ NON_RUNTIME_TYPES = (
     *ConcatenateTypes,
     *ParamSpecTypes,
     *TypeGuardTypes,
-    *AnnotatedTypes,
 )
 for name in (
+    "Annotated",
     "NoReturn",
     "Self",
     "Required",
