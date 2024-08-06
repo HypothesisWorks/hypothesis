@@ -147,6 +147,28 @@ except AttributeError:  # pragma: no cover
     pass  # `typing_extensions` might not be installed
 
 
+ReadOnlyTypes: tuple = ()
+try:
+    ReadOnlyTypes += (typing.ReadOnly,)  # type: ignore
+except AttributeError:  # pragma: no cover
+    pass  # Is missing for `python<3.12`
+try:
+    ReadOnlyTypes += (typing_extensions.ReadOnly,)
+except AttributeError:  # pragma: no cover
+    pass  # `typing_extensions` might not be installed
+
+
+AnnotatedTypes: tuple = ()
+try:
+    AnnotatedTypes += (typing.Annotated,)  # type: ignore
+except AttributeError:  # pragma: no cover
+    pass  # Is missing for `python<3.9`
+try:
+    AnnotatedTypes += (typing_extensions.Annotated,)
+except AttributeError:  # pragma: no cover
+    pass  # `typing_extensions` might not be installed
+
+
 # We use this variable to be sure that we are working with a type from `typing`:
 typing_root_type = (typing._Final, typing._GenericAlias)  # type: ignore
 
@@ -162,13 +184,14 @@ NON_RUNTIME_TYPES = (
     *ConcatenateTypes,
     *ParamSpecTypes,
     *TypeGuardTypes,
+    *AnnotatedTypes,
 )
 for name in (
-    "Annotated",
     "NoReturn",
     "Self",
     "Required",
     "NotRequired",
+    "ReadOnly",
     "Never",
     "TypeVarTuple",
     "Unpack",

@@ -18,6 +18,7 @@ from typing_extensions import (
     Concatenate,
     NotRequired,
     ParamSpec,
+    ReadOnly,
     Required,
     TypedDict,
     TypeGuard,
@@ -288,6 +289,30 @@ def test_required_and_not_required_keys(check, condition):
     check(from_type(Novel), condition)
 
 
+class DeeplyNestedQualifiers(TypedDict):
+    a: ReadOnly[Required[int]]
+    b: NotRequired[Annotated[ReadOnly[int], "metadata"]]
+    c: Annotated[ReadOnly[NotRequired[str]], "metadata"]
+
+
+@pytest.mark.parametrize(
+    "check,condition",
+    [
+        pytest.param(
+            assert_all_examples,
+            lambda novel: "a" in novel,
+            id="a-is-required",
+        ),
+        pytest.param(find_any, lambda novel: "b" in novel, id="b-may-be-present"),
+        pytest.param(find_any, lambda novel: "b" not in novel, id="b-may-be-absent"),
+        pytest.param(find_any, lambda novel: "c" in novel, id="c-may-be-present"),
+        pytest.param(find_any, lambda novel: "c" not in novel, id="c-may-be-absent"),
+    ],
+)
+def test_required_and_not_required_keys_deeply_nested(check, condition):
+    check(from_type(DeeplyNestedQualifiers), condition)
+
+
 def test_typeddict_error_msg():
     with pytest.raises(TypeError, match="is not valid as type argument"):
 
@@ -298,3 +323,8 @@ def test_typeddict_error_msg():
 
         class Bar(TypedDict):
             attr: NotRequired
+
+    with pytest.raises(TypeError, match="is not valid as type argument"):
+
+        class Baz(TypedDict):
+            attr: ReadOnly
