@@ -62,7 +62,7 @@ make changes and install the changed version) you can do this with:
   pytest hypothesis-python/tests/cover/
 
 You may wish to do all of this in a
-`virtualenv <https://virtualenv.pypa.io/en/latest/>`_. For example:
+`virtualenv <https://docs.python.org/3/library/venv.html>`_. For example:
 
 .. code:: bash
 
