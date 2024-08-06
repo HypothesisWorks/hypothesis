@@ -62,12 +62,12 @@ make changes and install the changed version) you can do this with:
   pytest hypothesis-python/tests/cover/
 
 You may wish to do all of this in a
-`virtualenv <https://virtualenv.pypa.io/en/latest/>`_. For example:
+`virtualenv <https://docs.python.org/3/library/venv.html>`_. For example:
 
 .. code:: bash
 
-  virtualenv venv
-  source venv/bin/activate
+  python3 -m venv .venv
+  source .venv/bin/activate
   pip install hypothesis
 
 Will create an isolated environment where you can install and try out
