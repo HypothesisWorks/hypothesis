@@ -1353,7 +1353,7 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
         def _get_typeddict_qualifiers(key, annotation_type):
             qualifiers = []
             while True:
-                annotation_origin = get_origin(annotation_type)
+                annotation_origin = types.extended_get_origin(annotation_type)
                 if annotation_origin in types.AnnotatedTypes:
                     if annotation_args := get_args(annotation_type):
                         annotation_type = annotation_args[0]
@@ -1381,9 +1381,7 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
         )
         anns = {}
         for k, v in get_type_hints(thing).items():
-            print(k, v)
             qs, v = _get_typeddict_qualifiers(k, v)
-            print(qs, v)
             # We ignore `ReadOnly` type for now, only unwrap it.
             if types.RequiredTypes in qs:
                 optional.discard(k)

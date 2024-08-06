@@ -160,13 +160,23 @@ except AttributeError:  # pragma: no cover
 
 AnnotatedTypes: tuple = ()
 try:
-    AnnotatedTypes += (typing.Annotated,)  # type: ignore
+    AnnotatedTypes += (typing.Annotated,)
 except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.9`
 try:
     AnnotatedTypes += (typing_extensions.Annotated,)
 except AttributeError:  # pragma: no cover
     pass  # `typing_extensions` might not be installed
+
+
+# We need this function to use `get_origin` on 3.8 for types added later:
+# in typing-extensions, so we prefer this function over regular `get_origin`
+# when unwrapping `TypedDict`'s annotations.
+try:
+    extended_get_origin = typing_extensions.get_origin
+except AttributeError:  # pragma: no cover
+    # `typing_extensions` might not be installed, in this case - fallback:
+    extended_get_origin = get_origin  # type: ignore
 
 
 # We use this variable to be sure that we are working with a type from `typing`:
