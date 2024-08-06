@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.108.10:
+
+---------------------
+6.108.10 - 2024-08-06
+---------------------
+
+This patch fixes compatibility with :pypi:`attrs==24.1.0 <attrs>`
+on the nightly build of CPython, 3.14.0 pre-alpha (:issue:`4067`).
+
 .. _v6.108.9:
 
 --------------------
