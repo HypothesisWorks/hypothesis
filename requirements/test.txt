@@ -4,7 +4,7 @@
 #
 #    ./build.sh upgrade-requirements
 #
-attrs==23.2.0
+attrs==24.1.0
     # via hypothesis (hypothesis-python/setup.py)
 exceptiongroup==1.2.2 ; python_version < "3.11"
     # via
@@ -22,7 +22,7 @@ pluggy==1.5.0
     # via pytest
 ptyprocess==0.7.0
     # via pexpect
-pytest==8.2.2
+pytest==8.3.2
     # via
     #   -r requirements/test.in
     #   pytest-xdist
