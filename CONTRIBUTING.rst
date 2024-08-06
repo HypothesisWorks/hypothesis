@@ -66,8 +66,8 @@ You may wish to do all of this in a
 
 .. code:: bash
 
-  virtualenv venv
-  source venv/bin/activate
+  python3 -m venv .venv
+  source .venv/bin/activate
   pip install hypothesis
 
 Will create an isolated environment where you can install and try out
