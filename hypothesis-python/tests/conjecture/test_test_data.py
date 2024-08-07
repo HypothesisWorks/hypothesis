@@ -351,6 +351,14 @@ def test_examples_support_negative_indexing():
     assert d.examples[-1].length == 1
 
 
+def test_examples_out_of_bounds_index():
+    d = ConjectureData.for_buffer(bytes(2))
+    d.draw(st.booleans())
+    d.freeze()
+    with pytest.raises(IndexError):
+        d.examples[10]
+
+
 def test_can_override_label():
     d = ConjectureData.for_buffer(bytes(2))
     d.draw(st.booleans(), label=7)
