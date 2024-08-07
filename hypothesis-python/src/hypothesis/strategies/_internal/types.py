@@ -171,7 +171,7 @@ except AttributeError:  # pragma: no cover
 
 LiteralStringTypes: tuple = ()
 try:
-    LiteralStringTypes += (typing.LiteralString,)
+    LiteralStringTypes += (typing.LiteralString,)  # type: ignore
 except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.11`
 try:
