@@ -1,3 +1,13 @@
+# This file is part of Hypothesis, which may be found at
+# https://github.com/HypothesisWorks/hypothesis/
+#
+# Copyright the Hypothesis Authors.
+# Individual contributors are listed in AUTHORS.rst and the git log.
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v. 2.0. If a copy of the MPL was not distributed with this file, You can
+# obtain one at https://mozilla.org/MPL/2.0/.
+
 import contextlib
 import json
 import statistics
@@ -87,23 +97,26 @@ def pytest_configure(config):
 
 def pytest_terminal_summary(terminalreporter, exitstatus, config):
     terminalreporter.ensure_newline()
-    terminalreporter.section(
-        "relative overhead (per example) - lower is better"
-    )
+    terminalreporter.section("relative overhead (per example) - lower is better")
     for testid, (dmin, davg, dmax) in config._bench_ratios.items():
         msg = f"{davg:5.1f}   ({dmin:5.1f} --{dmax:5.1f} )   {testid}"
         terminalreporter.write_line(msg, yellow=True, bold=True)
 
-    proc = subprocess.run(["git", "show", "--summary", "HEAD^"], capture_output=True, encoding="utf8")
+    proc = subprocess.run(
+        ["git", "show", "--summary", "HEAD^"], capture_output=True, encoding="utf8"
+    )
     with open("bench.json", "w") as f:
         # github-actions-benchmark `customSmallerIsBetter`
-        json.dump([
-            {
-                "name": testid,
-                "unit": "ratio",
-                "value": davg,
-                "range": [dmin, dmax],
-                "extra": proc.stdout,
-            }
-            for testid, (dmin, davg, dmax) in config._bench_ratios.items()
-        ], f)
+        json.dump(
+            [
+                {
+                    "name": testid,
+                    "unit": "ratio",
+                    "value": davg,
+                    "range": [dmin, dmax],
+                    "extra": proc.stdout,
+                }
+                for testid, (dmin, davg, dmax) in config._bench_ratios.items()
+            ],
+            f,
+        )
