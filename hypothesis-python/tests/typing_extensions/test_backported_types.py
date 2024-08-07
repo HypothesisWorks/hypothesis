@@ -16,6 +16,7 @@ import typing_extensions
 from typing_extensions import (
     Annotated,
     Concatenate,
+    LiteralString,
     NotRequired,
     ParamSpec,
     ReadOnly,
@@ -328,3 +329,7 @@ def test_typeddict_error_msg():
 
         class Baz(TypedDict):
             attr: ReadOnly
+
+
+def test_literal_string_is_just_a_string():
+    assert_all_examples(from_type(LiteralString), lambda thing: isinstance(thing, str))

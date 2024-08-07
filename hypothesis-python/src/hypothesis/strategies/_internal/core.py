@@ -1295,6 +1295,12 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
         if types.is_a_union(thing):
             args = sorted(thing.__args__, key=types.type_sorting_key)
             return one_of([_from_type(t) for t in args])
+        if thing in types.LiteralStringTypes:  # pragma: no cover
+            # We can't really cover this because it needs either
+            # typing-extensions or python3.11+ typing.
+            # `LiteralString` from runtime's point of view is just a string.
+            # Fallback to regular text.
+            return text()
     # We also have a special case for TypeVars.
     # They are represented as instances like `~T` when they come here.
     # We need to work with their type instead.

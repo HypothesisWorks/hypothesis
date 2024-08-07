@@ -169,6 +169,17 @@ except AttributeError:  # pragma: no cover
     pass  # `typing_extensions` might not be installed
 
 
+LiteralStringTypes: tuple = ()
+try:
+    LiteralStringTypes += (typing.LiteralString,)  # type: ignore
+except AttributeError:  # pragma: no cover
+    pass  # Is missing for `python<3.11`
+try:
+    LiteralStringTypes += (typing_extensions.LiteralString,)
+except AttributeError:  # pragma: no cover
+    pass  # `typing_extensions` might not be installed
+
+
 # We need this function to use `get_origin` on 3.8 for types added later:
 # in typing-extensions, so we prefer this function over regular `get_origin`
 # when unwrapping `TypedDict`'s annotations.
@@ -205,7 +216,6 @@ for name in (
     "Never",
     "TypeVarTuple",
     "Unpack",
-    "LiteralString",
 ):
     try:
         NON_RUNTIME_TYPES += (getattr(typing, name),)
