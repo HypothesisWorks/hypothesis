@@ -9,7 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 from collections import defaultdict
-from typing import TYPE_CHECKING, Callable, Dict, Optional, Union
+from typing import TYPE_CHECKING, Callable, Dict, Optional, Tuple, TypeVar, Union
 
 import attr
 
@@ -38,10 +38,14 @@ from hypothesis.internal.conjecture.shrinking import (
 )
 
 if TYPE_CHECKING:
+    from random import Random
+
     from hypothesis.internal.conjecture.engine import ConjectureRunner
 
+SortKeyT = TypeVar("SortKeyT", str, bytes)
 
-def sort_key(buffer):
+
+def sort_key(buffer: SortKeyT) -> Tuple[int, SortKeyT]:
     """Returns a sort key such that "simpler" buffers are smaller than
     "more complicated" ones.
 
@@ -357,16 +361,16 @@ class Shrinker:
         return self.passes_by_name[name]
 
     @property
-    def calls(self):
+    def calls(self) -> int:
         """Return the number of calls that have been made to the underlying
         test function."""
         return self.engine.call_count
 
     @property
-    def misaligned(self):
+    def misaligned(self) -> int:
         return self.engine.misaligned_count
 
-    def check_calls(self):
+    def check_calls(self) -> None:
         if self.calls - self.calls_at_last_shrink >= self.max_stall:
             raise StopShrinking
 
@@ -449,11 +453,11 @@ class Shrinker:
         self.check_calls()
         return result
 
-    def debug(self, msg):
+    def debug(self, msg: str) -> None:
         self.engine.debug(msg)
 
     @property
-    def random(self):
+    def random(self) -> "Random":
         return self.engine.random
 
     def shrink(self):
