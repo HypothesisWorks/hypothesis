@@ -1068,10 +1068,11 @@ class Shrinker:
             if node.was_forced:
                 return False  # pragma: no cover
 
-            if node.ir_type == "string":
+            if node.ir_type in {"string", "bytes"}:
+                size_kwarg = "min_size" if node.ir_type == "string" else "size"
                 # if the size *increased*, we would have to guess what to pad with
                 # in order to try fixing up this attempt. Just give up.
-                if node.kwargs["min_size"] <= attempt_kwargs["min_size"]:
+                if node.kwargs[size_kwarg] <= attempt_kwargs[size_kwarg]:
                     return False
                 # the size decreased in our attempt. Try again, but replace with
                 # the min_size that we would have gotten, and truncate the value
@@ -1082,22 +1083,7 @@ class Shrinker:
                         initial_attempt[node.index].copy(
                             with_kwargs=attempt_kwargs,
                             with_value=initial_attempt[node.index].value[
-                                : attempt_kwargs["min_size"]
-                            ],
-                        )
-                    ]
-                    + initial_attempt[node.index :]
-                )
-            if node.ir_type == "bytes":
-                if node.kwargs["size"] <= attempt_kwargs["size"]:
-                    return False
-                return self.consider_new_tree(
-                    initial_attempt[: node.index]
-                    + [
-                        initial_attempt[node.index].copy(
-                            with_kwargs=attempt_kwargs,
-                            with_value=initial_attempt[node.index].value[
-                                : attempt_kwargs["size"]
+                                : attempt_kwargs[size_kwarg]
                             ],
                         )
                     ]
