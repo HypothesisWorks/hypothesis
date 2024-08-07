@@ -130,15 +130,15 @@ def next_down(value: float, width: int = 64) -> float:
     return -next_up(-value, width)
 
 
-def next_down_normal(value: float, width: int, allow_subnormal: bool) -> float:
+def next_down_normal(value: float, width: int, *, allow_subnormal: bool) -> float:
     value = next_down(value, width)
     if (not allow_subnormal) and 0 < abs(value) < width_smallest_normals[width]:
         return 0.0 if value > 0 else -width_smallest_normals[width]
     return value
 
 
-def next_up_normal(value: float, width: int, allow_subnormal: bool) -> float:
-    return -next_down_normal(-value, width, allow_subnormal)
+def next_up_normal(value: float, width: int, *, allow_subnormal: bool) -> float:
+    return -next_down_normal(-value, width, allow_subnormal=allow_subnormal)
 
 
 # Smallest positive non-zero numbers that is fully representable by an
