@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.110.0:
+
+--------------------
+6.110.0 - 2024-08-07
+--------------------
+
+Support :obj:`~python:typing.LiteralString`
+in :func:`~hypothesis.strategies.from_type`.
+
 .. _v6.109.1:
 
 --------------------
