@@ -20,7 +20,6 @@ from typing import (
     SupportsFloat,
     Tuple,
     Union,
-    overload,
 )
 
 if TYPE_CHECKING:
@@ -32,6 +31,7 @@ SignedIntFormat: "TypeAlias" = Literal["!h", "!i", "!q"]
 UnsignedIntFormat: "TypeAlias" = Literal["!H", "!I", "!Q"]
 IntFormat: "TypeAlias" = Union[SignedIntFormat, UnsignedIntFormat]
 FloatFormat: "TypeAlias" = Literal["!e", "!f", "!d"]
+Width: "TypeAlias" = Literal[16, 32, 64]
 
 # Format codes for (int, float) sized types, used for byte-wise casts.
 # See https://docs.python.org/3/library/struct.html#format-characters
@@ -48,21 +48,13 @@ TO_SIGNED_FORMAT: Dict[UnsignedIntFormat, SignedIntFormat] = {
 }
 
 
-@overload
-def reinterpret_bits(x: float, from_: str, to: IntFormat) -> int: ...
-
-
-@overload
-def reinterpret_bits(x: float, from_: str, to: FloatFormat) -> float: ...
-
-
 def reinterpret_bits(x: float, from_: str, to: str) -> float:
     x = struct.unpack(to, struct.pack(from_, x))[0]
     assert isinstance(x, (float, int))
     return x
 
 
-def float_of(x: SupportsFloat, width: int) -> float:
+def float_of(x: SupportsFloat, width: Width) -> float:
     assert width in (16, 32, 64)
     if width == 64:
         return float(x)
@@ -97,7 +89,9 @@ def count_between_floats(x: float, y: float, width: int = 64) -> int:
 
 def float_to_int(value: float, width: int = 64) -> int:
     fmt_int, fmt_flt = STRUCT_FORMATS[width]
-    return reinterpret_bits(value, fmt_flt, fmt_int)
+    x = reinterpret_bits(value, fmt_flt, fmt_int)
+    assert isinstance(x, int)
+    return x
 
 
 def int_to_float(value: int, width: int = 64) -> float:
