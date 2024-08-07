@@ -49,11 +49,11 @@ TO_SIGNED_FORMAT: Dict[UnsignedIntFormat, SignedIntFormat] = {
 
 
 @overload
-def reinterpret_bits(x: float, from_: str, to: FloatFormat) -> float: ...
+def reinterpret_bits(x: float, from_: str, to: IntFormat) -> int: ...
 
 
 @overload
-def reinterpret_bits(x: float, from_: str, to: IntFormat) -> int: ...
+def reinterpret_bits(x: float, from_: str, to: FloatFormat) -> float: ...
 
 
 def reinterpret_bits(x: float, from_: str, to: str) -> float:
