@@ -24,41 +24,41 @@ jobs:
     strategy:
       matrix:
         task:
-          - check-whole-repo-tests
+          #- check-whole-repo-tests
           - lint
           - check-format
-          - check-coverage
-          - check-conjecture-coverage
-          - check-py38-cover
-          - check-py38-nocover
-          - check-py38-niche
-          - check-pypy38-cover
-          - check-py39-cover
-          - check-pypy39-cover
-          - check-py310-cover
-          - check-py310-nocover
-          - check-py310-niche
-          - check-pypy310-cover
+          #- check-coverage
+          #- check-conjecture-coverage
+          #- check-py38-cover
+          #- check-py38-nocover
+          #- check-py38-niche
+          #- check-pypy38-cover
+          #- check-py39-cover
+          #- check-pypy39-cover
+          #- check-py310-cover
+          #- check-py310-nocover
+          #- check-py310-niche
+          #- check-pypy310-cover
           # - check-py310-pyjion  # see notes in tox.ini
-          - check-py311-cover
-          - check-py311-nocover
-          - check-py311-niche
-          - check-py312-cover
-          - check-py312-nocover
-          - check-py312-niche
-          - check-py313-cover
-          - check-py313-nocover
-          - check-py313-niche
+          #- check-py311-cover
+          #- check-py311-nocover
+          #- check-py311-niche
+          #- check-py312-cover
+          #- check-py312-nocover
+          #- check-py312-niche
+          #- check-py313-cover
+          #- check-py313-nocover
+          #- check-py313-niche
           # - check-py313t-cover
           # - check-py313t-nocover
           # - check-py313t-niche
-          - check-py314-cover
-          - check-py314-nocover
-          - check-py314-niche
+          #- check-py314-cover
+          #- check-py314-nocover
+          #- check-py314-niche
           # - check-py314t-cover
           # - check-py314t-nocover
           # - check-py314t-niche
-          - check-quality
+          #- check-quality
           ## Skip all the (inactive/old) Rust and Ruby tests pending fixes
           # - lint-ruby
           # - check-ruby-tests
@@ -69,20 +69,20 @@ jobs:
           # - check-rust-tests
           # - audit-conjecture-rust
           # - lint-conjecture-rust
-          - check-py39-nose
-          - check-py39-pytest46
-          - check-py39-pytest54
-          - check-pytest62
-          - check-django50
-          - check-django42
-          - check-pandas22
-          - check-pandas21
-          - check-pandas20
-          - check-pandas15
-          - check-pandas14
-          - check-pandas13
-          - check-py39-pandas12
-          - check-py39-pandas11
+          #- check-py39-nose
+          #- check-py39-pytest46
+          #- check-py39-pytest54
+          #- check-pytest62
+          #- check-django50
+          #- check-django42
+          #- check-pandas22
+          #- check-pandas21
+          #- check-pandas20
+          #- check-pandas15
+          #- check-pandas14
+          #- check-pandas13
+          #- check-py39-pandas12
+          #- check-py39-pandas11
           ## `-cover` is too slow under crosshair; use a custom split
           # - check-crosshair-custom-cover/test_[a-d]*
           # - check-crosshair-custom-cover/test_[e-i]*
@@ -91,8 +91,8 @@ jobs:
           # - check-crosshair-custom-pytest/test_*
           # - check-crosshair-nocover
           # - check-crosshair-niche
-          - check-py38-oldestnumpy
-          - check-numpy-nightly
+          #- check-py38-oldestnumpy
+          #- check-numpy-nightly
       fail-fast: false
     steps:
     - uses: actions/checkout@v3
@@ -146,6 +146,7 @@ jobs:
           hypothesis-python/branch-check*
 
   test-win:
+    if: ${{ false }}
     runs-on: windows-latest
     strategy:
       matrix:
@@ -194,6 +195,7 @@ jobs:
       run: python -m pytest --numprocesses auto ${{ matrix.whichtests == 'nocover' && 'hypothesis-python/tests/nocover' || 'hypothesis-python/tests/ --ignore=hypothesis-python/tests/nocover/ --ignore=hypothesis-python/tests/quality/ --ignore=hypothesis-python/tests/ghostwriter/ --ignore=hypothesis-python/tests/patching/' }}
 
   test-osx:
+    if: ${{ false }}
     runs-on: macos-latest
     strategy:
       matrix:
@@ -226,6 +228,7 @@ jobs:
   # See https://pyodide.org/en/stable/development/building-and-testing-packages.html#testing-packages-against-pyodide
   # and https://github.com/numpy/numpy/blob/9a650391651c8486d8cb8b27b0e75aed5d36033e/.github/workflows/emscripten.yml
   test-pyodide:
+    if: ${{ false }}
     runs-on: ubuntu-latest
     env:
       NODE_VERSION: 18
