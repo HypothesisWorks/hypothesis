@@ -36,11 +36,11 @@ def test_integers_generation(bench, _vary_max_examples):
 def test_integers_shrink(bench):
 
     @given(st.integers(min_value=0))
-    @settings(database=None, phases=[Phase.generate, Phase.shrink], max_examples=50)
+    @settings(database=None, phases=[Phase.generate, Phase.shrink])
     def test(x):
         assert x < 10
 
-    bench(test, exc=AssertionError)
+    bench(test, expected_exc=AssertionError)
 
 
 def test_unique_lists_sampled_from(bench, _vary_max_examples):

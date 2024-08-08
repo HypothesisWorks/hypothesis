@@ -8,7 +8,6 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import contextlib
 import json
 import statistics
 import subprocess
@@ -38,22 +37,32 @@ def stats(d):
 
 
 @pytest.fixture
-def bench(request):
+def bench(request, monkeypatch):
+    seen_exc = None
 
-    def benchmarker(test, exc=None):
+    def benchmarker(test, expected_exc=None):
         repeat = max(5, request.config.option.hypothesis_bench_repeats)
 
-        def timed(f, number):
+        def timed(f):
+            nonlocal seen_exc
             before = timer()
-            for _ in range(number):
-                with contextlib.suppress(exc) if exc else contextlib.nullcontext():
-                    f()
+            try:
+                f()
+            except BaseException as e:
+                seen_exc = e
             return timer() - before
 
-        def single_synthetic_example():
-            # add some exemplary synthetic baseline work (build a dict from a
-            # lambda fn with some getattrs mixed in, raise and catch an exception,
-            # plus the context manager inside timed)
+        inner_test = test.hypothesis.inner_test
+
+        def wrapped_inner_test(*args, **kwargs):
+            # Add some exemplary synthetic baseline work (build a dict from a
+            # lambda fn with some getattrs mixed in, raise and catch an exception).
+            # This has two purposes:
+            # - make the inner test take a measurable amount of time
+            # - mimic "real" load so that the relative number is fairly stable
+            #   under various load conditions
+            nonlocal time_inner
+            before = timer()
             try:
                 f = lambda i: i * i
                 f.a = {}
@@ -62,27 +71,29 @@ def bench(request):
                 assert not f.a
             except AssertionError:
                 pass
+            try:
+                inner_test(*args, **kwargs)
+            finally:
+                time_inner += timer() - before
 
-        time_inner = []
-        time_given = []
-        max_examples = test._hypothesis_internal_use_settings.max_examples
+        monkeypatch.setattr(test.hypothesis, "inner_test", wrapped_inner_test)
 
+        rel_overhead = []
         for _ in range(repeat):
-            # interleave measurements to smoothen effect of varying load
-            time_inner.append(timed(single_synthetic_example, number=max_examples))
-            time_given.append(timed(test, number=1))
-        ratio = stats(np.array(time_given) / np.array(time_inner))
+            time_inner = 0
+            time_given = timed(test)
+            assert time_inner > 0
+            rel_overhead.append((time_given - time_inner) / time_inner)
+        ratio = stats(rel_overhead)
 
         request.config._bench_ratios[request.node.nodeid] = ratio
 
-        # Verify that we got our exception
-        if exc is not None:
-            try:
-                test()
-            except exc:
-                pass
-            else:
-                raise AssertionError(f"Did not see expected {exc}")
+        if expected_exc is None:
+            if seen_exc is not None:
+                raise seen_exc
+        else:
+            if not isinstance(seen_exc, expected_exc):
+                raise AssertionError(f"Did not see expected {expected_exc} (got {repr(seen_exc)})")
 
     return benchmarker
 
