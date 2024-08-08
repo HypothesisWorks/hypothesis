@@ -120,7 +120,7 @@ try:
 except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.10`
 try:
-    TypeGuardTypes += (typing.TypeIs,)
+    TypeGuardTypes += (typing.TypeIs,)  # type: ignore
 except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.13`
 try:
