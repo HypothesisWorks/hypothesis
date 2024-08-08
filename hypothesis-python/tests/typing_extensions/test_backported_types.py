@@ -23,6 +23,7 @@ from typing_extensions import (
     Required,
     TypedDict,
     TypeGuard,
+    TypeIs,
 )
 
 from hypothesis import assume, given, strategies as st
@@ -199,17 +200,18 @@ def test_callable_with_paramspec():
         st.register_type_strategy(func_type, st.none())
 
 
-def test_callable_return_typegard_type():
-    strategy = st.from_type(Callable[[], TypeGuard[int]])
+@pytest.mark.parametrize("typ", [TypeGuard, TypeIs])
+def test_callable_return_typegard_type(typ):
+    strategy = st.from_type(Callable[[], typ[int]])
     with pytest.raises(
         InvalidArgument,
         match="Hypothesis cannot yet construct a strategy for callables "
-        "which are PEP-647 TypeGuards",
+        "which are PEP-647 TypeGuards or PEP-742 TypeIs",
     ):
         check_can_generate_examples(strategy)
 
     with pytest.raises(InvalidArgument, match="Cannot register generic type"):
-        st.register_type_strategy(Callable[[], TypeGuard[int]], st.none())
+        st.register_type_strategy(Callable[[], typ[int]], st.none())
 
 
 class Movie(TypedDict):  # implicitly total=True
