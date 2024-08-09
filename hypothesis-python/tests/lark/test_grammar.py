@@ -19,6 +19,7 @@ from hypothesis.extra.lark import from_lark
 from hypothesis.strategies import characters, data, just
 
 from tests.common.debug import check_can_generate_examples, find_any
+from tests.common.utils import Why, xfail_on_crosshair
 
 # Adapted from the official Lark tutorial, with modifications to ensure
 # that the generated JSON is valid.  i.e. no numbers starting with ".",
@@ -65,6 +66,7 @@ def test_generates_valid_json(string):
         ("NULL", type(None)),
     ],
 )
+@xfail_on_crosshair(Why.flaky_replay)  # reasoning bug?
 @given(data=data())
 def test_can_specify_start_rule(data, start, type_):
     string = data.draw(from_lark(Lark(EBNF_GRAMMAR, start="value"), start=start))
@@ -103,6 +105,7 @@ def test_cannot_convert_EBNF_to_strategy_directly():
         )
 
 
+@xfail_on_crosshair(Why.other, strict=False)
 def test_required_undefined_terminals_require_explicit_strategies():
     elem_grammar = r"""
     list : "[" ELEMENT ("," ELEMENT)* "]"
@@ -125,6 +128,7 @@ def test_cannot_use_explicit_strategies_for_unknown_terminals():
         )
 
 
+@xfail_on_crosshair(Why.other, strict=False)
 def test_non_string_explicit_strategies_are_invalid():
     with pytest.raises(InvalidArgument):
         check_can_generate_examples(

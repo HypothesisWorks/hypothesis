@@ -31,6 +31,8 @@ from hypothesis.stateful import (
     run_state_machine_as_test,
 )
 
+from tests.common.utils import Why, xfail_on_crosshair
+
 
 @contextlib.contextmanager
 def capture_observations():
@@ -56,6 +58,7 @@ def do_it_all(a, x, data):
     1 / ((x or 1) % 7)
 
 
+@xfail_on_crosshair(Why.other)
 def test_observability():
     with capture_observations() as ls:
         with pytest.raises(ZeroDivisionError):

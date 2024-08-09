@@ -23,6 +23,8 @@ from hypothesis.stateful import (
 )
 from hypothesis.strategies import booleans, integers, lists
 
+from tests.common.utils import Why, xfail_on_crosshair
+
 Leaf = namedtuple("Leaf", ("label",))
 Split = namedtuple("Split", ("left", "right"))
 
@@ -181,6 +183,7 @@ with_cheap_bad_machines = pytest.mark.parametrize(
 )
 
 
+@xfail_on_crosshair(Why.undiscovered, strict=False)
 @pytest.mark.parametrize(
     "machine", bad_machines, ids=[t.__name__ for t in bad_machines]
 )

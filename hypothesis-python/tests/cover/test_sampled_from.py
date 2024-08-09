@@ -34,7 +34,7 @@ from tests.common.debug import (
     assert_simple_property,
     check_can_generate_examples,
 )
-from tests.common.utils import fails_with
+from tests.common.utils import Why, fails_with, xfail_on_crosshair
 
 an_enum = enum.Enum("A", "a b c")
 a_flag = enum.Flag("A", "a b c")
@@ -62,6 +62,7 @@ def test_can_sample_enums(enum_class):
     assert_all_examples(sampled_from(enum_class), lambda x: isinstance(x, enum_class))
 
 
+@xfail_on_crosshair(Why.other)
 @fails_with(FailedHealthCheck)
 @settings(suppress_health_check=[])
 @given(sampled_from(range(10)).filter(lambda x: x < 0))
@@ -69,6 +70,7 @@ def test_unsat_filtered_sampling(x):
     raise AssertionError
 
 
+@xfail_on_crosshair(Why.other)
 @fails_with(Unsatisfiable)
 @settings(suppress_health_check=[])
 @given(sampled_from(range(2)).filter(lambda x: x < 0))
@@ -137,6 +139,7 @@ def stupid_sampled_sets(draw):
     return result
 
 
+@xfail_on_crosshair(Why.undiscovered)
 @given(stupid_sampled_sets())
 def test_efficient_sets_of_samples_with_chained_transformations_slow_path(x):
     # This deliberately exercises the standard filtering logic without going
@@ -144,6 +147,7 @@ def test_efficient_sets_of_samples_with_chained_transformations_slow_path(x):
     assert x == {x * 2 for x in range(20) if x % 3}
 
 
+@xfail_on_crosshair(Why.other)
 @fails_with(Unsatisfiable)
 @given(FilteredStrategy(st.sampled_from([None, False, ""]), conditions=(bool,)))
 def test_unsatisfiable_explicit_filteredstrategy_sampled(x):

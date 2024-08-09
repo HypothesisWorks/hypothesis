@@ -34,6 +34,8 @@ from hypothesis.strategies import (
     tuples,
 )
 
+from tests.common.utils import Why, xfail_on_crosshair
+
 AVERAGE_LIST_LENGTH = 2
 
 
@@ -183,6 +185,7 @@ class HypothesisSpec(RuleBasedStateMachine):
 
 MAIN = __name__ == "__main__"
 
+pytestmark = [x.mark for x in xfail_on_crosshair(Why.pytest_reporting, as_marks=True)]
 TestHypothesis = HypothesisSpec.TestCase
 
 TestHypothesis.settings = settings(

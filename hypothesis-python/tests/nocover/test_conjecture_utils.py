@@ -17,6 +17,8 @@ from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.data import ConjectureData, StopTest
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE
 
+from tests.common.utils import Why, xfail_on_crosshair
+
 
 def test_gives_the_correct_probabilities():
     weights = [Fraction(1), Fraction(9)]
@@ -44,6 +46,7 @@ def test_gives_the_correct_probabilities():
             i += 1
 
 
+@xfail_on_crosshair(Why.bad_reasoning)
 @example(0, 1)
 @example(0, float("inf"))
 @example(cu.SMALLEST_POSITIVE_FLOAT, 2 * cu.SMALLEST_POSITIVE_FLOAT)

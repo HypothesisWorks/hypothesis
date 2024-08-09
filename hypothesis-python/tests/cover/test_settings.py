@@ -35,11 +35,13 @@ from hypothesis.stateful import RuleBasedStateMachine, rule
 from hypothesis.utils.conventions import not_set
 
 from tests.common.utils import (
+    Why,
     checks_deprecated_behaviour,
     counts_calls,
     fails_with,
     skipif_emscripten,
     validate_deprecation,
+    xfail_on_crosshair,
 )
 
 
@@ -298,6 +300,7 @@ def test_database_is_reference_preserved():
     assert s.database is s.database
 
 
+@xfail_on_crosshair(Why.pytest_reporting)
 @settings(verbosity=Verbosity.verbose)
 @example(x=99)
 @given(st.integers())

@@ -17,7 +17,10 @@ from hypothesis import Phase, example, find, given, reject, settings, strategies
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.errors import InvalidArgument, NoSuchExample, Unsatisfiable
 
+from tests.common.utils import Why, xfail_on_crosshair
 
+
+@xfail_on_crosshair(Why.other)
 def test_stops_after_max_examples_if_satisfying():
     tracker = []
 
@@ -33,6 +36,7 @@ def test_stops_after_max_examples_if_satisfying():
     assert len(tracker) == max_examples
 
 
+@xfail_on_crosshair(Why.symbolic_outside_context)
 def test_stops_after_ten_times_max_examples_if_not_satisfying():
     count = [0]
 
@@ -79,6 +83,7 @@ def test_given_shrinks_pytest_helper_errors():
     assert final_value[0] == 101
 
 
+@xfail_on_crosshair(Why.symbolic_outside_context)
 def test_pytest_skip_skips_shrinking():
     values = []
 
@@ -91,6 +96,7 @@ def test_pytest_skip_skips_shrinking():
 
     with pytest.raises(Skipped):
         inner()
+    # FIXME: can we do a more targeted failure or make this work on crosshair?
     assert len([x for x in values if x > 100]) == 1
 
 

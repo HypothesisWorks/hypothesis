@@ -13,10 +13,13 @@ import sys
 
 import pytest
 
-from hypothesis import given
+from hypothesis import given, settings
 from hypothesis.strategies import floats, integers, lists
 
 from tests.common.debug import minimal
+
+if settings._current_profile == "crosshair":
+    pytest.skip(reason="slow and uninformative", allow_module_level=True)
 
 
 def test_minimize_negative_int():

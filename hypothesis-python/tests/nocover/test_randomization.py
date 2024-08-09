@@ -8,7 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from pytest import raises
+import pytest
 
 from hypothesis import Verbosity, core, find, given, settings, strategies as st
 
@@ -24,6 +24,7 @@ def test_seeds_off_internal_random():
     assert x == y
 
 
+@pytest.mark.skipif(settings._current_profile == "crosshair", reason="slow to xfail")
 def test_nesting_with_control_passes_health_check():
     @given(st.integers(0, 100), st.random_module())
     @settings(max_examples=5, database=None, deadline=None)
@@ -35,7 +36,7 @@ def test_nesting_with_control_passes_health_check():
         def test_nest(y):
             assert y < x
 
-        with raises(AssertionError):
+        with pytest.raises(AssertionError):
             test_nest()
 
     test_blah()

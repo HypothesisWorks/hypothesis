@@ -16,7 +16,12 @@ import pytest
 from hypothesis import given, settings, strategies as st
 from hypothesis.errors import DeadlineExceeded, FlakyFailure, InvalidArgument
 
-from tests.common.utils import assert_falsifying_output, fails_with
+from tests.common.utils import (
+    Why,
+    assert_falsifying_output,
+    fails_with,
+    xfail_on_crosshair,
+)
 
 
 def test_raises_deadline_on_slow_test():
@@ -29,6 +34,7 @@ def test_raises_deadline_on_slow_test():
         slow()
 
 
+@xfail_on_crosshair(Why.no_healthchecks)
 @fails_with(DeadlineExceeded)
 @given(st.integers())
 def test_slow_tests_are_errors_by_default(i):
@@ -46,6 +52,7 @@ def test_slow_with_none_deadline(i):
     time.sleep(1)
 
 
+@xfail_on_crosshair(Why.misdiagnose_deadline)
 def test_raises_flaky_if_a_test_becomes_fast_on_rerun():
     once = [True]
 
@@ -74,6 +81,7 @@ def test_deadlines_participate_in_shrinking():
     )
 
 
+@xfail_on_crosshair(Why.misdiagnose_deadline)
 def test_keeps_you_well_above_the_deadline():
     seen = set()
     failed_once = [False]
@@ -100,6 +108,7 @@ def test_keeps_you_well_above_the_deadline():
         slow()
 
 
+@xfail_on_crosshair(Why.misdiagnose_deadline)
 def test_gives_a_deadline_specific_flaky_error_message():
     once = [True]
 
