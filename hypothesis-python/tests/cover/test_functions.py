@@ -18,6 +18,7 @@ from hypothesis.reporting import with_reporter
 from hypothesis.strategies import booleans, functions, integers
 
 from tests.common.debug import check_can_generate_examples
+from tests.common.utils import Why, xfail_on_crosshair
 
 
 def func_a():
@@ -149,6 +150,7 @@ def test_functions_pure_with_same_args(f, arg1, arg2):
     assert f(arg2=arg2, arg1=arg1) == expected
 
 
+@xfail_on_crosshair(Why.undiscovered)
 @given(
     f=functions(like=pure_func, returns=integers(), pure=True),
     arg1=integers(),

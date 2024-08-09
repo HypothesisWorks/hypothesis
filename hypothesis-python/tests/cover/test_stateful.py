@@ -42,7 +42,12 @@ from hypothesis.stateful import (
 )
 from hypothesis.strategies import binary, data, integers, just, lists
 
-from tests.common.utils import capture_out, validate_deprecation
+from tests.common.utils import (
+    Why,
+    capture_out,
+    validate_deprecation,
+    xfail_on_crosshair,
+)
 from tests.nocover.test_stateful import DepthMachine
 
 NO_BLOB_SETTINGS = Settings(print_blob=False, phases=tuple(Phase)[:-1])
@@ -1177,6 +1182,8 @@ class MinStepsMachine(RuleBasedStateMachine):
         assert self.a >= 2
 
 
+# Replay overruns after we trigger a crosshair.util.IgnoreAttempt exception for n=3
+@xfail_on_crosshair(Why.other)
 def test_min_steps_argument():
     # You must pass a non-negative integer...
     for n_steps in (-1, "nan", 5.0):
@@ -1272,6 +1279,7 @@ state.teardown()
     )
 
 
+@xfail_on_crosshair(Why.undiscovered, strict=False)
 def test_multiple_common_targets():
     class Machine(RuleBasedStateMachine):
         a = Bundle("a")
@@ -1319,4 +1327,5 @@ class LotsOfEntropyPerStepMachine(RuleBasedStateMachine):
         assert data
 
 
-TestLotsOfEntropyPerStepMachine = LotsOfEntropyPerStepMachine.TestCase
+def test_lots_of_entropy_per_step():
+    run_state_machine_as_test(LotsOfEntropyPerStepMachine)

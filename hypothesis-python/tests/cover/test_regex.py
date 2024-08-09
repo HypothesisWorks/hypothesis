@@ -413,6 +413,7 @@ def test_issue_992_regression(data):
     data.draw(strat)
 
 
+@pytest.mark.skipif(settings._current_profile == "crosshair", reason="hangs")
 @pytest.mark.parametrize(
     "pattern,matching_str",
     [

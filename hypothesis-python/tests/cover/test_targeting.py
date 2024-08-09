@@ -15,6 +15,8 @@ import pytest
 from hypothesis import example, given, strategies as st, target
 from hypothesis.errors import InvalidArgument
 
+from tests.common.utils import Why, xfail_on_crosshair
+
 
 @example(0.0, "this covers the branch where context.data is None")
 @given(
@@ -90,6 +92,7 @@ def test_cannot_target_outside_test():
         target(1.0, label="example label")
 
 
+@xfail_on_crosshair(Why.other)  # target() is a noop to avoid realizing arguments
 @given(st.none())
 def test_cannot_target_same_label_twice(_):
     target(0.0, label="label")
@@ -97,6 +100,7 @@ def test_cannot_target_same_label_twice(_):
         target(1.0, label="label")
 
 
+@xfail_on_crosshair(Why.undiscovered)
 @given(st.none())
 def test_cannot_target_default_label_twice(_):
     target(0.0)

@@ -44,7 +44,7 @@ from tests.common.debug import (
     find_any,
     minimal,
 )
-from tests.common.utils import fails_with, temp_registered
+from tests.common.utils import Why, fails_with, temp_registered, xfail_on_crosshair
 
 sentinel = object()
 BUILTIN_TYPES = tuple(
@@ -119,9 +119,13 @@ def test_typing_Type_Union(ex):
             getattr(collections.abc, "ByteString", ...),
             marks=pytest.mark.skipif(sys.version_info[:2] >= (3, 14), reason="removed"),
         ),
-        typing.Match,
+        pytest.param(
+            typing.Match, marks=xfail_on_crosshair(Why.not_instance, as_marks=True)
+        ),
         typing.Pattern,
-        re.Match,
+        pytest.param(
+            re.Match, marks=xfail_on_crosshair(Why.not_instance, as_marks=True)
+        ),
         re.Pattern,
     ],
     ids=repr,
@@ -147,8 +151,16 @@ class Elem:
         (typing.FrozenSet[Elem], frozenset),
         (typing.Dict[Elem, None], dict),
         (typing.DefaultDict[Elem, None], collections.defaultdict),
-        (typing.KeysView[Elem], type({}.keys())),
-        (typing.ValuesView[Elem], type({}.values())),
+        pytest.param(
+            typing.KeysView[Elem],
+            type({}.keys()),
+            marks=xfail_on_crosshair(Why.not_instance, as_marks=True),
+        ),
+        pytest.param(
+            typing.ValuesView[Elem],
+            type({}.values()),
+            marks=xfail_on_crosshair(Why.not_instance, as_marks=True),
+        ),
         (typing.List[Elem], list),
         (typing.Tuple[Elem], tuple),
         (typing.Tuple[Elem, ...], tuple),
@@ -198,6 +210,7 @@ def test_specialised_mapping_types(data, typ, coll_type):
     assert all(isinstance(elem, ElemValue) for elem in ex.values())
 
 
+@xfail_on_crosshair(Why.not_instance)
 @given(from_type(typing.ItemsView[Elem, Elem]).filter(len))
 def test_ItemsView(ex):
     # See https://github.com/python/typing/issues/177
@@ -321,7 +334,12 @@ st.register_type_strategy(Baz, st.builds(Baz, st.integers()))
 @pytest.mark.parametrize(
     "var,expected",
     [
-        (typing.TypeVar("V"), object),
+        pytest.param(
+            typing.TypeVar("V"),
+            object,
+            # https://github.com/pschanely/CrossHair/issues/292
+            marks=xfail_on_crosshair(Why.other, as_marks=True),
+        ),
         (typing.TypeVar("V", bound=int), int),
         (typing.TypeVar("V", bound=Foo), (Bar, Baz)),
         (typing.TypeVar("V", bound=typing.Union[int, str]), (int, str)),
@@ -861,6 +879,7 @@ def test_supportsop_types_support_protocol(protocol, data):
     assert issubclass(type(value), protocol)
 
 
+@xfail_on_crosshair(Why.undiscovered)
 @pytest.mark.parametrize("restrict_custom_strategy", [True, False])
 def test_generic_aliases_can_be_conditionally_resolved_by_registered_function(
     restrict_custom_strategy,
@@ -918,7 +937,11 @@ def test_generic_aliases_can_be_conditionally_resolved_by_registered_function(
     [
         (typing.SupportsFloat, float),
         (typing.SupportsInt, int),
-        (typing.SupportsBytes, bytes),
+        pytest.param(
+            typing.SupportsBytes,
+            bytes,
+            marks=xfail_on_crosshair(Why.not_instance, as_marks=True),
+        ),
         (typing.SupportsComplex, complex),
     ],
 )
@@ -1002,6 +1025,7 @@ class TreeForwardRefs(typing.NamedTuple):
     r: typing.Optional["TreeForwardRefs"]
 
 
+@xfail_on_crosshair(Why.other)
 @given(st.builds(TreeForwardRefs))
 def test_resolves_forward_references_outside_annotations(t):
     assert isinstance(t, TreeForwardRefs)

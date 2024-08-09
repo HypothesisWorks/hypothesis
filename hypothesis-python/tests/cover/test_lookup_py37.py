@@ -20,6 +20,8 @@ import pytest
 
 from hypothesis import assume, given
 
+from tests.common.utils import Why, xfail_on_crosshair
+
 # On Python 3.7 and 3.8, `from __future__ import annotations` means
 # that the syntax is supported; but the feature fails at runtime.  On Python
 # 3.9 and later, it should all work.
@@ -240,12 +242,14 @@ def test_resolving_standard_contextmanager_as_generic(
     assert isinstance(x, contextlib.AbstractContextManager)
 
 
+@xfail_on_crosshair(Why.not_instance)
 @given(...)
 def test_resolving_standard_re_match_bytes_as_generic(x: re.Match[bytes]):
     assert isinstance(x, re.Match)
     assert isinstance(x[0], bytes)
 
 
+@xfail_on_crosshair(Why.not_instance)
 @given(...)
 def test_resolving_standard_re_match_str_as_generic(x: re.Match[str]):
     assert isinstance(x, re.Match)

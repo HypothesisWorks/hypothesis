@@ -30,7 +30,7 @@ from hypothesis.strategies._internal.strategies import FilteredStrategy, MappedS
 from hypothesis.strategies._internal.strings import TextStrategy
 
 from tests.common.debug import check_can_generate_examples
-from tests.common.utils import fails_with
+from tests.common.utils import Why, fails_with, xfail_on_crosshair
 
 A_FEW = 15  # speed up massively-parametrized tests
 
@@ -180,6 +180,7 @@ def test_rewrite_unsatisfiable_filter(s, pred):
     assert s.filter(pred).is_empty
 
 
+@xfail_on_crosshair(Why.undiscovered)
 @pytest.mark.parametrize(
     "pred",
     [
@@ -425,6 +426,9 @@ def test_filter_rewriting_text_partial_len(data, strategy, predicate, start, end
     assert predicate(value)
 
 
+# Filter-rewriting "doesn't work" under crosshair because it patches functools.partial,
+# but that's fine because it can generate efficiently for other reasons anyway :-)
+@xfail_on_crosshair(Why.other)
 @given(data=st.data())
 def test_can_rewrite_multiple_length_filters_if_not_lambdas(data):
     # This is a key capability for efficient rewriting using the `annotated-types`

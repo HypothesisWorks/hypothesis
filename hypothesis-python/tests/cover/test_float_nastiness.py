@@ -26,6 +26,7 @@ from hypothesis.internal.floats import (
 )
 
 from tests.common.debug import find_any, minimal
+from tests.common.utils import Why, xfail_on_crosshair
 
 try:
     import numpy
@@ -47,6 +48,7 @@ def test_floats_are_in_range(data, lower, upper):
     assert lower <= t <= upper
 
 
+@xfail_on_crosshair(Why.floats)
 @pytest.mark.parametrize("sign", [-1, 1])
 def test_can_generate_both_zeros(sign):
     assert minimal(st.floats(), lambda x: math.copysign(1, x) == sign) == sign * 0.0
@@ -61,21 +63,25 @@ def test_can_generate_both_zeros_when_in_interval(l, r, sign):
     assert minimal(st.floats(l, r), lambda x: math.copysign(1, x) == sign) == sign * 0.0
 
 
+@xfail_on_crosshair(Why.floats)
 @given(st.floats(0.0, 1.0))
 def test_does_not_generate_negative_if_right_boundary_is_positive(x):
     assert math.copysign(1, x) == 1
 
 
+@xfail_on_crosshair(Why.floats)
 @given(st.floats(-1.0, -0.0))
 def test_does_not_generate_positive_if_right_boundary_is_negative(x):
     assert math.copysign(1, x) == -1
 
 
+@xfail_on_crosshair(Why.undiscovered)
 def test_half_bounded_generates_zero():
     find_any(st.floats(min_value=-1.0), lambda x: x == 0.0)
     find_any(st.floats(max_value=1.0), lambda x: x == 0.0)
 
 
+@xfail_on_crosshair(Why.floats)
 @given(st.floats(max_value=-0.0))
 def test_half_bounded_respects_sign_of_upper_bound(x):
     assert math.copysign(1, x) == -1
@@ -151,6 +157,7 @@ def test_down_means_lesser(x):
         )
 
 
+@xfail_on_crosshair(Why.floats)
 @given(st.floats(allow_nan=False, allow_infinity=False))
 def test_updown_roundtrip(val):
     assert val == next_up(next_down(val))

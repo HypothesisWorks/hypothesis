@@ -11,7 +11,7 @@
 import pytest
 
 from hypothesis import Phase, settings
-from hypothesis.errors import Unsatisfiable
+from hypothesis.errors import FlakyReplay, Unsatisfiable
 from hypothesis.strategies import lists
 
 from tests.common import standard_types
@@ -31,3 +31,7 @@ def test_can_collectively_minimize(spec):
         assert 2 <= len(set(map(repr, xs))) <= 3
     except Unsatisfiable:
         pass
+    except FlakyReplay:
+        if settings._current_profile == "crosshair":
+            pytest.xfail("flaky replay")
+        raise

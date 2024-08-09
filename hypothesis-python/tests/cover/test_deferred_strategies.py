@@ -10,7 +10,7 @@
 
 import pytest
 
-from hypothesis import given, strategies as st
+from hypothesis import given, settings, strategies as st
 from hypothesis.errors import InvalidArgument
 
 from tests.common.debug import assert_no_examples, check_can_generate_examples, minimal
@@ -23,6 +23,7 @@ def test_binary_tree():
     assert minimal(tree, lambda x: isinstance(x, tuple)) == (0, 0)
 
 
+@pytest.mark.skipif(settings._current_profile == "crosshair", reason="2.5 hours slow")
 def test_mutual_recursion():
     t = st.deferred(lambda: a | b)
     a = st.deferred(lambda: st.none() | st.tuples(st.just("a"), b))

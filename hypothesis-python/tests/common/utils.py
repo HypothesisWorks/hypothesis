@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import contextlib
+import enum
 import sys
 import warnings
 from io import StringIO
@@ -238,3 +239,51 @@ def raises_warning(expected_warning, match=None):
 # config option, so *linking against* something built this way can break us.
 # Everything is terrible
 PYTHON_FTZ = next_down(sys.float_info.min) == 0.0
+
+
+class Why(enum.Enum):
+    # Use an enum here so it's easier to find and/or exclude some cases later
+
+    # things we want to fix
+    bad_reasoning = "looks like Crosshair is getting the wrong result"
+    flaky_replay = "Inconsistent results from replaying a failing test..."
+    symbolic_outside_context = "CrosshairInternal error (using value outside context)"
+    decimals = "decimal support is a work in progress"
+    numpy_suport = "easy to find numpy interactions that don't work"
+    floats = "crosshair doesn't reason about signed zero (and other edge cases?)"
+    pytest_reporting = "pytest can't report symbolic strings"
+    not_instance = "type inference doesn't produce an instance"
+    int_from_bytes = "ipaddress problem, crosshair issue #291"
+
+    # things that are basically fine to leave alone
+
+    # nested_given: https://github.com/pschanely/hypothesis-crosshair/issues/11
+    nested_given = "nested @given decorators don't work with crosshair"
+    # path_timeout: https://github.com/pschanely/hypothesis-crosshair/issues/21
+    path_timeout = "realization can be slow for this test"
+    undiscovered = "crosshair doesn't find the failing input"
+    no_healthchecks = "configured with no healthchecks under crosshair"
+    misdiagnose_deadline = "flaky deadlines look like backend-specific failures"
+    other = "reasons not elsewhere categorized"
+
+
+def xfail_on_crosshair(why: Why, /, *, strict=True, as_marks=False):
+    try:
+        import pytest
+    except ImportError:
+        return lambda fn: fn
+
+    current_backend = settings.get_profile(settings._current_profile).backend
+    kw = {
+        "strict": strict and why not in (Why.undiscovered, Why.path_timeout),
+        "reason": f"Expected failure due to: {why.value}",
+        "condition": current_backend == "crosshair",
+    }
+    if why is Why.path_timeout:
+        with contextlib.suppress(ImportError):
+            from crosshair.util import PathTimeout
+
+            kw["raises"] = PathTimeout
+    if as_marks:  # for use with pytest.param(..., marks=xfail_on_crosshair())
+        return (pytest.mark.xf_crosshair, pytest.mark.xfail(**kw))
+    return lambda fn: pytest.mark.xf_crosshair(pytest.mark.xfail(**kw)(fn))
