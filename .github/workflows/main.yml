@@ -134,7 +134,7 @@ jobs:
         export TASK=${{ matrix.task }}
         if [[ $TASK == check-crosshair-custom-* ]]; then
           GROUP="${TASK#check-crosshair-custom-}"
-          ./build.sh check-crosshair-custom -- -n auto $(cd hypothesis-python ; echo tests/$GROUP) -k 'not decimal'
+          ./build.sh check-crosshair-custom -- -v $(cd hypothesis-python ; echo tests/$GROUP) -k 'not decimal'
         else
           ./build.sh
         fi
