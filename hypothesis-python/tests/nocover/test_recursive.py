@@ -12,6 +12,8 @@ import sys
 import threading
 import warnings
 
+import pytest
+
 from hypothesis import HealthCheck, given, settings, strategies as st
 
 from tests.common.debug import find_any, minimal
@@ -72,6 +74,7 @@ def test_can_find_quite_broad_lists():
     assert breadth(broad) == target
 
 
+@pytest.mark.skipif(settings._current_profile == "crosshair", reason="very slow")
 def test_drawing_many_near_boundary():
     size = 4
     elems = st.recursive(
@@ -121,6 +124,7 @@ def test_can_form_sets_of_recursive_data():
     assert len(xs) == size
 
 
+@pytest.mark.skipif(settings._current_profile == "crosshair", reason="not threadsafe")
 def test_drawing_from_recursive_strategy_is_thread_safe():
     shared_strategy = st.recursive(
         st.integers(), lambda s: st.lists(s, max_size=2), max_leaves=20

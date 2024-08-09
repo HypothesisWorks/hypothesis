@@ -962,6 +962,7 @@ def test_no_byteswarning(_):
     pass
 
 
+@pytest.mark.skipif(settings._current_profile == "crosshair", reason="very very slow")
 def test_hashable_type_unhashable_value():
     # Decimal("snan") is not hashable; we should be able to generate it.
     # See https://github.com/HypothesisWorks/hypothesis/issues/2320
