@@ -29,6 +29,10 @@ def test_raises_deadline_on_slow_test():
         slow()
 
 
+@pytest.mark.skipif(
+    settings.get_profile(settings._current_profile).deadline is None,
+    reason="not expected to fail if deadline is disabled",
+)
 @fails_with(DeadlineExceeded)
 @given(st.integers())
 def test_slow_tests_are_errors_by_default(i):
