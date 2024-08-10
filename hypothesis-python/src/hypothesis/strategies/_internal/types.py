@@ -195,7 +195,10 @@ except AttributeError:  # pragma: no cover
 
 
 # Used on `TypeVar` objects with no default:
-NoDefault = getattr(typing_extensions, "NoDefault", object())
+NoDefaults = (
+    getattr(typing, "NoDefault", object()),
+    getattr(typing_extensions, "NoDefault", object()),
+)
 
 # We use this variable to be sure that we are working with a type from `typing`:
 typing_root_type = (typing._Final, typing._GenericAlias)  # type: ignore
@@ -443,7 +446,7 @@ __EVAL_TYPE_TAKES_TYPE_PARAMS = (
 )
 
 
-def _try_import_forward_ref(thing, typ, *, type_params=()):  # pragma: no cover
+def _try_import_forward_ref(thing, typ, *, type_params):  # pragma: no cover
     """
     Tries to import a real bound or default type from ``ForwardRef`` in ``TypeVar``.
 
@@ -1090,7 +1093,7 @@ def resolve_TypeVar(thing):
     type_var_key = f"typevar={thing!r}"
 
     bound = getattr(thing, "__bound__", None)
-    default = getattr(thing, "__default__", NoDefault)
+    default = getattr(thing, "__default__", NoDefaults[0])
     original_strategies = []
 
     def resolve_strategies(typ):
@@ -1106,7 +1109,7 @@ def resolve_TypeVar(thing):
 
     if bound is not None:
         resolve_strategies(bound)
-    if default is not NoDefault:  # pragma: no cover
+    if default not in NoDefaults:  # pragma: no cover
         # Coverage requires 3.13 or `typing_extensions` package.
         resolve_strategies(default)
 

@@ -250,6 +250,7 @@ def _check_instances(t):
         t.__module__ != "typing"
         and t.__name__ != "ByteString"
         and not t.__module__.startswith("pydantic")
+        and t.__module__ != "typing_extensions
     )
 
 
