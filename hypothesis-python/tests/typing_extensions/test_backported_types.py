@@ -26,7 +26,7 @@ from typing_extensions import (
     TypeIs,
 )
 
-from hypothesis import assume, given, strategies as st
+from hypothesis import HealthCheck, assume, given, settings, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import from_type
 from hypothesis.strategies._internal.types import NON_RUNTIME_TYPES
@@ -335,3 +335,57 @@ def test_typeddict_error_msg():
 
 def test_literal_string_is_just_a_string():
     assert_all_examples(from_type(LiteralString), lambda thing: isinstance(thing, str))
+
+
+class Foo:
+    def __init__(self, x):
+        pass
+
+
+class Bar(Foo):
+    pass
+
+
+class Baz(Foo):
+    pass
+
+
+st.register_type_strategy(Bar, st.builds(Bar, st.integers()))
+st.register_type_strategy(Baz, st.builds(Baz, st.integers()))
+
+T = typing_extensions.TypeVar("T")
+T_int = typing_extensions.TypeVar("T_int", bound=int)
+
+
+@pytest.mark.parametrize(
+    "var,expected",
+    [
+        (typing_extensions.TypeVar("V"), object),
+        # Bound:
+        (typing_extensions.TypeVar("V", bound=int), int),
+        (typing_extensions.TypeVar("V", bound=Foo), (Bar, Baz)),
+        (typing_extensions.TypeVar("V", bound=Union[int, str]), (int, str)),
+        # Constraints:
+        (typing_extensions.TypeVar("V", int, str), (int, str)),
+        # Default:
+        (typing_extensions.TypeVar("V", default=int), int),
+        (typing_extensions.TypeVar("V", default=T), object),
+        (typing_extensions.TypeVar("V", default=Foo), (Bar, Baz)),
+        (typing_extensions.TypeVar("V", default=Union[int, str]), (int, str)),
+        (typing_extensions.TypeVar("V", default=T_int), int),
+        (typing_extensions.TypeVar("V", default=T_int, bound=int), int),
+        (typing_extensions.TypeVar("V", int, str, default=int), (int, str)),
+        # This case is not correct from typing's perspective, but its not
+        # our job to very this, static type-checkers should do that:
+        (typing_extensions.TypeVar("V", default=T_int, bound=str), (int, str)),
+    ],
+)
+@settings(suppress_health_check=[HealthCheck.too_slow])
+@given(data=st.data())
+def test_typevar_type_is_consistent(data, var, expected):
+    strat = st.from_type(var)
+    v1 = data.draw(strat)
+    v2 = data.draw(strat)
+    assume(v1 != v2)  # Values may vary, just not types
+    assert type(v1) == type(v2)
+    assert isinstance(v1, expected)
