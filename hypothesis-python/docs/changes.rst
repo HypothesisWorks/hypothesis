@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.110.2:
+
+--------------------
+6.110.2 - 2024-08-11
+--------------------
+
+Support ``__default__`` field of :obj:`~python:typing.TypeVar`
+and support the same from :pypi:`typing_extensions`
+in :func:`~hypothesis.strategies.from_type`.
+
 .. _v6.110.1:
 
 --------------------
