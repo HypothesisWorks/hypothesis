@@ -8,7 +8,7 @@ annotated-types==0.7.0
     # via -r requirements/coverage.in
 async-timeout==4.0.3
     # via redis
-attrs==24.1.0
+attrs==24.2.0
     # via
     #   hypothesis
     #   hypothesis (hypothesis-python/setup.py)
@@ -56,7 +56,7 @@ flask==3.0.3
     # via dash
 hypofuzz==24.2.3
     # via -r requirements/fuzzing.in
-hypothesis[cli]==6.108.9
+hypothesis[cli]==6.110.1
     # via hypofuzz
 idna==3.7
     # via requests
@@ -136,7 +136,7 @@ pytz==2024.1
     # via
     #   -r requirements/coverage.in
     #   pandas
-pyyaml==6.0.1
+pyyaml==6.0.2
     # via libcst
 redis==5.0.8
     # via fakeredis

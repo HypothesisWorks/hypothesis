@@ -12,11 +12,11 @@ asgiref==3.8.1
     # via django
 asttokens==2.4.1
     # via stack-data
-attrs==24.1.0
+attrs==24.2.0
     # via hypothesis (hypothesis-python/setup.py)
 autoflake==2.3.1
     # via shed
-babel==2.15.0
+babel==2.16.0
     # via sphinx
 backports-tarfile==1.2.0
     # via jaraco-context
@@ -32,7 +32,7 @@ cachetools==5.4.0
     # via tox
 certifi==2024.7.4
     # via requests
-cffi==1.16.0
+cffi==1.17.0
     # via cryptography
 chardet==5.2.0
     # via tox
@@ -59,7 +59,7 @@ decorator==5.1.1
     # via ipython
 distlib==0.3.8
     # via virtualenv
-django==5.0.7
+django==5.1
     # via -r requirements/tools.in
 docutils==0.20.1
     # via
@@ -137,7 +137,7 @@ matplotlib-inline==0.1.7
     # via ipython
 mdurl==0.1.2
     # via markdown-it-py
-more-itertools==10.3.0
+more-itertools==10.4.0
     # via
     #   jaraco-classes
     #   jaraco-functools
@@ -207,7 +207,7 @@ pyproject-hooks==1.1.0
     # via
     #   build
     #   pip-tools
-pyright==1.1.374
+pyright==1.1.375
     # via -r requirements/tools.in
 pytest==8.3.2
     # via -r requirements/tools.in
@@ -219,7 +219,7 @@ pytz==2024.1
     # via feedgenerator
 pyupgrade==3.17.0
     # via shed
-pyyaml==6.0.1
+pyyaml==6.0.2
     # via
     #   libcst
     #   sphinx-jsonschema
@@ -242,7 +242,7 @@ rich==13.7.1
     # via
     #   pelican
     #   twine
-ruff==0.5.6
+ruff==0.5.7
     # via -r requirements/tools.in
 secretstorage==3.3.3
     # via keyring
@@ -310,7 +310,7 @@ tomli==2.0.1
     #   pytest
     #   sphinx
     #   tox
-tox==4.17.0
+tox==4.17.1
     # via -r requirements/tools.in
 traitlets==5.14.3
     # via
@@ -346,7 +346,7 @@ urllib3==2.2.2
     #   twine
 virtualenv==20.26.3
     # via tox
-watchfiles==0.22.0
+watchfiles==0.23.0
     # via pelican
 wcwidth==0.2.13
     # via prompt-toolkit
