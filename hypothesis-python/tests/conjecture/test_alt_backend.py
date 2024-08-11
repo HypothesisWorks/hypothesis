@@ -10,9 +10,10 @@
 
 import math
 import sys
+from collections.abc import Sequence
 from contextlib import contextmanager
 from random import Random
-from typing import Optional, Sequence
+from typing import Optional
 
 import pytest
 
@@ -31,6 +32,7 @@ from hypothesis.internal.floats import SIGNALING_NAN
 from hypothesis.internal.intervalsets import IntervalSet
 
 from tests.common.debug import minimal
+from tests.common.utils import capture_observations
 from tests.conjecture.common import ir_nodes
 
 
@@ -358,7 +360,7 @@ def test_case_lifetime():
 
 
 def test_flaky_with_backend():
-    with temp_register_backend("trivial", TrivialProvider):
+    with temp_register_backend("trivial", TrivialProvider), capture_observations():
 
         calls = 0
 
@@ -428,3 +430,42 @@ def test_realize_dependent_draw():
             assert n1 <= n2
 
         test_function()
+
+
+class ObservableProvider(TrivialProvider):
+    def observe_test_case(self):
+        return {"msg_key": "some message", "data_key": [1, "2", {}]}
+
+    def observe_information_messages(self, *, lifetime):
+        if lifetime == "test_case":
+            yield {"type": "info", "title": "trivial-data", "content": {"k2": "v2"}}
+        else:
+            assert lifetime == "test_function"
+            yield {"type": "alert", "title": "Trivial alert", "content": "message here"}
+            yield {"type": "info", "title": "trivial-data", "content": {"k2": "v2"}}
+
+
+def test_custom_observations_from_backend():
+    with (
+        temp_register_backend("observable", ObservableProvider),
+        capture_observations() as ls,
+    ):
+
+        @given(st.none())
+        @settings(backend="observable", database=None)
+        def test_function(_):
+            pass
+
+        test_function()
+
+    assert len(ls) >= 3
+    cases = [t["metadata"]["backend"] for t in ls if t["type"] == "test_case"]
+    assert {"msg_key": "some message", "data_key": [1, "2", {}]} in cases
+
+    infos = [
+        {k: v for k, v in t.items() if k in ("title", "content")}
+        for t in ls
+        if t["type"] != "test_case"
+    ]
+    assert {"title": "Trivial alert", "content": "message here"} in infos
+    assert {"title": "trivial-data", "content": {"k2": "v2"}} in infos

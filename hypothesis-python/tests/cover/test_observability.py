@@ -8,8 +8,6 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import contextlib
-
 import pytest
 
 from hypothesis import (
@@ -23,7 +21,6 @@ from hypothesis import (
     target,
 )
 from hypothesis.database import InMemoryExampleDatabase
-from hypothesis.internal.observability import TESTCASE_CALLBACKS
 from hypothesis.stateful import (
     RuleBasedStateMachine,
     invariant,
@@ -31,15 +28,7 @@ from hypothesis.stateful import (
     run_state_machine_as_test,
 )
 
-
-@contextlib.contextmanager
-def capture_observations():
-    ls = []
-    TESTCASE_CALLBACKS.append(ls.append)
-    try:
-        yield ls
-    finally:
-        TESTCASE_CALLBACKS.remove(ls.append)
+from tests.common.utils import capture_observations
 
 
 @seed("deterministic so we don't miss some combination of features")
