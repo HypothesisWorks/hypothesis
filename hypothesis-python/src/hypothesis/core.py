@@ -1122,6 +1122,7 @@ class StateForActualGivenExecution:
                     data._observability_args
                 )
                 self._string_repr = data.provider.realize(self._string_repr)
+                backend_metadata = data.provider.get_observability_data()
                 tc = make_testcase(
                     start_timestamp=self._start_timestamp,
                     test_name_or_nodeid=self.test_identifier,
@@ -1132,6 +1133,7 @@ class StateForActualGivenExecution:
                     timing=self._timing_features,
                     coverage=tractable_coverage_report(trace) or None,
                     phase=phase,
+                    backend_metadata=backend_metadata,
                 )
                 deliver_json_blob(tc)
             self._timing_features = {}

@@ -1240,8 +1240,15 @@ class PrimitiveProvider(abc.ABC):
 
         The returned value should be non-symbolic.
         """
-
         return value
+
+    def get_observability_data(self) -> Dict[str, Any]:
+        """Called at the end of the test case when observability mode is active.
+
+        The return value should be a non-symbolic json-encodable dictionary,
+        and will be included as `observation["metadata"]["backend"]`.
+        """
+        return {}
 
     @abc.abstractmethod
     def draw_boolean(
