@@ -279,6 +279,32 @@ jobs:
           parallel --max-procs 100% --max-args 20 --keep-order --line-buffer \
             python -m pytest -p no:cacheprovider <<< $TEST_FILES
 
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.10"
+    - name: Restore cache
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache
+          ~/wheelhouse
+          ~/.local
+          vendor/bundle
+          .tox/
+        key: deps-${{ runner.os }}-${{ hashFiles('requirements/*.txt') }}-${{ matrix.task }}
+        restore-keys: |
+          deps-${{ runner.os }}-${{ hashFiles('requirements/*.txt') }}
+          deps-${{ runner.os }}
+    - name: Run tests
+      run: ./build.sh benchmark
+
   deploy:
     if: "github.event_name == 'push' && github.repository == 'HypothesisWorks/hypothesis'"
     runs-on: ubuntu-latest

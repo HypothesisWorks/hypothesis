@@ -495,6 +495,11 @@ def check_py310_pyjion(*args):
     run_tox("py310-pyjion", PYTHONS["3.10"], *args)
 
 
+@python_tests
+def benchmark(*args):
+    run_tox("benchmark", PYTHONS[ci_version], *args)
+
+
 @task()
 def tox(*args):
     if len(args) < 2:
