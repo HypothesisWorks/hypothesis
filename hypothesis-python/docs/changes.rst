@@ -18,6 +18,65 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.111.0:
+
+--------------------
+6.111.0 - 2024-08-11
+--------------------
+
+:ref:`alternative-backends` can now implement ``.observe_test_case()``
+and ``observe_information_message()`` methods, to record backend-specific
+metadata and messages in our :doc:`observability output <observability>`
+(:issue:`3845` and `hypothesis-crosshair#22
+<https://github.com/pschanely/hypothesis-crosshair/issues/22>`__).
+
+.. _v6.110.2:
+
+--------------------
+6.110.2 - 2024-08-11
+--------------------
+
+Support ``__default__`` field of :obj:`~python:typing.TypeVar`
+and support the same from :pypi:`typing_extensions`
+in :func:`~hypothesis.strategies.from_type`.
+
+.. _v6.110.1:
+
+--------------------
+6.110.1 - 2024-08-08
+--------------------
+
+Add better error message for :obj:`!~python:typing.TypeIs` types
+in :func:`~hypothesis.strategies.from_type`.
+
+.. _v6.110.0:
+
+--------------------
+6.110.0 - 2024-08-07
+--------------------
+
+Support :obj:`~python:typing.LiteralString`
+in :func:`~hypothesis.strategies.from_type`.
+
+.. _v6.109.1:
+
+--------------------
+6.109.1 - 2024-08-07
+--------------------
+
+This patch makes progress towards adding type hints to our internal conjecture engine (:issue:`3074`).
+
+.. _v6.109.0:
+
+--------------------
+6.109.0 - 2024-08-07
+--------------------
+
+This release allows using :obj:`~python:typing.Annotated`
+and :obj:`!ReadOnly` types
+for :class:`~python:typing.TypedDict` value types
+with :func:`~hypothesis.strategies.from_type`.
+
 .. _v6.108.10:
 
 ---------------------

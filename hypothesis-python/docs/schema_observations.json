@@ -74,7 +74,7 @@
             "type": "object",
             "properties": {
                 "type": {
-                    "enum": [ "info", "alert", "error"],
+                    "enum": ["info", "alert", "error"],
                     "description": "A tag which labels this observation as general information to show the user.  Hypothesis uses info messages to report statistics; alert or error messages can be provided by plugins."
                 },
                 "title": {
@@ -82,8 +82,8 @@
                     "description": "The title of this message"
                 },
                 "content": {
-                    "type": "string",
-                    "description": "The body of the message.  May use markdown."
+                    "type": ["string", "object"],
+                    "description": "The body of the message.  Strings are presumed to be human-readable messages in markdown format; dictionaries may contain arbitrary information (as for test-case metadata)."
                 },
                 "property": {
                     "type": "string",
@@ -94,7 +94,7 @@
                     "description": "unix timestamp at which we started running this test function, so that later analysis can group test cases by run."
                 }
             },
-            "required": [ "type", "title", "content", "property", "run_start"],
+            "required": ["type", "title", "content", "property", "run_start"],
             "additionalProperties": false
         }
     ]

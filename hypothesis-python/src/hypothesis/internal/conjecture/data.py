@@ -679,6 +679,12 @@ class Examples:
             i += n
         return Example(self, i)
 
+    # not strictly necessary as we have len/getitem, but required for mypy.
+    # https://github.com/python/mypy/issues/9737
+    def __iter__(self) -> Iterator[Example]:
+        for i in range(len(self)):
+            yield self[i]
+
 
 @dataclass_transform()
 @attr.s(slots=True, frozen=True)
@@ -1180,6 +1186,14 @@ class ConjectureResult:
 BYTE_MASKS = [(1 << n) - 1 for n in range(8)]
 BYTE_MASKS[0] = 255
 
+_Lifetime: TypeAlias = Literal["test_case", "test_function"]
+
+
+class _BackendInfoMsg(TypedDict):
+    type: str
+    title: str
+    content: Union[str, Dict[str, Any]]
+
 
 class PrimitiveProvider(abc.ABC):
     # This is the low-level interface which would also be implemented
@@ -1206,7 +1220,7 @@ class PrimitiveProvider(abc.ABC):
     # lifetime can access the passed ConjectureData object.
     #
     # Non-hypothesis providers probably want to set a lifetime of test_function.
-    lifetime = "test_function"
+    lifetime: _Lifetime = "test_function"
 
     # Solver-based backends such as hypothesis-crosshair use symbolic values
     # which record operations performed on them in order to discover new paths.
@@ -1234,8 +1248,27 @@ class PrimitiveProvider(abc.ABC):
 
         The returned value should be non-symbolic.
         """
-
         return value
+
+    def observe_test_case(self) -> Dict[str, Any]:
+        """Called at the end of the test case when observability mode is active.
+
+        The return value should be a non-symbolic json-encodable dictionary,
+        and will be included as `observation["metadata"]["backend"]`.
+        """
+        return {}
+
+    def observe_information_messages(
+        self, *, lifetime: _Lifetime
+    ) -> Iterable[_BackendInfoMsg]:
+        """Called at the end of each test case and again at end of the test function.
+
+        Return an iterable of `{type: info/alert/error, title: str, content: str|dict}`
+        dictionaries to be delivered as individual information messages.
+        (Hypothesis adds the `run_start` timestamp and `property` name for you.)
+        """
+        assert lifetime in ("test_case", "test_function")
+        yield from []
 
     @abc.abstractmethod
     def draw_boolean(
@@ -1301,7 +1334,6 @@ class HypothesisProvider(PrimitiveProvider):
     lifetime = "test_case"
 
     def __init__(self, conjecturedata: Optional["ConjectureData"], /):
-        assert conjecturedata is not None
         super().__init__(conjecturedata)
 
     def draw_boolean(
