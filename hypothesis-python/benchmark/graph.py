@@ -52,7 +52,7 @@ for name in names:
 names = new_names
 
 # either "time" or "calls"
-statistic = "calls"
+statistic = "time"
 # name : average calls
 old_values = {}
 new_values = {}

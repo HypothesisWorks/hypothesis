@@ -742,7 +742,6 @@ def test_always_runs_at_least_one_step():
     run_state_machine_as_test(CountSteps)
 
 
-@pytest.mark.skip("TODO_BETTER_SHRINK: temporary regression in stateful bundles")
 def test_removes_needless_steps():
     """Regression test from an example based on
     tests/nocover/test_database_agreement.py, but without the expensive bits.
@@ -794,7 +793,6 @@ def test_removes_needless_steps():
     assert result.count(" = state.v(") == 1
 
 
-@pytest.mark.skip("TODO_BETTER_SHRINK: temporary regression in stateful bundles")
 def test_prints_equal_values_with_correct_variable_name():
     @Settings(max_examples=100, suppress_health_check=list(HealthCheck))
     class MovesBetweenBundles(RuleBasedStateMachine):

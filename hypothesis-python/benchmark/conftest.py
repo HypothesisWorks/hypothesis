@@ -16,7 +16,6 @@ from collections import defaultdict
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 
-mode = "calls"
 # we'd like to support xdist here for parallelism, but a session-scope fixture won't
 # be enough: https://github.com/pytest-dev/pytest-xdist/issues/271. need a lockfile
 # or equivalent.

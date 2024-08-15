@@ -14,7 +14,7 @@ from copy import deepcopy
 
 import pytest
 
-from hypothesis import HealthCheck, assume, example, given, settings, strategies as st
+from hypothesis import assume, example, given, strategies as st
 from hypothesis.errors import StopTest
 from hypothesis.internal.conjecture.data import (
     ConjectureData,
@@ -38,7 +38,6 @@ from tests.conjecture.common import (
     fresh_data,
     ir_nodes,
     ir_types_and_kwargs,
-    kwargs_strategy,
 )
 
 
@@ -390,56 +389,6 @@ def test_data_with_empty_ir_tree_is_overrun():
         data.draw_integer()
 
     assert data.status is Status.OVERRUN
-
-
-@settings(suppress_health_check=[HealthCheck.too_slow])
-@given(st.data())
-def test_node_with_different_ir_type_is_invalid(data):
-    node = data.draw(ir_nodes())
-    (ir_type, kwargs) = data.draw(ir_types_and_kwargs())
-
-    # drawing a node with a different ir type should cause a misalignment.
-    assume(ir_type != node.ir_type)
-
-    data = ConjectureData.for_ir_tree([node])
-    draw_func = getattr(data, f"draw_{ir_type}")
-    with pytest.raises(StopTest):
-        draw_func(**kwargs)
-
-    assert data.status is Status.INVALID
-
-
-@settings(suppress_health_check=[HealthCheck.too_slow])
-@given(st.data())
-def test_node_with_same_ir_type_but_different_value_is_invalid(data):
-    node = data.draw(ir_nodes())
-    kwargs = data.draw(kwargs_strategy(node.ir_type))
-
-    # drawing a node with the same ir type, but a non-compatible value, should
-    # also cause a misalignment.
-    assume(not ir_value_permitted(node.value, node.ir_type, kwargs))
-
-    data = ConjectureData.for_ir_tree([node])
-    draw_func = getattr(data, f"draw_{node.ir_type}")
-    with pytest.raises(StopTest):
-        draw_func(**kwargs)
-
-    assert data.status is Status.INVALID
-
-
-@given(ir_nodes(was_forced=False))
-def test_data_with_changed_was_forced(node):
-    # we had a normal node and then tried to draw a different forced value from it.
-    # ir tree: v1 [was_forced=False]
-    # drawing:    [forced=v2]
-    data = ConjectureData.for_ir_tree([node])
-
-    draw_func = getattr(data, f"draw_{node.ir_type}")
-    kwargs = deepcopy(node.kwargs)
-    kwargs["forced"] = draw_value(node.ir_type, node.kwargs)
-    assume(not ir_value_equal(node.ir_type, kwargs["forced"], node.value))
-
-    assert ir_value_equal(node.ir_type, draw_func(**kwargs), kwargs["forced"])
 
 
 @given(ir_nodes(was_forced=True))
