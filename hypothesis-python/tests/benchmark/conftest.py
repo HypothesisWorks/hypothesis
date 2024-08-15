@@ -28,6 +28,7 @@ import pytest
 
 
 timer = time.process_time  # store a reference in case the time module is monkeypatched
+repeat = None  # set by pytest_configure
 
 
 def stats(d):
@@ -41,7 +42,6 @@ def bench(request, monkeypatch):
     seen_exc = None
 
     def benchmarker(test, expected_exc=None):
-        repeat = max(5, request.config.option.hypothesis_bench_repeats)
 
         def timed(f):
             nonlocal seen_exc
@@ -54,15 +54,9 @@ def bench(request, monkeypatch):
 
         inner_test = test.hypothesis.inner_test
 
-        def wrapped_inner_test(*args, **kwargs):
-            # Add some exemplary synthetic baseline work (build a dict from a
-            # lambda fn with some getattrs mixed in, raise and catch an exception).
-            # This has two purposes:
-            # - make the inner test take a measurable amount of time
-            # - mimic "real" load so that the relative number is fairly stable
-            #   under various load conditions
-            nonlocal time_inner
-            before = timer()
+        def synthetic_work():
+            # Beware: This defines the unit of work. If the work changes,
+            # so do the reported numbers (which are scaled by this unit).
             try:
                 f = lambda i: i * i
                 f.a = {}
@@ -71,7 +65,19 @@ def bench(request, monkeypatch):
                 assert not f.a
             except AssertionError:
                 pass
+
+        def wrapped_inner_test(*args, **kwargs):
+            # Add some exemplary synthetic baseline work
+            # This has two purposes:
+            # - make the inner test take a measurable amount of time
+            # - mimic "real" load so that the relative number is fairly stable
+            #   under various load conditions
+            # The latter is partly successful: with 100% loaded system the test
+            # takes 2.5x time, the reported numbers shift by <~20%.
+            nonlocal time_inner
+            before = timer()
             try:
+                synthetic_work()
                 inner_test(*args, **kwargs)
             finally:
                 time_inner += timer() - before
@@ -93,7 +99,9 @@ def bench(request, monkeypatch):
                 raise seen_exc
         else:
             if not isinstance(seen_exc, expected_exc):
-                raise AssertionError(f"Did not see expected {expected_exc} (got {repr(seen_exc)})")
+                raise AssertionError(
+                    f"Did not see expected {expected_exc} (got {repr(seen_exc)})"
+                )
 
     return benchmarker
 
@@ -103,12 +111,14 @@ def pytest_addoption(parser):
 
 
 def pytest_configure(config):
+    global repeat
+    repeat = max(5, config.option.hypothesis_bench_repeats)
     config._bench_ratios = {}
 
 
 def pytest_terminal_summary(terminalreporter, exitstatus, config):
     terminalreporter.ensure_newline()
-    terminalreporter.section("relative overhead (per example) - lower is better")
+    terminalreporter.section(f"overhead relative to example cost - lower is better [{repeat}it]")
     for testid, (dmin, davg, dmax) in config._bench_ratios.items():
         msg = f"{davg:5.1f}   ({dmin:5.1f} --{dmax:5.1f} )   {testid}"
         terminalreporter.write_line(msg, yellow=True, bold=True)
@@ -116,7 +126,7 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
     proc = subprocess.run(
         ["git", "show", "--summary", "HEAD^"], capture_output=True, encoding="utf8"
     )
-    with open("bench.json", "w") as f:
+    with open("bench.json", "w", encoding="utf8") as f:
         # github-actions-benchmark `customSmallerIsBetter`
         json.dump(
             [
