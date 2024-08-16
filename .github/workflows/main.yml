@@ -290,7 +290,7 @@ jobs:
       with:
         python-version: "3.10"
     - name: Restore cache
-      uses: actions/cache@v3
+      uses: actions/cache/restore@v3
       with:
         path: |
           ~/.cache
@@ -298,12 +298,32 @@ jobs:
           ~/.local
           vendor/bundle
           .tox/
-        key: deps-${{ runner.os }}-${{ hashFiles('requirements/*.txt') }}-${{ matrix.task }}
+        key: deps-${{ runner.os }}-${{ hashFiles('requirements/*.txt') }}
         restore-keys: |
-          deps-${{ runner.os }}-${{ hashFiles('requirements/*.txt') }}
-          deps-${{ runner.os }}
+          bench-${{ runner.os }}
     - name: Run tests
-      run: ./build.sh benchmark
+      run: ./build.sh benchmark -- --hypothesis-bench-repeats=10 --hypothesis-bench-json=${{ github.workspace }}/bench.json
+    - name: Restore benchmark history
+      uses: actions/cache@v3
+      with:
+        path: ./bench-data.json
+        key: bench-${{ runner.os }}
+    - name: Process benchmark result
+      uses: benchmark-action/github-action-benchmark@v1
+      with:
+        tool: 'customSmallerIsBetter'
+        output-file-path: ./bench.json
+        external-data-json-path: ./bench-data.json
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        summary-always: true
+        #alert-threshold: "100%"
+        # comment-on-alert fails with permission error, see:
+        # https://docs.github.com/en/actions/security-for-github-actions/security-guides/automatic-token-authentication#permissions-for-the-github_token
+        comment-on-alert: false
+        fail-on-alert: false
+        #save-data-file: {{ branch == master }}  # so that PR is always compared to master
+    - name: Show json
+      run: cat ./bench-data.json
 
   deploy:
     if: "github.event_name == 'push' && github.repository == 'HypothesisWorks/hypothesis'"

@@ -10,7 +10,6 @@
 
 import json
 import statistics
-import subprocess
 import time
 
 import numpy as np
@@ -100,7 +99,7 @@ def bench(request, monkeypatch):
         else:
             if not isinstance(seen_exc, expected_exc):
                 raise AssertionError(
-                    f"Did not see expected {expected_exc} (got {repr(seen_exc)})"
+                    f"Did not see expected {expected_exc} (got {seen_exc!r})"
                 )
 
     return benchmarker
@@ -108,6 +107,7 @@ def bench(request, monkeypatch):
 
 def pytest_addoption(parser):
     parser.addoption("--hypothesis-bench-repeats", type=int, action="store", default=5)
+    parser.addoption("--hypothesis-bench-json", type=str, action="store")
 
 
 def pytest_configure(config):
@@ -118,26 +118,27 @@ def pytest_configure(config):
 
 def pytest_terminal_summary(terminalreporter, exitstatus, config):
     terminalreporter.ensure_newline()
-    terminalreporter.section(f"overhead relative to example cost - lower is better [{repeat}it]")
+    terminalreporter.section(
+        f"overhead relative to example cost - lower is better [{repeat}it]"
+    )
     for testid, (dmin, davg, dmax) in config._bench_ratios.items():
         msg = f"{davg:5.1f}   ({dmin:5.1f} --{dmax:5.1f} )   {testid}"
         terminalreporter.write_line(msg, yellow=True, bold=True)
 
-    proc = subprocess.run(
-        ["git", "show", "--summary", "HEAD^"], capture_output=True, encoding="utf8"
-    )
-    with open("bench.json", "w", encoding="utf8") as f:
-        # github-actions-benchmark `customSmallerIsBetter`
-        json.dump(
-            [
-                {
-                    "name": testid,
-                    "unit": "ratio",
-                    "value": davg,
-                    "range": [dmin, dmax],
-                    "extra": proc.stdout,
-                }
-                for testid, (dmin, davg, dmax) in config._bench_ratios.items()
-            ],
-            f,
-        )
+    store_json = config.option.hypothesis_bench_json
+    if store_json:
+        with open(store_json, "w", encoding="utf8") as f:
+            # github-actions-benchmark `customSmallerIsBetter`
+            json.dump(
+                [
+                    {
+                        "name": testid,
+                        "unit": "",
+                        "value": round(davg, ndigits=1),
+                        "range": f"{dmin:.1f} – {dmax:.1f}",
+                        # "extra": "",
+                    }
+                    for testid, (dmin, davg, dmax) in config._bench_ratios.items()
+                ],
+                f,
+            )
