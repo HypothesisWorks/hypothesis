@@ -324,8 +324,8 @@ jobs:
         # comment-on-alert fails with permission error, see:
         # https://docs.github.com/en/actions/security-for-github-actions/security-guides/automatic-token-authentication#permissions-for-the-github_token
         comment-on-alert: false
-    - name: Show json
-      run: cat ./bench-data.json
+      #- name: Show json
+      #run: cat ./bench-data.json
 
   deploy:
     if: "github.event_name == 'push' && github.repository == 'HypothesisWorks/hypothesis'"

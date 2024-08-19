@@ -32,10 +32,12 @@ repeat = None  # repeats to run internally
 count = None  # repeats as executed by pytest-repeat
 
 
-def stats(d):
-    # stable funny-statistics:
-    # throw away extreme quintiles, return the middle three as min/expected/max
-    return [*d, *d, *d] if len(d) == 1 else statistics.quantiles(d, n=6)[1:-1]
+def stats(data):
+    # (p05, p25, median, p75, p95)
+    if len(data) == 1:
+        return [*data] * 5
+    ntiles = statistics.quantiles(data, n=20, method="inclusive")
+    return (ntiles[0], ntiles[4], ntiles[9], ntiles[14], ntiles[18])
 
 
 @pytest.fixture
@@ -131,8 +133,8 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
         f"overhead relative to example cost - lower is better [{repeat}it×{count}]"
     )
     ratios = [(k, stats(v)) for k, v in config._bench_rel_overhead.items()]
-    for testid, (dmin, davg, dmax) in ratios:
-        msg = f"{davg:5.1f}   ({dmin:5.1f} --{dmax:5.1f} )   {testid}"
+    for testid, (p05, p25, p50, p75, p95) in ratios:
+        msg = f"{p50:5.1f}   ({p05:5.1f} --{p95:5.1f} )   {testid}"
         terminalreporter.write_line(msg, yellow=True, bold=True)
 
     store_json = config.option.hypothesis_bench_json
@@ -144,11 +146,11 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
                     {
                         "name": testid,
                         "unit": "",
-                        "value": round(davg, ndigits=1),
-                        "range": f"{dmin:.1f} – {dmax:.1f}",
-                        # "extra": "",
+                        "value": round(p50, ndigits=1),
+                        "range": f"{p05:.1f} – {p95:.1f}",
+                        "extra": f"interquartile range {p25:.1f} – {p75:.1f}",
                     }
-                    for testid, (dmin, davg, dmax) in ratios
+                    for testid, (p05, p25, p50, p95) in ratios
                 ],
                 f,
             )
