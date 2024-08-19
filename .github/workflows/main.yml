@@ -301,7 +301,9 @@ jobs:
         key: deps-${{ runner.os }}-${{ hashFiles('requirements/*.txt') }}
         restore-keys: deps-${{ runner.os }}
     - name: Run tests
-      run: ./build.sh benchmark -- --hypothesis-bench-repeats=10 --hypothesis-bench-json=${{ github.workspace }}/bench.json
+      run: |
+        ./build.sh benchmark -- \
+          --hypothesis-bench-repeats=1 --count=20 --repeat-scope=session --hypothesis-bench-json=${{ github.workspace }}/bench.json
     - name: Restore benchmark history
       uses: actions/cache@v3
       with:

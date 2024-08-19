@@ -9,17 +9,17 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import json
+import re
 import statistics
 import time
 
-import numpy as np
 import pytest
 
 # Performance measurements on shared CI workers is notoriously unreliable. Here,
 # some tricks are used to work around it:
 #
 # - Use the time.process_time (CPU time) timer, in an attempt to exclude the effect
-#   of uncontrolled concurrent processes on the server.
+#   of concurrent processes on the server.
 # - Report the ratio between a fixed amount of synthetic work and @given, instead
 #   of absolute times.
 # - Run the test parts (synthetic/@given) interleaved many times, so that temporal
@@ -27,13 +27,15 @@ import pytest
 
 
 timer = time.process_time  # store a reference in case the time module is monkeypatched
-repeat = None  # set by pytest_configure
+# set by pytest_configure:
+repeat = None  # repeats to run internally
+count = None  # repeats as executed by pytest-repeat
 
 
 def stats(d):
     # stable funny-statistics:
     # throw away extreme quintiles, return the middle three as min/expected/max
-    return np.array(statistics.quantiles(d, n=6)[1:-1])
+    return [*d, *d, *d] if len(d) == 1 else statistics.quantiles(d, n=6)[1:-1]
 
 
 @pytest.fixture
@@ -87,11 +89,17 @@ def bench(request, monkeypatch):
         for _ in range(repeat):
             time_inner = 0
             time_given = timed(test)
-            assert time_inner > 0
+            assert time_given > time_inner > 0
             rel_overhead.append((time_given - time_inner) / time_inner)
-        ratio = stats(rel_overhead)
 
-        request.config._bench_ratios[request.node.nodeid] = ratio
+        test_id = request.node.nodeid
+        if count > 1:
+            # We're running under pytest-repeat (which is a simple way to improve
+            # interleaving of tests using `--count=N --repeat-scope=session`), so
+            # mangle the id to remove pytest-repeat's parametrization.
+            test_id = re.sub(r"-?[0-9]+-[0-9]+\]$", "]", test_id)
+            test_id = re.sub(r"\[\]$", "", test_id)
+        request.config._bench_rel_overhead.setdefault(test_id, []).extend(rel_overhead)
 
         if expected_exc is None:
             if seen_exc is not None:
@@ -111,17 +119,19 @@ def pytest_addoption(parser):
 
 
 def pytest_configure(config):
-    global repeat
-    repeat = max(5, config.option.hypothesis_bench_repeats)
-    config._bench_ratios = {}
+    global repeat, count
+    repeat = max(1, config.option.hypothesis_bench_repeats)
+    count = max(1, getattr(config.option, "count", 1))
+    config._bench_rel_overhead = {}
 
 
 def pytest_terminal_summary(terminalreporter, exitstatus, config):
     terminalreporter.ensure_newline()
     terminalreporter.section(
-        f"overhead relative to example cost - lower is better [{repeat}it]"
+        f"overhead relative to example cost - lower is better [{repeat}it×{count}]"
     )
-    for testid, (dmin, davg, dmax) in config._bench_ratios.items():
+    ratios = [(k, stats(v)) for k, v in config._bench_rel_overhead.items()]
+    for testid, (dmin, davg, dmax) in ratios:
         msg = f"{davg:5.1f}   ({dmin:5.1f} --{dmax:5.1f} )   {testid}"
         terminalreporter.write_line(msg, yellow=True, bold=True)
 
@@ -138,7 +148,7 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
                         "range": f"{dmin:.1f} – {dmax:.1f}",
                         # "extra": "",
                     }
-                    for testid, (dmin, davg, dmax) in config._bench_ratios.items()
+                    for testid, (dmin, davg, dmax) in ratios
                 ],
                 f,
             )
