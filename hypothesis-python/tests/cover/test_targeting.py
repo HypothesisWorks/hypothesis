@@ -13,6 +13,7 @@ from operator import itemgetter
 import pytest
 
 from hypothesis import example, given, strategies as st, target
+from hypothesis.control import current_build_context
 from hypothesis.errors import InvalidArgument
 
 
@@ -92,6 +93,8 @@ def test_cannot_target_outside_test():
 
 @given(st.none())
 def test_cannot_target_same_label_twice(_):
+    if current_build_context().data.provider.avoid_realization:
+        pytest.skip("target() is a noop to avoid realizing arguments")
     target(0.0, label="label")
     with pytest.raises(InvalidArgument):
         target(1.0, label="label")
