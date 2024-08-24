@@ -62,11 +62,7 @@ def test_generates_and_minimizes():
 
 
 def test_can_minimize_large_arrays():
-    x = minimal(
-        nps.arrays("uint32", 100),
-        lambda x: np.any(x) and not np.all(x),
-        timeout_after=60,
-    )
+    x = minimal(nps.arrays("uint32", 100), lambda x: np.any(x) and not np.all(x))
     assert np.logical_or(x == 0, x == 1).all()
     assert np.count_nonzero(x) in (1, len(x) - 1)
 
