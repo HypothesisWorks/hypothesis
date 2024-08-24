@@ -25,30 +25,21 @@ class Timeout(BaseException):
     pass
 
 
-def minimal(definition, condition=lambda x: True, settings=None, timeout_after=10):
+def minimal(definition, condition=lambda x: True, settings=None):
     definition.validate()
-    runtime = None
     result = None
+
+    def wrapped_condition(x):
+        # This sure seems pointless, but `test_sum_of_pair` fails otherwise...
+        return condition(x)
 
     if (
         context := _current_build_context.value
     ) and context.data.provider.avoid_realization:
         raise SkipTest("`minimal()` helper not supported under symbolic execution")
 
-    def wrapped_condition(x):
-        nonlocal runtime
-        if timeout_after is not None:
-            if runtime:
-                runtime += TIME_INCREMENT
-                if runtime >= timeout_after:
-                    raise Timeout
-        result = condition(x)
-        if result and not runtime:
-            runtime = 0.0
-        return result
-
     if settings is None:
-        settings = Settings(max_examples=50000, phases=(Phase.generate, Phase.shrink))
+        settings = Settings(max_examples=500, phases=(Phase.generate, Phase.shrink))
 
     verbosity = settings.verbosity
     if verbosity == Verbosity.normal:

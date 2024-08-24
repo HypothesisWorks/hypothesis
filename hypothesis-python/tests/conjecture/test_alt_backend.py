@@ -18,6 +18,7 @@ from typing import Optional
 import pytest
 
 from hypothesis import given, settings, strategies as st
+from hypothesis.control import current_build_context
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.errors import Flaky, HypothesisException, InvalidArgument
 from hypothesis.internal.compat import int_to_bytes
@@ -25,7 +26,6 @@ from hypothesis.internal.conjecture.data import (
     AVAILABLE_PROVIDERS,
     ConjectureData,
     PrimitiveProvider,
-    realize,
 )
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.floats import SIGNALING_NAN
@@ -412,7 +412,7 @@ def test_realize():
         @given(st.integers())
         @settings(backend="realize")
         def test_function(n):
-            values.append(realize(n))
+            values.append(current_build_context().data.provider.realize(n))
 
         test_function()
 

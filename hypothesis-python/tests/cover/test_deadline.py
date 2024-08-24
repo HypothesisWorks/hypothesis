@@ -53,7 +53,7 @@ def test_slow_with_none_deadline(i):
 def test_raises_flaky_if_a_test_becomes_fast_on_rerun():
     once = [True]
 
-    @settings(deadline=500)
+    @settings(deadline=500, backend="hypothesis")
     @given(st.integers())
     def test_flaky_slow(i):
         if once[0]:
@@ -82,11 +82,10 @@ def test_keeps_you_well_above_the_deadline():
     seen = set()
     failed_once = [False]
 
-    @settings(deadline=100)
+    @settings(deadline=100, backend="hypothesis")
     @given(st.integers(0, 2000))
     def slow(i):
-        # Make sure our initial failure isn't something that immediately goes
-        # flaky.
+        # Make sure our initial failure isn't something that immediately goes flaky.
         if not failed_once[0]:
             if i * 0.9 <= 100:
                 return
@@ -107,7 +106,7 @@ def test_keeps_you_well_above_the_deadline():
 def test_gives_a_deadline_specific_flaky_error_message():
     once = [True]
 
-    @settings(deadline=100)
+    @settings(deadline=100, backend="hypothesis")
     @given(st.integers())
     def slow_once(i):
         if once[0]:

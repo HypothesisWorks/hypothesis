@@ -187,11 +187,7 @@ def test_minimize_large_uint_arrays(xp, xps):
     example."""
     if not hasattr(xp, "nonzero"):
         pytest.skip("optional API")
-    smallest = minimal(
-        xps.arrays(xp.uint8, 100),
-        lambda x: xp.any(x) and not xp.all(x),
-        timeout_after=60,
-    )
+    smallest = minimal(xps.arrays(xp.uint8, 100), lambda x: xp.any(x) and not xp.all(x))
     assert xp.all(xp.logical_or(smallest == 0, smallest == 1))
     idx = xp.nonzero(smallest)[0]
     assert idx.size in (1, smallest.size - 1)
