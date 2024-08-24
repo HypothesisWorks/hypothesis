@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.111.2:
+
+--------------------
+6.111.2 - 2024-08-24
+--------------------
+
+This patch contains some internal code cleanup.  There is no user-visible change.
+
 .. _v6.111.1:
 
 --------------------
