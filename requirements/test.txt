@@ -4,7 +4,7 @@
 #
 #    ./build.sh upgrade-requirements
 #
-attrs==24.1.0
+attrs==24.2.0
     # via hypothesis (hypothesis-python/setup.py)
 exceptiongroup==1.2.2 ; python_version < "3.11"
     # via

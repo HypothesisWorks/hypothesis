@@ -8,7 +8,7 @@ annotated-types==0.7.0
     # via -r requirements/coverage.in
 async-timeout==4.0.3
     # via redis
-attrs==24.1.0
+attrs==24.2.0
     # via
     #   hypothesis
     #   hypothesis (hypothesis-python/setup.py)
@@ -50,17 +50,17 @@ exceptiongroup==1.2.2 ; python_version < "3.11"
     #   pytest
 execnet==2.1.1
     # via pytest-xdist
-fakeredis==2.23.5
+fakeredis==2.24.0
     # via -r requirements/coverage.in
 flask==3.0.3
     # via dash
 hypofuzz==24.2.3
     # via -r requirements/fuzzing.in
-hypothesis[cli]==6.111.1
+hypothesis[cli]==6.111.2
     # via hypofuzz
-idna==3.7
+idna==3.8
     # via requests
-importlib-metadata==8.2.0
+importlib-metadata==8.4.0
     # via dash
 iniconfig==2.0.0
     # via pytest
@@ -86,7 +86,7 @@ mypy-extensions==1.0.0
     # via black
 nest-asyncio==1.6.0
     # via dash
-numpy==2.0.1
+numpy==2.1.0
     # via
     #   -r requirements/coverage.in
     #   pandas
@@ -174,7 +174,7 @@ tzdata==2024.1
     # via pandas
 urllib3==2.2.2
     # via requests
-werkzeug==3.0.3
+werkzeug==3.0.4
     # via
     #   dash
     #   flask
@@ -182,5 +182,5 @@ zipp==3.20.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-setuptools==72.2.0
+setuptools==73.0.1
     # via dash
