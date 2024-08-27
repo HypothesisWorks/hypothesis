@@ -14,6 +14,7 @@ import random
 import sys
 import warnings
 from itertools import count
+from threading import Lock
 from typing import TYPE_CHECKING, Any, Callable, Hashable, Tuple
 from weakref import WeakValueDictionary
 
@@ -54,6 +55,7 @@ class NumpyRandomWrapper:
 
 
 NP_RANDOM = None
+RANDOM_LOCK = Lock()
 
 
 if not (PYPY or GRAALPY):
@@ -192,9 +194,10 @@ def deterministic_PRNG(seed=0):
     bad idea in principle, and breaks all kinds of independence assumptions
     in practice.
     """
-    if hypothesis.core._hypothesis_global_random is None:  # pragma: no cover
-        hypothesis.core._hypothesis_global_random = random.Random()
-        register_random(hypothesis.core._hypothesis_global_random)
+    with RANDOM_LOCK:
+        if hypothesis.core._hypothesis_global_random is None:  # pragma: no cover
+            hypothesis.core._hypothesis_global_random = random.Random()
+            register_random(hypothesis.core._hypothesis_global_random)
 
     seed_all, restore_all = get_seeder_and_restorer(seed)
     seed_all()
