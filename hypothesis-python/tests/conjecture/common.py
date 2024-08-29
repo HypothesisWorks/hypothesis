@@ -11,7 +11,7 @@
 import math
 from contextlib import contextmanager
 
-from hypothesis import HealthCheck, assume, settings, strategies as st
+from hypothesis import HealthCheck, Phase, assume, settings, strategies as st
 from hypothesis.control import current_build_context
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import engine as engine_module
@@ -64,6 +64,9 @@ def shrinking_from(start):
                     max_examples=5000,
                     database=None,
                     suppress_health_check=list(HealthCheck),
+                    # avoid running the explain phase in shrinker.shrink() in tests
+                    # which don't test the inquisitor.
+                    phases=set(settings.default.phases) - {Phase.explain},
                 ),
             )
             runner.cached_test_function(start)
