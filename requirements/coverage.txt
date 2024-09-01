@@ -8,7 +8,7 @@ annotated-types==0.7.0
     # via -r requirements/coverage.in
 async-timeout==4.0.3
     # via redis
-attrs==24.1.0
+attrs==24.2.0
     # via hypothesis (hypothesis-python/setup.py)
 black==24.8.0
     # via -r requirements/coverage.in
@@ -26,7 +26,7 @@ exceptiongroup==1.2.2 ; python_version < "3.11"
     #   pytest
 execnet==2.1.1
     # via pytest-xdist
-fakeredis==2.23.5
+fakeredis==2.24.1
     # via -r requirements/coverage.in
 iniconfig==2.0.0
     # via pytest
@@ -36,7 +36,7 @@ libcst==1.4.0
     # via -r requirements/coverage.in
 mypy-extensions==1.0.0
     # via black
-numpy==2.0.1
+numpy==2.1.0
     # via
     #   -r requirements/coverage.in
     #   pandas

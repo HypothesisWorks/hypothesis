@@ -12,7 +12,7 @@ asgiref==3.8.1
     # via django
 asttokens==2.4.1
     # via stack-data
-attrs==24.1.0
+attrs==24.2.0
     # via hypothesis (hypothesis-python/setup.py)
 autoflake==2.3.1
     # via shed
@@ -28,9 +28,9 @@ blinker==1.8.2
     # via pelican
 build==1.2.1
     # via pip-tools
-cachetools==5.4.0
+cachetools==5.5.0
     # via tox
-certifi==2024.7.4
+certifi==2024.8.30
     # via requests
 cffi==1.17.0
     # via cryptography
@@ -85,25 +85,25 @@ filelock==3.15.4
     # via
     #   tox
     #   virtualenv
-idna==3.7
+idna==3.8
     # via
     #   anyio
     #   requests
 imagesize==1.4.1
     # via sphinx
-importlib-metadata==8.2.0
+importlib-metadata==8.4.0
     # via
     #   keyring
     #   twine
 iniconfig==2.0.0
     # via pytest
-ipython==8.26.0
+ipython==8.27.0
     # via -r requirements/tools.in
 isort==5.13.2
     # via shed
 jaraco-classes==3.4.0
     # via keyring
-jaraco-context==5.3.0
+jaraco-context==6.0.1
     # via keyring
 jaraco-functools==4.0.2
     # via keyring
@@ -141,7 +141,7 @@ more-itertools==10.4.0
     # via
     #   jaraco-classes
     #   jaraco-functools
-mypy==1.11.1
+mypy==1.11.2
     # via -r requirements/tools.in
 mypy-extensions==1.0.0
     # via
@@ -151,7 +151,7 @@ nh3==0.2.18
     # via readme-renderer
 nodeenv==1.9.1
     # via pyright
-numpy==2.0.1
+numpy==2.1.0
     # via -r requirements/tools.in
 ordered-set==4.1.0
     # via pelican
@@ -207,7 +207,7 @@ pyproject-hooks==1.1.0
     # via
     #   build
     #   pip-tools
-pyright==1.1.376
+pyright==1.1.378
     # via -r requirements/tools.in
 pytest==8.3.2
     # via -r requirements/tools.in
@@ -238,11 +238,11 @@ restructuredtext-lint==1.4.0
     # via -r requirements/tools.in
 rfc3986==2.0.0
     # via twine
-rich==13.7.1
+rich==13.8.0
     # via
     #   pelican
     #   twine
-ruff==0.6.1
+ruff==0.6.3
     # via -r requirements/tools.in
 secretstorage==3.3.3
     # via keyring
@@ -326,9 +326,9 @@ types-pyopenssl==24.1.0.20240722
     # via types-redis
 types-pytz==2024.1.0.20240417
     # via -r requirements/tools.in
-types-redis==4.6.0.20240806
+types-redis==4.6.0.20240819
     # via -r requirements/tools.in
-types-setuptools==71.1.0.20240813
+types-setuptools==74.0.0.20240831
     # via types-cffi
 typing-extensions==4.12.2
     # via
@@ -346,17 +346,17 @@ urllib3==2.2.2
     #   twine
 virtualenv==20.26.3
     # via tox
-watchfiles==0.23.0
+watchfiles==0.24.0
     # via pelican
 wcwidth==0.2.13
     # via prompt-toolkit
 wheel==0.44.0
     # via pip-tools
-zipp==3.20.0
+zipp==3.20.1
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 pip==24.2
     # via pip-tools
-setuptools==72.2.0
+setuptools==74.0.0
     # via pip-tools
