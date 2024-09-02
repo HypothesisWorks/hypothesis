@@ -123,7 +123,7 @@ def test_can_reexecute_dead_examples():
 def test_novel_prefixes_are_novel():
     def tf(data):
         for _ in range(4):
-            data.draw_bytes(1, forced=b"\0")
+            data.draw_bytes(1, 1, forced=b"\0")
             data.draw_integer(0, 3)
 
     runner = ConjectureRunner(tf, settings=TEST_SETTINGS, random=Random(0))
@@ -137,7 +137,7 @@ def test_novel_prefixes_are_novel():
 
 def test_overruns_if_not_enough_bytes_for_block():
     runner = ConjectureRunner(
-        lambda data: data.draw_bytes(2), settings=TEST_SETTINGS, random=Random(0)
+        lambda data: data.draw_bytes(2, 2), settings=TEST_SETTINGS, random=Random(0)
     )
     runner.cached_test_function(b"\0\0")
     assert runner.tree.rewrite(b"\0")[1] == Status.OVERRUN
@@ -328,8 +328,8 @@ def test_truncates_if_seen():
     b = bytes([1, 2, 3, 4])
 
     data = ConjectureData.for_buffer(b, observer=tree.new_observer())
-    data.draw_bytes(1)
-    data.draw_bytes(1)
+    data.draw_bytes(1, 1)
+    data.draw_bytes(1, 1)
     data.freeze()
 
     assert tree.rewrite(b) == (b[:2], Status.VALID)
@@ -338,13 +338,13 @@ def test_truncates_if_seen():
 def test_child_becomes_exhausted_after_split():
     tree = DataTree()
     data = ConjectureData.for_buffer([0, 0], observer=tree.new_observer())
-    data.draw_bytes(1)
-    data.draw_bytes(1, forced=b"\0")
+    data.draw_bytes(1, 1)
+    data.draw_bytes(1, 1, forced=b"\0")
     data.freeze()
 
     data = ConjectureData.for_buffer([1, 0], observer=tree.new_observer())
-    data.draw_bytes(1)
-    data.draw_bytes(1)
+    data.draw_bytes(1, 1)
+    data.draw_bytes(1, 1)
     data.freeze()
 
     assert not tree.is_exhausted
@@ -359,7 +359,7 @@ def test_will_generate_novel_prefix_to_avoid_exhausted_branches():
 
     data = ConjectureData.for_buffer([0, 1], observer=tree.new_observer())
     data.draw_integer(0, 1)
-    data.draw_bytes(1)
+    data.draw_bytes(1, 1)
     data.freeze()
 
     prefix = list(tree.generate_novel_prefix(Random(0)))

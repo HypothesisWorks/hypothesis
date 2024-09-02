@@ -333,7 +333,7 @@ def test_ir_nodes(random):
 
     data.start_example(42)
     data.draw_string(IntervalSet.from_string("abcd"), forced="abbcccdddd")
-    data.draw_bytes(8, forced=bytes(8))
+    data.draw_bytes(8, 8, forced=bytes(8))
     data.stop_example()
 
     data.draw_integer(0, 100, forced=50)

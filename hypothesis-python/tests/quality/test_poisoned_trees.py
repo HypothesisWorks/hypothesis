@@ -103,7 +103,7 @@ def test_can_reduce_poison_from_any_subtree(size, seed):
 
         def test_function_with_poison(data):
             v = data.draw(strat)
-            m = data.draw_bytes(len(marker))
+            m = data.draw_bytes(len(marker), len(marker))
             if POISON in v and m == marker:
                 data.mark_interesting()
 
