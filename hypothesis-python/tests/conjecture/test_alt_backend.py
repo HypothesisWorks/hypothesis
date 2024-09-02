@@ -144,10 +144,17 @@ class PrngProvider(PrimitiveProvider):
         return "".join(map(chr, self.prng.choices(intervals, k=size)))
 
     def draw_bytes(
-        self, size: int, *, forced: Optional[bytes] = None, fake_forced: bool = False
+        self,
+        min_size: int,
+        max_size: Optional[int],
+        *,
+        forced: Optional[bytes] = None,
+        fake_forced: bool = False,
     ) -> bytes:
         if forced is not None:
             return forced
+        max_size = 100 if max_size is None else max_size
+        size = self.prng.randint(min_size, max_size)
         return self.prng.randbytes(size)
 
 

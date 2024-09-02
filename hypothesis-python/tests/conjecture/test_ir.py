@@ -102,6 +102,30 @@ def test_compute_max_children_is_positive(ir_type_and_kwargs):
             },
             MAX_CHILDREN_EFFECTIVELY_INFINITE,
         ),
+        (
+            "bytes",
+            {
+                "min_size": 0,
+                "max_size": 2,
+            },
+            sum(2 ** (8 * k) for k in range(2 + 1)),
+        ),
+        (
+            "bytes",
+            {
+                "min_size": 0,
+                "max_size": None,
+            },
+            MAX_CHILDREN_EFFECTIVELY_INFINITE,
+        ),
+        (
+            "bytes",
+            {
+                "min_size": 0,
+                "max_size": 10_000,
+            },
+            MAX_CHILDREN_EFFECTIVELY_INFINITE,
+        ),
         ("boolean", {"p": 0.0}, 1),
         ("boolean", {"p": 1.0}, 1),
         ("boolean", {"p": 0.5}, 2),
@@ -346,7 +370,7 @@ def test_ir_nodes(random):
         IRNode(
             ir_type="bytes",
             value=bytes(8),
-            kwargs={"size": 8},
+            kwargs={"min_size": 8, "max_size": 8},
             was_forced=True,
         ),
         IRNode(
@@ -461,7 +485,7 @@ def test_data_with_changed_forced_value(node):
     IRNode(
         ir_type="bytes",
         value=bytes(8),
-        kwargs={"size": 8},
+        kwargs={"min_size": 8, "max_size": 8},
         was_forced=True,
     )
 )
@@ -587,8 +611,10 @@ def test_all_children_are_permitted_values(ir_type_and_kwargs):
             {"min_size": 1, "max_size": 10, "intervals": IntervalSet.from_string("e")},
             True,
         ),
-        (b"a", "bytes", {"size": 2}, False),
-        (b"aa", "bytes", {"size": 2}, True),
+        (b"a", "bytes", {"min_size": 2, "max_size": 2}, False),
+        (b"aa", "bytes", {"min_size": 2, "max_size": 2}, True),
+        (b"aa", "bytes", {"min_size": 0, "max_size": 3}, True),
+        (b"a", "bytes", {"min_size": 2, "max_size": 10}, False),
         (True, "boolean", {"p": 0}, False),
         (False, "boolean", {"p": 0}, True),
         (True, "boolean", {"p": 1}, True),
@@ -671,7 +697,13 @@ def test_forced_nodes_are_trivial(node):
         IRNode(
             ir_type="bytes",
             value=bytes(8),
-            kwargs={"size": 8},
+            kwargs={"min_size": 8, "max_size": 8},
+            was_forced=False,
+        ),
+        IRNode(
+            ir_type="bytes",
+            value=bytes(2),
+            kwargs={"min_size": 2, "max_size": None},
             was_forced=False,
         ),
         IRNode(
@@ -809,7 +841,19 @@ def test_trivial_nodes(node):
         IRNode(
             ir_type="bytes",
             value=b"\x01",
-            kwargs={"size": 1},
+            kwargs={"min_size": 1, "max_size": 1},
+            was_forced=False,
+        ),
+        IRNode(
+            ir_type="bytes",
+            value=bytes(1),
+            kwargs={"min_size": 0, "max_size": None},
+            was_forced=False,
+        ),
+        IRNode(
+            ir_type="bytes",
+            value=bytes(2),
+            kwargs={"min_size": 1, "max_size": 10},
             was_forced=False,
         ),
         IRNode(
