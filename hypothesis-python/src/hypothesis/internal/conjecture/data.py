@@ -1098,9 +1098,7 @@ def ir_value_permitted(value, ir_type, kwargs):
     elif ir_type == "bytes":
         if len(value) < kwargs["min_size"]:
             return False
-        if kwargs["max_size"] is not None and len(value) > kwargs["max_size"]:
-            return False
-        return True
+        return kwargs["max_size"] is None or len(value) <= kwargs["max_size"]
     elif ir_type == "boolean":
         if kwargs["p"] <= 2 ** (-64):
             return value is False
@@ -1684,6 +1682,7 @@ class HypothesisProvider(PrimitiveProvider):
             max_size = COLLECTION_DEFAULT_MAX_SIZE
 
         assert forced is None or min_size <= len(forced) <= max_size
+        assert self._cd is not None
 
         buf = bytearray()
         average_size = min(
@@ -1705,7 +1704,6 @@ class HypothesisProvider(PrimitiveProvider):
                 # implicit conversion from bytes to int by indexing here
                 forced_i = forced[elements.count - 1]
 
-            assert self._cd is not None
             buf += self._cd.draw_bits(
                 8, forced=forced_i, fake_forced=fake_forced
             ).to_bytes(1, "big")
