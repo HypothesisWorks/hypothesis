@@ -305,13 +305,8 @@ def all_children(ir_type, kwargs):
         else:
             yield from [False, True]
     if ir_type == "bytes":
-        min_size = kwargs["min_size"]
-        max_size = kwargs["max_size"]
-
-        size = min_size
-        while size <= max_size:
+        for size in range(kwargs["min_size"], kwargs["max_size"] + 1):
             yield from (int_to_bytes(i, size) for i in range(2 ** (8 * size)))
-            size += 1
     if ir_type == "string":
         min_size = kwargs["min_size"]
         max_size = kwargs["max_size"]
