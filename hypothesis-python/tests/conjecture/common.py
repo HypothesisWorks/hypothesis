@@ -15,7 +15,12 @@ from hypothesis import HealthCheck, Phase, assume, settings, strategies as st
 from hypothesis.control import current_build_context
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import engine as engine_module
-from hypothesis.internal.conjecture.data import ConjectureData, IRNode, Status
+from hypothesis.internal.conjecture.data import (
+    COLLECTION_DEFAULT_MAX_SIZE,
+    ConjectureData,
+    IRNode,
+    Status,
+)
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE, ConjectureRunner
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.entropy import deterministic_PRNG
@@ -170,6 +175,30 @@ def draw_integer_kwargs(
 
 
 @st.composite
+def _collection_kwargs(draw, *, forced, use_min_size=True, use_max_size=True):
+    min_size = 0
+    max_size = COLLECTION_DEFAULT_MAX_SIZE
+    # collections are quite expensive in entropy. cap to avoid overruns.
+    cap = 50
+
+    if use_min_size:
+        min_size = draw(
+            st.integers(0, min(len(forced), cap) if forced is not None else cap)
+        )
+
+    if use_max_size:
+        max_size = draw(
+            st.integers(
+                min_value=min_size if forced is None else max(min_size, len(forced))
+            )
+        )
+        # cap to some reasonable max size to avoid overruns.
+        max_size = min(max_size, min_size + 100)
+
+    return {"min_size": min_size, "max_size": max_size}
+
+
+@st.composite
 def draw_string_kwargs(draw, *, use_min_size=True, use_max_size=True, use_forced=False):
     # TODO also sample empty intervals, ie remove this min_size, once we handle empty
     # pseudo-choices in the ir
@@ -177,42 +206,25 @@ def draw_string_kwargs(draw, *, use_min_size=True, use_max_size=True, use_forced
     forced = (
         draw(TextStrategy(OneCharStringStrategy(interval_set))) if use_forced else None
     )
+    kwargs = draw(
+        _collection_kwargs(
+            forced=forced, use_min_size=use_min_size, use_max_size=use_max_size
+        )
+    )
 
-    min_size = 0
-    max_size = None
-
-    if use_min_size:
-        # cap to some reasonable min size to avoid overruns.
-        n = 100
-        if forced is not None:
-            n = min(n, len(forced))
-
-        min_size = draw(st.integers(0, n))
-
-    if use_max_size:
-        n = min_size if forced is None else max(min_size, len(forced))
-        max_size = draw(st.integers(min_value=n))
-        # cap to some reasonable max size to avoid overruns.
-        max_size = min(max_size, min_size + 100)
-
-    return {
-        "intervals": interval_set,
-        "min_size": min_size,
-        "max_size": max_size,
-        "forced": forced,
-    }
+    return {"intervals": interval_set, "forced": forced, **kwargs}
 
 
 @st.composite
-def draw_bytes_kwargs(draw, *, use_forced=False):
+def draw_bytes_kwargs(draw, *, use_min_size=True, use_max_size=True, use_forced=False):
     forced = draw(st.binary()) if use_forced else None
-    # be reasonable with the number of bytes we ask for. We only have BUFFER_SIZE
-    # to work with before we overrun.
-    size = (
-        draw(st.integers(min_value=0, max_value=100)) if forced is None else len(forced)
-    )
 
-    return {"size": size, "forced": forced}
+    kwargs = draw(
+        _collection_kwargs(
+            forced=forced, use_min_size=use_min_size, use_max_size=use_max_size
+        )
+    )
+    return {"forced": forced, **kwargs}
 
 
 @st.composite

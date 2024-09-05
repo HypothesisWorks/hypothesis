@@ -53,7 +53,7 @@ def test_deletion_and_lowering_fails_to_shrink(monkeypatch):
     @run_to_buffer
     def x(data):
         for _ in range(10):
-            data.draw_bytes(1)
+            data.draw_bytes(1, 1)
         data.mark_interesting()
 
     assert x == bytes(10)
@@ -67,7 +67,7 @@ def test_duplicate_blocks_that_go_away():
         x = data.draw_integer(0, 2**24 - 1, forced=1234567)
         _y = data.draw_integer(0, 2**24 - 1, forced=1234567)
         for _ in range(x & 255):
-            data.draw_bytes(1)
+            data.draw_bytes(1, 1)
         data.mark_interesting()
 
     @shrinking_from(base_buf)
@@ -76,7 +76,7 @@ def test_duplicate_blocks_that_go_away():
         y = data.draw_integer(0, 2**24 - 1)
         if x != y:
             data.mark_invalid()
-        b = [data.draw_bytes(1) for _ in range(x & 255)]
+        b = [data.draw_bytes(1, 1) for _ in range(x & 255)]
         if len(set(b)) <= 1:
             data.mark_interesting()
 
@@ -95,7 +95,7 @@ def test_accidental_duplication():
             data.mark_invalid()
         if x < 5:
             data.mark_invalid()
-        b = [data.draw_bytes(1) for _ in range(x)]
+        b = [data.draw_bytes(1, 1) for _ in range(x)]
         if len(set(b)) == 1:
             data.mark_interesting()
 

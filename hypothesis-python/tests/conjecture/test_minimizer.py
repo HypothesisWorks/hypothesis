@@ -12,7 +12,6 @@ from collections import Counter
 
 import pytest
 
-from hypothesis.internal.compat import int_from_bytes
 from hypothesis.internal.conjecture.shrinking import (
     Bytes,
     Collection,
@@ -79,12 +78,14 @@ def test_shrink_strings(initial, predicate, intervals, expected):
 @pytest.mark.parametrize(
     "initial, predicate, expected",
     [
-        (b"\x18\x12", lambda v: True, b"\x00\x00"),
-        (b"\x01\x10", lambda v: v[0] == 1, b"\x01\x00"),
+        (b"\x18\x12", lambda v: len(v) == 2, b"\x00\x00"),
+        (b"\x18\x12", lambda v: True, b""),
+        (b"\x01\x10", lambda v: len(v) > 0 and v[0] == 1, b"\x01"),
+        (b"\x01\x10\x01\x92", lambda v: sum(v) >= 9, b"\x09"),
     ],
 )
 def test_shrink_bytes(initial, predicate, expected):
-    assert Bytes.shrink(initial, predicate) == int_from_bytes(expected)
+    assert bytes(Bytes.shrink(initial, predicate)) == expected
 
 
 def test_collection_left_is_better():

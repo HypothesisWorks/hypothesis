@@ -58,7 +58,7 @@ from tests.conjecture.common import (
 def test_can_index_results():
     @run_to_buffer
     def f(data):
-        data.draw_bytes(5)
+        data.draw_bytes(5, 5)
         data.mark_interesting()
 
     assert f.index(0) == 0
@@ -68,8 +68,8 @@ def test_can_index_results():
 def test_non_cloneable_intervals():
     @run_to_buffer
     def x(data):
-        data.draw_bytes(10)
-        data.draw_bytes(9)
+        data.draw_bytes(10, 10)
+        data.draw_bytes(9, 9)
         data.mark_interesting()
 
     assert x == bytes(19)
@@ -79,7 +79,7 @@ def test_deletable_draws():
     @run_to_buffer
     def x(data):
         while True:
-            x = data.draw_bytes(2)
+            x = data.draw_bytes(2, 2)
             if x[0] == 255:
                 data.mark_interesting()
 
@@ -97,7 +97,7 @@ def test_can_load_data_from_a_corpus():
     db.save(key, value)
 
     def f(data):
-        if data.draw_bytes(len(value)) == value:
+        if data.draw_bytes(len(value), len(value)) == value:
             data.mark_interesting()
 
     runner = ConjectureRunner(f, settings=settings(database=db), database_key=key)
@@ -148,7 +148,7 @@ def test_detects_flakiness():
     count = [0]
 
     def tf(data):
-        data.draw_bytes(1)
+        data.draw_bytes(1, 1)
         count[0] += 1
         if not failed_once[0]:
             failed_once[0] = True
@@ -183,9 +183,9 @@ def test_variadic_draw():
         result = []
         while True:
             data.start_example(SOME_LABEL)
-            d = data.draw_bytes(1)[0] & 7
+            d = data.draw_bytes(1, 1)[0] & 7
             if d:
-                result.append(data.draw_bytes(d))
+                result.append(data.draw_bytes(d, d))
             data.stop_example()
             if not d:
                 break
@@ -204,8 +204,8 @@ def test_variadic_draw():
 def test_draw_to_overrun():
     @run_to_buffer
     def x(data):
-        d = (data.draw_bytes(1)[0] - 8) & 0xFF
-        data.draw_bytes(128 * d)
+        d = (data.draw_bytes(1, 1)[0] - 8) & 0xFF
+        data.draw_bytes(128 * d, 128 * d)
         if d >= 2:
             data.mark_interesting()
 
@@ -214,8 +214,8 @@ def test_draw_to_overrun():
 
 def test_can_navigate_to_a_valid_example():
     def f(data):
-        i = int_from_bytes(data.draw_bytes(2))
-        data.draw_bytes(i)
+        i = int_from_bytes(data.draw_bytes(2, 2))
+        data.draw_bytes(i, i)
         data.mark_interesting()
 
     runner = ConjectureRunner(f, settings=settings(max_examples=5000, database=None))
@@ -234,7 +234,7 @@ def test_stops_after_max_examples_when_reading():
     seen = []
 
     def f(data):
-        seen.append(data.draw_bytes(1))
+        seen.append(data.draw_bytes(1, 1))
 
     runner = ConjectureRunner(
         f, settings=settings(max_examples=1, database=db), database_key=key
@@ -247,7 +247,7 @@ def test_stops_after_max_examples_when_generating():
     seen = []
 
     def f(data):
-        seen.append(data.draw_bytes(1))
+        seen.append(data.draw_bytes(1, 1))
 
     runner = ConjectureRunner(f, settings=settings(max_examples=1, database=None))
     runner.run()
@@ -285,10 +285,10 @@ def test_interleaving_engines():
 
     @run_to_buffer
     def x(data):
-        rnd = Random(data.draw_bytes(1))
+        rnd = Random(data.draw_bytes(1, 1))
 
         def g(d2):
-            d2.draw_bytes(1)
+            d2.draw_bytes(1, 1)
             data.mark_interesting()
 
         runner = ConjectureRunner(g, random=rnd)
@@ -306,7 +306,7 @@ def test_phases_can_disable_shrinking():
     seen = set()
 
     def f(data):
-        seen.add(bytes(data.draw_bytes(32)))
+        seen.add(bytes(data.draw_bytes(32, 32)))
         data.mark_interesting()
 
     runner = ConjectureRunner(
@@ -342,8 +342,8 @@ def test_erratic_draws():
 
         @run_to_buffer
         def x(data):
-            data.draw_bytes(n[0])
-            data.draw_bytes(255 - n[0])
+            data.draw_bytes(n[0], n[0])
+            data.draw_bytes(255 - n[0], 255 - n[0])
             if n[0] == 255:
                 data.mark_interesting()
             else:
@@ -368,10 +368,10 @@ def test_one_dead_branch():
 
         @run_to_buffer
         def x(data):
-            i = data.draw_bytes(1)[0]
+            i = data.draw_bytes(1, 1)[0]
             if i > 0:
                 data.mark_invalid()
-            i = data.draw_bytes(1)[0]
+            i = data.draw_bytes(1, 1)[0]
             if len(seen) < 255:
                 seen.add(i)
             elif i not in seen:
@@ -398,7 +398,7 @@ def test_returns_written():
 
     @run_to_buffer
     def written(data):
-        data.draw_bytes(len(value), forced=value)
+        data.draw_bytes(len(value), len(value), forced=value)
         data.mark_interesting()
 
     assert value == written
@@ -424,21 +424,21 @@ def fails_health_check(label, **kwargs):
 def test_fails_health_check_for_all_invalid():
     @fails_health_check(HealthCheck.filter_too_much)
     def _(data):
-        data.draw_bytes(2)
+        data.draw_bytes(2, 2)
         data.mark_invalid()
 
 
 def test_fails_health_check_for_large_base():
     @fails_health_check(HealthCheck.large_base_example)
     def _(data):
-        data.draw_bytes(10**6)
+        data.draw_bytes(10**6, 10**6)
 
 
 def test_fails_health_check_for_large_non_base():
     @fails_health_check(HealthCheck.data_too_large)
     def _(data):
         if data.draw_integer(0, 2**8 - 1):
-            data.draw_bytes(10**6)
+            data.draw_bytes(10**6, 10**6)
 
 
 def test_fails_health_check_for_slow_draws():
@@ -537,8 +537,8 @@ def test_can_write_bytes_towards_the_end():
 
     def f(data):
         if data.draw_boolean():
-            data.draw_bytes(5)
-            data.draw_bytes(len(buf), forced=buf)
+            data.draw_bytes(5, 5)
+            data.draw_bytes(len(buf), len(buf), forced=buf)
             assert data.buffer[-len(buf) :] == buf
 
     with buffer_size_limit(10):
@@ -549,7 +549,7 @@ def test_uniqueness_is_preserved_when_writing_at_beginning():
     seen = set()
 
     def f(data):
-        data.draw_bytes(1, forced=bytes(1))
+        data.draw_bytes(1, 1, forced=bytes(1))
         n = data.draw_integer(0, 2**3 - 1)
         assert n not in seen
         seen.add(n)
@@ -601,7 +601,7 @@ def test_detects_too_small_block_starts():
     def f(data):
         assert call_count[0] == 0
         call_count[0] += 1
-        data.draw_bytes(8)
+        data.draw_bytes(8, 8)
         data.mark_interesting()
 
     runner = ConjectureRunner(f, settings=settings(database=None))
@@ -952,7 +952,7 @@ def test_cached_test_function_does_not_reinvoke_on_prefix():
     def test_function(data):
         call_count[0] += 1
         data.draw_integer(0, 2**8 - 1)
-        data.draw_bytes(1, forced=bytes([7]))
+        data.draw_bytes(1, 1, forced=bytes([7]))
         data.draw_integer(0, 2**8 - 1)
 
     with deterministic_PRNG():
@@ -971,7 +971,7 @@ def test_will_evict_entries_from_the_cache(monkeypatch):
     count = [0]
 
     def tf(data):
-        data.draw_bytes(1)
+        data.draw_bytes(1, 1)
         count[0] += 1
 
     runner = ConjectureRunner(tf, settings=TEST_SETTINGS)
@@ -1421,7 +1421,7 @@ def test_does_not_run_optimisation_when_max_examples_is_small():
 
 def test_does_not_cache_extended_prefix():
     def test(data):
-        data.draw_bytes(8)
+        data.draw_bytes(8, 8)
 
     with deterministic_PRNG():
         runner = ConjectureRunner(test, settings=TEST_SETTINGS)
@@ -1438,7 +1438,7 @@ def test_does_cache_if_extend_is_not_used():
 
     def test(data):
         calls[0] += 1
-        data.draw_bytes(1)
+        data.draw_bytes(1, 1)
 
     with deterministic_PRNG():
         runner = ConjectureRunner(test, settings=TEST_SETTINGS)
@@ -1455,7 +1455,7 @@ def test_does_result_for_reuse():
 
     def test(data):
         calls[0] += 1
-        data.draw_bytes(1)
+        data.draw_bytes(1, 1)
 
     with deterministic_PRNG():
         runner = ConjectureRunner(test, settings=TEST_SETTINGS)
@@ -1469,7 +1469,7 @@ def test_does_result_for_reuse():
 
 def test_does_not_cache_overrun_if_extending():
     def test(data):
-        data.draw_bytes(8)
+        data.draw_bytes(8, 8)
 
     with deterministic_PRNG():
         runner = ConjectureRunner(test, settings=TEST_SETTINGS)
@@ -1482,8 +1482,8 @@ def test_does_not_cache_overrun_if_extending():
 
 def test_does_cache_overrun_if_not_extending():
     def test(data):
-        data.draw_bytes(8)
-        data.draw_bytes(8)
+        data.draw_bytes(8, 8)
+        data.draw_bytes(8, 8)
 
     with deterministic_PRNG():
         runner = ConjectureRunner(test, settings=TEST_SETTINGS)
@@ -1496,7 +1496,7 @@ def test_does_cache_overrun_if_not_extending():
 
 def test_does_not_cache_extended_prefix_if_overrun():
     def test(data):
-        data.draw_bytes(8)
+        data.draw_bytes(8, 8)
 
     with deterministic_PRNG():
         runner = ConjectureRunner(test, settings=TEST_SETTINGS)
@@ -1509,7 +1509,7 @@ def test_does_not_cache_extended_prefix_if_overrun():
 
 def test_can_be_set_to_ignore_limits():
     def test(data):
-        data.draw_bytes(1)
+        data.draw_bytes(1, 1)
 
     with deterministic_PRNG():
         runner = ConjectureRunner(

@@ -22,7 +22,7 @@ def test_lot_of_dead_nodes():
     @run_to_buffer
     def x(data):
         for i in range(4):
-            if data.draw_bytes(1)[0] != i:
+            if data.draw_bytes(1, 1)[0] != i:
                 data.mark_invalid()
         data.mark_interesting()
 
@@ -43,7 +43,7 @@ def test_saves_data_while_shrinking(monkeypatch):
     )
 
     def f(data):
-        x = data.draw_bytes(10)
+        x = data.draw_bytes(10, 10)
         if sum(x) >= 2000 and len(seen) < n:
             seen.add(x)
         if x in seen:
@@ -73,7 +73,7 @@ def test_can_discard(monkeypatch):
     def x(data):
         seen = set()
         while len(seen) < n:
-            seen.add(bytes(data.draw_bytes(1)))
+            seen.add(bytes(data.draw_bytes(1, 1)))
         data.mark_interesting()
 
     assert len(x) == n
