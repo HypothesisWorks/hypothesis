@@ -14,9 +14,6 @@ from hypothesis.internal.conjecture.shrinking.integer import Integer
 
 class Bytes(Collection):
     def __init__(self, initial, predicate, **kwargs):
-        # shrink by interpreting the bytes as an integer.
-        # move to Collection.shrink when we support variable-size bytes,
-        # because b'\x00\x02' could shrink to either b'\x00\x01' or b'\x02'.
         super().__init__(
             # implicit conversion from bytes to list of integers here
             list(initial),
