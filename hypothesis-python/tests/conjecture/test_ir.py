@@ -17,6 +17,7 @@ import pytest
 from hypothesis import assume, example, given, strategies as st
 from hypothesis.errors import StopTest
 from hypothesis.internal.conjecture.data import (
+    COLLECTION_DEFAULT_MAX_SIZE,
     ConjectureData,
     IRNode,
     Status,
@@ -88,7 +89,7 @@ def test_compute_max_children_is_positive(ir_type_and_kwargs):
             "string",
             {
                 "min_size": 0,
-                "max_size": None,
+                "max_size": COLLECTION_DEFAULT_MAX_SIZE,
                 "intervals": IntervalSet.from_string("a"),
             },
             MAX_CHILDREN_EFFECTIVELY_INFINITE,
@@ -114,7 +115,7 @@ def test_compute_max_children_is_positive(ir_type_and_kwargs):
             "bytes",
             {
                 "min_size": 0,
-                "max_size": None,
+                "max_size": COLLECTION_DEFAULT_MAX_SIZE,
             },
             MAX_CHILDREN_EFFECTIVELY_INFINITE,
         ),
@@ -363,7 +364,7 @@ def test_ir_nodes(random):
             kwargs={
                 "intervals": IntervalSet.from_string("abcd"),
                 "min_size": 0,
-                "max_size": None,
+                "max_size": COLLECTION_DEFAULT_MAX_SIZE,
             },
             was_forced=True,
         ),
@@ -476,7 +477,7 @@ def test_data_with_changed_forced_value(node):
         kwargs={
             "intervals": IntervalSet.from_string("bcda"),
             "min_size": 4,
-            "max_size": None,
+            "max_size": COLLECTION_DEFAULT_MAX_SIZE,
         },
         was_forced=True,
     )
@@ -680,7 +681,7 @@ def test_forced_nodes_are_trivial(node):
             kwargs={
                 "intervals": IntervalSet.from_string("abcd"),
                 "min_size": 0,
-                "max_size": None,
+                "max_size": COLLECTION_DEFAULT_MAX_SIZE,
             },
             was_forced=False,
         ),
@@ -690,7 +691,7 @@ def test_forced_nodes_are_trivial(node):
             kwargs={
                 "intervals": IntervalSet.from_string("bcda"),
                 "min_size": 4,
-                "max_size": None,
+                "max_size": COLLECTION_DEFAULT_MAX_SIZE,
             },
             was_forced=False,
         ),
@@ -703,7 +704,7 @@ def test_forced_nodes_are_trivial(node):
         IRNode(
             ir_type="bytes",
             value=bytes(2),
-            kwargs={"min_size": 2, "max_size": None},
+            kwargs={"min_size": 2, "max_size": COLLECTION_DEFAULT_MAX_SIZE},
             was_forced=False,
         ),
         IRNode(
@@ -834,7 +835,7 @@ def test_trivial_nodes(node):
             kwargs={
                 "intervals": IntervalSet.from_string("abcd"),
                 "min_size": 1,
-                "max_size": None,
+                "max_size": COLLECTION_DEFAULT_MAX_SIZE,
             },
             was_forced=False,
         ),
@@ -847,7 +848,7 @@ def test_trivial_nodes(node):
         IRNode(
             ir_type="bytes",
             value=bytes(1),
-            kwargs={"min_size": 0, "max_size": None},
+            kwargs={"min_size": 0, "max_size": COLLECTION_DEFAULT_MAX_SIZE},
             was_forced=False,
         ),
         IRNode(

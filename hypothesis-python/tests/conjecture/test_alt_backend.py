@@ -24,6 +24,7 @@ from hypothesis.errors import Flaky, HypothesisException, InvalidArgument
 from hypothesis.internal.compat import int_to_bytes
 from hypothesis.internal.conjecture.data import (
     AVAILABLE_PROVIDERS,
+    COLLECTION_DEFAULT_MAX_SIZE,
     ConjectureData,
     PrimitiveProvider,
 )
@@ -132,7 +133,7 @@ class PrngProvider(PrimitiveProvider):
         intervals: IntervalSet,
         *,
         min_size: int = 0,
-        max_size: Optional[int] = None,
+        max_size: int = COLLECTION_DEFAULT_MAX_SIZE,
         forced: Optional[str] = None,
         fake_forced: bool = False,
     ) -> str:
@@ -145,8 +146,8 @@ class PrngProvider(PrimitiveProvider):
 
     def draw_bytes(
         self,
-        min_size: int,
-        max_size: Optional[int],
+        min_size: int = 0,
+        max_size: int = COLLECTION_DEFAULT_MAX_SIZE,
         *,
         forced: Optional[bytes] = None,
         fake_forced: bool = False,

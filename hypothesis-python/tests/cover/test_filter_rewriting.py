@@ -20,6 +20,7 @@ import pytest
 
 from hypothesis import HealthCheck, given, settings, strategies as st
 from hypothesis.errors import HypothesisWarning, Unsatisfiable
+from hypothesis.internal.conjecture.data import COLLECTION_DEFAULT_MAX_SIZE
 from hypothesis.internal.filtering import max_len, min_len
 from hypothesis.internal.floats import next_down, next_up
 from hypothesis.internal.reflection import get_pretty_function_description
@@ -27,7 +28,7 @@ from hypothesis.strategies._internal.core import data
 from hypothesis.strategies._internal.lazy import LazyStrategy, unwrap_strategies
 from hypothesis.strategies._internal.numbers import FloatStrategy, IntegersStrategy
 from hypothesis.strategies._internal.strategies import FilteredStrategy, MappedStrategy
-from hypothesis.strategies._internal.strings import TextStrategy
+from hypothesis.strategies._internal.strings import BytesStrategy, TextStrategy
 
 from tests.common.debug import check_can_generate_examples
 from tests.common.utils import fails_with
@@ -504,6 +505,10 @@ def test_filter_rewriting_text_lambda_len(data, strategy, predicate, start, end)
 
     if isinstance(unwrapped.filtered_strategy, MappedStrategy):
         unwrapped = unwrapped.filtered_strategy.mapped_strategy
+
+    # binary() has a finite-but-effectively-infinite cap instead.
+    if isinstance(unwrapped_nofilter, BytesStrategy) and end == math.inf:
+        end = COLLECTION_DEFAULT_MAX_SIZE
 
     assert unwrapped.filtered_strategy.min_size == start
     assert unwrapped.filtered_strategy.max_size == end

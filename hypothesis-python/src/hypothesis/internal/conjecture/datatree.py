@@ -147,8 +147,6 @@ MAX_CHILDREN_EFFECTIVELY_INFINITE = 100_000
 
 
 def compute_max_children(ir_type, kwargs):
-    from hypothesis.internal.conjecture.data import COLLECTION_DEFAULT_MAX_SIZE
-
     if ir_type == "integer":
         min_value = kwargs["min_value"]
         max_value = kwargs["max_value"]
@@ -181,9 +179,6 @@ def compute_max_children(ir_type, kwargs):
         min_size = kwargs["min_size"]
         max_size = kwargs["max_size"]
 
-        if max_size is None:
-            max_size = COLLECTION_DEFAULT_MAX_SIZE
-
         definitely_too_large = max_size * math.log(2**8) > math.log(
             MAX_CHILDREN_EFFECTIVELY_INFINITE
         )
@@ -195,9 +190,6 @@ def compute_max_children(ir_type, kwargs):
         min_size = kwargs["min_size"]
         max_size = kwargs["max_size"]
         intervals = kwargs["intervals"]
-
-        if max_size is None:
-            max_size = COLLECTION_DEFAULT_MAX_SIZE
 
         if len(intervals) == 0:
             # Special-case the empty alphabet to avoid an error in math.log(0).

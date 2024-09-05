@@ -111,12 +111,12 @@ class FloatKWargs(TypedDict):
 class StringKWargs(TypedDict):
     intervals: IntervalSet
     min_size: int
-    max_size: Optional[int]
+    max_size: int
 
 
 class BytesKWargs(TypedDict):
     min_size: int
-    max_size: Optional[int]
+    max_size: int
 
 
 class BooleanKWargs(TypedDict):
@@ -1317,7 +1317,7 @@ class PrimitiveProvider(abc.ABC):
         intervals: IntervalSet,
         *,
         min_size: int = 0,
-        max_size: Optional[int] = None,
+        max_size: int = COLLECTION_DEFAULT_MAX_SIZE,
         forced: Optional[str] = None,
         fake_forced: bool = False,
     ) -> str:
@@ -1326,8 +1326,8 @@ class PrimitiveProvider(abc.ABC):
     @abc.abstractmethod
     def draw_bytes(
         self,
-        min_size: int,
-        max_size: Optional[int],
+        min_size: int = 0,
+        max_size: int = COLLECTION_DEFAULT_MAX_SIZE,
         *,
         forced: Optional[bytes] = None,
         fake_forced: bool = False,
@@ -1614,14 +1614,10 @@ class HypothesisProvider(PrimitiveProvider):
         intervals: IntervalSet,
         *,
         min_size: int = 0,
-        max_size: Optional[int] = None,
+        max_size: int = COLLECTION_DEFAULT_MAX_SIZE,
         forced: Optional[str] = None,
         fake_forced: bool = False,
     ) -> str:
-        if max_size is None:
-            max_size = COLLECTION_DEFAULT_MAX_SIZE
-
-        assert forced is None or min_size <= len(forced) <= max_size
         assert self._cd is not None
 
         average_size = min(
@@ -1672,16 +1668,12 @@ class HypothesisProvider(PrimitiveProvider):
 
     def draw_bytes(
         self,
-        min_size: int,
-        max_size: Optional[int],
+        min_size: int = 0,
+        max_size: int = COLLECTION_DEFAULT_MAX_SIZE,
         *,
         forced: Optional[bytes] = None,
         fake_forced: bool = False,
     ) -> bytes:
-        if max_size is None:
-            max_size = COLLECTION_DEFAULT_MAX_SIZE
-
-        assert forced is None or min_size <= len(forced) <= max_size
         assert self._cd is not None
 
         buf = bytearray()
@@ -2251,12 +2243,12 @@ class ConjectureData:
         intervals: IntervalSet,
         *,
         min_size: int = 0,
-        max_size: Optional[int] = None,
+        max_size: int = COLLECTION_DEFAULT_MAX_SIZE,
         forced: Optional[str] = None,
         fake_forced: bool = False,
         observe: bool = True,
     ) -> str:
-        assert forced is None or min_size <= len(forced)
+        assert forced is None or min_size <= len(forced) <= max_size
         assert min_size >= 0
 
         kwargs: StringKWargs = self._pooled_kwargs(
@@ -2291,14 +2283,14 @@ class ConjectureData:
 
     def draw_bytes(
         self,
-        min_size: int,
-        max_size: Optional[int],
+        min_size: int = 0,
+        max_size: int = COLLECTION_DEFAULT_MAX_SIZE,
         *,
         forced: Optional[bytes] = None,
         fake_forced: bool = False,
         observe: bool = True,
     ) -> bytes:
-        assert forced is None or min_size <= len(forced)
+        assert forced is None or min_size <= len(forced) <= max_size
         assert min_size >= 0
 
         kwargs: BytesKWargs = self._pooled_kwargs(

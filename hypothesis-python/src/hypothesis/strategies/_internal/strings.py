@@ -16,6 +16,7 @@ from typing import Optional
 
 from hypothesis.errors import HypothesisWarning, InvalidArgument
 from hypothesis.internal import charmap
+from hypothesis.internal.conjecture.data import COLLECTION_DEFAULT_MAX_SIZE
 from hypothesis.internal.filtering import max_len, min_len
 from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.internal.reflection import get_pretty_function_description
@@ -158,7 +159,13 @@ class TextStrategy(ListStrategy):
         elems = unwrap_strategies(self.element_strategy)
         if isinstance(elems, OneCharStringStrategy):
             return data.draw_string(
-                elems.intervals, min_size=self.min_size, max_size=self.max_size
+                elems.intervals,
+                min_size=self.min_size,
+                max_size=(
+                    COLLECTION_DEFAULT_MAX_SIZE
+                    if self.max_size == float("inf")
+                    else self.max_size
+                ),
             )
         return "".join(super().do_draw(data))
 
@@ -338,7 +345,9 @@ def _identifier_characters():
 class BytesStrategy(SearchStrategy):
     def __init__(self, min_size: int, max_size: Optional[int]):
         self.min_size = min_size
-        self.max_size = max_size if max_size is not None else float("inf")
+        self.max_size = (
+            max_size if max_size is not None else COLLECTION_DEFAULT_MAX_SIZE
+        )
 
     def do_draw(self, data):
         return data.draw_bytes(self.min_size, self.max_size)

@@ -15,7 +15,12 @@ from hypothesis import HealthCheck, Phase, assume, settings, strategies as st
 from hypothesis.control import current_build_context
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import engine as engine_module
-from hypothesis.internal.conjecture.data import ConjectureData, IRNode, Status
+from hypothesis.internal.conjecture.data import (
+    COLLECTION_DEFAULT_MAX_SIZE,
+    ConjectureData,
+    IRNode,
+    Status,
+)
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE, ConjectureRunner
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.entropy import deterministic_PRNG
@@ -172,7 +177,7 @@ def draw_integer_kwargs(
 @st.composite
 def _collection_kwargs(draw, *, forced, use_min_size=True, use_max_size=True):
     min_size = 0
-    max_size = None
+    max_size = COLLECTION_DEFAULT_MAX_SIZE
     # collections are quite expensive in entropy. cap to avoid overruns.
     cap = 50
 
