@@ -12,6 +12,7 @@ import json
 import re
 import statistics
 import time
+from collections import namedtuple
 
 import pytest
 
@@ -31,13 +32,14 @@ timer = time.process_time  # store a reference in case the time module is monkey
 repeat = None  # repeats to run internally
 count = None  # repeats as executed by pytest-repeat
 
+ratio = namedtuple("ratio", ("p05", "p25", "p50", "p75", "p95"))
+
 
 def stats(data):
-    # (p05, p25, median, p75, p95)
     if len(data) == 1:
-        return [*data] * 5
+        return ratio(*([data[0]] * 5))
     ntiles = statistics.quantiles(data, n=20, method="inclusive")
-    return (ntiles[0], ntiles[4], ntiles[9], ntiles[14], ntiles[18])
+    return ratio(ntiles[0], ntiles[4], ntiles[9], ntiles[14], ntiles[18])
 
 
 @pytest.fixture
@@ -61,6 +63,7 @@ def bench(request, monkeypatch):
             # Beware: This defines the unit of work. If the work changes,
             # so do the reported numbers (which are scaled by this unit).
             try:
+                # there is no logic to this, just arbitrary instructions
                 f = lambda i: i * i
                 f.a = {}
                 for i in range(500):
@@ -75,8 +78,10 @@ def bench(request, monkeypatch):
             # - make the inner test take a measurable amount of time
             # - mimic "real" load so that the relative number is fairly stable
             #   under various load conditions
-            # The latter is partly successful: with 100% loaded system the test
-            # takes 2.5x time, the reported numbers shift by <~20%.
+            # The latter is only partly successful: with 100% loaded system the
+            # test takes 2.5x time, some of the reported numbers shift by ~20%.
+            # The problem is probably that the synthetic work is an imperfect
+            # approximation of the actual overhead-work.
             nonlocal time_inner
             before = timer()
             try:
@@ -92,6 +97,9 @@ def bench(request, monkeypatch):
             time_inner = 0
             time_given = timed(test)
             assert time_given > time_inner > 0
+            # Note, rel_overhead is somewhat insensitive to changes in performance
+            # caused by a change in the number of inner-test executions (shrinks).
+            # That's ok, since that number is tracked elsewhere.
             rel_overhead.append((time_given - time_inner) / time_inner)
 
         test_id = request.node.nodeid
@@ -118,6 +126,8 @@ def bench(request, monkeypatch):
 def pytest_addoption(parser):
     parser.addoption("--hypothesis-bench-repeats", type=int, action="store", default=5)
     parser.addoption("--hypothesis-bench-json", type=str, action="store")
+    parser.addoption("--hypothesis-bench-set-ref", action="store_true")
+    parser.addoption("--hypothesis-bench-use-ref", action="store_true")
 
 
 def pytest_configure(config):
@@ -133,9 +143,27 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
         f"overhead relative to example cost - lower is better [{repeat}it×{count}]"
     )
     ratios = [(k, stats(v)) for k, v in config._bench_rel_overhead.items()]
-    for testid, (p05, p25, p50, p75, p95) in ratios:
-        msg = f"{p50:5.1f}   ({p05:5.1f} --{p95:5.1f} )   {testid}"
-        terminalreporter.write_line(msg, yellow=True, bold=True)
+
+    if config.option.hypothesis_bench_set_ref:
+        refs = config.cache.get("hypothesis-bench/medians", {})
+        config.cache.set(
+            "hypothesis-bench/medians", refs | {testid: r.p50 for testid, r in ratios}
+        )
+    if config.option.hypothesis_bench_use_ref:
+        refs = config.cache.get("hypothesis-bench/medians", {})
+        has_ref = refs.keys()
+        ratios = [
+            (testid, ratio(*[p / ref for p in ps]))
+            for testid, ps in ratios
+            if (ref := refs.get(testid, 1.0))
+        ]
+    else:
+        has_ref = set()
+
+    for testid, r in ratios:
+        marker = "×" if testid in has_ref else " "
+        msg = f"{marker}{r.p50:5.2f}   ({r.p05:5.2f}, {r.p95:5.2f})   {testid}"
+        terminalreporter.write_line(msg, bold=True)
 
     store_json = config.option.hypothesis_bench_json
     if store_json:
@@ -146,11 +174,11 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
                     {
                         "name": testid,
                         "unit": "",
-                        "value": round(p50, ndigits=1),
-                        "range": f"{p05:.1f} – {p95:.1f}",
-                        "extra": f"interquartile range {p25:.1f} – {p75:.1f}",
+                        "value": round(r.p50, ndigits=2),
+                        "range": f"{r.p05:.2f} – {r.p95:.2f}",
+                        "extra": f"interquartile range {r.p25:.2f} – {r.p75:.2f}",
                     }
-                    for testid, (p05, p25, p50, p95) in ratios
+                    for testid, r in ratios
                 ],
                 f,
             )
