@@ -17,9 +17,9 @@ from tests.common.utils import no_shrink
 
 def test_seeds_off_internal_random():
     s = settings(phases=no_shrink, database=None)
-    r = core._hypothesis_global_random.getstate()
+    r = core._hypothesis_global_random.r.getstate()
     x = find(st.integers(), lambda x: True, settings=s)
-    core._hypothesis_global_random.setstate(r)
+    core._hypothesis_global_random.r.setstate(r)
     y = find(st.integers(), lambda x: True, settings=s)
     assert x == y
 

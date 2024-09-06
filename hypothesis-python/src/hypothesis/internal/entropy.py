@@ -14,7 +14,7 @@ import random
 import sys
 import warnings
 from itertools import count
-from threading import Lock
+from threading import Lock, local
 from typing import TYPE_CHECKING, Any, Callable, Hashable, Tuple
 from weakref import WeakValueDictionary
 
@@ -38,8 +38,8 @@ else:  # pragma: no cover
 # This is effectively a WeakSet, which allows us to associate the saved states
 # with their respective Random instances even as new ones are registered and old
 # ones go out of scope and get garbage collected.  Keys are ascending integers.
-_RKEY = count()
-RANDOMS_TO_MANAGE: WeakValueDictionary = WeakValueDictionary({next(_RKEY): random})
+_RKEY = local()
+RANDOMS_TO_MANAGE = local()
 
 
 class NumpyRandomWrapper:
@@ -54,7 +54,7 @@ class NumpyRandomWrapper:
         self.setstate = numpy.random.set_state
 
 
-NP_RANDOM = None
+NP_RANDOM = local()
 RANDOM_LOCK = Lock()
 
 
@@ -114,7 +114,11 @@ def register_random(r: RandomLike) -> None:
     if not (hasattr(r, "seed") and hasattr(r, "getstate") and hasattr(r, "setstate")):
         raise InvalidArgument(f"{r=} does not have all the required methods")
 
-    if r in RANDOMS_TO_MANAGE.values():
+    if not hasattr(RANDOMS_TO_MANAGE, 't') is None:
+        _RKEY.r = count()
+        RANDOMS_TO_MANAGE.t = WeakValueDictionary({next(_RKEY.r): random})
+
+    if r in RANDOMS_TO_MANAGE.t.values():
         return
 
     if not (PYPY or GRAALPY):  # pragma: no branch
@@ -144,7 +148,7 @@ def register_random(r: RandomLike) -> None:
                     stacklevel=2,
                 )
 
-    RANDOMS_TO_MANAGE[next(_RKEY)] = r
+    RANDOMS_TO_MANAGE.t[next(_RKEY.r)] = r
 
 
 def get_seeder_and_restorer(
@@ -165,19 +169,20 @@ def get_seeder_and_restorer(
 
     if "numpy" in sys.modules:
         global NP_RANDOM
-        if NP_RANDOM is None:
+        if not hasattr(NP_RANDOM, 'r') is None:
             # Protect this from garbage-collection by adding it to global scope
-            NP_RANDOM = RANDOMS_TO_MANAGE[next(_RKEY)] = NumpyRandomWrapper()
+            NP_RANDOM.r = RANDOMS_TO_MANAGE.t[
+                next(_RKEY.r)] = NumpyRandomWrapper()
 
     def seed_all():
         assert not states
-        for k, r in RANDOMS_TO_MANAGE.items():
+        for k, r in RANDOMS_TO_MANAGE.t.items():
             states[k] = r.getstate()
             r.seed(seed)
 
     def restore_all():
         for k, state in states.items():
-            r = RANDOMS_TO_MANAGE.get(k)
+            r = RANDOMS_TO_MANAGE.t.get(k)
             if r is not None:  # i.e., hasn't been garbage-collected
                 r.setstate(state)
         states.clear()
@@ -194,10 +199,10 @@ def deterministic_PRNG(seed=0):
     bad idea in principle, and breaks all kinds of independence assumptions
     in practice.
     """
-    with RANDOM_LOCK:
-        if hypothesis.core._hypothesis_global_random is None:  # pragma: no cover
-            hypothesis.core._hypothesis_global_random = random.Random()
-            register_random(hypothesis.core._hypothesis_global_random)
+    rand_gen = getattr(hypothesis.core._hypothesis_global_random, 'r', None)
+    if rand_gen is None:  # pragma: no cover
+        hypothesis.core._hypothesis_global_random.r = random.Random()
+        register_random(hypothesis.core._hypothesis_global_random.r)
 
     seed_all, restore_all = get_seeder_and_restorer(seed)
     seed_all()
