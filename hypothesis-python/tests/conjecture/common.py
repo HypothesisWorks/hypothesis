@@ -343,7 +343,7 @@ def boolean_kwargs(draw, *, use_forced=False):
     return {"p": p, "forced": forced}
 
 
-def kwargs_strategy(ir_type, strategy_kwargs=None):
+def kwargs_strategy(ir_type, strategy_kwargs=None, *, use_forced=False):
     strategy = {
         "boolean": boolean_kwargs,
         "integer": integer_kwargs,
@@ -353,13 +353,15 @@ def kwargs_strategy(ir_type, strategy_kwargs=None):
     }[ir_type]
     if strategy_kwargs is None:
         strategy_kwargs = {}
-    return strategy(**strategy_kwargs.get(ir_type, {}))
+    return strategy(**strategy_kwargs.get(ir_type, {}), use_forced=use_forced)
 
 
-def ir_types_and_kwargs(strategy_kwargs=None):
+def ir_types_and_kwargs(strategy_kwargs=None, *, use_forced=False):
     options = ["boolean", "integer", "float", "bytes", "string"]
     return st.one_of(
-        st.tuples(st.just(name), kwargs_strategy(name, strategy_kwargs))
+        st.tuples(
+            st.just(name), kwargs_strategy(name, strategy_kwargs, use_forced=use_forced)
+        )
         for name in options
     )
 
