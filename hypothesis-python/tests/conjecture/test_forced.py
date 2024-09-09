@@ -61,6 +61,30 @@ def test_forced_many(data):
 
 @example(("boolean", {"p": 1e-19, "forced": True}))  # 64 bit p
 @example(("boolean", {"p": 3e-19, "forced": True}))  # 62 bit p
+@example(
+    (
+        "integer",
+        {
+            "min_value": -1,
+            "max_value": 1,
+            "shrink_towards": 1,
+            "weights": [0.1] * 3,
+            "forced": 0,
+        },
+    )
+)
+@example(
+    (
+        "integer",
+        {
+            "min_value": -1,
+            "max_value": 1,
+            "shrink_towards": -1,
+            "weights": [0.1] * 3,
+            "forced": 0,
+        },
+    )
+)
 @example(("float", {"forced": 0.0}))
 @example(("float", {"forced": -0.0}))
 @example(("float", {"forced": 1.0}))
