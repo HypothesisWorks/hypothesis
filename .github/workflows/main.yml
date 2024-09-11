@@ -135,7 +135,7 @@ jobs:
           ./build.sh
         fi
     - name: Upload coverage data
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       # Invoke the magic `always` function to run on both success and failure.
       if: ${{ always() && endsWith(matrix.task, '-coverage') }}
       with:
