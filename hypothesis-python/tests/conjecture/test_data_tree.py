@@ -28,13 +28,11 @@ from hypothesis.internal.floats import next_up
 from hypothesis.vendor import pretty
 
 from tests.conjecture.common import (
-    draw_boolean_kwargs,
-    draw_bytes_kwargs,
-    draw_float_kwargs,
-    draw_integer_kwargs,
-    draw_string_kwargs,
+    boolean_kwargs,
     fresh_data,
+    integer_kwargs,
     ir_nodes,
+    kwargs_strategy,
     run_to_buffer,
 )
 
@@ -444,15 +442,7 @@ def test_low_probabilities_are_still_explored():
 
 
 def _test_observed_draws_are_recorded_in_tree(ir_type):
-    kwargs_strategy = {
-        "integer": draw_integer_kwargs(),
-        "bytes": draw_bytes_kwargs(),
-        "float": draw_float_kwargs(),
-        "string": draw_string_kwargs(),
-        "boolean": draw_boolean_kwargs(),
-    }[ir_type]
-
-    @given(kwargs_strategy)
+    @given(kwargs_strategy(ir_type))
     def test(kwargs):
         # we currently split pseudo-choices with a single child into their
         # own transition, which clashes with our asserts below. If we ever
@@ -472,15 +462,7 @@ def _test_observed_draws_are_recorded_in_tree(ir_type):
 
 
 def _test_non_observed_draws_are_not_recorded_in_tree(ir_type):
-    kwargs_strategy = {
-        "integer": draw_integer_kwargs(),
-        "bytes": draw_bytes_kwargs(),
-        "float": draw_float_kwargs(),
-        "string": draw_string_kwargs(),
-        "boolean": draw_boolean_kwargs(),
-    }[ir_type]
-
-    @given(kwargs_strategy)
+    @given(kwargs_strategy(ir_type))
     def test(kwargs):
         assume(compute_max_children(ir_type, kwargs) > 1)
 
@@ -573,7 +555,7 @@ def test_can_generate_hard_floats():
         assert data.draw_float(min_value, max_value, allow_nan=False) == expected_value
 
 
-@given(draw_boolean_kwargs(), draw_integer_kwargs())
+@given(boolean_kwargs(), integer_kwargs())
 def test_datatree_repr(bool_kwargs, int_kwargs):
     tree = DataTree()
 

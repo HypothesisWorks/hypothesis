@@ -110,14 +110,23 @@ def fresh_data(*, random=None, observer=None) -> ConjectureData:
     )
 
 
+def clamped_shrink_towards(kwargs):
+    v = kwargs["shrink_towards"]
+    if kwargs["min_value"] is not None:
+        v = max(kwargs["min_value"], v)
+    if kwargs["max_value"] is not None:
+        v = min(kwargs["max_value"], v)
+    return v
+
+
 @st.composite
-def draw_integer_kwargs(
+def integer_kwargs(
     draw,
     *,
-    use_min_value=True,
-    use_max_value=True,
-    use_shrink_towards=True,
-    use_weights=True,
+    use_min_value=None,
+    use_max_value=None,
+    use_shrink_towards=None,
+    use_weights=None,
     use_forced=False,
 ):
     min_value = None
@@ -125,12 +134,25 @@ def draw_integer_kwargs(
     shrink_towards = 0
     weights = None
 
+    if use_min_value is None:
+        use_min_value = draw(st.booleans())
+    if use_max_value is None:
+        use_max_value = draw(st.booleans())
+    use_shrink_towards = draw(st.booleans())
+    if use_weights is None:
+        use_weights = (
+            draw(st.booleans()) if (use_min_value and use_max_value) else False
+        )
+
     # this generation is complicated to deal with maintaining any combination of
     # the following invariants, depending on which parameters are passed:
     #
     # (1) min_value <= forced <= max_value
     # (2) max_value - min_value + 1 == len(weights)
     # (3) len(weights) <= 255
+
+    if use_shrink_towards:
+        shrink_towards = draw(st.integers())
 
     forced = draw(st.integers()) if use_forced else None
     if use_weights:
@@ -140,13 +162,35 @@ def draw_integer_kwargs(
         # We'll treat the weights as our "key" draw and base all other draws on that.
 
         # weights doesn't play well with super small floats, so exclude <.01
-        weights = draw(st.lists(st.floats(0.01, 1), min_size=1, max_size=255))
+        weights = draw(
+            st.lists(st.just(0) | st.floats(0.01, 1), min_size=1, max_size=255)
+        )
+        # zero is allowed, but it can't be all zeroes
+        assume(sum(weights) > 0)
 
         # we additionally pick a central value (if not forced), and then the index
         # into the weights at which it can be found - aka the min-value offset.
         center = forced if use_forced else draw(st.integers())
         min_value = center - draw(st.integers(0, len(weights) - 1))
         max_value = min_value + len(weights) - 1
+
+        if use_forced:
+            # can't force a 0-weight index.
+            # we avoid clamping the returned shrink_towards to maximize
+            # bug-finding power.
+            _shrink_towards = clamped_shrink_towards(
+                {
+                    "shrink_towards": shrink_towards,
+                    "min_value": min_value,
+                    "max_value": max_value,
+                }
+            )
+            forced_idx = (
+                forced - _shrink_towards
+                if forced >= _shrink_towards
+                else max_value - forced
+            )
+            assume(weights[forced_idx] > 0)
     else:
         if use_min_value:
             min_value = draw(st.integers(max_value=forced))
@@ -158,9 +202,6 @@ def draw_integer_kwargs(
                 min_vals.append(forced)
             min_val = max(min_vals) if min_vals else None
             max_value = draw(st.integers(min_value=min_val))
-
-    if use_shrink_towards:
-        shrink_towards = draw(st.integers())
 
     if forced is not None:
         assume((forced - shrink_towards).bit_length() < 128)
@@ -175,11 +216,16 @@ def draw_integer_kwargs(
 
 
 @st.composite
-def _collection_kwargs(draw, *, forced, use_min_size=True, use_max_size=True):
+def _collection_kwargs(draw, *, forced, use_min_size=None, use_max_size=None):
     min_size = 0
     max_size = COLLECTION_DEFAULT_MAX_SIZE
     # collections are quite expensive in entropy. cap to avoid overruns.
     cap = 50
+
+    if use_min_size is None:
+        use_min_size = draw(st.booleans())
+    if use_max_size is None:
+        use_max_size = draw(st.booleans())
 
     if use_min_size:
         min_size = draw(
@@ -199,7 +245,7 @@ def _collection_kwargs(draw, *, forced, use_min_size=True, use_max_size=True):
 
 
 @st.composite
-def draw_string_kwargs(draw, *, use_min_size=True, use_max_size=True, use_forced=False):
+def string_kwargs(draw, *, use_min_size=None, use_max_size=None, use_forced=False):
     # TODO also sample empty intervals, ie remove this min_size, once we handle empty
     # pseudo-choices in the ir
     interval_set = draw(intervals(min_size=1))
@@ -216,7 +262,7 @@ def draw_string_kwargs(draw, *, use_min_size=True, use_max_size=True, use_forced
 
 
 @st.composite
-def draw_bytes_kwargs(draw, *, use_min_size=True, use_max_size=True, use_forced=False):
+def bytes_kwargs(draw, *, use_min_size=None, use_max_size=None, use_forced=False):
     forced = draw(st.binary()) if use_forced else None
 
     kwargs = draw(
@@ -228,9 +274,12 @@ def draw_bytes_kwargs(draw, *, use_min_size=True, use_max_size=True, use_forced=
 
 
 @st.composite
-def draw_float_kwargs(
-    draw, *, use_min_value=True, use_max_value=True, use_forced=False
-):
+def float_kwargs(draw, *, use_min_value=None, use_max_value=None, use_forced=False):
+    if use_min_value is None:
+        use_min_value = draw(st.booleans())
+    if use_max_value is None:
+        use_max_value = draw(st.booleans())
+
     forced = draw(st.floats()) if use_forced else None
     pivot = forced if (use_forced and not math.isnan(forced)) else None
     min_value = -math.inf
@@ -276,13 +325,10 @@ def draw_float_kwargs(
 
 
 @st.composite
-def draw_boolean_kwargs(draw, *, use_forced=False):
+def boolean_kwargs(draw, *, use_forced=False):
     forced = draw(st.booleans()) if use_forced else None
-    p = draw(st.floats(0, 1, allow_nan=False, allow_infinity=False))
-
     # avoid invalid forced combinations
-    assume(p > 0 or forced is False)
-    assume(p < 1 or forced is True)
+    p = draw(st.floats(0, 1, exclude_min=forced is True, exclude_max=forced is False))
 
     if 0 < p < 1:
         # match internal assumption about avoiding large draws
@@ -292,20 +338,26 @@ def draw_boolean_kwargs(draw, *, use_forced=False):
     return {"p": p, "forced": forced}
 
 
-def kwargs_strategy(ir_type):
-    return {
-        "boolean": draw_boolean_kwargs(),
-        "integer": draw_integer_kwargs(),
-        "float": draw_float_kwargs(),
-        "bytes": draw_bytes_kwargs(),
-        "string": draw_string_kwargs(),
+def kwargs_strategy(ir_type, strategy_kwargs=None, *, use_forced=False):
+    strategy = {
+        "boolean": boolean_kwargs,
+        "integer": integer_kwargs,
+        "float": float_kwargs,
+        "bytes": bytes_kwargs,
+        "string": string_kwargs,
     }[ir_type]
+    if strategy_kwargs is None:
+        strategy_kwargs = {}
+    return strategy(**strategy_kwargs.get(ir_type, {}), use_forced=use_forced)
 
 
-def ir_types_and_kwargs():
+def ir_types_and_kwargs(strategy_kwargs=None, *, use_forced=False):
     options = ["boolean", "integer", "float", "bytes", "string"]
     return st.one_of(
-        st.tuples(st.just(name), kwargs_strategy(name)) for name in options
+        st.tuples(
+            st.just(name), kwargs_strategy(name, strategy_kwargs, use_forced=use_forced)
+        )
+        for name in options
     )
 
 

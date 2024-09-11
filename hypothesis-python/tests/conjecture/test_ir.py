@@ -14,7 +14,7 @@ from copy import deepcopy
 
 import pytest
 
-from hypothesis import assume, example, given, strategies as st
+from hypothesis import HealthCheck, assume, example, given, settings, strategies as st
 from hypothesis.errors import StopTest
 from hypothesis.internal.conjecture.data import (
     COLLECTION_DEFAULT_MAX_SIZE,
@@ -34,9 +34,9 @@ from hypothesis.internal.intervalsets import IntervalSet
 
 from tests.common.debug import minimal
 from tests.conjecture.common import (
-    draw_integer_kwargs,
     draw_value,
     fresh_data,
+    integer_kwargs,
     ir_nodes,
     ir_types_and_kwargs,
 )
@@ -276,10 +276,12 @@ def test_draw_string_single_interval_with_equal_bounds(s, n):
             "min_value": 1,
             "max_value": 2,
             "weights": [0, 1],
+            "shrink_towards": 0,
         },
     )
 )
 @given(ir_types_and_kwargs())
+@settings(suppress_health_check=[HealthCheck.filter_too_much])
 def test_compute_max_children_and_all_children_agree(ir_type_and_kwargs):
     (ir_type, kwargs) = ir_type_and_kwargs
     max_children = compute_max_children(ir_type, kwargs)
@@ -299,31 +301,23 @@ def test_compute_max_children_and_all_children_agree(ir_type_and_kwargs):
 # element is what we expect.
 
 
-@pytest.mark.parametrize("use_min_value", [True, False])
-@pytest.mark.parametrize("use_max_value", [True, False])
-def test_compute_max_children_unbounded_integer_ranges(use_min_value, use_max_value):
-    @given(
-        draw_integer_kwargs(
-            use_min_value=use_min_value,
-            use_max_value=use_max_value,
-            use_weights=use_min_value and use_max_value,
+@given(integer_kwargs())
+def test_compute_max_children_integer_ranges(kwargs):
+    if kwargs["weights"] is not None:
+        # this case is in principle testable. would need to takewhile from all_children
+        # while weight is not zero.
+        assume(all(v > 0 for v in kwargs["weights"]))
+    if kwargs["min_value"] is not None:
+        expected = kwargs["min_value"]
+    else:
+        offset = (
+            0
+            if kwargs["max_value"] is None
+            else min(kwargs["max_value"], kwargs["shrink_towards"])
         )
-    )
-    def f(kwargs):
-        if kwargs["min_value"] is not None:
-            expected = kwargs["min_value"]
-        else:
-            offset = (
-                0
-                if kwargs["max_value"] is None
-                else min(kwargs["max_value"], kwargs["shrink_towards"])
-            )
-            expected = offset - (2**127) + 1
-
-        first = next(all_children("integer", kwargs))
-        assert expected == first, (expected, first)
-
-    f()
+        expected = offset - (2**127) + 1
+    first = next(all_children("integer", kwargs))
+    assert expected == first, (expected, first)
 
 
 @given(st.randoms())
@@ -505,6 +499,7 @@ def test_data_with_same_forced_value_is_valid(node):
 
 
 @given(ir_types_and_kwargs())
+@settings(suppress_health_check=[HealthCheck.filter_too_much])
 def test_all_children_are_permitted_values(ir_type_and_kwargs):
     (ir_type, kwargs) = ir_type_and_kwargs
     max_children = compute_max_children(ir_type, kwargs)
