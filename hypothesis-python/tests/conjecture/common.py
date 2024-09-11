@@ -327,13 +327,8 @@ def float_kwargs(draw, *, use_min_value=None, use_max_value=None, use_forced=Fal
 @st.composite
 def boolean_kwargs(draw, *, use_forced=False):
     forced = draw(st.booleans()) if use_forced else None
-    p = draw(st.floats(0, 1, allow_nan=False, allow_infinity=False))
-
     # avoid invalid forced combinations
-    if forced is True:
-        assume(p > 0)
-    if forced is False:
-        assume(p < 1)
+    p = draw(st.floats(0, 1, exclude_min=forced is True, exclude_max=forced is False))
 
     if 0 < p < 1:
         # match internal assumption about avoiding large draws
