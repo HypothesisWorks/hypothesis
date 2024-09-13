@@ -8,9 +8,12 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from typing import Iterable, List, Sequence, Tuple, TypeAlias, Union, cast
+from typing import TYPE_CHECKING, Iterable, List, Sequence, Tuple, Union, cast
 
-IntervalsT: TypeAlias = Tuple[Tuple[int, int], ...]
+if TYPE_CHECKING:
+    from typing import TypeAlias
+
+IntervalsT: "TypeAlias" = Tuple[Tuple[int, int], ...]
 
 
 class IntervalSet:

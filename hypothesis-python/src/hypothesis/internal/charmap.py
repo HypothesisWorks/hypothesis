@@ -17,15 +17,18 @@ import tempfile
 import unicodedata
 from functools import lru_cache
 from pathlib import Path
-from typing import Dict, Iterable, Literal, Optional, Tuple, TypeAlias
+from typing import TYPE_CHECKING, Dict, Iterable, Literal, Optional, Tuple
 
 from hypothesis.configuration import storage_directory
 from hypothesis.control import _current_build_context
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.intervalsets import IntervalSet, IntervalsT
 
+if TYPE_CHECKING:
+    from typing import TypeAlias
+
 # See https://en.wikipedia.org/wiki/Unicode_character_property#General_Category
-CategoryName: TypeAlias = Literal[
+CategoryName: "TypeAlias" = Literal[
     "L",  #  Letter
     "Lu",  # Letter, uppercase
     "Ll",  # Letter, lowercase
@@ -64,8 +67,8 @@ CategoryName: TypeAlias = Literal[
     "Co",  # Other, private use
     "Cn",  # Other, not assigned
 ]
-Categories: TypeAlias = Iterable[CategoryName]
-CategoriesTuple: TypeAlias = Tuple[CategoryName, ...]
+Categories: "TypeAlias" = Iterable[CategoryName]
+CategoriesTuple: "TypeAlias" = Tuple[CategoryName, ...]
 
 
 def charmap_file(fname: str = "charmap") -> Path:
