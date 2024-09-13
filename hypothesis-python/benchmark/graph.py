@@ -51,7 +51,8 @@ for name in names:
     new_names.append(name)
 names = new_names
 
-
+# either "time" or "calls"
+statistic = "time"
 # name : average calls
 old_values = {}
 new_values = {}
@@ -59,8 +60,8 @@ for name in names:
 
     # mean across the different minimal() calls in a single test function, then
     # median across the n iterations we ran that for to reduce error
-    old_vals = [statistics.mean(run[name]) for run in old_runs]
-    new_vals = [statistics.mean(run[name]) for run in new_runs]
+    old_vals = [statistics.mean(r[statistic] for r in run[name]) for run in old_runs]
+    new_vals = [statistics.mean(r[statistic] for r in run[name]) for run in new_runs]
     old_values[name] = statistics.median(old_vals)
     new_values[name] = statistics.median(new_vals)
 
@@ -70,20 +71,21 @@ for name in names:
     old = old_values[name]
     new = new_values[name]
     diff = old - new
-    diff_times = (old - new) / old
+    if old == 0:
+        diff_times = 0
+    else:
+        diff_times = (old - new) / old
     if 0 < diff_times < 1:
         diff_times = (1 / (1 - diff_times)) - 1
     diffs[name] = (diff, diff_times)
 
-    print(f"{name} {int(diff)} ({int(old)} -> {int(new)}, {round(diff_times, 1)}✕)")
+    print(f"{name} {diff} ({old} -> {new}, {round(diff_times, 1)}✕)")
 
 diffs = dict(sorted(diffs.items(), key=lambda kv: kv[1][0]))
 diffs_value = [v[0] for v in diffs.values()]
 diffs_percentage = [v[1] for v in diffs.values()]
 
-print(
-    f"mean: {int(statistics.mean(diffs_value))}, median: {int(statistics.median(diffs_value))}"
-)
+print(f"mean: {statistics.mean(diffs_value)}, median: {statistics.median(diffs_value)}")
 
 
 # https://stackoverflow.com/a/65824524
@@ -100,15 +102,20 @@ def align_axes(ax1, ax2):
         ax1.set_ylim(bottom=ax1_ylims[1] * ax2_yratio)
 
 
-ax1 = sns.barplot(diffs_value, color="b", alpha=0.7, label="shrink call change")
+ax1 = sns.barplot(diffs_value, color="b", alpha=0.7, label="absolute change")
 ax2 = plt.twinx()
-sns.barplot(diffs_percentage, color="r", alpha=0.7, label=r"n✕ change", ax=ax2)
+sns.barplot(diffs_percentage, color="r", alpha=0.7, ax=ax2, label="n✕ change")
 
-ax1.set_title("old shrinks - new shrinks (aka shrinks saved, higher is better)")
+ax1.set_title(
+    "old shrinks - new shrinks (aka shrinks saved, higher is better)"
+    if statistic == "calls"
+    else "old time - new time in seconds (aka time saved, higher is better)"
+)
 ax1.set_xticks([])
 align_axes(ax1, ax2)
-legend = ax1.legend(labels=["shrink call change", "n✕ change"])
-legend.legend_handles[0].set_color("b")
-legend.legend_handles[1].set_color("r")
+legend1 = ax1.legend(loc="upper left")
+legend1.legend_handles[0].set_color("b")
+legend2 = ax2.legend(loc="lower right")
+legend2.legend_handles[0].set_color("r")
 
 plt.show()

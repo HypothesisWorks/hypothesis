@@ -145,7 +145,6 @@ def test_list_of_fractional_float():
         minimal(
             lists(floats(), min_size=5),
             lambda x: len([t for t in x if t >= 1.5]) >= 5,
-            timeout_after=60,
         )
     ) == {2}
 
@@ -158,7 +157,6 @@ def test_minimizes_lists_of_negative_ints_up_to_boundary():
     result = minimal(
         lists(integers(), min_size=10),
         lambda x: len([t for t in x if t <= -1]) >= 10,
-        timeout_after=60,
     )
     assert result == [-1] * 10
 

@@ -10,6 +10,7 @@
 
 import inspect
 import json
+import time
 from collections import defaultdict
 
 import pytest
@@ -19,6 +20,7 @@ from _pytest.monkeypatch import MonkeyPatch
 # be enough: https://github.com/pytest-dev/pytest-xdist/issues/271. need a lockfile
 # or equivalent.
 shrink_calls = defaultdict(list)
+timer = time.process_time
 
 
 def pytest_collection_modifyitems(config, items):
@@ -51,8 +53,11 @@ def _benchmark_shrinks():
     old_shrink = Shrinker.shrink
 
     def shrink(self, *args, **kwargs):
+        t = timer()
         v = old_shrink(self, *args, **kwargs)
-        record_shrink_calls(self.engine.call_count - self.initial_calls)
+        time = timer() - t
+        calls = self.engine.call_count - self.initial_calls
+        record_shrink_calls({"calls": calls, "time": time})
         return v
 
     monkeypatch.setattr(Shrinker, "shrink", shrink)

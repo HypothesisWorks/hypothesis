@@ -15,18 +15,10 @@ import pytest
 import hypothesis.strategies as st
 from hypothesis import HealthCheck, assume, example, given, settings
 from hypothesis.internal.conjecture import utils as cu
-from hypothesis.internal.conjecture.data import ConjectureData
-from hypothesis.internal.conjecture.floats import float_to_lex
+from hypothesis.internal.conjecture.data import ConjectureData, ir_value_equal
 from hypothesis.internal.floats import SIGNALING_NAN, SMALLEST_SUBNORMAL
 
-from tests.conjecture.common import (
-    draw_boolean_kwargs,
-    draw_bytes_kwargs,
-    draw_float_kwargs,
-    draw_integer_kwargs,
-    draw_string_kwargs,
-    fresh_data,
-)
+from tests.conjecture.common import fresh_data, ir_types_and_kwargs
 
 
 @given(st.data())
@@ -67,144 +59,72 @@ def test_forced_many(data):
     assert not many.more()
 
 
-@example({"p": 1e-19, "forced": True})  # 64 bit p
-@example({"p": 3e-19, "forced": True})  # 62 bit p
-@given(draw_boolean_kwargs(use_forced=True))
-def test_forced_boolean(kwargs):
-    forced = kwargs["forced"]
-
-    data = fresh_data()
-    assert data.draw_boolean(**kwargs) == forced
-
-    # now make sure the written buffer reproduces the forced value, even without
-    # specifying forced=.
-    del kwargs["forced"]
-    data = ConjectureData.for_buffer(data.buffer)
-    assert data.draw_boolean(**kwargs) == forced
-
-
-@pytest.mark.parametrize(
-    "use_min_value, use_max_value, use_shrink_towards, use_weights",
-    [
-        (True, True, True, True),
-        (True, True, True, False),
-        (True, True, False, True),
-        (True, True, False, False),
-        (True, False, True, False),
-        (False, True, True, False),
-        (False, False, True, False),
-        (False, True, False, False),
-        (True, False, False, False),
-        (False, False, False, False),
-    ],
+@example(("boolean", {"p": 1e-19, "forced": True}))  # 64 bit p
+@example(("boolean", {"p": 3e-19, "forced": True}))  # 62 bit p
+@example(
+    (
+        "integer",
+        {
+            "min_value": -1,
+            "max_value": 1,
+            "shrink_towards": 1,
+            "weights": [0.1] * 3,
+            "forced": 0,
+        },
+    )
 )
-def test_forced_integer(use_min_value, use_max_value, use_shrink_towards, use_weights):
-    healthchecks = list(HealthCheck) * (use_min_value and use_max_value and use_weights)
-
-    @settings(derandomize=True, suppress_health_check=healthchecks)
-    @given(
-        draw_integer_kwargs(
-            use_min_value=use_min_value,
-            use_max_value=use_max_value,
-            use_shrink_towards=use_shrink_towards,
-            use_weights=use_weights,
-            use_forced=True,
-        )
+@example(
+    (
+        "integer",
+        {
+            "min_value": -1,
+            "max_value": 1,
+            "shrink_towards": -1,
+            "weights": [0.1] * 3,
+            "forced": 0,
+        },
     )
-    def test(kwargs):
-        forced = kwargs["forced"]
-
-        data = fresh_data()
-        assert data.draw_integer(**kwargs) == forced
-
-        del kwargs["forced"]
-        data = ConjectureData.for_buffer(data.buffer)
-        assert data.draw_integer(**kwargs) == forced
-
-    test()
-
-
-@pytest.mark.parametrize("use_min_size", [True, False])
-@pytest.mark.parametrize("use_max_size", [True, False])
-def test_forced_string(use_min_size, use_max_size):
-    @given(
-        draw_string_kwargs(
-            use_min_size=use_min_size, use_max_size=use_max_size, use_forced=True
-        )
+)
+@example(("float", {"forced": 0.0}))
+@example(("float", {"forced": -0.0}))
+@example(("float", {"forced": 1.0}))
+@example(("float", {"forced": 1.2345}))
+@example(("float", {"forced": SMALLEST_SUBNORMAL}))
+@example(("float", {"forced": -SMALLEST_SUBNORMAL}))
+@example(("float", {"forced": 100 * SMALLEST_SUBNORMAL}))
+@example(("float", {"forced": math.nan}))
+@example(("float", {"forced": -math.nan}))
+@example(("float", {"forced": SIGNALING_NAN}))
+@example(("float", {"forced": -SIGNALING_NAN}))
+@example(("float", {"forced": 1e999}))
+@example(("float", {"forced": -1e999}))
+# previously errored on our {pos, neg}_clamper logic not considering nans.
+@example(
+    (
+        "float",
+        {"min_value": -1 * math.inf, "max_value": -1 * math.inf, "forced": math.nan},
     )
-    def test(kwargs):
-        forced = kwargs["forced"]
+)
+@given(ir_types_and_kwargs(use_forced=True))
+def test_forced_values(ir_type_and_kwargs):
+    (ir_type, kwargs) = ir_type_and_kwargs
 
-        data = fresh_data()
-        assert data.draw_string(**kwargs) == forced
-
-        del kwargs["forced"]
-        data = ConjectureData.for_buffer(data.buffer)
-        assert data.draw_string(**kwargs) == forced
-
-    test()
-
-
-@given(st.data())
-def test_forced_bytes(data):
-    kwargs = data.draw(draw_bytes_kwargs(use_forced=True))
-    forced = kwargs["forced"]
-
-    data = fresh_data()
-    assert data.draw_bytes(**kwargs) == forced
-
-    del kwargs["forced"]
-    data = ConjectureData.for_buffer(data.buffer)
-    assert data.draw_bytes(**kwargs) == forced
-
-
-@pytest.mark.parametrize("use_min_value", [True, False])
-@pytest.mark.parametrize("use_max_value", [True, False])
-def test_forced_floats(use_min_value, use_max_value):
-    @example({"forced": 0.0})
-    @example({"forced": -0.0})
-    @example({"forced": 1.0})
-    @example({"forced": 1.2345})
-    @example({"forced": SMALLEST_SUBNORMAL})
-    @example({"forced": -SMALLEST_SUBNORMAL})
-    @example({"forced": 100 * SMALLEST_SUBNORMAL})
-    @example({"forced": math.nan})
-    @example({"forced": -math.nan})
-    @example({"forced": SIGNALING_NAN})
-    @example({"forced": -SIGNALING_NAN})
-    @example({"forced": 1e999})
-    @example({"forced": -1e999})
-    # previously errored on our {pos, neg}_clamper logic not considering nans.
-    @example(
-        {"min_value": -1 * math.inf, "max_value": -1 * math.inf, "forced": math.nan}
-    )
-    @given(
-        draw_float_kwargs(
-            use_min_value=use_min_value, use_max_value=use_max_value, use_forced=True
-        )
-    )
-    def test(kwargs):
+    if ir_type == "float":
         # TODO intentionally avoid triggering a bug with forcing nan values
         # while both min and max value have the opposite sign.
         # Once we fix the aforementioned bug we can remove this intentional
         # weakening of the test.
         assume(not math.isnan(kwargs["forced"]))
 
-        forced = kwargs["forced"]
+    forced = kwargs["forced"]
+    data = fresh_data()
+    assert ir_value_equal(ir_type, getattr(data, f"draw_{ir_type}")(**kwargs), forced)
 
-        data = fresh_data()
-        drawn = data.draw_float(**kwargs)
-        # Bitwise equality check to handle nan, snan, -nan, +0, -0, etc.
-        assert math.copysign(1, drawn) == math.copysign(1, forced)
-        assert float_to_lex(abs(drawn)) == float_to_lex(abs(forced))
-
-        del kwargs["forced"]
-        data = ConjectureData.for_buffer(data.buffer)
-        drawn = data.draw_float(**kwargs)
-        assert math.copysign(1, drawn) == math.copysign(1, forced)
-        assert float_to_lex(abs(drawn)) == float_to_lex(abs(forced))
-
-    test()
+    # now make sure the written buffer reproduces the forced value, even without
+    # specifying forced=.
+    del kwargs["forced"]
+    data = ConjectureData.for_buffer(data.buffer)
+    assert ir_value_equal(ir_type, getattr(data, f"draw_{ir_type}")(**kwargs), forced)
 
 
 @pytest.mark.parametrize("sign", [1, -1])

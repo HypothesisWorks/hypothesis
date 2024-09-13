@@ -74,7 +74,9 @@ def run_language_test_for(root, data, seed):
         node = root
         while not isinstance(node, Terminal):
             if isinstance(node, Write):
-                local_data.draw_bytes(len(node.value), forced=node.value)
+                local_data.draw_bytes(
+                    len(node.value), len(node.value), forced=node.value
+                )
                 node = node.child
             else:
                 assert isinstance(node, Branch)

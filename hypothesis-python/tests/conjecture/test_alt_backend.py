@@ -10,27 +10,30 @@
 
 import math
 import sys
+from collections.abc import Sequence
 from contextlib import contextmanager
 from random import Random
-from typing import Optional, Sequence
+from typing import Optional
 
 import pytest
 
 from hypothesis import given, settings, strategies as st
+from hypothesis.control import current_build_context
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.errors import Flaky, HypothesisException, InvalidArgument
 from hypothesis.internal.compat import int_to_bytes
 from hypothesis.internal.conjecture.data import (
     AVAILABLE_PROVIDERS,
+    COLLECTION_DEFAULT_MAX_SIZE,
     ConjectureData,
     PrimitiveProvider,
-    realize,
 )
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.floats import SIGNALING_NAN
 from hypothesis.internal.intervalsets import IntervalSet
 
 from tests.common.debug import minimal
+from tests.common.utils import capture_observations
 from tests.conjecture.common import ir_nodes
 
 
@@ -130,7 +133,7 @@ class PrngProvider(PrimitiveProvider):
         intervals: IntervalSet,
         *,
         min_size: int = 0,
-        max_size: Optional[int] = None,
+        max_size: int = COLLECTION_DEFAULT_MAX_SIZE,
         forced: Optional[str] = None,
         fake_forced: bool = False,
     ) -> str:
@@ -142,10 +145,17 @@ class PrngProvider(PrimitiveProvider):
         return "".join(map(chr, self.prng.choices(intervals, k=size)))
 
     def draw_bytes(
-        self, size: int, *, forced: Optional[bytes] = None, fake_forced: bool = False
+        self,
+        min_size: int = 0,
+        max_size: int = COLLECTION_DEFAULT_MAX_SIZE,
+        *,
+        forced: Optional[bytes] = None,
+        fake_forced: bool = False,
     ) -> bytes:
         if forced is not None:
             return forced
+        max_size = 100 if max_size is None else max_size
+        size = self.prng.randint(min_size, max_size)
         return self.prng.randbytes(size)
 
 
@@ -358,7 +368,7 @@ def test_case_lifetime():
 
 
 def test_flaky_with_backend():
-    with temp_register_backend("trivial", TrivialProvider):
+    with temp_register_backend("trivial", TrivialProvider), capture_observations():
 
         calls = 0
 
@@ -410,7 +420,7 @@ def test_realize():
         @given(st.integers())
         @settings(backend="realize")
         def test_function(n):
-            values.append(realize(n))
+            values.append(current_build_context().data.provider.realize(n))
 
         test_function()
 
@@ -428,3 +438,42 @@ def test_realize_dependent_draw():
             assert n1 <= n2
 
         test_function()
+
+
+class ObservableProvider(TrivialProvider):
+    def observe_test_case(self):
+        return {"msg_key": "some message", "data_key": [1, "2", {}]}
+
+    def observe_information_messages(self, *, lifetime):
+        if lifetime == "test_case":
+            yield {"type": "info", "title": "trivial-data", "content": {"k2": "v2"}}
+        else:
+            assert lifetime == "test_function"
+            yield {"type": "alert", "title": "Trivial alert", "content": "message here"}
+            yield {"type": "info", "title": "trivial-data", "content": {"k2": "v2"}}
+
+
+def test_custom_observations_from_backend():
+    with (
+        temp_register_backend("observable", ObservableProvider),
+        capture_observations() as ls,
+    ):
+
+        @given(st.none())
+        @settings(backend="observable", database=None)
+        def test_function(_):
+            pass
+
+        test_function()
+
+    assert len(ls) >= 3
+    cases = [t["metadata"]["backend"] for t in ls if t["type"] == "test_case"]
+    assert {"msg_key": "some message", "data_key": [1, "2", {}]} in cases
+
+    infos = [
+        {k: v for k, v in t.items() if k in ("title", "content")}
+        for t in ls
+        if t["type"] != "test_case"
+    ]
+    assert {"title": "Trivial alert", "content": "message here"} in infos
+    assert {"title": "trivial-data", "content": {"k2": "v2"}} in infos

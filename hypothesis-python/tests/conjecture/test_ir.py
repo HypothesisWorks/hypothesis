@@ -17,6 +17,7 @@ import pytest
 from hypothesis import HealthCheck, assume, example, given, settings, strategies as st
 from hypothesis.errors import StopTest
 from hypothesis.internal.conjecture.data import (
+    COLLECTION_DEFAULT_MAX_SIZE,
     ConjectureData,
     IRNode,
     Status,
@@ -33,12 +34,11 @@ from hypothesis.internal.intervalsets import IntervalSet
 
 from tests.common.debug import minimal
 from tests.conjecture.common import (
-    draw_integer_kwargs,
     draw_value,
     fresh_data,
+    integer_kwargs,
     ir_nodes,
     ir_types_and_kwargs,
-    kwargs_strategy,
 )
 
 
@@ -89,7 +89,7 @@ def test_compute_max_children_is_positive(ir_type_and_kwargs):
             "string",
             {
                 "min_size": 0,
-                "max_size": None,
+                "max_size": COLLECTION_DEFAULT_MAX_SIZE,
                 "intervals": IntervalSet.from_string("a"),
             },
             MAX_CHILDREN_EFFECTIVELY_INFINITE,
@@ -100,6 +100,30 @@ def test_compute_max_children_is_positive(ir_type_and_kwargs):
                 "min_size": 0,
                 "max_size": 10_000,
                 "intervals": IntervalSet.from_string("abcdefg"),
+            },
+            MAX_CHILDREN_EFFECTIVELY_INFINITE,
+        ),
+        (
+            "bytes",
+            {
+                "min_size": 0,
+                "max_size": 2,
+            },
+            sum(2 ** (8 * k) for k in range(2 + 1)),
+        ),
+        (
+            "bytes",
+            {
+                "min_size": 0,
+                "max_size": COLLECTION_DEFAULT_MAX_SIZE,
+            },
+            MAX_CHILDREN_EFFECTIVELY_INFINITE,
+        ),
+        (
+            "bytes",
+            {
+                "min_size": 0,
+                "max_size": 10_000,
             },
             MAX_CHILDREN_EFFECTIVELY_INFINITE,
         ),
@@ -252,10 +276,12 @@ def test_draw_string_single_interval_with_equal_bounds(s, n):
             "min_value": 1,
             "max_value": 2,
             "weights": [0, 1],
+            "shrink_towards": 0,
         },
     )
 )
 @given(ir_types_and_kwargs())
+@settings(suppress_health_check=[HealthCheck.filter_too_much])
 def test_compute_max_children_and_all_children_agree(ir_type_and_kwargs):
     (ir_type, kwargs) = ir_type_and_kwargs
     max_children = compute_max_children(ir_type, kwargs)
@@ -275,31 +301,23 @@ def test_compute_max_children_and_all_children_agree(ir_type_and_kwargs):
 # element is what we expect.
 
 
-@pytest.mark.parametrize("use_min_value", [True, False])
-@pytest.mark.parametrize("use_max_value", [True, False])
-def test_compute_max_children_unbounded_integer_ranges(use_min_value, use_max_value):
-    @given(
-        draw_integer_kwargs(
-            use_min_value=use_min_value,
-            use_max_value=use_max_value,
-            use_weights=use_min_value and use_max_value,
+@given(integer_kwargs())
+def test_compute_max_children_integer_ranges(kwargs):
+    if kwargs["weights"] is not None:
+        # this case is in principle testable. would need to takewhile from all_children
+        # while weight is not zero.
+        assume(all(v > 0 for v in kwargs["weights"]))
+    if kwargs["min_value"] is not None:
+        expected = kwargs["min_value"]
+    else:
+        offset = (
+            0
+            if kwargs["max_value"] is None
+            else min(kwargs["max_value"], kwargs["shrink_towards"])
         )
-    )
-    def f(kwargs):
-        if kwargs["min_value"] is not None:
-            expected = kwargs["min_value"]
-        else:
-            offset = (
-                0
-                if kwargs["max_value"] is None
-                else min(kwargs["max_value"], kwargs["shrink_towards"])
-            )
-            expected = offset - (2**127) + 1
-
-        first = next(all_children("integer", kwargs))
-        assert expected == first, (expected, first)
-
-    f()
+        expected = offset - (2**127) + 1
+    first = next(all_children("integer", kwargs))
+    assert expected == first, (expected, first)
 
 
 @given(st.randoms())
@@ -310,7 +328,7 @@ def test_ir_nodes(random):
 
     data.start_example(42)
     data.draw_string(IntervalSet.from_string("abcd"), forced="abbcccdddd")
-    data.draw_bytes(8, forced=bytes(8))
+    data.draw_bytes(8, 8, forced=bytes(8))
     data.stop_example()
 
     data.draw_integer(0, 100, forced=50)
@@ -340,14 +358,14 @@ def test_ir_nodes(random):
             kwargs={
                 "intervals": IntervalSet.from_string("abcd"),
                 "min_size": 0,
-                "max_size": None,
+                "max_size": COLLECTION_DEFAULT_MAX_SIZE,
             },
             was_forced=True,
         ),
         IRNode(
             ir_type="bytes",
             value=bytes(8),
-            kwargs={"size": 8},
+            kwargs={"min_size": 8, "max_size": 8},
             was_forced=True,
         ),
         IRNode(
@@ -390,56 +408,6 @@ def test_data_with_empty_ir_tree_is_overrun():
         data.draw_integer()
 
     assert data.status is Status.OVERRUN
-
-
-@settings(suppress_health_check=[HealthCheck.too_slow])
-@given(st.data())
-def test_node_with_different_ir_type_is_invalid(data):
-    node = data.draw(ir_nodes())
-    (ir_type, kwargs) = data.draw(ir_types_and_kwargs())
-
-    # drawing a node with a different ir type should cause a misalignment.
-    assume(ir_type != node.ir_type)
-
-    data = ConjectureData.for_ir_tree([node])
-    draw_func = getattr(data, f"draw_{ir_type}")
-    with pytest.raises(StopTest):
-        draw_func(**kwargs)
-
-    assert data.status is Status.INVALID
-
-
-@settings(suppress_health_check=[HealthCheck.too_slow])
-@given(st.data())
-def test_node_with_same_ir_type_but_different_value_is_invalid(data):
-    node = data.draw(ir_nodes())
-    kwargs = data.draw(kwargs_strategy(node.ir_type))
-
-    # drawing a node with the same ir type, but a non-compatible value, should
-    # also cause a misalignment.
-    assume(not ir_value_permitted(node.value, node.ir_type, kwargs))
-
-    data = ConjectureData.for_ir_tree([node])
-    draw_func = getattr(data, f"draw_{node.ir_type}")
-    with pytest.raises(StopTest):
-        draw_func(**kwargs)
-
-    assert data.status is Status.INVALID
-
-
-@given(ir_nodes(was_forced=False))
-def test_data_with_changed_was_forced(node):
-    # we had a normal node and then tried to draw a different forced value from it.
-    # ir tree: v1 [was_forced=False]
-    # drawing:    [forced=v2]
-    data = ConjectureData.for_ir_tree([node])
-
-    draw_func = getattr(data, f"draw_{node.ir_type}")
-    kwargs = deepcopy(node.kwargs)
-    kwargs["forced"] = draw_value(node.ir_type, node.kwargs)
-    assume(not ir_value_equal(node.ir_type, kwargs["forced"], node.value))
-
-    assert ir_value_equal(node.ir_type, draw_func(**kwargs), kwargs["forced"])
 
 
 @given(ir_nodes(was_forced=True))
@@ -503,7 +471,7 @@ def test_data_with_changed_forced_value(node):
         kwargs={
             "intervals": IntervalSet.from_string("bcda"),
             "min_size": 4,
-            "max_size": None,
+            "max_size": COLLECTION_DEFAULT_MAX_SIZE,
         },
         was_forced=True,
     )
@@ -512,7 +480,7 @@ def test_data_with_changed_forced_value(node):
     IRNode(
         ir_type="bytes",
         value=bytes(8),
-        kwargs={"size": 8},
+        kwargs={"min_size": 8, "max_size": 8},
         was_forced=True,
     )
 )
@@ -531,6 +499,7 @@ def test_data_with_same_forced_value_is_valid(node):
 
 
 @given(ir_types_and_kwargs())
+@settings(suppress_health_check=[HealthCheck.filter_too_much])
 def test_all_children_are_permitted_values(ir_type_and_kwargs):
     (ir_type, kwargs) = ir_type_and_kwargs
     max_children = compute_max_children(ir_type, kwargs)
@@ -638,8 +607,10 @@ def test_all_children_are_permitted_values(ir_type_and_kwargs):
             {"min_size": 1, "max_size": 10, "intervals": IntervalSet.from_string("e")},
             True,
         ),
-        (b"a", "bytes", {"size": 2}, False),
-        (b"aa", "bytes", {"size": 2}, True),
+        (b"a", "bytes", {"min_size": 2, "max_size": 2}, False),
+        (b"aa", "bytes", {"min_size": 2, "max_size": 2}, True),
+        (b"aa", "bytes", {"min_size": 0, "max_size": 3}, True),
+        (b"a", "bytes", {"min_size": 2, "max_size": 10}, False),
         (True, "boolean", {"p": 0}, False),
         (False, "boolean", {"p": 0}, True),
         (True, "boolean", {"p": 1}, True),
@@ -705,7 +676,7 @@ def test_forced_nodes_are_trivial(node):
             kwargs={
                 "intervals": IntervalSet.from_string("abcd"),
                 "min_size": 0,
-                "max_size": None,
+                "max_size": COLLECTION_DEFAULT_MAX_SIZE,
             },
             was_forced=False,
         ),
@@ -715,14 +686,20 @@ def test_forced_nodes_are_trivial(node):
             kwargs={
                 "intervals": IntervalSet.from_string("bcda"),
                 "min_size": 4,
-                "max_size": None,
+                "max_size": COLLECTION_DEFAULT_MAX_SIZE,
             },
             was_forced=False,
         ),
         IRNode(
             ir_type="bytes",
             value=bytes(8),
-            kwargs={"size": 8},
+            kwargs={"min_size": 8, "max_size": 8},
+            was_forced=False,
+        ),
+        IRNode(
+            ir_type="bytes",
+            value=bytes(2),
+            kwargs={"min_size": 2, "max_size": COLLECTION_DEFAULT_MAX_SIZE},
             was_forced=False,
         ),
         IRNode(
@@ -853,14 +830,26 @@ def test_trivial_nodes(node):
             kwargs={
                 "intervals": IntervalSet.from_string("abcd"),
                 "min_size": 1,
-                "max_size": None,
+                "max_size": COLLECTION_DEFAULT_MAX_SIZE,
             },
             was_forced=False,
         ),
         IRNode(
             ir_type="bytes",
             value=b"\x01",
-            kwargs={"size": 1},
+            kwargs={"min_size": 1, "max_size": 1},
+            was_forced=False,
+        ),
+        IRNode(
+            ir_type="bytes",
+            value=bytes(1),
+            kwargs={"min_size": 0, "max_size": COLLECTION_DEFAULT_MAX_SIZE},
+            was_forced=False,
+        ),
+        IRNode(
+            ir_type="bytes",
+            value=bytes(2),
+            kwargs={"min_size": 1, "max_size": 10},
             was_forced=False,
         ),
         IRNode(

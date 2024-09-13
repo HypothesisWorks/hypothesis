@@ -8,13 +8,13 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import re
 import time
 
 import pytest
-from pytest import raises
 
 from hypothesis import HealthCheck, given, settings, strategies as st
-from hypothesis.control import assume
+from hypothesis.control import assume, current_build_context
 from hypothesis.errors import FailedHealthCheck, InvalidArgument
 from hypothesis.internal.compat import int_from_bytes
 from hypothesis.stateful import (
@@ -28,26 +28,28 @@ from hypothesis.strategies._internal.strategies import SearchStrategy
 
 from tests.common.utils import no_shrink
 
-HEALTH_CHECK_SETTINGS = settings(max_examples=11, database=None)
+HEALTH_CHECK_SETTINGS = settings(
+    max_examples=11, database=None, suppress_health_check=()
+)
 
 
 def test_slow_generation_fails_a_health_check():
-    @HEALTH_CHECK_SETTINGS
+    @settings(HEALTH_CHECK_SETTINGS, deadline=200)
     @given(st.integers().map(lambda x: time.sleep(0.2)))
     def test(x):
         pass
 
-    with raises(FailedHealthCheck):
+    with pytest.raises(FailedHealthCheck):
         test()
 
 
 def test_slow_generation_inline_fails_a_health_check():
-    @HEALTH_CHECK_SETTINGS
+    @settings(HEALTH_CHECK_SETTINGS, deadline=200)
     @given(st.data())
     def test(data):
         data.draw(st.integers().map(lambda x: time.sleep(0.2)))
 
-    with raises(FailedHealthCheck):
+    with pytest.raises(FailedHealthCheck):
         test()
 
 
@@ -75,7 +77,7 @@ def test_suppressing_filtering_health_check():
     def test1(x):
         raise ValueError
 
-    with raises(FailedHealthCheck):
+    with pytest.raises(FailedHealthCheck):
         test1()
 
     forbidden = set()
@@ -85,7 +87,7 @@ def test_suppressing_filtering_health_check():
     def test2(x):
         raise ValueError
 
-    with raises(ValueError):
+    with pytest.raises(ValueError):
         test2()
 
 
@@ -95,27 +97,26 @@ def test_filtering_everything_fails_a_health_check():
     def test(x):
         pass
 
-    with raises(FailedHealthCheck) as e:
+    with pytest.raises(FailedHealthCheck, match="filter"):
         test()
-    assert "filter" in e.value.args[0]
 
 
 class fails_regularly(SearchStrategy):
     def do_draw(self, data):
-        b = int_from_bytes(data.draw_bytes(2))
+        b = int_from_bytes(data.draw_bytes(2, 2))
         assume(b == 3)
         print("ohai")
 
 
 def test_filtering_most_things_fails_a_health_check():
     @given(fails_regularly())
-    @settings(database=None, phases=no_shrink)
+    @settings(database=None, phases=no_shrink, suppress_health_check=())
     def test(x):
-        pass
+        if current_build_context().data.provider.avoid_realization:
+            pytest.skip("symbolic backends can filter efficiently!")
 
-    with raises(FailedHealthCheck) as e:
+    with pytest.raises(FailedHealthCheck, match="filter"):
         test()
-    assert "filter" in e.value.args[0]
 
 
 def test_returning_non_none_is_forbidden():
@@ -123,7 +124,7 @@ def test_returning_non_none_is_forbidden():
     def a(x):
         return 1
 
-    with raises(FailedHealthCheck):
+    with pytest.raises(FailedHealthCheck):
         a()
 
 
@@ -153,19 +154,18 @@ class sample_test_runner:
 
 def test_differing_executors_fails_health_check():
     sample_test_runner().test()
-    with pytest.raises(FailedHealthCheck) as exc:
+    msg = re.escape(str(HealthCheck.differing_executors))
+    with pytest.raises(FailedHealthCheck, match=msg):
         sample_test_runner().test()
-
-    assert str(HealthCheck.differing_executors) in str(exc.value)
 
 
 def test_it_is_an_error_to_suppress_non_iterables():
-    with raises(InvalidArgument):
+    with pytest.raises(InvalidArgument):
         settings(suppress_health_check=1)
 
 
 def test_it_is_an_error_to_suppress_non_healthchecks():
-    with raises(InvalidArgument):
+    with pytest.raises(InvalidArgument):
         settings(suppress_health_check=[1])
 
 

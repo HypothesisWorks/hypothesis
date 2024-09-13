@@ -29,15 +29,15 @@ from hypothesis.strategies._internal.strategies import SearchStrategy
 @given(st.binary())
 def test_buffer_draws_as_self(buf):
     x = ConjectureData.for_buffer(buf)
-    assert x.draw_bytes(len(buf)) == buf
+    assert x.draw_bytes(len(buf), len(buf)) == buf
 
 
 def test_cannot_draw_after_freeze():
     x = ConjectureData.for_buffer(b"hi")
-    x.draw_bytes(1)
+    x.draw_bytes(1, 1)
     x.freeze()
     with pytest.raises(Frozen):
-        x.draw_bytes(1)
+        x.draw_bytes(1, 1)
 
 
 def test_can_double_freeze():
@@ -51,13 +51,13 @@ def test_can_double_freeze():
 def test_can_draw_zero_bytes():
     x = ConjectureData.for_buffer(b"")
     for _ in range(10):
-        assert x.draw_bytes(0) == b""
+        assert x.draw_bytes(0, 0) == b""
 
 
 def test_draw_past_end_sets_overflow():
     x = ConjectureData.for_buffer(bytes(5))
     with pytest.raises(StopTest) as e:
-        x.draw_bytes(6)
+        x.draw_bytes(6, 6)
     assert e.value.testcounter == x.testcounter
     assert x.frozen
     assert x.status == Status.OVERRUN
@@ -116,7 +116,7 @@ def test_can_mark_invalid_with_why():
 
 class BoomStrategy(SearchStrategy):
     def do_draw(self, data):
-        data.draw_bytes(1)
+        data.draw_bytes(1, 1)
         raise ValueError
 
 
@@ -130,7 +130,7 @@ def test_closes_interval_on_error_in_strategy():
 
 class BigStrategy(SearchStrategy):
     def do_draw(self, data):
-        data.draw_bytes(10**6)
+        data.draw_bytes(10**6, 10**6)
 
 
 def test_does_not_double_freeze_in_interval_close():
@@ -150,7 +150,7 @@ def test_triviality():
     d.stop_example()
 
     d.start_example(label=2)
-    d.draw_bytes(1, forced=bytes([2]))
+    d.draw_bytes(1, 1, forced=bytes([2]))
     d.stop_example()
 
     d.freeze()
@@ -504,7 +504,7 @@ def test_example_equality():
 def test_partial_buffer(n, rnd):
     data = ConjectureData(prefix=[n], random=rnd, max_length=2)
 
-    assert data.draw_bytes(2)[0] == n
+    assert data.draw_bytes(2, 2)[0] == n
 
 
 def test_structural_coverage_is_cached():

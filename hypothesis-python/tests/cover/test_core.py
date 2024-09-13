@@ -80,18 +80,20 @@ def test_given_shrinks_pytest_helper_errors():
 
 
 def test_pytest_skip_skips_shrinking():
-    values = []
+    seen_large = False
 
     @settings(derandomize=True, max_examples=100)
     @given(s.integers())
     def inner(x):
-        values.append(x)
+        nonlocal seen_large
         if x > 100:
+            if seen_large:
+                raise Exception("Should never replay a skipped test!")
+            seen_large = True
             pytest.skip(f"{x=} is too big!")
 
     with pytest.raises(Skipped):
         inner()
-    assert len([x for x in values if x > 100]) == 1
 
 
 def test_can_find_with_db_eq_none():

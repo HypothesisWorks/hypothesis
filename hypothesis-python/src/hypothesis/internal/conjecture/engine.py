@@ -332,15 +332,8 @@ class ConjectureRunner:
         data: Union[ConjectureData, ConjectureResult, None] = None,
     ) -> Tuple[Tuple[Any, ...], ...]:
         assert (nodes is not None) ^ (data is not None)
-        extension = []
         if data is not None:
             nodes = data.examples.ir_tree_nodes
-            if data.invalid_at is not None:
-                # if we're invalid then we should have at least one node left (the invalid one).
-                assert isinstance(data, ConjectureData)
-                assert data.ir_tree_nodes is not None
-                assert data._node_index < len(data.ir_tree_nodes)
-                extension = [data.ir_tree_nodes[data._node_index]]
         assert nodes is not None
 
         # intentionally drop was_forced from equality here, because the was_forced
@@ -351,24 +344,12 @@ class ConjectureRunner:
                 ir_value_key(node.ir_type, node.value),
                 ir_kwargs_key(node.ir_type, node.kwargs),
             )
-            for node in nodes + extension
+            for node in nodes
         )
 
     def _cache(self, data: ConjectureData) -> None:
         result = data.as_result()
-        # when we shrink, we try out of bounds things, which can lead to the same
-        # data.buffer having multiple outcomes. eg data.buffer=b'' is Status.OVERRUN
-        # in normal circumstances, but a data with
-        # ir_nodes=[integer -5 {min_value: 0, max_value: 10}] will also have
-        # data.buffer=b'' but will be Status.INVALID instead. We do not want to
-        # change the cached value to INVALID in this case.
-        #
-        # We handle this specially for the ir cache by keying off the misaligned node
-        # as well, but we cannot do the same for buffers as we do not know ahead of
-        # time what buffer a node maps to. I think it's largely fine that we don't
-        # write to the buffer cache here as we move more things to the ir cache.
-        if data.invalid_at is None:
-            self.__data_cache[data.buffer] = result
+        self.__data_cache[data.buffer] = result
 
         # interesting buffer-based data can mislead the shrinker if we cache them.
         #
@@ -490,7 +471,7 @@ class ConjectureRunner:
                         node.kwargs = kwargs
 
                 self._cache(data)
-                if data.invalid_at is not None:  # pragma: no branch # coverage bug?
+                if data.misaligned_at is not None:  # pragma: no branch # coverage bug?
                     self.misaligned_count += 1
 
         self.debug_data(data)
@@ -1132,7 +1113,7 @@ class ConjectureRunner:
                 (start1, end1), (start2, end2) = self.random.sample(sorted(group), 2)
                 if (start1 <= start2 <= end2 <= end1) or (
                     start2 <= start1 <= end1 <= end2
-                ):
+                ):  # pragma: no cover  # flaky on conjecture-cover tests
                     # one example entirely contains the other. give up.
                     # TODO use more intelligent mutation for containment, like
                     # replacing child with parent or vice versa. Would allow for

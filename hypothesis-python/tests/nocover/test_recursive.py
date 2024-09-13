@@ -34,7 +34,6 @@ def test_can_generate_with_large_branching():
             max_leaves=size * 2,
         ),
         lambda x: isinstance(x, list) and len(flatten(x)) >= size,
-        timeout_after=None,
     )
     assert flatten(xs) == [0] * size
 
@@ -46,11 +45,7 @@ def test_can_generate_some_depth_with_large_branching():
         else:
             return 1
 
-    xs = minimal(
-        st.recursive(st.integers(), st.lists),
-        lambda x: depth(x) > 1,
-        timeout_after=None,
-    )
+    xs = minimal(st.recursive(st.integers(), st.lists), lambda x: depth(x) > 1)
     assert xs in ([0], [[]])
 
 
@@ -67,7 +62,6 @@ def test_can_find_quite_broad_lists():
         st.recursive(st.booleans(), lambda x: st.lists(x, max_size=target // 2)),
         lambda x: breadth(x) >= target,
         settings=settings(max_examples=10000),
-        timeout_after=None,
     )
     assert breadth(broad) == target
 
@@ -79,7 +73,7 @@ def test_drawing_many_near_boundary():
         lambda x: st.lists(x, min_size=2 * (size - 1), max_size=2 * size).map(tuple),
         max_leaves=2 * size - 1,
     )
-    ls = minimal(st.lists(elems), lambda x: len(set(x)) >= size, timeout_after=None)
+    ls = minimal(st.lists(elems), lambda x: len(set(x)) >= size)
     assert len(ls) == size
 
 
@@ -117,7 +111,7 @@ def test_can_form_sets_of_recursive_data():
             max_leaves=20,
         )
     )
-    xs = minimal(trees, lambda x: len(x) >= size, timeout_after=None)
+    xs = minimal(trees, lambda x: len(x) >= size)
     assert len(xs) == size
 
 

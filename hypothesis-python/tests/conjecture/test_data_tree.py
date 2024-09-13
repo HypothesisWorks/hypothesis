@@ -19,7 +19,6 @@ from hypothesis.internal.conjecture.data import ConjectureData, Status, StopTest
 from hypothesis.internal.conjecture.datatree import (
     Branch,
     DataTree,
-    PreviouslyUnseenBehaviour,
     compute_max_children,
 )
 from hypothesis.internal.conjecture.engine import ConjectureRunner
@@ -29,13 +28,11 @@ from hypothesis.internal.floats import next_up
 from hypothesis.vendor import pretty
 
 from tests.conjecture.common import (
-    draw_boolean_kwargs,
-    draw_bytes_kwargs,
-    draw_float_kwargs,
-    draw_integer_kwargs,
-    draw_string_kwargs,
+    boolean_kwargs,
     fresh_data,
+    integer_kwargs,
     ir_nodes,
+    kwargs_strategy,
     run_to_buffer,
 )
 
@@ -124,7 +121,7 @@ def test_can_reexecute_dead_examples():
 def test_novel_prefixes_are_novel():
     def tf(data):
         for _ in range(4):
-            data.draw_bytes(1, forced=b"\0")
+            data.draw_bytes(1, 1, forced=b"\0")
             data.draw_integer(0, 3)
 
     runner = ConjectureRunner(tf, settings=TEST_SETTINGS, random=Random(0))
@@ -138,7 +135,7 @@ def test_novel_prefixes_are_novel():
 
 def test_overruns_if_not_enough_bytes_for_block():
     runner = ConjectureRunner(
-        lambda data: data.draw_bytes(2), settings=TEST_SETTINGS, random=Random(0)
+        lambda data: data.draw_bytes(2, 2), settings=TEST_SETTINGS, random=Random(0)
     )
     runner.cached_test_function(b"\0\0")
     assert runner.tree.rewrite(b"\0")[1] == Status.OVERRUN
@@ -329,8 +326,8 @@ def test_truncates_if_seen():
     b = bytes([1, 2, 3, 4])
 
     data = ConjectureData.for_buffer(b, observer=tree.new_observer())
-    data.draw_bytes(1)
-    data.draw_bytes(1)
+    data.draw_bytes(1, 1)
+    data.draw_bytes(1, 1)
     data.freeze()
 
     assert tree.rewrite(b) == (b[:2], Status.VALID)
@@ -339,13 +336,13 @@ def test_truncates_if_seen():
 def test_child_becomes_exhausted_after_split():
     tree = DataTree()
     data = ConjectureData.for_buffer([0, 0], observer=tree.new_observer())
-    data.draw_bytes(1)
-    data.draw_bytes(1, forced=b"\0")
+    data.draw_bytes(1, 1)
+    data.draw_bytes(1, 1, forced=b"\0")
     data.freeze()
 
     data = ConjectureData.for_buffer([1, 0], observer=tree.new_observer())
-    data.draw_bytes(1)
-    data.draw_bytes(1)
+    data.draw_bytes(1, 1)
+    data.draw_bytes(1, 1)
     data.freeze()
 
     assert not tree.is_exhausted
@@ -360,7 +357,7 @@ def test_will_generate_novel_prefix_to_avoid_exhausted_branches():
 
     data = ConjectureData.for_buffer([0, 1], observer=tree.new_observer())
     data.draw_integer(0, 1)
-    data.draw_bytes(1)
+    data.draw_bytes(1, 1)
     data.freeze()
 
     prefix = list(tree.generate_novel_prefix(Random(0)))
@@ -445,15 +442,7 @@ def test_low_probabilities_are_still_explored():
 
 
 def _test_observed_draws_are_recorded_in_tree(ir_type):
-    kwargs_strategy = {
-        "integer": draw_integer_kwargs(),
-        "bytes": draw_bytes_kwargs(),
-        "float": draw_float_kwargs(),
-        "string": draw_string_kwargs(),
-        "boolean": draw_boolean_kwargs(),
-    }[ir_type]
-
-    @given(kwargs_strategy)
+    @given(kwargs_strategy(ir_type))
     def test(kwargs):
         # we currently split pseudo-choices with a single child into their
         # own transition, which clashes with our asserts below. If we ever
@@ -473,15 +462,7 @@ def _test_observed_draws_are_recorded_in_tree(ir_type):
 
 
 def _test_non_observed_draws_are_not_recorded_in_tree(ir_type):
-    kwargs_strategy = {
-        "integer": draw_integer_kwargs(),
-        "bytes": draw_bytes_kwargs(),
-        "float": draw_float_kwargs(),
-        "string": draw_string_kwargs(),
-        "boolean": draw_boolean_kwargs(),
-    }[ir_type]
-
-    @given(kwargs_strategy)
+    @given(kwargs_strategy(ir_type))
     def test(kwargs):
         assume(compute_max_children(ir_type, kwargs) > 1)
 
@@ -574,7 +555,7 @@ def test_can_generate_hard_floats():
         assert data.draw_float(min_value, max_value, allow_nan=False) == expected_value
 
 
-@given(draw_boolean_kwargs(), draw_integer_kwargs())
+@given(boolean_kwargs(), integer_kwargs())
 def test_datatree_repr(bool_kwargs, int_kwargs):
     tree = DataTree()
 
@@ -625,52 +606,6 @@ def _draw(data, node, *, forced=None):
     return getattr(data, f"draw_{node.ir_type}")(**node.kwargs, forced=forced)
 
 
-@given(ir_nodes(), ir_nodes())
-@settings(suppress_health_check=[HealthCheck.too_slow])
-def test_misaligned_nodes_after_valid_draw(node, misaligned_node):
-    # if we run a valid tree through a test function, the datatree should still
-    # be able to return a Status.INVALID when a node in that tree becomes misaligned.
-    assume(misaligned_node.ir_type != node.ir_type)
-    tree = DataTree()
-
-    data = ConjectureData.for_ir_tree([node], observer=tree.new_observer())
-    _draw(data, node)
-    assert data.status is Status.VALID
-
-    data = ConjectureData.for_ir_tree([misaligned_node])
-    tree.simulate_test_function(data)
-    assert data.status is Status.INVALID
-
-    assert data.invalid_at == (node.ir_type, node.kwargs, None)
-
-
-@given(ir_nodes(was_forced=False), ir_nodes(was_forced=False))
-@settings(suppress_health_check=[HealthCheck.too_slow])
-def test_misaligned_nodes_before_valid_draw(node, misaligned_node):
-    # if we run a misaligned tree through a test function, we should still get
-    # the correct response when running the aligned version of the tree through
-    # the test function afterwards.
-    assume(misaligned_node.ir_type != node.ir_type)
-    tree = DataTree()
-
-    data = ConjectureData.for_ir_tree([node], observer=tree.new_observer())
-
-    with pytest.raises(StopTest):
-        _draw(data, misaligned_node)
-    data.freeze()
-    assert data.status is Status.INVALID
-    assert data.examples.ir_tree_nodes == []
-
-    # make sure the tree is tracking that `node` leads to Status.INVALID only
-    # when trying to draw a misaligned node. If we try to draw something that
-    # is valid for that node, then it's a valid draw and should lead to Status.VALID.
-    data = ConjectureData.for_ir_tree([node], observer=tree.new_observer())
-    _draw(data, node)
-    data.freeze()
-    assert data.status is Status.VALID
-    assert data.examples.ir_tree_nodes == [node]
-
-
 @given(ir_nodes(was_forced=True, ir_type="float"))
 def test_simulate_forced_floats(node):
     tree = DataTree()
@@ -684,62 +619,3 @@ def test_simulate_forced_floats(node):
     tree.simulate_test_function(data)
     data.freeze()
     assert data.examples.ir_tree_nodes == [node]
-
-
-@given(ir_nodes(), ir_nodes())
-@settings(suppress_health_check=[HealthCheck.too_slow])
-def test_simulate_non_invalid_conclude_is_unseen_behavior(node, misaligned_node):
-    # coverage test for the case where we have a node invalid at some draw, and
-    # simulating that draw should lead to some conclusion other than invalid.
-    assume(misaligned_node.ir_type != node.ir_type)
-    tree = DataTree()
-
-    # set up an invalid draw. the transition for node is now None in the tree
-    data = ConjectureData.for_ir_tree(
-        [node, misaligned_node], observer=tree.new_observer()
-    )
-    with pytest.raises(StopTest):
-        _draw(data, node)
-        _draw(data, node)
-
-    # try simulating something that will take the transition path for node, but
-    # end in something other than a misaligned/invalid result, such as an overrun
-    data = ConjectureData.for_ir_tree([node], observer=tree.new_observer())
-    with pytest.raises(PreviouslyUnseenBehaviour):
-        tree.simulate_test_function(data)
-
-    assert data.status is Status.OVERRUN
-
-
-@given(ir_nodes(), ir_nodes())
-@settings(suppress_health_check=[HealthCheck.too_slow])
-def test_simulating_inherits_invalid_forced_status(node, misaligned_node):
-    assume(misaligned_node.ir_type != node.ir_type)
-
-    # we have some logic in DataTree.simulate_test_function to "peek ahead" and
-    # make sure it simulates invalid nodes correctly. But if it does so without
-    # respecting whether the invalid node was forced or not, and this simulation
-    # is observed by an observer, this can cause flaky errors later due to a node
-    # going from unforced to forced.
-
-    tree = DataTree()
-
-    def test_function(ir_nodes):
-        data = ConjectureData.for_ir_tree(ir_nodes, observer=tree.new_observer())
-        _draw(data, node)
-        _draw(data, node, forced=node.value)
-
-    # (1) set up a misaligned node at index 1
-    with pytest.raises(StopTest):
-        test_function([node, misaligned_node])
-
-    # (2) simulate an aligned tree. the datatree peeks ahead here using invalid_at
-    # due to (1).
-    data = ConjectureData.for_ir_tree([node, node], observer=tree.new_observer())
-    with pytest.raises(PreviouslyUnseenBehaviour):
-        tree.simulate_test_function(data)
-
-    # (3) run the same aligned tree without simulating. this uses the actual test
-    # function's draw and forced value. This would flaky error if it did not match
-    # what the datatree peeked ahead with in (2).
-    test_function([node, node])

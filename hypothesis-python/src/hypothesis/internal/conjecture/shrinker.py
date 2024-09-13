@@ -1037,10 +1037,10 @@ class Shrinker:
         if attempt.status is Status.OVERRUN:
             return False
 
-        if attempt.status is Status.INVALID and attempt.invalid_at is None:
+        if attempt.status is Status.INVALID:
             return False
 
-        if attempt.status is Status.INVALID and attempt.invalid_at is not None:
+        if attempt.misaligned_at is not None:
             # we're invalid due to a misalignment in the tree. We'll try to fix
             # a very specific type of misalignment here: where we have a node of
             # {"size": n} and tried to draw the same node, but with {"size": m < n}.
@@ -1065,18 +1065,19 @@ class Shrinker:
             # case of this function of preserving from the right instead of
             # preserving from the left. see test_can_shrink_variable_string_draws.
 
-            node = self.nodes[len(attempt.examples.ir_tree_nodes)]
-            (attempt_ir_type, attempt_kwargs, _attempt_forced) = attempt.invalid_at
+            (index, attempt_ir_type, attempt_kwargs, _attempt_forced) = (
+                attempt.misaligned_at
+            )
+            node = self.nodes[index]
             if node.ir_type != attempt_ir_type:
-                return False
+                return False  # pragma: no cover
             if node.was_forced:
                 return False  # pragma: no cover
 
             if node.ir_type in {"string", "bytes"}:
-                size_kwarg = "min_size" if node.ir_type == "string" else "size"
                 # if the size *increased*, we would have to guess what to pad with
                 # in order to try fixing up this attempt. Just give up.
-                if node.kwargs[size_kwarg] <= attempt_kwargs[size_kwarg]:
+                if node.kwargs["min_size"] <= attempt_kwargs["min_size"]:
                     return False
                 # the size decreased in our attempt. Try again, but replace with
                 # the min_size that we would have gotten, and truncate the value
@@ -1087,7 +1088,7 @@ class Shrinker:
                         initial_attempt[node.index].copy(
                             with_kwargs=attempt_kwargs,
                             with_value=initial_attempt[node.index].value[
-                                : attempt_kwargs[size_kwarg]
+                                : attempt_kwargs["min_size"]
                             ],
                         )
                     ]

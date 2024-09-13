@@ -56,7 +56,7 @@ flask==3.0.3
     # via dash
 hypofuzz==24.2.3
     # via -r requirements/fuzzing.in
-hypothesis[cli]==6.108.9
+hypothesis[cli]==6.111.1
     # via hypofuzz
 idna==3.7
     # via requests
@@ -68,7 +68,7 @@ itsdangerous==2.2.0
     # via flask
 jinja2==3.1.4
     # via flask
-lark==1.1.9
+lark==1.2.2
     # via -r requirements/coverage.in
 libcst==1.4.0
     # via
@@ -136,7 +136,7 @@ pytz==2024.1
     # via
     #   -r requirements/coverage.in
     #   pandas
-pyyaml==6.0.1
+pyyaml==6.0.2
     # via libcst
 redis==5.0.8
     # via fakeredis
@@ -178,9 +178,9 @@ werkzeug==3.0.3
     # via
     #   dash
     #   flask
-zipp==3.19.2
+zipp==3.20.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-setuptools==72.1.0
+setuptools==72.2.0
     # via dash

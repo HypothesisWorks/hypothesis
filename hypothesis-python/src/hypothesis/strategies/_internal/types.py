@@ -120,7 +120,11 @@ try:
 except AttributeError:  # pragma: no cover
     pass  # Is missing for `python<3.10`
 try:
-    TypeGuardTypes += (typing_extensions.TypeGuard,)
+    TypeGuardTypes += (typing.TypeIs,)  # type: ignore
+except AttributeError:  # pragma: no cover
+    pass  # Is missing for `python<3.13`
+try:
+    TypeGuardTypes += (typing_extensions.TypeGuard, typing_extensions.TypeIs)
 except AttributeError:  # pragma: no cover
     pass  # `typing_extensions` might not be installed
 
@@ -147,6 +151,55 @@ except AttributeError:  # pragma: no cover
     pass  # `typing_extensions` might not be installed
 
 
+ReadOnlyTypes: tuple = ()
+try:
+    ReadOnlyTypes += (typing.ReadOnly,)  # type: ignore
+except AttributeError:  # pragma: no cover
+    pass  # Is missing for `python<3.13`
+try:
+    ReadOnlyTypes += (typing_extensions.ReadOnly,)
+except AttributeError:  # pragma: no cover
+    pass  # `typing_extensions` might not be installed
+
+
+AnnotatedTypes: tuple = ()
+try:
+    AnnotatedTypes += (typing.Annotated,)
+except AttributeError:  # pragma: no cover
+    pass  # Is missing for `python<3.9`
+try:
+    AnnotatedTypes += (typing_extensions.Annotated,)
+except AttributeError:  # pragma: no cover
+    pass  # `typing_extensions` might not be installed
+
+
+LiteralStringTypes: tuple = ()
+try:
+    LiteralStringTypes += (typing.LiteralString,)  # type: ignore
+except AttributeError:  # pragma: no cover
+    pass  # Is missing for `python<3.11`
+try:
+    LiteralStringTypes += (typing_extensions.LiteralString,)
+except AttributeError:  # pragma: no cover
+    pass  # `typing_extensions` might not be installed
+
+
+# We need this function to use `get_origin` on 3.8 for types added later:
+# in typing-extensions, so we prefer this function over regular `get_origin`
+# when unwrapping `TypedDict`'s annotations.
+try:
+    extended_get_origin = typing_extensions.get_origin
+except AttributeError:  # pragma: no cover
+    # `typing_extensions` might not be installed, in this case - fallback:
+    extended_get_origin = get_origin  # type: ignore
+
+
+# Used on `TypeVar` objects with no default:
+NoDefaults = (
+    getattr(typing, "NoDefault", object()),
+    getattr(typing_extensions, "NoDefault", object()),
+)
+
 # We use this variable to be sure that we are working with a type from `typing`:
 typing_root_type = (typing._Final, typing._GenericAlias)  # type: ignore
 
@@ -169,10 +222,10 @@ for name in (
     "Self",
     "Required",
     "NotRequired",
+    "ReadOnly",
     "Never",
     "TypeVarTuple",
     "Unpack",
-    "LiteralString",
 ):
     try:
         NON_RUNTIME_TYPES += (getattr(typing, name),)
@@ -393,9 +446,9 @@ __EVAL_TYPE_TAKES_TYPE_PARAMS = (
 )
 
 
-def _try_import_forward_ref(thing, bound, *, type_params):  # pragma: no cover
+def _try_import_forward_ref(thing, typ, *, type_params):  # pragma: no cover
     """
-    Tries to import a real bound type from ``TypeVar`` bound to a ``ForwardRef``.
+    Tries to import a real bound or default type from ``ForwardRef`` in ``TypeVar``.
 
     This function is very "magical" to say the least, please don't use it.
     This function fully covered, but is excluded from coverage
@@ -405,13 +458,13 @@ def _try_import_forward_ref(thing, bound, *, type_params):  # pragma: no cover
         kw = {"globalns": vars(sys.modules[thing.__module__]), "localns": None}
         if __EVAL_TYPE_TAKES_TYPE_PARAMS:
             kw["type_params"] = type_params
-        return typing._eval_type(bound, **kw)
+        return typing._eval_type(typ, **kw)
     except (KeyError, AttributeError, NameError):
         # We fallback to `ForwardRef` instance, you can register it as a type as well:
         # >>> from typing import ForwardRef
         # >>> from hypothesis import strategies as st
         # >>> st.register_type_strategy(ForwardRef('YourType'), your_strategy)
-        return bound
+        return typ
 
 
 def from_typing_type(thing):
@@ -1024,7 +1077,7 @@ def resolve_Callable(thing):
     if get_origin(return_type) in TypeGuardTypes:
         raise InvalidArgument(
             "Hypothesis cannot yet construct a strategy for callables which "
-            f"are PEP-647 TypeGuards (got {return_type!r}).  "
+            f"are PEP-647 TypeGuards or PEP-742 TypeIs (got {return_type!r}).  "
             "Consider using an explicit strategy, or opening an issue."
         )
 
@@ -1035,25 +1088,39 @@ def resolve_Callable(thing):
 
 
 @register(typing.TypeVar)
+@register("TypeVar", module=typing_extensions)
 def resolve_TypeVar(thing):
     type_var_key = f"typevar={thing!r}"
 
-    if getattr(thing, "__bound__", None) is not None:
-        bound = thing.__bound__
-        if isinstance(bound, typing.ForwardRef):
+    bound = getattr(thing, "__bound__", None)
+    default = getattr(thing, "__default__", NoDefaults[0])
+    original_strategies = []
+
+    def resolve_strategies(typ):
+        if isinstance(typ, typing.ForwardRef):
             # TODO: on Python 3.13 and later, we should work out what type_params
             #       could be part of this type, and pass them in here.
-            bound = _try_import_forward_ref(thing, bound, type_params=())
-        strat = unwrap_strategies(st.from_type(bound))
+            typ = _try_import_forward_ref(thing, typ, type_params=())
+        strat = unwrap_strategies(st.from_type(typ))
         if not isinstance(strat, OneOfStrategy):
-            return strat
-        # The bound was a union, or we resolved it as a union of subtypes,
+            original_strategies.append(strat)
+        else:
+            original_strategies.extend(strat.original_strategies)
+
+    if bound is not None:
+        resolve_strategies(bound)
+    if default not in NoDefaults:  # pragma: no cover
+        # Coverage requires 3.13 or `typing_extensions` package.
+        resolve_strategies(default)
+
+    if original_strategies:
+        # The bound / default was a union, or we resolved it as a union of subtypes,
         # so we need to unpack the strategy to ensure consistency across uses.
         # This incantation runs a sampled_from over the strategies inferred for
         # each part of the union, wraps that in shared so that we only generate
         # from one type per testcase, and flatmaps that back to instances.
         return st.shared(
-            st.sampled_from(strat.original_strategies), key=type_var_key
+            st.sampled_from(original_strategies), key=type_var_key
         ).flatmap(lambda s: s)
 
     builtin_scalar_types = [type(None), bool, int, float, str, bytes]

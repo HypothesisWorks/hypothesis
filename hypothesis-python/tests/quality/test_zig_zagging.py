@@ -78,7 +78,7 @@ def test_avoids_zig_zag_trap(p):
     def buf(data):
         _m = data.draw_integer(0, 2**n_bits - 1, forced=m)
         _n = data.draw_integer(0, 2**n_bits - 1, forced=m + 1)
-        _marker = data.draw_bytes(len(marker), forced=marker)
+        _marker = data.draw_bytes(len(marker), len(marker), forced=marker)
         data.mark_interesting()
 
     def test_function(data):
@@ -86,7 +86,7 @@ def test_avoids_zig_zag_trap(p):
         if m < lower_bound:
             data.mark_invalid()
         n = data.draw_integer(0, 2**n_bits - 1)
-        if data.draw_bytes(len(marker)) != marker:
+        if data.draw_bytes(len(marker), len(marker)) != marker:
             data.mark_invalid()
         if abs(m - n) == 1:
             data.mark_interesting()

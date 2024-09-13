@@ -21,7 +21,7 @@ class Blocks(SearchStrategy):
         self.n = n
 
     def do_draw(self, data):
-        return data.draw_bytes(self.n)
+        return data.draw_bytes(self.n, self.n)
 
 
 @pytest.mark.parametrize("n", range(1, 5))
