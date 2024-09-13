@@ -71,6 +71,7 @@ from hypothesis.errors import (
 )
 from hypothesis.internal.cathetus import cathetus
 from hypothesis.internal.charmap import (
+    Categories,
     as_general_categories,
     categories as all_categories,
 )
@@ -154,11 +155,9 @@ from hypothesis.vendor.pretty import RepresentationPrinter
 
 if sys.version_info >= (3, 10):
     from types import EllipsisType as EllipsisType
-    from typing import TypeAlias as TypeAlias
 elif typing.TYPE_CHECKING:  # pragma: no cover
     from builtins import ellipsis as EllipsisType
 
-    from typing_extensions import TypeAlias
 else:
     EllipsisType = type(Ellipsis)  # pragma: no cover
 
@@ -568,48 +567,6 @@ def dictionaries(
     ).map(dict_class)
 
 
-# See https://en.wikipedia.org/wiki/Unicode_character_property#General_Category
-CategoryName: "TypeAlias" = Literal[
-    "L",  #  Letter
-    "Lu",  # Letter, uppercase
-    "Ll",  # Letter, lowercase
-    "Lt",  # Letter, titlecase
-    "Lm",  # Letter, modifier
-    "Lo",  # Letter, other
-    "M",  #  Mark
-    "Mn",  # Mark, nonspacing
-    "Mc",  # Mark, spacing combining
-    "Me",  # Mark, enclosing
-    "N",  #  Number
-    "Nd",  # Number, decimal digit
-    "Nl",  # Number, letter
-    "No",  # Number, other
-    "P",  #  Punctuation
-    "Pc",  # Punctuation, connector
-    "Pd",  # Punctuation, dash
-    "Ps",  # Punctuation, open
-    "Pe",  # Punctuation, close
-    "Pi",  # Punctuation, initial quote
-    "Pf",  # Punctuation, final quote
-    "Po",  # Punctuation, other
-    "S",  #  Symbol
-    "Sm",  # Symbol, math
-    "Sc",  # Symbol, currency
-    "Sk",  # Symbol, modifier
-    "So",  # Symbol, other
-    "Z",  #  Separator
-    "Zs",  # Separator, space
-    "Zl",  # Separator, line
-    "Zp",  # Separator, paragraph
-    "C",  #  Other
-    "Cc",  # Other, control
-    "Cf",  # Other, format
-    "Cs",  # Other, surrogate
-    "Co",  # Other, private use
-    "Cn",  # Other, not assigned
-]
-
-
 @cacheable
 @defines_strategy(force_reusable_values=True)
 def characters(
@@ -617,13 +574,13 @@ def characters(
     codec: Optional[str] = None,
     min_codepoint: Optional[int] = None,
     max_codepoint: Optional[int] = None,
-    categories: Optional[Collection[CategoryName]] = None,
-    exclude_categories: Optional[Collection[CategoryName]] = None,
+    categories: Optional[Categories] = None,
+    exclude_categories: Optional[Categories] = None,
     exclude_characters: Optional[Collection[str]] = None,
     include_characters: Optional[Collection[str]] = None,
     # Note: these arguments are deprecated aliases for backwards compatibility
-    blacklist_categories: Optional[Collection[CategoryName]] = None,
-    whitelist_categories: Optional[Collection[CategoryName]] = None,
+    blacklist_categories: Optional[Categories] = None,
+    whitelist_categories: Optional[Categories] = None,
     blacklist_characters: Optional[Collection[str]] = None,
     whitelist_characters: Optional[Collection[str]] = None,
 ) -> SearchStrategy[str]:
@@ -725,8 +682,12 @@ def characters(
             f"Characters {sorted(overlap)!r} are present in both "
             f"{include_characters=} and {exclude_characters=}"
         )
-    categories = as_general_categories(categories, "categories")
-    exclude_categories = as_general_categories(exclude_categories, "exclude_categories")
+    if categories is not None:
+        categories = as_general_categories(categories, "categories")
+    if exclude_categories is not None:
+        exclude_categories = as_general_categories(
+            exclude_categories, "exclude_categories"
+        )
     if categories is not None and not categories and not include_characters:
         raise InvalidArgument(
             "When `categories` is an empty collection and there are "

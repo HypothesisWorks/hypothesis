@@ -18,7 +18,6 @@ from typing import get_args
 from hypothesis import given, strategies as st
 from hypothesis.internal import charmap as cm
 from hypothesis.internal.intervalsets import IntervalSet
-from hypothesis.strategies._internal.core import CategoryName
 
 
 def test_charmap_contains_all_unicode():
@@ -189,4 +188,4 @@ def test_error_writing_charmap_file_is_suppressed(monkeypatch):
 def test_categoryname_literal_is_correct():
     minor_categories = set(cm.categories())
     major_categories = {c[0] for c in minor_categories}
-    assert set(get_args(CategoryName)) == minor_categories | major_categories
+    assert set(get_args(cm.CategoryName)) == minor_categories | major_categories

@@ -10,6 +10,7 @@
 
 from typing import Iterable, List, Sequence, Tuple, TypeAlias, Union, cast
 
+IntervalsT: TypeAlias = Tuple[Tuple[int, int], ...]
 
 
 class IntervalSet:
@@ -23,9 +24,15 @@ class IntervalSet:
         x = cls((ord(c), ord(c)) for c in sorted(s))
         return x.union(x)
 
-    def __init__(self, intervals=()):
-        self.intervals = tuple(intervals)
-        self.offsets = [0]
+    def __init__(self, intervals: Iterable[Sequence[int]] = ()) -> None:
+        self.intervals: IntervalsT = cast(
+            IntervalsT, tuple(tuple(v) for v in intervals)
+        )
+        # cast above is validated by this length assertion. check here instead of
+        # before to not exhaust generators before we create intervals from it
+        assert all(len(v) == 2 for v in self.intervals)
+
+        self.offsets: List[int] = [0]
         for u, v in self.intervals:
             self.offsets.append(self.offsets[-1] + v - u + 1)
         self.size = self.offsets.pop()
