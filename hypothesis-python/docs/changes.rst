@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.112.1:
+
+--------------------
+6.112.1 - 2024-09-13
+--------------------
+
+This patch removes a now-incorrect internal assertion about numpy's typing after recent numpy changes (currently only in numpy's nightly release).
+
 .. _v6.112.0:
 
 --------------------
