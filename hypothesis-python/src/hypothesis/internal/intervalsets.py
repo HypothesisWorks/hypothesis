@@ -8,12 +8,13 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from typing import Union
+from typing import Iterable, List, Sequence, Tuple, TypeAlias, Union, cast
+
 
 
 class IntervalSet:
     @classmethod
-    def from_string(cls, s):
+    def from_string(cls, s: str) -> "IntervalSet":
         """Return a tuple of intervals, covering the codepoints of characters in `s`.
 
         >>> IntervalSet.from_string('abcdef0123456789')
@@ -31,14 +32,14 @@ class IntervalSet:
         self._idx_of_zero = self.index_above(ord("0"))
         self._idx_of_Z = min(self.index_above(ord("Z")), len(self) - 1)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self.size
 
-    def __iter__(self):
+    def __iter__(self) -> Iterable[int]:
         for u, v in self.intervals:
             yield from range(u, v + 1)
 
-    def __getitem__(self, i):
+    def __getitem__(self, i: int) -> int:
         if i < 0:
             i = self.size + i
         if i < 0 or i >= self.size:
@@ -69,7 +70,7 @@ class IntervalSet:
         assert 0 <= elem <= 0x10FFFF
         return any(start <= elem <= end for start, end in self.intervals)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"IntervalSet({self.intervals!r})"
 
     def index(self, value: int) -> int:
@@ -90,22 +91,22 @@ class IntervalSet:
                 return offset + (value - u)
         return self.size
 
-    def __or__(self, other):
+    def __or__(self, other: "IntervalSet") -> "IntervalSet":
         return self.union(other)
 
-    def __sub__(self, other):
+    def __sub__(self, other: "IntervalSet") -> "IntervalSet":
         return self.difference(other)
 
-    def __and__(self, other):
+    def __and__(self, other: "IntervalSet") -> "IntervalSet":
         return self.intersection(other)
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         return isinstance(other, IntervalSet) and (other.intervals == self.intervals)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.intervals)
 
-    def union(self, other):
+    def union(self, other: "IntervalSet") -> "IntervalSet":
         """Merge two sequences of intervals into a single tuple of intervals.
 
         Any integer bounded by `x` or `y` is also bounded by the result.
@@ -141,7 +142,7 @@ class IntervalSet:
                 result.append((u, v))
         return IntervalSet(result)
 
-    def difference(self, other):
+    def difference(self, other: "IntervalSet") -> "IntervalSet":
         """Set difference for lists of intervals. That is, returns a list of
         intervals that bounds all values bounded by x that are not also bounded by
         y. x and y are expected to be in sorted order.
@@ -158,7 +159,7 @@ class IntervalSet:
         x = list(map(list, x))
         i = 0
         j = 0
-        result = []
+        result: List[Iterable[int]] = []
         while i < len(x) and j < len(y):
             # Iterate in parallel over x and y. j stays pointing at the smallest
             # interval in the left hand side that could still overlap with some
@@ -218,7 +219,7 @@ class IntervalSet:
         result.extend(x[i:])
         return IntervalSet(map(tuple, result))
 
-    def intersection(self, other):
+    def intersection(self, other: "IntervalSet") -> "IntervalSet":
         """Set intersection for lists of intervals."""
         assert isinstance(other, type(self)), other
         intervals = []
