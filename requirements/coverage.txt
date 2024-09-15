@@ -8,7 +8,7 @@ annotated-types==0.7.0
     # via -r requirements/coverage.in
 async-timeout==4.0.3
     # via redis
-attrs==24.1.0
+attrs==24.2.0
     # via hypothesis (hypothesis-python/setup.py)
 black==24.8.0
     # via -r requirements/coverage.in
@@ -26,7 +26,7 @@ exceptiongroup==1.2.2 ; python_version < "3.11"
     #   pytest
 execnet==2.1.1
     # via pytest-xdist
-fakeredis==2.23.5
+fakeredis==2.24.1
     # via -r requirements/coverage.in
 iniconfig==2.0.0
     # via pytest
@@ -36,7 +36,7 @@ libcst==1.4.0
     # via -r requirements/coverage.in
 mypy-extensions==1.0.0
     # via black
-numpy==2.0.1
+numpy==2.1.1
     # via
     #   -r requirements/coverage.in
     #   pandas
@@ -51,7 +51,7 @@ pathspec==0.12.1
     # via black
 pexpect==4.9.0
     # via -r requirements/test.in
-platformdirs==4.2.2
+platformdirs==4.3.3
     # via black
 pluggy==1.5.0
     # via pytest
@@ -59,7 +59,7 @@ ptyprocess==0.7.0
     # via pexpect
 pyarrow==17.0.0
     # via -r requirements/coverage.in
-pytest==8.3.2
+pytest==8.3.3
     # via
     #   -r requirements/test.in
     #   pytest-cov
@@ -72,7 +72,7 @@ python-dateutil==2.9.0.post0
     # via
     #   -r requirements/coverage.in
     #   pandas
-pytz==2024.1
+pytz==2024.2
     # via
     #   -r requirements/coverage.in
     #   pandas
