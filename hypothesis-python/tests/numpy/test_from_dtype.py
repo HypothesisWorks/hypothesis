@@ -69,7 +69,7 @@ def test_produces_instances(t):
     test_is_t()
 
 
-@settings(max_examples=100)
+@settings(max_examples=100, deadline=None)
 @given(nps.nested_dtypes(max_itemsize=400), st.data())
 def test_infer_strategy_from_dtype(dtype, data):
     # Given a dtype

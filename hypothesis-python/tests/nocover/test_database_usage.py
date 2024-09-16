@@ -100,7 +100,6 @@ def test_trashes_invalid_examples():
     invalid.add(value)
     with deterministic_PRNG():
         stuff()
-
     assert len(all_values(database)) < original
 
 
@@ -108,10 +107,11 @@ def test_respects_max_examples_in_database_usage():
     key = b"a database key"
     database = InMemoryExampleDatabase()
     do_we_care = True
-    counter = [0]
+    counter = 0
 
     def check(x):
-        counter[0] += 1
+        nonlocal counter
+        counter += 1
         return do_we_care and has_a_non_zero_byte(x)
 
     def stuff():
@@ -129,9 +129,10 @@ def test_respects_max_examples_in_database_usage():
         stuff()
     assert len(all_values(database)) > 10
     do_we_care = False
-    counter[0] = 0
-    stuff()
-    assert counter == [10]
+    counter = 0
+    with deterministic_PRNG():
+        stuff()
+    assert counter == 10
 
 
 def test_does_not_use_database_when_seed_is_forced(monkeypatch):
