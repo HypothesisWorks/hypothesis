@@ -1,3 +1,4 @@
+attrs==24.1.0  # too early for https://github.com/python-attrs/attrs/pull/1329
 pexpect
 pytest
 pytest-xdist

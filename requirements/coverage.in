@@ -8,9 +8,8 @@ libcst
 numpy
 pandas
 pyarrow  # Silence warning from Pandas >=2.2, <3 - see https://github.com/pandas-dev/pandas/issues/54466
+pytest-cov
 python-dateutil
 pytz
 typing-extensions
 -r test.in
-# Need the unreleased compatibility fix for pytest-xdist rsyncdirs deprecation
-git+https://github.com/pytest-dev/pytest-cov.git@9757222e2e044361e70125ebdd96e5eb87395983

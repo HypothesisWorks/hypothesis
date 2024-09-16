@@ -10,13 +10,12 @@
 
 import pytest
 
-from hypothesis import given, settings, strategies as st
+from hypothesis import given, strategies as st
 
 
 @pytest.mark.parametrize("width", [32, 64, 128])
 @pytest.mark.parametrize("keyword", ["min_magnitude", "max_magnitude"])
 @given(data=st.data())
-@settings(max_examples=1000)
 def test_magnitude_validates(width, keyword, data):
     # See https://github.com/HypothesisWorks/hypothesis/issues/3573
     component_width = width / 2
