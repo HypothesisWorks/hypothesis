@@ -3,7 +3,7 @@ name = "conjecture"
 version = '0.7.0'
 authors = ["David R. MacIver <david@drmaciver.com>"]
 
-homepage = "https://github.com/HypothesisWorks/hypothesis/tree/master/conjecture-rust"
+homepage = "https://github.com/HypothesisWorks/hypothesis/tree/main/conjecture-rust"
 repository = "https://github.com/HypothesisWorks/hypothesis/"
 
 keywords = ["testing", "fuzzing", "shrinking", "property-based"]

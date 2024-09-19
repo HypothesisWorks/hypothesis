@@ -197,7 +197,7 @@ Public API changes must satisfy the following:
 Bug Fixes
 ~~~~~~~~~
 
-1. All bug fixes must come with a test that demonstrates the bug on master and
+1. All bug fixes must come with a test that demonstrates the bug on main and
    which is fixed in this branch. An exception *may* be made here if the submitter
    can convincingly argue that testing this would be prohibitively difficult.
 2. Where possible, a fix that makes it impossible for similar bugs to occur is

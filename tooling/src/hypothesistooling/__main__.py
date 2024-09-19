@@ -108,13 +108,13 @@ def do_release(package):
 @task()
 def deploy():
     HEAD = tools.hash_for_name("HEAD")
-    MASTER = tools.hash_for_name("origin/master")
+    MASTER = tools.hash_for_name("origin/main")
 
     print("Current head:  ", HEAD)
-    print("Current master:", MASTER)
+    print("Current main:", MASTER)
 
     if not tools.is_ancestor(HEAD, MASTER):
-        print("Not deploying due to not being on master")
+        print("Not deploying due to not being on main")
         sys.exit(0)
 
     if "TWINE_PASSWORD" not in os.environ:
@@ -271,7 +271,7 @@ def update_python_versions():
     install.ensure_python(PYTHONS[ci_version])
     where = os.path.expanduser("~/.cache/hypothesis-build-runtimes/pyenv/")
     subprocess.run(
-        "git fetch && git reset --hard origin/master",
+        "git fetch && git reset --hard origin/main",
         cwd=where,
         shell=True,
         capture_output=True,

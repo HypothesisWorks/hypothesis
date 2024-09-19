@@ -55,7 +55,7 @@ def merge_base(a, b):
 
 
 def point_of_divergence():
-    return merge_base("HEAD", "origin/master")
+    return merge_base("HEAD", "origin/main")
 
 
 def has_changes(files):
@@ -105,7 +105,7 @@ def create_tag(tagname):
 def push_tag(tagname):
     assert_can_release()
     subprocess.check_call(["git", "push", "origin", shlex.quote(tagname)])
-    subprocess.check_call(["git", "push", "origin", "HEAD:master"])
+    subprocess.check_call(["git", "push", "origin", "HEAD:main"])
 
 
 def assert_can_release():
@@ -143,11 +143,11 @@ def all_files():
     ]
 
 
-def changed_files_from_master():
+def changed_files_from_main():
     """Returns a list of files which have changed between a branch and
-    master."""
+    main."""
     files = set()
-    command = ["git", "diff", "--name-only", "HEAD", "master"]
+    command = ["git", "diff", "--name-only", "HEAD", "main"]
     diff_output = subprocess.check_output(command).decode("ascii")
     for line in diff_output.splitlines():
         filepath = line.strip()

@@ -38,7 +38,7 @@ If you want to detect this, you can
 
 We use continuous deployment to ensure that you can always use our newest and
 shiniest features - every change to the source tree is automatically built and
-published on PyPI as soon as it's merged onto master, after code review and
+published on PyPI as soon as it's merged onto main, after code review and
 passing our extensive test suite.
 
 

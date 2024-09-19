@@ -180,7 +180,7 @@ avoiding slipping to new errors all together. Zac pushed back with some good que
 around whether this was really the correct thing to do, and after some experimentation
 and feedback I eventually hit on the design that lead to displaying all of the errors.
 
-Our [review handbook](https://github.com/HypothesisWorks/hypothesis-python/blob/master/guides/review.rst)
+Our [review handbook](https://github.com/HypothesisWorks/hypothesis-python/blob/main/guides/review.rst)
 emphasises that code review is a collaborative design process, and I feel this was
 a particularly good example of that. We've created a great culture of code review,
 and we're reaping the benefits (and if you want to get in on it, we could always

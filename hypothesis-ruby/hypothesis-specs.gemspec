@@ -14,7 +14,7 @@ DESCRIPTION
     'Cargo.toml', 'LICENSE.txt', 'README.markdown', 'Rakefile',
     'CHANGELOG.md'
   ]
-  s.homepage    = 'https://github.com/HypothesisWorks/hypothesis/tree/master/hypothesis-ruby'
+  s.homepage    = 'https://github.com/HypothesisWorks/hypothesis/tree/main/hypothesis-ruby'
   s.license     = 'MPL-2.0'
   s.extensions = Dir['ext/extconf.rb']
   s.add_dependency 'rutie', '~> 0.0.3'

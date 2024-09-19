@@ -21,7 +21,7 @@ In this post, I'll explain how our continuous releases work, and why we find it 
 In the past, Hypothesis was released manually.
 Somebody had to write a changelog, tag a new release on GitHub, and run some manual pip commands to publish a new version to PyPI -- and only David had the credentials for the latter.
 
-This meant that releases were infrequent, and features spent a long time in master before they were available to `pip install`.
+This meant that releases were infrequent, and features spent a long time in main before they were available to `pip install`.
 The pace of development picked up in 2017 -- partly as new maintainers arrived, and partly groundwork for [David's upcoming (now started) PhD][phd] -- and we wanted to be able to release more frequently.
 We decided to automate the entire release process.
 
@@ -44,7 +44,7 @@ If you need a release file but haven't written one, the tests fail and your pull
 Sometimes we write a release file even if there aren't changes to the core code, but we think it's worth a release anyway.
 For example, changes to the installation code in `setup.py`, or larger changes to our test code for the benefit of downstream packagers.
 
-Once you've written a release file and the pull request is merged into master, and after all the other tests have passed, our CI uses this file to create a new release.
+Once you've written a release file and the pull request is merged into main, and after all the other tests have passed, our CI uses this file to create a new release.
 
 First, it works out the new version number, and updates it in [version.py][version.py].
 Then it copies the release description into the changelog, including the new version number and the current date.
@@ -65,7 +65,7 @@ The tag and the commit are pushed to GitHub, and then CI builds a new package an
 So with no very little extra work, every code change triggers a new release, and it's usually available within half an hour of merging the pull request.
 
 This exact system might not scale to larger teams.
-In particular, you can't merge new features until the code in master has been released -- you get conflicts around `RELEASE.rst` -- so you can only merge one pull request at a time.
+In particular, you can't merge new features until the code in main has been released -- you get conflicts around `RELEASE.rst` -- so you can only merge one pull request at a time.
 And in Hypothesis, we never backport bugfixes to old major or minor releases -- you'd need some changes to support that.
 
 But Hypothesis only has one full-time contributor, and everybody else works on it in their free time, we don't create patches fast enough for this to be a problem.
@@ -75,7 +75,7 @@ For us, it works exceptionally well.
 [recent]: https://github.com/HypothesisWorks/hypothesis-python/pull/1101
 [semver]: https://semver.org/
 [typo]: https://github.com/HypothesisWorks/hypothesis-python/pull/1069
-[version.py]: https://github.com/HypothesisWorks/hypothesis-python/blob/master/src/hypothesis/version.py
+[version.py]: https://github.com/HypothesisWorks/hypothesis-python/blob/main/src/hypothesis/version.py
 
 ## Why bother?
 
@@ -102,11 +102,11 @@ If you submit a patch that gets accepted, your change is available immediately, 
 This may less of tangible benefit, but it gives off nice fuzzy feelings, especially if it's your first patch.
 (Speaking of which, we're always looking [for new contributors][contributors]!)
 
-[contributors]: https://github.com/HypothesisWorks/hypothesis-python/blob/master/CONTRIBUTING.rst
+[contributors]: https://github.com/HypothesisWorks/hypothesis-python/blob/main/CONTRIBUTING.rst
 
 ## I'm ruined for everything else
 
-I've become used to code being available almost immediately after it's merged into master -- which isn't true for the vast majority of projects.
+I've become used to code being available almost immediately after it's merged into main -- which isn't true for the vast majority of projects.
 When I go to a repo with a bug report, see that a bugfix was merged two weeks ago, but there's yet to be a new release, it's hard not to feel a little impatient.
 
 I've started using this in my other repos -- both these scripts exactly, and derivatives of the same idea.
@@ -116,4 +116,4 @@ Look in the [scripts directory][scripts] of the main repo.
 In particular, `check-release-file.py` looks for a release note on pull requests, and `deploy.py` is what actually cuts the release.
 The code will probably need tweaking for your repo (it's closely based on the Hypothesis repo), but hopefully it provides a useful starting point.
 
-[scripts]: https://github.com/HypothesisWorks/hypothesis-python/tree/master/scripts
+[scripts]: https://github.com/HypothesisWorks/hypothesis-python/tree/main/scripts

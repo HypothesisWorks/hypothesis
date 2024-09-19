@@ -337,9 +337,9 @@ This feature is currently somewhat under-documented so hasn't seen as widespread
 it could. However, there are at least two interesting real world examples:
 
 1. Hypothesis uses it to test itself. Hypothesis has [tests of its example database](
-   https://github.com/HypothesisWorks/hypothesis-python/blob/master/tests/cover/test_database_agreement.py)
+   https://github.com/HypothesisWorks/hypothesis-python/blob/main/tests/cover/test_database_agreement.py)
    which work very much like the above, and [a small model of its test API](
-   https://github.com/HypothesisWorks/hypothesis-python/blob/master/tests/nocover/test_strategy_state.py)
+   https://github.com/HypothesisWorks/hypothesis-python/blob/main/tests/nocover/test_strategy_state.py)
    which generates random strategies and runs tests using them.
 2. It's being used to [test Mercurial](https://www.mercurial-scm.org/pipermail/mercurial-devel/2016-February/080037.html)
    generating random. So far it's found [bug 5112](https://bz.mercurial-scm.org/show_bug.cgi?id=5112) and

@@ -25,20 +25,20 @@ List branches:
 
     $ tlr branch
     foo
-    * master
+    * main
 
 Switch to an existing branch:
 
     $ tlr checkout foo
     * foo
-    master
+    main
 
 Create a branch and switch to it:
 
     $ tlr checkout -b new-branch
     $ tlr branch
     foo
-    master
+    main
     * new-branch
 
 Early on, my colleague and I found a bug: when you created a new branch with
@@ -48,10 +48,10 @@ this:
     $ tlr checkout -b new-branch
     $ tlr branch
     foo
-    * master
+    * main
     new-branch
 
-The previously active branch (in this case, `master`) stayed active, rather
+The previously active branch (in this case, `main`) stayed active, rather
 than switching to the newly-created branch (`new-branch`).
 
 Before we fixed the bug, we decided to write a test. I thought this would be a
@@ -204,8 +204,8 @@ Adding edge cases
 -----------------
 
 There's one valid branch name that this strategy *could* generate, but
-probably won't: `master`. If we left the test just as it is, then one time in
-a hojillion the strategy would generate `"master"` and the test would fail.
+probably won't: `main`. If we left the test just as it is, then one time in
+a hojillion the strategy would generate `"main"` and the test would fail.
 
 Rather than waiting on chance, we encoded this in the `valid_branch_names`
 strategy, to make it more likely:
@@ -214,11 +214,11 @@ strategy, to make it more likely:
 def valid_branch_names():
     return st.text(alphabet=letters, min_size=1, max_size=112).map(
         lambda t: t.lower()
-    ) | st.just("master")
+    ) | st.just("main")
 ```
 
 When we ran the tests now, they failed with an exception due to the branch
-`master` already existing. To fix this, we used `assume`:
+`main` already existing. To fix this, we used `assume`:
 
 ```python
 from hypothesis import assume
@@ -226,7 +226,7 @@ from hypothesis import assume
 
 @given(branch_name=valid_branch_names())
 def test_checkout_new_branch(self, branch_name):
-    assume(branch_name != "master")
+    assume(branch_name != "main")
     tmpdir = FilePath(self.mktemp())
     tmpdir.makedirs()
     repo = Repository.initialize(tmpdir.path)
@@ -234,11 +234,11 @@ def test_checkout_new_branch(self, branch_name):
     self.assertEqual(branch_name, repo.get_active_branch())
 ```
 
-Why did we add `master` to the valid branch names if we were just going to
+Why did we add `main` to the valid branch names if we were just going to
 exclude it anyway? Because when other tests say "give me a valid branch name",
-we want *them* to make the decision about whether `master` is appropriate or
+we want *them* to make the decision about whether `main` is appropriate or
 not. Any future test author will be compelled to actually think about whether
-handling `master` is a thing that they want to do. That's one of the great
+handling `main` is a thing that they want to do. That's one of the great
 benefits of Hypothesis: it's like having a rigorous design critic in your
 team.
 

@@ -87,7 +87,7 @@ setuptools.setup(
     package_data={"hypothesis": ["py.typed", "vendor/tlds-alpha-by-domain.txt"]},
     url="https://hypothesis.works",
     project_urls={
-        "Source": "https://github.com/HypothesisWorks/hypothesis/tree/master/hypothesis-python",
+        "Source": "https://github.com/HypothesisWorks/hypothesis/tree/main/hypothesis-python",
         "Changelog": "https://hypothesis.readthedocs.io/en/latest/changes.html",
         "Documentation": "https://hypothesis.readthedocs.io",
         "Issues": "https://github.com/HypothesisWorks/hypothesis/issues",

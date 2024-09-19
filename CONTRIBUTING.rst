@@ -124,7 +124,7 @@ free to have a read of it in advance and go through it yourself if you'd like to
 required, but it might speed up the process.
 
 Once your pull request has a green build and has passed review, it will be merged to
-master fairly promptly. This will immediately trigger a release! Don't be scared. If that
+main fairly promptly. This will immediately trigger a release! Don't be scared. If that
 breaks things, that's our fault not yours - the whole point of this process is to ensure
 that problems get caught before we merge rather than after.
 

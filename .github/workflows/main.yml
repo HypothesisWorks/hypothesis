@@ -7,9 +7,9 @@ env:
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
   workflow_dispatch:
 
 # Cancel in-progress PR builds if another commit is pushed.
