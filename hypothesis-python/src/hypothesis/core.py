@@ -61,6 +61,7 @@ from hypothesis.errors import (
     FlakyFailure,
     FlakyReplay,
     Found,
+    Frozen,
     HypothesisException,
     HypothesisWarning,
     InvalidArgument,
@@ -148,6 +149,8 @@ elif TYPE_CHECKING:
 else:  # pragma: no cover
     EllipsisType = type(Ellipsis)
 
+if sys.version_info < (3, 11):
+    from exceptiongroup import ExceptionGroup
 
 TestFunc = TypeVar("TestFunc", bound=Callable)
 
@@ -768,6 +771,45 @@ def get_executor(runner):
     return default_executor
 
 
+@contextlib.contextmanager
+def unwrap_exception_group():
+    def _flatten_group(excgroup: BaseExceptionGroup) -> list[BaseException]:
+        found_exceptions = []
+        for exc in excgroup.exceptions:
+            if isinstance(exc, BaseExceptionGroup):
+                found_exceptions.extend(_flatten_group(exc))
+            else:
+                found_exceptions.append(exc)
+        return found_exceptions
+
+    try:
+        yield
+    except BaseExceptionGroup as excgroup:
+        # Found? RewindRecursive? FlakyReplay?
+        marker_exceptions = (StopTest, UnsatisfiedAssumption)
+        frozen_exceptions, non_frozen_exceptions = excgroup.split(Frozen)
+        marker_exceptions, user_exceptions = non_frozen_exceptions.split(lambda e: isinstance(e, marker_exceptions))
+
+        # TODO: not a great variable name
+        if user_exceptions:
+            raise
+
+        if non_frozen_exceptions:
+            flattened_non_frozen_exceptions = _flatten_group(non_frozen_exceptions)
+            if len(flattened_non_frozen_exceptions) == 1:
+                raise flattened_non_frozen_exceptions[0] from None
+            # multiple non-frozen exceptions, re-raise the entire group
+            raise
+
+        flattened_frozen_exceptions = _flatten_group(frozen_exceptions)
+        # we only have frozen exceptions
+        if len(flattened_frozen_exceptions) == 1:
+            raise flattened_frozen_exceptions[0] from excgroup
+
+        # multiple frozen exceptions
+        # TODO: raise a group? The first one? None of them?
+        raise frozen_exceptions[0] from excgroup
+
 class StateForActualGivenExecution:
     def __init__(self, stuff, test, settings, random, wrapped_test):
         self.test_runner = get_executor(stuff.selfy)
@@ -841,7 +883,7 @@ class StateForActualGivenExecution:
 
             @proxies(self.test)
             def test(*args, **kwargs):
-                with ensure_free_stackframes():
+                with unwrap_exception_group(), ensure_free_stackframes():
                     return self.test(*args, **kwargs)
 
         else:
@@ -853,7 +895,7 @@ class StateForActualGivenExecution:
                 arg_gctime = gc_cumulative_time()
                 start = time.perf_counter()
                 try:
-                    with ensure_free_stackframes():
+                    with unwrap_exception_group(), ensure_free_stackframes():
                         result = self.test(*args, **kwargs)
                 finally:
                     finish = time.perf_counter()
