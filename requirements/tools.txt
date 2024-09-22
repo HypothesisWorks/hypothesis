@@ -6,7 +6,7 @@
 #
 alabaster==0.7.16
     # via sphinx
-anyio==4.4.0
+anyio==4.6.0
     # via watchfiles
 asgiref==3.8.1
     # via django
@@ -81,7 +81,7 @@ executing==2.1.0
     # via stack-data
 feedgenerator==2.1.0
     # via pelican
-filelock==3.16.0
+filelock==3.16.1
     # via
     #   tox
     #   virtualenv
@@ -119,7 +119,7 @@ jinja2==3.1.4
     #   sphinx
 jsonpointer==3.0.0
     # via sphinx-jsonschema
-keyring==25.3.0
+keyring==25.4.1
     # via twine
 lark==1.2.2
     # via -r requirements/tools.in
@@ -167,7 +167,7 @@ parso==0.8.4
     # via jedi
 pathspec==0.12.1
     # via black
-pelican[markdown]==4.9.1
+pelican[markdown]==4.10.0
     # via -r requirements/tools.in
 pexpect==4.9.0
     # via ipython
@@ -175,7 +175,7 @@ pip-tools==7.4.1
     # via -r requirements/tools.in
 pkginfo==1.10.0
     # via twine
-platformdirs==4.3.3
+platformdirs==4.3.6
     # via
     #   black
     #   tox
@@ -201,13 +201,13 @@ pygments==2.18.0
     #   readme-renderer
     #   rich
     #   sphinx
-pyproject-api==1.7.1
+pyproject-api==1.8.0
     # via tox
 pyproject-hooks==1.1.0
     # via
     #   build
     #   pip-tools
-pyright==1.1.380
+pyright==1.1.381
     # via -r requirements/tools.in
 pytest==8.3.3
     # via -r requirements/tools.in
@@ -242,7 +242,7 @@ rich==13.8.1
     # via
     #   pelican
     #   twine
-ruff==0.6.5
+ruff==0.6.7
     # via -r requirements/tools.in
 secretstorage==3.3.3
     # via keyring
@@ -310,7 +310,7 @@ tomli==2.0.1
     #   pytest
     #   sphinx
     #   tox
-tox==4.18.1
+tox==4.20.0
     # via -r requirements/tools.in
 traitlets==5.14.3
     # via
@@ -328,7 +328,7 @@ types-pytz==2024.2.0.20240913
     # via -r requirements/tools.in
 types-redis==4.6.0.20240903
     # via -r requirements/tools.in
-types-setuptools==74.1.0.20240907
+types-setuptools==75.1.0.20240917
     # via types-cffi
 typing-extensions==4.12.2
     # via
@@ -344,7 +344,7 @@ urllib3==2.2.3
     # via
     #   requests
     #   twine
-virtualenv==20.26.4
+virtualenv==20.26.5
     # via tox
 watchfiles==0.24.0
     # via pelican
@@ -358,5 +358,5 @@ zipp==3.20.2
 # The following packages are considered to be unsafe in a requirements file:
 pip==24.2
     # via pip-tools
-setuptools==75.0.0
+setuptools==75.1.0
     # via pip-tools
