@@ -167,8 +167,7 @@ class GenericCache:
 
     def clear(self):
         """Remove all keys, regardless of their pinned status."""
-        del self.data[:]
-        self.keys_to_indices.clear()
+        self._threadlocal = threading.local()
 
     def __repr__(self):
         return "{" + ", ".join(f"{e.key!r}: {e.value!r}" for e in self.data) + "}"
