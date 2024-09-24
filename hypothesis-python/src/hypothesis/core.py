@@ -149,9 +149,6 @@ elif TYPE_CHECKING:
 else:  # pragma: no cover
     EllipsisType = type(Ellipsis)
 
-if sys.version_info < (3, 11):
-    from exceptiongroup import ExceptionGroup
-
 TestFunc = TypeVar("TestFunc", bound=Callable)
 
 
@@ -786,9 +783,19 @@ def unwrap_exception_group():
         yield
     except BaseExceptionGroup as excgroup:
         # Found? RewindRecursive? FlakyReplay?
-        marker_exceptions = (StopTest, UnsatisfiedAssumption)
+        marker_exceptions = (StopTest, HypothesisException)
         frozen_exceptions, non_frozen_exceptions = excgroup.split(Frozen)
-        marker_exceptions, user_exceptions = non_frozen_exceptions.split(lambda e: isinstance(e, marker_exceptions))
+
+        # group only contains Frozen, reraise the group
+        # it doesn't matter what we raise, since any exceptions get disregarded
+        # and reraised as StopTest if data got frozen.
+        if non_frozen_exceptions is None:
+            raise
+        # in all other cases they are discarded
+
+        marker_exceptions, user_exceptions = non_frozen_exceptions.split(
+            lambda e: isinstance(e, marker_exceptions)
+        )
 
         # TODO: not a great variable name
         if user_exceptions:
@@ -798,17 +805,12 @@ def unwrap_exception_group():
             flattened_non_frozen_exceptions = _flatten_group(non_frozen_exceptions)
             if len(flattened_non_frozen_exceptions) == 1:
                 raise flattened_non_frozen_exceptions[0] from None
-            # multiple non-frozen exceptions, re-raise the entire group
-            raise
+            # multiple marker exceptions. If we re-raise the whole group we break
+            # a bunch of logic so ....?
+            # is it possible to get multiple StopTest? Both a StopTest and
+            # HypothesisException? Multiple HypothesisException?
+            raise flattened_non_frozen_exceptions[0] from excgroup
 
-        flattened_frozen_exceptions = _flatten_group(frozen_exceptions)
-        # we only have frozen exceptions
-        if len(flattened_frozen_exceptions) == 1:
-            raise flattened_frozen_exceptions[0] from excgroup
-
-        # multiple frozen exceptions
-        # TODO: raise a group? The first one? None of them?
-        raise frozen_exceptions[0] from excgroup
 
 class StateForActualGivenExecution:
     def __init__(self, stuff, test, settings, random, wrapped_test):
@@ -1128,6 +1130,9 @@ class StateForActualGivenExecution:
                 # This can happen if an error occurred in a finally
                 # block somewhere, suppressing our original StopTest.
                 # We raise a new one here to resume normal operation.
+                # TODO: this should maybe inspect the stacktrace to see that the above
+                # mentioned story is true? I.e. reraise as StopTest iff there is a
+                # StopTest somewhere in the tree of e.__context__
                 raise StopTest(data.testcounter) from e
             else:
                 # The test failed by raising an exception, so we inform the
@@ -1291,6 +1296,9 @@ class StateForActualGivenExecution:
             ran_example.slice_comments = falsifying_example.slice_comments
             tb = None
             origin = None
+            # this assert is failing in test_exceptiongroup_multiple_stop and I have
+            # no clue why
+            assert info is not None
             assert info._expected_exception is not None
             try:
                 with with_reporter(fragments.append):
