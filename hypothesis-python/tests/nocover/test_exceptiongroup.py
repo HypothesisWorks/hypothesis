@@ -9,13 +9,19 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import asyncio
+import sys
 from typing import Callable
 
 import pytest
 
-from hypothesis import errors, given, strategies as st
+from hypothesis import errors, given, reject, strategies as st
 from hypothesis.internal.compat import ExceptionGroup
 from hypothesis.strategies import DataObject
+
+# this file is not typechecked by mypy, which only runs py310
+
+if sys.version_info < (3, 11):
+    pytest.skip("asyncio.TaskGroup not available on <py3.11", allow_module_level=True)
 
 
 def test_exceptiongroup_discard_frozen():
@@ -42,7 +48,7 @@ def test_exceptiongroup_nested() -> None:
     @given(st.data())
     def test_function(data: DataObject) -> None:
         async def task(pred: Callable[[bool], bool]) -> None:
-            return data.draw(st.booleans().filter(pred))
+            data.draw(st.booleans().filter(pred))
 
         async def _main() -> None:
             async with asyncio.TaskGroup():
@@ -83,12 +89,13 @@ def test_exceptiongroup_user_originated() -> None:
 
 
 def test_exceptiongroup_multiple_stop() -> None:
-    # or well, I'm trying to get multiple StopTest, but instead I'm getting a strange
-    # AttributeError
     @given(st.data())
     def test_function(data):
         async def task(d: DataObject) -> None:
-            d.conjecture_data.mark_interesting()
+            ...
+            # idk how to intentionally raise StopTest here, without mucking
+            # around with internals *a lot* in a way that nobody would ever
+            # be expected to do
 
         async def _main(d: DataObject) -> None:
             async with asyncio.TaskGroup() as tg:
@@ -98,6 +105,53 @@ def test_exceptiongroup_multiple_stop() -> None:
         asyncio.run(_main(data))
 
     test_function()
+
+
+def test_exceptiongroup_stop_and_hypothesisexception() -> None:
+    # idk how to intentionally raise StopTest
+    ...
+
+
+def test_exceptiongroup_multiple_hypothesisexception() -> None:
+    # multiple UnsatisfiedAssumption => first one is reraised => engine suppresses it
+
+    @given(st.integers(min_value=0, max_value=3))
+    def test_function(val: int) -> None:
+        async def task(value: int) -> None:
+            if value == 0:
+                reject()
+
+        async def _main(value: int) -> None:
+            async with asyncio.TaskGroup() as tg:
+                tg.create_task(task(value))
+                tg.create_task(task(value))
+
+        asyncio.run(_main(val))
+
+    test_function()
+
+
+def test_exceptiongroup_multiple_InvalidArgument() -> None:
+    # multiple InvalidArgument => only first one is reraised... which seems bad.
+    # But raising a group might break ghostwriter(?)
+
+    @given(st.data())
+    def test_function(data: DataObject) -> None:
+        async def task1(d: DataObject) -> None:
+            d.draw(st.integers(max_value=1, min_value=3))
+
+        async def task2(d: DataObject) -> None:
+            d.draw(st.integers(max_value=2, min_value=3))
+
+        async def _main(d: DataObject) -> None:
+            async with asyncio.TaskGroup() as tg:
+                tg.create_task(task1(d))
+                tg.create_task(task2(d))
+
+        asyncio.run(_main(data))
+
+    with pytest.raises(errors.InvalidArgument):
+        test_function()
 
 
 # if intended, will probably remove this test, and either way probably belong somewhere else
@@ -139,3 +193,27 @@ def test_frozen_data_and_critical_user_exception():
     # assert len(e.exceptions) == 2
     # assert isinstance(e.exceptions[0], errors.Frozen)
     # assert isinstance(e.exceptions[1], TypeError)
+
+
+# FIXME: temporarily added while debugging #4115
+def test_recursive_exception():
+    @given(st.data())
+    def test_function(data):
+        try:
+            raise ExceptionGroup("", [ValueError()])
+        except ExceptionGroup as eg:
+            raise eg.exceptions[0] from None
+
+    with pytest.raises(ValueError):
+        test_function()
+
+
+def test_recursive_exception2():
+    @given(st.data())
+    def test_function(data):
+        k = ValueError()
+        k.__context__ = k
+        raise k
+
+    with pytest.raises(ValueError):
+        test_function()

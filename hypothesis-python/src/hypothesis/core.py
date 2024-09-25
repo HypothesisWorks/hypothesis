@@ -32,6 +32,7 @@ from typing import (
     BinaryIO,
     Callable,
     Coroutine,
+    Generator,
     Hashable,
     List,
     Optional,
@@ -769,8 +770,10 @@ def get_executor(runner):
 
 
 @contextlib.contextmanager
-def unwrap_exception_group():
-    def _flatten_group(excgroup: BaseExceptionGroup) -> list[BaseException]:
+def unwrap_exception_group() -> Generator[None, None, None]:
+    T = TypeVar("T", bound=BaseException)
+
+    def _flatten_group(excgroup: BaseExceptionGroup[T]) -> list[T]:
         found_exceptions = []
         for exc in excgroup.exceptions:
             if isinstance(exc, BaseExceptionGroup):
@@ -782,8 +785,6 @@ def unwrap_exception_group():
     try:
         yield
     except BaseExceptionGroup as excgroup:
-        # Found? RewindRecursive? FlakyReplay?
-        marker_exceptions = (StopTest, HypothesisException)
         frozen_exceptions, non_frozen_exceptions = excgroup.split(Frozen)
 
         # group only contains Frozen, reraise the group
@@ -793,23 +794,34 @@ def unwrap_exception_group():
             raise
         # in all other cases they are discarded
 
-        marker_exceptions, user_exceptions = non_frozen_exceptions.split(
-            lambda e: isinstance(e, marker_exceptions)
+        # Can RewindRecursive end up in this group?
+        _, user_exceptions = non_frozen_exceptions.split(
+            lambda e: isinstance(e, (StopTest, HypothesisException))
         )
 
-        # TODO: not a great variable name
-        if user_exceptions:
+        # this might contain marker exceptions, or internal errors, but not frozen.
+        if user_exceptions is not None:
             raise
 
-        if non_frozen_exceptions:
-            flattened_non_frozen_exceptions = _flatten_group(non_frozen_exceptions)
-            if len(flattened_non_frozen_exceptions) == 1:
-                raise flattened_non_frozen_exceptions[0] from None
-            # multiple marker exceptions. If we re-raise the whole group we break
-            # a bunch of logic so ....?
-            # is it possible to get multiple StopTest? Both a StopTest and
-            # HypothesisException? Multiple HypothesisException?
-            raise flattened_non_frozen_exceptions[0] from excgroup
+        # single marker exception - reraise it
+        flattened_non_frozen_exceptions = _flatten_group(non_frozen_exceptions)
+        if len(flattened_non_frozen_exceptions) == 1:
+            raise flattened_non_frozen_exceptions[0] from None
+
+        # multiple marker exceptions. If we re-raise the whole group we break
+        # a bunch of logic so ....?
+        stoptests, non_stoptests = non_frozen_exceptions.split(StopTest)
+
+        # TODO: stoptest+hypothesisexception ...? Is it possible? If so, what do?
+
+        if non_stoptests:
+            # TODO: multiple marker exceptions is easy to produce, but the logic in the
+            # engine does not handle it... so we just reraise the first one for now.
+            raise _flatten_group(non_stoptests)[0] from None
+        assert stoptests is not None
+
+        # multiple stoptests: raising the one with the lowest testcounter
+        raise min(_flatten_group(stoptests), key=lambda s_e: s_e.testcounter)
 
 
 class StateForActualGivenExecution:
@@ -1296,8 +1308,6 @@ class StateForActualGivenExecution:
             ran_example.slice_comments = falsifying_example.slice_comments
             tb = None
             origin = None
-            # this assert is failing in test_exceptiongroup_multiple_stop and I have
-            # no clue why
             assert info is not None
             assert info._expected_exception is not None
             try:

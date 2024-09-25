@@ -13,9 +13,10 @@ import os
 import sys
 import textwrap
 import traceback
+from functools import partial
 from inspect import getframeinfo
 from pathlib import Path
-from typing import Dict, NamedTuple, Optional, Type
+from typing import Dict, NamedTuple, Optional, Tuple, Type
 
 import hypothesis
 from hypothesis.errors import _Trimmable
@@ -107,20 +108,26 @@ class InterestingOrigin(NamedTuple):
         return f"{self.exc_type.__name__} at {self.filename}:{self.lineno}{ctx}{group}"
 
     @classmethod
-    def from_exception(cls, exception: BaseException, /) -> "InterestingOrigin":
+    def from_exception(cls, exception: BaseException, /, handled_exceptions: Tuple[BaseException,...] = ()) -> "InterestingOrigin":
+        if exception in handled_exceptions:
+            exception.__context__ = None
         filename, lineno = None, None
         if tb := get_trimmed_traceback(exception):
             filename, lineno, *_ = traceback.extract_tb(tb)[-1]
+
+        # Quick dirty fix for #4115
+        handled_exceptions=(*handled_exceptions, exception)
+
         return cls(
             type(exception),
             filename,
             lineno,
             # Note that if __cause__ is set it is always equal to __context__, explicitly
             # to support introspection when debugging, so we can use that unconditionally.
-            cls.from_exception(exception.__context__) if exception.__context__ else (),
+            cls.from_exception(exception.__context__, handled_exceptions=handled_exceptions) if exception.__context__ else (),
             # We distinguish exception groups by the inner exceptions, as for __context__
             (
-                tuple(map(cls.from_exception, exception.exceptions))
+                tuple(map(partial(cls.from_exception, handled_exceptions=handled_exceptions), exception.exceptions))
                 if isinstance(exception, BaseExceptionGroup)
                 else ()
             ),
