@@ -97,7 +97,7 @@ packaging==24.1
     #   black
     #   plotly
     #   pytest
-pandas==2.2.2
+pandas==2.2.3
     # via
     #   -r requirements/coverage.in
     #   hypofuzz
@@ -105,7 +105,7 @@ pathspec==0.12.1
     # via black
 pexpect==4.9.0
     # via -r requirements/test.in
-platformdirs==4.3.3
+platformdirs==4.3.6
     # via black
 plotly==5.24.1
     # via dash
@@ -183,5 +183,5 @@ zipp==3.20.2
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-setuptools==75.0.0
+setuptools==75.1.0
     # via dash

@@ -47,13 +47,13 @@ packaging==24.1
     # via
     #   black
     #   pytest
-pandas==2.2.2
+pandas==2.2.3
     # via -r requirements/coverage.in
 pathspec==0.12.1
     # via black
 pexpect==4.9.0
     # via -r requirements/test.in
-platformdirs==4.3.3
+platformdirs==4.3.6
     # via black
 pluggy==1.5.0
     # via pytest
