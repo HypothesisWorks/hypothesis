@@ -139,9 +139,9 @@ def test_stoptest_and_hypothesisexception() -> None:
     @given(st.data())
     def stoptest_and_hypothesisexception(data: DataObject) -> None:
         c = data.conjecture_data.testcounter
-        raise BaseExceptionGroup("", [errors.StopTest(c), errors.FlakyTest()])
+        raise BaseExceptionGroup("", [errors.StopTest(c), errors.Flaky()])
 
-    with pytest.raises(errors.FlakyTest):
+    with pytest.raises(errors.Flaky):
         stoptest_and_hypothesisexception()
 
 
@@ -149,9 +149,10 @@ def test_multiple_hypothesisexception() -> None:
     # this can happen in several ways, see nocover/test_exceptiongroup.py
     @given(st.data())
     def stoptest_and_hypothesisexception(data: DataObject) -> None:
-        raise BaseExceptionGroup("", [errors.StopTest(c), errors.FlakyTest()])
+        c = data.conjecture_data.testcounter
+        raise BaseExceptionGroup("", [errors.StopTest(c), errors.Flaky()])
 
-    with pytest.raises(errors.FlakyTest):
+    with pytest.raises(errors.Flaky):
         stoptest_and_hypothesisexception()
 
 
