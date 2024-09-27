@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 """This module provides the core primitives of Hypothesis, such as given."""
+from __future__ import annotations
 
 import base64
 import contextlib
@@ -34,12 +35,7 @@ from typing import (
     Coroutine,
     Generator,
     Hashable,
-    List,
-    Optional,
-    Tuple,
-    Type,
     TypeVar,
-    Union,
     overload,
 )
 from unittest import TestCase
@@ -179,7 +175,7 @@ class example:
         if not (args or kwargs):
             raise InvalidArgument("An example must provide at least one argument")
 
-        self.hypothesis_explicit_examples: List[Example] = []
+        self.hypothesis_explicit_examples: list[Example] = []
         self._this_example = Example(tuple(args), kwargs)
 
     def __call__(self, test: TestFunc) -> TestFunc:
@@ -193,10 +189,8 @@ class example:
         condition: bool = True,  # noqa: FBT002
         *,
         reason: str = "",
-        raises: Union[
-            Type[BaseException], Tuple[Type[BaseException], ...]
-        ] = BaseException,
-    ) -> "example":
+        raises: type[BaseException] | tuple[type[BaseException], ...] = BaseException,
+    ) -> example:
         """Mark this example as an expected failure, similarly to
         :obj:`pytest.mark.xfail(strict=True) <pytest.mark.xfail>`.
 
@@ -265,7 +259,7 @@ class example:
             )
         return self
 
-    def via(self, whence: str, /) -> "example":
+    def via(self, whence: str, /) -> example:
         """Attach a machine-readable label noting whence this example came.
 
         The idea is that tools will be able to add ``@example()`` cases for you, e.g.
@@ -770,7 +764,7 @@ def get_executor(runner):
 
 
 @contextlib.contextmanager
-def unwrap_exception_group() -> Generator[None, None, None]:
+def unwrap_exception_group() -> Generator[None]:
     T = TypeVar("T", bound=BaseException)
 
     def _flatten_group(excgroup: BaseExceptionGroup[T]) -> list[T]:
@@ -1205,7 +1199,7 @@ class StateForActualGivenExecution:
             self._timing_features = {}
 
     def _deliver_information_message(
-        self, *, type: str, title: str, content: Union[str, dict]
+        self, *, type: str, title: str, content: str | dict
     ) -> None:
         deliver_json_blob(
             {
@@ -1467,7 +1461,7 @@ class HypothesisHandle:
     @property
     def fuzz_one_input(
         self,
-    ) -> Callable[[Union[bytes, bytearray, memoryview, BinaryIO]], Optional[bytes]]:
+    ) -> Callable[[bytes | bytearray | memoryview | BinaryIO], bytes | None]:
         """Run the test as a fuzz target, driven with the `buffer` of bytes.
 
         Returns None if buffer invalid for the strategy, canonical pruned
@@ -1488,7 +1482,7 @@ class HypothesisHandle:
 def given(
     _: EllipsisType, /
 ) -> Callable[
-    [Callable[..., Optional[Coroutine[Any, Any, None]]]], Callable[[], None]
+    [Callable[..., Coroutine[Any, Any, None] | None]], Callable[[], None]
 ]:  # pragma: no cover
     ...
 
@@ -1497,26 +1491,24 @@ def given(
 def given(
     *_given_arguments: SearchStrategy[Any],
 ) -> Callable[
-    [Callable[..., Optional[Coroutine[Any, Any, None]]]], Callable[..., None]
+    [Callable[..., Coroutine[Any, Any, None] | None]], Callable[..., None]
 ]:  # pragma: no cover
     ...
 
 
 @overload
 def given(
-    **_given_kwargs: Union[SearchStrategy[Any], EllipsisType],
+    **_given_kwargs: SearchStrategy[Any] | EllipsisType,
 ) -> Callable[
-    [Callable[..., Optional[Coroutine[Any, Any, None]]]], Callable[..., None]
+    [Callable[..., Coroutine[Any, Any, None] | None]], Callable[..., None]
 ]:  # pragma: no cover
     ...
 
 
 def given(
-    *_given_arguments: Union[SearchStrategy[Any], EllipsisType],
-    **_given_kwargs: Union[SearchStrategy[Any], EllipsisType],
-) -> Callable[
-    [Callable[..., Optional[Coroutine[Any, Any, None]]]], Callable[..., None]
-]:
+    *_given_arguments: SearchStrategy[Any] | EllipsisType,
+    **_given_kwargs: SearchStrategy[Any] | EllipsisType,
+) -> Callable[[Callable[..., Coroutine[Any, Any, None] | None]], Callable[..., None]]:
     """A decorator for turning a test function that accepts arguments into a
     randomized test.
 
@@ -1785,7 +1777,7 @@ def given(
                 raise SKIP_BECAUSE_NO_EXAMPLES
 
         def _get_fuzz_target() -> (
-            Callable[[Union[bytes, bytearray, memoryview, BinaryIO]], Optional[bytes]]
+            Callable[[bytes | bytearray | memoryview | BinaryIO], bytes | None]
         ):
             # Because fuzzing interfaces are very performance-sensitive, we use a
             # somewhat more complicated structure here.  `_get_fuzz_target()` is
@@ -1817,8 +1809,8 @@ def given(
             minimal_failures: dict = {}
 
             def fuzz_one_input(
-                buffer: Union[bytes, bytearray, memoryview, BinaryIO]
-            ) -> Optional[bytes]:
+                buffer: bytes | bytearray | memoryview | BinaryIO,
+            ) -> bytes | None:
                 # This inner part is all that the fuzzer will actually run,
                 # so we keep it as small and as fast as possible.
                 if isinstance(buffer, io.IOBase):
@@ -1872,9 +1864,9 @@ def find(
     specifier: SearchStrategy[Ex],
     condition: Callable[[Any], bool],
     *,
-    settings: Optional[Settings] = None,
-    random: Optional[Random] = None,
-    database_key: Optional[bytes] = None,
+    settings: Settings | None = None,
+    random: Random | None = None,
+    database_key: bytes | None = None,
 ) -> Ex:
     """Returns the minimal example from the given strategy ``specifier`` that
     matches the predicate function ``condition``."""
@@ -1897,7 +1889,7 @@ def find(
         )
     specifier.validate()
 
-    last: List[Ex] = []
+    last: list[Ex] = []
 
     @settings
     @given(specifier)
