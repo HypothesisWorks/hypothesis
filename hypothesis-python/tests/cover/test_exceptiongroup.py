@@ -10,8 +10,8 @@
 
 import pytest
 
-from hypothesis.internal.compat import BaseExceptionGroup, ExceptionGroup
 from hypothesis import errors, given, strategies as st
+from hypothesis.internal.compat import BaseExceptionGroup, ExceptionGroup
 from hypothesis.strategies import DataObject
 
 
@@ -22,6 +22,7 @@ def test_discard_frozen() -> None:
         # whether the data is frozen.
         data.conjecture_data.freeze()
         raise ExceptionGroup("", [errors.Frozen()])
+
     discard_frozen()
 
 
@@ -30,12 +31,15 @@ def test_discard_multiple_frozen() -> None:
     def discard_multiple_frozen(data: DataObject) -> None:
         data.conjecture_data.freeze()
         raise ExceptionGroup("", [errors.Frozen(), errors.Frozen()])
+
     discard_multiple_frozen()
+
 
 def test_user_error_and_frozen() -> None:
     @given(st.data())
     def user_error_and_frozen(data: DataObject) -> None:
         raise ExceptionGroup("", [errors.Frozen(), TypeError()])
+
     with pytest.raises(ExceptionGroup) as excinfo:
         user_error_and_frozen()
     e = excinfo.value
@@ -44,13 +48,17 @@ def test_user_error_and_frozen() -> None:
     assert isinstance(e.exceptions[0], errors.Frozen)
     assert isinstance(e.exceptions[1], TypeError)
 
+
 def test_user_error_and_stoptest() -> None:
     # if the code base had "proper" handling of exceptiongroups, the StopTest would
     # probably be handled by an except*.
     # TODO: which I suppose is an argument in favor of stripping it??
     @given(st.data())
     def user_error_and_stoptest(data: DataObject) -> None:
-        raise BaseExceptionGroup("", [errors.StopTest(data.conjecture_data.testcounter), TypeError()])
+        raise BaseExceptionGroup(
+            "", [errors.StopTest(data.conjecture_data.testcounter), TypeError()]
+        )
+
     with pytest.raises(BaseExceptionGroup) as excinfo:
         user_error_and_stoptest()
     e = excinfo.value
@@ -59,12 +67,14 @@ def test_user_error_and_stoptest() -> None:
     assert isinstance(e.exceptions[0], errors.StopTest)
     assert isinstance(e.exceptions[1], TypeError)
 
+
 def test_lone_user_error() -> None:
     # we don't want to unwrap exceptiongroups, since they might contain
     # useful debugging info
     @given(st.data())
     def lone_user_error(data: DataObject) -> None:
         raise ExceptionGroup("foo", [TypeError()])
+
     with pytest.raises(ExceptionGroup) as excinfo:
         lone_user_error()
     e = excinfo.value
@@ -72,21 +82,44 @@ def test_lone_user_error() -> None:
     assert len(e.exceptions) == 1
     assert isinstance(e.exceptions[0], TypeError)
 
+
+def test_nested_stoptest() -> None:
+    @given(st.data())
+    def nested_stoptest(data: DataObject) -> None:
+        raise BaseExceptionGroup(
+            "",
+            [
+                BaseExceptionGroup(
+                    "", [errors.StopTest(data.conjecture_data.testcounter)]
+                )
+            ],
+        )
+
+    nested_stoptest()
+
+
 def test_frozen_and_stoptest() -> None:
     # frozen+stoptest => strip frozen and let engine handle StopTest
+    # actually.. I don't think I've got a live repo for this either.
     @given(st.data())
     def frozen_and_stoptest(data: DataObject) -> None:
-        raise BaseExceptionGroup("", [errors.StopTest(data.conjecture_data.testcounter), errors.Frozen()])
+        raise BaseExceptionGroup(
+            "", [errors.StopTest(data.conjecture_data.testcounter), errors.Frozen()]
+        )
+
     frozen_and_stoptest()
+
 
 def test_multiple_stoptest_1() -> None:
     # multiple stoptest, reraise the one with lowest testcounter
-    # I don't know if/how this can happen, nested tests perhaps??
+    # TODO: I don't know if/how this can happen, nested tests perhaps??
     @given(st.data())
     def multiple_stoptest(data: DataObject) -> None:
         c = data.conjecture_data.testcounter
-        raise BaseExceptionGroup("", [errors.StopTest(c), errors.StopTest(c+1)])
+        raise BaseExceptionGroup("", [errors.StopTest(c), errors.StopTest(c + 1)])
+
     multiple_stoptest()
+
 
 def test_multiple_stoptest_2() -> None:
     # the lower value is raised, which does not match data.conjecture_data.testcounter
@@ -94,9 +127,53 @@ def test_multiple_stoptest_2() -> None:
     @given(st.data())
     def multiple_stoptest_2(data: DataObject) -> None:
         c = data.conjecture_data.testcounter
-        raise BaseExceptionGroup("", [errors.StopTest(c), errors.StopTest(c-1)])
+        raise BaseExceptionGroup("", [errors.StopTest(c), errors.StopTest(c - 1)])
 
-    with pytest.raises(errors.StopTest) as excinfo:
+    with pytest.raises(errors.StopTest):
         multiple_stoptest_2()
-    e = excinfo.value
-    assert isinstance(e, errors.StopTest)
+
+
+def test_stoptest_and_hypothesisexception() -> None:
+    # TODO: can this happen? If so what do?
+    # current code raises the first hypothesisexception and throws away stoptest
+    @given(st.data())
+    def stoptest_and_hypothesisexception(data: DataObject) -> None:
+        c = data.conjecture_data.testcounter
+        raise BaseExceptionGroup("", [errors.StopTest(c), errors.FlakyTest()])
+
+    with pytest.raises(errors.FlakyTest):
+        stoptest_and_hypothesisexception()
+
+
+def test_multiple_hypothesisexception() -> None:
+    # this can happen in several ways, see nocover/test_exceptiongroup.py
+    @given(st.data())
+    def stoptest_and_hypothesisexception(data: DataObject) -> None:
+        raise BaseExceptionGroup("", [errors.StopTest(c), errors.FlakyTest()])
+
+    with pytest.raises(errors.FlakyTest):
+        stoptest_and_hypothesisexception()
+
+
+# FIXME: temporarily added while debugging #4115
+def test_recursive_exception():
+    @given(st.data())
+    def test_function(data):
+        try:
+            raise ExceptionGroup("", [ValueError()])
+        except ExceptionGroup as eg:
+            raise eg.exceptions[0] from None
+
+    with pytest.raises(ValueError):
+        test_function()
+
+
+def test_recursive_exception2():
+    @given(st.data())
+    def test_function(data):
+        k = ValueError()
+        k.__context__ = k
+        raise k
+
+    with pytest.raises(ValueError):
+        test_function()

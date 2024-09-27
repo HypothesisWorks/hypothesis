@@ -193,27 +193,3 @@ def test_frozen_data_and_critical_user_exception():
     # assert len(e.exceptions) == 2
     # assert isinstance(e.exceptions[0], errors.Frozen)
     # assert isinstance(e.exceptions[1], TypeError)
-
-
-# FIXME: temporarily added while debugging #4115
-def test_recursive_exception():
-    @given(st.data())
-    def test_function(data):
-        try:
-            raise ExceptionGroup("", [ValueError()])
-        except ExceptionGroup as eg:
-            raise eg.exceptions[0] from None
-
-    with pytest.raises(ValueError):
-        test_function()
-
-
-def test_recursive_exception2():
-    @given(st.data())
-    def test_function(data):
-        k = ValueError()
-        k.__context__ = k
-        raise k
-
-    with pytest.raises(ValueError):
-        test_function()
