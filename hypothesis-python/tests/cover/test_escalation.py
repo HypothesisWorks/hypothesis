@@ -70,3 +70,26 @@ def test_handles_groups():
     assert "ExceptionGroup at " in str(origin)
     assert "child exception" in str(origin)
     assert "ValueError at " in str(origin)
+
+
+def make_exceptions_with_cycles():
+    err = ValueError()
+    err.__context__ = err
+    yield err
+
+    err = TypeError()
+    err.__context__ = BaseExceptionGroup("msg", [err])
+    yield err
+
+    inner = LookupError()
+    err = BaseExceptionGroup("msg", [inner])
+    inner.__context__ = err
+    yield err
+
+    inner = OSError()
+    yield BaseExceptionGroup("msg", [inner, inner, inner])
+
+
+@pytest.mark.parametrize("err", list(make_exceptions_with_cycles()))
+def test_handles_cycles(err):
+    esc.InterestingOrigin.from_exception(err)
