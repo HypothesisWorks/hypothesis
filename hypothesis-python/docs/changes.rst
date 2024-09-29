@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.112.2:
+
+--------------------
+6.112.2 - 2024-09-29
+--------------------
+
+This patch fixes an internal error when the ``__context__``
+attribute of a raised exception leads to a cycle (:issue:`4115`).
+
 .. _v6.112.1:
 
 --------------------
