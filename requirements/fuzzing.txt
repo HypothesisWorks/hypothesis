@@ -51,11 +51,11 @@ exceptiongroup==1.2.2 ; python_version < "3.11"
     #   pytest
 execnet==2.1.1
     # via pytest-xdist
-fakeredis==2.24.1
+fakeredis==2.25.0
     # via -r requirements/coverage.in
 flask==3.0.3
     # via dash
-hypofuzz==24.2.3
+hypofuzz==24.9.1
     # via -r requirements/fuzzing.in
 hypothesis[cli]==6.112.1
     # via hypofuzz
@@ -97,7 +97,7 @@ packaging==24.1
     #   black
     #   plotly
     #   pytest
-pandas==2.2.2
+pandas==2.2.3
     # via
     #   -r requirements/coverage.in
     #   hypofuzz
@@ -105,7 +105,7 @@ pathspec==0.12.1
     # via black
 pexpect==4.9.0
     # via -r requirements/test.in
-platformdirs==4.3.3
+platformdirs==4.3.6
     # via black
 plotly==5.24.1
     # via dash
@@ -139,7 +139,7 @@ pytz==2024.2
     #   pandas
 pyyaml==6.0.2
     # via libcst
-redis==5.0.8
+redis==5.1.0
     # via fakeredis
 requests==2.32.3
     # via
@@ -171,7 +171,7 @@ typing-extensions==4.12.2
     #   black
     #   dash
     #   fakeredis
-tzdata==2024.1
+tzdata==2024.2
     # via pandas
 urllib3==2.2.3
     # via requests
@@ -183,5 +183,5 @@ zipp==3.20.2
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-setuptools==75.0.0
+setuptools==75.1.0
     # via dash

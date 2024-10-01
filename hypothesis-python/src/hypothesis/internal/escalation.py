@@ -109,43 +109,26 @@ class InterestingOrigin(NamedTuple):
 
     @classmethod
     def from_exception(
-        cls,
-        exception: BaseException,
-        /,
-        handled_exceptions: Tuple[BaseException, ...] = (),
+        cls, exception: BaseException, /, seen: Tuple[BaseException, ...] = ()
     ) -> "InterestingOrigin":
-        if exception in handled_exceptions:
-            exception.__context__ = None
         filename, lineno = None, None
         if tb := get_trimmed_traceback(exception):
             filename, lineno, *_ = traceback.extract_tb(tb)[-1]
-
-        # Quick dirty fix for #4115
-        handled_exceptions = (*handled_exceptions, exception)
-
+        seen = (*seen, exception)
+        make = partial(cls.from_exception, seen=seen)
+        context: "InterestingOrigin | tuple[()]" = ()
+        if exception.__context__ is not None and exception.__context__ not in seen:
+            context = make(exception.__context__)
         return cls(
             type(exception),
             filename,
             lineno,
             # Note that if __cause__ is set it is always equal to __context__, explicitly
             # to support introspection when debugging, so we can use that unconditionally.
-            (
-                cls.from_exception(
-                    exception.__context__, handled_exceptions=handled_exceptions
-                )
-                if exception.__context__
-                else ()
-            ),
+            context,
             # We distinguish exception groups by the inner exceptions, as for __context__
             (
-                tuple(
-                    map(
-                        partial(
-                            cls.from_exception, handled_exceptions=handled_exceptions
-                        ),
-                        exception.exceptions,
-                    )
-                )
+                tuple(make(exc) for exc in exception.exceptions if exc not in seen)
                 if isinstance(exception, BaseExceptionGroup)
                 else ()
             ),
