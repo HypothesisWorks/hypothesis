@@ -773,8 +773,8 @@ def get_executor(runner):
 def unwrap_exception_group() -> Generator[None, None, None]:
     T = TypeVar("T", bound=BaseException)
 
-    def _flatten_group(excgroup: BaseExceptionGroup[T]) -> list[T]:
-        found_exceptions = []
+    def _flatten_group(excgroup: BaseExceptionGroup[T]) -> List[T]:
+        found_exceptions: List[T] = []
         for exc in excgroup.exceptions:
             if isinstance(exc, BaseExceptionGroup):
                 found_exceptions.extend(_flatten_group(exc))
@@ -804,7 +804,7 @@ def unwrap_exception_group() -> Generator[None, None, None]:
             raise
 
         # single marker exception - reraise it
-        flattened_non_frozen_exceptions = _flatten_group(non_frozen_exceptions)
+        flattened_non_frozen_exceptions: List[BaseException] = _flatten_group(non_frozen_exceptions)
         if len(flattened_non_frozen_exceptions) == 1:
             e = flattened_non_frozen_exceptions[0]
             # preserve the cause of the original exception to not hinder debugging
