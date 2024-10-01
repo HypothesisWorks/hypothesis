@@ -9,8 +9,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 """This module provides the core primitives of Hypothesis, such as given."""
-from __future__ import annotations
-
 import base64
 import contextlib
 import datetime
@@ -35,7 +33,12 @@ from typing import (
     Coroutine,
     Generator,
     Hashable,
+    List,
+    Optional,
+    Tuple,
+    Type,
     TypeVar,
+    Union,
     overload,
 )
 from unittest import TestCase
@@ -146,6 +149,7 @@ elif TYPE_CHECKING:
 else:  # pragma: no cover
     EllipsisType = type(Ellipsis)
 
+
 TestFunc = TypeVar("TestFunc", bound=Callable)
 
 
@@ -175,7 +179,7 @@ class example:
         if not (args or kwargs):
             raise InvalidArgument("An example must provide at least one argument")
 
-        self.hypothesis_explicit_examples: list[Example] = []
+        self.hypothesis_explicit_examples: List[Example] = []
         self._this_example = Example(tuple(args), kwargs)
 
     def __call__(self, test: TestFunc) -> TestFunc:
@@ -189,8 +193,10 @@ class example:
         condition: bool = True,  # noqa: FBT002
         *,
         reason: str = "",
-        raises: type[BaseException] | tuple[type[BaseException], ...] = BaseException,
-    ) -> example:
+        raises: Union[
+            Type[BaseException], Tuple[Type[BaseException], ...]
+        ] = BaseException,
+    ) -> "example":
         """Mark this example as an expected failure, similarly to
         :obj:`pytest.mark.xfail(strict=True) <pytest.mark.xfail>`.
 
@@ -259,7 +265,7 @@ class example:
             )
         return self
 
-    def via(self, whence: str, /) -> example:
+    def via(self, whence: str, /) -> "example":
         """Attach a machine-readable label noting whence this example came.
 
         The idea is that tools will be able to add ``@example()`` cases for you, e.g.
@@ -800,7 +806,10 @@ def unwrap_exception_group() -> Generator[None]:
         # single marker exception - reraise it
         flattened_non_frozen_exceptions = _flatten_group(non_frozen_exceptions)
         if len(flattened_non_frozen_exceptions) == 1:
-            raise flattened_non_frozen_exceptions[0] from None
+            e = flattened_non_frozen_exceptions[0]
+            # preserve the cause of the original exception to not hinder debugging
+            # note that __context__ is still lost though
+            raise e from e.__cause__
 
         # multiple marker exceptions. If we re-raise the whole group we break
         # a bunch of logic so ....?
@@ -811,7 +820,8 @@ def unwrap_exception_group() -> Generator[None]:
         if non_stoptests:
             # TODO: multiple marker exceptions is easy to produce, but the logic in the
             # engine does not handle it... so we just reraise the first one for now.
-            raise _flatten_group(non_stoptests)[0] from None
+            e = _flatten_group(non_stoptests)[0]
+            raise e from e.__cause__
         assert stoptests is not None
 
         # multiple stoptests: raising the one with the lowest testcounter
@@ -1199,7 +1209,7 @@ class StateForActualGivenExecution:
             self._timing_features = {}
 
     def _deliver_information_message(
-        self, *, type: str, title: str, content: str | dict
+        self, *, type: str, title: str, content: Union[str, dict]
     ) -> None:
         deliver_json_blob(
             {
@@ -1461,7 +1471,7 @@ class HypothesisHandle:
     @property
     def fuzz_one_input(
         self,
-    ) -> Callable[[bytes | bytearray | memoryview | BinaryIO], bytes | None]:
+    ) -> Callable[[Union[bytes, bytearray, memoryview, BinaryIO]], Optional[bytes]]:
         """Run the test as a fuzz target, driven with the `buffer` of bytes.
 
         Returns None if buffer invalid for the strategy, canonical pruned
@@ -1482,7 +1492,7 @@ class HypothesisHandle:
 def given(
     _: EllipsisType, /
 ) -> Callable[
-    [Callable[..., Coroutine[Any, Any, None] | None]], Callable[[], None]
+    [Callable[..., Optional[Coroutine[Any, Any, None]]]], Callable[[], None]
 ]:  # pragma: no cover
     ...
 
@@ -1491,24 +1501,26 @@ def given(
 def given(
     *_given_arguments: SearchStrategy[Any],
 ) -> Callable[
-    [Callable[..., Coroutine[Any, Any, None] | None]], Callable[..., None]
+    [Callable[..., Optional[Coroutine[Any, Any, None]]]], Callable[..., None]
 ]:  # pragma: no cover
     ...
 
 
 @overload
 def given(
-    **_given_kwargs: SearchStrategy[Any] | EllipsisType,
+    **_given_kwargs: Union[SearchStrategy[Any], EllipsisType],
 ) -> Callable[
-    [Callable[..., Coroutine[Any, Any, None] | None]], Callable[..., None]
+    [Callable[..., Optional[Coroutine[Any, Any, None]]]], Callable[..., None]
 ]:  # pragma: no cover
     ...
 
 
 def given(
-    *_given_arguments: SearchStrategy[Any] | EllipsisType,
-    **_given_kwargs: SearchStrategy[Any] | EllipsisType,
-) -> Callable[[Callable[..., Coroutine[Any, Any, None] | None]], Callable[..., None]]:
+    *_given_arguments: Union[SearchStrategy[Any], EllipsisType],
+    **_given_kwargs: Union[SearchStrategy[Any], EllipsisType],
+) -> Callable[
+    [Callable[..., Optional[Coroutine[Any, Any, None]]]], Callable[..., None]
+]:
     """A decorator for turning a test function that accepts arguments into a
     randomized test.
 
@@ -1777,7 +1789,7 @@ def given(
                 raise SKIP_BECAUSE_NO_EXAMPLES
 
         def _get_fuzz_target() -> (
-            Callable[[bytes | bytearray | memoryview | BinaryIO], bytes | None]
+            Callable[[Union[bytes, bytearray, memoryview, BinaryIO]], Optional[bytes]]
         ):
             # Because fuzzing interfaces are very performance-sensitive, we use a
             # somewhat more complicated structure here.  `_get_fuzz_target()` is
@@ -1809,8 +1821,8 @@ def given(
             minimal_failures: dict = {}
 
             def fuzz_one_input(
-                buffer: bytes | bytearray | memoryview | BinaryIO,
-            ) -> bytes | None:
+                buffer: Union[bytes, bytearray, memoryview, BinaryIO]
+            ) -> Optional[bytes]:
                 # This inner part is all that the fuzzer will actually run,
                 # so we keep it as small and as fast as possible.
                 if isinstance(buffer, io.IOBase):
@@ -1864,9 +1876,9 @@ def find(
     specifier: SearchStrategy[Ex],
     condition: Callable[[Any], bool],
     *,
-    settings: Settings | None = None,
-    random: Random | None = None,
-    database_key: bytes | None = None,
+    settings: Optional[Settings] = None,
+    random: Optional[Random] = None,
+    database_key: Optional[bytes] = None,
 ) -> Ex:
     """Returns the minimal example from the given strategy ``specifier`` that
     matches the predicate function ``condition``."""
@@ -1889,7 +1901,7 @@ def find(
         )
     specifier.validate()
 
-    last: list[Ex] = []
+    last: List[Ex] = []
 
     @settings
     @given(specifier)
