@@ -770,7 +770,7 @@ def get_executor(runner):
 
 
 @contextlib.contextmanager
-def unwrap_exception_group() -> Generator[None]:
+def unwrap_exception_group() -> Generator[None, None, None]:
     T = TypeVar("T", bound=BaseException)
 
     def _flatten_group(excgroup: BaseExceptionGroup[T]) -> list[T]:
