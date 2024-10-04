@@ -467,7 +467,6 @@ class Rule:
         for k, v in sorted(self.arguments.items()):
             if isinstance(v, Bundle):
                 bundles.append(v)
-                # consume = isinstance(v, BundleConsumer)
             self.arguments_strategies[k] = v
         self.bundles = tuple(bundles)
 
@@ -523,7 +522,6 @@ class Bundle(SearchStrategy[Ex]):
         else:
             reference = bundle[position]
 
-        # return machine.names_to_values[reference.name]
         return reference
 
     def __repr__(self):
@@ -544,11 +542,6 @@ class Bundle(SearchStrategy[Ex]):
         return bool(machine.bundle(self.name))
 
 
-class BundleConsumer(Bundle[Ex]):
-    def __init__(self, bundle: Bundle[Ex]) -> None:
-        super().__init__(bundle.name, consume=True)
-
-
 def consumes(bundle: Bundle[Ex]) -> SearchStrategy[Ex]:
     """When introducing a rule in a RuleBasedStateMachine, this function can
     be used to mark bundles from which each value used in a step with the
@@ -564,11 +557,9 @@ def consumes(bundle: Bundle[Ex]) -> SearchStrategy[Ex]:
     """
     if not isinstance(bundle, Bundle):
         raise TypeError("Argument to be consumed must be a bundle.")
-    # return BundleConsumer(bundle)
     return type(bundle)(
         name=bundle.name,
         consume=True,
-        # transformations=bundle._transformations,
     )
 
 
@@ -616,7 +607,6 @@ def _convert_targets(targets, target):
                 )
             raise InvalidArgument(msg % (t, type(t)))
         while isinstance(t, Bundle):
-            # if isinstance(t, BundleConsumer):
             if t.consume:
                 note_deprecation(
                     f"Using consumes({t.name}) doesn't makes sense in this context.  "
