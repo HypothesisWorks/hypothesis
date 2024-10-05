@@ -11,7 +11,6 @@
 from collections import Counter
 from fractions import Fraction
 
-import numpy as np
 import pytest
 
 from hypothesis import (
@@ -29,6 +28,11 @@ from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.data import ConjectureData, Status, StopTest
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 from hypothesis.internal.intervalsets import IntervalSet
+
+try:
+    import numpy as np
+except ImportError:
+    np = None
 
 
 def test_coin_biased_towards_truth():
@@ -222,11 +226,13 @@ def test_combine_labels_is_distinct():
     assert cu.combine_labels(x, y) not in (x, y)
 
 
+@pytest.mark.skipif(np is None, reason="requires Numpy")
 def test_invalid_numpy_sample():
     with pytest.raises(InvalidArgument):
         cu.check_sample(np.array([[1, 1], [1, 1]]), "array")
 
 
+@pytest.mark.skipif(np is None, reason="requires Numpy")
 def test_valid_numpy_sample():
     cu.check_sample(np.array([1, 2, 3]), "array")
 

@@ -10,10 +10,9 @@
 
 import math
 import sys
-from collections.abc import Sequence
 from contextlib import contextmanager
 from random import Random
-from typing import Optional
+from typing import Optional, Sequence
 
 import pytest
 
@@ -454,17 +453,15 @@ class ObservableProvider(TrivialProvider):
 
 
 def test_custom_observations_from_backend():
-    with (
-        temp_register_backend("observable", ObservableProvider),
-        capture_observations() as ls,
-    ):
+    with temp_register_backend("observable", ObservableProvider):
 
         @given(st.none())
         @settings(backend="observable", database=None)
         def test_function(_):
             pass
 
-        test_function()
+        with capture_observations() as ls:
+            test_function()
 
     assert len(ls) >= 3
     cases = [t["metadata"]["backend"] for t in ls if t["type"] == "test_case"]
