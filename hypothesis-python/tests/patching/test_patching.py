@@ -74,8 +74,8 @@ def test_adds_simple_patch(tst, example, expected):
 
 
 SIMPLE_PATCH_BODY = f'''\
---- {WHERE}
-+++ {WHERE}
+--- ./{WHERE}
++++ ./{WHERE}
 @@ -18,6 +18,7 @@
 
 
@@ -86,8 +86,8 @@ SIMPLE_PATCH_BODY = f'''\
 
 '''
 CASES_PATCH_BODY = f'''\
---- {WHERE}
-+++ {WHERE}
+--- ./{WHERE}
++++ ./{WHERE}
 @@ -25,6 +25,9 @@
  class Cases:
      @example(n=0, label="whatever")
@@ -98,8 +98,8 @@ CASES_PATCH_BODY = f'''\
 
 '''
 TOPLEVEL_PATCH_BODY = f'''\
---- {WHERE_TOP}
-+++ {WHERE_TOP}
+--- ./{WHERE_TOP}
++++ ./{WHERE_TOP}
 @@ -19,5 +19,6 @@
 
 
@@ -109,8 +109,8 @@ TOPLEVEL_PATCH_BODY = f'''\
      """A trivial test function."""
 '''
 COVERING_PATCH_BODY = f'''\
---- {WHERE}
-+++ {WHERE}
+--- ./{WHERE}
++++ ./{WHERE}
 @@ -31,7 +31,7 @@
 
  @given(st.integers())

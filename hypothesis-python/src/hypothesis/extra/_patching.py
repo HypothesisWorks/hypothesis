@@ -205,8 +205,8 @@ def make_patch(triples, *, msg="Hypothesis: add explicit examples", when=None):
         ud = difflib.unified_diff(
             source_before.splitlines(keepends=True),
             source_after.splitlines(keepends=True),
-            fromfile=str(fname),
-            tofile=str(fname),
+            fromfile=f"./{fname}",  # git strips the first part of the path by default
+            tofile=f"./{fname}",
         )
         diffs.append("".join(ud))
     return "".join(diffs)
