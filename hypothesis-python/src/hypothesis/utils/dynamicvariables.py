@@ -9,24 +9,28 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import threading
+from collections.abc import Generator
 from contextlib import contextmanager
+from typing import Generic, TypeVar
+
+T = TypeVar("T")
 
 
-class DynamicVariable:
-    def __init__(self, default):
+class DynamicVariable(Generic[T]):
+    def __init__(self, default: T) -> None:
         self.default = default
         self.data = threading.local()
 
     @property
-    def value(self):
+    def value(self) -> T:
         return getattr(self.data, "value", self.default)
 
     @value.setter
-    def value(self, value):
+    def value(self, value: T) -> None:
         self.data.value = value
 
     @contextmanager
-    def with_value(self, value):
+    def with_value(self, value: T) -> Generator[None, None, None]:
         old_value = self.value
         try:
             self.data.value = value

@@ -159,9 +159,10 @@ class Sampler:
             table[small.pop()][2] = zero
 
         self.table: "List[Tuple[int, int, float]]" = []
-        for base, alternate, alternate_chance in table:  # type: ignore
+        for base, alternate, alternate_chance in table:
             assert isinstance(base, int)
             assert isinstance(alternate, int) or alternate is None
+            assert alternate_chance is not None
             if alternate is None:
                 self.table.append((base, base, alternate_chance))
             elif alternate < base:

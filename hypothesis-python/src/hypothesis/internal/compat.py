@@ -17,7 +17,15 @@ import sys
 import sysconfig
 import typing
 from functools import partial
-from typing import Any, ForwardRef, List, Optional, TypedDict as TypedDict, get_args
+from typing import (
+    Any,
+    Dict,
+    ForwardRef,
+    List,
+    Optional,
+    TypedDict as TypedDict,
+    get_args,
+)
 
 try:
     BaseExceptionGroup = BaseExceptionGroup
@@ -36,6 +44,8 @@ if typing.TYPE_CHECKING:  # pragma: no cover
         TypedDict as TypedDict,
         override as override,
     )
+
+    from hypothesis.internal.conjecture.engine import ConjectureRunner
 else:
     # In order to use NotRequired, we need the version of TypedDict included in Python 3.11+.
     if sys.version_info[:2] >= (3, 11):
@@ -110,7 +120,7 @@ def int_to_byte(i: int) -> bytes:
     return bytes([i])
 
 
-def is_typed_named_tuple(cls):
+def is_typed_named_tuple(cls: type) -> bool:
     """Return True if cls is probably a subtype of `typing.NamedTuple`.
 
     Unfortunately types created with `class T(NamedTuple):` actually
@@ -129,7 +139,7 @@ def _hint_and_args(x):
     return (x, *get_args(x))
 
 
-def get_type_hints(thing):
+def get_type_hints(thing: object) -> Dict[str, object]:
     """Like the typing version, but tries harder and never errors.
 
     Tries harder: if the thing to inspect is a class but typing.get_type_hints
@@ -150,7 +160,9 @@ def get_type_hints(thing):
         )
         return {k: v for k, v in get_type_hints(thing.func).items() if k not in bound}
 
-    kwargs = {} if sys.version_info[:2] < (3, 9) else {"include_extras": True}
+    kwargs: Dict[str, Any] = (
+        {} if sys.version_info[:2] < (3, 9) else {"include_extras": True}
+    )
 
     try:
         hints = typing.get_type_hints(thing, **kwargs)
@@ -206,14 +218,14 @@ def get_type_hints(thing):
 # We still use the same trick on Python 3, because Numpy values and other
 # custom __floor__ or __ceil__ methods may convert via floats.
 # See issue #1667, Numpy issue 9068.
-def floor(x):
+def floor(x: float) -> int:
     y = int(x)
     if y != x and x < 0:
         return y - 1
     return y
 
 
-def ceil(x):
+def ceil(x: float) -> int:
     y = int(x)
     if y != x and x > 0:
         return y + 1
@@ -239,7 +251,7 @@ except AttributeError:  # pragma: no cover
     bit_count = lambda self: sum(extract_bits(abs(self)))
 
 
-def bad_django_TestCase(runner):
+def bad_django_TestCase(runner: Optional["ConjectureRunner"]) -> bool:
     if runner is None or "django.test" not in sys.modules:
         return False
     else:  # pragma: no cover

@@ -8,6 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+from typing import Any
+
 from hypothesis.internal.compat import ExceptionGroup
 
 
@@ -214,7 +216,7 @@ class StopTest(BaseException):
     the Hypothesis engine, which should then continue normally.
     """
 
-    def __init__(self, testcounter):
+    def __init__(self, testcounter: int) -> None:
         super().__init__(repr(testcounter))
         self.testcounter = testcounter
 
@@ -230,7 +232,7 @@ class Found(HypothesisException):
 class RewindRecursive(Exception):
     """Signal that the type inference should be rewound due to recursive types. Internal use only."""
 
-    def __init__(self, target):
+    def __init__(self, target: Any) -> None:
         self.target = target
 
 
