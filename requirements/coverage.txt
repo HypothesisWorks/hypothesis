@@ -28,7 +28,7 @@ exceptiongroup==1.2.2 ; python_version < "3.11"
     #   pytest
 execnet==2.1.1
     # via pytest-xdist
-fakeredis==2.25.0
+fakeredis==2.25.1
     # via -r requirements/coverage.in
 iniconfig==2.0.0
     # via pytest
@@ -38,7 +38,7 @@ libcst==1.4.0
     # via -r requirements/coverage.in
 mypy-extensions==1.0.0
     # via black
-numpy==2.1.1
+numpy==2.1.2
     # via
     #   -r requirements/coverage.in
     #   pandas
@@ -80,7 +80,7 @@ pytz==2024.2
     #   pandas
 pyyaml==6.0.2
     # via libcst
-redis==5.1.0
+redis==5.1.1
     # via fakeredis
 six==1.16.0
     # via python-dateutil
@@ -88,7 +88,7 @@ sortedcontainers==2.4.0
     # via
     #   fakeredis
     #   hypothesis (hypothesis-python/setup.py)
-tomli==2.0.1
+tomli==2.0.2
     # via
     #   black
     #   coverage
