@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.112.3:
+
+--------------------
+6.112.3 - 2024-10-05
+--------------------
+
+This release refactors internals of :class:`hypothesis.stateful.Bundle` to have a more consistent representation internally.
+
 .. _v6.112.2:
 
 --------------------
