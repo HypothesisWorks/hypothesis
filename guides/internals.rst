@@ -74,7 +74,7 @@ Useful Files to Know About
 --------------------------
 
 The code associated with Conjecture lives in
-`src/hypothesis/internal/conjecture <https://github.com/HypothesisWorks/hypothesis/tree/master/hypothesis-python/src/hypothesis/internal/conjecture>`_.
+`src/hypothesis/internal/conjecture <https://github.com/HypothesisWorks/hypothesis/tree/main/hypothesis-python/src/hypothesis/internal/conjecture>`_.
 There are a number of files in there,
 but the most important ones are ``engine.py`` and ``data.py``.
 ``data.py`` defines the core type that is used to represent test cases,
@@ -98,13 +98,13 @@ the `testing guide <testing-hypothesis.rst>`_, but there are a couple
 of areas that it's worth specifically highlighting for making changes
 to the engine:
 
-The first is `tests/conjecture/ <https://github.com/HypothesisWorks/hypothesis/tree/master/hypothesis-python/tests/conjecture>`_,
+The first is `tests/conjecture/ <https://github.com/HypothesisWorks/hypothesis/tree/main/hypothesis-python/tests/conjecture>`_,
 which is a set of unit tests designed to put the engine into particular scenarios to exercise specific behaviours,
 with a goal of achieving 100% coverage on it in isolation (though it currently does not quite achieve that for some specific edge cases.
 We may fix and enforce this later).
 
 The other set of tests that are worth knowing about are the quality tests,
-in `tests/quality <https://github.com/HypothesisWorks/hypothesis/tree/master/hypothesis-python/tests/quality>`_.
+in `tests/quality <https://github.com/HypothesisWorks/hypothesis/tree/main/hypothesis-python/tests/quality>`_.
 These assert specific hard to satisfy properties about the examples that Hypothesis finds -
 either their existence, or something about the final shrunk result.
 

@@ -44,8 +44,8 @@ templates_path = ["_templates"]
 
 source_suffix = ".rst"
 
-# The master toctree document.
-master_doc = "index"
+# The main toctree document.
+main_doc = "index"
 
 # General information about the project.
 project = "Hypothesis"
@@ -138,7 +138,7 @@ from hypothesis.strategies import *
 _repo = "https://github.com/HypothesisWorks/hypothesis/"
 extlinks = {
     "commit": (_repo + "commit/%s", "commit %s"),
-    "gh-file": (_repo + "blob/master/%s", "%s"),
+    "gh-file": (_repo + "blob/main/%s", "%s"),
     "gh-link": (_repo + "%s", "%s"),
     "issue": (_repo + "issues/%s", "issue #%s"),
     "pull": (_repo + "pull/%s", "pull request #%s"),
@@ -169,14 +169,14 @@ html_logo = "../../brand/dragonfly-rainbow-150w.svg"
 latex_elements = {}
 
 latex_documents = [
-    (master_doc, "Hypothesis.tex", "Hypothesis Documentation", author, "manual")
+    (main_doc, "Hypothesis.tex", "Hypothesis Documentation", author, "manual")
 ]
 
-man_pages = [(master_doc, "hypothesis", "Hypothesis Documentation", [author], 1)]
+man_pages = [(main_doc, "hypothesis", "Hypothesis Documentation", [author], 1)]
 
 texinfo_documents = [
     (
-        master_doc,
+        main_doc,
         "Hypothesis",
         "Hypothesis Documentation",
         author,

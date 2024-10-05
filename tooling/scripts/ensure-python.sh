@@ -54,7 +54,7 @@ if [ ! -e "$TARGET/bin/python" ] ; then
       back=$PWD
       cd "$PYENV"
       git fetch || echo "Update failed to complete. Ignoring"
-      git reset --hard origin/master
+      git reset --hard origin/main
       cd "$back"
     fi
 
