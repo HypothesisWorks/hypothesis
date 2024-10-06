@@ -173,7 +173,7 @@ def test_recursion_error_is_not_flaky():
         except RecursionError:
             data.mark_interesting()
 
-    runner = ConjectureRunner(tf)
+    runner = ConjectureRunner(tf, settings=settings(derandomize=True))
     runner.run()
     assert runner.exit_reason == ExitReason.finished
 

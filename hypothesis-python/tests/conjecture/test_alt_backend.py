@@ -155,7 +155,10 @@ class PrngProvider(PrimitiveProvider):
             return forced
         max_size = 100 if max_size is None else max_size
         size = self.prng.randint(min_size, max_size)
-        return self.prng.randbytes(size)
+        try:
+            return self.prng.randbytes(size)
+        except AttributeError:  # randbytes is new in python 3.9
+            return bytes(self.prng.randint(0, 255) for _ in range(size))
 
 
 @contextmanager
