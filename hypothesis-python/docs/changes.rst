@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.112.4:
+
+--------------------
+6.112.4 - 2024-10-06
+--------------------
+
+This patch tweaks the paths in ``@example(...)`` patches, so that
+both ``git apply`` and ``patch`` will work by default.
+
 .. _v6.112.3:
 
 --------------------
