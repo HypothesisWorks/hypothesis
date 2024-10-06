@@ -41,9 +41,9 @@ class PrngProvider(PrimitiveProvider):
     # a very simple PRNG to choose each value. Dumb but efficient, and entirely
     # independent of our real backend
 
-    def __init__(self, conjecturedata: "ConjectureData", /) -> None:
+    def __init__(self, conjecturedata: "ConjectureData | None", /) -> None:
         super().__init__(conjecturedata)
-        self.prng = Random()
+        self.prng = Random(0)
 
     def draw_boolean(
         self,
