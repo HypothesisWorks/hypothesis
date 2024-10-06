@@ -57,7 +57,7 @@ flask==3.0.3
     # via dash
 hypofuzz==24.9.1
     # via -r requirements/fuzzing.in
-hypothesis[cli]==6.112.2
+hypothesis[cli]==6.112.3
     # via hypofuzz
 idna==3.10
     # via requests
