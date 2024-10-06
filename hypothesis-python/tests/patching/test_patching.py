@@ -23,7 +23,7 @@ from hypothesis.extra._patching import (
 )
 from hypothesis.internal.compat import WINDOWS
 
-from .callables import WHERE, Cases, covered, fn
+from .callables import WHERE, Cases, covered, fn, undef_name
 from .toplevel import WHERE_TOP, fn_top
 
 SIMPLE = (
@@ -52,6 +52,11 @@ COVERING = (
     + "\n"
     + indent('@example(x=0).via("covering example")', prefix="+"),
 )
+UNDEF_NAME = (
+    undef_name,
+    ("undef_name(\n    array=array([100], dtype=int8),\n)", FAIL_MSG),
+    '+@example(array=np.array([100], dtype=np.int8)).via("discovered failure")',
+)
 
 
 def strip_trailing_whitespace(s):
@@ -76,7 +81,7 @@ def test_adds_simple_patch(tst, example, expected):
 SIMPLE_PATCH_BODY = f'''\
 --- ./{WHERE}
 +++ ./{WHERE}
-@@ -18,6 +18,7 @@
+@@ -21,6 +21,7 @@
 
 
  @given(st.integers())
@@ -88,7 +93,7 @@ SIMPLE_PATCH_BODY = f'''\
 CASES_PATCH_BODY = f'''\
 --- ./{WHERE}
 +++ ./{WHERE}
-@@ -25,6 +25,9 @@
+@@ -28,6 +28,9 @@
  class Cases:
      @example(n=0, label="whatever")
      @given(st.integers(), st.text())
@@ -111,7 +116,7 @@ TOPLEVEL_PATCH_BODY = f'''\
 COVERING_PATCH_BODY = f'''\
 --- ./{WHERE}
 +++ ./{WHERE}
-@@ -31,7 +31,7 @@
+@@ -34,7 +34,7 @@
 
  @given(st.integers())
  @example(x=2).via("not a literal when repeated " * 2)
@@ -120,6 +125,19 @@ COVERING_PATCH_BODY = f'''\
      """A test function with a removable explicit example."""
 
 '''
+
+UNDEF_NAME_PATCH_BODY = f"""\
+--- ./{WHERE}
++++ ./{WHERE}
+@@ -40,6 +40,7 @@
+
+
+ @given(npst.arrays(np.int8, 1))
+{{0}}
+ def undef_name(array):
+     assert sum(array) < 100
+
+"""
 
 
 @pytest.mark.parametrize(
@@ -131,6 +149,7 @@ COVERING_PATCH_BODY = f'''\
         pytest.param(
             *COVERING, COVERING_PATCH_BODY, ("covering example",), id="covering"
         ),
+        pytest.param(*UNDEF_NAME, UNDEF_NAME_PATCH_BODY, (), id="undef_name"),
     ],
 )
 def test_make_full_patch(tst, example, expected, body, remove):
