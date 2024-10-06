@@ -51,11 +51,6 @@ pip uninstall -y lark
 if [ "$(python -c $'import platform, sys; print(sys.version_info.releaselevel == \'final\' and platform.python_implementation() not in ("PyPy", "GraalVM"))')" = "True" ] ; then
   pip install ".[codemods,cli]"
   $PYTEST tests/codemods/
-  pip install "$(grep -E 'black(==| @)' ../requirements/coverage.txt)"
-  if [ "$(python -c 'import sys; print(sys.version_info[:2] >= (3, 9))')" = "True" ] ; then
-    $PYTEST tests/patching/
-  fi
-  pip uninstall -y libcst
 
   if [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 8))')" = "True" ] ; then
     # Per NEP-29, this is the last version to support Python 3.8
@@ -63,6 +58,12 @@ if [ "$(python -c $'import platform, sys; print(sys.version_info.releaselevel ==
   else
     pip install "$(grep 'numpy==' ../requirements/coverage.txt)"
   fi
+
+  pip install "$(grep -E 'black(==| @)' ../requirements/coverage.txt)"
+  if [ "$(python -c 'import sys; print(sys.version_info[:2] >= (3, 9))')" = "True" ] ; then
+    $PYTEST tests/patching/
+  fi
+  pip uninstall -y libcst
 
   $PYTEST tests/ghostwriter/
   pip uninstall -y black

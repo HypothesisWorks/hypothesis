@@ -10,10 +10,9 @@
 
 import math
 import sys
-from collections.abc import Sequence
 from contextlib import contextmanager
 from random import Random
-from typing import Optional
+from typing import Optional, Sequence
 
 import pytest
 
@@ -42,9 +41,9 @@ class PrngProvider(PrimitiveProvider):
     # a very simple PRNG to choose each value. Dumb but efficient, and entirely
     # independent of our real backend
 
-    def __init__(self, conjecturedata: "ConjectureData", /) -> None:
+    def __init__(self, conjecturedata: "ConjectureData | None", /) -> None:
         super().__init__(conjecturedata)
-        self.prng = Random()
+        self.prng = Random(0)
 
     def draw_boolean(
         self,
@@ -156,7 +155,10 @@ class PrngProvider(PrimitiveProvider):
             return forced
         max_size = 100 if max_size is None else max_size
         size = self.prng.randint(min_size, max_size)
-        return self.prng.randbytes(size)
+        try:
+            return self.prng.randbytes(size)
+        except AttributeError:  # randbytes is new in python 3.9
+            return bytes(self.prng.randint(0, 255) for _ in range(size))
 
 
 @contextmanager
@@ -454,17 +456,15 @@ class ObservableProvider(TrivialProvider):
 
 
 def test_custom_observations_from_backend():
-    with (
-        temp_register_backend("observable", ObservableProvider),
-        capture_observations() as ls,
-    ):
+    with temp_register_backend("observable", ObservableProvider):
 
         @given(st.none())
         @settings(backend="observable", database=None)
         def test_function(_):
             pass
 
-        test_function()
+        with capture_observations() as ls:
+            test_function()
 
     assert len(ls) >= 3
     cases = [t["metadata"]["backend"] for t in ls if t["type"] == "test_case"]

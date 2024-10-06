@@ -27,7 +27,7 @@ from hypothesis import (
 )
 from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
 from hypothesis.errors import FailedHealthCheck, FlakyStrategyDefinition
-from hypothesis.internal.compat import bit_count, int_from_bytes
+from hypothesis.internal.compat import PYPY, bit_count, int_from_bytes
 from hypothesis.internal.conjecture import engine as engine_module
 from hypothesis.internal.conjecture.data import ConjectureData, IRNode, Overrun, Status
 from hypothesis.internal.conjecture.datatree import compute_max_children
@@ -165,6 +165,7 @@ def recur(i, data):
         recur(i - 1, data)
 
 
+@pytest.mark.skipif(PYPY, reason="stack tricks only work reliably on CPython")
 def test_recursion_error_is_not_flaky():
     def tf(data):
         i = data.draw_integer(0, 2**16 - 1)
@@ -173,7 +174,7 @@ def test_recursion_error_is_not_flaky():
         except RecursionError:
             data.mark_interesting()
 
-    runner = ConjectureRunner(tf)
+    runner = ConjectureRunner(tf, settings=settings(derandomize=True))
     runner.run()
     assert runner.exit_reason == ExitReason.finished
 

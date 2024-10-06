@@ -144,8 +144,7 @@ def all_files():
 
 
 def changed_files_from_master():
-    """Returns a list of files which have changed between a branch and
-    master."""
+    """Returns a list of files which have changed between a branch and master."""
     files = set()
     command = ["git", "diff", "--name-only", "HEAD", "master"]
     diff_output = subprocess.check_output(command).decode("ascii")
