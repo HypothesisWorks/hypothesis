@@ -1254,7 +1254,8 @@ class PrimitiveProvider(abc.ABC):
         symbolic before calling `realize`, so you should handle the case where
         `value` is non-symbolic.
 
-        The returned value should be non-symbolic.
+        The returned value should be non-symbolic.  If you cannot provide a value,
+        raise hypothesis.errors.BackendCannotProceed("discard_test_case")
         """
         return value
 
