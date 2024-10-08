@@ -1318,3 +1318,24 @@ class LotsOfEntropyPerStepMachine(RuleBasedStateMachine):
 
 
 TestLotsOfEntropyPerStepMachine = LotsOfEntropyPerStepMachine.TestCase
+
+
+def test_flatmap():
+    class Machine(RuleBasedStateMachine):
+        buns = Bundle("buns")
+
+        @initialize(target=buns)
+        def create_bun(self):
+            return 0
+
+        @rule(target=buns, bun=buns.flatmap(lambda x: just(x + 1)))
+        def use_flatmap(self, bun):
+            assert isinstance(bun, int)
+            return bun
+
+        @rule(bun=buns)
+        def use_directly(self, bun):
+            assert isinstance(bun, int)
+
+    Machine.TestCase.settings = Settings(stateful_step_count=5, max_examples=10)
+    run_state_machine_as_test(Machine)
