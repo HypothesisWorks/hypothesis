@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.112.5:
+
+--------------------
+6.112.5 - 2024-10-08
+--------------------
+
+This release fixes a regression where :class:`hypothesis.stateful.Bundle` did not work properly with :ref:`flatmap <flatmap>` functionality (:issue:`4128`).
+
 .. _v6.112.4:
 
 --------------------
