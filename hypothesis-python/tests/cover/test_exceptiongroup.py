@@ -8,8 +8,6 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from __future__ import annotations
-
 import pytest
 
 from hypothesis import errors, given, strategies as st
@@ -114,7 +112,6 @@ def test_frozen_and_stoptest() -> None:
 
 def test_multiple_stoptest_1() -> None:
     # multiple stoptest, reraise the one with lowest testcounter
-    # TODO: I don't know if/how this can happen, nested tests perhaps??
     @given(st.data())
     def multiple_stoptest(data: DataObject) -> None:
         c = data.conjecture_data.testcounter

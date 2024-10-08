@@ -804,7 +804,9 @@ def unwrap_exception_group() -> Generator[None, None, None]:
             raise
 
         # single marker exception - reraise it
-        flattened_non_frozen_exceptions: List[BaseException] = _flatten_group(non_frozen_exceptions)
+        flattened_non_frozen_exceptions: List[BaseException] = _flatten_group(
+            non_frozen_exceptions
+        )
         if len(flattened_non_frozen_exceptions) == 1:
             e = flattened_non_frozen_exceptions[0]
             # preserve the cause of the original exception to not hinder debugging
@@ -1146,9 +1148,6 @@ class StateForActualGivenExecution:
                 # This can happen if an error occurred in a finally
                 # block somewhere, suppressing our original StopTest.
                 # We raise a new one here to resume normal operation.
-                # TODO: this should maybe inspect the stacktrace to see that the above
-                # mentioned story is true? I.e. reraise as StopTest iff there is a
-                # StopTest somewhere in the tree of e.__context__
                 raise StopTest(data.testcounter) from e
             else:
                 # The test failed by raising an exception, so we inform the

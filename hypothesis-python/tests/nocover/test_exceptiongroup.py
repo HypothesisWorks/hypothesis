@@ -8,8 +8,6 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from __future__ import annotations
-
 import asyncio
 import sys
 from typing import Callable
@@ -94,10 +92,7 @@ def test_exceptiongroup_multiple_stop() -> None:
     @given(st.data())
     def test_function(data):
         async def task(d: DataObject) -> None:
-            ...
-            # idk how to intentionally raise StopTest here, without mucking
-            # around with internals *a lot* in a way that nobody would ever
-            # be expected to do
+            d.conjecture_data.mark_invalid()
 
         async def _main(d: DataObject) -> None:
             async with asyncio.TaskGroup() as tg:
@@ -106,12 +101,30 @@ def test_exceptiongroup_multiple_stop() -> None:
 
         asyncio.run(_main(data))
 
-    test_function()
+    # multiple stoptests -> single stoptest -> unsatisfiable
+    with pytest.raises(errors.Unsatisfiable):
+        test_function()
 
 
 def test_exceptiongroup_stop_and_hypothesisexception() -> None:
-    # idk how to intentionally raise StopTest
-    ...
+    # group with stoptest+invalidargument -> invalidargument
+    @given(st.data())
+    def test_function(data):
+        async def task_stoptest(d: DataObject) -> None:
+            d.conjecture_data.mark_invalid()
+
+        async def task_invalid_argument(d: DataObject) -> None:
+            d.draw(st.integers(max_value=2, min_value=3))
+
+        async def _main(d: DataObject) -> None:
+            async with asyncio.TaskGroup() as tg:
+                tg.create_task(task_stoptest(d))
+                tg.create_task(task_invalid_argument(d))
+
+        asyncio.run(_main(data))
+
+    with pytest.raises(errors.InvalidArgument):
+        test_function()
 
 
 def test_exceptiongroup_multiple_hypothesisexception() -> None:
