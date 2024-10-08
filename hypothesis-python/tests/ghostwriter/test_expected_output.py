@@ -299,6 +299,7 @@ else:
     ],
     ids=lambda x: x[0],
 )
+@pytest.mark.skipif(sys.version_info >= (3, 13), reason="changed name/alias")
 def test_ghostwriter_example_outputs(update_recorded_outputs, data):
     name, actual = data
     expected = get_recorded(name, actual * update_recorded_outputs)
