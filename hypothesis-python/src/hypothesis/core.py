@@ -1377,7 +1377,7 @@ def _raise_to_user(
             add_note(the_error_hypothesis_found, line)
 
     if verified_by:
-        msg = f"backend={verified_by!r} verified this test passes - please report that as a bug!"
+        msg = f"backend={verified_by!r} claimed to verify this test passes - please send them a bug report!"
         add_note(err, msg)
 
     raise the_error_hypothesis_found

@@ -540,7 +540,7 @@ class UnsoundVerifierProvider(ExhaustibleProvider):
 
 @pytest.mark.parametrize("provider", [ExhaustibleProvider, UnsoundVerifierProvider])
 def test_notes_incorrect_verification(provider):
-    msg = "backend='p' verified this test passes - please report that as a bug!"
+    msg = "backend='p' claimed to verify this test passes - please send them a bug report!"
     with temp_register_backend("p", provider):
 
         @given(st.integers())
