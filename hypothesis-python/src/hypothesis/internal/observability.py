@@ -17,13 +17,13 @@ import time
 import warnings
 from datetime import date, timedelta
 from functools import lru_cache
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Optional
 
 from hypothesis.configuration import storage_directory
 from hypothesis.errors import HypothesisWarning
 from hypothesis.internal.conjecture.data import ConjectureData, Status
 
-TESTCASE_CALLBACKS: List[Callable[[dict], None]] = []
+TESTCASE_CALLBACKS: list[Callable[[dict], None]] = []
 
 
 def deliver_json_blob(value: dict) -> None:
@@ -39,10 +39,10 @@ def make_testcase(
     how_generated: str,
     string_repr: str = "<unknown>",
     arguments: Optional[dict] = None,
-    timing: Dict[str, float],
-    coverage: Optional[Dict[str, List[int]]] = None,
+    timing: dict[str, float],
+    coverage: Optional[dict[str, list[int]]] = None,
     phase: Optional[str] = None,
-    backend_metadata: Optional[Dict[str, Any]] = None,
+    backend_metadata: Optional[dict[str, Any]] = None,
 ) -> dict:
     if data.interesting_origin:
         status_reason = str(data.interesting_origin)

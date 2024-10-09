@@ -9,7 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 from importlib.metadata import EntryPoint, entry_points  # type: ignore
-from typing import Dict, Literal
+from typing import Literal
 
 import pytest
 
@@ -34,7 +34,7 @@ if len(RELEASED_VERSIONS) > 1:
     assert MIN_VER_FOR_COMPLEX == RELEASED_VERSIONS[1]
 
 
-def installed_array_modules() -> Dict[str, EntryPoint]:
+def installed_array_modules() -> dict[str, EntryPoint]:
     """Returns a dictionary of array module names paired to their entry points
 
     A convenience wrapper for importlib.metadata.entry_points(). It has the

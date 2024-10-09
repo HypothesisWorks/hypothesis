@@ -23,7 +23,8 @@ import pathlib
 import re
 import subprocess
 import sys
-from typing import Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import Optional, Union
 
 import numpy
 import numpy.typing

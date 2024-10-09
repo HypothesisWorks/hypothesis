@@ -21,13 +21,14 @@ import sys
 import textwrap
 import types
 import warnings
+from collections.abc import MutableMapping
 from functools import partial, wraps
 from io import StringIO
 from keyword import iskeyword
 from random import _inst as global_random_instance
 from tokenize import COMMENT, detect_encoding, generate_tokens, untokenize
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Callable, MutableMapping
+from typing import TYPE_CHECKING, Any, Callable
 from unittest.mock import _patch as PatchType
 from weakref import WeakKeyDictionary
 

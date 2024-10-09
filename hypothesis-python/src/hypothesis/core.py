@@ -24,6 +24,7 @@ import unittest
 import warnings
 import zlib
 from collections import defaultdict
+from collections.abc import Coroutine, Hashable
 from functools import partial
 from random import Random
 from typing import (
@@ -31,12 +32,7 @@ from typing import (
     Any,
     BinaryIO,
     Callable,
-    Coroutine,
-    Hashable,
-    List,
     Optional,
-    Tuple,
-    Type,
     TypeVar,
     Union,
     overload,
@@ -179,7 +175,7 @@ class example:
         if not (args or kwargs):
             raise InvalidArgument("An example must provide at least one argument")
 
-        self.hypothesis_explicit_examples: List[Example] = []
+        self.hypothesis_explicit_examples: list[Example] = []
         self._this_example = Example(tuple(args), kwargs)
 
     def __call__(self, test: TestFunc) -> TestFunc:
@@ -194,7 +190,7 @@ class example:
         *,
         reason: str = "",
         raises: Union[
-            Type[BaseException], Tuple[Type[BaseException], ...]
+            type[BaseException], tuple[type[BaseException], ...]
         ] = BaseException,
     ) -> "example":
         """Mark this example as an expected failure, similarly to
@@ -1825,7 +1821,7 @@ def find(
         )
     specifier.validate()
 
-    last: List[Ex] = []
+    last: list[Ex] = []
 
     @settings
     @given(specifier)

@@ -17,7 +17,7 @@ import sys
 import sysconfig
 import typing
 from functools import partial
-from typing import Any, ForwardRef, List, Optional, TypedDict as TypedDict, get_args
+from typing import Any, ForwardRef, Optional, TypedDict as TypedDict, get_args
 
 try:
     BaseExceptionGroup = BaseExceptionGroup
@@ -218,7 +218,7 @@ def ceil(x):
     return y
 
 
-def extract_bits(x: int, /, width: Optional[int] = None) -> List[int]:
+def extract_bits(x: int, /, width: Optional[int] = None) -> list[int]:
     assert x >= 0
     result = []
     while x:

@@ -209,6 +209,8 @@ def format():
     codespell("--write-changes", *files_to_format, *doc_files_to_format)
     pip_tool("ruff", "check", "--fix-only", ".")
     pip_tool("shed", *files_to_format, *doc_files_to_format)
+    # FIXME: work through the typing issues and enable py39 formatting
+    # pip_tool("shed", "--py39-plus", *files_to_format, *doc_files_to_format)
 
 
 VALID_STARTS = (HEADER.split()[0], "#!/usr/bin/env python")
