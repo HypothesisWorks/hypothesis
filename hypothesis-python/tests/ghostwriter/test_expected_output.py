@@ -179,9 +179,9 @@ else:
         ("re_compile", ghostwriter.fuzz(re.compile)),
         (
             "re_compile_except",
-            ghostwriter.fuzz(re.compile, except_=re.error)
-            # re.error fixed it's __module__ in Python 3.7
-            .replace("import sre_constants\n", "").replace("sre_constants.", "re."),
+            ghostwriter.fuzz(re.compile, except_=re.error).replace(
+                "re.PatternError", "re.error"  # changed in Python 3.13
+            ),
         ),
         ("re_compile_unittest", ghostwriter.fuzz(re.compile, style="unittest")),
         pytest.param(
@@ -194,7 +194,10 @@ else:
             "timsort_idempotent_asserts",
             ghostwriter.idempotent(timsort, except_=AssertionError),
         ),
-        ("eval_equivalent", ghostwriter.equivalent(eval, ast.literal_eval)),
+        pytest.param(
+            ("eval_equivalent", ghostwriter.equivalent(eval, ast.literal_eval)),
+            marks=[pytest.mark.skipif(sys.version_info[:2] >= (3, 13), reason="kw")],
+        ),
         ("sorted_self_equivalent", ghostwriter.equivalent(sorted, sorted, sorted)),
         (
             "sorted_self_equivalent_with_annotations",
@@ -299,7 +302,6 @@ else:
     ],
     ids=lambda x: x[0],
 )
-@pytest.mark.skipif(sys.version_info >= (3, 13), reason="changed name/alias")
 def test_ghostwriter_example_outputs(update_recorded_outputs, data):
     name, actual = data
     expected = get_recorded(name, actual * update_recorded_outputs)
