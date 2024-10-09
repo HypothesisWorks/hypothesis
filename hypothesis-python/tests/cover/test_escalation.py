@@ -23,7 +23,7 @@ def test_is_hypothesis_file_not_confused_by_prefix(monkeypatch):
     # `hypothesis-jsonschema` used to be incorrectly considered to be
     # Hypothesis internal errors, which could result in confusing error
     # messages. This test makes sure that files like:
-    # `[...]/python3.7/site-packages/hypothesis_something/[...]`
+    # `[...]/python3.12/site-packages/hypothesis_something/[...]`
     # are not considered as hypothesis files.
     root = os.path.dirname(hypothesis.__file__)
     assert esc.is_hypothesis_file(hypothesis.__file__)

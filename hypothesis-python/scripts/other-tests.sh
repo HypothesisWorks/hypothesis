@@ -35,11 +35,9 @@ if [[ "$HYPOTHESIS_PROFILE" != "crosshair" ]]; then
   pip uninstall -y typing_extensions
 fi
 
-if [ "$(python -c 'import sys; print(sys.version_info[:2] >= (3, 9))')" = "True" ] ; then
-  pip install "$(grep 'annotated-types==' ../requirements/coverage.txt)"
-  $PYTEST tests/test_annotated_types.py
-  pip uninstall -y annotated-types
-fi
+pip install "$(grep 'annotated-types==' ../requirements/coverage.txt)"
+$PYTEST tests/test_annotated_types.py
+pip uninstall -y annotated-types
 
 pip install ".[lark]"
 pip install "$(grep -oE 'lark>=([0-9.]+)' ../hypothesis-python/setup.py | tr '>' =)"
@@ -52,17 +50,15 @@ if [ "$(python -c $'import platform, sys; print(sys.version_info.releaselevel ==
   pip install ".[codemods,cli]"
   $PYTEST tests/codemods/
 
-  if [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 8))')" = "True" ] ; then
-    # Per NEP-29, this is the last version to support Python 3.8
-    pip install numpy==1.24.3
+  if [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 9))')" = "True" ] ; then
+    # Per NEP-29, this is the last version to support Python 3.9
+    pip install numpy==2.0.2
   else
     pip install "$(grep 'numpy==' ../requirements/coverage.txt)"
   fi
 
   pip install "$(grep -E 'black(==| @)' ../requirements/coverage.txt)"
-  if [ "$(python -c 'import sys; print(sys.version_info[:2] >= (3, 9))')" = "True" ] ; then
-    $PYTEST tests/patching/
-  fi
+  $PYTEST tests/patching/
   pip uninstall -y libcst
 
   $PYTEST tests/ghostwriter/

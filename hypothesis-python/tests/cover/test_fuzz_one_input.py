@@ -11,6 +11,7 @@
 import io
 import unittest
 from operator import attrgetter
+from random import randbytes
 
 import pytest
 
@@ -18,11 +19,6 @@ from hypothesis import Phase, given, settings, strategies as st
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture.shrinker import sort_key
-
-try:
-    from random import randbytes
-except ImportError:  # New in Python 3.9
-    from secrets import token_bytes as randbytes
 
 
 @pytest.mark.parametrize(

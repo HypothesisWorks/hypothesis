@@ -12,12 +12,11 @@ import pytest
 
 from hypothesis import example, given, strategies as st
 from hypothesis.errors import HypothesisWarning, InvalidArgument
-from hypothesis.internal.conjecture.utils import identity
 
 from tests.common.utils import fails_with
 
 
-@identity(example(False).via("Manually specified"))
+@example(False).via("Manually specified")
 @given(st.booleans())
 def test_ok_example_via(x):
     pass
@@ -49,12 +48,12 @@ def test_invalid_example_xfail_arguments(kw):
         example(x=False).xfail(**kw)
 
 
-@identity(example(True).xfail())
-@identity(example(True).xfail(reason="ignored for passing tests"))
-@identity(example(True).xfail(raises=KeyError))
-@identity(example(True).xfail(raises=(KeyError, ValueError)))
-@identity(example(True).xfail(True, reason="..."))
-@identity(example(False).xfail(condition=False))
+@example(True).xfail()
+@example(True).xfail(reason="ignored for passing tests")
+@example(True).xfail(raises=KeyError)
+@example(True).xfail(raises=(KeyError, ValueError))
+@example(True).xfail(True, reason="...")
+@example(False).xfail(condition=False)
 @given(st.none())
 def test_many_xfail_example_decorators(fails):
     if fails:
@@ -62,7 +61,7 @@ def test_many_xfail_example_decorators(fails):
 
 
 @fails_with(AssertionError)
-@identity(example(x=True).xfail(raises=KeyError))
+@example(x=True).xfail(raises=KeyError)
 @given(st.none())
 def test_xfail_reraises_non_specified_exception(x):
     assert not x
@@ -73,7 +72,7 @@ def test_xfail_reraises_non_specified_exception(x):
     match=r"@example\(x=True\) raised an expected BaseException\('msg'\), "
     r"but Hypothesis does not treat this as a test failure",
 )
-@identity(example(True).xfail())
+@example(True).xfail()
 @given(st.none())
 def test_must_raise_a_failure_exception(x):
     if x:
@@ -84,7 +83,7 @@ def test_must_raise_a_failure_exception(x):
     AssertionError,
     match=r"Expected an exception from @example\(x=None\), but no exception was raised.",
 )
-@identity(example(None).xfail())
+@example(None).xfail()
 @given(st.none())
 def test_error_on_unexpected_pass_base(x):
     pass
@@ -94,7 +93,7 @@ def test_error_on_unexpected_pass_base(x):
     AssertionError,
     match=r"Expected an AssertionError from @example\(x=None\), but no exception was raised.",
 )
-@identity(example(None).xfail(raises=AssertionError))
+@example(None).xfail(raises=AssertionError)
 @given(st.none())
 def test_error_on_unexpected_pass_single(x):
     pass
@@ -104,7 +103,7 @@ def test_error_on_unexpected_pass_single(x):
     AssertionError,
     match=r"Expected an AssertionError from @example\(x=None\), but no exception was raised.",
 )
-@identity(example(None).xfail(raises=(AssertionError,)))
+@example(None).xfail(raises=(AssertionError,))
 @given(st.none())
 def test_error_on_unexpected_pass_single_elem_tuple(x):
     pass
@@ -114,7 +113,7 @@ def test_error_on_unexpected_pass_single_elem_tuple(x):
     AssertionError,
     match=r"Expected a KeyError, or ValueError from @example\(x=None\), but no exception was raised.",
 )
-@identity(example(None).xfail(raises=(KeyError, ValueError)))
+@example(None).xfail(raises=(KeyError, ValueError))
 @given(st.none())
 def test_error_on_unexpected_pass_multi(x):
     pass
@@ -123,7 +122,7 @@ def test_error_on_unexpected_pass_multi(x):
 def test_generating_xfailed_examples_warns():
     @given(st.integers())
     @example(1)
-    @identity(example(0).xfail(raises=ZeroDivisionError))
+    @example(0).xfail(raises=ZeroDivisionError)
     def foo(x):
         assert 1 / x
 

@@ -1,11 +1,13 @@
 # This test code was written by the `hypothesis.extra.ghostwriter` module
 # and is provided under the Creative Commons Zero public domain dedication.
 
+import collections.abc
 import datetime
 import hypothesis
 import random
 import typing
-from hypothesis import given, strategies as st
+from collections.abc import Hashable
+from hypothesis import given, settings, strategies as st
 
 
 @given(condition=st.from_type(object))
@@ -56,8 +58,8 @@ def test_fuzz_reproduce_failure(version: str, blob: bytes) -> None:
     hypothesis.reproduce_failure(version=version, blob=blob)
 
 
-@given(seed=st.from_type(typing.Hashable))
-def test_fuzz_seed(seed: typing.Hashable) -> None:
+@given(seed=st.from_type(Hashable))
+def test_fuzz_seed(seed: collections.abc.Hashable) -> None:
     hypothesis.seed(seed=seed)
 
 

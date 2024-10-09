@@ -13,6 +13,7 @@ import math
 import textwrap
 import time
 from collections import defaultdict
+from collections.abc import Generator
 from contextlib import contextmanager, suppress
 from datetime import timedelta
 from enum import Enum
@@ -20,16 +21,11 @@ from random import Random, getrandbits
 from typing import (
     Any,
     Callable,
-    Dict,
     Final,
-    FrozenSet,
-    Generator,
     List,
     Literal,
     NoReturn,
     Optional,
-    Set,
-    Tuple,
     Union,
     cast,
     overload,
@@ -97,7 +93,7 @@ BUFFER_SIZE: Final[int] = 8 * 1024
 # (but make it monkeypatchable, for the rare users who need to keep on shrinking)
 MAX_SHRINKING_SECONDS: Final[int] = 300
 
-Ls: TypeAlias = List["Ls | int"]
+Ls: TypeAlias = list["Ls | int"]
 
 
 @attr.s
@@ -117,7 +113,9 @@ class HealthCheckState:
         """Return a terminal report describing what was slow."""
         if not self.draw_times:
             return ""
-        width = max(len(k[len("generate:") :].strip(": ")) for k in self.draw_times)
+        width = max(
+            len(k.removeprefix("generate:").removesuffix(": ")) for k in self.draw_times
+        )
         out = [f"\n  {'':^{width}}   count | fraction |    slowest draws (seconds)"]
         args_in_order = sorted(self.draw_times.items(), key=lambda kv: -sum(kv[1]))
         for i, (argname, times) in enumerate(args_in_order):  # pragma: no branch
@@ -132,7 +130,7 @@ class HealthCheckState:
             # Compute the row to report, omitting times <1ms to focus on slow draws
             reprs = [f"{t:>6.3f}," for t in sorted(times)[-5:] if t > 5e-4]
             desc = " ".join((["    -- "] * 5 + reprs)[-5:]).rstrip(",")
-            arg = argname[len("generate:") :].strip(": ")  # removeprefix in py3.9
+            arg = argname.removeprefix("generate:").removesuffix(": ")
             out.append(
                 f"  {arg:^{width}} | {len(times):>4}  | "
                 f"{math.fsum(times)/self.total_draw_time:>7.0%}  |  {desc}"
@@ -178,14 +176,14 @@ class CallStats(TypedDict):
     runtime: float
     drawtime: float
     gctime: float
-    events: List[str]
+    events: list[str]
 
 
 PhaseStatistics = TypedDict(
     "PhaseStatistics",
     {
         "duration-seconds": float,
-        "test-cases": List[CallStats],
+        "test-cases": list[CallStats],
         "distinct-failures": int,
         "shrinks-successful": int,
     },
@@ -197,7 +195,7 @@ StatisticsDict = TypedDict(
         "reuse-phase": NotRequired[PhaseStatistics],
         "shrink-phase": NotRequired[PhaseStatistics],
         "stopped-because": NotRequired[str],
-        "targets": NotRequired[Dict[str, float]],
+        "targets": NotRequired[dict[str, float]],
         "nodeid": NotRequired[str],
     },
 )
@@ -228,16 +226,16 @@ class ConjectureRunner:
         # which transfer to the global dict at the end of each phase.
         self._current_phase: str = "(not a phase)"
         self.statistics: StatisticsDict = {}
-        self.stats_per_test_case: List[CallStats] = []
+        self.stats_per_test_case: list[CallStats] = []
 
         # At runtime, the keys are only ever type `InterestingOrigin`, but can be `None` during tests.
-        self.interesting_examples: Dict[InterestingOrigin, ConjectureResult] = {}
+        self.interesting_examples: dict[InterestingOrigin, ConjectureResult] = {}
         # We use call_count because there may be few possible valid_examples.
         self.first_bug_found_at: Optional[int] = None
         self.last_bug_found_at: Optional[int] = None
 
         # At runtime, the keys are only ever type `InterestingOrigin`, but can be `None` during tests.
-        self.shrunk_examples: Set[Optional[InterestingOrigin]] = set()
+        self.shrunk_examples: set[Optional[InterestingOrigin]] = set()
 
         self.health_check_state: Optional[HealthCheckState] = None
 
@@ -250,7 +248,7 @@ class ConjectureRunner:
         self.best_observed_targets: "defaultdict[str, float]" = defaultdict(
             lambda: NO_SCORE
         )
-        self.best_examples_of_observed_targets: Dict[str, ConjectureResult] = {}
+        self.best_examples_of_observed_targets: dict[str, ConjectureResult] = {}
 
         # We keep the pareto front in the example database if we have one. This
         # is only marginally useful at present, but speeds up local development
@@ -332,9 +330,9 @@ class ConjectureRunner:
     def _cache_key_ir(
         self,
         *,
-        nodes: Optional[List[IRNode]] = None,
+        nodes: Optional[list[IRNode]] = None,
         data: Union[ConjectureData, ConjectureResult, None] = None,
-    ) -> Tuple[Tuple[Any, ...], ...]:
+    ) -> tuple[tuple[Any, ...], ...]:
         assert (nodes is not None) ^ (data is not None)
         if data is not None:
             nodes = data.examples.ir_tree_nodes
@@ -375,7 +373,7 @@ class ConjectureRunner:
             self.__data_cache_ir[key] = result
 
     def cached_test_function_ir(
-        self, nodes: List[IRNode], *, error_on_discard: bool = False
+        self, nodes: list[IRNode], *, error_on_discard: bool = False
     ) -> Union[ConjectureResult, _Overrun]:
         key = self._cache_key_ir(nodes=nodes)
         try:
@@ -532,7 +530,9 @@ class ConjectureRunner:
                 # drive the ir tree through the test function to convert it
                 # to a buffer
                 initial_origin = data.interesting_origin
-                initial_traceback = data.extra_information._expected_traceback  # type: ignore
+                initial_traceback = getattr(
+                    data.extra_information, "_expected_traceback", None
+                )
                 data = ConjectureData.for_ir_tree(data.examples.ir_tree_nodes)
                 self.__stoppable_test_function(data)
                 data.freeze()
@@ -544,7 +544,11 @@ class ConjectureRunner:
                         data.status.INVALID: "failed filters",
                         data.status.OVERRUN: "overran",
                     }[data.status]
-                    wrapped_tb = textwrap.indent(initial_traceback, "  | ")
+                    wrapped_tb = (
+                        ""
+                        if initial_traceback is None
+                        else textwrap.indent(initial_traceback, "  | ")
+                    )
                     raise FlakyReplay(
                         f"Inconsistent results from replaying a failing test case!\n"
                         f"{wrapped_tb}on backend={self.settings.backend!r} but "
@@ -740,7 +744,7 @@ class ConjectureRunner:
         if not self.report_debug_info:
             return
 
-        stack: List[Ls] = [[]]
+        stack: list[Ls] = [[]]
 
         def go(ex: Example) -> None:
             if ex.length == 0:
@@ -1255,7 +1259,7 @@ class ConjectureRunner:
 
     def new_conjecture_data_ir(
         self,
-        ir_tree_prefix: List[IRNode],
+        ir_tree_prefix: list[IRNode],
         *,
         observer: Optional[DataObserver] = None,
         max_length: Optional[int] = None,
@@ -1484,7 +1488,7 @@ class ConjectureRunner:
             self.__data_cache[buffer] = result
         return result
 
-    def passing_buffers(self, prefix: bytes = b"") -> FrozenSet[bytes]:
+    def passing_buffers(self, prefix: bytes = b"") -> frozenset[bytes]:
         """Return a collection of bytestrings which cause the test to pass.
 
         Optionally restrict this by a certain prefix, which is useful for explain mode.

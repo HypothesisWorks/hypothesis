@@ -24,6 +24,7 @@ import unittest
 import warnings
 import zlib
 from collections import defaultdict
+from collections.abc import Coroutine, Hashable
 from functools import partial
 from random import Random
 from typing import (
@@ -31,12 +32,7 @@ from typing import (
     Any,
     BinaryIO,
     Callable,
-    Coroutine,
-    Hashable,
-    List,
     Optional,
-    Tuple,
-    Type,
     TypeVar,
     Union,
     overload,
@@ -179,7 +175,7 @@ class example:
         if not (args or kwargs):
             raise InvalidArgument("An example must provide at least one argument")
 
-        self.hypothesis_explicit_examples: List[Example] = []
+        self.hypothesis_explicit_examples: list[Example] = []
         self._this_example = Example(tuple(args), kwargs)
 
     def __call__(self, test: TestFunc) -> TestFunc:
@@ -194,7 +190,7 @@ class example:
         *,
         reason: str = "",
         raises: Union[
-            Type[BaseException], Tuple[Type[BaseException], ...]
+            type[BaseException], tuple[type[BaseException], ...]
         ] = BaseException,
     ) -> "example":
         """Mark this example as an expected failure, similarly to
@@ -209,7 +205,7 @@ class example:
             @example(...).xfail()
             @example(...).xfail(reason="Prices must be non-negative")
             @example(...).xfail(raises=(KeyError, ValueError))
-            @example(...).xfail(sys.version_info[:2] >= (3, 9), reason="needs py39+")
+            @example(...).xfail(sys.version_info[:2] >= (3, 12), reason="needs py 3.12")
             @example(...).xfail(condition=sys.platform != "linux", raises=OSError)
             def test(x):
                 pass
@@ -229,21 +225,6 @@ class example:
                     # strategy.  If we happen to generate y=0, the test will fail
                     # because only the explicit example is treated as xfailing.
                     x / y
-
-        Note that this "method chaining" syntax requires Python 3.9 or later, for
-        :pep:`614` relaxing grammar restrictions on decorators.  If you need to
-        support older versions of Python, you can use an identity function:
-
-        .. code-block:: python
-
-            def identity(x):
-                return x
-
-
-            @identity(example(...).xfail())
-            def test(x):
-                pass
-
         """
         check_type(bool, condition, "condition")
         check_type(str, reason, "reason")
@@ -284,21 +265,6 @@ class example:
             @example(...).via("hy-target-$label")
             def test(x):
                 pass
-
-        Note that this "method chaining" syntax requires Python 3.9 or later, for
-        :pep:`614` relaxing grammar restrictions on decorators.  If you need to
-        support older versions of Python, you can use an identity function:
-
-        .. code-block:: python
-
-            def identity(x):
-                return x
-
-
-            @identity(example(...).via("label"))
-            def test(x):
-                pass
-
         """
         if not isinstance(whence, str):
             raise InvalidArgument(".via() must be passed a string")
@@ -1359,7 +1325,7 @@ def _raise_to_user(
         for note in fragments:
             add_note(err, note)
             if note.startswith(failing_prefix):
-                ls.append(note[len(failing_prefix) :])
+                ls.append(note.removeprefix(failing_prefix))
     if current_pytest_item.value:
         current_pytest_item.value._hypothesis_failing_examples = ls
 
@@ -1855,7 +1821,7 @@ def find(
         )
     specifier.validate()
 
-    last: List[Ex] = []
+    last: list[Ex] = []
 
     @settings
     @given(specifier)

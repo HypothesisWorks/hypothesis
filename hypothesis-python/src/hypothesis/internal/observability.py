@@ -17,13 +17,13 @@ import time
 import warnings
 from datetime import date, timedelta
 from functools import lru_cache
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Optional
 
 from hypothesis.configuration import storage_directory
 from hypothesis.errors import HypothesisWarning
 from hypothesis.internal.conjecture.data import ConjectureData, Status
 
-TESTCASE_CALLBACKS: List[Callable[[dict], None]] = []
+TESTCASE_CALLBACKS: list[Callable[[dict], None]] = []
 
 
 def deliver_json_blob(value: dict) -> None:
@@ -39,10 +39,10 @@ def make_testcase(
     how_generated: str,
     string_repr: str = "<unknown>",
     arguments: Optional[dict] = None,
-    timing: Dict[str, float],
-    coverage: Optional[Dict[str, List[int]]] = None,
+    timing: dict[str, float],
+    coverage: Optional[dict[str, list[int]]] = None,
     phase: Optional[str] = None,
-    backend_metadata: Optional[Dict[str, Any]] = None,
+    backend_metadata: Optional[dict[str, Any]] = None,
 ) -> dict:
     if data.interesting_origin:
         status_reason = str(data.interesting_origin)
@@ -109,9 +109,8 @@ def _system_metadata():
 OBSERVABILITY_COLLECT_COVERAGE = (
     "HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY_NOCOVER" not in os.environ
 )
-if OBSERVABILITY_COLLECT_COVERAGE is False and sys.version_info[:2] >= (
-    3,
-    12,
+if OBSERVABILITY_COLLECT_COVERAGE is False and (
+    sys.version_info[:2] >= (3, 12)
 ):  # pragma: no cover
     warnings.warn(
         "Coverage data collection should be quite fast in Python 3.12 or later "
@@ -119,9 +118,8 @@ if OBSERVABILITY_COLLECT_COVERAGE is False and sys.version_info[:2] >= (
         HypothesisWarning,
         stacklevel=2,
     )
-if (
-    "HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY" in os.environ
-    or OBSERVABILITY_COLLECT_COVERAGE is False
+if "HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY" in os.environ or (
+    OBSERVABILITY_COLLECT_COVERAGE is False
 ):  # pragma: no cover
     TESTCASE_CALLBACKS.append(_deliver_to_file)
 
