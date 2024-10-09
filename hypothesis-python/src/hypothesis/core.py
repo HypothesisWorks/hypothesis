@@ -55,6 +55,7 @@ from hypothesis._settings import (
 )
 from hypothesis.control import BuildContext
 from hypothesis.errors import (
+    BackendCannotProceed,
     DeadlineExceeded,
     DidNotReproduce,
     FailedHealthCheck,
@@ -1063,7 +1064,7 @@ class StateForActualGivenExecution:
                 # This was unexpected, meaning that the assume was flaky.
                 # Report it as such.
                 raise self._flaky_replay_to_failure(err, e) from None
-        except StopTest:
+        except (StopTest, BackendCannotProceed):
             # The engine knows how to handle this control exception, so it's
             # OK to re-raise it.
             raise
@@ -1122,10 +1123,15 @@ class StateForActualGivenExecution:
                     self.settings.backend != "hypothesis"
                     and not getattr(runner, "_switch_to_hypothesis_provider", False)
                 )
-                data._observability_args = data.provider.realize(
-                    data._observability_args
-                )
-                self._string_repr = data.provider.realize(self._string_repr)
+                try:
+                    data._observability_args = data.provider.realize(
+                        data._observability_args
+                    )
+                    self._string_repr = data.provider.realize(self._string_repr)
+                except BackendCannotProceed:
+                    data._observability_args = {}
+                    self._string_repr = "<backend failed to realize symbolic arguments>"
+
                 tc = make_testcase(
                     start_timestamp=self._start_timestamp,
                     test_name_or_nodeid=self.test_identifier,
@@ -1335,10 +1341,17 @@ class StateForActualGivenExecution:
                 # finished and they can't draw more data from it.
                 ran_example.freeze()  # pragma: no branch
                 # No branch is possible here because we never have an active exception.
-        _raise_to_user(errors_to_report, self.settings, report_lines)
+        _raise_to_user(
+            errors_to_report,
+            self.settings,
+            report_lines,
+            verified_by=runner._verified_by,
+        )
 
 
-def _raise_to_user(errors_to_report, settings, target_lines, trailer=""):
+def _raise_to_user(
+    errors_to_report, settings, target_lines, trailer="", verified_by=None
+):
     """Helper function for attaching notes and grouping multiple errors."""
     failing_prefix = "Falsifying example: "
     ls = []
@@ -1362,6 +1375,11 @@ def _raise_to_user(errors_to_report, settings, target_lines, trailer=""):
     if settings.verbosity >= Verbosity.normal:
         for line in target_lines:
             add_note(the_error_hypothesis_found, line)
+
+    if verified_by:
+        msg = f"backend={verified_by!r} claimed to verify this test passes - please send them a bug report!"
+        add_note(err, msg)
+
     raise the_error_hypothesis_found
 
 

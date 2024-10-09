@@ -8,6 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+from typing import Literal
+
 from hypothesis.internal.compat import ExceptionGroup
 
 
@@ -237,3 +239,36 @@ class RewindRecursive(Exception):
 class SmallSearchSpaceWarning(HypothesisWarning):
     """Indicates that an inferred strategy does not span the search space
     in a meaningful way, for example by only creating default instances."""
+
+
+class BackendCannotProceed(HypothesisException):
+    """UNSTABLE API
+
+    Raised by alternative backends when the PrimitiveProvider cannot proceed.
+    This is expected to occur inside one of the `.draw_*()` methods, or for
+    symbolic execution perhaps in `.realize(...)`.
+
+    The optional `scope` argument can enable smarter integration:
+
+        verified:
+            Do not request further test cases from this backend.  We _may_
+            generate more test cases with other backends; if one fails then
+            Hypothesis will report unsound verification in the backend too.
+
+        exhausted:
+            Do not request further test cases from this backend; finish testing
+            with test cases generated with the default backend.  Common if e.g.
+            native code blocks symbolic reasoning very early.
+
+        discard_test_case:
+            This particular test case could not be converted to concrete values;
+            skip any further processing and continue with another test case from
+            this backend.
+    """
+
+    def __init__(
+        self,
+        scope: Literal["verified", "exhausted", "discard_test_case", "other"] = "other",
+        /,
+    ) -> None:
+        self.scope = scope

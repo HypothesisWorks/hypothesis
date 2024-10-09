@@ -19,7 +19,12 @@ import pytest
 from hypothesis import given, settings, strategies as st
 from hypothesis.control import current_build_context
 from hypothesis.database import InMemoryExampleDatabase
-from hypothesis.errors import Flaky, HypothesisException, InvalidArgument
+from hypothesis.errors import (
+    BackendCannotProceed,
+    Flaky,
+    HypothesisException,
+    InvalidArgument,
+)
 from hypothesis.internal.compat import int_to_bytes
 from hypothesis.internal.conjecture.data import (
     AVAILABLE_PROVIDERS,
@@ -454,6 +459,10 @@ class ObservableProvider(TrivialProvider):
             yield {"type": "alert", "title": "Trivial alert", "content": "message here"}
             yield {"type": "info", "title": "trivial-data", "content": {"k2": "v2"}}
 
+    def realize(self, value):
+        # Get coverage of the can't-realize path for observability outputs
+        raise BackendCannotProceed
+
 
 def test_custom_observations_from_backend():
     with temp_register_backend("observable", ObservableProvider):
@@ -470,6 +479,8 @@ def test_custom_observations_from_backend():
     cases = [t["metadata"]["backend"] for t in ls if t["type"] == "test_case"]
     assert {"msg_key": "some message", "data_key": [1, "2", {}]} in cases
 
+    assert "<backend failed to realize symbolic arguments>" in repr(ls)
+
     infos = [
         {k: v for k, v in t.items() if k in ("title", "content")}
         for t in ls
@@ -477,3 +488,66 @@ def test_custom_observations_from_backend():
     ]
     assert {"title": "Trivial alert", "content": "message here"} in infos
     assert {"title": "trivial-data", "content": {"k2": "v2"}} in infos
+
+
+class FallibleProvider(TrivialProvider):
+    def __init__(self, conjecturedata: "ConjectureData", /) -> None:
+        super().__init__(conjecturedata)
+        self.prng = Random(0)
+
+    def draw_integer(self, *args, **kwargs):
+        # This is frequent enough that we'll get coverage of the "give up and go
+        # back to Hypothesis' standard backend" code path.
+        if self.prng.getrandbits(1):
+            scope = self.prng.choice(["discard_test_case", "other"])
+            raise BackendCannotProceed(scope)
+        return 1
+
+
+def test_falls_back_to_default_backend():
+    with temp_register_backend("fallible", FallibleProvider):
+        seen_other_ints = False
+
+        @given(st.integers())
+        @settings(backend="fallible", database=None, max_examples=100)
+        def test_function(x):
+            nonlocal seen_other_ints
+            seen_other_ints |= x != 1
+
+        test_function()
+        assert seen_other_ints  # must have swapped backends then
+
+
+class ExhaustibleProvider(TrivialProvider):
+    scope = "exhausted"
+
+    def __init__(self, conjecturedata: "ConjectureData", /) -> None:
+        super().__init__(conjecturedata)
+        self._calls = 0
+
+    def draw_integer(self, *args, **kwargs):
+        self._calls += 1
+        if self._calls > 20:
+            # This is complete nonsense of course, so we'll see Hypothesis complain
+            # that we found a problem after the backend reported verification.
+            raise BackendCannotProceed(self.scope)
+        return 1
+
+
+class UnsoundVerifierProvider(ExhaustibleProvider):
+    scope = "verified"
+
+
+@pytest.mark.parametrize("provider", [ExhaustibleProvider, UnsoundVerifierProvider])
+def test_notes_incorrect_verification(provider):
+    msg = "backend='p' claimed to verify this test passes - please send them a bug report!"
+    with temp_register_backend("p", provider):
+
+        @given(st.integers())
+        @settings(backend="p", database=None, max_examples=100)
+        def test_function(x):
+            assert x == 1  # True from this backend, false in general!
+
+        with pytest.raises(AssertionError) as ctx:
+            test_function()
+        assert (msg in ctx.value.__notes__) == (provider is UnsoundVerifierProvider)

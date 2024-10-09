@@ -13,7 +13,7 @@ import math
 import textwrap
 import time
 from collections import defaultdict
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from datetime import timedelta
 from enum import Enum
 from random import Random, getrandbits
@@ -41,6 +41,7 @@ from hypothesis import HealthCheck, Phase, Verbosity, settings as Settings
 from hypothesis._settings import local_settings
 from hypothesis.database import ExampleDatabase
 from hypothesis.errors import (
+    BackendCannotProceed,
     FlakyReplay,
     HypothesisException,
     InvalidArgument,
@@ -270,6 +271,9 @@ class ConjectureRunner:
         self.__pending_call_explanation: Optional[str] = None
         self._switch_to_hypothesis_provider: bool = False
 
+        self.__failed_realize_count = 0
+        self._verified_by = None  # note unsound verification by alt backends
+
     def explain_next_call_as(self, explanation: str) -> None:
         self.__pending_call_explanation = explanation
 
@@ -425,6 +429,18 @@ class ConjectureRunner:
         except KeyboardInterrupt:
             interrupted = True
             raise
+        except BackendCannotProceed as exc:
+            if exc.scope in ("verified", "exhausted"):
+                self._switch_to_hypothesis_provider = True
+                if exc.scope == "verified":
+                    self._verified_by = self.settings.backend
+            elif exc.scope == "discard_test_case":
+                self.__failed_realize_count += 1
+                if (
+                    self.__failed_realize_count > 10
+                    and (self.__failed_realize_count / self.call_count) > 0.2
+                ):
+                    self._switch_to_hypothesis_provider = True
         except BaseException:
             self.save_buffer(data.buffer)
             raise
@@ -976,7 +992,8 @@ class ConjectureRunner:
             # once more things are on the ir.
             if self.settings.backend != "hypothesis":
                 data = self.new_conjecture_data(prefix=b"", max_length=BUFFER_SIZE)
-                self.test_function(data)
+                with suppress(BackendCannotProceed):
+                    self.test_function(data)
                 continue
 
             self._current_phase = "generate"
