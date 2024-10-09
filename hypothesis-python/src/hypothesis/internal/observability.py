@@ -109,9 +109,8 @@ def _system_metadata():
 OBSERVABILITY_COLLECT_COVERAGE = (
     "HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY_NOCOVER" not in os.environ
 )
-if OBSERVABILITY_COLLECT_COVERAGE is False and sys.version_info[:2] >= (
-    3,
-    12,
+if OBSERVABILITY_COLLECT_COVERAGE is False and (
+    sys.version_info[:2] >= (3, 12)
 ):  # pragma: no cover
     warnings.warn(
         "Coverage data collection should be quite fast in Python 3.12 or later "
@@ -119,9 +118,8 @@ if OBSERVABILITY_COLLECT_COVERAGE is False and sys.version_info[:2] >= (
         HypothesisWarning,
         stacklevel=2,
     )
-if (
-    "HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY" in os.environ
-    or OBSERVABILITY_COLLECT_COVERAGE is False
+if "HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY" in os.environ or (
+    OBSERVABILITY_COLLECT_COVERAGE is False
 ):  # pragma: no cover
     TESTCASE_CALLBACKS.append(_deliver_to_file)
 
