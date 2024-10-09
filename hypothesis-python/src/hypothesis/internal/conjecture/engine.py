@@ -530,7 +530,9 @@ class ConjectureRunner:
                 # drive the ir tree through the test function to convert it
                 # to a buffer
                 initial_origin = data.interesting_origin
-                initial_traceback = data.extra_information._expected_traceback  # type: ignore
+                initial_traceback = getattr(
+                    data.extra_information, "_expected_traceback", None
+                )
                 data = ConjectureData.for_ir_tree(data.examples.ir_tree_nodes)
                 self.__stoppable_test_function(data)
                 data.freeze()
@@ -542,7 +544,11 @@ class ConjectureRunner:
                         data.status.INVALID: "failed filters",
                         data.status.OVERRUN: "overran",
                     }[data.status]
-                    wrapped_tb = textwrap.indent(initial_traceback, "  | ")
+                    wrapped_tb = (
+                        ""
+                        if initial_traceback is None
+                        else textwrap.indent(initial_traceback, "  | ")
+                    )
                     raise FlakyReplay(
                         f"Inconsistent results from replaying a failing test case!\n"
                         f"{wrapped_tb}on backend={self.settings.backend!r} but "
