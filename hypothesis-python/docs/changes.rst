@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.113.0:
+
+--------------------
+6.113.0 - 2024-10-09
+--------------------
+
+This release adds ``hypothesis.errors.BackendCannotProceed``, an unstable API
+for use by :ref:`alternative-backends`.
+
 .. _v6.112.5:
 
 --------------------
