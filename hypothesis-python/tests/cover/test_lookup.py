@@ -66,6 +66,12 @@ generics = sorted(
     ),
     key=str,
 )
+_Type = getattr(typing, "Type", None)
+_List = getattr(typing, "List", None)
+_Dict = getattr(typing, "Dict", None)
+_Set = getattr(typing, "Set", None)
+_FrozenSet = getattr(typing, "FrozenSet", None)
+_Tuple = getattr(typing, "Tuple", None)
 
 
 @pytest.mark.parametrize("typ", generics, ids=repr)
@@ -104,10 +110,13 @@ def test_specialised_scalar_types(data, typ, instance_of):
 
 
 def test_typing_Type_int():
-    assert_simple_property(from_type(typing.Type[int]), lambda x: x is int)
+    for t in (type[int], type["int"], _Type[int], _Type["int"]):
+        assert_simple_property(from_type(t), lambda x: x is int)
 
 
-@given(from_type(typing.Type[typing.Union[str, list]]))
+@given(
+    from_type(type[typing.Union[str, list]]) | from_type(_Type[typing.Union[str, list]])
+)
 def test_typing_Type_Union(ex):
     assert ex in (str, list)
 
@@ -143,15 +152,21 @@ class Elem:
 @pytest.mark.parametrize(
     "typ,coll_type",
     [
-        (typing.Set[Elem], set),
-        (typing.FrozenSet[Elem], frozenset),
-        (typing.Dict[Elem, None], dict),
+        (_Set[Elem], set),
+        (_FrozenSet[Elem], frozenset),
+        (_Dict[Elem, None], dict),
+        (set[Elem], set),
+        (frozenset[Elem], frozenset),
+        # (dict[Elem, None], dict),  # FIXME this should work
         (typing.DefaultDict[Elem, None], collections.defaultdict),
         (typing.KeysView[Elem], type({}.keys())),
         (typing.ValuesView[Elem], type({}.values())),
-        (typing.List[Elem], list),
-        (typing.Tuple[Elem], tuple),
-        (typing.Tuple[Elem, ...], tuple),
+        (_List[Elem], list),
+        (_Tuple[Elem], tuple),
+        (_Tuple[Elem, ...], tuple),
+        (list[Elem], list),
+        (tuple[Elem], tuple),
+        (tuple[Elem, ...], tuple),
         (typing.Iterator[Elem], typing.Iterator),
         (typing.Sequence[Elem], typing.Sequence),
         (typing.Iterable[Elem], typing.Iterable),
@@ -226,9 +241,10 @@ def test_Optional_minimises_to_None():
     assert minimal(from_type(typing.Optional[int]), lambda ex: True) is None
 
 
-@pytest.mark.parametrize("n", range(10))
-def test_variable_length_tuples(n):
-    type_ = typing.Tuple[int, ...]
+@pytest.mark.parametrize("n", [0, 1, 5])
+@pytest.mark.parametrize("t", [tuple, _Tuple])
+def test_variable_length_tuples(t, n):
+    type_ = t[int, ...]
     check_can_generate_examples(from_type(type_).filter(lambda ex: len(ex) == n))
 
 
@@ -236,13 +252,13 @@ def test_lookup_overrides_defaults():
     sentinel = object()
     with temp_registered(int, st.just(sentinel)):
 
-        @given(from_type(typing.List[int]))
+        @given(from_type(list[int]))
         def inner_1(ex):
             assert all(elem is sentinel for elem in ex)
 
         inner_1()
 
-    @given(from_type(typing.List[int]))
+    @given(from_type(list[int]))
     def inner_2(ex):
         assert all(isinstance(elem, int) for elem in ex)
 
@@ -253,7 +269,7 @@ def test_register_generic_typing_strats():
     # I don't expect anyone to do this, but good to check it works as expected
     with temp_registered(
         typing.Sequence,
-        types._global_type_lookup[typing.get_origin(typing.Set) or typing.Set],
+        types._global_type_lookup[set],
     ):
         # We register sets for the abstract sequence type, which masks subtypes
         # from supertype resolution but not direct resolution
@@ -264,9 +280,7 @@ def test_register_generic_typing_strats():
             from_type(typing.Container[int]),
             lambda ex: not isinstance(ex, typing.Sequence),
         )
-        assert_all_examples(
-            from_type(typing.List[int]), lambda ex: isinstance(ex, list)
-        )
+        assert_all_examples(from_type(list[int]), lambda ex: isinstance(ex, list))
 
 
 def if_available(name):
@@ -587,7 +601,7 @@ def test_override_args_for_namedtuple(thing):
     assert thing.a is None
 
 
-@pytest.mark.parametrize("thing", [typing.Optional, typing.List, typing.Type])
+@pytest.mark.parametrize("thing", [typing.Optional, list, type, _List, _Type])
 def test_cannot_resolve_bare_forward_reference(thing):
     t = thing["ConcreteFoo"]
     with pytest.raises(InvalidArgument):
@@ -740,7 +754,7 @@ def test_resolving_recursive_type_with_registered_constraint_not_none():
         find_any(s, lambda s: s.next_node is not None)
 
 
-@given(from_type(typing.Tuple[()]))
+@given(from_type(tuple[()]) | from_type(_Tuple[()]))
 def test_resolves_empty_Tuple_issue_1583_regression(ex):
     # See e.g. https://github.com/python/mypy/commit/71332d58
     assert ex == ()
@@ -805,8 +819,14 @@ def test_cannot_resolve_abstract_class_with_no_concrete_subclass(instance):
 
 
 @fails_with(ResolutionFailed)
-@given(st.from_type(typing.Type["ConcreteFoo"]))
+@given(st.from_type(type["ConcreteFoo"]))
 def test_cannot_resolve_type_with_forwardref(instance):
+    raise AssertionError("test body unreachable as strategy cannot resolve")
+
+
+@fails_with(ResolutionFailed)
+@given(st.from_type(_Type["ConcreteFoo"]))
+def test_cannot_resolve_type_with_forwardref_old(instance):
     raise AssertionError("test body unreachable as strategy cannot resolve")
 
 
@@ -938,9 +958,12 @@ def test_timezone_lookup(type_):
 @pytest.mark.parametrize(
     "typ",
     [
-        typing.Set[typing.Hashable],
-        typing.FrozenSet[typing.Hashable],
-        typing.Dict[typing.Hashable, int],
+        _Set[typing.Hashable],
+        _FrozenSet[typing.Hashable],
+        _Dict[typing.Hashable, int],
+        set[typing.Hashable],
+        frozenset[typing.Hashable],
+        dict[typing.Hashable, int],
     ],
 )
 @settings(suppress_health_check=[HealthCheck.data_too_large])
@@ -973,7 +996,8 @@ class _EmptyClass:
     "typ,repr_",
     [
         (int, "integers()"),
-        (typing.List[str], "lists(text())"),
+        (list[str], "lists(text())"),
+        (_List[str], "lists(text())"),
         ("not a type", "from_type('not a type')"),
         (random.Random, "randoms()"),
         (_EmptyClass, "from_type(tests.cover.test_lookup._EmptyClass)"),
@@ -1123,15 +1147,22 @@ def test_resolves_forwardrefs_to_builtin_types(t, data):
 
 @pytest.mark.parametrize("t", BUILTIN_TYPES, ids=lambda t: t.__name__)
 def test_resolves_type_of_builtin_types(t):
-    assert_simple_property(st.from_type(typing.Type[t.__name__]), lambda v: v is t)
+    assert_simple_property(st.from_type(type[t.__name__]), lambda v: v is t)
 
 
-@given(st.from_type(typing.Type[typing.Union["str", "int"]]))
+@given(
+    st.from_type(type[typing.Union["str", "int"]])
+    | st.from_type(_Type[typing.Union["str", "int"]])
+)
 def test_resolves_type_of_union_of_forwardrefs_to_builtins(x):
     assert x in (str, int)
 
 
-@pytest.mark.parametrize("type_", [typing.List[int], typing.Optional[int]])
+@pytest.mark.parametrize(
+    # Old-style `List` because `list[int]() == list()`, so no need for the hint.
+    "type_",
+    [getattr(typing, "List", None)[int], typing.Optional[int]],
+)
 def test_builds_suggests_from_type(type_):
     with pytest.raises(
         InvalidArgument, match=re.escape(f"try using from_type({type_!r})")

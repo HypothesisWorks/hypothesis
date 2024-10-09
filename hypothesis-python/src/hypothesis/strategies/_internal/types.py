@@ -28,10 +28,11 @@ import typing
 import uuid
 import warnings
 import zoneinfo
+from collections.abc import Iterator
 from functools import partial
 from pathlib import PurePath
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, Iterator, Tuple, get_args, get_origin
+from typing import TYPE_CHECKING, Any, get_args, get_origin
 
 from hypothesis import strategies as st
 from hypothesis.errors import HypothesisWarning, InvalidArgument, ResolutionFailed
@@ -339,7 +340,7 @@ def get_constraints_filter_map():
     return {}  # pragma: no cover
 
 
-def _get_constraints(args: Tuple[Any, ...]) -> Iterator["at.BaseMetadata"]:
+def _get_constraints(args: tuple[Any, ...]) -> Iterator["at.BaseMetadata"]:
     at = sys.modules.get("annotated_types")
     for arg in args:
         if at and isinstance(arg, at.BaseMetadata):
@@ -619,7 +620,7 @@ utc_offsets = st.builds(
 # exposed for it, and NotImplemented itself is typed as Any so that it can be
 # returned without being listed in a function signature:
 # https://github.com/python/mypy/issues/6710#issuecomment-485580032
-_global_type_lookup: typing.Dict[
+_global_type_lookup: dict[
     type, typing.Union[st.SearchStrategy, typing.Callable[[type], st.SearchStrategy]]
 ] = {
     type(None): st.none(),
@@ -726,8 +727,8 @@ if PYPY:
     _global_type_lookup[builtins.sequenceiterator] = st.builds(iter, st.tuples())  # type: ignore
 
 
-_global_type_lookup[type] = st.sampled_from(
-    [type(None), *sorted(_global_type_lookup, key=str)]
+_fallback_type_strategy = st.sampled_from(
+    sorted(_global_type_lookup, key=type_sorting_key)
 )
 # subclass of MutableMapping, and so we resolve to a union which
 # includes this... but we don't actually ever want to build one.
@@ -803,15 +804,15 @@ _global_type_lookup.update(
 # installed. To avoid the performance hit of importing anything here, we defer
 # it until the method is called the first time, at which point we replace the
 # entry in the lookup table with the direct call.
-def _from_numpy_type(thing: typing.Type) -> typing.Optional[st.SearchStrategy]:
+def _from_numpy_type(thing: type) -> typing.Optional[st.SearchStrategy]:
     from hypothesis.extra.numpy import _from_type
 
     _global_extra_lookup["numpy"] = _from_type
     return _from_type(thing)
 
 
-_global_extra_lookup: typing.Dict[
-    str, typing.Callable[[typing.Type], typing.Optional[st.SearchStrategy]]
+_global_extra_lookup: dict[
+    str, typing.Callable[[type], typing.Optional[st.SearchStrategy]]
 ] = {
     "numpy": _from_numpy_type,
 }
@@ -839,26 +840,30 @@ def register(type_, fallback=None, *, module=typing):
                 return fallback
             return func(thing)
 
+        _global_type_lookup[type_] = really_inner
         _global_type_lookup[get_origin(type_) or type_] = really_inner
         return really_inner
 
     return inner
 
 
-@register(typing.Type)
+@register(type)
+@register("Type")
 @register("Type", module=typing_extensions)
 def resolve_Type(thing):
     if getattr(thing, "__args__", None) is None:
         return st.just(type)
+    elif get_args(thing) == ():  # pragma: no cover
+        return _fallback_type_strategy
     args = (thing.__args__[0],)
     if is_a_union(args[0]):
         args = args[0].__args__
     # Duplicate check from from_type here - only paying when needed.
     args = list(args)
     for i, a in enumerate(args):
-        if type(a) == typing.ForwardRef:
+        if type(a) in (typing.ForwardRef, str):
             try:
-                args[i] = getattr(builtins, a.__forward_arg__)
+                args[i] = getattr(builtins, getattr(a, "__forward_arg__", a))
             except AttributeError:
                 raise ResolutionFailed(
                     f"Cannot find the type referenced by {thing} - try using "
@@ -867,12 +872,12 @@ def resolve_Type(thing):
     return st.sampled_from(sorted(args, key=type_sorting_key))
 
 
-@register(typing.List, st.builds(list))
+@register("List", st.builds(list))
 def resolve_List(thing):
     return st.lists(st.from_type(thing.__args__[0]))
 
 
-@register(typing.Tuple, st.builds(tuple))
+@register("Tuple", st.builds(tuple))
 def resolve_Tuple(thing):
     elem_types = getattr(thing, "__args__", None) or ()
     if len(elem_types) == 2 and elem_types[-1] is Ellipsis:
@@ -906,27 +911,28 @@ def _from_hashable_type(type_):
         return st.from_type(type_).filter(_can_hash)
 
 
-@register(typing.Set, st.builds(set))
+@register("Set", st.builds(set))
 @register(typing.MutableSet, st.builds(set))
 def resolve_Set(thing):
     return st.sets(_from_hashable_type(thing.__args__[0]))
 
 
-@register(typing.FrozenSet, st.builds(frozenset))
+@register("FrozenSet", st.builds(frozenset))
 def resolve_FrozenSet(thing):
     return st.frozensets(_from_hashable_type(thing.__args__[0]))
 
 
-@register(typing.Dict, st.builds(dict))
+@register("Dict", st.builds(dict))
 def resolve_Dict(thing):
     # If thing is a Collection instance, we need to fill in the values
-    keys_vals = thing.__args__ * 2
+    keys, vals, *_ = thing.__args__ * 2
     return st.dictionaries(
-        _from_hashable_type(keys_vals[0]), st.from_type(keys_vals[1])
+        _from_hashable_type(keys),
+        st.none() if vals is None else st.from_type(vals),
     )
 
 
-@register(typing.DefaultDict, st.builds(collections.defaultdict))
+@register("DefaultDict", st.builds(collections.defaultdict))
 @register("DefaultDict", st.builds(collections.defaultdict), module=typing_extensions)
 def resolve_DefaultDict(thing):
     return resolve_Dict(thing).map(lambda d: collections.defaultdict(None, d))
@@ -988,9 +994,9 @@ def resolve_Pattern(thing):
     return st.just(re.compile(thing.__args__[0]()))
 
 
-@register(  # pragma: no branch  # coverage does not see lambda->exit branch
+@register(
     typing.Match,
-    st.text().map(lambda c: re.match(".", c, flags=re.DOTALL)).filter(bool),
+    st.text().map(partial(re.match, ".", flags=re.DOTALL)).filter(bool),
 )
 def resolve_Match(thing):
     if thing.__args__[0] == bytes:

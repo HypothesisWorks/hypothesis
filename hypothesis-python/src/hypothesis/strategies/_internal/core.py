@@ -25,7 +25,7 @@ from fractions import Fraction
 from functools import reduce
 from inspect import Parameter, Signature, isabstract, isclass
 from re import Pattern
-from types import FunctionType
+from types import FunctionType, GenericAlias
 from typing import (
     Any,
     AnyStr,
@@ -1324,6 +1324,13 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
     try:
         if thing in types._global_type_lookup:
             strategy = as_strategy(types._global_type_lookup[thing], thing)
+            if strategy is not NotImplemented:
+                return strategy
+        elif (
+            isinstance(thing, GenericAlias)
+            and (to := get_origin(thing)) in types._global_type_lookup
+        ):
+            strategy = as_strategy(types._global_type_lookup[to], thing)
             if strategy is not NotImplemented:
                 return strategy
     except TypeError:  # pragma: no cover
