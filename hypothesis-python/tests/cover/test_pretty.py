@@ -49,11 +49,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import re
 import struct
+import sys
 import warnings
 from collections import Counter, OrderedDict, defaultdict, deque
+from dataclasses import dataclass, field
 from enum import Enum, Flag
 from functools import partial
 
+import attrs
 import pytest
 
 from hypothesis import given, strategies as st
@@ -758,3 +761,118 @@ def test_pprint_extremely_large_integers():
     got = p.getvalue()
     assert got == f"{x:#_x}"  # hexadecimal with underscores
     assert eval(got) == x
+
+
+class ReprDetector:
+    def _repr_pretty_(self, p, cycle):
+        """Exercise the IPython callback interface."""
+        p.text("GOOD")
+
+    def __repr__(self):
+        return "BAD"
+
+
+@dataclass
+class SomeDataClass:
+    x: object
+
+
+def test_pretty_prints_data_classes():
+    assert pretty.pretty(SomeDataClass(ReprDetector())) == "SomeDataClass(x=GOOD)"
+
+
+@attrs.define
+class SomeAttrsClass:
+    x: ReprDetector
+
+
+@pytest.mark.skipif(sys.version_info[:2] >= (3, 14), reason="FIXME-py314")
+def test_pretty_prints_attrs_classes():
+    assert pretty.pretty(SomeAttrsClass(ReprDetector())) == "SomeAttrsClass(x=GOOD)"
+
+
+@attrs.define
+class SomeAttrsClassWithCustomPretty:
+    def _repr_pretty_(self, p, cycle):
+        """Exercise the IPython callback interface."""
+        p.text("I am a banana")
+
+
+def test_custom_pretty_print_method_overrides_field_printing():
+    assert pretty.pretty(SomeAttrsClassWithCustomPretty()) == "I am a banana"
+
+
+@attrs.define
+class SomeAttrsClassWithLotsOfFields:
+    a: int
+    b: int
+    c: int
+    d: int
+    e: int
+    f: int
+    g: int
+    h: int
+    i: int
+    j: int
+    k: int
+    l: int
+    m: int
+    n: int
+    o: int
+    p: int
+    q: int
+    r: int
+    s: int
+
+
+@pytest.mark.skipif(sys.version_info[:2] >= (3, 14), reason="FIXME-py314")
+def test_will_line_break_between_fields():
+    obj = SomeAttrsClassWithLotsOfFields(
+        **{
+            at.name: 12345678900000000000000001
+            for at in SomeAttrsClassWithLotsOfFields.__attrs_attrs__
+        }
+    )
+    assert "\n" in pretty.pretty(obj)
+
+
+@attrs.define
+class SomeDataClassWithNoFields: ...
+
+
+def test_prints_empty_dataclass_correctly():
+    assert pretty.pretty(SomeDataClassWithNoFields()) == "SomeDataClassWithNoFields()"
+
+
+def test_handles_cycles_in_dataclass():
+    x = SomeDataClass(x=1)
+    x.x = x
+
+    assert pretty.pretty(x) == "SomeDataClass(x=SomeDataClass(...))"
+
+
+@dataclass
+class DataClassWithNoInitField:
+    x: int
+    y: int = field(init=False)
+
+
+def test_does_not_include_no_init_fields_in_dataclass_printing():
+    record = DataClassWithNoInitField(x=1)
+    assert pretty.pretty(record) == "DataClassWithNoInitField(x=1)"
+    record.y = 1
+    assert pretty.pretty(record) == "DataClassWithNoInitField(x=1)"
+
+
+@attrs.define
+class AttrsClassWithNoInitField:
+    x: int
+    y: int = attrs.field(init=False)
+
+
+@pytest.mark.skipif(sys.version_info[:2] >= (3, 14), reason="FIXME-py314")
+def test_does_not_include_no_init_fields_in_attrs_printing():
+    record = AttrsClassWithNoInitField(x=1)
+    assert pretty.pretty(record) == "AttrsClassWithNoInitField(x=1)"
+    record.y = 1
+    assert pretty.pretty(record) == "AttrsClassWithNoInitField(x=1)"
