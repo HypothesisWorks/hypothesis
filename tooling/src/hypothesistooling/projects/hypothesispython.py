@@ -236,7 +236,7 @@ def latest_version():
 
     for t in tools.tags():
         if t.startswith(PYTHON_TAG_PREFIX):
-            t = t[len(PYTHON_TAG_PREFIX) :]
+            t = t.removeprefix(PYTHON_TAG_PREFIX)
         else:
             continue
         assert t == t.strip()

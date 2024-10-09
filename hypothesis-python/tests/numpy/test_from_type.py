@@ -59,9 +59,9 @@ def workaround(dtype):
     return dtype
 
 
+# https://numpy.org/devdocs/release/1.22.0-notes.html#ndarray-dtype-and-number-are-now-runtime-subscriptable
 @pytest.mark.skipif(
-    sys.version_info[:2] < (3, 9),
-    reason="Type subscription requires python >= 3.9",
+    tuple(int(x) for x in np.__version__.split(".")[:2]) < (1, 22), reason="see comment"
 )
 @pytest.mark.parametrize("typ", [workaround(t) for t in STANDARD_TYPES_TYPE])
 def test_resolves_specified_ndarray_type(typ):

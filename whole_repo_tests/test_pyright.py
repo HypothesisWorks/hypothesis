@@ -179,11 +179,11 @@ def test_numpy_arrays_strategy(tmp_path: Path):
     "val,expect",
     [
         *REVEALED_TYPES,  # shared with Mypy
-        ("lists(none())", "List[None]"),
-        ("dictionaries(integers(), datetimes())", "Dict[int, datetime]"),
+        ("lists(none())", "list[None]"),
+        ("dictionaries(integers(), datetimes())", "dict[int, datetime]"),
         ("data()", "DataObject"),
         ("none() | integers()", "int | None"),
-        ("recursive(integers(), lists)", "List[Any] | int"),
+        ("recursive(integers(), lists)", "list[Any] | int"),
         # We have overloads for up to five types, then fall back to Any.
         # (why five?  JSON atoms are None|bool|int|float|str and we do that a lot)
         ("one_of(integers(), text())", "int | str"),

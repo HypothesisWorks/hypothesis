@@ -10,7 +10,7 @@
 
 import re
 import sys
-from typing import List, Set
+from typing import Annotated, List, Set
 
 import pytest
 
@@ -23,8 +23,6 @@ from hypothesis.strategies._internal.types import _get_constraints
 from tests.common.debug import check_can_generate_examples
 
 try:
-    from typing import Annotated  # new in Python 3.9
-
     import annotated_types as at
 except ImportError:
     pytest.skip(allow_module_level=True)

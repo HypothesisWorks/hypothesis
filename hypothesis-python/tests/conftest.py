@@ -31,9 +31,6 @@ run()
 # Skip collection of tests which require the Django test runner,
 # or that don't work on the current version of Python.
 collect_ignore_glob = ["django/*"]
-if sys.version_info < (3, 9):
-    collect_ignore_glob.append("cover/*py39*")
-    collect_ignore_glob.append("patching/*")
 if sys.version_info < (3, 10):
     collect_ignore_glob.append("cover/*py310*")
 

@@ -30,7 +30,7 @@ import pytest
 
 from hypothesis import HealthCheck, assume, given, settings, strategies as st
 from hypothesis.errors import InvalidArgument, ResolutionFailed, SmallSearchSpaceWarning
-from hypothesis.internal.compat import PYPY, get_type_hints
+from hypothesis.internal.compat import get_type_hints
 from hypothesis.internal.conjecture.junkdrawer import stack_depth_of_caller
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies import from_type
@@ -81,7 +81,7 @@ def test_resolve_typing_module(data, typ):
         assert isinstance(ex, io.IOBase)
     elif isinstance(typ, typing._ProtocolMeta):
         pass
-    elif typ is typing.Type and not isinstance(typing.Type, type):
+    elif (typing.get_origin(typ) or typ) is type and not isinstance(type, type):
         assert ex is type or isinstance(ex, typing.TypeVar)
     else:
         assert isinstance(ex, typ)
@@ -181,12 +181,8 @@ class ElemValue:
     [
         (typing.ChainMap[Elem, ElemValue], typing.ChainMap),
         (typing.DefaultDict[Elem, ElemValue], typing.DefaultDict),
-    ]
-    + (
-        [(typing.OrderedDict[Elem, ElemValue], typing.OrderedDict)]
-        if hasattr(typing, "OrderedDict")  # Python 3.7.2 and later
-        else []
-    ),
+        (typing.OrderedDict[Elem, ElemValue], typing.OrderedDict),
+    ],
     ids=repr,
 )
 @given(data=st.data())
@@ -700,10 +696,6 @@ class B_with_default:
         return f"B_with_default({self.nxt})"
 
 
-@pytest.mark.skipif(
-    PYPY and sys.version_info[:2] < (3, 9),
-    reason="mysterious failure on pypy/python<3.9",
-)
 @given(nxt=st.from_type(A_with_default))
 def test_resolving_mutually_recursive_types_with_defaults(nxt):
     # This test is required to cover the raise/except part of the recursion

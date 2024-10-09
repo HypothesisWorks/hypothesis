@@ -9,12 +9,12 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import platform
+import zoneinfo
 
 import pytest
 
 from hypothesis import given, strategies as st
 from hypothesis.errors import InvalidArgument
-from hypothesis.strategies._internal.datetime import zoneinfo
 
 from tests.common.debug import assert_no_examples, find_any, minimal
 

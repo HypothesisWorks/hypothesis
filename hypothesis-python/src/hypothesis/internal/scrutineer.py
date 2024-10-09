@@ -250,15 +250,6 @@ def _get_git_repo_root() -> Path:
         return Path(where)
 
 
-if sys.version_info[:2] <= (3, 8):
-
-    def is_relative_to(self, other):
-        return other == self or other in self.parents
-
-else:
-    is_relative_to = Path.is_relative_to
-
-
 def tractable_coverage_report(trace: Trace) -> Dict[str, List[int]]:
     """Report a simple coverage map which is (probably most) of the user's code."""
     coverage: dict = {}
@@ -272,6 +263,6 @@ def tractable_coverage_report(trace: Trace) -> Dict[str, List[int]]:
         k: sorted(v)
         for k, v in coverage.items()
         if stdlib_fragment not in k
-        and is_relative_to(p := Path(k), _get_git_repo_root())
+        and (p := Path(k)).is_relative_to(_get_git_repo_root())
         and "site-packages" not in p.parts
     }

@@ -1336,9 +1336,11 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
             if strategy is not NotImplemented:
                 return strategy
     except TypeError:  # pragma: no cover
-        # This is due to a bizarre divergence in behaviour under Python 3.9.0:
+        # This was originally due to a bizarre divergence in behaviour on Python 3.9.0:
         # typing.Callable[[], foo] has __args__ = (foo,) but collections.abc.Callable
         # has __args__ = ([], foo); and as a result is non-hashable.
+        # We've kept it because we turn out to have more type errors from... somewhere.
+        # FIXME: investigate that, maybe it should be fixed more precisely?
         pass
     if (
         hasattr(typing, "_TypedDictMeta")
@@ -1425,9 +1427,7 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
     # because there are several special cases that don't play well with
     # subclass and instance checks.
     if isinstance(thing, types.typing_root_type) or (
-        sys.version_info[:2] >= (3, 9)
-        and isinstance(get_origin(thing), type)
-        and get_args(thing)
+        isinstance(get_origin(thing), type) and get_args(thing)
     ):
         return types.from_typing_type(thing)
     # If it's not from the typing module, we get all registered types that are

@@ -109,14 +109,7 @@ else:
         return sum(items)
 
 
-if sys.version_info[:2] >= (3, 9):
-    CollectionsSequence = collections.abc.Sequence
-else:
-    # in older versions collections.abc was not generic
-    CollectionsSequence = Sequence
-
-
-def sequence_from_collections(items: CollectionsSequence[int]) -> int:
+def sequence_from_collections(items: collections.abc.Sequence[int]) -> int:
     return min(items)
 
 
@@ -145,20 +138,10 @@ else:
         ("fuzz_staticmethod", ghostwriter.fuzz(A_Class.a_staticmethod)),
         ("fuzz_ufunc", ghostwriter.fuzz(numpy.add)),
         ("magic_gufunc", ghostwriter.magic(numpy.matmul)),
-        pytest.param(
-            ("optional_parameter", ghostwriter.magic(optional_parameter)),
-            marks=pytest.mark.skipif("sys.version_info[:2] < (3, 9)"),
-        ),
-        pytest.param(
-            ("optional_parameter_pre_py_3_9", ghostwriter.magic(optional_parameter)),
-            marks=pytest.mark.skipif("sys.version_info[:2] >= (3, 9)"),
-        ),
+        ("optional_parameter", ghostwriter.magic(optional_parameter)),
         ("optional_union_parameter", ghostwriter.magic(optional_union_parameter)),
         ("union_sequence_parameter", ghostwriter.magic(union_sequence_parameter)),
-        pytest.param(
-            ("sequence_from_collections", ghostwriter.magic(sequence_from_collections)),
-            marks=pytest.mark.skipif("sys.version_info[:2] < (3, 9)"),
-        ),
+        ("sequence_from_collections", ghostwriter.magic(sequence_from_collections)),
         pytest.param(
             ("add_custom_classes", ghostwriter.magic(add_custom_classes)),
             marks=pytest.mark.skipif("sys.version_info[:2] < (3, 10)"),

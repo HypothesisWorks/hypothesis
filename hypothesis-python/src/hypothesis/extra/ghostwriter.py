@@ -290,9 +290,8 @@ def _strategy_for(param: inspect.Parameter, docstring: str) -> st.SearchStrategy
         types = []
         for token in re.split(r",? +or +| *, *", doc_type):
             for prefix in ("default ", "python "):
-                # `str or None, default "auto"`; `python int or numpy.int64`
-                if token.startswith(prefix):
-                    token = token[len(prefix) :]
+                # e.g. `str or None, default "auto"` or `python int or numpy.int64`
+                token = token.removeprefix(prefix)
             if not token:
                 continue
             try:
@@ -636,8 +635,6 @@ def _imports_for_strategy(strategy):
             for imp in _imports_for_object(_strip_typevars(arg))
         }
         if re.match(r"from_(type|regex)\(", repr(strategy)):
-            if repr(strategy).startswith("from_type("):
-                return {module for module, _ in imports}
             return imports
         elif _get_module(strategy.function).startswith("hypothesis.extra."):
             module = _get_module(strategy.function).replace("._array_helpers", ".numpy")
@@ -1228,7 +1225,7 @@ def magic(
             for k in sorted(sys.modules, key=len):
                 if (
                     k.startswith(f"{thing.__name__}.")
-                    and "._" not in k[len(thing.__name__) :]
+                    and "._" not in k.removeprefix(thing.__name__)
                     and not k.startswith(tuple(f"{m}." for m in mods))
                     and _get_testable_functions(sys.modules[k])
                 ):

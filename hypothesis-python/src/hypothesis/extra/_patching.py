@@ -112,8 +112,6 @@ class AddExamplesCodemod(VisitorBasedCodemodCommand):
                 else node.args
             ),
         )
-        # Note: calling a method on a decorator requires PEP-614, i.e. Python 3.9+,
-        # but plumbing two cases through doesn't seem worth the trouble :-/
         via = cst.Call(
             func=cst.Attribute(node, cst.Name("via")),
             args=[cst.Arg(cst.SimpleString(repr(via)))],

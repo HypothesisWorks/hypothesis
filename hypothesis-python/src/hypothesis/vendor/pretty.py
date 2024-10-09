@@ -693,10 +693,6 @@ def _type_pprint(obj, p, cycle):
     mod = _safe_getattr(obj, "__module__", None)
     try:
         name = obj.__qualname__
-        if not isinstance(name, str):  # pragma: no cover
-            # This can happen if the type implements __qualname__ as a property
-            # or other descriptor in Python 2.
-            raise Exception("Try __name__")
     except Exception:  # pragma: no cover
         name = obj.__name__
         if not isinstance(name, str):
