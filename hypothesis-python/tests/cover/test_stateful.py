@@ -1285,6 +1285,7 @@ state.teardown()
     )
 
 
+@xfail_on_crosshair(Why.undiscovered)
 def test_multiple_common_targets():
     class Machine(RuleBasedStateMachine):
         a = Bundle("a")

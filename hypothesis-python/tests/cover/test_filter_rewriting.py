@@ -182,6 +182,7 @@ def test_rewrite_unsatisfiable_filter(s, pred):
     assert s.filter(pred).is_empty
 
 
+@xfail_on_crosshair(Why.undiscovered)
 @pytest.mark.parametrize(
     "pred",
     [
