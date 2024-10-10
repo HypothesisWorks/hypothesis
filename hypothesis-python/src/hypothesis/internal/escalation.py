@@ -16,7 +16,7 @@ import traceback
 from functools import partial
 from inspect import getframeinfo
 from pathlib import Path
-from typing import Dict, NamedTuple, Optional, Tuple, Type
+from typing import NamedTuple, Optional
 
 import hypothesis
 from hypothesis.errors import _Trimmable
@@ -49,7 +49,7 @@ def belongs_to(package):
     return accept
 
 
-FILE_CACHE: Dict[bytes, bool] = {}
+FILE_CACHE: dict[bytes, bool] = {}
 
 
 is_hypothesis_file = belongs_to(hypothesis)
@@ -91,7 +91,7 @@ class InterestingOrigin(NamedTuple):
     # location, but have extracted this logic in order to see through `except ...:`
     # blocks and understand the __cause__ (`raise x from y`) or __context__ that
     # first raised an exception as well as PEP-654 exception groups.
-    exc_type: Type[BaseException]
+    exc_type: type[BaseException]
     filename: Optional[str]
     lineno: Optional[int]
     context: "InterestingOrigin | tuple[()]"
@@ -109,7 +109,7 @@ class InterestingOrigin(NamedTuple):
 
     @classmethod
     def from_exception(
-        cls, exception: BaseException, /, seen: Tuple[BaseException, ...] = ()
+        cls, exception: BaseException, /, seen: tuple[BaseException, ...] = ()
     ) -> "InterestingOrigin":
         filename, lineno = None, None
         if tb := get_trimmed_traceback(exception):

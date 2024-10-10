@@ -14,12 +14,13 @@ import json
 import os
 import sys
 import warnings
+from collections.abc import Iterable
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 from hashlib import sha384
 from os import getenv
 from pathlib import Path, PurePath
-from typing import Dict, Iterable, Optional, Set
+from typing import Optional
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 from zipfile import BadZipFile, ZipFile
@@ -195,7 +196,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
 
     def __init__(self, path: os.PathLike) -> None:
         self.path = Path(path)
-        self.keypaths: Dict[bytes, Path] = {}
+        self.keypaths: dict[bytes, Path] = {}
 
     def __repr__(self) -> str:
         return f"DirectoryBasedExampleDatabase({self.path!r})"
@@ -444,7 +445,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
         # .hypothesis/github-artifacts/<artifact-name>/<modified_isoformat>.zip
         self._artifact: Optional[Path] = None
         # This caches the artifact structure
-        self._access_cache: Optional[Dict[PurePath, Set[PurePath]]] = None
+        self._access_cache: Optional[dict[PurePath, set[PurePath]]] = None
 
         # Message to display if user doesn't wrap around ReadOnlyDatabase
         self._read_only_message = (

@@ -19,18 +19,9 @@ import datetime
 import inspect
 import os
 import warnings
+from collections.abc import Collection
 from enum import Enum, EnumMeta, IntEnum, unique
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    ClassVar,
-    Collection,
-    Dict,
-    List,
-    Optional,
-    TypeVar,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, ClassVar, Optional, TypeVar, Union
 
 import attr
 
@@ -49,7 +40,7 @@ if TYPE_CHECKING:
 
 __all__ = ["settings"]
 
-all_settings: Dict[str, "Setting"] = {}
+all_settings: dict[str, "Setting"] = {}
 
 T = TypeVar("T")
 
@@ -138,7 +129,7 @@ class settings(metaclass=settingsMeta):
     """
 
     __definitions_are_locked = False
-    _profiles: ClassVar[Dict[str, "settings"]] = {}
+    _profiles: ClassVar[dict[str, "settings"]] = {}
     __module__ = "hypothesis"
 
     def __getattr__(self, name):
@@ -479,7 +470,7 @@ class HealthCheck(Enum, metaclass=HealthCheckMeta):
         return f"{self.__class__.__name__}.{self.name}"
 
     @classmethod
-    def all(cls) -> List["HealthCheck"]:
+    def all(cls) -> list["HealthCheck"]:
         # Skipping of deprecated attributes is handled in HealthCheckMeta.__iter__
         note_deprecation(
             "`HealthCheck.all()` is deprecated; use `list(HealthCheck)` instead.",

@@ -25,6 +25,14 @@ import warnings
 from dataclasses import dataclass
 from inspect import signature
 from numbers import Real
+from typing import (
+    Dict as _Dict,
+    FrozenSet as _FrozenSet,
+    List as _List,
+    Set as _Set,
+    Tuple as _Tuple,
+    Type as _Type,
+)
 
 import pytest
 
@@ -66,12 +74,6 @@ generics = sorted(
     ),
     key=str,
 )
-_Type = getattr(typing, "Type", None)
-_List = getattr(typing, "List", None)
-_Dict = getattr(typing, "Dict", None)
-_Set = getattr(typing, "Set", None)
-_FrozenSet = getattr(typing, "FrozenSet", None)
-_Tuple = getattr(typing, "Tuple", None)
 
 
 @pytest.mark.parametrize("typ", generics, ids=repr)

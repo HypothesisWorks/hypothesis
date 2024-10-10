@@ -10,9 +10,10 @@
 
 import math
 import sys
+from collections.abc import Sequence
 from contextlib import contextmanager
 from random import Random
-from typing import Optional, Sequence
+from typing import Optional
 
 import pytest
 

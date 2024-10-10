@@ -11,16 +11,7 @@
 import math
 import struct
 from sys import float_info
-from typing import (
-    TYPE_CHECKING,
-    Callable,
-    Dict,
-    Literal,
-    Optional,
-    SupportsFloat,
-    Tuple,
-    Union,
-)
+from typing import TYPE_CHECKING, Callable, Literal, Optional, SupportsFloat, Union
 
 if TYPE_CHECKING:
     from typing import TypeAlias
@@ -35,13 +26,13 @@ Width: "TypeAlias" = Literal[16, 32, 64]
 
 # Format codes for (int, float) sized types, used for byte-wise casts.
 # See https://docs.python.org/3/library/struct.html#format-characters
-STRUCT_FORMATS: Dict[int, Tuple[UnsignedIntFormat, FloatFormat]] = {
+STRUCT_FORMATS: dict[int, tuple[UnsignedIntFormat, FloatFormat]] = {
     16: ("!H", "!e"),
     32: ("!I", "!f"),
     64: ("!Q", "!d"),
 }
 
-TO_SIGNED_FORMAT: Dict[UnsignedIntFormat, SignedIntFormat] = {
+TO_SIGNED_FORMAT: dict[UnsignedIntFormat, SignedIntFormat] = {
     "!H": "!h",
     "!I": "!i",
     "!Q": "!q",
@@ -138,7 +129,7 @@ def next_up_normal(value: float, width: int, *, allow_subnormal: bool) -> float:
 # Smallest positive non-zero numbers that is fully representable by an
 # IEEE-754 float, calculated with the width's associated minimum exponent.
 # Values from https://en.wikipedia.org/wiki/IEEE_754#Basic_and_interchange_formats
-width_smallest_normals: Dict[int, float] = {
+width_smallest_normals: dict[int, float] = {
     16: 2 ** -(2 ** (5 - 1) - 2),
     32: 2 ** -(2 ** (8 - 1) - 2),
     64: 2 ** -(2 ** (11 - 1) - 2),

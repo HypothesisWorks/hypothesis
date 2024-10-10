@@ -16,15 +16,14 @@ import sys
 import tempfile
 import unicodedata
 from functools import lru_cache
-from typing import Dict, Tuple
 
 from hypothesis.configuration import storage_directory
 from hypothesis.control import _current_build_context
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.intervalsets import IntervalSet
 
-intervals = Tuple[Tuple[int, int], ...]
-cache_type = Dict[Tuple[Tuple[str, ...], int, int, intervals], IntervalSet]
+intervals = tuple[tuple[int, int], ...]
+cache_type = dict[tuple[tuple[str, ...], int, int, intervals], IntervalSet]
 
 
 def charmap_file(fname="charmap"):

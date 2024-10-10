@@ -11,7 +11,7 @@
 import inspect
 import math
 from random import Random
-from typing import Any, Dict
+from typing import Any
 
 import attr
 
@@ -110,7 +110,7 @@ def _randbelow(self, n: int) -> int:  # type: ignore
 STUBS = {f.__name__: f for f in [getrandbits, random, _randbelow]}
 
 
-SIGNATURES: Dict[str, inspect.Signature] = {}
+SIGNATURES: dict[str, inspect.Signature] = {}
 
 
 def sig_of(name):

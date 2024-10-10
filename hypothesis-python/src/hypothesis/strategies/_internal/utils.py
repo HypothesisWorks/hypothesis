@@ -11,7 +11,7 @@
 import sys
 import threading
 from inspect import signature
-from typing import TYPE_CHECKING, Callable, Dict
+from typing import TYPE_CHECKING, Callable
 
 import attr
 
@@ -25,7 +25,7 @@ from hypothesis.vendor.pretty import pretty
 if TYPE_CHECKING:
     from hypothesis.strategies._internal.strategies import SearchStrategy, T
 
-_strategies: Dict[str, Callable[..., "SearchStrategy"]] = {}
+_strategies: dict[str, Callable[..., "SearchStrategy"]] = {}
 
 
 class FloatKey:

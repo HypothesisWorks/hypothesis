@@ -9,7 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 from inspect import signature
-from typing import List, Optional, get_type_hints
+from typing import Optional, get_type_hints
 
 from hypothesis import given, strategies as st
 
@@ -63,7 +63,7 @@ def use_annotations(
 
 
 def use_signature(
-    self, testA: int, testB: Optional[str] = None, *, testX: float, testY: List[str]
+    self, testA: int, testB: Optional[str] = None, *, testX: float, testY: list[str]
 ):
     pass
 

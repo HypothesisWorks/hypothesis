@@ -10,7 +10,8 @@
 
 import math
 from collections import Counter
-from typing import TYPE_CHECKING, Dict, Iterable, List, cast
+from collections.abc import Iterable
+from typing import TYPE_CHECKING, cast
 
 from hypothesis._settings import Phase
 from hypothesis.utils.dynamicvariables import DynamicVariable
@@ -27,7 +28,7 @@ def note_statistics(stats_dict: "StatisticsDict") -> None:
         callback(stats_dict)
 
 
-def describe_targets(best_targets: Dict[str, float]) -> List[str]:
+def describe_targets(best_targets: dict[str, float]) -> list[str]:
     """Return a list of lines describing the results of `target`, if any."""
     # These lines are included in the general statistics description below,
     # but also printed immediately below failing examples to alleviate the

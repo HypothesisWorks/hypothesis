@@ -11,20 +11,8 @@
 import importlib
 import math
 import types
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Literal,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-    overload,
-)
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Literal, Optional, TypeVar, Union, cast, overload
 
 import numpy as np
 
@@ -1190,7 +1178,7 @@ def integer_array_indices(
     shape: Shape,
     *,
     result_shape: st.SearchStrategy[Shape] = array_shapes(),
-) -> "st.SearchStrategy[Tuple[NDArray[np.signedinteger[Any]], ...]]": ...
+) -> "st.SearchStrategy[tuple[NDArray[np.signedinteger[Any]], ...]]": ...
 
 
 @overload
@@ -1200,7 +1188,7 @@ def integer_array_indices(
     *,
     result_shape: st.SearchStrategy[Shape] = array_shapes(),
     dtype: "np.dtype[I]",
-) -> "st.SearchStrategy[Tuple[NDArray[I], ...]]": ...
+) -> "st.SearchStrategy[tuple[NDArray[I], ...]]": ...
 
 
 @defines_strategy()
@@ -1209,7 +1197,7 @@ def integer_array_indices(
     *,
     result_shape: st.SearchStrategy[Shape] = array_shapes(),
     dtype: "np.dtype[I] | np.dtype[np.signedinteger[Any]]" = np.dtype(int),
-) -> "st.SearchStrategy[Tuple[NDArray[I], ...]]":
+) -> "st.SearchStrategy[tuple[NDArray[I], ...]]":
     """Return a search strategy for tuples of integer-arrays that, when used
     to index into an array of shape ``shape``, given an array whose shape
     was drawn from ``result_shape``.
@@ -1314,7 +1302,7 @@ def _dtype_from_args(args):
     return np.dtype(dtype)
 
 
-def _from_type(thing: Type[Ex]) -> Optional[st.SearchStrategy[Ex]]:
+def _from_type(thing: type[Ex]) -> Optional[st.SearchStrategy[Ex]]:
     """Called by st.from_type to try to infer a strategy for thing using numpy.
 
     If we can infer a numpy-specific strategy for thing, we return that; otherwise,
