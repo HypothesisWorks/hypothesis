@@ -809,13 +809,13 @@ def potentially_modified_vars(func: ast.FunctionDef, params: Set[str]) -> Set[st
             self.potentially_modified = set()
         def visit_Assign(self, node: ast.Assign):
             for target in node.targets:
-                if not isinstance(node, ast.Name):
+                if not isinstance(target, ast.Name):
                     # the only other things on the LHS
                     # can be a Subscript or an Attribute
                     bv = BaseNameVisitor()
                     bv.visit(target)
                     self.potentially_modified.add(bv.base_name)
-
+            self.visit(node.value)
         def visit_Call(self, node: ast.Call):
             # Might overlap with above method,
             # but since we're using a set that's okay
@@ -872,8 +872,10 @@ def _write_call(
     subtypes of `except_`, which will be handled in an outer try-except block.
     """
     params_dd = _get_params(func)
-    if copy_args:
+    if copy_args is None:
         potentially_modified = potentially_modified_vars(ast.parse(inspect.getsource(func)).body[0], set(params_dd.keys()))
+    elif copy_args is True:
+        potentially_modified = set(params_dd.keys())
     else:
         potentially_modified = set()
     args = ", ".join(
