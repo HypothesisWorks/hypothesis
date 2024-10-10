@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import contextlib
+import enum
 import sys
 import warnings
 from io import StringIO
@@ -249,3 +250,36 @@ def capture_observations():
 # config option, so *linking against* something built this way can break us.
 # Everything is terrible
 PYTHON_FTZ = next_down(sys.float_info.min) == 0.0
+
+
+class Why(enum.Enum):
+    # Use an enum here so it's easier to find and/or exclude some cases later
+
+    # things we want to fix
+    flaky_replay = "Inconsistent results from replaying a failing test..."
+    symbolic_outside_context = "CrosshairInternal error (using value outside context)"
+    floats = "crosshair doesn't reason about signed zero (and other edge cases?)"
+    no_unsatisfiable = "doesn't raise Unsatisfiable for some reason"
+
+    # things that are basically fine to leave alone
+
+    # nested_given: https://github.com/pschanely/hypothesis-crosshair/issues/11
+    nested_given = "nested @given decorators don't work with crosshair"
+    other = "reasons not elsewhere categorized"
+
+
+def xfail_on_crosshair(why: Why, /, *, strict=True, as_marks=False):
+    try:
+        import pytest
+    except ImportError:
+        return lambda fn: fn
+
+    current_backend = settings.get_profile(settings._current_profile).backend
+    kw = {
+        "strict": strict,
+        "reason": f"Expected failure due to: {why.value}",
+        "condition": current_backend == "crosshair",
+    }
+    if as_marks:  # for use with pytest.param(..., marks=xfail_on_crosshair())
+        return (pytest.mark.xf_crosshair, pytest.mark.xfail(**kw))
+    return lambda fn: pytest.mark.xf_crosshair(pytest.mark.xfail(**kw)(fn))
