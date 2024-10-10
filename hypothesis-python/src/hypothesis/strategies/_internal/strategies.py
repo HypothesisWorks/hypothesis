@@ -11,6 +11,7 @@
 import sys
 import warnings
 from collections import abc, defaultdict
+from collections.abc import Sequence
 from functools import lru_cache
 from random import shuffle
 from typing import (
@@ -18,10 +19,7 @@ from typing import (
     Any,
     Callable,
     ClassVar,
-    Dict,
     Generic,
-    List,
-    Sequence,
     TypeVar,
     Union,
     cast,
@@ -327,7 +325,7 @@ class SearchStrategy(Generic[Ex]):
         try:
             return self.__examples.pop()
         except (AttributeError, IndexError):
-            self.__examples: List[Ex] = []
+            self.__examples: list[Ex] = []
 
         from hypothesis.core import given
 
@@ -395,7 +393,7 @@ class SearchStrategy(Generic[Ex]):
         return FilteredStrategy(conditions=(condition,), strategy=self)
 
     @property
-    def branches(self) -> List["SearchStrategy[Ex]"]:
+    def branches(self) -> list["SearchStrategy[Ex]"]:
         return [self]
 
     def __or__(self, other: "SearchStrategy[T]") -> "SearchStrategy[Union[Ex, T]]":
@@ -432,7 +430,7 @@ class SearchStrategy(Generic[Ex]):
             self.validate_called = False
             raise
 
-    LABELS: ClassVar[Dict[type, int]] = {}
+    LABELS: ClassVar[dict[type, int]] = {}
 
     @property
     def class_label(self):
@@ -850,7 +848,7 @@ class MappedStrategy(SearchStrategy[Ex]):
         raise UnsatisfiedAssumption
 
     @property
-    def branches(self) -> List[SearchStrategy[Ex]]:
+    def branches(self) -> list[SearchStrategy[Ex]]:
         return [
             MappedStrategy(strategy, pack=self.pack)
             for strategy in self.mapped_strategy.branches
@@ -1025,7 +1023,7 @@ class FilteredStrategy(SearchStrategy[Ex]):
         return filter_not_satisfied
 
     @property
-    def branches(self) -> List[SearchStrategy[Ex]]:
+    def branches(self) -> list[SearchStrategy[Ex]]:
         return [
             FilteredStrategy(strategy=strategy, conditions=self.flat_conditions)
             for strategy in self.filtered_strategy.branches

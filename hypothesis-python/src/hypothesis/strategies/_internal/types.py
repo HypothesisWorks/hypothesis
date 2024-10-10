@@ -73,28 +73,6 @@ except ImportError:
     except ImportError:
         _AnnotatedAlias = ()
 
-TypeAliasTypes: tuple = ()
-try:
-    TypeAliasTypes += (typing.TypeAlias,)
-except AttributeError:  # pragma: no cover
-    pass  # Is missing for `python<3.10`
-try:
-    TypeAliasTypes += (typing_extensions.TypeAlias,)
-except AttributeError:  # pragma: no cover
-    pass  # Is missing for `typing_extensions<3.10`
-
-ClassVarTypes: tuple = (typing.ClassVar,)
-try:
-    ClassVarTypes += (typing_extensions.ClassVar,)
-except AttributeError:  # pragma: no cover
-    pass  # `typing_extensions` might not be installed
-
-FinalTypes: tuple = (typing.Final,)
-try:
-    FinalTypes += (typing_extensions.Final,)
-except AttributeError:  # pragma: no cover
-    pass  # `typing_extensions` might not be installed
-
 ConcatenateTypes: tuple = ()
 try:
     ConcatenateTypes += (typing.Concatenate,)
@@ -163,13 +141,6 @@ except AttributeError:  # pragma: no cover
     pass  # `typing_extensions` might not be installed
 
 
-AnnotatedTypes: tuple = (typing.Annotated,)
-try:
-    AnnotatedTypes += (typing_extensions.Annotated,)
-except AttributeError:  # pragma: no cover
-    pass  # `typing_extensions` might not be installed
-
-
 LiteralStringTypes: tuple = ()
 try:
     LiteralStringTypes += (typing.LiteralString,)  # type: ignore
@@ -206,21 +177,21 @@ typing_root_type = (typing._Final, typing._GenericAlias)  # type: ignore
 # `Final` is a great example: it just indicates that this value can't be reassigned.
 NON_RUNTIME_TYPES = (
     typing.Any,
-    *ClassVarTypes,
-    *TypeAliasTypes,
-    *FinalTypes,
+    typing.Annotated,
     *ConcatenateTypes,
     *ParamSpecTypes,
     *TypeGuardTypes,
 )
 for name in (
-    "Annotated",
+    "ClassVar",
+    "Final",
     "NoReturn",
     "Self",
     "Required",
     "NotRequired",
     "ReadOnly",
     "Never",
+    "TypeAlias",
     "TypeVarTuple",
     "Unpack",
 ):

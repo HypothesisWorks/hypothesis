@@ -63,7 +63,6 @@ def get_mypy_analysed_type(fname):
         )
         .replace("numpy._typing.", "")
         .replace("numpy.", "")
-        .replace("tuple", "Tuple")
         .replace("List[", "list[")
         .replace("Dict[", "dict[")
     )

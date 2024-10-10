@@ -9,8 +9,9 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import threading
+from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Generator, Generic, TypeVar
+from typing import Generic, TypeVar
 
 T = TypeVar("T")
 

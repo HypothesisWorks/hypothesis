@@ -9,7 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import re
-from typing import NamedTuple, Optional, Tuple, Union
+from typing import NamedTuple, Optional, Union
 
 from hypothesis import assume, strategies as st
 from hypothesis.errors import InvalidArgument
@@ -36,13 +36,13 @@ __all__ = [
 ]
 
 
-Shape = Tuple[int, ...]
+Shape = tuple[int, ...]
 # We silence flake8 here because it disagrees with mypy about `ellipsis` (`type(...)`)
-BasicIndex = Tuple[Union[int, slice, None, "ellipsis"], ...]  # noqa: F821
+BasicIndex = tuple[Union[int, slice, None, "ellipsis"], ...]  # noqa: F821
 
 
 class BroadcastableShapes(NamedTuple):
-    input_shapes: Tuple[Shape, ...]
+    input_shapes: tuple[Shape, ...]
     result_shape: Shape
 
 
@@ -121,7 +121,7 @@ def valid_tuple_axes(
     *,
     min_size: int = 0,
     max_size: Optional[int] = None,
-) -> st.SearchStrategy[Tuple[int, ...]]:
+) -> st.SearchStrategy[tuple[int, ...]]:
     """All tuples will have a length >= ``min_size`` and <= ``max_size``. The default
     value for ``max_size`` is ``ndim``.
 
@@ -282,7 +282,7 @@ _SIGNATURE_MULTIPLE_OUTPUT = rf"^{_ARGUMENT_LIST}->{_ARGUMENT_LIST}$"
 
 
 class _GUfuncSig(NamedTuple):
-    input_shapes: Tuple[Shape, ...]
+    input_shapes: tuple[Shape, ...]
     result_shape: Shape
 
 

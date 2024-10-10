@@ -26,10 +26,11 @@ import ast
 import inspect
 import math
 import operator
+from collections.abc import Collection
 from decimal import Decimal
 from fractions import Fraction
 from functools import partial
-from typing import Any, Callable, Collection, Dict, NamedTuple, Optional, TypeVar
+from typing import Any, Callable, NamedTuple, Optional, TypeVar
 
 from hypothesis.internal.compat import ceil, floor
 from hypothesis.internal.floats import next_down, next_up
@@ -60,7 +61,7 @@ class ConstructivePredicate(NamedTuple):
     for each numeric type, for strings, for bytes, for collection sizes, etc.
     """
 
-    kwargs: Dict[str, Any]
+    kwargs: dict[str, Any]
     predicate: Optional[Predicate]
 
     @classmethod

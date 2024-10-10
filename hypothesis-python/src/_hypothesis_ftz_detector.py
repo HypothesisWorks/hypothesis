@@ -18,13 +18,13 @@ import of Hypothesis itself from each subprocess which must import the worker fu
 
 import importlib
 import sys
-from typing import TYPE_CHECKING, Callable, Optional, Set, Tuple
+from typing import TYPE_CHECKING, Callable, Optional
 
 if TYPE_CHECKING:
     from multiprocessing import Queue
     from typing import TypeAlias
 
-FTZCulprits: "TypeAlias" = Tuple[Optional[bool], Set[str]]
+FTZCulprits: "TypeAlias" = tuple[Optional[bool], set[str]]
 
 
 KNOWN_EVER_CULPRITS = (
@@ -104,7 +104,7 @@ def identify_ftz_culprits() -> str:
     # that importing them in a new process sets the FTZ state.  As a heuristic, we'll
     # start with packages known to have ever enabled FTZ, then top-level packages as
     # a way to eliminate large fractions of the search space relatively quickly.
-    def key(name: str) -> Tuple[bool, int, str]:
+    def key(name: str) -> tuple[bool, int, str]:
         """Prefer known-FTZ modules, then top-level packages, then alphabetical."""
         return (name not in KNOWN_EVER_CULPRITS, name.count("."), name)
 

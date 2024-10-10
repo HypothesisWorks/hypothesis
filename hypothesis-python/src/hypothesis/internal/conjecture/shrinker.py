@@ -9,7 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 from collections import defaultdict
-from typing import TYPE_CHECKING, Callable, Dict, Optional, Tuple, TypeVar, Union
+from typing import TYPE_CHECKING, Callable, Optional, TypeVar, Union
 
 import attr
 
@@ -45,7 +45,7 @@ if TYPE_CHECKING:
 SortKeyT = TypeVar("SortKeyT", str, bytes)
 
 
-def sort_key(buffer: SortKeyT) -> Tuple[int, SortKeyT]:
+def sort_key(buffer: SortKeyT) -> tuple[int, SortKeyT]:
     """Returns a sort key such that "simpler" buffers are smaller than
     "more complicated" ones.
 
@@ -71,7 +71,7 @@ def sort_key(buffer: SortKeyT) -> Tuple[int, SortKeyT]:
     return (len(buffer), buffer)
 
 
-SHRINK_PASS_DEFINITIONS: Dict[str, "ShrinkPassDefinition"] = {}
+SHRINK_PASS_DEFINITIONS: dict[str, "ShrinkPassDefinition"] = {}
 
 
 @attr.s()
@@ -313,7 +313,7 @@ class Shrinker:
         self.initial_misaligned = self.engine.misaligned_count
         self.calls_at_last_shrink = self.initial_calls
 
-        self.passes_by_name: Dict[str, ShrinkPass] = {}
+        self.passes_by_name: dict[str, ShrinkPass] = {}
 
         # Because the shrinker is also used to `pareto_optimise` in the target phase,
         # we sometimes want to allow extending buffers instead of aborting at the end.

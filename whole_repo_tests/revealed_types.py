@@ -20,16 +20,16 @@ REVEALED_TYPES = [
     ("text()", "str"),
     ("integers().map(str)", "str"),
     ("booleans().filter(bool)", "bool"),
-    ("tuples()", "Tuple[()]"),
-    ("tuples(integers())", "Tuple[int]"),
-    ("tuples(integers(), text())", "Tuple[int, str]"),
+    ("tuples()", "tuple[()]"),
+    ("tuples(integers())", "tuple[int]"),
+    ("tuples(integers(), text())", "tuple[int, str]"),
     (
         "tuples(integers(), text(), integers(), text(), integers())",
-        "Tuple[int, str, int, str, int]",
+        "tuple[int, str, int, str, int]",
     ),
     (
         "tuples(text(), text(), text(), text(), text(), text())",
-        "Tuple[Any, ...]",
+        "tuple[Any, ...]",
     ),
 ]
 
@@ -140,14 +140,14 @@ NUMPY_REVEALED_TYPES = [
     ),
     (
         "integer_array_indices(shape=(2, 3))",
-        "Tuple[ndarray[Any, dtype[signedinteger[Any]]], ...]",
+        "tuple[ndarray[Any, dtype[signedinteger[Any]]], ...]",
     ),
     (
         'integer_array_indices(shape=(2, 3), dtype=np.dtype("int32"))',
-        "Tuple[ndarray[Any, dtype[signedinteger[_32Bit]]], ...]",
+        "tuple[ndarray[Any, dtype[signedinteger[_32Bit]]], ...]",
     ),
     (
         'integer_array_indices(shape=(2, 3), dtype=np.dtype("uint8"))',
-        "Tuple[ndarray[Any, dtype[unsignedinteger[_8Bit]]], ...]",
+        "tuple[ndarray[Any, dtype[unsignedinteger[_8Bit]]], ...]",
     ),
 ]

@@ -12,11 +12,12 @@ import os
 import re
 import tempfile
 import zipfile
+from collections.abc import Iterator
 from contextlib import contextmanager, nullcontext
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from shutil import make_archive, rmtree
-from typing import Iterator, Optional, Tuple
+from typing import Optional
 
 import pytest
 
@@ -188,7 +189,7 @@ def test_ga_require_readonly_wrapping():
 @contextmanager
 def ga_empty_artifact(
     date: Optional[datetime] = None, path: Optional[Path] = None
-) -> Iterator[Tuple[Path, Path]]:
+) -> Iterator[tuple[Path, Path]]:
     """Creates an empty GitHub artifact."""
     if date:
         timestamp = date.isoformat().replace(":", "_")

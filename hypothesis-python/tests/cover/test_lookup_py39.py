@@ -30,12 +30,10 @@ from tests.common.utils import temp_registered
     "annotated_type,expected_strategy_repr",
     [
         (typing.Annotated[int, "foo"], "integers()"),
-        (typing.Annotated[typing.List[float], "foo"], "lists(floats())"),
+        (typing.Annotated[list[float], "foo"], "lists(floats())"),
         (typing.Annotated[typing.Annotated[str, "foo"], "bar"], "text()"),
         (
-            typing.Annotated[
-                typing.Annotated[typing.List[typing.Dict[str, bool]], "foo"], "bar"
-            ],
+            typing.Annotated[typing.Annotated[list[dict[str, bool]], "foo"], "bar"],
             "lists(dictionaries(keys=text(), values=booleans()))",
         ),
     ],
@@ -101,7 +99,7 @@ def test_issue_3080():
 
 @dataclasses.dataclass
 class TypingTuple:
-    a: dict[typing.Tuple[int, int], str]
+    a: dict[tuple[int, int], str]
 
 
 @dataclasses.dataclass

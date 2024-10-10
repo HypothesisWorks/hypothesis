@@ -12,7 +12,6 @@ import functools
 import warnings
 from copy import copy
 from types import SimpleNamespace
-from typing import Tuple
 
 import pytest
 
@@ -45,7 +44,7 @@ class MockedArray:
         return object.__getattr__(self, name)
 
 
-def wrap_array(func: callable, exclude: Tuple[str, ...] = ()) -> callable:
+def wrap_array(func: callable, exclude: tuple[str, ...] = ()) -> callable:
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
         result = func(*args, **kwargs)
@@ -59,7 +58,7 @@ def wrap_array(func: callable, exclude: Tuple[str, ...] = ()) -> callable:
 
 
 def make_mock_xp(
-    *, exclude: Tuple[str, ...] = (), exclude_methods: Tuple[str, ...] = ()
+    *, exclude: tuple[str, ...] = (), exclude_methods: tuple[str, ...] = ()
 ) -> SimpleNamespace:
     xp = copy(mock_xp)
     assert isinstance(exclude, tuple)  # sanity check

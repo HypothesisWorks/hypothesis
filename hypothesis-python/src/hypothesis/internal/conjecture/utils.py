@@ -13,8 +13,9 @@ import hashlib
 import heapq
 import sys
 from collections import OrderedDict, abc
+from collections.abc import Sequence
 from functools import lru_cache
-from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Type, TypeVar, Union
+from typing import TYPE_CHECKING, List, Optional, TypeVar, Union
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import int_from_bytes
@@ -56,7 +57,7 @@ def identity(v: T) -> T:
 
 
 def check_sample(
-    values: Union[Type[enum.Enum], Sequence[T]], strategy_name: str
+    values: Union[type[enum.Enum], Sequence[T]], strategy_name: str
 ) -> Sequence[T]:
     if "numpy" in sys.modules and isinstance(values, sys.modules["numpy"].ndarray):
         if values.ndim != 1:
@@ -103,7 +104,7 @@ class Sampler:
        shrinking the chosen element.
     """
 
-    table: List[Tuple[int, int, float]]  # (base_idx, alt_idx, alt_chance)
+    table: list[tuple[int, int, float]]  # (base_idx, alt_idx, alt_chance)
 
     def __init__(self, weights: Sequence[float], *, observe: bool = True):
         self.observe = observe
@@ -158,7 +159,7 @@ class Sampler:
         while small:
             table[small.pop()][2] = zero
 
-        self.table: "List[Tuple[int, int, float]]" = []
+        self.table: "list[tuple[int, int, float]]" = []
         for base, alternate, alternate_chance in table:  # type: ignore
             assert isinstance(base, int)
             assert isinstance(alternate, int) or alternate is None

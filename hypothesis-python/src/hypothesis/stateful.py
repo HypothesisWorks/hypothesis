@@ -17,22 +17,12 @@ execution to date.
 """
 import collections
 import inspect
+from collections.abc import Iterable, Sequence
 from copy import copy
 from functools import lru_cache
 from io import StringIO
 from time import perf_counter
-from typing import (
-    Any,
-    Callable,
-    ClassVar,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Sequence,
-    Union,
-    overload,
-)
+from typing import Any, Callable, ClassVar, Optional, Union, overload
 from unittest import TestCase
 
 import attr
@@ -274,17 +264,17 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
     At any given point a random applicable rule will be executed.
     """
 
-    _rules_per_class: ClassVar[Dict[type, List[classmethod]]] = {}
-    _invariants_per_class: ClassVar[Dict[type, List[classmethod]]] = {}
-    _initializers_per_class: ClassVar[Dict[type, List[classmethod]]] = {}
+    _rules_per_class: ClassVar[dict[type, list[classmethod]]] = {}
+    _invariants_per_class: ClassVar[dict[type, list[classmethod]]] = {}
+    _initializers_per_class: ClassVar[dict[type, list[classmethod]]] = {}
 
     def __init__(self) -> None:
         if not self.rules():
             raise InvalidDefinition(f"Type {type(self).__name__} defines no rules")
-        self.bundles: Dict[str, list] = {}
+        self.bundles: dict[str, list] = {}
         self.names_counters: collections.Counter = collections.Counter()
         self.names_list: list[str] = []
-        self.names_to_values: Dict[str, Any] = {}
+        self.names_to_values: dict[str, Any] = {}
         self.__stream = StringIO()
         self.__printer = RepresentationPrinter(
             self.__stream, context=_current_build_context.value
@@ -651,15 +641,15 @@ _RuleWrapper = Callable[[_RuleType[Ex]], _RuleType[Ex]]
 # a `SearchStrategy`, which the concrete implementation does not accept.
 #
 # Omitted `targets` parameters, where the default value is used, are typed with
-# a special `_OmittedArgument` type. We cannot type them as `Tuple[()]`, because
-# `Tuple[()]` is a subtype of `Sequence[Bundle[Ex]]`, leading to signature
+# a special `_OmittedArgument` type. We cannot type them as `tuple[()]`, because
+# `tuple[()]` is a subtype of `Sequence[Bundle[Ex]]`, leading to signature
 # overlaps with incompatible return types. The `_OmittedArgument` type will never be
 # encountered at runtime, and exists solely to annotate the default of `targets`.
 # PEP 661 (Sentinel Values) might provide a more elegant alternative in the future.
 #
-# We could've also annotated `targets` as `Tuple[_OmittedArgument]`, but then when
+# We could've also annotated `targets` as `tuple[_OmittedArgument]`, but then when
 # both `target` and `targets` are provided, mypy describes the type error as an
-# invalid argument type for `targets` (expected `Tuple[_OmittedArgument]`, got ...).
+# invalid argument type for `targets` (expected `tuple[_OmittedArgument]`, got ...).
 # By annotating it as a bare `_OmittedArgument` type, mypy's error will warn that
 # there is no overloaded signature matching the call, which is more descriptive.
 #

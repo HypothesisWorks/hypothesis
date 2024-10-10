@@ -25,7 +25,7 @@ your own at all.
 """
 
 from inspect import signature
-from typing import Dict, Optional
+from typing import Optional
 
 import lark
 from lark.grammar import NonTerminal, Terminal
@@ -201,7 +201,7 @@ def from_lark(
     grammar: lark.lark.Lark,
     *,
     start: Optional[str] = None,
-    explicit: Optional[Dict[str, st.SearchStrategy[str]]] = None,
+    explicit: Optional[dict[str, st.SearchStrategy[str]]] = None,
     alphabet: st.SearchStrategy[str] = st.characters(codec="utf-8"),
 ) -> st.SearchStrategy[str]:
     """A strategy for strings accepted by the given context-free grammar.

@@ -27,6 +27,7 @@ from inspect import Parameter, Signature, isabstract, isclass
 from re import Pattern
 from types import FunctionType, GenericAlias
 from typing import (
+    Annotated,
     Any,
     AnyStr,
     Callable,
@@ -1360,7 +1361,7 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
             qualifiers = []
             while True:
                 annotation_origin = types.extended_get_origin(annotation_type)
-                if annotation_origin in types.AnnotatedTypes:
+                if annotation_origin is Annotated:
                     if annotation_args := get_args(annotation_type):
                         annotation_type = annotation_args[0]
                     else:
@@ -1793,7 +1794,7 @@ class DrawFn(Protocol):
     .. code-block:: python
 
         @composite
-        def list_and_index(draw: DrawFn) -> Tuple[int, str]:
+        def list_and_index(draw: DrawFn) -> tuple[int, str]:
             i = draw(integers())  # type inferred as 'int'
             s = draw(text())  # type inferred as 'str'
             return i, s
