@@ -872,9 +872,26 @@ def _write_call(
     subtypes of `except_`, which will be handled in an outer try-except block.
     """
     params_dd = _get_params(func)
-    if copy_args is None:
-        potentially_modified = potentially_modified_vars(ast.parse(inspect.getsource(func)).body[0], set(params_dd.keys()))
-    elif copy_args is True:
+    try:
+        src_ast = ast.parse(dedent(inspect.getsource(func)))
+        fn_ast = None
+        for fn_iter in src_ast.body:
+            if isinstance(fn_iter, ast.FunctionDef) and fn_iter.name == func.__name__:
+                fn_ast = fn_iter
+                break
+    except (TypeError, IndexError):
+        # getsource raises a TypeError if the function isn't of a type
+        # it can get the source from. The IndexError is to account
+        # for silent failures that return something without
+        # a function
+        fn_ast = None
+
+    if copy_args is None and fn_ast is not None:
+        potentially_modified = potentially_modified_vars(fn_ast, set(params_dd.keys()))
+    elif copy_args is True or (copy_args is None and fn_ast is not None):
+        # This is a little questionable, but I'd argue that if we can't see 
+        # the internals of a function that we're comparing, we should make the
+        # most aggressive assumption
         potentially_modified = set(params_dd.keys())
     else:
         potentially_modified = set()
