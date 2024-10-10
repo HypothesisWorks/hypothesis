@@ -1325,7 +1325,9 @@ class LotsOfEntropyPerStepMachine(RuleBasedStateMachine):
         assert data
 
 
-TestLotsOfEntropyPerStepMachine = LotsOfEntropyPerStepMachine.TestCase
+@pytest.mark.skipif(Settings._current_profile == "crosshair", reason="takes hours")
+def test_lots_of_entropy():
+    run_state_machine_as_test(LotsOfEntropyPerStepMachine)
 
 
 def test_flatmap():
