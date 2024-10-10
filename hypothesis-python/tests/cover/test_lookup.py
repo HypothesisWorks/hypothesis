@@ -876,6 +876,7 @@ def test_supportsop_types_support_protocol(protocol, data):
     assert issubclass(type(value), protocol)
 
 
+@xfail_on_crosshair(Why.undiscovered)
 @pytest.mark.parametrize("restrict_custom_strategy", [True, False])
 def test_generic_aliases_can_be_conditionally_resolved_by_registered_function(
     restrict_custom_strategy,

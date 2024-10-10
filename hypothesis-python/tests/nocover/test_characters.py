@@ -15,6 +15,8 @@ import pytest
 
 from hypothesis import given, settings, strategies as st
 
+from tests.common.utils import Why, xfail_on_crosshair
+
 IDENTIFIER_CHARS = string.ascii_letters + string.digits + "_"
 
 
@@ -23,6 +25,7 @@ def test_large_blacklist(c):
     assert c not in IDENTIFIER_CHARS
 
 
+@xfail_on_crosshair(Why.symbolic_outside_context)  # seems like a crosshair bug here
 @given(st.data())
 def test_arbitrary_blacklist(data):
     blacklist = data.draw(st.text(st.characters(max_codepoint=1000), min_size=1))

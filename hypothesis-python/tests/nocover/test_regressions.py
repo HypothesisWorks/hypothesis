@@ -14,7 +14,10 @@ from hypothesis import given, strategies as st
 from hypothesis._settings import note_deprecation
 from hypothesis.errors import HypothesisDeprecationWarning
 
+from tests.common.utils import Why, xfail_on_crosshair
 
+
+@xfail_on_crosshair(Why.other)
 def test_note_deprecation_blames_right_code_issue_652():
     msg = "this is an arbitrary deprecation warning message"
 
@@ -58,6 +61,8 @@ def test_unique_floats_with_nan_is_not_flaky_3926(ls):
 
 # this will take a while to find the regression, but will eventually trigger it.
 # min_value=0 is critical to trigger the probing behavior which exhausts our buffer.
+# https://github.com/pschanely/CrossHair/issues/285 for an upstream fix.
+@xfail_on_crosshair(Why.other, strict=False)
 @given(st.integers(min_value=0, max_value=1 << 25_000))
 def test_overrun_during_datatree_simulation_3874(n):
     pass
