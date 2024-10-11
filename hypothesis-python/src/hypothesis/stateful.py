@@ -56,8 +56,10 @@ from hypothesis.strategies._internal.strategies import (
     Ex,
     Ex_Inv,
     OneOfStrategy,
+    SampledFromStrategy,
     SearchStrategy,
     check_strategy,
+    filter_not_satisfied,
 )
 from hypothesis.vendor.pretty import RepresentationPrinter
 
@@ -184,12 +186,12 @@ def run_state_machine_as_test(state_machine_factory, *, settings=None, _min_step
                 try:
                     data = dict(data)
                     for k, v in list(data.items()):
-                        if isinstance(v, VarReference):
-                            data[k] = machine.names_to_values[v.name]
+                        if isinstance(v, VarReferenceMapping):
+                            data[k] = v.value
                         elif isinstance(v, list) and all(
-                            isinstance(item, VarReference) for item in v
+                            isinstance(item, VarReferenceMapping) for item in v
                         ):
-                            data[k] = [machine.names_to_values[item.name] for item in v]
+                            data[k] = [item.value for item in v]
 
                     label = f"execute:rule:{rule.function.__name__}"
                     start = perf_counter()
@@ -292,12 +294,12 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
             )
 
     def _pretty_print(self, value):
-        if isinstance(value, VarReference):
-            return value.name
+        if isinstance(value, VarReferenceMapping):
+            return value.reference.name
         elif isinstance(value, list) and all(
-            isinstance(item, VarReference) for item in value
+            isinstance(item, VarReferenceMapping) for item in value
         ):
-            return "[" + ", ".join([item.name for item in value]) + "]"
+            return "[" + ", ".join([item.reference.name for item in value]) + "]"
         self.__stream.seek(0)
         self.__stream.truncate(0)
         self.__printer.output_width = 0
@@ -458,8 +460,12 @@ class Rule:
             assert not isinstance(v, BundleReferenceStrategy)
             if isinstance(v, Bundle):
                 bundles.append(v)
-                consume = isinstance(v, BundleConsumer)
-                v = BundleReferenceStrategy(v.name, consume=consume)
+                v = BundleReferenceStrategy(
+                    v.name,
+                    consume=v.consume,
+                    repr_=v.repr_,
+                    transformations=v.transformations,
+                )
             self.arguments_strategies[k] = v
         self.bundles = tuple(bundles)
 
@@ -472,24 +478,61 @@ class Rule:
 self_strategy = st.runner()
 
 
-class BundleReferenceStrategy(SearchStrategy):
-    def __init__(self, name: str, *, consume: bool = False):
+class BundleReferenceStrategy(SampledFromStrategy[Ex]):
+
+    def __init__(
+        self,
+        name: str,
+        *,
+        consume: bool = False,
+        repr_: Optional[str] = None,
+        transformations: Iterable[tuple[str, Callable]] = (),
+    ):
         self.name = name
         self.consume = consume
+        super().__init__(
+            [...],
+            repr_=repr_,
+            transformations=transformations,
+        )  # Some random items that'll get replaced in do_draw
+
+    def get_transformed_value(self, reference):
+        assert isinstance(reference, VarReference)
+        return self._transform(self.machine.names_to_values.get(reference.name))
+
+    def get_element(self, i):
+        idx = self.elements[i]
+        assert isinstance(idx, int)
+        reference = self.bundle[idx]
+        value = self.get_transformed_value(reference)
+        return idx if value is not filter_not_satisfied else filter_not_satisfied
 
     def do_draw(self, data):
-        machine = data.draw(self_strategy)
-        bundle = machine.bundle(self.name)
-        if not bundle:
+        self.machine = data.draw(self_strategy)
+        self.bundle = self.machine.bundle(self.name)
+        if not self.bundle:
             data.mark_invalid(f"Cannot draw from empty bundle {self.name!r}")
+
+        # We use both self.bundle and self.elements to make sure an index is
+        # used to safely pop.
+
         # Shrink towards the right rather than the left. This makes it easier
         # to delete data generated earlier, as when the error is towards the
         # end there can be a lot of hard to remove padding.
-        position = data.draw_integer(0, len(bundle) - 1, shrink_towards=len(bundle))
+        self.elements = range(len(self.bundle))[::-1]
+
+        position = super().do_draw(data)
+        reference = self.bundle[position]
         if self.consume:
-            return bundle.pop(position)  # pragma: no cover  # coverage is flaky here
-        else:
-            return bundle[position]
+            self.bundle.pop(position)  # pragma: no cover # coverage is flaky here
+
+        value = self.get_transformed_value(reference)
+        if value is filter_not_satisfied:
+            data.mark_invalid(f"Aborted test because unable to satisfy {self!r}")
+
+        # We need both reference and the value itself to pretty-print deterministically
+        # and maintain any transformations that is bundle-specific
+        return VarReferenceMapping(reference, value)
 
 
 class Bundle(SearchStrategy[Ex]):
@@ -515,22 +558,62 @@ class Bundle(SearchStrategy[Ex]):
     """
 
     def __init__(
-        self, name: str, *, consume: bool = False, draw_references: bool = True
+        self,
+        name: str,
+        *,
+        consume: bool = False,
+        repr_: Optional[str] = None,
+        transformations: Iterable[tuple[str, Callable]] = (),
     ) -> None:
         self.name = name
-        self.__reference_strategy = BundleReferenceStrategy(name, consume=consume)
-        self.draw_references = draw_references
+        self.__reference_strategy = BundleReferenceStrategy(
+            name, consume=consume, repr_=repr_, transformations=transformations
+        )
+
+    @property
+    def consume(self):
+        return self.__reference_strategy.consume
+
+    @property
+    def repr_(self):
+        return self.__reference_strategy.repr_
+
+    @property
+    def transformations(self):
+        return self.__reference_strategy._transformations
 
     def do_draw(self, data):
-        machine = data.draw(self_strategy)
-        reference = data.draw(self.__reference_strategy)
-        return machine.names_to_values[reference.name]
+        self.machine = data.draw(self_strategy)
+        var_reference = data.draw(self.__reference_strategy)
+        assert type(var_reference) is VarReferenceMapping
+        return var_reference.value
+
+    def filter(self, condition):
+        return type(self)(
+            self.name,
+            consume=self.__reference_strategy.consume,
+            transformations=(
+                *self.__reference_strategy._transformations,
+                ("filter", condition),
+            ),
+            repr_=self.__reference_strategy.repr_,
+        )
+
+    def map(self, pack):
+        return type(self)(
+            self.name,
+            consume=self.__reference_strategy.consume,
+            transformations=(
+                *self.__reference_strategy._transformations,
+                ("map", pack),
+            ),
+            repr_=self.__reference_strategy.repr_,
+        )
 
     def __repr__(self):
-        consume = self.__reference_strategy.consume
-        if consume is False:
+        if self.consume is False:
             return f"Bundle(name={self.name!r})"
-        return f"Bundle(name={self.name!r}, {consume=})"
+        return f"Bundle(name={self.name!r}, {self.consume=})"
 
     def calc_is_empty(self, recur):
         # We assume that a bundle will grow over time
@@ -542,20 +625,6 @@ class Bundle(SearchStrategy[Ex]):
         # modifying the underlying buffer.
         machine = data.draw(self_strategy)
         return bool(machine.bundle(self.name))
-
-    def flatmap(self, expand):
-        if self.draw_references:
-            return type(self)(
-                self.name,
-                consume=self.__reference_strategy.consume,
-                draw_references=False,
-            ).flatmap(expand)
-        return super().flatmap(expand)
-
-
-class BundleConsumer(Bundle[Ex]):
-    def __init__(self, bundle: Bundle[Ex]) -> None:
-        super().__init__(bundle.name, consume=True)
 
 
 def consumes(bundle: Bundle[Ex]) -> SearchStrategy[Ex]:
@@ -573,7 +642,12 @@ def consumes(bundle: Bundle[Ex]) -> SearchStrategy[Ex]:
     """
     if not isinstance(bundle, Bundle):
         raise TypeError("Argument to be consumed must be a bundle.")
-    return BundleConsumer(bundle)
+    return type(bundle)(
+        name=bundle.name,
+        consume=True,
+        transformations=bundle.transformations,
+        repr_=bundle.repr_,
+    )
 
 
 @attr.s()
@@ -620,7 +694,8 @@ def _convert_targets(targets, target):
                 )
             raise InvalidArgument(msg % (t, type(t)))
         while isinstance(t, Bundle):
-            if isinstance(t, BundleConsumer):
+            # if isinstance(t, BundleConsumer):
+            if t.consume:
                 note_deprecation(
                     f"Using consumes({t.name}) doesn't makes sense in this context.  "
                     "This will be an error in a future version of Hypothesis.",
@@ -837,6 +912,12 @@ def initialize(
 @attr.s()
 class VarReference:
     name = attr.ib()
+
+
+@attr.s()
+class VarReferenceMapping:
+    reference: VarReference = attr.ib()
+    value: Any = attr.ib()
 
 
 # There are multiple alternatives for annotating the `precond` type, all of them

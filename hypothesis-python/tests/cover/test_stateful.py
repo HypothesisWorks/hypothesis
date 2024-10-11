@@ -28,7 +28,13 @@ from hypothesis import (
 )
 from hypothesis.control import current_build_context
 from hypothesis.database import ExampleDatabase
-from hypothesis.errors import DidNotReproduce, Flaky, InvalidArgument, InvalidDefinition
+from hypothesis.errors import (
+    DidNotReproduce,
+    FailedHealthCheck,
+    Flaky,
+    InvalidArgument,
+    InvalidDefinition,
+)
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.stateful import (
     Bundle,
@@ -1243,20 +1249,20 @@ state.teardown()
 
 def test_multiple_targets():
     class Machine(RuleBasedStateMachine):
-        a = Bundle("a")
-        b = Bundle("b")
+        va = Bundle("va")
+        vb = Bundle("vb")
 
-        @initialize(targets=(a, b))
+        @initialize(targets=(va, vb))
         def initialize(self):
             return multiple("ret1", "ret2", "ret3")
 
         @rule(
-            a1=consumes(a),
-            a2=consumes(a),
-            a3=consumes(a),
-            b1=consumes(b),
-            b2=consumes(b),
-            b3=consumes(b),
+            a1=consumes(va),
+            a2=consumes(va),
+            a3=consumes(va),
+            b1=consumes(vb),
+            b2=consumes(vb),
+            b3=consumes(vb),
         )
         def fail_fast(self, a1, a2, a3, b1, b2, b3):
             raise AssertionError
@@ -1271,8 +1277,8 @@ def test_multiple_targets():
         == """
 Falsifying example:
 state = Machine()
-a_0, b_0, a_1, b_1, a_2, b_2 = state.initialize()
-state.fail_fast(a1=a_2, a2=a_1, a3=a_0, b1=b_2, b2=b_1, b3=b_0)
+va_0, vb_0, va_1, vb_1, va_2, vb_2 = state.initialize()
+state.fail_fast(a1=va_2, a2=va_1, a3=va_0, b1=vb_2, b2=vb_1, b3=vb_0)
 state.teardown()
 """.strip()
     )
@@ -1280,23 +1286,23 @@ state.teardown()
 
 def test_multiple_common_targets():
     class Machine(RuleBasedStateMachine):
-        a = Bundle("a")
-        b = Bundle("b")
+        va = Bundle("va")
+        vb = Bundle("vb")
 
-        @initialize(targets=(a, b, a))
+        @initialize(targets=(va, vb, va))
         def initialize(self):
             return multiple("ret1", "ret2", "ret3")
 
         @rule(
-            a1=consumes(a),
-            a2=consumes(a),
-            a3=consumes(a),
-            a4=consumes(a),
-            a5=consumes(a),
-            a6=consumes(a),
-            b1=consumes(b),
-            b2=consumes(b),
-            b3=consumes(b),
+            a1=consumes(va),
+            a2=consumes(va),
+            a3=consumes(va),
+            a4=consumes(va),
+            a5=consumes(va),
+            a6=consumes(va),
+            b1=consumes(vb),
+            b2=consumes(vb),
+            b3=consumes(vb),
         )
         def fail_fast(self, a1, a2, a3, a4, a5, a6, b1, b2, b3):
             raise AssertionError
@@ -1311,8 +1317,8 @@ def test_multiple_common_targets():
         == """
 Falsifying example:
 state = Machine()
-a_0, b_0, a_1, a_2, b_1, a_3, a_4, b_2, a_5 = state.initialize()
-state.fail_fast(a1=a_5, a2=a_4, a3=a_3, a4=a_2, a5=a_1, a6=a_0, b1=b_2, b2=b_1, b3=b_0)
+va_0, vb_0, va_1, va_2, vb_1, va_3, va_4, vb_2, va_5 = state.initialize()
+state.fail_fast(a1=va_5, a2=va_4, a3=va_3, a4=va_2, a5=va_1, a6=va_0, b1=vb_2, b2=vb_1, b3=vb_0)
 state.teardown()
 """.strip()
     )
@@ -1328,7 +1334,106 @@ class LotsOfEntropyPerStepMachine(RuleBasedStateMachine):
 TestLotsOfEntropyPerStepMachine = LotsOfEntropyPerStepMachine.TestCase
 
 
-def test_flatmap():
+def test_filter():
+    class Machine(RuleBasedStateMachine):
+        val = Bundle("val")
+
+        @initialize(target=val)
+        def initialize(self):
+            return multiple(1, 2, 3)
+
+        @rule(
+            a1=val.filter(lambda x: x < 2),
+            a2=val.filter(lambda x: x > 2),
+            a3=val,
+        )
+        def fail_fast(self, a1, a2, a3):
+            raise AssertionError
+
+    Machine.TestCase.settings = NO_BLOB_SETTINGS
+    with pytest.raises(AssertionError) as err:
+        run_state_machine_as_test(Machine)
+
+    result = "\n".join(err.value.__notes__)
+    assert (
+        result
+        == """
+Falsifying example:
+state = Machine()
+val_0, val_1, val_2 = state.initialize()
+state.fail_fast(a1=val_0, a2=val_2, a3=val_2)
+state.teardown()
+""".strip()
+    )
+
+
+def test_consumes_filter():
+    class Machine(RuleBasedStateMachine):
+        bun = Bundle("bun")
+
+        @initialize(target=bun)
+        def initialize(self):
+            return multiple(1, 2, 3)
+
+        @rule(
+            a1=consumes(bun).filter(lambda x: x < 2),
+            a2=consumes(bun).filter(lambda x: x > 2),
+            a3=consumes(bun),
+        )
+        def fail_fast(self, a1, a2, a3):
+            raise AssertionError
+
+    Machine.TestCase.settings = NO_BLOB_SETTINGS
+    with pytest.raises(AssertionError) as err:
+        run_state_machine_as_test(Machine)
+
+    result = "\n".join(err.value.__notes__)
+    assert (
+        result
+        == """
+Falsifying example:
+state = Machine()
+bun_0, bun_1, bun_2 = state.initialize()
+state.fail_fast(a1=bun_0, a2=bun_2, a3=bun_1)
+state.teardown()
+""".strip()
+    )
+
+
+def test_consumes_map_with_filter():
+    class Machine(RuleBasedStateMachine):
+        bun = Bundle("bun")
+
+        @initialize(target=bun)
+        def initialize(self):
+            return multiple(2, 4)
+
+        @rule(
+            a1=bun.map(lambda x: x**2).filter(lambda x: x < 3**2),
+            a2=consumes(bun).map(lambda x: x**2).filter(lambda x: x > 3**2),
+            a3=consumes(bun),
+        )
+        def fail_fast(self, a1, a2, a3):
+            raise AssertionError
+
+    Machine.TestCase.settings = NO_BLOB_SETTINGS
+    with pytest.raises(AssertionError) as err:
+        run_state_machine_as_test(Machine)
+
+    result = "\n".join(err.value.__notes__)
+    assert (
+        result
+        == """
+Falsifying example:
+state = Machine()
+bun_0, bun_1 = state.initialize()
+state.fail_fast(a1=bun_0, a2=bun_1, a3=bun_0)
+state.teardown()
+""".strip()
+    )
+
+
+def test_flatmap_with_combinations():
     class Machine(RuleBasedStateMachine):
         buns = Bundle("buns")
 
@@ -1341,11 +1446,29 @@ def test_flatmap():
             assert isinstance(bun, int)
             return bun
 
+        @rule(
+            target=buns,
+            bun=buns.flatmap(lambda x: just(-x)).filter(lambda x: x < -1),
+        )
+        def use_flatmap_filtered(self, bun):
+            assert isinstance(bun, int)
+            assert bun < -1
+            return -bun
+
+        @rule(
+            target=buns,
+            bun=buns.flatmap(lambda x: just(x + 1)).map(lambda x: -x),
+        )
+        def use_flatmap_mapped(self, bun):
+            assert isinstance(bun, int)
+            assert bun < 0
+            return -bun
+
         @rule(bun=buns)
         def use_directly(self, bun):
             assert isinstance(bun, int)
+            assert bun >= 0
 
-    Machine.TestCase.settings = Settings(stateful_step_count=5, max_examples=10)
     run_state_machine_as_test(Machine)
 
 
@@ -1366,5 +1489,127 @@ def test_use_bundle_within_other_strategies():
             assert isinstance(instance, Class)
             assert isinstance(instance.value, str)
 
-    Machine.TestCase.settings = Settings(stateful_step_count=5, max_examples=10)
     run_state_machine_as_test(Machine)
+
+
+def test_map_with_combinations():
+    class Machine(RuleBasedStateMachine):
+        buns = Bundle("buns")
+
+        @initialize(target=buns)
+        def create_bun(self):
+            return 1
+
+        @rule(bun=buns.map(lambda x: -x))
+        def use_map_base(self, bun):
+            assert isinstance(bun, int)
+            assert bun < 0
+
+        @rule(
+            bun=buns.map(lambda x: -x).filter(lambda x: x < -1),
+        )
+        def use_flatmap_filtered(self, bun):
+            assert isinstance(bun, int)
+            assert bun < -1
+
+        @rule(
+            bun=buns.map(lambda x: -x).flatmap(lambda x: just(abs(x) + 1)),
+        )
+        def use_flatmap_mapped(self, bun):
+            assert isinstance(bun, int)
+            assert bun > 0
+
+        @rule(bun=buns)
+        def use_directly(self, bun):
+            assert isinstance(bun, int)
+            assert bun > 0
+
+    run_state_machine_as_test(Machine)
+
+
+def test_filter_with_combinations():
+    class Machine(RuleBasedStateMachine):
+        buns = Bundle("buns")
+
+        @initialize(target=buns)
+        def create_bun(self):
+            return multiple(0, -1, -2)
+
+        @rule(bun=buns.filter(lambda x: x > 0))
+        def use_filter_base(self, bun):
+            assert isinstance(bun, int)
+            assert bun > 0
+
+        @rule(
+            bun=buns.filter(lambda x: x > 0).flatmap(lambda x: just(-x)),
+        )
+        def use_filter_flatmapped(self, bun):
+            assert isinstance(bun, int)
+            assert bun < 0
+
+        @rule(
+            bun=buns.filter(lambda x: x < 0).map(lambda x: -x),
+        )
+        def use_flatmap_mapped(self, bun):
+            assert isinstance(bun, int)
+            assert bun > 0
+
+        @rule(bun=buns)
+        def use_directly(self, bun):
+            assert isinstance(bun, int)
+
+    run_state_machine_as_test(Machine)
+
+
+def test_filter_not_satisfied_healthcheck():
+    class Machine(RuleBasedStateMachine):
+        buns = Bundle("buns")
+
+        @initialize(target=buns)
+        def create_bun(self):
+            return multiple(0)
+
+        @rule(bun=buns.filter(lambda x: False))
+        def use_filter(self, bun):
+            raise ValueError("This shouldn't be raised.")
+
+    Machine.TestCase.settings = Settings(
+        stateful_step_count=2,
+        max_examples=2,
+    )
+    with pytest.raises(FailedHealthCheck, match="HealthCheck.filter_too_much"):
+        run_state_machine_as_test(Machine)
+
+
+def test_mapped_values_assigned_properly():
+    class Machine(RuleBasedStateMachine):
+        bun = Bundle("bun")
+
+        @initialize(target=bun)
+        def initialize(self):
+            return multiple("ret1", "ret2")
+
+        @rule(
+            a1=bun,
+            a2=bun.map(lambda x: x + x),
+            a3=consumes(bun).map(lambda x: x + x),
+            a4=bun,
+        )
+        def fail_fast(self, a1, a2, a3, a4):
+            raise AssertionError
+
+    Machine.TestCase.settings = NO_BLOB_SETTINGS
+    with pytest.raises(AssertionError) as err:
+        run_state_machine_as_test(Machine)
+
+    result = "\n".join(err.value.__notes__)
+    assert (
+        result
+        == """
+Falsifying example:
+state = Machine()
+bun_0, bun_1 = state.initialize()
+state.fail_fast(a1=bun_1, a2=bun_1, a3=bun_1, a4=bun_0)
+state.teardown()
+""".strip()
+    )

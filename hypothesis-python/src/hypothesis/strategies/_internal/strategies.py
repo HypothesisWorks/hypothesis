@@ -477,7 +477,7 @@ def is_simple_data(value):
         return False
 
 
-class SampledFromStrategy(SearchStrategy):
+class SampledFromStrategy(SearchStrategy[Ex]):
     """A strategy which samples from a set of elements. This is essentially
     equivalent to using a OneOfStrategy over Just strategies but may be more
     efficient and convenient.
@@ -528,7 +528,7 @@ class SampledFromStrategy(SearchStrategy):
         return is_simple_data(self.elements)
 
     def _transform(self, element):
-        # Used in UniqueSampledListStrategy
+        # Used in UniqueSampledListStrategy and BundleStrategy
         for name, f in self._transformations:
             if name == "map":
                 result = f(element)
@@ -602,7 +602,11 @@ class SampledFromStrategy(SearchStrategy):
                     if len(allowed) > speculative_index:
                         # Early-exit case: We reached the speculative index, so
                         # we just return the corresponding element.
-                        data.draw_integer(0, len(self.elements) - 1, forced=i)
+                        data.draw_integer(
+                            0,
+                            len(self.elements) - 1,
+                            forced=i,
+                        )
                         return element
 
         # The speculative index didn't work out, but at this point we've built
