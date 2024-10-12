@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.115.0:
+
+--------------------
+6.115.0 - 2024-10-12
+--------------------
+
+This improves the formatting of dataclasses and attrs classes when printing
+falsifying examples.
+
 .. _v6.114.1:
 
 --------------------
