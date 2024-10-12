@@ -214,6 +214,24 @@ class RepresentationPrinter:
                                 meth = cls._repr_pretty_
                                 if callable(meth):
                                     return meth(obj, self, cycle)
+                            if hasattr(cls, "__attrs_attrs__"):
+                                return pprint_fields(
+                                    obj,
+                                    self,
+                                    cycle,
+                                    [at.name for at in cls.__attrs_attrs__ if at.init],
+                                )
+                            if hasattr(cls, "__dataclass_fields__"):
+                                return pprint_fields(
+                                    obj,
+                                    self,
+                                    cycle,
+                                    [
+                                        k
+                                        for k, v in cls.__dataclass_fields__.items()
+                                        if v.init
+                                    ],
+                                )
                 # Now check for object-specific printers which show how this
                 # object was constructed (a Hypothesis special feature).
                 printers = self.known_object_printers[IDKey(obj)]
@@ -712,6 +730,20 @@ def _repr_pprint(obj, p, cycle):
         if idx:
             p.break_()
         p.text(output_line)
+
+
+def pprint_fields(obj, p, cycle, fields):
+    name = obj.__class__.__name__
+    if cycle:
+        return p.text(f"{name}(...)")
+    with p.group(1, name + "(", ")"):
+        for idx, field in enumerate(fields):
+            if idx:
+                p.text(",")
+                p.breakable()
+            p.text(field)
+            p.text("=")
+            p.pretty(getattr(obj, field))
 
 
 def _function_pprint(obj, p, cycle):
