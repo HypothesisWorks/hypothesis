@@ -9,20 +9,24 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import hypothesis.strategies as st
-from hypothesis.control import BuildContext
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.strategies._internal.strategies import FilteredStrategy
+
+from tests.conjecture.common import run_to_buffer
 
 
 def test_filter_iterations_are_marked_as_discarded():
     variable_equal_to_zero = 0  # non-local references disables filter-rewriting
-    x = st.integers(0, 255).filter(lambda x: x == variable_equal_to_zero)
+    x = st.integers().filter(lambda x: x == variable_equal_to_zero)
 
-    data = ConjectureData.for_buffer([0, 2, 1, 0])
+    @run_to_buffer
+    def buf(data):
+        data.draw_integer(forced=1)
+        data.draw_integer(forced=0)
+        data.mark_interesting()
 
-    with BuildContext(data):
-        assert data.draw(x) == 0
-
+    data = ConjectureData.for_buffer(buf)
+    assert data.draw(x) == 0
     assert data.has_discards
 
 
