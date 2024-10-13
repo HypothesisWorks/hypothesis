@@ -144,11 +144,9 @@ def integer_kwargs(
             draw(st.booleans()) if (use_min_value and use_max_value) else False
         )
 
-    # this generation is complicated to deal with maintaining any combination of
-    # the following invariants, depending on which parameters are passed:
-    #
+    # Invariants:
     # (1) min_value <= forced <= max_value
-    # (2) max_value - min_value + 1 == len(weights)
+    # (2) sum(weights.values()) < 1
     # (3) len(weights) <= 255
 
     if use_shrink_towards:
@@ -158,39 +156,22 @@ def integer_kwargs(
     if use_weights:
         assert use_max_value
         assert use_min_value
-        # handle the weights case entirely independently from the non-weights case.
-        # We'll treat the weights as our "key" draw and base all other draws on that.
 
-        # weights doesn't play well with super small floats, so exclude <.01
+        min_value = draw(st.integers(max_value=forced))
+        min_val = max(min_value, forced) if forced is not None else min_value
+        max_value = draw(st.integers(min_value=min_val))
+
+        # Sampler doesn't play well with super small floats, so exclude them
         weights = draw(
-            st.lists(st.just(0) | st.floats(0.01, 1), min_size=1, max_size=255)
+            st.dictionaries(st.integers(), st.floats(0.001, 1), max_size=255)
         )
-        # zero is allowed, but it can't be all zeroes
-        assume(sum(weights) > 0)
-
-        # we additionally pick a central value (if not forced), and then the index
-        # into the weights at which it can be found - aka the min-value offset.
-        center = forced if use_forced else draw(st.integers())
-        min_value = center - draw(st.integers(0, len(weights) - 1))
-        max_value = min_value + len(weights) - 1
-
-        if use_forced:
-            # can't force a 0-weight index.
-            # we avoid clamping the returned shrink_towards to maximize
-            # bug-finding power.
-            _shrink_towards = clamped_shrink_towards(
-                {
-                    "shrink_towards": shrink_towards,
-                    "min_value": min_value,
-                    "max_value": max_value,
-                }
-            )
-            forced_idx = (
-                forced - _shrink_towards
-                if forced >= _shrink_towards
-                else max_value - forced
-            )
-            assume(weights[forced_idx] > 0)
+        # invalid to have a weighting that disallows all possibilities
+        assume(sum(weights.values()) != 0)
+        target = draw(st.floats(0.001, 0.999))
+        # re-normalize probabilities to sum to some arbitrary value < 1
+        weights = {k: v / target for k, v in weights.items()}
+        # float rounding error can cause this to fail.
+        assume(sum(weights.values()) == target)
     else:
         if use_min_value:
             min_value = draw(st.integers(max_value=forced))

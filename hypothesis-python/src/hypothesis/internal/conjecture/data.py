@@ -88,7 +88,7 @@ T = TypeVar("T")
 class IntegerKWargs(TypedDict):
     min_value: Optional[int]
     max_value: Optional[int]
-    weights: Optional[Sequence[float]]
+    weights: Optional[dict[int, float]]
     shrink_towards: int
 
 
@@ -1287,7 +1287,7 @@ class PrimitiveProvider(abc.ABC):
         max_value: Optional[int] = None,
         *,
         # weights are for choosing an element index from a bounded range
-        weights: Optional[Sequence[float]] = None,
+        weights: Optional[dict[int, float]] = None,
         shrink_towards: int = 0,
         forced: Optional[int] = None,
         fake_forced: bool = False,
@@ -1456,8 +1456,7 @@ class HypothesisProvider(PrimitiveProvider):
         min_value: Optional[int] = None,
         max_value: Optional[int] = None,
         *,
-        # weights are for choosing an element index from a bounded range
-        weights: Optional[Sequence[float]] = None,
+        weights: Optional[dict[int, float]] = None,
         shrink_towards: int = 0,
         forced: Optional[int] = None,
         fake_forced: bool = False,
@@ -1475,22 +1474,35 @@ class HypothesisProvider(PrimitiveProvider):
             assert min_value is not None
             assert max_value is not None
 
-            sampler = Sampler(weights, observe=False)
-            gap = max_value - shrink_towards
+            # format of weights is a mapping of ints to p, where sum(p) < 1.
+            # The remaining probability mass is uniformly distributed over
+            # *all* ints (not just the unmapped ones; this is somewhat undesirable,
+            # but simplifies things).
+            #
+            # We assert that sum(p) is strictly less than 1 because it simplifies
+            # handling forced values when we can force into the unmapped probability
+            # mass. We should eventually remove this restriction.
+            sampler = Sampler(
+                [1 - sum(weights.values()), *weights.values()], observe=False
+            )
+            # if we're forcing, it's easiest to force into the unmapped probability
+            # mass and then force the drawn value after.
+            idx = sampler.sample(
+                self._cd, forced=None if forced is None else 0, fake_forced=fake_forced
+            )
 
-            forced_idx = None
-            if forced is not None:
-                if forced >= shrink_towards:
-                    forced_idx = forced - shrink_towards
-                else:
-                    forced_idx = shrink_towards + gap - forced
-            idx = sampler.sample(self._cd, forced=forced_idx, fake_forced=fake_forced)
-
-            # For range -2..2, interpret idx = 0..4 as [0, 1, 2, -1, -2]
-            if idx <= gap:
-                return shrink_towards + idx
-            else:
-                return shrink_towards - (idx - gap)
+            return (
+                self._draw_bounded_integer(
+                    min_value,
+                    max_value,
+                    forced=forced,
+                    center=shrink_towards,
+                    fake_forced=fake_forced,
+                )
+                if idx == 0
+                # implicit reliance on dicts being sorted for determinism
+                else list(weights)[idx - 1]
+            )
 
         if min_value is None and max_value is None:
             return self._draw_unbounded_integer(forced=forced, fake_forced=fake_forced)
@@ -2116,8 +2128,7 @@ class ConjectureData:
         min_value: Optional[int] = None,
         max_value: Optional[int] = None,
         *,
-        # weights are for choosing an element index from a bounded range
-        weights: Optional[Sequence[float]] = None,
+        weights: Optional[dict[int, float]] = None,
         shrink_towards: int = 0,
         forced: Optional[int] = None,
         fake_forced: bool = False,
@@ -2127,9 +2138,11 @@ class ConjectureData:
         if weights is not None:
             assert min_value is not None
             assert max_value is not None
-            width = max_value - min_value + 1
-            assert width <= 255  # arbitrary practical limit
-            assert len(weights) == width
+            assert len(weights) <= 255  # arbitrary practical limit
+            # We can and should eventually support total weights. But this
+            # complicates shrinking as we can no longer assume we can force
+            # a value to the unmapped probability mass if that mass might be 0.
+            assert sum(weights.values()) < 1
 
         if forced is not None and (min_value is None or max_value is None):
             # We draw `forced=forced - shrink_towards` here internally, after clamping.

@@ -10,7 +10,6 @@
 
 import math
 import sys
-from collections.abc import Sequence
 from contextlib import contextmanager
 from random import Random
 from typing import Optional
@@ -67,8 +66,7 @@ class PrngProvider(PrimitiveProvider):
         min_value: Optional[int] = None,
         max_value: Optional[int] = None,
         *,
-        # weights are for choosing an element index from a bounded range
-        weights: Optional[Sequence[float]] = None,
+        weights: Optional[dict[int, float]] = None,
         shrink_towards: int = 0,
         forced: Optional[int] = None,
         fake_forced: bool = False,

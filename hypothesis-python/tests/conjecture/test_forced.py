@@ -68,7 +68,7 @@ def test_forced_many(data):
             "min_value": -1,
             "max_value": 1,
             "shrink_towards": 1,
-            "weights": [0.1] * 3,
+            "weights": {-1: 0.2, 0: 0.2, 1: 0.2},
             "forced": 0,
         },
     )
@@ -80,8 +80,32 @@ def test_forced_many(data):
             "min_value": -1,
             "max_value": 1,
             "shrink_towards": -1,
-            "weights": [0.1] * 3,
+            "weights": {-1: 0.2, 0: 0.2, 1: 0.2},
             "forced": 0,
+        },
+    )
+)
+@example(
+    (
+        "integer",
+        {
+            "min_value": 10,
+            "max_value": 1_000,
+            "shrink_towards": 17,
+            "weights": {20: 0.1},
+            "forced": 15,
+        },
+    )
+)
+@example(
+    (
+        "integer",
+        {
+            "min_value": -1_000,
+            "max_value": -10,
+            "shrink_towards": -17,
+            "weights": {-20: 0.1},
+            "forced": -15,
         },
     )
 )
