@@ -23,7 +23,6 @@ from hypothesis.internal.conjecture.data import (
     ConjectureData,
     ConjectureResult,
     Status,
-    bits_to_bytes,
     ir_value_equal,
     ir_value_key,
     ir_value_permitted,
@@ -681,7 +680,7 @@ class Shrinker:
                 "reorder_examples",
                 "minimize_duplicated_nodes",
                 "minimize_individual_nodes",
-                "redistribute_block_pairs",
+                "redistribute_integer_pairs",
                 "lower_blocks_together",
             ]
         )
@@ -1227,42 +1226,32 @@ class Shrinker:
         self.minimize_nodes(nodes)
 
     @defines_shrink_pass()
-    def redistribute_block_pairs(self, chooser):
+    def redistribute_integer_pairs(self, chooser):
         """If there is a sum of generated integers that we need their sum
         to exceed some bound, lowering one of them requires raising the
         other. This pass enables that."""
+        # TODO_SHRINK let's extend this to floats as well.
 
-        node = chooser.choose(
+        # look for a pair of nodes (node1, node2) which are both integers and
+        # aren't separated by too many other nodes. We'll decrease node1 and
+        # increase node2 (note that the other way around doesn't make sense as
+        # it's strictly worse in the ordering).
+        node1 = chooser.choose(
             self.nodes, lambda node: node.ir_type == "integer" and not node.trivial
         )
+        node2 = chooser.choose(
+            self.nodes,
+            lambda node: node.ir_type == "integer"
+            # Note that it's fine for node2 to be trivial, because we're going to
+            # explicitly make it *not* trivial by adding to its value.
+            and not node.was_forced
+            # to avoid quadratic behavior, scan ahead only a small amount for
+            # the related node.
+            and node1.index < node.index <= node1.index + 4,
+        )
 
-        # The preconditions for this pass are that the two integer draws are only
-        # separated by non-integer nodes, and have the same size value in bytes.
-        #
-        # This isn't particularly principled. For instance, this wouldn't reduce
-        # e.g. @given(integers(), integers(), integers()) where the sum property
-        # involves the first and last integers.
-        #
-        # A better approach may be choosing *two* such integer nodes arbitrarily
-        # from the list, instead of conditionally scanning forward.
-
-        for j in range(node.index + 1, len(self.nodes)):
-            next_node = self.nodes[j]
-            if next_node.ir_type == "integer" and bits_to_bytes(
-                node.value.bit_length()
-            ) == bits_to_bytes(next_node.value.bit_length()):
-                break
-        else:
-            return
-
-        if next_node.was_forced:
-            # avoid modifying a forced node. Note that it's fine for next_node
-            # to be trivial, because we're going to explicitly make it *not*
-            # trivial by adding to its value.
-            return
-
-        m = node.value
-        n = next_node.value
+        m = node1.value
+        n = node2.value
 
         def boost(k):
             if k > m:
@@ -1272,11 +1261,11 @@ class Shrinker:
             next_node_value = n + k
 
             return self.consider_new_tree(
-                self.nodes[: node.index]
-                + [node.copy(with_value=node_value)]
-                + self.nodes[node.index + 1 : next_node.index]
-                + [next_node.copy(with_value=next_node_value)]
-                + self.nodes[next_node.index + 1 :]
+                self.nodes[: node1.index]
+                + [node1.copy(with_value=node_value)]
+                + self.nodes[node1.index + 1 : node2.index]
+                + [node2.copy(with_value=next_node_value)]
+                + self.nodes[node2.index + 1 :]
             )
 
         find_integer(boost)
