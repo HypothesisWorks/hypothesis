@@ -19,6 +19,7 @@ definitions it links to.  If not, report the bug!
 # https://tools.ietf.org/html/rfc3696
 
 import string
+from functools import lru_cache
 from importlib import resources
 from typing import Optional
 
@@ -31,15 +32,17 @@ URL_SAFE_CHARACTERS = frozenset(string.ascii_letters + string.digits + "$-_.+!*'
 FRAGMENT_SAFE_CHARACTERS = URL_SAFE_CHARACTERS | {"?", "/"}
 
 
-# This file is sourced from http://data.iana.org/TLD/tlds-alpha-by-domain.txt
-# The file contains additional information about the date that it was last updated.
-traversable = resources.files("hypothesis.vendor") / "tlds-alpha-by-domain.txt"
-_comment, *_tlds = traversable.read_text(encoding="utf-8").splitlines()
-assert _comment.startswith("#")
+@lru_cache(maxsize=1)
+def get_top_level_domains() -> tuple[str, ...]:
+    # This file is sourced from http://data.iana.org/TLD/tlds-alpha-by-domain.txt
+    # The file contains additional information about the date that it was last updated.
+    traversable = resources.files("hypothesis.vendor") / "tlds-alpha-by-domain.txt"
+    _comment, *_tlds = traversable.read_text(encoding="utf-8").splitlines()
+    assert _comment.startswith("#")
 
-# Remove special-use domain names from the list. For more discussion
-# see https://github.com/HypothesisWorks/hypothesis/pull/3572
-TOP_LEVEL_DOMAINS = ["COM", *sorted((d for d in _tlds if d != "ARPA"), key=len)]
+    # Remove special-use domain names from the list. For more discussion
+    # see https://github.com/HypothesisWorks/hypothesis/pull/3572
+    return ("COM", *sorted((d for d in _tlds if d != "ARPA"), key=len))
 
 
 class DomainNameStrategy(st.SearchStrategy):
@@ -101,7 +104,7 @@ class DomainNameStrategy(st.SearchStrategy):
         # prevent us from generating at least a 1 character subdomain.
         # 3 - Randomize the TLD between upper and lower case characters.
         domain = data.draw(
-            st.sampled_from(TOP_LEVEL_DOMAINS)
+            st.sampled_from(get_top_level_domains())
             .filter(lambda tld: len(tld) + 2 <= self.max_length)
             .flatmap(
                 lambda tld: st.tuples(
