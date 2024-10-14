@@ -1491,17 +1491,13 @@ class HypothesisProvider(PrimitiveProvider):
                 self._cd, forced=None if forced is None else 0, fake_forced=fake_forced
             )
 
-            return (
-                self._draw_bounded_integer(
-                    min_value,
-                    max_value,
-                    forced=forced,
-                    center=shrink_towards,
-                    fake_forced=fake_forced,
-                )
-                if idx == 0
+            return self._draw_bounded_integer(
+                min_value,
+                max_value,
                 # implicit reliance on dicts being sorted for determinism
-                else list(weights)[idx - 1]
+                forced=forced if idx == 0 else list(weights)[idx - 1],
+                center=shrink_towards,
+                fake_forced=fake_forced,
             )
 
         if min_value is None and max_value is None:
