@@ -236,9 +236,9 @@ def get_numeric_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
         options = {
             # We're talking about op(arg, x) - the reverse of our usual intuition!
             operator.lt: {"min_value": arg, "exclude_min": True},  # lambda x: arg < x
-            operator.le: {"min_value": arg},  # lambda x: arg <= x
-            operator.eq: {"min_value": arg, "max_value": arg},  # lambda x: arg == x
-            operator.ge: {"max_value": arg},  # lambda x: arg >= x
+            operator.le: {"min_value": arg},  #                      lambda x: arg <= x
+            operator.eq: {"min_value": arg, "max_value": arg},  #    lambda x: arg == x
+            operator.ge: {"max_value": arg},  #                      lambda x: arg >= x
             operator.gt: {"max_value": arg, "exclude_max": True},  # lambda x: arg > x
             # Special-case our default predicates for length bounds
             min_len: {"min_value": arg, "len": True},
