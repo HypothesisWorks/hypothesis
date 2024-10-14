@@ -2139,6 +2139,9 @@ class ConjectureData:
             # complicates shrinking as we can no longer assume we can force
             # a value to the unmapped probability mass if that mass might be 0.
             assert sum(weights.values()) < 1
+            # similarly, things get simpler if we assume every value is possible.
+            # we'll want to drop this restriction eventually.
+            assert all(w != 0 for w in weights.values())
 
         if forced is not None and (min_value is None or max_value is None):
             # We draw `forced=forced - shrink_towards` here internally, after clamping.
