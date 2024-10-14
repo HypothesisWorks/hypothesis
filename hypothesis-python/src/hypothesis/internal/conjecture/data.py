@@ -2374,18 +2374,7 @@ class ConjectureData:
         if self.provider.avoid_realization:
             return kwargs
 
-        key = []
-        for k, v in kwargs.items():
-            if ir_type == "float" and k in ["min_value", "max_value"]:
-                # handle -0.0 vs 0.0, etc.
-                v = float_to_int(v)
-            elif ir_type == "integer" and k == "weights":
-                # make hashable
-                v = v if v is None else tuple(v)
-            key.append((k, v))
-
-        key = (ir_type, *sorted(key))
-
+        key = (ir_type, *ir_kwargs_key(ir_type, kwargs))
         try:
             return POOLED_KWARGS_CACHE[key]
         except KeyError:
