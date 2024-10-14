@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.115.1:
+
+--------------------
+6.115.1 - 2024-10-14
+--------------------
+
+This patch improves the performance of :func:`~hypothesis.strategies.from_type` with
+`pydantic.types.condate <https://docs.pydantic.dev/latest/api/types/#pydantic.types.condate>`__
+(:issue:`4000`).
+
 .. _v6.115.0:
 
 --------------------
