@@ -163,13 +163,18 @@ def integer_kwargs(
 
         # Sampler doesn't play well with super small floats, so exclude them
         weights = draw(
-            st.dictionaries(st.integers(), st.floats(0.001, 1), max_size=255)
+            st.dictionaries(
+                st.integers(min_value=min_value, max_value=max_value),
+                st.floats(0.001, 1),
+                max_size=255,
+            )
         )
         # invalid to have a weighting that disallows all possibilities
         assume(sum(weights.values()) != 0)
+        # re-normalize probabilities to sum to some arbitrary target < 1
         target = draw(st.floats(0.001, 0.999))
-        # re-normalize probabilities to sum to some arbitrary value < 1
-        weights = {k: v / target for k, v in weights.items()}
+        factor = target / sum(weights.values())
+        weights = {k: v * factor for k, v in weights.items()}
         # float rounding error can cause this to fail.
         assume(sum(weights.values()) == target)
     else:
