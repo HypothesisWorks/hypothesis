@@ -14,8 +14,6 @@ import sys
 import types
 from pathlib import Path
 
-import sphinx_rtd_theme
-
 root = Path(__file__).parent.parent
 sys.path.append(str(root / "src"))
 
@@ -151,8 +149,6 @@ extlinks = {
 # -- Options for HTML output ----------------------------------------------
 
 html_theme = "sphinx_rtd_theme"
-
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 html_static_path = ["_static"]
 

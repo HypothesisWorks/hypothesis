@@ -16,9 +16,7 @@ import pytest
 from hypothesistooling.projects.hypothesispython import PYTHON_SRC
 from hypothesistooling.scripts import pip_tool, tool_path
 
-from .revealed_types import NUMPY_REVEALED_TYPES, REVEALED_TYPES
-
-PYTHON_VERSIONS = ["3.8", "3.9", "3.10", "3.11"]
+from .revealed_types import NUMPY_REVEALED_TYPES, PYTHON_VERSIONS, REVEALED_TYPES
 
 
 def test_mypy_passes_on_hypothesis():
