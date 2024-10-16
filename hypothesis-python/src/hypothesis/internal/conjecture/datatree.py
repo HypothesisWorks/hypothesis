@@ -262,7 +262,6 @@ def all_children(ir_type, kwargs):
     if ir_type == "integer":
         min_value = kwargs["min_value"]
         max_value = kwargs["max_value"]
-        weights = kwargs["weights"]
 
         if min_value is None and max_value is None:
             # full 128 bit range.
