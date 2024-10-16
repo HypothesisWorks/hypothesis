@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.115.3:
+
+--------------------
+6.115.3 - 2024-10-16
+--------------------
+
+This patch fixes a regression from :ref:`version 6.115.2 <v6.115.2>` where generating values from :func:`~hypothesis.strategies.integers` with certain values for ``min_value`` and ``max_value`` would error.
+
 .. _v6.115.2:
 
 --------------------
