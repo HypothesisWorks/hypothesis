@@ -473,13 +473,14 @@ def is_simple_data(value):
         return False
 
 
-class SampledFromStrategy(SearchStrategy):
+class SampledFromStrategy(SearchStrategy[Ex]):
     """A strategy which samples from a set of elements. This is essentially
     equivalent to using a OneOfStrategy over Just strategies but may be more
     efficient and convenient.
     """
 
     _MAX_FILTER_CALLS = 10_000
+    _SHRINK_TOWARDS = 0
 
     def __init__(self, elements, repr_=None, transformations=()):
         super().__init__()
@@ -562,7 +563,9 @@ class SampledFromStrategy(SearchStrategy):
         # Start with ordinary rejection sampling. It's fast if it works, and
         # if it doesn't work then it was only a small amount of overhead.
         for _ in range(3):
-            i = data.draw_integer(0, len(self.elements) - 1)
+            i = data.draw_integer(
+                0, len(self.elements) - 1, shrink_towards=self._SHRINK_TOWARDS
+            )
             if i not in known_bad_indices:
                 element = self.get_element(i)
                 if element is not filter_not_satisfied:
@@ -583,7 +586,9 @@ class SampledFromStrategy(SearchStrategy):
         # Before building the list of allowed indices, speculatively choose
         # one of them. We don't yet know how many allowed indices there will be,
         # so this choice might be out-of-bounds, but that's OK.
-        speculative_index = data.draw_integer(0, max_good_indices - 1)
+        speculative_index = data.draw_integer(
+            0, max_good_indices - 1, shrink_towards=self._SHRINK_TOWARDS
+        )
 
         # Calculate the indices of allowed values, so that we can choose one
         # of them at random. But if we encounter the speculatively-chosen one,
@@ -598,14 +603,21 @@ class SampledFromStrategy(SearchStrategy):
                     if len(allowed) > speculative_index:
                         # Early-exit case: We reached the speculative index, so
                         # we just return the corresponding element.
-                        data.draw_integer(0, len(self.elements) - 1, forced=i)
+                        data.draw_integer(
+                            0,
+                            len(self.elements) - 1,
+                            forced=i,
+                            shrink_towards=self._SHRINK_TOWARDS,
+                        )
                         return element
 
         # The speculative index didn't work out, but at this point we've built
         # and can choose from the complete list of allowed indices and elements.
         if allowed:
             i, element = data.choice(allowed)
-            data.draw_integer(0, len(self.elements) - 1, forced=i)
+            data.draw_integer(
+                0, len(self.elements) - 1, forced=i, shrink_towards=self._SHRINK_TOWARDS
+            )
             return element
         # If there are no allowed indices, the filter couldn't be satisfied.
         return filter_not_satisfied

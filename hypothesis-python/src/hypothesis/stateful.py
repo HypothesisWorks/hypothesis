@@ -17,6 +17,7 @@ execution to date.
 """
 import collections
 import inspect
+import sys
 from collections.abc import Iterable, Sequence
 from copy import copy
 from functools import lru_cache
@@ -56,8 +57,10 @@ from hypothesis.strategies._internal.strategies import (
     Ex,
     Ex_Inv,
     OneOfStrategy,
+    SampledFromStrategy,
     SearchStrategy,
     check_strategy,
+    filter_not_satisfied,
 )
 from hypothesis.vendor.pretty import RepresentationPrinter
 
@@ -184,12 +187,12 @@ def run_state_machine_as_test(state_machine_factory, *, settings=None, _min_step
                 try:
                     data = dict(data)
                     for k, v in list(data.items()):
-                        if isinstance(v, VarReference):
-                            data[k] = machine.names_to_values[v.name]
+                        if isinstance(v, VarReferenceMapping):
+                            data[k] = v.value
                         elif isinstance(v, list) and all(
-                            isinstance(item, VarReference) for item in v
+                            isinstance(item, VarReferenceMapping) for item in v
                         ):
-                            data[k] = [machine.names_to_values[item.name] for item in v]
+                            data[k] = [item.value for item in v]
 
                     label = f"execute:rule:{rule.function.__name__}"
                     start = perf_counter()
@@ -292,12 +295,12 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
             )
 
     def _pretty_print(self, value):
-        if isinstance(value, VarReference):
-            return value.name
+        if isinstance(value, VarReferenceMapping):
+            return value.reference.name
         elif isinstance(value, list) and all(
-            isinstance(item, VarReference) for item in value
+            isinstance(item, VarReferenceMapping) for item in value
         ):
-            return "[" + ", ".join([item.name for item in value]) + "]"
+            return "[" + ", ".join([item.reference.name for item in value]) + "]"
         self.__stream.seek(0)
         self.__stream.truncate(0)
         self.__printer.output_width = 0
@@ -469,7 +472,7 @@ class Rule:
 self_strategy = st.runner()
 
 
-class Bundle(SearchStrategy[Ex]):
+class Bundle(SampledFromStrategy[Ex]):
     """A collection of values for use in stateful testing.
 
     Bundles are a kind of strategy where values can be added by rules,
@@ -492,32 +495,81 @@ class Bundle(SearchStrategy[Ex]):
     """
 
     def __init__(
-        self, name: str, *, consume: bool = False, draw_references: bool = True
+        self,
+        name: str,
+        *,
+        consume: bool = False,
+        draw_references: bool = True,
+        repr_: Optional[str] = None,
+        transformations: Iterable[tuple[str, Callable]] = (),
     ) -> None:
+        super().__init__(
+            [...],
+            repr_=repr_,
+            transformations=transformations,
+        )  # Some random items that'll get replaced in do_draw
         self.name = name
         self.consume = consume
         self.draw_references = draw_references
 
-    def do_draw(self, data):
-        machine = data.draw(self_strategy)
+        self.bundle = None
+        self.machine = None
 
-        bundle = machine.bundle(self.name)
-        if not bundle:
-            data.mark_invalid(f"Cannot draw from empty bundle {self.name!r}")
         # Shrink towards the right rather than the left. This makes it easier
         # to delete data generated earlier, as when the error is towards the
         # end there can be a lot of hard to remove padding.
-        position = data.draw_integer(0, len(bundle) - 1, shrink_towards=len(bundle))
-        if self.consume:
-            reference = bundle.pop(
-                position
-            )  # pragma: no cover  # coverage is flaky here
-        else:
-            reference = bundle[position]
+        self._SHRINK_TOWARDS = sys.maxsize
 
-        if self.draw_references:
-            return reference
-        return machine.names_to_values[reference.name]
+    def get_transformed_value(self, reference):
+        assert isinstance(reference, VarReference)
+        return self._transform(self.machine.names_to_values.get(reference.name))
+
+    def get_element(self, i):
+        idx = self.elements[i]
+        assert isinstance(idx, int)
+        reference = self.bundle[idx]
+        value = self.get_transformed_value(reference)
+        return idx if value is not filter_not_satisfied else filter_not_satisfied
+
+    def do_draw(self, data):
+        self.machine = data.draw(self_strategy)
+        self.bundle = self.machine.bundle(self.name)
+        if not self.bundle:
+            data.mark_invalid(f"Cannot draw from empty bundle {self.name!r}")
+
+        # We use both self.bundle and self.elements to make sure an index is used to safely pop
+        self.elements = range(len(self.bundle))
+
+        idx = super().do_draw(data)
+        reference = self.bundle[idx]
+
+        if self.consume:
+            self.bundle.pop(idx)  # pragma: no cover # coverage is flaky here
+
+        if not self.draw_references:
+            return self.get_transformed_value(reference)
+
+        # we need both reference and the value itself to pretty-print deterministically
+        # and maintain any transformations that is bundle-specific
+        return VarReferenceMapping(reference, self.get_transformed_value(reference))
+
+    def filter(self, condition):
+        return type(self)(
+            self.name,
+            consume=self.consume,
+            draw_references=self.draw_references,
+            transformations=(*self._transformations, ("filter", condition)),
+            repr_=self.repr_,
+        )
+
+    def map(self, pack):
+        return type(self)(
+            self.name,
+            consume=self.consume,
+            draw_references=self.draw_references,
+            transformations=(*self._transformations, ("map", pack)),
+            repr_=self.repr_,
+        )
 
     def __repr__(self):
         consume = self.consume
@@ -539,7 +591,11 @@ class Bundle(SearchStrategy[Ex]):
     def flatmap(self, expand):
         if self.draw_references:
             return type(self)(
-                self.name, consume=self.consume, draw_references=False
+                self.name,
+                consume=self.consume,
+                draw_references=False,
+                transformations=self._transformations,
+                repr_=self.repr_,
             ).flatmap(expand)
         return super().flatmap(expand)
 
@@ -562,6 +618,7 @@ def consumes(bundle: Bundle[Ex]) -> SearchStrategy[Ex]:
     return type(bundle)(
         name=bundle.name,
         consume=True,
+        transformations=bundle._transformations,
     )
 
 
@@ -826,6 +883,12 @@ def initialize(
 @attr.s()
 class VarReference:
     name = attr.ib()
+
+
+@attr.s()
+class VarReferenceMapping:
+    reference: VarReference = attr.ib()
+    value: Any = attr.ib()
 
 
 # There are multiple alternatives for annotating the `precond` type, all of them
