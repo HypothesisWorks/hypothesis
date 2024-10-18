@@ -876,3 +876,28 @@ def test_does_not_include_no_init_fields_in_attrs_printing():
     assert pretty.pretty(record) == "AttrsClassWithNoInitField(x=1)"
     record.y = 1
     assert pretty.pretty(record) == "AttrsClassWithNoInitField(x=1)"
+
+
+class Namespace:
+    @dataclass
+    class DC:
+        x: int
+
+    @attrs.define
+    class A:
+        x: int
+
+    class E(Enum):
+        A = 1
+
+
+NAMESPACED_VALUES = [
+    Namespace.DC(x=1),
+    Namespace.A(x=1),
+    Namespace.E.A,
+]
+
+
+@pytest.mark.parametrize("obj", NAMESPACED_VALUES, ids=map(repr, NAMESPACED_VALUES))
+def test_includes_namespace_classes_in_pretty(obj):
+    assert pretty.pretty(obj).startswith("Namespace.")
