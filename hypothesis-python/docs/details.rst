@@ -691,6 +691,9 @@ on working with markers <pytest:mark examples>`.
 .. note::
     Pytest will load the plugin automatically if Hypothesis is installed.
     You don't need to do anything at all to use it.
+    
+    If it causes problems, you can avoid loading the plugin with the 
+    ``-p no:hypothesispytest`` option.
 
 
 .. _fuzz_one_input:
