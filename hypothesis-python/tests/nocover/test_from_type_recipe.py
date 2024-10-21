@@ -11,6 +11,8 @@
 from hypothesis import given, strategies as st
 from hypothesis.strategies._internal.types import _global_type_lookup
 
+from tests.common.debug import find_any
+
 TYPES = sorted(
     (
         x
@@ -39,3 +41,7 @@ def everything_except(excluded_types):
 def test_recipe_for_everything_except(excluded_types, data):
     value = data.draw(everything_except(excluded_types))
     assert not isinstance(value, excluded_types)
+
+
+def test_issue_4144_regression():
+    find_any(everything_except(()), lambda t: t is not type)
