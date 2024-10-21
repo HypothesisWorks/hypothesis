@@ -44,6 +44,7 @@ def pytest_configure(config):
         "markers",
         "xp_min_version(api_version): run when greater or equal to api_version",
     )
+    config.addinivalue_line("markers", "xf_crosshair: selection for xfailing symbolics")
 
 
 def pytest_addoption(parser):
