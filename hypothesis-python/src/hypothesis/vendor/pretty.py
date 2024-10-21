@@ -582,6 +582,10 @@ def _seq_pprinter_factory(start, end, basetype):
     return inner
 
 
+def get_class_name(cls):
+    return _safe_getattr(cls, "__qualname__", cls.__name__)
+
+
 def _set_pprinter_factory(start, end, basetype):
     """Factory that returns a pprint function useful for sets and
     frozensets."""
@@ -600,7 +604,7 @@ def _set_pprinter_factory(start, end, basetype):
             return p.text(start + "..." + end)
         if not obj:
             # Special case.
-            p.text(basetype.__name__ + "()")
+            p.text(get_class_name(basetype) + "()")
         else:
             step = len(start)
             with p.group(step, start, end):
@@ -733,7 +737,7 @@ def _repr_pprint(obj, p, cycle):
 
 
 def pprint_fields(obj, p, cycle, fields):
-    name = obj.__class__.__name__
+    name = get_class_name(obj.__class__)
     if cycle:
         return p.text(f"{name}(...)")
     with p.group(1, name + "(", ")"):
@@ -879,7 +883,7 @@ def _repr_dataframe(obj, p, cycle):  # pragma: no cover
 
 
 def _repr_enum(obj, p, cycle):
-    tname = type(obj).__name__
+    tname = get_class_name(type(obj))
     if isinstance(obj, Flag):
         p.text(
             " | ".join(f"{tname}.{x.name}" for x in type(obj) if x & obj == x)
