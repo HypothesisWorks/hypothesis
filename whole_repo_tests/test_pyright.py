@@ -63,7 +63,14 @@ def test_pyright_passes_on_basic_test(tmp_path: Path, python_version: str):
     assert _get_pyright_errors(file) == []
 
 
-@pytest.mark.parametrize("python_version", PYTHON_VERSIONS)
+@pytest.mark.parametrize(
+    "python_version",
+    [
+        # FIXME: temporary workaround, see hypothesis/pull/4136
+        pytest.param(v, marks=[pytest.mark.xfail(strict=False)] * (v == "3.13"))
+        for v in PYTHON_VERSIONS
+    ],
+)
 def test_given_only_allows_strategies(tmp_path: Path, python_version: str):
     file = tmp_path / "test.py"
     file.write_text(

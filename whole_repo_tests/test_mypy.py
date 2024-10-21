@@ -260,7 +260,8 @@ def test_stateful_bundle_generic_type(tmp_path):
     f.write_text(
         "from hypothesis.stateful import Bundle\n"
         "b: Bundle[int] = Bundle('test')\n"
-        "reveal_type(b.example())\n",
+        "x = b.example()\n"
+        "reveal_type(x)\n",
         encoding="utf-8",
     )
     got = get_mypy_analysed_type(f)
@@ -564,14 +565,7 @@ def test_mypy_passes_on_basic_test(tmp_path, python_version):
     assert_mypy_errors(f, [], python_version=python_version)
 
 
-@pytest.mark.parametrize(
-    "python_version",
-    [
-        # FIXME: temporary workaround for mypy bug, see hypothesis/pull/4136
-        pytest.param(v, marks=[pytest.mark.xfail(strict=False)] * (v == "3.13"))
-        for v in PYTHON_VERSIONS
-    ],
-)
+@pytest.mark.parametrize("python_version", PYTHON_VERSIONS)
 def test_given_only_allows_strategies(tmp_path, python_version):
     f = tmp_path / "check_mypy_given_expects_strategies.py"
     f.write_text(
