@@ -326,7 +326,8 @@ def test_stateful_target_params_mutually_exclusive(tmp_path, decorator):
     "target_args",
     [
         "target=b1",
-        "targets=(b1,)",
+        # FIXME: temporary workaround for mypy bug, see hypothesis/pull/4136
+        pytest.param("targets=(b1,)", marks=pytest.mark.xfail(strict=False)),
         "targets=(b1, b2)",
         "",
     ],
@@ -563,7 +564,14 @@ def test_mypy_passes_on_basic_test(tmp_path, python_version):
     assert_mypy_errors(f, [], python_version=python_version)
 
 
-@pytest.mark.parametrize("python_version", PYTHON_VERSIONS)
+@pytest.mark.parametrize(
+    "python_version",
+    [
+        # FIXME: temporary workaround for mypy bug, see hypothesis/pull/4136
+        pytest.param(v, marks=[pytest.mark.xfail(strict=False)] * (v == "3.13"))
+        for v in PYTHON_VERSIONS
+    ],
+)
 def test_given_only_allows_strategies(tmp_path, python_version):
     f = tmp_path / "check_mypy_given_expects_strategies.py"
     f.write_text(
