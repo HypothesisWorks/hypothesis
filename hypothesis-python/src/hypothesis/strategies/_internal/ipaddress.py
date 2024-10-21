@@ -115,4 +115,4 @@ def ip_addresses(
     if v not in (None, network.version):
         raise InvalidArgument(f"{v=} is incompatible with {network=}")
     addr_type = IPv4Address if network.version == 4 else IPv6Address
-    return integers(int(network[0]), int(network[-1])).map(addr_type)  # type: ignore
+    return integers(int(network[0]), int(network[-1])).map(addr_type)

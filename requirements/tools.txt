@@ -6,14 +6,16 @@
 #
 alabaster==1.0.0
     # via sphinx
-anyio==4.6.0
+anyio==4.6.2.post1
     # via watchfiles
 asgiref==3.8.1
     # via django
 asttokens==2.4.1
     # via stack-data
-attrs==24.2.0
-    # via hypothesis (hypothesis-python/setup.py)
+attrs==24.1.0
+    # via
+    #   -r requirements/test.in
+    #   hypothesis (hypothesis-python/setup.py)
 autoflake==2.3.1
     # via shed
 babel==2.16.0
@@ -48,7 +50,7 @@ colorama==0.4.6
     # via tox
 com2ann==0.3.0
     # via shed
-coverage==7.6.2
+coverage==7.6.3
     # via -r requirements/tools.in
 cryptography==43.0.1
     # via
@@ -77,6 +79,8 @@ exceptiongroup==1.2.2 ; python_version < "3.11"
     #   hypothesis (hypothesis-python/setup.py)
     #   ipython
     #   pytest
+execnet==2.1.1
+    # via pytest-xdist
 executing==2.1.0
     # via stack-data
 feedgenerator==2.1.0
@@ -141,7 +145,7 @@ more-itertools==10.5.0
     # via
     #   jaraco-classes
     #   jaraco-functools
-mypy==1.11.2
+mypy==1.12.0
     # via -r requirements/tools.in
 mypy-extensions==1.0.0
     # via
@@ -170,7 +174,9 @@ pathspec==0.12.1
 pelican[markdown]==4.10.1
     # via -r requirements/tools.in
 pexpect==4.9.0
-    # via ipython
+    # via
+    #   -r requirements/test.in
+    #   ipython
 pip-tools==7.4.1
     # via -r requirements/tools.in
 pkginfo==1.10.0
@@ -210,7 +216,11 @@ pyproject-hooks==1.2.0
 pyright==1.1.384
     # via -r requirements/tools.in
 pytest==8.3.3
-    # via -r requirements/tools.in
+    # via
+    #   -r requirements/test.in
+    #   pytest-xdist
+pytest-xdist==3.6.1
+    # via -r requirements/test.in
 python-dateutil==2.9.0.post0
     # via
     #   -r requirements/tools.in
@@ -260,7 +270,7 @@ sortedcontainers==2.4.0
     # via hypothesis (hypothesis-python/setup.py)
 soupsieve==2.6
     # via beautifulsoup4
-sphinx==8.1.2
+sphinx==8.1.3
     # via
     #   -r requirements/tools.in
     #   sphinx-codeautolink
@@ -328,7 +338,7 @@ types-pytz==2024.2.0.20241003
     # via -r requirements/tools.in
 types-redis==4.6.0.20241004
     # via -r requirements/tools.in
-types-setuptools==75.1.0.20240917
+types-setuptools==75.1.0.20241014
     # via types-cffi
 typing-extensions==4.12.2
     # via
