@@ -4,7 +4,7 @@
 #
 #    ./build.sh upgrade-requirements
 #
-alabaster==0.7.16
+alabaster==1.0.0
     # via sphinx
 anyio==4.6.0
     # via watchfiles
@@ -22,11 +22,11 @@ backports-tarfile==1.2.0
     # via jaraco-context
 beautifulsoup4==4.12.3
     # via sphinx-codeautolink
-black==24.8.0
+black==24.10.0
     # via shed
 blinker==1.8.2
     # via pelican
-build==1.2.2
+build==1.2.2.post1
     # via pip-tools
 cachetools==5.5.0
     # via tox
@@ -36,7 +36,7 @@ cffi==1.17.1
     # via cryptography
 chardet==5.2.0
     # via tox
-charset-normalizer==3.3.2
+charset-normalizer==3.4.0
     # via requests
 click==8.1.7
     # via
@@ -48,7 +48,7 @@ colorama==0.4.6
     # via tox
 com2ann==0.3.0
     # via shed
-coverage==7.6.1
+coverage==7.6.2
     # via -r requirements/tools.in
 cryptography==43.0.1
     # via
@@ -57,11 +57,11 @@ cryptography==43.0.1
     #   types-redis
 decorator==5.1.1
     # via ipython
-distlib==0.3.8
+distlib==0.3.9
     # via virtualenv
-django==5.1.1
+django==5.1.2
     # via -r requirements/tools.in
-docutils==0.20.1
+docutils==0.21.2
     # via
     #   pelican
     #   readme-renderer
@@ -123,7 +123,7 @@ keyring==25.4.1
     # via twine
 lark==1.2.2
     # via -r requirements/tools.in
-libcst==1.4.0
+libcst==1.5.0
     # via
     #   -r requirements/tools.in
     #   shed
@@ -131,7 +131,7 @@ markdown==3.7
     # via pelican
 markdown-it-py==3.0.0
     # via rich
-markupsafe==2.1.5
+markupsafe==3.0.1
     # via jinja2
 matplotlib-inline==0.1.7
     # via ipython
@@ -207,7 +207,7 @@ pyproject-hooks==1.2.0
     # via
     #   build
     #   pip-tools
-pyright==1.1.383
+pyright==1.1.384
     # via -r requirements/tools.in
 pytest==8.3.3
     # via -r requirements/tools.in
@@ -217,13 +217,13 @@ python-dateutil==2.9.0.post0
     #   pelican
 pytz==2024.2
     # via feedgenerator
-pyupgrade==3.17.0
+pyupgrade==3.18.0
     # via shed
 pyyaml==6.0.2
     # via
     #   libcst
     #   sphinx-jsonschema
-readme-renderer==43.0
+readme-renderer==44.0
     # via twine
 requests==2.32.3
     # via
@@ -260,7 +260,7 @@ sortedcontainers==2.4.0
     # via hypothesis (hypothesis-python/setup.py)
 soupsieve==2.6
     # via beautifulsoup4
-sphinx==7.4.7
+sphinx==8.1.2
     # via
     #   -r requirements/tools.in
     #   sphinx-codeautolink
@@ -273,7 +273,7 @@ sphinx-hoverxref==1.4.1
     # via -r requirements/tools.in
 sphinx-jsonschema==1.19.1
     # via -r requirements/tools.in
-sphinx-rtd-theme==2.0.0
+sphinx-rtd-theme==3.0.1
     # via -r requirements/tools.in
 sphinx-selective-exclude==1.0.3
     # via -r requirements/tools.in

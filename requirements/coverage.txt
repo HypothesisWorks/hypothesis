@@ -12,13 +12,13 @@ attrs==24.1.0
     # via
     #   -r requirements/test.in
     #   hypothesis (hypothesis-python/setup.py)
-black==24.8.0
+black==24.10.0
     # via -r requirements/coverage.in
 click==8.1.7
     # via
     #   -r requirements/coverage.in
     #   black
-coverage[toml]==7.6.1
+coverage[toml]==7.6.2
     # via pytest-cov
 dpcontracts==0.6.0
     # via -r requirements/coverage.in
@@ -34,7 +34,7 @@ iniconfig==2.0.0
     # via pytest
 lark==1.2.2
     # via -r requirements/coverage.in
-libcst==1.4.0
+libcst==1.5.0
     # via -r requirements/coverage.in
 mypy-extensions==1.0.0
     # via black
