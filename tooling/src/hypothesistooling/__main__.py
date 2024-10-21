@@ -548,7 +548,7 @@ def check_whole_repo_tests(*args):
     )
 
     if not args:
-        args = [tools.REPO_TESTS]
+        args = ["-n", "auto", tools.REPO_TESTS]
     subprocess.check_call([sys.executable, "-m", "pytest", *args])
 
 
