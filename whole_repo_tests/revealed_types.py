@@ -8,6 +8,12 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import re
+
+from hypothesistooling.__main__ import PYTHONS as pythons_map
+
+PYTHON_VERSIONS = [v for v in pythons_map if re.fullmatch(r"3\.\d\d?", v)]
+
 try:
     from numpy import __version__ as np_version
 except ImportError:
