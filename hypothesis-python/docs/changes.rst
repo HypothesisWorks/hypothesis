@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.115.5:
+
+--------------------
+6.115.5 - 2024-10-23
+--------------------
+
+This patch restores diversity to the outputs of
+:func:`from_type(type) <hypothesis.strategies.from_type>` (:issue:`4144`).
+
 .. _v6.115.4:
 
 --------------------
