@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.115.4:
+
+--------------------
+6.115.4 - 2024-10-23
+--------------------
+
+This release improves pretty printing of nested classes to include the outer class name in their printed representation.
+
 .. _v6.115.3:
 
 --------------------
