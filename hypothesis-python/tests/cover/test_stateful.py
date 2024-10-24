@@ -10,6 +10,8 @@
 
 import base64
 import re
+import inspect
+import trio
 from collections import defaultdict
 from typing import ClassVar
 
@@ -1233,8 +1235,19 @@ state.teardown()
     )
 
 
-def test_multiple_targets():
-    class Machine(RuleBasedStateMachine):
+@pytest.mark.parametrize(
+    "machine_cls, async_methods",
+    "settings"[
+        (RuleBasedStateMachine, [], NO_BLOB_SETTINGS),
+        (
+            RuleBasedStateMachine,
+            ["fail_fast"],
+            Settings(stateful_step_count=5, max_examples=10),
+        ),
+    ],
+)
+def test_multiple_targets(machine_cls, async_methods, settings):
+    class Machine(machine_cls):
         a = Bundle("a")
         b = Bundle("b")
 
@@ -1253,7 +1266,10 @@ def test_multiple_targets():
         def fail_fast(self, a1, a2, a3, b1, b2, b3):
             raise AssertionError
 
-    Machine.TestCase.settings = NO_BLOB_SETTINGS
+    convert_to_async(Machine, async_methods)
+
+    Machine.TestCase.settings = settings
+
     with pytest.raises(AssertionError) as err:
         run_state_machine_as_test(Machine)
 
@@ -1268,6 +1284,29 @@ state.fail_fast(a1=a_2, a2=a_1, a3=a_0, b1=b_2, b2=b_1, b3=b_0)
 state.teardown()
 """.strip()
     )
+
+
+class AsyncPreconditionMachine(TrioRuleBasedStateMachine):
+    num = 0
+
+    @rule()
+    async def add_one(self):
+        await trio.sleep(0.01)  # Simulate fast async operation
+        self.num += 1
+
+    @rule()
+    async def set_to_zero(self):
+        self.num = 0
+
+    @precondition(lambda self: self.num != 0)
+    @rule(num=integers(min_value=1, max_value=100))
+    async def div_by_precondition(self, num):
+        await trio.sleep(0.01)  # Simulate async operation
+        self.num = num / self.num
+
+    @invariant()
+    async def num_is_non_negative(self):
+        assert self.num >= 0
 
 
 def test_multiple_common_targets():
@@ -1339,3 +1378,14 @@ def test_flatmap():
 
     Machine.TestCase.settings = Settings(stateful_step_count=5, max_examples=10)
     run_state_machine_as_test(Machine)
+
+
+def convert_to_async(obj, async_method_names):
+    """Convert specified sync rule methods to async for async testing."""
+    for name, method in inspect.getmembers(obj, predicate=inspect.isfunction):
+        if name in async_method_names and not inspect.iscoroutinefunction(method):
+
+            async def async_wrapper(self, *args, **kwargs):
+                return method(self, *args, **kwargs)
+
+            setattr(obj, name, async_wrapper)
