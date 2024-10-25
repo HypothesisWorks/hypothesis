@@ -34,6 +34,7 @@ from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.stateful import (
     Bundle,
     RuleBasedStateMachine,
+    TrioRuleBasedStateMachine,
     consumes,
     initialize,
     invariant,
@@ -1286,27 +1287,30 @@ state.teardown()
     )
 
 
-class AsyncPreconditionMachine(TrioRuleBasedStateMachine):
-    num = 0
+def test_bleh():
+    class AsyncPreconditionMachine(TrioRuleBasedStateMachine):
+        num = 0
 
-    @rule()
-    async def add_one(self):
-        await trio.sleep(0.01)  # Simulate fast async operation
-        self.num += 1
+        @rule()
+        async def add_one(self):
+            await trio.sleep(0.01)  # Simulate fast async operation
+            self.num += 1
 
-    @rule()
-    async def set_to_zero(self):
-        self.num = 0
+        @rule()
+        async def set_to_zero(self):
+            self.num = 0
 
-    @precondition(lambda self: self.num != 0)
-    @rule(num=integers(min_value=1, max_value=100))
-    async def div_by_precondition(self, num):
-        await trio.sleep(0.01)  # Simulate async operation
-        self.num = num / self.num
+        @precondition(lambda self: self.num != 0)
+        @rule(num=integers(min_value=1, max_value=100))
+        async def div_by_precondition(self, num):
+            await trio.sleep(0.01)  # Simulate async operation
+            self.num = num / self.num
 
-    @invariant()
-    async def num_is_non_negative(self):
-        assert self.num >= 0
+        @invariant()
+        def num_is_non_negative(self):
+            assert self.num >= 0
+
+    run_state_machine_as_test(AsyncPreconditionMachine)
 
 
 def test_multiple_common_targets():
@@ -1380,12 +1384,12 @@ def test_flatmap():
     run_state_machine_as_test(Machine)
 
 
-def convert_to_async(obj, async_method_names):
-    """Convert specified sync rule methods to async for async testing."""
-    for name, method in inspect.getmembers(obj, predicate=inspect.isfunction):
-        if name in async_method_names and not inspect.iscoroutinefunction(method):
+# def convert_to_async(obj, async_method_names):
+#     """Convert specified sync rule methods to async for async testing."""
+#     for name, method in inspect.getmembers(obj, predicate=inspect.isfunction):
+#         if name in async_method_names and not inspect.iscoroutinefunction(method):
 
-            async def async_wrapper(self, *args, **kwargs):
-                return method(self, *args, **kwargs)
+#             async def async_wrapper(self, *args, **kwargs):
+#                 return method(self, *args, **kwargs)
 
-            setattr(obj, name, async_wrapper)
+#             setattr(obj, name, async_wrapper)

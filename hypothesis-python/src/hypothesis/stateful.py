@@ -17,9 +17,10 @@ execution to date.
 """
 import collections
 import inspect
+import trio
 from collections.abc import Iterable, Sequence
 from copy import copy
-from functools import lru_cache
+from functools import lru_cache, wraps
 from io import StringIO
 from time import perf_counter
 from typing import Any, Callable, ClassVar, Optional, Union, overload
@@ -349,6 +350,12 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         for _, v in inspect.getmembers(cls):
             r = getattr(v, RULE_MARKER, None)
             if r is not None:
+                # if type(cls) in _ASYNC_STATE_MACHINES:
+                #     if inspect.iscoroutinefunction(r):
+                #         r.context_manager =
+                #         cls._rules_per_class[cls].append((r, "async"))
+                #     else:
+                #         cls._rules_per_class[cls].append((r, "sync"))
                 cls._rules_per_class[cls].append(r)
         return cls._rules_per_class[cls]
 
@@ -443,6 +450,33 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         return StateMachineTestCase
 
 
+class TrioRuleBasedStateMachine(RuleBasedStateMachine):
+    def __init__(self):
+        super().__init__()
+
+
+# _ASYNC_STATE_MACHINES = [TrioRuleBasedStateMachine]
+
+
+def async_manager_decorator(fn):
+    @wraps(fn)
+    async def wrapper(*args, **kwargs):
+        machine = args[0]
+
+        if isinstance(machine, TrioRuleBasedStateMachine):
+            async with trio.open_nursery() as nursery:
+                machine.nursery = nursery  # Store nursery in machine
+                result = await fn(*args, **kwargs)
+        else:
+            result = await fn(*args, **kwargs)
+
+        if result is not None:
+            return result
+        return None
+
+    return wrapper
+
+
 @attr.s(repr=False)
 class Rule:
     targets = attr.ib()
@@ -459,6 +493,9 @@ class Rule:
                 bundles.append(v)
             self.arguments_strategies[k] = v
         self.bundles = tuple(bundles)
+
+        if inspect.iscoroutinefunction(self):
+            self.function = async_manager_decorator(self.function)
 
     def __repr__(self) -> str:
         rep = get_pretty_function_description
