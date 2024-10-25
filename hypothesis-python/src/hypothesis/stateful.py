@@ -350,12 +350,6 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         for _, v in inspect.getmembers(cls):
             r = getattr(v, RULE_MARKER, None)
             if r is not None:
-                # if type(cls) in _ASYNC_STATE_MACHINES:
-                #     if inspect.iscoroutinefunction(r):
-                #         r.context_manager =
-                #         cls._rules_per_class[cls].append((r, "async"))
-                #     else:
-                #         cls._rules_per_class[cls].append((r, "sync"))
                 cls._rules_per_class[cls].append(r)
         return cls._rules_per_class[cls]
 
@@ -453,9 +447,6 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
 class TrioRuleBasedStateMachine(RuleBasedStateMachine):
     def __init__(self):
         super().__init__()
-
-
-# _ASYNC_STATE_MACHINES = [TrioRuleBasedStateMachine]
 
 
 def async_manager_decorator(fn):
