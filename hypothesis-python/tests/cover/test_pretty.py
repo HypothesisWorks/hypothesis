@@ -47,6 +47,7 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
+import io
 import re
 import struct
 import sys
@@ -100,8 +101,11 @@ class Dummy1:
         p.text("Dummy1(...)")
 
 
-class Dummy2(Dummy1):
+class Dummy2:
     _repr_pretty_ = None
+
+    def __repr__(self):
+        return "Dummy2()"
 
 
 class NoModule:
@@ -207,7 +211,7 @@ def test_callability_checking():
     """Test that the _repr_pretty_ method is tested for callability and skipped
     if not."""
     gotoutput = pretty.pretty(Dummy2())
-    expectedoutput = "Dummy1(...)"
+    expectedoutput = "Dummy2()"
 
     assert gotoutput == expectedoutput
 
@@ -901,3 +905,29 @@ NAMESPACED_VALUES = [
 @pytest.mark.parametrize("obj", NAMESPACED_VALUES, ids=map(repr, NAMESPACED_VALUES))
 def test_includes_namespace_classes_in_pretty(obj):
     assert pretty.pretty(obj).startswith("Namespace.")
+
+
+class Banana:
+    def _repr_pretty_(self, p, cycle):
+        p.text("I am a banana")
+
+
+@dataclass
+class InheritsPretty(Banana):
+    x: int
+    y: int
+
+
+def test_uses_defined_pretty_printing_method():
+    assert pretty.pretty(InheritsPretty(x=1, y=2)) == pretty.pretty(Banana())
+
+
+def test_prefers_singleton_printing_to_repr_pretty():
+    out = io.StringIO()
+    printer = pretty.RepresentationPrinter(out)
+    banana = Banana()
+    printer.singleton_pprinters[id(banana)] = lambda obj, p, cycle: p.text(
+        "Actually a fish"
+    )
+    printer.pretty(banana)
+    assert "Actually a fish" in out.getvalue()
