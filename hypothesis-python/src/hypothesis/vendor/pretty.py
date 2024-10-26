@@ -186,6 +186,16 @@ class RepresentationPrinter:
                     pass
                 else:
                     return printer(obj, self, cycle)
+
+                # Look for the _repr_pretty_ method which allows users
+                # to define custom pretty printing.
+                # Some objects automatically create any requested
+                # attribute. Try to ignore most of them by checking for
+                # callability.
+                pretty_method = _safe_getattr(obj, "_repr_pretty_", None)
+                if callable(pretty_method):
+                    return pretty_method(self, cycle)
+
                 # Next walk the mro and check for either:
                 #   1) a registered printer
                 #   2) a _repr_pretty_ method
@@ -206,14 +216,6 @@ class RepresentationPrinter:
                             self.type_pprinters[cls] = printer
                             return printer(obj, self, cycle)
                         else:
-                            # Finally look for special method names.
-                            # Some objects automatically create any requested
-                            # attribute. Try to ignore most of them by checking for
-                            # callability.
-                            if "_repr_pretty_" in cls.__dict__:
-                                meth = cls._repr_pretty_
-                                if callable(meth):
-                                    return meth(obj, self, cycle)
                             if hasattr(cls, "__attrs_attrs__"):
                                 return pprint_fields(
                                     obj,
