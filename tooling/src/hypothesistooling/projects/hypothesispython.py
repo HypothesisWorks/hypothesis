@@ -65,21 +65,19 @@ def has_source_changes():
     return tools.has_changes([PYTHON_SRC])
 
 
-def build_docs(*, builder="html", only=[]):
+def build_docs(*, builder="html", only=()):
     # See https://www.sphinx-doc.org/en/stable/man/sphinx-build.html
     # (unfortunately most options only have the short flag version)
     tools.scripts.pip_tool(
-        *[
-            "sphinx-build",
-            "-W",
-            "-T",
-            "-E",
-            "-b",
-            builder,
-            "docs",
-            "docs/_build/" + builder,
-            *only,
-        ],
+        "sphinx-build",
+        "-W",
+        "-T",
+        "-E",
+        "-b",
+        builder,
+        "docs",
+        "docs/_build/" + builder,
+        *only,
         cwd=HYPOTHESIS_PYTHON,
     )
 
