@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import datetime
+import os
 import subprocess
 import sys
 from unittest import TestCase
@@ -25,7 +26,7 @@ from hypothesis._settings import (
     note_deprecation,
     settings,
 )
-from hypothesis.database import ExampleDatabase
+from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
 from hypothesis.errors import (
     HypothesisDeprecationWarning,
     InvalidArgument,
@@ -108,12 +109,13 @@ def test_can_not_set_verbosity_to_non_verbosity():
 
 @pytest.mark.parametrize("db", [None, ExampleDatabase()])
 def test_inherits_an_empty_database(db):
-    assert settings.default.database is not None
-    s = settings(database=db)
-    assert s.database is db
-    with local_settings(s):
-        t = settings()
-    assert t.database is db
+    with local_settings(settings(database=InMemoryExampleDatabase())):
+        assert settings.default.database is not None
+        s = settings(database=db)
+        assert s.database is db
+        with local_settings(s):
+            t = settings()
+        assert t.database is db
 
 
 @pytest.mark.parametrize("db", [None, ExampleDatabase()])
@@ -273,6 +275,7 @@ from hypothesis import settings
 from hypothesis.configuration import set_hypothesis_home_dir
 from hypothesis.database import DirectoryBasedExampleDatabase
 
+settings.load_profile("default")
 settings.default.database
 
 if __name__ == '__main__':
@@ -476,8 +479,12 @@ def test_invalid_parent():
     assert "parent=(not settings repr)" in str(excinfo.value)
 
 
+def test_default_settings_do_not_use_ci():
+    assert settings.get_profile("default").suppress_health_check == ()
+
+
 def test_show_changed():
-    s = settings(max_examples=999, database=None)
+    s = settings(settings.get_profile("default"), max_examples=999, database=None)
     assert s.show_changed() == "database=None, max_examples=999"
 
 
@@ -511,3 +518,43 @@ def test_deprecated_settings_not_in_settings_all_list():
     assert al == ls
     assert HealthCheck.return_value not in ls
     assert HealthCheck.not_a_test_method not in ls
+
+
+@skipif_emscripten
+def test_check_defaults_to_derandomize_when_running_on_ci():
+    env = dict(os.environ)
+    env["CI"] = "true"
+
+    assert (
+        subprocess.check_output(
+            [
+                sys.executable,
+                "-c",
+                "from hypothesis import settings\nprint(settings().derandomize)",
+            ],
+            env=env,
+            text=True,
+            encoding="utf-8",
+        ).strip()
+        == "True"
+    )
+
+
+@skipif_emscripten
+def test_check_defaults_to_randomize_when_not_running_on_ci():
+    env = dict(os.environ)
+    env.pop("CI", None)
+    env.pop("TF_BUILD", None)
+    assert (
+        subprocess.check_output(
+            [
+                sys.executable,
+                "-c",
+                "from hypothesis import settings\nprint(settings().derandomize)",
+            ],
+            env=env,
+            text=True,
+            encoding="utf-8",
+        ).strip()
+        == "False"
+    )
