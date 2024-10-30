@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.115.6:
+
+--------------------
+6.115.6 - 2024-10-30
+--------------------
+
+This patch changes the priority order of pretty printing logic so that a user
+provided pretty printing method will always be used in preference to e.g.
+printing it like a dataclass.
+
 .. _v6.115.5:
 
 --------------------
