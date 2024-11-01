@@ -237,7 +237,7 @@ def test_stateful_with_one_of_bundles_states_are_deduped():
 
 
 def test_statistics_for_threshold_problem():
-    @settings(max_examples=100)
+    @settings(max_examples=100, database=None)
     @given(st.floats(min_value=0, allow_infinity=False))
     def threshold(error):
         target(error, label="error")

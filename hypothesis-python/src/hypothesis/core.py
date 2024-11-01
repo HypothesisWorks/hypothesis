@@ -1732,7 +1732,7 @@ def given(
             state = StateForActualGivenExecution(
                 stuff, test, settings, random, wrapped_test
             )
-            digest = function_digest(test)
+            database_key = function_digest(test) + b".secondary"
             # We track the minimal-so-far example for each distinct origin, so
             # that we track log-n instead of n examples for long runs.  In particular
             # it means that we saturate for common errors in long runs instead of
@@ -1758,7 +1758,7 @@ def given(
                     if settings.database is not None and (
                         known is None or sort_key(buffer) <= sort_key(known)
                     ):
-                        settings.database.save(digest, buffer)
+                        settings.database.save(database_key, buffer)
                         minimal_failures[data.interesting_origin] = buffer
                     raise
                 return bytes(data.buffer)

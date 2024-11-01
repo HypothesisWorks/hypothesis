@@ -44,7 +44,7 @@ def test_gives_flaky_error_if_assumption_is_flaky():
     seen = set()
 
     @given(integers())
-    @settings(verbosity=Verbosity.quiet)
+    @settings(verbosity=Verbosity.quiet, database=None)
     def oops(s):
         assume(s not in seen)
         seen.add(s)
