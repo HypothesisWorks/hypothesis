@@ -97,7 +97,7 @@ class settingsMeta(type):
         v = default_variable.value
         if v is not None:
             return v
-        if hasattr(settings, "_current_profile"):
+        if getattr(settings, "_current_profile", None) is not None:
             settings.load_profile(settings._current_profile)
             assert default_variable.value is not None
         return default_variable.value
@@ -132,6 +132,7 @@ class settings(metaclass=settingsMeta):
     __definitions_are_locked = False
     _profiles: ClassVar[dict[str, "settings"]] = {}
     __module__ = "hypothesis"
+    _current_profile = None
 
     def __getattr__(self, name):
         if name in all_settings:
@@ -319,6 +320,8 @@ class settings(metaclass=settingsMeta):
         """
         check_type(str, name, "name")
         settings._profiles[name] = settings(parent=parent, **kwargs)
+        if settings._current_profile == name:
+            settings.load_profile(name)
 
     @staticmethod
     def get_profile(name: str) -> "settings":
@@ -768,7 +771,7 @@ settings.register_profile("ci", CI)
 
 
 # This is tested in a subprocess so the branch doesn't show up in coverage.
-if is_in_ci():  # pragma: no cover
+if is_in_ci():  # pragma: no
     settings.load_profile("ci")
 
 assert settings.default is not None

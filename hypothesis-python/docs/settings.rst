@@ -258,6 +258,21 @@ Hypothesis will automatically detect certain common CI environments and use the 
 when running in them.
 In particular, if you wish to use the ``ci`` profile, setting the ``CI`` environment variable will do this.
 
+If you want to customise your CI behaviour, registering a new version of the ``ci`` profile will automatically be picked up in CI. For example, if you wanted to run more examples in CI, you might configure it as follows:
+
+
+.. code-block:: python
+
+    settings.register_profile(
+        "ci",
+        settings(
+            settings.get_profile("ci"),
+            max_examples=1000,
+        ),
+    )
+
+This will configure your CI to run 1000 examples per test rather than the default of 100, and this change will automatically be picked up when running on a CI server.
+
 .. _healthchecks:
 
 -------------
