@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.116.0:
+
+--------------------
+6.116.0 - 2024-11-01
+--------------------
+
+Hypothesis now detects if it is running on a CI server and provides better default settings for running on CI in this case.
+
 .. _v6.115.6:
 
 --------------------
