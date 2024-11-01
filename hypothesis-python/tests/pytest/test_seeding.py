@@ -82,7 +82,10 @@ def test_failure(i):
 """
 
 
-def test_repeats_healthcheck_when_following_seed_instruction(testdir, tmp_path):
+def test_repeats_healthcheck_when_following_seed_instruction(
+    testdir, tmp_path, monkeypatch
+):
+    monkeypatch.delenv("CI", raising=False)
     health_check_test = HEALTH_CHECK_FAILURE.replace(
         "<file>", repr(str(tmp_path / "seen"))
     )

@@ -250,6 +250,14 @@ by your conftest you can load one with the command line option ``--hypothesis-pr
     $ pytest tests --hypothesis-profile <profile-name>
 
 
+Hypothesis comes with two built-in profiles, ``ci`` and ``default``.
+``ci`` is set up to have good defaults for running in a CI environment, so emphasizes determinism, while the 
+``default`` settings are picked to be more likely to find bugs and to have a good workflow when used for local development.
+
+Hypothesis will automatically detect certain common CI environments and use the CI profile automatically
+when running in them.
+In particular, if you wish to use the ``ci`` profile, setting the ``CI`` environment variable will do this.
+
 .. _healthchecks:
 
 -------------
