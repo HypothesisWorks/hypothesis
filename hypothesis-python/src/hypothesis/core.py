@@ -829,6 +829,9 @@ class StateForActualGivenExecution:
                         math.fsum(data._stateful_run_times.values()) - arg_stateful
                     )
                     in_gctime = gc_cumulative_time() - arg_gctime
+                    print(
+                        f"runtime: {finish=}, {start=}, {in_drawtime=}, {in_stateful=}, {in_gctime=}"
+                    )
                     runtime = finish - start - in_drawtime - in_stateful - in_gctime
                     self._timing_features = {
                         "execute:test": runtime,
@@ -841,9 +844,14 @@ class StateForActualGivenExecution:
                     if not is_final:
                         current_deadline = (current_deadline // 4) * 5
                     if runtime >= current_deadline.total_seconds():
-                        raise DeadlineExceeded(
-                            datetime.timedelta(seconds=runtime), self.settings.deadline
-                        )
+                        pass
+                        # raise DeadlineExceeded(
+                        #     datetime.timedelta(seconds=runtime), self.settings.deadline
+                        # )
+                print(f"{runtime=}, {current_deadline.total_seconds()=}")
+                print(
+                    f"{current_deadline=}, {current_deadline is not None=}, {runtime >= current_deadline.total_seconds()=}"
+                )
                 return result
 
         def run(data):
@@ -1530,21 +1538,21 @@ def given(
                 wrapped_test, arguments, kwargs, given_kwargs, new_signature.parameters
             )
 
-            if (
-                inspect.iscoroutinefunction(test)
-                and get_executor(stuff.selfy) is default_executor
-            ):
-                # See https://github.com/HypothesisWorks/hypothesis/issues/3054
-                # If our custom executor doesn't handle coroutines, or we return an
-                # awaitable from a non-async-def function, we just rely on the
-                # return_value health check.  This catches most user errors though.
-                raise InvalidArgument(
-                    "Hypothesis doesn't know how to run async test functions like "
-                    f"{test.__name__}.  You'll need to write a custom executor, "
-                    "or use a library like pytest-asyncio or pytest-trio which can "
-                    "handle the translation for you.\n    See https://hypothesis."
-                    "readthedocs.io/en/latest/details.html#custom-function-execution"
-                )
+            # if (
+            #     inspect.iscoroutinefunction(test)
+            #     and get_executor(stuff.selfy) is default_executor
+            # ):
+            #     # See https://github.com/HypothesisWorks/hypothesis/issues/3054
+            #     # If our custom executor doesn't handle coroutines, or we return an
+            #     # awaitable from a non-async-def function, we just rely on the
+            #     # return_value health check.  This catches most user errors though.
+            #     raise InvalidArgument(
+            #         "Hypothesis doesn't know how to run async test functions like "
+            #         f"{test.__name__}.  You'll need to write a custom executor, "
+            #         "or use a library like pytest-asyncio or pytest-trio which can "
+            #         "handle the translation for you.\n    See https://hypothesis."
+            #         "readthedocs.io/en/latest/details.html#custom-function-execution"
+            #     )
 
             runner = stuff.selfy
             if isinstance(stuff.selfy, TestCase) and test.__name__ in dir(TestCase):

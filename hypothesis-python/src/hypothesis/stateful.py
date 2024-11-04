@@ -18,6 +18,7 @@ execution to date.
 import collections
 import inspect
 import trio
+import asyncio
 from collections.abc import Iterable, Sequence
 from copy import copy
 from functools import lru_cache, wraps
@@ -27,6 +28,8 @@ from typing import Any, Callable, ClassVar, Optional, Union, overload
 from unittest import TestCase
 
 import attr
+from functools import partial
+
 
 from hypothesis import strategies as st
 from hypothesis._settings import (
@@ -125,106 +128,118 @@ def run_state_machine_as_test(state_machine_factory, *, settings=None, _min_step
             if TESTCASE_CALLBACKS:
                 cd._stateful_repr_parts.append(s)
 
-        try:
-            output(f"state = {machine.__class__.__name__}()")
-            machine.check_invariants(settings, output, cd._stateful_run_times)
-            max_steps = settings.stateful_step_count
-            steps_run = 0
-
-            while True:
-                # We basically always want to run the maximum number of steps,
-                # but need to leave a small probability of terminating early
-                # in order to allow for reducing the number of steps once we
-                # find a failing test case, so we stop with probability of
-                # 2 ** -16 during normal operation but force a stop when we've
-                # generated enough steps.
-                cd.start_example(STATE_MACHINE_RUN_LABEL)
-                must_stop = None
-                if steps_run >= max_steps:
-                    must_stop = True
-                elif steps_run <= _min_steps:
-                    must_stop = False
-                elif cd._bytes_drawn > (0.8 * BUFFER_SIZE):
-                    # Better to stop after fewer steps, than always overrun and retry.
-                    # See https://github.com/HypothesisWorks/hypothesis/issues/3618
-                    must_stop = True
-
-                start_draw = perf_counter()
-                start_gc = gc_cumulative_time()
-                if cd.draw_boolean(p=2**-16, forced=must_stop):
-                    break
-                steps_run += 1
-
-                # Choose a rule to run, preferring an initialize rule if there are
-                # any which have not been run yet.
-                if machine._initialize_rules_to_run:
-                    init_rules = [
-                        st.tuples(st.just(rule), st.fixed_dictionaries(rule.arguments))
-                        for rule in machine._initialize_rules_to_run
-                    ]
-                    rule, data = cd.draw(st.one_of(init_rules))
-                    machine._initialize_rules_to_run.remove(rule)
-                else:
-                    rule, data = cd.draw(machine._rules_strategy)
-                draw_label = f"generate:rule:{rule.function.__name__}"
-                cd.draw_times.setdefault(draw_label, 0.0)
-                in_gctime = gc_cumulative_time() - start_gc
-                cd.draw_times[draw_label] += perf_counter() - start_draw - in_gctime
-
-                # Pretty-print the values this rule was called with *before* calling
-                # _add_result_to_targets, to avoid printing arguments which are also
-                # a return value using the variable name they are assigned to.
-                # See https://github.com/HypothesisWorks/hypothesis/issues/2341
-                if print_steps or TESTCASE_CALLBACKS:
-                    data_to_print = {
-                        k: machine._pretty_print(v) for k, v in data.items()
-                    }
-
-                # Assign 'result' here in case executing the rule fails below
-                result = multiple()
-                try:
-                    data = dict(data)
-                    for k, v in list(data.items()):
-                        if isinstance(v, VarReference):
-                            data[k] = machine.names_to_values[v.name]
-                        elif isinstance(v, list) and all(
-                            isinstance(item, VarReference) for item in v
-                        ):
-                            data[k] = [machine.names_to_values[item.name] for item in v]
-
-                    label = f"execute:rule:{rule.function.__name__}"
-                    start = perf_counter()
-                    start_gc = gc_cumulative_time()
-                    result = rule.function(machine, **data)
-                    in_gctime = gc_cumulative_time() - start_gc
-                    cd._stateful_run_times[label] += perf_counter() - start - in_gctime
-
-                    if rule.targets:
-                        if isinstance(result, MultipleResults):
-                            for single_result in result.values:
-                                machine._add_result_to_targets(
-                                    rule.targets, single_result
-                                )
-                        else:
-                            machine._add_result_to_targets(rule.targets, result)
-                    elif result is not None:
-                        fail_health_check(
-                            settings,
-                            "Rules should return None if they have no target bundle, "
-                            f"but {rule.function.__qualname__} returned {result!r}",
-                            HealthCheck.return_value,
-                        )
-                finally:
-                    if print_steps or TESTCASE_CALLBACKS:
-                        # 'result' is only used if the step has target bundles.
-                        # If it does, and the result is a 'MultipleResult',
-                        # then 'print_step' prints a multi-variable assignment.
-                        output(machine._repr_step(rule, data_to_print, result))
+        @async_manager_decorator
+        def run_loop(machine):
+            try:
+                output(f"state = {machine.__class__.__name__}()")
                 machine.check_invariants(settings, output, cd._stateful_run_times)
-                cd.stop_example()
-        finally:
-            output("state.teardown()")
-            machine.teardown()
+                max_steps = settings.stateful_step_count
+                steps_run = 0
+
+                while True:
+                    # We basically always want to run the maximum number of steps,
+                    # but need to leave a small probability of terminating early
+                    # in order to allow for reducing the number of steps once we
+                    # find a failing test case, so we stop with probability of
+                    # 2 ** -16 during normal operation but force a stop when we've
+                    # generated enough steps.
+                    cd.start_example(STATE_MACHINE_RUN_LABEL)
+                    must_stop = None
+                    if steps_run >= max_steps:
+                        must_stop = True
+                    elif steps_run <= _min_steps:
+                        must_stop = False
+                    elif cd._bytes_drawn > (0.8 * BUFFER_SIZE):
+                        # Better to stop after fewer steps, than always overrun and retry.
+                        # See https://github.com/HypothesisWorks/hypothesis/issues/3618
+                        must_stop = True
+
+                    start_draw = perf_counter()
+                    start_gc = gc_cumulative_time()
+                    if cd.draw_boolean(p=2**-16, forced=must_stop):
+                        break
+                    steps_run += 1
+
+                    # Choose a rule to run, preferring an initialize rule if there are
+                    # any which have not been run yet.
+                    if machine._initialize_rules_to_run:
+                        init_rules = [
+                            st.tuples(
+                                st.just(rule), st.fixed_dictionaries(rule.arguments)
+                            )
+                            for rule in machine._initialize_rules_to_run
+                        ]
+                        rule, data = cd.draw(st.one_of(init_rules))
+                        machine._initialize_rules_to_run.remove(rule)
+                    else:
+                        rule, data = cd.draw(machine._rules_strategy)
+                    draw_label = f"generate:rule:{rule.function.__name__}"
+                    cd.draw_times.setdefault(draw_label, 0.0)
+                    in_gctime = gc_cumulative_time() - start_gc
+                    cd.draw_times[draw_label] += perf_counter() - start_draw - in_gctime
+
+                    # Pretty-print the values this rule was called with *before* calling
+                    # _add_result_to_targets, to avoid printing arguments which are also
+                    # a return value using the variable name they are assigned to.
+                    # See https://github.com/HypothesisWorks/hypothesis/issues/2341
+                    if print_steps or TESTCASE_CALLBACKS:
+                        data_to_print = {
+                            k: machine._pretty_print(v) for k, v in data.items()
+                        }
+
+                    # Assign 'result' here in case executing the rule fails below
+                    result = multiple()
+                    try:
+                        data = dict(data)
+                        for k, v in list(data.items()):
+                            if isinstance(v, VarReference):
+                                data[k] = machine.names_to_values[v.name]
+                            elif isinstance(v, list) and all(
+                                isinstance(item, VarReference) for item in v
+                            ):
+                                data[k] = [
+                                    machine.names_to_values[item.name] for item in v
+                                ]
+
+                        label = f"execute:rule:{rule.function.__name__}"
+                        start = perf_counter()
+                        start_gc = gc_cumulative_time()
+
+                        result = machine._execute_fn(rule, **data)
+
+                        in_gctime = gc_cumulative_time() - start_gc
+                        cd._stateful_run_times[label] += (
+                            perf_counter() - start - in_gctime
+                        )
+
+                        if rule.targets:
+                            if isinstance(result, MultipleResults):
+                                for single_result in result.values:
+                                    machine._add_result_to_targets(
+                                        rule.targets, single_result
+                                    )
+                            else:
+                                machine._add_result_to_targets(rule.targets, result)
+                        elif result is not None:
+                            fail_health_check(
+                                settings,
+                                "Rules should return None if they have no target bundle, "
+                                f"but {rule.function.__qualname__} returned {result!r}",
+                                HealthCheck.return_value,
+                            )
+                    finally:
+                        if print_steps or TESTCASE_CALLBACKS:
+                            # 'result' is only used if the step has target bundles.
+                            # If it does, and the result is a 'MultipleResult',
+                            # then 'print_step' prints a multi-variable assignment.
+                            output(machine._repr_step(rule, data_to_print, result))
+                    machine.check_invariants(settings, output, cd._stateful_run_times)
+                    cd.stop_example()
+            finally:
+                output("state.teardown()")
+                machine.teardown()
+
+        run_loop(machine)
 
     # Use a machine digest to identify stateful tests in the example database
     run_state_machine.hypothesis.inner_test._hypothesis_internal_add_digest = (
@@ -443,27 +458,89 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         StateMachineTestCase.__qualname__ = cls.__qualname__ + ".TestCase"
         return StateMachineTestCase
 
+    def _execute_fn(self, rule, **data):
+        return rule.function(self, **data)
+
 
 class TrioRuleBasedStateMachine(RuleBasedStateMachine):
     def __init__(self):
         super().__init__()
 
+    def _execute_fn(self, rule, **data):
+        if inspect.iscoroutinefunction(rule.function):
+            assert hasattr(self, "nursery") and isinstance(self.nursery, trio.Nursery)
+            task_with_kwargs = partial(rule.function, **data)
+            return self.nursery.start_soon(task_with_kwargs, self)
+        return rule.function(self, **data)
+
+    def loop_setup(self, fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            async def run_with_nursery(*args, **kwargs):
+                async with trio.open_nursery() as nursery:
+                    self.nursery = nursery
+                    # print(f"args are: {args=}")
+                    # print(f"kwargs are: {kwargs=}")
+                    return fn(*args, **kwargs)
+
+            return trio.run(run_with_nursery, *args, **kwargs)
+
+        return wrapper
+
+
+class AsyncIORuleBasedStateMachine(RuleBasedStateMachine):
+    def __init__(self):
+        super().__init__()
+
+    async def _execute_fn(self, rule, **data):
+        # TODO: Look at asyncio to see if this works.
+        if inspect.iscoroutinefunction(rule.function):
+            task_with_kwargs = partial(rule.function, **data)
+
+            try:
+                # Try to get the current event loop
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                # No event loop is running, create a new one
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+
+            if loop.is_running():
+                # If the loop is already running (e.g., in a web server), create a task
+                task = asyncio.ensure_future(task_with_kwargs(self))
+                result = asyncio.run_coroutine_threadsafe(task, loop).result()
+            else:
+                # Run the coroutine and block until it completes
+                result = loop.run_until_complete(task_with_kwargs(self))
+
+            return result
+        else:
+            return rule.function(self, **data)
+
+    def loop_setup(self, fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            async def run_with_asyncio(*args, **kwargs):
+                if inspect.iscoroutinefunction(fn):
+                    return await fn(*args, **kwargs)
+                else:
+                    raise ValueError("The wrapped function must be async.")
+
+            return asyncio.run(run_with_asyncio(*args, **kwargs))
+
+        return wrapper
+
 
 def async_manager_decorator(fn):
     @wraps(fn)
-    async def wrapper(*args, **kwargs):
+    def wrapper(*args, **kwargs):
         machine = args[0]
-
-        if isinstance(machine, TrioRuleBasedStateMachine):
-            async with trio.open_nursery() as nursery:
-                machine.nursery = nursery  # Store nursery in machine
-                result = await fn(*args, **kwargs)
-        else:
-            result = await fn(*args, **kwargs)
-
-        if result is not None:
-            return result
-        return None
+        # print(
+        #     f"{machine=}, {type(machine)=}, {isinstance(machine, RuleBasedStateMachine)=}"
+        # )
+        if hasattr(machine, "loop_setup") and callable(machine.loop_setup):
+            return machine.loop_setup(fn)(*args, **kwargs)
+        return fn(*args, **kwargs)
 
     return wrapper
 
@@ -484,9 +561,6 @@ class Rule:
                 bundles.append(v)
             self.arguments_strategies[k] = v
         self.bundles = tuple(bundles)
-
-        if inspect.iscoroutinefunction(self):
-            self.function = async_manager_decorator(self.function)
 
     def __repr__(self) -> str:
         rep = get_pretty_function_description
