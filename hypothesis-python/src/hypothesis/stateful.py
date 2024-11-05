@@ -18,7 +18,6 @@ execution to date.
 import collections
 import inspect
 import trio
-# import asyncio
 from collections.abc import Iterable, Sequence
 from copy import copy
 from functools import lru_cache, wraps
@@ -491,42 +490,6 @@ class TrioRuleBasedStateMachine(RuleBasedStateMachine):
             return trio.run(run_with_nursery, *args, **kwargs)
 
         return wrapper
-
-
-# class AsyncIORuleBasedStateMachine(RuleBasedStateMachine):
-#     def __init__(self):
-#         super().__init__()
-
-#     def _execute_fn(self, rule, stateful_run_times, **data):
-#         if inspect.iscoroutinefunction(rule.function):
-#             # Async case: Run with async_time_tracker and schedule with asyncio
-#             formatted_task = partial(
-#                 get_async_result_with_time,
-#                 rule.function,
-#                 stateful_run_times,
-#                 self,
-#                 **data,
-#             )
-#             asyncio.create_task(formatted_task())
-#             return  # Async functions don’t return values immediately
-#         return super()._execute_fn(rule, stateful_run_times, **data)
-
-#     def loop_setup(self, fn):
-#         @wraps(fn)
-#         def wrapper(*args, **kwargs):
-#             async def run_in_event_loop(*args, **kwargs):
-#                 self.tasks = []
-#                 result = fn(*args, **kwargs)
-
-#                 if self.tasks:
-#                     await asyncio.gather(*self.tasks)
-
-#                 return result
-
-#             return asyncio.run(run_in_event_loop(*args, **kwargs))
-
-#         return wrapper
-
 
 def async_manager_decorator(fn):
     @wraps(fn)
