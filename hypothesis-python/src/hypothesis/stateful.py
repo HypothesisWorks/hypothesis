@@ -18,7 +18,7 @@ execution to date.
 import collections
 import inspect
 import trio
-import asyncio
+# import asyncio
 from collections.abc import Iterable, Sequence
 from copy import copy
 from functools import lru_cache, wraps
@@ -201,15 +201,8 @@ def run_state_machine_as_test(state_machine_factory, *, settings=None, _min_step
                                     machine.names_to_values[item.name] for item in v
                                 ]
 
-                        label = f"execute:rule:{rule.function.__name__}"
-                        start = perf_counter()
-                        start_gc = gc_cumulative_time()
-
-                        result = machine._execute_fn(rule, **data)
-
-                        in_gctime = gc_cumulative_time() - start_gc
-                        cd._stateful_run_times[label] += (
-                            perf_counter() - start - in_gctime
+                        result = machine._execute_fn(
+                            rule, cd._stateful_run_times, **data
                         )
 
                         if rule.targets:
@@ -458,20 +451,34 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         StateMachineTestCase.__qualname__ = cls.__qualname__ + ".TestCase"
         return StateMachineTestCase
 
-    def _execute_fn(self, rule, **data):
-        return rule.function(self, **data)
+    def _execute_fn(self, rule, stateful_run_times, **data):
+        result = get_sync_result_with_time(
+            rule.function, stateful_run_times, self, **data
+        )
+        return result
 
 
 class TrioRuleBasedStateMachine(RuleBasedStateMachine):
     def __init__(self):
         super().__init__()
 
-    def _execute_fn(self, rule, **data):
+    def _execute_fn(self, rule, stateful_run_times, **data):
         if inspect.iscoroutinefunction(rule.function):
             assert hasattr(self, "nursery") and isinstance(self.nursery, trio.Nursery)
-            task_with_kwargs = partial(rule.function, **data)
-            return self.nursery.start_soon(task_with_kwargs, self)
-        return rule.function(self, **data)
+            formatted_task = partial(
+                get_async_result_with_time,
+                rule.function,
+                stateful_run_times,
+                self,
+                **data,
+            )
+            self.nursery.start_soon(formatted_task)
+
+            # TODO: Maybe include a warning for async functions
+            # that include a return statement that users cannot return values?
+            return
+
+        return super()._execute_fn(rule, stateful_run_times, **data)
 
     def loop_setup(self, fn):
         @wraps(fn)
@@ -479,56 +486,46 @@ class TrioRuleBasedStateMachine(RuleBasedStateMachine):
             async def run_with_nursery(*args, **kwargs):
                 async with trio.open_nursery() as nursery:
                     self.nursery = nursery
-                    # print(f"args are: {args=}")
-                    # print(f"kwargs are: {kwargs=}")
-                    return fn(*args, **kwargs)
+                    fn(*args, **kwargs)
 
             return trio.run(run_with_nursery, *args, **kwargs)
 
         return wrapper
 
 
-class AsyncIORuleBasedStateMachine(RuleBasedStateMachine):
-    def __init__(self):
-        super().__init__()
+# class AsyncIORuleBasedStateMachine(RuleBasedStateMachine):
+#     def __init__(self):
+#         super().__init__()
 
-    async def _execute_fn(self, rule, **data):
-        # TODO: Look at asyncio to see if this works.
-        if inspect.iscoroutinefunction(rule.function):
-            task_with_kwargs = partial(rule.function, **data)
+#     def _execute_fn(self, rule, stateful_run_times, **data):
+#         if inspect.iscoroutinefunction(rule.function):
+#             # Async case: Run with async_time_tracker and schedule with asyncio
+#             formatted_task = partial(
+#                 get_async_result_with_time,
+#                 rule.function,
+#                 stateful_run_times,
+#                 self,
+#                 **data,
+#             )
+#             asyncio.create_task(formatted_task())
+#             return  # Async functions don’t return values immediately
+#         return super()._execute_fn(rule, stateful_run_times, **data)
 
-            try:
-                # Try to get the current event loop
-                loop = asyncio.get_running_loop()
-            except RuntimeError:
-                # No event loop is running, create a new one
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
+#     def loop_setup(self, fn):
+#         @wraps(fn)
+#         def wrapper(*args, **kwargs):
+#             async def run_in_event_loop(*args, **kwargs):
+#                 self.tasks = []
+#                 result = fn(*args, **kwargs)
 
-            if loop.is_running():
-                # If the loop is already running (e.g., in a web server), create a task
-                task = asyncio.ensure_future(task_with_kwargs(self))
-                result = asyncio.run_coroutine_threadsafe(task, loop).result()
-            else:
-                # Run the coroutine and block until it completes
-                result = loop.run_until_complete(task_with_kwargs(self))
+#                 if self.tasks:
+#                     await asyncio.gather(*self.tasks)
 
-            return result
-        else:
-            return rule.function(self, **data)
+#                 return result
 
-    def loop_setup(self, fn):
-        @wraps(fn)
-        def wrapper(*args, **kwargs):
-            async def run_with_asyncio(*args, **kwargs):
-                if inspect.iscoroutinefunction(fn):
-                    return await fn(*args, **kwargs)
-                else:
-                    raise ValueError("The wrapped function must be async.")
+#             return asyncio.run(run_in_event_loop(*args, **kwargs))
 
-            return asyncio.run(run_with_asyncio(*args, **kwargs))
-
-        return wrapper
+#         return wrapper
 
 
 def async_manager_decorator(fn):
@@ -543,6 +540,41 @@ def async_manager_decorator(fn):
         return fn(*args, **kwargs)
 
     return wrapper
+
+
+def get_sync_result_with_time(func, stateful_run_times, *args, **kwargs):
+    label = f"execute:rule:{func.__name__}"
+    start = perf_counter()
+    start_gc = gc_cumulative_time()
+
+    result = func(*args, **kwargs)
+
+    in_gctime = gc_cumulative_time() - start_gc
+    duration = perf_counter() - start - in_gctime
+    stateful_run_times[label] = stateful_run_times.get(label, 0) + duration
+    print(
+        f"{label} (sync) took {duration:.4f} seconds (excluding GC: {in_gctime:.4f} seconds)"
+    )
+
+    return result
+
+
+async def get_async_result_with_time(func, stateful_run_times, *args, **kwargs):
+    # This is just to play nicely with python syntax
+    label = f"execute:rule:{func.__name__}"
+    start = perf_counter()
+    start_gc = gc_cumulative_time()
+
+    result = await func(*args, **kwargs)
+
+    in_gctime = gc_cumulative_time() - start_gc
+    duration = perf_counter() - start - in_gctime
+    stateful_run_times[label] = stateful_run_times.get(label, 0) + duration
+    print(
+        f"{label} (async) took {duration:.4f} seconds (excluding GC: {in_gctime:.4f} seconds)"
+    )
+
+    return result
 
 
 @attr.s(repr=False)
