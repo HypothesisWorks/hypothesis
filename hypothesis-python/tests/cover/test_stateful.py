@@ -1399,8 +1399,8 @@ def test_async():
             print("func3 end.")
 
     out = []
-    # mach_lst = [Async, Sync]
-    mach_lst = [Async]
+    mach_lst = [Async, Sync]
+    # mach_lst = [Async]
     # mach_lst = [Sync]
     for machine in mach_lst:
         start = time.time()
