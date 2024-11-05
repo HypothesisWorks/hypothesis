@@ -1236,6 +1236,43 @@ state.teardown()
     )
 
 
+def test_multiple_targets():
+    class Machine(RuleBasedStateMachine):
+        a = Bundle("a")
+        b = Bundle("b")
+
+        @initialize(targets=(a, b))
+        def initialize(self):
+            return multiple("ret1", "ret2", "ret3")
+
+        @rule(
+            a1=consumes(a),
+            a2=consumes(a),
+            a3=consumes(a),
+            b1=consumes(b),
+            b2=consumes(b),
+            b3=consumes(b),
+        )
+        def fail_fast(self, a1, a2, a3, b1, b2, b3):
+            raise AssertionError
+
+    Machine.TestCase.settings = NO_BLOB_SETTINGS
+    with pytest.raises(AssertionError) as err:
+        run_state_machine_as_test(Machine)
+
+    result = "\n".join(err.value.__notes__)
+    assert (
+        result
+        == """
+Falsifying example:
+state = Machine()
+a_0, b_0, a_1, b_1, a_2, b_2 = state.initialize()
+state.fail_fast(a1=a_2, a2=a_1, a3=a_0, b1=b_2, b2=b_1, b3=b_0)
+state.teardown()
+""".strip()
+    )
+
+
 def test_multiple_common_targets():
     class Machine(RuleBasedStateMachine):
         a = Bundle("a")
