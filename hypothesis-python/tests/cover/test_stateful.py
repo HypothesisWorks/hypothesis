@@ -1236,83 +1236,6 @@ state.teardown()
     )
 
 
-@pytest.mark.parametrize(
-    "machine_cls, async_methods",
-    "settings"[
-        (RuleBasedStateMachine, [], NO_BLOB_SETTINGS),
-        (
-            RuleBasedStateMachine,
-            ["fail_fast"],
-            Settings(stateful_step_count=5, max_examples=10),
-        ),
-    ],
-)
-def test_multiple_targets(machine_cls, async_methods, settings):
-    class Machine(machine_cls):
-        a = Bundle("a")
-        b = Bundle("b")
-
-        @initialize(targets=(a, b))
-        def initialize(self):
-            return multiple("ret1", "ret2", "ret3")
-
-        @rule(
-            a1=consumes(a),
-            a2=consumes(a),
-            a3=consumes(a),
-            b1=consumes(b),
-            b2=consumes(b),
-            b3=consumes(b),
-        )
-        def fail_fast(self, a1, a2, a3, b1, b2, b3):
-            raise AssertionError
-
-    convert_to_async(Machine, async_methods)
-
-    Machine.TestCase.settings = settings
-
-    with pytest.raises(AssertionError) as err:
-        run_state_machine_as_test(Machine)
-
-    result = "\n".join(err.value.__notes__)
-    assert (
-        result
-        == """
-Falsifying example:
-state = Machine()
-a_0, b_0, a_1, b_1, a_2, b_2 = state.initialize()
-state.fail_fast(a1=a_2, a2=a_1, a3=a_0, b1=b_2, b2=b_1, b3=b_0)
-state.teardown()
-""".strip()
-    )
-
-
-def test_bleh():
-    class AsyncPreconditionMachine(TrioRuleBasedStateMachine):
-        num = 0
-
-        @rule()
-        async def add_one(self):
-            await trio.sleep(0.01)  # Simulate fast async operation
-            self.num += 1
-
-        @rule()
-        async def set_to_zero(self):
-            self.num = 0
-
-        @precondition(lambda self: self.num != 0)
-        @rule(num=integers(min_value=1, max_value=100))
-        async def div_by_precondition(self, num):
-            await trio.sleep(0.01)  # Simulate async operation
-            self.num = num / self.num
-
-        @invariant()
-        def num_is_non_negative(self):
-            assert self.num >= 0
-
-    run_state_machine_as_test(AsyncPreconditionMachine)
-
-
 def test_multiple_common_targets():
     class Machine(RuleBasedStateMachine):
         a = Bundle("a")
@@ -1383,13 +1306,66 @@ def test_flatmap():
     Machine.TestCase.settings = Settings(stateful_step_count=5, max_examples=10)
     run_state_machine_as_test(Machine)
 
+import trio
+import time
 
-# def convert_to_async(obj, async_method_names):
-#     """Convert specified sync rule methods to async for async testing."""
-#     for name, method in inspect.getmembers(obj, predicate=inspect.isfunction):
-#         if name in async_method_names and not inspect.iscoroutinefunction(method):
 
-#             async def async_wrapper(self, *args, **kwargs):
-#                 return method(self, *args, **kwargs)
+def test_async():
+    class Async(TrioRuleBasedStateMachine):
+        buns = Bundle("buns")
 
-#             setattr(obj, name, async_wrapper)
+        @initialize(target=buns)
+        def create_bun(self):
+            return 0
+
+        @rule(bun=buns)
+        async def func1(self, bun):
+            print("func1 start.")
+            await trio.sleep(1.5)
+            print("func1 end.")
+
+        @rule(bun=buns)
+        def func2(self, bun):
+            print("func2 start.")
+            time.sleep(0.3)
+            print("func2 end.")
+
+        @rule(bun=buns)
+        async def func3(self, bun):
+            print("func3 start.")
+            await trio.sleep(1.5)
+            print("func3 end.")
+
+    Async.TestCase.settings = Settings(stateful_step_count=10, max_examples=1)
+    # trio.run(run_state_machine_as_test, Machine)
+    run_state_machine_as_test(Async)
+
+
+def test_sync():
+    class Sync(RuleBasedStateMachine):
+        buns = Bundle("buns")
+
+        @initialize(target=buns)
+        def create_bun(self):
+            return 0
+
+        @rule(bun=buns)
+        def func1(self, bun):
+            print("func1 start.")
+            time.sleep(1.5)
+            print("func1 end.")
+
+        @rule(bun=buns)
+        def func2(self, bun):
+            print("func2 start.")
+            time.sleep(1.5)
+            print("func2 end.")
+
+        @rule(bun=buns)
+        def func3(self, bun):
+            print("func3 start.")
+            time.sleep(1.5)
+            print("func3 end.")
+
+    Sync.TestCase.settings = Settings(stateful_step_count=10, max_examples=1)
+    run_state_machine_as_test(Sync)
