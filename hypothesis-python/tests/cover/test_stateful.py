@@ -1336,12 +1336,6 @@ def test_async():
             await trio.sleep(1.5)
             print("func3 end.")
 
-    Async.TestCase.settings = Settings(stateful_step_count=10, max_examples=1)
-    # trio.run(run_state_machine_as_test, Machine)
-    run_state_machine_as_test(Async)
-
-
-def test_sync():
     class Sync(RuleBasedStateMachine):
         buns = Bundle("buns")
 
@@ -1367,5 +1361,20 @@ def test_sync():
             time.sleep(1.5)
             print("func3 end.")
 
-    Sync.TestCase.settings = Settings(stateful_step_count=10, max_examples=1)
-    run_state_machine_as_test(Sync)
+    out = []
+    # mach_lst = [Async, Sync]
+    mach_lst = [Async]
+    # mach_lst = [Sync]
+    for machine in mach_lst:
+        start = time.time()
+        machine.TestCase.settings = Settings(stateful_step_count=10, max_examples=1)
+        run_state_machine_as_test(machine)
+        print(f"This should print after the rest of the stuff")
+        end = time.time()
+        duration = end - start
+        print(f"Finished: {end=} {start=} {duration=} ")
+        out.append(duration)
+
+    print(f"TODO: This works as a standalone script, but async on pytest is weird.")
+    for duration, machine in zip(out, mach_lst):
+        print(f"Test for machine {machine} took {duration}")
