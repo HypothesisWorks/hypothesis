@@ -130,14 +130,15 @@ def test_apparently_instantaneous_tests():
 
 
 def test_flaky_exit():
-    first = [True]
+    first = True
 
     @settings(derandomize=True)
     @given(st.integers())
     def test(i):
+        nonlocal first
         if i > 1001:
-            if first[0]:
-                first[0] = False
+            if first:
+                first = False
                 print("Hi")
                 raise AssertionError
 

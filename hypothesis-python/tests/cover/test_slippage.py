@@ -34,19 +34,20 @@ def capture_reports(test):
 
 
 def test_raises_multiple_failures_with_varying_type():
-    target = [None]
+    target = None
 
     @settings(database=None, max_examples=100, report_multiple_bugs=True)
     @given(st.integers())
     def test(i):
+        nonlocal target
         if abs(i) < 1000:
             return
-        if target[0] is None:
+        if target is None:
             # Ensure that we have some space to shrink into, so we can't
             # trigger an minimal example and mask the other exception type.
             assume(1003 < abs(i))
-            target[0] = i
-        exc_class = TypeError if target[0] == i else ValueError
+            target = i
+        exc_class = TypeError if target == i else ValueError
         raise exc_class
 
     output = capture_reports(test)
@@ -66,16 +67,17 @@ def test_shows_target_scores_with_multiple_failures():
 
 
 def test_raises_multiple_failures_when_position_varies():
-    target = [None]
+    target = None
 
     @settings(max_examples=100, report_multiple_bugs=True)
     @given(st.integers())
     def test(i):
+        nonlocal target
         if abs(i) < 1000:
             return
-        if target[0] is None:
-            target[0] = i
-        if target[0] == i:
+        if target is None:
+            target = i
+        if target == i:
             raise ValueError("loc 1")
         else:
             raise ValueError("loc 2")
@@ -86,18 +88,19 @@ def test_raises_multiple_failures_when_position_varies():
 
 
 def test_replays_both_failing_values():
-    target = [None]
+    target = None
 
     @settings(
         database=InMemoryExampleDatabase(), max_examples=500, report_multiple_bugs=True
     )
     @given(st.integers())
     def test(i):
+        nonlocal target
         if abs(i) < 1000:
             return
-        if target[0] is None:
-            target[0] = i
-        exc_class = TypeError if target[0] == i else ValueError
+        if target is None:
+            target = i
+        exc_class = TypeError if target == i else ValueError
         raise exc_class
 
     with pytest.raises(ExceptionGroup):
@@ -216,25 +219,26 @@ def test_handles_flaky_tests_where_only_one_is_flaky():
     flaky_fixed = False
 
     target = []
-    flaky_failed_once = [False]
+    flaky_failed_once = False
 
     @settings(
         database=InMemoryExampleDatabase(), max_examples=1000, report_multiple_bugs=True
     )
     @given(st.integers())
     def test(i):
+        nonlocal flaky_failed_once
         if abs(i) < 1000:
             return
         if not target:
             target.append(i)
         if i == target[0]:
             raise TypeError
-        if flaky_failed_once[0] and not flaky_fixed:
+        if flaky_failed_once and not flaky_fixed:
             return
         if len(target) == 1:
             target.append(i)
         if i == target[1]:
-            flaky_failed_once[0] = True
+            flaky_failed_once = True
             raise ValueError
 
     with pytest.raises(ExceptionGroup) as err:

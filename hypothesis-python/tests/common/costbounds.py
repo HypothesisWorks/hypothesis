@@ -19,12 +19,13 @@ def find_integer_cost(n):
     except KeyError:
         pass
 
-    cost = [0]
+    cost = 0
 
     def test(i):
-        cost[0] += 1
+        nonlocal cost
+        cost += 1
         return i <= n
 
     find_integer(test)
 
-    return FIND_INTEGER_COSTS.setdefault(n, cost[0])
+    return FIND_INTEGER_COSTS.setdefault(n, cost)

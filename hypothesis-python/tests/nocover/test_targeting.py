@@ -61,7 +61,7 @@ def test_targeting_can_be_disabled():
     strat = st.lists(st.integers(0, 255))
 
     def score(enabled):
-        result = [0]
+        result = 0
         phases = [Phase.generate]
         if enabled:
             phases.append(Phase.target)
@@ -70,12 +70,13 @@ def test_targeting_can_be_disabled():
         @settings(database=None, max_examples=200, phases=phases)
         @given(strat)
         def test(ls):
+            nonlocal result
             score = float(sum(ls))
-            result[0] = max(result[0], score)
+            result = max(result, score)
             target(score)
 
         test()
-        return result[0]
+        return result
 
     assert score(enabled=True) > score(enabled=False)
 

@@ -54,16 +54,17 @@ def test_errors_on_example():
 
 
 def test_does_not_recalculate_the_strategy():
-    calls = [0]
+    calls = 0
 
     @defines_strategy()
     def foo():
-        calls[0] += 1
+        nonlocal calls
+        calls += 1
         return st.just(1)
 
     f = foo()
-    assert calls == [0]
+    assert calls == 0
     check_can_generate_examples(f)
-    assert calls == [1]
+    assert calls == 1
     check_can_generate_examples(f)
-    assert calls == [1]
+    assert calls == 1
