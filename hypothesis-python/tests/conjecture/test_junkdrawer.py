@@ -198,7 +198,7 @@ def test_self_organising_list_moves_to_front():
     x = SelfOrganisingList(range(20))
 
     assert x.find(zero) == 0
-    assert count[0] == 20
+    assert count == 20
 
     assert x.find(zero) == 0
-    assert count[0] == 21
+    assert count == 21

@@ -157,7 +157,7 @@ def test_detects_flakiness():
     runner = ConjectureRunner(tf)
     runner.run()
     assert runner.exit_reason == ExitReason.flaky
-    assert count == [MIN_TEST_CALLS + 1]
+    assert count == MIN_TEST_CALLS + 1
 
 
 def recur(i, data):
@@ -656,7 +656,7 @@ def test_discarding(monkeypatch):
 
 def test_can_remove_discarded_data():
     @shrinking_from(bytes([0] * 10 + [11]))
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         while True:
             data.start_example(SOME_LABEL)
             b = data.draw_integer(0, 2**8 - 1)
@@ -671,7 +671,7 @@ def test_can_remove_discarded_data():
 
 def test_discarding_iterates_to_fixed_point():
     @shrinking_from(bytes(list(range(100, -1, -1))))
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         data.start_example(0)
         data.draw_integer(0, 2**8 - 1)
         data.stop_example(discard=True)
@@ -685,7 +685,7 @@ def test_discarding_iterates_to_fixed_point():
 
 def test_discarding_is_not_fooled_by_empty_discards():
     @shrinking_from(bytes([1, 1]))
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         data.draw_integer(0, 2**1 - 1)
         data.start_example(0)
         data.stop_example(discard=True)
@@ -698,7 +698,7 @@ def test_discarding_is_not_fooled_by_empty_discards():
 
 def test_discarding_can_fail(monkeypatch):
     @shrinking_from(bytes([1]))
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         data.start_example(0)
         data.draw_boolean()
         data.stop_example(discard=True)
@@ -857,7 +857,7 @@ def test_exit_because_shrink_phase_timeout(monkeypatch):
 
 def test_dependent_block_pairs_can_lower_to_zero():
     @shrinking_from([1, 0, 1])
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         if data.draw_boolean():
             n = data.draw_integer(0, 2**16 - 1)
         else:
@@ -872,7 +872,7 @@ def test_dependent_block_pairs_can_lower_to_zero():
 
 def test_handle_size_too_large_during_dependent_lowering():
     @shrinking_from([1, 255, 0])
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         if data.draw_boolean():
             data.draw_integer(0, 2**16 - 1)
             data.mark_interesting()
@@ -886,7 +886,7 @@ def test_block_may_grow_during_lexical_shrinking():
     initial = bytes([2, 1, 1])
 
     @shrinking_from(initial)
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         n = data.draw_integer(0, 2**8 - 1)
         if n == 2:
             data.draw_integer(0, 2**8 - 1)
@@ -901,7 +901,7 @@ def test_block_may_grow_during_lexical_shrinking():
 
 def test_lower_common_node_offset_does_nothing_when_changed_blocks_are_zero():
     @shrinking_from([1, 0, 1, 0])
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         data.draw_boolean()
         data.draw_boolean()
         data.draw_boolean()
@@ -916,7 +916,7 @@ def test_lower_common_node_offset_does_nothing_when_changed_blocks_are_zero():
 
 def test_lower_common_node_offset_ignores_zeros():
     @shrinking_from([2, 2, 0])
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         n = data.draw_integer(0, 2**8 - 1)
         data.draw_integer(0, 2**8 - 1)
         data.draw_integer(0, 2**8 - 1)
@@ -1448,7 +1448,7 @@ def test_does_cache_if_extend_is_not_used():
         d2 = runner.cached_test_function(b"\0", extend=8)
         assert d1.status == d2.status == Status.VALID
         assert d1.buffer == d2.buffer
-        assert calls[0] == 1
+        assert calls == 1
 
 
 def test_does_result_for_reuse():
@@ -1465,7 +1465,7 @@ def test_does_result_for_reuse():
         d2 = runner.cached_test_function(d1.buffer)
         assert d1.status == d2.status == Status.VALID
         assert d1.buffer == d2.buffer
-        assert calls[0] == 1
+        assert calls == 1
 
 
 def test_does_not_cache_overrun_if_extending():
