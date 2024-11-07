@@ -251,15 +251,14 @@ by your conftest you can load one with the command line option ``--hypothesis-pr
 
 
 Hypothesis comes with two built-in profiles, ``ci`` and ``default``.
-``ci`` is set up to have good defaults for running in a CI environment, so emphasizes determinism, while the 
+``ci`` is set up to have good defaults for running in a CI environment, so emphasizes determinism, while the
 ``default`` settings are picked to be more likely to find bugs and to have a good workflow when used for local development.
 
-Hypothesis will automatically detect certain common CI environments and use the CI profile automatically
+Hypothesis will automatically detect certain common CI environments and use the ci profile automatically
 when running in them.
 In particular, if you wish to use the ``ci`` profile, setting the ``CI`` environment variable will do this.
 
-If you want to customise your CI behaviour, registering a new version of the ``ci`` profile will automatically be picked up in CI. For example, if you wanted to run more examples in CI, you might configure it as follows:
-
+This will still be the case if you register your own ci profile. For example, if you wanted to run more examples in CI, you might configure it as follows:
 
 .. code-block:: python
 

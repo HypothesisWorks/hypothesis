@@ -317,6 +317,10 @@ class settings(metaclass=settingsMeta):
         :class:`~hypothesis.settings`: optional ``parent`` settings, and
         keyword arguments for each setting that will be set differently to
         parent (or settings.default, if parent is None).
+
+        If you register a profile that has already been defined and that profile
+        is the currently loaded profile, the new changes will take effect immediately,
+        and do not require reloading the profile.
         """
         check_type(str, name, "name")
         settings._profiles[name] = settings(parent=parent, **kwargs)
