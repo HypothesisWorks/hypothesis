@@ -137,11 +137,12 @@ def test_always_evicts_the_lowest_scoring_value(writes, data):
         scores[key] = data.draw(st.integers(0, 1000), label=f"scores[{key!r}]")
         return scores[key]
 
-    last_entry = [None]
+    last_entry = None
 
     class Cache(GenericCache):
         def new_entry(self, key, value):
-            last_entry[0] = key
+            nonlocal last_entry
+            last_entry = key
             evicted.discard(key)
             assert key not in scores
             return new_score(key)
@@ -155,7 +156,7 @@ def test_always_evicts_the_lowest_scoring_value(writes, data):
             assert score == scores[key]
             del scores[key]
             if len(scores) > 1:
-                assert score <= min(v for k, v in scores.items() if k != last_entry[0])
+                assert score <= min(v for k, v in scores.items() if k != last_entry)
             evicted.add(key)
 
     target = Cache(max_size=size)

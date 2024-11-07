@@ -159,12 +159,13 @@ def test_integers_from_are_from(x):
 
 
 def test_does_not_catch_interrupt_during_falsify():
-    calls = [0]
+    called = False
 
     @given(integers())
     def flaky_base_exception(x):
-        if not calls[0]:
-            calls[0] = 1
+        nonlocal called
+        if not called:
+            called = True
             raise KeyboardInterrupt
 
     with raises(KeyboardInterrupt):

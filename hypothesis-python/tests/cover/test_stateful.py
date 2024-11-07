@@ -334,23 +334,26 @@ def test_machine_with_no_terminals_is_invalid():
 
 
 def test_minimizes_errors_in_teardown():
-    counter = [0]
+    counter = 0
 
     class Foo(RuleBasedStateMachine):
         @initialize()
         def init(self):
-            counter[0] = 0
+            nonlocal counter
+            counter = 0
 
         @rule()
         def increment(self):
-            counter[0] += 1
+            nonlocal counter
+            counter += 1
 
         def teardown(self):
-            assert not counter[0]
+            nonlocal counter
+            assert not counter
 
     with raises(AssertionError):
         run_state_machine_as_test(Foo)
-    assert counter[0] == 1
+    assert counter == 1
 
 
 class RequiresInit(RuleBasedStateMachine):

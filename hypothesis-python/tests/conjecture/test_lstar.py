@@ -124,10 +124,11 @@ def test_iteration_with_dead_nodes():
 
 
 def test_learning_is_just_checking_when_fully_explored():
-    count = [0]
+    count = 0
 
     def accept(s):
-        count[0] += 1
+        nonlocal count
+        count += 1
         return len(s) <= 5 and all(c == 0 for c in s)
 
     learner = LStar(accept)
@@ -138,20 +139,21 @@ def test_learning_is_just_checking_when_fully_explored():
 
     assert list(learner.dfa.all_matching_strings()) == [bytes(n) for n in range(6)]
 
-    (prev,) = count
+    prev = count
 
     learner.learn([2] * 11)
 
-    calls = count[0] - prev
+    calls = count - prev
 
     assert calls == 1
 
 
 def test_canonicalises_values_to_zero_where_appropriate():
-    calls = [0]
+    calls = 0
 
     def member(s):
-        calls[0] += 1
+        nonlocal calls
+        calls += 1
         return len(s) == 10
 
     learner = LStar(member)
@@ -159,11 +161,11 @@ def test_canonicalises_values_to_zero_where_appropriate():
     learner.learn(bytes(10))
     learner.learn(bytes(11))
 
-    (prev,) = calls
+    prev = calls
 
     assert learner.dfa.matches(bytes([1] * 10))
 
-    assert calls[0] == prev
+    assert calls == prev
 
 
 def test_normalizing_defaults_to_zero():

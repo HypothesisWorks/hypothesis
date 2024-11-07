@@ -144,20 +144,21 @@ def test_terminates_shrinks(n, monkeypatch):
 
 
 def test_detects_flakiness():
-    failed_once = [False]
-    count = [0]
+    failed_once = False
+    count = 0
 
     def tf(data):
+        nonlocal count, failed_once
         data.draw_bytes(1, 1)
-        count[0] += 1
-        if not failed_once[0]:
-            failed_once[0] = True
+        count += 1
+        if not failed_once:
+            failed_once = True
             data.mark_interesting()
 
     runner = ConjectureRunner(tf)
     runner.run()
     assert runner.exit_reason == ExitReason.flaky
-    assert count == [MIN_TEST_CALLS + 1]
+    assert count == MIN_TEST_CALLS + 1
 
 
 def recur(i, data):
@@ -258,15 +259,17 @@ def test_stops_after_max_examples_when_generating():
 @pytest.mark.parametrize("examples", [1, 5, 20, 50])
 def test_stops_after_max_examples_when_generating_more_bugs(examples):
     seen = []
-    bad = [False, False]
+    err_common = False
+    err_rare = False
 
     def f(data):
         seen.append(data.draw_integer(0, 2**32 - 1))
         # Rare, potentially multi-error conditions
+        nonlocal err_common, err_rare
         if seen[-1] > 2**31:
-            bad[0] = True
+            err_rare = True
             raise ValueError
-        bad[1] = True
+        err_common = True
         raise Exception
 
     runner = ConjectureRunner(
@@ -278,7 +281,7 @@ def test_stops_after_max_examples_when_generating_more_bugs(examples):
         pass
     # No matter what, whether examples is larger or smalller than MAX_TEST_CALLS,
     # we stop looking at max_examples.  (and re-run each failure for the traceback)
-    assert len(seen) <= examples + sum(bad)
+    assert len(seen) <= examples + err_common + err_rare
 
 
 def test_interleaving_engines():
@@ -337,30 +340,32 @@ def test_reuse_phase_runs_for_max_examples_if_generation_is_disabled():
 
 
 def test_erratic_draws():
-    n = [0]
+    n = 0
 
     with pytest.raises(FlakyStrategyDefinition):
 
         @run_to_buffer
         def x(data):
-            data.draw_bytes(n[0], n[0])
-            data.draw_bytes(255 - n[0], 255 - n[0])
-            if n[0] == 255:
+            nonlocal n
+            data.draw_bytes(n, n)
+            data.draw_bytes(255 - n, 255 - n)
+            if n == 255:
                 data.mark_interesting()
             else:
-                n[0] += 1
+                n += 1
 
 
 def test_no_read_no_shrink():
-    count = [0]
+    count = 0
 
     @run_to_buffer
     def x(data):
-        count[0] += 1
+        nonlocal count
+        count += 1
         data.mark_interesting()
 
     assert x == b""
-    assert count == [1]
+    assert count == 1
 
 
 def test_one_dead_branch():
@@ -597,21 +602,21 @@ def test_clears_out_its_database_on_shrinking(
 
 
 def test_detects_too_small_block_starts():
-    call_count = [0]
+    call_count = 0
 
     def f(data):
-        assert call_count[0] == 0
-        call_count[0] += 1
+        nonlocal call_count
+        call_count += 1
         data.draw_bytes(8, 8)
         data.mark_interesting()
 
     runner = ConjectureRunner(f, settings=settings(database=None))
     r = runner.cached_test_function(bytes(8))
     assert r.status == Status.INTERESTING
-    assert call_count[0] == 1
+    assert call_count == 1
     r2 = runner.cached_test_function(bytes([255] * 7))
     assert r2.status == Status.OVERRUN
-    assert call_count[0] == 1
+    assert call_count == 1
 
 
 def test_shrinks_both_interesting_examples(monkeypatch):
@@ -656,7 +661,7 @@ def test_discarding(monkeypatch):
 
 def test_can_remove_discarded_data():
     @shrinking_from(bytes([0] * 10 + [11]))
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         while True:
             data.start_example(SOME_LABEL)
             b = data.draw_integer(0, 2**8 - 1)
@@ -671,7 +676,7 @@ def test_can_remove_discarded_data():
 
 def test_discarding_iterates_to_fixed_point():
     @shrinking_from(bytes(list(range(100, -1, -1))))
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         data.start_example(0)
         data.draw_integer(0, 2**8 - 1)
         data.stop_example(discard=True)
@@ -685,7 +690,7 @@ def test_discarding_iterates_to_fixed_point():
 
 def test_discarding_is_not_fooled_by_empty_discards():
     @shrinking_from(bytes([1, 1]))
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         data.draw_integer(0, 2**1 - 1)
         data.start_example(0)
         data.stop_example(discard=True)
@@ -698,7 +703,7 @@ def test_discarding_is_not_fooled_by_empty_discards():
 
 def test_discarding_can_fail(monkeypatch):
     @shrinking_from(bytes([1]))
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         data.start_example(0)
         data.draw_boolean()
         data.stop_example(discard=True)
@@ -838,11 +843,12 @@ def test_exit_because_max_iterations():
 
 
 def test_exit_because_shrink_phase_timeout(monkeypatch):
-    val = [0]
+    val = 0
 
     def fast_time():
-        val[0] += 1000
-        return val[0]
+        nonlocal val
+        val += 1000
+        return val
 
     def f(data):
         if data.draw_integer(0, 2**64 - 1) > 2**33:
@@ -857,7 +863,7 @@ def test_exit_because_shrink_phase_timeout(monkeypatch):
 
 def test_dependent_block_pairs_can_lower_to_zero():
     @shrinking_from([1, 0, 1])
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         if data.draw_boolean():
             n = data.draw_integer(0, 2**16 - 1)
         else:
@@ -872,7 +878,7 @@ def test_dependent_block_pairs_can_lower_to_zero():
 
 def test_handle_size_too_large_during_dependent_lowering():
     @shrinking_from([1, 255, 0])
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         if data.draw_boolean():
             data.draw_integer(0, 2**16 - 1)
             data.mark_interesting()
@@ -886,7 +892,7 @@ def test_block_may_grow_during_lexical_shrinking():
     initial = bytes([2, 1, 1])
 
     @shrinking_from(initial)
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         n = data.draw_integer(0, 2**8 - 1)
         if n == 2:
             data.draw_integer(0, 2**8 - 1)
@@ -901,7 +907,7 @@ def test_block_may_grow_during_lexical_shrinking():
 
 def test_lower_common_node_offset_does_nothing_when_changed_blocks_are_zero():
     @shrinking_from([1, 0, 1, 0])
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         data.draw_boolean()
         data.draw_boolean()
         data.draw_boolean()
@@ -916,7 +922,7 @@ def test_lower_common_node_offset_does_nothing_when_changed_blocks_are_zero():
 
 def test_lower_common_node_offset_ignores_zeros():
     @shrinking_from([2, 2, 0])
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         n = data.draw_integer(0, 2**8 - 1)
         data.draw_integer(0, 2**8 - 1)
         data.draw_integer(0, 2**8 - 1)
@@ -930,10 +936,11 @@ def test_lower_common_node_offset_ignores_zeros():
 
 
 def test_cached_test_function_returns_right_value():
-    count = [0]
+    count = 0
 
     def tf(data):
-        count[0] += 1
+        nonlocal count
+        count += 1
         data.draw_integer(0, 3)
         data.mark_interesting()
 
@@ -944,14 +951,15 @@ def test_cached_test_function_returns_right_value():
                 d = runner.cached_test_function(b)
                 assert d.status == Status.INTERESTING
                 assert d.buffer == b
-        assert count[0] == 2
+        assert count == 2
 
 
 def test_cached_test_function_does_not_reinvoke_on_prefix():
-    call_count = [0]
+    call_count = 0
 
     def test_function(data):
-        call_count[0] += 1
+        nonlocal call_count
+        call_count += 1
         data.draw_integer(0, 2**8 - 1)
         data.draw_bytes(1, 1, forced=bytes([7]))
         data.draw_integer(0, 2**8 - 1)
@@ -964,16 +972,17 @@ def test_cached_test_function_does_not_reinvoke_on_prefix():
         for n in [2, 1, 0]:
             prefix_data = runner.cached_test_function(bytes(n))
             assert prefix_data is Overrun
-        assert call_count[0] == 1
+        assert call_count == 1
 
 
 def test_will_evict_entries_from_the_cache(monkeypatch):
     monkeypatch.setattr(engine_module, "CACHE_SIZE", 5)
-    count = [0]
+    count = 0
 
     def tf(data):
+        nonlocal count
         data.draw_bytes(1, 1)
-        count[0] += 1
+        count += 1
 
     runner = ConjectureRunner(tf, settings=TEST_SETTINGS)
 
@@ -984,7 +993,7 @@ def test_will_evict_entries_from_the_cache(monkeypatch):
     # Because we exceeded the cache size, our previous
     # calls will have been evicted, so each call to
     # cached_test_function will have to reexecute.
-    assert count[0] == 30
+    assert count == 30
 
 
 def test_branch_ending_in_write():
@@ -1435,10 +1444,11 @@ def test_does_not_cache_extended_prefix():
 
 
 def test_does_cache_if_extend_is_not_used():
-    calls = [0]
+    calls = 0
 
     def test(data):
-        calls[0] += 1
+        nonlocal calls
+        calls += 1
         data.draw_bytes(1, 1)
 
     with deterministic_PRNG():
@@ -1448,14 +1458,15 @@ def test_does_cache_if_extend_is_not_used():
         d2 = runner.cached_test_function(b"\0", extend=8)
         assert d1.status == d2.status == Status.VALID
         assert d1.buffer == d2.buffer
-        assert calls[0] == 1
+        assert calls == 1
 
 
 def test_does_result_for_reuse():
-    calls = [0]
+    calls = 0
 
     def test(data):
-        calls[0] += 1
+        nonlocal calls
+        calls += 1
         data.draw_bytes(1, 1)
 
     with deterministic_PRNG():
@@ -1465,7 +1476,7 @@ def test_does_result_for_reuse():
         d2 = runner.cached_test_function(d1.buffer)
         assert d1.status == d2.status == Status.VALID
         assert d1.buffer == d2.buffer
-        assert calls[0] == 1
+        assert calls == 1
 
 
 def test_does_not_cache_overrun_if_extending():
