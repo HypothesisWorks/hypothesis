@@ -97,7 +97,7 @@ class settingsMeta(type):
         v = default_variable.value
         if v is not None:
             return v
-        if hasattr(settings, "_current_profile"):
+        if getattr(settings, "_current_profile", None) is not None:
             settings.load_profile(settings._current_profile)
             assert default_variable.value is not None
         return default_variable.value
@@ -132,6 +132,7 @@ class settings(metaclass=settingsMeta):
     __definitions_are_locked = False
     _profiles: ClassVar[dict[str, "settings"]] = {}
     __module__ = "hypothesis"
+    _current_profile = None
 
     def __getattr__(self, name):
         if name in all_settings:
@@ -316,9 +317,15 @@ class settings(metaclass=settingsMeta):
         :class:`~hypothesis.settings`: optional ``parent`` settings, and
         keyword arguments for each setting that will be set differently to
         parent (or settings.default, if parent is None).
+
+        If you register a profile that has already been defined and that profile
+        is the currently loaded profile, the new changes will take effect immediately,
+        and do not require reloading the profile.
         """
         check_type(str, name, "name")
         settings._profiles[name] = settings(parent=parent, **kwargs)
+        if settings._current_profile == name:
+            settings.load_profile(name)
 
     @staticmethod
     def get_profile(name: str) -> "settings":
@@ -767,8 +774,7 @@ CI = settings(
 settings.register_profile("ci", CI)
 
 
-# This is tested in a subprocess so the branch doesn't show up in coverage.
-if is_in_ci():  # pragma: no cover
+if is_in_ci():
     settings.load_profile("ci")
 
 assert settings.default is not None

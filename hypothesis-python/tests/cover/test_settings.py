@@ -558,3 +558,40 @@ def test_check_defaults_to_randomize_when_not_running_on_ci():
         ).strip()
         == "False"
     )
+
+
+def test_reloads_the_loaded_profile_if_registered_again():
+    prev_profile = settings._current_profile
+    try:
+        test_profile = "some nonsense profile purely for this test"
+        test_value = 123456
+        settings.register_profile(test_profile, settings(max_examples=test_value))
+        settings.load_profile(test_profile)
+        assert settings.default.max_examples == test_value
+        test_value_2 = 42
+        settings.register_profile(test_profile, settings(max_examples=test_value_2))
+        assert settings.default.max_examples == test_value_2
+    finally:
+        if prev_profile is not None:
+            settings.load_profile(prev_profile)
+
+
+CI_TESTING_SCRIPT = """
+from hypothesis import settings
+
+if __name__ == '__main__':
+    settings.register_profile("ci", settings(max_examples=42))
+    assert settings.default.max_examples == 42
+"""
+
+
+@skipif_emscripten
+def test_will_automatically_pick_up_changes_to_ci_profile_in_ci():
+    env = dict(os.environ)
+    env["CI"] = "true"
+    subprocess.check_call(
+        [sys.executable, "-c", CI_TESTING_SCRIPT],
+        env=env,
+        text=True,
+        encoding="utf-8",
+    )
