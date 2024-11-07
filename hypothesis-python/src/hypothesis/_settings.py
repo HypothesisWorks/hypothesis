@@ -774,8 +774,7 @@ CI = settings(
 settings.register_profile("ci", CI)
 
 
-# This is tested in a subprocess so the branch doesn't show up in coverage.
-if is_in_ci():  # pragma: no
+if is_in_ci():
     settings.load_profile("ci")
 
 assert settings.default is not None
