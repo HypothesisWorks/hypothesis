@@ -44,13 +44,7 @@ from hypothesis.errors import (
     StopTest,
 )
 from hypothesis.internal.cache import LRUReusedCache
-from hypothesis.internal.compat import (
-    NotRequired,
-    TypeAlias,
-    TypedDict,
-    ceil,
-    override,
-)
+from hypothesis.internal.compat import NotRequired, TypeAlias, TypedDict, ceil, override
 from hypothesis.internal.conjecture.data import (
     AVAILABLE_PROVIDERS,
     ConjectureData,
@@ -1488,15 +1482,18 @@ class ConjectureRunner:
             self.__data_cache[buffer] = result
         return result
 
-    def passing_buffers(self, prefix: bytes = b"") -> frozenset[bytes]:
-        """Return a collection of bytestrings which cause the test to pass.
+    def passing_choice_sequences(
+        self, prefix: Sequence[IRNode] = ()
+    ) -> frozenset[bytes]:
+        """Return a collection of choice sequence nodes which cause the test to pass.
 
         Optionally restrict this by a certain prefix, which is useful for explain mode.
         """
         return frozenset(
-            buf
-            for buf in self.__data_cache
-            if buf.startswith(prefix) and self.__data_cache[buf].status == Status.VALID
+            result.examples.ir_tree_nodes
+            for key in self.__data_cache_ir
+            if (result := self.__data_cache_ir[key]).status is Status.VALID
+            and startswith(result.examples.ir_tree_nodes, prefix)
         )
 
 
