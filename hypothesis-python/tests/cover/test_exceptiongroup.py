@@ -133,7 +133,6 @@ def test_multiple_stoptest_2() -> None:
 
 
 def test_stoptest_and_hypothesisexception() -> None:
-    # TODO: can this happen? If so what do?
     # current code raises the first hypothesisexception and throws away stoptest
     @given(st.data())
     def stoptest_and_hypothesisexception(data: DataObject) -> None:
@@ -153,27 +152,3 @@ def test_multiple_hypothesisexception() -> None:
 
     with pytest.raises(errors.Flaky):
         stoptest_and_hypothesisexception()
-
-
-# FIXME: temporarily added while debugging #4115
-def test_recursive_exception():
-    @given(st.data())
-    def test_function(data):
-        try:
-            raise ExceptionGroup("", [ValueError()])
-        except ExceptionGroup as eg:
-            raise eg.exceptions[0] from None
-
-    with pytest.raises(ValueError):
-        test_function()
-
-
-def test_recursive_exception2():
-    @given(st.data())
-    def test_function(data):
-        k = ValueError()
-        k.__context__ = k
-        raise k
-
-    with pytest.raises(ValueError):
-        test_function()

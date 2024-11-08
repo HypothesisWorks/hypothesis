@@ -111,7 +111,9 @@ def test_exceptiongroup_stop_and_hypothesisexception() -> None:
     @given(st.data())
     def test_function(data):
         async def task_stoptest(d: DataObject) -> None:
-            d.conjecture_data.mark_invalid()
+            # only mark some runs as invalid to not raise Unsatisfiable
+            if d.draw(st.integers(min_value=0, max_value=1)) == 1:
+                d.conjecture_data.mark_invalid()
 
         async def task_invalid_argument(d: DataObject) -> None:
             d.draw(st.integers(max_value=2, min_value=3))
