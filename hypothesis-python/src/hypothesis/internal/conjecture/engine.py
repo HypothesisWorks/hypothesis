@@ -49,7 +49,6 @@ from hypothesis.internal.compat import (
     TypeAlias,
     TypedDict,
     ceil,
-    int_from_bytes,
     override,
 )
 from hypothesis.internal.conjecture.data import (
@@ -57,7 +56,6 @@ from hypothesis.internal.conjecture.data import (
     ConjectureData,
     ConjectureResult,
     DataObserver,
-    Example,
     HypothesisProvider,
     InterestingOrigin,
     IRKWargsType,
@@ -67,6 +65,7 @@ from hypothesis.internal.conjecture.data import (
     Status,
     _Overrun,
     ir_kwargs_key,
+    ir_size,
     ir_value_key,
 )
 from hypothesis.internal.conjecture.datatree import (
@@ -74,7 +73,11 @@ from hypothesis.internal.conjecture.datatree import (
     PreviouslyUnseenBehaviour,
     TreeRecordingObserver,
 )
-from hypothesis.internal.conjecture.junkdrawer import clamp, ensure_free_stackframes
+from hypothesis.internal.conjecture.junkdrawer import (
+    clamp,
+    ensure_free_stackframes,
+    startswith,
+)
 from hypothesis.internal.conjecture.pareto import NO_SCORE, ParetoFront, ParetoOptimiser
 from hypothesis.internal.conjecture.shrinker import Shrinker, sort_key
 from hypothesis.internal.healthcheck import fail_health_check
@@ -85,6 +88,7 @@ CACHE_SIZE: Final[int] = 10000
 MUTATION_POOL_SIZE: Final[int] = 100
 MIN_TEST_CALLS: Final[int] = 10
 BUFFER_SIZE: Final[int] = 8 * 1024
+BUFFER_SIZE_IR: Final[int] = 8 * 1024
 
 # If the shrinking phase takes more than five minutes, abort it early and print
 # a warning.   Many CI systems will kill a build after around ten minutes with
@@ -373,13 +377,23 @@ class ConjectureRunner:
             self.__data_cache_ir[key] = result
 
     def cached_test_function_ir(
-        self, nodes: list[IRNode], *, error_on_discard: bool = False
+        self,
+        nodes: Sequence[IRNode],
+        *,
+        error_on_discard: bool = False,
+        extend: int = 0,
     ) -> Union[ConjectureResult, _Overrun]:
         key = self._cache_key_ir(nodes=nodes)
         try:
-            return self.__data_cache_ir[key]
+            cached = self.__data_cache_ir[key]
+            # if we have a cached overrun for this key, but we're allowing extensions
+            # of the nodes, it could in fact run to a valid data if we try.
+            if extend == 0 or cached.status is not Status.OVERRUN:
+                return cached
         except KeyError:
             pass
+
+        max_length = min(BUFFER_SIZE_IR, ir_size(nodes) + extend)
 
         # explicitly use a no-op DataObserver here instead of a TreeRecordingObserver.
         # The reason is we don't expect simulate_test_function to explore new choices
@@ -396,7 +410,9 @@ class ConjectureRunner:
             trial_observer = DiscardObserver()
 
         try:
-            trial_data = self.new_conjecture_data_ir(nodes, observer=trial_observer)
+            trial_data = self.new_conjecture_data_ir(
+                nodes, observer=trial_observer, max_length=max_length
+            )
             self.tree.simulate_test_function(trial_data)
         except PreviouslyUnseenBehaviour:
             pass
@@ -408,7 +424,7 @@ class ConjectureRunner:
             except KeyError:
                 pass
 
-        data = self.new_conjecture_data_ir(nodes)
+        data = self.new_conjecture_data_ir(nodes, max_length=max_length)
         # note that calling test_function caches `data` for us, for both an ir
         # tree key and a buffer key.
         self.test_function(data)
@@ -1252,7 +1268,11 @@ class ConjectureRunner:
             observer = DataObserver()
 
         return ConjectureData.for_ir_tree(
-            ir_tree_prefix, observer=observer, provider=provider, max_length=max_length
+            ir_tree_prefix,
+            observer=observer,
+            provider=provider,
+            max_length=max_length,
+            random=self.random,
         )
 
     def new_conjecture_data(
