@@ -744,34 +744,14 @@ class ConjectureRunner:
         if not self.report_debug_info:
             return
 
-        stack: list[Ls] = [[]]
-
-        def go(ex: Example) -> None:
-            if ex.length == 0:
-                return
-            if len(ex.children) == 0:
-                stack[-1].append(int_from_bytes(data.buffer[ex.start : ex.end]))
-            else:
-                node: Ls = []
-                stack.append(node)
-
-                for v in ex.children:
-                    go(v)
-                stack.pop()
-                if len(node) == 1:
-                    stack[-1].extend(node)
-                else:
-                    stack[-1].append(node)
-
-        go(data.examples[0])
-        assert len(stack) == 1
-
         status = repr(data.status)
-
         if data.status == Status.INTERESTING:
             status = f"{status} ({data.interesting_origin!r})"
 
-        self.debug(f"{data.index} bytes {stack[0]!r} -> {status}, {data.output}")
+        nodes = data.examples.ir_tree_nodes
+        self.debug(
+            f"{len(nodes)} nodes {[n.value for n in nodes]} -> {status}, {data.output}"
+        )
 
     def run(self) -> None:
         with local_settings(self.settings):

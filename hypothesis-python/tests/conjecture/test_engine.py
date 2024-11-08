@@ -529,7 +529,7 @@ def test_debug_data(capsys):
     runner.run()
 
     out, _ = capsys.readouterr()
-    assert re.match("\\d+ bytes \\[.*\\] -> ", out)
+    assert re.match("\\d+ nodes \\[.*\\] -> ", out)
     assert "INTERESTING" in out
 
 
