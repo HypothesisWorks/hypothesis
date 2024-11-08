@@ -166,13 +166,18 @@ _url_fragments_strategy = (
 
 @defines_strategy(force_reusable_values=True)
 def urls() -> st.SearchStrategy[str]:
-    """A strategy for :rfc:`3986`, generating http/https URLs."""
+    """A strategy for :rfc:`3986`, generating http/https URLs.
+
+    The generated URLs could, at least in theory, be passed to an HTTP client
+    and fetched.
+
+    """
 
     def url_encode(s: str) -> str:
         return "".join(c if c in URL_SAFE_CHARACTERS else "%%%02X" % ord(c) for c in s)
 
     schemes = st.sampled_from(["http", "https"])
-    ports = st.integers(min_value=0, max_value=2**16 - 1).map(":{}".format)
+    ports = st.integers(min_value=1, max_value=2**16 - 1).map(":{}".format)
     paths = st.lists(st.text(string.printable).map(url_encode)).map("/".join)
 
     return st.builds(
