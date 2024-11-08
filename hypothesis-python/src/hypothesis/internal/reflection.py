@@ -21,18 +21,19 @@ import sys
 import textwrap
 import types
 import warnings
+from collections.abc import MutableMapping
 from functools import partial, wraps
 from io import StringIO
 from keyword import iskeyword
 from random import _inst as global_random_instance
 from tokenize import COMMENT, detect_encoding, generate_tokens, untokenize
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Callable, MutableMapping
+from typing import TYPE_CHECKING, Any, Callable
 from unittest.mock import _patch as PatchType
 from weakref import WeakKeyDictionary
 
 from hypothesis.errors import HypothesisWarning
-from hypothesis.internal.compat import PYPY, is_typed_named_tuple
+from hypothesis.internal.compat import is_typed_named_tuple
 from hypothesis.utils.conventions import not_set
 from hypothesis.vendor.pretty import pretty
 
@@ -67,14 +68,7 @@ def _clean_source(src: str) -> bytes:
     # lines - i.e. any decorators, so that adding `@example()`s keeps the same key.
     try:
         funcdef = ast.parse(src).body[0]
-        if sys.version_info[:2] == (3, 8) and PYPY:
-            # We can't get a line number of the (async) def here, so as a best-effort
-            # approximation we'll use str.split instead and hope for the best.
-            tag = "async def " if isinstance(funcdef, ast.AsyncFunctionDef) else "def "
-            if tag in src:
-                src = tag + src.split(tag, maxsplit=1)[1]
-        else:
-            src = "".join(src.splitlines(keepends=True)[funcdef.lineno - 1 :])
+        src = "".join(src.splitlines(keepends=True)[funcdef.lineno - 1 :])
     except Exception:
         pass
     # Remove blank lines and use the tokenize module to strip out comments,
@@ -166,16 +160,6 @@ def get_signature(
                     parameters=[v for k, v in sig.parameters.items() if k != "self"]
                 )
         return sig
-    if sys.version_info[:2] <= (3, 8) and inspect.isclass(target):
-        # Workaround for subclasses of typing.Generic on Python <= 3.8
-        from hypothesis.strategies._internal.types import is_generic_type
-
-        if is_generic_type(target):
-            sig = inspect.signature(target.__init__)
-            check_signature(sig)
-            return sig.replace(
-                parameters=[v for k, v in sig.parameters.items() if k != "self"]
-            )
     # eval_str is only supported by Python 3.10 and newer
     if sys.version_info[:2] >= (3, 10):
         sig = inspect.signature(
@@ -257,7 +241,7 @@ def ast_arguments_matches_signature(args, sig):
     assert isinstance(args, ast.arguments)
     assert isinstance(sig, inspect.Signature)
     expected = []
-    for node in getattr(args, "posonlyargs", ()):  # New in Python 3.8
+    for node in args.posonlyargs:
         expected.append((node.arg, inspect.Parameter.POSITIONAL_ONLY))
     for node in args.args:
         expected.append((node.arg, inspect.Parameter.POSITIONAL_OR_KEYWORD))

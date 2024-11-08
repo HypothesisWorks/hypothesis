@@ -13,8 +13,9 @@ import gc
 import random
 import sys
 import warnings
+from collections.abc import Hashable
 from itertools import count
-from typing import TYPE_CHECKING, Any, Callable, Hashable, Tuple
+from typing import TYPE_CHECKING, Any, Callable
 from weakref import WeakValueDictionary
 
 import hypothesis.core
@@ -147,7 +148,7 @@ def register_random(r: RandomLike) -> None:
 
 def get_seeder_and_restorer(
     seed: Hashable = 0,
-) -> Tuple[Callable[[], None], Callable[[], None]]:
+) -> tuple[Callable[[], None], Callable[[], None]]:
     """Return a pair of functions which respectively seed all and restore
     the state of all registered PRNGs.
 

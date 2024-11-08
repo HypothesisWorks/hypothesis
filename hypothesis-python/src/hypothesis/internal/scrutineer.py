@@ -15,10 +15,11 @@ import subprocess
 import sys
 import types
 from collections import defaultdict
+from collections.abc import Iterable
 from functools import lru_cache, reduce
 from os import sep
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
+from typing import TYPE_CHECKING, Optional
 
 from hypothesis._settings import Phase, Verbosity
 from hypothesis.internal.compat import PYPY
@@ -29,13 +30,13 @@ if TYPE_CHECKING:
 else:
     TypeAlias = object
 
-Location: TypeAlias = Tuple[str, int]
-Branch: TypeAlias = Tuple[Optional[Location], Location]
-Trace: TypeAlias = Set[Branch]
+Location: TypeAlias = tuple[str, int]
+Branch: TypeAlias = tuple[Optional[Location], Location]
+Trace: TypeAlias = set[Branch]
 
 
 @lru_cache(maxsize=None)
-def should_trace_file(fname):
+def should_trace_file(fname: str) -> bool:
     # fname.startswith("<") indicates runtime code-generation via compile,
     # e.g. compile("def ...", "<string>", "exec") in e.g. attrs methods.
     return not (is_hypothesis_file(fname) or fname.startswith("<"))
@@ -55,12 +56,12 @@ class Tracer:
 
     __slots__ = ("branches", "_previous_location")
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.branches: Trace = set()
-        self._previous_location = None
+        self._previous_location: Optional[Location] = None
 
     @staticmethod
-    def can_trace():
+    def can_trace() -> bool:
         return (
             (sys.version_info[:2] < (3, 12) and sys.gettrace() is None)
             or (
@@ -138,7 +139,7 @@ UNHELPFUL_LOCATIONS = (
 )
 
 
-def _glob_to_re(locs):
+def _glob_to_re(locs: Iterable[str]) -> str:
     """Translate a list of glob patterns to a combined regular expression.
     Only the * wildcard is supported, and patterns including special
     characters will only work by chance."""
@@ -250,16 +251,7 @@ def _get_git_repo_root() -> Path:
         return Path(where)
 
 
-if sys.version_info[:2] <= (3, 8):
-
-    def is_relative_to(self, other):
-        return other == self or other in self.parents
-
-else:
-    is_relative_to = Path.is_relative_to
-
-
-def tractable_coverage_report(trace: Trace) -> Dict[str, List[int]]:
+def tractable_coverage_report(trace: Trace) -> dict[str, list[int]]:
     """Report a simple coverage map which is (probably most) of the user's code."""
     coverage: dict = {}
     t = dict(trace)
@@ -272,6 +264,6 @@ def tractable_coverage_report(trace: Trace) -> Dict[str, List[int]]:
         k: sorted(v)
         for k, v in coverage.items()
         if stdlib_fragment not in k
-        and is_relative_to(p := Path(k), _get_git_repo_root())
+        and (p := Path(k)).is_relative_to(_get_git_repo_root())
         and "site-packages" not in p.parts
     }

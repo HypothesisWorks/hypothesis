@@ -51,13 +51,14 @@ def test_slow_with_none_deadline(i):
 
 
 def test_raises_flaky_if_a_test_becomes_fast_on_rerun():
-    once = [True]
+    once = True
 
     @settings(deadline=500, backend="hypothesis")
     @given(st.integers())
     def test_flaky_slow(i):
-        if once[0]:
-            once[0] = False
+        nonlocal once
+        if once:
+            once = False
             time.sleep(1)
 
     with pytest.raises(FlakyFailure):
@@ -80,17 +81,18 @@ def test_deadlines_participate_in_shrinking():
 
 def test_keeps_you_well_above_the_deadline():
     seen = set()
-    failed_once = [False]
+    failed_once = False
 
     @settings(deadline=100, backend="hypothesis")
     @given(st.integers(0, 2000))
     def slow(i):
+        nonlocal failed_once
         # Make sure our initial failure isn't something that immediately goes flaky.
-        if not failed_once[0]:
+        if not failed_once:
             if i * 0.9 <= 100:
                 return
             else:
-                failed_once[0] = True
+                failed_once = True
 
         t = i / 1000
         if i in seen:
@@ -104,13 +106,14 @@ def test_keeps_you_well_above_the_deadline():
 
 
 def test_gives_a_deadline_specific_flaky_error_message():
-    once = [True]
+    once = True
 
     @settings(deadline=100, backend="hypothesis")
     @given(st.integers())
     def slow_once(i):
-        if once[0]:
-            once[0] = False
+        nonlocal once
+        if once:
+            once = False
             time.sleep(0.2)
 
     with pytest.raises(FlakyFailure) as err:

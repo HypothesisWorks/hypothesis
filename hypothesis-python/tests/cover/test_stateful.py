@@ -334,23 +334,26 @@ def test_machine_with_no_terminals_is_invalid():
 
 
 def test_minimizes_errors_in_teardown():
-    counter = [0]
+    counter = 0
 
     class Foo(RuleBasedStateMachine):
         @initialize()
         def init(self):
-            counter[0] = 0
+            nonlocal counter
+            counter = 0
 
         @rule()
         def increment(self):
-            counter[0] += 1
+            nonlocal counter
+            counter += 1
 
         def teardown(self):
-            assert not counter[0]
+            nonlocal counter
+            assert not counter
 
     with raises(AssertionError):
         run_state_machine_as_test(Foo)
-    assert counter[0] == 1
+    assert counter == 1
 
 
 class RequiresInit(RuleBasedStateMachine):
@@ -1318,3 +1321,24 @@ class LotsOfEntropyPerStepMachine(RuleBasedStateMachine):
 
 
 TestLotsOfEntropyPerStepMachine = LotsOfEntropyPerStepMachine.TestCase
+
+
+def test_flatmap():
+    class Machine(RuleBasedStateMachine):
+        buns = Bundle("buns")
+
+        @initialize(target=buns)
+        def create_bun(self):
+            return 0
+
+        @rule(target=buns, bun=buns.flatmap(lambda x: just(x + 1)))
+        def use_flatmap(self, bun):
+            assert isinstance(bun, int)
+            return bun
+
+        @rule(bun=buns)
+        def use_directly(self, bun):
+            assert isinstance(bun, int)
+
+    Machine.TestCase.settings = Settings(stateful_step_count=5, max_examples=10)
+    run_state_machine_as_test(Machine)

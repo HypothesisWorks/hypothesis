@@ -349,6 +349,19 @@ def test_sum_of_pair():
     ) == (1, 1000)
 
 
+def test_sum_of_pair_separated():
+    @st.composite
+    def separated_sum(draw):
+        n1 = draw(st.integers(0, 1000))
+        draw(st.text())
+        draw(st.booleans())
+        draw(st.integers())
+        n2 = draw(st.integers(0, 1000))
+        return (n1, n2)
+
+    assert minimal(separated_sum(), lambda x: sum(x) > 1000) == (1, 1000)
+
+
 def test_calculator_benchmark():
     """This test comes from
     https://github.com/jlink/shrinking-challenge/blob/main/challenges/calculator.md,

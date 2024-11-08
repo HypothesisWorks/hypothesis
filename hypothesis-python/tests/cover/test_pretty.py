@@ -47,13 +47,17 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
+import io
 import re
 import struct
+import sys
 import warnings
 from collections import Counter, OrderedDict, defaultdict, deque
+from dataclasses import dataclass, field
 from enum import Enum, Flag
 from functools import partial
 
+import attrs
 import pytest
 
 from hypothesis import given, strategies as st
@@ -97,8 +101,11 @@ class Dummy1:
         p.text("Dummy1(...)")
 
 
-class Dummy2(Dummy1):
+class Dummy2:
     _repr_pretty_ = None
+
+    def __repr__(self):
+        return "Dummy2()"
 
 
 class NoModule:
@@ -204,7 +211,7 @@ def test_callability_checking():
     """Test that the _repr_pretty_ method is tested for callability and skipped
     if not."""
     gotoutput = pretty.pretty(Dummy2())
-    expectedoutput = "Dummy1(...)"
+    expectedoutput = "Dummy2()"
 
     assert gotoutput == expectedoutput
 
@@ -758,3 +765,169 @@ def test_pprint_extremely_large_integers():
     got = p.getvalue()
     assert got == f"{x:#_x}"  # hexadecimal with underscores
     assert eval(got) == x
+
+
+class ReprDetector:
+    def _repr_pretty_(self, p, cycle):
+        """Exercise the IPython callback interface."""
+        p.text("GOOD")
+
+    def __repr__(self):
+        return "BAD"
+
+
+@dataclass
+class SomeDataClass:
+    x: object
+
+
+def test_pretty_prints_data_classes():
+    assert pretty.pretty(SomeDataClass(ReprDetector())) == "SomeDataClass(x=GOOD)"
+
+
+@attrs.define
+class SomeAttrsClass:
+    x: ReprDetector
+
+
+@pytest.mark.skipif(sys.version_info[:2] >= (3, 14), reason="FIXME-py314")
+def test_pretty_prints_attrs_classes():
+    assert pretty.pretty(SomeAttrsClass(ReprDetector())) == "SomeAttrsClass(x=GOOD)"
+
+
+@attrs.define
+class SomeAttrsClassWithCustomPretty:
+    def _repr_pretty_(self, p, cycle):
+        """Exercise the IPython callback interface."""
+        p.text("I am a banana")
+
+
+def test_custom_pretty_print_method_overrides_field_printing():
+    assert pretty.pretty(SomeAttrsClassWithCustomPretty()) == "I am a banana"
+
+
+@attrs.define
+class SomeAttrsClassWithLotsOfFields:
+    a: int
+    b: int
+    c: int
+    d: int
+    e: int
+    f: int
+    g: int
+    h: int
+    i: int
+    j: int
+    k: int
+    l: int
+    m: int
+    n: int
+    o: int
+    p: int
+    q: int
+    r: int
+    s: int
+
+
+@pytest.mark.skipif(sys.version_info[:2] >= (3, 14), reason="FIXME-py314")
+def test_will_line_break_between_fields():
+    obj = SomeAttrsClassWithLotsOfFields(
+        **{
+            at.name: 12345678900000000000000001
+            for at in SomeAttrsClassWithLotsOfFields.__attrs_attrs__
+        }
+    )
+    assert "\n" in pretty.pretty(obj)
+
+
+@attrs.define
+class SomeDataClassWithNoFields: ...
+
+
+def test_prints_empty_dataclass_correctly():
+    assert pretty.pretty(SomeDataClassWithNoFields()) == "SomeDataClassWithNoFields()"
+
+
+def test_handles_cycles_in_dataclass():
+    x = SomeDataClass(x=1)
+    x.x = x
+
+    assert pretty.pretty(x) == "SomeDataClass(x=SomeDataClass(...))"
+
+
+@dataclass
+class DataClassWithNoInitField:
+    x: int
+    y: int = field(init=False)
+
+
+def test_does_not_include_no_init_fields_in_dataclass_printing():
+    record = DataClassWithNoInitField(x=1)
+    assert pretty.pretty(record) == "DataClassWithNoInitField(x=1)"
+    record.y = 1
+    assert pretty.pretty(record) == "DataClassWithNoInitField(x=1)"
+
+
+@attrs.define
+class AttrsClassWithNoInitField:
+    x: int
+    y: int = attrs.field(init=False)
+
+
+@pytest.mark.skipif(sys.version_info[:2] >= (3, 14), reason="FIXME-py314")
+def test_does_not_include_no_init_fields_in_attrs_printing():
+    record = AttrsClassWithNoInitField(x=1)
+    assert pretty.pretty(record) == "AttrsClassWithNoInitField(x=1)"
+    record.y = 1
+    assert pretty.pretty(record) == "AttrsClassWithNoInitField(x=1)"
+
+
+class Namespace:
+    @dataclass
+    class DC:
+        x: int
+
+    @attrs.define
+    class A:
+        x: int
+
+    class E(Enum):
+        A = 1
+
+
+NAMESPACED_VALUES = [
+    Namespace.DC(x=1),
+    Namespace.A(x=1),
+    Namespace.E.A,
+]
+
+
+@pytest.mark.parametrize("obj", NAMESPACED_VALUES, ids=map(repr, NAMESPACED_VALUES))
+def test_includes_namespace_classes_in_pretty(obj):
+    assert pretty.pretty(obj).startswith("Namespace.")
+
+
+class Banana:
+    def _repr_pretty_(self, p, cycle):
+        p.text("I am a banana")
+
+
+@dataclass
+class InheritsPretty(Banana):
+    x: int
+    y: int
+
+
+def test_uses_defined_pretty_printing_method():
+    assert pretty.pretty(InheritsPretty(x=1, y=2)) == pretty.pretty(Banana())
+
+
+def test_prefers_singleton_printing_to_repr_pretty():
+    out = io.StringIO()
+    printer = pretty.RepresentationPrinter(out)
+    banana = Banana()
+    printer.singleton_pprinters[id(banana)] = lambda obj, p, cycle: p.text(
+        "Actually a fish"
+    )
+    printer.pretty(banana)
+    assert "Actually a fish" in out.getvalue()

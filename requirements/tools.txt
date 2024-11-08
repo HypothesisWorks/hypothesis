@@ -4,16 +4,18 @@
 #
 #    ./build.sh upgrade-requirements
 #
-alabaster==0.7.16
+alabaster==1.0.0
     # via sphinx
-anyio==4.6.0
+anyio==4.6.2.post1
     # via watchfiles
 asgiref==3.8.1
     # via django
 asttokens==2.4.1
     # via stack-data
-attrs==24.2.0
-    # via hypothesis (hypothesis-python/setup.py)
+attrs==24.1.0
+    # via
+    #   -r requirements/test.in
+    #   hypothesis (hypothesis-python/setup.py)
 autoflake==2.3.1
     # via shed
 babel==2.16.0
@@ -22,11 +24,11 @@ backports-tarfile==1.2.0
     # via jaraco-context
 beautifulsoup4==4.12.3
     # via sphinx-codeautolink
-black==24.8.0
+black==24.10.0
     # via shed
 blinker==1.8.2
     # via pelican
-build==1.2.2
+build==1.2.2.post1
     # via pip-tools
 cachetools==5.5.0
     # via tox
@@ -36,7 +38,7 @@ cffi==1.17.1
     # via cryptography
 chardet==5.2.0
     # via tox
-charset-normalizer==3.3.2
+charset-normalizer==3.4.0
     # via requests
 click==8.1.7
     # via
@@ -48,7 +50,7 @@ colorama==0.4.6
     # via tox
 com2ann==0.3.0
     # via shed
-coverage==7.6.1
+coverage==7.6.3
     # via -r requirements/tools.in
 cryptography==43.0.1
     # via
@@ -57,11 +59,11 @@ cryptography==43.0.1
     #   types-redis
 decorator==5.1.1
     # via ipython
-distlib==0.3.8
+distlib==0.3.9
     # via virtualenv
-django==5.1.1
+django==5.1.2
     # via -r requirements/tools.in
-docutils==0.20.1
+docutils==0.21.2
     # via
     #   pelican
     #   readme-renderer
@@ -77,6 +79,8 @@ exceptiongroup==1.2.2 ; python_version < "3.11"
     #   hypothesis (hypothesis-python/setup.py)
     #   ipython
     #   pytest
+execnet==2.1.1
+    # via pytest-xdist
 executing==2.1.0
     # via stack-data
 feedgenerator==2.1.0
@@ -97,7 +101,7 @@ importlib-metadata==8.5.0
     #   twine
 iniconfig==2.0.0
     # via pytest
-ipython==8.27.0
+ipython==8.28.0
     # via -r requirements/tools.in
 isort==5.13.2
     # via shed
@@ -123,7 +127,7 @@ keyring==25.4.1
     # via twine
 lark==1.2.2
     # via -r requirements/tools.in
-libcst==1.4.0
+libcst==1.5.0
     # via
     #   -r requirements/tools.in
     #   shed
@@ -131,7 +135,7 @@ markdown==3.7
     # via pelican
 markdown-it-py==3.0.0
     # via rich
-markupsafe==2.1.5
+markupsafe==3.0.1
     # via jinja2
 matplotlib-inline==0.1.7
     # via ipython
@@ -151,7 +155,7 @@ nh3==0.2.18
     # via readme-renderer
 nodeenv==1.9.1
     # via pyright
-numpy==2.1.1
+numpy==2.1.2
     # via -r requirements/tools.in
 ordered-set==4.1.0
     # via pelican
@@ -170,7 +174,9 @@ pathspec==0.12.1
 pelican[markdown]==4.10.1
     # via -r requirements/tools.in
 pexpect==4.9.0
-    # via ipython
+    # via
+    #   -r requirements/test.in
+    #   ipython
 pip-tools==7.4.1
     # via -r requirements/tools.in
 pkginfo==1.10.0
@@ -203,27 +209,31 @@ pygments==2.18.0
     #   sphinx
 pyproject-api==1.8.0
     # via tox
-pyproject-hooks==1.1.0
+pyproject-hooks==1.2.0
     # via
     #   build
     #   pip-tools
-pyright==1.1.382.post1
+pyright==1.1.384
     # via -r requirements/tools.in
 pytest==8.3.3
-    # via -r requirements/tools.in
+    # via
+    #   -r requirements/test.in
+    #   pytest-xdist
+pytest-xdist==3.6.1
+    # via -r requirements/test.in
 python-dateutil==2.9.0.post0
     # via
     #   -r requirements/tools.in
     #   pelican
 pytz==2024.2
     # via feedgenerator
-pyupgrade==3.17.0
+pyupgrade==3.18.0
     # via shed
 pyyaml==6.0.2
     # via
     #   libcst
     #   sphinx-jsonschema
-readme-renderer==43.0
+readme-renderer==44.0
     # via twine
 requests==2.32.3
     # via
@@ -238,11 +248,11 @@ restructuredtext-lint==1.4.0
     # via -r requirements/tools.in
 rfc3986==2.0.0
     # via twine
-rich==13.8.1
+rich==13.9.2
     # via
     #   pelican
     #   twine
-ruff==0.6.8
+ruff==0.6.9
     # via -r requirements/tools.in
 secretstorage==3.3.3
     # via keyring
@@ -260,7 +270,7 @@ sortedcontainers==2.4.0
     # via hypothesis (hypothesis-python/setup.py)
 soupsieve==2.6
     # via beautifulsoup4
-sphinx==7.4.7
+sphinx==8.1.3
     # via
     #   -r requirements/tools.in
     #   sphinx-codeautolink
@@ -273,7 +283,7 @@ sphinx-hoverxref==1.4.1
     # via -r requirements/tools.in
 sphinx-jsonschema==1.19.1
     # via -r requirements/tools.in
-sphinx-rtd-theme==2.0.0
+sphinx-rtd-theme==3.0.1
     # via -r requirements/tools.in
 sphinx-selective-exclude==1.0.3
     # via -r requirements/tools.in
@@ -299,7 +309,7 @@ stack-data==0.6.3
     # via ipython
 tokenize-rt==6.0.0
     # via pyupgrade
-tomli==2.0.1
+tomli==2.0.2
     # via
     #   autoflake
     #   black
@@ -310,7 +320,7 @@ tomli==2.0.1
     #   pytest
     #   sphinx
     #   tox
-tox==4.20.0
+tox==4.21.2
     # via -r requirements/tools.in
 traitlets==5.14.3
     # via
@@ -324,11 +334,11 @@ types-click==7.1.8
     # via -r requirements/tools.in
 types-pyopenssl==24.1.0.20240722
     # via types-redis
-types-pytz==2024.2.0.20240913
+types-pytz==2024.2.0.20241003
     # via -r requirements/tools.in
-types-redis==4.6.0.20240903
+types-redis==4.6.0.20241004
     # via -r requirements/tools.in
-types-setuptools==75.1.0.20240917
+types-setuptools==75.1.0.20241014
     # via types-cffi
 typing-extensions==4.12.2
     # via
@@ -339,6 +349,8 @@ typing-extensions==4.12.2
     #   ipython
     #   mypy
     #   pyright
+    #   rich
+    #   tox
 unidecode==1.3.8
     # via pelican
 urllib3==2.2.3

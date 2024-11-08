@@ -13,7 +13,7 @@ import string
 from datetime import datetime, timedelta
 from decimal import Decimal
 from functools import lru_cache
-from typing import Any, Callable, Dict, Type, TypeVar, Union
+from typing import Any, Callable, TypeVar, Union
 
 import django
 from django import forms as df
@@ -68,8 +68,8 @@ def timezones():
 
 
 # Mapping of field types, to strategy objects or functions of (type) -> strategy
-_FieldLookUpType = Dict[
-    Type[AnyField],
+_FieldLookUpType = dict[
+    type[AnyField],
     Union[st.SearchStrategy, Callable[[Any], st.SearchStrategy]],
 ]
 _global_field_lookup: _FieldLookUpType = {
@@ -319,7 +319,7 @@ def _for_model_multiple_choice(field):
 
 
 def register_field_strategy(
-    field_type: Type[AnyField], strategy: st.SearchStrategy
+    field_type: type[AnyField], strategy: st.SearchStrategy
 ) -> None:
     """Add an entry to the global field-to-strategy lookup used by
     :func:`~hypothesis.extra.django.from_field`.

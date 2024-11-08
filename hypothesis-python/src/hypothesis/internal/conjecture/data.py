@@ -13,6 +13,7 @@ import contextlib
 import math
 import time
 from collections import defaultdict
+from collections.abc import Iterable, Iterator, Sequence
 from enum import IntEnum
 from random import Random
 from sys import float_info
@@ -20,19 +21,9 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    DefaultDict,
-    Dict,
-    FrozenSet,
-    Iterable,
-    Iterator,
-    List,
     Literal,
     NoReturn,
     Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Type,
     TypedDict,
     TypeVar,
     Union,
@@ -86,10 +77,10 @@ else:
 
 
 TOP_LABEL = calc_label_from_name("top")
-InterestingOrigin = Tuple[
-    Type[BaseException], str, int, Tuple[Any, ...], Tuple[Tuple[Any, ...], ...]
+InterestingOrigin = tuple[
+    type[BaseException], str, int, tuple[Any, ...], tuple[tuple[Any, ...], ...]
 ]
-TargetObservations = Dict[str, Union[int, float]]
+TargetObservations = dict[str, Union[int, float]]
 
 T = TypeVar("T")
 
@@ -97,7 +88,7 @@ T = TypeVar("T")
 class IntegerKWargs(TypedDict):
     min_value: Optional[int]
     max_value: Optional[int]
-    weights: Optional[Sequence[float]]
+    weights: Optional[dict[int, float]]
     shrink_towards: int
 
 
@@ -129,7 +120,7 @@ IRKWargsType: TypeAlias = Union[
 ]
 IRTypeName: TypeAlias = Literal["integer", "string", "boolean", "float", "bytes"]
 # index, ir_type, kwargs, forced
-MisalignedAt: TypeAlias = Tuple[int, IRTypeName, IRKWargsType, Optional[IRType]]
+MisalignedAt: TypeAlias = tuple[int, IRTypeName, IRKWargsType, Optional[IRType]]
 
 
 class ExtraInformation:
@@ -161,7 +152,7 @@ class StructuralCoverageTag:
     label: int = attr.ib()
 
 
-STRUCTURAL_COVERAGE_CACHE: Dict[int, StructuralCoverageTag] = {}
+STRUCTURAL_COVERAGE_CACHE: dict[int, StructuralCoverageTag] = {}
 
 
 def structural_coverage(label: int) -> StructuralCoverageTag:
@@ -271,7 +262,7 @@ class Example:
         return self.owner.labels[self.owner.label_indices[self.index]]
 
     @property
-    def parent(self):
+    def parent(self) -> Optional[int]:
         """The index of the example that this one is nested directly within."""
         if self.index == 0:
             return None
@@ -298,13 +289,13 @@ class Example:
         return self.owner.ir_ends[self.index]
 
     @property
-    def depth(self):
+    def depth(self) -> int:
         """Depth of this example in the example tree. The top-level example has a
         depth of 0."""
         return self.owner.depths[self.index]
 
     @property
-    def trivial(self):
+    def trivial(self) -> bool:
         """An example is "trivial" if it only contains forced bytes and zero bytes.
         All examples start out as trivial, and then get marked non-trivial when
         we see a byte that is neither forced nor zero."""
@@ -330,7 +321,7 @@ class Example:
         return self.ir_end - self.ir_start
 
     @property
-    def children(self) -> "List[Example]":
+    def children(self) -> "list[Example]":
         """The list of all examples with this as a parent, in increasing index
         order."""
         return [self.owner[i] for i in self.owner.children[self.index]]
@@ -346,12 +337,13 @@ class ExampleProperty:
     """
 
     def __init__(self, examples: "Examples"):
-        self.example_stack: "List[int]" = []
+        self.example_stack: "list[int]" = []
         self.examples = examples
         self.bytes_read = 0
         self.example_count = 0
         self.block_count = 0
         self.ir_node_count = 0
+        self.result: Any = None
 
     def run(self) -> Any:
         """Rerun the test case with this visitor and return the
@@ -414,7 +406,7 @@ class ExampleProperty:
         return self.result
 
 
-def calculated_example_property(cls: Type[ExampleProperty]) -> Any:
+def calculated_example_property(cls: type[ExampleProperty]) -> Any:
     """Given an ``ExampleProperty`` as above we use this decorator
     to transform it into a lazy property on the ``Examples`` class,
     which has as its value the result of calling ``cls.run()``,
@@ -425,7 +417,7 @@ def calculated_example_property(cls: Type[ExampleProperty]) -> Any:
     name = cls.__name__
     cache_name = "__" + name
 
-    def lazy_calculate(self: "Examples") -> IntList:
+    def lazy_calculate(self: "Examples") -> Any:
         result = getattr(self, cache_name, None)
         if result is None:
             result = cls(self).run()
@@ -457,15 +449,22 @@ class ExampleRecord:
     """
 
     def __init__(self) -> None:
-        self.labels: List[int] = []
-        self.__index_of_labels: "Optional[Dict[int, int]]" = {}
+        self.labels: list[int] = []
+        self.__index_of_labels: "dict[int, int] | None" = {}
         self.trail = IntList()
-        self.ir_nodes: List[IRNode] = []
+        self.ir_nodes: list[IRNode] = []
 
     def freeze(self) -> None:
         self.__index_of_labels = None
 
-    def record_ir_draw(self, ir_type, value, *, kwargs, was_forced):
+    def record_ir_draw(
+        self,
+        ir_type: IRTypeName,
+        value: IRType,
+        *,
+        kwargs: IRKWargsType,
+        was_forced: bool,
+    ) -> None:
         self.trail.append(IR_NODE_RECORD)
         node = IRNode(
             ir_type=ir_type,
@@ -514,10 +513,10 @@ class Examples:
             STOP_EXAMPLE_DISCARD_RECORD
         ) + record.trail.count(STOP_EXAMPLE_NO_DISCARD_RECORD)
         self.blocks = blocks
-        self.__children: "Optional[List[Sequence[int]]]" = None
+        self.__children: "list[Sequence[int]] | None" = None
 
     class _starts_and_ends(ExampleProperty):
-        def begin(self):
+        def begin(self) -> None:
             self.starts = IntList.of_length(len(self.examples))
             self.ends = IntList.of_length(len(self.examples))
 
@@ -527,10 +526,10 @@ class Examples:
         def stop_example(self, i: int, *, discarded: bool) -> None:
             self.ends[i] = self.bytes_read
 
-        def finish(self) -> Tuple[IntList, IntList]:
+        def finish(self) -> tuple[IntList, IntList]:
             return (self.starts, self.ends)
 
-    starts_and_ends: "Tuple[IntList, IntList]" = calculated_example_property(
+    starts_and_ends: "tuple[IntList, IntList]" = calculated_example_property(
         _starts_and_ends
     )
 
@@ -543,7 +542,7 @@ class Examples:
         return self.starts_and_ends[1]
 
     class _ir_starts_and_ends(ExampleProperty):
-        def begin(self):
+        def begin(self) -> None:
             self.starts = IntList.of_length(len(self.examples))
             self.ends = IntList.of_length(len(self.examples))
 
@@ -553,10 +552,10 @@ class Examples:
         def stop_example(self, i: int, *, discarded: bool) -> None:
             self.ends[i] = self.ir_node_count
 
-        def finish(self) -> Tuple[IntList, IntList]:
+        def finish(self) -> tuple[IntList, IntList]:
             return (self.starts, self.ends)
 
-    ir_starts_and_ends: "Tuple[IntList, IntList]" = calculated_example_property(
+    ir_starts_and_ends: "tuple[IntList, IntList]" = calculated_example_property(
         _ir_starts_and_ends
     )
 
@@ -570,21 +569,21 @@ class Examples:
 
     class _discarded(ExampleProperty):
         def begin(self) -> None:
-            self.result: "Set[int]" = set()  # type: ignore  # IntList in parent class
+            self.result: "set[int]" = set()
 
-        def finish(self) -> FrozenSet[int]:
+        def finish(self) -> frozenset[int]:
             return frozenset(self.result)
 
         def stop_example(self, i: int, *, discarded: bool) -> None:
             if discarded:
                 self.result.add(i)
 
-    discarded: FrozenSet[int] = calculated_example_property(_discarded)
+    discarded: frozenset[int] = calculated_example_property(_discarded)
 
     class _trivial(ExampleProperty):
         def begin(self) -> None:
             self.nontrivial = IntList.of_length(len(self.examples))
-            self.result: "Set[int]" = set()  # type: ignore  # IntList in parent class
+            self.result: "set[int]" = set()
 
         def block(self, i: int) -> None:
             if not self.examples.blocks.trivial(i):
@@ -597,10 +596,10 @@ class Examples:
             else:
                 self.result.add(i)
 
-        def finish(self) -> FrozenSet[int]:
+        def finish(self) -> frozenset[int]:
             return frozenset(self.result)
 
-    trivial: FrozenSet[int] = calculated_example_property(_trivial)
+    trivial: frozenset[int] = calculated_example_property(_trivial)
 
     class _parentage(ExampleProperty):
         def stop_example(self, i: int, *, discarded: bool) -> None:
@@ -610,7 +609,7 @@ class Examples:
     parentage: IntList = calculated_example_property(_parentage)
 
     class _depths(ExampleProperty):
-        def begin(self):
+        def begin(self) -> None:
             self.result = IntList.of_length(len(self.examples))
 
         def start_example(self, i: int, label_index: int) -> None:
@@ -619,13 +618,13 @@ class Examples:
     depths: IntList = calculated_example_property(_depths)
 
     class _ir_tree_nodes(ExampleProperty):
-        def begin(self):
+        def begin(self) -> None:
             self.result = []
 
-        def ir_node(self, ir_node):
+        def ir_node(self, ir_node: "IRNode") -> None:
             self.result.append(ir_node)
 
-    ir_tree_nodes: "List[IRNode]" = calculated_example_property(_ir_tree_nodes)
+    ir_tree_nodes: "list[IRNode]" = calculated_example_property(_ir_tree_nodes)
 
     class _label_indices(ExampleProperty):
         def start_example(self, i: int, label_index: int) -> None:
@@ -635,7 +634,7 @@ class Examples:
 
     class _mutator_groups(ExampleProperty):
         def begin(self) -> None:
-            self.groups: "Dict[int, Set[Tuple[int, int]]]" = defaultdict(set)
+            self.groups: "dict[int, set[tuple[int, int]]]" = defaultdict(set)
 
         def start_example(self, i: int, label_index: int) -> None:
             # TODO should we discard start == end cases? occurs for eg st.data()
@@ -644,17 +643,17 @@ class Examples:
             key = (self.examples[i].ir_start, self.examples[i].ir_end)
             self.groups[label_index].add(key)
 
-        def finish(self) -> Iterable[Set[Tuple[int, int]]]:
+        def finish(self) -> Iterable[set[tuple[int, int]]]:
             # Discard groups with only one example, since the mutator can't
             # do anything useful with them.
             return [g for g in self.groups.values() if len(g) >= 2]
 
-    mutator_groups: List[Set[Tuple[int, int]]] = calculated_example_property(
+    mutator_groups: list[set[tuple[int, int]]] = calculated_example_property(
         _mutator_groups
     )
 
     @property
-    def children(self) -> List[Sequence[int]]:
+    def children(self) -> list[Sequence[int]]:
         if self.__children is None:
             children = [IntList() for _ in range(len(self))]
             for i, p in enumerate(self.parentage):
@@ -714,7 +713,7 @@ class Block:
     all_zero: bool = attr.ib(repr=False)
 
     @property
-    def bounds(self) -> Tuple[int, int]:
+    def bounds(self) -> tuple[int, int]:
         return (self.start, self.end)
 
     @property
@@ -745,7 +744,7 @@ class Blocks:
 
     __slots__ = ("endpoints", "owner", "__blocks", "__count", "__sparse")
     owner: "Union[ConjectureData, ConjectureResult, None]"
-    __blocks: Union[Dict[int, Block], List[Optional[Block]]]
+    __blocks: Union[dict[int, Block], list[Optional[Block]]]
 
     def __init__(self, owner: "ConjectureData") -> None:
         self.owner = owner
@@ -780,7 +779,7 @@ class Blocks:
         """Equivalent to self[i].end."""
         return self.endpoints[i]
 
-    def all_bounds(self) -> Iterable[Tuple[int, int]]:
+    def all_bounds(self) -> Iterable[tuple[int, int]]:
         """Equivalent to [(b.start, b.end) for b in self]."""
         prev = 0
         for e in self.endpoints:
@@ -788,7 +787,7 @@ class Blocks:
             prev = e
 
     @property
-    def last_block_length(self):
+    def last_block_length(self) -> int:
         return self.end(-1) - self.start(-1)
 
     def __len__(self) -> int:
@@ -829,7 +828,7 @@ class Blocks:
         # stop being sparse and want to use most of the blocks. Switch
         # over to a list at that point.
         if self.__sparse and len(self.__blocks) * 2 >= len(self):
-            new_blocks: "List[Optional[Block]]" = [None] * len(self)
+            new_blocks: "list[Block | None]" = [None] * len(self)
             assert isinstance(self.__blocks, dict)
             for k, v in self.__blocks.items():
                 new_blocks[k] = v
@@ -869,7 +868,7 @@ class Blocks:
 
         return result
 
-    def __check_completion(self):
+    def __check_completion(self) -> None:
         """The list of blocks is complete if we have created every ``Block``
         object that we currently good and know that no more will be created.
 
@@ -886,7 +885,7 @@ class Blocks:
             yield self[i]
 
     def __repr__(self) -> str:
-        parts: "List[str]" = []
+        parts: "list[str]" = []
         for i in range(len(self)):
             b = self.__known_block(i)
             if b is None:
@@ -899,7 +898,7 @@ class Blocks:
 class _Overrun:
     status = Status.OVERRUN
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "Overrun"
 
 
@@ -1052,7 +1051,7 @@ class IRNode:
             and self.was_forced == other.was_forced
         )
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(
             (
                 self.ir_type,
@@ -1062,7 +1061,7 @@ class IRNode:
             )
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         # repr to avoid "BytesWarning: str() on a bytes instance" for bytes nodes
         forced_marker = " [forced]" if self.was_forced else ""
         return f"{self.ir_type} {self.value!r}{forced_marker} {self.kwargs!r}"
@@ -1164,11 +1163,11 @@ class ConjectureResult:
     extra_information: Optional[ExtraInformation] = attr.ib()
     has_discards: bool = attr.ib()
     target_observations: TargetObservations = attr.ib()
-    tags: FrozenSet[StructuralCoverageTag] = attr.ib()
-    forced_indices: FrozenSet[int] = attr.ib(repr=False)
+    tags: frozenset[StructuralCoverageTag] = attr.ib()
+    forced_indices: frozenset[int] = attr.ib(repr=False)
     examples: Examples = attr.ib(repr=False, eq=False)
-    arg_slices: Set[Tuple[int, int]] = attr.ib(repr=False)
-    slice_comments: Dict[Tuple[int, int], str] = attr.ib(repr=False)
+    arg_slices: set[tuple[int, int]] = attr.ib(repr=False)
+    slice_comments: dict[tuple[int, int], str] = attr.ib(repr=False)
     misaligned_at: Optional[MisalignedAt] = attr.ib(repr=False)
 
     index: int = attr.ib(init=False)
@@ -1192,7 +1191,7 @@ _Lifetime: TypeAlias = Literal["test_case", "test_function"]
 class _BackendInfoMsg(TypedDict):
     type: str
     title: str
-    content: Union[str, Dict[str, Any]]
+    content: Union[str, dict[str, Any]]
 
 
 class PrimitiveProvider(abc.ABC):
@@ -1246,11 +1245,12 @@ class PrimitiveProvider(abc.ABC):
         symbolic before calling `realize`, so you should handle the case where
         `value` is non-symbolic.
 
-        The returned value should be non-symbolic.
+        The returned value should be non-symbolic.  If you cannot provide a value,
+        raise hypothesis.errors.BackendCannotProceed("discard_test_case")
         """
         return value
 
-    def observe_test_case(self) -> Dict[str, Any]:
+    def observe_test_case(self) -> dict[str, Any]:
         """Called at the end of the test case when observability mode is active.
 
         The return value should be a non-symbolic json-encodable dictionary,
@@ -1287,7 +1287,7 @@ class PrimitiveProvider(abc.ABC):
         max_value: Optional[int] = None,
         *,
         # weights are for choosing an element index from a bounded range
-        weights: Optional[Sequence[float]] = None,
+        weights: Optional[dict[int, float]] = None,
         shrink_towards: int = 0,
         forced: Optional[int] = None,
         fake_forced: bool = False,
@@ -1456,8 +1456,7 @@ class HypothesisProvider(PrimitiveProvider):
         min_value: Optional[int] = None,
         max_value: Optional[int] = None,
         *,
-        # weights are for choosing an element index from a bounded range
-        weights: Optional[Sequence[float]] = None,
+        weights: Optional[dict[int, float]] = None,
         shrink_towards: int = 0,
         forced: Optional[int] = None,
         fake_forced: bool = False,
@@ -1475,22 +1474,31 @@ class HypothesisProvider(PrimitiveProvider):
             assert min_value is not None
             assert max_value is not None
 
-            sampler = Sampler(weights, observe=False)
-            gap = max_value - shrink_towards
+            # format of weights is a mapping of ints to p, where sum(p) < 1.
+            # The remaining probability mass is uniformly distributed over
+            # *all* ints (not just the unmapped ones; this is somewhat undesirable,
+            # but simplifies things).
+            #
+            # We assert that sum(p) is strictly less than 1 because it simplifies
+            # handling forced values when we can force into the unmapped probability
+            # mass. We should eventually remove this restriction.
+            sampler = Sampler(
+                [1 - sum(weights.values()), *weights.values()], observe=False
+            )
+            # if we're forcing, it's easiest to force into the unmapped probability
+            # mass and then force the drawn value after.
+            idx = sampler.sample(
+                self._cd, forced=None if forced is None else 0, fake_forced=fake_forced
+            )
 
-            forced_idx = None
-            if forced is not None:
-                if forced >= shrink_towards:
-                    forced_idx = forced - shrink_towards
-                else:
-                    forced_idx = shrink_towards + gap - forced
-            idx = sampler.sample(self._cd, forced=forced_idx, fake_forced=fake_forced)
-
-            # For range -2..2, interpret idx = 0..4 as [0, 1, 2, -1, -2]
-            if idx <= gap:
-                return shrink_towards + idx
-            else:
-                return shrink_towards - (idx - gap)
+            return self._draw_bounded_integer(
+                min_value,
+                max_value,
+                # implicit reliance on dicts being sorted for determinism
+                forced=forced if idx == 0 else list(weights)[idx - 1],
+                center=shrink_towards,
+                fake_forced=fake_forced,
+            )
 
         if min_value is None and max_value is None:
             return self._draw_unbounded_integer(forced=forced, fake_forced=fake_forced)
@@ -1856,12 +1864,12 @@ class HypothesisProvider(PrimitiveProvider):
         max_value: float,
         allow_nan: bool,
         smallest_nonzero_magnitude: float,
-    ) -> Tuple[
+    ) -> tuple[
         Optional[Sampler],
         Optional[Literal[0, 1]],
         Optional[Callable[[float], float]],
         Optional[Callable[[float], float]],
-        List[float],
+        list[float],
     ]:
         """
         Caches initialization logic for draw_float, as an alternative to
@@ -1894,12 +1902,12 @@ class HypothesisProvider(PrimitiveProvider):
         max_value: float,
         allow_nan: bool,
         smallest_nonzero_magnitude: float,
-    ) -> Tuple[
+    ) -> tuple[
         Optional[Sampler],
         Optional[Literal[0, 1]],
         Optional[Callable[[float], float]],
         Optional[Callable[[float], float]],
-        List[float],
+        list[float],
     ]:
         if smallest_nonzero_magnitude == 0.0:  # pragma: no cover
             raise FloatingPointError(
@@ -1911,8 +1919,7 @@ class HypothesisProvider(PrimitiveProvider):
                 "writeup - and good luck!"
             )
 
-        def permitted(f):
-            assert isinstance(f, float)
+        def permitted(f: float) -> bool:
             if math.isnan(f):
                 return allow_nan
             if 0 < abs(f) < smallest_nonzero_magnitude:
@@ -1966,7 +1973,7 @@ class ConjectureData:
     @classmethod
     def for_buffer(
         cls,
-        buffer: Union[List[int], bytes],
+        buffer: Union[list[int], bytes],
         *,
         observer: Optional[DataObserver] = None,
         provider: Union[type, PrimitiveProvider] = HypothesisProvider,
@@ -1978,7 +1985,7 @@ class ConjectureData:
     @classmethod
     def for_ir_tree(
         cls,
-        ir_tree_prefix: List[IRNode],
+        ir_tree_prefix: list[IRNode],
         *,
         observer: Optional[DataObserver] = None,
         provider: Union[type, PrimitiveProvider] = HypothesisProvider,
@@ -1998,12 +2005,12 @@ class ConjectureData:
     def __init__(
         self,
         max_length: int,
-        prefix: Union[List[int], bytes, bytearray],
+        prefix: Union[list[int], bytes, bytearray],
         *,
         random: Optional[Random],
         observer: Optional[DataObserver] = None,
         provider: Union[type, PrimitiveProvider] = HypothesisProvider,
-        ir_tree_prefix: Optional[List[IRNode]] = None,
+        ir_tree_prefix: Optional[list[IRNode]] = None,
     ) -> None:
         if observer is None:
             observer = DataObserver()
@@ -2030,11 +2037,11 @@ class ConjectureData:
         global_test_counter += 1
         self.start_time = time.perf_counter()
         self.gc_start_time = gc_cumulative_time()
-        self.events: Dict[str, Union[str, int, float]] = {}
-        self.forced_indices: "Set[int]" = set()
+        self.events: dict[str, Union[str, int, float]] = {}
+        self.forced_indices: "set[int]" = set()
         self.interesting_origin: Optional[InterestingOrigin] = None
-        self.draw_times: "Dict[str, float]" = {}
-        self._stateful_run_times: "DefaultDict[str, float]" = defaultdict(float)
+        self.draw_times: "dict[str, float]" = {}
+        self._stateful_run_times: "defaultdict[str, float]" = defaultdict(float)
         self.max_depth = 0
         self.has_discards = False
 
@@ -2051,8 +2058,8 @@ class ConjectureData:
 
         # Tags which indicate something about which part of the search space
         # this example is in. These are used to guide generation.
-        self.tags: "Set[StructuralCoverageTag]" = set()
-        self.labels_for_structure_stack: "List[Set[int]]" = []
+        self.tags: "set[StructuralCoverageTag]" = set()
+        self.labels_for_structure_stack: "list[set[int]]" = []
 
         # Normally unpopulated but we need this in the niche case
         # that self.as_result() is Overrun but we still want the
@@ -2066,9 +2073,9 @@ class ConjectureData:
 
         # Slice indices for discrete reportable parts that which-parts-matter can
         # try varying, to report if the minimal example always fails anyway.
-        self.arg_slices: Set[Tuple[int, int]] = set()
-        self.slice_comments: Dict[Tuple[int, int], str] = {}
-        self._observability_args: Dict[str, Any] = {}
+        self.arg_slices: set[tuple[int, int]] = set()
+        self.slice_comments: dict[tuple[int, int], str] = {}
+        self._observability_args: dict[str, Any] = {}
         self._observability_predicates: defaultdict = defaultdict(
             lambda: {"satisfied": 0, "unsatisfied": 0}
         )
@@ -2080,7 +2087,7 @@ class ConjectureData:
         self._node_index = 0
         self.start_example(TOP_LABEL)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "ConjectureData(%s, %d bytes%s)" % (
             self.status.name,
             len(self.buffer),
@@ -2117,8 +2124,7 @@ class ConjectureData:
         min_value: Optional[int] = None,
         max_value: Optional[int] = None,
         *,
-        # weights are for choosing an element index from a bounded range
-        weights: Optional[Sequence[float]] = None,
+        weights: Optional[dict[int, float]] = None,
         shrink_towards: int = 0,
         forced: Optional[int] = None,
         fake_forced: bool = False,
@@ -2128,9 +2134,14 @@ class ConjectureData:
         if weights is not None:
             assert min_value is not None
             assert max_value is not None
-            width = max_value - min_value + 1
-            assert width <= 255  # arbitrary practical limit
-            assert len(weights) == width
+            assert len(weights) <= 255  # arbitrary practical limit
+            # We can and should eventually support total weights. But this
+            # complicates shrinking as we can no longer assume we can force
+            # a value to the unmapped probability mass if that mass might be 0.
+            assert sum(weights.values()) < 1
+            # similarly, things get simpler if we assume every value is possible.
+            # we'll want to drop this restriction eventually.
+            assert all(w != 0 for w in weights.values())
 
         if forced is not None and (min_value is None or max_value is None):
             # We draw `forced=forced - shrink_towards` here internally, after clamping.
@@ -2366,18 +2377,7 @@ class ConjectureData:
         if self.provider.avoid_realization:
             return kwargs
 
-        key = []
-        for k, v in kwargs.items():
-            if ir_type == "float" and k in ["min_value", "max_value"]:
-                # handle -0.0 vs 0.0, etc.
-                v = float_to_int(v)
-            elif ir_type == "integer" and k == "weights":
-                # make hashable
-                v = v if v is None else tuple(v)
-            key.append((k, v))
-
-        key = (ir_type, *sorted(key))
-
+        key = (ir_type, *ir_kwargs_key(ir_type, kwargs))
         try:
             return POOLED_KWARGS_CACHE[key]
         except KeyError:

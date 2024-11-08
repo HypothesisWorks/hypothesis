@@ -11,8 +11,10 @@
 import abc
 import enum
 import sys
+import typing
+from collections.abc import Sequence
 from inspect import Parameter as P, Signature
-from typing import Callable, Dict, Generic, List, Sequence, TypeVar, Union
+from typing import Callable, Generic, List as _List, TypeVar, Union
 
 import pytest
 
@@ -279,7 +281,7 @@ class Lines(Sequence[str]):
     """
 
 
-class SpecificDict(Dict[int, int]):
+class SpecificDict(dict[int, int]):
     pass
 
 
@@ -308,10 +310,10 @@ def test_issue_2951_regression():
 
 def test_issue_2951_regression_two_params():
     map_strat = st.builds(SpecificDict, st.dictionaries(st.integers(), st.integers()))
-    expected = repr(st.from_type(Dict[int, int]))
+    expected = repr(st.from_type(dict[int, int]))
     with temp_registered(SpecificDict, map_strat):
         assert st.from_type(SpecificDict) == map_strat
-        assert expected == repr(st.from_type(Dict[int, int]))
+        assert expected == repr(st.from_type(dict[int, int]))
 
 
 @pytest.mark.parametrize(
@@ -332,15 +334,20 @@ def test_generic_origin_with_type_args(generic, strategy):
     assert generic not in types._global_type_lookup
 
 
+skip_39 = pytest.mark.skipif(sys.version_info[:2] == (3, 9), reason="early version")
+
+
 @pytest.mark.parametrize(
     "generic",
     (
         Callable,
-        List,
+        list,
         Sequence,
         # you can register types with all generic parameters
-        List[T],
-        Sequence[T],
+        _List[T],
+        getattr(typing, "Sequence", None)[T],  # pyupgrade workaround
+        pytest.param(list[T], marks=skip_39),
+        pytest.param(Sequence[T], marks=skip_39),
         # User-defined generics should also work
         MyGeneric,
         MyGeneric[T],

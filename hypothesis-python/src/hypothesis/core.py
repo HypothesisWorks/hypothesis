@@ -23,6 +23,7 @@ import unittest
 import warnings
 import zlib
 from collections import defaultdict
+from collections.abc import Coroutine, Generator, Hashable
 from functools import partial
 from random import Random
 from typing import (
@@ -30,13 +31,7 @@ from typing import (
     Any,
     BinaryIO,
     Callable,
-    Coroutine,
-    Generator,
-    Hashable,
-    List,
     Optional,
-    Tuple,
-    Type,
     TypeVar,
     Union,
     overload,
@@ -55,6 +50,7 @@ from hypothesis._settings import (
 )
 from hypothesis.control import BuildContext
 from hypothesis.errors import (
+    BackendCannotProceed,
     DeadlineExceeded,
     DidNotReproduce,
     FailedHealthCheck,
@@ -179,7 +175,7 @@ class example:
         if not (args or kwargs):
             raise InvalidArgument("An example must provide at least one argument")
 
-        self.hypothesis_explicit_examples: List[Example] = []
+        self.hypothesis_explicit_examples: list[Example] = []
         self._this_example = Example(tuple(args), kwargs)
 
     def __call__(self, test: TestFunc) -> TestFunc:
@@ -194,7 +190,7 @@ class example:
         *,
         reason: str = "",
         raises: Union[
-            Type[BaseException], Tuple[Type[BaseException], ...]
+            type[BaseException], tuple[type[BaseException], ...]
         ] = BaseException,
     ) -> "example":
         """Mark this example as an expected failure, similarly to
@@ -209,7 +205,7 @@ class example:
             @example(...).xfail()
             @example(...).xfail(reason="Prices must be non-negative")
             @example(...).xfail(raises=(KeyError, ValueError))
-            @example(...).xfail(sys.version_info[:2] >= (3, 9), reason="needs py39+")
+            @example(...).xfail(sys.version_info[:2] >= (3, 12), reason="needs py 3.12")
             @example(...).xfail(condition=sys.platform != "linux", raises=OSError)
             def test(x):
                 pass
@@ -229,21 +225,6 @@ class example:
                     # strategy.  If we happen to generate y=0, the test will fail
                     # because only the explicit example is treated as xfailing.
                     x / y
-
-        Note that this "method chaining" syntax requires Python 3.9 or later, for
-        :pep:`614` relaxing grammar restrictions on decorators.  If you need to
-        support older versions of Python, you can use an identity function:
-
-        .. code-block:: python
-
-            def identity(x):
-                return x
-
-
-            @identity(example(...).xfail())
-            def test(x):
-                pass
-
         """
         check_type(bool, condition, "condition")
         check_type(str, reason, "reason")
@@ -284,21 +265,6 @@ class example:
             @example(...).via("hy-target-$label")
             def test(x):
                 pass
-
-        Note that this "method chaining" syntax requires Python 3.9 or later, for
-        :pep:`614` relaxing grammar restrictions on decorators.  If you need to
-        support older versions of Python, you can use an identity function:
-
-        .. code-block:: python
-
-            def identity(x):
-                return x
-
-
-            @identity(example(...).via("label"))
-            def test(x):
-                pass
-
         """
         if not isinstance(whence, str):
             raise InvalidArgument(".via() must be passed a string")
@@ -773,8 +739,8 @@ def get_executor(runner):
 def unwrap_exception_group() -> Generator[None, None, None]:
     T = TypeVar("T", bound=BaseException)
 
-    def _flatten_group(excgroup: BaseExceptionGroup[T]) -> List[T]:
-        found_exceptions: List[T] = []
+    def _flatten_group(excgroup: BaseExceptionGroup[T]) -> list[T]:
+        found_exceptions: list[T] = []
         for exc in excgroup.exceptions:
             if isinstance(exc, BaseExceptionGroup):
                 found_exceptions.extend(_flatten_group(exc))
@@ -804,7 +770,7 @@ def unwrap_exception_group() -> Generator[None, None, None]:
             raise
 
         # single marker exception - reraise it
-        flattened_non_frozen_exceptions: List[BaseException] = _flatten_group(
+        flattened_non_frozen_exceptions: list[BaseException] = _flatten_group(
             non_frozen_exceptions
         )
         if len(flattened_non_frozen_exceptions) == 1:
@@ -1125,7 +1091,7 @@ class StateForActualGivenExecution:
                 # This was unexpected, meaning that the assume was flaky.
                 # Report it as such.
                 raise self._flaky_replay_to_failure(err, e) from None
-        except StopTest:
+        except (StopTest, BackendCannotProceed):
             # The engine knows how to handle this control exception, so it's
             # OK to re-raise it.
             raise
@@ -1184,10 +1150,15 @@ class StateForActualGivenExecution:
                     self.settings.backend != "hypothesis"
                     and not getattr(runner, "_switch_to_hypothesis_provider", False)
                 )
-                data._observability_args = data.provider.realize(
-                    data._observability_args
-                )
-                self._string_repr = data.provider.realize(self._string_repr)
+                try:
+                    data._observability_args = data.provider.realize(
+                        data._observability_args
+                    )
+                    self._string_repr = data.provider.realize(self._string_repr)
+                except BackendCannotProceed:
+                    data._observability_args = {}
+                    self._string_repr = "<backend failed to realize symbolic arguments>"
+
                 tc = make_testcase(
                     start_timestamp=self._start_timestamp,
                     test_name_or_nodeid=self.test_identifier,
@@ -1398,10 +1369,17 @@ class StateForActualGivenExecution:
                 # finished and they can't draw more data from it.
                 ran_example.freeze()  # pragma: no branch
                 # No branch is possible here because we never have an active exception.
-        _raise_to_user(errors_to_report, self.settings, report_lines)
+        _raise_to_user(
+            errors_to_report,
+            self.settings,
+            report_lines,
+            verified_by=runner._verified_by,
+        )
 
 
-def _raise_to_user(errors_to_report, settings, target_lines, trailer=""):
+def _raise_to_user(
+    errors_to_report, settings, target_lines, trailer="", verified_by=None
+):
     """Helper function for attaching notes and grouping multiple errors."""
     failing_prefix = "Falsifying example: "
     ls = []
@@ -1409,7 +1387,7 @@ def _raise_to_user(errors_to_report, settings, target_lines, trailer=""):
         for note in fragments:
             add_note(err, note)
             if note.startswith(failing_prefix):
-                ls.append(note[len(failing_prefix) :])
+                ls.append(note.removeprefix(failing_prefix))
     if current_pytest_item.value:
         current_pytest_item.value._hypothesis_failing_examples = ls
 
@@ -1425,6 +1403,11 @@ def _raise_to_user(errors_to_report, settings, target_lines, trailer=""):
     if settings.verbosity >= Verbosity.normal:
         for line in target_lines:
             add_note(the_error_hypothesis_found, line)
+
+    if verified_by:
+        msg = f"backend={verified_by!r} claimed to verify this test passes - please send them a bug report!"
+        add_note(err, msg)
+
     raise the_error_hypothesis_found
 
 
@@ -1643,23 +1626,23 @@ def given(
                     "to ensure that each example is run in a separate "
                     "database transaction."
                 )
-            if settings.database is not None:
-                nonlocal prev_self
-                # Check selfy really is self (not e.g. a mock) before we health-check
-                cur_self = (
-                    stuff.selfy
-                    if getattr(type(stuff.selfy), test.__name__, None) is wrapped_test
-                    else None
+
+            nonlocal prev_self
+            # Check selfy really is self (not e.g. a mock) before we health-check
+            cur_self = (
+                stuff.selfy
+                if getattr(type(stuff.selfy), test.__name__, None) is wrapped_test
+                else None
+            )
+            if prev_self is Unset:
+                prev_self = cur_self
+            elif cur_self is not prev_self:
+                msg = (
+                    f"The method {test.__qualname__} was called from multiple "
+                    "different executors. This may lead to flaky tests and "
+                    "nonreproducible errors when replaying from database."
                 )
-                if prev_self is Unset:
-                    prev_self = cur_self
-                elif cur_self is not prev_self:
-                    msg = (
-                        f"The method {test.__qualname__} was called from multiple "
-                        "different executors. This may lead to flaky tests and "
-                        "nonreproducible errors when replaying from database."
-                    )
-                    fail_health_check(settings, msg, HealthCheck.differing_executors)
+                fail_health_check(settings, msg, HealthCheck.differing_executors)
 
             state = StateForActualGivenExecution(
                 stuff, test, settings, random, wrapped_test
@@ -1754,7 +1737,6 @@ def given(
                 # The exception caught here should either be an actual test
                 # failure (or BaseExceptionGroup), or some kind of fatal error
                 # that caused the engine to stop.
-
                 generated_seed = wrapped_test._hypothesis_internal_use_generated_seed
                 with local_settings(settings):
                     if not (state.failed_normally or generated_seed is None):
@@ -1900,7 +1882,7 @@ def find(
         )
     specifier.validate()
 
-    last: List[Ex] = []
+    last: list[Ex] = []
 
     @settings
     @given(specifier)

@@ -214,8 +214,8 @@ def temp_registered(type_, strat_or_factory):
     previously-registered strategy which we got wrong in a few places.
     """
     prev = _global_type_lookup.get(type_)
+    register_type_strategy(type_, strat_or_factory)
     try:
-        register_type_strategy(type_, strat_or_factory)
         yield
     finally:
         del _global_type_lookup[type_]

@@ -64,6 +64,7 @@ def test_default_health_check_can_weaken_specific():
     test()
 
 
+@pytest.mark.skipif(settings._current_profile == "crosshair", reason="nondeterministic")
 def test_suppressing_filtering_health_check():
     forbidden = set()
 

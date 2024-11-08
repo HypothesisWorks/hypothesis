@@ -17,22 +17,12 @@ execution to date.
 """
 import collections
 import inspect
+from collections.abc import Iterable, Sequence
 from copy import copy
 from functools import lru_cache
 from io import StringIO
 from time import perf_counter
-from typing import (
-    Any,
-    Callable,
-    ClassVar,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Sequence,
-    Union,
-    overload,
-)
+from typing import Any, Callable, ClassVar, Optional, Union, overload
 from unittest import TestCase
 
 import attr
@@ -196,6 +186,10 @@ def run_state_machine_as_test(state_machine_factory, *, settings=None, _min_step
                     for k, v in list(data.items()):
                         if isinstance(v, VarReference):
                             data[k] = machine.names_to_values[v.name]
+                        elif isinstance(v, list) and all(
+                            isinstance(item, VarReference) for item in v
+                        ):
+                            data[k] = [machine.names_to_values[item.name] for item in v]
 
                     label = f"execute:rule:{rule.function.__name__}"
                     start = perf_counter()
@@ -270,17 +264,17 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
     At any given point a random applicable rule will be executed.
     """
 
-    _rules_per_class: ClassVar[Dict[type, List[classmethod]]] = {}
-    _invariants_per_class: ClassVar[Dict[type, List[classmethod]]] = {}
-    _initializers_per_class: ClassVar[Dict[type, List[classmethod]]] = {}
+    _rules_per_class: ClassVar[dict[type, list[classmethod]]] = {}
+    _invariants_per_class: ClassVar[dict[type, list[classmethod]]] = {}
+    _initializers_per_class: ClassVar[dict[type, list[classmethod]]] = {}
 
     def __init__(self) -> None:
         if not self.rules():
             raise InvalidDefinition(f"Type {type(self).__name__} defines no rules")
-        self.bundles: Dict[str, list] = {}
+        self.bundles: dict[str, list] = {}
         self.names_counters: collections.Counter = collections.Counter()
         self.names_list: list[str] = []
-        self.names_to_values: Dict[str, Any] = {}
+        self.names_to_values: dict[str, Any] = {}
         self.__stream = StringIO()
         self.__printer = RepresentationPrinter(
             self.__stream, context=_current_build_context.value
@@ -300,6 +294,10 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
     def _pretty_print(self, value):
         if isinstance(value, VarReference):
             return value.name
+        elif isinstance(value, list) and all(
+            isinstance(item, VarReference) for item in value
+        ):
+            return "[" + ", ".join([item.name for item in value]) + "]"
         self.__stream.seek(0)
         self.__stream.truncate(0)
         self.__printer.output_width = 0
@@ -457,11 +455,8 @@ class Rule:
         self.arguments_strategies = {}
         bundles = []
         for k, v in sorted(self.arguments.items()):
-            assert not isinstance(v, BundleReferenceStrategy)
             if isinstance(v, Bundle):
                 bundles.append(v)
-                consume = isinstance(v, BundleConsumer)
-                v = BundleReferenceStrategy(v.name, consume=consume)
             self.arguments_strategies[k] = v
         self.bundles = tuple(bundles)
 
@@ -472,26 +467,6 @@ class Rule:
 
 
 self_strategy = st.runner()
-
-
-class BundleReferenceStrategy(SearchStrategy):
-    def __init__(self, name: str, *, consume: bool = False):
-        self.name = name
-        self.consume = consume
-
-    def do_draw(self, data):
-        machine = data.draw(self_strategy)
-        bundle = machine.bundle(self.name)
-        if not bundle:
-            data.mark_invalid(f"Cannot draw from empty bundle {self.name!r}")
-        # Shrink towards the right rather than the left. This makes it easier
-        # to delete data generated earlier, as when the error is towards the
-        # end there can be a lot of hard to remove padding.
-        position = data.draw_integer(0, len(bundle) - 1, shrink_towards=len(bundle))
-        if self.consume:
-            return bundle.pop(position)  # pragma: no cover  # coverage is flaky here
-        else:
-            return bundle[position]
 
 
 class Bundle(SearchStrategy[Ex]):
@@ -516,17 +491,36 @@ class Bundle(SearchStrategy[Ex]):
     drawn from this bundle will be consumed (as above) when requested.
     """
 
-    def __init__(self, name: str, *, consume: bool = False) -> None:
+    def __init__(
+        self, name: str, *, consume: bool = False, draw_references: bool = True
+    ) -> None:
         self.name = name
-        self.__reference_strategy = BundleReferenceStrategy(name, consume=consume)
+        self.consume = consume
+        self.draw_references = draw_references
 
     def do_draw(self, data):
         machine = data.draw(self_strategy)
-        reference = data.draw(self.__reference_strategy)
+
+        bundle = machine.bundle(self.name)
+        if not bundle:
+            data.mark_invalid(f"Cannot draw from empty bundle {self.name!r}")
+        # Shrink towards the right rather than the left. This makes it easier
+        # to delete data generated earlier, as when the error is towards the
+        # end there can be a lot of hard to remove padding.
+        position = data.draw_integer(0, len(bundle) - 1, shrink_towards=len(bundle))
+        if self.consume:
+            reference = bundle.pop(
+                position
+            )  # pragma: no cover  # coverage is flaky here
+        else:
+            reference = bundle[position]
+
+        if self.draw_references:
+            return reference
         return machine.names_to_values[reference.name]
 
     def __repr__(self):
-        consume = self.__reference_strategy.consume
+        consume = self.consume
         if consume is False:
             return f"Bundle(name={self.name!r})"
         return f"Bundle(name={self.name!r}, {consume=})"
@@ -542,10 +536,12 @@ class Bundle(SearchStrategy[Ex]):
         machine = data.draw(self_strategy)
         return bool(machine.bundle(self.name))
 
-
-class BundleConsumer(Bundle[Ex]):
-    def __init__(self, bundle: Bundle[Ex]) -> None:
-        super().__init__(bundle.name, consume=True)
+    def flatmap(self, expand):
+        if self.draw_references:
+            return type(self)(
+                self.name, consume=self.consume, draw_references=False
+            ).flatmap(expand)
+        return super().flatmap(expand)
 
 
 def consumes(bundle: Bundle[Ex]) -> SearchStrategy[Ex]:
@@ -563,7 +559,10 @@ def consumes(bundle: Bundle[Ex]) -> SearchStrategy[Ex]:
     """
     if not isinstance(bundle, Bundle):
         raise TypeError("Argument to be consumed must be a bundle.")
-    return BundleConsumer(bundle)
+    return type(bundle)(
+        name=bundle.name,
+        consume=True,
+    )
 
 
 @attr.s()
@@ -610,7 +609,7 @@ def _convert_targets(targets, target):
                 )
             raise InvalidArgument(msg % (t, type(t)))
         while isinstance(t, Bundle):
-            if isinstance(t, BundleConsumer):
+            if t.consume:
                 note_deprecation(
                     f"Using consumes({t.name}) doesn't makes sense in this context.  "
                     "This will be an error in a future version of Hypothesis.",
@@ -642,15 +641,15 @@ _RuleWrapper = Callable[[_RuleType[Ex]], _RuleType[Ex]]
 # a `SearchStrategy`, which the concrete implementation does not accept.
 #
 # Omitted `targets` parameters, where the default value is used, are typed with
-# a special `_OmittedArgument` type. We cannot type them as `Tuple[()]`, because
-# `Tuple[()]` is a subtype of `Sequence[Bundle[Ex]]`, leading to signature
+# a special `_OmittedArgument` type. We cannot type them as `tuple[()]`, because
+# `tuple[()]` is a subtype of `Sequence[Bundle[Ex]]`, leading to signature
 # overlaps with incompatible return types. The `_OmittedArgument` type will never be
 # encountered at runtime, and exists solely to annotate the default of `targets`.
 # PEP 661 (Sentinel Values) might provide a more elegant alternative in the future.
 #
-# We could've also annotated `targets` as `Tuple[_OmittedArgument]`, but then when
+# We could've also annotated `targets` as `tuple[_OmittedArgument]`, but then when
 # both `target` and `targets` are provided, mypy describes the type error as an
-# invalid argument type for `targets` (expected `Tuple[_OmittedArgument]`, got ...).
+# invalid argument type for `targets` (expected `tuple[_OmittedArgument]`, got ...).
 # By annotating it as a bare `_OmittedArgument` type, mypy's error will warn that
 # there is no overloaded signature matching the call, which is more descriptive.
 #
@@ -1007,6 +1006,10 @@ class RuleStrategy(SearchStrategy):
         return (rule, arguments)
 
     def is_valid(self, rule):
+        for b in rule.bundles:
+            if not self.machine.bundle(b.name):
+                return False
+
         predicates = self.machine._observability_predicates
         desc = f"{self.machine.__class__.__qualname__}, rule {rule.function.__name__},"
         for pred in rule.preconditions:
@@ -1016,8 +1019,4 @@ class RuleStrategy(SearchStrategy):
             if not meets_precond:
                 return False
 
-        for b in rule.bundles:
-            bundle = self.machine.bundle(b.name)
-            if not bundle:
-                return False
         return True

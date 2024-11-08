@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import datetime as dt
 import decimal
 import math
 import operator
@@ -624,3 +625,20 @@ def test_regex_filter_rewriting(data, strategy, pattern, method):
 @given(st.text().filter(re.compile("abc").sub))
 def test_error_on_method_which_requires_multiple_args(_):
     pass
+
+
+def test_dates_filter_rewriting():
+    today = dt.date.today()
+
+    assert st.dates().filter(partial(operator.lt, dt.date.max)).is_empty
+    assert st.dates().filter(partial(operator.gt, dt.date.min)).is_empty
+    assert st.dates(min_value=today).filter(partial(operator.gt, today)).is_empty
+    assert st.dates(max_value=today).filter(partial(operator.lt, today)).is_empty
+
+    bare = unwrap_strategies(st.dates())
+    assert bare.filter(partial(operator.ge, dt.date.max)) is bare
+    assert bare.filter(partial(operator.le, dt.date.min)) is bare
+
+    new = bare.filter(partial(operator.le, today))
+    assert not new.is_empty
+    assert new is not bare

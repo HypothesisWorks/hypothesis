@@ -119,14 +119,15 @@ def test_errors_with_did_not_reproduce_if_rejected():
 
 
 def test_prints_reproduction_if_requested():
-    failing_example = [None]
+    failing_example = None
 
     @settings(print_blob=True, database=None, max_examples=100)
     @given(st.integers())
     def test(i):
-        if failing_example[0] is None and i != 0:
-            failing_example[0] = i
-        assert i not in failing_example
+        nonlocal failing_example
+        if failing_example is None and i != 0:
+            failing_example = i
+        assert i != failing_example
 
     with pytest.raises(AssertionError) as err:
         test()

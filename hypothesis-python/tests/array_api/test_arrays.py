@@ -8,8 +8,6 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import sys
-
 import pytest
 
 from hypothesis import given, settings, strategies as st
@@ -295,7 +293,6 @@ def test_may_not_fill_unique_array_with_non_nan(xp, xps):
         check_can_generate_examples(strat)
 
 
-@pytest.mark.skipif(sys.version_info[:2] <= (3, 8), reason="no complex")
 def test_floating_point_array():
     import warnings
 

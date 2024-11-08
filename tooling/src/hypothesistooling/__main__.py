@@ -208,7 +208,7 @@ def format():
 
     codespell("--write-changes", *files_to_format, *doc_files_to_format)
     pip_tool("ruff", "check", "--fix-only", ".")
-    pip_tool("shed", *files_to_format, *doc_files_to_format)
+    pip_tool("shed", "--py39-plus", *files_to_format, *doc_files_to_format)
 
 
 VALID_STARTS = (HEADER.split()[0], "#!/usr/bin/env python")
@@ -290,7 +290,7 @@ def update_python_versions():
     ).group(1)
     best = {}
     for line in map(str.strip, result.splitlines()):
-        if m := re.match(r"(?:pypy)?3\.(?:[89]|\d\dt?)", line):
+        if m := re.match(r"(?:pypy)?3\.(?:9|\d\dt?)", line):
             key = m.group()
             curr = best.get(key, line)
             if (
@@ -446,16 +446,14 @@ def run_tox(task, version, *args):
 # When a version is added or removed, manually update the env lists in tox.ini and
 # workflows/main.yml, and the `Programming Language ::` specifiers in setup.py
 PYTHONS = {
-    "3.8": "3.8.20",
     "3.9": "3.9.20",
     "3.10": "3.10.15",
     "3.11": "3.11.10",
-    "3.12": "3.12.6",
-    "3.13": "3.13.0rc2",
+    "3.12": "3.12.7",
+    "3.13": "3.13.0",
     "3.13t": "3.13t-dev",
     "3.14": "3.14-dev",
     "3.14t": "3.14t-dev",
-    "pypy3.8": "pypy3.8-7.3.11",
     "pypy3.9": "pypy3.9-7.3.16",
     "pypy3.10": "pypy3.10-7.3.17",
 }
@@ -525,7 +523,7 @@ standard_tox_task("py39-pandas12", py="3.9")
 for kind in ("cover", "nocover", "niche", "custom"):
     standard_tox_task(f"crosshair-{kind}")
 
-standard_tox_task("py38-oldestnumpy", py="3.8")
+standard_tox_task("py39-oldestnumpy", py="3.9")
 standard_tox_task("numpy-nightly", py="3.12")
 
 standard_tox_task("coverage")
@@ -550,7 +548,7 @@ def check_whole_repo_tests(*args):
     )
 
     if not args:
-        args = [tools.REPO_TESTS]
+        args = ["-n", "auto", tools.REPO_TESTS]
     subprocess.check_call([sys.executable, "-m", "pytest", *args])
 
 

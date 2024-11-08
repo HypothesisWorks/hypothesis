@@ -12,12 +12,13 @@ from hypothesis import given, settings, strategies as st
 
 
 def test_max_examples_are_respected():
-    counter = [0]
+    counter = 0
 
     @given(st.random_module(), st.integers())
     @settings(max_examples=100)
     def test(rnd, i):
-        counter[0] += 1
+        nonlocal counter
+        counter += 1
 
     test()
-    assert counter == [100]
+    assert counter == 100

@@ -12,6 +12,7 @@ import time
 
 import pytest
 
+from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.shrinker import (
     Shrinker,
@@ -27,7 +28,7 @@ from tests.conjecture.common import SOME_LABEL, run_to_buffer, shrinking_from
 @pytest.mark.parametrize("n", [1, 5, 8, 15])
 def test_can_shrink_variable_draws_with_just_deletion(n):
     @shrinking_from([n] + [0] * (n - 1) + [1])
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         n = data.draw_integer(0, 2**4 - 1)
         b = [data.draw_integer(0, 2**8 - 1) for _ in range(n)]
         if any(b):
@@ -71,7 +72,7 @@ def test_duplicate_blocks_that_go_away():
         data.mark_interesting()
 
     @shrinking_from(base_buf)
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         x = data.draw_integer(0, 2**24 - 1)
         y = data.draw_integer(0, 2**24 - 1)
         if x != y:
@@ -88,7 +89,7 @@ def test_duplicate_blocks_that_go_away():
 
 def test_accidental_duplication():
     @shrinking_from([18] * 20)
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         x = data.draw_integer(0, 2**8 - 1)
         y = data.draw_integer(0, 2**8 - 1)
         if x != y:
@@ -106,7 +107,7 @@ def test_accidental_duplication():
 
 def test_can_zero_subintervals():
     @shrinking_from(bytes([3, 0, 0, 0, 1]) * 10)
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         for _ in range(10):
             data.start_example(SOME_LABEL)
             n = data.draw_integer(0, 2**8 - 1)
@@ -137,7 +138,7 @@ def test_can_pass_to_an_indirect_descendant():
     good = {initial, target}
 
     @shrinking_from(initial)
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         tree(data)
         if bytes(data.buffer) in good:
             data.mark_interesting()
@@ -160,7 +161,7 @@ def shrink(buffer, *passes):
 
 def test_shrinking_blocks_from_common_offset():
     @shrinking_from([11, 10])
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         m = data.draw_integer(0, 2**8 - 1)
         n = data.draw_integer(0, 2**8 - 1)
         if abs(m - n) <= 1 and max(m, n) > 0:
@@ -194,7 +195,7 @@ def test_handle_empty_draws():
 def test_can_reorder_examples():
     # grouped by iteration: (1, 0, 1) (1, 0, 1) (0) (0) (0)
     @shrinking_from([1, 0, 1, 1, 0, 1, 0, 0, 0])
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         total = 0
         for _ in range(5):
             data.start_example(label=0)
@@ -230,7 +231,7 @@ def test_permits_but_ignores_raising_order(monkeypatch):
 
 def test_block_deletion_can_delete_short_ranges():
     @shrinking_from([v for i in range(5) for _ in range(i + 1) for v in [0, i]])
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         while True:
             n = data.draw_integer(0, 2**16 - 1)
             for _ in range(n):
@@ -261,7 +262,7 @@ def test_dependent_block_pairs_is_up_to_shrinking_integers():
             data.mark_interesting()
 
     @shrinking_from(buf)
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         size = sizes[distribution.sample(data)]
         result = data.draw_integer(0, 2**size - 1)
         sign = (-1) ** (result & 1)
@@ -294,7 +295,7 @@ def test_finding_a_minimal_balanced_binary_tree():
 
     # Starting from an unbalanced tree of depth six
     @shrinking_from([1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0])
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         _, b = tree(data)
         if not b:
             data.mark_interesting()
@@ -306,7 +307,7 @@ def test_finding_a_minimal_balanced_binary_tree():
 
 def test_node_programs_are_adaptive():
     @shrinking_from(bytes(1000) + bytes([1]))
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         while not data.draw_boolean():
             pass
         data.mark_interesting()
@@ -320,7 +321,7 @@ def test_node_programs_are_adaptive():
 
 def test_zero_examples_with_variable_min_size():
     @shrinking_from(bytes([255]) * 100)
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         any_nonzero = False
         for i in range(1, 10):
             any_nonzero |= data.draw_integer(0, 2**i - 1) > 0
@@ -334,7 +335,7 @@ def test_zero_examples_with_variable_min_size():
 
 def test_zero_contained_examples():
     @shrinking_from(bytes([1]) * 8)
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         for _ in range(4):
             data.start_example(1)
             if data.draw_integer(0, 2**8 - 1) == 0:
@@ -351,7 +352,7 @@ def test_zero_contained_examples():
 
 def test_zig_zags_quickly():
     @shrinking_from(bytes([255]) * 4)
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         m = data.draw_integer(0, 2**16 - 1)
         n = data.draw_integer(0, 2**16 - 1)
         if m == 0 or n == 0:
@@ -398,7 +399,7 @@ def test_zig_zags_quickly_with_shrink_towards(
             data.mark_interesting()
 
     @shrinking_from(buf)
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         m = data.draw_integer(min_value, max_value, shrink_towards=shrink_towards)
         n = data.draw_integer(min_value, max_value, shrink_towards=shrink_towards)
         # avoid trivial counterexamples
@@ -414,7 +415,7 @@ def test_zig_zags_quickly_with_shrink_towards(
 
 def test_zero_irregular_examples():
     @shrinking_from([255] * 6)
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         data.start_example(1)
         data.draw_integer(0, 2**8 - 1)
         data.draw_integer(0, 2**16 - 1)
@@ -433,7 +434,7 @@ def test_zero_irregular_examples():
 
 def test_retain_end_of_buffer():
     @shrinking_from([1, 2, 3, 4, 5, 6, 0])
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         interesting = False
         while True:
             n = data.draw_integer(0, 2**8 - 1)
@@ -450,7 +451,7 @@ def test_retain_end_of_buffer():
 
 def test_can_expand_zeroed_region():
     @shrinking_from([255] * 5)
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         seen_non_zero = False
         for _ in range(5):
             if data.draw_integer(0, 2**8 - 1) == 0:
@@ -466,7 +467,7 @@ def test_can_expand_zeroed_region():
 
 def test_can_expand_deleted_region():
     @shrinking_from([1, 2, 3, 4, 0, 0])
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         def t():
             data.start_example(1)
 
@@ -494,7 +495,7 @@ def test_can_expand_deleted_region():
 
 def test_shrink_pass_method_is_idempotent():
     @shrinking_from([255])
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         data.draw_integer(0, 2**8 - 1)
         data.mark_interesting()
 
@@ -510,7 +511,7 @@ def test_will_terminate_stalled_shrinks():
     time.freeze()
 
     @shrinking_from([255] * 100)
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         count = 0
 
         for _ in range(100):
@@ -526,7 +527,7 @@ def test_will_terminate_stalled_shrinks():
 
 def test_will_let_fixate_shrink_passes_do_a_full_run_through():
     @shrinking_from(range(50))
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         for i in range(50):
             if data.draw_integer(0, 2**8 - 1) != i:
                 data.mark_invalid()
@@ -545,7 +546,7 @@ def test_will_let_fixate_shrink_passes_do_a_full_run_through():
 @pytest.mark.parametrize("n_gap", [0, 1, 2, 3])
 def test_can_simultaneously_lower_non_duplicated_nearby_blocks(n_gap):
     @shrinking_from([1, 1] + [0] * n_gap + [0, 2])
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         # Block off lowering the whole buffer
         if data.draw_integer(0, 2**1 - 1) == 0:
             data.mark_invalid()
@@ -562,7 +563,7 @@ def test_can_simultaneously_lower_non_duplicated_nearby_blocks(n_gap):
     assert list(shrinker.buffer) == [1, 0] + [0] * n_gap + [0, 1]
 
 
-def test_redistribute_block_pairs_with_forced_node():
+def test_redistribute_integer_pairs_with_forced_node():
     @run_to_buffer
     def buf(data):
         data.draw_integer(0, 100, forced=15)
@@ -570,14 +571,14 @@ def test_redistribute_block_pairs_with_forced_node():
         data.mark_interesting()
 
     @shrinking_from(buf)
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         n1 = data.draw_integer(0, 100)
         n2 = data.draw_integer(0, 100, forced=10)
         if n1 + n2 > 20:
             data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["redistribute_block_pairs"])
-    # redistribute_block_pairs shouldn't try modifying forced nodes while
+    shrinker.fixate_shrink_passes(["redistribute_integer_pairs"])
+    # redistribute_integer_pairs shouldn't try modifying forced nodes while
     # shrinking. Since the second draw is forced, this isn't possible to shrink
     # with just this pass.
     assert shrinker.buffer == buf

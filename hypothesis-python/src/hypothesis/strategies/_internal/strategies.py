@@ -11,6 +11,7 @@
 import sys
 import warnings
 from collections import abc, defaultdict
+from collections.abc import Sequence
 from functools import lru_cache
 from random import shuffle
 from typing import (
@@ -18,10 +19,7 @@ from typing import (
     Any,
     Callable,
     ClassVar,
-    Dict,
     Generic,
-    List,
-    Sequence,
     TypeVar,
     Union,
     cast,
@@ -29,7 +27,7 @@ from typing import (
 )
 
 from hypothesis._settings import HealthCheck, Phase, Verbosity, settings
-from hypothesis.control import _current_build_context
+from hypothesis.control import _current_build_context, current_build_context
 from hypothesis.errors import (
     HypothesisException,
     HypothesisWarning,
@@ -327,7 +325,7 @@ class SearchStrategy(Generic[Ex]):
         try:
             return self.__examples.pop()
         except (AttributeError, IndexError):
-            self.__examples: List[Ex] = []
+            self.__examples: list[Ex] = []
 
         from hypothesis.core import given
 
@@ -395,7 +393,7 @@ class SearchStrategy(Generic[Ex]):
         return FilteredStrategy(conditions=(condition,), strategy=self)
 
     @property
-    def branches(self) -> List["SearchStrategy[Ex]"]:
+    def branches(self) -> list["SearchStrategy[Ex]"]:
         return [self]
 
     def __or__(self, other: "SearchStrategy[T]") -> "SearchStrategy[Union[Ex, T]]":
@@ -432,7 +430,7 @@ class SearchStrategy(Generic[Ex]):
             self.validate_called = False
             raise
 
-    LABELS: ClassVar[Dict[type, int]] = {}
+    LABELS: ClassVar[dict[type, int]] = {}
 
     @property
     def class_label(self):
@@ -843,14 +841,14 @@ class MappedStrategy(SearchStrategy[Ex]):
                     x = data.draw(self.mapped_strategy)
                     result = self.pack(x)  # type: ignore
                     data.stop_example()
-                    _current_build_context.value.record_call(result, self.pack, [x], {})
+                    current_build_context().record_call(result, self.pack, [x], {})
                     return result
                 except UnsatisfiedAssumption:
                     data.stop_example(discard=True)
         raise UnsatisfiedAssumption
 
     @property
-    def branches(self) -> List[SearchStrategy[Ex]]:
+    def branches(self) -> list[SearchStrategy[Ex]]:
         return [
             MappedStrategy(strategy, pack=self.pack)
             for strategy in self.mapped_strategy.branches
@@ -1025,7 +1023,7 @@ class FilteredStrategy(SearchStrategy[Ex]):
         return filter_not_satisfied
 
     @property
-    def branches(self) -> List[SearchStrategy[Ex]]:
+    def branches(self) -> list[SearchStrategy[Ex]]:
         return [
             FilteredStrategy(strategy=strategy, conditions=self.flat_conditions)
             for strategy in self.filtered_strategy.branches

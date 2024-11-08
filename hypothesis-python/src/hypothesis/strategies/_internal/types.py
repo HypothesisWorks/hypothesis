@@ -27,10 +27,12 @@ import sys
 import typing
 import uuid
 import warnings
+import zoneinfo
+from collections.abc import Iterator
 from functools import partial
 from pathlib import PurePath
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, Iterator, Tuple, get_args, get_origin
+from typing import TYPE_CHECKING, Any, get_args, get_origin
 
 from hypothesis import strategies as st
 from hypothesis.errors import HypothesisWarning, InvalidArgument, ResolutionFailed
@@ -38,7 +40,6 @@ from hypothesis.internal.compat import PYPY, BaseExceptionGroup, ExceptionGroup
 from hypothesis.internal.conjecture.utils import many as conjecture_utils_many
 from hypothesis.internal.filtering import max_len, min_len
 from hypothesis.internal.reflection import get_pretty_function_description
-from hypothesis.strategies._internal.datetime import zoneinfo  # type: ignore
 from hypothesis.strategies._internal.ipaddress import (
     SPECIAL_IPv4_RANGES,
     SPECIAL_IPv6_RANGES,
@@ -71,28 +72,6 @@ except ImportError:
         from typing_extensions import _AnnotatedAlias
     except ImportError:
         _AnnotatedAlias = ()
-
-TypeAliasTypes: tuple = ()
-try:
-    TypeAliasTypes += (typing.TypeAlias,)
-except AttributeError:  # pragma: no cover
-    pass  # Is missing for `python<3.10`
-try:
-    TypeAliasTypes += (typing_extensions.TypeAlias,)
-except AttributeError:  # pragma: no cover
-    pass  # Is missing for `typing_extensions<3.10`
-
-ClassVarTypes: tuple = (typing.ClassVar,)
-try:
-    ClassVarTypes += (typing_extensions.ClassVar,)
-except AttributeError:  # pragma: no cover
-    pass  # `typing_extensions` might not be installed
-
-FinalTypes: tuple = (typing.Final,)
-try:
-    FinalTypes += (typing_extensions.Final,)
-except AttributeError:  # pragma: no cover
-    pass  # `typing_extensions` might not be installed
 
 ConcatenateTypes: tuple = ()
 try:
@@ -162,17 +141,6 @@ except AttributeError:  # pragma: no cover
     pass  # `typing_extensions` might not be installed
 
 
-AnnotatedTypes: tuple = ()
-try:
-    AnnotatedTypes += (typing.Annotated,)
-except AttributeError:  # pragma: no cover
-    pass  # Is missing for `python<3.9`
-try:
-    AnnotatedTypes += (typing_extensions.Annotated,)
-except AttributeError:  # pragma: no cover
-    pass  # `typing_extensions` might not be installed
-
-
 LiteralStringTypes: tuple = ()
 try:
     LiteralStringTypes += (typing.LiteralString,)  # type: ignore
@@ -209,21 +177,21 @@ typing_root_type = (typing._Final, typing._GenericAlias)  # type: ignore
 # `Final` is a great example: it just indicates that this value can't be reassigned.
 NON_RUNTIME_TYPES = (
     typing.Any,
-    *ClassVarTypes,
-    *TypeAliasTypes,
-    *FinalTypes,
+    typing.Annotated,
     *ConcatenateTypes,
     *ParamSpecTypes,
     *TypeGuardTypes,
 )
 for name in (
-    "Annotated",
+    "ClassVar",
+    "Final",
     "NoReturn",
     "Self",
     "Required",
     "NotRequired",
     "ReadOnly",
     "Never",
+    "TypeAlias",
     "TypeVarTuple",
     "Unpack",
 ):
@@ -304,24 +272,24 @@ def is_a_new_type(thing):
     return isinstance(thing, typing.NewType)
 
 
-def is_a_union(thing):
+def is_a_union(thing: object) -> bool:
     """Return True if thing is a typing.Union or types.UnionType (in py310)."""
     return isinstance(thing, UnionType) or get_origin(thing) is typing.Union
 
 
-def is_a_type(thing):
+def is_a_type(thing: object) -> bool:
     """Return True if thing is a type or a generic type like thing."""
     return isinstance(thing, type) or is_generic_type(thing) or is_a_new_type(thing)
 
 
-def is_typing_literal(thing):
+def is_typing_literal(thing: object) -> bool:
     return get_origin(thing) in (
         typing.Literal,
         getattr(typing_extensions, "Literal", object()),
     )
 
 
-def is_annotated_type(thing):
+def is_annotated_type(thing: object) -> bool:
     return (
         isinstance(thing, _AnnotatedAlias)
         and getattr(thing, "__args__", None) is not None
@@ -343,7 +311,7 @@ def get_constraints_filter_map():
     return {}  # pragma: no cover
 
 
-def _get_constraints(args: Tuple[Any, ...]) -> Iterator["at.BaseMetadata"]:
+def _get_constraints(args: tuple[Any, ...]) -> Iterator["at.BaseMetadata"]:
     at = sys.modules.get("annotated_types")
     for arg in args:
         if at and isinstance(arg, at.BaseMetadata):
@@ -487,20 +455,8 @@ def from_typing_type(thing):
             else:
                 literals.append(arg)
         return st.sampled_from(literals)
-    if is_annotated_type(thing):  # pragma: no cover
-        # This requires Python 3.9+ or the typing_extensions package
-        annotated_strategy = find_annotated_strategy(thing)
-        if annotated_strategy is not None:
-            return annotated_strategy
-        args = thing.__args__
-        assert args, "it's impossible to make an annotated type with no args"
-        annotated_type = args[0]
-        return st.from_type(annotated_type)
-    # Now, confirm that we're dealing with a generic type as we expected
-    if sys.version_info[:2] < (3, 9) and not isinstance(
-        thing, typing_root_type
-    ):  # pragma: no cover
-        raise ResolutionFailed(f"Cannot resolve {thing} to a strategy")
+    if is_annotated_type(thing):
+        return find_annotated_strategy(thing)
 
     # Some "generic" classes are not generic *in* anything - for example both
     # Hashable and Sized have `__args__ == ()`
@@ -513,13 +469,22 @@ def from_typing_type(thing):
 
     # Parametrised generic types have their __origin__ attribute set to the
     # un-parametrised version, which we need to use in the subclass checks.
-    # e.g.:     typing.List[int].__origin__ == typing.List
-    # (actually not sure if this is true since Python 3.9 or so)
+    # i.e.:     typing.List[int].__origin__ == list
     mapping = {
         k: v
         for k, v in _global_type_lookup.items()
         if is_generic_type(k) and try_issubclass(k, thing)
     }
+
+    # Discard any type which is not it's own origin, where the origin is also in the
+    # mapping.  On old Python versions this could be due to redefinition of types
+    # between collections.abc and typing, but the logic seems reasonable to keep in
+    # case of similar situations now that's been fixed.
+    for t in sorted(mapping, key=type_sorting_key):
+        origin = get_origin(t)
+        if origin is not t and origin in mapping:
+            mapping.pop(t)
+
     # Drop some unusual cases for simplicity, including tuples or its
     # subclasses (e.g. namedtuple)
     if len(mapping) > 1:
@@ -528,24 +493,21 @@ def from_typing_type(thing):
     tuple_types = [
         t
         for t in mapping
-        if (isinstance(t, type) and issubclass(t, tuple)) or t is typing.Tuple
+        if (isinstance(t, type) and issubclass(t, tuple)) or get_origin(t) is tuple
     ]
     if len(mapping) > len(tuple_types):
         for tuple_type in tuple_types:
             mapping.pop(tuple_type)
 
-    # After we drop Python 3.8 and can rely on having generic builtin types, we'll
-    # be able to simplify this logic by dropping the typing-module handling.
-    if {dict, set, typing.Dict, typing.Set}.intersection(mapping):
+    if {dict, set}.intersection(mapping):
         # ItemsView can cause test_lookup.py::test_specialised_collection_types
         # to fail, due to weird isinstance behaviour around the elements.
         mapping.pop(collections.abc.ItemsView, None)
         mapping.pop(typing.ItemsView, None)
-    if {collections.deque, typing.Deque}.intersection(mapping) and len(mapping) > 1:
+    if {collections.deque}.intersection(mapping) and len(mapping) > 1:
         # Resolving generic sequences to include a deque is more trouble for e.g.
         # the ghostwriter than it's worth, via undefined names in the repr.
         mapping.pop(collections.deque, None)
-        mapping.pop(typing.Deque, None)
 
     if len(mapping) > 1:
         # issubclass treats bytestring as a kind of sequence, which it is,
@@ -569,20 +531,12 @@ def from_typing_type(thing):
             mapping.pop(bytes, None)
             if sys.version_info[:2] <= (3, 13):
                 mapping.pop(collections.abc.ByteString, None)
-                mapping.pop(typing.ByteString, None)
     elif (
         (not mapping)
         and isinstance(thing, typing.ForwardRef)
         and thing.__forward_arg__ in vars(builtins)
     ):
         return st.from_type(getattr(builtins, thing.__forward_arg__))
-    # Before Python 3.9, we sometimes have e.g. Sequence from both the typing
-    # module, and collections.abc module.  Discard any type which is not it's own
-    # origin, where the origin is also in the mapping.
-    for t in sorted(mapping, key=type_sorting_key):
-        origin = get_origin(t)
-        if origin is not t and origin in mapping:
-            mapping.pop(t)
     # Sort strategies according to our type-sorting heuristic for stable output
     strategies = [
         s
@@ -637,7 +591,7 @@ utc_offsets = st.builds(
 # exposed for it, and NotImplemented itself is typed as Any so that it can be
 # returned without being listed in a function signature:
 # https://github.com/python/mypy/issues/6710#issuecomment-485580032
-_global_type_lookup: typing.Dict[
+_global_type_lookup: dict[
     type, typing.Union[st.SearchStrategy, typing.Callable[[type], st.SearchStrategy]]
 ] = {
     type(None): st.none(),
@@ -737,21 +691,19 @@ _global_type_lookup: typing.Dict[
     re.Match: st.text().map(lambda c: re.match(".", c, flags=re.DOTALL)).filter(bool),
     re.Pattern: st.builds(re.compile, st.sampled_from(["", b""])),
     random.Random: st.randoms(),
+    zoneinfo.ZoneInfo: st.timezones(),
     # Pull requests with more types welcome!
 }
-if zoneinfo is not None:  # pragma: no branch
-    _global_type_lookup[zoneinfo.ZoneInfo] = st.timezones()
 if PYPY:
     _global_type_lookup[builtins.sequenceiterator] = st.builds(iter, st.tuples())  # type: ignore
 
 
-_global_type_lookup[type] = st.sampled_from(
-    [type(None), *sorted(_global_type_lookup, key=str)]
+_fallback_type_strategy = st.sampled_from(
+    sorted(_global_type_lookup, key=type_sorting_key)
 )
-if sys.version_info[:2] >= (3, 9):
-    # subclass of MutableMapping, and in Python 3.9 we resolve to a union
-    # which includes this... but we don't actually ever want to build one.
-    _global_type_lookup[os._Environ] = st.just(os.environ)
+# subclass of MutableMapping, and so we resolve to a union which
+# includes this... but we don't actually ever want to build one.
+_global_type_lookup[os._Environ] = st.just(os.environ)
 
 if sys.version_info[:2] <= (3, 13):
     # Note: while ByteString notionally also represents the bytearray and
@@ -823,15 +775,15 @@ _global_type_lookup.update(
 # installed. To avoid the performance hit of importing anything here, we defer
 # it until the method is called the first time, at which point we replace the
 # entry in the lookup table with the direct call.
-def _from_numpy_type(thing: typing.Type) -> typing.Optional[st.SearchStrategy]:
+def _from_numpy_type(thing: type) -> typing.Optional[st.SearchStrategy]:
     from hypothesis.extra.numpy import _from_type
 
     _global_extra_lookup["numpy"] = _from_type
     return _from_type(thing)
 
 
-_global_extra_lookup: typing.Dict[
-    str, typing.Callable[[typing.Type], typing.Optional[st.SearchStrategy]]
+_global_extra_lookup: dict[
+    str, typing.Callable[[type], typing.Optional[st.SearchStrategy]]
 ] = {
     "numpy": _from_numpy_type,
 }
@@ -840,7 +792,9 @@ _global_extra_lookup: typing.Dict[
 def register(type_, fallback=None, *, module=typing):
     if isinstance(type_, str):
         # Use the name of generic types which are not available on all
-        # versions, and the function just won't be added to the registry
+        # versions, and the function just won't be added to the registry;
+        # also works when module=None because typing_extensions isn't
+        # installed (nocover because it _is_ in our coverage tests).
         type_ = getattr(module, type_, None)
         if type_ is None:  # pragma: no cover
             return lambda f: f
@@ -853,37 +807,32 @@ def register(type_, fallback=None, *, module=typing):
 
         @functools.wraps(func)
         def really_inner(thing):
-            # This branch is for Python <= 3.8, when __args__ was not always tracked
             if getattr(thing, "__args__", None) is None:
-                return fallback  # pragma: no cover
+                return fallback
             return func(thing)
 
-        if sys.version_info[:2] >= (3, 9):
-            try:
-                type_ = get_origin(type_)
-            except Exception:
-                pass
         _global_type_lookup[type_] = really_inner
+        _global_type_lookup[get_origin(type_) or type_] = really_inner
         return really_inner
 
     return inner
 
 
-@register(typing.Type)
+@register(type)
+@register("Type")
 @register("Type", module=typing_extensions)
 def resolve_Type(thing):
-    if getattr(thing, "__args__", None) is None:
-        # This branch is for Python <= 3.8, when __args__ was not always tracked
-        return st.just(type)  # pragma: no cover
+    if getattr(thing, "__args__", None) is None or get_args(thing) == ():
+        return _fallback_type_strategy
     args = (thing.__args__[0],)
     if is_a_union(args[0]):
         args = args[0].__args__
     # Duplicate check from from_type here - only paying when needed.
     args = list(args)
     for i, a in enumerate(args):
-        if type(a) == typing.ForwardRef:
+        if type(a) in (typing.ForwardRef, str):
             try:
-                args[i] = getattr(builtins, a.__forward_arg__)
+                args[i] = getattr(builtins, getattr(a, "__forward_arg__", a))
             except AttributeError:
                 raise ResolutionFailed(
                     f"Cannot find the type referenced by {thing} - try using "
@@ -892,12 +841,12 @@ def resolve_Type(thing):
     return st.sampled_from(sorted(args, key=type_sorting_key))
 
 
-@register(typing.List, st.builds(list))
+@register("List", st.builds(list))
 def resolve_List(thing):
     return st.lists(st.from_type(thing.__args__[0]))
 
 
-@register(typing.Tuple, st.builds(tuple))
+@register("Tuple", st.builds(tuple))
 def resolve_Tuple(thing):
     elem_types = getattr(thing, "__args__", None) or ()
     if len(elem_types) == 2 and elem_types[-1] is Ellipsis:
@@ -931,27 +880,28 @@ def _from_hashable_type(type_):
         return st.from_type(type_).filter(_can_hash)
 
 
-@register(typing.Set, st.builds(set))
+@register("Set", st.builds(set))
 @register(typing.MutableSet, st.builds(set))
 def resolve_Set(thing):
     return st.sets(_from_hashable_type(thing.__args__[0]))
 
 
-@register(typing.FrozenSet, st.builds(frozenset))
+@register("FrozenSet", st.builds(frozenset))
 def resolve_FrozenSet(thing):
     return st.frozensets(_from_hashable_type(thing.__args__[0]))
 
 
-@register(typing.Dict, st.builds(dict))
+@register("Dict", st.builds(dict))
 def resolve_Dict(thing):
     # If thing is a Collection instance, we need to fill in the values
-    keys_vals = thing.__args__ * 2
+    keys, vals, *_ = thing.__args__ * 2
     return st.dictionaries(
-        _from_hashable_type(keys_vals[0]), st.from_type(keys_vals[1])
+        _from_hashable_type(keys),
+        st.none() if vals is None else st.from_type(vals),
     )
 
 
-@register(typing.DefaultDict, st.builds(collections.defaultdict))
+@register("DefaultDict", st.builds(collections.defaultdict))
 @register("DefaultDict", st.builds(collections.defaultdict), module=typing_extensions)
 def resolve_DefaultDict(thing):
     return resolve_Dict(thing).map(lambda d: collections.defaultdict(None, d))
@@ -1007,15 +957,15 @@ def resolve_OrderedDict(thing):
 @register(typing.Pattern, st.builds(re.compile, st.sampled_from(["", b""])))
 def resolve_Pattern(thing):
     if isinstance(thing.__args__[0], typing.TypeVar):  # pragma: no cover
-        # TODO: this was covered on Python 3.8, but isn't on 3.10 - we should
+        # FIXME: this was covered on Python 3.8, but isn't on 3.10 - we should
         # work out why not and write some extra tests to help avoid regressions.
         return st.builds(re.compile, st.sampled_from(["", b""]))
     return st.just(re.compile(thing.__args__[0]()))
 
 
-@register(  # pragma: no branch  # coverage does not see lambda->exit branch
+@register(
     typing.Match,
-    st.text().map(lambda c: re.match(".", c, flags=re.DOTALL)).filter(bool),
+    st.text().map(partial(re.match, ".", flags=re.DOTALL)).filter(bool),
 )
 def resolve_Match(thing):
     if thing.__args__[0] == bytes:
