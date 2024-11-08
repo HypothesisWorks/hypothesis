@@ -333,7 +333,7 @@ def test_ir_nodes(random):
     data.draw_integer(0, 100, forced=50)
 
     data.freeze()
-    expected_tree_nodes = [
+    expected_tree_nodes = (
         IRNode(
             ir_type="float",
             value=5.0,
@@ -378,7 +378,7 @@ def test_ir_nodes(random):
             },
             was_forced=True,
         ),
-    ]
+    )
     assert data.examples.ir_tree_nodes == expected_tree_nodes
 
 

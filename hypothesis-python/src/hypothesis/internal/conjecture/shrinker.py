@@ -1262,9 +1262,9 @@ class Shrinker:
 
             return self.consider_new_tree(
                 self.nodes[: node1.index]
-                + [node1.copy(with_value=node_value)]
+                + (node1.copy(with_value=node_value),)
                 + self.nodes[node1.index + 1 : node2.index]
-                + [node2.copy(with_value=next_node_value)]
+                + (node2.copy(with_value=next_node_value),)
                 + self.nodes[node2.index + 1 :]
             )
 
@@ -1413,7 +1413,7 @@ class Shrinker:
 
         lowered = (
             self.nodes[: node.index]
-            + [node.copy(with_value=node.value - 1)]
+            + (node.copy(with_value=node.value - 1),)
             + self.nodes[node.index + 1 :]
         )
         attempt = self.cached_test_function_ir(lowered)

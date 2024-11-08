@@ -13,7 +13,7 @@ import math
 import textwrap
 import time
 from collections import defaultdict
-from collections.abc import Generator
+from collections.abc import Generator, Sequence
 from contextlib import contextmanager, suppress
 from datetime import timedelta
 from enum import Enum
@@ -330,7 +330,7 @@ class ConjectureRunner:
     def _cache_key_ir(
         self,
         *,
-        nodes: Optional[list[IRNode]] = None,
+        nodes: Optional[Sequence[IRNode]] = None,
         data: Union[ConjectureData, ConjectureResult, None] = None,
     ) -> tuple[tuple[Any, ...], ...]:
         assert (nodes is not None) ^ (data is not None)
@@ -1239,7 +1239,7 @@ class ConjectureRunner:
 
     def new_conjecture_data_ir(
         self,
-        ir_tree_prefix: list[IRNode],
+        ir_tree_prefix: Sequence[IRNode],
         *,
         observer: Optional[DataObserver] = None,
         max_length: Optional[int] = None,

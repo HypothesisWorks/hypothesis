@@ -624,7 +624,10 @@ class Examples:
         def ir_node(self, ir_node: "IRNode") -> None:
             self.result.append(ir_node)
 
-    ir_tree_nodes: "list[IRNode]" = calculated_example_property(_ir_tree_nodes)
+        def finish(self):
+            return tuple(self.result)
+
+    ir_tree_nodes: "tuple[IRNode]" = calculated_example_property(_ir_tree_nodes)
 
     class _label_indices(ExampleProperty):
         def start_example(self, i: int, label_index: int) -> None:
