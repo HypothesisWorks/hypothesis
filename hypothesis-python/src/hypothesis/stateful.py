@@ -473,8 +473,9 @@ class TrioRuleBasedStateMachine(RuleBasedStateMachine):
             )
             self.nursery.start_soon(formatted_task)
 
-            # TODO: Maybe include a warning for async functions
-            # that include a return statement that users cannot return values?
+            # TODO: At the moment, we can't return any values for async functions. Should this remain the case?
+            # Trio doesn't seem to (https://stackoverflow.com/questions/51567451/capture-the-return-value-from-nursery-objects).
+            # Maybe include an error for `return` keywords in async @rules
             return
 
         return super()._execute_fn(rule, stateful_run_times, **data)
@@ -495,9 +496,6 @@ def async_manager_decorator(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
         machine = args[0]
-        # print(
-        #     f"{machine=}, {type(machine)=}, {isinstance(machine, RuleBasedStateMachine)=}"
-        # )
         if hasattr(machine, "loop_setup") and callable(machine.loop_setup):
             return machine.loop_setup(fn)(*args, **kwargs)
         return fn(*args, **kwargs)
@@ -523,7 +521,7 @@ def get_sync_result_with_time(func, stateful_run_times, *args, **kwargs):
 
 
 async def get_async_result_with_time(func, stateful_run_times, *args, **kwargs):
-    # This is just to play nicely with python syntax
+    """This is mainly a copy of the sync version of the method, but plays nicely with python async/await"""
     label = f"execute:rule:{func.__name__}"
     start = perf_counter()
     start_gc = gc_cumulative_time()
