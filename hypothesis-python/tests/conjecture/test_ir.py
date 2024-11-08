@@ -401,6 +401,12 @@ def test_ir_node_equality(node):
     assert node != 42
 
 
+@given(ir_nodes(was_forced=True))
+def test_cannot_modify_forced_nodes(node):
+    with pytest.raises(AssertionError):
+        node.copy(with_value=42)
+
+
 def test_data_with_empty_ir_tree_is_overrun():
     data = ConjectureData.for_ir_tree([])
     with pytest.raises(StopTest):

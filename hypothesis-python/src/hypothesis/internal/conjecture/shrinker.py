@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 from collections import defaultdict
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Callable, Optional, TypeVar, Union
 
 import attr
@@ -22,6 +23,7 @@ from hypothesis.internal.conjecture.choicetree import (
 from hypothesis.internal.conjecture.data import (
     ConjectureData,
     ConjectureResult,
+    IRNode,
     Status,
     ir_to_buffer,
     ir_value_equal,
@@ -391,7 +393,7 @@ class Shrinker:
         self.check_calls()
         return result
 
-    def consider_new_tree(self, tree):
+    def consider_new_tree(self, tree: Sequence[IRNode]) -> bool:
         tree = tree[: len(self.nodes)]
 
         if startswith(tree, self.nodes):

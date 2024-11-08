@@ -1578,6 +1578,32 @@ def test_cache_ignores_was_forced(forced_first, node):
     assert runner.call_count == 1
 
 
+@given(ir_nodes(was_forced=False))
+def test_overruns_with_extend_are_not_cached(node):
+    assume(compute_max_children(node.ir_type, node.kwargs) > 100)
+
+    def test(cd):
+        _draw(cd, node)
+        _draw(cd, node)
+
+    runner = ConjectureRunner(test)
+    assert runner.call_count == 0
+
+    data = runner.cached_test_function_ir([node])
+    assert runner.call_count == 1
+    assert data.status is Status.OVERRUN
+
+    # cache hit
+    data = runner.cached_test_function_ir([node])
+    assert runner.call_count == 1
+    assert data.status is Status.OVERRUN
+
+    # cache miss
+    data = runner.cached_test_function_ir([node], extend=1)
+    assert runner.call_count == 2
+    assert data.status is Status.VALID
+
+
 def test_simulate_to_evicted_data(monkeypatch):
     # test that we do not rely on the false invariant that correctly simulating
     # a data to a result means we have that result in the cache, due to e.g.
