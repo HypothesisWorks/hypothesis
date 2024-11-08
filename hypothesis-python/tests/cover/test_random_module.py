@@ -102,15 +102,16 @@ def test_registered_Random_is_seeded_by_random_module_strategy():
     register_random(r)
     state = r.getstate()
     results = set()
-    count = [0]
+    count = 0
 
     @given(st.integers())
     def inner(x):
+        nonlocal count
         results.add(r.random())
-        count[0] += 1
+        count += 1
 
     inner()
-    assert count[0] > len(results) * 0.9, "too few unique random numbers"
+    assert count > len(results) * 0.9, "too few unique random numbers"
     assert state == r.getstate()
 
 

@@ -63,6 +63,7 @@ class settingsProperty:
                     from hypothesis.database import ExampleDatabase
 
                     result = ExampleDatabase(not_set)
+                assert result is not not_set
                 return result
             except KeyError:
                 raise AttributeError(self.name) from None
@@ -96,7 +97,7 @@ class settingsMeta(type):
         v = default_variable.value
         if v is not None:
             return v
-        if hasattr(settings, "_current_profile"):
+        if getattr(settings, "_current_profile", None) is not None:
             settings.load_profile(settings._current_profile)
             assert default_variable.value is not None
         return default_variable.value
@@ -131,6 +132,7 @@ class settings(metaclass=settingsMeta):
     __definitions_are_locked = False
     _profiles: ClassVar[dict[str, "settings"]] = {}
     __module__ = "hypothesis"
+    _current_profile = None
 
     def __getattr__(self, name):
         if name in all_settings:
@@ -315,9 +317,15 @@ class settings(metaclass=settingsMeta):
         :class:`~hypothesis.settings`: optional ``parent`` settings, and
         keyword arguments for each setting that will be set differently to
         parent (or settings.default, if parent is None).
+
+        If you register a profile that has already been defined and that profile
+        is the currently loaded profile, the new changes will take effect immediately,
+        and do not require reloading the profile.
         """
         check_type(str, name, "name")
         settings._profiles[name] = settings(parent=parent, **kwargs)
+        if settings._current_profile == name:
+            settings.load_profile(name)
 
     @staticmethod
     def get_profile(name: str) -> "settings":
@@ -407,6 +415,8 @@ This allows you to `check for regressions and look for bugs
 :ref:`separate settings profiles <settings_profiles>` - for example running
 quick deterministic tests on every commit, and a longer non-deterministic
 nightly testing run.
+
+By default when running on CI, this will be set to True.
 """,
 )
 
@@ -682,6 +692,8 @@ errors (but will not necessarily be if close to the deadline, to allow some
 variability in test run time).
 
 Set this to ``None`` to disable this behaviour entirely.
+
+By default when running on CI, this will be set to None.
 """,
 )
 
@@ -694,13 +706,11 @@ def is_in_ci() -> bool:
 
 settings._define_setting(
     "print_blob",
-    default=is_in_ci(),
-    show_default=False,
+    default=False,
     options=(True, False),
     description="""
 If set to ``True``, Hypothesis will print code for failing examples that can be used with
 :func:`@reproduce_failure <hypothesis.reproduce_failure>` to reproduce the failing example.
-The default is ``True`` if the ``CI`` or ``TF_BUILD`` env vars are set, ``False`` otherwise.
 """,
 )
 
@@ -750,6 +760,23 @@ def note_deprecation(
 
 settings.register_profile("default", settings())
 settings.load_profile("default")
+
+assert settings.default is not None
+
+CI = settings(
+    derandomize=True,
+    deadline=None,
+    database=None,
+    print_blob=True,
+    suppress_health_check=[HealthCheck.too_slow],
+)
+
+settings.register_profile("ci", CI)
+
+
+if is_in_ci():
+    settings.load_profile("ci")
+
 assert settings.default is not None
 
 

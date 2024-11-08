@@ -1564,23 +1564,23 @@ def given(
                     "to ensure that each example is run in a separate "
                     "database transaction."
                 )
-            if settings.database is not None:
-                nonlocal prev_self
-                # Check selfy really is self (not e.g. a mock) before we health-check
-                cur_self = (
-                    stuff.selfy
-                    if getattr(type(stuff.selfy), test.__name__, None) is wrapped_test
-                    else None
+
+            nonlocal prev_self
+            # Check selfy really is self (not e.g. a mock) before we health-check
+            cur_self = (
+                stuff.selfy
+                if getattr(type(stuff.selfy), test.__name__, None) is wrapped_test
+                else None
+            )
+            if prev_self is Unset:
+                prev_self = cur_self
+            elif cur_self is not prev_self:
+                msg = (
+                    f"The method {test.__qualname__} was called from multiple "
+                    "different executors. This may lead to flaky tests and "
+                    "nonreproducible errors when replaying from database."
                 )
-                if prev_self is Unset:
-                    prev_self = cur_self
-                elif cur_self is not prev_self:
-                    msg = (
-                        f"The method {test.__qualname__} was called from multiple "
-                        "different executors. This may lead to flaky tests and "
-                        "nonreproducible errors when replaying from database."
-                    )
-                    fail_health_check(settings, msg, HealthCheck.differing_executors)
+                fail_health_check(settings, msg, HealthCheck.differing_executors)
 
             state = StateForActualGivenExecution(
                 stuff, test, settings, random, wrapped_test
@@ -1675,7 +1675,6 @@ def given(
                 # The exception caught here should either be an actual test
                 # failure (or BaseExceptionGroup), or some kind of fatal error
                 # that caused the engine to stop.
-
                 generated_seed = wrapped_test._hypothesis_internal_use_generated_seed
                 with local_settings(settings):
                     if not (state.failed_normally or generated_seed is None):

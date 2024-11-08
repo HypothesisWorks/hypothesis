@@ -18,6 +18,44 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.118.0:
+
+--------------------
+6.118.0 - 2024-11-08
+--------------------
+
+The :func:`~hypothesis.provisional.urls` strategy no longer generates
+URLs where the port number is 0.
+
+This change is motivated by the idea that the generated URLs should, at least in
+theory, be possible to fetch. The port number 0 is special; if a server binds to
+port 0, the kernel will allocate an unused, and non-zero, port instead. That
+means that it's not possible for a server to actually be listening on port 0.
+This motivation is briefly described in the documentation for
+:func:`~hypothesis.provisional.urls`.
+
+Fixes :issue:`4157`.
+
+Thanks to @gmacon for this contribution!
+
+.. _v6.117.0:
+
+--------------------
+6.117.0 - 2024-11-07
+--------------------
+
+This changes the behaviour of settings profiles so that if you reregister the currently loaded profile it will automatically reload it. Previously you would have had to load it again.
+
+In particular this means that if you register a "ci" profile, it will automatically be used when Hypothesis detects you are running on CI.
+
+.. _v6.116.0:
+
+--------------------
+6.116.0 - 2024-11-01
+--------------------
+
+Hypothesis now detects if it is running on a CI server and provides better default settings for running on CI in this case.
+
 .. _v6.115.6:
 
 --------------------

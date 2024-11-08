@@ -93,7 +93,8 @@ def test_healthcheck_traceback_is_hidden(x):
 """
 
 
-def test_healthcheck_traceback_is_hidden(testdir):
+def test_healthcheck_traceback_is_hidden(testdir, monkeypatch):
+    monkeypatch.delenv("CI", raising=False)
     script = testdir.makepyfile(TRACEBACKHIDE_HEALTHCHECK)
     result = testdir.runpytest(script, "--verbose")
     def_token = "__ test_healthcheck_traceback_is_hidden __"

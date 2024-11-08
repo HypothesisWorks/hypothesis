@@ -191,19 +191,20 @@ def test_self_organising_list_raises_not_found_when_none_satisfy():
 
 
 def test_self_organising_list_moves_to_front():
-    count = [0]
+    count = 0
 
     def zero(n):
-        count[0] += 1
+        nonlocal count
+        count += 1
         return n == 0
 
     x = SelfOrganisingList(range(20))
 
     assert x.find(zero) == 0
-    assert count[0] == 20
+    assert count == 20
 
     assert x.find(zero) == 0
-    assert count[0] == 21
+    assert count == 21
 
 
 @given(st.binary(), st.binary())
