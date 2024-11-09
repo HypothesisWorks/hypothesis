@@ -134,6 +134,9 @@ class Optimiser:
                     return False
 
                 node = self.current_data.examples.ir_tree_nodes[i]
+                if node.was_forced:
+                    return False  # pragma: no cover
+
                 if node.ir_type in {"integer", "float"}:
                     new_value = node.value + k
                 elif node.ir_type == "boolean":
