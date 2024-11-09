@@ -338,7 +338,6 @@ def test_stateful_target_params_mutually_exclusive(tmp_path, decorator):
     "target_args",
     [
         "target=b1",
-        "targets=(b1,)",
         # FIXME: temporary workaround for mypy bug, see hypothesis/pull/4136
         pytest.param("targets=(b1,)", marks=pytest.mark.xfail(strict=False)),
         "targets=(b1, b2)",

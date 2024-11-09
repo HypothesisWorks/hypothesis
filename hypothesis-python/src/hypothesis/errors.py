@@ -8,7 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from typing import Any, Literal
+from typing import Literal
 
 from hypothesis.internal.compat import ExceptionGroup
 
@@ -232,7 +232,7 @@ class Found(HypothesisException):
 class RewindRecursive(Exception):
     """Signal that the type inference should be rewound due to recursive types. Internal use only."""
 
-    def __init__(self, target: Any) -> None:
+    def __init__(self, target: object) -> None:
         self.target = target
 
 

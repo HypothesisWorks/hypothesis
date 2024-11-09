@@ -206,14 +206,14 @@ def get_type_hints(thing: object) -> dict[str, Any]:
 # We still use the same trick on Python 3, because Numpy values and other
 # custom __floor__ or __ceil__ methods may convert via floats.
 # See issue #1667, Numpy issue 9068.
-def floor(x: float) -> int:
+def floor(x):
     y = int(x)
     if y != x and x < 0:
         return y - 1
     return y
 
 
-def ceil(x: float) -> int:
+def ceil(x):
     y = int(x)
     if y != x and x > 0:
         return y + 1

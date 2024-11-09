@@ -36,6 +36,7 @@ from typing import (
     Protocol,
     TypeVar,
     Union,
+    cast,
     get_args,
     get_origin,
     overload,
@@ -64,6 +65,7 @@ from hypothesis.errors import (
 from hypothesis.internal.cathetus import cathetus
 from hypothesis.internal.charmap import (
     Categories,
+    CategoryName,
     as_general_categories,
     categories as all_categories,
 )
@@ -566,13 +568,13 @@ def characters(
     codec: Optional[str] = None,
     min_codepoint: Optional[int] = None,
     max_codepoint: Optional[int] = None,
-    categories: Optional[Categories] = None,
-    exclude_categories: Optional[Categories] = None,
+    categories: Optional[Collection[CategoryName]] = None,
+    exclude_categories: Optional[Collection[CategoryName]] = None,
     exclude_characters: Optional[Collection[str]] = None,
     include_characters: Optional[Collection[str]] = None,
     # Note: these arguments are deprecated aliases for backwards compatibility
-    blacklist_categories: Optional[Categories] = None,
-    whitelist_categories: Optional[Categories] = None,
+    blacklist_categories: Optional[Collection[CategoryName]] = None,
+    whitelist_categories: Optional[Collection[CategoryName]] = None,
     blacklist_characters: Optional[Collection[str]] = None,
     whitelist_characters: Optional[Collection[str]] = None,
 ) -> SearchStrategy[str]:
@@ -627,7 +629,7 @@ def characters(
     check_valid_size(min_codepoint, "min_codepoint")
     check_valid_size(max_codepoint, "max_codepoint")
     check_valid_interval(min_codepoint, max_codepoint, "min_codepoint", "max_codepoint")
-
+    categories = cast(Optional[Categories], categories)
     if categories is not None and exclude_categories is not None:
         raise InvalidArgument(
             f"Pass at most one of {categories=} and {exclude_categories=} - "
