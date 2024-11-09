@@ -59,7 +59,7 @@ from hypothesis.internal.conjecture.data import (
     Status,
     _Overrun,
     ir_kwargs_key,
-    ir_size,
+    ir_size_nodes,
     ir_value_key,
 )
 from hypothesis.internal.conjecture.datatree import (
@@ -387,7 +387,7 @@ class ConjectureRunner:
         except KeyError:
             pass
 
-        max_length = min(BUFFER_SIZE_IR, ir_size(nodes) + extend)
+        max_length = min(BUFFER_SIZE_IR, ir_size_nodes(nodes) + extend)
 
         # explicitly use a no-op DataObserver here instead of a TreeRecordingObserver.
         # The reason is we don't expect simulate_test_function to explore new choices

@@ -29,9 +29,16 @@ from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
 from hypothesis.errors import FailedHealthCheck, FlakyStrategyDefinition
 from hypothesis.internal.compat import PYPY, bit_count, int_from_bytes
 from hypothesis.internal.conjecture import engine as engine_module
-from hypothesis.internal.conjecture.data import ConjectureData, IRNode, Overrun, Status
+from hypothesis.internal.conjecture.data import (
+    ConjectureData,
+    IRNode,
+    Overrun,
+    Status,
+    ir_size_nodes,
+)
 from hypothesis.internal.conjecture.datatree import compute_max_children
 from hypothesis.internal.conjecture.engine import (
+    BUFFER_SIZE_IR,
     MIN_TEST_CALLS,
     ConjectureRunner,
     ExitReason,
@@ -1610,7 +1617,9 @@ def test_overruns_with_extend_are_not_cached(node):
     assert data.status is Status.OVERRUN
 
     # cache miss
-    data = runner.cached_test_function_ir([node], extend=1)
+    data = runner.cached_test_function_ir(
+        [node], extend=BUFFER_SIZE_IR - ir_size_nodes([node])
+    )
     assert runner.call_count == 2
     assert data.status is Status.VALID
 

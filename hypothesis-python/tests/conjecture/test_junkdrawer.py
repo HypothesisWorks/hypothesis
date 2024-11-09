@@ -21,10 +21,10 @@ from hypothesis.internal.conjecture.junkdrawer import (
     SelfOrganisingList,
     binary_search,
     clamp,
+    endswith,
     replace_all,
     stack_depth_of_caller,
     startswith,
-    endswith,
 )
 
 

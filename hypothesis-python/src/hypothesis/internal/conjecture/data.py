@@ -1112,10 +1112,14 @@ def ir_value_permitted(value, ir_type, kwargs):
     raise NotImplementedError(f"unhandled type {type(value)} of ir value {value}")
 
 
-def ir_size(nodes: Sequence[IRNode]) -> int:
-    # TODO some node-specific notion of size: strings = # of elements,
-    # ints = some function of the number of bits, etc
-    return len(nodes)
+def ir_size(ir: Iterable[IRType]) -> int:
+    from hypothesis.database import ir_to_bytes
+
+    return len(ir_to_bytes(ir))
+
+
+def ir_size_nodes(nodes: Iterable[IRNode]) -> int:
+    return ir_size([n.value for n in nodes])
 
 
 def ir_value_key(ir_type, v):
@@ -2006,7 +2010,9 @@ class ConjectureData:
 
         return cls(
             max_length=BUFFER_SIZE,
-            max_length_ir=ir_size(ir_tree_prefix) if max_length is None else max_length,
+            max_length_ir=(
+                ir_size_nodes(ir_tree_prefix) if max_length is None else max_length
+            ),
             prefix=b"",
             random=random,
             ir_tree_prefix=ir_tree_prefix,
@@ -2045,6 +2051,7 @@ class ConjectureData:
         self.blocks = Blocks(self)
         self.buffer: "Union[bytes, bytearray]" = bytearray()
         self.index = 0
+        self.length_ir = 0
         self.index_ir = 0
         self.output = ""
         self.status = Status.VALID
@@ -2136,16 +2143,22 @@ class ConjectureData:
     # e.g. the shrinker.
 
     def _draw(self, ir_type, kwargs, *, observe, forced, fake_forced):
-        if self.index_ir >= self.max_length_ir:
+        # this is somewhat redundant with the length > max_length check at the
+        # end of the function, but avoids trying to use a null self.random when
+        # drawing past the node of a ConjectureData.for_ir_tree data.
+        if self.length_ir == self.max_length_ir:
             self.mark_overrun()
 
         if self.ir_tree_nodes is not None and observe:
             if self.index_ir < len(self.ir_tree_nodes):
                 node_value = self._pop_ir_tree_node(ir_type, kwargs, forced=forced)
             else:
-                (node_value, _buf) = ir_to_buffer(
-                    ir_type, kwargs, forced=forced, random=self.__random
-                )
+                try:
+                    (node_value, _buf) = ir_to_buffer(
+                        ir_type, kwargs, forced=forced, random=self.__random
+                    )
+                except StopTest:
+                    self.mark_overrun()
 
             if forced is None:
                 forced = node_value
@@ -2156,16 +2169,21 @@ class ConjectureData:
         )
 
         if observe:
+            was_forced = forced is not None and not fake_forced
             getattr(self.observer, f"draw_{ir_type}")(
-                value, kwargs=kwargs, was_forced=forced is not None and not fake_forced
+                value, kwargs=kwargs, was_forced=was_forced
             )
             self.__example_record.record_ir_draw(
                 ir_type,
                 value,
                 kwargs=kwargs,
-                was_forced=forced is not None and not fake_forced,
+                was_forced=was_forced,
             )
             self.index_ir += 1
+            self.length_ir += ir_size([value])
+
+        if self.length_ir > self.max_length_ir:
+            self.mark_overrun()
         return value
 
     def draw_integer(
@@ -2374,10 +2392,10 @@ class ConjectureData:
             # only track first misalignment for now.
             if self.misaligned_at is None:
                 self.misaligned_at = (self.index_ir, ir_type, kwargs, forced)
-            (_value, buffer) = ir_to_buffer(
-                node.ir_type, node.kwargs, forced=node.value
-            )
             try:
+                (_value, buffer) = ir_to_buffer(
+                    node.ir_type, node.kwargs, forced=node.value
+                )
                 value = buffer_to_ir(
                     ir_type, kwargs, buffer=buffer + bytes(BUFFER_SIZE - len(buffer))
                 )

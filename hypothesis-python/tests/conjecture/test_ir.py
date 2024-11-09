@@ -29,6 +29,7 @@ from hypothesis.internal.conjecture.datatree import (
     all_children,
     compute_max_children,
 )
+from hypothesis.internal.conjecture.engine import BUFFER_SIZE_IR
 from hypothesis.internal.floats import SMALLEST_SUBNORMAL, next_down, next_up
 from hypothesis.internal.intervalsets import IntervalSet
 
@@ -424,7 +425,7 @@ def test_data_with_changed_forced_value(node):
     # This is actually fine; we'll just ignore the forced node (v1) and return
     # what the draw expects (v2).
 
-    data = ConjectureData.for_ir_tree([node])
+    data = ConjectureData.for_ir_tree([node], max_length=BUFFER_SIZE_IR)
 
     draw_func = getattr(data, f"draw_{node.ir_type}")
     kwargs = deepcopy(node.kwargs)
