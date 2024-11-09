@@ -231,7 +231,7 @@ def as_general_categories(cats: Categories, name: str = "cats") -> CategoriesTup
     return tuple(c for c in cs if c in out)
 
 
-category_index_cache: dict[CategoriesTuple, IntervalsT] = {(): ()}
+category_index_cache: dict[frozenset[CategoryName], IntervalsT] = {frozenset(): ()}
 
 
 def _category_key(cats: Optional[Iterable[str]]) -> CategoriesTuple:
@@ -260,10 +260,12 @@ def _query_for_key(key: Categories) -> IntervalsT:
     ((8232, 8233), (57344, 63743), (983040, 1048573), (1048576, 1114109))
     """
     key = tuple(key)
+    # ignore ordering on the cache key to increase potential cache hits.
+    cache_key = frozenset(key)
     context = _current_build_context.value
     if context is None or not context.data.provider.avoid_realization:
         try:
-            return category_index_cache[key]
+            return category_index_cache[cache_key]
         except KeyError:
             pass
     elif not key:  # pragma: no cover  # only on alternative backends
@@ -277,7 +279,7 @@ def _query_for_key(key: Categories) -> IntervalsT:
         )
     assert isinstance(result, IntervalSet)
     if context is None or not context.data.provider.avoid_realization:
-        category_index_cache[key] = result.intervals
+        category_index_cache[cache_key] = result.intervals
     return result.intervals
 
 
