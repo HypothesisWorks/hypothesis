@@ -494,6 +494,7 @@ def test_can_shrink_variable_string_draws():
 def test_variable_size_string_increasing():
     # coverage test for min_size increasing during shrinking (because the test
     # function inverts n).
+    # ...except this currently overruns instead and misses that check.
     @st.composite
     def strategy(draw):
         n = 10 - draw(st.integers(0, 10))

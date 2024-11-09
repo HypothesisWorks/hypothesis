@@ -149,10 +149,10 @@ class BuildContext:
         arg_labels = {}
         kwargs = {}
         for k, s in kwarg_strategies.items():
-            start_idx = self.data.index_ir
+            start_idx = self.data.index
             with deprecate_random_in_strategy("from {}={!r}", k, s) as check:
                 obj = check(self.data.draw(s, observe_as=f"generate:{k}"))
-            end_idx = self.data.index_ir
+            end_idx = self.data.index
             kwargs[k] = obj
 
             # This high up the stack, we can't see or really do much with the conjecture

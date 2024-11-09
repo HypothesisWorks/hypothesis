@@ -67,11 +67,7 @@ from hypothesis.internal.conjecture.datatree import (
     PreviouslyUnseenBehaviour,
     TreeRecordingObserver,
 )
-from hypothesis.internal.conjecture.junkdrawer import (
-    clamp,
-    ensure_free_stackframes,
-    startswith,
-)
+from hypothesis.internal.conjecture.junkdrawer import clamp, ensure_free_stackframes
 from hypothesis.internal.conjecture.pareto import NO_SCORE, ParetoFront, ParetoOptimiser
 from hypothesis.internal.conjecture.shrinker import Shrinker, sort_key
 from hypothesis.internal.healthcheck import fail_health_check
@@ -1482,18 +1478,14 @@ class ConjectureRunner:
             self.__data_cache[buffer] = result
         return result
 
-    def passing_choice_sequences(
-        self, prefix: Sequence[IRNode] = ()
-    ) -> frozenset[bytes]:
-        """Return a collection of choice sequence nodes which cause the test to pass.
-
+    def passing_buffers(self, prefix: bytes = b"") -> frozenset[bytes]:
+        """Return a collection of bytestrings which cause the test to pass.
         Optionally restrict this by a certain prefix, which is useful for explain mode.
         """
         return frozenset(
-            result.examples.ir_tree_nodes
-            for key in self.__data_cache_ir
-            if (result := self.__data_cache_ir[key]).status is Status.VALID
-            and startswith(result.examples.ir_tree_nodes, prefix)
+            buf
+            for buf in self.__data_cache
+            if buf.startswith(prefix) and self.__data_cache[buf].status == Status.VALID
         )
 
 
