@@ -8,15 +8,18 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import math
+
 import pytest
 
-from hypothesis import settings
+from hypothesis import assume, example, given, settings
 from hypothesis.internal.compat import int_to_bytes
-from hypothesis.internal.conjecture.data import Status
+from hypothesis.internal.conjecture.data import IRNode, Status
+from hypothesis.internal.conjecture.datatree import compute_max_children
 from hypothesis.internal.conjecture.engine import ConjectureRunner, RunIsComplete
 from hypothesis.internal.entropy import deterministic_PRNG
 
-from tests.conjecture.common import TEST_SETTINGS, buffer_size_limit
+from tests.conjecture.common import TEST_SETTINGS, buffer_size_limit, ir_nodes
 
 
 def test_optimises_to_maximum():
@@ -219,3 +222,38 @@ def test_optimiser_when_test_grows_buffer_to_overflow():
                 pass
 
             assert runner.best_observed_targets["m"] == 100
+
+
+@given(ir_nodes())
+@example(
+    IRNode(
+        ir_type="bytes",
+        value=b"\xb1",
+        kwargs={"min_size": 1, "max_size": 1},
+        was_forced=False,
+    )
+)
+def test_optimising_all_nodes(node):
+    assume(compute_max_children(node.ir_type, node.kwargs) > 100)
+    size_function = {
+        "integer": lambda n: n,
+        "float": lambda f: f if math.isfinite(f) else 0,
+        "string": lambda s: len(s),
+        "bytes": lambda b: len(b),
+        "boolean": lambda b: int(b),
+    }
+    with deterministic_PRNG():
+
+        def test(data):
+            v = getattr(data, f"draw_{node.ir_type}")(**node.kwargs)
+            data.target_observations["v"] = size_function[node.ir_type](v)
+
+        runner = ConjectureRunner(
+            test, settings=settings(TEST_SETTINGS, max_examples=50)
+        )
+        runner.cached_test_function_ir([node])
+
+        try:
+            runner.optimise_targets()
+        except RunIsComplete:
+            pass
