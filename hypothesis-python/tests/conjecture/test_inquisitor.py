@@ -16,14 +16,12 @@ from tests.common.utils import fails_with
 
 
 def fails_with_output(expected, error=AssertionError, **kw):
-    expected = [expected] if isinstance(expected, str) else expected
-
     def _inner(f):
         def _new():
             with pytest.raises(error) as err:
                 settings(print_blob=False, derandomize=True, **kw)(f)()
             got = "\n".join(err.value.__notes__).strip() + "\n"
-            assert any(got == s.strip() + "\n" for s in expected), got
+            assert got == expected.strip() + "\n"
 
         return _new
 
