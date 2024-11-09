@@ -569,7 +569,7 @@ class Examples:
 
     class _discarded(ExampleProperty):
         def begin(self) -> None:
-            self.result: "set[int]" = set()
+            self.result: set[int] = set()
 
         def finish(self) -> frozenset[int]:
             return frozenset(self.result)
@@ -583,7 +583,7 @@ class Examples:
     class _trivial(ExampleProperty):
         def begin(self) -> None:
             self.nontrivial = IntList.of_length(len(self.examples))
-            self.result: "set[int]" = set()
+            self.result: set[int] = set()
 
         def block(self, i: int) -> None:
             if not self.examples.blocks.trivial(i):

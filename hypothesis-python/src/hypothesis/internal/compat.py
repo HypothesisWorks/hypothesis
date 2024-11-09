@@ -36,6 +36,8 @@ if typing.TYPE_CHECKING:  # pragma: no cover
         TypedDict as TypedDict,
         override as override,
     )
+
+    from hypothesis.internal.conjecture.engine import ConjectureRunner
 else:
     # In order to use NotRequired, we need the version of TypedDict included in Python 3.11+.
     if sys.version_info[:2] >= (3, 11):
@@ -129,7 +131,7 @@ def _hint_and_args(x):
     return (x, *get_args(x))
 
 
-def get_type_hints(thing):
+def get_type_hints(thing: object) -> dict[str, Any]:
     """Like the typing version, but tries harder and never errors.
 
     Tries harder: if the thing to inspect is a class but typing.get_type_hints
@@ -237,7 +239,7 @@ except AttributeError:  # pragma: no cover
     bit_count = lambda self: sum(extract_bits(abs(self)))
 
 
-def bad_django_TestCase(runner):
+def bad_django_TestCase(runner: Optional["ConjectureRunner"]) -> bool:
     if runner is None or "django.test" not in sys.modules:
         return False
     else:  # pragma: no cover

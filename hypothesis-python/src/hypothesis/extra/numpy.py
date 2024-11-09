@@ -531,7 +531,7 @@ def arrays(
             lambda s: arrays(dtype, s, elements=elements, fill=fill, unique=unique)
         )
     # From here on, we're only dealing with values and it's relatively simple.
-    dtype = np.dtype(dtype)  # type: ignore[arg-type,assignment]
+    dtype = np.dtype(dtype)  # type: ignore[arg-type]
     assert isinstance(dtype, np.dtype)  # help mypy out a bit...
     if elements is None or isinstance(elements, Mapping):
         if dtype.kind in ("m", "M") and "[" not in dtype.str:

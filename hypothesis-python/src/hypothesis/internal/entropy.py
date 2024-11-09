@@ -13,9 +13,9 @@ import gc
 import random
 import sys
 import warnings
-from collections.abc import Hashable
+from collections.abc import Generator, Hashable
 from itertools import count
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any, Callable, Optional
 from weakref import WeakValueDictionary
 
 import hypothesis.core
@@ -28,9 +28,9 @@ if TYPE_CHECKING:
     # we can't use this at runtime until from_type supports
     # protocols -- breaks ghostwriter tests
     class RandomLike(Protocol):
-        seed: Callable[..., Any]
-        getstate: Callable[[], Any]
-        setstate: Callable[..., Any]
+        def seed(self, *args: Any, **kwargs: Any) -> Any: ...
+        def getstate(self, *args: Any, **kwargs: Any) -> Any: ...
+        def setstate(self, *args: Any, **kwargs: Any) -> Any: ...
 
 else:  # pragma: no cover
     RandomLike = random.Random
@@ -39,11 +39,13 @@ else:  # pragma: no cover
 # with their respective Random instances even as new ones are registered and old
 # ones go out of scope and get garbage collected.  Keys are ascending integers.
 _RKEY = count()
-RANDOMS_TO_MANAGE: WeakValueDictionary = WeakValueDictionary({next(_RKEY): random})
+RANDOMS_TO_MANAGE: WeakValueDictionary[int, RandomLike] = WeakValueDictionary(
+    {next(_RKEY): random}
+)
 
 
 class NumpyRandomWrapper:
-    def __init__(self):
+    def __init__(self) -> None:
         assert "numpy" in sys.modules
         # This class provides a shim that matches the numpy to stdlib random,
         # and lets us avoid importing Numpy until it's already in use.
@@ -54,7 +56,7 @@ class NumpyRandomWrapper:
         self.setstate = numpy.random.set_state
 
 
-NP_RANDOM = None
+NP_RANDOM: Optional[RandomLike] = None
 
 
 if not (PYPY or GRAALPY):
@@ -160,7 +162,7 @@ def get_seeder_and_restorer(
     """
     assert isinstance(seed, int)
     assert 0 <= seed < 2**32
-    states: dict = {}
+    states: dict[int, object] = {}
 
     if "numpy" in sys.modules:
         global NP_RANDOM
@@ -168,13 +170,13 @@ def get_seeder_and_restorer(
             # Protect this from garbage-collection by adding it to global scope
             NP_RANDOM = RANDOMS_TO_MANAGE[next(_RKEY)] = NumpyRandomWrapper()
 
-    def seed_all():
+    def seed_all() -> None:
         assert not states
         for k, r in RANDOMS_TO_MANAGE.items():
             states[k] = r.getstate()
             r.seed(seed)
 
-    def restore_all():
+    def restore_all() -> None:
         for k, state in states.items():
             r = RANDOMS_TO_MANAGE.get(k)
             if r is not None:  # i.e., hasn't been garbage-collected
@@ -185,7 +187,7 @@ def get_seeder_and_restorer(
 
 
 @contextlib.contextmanager
-def deterministic_PRNG(seed=0):
+def deterministic_PRNG(seed: int = 0) -> Generator[None, None, None]:
     """Context manager that handles random.seed without polluting global state.
 
     See issue #1255 and PR #1295 for details and motivation - in short,
