@@ -618,4 +618,4 @@ def test_simulate_forced_floats(node):
     data = ConjectureData.for_ir_tree([node], observer=tree.new_observer())
     tree.simulate_test_function(data)
     data.freeze()
-    assert data.examples.ir_tree_nodes == [node]
+    assert data.examples.ir_tree_nodes == (node,)

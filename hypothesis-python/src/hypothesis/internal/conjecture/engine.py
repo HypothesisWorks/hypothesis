@@ -13,7 +13,7 @@ import math
 import textwrap
 import time
 from collections import defaultdict
-from collections.abc import Generator
+from collections.abc import Generator, Sequence
 from contextlib import contextmanager, suppress
 from datetime import timedelta
 from enum import Enum
@@ -44,20 +44,12 @@ from hypothesis.errors import (
     StopTest,
 )
 from hypothesis.internal.cache import LRUReusedCache
-from hypothesis.internal.compat import (
-    NotRequired,
-    TypeAlias,
-    TypedDict,
-    ceil,
-    int_from_bytes,
-    override,
-)
+from hypothesis.internal.compat import NotRequired, TypeAlias, TypedDict, ceil, override
 from hypothesis.internal.conjecture.data import (
     AVAILABLE_PROVIDERS,
     ConjectureData,
     ConjectureResult,
     DataObserver,
-    Example,
     HypothesisProvider,
     InterestingOrigin,
     IRKWargsType,
@@ -67,6 +59,7 @@ from hypothesis.internal.conjecture.data import (
     Status,
     _Overrun,
     ir_kwargs_key,
+    ir_size_nodes,
     ir_value_key,
 )
 from hypothesis.internal.conjecture.datatree import (
@@ -85,6 +78,7 @@ CACHE_SIZE: Final[int] = 10000
 MUTATION_POOL_SIZE: Final[int] = 100
 MIN_TEST_CALLS: Final[int] = 10
 BUFFER_SIZE: Final[int] = 8 * 1024
+BUFFER_SIZE_IR: Final[int] = 8 * 1024
 
 # If the shrinking phase takes more than five minutes, abort it early and print
 # a warning.   Many CI systems will kill a build after around ten minutes with
@@ -330,7 +324,7 @@ class ConjectureRunner:
     def _cache_key_ir(
         self,
         *,
-        nodes: Optional[list[IRNode]] = None,
+        nodes: Optional[Sequence[IRNode]] = None,
         data: Union[ConjectureData, ConjectureResult, None] = None,
     ) -> tuple[tuple[Any, ...], ...]:
         assert (nodes is not None) ^ (data is not None)
@@ -373,13 +367,23 @@ class ConjectureRunner:
             self.__data_cache_ir[key] = result
 
     def cached_test_function_ir(
-        self, nodes: list[IRNode], *, error_on_discard: bool = False
+        self,
+        nodes: Sequence[IRNode],
+        *,
+        error_on_discard: bool = False,
+        extend: int = 0,
     ) -> Union[ConjectureResult, _Overrun]:
         key = self._cache_key_ir(nodes=nodes)
         try:
-            return self.__data_cache_ir[key]
+            cached = self.__data_cache_ir[key]
+            # if we have a cached overrun for this key, but we're allowing extensions
+            # of the nodes, it could in fact run to a valid data if we try.
+            if extend == 0 or cached.status is not Status.OVERRUN:
+                return cached
         except KeyError:
             pass
+
+        max_length = min(BUFFER_SIZE_IR, ir_size_nodes(nodes) + extend)
 
         # explicitly use a no-op DataObserver here instead of a TreeRecordingObserver.
         # The reason is we don't expect simulate_test_function to explore new choices
@@ -396,7 +400,9 @@ class ConjectureRunner:
             trial_observer = DiscardObserver()
 
         try:
-            trial_data = self.new_conjecture_data_ir(nodes, observer=trial_observer)
+            trial_data = self.new_conjecture_data_ir(
+                nodes, observer=trial_observer, max_length=max_length
+            )
             self.tree.simulate_test_function(trial_data)
         except PreviouslyUnseenBehaviour:
             pass
@@ -408,7 +414,7 @@ class ConjectureRunner:
             except KeyError:
                 pass
 
-        data = self.new_conjecture_data_ir(nodes)
+        data = self.new_conjecture_data_ir(nodes, max_length=max_length)
         # note that calling test_function caches `data` for us, for both an ir
         # tree key and a buffer key.
         self.test_function(data)
@@ -744,34 +750,14 @@ class ConjectureRunner:
         if not self.report_debug_info:
             return
 
-        stack: list[Ls] = [[]]
-
-        def go(ex: Example) -> None:
-            if ex.length == 0:
-                return
-            if len(ex.children) == 0:
-                stack[-1].append(int_from_bytes(data.buffer[ex.start : ex.end]))
-            else:
-                node: Ls = []
-                stack.append(node)
-
-                for v in ex.children:
-                    go(v)
-                stack.pop()
-                if len(node) == 1:
-                    stack[-1].extend(node)
-                else:
-                    stack[-1].append(node)
-
-        go(data.examples[0])
-        assert len(stack) == 1
-
         status = repr(data.status)
-
         if data.status == Status.INTERESTING:
             status = f"{status} ({data.interesting_origin!r})"
 
-        self.debug(f"{data.index} bytes {stack[0]!r} -> {status}, {data.output}")
+        nodes = data.examples.ir_tree_nodes
+        self.debug(
+            f"{len(nodes)} nodes {[n.value for n in nodes]} -> {status}, {data.output}"
+        )
 
     def run(self) -> None:
         with local_settings(self.settings):
@@ -1259,7 +1245,7 @@ class ConjectureRunner:
 
     def new_conjecture_data_ir(
         self,
-        ir_tree_prefix: list[IRNode],
+        ir_tree_prefix: Sequence[IRNode],
         *,
         observer: Optional[DataObserver] = None,
         max_length: Optional[int] = None,
@@ -1272,7 +1258,11 @@ class ConjectureRunner:
             observer = DataObserver()
 
         return ConjectureData.for_ir_tree(
-            ir_tree_prefix, observer=observer, provider=provider, max_length=max_length
+            ir_tree_prefix,
+            observer=observer,
+            provider=provider,
+            max_length=max_length,
+            random=self.random,
         )
 
     def new_conjecture_data(
@@ -1490,7 +1480,6 @@ class ConjectureRunner:
 
     def passing_buffers(self, prefix: bytes = b"") -> frozenset[bytes]:
         """Return a collection of bytestrings which cause the test to pass.
-
         Optionally restrict this by a certain prefix, which is useful for explain mode.
         """
         return frozenset(

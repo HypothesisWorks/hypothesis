@@ -29,6 +29,7 @@ from hypothesis.internal.conjecture.datatree import (
     all_children,
     compute_max_children,
 )
+from hypothesis.internal.conjecture.engine import BUFFER_SIZE_IR
 from hypothesis.internal.floats import SMALLEST_SUBNORMAL, next_down, next_up
 from hypothesis.internal.intervalsets import IntervalSet
 
@@ -333,7 +334,7 @@ def test_ir_nodes(random):
     data.draw_integer(0, 100, forced=50)
 
     data.freeze()
-    expected_tree_nodes = [
+    expected_tree_nodes = (
         IRNode(
             ir_type="float",
             value=5.0,
@@ -378,7 +379,7 @@ def test_ir_nodes(random):
             },
             was_forced=True,
         ),
-    ]
+    )
     assert data.examples.ir_tree_nodes == expected_tree_nodes
 
 
@@ -401,6 +402,12 @@ def test_ir_node_equality(node):
     assert node != 42
 
 
+@given(ir_nodes(was_forced=True))
+def test_cannot_modify_forced_nodes(node):
+    with pytest.raises(AssertionError):
+        node.copy(with_value=42)
+
+
 def test_data_with_empty_ir_tree_is_overrun():
     data = ConjectureData.for_ir_tree([])
     with pytest.raises(StopTest):
@@ -418,7 +425,7 @@ def test_data_with_changed_forced_value(node):
     # This is actually fine; we'll just ignore the forced node (v1) and return
     # what the draw expects (v2).
 
-    data = ConjectureData.for_ir_tree([node])
+    data = ConjectureData.for_ir_tree([node], max_length=BUFFER_SIZE_IR)
 
     draw_func = getattr(data, f"draw_{node.ir_type}")
     kwargs = deepcopy(node.kwargs)

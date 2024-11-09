@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 from collections import defaultdict
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Callable, Optional, TypeVar, Union
 
 import attr
@@ -22,12 +23,17 @@ from hypothesis.internal.conjecture.choicetree import (
 from hypothesis.internal.conjecture.data import (
     ConjectureData,
     ConjectureResult,
+    IRNode,
     Status,
     ir_value_equal,
     ir_value_key,
     ir_value_permitted,
 )
-from hypothesis.internal.conjecture.junkdrawer import find_integer, replace_all
+from hypothesis.internal.conjecture.junkdrawer import (
+    find_integer,
+    replace_all,
+    startswith,
+)
 from hypothesis.internal.conjecture.shrinking import (
     Bytes,
     Float,
@@ -385,11 +391,8 @@ class Shrinker:
         self.check_calls()
         return result
 
-    def consider_new_tree(self, tree):
+    def consider_new_tree(self, tree: Sequence[IRNode]) -> bool:
         tree = tree[: len(self.nodes)]
-
-        def startswith(t1, t2):
-            return t1[: len(t2)] == t2
 
         if startswith(tree, self.nodes):
             return True
@@ -1077,7 +1080,9 @@ class Shrinker:
                 # if the size *increased*, we would have to guess what to pad with
                 # in order to try fixing up this attempt. Just give up.
                 if node.kwargs["min_size"] <= attempt_kwargs["min_size"]:
-                    return False
+                    # attempts which increase min_size tend to overrun rather than
+                    # be misaligned, making a covering case difficult.
+                    return False  # pragma: no cover
                 # the size decreased in our attempt. Try again, but replace with
                 # the min_size that we would have gotten, and truncate the value
                 # to that size by removing any elements past min_size.
@@ -1262,9 +1267,9 @@ class Shrinker:
 
             return self.consider_new_tree(
                 self.nodes[: node1.index]
-                + [node1.copy(with_value=node_value)]
+                + (node1.copy(with_value=node_value),)
                 + self.nodes[node1.index + 1 : node2.index]
-                + [node2.copy(with_value=next_node_value)]
+                + (node2.copy(with_value=next_node_value),)
                 + self.nodes[node2.index + 1 :]
             )
 
@@ -1413,7 +1418,7 @@ class Shrinker:
 
         lowered = (
             self.nodes[: node.index]
-            + [node.copy(with_value=node.value - 1)]
+            + (node.copy(with_value=node.value - 1),)
             + self.nodes[node.index + 1 :]
         )
         attempt = self.cached_test_function_ir(lowered)

@@ -12,6 +12,7 @@ import abc
 import binascii
 import json
 import os
+import struct
 import sys
 import warnings
 from collections.abc import Iterable
@@ -27,6 +28,7 @@ from zipfile import BadZipFile, ZipFile
 
 from hypothesis.configuration import storage_directory
 from hypothesis.errors import HypothesisException, HypothesisWarning
+from hypothesis.internal.conjecture.data import IRType
 from hypothesis.utils.conventions import not_set
 
 __all__ = [
@@ -671,3 +673,75 @@ class GitHubArtifactDatabase(ExampleDatabase):
 
     def delete(self, key: bytes, value: bytes) -> None:
         raise RuntimeError(self._read_only_message)
+
+
+def ir_to_bytes(ir: Iterable[IRType], /) -> bytes:
+    """Serialize a list of IR elements to a bytestring.  Inverts ir_from_bytes."""
+    # We use a custom serialization format for this, which might seem crazy - but our
+    # data is a flat sequence of elements, and standard tools like protobuf or msgpack
+    # don't deal well with e.g. nonstandard bit-pattern-NaNs, or invalid-utf8 unicode.
+    #
+    # We simply encode each element with a metadata byte, if needed a uint16 size, and
+    # then the payload bytes.  For booleans, the payload is inlined into the metadata.
+    parts = []
+    for elem in ir:
+        if isinstance(elem, bool):
+            # `000_0000v` - tag zero, low bit payload.
+            parts.append(b"\1" if elem else b"\0")
+            continue
+
+        # `tag_ssss [uint16 size?] [payload]`
+        if isinstance(elem, float):
+            tag = 1 << 5
+            elem = struct.pack("!d", elem)
+        elif isinstance(elem, int):
+            tag = 2 << 5
+            elem = elem.to_bytes(1 + elem.bit_length() // 8, "big", signed=True)
+        elif isinstance(elem, bytes):
+            tag = 3 << 5
+        else:
+            assert isinstance(elem, str)
+            tag = 4 << 5
+            elem = elem.encode(errors="surrogatepass")
+
+        size = len(elem)
+        if size < 0b11111:
+            parts.append((tag | size).to_bytes(1, "big"))
+        else:
+            parts.append((tag | 0b11111).to_bytes(1, "big"))
+            parts.append(struct.pack("!H", size))
+        parts.append(elem)
+
+    return b"".join(parts)
+
+
+def ir_from_bytes(buffer: bytes, /) -> list[IRType]:
+    """Deserialize a bytestring to a list of IR elements. Inverts ir_to_bytes."""
+    # See above for an explanation of the format.
+    parts: list[IRType] = []
+    idx = 0
+    while idx < len(buffer):
+        tag = buffer[idx] >> 5
+        size = buffer[idx] & 0b11111
+        idx += 1
+
+        if tag == 0:
+            parts.append(bool(size))
+            continue
+        if size == 0b11111:
+            (size,) = struct.unpack_from("!H", buffer, offset=idx)
+            idx += 2
+        chunk = buffer[idx : idx + size]
+        idx += size
+
+        if tag == 1:
+            assert size == 8, "expected float64"
+            parts.extend(struct.unpack("!d", chunk))
+        elif tag == 2:
+            parts.append(int.from_bytes(chunk, "big", signed=True))
+        elif tag == 3:
+            parts.append(chunk)
+        else:
+            assert tag == 4
+            parts.append(chunk.decode(errors="surrogatepass"))
+    return parts

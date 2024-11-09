@@ -29,9 +29,16 @@ from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
 from hypothesis.errors import FailedHealthCheck, FlakyStrategyDefinition
 from hypothesis.internal.compat import PYPY, bit_count, int_from_bytes
 from hypothesis.internal.conjecture import engine as engine_module
-from hypothesis.internal.conjecture.data import ConjectureData, IRNode, Overrun, Status
+from hypothesis.internal.conjecture.data import (
+    ConjectureData,
+    IRNode,
+    Overrun,
+    Status,
+    ir_size_nodes,
+)
 from hypothesis.internal.conjecture.datatree import compute_max_children
 from hypothesis.internal.conjecture.engine import (
+    BUFFER_SIZE_IR,
     MIN_TEST_CALLS,
     ConjectureRunner,
     ExitReason,
@@ -487,6 +494,7 @@ def test_can_shrink_variable_string_draws():
 def test_variable_size_string_increasing():
     # coverage test for min_size increasing during shrinking (because the test
     # function inverts n).
+    # ...except this currently overruns instead and misses that check.
     @st.composite
     def strategy(draw):
         n = 10 - draw(st.integers(0, 10))
@@ -534,7 +542,7 @@ def test_debug_data(capsys):
     runner.run()
 
     out, _ = capsys.readouterr()
-    assert re.match("\\d+ bytes \\[.*\\] -> ", out)
+    assert re.match("\\d+ nodes \\[.*\\] -> ", out)
     assert "INTERESTING" in out
 
 
@@ -1587,6 +1595,34 @@ def test_cache_ignores_was_forced(forced_first, node):
 
     runner.cached_test_function_ir([node] if forced_first else [forced_node])
     assert runner.call_count == 1
+
+
+@given(ir_nodes(was_forced=False))
+def test_overruns_with_extend_are_not_cached(node):
+    assume(compute_max_children(node.ir_type, node.kwargs) > 100)
+
+    def test(cd):
+        _draw(cd, node)
+        _draw(cd, node)
+
+    runner = ConjectureRunner(test)
+    assert runner.call_count == 0
+
+    data = runner.cached_test_function_ir([node])
+    assert runner.call_count == 1
+    assert data.status is Status.OVERRUN
+
+    # cache hit
+    data = runner.cached_test_function_ir([node])
+    assert runner.call_count == 1
+    assert data.status is Status.OVERRUN
+
+    # cache miss
+    data = runner.cached_test_function_ir(
+        [node], extend=BUFFER_SIZE_IR - ir_size_nodes([node])
+    )
+    assert runner.call_count == 2
+    assert data.status is Status.VALID
 
 
 def test_simulate_to_evicted_data(monkeypatch):

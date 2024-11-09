@@ -468,3 +468,15 @@ def gc_cumulative_time() -> float:
         _gc_initialized = True
 
     return _gc_cumulative_time
+
+
+def startswith(l1: Sequence[T], l2: Sequence[T]) -> bool:
+    if len(l1) < len(l2):
+        return False
+    return all(v1 == v2 for v1, v2 in zip(l1[: len(l2)], l2))
+
+
+def endswith(l1: Sequence[T], l2: Sequence[T]) -> bool:
+    if len(l1) < len(l2):
+        return False
+    return all(v1 == v2 for v1, v2 in zip(l1[-len(l2) :], l2))
