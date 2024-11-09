@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.118.2:
+
+--------------------
+6.118.2 - 2024-11-09
+--------------------
+
+This patch migrates the :obj:`~hypothesis.Phase.explain` :ref:`phase <phases>` to our IR layer (:issue:`3921`). This should improve both its speed and precision.
+
 .. _v6.118.1:
 
 --------------------
