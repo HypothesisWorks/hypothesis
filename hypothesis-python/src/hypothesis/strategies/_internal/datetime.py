@@ -9,8 +9,10 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import datetime as dt
+import operator as op
+import zoneinfo
 from calendar import monthrange
-from functools import lru_cache
+from functools import lru_cache, partial
 from importlib import resources
 from pathlib import Path
 from typing import Optional
@@ -18,21 +20,9 @@ from typing import Optional
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.validation import check_type, check_valid_interval
 from hypothesis.strategies._internal.core import sampled_from
-from hypothesis.strategies._internal.misc import just, none
+from hypothesis.strategies._internal.misc import just, none, nothing
 from hypothesis.strategies._internal.strategies import SearchStrategy
 from hypothesis.strategies._internal.utils import defines_strategy
-
-# The zoneinfo module, required for the timezones() and timezone_keys()
-# strategies, is new in Python 3.9 and the backport might be missing.
-try:
-    import zoneinfo
-except ImportError:
-    try:
-        from backports import zoneinfo  # type: ignore
-    except ImportError:
-        # We raise an error recommending `pip install hypothesis[zoneinfo]`
-        # when timezones() or timezone_keys() strategies are actually used.
-        zoneinfo = None  # type: ignore
 
 DATENAMES = ("year", "month", "day")
 TIMENAMES = ("hour", "minute", "second", "microsecond")
@@ -189,8 +179,7 @@ def datetimes(
     You can construct your own, though we recommend using one of these built-in
     strategies:
 
-    * with Python 3.9 or newer or :pypi:`backports.zoneinfo`:
-      :func:`hypothesis.strategies.timezones`;
+    * with the standard library: :func:`hypothesis.strategies.timezones`;
     * with :pypi:`dateutil <python-dateutil>`:
       :func:`hypothesis.extra.dateutil.timezones`; or
     * with :pypi:`pytz`: :func:`hypothesis.extra.pytz.timezones`.
@@ -279,6 +268,37 @@ class DateStrategy(SearchStrategy):
             **draw_capped_multipart(data, self.min_value, self.max_value, DATENAMES)
         )
 
+    def filter(self, condition):
+        if (
+            isinstance(condition, partial)
+            and len(args := condition.args) == 1
+            and not condition.keywords
+            and isinstance(arg := args[0], dt.date)
+            and condition.func in (op.lt, op.le, op.eq, op.ge, op.gt)
+        ):
+            try:
+                arg += dt.timedelta(days={op.lt: 1, op.gt: -1}.get(condition.func, 0))
+            except OverflowError:  # gt date.max, or lt date.min
+                return nothing()
+            lo, hi = {
+                # We're talking about op(arg, x) - the reverse of our usual intuition!
+                op.lt: (arg, self.max_value),  # lambda x: arg < x
+                op.le: (arg, self.max_value),  # lambda x: arg <= x
+                op.eq: (arg, arg),  #            lambda x: arg == x
+                op.ge: (self.min_value, arg),  # lambda x: arg >= x
+                op.gt: (self.min_value, arg),  # lambda x: arg > x
+            }[condition.func]
+            lo = max(lo, self.min_value)
+            hi = min(hi, self.max_value)
+            print(lo, hi)
+            if hi < lo:
+                return nothing()
+            if lo <= self.min_value and self.max_value <= hi:
+                return self
+            return dates(lo, hi)
+
+        return super().filter(condition)
+
 
 @defines_strategy(force_reusable_values=True)
 def dates(
@@ -353,12 +373,7 @@ def _valid_key_cacheable(tzpath, key):
         *package_loc, resource_name = key.split("/")
         package = "tzdata.zoneinfo." + ".".join(package_loc)
         try:
-            try:
-                traversable = resources.files(package) / resource_name
-                return traversable.exists()
-            except (AttributeError, ValueError):
-                # .files() was added in Python 3.9
-                return resources.is_resource(package, resource_name)
+            return (resources.files(package) / resource_name).exists()
         except ModuleNotFoundError:
             return False
 
@@ -388,14 +403,9 @@ def timezone_keys(
 
     .. note::
 
-        The :mod:`python:zoneinfo` module is new in Python 3.9, so you will need
-        to install the :pypi:`backports.zoneinfo` module on earlier versions.
-
-        `On Windows, you will also need to install the tzdata package
+        `The tzdata package is required on Windows
         <https://docs.python.org/3/library/zoneinfo.html#data-sources>`__.
-
-        ``pip install hypothesis[zoneinfo]`` will install these conditional
-        dependencies if and only if they are needed.
+        ``pip install hypothesis[zoneinfo]`` installs it, if and only if needed.
 
     On Windows, you may need to access IANA timezone data via the :pypi:`tzdata`
     package.  For non-IANA timezones, such as Windows-native names or GNU TZ
@@ -406,11 +416,6 @@ def timezone_keys(
     # check_type(bool, allow_alias, "allow_alias")
     # check_type(bool, allow_deprecated, "allow_deprecated")
     check_type(bool, allow_prefix, "allow_prefix")
-    if zoneinfo is None:  # pragma: no cover
-        raise ModuleNotFoundError(
-            "The zoneinfo module is required, but could not be imported.  "
-            "Run `pip install hypothesis[zoneinfo]` and try again."
-        )
 
     available_timezones = ("UTC", *sorted(zoneinfo.available_timezones()))
 
@@ -448,21 +453,11 @@ def timezones(*, no_cache: bool = False) -> SearchStrategy["zoneinfo.ZoneInfo"]:
 
     .. note::
 
-        The :mod:`python:zoneinfo` module is new in Python 3.9, so you will need
-        to install the :pypi:`backports.zoneinfo` module on earlier versions.
-
-        `On Windows, you will also need to install the tzdata package
+        `The tzdata package is required on Windows
         <https://docs.python.org/3/library/zoneinfo.html#data-sources>`__.
-
-        ``pip install hypothesis[zoneinfo]`` will install these conditional
-        dependencies if and only if they are needed.
+        ``pip install hypothesis[zoneinfo]`` installs it, if and only if needed.
     """
     check_type(bool, no_cache, "no_cache")
-    if zoneinfo is None:  # pragma: no cover
-        raise ModuleNotFoundError(
-            "The zoneinfo module is required, but could not be imported.  "
-            "Run `pip install hypothesis[zoneinfo]` and try again."
-        )
     return timezone_keys().map(
         zoneinfo.ZoneInfo.no_cache if no_cache else zoneinfo.ZoneInfo
     )

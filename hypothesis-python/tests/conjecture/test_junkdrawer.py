@@ -21,8 +21,10 @@ from hypothesis.internal.conjecture.junkdrawer import (
     SelfOrganisingList,
     binary_search,
     clamp,
+    endswith,
     replace_all,
     stack_depth_of_caller,
+    startswith,
 )
 
 
@@ -189,16 +191,27 @@ def test_self_organising_list_raises_not_found_when_none_satisfy():
 
 
 def test_self_organising_list_moves_to_front():
-    count = [0]
+    count = 0
 
     def zero(n):
-        count[0] += 1
+        nonlocal count
+        count += 1
         return n == 0
 
     x = SelfOrganisingList(range(20))
 
     assert x.find(zero) == 0
-    assert count[0] == 20
+    assert count == 20
 
     assert x.find(zero) == 0
-    assert count[0] == 21
+    assert count == 21
+
+
+@given(st.binary(), st.binary())
+def test_startswith(b1, b2):
+    assert b1.startswith(b2) == startswith(b1, b2)
+
+
+@given(st.binary(), st.binary())
+def test_endswith(b1, b2):
+    assert b1.endswith(b2) == endswith(b1, b2)

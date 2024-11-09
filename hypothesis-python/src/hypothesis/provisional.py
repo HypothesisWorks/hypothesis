@@ -19,7 +19,9 @@ definitions it links to.  If not, report the bug!
 # https://tools.ietf.org/html/rfc3696
 
 import string
+from functools import lru_cache
 from importlib import resources
+from typing import Optional
 from typing import Optional
 
 from hypothesis import strategies as st
@@ -31,20 +33,17 @@ URL_SAFE_CHARACTERS = frozenset(string.ascii_letters + string.digits + "$-_.+!*'
 FRAGMENT_SAFE_CHARACTERS = URL_SAFE_CHARACTERS | {"?", "/"}
 
 
-# This file is sourced from http://data.iana.org/TLD/tlds-alpha-by-domain.txt
-# The file contains additional information about the date that it was last updated.
-try:  # pragma: no cover
+@lru_cache(maxsize=1)
+def get_top_level_domains() -> tuple[str, ...]:
+    # This file is sourced from http://data.iana.org/TLD/tlds-alpha-by-domain.txt
+    # The file contains additional information about the date that it was last updated.
     traversable = resources.files("hypothesis.vendor") / "tlds-alpha-by-domain.txt"
     _comment, *_tlds = traversable.read_text(encoding="utf-8").splitlines()
-except (AttributeError, ValueError):  # pragma: no cover  # .files() was added in 3.9
-    _comment, *_tlds = resources.read_text(
-        "hypothesis.vendor", "tlds-alpha-by-domain.txt", encoding="utf-8"
-    ).splitlines()
-assert _comment.startswith("#")
+    assert _comment.startswith("#")
 
-# Remove special-use domain names from the list. For more discussion
-# see https://github.com/HypothesisWorks/hypothesis/pull/3572
-TOP_LEVEL_DOMAINS = ["COM", *sorted((d for d in _tlds if d != "ARPA"), key=len)]
+    # Remove special-use domain names from the list. For more discussion
+    # see https://github.com/HypothesisWorks/hypothesis/pull/3572
+    return ("COM", *sorted((d for d in _tlds if d != "ARPA"), key=len))
 
 
 class DomainNameStrategy(st.SearchStrategy):
@@ -106,7 +105,7 @@ class DomainNameStrategy(st.SearchStrategy):
         # prevent us from generating at least a 1 character subdomain.
         # 3 - Randomize the TLD between upper and lower case characters.
         domain = data.draw(
-            st.sampled_from(TOP_LEVEL_DOMAINS)
+            st.sampled_from(get_top_level_domains())
             .filter(lambda tld: len(tld) + 2 <= self.max_length)
             .flatmap(
                 lambda tld: st.tuples(
@@ -168,13 +167,18 @@ _url_fragments_strategy = (
 
 @defines_strategy(force_reusable_values=True)
 def urls() -> st.SearchStrategy[str]:
-    """A strategy for :rfc:`3986`, generating http/https URLs."""
+    """A strategy for :rfc:`3986`, generating http/https URLs.
+
+    The generated URLs could, at least in theory, be passed to an HTTP client
+    and fetched.
+
+    """
 
     def url_encode(s: str) -> str:
         return "".join(c if c in URL_SAFE_CHARACTERS else "%%%02X" % ord(c) for c in s)
 
     schemes = st.sampled_from(["http", "https"])
-    ports = st.integers(min_value=0, max_value=2**16 - 1).map(":{}".format)
+    ports = st.integers(min_value=1, max_value=2**16 - 1).map(":{}".format)
     paths = st.lists(st.text(string.printable).map(url_encode)).map("/".join)
 
     return st.builds(

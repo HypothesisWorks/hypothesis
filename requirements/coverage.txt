@@ -9,14 +9,16 @@ annotated-types==0.7.0
 async-timeout==4.0.3
     # via redis
 attrs==24.1.0
-    # via hypothesis (hypothesis-python/setup.py)
-black==24.8.0
+    # via
+    #   -r requirements/test.in
+    #   hypothesis (hypothesis-python/setup.py)
+black==24.10.0
     # via -r requirements/coverage.in
 click==8.1.7
     # via
     #   -r requirements/coverage.in
     #   black
-coverage[toml]==7.6.1
+coverage[toml]==7.6.2
     # via pytest-cov
 dpcontracts==0.6.0
     # via -r requirements/coverage.in
@@ -26,17 +28,17 @@ exceptiongroup==1.2.2 ; python_version < "3.11"
     #   pytest
 execnet==2.1.1
     # via pytest-xdist
-fakeredis==2.23.5
+fakeredis==2.25.1
     # via -r requirements/coverage.in
 iniconfig==2.0.0
     # via pytest
 lark==1.2.2
     # via -r requirements/coverage.in
-libcst==1.4.0
+libcst==1.5.0
     # via -r requirements/coverage.in
 mypy-extensions==1.0.0
     # via black
-numpy==2.0.1
+numpy==2.1.2
     # via
     #   -r requirements/coverage.in
     #   pandas
@@ -45,13 +47,13 @@ packaging==24.1
     # via
     #   black
     #   pytest
-pandas==2.2.2
+pandas==2.2.3
     # via -r requirements/coverage.in
 pathspec==0.12.1
     # via black
 pexpect==4.9.0
     # via -r requirements/test.in
-platformdirs==4.2.2
+platformdirs==4.3.6
     # via black
 pluggy==1.5.0
     # via pytest
@@ -59,12 +61,12 @@ ptyprocess==0.7.0
     # via pexpect
 pyarrow==17.0.0
     # via -r requirements/coverage.in
-pytest==8.3.2
+pytest==8.3.3
     # via
     #   -r requirements/test.in
     #   pytest-cov
     #   pytest-xdist
-pytest-cov @ git+https://github.com/pytest-dev/pytest-cov.git@9757222e2e044361e70125ebdd96e5eb87395983
+pytest-cov==5.0.0
     # via -r requirements/coverage.in
 pytest-xdist==3.6.1
     # via -r requirements/test.in
@@ -72,13 +74,13 @@ python-dateutil==2.9.0.post0
     # via
     #   -r requirements/coverage.in
     #   pandas
-pytz==2024.1
+pytz==2024.2
     # via
     #   -r requirements/coverage.in
     #   pandas
 pyyaml==6.0.2
     # via libcst
-redis==5.0.8
+redis==5.1.1
     # via fakeredis
 six==1.16.0
     # via python-dateutil
@@ -86,7 +88,7 @@ sortedcontainers==2.4.0
     # via
     #   fakeredis
     #   hypothesis (hypothesis-python/setup.py)
-tomli==2.0.1
+tomli==2.0.2
     # via
     #   black
     #   coverage
@@ -96,5 +98,5 @@ typing-extensions==4.12.2
     #   -r requirements/coverage.in
     #   black
     #   fakeredis
-tzdata==2024.1
+tzdata==2024.2
     # via pandas

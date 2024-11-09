@@ -9,7 +9,8 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import copy
-from typing import Any, Iterable, Tuple, overload
+from collections.abc import Iterable
+from typing import Any, overload
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import utils as cu
@@ -64,26 +65,26 @@ class TupleStrategy(SearchStrategy):
 
 
 @overload
-def tuples() -> SearchStrategy[Tuple[()]]:  # pragma: no cover
+def tuples() -> SearchStrategy[tuple[()]]:  # pragma: no cover
     ...
 
 
 @overload
-def tuples(__a1: SearchStrategy[Ex]) -> SearchStrategy[Tuple[Ex]]:  # pragma: no cover
+def tuples(__a1: SearchStrategy[Ex]) -> SearchStrategy[tuple[Ex]]:  # pragma: no cover
     ...
 
 
 @overload
 def tuples(
     __a1: SearchStrategy[Ex], __a2: SearchStrategy[T]
-) -> SearchStrategy[Tuple[Ex, T]]:  # pragma: no cover
+) -> SearchStrategy[tuple[Ex, T]]:  # pragma: no cover
     ...
 
 
 @overload
 def tuples(
     __a1: SearchStrategy[Ex], __a2: SearchStrategy[T], __a3: SearchStrategy[T3]
-) -> SearchStrategy[Tuple[Ex, T, T3]]:  # pragma: no cover
+) -> SearchStrategy[tuple[Ex, T, T3]]:  # pragma: no cover
     ...
 
 
@@ -93,7 +94,7 @@ def tuples(
     __a2: SearchStrategy[T],
     __a3: SearchStrategy[T3],
     __a4: SearchStrategy[T4],
-) -> SearchStrategy[Tuple[Ex, T, T3, T4]]:  # pragma: no cover
+) -> SearchStrategy[tuple[Ex, T, T3, T4]]:  # pragma: no cover
     ...
 
 
@@ -104,20 +105,20 @@ def tuples(
     __a3: SearchStrategy[T3],
     __a4: SearchStrategy[T4],
     __a5: SearchStrategy[T5],
-) -> SearchStrategy[Tuple[Ex, T, T3, T4, T5]]:  # pragma: no cover
+) -> SearchStrategy[tuple[Ex, T, T3, T4, T5]]:  # pragma: no cover
     ...
 
 
 @overload
 def tuples(
     *args: SearchStrategy[Any],
-) -> SearchStrategy[Tuple[Any, ...]]:  # pragma: no cover
+) -> SearchStrategy[tuple[Any, ...]]:  # pragma: no cover
     ...
 
 
 @cacheable
 @defines_strategy()
-def tuples(*args: SearchStrategy[Any]) -> SearchStrategy[Tuple[Any, ...]]:
+def tuples(*args: SearchStrategy[Any]) -> SearchStrategy[tuple[Any, ...]]:
     """Return a strategy which generates a tuple of the same length as args by
     generating the value at index i from args[i].
 

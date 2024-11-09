@@ -12,11 +12,12 @@ import os
 import re
 import tempfile
 import zipfile
+from collections.abc import Iterator
 from contextlib import contextmanager, nullcontext
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from shutil import make_archive, rmtree
-from typing import Iterator, Optional, Tuple
+from typing import Optional
 
 import pytest
 
@@ -28,12 +29,17 @@ from hypothesis.database import (
     InMemoryExampleDatabase,
     MultiplexedDatabase,
     ReadOnlyDatabase,
+    ir_from_bytes,
+    ir_to_bytes,
 )
 from hypothesis.errors import HypothesisWarning
 from hypothesis.internal.compat import WINDOWS
+from hypothesis.internal.conjecture.data import ir_value_equal
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
 from hypothesis.strategies import binary, lists, tuples
 from hypothesis.utils.conventions import not_set
+
+from tests.conjecture.common import ir_nodes
 
 small_settings = settings(max_examples=50)
 
@@ -188,7 +194,7 @@ def test_ga_require_readonly_wrapping():
 @contextmanager
 def ga_empty_artifact(
     date: Optional[datetime] = None, path: Optional[Path] = None
-) -> Iterator[Tuple[Path, Path]]:
+) -> Iterator[tuple[Path, Path]]:
     """Creates an empty GitHub artifact."""
     if date:
         timestamp = date.isoformat().replace(":", "_")
@@ -443,3 +449,20 @@ def test_database_directory_inaccessible(dirs, tmp_path, monkeypatch):
     ):
         database = ExampleDatabase(not_set)
     database.save(b"fizz", b"buzz")
+
+
+@given(lists(ir_nodes()))
+def test_ir_nodes_rountrips(nodes1):
+    s1 = ir_to_bytes([n.value for n in nodes1])
+    assert isinstance(s1, bytes)
+    ir2 = ir_from_bytes(s1)
+    assert len(nodes1) == len(ir2)
+
+    for n1, v2 in zip(nodes1, ir2):
+        v1 = n1.value
+        ir_type = n1.ir_type
+        assert type(v1) is type(v2)
+        assert ir_value_equal(ir_type, v1, v2)
+
+    s2 = ir_to_bytes(ir2)
+    assert s1 == s2

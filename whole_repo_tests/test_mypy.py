@@ -16,9 +16,7 @@ import pytest
 from hypothesistooling.projects.hypothesispython import PYTHON_SRC
 from hypothesistooling.scripts import pip_tool, tool_path
 
-from .revealed_types import NUMPY_REVEALED_TYPES, REVEALED_TYPES
-
-PYTHON_VERSIONS = ["3.8", "3.9", "3.10", "3.11"]
+from .revealed_types import NUMPY_REVEALED_TYPES, PYTHON_VERSIONS, REVEALED_TYPES
 
 
 def test_mypy_passes_on_hypothesis():
@@ -63,7 +61,8 @@ def get_mypy_analysed_type(fname):
         )
         .replace("numpy._typing.", "")
         .replace("numpy.", "")
-        .replace("tuple", "Tuple")
+        .replace("List[", "list[")
+        .replace("Dict[", "dict[")
     )
 
 
@@ -261,7 +260,8 @@ def test_stateful_bundle_generic_type(tmp_path):
     f.write_text(
         "from hypothesis.stateful import Bundle\n"
         "b: Bundle[int] = Bundle('test')\n"
-        "reveal_type(b.example())\n",
+        "x = b.example()\n"
+        "reveal_type(x)\n",
         encoding="utf-8",
     )
     got = get_mypy_analysed_type(f)
@@ -327,7 +327,8 @@ def test_stateful_target_params_mutually_exclusive(tmp_path, decorator):
     "target_args",
     [
         "target=b1",
-        "targets=(b1,)",
+        # FIXME: temporary workaround for mypy bug, see hypothesis/pull/4136
+        pytest.param("targets=(b1,)", marks=pytest.mark.xfail(strict=False)),
         "targets=(b1, b2)",
         "",
     ],

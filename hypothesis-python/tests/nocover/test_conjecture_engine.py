@@ -103,7 +103,7 @@ def test_node_programs_fail_efficiently(monkeypatch):
     # Create 256 byte-sized blocks. None of the blocks can be deleted, and
     # every deletion attempt produces a different buffer.
     @shrinking_from(bytes(range(256)))
-    def shrinker(data):
+    def shrinker(data: ConjectureData):
         values = set()
         for _ in range(256):
             v = data.draw_integer(0, 2**8 - 1)

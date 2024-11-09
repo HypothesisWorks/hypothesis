@@ -18,30 +18,22 @@ import string
 import sys
 import typing
 import warnings
+from collections.abc import Collection, Hashable, Iterable, Sequence
 from contextvars import ContextVar
 from decimal import Context, Decimal, localcontext
 from fractions import Fraction
 from functools import reduce
 from inspect import Parameter, Signature, isabstract, isclass
-from types import FunctionType
+from re import Pattern
+from types import FunctionType, GenericAlias
 from typing import (
+    Annotated,
     Any,
     AnyStr,
     Callable,
-    Collection,
-    Dict,
-    FrozenSet,
-    Hashable,
-    Iterable,
-    List,
     Literal,
     Optional,
-    Pattern,
     Protocol,
-    Sequence,
-    Set,
-    Tuple,
-    Type,
     TypeVar,
     Union,
     get_args,
@@ -179,21 +171,21 @@ def sampled_from(elements: Sequence[T]) -> SearchStrategy[T]:  # pragma: no cove
 
 
 @overload
-def sampled_from(elements: Type[enum.Enum]) -> SearchStrategy[Any]:  # pragma: no cover
+def sampled_from(elements: type[enum.Enum]) -> SearchStrategy[Any]:  # pragma: no cover
     # `SearchStrategy[Enum]` is unreliable due to metaclass issues.
     ...
 
 
 @overload
 def sampled_from(
-    elements: Union[Type[enum.Enum], Sequence[Any]]
+    elements: Union[type[enum.Enum], Sequence[Any]]
 ) -> SearchStrategy[Any]:  # pragma: no cover
     ...
 
 
 @defines_strategy(try_non_lazy=True)
 def sampled_from(
-    elements: Union[Type[enum.Enum], Sequence[Any]]
+    elements: Union[type[enum.Enum], Sequence[Any]]
 ) -> SearchStrategy[Any]:
     """Returns a strategy which generates any value present in ``elements``.
 
@@ -284,10 +276,10 @@ def lists(
     unique_by: Union[
         None,
         Callable[[Ex], Hashable],
-        Tuple[Callable[[Ex], Hashable], ...],
+        tuple[Callable[[Ex], Hashable], ...],
     ] = None,
     unique: bool = False,
-) -> SearchStrategy[List[Ex]]:
+) -> SearchStrategy[list[Ex]]:
     """Returns a list containing values drawn from elements with length in the
     interval [min_size, max_size] (no bounds in that direction if these are
     None). If max_size is 0, only the empty list will be drawn.
@@ -418,7 +410,7 @@ def sets(
     *,
     min_size: int = 0,
     max_size: Optional[int] = None,
-) -> SearchStrategy[Set[Ex]]:
+) -> SearchStrategy[set[Ex]]:
     """This has the same behaviour as lists, but returns sets instead.
 
     Note that Hypothesis cannot tell if values are drawn from elements
@@ -440,7 +432,7 @@ def frozensets(
     *,
     min_size: int = 0,
     max_size: Optional[int] = None,
-) -> SearchStrategy[FrozenSet[Ex]]:
+) -> SearchStrategy[frozenset[Ex]]:
     """This is identical to the sets function but instead returns
     frozensets."""
     return lists(
@@ -472,7 +464,7 @@ def iterables(
     unique_by: Union[
         None,
         Callable[[Ex], Hashable],
-        Tuple[Callable[[Ex], Hashable], ...],
+        tuple[Callable[[Ex], Hashable], ...],
     ] = None,
     unique: bool = False,
 ) -> SearchStrategy[Iterable[Ex]]:
@@ -494,10 +486,10 @@ def iterables(
 
 @defines_strategy()
 def fixed_dictionaries(
-    mapping: Dict[T, SearchStrategy[Ex]],
+    mapping: dict[T, SearchStrategy[Ex]],
     *,
-    optional: Optional[Dict[T, SearchStrategy[Ex]]] = None,
-) -> SearchStrategy[Dict[T, Ex]]:
+    optional: Optional[dict[T, SearchStrategy[Ex]]] = None,
+) -> SearchStrategy[dict[T, Ex]]:
     """Generates a dictionary of the same type as mapping with a fixed set of
     keys mapping to strategies. ``mapping`` must be a dict subclass.
 
@@ -541,7 +533,7 @@ def dictionaries(
     dict_class: type = dict,
     min_size: int = 0,
     max_size: Optional[int] = None,
-) -> SearchStrategy[Dict[Ex, T]]:
+) -> SearchStrategy[dict[Ex, T]]:
     # Describing the exact dict_class to Mypy drops the key and value types,
     # so we report Dict[K, V] instead of Mapping[Any, Any] for now.  Sorry!
     """Generates dictionaries of type ``dict_class`` with keys drawn from the ``keys``
@@ -1100,7 +1092,7 @@ def builds(
 
 @cacheable
 @defines_strategy(never_lazy=True)
-def from_type(thing: Type[Ex_Inv]) -> SearchStrategy[Ex_Inv]:
+def from_type(thing: type[Ex_Inv]) -> SearchStrategy[Ex_Inv]:
     """Looks up the appropriate search strategy for the given type.
 
     ``from_type`` is used internally to fill in missing arguments to
@@ -1160,7 +1152,7 @@ def from_type(thing: Type[Ex_Inv]) -> SearchStrategy[Ex_Inv]:
         return _from_type_deferred(thing)
 
 
-def _from_type_deferred(thing: Type[Ex]) -> SearchStrategy[Ex]:
+def _from_type_deferred(thing: type[Ex]) -> SearchStrategy[Ex]:
     # This tricky little dance is because we want to show the repr of the actual
     # underlying strategy wherever possible, as a form of user education, but
     # would prefer to fall back to the default "from_type(...)" repr instead of
@@ -1185,7 +1177,7 @@ def _from_type_deferred(thing: Type[Ex]) -> SearchStrategy[Ex]:
 _recurse_guard: ContextVar = ContextVar("recurse_guard")
 
 
-def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
+def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
     # TODO: We would like to move this to the top level, but pending some major
     # refactoring it's hard to do without creating circular imports.
     from hypothesis.strategies._internal import types
@@ -1296,10 +1288,19 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
             strategy = as_strategy(types._global_type_lookup[thing], thing)
             if strategy is not NotImplemented:
                 return strategy
+        elif (
+            isinstance(thing, GenericAlias)
+            and (to := get_origin(thing)) in types._global_type_lookup
+        ):
+            strategy = as_strategy(types._global_type_lookup[to], thing)
+            if strategy is not NotImplemented:
+                return strategy
     except TypeError:  # pragma: no cover
-        # This is due to a bizarre divergence in behaviour under Python 3.9.0:
+        # This was originally due to a bizarre divergence in behaviour on Python 3.9.0:
         # typing.Callable[[], foo] has __args__ = (foo,) but collections.abc.Callable
         # has __args__ = ([], foo); and as a result is non-hashable.
+        # We've kept it because we turn out to have more type errors from... somewhere.
+        # FIXME: investigate that, maybe it should be fixed more precisely?
         pass
     if (
         hasattr(typing, "_TypedDictMeta")
@@ -1321,7 +1322,7 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
             qualifiers = []
             while True:
                 annotation_origin = types.extended_get_origin(annotation_type)
-                if annotation_origin in types.AnnotatedTypes:
+                if annotation_origin is Annotated:
                     if annotation_args := get_args(annotation_type):
                         annotation_type = annotation_args[0]
                     else:
@@ -1386,9 +1387,7 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
     # because there are several special cases that don't play well with
     # subclass and instance checks.
     if isinstance(thing, types.typing_root_type) or (
-        sys.version_info[:2] >= (3, 9)
-        and isinstance(get_origin(thing), type)
-        and get_args(thing)
+        isinstance(get_origin(thing), type) and get_args(thing)
     ):
         return types.from_typing_type(thing)
     # If it's not from the typing module, we get all registered types that are
@@ -1664,7 +1663,7 @@ def decimals(
 
         strat = fractions(min_value, max_value).map(fraction_to_decimal)
     # Compose with sampled_from for infinities and NaNs as appropriate
-    special: List[Decimal] = []
+    special: list[Decimal] = []
     if allow_nan or (allow_nan is None and (None in (min_value, max_value))):
         special.extend(map(Decimal, ("NaN", "-NaN", "sNaN", "-sNaN")))
     if allow_infinity or (allow_infinity is None and max_value is None):
@@ -1722,7 +1721,7 @@ class PermutationStrategy(SearchStrategy):
 
 
 @defines_strategy()
-def permutations(values: Sequence[T]) -> SearchStrategy[List[T]]:
+def permutations(values: Sequence[T]) -> SearchStrategy[list[T]]:
     """Return a strategy which returns permutations of the ordered collection
     ``values``.
 
@@ -1756,7 +1755,7 @@ class DrawFn(Protocol):
     .. code-block:: python
 
         @composite
-        def list_and_index(draw: DrawFn) -> Tuple[int, str]:
+        def list_and_index(draw: DrawFn) -> tuple[int, str]:
             i = draw(integers())  # type inferred as 'int'
             s = draw(text())  # type inferred as 'str'
             return i, s
@@ -2178,8 +2177,8 @@ def data() -> SearchStrategy[DataObject]:
 
 
 def register_type_strategy(
-    custom_type: Type[Ex],
-    strategy: Union[SearchStrategy[Ex], Callable[[Type[Ex]], SearchStrategy[Ex]]],
+    custom_type: type[Ex],
+    strategy: Union[SearchStrategy[Ex], Callable[[type[Ex]], SearchStrategy[Ex]]],
 ) -> None:
     """Add an entry to the global type-to-strategy lookup.
 

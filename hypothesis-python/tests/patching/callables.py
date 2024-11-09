@@ -12,7 +12,10 @@
 
 from pathlib import Path
 
+import numpy as np
+
 from hypothesis import example, given, strategies as st
+from hypothesis.extra import numpy as npst
 
 WHERE = Path(__file__).relative_to(Path.cwd())
 
@@ -34,6 +37,11 @@ class Cases:
 @example(x=1).via("covering example")
 def covered(x):
     """A test function with a removable explicit example."""
+
+
+@given(npst.arrays(np.int8, 1))
+def undef_name(array):
+    assert sum(array) < 100
 
 
 # TODO: test function for insertion-order logic, once I get that set up.

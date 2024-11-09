@@ -10,7 +10,6 @@ numpy
 pelican[markdown]
 pip-tools
 pyright
-pytest
 python-dateutil
 requests
 restructuredtext-lint
@@ -28,3 +27,4 @@ types-click
 types-pytz
 types-redis
 typing-extensions
+-r test.in

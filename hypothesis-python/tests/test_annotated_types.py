@@ -10,7 +10,7 @@
 
 import re
 import sys
-from typing import List, Set
+from typing import Annotated
 
 import pytest
 
@@ -23,8 +23,6 @@ from hypothesis.strategies._internal.types import _get_constraints
 from tests.common.debug import check_can_generate_examples
 
 try:
-    from typing import Annotated  # new in Python 3.9
-
     import annotated_types as at
 except ImportError:
     pytest.skip(allow_module_level=True)
@@ -92,7 +90,7 @@ def test_predicate_constraint():
 
 
 class MyCollection:
-    def __init__(self, values: List[int]) -> None:
+    def __init__(self, values: list[int]) -> None:
         self._values = values
 
     def __len__(self) -> int:
@@ -101,7 +99,7 @@ class MyCollection:
 
 @pytest.mark.parametrize("lo", [0, 1])
 @pytest.mark.parametrize("hi", [None, 10])
-@pytest.mark.parametrize("type_", [List[int], Set[int], MyCollection])
+@pytest.mark.parametrize("type_", [list[int], set[int], MyCollection])
 @given(data=st.data())
 def test_collection_sizes(data, lo, hi, type_):
     print(f"{type_=} {lo=} {hi=}")

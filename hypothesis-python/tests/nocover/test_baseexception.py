@@ -48,13 +48,14 @@ def test_exception_propagates_fine_from_strategy(e):
 
 @pytest.mark.parametrize("e", [KeyboardInterrupt, ValueError])
 def test_baseexception_no_rerun_no_flaky(e):
-    runs = [0]
+    runs = 0
     interrupt = 3
 
     @given(integers())
     def test_raise_baseexception(x):
-        runs[0] += 1
-        if runs[0] == interrupt:
+        nonlocal runs
+        runs += 1
+        if runs == interrupt:
             raise e
 
     if issubclass(e, (KeyboardInterrupt, SystemExit, GeneratorExit)):
@@ -62,7 +63,7 @@ def test_baseexception_no_rerun_no_flaky(e):
         with pytest.raises(e):
             test_raise_baseexception()
 
-        assert runs[0] == interrupt
+        assert runs == interrupt
     else:
         with pytest.raises(FlakyFailure):
             test_raise_baseexception()

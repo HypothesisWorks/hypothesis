@@ -150,7 +150,7 @@ def register_random(r: RandomLike) -> None:
 
 def get_seeder_and_restorer(
     seed: Hashable = 0,
-) -> Tuple[Callable[[], None], Callable[[], None]]:
+) -> tuple[Callable[[], None], Callable[[], None]]:
     """Return a pair of functions which respectively seed all and restore
     the state of all registered PRNGs.
 

@@ -13,9 +13,10 @@ import os
 import sys
 import textwrap
 import traceback
+from functools import partial
 from inspect import getframeinfo
 from pathlib import Path
-from typing import Dict, NamedTuple, Optional, Type
+from typing import NamedTuple, Optional
 
 import hypothesis
 from hypothesis.errors import _Trimmable
@@ -48,7 +49,7 @@ def belongs_to(package):
     return accept
 
 
-FILE_CACHE: Dict[bytes, bool] = {}
+FILE_CACHE: dict[bytes, bool] = {}
 
 
 is_hypothesis_file = belongs_to(hypothesis)
@@ -90,7 +91,7 @@ class InterestingOrigin(NamedTuple):
     # location, but have extracted this logic in order to see through `except ...:`
     # blocks and understand the __cause__ (`raise x from y`) or __context__ that
     # first raised an exception as well as PEP-654 exception groups.
-    exc_type: Type[BaseException]
+    exc_type: type[BaseException]
     filename: Optional[str]
     lineno: Optional[int]
     context: "InterestingOrigin | tuple[()]"
@@ -107,20 +108,27 @@ class InterestingOrigin(NamedTuple):
         return f"{self.exc_type.__name__} at {self.filename}:{self.lineno}{ctx}{group}"
 
     @classmethod
-    def from_exception(cls, exception: BaseException, /) -> "InterestingOrigin":
+    def from_exception(
+        cls, exception: BaseException, /, seen: tuple[BaseException, ...] = ()
+    ) -> "InterestingOrigin":
         filename, lineno = None, None
         if tb := get_trimmed_traceback(exception):
             filename, lineno, *_ = traceback.extract_tb(tb)[-1]
+        seen = (*seen, exception)
+        make = partial(cls.from_exception, seen=seen)
+        context: "InterestingOrigin | tuple[()]" = ()
+        if exception.__context__ is not None and exception.__context__ not in seen:
+            context = make(exception.__context__)
         return cls(
             type(exception),
             filename,
             lineno,
             # Note that if __cause__ is set it is always equal to __context__, explicitly
             # to support introspection when debugging, so we can use that unconditionally.
-            cls.from_exception(exception.__context__) if exception.__context__ else (),
+            context,
             # We distinguish exception groups by the inner exceptions, as for __context__
             (
-                tuple(map(cls.from_exception, exception.exceptions))
+                tuple(make(exc) for exc in exception.exceptions if exc not in seen)
                 if isinstance(exception, BaseExceptionGroup)
                 else ()
             ),

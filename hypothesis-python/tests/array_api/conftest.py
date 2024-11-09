@@ -12,7 +12,6 @@ import warnings
 from importlib import import_module
 from os import getenv
 from types import ModuleType, SimpleNamespace
-from typing import List, Tuple
 
 import pytest
 
@@ -47,7 +46,7 @@ class InvalidArgumentWarning(UserWarning):
 
 
 name_to_entry_point = installed_array_modules()
-xp_and_xps_pairs: List[Tuple[ModuleType, SimpleNamespace]] = []
+xp_and_xps_pairs: list[tuple[ModuleType, SimpleNamespace]] = []
 with warnings.catch_warnings():
     # We ignore all warnings here as many array modules warn on import. Ideally
     # we would just ignore ImportWarning, but no one seems to use it!

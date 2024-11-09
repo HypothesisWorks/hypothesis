@@ -429,7 +429,6 @@ def test_fullmatch_generates_example(pattern, matching_str):
     find_any(
         st.from_regex(pattern, fullmatch=True),
         lambda s: s == matching_str,
-        settings(max_examples=10**6),
     )
 
 

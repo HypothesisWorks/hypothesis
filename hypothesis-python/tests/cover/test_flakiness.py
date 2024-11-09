@@ -25,12 +25,13 @@ class Nope(Exception):
 
 
 def test_fails_only_once_is_flaky():
-    first_call = [True]
+    first_call = True
 
     @given(integers())
     def rude(x):
-        if first_call[0]:
-            first_call[0] = False
+        nonlocal first_call
+        if first_call:
+            first_call = False
             raise Nope
 
     with pytest.raises(FlakyFailure, match="Falsified on the first call but") as e:

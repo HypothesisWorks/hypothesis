@@ -14,13 +14,14 @@ from hypothesis import given, strategies as st
 
 
 def test_can_run_given_in_thread():
-    has_run_successfully = [False]
+    has_run_successfully = False
 
     @given(st.integers())
     def test(n):
-        has_run_successfully[0] = True
+        nonlocal has_run_successfully
+        has_run_successfully = True
 
     t = threading.Thread(target=test)
     t.start()
     t.join()
-    assert has_run_successfully[0]
+    assert has_run_successfully

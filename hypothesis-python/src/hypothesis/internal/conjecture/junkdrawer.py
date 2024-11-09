@@ -17,19 +17,15 @@ import gc
 import sys
 import time
 import warnings
+from collections.abc import Iterable, Iterator, Sequence
 from random import Random
 from typing import (
     Any,
     Callable,
-    Dict,
     Generic,
-    Iterable,
-    Iterator,
     List,
     Literal,
     Optional,
-    Sequence,
-    Tuple,
     TypeVar,
     Union,
     overload,
@@ -54,14 +50,14 @@ def array_or_list(
 
 def replace_all(
     ls: Sequence[T],
-    replacements: Iterable[Tuple[int, int, Sequence[T]]],
-) -> List[T]:
+    replacements: Iterable[tuple[int, int, Sequence[T]]],
+) -> list[T]:
     """Substitute multiple replacement values into a list.
 
     Replacements is a list of (start, end, value) triples.
     """
 
-    result: List[T] = []
+    result: list[T] = []
     prev = 0
     offset = 0
     for u, v, r in replacements:
@@ -208,7 +204,7 @@ class LazySequenceCopy:
     def __init__(self, values: Sequence[int]):
         self.__values = values
         self.__len = len(values)
-        self.__mask: Optional[Dict[int, int]] = None
+        self.__mask: Optional[dict[int, int]] = None
         self.__popped_indices: Optional[SortedList] = None
 
     def __len__(self) -> int:
@@ -434,7 +430,7 @@ def gc_cumulative_time() -> float:
         if hasattr(gc, "callbacks"):
             # CPython
             def gc_callback(
-                phase: Literal["start", "stop"], info: Dict[str, int]
+                phase: Literal["start", "stop"], info: dict[str, int]
             ) -> None:
                 global _gc_start, _gc_cumulative_time
                 try:
@@ -472,3 +468,15 @@ def gc_cumulative_time() -> float:
         _gc_initialized = True
 
     return _gc_cumulative_time
+
+
+def startswith(l1: Sequence[T], l2: Sequence[T]) -> bool:
+    if len(l1) < len(l2):
+        return False
+    return all(v1 == v2 for v1, v2 in zip(l1[: len(l2)], l2))
+
+
+def endswith(l1: Sequence[T], l2: Sequence[T]) -> bool:
+    if len(l1) < len(l2):
+        return False
+    return all(v1 == v2 for v1, v2 in zip(l1[-len(l2) :], l2))

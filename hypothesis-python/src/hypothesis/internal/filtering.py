@@ -26,10 +26,11 @@ import ast
 import inspect
 import math
 import operator
+from collections.abc import Collection
 from decimal import Decimal
 from fractions import Fraction
 from functools import partial
-from typing import Any, Callable, Collection, Dict, NamedTuple, Optional, TypeVar
+from typing import Any, Callable, NamedTuple, Optional, TypeVar
 
 from hypothesis.internal.compat import ceil, floor
 from hypothesis.internal.floats import next_down, next_up
@@ -60,7 +61,7 @@ class ConstructivePredicate(NamedTuple):
     for each numeric type, for strings, for bytes, for collection sizes, etc.
     """
 
-    kwargs: Dict[str, Any]
+    kwargs: dict[str, Any]
     predicate: Optional[Predicate]
 
     @classmethod
@@ -235,9 +236,9 @@ def get_numeric_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
         options = {
             # We're talking about op(arg, x) - the reverse of our usual intuition!
             operator.lt: {"min_value": arg, "exclude_min": True},  # lambda x: arg < x
-            operator.le: {"min_value": arg},  # lambda x: arg <= x
-            operator.eq: {"min_value": arg, "max_value": arg},  # lambda x: arg == x
-            operator.ge: {"max_value": arg},  # lambda x: arg >= x
+            operator.le: {"min_value": arg},  #                      lambda x: arg <= x
+            operator.eq: {"min_value": arg, "max_value": arg},  #    lambda x: arg == x
+            operator.ge: {"max_value": arg},  #                      lambda x: arg >= x
             operator.gt: {"max_value": arg, "exclude_max": True},  # lambda x: arg > x
             # Special-case our default predicates for length bounds
             min_len: {"min_value": arg, "len": True},

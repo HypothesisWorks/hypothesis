@@ -237,41 +237,6 @@ positive integers is positive.
 The reason that this should be surprising is not that it doesn't find a
 counter-example, but that it finds enough examples at all.
 
-In order to make sure something interesting is happening, suppose we wanted to
-try this for long lists. e.g. suppose we added an ``assume(len(xs) > 10)`` to it.
-This should basically never find an example: a naive strategy would find fewer
-than one in a thousand examples, because if each element of the list is
-negative with probability one-half, you'd have to have ten of these go the right
-way by chance. In the default configuration Hypothesis gives up long before
-it's tried 1000 examples (by default it tries 200).
-
-Here's what happens if we try to run this:
-
-
-.. code:: python
-
-  @given(lists(integers()))
-  def test_sum_is_positive(xs):
-      assume(len(xs) > 10)
-      assume(all(x > 0 for x in xs))
-      print(xs)
-      assert sum(xs) > 0
-
-
-In: ``test_sum_is_positive()``
-
-.. code:: python
-
-  [17, 12, 7, 13, 11, 3, 6, 9, 8, 11, 47, 27, 1, 31, 1]
-  [6, 2, 29, 30, 25, 34, 19, 15, 50, 16, 10, 3, 16]
-  [25, 17, 9, 19, 15, 2, 2, 4, 22, 10, 10, 27, 3, 1, 14, 17, 13, 8, 16, 9, 2, ...]
-  [17, 65, 78, 1, 8, 29, 2, 79, 28, 18, 39]
-  [13, 26, 8, 3, 4, 76, 6, 14, 20, 27, 21, 32, 14, 42, 9, 24, 33, 9, 5, 15, ...]
-  [2, 1, 2, 2, 3, 10, 12, 11, 21, 11, 1, 16]
-
-As you can see, Hypothesis doesn't find *many* examples here, but it finds some - enough to
-keep it happy.
-
 In general if you *can* shape your strategies better to your tests you should - for example
 :py:func:`integers(1, 1000) <hypothesis.strategies.integers>` is a lot better than
 ``assume(1 <= x <= 1000)``, but ``assume`` will take you a long way if you can't.
@@ -726,6 +691,9 @@ on working with markers <pytest:mark examples>`.
 .. note::
     Pytest will load the plugin automatically if Hypothesis is installed.
     You don't need to do anything at all to use it.
+    
+    If it causes problems, you can avoid loading the plugin with the 
+    ``-p no:hypothesispytest`` option.
 
 
 .. _fuzz_one_input:

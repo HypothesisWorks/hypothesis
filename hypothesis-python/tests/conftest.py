@@ -31,9 +31,6 @@ run()
 # Skip collection of tests which require the Django test runner,
 # or that don't work on the current version of Python.
 collect_ignore_glob = ["django/*"]
-if sys.version_info < (3, 9):
-    collect_ignore_glob.append("cover/*py39*")
-    collect_ignore_glob.append("patching/*")
 if sys.version_info < (3, 10):
     collect_ignore_glob.append("cover/*py310*")
 
@@ -88,20 +85,23 @@ def _consistently_increment_time(monkeypatch):
 
     Replacing time with a fake version under our control avoids this problem.
     """
-    frozen = [False]
+    frozen = False
 
-    current_time = [time_module.time()]
+    current_time = time_module.time()
 
     def time():
-        if not frozen[0]:
-            current_time[0] += TIME_INCREMENT
-        return current_time[0]
+        nonlocal current_time
+        if not frozen:
+            current_time += TIME_INCREMENT
+        return current_time
 
     def sleep(naptime):
-        current_time[0] += naptime
+        nonlocal current_time
+        current_time += naptime
 
     def freeze():
-        frozen[0] = True
+        nonlocal frozen
+        frozen = True
 
     def _patch(name, fn):
         monkeypatch.setattr(time_module, name, wraps(getattr(time_module, name))(fn))
@@ -122,14 +122,16 @@ def _consistently_increment_time(monkeypatch):
         # ensure timer callback is added, then bracket it by freeze/unfreeze below
         junkdrawer.gc_cumulative_time()
 
-        _was_frozen = [False]
+        _was_frozen = False
 
         def _freezer(*_):
-            _was_frozen[0] = frozen[0]
-            frozen[0] = True
+            nonlocal _was_frozen, frozen
+            _was_frozen = frozen
+            frozen = True
 
         def _unfreezer(*_):
-            frozen[0] = _was_frozen[0]
+            nonlocal _was_frozen, frozen
+            frozen = _was_frozen
 
         gc.callbacks.insert(0, _freezer)  # freeze before gc callback
         gc.callbacks.append(_unfreezer)  # unfreeze after

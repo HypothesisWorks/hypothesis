@@ -8,6 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import pytest
+
 from hypothesis import assume, core, find, given, settings, strategies as st
 from hypothesis.database import (
     ExampleDatabase,
@@ -100,18 +102,22 @@ def test_trashes_invalid_examples():
     invalid.add(value)
     with deterministic_PRNG():
         stuff()
-
     assert len(all_values(database)) < original
 
 
+@pytest.mark.skipif(
+    settings._current_profile == "crosshair",
+    reason="condition is easy for crosshair, stops early",
+)
 def test_respects_max_examples_in_database_usage():
     key = b"a database key"
     database = InMemoryExampleDatabase()
     do_we_care = True
-    counter = [0]
+    counter = 0
 
     def check(x):
-        counter[0] += 1
+        nonlocal counter
+        counter += 1
         return do_we_care and has_a_non_zero_byte(x)
 
     def stuff():
@@ -129,9 +135,10 @@ def test_respects_max_examples_in_database_usage():
         stuff()
     assert len(all_values(database)) > 10
     do_we_care = False
-    counter[0] = 0
-    stuff()
-    assert counter == [10]
+    counter = 0
+    with deterministic_PRNG():
+        stuff()
+    assert counter == 10
 
 
 def test_does_not_use_database_when_seed_is_forced(monkeypatch):

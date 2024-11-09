@@ -9,7 +9,8 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 from collections import defaultdict
-from typing import TYPE_CHECKING, Callable, Dict, Optional, Tuple, TypeVar, Union
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Callable, Optional, TypeVar, Union
 
 import attr
 
@@ -22,13 +23,17 @@ from hypothesis.internal.conjecture.choicetree import (
 from hypothesis.internal.conjecture.data import (
     ConjectureData,
     ConjectureResult,
+    IRNode,
     Status,
-    bits_to_bytes,
     ir_value_equal,
     ir_value_key,
     ir_value_permitted,
 )
-from hypothesis.internal.conjecture.junkdrawer import find_integer, replace_all
+from hypothesis.internal.conjecture.junkdrawer import (
+    find_integer,
+    replace_all,
+    startswith,
+)
 from hypothesis.internal.conjecture.shrinking import (
     Bytes,
     Float,
@@ -45,7 +50,7 @@ if TYPE_CHECKING:
 SortKeyT = TypeVar("SortKeyT", str, bytes)
 
 
-def sort_key(buffer: SortKeyT) -> Tuple[int, SortKeyT]:
+def sort_key(buffer: SortKeyT) -> tuple[int, SortKeyT]:
     """Returns a sort key such that "simpler" buffers are smaller than
     "more complicated" ones.
 
@@ -71,7 +76,7 @@ def sort_key(buffer: SortKeyT) -> Tuple[int, SortKeyT]:
     return (len(buffer), buffer)
 
 
-SHRINK_PASS_DEFINITIONS: Dict[str, "ShrinkPassDefinition"] = {}
+SHRINK_PASS_DEFINITIONS: dict[str, "ShrinkPassDefinition"] = {}
 
 
 @attr.s()
@@ -313,7 +318,7 @@ class Shrinker:
         self.initial_misaligned = self.engine.misaligned_count
         self.calls_at_last_shrink = self.initial_calls
 
-        self.passes_by_name: Dict[str, ShrinkPass] = {}
+        self.passes_by_name: dict[str, ShrinkPass] = {}
 
         # Because the shrinker is also used to `pareto_optimise` in the target phase,
         # we sometimes want to allow extending buffers instead of aborting at the end.
@@ -386,11 +391,8 @@ class Shrinker:
         self.check_calls()
         return result
 
-    def consider_new_tree(self, tree):
+    def consider_new_tree(self, tree: Sequence[IRNode]) -> bool:
         tree = tree[: len(self.nodes)]
-
-        def startswith(t1, t2):
-            return t1[: len(t2)] == t2
 
         if startswith(tree, self.nodes):
             return True
@@ -681,7 +683,7 @@ class Shrinker:
                 "reorder_examples",
                 "minimize_duplicated_nodes",
                 "minimize_individual_nodes",
-                "redistribute_block_pairs",
+                "redistribute_integer_pairs",
                 "lower_blocks_together",
             ]
         )
@@ -1078,7 +1080,9 @@ class Shrinker:
                 # if the size *increased*, we would have to guess what to pad with
                 # in order to try fixing up this attempt. Just give up.
                 if node.kwargs["min_size"] <= attempt_kwargs["min_size"]:
-                    return False
+                    # attempts which increase min_size tend to overrun rather than
+                    # be misaligned, making a covering case difficult.
+                    return False  # pragma: no cover
                 # the size decreased in our attempt. Try again, but replace with
                 # the min_size that we would have gotten, and truncate the value
                 # to that size by removing any elements past min_size.
@@ -1227,42 +1231,32 @@ class Shrinker:
         self.minimize_nodes(nodes)
 
     @defines_shrink_pass()
-    def redistribute_block_pairs(self, chooser):
+    def redistribute_integer_pairs(self, chooser):
         """If there is a sum of generated integers that we need their sum
         to exceed some bound, lowering one of them requires raising the
         other. This pass enables that."""
+        # TODO_SHRINK let's extend this to floats as well.
 
-        node = chooser.choose(
+        # look for a pair of nodes (node1, node2) which are both integers and
+        # aren't separated by too many other nodes. We'll decrease node1 and
+        # increase node2 (note that the other way around doesn't make sense as
+        # it's strictly worse in the ordering).
+        node1 = chooser.choose(
             self.nodes, lambda node: node.ir_type == "integer" and not node.trivial
         )
+        node2 = chooser.choose(
+            self.nodes,
+            lambda node: node.ir_type == "integer"
+            # Note that it's fine for node2 to be trivial, because we're going to
+            # explicitly make it *not* trivial by adding to its value.
+            and not node.was_forced
+            # to avoid quadratic behavior, scan ahead only a small amount for
+            # the related node.
+            and node1.index < node.index <= node1.index + 4,
+        )
 
-        # The preconditions for this pass are that the two integer draws are only
-        # separated by non-integer nodes, and have the same size value in bytes.
-        #
-        # This isn't particularly principled. For instance, this wouldn't reduce
-        # e.g. @given(integers(), integers(), integers()) where the sum property
-        # involves the first and last integers.
-        #
-        # A better approach may be choosing *two* such integer nodes arbitrarily
-        # from the list, instead of conditionally scanning forward.
-
-        for j in range(node.index + 1, len(self.nodes)):
-            next_node = self.nodes[j]
-            if next_node.ir_type == "integer" and bits_to_bytes(
-                node.value.bit_length()
-            ) == bits_to_bytes(next_node.value.bit_length()):
-                break
-        else:
-            return
-
-        if next_node.was_forced:
-            # avoid modifying a forced node. Note that it's fine for next_node
-            # to be trivial, because we're going to explicitly make it *not*
-            # trivial by adding to its value.
-            return
-
-        m = node.value
-        n = next_node.value
+        m = node1.value
+        n = node2.value
 
         def boost(k):
             if k > m:
@@ -1272,11 +1266,11 @@ class Shrinker:
             next_node_value = n + k
 
             return self.consider_new_tree(
-                self.nodes[: node.index]
-                + [node.copy(with_value=node_value)]
-                + self.nodes[node.index + 1 : next_node.index]
-                + [next_node.copy(with_value=next_node_value)]
-                + self.nodes[next_node.index + 1 :]
+                self.nodes[: node1.index]
+                + (node1.copy(with_value=node_value),)
+                + self.nodes[node1.index + 1 : node2.index]
+                + (node2.copy(with_value=next_node_value),)
+                + self.nodes[node2.index + 1 :]
             )
 
         find_integer(boost)
@@ -1424,7 +1418,7 @@ class Shrinker:
 
         lowered = (
             self.nodes[: node.index]
-            + [node.copy(with_value=node.value - 1)]
+            + (node.copy(with_value=node.value - 1),)
             + self.nodes[node.index + 1 :]
         )
         attempt = self.cached_test_function_ir(lowered)

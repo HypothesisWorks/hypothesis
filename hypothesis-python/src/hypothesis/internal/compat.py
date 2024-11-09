@@ -165,13 +165,13 @@ def get_type_hints(thing: object) -> Dict[str, object]:
     )
 
     try:
-        hints = typing.get_type_hints(thing, **kwargs)
+        hints = typing.get_type_hints(thing, include_extras=True)
     except (AttributeError, TypeError, NameError):  # pragma: no cover
         hints = {}
 
     if inspect.isclass(thing):
         try:
-            hints.update(typing.get_type_hints(thing.__init__, **kwargs))
+            hints.update(typing.get_type_hints(thing.__init__, include_extras=True))
         except (TypeError, NameError, AttributeError):
             pass
 
@@ -232,7 +232,7 @@ def ceil(x: float) -> int:
     return y
 
 
-def extract_bits(x: int, /, width: Optional[int] = None) -> List[int]:
+def extract_bits(x: int, /, width: Optional[int] = None) -> list[int]:
     assert x >= 0
     result = []
     while x:
@@ -244,7 +244,7 @@ def extract_bits(x: int, /, width: Optional[int] = None) -> List[int]:
     return result
 
 
-# int.bit_count was added sometime around python 3.9
+# int.bit_count was added in python 3.10
 try:
     bit_count = int.bit_count
 except AttributeError:  # pragma: no cover

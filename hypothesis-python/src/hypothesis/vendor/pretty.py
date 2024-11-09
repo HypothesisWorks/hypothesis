@@ -186,6 +186,16 @@ class RepresentationPrinter:
                     pass
                 else:
                     return printer(obj, self, cycle)
+
+                # Look for the _repr_pretty_ method which allows users
+                # to define custom pretty printing.
+                # Some objects automatically create any requested
+                # attribute. Try to ignore most of them by checking for
+                # callability.
+                pretty_method = _safe_getattr(obj, "_repr_pretty_", None)
+                if callable(pretty_method):
+                    return pretty_method(self, cycle)
+
                 # Next walk the mro and check for either:
                 #   1) a registered printer
                 #   2) a _repr_pretty_ method
@@ -206,14 +216,24 @@ class RepresentationPrinter:
                             self.type_pprinters[cls] = printer
                             return printer(obj, self, cycle)
                         else:
-                            # Finally look for special method names.
-                            # Some objects automatically create any requested
-                            # attribute. Try to ignore most of them by checking for
-                            # callability.
-                            if "_repr_pretty_" in cls.__dict__:
-                                meth = cls._repr_pretty_
-                                if callable(meth):
-                                    return meth(obj, self, cycle)
+                            if hasattr(cls, "__attrs_attrs__"):
+                                return pprint_fields(
+                                    obj,
+                                    self,
+                                    cycle,
+                                    [at.name for at in cls.__attrs_attrs__ if at.init],
+                                )
+                            if hasattr(cls, "__dataclass_fields__"):
+                                return pprint_fields(
+                                    obj,
+                                    self,
+                                    cycle,
+                                    [
+                                        k
+                                        for k, v in cls.__dataclass_fields__.items()
+                                        if v.init
+                                    ],
+                                )
                 # Now check for object-specific printers which show how this
                 # object was constructed (a Hypothesis special feature).
                 printers = self.known_object_printers[IDKey(obj)]
@@ -564,6 +584,10 @@ def _seq_pprinter_factory(start, end, basetype):
     return inner
 
 
+def get_class_name(cls):
+    return _safe_getattr(cls, "__qualname__", cls.__name__)
+
+
 def _set_pprinter_factory(start, end, basetype):
     """Factory that returns a pprint function useful for sets and
     frozensets."""
@@ -582,7 +606,7 @@ def _set_pprinter_factory(start, end, basetype):
             return p.text(start + "..." + end)
         if not obj:
             # Special case.
-            p.text(basetype.__name__ + "()")
+            p.text(get_class_name(basetype) + "()")
         else:
             step = len(start)
             with p.group(step, start, end):
@@ -693,10 +717,6 @@ def _type_pprint(obj, p, cycle):
     mod = _safe_getattr(obj, "__module__", None)
     try:
         name = obj.__qualname__
-        if not isinstance(name, str):  # pragma: no cover
-            # This can happen if the type implements __qualname__ as a property
-            # or other descriptor in Python 2.
-            raise Exception("Try __name__")
     except Exception:  # pragma: no cover
         name = obj.__name__
         if not isinstance(name, str):
@@ -716,6 +736,20 @@ def _repr_pprint(obj, p, cycle):
         if idx:
             p.break_()
         p.text(output_line)
+
+
+def pprint_fields(obj, p, cycle, fields):
+    name = get_class_name(obj.__class__)
+    if cycle:
+        return p.text(f"{name}(...)")
+    with p.group(1, name + "(", ")"):
+        for idx, field in enumerate(fields):
+            if idx:
+                p.text(",")
+                p.breakable()
+            p.text(field)
+            p.text("=")
+            p.pretty(getattr(obj, field))
 
 
 def _function_pprint(obj, p, cycle):
@@ -851,7 +885,7 @@ def _repr_dataframe(obj, p, cycle):  # pragma: no cover
 
 
 def _repr_enum(obj, p, cycle):
-    tname = type(obj).__name__
+    tname = get_class_name(type(obj))
     if isinstance(obj, Flag):
         p.text(
             " | ".join(f"{tname}.{x.name}" for x in type(obj) if x & obj == x)

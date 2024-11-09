@@ -50,9 +50,9 @@ class Inferrables:
         validator=[attr.validators.in_("abcd"), attr.validators.in_(["ab", "cd"])]
     )
 
-    typing_list = attr.ib(type=typing.List[int])
-    typing_list_of_list = attr.ib(type=typing.List[typing.List[int]])
-    typing_dict = attr.ib(type=typing.Dict[str, int])
+    typing_list = attr.ib(type=list[int])
+    typing_list_of_list = attr.ib(type=list[list[int]])
+    typing_dict = attr.ib(type=dict[str, int])
     typing_optional = attr.ib(type=typing.Optional[bool])
     typing_union = attr.ib(type=typing.Union[str, int])
 

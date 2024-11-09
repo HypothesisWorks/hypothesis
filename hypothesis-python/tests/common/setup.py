@@ -12,7 +12,7 @@ import os
 from warnings import filterwarnings
 
 from hypothesis import HealthCheck, Phase, Verbosity, settings
-from hypothesis._settings import not_set
+from hypothesis._settings import CI, is_in_ci, not_set
 from hypothesis.internal.conjecture.data import AVAILABLE_PROVIDERS
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 
@@ -45,13 +45,14 @@ def run():
         v = getattr(x, s.name)
         # Check if it has a dynamically defined default and if so skip comparison.
         if getattr(settings, s.name).show_default:
-            assert (
-                v == s.default
+            assert v == s.default or (
+                is_in_ci() and v == getattr(CI, s.name)
             ), f"({v!r} == x.{s.name}) != (s.{s.name} == {s.default!r})"
 
     settings.register_profile(
         "default",
         settings(
+            settings.get_profile("default"),
             max_examples=20 if IN_COVERAGE_TESTS else not_set,
             phases=list(Phase),  # Dogfooding the explain phase
         ),

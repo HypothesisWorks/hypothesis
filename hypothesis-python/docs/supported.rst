@@ -45,7 +45,7 @@ exactly where an error came from, or turn only our warnings into errors.
 Python versions
 ---------------
 
-Hypothesis is supported and tested on CPython 3.8+, i.e.
+Hypothesis is supported and tested on CPython 3.9+, i.e.
 `all versions of CPython with upstream support <https://devguide.python.org/versions/>`_,
 along with PyPy for the same versions.
 32-bit builds of CPython also work, though we only test them on Windows.
