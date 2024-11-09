@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.118.1:
+
+--------------------
+6.118.1 - 2024-11-09
+--------------------
+
+This patch updates some internals around how we determine an input is too large to finish generating.
+
 .. _v6.118.0:
 
 --------------------
