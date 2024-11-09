@@ -1527,6 +1527,19 @@ def test_does_not_cache_extended_prefix_if_overrun():
         assert d2.status == Status.VALID
 
 
+def test_draw_bits_partly_from_prefix_and_partly_random():
+    # a draw_bits call which straddles the end of our prefix has a slightly
+    # different code branch.
+    def test(data):
+        # float consumes draw_bits(64)
+        data.draw_float()
+
+    with deterministic_PRNG():
+        runner = ConjectureRunner(test, settings=TEST_SETTINGS)
+        d = runner.cached_test_function(bytes(10), extend=100)
+        assert d.status == Status.VALID
+
+
 def test_can_be_set_to_ignore_limits():
     def test(data):
         data.draw_bytes(1, 1)
