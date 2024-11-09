@@ -41,11 +41,22 @@ def get_mypy_output(fname, *extra_args):
 
 
 def get_mypy_analysed_type(fname):
-    out = get_mypy_output(fname).rstrip()
-    msg = "Success: no issues found in 1 source file"
-    if out.endswith(msg):
-        out = out[: -len(msg)]
-    assert len(out.splitlines()) == 1, out
+    attempts = 0
+    while True:
+        out = get_mypy_output(fname).rstrip()
+        msg = "Success: no issues found in 1 source file"
+        if out.endswith(msg):
+            out = out[: -len(msg)]
+        # we've noticed some flakiness in getting an empty output here. Give it
+        # a couple tries.
+        if len(out.splitlines()) == 0:
+            attempts += 1
+            continue
+
+        assert len(out.splitlines()) == 1, out
+        assert attempts < 2, "too many failed retries"
+        break
+
     # See https://mypy.readthedocs.io/en/latest/common_issues.html#reveal-type
     # The shell output for `reveal_type([1, 2, 3])` looks like a literal:
     # file.py:2: error: Revealed type is 'builtins.list[builtins.int*]'
@@ -327,8 +338,7 @@ def test_stateful_target_params_mutually_exclusive(tmp_path, decorator):
     "target_args",
     [
         "target=b1",
-        # FIXME: temporary workaround for mypy bug, see hypothesis/pull/4136
-        pytest.param("targets=(b1,)", marks=pytest.mark.xfail(strict=False)),
+        "targets=(b1,)",
         "targets=(b1, b2)",
         "",
     ],

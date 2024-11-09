@@ -16,36 +16,20 @@ from tests.common.utils import fails_with
 
 
 def fails_with_output(expected, error=AssertionError, **kw):
-    expected = [expected] if isinstance(expected, str) else expected
-
     def _inner(f):
         def _new():
             with pytest.raises(error) as err:
                 settings(print_blob=False, derandomize=True, **kw)(f)()
             got = "\n".join(err.value.__notes__).strip() + "\n"
-            assert any(got == s.strip() + "\n" for s in expected)
+            assert got == expected.strip() + "\n"
 
         return _new
 
     return _inner
 
 
-# this should have a marked as freely varying, but
-# false negatives in our inquisitor code skip over it sometimes, depending on the
-# seen_passed_buffers. yet another thing that should be improved by moving to the ir.
 @fails_with_output(
-    [
-        """
-Falsifying example: test_inquisitor_comments_basic_fail_if_either(
-    # The test always failed when commented parts were varied together.
-    a=False,
-    b=True,
-    c=[],  # or any other generated value
-    d=True,
-    e=False,  # or any other generated value
-)
-""",
-        """
+    """
 Falsifying example: test_inquisitor_comments_basic_fail_if_either(
     # The test always failed when commented parts were varied together.
     a=False,  # or any other generated value
@@ -54,8 +38,7 @@ Falsifying example: test_inquisitor_comments_basic_fail_if_either(
     d=True,
     e=False,  # or any other generated value
 )
-""",
-    ]
+"""
 )
 @given(st.booleans(), st.booleans(), st.lists(st.none()), st.booleans(), st.booleans())
 def test_inquisitor_comments_basic_fail_if_either(a, b, c, d, e):
@@ -89,6 +72,27 @@ Falsifying example: test_inquisitor_no_together_comment_if_single_argument(
 @given(st.text(), st.text())
 def test_inquisitor_no_together_comment_if_single_argument(a, b):
     assert a
+
+
+@st.composite
+def ints_with_forced_draw(draw):
+    data = draw(st.data())
+    n = draw(st.integers())
+    data.conjecture_data.draw_boolean(forced=True)
+    return n
+
+
+@fails_with_output(
+    """
+Falsifying example: test_inquisitor_doesnt_break_on_varying_forced_nodes(
+    n1=100,
+    n2=0,  # or any other generated value
+)
+"""
+)
+@given(st.integers(), ints_with_forced_draw())
+def test_inquisitor_doesnt_break_on_varying_forced_nodes(n1, n2):
+    assert n1 < 100
 
 
 @fails_with(ZeroDivisionError)
