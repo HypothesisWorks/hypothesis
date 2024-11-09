@@ -19,6 +19,7 @@ import collections
 import inspect
 import trio
 from collections.abc import Iterable, Sequence
+from contextlib import contextmanager
 from copy import copy
 from functools import lru_cache, wraps
 from io import StringIO
@@ -503,38 +504,34 @@ def async_manager_decorator(fn):
     return wrapper
 
 
-def get_sync_result_with_time(func, stateful_run_times, *args, **kwargs):
-    label = f"execute:rule:{func.__name__}"
+@contextmanager
+def recorded_time(stateful_run_times, label):
+    """Context manager for measuring and recording execution time."""
     start = perf_counter()
     start_gc = gc_cumulative_time()
 
-    result = func(*args, **kwargs)
+    try:
+        yield
+    finally:
+        in_gctime = gc_cumulative_time() - start_gc
+        duration = perf_counter() - start - in_gctime
+        stateful_run_times[label] = stateful_run_times.get(label, 0) + duration
+        print(
+            f"{label} took {duration:.4f} seconds (excluding GC: {in_gctime:.4f} seconds)"
+        )
 
-    in_gctime = gc_cumulative_time() - start_gc
-    duration = perf_counter() - start - in_gctime
-    stateful_run_times[label] = stateful_run_times.get(label, 0) + duration
-    print(
-        f"{label} (sync) took {duration:.4f} seconds (excluding GC: {in_gctime:.4f} seconds)"
-    )
 
+def get_sync_result_with_time(func, stateful_run_times, *args, **kwargs):
+    label = f"execute:rule:{func.__name__}"
+    with recorded_time(stateful_run_times, label):
+        result = func(*args, **kwargs)
     return result
 
 
 async def get_async_result_with_time(func, stateful_run_times, *args, **kwargs):
-    """This is mainly a copy of the sync version of the method, but plays nicely with python async/await"""
     label = f"execute:rule:{func.__name__}"
-    start = perf_counter()
-    start_gc = gc_cumulative_time()
-
-    result = await func(*args, **kwargs)
-
-    in_gctime = gc_cumulative_time() - start_gc
-    duration = perf_counter() - start - in_gctime
-    stateful_run_times[label] = stateful_run_times.get(label, 0) + duration
-    print(
-        f"{label} (async) took {duration:.4f} seconds (excluding GC: {in_gctime:.4f} seconds)"
-    )
-
+    with recorded_time(stateful_run_times, label):
+        result = await func(*args, **kwargs)
     return result
 
 
