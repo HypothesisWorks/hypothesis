@@ -159,7 +159,7 @@ class Sampler:
         while small:
             table[small.pop()][2] = zero
 
-        self.table: "List[Tuple[int, int, float]]" = []
+        self.table: "list[tuple[int, int, float]]" = []
         for base, alternate, alternate_chance in table:
             assert isinstance(base, int)
             assert isinstance(alternate, int) or alternate is None

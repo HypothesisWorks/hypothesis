@@ -282,7 +282,7 @@ def get_numeric_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
 
 
 def get_integer_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
-    kwargs, predicate = get_numeric_predicate_bounds(predicate)  # type: ignore
+    kwargs, predicate = get_numeric_predicate_bounds(predicate)
 
     if "min_value" in kwargs:
         if kwargs["min_value"] == -math.inf:
@@ -310,7 +310,7 @@ def get_integer_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
 
 
 def get_float_predicate_bounds(predicate: Predicate) -> ConstructivePredicate:
-    kwargs, predicate = get_numeric_predicate_bounds(predicate)  # type: ignore
+    kwargs, predicate = get_numeric_predicate_bounds(predicate)
 
     if "min_value" in kwargs:
         min_value = kwargs["min_value"]

@@ -15,9 +15,10 @@ import os
 import sys
 import tempfile
 import unicodedata
+from collections.abc import Iterable
 from functools import lru_cache
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Iterable, Literal, Optional, Tuple
+from typing import TYPE_CHECKING, Literal, Optional
 
 from hypothesis.configuration import storage_directory
 from hypothesis.control import _current_build_context
@@ -68,7 +69,7 @@ CategoryName: "TypeAlias" = Literal[
     "Cn",  # Other, not assigned
 ]
 Categories: "TypeAlias" = Iterable[CategoryName]
-CategoriesTuple: "TypeAlias" = Tuple[CategoryName, ...]
+CategoriesTuple: "TypeAlias" = tuple[CategoryName, ...]
 
 
 def charmap_file(fname: str = "charmap") -> Path:
@@ -80,7 +81,7 @@ def charmap_file(fname: str = "charmap") -> Path:
 _charmap = None
 
 
-def charmap() -> Dict[CategoryName, IntervalsT]:
+def charmap() -> dict[CategoryName, IntervalsT]:
     """Return a dict that maps a Unicode category, to a tuple of 2-tuples
     covering the codepoint intervals for characters in that category.
 
@@ -230,7 +231,7 @@ def as_general_categories(cats: Categories, name: str = "cats") -> CategoriesTup
     return tuple(c for c in cs if c in out)
 
 
-category_index_cache: Dict[CategoriesTuple, IntervalsT] = {(): ()}
+category_index_cache: dict[CategoriesTuple, IntervalsT] = {(): ()}
 
 
 def _category_key(cats: Optional[Iterable[str]]) -> CategoriesTuple:
@@ -280,8 +281,8 @@ def _query_for_key(key: Categories) -> IntervalsT:
     return result.intervals
 
 
-limited_category_index_cache: Dict[
-    Tuple[CategoriesTuple, int, int, IntervalsT, IntervalsT], IntervalSet
+limited_category_index_cache: dict[
+    tuple[CategoriesTuple, int, int, IntervalsT, IntervalsT], IntervalSet
 ] = {}
 
 

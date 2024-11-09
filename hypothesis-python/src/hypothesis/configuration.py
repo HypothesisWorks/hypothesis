@@ -12,7 +12,7 @@ import os
 import sys
 import warnings
 from pathlib import Path
-from typing import Optional, Union
+from typing import Union
 
 import _hypothesis_globals
 
@@ -22,7 +22,7 @@ __hypothesis_home_directory_default = Path.cwd() / ".hypothesis"
 __hypothesis_home_directory = None
 
 
-def set_hypothesis_home_dir(directory: Optional[Union[str, Path]]) -> None:
+def set_hypothesis_home_dir(directory: Union[str, Path, None]) -> None:
     global __hypothesis_home_directory
     __hypothesis_home_directory = None if directory is None else Path(directory)
 

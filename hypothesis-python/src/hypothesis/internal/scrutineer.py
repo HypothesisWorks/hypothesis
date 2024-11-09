@@ -19,7 +19,7 @@ from collections.abc import Iterable
 from functools import lru_cache, reduce
 from os import sep
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Set, Tuple
+from typing import TYPE_CHECKING, Optional
 
 from hypothesis._settings import Phase, Verbosity
 from hypothesis.internal.compat import PYPY
@@ -36,7 +36,6 @@ Trace: TypeAlias = set[Branch]
 
 
 @lru_cache(maxsize=None)
-def should_trace_file(fname: str) -> bool:
 def should_trace_file(fname: str) -> bool:
     # fname.startswith("<") indicates runtime code-generation via compile,
     # e.g. compile("def ...", "<string>", "exec") in e.g. attrs methods.
@@ -58,13 +57,10 @@ class Tracer:
     __slots__ = ("branches", "_previous_location")
 
     def __init__(self) -> None:
-    def __init__(self) -> None:
         self.branches: Trace = set()
-        self._previous_location: Optional[Location] = None
         self._previous_location: Optional[Location] = None
 
     @staticmethod
-    def can_trace() -> bool:
     def can_trace() -> bool:
         return (
             (sys.version_info[:2] < (3, 12) and sys.gettrace() is None)
@@ -143,7 +139,6 @@ UNHELPFUL_LOCATIONS = (
 )
 
 
-def _glob_to_re(locs: Iterable[str]) -> str:
 def _glob_to_re(locs: Iterable[str]) -> str:
     """Translate a list of glob patterns to a combined regular expression.
     Only the * wildcard is supported, and patterns including special

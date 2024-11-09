@@ -22,7 +22,6 @@ import string
 from functools import lru_cache
 from importlib import resources
 from typing import Optional
-from typing import Optional
 
 from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument

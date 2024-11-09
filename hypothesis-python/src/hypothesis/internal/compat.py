@@ -17,15 +17,7 @@ import sys
 import sysconfig
 import typing
 from functools import partial
-from typing import (
-    Any,
-    Dict,
-    ForwardRef,
-    List,
-    Optional,
-    TypedDict as TypedDict,
-    get_args,
-)
+from typing import Any, ForwardRef, Optional, TypedDict as TypedDict, get_args
 
 try:
     BaseExceptionGroup = BaseExceptionGroup
@@ -139,7 +131,7 @@ def _hint_and_args(x):
     return (x, *get_args(x))
 
 
-def get_type_hints(thing: object) -> Dict[str, object]:
+def get_type_hints(thing: object) -> dict[str, Any]:
     """Like the typing version, but tries harder and never errors.
 
     Tries harder: if the thing to inspect is a class but typing.get_type_hints
@@ -159,10 +151,6 @@ def get_type_hints(thing: object) -> Dict[str, object]:
             get_signature(thing).parameters
         )
         return {k: v for k, v in get_type_hints(thing.func).items() if k not in bound}
-
-    kwargs: Dict[str, Any] = (
-        {} if sys.version_info[:2] < (3, 9) else {"include_extras": True}
-    )
 
     try:
         hints = typing.get_type_hints(thing, include_extras=True)

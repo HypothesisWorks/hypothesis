@@ -263,7 +263,6 @@ class Example:
 
     @property
     def parent(self) -> Optional[int]:
-    def parent(self) -> Optional[int]:
         """The index of the example that this one is nested directly within."""
         if self.index == 0:
             return None
@@ -291,13 +290,11 @@ class Example:
 
     @property
     def depth(self) -> int:
-    def depth(self) -> int:
         """Depth of this example in the example tree. The top-level example has a
         depth of 0."""
         return self.owner.depths[self.index]
 
     @property
-    def trivial(self) -> bool:
     def trivial(self) -> bool:
         """An example is "trivial" if it only contains forced bytes and zero bytes.
         All examples start out as trivial, and then get marked non-trivial when
@@ -346,7 +343,6 @@ class ExampleProperty:
         self.example_count = 0
         self.block_count = 0
         self.ir_node_count = 0
-        self.result: Any = None
         self.result: Any = None
 
     def run(self) -> Any:
@@ -422,7 +418,6 @@ def calculated_example_property(cls: type[ExampleProperty]) -> Any:
     cache_name = "__" + name
 
     def lazy_calculate(self: "Examples") -> Any:
-    def lazy_calculate(self: "Examples") -> Any:
         result = getattr(self, cache_name, None)
         if result is None:
             result = cls(self).run()
@@ -462,14 +457,6 @@ class ExampleRecord:
     def freeze(self) -> None:
         self.__index_of_labels = None
 
-    def record_ir_draw(
-        self,
-        ir_type: IRTypeName,
-        value: IRType,
-        *,
-        kwargs: IRKWargsType,
-        was_forced: bool,
-    ) -> None:
     def record_ir_draw(
         self,
         ir_type: IRTypeName,
@@ -530,7 +517,6 @@ class Examples:
 
     class _starts_and_ends(ExampleProperty):
         def begin(self) -> None:
-        def begin(self) -> None:
             self.starts = IntList.of_length(len(self.examples))
             self.ends = IntList.of_length(len(self.examples))
 
@@ -556,7 +542,6 @@ class Examples:
         return self.starts_and_ends[1]
 
     class _ir_starts_and_ends(ExampleProperty):
-        def begin(self) -> None:
         def begin(self) -> None:
             self.starts = IntList.of_length(len(self.examples))
             self.ends = IntList.of_length(len(self.examples))
@@ -584,7 +569,7 @@ class Examples:
 
     class _discarded(ExampleProperty):
         def begin(self) -> None:
-            self.result: "Set[int]" = set()
+            self.result: set[int] = set()
 
         def finish(self) -> frozenset[int]:
             return frozenset(self.result)
@@ -598,7 +583,7 @@ class Examples:
     class _trivial(ExampleProperty):
         def begin(self) -> None:
             self.nontrivial = IntList.of_length(len(self.examples))
-            self.result: "Set[int]" = set()
+            self.result: set[int] = set()
 
         def block(self, i: int) -> None:
             if not self.examples.blocks.trivial(i):
@@ -625,7 +610,6 @@ class Examples:
 
     class _depths(ExampleProperty):
         def begin(self) -> None:
-        def begin(self) -> None:
             self.result = IntList.of_length(len(self.examples))
 
         def start_example(self, i: int, label_index: int) -> None:
@@ -635,10 +619,8 @@ class Examples:
 
     class _ir_tree_nodes(ExampleProperty):
         def begin(self) -> None:
-        def begin(self) -> None:
             self.result = []
 
-        def ir_node(self, ir_node: "IRNode") -> None:
         def ir_node(self, ir_node: "IRNode") -> None:
             self.result.append(ir_node)
 
@@ -809,7 +791,6 @@ class Blocks:
 
     @property
     def last_block_length(self) -> int:
-    def last_block_length(self) -> int:
         return self.end(-1) - self.start(-1)
 
     def __len__(self) -> int:
@@ -891,7 +872,6 @@ class Blocks:
         return result
 
     def __check_completion(self) -> None:
-    def __check_completion(self) -> None:
         """The list of blocks is complete if we have created every ``Block``
         object that we currently good and know that no more will be created.
 
@@ -921,7 +901,6 @@ class Blocks:
 class _Overrun:
     status = Status.OVERRUN
 
-    def __repr__(self) -> str:
     def __repr__(self) -> str:
         return "Overrun"
 
@@ -1077,7 +1056,6 @@ class IRNode:
         )
 
     def __hash__(self) -> int:
-    def __hash__(self) -> int:
         return hash(
             (
                 self.ir_type,
@@ -1087,7 +1065,6 @@ class IRNode:
             )
         )
 
-    def __repr__(self) -> str:
     def __repr__(self) -> str:
         # repr to avoid "BytesWarning: str() on a bytes instance" for bytes nodes
         forced_marker = " [forced]" if self.was_forced else ""
@@ -1957,7 +1934,6 @@ class HypothesisProvider(PrimitiveProvider):
             )
 
         def permitted(f: float) -> bool:
-        def permitted(f: float) -> bool:
             if math.isnan(f):
                 return allow_nan
             if 0 < abs(f) < smallest_nonzero_magnitude:
@@ -2134,7 +2110,6 @@ class ConjectureData:
         self.misaligned_at: Optional[MisalignedAt] = None
         self.start_example(TOP_LABEL)
 
-    def __repr__(self) -> str:
     def __repr__(self) -> str:
         return "ConjectureData(%s, %d bytes%s)" % (
             self.status.name,

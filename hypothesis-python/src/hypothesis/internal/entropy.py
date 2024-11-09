@@ -13,9 +13,9 @@ import gc
 import random
 import sys
 import warnings
-from collections.abc import Generator
+from collections.abc import Generator, Hashable
 from itertools import count
-from typing import TYPE_CHECKING, Any, Callable, Dict, Hashable, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Optional
 from weakref import WeakValueDictionary
 
 import hypothesis.core
@@ -162,7 +162,7 @@ def get_seeder_and_restorer(
     """
     assert isinstance(seed, int)
     assert 0 <= seed < 2**32
-    states: Dict[int, object] = {}
+    states: dict[int, object] = {}
 
     if "numpy" in sys.modules:
         global NP_RANDOM
