@@ -264,6 +264,8 @@ class ConjectureRunner:
         self.__data_cache = LRUReusedCache(CACHE_SIZE)
         self.__data_cache_ir = LRUReusedCache(CACHE_SIZE)
 
+        self.reused_previously_shrunk_test_case = False
+
         self.__pending_call_explanation: Optional[str] = None
         self._switch_to_hypothesis_provider: bool = False
 
@@ -815,6 +817,7 @@ class ConjectureRunner:
             )
             factor = 0.1 if (Phase.generate in self.settings.phases) else 1
             desired_size = max(2, ceil(factor * self.settings.max_examples))
+            primary_corpus_size = len(corpus)
 
             if len(corpus) < desired_size:
                 extra_corpus = list(self.settings.database.fetch(self.secondary_key))
@@ -828,11 +831,29 @@ class ConjectureRunner:
                 extra.sort(key=sort_key)
                 corpus.extend(extra)
 
-            for existing in corpus:
+            # We want a fast path where every primary entry in the database was
+            # interesting.
+            found_interesting_in_primary = False
+            all_interesting_in_primary_were_exact = True
+
+            for i, existing in enumerate(corpus):
+                if i >= primary_corpus_size and found_interesting_in_primary:
+                    break
                 data = self.cached_test_function(existing, extend=BUFFER_SIZE)
                 if data.status != Status.INTERESTING:
                     self.settings.database.delete(self.database_key, existing)
                     self.settings.database.delete(self.secondary_key, existing)
+                else:
+                    if i < primary_corpus_size:
+                        found_interesting_in_primary = True
+                        assert not isinstance(data, _Overrun)
+                        if existing != data.buffer:
+                            all_interesting_in_primary_were_exact = False
+                    if not self.settings.report_multiple_bugs:
+                        break
+            if found_interesting_in_primary:
+                if all_interesting_in_primary_were_exact:
+                    self.reused_previously_shrunk_test_case = True
 
             # Because self.database is not None (because self.has_existing_examples())
             # and self.database_key is not None (because we fetched using it above),
@@ -1231,6 +1252,11 @@ class ConjectureRunner:
         self._switch_to_hypothesis_provider = True
         with self._log_phase_statistics("reuse"):
             self.reuse_existing_examples()
+        # Fast path for development: If the database gave us interesting
+        # examples from the previously stored primary key, don't try
+        # shrinking it again as it's unlikely to work.
+        if self.reused_previously_shrunk_test_case:
+            self.exit_with(ExitReason.finished)
         # ...but we should use the supplied provider when generating...
         self._switch_to_hypothesis_provider = False
         with self._log_phase_statistics("generate"):

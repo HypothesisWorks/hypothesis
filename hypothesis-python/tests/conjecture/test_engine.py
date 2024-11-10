@@ -1691,3 +1691,72 @@ def test_mildly_complicated_strategies(strategy, condition):
     # covered by shrinking any mildly compliated strategy and aren't worth
     # testing explicitly for. This covers those.
     minimal(strategy, condition)
+
+
+def test_does_not_shrink_if_replaying_from_database():
+    db = InMemoryExampleDatabase()
+    key = b"foo"
+
+    def f(data):
+        if data.draw_integer(0, 255) == 123:
+            data.mark_interesting()
+
+    runner = ConjectureRunner(f, settings=settings(database=db), database_key=key)
+    b = bytes([123])
+    runner.save_buffer(b)
+    runner.shrink_interesting_examples = None
+    runner.run()
+    (last_data,) = runner.interesting_examples.values()
+    assert last_data.buffer == b
+
+
+def test_does_shrink_if_replaying_inexact_from_database():
+    db = InMemoryExampleDatabase()
+    key = b"foo"
+
+    def f(data):
+        data.draw_integer(0, 255)
+        data.mark_interesting()
+
+    runner = ConjectureRunner(f, settings=settings(database=db), database_key=key)
+    b = bytes([123, 2])
+    runner.save_buffer(b)
+    runner.run()
+    (last_data,) = runner.interesting_examples.values()
+    assert last_data.buffer == bytes([0])
+
+
+def test_stops_if_hits_interesting_early_and_only_want_one_bug():
+    db = InMemoryExampleDatabase()
+    key = b"foo"
+
+    def f(data):
+        data.draw_integer(0, 255)
+        data.mark_interesting()
+
+    runner = ConjectureRunner(
+        f, settings=settings(database=db, report_multiple_bugs=False), database_key=key
+    )
+    for i in range(256):
+        runner.save_buffer(bytes([i]))
+    runner.run()
+    assert runner.call_count == 1
+
+
+def test_skips_secondary_if_interesting_is_found():
+    db = InMemoryExampleDatabase()
+    key = b"foo"
+
+    def f(data):
+        data.draw_integer(0, 255)
+        data.mark_interesting()
+
+    runner = ConjectureRunner(
+        f,
+        settings=settings(max_examples=1000, database=db, report_multiple_bugs=True),
+        database_key=key,
+    )
+    for i in range(256):
+        db.save(runner.database_key if i < 10 else runner.secondary_key, bytes([i]))
+    runner.reuse_existing_examples()
+    assert runner.call_count == 10
