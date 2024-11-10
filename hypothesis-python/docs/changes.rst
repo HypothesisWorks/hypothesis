@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.118.3:
+
+--------------------
+6.118.3 - 2024-11-10
+--------------------
+
+This patch adds more type hints to internal Hypothesis code.
+
 .. _v6.118.2:
 
 --------------------
