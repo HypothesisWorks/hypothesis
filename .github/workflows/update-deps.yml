@@ -18,7 +18,7 @@ jobs:
       - name: Update pinned dependencies
         run: ./build.sh upgrade-requirements
       - name: Open pull request
-        uses: peter-evans/create-pull-request@v4
+        uses: peter-evans/create-pull-request@v7
         with:
           token: ${{secrets.GH_TOKEN}}
           delete-branch: true
