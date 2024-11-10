@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.118.5:
+
+--------------------
+6.118.5 - 2024-11-10
+--------------------
+
+This patch avoids computing some string representations we won't need,
+giving a small speedup (part of :issue:`4139`).
+
 .. _v6.118.4:
 
 --------------------
