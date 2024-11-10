@@ -61,7 +61,7 @@ def test_gives_flaky_error_if_assumption_is_flaky():
 
 def test_flaky_with_context_when_fails_only_under_tracing(monkeypatch):
     # make anything fail under tracing
-    monkeypatch.setattr(Tracer, "can_trace", lambda: True)
+    monkeypatch.setattr(Tracer, "can_trace", staticmethod(lambda: True))
     monkeypatch.setattr(Tracer, "__enter__", lambda *_: 1 / 0)
     # ensure tracing is always entered inside _execute_once_for_engine
     monkeypatch.setattr(StateForActualGivenExecution, "_should_trace", lambda _: True)

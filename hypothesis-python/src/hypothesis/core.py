@@ -477,9 +477,6 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
             fragments_reported = []
             empty_data = ConjectureData.for_buffer(b"")
             try:
-                bits = ", ".join(nicerepr(x) for x in arguments) + ", ".join(
-                    f"{k}={nicerepr(v)}" for k, v in example_kwargs.items()
-                )
                 execute_example = partial(
                     state.execute_once,
                     empty_data,
@@ -492,7 +489,9 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
                         execute_example()
                     else:
                         # @example(...).xfail(...)
-
+                        bits = ", ".join(nicerepr(x) for x in arguments) + ", ".join(
+                            f"{k}={nicerepr(v)}" for k, v in example_kwargs.items()
+                        )
                         try:
                             execute_example()
                         except failure_exceptions_to_catch() as err:
@@ -864,15 +863,6 @@ class StateForActualGivenExecution:
             if expected_failure is not None:
                 nonlocal text_repr
                 text_repr = repr_call(test, args, kwargs)
-                if text_repr in self.xfail_example_reprs:
-                    warnings.warn(
-                        f"We generated {text_repr}, which seems identical "
-                        "to one of your `@example(...).xfail()` cases.  "
-                        "Revise the strategy to avoid this overlap?",
-                        HypothesisWarning,
-                        # Checked in test_generating_xfailed_examples_warns!
-                        stacklevel=6,
-                    )
 
             if print_example or current_verbosity() >= Verbosity.verbose:
                 printer = RepresentationPrinter(context=context)
@@ -1002,18 +992,17 @@ class StateForActualGivenExecution:
         """
         trace: Trace = set()
         try:
-            if self._should_trace() and Tracer.can_trace():  # pragma: no cover
-                # This is in fact covered by our *non-coverage* tests, but due to the
-                # settrace() contention *not* by our coverage tests.  Ah well.
-                with Tracer() as tracer:
-                    try:
-                        result = self.execute_once(data)
-                        if data.status == Status.VALID:
-                            self.explain_traces[None].add(frozenset(tracer.branches))
-                    finally:
-                        trace = tracer.branches
-            else:
-                result = self.execute_once(data)
+            with Tracer(should_trace=self._should_trace()) as tracer:
+                try:
+                    result = self.execute_once(data)
+                    if (
+                        data.status == Status.VALID and tracer.branches
+                    ):  # pragma: no cover
+                        # This is in fact covered by our *non-coverage* tests, but due
+                        # to the settrace() contention *not* by our coverage tests.
+                        self.explain_traces[None].add(frozenset(tracer.branches))
+                finally:
+                    trace = tracer.branches
             if result is not None:
                 fail_health_check(
                     self.settings,
