@@ -477,9 +477,6 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
             fragments_reported = []
             empty_data = ConjectureData.for_buffer(b"")
             try:
-                bits = ", ".join(nicerepr(x) for x in arguments) + ", ".join(
-                    f"{k}={nicerepr(v)}" for k, v in example_kwargs.items()
-                )
                 execute_example = partial(
                     state.execute_once,
                     empty_data,
@@ -492,7 +489,9 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
                         execute_example()
                     else:
                         # @example(...).xfail(...)
-
+                        bits = ", ".join(nicerepr(x) for x in arguments) + ", ".join(
+                            f"{k}={nicerepr(v)}" for k, v in example_kwargs.items()
+                        )
                         try:
                             execute_example()
                         except failure_exceptions_to_catch() as err:
