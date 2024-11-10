@@ -1002,18 +1002,17 @@ class StateForActualGivenExecution:
         """
         trace: Trace = set()
         try:
-            if self._should_trace() and Tracer.can_trace():  # pragma: no cover
-                # This is in fact covered by our *non-coverage* tests, but due to the
-                # settrace() contention *not* by our coverage tests.  Ah well.
-                with Tracer() as tracer:
-                    try:
-                        result = self.execute_once(data)
-                        if data.status == Status.VALID:
-                            self.explain_traces[None].add(frozenset(tracer.branches))
-                    finally:
-                        trace = tracer.branches
-            else:
-                result = self.execute_once(data)
+            with Tracer(should_trace=self._should_trace()) as tracer:
+                try:
+                    result = self.execute_once(data)
+                    if (
+                        data.status == Status.VALID and tracer.branches
+                    ):  # pragma: no cover
+                        # This is in fact covered by our *non-coverage* tests, but due
+                        # to the settrace() contention *not* by our coverage tests.
+                        self.explain_traces[None].add(frozenset(tracer.branches))
+                finally:
+                    trace = tracer.branches
             if result is not None:
                 fail_health_check(
                     self.settings,
