@@ -13,6 +13,7 @@ import pathlib
 import re
 import subprocess
 import sys
+from datetime import date
 from pathlib import Path
 
 import requests
@@ -30,6 +31,7 @@ BUILD_FILES = tuple(
     os.path.join(tools.ROOT, f)
     for f in ["tooling", "requirements", ".github", "hypothesis-python/tox.ini"]
 )
+TODAY = date.today().isoformat()
 
 
 def task(if_changed=()):
@@ -321,6 +323,54 @@ def update_python_versions():
         build_sh.chmod(0o755)
 
 
+DJANGO_VERSIONS = {
+    "4.2": "4.2.16",
+    "5.0": "5.0.9",
+    "5.1": "5.1.3",
+}
+
+
+def update_django_versions():
+    # https://endoflife.date/django makes it easier to track these
+    releases = requests.get("https://endoflife.date/api/django.json").json()
+    versions = {r["cycle"]: r["latest"] for r in releases[::-1] if TODAY <= r["eol"]}
+
+    if versions == DJANGO_VERSIONS:
+        return
+
+    # Write the new mapping back to this file
+    thisfile = pathlib.Path(__file__)
+    before = thisfile.read_text(encoding="utf-8")
+    after = re.sub(
+        r"DJANGO_VERSIONS = \{[^{}]+\}",
+        "DJANGO_VERSIONS = " + repr(versions).replace("}", ",}"),
+        before,
+    )
+    thisfile.write_text(after, encoding="utf-8")
+    pip_tool("shed", str(thisfile))
+
+    # Update the minimum version in setup.py
+    setup_py = hp.BASE_DIR / "setup.py"
+    content = re.sub(
+        r"django>=\d+\.\d+",
+        f"django>={min(versions, key=float)}",
+        setup_py.read_text(encoding="utf-8"),
+    )
+    setup_py.write_text(content, encoding="utf-8")
+
+    # Automatically sync ci_version with the version in build.sh
+    tox_ini = hp.BASE_DIR / "tox.ini"
+    content = tox_ini.read_text(encoding="utf-8")
+    print(versions)
+    for short, full in versions.items():
+        content = re.sub(
+            rf"(pip install django==){short}\.\d+",
+            rf"\g<1>{full}",
+            content,
+        )
+    tox_ini.write_text(content, encoding="utf-8")
+
+
 def update_pyodide_versions():
     vers_re = r"(\d+\.\d+\.\d+)"
     all_versions = re.findall(
@@ -391,6 +441,7 @@ def upgrade_requirements():
             f.write(f"RELEASE_TYPE: patch\n\n{msg}")
     update_python_versions()
     update_pyodide_versions()
+    update_django_versions()
     subprocess.call(["git", "add", "."], cwd=tools.ROOT)
 
 
@@ -512,8 +563,8 @@ standard_tox_task("py39-pytest46", py="3.9")
 standard_tox_task("py39-pytest54", py="3.9")
 standard_tox_task("pytest62")
 
-for n in [42, 50]:
-    standard_tox_task(f"django{n}")
+for n in DJANGO_VERSIONS:
+    standard_tox_task(f"django{n.replace('.', '')}")
 
 for n in [13, 14, 15, 20, 21, 22]:
     standard_tox_task(f"pandas{n}")
