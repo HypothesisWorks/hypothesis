@@ -13,6 +13,7 @@ from typing import Union
 from hypothesis.internal.compat import int_from_bytes, int_to_bytes
 from hypothesis.internal.conjecture.data import (
     ConjectureResult,
+    IRType,
     Status,
     _Overrun,
     bits_to_bytes,
@@ -134,12 +135,16 @@ class Optimiser:
                     return False
 
                 node = self.current_data.examples.ir_tree_nodes[i]
+                assert node.index is not None
                 if node.was_forced:
                     return False  # pragma: no cover
 
+                new_value: IRType
                 if node.ir_type in {"integer", "float"}:
+                    assert isinstance(node.value, (int, float))
                     new_value = node.value + k
                 elif node.ir_type == "boolean":
+                    assert isinstance(node.value, bool)
                     if abs(k) > 1:
                         return False
                     if k == -1:
@@ -150,6 +155,7 @@ class Optimiser:
                         new_value = node.value
                 else:
                     assert node.ir_type == "bytes"
+                    assert isinstance(node.value, bytes)
                     v = int_from_bytes(node.value)
                     # can't go below zero for bytes
                     if v + k < 0:
