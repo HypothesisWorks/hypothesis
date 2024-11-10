@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.118.7:
+
+--------------------
+6.118.7 - 2024-11-10
+--------------------
+
+This patch removes some ``# type: ignore`` comments following a :pypi:`mypy` update.
+
 .. _v6.118.6:
 
 --------------------
