@@ -864,15 +864,6 @@ class StateForActualGivenExecution:
             if expected_failure is not None:
                 nonlocal text_repr
                 text_repr = repr_call(test, args, kwargs)
-                if text_repr in self.xfail_example_reprs:
-                    warnings.warn(
-                        f"We generated {text_repr}, which seems identical "
-                        "to one of your `@example(...).xfail()` cases.  "
-                        "Revise the strategy to avoid this overlap?",
-                        HypothesisWarning,
-                        # Checked in test_generating_xfailed_examples_warns!
-                        stacklevel=6,
-                    )
 
             if print_example or current_verbosity() >= Verbosity.verbose:
                 printer = RepresentationPrinter(context=context)
