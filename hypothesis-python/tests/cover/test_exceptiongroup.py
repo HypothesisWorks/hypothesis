@@ -18,9 +18,12 @@ from hypothesis.strategies import DataObject
 def test_discard_frozen() -> None:
     @given(st.data())
     def discard_frozen(data: DataObject) -> None:
-        # raising Frozen doesn't actually do anything, what matters is
-        # whether the data is frozen.
+        # Accessing .conjecture_data is internal API. Other possible ways of freezing
+        # data might go through ConjectureRunner.cached_test_function_ir or
+        # ConjectureRunner.test_function
         data.conjecture_data.freeze()
+        # Raising Frozen doesn't actually do anything, what matters is
+        # whether the data is frozen.
         raise ExceptionGroup("", [errors.Frozen()])
 
     discard_frozen()

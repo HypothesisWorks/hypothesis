@@ -172,6 +172,9 @@ def test_exceptiongroup_multiple_InvalidArgument() -> None:
 
 
 # if intended, will probably remove this test, and either way probably belong somewhere else
+# data.conjecture_data is internal API, so calling freeze like this is invalid use of
+# internal API. I'm not sure if it's possible to repro this only using public API, in
+# which case it's much less of a problem - but could probably hide internal bugs at least.
 def test_frozen_things():
     # Hypothesis reraises the TypeError as a StopTest, because the data is Frozen.
     # Doesn't seem great, but I suppose it is intentional?

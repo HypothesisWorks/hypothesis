@@ -736,7 +736,9 @@ def get_executor(runner):
 
 
 @contextlib.contextmanager
-def unwrap_exception_group() -> Generator[None, None, None]:
+def unwrap_markers_from_group() -> Generator[None, None, None]:
+    # This function is a crude solution, a better way of resolving it would probably
+    # be to rewrite a bunch of exception handlers to use except*.
     T = TypeVar("T", bound=BaseException)
 
     def _flatten_group(excgroup: BaseExceptionGroup[T]) -> list[T]:
@@ -869,7 +871,7 @@ class StateForActualGivenExecution:
 
             @proxies(self.test)
             def test(*args, **kwargs):
-                with unwrap_exception_group(), ensure_free_stackframes():
+                with unwrap_markers_from_group(), ensure_free_stackframes():
                     return self.test(*args, **kwargs)
 
         else:
@@ -881,7 +883,7 @@ class StateForActualGivenExecution:
                 arg_gctime = gc_cumulative_time()
                 start = time.perf_counter()
                 try:
-                    with unwrap_exception_group(), ensure_free_stackframes():
+                    with unwrap_markers_from_group(), ensure_free_stackframes():
                         result = self.test(*args, **kwargs)
                 finally:
                     finish = time.perf_counter()
