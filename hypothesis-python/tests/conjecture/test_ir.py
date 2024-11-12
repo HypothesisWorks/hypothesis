@@ -380,7 +380,7 @@ def test_ir_nodes(random):
             was_forced=True,
         ),
     )
-    assert data.examples.ir_tree_nodes == expected_tree_nodes
+    assert data.ir_nodes == expected_tree_nodes
 
 
 @given(ir_nodes())
