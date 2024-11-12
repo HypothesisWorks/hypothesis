@@ -356,8 +356,6 @@ class ExampleProperty:
                 self.block(self.block_count)
                 self.block_count += 1
             elif record == IR_NODE_RECORD:
-                data = self.examples.ir_nodes[self.ir_node_count]
-                self.ir_node(data)
                 self.ir_node_count += 1
             elif record >= START_EXAMPLE_RECORD:
                 self.__push(record - START_EXAMPLE_RECORD)
@@ -398,9 +396,6 @@ class ExampleProperty:
         """Called at the end of each example, with ``i`` the
         index of the example and ``discarded`` being ``True`` if ``stop_example``
         was called with ``discard=True``."""
-
-    def ir_node(self, node: "IRNode") -> None:
-        """Called when an ir node is drawn."""
 
     def finish(self) -> Any:
         return self.result
@@ -457,23 +452,8 @@ class ExampleRecord:
     def freeze(self) -> None:
         self.__index_of_labels = None
 
-    def record_ir_draw(
-        self,
-        ir_type: IRTypeName,
-        value: IRType,
-        *,
-        kwargs: IRKWargsType,
-        was_forced: bool,
-    ) -> None:
+    def record_ir_draw(self) -> None:
         self.trail.append(IR_NODE_RECORD)
-        node = IRNode(
-            ir_type=ir_type,
-            value=value,
-            kwargs=kwargs,
-            was_forced=was_forced,
-            index=len(self.ir_nodes),
-        )
-        self.ir_nodes.append(node)
 
     def start_example(self, label: int) -> None:
         assert self.__index_of_labels is not None
@@ -507,7 +487,6 @@ class Examples:
 
     def __init__(self, record: ExampleRecord, blocks: "Blocks") -> None:
         self.trail = record.trail
-        self.ir_nodes = record.ir_nodes
         self.labels = record.labels
         self.__length = self.trail.count(
             STOP_EXAMPLE_DISCARD_RECORD
@@ -616,18 +595,6 @@ class Examples:
             self.result[i] = len(self.example_stack)
 
     depths: IntList = calculated_example_property(_depths)
-
-    class _ir_tree_nodes(ExampleProperty):
-        def begin(self) -> None:
-            self.result = []
-
-        def ir_node(self, ir_node: "IRNode") -> None:
-            self.result.append(ir_node)
-
-        def finish(self):
-            return tuple(self.result)
-
-    ir_tree_nodes: "tuple[IRNode, ...]" = calculated_example_property(_ir_tree_nodes)
 
     class _label_indices(ExampleProperty):
         def start_example(self, i: int, label_index: int) -> None:
@@ -1173,6 +1140,7 @@ class ConjectureResult:
     # If we consider blocks or examples in equality checks, multiple semantically equal
     # results get stored in e.g. the pareto front.
     blocks: Blocks = attr.ib(eq=False)
+    ir_nodes: tuple[IRNode, ...] = attr.ib(eq=False, repr=False)
     output: str = attr.ib()
     extra_information: Optional[ExtraInformation] = attr.ib()
     has_discards: bool = attr.ib()
@@ -2106,7 +2074,8 @@ class ConjectureData:
 
         self.extra_information = ExtraInformation()
 
-        self.ir_tree_nodes = ir_tree_prefix
+        self.ir_prefix = ir_tree_prefix
+        self.ir_nodes: tuple[IRNode, ...] = ()
         self.misaligned_at: Optional[MisalignedAt] = None
         self.start_example(TOP_LABEL)
 
@@ -2149,8 +2118,8 @@ class ConjectureData:
         if self.length_ir == self.max_length_ir:
             self.mark_overrun()
 
-        if self.ir_tree_nodes is not None and observe:
-            if self.index_ir < len(self.ir_tree_nodes):
+        if self.ir_prefix is not None and observe:
+            if self.index_ir < len(self.ir_prefix):
                 node_value = self._pop_ir_tree_node(ir_type, kwargs, forced=forced)
             else:
                 try:
@@ -2173,14 +2142,21 @@ class ConjectureData:
             getattr(self.observer, f"draw_{ir_type}")(
                 value, kwargs=kwargs, was_forced=was_forced
             )
-            self.__example_record.record_ir_draw(
-                ir_type,
-                value,
+            size = ir_size([value])
+            if size + self.length_ir > self.max_length_ir:
+                self.mark_overrun()
+
+            node = IRNode(
+                ir_type=ir_type,
+                value=value,
                 kwargs=kwargs,
                 was_forced=was_forced,
+                index=len(self.ir_nodes),
             )
+            self.__example_record.record_ir_draw()
+            self.ir_nodes += (node,)
             self.index_ir += 1
-            self.length_ir += ir_size([value])
+            self.length_ir += size
 
         if self.length_ir > self.max_length_ir:
             self.mark_overrun()
@@ -2362,11 +2338,11 @@ class ConjectureData:
     ) -> IRType:
         from hypothesis.internal.conjecture.engine import BUFFER_SIZE
 
-        assert self.ir_tree_nodes is not None
+        assert self.ir_prefix is not None
         # checked in _draw
-        assert self.index_ir < len(self.ir_tree_nodes)
+        assert self.index_ir < len(self.ir_prefix)
 
-        node = self.ir_tree_nodes[self.index_ir]
+        node = self.ir_prefix[self.index_ir]
         value = node.value
         # If we're trying to:
         # * draw a different ir type at the same location
@@ -2422,6 +2398,7 @@ class ConjectureData:
                 interesting_origin=self.interesting_origin,
                 buffer=self.buffer,
                 examples=self.examples,
+                ir_nodes=self.ir_nodes,
                 blocks=self.blocks,
                 output=self.output,
                 extra_information=(

@@ -605,8 +605,8 @@ class Shrinker:
                 if result.status is Status.OVERRUN:
                     continue  # pragma: no cover  # flakily covered
                 if not (
-                    len(attempt) == len(result.examples.ir_tree_nodes)
-                    and endswith(result.examples.ir_tree_nodes, nodes[end:])
+                    len(attempt) == len(result.ir_nodes)
+                    and endswith(result.ir_nodes, nodes[end:])
                 ):
                     for ex, res in zip(shrink_target.examples, result.examples):
                         assert ex.ir_start == res.ir_start
@@ -619,21 +619,15 @@ class Shrinker:
                         raise NotImplementedError("Expected matching prefixes")
 
                     attempt = (
-                        nodes[:start]
-                        + result.examples.ir_tree_nodes[start:res_end]
-                        + nodes[end:]
+                        nodes[:start] + result.ir_nodes[start:res_end] + nodes[end:]
                     )
-                    chunks[(start, end)].append(
-                        result.examples.ir_tree_nodes[start:res_end]
-                    )
+                    chunks[(start, end)].append(result.ir_nodes[start:res_end])
                     result = self.engine.cached_test_function_ir(attempt)
 
                     if result.status is Status.OVERRUN:
                         continue  # pragma: no cover  # flakily covered
                 else:
-                    chunks[(start, end)].append(
-                        result.examples.ir_tree_nodes[start:end]
-                    )
+                    chunks[(start, end)].append(result.ir_nodes[start:end])
 
                 if shrink_target is not self.shrink_target:  # pragma: no cover
                     # If we've shrunk further without meaning to, bail out.
@@ -816,7 +810,7 @@ class Shrinker:
 
     @property
     def nodes(self):
-        return self.shrink_target.examples.ir_tree_nodes
+        return self.shrink_target.ir_nodes
 
     @property
     def examples(self):
@@ -956,7 +950,7 @@ class Shrinker:
         def consider(n, sign):
             return self.consider_new_tree(
                 replace_all(
-                    st.examples.ir_tree_nodes,
+                    st.ir_nodes,
                     [
                         offset_node(node, sign * (n + v))
                         for node, v in zip(changed, ints)
@@ -984,8 +978,8 @@ class Shrinker:
         prev_target = self.__last_checked_changed_at
         new_target = self.shrink_target
         assert prev_target is not new_target
-        prev_nodes = prev_target.examples.ir_tree_nodes
-        new_nodes = new_target.examples.ir_tree_nodes
+        prev_nodes = prev_target.ir_nodes
+        new_nodes = new_target.ir_nodes
         assert sort_key(new_target.buffer) < sort_key(prev_target.buffer)
 
         if len(prev_nodes) != len(new_nodes) or any(
@@ -1117,7 +1111,7 @@ class Shrinker:
                     + initial_attempt[node.index :]
                 )
 
-        lost_nodes = len(self.nodes) - len(attempt.examples.ir_tree_nodes)
+        lost_nodes = len(self.nodes) - len(attempt.ir_nodes)
         if lost_nodes <= 0:
             return False
 
@@ -1443,8 +1437,8 @@ class Shrinker:
         if (
             attempt is None
             or attempt.status < Status.VALID
-            or len(attempt.examples.ir_tree_nodes) == len(self.nodes)
-            or len(attempt.examples.ir_tree_nodes) == node.index + 1
+            or len(attempt.ir_nodes) == len(self.nodes)
+            or len(attempt.ir_nodes) == node.index + 1
         ):
             # no point in trying our size-dependency-logic if our attempt at
             # lowering the node resulted in:
@@ -1519,14 +1513,12 @@ class Shrinker:
             range(len(examples)),
             lambda indices: self.consider_new_tree(
                 replace_all(
-                    st.examples.ir_nodes,
+                    st.ir_nodes,
                     [
                         (
                             u,
                             v,
-                            st.examples.ir_nodes[
-                                examples[i].ir_start : examples[i].ir_end
-                            ],
+                            st.ir_nodes[examples[i].ir_start : examples[i].ir_end],
                         )
                         for (u, v), i in zip(endpoints, indices)
                     ],
@@ -1550,9 +1542,9 @@ class Shrinker:
         Returns True if this successfully changes the underlying shrink target,
         else False.
         """
-        if i + len(description) > len(original.examples.ir_tree_nodes) or i < 0:
+        if i + len(description) > len(original.ir_nodes) or i < 0:
             return False
-        attempt = list(original.examples.ir_tree_nodes)
+        attempt = list(original.ir_nodes)
         for _ in range(repeats):
             for k, command in reversed(list(enumerate(description))):
                 j = i + k

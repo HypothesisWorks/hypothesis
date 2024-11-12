@@ -335,7 +335,7 @@ class ConjectureRunner:
     ) -> tuple[tuple[Any, ...], ...]:
         assert (nodes is not None) ^ (data is not None)
         if data is not None:
-            nodes = data.examples.ir_tree_nodes
+            nodes = data.ir_nodes
         assert nodes is not None
 
         # intentionally drop was_forced from equality here, because the was_forced
@@ -368,7 +368,7 @@ class ConjectureRunner:
         # smallest buffer via forced=. The overhead here is small because almost
         # all interesting data are ir-based via the shrinker (and that overhead
         # will tend towards zero as we move generation to the ir).
-        if data.ir_tree_nodes is not None or data.status < Status.INTERESTING:
+        if data.ir_prefix is not None or data.status < Status.INTERESTING:
             key = self._cache_key_ir(data=data)
             self.__data_cache_ir[key] = result
 
@@ -470,7 +470,7 @@ class ConjectureRunner:
                 }
                 self.stats_per_test_case.append(call_stats)
                 if self.settings.backend != "hypothesis":
-                    for node in data.examples.ir_tree_nodes:
+                    for node in data.ir_nodes:
                         value = data.provider.realize(node.value)
                         expected_type = {
                             "string": str,
@@ -545,7 +545,7 @@ class ConjectureRunner:
                 initial_traceback = getattr(
                     data.extra_information, "_expected_traceback", None
                 )
-                data = ConjectureData.for_ir_tree(data.examples.ir_tree_nodes)
+                data = ConjectureData.for_ir_tree(data.ir_nodes)
                 self.__stoppable_test_function(data)
                 data.freeze()
                 # TODO: Convert to FlakyFailure on the way out. Should same-origin
@@ -760,7 +760,7 @@ class ConjectureRunner:
         if data.status == Status.INTERESTING:
             status = f"{status} ({data.interesting_origin!r})"
 
-        nodes = data.examples.ir_tree_nodes
+        nodes = data.ir_nodes
         self.debug(
             f"{len(nodes)} nodes {[n.value for n in nodes]} -> {status}, {data.output}"
         )
@@ -1157,7 +1157,7 @@ class ConjectureRunner:
                     (start1, end1), (start2, end2) = (start2, end2), (start1, end1)
                 assert end1 <= start2
 
-                nodes = data.examples.ir_tree_nodes
+                nodes = data.ir_nodes
                 (start, end) = self.random.choice([(start1, end1), (start2, end2)])
                 replacement = nodes[start:end]
 
@@ -1338,7 +1338,7 @@ class ConjectureRunner:
             self.interesting_examples.values(), key=lambda d: sort_key(d.buffer)
         ):
             assert prev_data.status == Status.INTERESTING
-            data = self.new_conjecture_data_ir(prev_data.examples.ir_tree_nodes)
+            data = self.new_conjecture_data_ir(prev_data.ir_nodes)
             self.test_function(data)
             if data.status != Status.INTERESTING:
                 self.exit_with(ExitReason.flaky)
@@ -1515,10 +1515,10 @@ class ConjectureRunner:
         Optionally restrict this by a certain prefix, which is useful for explain mode.
         """
         return frozenset(
-            result.examples.ir_tree_nodes
+            result.ir_nodes
             for key in self.__data_cache_ir
             if (result := self.__data_cache_ir[key]).status is Status.VALID
-            and startswith(result.examples.ir_tree_nodes, prefix)
+            and startswith(result.ir_nodes, prefix)
         )
 
 
