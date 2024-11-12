@@ -2158,8 +2158,6 @@ class ConjectureData:
             self.index_ir += 1
             self.length_ir += size
 
-        if self.length_ir > self.max_length_ir:
-            self.mark_overrun()
         return value
 
     def draw_integer(
