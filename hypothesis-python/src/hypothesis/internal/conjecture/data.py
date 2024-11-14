@@ -58,6 +58,7 @@ from hypothesis.internal.floats import (
     sign_aware_lte,
 )
 from hypothesis.internal.intervalsets import IntervalSet
+from hypothesis.reporting import debug_report
 
 if TYPE_CHECKING:
     from typing import TypeAlias
@@ -2124,6 +2125,7 @@ class ConjectureData:
         # end of the function, but avoids trying to use a null self.random when
         # drawing past the node of a ConjectureData.for_ir_tree data.
         if self.length_ir == self.max_length_ir:
+            debug_report(f"overrun because hit {self.max_length_ir=}")
             self.mark_overrun()
 
         if self.ir_prefix is not None and observe:
@@ -2135,6 +2137,7 @@ class ConjectureData:
                         ir_type, kwargs, forced=forced, random=self.__random
                     )
                 except StopTest:
+                    debug_report("overrun because ir_to_buffer overran")
                     self.mark_overrun()
 
             if forced is None:
@@ -2151,7 +2154,10 @@ class ConjectureData:
                 value, kwargs=kwargs, was_forced=was_forced
             )
             size = ir_size([value])
-            if size + self.length_ir > self.max_length_ir:
+            if self.length_ir + size > self.max_length_ir:
+                debug_report(
+                    f"overrun because {self.length_ir} + {size} > {self.max_length_ir=}"
+                )
                 self.mark_overrun()
 
             node = IRNode(
