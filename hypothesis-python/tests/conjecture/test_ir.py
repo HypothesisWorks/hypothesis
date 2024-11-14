@@ -677,6 +677,18 @@ def test_forced_nodes_are_trivial(node):
             was_forced=False,
         ),
         IRNode(
+            ir_type="boolean",
+            value=True,
+            kwargs={"p": 1.0},
+            was_forced=False,
+        ),
+        IRNode(
+            ir_type="boolean",
+            value=False,
+            kwargs={"p": 0.0},
+            was_forced=False,
+        ),
+        IRNode(
             ir_type="string",
             value="",
             kwargs={
@@ -774,6 +786,41 @@ def test_forced_nodes_are_trivial(node):
             },
             was_forced=False,
         ),
+        IRNode(
+            ir_type="integer",
+            value=1,
+            kwargs={
+                "min_value": -10,
+                "max_value": None,
+                "weights": None,
+                "shrink_towards": 1,
+            },
+            was_forced=False,
+        ),
+        IRNode(
+            ir_type="integer",
+            value=1,
+            kwargs={
+                "min_value": None,
+                "max_value": 10,
+                "weights": None,
+                "shrink_towards": 1,
+            },
+            was_forced=False,
+        ),
+        # we don't consider shrink_towards for unbounded integers.
+        # the trivial value should probably be 1 here, not 0.
+        IRNode(
+            ir_type="integer",
+            value=0,
+            kwargs={
+                "min_value": None,
+                "max_value": None,
+                "weights": None,
+                "shrink_towards": 1,
+            },
+            was_forced=False,
+        ),
     ],
 )
 def test_trivial_nodes(node):
@@ -828,6 +875,12 @@ def test_trivial_nodes(node):
             ir_type="boolean",
             value=True,
             kwargs={"p": 0.5},
+            was_forced=False,
+        ),
+        IRNode(
+            ir_type="boolean",
+            value=True,
+            kwargs={"p": 0.99},
             was_forced=False,
         ),
         IRNode(

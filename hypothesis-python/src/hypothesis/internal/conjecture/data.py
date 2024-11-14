@@ -969,6 +969,11 @@ class IRNode:
             min_value = self.kwargs["min_value"]
             max_value = self.kwargs["max_value"]
 
+            # shrink_towards is not respected for unbounded integers. (though
+            # probably it should be?)
+            if min_value is None and max_value is None:
+                return self.value == 0
+
             if min_value is not None:
                 shrink_towards = max(min_value, shrink_towards)
             if max_value is not None:
@@ -1000,6 +1005,9 @@ class IRNode:
             # also not incorrect to be conservative here.
             return False
         if self.ir_type == "boolean":
+            p = self.kwargs["p"]
+            if p == 1.0:
+                return True
             return self.value is False
         if self.ir_type == "string":
             # smallest size and contains only the smallest-in-shrink-order character.
