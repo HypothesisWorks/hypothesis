@@ -20,7 +20,9 @@ from hypothesis.internal.conjecture.data import (
     COLLECTION_DEFAULT_MAX_SIZE,
     ConjectureData,
     IRNode,
+    NodeTemplate,
     Status,
+    ir_size_nodes,
     ir_value_equal,
     ir_value_permitted,
 )
@@ -38,6 +40,7 @@ from tests.conjecture.common import (
     draw_value,
     fresh_data,
     integer_kwargs,
+    ir,
     ir_nodes,
     ir_types_and_kwargs,
 )
@@ -1023,3 +1026,44 @@ def test_conservative_nontrivial_nodes(node):
 @given(ir_nodes())
 def test_ir_node_is_hashable(ir_node):
     hash(ir_node)
+
+
+@given(st.lists(ir_nodes()))
+def test_ir_size_positive(nodes):
+    assert ir_size_nodes(nodes) >= 0
+
+
+@given(st.integers(min_value=1))
+def test_ir_size_node_template(n):
+    node = NodeTemplate(type="simplest", size=n)
+    assert ir_size_nodes([node]) == n
+
+
+def test_node_template_to_overrun():
+    data = ConjectureData.for_ir_tree(ir(1) + (NodeTemplate("simplest", size=5),))
+    data.draw_integer()
+    with pytest.raises(StopTest):
+        for _ in range(10):
+            data.draw_integer()
+
+    assert data.status is Status.OVERRUN
+
+
+def test_node_template_single_node_overruns():
+    # test for when drawing a single node takes more than BUFFER_SIZE, while in
+    # the NodeTemplate case
+    data = ConjectureData.for_ir_tree((NodeTemplate("simplest", size=BUFFER_SIZE_IR),))
+    with pytest.raises(StopTest):
+        data.draw_bytes(10_000, 10_000)
+
+    assert data.status is Status.OVERRUN
+
+
+@given(ir_nodes())
+def test_node_template_simplest_is_actually_trivial(node):
+    # TODO_IR node.trivial is sound but not complete for floats.
+    assume(node.ir_type != "float")
+    data = ConjectureData.for_ir_tree((NodeTemplate("simplest", size=BUFFER_SIZE_IR),))
+    getattr(data, f"draw_{node.ir_type}")(**node.kwargs)
+    assert len(data.ir_nodes) == 1
+    assert data.ir_nodes[0].trivial
