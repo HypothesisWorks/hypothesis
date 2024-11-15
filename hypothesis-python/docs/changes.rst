@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.119.1:
+
+--------------------
+6.119.1 - 2024-11-15
+--------------------
+
+This patch migrates some more internals (around generating novel inputs) to the IR layer (:issue:`3921`).
+
 .. _v6.119.0:
 
 --------------------
