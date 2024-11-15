@@ -54,11 +54,13 @@ from hypothesis.internal.conjecture.data import (
     InterestingOrigin,
     IRKWargsType,
     IRNode,
+    NodeTemplate,
     Overrun,
     PrimitiveProvider,
     Status,
     _Overrun,
     ir_kwargs_key,
+    ir_size,
     ir_size_nodes,
     ir_value_key,
 )
@@ -197,6 +199,17 @@ StatisticsDict = TypedDict(
         "nodeid": NotRequired[str],
     },
 )
+
+
+def truncate_nodes_to_size(nodes: Sequence[IRNode], size: int) -> tuple[IRNode, ...]:
+    s = 0
+    i = 0
+    for node in nodes:
+        s += ir_size([node.value])
+        if s > size:
+            break
+        i += 1
+    return tuple(nodes[:i])
 
 
 class ConjectureRunner:
@@ -374,20 +387,26 @@ class ConjectureRunner:
 
     def cached_test_function_ir(
         self,
-        nodes: Sequence[IRNode],
+        nodes: Sequence[Union[IRNode, NodeTemplate]],
         *,
         error_on_discard: bool = False,
         extend: int = 0,
     ) -> Union[ConjectureResult, _Overrun]:
-        key = self._cache_key_ir(nodes=nodes)
-        try:
-            cached = self.__data_cache_ir[key]
-            # if we have a cached overrun for this key, but we're allowing extensions
-            # of the nodes, it could in fact run to a valid data if we try.
-            if extend == 0 or cached.status is not Status.OVERRUN:
-                return cached
-        except KeyError:
-            pass
+        # node templates represent a not-yet-filled hole and therefore cannot
+        # be cached or retrieved from the cache.
+        if not any(isinstance(node, NodeTemplate) for node in nodes):
+            # this type cast is validated by the isinstance check above (ie, there
+            # are no NodeTemplate elements).
+            nodes = cast(Sequence[IRNode], nodes)
+            key = self._cache_key_ir(nodes=nodes)
+            try:
+                cached = self.__data_cache_ir[key]
+                # if we have a cached overrun for this key, but we're allowing extensions
+                # of the nodes, it could in fact run to a valid data if we try.
+                if extend == 0 or cached.status is not Status.OVERRUN:
+                    return cached
+            except KeyError:
+                pass
 
         max_length = min(BUFFER_SIZE_IR, ir_size_nodes(nodes) + extend)
 
@@ -634,7 +653,7 @@ class ConjectureRunner:
     def on_pareto_evict(self, data: ConjectureData) -> None:
         self.settings.database.delete(self.pareto_key, data.buffer)
 
-    def generate_novel_prefix(self) -> bytes:
+    def generate_novel_prefix(self) -> tuple[IRNode, ...]:
         """Uses the tree to proactively generate a starting sequence of bytes
         that we haven't explored yet for this test.
 
@@ -996,7 +1015,6 @@ class ConjectureRunner:
         # on the strategy in general can fall afoul of strategies that
         # have very different sizes for different prefixes.
         small_example_cap = clamp(10, self.settings.max_examples // 10, 50)
-
         optimise_at = max(self.settings.max_examples // 2, small_example_cap + 1)
         ran_optimisations = False
 
@@ -1016,15 +1034,17 @@ class ConjectureRunner:
             # it is possible, if unlikely, to generate a > BUFFER_SIZE novel prefix,
             # as nodes in the novel tree may be variable sized due to eg integer
             # probe retries.
-            prefix = prefix[:BUFFER_SIZE]
+            prefix = truncate_nodes_to_size(prefix, BUFFER_SIZE_IR)
             if (
                 self.valid_examples <= small_example_cap
                 and self.call_count <= 5 * small_example_cap
                 and not self.interesting_examples
                 and consecutive_zero_extend_is_invalid < 5
             ):
-                minimal_example = self.cached_test_function(
-                    prefix + bytes(BUFFER_SIZE - len(prefix))
+                prefix_size = ir_size_nodes(prefix)
+                minimal_example = self.cached_test_function_ir(
+                    prefix
+                    + (NodeTemplate("simplest", size=BUFFER_SIZE_IR - prefix_size),)
                 )
 
                 if minimal_example.status < Status.VALID:
@@ -1034,12 +1054,11 @@ class ConjectureRunner:
                 # Status.OVERRUN, which guarantees that the minimal_example is a
                 # ConjectureResult object.
                 assert isinstance(minimal_example, ConjectureResult)
-
                 consecutive_zero_extend_is_invalid = 0
-
-                minimal_extension = len(minimal_example.buffer) - len(prefix)
-
-                max_length = min(len(prefix) + minimal_extension * 10, BUFFER_SIZE)
+                minimal_extension = (
+                    ir_size_nodes(minimal_example.ir_nodes) - prefix_size
+                )
+                max_length = min(prefix_size + minimal_extension * 10, BUFFER_SIZE_IR)
 
                 # We could end up in a situation where even though the prefix was
                 # novel when we generated it, because we've now tried zero extending
@@ -1049,10 +1068,7 @@ class ConjectureRunner:
                 # running the test function for real here. If however we encounter
                 # some novel behaviour, we try again with the real test function,
                 # starting from the new novel prefix that has discovered.
-
-                trial_data = self.new_conjecture_data(
-                    prefix=prefix, max_length=max_length
-                )
+                trial_data = self.new_conjecture_data_ir(prefix, max_length=max_length)
                 try:
                     self.tree.simulate_test_function(trial_data)
                     continue
@@ -1070,17 +1086,16 @@ class ConjectureRunner:
                 if not self.should_generate_more():
                     break
 
-                prefix = trial_data.buffer
+                prefix = trial_data.ir_nodes
             else:
-                max_length = BUFFER_SIZE
+                max_length = BUFFER_SIZE_IR
 
-            data = self.new_conjecture_data(prefix=prefix, max_length=max_length)
-
+            data = self.new_conjecture_data_ir(prefix, max_length=max_length)
             self.test_function(data)
 
             if (
-                data.status == Status.OVERRUN
-                and max_length < BUFFER_SIZE
+                data.status is Status.OVERRUN
+                and max_length < BUFFER_SIZE_IR
                 and "invalid because" not in data.events
             ):
                 data.events["invalid because"] = (
@@ -1275,7 +1290,7 @@ class ConjectureRunner:
 
     def new_conjecture_data_ir(
         self,
-        ir_tree_prefix: Sequence[IRNode],
+        ir_tree_prefix: Sequence[Union[IRNode, NodeTemplate]],
         *,
         observer: Optional[DataObserver] = None,
         max_length: Optional[int] = None,
@@ -1354,7 +1369,7 @@ class ConjectureRunner:
                 ),
                 key=lambda kv: (sort_key(kv[1].buffer), sort_key(repr(kv[0]))),
             )
-            self.debug(f"Shrinking {target!r}")
+            self.debug(f"Shrinking {target!r}: {[n.value for n in example.ir_nodes]}")
 
             if not self.settings.report_multiple_bugs:
                 # If multi-bug reporting is disabled, we shrink our currently-minimal

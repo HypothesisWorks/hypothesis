@@ -1,3 +1,3 @@
 RELEASE_TYPE: patch
 
-Internal refactorings in preparation for upcoming changes.
+This patch migrates some more internals (around generating novel inputs) to the IR layer (:issue:`3921`).
