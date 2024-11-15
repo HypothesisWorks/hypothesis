@@ -805,8 +805,8 @@ class DataTree:
 
     def rewrite(self, nodes):
         """Use previously seen ConjectureData objects to return a tuple of
-        the rewritten buffer and the status we would get from running that
-        buffer with the test function. If the status cannot be predicted
+        the rewritten choice sequence and the status we would get from running
+        that with the test function. If the status cannot be predicted
         from the existing values it will be None."""
         data = ConjectureData.for_ir_tree(nodes)
         try:
