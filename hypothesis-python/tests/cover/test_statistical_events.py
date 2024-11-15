@@ -115,7 +115,7 @@ def test_exact_timing():
         time.sleep(0.5)
 
     stats = describe_statistics(call_for_statistics(test))
-    assert "~ 502ms" in stats
+    assert "~ 500ms" in stats
 
 
 def test_apparently_instantaneous_tests():

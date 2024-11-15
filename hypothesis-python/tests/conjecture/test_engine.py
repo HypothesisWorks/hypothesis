@@ -45,6 +45,7 @@ from hypothesis.internal.conjecture.engine import (
     HealthCheckState,
     RunIsComplete,
 )
+from hypothesis.internal.conjecture.junkdrawer import startswith
 from hypothesis.internal.conjecture.pareto import DominanceRelation, dominance
 from hypothesis.internal.conjecture.shrinker import Shrinker
 from hypothesis.internal.entropy import deterministic_PRNG
@@ -56,6 +57,7 @@ from tests.conjecture.common import (
     SOME_LABEL,
     TEST_SETTINGS,
     buffer_size_limit,
+    ir,
     ir_nodes,
     run_to_buffer,
     shrinking_from,
@@ -210,7 +212,14 @@ def test_variadic_draw():
     assert len(ls[0]) == 1
 
 
-def test_draw_to_overrun():
+def test_draw_to_overrun(monkeypatch):
+    # TODO_BETTER_SHRINK: sometimes we can get unlucky and fail to shrink the
+    # initial size draw d to 2 before shrinking the 128 * d bytes, but I'm not
+    # sure why.
+    #
+    # If we do get unlucky in such a way then we need more than 500 shrinks to finish.
+    monkeypatch.setattr(engine_module, "MAX_SHRINKS", 1000)
+
     @run_to_buffer
     def x(data):
         d = (data.draw_bytes(1, 1)[0] - 8) & 0xFF
@@ -1015,19 +1024,20 @@ def test_branch_ending_in_write():
         if count > 1:
             data.draw_boolean(forced=False)
 
-        b = bytes(data.buffer)
-        assert b not in seen
-        seen.add(b)
+        assert data.ir_nodes not in seen
+        seen.add(data.ir_nodes)
 
     with deterministic_PRNG():
         runner = ConjectureRunner(tf, settings=TEST_SETTINGS)
 
         for _ in range(100):
             prefix = runner.generate_novel_prefix()
-            attempt = prefix + bytes(2)
-            data = runner.cached_test_function(attempt)
-            assert data.status == Status.VALID
-            assert attempt.startswith(data.buffer)
+            attempt = prefix + ir(False, False)
+            data = runner.cached_test_function_ir(attempt)
+            assert data.status is Status.VALID
+            assert startswith(
+                [n.value for n in attempt], [n.value for n in data.ir_nodes]
+            )
 
 
 def test_exhaust_space():

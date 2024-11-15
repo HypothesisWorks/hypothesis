@@ -31,7 +31,7 @@ from hypothesis.internal.conjecture.datatree import (
     all_children,
     compute_max_children,
 )
-from hypothesis.internal.conjecture.engine import BUFFER_SIZE_IR
+from hypothesis.internal.conjecture.engine import BUFFER_SIZE_IR, truncate_nodes_to_size
 from hypothesis.internal.floats import SMALLEST_SUBNORMAL, next_down, next_up
 from hypothesis.internal.intervalsets import IntervalSet
 
@@ -1034,13 +1034,18 @@ def test_ir_size_positive(nodes):
 
 
 @given(st.integers(min_value=1))
-def test_ir_size_node_template(n):
+def test_node_template_size(n):
     node = NodeTemplate(type="simplest", size=n)
     assert ir_size_nodes([node]) == n
 
 
+@given(st.lists(ir_nodes()), st.integers(min_value=0))
+def test_truncate_nodes(nodes, size):
+    assert len(truncate_nodes_to_size(nodes, size)) <= len(nodes)
+
+
 def test_node_template_to_overrun():
-    data = ConjectureData.for_ir_tree(ir(1) + (NodeTemplate("simplest", size=5),))
+    data = ConjectureData.for_ir_tree(ir(1) + (NodeTemplate("simplest", size=10),))
     data.draw_integer()
     with pytest.raises(StopTest):
         for _ in range(10):

@@ -18,7 +18,7 @@ from hypothesis.internal.reflection import get_pretty_function_description
 
 from tests.common.utils import no_shrink
 
-TIME_INCREMENT = 0.001
+TIME_INCREMENT = 0.0001
 
 
 class Timeout(BaseException):

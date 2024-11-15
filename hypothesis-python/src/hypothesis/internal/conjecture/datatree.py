@@ -710,12 +710,15 @@ class DataTree:
         for it to be uniform at random, but previous attempts to do that
         have proven too expensive.
         """
+        from hypothesis.internal.conjecture.data import IRNode
 
         assert not self.is_exhausted
-        novel_prefix = bytearray()
+        novel_prefix = []
 
-        def append_buf(buf):
-            novel_prefix.extend(buf)
+        def append_node(node):
+            if node.ir_type == "float":
+                node.value = int_to_float(node.value)
+            novel_prefix.append(node)
 
         current_node = self.root
         while True:
@@ -724,18 +727,17 @@ class DataTree:
                 zip(current_node.ir_types, current_node.kwargs, current_node.values)
             ):
                 if i in current_node.forced:
-                    if ir_type == "float":
-                        value = int_to_float(value)
-                    (_value, buf) = self._draw(
-                        ir_type, kwargs, forced=value, random=random
+                    append_node(
+                        IRNode(
+                            ir_type=ir_type, value=value, kwargs=kwargs, was_forced=True
+                        )
                     )
-                    append_buf(buf)
                 else:
                     attempts = 0
                     while True:
                         if attempts <= 10:
                             try:
-                                (v, buf) = self._draw(ir_type, kwargs, random=random)
+                                node = self._draw(ir_type, kwargs, random=random)
                             except StopTest:  # pragma: no cover
                                 # it is possible that drawing from a fresh data can
                                 # overrun BUFFER_SIZE, due to eg unlucky rejection sampling
@@ -743,24 +745,24 @@ class DataTree:
                                 attempts += 1
                                 continue
                         else:
-                            (v, buf) = self._draw_from_cache(
+                            node = self._draw_from_cache(
                                 ir_type, kwargs, key=id(current_node), random=random
                             )
 
-                        if v != value:
-                            append_buf(buf)
+                        if node.value != value:
+                            append_node(node)
                             break
                         attempts += 1
                         self._reject_child(
-                            ir_type, kwargs, child=v, key=id(current_node)
+                            ir_type, kwargs, child=node.value, key=id(current_node)
                         )
                     # We've now found a value that is allowed to
                     # vary, so what follows is not fixed.
-                    return bytes(novel_prefix)
+                    return tuple(novel_prefix)
             else:
                 assert not isinstance(current_node.transition, (Conclusion, Killed))
                 if current_node.transition is None:
-                    return bytes(novel_prefix)
+                    return tuple(novel_prefix)
                 branch = current_node.transition
                 assert isinstance(branch, Branch)
 
@@ -768,28 +770,28 @@ class DataTree:
                 while True:
                     if attempts <= 10:
                         try:
-                            (v, buf) = self._draw(
+                            node = self._draw(
                                 branch.ir_type, branch.kwargs, random=random
                             )
                         except StopTest:  # pragma: no cover
                             attempts += 1
                             continue
                     else:
-                        (v, buf) = self._draw_from_cache(
+                        node = self._draw_from_cache(
                             branch.ir_type, branch.kwargs, key=id(branch), random=random
                         )
                     try:
-                        child = branch.children[v]
+                        child = branch.children[node.value]
                     except KeyError:
-                        append_buf(buf)
-                        return bytes(novel_prefix)
+                        append_node(node)
+                        return tuple(novel_prefix)
                     if not child.is_exhausted:
-                        append_buf(buf)
+                        append_node(node)
                         current_node = child
                         break
                     attempts += 1
                     self._reject_child(
-                        branch.ir_type, branch.kwargs, child=v, key=id(branch)
+                        branch.ir_type, branch.kwargs, child=node.value, key=id(branch)
                     )
 
                     # We don't expect this assertion to ever fire, but coverage
@@ -801,19 +803,17 @@ class DataTree:
                         or any(not v.is_exhausted for v in branch.children.values())
                     )
 
-    def rewrite(self, buffer):
+    def rewrite(self, nodes):
         """Use previously seen ConjectureData objects to return a tuple of
-        the rewritten buffer and the status we would get from running that
-        buffer with the test function. If the status cannot be predicted
+        the rewritten choice sequence and the status we would get from running
+        that with the test function. If the status cannot be predicted
         from the existing values it will be None."""
-        buffer = bytes(buffer)
-
-        data = ConjectureData.for_buffer(buffer)
+        data = ConjectureData.for_ir_tree(nodes)
         try:
             self.simulate_test_function(data)
-            return (data.buffer, data.status)
+            return (data.ir_nodes, data.status)
         except PreviouslyUnseenBehaviour:
-            return (buffer, None)
+            return (nodes, None)
 
     def simulate_test_function(self, data):
         """Run a simulated version of the test function recorded by
@@ -864,10 +864,10 @@ class DataTree:
     def new_observer(self):
         return TreeRecordingObserver(self)
 
-    def _draw(self, ir_type, kwargs, *, random, forced=None):
-        from hypothesis.internal.conjecture.data import ir_to_buffer
+    def _draw(self, ir_type, kwargs, *, random):
+        from hypothesis.internal.conjecture.data import IRNode, ir_to_buffer
 
-        (value, buf) = ir_to_buffer(ir_type, kwargs, forced=forced, random=random)
+        (value, buf) = ir_to_buffer(ir_type, kwargs, random=random)
         # using floats as keys into branch.children breaks things, because
         # e.g. hash(0.0) == hash(-0.0) would collide as keys when they are
         # in fact distinct child branches.
@@ -878,7 +878,7 @@ class DataTree:
         # buffer), and converting between the two forms as appropriate.
         if ir_type == "float":
             value = float_to_int(value)
-        return (value, buf)
+        return IRNode(ir_type=ir_type, value=value, kwargs=kwargs, was_forced=False)
 
     def _get_children_cache(self, ir_type, kwargs, *, key):
         # cache the state of the children generator per node/branch (passed as
@@ -899,6 +899,8 @@ class DataTree:
         return self._children_cache[key]
 
     def _draw_from_cache(self, ir_type, kwargs, *, key, random):
+        from hypothesis.internal.conjecture.data import IRNode
+
         (generator, children, rejected) = self._get_children_cache(
             ir_type, kwargs, key=key
         )
@@ -918,11 +920,8 @@ class DataTree:
                 if len(children) >= 100:
                     break
 
-        forced = random.choice(children)
-        if ir_type == "float":
-            forced = int_to_float(forced)
-        (value, buf) = self._draw(ir_type, kwargs, forced=forced, random=random)
-        return (value, buf)
+        value = random.choice(children)
+        return IRNode(ir_type=ir_type, value=value, kwargs=kwargs, was_forced=True)
 
     def _reject_child(self, ir_type, kwargs, *, child, key):
         (_generator, children, rejected) = self._get_children_cache(
