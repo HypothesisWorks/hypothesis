@@ -9,7 +9,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 """This module provides the core primitives of Hypothesis, such as given."""
-
 import base64
 import contextlib
 import datetime
@@ -24,7 +23,7 @@ import unittest
 import warnings
 import zlib
 from collections import defaultdict
-from collections.abc import Coroutine, Hashable
+from collections.abc import Coroutine, Generator, Hashable
 from functools import partial
 from random import Random
 from typing import (
@@ -58,6 +57,7 @@ from hypothesis.errors import (
     FlakyFailure,
     FlakyReplay,
     Found,
+    Frozen,
     HypothesisException,
     HypothesisWarning,
     InvalidArgument,
@@ -734,6 +734,69 @@ def get_executor(runner):
     return default_executor
 
 
+@contextlib.contextmanager
+def unwrap_markers_from_group() -> Generator[None, None, None]:
+    # This function is a crude solution, a better way of resolving it would probably
+    # be to rewrite a bunch of exception handlers to use except*.
+    T = TypeVar("T", bound=BaseException)
+
+    def _flatten_group(excgroup: BaseExceptionGroup[T]) -> list[T]:
+        found_exceptions: list[T] = []
+        for exc in excgroup.exceptions:
+            if isinstance(exc, BaseExceptionGroup):
+                found_exceptions.extend(_flatten_group(exc))
+            else:
+                found_exceptions.append(exc)
+        return found_exceptions
+
+    try:
+        yield
+    except BaseExceptionGroup as excgroup:
+        frozen_exceptions, non_frozen_exceptions = excgroup.split(Frozen)
+
+        # group only contains Frozen, reraise the group
+        # it doesn't matter what we raise, since any exceptions get disregarded
+        # and reraised as StopTest if data got frozen.
+        if non_frozen_exceptions is None:
+            raise
+        # in all other cases they are discarded
+
+        # Can RewindRecursive end up in this group?
+        _, user_exceptions = non_frozen_exceptions.split(
+            lambda e: isinstance(e, (StopTest, HypothesisException))
+        )
+
+        # this might contain marker exceptions, or internal errors, but not frozen.
+        if user_exceptions is not None:
+            raise
+
+        # single marker exception - reraise it
+        flattened_non_frozen_exceptions: list[BaseException] = _flatten_group(
+            non_frozen_exceptions
+        )
+        if len(flattened_non_frozen_exceptions) == 1:
+            e = flattened_non_frozen_exceptions[0]
+            # preserve the cause of the original exception to not hinder debugging
+            # note that __context__ is still lost though
+            raise e from e.__cause__
+
+        # multiple marker exceptions. If we re-raise the whole group we break
+        # a bunch of logic so ....?
+        stoptests, non_stoptests = non_frozen_exceptions.split(StopTest)
+
+        # TODO: stoptest+hypothesisexception ...? Is it possible? If so, what do?
+
+        if non_stoptests:
+            # TODO: multiple marker exceptions is easy to produce, but the logic in the
+            # engine does not handle it... so we just reraise the first one for now.
+            e = _flatten_group(non_stoptests)[0]
+            raise e from e.__cause__
+        assert stoptests is not None
+
+        # multiple stoptests: raising the one with the lowest testcounter
+        raise min(_flatten_group(stoptests), key=lambda s_e: s_e.testcounter)
+
+
 class StateForActualGivenExecution:
     def __init__(self, stuff, test, settings, random, wrapped_test):
         self.test_runner = get_executor(stuff.selfy)
@@ -807,7 +870,7 @@ class StateForActualGivenExecution:
 
             @proxies(self.test)
             def test(*args, **kwargs):
-                with ensure_free_stackframes():
+                with unwrap_markers_from_group(), ensure_free_stackframes():
                     return self.test(*args, **kwargs)
 
         else:
@@ -819,7 +882,7 @@ class StateForActualGivenExecution:
                 arg_gctime = gc_cumulative_time()
                 start = time.perf_counter()
                 try:
-                    with ensure_free_stackframes():
+                    with unwrap_markers_from_group(), ensure_free_stackframes():
                         result = self.test(*args, **kwargs)
                 finally:
                     finish = time.perf_counter()
@@ -1210,6 +1273,7 @@ class StateForActualGivenExecution:
             ran_example.slice_comments = falsifying_example.slice_comments
             tb = None
             origin = None
+            assert info is not None
             assert info._expected_exception is not None
             try:
                 with with_reporter(fragments.append):
