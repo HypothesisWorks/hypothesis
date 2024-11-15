@@ -9,6 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
+import sys
 from contextlib import contextmanager
 
 from hypothesis import HealthCheck, Phase, assume, settings, strategies as st
@@ -19,12 +20,14 @@ from hypothesis.internal.conjecture.data import (
     COLLECTION_DEFAULT_MAX_SIZE,
     ConjectureData,
     IRNode,
+    IRType,
     Status,
 )
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE, ConjectureRunner
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.internal.floats import SMALLEST_SUBNORMAL, sign_aware_lte
+from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.strategies._internal.strings import OneCharStringStrategy, TextStrategy
 
 from tests.common.strategies import intervals
@@ -48,6 +51,10 @@ def run_to_data(f):
 
 def run_to_buffer(f):
     return bytes(run_to_data(f).buffer)
+
+
+def run_to_nodes(f):
+    return run_to_data(f).ir_nodes
 
 
 @contextmanager
@@ -364,3 +371,64 @@ def ir_nodes(draw, *, was_forced=None, ir_type=None):
     was_forced = draw(st.booleans()) if was_forced is None else was_forced
 
     return IRNode(ir_type=ir_type, value=value, kwargs=kwargs, was_forced=was_forced)
+
+
+def ir(*values: list[IRType]) -> list[IRNode]:
+    """
+    For inline-creating an ir node or list of ir nodes, where you don't care about the
+    kwargs. This uses maximally-permissable kwargs and infers the ir_type you meant
+    based on the type of the value.
+
+    You can optionally pass (value, kwargs) to as an element in order to override
+    the default kwargs for that element.
+    """
+    mapping = {
+        float: (
+            "float",
+            {
+                "min_value": -math.inf,
+                "max_value": math.inf,
+                "allow_nan": True,
+                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+            },
+        ),
+        int: (
+            "integer",
+            {
+                "min_value": None,
+                "max_value": None,
+                "weights": None,
+                "shrink_towards": 0,
+            },
+        ),
+        str: (
+            "string",
+            {
+                "intervals": IntervalSet(((0, sys.maxunicode),)),
+                "min_size": 0,
+                "max_size": COLLECTION_DEFAULT_MAX_SIZE,
+            },
+        ),
+        bytes: ("bytes", {"min_size": 0, "max_size": COLLECTION_DEFAULT_MAX_SIZE}),
+        bool: ("boolean", {"p": 0.5}),
+    }
+    nodes = []
+    for value in values:
+        override_kwargs = {}
+        if isinstance(value, tuple):
+            (value, override_kwargs) = value
+            if override_kwargs is None:
+                override_kwargs = {}
+
+        (ir_type, kwargs) = mapping[type(value)]
+
+        nodes.append(
+            IRNode(
+                ir_type=ir_type,
+                value=value,
+                kwargs=kwargs | override_kwargs,
+                was_forced=False,
+            )
+        )
+
+    return tuple(nodes)

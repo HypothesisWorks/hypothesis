@@ -58,6 +58,7 @@ from hypothesis.internal.floats import (
     sign_aware_lte,
 )
 from hypothesis.internal.intervalsets import IntervalSet
+from hypothesis.reporting import debug_report
 
 if TYPE_CHECKING:
     from typing import TypeAlias
@@ -969,6 +970,11 @@ class IRNode:
             min_value = self.kwargs["min_value"]
             max_value = self.kwargs["max_value"]
 
+            # shrink_towards is not respected for unbounded integers. (though
+            # probably it should be?)
+            if min_value is None and max_value is None:
+                return self.value == 0
+
             if min_value is not None:
                 shrink_towards = max(min_value, shrink_towards)
             if max_value is not None:
@@ -1000,6 +1006,9 @@ class IRNode:
             # also not incorrect to be conservative here.
             return False
         if self.ir_type == "boolean":
+            p = self.kwargs["p"]
+            if p == 1.0:
+                return True
             return self.value is False
         if self.ir_type == "string":
             # smallest size and contains only the smallest-in-shrink-order character.
@@ -1036,6 +1045,15 @@ class IRNode:
         # repr to avoid "BytesWarning: str() on a bytes instance" for bytes nodes
         forced_marker = " [forced]" if self.was_forced else ""
         return f"{self.ir_type} {self.value!r}{forced_marker} {self.kwargs!r}"
+
+
+@attr.s(slots=True)
+class NodeTemplate:
+    type: Literal["simplest"] = attr.ib()
+    size: int = attr.ib()
+
+    def __attrs_post_init__(self) -> None:
+        assert self.size > 0
 
 
 def ir_value_permitted(value, ir_type, kwargs):
@@ -1085,8 +1103,11 @@ def ir_size(ir: Iterable[IRType]) -> int:
     return len(ir_to_bytes(ir))
 
 
-def ir_size_nodes(nodes: Iterable[IRNode]) -> int:
-    return ir_size([n.value for n in nodes])
+def ir_size_nodes(nodes: Iterable[Union[IRNode, NodeTemplate]]) -> int:
+    size = 0
+    for node in nodes:
+        size += node.size if isinstance(node, NodeTemplate) else ir_size([node.value])
+    return size
 
 
 def ir_value_key(ir_type, v):
@@ -1967,7 +1988,7 @@ class ConjectureData:
     @classmethod
     def for_ir_tree(
         cls,
-        ir_tree_prefix: Sequence[IRNode],
+        ir_tree_prefix: Sequence[Union[IRNode, NodeTemplate]],
         *,
         observer: Optional[DataObserver] = None,
         provider: Union[type, PrimitiveProvider] = HypothesisProvider,
@@ -1996,7 +2017,7 @@ class ConjectureData:
         random: Optional[Random],
         observer: Optional[DataObserver] = None,
         provider: Union[type, PrimitiveProvider] = HypothesisProvider,
-        ir_tree_prefix: Optional[Sequence[IRNode]] = None,
+        ir_tree_prefix: Optional[Sequence[Union[IRNode, NodeTemplate]]] = None,
         max_length_ir: Optional[int] = None,
     ) -> None:
         from hypothesis.internal.conjecture.engine import BUFFER_SIZE_IR
@@ -2116,6 +2137,7 @@ class ConjectureData:
         # end of the function, but avoids trying to use a null self.random when
         # drawing past the node of a ConjectureData.for_ir_tree data.
         if self.length_ir == self.max_length_ir:
+            debug_report(f"overrun because hit {self.max_length_ir=}")
             self.mark_overrun()
 
         if self.ir_prefix is not None and observe:
@@ -2127,6 +2149,7 @@ class ConjectureData:
                         ir_type, kwargs, forced=forced, random=self.__random
                     )
                 except StopTest:
+                    debug_report("overrun because ir_to_buffer overran")
                     self.mark_overrun()
 
             if forced is None:
@@ -2143,7 +2166,10 @@ class ConjectureData:
                 value, kwargs=kwargs, was_forced=was_forced
             )
             size = ir_size([value])
-            if size + self.length_ir > self.max_length_ir:
+            if self.length_ir + size > self.max_length_ir:
+                debug_report(
+                    f"overrun because {self.length_ir=} + {size=} > {self.max_length_ir=}"
+                )
                 self.mark_overrun()
 
             node = IRNode(
@@ -2155,7 +2181,6 @@ class ConjectureData:
             )
             self.__example_record.record_ir_draw()
             self.ir_nodes += (node,)
-            self.index_ir += 1
             self.length_ir += size
 
         return value
@@ -2341,6 +2366,25 @@ class ConjectureData:
         assert self.index_ir < len(self.ir_prefix)
 
         node = self.ir_prefix[self.index_ir]
+        if isinstance(node, NodeTemplate):
+            assert node.size >= 0
+            # node templates have to be at the end for now, since it's not immediately
+            # apparent how to handle overruning a node template while generating a single
+            # node if the alternative is not "the entire data is an overrun".
+            assert self.index_ir == len(self.ir_prefix) - 1
+            if node.type == "simplest":
+                try:
+                    value = buffer_to_ir(ir_type, kwargs, buffer=bytes(BUFFER_SIZE))
+                except StopTest:
+                    self.mark_overrun()
+            else:
+                raise NotImplementedError
+
+            node.size -= ir_size([value])
+            if node.size < 0:
+                self.mark_overrun()
+            return value
+
         value = node.value
         # If we're trying to:
         # * draw a different ir type at the same location
@@ -2381,6 +2425,7 @@ class ConjectureData:
                 #   buffer_to_ir(ir_type, kwargs, buffer=bytes(BUFFER_SIZE))
                 self.mark_overrun()
 
+        self.index_ir += 1
         return value
 
     def as_result(self) -> Union[ConjectureResult, _Overrun]:

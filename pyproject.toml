@@ -59,6 +59,7 @@ ignore = [
   "PT023",
   "PT027",
   "RUF001",  # don't break our tests by rewriting confusables
+  "RUF005",
   "RUF017",
   "SIM102",
   "SIM105",
