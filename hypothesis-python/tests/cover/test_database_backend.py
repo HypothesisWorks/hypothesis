@@ -21,7 +21,7 @@ from typing import Optional
 
 import pytest
 
-from hypothesis import configuration, given, settings, strategies as st
+from hypothesis import configuration, example, given, settings, strategies as st
 from hypothesis.database import (
     DirectoryBasedExampleDatabase,
     ExampleDatabase,
@@ -39,7 +39,7 @@ from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
 from hypothesis.strategies import binary, lists, tuples
 from hypothesis.utils.conventions import not_set
 
-from tests.conjecture.common import ir_nodes
+from tests.conjecture.common import ir, ir_nodes
 
 small_settings = settings(max_examples=50)
 
@@ -452,6 +452,13 @@ def test_database_directory_inaccessible(dirs, tmp_path, monkeypatch):
 
 
 @given(lists(ir_nodes()))
+# covering examples
+@example(ir(True))
+@example(ir(1))
+@example(ir(0.0))
+@example(ir(-0.0))
+@example(ir("a"))
+@example(ir(b"a"))
 def test_ir_nodes_rountrips(nodes1):
     s1 = ir_to_bytes([n.value for n in nodes1])
     assert isinstance(s1, bytes)
