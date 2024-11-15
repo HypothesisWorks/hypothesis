@@ -20,6 +20,7 @@ from hypothesis.internal.conjecture.data import (
     COLLECTION_DEFAULT_MAX_SIZE,
     ConjectureData,
     IRNode,
+    IRType,
     Status,
 )
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE, ConjectureRunner
@@ -372,7 +373,7 @@ def ir_nodes(draw, *, was_forced=None, ir_type=None):
     return IRNode(ir_type=ir_type, value=value, kwargs=kwargs, was_forced=was_forced)
 
 
-def ir(*values) -> list[IRNode]:
+def ir(*values: list[IRType]) -> list[IRNode]:
     """
     For inline-creating an ir node or list of ir nodes, where you don't care about the
     kwargs. This uses maximally-permissable kwargs and infers the ir_type you meant
@@ -414,7 +415,7 @@ def ir(*values) -> list[IRNode]:
     nodes = []
     for value in values:
         override_kwargs = {}
-        if isinstance(value, (list, tuple)):
+        if isinstance(value, tuple):
             (value, override_kwargs) = value
             if override_kwargs is None:
                 override_kwargs = {}

@@ -2168,7 +2168,7 @@ class ConjectureData:
             size = ir_size([value])
             if self.length_ir + size > self.max_length_ir:
                 debug_report(
-                    f"overrun because {self.length_ir} + {size} > {self.max_length_ir=}"
+                    f"overrun because {self.length_ir=} + {size=} > {self.max_length_ir=}"
                 )
                 self.mark_overrun()
 
@@ -2367,7 +2367,7 @@ class ConjectureData:
 
         node = self.ir_prefix[self.index_ir]
         if isinstance(node, NodeTemplate):
-            assert node.size > 0
+            assert node.size >= 0
             # node templates have to be at the end for now, since it's not immediately
             # apparent how to handle overruning a node template while generating a single
             # node if the alternative is not "the entire data is an overrun".
