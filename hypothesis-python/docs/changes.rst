@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.118.9:
+
+--------------------
+6.118.9 - 2024-11-15
+--------------------
+
+Internal refactorings in preparation for upcoming changes.
+
 .. _v6.118.8:
 
 --------------------
