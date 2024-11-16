@@ -434,17 +434,16 @@ class ConjectureRunner:
         else:
             trial_data.freeze()
             key = self._cache_key_ir(data=trial_data)
-            if trial_data.status > Status.OVERRUN:
-                try:
-                    return self.__data_cache_ir[key]
-                except KeyError:
-                    pass
-            else:
+            if trial_data.status is Status.OVERRUN:
                 # if we simulated to an overrun, then we our result is certainly
                 # an overrun; no need to consult the cache. (and we store this result
                 # for simulation-less lookup later).
                 self.__data_cache_ir[key] = Overrun
                 return Overrun
+            try:
+                return self.__data_cache_ir[key]
+            except KeyError:
+                pass
 
         data = self.new_conjecture_data_ir(nodes, max_length=max_length)
         # note that calling test_function caches `data` for us, for both an ir
