@@ -15,18 +15,18 @@ from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.shrinker import Shrinker, node_program
 
 from tests.common.utils import counts_calls, non_covering_examples
-from tests.conjecture.common import run_to_buffer, shrinking_from
+from tests.conjecture.common import ir, run_to_nodes, shrinking_from
 
 
 def test_lot_of_dead_nodes():
-    @run_to_buffer
-    def x(data):
+    @run_to_nodes
+    def nodes(data):
         for i in range(4):
-            if data.draw_bytes(1, 1)[0] != i:
+            if data.draw_integer(0, 2**8 - 1) != i:
                 data.mark_invalid()
         data.mark_interesting()
 
-    assert x == bytes([0, 1, 2, 3])
+    assert tuple(n.value for n in nodes) == (0, 1, 2, 3)
 
 
 def test_saves_data_while_shrinking(monkeypatch):
@@ -39,7 +39,7 @@ def test_saves_data_while_shrinking(monkeypatch):
     monkeypatch.setattr(
         ConjectureRunner,
         "generate_new_examples",
-        lambda runner: runner.cached_test_function([255] * 10),
+        lambda runner: runner.cached_test_function_ir(ir(bytes([255]) * 10)),
     )
 
     def f(data):
@@ -69,14 +69,14 @@ def test_can_discard(monkeypatch):
         ),
     )
 
-    @run_to_buffer
-    def x(data):
+    @run_to_nodes
+    def nodes(data):
         seen = set()
         while len(seen) < n:
-            seen.add(bytes(data.draw_bytes(1, 1)))
+            seen.add(data.draw_bytes(1, 1))
         data.mark_interesting()
 
-    assert len(x) == n
+    assert len(nodes) == n
 
 
 @given(st.integers(0, 255), st.integers(0, 255))
@@ -102,7 +102,7 @@ def test_cached_with_masked_byte_agrees_with_results(byte_a, byte_b):
 def test_node_programs_fail_efficiently(monkeypatch):
     # Create 256 byte-sized blocks. None of the blocks can be deleted, and
     # every deletion attempt produces a different buffer.
-    @shrinking_from(bytes(range(256)))
+    @shrinking_from(sum((ir(i) for i in range(256)), start=()))
     def shrinker(data: ConjectureData):
         values = set()
         for _ in range(256):
@@ -114,14 +114,11 @@ def test_node_programs_fail_efficiently(monkeypatch):
     monkeypatch.setattr(
         Shrinker, "run_node_program", counts_calls(Shrinker.run_node_program)
     )
-
     shrinker.max_stall = 500
-
     shrinker.fixate_shrink_passes([node_program("XX")])
 
     assert shrinker.shrinks == 0
     assert 250 <= shrinker.calls <= 260
-
     # The block program should have been run roughly 255 times, with a little
     # bit of wiggle room for implementation details.
     #   - Too many calls mean that failing steps are doing too much work.

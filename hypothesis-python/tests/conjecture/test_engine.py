@@ -59,44 +59,30 @@ from tests.conjecture.common import (
     buffer_size_limit,
     ir,
     ir_nodes,
-    run_to_buffer,
+    run_to_nodes,
     shrinking_from,
 )
 
 
-def test_can_index_results():
-    @run_to_buffer
-    def f(data):
-        data.draw_bytes(5, 5)
-        data.mark_interesting()
-
-    assert f.index(0) == 0
-    assert f.count(0) == 5
-
-
 def test_non_cloneable_intervals():
-    @run_to_buffer
-    def x(data):
+    @run_to_nodes
+    def nodes(data):
         data.draw_bytes(10, 10)
         data.draw_bytes(9, 9)
         data.mark_interesting()
 
-    assert x == bytes(19)
+    assert tuple(n.value for n in nodes) == (bytes(10), bytes(9))
 
 
 def test_deletable_draws():
-    @run_to_buffer
-    def x(data):
+    @run_to_nodes
+    def nodes(data):
         while True:
             x = data.draw_bytes(2, 2)
             if x[0] == 255:
                 data.mark_interesting()
 
-    assert x == bytes([255, 0])
-
-
-def zero_dist(random, n):
-    return bytes(n)
+    assert tuple(n.value for n in nodes) == (b"\xff\x00",)
 
 
 def test_can_load_data_from_a_corpus():
@@ -194,7 +180,7 @@ def test_variadic_draw():
         result = []
         while True:
             data.start_example(SOME_LABEL)
-            d = data.draw_bytes(1, 1)[0] & 7
+            d = data.draw_integer(0, 2**8 - 1) & 7
             if d:
                 result.append(data.draw_bytes(d, d))
             data.stop_example()
@@ -202,12 +188,12 @@ def test_variadic_draw():
                 break
         return result
 
-    @run_to_buffer
-    def b(data):
+    @run_to_nodes
+    def nodes(data):
         if any(all(d) for d in draw_list(data)):
             data.mark_interesting()
 
-    ls = draw_list(ConjectureData.for_buffer(b))
+    ls = draw_list(ConjectureData.for_ir_tree(nodes))
     assert len(ls) == 1
     assert len(ls[0]) == 1
 
@@ -220,14 +206,14 @@ def test_draw_to_overrun(monkeypatch):
     # If we do get unlucky in such a way then we need more than 500 shrinks to finish.
     monkeypatch.setattr(engine_module, "MAX_SHRINKS", 1000)
 
-    @run_to_buffer
-    def x(data):
+    @run_to_nodes
+    def nodes(data):
         d = (data.draw_bytes(1, 1)[0] - 8) & 0xFF
         data.draw_bytes(128 * d, 128 * d)
         if d >= 2:
             data.mark_interesting()
 
-    assert x == bytes([10]) + bytes(128 * 2)
+    assert tuple(n.value for n in nodes) == (bytes([10]),) + (bytes(128 * 2),)
 
 
 def test_can_navigate_to_a_valid_example():
@@ -303,8 +289,8 @@ def test_stops_after_max_examples_when_generating_more_bugs(examples):
 def test_interleaving_engines():
     children = []
 
-    @run_to_buffer
-    def x(data):
+    @run_to_nodes
+    def nodes(data):
         rnd = Random(data.draw_bytes(1, 1))
 
         def g(d2):
@@ -317,7 +303,7 @@ def test_interleaving_engines():
         if runner.interesting_examples:
             data.mark_interesting()
 
-    assert x == b"\0"
+    assert tuple(n.value for n in nodes) == (b"\0",)
     for c in children:
         assert not c.interesting_examples
 
@@ -360,8 +346,8 @@ def test_erratic_draws():
 
     with pytest.raises(FlakyStrategyDefinition):
 
-        @run_to_buffer
-        def x(data):
+        @run_to_nodes
+        def nodes(data):
             nonlocal n
             data.draw_bytes(n, n)
             data.draw_bytes(255 - n, 255 - n)
@@ -374,13 +360,13 @@ def test_erratic_draws():
 def test_no_read_no_shrink():
     count = 0
 
-    @run_to_buffer
-    def x(data):
+    @run_to_nodes
+    def nodes(data):
         nonlocal count
         count += 1
         data.mark_interesting()
 
-    assert x == b""
+    assert nodes == ()
     assert count == 1
 
 
@@ -388,8 +374,8 @@ def test_one_dead_branch():
     with deterministic_PRNG():
         seen = set()
 
-        @run_to_buffer
-        def x(data):
+        @run_to_nodes
+        def nodes(data):
             i = data.draw_bytes(1, 1)[0]
             if i > 0:
                 data.mark_invalid()
@@ -415,15 +401,15 @@ def test_does_not_save_on_interrupt():
     assert not db.data
 
 
-def test_returns_written():
+def test_returns_forced():
     value = b"\0\1\2\3"
 
-    @run_to_buffer
-    def written(data):
+    @run_to_nodes
+    def nodes(data):
         data.draw_bytes(len(value), len(value), forced=value)
         data.mark_interesting()
 
-    assert value == written
+    assert tuple(n.value for n in nodes) == (value,)
 
 
 def fails_health_check(label, **kwargs):
@@ -551,7 +537,7 @@ def test_debug_data(capsys):
     runner.run()
 
     out, _ = capsys.readouterr()
-    assert re.match("\\d+ nodes \\[.*\\] -> ", out)
+    assert re.match(r"\d+ choices \(.*\) -> ", out)
     assert "INTERESTING" in out
 
 
@@ -659,11 +645,11 @@ def test_discarding(monkeypatch):
     monkeypatch.setattr(
         ConjectureRunner,
         "generate_new_examples",
-        lambda runner: runner.cached_test_function(bytes([0, 1] * 10)),
+        lambda runner: runner.cached_test_function_ir(ir(False, True) * 10),
     )
 
-    @run_to_buffer
-    def x(data):
+    @run_to_nodes
+    def nodes(data):
         count = 0
         while count < 10:
             data.start_example(SOME_LABEL)
@@ -673,11 +659,11 @@ def test_discarding(monkeypatch):
             data.stop_example(discard=not b)
         data.mark_interesting()
 
-    assert x == bytes(bytes([1]) * 10)
+    assert tuple(n.value for n in nodes) == (True,) * 10
 
 
 def test_can_remove_discarded_data():
-    @shrinking_from(bytes([0] * 10 + [11]))
+    @shrinking_from(ir(0) * 10 + ir(11))
     def shrinker(data: ConjectureData):
         while True:
             data.start_example(SOME_LABEL)
@@ -688,11 +674,11 @@ def test_can_remove_discarded_data():
         data.mark_interesting()
 
     shrinker.remove_discarded()
-    assert list(shrinker.buffer) == [11]
+    assert shrinker.choices == (11,)
 
 
 def test_discarding_iterates_to_fixed_point():
-    @shrinking_from(bytes(list(range(100, -1, -1))))
+    @shrinking_from(ir(*list(range(100, -1, -1))))
     def shrinker(data: ConjectureData):
         data.start_example(0)
         data.draw_integer(0, 2**8 - 1)
@@ -702,11 +688,11 @@ def test_discarding_iterates_to_fixed_point():
         data.mark_interesting()
 
     shrinker.remove_discarded()
-    assert list(shrinker.buffer) == [1, 0]
+    assert shrinker.choices == (1, 0)
 
 
 def test_discarding_is_not_fooled_by_empty_discards():
-    @shrinking_from(bytes([1, 1]))
+    @shrinking_from(ir(1, 1))
     def shrinker(data: ConjectureData):
         data.draw_integer(0, 2**1 - 1)
         data.start_example(0)
@@ -718,8 +704,8 @@ def test_discarding_is_not_fooled_by_empty_discards():
     assert shrinker.shrink_target.has_discards
 
 
-def test_discarding_can_fail(monkeypatch):
-    @shrinking_from(bytes([1]))
+def test_discarding_can_fail():
+    @shrinking_from(ir(1))
     def shrinker(data: ConjectureData):
         data.start_example(0)
         data.draw_boolean()
@@ -734,16 +720,16 @@ def test_shrinking_from_mostly_zero(monkeypatch):
     monkeypatch.setattr(
         ConjectureRunner,
         "generate_new_examples",
-        lambda self: self.cached_test_function(bytes(5) + bytes([2])),
+        lambda self: self.cached_test_function_ir(ir(0) * 5 + ir(2)),
     )
 
-    @run_to_buffer
-    def x(data):
+    @run_to_nodes
+    def nodes(data):
         s = [data.draw_integer(0, 2**8 - 1) for _ in range(6)]
         if any(s):
             data.mark_interesting()
 
-    assert x == bytes(5) + bytes([1])
+    assert tuple(n.value for n in nodes) == (0,) * 5 + (1,)
 
 
 def test_handles_nesting_of_discard_correctly(monkeypatch):
@@ -751,11 +737,11 @@ def test_handles_nesting_of_discard_correctly(monkeypatch):
     monkeypatch.setattr(
         ConjectureRunner,
         "generate_new_examples",
-        lambda runner: runner.cached_test_function(bytes([0, 0, 1, 1])),
+        lambda runner: runner.cached_test_function_ir(ir(False, False, True, True)),
     )
 
-    @run_to_buffer
-    def x(data):
+    @run_to_nodes
+    def nodes(data):
         while True:
             data.start_example(SOME_LABEL)
             succeeded = data.draw_boolean()
@@ -766,7 +752,7 @@ def test_handles_nesting_of_discard_correctly(monkeypatch):
             if succeeded:
                 data.mark_interesting()
 
-    assert x == bytes([1, 1])
+    assert tuple(n.value for n in nodes) == (True, True)
 
 
 def test_database_clears_secondary_key():
@@ -879,7 +865,7 @@ def test_exit_because_shrink_phase_timeout(monkeypatch):
 
 
 def test_dependent_block_pairs_can_lower_to_zero():
-    @shrinking_from([1, 0, 1])
+    @shrinking_from(ir(True, 1))
     def shrinker(data: ConjectureData):
         if data.draw_boolean():
             n = data.draw_integer(0, 2**16 - 1)
@@ -890,11 +876,11 @@ def test_dependent_block_pairs_can_lower_to_zero():
             data.mark_interesting()
 
     shrinker.fixate_shrink_passes(["minimize_individual_nodes"])
-    assert list(shrinker.shrink_target.buffer) == [0, 1]
+    assert shrinker.choices == (False, 1)
 
 
 def test_handle_size_too_large_during_dependent_lowering():
-    @shrinking_from([1, 255, 0])
+    @shrinking_from(ir(True, 255, 0))
     def shrinker(data: ConjectureData):
         if data.draw_boolean():
             data.draw_integer(0, 2**16 - 1)
@@ -906,9 +892,7 @@ def test_handle_size_too_large_during_dependent_lowering():
 
 
 def test_block_may_grow_during_lexical_shrinking():
-    initial = bytes([2, 1, 1])
-
-    @shrinking_from(initial)
+    @shrinking_from(ir(2, 1, 1))
     def shrinker(data: ConjectureData):
         n = data.draw_integer(0, 2**8 - 1)
         if n == 2:
@@ -919,11 +903,11 @@ def test_block_may_grow_during_lexical_shrinking():
         data.mark_interesting()
 
     shrinker.fixate_shrink_passes(["minimize_individual_nodes"])
-    assert list(shrinker.shrink_target.buffer) == [0, 0, 0]
+    assert shrinker.choices == (0, 0)
 
 
 def test_lower_common_node_offset_does_nothing_when_changed_blocks_are_zero():
-    @shrinking_from([1, 0, 1, 0])
+    @shrinking_from(ir(True, False, True, False))
     def shrinker(data: ConjectureData):
         data.draw_boolean()
         data.draw_boolean()
@@ -934,11 +918,11 @@ def test_lower_common_node_offset_does_nothing_when_changed_blocks_are_zero():
     shrinker.mark_changed(1)
     shrinker.mark_changed(3)
     shrinker.lower_common_node_offset()
-    assert list(shrinker.shrink_target.buffer) == [1, 0, 1, 0]
+    assert shrinker.choices == (True, False, True, False)
 
 
 def test_lower_common_node_offset_ignores_zeros():
-    @shrinking_from([2, 2, 0])
+    @shrinking_from(ir(2, 2, 0))
     def shrinker(data: ConjectureData):
         n = data.draw_integer(0, 2**8 - 1)
         data.draw_integer(0, 2**8 - 1)
@@ -949,7 +933,7 @@ def test_lower_common_node_offset_ignores_zeros():
     for i in range(3):
         shrinker.mark_changed(i)
     shrinker.lower_common_node_offset()
-    assert list(shrinker.shrink_target.buffer) == [1, 1, 0]
+    assert shrinker.choices == (1, 1, 0)
 
 
 def test_cached_test_function_returns_right_value():
@@ -1035,9 +1019,7 @@ def test_branch_ending_in_write():
             attempt = prefix + ir(False, False)
             data = runner.cached_test_function_ir(attempt)
             assert data.status is Status.VALID
-            assert startswith(
-                [n.value for n in attempt], [n.value for n in data.ir_nodes]
-            )
+            assert startswith(tuple(n.value for n in attempt), data.choices)
 
 
 def test_exhaust_space():
