@@ -779,9 +779,9 @@ class ConjectureRunner:
         if data.status == Status.INTERESTING:
             status = f"{status} ({data.interesting_origin!r})"
 
-        nodes = data.ir_nodes
         self.debug(
-            f"{len(nodes)} nodes {[n.value for n in nodes]} -> {status}, {data.output}"
+            f"{len(data.choices)} choices {data.choices} -> {status}"
+            f"{', ' + data.output if data.output else ''}"
         )
 
     def run(self) -> None:
@@ -1369,7 +1369,7 @@ class ConjectureRunner:
                 ),
                 key=lambda kv: (sort_key(kv[1].buffer), sort_key(repr(kv[0]))),
             )
-            self.debug(f"Shrinking {target!r}: {[n.value for n in example.ir_nodes]}")
+            self.debug(f"Shrinking {target!r}: {data.choices}")
 
             if not self.settings.report_multiple_bugs:
                 # If multi-bug reporting is disabled, we shrink our currently-minimal

@@ -813,6 +813,10 @@ class Shrinker:
         return self.shrink_target.ir_nodes
 
     @property
+    def choices(self):
+        return self.shrink_target.choices
+
+    @property
     def examples(self):
         return self.shrink_target.examples
 

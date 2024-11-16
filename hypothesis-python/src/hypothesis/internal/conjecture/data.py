@@ -1182,6 +1182,10 @@ class ConjectureResult:
     def as_result(self) -> "ConjectureResult":
         return self
 
+    @property
+    def choices(self) -> tuple[IRType, ...]:
+        return tuple(node.value for node in self.ir_nodes)
+
 
 # Masks for masking off the first byte of an n-bit buffer.
 # The appropriate mask is stored at position n % 8.
@@ -2106,6 +2110,10 @@ class ConjectureData:
             len(self.buffer),
             ", frozen" if self.frozen else "",
         )
+
+    @property
+    def choices(self) -> tuple[IRType, ...]:
+        return tuple(node.value for node in self.ir_nodes)
 
     # A bit of explanation of the `observe` and `fake_forced` arguments in our
     # draw_* functions.
