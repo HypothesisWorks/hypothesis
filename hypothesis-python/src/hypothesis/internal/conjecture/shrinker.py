@@ -413,7 +413,9 @@ class Shrinker:
         buffer = bytes(buffer)
         return buffer.startswith(self.buffer) or self.incorporate_new_buffer(buffer)
 
-    def incorporate_new_buffer(self, buffer):  # pragma: no cover
+    def incorporate_new_buffer(
+        self, buffer
+    ):  # pragma: no cover # removing function soon
         """Either runs the test function on this buffer and returns True if
         that changed the shrink_target, or determines that doing so would
         be useless and returns False without running it."""
