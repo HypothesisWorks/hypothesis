@@ -19,7 +19,7 @@ from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.floats import float_to_int
 
-from tests.conjecture.common import run_to_buffer
+from tests.conjecture.common import ir
 
 EXPONENTS = list(range(flt.MAX_EXPONENT + 1))
 assert len(EXPONENTS) == 2**11
@@ -126,18 +126,13 @@ def test_reverse_bits_table_has_right_elements():
 def float_runner(start, condition, *, kwargs=None):
     kwargs = {} if kwargs is None else kwargs
 
-    @run_to_buffer
-    def buf(data):
-        data.draw_float(forced=start, **kwargs)
-        data.mark_interesting()
-
     def test_function(data):
         f = data.draw_float(**kwargs)
         if condition(f):
             data.mark_interesting()
 
     runner = ConjectureRunner(test_function)
-    runner.cached_test_function(buf)
+    runner.cached_test_function_ir(ir((float(start), kwargs)))
     assert runner.interesting_examples
     return runner
 
@@ -148,7 +143,7 @@ def minimal_from(start, condition, *, kwargs=None):
     runner = float_runner(start, condition, kwargs=kwargs)
     runner.shrink_interesting_examples()
     (v,) = runner.interesting_examples.values()
-    data = ConjectureData.for_buffer(v.buffer)
+    data = ConjectureData.for_ir_tree(v.ir_nodes)
     result = data.draw_float(**kwargs)
     assert condition(result)
     return result

@@ -49,10 +49,6 @@ def run_to_data(f):
         return last_data
 
 
-def run_to_buffer(f):
-    return bytes(run_to_data(f).buffer)
-
-
 def run_to_nodes(f):
     return run_to_data(f).ir_nodes
 
@@ -81,7 +77,7 @@ def shrinking_from(start):
                     phases=set(settings.default.phases) - {Phase.explain},
                 ),
             )
-            runner.cached_test_function(start)
+            runner.cached_test_function_ir(start)
             assert runner.interesting_examples
             (last_data,) = runner.interesting_examples.values()
             return runner.new_shrinker(
