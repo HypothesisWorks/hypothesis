@@ -537,7 +537,7 @@ def test_debug_data(capsys):
     runner.run()
 
     out, _ = capsys.readouterr()
-    assert re.match("\\d+ choices \\[.*\\] -> ", out)
+    assert re.match(r"\d+ choices \(.*\) -> ", out)
     assert "INTERESTING" in out
 
 
