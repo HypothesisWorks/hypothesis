@@ -443,7 +443,7 @@ class ConjectureRunner:
                 # if we simulated to an overrun, then we our result is certainly
                 # an overrun; no need to consult the cache. (and we store this result
                 # for simulation-less lookup later).
-                self.__data_cache[key] = Overrun
+                self.__data_cache_ir[key] = Overrun
                 return Overrun
 
         data = self.new_conjecture_data_ir(nodes, max_length=max_length)
