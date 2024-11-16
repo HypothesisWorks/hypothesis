@@ -434,10 +434,17 @@ class ConjectureRunner:
         else:
             trial_data.freeze()
             key = self._cache_key_ir(data=trial_data)
-            try:
-                return self.__data_cache_ir[key]
-            except KeyError:
-                pass
+            if trial_data.status > Status.OVERRUN:
+                try:
+                    return self.__data_cache_ir[key]
+                except KeyError:
+                    pass
+            else:
+                # if we simulated to an overrun, then we our result is certainly
+                # an overrun; no need to consult the cache. (and we store this result
+                # for simulation-less lookup later).
+                self.__data_cache[key] = Overrun
+                return Overrun
 
         data = self.new_conjecture_data_ir(nodes, max_length=max_length)
         # note that calling test_function caches `data` for us, for both an ir
@@ -1446,7 +1453,7 @@ class ConjectureRunner:
         buffer: Union[bytes, bytearray],
         *,
         extend: int = 0,
-    ) -> Union[ConjectureResult, _Overrun]:
+    ) -> Union[ConjectureResult, _Overrun]:  # pragma: no cover # removing function soon
         """Checks the tree to see if we've tested this buffer, and returns the
         previous result if we have.
 

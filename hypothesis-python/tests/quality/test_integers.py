@@ -84,17 +84,13 @@ def test_always_reduces_integers_to_smallest_suitable_sizes(problem):
     )
 
     runner.cached_test_function(blob)
-
     assert runner.interesting_examples
 
     (v,) = runner.interesting_examples.values()
-
     shrinker = runner.new_shrinker(v, lambda x: x.status == Status.INTERESTING)
-
     shrinker.fixate_shrink_passes(["minimize_individual_nodes"])
 
     v = shrinker.shrink_target
-
     m = ConjectureData.for_buffer(v.buffer).draw(st.integers())
     assert m == n
 
