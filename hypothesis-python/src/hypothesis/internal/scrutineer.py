@@ -87,7 +87,9 @@ class Tracer:
     def trace_line(self, code: types.CodeType, line_number: int) -> None:
         fname = code.co_filename
         if not should_trace_file(fname):
-            return sys.monitoring.DISABLE
+            # this function is only called on 3.12+, but we want to avoid an
+            # assertion to that effect for performance.
+            return sys.monitoring.DISABLE  # type: ignore
 
         current_location = (fname, line_number)
         self.branches.add((self._previous_location, current_location))
