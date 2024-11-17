@@ -840,10 +840,10 @@ class StateForActualGivenExecution:
                 if (current_deadline := self.settings.deadline) is not None:
                     if not is_final:
                         current_deadline = (current_deadline // 4) * 5
-                    # if runtime >= current_deadline.total_seconds():
-                    #     raise DeadlineExceeded(
-                    #         datetime.timedelta(seconds=runtime), self.settings.deadline
-                    #     )
+                    if runtime >= current_deadline.total_seconds():
+                        raise DeadlineExceeded(
+                            datetime.timedelta(seconds=runtime), self.settings.deadline
+                        )
                 return result
 
         def run(data):

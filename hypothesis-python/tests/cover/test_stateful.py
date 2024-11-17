@@ -1348,63 +1348,37 @@ import time
 
 
 def test_async():
+    function_sleep_duration = 1.5
+
     class Async(TrioRuleBasedStateMachine):
-        buns = Bundle("buns")
 
-        @initialize(target=buns)
-        def create_bun(self):
-            return 0
-
-        @rule(bun=buns)
-        async def func1(self, bun):
+        @rule()
+        async def func1(self):
             print("func1 start.")
-            await trio.sleep(1.5)
+            await trio.sleep(function_sleep_duration)
             print("func1 end.")
-
-        @rule(bun=buns)
-        def func2(self, bun):
-            print("func2 start.")
-            time.sleep(0.3)
-            print("func2 end.")
-
-        @rule(bun=buns)
-        async def func3(self, bun):
-            print("func3 start.")
-            await trio.sleep(1.5)
-            print("func3 end.")
 
     class Sync(RuleBasedStateMachine):
-        buns = Bundle("buns")
 
-        @initialize(target=buns)
-        def create_bun(self):
-            return 0
-
-        @rule(bun=buns)
-        def func1(self, bun):
+        @rule()
+        def func1(self):
             print("func1 start.")
-            time.sleep(1.5)
+            time.sleep(function_sleep_duration)
             print("func1 end.")
 
-        @rule(bun=buns)
-        def func2(self, bun):
+        @rule()
+        def func2(self):
             print("func2 start.")
-            time.sleep(1.5)
+            time.sleep(function_sleep_duration)
             print("func2 end.")
-
-        @rule(bun=buns)
-        def func3(self, bun):
-            print("func3 start.")
-            time.sleep(1.5)
-            print("func3 end.")
 
     out = []
     mach_lst = [Async, Sync]
-    # mach_lst = [Async]
-    # mach_lst = [Sync]
     for machine in mach_lst:
         start = time.time()
-        machine.TestCase.settings = Settings(stateful_step_count=10, max_examples=1)
+        machine.TestCase.settings = Settings(
+            stateful_step_count=10, max_examples=1, deadline=None
+        )
         run_state_machine_as_test(machine)
         print(f"This should print after the rest of the stuff")
         end = time.time()
@@ -1412,6 +1386,5 @@ def test_async():
         print(f"Finished: {end=} {start=} {duration=} ")
         out.append(duration)
 
-    print(f"TODO: This works as a standalone script, but async on pytest is weird.")
     for duration, machine in zip(out, mach_lst):
         print(f"Test for machine {machine} took {duration}")
