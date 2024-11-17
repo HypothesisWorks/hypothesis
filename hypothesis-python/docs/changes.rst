@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.119.2:
+
+--------------------
+6.119.2 - 2024-11-17
+--------------------
+
+This patch refactors some internals to prepare for future work using our IR (:issue:`3921`).
+
 .. _v6.119.1:
 
 --------------------
