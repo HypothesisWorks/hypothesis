@@ -64,8 +64,8 @@ def test_can_discard(monkeypatch):
     monkeypatch.setattr(
         ConjectureRunner,
         "generate_new_examples",
-        lambda runner: runner.cached_test_function(
-            [v for i in range(n) for v in [i, i]]
+        lambda runner: runner.cached_test_function_ir(
+            ir(*[bytes(v) for i in range(n) for v in [i, i]])
         ),
     )
 
@@ -80,23 +80,21 @@ def test_can_discard(monkeypatch):
 
 
 @given(st.integers(0, 255), st.integers(0, 255))
-def test_cached_with_masked_byte_agrees_with_results(byte_a, byte_b):
+def test_cached_with_masked_byte_agrees_with_results(a, b):
     def f(data):
         data.draw_integer(0, 3)
 
     runner = ConjectureRunner(f)
 
-    cached_a = runner.cached_test_function(bytes([byte_a]))
-    cached_b = runner.cached_test_function(bytes([byte_b]))
+    cached_a = runner.cached_test_function_ir(ir(a))
+    cached_b = runner.cached_test_function_ir(ir(b))
 
-    data_b = ConjectureData.for_buffer(
-        bytes([byte_b]), observer=runner.tree.new_observer()
-    )
+    data_b = ConjectureData.for_ir_tree(ir(b), observer=runner.tree.new_observer())
     runner.test_function(data_b)
 
     # If the cache found an old result, then it should match the real result.
     # If it did not, then it must be because A and B were different.
-    assert (cached_a is cached_b) == (cached_a.buffer == data_b.buffer)
+    assert (cached_a is cached_b) == (cached_a.ir_nodes == data_b.ir_nodes)
 
 
 def test_node_programs_fail_efficiently(monkeypatch):

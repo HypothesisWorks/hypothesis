@@ -82,10 +82,8 @@ def test_can_reduce_poison_from_any_subtree(size, seed):
             data.mark_interesting()
 
     runner = ConjectureRunner(test_function, random=random, settings=TEST_SETTINGS)
-
     runner.generate_new_examples()
     runner.shrink_interesting_examples()
-
     (data,) = runner.interesting_examples.values()
 
     assert len(ConjectureData.for_buffer(data.buffer).draw(strat)) == size
@@ -110,14 +108,11 @@ def test_can_reduce_poison_from_any_subtree(size, seed):
         runner = ConjectureRunner(
             test_function_with_poison, random=random, settings=TEST_SETTINGS
         )
-
         runner.cached_test_function(
             data.buffer[:u] + bytes([255]) * 4 + data.buffer[u + 4 :] + marker
         )
-
         assert runner.interesting_examples
+
         runner.shrink_interesting_examples()
-
         (shrunk,) = runner.interesting_examples.values()
-
         assert ConjectureData.for_buffer(shrunk.buffer).draw(strat) == (POISON,)

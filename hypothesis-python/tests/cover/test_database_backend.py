@@ -459,6 +459,7 @@ def test_database_directory_inaccessible(dirs, tmp_path, monkeypatch):
 @example(ir(-0.0))
 @example(ir("a"))
 @example(ir(b"a"))
+@example(ir(b"a" * 50))
 def test_ir_nodes_rountrips(nodes1):
     s1 = ir_to_bytes([n.value for n in nodes1])
     assert isinstance(s1, bytes)

@@ -117,7 +117,7 @@ def test_terminates_shrinks(n, monkeypatch):
     db = InMemoryExampleDatabase()
 
     def generate_new_examples(self):
-        self.cached_test_function([255] * 1000)
+        self.cached_test_function_ir(ir(255) * 1000)
 
     monkeypatch.setattr(
         ConjectureRunner, "generate_new_examples", generate_new_examples
@@ -514,11 +514,11 @@ class Foo:
 
 
 def test_debug_data(capsys):
-    buf = [0, 1, 2]
+    nodes = ir(0, 1, 2)
 
     def f(data):
-        for x in bytes(buf):
-            if data.draw(st.integers(0, 100)) != x:
+        for node in nodes:
+            if data.draw(st.integers(0, 100)) != node.value:
                 data.mark_invalid()
             data.start_example(1)
             data.stop_example()
@@ -533,7 +533,7 @@ def test_debug_data(capsys):
             verbosity=Verbosity.debug,
         ),
     )
-    runner.cached_test_function(buf)
+    runner.cached_test_function_ir(nodes)
     runner.run()
 
     out, _ = capsys.readouterr()
@@ -569,12 +569,12 @@ def test_uniqueness_is_preserved_when_writing_at_beginning():
 
 
 @pytest.mark.parametrize("skip_target", [False, True])
-@pytest.mark.parametrize("initial_attempt", [127, 128])
+@pytest.mark.parametrize("initial_attempt", [ir(127, 128)])
 def test_clears_out_its_database_on_shrinking(
     initial_attempt, skip_target, monkeypatch
 ):
     def generate_new_examples(self):
-        self.cached_test_function(initial_attempt)
+        self.cached_test_function_ir(initial_attempt)
 
     monkeypatch.setattr(
         ConjectureRunner, "generate_new_examples", generate_new_examples
@@ -615,16 +615,16 @@ def test_detects_too_small_block_starts():
 
     runner = ConjectureRunner(f, settings=settings(database=None))
     r = runner.cached_test_function(bytes(8))
-    assert r.status == Status.INTERESTING
+    assert r.status is Status.INTERESTING
     assert call_count == 1
     r2 = runner.cached_test_function(bytes([255] * 7))
-    assert r2.status == Status.OVERRUN
+    assert r2.status is Status.OVERRUN
     assert call_count == 1
 
 
 def test_shrinks_both_interesting_examples(monkeypatch):
     def generate_new_examples(self):
-        self.cached_test_function(bytes([1]))
+        self.cached_test_function_ir(ir(1))
 
     monkeypatch.setattr(
         ConjectureRunner, "generate_new_examples", generate_new_examples
@@ -636,8 +636,8 @@ def test_shrinks_both_interesting_examples(monkeypatch):
 
     runner = ConjectureRunner(f, database_key=b"key")
     runner.run()
-    assert runner.interesting_examples[0].buffer == bytes([0])
-    assert runner.interesting_examples[1].buffer == bytes([1])
+    assert runner.interesting_examples[0].choices == (0,)
+    assert runner.interesting_examples[1].choices == (1,)
 
 
 def test_discarding(monkeypatch):
@@ -776,7 +776,7 @@ def test_database_clears_secondary_key():
     for i in range(10):
         database.save(runner.secondary_key, bytes([i]))
 
-    runner.cached_test_function([10])
+    runner.cached_test_function_ir(ir(10))
     assert runner.interesting_examples
 
     assert len(set(database.fetch(key))) == 1
@@ -805,13 +805,11 @@ def test_database_uses_values_from_secondary_key():
         ),
         database_key=key,
     )
-
     for i in range(10):
         database.save(runner.secondary_key, bytes([i]))
 
-    runner.cached_test_function([10])
+    runner.cached_test_function_ir(ir(10))
     assert runner.interesting_examples
-
     assert len(set(database.fetch(key))) == 1
     assert len(set(database.fetch(runner.secondary_key))) == 10
 
@@ -823,7 +821,6 @@ def test_database_uses_values_from_secondary_key():
     )
 
     (v,) = runner.interesting_examples.values()
-
     assert list(v.buffer) == [5]
 
 
@@ -948,10 +945,10 @@ def test_cached_test_function_returns_right_value():
     with deterministic_PRNG():
         runner = ConjectureRunner(tf, settings=TEST_SETTINGS)
         for _ in range(2):
-            for b in (b"\0", b"\1"):
-                d = runner.cached_test_function(b)
+            for nodes in (ir(0), ir(1)):
+                d = runner.cached_test_function_ir(nodes)
                 assert d.status == Status.INTERESTING
-                assert d.buffer == b
+                assert d.choices == (nodes[0].value,)
         assert count == 2
 
 
@@ -968,11 +965,11 @@ def test_cached_test_function_does_not_reinvoke_on_prefix():
     with deterministic_PRNG():
         runner = ConjectureRunner(test_function, settings=TEST_SETTINGS)
 
-        data = runner.cached_test_function(bytes(3))
+        data = runner.cached_test_function_ir(ir(0, b"\0", 0))
         assert data.status == Status.VALID
         for n in [2, 1, 0]:
-            prefix_data = runner.cached_test_function(bytes(n))
-            assert prefix_data is Overrun
+            d = runner.cached_test_function_ir(data.ir_nodes[:n])
+            assert d is Overrun
         assert call_count == 1
 
 
@@ -982,14 +979,14 @@ def test_will_evict_entries_from_the_cache(monkeypatch):
 
     def tf(data):
         nonlocal count
-        data.draw_bytes(1, 1)
+        data.draw_integer(0, 2**8 - 1)
         count += 1
 
     runner = ConjectureRunner(tf, settings=TEST_SETTINGS)
 
     for _ in range(3):
         for n in range(10):
-            runner.cached_test_function([n])
+            runner.cached_test_function_ir(ir(n))
 
     # Because we exceeded the cache size, our previous
     # calls will have been evicted, so each call to
@@ -1100,7 +1097,7 @@ def test_does_not_shrink_multiple_bugs_when_told_not_to():
         runner = ConjectureRunner(
             test, settings=settings(TEST_SETTINGS, report_multiple_bugs=False)
         )
-        runner.cached_test_function([255, 255])
+        runner.cached_test_function_ir(ir(255, 255))
         runner.shrink_interesting_examples()
 
         results = {d.buffer for d in runner.interesting_examples.values()}
@@ -1294,15 +1291,15 @@ def test_replaces_all_dominated():
         database_key=b"stuff",
     )
 
-    d1 = runner.cached_test_function([0, 1]).as_result()
-    d2 = runner.cached_test_function([1, 0]).as_result()
+    d1 = runner.cached_test_function_ir(ir(0, 1)).as_result()
+    d2 = runner.cached_test_function_ir(ir(1, 0)).as_result()
 
     assert len(runner.pareto_front) == 2
 
     assert runner.pareto_front[0] == d1
     assert runner.pareto_front[1] == d2
 
-    d3 = runner.cached_test_function([0, 0]).as_result()
+    d3 = runner.cached_test_function_ir(ir(0, 0)).as_result()
     assert len(runner.pareto_front) == 1
 
     assert runner.pareto_front[0] == d3
@@ -1317,18 +1314,13 @@ def test_does_not_duplicate_elements():
         settings=settings(TEST_SETTINGS, database=InMemoryExampleDatabase()),
         database_key=b"stuff",
     )
-
-    d1 = runner.cached_test_function([1]).as_result()
+    d1 = runner.cached_test_function_ir(ir(1)).as_result()
 
     assert len(runner.pareto_front) == 1
-
     # This can happen in practice if we e.g. reexecute a test because it has
     # expired from the cache. It's easier just to test it directly though
     # rather than simulate the failure mode.
-    is_pareto = runner.pareto_front.add(d1)
-
-    assert is_pareto
-
+    assert runner.pareto_front.add(d1)
     assert len(runner.pareto_front) == 1
 
 
@@ -1343,8 +1335,8 @@ def test_includes_right_hand_side_targets_in_dominance():
         database_key=b"stuff",
     )
 
-    d1 = runner.cached_test_function([0]).as_result()
-    d2 = runner.cached_test_function([1]).as_result()
+    d1 = runner.cached_test_function_ir(ir(0)).as_result()
+    d2 = runner.cached_test_function_ir(ir(1)).as_result()
 
     assert dominance(d1, d2) == DominanceRelation.NO_DOMINANCE
 
@@ -1360,8 +1352,8 @@ def test_smaller_interesting_dominates_larger_valid():
         database_key=b"stuff",
     )
 
-    d1 = runner.cached_test_function([0]).as_result()
-    d2 = runner.cached_test_function([1]).as_result()
+    d1 = runner.cached_test_function_ir(ir(0)).as_result()
+    d2 = runner.cached_test_function_ir(ir(1)).as_result()
     assert dominance(d1, d2) == DominanceRelation.LEFT_DOMINATES
 
 
@@ -1387,9 +1379,7 @@ def test_runs_optimisation_even_if_not_generating():
         runner = ConjectureRunner(
             test, settings=settings(TEST_SETTINGS, phases=[Phase.target])
         )
-
-        runner.cached_test_function(bytes(2))
-
+        runner.cached_test_function_ir(ir(0))
         runner.run()
 
         assert runner.best_observed_targets["n"] == (2**16) - 1
@@ -1431,16 +1421,17 @@ def test_does_not_run_optimisation_when_max_examples_is_small():
 
 def test_does_not_cache_extended_prefix():
     def test(data):
-        data.draw_bytes(8, 8)
+        data.draw_integer()
+        data.draw_integer()
 
     with deterministic_PRNG():
         runner = ConjectureRunner(test, settings=TEST_SETTINGS)
 
-        d1 = runner.cached_test_function(b"", extend=8)
-        d2 = runner.cached_test_function(b"", extend=8)
-        assert d1.status == d2.status == Status.VALID
-
-        assert d1.buffer != d2.buffer
+        d1 = runner.cached_test_function_ir(ir(0), extend=10)
+        assert runner.call_count == 1
+        d2 = runner.cached_test_function_ir(ir(0), extend=10)
+        assert runner.call_count == 2
+        assert d1.status is d2.status is Status.VALID
 
 
 def test_does_cache_if_extend_is_not_used():
@@ -1454,8 +1445,8 @@ def test_does_cache_if_extend_is_not_used():
     with deterministic_PRNG():
         runner = ConjectureRunner(test, settings=TEST_SETTINGS)
 
-        d1 = runner.cached_test_function(b"\0", extend=8)
-        d2 = runner.cached_test_function(b"\0", extend=8)
+        d1 = runner.cached_test_function_ir(ir(b"\0"), extend=8)
+        d2 = runner.cached_test_function_ir(ir(b"\0"), extend=8)
         assert d1.status == d2.status == Status.VALID
         assert d1.buffer == d2.buffer
         assert calls == 1
@@ -1472,10 +1463,10 @@ def test_does_result_for_reuse():
     with deterministic_PRNG():
         runner = ConjectureRunner(test, settings=TEST_SETTINGS)
 
-        d1 = runner.cached_test_function(b"\0", extend=8)
-        d2 = runner.cached_test_function(d1.buffer)
+        d1 = runner.cached_test_function_ir(ir(b"\0"), extend=8)
+        d2 = runner.cached_test_function_ir(d1.ir_nodes)
         assert d1.status == d2.status == Status.VALID
-        assert d1.buffer == d2.buffer
+        assert d1.ir_nodes == d2.ir_nodes
         assert calls == 1
 
 
@@ -1486,8 +1477,8 @@ def test_does_not_cache_overrun_if_extending():
     with deterministic_PRNG():
         runner = ConjectureRunner(test, settings=TEST_SETTINGS)
 
-        d1 = runner.cached_test_function(b"", extend=4)
-        d2 = runner.cached_test_function(b"", extend=8)
+        d1 = runner.cached_test_function_ir(ir(b""), extend=4)
+        d2 = runner.cached_test_function_ir(ir(b""), extend=8)
         assert d1.status == Status.OVERRUN
         assert d2.status == Status.VALID
 
@@ -1500,10 +1491,11 @@ def test_does_cache_overrun_if_not_extending():
     with deterministic_PRNG():
         runner = ConjectureRunner(test, settings=TEST_SETTINGS)
 
-        d1 = runner.cached_test_function(bytes(8), extend=0)
-        d2 = runner.cached_test_function(bytes(8), extend=8)
-        assert d1.status == Status.OVERRUN
-        assert d2.status == Status.VALID
+        data = runner.cached_test_function_ir(ir(bytes(8)), extend=0)
+        assert data.status is Status.OVERRUN
+
+        data = runner.cached_test_function_ir(ir(bytes(8)), extend=10)
+        assert data.status is Status.VALID
 
 
 def test_does_not_cache_extended_prefix_if_overrun():
@@ -1513,8 +1505,8 @@ def test_does_not_cache_extended_prefix_if_overrun():
     with deterministic_PRNG():
         runner = ConjectureRunner(test, settings=TEST_SETTINGS)
 
-        d1 = runner.cached_test_function(b"", extend=4)
-        d2 = runner.cached_test_function(b"", extend=8)
+        d1 = runner.cached_test_function_ir(ir(b""), extend=4)
+        d2 = runner.cached_test_function_ir(ir(b""), extend=8)
         assert d1.status == Status.OVERRUN
         assert d2.status == Status.VALID
 
@@ -1534,15 +1526,14 @@ def test_draw_bits_partly_from_prefix_and_partly_random():
 
 def test_can_be_set_to_ignore_limits():
     def test(data):
-        data.draw_bytes(1, 1)
+        data.draw_integer(0, 2**8 - 1)
 
     with deterministic_PRNG():
         runner = ConjectureRunner(
             test, settings=settings(TEST_SETTINGS, max_examples=1), ignore_limits=True
         )
-
         for c in range(256):
-            runner.cached_test_function([c])
+            runner.cached_test_function_ir(ir(c))
 
         assert runner.tree.is_exhausted
 
