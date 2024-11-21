@@ -1342,7 +1342,7 @@ class StateForActualGivenExecution:
                     "coverage": None,  # Not recorded when we're replaying the MFE
                     "metadata": {
                         "traceback": tb,
-                        "predicates": ran_example._observability_predicates,
+                        "predicates": dict(ran_example._observability_predicates),
                         **_system_metadata(),
                     },
                 }
