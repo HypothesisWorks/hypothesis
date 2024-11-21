@@ -11,7 +11,6 @@
 import base64
 import re
 import inspect
-import trio
 from collections import defaultdict
 from typing import ClassVar
 
@@ -34,7 +33,6 @@ from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.stateful import (
     Bundle,
     RuleBasedStateMachine,
-    TrioRuleBasedStateMachine,
     consumes,
     initialize,
     invariant,
@@ -1342,49 +1340,3 @@ def test_flatmap():
 
     Machine.TestCase.settings = Settings(stateful_step_count=5, max_examples=10)
     run_state_machine_as_test(Machine)
-
-import trio
-import time
-
-
-def test_async():
-    function_sleep_duration = 1.5
-
-    class Async(TrioRuleBasedStateMachine):
-
-        @rule()
-        async def func1(self):
-            print("func1 start.")
-            await trio.sleep(function_sleep_duration)
-            print("func1 end.")
-
-    class Sync(RuleBasedStateMachine):
-
-        @rule()
-        def func1(self):
-            print("func1 start.")
-            time.sleep(function_sleep_duration)
-            print("func1 end.")
-
-        @rule()
-        def func2(self):
-            print("func2 start.")
-            time.sleep(function_sleep_duration)
-            print("func2 end.")
-
-    out = []
-    mach_lst = [Async, Sync]
-    for machine in mach_lst:
-        start = time.time()
-        machine.TestCase.settings = Settings(
-            stateful_step_count=10, max_examples=1, deadline=None
-        )
-        run_state_machine_as_test(machine)
-        print(f"This should print after the rest of the stuff")
-        end = time.time()
-        duration = end - start
-        print(f"Finished: {end=} {start=} {duration=} ")
-        out.append(duration)
-
-    for duration, machine in zip(out, mach_lst):
-        print(f"Test for machine {machine} took {duration}")

@@ -17,7 +17,6 @@ execution to date.
 """
 import collections
 import inspect
-import trio
 from collections.abc import Iterable, Sequence
 from contextlib import contextmanager
 from copy import copy
@@ -457,41 +456,6 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         )
         return result
 
-
-class TrioRuleBasedStateMachine(RuleBasedStateMachine):
-    def __init__(self):
-        super().__init__()
-
-    def _execute_fn(self, rule, stateful_run_times, **data):
-        if inspect.iscoroutinefunction(rule.function):
-            assert hasattr(self, "nursery") and isinstance(self.nursery, trio.Nursery)
-            formatted_task = partial(
-                get_async_result_with_time,
-                rule.function,
-                stateful_run_times,
-                self,
-                **data,
-            )
-            self.nursery.start_soon(formatted_task)
-
-            # TODO: At the moment, we can't return any values for async functions. Should this remain the case?
-            # Trio doesn't seem to (https://stackoverflow.com/questions/51567451/capture-the-return-value-from-nursery-objects).
-            # Maybe include an error for `return` keywords in async @rules
-            return
-
-        return super()._execute_fn(rule, stateful_run_times, **data)
-
-    def loop_setup(self, fn):
-        @wraps(fn)
-        def wrapper(*args, **kwargs):
-            async def run_with_nursery(*args, **kwargs):
-                async with trio.open_nursery() as nursery:
-                    self.nursery = nursery
-                    fn(*args, **kwargs)
-
-            return trio.run(run_with_nursery, *args, **kwargs)
-
-        return wrapper
 
 def async_manager_decorator(fn):
     @wraps(fn)
