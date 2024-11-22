@@ -80,10 +80,10 @@ def test_capture_unnamed_arguments():
     test_cases = [tc for tc in observations if tc["type"] == "test_case"]
     for test_case in test_cases:
         assert list(test_case["arguments"].keys()) == [
-            "generate:v1",
-            "generate:v2",
-            "generate:data",
-            "generate:Draw 1",
+            "v1",
+            "v2",
+            "data",
+            "Draw 1",
         ], test_case
 
 
@@ -98,10 +98,10 @@ def test_capture_named_arguments():
     test_cases = [tc for tc in observations if tc["type"] == "test_case"]
     for test_case in test_cases:
         assert list(test_case["arguments"].keys()) == [
-            "generate:named1",
-            "generate:named2",
-            "generate:data",
-            "generate:Draw 1",
+            "named1",
+            "named2",
+            "data",
+            "Draw 1",
         ], test_case
 
 

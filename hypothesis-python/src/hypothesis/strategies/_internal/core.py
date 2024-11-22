@@ -2113,13 +2113,13 @@ class DataObject:
     def draw(self, strategy: SearchStrategy[Ex], label: Any = None) -> Ex:
         check_strategy(strategy, "strategy")
         self.count += 1
-        printer = RepresentationPrinter(context=current_build_context())
         desc = f"Draw {self.count}{'' if label is None else f' ({label})'}"
         with deprecate_random_in_strategy("{}from {!r}", desc, strategy):
             result = self.conjecture_data.draw(strategy, observe_as=f"generate:{desc}")
 
         # optimization to avoid needless printer.pretty
         if should_note():
+            printer = RepresentationPrinter(context=current_build_context())
             printer.text(f"{desc}: ")
             printer.pretty(result)
             note(printer.getvalue())

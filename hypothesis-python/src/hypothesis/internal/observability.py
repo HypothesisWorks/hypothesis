@@ -63,7 +63,9 @@ def make_testcase(
         }[data.status],
         "status_reason": status_reason,
         "representation": string_repr,
-        "arguments": arguments or {},
+        "arguments": {
+            k.removeprefix("generate:"): v for k, v in (arguments or {}).items()
+        },
         "how_generated": how_generated,  # iid, mutation, etc.
         "features": {
             **{

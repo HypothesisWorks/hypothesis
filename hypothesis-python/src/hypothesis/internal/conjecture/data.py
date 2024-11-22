@@ -2531,7 +2531,10 @@ class ConjectureData:
                     in_gctime = gc_cumulative_time() - gc_start_time
                     self.draw_times[key] = time.perf_counter() - start_time - in_gctime
             except Exception as err:
-                add_note(err, f"while generating {key[9:]!r} from {strategy!r}")
+                add_note(
+                    err,
+                    f"while generating {key.removeprefix('generate:')!r} from {strategy!r}",
+                )
                 raise
             if TESTCASE_CALLBACKS:
                 self._observability_args[key] = to_jsonable(v)
