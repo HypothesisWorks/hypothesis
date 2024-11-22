@@ -2485,6 +2485,9 @@ class ConjectureData:
         label: Optional[int] = None,
         observe_as: Optional[str] = None,
     ) -> "Ex":
+        from hypothesis.internal.observability import TESTCASE_CALLBACKS
+        from hypothesis.strategies._internal.utils import to_jsonable
+
         if self.is_find and not strategy.supports_find:
             raise InvalidArgument(
                 f"Cannot use strategy {strategy!r} within a call to find "
@@ -2521,15 +2524,21 @@ class ConjectureData:
             try:
                 strategy.validate()
                 try:
-                    return strategy.do_draw(self)
+                    v = strategy.do_draw(self)
                 finally:
                     # Subtract the time spent in GC to avoid overcounting, as it is
                     # accounted for at the overall example level.
                     in_gctime = gc_cumulative_time() - gc_start_time
                     self.draw_times[key] = time.perf_counter() - start_time - in_gctime
             except Exception as err:
-                add_note(err, f"while generating {key[9:]!r} from {strategy!r}")
+                add_note(
+                    err,
+                    f"while generating {key.removeprefix('generate:')!r} from {strategy!r}",
+                )
                 raise
+            if TESTCASE_CALLBACKS:
+                self._observability_args[key] = to_jsonable(v)
+            return v
         finally:
             self.stop_example()
 

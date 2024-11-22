@@ -63,7 +63,9 @@ def make_testcase(
         }[data.status],
         "status_reason": status_reason,
         "representation": string_repr,
-        "arguments": arguments or {},
+        "arguments": {
+            k.removeprefix("generate:"): v for k, v in (arguments or {}).items()
+        },
         "how_generated": how_generated,  # iid, mutation, etc.
         "features": {
             **{
@@ -74,7 +76,7 @@ def make_testcase(
         "timing": timing,
         "metadata": {
             "traceback": getattr(data.extra_information, "_expected_traceback", None),
-            "predicates": data._observability_predicates,
+            "predicates": dict(data._observability_predicates),
             "backend": backend_metadata or {},
             **_system_metadata(),
         },
