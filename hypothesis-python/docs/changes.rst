@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.119.4:
+
+--------------------
+6.119.4 - 2024-11-22
+--------------------
+
+This patch fixes a bug since :ref:`v6.99.13` where only interactively-generated values (via ``data.draw``) would be reported in the ``arguments`` field of our :doc:`observability output <observability>`. Now, all values are reported.
+
 .. _v6.119.3:
 
 --------------------
