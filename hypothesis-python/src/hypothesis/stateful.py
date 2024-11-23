@@ -465,6 +465,7 @@ class AsyncIORuleBasedStateMachine(RuleBasedStateMachine):
 
     def _execute_fn(self, rule, stateful_run_times, **data):
         if inspect.iscoroutinefunction(rule.function):
+            # Make sure to wrap it in get_async_result_with_time once debugged
             self.tg.create_task(rule.function(self, **data))
             return
 
