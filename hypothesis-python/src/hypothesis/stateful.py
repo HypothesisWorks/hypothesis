@@ -457,6 +457,32 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         return result
 
 
+class AsyncIORuleBasedStateMachine(RuleBasedStateMachine):
+    def __init__(self):
+        super().__init__()
+        global asyncio
+        import asyncio
+
+    def _execute_fn(self, rule, stateful_run_times, **data):
+        if inspect.iscoroutinefunction(rule.function):
+            self.tg.create_task(rule.function(self, **data))
+            return
+
+        return super()._execute_fn(rule, stateful_run_times, **data)
+
+    def loop_setup(self, fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            async def run_sync():
+                async with asyncio.TaskGroup() as tg:
+                    self.tg = tg
+                    fn(*args, **kwargs)
+
+            asyncio.run(run_sync())
+
+        return wrapper
+
+
 def async_manager_decorator(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):

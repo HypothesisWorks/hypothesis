@@ -11,6 +11,8 @@
 import base64
 import re
 import inspect
+import time
+import asyncio
 from collections import defaultdict
 from typing import ClassVar
 
@@ -33,6 +35,7 @@ from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.stateful import (
     Bundle,
     RuleBasedStateMachine,
+    AsyncIORuleBasedStateMachine,
     consumes,
     initialize,
     invariant,
@@ -1340,3 +1343,41 @@ def test_flatmap():
 
     Machine.TestCase.settings = Settings(stateful_step_count=5, max_examples=10)
     run_state_machine_as_test(Machine)
+
+
+def test_async():
+    class Async_AsyncIO(AsyncIORuleBasedStateMachine):
+        @rule()
+        async def func1(self):
+            try:
+                print("func1 start.")
+                await asyncio.sleep(1)
+                print("func1 mid.")
+                await asyncio.sleep(1)
+                print("func1 end.")
+            except asyncio.CancelledError as e:
+                print("func1 was cancelled.", e)
+                raise e
+
+        @rule()
+        async def func2(self):
+            try:
+                print("func2 start.")
+                await asyncio.sleep(1)
+                print("func2 mid.")
+                await asyncio.sleep(1)
+                print("func2 end.")
+            except asyncio.CancelledError as e:
+                print("func2 was cancelled.", e)
+                raise e
+
+    start = time.time()
+    Async_AsyncIO.TestCase.settings = Settings(
+        stateful_step_count=10, max_examples=1, deadline=None
+    )
+    run_state_machine_as_test(Async_AsyncIO)
+    end = time.time()
+    duration = end - start
+    print(f"Finished: {end=} {start=} {duration=} ")
+
+    print(f"Test for machine {Async_AsyncIO} took {duration}")
