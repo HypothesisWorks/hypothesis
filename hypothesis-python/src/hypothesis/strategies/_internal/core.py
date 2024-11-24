@@ -341,12 +341,16 @@ def lists(
             and len(unique_by) == 1
             and (
                 # Introspection for either `itemgetter(0)`, or `lambda x: x[0]`
-                isinstance(unique_by[0], operator.itemgetter)
-                and repr(unique_by[0]) == "operator.itemgetter(0)"
-                or isinstance(unique_by[0], FunctionType)
-                and re.fullmatch(
-                    get_pretty_function_description(unique_by[0]),
-                    r"lambda ([a-z]+): \1\[0\]",
+                (
+                    isinstance(unique_by[0], operator.itemgetter)
+                    and repr(unique_by[0]) == "operator.itemgetter(0)"
+                )
+                or (
+                    isinstance(unique_by[0], FunctionType)
+                    and re.fullmatch(
+                        get_pretty_function_description(unique_by[0]),
+                        r"lambda ([a-z]+): \1\[0\]",
+                    )
                 )
             )
         ):
@@ -1299,12 +1303,10 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
         # We've kept it because we turn out to have more type errors from... somewhere.
         # FIXME: investigate that, maybe it should be fixed more precisely?
         pass
-    if (
-        hasattr(typing, "_TypedDictMeta")
-        and type(thing) is typing._TypedDictMeta
-        or hasattr(types.typing_extensions, "_TypedDictMeta")  # type: ignore
-        and type(thing) is types.typing_extensions._TypedDictMeta  # type: ignore
-    ):  # pragma: no cover
+    if (hasattr(typing, "_TypedDictMeta") and type(thing) is typing._TypedDictMeta) or (
+        hasattr(types.typing_extensions, "_TypedDictMeta")  # type: ignore
+        and type(thing) is types.typing_extensions._TypedDictMeta
+    ):  # type: ignore  # pragma: no cover
 
         def _get_annotation_arg(key, annotation_type):
             try:

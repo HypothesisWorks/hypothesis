@@ -24,7 +24,7 @@ __all__ = [
     "TestCase",
     "TransactionTestCase",
     "from_field",
+    "from_form",
     "from_model",
     "register_field_strategy",
-    "from_form",
 ]

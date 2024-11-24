@@ -36,6 +36,8 @@ __all__ = [
     "HealthCheck",
     "Phase",
     "Verbosity",
+    "__version__",
+    "__version_info__",
     "assume",
     "currently_in_test_context",
     "event",
@@ -50,8 +52,6 @@ __all__ = [
     "seed",
     "settings",
     "target",
-    "__version__",
-    "__version_info__",
 ]
 
 run()

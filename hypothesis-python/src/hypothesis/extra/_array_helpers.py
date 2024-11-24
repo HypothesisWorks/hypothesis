@@ -21,18 +21,18 @@ from hypothesis.utils.conventions import UniqueIdentifier, not_set
 
 __all__ = [
     "NDIM_MAX",
-    "Shape",
-    "BroadcastableShapes",
     "BasicIndex",
-    "check_argument",
-    "order_check",
-    "check_valid_dims",
-    "array_shapes",
-    "valid_tuple_axes",
-    "broadcastable_shapes",
-    "mutually_broadcastable_shapes",
-    "MutuallyBroadcastableShapesStrategy",
     "BasicIndexStrategy",
+    "BroadcastableShapes",
+    "MutuallyBroadcastableShapesStrategy",
+    "Shape",
+    "array_shapes",
+    "broadcastable_shapes",
+    "check_argument",
+    "check_valid_dims",
+    "mutually_broadcastable_shapes",
+    "order_check",
+    "valid_tuple_axes",
 ]
 
 

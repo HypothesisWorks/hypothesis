@@ -232,7 +232,7 @@ class Example:
     often dramatically reduce our memory usage, so is worth it.
     """
 
-    __slots__ = ("owner", "index")
+    __slots__ = ("index", "owner")
 
     def __init__(self, owner: "Examples", index: int) -> None:
         self.owner = owner
@@ -713,7 +713,7 @@ class Blocks:
     be preferred to using the Block objects directly, as it will not
     have to allocate the actual object."""
 
-    __slots__ = ("endpoints", "owner", "__blocks", "__count", "__sparse")
+    __slots__ = ("__blocks", "__count", "__sparse", "endpoints", "owner")
     owner: "Union[ConjectureData, ConjectureResult, None]"
     __blocks: Union[dict[int, Block], list[Optional[Block]]]
 

@@ -34,10 +34,10 @@ from hypothesis.utils.conventions import not_set
 __all__ = [
     "DirectoryBasedExampleDatabase",
     "ExampleDatabase",
+    "GitHubArtifactDatabase",
     "InMemoryExampleDatabase",
     "MultiplexedDatabase",
     "ReadOnlyDatabase",
-    "GitHubArtifactDatabase",
 ]
 
 
