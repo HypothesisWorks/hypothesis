@@ -99,6 +99,10 @@ class CustomishDefault(models.Model):
     customish = CustomishField(default="b")
 
 
+class FileFields(models.Model):
+    file1 = FileField()
+
+
 class MandatoryComputed(models.Model):
     name = models.CharField(max_length=100, unique=True)
     company = models.ForeignKey(Company, null=False, on_delete=models.CASCADE)
