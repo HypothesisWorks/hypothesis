@@ -335,7 +335,10 @@ class SearchStrategy(Generic[Ex]):
         @given(self)
         @settings(
             database=None,
-            max_examples=100,
+            # generate only a few examples at a time to avoid slow interactivity
+            # for large strategies. The overhead of @given is very small relative
+            # to generation, so a small batch size is fine.
+            max_examples=10,
             deadline=None,
             verbosity=Verbosity.quiet,
             phases=(Phase.generate,),
