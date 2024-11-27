@@ -703,7 +703,7 @@ class BackgroundWriteDatabase(ExampleDatabase):
             getattr(self._db, method)(*args)
             self._queue.task_done()
 
-    def _join(self, timeout: Optional[int] = None) -> None:
+    def _join(self, timeout: Optional[float] = None) -> None:
         # copy of Queue.join with a timeout. https://bugs.python.org/issue9634
         with self._queue.all_tasks_done:
             while self._queue.unfinished_tasks:

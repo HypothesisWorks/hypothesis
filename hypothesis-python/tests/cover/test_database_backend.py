@@ -40,6 +40,7 @@ from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
 from hypothesis.strategies import binary, lists, tuples
 from hypothesis.utils.conventions import not_set
 
+from tests.common.utils import skipif_emscripten
 from tests.conjecture.common import ir, ir_nodes
 
 small_settings = settings(max_examples=50)
@@ -452,6 +453,7 @@ def test_database_directory_inaccessible(dirs, tmp_path, monkeypatch):
     database.save(b"fizz", b"buzz")
 
 
+@skipif_emscripten
 def test_background_write_database():
     db = BackgroundWriteDatabase(InMemoryExampleDatabase())
     db.save(b"a", b"b")
