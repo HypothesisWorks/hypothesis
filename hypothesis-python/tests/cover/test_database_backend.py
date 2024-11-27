@@ -23,6 +23,7 @@ import pytest
 
 from hypothesis import configuration, example, given, settings, strategies as st
 from hypothesis.database import (
+    BackgroundWriteDatabase,
     DirectoryBasedExampleDatabase,
     ExampleDatabase,
     GitHubArtifactDatabase,
@@ -449,6 +450,21 @@ def test_database_directory_inaccessible(dirs, tmp_path, monkeypatch):
     ):
         database = ExampleDatabase(not_set)
     database.save(b"fizz", b"buzz")
+
+
+def test_background_write_database():
+    db = BackgroundWriteDatabase(InMemoryExampleDatabase())
+    db.save(b"a", b"b")
+    db.save(b"a", b"c")
+    db.save(b"a", b"d")
+    assert set(db.fetch(b"a")) == {b"b", b"c", b"d"}
+
+    db.move(b"a", b"a2", b"b")
+    assert set(db.fetch(b"a")) == {b"c", b"d"}
+    assert set(db.fetch(b"a2")) == {b"b"}
+
+    db.delete(b"a", b"c")
+    assert set(db.fetch(b"a")) == {b"d"}
 
 
 @given(lists(ir_nodes()))

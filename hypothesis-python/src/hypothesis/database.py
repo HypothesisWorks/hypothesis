@@ -15,12 +15,15 @@ import os
 import struct
 import sys
 import warnings
+import weakref
 from collections.abc import Iterable
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 from hashlib import sha384
 from os import getenv
 from pathlib import Path, PurePath
+from queue import Queue
+from threading import Thread
 from typing import Optional
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
@@ -673,6 +676,51 @@ class GitHubArtifactDatabase(ExampleDatabase):
 
     def delete(self, key: bytes, value: bytes) -> None:
         raise RuntimeError(self._read_only_message)
+
+
+class BackgroundWriteDatabase(ExampleDatabase):
+    """A wrapper which defers writes on the given database to a background thread.
+
+    Calls to :meth:`~hypothesis.database.ExampleDatabase.fetch` wait for any
+    enqueued writes to finish before fetching from the database.
+    """
+
+    def __init__(self, db: ExampleDatabase) -> None:
+        self._db = db
+        self._queue: Queue[tuple[str, tuple[bytes, ...]]] = Queue()
+        self._thread = Thread(target=self._worker, daemon=True)
+        self._thread.start()
+        # avoid an unbounded timeout during gc. 0.1 should be plenty for most
+        # use cases.
+        weakref.finalize(self, self._join, 0.1)
+
+    def __repr__(self) -> str:
+        return f"BackgroundWriteDatabase({self._db!r})"
+
+    def _worker(self) -> None:
+        while True:
+            method, args = self._queue.get()
+            getattr(self._db, method)(*args)
+            self._queue.task_done()
+
+    def _join(self, timeout: Optional[int] = None) -> None:
+        # copy of Queue.join with a timeout. https://bugs.python.org/issue9634
+        with self._queue.all_tasks_done:
+            while self._queue.unfinished_tasks:
+                self._queue.all_tasks_done.wait(timeout)
+
+    def fetch(self, key: bytes) -> Iterable[bytes]:
+        self._join()
+        return self._db.fetch(key)
+
+    def save(self, key: bytes, value: bytes) -> None:
+        self._queue.put(("save", (key, value)))
+
+    def delete(self, key: bytes, value: bytes) -> None:
+        self._queue.put(("delete", (key, value)))
+
+    def move(self, src: bytes, dest: bytes, value: bytes) -> None:
+        self._queue.put(("move", (src, dest, value)))
 
 
 def ir_to_bytes(ir: Iterable[IRType], /) -> bytes:
