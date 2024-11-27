@@ -70,7 +70,6 @@ from hypothesis.internal.conjecture.datatree import (
     TreeRecordingObserver,
 )
 from hypothesis.internal.conjecture.junkdrawer import (
-    clamp,
     ensure_free_stackframes,
     startswith,
 )
@@ -1020,8 +1019,14 @@ class ConjectureRunner:
         # because any fixed size might be too small, and any size based
         # on the strategy in general can fall afoul of strategies that
         # have very different sizes for different prefixes.
-        small_example_cap = clamp(10, self.settings.max_examples // 10, 50)
-        optimise_at = max(self.settings.max_examples // 2, small_example_cap + 1)
+        #
+        # We previously set a minimum value of 10 on small_example_cap, with the
+        # reasoning of avoiding flaky health checks. However, some users set a
+        # low max_examples for performance. A hard lower bound in this case biases
+        # the distribution towards small (and less powerful) examples. Flaky
+        # and loud health checks are better than silent performance degradation.
+        small_example_cap = min(self.settings.max_examples // 10, 50)
+        optimise_at = max(self.settings.max_examples // 2, small_example_cap + 1, 10)
         ran_optimisations = False
 
         while self.should_generate_more():
