@@ -754,7 +754,7 @@ the test, just like the :doc:`example database <database>` and
 
   For usages of ``fuzz_one_input`` which expect to discover many failures, consider
   wrapping your database with :class:`~hypothesis.database.BackgroundWriteDatabase`
-  for low-overhead writes of failures to the database.
+  for low-overhead writes of failures.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 Interaction with settings
