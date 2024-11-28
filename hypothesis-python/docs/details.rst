@@ -691,8 +691,8 @@ on working with markers <pytest:mark examples>`.
 .. note::
     Pytest will load the plugin automatically if Hypothesis is installed.
     You don't need to do anything at all to use it.
-    
-    If it causes problems, you can avoid loading the plugin with the 
+
+    If it causes problems, you can avoid loading the plugin with the
     ``-p no:hypothesispytest`` option.
 
 
@@ -749,6 +749,12 @@ Note that the interpretation of both input and output bytestrings is specific
 to the exact version of Hypothesis you are using and the strategies given to
 the test, just like the :doc:`example database <database>` and
 :func:`@reproduce_failure <hypothesis.reproduce_failure>` decorator.
+
+.. tip::
+
+  For usages of ``fuzz_one_input`` which expect to discover many failures, consider
+  wrapping your database with :class:`~hypothesis.database.BackgroundWriteDatabase`
+  for low-overhead writes of failures.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 Interaction with settings

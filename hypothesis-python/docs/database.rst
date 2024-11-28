@@ -46,6 +46,7 @@ Hypothesis provides the following :class:`~hypothesis.database.ExampleDatabase` 
 .. autoclass:: hypothesis.database.GitHubArtifactDatabase
 .. autoclass:: hypothesis.database.ReadOnlyDatabase
 .. autoclass:: hypothesis.database.MultiplexedDatabase
+.. autoclass:: hypothesis.database.BackgroundWriteDatabase
 .. autoclass:: hypothesis.extra.redis.RedisExampleDatabase
 
 ---------------------------------
