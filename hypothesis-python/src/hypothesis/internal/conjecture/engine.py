@@ -284,6 +284,12 @@ class ConjectureRunner:
         self.__failed_realize_count = 0
         self._verified_by = None  # note unsound verification by alt backends
 
+    @property
+    def using_hypothesis_backend(self):
+        return (
+            self.settings.backend == "hypothesis" or self._switch_to_hypothesis_provider
+        )
+
     def explain_next_call_as(self, explanation: str) -> None:
         self.__pending_call_explanation = explanation
 
@@ -314,7 +320,7 @@ class ConjectureRunner:
         return Phase.target in self.settings.phases
 
     def __tree_is_exhausted(self) -> bool:
-        return self.tree.is_exhausted and self.settings.backend == "hypothesis"
+        return self.tree.is_exhausted and self.using_hypothesis_backend
 
     def __stoppable_test_function(self, data: ConjectureData) -> None:
         """Run ``self._test_function``, but convert a ``StopTest`` exception
@@ -475,6 +481,9 @@ class ConjectureRunner:
                     and (self.__failed_realize_count / self.call_count) > 0.2
                 ):
                     self._switch_to_hypothesis_provider = True
+            # skip the post-test-case tracking; we're pretending this never happened
+            interrupted = True
+            return
         except BaseException:
             self.save_buffer(data.buffer)
             raise
@@ -562,7 +571,7 @@ class ConjectureRunner:
             self.valid_examples += 1
 
         if data.status == Status.INTERESTING:
-            if self.settings.backend != "hypothesis":
+            if not self.using_hypothesis_backend:
                 # drive the ir tree through the test function to convert it
                 # to a buffer
                 initial_origin = data.interesting_origin
@@ -1034,7 +1043,7 @@ class ConjectureRunner:
             # a buffer and uses HypothesisProvider as its backing provider,
             # not whatever is specified by the backend. We can improve this
             # once more things are on the ir.
-            if self.settings.backend != "hypothesis":
+            if not self.using_hypothesis_backend:
                 data = self.new_conjecture_data(prefix=b"", max_length=BUFFER_SIZE)
                 with suppress(BackendCannotProceed):
                     self.test_function(data)
@@ -1310,7 +1319,7 @@ class ConjectureRunner:
             HypothesisProvider if self._switch_to_hypothesis_provider else self.provider
         )
         observer = observer or self.tree.new_observer()
-        if self.settings.backend != "hypothesis":
+        if not self.using_hypothesis_backend:
             observer = DataObserver()
 
         return ConjectureData.for_ir_tree(
@@ -1331,7 +1340,7 @@ class ConjectureRunner:
             HypothesisProvider if self._switch_to_hypothesis_provider else self.provider
         )
         observer = observer or self.tree.new_observer()
-        if self.settings.backend != "hypothesis":
+        if not self.using_hypothesis_backend:
             observer = DataObserver()
 
         return ConjectureData(
@@ -1499,7 +1508,7 @@ class ConjectureRunner:
             prefix=buffer, max_length=max_length, observer=observer
         )
 
-        if self.settings.backend == "hypothesis":
+        if self.using_hypothesis_backend:
             try:
                 self.tree.simulate_test_function(dummy_data)
             except PreviouslyUnseenBehaviour:
