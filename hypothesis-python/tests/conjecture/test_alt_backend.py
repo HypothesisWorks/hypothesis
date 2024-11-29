@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import itertools
 import math
 import sys
 from contextlib import contextmanager
@@ -16,7 +17,7 @@ from typing import Optional
 
 import pytest
 
-from hypothesis import given, settings, strategies as st
+from hypothesis import HealthCheck, assume, given, settings, strategies as st
 from hypothesis.control import current_build_context
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.errors import (
@@ -24,6 +25,7 @@ from hypothesis.errors import (
     Flaky,
     HypothesisException,
     InvalidArgument,
+    Unsatisfiable,
 )
 from hypothesis.internal.compat import int_to_bytes
 from hypothesis.internal.conjecture.data import (
@@ -492,15 +494,13 @@ def test_custom_observations_from_backend():
 class FallibleProvider(TrivialProvider):
     def __init__(self, conjecturedata: "ConjectureData", /) -> None:
         super().__init__(conjecturedata)
-        self.prng = Random(0)
+        self._it = itertools.cycle([1, 1, 1, "discard_test_case", "other"])
 
     def draw_integer(self, *args, **kwargs):
-        # This is frequent enough that we'll get coverage of the "give up and go
-        # back to Hypothesis' standard backend" code path.
-        if self.prng.getrandbits(1):
-            scope = self.prng.choice(["discard_test_case", "other"])
-            raise BackendCannotProceed(scope)
-        return 1
+        x = next(self._it)
+        if isinstance(x, str):
+            raise BackendCannotProceed(x)
+        return x
 
 
 def test_falls_back_to_default_backend():
@@ -515,6 +515,23 @@ def test_falls_back_to_default_backend():
 
         test_function()
         assert seen_other_ints  # must have swapped backends then
+
+
+def test_can_raise_unsatisfiable_after_falling_back():
+    with temp_register_backend("fallible", FallibleProvider):
+
+        @given(st.integers())
+        @settings(
+            backend="fallible",
+            database=None,
+            max_examples=100,
+            suppress_health_check=[HealthCheck.filter_too_much],
+        )
+        def test_function(x):
+            assume(x == "unsatisfiable")
+
+        with pytest.raises(Unsatisfiable):
+            test_function()
 
 
 class ExhaustibleProvider(TrivialProvider):

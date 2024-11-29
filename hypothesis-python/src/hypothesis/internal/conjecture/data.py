@@ -1341,6 +1341,27 @@ class PrimitiveProvider(abc.ABC):
     ) -> bytes:
         raise NotImplementedError
 
+    def span_start(self, label: int, /) -> None:  # noqa: B027  # non-abstract noop
+        """Marks the beginning of a semantically meaningful span.
+
+        Providers can optionally track this data to learn which sub-sequences
+        of draws correspond to a higher-level object, recovering the parse tree.
+        `label` is an opaque integer, which will be shared by all spans drawn
+        from a particular strategy.
+
+        This method is called from ConjectureData.start_example().
+        """
+
+    def span_end(self, discard: bool, /) -> None:  # noqa: B027  # non-abstract noop
+        """Marks the end of a semantically meaningful span.
+
+        `discard` is True when the draw was filtered out or otherwise marked as
+        unlikely to contribute to the input data as seen by the user's test.
+        Note however that side effects can make this determination unsound.
+
+        This method is called from ConjectureData.stop_example().
+        """
+
 
 class HypothesisProvider(PrimitiveProvider):
     lifetime = "test_case"
@@ -2543,6 +2564,7 @@ class ConjectureData:
             self.stop_example()
 
     def start_example(self, label: int) -> None:
+        self.provider.span_start(label)
         self.__assert_not_frozen("start_example")
         self.depth += 1
         # Logically it would make sense for this to just be
@@ -2557,6 +2579,7 @@ class ConjectureData:
         self.labels_for_structure_stack.append({label})
 
     def stop_example(self, *, discard: bool = False) -> None:
+        self.provider.span_end(discard)
         if self.frozen:
             return
         if discard:
