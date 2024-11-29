@@ -1305,8 +1305,8 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
         pass
     if (hasattr(typing, "_TypedDictMeta") and type(thing) is typing._TypedDictMeta) or (
         hasattr(types.typing_extensions, "_TypedDictMeta")  # type: ignore
-        and type(thing) is types.typing_extensions._TypedDictMeta
-    ):  # type: ignore  # pragma: no cover
+        and type(thing) is types.typing_extensions._TypedDictMeta  # type: ignore
+    ):  # pragma: no cover
 
         def _get_annotation_arg(key, annotation_type):
             try:

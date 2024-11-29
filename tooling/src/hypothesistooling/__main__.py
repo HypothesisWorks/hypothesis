@@ -267,6 +267,7 @@ def compile_requirements(*, upgrade=False):
             p = p.lower().replace("_", "-")
             if re.fullmatch(r"[a-z-]+", p):
                 assert p + "==" in out_pkgs, f"Package `{p}` deleted from {out_file}"
+        out_file.write_text(out_pkgs.replace(f"{tools.ROOT}/", ""))
 
 
 def update_python_versions():

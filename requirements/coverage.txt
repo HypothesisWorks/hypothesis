@@ -10,7 +10,7 @@ async-timeout==5.0.1
     # via redis
 attrs==24.1.0
     # via
-    #   -r /home/runner/work/hypothesis/hypothesis/requirements/test.in
+    #   -r requirements/test.in
     #   hypothesis (hypothesis-python/setup.py)
 black==24.10.0
     # via -r requirements/coverage.in
@@ -18,7 +18,7 @@ click==8.1.7
     # via
     #   -r requirements/coverage.in
     #   black
-coverage[toml]==7.6.7
+coverage[toml]==7.6.8
     # via pytest-cov
 dpcontracts==0.6.0
     # via -r requirements/coverage.in
@@ -51,24 +51,24 @@ pandas==2.2.3
 pathspec==0.12.1
     # via black
 pexpect==4.9.0
-    # via -r /home/runner/work/hypothesis/hypothesis/requirements/test.in
+    # via -r requirements/test.in
 platformdirs==4.3.6
     # via black
 pluggy==1.5.0
     # via pytest
 ptyprocess==0.7.0
     # via pexpect
-pyarrow==18.0.0
+pyarrow==18.1.0
     # via -r requirements/coverage.in
 pytest==8.3.3
     # via
-    #   -r /home/runner/work/hypothesis/hypothesis/requirements/test.in
+    #   -r requirements/test.in
     #   pytest-cov
     #   pytest-xdist
 pytest-cov==6.0.0
     # via -r requirements/coverage.in
 pytest-xdist==3.6.1
-    # via -r /home/runner/work/hypothesis/hypothesis/requirements/test.in
+    # via -r requirements/test.in
 python-dateutil==2.9.0.post0
     # via
     #   -r requirements/coverage.in
@@ -87,7 +87,7 @@ sortedcontainers==2.4.0
     # via
     #   fakeredis
     #   hypothesis (hypothesis-python/setup.py)
-tomli==2.1.0
+tomli==2.2.1
     # via
     #   black
     #   coverage

@@ -14,7 +14,7 @@ asttokens==2.4.1
     # via stack-data
 attrs==24.1.0
     # via
-    #   -r /home/runner/work/hypothesis/hypothesis/requirements/test.in
+    #   -r requirements/test.in
     #   hypothesis (hypothesis-python/setup.py)
 autoflake==2.3.1
     # via shed
@@ -50,9 +50,9 @@ colorama==0.4.6
     # via tox
 com2ann==0.3.0
     # via shed
-coverage==7.6.7
+coverage==7.6.8
     # via -r requirements/tools.in
-cryptography==43.0.3
+cryptography==44.0.0
     # via
     #   secretstorage
     #   types-pyopenssl
@@ -151,7 +151,7 @@ mypy-extensions==1.0.0
     # via
     #   black
     #   mypy
-nh3==0.2.18
+nh3==0.2.19
     # via readme-renderer
 nodeenv==1.9.1
     # via pyright
@@ -171,11 +171,11 @@ parso==0.8.4
     # via jedi
 pathspec==0.12.1
     # via black
-pelican[markdown]==4.10.1
+pelican[markdown]==4.10.2
     # via -r requirements/tools.in
 pexpect==4.9.0
     # via
-    #   -r /home/runner/work/hypothesis/hypothesis/requirements/test.in
+    #   -r requirements/test.in
     #   ipython
 pip-tools==7.4.1
     # via -r requirements/tools.in
@@ -217,10 +217,10 @@ pyright==1.1.389
     # via -r requirements/tools.in
 pytest==8.3.3
     # via
-    #   -r /home/runner/work/hypothesis/hypothesis/requirements/test.in
+    #   -r requirements/test.in
     #   pytest-xdist
 pytest-xdist==3.6.1
-    # via -r /home/runner/work/hypothesis/hypothesis/requirements/test.in
+    # via -r requirements/test.in
 python-dateutil==2.9.0.post0
     # via
     #   -r requirements/tools.in
@@ -252,7 +252,7 @@ rich==13.9.4
     # via
     #   pelican
     #   twine
-ruff==0.8.0
+ruff==0.8.1
     # via -r requirements/tools.in
 secretstorage==3.3.3
     # via keyring
@@ -309,7 +309,7 @@ stack-data==0.6.3
     # via ipython
 tokenize-rt==6.1.0
     # via pyupgrade
-tomli==2.1.0
+tomli==2.2.1
     # via
     #   autoflake
     #   black
@@ -338,7 +338,7 @@ types-pytz==2024.2.0.20241003
     # via -r requirements/tools.in
 types-redis==4.6.0.20241004
     # via -r requirements/tools.in
-types-setuptools==75.5.0.20241122
+types-setuptools==75.6.0.20241126
     # via types-cffi
 typing-extensions==4.12.2
     # via
@@ -357,9 +357,9 @@ urllib3==2.2.3
     # via
     #   requests
     #   twine
-virtualenv==20.27.1
+virtualenv==20.28.0
     # via tox
-watchfiles==0.24.0
+watchfiles==1.0.0
     # via pelican
 wcwidth==0.2.13
     # via prompt-toolkit
