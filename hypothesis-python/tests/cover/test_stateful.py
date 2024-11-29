@@ -24,6 +24,7 @@ from hypothesis import (
     reproduce_failure,
     seed,
     settings as Settings,
+    strategies as st,
 )
 from hypothesis.control import current_build_context
 from hypothesis.database import ExampleDatabase
@@ -1343,6 +1344,27 @@ def test_flatmap():
         @rule(bun=buns)
         def use_directly(self, bun):
             assert isinstance(bun, int)
+
+    Machine.TestCase.settings = Settings(stateful_step_count=5, max_examples=10)
+    run_state_machine_as_test(Machine)
+
+
+def test_use_bundle_within_other_strategies():
+    class Class:
+        def __init__(self, value):
+            self.value = value
+
+    class Machine(RuleBasedStateMachine):
+        my_bundle = Bundle("my_bundle")
+
+        @initialize(target=my_bundle)
+        def set_initial(self, /) -> str:
+            return "sample text"
+
+        @rule(instance=st.builds(Class, my_bundle))
+        def check(self, instance):
+            assert isinstance(instance, Class)
+            assert isinstance(instance.value, str)
 
     Machine.TestCase.settings = Settings(stateful_step_count=5, max_examples=10)
     run_state_machine_as_test(Machine)
