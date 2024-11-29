@@ -54,7 +54,7 @@ if sys.version_info[:2] >= (3, 12):
 class Tracer:
     """A super-simple branch coverage tracer."""
 
-    __slots__ = ("branches", "_previous_location", "_should_trace")
+    __slots__ = ("_previous_location", "_should_trace", "branches")
 
     def __init__(self, *, should_trace: bool) -> None:
         self.branches: Trace = set()

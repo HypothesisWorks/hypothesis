@@ -18,7 +18,7 @@ click==8.1.7
     # via
     #   -r requirements/coverage.in
     #   black
-coverage[toml]==7.6.4
+coverage[toml]==7.6.8
     # via pytest-cov
 dpcontracts==0.6.0
     # via -r requirements/coverage.in
@@ -34,7 +34,7 @@ iniconfig==2.0.0
     # via pytest
 lark==1.2.2
     # via -r requirements/coverage.in
-libcst==1.5.0
+libcst==1.5.1
     # via -r requirements/coverage.in
 mypy-extensions==1.0.0
     # via black
@@ -58,7 +58,7 @@ pluggy==1.5.0
     # via pytest
 ptyprocess==0.7.0
     # via pexpect
-pyarrow==18.0.0
+pyarrow==18.1.0
     # via -r requirements/coverage.in
 pytest==8.3.3
     # via
@@ -87,7 +87,7 @@ sortedcontainers==2.4.0
     # via
     #   fakeredis
     #   hypothesis (hypothesis-python/setup.py)
-tomli==2.0.2
+tomli==2.2.1
     # via
     #   black
     #   coverage

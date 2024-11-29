@@ -37,7 +37,7 @@ from hypothesis.strategies import (
 
 from tests.common.debug import TIME_INCREMENT
 
-__all__ = ["standard_types", "OrderedPair", "TIME_INCREMENT"]
+__all__ = ["TIME_INCREMENT", "OrderedPair", "standard_types"]
 
 OrderedPair = namedtuple("OrderedPair", ("left", "right"))
 

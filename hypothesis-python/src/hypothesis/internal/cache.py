@@ -57,7 +57,7 @@ class GenericCache:
     on_access and on_evict to implement a specific scoring strategy.
     """
 
-    __slots__ = ("max_size", "_threadlocal")
+    __slots__ = ("_threadlocal", "max_size")
 
     def __init__(self, max_size):
         if max_size <= 0:

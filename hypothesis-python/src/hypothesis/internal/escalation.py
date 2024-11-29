@@ -69,8 +69,10 @@ def get_trimmed_traceback(exception=None):
         tb is None
         or os.environ.get("HYPOTHESIS_NO_TRACEBACK_TRIM", None)
         or hypothesis.settings.default.verbosity >= hypothesis.Verbosity.debug
-        or is_hypothesis_file(traceback.extract_tb(tb)[-1][0])
-        and not isinstance(exception, _Trimmable)
+        or (
+            is_hypothesis_file(traceback.extract_tb(tb)[-1][0])
+            and not isinstance(exception, _Trimmable)
+        )
     ):
         return tb
     while tb.tb_next is not None and (

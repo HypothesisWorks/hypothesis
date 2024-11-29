@@ -65,6 +65,9 @@ from hypothesis.strategies._internal.utils import _strategies
 
 
 __all__ = [
+    "DataObject",
+    "DrawFn",
+    "SearchStrategy",
     "binary",
     "booleans",
     "builds",
@@ -72,13 +75,11 @@ __all__ = [
     "complex_numbers",
     "composite",
     "data",
-    "DataObject",
     "dates",
     "datetimes",
     "decimals",
     "deferred",
     "dictionaries",
-    "DrawFn",
     "emails",
     "fixed_dictionaries",
     "floats",
@@ -112,7 +113,6 @@ __all__ = [
     "timezones",
     "tuples",
     "uuids",
-    "SearchStrategy",
 ]
 
 

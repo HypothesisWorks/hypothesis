@@ -226,7 +226,7 @@ jobs:
       NODE_VERSION: 18
       # Note that the versions below must be updated in sync; we've automated
       # that with `update_pyodide_versions()` in our weekly cronjob.
-      PYODIDE_VERSION: 0.26.3
+      PYODIDE_VERSION: 0.26.4
       PYTHON_VERSION: 3.12.1
       EMSCRIPTEN_VERSION: 3.1.58
     steps:
@@ -245,7 +245,6 @@ jobs:
         uses: mymindstorm/setup-emsdk@6ab9eb1bda2574c4ddb79809fc9247783eaf9021 # v14
         with:
           version: ${{ env.EMSCRIPTEN_VERSION }}
-          actions-cache-folder: emsdk-cache
       - name: Build
         run: |
           pip install pyodide-build==$PYODIDE_VERSION

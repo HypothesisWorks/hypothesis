@@ -76,9 +76,9 @@ from io import StringIO
 from math import copysign, isnan
 
 __all__ = [
-    "pretty",
     "IDKey",
     "RepresentationPrinter",
+    "pretty",
 ]
 
 

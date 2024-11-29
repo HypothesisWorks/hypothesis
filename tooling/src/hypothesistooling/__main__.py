@@ -267,6 +267,7 @@ def compile_requirements(*, upgrade=False):
             p = p.lower().replace("_", "-")
             if re.fullmatch(r"[a-z-]+", p):
                 assert p + "==" in out_pkgs, f"Package `{p}` deleted from {out_file}"
+        out_file.write_text(out_pkgs.replace(f"{tools.ROOT}/", ""))
 
 
 def update_python_versions():
@@ -503,7 +504,7 @@ PYTHONS = {
     "3.12": "3.12.7",
     "3.13": "3.13.0",
     "3.13t": "3.13t-dev",
-    "3.14": "3.14.0a1",
+    "3.14": "3.14.0a2",
     "3.14t": "3.14t-dev",
     "pypy3.9": "pypy3.9-7.3.16",
     "pypy3.10": "pypy3.10-7.3.17",
