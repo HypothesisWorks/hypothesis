@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.122.0:
+
+--------------------
+6.122.0 - 2024-11-29
+--------------------
+
+This release adds ``.span_start()`` and ``.span_end()`` methods
+to our internal ``PrimitiveProvider`` interface, for use by
+:ref:`alternative-backends`.
+
 .. _v6.121.2:
 
 --------------------
