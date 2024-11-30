@@ -47,6 +47,7 @@ from hypothesis.internal.cache import LRUReusedCache
 from hypothesis.internal.compat import NotRequired, TypeAlias, TypedDict, ceil, override
 from hypothesis.internal.conjecture.data import (
     AVAILABLE_PROVIDERS,
+    Cancelled,
     ConjectureData,
     ConjectureResult,
     DataObserver,
@@ -58,6 +59,7 @@ from hypothesis.internal.conjecture.data import (
     Overrun,
     PrimitiveProvider,
     Status,
+    _Cancelled,
     _Overrun,
     ir_kwargs_key,
     ir_size,
@@ -396,7 +398,7 @@ class ConjectureRunner:
         *,
         error_on_discard: bool = False,
         extend: int = 0,
-    ) -> Union[ConjectureResult, _Overrun]:
+    ) -> Union[ConjectureResult, _Cancelled, _Overrun]:
         # node templates represent a not-yet-filled hole and therefore cannot
         # be cached or retrieved from the cache.
         if not any(isinstance(node, NodeTemplate) for node in nodes):
@@ -463,13 +465,13 @@ class ConjectureRunner:
 
         self.call_count += 1
 
-        interrupted = False
         try:
             self.__stoppable_test_function(data)
         except KeyboardInterrupt:
-            interrupted = True
+            data.status = Status.CANCELLED
             raise
         except BackendCannotProceed as exc:
+            data.status = Status.CANCELLED
             if exc.scope in ("verified", "exhausted"):
                 self._switch_to_hypothesis_provider = True
                 if exc.scope == "verified":
@@ -482,7 +484,6 @@ class ConjectureRunner:
                 ):
                     self._switch_to_hypothesis_provider = True
             # skip the post-test-case tracking; we're pretending this never happened
-            interrupted = True
             return
         except BaseException:
             self.save_buffer(data.buffer)
@@ -490,7 +491,7 @@ class ConjectureRunner:
         finally:
             # No branch, because if we're interrupted we always raise
             # the KeyboardInterrupt, never continue to the code below.
-            if not interrupted:  # pragma: no branch
+            if data.status is not Status.CANCELLED:
                 data.freeze()
                 call_stats: CallStats = {
                     "status": data.status.name.lower(),
@@ -550,7 +551,7 @@ class ConjectureRunner:
 
                 if k not in self.best_examples_of_observed_targets:
                     data_as_result = data.as_result()
-                    assert not isinstance(data_as_result, _Overrun)
+                    assert not isinstance(data_as_result, (_Cancelled, _Overrun))
                     self.best_examples_of_observed_targets[k] = data_as_result
                     continue
 
@@ -564,7 +565,7 @@ class ConjectureRunner:
                     existing_example.buffer
                 ):
                     data_as_result = data.as_result()
-                    assert not isinstance(data_as_result, _Overrun)
+                    assert not isinstance(data_as_result, (_Cancelled, _Overrun))
                     self.best_examples_of_observed_targets[k] = data_as_result
 
         if data.status == Status.VALID:
@@ -879,7 +880,7 @@ class ConjectureRunner:
                 else:
                     if i < primary_corpus_size:
                         found_interesting_in_primary = True
-                        assert not isinstance(data, _Overrun)
+                        assert not isinstance(data, (_Cancelled, _Overrun))
                         if existing != data.buffer:
                             all_interesting_in_primary_were_exact = False
                     if not self.settings.report_multiple_bugs:
@@ -1466,7 +1467,9 @@ class ConjectureRunner:
         buffer: Union[bytes, bytearray],
         *,
         extend: int = 0,
-    ) -> Union[ConjectureResult, _Overrun]:  # pragma: no cover # removing function soon
+    ) -> Union[
+        ConjectureResult, _Cancelled, _Overrun
+    ]:  # pragma: no cover # removing function soon
         """Checks the tree to see if we've tested this buffer, and returns the
         previous result if we have.
 
@@ -1485,14 +1488,16 @@ class ConjectureRunner:
         max_length = min(BUFFER_SIZE, len(buffer) + extend)
 
         @overload
+        def check_result(result: _Cancelled) -> _Cancelled: ...
+        @overload
         def check_result(result: _Overrun) -> _Overrun: ...
         @overload
         def check_result(result: ConjectureResult) -> ConjectureResult: ...
         def check_result(
-            result: Union[_Overrun, ConjectureResult],
-        ) -> Union[_Overrun, ConjectureResult]:
-            assert result is Overrun or (
-                isinstance(result, ConjectureResult) and result.status != Status.OVERRUN
+            result: Union[_Cancelled, _Overrun, ConjectureResult],
+        ) -> Union[_Cancelled, _Overrun, ConjectureResult]:
+            assert result in (Cancelled, Overrun) or (
+                isinstance(result, ConjectureResult) and result.status >= Status.INVALID
             )
             return result
 
@@ -1536,9 +1541,7 @@ class ConjectureRunner:
         self.test_function(data)
         result = check_result(data.as_result())
         if extend == 0 or (
-            result is not Overrun
-            and not isinstance(result, _Overrun)
-            and len(result.buffer) <= len(buffer)
+            isinstance(result, ConjectureResult) and len(result.buffer) <= len(buffer)
         ):
             self.__data_cache[buffer] = result
         return result

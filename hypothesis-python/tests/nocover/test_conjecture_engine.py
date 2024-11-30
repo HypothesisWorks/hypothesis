@@ -65,7 +65,6 @@ def test_saves_data_while_shrinking(monkeypatch):
     assert in_db == seen
 
 
-@xfail_on_crosshair(Why.nested_given)
 def test_can_discard(monkeypatch):
     n = 8
 
@@ -106,7 +105,6 @@ def test_cached_with_masked_byte_agrees_with_results(a, b):
     assert (cached_a is cached_b) == (cached_a.ir_nodes == data_b.ir_nodes)
 
 
-@xfail_on_crosshair(Why.other)
 def test_node_programs_fail_efficiently(monkeypatch):
     # Create 256 byte-sized blocks. None of the blocks can be deleted, and
     # every deletion attempt produces a different buffer.
