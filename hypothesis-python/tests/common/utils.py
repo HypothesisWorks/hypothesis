@@ -259,7 +259,6 @@ class Why(enum.Enum):
     flaky_replay = "Inconsistent results from replaying a failing test..."
     symbolic_outside_context = "CrosshairInternal error (using value outside context)"
     floats = "crosshair doesn't reason about signed zero (and other edge cases?)"
-    no_unsatisfiable = "doesn't raise Unsatisfiable for some reason"
 
     # things that are basically fine to leave alone
 

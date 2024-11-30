@@ -12,10 +12,9 @@ from hypothesis import HealthCheck, given, reject, settings
 from hypothesis.errors import Unsatisfiable
 from hypothesis.strategies import integers
 
-from tests.common.utils import Why, fails_with, xfail_on_crosshair
+from tests.common.utils import fails_with
 
 
-@xfail_on_crosshair(Why.no_unsatisfiable)
 @fails_with(Unsatisfiable)
 @given(integers())
 @settings(max_examples=50, suppress_health_check=list(HealthCheck))
