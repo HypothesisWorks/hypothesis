@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import collections.abc
 import dataclasses
 import sys
 import typing
@@ -174,3 +175,9 @@ class LazyStrategyAnnotation:
 @given(...)
 def test_grouped_protocol_strategy(x: typing.Annotated[int, LazyStrategyAnnotation()]):
     assert x is sentinel
+
+
+def test_collections_abc_callable_none():
+    # https://github.com/HypothesisWorks/hypothesis/issues/4192
+    s = st.from_type(collections.abc.Callable[[None], None])
+    assert_all_examples(s, lambda x: callable(x) and x(None) is None)

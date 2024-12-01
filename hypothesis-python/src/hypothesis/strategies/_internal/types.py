@@ -1031,6 +1031,9 @@ def resolve_Callable(thing):
             "Consider using an explicit strategy, or opening an issue."
         )
 
+    if get_origin(thing) is collections.abc.Callable and return_type is None:
+        return_type = type(None)
+
     return st.functions(
         like=(lambda *a, **k: None) if args_types else (lambda: None),
         returns=st.from_type(return_type),
