@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.122.1:
+
+--------------------
+6.122.1 - 2024-12-01
+--------------------
+
+Fix :func:`~hypothesis.strategies.from_type`
+on :class:`collections.abc.Callable` returning ``None``.
+
 .. _v6.122.0:
 
 --------------------
