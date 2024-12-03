@@ -1,6 +1,6 @@
-==========================
-Ghostwriting tests for you
-==========================
+===========
+Ghostwriter
+===========
 
 .. automodule:: hypothesis.extra.ghostwriter
    :members:

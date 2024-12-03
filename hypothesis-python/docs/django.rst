@@ -1,8 +1,8 @@
 .. _hypothesis-django:
 
-===========================
-Hypothesis for Django users
-===========================
+=====================
+Hypothesis for Django
+=====================
 
 Hypothesis offers a number of features specific for Django testing, available
 in the ``hypothesis[django]`` :doc:`extra </extras>`.  This is tested

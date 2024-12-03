@@ -1,6 +1,6 @@
-=============================
-What you can generate and how
-=============================
+==========
+Strategies
+==========
 
 *Most things should be easy to generate and everything should be possible.*
 
