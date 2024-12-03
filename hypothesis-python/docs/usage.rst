@@ -1,6 +1,6 @@
-=====================================
-Open source projects using Hypothesis
-=====================================
+=========================
+Projects using Hypothesis
+=========================
 
 The following is a non-exhaustive list of open source projects I know are
 using Hypothesis. If you're aware of any others please add them to the list!
@@ -8,10 +8,10 @@ The only inclusion criterion right now is that if it's a Python library
 then it should be available on PyPI.
 
 You can find hundreds more from `the Hypothesis page at libraries.io
-<https://libraries.io/pypi/hypothesis>`_, and :gh-file:`thousands on GitHub <network/dependents>`.
-Hypothesis has `over 100,000 downloads per week <https://pypistats.org/packages/hypothesis>`__,
-and was used by `more than 4% of Python users surveyed by the PSF in 2020
-<https://www.jetbrains.com/lp/python-developers-survey-2020/>`__.
+<https://libraries.io/pypi/hypothesis>`_, and `thousands on GitHub <https://github.com/HypothesisWorks/hypothesis/network/dependents>`__.
+Hypothesis has `over 8 million downloads per week <https://pypistats.org/packages/hypothesis>`__,
+and was used by `more than 5% of Python users surveyed by the PSF in 2023
+<https://lp.jetbrains.com/python-developers-survey-2023/>`__.
 
 * `aur <https://github.com/cdown/aur>`_
 * `argon2_cffi <https://github.com/hynek/argon2-cffi>`_

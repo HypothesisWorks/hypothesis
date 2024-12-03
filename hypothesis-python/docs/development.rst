@@ -1,6 +1,6 @@
-==============================
-Ongoing Hypothesis development
-==============================
+======================
+Hypothesis development
+======================
 
 Hypothesis development is managed by `David R. MacIver <https://www.drmaciver.com>`_
 and `Zac Hatfield-Dodds <https://zhd.dev>`_, respectively the first author and lead

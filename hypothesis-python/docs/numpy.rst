@@ -1,6 +1,6 @@
-===================================
-Hypothesis for the scientific stack
-===================================
+===========================
+Hypothesis for data science
+===========================
 
 .. _hypothesis-numpy:
 
