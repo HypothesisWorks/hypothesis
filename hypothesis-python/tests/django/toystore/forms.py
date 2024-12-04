@@ -46,6 +46,12 @@ class CouldBeCharmingForm(ReprModelForm):
         fields = "__all__"
 
 
+class FileFieldsForm(ReprModelForm):
+    class Meta:
+        model = FileFields
+        fields = "__all__"
+
+
 class CustomerForm(ReprModelForm):
     class Meta:
         model = Customer
