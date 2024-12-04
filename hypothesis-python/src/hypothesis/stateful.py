@@ -692,7 +692,6 @@ def _convert_targets(targets, target):
                 )
             raise InvalidArgument(msg % (t, type(t)))
         while isinstance(t, Bundle):
-            # if isinstance(t, BundleConsumer):
             if t.consume:
                 note_deprecation(
                     f"Using consumes({t.name}) doesn't makes sense in this context.  "
