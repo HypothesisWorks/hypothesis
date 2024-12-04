@@ -30,6 +30,7 @@ from hypothesis.strategies import (
 )
 
 from tests.common.utils import (
+    Why,
     assert_falsifying_output,
     capture_out,
     fails,
@@ -37,6 +38,7 @@ from tests.common.utils import (
     no_shrink,
     raises,
     skipif_emscripten,
+    xfail_on_crosshair,
 )
 
 # This particular test file is run under both pytest and nose, so it can't
@@ -137,6 +139,7 @@ def test_can_be_given_keyword_args(x, name):
     assert len(name) < x
 
 
+@xfail_on_crosshair(Why.undiscovered)
 @fails
 @given(one_of(floats(), booleans()), one_of(floats(), booleans()))
 def test_one_of_produces_different_values(x, y):
@@ -184,6 +187,7 @@ def test_removing_an_element_from_a_unique_list(xs, y):
     assert y not in xs
 
 
+@xfail_on_crosshair(Why.undiscovered)
 @fails
 @given(lists(integers(), min_size=2), data())
 def test_removing_an_element_from_a_non_unique_list(xs, data):
@@ -207,6 +211,7 @@ def test_can_mix_sampling_with_generating(x, y):
     assert type(x) == type(y)
 
 
+@xfail_on_crosshair(Why.undiscovered)
 @fails
 @given(frozensets(integers()))
 def test_can_find_large_sum_frozenset(xs):
@@ -305,6 +310,7 @@ def test_has_ascii(x):
     assert any(c in ascii_characters for c in x)
 
 
+@xfail_on_crosshair(Why.symbolic_outside_context, strict=False)
 def test_can_derandomize():
     values = []
 
@@ -394,6 +400,7 @@ def test_mixed_text(x):
     assert set(x).issubset(set("abcdefg"))
 
 
+@xfail_on_crosshair(Why.other, strict=False)  # runs ~five failing examples
 def test_when_set_to_no_simplifies_runs_failing_example_twice():
     failing = []
 
@@ -479,6 +486,7 @@ def test_empty_lists(xs):
     assert xs == []
 
 
+@xfail_on_crosshair(Why.other, strict=False)
 def test_given_usable_inline_on_lambdas():
     xs = []
     given(booleans())(lambda x: xs.append(x))()

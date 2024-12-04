@@ -138,6 +138,7 @@ class ExtraInformation:
 
 
 class Status(IntEnum):
+    CANCELLED = -1
     OVERRUN = 0
     INVALID = 1
     VALID = 2
@@ -864,6 +865,16 @@ class Blocks:
             else:
                 parts.append(repr(b))
         return "Block([{}])".format(", ".join(parts))
+
+
+class _Cancelled:
+    status = Status.CANCELLED
+
+    def __repr__(self) -> str:
+        return "Cancelled"
+
+
+Cancelled = _Cancelled()
 
 
 class _Overrun:
@@ -2457,9 +2468,11 @@ class ConjectureData:
         self.index_ir += 1
         return value
 
-    def as_result(self) -> Union[ConjectureResult, _Overrun]:
+    def as_result(self) -> Union[ConjectureResult, _Overrun, _Cancelled]:
         """Convert the result of running this test into
         either an Overrun object or a ConjectureResult."""
+        if self.status == Status.CANCELLED:
+            return Cancelled
 
         assert self.frozen
         if self.status == Status.OVERRUN:

@@ -34,7 +34,7 @@ from tests.common.debug import (
     assert_simple_property,
     check_can_generate_examples,
 )
-from tests.common.utils import fails_with
+from tests.common.utils import Why, fails_with, xfail_on_crosshair
 
 an_enum = enum.Enum("A", "a b c")
 a_flag = enum.Flag("A", "a b c")
@@ -137,6 +137,7 @@ def stupid_sampled_sets(draw):
     return result
 
 
+@xfail_on_crosshair(Why.undiscovered)
 @given(stupid_sampled_sets())
 def test_efficient_sets_of_samples_with_chained_transformations_slow_path(x):
     # This deliberately exercises the standard filtering logic without going
