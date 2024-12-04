@@ -527,8 +527,6 @@ class BundleReferenceStrategy(SampledFromStrategy[Ex]):
             self.bundle.pop(position)  # pragma: no cover # coverage is flaky here
 
         value = self.get_transformed_value(reference)
-        if value is filter_not_satisfied:
-            data.mark_invalid(f"Aborted test because unable to satisfy {self!r}")
 
         # We need both reference and the value itself to pretty-print deterministically
         # and maintain any transformations that is bundle-specific
