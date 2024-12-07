@@ -27,7 +27,7 @@ has caught or prevented far more bugs - than our old style of
 example-based testing.
 
 ---------------------------------------------------------------------------------------
-Kristian Glass - Director of Technology at `LaterPay GmbH <https://www.laterpay.net/>`_
+Kristian Glass - Director of Technology at LaterPay GmbH
 ---------------------------------------------------------------------------------------
 
 Hypothesis has been brilliant for expanding the coverage of our test cases,

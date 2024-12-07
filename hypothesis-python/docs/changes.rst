@@ -4807,7 +4807,7 @@ If the plugin detects an earlier version of pytest, it will automatically
 deactivate itself.
 
 `(4.6.x is the earliest pytest branch that still accepts community bugfixes.)
-<https://docs.pytest.org/en/stable/py27-py34-deprecation.html>`__
+<https://docs.pytest.org/en/6.2.x/py27-py34-deprecation.html>`__
 
 Hypothesis-based tests should continue to work in earlier versions of
 pytest, but enhanced integrations provided by the plugin
@@ -7618,7 +7618,7 @@ is not a strategy, Hypothesis now tells you which one.
 -------------------
 
 This release adds the :func:`~hypothesis.extra.numpy.basic_indices` strategy,
-to generate `basic indexes <https://numpy.org/doc/stable/reference/arrays.indexing.html>`__
+to generate `basic indexes <https://numpy.org/doc/stable/user/basics.indexing.html>`__
 for arrays of the specified shape (:issue:`1930`).
 
 It generates tuples containing some mix of integers, :obj:`python:slice` objects,
