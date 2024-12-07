@@ -45,6 +45,7 @@ from hypothesis._settings import (
     HealthCheck,
     Phase,
     Verbosity,
+    all_settings,
     local_settings,
     settings as Settings,
 )
@@ -405,9 +406,12 @@ def is_invalid_test(test, original_sig, given_arguments, given_kwargs):
     ]
     if extra_kwargs and (params == [] or params[-1].kind is not params[-1].VAR_KEYWORD):
         arg = extra_kwargs[0]
+        extra = ""
+        if arg in all_settings:
+            extra = f". Did you mean @settings({arg}={given_kwargs[arg]!r})?"
         return invalid(
             f"{test.__name__}() got an unexpected keyword argument {arg!r}, "
-            f"from `{arg}={given_kwargs[arg]!r}` in @given"
+            f"from `{arg}={given_kwargs[arg]!r}` in @given{extra}"
         )
     if any(p.default is not p.empty for p in params):
         return invalid("Cannot apply @given to a function with defaults.")
