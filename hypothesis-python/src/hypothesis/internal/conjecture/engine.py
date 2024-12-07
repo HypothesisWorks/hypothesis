@@ -228,6 +228,8 @@ class ConjectureRunner:
         self.call_count: int = 0
         self.misaligned_count: int = 0
         self.valid_examples: int = 0
+        self.invalid_examples = 0
+        self.overrun_examples = 0
         self.random: Random = random or Random(getrandbits(128))
         self.database_key: Optional[bytes] = database_key
         self.ignore_limits: bool = ignore_limits
@@ -567,8 +569,12 @@ class ConjectureRunner:
                     assert not isinstance(data_as_result, _Overrun)
                     self.best_examples_of_observed_targets[k] = data_as_result
 
-        if data.status == Status.VALID:
+        if data.status is Status.VALID:
             self.valid_examples += 1
+        if data.status is Status.INVALID:
+            self.invalid_examples += 1
+        if data.status is Status.OVERRUN:
+            self.overrun_examples += 1
 
         if data.status == Status.INTERESTING:
             if not self.using_hypothesis_backend:
