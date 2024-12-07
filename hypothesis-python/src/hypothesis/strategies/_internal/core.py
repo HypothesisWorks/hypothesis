@@ -793,7 +793,7 @@ def text(
                 "The following elements in alphabet are not of length one, "
                 f"which leads to violation of size constraints:  {not_one_char!r}"
             )
-        if alphabet in {"ascii", "utf-8"}:
+        if alphabet in ["ascii", "utf-8"]:
             warnings.warn(
                 f"st.text({alphabet!r}): it seems like you are trying to use the "
                 f"codec {alphabet!r}. st.text({alphabet!r}) instead generates "
