@@ -793,6 +793,19 @@ def text(
                 "The following elements in alphabet are not of length one, "
                 f"which leads to violation of size constraints:  {not_one_char!r}"
             )
+        if alphabet in {"ascii", "utf-8"}:
+            warnings.warn(
+                f"st.text({alphabet!r}): it seems like you are trying to use the "
+                f"codec {alphabet!r}. st.text({alphabet!r}) instead generates "
+                f"strings using the literal characters {list(alphabet)!r}. To specify "
+                f"the {alphabet} codec, use st.text(st.characters({alphabet!r})). "
+                "If you intended to use character literals, you can silence this "
+                "warning by reordering the characters.",
+                HypothesisWarning,
+                # this stacklevel is of course incorrect, but breaking out of the
+                # levels of LazyStrategy and validation isn't worthwhile.
+                stacklevel=1,
+            )
         char_strategy = (
             characters(categories=(), include_characters=alphabet)
             if alphabet
