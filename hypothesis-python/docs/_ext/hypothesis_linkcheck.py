@@ -1,6 +1,16 @@
-from sphinx.builders.linkcheck import HyperlinkAvailabilityChecker
+# This file is part of Hypothesis, which may be found at
+# https://github.com/HypothesisWorks/hypothesis/
+#
+# Copyright the Hypothesis Authors.
+# Individual contributors are listed in AUTHORS.rst and the git log.
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v. 2.0. If a copy of the MPL was not distributed with this file, You can
+# obtain one at https://mozilla.org/MPL/2.0/.
+
 import sphinx
 from sphinx.application import Sphinx
+from sphinx.builders.linkcheck import HyperlinkAvailabilityChecker
 
 # We want to customize the linkcheck behavior so that references from intersphinx
 # mappings are not checked. We use these liberally and don't want to spend CI time
