@@ -393,7 +393,7 @@ running time against the chance of missing a bug.
 If you are writing one-off tests, running tens of thousands of examples is
 quite reasonable as Hypothesis may miss uncommon bugs with default settings.
 For very complex code, we have observed Hypothesis finding novel bugs after
-*several million* examples while testing :pypi:`SymPy`.
+*several million* examples while testing :pypi:`SymPy <sympy>`.
 If you are running more than 100k examples for a test, consider using our
 :ref:`integration for coverage-guided fuzzing <fuzz_one_input>` - it really
 shines when given minutes or hours to run.

@@ -402,7 +402,7 @@ metadata and messages in our :doc:`observability output <observability>`
 --------------------
 
 Support ``__default__`` field of :obj:`~python:typing.TypeVar`
-and support the same from :pypi:`typing_extensions`
+and support the same from :pypi:`typing_extensions <typing-extensions>`
 in :func:`~hypothesis.strategies.from_type`.
 
 .. _v6.110.1:
@@ -1575,7 +1575,7 @@ Thanks to Liam DeVoe for this fantastic contribution!
 -------------------
 
 This release teaches :func:`~hypothesis.strategies.from_type` to handle constraints
-implied by the :pypi:`annotated-types` package - as used by e.g. :pypi:`Pydantic`.
+implied by the :pypi:`annotated-types` package - as used by e.g. :pypi:`pydantic`.
 This is usually efficient, but falls back to filtering in a few remaining cases.
 
 Thanks to Viicos for :pull:`3780`!
@@ -1930,7 +1930,7 @@ This release further improves our ``.patch``-file support from
 :func:`~hypothesis.strategies.data` (and don't support
 :obj:`@example() <hypothesis.example>`\ ), and various broken edge-cases.
 
-Because :pypi:`libCST` has released version 1.0 which uses the native parser
+Because :pypi:`libCST <libcst>` has released version 1.0 which uses the native parser
 by default, we no longer set the ``LIBCST_PARSER_TYPE=native`` environment
 variable.  If you are using an older version, you may need to upgrade or
 set this envvar for yourself.
@@ -2171,7 +2171,7 @@ Our Pytest plugin now writes ``.patch`` files to insert them for you, making
 `this workflow <https://blog.nelhage.com/post/property-testing-like-afl/>`__
 easier than ever before.
 
-Note that you'll need :pypi:`LibCST` (via :ref:`codemods`), and that
+Note that you'll need :pypi:`LibCST <libcst>` (via :ref:`codemods`), and that
 :obj:`@example().via() <hypothesis.example.via>` requires :pep:`614`
 (Python 3.9 or later).
 
@@ -2892,7 +2892,7 @@ This release allows :func:`~hypothesis.extra.numpy.from_dtype` to generate
 Unicode strings which cannot be encoded in UTF-8, but are valid in Numpy
 arrays (which use UTF-32).
 
-This logic will only be used with :pypi:`Numpy` >= 1.19, because earlier
+This logic will only be used with :pypi:`numpy` >= 1.19, because earlier
 versions have `an issue <https://github.com/numpy/numpy/issues/15363>`__
 which led us to revert :ref:`Hypothesis 5.2 <v5.2.0>` last time!
 
@@ -2913,7 +2913,7 @@ This patch fixes some inconsistency between argument handling for
 -------------------
 
 This release uses :pep:`612` :obj:`python:typing.ParamSpec` (or the
-:pypi:`typing_extensions` backport) to express the first-argument-removing
+:pypi:`typing_extensions <typing-extensions>` backport) to express the first-argument-removing
 behaviour of :func:`@st.composite <hypothesis.strategies.composite>`
 and signature-preservation of :func:`~hypothesis.strategies.functions`
 to IDEs, editor plugins, and static type checkers such as :pypi:`mypy`.
@@ -3240,7 +3240,7 @@ Fixed a type annotation for ``pyright --strict`` (:issue:`3287`).
 
 This patch makes it an explicit error to call
 :func:`~hypothesis.strategies.register_type_strategy` with a
-`Pydantic GenericModel <https://pydantic-docs.helpmanual.io/usage/models/#generic-models>`__
+`Pydantic GenericModel <https://docs.pydantic.dev/latest/concepts/models/#generic-models>`__
 and a callable, because ``GenericModel`` isn't actually a generic type at
 runtime and so you have to register each of the "parametrized versions"
 (actually subclasses!) manually.  See :issue:`2940` for more details.
@@ -4488,7 +4488,7 @@ allowing it to be conveniently used inline in expressions such as
 This patch fixes a deprecation warning if you're using recent versions
 of :pypi:`importlib-metadata` (:issue:`2934`), which we use to load
 :ref:`third-party plugins <entry-points>` such as `Pydantic's integration
-<https://pydantic-docs.helpmanual.io/hypothesis_plugin/>`__.
+<https://docs.pydantic.dev/latest/hypothesis_plugin/>`__.
 On older versions of :pypi:`importlib-metadata`, there is no change and
 you don't need to upgrade.
 
@@ -4736,7 +4736,7 @@ Thanks to Nikita Sobolev for fixing :issue:`2884`!
 ------------------
 
 This patch fixes an exception that occurs when using type unions of
-the :pypi:`typing_extensions` ``Literal`` backport on Python 3.6.
+the :pypi:`typing_extensions <typing-extensions>` ``Literal`` backport on Python 3.6.
 
 Thanks to Ben Anhalt for identifying and fixing this bug.
 
@@ -5011,7 +5011,7 @@ Hypothesis APIs (:issue:`2705`).
 -------------------
 
 This patch fixes :func:`~hypothesis.strategies.from_type` with
-the :pypi:`typing_extensions` ``Literal`` backport on Python 3.6.
+the :pypi:`typing_extensions <typing-extensions>` ``Literal`` backport on Python 3.6.
 
 .. _v5.43.9:
 
@@ -5191,7 +5191,7 @@ trigger an internal error when casefolding a character creates a longer string
 
 This patch adds a final fallback clause to :ref:`our plugin logic <entry-points>`
 to fail with a warning rather than error on Python < 3.8 when neither the
-:pypi:`importlib_metadata` (preferred) or :pypi:`setuptools` (fallback)
+:pypi:`importlib-metadata` (preferred) or :pypi:`setuptools` (fallback)
 packages are available.
 
 .. _v5.41.2:
@@ -5341,8 +5341,8 @@ is callable, we call it after importing it.  You can still use non-callable
 entry points (like modules), which are only imported.
 
 We also prefer `importlib.metadata <https://docs.python.org/3/library/importlib.metadata.html>`__
-or :pypi:`the backport <importlib_metadata>` over `pkg_resources
-<https://setuptools.readthedocs.io/en/latest/pkg_resources.html>`__,
+or :pypi:`the backport <importlib-metadata>` over `pkg_resources
+<https://setuptools.pypa.io/en/latest/pkg_resources.html>`__,
 which makes ``import hypothesis`` around 200 milliseconds faster
 (:issue:`2571`).
 
@@ -5510,7 +5510,7 @@ If argument names varied between the ``__annotations__`` and ``__signature__``,
 they would not be supplied to the target.
 
 This was particularly an issue for :pypi:`pydantic` models which use an
-`alias generator <https://pydantic-docs.helpmanual.io/usage/model_config/#alias-generator>`__.
+`alias generator <https://docs.pydantic.dev/latest/api/config/#pydantic.alias_generators>`__.
 
 .. _v5.30.1:
 
@@ -6006,7 +6006,7 @@ To report only the first failure, you can use the :obj:`report_multiple_bugs=Fal
 -------------------
 
 This patch adds strategy inference for the ``Literal``, ``NewType``, ``Type``,
-``DefaultDict``, and ``TypedDict`` types from the :pypi:`typing_extensions`
+``DefaultDict``, and ``TypedDict`` types from the :pypi:`typing_extensions <typing-extensions>`
 backport on PyPI.
 
 .. _v5.16.3:
@@ -6160,7 +6160,7 @@ following test no longer fails with ``UnsatisfiedAssumption`` (:issue:`2125`):
 5.10.5 - 2020-05-04
 -------------------
 
-If you have :pypi:`django` installed but don't use it, this patch will make
+If you have :pypi:`Django` installed but don't use it, this patch will make
 ``import hypothesis`` a few hundred milliseconds faster (e.g. 0.704s -> 0.271s).
 
 Thanks to :pypi:`importtime-waterfall` for highlighting this problem and
@@ -6175,7 +6175,7 @@ the solution - it's impossible to misuse code from a module you haven't imported
 
 This patch improves the internals of :func:`~hypothesis.strategies.builds` type
 inference, to handle recursive forward references in certain dataclasses.
-This is useful for e.g. :pypi:`hypothesmith`'s forthcoming :pypi:`LibCST` mode.
+This is useful for e.g. :pypi:`hypothesmith`'s forthcoming :pypi:`LibCST <libcst>` mode.
 
 .. _v5.10.3:
 
@@ -6290,8 +6290,8 @@ This release fixes :issue:`2395`, where under some circumstances targeted proper
 This patch teaches :func:`~hypothesis.strategies.builds` and
 :func:`~hypothesis.strategies.from_type` to use the ``__signature__``
 attribute of classes where it has been set, improving our support
-for :pypi:`Pydantic` models (`in pydantic >= 1.5
-<https://github.com/samuelcolvin/pydantic/pull/1034>`__).
+for :pypi:`pydantic` models (`in pydantic >= 1.5
+<https://github.com/pydantic/pydantic/pull/1034>`__).
 
 .. _v5.8.2:
 
@@ -6552,8 +6552,8 @@ types can actually be hashed.
 5.1.5 - 2020-01-12
 ------------------
 
-This patch fixes an internal error when running in an :pypi:`IPython` repl or
-:pypi:`Jupyter` notebook on Windows (:issue:`2319`), and an internal error on
+This patch fixes an internal error when running in an :pypi:`ipython` repl or
+:pypi:`jupyter` notebook on Windows (:issue:`2319`), and an internal error on
 Python 3.5.1 (:issue:`2318`).
 
 .. _v5.1.4:
@@ -6649,7 +6649,7 @@ Hypothesis deprecation warnings*, this will be a very boring upgrade.
 .. note::
     This release drops support for Python 2, which has passed
     `its end of life date <https://devguide.python.org/#status-of-python-branches>`__.
-    The `Python 3 Statement <https://python3statement.org/>`__ outlines our
+    The `Python 3 Statement <https://python3statement.github.io>`__ outlines our
     reasons, and lists many other packages that have made the same decision.
 
     ``pip install hypothesis`` should continue to give you the latest compatible version.
@@ -7759,7 +7759,7 @@ in Python code, which can be generated with the :pypi:`hypothesmith` package.
 The :func:`~hypothesis.strategies.from_type` strategy now knows to look up
 the subclasses of abstract types, which cannot be instantiated directly.
 
-This is very useful for :pypi:`hypothesmith` to support :pypi:`libCST`.
+This is very useful for :pypi:`hypothesmith` to support :pypi:`libCST <libcst>`.
 
 .. _v4.33.1:
 
@@ -8024,7 +8024,7 @@ This patch fixes :issue:`2014`, where our compatibility layer broke with version
 3.7.4 of the :pypi:`typing` module backport on PyPI.
 
 This issue only affects Python 2.  We remind users that Hypothesis, like many other
-packages, `will drop Python 2 support on 2020-01-01 <https://python3statement.org>`__
+packages, `will drop Python 2 support on 2020-01-01 <https://python3statement.github.io>`__
 and already has several features that are only available on Python 3.
 
 .. _v4.24.3:
@@ -9476,7 +9476,7 @@ with whatever arguments you prefer.
 3.83.2 - 2018-12-17
 -------------------
 
-Hypothesis has adopted :pypi:`Black` as our code formatter (:issue:`1686`).
+Hypothesis has adopted :pypi:`black` as our code formatter (:issue:`1686`).
 There are no functional changes to the source, but it's prettier!
 
 .. _v3.83.1:

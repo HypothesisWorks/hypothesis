@@ -67,7 +67,7 @@ generally do their best to write you a useful test.  You can also use
     Legal questions?  While the ghostwriter fragments and logic is under the
     MPL-2.0 license like the rest of Hypothesis, the *output* from the ghostwriter
     is made available under the `Creative Commons Zero (CC0)
-    <https://creativecommons.org/share-your-work/public-domain/cc0/>`__
+    <https://creativecommons.org/public-domain/cc0/>`__
     public domain dedication, so you can use it without any restrictions.
 """
 
