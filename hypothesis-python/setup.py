@@ -20,7 +20,7 @@ if sys.version_info[:2] < (3, 9):  # "unreachable" sanity check
         f"{sys.version.split()[0]}, but it requires Python 3.9 or later."
         "Update `pip` and `setuptools`, try again, and you will automatically "
         "get the latest compatible version of Hypothesis instead.  "
-        "See also https://python3statement.org/practicalities/"
+        "See also https://python3statement.github.io/practicalities/"
     )
 
 

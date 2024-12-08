@@ -24,7 +24,7 @@ Some packages provide strategies directly:
 * :pypi:`hypothesis-geojson` - strategy to generate `GeoJson <https://geojson.org/>`_.
 * :pypi:`hypothesis-geometry` - strategies to generate geometric objects.
 * :pypi:`hs-dbus-signature` - strategy to generate arbitrary
-  `D-Bus signatures <https://dbus.freedesktop.org>`_.
+  `D-Bus signatures <https://www.freedesktop.org/wiki/Software/dbus/>`_.
 * :pypi:`hypothesis-sqlalchemy` - strategies to generate :pypi:`SQLAlchemy` objects.
 * :pypi:`hypothesis-ros` - strategies to generate messages and parameters for the `Robot Operating System <https://www.ros.org/>`_.
 * :pypi:`hypothesis-csv` - strategy to generate CSV files.
@@ -41,15 +41,15 @@ Others provide a function to infer a strategy from some other schema:
 * :pypi:`hypothesis-graphql` - infer strategies from `GraphQL schemas <https://graphql.org/>`_.
 * :pypi:`hypothesis-mongoengine` - infer strategies from a :pypi:`mongoengine` model.
 * :pypi:`hypothesis-pb` - infer strategies from `Protocol Buffer
-  <https://developers.google.com/protocol-buffers/>`_ schemas.
+  <https://protobuf.dev/>`_ schemas.
 
 Or some other custom integration, such as a :ref:`"hypothesis" entry point <entry-points>`:
 
 * :pypi:`deal` is a design-by-contract library with built-in Hypothesis support.
 * :pypi:`icontract-hypothesis` infers strategies from :pypi:`icontract` code contracts.
-* :pypi:`Pandera` schemas all have a ``.strategy()`` method, which returns a strategy for
+* :pypi:`pandera` schemas all have a ``.strategy()`` method, which returns a strategy for
   matching :class:`~pandas:pandas.DataFrame`\ s.
-* :pypi:`Pydantic` automatically registers constrained types - so
+* :pypi:`Pydantic <pydantic>` automatically registers constrained types - so
   :func:`~hypothesis.strategies.builds` and :func:`~hypothesis.strategies.from_type`
   "just work" regardless of the underlying implementation.
 
@@ -84,7 +84,7 @@ equivalent, from function-level to register-transfer level and even to hardware.
 :pypi:`libarchimedes` makes it easy to use Hypothesis in
 `the Hy language <https://github.com/hylang/hy>`_, a Lisp embedded in Python.
 
-:pypi:`battle_tested` is a fuzzing tool that will show you how your code can
+:pypi:`battle-tested` is a fuzzing tool that will show you how your code can
 fail - by trying all kinds of inputs and reporting whatever happens.
 
 :pypi:`pytest-subtesthack` functions as a workaround for :issue:`377`.

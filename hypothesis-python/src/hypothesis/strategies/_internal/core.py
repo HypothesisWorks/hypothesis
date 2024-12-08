@@ -618,7 +618,7 @@ def characters(
     explicitly allowed, the ``codec`` argument will exclude them without
     raising an exception.
 
-    .. _general category: https://wikipedia.org/wiki/Unicode_character_property
+    .. _general category: https://en.wikipedia.org/wiki/Unicode_character_property
     .. _codec encodings: https://docs.python.org/3/library/codecs.html#encodings-and-unicode
     .. _python-specific text encodings: https://docs.python.org/3/library/codecs.html#python-specific-encodings
 

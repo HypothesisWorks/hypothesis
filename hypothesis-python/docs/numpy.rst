@@ -61,9 +61,9 @@ Array API
 
 Hypothesis offers strategies for `Array API <https://data-apis.org/>`_ adopting
 libraries in the ``hypothesis.extra.array_api`` package. See :issue:`3037` for
-more details.  If you want to test with :pypi:`CuPy`, :pypi:`Dask`, :pypi:`JAX`,
-:pypi:`MXNet`, :pypi:`PyTorch <torch>`, :pypi:`TensorFlow`, or :pypi:`Xarray` -
-or just :pypi:`NumPy` - this is the extension for you!
+more details.  If you want to test with :pypi:`CuPy <cupy>`, :pypi:`Dask <dask>`, :pypi:`JAX <jax>`,
+:pypi:`MXNet <maxnet>`, :pypi:`PyTorch <torch>`, :pypi:`TensorFlow <tensorflow>`, or :pypi:`Xarray <xarray>` -
+or just :pypi:`NumPy <numpy>` - this is the extension for you!
 
 .. autofunction:: hypothesis.extra.array_api.make_strategies_namespace
 

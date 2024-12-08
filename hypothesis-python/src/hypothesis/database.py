@@ -361,7 +361,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
     .. note::
         You must provide ``GITHUB_TOKEN`` as an environment variable. In CI, Github Actions provides
         this automatically, but it needs to be set manually for local usage. In a developer machine,
-        this would usually be a `Personal Access Token <https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token>`_.
+        this would usually be a `Personal Access Token <https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens>`_.
         If the repository is private, it's necessary for the token to have ``repo`` scope
         in the case of a classic token, or ``actions:read`` in the case of a fine-grained token.
 

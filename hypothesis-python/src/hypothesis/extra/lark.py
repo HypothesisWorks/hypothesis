@@ -19,7 +19,7 @@ using the `Lark parser library <https://github.com/lark-parser/lark>`_.
 It currently only supports Lark's native EBNF syntax, but we plan to extend
 this to support other common syntaxes such as ANTLR and :rfc:`5234` ABNF.
 Lark already `supports loading grammars
-<https://lark-parser.readthedocs.io/en/latest/nearley.html>`_
+<https://lark-parser.readthedocs.io/en/stable/tools.html#importing-grammars-from-nearley-js>`_
 from `nearley.js <https://nearley.js.org/>`_, so you may not have to write
 your own at all.
 """

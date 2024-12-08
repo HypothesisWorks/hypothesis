@@ -102,7 +102,7 @@ In terms of what's actually *known* to work:
   * Integration with Django's testing requires use of the :ref:`hypothesis-django` extra.
     The issue is that in Django's tests' normal mode of execution it will reset the
     database once per test rather than once per example, which is not what you want.
-  * :pypi:`Coverage` works out of the box with Hypothesis; our own test suite has
+  * :pypi:`coverage` works out of the box with Hypothesis; our own test suite has
     100% branch coverage.
 
 -----------------
