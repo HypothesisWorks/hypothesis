@@ -45,6 +45,7 @@ from hypothesis._settings import (
     HealthCheck,
     Phase,
     Verbosity,
+    all_settings,
     local_settings,
     settings as Settings,
 )
@@ -405,9 +406,12 @@ def is_invalid_test(test, original_sig, given_arguments, given_kwargs):
     ]
     if extra_kwargs and (params == [] or params[-1].kind is not params[-1].VAR_KEYWORD):
         arg = extra_kwargs[0]
+        extra = ""
+        if arg in all_settings:
+            extra = f". Did you mean @settings({arg}={given_kwargs[arg]!r})?"
         return invalid(
             f"{test.__name__}() got an unexpected keyword argument {arg!r}, "
-            f"from `{arg}={given_kwargs[arg]!r}` in @given"
+            f"from `{arg}={given_kwargs[arg]!r}` in @given{extra}"
         )
     if any(p.default is not p.empty for p in params):
         return invalid("Cannot apply @given to a function with defaults.")
@@ -1227,8 +1231,33 @@ class StateForActualGivenExecution:
             )
         else:
             if runner.valid_examples == 0:
+                explanations = []
+                # use a somewhat arbitrary cutoff to avoid recommending spurious
+                # fixes.
+                # eg, a few invalid examples from internal filters when the
+                # problem is the user generating large inputs, or a
+                # few overruns during internal mutation when the problem is
+                # impossible user filters/assumes.
+                if runner.invalid_examples > min(20, runner.call_count // 5):
+                    explanations.append(
+                        f"{runner.invalid_examples} of {runner.call_count} "
+                        "examples failed a .filter() or assume() condition. Try "
+                        "making your filters or assumes less strict, or rewrite "
+                        "using strategy parameters: "
+                        "st.integers().filter(lambda x: x > 0) fails less often "
+                        "(that is, never) when rewritten as st.integers(min_value=1)."
+                    )
+                if runner.overrun_examples > min(20, runner.call_count // 5):
+                    explanations.append(
+                        f"{runner.overrun_examples} of {runner.call_count} "
+                        "examples were too large to finish generating; try "
+                        "reducing the typical size of your inputs?"
+                    )
                 rep = get_pretty_function_description(self.test)
-                raise Unsatisfiable(f"Unable to satisfy assumptions of {rep}")
+                raise Unsatisfiable(
+                    f"Unable to satisfy assumptions of {rep}. "
+                    f"{' Also, '.join(explanations)}"
+                )
 
         # If we have not traced executions, warn about that now (but only when
         # we'd expect to do so reliably, i.e. on CPython>=3.12)

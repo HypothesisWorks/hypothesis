@@ -12,7 +12,17 @@ import functools
 import threading
 from collections import namedtuple
 
-from hypothesis import HealthCheck, Verbosity, assume, given, note, reporting, settings
+from hypothesis import (
+    HealthCheck,
+    Verbosity,
+    assume,
+    given,
+    note,
+    reporting,
+    settings,
+    strategies as st,
+)
+from hypothesis.errors import Unsatisfiable
 from hypothesis.strategies import (
     binary,
     booleans,
@@ -484,3 +494,41 @@ def test_given_usable_inline_on_lambdas():
     given(booleans())(lambda x: xs.append(x))()
     assert len(xs) == 2
     assert set(xs) == {False, True}
+
+
+def test_notes_high_filter_rates_in_unsatisfiable_error():
+    @given(st.integers())
+    @settings(suppress_health_check=[HealthCheck.filter_too_much])
+    def f(v):
+        assume(False)
+
+    with raises(
+        Unsatisfiable,
+        match=(
+            r"Unable to satisfy assumptions of f\. 1000 of 1000 examples "
+            r"failed a \.filter\(\) or assume\(\)"
+        ),
+    ):
+        f()
+
+
+def test_notes_high_overrun_rates_in_unsatisfiable_error():
+    @given(st.binary(min_size=9000))
+    @settings(
+        suppress_health_check=[
+            HealthCheck.data_too_large,
+            HealthCheck.too_slow,
+            HealthCheck.large_base_example,
+        ]
+    )
+    def f(v):
+        pass
+
+    with raises(
+        Unsatisfiable,
+        match=(
+            r"1000 of 1000 examples were too large to finish generating; "
+            r"try reducing the typical size of your inputs\?"
+        ),
+    ):
+        f()
