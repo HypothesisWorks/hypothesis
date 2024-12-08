@@ -18,6 +18,18 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.122.3:
+
+--------------------
+6.122.3 - 2024-12-08
+--------------------
+
+This patch improves our error and warning messages.
+
+- Add a warning for ``st.text("ascii")`` - you probably meant ``st.text(st.characters(codec="ascii"))``. Similarly for ``"utf-8"``.
+- Recommend remedies in the error message of ``Unsatisfiable``.
+- When ``@given`` errors because it was given an extra keyword argument, and the keyword matches a setting name like ``max_examples``, recommend ``@settings(max_examples=...)`` instead.
+
 .. _v6.122.2:
 
 --------------------
