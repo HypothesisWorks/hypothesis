@@ -1250,8 +1250,8 @@ class StateForActualGivenExecution:
                 if runner.overrun_examples > min(20, runner.call_count // 5):
                     explanations.append(
                         f"{runner.overrun_examples} of {runner.call_count} "
-                        "examples were too large to finish generating. Try "
-                        "reducing the size of your inputs."
+                        "examples were too large to finish generating; try "
+                        "reducing the typical size of your inputs?"
                     )
                 rep = get_pretty_function_description(self.test)
                 raise Unsatisfiable(

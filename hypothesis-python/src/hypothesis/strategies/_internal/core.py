@@ -798,7 +798,7 @@ def text(
                 f"st.text({alphabet!r}): it seems like you are trying to use the "
                 f"codec {alphabet!r}. st.text({alphabet!r}) instead generates "
                 f"strings using the literal characters {list(alphabet)!r}. To specify "
-                f"the {alphabet} codec, use st.text(st.characters({alphabet!r})). "
+                f"the {alphabet} codec, use st.text(st.characters(codec={alphabet!r})). "
                 "If you intended to use character literals, you can silence this "
                 "warning by reordering the characters.",
                 HypothesisWarning,
