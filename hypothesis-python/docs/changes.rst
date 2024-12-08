@@ -402,7 +402,7 @@ metadata and messages in our :doc:`observability output <observability>`
 --------------------
 
 Support ``__default__`` field of :obj:`~python:typing.TypeVar`
-and support the same from :pypi:`typing_extensions <typing-extensions>`
+and support the same from :pypi:`typing-extensions`
 in :func:`~hypothesis.strategies.from_type`.
 
 .. _v6.110.1:
@@ -2913,7 +2913,7 @@ This patch fixes some inconsistency between argument handling for
 -------------------
 
 This release uses :pep:`612` :obj:`python:typing.ParamSpec` (or the
-:pypi:`typing_extensions <typing-extensions>` backport) to express the first-argument-removing
+:pypi:`typing-extensions` backport) to express the first-argument-removing
 behaviour of :func:`@st.composite <hypothesis.strategies.composite>`
 and signature-preservation of :func:`~hypothesis.strategies.functions`
 to IDEs, editor plugins, and static type checkers such as :pypi:`mypy`.
@@ -4736,7 +4736,7 @@ Thanks to Nikita Sobolev for fixing :issue:`2884`!
 ------------------
 
 This patch fixes an exception that occurs when using type unions of
-the :pypi:`typing_extensions <typing-extensions>` ``Literal`` backport on Python 3.6.
+the :pypi:`typing-extensions` ``Literal`` backport on Python 3.6.
 
 Thanks to Ben Anhalt for identifying and fixing this bug.
 
@@ -5011,7 +5011,7 @@ Hypothesis APIs (:issue:`2705`).
 -------------------
 
 This patch fixes :func:`~hypothesis.strategies.from_type` with
-the :pypi:`typing_extensions <typing-extensions>` ``Literal`` backport on Python 3.6.
+the :pypi:`typing-extensions` ``Literal`` backport on Python 3.6.
 
 .. _v5.43.9:
 
@@ -6006,7 +6006,7 @@ To report only the first failure, you can use the :obj:`report_multiple_bugs=Fal
 -------------------
 
 This patch adds strategy inference for the ``Literal``, ``NewType``, ``Type``,
-``DefaultDict``, and ``TypedDict`` types from the :pypi:`typing_extensions <typing-extensions>`
+``DefaultDict``, and ``TypedDict`` types from the :pypi:`typing-extensions`
 backport on PyPI.
 
 .. _v5.16.3:
