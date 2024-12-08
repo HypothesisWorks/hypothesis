@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.122.2:
+
+--------------------
+6.122.2 - 2024-12-08
+--------------------
+
+This patch updates some outdated external links in our documentation.
+
 .. _v6.122.1:
 
 --------------------
