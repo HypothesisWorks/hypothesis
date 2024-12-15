@@ -25,6 +25,7 @@ from hypothesis.internal.conjecture.data import (
     ConjectureResult,
     IRNode,
     Status,
+    _Overrun,
     ir_size_nodes,
     ir_to_buffer,
     ir_value_equal,
@@ -688,6 +689,7 @@ class Shrinker:
         """
         self.fixate_shrink_passes(
             [
+                "zero_examples",
                 node_program("X" * 5),
                 node_program("X" * 4),
                 node_program("X" * 3),
@@ -1386,6 +1388,46 @@ class Shrinker:
             raise NotImplementedError
 
     @defines_shrink_pass()
+    def zero_examples(self, chooser):
+        i = chooser.choose(range(len(self.examples)))
+
+        def trivial_value(ir_type):
+            # TODO: In an ideal world this would take into account the
+            # node kwargs, but this is an adequate first approximation.
+            return {
+                "integer": 0,
+                "string": "",
+                "boolean": False,
+                "float": 0.0,
+                "bytes": b"",
+            }[ir_type]
+
+        prev = self.shrink_target
+        nodes = self.shrink_target.ir_nodes
+        ex = self.examples[i]
+        prefix = nodes[: ex.ir_start]
+        replacement = tuple(
+            [
+                (
+                    node
+                    if node.was_forced
+                    else node.copy(with_value=trivial_value(node.ir_type))
+                )
+                for node in nodes[ex.ir_start : ex.ir_end]
+            ]
+        )
+        suffix = nodes[ex.ir_end :]
+        attempt = self.cached_test_function_ir(prefix + replacement + suffix)
+
+        if self.shrink_target is not prev:
+            return
+
+        if attempt is not None and not isinstance(attempt, _Overrun):
+            new_ex = attempt.examples[i]
+            new_replacement = attempt.ir_nodes[new_ex.start : new_ex.end]
+            self.consider_new_tree(prefix + new_replacement + suffix)
+
+    @defines_shrink_pass()
     def minimize_individual_nodes(self, chooser):
         """Attempt to minimize each node in sequence.
 
@@ -1442,7 +1484,7 @@ class Shrinker:
         attempt = self.cached_test_function_ir(lowered)
         if (
             attempt is None
-            or attempt.status < Status.VALID
+            or attempt.status < Status.INVALID
             or len(attempt.ir_nodes) == len(self.nodes)
             or len(attempt.ir_nodes) == node.index + 1
         ):
