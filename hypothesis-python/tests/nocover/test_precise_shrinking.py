@@ -185,7 +185,7 @@ def find_random(
             continue
 
 
-def shrinks(strategy, buffer, allow_sloppy=True, seed=0):
+def shrinks(strategy, buffer, *, allow_sloppy=True, seed=0):
     results = {}
     random = Random(seed)
 
@@ -244,9 +244,7 @@ def shrinks(strategy, buffer, allow_sloppy=True, seed=0):
     return result_list
 
 
-@pytest.mark.parametrize(
-    "a", [t for t in itertools.product(*([common_strategies[1:]] * 2))]
-)
+@pytest.mark.parametrize("a", list(itertools.product(*([common_strategies[1:]] * 2))))
 @pytest.mark.parametrize("block_falsey", [False, True])
 @pytest.mark.parametrize("allow_sloppy", [False, True])
 @pytest.mark.parametrize("seed", [0, 2452, 99085240570])
