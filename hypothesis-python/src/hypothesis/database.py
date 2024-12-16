@@ -744,7 +744,14 @@ def ir_to_bytes(ir: Iterable[IRType], /) -> bytes:
             elem = struct.pack("!d", elem)
         elif isinstance(elem, int):
             tag = 2 << 5
-            elem = elem.to_bytes(1 + elem.bit_length() // 8, "big", signed=True)
+            # We represent zero specially as zero bytes wide to
+            # make sure shrinking order makes sense. It's also
+            # a small space saving but we don't really care about
+            # that.
+            if elem != 0:
+                elem = elem.to_bytes(1 + elem.bit_length() // 8, "big", signed=True)
+            else:
+                elem = b""
         elif isinstance(elem, bytes):
             tag = 3 << 5
         else:

@@ -124,6 +124,7 @@ def test_will_shrink_if_the_previous_example_does_not_look_right():
     def test(data):
         nonlocal last
         m = data.draw(st.integers())
+        print(m)
         last = m
         if first_test:
             data.draw(st.integers())

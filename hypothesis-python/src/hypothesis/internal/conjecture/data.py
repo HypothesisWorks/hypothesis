@@ -1770,6 +1770,31 @@ class HypothesisProvider(PrimitiveProvider):
         self, *, forced: Optional[int] = None, fake_forced: bool = False
     ) -> int:
         assert self._cd is not None
+
+        max_small_integer = 50
+        if forced is None:
+            small_forced = None
+        elif abs(forced) > max_small_integer:
+            small_forced = max_small_integer * 2 + 2
+        elif forced == 0:
+            small_forced = 0
+        else:
+            small_forced = abs(forced) << 1
+            if forced < 0:
+                small_forced |= 1
+
+        small_integer_bits = self._cd.draw_bits(
+            8, forced=small_forced, fake_forced=fake_forced
+        )
+        if small_integer_bits == 0:
+            return 0
+        if small_integer_bits <= (max_small_integer * 2 + 1):
+            value = small_integer_bits >> 1
+            if small_integer_bits & 1:
+                return -value
+            else:
+                return value
+
         forced_i = None
         if forced is not None:
             # Using any bucket large enough to contain this integer would be a
