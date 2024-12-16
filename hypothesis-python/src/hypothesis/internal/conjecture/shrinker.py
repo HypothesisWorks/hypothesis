@@ -25,7 +25,6 @@ from hypothesis.internal.conjecture.data import (
     ConjectureResult,
     IRNode,
     Status,
-    _Overrun,
     ir_size_nodes,
     ir_to_buffer,
     ir_value_equal,
@@ -689,7 +688,7 @@ class Shrinker:
         """
         self.fixate_shrink_passes(
             [
-                "zero_examples",
+                "try_trivial_examples",
                 node_program("X" * 5),
                 node_program("X" * 4),
                 node_program("X" * 3),
@@ -1422,7 +1421,7 @@ class Shrinker:
         if self.shrink_target is not prev:
             return
 
-        if attempt is not None and not isinstance(attempt, _Overrun):
+        if isinstance(attempt, ConjectureResult):
             new_ex = attempt.examples[i]
             new_replacement = attempt.ir_nodes[new_ex.ir_start : new_ex.ir_end]
             self.consider_new_tree(prefix + new_replacement + suffix)
