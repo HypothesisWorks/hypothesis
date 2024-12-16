@@ -8,6 +8,37 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+"""
+This file tests for our ability to make precise shrinks.
+
+Terminology: A shrink is *precise* if there is a single example (draw call) that
+it replaces, without leaving any of the data before or after that draw call changed.
+Otherwise, it is sloppy.
+
+Precise shrinks correspond to the changes we can make to drawn data in isolation
+of the rest of the test case. e.g. if we draw a list, we want to always be able
+to delete an element from it without affecting things outside that list. If we
+draw an integer, we always want to be able to subtract from it.
+
+An example of a sloppy shrink is that we can sloppily replace any list with a prefix
+of it by changing the boolean that says if we should draw more elements with False.
+However leaves all the data corresponding to the rest of the list after that prefix
+in the test case, so everything after the drawn list is deleted.
+
+Having a rich vocabulary of precise shrinks we can make allows us to more easily
+reason about shrunk data, because we can look at the data and think in terms of
+what changes the shrinker would have made to it, and the fact that it hasn't
+means we know that it's important. e.g. this numeric value can't be smaller, this
+list can't have fewer elements.
+
+Sloppy shrinks in contrast just make the test case smaller. This is still good,
+obviously, and we rely on sloppy shrinks for a lot of shrinker performance and
+quality - often what we can expect is that we get to a smaller test case faster
+through sloppy shrinks, and then precise shrinks guarantee properties of the final
+result.
+"""
+
+
 import itertools
 from functools import lru_cache
 from random import Random
@@ -31,6 +62,8 @@ T = TypeVar("T")
 
 
 def safe_draw(data, strategy):
+    """Set up just enough of the Hypothesis machinery to use draw on
+    a strategy."""
     with BuildContext(data):
         try:
             return data.draw(strategy)
@@ -45,6 +78,9 @@ def precisely_shrink(
     end_marker=st.integers(),
     seed=0,
 ):
+    """Generates a random value from the strategy and then precisely shrinks it,
+    by shrinking it with some value immediately afterwards that is not allowed to
+    be modified during shrinking."""
     random = Random(seed)
 
     while True:
@@ -198,6 +234,7 @@ def shrinks(strategy, buffer, *, allow_sloppy=True, seed=0):
         runner = ConjectureRunner(test_function, settings=settings(max_examples=10**9))
 
         initial = runner.cached_test_function(buffer)
+        assert isinstance(initial, ConjectureResult)
         try:
             runner.shrink(initial, lambda x: x.buffer == initial.buffer)
         except RunIsComplete:
@@ -207,13 +244,13 @@ def shrinks(strategy, buffer, *, allow_sloppy=True, seed=0):
         with BuildContext(trial):
             trial.draw(strategy)
             assert bytes(trial.buffer) == buffer, "Buffer is already sloppy"
-            padding = trial.draw_integer(0, 1000)
+            padding = safe_draw(trial, st.integers())
         initial_buffer = bytes(trial.buffer)
 
         def test_function(data):
             value = safe_draw(data, strategy)
             key = bytes(data.buffer)
-            padding_check = data.draw_integer(0, 1000)
+            padding_check = safe_draw(trial, st.integers())
             if padding_check == padding:
                 results[key] = value
 
