@@ -250,7 +250,7 @@ def shrinks(strategy, buffer, *, allow_sloppy=True, seed=0):
         def test_function(data):
             value = safe_draw(data, strategy)
             key = bytes(data.buffer)
-            padding_check = safe_draw(trial, st.integers())
+            padding_check = safe_draw(data, st.integers())
             if padding_check == padding:
                 results[key] = value
 
