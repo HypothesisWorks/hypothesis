@@ -1388,7 +1388,7 @@ class Shrinker:
             raise NotImplementedError
 
     @defines_shrink_pass()
-    def zero_examples(self, chooser):
+    def try_trivial_examples(self, chooser):
         i = chooser.choose(range(len(self.examples)))
 
         def trivial_value(ir_type):
