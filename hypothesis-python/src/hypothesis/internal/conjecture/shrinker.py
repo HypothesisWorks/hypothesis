@@ -1484,7 +1484,7 @@ class Shrinker:
         attempt = self.cached_test_function_ir(lowered)
         if (
             attempt is None
-            or attempt.status < Status.INVALID
+            or attempt.status < Status.VALID
             or len(attempt.ir_nodes) == len(self.nodes)
             or len(attempt.ir_nodes) == node.index + 1
         ):
