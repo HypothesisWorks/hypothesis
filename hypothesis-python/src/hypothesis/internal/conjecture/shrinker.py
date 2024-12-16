@@ -1424,7 +1424,7 @@ class Shrinker:
 
         if attempt is not None and not isinstance(attempt, _Overrun):
             new_ex = attempt.examples[i]
-            new_replacement = attempt.ir_nodes[new_ex.start : new_ex.end]
+            new_replacement = attempt.ir_nodes[new_ex.ir_start : new_ex.ir_end]
             self.consider_new_tree(prefix + new_replacement + suffix)
 
     @defines_shrink_pass()
