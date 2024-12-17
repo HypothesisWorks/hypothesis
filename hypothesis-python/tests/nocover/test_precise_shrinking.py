@@ -179,6 +179,7 @@ def test_can_precisely_shrink_alternatives(i, j, a, seed):
         combined_strategy,
         initial_condition=lambda x: isinstance(x, types[j]),
         is_interesting=lambda x: not any(isinstance(x, types[k]) for k in range(i)),
+        seed=seed,
     )
     assert isinstance(value, types[i])
 
@@ -200,6 +201,7 @@ def test_precise_shrink_with_blocker(a, seed):
         combined_strategy,
         initial_condition=lambda x: isinstance(x, types[2]),
         is_interesting=lambda x: True,
+        seed=seed,
     )
 
     assert isinstance(value, types[0])
