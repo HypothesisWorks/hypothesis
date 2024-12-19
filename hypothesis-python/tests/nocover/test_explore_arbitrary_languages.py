@@ -26,6 +26,8 @@ from hypothesis import (
 from hypothesis.internal.conjecture.data import Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 
+from tests.common.utils import Why, xfail_on_crosshair
+
 
 @attr.s()
 class Write:
@@ -113,6 +115,7 @@ def run_language_test_for(root, data, seed):
     assume(runner.interesting_examples)
 
 
+@xfail_on_crosshair(Why.nested_given)  # technically nested-engine, but same problem
 @settings(
     suppress_health_check=list(HealthCheck),
     deadline=None,
