@@ -221,7 +221,11 @@ class Sampler:
 
 
 INT_SIZES = (8, 16, 32, 64, 128)
-INT_SIZES_SAMPLER = Sampler((4.0, 8.0, 1.0, 1.0, 0.5), observe=False)
+# We relatively rarely draw an 8-bit integer because most of the 8-bit integers
+# we draw are from our special case for integers with absolute value <= 50.
+# We allow some small number both for shrinking purposes and to get better
+# coverage of the interval [51, 256]
+INT_SIZES_SAMPLER = Sampler((1.0, 8.0, 1.0, 1.0, 0.5), observe=False)
 
 
 class many:
