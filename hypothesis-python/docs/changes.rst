@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.122.4:
+
+--------------------
+6.122.4 - 2024-12-19
+--------------------
+
+This patch improves generation performance for the provisional :func:`~hypothesis.provisional.domains` strategy, including its derivative strategies :func:`~hypothesis.provisional.urls` and :func:`~hypothesis.strategies.emails`.
+
 .. _v6.122.3:
 
 --------------------
