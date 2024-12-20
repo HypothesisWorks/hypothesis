@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.122.5:
+
+--------------------
+6.122.5 - 2024-12-20
+--------------------
+
+This release improves shrinking in some cases, especially for strategies using :func:`~hypothesis.strategies.one_of`.
+This will typically improve shrinking speed and may in some cases improve the end result.
+
 .. _v6.122.4:
 
 --------------------
