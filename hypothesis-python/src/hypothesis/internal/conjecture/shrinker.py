@@ -688,6 +688,7 @@ class Shrinker:
         """
         self.fixate_shrink_passes(
             [
+                "try_trivial_examples",
                 node_program("X" * 5),
                 node_program("X" * 4),
                 node_program("X" * 3),
@@ -1384,6 +1385,46 @@ class Shrinker:
             )
         else:
             raise NotImplementedError
+
+    @defines_shrink_pass()
+    def try_trivial_examples(self, chooser):
+        i = chooser.choose(range(len(self.examples)))
+
+        def trivial_value(ir_type):
+            # TODO: In an ideal world this would take into account the
+            # node kwargs, but this is an adequate first approximation.
+            return {
+                "integer": 0,
+                "string": "",
+                "boolean": False,
+                "float": 0.0,
+                "bytes": b"",
+            }[ir_type]
+
+        prev = self.shrink_target
+        nodes = self.shrink_target.ir_nodes
+        ex = self.examples[i]
+        prefix = nodes[: ex.ir_start]
+        replacement = tuple(
+            [
+                (
+                    node
+                    if node.was_forced
+                    else node.copy(with_value=trivial_value(node.ir_type))
+                )
+                for node in nodes[ex.ir_start : ex.ir_end]
+            ]
+        )
+        suffix = nodes[ex.ir_end :]
+        attempt = self.cached_test_function_ir(prefix + replacement + suffix)
+
+        if self.shrink_target is not prev:
+            return
+
+        if isinstance(attempt, ConjectureResult):
+            new_ex = attempt.examples[i]
+            new_replacement = attempt.ir_nodes[new_ex.ir_start : new_ex.ir_end]
+            self.consider_new_tree(prefix + new_replacement + suffix)
 
     @defines_shrink_pass()
     def minimize_individual_nodes(self, chooser):
