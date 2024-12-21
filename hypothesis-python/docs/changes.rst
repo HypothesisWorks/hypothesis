@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.122.6:
+
+--------------------
+6.122.6 - 2024-12-21
+--------------------
+
+This patch cleans up some internal code around clamping floats.
+
 .. _v6.122.5:
 
 --------------------
