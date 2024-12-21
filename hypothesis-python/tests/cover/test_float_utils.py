@@ -62,7 +62,14 @@ def test_next_float_equal(func, val):
 @example(make_float_kw(100.0001, 100.0003, allow_nan=False), math.nan)
 @example(make_float_kw(0, 10, allow_nan=False), math.nan)
 @example(make_float_kw(0, 10, allow_nan=True), math.nan)
+# the branch coverage of resampling in the "out of range of smallest magnitude" case
+# relies on randomness from the mantissa. try a few different values.
 @example(make_float_kw(-4, -1, smallest_nonzero_magnitude=4), 4)
+@example(make_float_kw(-4, -1, smallest_nonzero_magnitude=4), 5)
+@example(make_float_kw(-4, -1, smallest_nonzero_magnitude=4), 6)
+@example(make_float_kw(1, 4, smallest_nonzero_magnitude=4), -4)
+@example(make_float_kw(1, 4, smallest_nonzero_magnitude=4), -5)
+@example(make_float_kw(1, 4, smallest_nonzero_magnitude=4), -6)
 @given(float_kwargs(), st.floats())
 def test_float_clamper(kwargs, input_value):
     min_value = kwargs["min_value"]
