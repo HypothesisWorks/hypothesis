@@ -62,6 +62,7 @@ def test_next_float_equal(func, val):
 @example(make_float_kw(100.0001, 100.0003, allow_nan=False), math.nan)
 @example(make_float_kw(0, 10, allow_nan=False), math.nan)
 @example(make_float_kw(0, 10, allow_nan=True), math.nan)
+@example(make_float_kw(-4, -1, smallest_nonzero_magnitude=4), 4)
 @given(float_kwargs(), st.floats())
 def test_float_clamper(kwargs, input_value):
     min_value = kwargs["min_value"]
