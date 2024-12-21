@@ -11,7 +11,7 @@
 import math
 import struct
 from sys import float_info
-from typing import TYPE_CHECKING, Callable, Literal, Optional, SupportsFloat, Union
+from typing import TYPE_CHECKING, Callable, Literal, SupportsFloat, Union
 
 from hypothesis.internal.conjecture.junkdrawer import clamp
 
@@ -162,7 +162,7 @@ def make_float_clamper(
     *,
     smallest_nonzero_magnitude: float,
     allow_nan: bool,
-) -> Optional[Callable[[float], float]]:
+) -> Callable[[float], float]:
     """
     Return a function that clamps positive floats into the given bounds.
     """

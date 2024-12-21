@@ -1890,8 +1890,7 @@ class HypothesisProvider(PrimitiveProvider):
     ) -> tuple[
         Optional[Sampler],
         Optional[Literal[0, 1]],
-        Optional[Callable[[float], float]],
-        Optional[Callable[[float], float]],
+        Callable[[float], float],
         list[float],
     ]:
         """
@@ -1928,8 +1927,7 @@ class HypothesisProvider(PrimitiveProvider):
     ) -> tuple[
         Optional[Sampler],
         Optional[Literal[0, 1]],
-        Optional[Callable[[float], float]],
-        Optional[Callable[[float], float]],
+        Callable[[float], float],
         list[float],
     ]:
         if smallest_nonzero_magnitude == 0.0:  # pragma: no cover
