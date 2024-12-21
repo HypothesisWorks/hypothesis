@@ -38,7 +38,9 @@ from hypothesis.internal.intervalsets import IntervalSet
 from tests.common.debug import minimal
 from tests.conjecture.common import (
     draw_value,
+    float_kw,
     fresh_data,
+    integer_kw,
     integer_kwargs,
     ir,
     ir_nodes,
@@ -49,9 +51,9 @@ from tests.conjecture.common import (
 # we max out at 128 bit integers in the *unbounded* case, but someone may
 # specify a bound with a larger magnitude. Ensure we calculate max children for
 # those cases correctly.
-@example(("integer", {"min_value": None, "max_value": -(2**200), "weights": None}))
-@example(("integer", {"min_value": 2**200, "max_value": None, "weights": None}))
-@example(("integer", {"min_value": -(2**200), "max_value": 2**200, "weights": None}))
+@example(("integer", integer_kw(max_value=-(2**200))))
+@example(("integer", integer_kw(min_value=2**200)))
+@example(("integer", integer_kw(-(2**200), 2**200)))
 @given(ir_types_and_kwargs())
 def test_compute_max_children_is_positive(ir_type_and_kwargs):
     (ir_type, kwargs) = ir_type_and_kwargs
@@ -135,78 +137,22 @@ def test_compute_max_children_is_positive(ir_type_and_kwargs):
         ("boolean", {"p": 0.5}, 2),
         ("boolean", {"p": 0.001}, 2),
         ("boolean", {"p": 0.999}, 2),
+        ("float", float_kw(0.0, 0.0), 1),
+        ("float", float_kw(-0.0, -0.0), 1),
+        ("float", float_kw(-0.0, 0.0), 2),
+        ("float", float_kw(next_down(-0.0), next_up(0.0)), 4),
         (
             "float",
-            {
-                "min_value": 0.0,
-                "max_value": 0.0,
-                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
-            },
-            1,
-        ),
-        (
-            "float",
-            {
-                "min_value": -0.0,
-                "max_value": -0.0,
-                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
-            },
-            1,
-        ),
-        (
-            "float",
-            {
-                "min_value": -0.0,
-                "max_value": 0.0,
-                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
-            },
-            2,
-        ),
-        (
-            "float",
-            {
-                "min_value": next_down(-0.0),
-                "max_value": next_up(0.0),
-                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
-            },
+            float_kw(
+                next_down(next_down(-0.0)),
+                next_up(next_up(0.0)),
+                smallest_nonzero_magnitude=next_up(SMALLEST_SUBNORMAL),
+            ),
             4,
         ),
-        (
-            "float",
-            {
-                "min_value": next_down(next_down(-0.0)),
-                "max_value": next_up(next_up(0.0)),
-                "smallest_nonzero_magnitude": next_up(SMALLEST_SUBNORMAL),
-            },
-            4,
-        ),
-        (
-            "float",
-            {
-                "min_value": -math.inf,
-                "max_value": math.inf,
-                "smallest_nonzero_magnitude": next_down(math.inf),
-            },
-            6,
-        ),
-        (
-            "float",
-            {
-                "min_value": 1,
-                "max_value": 10,
-                "smallest_nonzero_magnitude": 11.0,
-            },
-            0,
-        ),
-        (
-            "float",
-            {
-                "min_value": -3,
-                "max_value": -2,
-                "smallest_nonzero_magnitude": 4.0,
-            },
-            0,
-        ),
+        ("float", float_kw(smallest_nonzero_magnitude=next_down(math.inf)), 6),
+        ("float", float_kw(1, 10, smallest_nonzero_magnitude=11.0), 0),
+        ("float", float_kw(-3, -2, smallest_nonzero_magnitude=4.0), 0),
     ],
 )
 def test_compute_max_children(ir_type, kwargs, count_children):
@@ -238,51 +184,12 @@ def test_draw_string_single_interval_with_equal_bounds(s, n):
     )
 )
 # all combinations of float signs
-@example(
-    (
-        "float",
-        {
-            "min_value": next_down(-0.0),
-            "max_value": -0.0,
-            "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
-        },
-    )
-)
-@example(
-    (
-        "float",
-        {
-            "min_value": next_down(-0.0),
-            "max_value": next_up(0.0),
-            "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
-        },
-    )
-)
-@example(
-    (
-        "float",
-        {
-            "min_value": 0.0,
-            "max_value": next_up(0.0),
-            "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
-        },
-    )
-)
+@example(("float", float_kw(next_down(-0.0), -0.0)))
+@example(("float", float_kw(next_down(-0.0), next_up(0.0))))
+@example(("float", float_kw(0.0, next_up(0.0))))
 # using a smallest_nonzero_magnitude which happens to filter out everything
-@example(
-    ("float", {"min_value": 1.0, "max_value": 2.0, "smallest_nonzero_magnitude": 3.0})
-)
-@example(
-    (
-        "integer",
-        {
-            "min_value": 1,
-            "max_value": 2,
-            "weights": {1: 0.2, 2: 0.4},
-            "shrink_towards": 0,
-        },
-    )
-)
+@example(("float", float_kw(1.0, 2.0, smallest_nonzero_magnitude=3.0)))
+@example(("integer", integer_kw(1, 2, weights={1: 0.2, 2: 0.4})))
 @given(ir_types_and_kwargs())
 @settings(suppress_health_check=[HealthCheck.filter_too_much])
 def test_compute_max_children_and_all_children_agree(ir_type_and_kwargs):
@@ -339,15 +246,7 @@ def test_ir_nodes(random):
     data.freeze()
     expected_tree_nodes = (
         IRNode(
-            ir_type="float",
-            value=5.0,
-            kwargs={
-                "min_value": -10.0,
-                "max_value": 10.0,
-                "allow_nan": True,
-                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
-            },
-            was_forced=True,
+            ir_type="float", value=5.0, kwargs=float_kw(-10.0, 10.0), was_forced=True
         ),
         IRNode(
             ir_type="boolean",
@@ -371,17 +270,7 @@ def test_ir_nodes(random):
             kwargs={"min_size": 8, "max_size": 8},
             was_forced=True,
         ),
-        IRNode(
-            ir_type="integer",
-            value=50,
-            kwargs={
-                "min_value": 0,
-                "max_value": 100,
-                "weights": None,
-                "shrink_towards": 0,
-            },
-            was_forced=True,
-        ),
+        IRNode(ir_type="integer", value=50, kwargs=integer_kw(0, 100), was_forced=True),
     )
     assert data.ir_nodes == expected_tree_nodes
 
@@ -439,19 +328,7 @@ def test_data_with_changed_forced_value(node):
 
 
 # ensure we hit bare-minimum coverage for all ir types.
-@example(
-    IRNode(
-        ir_type="float",
-        value=0.0,
-        kwargs={
-            "min_value": -math.inf,
-            "max_value": math.inf,
-            "allow_nan": True,
-            "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
-        },
-        was_forced=True,
-    )
-)
+@example(IRNode(ir_type="float", value=0.0, kwargs=float_kw(), was_forced=True))
 @example(
     IRNode(
         ir_type="boolean",
@@ -461,17 +338,7 @@ def test_data_with_changed_forced_value(node):
     )
 )
 @example(
-    IRNode(
-        ir_type="integer",
-        value=50,
-        kwargs={
-            "min_value": 50,
-            "max_value": 100,
-            "weights": None,
-            "shrink_towards": 0,
-        },
-        was_forced=True,
-    )
+    IRNode(ir_type="integer", value=50, kwargs=integer_kw(50, 100), was_forced=True)
 )
 @example(
     IRNode(
@@ -524,66 +391,21 @@ def test_all_children_are_permitted_values(ir_type_and_kwargs):
 @pytest.mark.parametrize(
     "value, ir_type, kwargs, permitted",
     [
-        (0, "integer", {"min_value": 1, "max_value": 2, "shrink_towards": 0}, False),
-        (2, "integer", {"min_value": 0, "max_value": 1, "shrink_towards": 0}, False),
-        (10, "integer", {"min_value": 0, "max_value": 20, "shrink_towards": 0}, True),
-        (
-            int(2**128 / 2) - 1,
-            "integer",
-            {"min_value": None, "max_value": None, "shrink_towards": 0},
-            True,
-        ),
-        (
-            int(2**128 / 2),
-            "integer",
-            {"min_value": None, "max_value": None, "shrink_towards": 0},
-            False,
-        ),
-        (
-            math.nan,
-            "float",
-            {"min_value": 0.0, "max_value": 0.0, "allow_nan": True},
-            True,
-        ),
-        (
-            math.nan,
-            "float",
-            {"min_value": 0.0, "max_value": 0.0, "allow_nan": False},
-            False,
-        ),
-        (
-            2.0,
-            "float",
-            {
-                "min_value": 1.0,
-                "max_value": 3.0,
-                "allow_nan": True,
-                "smallest_nonzero_magnitude": 2.5,
-            },
-            False,
-        ),
+        (0, "integer", integer_kw(1, 2), False),
+        (2, "integer", integer_kw(0, 1), False),
+        (10, "integer", integer_kw(0, 20), True),
+        (int(2**128 / 2) - 1, "integer", integer_kw(), True),
+        (int(2**128 / 2), "integer", integer_kw(), False),
+        (math.nan, "float", float_kw(0.0, 0.0), True),
+        (math.nan, "float", float_kw(0.0, 0.0, allow_nan=False), False),
+        (2.0, "float", float_kw(1.0, 3.0, smallest_nonzero_magnitude=2.5), False),
         (
             -2.0,
             "float",
-            {
-                "min_value": -3.0,
-                "max_value": -1.0,
-                "allow_nan": True,
-                "smallest_nonzero_magnitude": 2.5,
-            },
+            float_kw(-3.0, -1.0, smallest_nonzero_magnitude=2.5),
             False,
         ),
-        (
-            1.0,
-            "float",
-            {
-                "min_value": 1.0,
-                "max_value": 1.0,
-                "allow_nan": True,
-                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
-            },
-            True,
-        ),
+        (1.0, "float", float_kw(1.0, 1.0), True),
         (
             "abcd",
             "string",
@@ -641,56 +463,15 @@ def test_forced_nodes_are_trivial(node):
     "node",
     [
         IRNode(
-            ir_type="float",
-            value=5.0,
-            kwargs={
-                "min_value": 5.0,
-                "max_value": 10.0,
-                "allow_nan": True,
-                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
-            },
-            was_forced=False,
+            ir_type="float", value=5.0, kwargs=float_kw(5.0, 10.0), was_forced=False
         ),
         IRNode(
-            ir_type="float",
-            value=0.0,
-            kwargs={
-                "min_value": -5.0,
-                "max_value": 5.0,
-                "allow_nan": True,
-                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
-            },
-            was_forced=False,
+            ir_type="float", value=0.0, kwargs=float_kw(-5.0, 5.0), was_forced=False
         ),
-        IRNode(
-            ir_type="float",
-            value=0.0,
-            kwargs={
-                "min_value": -math.inf,
-                "max_value": math.inf,
-                "allow_nan": True,
-                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
-            },
-            was_forced=False,
-        ),
-        IRNode(
-            ir_type="boolean",
-            value=False,
-            kwargs={"p": 0.5},
-            was_forced=False,
-        ),
-        IRNode(
-            ir_type="boolean",
-            value=True,
-            kwargs={"p": 1.0},
-            was_forced=False,
-        ),
-        IRNode(
-            ir_type="boolean",
-            value=False,
-            kwargs={"p": 0.0},
-            was_forced=False,
-        ),
+        IRNode(ir_type="float", value=0.0, kwargs=float_kw(), was_forced=False),
+        IRNode(ir_type="boolean", value=False, kwargs={"p": 0.5}, was_forced=False),
+        IRNode(ir_type="boolean", value=True, kwargs={"p": 1.0}, was_forced=False),
+        IRNode(ir_type="boolean", value=False, kwargs={"p": 0.0}, was_forced=False),
         IRNode(
             ir_type="string",
             value="",
@@ -724,91 +505,40 @@ def test_forced_nodes_are_trivial(node):
             was_forced=False,
         ),
         IRNode(
-            ir_type="integer",
-            value=50,
-            kwargs={
-                "min_value": 50,
-                "max_value": 100,
-                "weights": None,
-                "shrink_towards": 0,
-            },
-            was_forced=False,
+            ir_type="integer", value=50, kwargs=integer_kw(50, 100), was_forced=False
         ),
         IRNode(
-            ir_type="integer",
-            value=0,
-            kwargs={
-                "min_value": -10,
-                "max_value": 10,
-                "weights": None,
-                "shrink_towards": 0,
-            },
-            was_forced=False,
+            ir_type="integer", value=0, kwargs=integer_kw(-10, 10), was_forced=False
         ),
         IRNode(
             ir_type="integer",
             value=2,
-            kwargs={
-                "min_value": -10,
-                "max_value": 10,
-                "weights": None,
-                "shrink_towards": 2,
-            },
+            kwargs=integer_kw(-10, 10, shrink_towards=2),
             was_forced=False,
         ),
         IRNode(
             ir_type="integer",
             value=-10,
-            kwargs={
-                "min_value": -10,
-                "max_value": 10,
-                "weights": None,
-                "shrink_towards": -12,
-            },
+            kwargs=integer_kw(-10, 10, shrink_towards=-12),
             was_forced=False,
         ),
         IRNode(
             ir_type="integer",
             value=10,
-            kwargs={
-                "min_value": -10,
-                "max_value": 10,
-                "weights": None,
-                "shrink_towards": 12,
-            },
+            kwargs=integer_kw(-10, 10, shrink_towards=12),
             was_forced=False,
         ),
+        IRNode(ir_type="integer", value=0, kwargs=integer_kw(), was_forced=False),
         IRNode(
             ir_type="integer",
-            value=0,
-            kwargs={
-                "min_value": None,
-                "max_value": None,
-                "weights": None,
-                "shrink_towards": 0,
-            },
+            value=1,
+            kwargs=integer_kw(min_value=-10, shrink_towards=1),
             was_forced=False,
         ),
         IRNode(
             ir_type="integer",
             value=1,
-            kwargs={
-                "min_value": -10,
-                "max_value": None,
-                "weights": None,
-                "shrink_towards": 1,
-            },
-            was_forced=False,
-        ),
-        IRNode(
-            ir_type="integer",
-            value=1,
-            kwargs={
-                "min_value": None,
-                "max_value": 10,
-                "weights": None,
-                "shrink_towards": 1,
-            },
+            kwargs=integer_kw(max_value=10, shrink_towards=1),
             was_forced=False,
         ),
         # we don't consider shrink_towards for unbounded integers.
@@ -816,12 +546,7 @@ def test_forced_nodes_are_trivial(node):
         IRNode(
             ir_type="integer",
             value=0,
-            kwargs={
-                "min_value": None,
-                "max_value": None,
-                "weights": None,
-                "shrink_towards": 1,
-            },
+            kwargs=integer_kw(shrink_towards=1),
             was_forced=False,
         ),
     ],
@@ -842,50 +567,14 @@ def test_trivial_nodes(node):
     "node",
     [
         IRNode(
-            ir_type="float",
-            value=6.0,
-            kwargs={
-                "min_value": 5.0,
-                "max_value": 10.0,
-                "allow_nan": True,
-                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
-            },
-            was_forced=False,
+            ir_type="float", value=6.0, kwargs=float_kw(5.0, 10.0), was_forced=False
         ),
         IRNode(
-            ir_type="float",
-            value=-5.0,
-            kwargs={
-                "min_value": -5.0,
-                "max_value": 5.0,
-                "allow_nan": True,
-                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
-            },
-            was_forced=False,
+            ir_type="float", value=-5.0, kwargs=float_kw(-5.0, 5.0), was_forced=False
         ),
-        IRNode(
-            ir_type="float",
-            value=1.0,
-            kwargs={
-                "min_value": -math.inf,
-                "max_value": math.inf,
-                "allow_nan": True,
-                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
-            },
-            was_forced=False,
-        ),
-        IRNode(
-            ir_type="boolean",
-            value=True,
-            kwargs={"p": 0.5},
-            was_forced=False,
-        ),
-        IRNode(
-            ir_type="boolean",
-            value=True,
-            kwargs={"p": 0.99},
-            was_forced=False,
-        ),
+        IRNode(ir_type="float", value=1.0, kwargs=float_kw(), was_forced=False),
+        IRNode(ir_type="boolean", value=True, kwargs={"p": 0.5}, was_forced=False),
+        IRNode(ir_type="boolean", value=True, kwargs={"p": 0.99}, was_forced=False),
         IRNode(
             ir_type="string",
             value="d",
@@ -915,27 +604,9 @@ def test_trivial_nodes(node):
             was_forced=False,
         ),
         IRNode(
-            ir_type="integer",
-            value=-10,
-            kwargs={
-                "min_value": -10,
-                "max_value": 10,
-                "weights": None,
-                "shrink_towards": 0,
-            },
-            was_forced=False,
+            ir_type="integer", value=-10, kwargs=integer_kw(-10, 10), was_forced=False
         ),
-        IRNode(
-            ir_type="integer",
-            value=42,
-            kwargs={
-                "min_value": None,
-                "max_value": None,
-                "weights": None,
-                "shrink_towards": 0,
-            },
-            was_forced=False,
-        ),
+        IRNode(ir_type="integer", value=42, kwargs=integer_kw(), was_forced=False),
     ],
 )
 def test_nontrivial_nodes(node):
@@ -956,56 +627,31 @@ def test_nontrivial_nodes(node):
         IRNode(
             ir_type="float",
             value=1.5,
-            kwargs={
-                "min_value": 1.1,
-                "max_value": 1.6,
-                "allow_nan": True,
-                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
-            },
+            kwargs=float_kw(1.1, 1.6),
             was_forced=False,
         ),
         IRNode(
             ir_type="float",
             value=math.floor(sys.float_info.max),
-            kwargs={
-                "min_value": sys.float_info.max - 1,
-                "max_value": math.inf,
-                "allow_nan": True,
-                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
-            },
+            kwargs=float_kw(sys.float_info.max - 1, math.inf),
             was_forced=False,
         ),
         IRNode(
             ir_type="float",
             value=math.ceil(-sys.float_info.max),
-            kwargs={
-                "min_value": -math.inf,
-                "max_value": -sys.float_info.max + 1,
-                "allow_nan": True,
-                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
-            },
+            kwargs=float_kw(-math.inf, -sys.float_info.max + 1),
             was_forced=False,
         ),
         IRNode(
             ir_type="float",
             value=math.inf,
-            kwargs={
-                "min_value": math.inf,
-                "max_value": math.inf,
-                "allow_nan": True,
-                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
-            },
+            kwargs=float_kw(math.inf, math.inf),
             was_forced=False,
         ),
         IRNode(
             ir_type="float",
             value=-math.inf,
-            kwargs={
-                "min_value": -math.inf,
-                "max_value": -math.inf,
-                "allow_nan": True,
-                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
-            },
+            kwargs=float_kw(-math.inf, -math.inf),
             was_forced=False,
         ),
     ],

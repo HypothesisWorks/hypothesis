@@ -430,9 +430,9 @@ def ir(*values: list[IRType]) -> list[IRNode]:
     return tuple(nodes)
 
 
-def make_float_kw(
-    min_value,
-    max_value,
+def float_kw(
+    min_value=-math.inf,
+    max_value=math.inf,
     *,
     allow_nan=True,
     smallest_nonzero_magnitude=SMALLEST_SUBNORMAL,
@@ -445,7 +445,7 @@ def make_float_kw(
     }
 
 
-def make_integer_kw(min_value, max_value, *, weights=None, shrink_towards=0):
+def integer_kw(min_value=None, max_value=None, *, weights=None, shrink_towards=0):
     return {
         "min_value": min_value,
         "max_value": max_value,
@@ -454,9 +454,9 @@ def make_integer_kw(min_value, max_value, *, weights=None, shrink_towards=0):
     }
 
 
-def make_string_kw(intervals, *, min_size=0, max_size=COLLECTION_DEFAULT_MAX_SIZE):
+def string_kw(intervals, *, min_size=0, max_size=COLLECTION_DEFAULT_MAX_SIZE):
     return {"intervals": intervals, "min_size": min_size, "max_size": max_size}
 
 
-# we could in theory define make_bytes_kw and make_boolean_kw, but without any
+# we could in theory define bytes_kw and boolean_kw, but without any
 # default kw values they aren't really a time save.
