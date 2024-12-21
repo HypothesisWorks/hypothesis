@@ -1576,8 +1576,7 @@ class HypothesisProvider(PrimitiveProvider):
         (
             sampler,
             forced_sign_bit,
-            neg_clamper,
-            pos_clamper,
+            clamper,
             nasty_floats,
         ) = self._draw_float_init_logic(
             min_value=min_value,
@@ -1608,12 +1607,8 @@ class HypothesisProvider(PrimitiveProvider):
                 )
                 if allow_nan and math.isnan(result):
                     clamped = result
-                elif math.copysign(1.0, result) == -1:
-                    assert neg_clamper is not None
-                    clamped = -neg_clamper(-result)
                 else:
-                    assert pos_clamper is not None
-                    clamped = pos_clamper(result)
+                    clamped = clamper(result)
                 if clamped != result and not (math.isnan(result) and allow_nan):
                     self._draw_float(forced=clamped, fake_forced=fake_forced)
                     result = clamped
@@ -1895,8 +1890,7 @@ class HypothesisProvider(PrimitiveProvider):
     ) -> tuple[
         Optional[Sampler],
         Optional[Literal[0, 1]],
-        Optional[Callable[[float], float]],
-        Optional[Callable[[float], float]],
+        Callable[[float], float],
         list[float],
     ]:
         """
@@ -1933,8 +1927,7 @@ class HypothesisProvider(PrimitiveProvider):
     ) -> tuple[
         Optional[Sampler],
         Optional[Literal[0, 1]],
-        Optional[Callable[[float], float]],
-        Optional[Callable[[float], float]],
+        Callable[[float], float],
         list[float],
     ]:
         if smallest_nonzero_magnitude == 0.0:  # pragma: no cover
@@ -1966,23 +1959,17 @@ class HypothesisProvider(PrimitiveProvider):
         weights = [0.2 * len(nasty_floats)] + [0.8] * len(nasty_floats)
         sampler = Sampler(weights, observe=False) if nasty_floats else None
 
-        pos_clamper = neg_clamper = None
-        if sign_aware_lte(0.0, max_value):
-            pos_min = max(min_value, smallest_nonzero_magnitude)
-            allow_zero = sign_aware_lte(min_value, 0.0)
-            pos_clamper = make_float_clamper(pos_min, max_value, allow_zero=allow_zero)
-        if sign_aware_lte(min_value, -0.0):
-            neg_max = min(max_value, -smallest_nonzero_magnitude)
-            allow_zero = sign_aware_lte(-0.0, max_value)
-            neg_clamper = make_float_clamper(
-                -neg_max, -min_value, allow_zero=allow_zero
-            )
-
         forced_sign_bit: Optional[Literal[0, 1]] = None
-        if (pos_clamper is None) != (neg_clamper is None):
-            forced_sign_bit = 1 if neg_clamper else 0
+        if sign_aware_lte(min_value, -0.0) != sign_aware_lte(0.0, max_value):
+            forced_sign_bit = 1 if sign_aware_lte(min_value, -0.0) else 0
 
-        return (sampler, forced_sign_bit, neg_clamper, pos_clamper, nasty_floats)
+        clamper = make_float_clamper(
+            min_value,
+            max_value,
+            smallest_nonzero_magnitude=smallest_nonzero_magnitude,
+            allow_nan=allow_nan,
+        )
+        return (sampler, forced_sign_bit, clamper, nasty_floats)
 
 
 # The set of available `PrimitiveProvider`s, by name.  Other libraries, such as
