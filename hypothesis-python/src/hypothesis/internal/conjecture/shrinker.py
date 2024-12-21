@@ -15,11 +15,6 @@ from typing import TYPE_CHECKING, Callable, Optional, TypeVar, Union
 import attr
 
 from hypothesis.internal.compat import int_from_bytes, int_to_bytes
-from hypothesis.internal.conjecture.choicetree import (
-    ChoiceTree,
-    prefix_selection_order,
-    random_selection_order,
-)
 from hypothesis.internal.conjecture.data import (
     ConjectureData,
     ConjectureResult,
@@ -43,6 +38,11 @@ from hypothesis.internal.conjecture.shrinking import (
     Integer,
     Ordering,
     String,
+)
+from hypothesis.internal.conjecture.shrinking.choicetree import (
+    ChoiceTree,
+    prefix_selection_order,
+    random_selection_order,
 )
 
 if TYPE_CHECKING:
