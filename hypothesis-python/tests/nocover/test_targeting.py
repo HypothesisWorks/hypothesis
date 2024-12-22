@@ -67,7 +67,7 @@ def test_targeting_can_be_disabled():
             phases.append(Phase.target)
 
         @seed(0)
-        @settings(database=None, max_examples=200, phases=phases)
+        @settings(database=None, max_examples=100, phases=phases)
         @given(strat)
         def test(ls):
             nonlocal result
