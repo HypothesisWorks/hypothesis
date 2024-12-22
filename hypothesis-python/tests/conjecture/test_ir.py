@@ -797,6 +797,8 @@ def test_choice_index_and_value_are_inverses(ir_type_and_kwargs):
         ("integer", integer_kw(max_value=5, shrink_towards=2), range(-10, 5 + 1)),
         ("integer", integer_kw(max_value=5), range(-10, 5 + 1)),
         ("integer", integer_kw(min_value=0, shrink_towards=1), range(10)),
+        ("integer", integer_kw(-5, 5, shrink_towards=3), range(-5, 5 + 1)),
+        ("integer", integer_kw(-5, 5, shrink_towards=-3), range(-5, 5 + 1)),
         (
             "float",
             float_kw(1.0, next_up(next_up(1.0))),

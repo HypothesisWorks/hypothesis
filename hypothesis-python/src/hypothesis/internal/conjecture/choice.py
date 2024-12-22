@@ -204,21 +204,19 @@ def choice_to_index(choice, kwargs):
             return 0
         return int(choice)
     elif isinstance(choice, bytes):
-        index = collection_index(
+        return collection_index(
             list(choice),
             min_size=kwargs["min_size"],
             alphabet_size=2**8,
         )
-        return index
     elif isinstance(choice, str):
         intervals = kwargs["intervals"]
-        index = collection_index(
+        return collection_index(
             choice,
             min_size=kwargs["min_size"],
             alphabet_size=len(intervals),
             to_order=intervals.index_from_char_in_shrink_order,
         )
-        return index
     elif isinstance(choice, float):
         sign = int(sign_aware_lte(choice, -0.0))
         return (sign << 64) | float_to_lex(abs(choice))
