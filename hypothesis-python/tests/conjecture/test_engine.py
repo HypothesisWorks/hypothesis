@@ -57,6 +57,7 @@ from tests.conjecture.common import (
     SOME_LABEL,
     TEST_SETTINGS,
     buffer_size_limit,
+    integer_kw,
     ir,
     ir_nodes,
     run_to_nodes,
@@ -1627,17 +1628,7 @@ def test_simulate_to_evicted_data(monkeypatch):
     # cache evictions (but also potentially other trickery).
     monkeypatch.setattr(engine_module, "CACHE_SIZE", 1)
 
-    node_0 = IRNode(
-        ir_type="integer",
-        value=0,
-        kwargs={
-            "min_value": None,
-            "max_value": None,
-            "weights": None,
-            "shrink_towards": 0,
-        },
-        was_forced=False,
-    )
+    node_0 = IRNode(ir_type="integer", value=0, kwargs=integer_kw(), was_forced=False)
     node_1 = node_0.copy(with_value=1)
 
     def test(data):

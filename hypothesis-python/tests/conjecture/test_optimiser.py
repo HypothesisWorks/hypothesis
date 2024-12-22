@@ -19,7 +19,13 @@ from hypothesis.internal.conjecture.engine import ConjectureRunner, RunIsComplet
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.internal.intervalsets import IntervalSet
 
-from tests.conjecture.common import TEST_SETTINGS, buffer_size_limit, ir, ir_nodes
+from tests.conjecture.common import (
+    TEST_SETTINGS,
+    buffer_size_limit,
+    integer_kw,
+    ir,
+    ir_nodes,
+)
 
 
 def test_optimises_to_maximum():
@@ -246,12 +252,7 @@ def test_optimiser_when_test_grows_buffer_to_overflow():
     )
 )
 @example(
-    IRNode(
-        ir_type="integer",
-        value=1,
-        kwargs={"min_value": 0, "max_value": 200, "weights": None, "shrink_towards": 0},
-        was_forced=False,
-    )
+    IRNode(ir_type="integer", value=1, kwargs=integer_kw(0, 200), was_forced=False)
 )
 def test_optimising_all_nodes(node):
     assume(compute_max_children(node.ir_type, node.kwargs) > 50)
