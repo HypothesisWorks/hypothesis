@@ -817,3 +817,33 @@ def test_choice_index_and_value_are_inverses_explicit(ir_type, kwargs, choices):
         assert ir_value_equal(
             ir_type, choice_from_index(index, ir_type, kwargs), choice
         )
+
+
+@pytest.mark.parametrize(
+    "kwargs, choices",
+    [
+        # unbounded
+        (integer_kw(), (0, 1, -1, 2, -2, 3, -3)),
+        (integer_kw(shrink_towards=2), (2, 3, 1, 4, 0, 5, -1, 6, -2)),
+        # semibounded (below)
+        (integer_kw(min_value=3), (3, 4, 5, 6, 7)),
+        (integer_kw(min_value=3, shrink_towards=5), (5, 6, 4, 7, 3, 8, 9)),
+        (integer_kw(min_value=-3), (0, 1, -1, 2, -2, 3, -3, 4, 5, 6)),
+        (integer_kw(min_value=-3, shrink_towards=-1), (-1, 0, -2, 1, -3, 2, 3, 4)),
+        # semibounded (above)
+        (integer_kw(max_value=3), (0, 1, -1, 2, -2, 3, -3, -4, -5, -6)),
+        (integer_kw(max_value=3, shrink_towards=1), (1, 2, 0, 3, -1, -2, -3, -4)),
+        (integer_kw(max_value=-3), (-3, -4, -5, -6, -7)),
+        (integer_kw(max_value=-3, shrink_towards=-5), (-5, -4, -6, -3, -7, -8, -9)),
+        # bounded
+        (integer_kw(-3, 3), (0, 1, -1, 2, -2, 3, -3)),
+        (integer_kw(-3, 3, shrink_towards=1), (1, 2, 0, 3, -1, -2, -3)),
+        (integer_kw(-3, 3, shrink_towards=-1), (-1, 0, -2, 1, -3, 2, 3)),
+    ],
+    ids=repr,
+)
+def test_integer_choice_index(kwargs, choices):
+    # explicit test which checks that the order of `choices` matches the index
+    # order.
+    for i, choice in enumerate(choices):
+        assert choice_to_index(choice, kwargs) == i

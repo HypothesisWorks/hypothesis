@@ -141,12 +141,11 @@ def choice_to_index(choice, kwargs):
         # Let a = shrink_towards.
         # * Unbounded: Ordered by (|a - x|, sgn(a - x)). Think of a zigzag.
         #   [a, a + 1, a - 1, a + 2, a - 2, ...]
-        # * Semi-bounded: Same as unbounded except stop on one side when you hit
+        # * Semi-bounded: Same as unbounded, except stop on one side when you hit
         #   {min, max}_value. so min_value=-1 a=0 has order
         #   [0, 1, -1, 2, 3, 4, ...]
-        # * Bounded: Ordered by (sgn(a - x), |a - x|). Count upwards until max_value,
-        #   then count downards.
-        #   [a, a + 1, a + 2, ..., max_value, a - 1, a - 2, ..., min_value]
+        # * Bounded: Same as unbounded and semibounded, except stop on each side
+        #   when you hit {min, max}_value.
         #
         # To simplify and gain intuition about this ordering, you can think about
         # the most common case where 0 is first (a = 0). We deviate from this only
@@ -185,17 +184,28 @@ def choice_to_index(choice, kwargs):
             # range = [-2, 5]
             # shrink_towards = 2
             # index |  0  1  2  3  4  5  6  7
-            #     v |  2  3  4  5  1  0 -1 -2
+            #     v |  2  3  1  4  0  5 -1 -2
             #
             # ^ with zero weights at index = [0, 2, 6]
             # index |  0  1  2  3  4
-            #     v |  3  5  1  0 -2
+            #     v |  3  4  0  5 -2
             assert kwargs["weights"] is None or all(
                 w > 0 for w in kwargs["weights"].values()
             ), "technically possible but really annoying to support zero weights"
-            if choice >= shrink_towards:
-                return choice - shrink_towards
-            return max_value - shrink_towards + abs(choice - shrink_towards)
+
+            # check which side gets exhausted first
+            if (shrink_towards - min_value) < (max_value - shrink_towards):
+                # Below shrink_towards gets exhausted first. Equivalent to
+                # semibounded below
+                if abs(choice - shrink_towards) <= (shrink_towards - min_value):
+                    return zigzag_index(choice, shrink_towards=shrink_towards)
+                return choice - min_value
+            else:
+                # Above shrink_towards gets exhausted first. Equivalent to semibounded
+                # above
+                if abs(choice - shrink_towards) <= (max_value - shrink_towards):
+                    return zigzag_index(choice, shrink_towards=shrink_towards)
+                return max_value - choice
     elif isinstance(choice, bool):
         # Ordered by [False, True].
         p = kwargs["p"]
@@ -241,14 +251,9 @@ def choice_from_index(index, ir_type, kwargs):
             return zigzag_value(index, shrink_towards=shrink_towards)
         elif min_value is not None and max_value is None:
             # case: semibounded below
-
-            # min_value = -2
-            # index | 0  1  2  3  4  5  6  7
-            #     v | 0  1 -1  2 -2  3  4  5
             if index <= zigzag_index(min_value, shrink_towards=shrink_towards):
                 return zigzag_value(index, shrink_towards=shrink_towards)
             return index + min_value
-
         elif max_value is not None and min_value is None:
             # case: semibounded above
             if index <= zigzag_index(max_value, shrink_towards=shrink_towards):
@@ -256,22 +261,20 @@ def choice_from_index(index, ir_type, kwargs):
             return max_value - index
         else:
             # case: bounded
+            assert kwargs["weights"] is None or all(
+                w > 0 for w in kwargs["weights"].values()
+            ), "possible but really annoying to support zero weights"
 
-            # range = [-2, 5]
-            # shrink_towards = 2
-            # index |  0  1  2  3  4  5  6  7
-            #     v |  2  3  4  5  1  0 -1 -2
-            #
-            # ^ with zero weights at index = [0, 2, 6]
-            # index |  0  1  2  3  4
-            #     v |  3  5  1  0 -2
-            if kwargs["weights"] is not None:
-                assert all(
-                    w > 0 for w in kwargs["weights"].values()
-                ), "possible but really annoying to support zero weightss"
-            if index <= max_value - shrink_towards:
-                return shrink_towards + index
-            return shrink_towards - (index - (max_value - shrink_towards))
+            if (shrink_towards - min_value) < (max_value - shrink_towards):
+                # equivalent to semibounded below case
+                if index <= zigzag_index(min_value, shrink_towards=shrink_towards):
+                    return zigzag_value(index, shrink_towards=shrink_towards)
+                return index + min_value
+            else:
+                # equivalent to semibounded above case
+                if index <= zigzag_index(max_value, shrink_towards=shrink_towards):
+                    return zigzag_value(index, shrink_towards=shrink_towards)
+                return max_value - index
     elif ir_type == "boolean":
         # Ordered by [False, True].
         p = kwargs["p"]
