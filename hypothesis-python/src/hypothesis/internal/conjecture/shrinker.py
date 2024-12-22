@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, Callable, Optional, TypeVar, Union
 import attr
 
 from hypothesis.internal.compat import int_from_bytes, int_to_bytes
+from hypothesis.internal.conjecture.choice import choice_from_index
 from hypothesis.internal.conjecture.data import (
     ConjectureData,
     ConjectureResult,
@@ -1390,17 +1391,6 @@ class Shrinker:
     def try_trivial_examples(self, chooser):
         i = chooser.choose(range(len(self.examples)))
 
-        def trivial_value(ir_type):
-            # TODO: In an ideal world this would take into account the
-            # node kwargs, but this is an adequate first approximation.
-            return {
-                "integer": 0,
-                "string": "",
-                "boolean": False,
-                "float": 0.0,
-                "bytes": b"",
-            }[ir_type]
-
         prev = self.shrink_target
         nodes = self.shrink_target.ir_nodes
         ex = self.examples[i]
@@ -1410,7 +1400,9 @@ class Shrinker:
                 (
                     node
                     if node.was_forced
-                    else node.copy(with_value=trivial_value(node.ir_type))
+                    else node.copy(
+                        with_value=choice_from_index(0, node.ir_type, node.kwargs)
+                    )
                 )
                 for node in nodes[ex.ir_start : ex.ir_end]
             ]

@@ -8,7 +8,6 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import itertools
 import math
 from typing import Optional, Union
 
@@ -21,7 +20,7 @@ from hypothesis.errors import (
     StopTest,
 )
 from hypothesis.internal import floats as flt
-from hypothesis.internal.compat import int_to_bytes
+from hypothesis.internal.conjecture.choice import choice_from_index
 from hypothesis.internal.conjecture.data import (
     BooleanKWargs,
     BytesKWargs,
@@ -259,54 +258,17 @@ def compute_max_children(ir_type, kwargs):
 # compute_max_children than to reify the list of children (only to immediately
 # throw it away).
 def all_children(ir_type, kwargs):
-    if ir_type == "integer":
-        min_value = kwargs["min_value"]
-        max_value = kwargs["max_value"]
-
-        if min_value is None and max_value is None:
-            # full 128 bit range.
-            yield from range(-(2**127) + 1, 2**127 - 1)
-
-        elif min_value is not None and max_value is not None:
-            yield from range(min_value, max_value + 1)
-        else:
-            assert (min_value is None) ^ (max_value is None)
-            # hard case: only one bound was specified. Here we probe in 128 bits
-            # around shrink_towards, and discard those above max_value or below
-            # min_value respectively.
-            shrink_towards = kwargs["shrink_towards"]
-            if min_value is None:
-                shrink_towards = min(max_value, shrink_towards)
-                yield from range(shrink_towards - (2**127) + 1, max_value)
-            else:
-                assert max_value is None
-                shrink_towards = max(min_value, shrink_towards)
-                yield from range(min_value, shrink_towards + (2**127) - 1)
-
-    if ir_type == "boolean":
-        p = kwargs["p"]
-        if p <= 2 ** (-64):
-            yield False
-        elif p >= (1 - 2 ** (-64)):
-            yield True
-        else:
-            yield from [False, True]
-    if ir_type == "bytes":
-        for size in range(kwargs["min_size"], kwargs["max_size"] + 1):
-            yield from (int_to_bytes(i, size) for i in range(2 ** (8 * size)))
-    if ir_type == "string":
-        min_size = kwargs["min_size"]
-        max_size = kwargs["max_size"]
-        intervals = kwargs["intervals"]
-
-        # written unidiomatically in order to handle the case of max_size=inf.
-        size = min_size
-        while size <= max_size:
-            for ords in itertools.product(intervals, repeat=size):
-                yield "".join(chr(n) for n in ords)
-            size += 1
-    if ir_type == "float":
-
+    if ir_type != "float":
+        for index in range(compute_max_children(ir_type, kwargs)):
+            yield choice_from_index(index, ir_type, kwargs)
+    else:
+        # the float ordering is not injective (because of resampling
+        # out-of-bounds values), so using choice_from_index would result in
+        # duplicates. This violates invariants in datatree about being able
+        # to draw unique new children using all_children.
+        #
+        # We instead maintain a separate implementation for floats.
+        # TODO_IR write a better (bijective) ordering for floats and remove this!
         def floats_between(a, b):
             for n in range(float_to_int(a), float_to_int(b) + 1):
                 yield int_to_float(n)

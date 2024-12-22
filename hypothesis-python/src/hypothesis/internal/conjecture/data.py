@@ -31,9 +31,10 @@ from typing import (
 
 import attr
 
-from hypothesis.errors import Frozen, InvalidArgument, StopTest
+from hypothesis.errors import ChoiceTooLarge, Frozen, InvalidArgument, StopTest
 from hypothesis.internal.cache import LRUCache
 from hypothesis.internal.compat import add_note, floor, int_from_bytes, int_to_bytes
+from hypothesis.internal.conjecture.choice import choice_from_index
 from hypothesis.internal.conjecture.floats import float_to_lex, lex_to_float
 from hypothesis.internal.conjecture.junkdrawer import (
     IntList,
@@ -965,23 +966,10 @@ class IRNode:
         if self.was_forced:
             return True
 
-        if self.ir_type == "integer":
-            shrink_towards = self.kwargs["shrink_towards"]
-            min_value = self.kwargs["min_value"]
-            max_value = self.kwargs["max_value"]
-
-            # shrink_towards is not respected for unbounded integers. (though
-            # probably it should be?)
-            if min_value is None and max_value is None:
-                return self.value == 0
-
-            if min_value is not None:
-                shrink_towards = max(min_value, shrink_towards)
-            if max_value is not None:
-                shrink_towards = min(max_value, shrink_towards)
-
-            return self.value == shrink_towards
-        if self.ir_type == "float":
+        if self.ir_type != "float":
+            zero_value = choice_from_index(0, self.ir_type, self.kwargs)
+            return ir_value_equal(self.ir_type, self.value, zero_value)
+        else:
             min_value = self.kwargs["min_value"]
             max_value = self.kwargs["max_value"]
             shrink_towards = 0
@@ -1005,20 +993,6 @@ class IRNode:
             # It would be good to compute this correctly in the future, but it's
             # also not incorrect to be conservative here.
             return False
-        if self.ir_type == "boolean":
-            p = self.kwargs["p"]
-            if p == 1.0:
-                return True
-            return self.value is False
-        if self.ir_type == "string":
-            # smallest size and contains only the smallest-in-shrink-order character.
-            minimal_char = self.kwargs["intervals"].char_in_shrink_order(0)
-            return self.value == (minimal_char * self.kwargs["min_size"])
-        if self.ir_type == "bytes":
-            # smallest size and all-zero value.
-            return len(self.value) == self.kwargs["min_size"] and not any(self.value)
-
-        raise NotImplementedError(f"unhandled ir_type {self.ir_type}")
 
     def __eq__(self, other):
         if not isinstance(other, IRNode):
@@ -2390,8 +2364,8 @@ class ConjectureData:
             assert self.index_ir == len(self.ir_prefix) - 1
             if node.type == "simplest":
                 try:
-                    value = buffer_to_ir(ir_type, kwargs, buffer=bytes(BUFFER_SIZE))
-                except StopTest:
+                    value = choice_from_index(0, ir_type, kwargs)
+                except ChoiceTooLarge:
                     self.mark_overrun()
             else:
                 raise NotImplementedError

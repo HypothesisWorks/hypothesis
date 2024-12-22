@@ -14,8 +14,17 @@ from copy import deepcopy
 
 import pytest
 
-from hypothesis import HealthCheck, assume, example, given, settings, strategies as st
+from hypothesis import (
+    HealthCheck,
+    assume,
+    example,
+    given,
+    note,
+    settings,
+    strategies as st,
+)
 from hypothesis.errors import StopTest
+from hypothesis.internal.conjecture.choice import choice_from_index, choice_to_index
 from hypothesis.internal.conjecture.data import (
     COLLECTION_DEFAULT_MAX_SIZE,
     ConjectureData,
@@ -37,6 +46,7 @@ from hypothesis.internal.intervalsets import IntervalSet
 
 from tests.common.debug import minimal
 from tests.conjecture.common import (
+    clamped_shrink_towards,
     draw_value,
     float_kw,
     fresh_data,
@@ -212,20 +222,8 @@ def test_compute_max_children_and_all_children_agree(ir_type_and_kwargs):
 
 
 @given(integer_kwargs())
-def test_compute_max_children_integer_ranges(kwargs):
-    if kwargs["weights"] is not None:
-        # this case is in principle testable. would need to takewhile from all_children
-        # while weight is not zero.
-        assume(all(v > 0 for v in kwargs["weights"]))
-    if kwargs["min_value"] is not None:
-        expected = kwargs["min_value"]
-    else:
-        offset = (
-            0
-            if kwargs["max_value"] is None
-            else min(kwargs["max_value"], kwargs["shrink_towards"])
-        )
-        expected = offset - (2**127) + 1
+def test_compute_max_children_unbounded_integer_ranges(kwargs):
+    expected = clamped_shrink_towards(kwargs)
     first = next(all_children("integer", kwargs))
     assert expected == first, (expected, first)
 
@@ -541,14 +539,21 @@ def test_forced_nodes_are_trivial(node):
             kwargs=integer_kw(max_value=10, shrink_towards=1),
             was_forced=False,
         ),
-        # we don't consider shrink_towards for unbounded integers.
-        # the trivial value should probably be 1 here, not 0.
-        IRNode(
-            ir_type="integer",
-            value=0,
-            kwargs=integer_kw(shrink_towards=1),
-            was_forced=False,
-        ),
+        # TODO_IR: this *is* trivial by node.trivial, but not by shrinking, because
+        # the buffer ordering doesn't yet consider shrink_towards for unbounded
+        # integers this will be fixed (and this test case can be uncommented) when
+        # we move shrink ordering to the typed choice sequence.
+        # IRNode(
+        #     ir_type="integer",
+        #     value=1,
+        #     kwargs={
+        #         "min_value": None,
+        #         "max_value": None,
+        #         "weights": None,
+        #         "shrink_towards": 1,
+        #     },
+        #     was_forced=False,
+        # ),
     ],
 )
 def test_trivial_nodes(node):
@@ -718,3 +723,95 @@ def test_node_template_simplest_is_actually_trivial(node):
     getattr(data, f"draw_{node.ir_type}")(**node.kwargs)
     assert len(data.ir_nodes) == 1
     assert data.ir_nodes[0].trivial
+
+
+@given(ir_types_and_kwargs())
+@example(("boolean", {"p": 0}))
+@example(("boolean", {"p": 1}))
+def test_choice_indices_are_positive(ir_type_and_kwargs):
+    (ir_type, kwargs) = ir_type_and_kwargs
+    v = draw_value(ir_type, kwargs)
+    assert choice_to_index(v, kwargs) >= 0
+
+
+@given(integer_kwargs())
+def test_shrink_towards_has_index_0(kwargs):
+    shrink_towards = clamped_shrink_towards(kwargs)
+    note({"clamped_shrink_towards": shrink_towards})
+    assert choice_to_index(shrink_towards, kwargs) == 0
+    assert choice_from_index(0, "integer", kwargs) == shrink_towards
+
+
+@given(ir_types_and_kwargs())
+def test_choice_to_index_injective(ir_type_and_kwargs):
+    # ir ordering should be injective both ways.
+    (ir_type, kwargs) = ir_type_and_kwargs
+    # ...except for floats, which are hard to order bijectively.
+    assume(ir_type != "float")
+    # cap to 10k so this test finishes in a reasonable amount of time
+    cap = min(compute_max_children(ir_type, kwargs), 10_000)
+
+    indices = set()
+    for i, choice in enumerate(all_children(ir_type, kwargs)):
+        if i >= cap:
+            break
+        index = choice_to_index(choice, kwargs)
+        assert index not in indices
+        indices.add(index)
+
+
+@given(ir_types_and_kwargs())
+@example(
+    (
+        "string",
+        {"min_size": 0, "max_size": 10, "intervals": IntervalSet.from_string("a")},
+    )
+)
+def test_choice_from_value_injective(ir_type_and_kwargs):
+    (ir_type, kwargs) = ir_type_and_kwargs
+    assume(ir_type != "float")
+    cap = min(compute_max_children(ir_type, kwargs), 10_000)
+
+    choices = set()
+    for index in range(cap):
+        choice = choice_from_index(index, ir_type, kwargs)
+        assert choice not in choices
+        choices.add(choice)
+
+
+@given(ir_types_and_kwargs())
+def test_choice_index_and_value_are_inverses(ir_type_and_kwargs):
+    (ir_type, kwargs) = ir_type_and_kwargs
+    v = draw_value(ir_type, kwargs)
+    index = choice_to_index(v, kwargs)
+    note({"v": v, "index": index})
+    ir_value_equal(ir_type, choice_from_index(index, ir_type, kwargs), v)
+
+
+@pytest.mark.parametrize(
+    "ir_type, kwargs, choices",
+    [
+        ("boolean", {"p": 1}, [True]),
+        ("boolean", {"p": 0}, [False]),
+        ("integer", integer_kw(min_value=1, shrink_towards=4), range(1, 10)),
+        ("integer", integer_kw(max_value=5, shrink_towards=2), range(-10, 5 + 1)),
+        ("integer", integer_kw(max_value=5), range(-10, 5 + 1)),
+        ("integer", integer_kw(min_value=0, shrink_towards=1), range(10)),
+        (
+            "float",
+            float_kw(1.0, next_up(next_up(1.0))),
+            [1.0, next_up(1.0), next_up(next_up(1.0))],
+        ),
+        (
+            "float",
+            float_kw(next_down(-0.0), next_up(0.0)),
+            [next_down(-0.0), -0.0, 0.0, next_up(0.0)],
+        ),
+    ],
+)
+def test_choice_index_and_value_are_inverses_explicit(ir_type, kwargs, choices):
+    for choice in choices:
+        index = choice_to_index(choice, kwargs)
+        assert ir_value_equal(
+            ir_type, choice_from_index(index, ir_type, kwargs), choice
+        )
