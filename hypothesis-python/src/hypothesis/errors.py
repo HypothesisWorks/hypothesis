@@ -55,6 +55,10 @@ class Unsatisfiable(_Trimmable):
     """
 
 
+class ChoiceTooLarge(HypothesisException):
+    """An internal error raised by choice_from_index."""
+
+
 class Flaky(_Trimmable):
     """Base class for indeterministic failures. Usually one of the more
     specific subclasses (FlakyFailure or FlakyStrategyDefinition) is raised."""
