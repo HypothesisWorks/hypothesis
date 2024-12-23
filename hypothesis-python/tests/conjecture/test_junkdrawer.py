@@ -26,6 +26,7 @@ from hypothesis.internal.conjecture.junkdrawer import (
     stack_depth_of_caller,
     startswith,
 )
+from hypothesis.internal.floats import float_to_int, sign_aware_lte
 
 
 def test_out_of_range():
@@ -66,20 +67,22 @@ def test_pop():
 @example(1, 10, 5)
 @example(5, 10, 5)
 @example(5, 1, 10)
-@given(st.integers(), st.integers(), st.integers())
+@example(-5, 0.0, -0.0)
+@example(0.0, -0.0, 5)
+@given(
+    st.floats(allow_nan=False), st.floats(allow_nan=False), st.floats(allow_nan=False)
+)
 def test_clamp(lower, value, upper):
     lower, upper = sorted((lower, upper))
-
     clamped = clamp(lower, value, upper)
 
-    assert lower <= clamped <= upper
-
-    if lower <= value <= upper:
-        assert value == clamped
+    assert sign_aware_lte(lower, clamped) and sign_aware_lte(clamped, upper)
+    if sign_aware_lte(lower, value) and sign_aware_lte(value, upper):
+        assert float_to_int(value) == float_to_int(clamped)
     if lower > value:
-        assert clamped == lower
+        assert float_to_int(clamped) == float_to_int(lower)
     if value > upper:
-        assert clamped == upper
+        assert float_to_int(clamped) == float_to_int(upper)
 
 
 # this would be more robust as a stateful test, where each rule is a list operation

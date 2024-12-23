@@ -272,6 +272,13 @@ class LazySequenceCopy:
 def clamp(lower: float, value: float, upper: float) -> float:
     """Given a value and lower/upper bounds, 'clamp' the value so that
     it satisfies lower <= value <= upper."""
+    # this seems pointless (and is for integers), but handles the -0.0/0.0 case.
+    # clamp(-1, 0.0, -0.0) violates the bounds by returning 0.0, since min(0.0, -0.0)
+    # takes the first value of 0.0.
+    if value == lower:
+        return lower
+    if value == upper:
+        return upper
     return max(lower, min(value, upper))
 
 

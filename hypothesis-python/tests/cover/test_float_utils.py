@@ -70,6 +70,7 @@ def test_next_float_equal(func, val):
 @example(float_kw(1, 4, smallest_nonzero_magnitude=4), -4)
 @example(float_kw(1, 4, smallest_nonzero_magnitude=4), -5)
 @example(float_kw(1, 4, smallest_nonzero_magnitude=4), -6)
+@example(float_kw(-5e-324, -0.0, smallest_nonzero_magnitude=5e-324), 3.0)
 @given(float_kwargs(), st.floats())
 def test_float_clamper(kwargs, input_value):
     min_value = kwargs["min_value"]
