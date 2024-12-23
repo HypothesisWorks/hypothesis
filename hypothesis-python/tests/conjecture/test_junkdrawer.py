@@ -63,20 +63,27 @@ def test_pop():
         x.pop()
 
 
-@example(1, 5, 10)
-@example(1, 10, 5)
-@example(5, 10, 5)
-@example(5, 1, 10)
-@example(-5, 0.0, -0.0)
-@example(0.0, -0.0, 5)
-@given(
-    st.floats(allow_nan=False), st.floats(allow_nan=False), st.floats(allow_nan=False)
-)
-def test_clamp(lower, value, upper):
-    lower, upper = sorted((lower, upper))
+@st.composite
+def clamp_inputs(draw):
+    lower = draw(st.floats(allow_nan=False))
+    value = draw(st.floats(allow_nan=False))
+    upper = draw(st.floats(min_value=lower, allow_nan=False))
+    return (lower, value, upper)
+
+
+@example((1, 5, 10))
+@example((1, 10, 5))
+@example((5, 10, 5))
+@example((5, 1, 10))
+@example((-5, 0.0, -0.0))
+@example((0.0, -0.0, 5))
+@given(clamp_inputs())
+def test_clamp(input):
+    lower, value, upper = input
     clamped = clamp(lower, value, upper)
 
-    assert sign_aware_lte(lower, clamped) and sign_aware_lte(clamped, upper)
+    assert sign_aware_lte(lower, clamped)
+    assert sign_aware_lte(clamped, upper)
     if sign_aware_lte(lower, value) and sign_aware_lte(value, upper):
         assert float_to_int(value) == float_to_int(clamped)
     if lower > value:
