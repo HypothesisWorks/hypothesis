@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.123.0:
+
+--------------------
+6.123.0 - 2024-12-23
+--------------------
+
+:func:`~hypothesis.strategies.from_type` can now handle constructors with
+required positional-only arguments if they have type annotations.  Previously,
+we only passed arguments by keyword.
+
 .. _v6.122.7:
 
 --------------------
