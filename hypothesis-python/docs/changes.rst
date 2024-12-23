@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.122.7:
+
+--------------------
+6.122.7 - 2024-12-23
+--------------------
+
+This patch lays some groundwork for migrating our internal representation to the typed choice sequence (:issue:`3921`)
+
 .. _v6.122.6:
 
 --------------------
