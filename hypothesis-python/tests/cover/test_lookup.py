@@ -1224,3 +1224,16 @@ def test_custom_strategy_function_resolves_types_conditionally():
         assert_all_examples(st.from_type(A), lambda example: type(example) == C)
         assert_all_examples(st.from_type(B), lambda example: example is sentinel)
         assert_all_examples(st.from_type(C), lambda example: type(example) == C)
+
+
+class CustomInteger(int):
+    def __init__(self, value: int, /) -> None:
+        if not isinstance(value, int):
+            raise TypeError
+
+
+@given(...)
+def test_from_type_resolves_required_posonly_args(n: CustomInteger):
+    # st.builds() does not infer for positional arguments, but st.from_type()
+    # does.  See e.g. https://stackoverflow.com/q/79199376/ for motivation.
+    assert isinstance(n, CustomInteger)

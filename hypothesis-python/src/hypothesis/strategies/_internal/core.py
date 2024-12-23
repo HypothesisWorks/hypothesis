@@ -1447,17 +1447,35 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
             params = get_signature(thing).parameters
         except Exception:
             params = {}  # type: ignore
+
+        posonly_args = []
         kwargs = {}
         for k, p in params.items():
             if (
-                k in hints
+                p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD, p.KEYWORD_ONLY)
+                and k in hints
                 and k != "return"
-                and p.kind in (Parameter.POSITIONAL_OR_KEYWORD, Parameter.KEYWORD_ONLY)
             ):
-                kwargs[k] = from_type_guarded(hints[k])
-                if p.default is not Parameter.empty and kwargs[k] is not ...:
-                    kwargs[k] = just(p.default) | kwargs[k]
-        if params and not kwargs and not issubclass(thing, BaseException):
+                ps = from_type_guarded(hints[k])
+                if p.default is not Parameter.empty and ps is not ...:
+                    ps = just(p.default) | ps
+                if p.kind is Parameter.POSITIONAL_ONLY:
+                    # builds() doesn't infer strategies for positional args, so:
+                    if ps is ...:  # pragma: no cover  # rather fiddly to test
+                        if p.default is Parameter.empty:
+                            raise ResolutionFailed(
+                                f"Could not resolve {thing!r} to a strategy; "
+                                "consider using register_type_strategy"
+                            )
+                        ps = just(p.default)
+                    posonly_args.append(ps)
+                else:
+                    kwargs[k] = ps
+        if (
+            params
+            and not (posonly_args or kwargs)
+            and not issubclass(thing, BaseException)
+        ):
             from_type_repr = repr_call(from_type, (thing,), {})
             builds_repr = repr_call(builds, (thing,), {})
             warnings.warn(
@@ -1468,7 +1486,7 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
                 SmallSearchSpaceWarning,
                 stacklevel=2,
             )
-        return builds(thing, **kwargs)
+        return builds(thing, *posonly_args, **kwargs)
     # And if it's an abstract type, we'll resolve to a union of subclasses instead.
     subclasses = thing.__subclasses__()
     if not subclasses:
