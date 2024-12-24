@@ -275,6 +275,8 @@ def clamp(lower: float, value: float, upper: float) -> float:
     # this seems pointless (and is for integers), but handles the -0.0/0.0 case.
     # clamp(-1, 0.0, -0.0) violates the bounds by returning 0.0, since min(0.0, -0.0)
     # takes the first value of 0.0.
+    if lower == value == upper:
+        return value
     if value == lower:
         return lower
     if value == upper:

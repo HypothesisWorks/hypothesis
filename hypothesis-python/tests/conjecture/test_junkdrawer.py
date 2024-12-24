@@ -77,6 +77,8 @@ def clamp_inputs(draw):
 @example((5, 1, 10))
 @example((-5, 0.0, -0.0))
 @example((0.0, -0.0, 5))
+@example((-0.0, 0.0, 0.0))
+@example((-0.0, -0.0, 0.0))
 @given(clamp_inputs())
 def test_clamp(input):
     lower, value, upper = input
