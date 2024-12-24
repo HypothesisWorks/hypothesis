@@ -208,11 +208,11 @@ def sign_aware_lte(x: float, y: float) -> bool:
 
 def clamp(lower: float, value: float, upper: float) -> float:
     """Given a value and lower/upper bounds, 'clamp' the value so that
-    it satisfies lower <= value <= upper."""
+    it satisfies lower <= value <= upper.  NaN is mapped to lower."""
     # this seems pointless (and is for integers), but handles the -0.0/0.0 case.
-    if sign_aware_lte(value, lower):
+    if not sign_aware_lte(lower, value):
         return lower
-    if sign_aware_lte(upper, value):
+    if not sign_aware_lte(value, upper):
         return upper
     return value
 
