@@ -18,6 +18,19 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.123.1:
+
+--------------------
+6.123.1 - 2024-12-24
+--------------------
+
+Our pytest plugin now emits a warning if you set Pytest's ``norecursedirs``
+config option in such a way that the ``.hypothesis`` directory would be
+searched for tests.  This reliably indicates that you've made a mistake
+which slows down test collection, usually assuming that your configuration
+extends the set of ignored patterns when it actually replaces them.
+(:issue:`4200`)
+
 .. _v6.123.0:
 
 --------------------
