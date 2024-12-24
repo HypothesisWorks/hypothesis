@@ -30,7 +30,8 @@ def plot_vega(vega_spec, data, *, to, parameters=None):
         spec["signals"].append({"name": key, "value": value})
 
     with open(to, "wb") as f:
-        f.write(vl_convert.vega_to_png(spec))
+        # default ppi is 72, which is somewhat blurry.
+        f.write(vl_convert.vega_to_png(spec, ppi=200))
 
 
 def _mean_difference_ci(n1, n2, *, confidence):
