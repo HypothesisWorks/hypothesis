@@ -16,8 +16,10 @@ from pathlib import Path
 import click
 
 
-def plot_vega(vega_spec, data, *, to, parameters={}):
+def plot_vega(vega_spec, data, *, to, parameters=None):
     import vl_convert
+
+    parameters = parameters or {}
 
     spec = json.loads(vega_spec.read_text())
     spec["data"].insert(0, {"name": "source", "values": data})
@@ -48,9 +50,11 @@ def _mean_difference_ci(n1, n2, *, confidence):
 
 def _process_benchmark_data(data):
     assert set(data) == {"old", "new"}
-    assert (old := set(data["old"]["calls"])) == (
-        new := set(data["new"]["calls"])
-    ), old.symmetric_difference(new)
+    old_calls = data["old"]["calls"]
+    new_calls = data["new"]["calls"]
+    assert set(old_calls) == set(new_calls), set(old_calls).symmetric_difference(
+        set(new_calls)
+    )
 
     graph_data = []
 
@@ -66,9 +70,9 @@ def _process_benchmark_data(data):
         return v
 
     sums = {"old": 0, "new": 0}
-    for node_id in data["old"]["calls"]:
-        old = data["old"]["calls"][node_id]
-        new = data["new"]["calls"][node_id]
+    for node_id in old_calls:
+        old = old_calls[node_id]
+        new = new_calls[node_id]
         if set(old) | set(new) == {0} or len(old) != len(new):
             print(f"skipping {node_id}")
             continue
