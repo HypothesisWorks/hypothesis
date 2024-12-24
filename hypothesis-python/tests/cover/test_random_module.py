@@ -161,7 +161,11 @@ def test_find_does_not_pollute_state():
     "ignore:It looks like `register_random` was passed an object that could be garbage collected"
 )
 def test_evil_prng_registration_nonsense():
-    gc_collect()
+    # my guess is that other tests may register randoms that are then marked for
+    # deletion (but not actually gc'd yet). Therefore, depending on the order tests
+    # are run, RANDOMS_TO_MANAGE may start with more entries than after a gc. To
+    # force a clean slate for this test, unconditionally gc.
+    gc.collect()
     # The first test to call deterministic_PRNG registers a new random instance.
     # If that's this test, it will throw off our n_registered count in the middle.
     # start with a no-op to ensure this registration has occurred.
