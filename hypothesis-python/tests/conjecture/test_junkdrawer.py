@@ -20,13 +20,12 @@ from hypothesis.internal.conjecture.junkdrawer import (
     NotFound,
     SelfOrganisingList,
     binary_search,
-    clamp,
     endswith,
     replace_all,
     stack_depth_of_caller,
     startswith,
 )
-from hypothesis.internal.floats import float_to_int, sign_aware_lte
+from hypothesis.internal.floats import clamp, float_to_int, sign_aware_lte
 
 
 def test_out_of_range():

@@ -13,8 +13,6 @@ import struct
 from sys import float_info
 from typing import TYPE_CHECKING, Callable, Literal, SupportsFloat, Union
 
-from hypothesis.internal.conjecture.junkdrawer import clamp
-
 if TYPE_CHECKING:
     from typing import TypeAlias
 else:
@@ -206,6 +204,17 @@ def sign_aware_lte(x: float, y: float) -> bool:
         return math.copysign(1.0, x) <= math.copysign(1.0, y)
     else:
         return x <= y
+
+
+def clamp(lower: float, value: float, upper: float) -> float:
+    """Given a value and lower/upper bounds, 'clamp' the value so that
+    it satisfies lower <= value <= upper."""
+    # this seems pointless (and is for integers), but handles the -0.0/0.0 case.
+    if sign_aware_lte(value, lower):
+        return lower
+    if sign_aware_lte(upper, value):
+        return upper
+    return value
 
 
 SMALLEST_SUBNORMAL = next_up(0.0)
