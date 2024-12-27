@@ -9,12 +9,17 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import gc
+import inspect
+import json
 import random
 import sys
 import time as time_module
+from collections import defaultdict
 from functools import wraps
+from pathlib import Path
 
 import pytest
+from _pytest.monkeypatch import MonkeyPatch
 
 from hypothesis._settings import is_in_ci
 from hypothesis.errors import NonInteractiveExampleWarning
@@ -38,6 +43,9 @@ if sys.version_info >= (3, 11):
     collect_ignore_glob.append("cover/test_asyncio.py")  # @asyncio.coroutine removed
 
 
+in_shrinking_benchmark = False
+
+
 def pytest_configure(config):
     config.addinivalue_line("markers", "slow: pandas expects this marker to exist.")
     config.addinivalue_line(
@@ -45,9 +53,26 @@ def pytest_configure(config):
         "xp_min_version(api_version): run when greater or equal to api_version",
     )
 
+    if config.getoption("--hypothesis-benchmark-shrinks"):
+        # we'd like to support xdist here, but a session-scope fixture won't
+        # be enough: https://github.com/pytest-dev/pytest-xdist/issues/271.
+        # Need a lockfile or equivalent.
+
+        assert not hasattr(
+            config, "workerinput"
+        ), "--hypothesis-benchmark-shrinks does not currently support xdist. Run without -n"
+        assert config.getoption(
+            "--hypothesis-benchmark-output"
+        ), "must specify shrinking output file"
+
+        global in_shrinking_benchmark
+        in_shrinking_benchmark = True
+
 
 def pytest_addoption(parser):
     parser.addoption("--hypothesis-update-outputs", action="store_true")
+    parser.addoption("--hypothesis-benchmark-shrinks", type=str, choices=["new", "old"])
+    parser.addoption("--hypothesis-benchmark-output", type=str)
     parser.addoption("--hypothesis-learn-to-normalize", action="store_true")
 
     # New in pytest 6, so we add a shim on old versions to avoid missing-arg errors
@@ -145,6 +170,13 @@ independent_random = random.Random()
 
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_call(item):
+    if item.config.getoption("--hypothesis-benchmark-shrinks"):
+        yield from _benchmark_shrinks(item)
+        # ideally benchmark shrinking would not be mutually exclusive with the
+        # other checks in this function, but it's cleaner to early-return here,
+        # and in practice they will error in normal tests before one runs a
+        # benchmark.
+        return
     # This hookwrapper checks for PRNG state leaks from Hypothesis tests.
     # See: https://github.com/HypothesisWorks/hypothesis/issues/1919
     if not (hasattr(item, "obj") and is_hypothesis_test(item.obj)):
@@ -179,3 +211,51 @@ def pytest_runtest_call(item):
             "For hypothesis' own test suite, consider using one of the helper "
             "methods in tests.common.debug instead.",
         )
+
+
+shrink_calls = defaultdict(list)
+shrink_time = defaultdict(list)
+timer = time_module.process_time
+
+
+def _benchmark_shrinks(item):
+    from hypothesis.internal.conjecture.shrinker import Shrinker
+
+    # this isn't perfect, but it is cheap!
+    if "minimal(" not in inspect.getsource(item.function):
+        pytest.skip("(probably) does not call minimal()")
+
+    actual_shrink = Shrinker.shrink
+
+    def shrink(self, *args, **kwargs):
+        start_t = timer()
+        result = actual_shrink(self, *args, **kwargs)
+        # remove leading hypothesis-python/tests/...
+        nodeid = item.nodeid.rsplit("/", 1)[1]
+        shrink_calls[nodeid].append(self.engine.call_count - self.initial_calls)
+        shrink_time[nodeid].append(timer() - start_t)
+        return result
+
+    monkeypatch = MonkeyPatch()
+    monkeypatch.setattr(Shrinker, "shrink", shrink)
+
+    # pytest_runtest_call must yield at some point. This executes the test function
+    # n - 1 times, and then yields for the final execution.
+    for _ in range(5 - 1):
+        item.runtest()
+    yield
+
+    monkeypatch.undo()
+
+
+def pytest_sessionfinish(session, exitstatus):
+    if not (mode := session.config.getoption("--hypothesis-benchmark-shrinks")):
+        return
+    p = Path(session.config.getoption("--hypothesis-benchmark-output"))
+    results = {mode: {"calls": shrink_calls, "time": shrink_time}}
+    if not p.exists():
+        p.write_text(json.dumps(results))
+    else:
+        data = json.loads(p.read_text())
+        data[mode] = results[mode]
+        p.write_text(json.dumps(data))

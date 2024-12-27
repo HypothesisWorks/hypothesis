@@ -1,0 +1,396 @@
+{
+    "$schema": "https://vega.github.io/schema/vega/v5.json",
+    "width": 1600,
+    "height": 800,
+    "padding": 5,
+    "background": "#ffffff",
+    "title": {
+      "text": {"signal": "title"},
+      "fontSize": 18
+    },
+    "data": [
+      {
+        "name": "example",
+        "values": [
+          {"node_id": "test_node_1", "absolute": 100, "absolute_ci_lower": 10, "absolute_ci_upper": 15, "nx": 0.5, "nx_ci_lower": 0.05, "nx_ci_upper": 0.07},
+          {"node_id": "test_node_2", "absolute": -50, "absolute_ci_lower": 5, "absolute_ci_upper": 8, "nx": -0.2, "nx_ci_lower": 0.02, "nx_ci_upper": 0.03},
+          {"node_id": "test_node_3", "absolute": 150, "absolute_ci_lower": 15, "absolute_ci_upper": 20, "nx": 0.6, "nx_ci_lower": 0.04, "nx_ci_upper": 0.09},
+          {"node_id": "test_node_4", "absolute": -120, "absolute_ci_lower": 10, "absolute_ci_upper": 12, "nx": -0.4, "nx_ci_lower": 0.03, "nx_ci_upper": 0.05},
+          {"node_id": "test_node_5", "absolute": 80, "absolute_ci_lower": 8, "absolute_ci_upper": 10, "nx": 0.3, "nx_ci_lower": 0.02, "nx_ci_upper": 0.04}
+        ]
+      },
+      {
+        "name": "shrink_stats",
+        "source": "source",
+        "transform": [
+          {
+            "type": "aggregate",
+            "fields": ["absolute", "absolute", "nx", "nx"],
+            "ops": ["mean", "sum", "mean", "sum"],
+            "as": ["mean_shrink", "sum_shrink", "mean_nx", "sum_nx"]
+          }
+        ]
+      },
+      {
+        "name": "shrink_domain",
+        "source": "source",
+        "transform": [
+          {
+            "type": "aggregate",
+            "fields": ["absolute", "absolute", "absolute_ci_lower", "absolute_ci_upper"],
+            "ops": ["min", "max", "min", "max"],
+            "as": ["min_value", "max_value", "min_ci", "max_ci"]
+          },
+          {
+            "type": "formula",
+            "expr": "datum.min_value - datum.min_ci",
+            "as": "domain_min"
+          },
+          {
+            "type": "formula",
+            "expr": "datum.max_value + datum.max_ci",
+            "as": "domain_max"
+          }
+        ]
+      },
+      {
+        "name": "nx_domain",
+        "source": "source",
+        "transform": [
+          {
+            "type": "aggregate",
+            "fields": ["nx", "nx", "nx_ci_lower", "nx_ci_upper"],
+            "ops": ["min", "max", "min", "max"],
+            "as": ["min_value", "max_value", "min_ci", "max_ci"]
+          },
+          {
+            "type": "formula",
+            "expr": "datum.min_value - datum.min_ci",
+            "as": "domain_min"
+          },
+          {
+            "type": "formula",
+            "expr": "datum.max_value + datum.max_ci",
+            "as": "domain_max"
+          }
+        ]
+      }
+    ],
+    "scales": [
+      {
+        "name": "x",
+        "type": "band",
+        "domain": {"data": "source", "field": "node_id"},
+        "range": "width",
+        "padding": 0.2
+      },
+      {
+        "name": "y",
+        "type": "linear",
+        "domain": {"data": "shrink_domain", "fields": ["domain_min", "domain_max"]},
+        "range": "height",
+        "nice": true,
+        "zero": true
+      },
+      {
+        "name": "y2",
+        "type": "linear",
+        "domain": {"data": "nx_domain", "fields": ["domain_min", "domain_max"]},
+        "range": "height",
+        "nice": true,
+        "zero": true
+      },
+      {
+        "name": "color",
+        "type": "ordinal",
+        "domain": ["shrink call change", "n× change"],
+        "range": ["#4285F4", "#DB4437"]
+      }
+    ],
+    "axes": [
+      {
+        "orient": "bottom",
+        "scale": "x",
+        "labelAngle": -90,
+        "labelAlign": "right",
+        "labelBaseline": "middle",
+        "labelLimit": 300
+      },
+      {
+        "orient": "left",
+        "scale": "y",
+        "title": {"signal": "absolute_axis_title"},
+        "titleColor": "#4285F4",
+        "tickColor": "#4285F4",
+        "labelColor": "#4285F4",
+        "grid": true,
+        "gridColor": "#e0e0e0",
+        "gridOpacity": 0.5,
+        "titleFontSize": 15,
+        "tickCount": 25
+      },
+      {
+        "orient": "right",
+        "scale": "y2",
+        "title": "n× change",
+        "titleColor": "#DB4437",
+        "tickColor": "#DB4437",
+        "labelColor": "#DB4437",
+        "titleFontSize": 15,
+        "tickCount": 25
+      }
+    ],
+    "marks": [
+      {
+        "type": "rule",
+        "encode": {
+          "enter": {
+            "y": {"scale": "y", "value": 0},
+            "x": {"value": 0},
+            "x2": {"field": {"group": "width"}},
+            "stroke": {"value": "#4285F4"},
+            "strokeWidth": {"value": 1},
+            "strokeOpacity": {"value": 0.7}
+          }
+        }
+      },
+      {
+        "type": "rule",
+        "encode": {
+          "enter": {
+            "y": {"scale": "y2", "value": 0},
+            "x": {"value": 0},
+            "x2": {"field": {"group": "width"}},
+            "stroke": {"value": "#DB4437"},
+            "strokeWidth": {"value": 1},
+            "strokeOpacity": {"value": 0.7}
+          }
+        }
+      },
+      {
+        "type": "rule",
+        "from": {"data": "source"},
+        "encode": {
+          "enter": {
+            "x": {"scale": "x", "field": "node_id", "band": 0.5},
+            "y": {"scale": "y", "field": "absolute", "offset": {"signal": "-datum.absolute_ci_lower * height / (domain('y')[1] - domain('y')[0])"}},
+            "y2": {"scale": "y", "field": "absolute", "offset": {"signal": "datum.absolute_ci_upper * height / (domain('y')[1] - domain('y')[0])"}},
+            "stroke": {"value": "#4285F4"},
+            "strokeOpacity": {"value": 0.5}
+          }
+        }
+      },
+      {
+        "type": "rect",
+        "from": {"data": "source"},
+        "encode": {
+          "enter": {
+            "x": {"scale": "x", "field": "node_id", "band": 0.5, "offset": -5},
+            "width": {"value": 10},
+            "y": {"scale": "y", "field": "absolute", "offset": {"signal": "-datum.absolute_ci_lower * height / (domain('y')[1] - domain('y')[0])"}},
+            "height": {"value": 1},
+            "fill": {"value": "#4285F4"},
+            "fillOpacity": {"value": 0.5}
+          }
+        }
+      },
+      {
+        "type": "rect",
+        "from": {"data": "source"},
+        "encode": {
+          "enter": {
+            "x": {"scale": "x", "field": "node_id", "band": 0.5, "offset": -5},
+            "width": {"value": 10},
+            "y": {"scale": "y", "field": "absolute", "offset": {"signal": "datum.absolute_ci_upper * height / (domain('y')[1] - domain('y')[0])"}},
+            "height": {"value": 1},
+            "fill": {"value": "#4285F4"},
+            "fillOpacity": {"value": 0.5}
+          }
+        }
+      },
+      {
+        "type": "symbol",
+        "from": {"data": "source"},
+        "encode": {
+          "enter": {
+            "x": {"scale": "x", "field": "node_id", "band": 0.5},
+            "y": {"scale": "y", "field": "absolute"},
+            "fill": {"value": "#4285F4"},
+            "size": {"value": 100},
+            "opacity": {"value": 0.35}
+          }
+        }
+      },
+      {
+        "type": "symbol",
+        "from": {"data": "source"},
+        "encode": {
+          "enter": {
+            "x": {"scale": "x", "field": "node_id", "band": 0.5},
+            "y": {"scale": "y", "field": "absolute"},
+            "fill": {"value": "#4285F4"},
+            "size": {"value": 38},
+            "opacity": {"value": 0.85}
+          }
+        }
+      },
+      {
+        "type": "rule",
+        "from": {"data": "source"},
+        "encode": {
+          "enter": {
+            "x": {"scale": "x", "field": "node_id", "band": 0.5},
+            "y": {"scale": "y2", "field": "nx", "offset": {"signal": "-datum.nx_ci_lower * height / (domain('y2')[1] - domain('y2')[0])"}},
+            "y2": {"scale": "y2", "field": "nx", "offset": {"signal": "datum.nx_ci_upper * height / (domain('y2')[1] - domain('y2')[0])"}},
+            "stroke": {"value": "#DB4437"},
+            "strokeOpacity": {"value": 0.5}
+          }
+        }
+      },
+      {
+        "type": "rect",
+        "from": {"data": "source"},
+        "encode": {
+          "enter": {
+            "x": {"scale": "x", "field": "node_id", "band": 0.5, "offset": -5},
+            "width": {"value": 10},
+            "y": {"scale": "y2", "field": "nx", "offset": {"signal": "-datum.nx_ci_lower * height / (domain('y2')[1] - domain('y2')[0])"}},
+            "height": {"value": 1},
+            "fill": {"value": "#DB4437"},
+            "fillOpacity": {"value": 0.5}
+          }
+        }
+      },
+      {
+        "type": "rect",
+        "from": {"data": "source"},
+        "encode": {
+          "enter": {
+            "x": {"scale": "x", "field": "node_id", "band": 0.5, "offset": -5},
+            "width": {"value": 10},
+            "y": {"scale": "y2", "field": "nx", "offset": {"signal": "datum.nx_ci_upper * height / (domain('y2')[1] - domain('y2')[0])"}},
+            "height": {"value": 1},
+            "fill": {"value": "#DB4437"},
+            "fillOpacity": {"value": 0.5}
+          }
+        }
+      },
+      {
+        "type": "symbol",
+        "from": {"data": "source"},
+        "encode": {
+          "enter": {
+            "x": {"scale": "x", "field": "node_id", "band": 0.5},
+            "y": {"scale": "y2", "field": "nx"},
+            "fill": {"value": "#DB4437"},
+            "size": {"value": 100},
+            "opacity": {"value": 0.35}
+          }
+        }
+      },
+      {
+        "type": "symbol",
+        "from": {"data": "source"},
+        "encode": {
+          "enter": {
+            "x": {"scale": "x", "field": "node_id", "band": 0.5},
+            "y": {"scale": "y2", "field": "nx"},
+            "fill": {"value": "#DB4437"},
+            "size": {"value": 38},
+            "opacity": {"value": 0.85}
+          }
+        }
+      },
+      {
+        "type": "group",
+        "encode": {
+          "enter": {
+            "x": {"value": 1630},
+            "y": {"value": 20},
+            "width": {"value": 140},
+            "height": {"value": 130},
+            "cornerRadius": {"value": 5},
+            "fill": {"value": "#f0f0f0"},
+            "stroke": {"value": "#cccccc"}
+          }
+        },
+        "marks": [
+          {
+            "type": "text",
+            "from": {"data": "shrink_stats"},
+            "encode": {
+              "enter": {
+                "x": {"value": 10},
+                "y": {"value": 20},
+                "text": {"signal": "'Mean: ' + format(datum.mean_shrink, ',.1f')"},
+                "fontSize": {"value": 14},
+                "fill": {"value": "#4285F4"}
+              }
+            }
+          },
+          {
+            "type": "text",
+            "from": {"data": "shrink_stats"},
+            "encode": {
+              "enter": {
+                "x": {"value": 10},
+                "y": {"value": 40},
+                "text": {"signal": "'Sum: ' + format(datum.sum_shrink, ',d')"},
+                "fontSize": {"value": 14},
+                "fill": {"value": "#4285F4"}
+              }
+            }
+          },
+          {
+            "type": "text",
+            "from": {"data": "shrink_stats"},
+            "encode": {
+              "enter": {
+                "x": {"value": 10},
+                "y": {"value": 60},
+                "text": {"signal": "'Mean: ' + format(datum.mean_nx, ',.1f')"},
+                "fontSize": {"value": 14},
+                "fill": {"value": "#DB4437"}
+              }
+            }
+          },
+          {
+            "type": "text",
+            "encode": {
+              "enter": {
+                "x": {"value": 10},
+                "y": {"value": 80},
+                "text": {"signal": "'sum(old): ' + format(sum_old, ',.1f')"},
+                "fontSize": {"value": 14},
+                "fill": {"value": "#505050"}
+              }
+            }
+          },
+          {
+            "type": "text",
+            "encode": {
+              "enter": {
+                "x": {"value": 10},
+                "y": {"value": 100},
+                "text": {"signal": "'sum(new): ' + format(sum_new, ',.1f')"},
+                "fontSize": {"value": 14},
+                "fill": {"value": "#505050"}
+              }
+            }
+          },
+          {
+            "type": "text",
+            "encode": {
+              "enter": {
+                "x": {"value": 10},
+                "y": {"value": 120},
+                "text": {"signal": "'old / new: ' + format(sum_old / sum_new, ',.2f')"},
+                "fontSize": {"value": 14},
+                "fill": {"value": "#505050"}
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
