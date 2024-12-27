@@ -74,7 +74,7 @@ from hypothesis.internal.conjecture.junkdrawer import (
     startswith,
 )
 from hypothesis.internal.conjecture.pareto import NO_SCORE, ParetoFront, ParetoOptimiser
-from hypothesis.internal.conjecture.shrinker import Shrinker, sort_key
+from hypothesis.internal.conjecture.shrinker import Shrinker, sort_key, sort_key_ir
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.reporting import base_report, report
 
@@ -562,8 +562,8 @@ class ConjectureRunner:
                 if v < existing_score:
                     continue
 
-                if v > existing_score or sort_key(data.buffer) < sort_key(
-                    existing_example.buffer
+                if v > existing_score or sort_key_ir(data.ir_nodes) < sort_key_ir(
+                    existing_example.ir_nodes
                 ):
                     data_as_result = data.as_result()
                     assert not isinstance(data_as_result, _Overrun)
@@ -619,7 +619,7 @@ class ConjectureRunner:
                 if self.first_bug_found_at is None:
                     self.first_bug_found_at = self.call_count
             else:
-                if sort_key(data.buffer) < sort_key(existing.buffer):
+                if sort_key_ir(data.ir_nodes) < sort_key_ir(existing.ir_nodes):
                     self.shrinks += 1
                     self.downgrade_buffer(existing.buffer)
                     self.__data_cache.unpin(existing.buffer)
@@ -1376,7 +1376,7 @@ class ConjectureRunner:
         self.finish_shrinking_deadline = time.perf_counter() + MAX_SHRINKING_SECONDS
 
         for prev_data in sorted(
-            self.interesting_examples.values(), key=lambda d: sort_key(d.buffer)
+            self.interesting_examples.values(), key=lambda d: sort_key_ir(d.ir_nodes)
         ):
             assert prev_data.status == Status.INTERESTING
             data = self.new_conjecture_data_ir(prev_data.ir_nodes)
@@ -1393,7 +1393,7 @@ class ConjectureRunner:
                     for k, v in self.interesting_examples.items()
                     if k not in self.shrunk_examples
                 ),
-                key=lambda kv: (sort_key(kv[1].buffer), sort_key(repr(kv[0]))),
+                key=lambda kv: (sort_key_ir(kv[1].ir_nodes), sort_key(repr(kv[0]))),
             )
             self.debug(f"Shrinking {target!r}: {data.choices}")
 

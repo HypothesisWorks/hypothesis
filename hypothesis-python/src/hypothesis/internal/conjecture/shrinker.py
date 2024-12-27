@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Callable, Optional, TypeVar, Union
 import attr
 
 from hypothesis.internal.compat import int_from_bytes, int_to_bytes
-from hypothesis.internal.conjecture.choice import choice_from_index
+from hypothesis.internal.conjecture.choice import choice_from_index, choice_to_index
 from hypothesis.internal.conjecture.data import (
     ConjectureData,
     ConjectureResult,
@@ -78,6 +78,13 @@ def sort_key(buffer: SortKeyT) -> tuple[int, SortKeyT]:
        later ones. This makes the lexicographic order the more natural choice.
     """
     return (len(buffer), buffer)
+
+
+def sort_key_ir(nodes: list[IRNode]) -> tuple[int, tuple[int]]:
+    return (
+        len(nodes),
+        tuple(choice_to_index(node.value, node.kwargs) for node in nodes),
+    )
 
 
 SHRINK_PASS_DEFINITIONS: dict[str, "ShrinkPassDefinition"] = {}
@@ -305,7 +312,7 @@ class Shrinker:
         self.__derived_values: dict = {}
         self.__pending_shrink_explanation = None
 
-        self.initial_size = len(initial.buffer)
+        self.initial_size = len(initial.choices)
 
         # We keep track of the current best example on the shrink_target
         # attribute.
@@ -401,7 +408,7 @@ class Shrinker:
         if startswith(tree, self.nodes):
             return True
 
-        if startswith(self.nodes, tree):
+        if sort_key_ir(self.nodes) < sort_key_ir(tree):
             return False
 
         previous = self.shrink_target
@@ -445,7 +452,7 @@ class Shrinker:
             return
         if (
             self.__predicate(data)
-            and sort_key(data.buffer) < sort_key(self.shrink_target.buffer)
+            and sort_key_ir(data.ir_nodes) < sort_key_ir(self.shrink_target.ir_nodes)
             and self.__allow_transition(self.shrink_target, data)
         ):
             self.update_shrink_target(data)
@@ -474,28 +481,13 @@ class Shrinker:
         This method is "mostly idempotent" - calling it twice is unlikely to
         have any effect, though it has a non-zero probability of doing so.
         """
-        # We assume that if an all-zero block of bytes is an interesting
-        # example then we're not going to do better than that.
-        # This might not technically be true: e.g. for integers() | booleans()
-        # the simplest example is actually [1, 0]. Missing this case is fairly
-        # harmless and this allows us to make various simplifying assumptions
-        # about the structure of the data (principally that we're never
-        # operating on a block of all zero bytes so can use non-zeroness as a
-        # signpost of complexity).
-        if not any(self.shrink_target.buffer) or self.incorporate_new_buffer(
-            bytes(len(self.shrink_target.buffer))
-        ):
+        # We assume that if an all-trivial example is interesting then
+        # we're not going to do better than that. This might not technically be true:
+        # e.g. in tuples(booleans(), booleans()) | booleans() the simplest example
+        # is [1, False] but the all-trivial example is [0, False, False].
+        if all(node.trivial for node in self.nodes):
             self.explain()
             return
-
-        # There are multiple buffers that represent the same counterexample, eg
-        # n=2 (from the 16 bit integer bucket) and n=2 (from the 32 bit integer
-        # bucket). Before we start shrinking, we need to normalize to the minimal
-        # such buffer, else a buffer-smaller but ir-larger value may be chosen
-        # as the minimal counterexample.
-        data = self.engine.new_conjecture_data_ir(self.nodes)
-        self.engine.test_function(data)
-        self.incorporate_test_data(data.as_result())
 
         try:
             self.greedy_shrink()
@@ -509,7 +501,7 @@ class Shrinker:
                 def s(n):
                     return "s" if n != 1 else ""
 
-                total_deleted = self.initial_size - len(self.shrink_target.buffer)
+                total_deleted = self.initial_size - len(self.shrink_target.choices)
                 calls = self.engine.call_count - self.initial_calls
                 misaligned = self.engine.misaligned_count - self.initial_misaligned
 
@@ -518,7 +510,7 @@ class Shrinker:
                     "Shrink pass profiling\n"
                     "---------------------\n\n"
                     f"Shrinking made a total of {calls} call{s(calls)} of which "
-                    f"{self.shrinks} shrank and {misaligned} were misaligned. This deleted {total_deleted} bytes out "
+                    f"{self.shrinks} shrank and {misaligned} were misaligned. This deleted {total_deleted} choices out "
                     f"of {self.initial_size}."
                 )
                 for useful in [True, False]:
@@ -540,7 +532,7 @@ class Shrinker:
                         self.debug(
                             f"  * {p.name} made {p.calls} call{s(p.calls)} of which "
                             f"{p.shrinks} shrank and {p.misaligned} were misaligned, "
-                            f"deleting {p.deletions} byte{s(p.deletions)}."
+                            f"deleting {p.deletions} choice{s(p.deletions)}."
                         )
                 self.debug("")
         self.explain()
@@ -797,7 +789,7 @@ class Shrinker:
                 # the length are the best.
                 if self.shrink_target is before_sp:
                     reordering[sp] = 1
-                elif len(self.buffer) < len(before_sp.buffer):
+                elif len(self.choices) < len(before_sp.choices):
                     reordering[sp] = -1
                 else:
                     reordering[sp] = 0
@@ -988,7 +980,7 @@ class Shrinker:
         assert prev_target is not new_target
         prev_nodes = prev_target.ir_nodes
         new_nodes = new_target.ir_nodes
-        assert sort_key(new_target.buffer) < sort_key(prev_target.buffer)
+        assert sort_key_ir(new_target.ir_nodes) < sort_key_ir(prev_target.ir_nodes)
 
         if len(prev_nodes) != len(new_nodes) or any(
             n1.ir_type != n2.ir_type for n1, n2 in zip(prev_nodes, new_nodes)
@@ -1186,11 +1178,11 @@ class Shrinker:
 
             for ex in self.shrink_target.examples:
                 if (
-                    ex.length > 0
+                    ex.ir_length > 0
                     and ex.discarded
-                    and (not discarded or ex.start >= discarded[-1][-1])
+                    and (not discarded or ex.ir_start >= discarded[-1][-1])
                 ):
-                    discarded.append((ex.start, ex.end))
+                    discarded.append((ex.ir_start, ex.ir_end))
 
             # This can happen if we have discards but they are all of
             # zero length. This shouldn't happen very often so it's
@@ -1199,11 +1191,11 @@ class Shrinker:
             if not discarded:
                 break
 
-            attempt = bytearray(self.shrink_target.buffer)
+            attempt = list(self.nodes)
             for u, v in reversed(discarded):
                 del attempt[u:v]
 
-            if not self.incorporate_new_buffer(attempt):
+            if not self.consider_new_tree(tuple(attempt)):
                 return False
         return True
 
@@ -1563,7 +1555,9 @@ class Shrinker:
                     ],
                 )
             ),
-            key=lambda i: st.buffer[examples[i].start : examples[i].end],
+            key=lambda i: sort_key_ir(
+                st.ir_nodes[examples[i].ir_start : examples[i].ir_end]
+            ),
         )
 
     def run_node_program(self, i, description, original, repeats=1):
@@ -1670,7 +1664,7 @@ class ShrinkPass:
         initial_shrinks = self.shrinker.shrinks
         initial_calls = self.shrinker.calls
         initial_misaligned = self.shrinker.misaligned
-        size = len(self.shrinker.shrink_target.buffer)
+        size = len(self.shrinker.shrink_target.choices)
         self.shrinker.engine.explain_next_call_as(self.name)
 
         if random_order:
@@ -1687,7 +1681,7 @@ class ShrinkPass:
             self.calls += self.shrinker.calls - initial_calls
             self.misaligned += self.shrinker.misaligned - initial_misaligned
             self.shrinks += self.shrinker.shrinks - initial_shrinks
-            self.deletions += size - len(self.shrinker.shrink_target.buffer)
+            self.deletions += size - len(self.shrinker.shrink_target.choices)
             self.shrinker.engine.clear_call_explanation()
         return True
 

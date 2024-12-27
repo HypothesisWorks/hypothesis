@@ -85,7 +85,7 @@ from hypothesis.internal.conjecture.junkdrawer import (
     ensure_free_stackframes,
     gc_cumulative_time,
 )
-from hypothesis.internal.conjecture.shrinker import sort_key
+from hypothesis.internal.conjecture.shrinker import sort_key, sort_key_ir
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.internal.escalation import (
     InterestingOrigin,
@@ -1226,7 +1226,7 @@ class StateForActualGivenExecution:
         if runner.interesting_examples:
             self.falsifying_examples = sorted(
                 runner.interesting_examples.values(),
-                key=lambda d: sort_key(d.buffer),
+                key=lambda d: sort_key_ir(d.ir_nodes),
                 reverse=True,
             )
         else:
