@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.123.2:
+
+--------------------
+6.123.2 - 2024-12-27
+--------------------
+
+The shrinker now uses the typed choice sequence (:issue:`3921`) when ordering failing examples. As a result, Hypothesis may now report a different minimal failing example for some tests. We expect most cases to remain unchanged.
+
 .. _v6.123.1:
 
 --------------------
