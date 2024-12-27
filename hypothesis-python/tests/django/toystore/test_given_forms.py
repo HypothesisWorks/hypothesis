@@ -41,6 +41,7 @@ from tests.django.toystore.forms import (
     UsernameForm,
     UUIDFieldForm,
     WithValidatorsForm,
+    FileFieldsForm,
 )
 from tests.django.toystore.models import Company
 
@@ -129,6 +130,10 @@ class TestGetsBasicForms(TestCase):
         self.assertTrue(1 <= x.data["_decimal_one_to_five"] <= 5)
         self.assertTrue(1 <= x.data["_float_one_to_five"] <= 5)
         self.assertTrue(5 <= len(x.data["_string_five_to_ten"]) <= 10)
+
+    @given(from_form(FileFieldsForm))
+    def test_file_fields_form(self, x):
+        self.assertTrue(x.data["file1"])
 
     @given(from_form(UsernameForm))
     def test_username_form(self, username_form):
