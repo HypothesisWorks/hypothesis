@@ -80,7 +80,7 @@ def sort_key(buffer: SortKeyT) -> tuple[int, SortKeyT]:
     return (len(buffer), buffer)
 
 
-def sort_key_ir(nodes: list[IRNode]) -> tuple[int, tuple[int]]:
+def sort_key_ir(nodes: Sequence[IRNode]) -> tuple[int, tuple[int]]:
     return (
         len(nodes),
         tuple(choice_to_index(node.value, node.kwargs) for node in nodes),
