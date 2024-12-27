@@ -66,7 +66,7 @@ def test_raises_flaky_if_a_test_becomes_fast_on_rerun():
 
 
 def test_deadlines_participate_in_shrinking():
-    @settings(deadline=500, max_examples=1000)
+    @settings(deadline=500, max_examples=1000, database=None)
     @given(st.integers(min_value=0))
     def slow_if_large(i):
         if i >= 1000:
