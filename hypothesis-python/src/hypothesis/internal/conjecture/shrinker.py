@@ -481,13 +481,6 @@ class Shrinker:
         This method is "mostly idempotent" - calling it twice is unlikely to
         have any effect, though it has a non-zero probability of doing so.
         """
-        # We assume that if an all-trivial example is interesting then
-        # we're not going to do better than that. This might not technically be true:
-        # e.g. in tuples(booleans(), booleans()) | booleans() the simplest example
-        # is [1, False] but the all-trivial example is [0, False, False].
-        if all(node.trivial for node in self.nodes):
-            self.explain()
-            return
 
         try:
             self.greedy_shrink()
