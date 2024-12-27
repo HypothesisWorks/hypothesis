@@ -21,6 +21,7 @@ from hypothesis.internal.conjecture.shrinker import (
     node_program,
 )
 from hypothesis.internal.conjecture.utils import Sampler
+from hypothesis.internal.intervalsets import IntervalSet
 
 from tests.conjecture.common import SOME_LABEL, ir, run_to_nodes, shrinking_from
 
@@ -518,3 +519,33 @@ def test_redistribute_integer_pairs_with_forced_node():
     # shrinking. Since the second draw is forced, this isn't possible to shrink
     # with just this pass.
     assert shrinker.choices == (15, 10)
+
+
+@pytest.mark.parametrize("start,boundary", [(-63, -46)])
+def test_shrink_small_integer_down_to_boundary(start, boundary):
+    @shrinking_from(ir(start))
+    def shrinker(data: ConjectureData):
+        n = data.draw_integer()
+        if boundary == 0:
+            data.mark_interesting()
+        elif boundary < 0:
+            if n <= boundary:
+                data.mark_interesting()
+        elif n >= boundary:
+            data.mark_interesting()
+
+    shrinker.fixate_shrink_passes(["minimize_individual_nodes"])
+    assert shrinker.shrink_target.ir_nodes[0].value == boundary
+
+
+def test_will_prefer_zero_to_the_empty_string():
+    @shrinking_from(ir(True, ""))
+    def shrinker(data: ConjectureData):
+        if data.draw_boolean():
+            data.draw_string(IntervalSet([(0, 127)]))
+        else:
+            data.draw_integer()
+        data.mark_interesting()
+
+    shrinker.greedy_shrink()
+    assert shrinker.shrink_target.ir_nodes[1].value == 0
