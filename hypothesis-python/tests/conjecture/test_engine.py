@@ -200,13 +200,6 @@ def test_variadic_draw():
 
 
 def test_draw_to_overrun(monkeypatch):
-    # TODO_BETTER_SHRINK: sometimes we can get unlucky and fail to shrink the
-    # initial size draw d to 2 before shrinking the 128 * d bytes, but I'm not
-    # sure why.
-    #
-    # If we do get unlucky in such a way then we need more than 500 shrinks to finish.
-    monkeypatch.setattr(engine_module, "MAX_SHRINKS", 1000)
-
     @run_to_nodes
     def nodes(data):
         d = (data.draw_bytes(1, 1)[0] - 8) & 0xFF
