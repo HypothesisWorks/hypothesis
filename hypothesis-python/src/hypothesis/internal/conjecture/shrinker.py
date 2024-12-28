@@ -21,7 +21,7 @@ from hypothesis.internal.conjecture.data import (
     ConjectureResult,
     IRNode,
     Status,
-    ir_size_nodes,
+    ir_size,
     ir_to_buffer,
     ir_value_equal,
     ir_value_key,
@@ -586,7 +586,7 @@ class Shrinker:
 
                 attempt = nodes[:start] + tuple(replacement) + nodes[end:]
                 result = self.engine.cached_test_function_ir(
-                    attempt, extend=BUFFER_SIZE_IR - ir_size_nodes(attempt)
+                    attempt, extend=BUFFER_SIZE_IR - ir_size(attempt)
                 )
 
                 # Turns out this was a variable-length part, so grab the infix...
