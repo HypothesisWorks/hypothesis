@@ -1362,12 +1362,14 @@ class Shrinker:
             Bytes.shrink(
                 value,
                 lambda val: self.try_shrinking_nodes(nodes, val),
+                min_size=kwargs["min_size"],
             )
         elif ir_type == "string":
             String.shrink(
                 value,
                 lambda val: self.try_shrinking_nodes(nodes, val),
                 intervals=kwargs["intervals"],
+                min_size=kwargs["min_size"],
             )
         else:
             raise NotImplementedError
