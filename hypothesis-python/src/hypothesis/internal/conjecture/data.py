@@ -2401,18 +2401,25 @@ class ConjectureData:
             if self.misaligned_at is None:
                 self.misaligned_at = (self.index_ir, ir_type, kwargs, forced)
             try:
-                (_value, buffer) = ir_to_buffer(
-                    node.ir_type, node.kwargs, forced=node.value
-                )
-                value = buffer_to_ir(
-                    ir_type, kwargs, buffer=buffer + bytes(BUFFER_SIZE - len(buffer))
-                )
-            except StopTest:
-                # must have been an overrun.
+                # Fill in any misalignments with index 0 choices. An alternative to
+                # this is using the index of the misaligned choice instead
+                # of index 0, which may be useful for maintaining
+                # "similarly-complex choices" in the shrinker. This requires
+                # attaching an index to every choice in ConjectureData.for_choices,
+                # which we don't always have (e.g. when reading from db).
                 #
-                # maybe we should fall back to to an arbitrary small value here
-                # instead? eg
-                #   buffer_to_ir(ir_type, kwargs, buffer=bytes(BUFFER_SIZE))
+                # If we really wanted this in the future we could make this complexity
+                # optional, use it if present, and default to index 0 otherwise.
+                # This complicates our internal api and so I'd like to avoid it
+                # if possible.
+                #
+                # Additionally, I don't think slips which require
+                # slipping to high-complexity values are common. Though arguably
+                # we may want to expand a bit beyond *just* the simplest choice.
+                # (we could for example consider sampling choices from index 0-10).
+                value = choice_from_index(0, ir_type, kwargs)
+            except ChoiceTooLarge:
+                # should really never happen with a 0-index choice, but let's be safe.
                 self.mark_overrun()
 
         self.index_ir += 1
