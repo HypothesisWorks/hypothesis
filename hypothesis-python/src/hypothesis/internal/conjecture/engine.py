@@ -61,7 +61,6 @@ from hypothesis.internal.conjecture.data import (
     _Overrun,
     ir_kwargs_key,
     ir_size,
-    ir_size_nodes,
     ir_value_key,
 )
 from hypothesis.internal.conjecture.datatree import (
@@ -415,7 +414,7 @@ class ConjectureRunner:
             except KeyError:
                 pass
 
-        max_length = min(BUFFER_SIZE_IR, ir_size_nodes(nodes) + extend)
+        max_length = min(BUFFER_SIZE_IR, ir_size(nodes) + extend)
 
         # explicitly use a no-op DataObserver here instead of a TreeRecordingObserver.
         # The reason is we don't expect simulate_test_function to explore new choices
@@ -584,7 +583,7 @@ class ConjectureRunner:
                 initial_traceback = getattr(
                     data.extra_information, "_expected_traceback", None
                 )
-                data = ConjectureData.for_ir_tree(data.ir_nodes)
+                data = ConjectureData.for_choices(data.choices)
                 self.__stoppable_test_function(data)
                 data.freeze()
                 # TODO: Convert to FlakyFailure on the way out. Should same-origin
@@ -1067,7 +1066,7 @@ class ConjectureRunner:
                 and not self.interesting_examples
                 and consecutive_zero_extend_is_invalid < 5
             ):
-                prefix_size = ir_size_nodes(prefix)
+                prefix_size = ir_size(prefix)
                 minimal_example = self.cached_test_function_ir(
                     prefix
                     + (NodeTemplate("simplest", size=BUFFER_SIZE_IR - prefix_size),)
@@ -1081,9 +1080,7 @@ class ConjectureRunner:
                 # ConjectureResult object.
                 assert isinstance(minimal_example, ConjectureResult)
                 consecutive_zero_extend_is_invalid = 0
-                minimal_extension = (
-                    ir_size_nodes(minimal_example.ir_nodes) - prefix_size
-                )
+                minimal_extension = ir_size(minimal_example.ir_nodes) - prefix_size
                 max_length = min(prefix_size + minimal_extension * 10, BUFFER_SIZE_IR)
 
                 # We could end up in a situation where even though the prefix was
@@ -1328,8 +1325,8 @@ class ConjectureRunner:
         if not self.using_hypothesis_backend:
             observer = DataObserver()
 
-        return ConjectureData.for_ir_tree(
-            ir_tree_prefix,
+        return ConjectureData.for_choices(
+            [n if isinstance(n, NodeTemplate) else n.value for n in ir_tree_prefix],
             observer=observer,
             provider=provider,
             max_length=max_length,
