@@ -14,11 +14,11 @@ attrs==24.1.0
     #   hypothesis (hypothesis-python/setup.py)
 black==24.10.0
     # via -r requirements/coverage.in
-click==8.1.7
+click==8.1.8
     # via
     #   -r requirements/coverage.in
     #   black
-coverage[toml]==7.6.8
+coverage[toml]==7.6.10
     # via pytest-cov
 dpcontracts==0.6.0
     # via -r requirements/coverage.in
@@ -28,7 +28,7 @@ exceptiongroup==1.2.2 ; python_version < "3.11"
     #   pytest
 execnet==2.1.1
     # via pytest-xdist
-fakeredis==2.26.1
+fakeredis==2.26.2
     # via -r requirements/coverage.in
 iniconfig==2.0.0
     # via pytest
@@ -38,7 +38,7 @@ libcst==1.5.1
     # via -r requirements/coverage.in
 mypy-extensions==1.0.0
     # via black
-numpy==2.1.3
+numpy==2.2.1
     # via
     #   -r requirements/coverage.in
     #   pandas
@@ -60,7 +60,7 @@ ptyprocess==0.7.0
     # via pexpect
 pyarrow==18.1.0
     # via -r requirements/coverage.in
-pytest==8.3.3
+pytest==8.3.4
     # via
     #   -r requirements/test.in
     #   pytest-cov
@@ -79,9 +79,9 @@ pytz==2024.2
     #   pandas
 pyyaml==6.0.2
     # via libcst
-redis==5.2.0
+redis==5.2.1
     # via fakeredis
-six==1.16.0
+six==1.17.0
     # via python-dateutil
 sortedcontainers==2.4.0
     # via

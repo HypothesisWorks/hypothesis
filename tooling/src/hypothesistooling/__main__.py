@@ -325,9 +325,9 @@ def update_python_versions():
 
 
 DJANGO_VERSIONS = {
-    "4.2": "4.2.16",
-    "5.0": "5.0.9",
-    "5.1": "5.1.3",
+    "4.2": "4.2.17",
+    "5.0": "5.0.10",
+    "5.1": "5.1.4",
 }
 
 
@@ -498,13 +498,13 @@ def run_tox(task, version, *args):
 # When a version is added or removed, manually update the env lists in tox.ini and
 # workflows/main.yml, and the `Programming Language ::` specifiers in setup.py
 PYTHONS = {
-    "3.9": "3.9.20",
-    "3.10": "3.10.15",
-    "3.11": "3.11.10",
-    "3.12": "3.12.7",
-    "3.13": "3.13.0",
+    "3.9": "3.9.21",
+    "3.10": "3.10.16",
+    "3.11": "3.11.11",
+    "3.12": "3.12.8",
+    "3.13": "3.13.1",
     "3.13t": "3.13t-dev",
-    "3.14": "3.14.0a2",
+    "3.14": "3.14.0a3",
     "3.14t": "3.14t-dev",
     "pypy3.9": "pypy3.9-7.3.16",
     "pypy3.10": "pypy3.10-7.3.17",
