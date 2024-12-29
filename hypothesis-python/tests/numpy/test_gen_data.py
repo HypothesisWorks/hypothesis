@@ -1164,6 +1164,7 @@ def test_basic_indices_can_generate_indices_not_covering_all_dims():
             (not isinstance(ix, tuple) and ix != Ellipsis)
             or (isinstance(ix, tuple) and Ellipsis not in ix and len(ix) < 3)
         ),
+        settings=settings(max_examples=5_000),
     )
 
 
