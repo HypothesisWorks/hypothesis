@@ -14,13 +14,22 @@ from hypothesis.internal.conjecture.utils import identity
 
 
 class Collection(Shrinker):
-    def setup(self, *, ElementShrinker, to_order=identity, from_order=identity):
+    def setup(
+        self, *, ElementShrinker, to_order=identity, from_order=identity, min_size
+    ):
         self.ElementShrinker = ElementShrinker
         self.to_order = to_order
         self.from_order = from_order
+        self.min_size = min_size
 
     def make_immutable(self, value):
         return tuple(value)
+
+    def short_circuit(self):
+        zero = self.from_order(0)
+        success = self.consider([zero] * len(self.current))
+        # we could still simplify by deleting elements (unless we're minimal size).
+        return success and len(self.current) == self.min_size
 
     def left_is_better(self, left, right):
         if len(left) < len(right):
