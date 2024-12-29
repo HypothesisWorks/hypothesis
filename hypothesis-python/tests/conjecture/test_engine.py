@@ -134,6 +134,7 @@ def test_terminates_shrinks(n, monkeypatch):
     runner.run()
     (last_data,) = runner.interesting_examples.values()
     assert last_data.status == Status.INTERESTING
+    assert runner.exit_reason == ExitReason.max_shrinks
     assert runner.shrinks == n
     in_db = set(db.data[runner.secondary_key])
     assert len(in_db) == n

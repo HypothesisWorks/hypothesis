@@ -135,8 +135,12 @@ common_strategies = [v for _, v in common_strategies_with_types]
 
 
 @lru_cache
+def minimal_for_strategy(s):
+    return precisely_shrink(s, end_marker=st.none())
+
+
 def minimal_buffer_for_strategy(s):
-    return precisely_shrink(s, end_marker=st.none())[0].buffer
+    return minimal_for_strategy(s)[0].buffer
 
 
 def test_strategy_list_is_in_sorted_order():
@@ -274,12 +278,11 @@ def shrinks(strategy, buffer, *, allow_sloppy=True, seed=0):
     result_list = []
 
     for k, v in sorted(results.items(), key=lambda x: shortlex(x[0])):
-        if shortlex(k) < shortlex(buffer):
-            t = repr(v)
-            if t in seen:
-                continue
-            seen.add(t)
-            result_list.append((k, v))
+        t = repr(v)
+        if t in seen:
+            continue
+        seen.add(t)
+        result_list.append((k, v))
     return result_list
 
 
@@ -296,3 +299,34 @@ def test_always_shrinks_to_none(a, seed, block_falsey, allow_sloppy):
         combined_strategy, result.buffer, allow_sloppy=allow_sloppy, seed=seed
     )
     assert shrunk_values[0][1] is None
+
+
+@pytest.mark.parametrize(
+    "i,alts", [(i, alt) for alt in alternatives for i in range(1, len(alt))]
+)
+@pytest.mark.parametrize("force_small", [False, True])
+@pytest.mark.parametrize("seed", [0, 2452, 99085240570])
+def test_can_shrink_to_every_smaller_alternative(i, alts, seed, force_small):
+    types = [t for t, _ in alts]
+    strats = [s for _, s in alts]
+    combined_strategy = st.one_of(*strats)
+    if force_small:
+        result, value = precisely_shrink(
+            combined_strategy, is_interesting=lambda x: type(x) is types[i], seed=seed
+        )
+    else:
+        result, value = find_random(
+            combined_strategy, lambda x: type(x) is types[i], seed=seed
+        )
+
+    shrunk = shrinks(
+        combined_strategy,
+        result.buffer,
+        allow_sloppy=False,
+        # Arbitrary change so we don't use the same seed for each Random.
+        seed=seed * 17,
+    )
+    shrunk_values = [t for _, t in shrunk]
+
+    for j in range(i):
+        assert any(isinstance(x, types[j]) for x in shrunk_values)
