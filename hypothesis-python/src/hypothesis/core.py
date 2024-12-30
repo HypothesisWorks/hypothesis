@@ -79,12 +79,14 @@ from hypothesis.internal.conjecture.data import (
     ConjectureData,
     PrimitiveProvider,
     Status,
+    ir_to_buffer,
 )
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE, ConjectureRunner
 from hypothesis.internal.conjecture.junkdrawer import (
     ensure_free_stackframes,
     gc_cumulative_time,
 )
+from hypothesis.internal.conjecture.providers import BytestringProvider
 from hypothesis.internal.conjecture.shrinker import sort_key, sort_key_ir
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.internal.escalation import (
@@ -1829,13 +1831,22 @@ def given(
                 if isinstance(buffer, io.IOBase):
                     buffer = buffer.read(BUFFER_SIZE)
                 assert isinstance(buffer, (bytes, bytearray, memoryview))
-                data = ConjectureData.for_buffer(buffer)
+                data = ConjectureData(
+                    max_length=BUFFER_SIZE,
+                    prefix=b"",
+                    random=None,
+                    provider=BytestringProvider,
+                    provider_kw={"bytestring": buffer},
+                )
                 try:
                     state.execute_once(data)
                 except (StopTest, UnsatisfiedAssumption):
                     return None
                 except BaseException:
-                    buffer = bytes(data.buffer)
+                    buffer = b"".join(
+                        ir_to_buffer(n.ir_type, n.kwargs, forced=n.value)[1]
+                        for n in data.ir_nodes
+                    )
                     known = minimal_failures.get(data.interesting_origin)
                     if settings.database is not None and (
                         known is None or sort_key(buffer) <= sort_key(known)
@@ -1843,7 +1854,8 @@ def given(
                         settings.database.save(database_key, buffer)
                         minimal_failures[data.interesting_origin] = buffer
                     raise
-                return bytes(data.buffer)
+                assert isinstance(data.provider, BytestringProvider)
+                return bytes(data.provider.drawn)
 
             fuzz_one_input.__doc__ = HypothesisHandle.fuzz_one_input.__doc__
             return fuzz_one_input
