@@ -343,13 +343,29 @@ def test_lists_forced_near_top(n):
     ) == [0] * (n + 2)
 
 
-def test_sum_of_pair():
+def test_sum_of_pair_int():
     assert minimal(
         tuples(integers(0, 1000), integers(0, 1000)), lambda x: sum(x) > 1000
     ) == (1, 1000)
 
 
-def test_sum_of_pair_separated():
+def test_sum_of_pair_float():
+    assert minimal(
+        tuples(st.floats(0, 1000), st.floats(0, 1000)), lambda x: sum(x) > 1000
+    ) == (1.0, 1000.0)
+
+
+def test_sum_of_pair_mixed():
+    # check both orderings
+    assert minimal(
+        tuples(st.floats(0, 1000), st.integers(0, 1000)), lambda x: sum(x) > 1000
+    ) == (1.0, 1000.0)
+    assert minimal(
+        tuples(st.integers(0, 1000), st.floats(0, 1000)), lambda x: sum(x) > 1000
+    ) == (1.0, 1000.0)
+
+
+def test_sum_of_pair_separated_int():
     @st.composite
     def separated_sum(draw):
         n1 = draw(st.integers(0, 1000))
@@ -358,6 +374,19 @@ def test_sum_of_pair_separated():
         draw(st.integers())
         n2 = draw(st.integers(0, 1000))
         return (n1, n2)
+
+    assert minimal(separated_sum(), lambda x: sum(x) > 1000) == (1, 1000)
+
+
+def test_sum_of_pair_separated_float():
+    @st.composite
+    def separated_sum(draw):
+        f1 = draw(st.floats(0, 1000))
+        draw(st.text())
+        draw(st.booleans())
+        draw(st.integers())
+        f2 = draw(st.floats(0, 1000))
+        return (f1, f2)
 
     assert minimal(separated_sum(), lambda x: sum(x) > 1000) == (1, 1000)
 
