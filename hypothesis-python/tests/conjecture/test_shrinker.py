@@ -505,7 +505,7 @@ def test_can_simultaneously_lower_non_duplicated_nearby_blocks(n_gap):
     assert shrinker.choices == (1, 0) + (0,) * n_gap + (1,)
 
 
-def test_redistribute_integer_pairs_with_forced_node():
+def test_redistribute_pairs_with_forced_node_integer():
     @shrinking_from(ir(15, 10))
     def shrinker(data: ConjectureData):
         n1 = data.draw_integer(0, 100)
@@ -513,8 +513,8 @@ def test_redistribute_integer_pairs_with_forced_node():
         if n1 + n2 > 20:
             data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["redistribute_integer_pairs"])
-    # redistribute_integer_pairs shouldn't try modifying forced nodes while
+    shrinker.fixate_shrink_passes(["redistribute_numeric_pairs"])
+    # redistribute_numeric_pairs shouldn't try modifying forced nodes while
     # shrinking. Since the second draw is forced, this isn't possible to shrink
     # with just this pass.
     assert shrinker.choices == (15, 10)
