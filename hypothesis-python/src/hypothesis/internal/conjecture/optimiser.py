@@ -8,7 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from typing import Union
+from typing import Optional, Union
 
 from hypothesis.internal.compat import int_from_bytes, int_to_bytes
 from hypothesis.internal.conjecture.choice import ChoiceT, choice_permitted
@@ -97,7 +97,7 @@ class Optimiser:
 
         nodes_examined = set()
 
-        prev = None
+        prev: Optional[ConjectureResult] = None
         i = len(self.current_data.ir_nodes) - 1
         while i >= 0 and self.improvements <= self.max_improvements:
             if prev is not self.current_data:
