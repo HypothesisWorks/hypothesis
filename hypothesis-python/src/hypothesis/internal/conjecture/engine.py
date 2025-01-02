@@ -52,7 +52,6 @@ from hypothesis.internal.conjecture.data import (
     ConjectureResult,
     DataObserver,
     HypothesisProvider,
-    InterestingOrigin,
     IRNode,
     NodeTemplate,
     Overrun,
@@ -74,6 +73,7 @@ from hypothesis.internal.conjecture.junkdrawer import (
 )
 from hypothesis.internal.conjecture.pareto import NO_SCORE, ParetoFront, ParetoOptimiser
 from hypothesis.internal.conjecture.shrinker import Shrinker, sort_key, sort_key_ir
+from hypothesis.internal.escalation import InterestingOrigin
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.reporting import base_report, report
 

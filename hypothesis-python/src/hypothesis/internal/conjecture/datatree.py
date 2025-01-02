@@ -1048,7 +1048,9 @@ class TreeRecordingObserver(DataObserver):
         self.__index_in_current_node = 0
         self.__trail.append(self.__current_node)
 
-    def conclude_test(self, status, interesting_origin):
+    def conclude_test(
+        self, status: Status, interesting_origin: Optional[InterestingOrigin]
+    ) -> None:
         """Says that ``status`` occurred at node ``node``. This updates the
         node if necessary and checks for consistency."""
         if status == Status.OVERRUN:

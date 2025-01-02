@@ -59,6 +59,7 @@ from hypothesis.internal.conjecture.utils import (
     calc_label_from_name,
     many,
 )
+from hypothesis.internal.escalation import InterestingOrigin
 from hypothesis.internal.floats import (
     SIGNALING_NAN,
     SMALLEST_SUBNORMAL,
@@ -90,9 +91,6 @@ else:
 
 
 TOP_LABEL = calc_label_from_name("top")
-InterestingOrigin = tuple[
-    type[BaseException], str, int, tuple[Any, ...], tuple[tuple[Any, ...], ...]
-]
 TargetObservations = dict[str, Union[int, float]]
 
 T = TypeVar("T")

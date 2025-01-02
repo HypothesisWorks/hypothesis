@@ -11,6 +11,7 @@
 import math
 import sys
 from contextlib import contextmanager
+from typing import Optional
 
 from hypothesis import HealthCheck, Phase, assume, settings, strategies as st
 from hypothesis.control import current_build_context
@@ -26,6 +27,7 @@ from hypothesis.internal.conjecture.data import (
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE, ConjectureRunner
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.entropy import deterministic_PRNG
+from hypothesis.internal.escalation import InterestingOrigin
 from hypothesis.internal.floats import SMALLEST_SUBNORMAL, sign_aware_lte
 from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.strategies._internal.strings import OneCharStringStrategy, TextStrategy
@@ -38,6 +40,26 @@ SOME_LABEL = calc_label_from_name("some label")
 TEST_SETTINGS = settings(
     max_examples=5000, database=None, suppress_health_check=list(HealthCheck)
 )
+
+
+def interesting_origin(n: Optional[int] = None) -> InterestingOrigin:
+    """
+    Creates and returns an InterestingOrigin, parameterized by n, such that
+    interesting_origin(n) == interesting_origin(m) iff n = m.
+    """
+    try:
+        int("not an int")
+    except Exception as e:
+        origin = InterestingOrigin.from_exception(e)
+        if n is None:
+            return origin
+        return InterestingOrigin(
+            exc_type=origin.exc_type,
+            filename=origin.filename,
+            lineno=n,
+            context=origin.context,
+            group_elems=origin.group_elems,
+        )
 
 
 def run_to_data(f):

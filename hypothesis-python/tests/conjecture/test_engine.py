@@ -58,6 +58,7 @@ from tests.conjecture.common import (
     TEST_SETTINGS,
     buffer_size_limit,
     integer_kw,
+    interesting_origin,
     ir,
     ir_nodes,
     run_to_nodes,
@@ -630,12 +631,12 @@ def test_shrinks_both_interesting_examples(monkeypatch):
 
     def f(data):
         n = data.draw_integer(0, 2**8 - 1)
-        data.mark_interesting(n & 1)
+        data.mark_interesting(interesting_origin(n & 1))
 
     runner = ConjectureRunner(f, database_key=b"key")
     runner.run()
-    assert runner.interesting_examples[0].choices == (0,)
-    assert runner.interesting_examples[1].choices == (1,)
+    assert runner.interesting_examples[interesting_origin(0)].choices == (0,)
+    assert runner.interesting_examples[interesting_origin(1)].choices == (1,)
 
 
 def test_discarding(monkeypatch):
@@ -1087,9 +1088,9 @@ def test_does_not_shrink_multiple_bugs_when_told_not_to():
         n = data.draw_integer(0, 2**8 - 1)
 
         if m > 0:
-            data.mark_interesting(1)
+            data.mark_interesting(interesting_origin(1))
         if n > 5:
-            data.mark_interesting(2)
+            data.mark_interesting(interesting_origin(2))
 
     with deterministic_PRNG():
         runner = ConjectureRunner(
