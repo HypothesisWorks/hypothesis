@@ -1129,7 +1129,7 @@ class StateForActualGivenExecution:
                 if interesting_origin[0] == DeadlineExceeded:
                     self.failed_due_to_deadline = True
                     self.explain_traces.clear()
-                data.mark_interesting(interesting_origin)  # type: ignore  # mypy bug?
+                data.mark_interesting(interesting_origin)
         finally:
             # Conditional here so we can save some time constructing the payload; in
             # other cases (without coverage) it's cheap enough to do that regardless.

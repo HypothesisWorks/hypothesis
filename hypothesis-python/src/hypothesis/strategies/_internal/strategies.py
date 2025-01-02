@@ -465,7 +465,7 @@ class SearchStrategy(Generic[Ex]):
     def do_draw(self, data: ConjectureData) -> Ex:
         raise NotImplementedError(f"{type(self).__name__}.do_draw")
 
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
 

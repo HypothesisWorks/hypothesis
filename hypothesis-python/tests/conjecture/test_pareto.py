@@ -17,7 +17,7 @@ from hypothesis.internal.conjecture.data import Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner, RunIsComplete
 from hypothesis.internal.entropy import deterministic_PRNG
 
-from tests.conjecture.common import ir
+from tests.conjecture.common import interesting_origin, ir
 
 
 def test_pareto_front_contains_different_interesting_reasons():
@@ -25,7 +25,8 @@ def test_pareto_front_contains_different_interesting_reasons():
 
         def test(data):
             data.target_observations[""] = 1
-            data.mark_interesting(data.draw_integer(0, 2**4 - 1))
+            n = data.draw_integer(0, 2**4 - 1)
+            data.mark_interesting(interesting_origin(n))
 
         runner = ConjectureRunner(
             test,
