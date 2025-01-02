@@ -9,7 +9,8 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
-from typing import Optional, Union
+from random import Random
+from typing import TYPE_CHECKING, Optional, Union
 
 import attr
 
@@ -44,6 +45,9 @@ from hypothesis.internal.floats import (
     sign_aware_lte,
 )
 
+if TYPE_CHECKING:
+    from hypothesis.internal.conjecture.data import IRNode
+
 
 class PreviouslyUnseenBehaviour(HypothesisException):
     pass
@@ -57,7 +61,7 @@ def inconsistent_generation():
     )
 
 
-EMPTY: frozenset = frozenset()
+EMPTY: frozenset[int] = frozenset()
 
 
 @attr.s(slots=True)
@@ -89,7 +93,7 @@ class Branch:
     children = attr.ib(repr=False)
 
     @property
-    def max_children(self):
+    def max_children(self) -> int:
         max_children = compute_max_children(self.ir_type, self.kwargs)
         assert max_children > 0
         return max_children
@@ -377,7 +381,7 @@ class TreeNode:
     #
     # Stored as None if no indices have been forced, purely for space saving
     # reasons (we force quite rarely).
-    __forced: Optional[set] = attr.ib(default=None, init=False)
+    __forced: Optional[set[int]] = attr.ib(default=None, init=False)
 
     # What happens next after drawing these nodes. (conceptually, "what is the
     # child/children of the last node stored here").
@@ -398,12 +402,12 @@ class TreeNode:
     is_exhausted: bool = attr.ib(default=False, init=False)
 
     @property
-    def forced(self):
+    def forced(self) -> Union[set[int], frozenset[int]]:
         if not self.__forced:
             return EMPTY
         return self.__forced
 
-    def mark_forced(self, i):
+    def mark_forced(self, i: int) -> None:
         """
         Note that the draw at node i was forced.
         """
@@ -412,7 +416,7 @@ class TreeNode:
             self.__forced = set()
         self.__forced.add(i)
 
-    def split_at(self, i):
+    def split_at(self, i: int) -> None:
         """
         Splits the tree so that it can incorporate a decision at the draw call
         corresponding to the node at position i.
@@ -659,14 +663,14 @@ class DataTree:
         self._children_cache = {}
 
     @property
-    def is_exhausted(self):
+    def is_exhausted(self) -> bool:
         """
         Returns True if every node is exhausted, and therefore the tree has
         been fully explored.
         """
         return self.root.is_exhausted
 
-    def generate_novel_prefix(self, random):
+    def generate_novel_prefix(self, random: Random) -> tuple["IRNode", ...]:
         """Generate a short random string that (after rewriting) is not
         a prefix of any buffer previously added to the tree.
 
@@ -677,7 +681,7 @@ class DataTree:
         from hypothesis.internal.conjecture.data import IRNode
 
         assert not self.is_exhausted
-        novel_prefix = []
+        novel_prefix: list[IRNode] = []
 
         def append_node(node):
             if node.ir_type == "float":
@@ -1027,7 +1031,7 @@ class TreeRecordingObserver(DataObserver):
         if self.__trail[-1] is not self.__current_node:
             self.__trail.append(self.__current_node)
 
-    def kill_branch(self):
+    def kill_branch(self) -> None:
         """Mark this part of the tree as not worth re-exploring."""
         if self.killed:
             return
@@ -1089,7 +1093,7 @@ class TreeRecordingObserver(DataObserver):
         if not self.killed:
             self.__update_exhausted()
 
-    def __update_exhausted(self):
+    def __update_exhausted(self) -> None:
         for t in reversed(self.__trail):
             # Any node we've traversed might have now become exhausted.
             # We check from the right. As soon as we hit a node that

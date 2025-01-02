@@ -436,7 +436,7 @@ def extract_lambda_source(f):
     return source
 
 
-def get_pretty_function_description(f):
+def get_pretty_function_description(f: Any) -> str:
     if isinstance(f, partial):
         return pretty(f)
     if not hasattr(f, "__name__"):

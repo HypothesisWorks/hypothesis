@@ -843,7 +843,7 @@ class Blocks:
 
 
 class _Overrun:
-    status = Status.OVERRUN
+    status: Status = Status.OVERRUN
 
     def __repr__(self) -> str:
         return "Overrun"
