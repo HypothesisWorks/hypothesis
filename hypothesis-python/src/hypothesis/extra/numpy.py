@@ -92,8 +92,15 @@ __all__ = [
 
 TIME_RESOLUTIONS = tuple("Y  M  D  h  m  s  ms  us  ns  ps  fs  as".split())
 
+numpy_version = tuple(map(int, np.__version__.split(".")[:2]))
 # See https://github.com/HypothesisWorks/hypothesis/pull/3394 and linked discussion.
-NP_FIXED_UNICODE = tuple(int(x) for x in np.__version__.split(".")[:2]) >= (1, 19)
+NP_FIXED_UNICODE = numpy_version >= (1, 19)
+
+maybe_string_dtype = []
+if numpy_version >= (2, 0):  # pragma: no branch # else covered by oldestnumpy job
+    from numpy.dtypes import StringDType
+
+    maybe_string_dtype = [st.just(StringDType())]
 
 
 @defines_strategy(force_reusable_values=True)
@@ -213,6 +220,17 @@ def from_dtype(
         else:  # NEP-7 defines the NaT value as integer -(2**63)
             elems = st.integers(-(2**63) + 1, 2**63 - 1)
         result = st.builds(dtype.type, elems, res)
+    elif dtype.kind == "T":
+        result = st.text(**compat_kw("alphabet", "min_size", "max_size"))
+    elif dtype.kind == "V":
+        result = st.binary(
+            **compat_kw(
+                "min_size", max_size=None if dtype.itemsize == 0 else dtype.itemsize
+            )
+        )
+    # we explicitly avoid supporting dtype.kind == "O", because it is easy to
+    # OOM when evaluating e.g. np.array(range(0, n)) for large n (and this is in
+    # fact a thing hypothesis will generate via st.from_type(object)).
     else:
         raise InvalidArgument(f"No strategy inference for {dtype}")
     return result.map(dtype.type)
@@ -927,6 +945,9 @@ def timedelta64_dtypes(
     )
 
 
+# TODO: we should uncap max_len here, and for unicode/void below.
+# Also allow generating undetermined-width dtypes like "S" / "S0"? Possibly with
+# a new parameter allow_undetermined?
 @defines_dtype_strategy
 def byte_string_dtypes(
     *, endianness: str = "?", min_len: int = 1, max_len: int = 16
@@ -955,6 +976,21 @@ def unicode_string_dtypes(
     """
     order_check("len", 1, min_len, max_len)
     return dtype_factory("U", list(range(min_len, max_len + 1)), None, endianness)
+
+
+@defines_dtype_strategy
+def void_dtypes(
+    *, endianness: str = "?", min_len: int = 1, max_len: int = 16
+) -> st.SearchStrategy["np.dtype[np.void]"]:
+    """Return a strategy for generating void dtypes, of various lengths
+    and byteorder.
+
+    While Hypothesis' st.binary strategy can generate empty bytestrings, void
+    dtypes with length 0 indicate that size is still to be determined, so
+    the minimum length for void dtypes is 1.
+    """
+    order_check("len", 1, min_len, max_len)
+    return dtype_factory("V", list(range(min_len, max_len + 1)), None, endianness)
 
 
 def _no_title_is_name_of_a_titled_field(ls):
@@ -1336,6 +1372,8 @@ def _from_type(thing: type[Ex]) -> Optional[st.SearchStrategy[Ex]]:
         # Note: Parameterized dtypes and DTypeLike are not supported.
         return st.one_of(
             scalar_dtypes(),
+            void_dtypes(),
+            *maybe_string_dtype,
             byte_string_dtypes(),
             unicode_string_dtypes(),
             array_dtypes(),
@@ -1368,7 +1406,7 @@ def _from_type(thing: type[Ex]) -> Optional[st.SearchStrategy[Ex]]:
 
     if isinstance(thing, type) and issubclass(thing, np.generic):
         dtype = np.dtype(thing)
-        return from_dtype(dtype) if dtype.kind not in "OV" else None
+        return from_dtype(dtype) if dtype.kind != "O" else None
 
     real_thing, args = _unpack_generic(thing)
 
