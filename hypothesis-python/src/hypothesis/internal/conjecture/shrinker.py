@@ -1256,10 +1256,10 @@ class Shrinker:
             and node1.index < node.index <= node1.index + 4,
         )
 
-        m = node1.value
-        n = node2.value
+        m: Union[int, float] = node1.value
+        n: Union[int, float] = node2.value
 
-        def boost(k):
+        def boost(k: int):
             if k > m:
                 return False
 

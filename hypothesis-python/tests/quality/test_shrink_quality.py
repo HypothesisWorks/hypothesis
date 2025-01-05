@@ -359,10 +359,10 @@ def test_sum_of_pair_mixed():
     # check both orderings
     assert minimal(
         tuples(st.floats(0, 1000), st.integers(0, 1000)), lambda x: sum(x) > 1000
-    ) == (1.0, 1000.0)
+    ) == (1.0, 1000)
     assert minimal(
         tuples(st.integers(0, 1000), st.floats(0, 1000)), lambda x: sum(x) > 1000
-    ) == (1.0, 1000.0)
+    ) == (1, 1000.0)
 
 
 def test_sum_of_pair_separated_int():
