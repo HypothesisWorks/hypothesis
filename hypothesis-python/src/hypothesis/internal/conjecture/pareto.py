@@ -13,7 +13,7 @@ from enum import Enum
 from sortedcontainers import SortedList
 
 from hypothesis.internal.conjecture.data import ConjectureData, ConjectureResult, Status
-from hypothesis.internal.conjecture.junkdrawer import LazySequenceCopy, swap
+from hypothesis.internal.conjecture.junkdrawer import LazySequenceCopy
 from hypothesis.internal.conjecture.shrinker import sort_key_ir
 
 NO_SCORE = float("-inf")
@@ -198,7 +198,7 @@ class ParetoFront:
             dominators = [data]
 
             while i >= 0 and len(dominators) < 10:
-                swap(front, i, self.__random.randint(0, i))
+                front.swap(i, self.__random.randint(0, i))
 
                 candidate = front[i]
 

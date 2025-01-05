@@ -228,6 +228,12 @@ class LazySequenceCopy(Generic[T]):
         self.__popped_indices.add(i)
         return v
 
+    def swap(self, i: int, j: int) -> None:
+        """Swap the elements ls[i], ls[j]."""
+        if i == j:
+            return
+        self[i], self[j] = self[j], self[i]
+
     def __getitem__(self, i: int) -> T:
         i = self.__underlying_index(i)
 
@@ -269,16 +275,9 @@ class LazySequenceCopy(Generic[T]):
         return i
 
     # even though we have len + getitem, mypyc requires iter.
-    def __iter__(self) -> Iterator[T]:
+    def __iter__(self) -> Iterable[T]:
         for i in range(len(self)):
             yield self[i]
-
-
-def swap(ls: LazySequenceCopy[T], i: int, j: int) -> None:
-    """Swap the elements ls[i], ls[j]."""
-    if i == j:
-        return
-    ls[i], ls[j] = ls[j], ls[i]
 
 
 def stack_depth_of_caller() -> int:
