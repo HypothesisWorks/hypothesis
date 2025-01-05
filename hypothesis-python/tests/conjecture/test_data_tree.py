@@ -29,7 +29,6 @@ from hypothesis.internal.conjecture.datatree import (
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.floats import float_to_int
 from hypothesis.internal.conjecture.junkdrawer import startswith
-
 from hypothesis.internal.floats import next_up
 from hypothesis.vendor import pretty
 

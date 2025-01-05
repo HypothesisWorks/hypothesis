@@ -10,7 +10,16 @@
 
 import math
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Callable, Optional, TypedDict, TypeVar, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    Literal,
+    Optional,
+    TypedDict,
+    TypeVar,
+    Union,
+    cast,
+)
 
 from hypothesis.errors import ChoiceTooLarge
 from hypothesis.internal.conjecture.floats import float_to_lex, lex_to_float
@@ -57,6 +66,7 @@ ChoiceT: "TypeAlias" = Union[int, str, bool, float, bytes]
 ChoiceKwargsT: "TypeAlias" = Union[
     IntegerKWargs, FloatKWargs, StringKWargs, BytesKWargs, BooleanKWargs
 ]
+ChoiceNameT: "TypeAlias" = Literal["integer", "string", "boolean", "float", "bytes"]
 
 
 def _size_to_index(size: int, *, alphabet_size: int) -> int:
@@ -304,7 +314,9 @@ def choice_to_index(choice: ChoiceT, kwargs: ChoiceKwargsT) -> int:
         raise NotImplementedError
 
 
-def choice_from_index(index: int, ir_type: str, kwargs: ChoiceKwargsT) -> ChoiceT:
+def choice_from_index(
+    index: int, ir_type: ChoiceNameT, kwargs: ChoiceKwargsT
+) -> ChoiceT:
     assert index >= 0
     if ir_type == "integer":
         kwargs = cast(IntegerKWargs, kwargs)

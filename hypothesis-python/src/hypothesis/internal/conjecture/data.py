@@ -39,6 +39,7 @@ from hypothesis.internal.conjecture.choice import (
     BooleanKWargs,
     BytesKWargs,
     ChoiceKwargsT,
+    ChoiceNameT,
     ChoiceT,
     FloatKWargs,
     IntegerKWargs,
@@ -95,9 +96,8 @@ TargetObservations = dict[str, Union[int, float]]
 
 T = TypeVar("T")
 
-IRTypeName: TypeAlias = Literal["integer", "string", "boolean", "float", "bytes"]
 # index, ir_type, kwargs, forced
-MisalignedAt: TypeAlias = tuple[int, IRTypeName, ChoiceKwargsT, Optional[ChoiceT]]
+MisalignedAt: TypeAlias = tuple[int, ChoiceNameT, ChoiceKwargsT, Optional[ChoiceT]]
 
 
 class ExtraInformation:
@@ -904,7 +904,7 @@ class DataObserver:
 
 @attr.s(slots=True, repr=False, eq=False)
 class IRNode:
-    ir_type: IRTypeName = attr.ib()
+    ir_type: ChoiceNameT = attr.ib()
     value: ChoiceT = attr.ib()
     kwargs: ChoiceKwargsT = attr.ib()
     was_forced: bool = attr.ib()
@@ -2283,7 +2283,7 @@ class ConjectureData:
             return kwargs
 
     def _pop_choice(
-        self, ir_type: IRTypeName, kwargs: ChoiceKwargsT, *, forced: Optional[ChoiceT]
+        self, ir_type: ChoiceNameT, kwargs: ChoiceKwargsT, *, forced: Optional[ChoiceT]
     ) -> ChoiceT:
         assert self.ir_prefix is not None
         # checked in _draw
