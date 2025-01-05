@@ -436,12 +436,12 @@ def extract_lambda_source(f):
     return source
 
 
-def get_pretty_function_description(f: Any) -> str:
+def get_pretty_function_description(f: object) -> str:
     if isinstance(f, partial):
         return pretty(f)
     if not hasattr(f, "__name__"):
         return repr(f)
-    name = f.__name__
+    name = f.__name__  # type: ignore # validated by hasattr above
     if name == "<lambda>":
         return extract_lambda_source(f)
     elif isinstance(f, (types.MethodType, types.BuiltinMethodType)):

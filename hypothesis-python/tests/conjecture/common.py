@@ -46,20 +46,16 @@ def interesting_origin(n: Optional[int] = None) -> InterestingOrigin:
     """
     Creates and returns an InterestingOrigin, parameterized by n, such that
     interesting_origin(n) == interesting_origin(m) iff n = m.
+
+    Since n=None may by chance concide with an explicitly-passed value of n, I
+    recommend not mixing interesting_origin() and interesting_origin(n) in the
+    same test.
     """
     try:
         int("not an int")
     except Exception as e:
         origin = InterestingOrigin.from_exception(e)
-        if n is None:
-            return origin
-        return InterestingOrigin(
-            exc_type=origin.exc_type,
-            filename=origin.filename,
-            lineno=n,
-            context=origin.context,
-            group_elems=origin.group_elems,
-        )
+        return origin._replace(lineno=n if n is not None else origin.lineno)
 
 
 def run_to_data(f):

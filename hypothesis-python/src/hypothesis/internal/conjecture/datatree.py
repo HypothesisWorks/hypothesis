@@ -10,7 +10,7 @@
 
 import math
 from random import Random
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, AbstractSet, Optional, Union
 
 import attr
 
@@ -398,7 +398,7 @@ class TreeNode:
     is_exhausted: bool = attr.ib(default=False, init=False)
 
     @property
-    def forced(self) -> Union[set[int], frozenset[int]]:
+    def forced(self) -> AbstractSet[int]:
         if not self.__forced:
             return EMPTY
         return self.__forced
