@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.123.4:
+
+--------------------
+6.123.4 - 2025-01-06
+--------------------
+
+This patch improves shrinking involving long strings or byte sequences whose value is not relevant to the failure.
+
 .. _v6.123.3:
 
 --------------------
