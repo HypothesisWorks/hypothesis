@@ -1196,7 +1196,9 @@ def integer_array_indices(
     shape: Shape,
     *,
     result_shape: st.SearchStrategy[Shape] = array_shapes(),
-    dtype: "np.dtype[I] | np.dtype[np.signedinteger[Any]]" = np.dtype(int),
+    dtype: "np.dtype[I] | np.dtype[np.signedinteger[Any] | np.bool[bool]]" = np.dtype(
+        int
+    ),
 ) -> "st.SearchStrategy[tuple[NDArray[I], ...]]":
     """Return a search strategy for tuples of integer-arrays that, when used
     to index into an array of shape ``shape``, given an array whose shape
