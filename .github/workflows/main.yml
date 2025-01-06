@@ -78,8 +78,9 @@ jobs:
           - check-pandas15
           - check-pandas14
           - check-pandas13
-          - check-py39-pandas12
-          - check-py39-pandas11
+          ## FIXME: actions update means Python builds without eg _bz2, which was required
+          # - check-py39-pandas12
+          # - check-py39-pandas11
           ## `-cover` is too slow under crosshair; use a custom split
           # - check-crosshair-custom-cover/test_[a-d]*
           # - check-crosshair-custom-cover/test_[e-i]*

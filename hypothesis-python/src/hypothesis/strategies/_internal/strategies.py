@@ -843,7 +843,7 @@ class MappedStrategy(SearchStrategy[Ex]):
                 try:
                     data.start_example(MAPPED_SEARCH_STRATEGY_DO_DRAW_LABEL)
                     x = data.draw(self.mapped_strategy)
-                    result = self.pack(x)  # type: ignore
+                    result = self.pack(x)
                     data.stop_example()
                     current_build_context().record_call(result, self.pack, [x], {})
                     return result
