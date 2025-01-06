@@ -226,8 +226,8 @@ jobs:
       NODE_VERSION: 18
       # Note that the versions below must be updated in sync; we've automated
       # that with `update_pyodide_versions()` in our weekly cronjob.
-      PYODIDE_VERSION: 0.26.4
-      PYTHON_VERSION: 3.12.1
+      PYODIDE_VERSION: 0.27.0
+      PYTHON_VERSION: 3.12.7
       EMSCRIPTEN_VERSION: 3.1.58
     steps:
       - uses: actions/checkout@v3
