@@ -60,7 +60,7 @@ extras = {
     "pytest": ["pytest>=4.6"],
     "dpcontracts": ["dpcontracts>=0.4"],
     "redis": ["redis>=3.0.0"],
-    "crosshair": ["hypothesis-crosshair>=0.0.18", "crosshair-tool>=0.0.78"],
+    "crosshair": ["hypothesis-crosshair>=0.0.18", "crosshair-tool>=0.0.81"],
     # zoneinfo is an odd one: every dependency is platform-conditional.
     "zoneinfo": [
         "tzdata>=2024.2 ; sys_platform == 'win32' or sys_platform == 'emscripten'",
