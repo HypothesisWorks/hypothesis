@@ -520,6 +520,19 @@ def test_redistribute_integer_pairs_with_forced_node():
     assert shrinker.choices == (15, 10)
 
 
+@pytest.mark.parametrize("n", [10, 50, 100, 200])
+def test_can_quickly_shrink_to_trivial_collection(n):
+    @shrinking_from(ir(b"\x01" * n))
+    def shrinker(data: ConjectureData):
+        b = data.draw_bytes()
+        if len(b) >= n:
+            data.mark_interesting()
+
+    shrinker.fixate_shrink_passes(["minimize_individual_nodes"])
+    assert shrinker.choices == (b"\x00" * n,)
+    assert shrinker.calls < 10
+
+
 def test_alternative_shrinking_will_lower_to_alternate_value():
     # We want to reject the first integer value we see when shrinking
     # this alternative, because it will be the result of transmuting the

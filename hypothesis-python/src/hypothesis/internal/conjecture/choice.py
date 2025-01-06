@@ -69,8 +69,14 @@ def collection_index(choice, *, min_size, alphabet_size, to_order=identity):
     # We then add each element c to the index, starting from the end (so "ab" is
     # simpler than "ba"). Each loop takes c at position i in the sequence and
     # computes the number of sequences of size i which come before it in the ordering.
-    for i, c in enumerate(reversed(choice)):
-        index += (alphabet_size**i) * to_order(c)
+
+    # this running_exp computation is equivalent to doing
+    #   index += (alphabet_size**i) * n
+    # but reuses intermediate exponentiation steps for efficiency.
+    running_exp = 1
+    for c in reversed(choice):
+        index += running_exp * to_order(c)
+        running_exp *= alphabet_size
     return index
 
 
