@@ -2356,7 +2356,7 @@ class ConjectureData:
 
         value = self.ir_prefix[self.index_ir]
         if isinstance(value, NodeTemplate):
-            node = value
+            node: NodeTemplate = value
             assert node.size >= 0
             # node templates have to be at the end for now, since it's not immediately
             # apparent how to handle overruning a node template while generating a single
@@ -2364,27 +2364,29 @@ class ConjectureData:
             assert self.index_ir == len(self.ir_prefix) - 1
             if node.type == "simplest":
                 try:
-                    value = choice_from_index(0, ir_type, kwargs)
+                    choice: IRType = choice_from_index(0, ir_type, kwargs)
                 except ChoiceTooLarge:
                     self.mark_overrun()
             else:
                 raise NotImplementedError
 
-            node.size -= ir_size([value])
+            node.size -= ir_size([choice])
             if node.size < 0:
                 self.mark_overrun()
-            return value  # type: ignore # mypy misses eliminating the NodeTemplate type
+            return choice
 
+        choice = value
         node_ir_type = {
             str: "string",
             float: "float",
             int: "integer",
             bool: "boolean",
             bytes: "bytes",
-        }[type(value)]
+        }[type(choice)]
         # If we're trying to:
         # * draw a different ir type at the same location
-        # * draw the same ir type with a different kwargs
+        # * draw the same ir type with a different kwargs, which does not permit
+        #   the current value
         #
         # then we call this a misalignment, because the choice sequence has
         # slipped from what we expected at some point. An easy misalignment is
@@ -2393,11 +2395,11 @@ class ConjectureData:
         #
         # where the choice sequence [0, 100] has kwargs {min_value: 0, max_value: 100}
         # at index 1, but [0, 101] has kwargs {min_value: 101, max_value: 200} at
-        # index 1.
+        # index 1 (which does not permit any of the values 0-100).
         #
         # When the choice sequence becomes misaligned, we generate a new value of the
         # type and kwargs the strategy expects.
-        if node_ir_type != ir_type or not ir_value_permitted(value, ir_type, kwargs):
+        if node_ir_type != ir_type or not ir_value_permitted(choice, ir_type, kwargs):
             # only track first misalignment for now.
             if self.misaligned_at is None:
                 self.misaligned_at = (self.index_ir, ir_type, kwargs, forced)
@@ -2418,13 +2420,13 @@ class ConjectureData:
                 # slipping to high-complexity values are common. Though arguably
                 # we may want to expand a bit beyond *just* the simplest choice.
                 # (we could for example consider sampling choices from index 0-10).
-                value = choice_from_index(0, ir_type, kwargs)
+                choice = choice_from_index(0, ir_type, kwargs)
             except ChoiceTooLarge:
                 # should really never happen with a 0-index choice, but let's be safe.
                 self.mark_overrun()
 
         self.index_ir += 1
-        return value  # type: ignore # mypy misses eliminating the NodeTemplate type
+        return choice
 
     def as_result(self) -> Union[ConjectureResult, _Overrun]:
         """Convert the result of running this test into
