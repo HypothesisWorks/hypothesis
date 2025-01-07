@@ -160,7 +160,7 @@ class Shrinker:
         If this returns True, the ``run`` method will terminate early
         without doing any more work.
         """
-        return False  # pragma: no cover
+        return False
 
     def left_is_better(self, left, right):
         """Returns True if the left is strictly simpler than the right

@@ -765,17 +765,17 @@ class DataTree:
                         or any(not v.is_exhausted for v in branch.children.values())
                     )
 
-    def rewrite(self, nodes):
+    def rewrite(self, choices):
         """Use previously seen ConjectureData objects to return a tuple of
         the rewritten choice sequence and the status we would get from running
         that with the test function. If the status cannot be predicted
         from the existing values it will be None."""
-        data = ConjectureData.for_ir_tree(nodes)
+        data = ConjectureData.for_choices(choices)
         try:
             self.simulate_test_function(data)
-            return (data.ir_nodes, data.status)
+            return (data.choices, data.status)
         except PreviouslyUnseenBehaviour:
-            return (nodes, None)
+            return (choices, None)
 
     def simulate_test_function(self, data):
         """Run a simulated version of the test function recorded by

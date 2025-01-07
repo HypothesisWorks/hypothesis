@@ -17,7 +17,7 @@ from hypothesis.internal.conjecture.data import (
     Status,
     _Overrun,
     bits_to_bytes,
-    ir_size_nodes,
+    ir_size,
     ir_value_permitted,
 )
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE_IR, ConjectureRunner
@@ -176,7 +176,7 @@ class Optimiser:
                     )
                     attempt = self.engine.cached_test_function_ir(
                         attempt_nodes,
-                        extend=BUFFER_SIZE_IR - ir_size_nodes(attempt_nodes),
+                        extend=BUFFER_SIZE_IR - ir_size(attempt_nodes),
                     )
 
                     if self.consider_new_data(attempt):

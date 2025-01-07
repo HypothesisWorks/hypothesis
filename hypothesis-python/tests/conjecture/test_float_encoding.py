@@ -15,7 +15,6 @@ import pytest
 from hypothesis import HealthCheck, assume, example, given, settings, strategies as st
 from hypothesis.internal.compat import ceil, extract_bits, floor, int_to_bytes
 from hypothesis.internal.conjecture import floats as flt
-from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.floats import float_to_int
 
@@ -138,15 +137,12 @@ def float_runner(start, condition, *, kwargs=None):
 
 
 def minimal_from(start, condition, *, kwargs=None):
-    kwargs = {} if kwargs is None else kwargs
-
     runner = float_runner(start, condition, kwargs=kwargs)
     runner.shrink_interesting_examples()
     (v,) = runner.interesting_examples.values()
-    data = ConjectureData.for_ir_tree(v.ir_nodes)
-    result = data.draw_float(**kwargs)
-    assert condition(result)
-    return result
+    f = v.choices[0]
+    assert condition(f)
+    return f
 
 
 INTERESTING_FLOATS = [0.0, 1.0, 2.0, sys.float_info.max, float("inf"), float("nan")]

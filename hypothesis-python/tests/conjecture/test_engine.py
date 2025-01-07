@@ -34,7 +34,7 @@ from hypothesis.internal.conjecture.data import (
     IRNode,
     Overrun,
     Status,
-    ir_size_nodes,
+    ir_size,
 )
 from hypothesis.internal.conjecture.datatree import compute_max_children
 from hypothesis.internal.conjecture.engine import (
@@ -195,7 +195,7 @@ def test_variadic_draw():
         if any(all(d) for d in draw_list(data)):
             data.mark_interesting()
 
-    ls = draw_list(ConjectureData.for_ir_tree(nodes))
+    ls = draw_list(ConjectureData.for_choices([n.value for n in nodes]))
     assert len(ls) == 1
     assert len(ls[0]) == 1
 
@@ -1613,7 +1613,7 @@ def test_overruns_with_extend_are_not_cached(node):
 
     # cache miss
     data = runner.cached_test_function_ir(
-        [node], extend=BUFFER_SIZE_IR - ir_size_nodes([node])
+        [node], extend=BUFFER_SIZE_IR - ir_size([node])
     )
     assert runner.call_count == 2
     assert data.status is Status.VALID
@@ -1639,7 +1639,7 @@ def test_simulate_to_evicted_data(monkeypatch):
 
     # we dont throw PreviouslyUnseenBehavior when simulating, but the result
     # was evicted to the cache so we will still call through to the test function.
-    runner.tree.simulate_test_function(ConjectureData.for_ir_tree([node_0]))
+    runner.tree.simulate_test_function(ConjectureData.for_choices([0]))
     runner.cached_test_function_ir([node_0])
     assert runner.call_count == 3
 

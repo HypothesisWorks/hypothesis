@@ -20,6 +20,7 @@ from hypothesis.internal.conjecture.shrinker import (
     StopShrinking,
     node_program,
 )
+from hypothesis.internal.conjecture.shrinking.common import Shrinker as ShrinkerPass
 from hypothesis.internal.conjecture.utils import Sampler
 
 from tests.conjecture.common import SOME_LABEL, ir, run_to_nodes, shrinking_from
@@ -558,3 +559,17 @@ def test_alternative_shrinking_will_lower_to_alternate_value():
 
     shrinker.initial_coarse_reduction()
     assert shrinker.choices[0] == 0
+
+
+class BadShrinker(ShrinkerPass):
+    """
+    A shrinker that really doesn't do anything at all. This is mostly a covering
+    test for the shrinker interface methods.
+    """
+
+    def run_step(self):
+        return
+
+
+def test_silly_shrinker_subclass():
+    assert BadShrinker.shrink(10, lambda _: True) == 10
