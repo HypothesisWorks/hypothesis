@@ -15,6 +15,7 @@ from hypothesis.internal.conjecture.data import (
     ConjectureResult,
     IRType,
     Status,
+    _Cancelled,
     _Overrun,
     bits_to_bytes,
     ir_size,
@@ -68,7 +69,9 @@ class Optimiser:
     def current_score(self) -> float:
         return self.score_function(self.current_data)
 
-    def consider_new_data(self, data: Union[ConjectureResult, _Overrun]) -> bool:
+    def consider_new_data(
+        self, data: Union[ConjectureResult, _Cancelled, _Overrun]
+    ) -> bool:
         """Consider a new data object as a candidate target. If it is better
         than the current one, return True."""
         if data.status < Status.VALID:
