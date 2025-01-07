@@ -23,7 +23,7 @@ import unittest
 import warnings
 import zlib
 from collections import defaultdict
-from collections.abc import Coroutine, Generator, Hashable
+from collections.abc import Coroutine, Generator, Hashable, Sequence
 from functools import partial
 from random import Random
 from typing import (
@@ -50,6 +50,7 @@ from hypothesis._settings import (
     settings as Settings,
 )
 from hypothesis.control import BuildContext
+from hypothesis.database import ir_from_bytes, ir_to_bytes
 from hypothesis.errors import (
     BackendCannotProceed,
     DeadlineExceeded,
@@ -77,6 +78,7 @@ from hypothesis.internal.compat import (
 )
 from hypothesis.internal.conjecture.data import (
     ConjectureData,
+    IRType,
     PrimitiveProvider,
     Status,
 )
@@ -319,27 +321,28 @@ def reproduce_failure(version: str, blob: bytes) -> Callable[[TestFunc], TestFun
     return accept
 
 
-def encode_failure(buffer):
-    buffer = bytes(buffer)
-    compressed = zlib.compress(buffer)
-    if len(compressed) < len(buffer):
-        buffer = b"\1" + compressed
+def encode_failure(choices):
+    blob = ir_to_bytes(choices)
+    compressed = zlib.compress(blob)
+    if len(compressed) < len(blob):
+        blob = b"\1" + compressed
     else:
-        buffer = b"\0" + buffer
-    return base64.b64encode(buffer)
+        blob = b"\0" + blob
+    return base64.b64encode(blob)
 
 
-def decode_failure(blob):
+def decode_failure(blob: bytes) -> Sequence[IRType]:
     try:
-        buffer = base64.b64decode(blob)
+        decoded = base64.b64decode(blob)
     except Exception:
         raise InvalidArgument(f"Invalid base64 encoded string: {blob!r}") from None
-    prefix = buffer[:1]
+
+    prefix = decoded[:1]
     if prefix == b"\0":
-        return buffer[1:]
+        decoded = decoded[1:]
     elif prefix == b"\1":
         try:
-            return zlib.decompress(buffer[1:])
+            decoded = zlib.decompress(decoded[1:])
         except zlib.error as err:
             raise InvalidArgument(
                 f"Invalid zlib compression for blob {blob!r}"
@@ -348,6 +351,13 @@ def decode_failure(blob):
         raise InvalidArgument(
             f"Could not decode blob {blob!r}: Invalid start byte {prefix!r}"
         )
+
+    try:
+        choices = ir_from_bytes(decoded)
+    except Exception:
+        raise InvalidArgument(f"Invalid serialized choice sequence for blob {blob!r}")
+
+    return choices
 
 
 def _invalid(message, *, exc=InvalidArgument, test, given_kwargs):
@@ -1382,7 +1392,7 @@ class StateForActualGivenExecution:
                     fragments.append(
                         "\nYou can reproduce this example by temporarily adding "
                         "@reproduce_failure(%r, %r) as a decorator on your test case"
-                        % (__version__, encode_failure(falsifying_example.buffer))
+                        % (__version__, encode_failure(falsifying_example.choices))
                     )
                 # Mostly useful for ``find`` and ensuring that objects that
                 # hold on to a reference to ``data`` know that it's now been
@@ -1685,7 +1695,7 @@ def given(
                     )
                 try:
                     state.execute_once(
-                        ConjectureData.for_buffer(decode_failure(failure)),
+                        ConjectureData.for_choices(decode_failure(failure)),
                         print_example=True,
                         is_final=True,
                     )
