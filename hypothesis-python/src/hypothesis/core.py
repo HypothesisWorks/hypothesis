@@ -76,9 +76,9 @@ from hypothesis.internal.compat import (
     get_type_hints,
     int_from_bytes,
 )
+from hypothesis.internal.conjecture.choice import ChoiceT
 from hypothesis.internal.conjecture.data import (
     ConjectureData,
-    IRType,
     PrimitiveProvider,
     Status,
 )
@@ -331,7 +331,7 @@ def encode_failure(choices):
     return base64.b64encode(blob)
 
 
-def decode_failure(blob: bytes) -> Sequence[IRType]:
+def decode_failure(blob: bytes) -> Sequence[ChoiceT]:
     try:
         decoded = base64.b64decode(blob)
     except Exception:
