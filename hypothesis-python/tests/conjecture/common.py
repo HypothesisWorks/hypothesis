@@ -16,11 +16,11 @@ from hypothesis import HealthCheck, Phase, assume, settings, strategies as st
 from hypothesis.control import current_build_context
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import engine as engine_module
+from hypothesis.internal.conjecture.choice import ChoiceT
 from hypothesis.internal.conjecture.data import (
     COLLECTION_DEFAULT_MAX_SIZE,
     ConjectureData,
     IRNode,
-    IRType,
     Status,
 )
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE, ConjectureRunner
@@ -369,7 +369,7 @@ def ir_nodes(draw, *, was_forced=None, ir_type=None):
     return IRNode(ir_type=ir_type, value=value, kwargs=kwargs, was_forced=was_forced)
 
 
-def ir(*values: list[IRType]) -> list[IRNode]:
+def ir(*values: list[ChoiceT]) -> list[IRNode]:
     """
     For inline-creating an ir node or list of ir nodes, where you don't care about the
     kwargs. This uses maximally-permissable kwargs and infers the ir_type you meant

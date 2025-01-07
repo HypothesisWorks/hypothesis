@@ -24,7 +24,11 @@ from hypothesis import (
     strategies as st,
 )
 from hypothesis.errors import StopTest
-from hypothesis.internal.conjecture.choice import choice_from_index, choice_to_index
+from hypothesis.internal.conjecture.choice import (
+    choice_from_index,
+    choice_permitted,
+    choice_to_index,
+)
 from hypothesis.internal.conjecture.data import (
     COLLECTION_DEFAULT_MAX_SIZE,
     ConjectureData,
@@ -33,7 +37,6 @@ from hypothesis.internal.conjecture.data import (
     Status,
     ir_size,
     ir_value_equal,
-    ir_value_permitted,
 )
 from hypothesis.internal.conjecture.datatree import (
     MAX_CHILDREN_EFFECTIVELY_INFINITE,
@@ -380,32 +383,30 @@ def test_all_children_are_permitted_values(ir_type_and_kwargs):
     cap = min(100_000, MAX_CHILDREN_EFFECTIVELY_INFINITE)
     assume(max_children < cap)
 
-    # test that all_children -> ir_value_permitted (but not necessarily the converse.)
+    # test that all_children -> choice_permitted (but not necessarily the converse.)
     for value in all_children(ir_type, kwargs):
-        assert ir_value_permitted(value, ir_type, kwargs), value
+        assert choice_permitted(value, kwargs), value
 
 
 @pytest.mark.parametrize(
-    "value, ir_type, kwargs, permitted",
+    "value, kwargs, permitted",
     [
-        (0, "integer", integer_kw(1, 2), False),
-        (2, "integer", integer_kw(0, 1), False),
-        (10, "integer", integer_kw(0, 20), True),
-        (int(2**128 / 2) - 1, "integer", integer_kw(), True),
-        (int(2**128 / 2), "integer", integer_kw(), False),
-        (math.nan, "float", float_kw(0.0, 0.0), True),
-        (math.nan, "float", float_kw(0.0, 0.0, allow_nan=False), False),
-        (2.0, "float", float_kw(1.0, 3.0, smallest_nonzero_magnitude=2.5), False),
+        (0, integer_kw(1, 2), False),
+        (2, integer_kw(0, 1), False),
+        (10, integer_kw(0, 20), True),
+        (int(2**128 / 2) - 1, integer_kw(), True),
+        (int(2**128 / 2), integer_kw(), False),
+        (math.nan, float_kw(0.0, 0.0), True),
+        (math.nan, float_kw(0.0, 0.0, allow_nan=False), False),
+        (2.0, float_kw(1.0, 3.0, smallest_nonzero_magnitude=2.5), False),
         (
             -2.0,
-            "float",
             float_kw(-3.0, -1.0, smallest_nonzero_magnitude=2.5),
             False,
         ),
-        (1.0, "float", float_kw(1.0, 1.0), True),
+        (1.0, float_kw(1.0, 1.0), True),
         (
             "abcd",
-            "string",
             {
                 "min_size": 10,
                 "max_size": 20,
@@ -415,7 +416,6 @@ def test_all_children_are_permitted_values(ir_type_and_kwargs):
         ),
         (
             "abcd",
-            "string",
             {
                 "min_size": 1,
                 "max_size": 3,
@@ -425,30 +425,28 @@ def test_all_children_are_permitted_values(ir_type_and_kwargs):
         ),
         (
             "abcd",
-            "string",
             {"min_size": 1, "max_size": 10, "intervals": IntervalSet.from_string("e")},
             False,
         ),
         (
             "e",
-            "string",
             {"min_size": 1, "max_size": 10, "intervals": IntervalSet.from_string("e")},
             True,
         ),
-        (b"a", "bytes", {"min_size": 2, "max_size": 2}, False),
-        (b"aa", "bytes", {"min_size": 2, "max_size": 2}, True),
-        (b"aa", "bytes", {"min_size": 0, "max_size": 3}, True),
-        (b"a", "bytes", {"min_size": 2, "max_size": 10}, False),
-        (True, "boolean", {"p": 0}, False),
-        (False, "boolean", {"p": 0}, True),
-        (True, "boolean", {"p": 1}, True),
-        (False, "boolean", {"p": 1}, False),
-        (True, "boolean", {"p": 0.5}, True),
-        (False, "boolean", {"p": 0.5}, True),
+        (b"a", {"min_size": 2, "max_size": 2}, False),
+        (b"aa", {"min_size": 2, "max_size": 2}, True),
+        (b"aa", {"min_size": 0, "max_size": 3}, True),
+        (b"a", {"min_size": 2, "max_size": 10}, False),
+        (True, {"p": 0}, False),
+        (False, {"p": 0}, True),
+        (True, {"p": 1}, True),
+        (False, {"p": 1}, False),
+        (True, {"p": 0.5}, True),
+        (False, {"p": 0.5}, True),
     ],
 )
-def test_ir_value_permitted(value, ir_type, kwargs, permitted):
-    assert ir_value_permitted(value, ir_type, kwargs) == permitted
+def test_choice_permitted(value, kwargs, permitted):
+    assert choice_permitted(value, kwargs) == permitted
 
 
 @given(ir_nodes(was_forced=True))

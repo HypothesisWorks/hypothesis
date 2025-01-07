@@ -27,6 +27,7 @@ from typing import (
     TypedDict,
     TypeVar,
     Union,
+    cast,
 )
 
 import attr
@@ -34,7 +35,17 @@ import attr
 from hypothesis.errors import ChoiceTooLarge, Frozen, InvalidArgument, StopTest
 from hypothesis.internal.cache import LRUCache
 from hypothesis.internal.compat import add_note, floor, int_from_bytes, int_to_bytes
-from hypothesis.internal.conjecture.choice import choice_from_index
+from hypothesis.internal.conjecture.choice import (
+    BooleanKWargs,
+    BytesKWargs,
+    ChoiceKwargsT,
+    ChoiceT,
+    FloatKWargs,
+    IntegerKWargs,
+    StringKWargs,
+    choice_from_index,
+    choice_permitted,
+)
 from hypothesis.internal.conjecture.floats import float_to_lex, lex_to_float
 from hypothesis.internal.conjecture.junkdrawer import (
     IntList,
@@ -86,43 +97,9 @@ TargetObservations = dict[str, Union[int, float]]
 
 T = TypeVar("T")
 
-
-class IntegerKWargs(TypedDict):
-    min_value: Optional[int]
-    max_value: Optional[int]
-    weights: Optional[dict[int, float]]
-    shrink_towards: int
-
-
-class FloatKWargs(TypedDict):
-    min_value: float
-    max_value: float
-    allow_nan: bool
-    smallest_nonzero_magnitude: float
-
-
-class StringKWargs(TypedDict):
-    intervals: IntervalSet
-    min_size: int
-    max_size: int
-
-
-class BytesKWargs(TypedDict):
-    min_size: int
-    max_size: int
-
-
-class BooleanKWargs(TypedDict):
-    p: float
-
-
-IRType: TypeAlias = Union[int, str, bool, float, bytes]
-IRKWargsType: TypeAlias = Union[
-    IntegerKWargs, FloatKWargs, StringKWargs, BytesKWargs, BooleanKWargs
-]
 IRTypeName: TypeAlias = Literal["integer", "string", "boolean", "float", "bytes"]
 # index, ir_type, kwargs, forced
-MisalignedAt: TypeAlias = tuple[int, IRTypeName, IRKWargsType, Optional[IRType]]
+MisalignedAt: TypeAlias = tuple[int, IRTypeName, ChoiceKwargsT, Optional[ChoiceT]]
 
 
 class ExtraInformation:
@@ -930,16 +907,16 @@ class DataObserver:
 @attr.s(slots=True, repr=False, eq=False)
 class IRNode:
     ir_type: IRTypeName = attr.ib()
-    value: IRType = attr.ib()
-    kwargs: IRKWargsType = attr.ib()
+    value: ChoiceT = attr.ib()
+    kwargs: ChoiceKwargsT = attr.ib()
     was_forced: bool = attr.ib()
     index: Optional[int] = attr.ib(default=None)
 
     def copy(
         self,
         *,
-        with_value: Optional[IRType] = None,
-        with_kwargs: Optional[IRKWargsType] = None,
+        with_value: Optional[ChoiceT] = None,
+        with_kwargs: Optional[ChoiceKwargsT] = None,
     ) -> "IRNode":
         # we may want to allow this combination in the future, but for now it's
         # a footgun.
@@ -956,7 +933,7 @@ class IRNode:
         )
 
     @property
-    def trivial(self):
+    def trivial(self) -> bool:
         """
         A node is trivial if it cannot be simplified any further. This does not
         mean that modifying a trivial node can't produce simpler test cases when
@@ -970,8 +947,9 @@ class IRNode:
             zero_value = choice_from_index(0, self.ir_type, self.kwargs)
             return ir_value_equal(self.ir_type, self.value, zero_value)
         else:
-            min_value = self.kwargs["min_value"]
-            max_value = self.kwargs["max_value"]
+            kwargs = cast(FloatKWargs, self.kwargs)
+            min_value = kwargs["min_value"]
+            max_value = kwargs["max_value"]
             shrink_towards = 0
 
             if min_value == -math.inf and max_value == math.inf:
@@ -994,7 +972,7 @@ class IRNode:
             # also not incorrect to be conservative here.
             return False
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, IRNode):
             return NotImplemented
 
@@ -1030,48 +1008,7 @@ class NodeTemplate:
         assert self.size > 0
 
 
-def ir_value_permitted(value, ir_type, kwargs):
-    if ir_type == "integer":
-        min_value = kwargs["min_value"]
-        max_value = kwargs["max_value"]
-        shrink_towards = kwargs["shrink_towards"]
-        if min_value is not None and value < min_value:
-            return False
-        if max_value is not None and value > max_value:
-            return False
-
-        if max_value is None or min_value is None:
-            return (value - shrink_towards).bit_length() < 128
-
-        return True
-    elif ir_type == "float":
-        if math.isnan(value):
-            return kwargs["allow_nan"]
-        return (
-            sign_aware_lte(kwargs["min_value"], value)
-            and sign_aware_lte(value, kwargs["max_value"])
-        ) and not (0 < abs(value) < kwargs["smallest_nonzero_magnitude"])
-    elif ir_type == "string":
-        if len(value) < kwargs["min_size"]:
-            return False
-        if kwargs["max_size"] is not None and len(value) > kwargs["max_size"]:
-            return False
-        return all(ord(c) in kwargs["intervals"] for c in value)
-    elif ir_type == "bytes":
-        if len(value) < kwargs["min_size"]:
-            return False
-        return kwargs["max_size"] is None or len(value) <= kwargs["max_size"]
-    elif ir_type == "boolean":
-        if kwargs["p"] <= 2 ** (-64):
-            return value is False
-        if kwargs["p"] >= (1 - 2 ** (-64)):
-            return value is True
-        return True
-
-    raise NotImplementedError(f"unhandled type {type(value)} of ir value {value}")
-
-
-def ir_size(ir: Iterable[Union[IRNode, NodeTemplate, IRType]]) -> int:
+def ir_size(ir: Iterable[ChoiceT]) -> int:
     from hypothesis.database import ir_to_bytes
 
     size = 0
@@ -1081,7 +1018,7 @@ def ir_size(ir: Iterable[Union[IRNode, NodeTemplate, IRType]]) -> int:
         elif isinstance(v, NodeTemplate):
             size += v.size
         else:
-            # IRType
+            # ChoiceT
             size += len(ir_to_bytes([v]))
 
     return size
@@ -1160,7 +1097,7 @@ class ConjectureResult:
         return self
 
     @property
-    def choices(self) -> tuple[IRType, ...]:
+    def choices(self) -> tuple[ChoiceT, ...]:
         return tuple(node.value for node in self.ir_nodes)
 
 
@@ -1977,7 +1914,7 @@ class ConjectureData:
     @classmethod
     def for_choices(
         cls,
-        choices: Sequence[Union[NodeTemplate, IRType]],
+        choices: Sequence[Union[NodeTemplate, ChoiceT]],
         *,
         observer: Optional[DataObserver] = None,
         provider: Union[type, PrimitiveProvider] = HypothesisProvider,
@@ -2004,7 +1941,7 @@ class ConjectureData:
         random: Optional[Random],
         observer: Optional[DataObserver] = None,
         provider: Union[type, PrimitiveProvider] = HypothesisProvider,
-        ir_prefix: Optional[Sequence[Union[NodeTemplate, IRType]]] = None,
+        ir_prefix: Optional[Sequence[Union[NodeTemplate, ChoiceT]]] = None,
         max_length_ir: Optional[int] = None,
     ) -> None:
         from hypothesis.internal.conjecture.engine import BUFFER_SIZE_IR
@@ -2095,7 +2032,7 @@ class ConjectureData:
         )
 
     @property
-    def choices(self) -> tuple[IRType, ...]:
+    def choices(self) -> tuple[ChoiceT, ...]:
         return tuple(node.value for node in self.ir_nodes)
 
     # A bit of explanation of the `observe` and `fake_forced` arguments in our
@@ -2348,8 +2285,8 @@ class ConjectureData:
             return kwargs
 
     def _pop_choice(
-        self, ir_type: IRTypeName, kwargs: IRKWargsType, *, forced: Optional[IRType]
-    ) -> IRType:
+        self, ir_type: IRTypeName, kwargs: ChoiceKwargsT, *, forced: Optional[ChoiceT]
+    ) -> ChoiceT:
         assert self.ir_prefix is not None
         # checked in _draw
         assert self.index_ir < len(self.ir_prefix)
@@ -2364,7 +2301,7 @@ class ConjectureData:
             assert self.index_ir == len(self.ir_prefix) - 1
             if node.type == "simplest":
                 try:
-                    choice: IRType = choice_from_index(0, ir_type, kwargs)
+                    choice: ChoiceT = choice_from_index(0, ir_type, kwargs)
                 except ChoiceTooLarge:
                     self.mark_overrun()
             else:
@@ -2399,7 +2336,7 @@ class ConjectureData:
         #
         # When the choice sequence becomes misaligned, we generate a new value of the
         # type and kwargs the strategy expects.
-        if node_ir_type != ir_type or not ir_value_permitted(choice, ir_type, kwargs):
+        if node_ir_type != ir_type or not choice_permitted(choice, kwargs):
             # only track first misalignment for now.
             if self.misaligned_at is None:
                 self.misaligned_at = (self.index_ir, ir_type, kwargs, forced)

@@ -11,14 +11,13 @@
 from typing import Union
 
 from hypothesis.internal.compat import int_from_bytes, int_to_bytes
+from hypothesis.internal.conjecture.choice import ChoiceT, choice_permitted
 from hypothesis.internal.conjecture.data import (
     ConjectureResult,
-    IRType,
     Status,
     _Overrun,
     bits_to_bytes,
     ir_size,
-    ir_value_permitted,
 )
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE_IR, ConjectureRunner
 from hypothesis.internal.conjecture.junkdrawer import find_integer
@@ -137,7 +136,7 @@ class Optimiser:
                 if node.was_forced:
                     return False  # pragma: no cover
 
-                new_value: IRType
+                new_value: ChoiceT
                 if node.ir_type in {"integer", "float"}:
                     assert isinstance(node.value, (int, float))
                     new_value = node.value + k
@@ -164,7 +163,7 @@ class Optimiser:
                     size = max(len(node.value), bits_to_bytes(v.bit_length()))
                     new_value = int_to_bytes(v, size)
 
-                if not ir_value_permitted(new_value, node.ir_type, node.kwargs):
+                if not choice_permitted(new_value, node.kwargs):
                     return False
 
                 for _ in range(3):

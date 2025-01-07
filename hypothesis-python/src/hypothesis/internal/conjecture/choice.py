@@ -9,14 +9,57 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Callable, Optional, TypedDict, TypeVar, Union, cast
 
 from hypothesis.errors import ChoiceTooLarge
 from hypothesis.internal.conjecture.floats import float_to_lex, lex_to_float
 from hypothesis.internal.conjecture.utils import identity
 from hypothesis.internal.floats import make_float_clamper, sign_aware_lte
+from hypothesis.internal.intervalsets import IntervalSet
+
+T = TypeVar("T")
+
+if TYPE_CHECKING:
+    from typing import TypeAlias
 
 
-def _size_to_index(size, *, alphabet_size):
+class IntegerKWargs(TypedDict):
+    min_value: Optional[int]
+    max_value: Optional[int]
+    weights: Optional[dict[int, float]]
+    shrink_towards: int
+
+
+class FloatKWargs(TypedDict):
+    min_value: float
+    max_value: float
+    allow_nan: bool
+    smallest_nonzero_magnitude: float
+
+
+class StringKWargs(TypedDict):
+    intervals: IntervalSet
+    min_size: int
+    max_size: int
+
+
+class BytesKWargs(TypedDict):
+    min_size: int
+    max_size: int
+
+
+class BooleanKWargs(TypedDict):
+    p: float
+
+
+ChoiceT: "TypeAlias" = Union[int, str, bool, float, bytes]
+ChoiceKwargsT: "TypeAlias" = Union[
+    IntegerKWargs, FloatKWargs, StringKWargs, BytesKWargs, BooleanKWargs
+]
+
+
+def _size_to_index(size: int, *, alphabet_size: int) -> int:
     # this is the closed form of this geometric series:
     # for i in range(size):
     #     index += alphabet_size**i
@@ -25,10 +68,12 @@ def _size_to_index(size, *, alphabet_size):
         return 0
     if alphabet_size == 1:
         return size
-    return (alphabet_size**size - 1) // (alphabet_size - 1)
+    v = (alphabet_size**size - 1) // (alphabet_size - 1)
+    # mypy thinks (m: int) // (n: int) -> Any. assert it back to int.
+    return cast(int, v)
 
 
-def _index_to_size(index, alphabet_size):
+def _index_to_size(index: int, alphabet_size: int) -> int:
     if alphabet_size == 0:
         return 0
     elif alphabet_size == 1:
@@ -49,15 +94,21 @@ def _index_to_size(index, alphabet_size):
     # floating point errors, use a much slower integer-only logarithm instead,
     # which is guaranteed to be precise.
     if 0 < math.ceil(size) - size < 1e-7:
-        size = 0
+        s = 0
         while total >= alphabet_size:
             total //= alphabet_size
-            size += 1
-        return size
+            s += 1
+        return s
     return math.floor(size)
 
 
-def collection_index(choice, *, min_size, alphabet_size, to_order=identity):
+def collection_index(
+    choice: Sequence[T],
+    *,
+    min_size: int,
+    alphabet_size: int,
+    to_order: Callable[[T], int],
+) -> int:
     # Collections are ordered by counting the number of values of each size,
     # starting with min_size. alphabet_size indicates how many options there
     # are for a single element. to_order orders an element by returning an n ≥ 0.
@@ -80,7 +131,13 @@ def collection_index(choice, *, min_size, alphabet_size, to_order=identity):
     return index
 
 
-def collection_value(index, *, min_size, alphabet_size, from_order=identity):
+def collection_value(
+    index: int,
+    *,
+    min_size: int,
+    alphabet_size: int,
+    from_order: Callable[[int], T],
+) -> list[T]:
     from hypothesis.internal.conjecture.engine import BUFFER_SIZE_IR
 
     # this function is probably easiest to make sense of as an inverse of
@@ -96,7 +153,7 @@ def collection_value(index, *, min_size, alphabet_size, from_order=identity):
 
     # subtract out the amount responsible for the size
     index -= _size_to_index(size, alphabet_size=alphabet_size)
-    vals = []
+    vals: list[T] = []
     for i in reversed(range(size)):
         # optimization for common case when we hit index 0. Exponentiation
         # on large integers is expensive!
@@ -110,7 +167,7 @@ def collection_value(index, *, min_size, alphabet_size, from_order=identity):
     return vals
 
 
-def zigzag_index(value, *, shrink_towards):
+def zigzag_index(value: int, *, shrink_towards: int) -> int:
     # value | 0  1 -1  2 -2  3 -3  4
     # index | 0  1  2  3  4  5  6  7
     index = 2 * abs(shrink_towards - value)
@@ -119,7 +176,7 @@ def zigzag_index(value, *, shrink_towards):
     return index
 
 
-def zigzag_value(index, *, shrink_towards):
+def zigzag_value(index: int, *, shrink_towards: int) -> int:
     assert index >= 0
     # count how many "steps" away from shrink_towards we are.
     n = (index + 1) // 2
@@ -129,7 +186,7 @@ def zigzag_value(index, *, shrink_towards):
     return shrink_towards + n
 
 
-def choice_to_index(choice, kwargs):
+def choice_to_index(choice: ChoiceT, kwargs: ChoiceKwargsT) -> int:
     # This function takes a choice in the choice sequence and returns the
     # complexity index of that choice from among its possible values, where 0
     # is the simplest.
@@ -157,7 +214,7 @@ def choice_to_index(choice, kwargs):
         # the most common case where 0 is first (a = 0). We deviate from this only
         # rarely, e.g. for datetimes, where we generally want year 2000 to be
         # simpler than year 0.
-
+        kwargs = cast(IntegerKWargs, kwargs)
         shrink_towards = kwargs["shrink_towards"]
         min_value = kwargs["min_value"]
         max_value = kwargs["max_value"]
@@ -195,6 +252,9 @@ def choice_to_index(choice, kwargs):
             # ^ with zero weights at index = [0, 2, 6]
             # index |  0  1  2  3  4
             #     v |  3  4  0  5 -2
+
+            assert min_value is not None
+            assert max_value is not None
             assert kwargs["weights"] is None or all(
                 w > 0 for w in kwargs["weights"].values()
             ), "technically possible but really annoying to support zero weights"
@@ -213,6 +273,7 @@ def choice_to_index(choice, kwargs):
                     return zigzag_index(choice, shrink_towards=shrink_towards)
                 return max_value - choice
     elif isinstance(choice, bool):
+        kwargs = cast(BooleanKWargs, kwargs)
         # Ordered by [False, True].
         p = kwargs["p"]
         if not (2 ** (-64) < p < (1 - 2 ** (-64))):
@@ -220,12 +281,15 @@ def choice_to_index(choice, kwargs):
             return 0
         return int(choice)
     elif isinstance(choice, bytes):
+        kwargs = cast(BytesKWargs, kwargs)
         return collection_index(
             list(choice),
             min_size=kwargs["min_size"],
             alphabet_size=2**8,
+            to_order=identity,
         )
     elif isinstance(choice, str):
+        kwargs = cast(StringKWargs, kwargs)
         intervals = kwargs["intervals"]
         return collection_index(
             choice,
@@ -240,9 +304,10 @@ def choice_to_index(choice, kwargs):
         raise NotImplementedError
 
 
-def choice_from_index(index, ir_type, kwargs):
+def choice_from_index(index: int, ir_type: str, kwargs: ChoiceKwargsT) -> ChoiceT:
     assert index >= 0
     if ir_type == "integer":
+        kwargs = cast(IntegerKWargs, kwargs)
         shrink_towards = kwargs["shrink_towards"]
         min_value = kwargs["min_value"]
         max_value = kwargs["max_value"]
@@ -267,6 +332,8 @@ def choice_from_index(index, ir_type, kwargs):
             return max_value - index
         else:
             # case: bounded
+            assert min_value is not None
+            assert max_value is not None
             assert kwargs["weights"] is None or all(
                 w > 0 for w in kwargs["weights"].values()
             ), "possible but really annoying to support zero weights"
@@ -282,6 +349,7 @@ def choice_from_index(index, ir_type, kwargs):
                     return zigzag_value(index, shrink_towards=shrink_towards)
                 return max_value - index
     elif ir_type == "boolean":
+        kwargs = cast(BooleanKWargs, kwargs)
         # Ordered by [False, True].
         p = kwargs["p"]
         only = None
@@ -297,22 +365,25 @@ def choice_from_index(index, ir_type, kwargs):
             return only
         return bool(index)
     elif ir_type == "bytes":
-        value = collection_value(
-            index,
-            min_size=kwargs["min_size"],
-            alphabet_size=2**8,
+        kwargs = cast(BytesKWargs, kwargs)
+        value_b = collection_value(
+            index, min_size=kwargs["min_size"], alphabet_size=2**8, from_order=identity
         )
-        return bytes(value)
+        return bytes(value_b)
     elif ir_type == "string":
+        kwargs = cast(StringKWargs, kwargs)
         intervals = kwargs["intervals"]
-        value = collection_value(
+        # _s because mypy is unhappy with reusing different-typed names in branches,
+        # even if the branches are disjoint.
+        value_s = collection_value(
             index,
             min_size=kwargs["min_size"],
             alphabet_size=len(intervals),
             from_order=intervals.char_in_shrink_order,
         )
-        return "".join(value)
+        return "".join(value_s)
     elif ir_type == "float":
+        kwargs = cast(FloatKWargs, kwargs)
         sign = -1 if index >> 64 else 1
         result = sign * lex_to_float(index & ((1 << 64) - 1))
 
@@ -325,3 +396,49 @@ def choice_from_index(index, ir_type, kwargs):
         return clamper(result)
     else:
         raise NotImplementedError
+
+
+def choice_permitted(choice: ChoiceT, kwargs: ChoiceKwargsT) -> bool:
+    if isinstance(choice, int) and not isinstance(choice, bool):
+        kwargs = cast(IntegerKWargs, kwargs)
+        min_value = kwargs["min_value"]
+        max_value = kwargs["max_value"]
+        shrink_towards = kwargs["shrink_towards"]
+        if min_value is not None and choice < min_value:
+            return False
+        if max_value is not None and choice > max_value:
+            return False
+
+        if max_value is None or min_value is None:
+            return (choice - shrink_towards).bit_length() < 128
+
+        return True
+    elif isinstance(choice, float):
+        kwargs = cast(FloatKWargs, kwargs)
+        if math.isnan(choice):
+            return kwargs["allow_nan"]
+        return (
+            sign_aware_lte(kwargs["min_value"], choice)
+            and sign_aware_lte(choice, kwargs["max_value"])
+        ) and not (0 < abs(choice) < kwargs["smallest_nonzero_magnitude"])
+    elif isinstance(choice, str):
+        kwargs = cast(StringKWargs, kwargs)
+        if len(choice) < kwargs["min_size"]:
+            return False
+        if kwargs["max_size"] is not None and len(choice) > kwargs["max_size"]:
+            return False
+        return all(ord(c) in kwargs["intervals"] for c in choice)
+    elif isinstance(choice, bytes):
+        kwargs = cast(BytesKWargs, kwargs)
+        if len(choice) < kwargs["min_size"]:
+            return False
+        return kwargs["max_size"] is None or len(choice) <= kwargs["max_size"]
+    elif isinstance(choice, bool):
+        kwargs = cast(BooleanKWargs, kwargs)
+        if kwargs["p"] <= 2 ** (-64):
+            return choice is False
+        if kwargs["p"] >= (1 - 2 ** (-64)):
+            return choice is True
+        return True
+    else:
+        raise NotImplementedError(f"unhandled type {type(choice)} with value {choice}")

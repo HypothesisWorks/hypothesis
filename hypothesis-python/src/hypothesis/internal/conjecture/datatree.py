@@ -20,19 +20,21 @@ from hypothesis.errors import (
     StopTest,
 )
 from hypothesis.internal import floats as flt
-from hypothesis.internal.conjecture.choice import choice_from_index
-from hypothesis.internal.conjecture.data import (
+from hypothesis.internal.conjecture.choice import (
     BooleanKWargs,
     BytesKWargs,
-    ConjectureData,
-    DataObserver,
+    ChoiceKwargsT,
+    ChoiceT,
     FloatKWargs,
     IntegerKWargs,
-    IRKWargsType,
-    IRType,
+    StringKWargs,
+    choice_from_index,
+)
+from hypothesis.internal.conjecture.data import (
+    ConjectureData,
+    DataObserver,
     IRTypeName,
     Status,
-    StringKWargs,
 )
 from hypothesis.internal.escalation import InterestingOrigin
 from hypothesis.internal.floats import (
@@ -367,8 +369,8 @@ class TreeNode:
 
     # The kwargs, value, and ir_types of the nodes stored here. These always
     # have the same length. The values at index i belong to node i.
-    kwargs: list[IRKWargsType] = attr.ib(factory=list)
-    values: list[IRType] = attr.ib(factory=list)
+    kwargs: list[ChoiceKwargsT] = attr.ib(factory=list)
+    values: list[ChoiceT] = attr.ib(factory=list)
     ir_types: list[IRTypeName] = attr.ib(factory=list)
 
     # The indices of nodes which had forced values.
@@ -949,10 +951,10 @@ class TreeRecordingObserver(DataObserver):
     def draw_value(
         self,
         ir_type: IRTypeName,
-        value: IRType,
+        value: ChoiceT,
         *,
         was_forced: bool,
-        kwargs: IRKWargsType,
+        kwargs: ChoiceKwargsT,
     ) -> None:
         i = self.__index_in_current_node
         self.__index_in_current_node += 1
