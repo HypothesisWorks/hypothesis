@@ -76,9 +76,9 @@ from hypothesis.internal.compat import (
     get_type_hints,
     int_from_bytes,
 )
+from hypothesis.internal.conjecture.choice import ChoiceT
 from hypothesis.internal.conjecture.data import (
     ConjectureData,
-    IRType,
     PrimitiveProvider,
     Status,
 )
@@ -331,7 +331,7 @@ def encode_failure(choices):
     return base64.b64encode(blob)
 
 
-def decode_failure(blob: bytes) -> Sequence[IRType]:
+def decode_failure(blob: bytes) -> Sequence[ChoiceT]:
     try:
         decoded = base64.b64decode(blob)
     except Exception:
@@ -1139,7 +1139,7 @@ class StateForActualGivenExecution:
                 if interesting_origin[0] == DeadlineExceeded:
                     self.failed_due_to_deadline = True
                     self.explain_traces.clear()
-                data.mark_interesting(interesting_origin)  # type: ignore  # mypy bug?
+                data.mark_interesting(interesting_origin)
         finally:
             # Conditional here so we can save some time constructing the payload; in
             # other cases (without coverage) it's cheap enough to do that regardless.

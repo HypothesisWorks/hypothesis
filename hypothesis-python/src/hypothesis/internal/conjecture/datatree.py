@@ -9,7 +9,8 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
-from typing import Optional, Union
+from random import Random
+from typing import TYPE_CHECKING, AbstractSet, Optional, Union
 
 import attr
 
@@ -20,20 +21,18 @@ from hypothesis.errors import (
     StopTest,
 )
 from hypothesis.internal import floats as flt
-from hypothesis.internal.conjecture.choice import choice_from_index
-from hypothesis.internal.conjecture.data import (
+from hypothesis.internal.conjecture.choice import (
     BooleanKWargs,
     BytesKWargs,
-    ConjectureData,
-    DataObserver,
+    ChoiceKwargsT,
+    ChoiceNameT,
+    ChoiceT,
     FloatKWargs,
     IntegerKWargs,
-    IRKWargsType,
-    IRType,
-    IRTypeName,
-    Status,
     StringKWargs,
+    choice_from_index,
 )
+from hypothesis.internal.conjecture.data import ConjectureData, DataObserver, Status
 from hypothesis.internal.escalation import InterestingOrigin
 from hypothesis.internal.floats import (
     count_between_floats,
@@ -41,6 +40,9 @@ from hypothesis.internal.floats import (
     int_to_float,
     sign_aware_lte,
 )
+
+if TYPE_CHECKING:
+    from hypothesis.internal.conjecture.data import IRNode
 
 
 class PreviouslyUnseenBehaviour(HypothesisException):
@@ -55,7 +57,7 @@ def inconsistent_generation():
     )
 
 
-EMPTY: frozenset = frozenset()
+EMPTY: frozenset[int] = frozenset()
 
 
 @attr.s(slots=True)
@@ -87,7 +89,7 @@ class Branch:
     children = attr.ib(repr=False)
 
     @property
-    def max_children(self):
+    def max_children(self) -> int:
         max_children = compute_max_children(self.ir_type, self.kwargs)
         assert max_children > 0
         return max_children
@@ -367,15 +369,15 @@ class TreeNode:
 
     # The kwargs, value, and ir_types of the nodes stored here. These always
     # have the same length. The values at index i belong to node i.
-    kwargs: list[IRKWargsType] = attr.ib(factory=list)
-    values: list[IRType] = attr.ib(factory=list)
-    ir_types: list[IRTypeName] = attr.ib(factory=list)
+    kwargs: list[ChoiceKwargsT] = attr.ib(factory=list)
+    values: list[ChoiceT] = attr.ib(factory=list)
+    ir_types: list[ChoiceNameT] = attr.ib(factory=list)
 
     # The indices of nodes which had forced values.
     #
     # Stored as None if no indices have been forced, purely for space saving
     # reasons (we force quite rarely).
-    __forced: Optional[set] = attr.ib(default=None, init=False)
+    __forced: Optional[set[int]] = attr.ib(default=None, init=False)
 
     # What happens next after drawing these nodes. (conceptually, "what is the
     # child/children of the last node stored here").
@@ -396,12 +398,12 @@ class TreeNode:
     is_exhausted: bool = attr.ib(default=False, init=False)
 
     @property
-    def forced(self):
+    def forced(self) -> AbstractSet[int]:
         if not self.__forced:
             return EMPTY
         return self.__forced
 
-    def mark_forced(self, i):
+    def mark_forced(self, i: int) -> None:
         """
         Note that the draw at node i was forced.
         """
@@ -410,7 +412,7 @@ class TreeNode:
             self.__forced = set()
         self.__forced.add(i)
 
-    def split_at(self, i):
+    def split_at(self, i: int) -> None:
         """
         Splits the tree so that it can incorporate a decision at the draw call
         corresponding to the node at position i.
@@ -657,14 +659,14 @@ class DataTree:
         self._children_cache = {}
 
     @property
-    def is_exhausted(self):
+    def is_exhausted(self) -> bool:
         """
         Returns True if every node is exhausted, and therefore the tree has
         been fully explored.
         """
         return self.root.is_exhausted
 
-    def generate_novel_prefix(self, random):
+    def generate_novel_prefix(self, random: Random) -> tuple["IRNode", ...]:
         """Generate a short random string that (after rewriting) is not
         a prefix of any buffer previously added to the tree.
 
@@ -675,7 +677,7 @@ class DataTree:
         from hypothesis.internal.conjecture.data import IRNode
 
         assert not self.is_exhausted
-        novel_prefix = []
+        novel_prefix: list[IRNode] = []
 
         def append_node(node):
             if node.ir_type == "float":
@@ -948,11 +950,11 @@ class TreeRecordingObserver(DataObserver):
 
     def draw_value(
         self,
-        ir_type: IRTypeName,
-        value: IRType,
+        ir_type: ChoiceNameT,
+        value: ChoiceT,
         *,
         was_forced: bool,
-        kwargs: IRKWargsType,
+        kwargs: ChoiceKwargsT,
     ) -> None:
         i = self.__index_in_current_node
         self.__index_in_current_node += 1
@@ -1025,7 +1027,7 @@ class TreeRecordingObserver(DataObserver):
         if self.__trail[-1] is not self.__current_node:
             self.__trail.append(self.__current_node)
 
-    def kill_branch(self):
+    def kill_branch(self) -> None:
         """Mark this part of the tree as not worth re-exploring."""
         if self.killed:
             return
@@ -1046,7 +1048,9 @@ class TreeRecordingObserver(DataObserver):
         self.__index_in_current_node = 0
         self.__trail.append(self.__current_node)
 
-    def conclude_test(self, status, interesting_origin):
+    def conclude_test(
+        self, status: Status, interesting_origin: Optional[InterestingOrigin]
+    ) -> None:
         """Says that ``status`` occurred at node ``node``. This updates the
         node if necessary and checks for consistency."""
         if status == Status.OVERRUN:
@@ -1085,7 +1089,7 @@ class TreeRecordingObserver(DataObserver):
         if not self.killed:
             self.__update_exhausted()
 
-    def __update_exhausted(self):
+    def __update_exhausted(self) -> None:
         for t in reversed(self.__trail):
             # Any node we've traversed might have now become exhausted.
             # We check from the right. As soon as we hit a node that

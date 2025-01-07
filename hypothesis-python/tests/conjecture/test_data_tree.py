@@ -29,7 +29,6 @@ from hypothesis.internal.conjecture.datatree import (
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.floats import float_to_int
 from hypothesis.internal.conjecture.junkdrawer import startswith
-from hypothesis.internal.escalation import InterestingOrigin
 from hypothesis.internal.floats import next_up
 from hypothesis.vendor import pretty
 
@@ -37,6 +36,7 @@ from tests.conjecture.common import (
     boolean_kwargs,
     fresh_data,
     integer_kwargs,
+    interesting_origin,
     ir,
     ir_nodes,
     kwargs_strategy,
@@ -530,10 +530,7 @@ def test_can_generate_hard_floats():
 def test_datatree_repr(bool_kwargs, int_kwargs):
     tree = DataTree()
 
-    try:
-        int("not an int")
-    except ValueError as e:
-        origin = InterestingOrigin.from_exception(e)
+    origin = interesting_origin()
 
     observer = tree.new_observer()
     observer.draw_boolean(True, was_forced=False, kwargs=bool_kwargs)

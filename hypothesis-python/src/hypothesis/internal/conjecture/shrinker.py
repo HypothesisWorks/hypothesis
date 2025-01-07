@@ -15,7 +15,11 @@ from typing import TYPE_CHECKING, Callable, Optional, TypeVar, Union
 import attr
 
 from hypothesis.internal.compat import int_from_bytes, int_to_bytes
-from hypothesis.internal.conjecture.choice import choice_from_index, choice_to_index
+from hypothesis.internal.conjecture.choice import (
+    choice_from_index,
+    choice_permitted,
+    choice_to_index,
+)
 from hypothesis.internal.conjecture.data import (
     ConjectureData,
     ConjectureResult,
@@ -25,7 +29,6 @@ from hypothesis.internal.conjecture.data import (
     ir_to_buffer,
     ir_value_equal,
     ir_value_key,
-    ir_value_permitted,
 )
 from hypothesis.internal.conjecture.junkdrawer import (
     endswith,
@@ -394,7 +397,7 @@ class Shrinker:
         # sometimes our shrinking passes try obviously invalid things. We handle
         # discarding them in one place here.
         for node in tree:
-            if not ir_value_permitted(node.value, node.ir_type, node.kwargs):
+            if not choice_permitted(node.value, node.kwargs):
                 return None
 
         result = self.engine.cached_test_function_ir(tree)
@@ -761,8 +764,8 @@ class Shrinker:
                             orig_node = nodes[j]
                             if (
                                 zero_node.ir_type != orig_node.ir_type
-                                or not ir_value_permitted(
-                                    orig_node.value, zero_node.ir_type, zero_node.kwargs
+                                or not choice_permitted(
+                                    orig_node.value, zero_node.kwargs
                                 )
                             ):
                                 changed_shape = True

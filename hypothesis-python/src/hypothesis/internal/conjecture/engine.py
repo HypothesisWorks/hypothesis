@@ -45,14 +45,13 @@ from hypothesis.errors import (
 )
 from hypothesis.internal.cache import LRUReusedCache
 from hypothesis.internal.compat import NotRequired, TypeAlias, TypedDict, ceil, override
+from hypothesis.internal.conjecture.choice import ChoiceKwargsT
 from hypothesis.internal.conjecture.data import (
     AVAILABLE_PROVIDERS,
     ConjectureData,
     ConjectureResult,
     DataObserver,
     HypothesisProvider,
-    InterestingOrigin,
-    IRKWargsType,
     IRNode,
     NodeTemplate,
     Overrun,
@@ -74,6 +73,7 @@ from hypothesis.internal.conjecture.junkdrawer import (
 )
 from hypothesis.internal.conjecture.pareto import NO_SCORE, ParetoFront, ParetoOptimiser
 from hypothesis.internal.conjecture.shrinker import Shrinker, sort_key, sort_key_ir
+from hypothesis.internal.escalation import InterestingOrigin
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.reporting import base_report, report
 
@@ -256,7 +256,7 @@ class ConjectureRunner:
             self.settings.backend
         )
 
-        self.best_observed_targets: "defaultdict[str, float]" = defaultdict(
+        self.best_observed_targets: defaultdict[str, float] = defaultdict(
             lambda: NO_SCORE
         )
         self.best_examples_of_observed_targets: dict[str, ConjectureResult] = {}
@@ -521,7 +521,7 @@ class ConjectureRunner:
                             )
 
                         kwargs = cast(
-                            IRKWargsType,
+                            ChoiceKwargsT,
                             {
                                 k: data.provider.realize(v)
                                 for k, v in node.kwargs.items()
