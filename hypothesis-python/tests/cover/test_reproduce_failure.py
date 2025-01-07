@@ -26,20 +26,26 @@ from hypothesis import (
 )
 from hypothesis.core import decode_failure, encode_failure
 from hypothesis.errors import DidNotReproduce, InvalidArgument, UnsatisfiedAssumption
+from hypothesis.internal.conjecture.data import ir_value_equal
 
 from tests.common.utils import capture_out, no_shrink
+from tests.conjecture.common import ir, ir_nodes
 
 
-@example(bytes(20))  # shorter compressed
-@example(bytes(3))  # shorter uncompressed
-@given(st.binary() | st.binary(min_size=100))
-def test_encoding_loop(b):
-    assert decode_failure(encode_failure(b)) == b
+@example(ir("0" * 100))  # shorter compressed than not
+@given(st.lists(ir_nodes()))
+def test_encoding_loop(nodes):
+    choices = [n.value for n in nodes]
+    looped = decode_failure(encode_failure(choices))
+    assert len(choices) == len(looped)
+    for i, node in enumerate(nodes):
+        assert ir_value_equal(node.ir_type, choices[i], looped[i])
 
 
 @example(base64.b64encode(b"\2\3\4"))
 @example(b"\t")
 @example(base64.b64encode(b"\1\0"))  # zlib error
+@example(base64.b64encode(b"\1" + zlib.compress(b"\xFF")))  # ir_from_bytes error
 @given(st.binary())
 def test_decoding_may_fail(t):
     try:
@@ -63,13 +69,13 @@ def test_reproduces_the_failure():
     b = b"hello world"
     n = len(b)
 
-    @reproduce_failure(__version__, encode_failure(b))
+    @reproduce_failure(__version__, encode_failure([b]))
     @given(st.binary(min_size=n, max_size=n))
     def test_outer(x):
         assert x != b
 
     @given(st.binary(min_size=n, max_size=n))
-    @reproduce_failure(__version__, encode_failure(b))
+    @reproduce_failure(__version__, encode_failure([b]))
     def test_inner(x):
         assert x != b
 
@@ -83,7 +89,7 @@ def test_errors_if_provided_example_does_not_reproduce_failure():
     b = b"hello world"
     n = len(b)
 
-    @reproduce_failure(__version__, encode_failure(b))
+    @reproduce_failure(__version__, encode_failure([b]))
     @given(st.binary(min_size=n, max_size=n))
     def test(x):
         assert x == b
@@ -96,7 +102,7 @@ def test_errors_with_did_not_reproduce_if_the_shape_changes():
     b = b"hello world"
     n = len(b)
 
-    @reproduce_failure(__version__, encode_failure(b))
+    @reproduce_failure(__version__, encode_failure([b]))
     @given(st.binary(min_size=n + 1, max_size=n + 1))
     def test(x):
         assert x == b
@@ -109,7 +115,7 @@ def test_errors_with_did_not_reproduce_if_rejected():
     b = b"hello world"
     n = len(b)
 
-    @reproduce_failure(__version__, encode_failure(b))
+    @reproduce_failure(__version__, encode_failure([b]))
     @given(st.binary(min_size=n, max_size=n))
     def test(x):
         reject()
@@ -204,7 +210,7 @@ def test_raises_invalid_if_wrong_version():
     b = b"hello world"
     n = len(b)
 
-    @reproduce_failure("1.0.0", encode_failure(b))
+    @reproduce_failure("1.0.0", encode_failure([b]))
     @given(st.binary(min_size=n, max_size=n))
     def test(x):
         pass
