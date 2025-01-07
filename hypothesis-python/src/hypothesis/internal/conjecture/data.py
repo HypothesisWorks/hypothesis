@@ -1006,7 +1006,7 @@ class NodeTemplate:
         assert self.size > 0
 
 
-def ir_size(ir: Iterable[ChoiceT]) -> int:
+def ir_size(ir: Iterable[Union[IRNode, NodeTemplate, ChoiceT]]) -> int:
     from hypothesis.database import ir_to_bytes
 
     size = 0
