@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.123.5:
+
+--------------------
+6.123.5 - 2025-01-07
+--------------------
+
+Internal code refactoring for the typed choice sequence (:issue:`3921`). May have some neutral effect on shrinking.
+
 .. _v6.123.4:
 
 --------------------
