@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.123.7:
+
+--------------------
+6.123.7 - 2025-01-07
+--------------------
+
+Internal type hint additions and refactorings.
+
 .. _v6.123.6:
 
 --------------------
