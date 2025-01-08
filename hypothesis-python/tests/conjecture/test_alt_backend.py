@@ -274,7 +274,7 @@ def test_new_conjecture_data_ir_with_backend(node):
 
     with temp_register_backend("prng", PrngProvider):
         runner = ConjectureRunner(test, settings=settings(backend="prng"))
-        runner.cached_test_function_ir([node])
+        runner.cached_test_function_ir([node.value])
 
 
 # trivial provider for tests which don't care about drawn distributions.

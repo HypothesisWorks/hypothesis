@@ -2071,11 +2071,13 @@ class ConjectureData:
                 choice = self._pop_choice(ir_type, kwargs, forced=forced)
             else:
                 try:
-                    (choice, _buf) = ir_to_buffer(
-                        ir_type, kwargs, forced=forced, random=self.__random
+                    choice = (
+                        forced
+                        if forced is not None
+                        else draw_choice(ir_type, kwargs, random=self.__random)
                     )
                 except StopTest:
-                    debug_report("overrun because ir_to_buffer overran")
+                    debug_report("overrun because draw_choice overran")
                     self.mark_overrun()
 
             if forced is None:
@@ -2661,17 +2663,13 @@ def bits_to_bytes(n: int) -> int:
     return (n + 7) >> 3
 
 
-def ir_to_buffer(ir_type, kwargs, *, forced=None, random=None):
+def draw_choice(ir_type, kwargs, *, random):
     from hypothesis.internal.conjecture.engine import BUFFER_SIZE
-
-    if forced is None:
-        assert random is not None
 
     cd = ConjectureData(
         max_length=BUFFER_SIZE,
         # buffer doesn't matter if forced is passed since we're forcing the sole draw
-        prefix=b"" if forced is None else bytes(BUFFER_SIZE),
+        prefix=b"",
         random=random,
     )
-    value = getattr(cd.provider, f"draw_{ir_type}")(**kwargs, forced=forced)
-    return (value, cd.buffer)
+    return getattr(cd.provider, f"draw_{ir_type}")(**kwargs)
