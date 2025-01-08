@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.123.9:
+
+--------------------
+6.123.9 - 2025-01-08
+--------------------
+
+Add internal type hints to our pretty printer.
+
 .. _v6.123.8:
 
 --------------------
