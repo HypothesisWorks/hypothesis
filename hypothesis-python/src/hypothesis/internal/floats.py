@@ -219,5 +219,6 @@ def clamp(lower: float, value: float, upper: float) -> float:
 
 SMALLEST_SUBNORMAL = next_up(0.0)
 SIGNALING_NAN = int_to_float(0x7FF8_0000_0000_0001)  # nonzero mantissa
+MAX_PRECISE_INTEGER = 2**53
 assert math.isnan(SIGNALING_NAN)
 assert math.copysign(1, SIGNALING_NAN) == 1

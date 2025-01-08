@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import math
 from collections import defaultdict
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Callable, Optional, TypeVar, Union
@@ -48,6 +49,7 @@ from hypothesis.internal.conjecture.shrinking.choicetree import (
     prefix_selection_order,
     random_selection_order,
 )
+from hypothesis.internal.floats import MAX_PRECISE_INTEGER
 
 if TYPE_CHECKING:
     from random import Random
@@ -688,7 +690,7 @@ class Shrinker:
                 "reorder_examples",
                 "minimize_duplicated_nodes",
                 "minimize_individual_nodes",
-                "redistribute_integer_pairs",
+                "redistribute_numeric_pairs",
                 "lower_blocks_together",
             ]
         )
@@ -1345,34 +1347,42 @@ class Shrinker:
         more values at once.
         """
         nodes = chooser.choose(self.duplicated_nodes)
+        # we can't lower any nodes which are trivial. try proceeding with the
+        # remaining nodes.
+        nodes = [node for node in nodes if not node.trivial]
         if len(nodes) <= 1:
-            return
-
-        # no point in lowering nodes together if one is already trivial.
-        # TODO_BETTER_SHRINK: we could potentially just drop the trivial nodes
-        # here and carry on with nontrivial ones?
-        if any(node.trivial for node in nodes):
             return
 
         self.minimize_nodes(nodes)
 
     @defines_shrink_pass()
-    def redistribute_integer_pairs(self, chooser):
-        """If there is a sum of generated integers that we need their sum
+    def redistribute_numeric_pairs(self, chooser):
+        """If there is a sum of generated numbers that we need their sum
         to exceed some bound, lowering one of them requires raising the
         other. This pass enables that."""
-        # TODO_SHRINK let's extend this to floats as well.
 
-        # look for a pair of nodes (node1, node2) which are both integers and
-        # aren't separated by too many other nodes. We'll decrease node1 and
+        # look for a pair of nodes (node1, node2) which are both numeric
+        # and aren't separated by too many other nodes. We'll decrease node1 and
         # increase node2 (note that the other way around doesn't make sense as
         # it's strictly worse in the ordering).
+        def can_choose_node(node):
+            # don't choose nan, inf, or floats above the threshold where f + 1 > f
+            # (which is not necessarily true for floats above MAX_PRECISE_INTEGER).
+            # The motivation for the last condition is to avoid trying weird
+            # non-shrinks where we raise one node and think we lowered another
+            # (but didn't).
+            return node.ir_type in {"integer", "float"} and not (
+                node.ir_type == "float"
+                and (math.isnan(node.value) or abs(node.value) > MAX_PRECISE_INTEGER)
+            )
+
         node1 = chooser.choose(
-            self.nodes, lambda node: node.ir_type == "integer" and not node.trivial
+            self.nodes,
+            lambda node: can_choose_node(node) and not node.trivial,
         )
         node2 = chooser.choose(
             self.nodes,
-            lambda node: node.ir_type == "integer"
+            lambda node: can_choose_node(node)
             # Note that it's fine for node2 to be trivial, because we're going to
             # explicitly make it *not* trivial by adding to its value.
             and not node.was_forced
@@ -1381,15 +1391,20 @@ class Shrinker:
             and node1.index < node.index <= node1.index + 4,
         )
 
-        m = node1.value
-        n = node2.value
+        m: Union[int, float] = node1.value
+        n: Union[int, float] = node2.value
 
-        def boost(k):
+        def boost(k: int) -> bool:
             if k > m:
                 return False
 
-            node_value = m - k
-            next_node_value = n + k
+            try:
+                node_value = m - k
+                next_node_value = n + k
+            except OverflowError:  # pragma: no cover
+                # if n or m is a float and k is over sys.float_info.max, coercing
+                # k to a float will overflow.
+                return False
 
             return self.consider_new_tree(
                 self.nodes[: node1.index]

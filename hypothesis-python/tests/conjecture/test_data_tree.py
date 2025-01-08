@@ -574,7 +574,7 @@ def _draw(data, node, *, forced=None):
     return getattr(data, f"draw_{node.ir_type}")(**node.kwargs, forced=forced)
 
 
-@given(ir_nodes(was_forced=True, ir_type="float"))
+@given(ir_nodes(was_forced=True, ir_types=["float"]))
 def test_simulate_forced_floats(node):
     tree = DataTree()
 
