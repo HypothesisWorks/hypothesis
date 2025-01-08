@@ -14,8 +14,7 @@ import sys
 from hypothesis.internal.conjecture.floats import float_to_lex
 from hypothesis.internal.conjecture.shrinking.common import Shrinker
 from hypothesis.internal.conjecture.shrinking.integer import Integer
-
-MAX_PRECISE_INTEGER = 2**53
+from hypothesis.internal.floats import MAX_PRECISE_INTEGER
 
 
 class Float(Shrinker):

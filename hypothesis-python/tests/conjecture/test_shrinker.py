@@ -12,7 +12,9 @@ import time
 
 import pytest
 
+from hypothesis import assume, given, strategies as st
 from hypothesis.internal.conjecture.data import ConjectureData
+from hypothesis.internal.conjecture.datatree import compute_max_children
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.shrinker import (
     Shrinker,
@@ -22,7 +24,13 @@ from hypothesis.internal.conjecture.shrinker import (
 )
 from hypothesis.internal.conjecture.utils import Sampler
 
-from tests.conjecture.common import SOME_LABEL, ir, run_to_nodes, shrinking_from
+from tests.conjecture.common import (
+    SOME_LABEL,
+    ir,
+    ir_nodes,
+    run_to_nodes,
+    shrinking_from,
+)
 
 
 @pytest.mark.parametrize("n", [1, 5, 8, 15])
@@ -505,7 +513,7 @@ def test_can_simultaneously_lower_non_duplicated_nearby_blocks(n_gap):
     assert shrinker.choices == (1, 0) + (0,) * n_gap + (1,)
 
 
-def test_redistribute_pairs_with_forced_node_integer():
+def test_redistribute_with_forced_node_integer():
     @shrinking_from(ir(15, 10))
     def shrinker(data: ConjectureData):
         n1 = data.draw_integer(0, 100)
@@ -518,3 +526,32 @@ def test_redistribute_pairs_with_forced_node_integer():
     # shrinking. Since the second draw is forced, this isn't possible to shrink
     # with just this pass.
     assert shrinker.choices == (15, 10)
+
+
+numeric_nodes = ir_nodes(ir_types=["integer", "float"])
+
+
+@given(numeric_nodes, numeric_nodes, st.integers() | st.floats(allow_nan=False))
+def test_redistribute_numeric_pairs(node1, node2, stop):
+    assume(node1.value + node2.value > stop)
+    # avoid exhausting the tree while generating, which causes @shrinking_from's
+    # runner to raise
+    assume(
+        compute_max_children(node1.ir_type, node1.kwargs)
+        + compute_max_children(node2.ir_type, node2.kwargs)
+        > 2
+    )
+
+    @shrinking_from([node1, node2])
+    def shrinker(data: ConjectureData):
+        v1 = getattr(data, f"draw_{node1.ir_type}")(**node1.kwargs)
+        v2 = getattr(data, f"draw_{node2.ir_type}")(**node2.kwargs)
+        if v1 + v2 > stop:
+            data.mark_interesting()
+
+    shrinker.fixate_shrink_passes(["redistribute_numeric_pairs"])
+    assert len(shrinker.choices) == 2
+    # we should always have lowered the first choice and raised the second choice
+    # - or left the choices the same.
+    assert shrinker.choices[0] <= node1.value
+    assert shrinker.choices[1] >= node2.value

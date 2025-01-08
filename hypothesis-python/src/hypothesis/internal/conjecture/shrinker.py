@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import math
 from collections import defaultdict
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Callable, Optional, TypeVar, Union
@@ -45,6 +46,7 @@ from hypothesis.internal.conjecture.shrinking.choicetree import (
     prefix_selection_order,
     random_selection_order,
 )
+from hypothesis.internal.floats import MAX_PRECISE_INTEGER
 
 if TYPE_CHECKING:
     from random import Random
@@ -1237,17 +1239,29 @@ class Shrinker:
         """If there is a sum of generated numbers that we need their sum
         to exceed some bound, lowering one of them requires raising the
         other. This pass enables that."""
+
         # look for a pair of nodes (node1, node2) which are both numeric
         # and aren't separated by too many other nodes. We'll decrease node1 and
         # increase node2 (note that the other way around doesn't make sense as
         # it's strictly worse in the ordering).
+        def can_choose_node(node):
+            # don't choose nan, inf, or floats above the threshold where f + 1 > f
+            # (which is not necessarily true for floats above MAX_PRECISE_INTEGER).
+            # The motivation for the last condition is to avoid trying weird
+            # non-shrinks where we raise one node and think we lowered another
+            # (but didn't).
+            return node.ir_type in {"integer", "float"} and not (
+                node.ir_type == "float"
+                and (math.isnan(node.value) or abs(node.value) > MAX_PRECISE_INTEGER)
+            )
+
         node1 = chooser.choose(
             self.nodes,
-            lambda node: node.ir_type in {"integer", "float"} and not node.trivial,
+            lambda node: can_choose_node(node) and not node.trivial,
         )
         node2 = chooser.choose(
             self.nodes,
-            lambda node: node.ir_type in {"integer", "float"}
+            lambda node: can_choose_node(node)
             # Note that it's fine for node2 to be trivial, because we're going to
             # explicitly make it *not* trivial by adding to its value.
             and not node.was_forced
