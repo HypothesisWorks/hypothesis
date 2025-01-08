@@ -1394,7 +1394,7 @@ class Shrinker:
         m: Union[int, float] = node1.value
         n: Union[int, float] = node2.value
 
-        def boost(k: int):
+        def boost(k: int) -> bool:
             if k > m:
                 return False
 
