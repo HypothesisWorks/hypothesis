@@ -142,7 +142,7 @@ class RepresentationPrinter:
         *,
         context: Optional["BuildContext"] = None,
     ) -> None:
-        """Pass the output stream, and optionally the current build context.
+        """Optionally pass the output stream and the current build context.
 
         We use the context to represent objects constructed by strategies by showing
         *how* they were constructed, and add annotations showing which parts of the
@@ -456,7 +456,9 @@ class RepresentationPrinter:
             func_name = f"({func_name})"
         self.text(func_name)
         all_args = [(None, v) for v in args] + list(kwargs.items())
-        comments = {
+        # int indicates the position of a positional argument, rather than a keyword
+        # argument. Currently no callers use this; see #3624.
+        comments: dict[Union[int, str], object] = {
             k: self.slice_comments[v]
             for k, v in (arg_slices or {}).items()
             if v in self.slice_comments
@@ -492,8 +494,7 @@ class RepresentationPrinter:
                     self.text(",")
                 comment = None
                 if k is not None:
-                    # Optional comments are used to annotate which-parts-matter
-                    comment = comments.get(k)
+                    comment = comments.get(i) or comments.get(k)
                 if comment:
                     self.text(f"  # {comment}")
         if all_args and force_split:

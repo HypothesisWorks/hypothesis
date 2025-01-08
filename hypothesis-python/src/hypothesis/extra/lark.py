@@ -125,7 +125,7 @@ class LarkStrategy(st.SearchStrategy):
             )
         self.terminal_strategies.update(explicit)
 
-        # TODO: should this be NonTerminal only? but rule.expansion is Symbol...
+        # can in fact contain any symbol, despite its name.
         nonterminals: dict[str, list[tuple[Symbol, ...]]] = {}
 
         for rule in rules:
