@@ -485,10 +485,7 @@ def test_ir_nodes_rountrips(nodes1):
     assert len(nodes1) == len(ir2)
 
     for n1, v2 in zip(nodes1, ir2):
-        v1 = n1.value
-        ir_type = n1.ir_type
-        assert type(v1) is type(v2)
-        assert ir_value_equal(ir_type, v1, v2)
+        assert ir_value_equal(n1.value, v2)
 
     s2 = ir_to_bytes(ir2)
     assert s1 == s2

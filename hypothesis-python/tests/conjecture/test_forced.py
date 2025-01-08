@@ -142,13 +142,13 @@ def test_forced_values(ir_type_and_kwargs):
 
     forced = kwargs["forced"]
     data = fresh_data()
-    assert ir_value_equal(ir_type, getattr(data, f"draw_{ir_type}")(**kwargs), forced)
+    assert ir_value_equal(getattr(data, f"draw_{ir_type}")(**kwargs), forced)
 
     # now make sure the written buffer reproduces the forced value, even without
     # specifying forced=.
     del kwargs["forced"]
     data = ConjectureData.for_buffer(data.buffer)
-    assert ir_value_equal(ir_type, getattr(data, f"draw_{ir_type}")(**kwargs), forced)
+    assert ir_value_equal(getattr(data, f"draw_{ir_type}")(**kwargs), forced)
 
 
 @pytest.mark.parametrize("sign", [1, -1])

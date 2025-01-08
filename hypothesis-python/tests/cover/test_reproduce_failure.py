@@ -38,8 +38,8 @@ def test_encoding_loop(nodes):
     choices = [n.value for n in nodes]
     looped = decode_failure(encode_failure(choices))
     assert len(choices) == len(looped)
-    for i, node in enumerate(nodes):
-        assert ir_value_equal(node.ir_type, choices[i], looped[i])
+    for i in range(choices):
+        assert ir_value_equal(choices[i], looped[i])
 
 
 @example(base64.b64encode(b"\2\3\4"))

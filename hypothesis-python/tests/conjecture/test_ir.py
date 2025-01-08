@@ -283,7 +283,7 @@ def test_copy_ir_node(node):
     new_value = draw_value(node.ir_type, node.kwargs)
     # if we drew the same value as before, the node should still be equal
     assert (node.copy(with_value=new_value) == node) is (
-        ir_value_equal(node.ir_type, new_value, node.value)
+        ir_value_equal(new_value, node.value)
     )
 
 
@@ -322,9 +322,9 @@ def test_data_with_changed_forced_value(node):
     draw_func = getattr(data, f"draw_{node.ir_type}")
     kwargs = deepcopy(node.kwargs)
     kwargs["forced"] = draw_value(node.ir_type, node.kwargs)
-    assume(not ir_value_equal(node.ir_type, kwargs["forced"], node.value))
+    assume(not ir_value_equal(kwargs["forced"], node.value))
 
-    assert ir_value_equal(node.ir_type, draw_func(**kwargs), kwargs["forced"])
+    assert ir_value_equal(draw_func(**kwargs), kwargs["forced"])
 
 
 # ensure we hit bare-minimum coverage for all ir types.
@@ -371,7 +371,7 @@ def test_data_with_same_forced_value_is_valid(node):
 
     kwargs = deepcopy(node.kwargs)
     kwargs["forced"] = node.value
-    assert ir_value_equal(node.ir_type, draw_func(**kwargs), kwargs["forced"])
+    assert ir_value_equal(draw_func(**kwargs), kwargs["forced"])
 
 
 @given(ir_types_and_kwargs())
@@ -562,7 +562,7 @@ def test_trivial_nodes(node):
         return getattr(data, f"draw_{node.ir_type}")(**node.kwargs)
 
     # if we're trivial, then shrinking should produce the same value.
-    assert ir_value_equal(node.ir_type, minimal(values()), node.value)
+    assert ir_value_equal(minimal(values()), node.value)
 
 
 @pytest.mark.parametrize(
@@ -620,7 +620,7 @@ def test_nontrivial_nodes(node):
         return getattr(data, f"draw_{node.ir_type}")(**node.kwargs)
 
     # if we're nontrivial, then shrinking should produce something different.
-    assert not ir_value_equal(node.ir_type, minimal(values()), node.value)
+    assert not ir_value_equal(minimal(values()), node.value)
 
 
 @pytest.mark.parametrize(
@@ -668,7 +668,7 @@ def test_conservative_nontrivial_nodes(node):
         data = draw(st.data()).conjecture_data
         return getattr(data, f"draw_{node.ir_type}")(**node.kwargs)
 
-    assert ir_value_equal(node.ir_type, minimal(values()), node.value)
+    assert ir_value_equal(minimal(values()), float(node.value))
 
 
 @given(ir_nodes())
@@ -782,7 +782,7 @@ def test_choice_index_and_value_are_inverses(ir_type_and_kwargs):
     v = draw_value(ir_type, kwargs)
     index = choice_to_index(v, kwargs)
     note({"v": v, "index": index})
-    ir_value_equal(ir_type, choice_from_index(index, ir_type, kwargs), v)
+    ir_value_equal(choice_from_index(index, ir_type, kwargs), v)
 
 
 @pytest.mark.parametrize(
@@ -811,9 +811,7 @@ def test_choice_index_and_value_are_inverses(ir_type_and_kwargs):
 def test_choice_index_and_value_are_inverses_explicit(ir_type, kwargs, choices):
     for choice in choices:
         index = choice_to_index(choice, kwargs)
-        assert ir_value_equal(
-            ir_type, choice_from_index(index, ir_type, kwargs), choice
-        )
+        assert ir_value_equal(choice_from_index(index, ir_type, kwargs), choice)
 
 
 @pytest.mark.parametrize(
