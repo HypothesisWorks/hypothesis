@@ -27,6 +27,7 @@ from typing import (
     TypedDict,
     TypeVar,
     Union,
+    cast,
 )
 
 import attr
@@ -34,7 +35,18 @@ import attr
 from hypothesis.errors import ChoiceTooLarge, Frozen, InvalidArgument, StopTest
 from hypothesis.internal.cache import LRUCache
 from hypothesis.internal.compat import add_note, floor, int_from_bytes, int_to_bytes
-from hypothesis.internal.conjecture.choice import choice_from_index
+from hypothesis.internal.conjecture.choice import (
+    BooleanKWargs,
+    BytesKWargs,
+    ChoiceKwargsT,
+    ChoiceNameT,
+    ChoiceT,
+    FloatKWargs,
+    IntegerKWargs,
+    StringKWargs,
+    choice_from_index,
+    choice_permitted,
+)
 from hypothesis.internal.conjecture.floats import float_to_lex, lex_to_float
 from hypothesis.internal.conjecture.junkdrawer import (
     IntList,
@@ -48,6 +60,7 @@ from hypothesis.internal.conjecture.utils import (
     calc_label_from_name,
     many,
 )
+from hypothesis.internal.escalation import InterestingOrigin
 from hypothesis.internal.floats import (
     SIGNALING_NAN,
     SMALLEST_SUBNORMAL,
@@ -79,50 +92,12 @@ else:
 
 
 TOP_LABEL = calc_label_from_name("top")
-InterestingOrigin = tuple[
-    type[BaseException], str, int, tuple[Any, ...], tuple[tuple[Any, ...], ...]
-]
 TargetObservations = dict[str, Union[int, float]]
 
 T = TypeVar("T")
 
-
-class IntegerKWargs(TypedDict):
-    min_value: Optional[int]
-    max_value: Optional[int]
-    weights: Optional[dict[int, float]]
-    shrink_towards: int
-
-
-class FloatKWargs(TypedDict):
-    min_value: float
-    max_value: float
-    allow_nan: bool
-    smallest_nonzero_magnitude: float
-
-
-class StringKWargs(TypedDict):
-    intervals: IntervalSet
-    min_size: int
-    max_size: int
-
-
-class BytesKWargs(TypedDict):
-    min_size: int
-    max_size: int
-
-
-class BooleanKWargs(TypedDict):
-    p: float
-
-
-IRType: TypeAlias = Union[int, str, bool, float, bytes]
-IRKWargsType: TypeAlias = Union[
-    IntegerKWargs, FloatKWargs, StringKWargs, BytesKWargs, BooleanKWargs
-]
-IRTypeName: TypeAlias = Literal["integer", "string", "boolean", "float", "bytes"]
 # index, ir_type, kwargs, forced
-MisalignedAt: TypeAlias = tuple[int, IRTypeName, IRKWargsType, Optional[IRType]]
+MisalignedAt: TypeAlias = tuple[int, ChoiceNameT, ChoiceKwargsT, Optional[ChoiceT]]
 
 
 class ExtraInformation:
@@ -868,7 +843,7 @@ class Blocks:
 
 
 class _Overrun:
-    status = Status.OVERRUN
+    status: Status = Status.OVERRUN
 
     def __repr__(self) -> str:
         return "Overrun"
@@ -929,17 +904,17 @@ class DataObserver:
 
 @attr.s(slots=True, repr=False, eq=False)
 class IRNode:
-    ir_type: IRTypeName = attr.ib()
-    value: IRType = attr.ib()
-    kwargs: IRKWargsType = attr.ib()
+    ir_type: ChoiceNameT = attr.ib()
+    value: ChoiceT = attr.ib()
+    kwargs: ChoiceKwargsT = attr.ib()
     was_forced: bool = attr.ib()
     index: Optional[int] = attr.ib(default=None)
 
     def copy(
         self,
         *,
-        with_value: Optional[IRType] = None,
-        with_kwargs: Optional[IRKWargsType] = None,
+        with_value: Optional[ChoiceT] = None,
+        with_kwargs: Optional[ChoiceKwargsT] = None,
     ) -> "IRNode":
         # we may want to allow this combination in the future, but for now it's
         # a footgun.
@@ -956,7 +931,7 @@ class IRNode:
         )
 
     @property
-    def trivial(self):
+    def trivial(self) -> bool:
         """
         A node is trivial if it cannot be simplified any further. This does not
         mean that modifying a trivial node can't produce simpler test cases when
@@ -970,8 +945,9 @@ class IRNode:
             zero_value = choice_from_index(0, self.ir_type, self.kwargs)
             return ir_value_equal(self.ir_type, self.value, zero_value)
         else:
-            min_value = self.kwargs["min_value"]
-            max_value = self.kwargs["max_value"]
+            kwargs = cast(FloatKWargs, self.kwargs)
+            min_value = kwargs["min_value"]
+            max_value = kwargs["max_value"]
             shrink_towards = 0
 
             if min_value == -math.inf and max_value == math.inf:
@@ -994,7 +970,7 @@ class IRNode:
             # also not incorrect to be conservative here.
             return False
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, IRNode):
             return NotImplemented
 
@@ -1030,57 +1006,19 @@ class NodeTemplate:
         assert self.size > 0
 
 
-def ir_value_permitted(value, ir_type, kwargs):
-    if ir_type == "integer":
-        min_value = kwargs["min_value"]
-        max_value = kwargs["max_value"]
-        shrink_towards = kwargs["shrink_towards"]
-        if min_value is not None and value < min_value:
-            return False
-        if max_value is not None and value > max_value:
-            return False
-
-        if max_value is None or min_value is None:
-            return (value - shrink_towards).bit_length() < 128
-
-        return True
-    elif ir_type == "float":
-        if math.isnan(value):
-            return kwargs["allow_nan"]
-        return (
-            sign_aware_lte(kwargs["min_value"], value)
-            and sign_aware_lte(value, kwargs["max_value"])
-        ) and not (0 < abs(value) < kwargs["smallest_nonzero_magnitude"])
-    elif ir_type == "string":
-        if len(value) < kwargs["min_size"]:
-            return False
-        if kwargs["max_size"] is not None and len(value) > kwargs["max_size"]:
-            return False
-        return all(ord(c) in kwargs["intervals"] for c in value)
-    elif ir_type == "bytes":
-        if len(value) < kwargs["min_size"]:
-            return False
-        return kwargs["max_size"] is None or len(value) <= kwargs["max_size"]
-    elif ir_type == "boolean":
-        if kwargs["p"] <= 2 ** (-64):
-            return value is False
-        if kwargs["p"] >= (1 - 2 ** (-64)):
-            return value is True
-        return True
-
-    raise NotImplementedError(f"unhandled type {type(value)} of ir value {value}")
-
-
-def ir_size(ir: Iterable[IRType]) -> int:
+def ir_size(ir: Iterable[Union[IRNode, NodeTemplate, ChoiceT]]) -> int:
     from hypothesis.database import ir_to_bytes
 
-    return len(ir_to_bytes(ir))
-
-
-def ir_size_nodes(nodes: Iterable[Union[IRNode, NodeTemplate]]) -> int:
     size = 0
-    for node in nodes:
-        size += node.size if isinstance(node, NodeTemplate) else ir_size([node.value])
+    for v in ir:
+        if isinstance(v, IRNode):
+            size += len(ir_to_bytes([v.value]))
+        elif isinstance(v, NodeTemplate):
+            size += v.size
+        else:
+            # ChoiceT
+            size += len(ir_to_bytes([v]))
+
     return size
 
 
@@ -1157,7 +1095,7 @@ class ConjectureResult:
         return self
 
     @property
-    def choices(self) -> tuple[IRType, ...]:
+    def choices(self) -> tuple[ChoiceT, ...]:
         return tuple(node.value for node in self.ir_nodes)
 
 
@@ -1972,9 +1910,9 @@ class ConjectureData:
         )
 
     @classmethod
-    def for_ir_tree(
+    def for_choices(
         cls,
-        ir_tree_prefix: Sequence[Union[IRNode, NodeTemplate]],
+        choices: Sequence[Union[NodeTemplate, ChoiceT]],
         *,
         observer: Optional[DataObserver] = None,
         provider: Union[type, PrimitiveProvider] = HypothesisProvider,
@@ -1985,12 +1923,10 @@ class ConjectureData:
 
         return cls(
             max_length=BUFFER_SIZE,
-            max_length_ir=(
-                ir_size_nodes(ir_tree_prefix) if max_length is None else max_length
-            ),
+            max_length_ir=(ir_size(choices) if max_length is None else max_length),
             prefix=b"",
             random=random,
-            ir_tree_prefix=ir_tree_prefix,
+            ir_prefix=choices,
             observer=observer,
             provider=provider,
         )
@@ -2003,7 +1939,7 @@ class ConjectureData:
         random: Optional[Random],
         observer: Optional[DataObserver] = None,
         provider: Union[type, PrimitiveProvider] = HypothesisProvider,
-        ir_tree_prefix: Optional[Sequence[Union[IRNode, NodeTemplate]]] = None,
+        ir_prefix: Optional[Sequence[Union[NodeTemplate, ChoiceT]]] = None,
         max_length_ir: Optional[int] = None,
     ) -> None:
         from hypothesis.internal.conjecture.engine import BUFFER_SIZE_IR
@@ -2020,7 +1956,7 @@ class ConjectureData:
         self.__prefix = bytes(prefix)
         self.__random = random
 
-        if ir_tree_prefix is None:
+        if ir_prefix is None:
             assert random is not None or max_length <= len(prefix)
 
         self.blocks = Blocks(self)
@@ -2081,7 +2017,7 @@ class ConjectureData:
 
         self.extra_information = ExtraInformation()
 
-        self.ir_prefix = ir_tree_prefix
+        self.ir_prefix = ir_prefix
         self.ir_nodes: tuple[IRNode, ...] = ()
         self.misaligned_at: Optional[MisalignedAt] = None
         self.start_example(TOP_LABEL)
@@ -2094,7 +2030,7 @@ class ConjectureData:
         )
 
     @property
-    def choices(self) -> tuple[IRType, ...]:
+    def choices(self) -> tuple[ChoiceT, ...]:
         return tuple(node.value for node in self.ir_nodes)
 
     # A bit of explanation of the `observe` and `fake_forced` arguments in our
@@ -2125,17 +2061,17 @@ class ConjectureData:
     def _draw(self, ir_type, kwargs, *, observe, forced, fake_forced):
         # this is somewhat redundant with the length > max_length check at the
         # end of the function, but avoids trying to use a null self.random when
-        # drawing past the node of a ConjectureData.for_ir_tree data.
+        # drawing past the node of a ConjectureData.for_choices data.
         if self.length_ir == self.max_length_ir:
             debug_report(f"overrun because hit {self.max_length_ir=}")
             self.mark_overrun()
 
         if self.ir_prefix is not None and observe:
             if self.index_ir < len(self.ir_prefix):
-                node_value = self._pop_ir_tree_node(ir_type, kwargs, forced=forced)
+                choice = self._pop_choice(ir_type, kwargs, forced=forced)
             else:
                 try:
-                    (node_value, _buf) = ir_to_buffer(
+                    (choice, _buf) = ir_to_buffer(
                         ir_type, kwargs, forced=forced, random=self.__random
                     )
                 except StopTest:
@@ -2143,7 +2079,7 @@ class ConjectureData:
                     self.mark_overrun()
 
             if forced is None:
-                forced = node_value
+                forced = choice
                 fake_forced = True
 
         value = getattr(self.provider, f"draw_{ir_type}")(
@@ -2346,17 +2282,16 @@ class ConjectureData:
             POOLED_KWARGS_CACHE[key] = kwargs
             return kwargs
 
-    def _pop_ir_tree_node(
-        self, ir_type: IRTypeName, kwargs: IRKWargsType, *, forced: Optional[IRType]
-    ) -> IRType:
-        from hypothesis.internal.conjecture.engine import BUFFER_SIZE
-
+    def _pop_choice(
+        self, ir_type: ChoiceNameT, kwargs: ChoiceKwargsT, *, forced: Optional[ChoiceT]
+    ) -> ChoiceT:
         assert self.ir_prefix is not None
         # checked in _draw
         assert self.index_ir < len(self.ir_prefix)
 
-        node = self.ir_prefix[self.index_ir]
-        if isinstance(node, NodeTemplate):
+        value = self.ir_prefix[self.index_ir]
+        if isinstance(value, NodeTemplate):
+            node: NodeTemplate = value
             assert node.size >= 0
             # node templates have to be at the end for now, since it's not immediately
             # apparent how to handle overruning a node template while generating a single
@@ -2364,59 +2299,69 @@ class ConjectureData:
             assert self.index_ir == len(self.ir_prefix) - 1
             if node.type == "simplest":
                 try:
-                    value = choice_from_index(0, ir_type, kwargs)
+                    choice: ChoiceT = choice_from_index(0, ir_type, kwargs)
                 except ChoiceTooLarge:
                     self.mark_overrun()
             else:
                 raise NotImplementedError
 
-            node.size -= ir_size([value])
+            node.size -= ir_size([choice])
             if node.size < 0:
                 self.mark_overrun()
-            return value
+            return choice
 
-        value = node.value
+        choice = value
+        node_ir_type = {
+            str: "string",
+            float: "float",
+            int: "integer",
+            bool: "boolean",
+            bytes: "bytes",
+        }[type(choice)]
         # If we're trying to:
         # * draw a different ir type at the same location
-        # * draw the same ir type with a different kwargs
+        # * draw the same ir type with a different kwargs, which does not permit
+        #   the current value
         #
         # then we call this a misalignment, because the choice sequence has
         # slipped from what we expected at some point. An easy misalignment is
         #
-        #   st.one_of(st.integers(0, 100), st.integers(101, 200))
+        #   one_of(integers(0, 100), integers(101, 200))
         #
         # where the choice sequence [0, 100] has kwargs {min_value: 0, max_value: 100}
-        # at position 2, but [0, 101] has kwargs {min_value: 101, max_value: 200} at
-        # position 2.
+        # at index 1, but [0, 101] has kwargs {min_value: 101, max_value: 200} at
+        # index 1 (which does not permit any of the values 0-100).
         #
-        # When we see a misalignment, we can't offer up the stored node value as-is.
-        # We need to make it appropriate for the requested kwargs and ir type.
-        # Right now we do that by using bytes as the intermediary to convert between
-        # ir types/kwargs. In the future we'll probably use the index into a custom
-        # ordering for an (ir_type, kwargs) pair.
-        if node.ir_type != ir_type or not ir_value_permitted(
-            node.value, node.ir_type, kwargs
-        ):
+        # When the choice sequence becomes misaligned, we generate a new value of the
+        # type and kwargs the strategy expects.
+        if node_ir_type != ir_type or not choice_permitted(choice, kwargs):
             # only track first misalignment for now.
             if self.misaligned_at is None:
                 self.misaligned_at = (self.index_ir, ir_type, kwargs, forced)
             try:
-                (_value, buffer) = ir_to_buffer(
-                    node.ir_type, node.kwargs, forced=node.value
-                )
-                value = buffer_to_ir(
-                    ir_type, kwargs, buffer=buffer + bytes(BUFFER_SIZE - len(buffer))
-                )
-            except StopTest:
-                # must have been an overrun.
+                # Fill in any misalignments with index 0 choices. An alternative to
+                # this is using the index of the misaligned choice instead
+                # of index 0, which may be useful for maintaining
+                # "similarly-complex choices" in the shrinker. This requires
+                # attaching an index to every choice in ConjectureData.for_choices,
+                # which we don't always have (e.g. when reading from db).
                 #
-                # maybe we should fall back to to an arbitrary small value here
-                # instead? eg
-                #   buffer_to_ir(ir_type, kwargs, buffer=bytes(BUFFER_SIZE))
+                # If we really wanted this in the future we could make this complexity
+                # optional, use it if present, and default to index 0 otherwise.
+                # This complicates our internal api and so I'd like to avoid it
+                # if possible.
+                #
+                # Additionally, I don't think slips which require
+                # slipping to high-complexity values are common. Though arguably
+                # we may want to expand a bit beyond *just* the simplest choice.
+                # (we could for example consider sampling choices from index 0-10).
+                choice = choice_from_index(0, ir_type, kwargs)
+            except ChoiceTooLarge:
+                # should really never happen with a 0-index choice, but let's be safe.
                 self.mark_overrun()
 
         self.index_ir += 1
-        return value
+        return choice
 
     def as_result(self) -> Union[ConjectureResult, _Overrun]:
         """Convert the result of running this test into
@@ -2730,8 +2675,3 @@ def ir_to_buffer(ir_type, kwargs, *, forced=None, random=None):
     )
     value = getattr(cd.provider, f"draw_{ir_type}")(**kwargs, forced=forced)
     return (value, cd.buffer)
-
-
-def buffer_to_ir(ir_type, kwargs, *, buffer):
-    cd = ConjectureData.for_buffer(buffer)
-    return getattr(cd.provider, f"draw_{ir_type}")(**kwargs)

@@ -11,21 +11,23 @@
 import math
 import sys
 from contextlib import contextmanager
+from typing import Optional
 
 from hypothesis import HealthCheck, Phase, assume, settings, strategies as st
 from hypothesis.control import current_build_context
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import engine as engine_module
+from hypothesis.internal.conjecture.choice import ChoiceT
 from hypothesis.internal.conjecture.data import (
     COLLECTION_DEFAULT_MAX_SIZE,
     ConjectureData,
     IRNode,
-    IRType,
     Status,
 )
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE, ConjectureRunner
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.entropy import deterministic_PRNG
+from hypothesis.internal.escalation import InterestingOrigin
 from hypothesis.internal.floats import SMALLEST_SUBNORMAL, sign_aware_lte
 from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.strategies._internal.strings import OneCharStringStrategy, TextStrategy
@@ -38,6 +40,22 @@ SOME_LABEL = calc_label_from_name("some label")
 TEST_SETTINGS = settings(
     max_examples=5000, database=None, suppress_health_check=list(HealthCheck)
 )
+
+
+def interesting_origin(n: Optional[int] = None) -> InterestingOrigin:
+    """
+    Creates and returns an InterestingOrigin, parameterized by n, such that
+    interesting_origin(n) == interesting_origin(m) iff n = m.
+
+    Since n=None may by chance concide with an explicitly-passed value of n, I
+    recommend not mixing interesting_origin() and interesting_origin(n) in the
+    same test.
+    """
+    try:
+        int("not an int")
+    except Exception as e:
+        origin = InterestingOrigin.from_exception(e)
+        return origin._replace(lineno=n if n is not None else origin.lineno)
 
 
 def run_to_data(f):
@@ -370,7 +388,7 @@ def ir_nodes(draw, *, was_forced=None, ir_types=None):
     return IRNode(ir_type=ir_type, value=value, kwargs=kwargs, was_forced=was_forced)
 
 
-def ir(*values: list[IRType]) -> list[IRNode]:
+def ir(*values: list[ChoiceT]) -> list[IRNode]:
     """
     For inline-creating an ir node or list of ir nodes, where you don't care about the
     kwargs. This uses maximally-permissable kwargs and infers the ir_type you meant

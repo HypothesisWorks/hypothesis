@@ -16,17 +16,20 @@ from typing import TYPE_CHECKING, Callable, Optional, TypeVar, Union
 import attr
 
 from hypothesis.internal.compat import int_from_bytes, int_to_bytes
-from hypothesis.internal.conjecture.choice import choice_from_index, choice_to_index
+from hypothesis.internal.conjecture.choice import (
+    choice_from_index,
+    choice_permitted,
+    choice_to_index,
+)
 from hypothesis.internal.conjecture.data import (
     ConjectureData,
     ConjectureResult,
     IRNode,
     Status,
-    ir_size_nodes,
+    ir_size,
     ir_to_buffer,
     ir_value_equal,
     ir_value_key,
-    ir_value_permitted,
 )
 from hypothesis.internal.conjecture.junkdrawer import (
     endswith,
@@ -396,7 +399,7 @@ class Shrinker:
         # sometimes our shrinking passes try obviously invalid things. We handle
         # discarding them in one place here.
         for node in tree:
-            if not ir_value_permitted(node.value, node.ir_type, node.kwargs):
+            if not choice_permitted(node.value, node.kwargs):
                 return None
 
         result = self.engine.cached_test_function_ir(tree)
@@ -485,6 +488,7 @@ class Shrinker:
         """
 
         try:
+            self.initial_coarse_reduction()
             self.greedy_shrink()
         except StopShrinking:
             # If we stopped shrinking because we're making slow progress (instead of
@@ -588,7 +592,7 @@ class Shrinker:
 
                 attempt = nodes[:start] + tuple(replacement) + nodes[end:]
                 result = self.engine.cached_test_function_ir(
-                    attempt, extend=BUFFER_SIZE_IR - ir_size_nodes(attempt)
+                    attempt, extend=BUFFER_SIZE_IR - ir_size(attempt)
                 )
 
                 # Turns out this was a variable-length part, so grab the infix...
@@ -690,6 +694,123 @@ class Shrinker:
                 "lower_blocks_together",
             ]
         )
+
+    def initial_coarse_reduction(self):
+        """Performs some preliminary reductions that should not be
+        repeated as part of the main shrink passes.
+
+        The main reason why these can't be included as part of shrink
+        passes is that they have much more ability to make the test
+        case "worse". e.g. they might rerandomise part of it, significantly
+        increasing the value of individual nodes, which works in direct
+        opposition to the lexical shrinking and will frequently undo
+        its work.
+        """
+        self.reduce_each_alternative()
+
+    @derived_value  # type: ignore
+    def examples_starting_at(self):
+        result = [[] for _ in self.shrink_target.ir_nodes]
+        for i, ex in enumerate(self.examples):
+            # We can have zero-length examples that start at the end
+            if ex.ir_start < len(result):
+                result[ex.ir_start].append(i)
+        return tuple(map(tuple, result))
+
+    def reduce_each_alternative(self):
+        """This is a pass that is designed to rerandomise use of the
+        one_of strategy or things that look like it, in order to try
+        to move from later strategies to earlier ones in the branch
+        order.
+
+        It does this by trying to systematically lower each value it
+        finds that looks like it might be the branch decision for
+        one_of, and then attempts to repair any changes in shape that
+        this causes.
+        """
+        i = 0
+        while i < len(self.shrink_target.ir_nodes):
+            nodes = self.shrink_target.ir_nodes
+            node = nodes[i]
+            if (
+                node.ir_type == "integer"
+                and not node.was_forced
+                and node.value <= 10
+                and node.kwargs["min_value"] == 0
+            ):
+                assert isinstance(node.value, int)
+
+                # We've found a plausible candidate for a ``one_of`` choice.
+                # We now want to see if the shape of the test case actually depends
+                # on it. If it doesn't, then we don't need to do this (comparatively
+                # costly) pass, and can let much simpler lexicographic reduction
+                # handle it later.
+                #
+                # We test this by trying to set the value to zero and seeing if the
+                # shape changes, as measured by either changing the number of subsequent
+                # nodes, or changing the nodes in such a way as to cause one of the
+                # previous values to no longer be valid in its position.
+                zero_attempt = self.cached_test_function_ir(
+                    nodes[:i] + (nodes[i].copy(with_value=0),) + nodes[i + 1 :]
+                )
+                if (
+                    zero_attempt is not self.shrink_target
+                    and zero_attempt is not None
+                    and zero_attempt.status >= Status.VALID
+                ):
+                    changed_shape = len(zero_attempt.ir_nodes) != len(nodes)
+
+                    if not changed_shape:
+                        for j in range(i + 1, len(nodes)):
+                            zero_node = zero_attempt.ir_nodes[j]
+                            orig_node = nodes[j]
+                            if (
+                                zero_node.ir_type != orig_node.ir_type
+                                or not choice_permitted(
+                                    orig_node.value, zero_node.kwargs
+                                )
+                            ):
+                                changed_shape = True
+                                break
+                    if changed_shape:
+                        for v in range(node.value):
+                            if self.try_lower_node_as_alternative(i, v):
+                                break
+            i += 1
+
+    def try_lower_node_as_alternative(self, i, v):
+        """Attempt to lower `self.shrink_target.ir_nodes[i]` to `v`,
+        while rerandomising and attempting to repair any subsequent
+        changes to the shape of the test case that this causes."""
+        nodes = self.shrink_target.ir_nodes
+        initial_attempt = self.cached_test_function_ir(
+            nodes[:i] + (nodes[i].copy(with_value=v),) + nodes[i + 1 :]
+        )
+        if initial_attempt is self.shrink_target:
+            return True
+
+        prefix = nodes[:i] + (nodes[i].copy(with_value=v),)
+        initial = self.shrink_target
+        examples = self.examples_starting_at[i]
+        for _ in range(3):
+            random_attempt = self.engine.cached_test_function_ir(
+                prefix, extend=len(nodes) * 2
+            )
+            if random_attempt.status < Status.VALID:
+                continue
+            self.incorporate_test_data(random_attempt)
+            for j in examples:
+                initial_ex = initial.examples[j]
+                attempt_ex = random_attempt.examples[j]
+                contents = random_attempt.ir_nodes[
+                    attempt_ex.ir_start : attempt_ex.ir_end
+                ]
+                self.consider_new_tree(
+                    nodes[:i] + contents + nodes[initial_ex.ir_end :]
+                )
+                if initial is not self.shrink_target:
+                    return True
+        return False
 
     @derived_value  # type: ignore
     def shrink_pass_choice_trees(self):
@@ -1377,12 +1498,14 @@ class Shrinker:
             Bytes.shrink(
                 value,
                 lambda val: self.try_shrinking_nodes(nodes, val),
+                min_size=kwargs["min_size"],
             )
         elif ir_type == "string":
             String.shrink(
                 value,
                 lambda val: self.try_shrinking_nodes(nodes, val),
                 intervals=kwargs["intervals"],
+                min_size=kwargs["min_size"],
             )
         else:
             raise NotImplementedError

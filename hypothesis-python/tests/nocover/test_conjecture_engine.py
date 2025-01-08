@@ -89,7 +89,7 @@ def test_cached_with_masked_byte_agrees_with_results(a, b):
     cached_a = runner.cached_test_function_ir(ir(a))
     cached_b = runner.cached_test_function_ir(ir(b))
 
-    data_b = ConjectureData.for_ir_tree(ir(b), observer=runner.tree.new_observer())
+    data_b = ConjectureData.for_choices([b], observer=runner.tree.new_observer())
     runner.test_function(data_b)
 
     # If the cache found an old result, then it should match the real result.

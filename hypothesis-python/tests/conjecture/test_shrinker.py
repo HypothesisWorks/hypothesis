@@ -22,10 +22,12 @@ from hypothesis.internal.conjecture.shrinker import (
     StopShrinking,
     node_program,
 )
+from hypothesis.internal.conjecture.shrinking.common import Shrinker as ShrinkerPass
 from hypothesis.internal.conjecture.utils import Sampler
 
 from tests.conjecture.common import (
     SOME_LABEL,
+    interesting_origin,
     ir,
     ir_nodes,
     run_to_nodes,
@@ -322,11 +324,11 @@ def test_zig_zags_quickly():
         if m == 0 or n == 0:
             data.mark_invalid()
         if abs(m - n) <= 1:
-            data.mark_interesting(0)
+            data.mark_interesting(interesting_origin(0))
         # Two different interesting origins for avoiding slipping in the
         # shrinker.
         if abs(m - n) <= 10:
-            data.mark_interesting(1)
+            data.mark_interesting(interesting_origin(1))
 
     shrinker.fixate_shrink_passes(["minimize_individual_nodes"])
     assert shrinker.engine.valid_examples <= 100
@@ -526,6 +528,60 @@ def test_redistribute_with_forced_node_integer():
     # shrinking. Since the second draw is forced, this isn't possible to shrink
     # with just this pass.
     assert shrinker.choices == (15, 10)
+
+
+@pytest.mark.parametrize("n", [10, 50, 100, 200])
+def test_can_quickly_shrink_to_trivial_collection(n):
+    @shrinking_from(ir(b"\x01" * n))
+    def shrinker(data: ConjectureData):
+        b = data.draw_bytes()
+        if len(b) >= n:
+            data.mark_interesting()
+
+    shrinker.fixate_shrink_passes(["minimize_individual_nodes"])
+    assert shrinker.choices == (b"\x00" * n,)
+    assert shrinker.calls < 10
+
+
+def test_alternative_shrinking_will_lower_to_alternate_value():
+    # We want to reject the first integer value we see when shrinking
+    # this alternative, because it will be the result of transmuting the
+    # bytes value, and we want to ensure that we can find other values
+    # there when we detect the shape change.
+    seen_int = None
+
+    @shrinking_from(ir(1, b"hello world"))
+    def shrinker(data: ConjectureData):
+        nonlocal seen_int
+        i = data.draw_integer(min_value=0, max_value=1)
+        if i == 1:
+            if data.draw_bytes():
+                data.mark_interesting()
+        else:
+            n = data.draw_integer(0, 100)
+            if n == 0:
+                return
+            if seen_int is None:
+                seen_int = n
+            elif n != seen_int:
+                data.mark_interesting()
+
+    shrinker.initial_coarse_reduction()
+    assert shrinker.choices[0] == 0
+
+
+class BadShrinker(ShrinkerPass):
+    """
+    A shrinker that really doesn't do anything at all. This is mostly a covering
+    test for the shrinker interface methods.
+    """
+
+    def run_step(self):
+        return
+
+
+def test_silly_shrinker_subclass():
+    assert BadShrinker.shrink(10, lambda _: True) == 10
 
 
 numeric_nodes = ir_nodes(ir_types=["integer", "float"])

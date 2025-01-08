@@ -25,6 +25,8 @@ from hypothesis.internal.conjecture.data import (
 )
 from hypothesis.strategies._internal.strategies import SearchStrategy
 
+from tests.conjecture.common import interesting_origin
+
 
 @given(st.binary())
 def test_buffer_draws_as_self(buf):
@@ -253,17 +255,18 @@ def test_can_observe_draws():
     observer = LoggingObserver()
     x = ConjectureData.for_buffer(bytes([1, 2, 3]), observer=observer)
 
+    origin = interesting_origin()
     x.draw_boolean()
     x.draw_integer(0, 2**7 - 1, forced=10)
     x.draw_integer(0, 2**8 - 1)
     with pytest.raises(StopTest):
-        x.conclude_test(Status.INTERESTING, interesting_origin="neat")
+        x.conclude_test(Status.INTERESTING, interesting_origin=origin)
 
     assert observer.log == [
         ("draw_boolean", True, False),
         ("draw_integer", 10, True),
         ("draw_integer", 3, False),
-        ("concluded", Status.INTERESTING, "neat"),
+        ("concluded", Status.INTERESTING, origin),
     ]
 
 

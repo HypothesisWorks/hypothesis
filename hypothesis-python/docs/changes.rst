@@ -18,6 +18,47 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.123.7:
+
+--------------------
+6.123.7 - 2025-01-07
+--------------------
+
+Internal type hint additions and refactorings.
+
+.. _v6.123.6:
+
+--------------------
+6.123.6 - 2025-01-07
+--------------------
+
+:func:`@reproduce_failure() <hypothesis.reproduce_failure>` now uses a newer internal interface to represent failures. As a reminder, this representation is not intended to be stable across versions or with respect to changes in the test.
+
+.. _v6.123.5:
+
+--------------------
+6.123.5 - 2025-01-07
+--------------------
+
+Internal code refactoring for the typed choice sequence (:issue:`3921`). May have some neutral effect on shrinking.
+
+.. _v6.123.4:
+
+--------------------
+6.123.4 - 2025-01-06
+--------------------
+
+This patch improves shrinking involving long strings or byte sequences whose value is not relevant to the failure.
+
+.. _v6.123.3:
+
+--------------------
+6.123.3 - 2025-01-06
+--------------------
+
+This release further improves shrinking of strategies using :func:`~hypothesis.strategies.one_of`,
+allowing the shrinker to more reliably move between branches of the strategy.
+
 .. _v6.123.2:
 
 --------------------

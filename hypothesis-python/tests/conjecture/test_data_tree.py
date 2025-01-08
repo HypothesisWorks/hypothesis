@@ -28,7 +28,7 @@ from hypothesis.internal.conjecture.datatree import (
 )
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.floats import float_to_int
-from hypothesis.internal.escalation import InterestingOrigin
+from hypothesis.internal.conjecture.junkdrawer import startswith
 from hypothesis.internal.floats import next_up
 from hypothesis.vendor import pretty
 
@@ -36,6 +36,7 @@ from tests.conjecture.common import (
     boolean_kwargs,
     fresh_data,
     integer_kwargs,
+    interesting_origin,
     ir,
     ir_nodes,
     kwargs_strategy,
@@ -56,9 +57,9 @@ def runner_for(*examples):
             data = runner.cached_test_function_ir(nodes)
             ran_examples.append((nodes, data))
         for nodes, d in ran_examples:
-            rewritten, status = runner.tree.rewrite(nodes)
+            rewritten, status = runner.tree.rewrite([n.value for n in nodes])
             assert status == d.status
-            assert rewritten == d.ir_nodes
+            assert rewritten == d.choices
         return runner
 
     return accept
@@ -129,10 +130,11 @@ def test_novel_prefixes_are_novel():
     runner = ConjectureRunner(tf, settings=TEST_SETTINGS, random=Random(0))
     for _ in range(100):
         prefix = runner.tree.generate_novel_prefix(runner.random)
+        prefix_choices = [n.value for n in prefix]
         extension = prefix + (NodeTemplate("simplest", size=100),)
-        assert runner.tree.rewrite(extension)[1] is None
+        assert runner.tree.rewrite(prefix_choices)[1] is None
         result = runner.cached_test_function_ir(extension)
-        assert runner.tree.rewrite(extension)[0] == result.ir_nodes
+        assert startswith(result.choices, runner.tree.rewrite(prefix_choices)[0])
 
 
 def test_overruns_if_not_enough_bytes_for_block():
@@ -140,7 +142,7 @@ def test_overruns_if_not_enough_bytes_for_block():
         lambda data: data.draw_bytes(2, 2), settings=TEST_SETTINGS, random=Random(0)
     )
     runner.cached_test_function_ir(ir(b"\0\0"))
-    assert runner.tree.rewrite(ir(b"\0"))[1] is Status.OVERRUN
+    assert runner.tree.rewrite([b"\0"])[1] is Status.OVERRUN
 
 
 def test_overruns_if_prefix():
@@ -150,7 +152,7 @@ def test_overruns_if_prefix():
         random=Random(0),
     )
     runner.cached_test_function_ir(ir(False, False))
-    assert runner.tree.rewrite(ir(False))[1] is Status.OVERRUN
+    assert runner.tree.rewrite([False])[1] is Status.OVERRUN
 
 
 def test_stores_the_tree_flat_until_needed():
@@ -206,58 +208,58 @@ def test_correctly_relocates_forced_nodes():
 
 def test_can_go_from_interesting_to_valid():
     tree = DataTree()
-    data = ConjectureData.for_ir_tree([], observer=tree.new_observer())
+    data = ConjectureData.for_choices([], observer=tree.new_observer())
     with pytest.raises(StopTest):
         data.conclude_test(Status.INTERESTING)
 
-    data = ConjectureData.for_ir_tree([], observer=tree.new_observer())
+    data = ConjectureData.for_choices([], observer=tree.new_observer())
     with pytest.raises(StopTest):
         data.conclude_test(Status.VALID)
 
 
 def test_going_from_interesting_to_invalid_is_flaky():
     tree = DataTree()
-    data = ConjectureData.for_ir_tree([], observer=tree.new_observer())
+    data = ConjectureData.for_choices([], observer=tree.new_observer())
     with pytest.raises(StopTest):
         data.conclude_test(Status.INTERESTING)
 
-    data = ConjectureData.for_ir_tree([], observer=tree.new_observer())
+    data = ConjectureData.for_choices([], observer=tree.new_observer())
     with pytest.raises(Flaky):
         data.conclude_test(Status.INVALID)
 
 
 def test_concluding_at_prefix_is_flaky():
     tree = DataTree()
-    data = ConjectureData.for_ir_tree(ir(True), observer=tree.new_observer())
+    data = ConjectureData.for_choices([True], observer=tree.new_observer())
     data.draw_boolean()
     with pytest.raises(StopTest):
         data.conclude_test(Status.INTERESTING)
 
-    data = ConjectureData.for_ir_tree([], observer=tree.new_observer())
+    data = ConjectureData.for_choices([], observer=tree.new_observer())
     with pytest.raises(Flaky):
         data.conclude_test(Status.INVALID)
 
 
 def test_concluding_with_overrun_at_prefix_is_not_flaky():
     tree = DataTree()
-    data = ConjectureData.for_ir_tree(ir(True), observer=tree.new_observer())
+    data = ConjectureData.for_choices([True], observer=tree.new_observer())
     data.draw_boolean()
     with pytest.raises(StopTest):
         data.conclude_test(Status.INTERESTING)
 
-    data = ConjectureData.for_ir_tree([], observer=tree.new_observer())
+    data = ConjectureData.for_choices([], observer=tree.new_observer())
     with pytest.raises(StopTest):
         data.conclude_test(Status.OVERRUN)
 
 
 def test_changing_n_bits_is_flaky_in_prefix():
     tree = DataTree()
-    data = ConjectureData.for_ir_tree(ir(1), observer=tree.new_observer())
+    data = ConjectureData.for_choices([1], observer=tree.new_observer())
     data.draw_integer(0, 1)
     with pytest.raises(StopTest):
         data.conclude_test(Status.INTERESTING)
 
-    data = ConjectureData.for_ir_tree(ir(1), observer=tree.new_observer())
+    data = ConjectureData.for_choices([1], observer=tree.new_observer())
     with pytest.raises(Flaky):
         data.draw_integer(0, 3)
 
@@ -266,24 +268,24 @@ def test_changing_n_bits_is_flaky_in_branch():
     tree = DataTree()
 
     for i in [0, 1]:
-        data = ConjectureData.for_ir_tree(ir(i), observer=tree.new_observer())
+        data = ConjectureData.for_choices([i], observer=tree.new_observer())
         data.draw_integer(0, 1)
         with pytest.raises(StopTest):
             data.conclude_test(Status.INTERESTING)
 
-    data = ConjectureData.for_ir_tree(ir(1), observer=tree.new_observer())
+    data = ConjectureData.for_choices([1], observer=tree.new_observer())
     with pytest.raises(Flaky):
         data.draw_integer(0, 3)
 
 
 def test_extending_past_conclusion_is_flaky():
     tree = DataTree()
-    data = ConjectureData.for_ir_tree(ir(True), observer=tree.new_observer())
+    data = ConjectureData.for_choices([True], observer=tree.new_observer())
     data.draw_boolean()
     with pytest.raises(StopTest):
         data.conclude_test(Status.INTERESTING)
 
-    data = ConjectureData.for_ir_tree(ir(True, False), observer=tree.new_observer())
+    data = ConjectureData.for_choices([True, False], observer=tree.new_observer())
     data.draw_boolean()
 
     with pytest.raises(Flaky):
@@ -292,12 +294,12 @@ def test_extending_past_conclusion_is_flaky():
 
 def test_changing_to_forced_is_flaky():
     tree = DataTree()
-    data = ConjectureData.for_ir_tree(ir(True), observer=tree.new_observer())
+    data = ConjectureData.for_choices([True], observer=tree.new_observer())
     data.draw_boolean()
     with pytest.raises(StopTest):
         data.conclude_test(Status.INTERESTING)
 
-    data = ConjectureData.for_ir_tree(ir(True, False), observer=tree.new_observer())
+    data = ConjectureData.for_choices([True, False], observer=tree.new_observer())
 
     with pytest.raises(Flaky):
         data.draw_boolean(forced=True)
@@ -305,12 +307,12 @@ def test_changing_to_forced_is_flaky():
 
 def test_changing_value_of_forced_is_flaky():
     tree = DataTree()
-    data = ConjectureData.for_ir_tree(ir(True), observer=tree.new_observer())
+    data = ConjectureData.for_choices([True], observer=tree.new_observer())
     data.draw_boolean(forced=True)
     with pytest.raises(StopTest):
         data.conclude_test(Status.INTERESTING)
 
-    data = ConjectureData.for_ir_tree(ir(True, False), observer=tree.new_observer())
+    data = ConjectureData.for_choices([True, False], observer=tree.new_observer())
 
     with pytest.raises(Flaky):
         data.draw_boolean(forced=False)
@@ -318,31 +320,31 @@ def test_changing_value_of_forced_is_flaky():
 
 def test_does_not_truncate_if_unseen():
     tree = DataTree()
-    nodes = ir(1, 2, 3, 4)
-    assert tree.rewrite(nodes) == (nodes, None)
+    choices = [1, 2, 3, 4]
+    assert tree.rewrite(choices) == (choices, None)
 
 
 def test_truncates_if_seen():
     tree = DataTree()
 
-    nodes = ir(1, 2, 3, 4)
+    choices = (1, 2, 3, 4)
 
-    data = ConjectureData.for_ir_tree(nodes, observer=tree.new_observer())
+    data = ConjectureData.for_choices(choices, observer=tree.new_observer())
     data.draw_integer()
     data.draw_integer()
     data.freeze()
 
-    assert tree.rewrite(nodes) == (nodes[:2], Status.VALID)
+    assert tree.rewrite(choices) == (choices[:2], Status.VALID)
 
 
 def test_child_becomes_exhausted_after_split():
     tree = DataTree()
-    data = ConjectureData.for_ir_tree(ir(b"\0", b"\0"), observer=tree.new_observer())
+    data = ConjectureData.for_choices([b"\0", b"\0"], observer=tree.new_observer())
     data.draw_bytes(1, 1)
     data.draw_bytes(1, 1, forced=b"\0")
     data.freeze()
 
-    data = ConjectureData.for_ir_tree(ir(b"\1", b"\0"), observer=tree.new_observer())
+    data = ConjectureData.for_choices([b"\1", b"\0"], observer=tree.new_observer())
     data.draw_bytes(1, 1)
     data.draw_bytes(1, 1)
     data.freeze()
@@ -353,11 +355,11 @@ def test_child_becomes_exhausted_after_split():
 
 def test_will_generate_novel_prefix_to_avoid_exhausted_branches():
     tree = DataTree()
-    data = ConjectureData.for_ir_tree(ir(1), observer=tree.new_observer())
+    data = ConjectureData.for_choices([1], observer=tree.new_observer())
     data.draw_integer(0, 1)
     data.freeze()
 
-    data = ConjectureData.for_ir_tree(ir(0, b"\1"), observer=tree.new_observer())
+    data = ConjectureData.for_choices([0, b"\1"], observer=tree.new_observer())
     data.draw_integer(0, 1)
     data.draw_bytes(1, 1)
     data.freeze()
@@ -370,14 +372,14 @@ def test_will_generate_novel_prefix_to_avoid_exhausted_branches():
 
 def test_will_mark_changes_in_discard_as_flaky():
     tree = DataTree()
-    data = ConjectureData.for_ir_tree(ir(1, 1), observer=tree.new_observer())
+    data = ConjectureData.for_choices([1, 1], observer=tree.new_observer())
     data.start_example(10)
     data.draw_integer(0, 1)
     data.stop_example()
     data.draw_integer(0, 1)
     data.freeze()
 
-    data = ConjectureData.for_ir_tree(ir(1, 1), observer=tree.new_observer())
+    data = ConjectureData.for_choices([1, 1], observer=tree.new_observer())
     data.start_example(10)
     data.draw_integer(0, 1)
 
@@ -391,13 +393,13 @@ def test_is_not_flaky_on_positive_zero_and_negative_zero():
     # draw.
     tree = DataTree()
 
-    data = ConjectureData.for_ir_tree(ir(0.0, False), observer=tree.new_observer())
+    data = ConjectureData.for_choices([0.0, False], observer=tree.new_observer())
     f = data.draw_float()
     assert float_to_int(f) == float_to_int(0.0)
     data.draw_boolean(forced=False)
     data.freeze()
 
-    data = ConjectureData.for_ir_tree(ir(-0.0, False), observer=tree.new_observer())
+    data = ConjectureData.for_choices([-0.0, False], observer=tree.new_observer())
     f = data.draw_float()
     assert float_to_int(f) == float_to_int(-0.0)
     data.draw_boolean(forced=True)
@@ -410,14 +412,8 @@ def test_is_not_flaky_on_positive_zero_and_negative_zero():
 
 
 def test_low_probabilities_are_still_explored():
-    @run_to_nodes
-    def false_ir(data):
-        data.draw_boolean(p=1e-10, forced=False)
-        data.mark_interesting()
-
     tree = DataTree()
-
-    data = ConjectureData.for_ir_tree(false_ir, observer=tree.new_observer())
+    data = ConjectureData.for_choices([False], observer=tree.new_observer())
     data.draw_boolean(p=1e-10)  # False
 
     v = tree.generate_novel_prefix(Random())
@@ -478,7 +474,7 @@ def test_can_generate_hard_values():
     max_value = 1000
     # set up `tree` such that [0, 999] have been drawn and only n=1000 remains.
     for i in range(max_value):
-        data = ConjectureData.for_ir_tree(ir(i), observer=tree.new_observer())
+        data = ConjectureData.for_choices([i], observer=tree.new_observer())
         data.draw_integer(min_value, max_value)
         data.freeze()
 
@@ -487,7 +483,7 @@ def test_can_generate_hard_values():
     # value once or twice.
     for _ in range(20):
         prefix = tree.generate_novel_prefix(Random())
-        data = ConjectureData.for_ir_tree(prefix)
+        data = ConjectureData.for_choices([n.value for n in prefix])
         assert data.draw_integer(min_value, max_value) == 1000
 
 
@@ -511,7 +507,9 @@ def test_can_generate_hard_floats():
             data.draw_float(min_value, max_value, forced=f, allow_nan=False)
             data.mark_interesting()
 
-        data = ConjectureData.for_ir_tree(nodes, observer=tree.new_observer())
+        data = ConjectureData.for_choices(
+            [n.value for n in nodes], observer=tree.new_observer()
+        )
         data.draw_float(min_value, max_value, allow_nan=False)
         data.freeze()
 
@@ -524,7 +522,7 @@ def test_can_generate_hard_floats():
     for _ in range(20):
         expected_value = next_up_n(min_value, 100)
         prefix = tree.generate_novel_prefix(Random())
-        data = ConjectureData.for_ir_tree(prefix)
+        data = ConjectureData.for_choices([n.value for n in prefix])
         assert data.draw_float(min_value, max_value, allow_nan=False) == expected_value
 
 
@@ -532,10 +530,7 @@ def test_can_generate_hard_floats():
 def test_datatree_repr(bool_kwargs, int_kwargs):
     tree = DataTree()
 
-    try:
-        int("not an int")
-    except ValueError as e:
-        origin = InterestingOrigin.from_exception(e)
+    origin = interesting_origin()
 
     observer = tree.new_observer()
     observer.draw_boolean(True, was_forced=False, kwargs=bool_kwargs)
@@ -583,12 +578,12 @@ def _draw(data, node, *, forced=None):
 def test_simulate_forced_floats(node):
     tree = DataTree()
 
-    data = ConjectureData.for_ir_tree([node], observer=tree.new_observer())
+    data = ConjectureData.for_choices([node.value], observer=tree.new_observer())
     data.draw_float(**node.kwargs, forced=node.value)
     with pytest.raises(StopTest):
         data.conclude_test(Status.VALID)
 
-    data = ConjectureData.for_ir_tree([node], observer=tree.new_observer())
+    data = ConjectureData.for_choices([node.value], observer=tree.new_observer())
     tree.simulate_test_function(data)
     data.freeze()
     assert data.ir_nodes == (node,)
