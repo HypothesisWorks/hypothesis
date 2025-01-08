@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.123.8:
+
+--------------------
+6.123.8 - 2025-01-08
+--------------------
+
+The shrinker contains a pass aimed at integers which are required to sum to a value. This patch extends that pass to floats as well.
+
 .. _v6.123.7:
 
 --------------------
