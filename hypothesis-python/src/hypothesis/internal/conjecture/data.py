@@ -272,13 +272,6 @@ class Example:
         return self.owner.depths[self.index]
 
     @property
-    def trivial(self) -> bool:
-        """An example is "trivial" if it only contains forced bytes and zero bytes.
-        All examples start out as trivial, and then get marked non-trivial when
-        we see a byte that is neither forced nor zero."""
-        return self.index in self.owner.trivial
-
-    @property
     def discarded(self) -> bool:
         """True if this is example's ``stop_example`` call had ``discard`` set to
         ``True``. This means we believe that the shrinker should be able to delete
@@ -536,27 +529,6 @@ class Examples:
 
     discarded: frozenset[int] = calculated_example_property(_discarded)
 
-    class _trivial(ExampleProperty):
-        def begin(self) -> None:
-            self.nontrivial = IntList.of_length(len(self.examples))
-            self.result: set[int] = set()
-
-        def block(self, i: int) -> None:
-            if not self.examples.blocks.trivial(i):
-                self.nontrivial[self.example_stack[-1]] = 1
-
-        def stop_example(self, i: int, *, discarded: bool) -> None:
-            if self.nontrivial[i]:
-                if self.example_stack:
-                    self.nontrivial[self.example_stack[-1]] = 1
-            else:
-                self.result.add(i)
-
-        def finish(self) -> frozenset[int]:
-            return frozenset(self.result)
-
-    trivial: frozenset[int] = calculated_example_property(_trivial)
-
     class _parentage(ExampleProperty):
         def stop_example(self, i: int, *, discarded: bool) -> None:
             if i > 0:
@@ -745,15 +717,6 @@ class Blocks:
             return self.__blocks[i]
         except (KeyError, IndexError):
             return None
-
-    def trivial(self, i: int) -> Any:
-        """Equivalent to self.blocks[i].trivial."""
-        if self.owner is not None:
-            return self.start(i) in self.owner.forced_indices or not any(
-                self.owner.buffer[self.start(i) : self.end(i)]
-            )
-        else:
-            return self[i].trivial
 
     def _check_index(self, i: int) -> int:
         n = len(self)

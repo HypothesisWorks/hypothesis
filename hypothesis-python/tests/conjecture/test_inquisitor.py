@@ -24,9 +24,11 @@ def fails_with_output(expected, error=AssertionError, **kw):
                 settings(print_blob=False, derandomize=True, **kw)(f)()
 
             if not hasattr(err.value, "__notes__"):
-                # something has gone deeply wrong in the internals
                 traceback.print_exception(err.value)
-                assert False
+                raise Exception(
+                    "err.value does not have __notes__, something has gone "
+                    "deeply wrong in the internals"
+                )
 
             got = "\n".join(err.value.__notes__).strip() + "\n"
             assert got == expected.strip() + "\n"
