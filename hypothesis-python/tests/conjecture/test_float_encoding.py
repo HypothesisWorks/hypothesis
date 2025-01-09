@@ -18,8 +18,6 @@ from hypothesis.internal.conjecture import floats as flt
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.floats import float_to_int
 
-from tests.conjecture.common import ir
-
 EXPONENTS = list(range(flt.MAX_EXPONENT + 1))
 assert len(EXPONENTS) == 2**11
 
@@ -131,7 +129,7 @@ def float_runner(start, condition, *, kwargs=None):
             data.mark_interesting()
 
     runner = ConjectureRunner(test_function)
-    runner.cached_test_function_ir(ir((float(start), kwargs)))
+    runner.cached_test_function_ir((float(start),))
     assert runner.interesting_examples
     return runner
 

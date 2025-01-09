@@ -43,7 +43,10 @@ from hypothesis.internal.conjecture.datatree import (
     all_children,
     compute_max_children,
 )
-from hypothesis.internal.conjecture.engine import BUFFER_SIZE_IR, truncate_nodes_to_size
+from hypothesis.internal.conjecture.engine import (
+    BUFFER_SIZE_IR,
+    truncate_choices_to_size,
+)
 from hypothesis.internal.floats import SMALLEST_SUBNORMAL, next_down, next_up
 from hypothesis.internal.intervalsets import IntervalSet
 
@@ -689,7 +692,7 @@ def test_node_template_size(n):
 
 @given(st.lists(ir_nodes()), st.integers(min_value=0))
 def test_truncate_nodes(nodes, size):
-    assert len(truncate_nodes_to_size(nodes, size)) <= len(nodes)
+    assert len(truncate_choices_to_size(nodes, size)) <= len(nodes)
 
 
 def test_node_template_to_overrun():

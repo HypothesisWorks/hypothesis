@@ -17,7 +17,7 @@ from hypothesis.internal.conjecture.data import Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner, RunIsComplete
 from hypothesis.internal.entropy import deterministic_PRNG
 
-from tests.conjecture.common import interesting_origin, ir
+from tests.conjecture.common import interesting_origin
 
 
 def test_pareto_front_contains_different_interesting_reasons():
@@ -232,7 +232,7 @@ def test_optimises_the_pareto_front():
         settings=settings(max_examples=10000, database=InMemoryExampleDatabase()),
         database_key=b"stuff",
     )
-    runner.cached_test_function_ir(ir(255) * 20 + ir(0))
+    runner.cached_test_function_ir([255] * 20 + [0])
     runner.pareto_optimise()
 
     assert len(runner.pareto_front) == 6
@@ -253,7 +253,7 @@ def test_does_not_optimise_the_pareto_front_if_interesting():
         database_key=b"stuff",
     )
 
-    runner.cached_test_function_ir(ir(0))
+    runner.cached_test_function_ir([0])
     runner.pareto_optimise = None
     runner.optimise_targets()
 
@@ -275,7 +275,7 @@ def test_stops_optimising_once_interesting():
         database_key=b"stuff",
     )
 
-    data = runner.cached_test_function_ir(ir(hi))
+    data = runner.cached_test_function_ir([hi])
     assert data.status == Status.VALID
     runner.pareto_optimise()
     assert runner.call_count <= 20

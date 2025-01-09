@@ -26,8 +26,8 @@ from hypothesis.internal.conjecture.data import (
     ConjectureResult,
     IRNode,
     Status,
+    draw_choice,
     ir_size,
-    ir_to_buffer,
     ir_value_equal,
     ir_value_key,
 )
@@ -395,14 +395,14 @@ class Shrinker:
         if self.calls - self.calls_at_last_shrink >= self.max_stall:
             raise StopShrinking
 
-    def cached_test_function_ir(self, tree):
+    def cached_test_function_ir(self, nodes):
         # sometimes our shrinking passes try obviously invalid things. We handle
         # discarding them in one place here.
-        for node in tree:
+        for node in nodes:
             if not choice_permitted(node.value, node.kwargs):
                 return None
 
-        result = self.engine.cached_test_function_ir(tree)
+        result = self.engine.cached_test_function_ir([n.value for n in nodes])
         self.incorporate_test_data(result)
         self.check_calls()
         return result
@@ -545,6 +545,7 @@ class Shrinker:
         self.max_stall = 1e999
         shrink_target = self.shrink_target
         nodes = self.nodes
+        choices = self.choices
         chunks = defaultdict(list)
 
         # Before we start running experiments, let's check for known inputs which would
@@ -584,13 +585,13 @@ class Shrinker:
                 for i in range(start, end):
                     node = nodes[i]
                     if not node.was_forced:
-                        (value, _buf) = ir_to_buffer(
+                        value = draw_choice(
                             node.ir_type, node.kwargs, random=self.random
                         )
                         node = node.copy(with_value=value)
-                    replacement.append(node)
+                    replacement.append(node.value)
 
-                attempt = nodes[:start] + tuple(replacement) + nodes[end:]
+                attempt = choices[:start] + tuple(replacement) + choices[end:]
                 result = self.engine.cached_test_function_ir(
                     attempt, extend=BUFFER_SIZE_IR - ir_size(attempt)
                 )
@@ -599,7 +600,7 @@ class Shrinker:
                 if result.status is Status.OVERRUN:
                     continue  # pragma: no cover  # flakily covered
                 if not (
-                    len(attempt) == len(result.ir_nodes)
+                    len(attempt) == len(result.choices)
                     and endswith(result.ir_nodes, nodes[end:])
                 ):
                     for ex, res in zip(shrink_target.examples, result.examples):
@@ -613,15 +614,15 @@ class Shrinker:
                         raise NotImplementedError("Expected matching prefixes")
 
                     attempt = (
-                        nodes[:start] + result.ir_nodes[start:res_end] + nodes[end:]
+                        choices[:start] + result.choices[start:res_end] + choices[end:]
                     )
-                    chunks[(start, end)].append(result.ir_nodes[start:res_end])
+                    chunks[(start, end)].append(result.choices[start:res_end])
                     result = self.engine.cached_test_function_ir(attempt)
 
                     if result.status is Status.OVERRUN:
                         continue  # pragma: no cover  # flakily covered
                 else:
-                    chunks[(start, end)].append(result.ir_nodes[start:end])
+                    chunks[(start, end)].append(result.choices[start:end])
 
                 if shrink_target is not self.shrink_target:  # pragma: no cover
                     # If we've shrunk further without meaning to, bail out.
@@ -646,15 +647,15 @@ class Shrinker:
         chunks_by_start_index = sorted(chunks.items())
         for _ in range(500):  # pragma: no branch
             # no-branch here because we don't coverage-test the abort-at-500 logic.
-            new_nodes = []
+            new_choices = []
             prev_end = 0
             for (start, end), ls in chunks_by_start_index:
                 assert prev_end <= start < end, "these chunks must be nonoverlapping"
-                new_nodes.extend(nodes[prev_end:start])
-                new_nodes.extend(self.random.choice(ls))
+                new_choices.extend(choices[prev_end:start])
+                new_choices.extend(self.random.choice(ls))
                 prev_end = end
 
-            result = self.engine.cached_test_function_ir(new_nodes)
+            result = self.engine.cached_test_function_ir(new_choices)
 
             # This *can't* be a shrink because none of the components were.
             assert shrink_target is self.shrink_target
@@ -794,7 +795,7 @@ class Shrinker:
         examples = self.examples_starting_at[i]
         for _ in range(3):
             random_attempt = self.engine.cached_test_function_ir(
-                prefix, extend=len(nodes) * 2
+                [n.value for n in prefix], extend=len(nodes) * 2
             )
             if random_attempt.status < Status.VALID:
                 continue

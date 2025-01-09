@@ -25,8 +25,6 @@ from hypothesis.internal.compat import ceil
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 
-from tests.conjecture.common import ir
-
 
 @st.composite
 def problems(draw):
@@ -91,11 +89,11 @@ def test_avoids_zig_zag_trap(p):
         random=Random(0),
     )
 
-    runner.cached_test_function_ir(ir(m, m + 1, marker))
+    runner.cached_test_function_ir((m, m + 1, marker))
     assert runner.interesting_examples
     runner.run()
     (v,) = runner.interesting_examples.values()
-    data = ConjectureData.for_buffer(v.buffer)
+    data = ConjectureData.for_choices(v.choices)
 
     m = data.draw_integer(0, 2**n_bits - 1)
     n = data.draw_integer(0, 2**n_bits - 1)
