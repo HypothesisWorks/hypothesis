@@ -9,11 +9,11 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import abc
-import binascii
 import json
 import os
 import struct
 import sys
+import tempfile
 import warnings
 import weakref
 from collections.abc import Iterable
@@ -235,14 +235,19 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
             self._key_path(key).mkdir(exist_ok=True, parents=True)
             path = self._value_path(key, value)
             if not path.exists():
-                suffix = binascii.hexlify(os.urandom(16)).decode("ascii")
-                tmpname = path.with_suffix(f"{path.suffix}.{suffix}")
-                tmpname.write_bytes(value)
+                # to mimic an atomic write, create and write in a temporary
+                # directory, and only move to the final path after. This avoids
+                # any intermediate state where the file is created (and empty)
+                # but not yet written to.
+                fd, tmpname = tempfile.mkstemp()
+                tmppath = Path(tmpname)
+                os.write(fd, value)
+                os.close(fd)
                 try:
-                    tmpname.rename(path)
+                    tmppath.rename(path)
                 except OSError:  # pragma: no cover
-                    tmpname.unlink()
-                assert not tmpname.exists()
+                    tmppath.unlink()
+                assert not tmppath.exists()
         except OSError:  # pragma: no cover
             pass
 
