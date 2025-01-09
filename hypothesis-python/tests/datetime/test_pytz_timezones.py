@@ -113,6 +113,9 @@ def test_time_bounds_must_be_naive(name, val):
 def test_can_trigger_error_in_draw_near_boundary(bound):
     found = False
 
+    # this would be better written with find_any, but I couldn't get rewriting
+    # with st.composite and assuming the event condition to work.
+    # https://github.com/HypothesisWorks/hypothesis/pull/4229#discussion_r1907993831
     @given(st.data())
     def f(data):
         try:

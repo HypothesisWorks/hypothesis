@@ -634,13 +634,13 @@ def test_nontrivial_nodes(node):
         ),
         IRNode(
             ir_type="float",
-            value=math.floor(sys.float_info.max),
+            value=float(math.floor(sys.float_info.max)),
             kwargs=float_kw(sys.float_info.max - 1, math.inf),
             was_forced=False,
         ),
         IRNode(
             ir_type="float",
-            value=math.ceil(-sys.float_info.max),
+            value=float(math.ceil(-sys.float_info.max)),
             kwargs=float_kw(-math.inf, -sys.float_info.max + 1),
             was_forced=False,
         ),
@@ -668,7 +668,7 @@ def test_conservative_nontrivial_nodes(node):
         data = draw(st.data()).conjecture_data
         return getattr(data, f"draw_{node.ir_type}")(**node.kwargs)
 
-    assert ir_value_equal(minimal(values()), float(node.value))
+    assert ir_value_equal(minimal(values()), node.value)
 
 
 @given(ir_nodes())
