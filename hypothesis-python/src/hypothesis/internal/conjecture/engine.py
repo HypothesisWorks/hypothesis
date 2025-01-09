@@ -347,17 +347,7 @@ class ConjectureRunner:
                     raise
 
     def _cache_key(self, choices: Sequence[ChoiceT]) -> tuple[int, ...]:
-        # TODO drop after #4229
-        def ir_type(choice):
-            return {
-                str: "string",
-                float: "float",
-                int: "integer",
-                bool: "boolean",
-                bytes: "bytes",
-            }[type(choice)]
-
-        return tuple(ir_value_key(ir_type(choice), choice) for choice in choices)
+        return tuple(ir_value_key(choice) for choice in choices)
 
     def _cache(self, data: ConjectureData) -> None:
         result = data.as_result()
