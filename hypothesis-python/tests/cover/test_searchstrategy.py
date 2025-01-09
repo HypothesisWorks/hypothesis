@@ -25,7 +25,7 @@ from hypothesis.strategies import booleans, data, integers, just, lists, none, t
 from hypothesis.strategies._internal.utils import to_jsonable
 
 from tests.common.debug import assert_simple_property, check_can_generate_examples
-from tests.common.utils import checks_deprecated_behaviour
+from tests.common.utils import Why, checks_deprecated_behaviour, xfail_on_crosshair
 
 
 def test_or_errors_when_given_non_strategy():
@@ -69,6 +69,7 @@ def test_can_map():
     assert_simple_property(s, lambda v: v == "foo")
 
 
+@xfail_on_crosshair(Why.no_unsatisfiable)
 def test_example_raises_unsatisfiable_when_too_filtered():
     with pytest.raises(Unsatisfiable):
         check_can_generate_examples(integers().filter(lambda x: False))
