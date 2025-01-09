@@ -46,7 +46,7 @@ def test_forced_many(data):
     assert not many.more()
 
     # ensure values written to the buffer do in fact generate the forced value
-    data = ConjectureData.for_buffer(data.buffer)
+    data = ConjectureData.for_choices(data.choices)
     many = cu.many(
         data,
         min_size=min_size,
@@ -142,13 +142,13 @@ def test_forced_values(ir_type_and_kwargs):
 
     forced = kwargs["forced"]
     data = fresh_data()
-    assert ir_value_equal(ir_type, getattr(data, f"draw_{ir_type}")(**kwargs), forced)
+    assert ir_value_equal(getattr(data, f"draw_{ir_type}")(**kwargs), forced)
 
     # now make sure the written buffer reproduces the forced value, even without
     # specifying forced=.
     del kwargs["forced"]
-    data = ConjectureData.for_buffer(data.buffer)
-    assert ir_value_equal(ir_type, getattr(data, f"draw_{ir_type}")(**kwargs), forced)
+    data = ConjectureData.for_choices(data.choices)
+    assert ir_value_equal(getattr(data, f"draw_{ir_type}")(**kwargs), forced)
 
 
 @pytest.mark.parametrize("sign", [1, -1])

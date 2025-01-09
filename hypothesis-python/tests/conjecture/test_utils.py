@@ -98,7 +98,7 @@ def test_drawing_an_exact_fraction_coin():
 
 
 def test_too_small_to_be_useful_coin():
-    data = ConjectureData.for_buffer([1])
+    data = ConjectureData.for_choices((True,))
     assert not data.draw_boolean(0.5**65)
 
 
@@ -198,10 +198,10 @@ def test_bounds_and_weights():
 
 
 def test_draw_string():
-    data = ConjectureData.for_buffer([0] * 10)
+    data = ConjectureData.for_choices(("0",))
     assert data.draw_string(IntervalSet([(0, 127)]), min_size=1) == "0"
 
-    data = ConjectureData.for_buffer([0] * 10)
+    data = ConjectureData.for_choices(("0",))
     assert data.draw_string(IntervalSet([(0, 1024)]), min_size=1) == "0"
 
 
@@ -254,7 +254,7 @@ def test_choice():
 
 def test_fixed_size_draw_many():
     many = cu.many(
-        ConjectureData.for_buffer([]), min_size=3, max_size=3, average_size=3
+        ConjectureData.for_choices([]), min_size=3, max_size=3, average_size=3
     )
     assert many.more()
     assert many.more()
@@ -265,14 +265,14 @@ def test_fixed_size_draw_many():
 def test_astronomically_unlikely_draw_many():
     # Our internal helper doesn't underflow to zero or negative, but nor
     # will we ever generate an element for such a low average size.
-    buffer = ConjectureData.for_buffer(1024 * [255])
-    many = cu.many(buffer, min_size=0, max_size=10, average_size=1e-5)
+    data = ConjectureData.for_choices((True,) * 1000)
+    many = cu.many(data, min_size=0, max_size=10, average_size=1e-5)
     assert not many.more()
 
 
 def test_rejection_eventually_terminates_many():
     many = cu.many(
-        ConjectureData.for_buffer([1] * 1000),
+        ConjectureData.for_choices((True,) * 1000),
         min_size=0,
         max_size=1000,
         average_size=100,
@@ -287,7 +287,7 @@ def test_rejection_eventually_terminates_many():
 
 
 def test_rejection_eventually_terminates_many_invalid_for_min_size():
-    data = ConjectureData.for_buffer([1] * 1000)
+    data = ConjectureData.for_choices((True,) * 1000)
     many = cu.many(data, min_size=1, max_size=1000, average_size=100)
 
     with pytest.raises(StopTest):
@@ -299,7 +299,10 @@ def test_rejection_eventually_terminates_many_invalid_for_min_size():
 
 def test_many_with_min_size():
     many = cu.many(
-        ConjectureData.for_buffer([0] * 10), min_size=2, average_size=10, max_size=1000
+        ConjectureData.for_choices((False,) * 5),
+        min_size=2,
+        average_size=10,
+        max_size=1000,
     )
     assert many.more()
     assert many.more()
@@ -308,7 +311,7 @@ def test_many_with_min_size():
 
 def test_many_with_max_size():
     many = cu.many(
-        ConjectureData.for_buffer([1] * 10), min_size=0, average_size=1, max_size=2
+        ConjectureData.for_choices((True,) * 5), min_size=0, average_size=1, max_size=2
     )
     assert many.more()
     assert many.more()

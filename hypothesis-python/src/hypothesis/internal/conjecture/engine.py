@@ -475,6 +475,7 @@ class ConjectureRunner:
                     self._switch_to_hypothesis_provider = True
             # skip the post-test-case tracking; we're pretending this never happened
             interrupted = True
+            data.freeze()
             return
         except BaseException:
             self.save_buffer(data.buffer)
