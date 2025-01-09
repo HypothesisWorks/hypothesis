@@ -103,4 +103,4 @@ def test_float_clamper(kwargs, input_value):
         allow_nan=allow_nan,
         smallest_nonzero_magnitude=smallest_nonzero_magnitude,
     ):
-        assert ir_value_equal("float", input_value, clamped)
+        assert ir_value_equal(input_value, clamped)

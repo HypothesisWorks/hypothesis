@@ -1107,7 +1107,7 @@ class Shrinker:
             assert len(prev_nodes) == len(new_nodes)
             for i, (n1, n2) in enumerate(zip(prev_nodes, new_nodes)):
                 assert n1.ir_type == n2.ir_type
-                if not ir_value_equal(n1.ir_type, n1.value, n2.value):
+                if not ir_value_equal(n1.value, n2.value):
                     self.__all_changed_nodes.add(i)
 
         return self.__all_changed_nodes
@@ -1320,9 +1320,7 @@ class Shrinker:
         """Returns a list of nodes grouped (ir_type, value)."""
         duplicates = defaultdict(list)
         for node in self.nodes:
-            duplicates[(node.ir_type, ir_value_key(node.ir_type, node.value))].append(
-                node
-            )
+            duplicates[(node.ir_type, ir_value_key(node.value))].append(node)
         return list(duplicates.values())
 
     @defines_shrink_pass()
@@ -1460,7 +1458,7 @@ class Shrinker:
         # same operation on both basically just works.
         kwargs = nodes[0].kwargs
         assert all(
-            node.ir_type == ir_type and ir_value_equal(ir_type, node.value, value)
+            node.ir_type == ir_type and ir_value_equal(node.value, value)
             for node in nodes
         )
 

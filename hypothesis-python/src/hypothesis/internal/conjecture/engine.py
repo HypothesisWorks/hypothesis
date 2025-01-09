@@ -362,7 +362,7 @@ class ConjectureRunner:
         return tuple(
             (
                 node.ir_type,
-                ir_value_key(node.ir_type, node.value),
+                ir_value_key(node.value),
                 ir_kwargs_key(node.ir_type, node.kwargs),
             )
             for node in nodes
