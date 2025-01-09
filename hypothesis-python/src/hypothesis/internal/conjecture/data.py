@@ -246,18 +246,6 @@ class Example:
         return self.owner.parentage[self.index]
 
     @property
-    def start(self) -> int:
-        """The position of the start of this example in the byte stream."""
-        return self.owner.starts[self.index]
-
-    @property
-    def end(self) -> int:
-        """The position directly after the last byte in this byte stream.
-        i.e. the example corresponds to the half open region [start, end).
-        """
-        return self.owner.ends[self.index]
-
-    @property
     def ir_start(self) -> int:
         return self.owner.ir_starts[self.index]
 
@@ -279,11 +267,6 @@ class Example:
         strategy. Typically set when a rejection sampler decides to reject a
         generated value and try again."""
         return self.index in self.owner.discarded
-
-    @property
-    def length(self) -> int:
-        """The number of bytes in this example."""
-        return self.end - self.start
 
     @property
     def ir_length(self) -> int:
@@ -463,32 +446,6 @@ class Examples:
         ) + record.trail.count(STOP_EXAMPLE_NO_DISCARD_RECORD)
         self.blocks = blocks
         self.__children: "list[Sequence[int]] | None" = None
-
-    class _starts_and_ends(ExampleProperty):
-        def begin(self) -> None:
-            self.starts = IntList.of_length(len(self.examples))
-            self.ends = IntList.of_length(len(self.examples))
-
-        def start_example(self, i: int, label_index: int) -> None:
-            self.starts[i] = self.bytes_read
-
-        def stop_example(self, i: int, *, discarded: bool) -> None:
-            self.ends[i] = self.bytes_read
-
-        def finish(self) -> tuple[IntList, IntList]:
-            return (self.starts, self.ends)
-
-    starts_and_ends: "tuple[IntList, IntList]" = calculated_example_property(
-        _starts_and_ends
-    )
-
-    @property
-    def starts(self) -> IntList:
-        return self.starts_and_ends[0]
-
-    @property
-    def ends(self) -> IntList:
-        return self.starts_and_ends[1]
 
     class _ir_starts_and_ends(ExampleProperty):
         def begin(self) -> None:
