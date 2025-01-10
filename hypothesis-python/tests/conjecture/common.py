@@ -147,6 +147,7 @@ def integer_weights(draw, min_value=None, max_value=None):
         st.dictionaries(
             st.integers(min_value=min_value, max_value=max_value),
             st.floats(0.001, 1),
+            min_size=1,
             max_size=255,
         )
     )
@@ -157,7 +158,7 @@ def integer_weights(draw, min_value=None, max_value=None):
     factor = target / sum(weights.values())
     weights = {k: v * factor for k, v in weights.items()}
     # float rounding error can cause this to fail.
-    assume(sum(weights.values()) == target)
+    assume(0.001 <= sum(weights.values()) <= 0.999)
     return weights
 
 
