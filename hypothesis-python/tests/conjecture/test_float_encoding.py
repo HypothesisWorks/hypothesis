@@ -13,7 +13,7 @@ import sys
 import pytest
 
 from hypothesis import HealthCheck, assume, example, given, settings, strategies as st
-from hypothesis.internal.compat import ceil, extract_bits, floor, int_to_bytes
+from hypothesis.internal.compat import ceil, extract_bits, floor
 from hypothesis.internal.conjecture import floats as flt
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.floats import float_to_int
@@ -193,17 +193,6 @@ def test_does_not_shrink_across_one():
     # This test primarily exists to validate that we don't try to subtract one
     # from the starting point and trigger an internal exception.
     assert minimal_from(1.1, lambda x: x == 1.1 or 0 < x < 1) == 1.1
-
-
-@pytest.mark.parametrize("f", [2.0, 10000000.0])
-def test_converts_floats_to_integer_form(f):
-    assert flt.is_simple(f)
-    buf = int_to_bytes(flt.base_float_to_lex(f), 8)
-
-    runner = float_runner(f, lambda g: g == f)
-    runner.shrink_interesting_examples()
-    (v,) = runner.interesting_examples.values()
-    assert v.buffer[:-1] < buf
 
 
 def test_reject_out_of_bounds_floats_while_shrinking():

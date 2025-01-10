@@ -56,7 +56,7 @@ from hypothesis.internal.conjecture.engine import (
     ExitReason,
     RunIsComplete,
 )
-from hypothesis.internal.conjecture.shrinker import sort_key as shortlex
+from hypothesis.internal.conjecture.shrinker import sort_key_ir
 
 T = TypeVar("T")
 
@@ -94,9 +94,9 @@ def precisely_shrink(
 
     target_check_value = safe_draw(data, end_marker)
 
-    initial_buffer = bytes(data.buffer)
+    initial_choices = data.choices
 
-    replay = ConjectureData.for_buffer(initial_buffer)
+    replay = ConjectureData.for_choices(initial_choices)
     assert safe_draw(replay, strategy) == initial_value
     assert safe_draw(replay, end_marker) == target_check_value
 
@@ -108,16 +108,16 @@ def precisely_shrink(
 
     runner = ConjectureRunner(test_function, random=random)
     try:
-        buf = runner.cached_test_function(initial_buffer)
+        buf = runner.cached_test_function_ir(initial_choices)
         assert buf.status == Status.INTERESTING
-        assert buf.buffer == initial_buffer
+        assert buf.choices == initial_choices
         assert runner.interesting_examples
         runner.shrink_interesting_examples()
     except RunIsComplete:
         assert runner.exit_reason in (ExitReason.finished, ExitReason.max_shrinks)
     (result,) = runner.interesting_examples.values()
 
-    data = ConjectureData.for_buffer(result.buffer)
+    data = ConjectureData.for_choices(result.choices)
     result_value = safe_draw(data, strategy)
     data.freeze()
     return data.as_result(), result_value
@@ -139,13 +139,13 @@ def minimal_for_strategy(s):
     return precisely_shrink(s, end_marker=st.none())
 
 
-def minimal_buffer_for_strategy(s):
-    return minimal_for_strategy(s)[0].buffer
+def minimal_nodes_for_strategy(s):
+    return minimal_for_strategy(s)[0].ir_nodes
 
 
 def test_strategy_list_is_in_sorted_order():
     assert common_strategies == sorted(
-        common_strategies, key=lambda s: shortlex(minimal_buffer_for_strategy(s))
+        common_strategies, key=lambda s: sort_key_ir(minimal_nodes_for_strategy(s))
     )
 
 
@@ -227,57 +227,54 @@ def find_random(
             continue
 
 
-def shrinks(strategy, buffer, *, allow_sloppy=True, seed=0):
+def shrinks(strategy, ir_nodes, *, allow_sloppy=True, seed=0):
     results = {}
     random = Random(seed)
+    choices = tuple(n.value for n in ir_nodes)
 
     if allow_sloppy:
 
         def test_function(data):
             value = safe_draw(data, strategy)
-            results[bytes(data.buffer)] = value
+            results[data.ir_nodes] = value
 
         runner = ConjectureRunner(test_function, settings=settings(max_examples=10**9))
-
-        initial = runner.cached_test_function(buffer)
+        initial = runner.cached_test_function_ir(choices)
         assert isinstance(initial, ConjectureResult)
         try:
-            runner.shrink(initial, lambda x: x.buffer == initial.buffer)
+            runner.shrink(initial, lambda x: x.choices == initial.choices)
         except RunIsComplete:
             assert runner.exit_reason in (ExitReason.finished, ExitReason.max_shrinks)
     else:
-        trial = ConjectureData(prefix=buffer, max_length=BUFFER_SIZE, random=random)
+        trial = ConjectureData(
+            prefix=b"", ir_prefix=choices, max_length=BUFFER_SIZE, random=random
+        )
         with BuildContext(trial):
             trial.draw(strategy)
-            assert bytes(trial.buffer) == buffer, "Buffer is already sloppy"
+            assert trial.choices == choices, "choice sequence is already sloppy"
             padding = safe_draw(trial, st.integers())
-        initial_buffer = bytes(trial.buffer)
+        initial_choices = trial.choices
 
         def test_function(data):
             value = safe_draw(data, strategy)
-            key = bytes(data.buffer)
+            key = data.ir_nodes
             padding_check = safe_draw(data, st.integers())
             if padding_check == padding:
                 results[key] = value
 
         runner = ConjectureRunner(test_function, settings=settings(max_examples=10**9))
-        initial = runner.cached_test_function(initial_buffer)
+        initial = runner.cached_test_function_ir(initial_choices)
         assert len(results) == 1
         try:
-            runner.shrink(initial, lambda x: x.buffer == initial_buffer)
+            runner.shrink(initial, lambda x: x.choices == initial_choices)
         except RunIsComplete:
             assert runner.exit_reason in (ExitReason.finished, ExitReason.max_shrinks)
 
-    results.pop(buffer)
-
-    def shortlex(s):
-        return (len(s), s)
-
+    results.pop(ir_nodes)
     seen = set()
-
     result_list = []
 
-    for k, v in sorted(results.items(), key=lambda x: shortlex(x[0])):
+    for k, v in sorted(results.items(), key=lambda x: sort_key_ir(x[0])):
         t = repr(v)
         if t in seen:
             continue
@@ -294,9 +291,8 @@ def test_always_shrinks_to_none(a, seed, block_falsey, allow_sloppy):
     combined_strategy = st.one_of(st.none(), *a)
 
     result, value = find_random(combined_strategy, lambda x: x is not None)
-
     shrunk_values = shrinks(
-        combined_strategy, result.buffer, allow_sloppy=allow_sloppy, seed=seed
+        combined_strategy, result.ir_nodes, allow_sloppy=allow_sloppy, seed=seed
     )
     assert shrunk_values[0][1] is None
 
@@ -321,7 +317,7 @@ def test_can_shrink_to_every_smaller_alternative(i, alts, seed, force_small):
 
     shrunk = shrinks(
         combined_strategy,
-        result.buffer,
+        result.ir_nodes,
         allow_sloppy=False,
         # Arbitrary change so we don't use the same seed for each Random.
         seed=seed * 17,

@@ -9,39 +9,35 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import sys
-from fractions import Fraction
+from collections import Counter
 
-from hypothesis import assume, example, given, strategies as st, target
-from hypothesis.internal.compat import int_to_bytes
+from hypothesis import assume, example, given, settings, strategies as st, target
 from hypothesis.internal.conjecture import utils as cu
-from hypothesis.internal.conjecture.data import ConjectureData, StopTest
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE
 
+from tests.conjecture.common import fresh_data, integer_weights
 
-def test_gives_the_correct_probabilities():
-    weights = [Fraction(1), Fraction(9)]
-    total = sum(weights)
-    probabilities = [w / total for w in weights]
 
-    sampler = cu.Sampler(probabilities)
+@given(integer_weights(), st.randoms(use_true_random=True))
+@settings(max_examples=3)
+def test_sampler_matches_distribution(weights, random):
+    # if we randomly sample from Sampler(weights), the resulting distribution
+    # should match the weights (to some tolerance).
 
-    assert cu.Sampler(weights).table == sampler.table
+    weights = weights.values()
+    sampler = cu.Sampler(weights)
+    counter = Counter()
+    for _ in range(10_000):
+        cd = fresh_data(random=random)
+        n = sampler.sample(cd)
+        counter[n] += 1
 
-    counts = [0] * len(weights)
-
-    i = 0
-    while i < 2**16:
-        data = ConjectureData.for_buffer(int_to_bytes(i, 2))
-        try:
-            c = sampler.sample(data)
-            counts[c] += 1
-            assert probabilities[c] >= Fraction(counts[c], 2**16)
-        except StopTest:
-            pass
-        if 1 in data.forced_indices:
-            i += 256
-        else:
-            i += 1
+    # if we ever pull in scipy to our test suite, we should do a chi squared
+    # test here instead.
+    expected = [w / sum(weights) for w in weights]
+    actual = [counter[i] / counter.total() for i in range(len(weights))]
+    for p1, p2 in zip(expected, actual):
+        assert abs(p1 - p2) < 0.05, (expected, actual)
 
 
 @example(0, 1)

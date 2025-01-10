@@ -15,7 +15,7 @@ from functools import reduce
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import assume, settings
+from hypothesis import assume, given, settings
 from hypothesis.strategies import (
     booleans,
     builds,
@@ -438,3 +438,14 @@ def test_calculator_benchmark():
 
 def test_one_of_slip():
     assert minimal(st.integers(101, 200) | st.integers(0, 100)) == 101
+
+
+# this limit is only to avoid Unsatisfiable when searching for an initial
+# counterexample in minimal, as we may generate a very large magnitude n.
+@given(st.integers(-(2**32), 2**32))
+@settings(max_examples=3)
+def test_perfectly_shrinks_integers(n):
+    if n >= 0:
+        assert minimal(st.integers(), lambda x: x >= n) == n
+    else:
+        assert minimal(st.integers(), lambda x: x <= n) == n

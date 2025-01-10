@@ -12,7 +12,7 @@ import itertools
 
 import pytest
 
-from hypothesis import given, strategies as st
+from hypothesis import strategies as st
 from hypothesis.errors import Frozen, InvalidArgument
 from hypothesis.internal.conjecture.data import (
     MAX_DEPTH,
@@ -26,12 +26,6 @@ from hypothesis.internal.conjecture.data import (
 from hypothesis.strategies._internal.strategies import SearchStrategy
 
 from tests.conjecture.common import interesting_origin
-
-
-@given(st.binary())
-def test_buffer_draws_as_self(buf):
-    x = ConjectureData.for_buffer(buf)
-    assert x.draw_bytes(len(buf), len(buf)) == buf
 
 
 def test_cannot_draw_after_freeze():
@@ -488,13 +482,6 @@ def test_example_equality():
 
         assert not (ex == "hello")  # noqa
         assert ex != "hello"
-
-
-@given(st.integers(0, 255), st.randoms(use_true_random=True))
-def test_partial_buffer(n, rnd):
-    data = ConjectureData(prefix=[n], random=rnd, max_length=2)
-
-    assert data.draw_bytes(2, 2)[0] == n
 
 
 def test_structural_coverage_is_cached():
