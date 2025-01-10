@@ -8,7 +8,6 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from collections import Counter
 from fractions import Fraction
 
 import pytest
@@ -27,7 +26,6 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.data import ConjectureData, Status, StopTest
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
-from hypothesis.internal.intervalsets import IntervalSet
 
 try:
     import numpy as np
@@ -57,44 +55,16 @@ def test_coin_biased_towards_falsehood():
     assert data.draw_boolean(p)
 
 
-def test_unbiased_coin_has_no_second_order():
-    counts = Counter()
-
-    for i in range(256):
-        buf = bytes([i])
-        data = ConjectureData.for_buffer(buf)
-        result = data.draw_boolean()
-        if data.buffer == buf:
-            counts[result] += 1
-
-    assert counts[False] == counts[True] > 0
-
-
 def test_drawing_certain_coin_still_writes():
-    data = ConjectureData.for_buffer([0, 1])
-    assert not data.buffer
+    data = ConjectureData.for_choices([True])
     assert data.draw_boolean(1)
-    assert data.buffer
+    assert data.choices == (True,)
 
 
 def test_drawing_impossible_coin_still_writes():
-    data = ConjectureData.for_buffer([1, 0])
-    assert not data.buffer
+    data = ConjectureData.for_choices([False])
     assert not data.draw_boolean(0)
-    assert data.buffer
-
-
-def test_drawing_an_exact_fraction_coin():
-    count = 0
-    total = 0
-    p = Fraction(3, 8)
-    for i in range(4):
-        for j in range(4):
-            total += 1
-            data = ConjectureData.for_buffer([i, j, 0])
-            if data.draw_boolean(p):
-                count += 1
-    assert p == Fraction(count, total)
+    assert data.choices == (False,)
 
 
 def test_too_small_to_be_useful_coin():
@@ -139,82 +109,6 @@ def test_sampler_distribution(weights):
 def test_sampler_does_not_draw_minimum_if_zero():
     sampler = cu.Sampler([0, 2, 47])
     assert sampler.sample(ConjectureData.for_buffer([0, 0])) != 0
-
-
-def test_integer_range_center_upper():
-    data = ConjectureData.for_buffer([0])
-    assert data.draw_integer(0, 10, shrink_towards=10) == 10
-
-
-def test_integer_range_center_lower():
-    data = ConjectureData.for_buffer([0])
-    assert data.draw_integer(0, 10) == 0
-
-
-def test_integer_range_negative_center_upper():
-    data = ConjectureData.for_buffer([0])
-    assert data.draw_integer(-10, 0) == 0
-
-
-def test_integer_range_lower_equals_upper():
-    data = ConjectureData.for_buffer([0])
-
-    assert data.draw_integer(0, 0) == 0
-
-    assert len(data.buffer) == 1
-
-
-def test_integer_range_center_default():
-    data = ConjectureData.for_buffer([0])
-    assert data.draw_integer(0, 10) == 0
-
-
-def test_center_in_middle_below():
-    data = ConjectureData.for_buffer([0, 0])
-    assert data.draw_integer(0, 10, shrink_towards=5) == 5
-
-
-def test_center_in_middle_above():
-    data = ConjectureData.for_buffer([1, 0])
-    assert data.draw_integer(0, 10, shrink_towards=5) == 5
-
-
-@pytest.mark.parametrize(
-    "lo,hi,to",
-    [(1, None, 1), (1, None, 2), (None, 2, 1), (None, 1, 1), (-1, 1, 0)],
-)
-def test_single_bounds(lo, hi, to):
-    data = ConjectureData.for_buffer([0] * 100)
-    assert data.draw_integer(lo, hi, shrink_towards=to) == to
-
-
-def test_bounds_and_weights():
-    for to in (0, 1, 2):
-        data = ConjectureData.for_buffer([0] * 100 + [2] * 100)
-        val = data.draw_integer(
-            0, 2, shrink_towards=to, weights={0: 0.2, 1: 0.2, 2: 0.2}
-        )
-        assert val == to, to
-
-
-def test_draw_string():
-    data = ConjectureData.for_choices(("0",))
-    assert data.draw_string(IntervalSet([(0, 127)]), min_size=1) == "0"
-
-    data = ConjectureData.for_choices(("0",))
-    assert data.draw_string(IntervalSet([(0, 1024)]), min_size=1) == "0"
-
-
-def test_draw_float():
-    data = ConjectureData.for_buffer([0] * 16)
-    x = data.draw_float(0.0, 2.0, allow_nan=False, smallest_nonzero_magnitude=1.0)
-    assert x == 0 or 1 <= x <= 2
-
-
-def test_draw_negative_float():
-    data = ConjectureData.for_buffer([0] * 100)
-    x = data.draw_float(-2.0, -1.0, allow_nan=False, smallest_nonzero_magnitude=0.5)
-    assert -2 <= x <= -1
 
 
 def test_sampler_shrinks():

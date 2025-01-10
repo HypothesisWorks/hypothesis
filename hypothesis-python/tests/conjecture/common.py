@@ -141,6 +141,28 @@ def clamped_shrink_towards(kwargs):
 
 
 @st.composite
+def integer_weights(draw, min_value=None, max_value=None):
+    # Sampler doesn't play well with super small floats, so exclude them
+    weights = draw(
+        st.dictionaries(
+            st.integers(min_value=min_value, max_value=max_value),
+            st.floats(0.001, 1),
+            min_size=1,
+            max_size=255,
+        )
+    )
+    # invalid to have a weighting that disallows all possibilities
+    assume(sum(weights.values()) != 0)
+    # re-normalize probabilities to sum to some arbitrary target < 1
+    target = draw(st.floats(0.001, 0.999))
+    factor = target / sum(weights.values())
+    weights = {k: v * factor for k, v in weights.items()}
+    # float rounding error can cause this to fail.
+    assume(0.001 <= sum(weights.values()) <= 0.999)
+    return weights
+
+
+@st.composite
 def integer_kwargs(
     draw,
     *,
@@ -182,22 +204,7 @@ def integer_kwargs(
         min_val = max(min_value, forced) if forced is not None else min_value
         max_value = draw(st.integers(min_value=min_val))
 
-        # Sampler doesn't play well with super small floats, so exclude them
-        weights = draw(
-            st.dictionaries(
-                st.integers(min_value=min_value, max_value=max_value),
-                st.floats(0.001, 1),
-                max_size=255,
-            )
-        )
-        # invalid to have a weighting that disallows all possibilities
-        assume(sum(weights.values()) != 0)
-        # re-normalize probabilities to sum to some arbitrary target < 1
-        target = draw(st.floats(0.001, 0.999))
-        factor = target / sum(weights.values())
-        weights = {k: v * factor for k, v in weights.items()}
-        # float rounding error can cause this to fail.
-        assume(sum(weights.values()) == target)
+        weights = draw(integer_weights(min_value, max_value))
     else:
         if use_min_value:
             min_value = draw(st.integers(max_value=forced))

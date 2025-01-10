@@ -845,3 +845,42 @@ def test_integer_choice_index(kwargs, choices):
     # order.
     for i, choice in enumerate(choices):
         assert choice_to_index(choice, kwargs) == i
+
+
+@given(st.lists(ir_nodes()))
+def test_drawing_directly_matches_for_choices(nodes):
+    data = ConjectureData.for_choices([n.value for n in nodes])
+    for node in nodes:
+        value = getattr(data, f"draw_{node.ir_type}")(**node.kwargs)
+        assert ir_value_equal(node.value, value)
+
+
+def test_draw_directly_explicit():
+    # this is a much weaker and more explicit variant of the property-based test
+    # directly above, but this is such an important thing to ensure that we have
+    # correct that it's worth some duplication in case we ever screw up our pbt test.
+    assert (
+        ConjectureData.for_choices(["a"]).draw_string(
+            IntervalSet([(0, 127)]), min_size=1
+        )
+        == "a"
+    )
+    assert ConjectureData.for_choices([b"a"]).draw_bytes() == b"a"
+    assert (
+        ConjectureData.for_choices([1.0]).draw_float(
+            0.0, 2.0, allow_nan=False, smallest_nonzero_magnitude=0.5
+        )
+        == 1.0
+    )
+    assert ConjectureData.for_choices([True]).draw_boolean(0.3)
+    assert ConjectureData.for_choices([42]).draw_integer() == 42
+    assert (
+        ConjectureData.for_choices([-42]).draw_integer(min_value=-50, max_value=0)
+        == -42
+    )
+    assert (
+        ConjectureData.for_choices([10]).draw_integer(
+            min_value=10, max_value=11, weights={10: 0.1, 11: 0.3}
+        )
+        == 10
+    )
