@@ -44,7 +44,7 @@ from hypothesis.errors import (
 )
 from hypothesis.internal.cache import LRUReusedCache
 from hypothesis.internal.compat import NotRequired, TypeAlias, TypedDict, ceil, override
-from hypothesis.internal.conjecture.choice import ChoiceKwargsT, ChoiceT
+from hypothesis.internal.conjecture.choice import ChoiceKwargsT, ChoiceT, choices_key
 from hypothesis.internal.conjecture.data import (
     AVAILABLE_PROVIDERS,
     ConjectureData,
@@ -58,7 +58,6 @@ from hypothesis.internal.conjecture.data import (
     Status,
     _Overrun,
     ir_size,
-    ir_value_key,
 )
 from hypothesis.internal.conjecture.datatree import (
     DataTree,
@@ -346,8 +345,8 @@ class ConjectureRunner:
                     # correct engine.
                     raise
 
-    def _cache_key(self, choices: Sequence[ChoiceT]) -> tuple[int, ...]:
-        return tuple(ir_value_key(choice) for choice in choices)
+    def _cache_key(self, choices: Sequence[ChoiceT]) -> tuple[ChoiceT, ...]:
+        return choices_key(choices)
 
     def _cache(self, data: ConjectureData) -> None:
         result = data.as_result()

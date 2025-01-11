@@ -35,7 +35,7 @@ from hypothesis.database import (
 )
 from hypothesis.errors import HypothesisWarning
 from hypothesis.internal.compat import WINDOWS
-from hypothesis.internal.conjecture.data import ir_value_equal
+from hypothesis.internal.conjecture.choice import choice_equal
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
 from hypothesis.strategies import binary, lists, tuples
 from hypothesis.utils.conventions import not_set
@@ -485,7 +485,7 @@ def test_ir_nodes_rountrips(nodes1):
     assert len(nodes1) == len(ir2)
 
     for n1, v2 in zip(nodes1, ir2):
-        assert ir_value_equal(n1.value, v2)
+        assert choice_equal(n1.value, v2)
 
     s2 = ir_to_bytes(ir2)
     assert s1 == s2
