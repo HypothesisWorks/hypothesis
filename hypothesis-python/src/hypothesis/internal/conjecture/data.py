@@ -596,10 +596,6 @@ class Block:
     def length(self) -> int:
         return self.end - self.start
 
-    @property
-    def trivial(self) -> bool:
-        return self.forced or self.all_zero
-
 
 class Blocks:
     """A lazily calculated list of blocks for a particular ``ConjectureResult``

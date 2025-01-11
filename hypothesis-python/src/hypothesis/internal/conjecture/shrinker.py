@@ -15,7 +15,6 @@ from typing import TYPE_CHECKING, Callable, Optional, TypeVar, Union
 
 import attr
 
-from hypothesis.internal.compat import int_from_bytes, int_to_bytes
 from hypothesis.internal.conjecture.choice import (
     choice_from_index,
     choice_permitted,
@@ -420,12 +419,6 @@ class Shrinker:
         self.cached_test_function_ir(tree)
         return previous is not self.shrink_target
 
-    def consider_new_buffer(self, buffer):
-        """Returns True if after running this buffer the result would be
-        the current shrink_target."""
-        buffer = bytes(buffer)
-        return buffer.startswith(self.buffer) or self.incorporate_new_buffer(buffer)
-
     def incorporate_new_buffer(
         self, buffer
     ):  # pragma: no cover # removing function soon
@@ -461,17 +454,6 @@ class Shrinker:
             and self.__allow_transition(self.shrink_target, data)
         ):
             self.update_shrink_target(data)
-
-    def cached_test_function(self, buffer):
-        """Returns a cached version of the underlying test function, so
-        that the result is either an Overrun object (if the buffer is
-        too short to be a valid test case) or a ConjectureData object
-        with status >= INVALID that would result from running this buffer."""
-        buffer = bytes(buffer)
-        result = self.engine.cached_test_function(buffer, extend=self.__extend)
-        self.incorporate_test_data(result)
-        self.check_calls()
-        return result
 
     def debug(self, msg: str) -> None:
         self.engine.debug(msg)
@@ -692,7 +674,7 @@ class Shrinker:
                 "minimize_duplicated_nodes",
                 "minimize_individual_nodes",
                 "redistribute_numeric_pairs",
-                "lower_blocks_together",
+                "lower_integers_together",
             ]
         )
 
@@ -912,14 +894,6 @@ class Shrinker:
                     reordering[sp] = 0
 
             passes.sort(key=reordering.__getitem__)
-
-    @property
-    def buffer(self):
-        return self.shrink_target.buffer
-
-    @property
-    def blocks(self):
-        return self.shrink_target.blocks
 
     @property
     def nodes(self):
@@ -1416,37 +1390,36 @@ class Shrinker:
         find_integer(boost)
 
     @defines_shrink_pass()
-    def lower_blocks_together(self, chooser):
-        block = chooser.choose(self.blocks, lambda b: not b.trivial)
-
-        # Choose the next block to be up to eight blocks onwards. We don't
-        # want to go too far (to avoid quadratic time) but it's worth a
-        # reasonable amount of lookahead, especially as we expect most
-        # blocks are zero by this point anyway.
-        next_block = self.blocks[
+    def lower_integers_together(self, chooser):
+        node1 = chooser.choose(
+            self.nodes, lambda n: n.ir_type == "integer" and not n.trivial
+        )
+        # Search up to 3 nodes ahead, to avoid quadratic time.
+        node2 = self.nodes[
             chooser.choose(
-                range(block.index + 1, min(len(self.blocks), block.index + 9)),
-                lambda j: not self.blocks[j].trivial,
+                range(node1.index + 1, min(len(self.nodes), node1.index + 3 + 1)),
+                lambda i: self.nodes[i].ir_type == "integer",
             )
         ]
 
-        buffer = self.buffer
+        # one might expect us to require node2 to be nontrivial, and to minimize
+        # the node which is closer to its shrink_towards, rather than node1
+        # unconditionally. In reality, it's acceptable for us to transition node2
+        # from trivial to nontrivial, because the shrink ordering is dominated by
+        # the complexity of the earlier node1. What matters is minimizing node1.
+        shrink_towards = node1.kwargs["shrink_towards"]
 
-        m = int_from_bytes(buffer[block.start : block.end])
-        n = int_from_bytes(buffer[next_block.start : next_block.end])
-
-        def lower(k):
-            if k > min(m, n):
-                return False
-            attempt = bytearray(buffer)
-            attempt[block.start : block.end] = int_to_bytes(m - k, block.length)
-            attempt[next_block.start : next_block.end] = int_to_bytes(
-                n - k, next_block.length
+        def consider(n):
+            return self.consider_new_tree(
+                self.nodes[: node1.index]
+                + (node1.copy(with_value=node1.value - n),)
+                + self.nodes[node1.index + 1 : node2.index]
+                + (node2.copy(with_value=node2.value - n),)
+                + self.nodes[node2.index + 1 :]
             )
-            assert len(attempt) == len(buffer)
-            return self.consider_new_buffer(attempt)
 
-        find_integer(lower)
+        find_integer(lambda n: consider(shrink_towards - n))
+        find_integer(lambda n: consider(n - shrink_towards))
 
     def minimize_nodes(self, nodes):
         ir_type = nodes[0].ir_type
