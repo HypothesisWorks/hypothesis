@@ -775,7 +775,6 @@ class ConjectureResult:
     has_discards: bool = attr.ib()
     target_observations: TargetObservations = attr.ib()
     tags: frozenset[StructuralCoverageTag] = attr.ib()
-    forced_indices: frozenset[int] = attr.ib(repr=False)
     examples: Examples = attr.ib(repr=False, eq=False)
     arg_slices: set[tuple[int, int]] = attr.ib(repr=False)
     slice_comments: dict[tuple[int, int], str] = attr.ib(repr=False)
@@ -785,7 +784,6 @@ class ConjectureResult:
 
     def __attrs_post_init__(self) -> None:
         self.index = len(self.buffer)
-        self.forced_indices = frozenset(self.forced_indices)
 
     def as_result(self) -> "ConjectureResult":
         return self
@@ -1668,7 +1666,6 @@ class ConjectureData:
         self.start_time = time.perf_counter()
         self.gc_start_time = gc_cumulative_time()
         self.events: dict[str, Union[str, int, float]] = {}
-        self.forced_indices: "set[int]" = set()
         self.interesting_origin: Optional[InterestingOrigin] = None
         self.draw_times: "dict[str, float]" = {}
         self._stateful_run_times: "defaultdict[str, float]" = defaultdict(float)
@@ -2083,7 +2080,6 @@ class ConjectureData:
                 has_discards=self.has_discards,
                 target_observations=self.target_observations,
                 tags=frozenset(self.tags),
-                forced_indices=frozenset(self.forced_indices),
                 arg_slices=self.arg_slices,
                 slice_comments=self.slice_comments,
                 misaligned_at=self.misaligned_at,
@@ -2303,14 +2299,9 @@ class ConjectureData:
         buf = bytes(buf)
         result = int_from_bytes(buf)
 
-        initial = self.index
-
         assert isinstance(self.buffer, bytearray)
         self.buffer.extend(buf)
         self.index = len(self.buffer)
-
-        if forced is not None and not fake_forced:
-            self.forced_indices.update(range(initial, self.index))
 
         assert result.bit_length() <= n
         return result
