@@ -449,3 +449,27 @@ def test_perfectly_shrinks_integers(n):
         assert minimal(st.integers(), lambda x: x >= n) == n
     else:
         assert minimal(st.integers(), lambda x: x <= n) == n
+
+
+@given(st.integers(0, 20))
+def test_lowering_together_positive(gap):
+    s = st.tuples(st.integers(0, 20), st.integers(0, 20))
+    assert minimal(s, lambda x: x[0] + gap == x[1]) == (0, gap)
+
+
+@given(st.integers(-20, 0))
+def test_lowering_together_negative(gap):
+    s = st.tuples(st.integers(-20, 0), st.integers(-20, 0))
+    assert minimal(s, lambda x: x[0] + gap == x[1]) == (0, gap)
+
+
+@given(st.integers(-10, 10))
+def test_lowering_together_mixed(gap):
+    s = st.tuples(st.integers(-10, 10), st.integers(-10, 10))
+    assert minimal(s, lambda x: x[0] + gap == x[1]) == (0, gap)
+
+
+@given(st.integers(-10, 10))
+def test_lowering_together_with_gap(gap):
+    s = st.tuples(st.integers(-10, 10), st.text(), st.floats(), st.integers(-10, 10))
+    assert minimal(s, lambda x: x[0] + gap == x[3]) == (0, "", 0.0, gap)

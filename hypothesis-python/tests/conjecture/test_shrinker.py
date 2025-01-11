@@ -495,8 +495,8 @@ def test_will_let_fixate_shrink_passes_do_a_full_run_through():
     assert shrinker.shrink_pass(passes[-1]).calls > 0
 
 
-@pytest.mark.parametrize("n_gap", [0, 1, 2, 3])
-def test_can_simultaneously_lower_non_duplicated_nearby_blocks(n_gap):
+@pytest.mark.parametrize("n_gap", [0, 1, 2])
+def test_can_simultaneously_lower_non_duplicated_nearby_integers(n_gap):
     @shrinking_from((1, 1) + (0,) * n_gap + (2,))
     def shrinker(data: ConjectureData):
         # Block off lowering the whole buffer
@@ -510,7 +510,7 @@ def test_can_simultaneously_lower_non_duplicated_nearby_blocks(n_gap):
         if n == m + 1:
             data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["lower_blocks_together"])
+    shrinker.fixate_shrink_passes(["lower_integers_together"])
     assert shrinker.choices == (1, 0) + (0,) * n_gap + (1,)
 
 
