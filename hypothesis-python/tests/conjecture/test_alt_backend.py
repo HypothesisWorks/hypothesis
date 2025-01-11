@@ -17,7 +17,7 @@ from typing import Optional
 
 import pytest
 
-from hypothesis import HealthCheck, assume, given, settings, strategies as st
+from hypothesis import HealthCheck, Verbosity, assume, given, settings, strategies as st
 from hypothesis.control import current_build_context
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.errors import (
@@ -39,7 +39,7 @@ from hypothesis.internal.floats import SIGNALING_NAN
 from hypothesis.internal.intervalsets import IntervalSet
 
 from tests.common.debug import minimal
-from tests.common.utils import capture_observations
+from tests.common.utils import capture_observations, capture_out
 from tests.conjecture.common import ir_nodes
 
 
@@ -446,6 +446,34 @@ def test_realize_dependent_draw():
             assert n1 <= n2
 
         test_function()
+
+
+@pytest.mark.parametrize("verbosity", [Verbosity.verbose, Verbosity.debug])
+def test_realization_with_verbosity(verbosity):
+    with temp_register_backend("realize", RealizeProvider):
+
+        @given(st.floats())
+        @settings(backend="realize", verbosity=verbosity)
+        def test_function(f):
+            pass
+
+        with capture_out() as out:
+            test_function()
+        assert "Trying example: <symbolics>" in out.getvalue()
+
+
+@pytest.mark.parametrize("verbosity", [Verbosity.verbose, Verbosity.debug])
+def test_realization_with_verbosity_draw(verbosity):
+    with temp_register_backend("realize", RealizeProvider):
+
+        @given(st.data())
+        @settings(backend="realize", verbosity=verbosity)
+        def test_function(data):
+            data.draw(st.integers())
+
+        with capture_out() as out:
+            test_function()
+        assert "Draw 1: <symbolic>" in out.getvalue()
 
 
 class ObservableProvider(TrivialProvider):

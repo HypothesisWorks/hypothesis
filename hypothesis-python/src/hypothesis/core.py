@@ -949,19 +949,27 @@ class StateForActualGivenExecution:
                     printer.text("Trying example:")
 
                 if self.print_given_args:
-                    printer.text(" ")
-                    printer.repr_call(
-                        test.__name__,
-                        args,
-                        kwargs,
-                        force_split=True,
-                        arg_slices=argslices,
-                        leading_comment=(
-                            "# " + context.data.slice_comments[(0, 0)]
-                            if (0, 0) in context.data.slice_comments
-                            else None
-                        ),
-                    )
+                    if data.provider.avoid_realization and not print_example:
+                        # we can do better here by adding
+                        # avoid_realization: bool = False to repr_call, which
+                        # maintains args/kwargs structure (and comments) but shows
+                        # <symbolic> in place of values. For now, this at least
+                        # avoids realization with verbosity <= verbose.
+                        printer.text(" <symbolics>")
+                    else:
+                        printer.text(" ")
+                        printer.repr_call(
+                            test.__name__,
+                            args,
+                            kwargs,
+                            force_split=True,
+                            arg_slices=argslices,
+                            leading_comment=(
+                                "# " + context.data.slice_comments[(0, 0)]
+                                if (0, 0) in context.data.slice_comments
+                                else None
+                            ),
+                        )
                 report(printer.getvalue())
 
             if TESTCASE_CALLBACKS:

@@ -2154,7 +2154,10 @@ class DataObject:
         if should_note():
             printer = RepresentationPrinter(context=current_build_context())
             printer.text(f"{desc}: ")
-            printer.pretty(result)
+            if self.conjecture_data.provider.avoid_realization:
+                printer.text("<symbolic>")
+            else:
+                printer.pretty(result)
             note(printer.getvalue())
         return result
 

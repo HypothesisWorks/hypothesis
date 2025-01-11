@@ -1064,7 +1064,7 @@ class PrimitiveProvider(abc.ABC):
     # Solver-based backends such as hypothesis-crosshair use symbolic values
     # which record operations performed on them in order to discover new paths.
     # If avoid_realization is set to True, hypothesis will avoid interacting with
-    # ir values (symbolics) returned by the provider in any way that would force the
+    # symbolic choices returned by the provider in any way that would force the
     # solver to narrow the range of possible values for that symbolic.
     #
     # Setting this to True disables some hypothesis features, such as
