@@ -292,9 +292,7 @@ class ExampleProperty:
     def __init__(self, examples: "Examples"):
         self.example_stack: "list[int]" = []
         self.examples = examples
-        self.bytes_read = 0
         self.example_count = 0
-        self.block_count = 0
         self.ir_node_count = 0
         self.result: Any = None
 
@@ -302,13 +300,8 @@ class ExampleProperty:
         """Rerun the test case with this visitor and return the
         results of ``self.finish()``."""
         self.begin()
-        blocks = self.examples.blocks
         for record in self.examples.trail:
-            if record == DRAW_BITS_RECORD:
-                self.bytes_read = blocks.endpoints[self.block_count]
-                self.block(self.block_count)
-                self.block_count += 1
-            elif record == IR_NODE_RECORD:
+            if record == IR_NODE_RECORD:
                 self.ir_node_count += 1
             elif record >= START_EXAMPLE_RECORD:
                 self.__push(record - START_EXAMPLE_RECORD)
@@ -340,10 +333,6 @@ class ExampleProperty:
         """Called at the start of each example, with ``i`` the
         index of the example and ``label_index`` the index of
         its label in ``self.examples.labels``."""
-
-    def block(self, i: int) -> None:
-        """Called with each ``draw_bits`` call, with ``i`` the index of the
-        corresponding block in ``self.examples.blocks``"""
 
     def stop_example(self, i: int, *, discarded: bool) -> None:
         """Called at the end of each example, with ``i`` the
@@ -377,7 +366,6 @@ def calculated_example_property(cls: type[ExampleProperty]) -> Any:
     return property(lazy_calculate)
 
 
-DRAW_BITS_RECORD = 0
 STOP_EXAMPLE_DISCARD_RECORD = 1
 STOP_EXAMPLE_NO_DISCARD_RECORD = 2
 START_EXAMPLE_RECORD = 3
@@ -423,9 +411,6 @@ class ExampleRecord:
         else:
             self.trail.append(STOP_EXAMPLE_NO_DISCARD_RECORD)
 
-    def draw_bits(self) -> None:
-        self.trail.append(DRAW_BITS_RECORD)
-
 
 class Examples:
     """A lazy collection of ``Example`` objects, derived from
@@ -438,13 +423,12 @@ class Examples:
     described there.
     """
 
-    def __init__(self, record: ExampleRecord, blocks: "Blocks") -> None:
+    def __init__(self, record: ExampleRecord) -> None:
         self.trail = record.trail
         self.labels = record.labels
         self.__length = self.trail.count(
             STOP_EXAMPLE_DISCARD_RECORD
         ) + record.trail.count(STOP_EXAMPLE_NO_DISCARD_RECORD)
-        self.blocks = blocks
         self.__children: "list[Sequence[int]] | None" = None
 
     class _ir_starts_and_ends(ExampleProperty):
@@ -560,202 +544,6 @@ class Examples:
     def __iter__(self) -> Iterator[Example]:
         for i in range(len(self)):
             yield self[i]
-
-
-@dataclass_transform()
-@attr.s(slots=True, frozen=True)
-class Block:
-    """Blocks track the flat list of lowest-level draws from the byte stream,
-    within a single test run.
-
-    Block-tracking allows the shrinker to try "low-level"
-    transformations, such as minimizing the numeric value of an
-    individual call to ``draw_bits``.
-    """
-
-    start: int = attr.ib()
-    end: int = attr.ib()
-
-    # Index of this block inside the overall list of blocks.
-    index: int = attr.ib()
-
-    # True if this block's byte values were forced by a write operation.
-    # As long as the bytes before this block remain the same, modifying this
-    # block's bytes will have no effect.
-    forced: bool = attr.ib(repr=False)
-
-    # True if this block's byte values are all 0. Reading this flag can be
-    # more convenient than explicitly checking a slice for non-zero bytes.
-    all_zero: bool = attr.ib(repr=False)
-
-    @property
-    def bounds(self) -> tuple[int, int]:
-        return (self.start, self.end)
-
-    @property
-    def length(self) -> int:
-        return self.end - self.start
-
-
-class Blocks:
-    """A lazily calculated list of blocks for a particular ``ConjectureResult``
-    or ``ConjectureData`` object.
-
-    Pretends to be a list containing ``Block`` objects but actually only
-    contains their endpoints right up until the point where you want to
-    access the actual block, at which point it is constructed.
-
-    This is designed to be as space efficient as possible, so will at
-    various points silently transform its representation into one
-    that is better suited for the current access pattern.
-
-    In addition, it has a number of convenience methods for accessing
-    properties of the block object at index ``i`` that should generally
-    be preferred to using the Block objects directly, as it will not
-    have to allocate the actual object."""
-
-    __slots__ = ("__blocks", "__count", "__sparse", "endpoints", "owner")
-    owner: "Union[ConjectureData, ConjectureResult, None]"
-    __blocks: Union[dict[int, Block], list[Optional[Block]]]
-
-    def __init__(self, owner: "ConjectureData") -> None:
-        self.owner = owner
-        self.endpoints = IntList()
-        self.__blocks = {}
-        self.__count = 0
-        self.__sparse = True
-
-    def add_endpoint(self, n: int) -> None:
-        """Add n to the list of endpoints."""
-        assert isinstance(self.owner, ConjectureData)
-        self.endpoints.append(n)
-
-    def transfer_ownership(self, new_owner: "ConjectureResult") -> None:
-        """Used to move ``Blocks`` over to a ``ConjectureResult`` object
-        when that is read to be used and we no longer want to keep the
-        whole ``ConjectureData`` around."""
-        assert isinstance(new_owner, ConjectureResult)
-        self.owner = new_owner
-        self.__check_completion()
-
-    def start(self, i: int) -> int:
-        """Equivalent to self[i].start."""
-        i = self._check_index(i)
-
-        if i == 0:
-            return 0
-        else:
-            return self.end(i - 1)
-
-    def end(self, i: int) -> int:
-        """Equivalent to self[i].end."""
-        return self.endpoints[i]
-
-    def all_bounds(self) -> Iterable[tuple[int, int]]:
-        """Equivalent to [(b.start, b.end) for b in self]."""
-        prev = 0
-        for e in self.endpoints:
-            yield (prev, e)
-            prev = e
-
-    @property
-    def last_block_length(self) -> int:
-        return self.end(-1) - self.start(-1)
-
-    def __len__(self) -> int:
-        return len(self.endpoints)
-
-    def __known_block(self, i: int) -> Optional[Block]:
-        try:
-            return self.__blocks[i]
-        except (KeyError, IndexError):
-            return None
-
-    def _check_index(self, i: int) -> int:
-        n = len(self)
-        if i < -n or i >= n:
-            raise IndexError(f"Index {i} out of range [-{n}, {n})")
-        if i < 0:
-            i += n
-        return i
-
-    def __getitem__(self, i: int) -> Block:
-        i = self._check_index(i)
-        assert i >= 0
-        result = self.__known_block(i)
-        if result is not None:
-            return result
-
-        # We store the blocks as a sparse dict mapping indices to the
-        # actual result, but this isn't the best representation once we
-        # stop being sparse and want to use most of the blocks. Switch
-        # over to a list at that point.
-        if self.__sparse and len(self.__blocks) * 2 >= len(self):
-            new_blocks: "list[Block | None]" = [None] * len(self)
-            assert isinstance(self.__blocks, dict)
-            for k, v in self.__blocks.items():
-                new_blocks[k] = v
-            self.__sparse = False
-            self.__blocks = new_blocks
-            assert self.__blocks[i] is None
-
-        start = self.start(i)
-        end = self.end(i)
-
-        # We keep track of the number of blocks that have actually been
-        # instantiated so that when every block that could be instantiated
-        # has been we know that the list is complete and can throw away
-        # some data that we no longer need.
-        self.__count += 1
-
-        # Integrity check: We can't have allocated more blocks than we have
-        # positions for blocks.
-        assert self.__count <= len(self)
-        assert self.owner is not None
-        result = Block(
-            start=start,
-            end=end,
-            index=i,
-            forced=start in self.owner.forced_indices,
-            all_zero=not any(self.owner.buffer[start:end]),
-        )
-        try:
-            self.__blocks[i] = result
-        except IndexError:
-            assert isinstance(self.__blocks, list)
-            assert len(self.__blocks) < len(self)
-            self.__blocks.extend([None] * (len(self) - len(self.__blocks)))
-            self.__blocks[i] = result
-
-        self.__check_completion()
-
-        return result
-
-    def __check_completion(self) -> None:
-        """The list of blocks is complete if we have created every ``Block``
-        object that we currently good and know that no more will be created.
-
-        If this happens then we don't need to keep the reference to the
-        owner around, and delete it so that there is no circular reference.
-        The main benefit of this is that the gc doesn't need to run to collect
-        this because normal reference counting is enough.
-        """
-        if self.__count == len(self) and isinstance(self.owner, ConjectureResult):
-            self.owner = None
-
-    def __iter__(self) -> Iterator[Block]:
-        for i in range(len(self)):
-            yield self[i]
-
-    def __repr__(self) -> str:
-        parts: "list[str]" = []
-        for i in range(len(self)):
-            b = self.__known_block(i)
-            if b is None:
-                parts.append("...")
-            else:
-                parts.append(repr(b))
-        return "Block([{}])".format(", ".join(parts))
 
 
 class _Overrun:
@@ -981,15 +769,6 @@ class ConjectureResult:
     status: Status = attr.ib()
     interesting_origin: Optional[InterestingOrigin] = attr.ib()
     buffer: bytes = attr.ib()
-    # some ConjectureDatas pass through the ir and some pass through buffers.
-    # the ir does not drive its result through the buffer, which means blocks/examples
-    # may differ (I think for forced values?) even when the buffer is the same.
-    # I don't *think* anything was relying on anything but .buffer for result equality,
-    # though that assumption may be leaning on flakiness detection invariants.
-    #
-    # If we consider blocks or examples in equality checks, multiple semantically equal
-    # results get stored in e.g. the pareto front.
-    blocks: Blocks = attr.ib(eq=False)
     ir_nodes: tuple[IRNode, ...] = attr.ib(eq=False, repr=False)
     output: str = attr.ib()
     extra_information: Optional[ExtraInformation] = attr.ib()
@@ -1876,7 +1655,6 @@ class ConjectureData:
         if ir_prefix is None:
             assert random is not None or max_length <= len(prefix)
 
-        self.blocks = Blocks(self)
         self.buffer: "Union[bytes, bytearray]" = bytearray()
         self.index = 0
         self.length_ir = 0
@@ -2296,7 +2074,6 @@ class ConjectureData:
                 buffer=self.buffer,
                 examples=self.examples,
                 ir_nodes=self.ir_nodes,
-                blocks=self.blocks,
                 output=self.output,
                 extra_information=(
                     self.extra_information
@@ -2312,7 +2089,6 @@ class ConjectureData:
                 misaligned_at=self.misaligned_at,
             )
             assert self.__result is not None
-            self.blocks.transfer_ownership(self.__result)
         return self.__result
 
     def __assert_not_frozen(self, name: str) -> None:
@@ -2452,7 +2228,7 @@ class ConjectureData:
     def examples(self) -> Examples:
         assert self.frozen
         if self.__examples is None:
-            self.__examples = Examples(record=self.__example_record, blocks=self.blocks)
+            self.__examples = Examples(record=self.__example_record)
         return self.__examples
 
     def freeze(self) -> None:
@@ -2527,8 +2303,6 @@ class ConjectureData:
         buf = bytes(buf)
         result = int_from_bytes(buf)
 
-        self.__example_record.draw_bits()
-
         initial = self.index
 
         assert isinstance(self.buffer, bytearray)
@@ -2537,8 +2311,6 @@ class ConjectureData:
 
         if forced is not None and not fake_forced:
             self.forced_indices.update(range(initial, self.index))
-
-        self.blocks.add_endpoint(self.index)
 
         assert result.bit_length() <= n
         return result

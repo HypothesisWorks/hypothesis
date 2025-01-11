@@ -197,43 +197,6 @@ def test_has_cached_examples_even_when_overrun():
     assert d.examples is d.examples
 
 
-def test_blocks_preserve_identity():
-    n = 10
-    d = ConjectureData.for_buffer([1] * 10)
-    for _ in range(n):
-        d.draw_boolean()
-    d.freeze()
-    blocks = [d.blocks[i] for i in range(n)]
-    result = d.as_result()
-    for i, b in enumerate(blocks):
-        assert result.blocks[i] is b
-
-
-def test_compact_blocks_during_generation():
-    d = ConjectureData.for_buffer([1] * 10)
-    for _ in range(5):
-        d.draw_boolean()
-    assert len(list(d.blocks)) == 5
-    for _ in range(5):
-        d.draw_boolean()
-    assert len(list(d.blocks)) == 10
-
-
-def test_handles_indices_like_a_list():
-    n = 5
-    d = ConjectureData.for_buffer([1] * n)
-    for _ in range(n):
-        d.draw_boolean()
-    assert d.blocks[-1] is d.blocks[n - 1]
-    assert d.blocks[-n] is d.blocks[0]
-
-    with pytest.raises(IndexError):
-        d.blocks[n]
-
-    with pytest.raises(IndexError):
-        d.blocks[-n - 1]
-
-
 def test_can_observe_draws():
     class LoggingObserver(DataObserver):
         def __init__(self):
@@ -280,38 +243,6 @@ def test_calls_concluded_implicitly():
     d.freeze()
 
     assert observer.conclusion == (Status.VALID, None)
-
-
-def test_handles_start_indices_like_a_list():
-    n = 5
-    d = ConjectureData.for_buffer([1] * n)
-    for _ in range(n):
-        d.draw_boolean()
-
-    for i in range(-2 * n, 2 * n + 1):
-        try:
-            start = d.blocks.start(i)
-        except IndexError:
-            # Directly retrieving the start position failed, so check that
-            # indexing also fails.
-            with pytest.raises(IndexError):
-                d.blocks[i]
-            continue
-
-        # Directly retrieving the start position succeeded, so check that
-        # indexing also succeeds, and gives the same position.
-        assert start == d.blocks[i].start
-
-
-def test_last_block_length():
-    d = ConjectureData.for_buffer([0] * 20)
-
-    with pytest.raises(IndexError):
-        d.blocks.last_block_length
-
-    for n in range(1, 5 + 1):
-        d.draw_integer(0, 2 ** (n * 8) - 1)
-        assert d.blocks.last_block_length == n
 
 
 def test_examples_show_up_as_discarded():
@@ -416,26 +347,6 @@ def test_events_are_noted():
     d = ConjectureData.for_choices([])
     d.events["hello"] = ""
     assert "hello" in d.events
-
-
-def test_blocks_end_points():
-    d = ConjectureData.for_buffer(bytes(4))
-    d.draw_boolean()
-    d.draw_integer(0, 2**16 - 1, forced=1)
-    d.draw_integer(0, 2**8 - 1)
-    assert (
-        list(d.blocks.all_bounds())
-        == [b.bounds for b in d.blocks]
-        == [(0, 1), (1, 3), (3, 4)]
-    )
-
-
-def test_blocks_lengths():
-    d = ConjectureData.for_buffer(bytes(7))
-    d.draw_integer(0, 2**24 - 1)
-    d.draw_integer(0, 2**16 - 1)
-    d.draw_boolean()
-    assert [b.length for b in d.blocks] == [3, 2, 1]
 
 
 def test_child_indices():
