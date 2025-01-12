@@ -8,6 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import traceback
+
 import pytest
 
 from hypothesis import given, settings, strategies as st
@@ -20,6 +22,14 @@ def fails_with_output(expected, error=AssertionError, **kw):
         def _new():
             with pytest.raises(error) as err:
                 settings(print_blob=False, derandomize=True, **kw)(f)()
+
+            if not hasattr(err.value, "__notes__"):
+                traceback.print_exception(err.value)
+                raise Exception(
+                    "err.value does not have __notes__, something has gone "
+                    "deeply wrong in the internals"
+                )
+
             got = "\n".join(err.value.__notes__).strip() + "\n"
             assert got == expected.strip() + "\n"
 

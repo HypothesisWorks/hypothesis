@@ -42,15 +42,15 @@ REVEALED_TYPES = [
 NUMPY_REVEALED_TYPES = [
     (
         'arrays(dtype=np.dtype("int32"), shape=1)',
-        "ndarray[Any, dtype[signedinteger[_32Bit]]]",
+        "ndarray[tuple[int, ...], dtype[signedinteger[_32Bit]]]",
     ),
     (
         "arrays(dtype=np.dtype(int), shape=1)",
-        "ndarray[Any, dtype[signedinteger[Any]]]",
+        "ndarray[tuple[int, ...], dtype[Union[signedinteger[Union[_32Bit, _64Bit]], bool[bool]]]]",
     ),
     (
         "boolean_dtypes()",
-        "dtype[bool_]" if NP1 else "dtype[bool]",
+        "dtype[bool[bool]]",  # np.bool[builtins.bool]
     ),
     (
         "unsigned_integer_dtypes(sizes=8)",
@@ -110,7 +110,7 @@ NUMPY_REVEALED_TYPES = [
     ),
     (
         "floating_dtypes(sizes=64)",
-        "dtype[floating[_64Bit]]",
+        "dtype[float64]",
     ),
     (
         "floating_dtypes(sizes=128)",
@@ -130,7 +130,7 @@ NUMPY_REVEALED_TYPES = [
     ),
     (
         "complex_number_dtypes(sizes=128)",
-        "dtype[complexfloating[_64Bit, _64Bit]]",
+        "dtype[complex128]",
     ),
     (
         "complex_number_dtypes(sizes=256)",
@@ -146,14 +146,14 @@ NUMPY_REVEALED_TYPES = [
     ),
     (
         "integer_array_indices(shape=(2, 3))",
-        "tuple[ndarray[Any, dtype[signedinteger[Any]]], ...]",
+        "tuple[ndarray[tuple[int, ...], dtype[signedinteger[Any]]], ...]",
     ),
     (
         'integer_array_indices(shape=(2, 3), dtype=np.dtype("int32"))',
-        "tuple[ndarray[Any, dtype[signedinteger[_32Bit]]], ...]",
+        "tuple[ndarray[tuple[int, ...], dtype[signedinteger[_32Bit]]], ...]",
     ),
     (
         'integer_array_indices(shape=(2, 3), dtype=np.dtype("uint8"))',
-        "tuple[ndarray[Any, dtype[unsignedinteger[_8Bit]]], ...]",
+        "tuple[ndarray[tuple[int, ...], dtype[unsignedinteger[_8Bit]]], ...]",
     ),
 ]

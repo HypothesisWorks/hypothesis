@@ -9,11 +9,11 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import abc
-import binascii
 import json
 import os
 import struct
 import sys
+import tempfile
 import warnings
 import weakref
 from collections.abc import Iterable
@@ -31,7 +31,7 @@ from zipfile import BadZipFile, ZipFile
 
 from hypothesis.configuration import storage_directory
 from hypothesis.errors import HypothesisException, HypothesisWarning
-from hypothesis.internal.conjecture.data import IRType
+from hypothesis.internal.conjecture.choice import ChoiceT
 from hypothesis.utils.conventions import not_set
 
 __all__ = [
@@ -235,14 +235,19 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
             self._key_path(key).mkdir(exist_ok=True, parents=True)
             path = self._value_path(key, value)
             if not path.exists():
-                suffix = binascii.hexlify(os.urandom(16)).decode("ascii")
-                tmpname = path.with_suffix(f"{path.suffix}.{suffix}")
-                tmpname.write_bytes(value)
+                # to mimic an atomic write, create and write in a temporary
+                # directory, and only move to the final path after. This avoids
+                # any intermediate state where the file is created (and empty)
+                # but not yet written to.
+                fd, tmpname = tempfile.mkstemp()
+                tmppath = Path(tmpname)
+                os.write(fd, value)
+                os.close(fd)
                 try:
-                    tmpname.rename(path)
+                    tmppath.rename(path)
                 except OSError:  # pragma: no cover
-                    tmpname.unlink()
-                assert not tmpname.exists()
+                    tmppath.unlink()
+                assert not tmppath.exists()
         except OSError:  # pragma: no cover
             pass
 
@@ -723,7 +728,7 @@ class BackgroundWriteDatabase(ExampleDatabase):
         self._queue.put(("move", (src, dest, value)))
 
 
-def ir_to_bytes(ir: Iterable[IRType], /) -> bytes:
+def ir_to_bytes(ir: Iterable[ChoiceT], /) -> bytes:
     """Serialize a list of IR elements to a bytestring.  Inverts ir_from_bytes."""
     # We use a custom serialization format for this, which might seem crazy - but our
     # data is a flat sequence of elements, and standard tools like protobuf or msgpack
@@ -763,10 +768,10 @@ def ir_to_bytes(ir: Iterable[IRType], /) -> bytes:
     return b"".join(parts)
 
 
-def ir_from_bytes(buffer: bytes, /) -> list[IRType]:
+def ir_from_bytes(buffer: bytes, /) -> list[ChoiceT]:
     """Deserialize a bytestring to a list of IR elements. Inverts ir_to_bytes."""
     # See above for an explanation of the format.
-    parts: list[IRType] = []
+    parts: list[ChoiceT] = []
     idx = 0
     while idx < len(buffer):
         tag = buffer[idx] >> 5

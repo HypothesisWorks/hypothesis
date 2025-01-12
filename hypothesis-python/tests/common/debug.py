@@ -21,10 +21,6 @@ from tests.common.utils import no_shrink
 TIME_INCREMENT = 0.00001
 
 
-class Timeout(BaseException):
-    pass
-
-
 def minimal(definition, condition=lambda x: True, settings=None):
     from tests.conftest import in_shrinking_benchmark
 

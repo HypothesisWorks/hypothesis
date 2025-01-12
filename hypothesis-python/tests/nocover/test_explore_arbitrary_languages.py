@@ -26,6 +26,8 @@ from hypothesis import (
 from hypothesis.internal.conjecture.data import Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 
+from tests.conjecture.common import interesting_origin
+
 
 @attr.s()
 class Write:
@@ -89,7 +91,7 @@ def run_language_test_for(root, data, seed):
                     node = node.children.setdefault(c, data.draw(nodes))
         assert isinstance(node, Terminal)
         if node.status == Status.INTERESTING:
-            local_data.mark_interesting(node.payload)
+            local_data.mark_interesting(interesting_origin(node.payload))
         elif node.status == Status.INVALID:
             local_data.mark_invalid()
 

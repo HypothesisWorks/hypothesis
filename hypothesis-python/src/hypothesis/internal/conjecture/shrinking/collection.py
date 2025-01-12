@@ -14,13 +14,20 @@ from hypothesis.internal.conjecture.utils import identity
 
 
 class Collection(Shrinker):
-    def setup(self, *, ElementShrinker, to_order=identity, from_order=identity):
+    def setup(
+        self, *, ElementShrinker, min_size, to_order=identity, from_order=identity
+    ):
         self.ElementShrinker = ElementShrinker
         self.to_order = to_order
         self.from_order = from_order
+        self.min_size = min_size
 
     def make_immutable(self, value):
         return tuple(value)
+
+    def short_circuit(self):
+        zero = self.from_order(0)
+        return self.consider([zero] * self.min_size)
 
     def left_is_better(self, left, right):
         if len(left) < len(right):
@@ -38,6 +45,11 @@ class Collection(Shrinker):
         return False
 
     def run_step(self):
+        # try all-zero first; we already considered all-zero-and-smallest in
+        # short_circuit.
+        zero = self.from_order(0)
+        self.consider([zero] * len(self.current))
+
         # try deleting each element in turn, starting from the back
         # TODO_BETTER_SHRINK: adaptively delete here by deleting larger chunks at once
         # if early deletes succeed. use find_integer. turns O(n) into O(log(n))

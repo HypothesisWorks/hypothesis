@@ -465,7 +465,7 @@ class SearchStrategy(Generic[Ex]):
     def do_draw(self, data: ConjectureData) -> Ex:
         raise NotImplementedError(f"{type(self).__name__}.do_draw")
 
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
 
@@ -843,7 +843,7 @@ class MappedStrategy(SearchStrategy[Ex]):
                 try:
                     data.start_example(MAPPED_SEARCH_STRATEGY_DO_DRAW_LABEL)
                     x = data.draw(self.mapped_strategy)
-                    result = self.pack(x)  # type: ignore
+                    result = self.pack(x)
                     data.stop_example()
                     current_build_context().record_call(result, self.pack, [x], {})
                     return result

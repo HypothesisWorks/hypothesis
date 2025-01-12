@@ -37,7 +37,7 @@ from tests.common.utils import capture_out
 
 
 def bc():
-    return BuildContext(ConjectureData.for_buffer(b""))
+    return BuildContext(ConjectureData.for_choices([]))
 
 
 def test_cannot_cleanup_with_no_context():

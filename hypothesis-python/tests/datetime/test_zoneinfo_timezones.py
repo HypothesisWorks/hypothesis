@@ -56,6 +56,7 @@ def test_timezone_keys_argument_validation(kwargs):
         st.timezone_keys(**kwargs).validate()
 
 
+@pytest.mark.xfail(strict=False, reason="newly failing on GitHub Actions")
 @pytest.mark.skipif(platform.system() != "Linux", reason="platform-specific")
 def test_can_generate_prefixes_if_allowed_and_available():
     """

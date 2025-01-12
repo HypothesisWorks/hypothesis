@@ -9,7 +9,8 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
-from typing import Optional, Union
+from random import Random
+from typing import AbstractSet, Optional, Union
 
 import attr
 
@@ -20,20 +21,18 @@ from hypothesis.errors import (
     StopTest,
 )
 from hypothesis.internal import floats as flt
-from hypothesis.internal.conjecture.choice import choice_from_index
-from hypothesis.internal.conjecture.data import (
+from hypothesis.internal.conjecture.choice import (
     BooleanKWargs,
     BytesKWargs,
-    ConjectureData,
-    DataObserver,
+    ChoiceKwargsT,
+    ChoiceNameT,
+    ChoiceT,
     FloatKWargs,
     IntegerKWargs,
-    IRKWargsType,
-    IRType,
-    IRTypeName,
-    Status,
     StringKWargs,
+    choice_from_index,
 )
+from hypothesis.internal.conjecture.data import ConjectureData, DataObserver, Status
 from hypothesis.internal.escalation import InterestingOrigin
 from hypothesis.internal.floats import (
     count_between_floats,
@@ -55,7 +54,7 @@ def inconsistent_generation():
     )
 
 
-EMPTY: frozenset = frozenset()
+EMPTY: frozenset[int] = frozenset()
 
 
 @attr.s(slots=True)
@@ -87,7 +86,7 @@ class Branch:
     children = attr.ib(repr=False)
 
     @property
-    def max_children(self):
+    def max_children(self) -> int:
         max_children = compute_max_children(self.ir_type, self.kwargs)
         assert max_children > 0
         return max_children
@@ -367,15 +366,15 @@ class TreeNode:
 
     # The kwargs, value, and ir_types of the nodes stored here. These always
     # have the same length. The values at index i belong to node i.
-    kwargs: list[IRKWargsType] = attr.ib(factory=list)
-    values: list[IRType] = attr.ib(factory=list)
-    ir_types: list[IRTypeName] = attr.ib(factory=list)
+    kwargs: list[ChoiceKwargsT] = attr.ib(factory=list)
+    values: list[ChoiceT] = attr.ib(factory=list)
+    ir_types: list[ChoiceNameT] = attr.ib(factory=list)
 
     # The indices of nodes which had forced values.
     #
     # Stored as None if no indices have been forced, purely for space saving
     # reasons (we force quite rarely).
-    __forced: Optional[set] = attr.ib(default=None, init=False)
+    __forced: Optional[set[int]] = attr.ib(default=None, init=False)
 
     # What happens next after drawing these nodes. (conceptually, "what is the
     # child/children of the last node stored here").
@@ -396,12 +395,12 @@ class TreeNode:
     is_exhausted: bool = attr.ib(default=False, init=False)
 
     @property
-    def forced(self):
+    def forced(self) -> AbstractSet[int]:
         if not self.__forced:
             return EMPTY
         return self.__forced
 
-    def mark_forced(self, i):
+    def mark_forced(self, i: int) -> None:
         """
         Note that the draw at node i was forced.
         """
@@ -410,7 +409,7 @@ class TreeNode:
             self.__forced = set()
         self.__forced.add(i)
 
-    def split_at(self, i):
+    def split_at(self, i: int) -> None:
         """
         Splits the tree so that it can incorporate a decision at the draw call
         corresponding to the node at position i.
@@ -657,14 +656,14 @@ class DataTree:
         self._children_cache = {}
 
     @property
-    def is_exhausted(self):
+    def is_exhausted(self) -> bool:
         """
         Returns True if every node is exhausted, and therefore the tree has
         been fully explored.
         """
         return self.root.is_exhausted
 
-    def generate_novel_prefix(self, random):
+    def generate_novel_prefix(self, random: Random) -> tuple[ChoiceT, ...]:
         """Generate a short random string that (after rewriting) is not
         a prefix of any buffer previously added to the tree.
 
@@ -672,15 +671,13 @@ class DataTree:
         for it to be uniform at random, but previous attempts to do that
         have proven too expensive.
         """
-        from hypothesis.internal.conjecture.data import IRNode
-
         assert not self.is_exhausted
-        novel_prefix = []
+        prefix = []
 
-        def append_node(node):
-            if node.ir_type == "float":
-                node.value = int_to_float(node.value)
-            novel_prefix.append(node)
+        def append_choice(ir_type, choice):
+            if ir_type == "float":
+                choice = int_to_float(choice)
+            prefix.append(choice)
 
         current_node = self.root
         while True:
@@ -689,17 +686,13 @@ class DataTree:
                 zip(current_node.ir_types, current_node.kwargs, current_node.values)
             ):
                 if i in current_node.forced:
-                    append_node(
-                        IRNode(
-                            ir_type=ir_type, value=value, kwargs=kwargs, was_forced=True
-                        )
-                    )
+                    append_choice(ir_type, value)
                 else:
                     attempts = 0
                     while True:
                         if attempts <= 10:
                             try:
-                                node = self._draw(ir_type, kwargs, random=random)
+                                node_value = self._draw(ir_type, kwargs, random=random)
                             except StopTest:  # pragma: no cover
                                 # it is possible that drawing from a fresh data can
                                 # overrun BUFFER_SIZE, due to eg unlucky rejection sampling
@@ -707,24 +700,24 @@ class DataTree:
                                 attempts += 1
                                 continue
                         else:
-                            node = self._draw_from_cache(
+                            node_value = self._draw_from_cache(
                                 ir_type, kwargs, key=id(current_node), random=random
                             )
 
-                        if node.value != value:
-                            append_node(node)
+                        if node_value != value:
+                            append_choice(ir_type, node_value)
                             break
                         attempts += 1
                         self._reject_child(
-                            ir_type, kwargs, child=node.value, key=id(current_node)
+                            ir_type, kwargs, child=node_value, key=id(current_node)
                         )
                     # We've now found a value that is allowed to
                     # vary, so what follows is not fixed.
-                    return tuple(novel_prefix)
+                    return tuple(prefix)
             else:
                 assert not isinstance(current_node.transition, (Conclusion, Killed))
                 if current_node.transition is None:
-                    return tuple(novel_prefix)
+                    return tuple(prefix)
                 branch = current_node.transition
                 assert isinstance(branch, Branch)
 
@@ -732,28 +725,28 @@ class DataTree:
                 while True:
                     if attempts <= 10:
                         try:
-                            node = self._draw(
+                            node_value = self._draw(
                                 branch.ir_type, branch.kwargs, random=random
                             )
                         except StopTest:  # pragma: no cover
                             attempts += 1
                             continue
                     else:
-                        node = self._draw_from_cache(
+                        node_value = self._draw_from_cache(
                             branch.ir_type, branch.kwargs, key=id(branch), random=random
                         )
                     try:
-                        child = branch.children[node.value]
+                        child = branch.children[node_value]
                     except KeyError:
-                        append_node(node)
-                        return tuple(novel_prefix)
+                        append_choice(branch.ir_type, node_value)
+                        return tuple(prefix)
                     if not child.is_exhausted:
-                        append_node(node)
+                        append_choice(branch.ir_type, node_value)
                         current_node = child
                         break
                     attempts += 1
                     self._reject_child(
-                        branch.ir_type, branch.kwargs, child=node.value, key=id(branch)
+                        branch.ir_type, branch.kwargs, child=node_value, key=id(branch)
                     )
 
                     # We don't expect this assertion to ever fire, but coverage
@@ -765,17 +758,17 @@ class DataTree:
                         or any(not v.is_exhausted for v in branch.children.values())
                     )
 
-    def rewrite(self, nodes):
+    def rewrite(self, choices):
         """Use previously seen ConjectureData objects to return a tuple of
         the rewritten choice sequence and the status we would get from running
         that with the test function. If the status cannot be predicted
         from the existing values it will be None."""
-        data = ConjectureData.for_ir_tree(nodes)
+        data = ConjectureData.for_choices(choices)
         try:
             self.simulate_test_function(data)
-            return (data.ir_nodes, data.status)
+            return (data.choices, data.status)
         except PreviouslyUnseenBehaviour:
-            return (nodes, None)
+            return (choices, None)
 
     def simulate_test_function(self, data):
         """Run a simulated version of the test function recorded by
@@ -827,9 +820,9 @@ class DataTree:
         return TreeRecordingObserver(self)
 
     def _draw(self, ir_type, kwargs, *, random):
-        from hypothesis.internal.conjecture.data import IRNode, ir_to_buffer
+        from hypothesis.internal.conjecture.data import draw_choice
 
-        (value, buf) = ir_to_buffer(ir_type, kwargs, random=random)
+        value = draw_choice(ir_type, kwargs, random=random)
         # using floats as keys into branch.children breaks things, because
         # e.g. hash(0.0) == hash(-0.0) would collide as keys when they are
         # in fact distinct child branches.
@@ -840,7 +833,7 @@ class DataTree:
         # buffer), and converting between the two forms as appropriate.
         if ir_type == "float":
             value = float_to_int(value)
-        return IRNode(ir_type=ir_type, value=value, kwargs=kwargs, was_forced=False)
+        return value
 
     def _get_children_cache(self, ir_type, kwargs, *, key):
         # cache the state of the children generator per node/branch (passed as
@@ -861,8 +854,6 @@ class DataTree:
         return self._children_cache[key]
 
     def _draw_from_cache(self, ir_type, kwargs, *, key, random):
-        from hypothesis.internal.conjecture.data import IRNode
-
         (generator, children, rejected) = self._get_children_cache(
             ir_type, kwargs, key=key
         )
@@ -882,8 +873,7 @@ class DataTree:
                 if len(children) >= 100:
                     break
 
-        value = random.choice(children)
-        return IRNode(ir_type=ir_type, value=value, kwargs=kwargs, was_forced=True)
+        return random.choice(children)
 
     def _reject_child(self, ir_type, kwargs, *, child, key):
         (_generator, children, rejected) = self._get_children_cache(
@@ -948,11 +938,11 @@ class TreeRecordingObserver(DataObserver):
 
     def draw_value(
         self,
-        ir_type: IRTypeName,
-        value: IRType,
+        ir_type: ChoiceNameT,
+        value: ChoiceT,
         *,
         was_forced: bool,
-        kwargs: IRKWargsType,
+        kwargs: ChoiceKwargsT,
     ) -> None:
         i = self.__index_in_current_node
         self.__index_in_current_node += 1
@@ -1025,7 +1015,7 @@ class TreeRecordingObserver(DataObserver):
         if self.__trail[-1] is not self.__current_node:
             self.__trail.append(self.__current_node)
 
-    def kill_branch(self):
+    def kill_branch(self) -> None:
         """Mark this part of the tree as not worth re-exploring."""
         if self.killed:
             return
@@ -1046,7 +1036,9 @@ class TreeRecordingObserver(DataObserver):
         self.__index_in_current_node = 0
         self.__trail.append(self.__current_node)
 
-    def conclude_test(self, status, interesting_origin):
+    def conclude_test(
+        self, status: Status, interesting_origin: Optional[InterestingOrigin]
+    ) -> None:
         """Says that ``status`` occurred at node ``node``. This updates the
         node if necessary and checks for consistency."""
         if status == Status.OVERRUN:
@@ -1085,7 +1077,7 @@ class TreeRecordingObserver(DataObserver):
         if not self.killed:
             self.__update_exhausted()
 
-    def __update_exhausted(self):
+    def __update_exhausted(self) -> None:
         for t in reversed(self.__trail):
             # Any node we've traversed might have now become exhausted.
             # We check from the right. As soon as we hit a node that

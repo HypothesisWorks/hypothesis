@@ -71,6 +71,7 @@ def get_mypy_analysed_type(fname):
             "SearchStrategy",
         )
         .replace("numpy._typing.", "")
+        .replace("_nbit_base.", "")
         .replace("numpy.", "")
         .replace("List[", "list[")
         .replace("Dict[", "dict[")

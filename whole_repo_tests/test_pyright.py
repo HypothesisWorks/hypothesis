@@ -366,7 +366,16 @@ def get_pyright_analysed_type(fname):
     print(out, rest)
     assert not rest
     assert out["severity"] == "information"
-    return re.fullmatch(r'Type of ".+" is "(.+)"', out["message"]).group(1)
+    return (
+        re.fullmatch(r'Type of ".+" is "(.+)"', out["message"])
+        .group(1)
+        .replace("builtins.", "")
+        .replace("numpy.", "")
+        .replace(
+            "signedinteger[_32Bit | _64Bit] | bool[bool]",
+            "Union[signedinteger[Union[_32Bit, _64Bit]], bool[bool]]",
+        )
+    )
 
 
 def _write_config(config_dir: Path, data: dict[str, Any] | None = None):

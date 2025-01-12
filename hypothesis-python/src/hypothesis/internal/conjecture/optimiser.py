@@ -8,17 +8,16 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from typing import Union
+from typing import Optional, Union
 
 from hypothesis.internal.compat import int_from_bytes, int_to_bytes
+from hypothesis.internal.conjecture.choice import ChoiceT, choice_permitted
 from hypothesis.internal.conjecture.data import (
     ConjectureResult,
-    IRType,
     Status,
     _Overrun,
     bits_to_bytes,
-    ir_size_nodes,
-    ir_value_permitted,
+    ir_size,
 )
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE_IR, ConjectureRunner
 from hypothesis.internal.conjecture.junkdrawer import find_integer
@@ -98,7 +97,7 @@ class Optimiser:
 
         nodes_examined = set()
 
-        prev = None
+        prev: Optional[ConjectureResult] = None
         i = len(self.current_data.ir_nodes) - 1
         while i >= 0 and self.improvements <= self.max_improvements:
             if prev is not self.current_data:
@@ -137,20 +136,20 @@ class Optimiser:
                 if node.was_forced:
                     return False  # pragma: no cover
 
-                new_value: IRType
+                new_choice: ChoiceT
                 if node.ir_type in {"integer", "float"}:
                     assert isinstance(node.value, (int, float))
-                    new_value = node.value + k
+                    new_choice = node.value + k
                 elif node.ir_type == "boolean":
                     assert isinstance(node.value, bool)
                     if abs(k) > 1:
                         return False
                     if k == -1:
-                        new_value = False
+                        new_choice = False
                     if k == 1:
-                        new_value = True
+                        new_choice = True
                     if k == 0:  # pragma: no cover
-                        new_value = node.value
+                        new_choice = node.value
                 else:
                     assert node.ir_type == "bytes"
                     assert isinstance(node.value, bytes)
@@ -162,21 +161,21 @@ class Optimiser:
                     # allow adding k to increase the number of bytes. we don't want
                     # to decrease so that b"01" doesn't turn into b"1".
                     size = max(len(node.value), bits_to_bytes(v.bit_length()))
-                    new_value = int_to_bytes(v, size)
+                    new_choice = int_to_bytes(v, size)
 
-                if not ir_value_permitted(new_value, node.ir_type, node.kwargs):
+                if not choice_permitted(new_choice, node.kwargs):
                     return False
 
                 for _ in range(3):
-                    nodes = self.current_data.ir_nodes
-                    attempt_nodes = (
-                        nodes[: node.index]
-                        + (node.copy(with_value=new_value),)
-                        + nodes[node.index + 1 :]
+                    choices = self.current_data.choices
+                    attempt_choices = (
+                        choices[: node.index]
+                        + (new_choice,)
+                        + choices[node.index + 1 :]
                     )
                     attempt = self.engine.cached_test_function_ir(
-                        attempt_nodes,
-                        extend=BUFFER_SIZE_IR - ir_size_nodes(attempt_nodes),
+                        attempt_choices,
+                        extend=BUFFER_SIZE_IR - ir_size(attempt_choices),
                     )
 
                     if self.consider_new_data(attempt):
@@ -197,14 +196,14 @@ class Optimiser:
                         ex_attempt = attempt.examples[j]
                         if ex.ir_length == ex_attempt.ir_length:
                             continue  # pragma: no cover
-                        replacement = attempt.ir_nodes[
+                        replacement = attempt.choices[
                             ex_attempt.ir_start : ex_attempt.ir_end
                         ]
                         if self.consider_new_data(
                             self.engine.cached_test_function_ir(
-                                nodes[: node.index]
+                                choices[: node.index]
                                 + replacement
-                                + self.current_data.ir_nodes[ex.ir_end :]
+                                + self.current_data.choices[ex.ir_end :]
                             )
                         ):
                             return True
