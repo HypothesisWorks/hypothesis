@@ -1125,9 +1125,14 @@ class StateForActualGivenExecution:
             # of treating it as a test failure.
             if isinstance(e, BaseExceptionGroup) and len(e.exceptions) == 1:
                 # When a naked exception is implicitly wrapped in an ExceptionGroup
-                # due to a re-raising "except*", the ExceptionGroup is constructed
-                # in the caller stack frame (see #4183).
-                tb = e.exceptions[0].__traceback__
+                # due to a re-raising "except*", the ExceptionGroup is constructed in
+                # the caller's stack frame (see #4183). This workaround is specifically
+                # for implicit wrapping of naked exceptions by "except*", since explicit
+                # raising of ExceptionGroup gets the proper traceback in the first place
+                # - there's no need to handle hierarchical groups here, at least if no
+                # such implicit wrapping happens inside hypothesis code (we only care
+                # about the hypothesis-or-not distinction).
+                tb = e.exceptions[0].__traceback__ or e.__traceback__
             else:
                 tb = e.__traceback__
             filepath = traceback.extract_tb(tb)[-1][0]
