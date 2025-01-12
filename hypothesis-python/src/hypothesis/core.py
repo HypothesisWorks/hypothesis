@@ -1056,15 +1056,19 @@ class StateForActualGivenExecution:
     def _flaky_replay_to_failure(
         self, err: FlakyReplay, context: BaseException
     ) -> FlakyFailure:
+        # Note that in the mark_interesting case, _context_ itself
+        # is part of err._interesting_examples - but it's not in
+        # _runner.interesting_examples - this is fine, as the context
+        # (i.e., immediate exception) is appended.
         interesting_examples = [
             self._runner.interesting_examples[io]
             for io in err._interesting_origins
-            if io
+            if io in self._runner.interesting_examples
         ]
         exceptions = [
             ie.extra_information._expected_exception for ie in interesting_examples
         ]
-        exceptions.append(context)  # the offending assume (or whatever)
+        exceptions.append(context)  # the immediate exception
         return FlakyFailure(err.reason, exceptions)
 
     def _execute_once_for_engine(self, data: ConjectureData) -> None:
@@ -1119,7 +1123,14 @@ class StateForActualGivenExecution:
             # If an unhandled (i.e., non-Hypothesis) error was raised by
             # Hypothesis-internal code, re-raise it as a fatal error instead
             # of treating it as a test failure.
-            filepath = traceback.extract_tb(e.__traceback__)[-1][0]
+            if isinstance(e, BaseExceptionGroup) and len(e.exceptions) == 1:
+                # When a naked exception is implicitly wrapped in an ExceptionGroup
+                # due to a re-raising "except*", the ExceptionGroup is constructed
+                # in the caller stack frame (see #4183).
+                tb = e.exceptions[0].__traceback__
+            else:
+                tb = e.__traceback__
+            filepath = traceback.extract_tb(tb)[-1][0]
             if is_hypothesis_file(filepath) and not isinstance(e, HypothesisException):
                 raise
 
@@ -1147,7 +1158,11 @@ class StateForActualGivenExecution:
                 if interesting_origin[0] == DeadlineExceeded:
                     self.failed_due_to_deadline = True
                     self.explain_traces.clear()
-                data.mark_interesting(interesting_origin)
+                try:
+                    data.mark_interesting(interesting_origin)
+                except FlakyReplay as err:
+                    raise self._flaky_replay_to_failure(err, e) from None
+
         finally:
             # Conditional here so we can save some time constructing the payload; in
             # other cases (without coverage) it's cheap enough to do that regardless.
