@@ -34,7 +34,7 @@ iniconfig==2.0.0
     # via pytest
 lark==1.2.2
     # via -r requirements/coverage.in
-libcst==1.5.1
+libcst==1.6.0
     # via -r requirements/coverage.in
 mypy-extensions==1.0.0
     # via black
