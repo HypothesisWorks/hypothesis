@@ -1346,7 +1346,7 @@ class Shrinker:
             # (but didn't).
             return node.ir_type in {"integer", "float"} and not (
                 node.ir_type == "float"
-                and (math.isnan(node.value) or abs(node.value) > MAX_PRECISE_INTEGER)
+                and (math.isnan(node.value) or abs(node.value) >= MAX_PRECISE_INTEGER)
             )
 
         node1 = chooser.choose(
@@ -1372,18 +1372,23 @@ class Shrinker:
                 return False
 
             try:
-                node_value = m - k
-                next_node_value = n + k
+                v1 = m - k
+                v2 = n + k
             except OverflowError:  # pragma: no cover
                 # if n or m is a float and k is over sys.float_info.max, coercing
                 # k to a float will overflow.
                 return False
 
+            # if we've increased node2 to the point that we're past max precision,
+            # give up - things have become too unstable.
+            if node1.ir_type == "float" and v2 >= MAX_PRECISE_INTEGER:
+                return False
+
             return self.consider_new_tree(
                 self.nodes[: node1.index]
-                + (node1.copy(with_value=node_value),)
+                + (node1.copy(with_value=v1),)
                 + self.nodes[node1.index + 1 : node2.index]
-                + (node2.copy(with_value=next_node_value),)
+                + (node2.copy(with_value=v2),)
                 + self.nodes[node2.index + 1 :]
             )
 
