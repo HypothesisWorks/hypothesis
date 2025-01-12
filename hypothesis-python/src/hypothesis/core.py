@@ -81,7 +81,6 @@ from hypothesis.internal.conjecture.data import (
     ConjectureData,
     PrimitiveProvider,
     Status,
-    ir_to_buffer,
 )
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE, ConjectureRunner
 from hypothesis.internal.conjecture.junkdrawer import (

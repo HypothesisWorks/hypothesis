@@ -10,12 +10,12 @@
 
 from hypothesis import example, given, strategies as st
 from hypothesis.errors import StopTest
-from hypothesis.internal.conjecture.choice import choice_from_index
-from hypothesis.internal.conjecture.data import (
-    ConjectureData,
-    ir_value_equal,
-    ir_value_permitted,
+from hypothesis.internal.conjecture.choice import (
+    choice_equal,
+    choice_from_index,
+    choice_permitted,
 )
+from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE
 from hypothesis.internal.conjecture.providers import BytestringProvider
 
@@ -58,9 +58,9 @@ def test_provider_contract_bytestring(bytestring, ir_type_and_kwargs):
             and kwargs["shrink_towards"] is not None
             and kwargs["shrink_towards"].bit_length() > 100
         )
-        assert ir_value_permitted(value, ir_type, kwargs) or integer_edge_case
+        assert choice_permitted(value, kwargs) or integer_edge_case
 
         kwargs["forced"] = choice_from_index(0, ir_type, kwargs)
-        assert ir_value_equal(
-            ir_type, kwargs["forced"], getattr(data, f"draw_{ir_type}")(**kwargs)
+        assert choice_equal(
+            kwargs["forced"], getattr(data, f"draw_{ir_type}")(**kwargs)
         )

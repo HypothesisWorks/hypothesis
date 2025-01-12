@@ -66,9 +66,10 @@ class BytestringProvider(PrimitiveProvider):
             return True
 
         bits = math.ceil(-math.log2(min(p, 1 - p)))
-        # we treat probabilities of under 2^-64 as effectively zero.
-        if bits > 64:
-            return False
+        # cap boolean draws at 8 bits so they are a constant size of one byte.
+        # If a probability requires more than 8 bits to precisely represent,
+        # the result will be slightly biased, but not badly.
+        bits = min(bits, 8)
 
         size = 2**bits
         falsey = math.floor(size * (1 - p))

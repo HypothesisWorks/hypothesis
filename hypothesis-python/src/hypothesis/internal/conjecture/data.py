@@ -1624,9 +1624,6 @@ class ConjectureData:
         self.__prefix = bytes(prefix)
         self.__random = random
 
-        if ir_prefix is None:
-            assert random is not None or max_length <= len(prefix)
-
         self.buffer: "Union[bytes, bytearray]" = bytearray()
         self.index = 0
         self.length_ir = 0
@@ -1650,7 +1647,7 @@ class ConjectureData:
             provider(self, **provider_kw) if isinstance(provider, type) else provider
         )
         assert isinstance(self.provider, PrimitiveProvider)
-        if ir_tree_prefix is None and isinstance(self.provider, HypothesisProvider):
+        if ir_prefix is None and isinstance(self.provider, HypothesisProvider):
             assert random is not None or max_length <= len(prefix)
 
         self.__result: "Optional[ConjectureResult]" = None
