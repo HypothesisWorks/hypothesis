@@ -25,7 +25,12 @@ from hypothesis import (
     settings,
     strategies as st,
 )
-from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
+from hypothesis.database import (
+    ExampleDatabase,
+    InMemoryExampleDatabase,
+    keyed_ir_from_bytes,
+    keyed_ir_to_bytes,
+)
 from hypothesis.errors import FailedHealthCheck, FlakyStrategyDefinition
 from hypothesis.internal.compat import PYPY, bit_count, int_from_bytes
 from hypothesis.internal.conjecture import engine as engine_module
@@ -52,6 +57,7 @@ from tests.conjecture.common import (
     TEST_SETTINGS,
     buffer_size_limit,
     interesting_origin,
+    ir,
     ir_nodes,
     run_to_nodes,
     shrinking_from,
@@ -83,10 +89,10 @@ def test_can_load_data_from_a_corpus():
     key = b"hi there"
     db = ExampleDatabase()
     value = b"=\xc3\xe4l\x81\xe1\xc2H\xc9\xfb\x1a\xb6bM\xa8\x7f"
-    db.save(key, value)
+    db.save(key, keyed_ir_to_bytes(ir(value)))
 
     def f(data):
-        if data.draw_bytes(len(value), len(value)) == value:
+        if data.draw_bytes() == value:
             data.mark_interesting()
 
     runner = ConjectureRunner(f, settings=settings(database=db), database_key=key)
@@ -314,7 +320,7 @@ def test_reuse_phase_runs_for_max_examples_if_generation_is_disabled():
     with deterministic_PRNG():
         db = InMemoryExampleDatabase()
         for i in range(256):
-            db.save(b"key", bytes([i]))
+            db.save(b"key", keyed_ir_to_bytes(ir(i)))
         seen = set()
 
         def test(data):
@@ -379,11 +385,9 @@ def test_does_not_save_on_interrupt():
         raise KeyboardInterrupt
 
     db = InMemoryExampleDatabase()
-
     runner = ConjectureRunner(
         interrupts, settings=settings(database=db), database_key=b"key"
     )
-
     with pytest.raises(KeyboardInterrupt):
         runner.run()
     assert not db.data
@@ -575,7 +579,7 @@ def test_clears_out_its_database_on_shrinking(
     db = InMemoryExampleDatabase()
 
     def f(data):
-        if data.draw_integer(0, 2**8 - 1) >= 127:
+        if data.draw_integer() >= 127:
             data.mark_interesting()
 
     runner = ConjectureRunner(
@@ -587,11 +591,11 @@ def test_clears_out_its_database_on_shrinking(
 
     for n in range(256):
         if n != 127 or not skip_target:
-            db.save(runner.secondary_key, bytes([n]))
+            db.save(runner.secondary_key, keyed_ir_to_bytes(ir(n)))
     runner.run()
     assert len(runner.interesting_examples) == 1
     for b in db.fetch(runner.secondary_key):
-        assert b[0] >= 127
+        assert keyed_ir_from_bytes(b)[1][0] >= 127
     assert len(list(db.fetch(runner.database_key))) == 1
 
 
@@ -751,7 +755,7 @@ def test_database_clears_secondary_key():
     database = InMemoryExampleDatabase()
 
     def f(data):
-        if data.draw_integer(0, 2**8 - 1) == 10:
+        if data.draw_integer() == 10:
             data.mark_interesting()
         else:
             data.mark_invalid()
@@ -765,7 +769,7 @@ def test_database_clears_secondary_key():
     )
 
     for i in range(10):
-        database.save(runner.secondary_key, bytes([i]))
+        database.save(runner.secondary_key, keyed_ir_to_bytes(ir(i)))
 
     runner.cached_test_function_ir((10,))
     assert runner.interesting_examples
@@ -784,7 +788,7 @@ def test_database_uses_values_from_secondary_key():
     database = InMemoryExampleDatabase()
 
     def f(data):
-        if data.draw_integer(0, 2**8 - 1) >= 5:
+        if data.draw_integer() >= 5:
             data.mark_interesting()
         else:
             data.mark_invalid()
@@ -797,7 +801,7 @@ def test_database_uses_values_from_secondary_key():
         database_key=key,
     )
     for i in range(10):
-        database.save(runner.secondary_key, bytes([i]))
+        database.save(runner.secondary_key, keyed_ir_to_bytes(ir(i)))
 
     runner.cached_test_function_ir((10,))
     assert runner.interesting_examples
@@ -807,9 +811,9 @@ def test_database_uses_values_from_secondary_key():
     runner.clear_secondary_key()
 
     assert len(set(database.fetch(key))) == 1
-    assert set(map(int_from_bytes, database.fetch(runner.secondary_key))) == set(
-        range(6, 11)
-    )
+    assert {
+        keyed_ir_from_bytes(b)[1][0] for b in database.fetch(runner.secondary_key)
+    } == set(range(6, 11))
 
     (v,) = runner.interesting_examples.values()
     assert v.choices == (5,)
@@ -1599,7 +1603,7 @@ def test_simulate_to_evicted_data(monkeypatch):
 
     runner = ConjectureRunner(test)
     runner.cached_test_function_ir([0])
-    # cache size is 1 so this evicts node_0
+    # cache size is 1 so this evicts [0]
     runner.cached_test_function_ir([1])
     assert runner.call_count == 2
 
@@ -1639,12 +1643,12 @@ def test_does_not_shrink_if_replaying_from_database():
             data.mark_interesting()
 
     runner = ConjectureRunner(f, settings=settings(database=db), database_key=key)
-    b = bytes([123])
-    runner.save_buffer(b)
+    choices = (123,)
+    runner.save_choices(ir(*choices))
     runner.shrink_interesting_examples = None
     runner.run()
     (last_data,) = runner.interesting_examples.values()
-    assert last_data.buffer == b
+    assert last_data.choices == choices
 
 
 def test_does_shrink_if_replaying_inexact_from_database():
@@ -1656,11 +1660,10 @@ def test_does_shrink_if_replaying_inexact_from_database():
         data.mark_interesting()
 
     runner = ConjectureRunner(f, settings=settings(database=db), database_key=key)
-    b = bytes([123, 2])
-    runner.save_buffer(b)
+    runner.save_choices(ir(123, 2))
     runner.run()
     (last_data,) = runner.interesting_examples.values()
-    assert last_data.buffer == bytes([0])
+    assert last_data.choices == (0,)
 
 
 def test_stops_if_hits_interesting_early_and_only_want_one_bug():
@@ -1675,7 +1678,7 @@ def test_stops_if_hits_interesting_early_and_only_want_one_bug():
         f, settings=settings(database=db, report_multiple_bugs=False), database_key=key
     )
     for i in range(256):
-        runner.save_buffer(bytes([i]))
+        runner.save_choices(ir(i))
     runner.run()
     assert runner.call_count == 1
 
@@ -1694,6 +1697,9 @@ def test_skips_secondary_if_interesting_is_found():
         database_key=key,
     )
     for i in range(256):
-        db.save(runner.database_key if i < 10 else runner.secondary_key, bytes([i]))
+        db.save(
+            runner.database_key if i < 10 else runner.secondary_key,
+            keyed_ir_to_bytes(ir(i)),
+        )
     runner.reuse_existing_examples()
     assert runner.call_count == 10

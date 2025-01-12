@@ -50,7 +50,7 @@ from hypothesis._settings import (
     settings as Settings,
 )
 from hypothesis.control import BuildContext
-from hypothesis.database import ir_from_bytes, ir_to_bytes
+from hypothesis.database import ir_from_bytes, ir_to_bytes, keyed_ir_to_bytes
 from hypothesis.errors import (
     BackendCannotProceed,
     DeadlineExceeded,
@@ -89,7 +89,7 @@ from hypothesis.internal.conjecture.junkdrawer import (
     gc_cumulative_time,
 )
 from hypothesis.internal.conjecture.providers import BytestringProvider
-from hypothesis.internal.conjecture.shrinker import sort_key, sort_key_ir
+from hypothesis.internal.conjecture.shrinker import sort_key_ir
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.internal.escalation import (
     InterestingOrigin,
@@ -354,9 +354,8 @@ def decode_failure(blob: bytes) -> Sequence[ChoiceT]:
             f"Could not decode blob {blob!r}: Invalid start byte {prefix!r}"
         )
 
-    try:
-        choices = ir_from_bytes(decoded)
-    except Exception:
+    choices = ir_from_bytes(decoded)
+    if choices is None:
         raise InvalidArgument(f"Invalid serialized choice sequence for blob {blob!r}")
 
     return choices
@@ -1861,16 +1860,15 @@ def given(
                 except (StopTest, UnsatisfiedAssumption):
                     return None
                 except BaseException:
-                    buffer = b"".join(
-                        ir_to_buffer(n.ir_type, n.kwargs, forced=n.value)[1]
-                        for n in data.ir_nodes
-                    )
                     known = minimal_failures.get(data.interesting_origin)
                     if settings.database is not None and (
-                        known is None or sort_key(buffer) <= sort_key(known)
+                        known is None
+                        or sort_key_ir(data.ir_nodes) <= sort_key_ir(known)
                     ):
-                        settings.database.save(database_key, buffer)
-                        minimal_failures[data.interesting_origin] = buffer
+                        settings.database.save(
+                            database_key, keyed_ir_to_bytes(data.ir_nodes)
+                        )
+                        minimal_failures[data.interesting_origin] = data.ir_nodes
                     raise
                 assert isinstance(data.provider, BytestringProvider)
                 return bytes(data.provider.drawn)
