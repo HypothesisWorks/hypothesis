@@ -41,6 +41,50 @@ def test_fails_only_once_is_flaky():
     assert isinstance(exceptions[0], Nope)
 
 
+def test_fails_differently_is_flaky():
+    call_count = 0
+
+    class DifferentNope(Exception):
+        pass
+
+    @given(integers())
+    @settings(database=None)
+    def rude(x):
+        nonlocal call_count
+        if x == 0:
+            call_count += 1
+            if call_count > 1:
+                raise Nope
+            else:
+                raise DifferentNope
+
+    with pytest.raises(FlakyFailure, match="Inconsistent results from replaying") as e:
+        rude()
+    exceptions = e.value.exceptions
+    assert set(map(type, exceptions)) == set([Nope, DifferentNope])
+
+
+def test_exceptiongroup_wrapped_naked_exception_is_flaky():
+    first_call = True
+
+    @given(integers())
+    def rude(x):
+        nonlocal first_call
+        if first_call:
+            first_call = False
+            try:
+                raise Nope
+            except* Nope:
+                raise
+
+    with pytest.raises(FlakyFailure, match="Falsified on the first call but") as e:
+        rude()
+    exceptions = e.value.exceptions
+    assert set(map(type, exceptions)) == set([ExceptionGroup])
+    assert set(map(type, exceptions[0].exceptions)) == set([Nope])
+
+
+
 def test_gives_flaky_error_if_assumption_is_flaky():
     seen = set()
 
