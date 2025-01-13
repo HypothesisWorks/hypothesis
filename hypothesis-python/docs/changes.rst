@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.123.16:
+
+---------------------
+6.123.16 - 2025-01-13
+---------------------
+
+Improves an edge case in one of our integer and float shrinking passes.
+
 .. _v6.123.15:
 
 ---------------------
