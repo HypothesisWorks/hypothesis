@@ -8,11 +8,14 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import sys
+
 import pytest
 
 from hypothesis import HealthCheck, Verbosity, assume, example, given, reject, settings
 from hypothesis.core import StateForActualGivenExecution
 from hypothesis.errors import Flaky, FlakyFailure, Unsatisfiable, UnsatisfiedAssumption
+from hypothesis.internal.compat import ExceptionGroup
 from hypothesis.internal.conjecture.engine import MIN_TEST_CALLS
 from hypothesis.internal.scrutineer import Tracer
 from hypothesis.strategies import booleans, composite, integers, lists, random_module
@@ -39,6 +42,55 @@ def test_fails_only_once_is_flaky():
     exceptions = e.value.exceptions
     assert len(exceptions) == 1
     assert isinstance(exceptions[0], Nope)
+
+
+def test_fails_differently_is_flaky():
+    call_count = 0
+
+    class DifferentNope(Exception):
+        pass
+
+    @given(integers())
+    @settings(database=None)
+    def rude(x):
+        nonlocal call_count
+        if x == 0:
+            call_count += 1
+            if call_count > 1:
+                raise Nope
+            else:
+                raise DifferentNope
+
+    with pytest.raises(FlakyFailure, match="Inconsistent results from replaying") as e:
+        rude()
+    exceptions = e.value.exceptions
+    assert len(exceptions) == 2
+    assert set(map(type, exceptions)) == {Nope, DifferentNope}
+
+
+@pytest.mark.skipif(sys.version_info < (3, 11), reason="except* syntax")
+def test_exceptiongroup_wrapped_naked_exception_is_flaky():
+
+    # Defer parsing until runtime, as "except*" is syntax error pre 3.11
+    rude_def = """
+first_call = True
+def rude_fn(x):
+    global first_call
+    if first_call:
+        first_call = False
+        try:
+            raise Nope
+        except* Nope:
+            raise
+    """
+    exec(rude_def, globals())
+    rude = given(integers())(rude_fn)  # noqa: F821 # defined by exec()
+
+    with pytest.raises(FlakyFailure, match="Falsified on the first call but") as e:
+        rude()
+    exceptions = e.value.exceptions
+    assert list(map(type, exceptions)) == [ExceptionGroup]
+    assert list(map(type, exceptions[0].exceptions)) == [Nope]
 
 
 def test_gives_flaky_error_if_assumption_is_flaky():
