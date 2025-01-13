@@ -505,7 +505,9 @@ class BundleReferenceStrategy(SampledFromStrategy[Ex]):
         assert isinstance(idx, int)
         reference = self.bundle[idx]
         value = self.get_transformed_value(reference)
-        return idx if value is not filter_not_satisfied else filter_not_satisfied
+        if value is filter_not_satisfied:
+            return filter_not_satisfied
+        return idx
 
     def do_draw(self, data):
         self.machine = data.draw(self_strategy)

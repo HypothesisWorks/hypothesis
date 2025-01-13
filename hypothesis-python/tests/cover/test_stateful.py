@@ -1439,7 +1439,7 @@ def test_flatmap_with_combinations():
 
         @initialize(target=buns)
         def create_bun(self):
-            return 0
+            return 1
 
         @rule(target=buns, bun=buns.flatmap(lambda x: just(x + 1)))
         def use_flatmap(self, bun):
@@ -1498,7 +1498,7 @@ def test_map_with_combinations():
 
         @initialize(target=buns)
         def create_bun(self):
-            return 1
+            return multiple(1, 2)
 
         @rule(bun=buns.map(lambda x: -x))
         def use_map_base(self, bun):
@@ -1567,7 +1567,7 @@ def test_filter_not_satisfied_healthcheck():
 
         @initialize(target=buns)
         def create_bun(self):
-            return multiple(0)
+            return 0
 
         @rule(bun=buns.filter(lambda x: False))
         def use_filter(self, bun):
