@@ -12,8 +12,8 @@ import time
 
 import pytest
 
-from hypothesis import assume, given, strategies as st
-from hypothesis.internal.conjecture.data import ConjectureData
+from hypothesis import HealthCheck, assume, example, given, settings, strategies as st
+from hypothesis.internal.conjecture.data import ConjectureData, IRNode
 from hypothesis.internal.conjecture.datatree import compute_max_children
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.shrinker import (
@@ -24,9 +24,11 @@ from hypothesis.internal.conjecture.shrinker import (
 )
 from hypothesis.internal.conjecture.shrinking.common import Shrinker as ShrinkerPass
 from hypothesis.internal.conjecture.utils import Sampler
+from hypothesis.internal.floats import MAX_PRECISE_INTEGER
 
 from tests.conjecture.common import (
     SOME_LABEL,
+    float_kw,
     interesting_origin,
     ir,
     ir_nodes,
@@ -587,6 +589,22 @@ numeric_nodes = ir_nodes(ir_types=["integer", "float"])
 
 
 @given(numeric_nodes, numeric_nodes, st.integers() | st.floats(allow_nan=False))
+@example(
+    IRNode(
+        ir_type="float",
+        value=float(MAX_PRECISE_INTEGER - 1),
+        kwargs=float_kw(),
+        was_forced=False,
+    ),
+    IRNode(
+        ir_type="float",
+        value=float(MAX_PRECISE_INTEGER - 1),
+        kwargs=float_kw(),
+        was_forced=False,
+    ),
+    0,
+)
+@settings(suppress_health_check=[HealthCheck.filter_too_much])
 def test_redistribute_numeric_pairs(node1, node2, stop):
     assume(node1.value + node2.value > stop)
     # avoid exhausting the tree while generating, which causes @shrinking_from's
@@ -596,6 +614,14 @@ def test_redistribute_numeric_pairs(node1, node2, stop):
         + compute_max_children(node2.ir_type, node2.kwargs)
         > 2
     )
+    # TODO_IR: relax this restriction once choice_permitted isn't restricted by
+    # buffer practicalities like "can only generate 128 bits from min_value or
+    # shrink_towards".
+    assume(abs(node1.value) <= 2**64 and abs(node2.value) <= 2**64)
+    if node1.ir_type == "integer":
+        assume(abs(node1.kwargs["shrink_towards"]) <= 2**64)
+    if node2.ir_type == "integer":
+        assume(abs(node2.kwargs["shrink_towards"]) <= 2**64)
 
     @shrinking_from([node1.value, node2.value])
     def shrinker(data: ConjectureData):
