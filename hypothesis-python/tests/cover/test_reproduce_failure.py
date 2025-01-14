@@ -26,7 +26,7 @@ from hypothesis import (
 )
 from hypothesis.core import decode_failure, encode_failure
 from hypothesis.errors import DidNotReproduce, InvalidArgument, UnsatisfiedAssumption
-from hypothesis.internal.conjecture.data import ir_value_equal
+from hypothesis.internal.conjecture.choice import choice_equal
 
 from tests.common.utils import capture_out, no_shrink
 from tests.conjecture.common import ir, ir_nodes
@@ -39,7 +39,7 @@ def test_encoding_loop(nodes):
     looped = decode_failure(encode_failure(choices))
     assert len(choices) == len(looped)
     for pre, post in zip(choices, looped):
-        assert ir_value_equal(pre, post)
+        assert choice_equal(pre, post)
 
 
 @example(base64.b64encode(b"\2\3\4"))

@@ -25,6 +25,7 @@ from hypothesis import (
 )
 from hypothesis.errors import StopTest
 from hypothesis.internal.conjecture.choice import (
+    choice_equal,
     choice_from_index,
     choice_permitted,
     choice_to_index,
@@ -36,7 +37,6 @@ from hypothesis.internal.conjecture.data import (
     NodeTemplate,
     Status,
     ir_size,
-    ir_value_equal,
 )
 from hypothesis.internal.conjecture.datatree import (
     MAX_CHILDREN_EFFECTIVELY_INFINITE,
@@ -286,7 +286,7 @@ def test_copy_ir_node(node):
     new_value = draw_value(node.ir_type, node.kwargs)
     # if we drew the same value as before, the node should still be equal
     assert (node.copy(with_value=new_value) == node) is (
-        ir_value_equal(new_value, node.value)
+        choice_equal(new_value, node.value)
     )
 
 
@@ -325,9 +325,9 @@ def test_data_with_changed_forced_value(node):
     draw_func = getattr(data, f"draw_{node.ir_type}")
     kwargs = deepcopy(node.kwargs)
     kwargs["forced"] = draw_value(node.ir_type, node.kwargs)
-    assume(not ir_value_equal(kwargs["forced"], node.value))
+    assume(not choice_equal(kwargs["forced"], node.value))
 
-    assert ir_value_equal(draw_func(**kwargs), kwargs["forced"])
+    assert choice_equal(draw_func(**kwargs), kwargs["forced"])
 
 
 # ensure we hit bare-minimum coverage for all ir types.
@@ -374,7 +374,7 @@ def test_data_with_same_forced_value_is_valid(node):
 
     kwargs = deepcopy(node.kwargs)
     kwargs["forced"] = node.value
-    assert ir_value_equal(draw_func(**kwargs), kwargs["forced"])
+    assert choice_equal(draw_func(**kwargs), kwargs["forced"])
 
 
 @given(ir_types_and_kwargs())
@@ -565,7 +565,7 @@ def test_trivial_nodes(node):
         return getattr(data, f"draw_{node.ir_type}")(**node.kwargs)
 
     # if we're trivial, then shrinking should produce the same value.
-    assert ir_value_equal(minimal(values()), node.value)
+    assert choice_equal(minimal(values()), node.value)
 
 
 @pytest.mark.parametrize(
@@ -623,7 +623,7 @@ def test_nontrivial_nodes(node):
         return getattr(data, f"draw_{node.ir_type}")(**node.kwargs)
 
     # if we're nontrivial, then shrinking should produce something different.
-    assert not ir_value_equal(minimal(values()), node.value)
+    assert not choice_equal(minimal(values()), node.value)
 
 
 @pytest.mark.parametrize(
@@ -671,7 +671,7 @@ def test_conservative_nontrivial_nodes(node):
         data = draw(st.data()).conjecture_data
         return getattr(data, f"draw_{node.ir_type}")(**node.kwargs)
 
-    assert ir_value_equal(minimal(values()), node.value)
+    assert choice_equal(minimal(values()), node.value)
 
 
 @given(ir_nodes())
@@ -785,7 +785,7 @@ def test_choice_index_and_value_are_inverses(ir_type_and_kwargs):
     v = draw_value(ir_type, kwargs)
     index = choice_to_index(v, kwargs)
     note({"v": v, "index": index})
-    ir_value_equal(choice_from_index(index, ir_type, kwargs), v)
+    choice_equal(choice_from_index(index, ir_type, kwargs), v)
 
 
 @pytest.mark.parametrize(
@@ -814,7 +814,7 @@ def test_choice_index_and_value_are_inverses(ir_type_and_kwargs):
 def test_choice_index_and_value_are_inverses_explicit(ir_type, kwargs, choices):
     for choice in choices:
         index = choice_to_index(choice, kwargs)
-        assert ir_value_equal(choice_from_index(index, ir_type, kwargs), choice)
+        assert choice_equal(choice_from_index(index, ir_type, kwargs), choice)
 
 
 @pytest.mark.parametrize(
@@ -852,7 +852,7 @@ def test_drawing_directly_matches_for_choices(nodes):
     data = ConjectureData.for_choices([n.value for n in nodes])
     for node in nodes:
         value = getattr(data, f"draw_{node.ir_type}")(**node.kwargs)
-        assert ir_value_equal(node.value, value)
+        assert choice_equal(node.value, value)
 
 
 def test_draw_directly_explicit():

@@ -30,12 +30,17 @@ from hypothesis.database import (
     InMemoryExampleDatabase,
     MultiplexedDatabase,
     ReadOnlyDatabase,
+    _keyed_ir_from_bytes,
+    _pack_uleb128,
+    _unpack_uleb128,
     ir_from_bytes,
     ir_to_bytes,
+    keyed_ir_to_bytes,
 )
 from hypothesis.errors import HypothesisWarning
 from hypothesis.internal.compat import WINDOWS
-from hypothesis.internal.conjecture.data import ir_value_equal
+from hypothesis.internal.conjecture.choice import choice_equal
+from hypothesis.internal.conjecture.shrinker import sort_key_ir
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
 from hypothesis.strategies import binary, lists, tuples
 from hypothesis.utils.conventions import not_set
@@ -478,14 +483,43 @@ def test_background_write_database():
 @example(ir("a"))
 @example(ir(b"a"))
 @example(ir(b"a" * 50))
-def test_ir_nodes_rountrips(nodes1):
+def test_ir_nodes_roundtrips(nodes1):
     s1 = ir_to_bytes([n.value for n in nodes1])
     assert isinstance(s1, bytes)
     ir2 = ir_from_bytes(s1)
     assert len(nodes1) == len(ir2)
 
     for n1, v2 in zip(nodes1, ir2):
-        assert ir_value_equal(n1.value, v2)
+        assert choice_equal(n1.value, v2)
 
     s2 = ir_to_bytes(ir2)
     assert s1 == s2
+
+
+@given(st.integers(min_value=0))
+def test_uleb_128_roundtrips(n1):
+    buffer1 = _pack_uleb128(n1)
+    idx, n2 = _unpack_uleb128(buffer1)
+    assert idx == len(buffer1)
+    assert n1 == n2
+
+
+@given(lists(ir_nodes()))
+# covering examples
+@example(ir(True))
+@example(ir(1))
+@example(ir(0.0))
+@example(ir(-0.0))
+@example(ir("a"))
+@example(ir(b"a") * 500)
+@example(ir(b"a" * 500))
+def test_keyed_ir_roundtrips(nodes):
+    b1 = keyed_ir_to_bytes(nodes)
+    sort_key1 = sort_key_ir(nodes)
+    choices1 = [n.value for n in nodes]
+    sort_key2, choices2 = _keyed_ir_from_bytes(b1)
+    assert sort_key1 == sort_key2
+
+    assert len(choices1) == len(choices2)
+    for choice1, choice2 in zip(choices1, choices2):
+        assert choice_equal(choice1, choice2)
