@@ -372,3 +372,37 @@ This is not recommended as it bypasses some important internal functions,
 including reporting of statistics such as runtimes and :func:`~hypothesis.event`
 calls.  It was originally added to support custom ``__init__`` methods, but
 you can now use :func:`~hypothesis.stateful.initialize` rules instead.
+
+-------------------------
+Adapting stateful testing 
+-------------------------
+
+You can adapt stateful tests in a similar way to adapting regular strategies. 
+See :ref:`this section <adapting-strategies>` for more details on how each of these strategies work.
+
+.. code:: python
+
+ class Machine(RuleBasedStateMachine):
+     bun = Bundle("bun")
+
+     @initialize(target=buns)
+     def create_bun(self):
+         return multiple(1, 2)
+
+     @rule(bun=buns.map(lambda x: -x))
+     def use_map(self, bun):
+         print("Bun example is negative.")
+
+     @rule(bun=buns.filter(lambda x: x > 1))
+     def use_filter(self, bun):
+         print("Bun example is greater than 1.")
+
+     @rule(bun=buns.flatmap(lambda n: lists(lists(integers(), min_size=n, max_size=n))))
+     def use_flatmap(self, bun):
+         print("Bun example is a unique structure.")
+
+     @rule(bun=buns.map(lambda x: -x).filter(lambda x: x < -1))
+     def use_chain_strategies(self, bun):
+         print("Bun example uses chained strategies!")
+
+

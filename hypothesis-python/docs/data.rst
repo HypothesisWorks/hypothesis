@@ -56,6 +56,7 @@ Possibly the most important one to be aware of is
 produced by strategies earlier in its argument list. Most of the others should
 largely "do the right thing" without you having to think about it.
 
+.. _adapting-strategies:
 
 ~~~~~~~~~~~~~~~~~~~
 Adapting strategies
