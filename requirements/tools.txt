@@ -6,7 +6,7 @@
 #
 alabaster==1.0.0
     # via sphinx
-anyio==4.7.0
+anyio==4.8.0
     # via watchfiles
 asgiref==3.8.1
     # via django
@@ -125,7 +125,7 @@ keyring==25.6.0
     # via twine
 lark==1.2.2
     # via -r requirements/tools.in
-libcst==1.5.1
+libcst==1.6.0
     # via
     #   -r requirements/tools.in
     #   shed
@@ -199,7 +199,7 @@ pycparser==2.22
     # via cffi
 pyflakes==3.2.0
     # via autoflake
-pygments==2.18.0
+pygments==2.19.1
     # via
     #   ipython
     #   pelican
@@ -251,7 +251,7 @@ rich==13.9.4
     # via
     #   pelican
     #   twine
-ruff==0.8.6
+ruff==0.9.1
     # via -r requirements/tools.in
 secretstorage==3.3.3
     # via keyring
@@ -274,7 +274,7 @@ sphinx==8.1.3
     #   sphinx-hoverxref
     #   sphinx-rtd-theme
     #   sphinxcontrib-jquery
-sphinx-codeautolink==0.15.2
+sphinx-codeautolink==0.16.0
     # via -r requirements/tools.in
 sphinx-hoverxref==1.4.2
     # via -r requirements/tools.in
@@ -335,7 +335,7 @@ types-pytz==2024.2.0.20241221
     # via -r requirements/tools.in
 types-redis==4.6.0.20241004
     # via -r requirements/tools.in
-types-setuptools==75.6.0.20241223
+types-setuptools==75.8.0.20250110
     # via types-cffi
 typing-extensions==4.12.2
     # via
@@ -356,7 +356,7 @@ urllib3==2.3.0
     #   twine
 virtualenv==20.28.1
     # via tox
-watchfiles==1.0.3
+watchfiles==1.0.4
     # via pelican
 wcwidth==0.2.13
     # via prompt-toolkit
@@ -368,5 +368,5 @@ zipp==3.21.0
 # The following packages are considered to be unsafe in a requirements file:
 pip==24.3.1
     # via pip-tools
-setuptools==75.6.0
+setuptools==75.8.0
     # via pip-tools

@@ -55,9 +55,9 @@ fakeredis==2.26.2
     # via -r requirements/coverage.in
 flask==3.0.3
     # via dash
-hypofuzz==24.11.1
+hypofuzz==25.1.1
     # via -r requirements/fuzzing.in
-hypothesis[cli]==6.123.2
+hypothesis[cli]==6.123.15
     # via hypofuzz
 idna==3.10
     # via requests
@@ -71,7 +71,7 @@ jinja2==3.1.5
     # via flask
 lark==1.2.2
     # via -r requirements/coverage.in
-libcst==1.5.1
+libcst==1.6.0
     # via
     #   -r requirements/coverage.in
     #   hypofuzz
@@ -116,7 +116,7 @@ ptyprocess==0.7.0
     # via pexpect
 pyarrow==18.1.0
     # via -r requirements/coverage.in
-pygments==2.18.0
+pygments==2.19.1
     # via rich
 pytest==8.3.4
     # via
@@ -181,5 +181,5 @@ zipp==3.21.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-setuptools==75.6.0
+setuptools==75.8.0
     # via dash
