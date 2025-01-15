@@ -345,7 +345,7 @@ class ConjectureRunner:
                     # correct engine.
                     raise
 
-    def _cache_key(self, choices: Sequence[ChoiceT]) -> tuple[ChoiceT, ...]:
+    def _cache_key(self, choices: Sequence[ChoiceT]) -> tuple[ChoiceKeyT, ...]:
         return choices_key(choices)
 
     def _cache(self, data: ConjectureData) -> None:

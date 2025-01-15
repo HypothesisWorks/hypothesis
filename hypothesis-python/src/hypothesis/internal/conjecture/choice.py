@@ -67,6 +67,9 @@ ChoiceKwargsT: "TypeAlias" = Union[
     IntegerKWargs, FloatKWargs, StringKWargs, BytesKWargs, BooleanKWargs
 ]
 ChoiceNameT: "TypeAlias" = Literal["integer", "string", "boolean", "float", "bytes"]
+ChoiceKeyT: "TypeAlias" = Union[
+    int, str, bytes, tuple[Literal["bool"], bool], tuple[Literal["float"], int]
+]
 
 
 def _size_to_index(size: int, *, alphabet_size: int) -> int:
@@ -456,13 +459,17 @@ def choice_permitted(choice: ChoiceT, kwargs: ChoiceKwargsT) -> bool:
         raise NotImplementedError(f"unhandled type {type(choice)} with value {choice}")
 
 
-def choices_key(choices: Sequence[ChoiceT]) -> tuple[ChoiceT, ...]:
+def choices_key(choices: Sequence[ChoiceT]) -> tuple[ChoiceKeyT, ...]:
     return tuple(choice_key(choice) for choice in choices)
 
 
-def choice_key(choice: ChoiceT) -> ChoiceT:
-    if type(choice) is float:
-        return float_to_int(choice)
+def choice_key(choice: ChoiceT) -> ChoiceKeyT:
+    if isinstance(choice, float):
+        # distinguish -0.0/0.0, signaling/nonsignaling nans, etc.
+        return ("float", float_to_int(choice))
+    if isinstance(choice, bool):
+        # avoid choice_key(0) == choice_key(False)
+        return ("bool", choice)
     return choice
 
 

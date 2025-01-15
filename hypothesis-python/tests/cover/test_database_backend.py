@@ -478,7 +478,7 @@ def test_background_write_database():
 @example(ir("a"))
 @example(ir(b"a"))
 @example(ir(b"a" * 50))
-def test_ir_nodes_rountrips(nodes1):
+def test_ir_nodes_roundtrips(nodes1):
     s1 = ir_to_bytes([n.value for n in nodes1])
     assert isinstance(s1, bytes)
     ir2 = ir_from_bytes(s1)

@@ -29,6 +29,7 @@ from hypothesis.internal.conjecture.choice import (
     choice_from_index,
     choice_permitted,
     choice_to_index,
+    choices_key,
 )
 from hypothesis.internal.conjecture.data import (
     COLLECTION_DEFAULT_MAX_SIZE,
@@ -884,3 +885,26 @@ def test_draw_directly_explicit():
         )
         == 10
     )
+
+
+@pytest.mark.parametrize(
+    "choices1, choices2",
+    [
+        [(True,), (1,)],
+        [(False,), (0,)],
+        [(0.0,), (-0.0,)],
+    ],
+)
+def test_choices_key_distinguishes_weird_cases(choices1, choices2):
+    assert choices_key(choices1) != choices_key(choices2)
+
+
+@given(st.lists(ir_nodes()), st.lists(ir_nodes()))
+def test_choices_key_respects_inequality(nodes1, nodes2):
+    choices1 = [n.value for n in nodes1]
+    choices2 = [n.value for n in nodes2]
+    if choices_key(choices1) != choices_key(choices2):
+        assert set(choices1) != set(choices2)
+
+    # note that the other direction is not necessarily true: {False} == {0},
+    # but choices_key([False]) != choices_key([0]).
