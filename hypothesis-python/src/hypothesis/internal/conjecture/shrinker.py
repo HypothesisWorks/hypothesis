@@ -81,7 +81,7 @@ def sort_key(buffer: SortKeyT) -> tuple[int, SortKeyT]:
        result, so it makes sense to prioritise reducing earlier values over
        later ones. This makes the lexicographic order the more natural choice.
     """
-    return (len(buffer), buffer)
+    return (len(buffer), buffer)  # pragma: no cover # removing soon
 
 
 def sort_key_ir(nodes: Sequence[IRNode]) -> tuple[int, tuple[int, ...]]:

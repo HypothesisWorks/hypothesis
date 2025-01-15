@@ -768,8 +768,7 @@ def ir_to_bytes(ir: Iterable[ChoiceT], /) -> bytes:
     return b"".join(parts)
 
 
-def ir_from_bytes(buffer: bytes, /) -> list[ChoiceT]:
-    """Deserialize a bytestring to a list of IR elements. Inverts ir_to_bytes."""
+def _ir_from_bytes(buffer: bytes, /) -> tuple[ChoiceT, ...]:
     # See above for an explanation of the format.
     parts: list[ChoiceT] = []
     idx = 0
@@ -797,4 +796,19 @@ def ir_from_bytes(buffer: bytes, /) -> list[ChoiceT]:
         else:
             assert tag == 4
             parts.append(chunk.decode(errors="surrogatepass"))
-    return parts
+    return tuple(parts)
+
+
+def ir_from_bytes(buffer: bytes, /) -> Optional[tuple[ChoiceT, ...]]:
+    """
+    Deserialize a bytestring to a tuple of choices. Inverts ir_to_bytes.
+
+    Returns None if the given bytestring is not a valid serialization of choice
+    sequences.
+    """
+    try:
+        return _ir_from_bytes(buffer)
+    except Exception:
+        # deserialization error, eg because our format changed or someone put junk
+        # data in the db.
+        return None

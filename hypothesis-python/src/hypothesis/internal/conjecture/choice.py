@@ -465,7 +465,8 @@ def choices_key(choices: Sequence[ChoiceT]) -> tuple[ChoiceKeyT, ...]:
 
 def choice_key(choice: ChoiceT) -> ChoiceKeyT:
     if isinstance(choice, float):
-        # distinguish -0.0/0.0, signaling/nonsignaling nans, etc.
+        # float_to_int to distinguish -0.0/0.0, signaling/nonsignaling nans, etc,
+        # and then add a "float" key to avoid colliding with actual integers.
         return ("float", float_to_int(choice))
     if isinstance(choice, bool):
         # avoid choice_key(0) == choice_key(False)
