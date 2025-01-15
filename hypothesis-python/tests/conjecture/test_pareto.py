@@ -8,11 +8,12 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import itertools
+
 import pytest
 
 from hypothesis import HealthCheck, Phase, settings, strategies as st
-from hypothesis.database import InMemoryExampleDatabase
-from hypothesis.internal.compat import int_to_bytes
+from hypothesis.database import InMemoryExampleDatabase, ir_to_bytes
 from hypothesis.internal.conjecture.data import Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner, RunIsComplete
 from hypothesis.internal.entropy import deterministic_PRNG
@@ -133,7 +134,7 @@ def test_clears_defunct_pareto_front():
         )
 
         for i in range(256):
-            db.save(runner.pareto_key, bytes([i, 0]))
+            db.save(runner.pareto_key, ir_to_bytes((i, 0)))
 
         runner.run()
 
@@ -160,8 +161,8 @@ def test_down_samples_the_pareto_front():
             database_key=b"stuff",
         )
 
-        for i in range(10000):
-            db.save(runner.pareto_key, int_to_bytes(i, 2))
+        for n1, n2 in itertools.product(range(256), range(256)):
+            db.save(runner.pareto_key, ir_to_bytes((n1, n2)))
 
         with pytest.raises(RunIsComplete):
             runner.reuse_existing_examples()
@@ -173,8 +174,8 @@ def test_stops_loading_pareto_front_if_interesting():
     with deterministic_PRNG():
 
         def test(data):
-            data.draw_integer(0, 2**8 - 1)
-            data.draw_integer(0, 2**8 - 1)
+            data.draw_integer()
+            data.draw_integer()
             data.mark_interesting()
 
         db = InMemoryExampleDatabase()
@@ -190,8 +191,8 @@ def test_stops_loading_pareto_front_if_interesting():
             database_key=b"stuff",
         )
 
-        for i in range(10000):
-            db.save(runner.pareto_key, int_to_bytes(i, 2))
+        for n1, n2 in itertools.product(range(256), range(256)):
+            db.save(runner.pareto_key, ir_to_bytes((n1, n2)))
 
         runner.reuse_existing_examples()
 
@@ -237,7 +238,7 @@ def test_optimises_the_pareto_front():
 
     assert len(runner.pareto_front) == 6
     for i, data in enumerate(runner.pareto_front):
-        assert list(data.buffer) == [1] * i + [0]
+        assert data.choices == (1,) * i + (0,)
 
 
 def test_does_not_optimise_the_pareto_front_if_interesting():

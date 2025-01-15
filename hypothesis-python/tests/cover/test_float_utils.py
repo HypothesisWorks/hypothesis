@@ -14,7 +14,7 @@ from sys import float_info
 import pytest
 
 from hypothesis import example, given, strategies as st
-from hypothesis.internal.conjecture.data import ir_value_equal
+from hypothesis.internal.conjecture.choice import choice_equal
 from hypothesis.internal.floats import (
     count_between_floats,
     float_permitted,
@@ -103,4 +103,4 @@ def test_float_clamper(kwargs, input_value):
         allow_nan=allow_nan,
         smallest_nonzero_magnitude=smallest_nonzero_magnitude,
     ):
-        assert ir_value_equal(input_value, clamped)
+        assert choice_equal(input_value, clamped)
