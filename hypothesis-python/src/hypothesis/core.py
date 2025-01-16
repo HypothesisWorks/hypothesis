@@ -87,6 +87,7 @@ from hypothesis.internal.conjecture.junkdrawer import (
     ensure_free_stackframes,
     gc_cumulative_time,
 )
+from hypothesis.internal.conjecture.providers import BytestringProvider
 from hypothesis.internal.conjecture.shrinker import sort_key_ir
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.internal.escalation import (
@@ -1866,7 +1867,13 @@ def given(
                 if isinstance(buffer, io.IOBase):
                     buffer = buffer.read(BUFFER_SIZE)
                 assert isinstance(buffer, (bytes, bytearray, memoryview))
-                data = ConjectureData.for_buffer(buffer)
+                data = ConjectureData(
+                    max_length=BUFFER_SIZE,
+                    prefix=b"",
+                    random=None,
+                    provider=BytestringProvider,
+                    provider_kw={"bytestring": buffer},
+                )
                 try:
                     state.execute_once(data)
                 except (StopTest, UnsatisfiedAssumption):
@@ -1880,7 +1887,8 @@ def given(
                         settings.database.save(database_key, ir_to_bytes(data.choices))
                         minimal_failures[data.interesting_origin] = data.ir_nodes
                     raise
-                return bytes(data.buffer)
+                assert isinstance(data.provider, BytestringProvider)
+                return bytes(data.provider.drawn)
 
             fuzz_one_input.__doc__ = HypothesisHandle.fuzz_one_input.__doc__
             return fuzz_one_input
