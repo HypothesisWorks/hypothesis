@@ -15,7 +15,8 @@ import pytest
 import hypothesis.strategies as st
 from hypothesis import HealthCheck, assume, example, given, settings
 from hypothesis.internal.conjecture import utils as cu
-from hypothesis.internal.conjecture.data import ConjectureData, ir_value_equal
+from hypothesis.internal.conjecture.choice import choice_equal
+from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.floats import SIGNALING_NAN, SMALLEST_SUBNORMAL
 
 from tests.conjecture.common import fresh_data, ir_types_and_kwargs
@@ -142,13 +143,13 @@ def test_forced_values(ir_type_and_kwargs):
 
     forced = kwargs["forced"]
     data = fresh_data()
-    assert ir_value_equal(getattr(data, f"draw_{ir_type}")(**kwargs), forced)
+    assert choice_equal(getattr(data, f"draw_{ir_type}")(**kwargs), forced)
 
     # now make sure the written buffer reproduces the forced value, even without
     # specifying forced=.
     del kwargs["forced"]
     data = ConjectureData.for_choices(data.choices)
-    assert ir_value_equal(getattr(data, f"draw_{ir_type}")(**kwargs), forced)
+    assert choice_equal(getattr(data, f"draw_{ir_type}")(**kwargs), forced)
 
 
 @pytest.mark.parametrize("sign", [1, -1])

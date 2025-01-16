@@ -24,7 +24,7 @@ from typing import (
 from hypothesis.errors import ChoiceTooLarge
 from hypothesis.internal.conjecture.floats import float_to_lex, lex_to_float
 from hypothesis.internal.conjecture.utils import identity
-from hypothesis.internal.floats import make_float_clamper, sign_aware_lte
+from hypothesis.internal.floats import float_to_int, make_float_clamper, sign_aware_lte
 from hypothesis.internal.intervalsets import IntervalSet
 
 T = TypeVar("T")
@@ -67,6 +67,9 @@ ChoiceKwargsT: "TypeAlias" = Union[
     IntegerKWargs, FloatKWargs, StringKWargs, BytesKWargs, BooleanKWargs
 ]
 ChoiceNameT: "TypeAlias" = Literal["integer", "string", "boolean", "float", "bytes"]
+ChoiceKeyT: "TypeAlias" = Union[
+    int, str, bytes, tuple[Literal["bool"], bool], tuple[Literal["float"], int]
+]
 
 
 def _size_to_index(size: int, *, alphabet_size: int) -> int:
@@ -454,3 +457,47 @@ def choice_permitted(choice: ChoiceT, kwargs: ChoiceKwargsT) -> bool:
         return True
     else:
         raise NotImplementedError(f"unhandled type {type(choice)} with value {choice}")
+
+
+def choices_key(choices: Sequence[ChoiceT]) -> tuple[ChoiceKeyT, ...]:
+    return tuple(choice_key(choice) for choice in choices)
+
+
+def choice_key(choice: ChoiceT) -> ChoiceKeyT:
+    if isinstance(choice, float):
+        # float_to_int to distinguish -0.0/0.0, signaling/nonsignaling nans, etc,
+        # and then add a "float" key to avoid colliding with actual integers.
+        return ("float", float_to_int(choice))
+    if isinstance(choice, bool):
+        # avoid choice_key(0) == choice_key(False)
+        return ("bool", choice)
+    return choice
+
+
+def choice_equal(choice1: ChoiceT, choice2: ChoiceT) -> bool:
+    assert type(choice1) is type(choice2), (choice1, choice2)
+    return choice_key(choice1) == choice_key(choice2)
+
+
+def choice_kwargs_equal(
+    ir_type: ChoiceNameT, kwargs1: ChoiceKwargsT, kwargs2: ChoiceKwargsT
+) -> bool:
+    return choice_kwargs_key(ir_type, kwargs1) == choice_kwargs_key(ir_type, kwargs2)
+
+
+def choice_kwargs_key(ir_type, kwargs):
+    if ir_type == "float":
+        return (
+            float_to_int(kwargs["min_value"]),
+            float_to_int(kwargs["max_value"]),
+            kwargs["allow_nan"],
+            kwargs["smallest_nonzero_magnitude"],
+        )
+    if ir_type == "integer":
+        return (
+            kwargs["min_value"],
+            kwargs["max_value"],
+            None if kwargs["weights"] is None else tuple(kwargs["weights"]),
+            kwargs["shrink_towards"],
+        )
+    return tuple(kwargs[key] for key in sorted(kwargs))

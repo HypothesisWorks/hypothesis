@@ -44,7 +44,11 @@ from hypothesis.internal.conjecture.choice import (
     FloatKWargs,
     IntegerKWargs,
     StringKWargs,
+    choice_equal,
     choice_from_index,
+    choice_key,
+    choice_kwargs_equal,
+    choice_kwargs_key,
     choice_permitted,
 )
 from hypothesis.internal.conjecture.floats import float_to_lex, lex_to_float
@@ -647,7 +651,7 @@ class IRNode:
 
         if self.ir_type != "float":
             zero_value = choice_from_index(0, self.ir_type, self.kwargs)
-            return ir_value_equal(self.value, zero_value)
+            return choice_equal(self.value, zero_value)
         else:
             kwargs = cast(FloatKWargs, self.kwargs)
             min_value = kwargs["min_value"]
@@ -655,7 +659,7 @@ class IRNode:
             shrink_towards = 0.0
 
             if min_value == -math.inf and max_value == math.inf:
-                return ir_value_equal(self.value, shrink_towards)
+                return choice_equal(self.value, shrink_towards)
 
             if (
                 not math.isinf(min_value)
@@ -666,7 +670,7 @@ class IRNode:
                 # one closest to shrink_towards
                 shrink_towards = max(math.ceil(min_value), shrink_towards)
                 shrink_towards = min(math.floor(max_value), shrink_towards)
-                return ir_value_equal(self.value, float(shrink_towards))
+                return choice_equal(self.value, float(shrink_towards))
 
             # the real answer here is "the value in [min_value, max_value] with
             # the lowest denominator when represented as a fraction".
@@ -680,8 +684,8 @@ class IRNode:
 
         return (
             self.ir_type == other.ir_type
-            and ir_value_equal(self.value, other.value)
-            and ir_kwargs_equal(self.ir_type, self.kwargs, other.kwargs)
+            and choice_equal(self.value, other.value)
+            and choice_kwargs_equal(self.ir_type, self.kwargs, other.kwargs)
             and self.was_forced == other.was_forced
         )
 
@@ -689,8 +693,8 @@ class IRNode:
         return hash(
             (
                 self.ir_type,
-                ir_value_key(self.value),
-                ir_kwargs_key(self.ir_type, self.kwargs),
+                choice_key(self.value),
+                choice_kwargs_key(self.ir_type, self.kwargs),
                 self.was_forced,
             )
         )
@@ -724,39 +728,6 @@ def ir_size(ir: Iterable[Union[IRNode, NodeTemplate, ChoiceT]]) -> int:
             size += len(ir_to_bytes([v]))
 
     return size
-
-
-def ir_value_key(v):
-    if type(v) is float:
-        return float_to_int(v)
-    return v
-
-
-def ir_kwargs_key(ir_type, kwargs):
-    if ir_type == "float":
-        return (
-            float_to_int(kwargs["min_value"]),
-            float_to_int(kwargs["max_value"]),
-            kwargs["allow_nan"],
-            kwargs["smallest_nonzero_magnitude"],
-        )
-    if ir_type == "integer":
-        return (
-            kwargs["min_value"],
-            kwargs["max_value"],
-            None if kwargs["weights"] is None else tuple(kwargs["weights"]),
-            kwargs["shrink_towards"],
-        )
-    return tuple(kwargs[key] for key in sorted(kwargs))
-
-
-def ir_value_equal(v1, v2):
-    assert type(v1) is type(v2), (v1, v2)
-    return ir_value_key(v1) == ir_value_key(v2)
-
-
-def ir_kwargs_equal(ir_type, kwargs1, kwargs2):
-    return ir_kwargs_key(ir_type, kwargs1) == ir_kwargs_key(ir_type, kwargs2)
 
 
 @dataclass_transform()
@@ -1969,7 +1940,7 @@ class ConjectureData:
         if self.provider.avoid_realization:
             return kwargs
 
-        key = (ir_type, *ir_kwargs_key(ir_type, kwargs))
+        key = (ir_type, *choice_kwargs_key(ir_type, kwargs))
         try:
             return POOLED_KWARGS_CACHE[key]
         except KeyError:
