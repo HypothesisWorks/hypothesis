@@ -891,7 +891,10 @@ def test_draw_directly_explicit():
     "choices1, choices2",
     [
         [(True,), (1,)],
+        [(True,), (1.0,)],
         [(False,), (0,)],
+        [(False,), (0.0,)],
+        [(False,), (-0.0,)],
         [(0.0,), (-0.0,)],
     ],
 )
