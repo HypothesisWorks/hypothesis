@@ -65,14 +65,14 @@ class BytestringProvider(PrimitiveProvider):
         if p >= 1:
             return True
 
-        bits = math.ceil(-math.log2(min(p, 1 - p)))
-        # cap boolean draws at 8 bits so they are a constant size of one byte.
-        # If a probability requires more than 8 bits to precisely represent,
+        # always use one byte for booleans to maintain constant draw size.
+        # If a probability requires more than 8 bits to represent precisely,
         # the result will be slightly biased, but not badly.
-        bits = min(bits, 8)
-
+        bits = 8
         size = 2**bits
-        falsey = math.floor(size * (1 - p))
+        # always leave at least one value that can be true, even for very small
+        # p.
+        falsey = max(1, math.floor(size * (1 - p)))
         n = self._draw_bits(bits)
         return n >= falsey
 
