@@ -1614,6 +1614,12 @@ class ConjectureData:
             observer = DataObserver()
         if provider_kw is None:
             provider_kw = {}
+        elif not isinstance(provider, type):
+            raise InvalidArgument(
+                f"Expected {provider=} to be a class since {provider_kw=} was "
+                "passed, but got an instance instead."
+            )
+
         assert isinstance(observer, DataObserver)
         self._bytes_drawn = 0
         self.observer = observer

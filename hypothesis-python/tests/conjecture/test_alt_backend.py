@@ -595,3 +595,14 @@ def test_notes_incorrect_verification(provider):
         with pytest.raises(AssertionError) as ctx:
             test_function()
         assert (msg in ctx.value.__notes__) == (provider is UnsoundVerifierProvider)
+
+
+def test_invalid_provider_kw():
+    with pytest.raises(InvalidArgument, match="got an instance instead"):
+        ConjectureData(
+            max_length=0,
+            prefix=b"",
+            random=None,
+            provider=TrivialProvider(None),
+            provider_kw={"one": "two"},
+        )
