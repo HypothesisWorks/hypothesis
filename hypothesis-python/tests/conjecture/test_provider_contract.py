@@ -18,18 +18,23 @@ from hypothesis.internal.conjecture.choice import (
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE
 from hypothesis.internal.conjecture.providers import BytestringProvider
+from hypothesis.internal.intervalsets import IntervalSet
 
-from tests.conjecture.common import integer_kw, ir_types_and_kwargs
+from tests.conjecture.common import float_kw, integer_kw, ir_types_and_kwargs, string_kw
 
 
-@example(b"0" * 100, [("integer", integer_kw(0, 2))])
-@example(b"0" * 100, [("integer", integer_kw(0, 0))])
-@example(b"0" * 100, [("integer", integer_kw(min_value=0))])
-@example(b"0" * 100, [("integer", integer_kw(max_value=2))])
-@example(b"0" * 100, [("integer", integer_kw(0, 2, weights={0: 0.1}))])
-@example(b"0" * 100, [("boolean", {"p": 1.0})])
-@example(b"0" * 100, [("boolean", {"p": 0.0})])
-@example(b"0" * 100, [("boolean", {"p": 1e-99})])
+@example(b"\x00" * 100, [("integer", integer_kw())])
+@example(b"\x00" * 100, [("integer", integer_kw(0, 2))])
+@example(b"\x00" * 100, [("integer", integer_kw(0, 0))])
+@example(b"\x00" * 100, [("integer", integer_kw(min_value=0))])
+@example(b"\x00" * 100, [("integer", integer_kw(max_value=2))])
+@example(b"\x00" * 100, [("integer", integer_kw(0, 2, weights={0: 0.1}))])
+@example(b"\x00" * 100, [("boolean", {"p": 1.0})])
+@example(b"\x00" * 100, [("boolean", {"p": 0.0})])
+@example(b"\x00" * 100, [("boolean", {"p": 1e-99})])
+@example(b"\x00" * 100, [("string", string_kw(IntervalSet.from_string("a")))])
+@example(b"\x00" * 100, [("float", float_kw())])
+@example(b"\x00" * 100, [("bytes", {"min_size": 0, "max_size": 10})])
 @given(st.binary(min_size=200), st.lists(ir_types_and_kwargs()))
 def test_provider_contract_bytestring(bytestring, ir_type_and_kwargs):
     data = ConjectureData(
