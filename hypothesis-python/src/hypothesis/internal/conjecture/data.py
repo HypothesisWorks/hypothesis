@@ -1606,11 +1606,20 @@ class ConjectureData:
         provider: Union[type, PrimitiveProvider] = HypothesisProvider,
         ir_prefix: Optional[Sequence[Union[NodeTemplate, ChoiceT]]] = None,
         max_length_ir: Optional[int] = None,
+        provider_kw: Optional[dict[str, Any]] = None,
     ) -> None:
         from hypothesis.internal.conjecture.engine import BUFFER_SIZE_IR
 
         if observer is None:
             observer = DataObserver()
+        if provider_kw is None:
+            provider_kw = {}
+        elif not isinstance(provider, type):
+            raise InvalidArgument(
+                f"Expected {provider=} to be a class since {provider_kw=} was "
+                "passed, but got an instance instead."
+            )
+
         assert isinstance(observer, DataObserver)
         self._bytes_drawn = 0
         self.observer = observer
@@ -1620,9 +1629,6 @@ class ConjectureData:
         self.overdraw = 0
         self.__prefix = bytes(prefix)
         self.__random = random
-
-        if ir_prefix is None:
-            assert random is not None or max_length <= len(prefix)
 
         self.buffer: "Union[bytes, bytearray]" = bytearray()
         self.index = 0
@@ -1644,9 +1650,11 @@ class ConjectureData:
         self.has_discards = False
 
         self.provider: PrimitiveProvider = (
-            provider(self) if isinstance(provider, type) else provider
+            provider(self, **provider_kw) if isinstance(provider, type) else provider
         )
         assert isinstance(self.provider, PrimitiveProvider)
+        if ir_prefix is None and isinstance(self.provider, HypothesisProvider):
+            assert random is not None or max_length <= len(prefix)
 
         self.__result: "Optional[ConjectureResult]" = None
 

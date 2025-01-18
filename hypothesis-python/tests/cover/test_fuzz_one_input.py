@@ -38,7 +38,7 @@ def test_fuzz_one_input(buffer_type):
     @settings(database=db, phases=[Phase.reuse, Phase.shrink])
     def test(s):
         seen.append(s)
-        assert "\0" not in s, repr(s)
+        assert len(s) < 5, repr(s)
 
     # Before running fuzz_one_input, there's nothing in `db`, and so the test passes
     # (because example generation is disabled by the custom settings)
@@ -67,7 +67,7 @@ def test_fuzz_one_input(buffer_type):
     # reproduce it, *and shrink to a minimal example*.
     with pytest.raises(AssertionError):
         test()
-    assert seen[-1] == "\0"
+    assert seen[-1] == "0" * 5
 
 
 def test_can_fuzz_with_database_eq_None():
