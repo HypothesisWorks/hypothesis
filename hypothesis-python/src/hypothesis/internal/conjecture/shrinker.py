@@ -58,33 +58,24 @@ if TYPE_CHECKING:
 SortKeyT = TypeVar("SortKeyT", str, bytes)
 
 
-def sort_key(buffer: SortKeyT) -> tuple[int, SortKeyT]:
-    """Returns a sort key such that "simpler" buffers are smaller than
+def sort_key_ir(nodes: Sequence[IRNode]) -> tuple[int, tuple[int, ...]]:
+    """Returns a sort key such that "simpler" choice sequences are smaller than
     "more complicated" ones.
 
     We define sort_key so that x is simpler than y if x is shorter than y or if
-    they have the same length and x < y lexicographically. This is called the
-    shortlex order.
+    they have the same length and map(choice_to_index, x) < map(choice_to_index, y).
 
-    The reason for using the shortlex order is:
+    The reason for using this ordering is:
 
     1. If x is shorter than y then that means we had to make fewer decisions
        in constructing the test case when we ran x than we did when we ran y.
-    2. If x is the same length as y then replacing a byte with a lower byte
-       corresponds to reducing the value of an integer we drew with draw_bits
-       towards zero.
-    3. We want a total order, and given (2) the natural choices for things of
-       the same size are either the lexicographic or colexicographic orders
-       (the latter being the lexicographic order of the reverse of the string).
-       Because values drawn early in generation potentially get used in more
+    2. If x is the same length as y then replacing a choice with a lower index
+       choice corresponds to replacing it with a simpler/smaller choice.
+    3. Because choices drawn early in generation potentially get used in more
        places they potentially have a more significant impact on the final
-       result, so it makes sense to prioritise reducing earlier values over
-       later ones. This makes the lexicographic order the more natural choice.
+       result, so it makes sense to prioritise reducing earlier choices over
+       later ones.
     """
-    return (len(buffer), buffer)  # pragma: no cover # removing soon
-
-
-def sort_key_ir(nodes: Sequence[IRNode]) -> tuple[int, tuple[int, ...]]:
     return (
         len(nodes),
         tuple(choice_to_index(node.value, node.kwargs) for node in nodes),
@@ -417,30 +408,6 @@ class Shrinker:
 
         previous = self.shrink_target
         self.cached_test_function_ir(tree)
-        return previous is not self.shrink_target
-
-    def incorporate_new_buffer(
-        self, buffer
-    ):  # pragma: no cover # removing function soon
-        """Either runs the test function on this buffer and returns True if
-        that changed the shrink_target, or determines that doing so would
-        be useless and returns False without running it."""
-
-        buffer = bytes(buffer[: self.shrink_target.index])
-        # Sometimes an attempt at lexicographic minimization will do the wrong
-        # thing because the buffer has changed under it (e.g. something has
-        # turned into a write, the bit size has changed). The result would be
-        # an invalid string, but it's better for us to just ignore it here as
-        # it turns out to involve quite a lot of tricky book-keeping to get
-        # this right and it's better to just handle it in one place.
-        if sort_key(buffer) >= sort_key(self.shrink_target.buffer):
-            return False
-
-        if self.shrink_target.buffer.startswith(buffer):
-            return False
-
-        previous = self.shrink_target
-        self.cached_test_function(buffer)
         return previous is not self.shrink_target
 
     def incorporate_test_data(self, data):

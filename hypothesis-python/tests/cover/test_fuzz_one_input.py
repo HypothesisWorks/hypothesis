@@ -18,7 +18,7 @@ import pytest
 from hypothesis import Phase, given, settings, strategies as st
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.conjecture.shrinker import sort_key
+from hypothesis.internal.conjecture.engine import shortlex
 
 
 @pytest.mark.parametrize(
@@ -61,7 +61,7 @@ def test_fuzz_one_input(buffer_type):
     # recent seed that we tried or the pruned-and-canonicalised form of it.
     (saved_examples,) = db.data.values()
     assert len(saved_examples) == 1
-    assert sort_key(seeds[-1]) >= sort_key(next(iter(saved_examples)))
+    assert shortlex(seeds[-1]) >= shortlex(next(iter(saved_examples)))
 
     # Now that we have a failure in `db`, re-running our test is sufficient to
     # reproduce it, *and shrink to a minimal example*.
