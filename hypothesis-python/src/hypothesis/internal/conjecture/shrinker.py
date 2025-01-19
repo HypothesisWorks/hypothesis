@@ -1370,7 +1370,8 @@ class Shrinker:
         node2 = self.nodes[
             chooser.choose(
                 range(node1.index + 1, min(len(self.nodes), node1.index + 3 + 1)),
-                lambda i: self.nodes[i].ir_type == "integer",
+                lambda i: self.nodes[i].ir_type == "integer"
+                and not self.nodes[i].was_forced,
             )
         ]
 
