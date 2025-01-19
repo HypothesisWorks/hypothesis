@@ -50,8 +50,7 @@ from hypothesis.internal.reflection import (
 from hypothesis.strategies._internal.utils import defines_strategy
 from hypothesis.utils.conventions import UniqueIdentifier
 
-# TODO: Use `(3, 13)` once Python 3.13 is released.
-if sys.version_info >= (3, 13, 0, "final"):
+if sys.version_info >= (3, 13):
     Ex = TypeVar("Ex", covariant=True, default=Any)
 elif TYPE_CHECKING:
     from typing_extensions import TypeVar  # type: ignore[assignment]
