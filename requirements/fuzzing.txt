@@ -55,9 +55,9 @@ fakeredis==2.26.2
     # via -r requirements/coverage.in
 flask==3.0.3
     # via dash
-hypofuzz==25.1.1
+hypofuzz==25.1.2
     # via -r requirements/fuzzing.in
-hypothesis[cli]==6.123.15
+hypothesis[cli]==6.124.1
     # via hypofuzz
 idna==3.10
     # via requests
@@ -87,7 +87,7 @@ mypy-extensions==1.0.0
     # via black
 nest-asyncio==1.6.0
     # via dash
-numpy==2.2.1
+numpy==2.2.2
     # via
     #   -r requirements/coverage.in
     #   pandas
@@ -114,7 +114,7 @@ psutil==6.1.1
     # via hypofuzz
 ptyprocess==0.7.0
     # via pexpect
-pyarrow==18.1.0
+pyarrow==19.0.0
     # via -r requirements/coverage.in
 pygments==2.19.1
     # via rich
