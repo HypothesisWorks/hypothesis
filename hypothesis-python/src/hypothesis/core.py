@@ -489,7 +489,7 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
 
         with local_settings(state.settings):
             fragments_reported = []
-            empty_data = ConjectureData.for_buffer(b"")
+            empty_data = ConjectureData.for_choices([])
             try:
                 execute_example = partial(
                     state.execute_once,
@@ -1334,9 +1334,7 @@ class StateForActualGivenExecution:
             info = falsifying_example.extra_information
             fragments = []
 
-            ran_example = runner.new_conjecture_data_for_buffer(
-                falsifying_example.buffer
-            )
+            ran_example = runner.new_conjecture_data_ir(falsifying_example.choices)
             ran_example.slice_comments = falsifying_example.slice_comments
             tb = None
             origin = None

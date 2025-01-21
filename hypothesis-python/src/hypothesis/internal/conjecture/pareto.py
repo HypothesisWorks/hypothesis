@@ -12,6 +12,7 @@ from enum import Enum
 
 from sortedcontainers import SortedList
 
+from hypothesis.internal.conjecture.choice import choices_key
 from hypothesis.internal.conjecture.data import ConjectureData, ConjectureResult, Status
 from hypothesis.internal.conjecture.junkdrawer import LazySequenceCopy
 from hypothesis.internal.conjecture.shrinker import sort_key_ir
@@ -300,7 +301,7 @@ class ParetoOptimiser:
             assert self.front
             i = min(i, len(self.front) - 1)
             target = self.front[i]
-            if target.buffer in seen:
+            if choices_key(target.choices) in seen:
                 i -= 1
                 continue
             assert target is not prev
@@ -328,7 +329,7 @@ class ParetoOptimiser:
                 return False
 
             shrunk = self.__engine.shrink(target, allow_transition=allow_transition)
-            seen.add(shrunk.buffer)
+            seen.add(choices_key(shrunk.choices))
 
             # Note that the front may have changed shape arbitrarily when
             # we ran the shrinker. If it didn't change shape then this is
