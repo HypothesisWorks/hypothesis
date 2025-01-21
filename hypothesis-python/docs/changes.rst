@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.124.2:
+
+--------------------
+6.124.2 - 2025-01-21
+--------------------
+
+Improves our internal caching logic for test cases.
+
 .. _v6.124.1:
 
 --------------------
