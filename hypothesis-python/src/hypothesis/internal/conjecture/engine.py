@@ -18,16 +18,7 @@ from contextlib import contextmanager, suppress
 from datetime import timedelta
 from enum import Enum
 from random import Random, getrandbits
-from typing import (
-    Callable,
-    Final,
-    List,
-    Literal,
-    NoReturn,
-    Optional,
-    Union,
-    cast,
-)
+from typing import Callable, Final, List, Literal, NoReturn, Optional, Union, cast
 
 import attr
 
