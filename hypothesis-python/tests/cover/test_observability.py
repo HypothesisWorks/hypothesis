@@ -32,14 +32,15 @@ from tests.common.utils import capture_observations
 
 
 @seed("deterministic so we don't miss some combination of features")
-@example(a=0, x=4, data=None)
+@example(l=[1], a=0, x=4, data=None)
 # explicitly set max_examples=100 to override our lower example limit for coverage tests.
 @settings(database=InMemoryExampleDatabase(), deadline=None, max_examples=100)
-@given(st.integers(), st.integers(), st.data())
-def do_it_all(a, x, data):
+@given(st.lists(st.integers()), st.integers(), st.integers(), st.data())
+def do_it_all(l, a, x, data):
     event(f"{x%2=}")
     target(x % 5, label="x%5")
     assume(a % 9)
+    assume(len(l) > 0)
     if data:
         data.draw(st.text("abcdef", min_size=a % 3), label="interactive")
     1 / ((x or 1) % 7)

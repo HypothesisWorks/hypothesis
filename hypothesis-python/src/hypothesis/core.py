@@ -1334,7 +1334,9 @@ class StateForActualGivenExecution:
             info = falsifying_example.extra_information
             fragments = []
 
-            ran_example = runner.new_conjecture_data_ir(falsifying_example.choices)
+            ran_example = runner.new_conjecture_data_ir(
+                falsifying_example.choices, max_length=len(falsifying_example.choices)
+            )
             ran_example.slice_comments = falsifying_example.slice_comments
             tb = None
             origin = None

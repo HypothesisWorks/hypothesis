@@ -44,10 +44,7 @@ from hypothesis.internal.conjecture.datatree import (
     all_children,
     compute_max_children,
 )
-from hypothesis.internal.conjecture.engine import (
-    BUFFER_SIZE_IR,
-    truncate_choices_to_size,
-)
+from hypothesis.internal.conjecture.engine import choice_count
 from hypothesis.internal.floats import SMALLEST_SUBNORMAL, next_down, next_up
 from hypothesis.internal.intervalsets import IntervalSet
 
@@ -321,7 +318,7 @@ def test_data_with_changed_forced_value(node):
     # This is actually fine; we'll just ignore the forced node (v1) and return
     # what the draw expects (v2).
 
-    data = ConjectureData.for_choices([node.value], max_length=BUFFER_SIZE_IR)
+    data = ConjectureData.for_choices([node.value])
 
     draw_func = getattr(data, f"draw_{node.ir_type}")
     kwargs = deepcopy(node.kwargs)
@@ -682,22 +679,17 @@ def test_ir_node_is_hashable(ir_node):
 
 @given(st.lists(ir_nodes()))
 def test_ir_size_positive(nodes):
-    assert ir_size(nodes) >= 0
+    assert ir_size([n.value for n in nodes]) >= 0
 
 
 @given(st.integers(min_value=1))
-def test_node_template_size(n):
-    node = NodeTemplate(type="simplest", size=n)
-    assert ir_size([node]) == n
-
-
-@given(st.lists(ir_nodes()), st.integers(min_value=0))
-def test_truncate_nodes(nodes, size):
-    assert len(truncate_choices_to_size(nodes, size)) <= len(nodes)
+def test_node_template_count(n):
+    node = NodeTemplate(type="simplest", count=n)
+    assert choice_count([node]) == n
 
 
 def test_node_template_to_overrun():
-    data = ConjectureData.for_choices([1, NodeTemplate("simplest", size=10)])
+    data = ConjectureData.for_choices([1, NodeTemplate("simplest", count=5)])
     data.draw_integer()
     with pytest.raises(StopTest):
         for _ in range(10):
@@ -709,7 +701,7 @@ def test_node_template_to_overrun():
 def test_node_template_single_node_overruns():
     # test for when drawing a single node takes more than BUFFER_SIZE, while in
     # the NodeTemplate case
-    data = ConjectureData.for_choices((NodeTemplate("simplest", size=BUFFER_SIZE_IR),))
+    data = ConjectureData.for_choices((NodeTemplate("simplest", count=1),))
     with pytest.raises(StopTest):
         data.draw_bytes(10_000, 10_000)
 
@@ -720,7 +712,7 @@ def test_node_template_single_node_overruns():
 def test_node_template_simplest_is_actually_trivial(node):
     # TODO_IR node.trivial is sound but not complete for floats.
     assume(node.ir_type != "float")
-    data = ConjectureData.for_choices((NodeTemplate("simplest", size=BUFFER_SIZE_IR),))
+    data = ConjectureData.for_choices((NodeTemplate("simplest", count=1),))
     getattr(data, f"draw_{node.ir_type}")(**node.kwargs)
     assert len(data.ir_nodes) == 1
     assert data.ir_nodes[0].trivial
@@ -900,3 +892,22 @@ def test_draw_directly_explicit():
 )
 def test_choices_key_distinguishes_weird_cases(choices1, choices2):
     assert choices_key(choices1) != choices_key(choices2)
+
+
+def test_node_template_overrun():
+    # different code path for overruning the NodeTemplate count, not max_length_ir.
+    cd = ConjectureData(
+        max_length=100,
+        prefix=b"",
+        random=None,
+        ir_prefix=[NodeTemplate("simplest", count=2)],
+        max_length_ir=100,
+    )
+
+    cd.draw_integer()
+    cd.draw_integer()
+    try:
+        cd.draw_integer()
+    except StopTest:
+        pass
+    assert cd.status is Status.OVERRUN

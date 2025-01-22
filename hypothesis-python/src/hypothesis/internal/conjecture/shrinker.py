@@ -28,7 +28,6 @@ from hypothesis.internal.conjecture.data import (
     IRNode,
     Status,
     draw_choice,
-    ir_size,
 )
 from hypothesis.internal.conjecture.junkdrawer import (
     endswith,
@@ -486,7 +485,6 @@ class Shrinker:
         self.explain()
 
     def explain(self):
-        from hypothesis.internal.conjecture.engine import BUFFER_SIZE_IR
 
         if not self.should_explain or not self.shrink_target.arg_slices:
             return
@@ -541,9 +539,7 @@ class Shrinker:
                     replacement.append(node.value)
 
                 attempt = choices[:start] + tuple(replacement) + choices[end:]
-                result = self.engine.cached_test_function_ir(
-                    attempt, extend=BUFFER_SIZE_IR - ir_size(attempt)
-                )
+                result = self.engine.cached_test_function_ir(attempt, extend="full")
 
                 # Turns out this was a variable-length part, so grab the infix...
                 if result.status is Status.OVERRUN:
@@ -744,7 +740,7 @@ class Shrinker:
         examples = self.examples_starting_at[i]
         for _ in range(3):
             random_attempt = self.engine.cached_test_function_ir(
-                [n.value for n in prefix], extend=len(nodes) * 2
+                [n.value for n in prefix], extend=len(nodes)
             )
             if random_attempt.status < Status.VALID:
                 continue

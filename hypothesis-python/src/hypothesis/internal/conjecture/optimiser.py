@@ -17,9 +17,8 @@ from hypothesis.internal.conjecture.data import (
     Status,
     _Overrun,
     bits_to_bytes,
-    ir_size,
 )
-from hypothesis.internal.conjecture.engine import BUFFER_SIZE_IR, ConjectureRunner
+from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.junkdrawer import find_integer
 from hypothesis.internal.conjecture.pareto import NO_SCORE
 
@@ -174,8 +173,7 @@ class Optimiser:
                         + choices[node.index + 1 :]
                     )
                     attempt = self.engine.cached_test_function_ir(
-                        attempt_choices,
-                        extend=BUFFER_SIZE_IR - ir_size(attempt_choices),
+                        attempt_choices, extend="full"
                     )
 
                     if self.consider_new_data(attempt):
