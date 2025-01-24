@@ -11,6 +11,7 @@
 import math
 import sys
 from contextlib import contextmanager
+from random import Random
 from typing import Optional
 
 from hypothesis import HealthCheck, Phase, assume, settings, strategies as st
@@ -121,11 +122,18 @@ def fresh_data(*, random=None, observer=None) -> ConjectureData:
         # drawing this from the current build context is almost *too* magical. But
         # the alternative is an extra @given(st.randoms()) everywhere we use
         # fresh_data, so eh.
-        random = context.data.draw(st.randoms())
+
+        # @example uses a zero-length data, which means we can't use a
+        # hypothesis-backed random (which would entail drawing from the data).
+        # In this case, use a deterministic Random(0).
+        random = (
+            context.data.draw(st.randoms(use_true_random=True))
+            if (choices := context.data.max_choices) is None or choices > 0
+            else Random(0)
+        )
 
     return ConjectureData(
         BUFFER_SIZE,
-        prefix=b"",
         random=random,
         observer=observer,
     )
