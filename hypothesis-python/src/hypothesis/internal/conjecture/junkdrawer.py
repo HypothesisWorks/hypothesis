@@ -18,7 +18,6 @@ import sys
 import time
 import warnings
 from collections.abc import Iterable, Iterator, Sequence
-from random import Random
 from typing import (
     Any,
     Callable,
@@ -187,11 +186,6 @@ def binary_search(lo: int, hi: int, f: Callable[[int], bool]) -> int:
         else:
             hi = mid
     return lo
-
-
-def uniform(random: Random, n: int) -> bytes:
-    """Returns a bytestring of length n, distributed uniformly at random."""
-    return random.getrandbits(n * 8).to_bytes(n, "big")
 
 
 class LazySequenceCopy(Generic[T]):

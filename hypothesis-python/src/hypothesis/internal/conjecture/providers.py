@@ -53,13 +53,7 @@ class BytestringProvider(PrimitiveProvider):
     def draw_boolean(
         self,
         p: float = 0.5,
-        *,
-        forced: Optional[bool] = None,
-        fake_forced: bool = False,
     ) -> bool:
-        if forced is not None:
-            return forced
-
         if p <= 0:
             return False
         if p >= 1:
@@ -83,12 +77,7 @@ class BytestringProvider(PrimitiveProvider):
         *,
         weights: Optional[dict[int, float]] = None,
         shrink_towards: int = 0,
-        forced: Optional[int] = None,
-        fake_forced: bool = False,
     ) -> int:
-        if forced is not None:
-            return forced
-
         assert self._cd is not None
 
         # we explicitly ignore integer weights for now, as they are likely net
@@ -120,12 +109,7 @@ class BytestringProvider(PrimitiveProvider):
         max_value: float = math.inf,
         allow_nan: bool = True,
         smallest_nonzero_magnitude: float,
-        forced: Optional[float] = None,
-        fake_forced: bool = False,
     ) -> float:
-        if forced is not None:
-            return forced
-
         n = self._draw_bits(64)
         sign = -1 if n >> 64 else 1
         f = sign * lex_to_float(n & ((1 << 64) - 1))
@@ -160,11 +144,7 @@ class BytestringProvider(PrimitiveProvider):
         *,
         min_size: int = 0,
         max_size: int = COLLECTION_DEFAULT_MAX_SIZE,
-        forced: Optional[str] = None,
-        fake_forced: bool = False,
     ) -> str:
-        if forced is not None:
-            return forced
         values = self._draw_collection(min_size, max_size, alphabet_size=len(intervals))
         return "".join(chr(intervals[v]) for v in values)
 
@@ -172,11 +152,6 @@ class BytestringProvider(PrimitiveProvider):
         self,
         min_size: int = 0,
         max_size: int = COLLECTION_DEFAULT_MAX_SIZE,
-        *,
-        forced: Optional[bytes] = None,
-        fake_forced: bool = False,
     ) -> bytes:
-        if forced is not None:
-            return forced
         values = self._draw_collection(min_size, max_size, alphabet_size=2**8)
         return bytes(values)

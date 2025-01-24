@@ -75,11 +75,14 @@ def run_to_nodes(f):
 @contextmanager
 def buffer_size_limit(n):
     original = engine_module.BUFFER_SIZE
+    original_ir = engine_module.BUFFER_SIZE_IR
     try:
         engine_module.BUFFER_SIZE = n
+        engine_module.BUFFER_SIZE_IR = n
         yield
     finally:
         engine_module.BUFFER_SIZE = original
+        engine_module.BUFFER_SIZE_IR = original_ir
 
 
 def shrinking_from(start):
@@ -351,11 +354,6 @@ def boolean_kwargs(draw, *, use_forced=False):
     forced = draw(st.booleans()) if use_forced else None
     # avoid invalid forced combinations
     p = draw(st.floats(0, 1, exclude_min=forced is True, exclude_max=forced is False))
-
-    if 0 < p < 1:
-        # match internal assumption about avoiding large draws
-        bits = math.ceil(-math.log(min(p, 1 - p), 2))
-        assume(bits <= 64)
 
     return {"p": p, "forced": forced}
 

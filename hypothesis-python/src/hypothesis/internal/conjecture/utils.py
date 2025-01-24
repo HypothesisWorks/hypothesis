@@ -177,7 +177,6 @@ class Sampler:
         data: "ConjectureData",
         *,
         forced: Optional[int] = None,
-        fake_forced: bool = False,
     ) -> int:
         if self.observe:
             data.start_example(SAMPLE_IN_SAMPLER_LABEL)
@@ -193,7 +192,6 @@ class Sampler:
         base, alternate, alternate_chance = data.choice(
             self.table,
             forced=forced_choice,
-            fake_forced=fake_forced,
             observe=self.observe,
         )
         forced_use_alternate = None
@@ -207,7 +205,6 @@ class Sampler:
         use_alternate = data.draw_boolean(
             alternate_chance,
             forced=forced_use_alternate,
-            fake_forced=fake_forced,
             observe=self.observe,
         )
         if self.observe:
@@ -244,7 +241,6 @@ class many:
         average_size: Union[int, float],
         *,
         forced: Optional[int] = None,
-        fake_forced: bool = False,
         observe: bool = True,
     ) -> None:
         assert 0 <= min_size <= average_size <= max_size
@@ -253,7 +249,6 @@ class many:
         self.max_size = max_size
         self.data = data
         self.forced_size = forced
-        self.fake_forced = fake_forced
         self.p_continue = _calc_p_continue(average_size - min_size, max_size - min_size)
         self.count = 0
         self.rejections = 0
@@ -299,7 +294,6 @@ class many:
             should_continue = self.data.draw_boolean(
                 self.p_continue,
                 forced=forced_result,
-                fake_forced=self.fake_forced,
                 observe=self.observe,
             )
 

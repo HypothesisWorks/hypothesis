@@ -520,8 +520,6 @@ class ConjectureRunner:
         ):
             self.save_choices(data.choices, sub_key=b"pareto")
 
-        assert len(data.buffer) <= BUFFER_SIZE
-
         if data.status >= Status.VALID:
             for k, v in data.target_observations.items():
                 self.best_observed_targets[k] = max(self.best_observed_targets[k], v)
@@ -968,7 +966,7 @@ class ConjectureRunner:
         if zero_data.status == Status.OVERRUN or (
             zero_data.status == Status.VALID
             and isinstance(zero_data, ConjectureResult)
-            and len(zero_data.buffer) * 2 > BUFFER_SIZE
+            and zero_data.length_ir * 2 > BUFFER_SIZE
         ):
             fail_health_check(
                 self.settings,
@@ -1309,7 +1307,6 @@ class ConjectureRunner:
 
         return ConjectureData(
             BUFFER_SIZE,
-            prefix=b"",
             ir_prefix=prefix,
             observer=observer,
             provider=provider,

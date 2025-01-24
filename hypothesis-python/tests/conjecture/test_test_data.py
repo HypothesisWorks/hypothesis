@@ -14,7 +14,6 @@ import pytest
 
 from hypothesis import strategies as st
 from hypothesis.errors import Frozen, InvalidArgument
-from hypothesis.internal.conjecture import engine
 from hypothesis.internal.conjecture.data import (
     MAX_DEPTH,
     ConjectureData,
@@ -26,7 +25,7 @@ from hypothesis.internal.conjecture.data import (
 )
 from hypothesis.strategies._internal.strategies import SearchStrategy
 
-from tests.conjecture.common import interesting_origin
+from tests.conjecture.common import buffer_size_limit, interesting_origin
 
 
 def test_cannot_draw_after_freeze():
@@ -43,12 +42,6 @@ def test_can_double_freeze():
     assert d.frozen
     d.freeze()
     assert d.frozen
-
-
-def test_can_draw_zero_bytes():
-    x = ConjectureData.for_buffer(b"")
-    for _ in range(10):
-        assert x.draw_bytes(0, 0) == b""
 
 
 def test_draw_past_end_sets_overflow():
@@ -75,11 +68,6 @@ def test_can_mark_interesting():
         d.mark_interesting()
     assert d.frozen
     assert d.status == Status.INTERESTING
-
-
-def test_drawing_zero_bits_is_free():
-    x = ConjectureData.for_buffer(b"")
-    assert x.draw_bits(0) == 0
 
 
 def test_can_mark_invalid():
@@ -428,19 +416,11 @@ def test_children_of_discarded_examples_do_not_create_structural_coverage():
 
 
 def test_overruns_at_exactly_max_length():
-    # TODO_IR use `with buffer_size_limit` once we remove the BUFFER_SIZE / BUFFER_SIZE_IR
-    # distinction
-    original = engine.BUFFER_SIZE_IR
-    engine.BUFFER_SIZE_IR = 1
-    try:
-        data = ConjectureData(
-            999, prefix=b"", ir_prefix=[True], random=None, max_length_ir=1
-        )
+    with buffer_size_limit(1):
+        data = ConjectureData(999, ir_prefix=[True], random=None, max_length_ir=1)
         data.draw_boolean()
         try:
             data.draw_boolean()
         except StopTest:
             pass
         assert data.status is Status.OVERRUN
-    finally:
-        engine.BUFFER_SIZE_IR = original

@@ -18,7 +18,6 @@ from hypothesis import (
     assume,
     example,
     given,
-    reject,
     settings,
     strategies as st,
 )
@@ -33,28 +32,6 @@ except ImportError:
     np = None
 
 
-def test_coin_biased_towards_truth():
-    p = 1 - 1.0 / 500
-
-    for i in range(1, 255):
-        data = ConjectureData.for_buffer([0, i, 0, 0])
-        assert data.draw_boolean(p)
-
-    data = ConjectureData.for_buffer([0, 0, 0, 1])
-    assert not data.draw_boolean(p)
-
-
-def test_coin_biased_towards_falsehood():
-    p = 1.0 / 500
-
-    for i in range(255):
-        if i != 1:
-            data = ConjectureData.for_buffer([0, i, 0, 1])
-            assert not data.draw_boolean(p)
-    data = ConjectureData.for_buffer([0, 1, 0, 0])
-    assert data.draw_boolean(p)
-
-
 def test_drawing_certain_coin_still_writes():
     data = ConjectureData.for_choices([True])
     assert data.draw_boolean(1)
@@ -67,9 +44,9 @@ def test_drawing_impossible_coin_still_writes():
     assert data.choices == (False,)
 
 
-def test_too_small_to_be_useful_coin():
+def test_draws_extremely_small_p():
     data = ConjectureData.for_choices((True,))
-    assert not data.draw_boolean(0.5**65)
+    assert data.draw_boolean(0.5**65)
 
 
 @example([Fraction(1, 3), Fraction(1, 3), Fraction(1, 3)])
@@ -108,12 +85,19 @@ def test_sampler_distribution(weights):
 
 def test_sampler_does_not_draw_minimum_if_zero():
     sampler = cu.Sampler([0, 2, 47])
-    assert sampler.sample(ConjectureData.for_buffer([0, 0])) != 0
+    assert sampler.sample(ConjectureData.for_choices([0, 0])) != 0
 
 
 def test_sampler_shrinks():
     sampler = cu.Sampler([4.0, 8.0, 1.0, 1.0, 0.5])
-    assert sampler.sample(ConjectureData.for_buffer([0] * 3)) == 0
+    assert sampler.sample(ConjectureData.for_choices([0] * 3)) == 0
+
+
+def test_can_force_sampler():
+    sampler = cu.Sampler([0.5, 0.5])
+    cd = ConjectureData.for_choices([0] * 100)
+    assert sampler.sample(cd, forced=0) == 0
+    assert sampler.sample(cd, forced=1) == 1
 
 
 def test_combine_labels_is_distinct():
@@ -143,7 +127,7 @@ def test_valid_list_sample():
 
 
 def test_choice():
-    assert ConjectureData.for_buffer([1]).choice([1, 2, 3]) == 2
+    assert ConjectureData.for_choices([1]).choice([1, 2, 3]) == 2
 
 
 def test_fixed_size_draw_many():
@@ -161,7 +145,7 @@ def test_astronomically_unlikely_draw_many():
     # will we ever generate an element for such a low average size.
     data = ConjectureData.for_choices((True,) * 1000)
     many = cu.many(data, min_size=0, max_size=10, average_size=1e-5)
-    assert not many.more()
+    assert many.more()
 
 
 def test_rejection_eventually_terminates_many():
@@ -210,22 +194,6 @@ def test_many_with_max_size():
     assert many.more()
     assert many.more()
     assert not many.more()
-
-
-def test_assert_biased_coin_always_treats_one_as_true():
-    data = ConjectureData.for_buffer([0, 1])
-    assert data.draw_boolean(1.0 / 257)
-
-
-@example(p=0.31250000000000006, b=b"\x03\x03\x00")
-@example(p=0.4375000000000001, b=b"\x03\x00")
-@given(st.floats(0, 1), st.binary())
-def test_can_draw_arbitrary_fractions(p, b):
-    try:
-        data = ConjectureData.for_buffer(b)
-        data.draw_boolean(p)
-    except StopTest:
-        reject()
 
 
 def test_samples_from_a_range_directly():

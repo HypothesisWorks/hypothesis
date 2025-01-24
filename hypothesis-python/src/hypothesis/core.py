@@ -1869,7 +1869,6 @@ def given(
                 assert isinstance(buffer, (bytes, bytearray, memoryview))
                 data = ConjectureData(
                     max_length=BUFFER_SIZE,
-                    prefix=b"",
                     random=None,
                     provider=BytestringProvider,
                     provider_kw={"bytestring": buffer},
