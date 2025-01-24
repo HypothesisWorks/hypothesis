@@ -108,12 +108,12 @@ def do_release(package):
 @task()
 def deploy():
     HEAD = tools.hash_for_name("HEAD")
-    MASTER = tools.hash_for_name("origin/main")
+    MAIN = tools.hash_for_name("origin/main")
 
     print("Current head:  ", HEAD)
-    print("Current main:", MASTER)
+    print("Current main:", MAIN)
 
-    if not tools.is_ancestor(HEAD, MASTER):
+    if not tools.is_ancestor(HEAD, MAIN):
         print("Not deploying due to not being on main")
         sys.exit(0)
 
@@ -271,7 +271,7 @@ def update_python_versions():
     install.ensure_python(PYTHONS[ci_version])
     where = os.path.expanduser("~/.cache/hypothesis-build-runtimes/pyenv/")
     subprocess.run(
-        "git fetch && git reset --hard origin/main",
+        "git fetch && git reset --hard origin/master",
         cwd=where,
         shell=True,
         capture_output=True,
