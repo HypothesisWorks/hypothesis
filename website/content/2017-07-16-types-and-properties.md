@@ -58,13 +58,12 @@ Consider writing this code based on types instead:
 
 ```python
 from statistics import mean
-from typing import List
 
 from hypothesis import given, strategies as st
 
 
 @given(ls=...)
-def test_mean_is_in_bounds(ls: List[float]):
+def test_mean_is_in_bounds(ls: list[float]):
     assert min(ls) <= mean(ls) <= max(ls)
 ```
 
@@ -79,13 +78,12 @@ we have to add a precondition to make the test valid:
 ```python
 import math
 from statistics import mean
-from typing import List
 
 from hypothesis import assume, given, strategies as st
 
 
 @given(ls=...)
-def test_mean_is_in_bounds(ls: List[float]):
+def test_mean_is_in_bounds(ls: list[float]):
     assume(len(ls) > 1)
     assume(all(math.isfinite(x) for x in ls))
     assert min(ls) <= mean(ls) <= max(ls)

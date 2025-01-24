@@ -20,10 +20,12 @@ from hypothesis.internal.conjecture.junkdrawer import (
     NotFound,
     SelfOrganisingList,
     binary_search,
-    clamp,
+    endswith,
     replace_all,
     stack_depth_of_caller,
+    startswith,
 )
+from hypothesis.internal.floats import clamp, float_to_int, sign_aware_lte
 
 
 def test_out_of_range():
@@ -60,24 +62,35 @@ def test_pop():
         x.pop()
 
 
-@example(1, 5, 10)
-@example(1, 10, 5)
-@example(5, 10, 5)
-@example(5, 1, 10)
-@given(st.integers(), st.integers(), st.integers())
-def test_clamp(lower, value, upper):
-    lower, upper = sorted((lower, upper))
+@st.composite
+def clamp_inputs(draw):
+    lower = draw(st.floats(allow_nan=False))
+    value = draw(st.floats(allow_nan=False))
+    upper = draw(st.floats(min_value=lower, allow_nan=False))
+    return (lower, value, upper)
 
+
+@example((1, 5, 10))
+@example((1, 10, 5))
+@example((5, 10, 5))
+@example((5, 1, 10))
+@example((-5, 0.0, -0.0))
+@example((0.0, -0.0, 5))
+@example((-0.0, 0.0, 0.0))
+@example((-0.0, -0.0, 0.0))
+@given(clamp_inputs())
+def test_clamp(input):
+    lower, value, upper = input
     clamped = clamp(lower, value, upper)
 
-    assert lower <= clamped <= upper
-
-    if lower <= value <= upper:
-        assert value == clamped
+    assert sign_aware_lte(lower, clamped)
+    assert sign_aware_lte(clamped, upper)
+    if sign_aware_lte(lower, value) and sign_aware_lte(value, upper):
+        assert float_to_int(value) == float_to_int(clamped)
     if lower > value:
-        assert clamped == lower
+        assert float_to_int(clamped) == float_to_int(lower)
     if value > upper:
-        assert clamped == upper
+        assert float_to_int(clamped) == float_to_int(upper)
 
 
 # this would be more robust as a stateful test, where each rule is a list operation
@@ -189,16 +202,27 @@ def test_self_organising_list_raises_not_found_when_none_satisfy():
 
 
 def test_self_organising_list_moves_to_front():
-    count = [0]
+    count = 0
 
     def zero(n):
-        count[0] += 1
+        nonlocal count
+        count += 1
         return n == 0
 
     x = SelfOrganisingList(range(20))
 
     assert x.find(zero) == 0
-    assert count[0] == 20
+    assert count == 20
 
     assert x.find(zero) == 0
-    assert count[0] == 21
+    assert count == 21
+
+
+@given(st.binary(), st.binary())
+def test_startswith(b1, b2):
+    assert b1.startswith(b2) == startswith(b1, b2)
+
+
+@given(st.binary(), st.binary())
+def test_endswith(b1, b2):
+    assert b1.endswith(b2) == endswith(b1, b2)

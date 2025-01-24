@@ -102,15 +102,16 @@ def test_registered_Random_is_seeded_by_random_module_strategy():
     register_random(r)
     state = r.getstate()
     results = set()
-    count = [0]
+    count = 0
 
     @given(st.integers())
     def inner(x):
+        nonlocal count
         results.add(r.random())
-        count[0] += 1
+        count += 1
 
     inner()
-    assert count[0] > len(results) * 0.9, "too few unique random numbers"
+    assert count > len(results) * 0.9, "too few unique random numbers"
     assert state == r.getstate()
 
 
@@ -160,7 +161,17 @@ def test_find_does_not_pollute_state():
     "ignore:It looks like `register_random` was passed an object that could be garbage collected"
 )
 def test_evil_prng_registration_nonsense():
-    gc_collect()
+    # my guess is that other tests may register randoms that are then marked for
+    # deletion (but not actually gc'd yet). Therefore, depending on the order tests
+    # are run, RANDOMS_TO_MANAGE may start with more entries than after a gc. To
+    # force a clean slate for this test, unconditionally gc.
+    gc.collect()
+    # The first test to call deterministic_PRNG registers a new random instance.
+    # If that's this test, it will throw off our n_registered count in the middle.
+    # start with a no-op to ensure this registration has occurred.
+    with deterministic_PRNG(0):
+        pass
+
     n_registered = len(entropy.RANDOMS_TO_MANAGE)
     r1, r2, r3 = random.Random(1), random.Random(2), random.Random(3)
     s2 = r2.getstate()

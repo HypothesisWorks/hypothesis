@@ -69,6 +69,42 @@ def test_observability():
             )
 
 
+def test_capture_unnamed_arguments():
+    @given(st.integers(), st.floats(), st.data())
+    def f(v1, v2, data):
+        data.draw(st.booleans())
+
+    with capture_observations() as observations:
+        f()
+
+    test_cases = [tc for tc in observations if tc["type"] == "test_case"]
+    for test_case in test_cases:
+        assert list(test_case["arguments"].keys()) == [
+            "v1",
+            "v2",
+            "data",
+            "Draw 1",
+        ], test_case
+
+
+def test_capture_named_arguments():
+    @given(named1=st.integers(), named2=st.floats(), data=st.data())
+    def f(named1, named2, data):
+        data.draw(st.booleans())
+
+    with capture_observations() as observations:
+        f()
+
+    test_cases = [tc for tc in observations if tc["type"] == "test_case"]
+    for test_case in test_cases:
+        assert list(test_case["arguments"].keys()) == [
+            "named1",
+            "named2",
+            "data",
+            "Draw 1",
+        ], test_case
+
+
 def test_assume_has_status_reason():
     @given(st.booleans())
     def f(b):

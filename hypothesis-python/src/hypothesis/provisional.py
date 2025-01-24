@@ -19,7 +19,9 @@ definitions it links to.  If not, report the bug!
 # https://tools.ietf.org/html/rfc3696
 
 import string
+from functools import lru_cache
 from importlib import resources
+from typing import Optional
 
 from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument
@@ -30,25 +32,34 @@ URL_SAFE_CHARACTERS = frozenset(string.ascii_letters + string.digits + "$-_.+!*'
 FRAGMENT_SAFE_CHARACTERS = URL_SAFE_CHARACTERS | {"?", "/"}
 
 
-# This file is sourced from http://data.iana.org/TLD/tlds-alpha-by-domain.txt
-# The file contains additional information about the date that it was last updated.
-try:  # pragma: no cover
+@lru_cache(maxsize=1)
+def get_top_level_domains() -> tuple[str, ...]:
+    # This file is sourced from http://data.iana.org/TLD/tlds-alpha-by-domain.txt
+    # The file contains additional information about the date that it was last updated.
     traversable = resources.files("hypothesis.vendor") / "tlds-alpha-by-domain.txt"
     _comment, *_tlds = traversable.read_text(encoding="utf-8").splitlines()
-except (AttributeError, ValueError):  # pragma: no cover  # .files() was added in 3.9
-    _comment, *_tlds = resources.read_text(
-        "hypothesis.vendor", "tlds-alpha-by-domain.txt", encoding="utf-8"
-    ).splitlines()
-assert _comment.startswith("#")
+    assert _comment.startswith("#")
 
-# Remove special-use domain names from the list. For more discussion
-# see https://github.com/HypothesisWorks/hypothesis/pull/3572
-TOP_LEVEL_DOMAINS = ["COM", *sorted((d for d in _tlds if d != "ARPA"), key=len)]
+    # Remove special-use domain names from the list. For more discussion
+    # see https://github.com/HypothesisWorks/hypothesis/pull/3572
+    return ("COM", *sorted((d for d in _tlds if d != "ARPA"), key=len))
+
+
+@st.composite
+def _recase_randomly(draw, tld):
+    tld = list(tld)
+    changes = draw(st.tuples(*(st.booleans() for _ in range(len(tld)))))
+    for i, change_case in enumerate(changes):
+        if change_case:
+            tld[i] = tld[i].lower() if tld[i].isupper() else tld[i].upper()
+    return "".join(tld)
 
 
 class DomainNameStrategy(st.SearchStrategy):
     @staticmethod
-    def clean_inputs(minimum, maximum, value, variable_name):
+    def clean_inputs(
+        minimum: int, maximum: int, value: Optional[int], variable_name: str
+    ) -> int:
         if value is None:
             value = maximum
         elif not isinstance(value, int):
@@ -61,7 +72,9 @@ class DomainNameStrategy(st.SearchStrategy):
             )
         return value
 
-    def __init__(self, max_length=None, max_element_length=None):
+    def __init__(
+        self, max_length: Optional[int] = None, max_element_length: Optional[int] = None
+    ) -> None:
         """
         A strategy for :rfc:`1035` fully qualified domain names.
 
@@ -86,34 +99,37 @@ class DomainNameStrategy(st.SearchStrategy):
         # information in https://tools.ietf.org/html/rfc1035#section-2.3.1
         # which defines the allowed syntax of a subdomain string.
         if self.max_element_length == 1:
-            self.label_regex = r"[a-zA-Z]"
+            label_regex = r"[a-zA-Z]"
         elif self.max_element_length == 2:
-            self.label_regex = r"[a-zA-Z][a-zA-Z0-9]?"
+            label_regex = r"[a-zA-Z][a-zA-Z0-9]?"
         else:
             maximum_center_character_pattern_repetitions = self.max_element_length - 2
-            self.label_regex = r"[a-zA-Z]([a-zA-Z0-9\-]{0,%d}[a-zA-Z0-9])?" % (
+            label_regex = r"[a-zA-Z]([a-zA-Z0-9\-]{0,%d}[a-zA-Z0-9])?" % (
                 maximum_center_character_pattern_repetitions,
             )
 
-    def do_draw(self, data):
+        # Construct reusable strategies here to avoid a performance hit by doing
+        # so repeatedly in do_draw.
+
         # 1 - Select a valid top-level domain (TLD) name
         # 2 - Check that the number of characters in our selected TLD won't
         # prevent us from generating at least a 1 character subdomain.
         # 3 - Randomize the TLD between upper and lower case characters.
-        domain = data.draw(
-            st.sampled_from(TOP_LEVEL_DOMAINS)
+
+        self.domain_strategy = (
+            st.sampled_from(get_top_level_domains())
             .filter(lambda tld: len(tld) + 2 <= self.max_length)
-            .flatmap(
-                lambda tld: st.tuples(
-                    *(st.sampled_from([c.lower(), c.upper()]) for c in tld)
-                ).map("".join)
-            )
+            .flatmap(_recase_randomly)
         )
+
         # RFC-5890 s2.3.1 says such labels are reserved, and since we don't
         # want to bother with xn-- punycode labels we'll exclude them all.
-        elem_st = st.from_regex(self.label_regex, fullmatch=True).filter(
+        self.elem_strategy = st.from_regex(label_regex, fullmatch=True).filter(
             lambda label: len(label) < 4 or label[2:4] != "--"
         )
+
+    def do_draw(self, data):
+        domain = data.draw(self.domain_strategy)
         # The maximum possible number of subdomains is 126,
         # 1 character subdomain + 1 '.' character, * 126 = 252,
         # with a max of 255, that leaves 3 characters for a TLD.
@@ -122,7 +138,7 @@ class DomainNameStrategy(st.SearchStrategy):
         elements = cu.many(data, min_size=1, average_size=3, max_size=126)
         while elements.more():
             # Generate a new valid subdomain using the regex strategy.
-            sub_domain = data.draw(elem_st)
+            sub_domain = data.draw(self.elem_strategy)
             if len(domain) + len(sub_domain) >= self.max_length:
                 data.stop_example(discard=True)
                 break
@@ -163,13 +179,18 @@ _url_fragments_strategy = (
 
 @defines_strategy(force_reusable_values=True)
 def urls() -> st.SearchStrategy[str]:
-    """A strategy for :rfc:`3986`, generating http/https URLs."""
+    """A strategy for :rfc:`3986`, generating http/https URLs.
 
-    def url_encode(s):
+    The generated URLs could, at least in theory, be passed to an HTTP client
+    and fetched.
+
+    """
+
+    def url_encode(s: str) -> str:
         return "".join(c if c in URL_SAFE_CHARACTERS else "%%%02X" % ord(c) for c in s)
 
     schemes = st.sampled_from(["http", "https"])
-    ports = st.integers(min_value=0, max_value=2**16 - 1).map(":{}".format)
+    ports = st.integers(min_value=1, max_value=2**16 - 1).map(":{}".format)
     paths = st.lists(st.text(string.printable).map(url_encode)).map("/".join)
 
     return st.builds(

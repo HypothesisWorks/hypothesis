@@ -17,7 +17,7 @@ import sys
 import sysconfig
 import typing
 from functools import partial
-from typing import Any, ForwardRef, List, Optional, TypedDict as TypedDict, get_args
+from typing import Any, ForwardRef, Optional, TypedDict as TypedDict, get_args
 
 try:
     BaseExceptionGroup = BaseExceptionGroup
@@ -36,6 +36,8 @@ if typing.TYPE_CHECKING:  # pragma: no cover
         TypedDict as TypedDict,
         override as override,
     )
+
+    from hypothesis.internal.conjecture.engine import ConjectureRunner
 else:
     # In order to use NotRequired, we need the version of TypedDict included in Python 3.11+.
     if sys.version_info[:2] >= (3, 11):
@@ -110,7 +112,7 @@ def int_to_byte(i: int) -> bytes:
     return bytes([i])
 
 
-def is_typed_named_tuple(cls):
+def is_typed_named_tuple(cls: type) -> bool:
     """Return True if cls is probably a subtype of `typing.NamedTuple`.
 
     Unfortunately types created with `class T(NamedTuple):` actually
@@ -129,7 +131,7 @@ def _hint_and_args(x):
     return (x, *get_args(x))
 
 
-def get_type_hints(thing):
+def get_type_hints(thing: object) -> dict[str, Any]:
     """Like the typing version, but tries harder and never errors.
 
     Tries harder: if the thing to inspect is a class but typing.get_type_hints
@@ -150,16 +152,14 @@ def get_type_hints(thing):
         )
         return {k: v for k, v in get_type_hints(thing.func).items() if k not in bound}
 
-    kwargs = {} if sys.version_info[:2] < (3, 9) else {"include_extras": True}
-
     try:
-        hints = typing.get_type_hints(thing, **kwargs)
+        hints = typing.get_type_hints(thing, include_extras=True)
     except (AttributeError, TypeError, NameError):  # pragma: no cover
         hints = {}
 
     if inspect.isclass(thing):
         try:
-            hints.update(typing.get_type_hints(thing.__init__, **kwargs))
+            hints.update(typing.get_type_hints(thing.__init__, include_extras=True))
         except (TypeError, NameError, AttributeError):
             pass
 
@@ -220,7 +220,7 @@ def ceil(x):
     return y
 
 
-def extract_bits(x: int, /, width: Optional[int] = None) -> List[int]:
+def extract_bits(x: int, /, width: Optional[int] = None) -> list[int]:
     assert x >= 0
     result = []
     while x:
@@ -232,14 +232,14 @@ def extract_bits(x: int, /, width: Optional[int] = None) -> List[int]:
     return result
 
 
-# int.bit_count was added sometime around python 3.9
+# int.bit_count was added in python 3.10
 try:
     bit_count = int.bit_count
 except AttributeError:  # pragma: no cover
     bit_count = lambda self: sum(extract_bits(abs(self)))
 
 
-def bad_django_TestCase(runner):
+def bad_django_TestCase(runner: Optional["ConjectureRunner"]) -> bool:
     if runner is None or "django.test" not in sys.modules:
         return False
     else:  # pragma: no cover

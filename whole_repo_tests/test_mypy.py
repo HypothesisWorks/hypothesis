@@ -16,9 +16,7 @@ import pytest
 from hypothesistooling.projects.hypothesispython import PYTHON_SRC
 from hypothesistooling.scripts import pip_tool, tool_path
 
-from .revealed_types import NUMPY_REVEALED_TYPES, REVEALED_TYPES
-
-PYTHON_VERSIONS = ["3.8", "3.9", "3.10", "3.11"]
+from .revealed_types import NUMPY_REVEALED_TYPES, PYTHON_VERSIONS, REVEALED_TYPES
 
 
 def test_mypy_passes_on_hypothesis():
@@ -43,11 +41,22 @@ def get_mypy_output(fname, *extra_args):
 
 
 def get_mypy_analysed_type(fname):
-    out = get_mypy_output(fname).rstrip()
-    msg = "Success: no issues found in 1 source file"
-    if out.endswith(msg):
-        out = out[: -len(msg)]
-    assert len(out.splitlines()) == 1, out
+    attempts = 0
+    while True:
+        out = get_mypy_output(fname).rstrip()
+        msg = "Success: no issues found in 1 source file"
+        if out.endswith(msg):
+            out = out[: -len(msg)]
+        # we've noticed some flakiness in getting an empty output here. Give it
+        # a couple tries.
+        if len(out.splitlines()) == 0:
+            attempts += 1
+            continue
+
+        assert len(out.splitlines()) == 1, out
+        assert attempts < 2, "too many failed retries"
+        break
+
     # See https://mypy.readthedocs.io/en/latest/common_issues.html#reveal-type
     # The shell output for `reveal_type([1, 2, 3])` looks like a literal:
     # file.py:2: error: Revealed type is 'builtins.list[builtins.int*]'
@@ -62,8 +71,10 @@ def get_mypy_analysed_type(fname):
             "SearchStrategy",
         )
         .replace("numpy._typing.", "")
+        .replace("_nbit_base.", "")
         .replace("numpy.", "")
-        .replace("tuple", "Tuple")
+        .replace("List[", "list[")
+        .replace("Dict[", "dict[")
     )
 
 
@@ -261,7 +272,8 @@ def test_stateful_bundle_generic_type(tmp_path):
     f.write_text(
         "from hypothesis.stateful import Bundle\n"
         "b: Bundle[int] = Bundle('test')\n"
-        "reveal_type(b.example())\n",
+        "x = b.example()\n"
+        "reveal_type(x)\n",
         encoding="utf-8",
     )
     got = get_mypy_analysed_type(f)
@@ -327,8 +339,9 @@ def test_stateful_target_params_mutually_exclusive(tmp_path, decorator):
     "target_args",
     [
         "target=b1",
-        "targets=(b1,)",
-        "targets=(b1, b2)",
+        # FIXME: temporary workaround for mypy bug, see hypothesis/pull/4136
+        pytest.param("targets=(b1,)", marks=pytest.mark.xfail(strict=False)),
+        pytest.param("targets=(b1, b2)", marks=pytest.mark.xfail(strict=False)),
         "",
     ],
 )

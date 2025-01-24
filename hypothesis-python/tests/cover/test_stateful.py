@@ -8,7 +8,6 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import base64
 import re
 from collections import defaultdict
 from typing import ClassVar
@@ -24,8 +23,10 @@ from hypothesis import (
     reproduce_failure,
     seed,
     settings as Settings,
+    strategies as st,
 )
 from hypothesis.control import current_build_context
+from hypothesis.core import encode_failure
 from hypothesis.database import ExampleDatabase
 from hypothesis.errors import DidNotReproduce, Flaky, InvalidArgument, InvalidDefinition
 from hypothesis.internal.entropy import deterministic_PRNG
@@ -156,7 +157,11 @@ class FlakyRatchettingMachine(RuleBasedStateMachine):
         raise AssertionError
 
 
-@Settings(stateful_step_count=10, max_examples=30)  # speed this up
+@Settings(
+    stateful_step_count=10,
+    max_examples=30,
+    suppress_health_check=[HealthCheck.filter_too_much],
+)  # speed this up
 class MachineWithConsumingRule(RuleBasedStateMachine):
     b1 = Bundle("b1")
     b2 = Bundle("b2")
@@ -334,23 +339,26 @@ def test_machine_with_no_terminals_is_invalid():
 
 
 def test_minimizes_errors_in_teardown():
-    counter = [0]
+    counter = 0
 
     class Foo(RuleBasedStateMachine):
         @initialize()
         def init(self):
-            counter[0] = 0
+            nonlocal counter
+            counter = 0
 
         @rule()
         def increment(self):
-            counter[0] += 1
+            nonlocal counter
+            counter += 1
 
         def teardown(self):
-            assert not counter[0]
+            nonlocal counter
+            assert not counter
 
     with raises(AssertionError):
         run_state_machine_as_test(Foo)
-    assert counter[0] == 1
+    assert counter == 1
 
 
 class RequiresInit(RuleBasedStateMachine):
@@ -1066,7 +1074,7 @@ def test_uses_seed(capsys):
 
 
 def test_reproduce_failure_works():
-    @reproduce_failure(__version__, base64.b64encode(b"\x00\x00\x01\x00\x00\x00"))
+    @reproduce_failure(__version__, encode_failure([0, 1]))
     class TrivialMachine(RuleBasedStateMachine):
         @rule()
         def oops(self):
@@ -1077,7 +1085,7 @@ def test_reproduce_failure_works():
 
 
 def test_reproduce_failure_fails_if_no_error():
-    @reproduce_failure(__version__, base64.b64encode(b"\x00\x00\x01\x00\x00\x00"))
+    @reproduce_failure(__version__, encode_failure([0, 1]))
     class TrivialMachine(RuleBasedStateMachine):
         @rule()
         def ok(self):
@@ -1318,3 +1326,45 @@ class LotsOfEntropyPerStepMachine(RuleBasedStateMachine):
 
 
 TestLotsOfEntropyPerStepMachine = LotsOfEntropyPerStepMachine.TestCase
+
+
+def test_flatmap():
+    class Machine(RuleBasedStateMachine):
+        buns = Bundle("buns")
+
+        @initialize(target=buns)
+        def create_bun(self):
+            return 0
+
+        @rule(target=buns, bun=buns.flatmap(lambda x: just(x + 1)))
+        def use_flatmap(self, bun):
+            assert isinstance(bun, int)
+            return bun
+
+        @rule(bun=buns)
+        def use_directly(self, bun):
+            assert isinstance(bun, int)
+
+    Machine.TestCase.settings = Settings(stateful_step_count=5, max_examples=10)
+    run_state_machine_as_test(Machine)
+
+
+def test_use_bundle_within_other_strategies():
+    class Class:
+        def __init__(self, value):
+            self.value = value
+
+    class Machine(RuleBasedStateMachine):
+        my_bundle = Bundle("my_bundle")
+
+        @initialize(target=my_bundle)
+        def set_initial(self, /) -> str:
+            return "sample text"
+
+        @rule(instance=st.builds(Class, my_bundle))
+        def check(self, instance):
+            assert isinstance(instance, Class)
+            assert isinstance(instance.value, str)
+
+    Machine.TestCase.settings = Settings(stateful_step_count=5, max_examples=10)
+    run_state_machine_as_test(Machine)

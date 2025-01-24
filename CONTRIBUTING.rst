@@ -208,11 +208,11 @@ high level, the task takes the form:
 Namely, first provide the tox environment (see ``tox.ini``), then the python
 version to test with, then any ``tox`` or ``pytest`` args as needed. For
 example, to run all of the tests in the file
-``tests/nocover/test_conjecture_engine.py`` with python 3.8:
+``tests/nocover/test_conjecture_engine.py`` with python 3.12:
 
 .. code-block::
 
-    ./build.sh tox py38-custom 3.8.13 -- tests/nocover/test_conjecture_engine.py
+    ./build.sh tox py312-custom 3.12.7 -- tests/nocover/test_conjecture_engine.py
 
 See the ``tox`` docs and ``pytest`` docs for more information:
 * https://docs.pytest.org/en/latest/how-to/usage.html

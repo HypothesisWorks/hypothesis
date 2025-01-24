@@ -18,14 +18,12 @@ from hypothesis.internal.reflection import get_pretty_function_description
 
 from tests.common.utils import no_shrink
 
-TIME_INCREMENT = 0.001
-
-
-class Timeout(BaseException):
-    pass
+TIME_INCREMENT = 0.00001
 
 
 def minimal(definition, condition=lambda x: True, settings=None):
+    from tests.conftest import in_shrinking_benchmark
+
     definition.validate()
     result = None
 
@@ -50,7 +48,9 @@ def minimal(definition, condition=lambda x: True, settings=None):
         parent=settings,
         suppress_health_check=list(HealthCheck),
         report_multiple_bugs=False,
-        derandomize=True,
+        # we derandomize in general to avoid flaky tests, but we do want to
+        # measure this variation while benchmarking.
+        derandomize=not in_shrinking_benchmark,
         database=None,
         verbosity=verbosity,
     )

@@ -6,35 +6,35 @@
 #
 annotated-types==0.7.0
     # via -r requirements/coverage.in
-async-timeout==4.0.3
+async-timeout==5.0.1
     # via redis
 attrs==24.1.0
     # via
     #   -r requirements/test.in
     #   hypothesis
     #   hypothesis (hypothesis-python/setup.py)
-black==24.8.0
+black==24.10.0
     # via
     #   -r requirements/coverage.in
     #   hypofuzz
     #   hypothesis
-blinker==1.8.2
+blinker==1.9.0
     # via flask
-certifi==2024.8.30
+certifi==2024.12.14
     # via requests
-charset-normalizer==3.3.2
+charset-normalizer==3.4.1
     # via requests
-click==8.1.7
+click==8.1.8
     # via
     #   -r requirements/coverage.in
     #   black
     #   flask
     #   hypothesis
-coverage[toml]==7.6.1
+coverage[toml]==7.6.10
     # via
     #   hypofuzz
     #   pytest-cov
-dash==2.18.1
+dash==2.18.2
     # via hypofuzz
 dash-core-components==2.0.0
     # via dash
@@ -51,13 +51,13 @@ exceptiongroup==1.2.2 ; python_version < "3.11"
     #   pytest
 execnet==2.1.1
     # via pytest-xdist
-fakeredis==2.24.1
+fakeredis==2.26.2
     # via -r requirements/coverage.in
 flask==3.0.3
     # via dash
-hypofuzz==24.2.3
+hypofuzz==25.1.2
     # via -r requirements/fuzzing.in
-hypothesis[cli]==6.112.1
+hypothesis[cli]==6.124.1
     # via hypofuzz
 idna==3.10
     # via requests
@@ -67,17 +67,17 @@ iniconfig==2.0.0
     # via pytest
 itsdangerous==2.2.0
     # via flask
-jinja2==3.1.4
+jinja2==3.1.5
     # via flask
 lark==1.2.2
     # via -r requirements/coverage.in
-libcst==1.4.0
+libcst==1.6.0
     # via
     #   -r requirements/coverage.in
     #   hypofuzz
 markdown-it-py==3.0.0
     # via rich
-markupsafe==2.1.5
+markupsafe==3.0.2
     # via
     #   jinja2
     #   werkzeug
@@ -87,17 +87,16 @@ mypy-extensions==1.0.0
     # via black
 nest-asyncio==1.6.0
     # via dash
-numpy==2.1.1
+numpy==2.2.2
     # via
     #   -r requirements/coverage.in
     #   pandas
-    #   pyarrow
-packaging==24.1
+packaging==24.2
     # via
     #   black
     #   plotly
     #   pytest
-pandas==2.2.2
+pandas==2.2.3
     # via
     #   -r requirements/coverage.in
     #   hypofuzz
@@ -105,27 +104,27 @@ pathspec==0.12.1
     # via black
 pexpect==4.9.0
     # via -r requirements/test.in
-platformdirs==4.3.3
+platformdirs==4.3.6
     # via black
 plotly==5.24.1
     # via dash
 pluggy==1.5.0
     # via pytest
-psutil==6.0.0
+psutil==6.1.1
     # via hypofuzz
 ptyprocess==0.7.0
     # via pexpect
-pyarrow==17.0.0
+pyarrow==19.0.0
     # via -r requirements/coverage.in
-pygments==2.18.0
+pygments==2.19.1
     # via rich
-pytest==8.3.3
+pytest==8.3.4
     # via
     #   -r requirements/test.in
     #   hypofuzz
     #   pytest-cov
     #   pytest-xdist
-pytest-cov==5.0.0
+pytest-cov==6.0.0
     # via -r requirements/coverage.in
 pytest-xdist==3.6.1
     # via -r requirements/test.in
@@ -139,17 +138,15 @@ pytz==2024.2
     #   pandas
 pyyaml==6.0.2
     # via libcst
-redis==5.0.8
+redis==5.2.1
     # via fakeredis
 requests==2.32.3
-    # via
-    #   dash
-    #   hypofuzz
+    # via dash
 retrying==1.3.4
     # via dash
-rich==13.8.1
+rich==13.9.4
     # via hypothesis
-six==1.16.0
+six==1.17.0
     # via
     #   python-dateutil
     #   retrying
@@ -160,7 +157,7 @@ sortedcontainers==2.4.0
     #   hypothesis (hypothesis-python/setup.py)
 tenacity==9.0.0
     # via plotly
-tomli==2.0.1
+tomli==2.2.1
     # via
     #   black
     #   coverage
@@ -171,17 +168,18 @@ typing-extensions==4.12.2
     #   black
     #   dash
     #   fakeredis
-tzdata==2024.1
+    #   rich
+tzdata==2024.2
     # via pandas
-urllib3==2.2.3
+urllib3==2.3.0
     # via requests
-werkzeug==3.0.4
+werkzeug==3.0.6
     # via
     #   dash
     #   flask
-zipp==3.20.2
+zipp==3.21.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-setuptools==75.0.0
+setuptools==75.8.0
     # via dash

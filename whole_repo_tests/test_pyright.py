@@ -23,9 +23,7 @@ import pytest
 from hypothesistooling.projects.hypothesispython import HYPOTHESIS_PYTHON, PYTHON_SRC
 from hypothesistooling.scripts import pip_tool, tool_path
 
-from .revealed_types import NUMPY_REVEALED_TYPES, REVEALED_TYPES
-
-PYTHON_VERSIONS = ["3.7", "3.8", "3.9", "3.10", "3.11"]
+from .revealed_types import NUMPY_REVEALED_TYPES, PYTHON_VERSIONS, REVEALED_TYPES
 
 
 @pytest.mark.skip(
@@ -65,7 +63,14 @@ def test_pyright_passes_on_basic_test(tmp_path: Path, python_version: str):
     assert _get_pyright_errors(file) == []
 
 
-@pytest.mark.parametrize("python_version", PYTHON_VERSIONS)
+@pytest.mark.parametrize(
+    "python_version",
+    [
+        # FIXME: temporary workaround, see hypothesis/pull/4136
+        pytest.param(v, marks=[pytest.mark.xfail(strict=False)] * (v == "3.13"))
+        for v in PYTHON_VERSIONS
+    ],
+)
 def test_given_only_allows_strategies(tmp_path: Path, python_version: str):
     file = tmp_path / "test.py"
     file.write_text(
@@ -83,15 +88,9 @@ def test_given_only_allows_strategies(tmp_path: Path, python_version: str):
     _write_config(
         tmp_path, {"typeCheckingMode": "strict", "pythonVersion": python_version}
     )
-    assert (
-        sum(
-            e["message"].startswith(
-                'Argument of type "Literal[1]" cannot be assigned to parameter "_given_arguments"'
-            )
-            for e in _get_pyright_errors(file)
-        )
-        == 1
-    )
+    errors = _get_pyright_errors(file)
+    msg = 'Argument of type "Literal[1]" cannot be assigned to parameter "_given_arguments"'
+    assert sum(e["message"].startswith(msg) for e in errors) == 1, errors
 
 
 def test_pyright_issue_3296(tmp_path: Path):
@@ -179,11 +178,11 @@ def test_numpy_arrays_strategy(tmp_path: Path):
     "val,expect",
     [
         *REVEALED_TYPES,  # shared with Mypy
-        ("lists(none())", "List[None]"),
-        ("dictionaries(integers(), datetimes())", "Dict[int, datetime]"),
+        ("lists(none())", "list[None]"),
+        ("dictionaries(integers(), datetimes())", "dict[int, datetime]"),
         ("data()", "DataObject"),
         ("none() | integers()", "int | None"),
-        ("recursive(integers(), lists)", "List[Any] | int"),
+        ("recursive(integers(), lists)", "list[Any] | int"),
         # We have overloads for up to five types, then fall back to Any.
         # (why five?  JSON atoms are None|bool|int|float|str and we do that a lot)
         ("one_of(integers(), text())", "int | str"),
@@ -367,7 +366,16 @@ def get_pyright_analysed_type(fname):
     print(out, rest)
     assert not rest
     assert out["severity"] == "information"
-    return re.fullmatch(r'Type of ".+" is "(.+)"', out["message"]).group(1)
+    return (
+        re.fullmatch(r'Type of ".+" is "(.+)"', out["message"])
+        .group(1)
+        .replace("builtins.", "")
+        .replace("numpy.", "")
+        .replace(
+            "signedinteger[_32Bit | _64Bit] | bool[bool]",
+            "Union[signedinteger[Union[_32Bit, _64Bit]], bool[bool]]",
+        )
+    )
 
 
 def _write_config(config_dir: Path, data: dict[str, Any] | None = None):

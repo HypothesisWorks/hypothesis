@@ -34,10 +34,11 @@ def test_stops_after_max_examples_if_satisfying():
 
 
 def test_stops_after_ten_times_max_examples_if_not_satisfying():
-    count = [0]
+    count = 0
 
     def track(x):
-        count[0] += 1
+        nonlocal count
+        count += 1
         reject()
 
     max_examples = 100
@@ -48,7 +49,7 @@ def test_stops_after_ten_times_max_examples_if_not_satisfying():
     # Very occasionally we can generate overflows in generation, which also
     # count towards our example budget, which means that we don't hit the
     # maximum.
-    assert count[0] <= 10 * max_examples
+    assert count <= 10 * max_examples
 
 
 some_normal_settings = settings()
@@ -65,18 +66,19 @@ def test_settings_are_default_in_given(x):
 
 
 def test_given_shrinks_pytest_helper_errors():
-    final_value = [None]
+    final_value = None
 
     @settings(derandomize=True, max_examples=100)
     @given(s.integers())
     def inner(x):
-        final_value[0] = x
+        nonlocal final_value
+        final_value = x
         if x > 100:
             pytest.fail(f"{x=} is too big!")
 
     with pytest.raises(Failed):
         inner()
-    assert final_value[0] == 101
+    assert final_value == 101
 
 
 def test_pytest_skip_skips_shrinking():

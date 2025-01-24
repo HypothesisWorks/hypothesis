@@ -178,8 +178,9 @@ def mixed_generic_func2(obj: _SecondBase[float, D]):
     ],
 )
 def test_several_generic_bases_functions(type_, func):
-    with temp_registered(_FirstBase, st.builds(type_)), temp_registered(
-        _SecondBase, st.builds(type_)
+    with (
+        temp_registered(_FirstBase, st.builds(type_)),
+        temp_registered(_SecondBase, st.builds(type_)),
     ):
         find_any(st.builds(func))
 

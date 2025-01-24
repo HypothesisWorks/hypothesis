@@ -8,12 +8,28 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from typing import Union
+from collections.abc import Iterable, Sequence
+from typing import TYPE_CHECKING, Union, cast, final
+
+if TYPE_CHECKING:
+    from typing import TypeAlias
+
+    from typing_extensions import Self
+
+IntervalsT: "TypeAlias" = tuple[tuple[int, int], ...]
 
 
+# @final makes mypy happy with the Self return annotations. We otherwise run
+# afoul of:
+# > You should not use Self as the return annotation if the method is not
+# > guaranteed to return an instance of a subclass when the class is subclassed
+# > https://docs.python.org/3/library/typing.html#typing.Self
+
+
+@final
 class IntervalSet:
     @classmethod
-    def from_string(cls, s):
+    def from_string(cls, s: str) -> "Self":
         """Return a tuple of intervals, covering the codepoints of characters in `s`.
 
         >>> IntervalSet.from_string('abcdef0123456789')
@@ -22,23 +38,29 @@ class IntervalSet:
         x = cls((ord(c), ord(c)) for c in sorted(s))
         return x.union(x)
 
-    def __init__(self, intervals=()):
-        self.intervals = tuple(intervals)
-        self.offsets = [0]
+    def __init__(self, intervals: Iterable[Sequence[int]] = ()) -> None:
+        self.intervals: IntervalsT = cast(
+            IntervalsT, tuple(tuple(v) for v in intervals)
+        )
+        # cast above is validated by this length assertion. check here instead of
+        # before to not exhaust generators before we create intervals from it
+        assert all(len(v) == 2 for v in self.intervals)
+
+        self.offsets: list[int] = [0]
         for u, v in self.intervals:
             self.offsets.append(self.offsets[-1] + v - u + 1)
         self.size = self.offsets.pop()
         self._idx_of_zero = self.index_above(ord("0"))
         self._idx_of_Z = min(self.index_above(ord("Z")), len(self) - 1)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self.size
 
-    def __iter__(self):
+    def __iter__(self) -> Iterable[int]:
         for u, v in self.intervals:
             yield from range(u, v + 1)
 
-    def __getitem__(self, i):
+    def __getitem__(self, i: int) -> int:
         if i < 0:
             i = self.size + i
         if i < 0 or i >= self.size:
@@ -69,7 +91,7 @@ class IntervalSet:
         assert 0 <= elem <= 0x10FFFF
         return any(start <= elem <= end for start, end in self.intervals)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"IntervalSet({self.intervals!r})"
 
     def index(self, value: int) -> int:
@@ -90,22 +112,22 @@ class IntervalSet:
                 return offset + (value - u)
         return self.size
 
-    def __or__(self, other):
+    def __or__(self, other: "Self") -> "Self":
         return self.union(other)
 
-    def __sub__(self, other):
+    def __sub__(self, other: "Self") -> "Self":
         return self.difference(other)
 
-    def __and__(self, other):
+    def __and__(self, other: "Self") -> "Self":
         return self.intersection(other)
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         return isinstance(other, IntervalSet) and (other.intervals == self.intervals)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.intervals)
 
-    def union(self, other):
+    def union(self, other: "Self") -> "Self":
         """Merge two sequences of intervals into a single tuple of intervals.
 
         Any integer bounded by `x` or `y` is also bounded by the result.
@@ -141,7 +163,7 @@ class IntervalSet:
                 result.append((u, v))
         return IntervalSet(result)
 
-    def difference(self, other):
+    def difference(self, other: "Self") -> "Self":
         """Set difference for lists of intervals. That is, returns a list of
         intervals that bounds all values bounded by x that are not also bounded by
         y. x and y are expected to be in sorted order.
@@ -158,7 +180,7 @@ class IntervalSet:
         x = list(map(list, x))
         i = 0
         j = 0
-        result = []
+        result: list[Iterable[int]] = []
         while i < len(x) and j < len(y):
             # Iterate in parallel over x and y. j stays pointing at the smallest
             # interval in the left hand side that could still overlap with some
@@ -218,7 +240,7 @@ class IntervalSet:
         result.extend(x[i:])
         return IntervalSet(map(tuple, result))
 
-    def intersection(self, other):
+    def intersection(self, other: "Self") -> "Self":
         """Set intersection for lists of intervals."""
         assert isinstance(other, type(self)), other
         intervals = []

@@ -12,9 +12,10 @@ from enum import Enum
 
 from sortedcontainers import SortedList
 
+from hypothesis.internal.conjecture.choice import choices_key
 from hypothesis.internal.conjecture.data import ConjectureData, ConjectureResult, Status
-from hypothesis.internal.conjecture.junkdrawer import LazySequenceCopy, swap
-from hypothesis.internal.conjecture.shrinker import sort_key
+from hypothesis.internal.conjecture.junkdrawer import LazySequenceCopy
+from hypothesis.internal.conjecture.shrinker import sort_key_ir
 
 NO_SCORE = float("-inf")
 
@@ -45,10 +46,12 @@ def dominance(left, right):
     more structured or failing tests it can be useful to track, and future work
     will depend on it more."""
 
-    if left.buffer == right.buffer:
+    left_key = sort_key_ir(left.ir_nodes)
+    right_key = sort_key_ir(right.ir_nodes)
+    if left_key == right_key:
         return DominanceRelation.EQUAL
 
-    if sort_key(right.buffer) < sort_key(left.buffer):
+    if right_key < left_key:
         result = dominance(left=right, right=left)
         if result == DominanceRelation.LEFT_DOMINATES:
             return DominanceRelation.RIGHT_DOMINATES
@@ -60,7 +63,7 @@ def dominance(left, right):
             return result
 
     # Either left is better or there is no dominance relationship.
-    assert sort_key(left.buffer) < sort_key(right.buffer)
+    assert left_key < right_key
 
     # The right is more interesting
     if left.status < right.status:
@@ -126,7 +129,7 @@ class ParetoFront:
         self.__random = random
         self.__eviction_listeners = []
 
-        self.front = SortedList(key=lambda d: sort_key(d.buffer))
+        self.front = SortedList(key=lambda d: sort_key_ir(d.ir_nodes))
         self.__pending = None
 
     def add(self, data):
@@ -196,7 +199,7 @@ class ParetoFront:
             dominators = [data]
 
             while i >= 0 and len(dominators) < 10:
-                swap(front, i, self.__random.randint(0, i))
+                front.swap(i, self.__random.randint(0, i))
 
                 candidate = front[i]
 
@@ -298,7 +301,7 @@ class ParetoOptimiser:
             assert self.front
             i = min(i, len(self.front) - 1)
             target = self.front[i]
-            if target.buffer in seen:
+            if choices_key(target.choices) in seen:
                 i -= 1
                 continue
             assert target is not prev
@@ -326,7 +329,7 @@ class ParetoOptimiser:
                 return False
 
             shrunk = self.__engine.shrink(target, allow_transition=allow_transition)
-            seen.add(shrunk.buffer)
+            seen.add(choices_key(shrunk.choices))
 
             # Note that the front may have changed shape arbitrarily when
             # we ran the shrinker. If it didn't change shape then this is

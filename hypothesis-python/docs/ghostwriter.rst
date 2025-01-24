@@ -1,6 +1,6 @@
-==========================
-Ghostwriting tests for you
-==========================
+===========
+Ghostwriter
+===========
 
 .. automodule:: hypothesis.extra.ghostwriter
    :members:
@@ -51,7 +51,7 @@ If you're interested in similar questions, `drop me an email`_!
 .. _Daikon: https://plse.cs.washington.edu/daikon/pubs/
 .. _Alonso 2022: https://doi.org/10.1145/3540250.3559080
 .. _QuickSpec: http://www.cse.chalmers.se/~nicsma/papers/quickspec2.pdf
-.. _Speculate: https://matela.com.br/paper/speculate.pdf
+.. _Speculate: https://matela.com.br/speculate.pdf
 .. _FUDGE: https://research.google/pubs/pub48314/
 .. _FuzzGen: https://www.usenix.org/conference/usenixsecurity20/presentation/ispoglou
 .. _WINNIE: https://www.ndss-symposium.org/wp-content/uploads/2021-334-paper.pdf

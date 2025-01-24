@@ -15,7 +15,7 @@ from functools import reduce
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import assume, settings
+from hypothesis import assume, given, settings
 from hypothesis.strategies import (
     booleans,
     builds,
@@ -343,10 +343,52 @@ def test_lists_forced_near_top(n):
     ) == [0] * (n + 2)
 
 
-def test_sum_of_pair():
+def test_sum_of_pair_int():
     assert minimal(
         tuples(integers(0, 1000), integers(0, 1000)), lambda x: sum(x) > 1000
     ) == (1, 1000)
+
+
+def test_sum_of_pair_float():
+    assert minimal(
+        tuples(st.floats(0, 1000), st.floats(0, 1000)), lambda x: sum(x) > 1000
+    ) == (1.0, 1000.0)
+
+
+def test_sum_of_pair_mixed():
+    # check both orderings
+    assert minimal(
+        tuples(st.floats(0, 1000), st.integers(0, 1000)), lambda x: sum(x) > 1000
+    ) == (1.0, 1000)
+    assert minimal(
+        tuples(st.integers(0, 1000), st.floats(0, 1000)), lambda x: sum(x) > 1000
+    ) == (1, 1000.0)
+
+
+def test_sum_of_pair_separated_int():
+    @st.composite
+    def separated_sum(draw):
+        n1 = draw(st.integers(0, 1000))
+        draw(st.text())
+        draw(st.booleans())
+        draw(st.integers())
+        n2 = draw(st.integers(0, 1000))
+        return (n1, n2)
+
+    assert minimal(separated_sum(), lambda x: sum(x) > 1000) == (1, 1000)
+
+
+def test_sum_of_pair_separated_float():
+    @st.composite
+    def separated_sum(draw):
+        f1 = draw(st.floats(0, 1000))
+        draw(st.text())
+        draw(st.booleans())
+        draw(st.integers())
+        f2 = draw(st.floats(0, 1000))
+        return (f1, f2)
+
+    assert minimal(separated_sum(), lambda x: sum(x) > 1000) == (1, 1000)
 
 
 def test_calculator_benchmark():
@@ -396,3 +438,38 @@ def test_calculator_benchmark():
 
 def test_one_of_slip():
     assert minimal(st.integers(101, 200) | st.integers(0, 100)) == 101
+
+
+# this limit is only to avoid Unsatisfiable when searching for an initial
+# counterexample in minimal, as we may generate a very large magnitude n.
+@given(st.integers(-(2**32), 2**32))
+@settings(max_examples=3)
+def test_perfectly_shrinks_integers(n):
+    if n >= 0:
+        assert minimal(st.integers(), lambda x: x >= n) == n
+    else:
+        assert minimal(st.integers(), lambda x: x <= n) == n
+
+
+@given(st.integers(0, 20))
+def test_lowering_together_positive(gap):
+    s = st.tuples(st.integers(0, 20), st.integers(0, 20))
+    assert minimal(s, lambda x: x[0] + gap == x[1]) == (0, gap)
+
+
+@given(st.integers(-20, 0))
+def test_lowering_together_negative(gap):
+    s = st.tuples(st.integers(-20, 0), st.integers(-20, 0))
+    assert minimal(s, lambda x: x[0] + gap == x[1]) == (0, gap)
+
+
+@given(st.integers(-10, 10))
+def test_lowering_together_mixed(gap):
+    s = st.tuples(st.integers(-10, 10), st.integers(-10, 10))
+    assert minimal(s, lambda x: x[0] + gap == x[1]) == (0, gap)
+
+
+@given(st.integers(-10, 10))
+def test_lowering_together_with_gap(gap):
+    s = st.tuples(st.integers(-10, 10), st.text(), st.floats(), st.integers(-10, 10))
+    assert minimal(s, lambda x: x[0] + gap == x[3]) == (0, "", 0.0, gap)

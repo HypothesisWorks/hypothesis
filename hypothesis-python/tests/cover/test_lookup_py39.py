@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import collections.abc
 import dataclasses
 import sys
 import typing
@@ -30,12 +31,10 @@ from tests.common.utils import temp_registered
     "annotated_type,expected_strategy_repr",
     [
         (typing.Annotated[int, "foo"], "integers()"),
-        (typing.Annotated[typing.List[float], "foo"], "lists(floats())"),
+        (typing.Annotated[list[float], "foo"], "lists(floats())"),
         (typing.Annotated[typing.Annotated[str, "foo"], "bar"], "text()"),
         (
-            typing.Annotated[
-                typing.Annotated[typing.List[typing.Dict[str, bool]], "foo"], "bar"
-            ],
+            typing.Annotated[typing.Annotated[list[dict[str, bool]], "foo"], "bar"],
             "lists(dictionaries(keys=text(), values=booleans()))",
         ),
     ],
@@ -101,7 +100,7 @@ def test_issue_3080():
 
 @dataclasses.dataclass
 class TypingTuple:
-    a: dict[typing.Tuple[int, int], str]
+    a: dict[tuple[int, int], str]
 
 
 @dataclasses.dataclass
@@ -176,3 +175,9 @@ class LazyStrategyAnnotation:
 @given(...)
 def test_grouped_protocol_strategy(x: typing.Annotated[int, LazyStrategyAnnotation()]):
     assert x is sentinel
+
+
+def test_collections_abc_callable_none():
+    # https://github.com/HypothesisWorks/hypothesis/issues/4192
+    s = st.from_type(collections.abc.Callable[[None], None])
+    assert_all_examples(s, lambda x: callable(x) and x(None) is None)

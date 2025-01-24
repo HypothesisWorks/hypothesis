@@ -11,20 +11,8 @@
 import importlib
 import math
 import types
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Literal,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-    overload,
-)
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Literal, Optional, TypeVar, Union, cast, overload
 
 import numpy as np
 
@@ -80,26 +68,26 @@ _SupportsArray = _try_import("numpy._typing._array_like", "_SupportsArray")
 
 __all__ = [
     "BroadcastableShapes",
-    "from_dtype",
-    "arrays",
+    "array_dtypes",
     "array_shapes",
-    "scalar_dtypes",
+    "arrays",
+    "basic_indices",
     "boolean_dtypes",
-    "unsigned_integer_dtypes",
-    "integer_dtypes",
-    "floating_dtypes",
+    "broadcastable_shapes",
+    "byte_string_dtypes",
     "complex_number_dtypes",
     "datetime64_dtypes",
-    "timedelta64_dtypes",
-    "byte_string_dtypes",
-    "unicode_string_dtypes",
-    "array_dtypes",
-    "nested_dtypes",
-    "valid_tuple_axes",
-    "broadcastable_shapes",
-    "mutually_broadcastable_shapes",
-    "basic_indices",
+    "floating_dtypes",
+    "from_dtype",
     "integer_array_indices",
+    "integer_dtypes",
+    "mutually_broadcastable_shapes",
+    "nested_dtypes",
+    "scalar_dtypes",
+    "timedelta64_dtypes",
+    "unicode_string_dtypes",
+    "unsigned_integer_dtypes",
+    "valid_tuple_axes",
 ]
 
 TIME_RESOLUTIONS = tuple("Y  M  D  h  m  s  ms  us  ns  ps  fs  as".split())
@@ -543,7 +531,7 @@ def arrays(
             lambda s: arrays(dtype, s, elements=elements, fill=fill, unique=unique)
         )
     # From here on, we're only dealing with values and it's relatively simple.
-    dtype = np.dtype(dtype)  # type: ignore[arg-type,assignment]
+    dtype = np.dtype(dtype)  # type: ignore[arg-type]
     assert isinstance(dtype, np.dtype)  # help mypy out a bit...
     if elements is None or isinstance(elements, Mapping):
         if dtype.kind in ("m", "M") and "[" not in dtype.str:
@@ -1190,7 +1178,7 @@ def integer_array_indices(
     shape: Shape,
     *,
     result_shape: st.SearchStrategy[Shape] = array_shapes(),
-) -> "st.SearchStrategy[Tuple[NDArray[np.signedinteger[Any]], ...]]": ...
+) -> "st.SearchStrategy[tuple[NDArray[np.signedinteger[Any]], ...]]": ...
 
 
 @overload
@@ -1200,7 +1188,7 @@ def integer_array_indices(
     *,
     result_shape: st.SearchStrategy[Shape] = array_shapes(),
     dtype: "np.dtype[I]",
-) -> "st.SearchStrategy[Tuple[NDArray[I], ...]]": ...
+) -> "st.SearchStrategy[tuple[NDArray[I], ...]]": ...
 
 
 @defines_strategy()
@@ -1208,8 +1196,10 @@ def integer_array_indices(
     shape: Shape,
     *,
     result_shape: st.SearchStrategy[Shape] = array_shapes(),
-    dtype: "np.dtype[I] | np.dtype[np.signedinteger[Any]]" = np.dtype(int),
-) -> "st.SearchStrategy[Tuple[NDArray[I], ...]]":
+    dtype: "np.dtype[I] | np.dtype[np.signedinteger[Any] | np.bool[bool]]" = np.dtype(
+        int
+    ),
+) -> "st.SearchStrategy[tuple[NDArray[I], ...]]":
     """Return a search strategy for tuples of integer-arrays that, when used
     to index into an array of shape ``shape``, given an array whose shape
     was drawn from ``result_shape``.
@@ -1314,7 +1304,7 @@ def _dtype_from_args(args):
     return np.dtype(dtype)
 
 
-def _from_type(thing: Type[Ex]) -> Optional[st.SearchStrategy[Ex]]:
+def _from_type(thing: type[Ex]) -> Optional[st.SearchStrategy[Ex]]:
     """Called by st.from_type to try to infer a strategy for thing using numpy.
 
     If we can infer a numpy-specific strategy for thing, we return that; otherwise,

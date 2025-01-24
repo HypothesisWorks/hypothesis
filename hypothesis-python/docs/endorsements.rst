@@ -27,7 +27,7 @@ has caught or prevented far more bugs - than our old style of
 example-based testing.
 
 ---------------------------------------------------------------------------------------
-Kristian Glass - Director of Technology at `LaterPay GmbH <https://www.laterpay.net/>`_
+Kristian Glass - Director of Technology at LaterPay GmbH
 ---------------------------------------------------------------------------------------
 
 Hypothesis has been brilliant for expanding the coverage of our test cases,
@@ -183,16 +183,16 @@ in one of our most used library.  Since then, we have increasingly used
 hypothesis to improve the quality of our testing in libraries and applications
 as well.
 
-__ https://github.com/merchise/xoutil/commit/0a4a0f529812fed363efb653f3ade2d2bc203945
+__ https://github.com/merchise/xotl.tools/commit/0a4a0f529812fed363efb653f3ade2d2bc203945
 
 ----------------------------------------------
 `Florian Kromer <https://github.com/fkromer>`_
 ----------------------------------------------
 
-At `Roboception GmbH <https://roboception.com/en/>`_ I use Hypothesis to
+At `Roboception GmbH <https://roboception.com/>`_ I use Hypothesis to
 implement fully automated stateless and stateful reliability tests for the
-`3D sensor rc_visard <https://roboception.com/en/rc_visard-en/>`_ and
-`robotic software components <https://roboception.com/en/rc_reason-en/>`_ .
+`3D sensor rc_visard <https://roboception.com/3d-stereo-vision/rc-visard-3d-stereo-sensor/>`_ and
+`robotic software components <https://roboception.com/rc-reason-software-suite/>`_ .
 
 Thank you very much for creating the (probably) most powerful property-based
 testing framework.

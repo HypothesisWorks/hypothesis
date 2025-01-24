@@ -324,10 +324,6 @@ def test_choices_have_right_length(rnd, choices):
     assert len(rnd.choices(seq, k=k)) == k
 
 
-@pytest.mark.skipif(
-    "randbytes" not in RANDOM_METHODS,
-    reason="randbytes not supported on this Python version",
-)
 @given(any_random, st.integers(0, 100))
 def test_randbytes_have_right_length(rnd, n):
     assert len(rnd.randbytes(n)) == n

@@ -11,21 +11,20 @@
 import sys
 import threading
 from inspect import signature
-from typing import TYPE_CHECKING, Callable, Dict
+from typing import TYPE_CHECKING, Callable
 
 import attr
 
 from hypothesis.internal.cache import LRUReusedCache
 from hypothesis.internal.compat import dataclass_asdict
-from hypothesis.internal.conjecture.junkdrawer import clamp
-from hypothesis.internal.floats import float_to_int
+from hypothesis.internal.floats import clamp, float_to_int
 from hypothesis.internal.reflection import proxies
 from hypothesis.vendor.pretty import pretty
 
 if TYPE_CHECKING:
     from hypothesis.strategies._internal.strategies import SearchStrategy, T
 
-_strategies: Dict[str, Callable[..., "SearchStrategy"]] = {}
+_strategies: dict[str, Callable[..., "SearchStrategy"]] = {}
 
 
 class FloatKey:

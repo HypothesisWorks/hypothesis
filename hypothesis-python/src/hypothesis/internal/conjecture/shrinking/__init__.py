@@ -15,4 +15,4 @@ from hypothesis.internal.conjecture.shrinking.integer import Integer
 from hypothesis.internal.conjecture.shrinking.ordering import Ordering
 from hypothesis.internal.conjecture.shrinking.string import String
 
-__all__ = ["Integer", "Ordering", "Float", "Collection", "String", "Bytes"]
+__all__ = ["Bytes", "Collection", "Float", "Integer", "Ordering", "String"]

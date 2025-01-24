@@ -21,3 +21,5 @@ python:
       - path: hypothesis-python/
         extra_requirements:
            - all
+sphinx:
+   configuration: hypothesis-python/docs/conf.py

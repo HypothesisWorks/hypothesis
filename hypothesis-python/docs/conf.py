@@ -14,10 +14,9 @@ import sys
 import types
 from pathlib import Path
 
-import sphinx_rtd_theme
-
 root = Path(__file__).parent.parent
 sys.path.append(str(root / "src"))
+sys.path.append(str(Path(__file__).parent / "_ext"))
 
 needs_sphinx = re.search(
     r"sphinx==([0-9\.]+)", root.joinpath("../requirements/tools.txt").read_text()
@@ -38,6 +37,9 @@ extensions = [
     "sphinx_codeautolink",
     "sphinx_selective_exclude.eager_only",
     "sphinx-jsonschema",
+    # loading this extension overrides the default -b linkcheck behavior with
+    # custom url ignore logic. see hypothesis_linkcheck.py for details.
+    "hypothesis_linkcheck",
 ]
 
 templates_path = ["_templates"]
@@ -87,12 +89,19 @@ def setup(app):
 
 
 language = "en"
-
 exclude_patterns = ["_build"]
-
 pygments_style = "sphinx"
-
 todo_include_todos = False
+
+# To run linkcheck (last argument is the output dir)
+#   sphinx-build --builder linkcheck hypothesis-python/docs linkcheck
+linkcheck_ignore = [
+    # we'll assume that python isn't going to break peps, and github isn't going
+    # to break issues/pulls. (and if they did, we'd hopefully notice quickly).
+    r"https://peps.python.org/pep-.*",
+    r"https://github.com/HypothesisWorks/hypothesis/issues/\d+",
+    r"https://github.com/HypothesisWorks/hypothesis/pull/\d+",
+]
 
 # See https://sphinx-hoverxref.readthedocs.io/en/latest/configuration.html
 hoverxref_auto_ref = True
@@ -151,8 +160,6 @@ extlinks = {
 # -- Options for HTML output ----------------------------------------------
 
 html_theme = "sphinx_rtd_theme"
-
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 html_static_path = ["_static"]
 

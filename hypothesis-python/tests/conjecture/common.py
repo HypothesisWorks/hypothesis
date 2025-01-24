@@ -9,12 +9,15 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
+import sys
 from contextlib import contextmanager
+from typing import Optional
 
 from hypothesis import HealthCheck, Phase, assume, settings, strategies as st
 from hypothesis.control import current_build_context
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import engine as engine_module
+from hypothesis.internal.conjecture.choice import ChoiceT
 from hypothesis.internal.conjecture.data import (
     COLLECTION_DEFAULT_MAX_SIZE,
     ConjectureData,
@@ -24,7 +27,9 @@ from hypothesis.internal.conjecture.data import (
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE, ConjectureRunner
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.entropy import deterministic_PRNG
+from hypothesis.internal.escalation import InterestingOrigin
 from hypothesis.internal.floats import SMALLEST_SUBNORMAL, sign_aware_lte
+from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.strategies._internal.strings import OneCharStringStrategy, TextStrategy
 
 from tests.common.strategies import intervals
@@ -37,6 +42,22 @@ TEST_SETTINGS = settings(
 )
 
 
+def interesting_origin(n: Optional[int] = None) -> InterestingOrigin:
+    """
+    Creates and returns an InterestingOrigin, parameterized by n, such that
+    interesting_origin(n) == interesting_origin(m) iff n = m.
+
+    Since n=None may by chance concide with an explicitly-passed value of n, I
+    recommend not mixing interesting_origin() and interesting_origin(n) in the
+    same test.
+    """
+    try:
+        int("not an int")
+    except Exception as e:
+        origin = InterestingOrigin.from_exception(e)
+        return origin._replace(lineno=n if n is not None else origin.lineno)
+
+
 def run_to_data(f):
     with deterministic_PRNG():
         runner = ConjectureRunner(f, settings=TEST_SETTINGS)
@@ -46,8 +67,8 @@ def run_to_data(f):
         return last_data
 
 
-def run_to_buffer(f):
-    return bytes(run_to_data(f).buffer)
+def run_to_nodes(f):
+    return run_to_data(f).ir_nodes
 
 
 @contextmanager
@@ -74,7 +95,7 @@ def shrinking_from(start):
                     phases=set(settings.default.phases) - {Phase.explain},
                 ),
             )
-            runner.cached_test_function(start)
+            runner.cached_test_function_ir(start)
             assert runner.interesting_examples
             (last_data,) = runner.interesting_examples.values()
             return runner.new_shrinker(
@@ -120,6 +141,28 @@ def clamped_shrink_towards(kwargs):
 
 
 @st.composite
+def integer_weights(draw, min_value=None, max_value=None):
+    # Sampler doesn't play well with super small floats, so exclude them
+    weights = draw(
+        st.dictionaries(
+            st.integers(min_value=min_value, max_value=max_value),
+            st.floats(0.001, 1),
+            min_size=1,
+            max_size=255,
+        )
+    )
+    # invalid to have a weighting that disallows all possibilities
+    assume(sum(weights.values()) != 0)
+    # re-normalize probabilities to sum to some arbitrary target < 1
+    target = draw(st.floats(0.001, 0.999))
+    factor = target / sum(weights.values())
+    weights = {k: v * factor for k, v in weights.items()}
+    # float rounding error can cause this to fail.
+    assume(0.001 <= sum(weights.values()) <= 0.999)
+    return weights
+
+
+@st.composite
 def integer_kwargs(
     draw,
     *,
@@ -144,11 +187,9 @@ def integer_kwargs(
             draw(st.booleans()) if (use_min_value and use_max_value) else False
         )
 
-    # this generation is complicated to deal with maintaining any combination of
-    # the following invariants, depending on which parameters are passed:
-    #
+    # Invariants:
     # (1) min_value <= forced <= max_value
-    # (2) max_value - min_value + 1 == len(weights)
+    # (2) sum(weights.values()) < 1
     # (3) len(weights) <= 255
 
     if use_shrink_towards:
@@ -158,39 +199,12 @@ def integer_kwargs(
     if use_weights:
         assert use_max_value
         assert use_min_value
-        # handle the weights case entirely independently from the non-weights case.
-        # We'll treat the weights as our "key" draw and base all other draws on that.
 
-        # weights doesn't play well with super small floats, so exclude <.01
-        weights = draw(
-            st.lists(st.just(0) | st.floats(0.01, 1), min_size=1, max_size=255)
-        )
-        # zero is allowed, but it can't be all zeroes
-        assume(sum(weights) > 0)
+        min_value = draw(st.integers(max_value=forced))
+        min_val = max(min_value, forced) if forced is not None else min_value
+        max_value = draw(st.integers(min_value=min_val))
 
-        # we additionally pick a central value (if not forced), and then the index
-        # into the weights at which it can be found - aka the min-value offset.
-        center = forced if use_forced else draw(st.integers())
-        min_value = center - draw(st.integers(0, len(weights) - 1))
-        max_value = min_value + len(weights) - 1
-
-        if use_forced:
-            # can't force a 0-weight index.
-            # we avoid clamping the returned shrink_towards to maximize
-            # bug-finding power.
-            _shrink_towards = clamped_shrink_towards(
-                {
-                    "shrink_towards": shrink_towards,
-                    "min_value": min_value,
-                    "max_value": max_value,
-                }
-            )
-            forced_idx = (
-                forced - _shrink_towards
-                if forced >= _shrink_towards
-                else max_value - forced
-            )
-            assume(weights[forced_idx] > 0)
+        weights = draw(integer_weights(min_value, max_value))
     else:
         if use_min_value:
             min_value = draw(st.integers(max_value=forced))
@@ -367,10 +381,11 @@ def draw_value(ir_type, kwargs):
 
 
 @st.composite
-def ir_nodes(draw, *, was_forced=None, ir_type=None):
-    if ir_type is None:
+def ir_nodes(draw, *, was_forced=None, ir_types=None):
+    if ir_types is None:
         (ir_type, kwargs) = draw(ir_types_and_kwargs())
     else:
+        ir_type = draw(st.sampled_from(ir_types))
         kwargs = draw(kwargs_strategy(ir_type))
     # ir nodes don't include forced in their kwargs. see was_forced attribute
     del kwargs["forced"]
@@ -378,3 +393,96 @@ def ir_nodes(draw, *, was_forced=None, ir_type=None):
     was_forced = draw(st.booleans()) if was_forced is None else was_forced
 
     return IRNode(ir_type=ir_type, value=value, kwargs=kwargs, was_forced=was_forced)
+
+
+def ir(*values: list[ChoiceT]) -> list[IRNode]:
+    """
+    For inline-creating an ir node or list of ir nodes, where you don't care about the
+    kwargs. This uses maximally-permissable kwargs and infers the ir_type you meant
+    based on the type of the value.
+
+    You can optionally pass (value, kwargs) to as an element in order to override
+    the default kwargs for that element.
+    """
+    mapping = {
+        float: (
+            "float",
+            {
+                "min_value": -math.inf,
+                "max_value": math.inf,
+                "allow_nan": True,
+                "smallest_nonzero_magnitude": SMALLEST_SUBNORMAL,
+            },
+        ),
+        int: (
+            "integer",
+            {
+                "min_value": None,
+                "max_value": None,
+                "weights": None,
+                "shrink_towards": 0,
+            },
+        ),
+        str: (
+            "string",
+            {
+                "intervals": IntervalSet(((0, sys.maxunicode),)),
+                "min_size": 0,
+                "max_size": COLLECTION_DEFAULT_MAX_SIZE,
+            },
+        ),
+        bytes: ("bytes", {"min_size": 0, "max_size": COLLECTION_DEFAULT_MAX_SIZE}),
+        bool: ("boolean", {"p": 0.5}),
+    }
+    nodes = []
+    for value in values:
+        override_kwargs = {}
+        if isinstance(value, tuple):
+            (value, override_kwargs) = value
+            if override_kwargs is None:
+                override_kwargs = {}
+
+        (ir_type, kwargs) = mapping[type(value)]
+
+        nodes.append(
+            IRNode(
+                ir_type=ir_type,
+                value=value,
+                kwargs=kwargs | override_kwargs,
+                was_forced=False,
+            )
+        )
+
+    return tuple(nodes)
+
+
+def float_kw(
+    min_value=-math.inf,
+    max_value=math.inf,
+    *,
+    allow_nan=True,
+    smallest_nonzero_magnitude=SMALLEST_SUBNORMAL,
+):
+    return {
+        "min_value": min_value,
+        "max_value": max_value,
+        "allow_nan": allow_nan,
+        "smallest_nonzero_magnitude": smallest_nonzero_magnitude,
+    }
+
+
+def integer_kw(min_value=None, max_value=None, *, weights=None, shrink_towards=0):
+    return {
+        "min_value": min_value,
+        "max_value": max_value,
+        "weights": weights,
+        "shrink_towards": shrink_towards,
+    }
+
+
+def string_kw(intervals, *, min_size=0, max_size=COLLECTION_DEFAULT_MAX_SIZE):
+    return {"intervals": intervals, "min_size": min_size, "max_size": max_size}
+
+
+# we could in theory define bytes_kw and boolean_kw, but without any
+# default kw values they aren't really a time save.

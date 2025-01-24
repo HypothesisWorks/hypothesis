@@ -47,7 +47,6 @@ ignore = [
   "PIE790",  # See https://github.com/astral-sh/ruff/issues/10538
   "PT001",
   "PT003",
-  "PT004",
   "PT006",
   "PT007",
   "PT009",
@@ -59,6 +58,7 @@ ignore = [
   "PT023",
   "PT027",
   "RUF001",  # don't break our tests by rewriting confusables
+  "RUF005",
   "RUF017",
   "SIM102",
   "SIM105",
@@ -85,6 +85,7 @@ ignore = [
 python_version = "3.10"
 platform = "linux"
 
+allow_redefinition = true
 disallow_untyped_decorators = true
 disallow_incomplete_defs = true
 no_implicit_optional = true

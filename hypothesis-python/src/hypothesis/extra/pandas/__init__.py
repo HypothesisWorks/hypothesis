@@ -17,4 +17,4 @@ from hypothesis.extra.pandas.impl import (
     series,
 )
 
-__all__ = ["indexes", "range_indexes", "series", "column", "columns", "data_frames"]
+__all__ = ["column", "columns", "data_frames", "indexes", "range_indexes", "series"]

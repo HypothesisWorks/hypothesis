@@ -15,9 +15,14 @@ hypothesis[pytz]
 
 This module provides :pypi:`pytz` timezones.
 
-You can use this strategy to make
-:py:func:`hypothesis.strategies.datetimes` and
-:py:func:`hypothesis.strategies.times` produce timezone-aware values.
+If you are unable to use the stdlib :mod:`zoneinfo` module, e.g. via the
+:func:`hypothesis.strategies.timezones` strategy, you can use this
+strategy with :py:func:`hypothesis.strategies.datetimes` and
+:py:func:`hypothesis.strategies.times` to produce timezone-aware values.
+
+.. deprecated:: :mod:`zoneinfo` was added
+    we intend to remove ``hypothesis.extra.pytz``, after libraries
+    such as Pandas and Django complete their own migrations.
 """
 
 import datetime as dt
@@ -37,8 +42,12 @@ def timezones() -> st.SearchStrategy[dt.tzinfo]:
     """Any timezone in the Olsen database, as a pytz tzinfo object.
 
     This strategy minimises to UTC, or the smallest possible fixed
-    offset, and is designed for use with
-    :py:func:`hypothesis.strategies.datetimes`.
+    offset, and is designed for use with :func:`hypothesis.strategies.datetimes`.
+
+    .. tip::
+        Prefer the :func:`hypothesis.strategies.timezones` strategy, which uses
+        the stdlib :mod:`zoneinfo` module and avoids `the many footguns in pytz
+        <https://blog.ganssle.io/articles/2018/03/pytz-fastest-footgun.html>`__.
     """
     all_timezones = [pytz.timezone(tz) for tz in pytz.all_timezones]
     # Some timezones have always had a constant offset from UTC.  This makes

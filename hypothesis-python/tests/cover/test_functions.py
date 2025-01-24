@@ -98,16 +98,17 @@ def test_functions_strategy_return_type_inference(f):
 
 
 def test_functions_valid_within_given_invalid_outside():
-    cache = [None]
+    cache = None
 
     @given(functions())
     def t(f):
+        nonlocal cache
+        cache = f
         assert f() is None
-        cache[0] = f
 
     t()
     with pytest.raises(InvalidState):
-        cache[0]()
+        cache()
 
 
 def test_can_call_default_like_arg():

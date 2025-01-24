@@ -8,28 +8,14 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from __future__ import annotations
-
 import collections
 import collections.abc
 import contextlib
 import re
-import sys
 
 import pytest
 
 from hypothesis import assume, given
-
-# On Python 3.7 and 3.8, `from __future__ import annotations` means
-# that the syntax is supported; but the feature fails at runtime.  On Python
-# 3.9 and later, it should all work.
-#
-# For details, see https://www.python.org/dev/peps/pep-0585/
-
-if sys.version_info < (3, 9):
-    pytestmark = pytest.mark.xfail(
-        raises=Exception, reason="Requires Python 3.9 (PEP 585) or later."
-    )
 
 
 class Elem:

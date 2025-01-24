@@ -17,19 +17,15 @@ import gc
 import sys
 import time
 import warnings
+from collections.abc import Iterable, Iterator, Sequence
 from random import Random
 from typing import (
     Any,
     Callable,
-    Dict,
     Generic,
-    Iterable,
-    Iterator,
     List,
     Literal,
     Optional,
-    Sequence,
-    Tuple,
     TypeVar,
     Union,
     overload,
@@ -54,14 +50,14 @@ def array_or_list(
 
 def replace_all(
     ls: Sequence[T],
-    replacements: Iterable[Tuple[int, int, Sequence[T]]],
-) -> List[T]:
+    replacements: Iterable[tuple[int, int, Sequence[T]]],
+) -> list[T]:
     """Substitute multiple replacement values into a list.
 
     Replacements is a list of (start, end, value) triples.
     """
 
-    result: List[T] = []
+    result: list[T] = []
     prev = 0
     offset = 0
     for u, v, r in replacements:
@@ -128,7 +124,7 @@ class IntList(Sequence[int]):
             return IntList(self.__underlying[i])
         return self.__underlying[i]
 
-    def __delitem__(self, i: int) -> None:
+    def __delitem__(self, i: Union[int, slice]) -> None:
         del self.__underlying[i]
 
     def insert(self, i: int, v: int) -> None:
@@ -198,17 +194,17 @@ def uniform(random: Random, n: int) -> bytes:
     return random.getrandbits(n * 8).to_bytes(n, "big")
 
 
-class LazySequenceCopy:
+class LazySequenceCopy(Generic[T]):
     """A "copy" of a sequence that works by inserting a mask in front
     of the underlying sequence, so that you can mutate it without changing
     the underlying sequence. Effectively behaves as if you could do list(x)
     in O(1) time. The full list API is not supported yet but there's no reason
     in principle it couldn't be."""
 
-    def __init__(self, values: Sequence[int]):
+    def __init__(self, values: Sequence[T]):
         self.__values = values
         self.__len = len(values)
-        self.__mask: Optional[Dict[int, int]] = None
+        self.__mask: Optional[dict[int, T]] = None
         self.__popped_indices: Optional[SortedList] = None
 
     def __len__(self) -> int:
@@ -216,7 +212,7 @@ class LazySequenceCopy:
             return self.__len
         return self.__len - len(self.__popped_indices)
 
-    def pop(self, i: int = -1) -> int:
+    def pop(self, i: int = -1) -> T:
         if len(self) == 0:
             raise IndexError("Cannot pop from empty list")
         i = self.__underlying_index(i)
@@ -232,7 +228,13 @@ class LazySequenceCopy:
         self.__popped_indices.add(i)
         return v
 
-    def __getitem__(self, i: int) -> int:
+    def swap(self, i: int, j: int) -> None:
+        """Swap the elements ls[i], ls[j]."""
+        if i == j:
+            return
+        self[i], self[j] = self[j], self[i]
+
+    def __getitem__(self, i: int) -> T:
         i = self.__underlying_index(i)
 
         default = self.__values[i]
@@ -241,7 +243,7 @@ class LazySequenceCopy:
         else:
             return self.__mask.get(i, default)
 
-    def __setitem__(self, i: int, v: int) -> None:
+    def __setitem__(self, i: int, v: T) -> None:
         i = self.__underlying_index(i)
         if self.__mask is None:
             self.__mask = {}
@@ -272,18 +274,10 @@ class LazySequenceCopy:
                 i += 1
         return i
 
-
-def clamp(lower: float, value: float, upper: float) -> float:
-    """Given a value and lower/upper bounds, 'clamp' the value so that
-    it satisfies lower <= value <= upper."""
-    return max(lower, min(value, upper))
-
-
-def swap(ls: LazySequenceCopy, i: int, j: int) -> None:
-    """Swap the elements ls[i], ls[j]."""
-    if i == j:
-        return
-    ls[i], ls[j] = ls[j], ls[i]
+    # even though we have len + getitem, mypyc requires iter.
+    def __iter__(self) -> Iterable[T]:
+        for i in range(len(self)):
+            yield self[i]
 
 
 def stack_depth_of_caller() -> int:
@@ -434,7 +428,7 @@ def gc_cumulative_time() -> float:
         if hasattr(gc, "callbacks"):
             # CPython
             def gc_callback(
-                phase: Literal["start", "stop"], info: Dict[str, int]
+                phase: Literal["start", "stop"], info: dict[str, int]
             ) -> None:
                 global _gc_start, _gc_cumulative_time
                 try:
@@ -472,3 +466,15 @@ def gc_cumulative_time() -> float:
         _gc_initialized = True
 
     return _gc_cumulative_time
+
+
+def startswith(l1: Sequence[T], l2: Sequence[T]) -> bool:
+    if len(l1) < len(l2):
+        return False
+    return all(v1 == v2 for v1, v2 in zip(l1[: len(l2)], l2))
+
+
+def endswith(l1: Sequence[T], l2: Sequence[T]) -> bool:
+    if len(l1) < len(l2):
+        return False
+    return all(v1 == v2 for v1, v2 in zip(l1[-len(l2) :], l2))

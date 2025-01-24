@@ -11,16 +11,7 @@
 import math
 import struct
 from sys import float_info
-from typing import (
-    TYPE_CHECKING,
-    Callable,
-    Dict,
-    Literal,
-    Optional,
-    SupportsFloat,
-    Tuple,
-    Union,
-)
+from typing import TYPE_CHECKING, Callable, Literal, SupportsFloat, Union
 
 if TYPE_CHECKING:
     from typing import TypeAlias
@@ -35,13 +26,13 @@ Width: "TypeAlias" = Literal[16, 32, 64]
 
 # Format codes for (int, float) sized types, used for byte-wise casts.
 # See https://docs.python.org/3/library/struct.html#format-characters
-STRUCT_FORMATS: Dict[int, Tuple[UnsignedIntFormat, FloatFormat]] = {
+STRUCT_FORMATS: dict[int, tuple[UnsignedIntFormat, FloatFormat]] = {
     16: ("!H", "!e"),
     32: ("!I", "!f"),
     64: ("!Q", "!d"),
 }
 
-TO_SIGNED_FORMAT: Dict[UnsignedIntFormat, SignedIntFormat] = {
+TO_SIGNED_FORMAT: dict[UnsignedIntFormat, SignedIntFormat] = {
     "!H": "!h",
     "!I": "!i",
     "!Q": "!q",
@@ -138,45 +129,71 @@ def next_up_normal(value: float, width: int, *, allow_subnormal: bool) -> float:
 # Smallest positive non-zero numbers that is fully representable by an
 # IEEE-754 float, calculated with the width's associated minimum exponent.
 # Values from https://en.wikipedia.org/wiki/IEEE_754#Basic_and_interchange_formats
-width_smallest_normals: Dict[int, float] = {
+width_smallest_normals: dict[int, float] = {
     16: 2 ** -(2 ** (5 - 1) - 2),
     32: 2 ** -(2 ** (8 - 1) - 2),
     64: 2 ** -(2 ** (11 - 1) - 2),
 }
 assert width_smallest_normals[64] == float_info.min
 
+mantissa_mask = (1 << 52) - 1
+
+
+def float_permitted(
+    f: float,
+    *,
+    min_value: float,
+    max_value: float,
+    allow_nan: bool,
+    smallest_nonzero_magnitude: float,
+) -> bool:
+    if math.isnan(f):
+        return allow_nan
+    if 0 < abs(f) < smallest_nonzero_magnitude:
+        return False
+    return sign_aware_lte(min_value, f) and sign_aware_lte(f, max_value)
+
 
 def make_float_clamper(
-    min_float: float = 0.0,
-    max_float: float = math.inf,
+    min_value: float,
+    max_value: float,
     *,
-    allow_zero: bool = False,  # Allows +0.0 (even if minfloat > 0)
-) -> Optional[Callable[[float], float]]:
+    smallest_nonzero_magnitude: float,
+    allow_nan: bool,
+) -> Callable[[float], float]:
     """
     Return a function that clamps positive floats into the given bounds.
-
-    Returns None when no values are allowed (min > max and zero is not allowed).
     """
-    if max_float < min_float:
-        if allow_zero:
-            min_float = max_float = 0.0
-        else:
-            return None
+    assert sign_aware_lte(min_value, max_value)
+    range_size = min(max_value - min_value, float_info.max)
 
-    range_size = min(max_float - min_float, float_info.max)
-    mantissa_mask = (1 << 52) - 1
-
-    def float_clamper(float_val: float) -> float:
-        if min_float <= float_val <= max_float:
-            return float_val
-        if float_val == 0.0 and allow_zero:
-            return float_val
+    def float_clamper(f: float) -> float:
+        if float_permitted(
+            f,
+            min_value=min_value,
+            max_value=max_value,
+            allow_nan=allow_nan,
+            smallest_nonzero_magnitude=smallest_nonzero_magnitude,
+        ):
+            return f
         # Outside bounds; pick a new value, sampled from the allowed range,
         # using the mantissa bits.
-        mant = float_to_int(float_val) & mantissa_mask
-        float_val = min_float + range_size * (mant / mantissa_mask)
+        mant = float_to_int(abs(f)) & mantissa_mask
+        f = min_value + range_size * (mant / mantissa_mask)
+
+        # if we resampled into the space disallowed by smallest_nonzero_magnitude,
+        # default to smallest_nonzero_magnitude.
+        if 0 < abs(f) < smallest_nonzero_magnitude:
+            f = smallest_nonzero_magnitude
+            # we must have either -smallest_nonzero_magnitude <= min_value or
+            # smallest_nonzero_magnitude >= max_value, or no values would be
+            # possible. If smallest_nonzero_magnitude is not valid (because it's
+            # larger than max_value), then -smallest_nonzero_magnitude must be valid.
+            if smallest_nonzero_magnitude > max_value:
+                f *= -1
+
         # Re-enforce the bounds (just in case of floating point arithmetic error)
-        return max(min_float, min(max_float, float_val))
+        return clamp(min_value, f, max_value)
 
     return float_clamper
 
@@ -189,7 +206,19 @@ def sign_aware_lte(x: float, y: float) -> bool:
         return x <= y
 
 
+def clamp(lower: float, value: float, upper: float) -> float:
+    """Given a value and lower/upper bounds, 'clamp' the value so that
+    it satisfies lower <= value <= upper.  NaN is mapped to lower."""
+    # this seems pointless (and is for integers), but handles the -0.0/0.0 case.
+    if not sign_aware_lte(lower, value):
+        return lower
+    if not sign_aware_lte(value, upper):
+        return upper
+    return value
+
+
 SMALLEST_SUBNORMAL = next_up(0.0)
 SIGNALING_NAN = int_to_float(0x7FF8_0000_0000_0001)  # nonzero mantissa
+MAX_PRECISE_INTEGER = 2**53
 assert math.isnan(SIGNALING_NAN)
 assert math.copysign(1, SIGNALING_NAN) == 1

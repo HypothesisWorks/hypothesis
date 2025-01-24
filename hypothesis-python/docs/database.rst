@@ -1,6 +1,6 @@
-===============================
-The Hypothesis example database
-===============================
+========
+Database
+========
 
 When Hypothesis finds a bug it stores enough information in its database to reproduce it. This
 enables you to have a classic testing workflow of find a bug, fix a bug, and be confident that
@@ -46,6 +46,7 @@ Hypothesis provides the following :class:`~hypothesis.database.ExampleDatabase` 
 .. autoclass:: hypothesis.database.GitHubArtifactDatabase
 .. autoclass:: hypothesis.database.ReadOnlyDatabase
 .. autoclass:: hypothesis.database.MultiplexedDatabase
+.. autoclass:: hypothesis.database.BackgroundWriteDatabase
 .. autoclass:: hypothesis.extra.redis.RedisExampleDatabase
 
 ---------------------------------

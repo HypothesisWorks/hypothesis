@@ -11,6 +11,7 @@
 import sys
 import warnings
 from collections import abc, defaultdict
+from collections.abc import Sequence
 from functools import lru_cache
 from random import shuffle
 from typing import (
@@ -18,10 +19,7 @@ from typing import (
     Any,
     Callable,
     ClassVar,
-    Dict,
     Generic,
-    List,
-    Sequence,
     TypeVar,
     Union,
     cast,
@@ -29,7 +27,7 @@ from typing import (
 )
 
 from hypothesis._settings import HealthCheck, Phase, Verbosity, settings
-from hypothesis.control import _current_build_context
+from hypothesis.control import _current_build_context, current_build_context
 from hypothesis.errors import (
     HypothesisException,
     HypothesisWarning,
@@ -123,20 +121,21 @@ def recursive_property(name, default):
 
         mapping = {}
         sentinel = object()
-        hit_recursion = [False]
+        hit_recursion = False
 
         # For a first pass we do a direct recursive calculation of the
         # property, but we block recursively visiting a value in the
         # computation of its property: When that happens, we simply
         # note that it happened and return the default value.
         def recur(strat):
+            nonlocal hit_recursion
             try:
                 return forced_value(strat)
             except AttributeError:
                 pass
             result = mapping.get(strat, sentinel)
             if result is calculating:
-                hit_recursion[0] = True
+                hit_recursion = True
                 return default
             elif result is sentinel:
                 mapping[strat] = calculating
@@ -152,7 +151,7 @@ def recursive_property(name, default):
         # a more careful fixed point calculation to get the exact
         # values. Hopefully our mapping is still pretty good and it
         # won't take a large number of updates to reach a fixed point.
-        if hit_recursion[0]:
+        if hit_recursion:
             needs_update = set(mapping)
 
             # We track which strategies use which in the course of
@@ -327,7 +326,7 @@ class SearchStrategy(Generic[Ex]):
         try:
             return self.__examples.pop()
         except (AttributeError, IndexError):
-            self.__examples: List[Ex] = []
+            self.__examples: list[Ex] = []
 
         from hypothesis.core import given
 
@@ -336,7 +335,10 @@ class SearchStrategy(Generic[Ex]):
         @given(self)
         @settings(
             database=None,
-            max_examples=100,
+            # generate only a few examples at a time to avoid slow interactivity
+            # for large strategies. The overhead of @given is very small relative
+            # to generation, so a small batch size is fine.
+            max_examples=10,
             deadline=None,
             verbosity=Verbosity.quiet,
             phases=(Phase.generate,),
@@ -395,7 +397,7 @@ class SearchStrategy(Generic[Ex]):
         return FilteredStrategy(conditions=(condition,), strategy=self)
 
     @property
-    def branches(self) -> List["SearchStrategy[Ex]"]:
+    def branches(self) -> list["SearchStrategy[Ex]"]:
         return [self]
 
     def __or__(self, other: "SearchStrategy[T]") -> "SearchStrategy[Union[Ex, T]]":
@@ -432,7 +434,7 @@ class SearchStrategy(Generic[Ex]):
             self.validate_called = False
             raise
 
-    LABELS: ClassVar[Dict[type, int]] = {}
+    LABELS: ClassVar[dict[type, int]] = {}
 
     @property
     def class_label(self):
@@ -463,7 +465,7 @@ class SearchStrategy(Generic[Ex]):
     def do_draw(self, data: ConjectureData) -> Ex:
         raise NotImplementedError(f"{type(self).__name__}.do_draw")
 
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
 
@@ -841,16 +843,16 @@ class MappedStrategy(SearchStrategy[Ex]):
                 try:
                     data.start_example(MAPPED_SEARCH_STRATEGY_DO_DRAW_LABEL)
                     x = data.draw(self.mapped_strategy)
-                    result = self.pack(x)  # type: ignore
+                    result = self.pack(x)
                     data.stop_example()
-                    _current_build_context.value.record_call(result, self.pack, [x], {})
+                    current_build_context().record_call(result, self.pack, [x], {})
                     return result
                 except UnsatisfiedAssumption:
                     data.stop_example(discard=True)
         raise UnsatisfiedAssumption
 
     @property
-    def branches(self) -> List[SearchStrategy[Ex]]:
+    def branches(self) -> list[SearchStrategy[Ex]]:
         return [
             MappedStrategy(strategy, pack=self.pack)
             for strategy in self.mapped_strategy.branches
@@ -1025,7 +1027,7 @@ class FilteredStrategy(SearchStrategy[Ex]):
         return filter_not_satisfied
 
     @property
-    def branches(self) -> List[SearchStrategy[Ex]]:
+    def branches(self) -> list[SearchStrategy[Ex]]:
         return [
             FilteredStrategy(strategy=strategy, conditions=self.flat_conditions)
             for strategy in self.filtered_strategy.branches

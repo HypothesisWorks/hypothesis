@@ -115,7 +115,7 @@ def test_exact_timing():
         time.sleep(0.5)
 
     stats = describe_statistics(call_for_statistics(test))
-    assert "~ 502ms" in stats
+    assert "~ 500ms" in stats
 
 
 def test_apparently_instantaneous_tests():
@@ -130,14 +130,15 @@ def test_apparently_instantaneous_tests():
 
 
 def test_flaky_exit():
-    first = [True]
+    first = True
 
     @settings(derandomize=True)
     @given(st.integers())
     def test(i):
+        nonlocal first
         if i > 1001:
-            if first[0]:
-                first[0] = False
+            if first:
+                first = False
                 print("Hi")
                 raise AssertionError
 
@@ -237,7 +238,7 @@ def test_stateful_with_one_of_bundles_states_are_deduped():
 
 
 def test_statistics_for_threshold_problem():
-    @settings(max_examples=100)
+    @settings(max_examples=100, database=None)
     @given(st.floats(min_value=0, allow_infinity=False))
     def threshold(error):
         target(error, label="error")

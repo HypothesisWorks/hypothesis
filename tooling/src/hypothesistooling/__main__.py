@@ -13,6 +13,7 @@ import pathlib
 import re
 import subprocess
 import sys
+from datetime import date
 from pathlib import Path
 
 import requests
@@ -30,6 +31,7 @@ BUILD_FILES = tuple(
     os.path.join(tools.ROOT, f)
     for f in ["tooling", "requirements", ".github", "hypothesis-python/tox.ini"]
 )
+TODAY = date.today().isoformat()
 
 
 def task(if_changed=()):
@@ -208,7 +210,7 @@ def format():
 
     codespell("--write-changes", *files_to_format, *doc_files_to_format)
     pip_tool("ruff", "check", "--fix-only", ".")
-    pip_tool("shed", *files_to_format, *doc_files_to_format)
+    pip_tool("shed", "--py39-plus", *files_to_format, *doc_files_to_format)
 
 
 VALID_STARTS = (HEADER.split()[0], "#!/usr/bin/env python")
@@ -265,6 +267,7 @@ def compile_requirements(*, upgrade=False):
             p = p.lower().replace("_", "-")
             if re.fullmatch(r"[a-z-]+", p):
                 assert p + "==" in out_pkgs, f"Package `{p}` deleted from {out_file}"
+        out_file.write_text(out_pkgs.replace(f"{tools.ROOT}/", ""))
 
 
 def update_python_versions():
@@ -290,7 +293,7 @@ def update_python_versions():
     ).group(1)
     best = {}
     for line in map(str.strip, result.splitlines()):
-        if m := re.match(r"(?:pypy)?3\.(?:[89]|\d\dt?)", line):
+        if m := re.match(r"(?:pypy)?3\.(?:9|\d\dt?)", line):
             key = m.group()
             curr = best.get(key, line)
             if (
@@ -319,6 +322,54 @@ def update_python_versions():
         build_sh.unlink()  # so bash doesn't reload a modified file
         build_sh.write_text(sh_after, encoding="utf-8")
         build_sh.chmod(0o755)
+
+
+DJANGO_VERSIONS = {
+    "4.2": "4.2.18",
+    "5.0": "5.0.11",
+    "5.1": "5.1.5",
+}
+
+
+def update_django_versions():
+    # https://endoflife.date/django makes it easier to track these
+    releases = requests.get("https://endoflife.date/api/django.json").json()
+    versions = {r["cycle"]: r["latest"] for r in releases[::-1] if TODAY <= r["eol"]}
+
+    if versions == DJANGO_VERSIONS:
+        return
+
+    # Write the new mapping back to this file
+    thisfile = pathlib.Path(__file__)
+    before = thisfile.read_text(encoding="utf-8")
+    after = re.sub(
+        r"DJANGO_VERSIONS = \{[^{}]+\}",
+        "DJANGO_VERSIONS = " + repr(versions).replace("}", ",}"),
+        before,
+    )
+    thisfile.write_text(after, encoding="utf-8")
+    pip_tool("shed", str(thisfile))
+
+    # Update the minimum version in setup.py
+    setup_py = hp.BASE_DIR / "setup.py"
+    content = re.sub(
+        r"django>=\d+\.\d+",
+        f"django>={min(versions, key=float)}",
+        setup_py.read_text(encoding="utf-8"),
+    )
+    setup_py.write_text(content, encoding="utf-8")
+
+    # Automatically sync ci_version with the version in build.sh
+    tox_ini = hp.BASE_DIR / "tox.ini"
+    content = tox_ini.read_text(encoding="utf-8")
+    print(versions)
+    for short, full in versions.items():
+        content = re.sub(
+            rf"(pip install django==){short}\.\d+",
+            rf"\g<1>{full}",
+            content,
+        )
+    tox_ini.write_text(content, encoding="utf-8")
 
 
 def update_pyodide_versions():
@@ -391,6 +442,7 @@ def upgrade_requirements():
             f.write(f"RELEASE_TYPE: patch\n\n{msg}")
     update_python_versions()
     update_pyodide_versions()
+    update_django_versions()
     subprocess.call(["git", "add", "."], cwd=tools.ROOT)
 
 
@@ -446,16 +498,14 @@ def run_tox(task, version, *args):
 # When a version is added or removed, manually update the env lists in tox.ini and
 # workflows/main.yml, and the `Programming Language ::` specifiers in setup.py
 PYTHONS = {
-    "3.8": "3.8.20",
-    "3.9": "3.9.20",
-    "3.10": "3.10.15",
-    "3.11": "3.11.10",
-    "3.12": "3.12.6",
-    "3.13": "3.13.0rc2",
+    "3.9": "3.9.21",
+    "3.10": "3.10.16",
+    "3.11": "3.11.11",
+    "3.12": "3.12.8",
+    "3.13": "3.13.1",
     "3.13t": "3.13t-dev",
-    "3.14": "3.14-dev",
+    "3.14": "3.14.0a3",
     "3.14t": "3.14t-dev",
-    "pypy3.8": "pypy3.8-7.3.11",
     "pypy3.9": "pypy3.9-7.3.16",
     "pypy3.10": "pypy3.10-7.3.17",
 }
@@ -514,8 +564,8 @@ standard_tox_task("py39-pytest46", py="3.9")
 standard_tox_task("py39-pytest54", py="3.9")
 standard_tox_task("pytest62")
 
-for n in [42, 50]:
-    standard_tox_task(f"django{n}")
+for n in DJANGO_VERSIONS:
+    standard_tox_task(f"django{n.replace('.', '')}")
 
 for n in [13, 14, 15, 20, 21, 22]:
     standard_tox_task(f"pandas{n}")
@@ -525,7 +575,7 @@ standard_tox_task("py39-pandas12", py="3.9")
 for kind in ("cover", "nocover", "niche", "custom"):
     standard_tox_task(f"crosshair-{kind}")
 
-standard_tox_task("py38-oldestnumpy", py="3.8")
+standard_tox_task("py39-oldestnumpy", py="3.9")
 standard_tox_task("numpy-nightly", py="3.12")
 
 standard_tox_task("coverage")
@@ -550,7 +600,7 @@ def check_whole_repo_tests(*args):
     )
 
     if not args:
-        args = [tools.REPO_TESTS]
+        args = ["-n", "auto", tools.REPO_TESTS]
     subprocess.check_call([sys.executable, "-m", "pytest", *args])
 
 

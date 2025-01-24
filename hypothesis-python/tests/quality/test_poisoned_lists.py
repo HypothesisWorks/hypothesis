@@ -82,5 +82,5 @@ def test_minimal_poisoned_containers(seed, size, p, strategy_class):
     )
     runner.run()
     (v,) = runner.interesting_examples.values()
-    result = ConjectureData.for_buffer(v.buffer).draw(strategy)
+    result = ConjectureData.for_choices(v.choices).draw(strategy)
     assert len(result) == 1

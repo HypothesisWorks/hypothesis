@@ -53,13 +53,13 @@ def test_just_strategy_uses_repr():
 
 
 def test_just_strategy_does_not_draw():
-    data = ConjectureData.for_buffer(b"")
+    data = ConjectureData.for_choices([])
     s = just("hello")
     assert s.do_draw(data) == "hello"
 
 
 def test_none_strategy_does_not_draw():
-    data = ConjectureData.for_buffer(b"")
+    data = ConjectureData.for_choices([])
     s = none()
     assert s.do_draw(data) is None
 

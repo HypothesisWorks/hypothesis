@@ -8,8 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+from collections.abc import MutableMapping
 from inspect import signature
-from typing import MutableMapping
 from weakref import WeakKeyDictionary
 
 from hypothesis.configuration import check_sideeffect_during_initialization

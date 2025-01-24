@@ -8,19 +8,25 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import itertools
 import math
 import sys
-from collections.abc import Sequence
 from contextlib import contextmanager
 from random import Random
 from typing import Optional
 
 import pytest
 
-from hypothesis import given, settings, strategies as st
+from hypothesis import HealthCheck, Verbosity, assume, given, settings, strategies as st
 from hypothesis.control import current_build_context
 from hypothesis.database import InMemoryExampleDatabase
-from hypothesis.errors import Flaky, HypothesisException, InvalidArgument
+from hypothesis.errors import (
+    BackendCannotProceed,
+    Flaky,
+    HypothesisException,
+    InvalidArgument,
+    Unsatisfiable,
+)
 from hypothesis.internal.compat import int_to_bytes
 from hypothesis.internal.conjecture.data import (
     AVAILABLE_PROVIDERS,
@@ -33,7 +39,7 @@ from hypothesis.internal.floats import SIGNALING_NAN
 from hypothesis.internal.intervalsets import IntervalSet
 
 from tests.common.debug import minimal
-from tests.common.utils import capture_observations
+from tests.common.utils import capture_observations, capture_out
 from tests.conjecture.common import ir_nodes
 
 
@@ -42,9 +48,9 @@ class PrngProvider(PrimitiveProvider):
     # a very simple PRNG to choose each value. Dumb but efficient, and entirely
     # independent of our real backend
 
-    def __init__(self, conjecturedata: "ConjectureData", /) -> None:
+    def __init__(self, conjecturedata: "ConjectureData | None", /) -> None:
         super().__init__(conjecturedata)
-        self.prng = Random()
+        self.prng = Random(0)
 
     def draw_boolean(
         self,
@@ -62,8 +68,7 @@ class PrngProvider(PrimitiveProvider):
         min_value: Optional[int] = None,
         max_value: Optional[int] = None,
         *,
-        # weights are for choosing an element index from a bounded range
-        weights: Optional[Sequence[float]] = None,
+        weights: Optional[dict[int, float]] = None,
         shrink_towards: int = 0,
         forced: Optional[int] = None,
         fake_forced: bool = False,
@@ -156,7 +161,10 @@ class PrngProvider(PrimitiveProvider):
             return forced
         max_size = 100 if max_size is None else max_size
         size = self.prng.randint(min_size, max_size)
-        return self.prng.randbytes(size)
+        try:
+            return self.prng.randbytes(size)
+        except AttributeError:  # randbytes is new in python 3.9
+            return bytes(self.prng.randint(0, 255) for _ in range(size))
 
 
 @contextmanager
@@ -266,7 +274,7 @@ def test_new_conjecture_data_ir_with_backend(node):
 
     with temp_register_backend("prng", PrngProvider):
         runner = ConjectureRunner(test, settings=settings(backend="prng"))
-        runner.cached_test_function_ir([node])
+        runner.cached_test_function_ir([node.value])
 
 
 # trivial provider for tests which don't care about drawn distributions.
@@ -440,6 +448,34 @@ def test_realize_dependent_draw():
         test_function()
 
 
+@pytest.mark.parametrize("verbosity", [Verbosity.verbose, Verbosity.debug])
+def test_realization_with_verbosity(verbosity):
+    with temp_register_backend("realize", RealizeProvider):
+
+        @given(st.floats())
+        @settings(backend="realize", verbosity=verbosity)
+        def test_function(f):
+            pass
+
+        with capture_out() as out:
+            test_function()
+        assert "Trying example: <symbolics>" in out.getvalue()
+
+
+@pytest.mark.parametrize("verbosity", [Verbosity.verbose, Verbosity.debug])
+def test_realization_with_verbosity_draw(verbosity):
+    with temp_register_backend("realize", RealizeProvider):
+
+        @given(st.data())
+        @settings(backend="realize", verbosity=verbosity)
+        def test_function(data):
+            data.draw(st.integers())
+
+        with capture_out() as out:
+            test_function()
+        assert "Draw 1: <symbolic>" in out.getvalue()
+
+
 class ObservableProvider(TrivialProvider):
     def observe_test_case(self):
         return {"msg_key": "some message", "data_key": [1, "2", {}]}
@@ -452,23 +488,27 @@ class ObservableProvider(TrivialProvider):
             yield {"type": "alert", "title": "Trivial alert", "content": "message here"}
             yield {"type": "info", "title": "trivial-data", "content": {"k2": "v2"}}
 
+    def realize(self, value):
+        # Get coverage of the can't-realize path for observability outputs
+        raise BackendCannotProceed
+
 
 def test_custom_observations_from_backend():
-    with (
-        temp_register_backend("observable", ObservableProvider),
-        capture_observations() as ls,
-    ):
+    with temp_register_backend("observable", ObservableProvider):
 
         @given(st.none())
         @settings(backend="observable", database=None)
         def test_function(_):
             pass
 
-        test_function()
+        with capture_observations() as ls:
+            test_function()
 
     assert len(ls) >= 3
     cases = [t["metadata"]["backend"] for t in ls if t["type"] == "test_case"]
     assert {"msg_key": "some message", "data_key": [1, "2", {}]} in cases
+
+    assert "<backend failed to realize symbolic arguments>" in repr(ls)
 
     infos = [
         {k: v for k, v in t.items() if k in ("title", "content")}
@@ -477,3 +517,92 @@ def test_custom_observations_from_backend():
     ]
     assert {"title": "Trivial alert", "content": "message here"} in infos
     assert {"title": "trivial-data", "content": {"k2": "v2"}} in infos
+
+
+class FallibleProvider(TrivialProvider):
+    def __init__(self, conjecturedata: "ConjectureData", /) -> None:
+        super().__init__(conjecturedata)
+        self._it = itertools.cycle([1, 1, 1, "discard_test_case", "other"])
+
+    def draw_integer(self, *args, **kwargs):
+        x = next(self._it)
+        if isinstance(x, str):
+            raise BackendCannotProceed(x)
+        return x
+
+
+def test_falls_back_to_default_backend():
+    with temp_register_backend("fallible", FallibleProvider):
+        seen_other_ints = False
+
+        @given(st.integers())
+        @settings(backend="fallible", database=None, max_examples=100)
+        def test_function(x):
+            nonlocal seen_other_ints
+            seen_other_ints |= x != 1
+
+        test_function()
+        assert seen_other_ints  # must have swapped backends then
+
+
+def test_can_raise_unsatisfiable_after_falling_back():
+    with temp_register_backend("fallible", FallibleProvider):
+
+        @given(st.integers())
+        @settings(
+            backend="fallible",
+            database=None,
+            max_examples=100,
+            suppress_health_check=[HealthCheck.filter_too_much],
+        )
+        def test_function(x):
+            assume(x == "unsatisfiable")
+
+        with pytest.raises(Unsatisfiable):
+            test_function()
+
+
+class ExhaustibleProvider(TrivialProvider):
+    scope = "exhausted"
+
+    def __init__(self, conjecturedata: "ConjectureData", /) -> None:
+        super().__init__(conjecturedata)
+        self._calls = 0
+
+    def draw_integer(self, *args, **kwargs):
+        self._calls += 1
+        if self._calls > 20:
+            # This is complete nonsense of course, so we'll see Hypothesis complain
+            # that we found a problem after the backend reported verification.
+            raise BackendCannotProceed(self.scope)
+        return 1
+
+
+class UnsoundVerifierProvider(ExhaustibleProvider):
+    scope = "verified"
+
+
+@pytest.mark.parametrize("provider", [ExhaustibleProvider, UnsoundVerifierProvider])
+def test_notes_incorrect_verification(provider):
+    msg = "backend='p' claimed to verify this test passes - please send them a bug report!"
+    with temp_register_backend("p", provider):
+
+        @given(st.integers())
+        @settings(backend="p", database=None, max_examples=100)
+        def test_function(x):
+            assert x == 1  # True from this backend, false in general!
+
+        with pytest.raises(AssertionError) as ctx:
+            test_function()
+        assert (msg in ctx.value.__notes__) == (provider is UnsoundVerifierProvider)
+
+
+def test_invalid_provider_kw():
+    with pytest.raises(InvalidArgument, match="got an instance instead"):
+        ConjectureData(
+            max_length=0,
+            prefix=b"",
+            random=None,
+            provider=TrivialProvider(None),
+            provider_kw={"one": "two"},
+        )

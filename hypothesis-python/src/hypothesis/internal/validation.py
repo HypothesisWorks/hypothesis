@@ -11,13 +11,14 @@
 import decimal
 import math
 from numbers import Rational, Real
+from typing import Union
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.coverage import check_function
 
 
 @check_function
-def check_type(typ, arg, name):
+def check_type(typ: Union[type, tuple[type, ...]], arg: object, name: str) -> None:
     if not isinstance(arg, typ):
         if isinstance(typ, tuple):
             assert len(typ) >= 2, "Use bare type instead of len-1 tuple"

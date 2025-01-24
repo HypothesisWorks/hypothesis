@@ -1,6 +1,6 @@
-==================
-Some more examples
-==================
+========================
+Some Hypothesis examples
+========================
 
 This is a collection of examples of how to use Hypothesis in interesting ways.
 It's small for now but will grow over time.

@@ -137,6 +137,7 @@ exc_instances = [
         interesting_origins=[InterestingOrigin.from_exception(BaseException())],
     ),
     errors.FlakyFailure("check with BaseException", [BaseException()]),
+    errors.BackendCannotProceed("verified"),
 ]
 
 

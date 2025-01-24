@@ -1,6 +1,6 @@
-=====================================
-Open source projects using Hypothesis
-=====================================
+=========================
+Projects using Hypothesis
+=========================
 
 The following is a non-exhaustive list of open source projects I know are
 using Hypothesis. If you're aware of any others please add them to the list!
@@ -8,10 +8,10 @@ The only inclusion criterion right now is that if it's a Python library
 then it should be available on PyPI.
 
 You can find hundreds more from `the Hypothesis page at libraries.io
-<https://libraries.io/pypi/hypothesis>`_, and :gh-file:`thousands on GitHub <network/dependents>`.
-Hypothesis has `over 100,000 downloads per week <https://pypistats.org/packages/hypothesis>`__,
-and was used by `more than 4% of Python users surveyed by the PSF in 2020
-<https://www.jetbrains.com/lp/python-developers-survey-2020/>`__.
+<https://libraries.io/pypi/hypothesis>`_, and `thousands on GitHub <https://github.com/HypothesisWorks/hypothesis/network/dependents>`__.
+Hypothesis has `over 8 million downloads per week <https://pypistats.org/packages/hypothesis>`__,
+and was used by `more than 5% of Python users surveyed by the PSF in 2023
+<https://lp.jetbrains.com/python-developers-survey-2023/>`__.
 
 * `aur <https://github.com/cdown/aur>`_
 * `argon2_cffi <https://github.com/hynek/argon2-cffi>`_
@@ -19,7 +19,7 @@ and was used by `more than 4% of Python users surveyed by the PSF in 2020
 * `attrs <https://github.com/python-attrs/attrs>`_
 * `axelrod <https://github.com/Axelrod-Python/Axelrod>`_
 * `bidict <https://github.com/jab/bidict>`_
-* `binaryornot <https://github.com/audreyfeldroy/binaryornot>`_
+* `binaryornot <https://github.com/binaryornot/binaryornot>`_
 * `brotlicffi <https://github.com/python-hyper/brotlicffi>`_
 * :pypi:`chardet`
 * :pypi:`cmph-cffi`
@@ -33,7 +33,7 @@ and was used by `more than 4% of Python users surveyed by the PSF in 2020
 * `fusion-index <https://github.com/fusionapp/fusion-index>`_
 * `hyper-h2 <https://github.com/python-hyper/h2>`_
 * `into-dbus-python <https://github.com/stratis-storage/into-dbus-python>`_
-* `ivy <https://github.com/unifyai/ivy>`_
+* `ivy <https://github.com/ivy-llc/ivy>`_
 * `justbases <https://github.com/mulkieran/justbases>`_
 * `justbytes <https://github.com/mulkieran/justbytes>`_
 * `loris <https://github.com/loris-imageserver/loris>`_
@@ -49,7 +49,7 @@ and was used by `more than 4% of Python users surveyed by the PSF in 2020
 * `pretext <https://github.com/moreati/b-prefix-all-the-doctests>`_
 * `priority <https://github.com/python-hyper/priority>`_
 * `PyCEbox <https://github.com/AustinRochford/PyCEbox>`_
-* `PyPy <https://www.pypy.org/>`_
+* `PyPy <https://pypy.org/>`_
 * `pyrsistent <https://github.com/tobgu/pyrsistent>`_
 * `python-humble-utils <https://github.com/webyneter/python-humble-utils>`_
 * `pyudev <https://github.com/pyudev/pyudev>`_
