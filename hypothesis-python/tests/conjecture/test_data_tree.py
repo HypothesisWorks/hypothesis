@@ -128,18 +128,10 @@ def test_novel_prefixes_are_novel():
     runner = ConjectureRunner(tf, settings=TEST_SETTINGS, random=Random(0))
     for _ in range(100):
         prefix = runner.tree.generate_novel_prefix(runner.random)
-        extension = prefix + (NodeTemplate("simplest", size=100),)
+        extension = prefix + (NodeTemplate("simplest", count=100),)
         assert runner.tree.rewrite(extension)[1] is None
         result = runner.cached_test_function_ir(extension)
         assert runner.tree.rewrite(extension)[0] == result.choices
-
-
-def test_overruns_if_not_enough_bytes_for_block():
-    runner = ConjectureRunner(
-        lambda data: data.draw_bytes(2, 2), settings=TEST_SETTINGS, random=Random(0)
-    )
-    runner.cached_test_function_ir((b"\0\0",))
-    assert runner.tree.rewrite((b"\0",))[1] is Status.OVERRUN
 
 
 def test_overruns_if_prefix():

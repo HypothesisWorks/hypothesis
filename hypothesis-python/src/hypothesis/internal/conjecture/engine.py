@@ -52,7 +52,6 @@ from hypothesis.internal.conjecture.data import (
     PrimitiveProvider,
     Status,
     _Overrun,
-    ir_size,
 )
 from hypothesis.internal.conjecture.datatree import (
     DataTree,
@@ -195,17 +194,16 @@ StatisticsDict = TypedDict(
 )
 
 
-def truncate_choices_to_size(
-    choices: Sequence[ChoiceT], size: int
-) -> tuple[ChoiceT, ...]:
-    s = 0
-    i = 0
+def choice_count(choices: Sequence[Union[ChoiceT, NodeTemplate]]) -> Optional[int]:
+    count = 0
     for choice in choices:
-        s += ir_size([choice])
-        if s > size:
-            break
-        i += 1
-    return tuple(choices[:i])
+        if isinstance(choice, NodeTemplate):
+            if choice.count is None:
+                return None
+            count += choice.count
+        else:
+            count += 1
+    return count
 
 
 class ConjectureRunner:
@@ -356,7 +354,7 @@ class ConjectureRunner:
         choices: Sequence[Union[ChoiceT, NodeTemplate]],
         *,
         error_on_discard: bool = False,
-        extend: int = 0,
+        extend: Union[int, Literal["full"]] = 0,
     ) -> Union[ConjectureResult, _Overrun]:
         """
         If ``error_on_discard`` is set to True this will raise ``ContainsDiscard``
@@ -382,7 +380,12 @@ class ConjectureRunner:
             except KeyError:
                 pass
 
-        max_length = min(BUFFER_SIZE_IR, ir_size(choices) + extend)
+        if extend == "full":
+            max_length = None
+        elif (count := choice_count(choices)) is None:
+            max_length = None
+        else:
+            max_length = count + extend
 
         # explicitly use a no-op DataObserver here instead of a TreeRecordingObserver.
         # The reason is we don't expect simulate_test_function to explore new choices
@@ -856,7 +859,7 @@ class ConjectureRunner:
                     # clear out any keys which fail deserialization
                     self.settings.database.delete(self.database_key, existing)
                     continue
-                data = self.cached_test_function_ir(choices, extend=BUFFER_SIZE)
+                data = self.cached_test_function_ir(choices, extend="full")
                 if data.status != Status.INTERESTING:
                     self.settings.database.delete(self.database_key, existing)
                     self.settings.database.delete(self.secondary_key, existing)
@@ -891,7 +894,7 @@ class ConjectureRunner:
                     if choices is None:
                         self.settings.database.delete(self.pareto_key, existing)
                         continue
-                    data = self.cached_test_function_ir(choices, extend=BUFFER_SIZE)
+                    data = self.cached_test_function_ir(choices, extend="full")
                     if data not in self.pareto_front:
                         self.settings.database.delete(self.pareto_key, existing)
                     if data.status == Status.INTERESTING:
@@ -954,7 +957,7 @@ class ConjectureRunner:
 
         assert self.should_generate_more()
         zero_data = self.cached_test_function_ir(
-            (NodeTemplate("simplest", size=BUFFER_SIZE),)
+            (NodeTemplate("simplest", count=None),)
         )
         if zero_data.status > Status.OVERRUN:
             assert isinstance(zero_data, ConjectureResult)
@@ -1034,27 +1037,21 @@ class ConjectureRunner:
             # not whatever is specified by the backend. We can improve this
             # once more things are on the ir.
             if not self.using_hypothesis_backend:
-                data = self.new_conjecture_data_ir([], max_length=BUFFER_SIZE)
+                data = self.new_conjecture_data_ir([])
                 with suppress(BackendCannotProceed):
                     self.test_function(data)
                 continue
 
             self._current_phase = "generate"
             prefix = self.generate_novel_prefix()
-            # it is possible, if unlikely, to generate a > BUFFER_SIZE novel prefix,
-            # as nodes in the novel tree may be variable sized due to eg integer
-            # probe retries.
-            prefix = truncate_choices_to_size(prefix, BUFFER_SIZE_IR)
             if (
                 self.valid_examples <= small_example_cap
                 and self.call_count <= 5 * small_example_cap
                 and not self.interesting_examples
                 and consecutive_zero_extend_is_invalid < 5
             ):
-                prefix_size = ir_size(prefix)
                 minimal_example = self.cached_test_function_ir(
-                    prefix
-                    + (NodeTemplate("simplest", size=BUFFER_SIZE_IR - prefix_size),)
+                    prefix + (NodeTemplate("simplest", count=None),)
                 )
 
                 if minimal_example.status < Status.VALID:
@@ -1065,8 +1062,8 @@ class ConjectureRunner:
                 # ConjectureResult object.
                 assert isinstance(minimal_example, ConjectureResult)
                 consecutive_zero_extend_is_invalid = 0
-                minimal_extension = ir_size(minimal_example.ir_nodes) - prefix_size
-                max_length = min(prefix_size + minimal_extension * 10, BUFFER_SIZE_IR)
+                minimal_extension = len(minimal_example.choices) - len(prefix)
+                max_length = len(prefix) + minimal_extension * 5
 
                 # We could end up in a situation where even though the prefix was
                 # novel when we generated it, because we've now tried zero extending
@@ -1096,14 +1093,14 @@ class ConjectureRunner:
 
                 prefix = trial_data.choices
             else:
-                max_length = BUFFER_SIZE_IR
+                max_length = None
 
             data = self.new_conjecture_data_ir(prefix, max_length=max_length)
             self.test_function(data)
 
             if (
                 data.status is Status.OVERRUN
-                and max_length < BUFFER_SIZE_IR
+                and max_length is not None
                 and "invalid because" not in data.events
             ):
                 data.events["invalid because"] = (
@@ -1298,7 +1295,7 @@ class ConjectureRunner:
 
     def new_conjecture_data_ir(
         self,
-        choices: Sequence[Union[ChoiceT, NodeTemplate]],
+        prefix: Sequence[Union[ChoiceT, NodeTemplate]],
         *,
         observer: Optional[DataObserver] = None,
         max_length: Optional[int] = None,
@@ -1310,11 +1307,13 @@ class ConjectureRunner:
         if not self.using_hypothesis_backend:
             observer = DataObserver()
 
-        return ConjectureData.for_choices(
-            choices,
+        return ConjectureData(
+            BUFFER_SIZE,
+            prefix=b"",
+            ir_prefix=prefix,
             observer=observer,
             provider=provider,
-            max_length=max_length,
+            max_length_ir=max_length,
             random=self.random,
         )
 

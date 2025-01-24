@@ -708,26 +708,17 @@ class IRNode:
 @attr.s(slots=True)
 class NodeTemplate:
     type: Literal["simplest"] = attr.ib()
-    size: int = attr.ib()
+    count: Optional[int] = attr.ib()
 
     def __attrs_post_init__(self) -> None:
-        assert self.size > 0
+        if self.count is not None:
+            assert self.count > 0
 
 
-def ir_size(ir: Iterable[Union[IRNode, NodeTemplate, ChoiceT]]) -> int:
+def ir_size(ir: Iterable[ChoiceT]) -> int:
     from hypothesis.database import ir_to_bytes
 
-    size = 0
-    for v in ir:
-        if isinstance(v, IRNode):
-            size += len(ir_to_bytes([v.value]))
-        elif isinstance(v, NodeTemplate):
-            size += v.size
-        else:
-            # ChoiceT
-            size += len(ir_to_bytes([v]))
-
-    return size
+    return len(ir_to_bytes(ir))
 
 
 @dataclass_transform()
@@ -1581,14 +1572,13 @@ class ConjectureData:
         *,
         observer: Optional[DataObserver] = None,
         provider: Union[type, PrimitiveProvider] = HypothesisProvider,
-        max_length: Optional[int] = None,
         random: Optional[Random] = None,
     ) -> "ConjectureData":
-        from hypothesis.internal.conjecture.engine import BUFFER_SIZE
+        from hypothesis.internal.conjecture.engine import BUFFER_SIZE, choice_count
 
         return cls(
             max_length=BUFFER_SIZE,
-            max_length_ir=(ir_size(choices) if max_length is None else max_length),
+            max_length_ir=choice_count(choices),
             prefix=b"",
             random=random,
             ir_prefix=choices,
@@ -1624,7 +1614,8 @@ class ConjectureData:
         self._bytes_drawn = 0
         self.observer = observer
         self.max_length = max_length
-        self.max_length_ir = BUFFER_SIZE_IR if max_length_ir is None else max_length_ir
+        self.max_choices = max_length_ir
+        self.max_length_ir = BUFFER_SIZE_IR
         self.is_find = False
         self.overdraw = 0
         self.__prefix = bytes(prefix)
@@ -1735,6 +1726,9 @@ class ConjectureData:
         # drawing past the node of a ConjectureData.for_choices data.
         if self.length_ir == self.max_length_ir:
             debug_report(f"overrun because hit {self.max_length_ir=}")
+            self.mark_overrun()
+        if len(self.ir_nodes) == self.max_choices:
+            debug_report(f"overrun because hit {self.max_choices=}")
             self.mark_overrun()
 
         if (
@@ -1958,7 +1952,8 @@ class ConjectureData:
         value = self.ir_prefix[self.index_ir]
         if isinstance(value, NodeTemplate):
             node: NodeTemplate = value
-            assert node.size >= 0
+            if node.count is not None:
+                assert node.count >= 0
             # node templates have to be at the end for now, since it's not immediately
             # apparent how to handle overruning a node template while generating a single
             # node if the alternative is not "the entire data is an overrun".
@@ -1975,9 +1970,10 @@ class ConjectureData:
             else:
                 raise NotImplementedError
 
-            node.size -= 0 if self.provider.avoid_realization else ir_size([choice])
-            if node.size < 0:
-                self.mark_overrun()
+            if node.count is not None:
+                node.count -= 1
+                if node.count < 0:
+                    self.mark_overrun()
             return choice
 
         choice = value

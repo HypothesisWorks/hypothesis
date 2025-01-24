@@ -103,9 +103,9 @@ def test_errors_with_did_not_reproduce_if_the_shape_changes():
     n = len(b)
 
     @reproduce_failure(__version__, encode_failure([b]))
-    @given(st.binary(min_size=n + 1, max_size=n + 1))
-    def test(x):
-        assert x == b
+    @given(st.binary(min_size=n, max_size=n) | st.integers())
+    def test(v):
+        assert v == b
 
     with pytest.raises(DidNotReproduce):
         test()

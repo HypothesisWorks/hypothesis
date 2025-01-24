@@ -14,6 +14,7 @@ import pytest
 
 from hypothesis import strategies as st
 from hypothesis.errors import Frozen, InvalidArgument
+from hypothesis.internal.conjecture import engine
 from hypothesis.internal.conjecture.data import (
     MAX_DEPTH,
     ConjectureData,
@@ -424,3 +425,22 @@ def test_children_of_discarded_examples_do_not_create_structural_coverage():
     data.freeze()
     assert structural_coverage(42) not in data.tags
     assert structural_coverage(10) not in data.tags
+
+
+def test_overruns_at_exactly_max_length():
+    # TODO_IR use `with buffer_size_limit` once we remove the BUFFER_SIZE / BUFFER_SIZE_IR
+    # distinction
+    original = engine.BUFFER_SIZE_IR
+    engine.BUFFER_SIZE_IR = 1
+    try:
+        data = ConjectureData(
+            999, prefix=b"", ir_prefix=[True], random=None, max_length_ir=1
+        )
+        data.draw_boolean()
+        try:
+            data.draw_boolean()
+        except StopTest:
+            pass
+        assert data.status is Status.OVERRUN
+    finally:
+        engine.BUFFER_SIZE_IR = original

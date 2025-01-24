@@ -34,10 +34,9 @@ from hypothesis.database import (
 from hypothesis.errors import FailedHealthCheck, FlakyStrategyDefinition
 from hypothesis.internal.compat import PYPY, bit_count, int_from_bytes
 from hypothesis.internal.conjecture import engine as engine_module
-from hypothesis.internal.conjecture.data import ConjectureData, Overrun, Status, ir_size
+from hypothesis.internal.conjecture.data import ConjectureData, Overrun, Status
 from hypothesis.internal.conjecture.datatree import compute_max_children
 from hypothesis.internal.conjecture.engine import (
-    BUFFER_SIZE_IR,
     MIN_TEST_CALLS,
     ConjectureRunner,
     ExitReason,
@@ -596,24 +595,6 @@ def test_clears_out_its_database_on_shrinking(
     for b in db.fetch(runner.secondary_key):
         assert ir_from_bytes(b)[0] >= 127
     assert len(list(db.fetch(runner.database_key))) == 1
-
-
-def test_detects_too_small_block_starts():
-    call_count = 0
-
-    def f(data):
-        nonlocal call_count
-        call_count += 1
-        data.draw_bytes(8, 8)
-        data.mark_interesting()
-
-    runner = ConjectureRunner(f, settings=settings(database=None))
-    r = runner.cached_test_function_ir((bytes(8),))
-    assert r.status is Status.INTERESTING
-    assert call_count == 1
-    r2 = runner.cached_test_function_ir((bytes([255] * 7),))
-    assert r2.status is Status.OVERRUN
-    assert call_count == 1
 
 
 def test_shrinks_both_interesting_examples(monkeypatch):
@@ -1464,45 +1445,40 @@ def test_does_result_for_reuse():
         assert calls == 1
 
 
-def test_does_not_cache_overrun_if_extending():
+def test_does_not_use_cached_overrun_if_extending():
     def test(data):
-        data.draw_bytes(8, 8)
+        data.draw_integer()
+        data.draw_integer()
 
     with deterministic_PRNG():
         runner = ConjectureRunner(test, settings=TEST_SETTINGS)
 
-        d1 = runner.cached_test_function_ir((b"",), extend=4)
-        d2 = runner.cached_test_function_ir((b"",), extend=8)
-        assert d1.status == Status.OVERRUN
-        assert d2.status == Status.VALID
+        data = runner.cached_test_function_ir((1,))
+        assert data.status == Status.OVERRUN
+        assert runner.call_count == 1
+
+        # the choice sequence of (1,) maps to an overrun in the cache, but we
+        # do not want to use this cache entry if we're extending.
+        data = runner.cached_test_function_ir((1,), extend=1)
+        assert data.status == Status.VALID
+        assert runner.call_count == 2
 
 
-def test_does_cache_overrun_if_not_extending():
+def test_uses_cached_overrun_if_not_extending():
     def test(data):
-        data.draw_bytes(8, 8)
-        data.draw_bytes(8, 8)
+        data.draw_integer()
+        data.draw_integer()
 
     with deterministic_PRNG():
         runner = ConjectureRunner(test, settings=TEST_SETTINGS)
 
-        data = runner.cached_test_function_ir((bytes(8)), extend=0)
+        data = runner.cached_test_function_ir((1,), extend=0)
         assert data.status is Status.OVERRUN
+        assert runner.call_count == 1
 
-        data = runner.cached_test_function_ir((bytes(8)), extend=10)
-        assert data.status is Status.VALID
-
-
-def test_does_not_cache_extended_prefix_if_overrun():
-    def test(data):
-        data.draw_bytes(8, 8)
-
-    with deterministic_PRNG():
-        runner = ConjectureRunner(test, settings=TEST_SETTINGS)
-
-        d1 = runner.cached_test_function_ir((b"",), extend=4)
-        d2 = runner.cached_test_function_ir((b"",), extend=8)
-        assert d1.status is Status.OVERRUN
-        assert d2.status is Status.VALID
+        data = runner.cached_test_function_ir((1,), extend=0)
+        assert data.status is Status.OVERRUN
+        assert runner.call_count == 1
 
 
 def test_can_be_set_to_ignore_limits():
@@ -1571,9 +1547,7 @@ def test_overruns_with_extend_are_not_cached(node):
     assert data.status is Status.OVERRUN
 
     # cache miss
-    data = runner.cached_test_function_ir(
-        [node.value], extend=BUFFER_SIZE_IR - ir_size([node])
-    )
+    data = runner.cached_test_function_ir([node.value], extend="full")
     assert runner.call_count == 2
     assert data.status is Status.VALID
 

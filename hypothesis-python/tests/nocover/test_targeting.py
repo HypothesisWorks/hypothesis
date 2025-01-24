@@ -71,7 +71,9 @@ def test_targeting_can_be_disabled():
         @given(strat)
         def test(ls):
             nonlocal result
-            score = float(sum(ls))
+            # cap the score to avoid long test times by unbounded driving of list
+            # length upwards
+            score = min(sum(ls), 10_000)
             result = max(result, score)
             target(score)
 

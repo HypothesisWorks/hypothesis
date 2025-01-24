@@ -74,7 +74,7 @@ def test_can_discard(monkeypatch):
     def nodes(data):
         seen = set()
         while len(seen) < n:
-            seen.add(data.draw_bytes(1, 1))
+            seen.add(data.draw_bytes())
         data.mark_interesting()
 
     assert len(nodes) == n
