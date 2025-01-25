@@ -1008,26 +1008,25 @@ SMALL_COUNT_SETTINGS = settings(TEST_SETTINGS, max_examples=500)
 
 
 def test_discards_kill_branches():
-    starts = set()
+    seen = set()
 
-    with deterministic_PRNG():
+    def test(data: ConjectureData):
+        data.start_example(1)
+        n1 = data.draw_integer(0, 9)
+        data.stop_example(discard=n1 > 0)
+        n2 = data.draw_integer(0, 9)
+        n3 = data.draw_integer(0, 9)
 
-        def test(data):
-            assert runner.call_count <= 256
-            while True:
-                data.start_example(1)
-                b = data.draw_integer(0, 2**8 - 1)
-                data.stop_example(discard=b != 0)
-                if len(data.buffer) == 1:
-                    s = bytes(data.buffer)
-                    assert s not in starts
-                    starts.add(s)
-                if b == 0:
-                    break
+        assert (n1, n2, n3) not in seen
+        seen.add((n1, n2, n3))
 
-        runner = ConjectureRunner(test, settings=SMALL_COUNT_SETTINGS)
-        runner.run()
-        assert runner.call_count == 256
+    runner = ConjectureRunner(test, settings=SMALL_COUNT_SETTINGS)
+    runner.run()
+    assert runner.exit_reason is ExitReason.finished
+    # 10 to explore the initial n1 = 0-9 statespace, then 100 to explore just
+    # the (0, n1, n2) statespace, because every prefix other than 0 is a discard
+    # and is not explored. Subtract the overlap, which occurs once at n1 = 0.
+    assert len(seen) == 100 + 10 - 1
 
 
 @pytest.mark.parametrize("n", range(1, 32))
@@ -1044,7 +1043,7 @@ def test_number_of_examples_in_integer_range_is_bounded(n):
 
 def test_prefix_cannot_exceed_buffer_size(monkeypatch):
     buffer_size = 10
-    monkeypatch.setattr(engine_module, "BUFFER_SIZE", buffer_size)
+    monkeypatch.setattr(engine_module, "BUFFER_SIZE_IR", buffer_size)
 
     with deterministic_PRNG():
 

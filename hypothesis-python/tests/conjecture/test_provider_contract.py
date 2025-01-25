@@ -39,7 +39,6 @@ from tests.conjecture.common import float_kw, integer_kw, ir_types_and_kwargs, s
 def test_provider_contract_bytestring(bytestring, ir_type_and_kwargs):
     data = ConjectureData(
         BUFFER_SIZE,
-        prefix=b"",
         random=None,
         observer=None,
         provider=BytestringProvider,

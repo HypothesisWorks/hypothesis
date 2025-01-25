@@ -728,6 +728,45 @@ class BackgroundWriteDatabase(ExampleDatabase):
         self._queue.put(("move", (src, dest, value)))
 
 
+def _pack_uleb128(value: int) -> bytes:
+    """
+    Serialize an integer into variable-length bytes. For each byte, the first 7
+    bits represent (part of) the integer, while the last bit indicates whether the
+    integer continues into the next byte.
+
+    https://en.wikipedia.org/wiki/LEB128
+    """
+    parts = bytearray()
+    assert value >= 0
+    while True:
+        # chop off 7 bits
+        byte = value & ((1 << 7) - 1)
+        value >>= 7
+        # set the continuation bit if we have more left
+        if value:
+            byte |= 1 << 7
+
+        parts.append(byte)
+        if not value:
+            break
+    return bytes(parts)
+
+
+def _unpack_uleb128(buffer: bytes) -> tuple[int, int]:
+    """
+    Inverts _pack_uleb128, and also returns the index at which at which we stopped
+    reading.
+    """
+    value = 0
+    for i, byte in enumerate(buffer):
+        n = byte & ((1 << 7) - 1)
+        value |= n << (i * 7)
+
+        if not byte >> 7:
+            break
+    return (i + 1, value)
+
+
 def ir_to_bytes(ir: Iterable[ChoiceT], /) -> bytes:
     """Serialize a list of IR elements to a bytestring.  Inverts ir_from_bytes."""
     # We use a custom serialization format for this, which might seem crazy - but our
@@ -762,7 +801,7 @@ def ir_to_bytes(ir: Iterable[ChoiceT], /) -> bytes:
             parts.append((tag | size).to_bytes(1, "big"))
         else:
             parts.append((tag | 0b11111).to_bytes(1, "big"))
-            parts.append(struct.pack("!H", size))
+            parts.append(_pack_uleb128(size))
         parts.append(elem)
 
     return b"".join(parts)
@@ -781,8 +820,8 @@ def _ir_from_bytes(buffer: bytes, /) -> tuple[ChoiceT, ...]:
             parts.append(bool(size))
             continue
         if size == 0b11111:
-            (size,) = struct.unpack_from("!H", buffer, offset=idx)
-            idx += 2
+            (offset, size) = _unpack_uleb128(buffer[idx:])
+            idx += offset
         chunk = buffer[idx : idx + size]
         idx += size
 

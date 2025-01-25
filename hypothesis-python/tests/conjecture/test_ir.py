@@ -396,7 +396,7 @@ def test_all_children_are_permitted_values(ir_type_and_kwargs):
         (2, integer_kw(0, 1), False),
         (10, integer_kw(0, 20), True),
         (int(2**128 / 2) - 1, integer_kw(), True),
-        (int(2**128 / 2), integer_kw(), False),
+        (int(2**128 / 2), integer_kw(), True),
         (math.nan, float_kw(0.0, 0.0), True),
         (math.nan, float_kw(0.0, 0.0, allow_nan=False), False),
         (2.0, float_kw(1.0, 3.0, smallest_nonzero_magnitude=2.5), False),
@@ -898,7 +898,6 @@ def test_node_template_overrun():
     # different code path for overruning the NodeTemplate count, not max_length_ir.
     cd = ConjectureData(
         max_length=100,
-        prefix=b"",
         random=None,
         ir_prefix=[NodeTemplate("simplest", count=2)],
         max_length_ir=100,

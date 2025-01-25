@@ -79,16 +79,16 @@ def test_lazy_slow_initialization_issue_2108_regression(data):
 
 
 def test_does_not_trigger_health_check_on_simple_strategies(monkeypatch):
-    existing_draw_bits = ConjectureData.draw_bits
+    existing_draw = ConjectureData.draw_integer
 
     # We need to make drawing data artificially slow in order to trigger this
     # effect. This isn't actually slow because time is fake in our CI, but
     # we need it to pretend to be.
-    def draw_bits(self, n, *, forced=None, fake_forced=False):
+    def draw_integer(*args, **kwargs):
         time.sleep(0.001)
-        return existing_draw_bits(self, n, forced=forced, fake_forced=fake_forced)
+        return existing_draw(*args, **kwargs)
 
-    monkeypatch.setattr(ConjectureData, "draw_bits", draw_bits)
+    monkeypatch.setattr(ConjectureData, "draw_integer", draw_integer)
 
     with deterministic_PRNG():
         for _ in range(100):
@@ -96,8 +96,8 @@ def test_does_not_trigger_health_check_on_simple_strategies(monkeypatch):
             # health checks to finish running, but cuts the generation short
             # after that point to allow this test to run in reasonable time.
             @settings(database=None, max_examples=11, phases=[Phase.generate])
-            @given(st.binary())
-            def test(b):
+            @given(st.integers())
+            def test(n):
                 pass
 
             test()

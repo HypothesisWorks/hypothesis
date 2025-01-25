@@ -30,6 +30,8 @@ from hypothesis.database import (
     InMemoryExampleDatabase,
     MultiplexedDatabase,
     ReadOnlyDatabase,
+    _pack_uleb128,
+    _unpack_uleb128,
     ir_from_bytes,
     ir_to_bytes,
 )
@@ -478,6 +480,7 @@ def test_background_write_database():
 @example(ir("a"))
 @example(ir(b"a"))
 @example(ir(b"a" * 50))
+@example(ir(b"1" * 100_000))  # really long bytes
 def test_ir_nodes_roundtrips(nodes1):
     s1 = ir_to_bytes([n.value for n in nodes1])
     assert isinstance(s1, bytes)
@@ -489,3 +492,11 @@ def test_ir_nodes_roundtrips(nodes1):
 
     s2 = ir_to_bytes(ir2)
     assert s1 == s2
+
+
+@given(st.integers(min_value=0))
+def test_uleb_128_roundtrips(n1):
+    buffer1 = _pack_uleb128(n1)
+    idx, n2 = _unpack_uleb128(buffer1)
+    assert idx == len(buffer1)
+    assert n1 == n2

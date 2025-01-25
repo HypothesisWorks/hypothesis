@@ -418,16 +418,9 @@ def choice_permitted(choice: ChoiceT, kwargs: ChoiceKwargsT) -> bool:
         kwargs = cast(IntegerKWargs, kwargs)
         min_value = kwargs["min_value"]
         max_value = kwargs["max_value"]
-        shrink_towards = kwargs["shrink_towards"]
         if min_value is not None and choice < min_value:
             return False
-        if max_value is not None and choice > max_value:
-            return False
-
-        if max_value is None or min_value is None:
-            return (choice - shrink_towards).bit_length() < 128
-
-        return True
+        return not (max_value is not None and choice > max_value)
     elif isinstance(choice, float):
         kwargs = cast(FloatKWargs, kwargs)
         if math.isnan(choice):
@@ -450,9 +443,9 @@ def choice_permitted(choice: ChoiceT, kwargs: ChoiceKwargsT) -> bool:
         return kwargs["max_size"] is None or len(choice) <= kwargs["max_size"]
     elif isinstance(choice, bool):
         kwargs = cast(BooleanKWargs, kwargs)
-        if kwargs["p"] <= 2 ** (-64):
+        if kwargs["p"] <= 0:
             return choice is False
-        if kwargs["p"] >= (1 - 2 ** (-64)):
+        if kwargs["p"] >= 1:
             return choice is True
         return True
     else:

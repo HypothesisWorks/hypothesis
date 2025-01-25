@@ -55,12 +55,7 @@ class PrngProvider(PrimitiveProvider):
     def draw_boolean(
         self,
         p: float = 0.5,
-        *,
-        forced: Optional[bool] = None,
-        fake_forced: bool = False,
     ) -> bool:
-        if forced is not None:
-            return forced
         return self.prng.random() < p
 
     def draw_integer(
@@ -70,12 +65,8 @@ class PrngProvider(PrimitiveProvider):
         *,
         weights: Optional[dict[int, float]] = None,
         shrink_towards: int = 0,
-        forced: Optional[int] = None,
-        fake_forced: bool = False,
     ) -> int:
         assert isinstance(shrink_towards, int)  # otherwise ignored here
-        if forced is not None:
-            return forced
 
         if weights is not None:
             assert min_value is not None
@@ -102,12 +93,7 @@ class PrngProvider(PrimitiveProvider):
         max_value: float = math.inf,
         allow_nan: bool = True,
         smallest_nonzero_magnitude: float,
-        forced: Optional[float] = None,
-        fake_forced: bool = False,
     ) -> float:
-        if forced is not None:
-            return forced
-
         if allow_nan and self.prng.random() < 1 / 32:
             nans = [math.nan, -math.nan, SIGNALING_NAN, -SIGNALING_NAN]
             return self.prng.choice(nans)
@@ -139,11 +125,7 @@ class PrngProvider(PrimitiveProvider):
         *,
         min_size: int = 0,
         max_size: int = COLLECTION_DEFAULT_MAX_SIZE,
-        forced: Optional[str] = None,
-        fake_forced: bool = False,
     ) -> str:
-        if forced is not None:
-            return forced
         size = self.prng.randint(
             min_size, max(min_size, min(100 if max_size is None else max_size, 100))
         )
@@ -153,12 +135,7 @@ class PrngProvider(PrimitiveProvider):
         self,
         min_size: int = 0,
         max_size: int = COLLECTION_DEFAULT_MAX_SIZE,
-        *,
-        forced: Optional[bytes] = None,
-        fake_forced: bool = False,
     ) -> bytes:
-        if forced is not None:
-            return forced
         max_size = 100 if max_size is None else max_size
         size = self.prng.randint(min_size, max_size)
         try:
@@ -601,7 +578,6 @@ def test_invalid_provider_kw():
     with pytest.raises(InvalidArgument, match="got an instance instead"):
         ConjectureData(
             max_length=0,
-            prefix=b"",
             random=None,
             provider=TrivialProvider(None),
             provider_kw={"one": "two"},

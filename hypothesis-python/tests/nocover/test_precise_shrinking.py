@@ -84,7 +84,7 @@ def precisely_shrink(
     random = Random(seed)
 
     while True:
-        data = ConjectureData(random=random, prefix=b"", max_length=BUFFER_SIZE)
+        data = ConjectureData(random=random, max_length=BUFFER_SIZE)
         try:
             initial_value = safe_draw(data, strategy)
         except StopTest:
@@ -216,7 +216,7 @@ def find_random(
 ) -> tuple[ConjectureResult, T]:
     random = Random(seed)
     while True:
-        data = ConjectureData(random=random, max_length=BUFFER_SIZE, prefix=b"")
+        data = ConjectureData(random=random, max_length=BUFFER_SIZE)
         try:
             with BuildContext(data=data):
                 value = data.draw(s)
@@ -246,9 +246,7 @@ def shrinks(strategy, ir_nodes, *, allow_sloppy=True, seed=0):
         except RunIsComplete:
             assert runner.exit_reason in (ExitReason.finished, ExitReason.max_shrinks)
     else:
-        trial = ConjectureData(
-            prefix=b"", ir_prefix=choices, max_length=BUFFER_SIZE, random=random
-        )
+        trial = ConjectureData(ir_prefix=choices, max_length=BUFFER_SIZE, random=random)
         with BuildContext(trial):
             trial.draw(strategy)
             assert trial.choices == choices, "choice sequence is already sloppy"
