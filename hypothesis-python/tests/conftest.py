@@ -52,6 +52,7 @@ def pytest_configure(config):
         "markers",
         "xp_min_version(api_version): run when greater or equal to api_version",
     )
+    config.addinivalue_line("markers", "xf_crosshair: selection for xfailing symbolics")
 
     if config.getoption("--hypothesis-benchmark-shrinks"):
         # we'd like to support xdist here, but a session-scope fixture won't

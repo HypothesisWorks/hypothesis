@@ -8,6 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import pytest
+
 import hypothesis.strategies as st
 from hypothesis import Phase, example, given, settings
 from hypothesis.internal.conjecture.dfa.lstar import LStar
@@ -20,6 +22,7 @@ def byte_order(draw):
     return ls[:n]
 
 
+@pytest.mark.skipif(settings._current_profile == "crosshair", reason="takes 300s")
 @example({0}, [1])
 @given(st.sets(st.integers(0, 255)), byte_order())
 # This test doesn't even use targeting at all, but for some reason the
