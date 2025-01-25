@@ -40,7 +40,7 @@ from hypothesis.internal.intervalsets import IntervalSet
 
 from tests.common.debug import minimal
 from tests.common.utils import capture_observations, capture_out
-from tests.conjecture.common import ir_nodes
+from tests.conjecture.common import nodes
 
 
 class PrngProvider(PrimitiveProvider):
@@ -244,7 +244,7 @@ def test_backend_can_shrink_floats():
 
 # mostly a shoehorned coverage test until the shrinker is migrated to the ir
 # and calls cached_test_function_ir with backends consistently.
-@given(ir_nodes())
+@given(nodes())
 def test_new_conjecture_data_ir_with_backend(node):
     def test(data):
         getattr(data, f"draw_{node.ir_type}")(**node.kwargs)
@@ -577,7 +577,6 @@ def test_notes_incorrect_verification(provider):
 def test_invalid_provider_kw():
     with pytest.raises(InvalidArgument, match="got an instance instead"):
         ConjectureData(
-            max_length=0,
             random=None,
             provider=TrivialProvider(None),
             provider_kw={"one": "two"},

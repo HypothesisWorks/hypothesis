@@ -83,7 +83,7 @@ class Optimiser:
         # We allow transitions that leave the score unchanged as long as they
         # don't increase the number of nodes. This gives us a certain amount of
         # freedom for lateral moves that will take us out of local maxima.
-        if len(data.ir_nodes) <= len(self.current_data.ir_nodes):
+        if len(data.nodes) <= len(self.current_data.nodes):
             self.current_data = data
             return True
         return False
@@ -97,10 +97,10 @@ class Optimiser:
         nodes_examined = set()
 
         prev: Optional[ConjectureResult] = None
-        i = len(self.current_data.ir_nodes) - 1
+        i = len(self.current_data.nodes) - 1
         while i >= 0 and self.improvements <= self.max_improvements:
             if prev is not self.current_data:
-                i = len(self.current_data.ir_nodes) - 1
+                i = len(self.current_data.nodes) - 1
                 prev = self.current_data
 
             if i in nodes_examined:
@@ -108,7 +108,7 @@ class Optimiser:
                 continue
 
             nodes_examined.add(i)
-            node = self.current_data.ir_nodes[i]
+            node = self.current_data.nodes[i]
             assert node.index is not None
             # we can only (sensibly & easily) define hill climbing for
             # numeric-style nodes. It's not clear hill-climbing a string is
@@ -130,7 +130,7 @@ class Optimiser:
                 if abs(k) > 2**20:
                     return False
 
-                node = self.current_data.ir_nodes[i]
+                node = self.current_data.nodes[i]
                 assert node.index is not None
                 if node.was_forced:
                     return False  # pragma: no cover
@@ -183,25 +183,23 @@ class Optimiser:
                         return False
 
                     assert isinstance(attempt, ConjectureResult)
-                    if len(attempt.ir_nodes) == len(self.current_data.ir_nodes):
+                    if len(attempt.nodes) == len(self.current_data.nodes):
                         return False
 
                     for j, ex in enumerate(self.current_data.examples):
-                        if ex.ir_start >= node.index + 1:
+                        if ex.start >= node.index + 1:
                             break  # pragma: no cover
-                        if ex.ir_end <= node.index:
+                        if ex.end <= node.index:
                             continue
                         ex_attempt = attempt.examples[j]
-                        if ex.ir_length == ex_attempt.ir_length:
+                        if ex.choice_count == ex_attempt.choice_count:
                             continue  # pragma: no cover
-                        replacement = attempt.choices[
-                            ex_attempt.ir_start : ex_attempt.ir_end
-                        ]
+                        replacement = attempt.choices[ex_attempt.start : ex_attempt.end]
                         if self.consider_new_data(
                             self.engine.cached_test_function_ir(
                                 choices[: node.index]
                                 + replacement
-                                + self.current_data.choices[ex.ir_end :]
+                                + self.current_data.choices[ex.end :]
                             )
                         ):
                             return True

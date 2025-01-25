@@ -63,7 +63,7 @@ from hypothesis.internal.conjecture.junkdrawer import (
     startswith,
 )
 from hypothesis.internal.conjecture.pareto import NO_SCORE, ParetoFront, ParetoOptimiser
-from hypothesis.internal.conjecture.shrinker import Shrinker, sort_key_ir
+from hypothesis.internal.conjecture.shrinker import Shrinker, sort_key
 from hypothesis.internal.escalation import InterestingOrigin
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.reporting import base_report, report
@@ -73,7 +73,6 @@ CACHE_SIZE: Final[int] = 10000
 MUTATION_POOL_SIZE: Final[int] = 100
 MIN_TEST_CALLS: Final[int] = 10
 BUFFER_SIZE: Final[int] = 8 * 1024
-BUFFER_SIZE_IR: Final[int] = 8 * 1024
 
 # If the shrinking phase takes more than five minutes, abort it early and print
 # a warning.   Many CI systems will kill a build after around ten minutes with
@@ -405,7 +404,7 @@ class ConjectureRunner:
 
         try:
             trial_data = self.new_conjecture_data_ir(
-                choices, observer=trial_observer, max_length=max_length
+                choices, observer=trial_observer, max_choices=max_length
             )
             self.tree.simulate_test_function(trial_data)
         except PreviouslyUnseenBehaviour:
@@ -429,7 +428,7 @@ class ConjectureRunner:
             except KeyError:
                 pass
 
-        data = self.new_conjecture_data_ir(choices, max_length=max_length)
+        data = self.new_conjecture_data_ir(choices, max_choices=max_length)
         # note that calling test_function caches `data` for us, for both an ir
         # tree key and a buffer key.
         self.test_function(data)
@@ -483,7 +482,7 @@ class ConjectureRunner:
                 }
                 self.stats_per_test_case.append(call_stats)
                 if self.settings.backend != "hypothesis":
-                    for node in data.ir_nodes:
+                    for node in data.nodes:
                         value = data.provider.realize(node.value)
                         expected_type = {
                             "string": str,
@@ -538,8 +537,8 @@ class ConjectureRunner:
                 if v < existing_score:
                     continue
 
-                if v > existing_score or sort_key_ir(data.ir_nodes) < sort_key_ir(
-                    existing_example.ir_nodes
+                if v > existing_score or sort_key(data.nodes) < sort_key(
+                    existing_example.nodes
                 ):
                     data_as_result = data.as_result()
                     assert not isinstance(data_as_result, _Overrun)
@@ -595,7 +594,7 @@ class ConjectureRunner:
                 if self.first_bug_found_at is None:
                     self.first_bug_found_at = self.call_count
             else:
-                if sort_key_ir(data.ir_nodes) < sort_key_ir(existing.ir_nodes):
+                if sort_key(data.nodes) < sort_key(existing.nodes):
                     self.shrinks += 1
                     self.downgrade_buffer(ir_to_bytes(existing.choices))
                     self.__data_cache.unpin(self._cache_key(existing.choices))
@@ -968,7 +967,7 @@ class ConjectureRunner:
         if zero_data.status == Status.OVERRUN or (
             zero_data.status == Status.VALID
             and isinstance(zero_data, ConjectureResult)
-            and zero_data.length_ir * 2 > BUFFER_SIZE
+            and zero_data.length * 2 > BUFFER_SIZE
         ):
             fail_health_check(
                 self.settings,
@@ -1073,7 +1072,7 @@ class ConjectureRunner:
                 # running the test function for real here. If however we encounter
                 # some novel behaviour, we try again with the real test function,
                 # starting from the new novel prefix that has discovered.
-                trial_data = self.new_conjecture_data_ir(prefix, max_length=max_length)
+                trial_data = self.new_conjecture_data_ir(prefix, max_choices=max_length)
                 try:
                     self.tree.simulate_test_function(trial_data)
                     continue
@@ -1095,7 +1094,7 @@ class ConjectureRunner:
             else:
                 max_length = None
 
-            data = self.new_conjecture_data_ir(prefix, max_length=max_length)
+            data = self.new_conjecture_data_ir(prefix, max_choices=max_length)
             self.test_function(data)
 
             if (
@@ -1298,7 +1297,7 @@ class ConjectureRunner:
         prefix: Sequence[Union[ChoiceT, NodeTemplate]],
         *,
         observer: Optional[DataObserver] = None,
-        max_length: Optional[int] = None,
+        max_choices: Optional[int] = None,
     ) -> ConjectureData:
         provider = (
             HypothesisProvider if self._switch_to_hypothesis_provider else self.provider
@@ -1308,11 +1307,10 @@ class ConjectureRunner:
             observer = DataObserver()
 
         return ConjectureData(
-            BUFFER_SIZE,
-            ir_prefix=prefix,
+            prefix=prefix,
             observer=observer,
             provider=provider,
-            max_length_ir=max_length,
+            max_choices=max_choices,
             random=self.random,
         )
 
@@ -1330,7 +1328,7 @@ class ConjectureRunner:
         self.finish_shrinking_deadline = time.perf_counter() + MAX_SHRINKING_SECONDS
 
         for prev_data in sorted(
-            self.interesting_examples.values(), key=lambda d: sort_key_ir(d.ir_nodes)
+            self.interesting_examples.values(), key=lambda d: sort_key(d.nodes)
         ):
             assert prev_data.status == Status.INTERESTING
             data = self.new_conjecture_data_ir(prev_data.choices)
@@ -1347,7 +1345,7 @@ class ConjectureRunner:
                     for k, v in self.interesting_examples.items()
                     if k not in self.shrunk_examples
                 ),
-                key=lambda kv: (sort_key_ir(kv[1].ir_nodes), shortlex(repr(kv[0]))),
+                key=lambda kv: (sort_key(kv[1].nodes), shortlex(repr(kv[0]))),
             )
             self.debug(f"Shrinking {target!r}: {example.choices}")
 
@@ -1433,10 +1431,10 @@ class ConjectureRunner:
         Optionally restrict this by a certain prefix, which is useful for explain mode.
         """
         return frozenset(
-            cast(ConjectureResult, result).ir_nodes
+            cast(ConjectureResult, result).nodes
             for key in self.__data_cache
             if (result := self.__data_cache[key]).status is Status.VALID
-            and startswith(cast(ConjectureResult, result).ir_nodes, prefix)
+            and startswith(cast(ConjectureResult, result).nodes, prefix)
         )
 
 

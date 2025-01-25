@@ -56,7 +56,7 @@ from tests.conjecture.common import (
     TEST_SETTINGS,
     buffer_size_limit,
     interesting_origin,
-    ir_nodes,
+    nodes,
     run_to_nodes,
     shrinking_from,
 )
@@ -688,7 +688,9 @@ def test_discarding_can_fail():
         data.mark_interesting()
 
     shrinker.remove_discarded()
-    assert any(e.discarded and e.ir_length > 0 for e in shrinker.shrink_target.examples)
+    assert any(
+        e.discarded and e.choice_count > 0 for e in shrinker.shrink_target.examples
+    )
 
 
 def test_shrinking_from_mostly_zero(monkeypatch):
@@ -980,8 +982,8 @@ def test_branch_ending_in_write():
         if count > 1:
             data.draw_boolean(forced=False)
 
-        assert data.ir_nodes not in seen
-        seen.add(data.ir_nodes)
+        assert data.nodes not in seen
+        seen.add(data.nodes)
 
     with deterministic_PRNG():
         runner = ConjectureRunner(tf, settings=TEST_SETTINGS)
@@ -1043,14 +1045,13 @@ def test_number_of_examples_in_integer_range_is_bounded(n):
 
 def test_prefix_cannot_exceed_buffer_size(monkeypatch):
     buffer_size = 10
-    monkeypatch.setattr(engine_module, "BUFFER_SIZE_IR", buffer_size)
 
-    with deterministic_PRNG():
+    with deterministic_PRNG(), buffer_size_limit(buffer_size):
 
         def test(data):
             while data.draw_boolean():
-                assert data.length_ir <= buffer_size
-            assert data.length_ir <= buffer_size
+                assert data.length <= buffer_size
+            assert data.length <= buffer_size
 
         runner = ConjectureRunner(test, settings=SMALL_COUNT_SETTINGS)
         runner.run()
@@ -1440,7 +1441,7 @@ def test_does_result_for_reuse():
         d1 = runner.cached_test_function_ir((b"\0"), extend=8)
         d2 = runner.cached_test_function_ir(d1.choices)
         assert d1.status == d2.status == Status.VALID
-        assert d1.ir_nodes == d2.ir_nodes
+        assert d1.nodes == d2.nodes
         assert calls == 1
 
 
@@ -1525,7 +1526,7 @@ def _draw(cd, node):
     return getattr(cd, f"draw_{node.ir_type}")(**node.kwargs)
 
 
-@given(ir_nodes(was_forced=False))
+@given(nodes(was_forced=False))
 def test_overruns_with_extend_are_not_cached(node):
     assume(compute_max_children(node.ir_type, node.kwargs) > 100)
 

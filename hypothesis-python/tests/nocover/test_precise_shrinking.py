@@ -51,12 +51,11 @@ from hypothesis.control import BuildContext
 from hypothesis.errors import StopTest, UnsatisfiedAssumption
 from hypothesis.internal.conjecture.data import ConjectureData, ConjectureResult, Status
 from hypothesis.internal.conjecture.engine import (
-    BUFFER_SIZE,
     ConjectureRunner,
     ExitReason,
     RunIsComplete,
 )
-from hypothesis.internal.conjecture.shrinker import sort_key_ir
+from hypothesis.internal.conjecture.shrinker import sort_key
 
 T = TypeVar("T")
 
@@ -84,7 +83,7 @@ def precisely_shrink(
     random = Random(seed)
 
     while True:
-        data = ConjectureData(random=random, max_length=BUFFER_SIZE)
+        data = ConjectureData(random=random)
         try:
             initial_value = safe_draw(data, strategy)
         except StopTest:
@@ -140,12 +139,12 @@ def minimal_for_strategy(s):
 
 
 def minimal_nodes_for_strategy(s):
-    return minimal_for_strategy(s)[0].ir_nodes
+    return minimal_for_strategy(s)[0].nodes
 
 
 def test_strategy_list_is_in_sorted_order():
     assert common_strategies == sorted(
-        common_strategies, key=lambda s: sort_key_ir(minimal_nodes_for_strategy(s))
+        common_strategies, key=lambda s: sort_key(minimal_nodes_for_strategy(s))
     )
 
 
@@ -216,7 +215,7 @@ def find_random(
 ) -> tuple[ConjectureResult, T]:
     random = Random(seed)
     while True:
-        data = ConjectureData(random=random, max_length=BUFFER_SIZE)
+        data = ConjectureData(random=random)
         try:
             with BuildContext(data=data):
                 value = data.draw(s)
@@ -227,16 +226,16 @@ def find_random(
             continue
 
 
-def shrinks(strategy, ir_nodes, *, allow_sloppy=True, seed=0):
+def shrinks(strategy, nodes, *, allow_sloppy=True, seed=0):
     results = {}
     random = Random(seed)
-    choices = tuple(n.value for n in ir_nodes)
+    choices = tuple(n.value for n in nodes)
 
     if allow_sloppy:
 
         def test_function(data):
             value = safe_draw(data, strategy)
-            results[data.ir_nodes] = value
+            results[data.nodes] = value
 
         runner = ConjectureRunner(test_function, settings=settings(max_examples=10**9))
         initial = runner.cached_test_function_ir(choices)
@@ -246,7 +245,7 @@ def shrinks(strategy, ir_nodes, *, allow_sloppy=True, seed=0):
         except RunIsComplete:
             assert runner.exit_reason in (ExitReason.finished, ExitReason.max_shrinks)
     else:
-        trial = ConjectureData(ir_prefix=choices, max_length=BUFFER_SIZE, random=random)
+        trial = ConjectureData(prefix=choices, random=random)
         with BuildContext(trial):
             trial.draw(strategy)
             assert trial.choices == choices, "choice sequence is already sloppy"
@@ -255,7 +254,7 @@ def shrinks(strategy, ir_nodes, *, allow_sloppy=True, seed=0):
 
         def test_function(data):
             value = safe_draw(data, strategy)
-            key = data.ir_nodes
+            key = data.nodes
             padding_check = safe_draw(data, st.integers())
             if padding_check == padding:
                 results[key] = value
@@ -268,11 +267,11 @@ def shrinks(strategy, ir_nodes, *, allow_sloppy=True, seed=0):
         except RunIsComplete:
             assert runner.exit_reason in (ExitReason.finished, ExitReason.max_shrinks)
 
-    results.pop(ir_nodes)
+    results.pop(nodes)
     seen = set()
     result_list = []
 
-    for k, v in sorted(results.items(), key=lambda x: sort_key_ir(x[0])):
+    for k, v in sorted(results.items(), key=lambda x: sort_key(x[0])):
         t = repr(v)
         if t in seen:
             continue
@@ -290,7 +289,7 @@ def test_always_shrinks_to_none(a, seed, block_falsey, allow_sloppy):
 
     result, value = find_random(combined_strategy, lambda x: x is not None)
     shrunk_values = shrinks(
-        combined_strategy, result.ir_nodes, allow_sloppy=allow_sloppy, seed=seed
+        combined_strategy, result.nodes, allow_sloppy=allow_sloppy, seed=seed
     )
     assert shrunk_values[0][1] is None
 
@@ -315,7 +314,7 @@ def test_can_shrink_to_every_smaller_alternative(i, alts, seed, force_small):
 
     shrunk = shrinks(
         combined_strategy,
-        result.ir_nodes,
+        result.nodes,
         allow_sloppy=False,
         # Arbitrary change so we don't use the same seed for each Random.
         seed=seed * 17,

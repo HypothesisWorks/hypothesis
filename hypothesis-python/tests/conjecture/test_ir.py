@@ -56,8 +56,8 @@ from tests.conjecture.common import (
     fresh_data,
     integer_kw,
     integer_kwargs,
-    ir_nodes,
     ir_types_and_kwargs,
+    nodes,
 )
 
 
@@ -232,7 +232,7 @@ def test_compute_max_children_unbounded_integer_ranges(kwargs):
 
 
 @given(st.randoms())
-def test_ir_nodes(random):
+def test_nodes(random):
     data = fresh_data(random=random)
     data.draw_float(min_value=-10.0, max_value=10.0, forced=5.0)
     data.draw_boolean(forced=True)
@@ -273,10 +273,10 @@ def test_ir_nodes(random):
         ),
         IRNode(ir_type="integer", value=50, kwargs=integer_kw(0, 100), was_forced=True),
     )
-    assert data.ir_nodes == expected_tree_nodes
+    assert data.nodes == expected_tree_nodes
 
 
-@given(ir_nodes())
+@given(nodes())
 def test_copy_ir_node(node):
     assert node == node
 
@@ -288,14 +288,14 @@ def test_copy_ir_node(node):
     )
 
 
-@given(ir_nodes())
+@given(nodes())
 def test_ir_node_equality(node):
     assert node == node
     # for coverage on our NotImplemented return, more than anything.
     assert node != 42
 
 
-@given(ir_nodes(was_forced=True))
+@given(nodes(was_forced=True))
 def test_cannot_modify_forced_nodes(node):
     with pytest.raises(AssertionError):
         node.copy(with_value=42)
@@ -309,7 +309,7 @@ def test_data_with_empty_ir_tree_is_overrun():
     assert data.status is Status.OVERRUN
 
 
-@given(ir_nodes(was_forced=True))
+@given(nodes(was_forced=True))
 def test_data_with_changed_forced_value(node):
     # we had a forced node and then tried to draw a different forced value from it.
     # ir tree: v1 [was_forced=True]
@@ -361,7 +361,7 @@ def test_data_with_changed_forced_value(node):
         was_forced=True,
     )
 )
-@given(ir_nodes(was_forced=True))
+@given(nodes(was_forced=True))
 def test_data_with_same_forced_value_is_valid(node):
     # we had a forced node and then drew the same forced value. This is totally
     # fine!
@@ -450,7 +450,7 @@ def test_choice_permitted(value, kwargs, permitted):
     assert choice_permitted(value, kwargs) == permitted
 
 
-@given(ir_nodes(was_forced=True))
+@given(nodes(was_forced=True))
 def test_forced_nodes_are_trivial(node):
     assert node.trivial
 
@@ -668,12 +668,12 @@ def test_conservative_nontrivial_nodes(node):
     assert choice_equal(minimal(values()), node.value)
 
 
-@given(ir_nodes())
+@given(nodes())
 def test_ir_node_is_hashable(ir_node):
     hash(ir_node)
 
 
-@given(st.lists(ir_nodes()))
+@given(st.lists(nodes()))
 def test_ir_size_positive(nodes):
     assert ir_size([n.value for n in nodes]) >= 0
 
@@ -704,14 +704,14 @@ def test_node_template_single_node_overruns():
     assert data.status is Status.OVERRUN
 
 
-@given(ir_nodes())
+@given(nodes())
 def test_node_template_simplest_is_actually_trivial(node):
     # TODO_IR node.trivial is sound but not complete for floats.
     assume(node.ir_type != "float")
     data = ConjectureData.for_choices((NodeTemplate("simplest", count=1),))
     getattr(data, f"draw_{node.ir_type}")(**node.kwargs)
-    assert len(data.ir_nodes) == 1
-    assert data.ir_nodes[0].trivial
+    assert len(data.nodes) == 1
+    assert data.nodes[0].trivial
 
 
 @given(ir_types_and_kwargs())
@@ -836,7 +836,7 @@ def test_integer_choice_index(kwargs, choices):
         assert choice_to_index(choice, kwargs) == i
 
 
-@given(st.lists(ir_nodes()))
+@given(st.lists(nodes()))
 def test_drawing_directly_matches_for_choices(nodes):
     data = ConjectureData.for_choices([n.value for n in nodes])
     for node in nodes:
@@ -891,12 +891,11 @@ def test_choices_key_distinguishes_weird_cases(choices1, choices2):
 
 
 def test_node_template_overrun():
-    # different code path for overruning the NodeTemplate count, not max_length_ir.
+    # different code path for overruning the NodeTemplate count, not BUFFER_SIZE.
     cd = ConjectureData(
-        max_length=100,
         random=None,
-        ir_prefix=[NodeTemplate("simplest", count=2)],
-        max_length_ir=100,
+        prefix=[NodeTemplate("simplest", count=2)],
+        max_choices=100,
     )
 
     cd.draw_integer()

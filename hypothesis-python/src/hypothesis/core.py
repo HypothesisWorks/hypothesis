@@ -88,7 +88,7 @@ from hypothesis.internal.conjecture.junkdrawer import (
     gc_cumulative_time,
 )
 from hypothesis.internal.conjecture.providers import BytestringProvider
-from hypothesis.internal.conjecture.shrinker import sort_key_ir
+from hypothesis.internal.conjecture.shrinker import sort_key
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.internal.escalation import (
     InterestingOrigin,
@@ -1268,7 +1268,7 @@ class StateForActualGivenExecution:
         if runner.interesting_examples:
             self.falsifying_examples = sorted(
                 runner.interesting_examples.values(),
-                key=lambda d: sort_key_ir(d.ir_nodes),
+                key=lambda d: sort_key(d.nodes),
                 reverse=True,
             )
         else:
@@ -1339,7 +1339,7 @@ class StateForActualGivenExecution:
             fragments = []
 
             ran_example = runner.new_conjecture_data_ir(
-                falsifying_example.choices, max_length=len(falsifying_example.choices)
+                falsifying_example.choices, max_choices=len(falsifying_example.choices)
             )
             ran_example.slice_comments = falsifying_example.slice_comments
             tb = None
@@ -1872,7 +1872,6 @@ def given(
                     buffer = buffer.read(BUFFER_SIZE)
                 assert isinstance(buffer, (bytes, bytearray, memoryview))
                 data = ConjectureData(
-                    max_length=BUFFER_SIZE,
                     random=None,
                     provider=BytestringProvider,
                     provider_kw={"bytestring": buffer},
@@ -1884,11 +1883,10 @@ def given(
                 except BaseException:
                     known = minimal_failures.get(data.interesting_origin)
                     if settings.database is not None and (
-                        known is None
-                        or sort_key_ir(data.ir_nodes) <= sort_key_ir(known)
+                        known is None or sort_key(data.nodes) <= sort_key(known)
                     ):
                         settings.database.save(database_key, ir_to_bytes(data.choices))
-                        minimal_failures[data.interesting_origin] = data.ir_nodes
+                        minimal_failures[data.interesting_origin] = data.nodes
                     raise
                 assert isinstance(data.provider, BytestringProvider)
                 return bytes(data.provider.drawn)

@@ -39,7 +39,7 @@ from hypothesis.core import TestFunc, given
 from hypothesis.errors import InvalidArgument, InvalidDefinition
 from hypothesis.internal.compat import add_note
 from hypothesis.internal.conjecture import utils as cu
-from hypothesis.internal.conjecture.engine import BUFFER_SIZE_IR
+from hypothesis.internal.conjecture.engine import BUFFER_SIZE
 from hypothesis.internal.conjecture.junkdrawer import gc_cumulative_time
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.internal.observability import TESTCASE_CALLBACKS
@@ -136,7 +136,7 @@ def get_state_machine_test(state_machine_factory, *, settings=None, _min_steps=0
                     must_stop = True
                 elif steps_run <= _min_steps:
                     must_stop = False
-                elif cd.length_ir > (0.8 * BUFFER_SIZE_IR):
+                elif cd.length > (0.8 * BUFFER_SIZE):
                     # Better to stop after fewer steps, than always overrun and retry.
                     # See https://github.com/HypothesisWorks/hypothesis/issues/3618
                     must_stop = True

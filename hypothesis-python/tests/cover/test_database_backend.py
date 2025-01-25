@@ -43,7 +43,7 @@ from hypothesis.strategies import binary, lists, tuples
 from hypothesis.utils.conventions import not_set
 
 from tests.common.utils import skipif_emscripten
-from tests.conjecture.common import ir, ir_nodes
+from tests.conjecture.common import ir, nodes
 
 small_settings = settings(max_examples=50)
 
@@ -471,7 +471,7 @@ def test_background_write_database():
     assert set(db.fetch(b"a")) == {b"d"}
 
 
-@given(lists(ir_nodes()))
+@given(lists(nodes()))
 # covering examples
 @example(ir(True))
 @example(ir(1))
@@ -481,7 +481,7 @@ def test_background_write_database():
 @example(ir(b"a"))
 @example(ir(b"a" * 50))
 @example(ir(b"1" * 100_000))  # really long bytes
-def test_ir_nodes_roundtrips(nodes1):
+def test_nodes_roundtrips(nodes1):
     s1 = ir_to_bytes([n.value for n in nodes1])
     assert isinstance(s1, bytes)
     ir2 = ir_from_bytes(s1)

@@ -151,7 +151,7 @@ def collection_value(
     alphabet_size: int,
     from_order: Callable[[int], T],
 ) -> list[T]:
-    from hypothesis.internal.conjecture.engine import BUFFER_SIZE_IR
+    from hypothesis.internal.conjecture.engine import BUFFER_SIZE
 
     # this function is probably easiest to make sense of as an inverse of
     # collection_index, tracking ~corresponding lines of code between the two.
@@ -161,7 +161,7 @@ def collection_value(
     # index -> value computation can be arbitrarily expensive for arbitrarily
     # large min_size collections. short-circuit if the resulting size would be
     # obviously-too-large. callers will generally turn this into a .mark_overrun().
-    if size >= BUFFER_SIZE_IR:
+    if size >= BUFFER_SIZE:
         raise ChoiceTooLarge
 
     # subtract out the amount responsible for the size

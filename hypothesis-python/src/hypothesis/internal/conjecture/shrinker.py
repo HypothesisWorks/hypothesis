@@ -57,7 +57,7 @@ if TYPE_CHECKING:
 SortKeyT = TypeVar("SortKeyT", str, bytes)
 
 
-def sort_key_ir(nodes: Sequence[IRNode]) -> tuple[int, tuple[int, ...]]:
+def sort_key(nodes: Sequence[IRNode]) -> tuple[int, tuple[int, ...]]:
     """Returns a sort key such that "simpler" choice sequences are smaller than
     "more complicated" ones.
 
@@ -406,7 +406,7 @@ class Shrinker:
         if startswith(tree, self.nodes):
             return True
 
-        if sort_key_ir(self.nodes) < sort_key_ir(tree):
+        if sort_key(self.nodes) < sort_key(tree):
             return False
 
         previous = self.shrink_target
@@ -420,7 +420,7 @@ class Shrinker:
             return
         if (
             self.__predicate(data)
-            and sort_key_ir(data.ir_nodes) < sort_key_ir(self.shrink_target.ir_nodes)
+            and sort_key(data.nodes) < sort_key(self.shrink_target.nodes)
             and self.__allow_transition(self.shrink_target, data)
         ):
             self.update_shrink_target(data)
@@ -550,14 +550,14 @@ class Shrinker:
                     continue  # pragma: no cover  # flakily covered
                 if not (
                     len(attempt) == len(result.choices)
-                    and endswith(result.ir_nodes, nodes[end:])
+                    and endswith(result.nodes, nodes[end:])
                 ):
                     for ex, res in zip(shrink_target.examples, result.examples):
-                        assert ex.ir_start == res.ir_start
-                        assert ex.ir_start <= start
+                        assert ex.start == res.start
+                        assert ex.start <= start
                         assert ex.label == res.label
-                        if start == ex.ir_start and end == ex.ir_end:
-                            res_end = res.ir_end
+                        if start == ex.start and end == ex.end:
+                            res_end = res.end
                             break
                     else:
                         raise NotImplementedError("Expected matching prefixes")
@@ -660,11 +660,11 @@ class Shrinker:
 
     @derived_value  # type: ignore
     def examples_starting_at(self):
-        result = [[] for _ in self.shrink_target.ir_nodes]
+        result = [[] for _ in self.shrink_target.nodes]
         for i, ex in enumerate(self.examples):
             # We can have zero-length examples that start at the end
-            if ex.ir_start < len(result):
-                result[ex.ir_start].append(i)
+            if ex.start < len(result):
+                result[ex.start].append(i)
         return tuple(map(tuple, result))
 
     def reduce_each_alternative(self):
@@ -679,8 +679,8 @@ class Shrinker:
         this causes.
         """
         i = 0
-        while i < len(self.shrink_target.ir_nodes):
-            nodes = self.shrink_target.ir_nodes
+        while i < len(self.shrink_target.nodes):
+            nodes = self.shrink_target.nodes
             node = nodes[i]
             if (
                 node.ir_type == "integer"
@@ -708,11 +708,11 @@ class Shrinker:
                     and zero_attempt is not None
                     and zero_attempt.status >= Status.VALID
                 ):
-                    changed_shape = len(zero_attempt.ir_nodes) != len(nodes)
+                    changed_shape = len(zero_attempt.nodes) != len(nodes)
 
                     if not changed_shape:
                         for j in range(i + 1, len(nodes)):
-                            zero_node = zero_attempt.ir_nodes[j]
+                            zero_node = zero_attempt.nodes[j]
                             orig_node = nodes[j]
                             if (
                                 zero_node.ir_type != orig_node.ir_type
@@ -729,10 +729,10 @@ class Shrinker:
             i += 1
 
     def try_lower_node_as_alternative(self, i, v):
-        """Attempt to lower `self.shrink_target.ir_nodes[i]` to `v`,
+        """Attempt to lower `self.shrink_target.nodes[i]` to `v`,
         while rerandomising and attempting to repair any subsequent
         changes to the shape of the test case that this causes."""
-        nodes = self.shrink_target.ir_nodes
+        nodes = self.shrink_target.nodes
         initial_attempt = self.cached_test_function_ir(
             nodes[:i] + (nodes[i].copy(with_value=v),) + nodes[i + 1 :]
         )
@@ -752,12 +752,8 @@ class Shrinker:
             for j in examples:
                 initial_ex = initial.examples[j]
                 attempt_ex = random_attempt.examples[j]
-                contents = random_attempt.ir_nodes[
-                    attempt_ex.ir_start : attempt_ex.ir_end
-                ]
-                self.consider_new_tree(
-                    nodes[:i] + contents + nodes[initial_ex.ir_end :]
-                )
+                contents = random_attempt.nodes[attempt_ex.start : attempt_ex.end]
+                self.consider_new_tree(nodes[:i] + contents + nodes[initial_ex.end :])
                 if initial is not self.shrink_target:
                     return True
         return False
@@ -864,7 +860,7 @@ class Shrinker:
 
     @property
     def nodes(self):
-        return self.shrink_target.ir_nodes
+        return self.shrink_target.nodes
 
     @property
     def choices(self):
@@ -916,7 +912,7 @@ class Shrinker:
         i = chooser.choose(range(len(ls) - 1))
         ancestor = ls[i]
 
-        if i + 1 == len(ls) or ls[i + 1].ir_start >= ancestor.ir_end:
+        if i + 1 == len(ls) or ls[i + 1].start >= ancestor.end:
             return
 
         @self.cached(label, i)
@@ -925,22 +921,22 @@ class Shrinker:
             hi = len(ls)
             while lo + 1 < hi:
                 mid = (lo + hi) // 2
-                if ls[mid].ir_start >= ancestor.ir_end:
+                if ls[mid].start >= ancestor.end:
                     hi = mid
                 else:
                     lo = mid
-            return [t for t in ls[i + 1 : hi] if t.ir_length < ancestor.ir_length]
+            return [t for t in ls[i + 1 : hi] if t.choice_count < ancestor.choice_count]
 
-        descendant = chooser.choose(descendants, lambda ex: ex.ir_length > 0)
+        descendant = chooser.choose(descendants, lambda ex: ex.choice_count > 0)
 
-        assert ancestor.ir_start <= descendant.ir_start
-        assert ancestor.ir_end >= descendant.ir_end
-        assert descendant.ir_length < ancestor.ir_length
+        assert ancestor.start <= descendant.start
+        assert ancestor.end >= descendant.end
+        assert descendant.choice_count < ancestor.choice_count
 
         self.consider_new_tree(
-            self.nodes[: ancestor.ir_start]
-            + self.nodes[descendant.ir_start : descendant.ir_end]
-            + self.nodes[ancestor.ir_end :]
+            self.nodes[: ancestor.start]
+            + self.nodes[descendant.start : descendant.end]
+            + self.nodes[ancestor.end :]
         )
 
     def lower_common_node_offset(self):
@@ -1008,7 +1004,7 @@ class Shrinker:
         def consider(n, sign):
             return self.consider_new_tree(
                 replace_all(
-                    st.ir_nodes,
+                    st.nodes,
                     [
                         offset_node(node, sign * (n + v))
                         for node, v in zip(changed, ints)
@@ -1036,9 +1032,9 @@ class Shrinker:
         prev_target = self.__last_checked_changed_at
         new_target = self.shrink_target
         assert prev_target is not new_target
-        prev_nodes = prev_target.ir_nodes
-        new_nodes = new_target.ir_nodes
-        assert sort_key_ir(new_target.ir_nodes) < sort_key_ir(prev_target.ir_nodes)
+        prev_nodes = prev_target.nodes
+        new_nodes = new_target.nodes
+        assert sort_key(new_target.nodes) < sort_key(prev_target.nodes)
 
         if len(prev_nodes) != len(new_nodes) or any(
             n1.ir_type != n2.ir_type for n1, n2 in zip(prev_nodes, new_nodes)
@@ -1169,7 +1165,7 @@ class Shrinker:
                     + initial_attempt[node.index :]
                 )
 
-        lost_nodes = len(self.nodes) - len(attempt.ir_nodes)
+        lost_nodes = len(self.nodes) - len(attempt.nodes)
         if lost_nodes <= 0:
             return False
 
@@ -1183,17 +1179,17 @@ class Shrinker:
         regions_to_delete = {(end, end + lost_nodes)}
 
         for ex in self.examples:
-            if ex.ir_start > start:
+            if ex.start > start:
                 continue
-            if ex.ir_end <= end:
+            if ex.end <= end:
                 continue
 
             if ex.index >= len(attempt.examples):
                 continue  # pragma: no cover
 
             replacement = attempt.examples[ex.index]
-            in_original = [c for c in ex.children if c.ir_start >= end]
-            in_replaced = [c for c in replacement.children if c.ir_start >= end]
+            in_original = [c for c in ex.children if c.start >= end]
+            in_replaced = [c for c in replacement.children if c.start >= end]
 
             if len(in_replaced) >= len(in_original) or not in_replaced:
                 continue
@@ -1205,7 +1201,7 @@ class Shrinker:
             # important, so we try to arrange it so that it retains its
             # rightmost children instead of its leftmost.
             regions_to_delete.add(
-                (in_original[0].ir_start, in_original[-len(in_replaced)].ir_start)
+                (in_original[0].start, in_original[-len(in_replaced)].start)
             )
 
         for u, v in sorted(regions_to_delete, key=lambda x: x[1] - x[0], reverse=True):
@@ -1236,11 +1232,11 @@ class Shrinker:
 
             for ex in self.shrink_target.examples:
                 if (
-                    ex.ir_length > 0
+                    ex.choice_count > 0
                     and ex.discarded
-                    and (not discarded or ex.ir_start >= discarded[-1][-1])
+                    and (not discarded or ex.start >= discarded[-1][-1])
                 ):
-                    discarded.append((ex.ir_start, ex.ir_end))
+                    discarded.append((ex.start, ex.end))
 
             # This can happen if we have discards but they are all of
             # zero length. This shouldn't happen very often so it's
@@ -1460,9 +1456,9 @@ class Shrinker:
         i = chooser.choose(range(len(self.examples)))
 
         prev = self.shrink_target
-        nodes = self.shrink_target.ir_nodes
+        nodes = self.shrink_target.nodes
         ex = self.examples[i]
-        prefix = nodes[: ex.ir_start]
+        prefix = nodes[: ex.start]
         replacement = tuple(
             [
                 (
@@ -1472,10 +1468,10 @@ class Shrinker:
                         with_value=choice_from_index(0, node.ir_type, node.kwargs)
                     )
                 )
-                for node in nodes[ex.ir_start : ex.ir_end]
+                for node in nodes[ex.start : ex.end]
             ]
         )
-        suffix = nodes[ex.ir_end :]
+        suffix = nodes[ex.end :]
         attempt = self.cached_test_function_ir(prefix + replacement + suffix)
 
         if self.shrink_target is not prev:
@@ -1483,7 +1479,7 @@ class Shrinker:
 
         if isinstance(attempt, ConjectureResult):
             new_ex = attempt.examples[i]
-            new_replacement = attempt.ir_nodes[new_ex.ir_start : new_ex.ir_end]
+            new_replacement = attempt.nodes[new_ex.start : new_ex.end]
             self.consider_new_tree(prefix + new_replacement + suffix)
 
     @defines_shrink_pass()
@@ -1544,8 +1540,8 @@ class Shrinker:
         if (
             attempt is None
             or attempt.status < Status.VALID
-            or len(attempt.ir_nodes) == len(self.nodes)
-            or len(attempt.ir_nodes) == node.index + 1
+            or len(attempt.nodes) == len(self.nodes)
+            or len(attempt.nodes) == node.index + 1
         ):
             # no point in trying our size-dependency-logic if our attempt at
             # lowering the node resulted in:
@@ -1565,7 +1561,7 @@ class Shrinker:
             while lo + 1 < hi:
                 mid = (lo + hi) // 2
                 ex = self.examples[mid]
-                if ex.ir_start >= node.index:
+                if ex.start >= node.index:
                     hi = mid
                 else:
                     lo = mid
@@ -1579,10 +1575,10 @@ class Shrinker:
             ex = self.examples[
                 chooser.choose(
                     range(first_example_after_node, len(self.examples)),
-                    lambda i: self.examples[i].ir_length > 0,
+                    lambda i: self.examples[i].choice_count > 0,
                 )
             ]
-            self.consider_new_tree(lowered[: ex.ir_start] + lowered[ex.ir_end :])
+            self.consider_new_tree(lowered[: ex.start] + lowered[ex.end :])
         else:
             node = self.nodes[chooser.choose(range(node.index + 1, len(self.nodes)))]
             self.consider_new_tree(lowered[: node.index] + lowered[node.index + 1 :])
@@ -1614,26 +1610,24 @@ class Shrinker:
         if len(examples) <= 1:
             return
         st = self.shrink_target
-        endpoints = [(ex.ir_start, ex.ir_end) for ex in examples]
+        endpoints = [(ex.start, ex.end) for ex in examples]
 
         Ordering.shrink(
             range(len(examples)),
             lambda indices: self.consider_new_tree(
                 replace_all(
-                    st.ir_nodes,
+                    st.nodes,
                     [
                         (
                             u,
                             v,
-                            st.ir_nodes[examples[i].ir_start : examples[i].ir_end],
+                            st.nodes[examples[i].start : examples[i].end],
                         )
                         for (u, v), i in zip(endpoints, indices)
                     ],
                 )
             ),
-            key=lambda i: sort_key_ir(
-                st.ir_nodes[examples[i].ir_start : examples[i].ir_end]
-            ),
+            key=lambda i: sort_key(st.nodes[examples[i].start : examples[i].end]),
         )
 
     def run_node_program(self, i, description, original, repeats=1):
@@ -1651,9 +1645,9 @@ class Shrinker:
         Returns True if this successfully changes the underlying shrink target,
         else False.
         """
-        if i + len(description) > len(original.ir_nodes) or i < 0:
+        if i + len(description) > len(original.nodes) or i < 0:
             return False
-        attempt = list(original.ir_nodes)
+        attempt = list(original.nodes)
         for _ in range(repeats):
             for k, command in reversed(list(enumerate(description))):
                 j = i + k
