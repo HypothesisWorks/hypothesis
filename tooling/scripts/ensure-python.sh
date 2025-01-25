@@ -58,9 +58,33 @@ if [ ! -e "$TARGET/bin/python" ] ; then
       cd "$back"
     fi
 
+    # See if installing all of these will fix our build issues...
+    if [ -n "${GITHUB_ACTIONS-}" ] || [ -n "${CODESPACES-}" ] ; then
+      sudo apt-get update
+      sudo apt-get install -y \
+        build-essential \
+        libbz2-dev \
+        libffi-dev \
+        libgdbm-dev \
+        libgdbm-compat-dev \
+        liblzma-dev \
+        libncurses5-dev \
+        libreadline-dev \
+        libsqlite3-dev \
+        libssl-dev \
+        tk-dev \
+        uuid-dev \
+        zlib1g-dev
+    fi
+
     for _ in $(seq 5); do
-        if "$BASE/pyenv/plugins/python-build/bin/python-build" "$VERSION" "$TARGET" ; then
+        if OUTPUT=$("$BASE/pyenv/plugins/python-build/bin/python-build" "$VERSION" "$TARGET" 2>&1); then
             exit 0
+        fi
+        if echo "$OUTPUT" | grep -q "definition not found"; then
+            echo "Python version $VERSION is no longer available."
+            echo "Please run 'make upgrade-requirements' to update to the latest version."
+            exit 1
         fi
         echo "Command failed. For a possible solution, visit"
         echo "https://github.com/pyenv/pyenv/wiki#suggested-build-environment."
