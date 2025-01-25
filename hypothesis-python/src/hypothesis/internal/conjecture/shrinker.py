@@ -327,7 +327,11 @@ class Shrinker:
 
         # Because the shrinker is also used to `pareto_optimise` in the target phase,
         # we sometimes want to allow extending buffers instead of aborting at the end.
-        if in_target_phase:
+        if in_target_phase:  # pragma: no cover
+            # TODO_IR: this is no longer used, but it should be. See
+            # https://github.com/HypothesisWorks/hypothesis/commit/91c63bb76c970effd6cf3c013d8ed98788cf0527
+            # we'll need to adjust for the new notion of size in terms of nodes,
+            # and change self.cached_test_function_ir.
             from hypothesis.internal.conjecture.engine import BUFFER_SIZE
 
             self.__extend = BUFFER_SIZE
