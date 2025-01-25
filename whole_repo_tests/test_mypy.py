@@ -89,6 +89,8 @@ def assert_mypy_errors(fname, expected, python_version=None):
     # Shell output looks like:
     # file.py:2: error: Incompatible types in assignment ... [assignment]
 
+    print(f"mypy output: {out}")
+
     def convert_lines():
         for error_line in out.splitlines():
             col, category = error_line.split(":")[-3:-1]
@@ -97,8 +99,6 @@ def assert_mypy_errors(fname, expected, python_version=None):
                 # --hide-error-context. Don't include these
                 continue
 
-            # Intentional print so we can check mypy's output if a test fails
-            print(error_line)
             error_code = error_line.split("[")[-1].rstrip("]")
             if error_code == "empty-body":
                 continue
