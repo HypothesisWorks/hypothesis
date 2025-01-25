@@ -83,14 +83,7 @@ class TestCaseProperty:  # pragma: no cover
         raise AttributeError("Cannot delete TestCase")
 
 
-def run_state_machine_as_test(state_machine_factory, *, settings=None, _min_steps=0):
-    """Run a state machine definition as a test, either silently doing nothing
-    or printing a minimal breaking program and raising an exception.
-
-    state_machine_factory is anything which returns an instance of
-    RuleBasedStateMachine when called with no arguments - it can be a class or a
-    function. settings will be used to control the execution of the test.
-    """
+def get_state_machine_test(state_machine_factory, *, settings=None, _min_steps=0):
     if settings is None:
         try:
             settings = state_machine_factory.TestCase.settings
@@ -237,8 +230,21 @@ def run_state_machine_as_test(state_machine_factory, *, settings=None, _min_step
         state_machine_factory, "_hypothesis_internal_use_reproduce_failure", None
     )
     run_state_machine._hypothesis_internal_print_given_args = False
+    return run_state_machine
 
-    run_state_machine(state_machine_factory)
+
+def run_state_machine_as_test(state_machine_factory, *, settings=None, _min_steps=0):
+    """Run a state machine definition as a test, either silently doing nothing
+    or printing a minimal breaking program and raising an exception.
+
+    state_machine_factory is anything which returns an instance of
+    RuleBasedStateMachine when called with no arguments - it can be a class or a
+    function. settings will be used to control the execution of the test.
+    """
+    state_machine_test = get_state_machine_test(
+        state_machine_factory, settings=settings, _min_steps=_min_steps
+    )
+    state_machine_test(state_machine_factory)
 
 
 class StateMachineMeta(type):
@@ -437,6 +443,7 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
                 run_state_machine_as_test(cls, settings=self.settings)
 
             runTest.is_hypothesis_test = True
+            runTest._hypothesis_state_machine_class = cls
 
         StateMachineTestCase.__name__ = cls.__name__ + ".TestCase"
         StateMachineTestCase.__qualname__ = cls.__qualname__ + ".TestCase"
