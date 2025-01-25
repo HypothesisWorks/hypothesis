@@ -9,9 +9,10 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import os
+from typing import Literal
 
 
-def guess_background_color():
+def guess_background_color() -> Literal["light", "dark", "unknown"]:
     """Returns one of "dark", "light", or "unknown".
 
     This is basically just guessing, but better than always guessing "dark"!
@@ -24,7 +25,7 @@ def guess_background_color():
             return theme
     # Guessing based on the $COLORFGBG environment variable
     try:
-        fg, *_, bg = os.getenv("COLORFGBG").split(";")
+        fg, *_, bg = os.getenv("COLORFGBG", "").split(";")
     except Exception:
         pass
     else:

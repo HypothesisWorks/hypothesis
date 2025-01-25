@@ -9,8 +9,9 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
+from collections.abc import Generator
 from random import Random
-from typing import AbstractSet, Optional, Union
+from typing import TYPE_CHECKING, AbstractSet, Final, NoReturn, Optional, Union, cast
 
 import attr
 
@@ -41,12 +42,21 @@ from hypothesis.internal.floats import (
     sign_aware_lte,
 )
 
+if TYPE_CHECKING:
+    from typing import TypeAlias
+
+    from hypothesis.vendor.pretty import RepresentationPrinter
+
+ChildrenCacheValueT: "TypeAlias" = tuple[
+    Generator[ChoiceT, None, None], list[ChoiceT], set[ChoiceT]
+]
+
 
 class PreviouslyUnseenBehaviour(HypothesisException):
     pass
 
 
-def inconsistent_generation():
+def inconsistent_generation() -> NoReturn:
     raise FlakyStrategyDefinition(
         "Inconsistent data generation! Data generation behaved differently "
         "between different runs. Is your data generation depending on external "
@@ -64,16 +74,18 @@ class Killed:
     be treated as if it were completely explored for the purposes of
     exhaustion."""
 
-    next_node = attr.ib()
+    next_node: "TreeNode" = attr.ib()
 
-    def _repr_pretty_(self, p, cycle):
+    def _repr_pretty_(self, p: "RepresentationPrinter", cycle: bool) -> None:
         assert cycle is False
         p.text("Killed")
 
 
-def _node_pretty(ir_type, value, kwargs, *, forced):
+def _node_pretty(
+    ir_type: ChoiceNameT, value: ChoiceT, kwargs: ChoiceKwargsT, *, forced: bool
+) -> str:
     forced_marker = " [forced]" if forced else ""
-    return f"{ir_type} {value}{forced_marker} {kwargs}"
+    return f"{ir_type} {value!r}{forced_marker} {kwargs}"
 
 
 @attr.s(slots=True)
@@ -81,9 +93,9 @@ class Branch:
     """Represents a transition where multiple choices can be made as to what
     to drawn."""
 
-    kwargs = attr.ib()
-    ir_type = attr.ib()
-    children = attr.ib(repr=False)
+    kwargs: ChoiceKwargsT = attr.ib()
+    ir_type: ChoiceNameT = attr.ib()
+    children: dict[ChoiceT, "TreeNode"] = attr.ib(repr=False)
 
     @property
     def max_children(self) -> int:
@@ -91,7 +103,7 @@ class Branch:
         assert max_children > 0
         return max_children
 
-    def _repr_pretty_(self, p, cycle):
+    def _repr_pretty_(self, p: "RepresentationPrinter", cycle: bool) -> None:
         assert cycle is False
         for i, (value, child) in enumerate(self.children.items()):
             if i > 0:
@@ -109,7 +121,7 @@ class Conclusion:
     status: Status = attr.ib()
     interesting_origin: Optional[InterestingOrigin] = attr.ib()
 
-    def _repr_pretty_(self, p, cycle):
+    def _repr_pretty_(self, p: "RepresentationPrinter", cycle: bool) -> None:
         assert cycle is False
         o = self.interesting_origin
         # avoid str(o), which can include multiple lines of context
@@ -141,10 +153,10 @@ class Conclusion:
 # The one case where this may be detrimental is fuzzing, where the throughput of
 # examples is so high that it really may saturate important nodes. We'll cross
 # that bridge when we come to it.
-MAX_CHILDREN_EFFECTIVELY_INFINITE = 100_000
+MAX_CHILDREN_EFFECTIVELY_INFINITE: Final[int] = 100_000
 
 
-def _count_distinct_strings(*, alphabet_size, min_size, max_size):
+def _count_distinct_strings(*, alphabet_size: int, min_size: int, max_size: int) -> int:
     # We want to estimate if we're going to have more children than
     # MAX_CHILDREN_EFFECTIVELY_INFINITE, without computing a potentially
     # extremely expensive pow. We'll check if the number of strings in
@@ -168,8 +180,9 @@ def _count_distinct_strings(*, alphabet_size, min_size, max_size):
     return sum(alphabet_size**k for k in range(min_size, max_size + 1))
 
 
-def compute_max_children(ir_type, kwargs):
+def compute_max_children(ir_type: ChoiceNameT, kwargs: ChoiceKwargsT) -> int:
     if ir_type == "integer":
+        kwargs = cast(IntegerKWargs, kwargs)
         min_value = kwargs["min_value"]
         max_value = kwargs["max_value"]
 
@@ -187,16 +200,19 @@ def compute_max_children(ir_type, kwargs):
         assert (min_value is None) ^ (max_value is None)
         return 2**127
     elif ir_type == "boolean":
+        kwargs = cast(BooleanKWargs, kwargs)
         p = kwargs["p"]
         # probabilities of 0 or 1 (or effectively 0 or 1) only have one choice.
         if p <= 2 ** (-64) or p >= (1 - 2 ** (-64)):
             return 1
         return 2
     elif ir_type == "bytes":
+        kwargs = cast(BytesKWargs, kwargs)
         return _count_distinct_strings(
             alphabet_size=2**8, min_size=kwargs["min_size"], max_size=kwargs["max_size"]
         )
     elif ir_type == "string":
+        kwargs = cast(StringKWargs, kwargs)
         min_size = kwargs["min_size"]
         max_size = kwargs["max_size"]
         intervals = kwargs["intervals"]
@@ -215,11 +231,12 @@ def compute_max_children(ir_type, kwargs):
             alphabet_size=len(intervals), min_size=min_size, max_size=max_size
         )
     elif ir_type == "float":
-        min_value = kwargs["min_value"]
-        max_value = kwargs["max_value"]
+        kwargs = cast(FloatKWargs, kwargs)
+        min_value_f = kwargs["min_value"]
+        max_value_f = kwargs["max_value"]
         smallest_nonzero_magnitude = kwargs["smallest_nonzero_magnitude"]
 
-        count = count_between_floats(min_value, max_value)
+        count = count_between_floats(min_value_f, max_value_f)
 
         # we have two intervals:
         # a. [min_value, max_value]
@@ -229,18 +246,18 @@ def compute_max_children(ir_type, kwargs):
         # want the interval difference a - b.
 
         # next_down because endpoints are ok with smallest_nonzero_magnitude
-        min_point = max(min_value, -flt.next_down(smallest_nonzero_magnitude))
-        max_point = min(max_value, flt.next_down(smallest_nonzero_magnitude))
+        min_point = max(min_value_f, -flt.next_down(smallest_nonzero_magnitude))
+        max_point = min(max_value_f, flt.next_down(smallest_nonzero_magnitude))
 
         if min_point > max_point:
             # case: disjoint intervals.
             return count
 
         count -= count_between_floats(min_point, max_point)
-        if sign_aware_lte(min_value, -0.0) and sign_aware_lte(-0.0, max_value):
+        if sign_aware_lte(min_value_f, -0.0) and sign_aware_lte(-0.0, max_value_f):
             # account for -0.0
             count += 1
-        if sign_aware_lte(min_value, 0.0) and sign_aware_lte(0.0, max_value):
+        if sign_aware_lte(min_value_f, 0.0) and sign_aware_lte(0.0, max_value_f):
             # account for 0.0
             count += 1
         return count
@@ -256,11 +273,19 @@ def compute_max_children(ir_type, kwargs):
 # reasons. If you just need the number of children, it is cheaper to use
 # compute_max_children than to reify the list of children (only to immediately
 # throw it away).
-def all_children(ir_type, kwargs):
+def _floats_between(a: float, b: float) -> Generator[float, None, None]:
+    for n in range(float_to_int(a), float_to_int(b) + 1):
+        yield int_to_float(n)
+
+
+def all_children(
+    ir_type: ChoiceNameT, kwargs: ChoiceKwargsT
+) -> Generator[ChoiceT, None, None]:
     if ir_type != "float":
         for index in range(compute_max_children(ir_type, kwargs)):
             yield choice_from_index(index, ir_type, kwargs)
     else:
+        kwargs = cast(FloatKWargs, kwargs)
         # the float ordering is not injective (because of resampling
         # out-of-bounds values), so using choice_from_index would result in
         # duplicates. This violates invariants in datatree about being able
@@ -268,10 +293,6 @@ def all_children(ir_type, kwargs):
         #
         # We instead maintain a separate implementation for floats.
         # TODO_IR write a better (bijective) ordering for floats and remove this!
-        def floats_between(a, b):
-            for n in range(float_to_int(a), float_to_int(b) + 1):
-                yield int_to_float(n)
-
         min_value = kwargs["min_value"]
         max_value = kwargs["max_value"]
         smallest_nonzero_magnitude = kwargs["smallest_nonzero_magnitude"]
@@ -289,15 +310,15 @@ def all_children(ir_type, kwargs):
                 max_point = min(max_value, -smallest_nonzero_magnitude)
                 # float_to_int increases as negative magnitude increases, so
                 # invert order.
-                yield from floats_between(max_point, min_value)
+                yield from _floats_between(max_point, min_value)
             else:
                 # case: straddles midpoint (which is between -0.0 and 0.0).
-                yield from floats_between(-smallest_nonzero_magnitude, min_value)
-                yield from floats_between(smallest_nonzero_magnitude, max_value)
+                yield from _floats_between(-smallest_nonzero_magnitude, min_value)
+                yield from _floats_between(smallest_nonzero_magnitude, max_value)
         else:
             # case: both positive.
             min_point = max(min_value, smallest_nonzero_magnitude)
-            yield from floats_between(min_point, max_value)
+            yield from _floats_between(min_point, max_value)
 
 
 @attr.s(slots=True)
@@ -442,7 +463,7 @@ class TreeNode:
         del self.kwargs[i:]
         assert len(self.values) == len(self.kwargs) == len(self.ir_types) == i
 
-    def check_exhausted(self):
+    def check_exhausted(self) -> bool:
         """
         Recalculates is_exhausted if necessary, and then returns it.
 
@@ -486,7 +507,7 @@ class TreeNode:
                 )
         return self.is_exhausted
 
-    def _repr_pretty_(self, p, cycle):
+    def _repr_pretty_(self, p: "RepresentationPrinter", cycle: bool) -> None:
         assert cycle is False
         indent = 0
         for i, (ir_type, kwargs, value) in enumerate(
@@ -651,9 +672,9 @@ class DataTree:
       See TreeNode for more information.
     """
 
-    def __init__(self):
-        self.root = TreeNode()
-        self._children_cache = {}
+    def __init__(self) -> None:
+        self.root: TreeNode = TreeNode()
+        self._children_cache: dict[ChoiceT, ChildrenCacheValueT] = {}
 
     @property
     def is_exhausted(self) -> bool:
@@ -674,8 +695,9 @@ class DataTree:
         assert not self.is_exhausted
         prefix = []
 
-        def append_choice(ir_type, choice):
+        def append_choice(ir_type: ChoiceNameT, choice: ChoiceT) -> None:
             if ir_type == "float":
+                assert isinstance(choice, int)
                 choice = int_to_float(choice)
             prefix.append(choice)
 
@@ -770,7 +792,7 @@ class DataTree:
         except PreviouslyUnseenBehaviour:
             return (choices, None)
 
-    def simulate_test_function(self, data):
+    def simulate_test_function(self, data: ConjectureData) -> None:
         """Run a simulated version of the test function recorded by
         this tree. Note that this does not currently call ``stop_example``
         or ``start_example`` as these are not currently recorded in the
@@ -819,7 +841,9 @@ class DataTree:
     def new_observer(self):
         return TreeRecordingObserver(self)
 
-    def _draw(self, ir_type, kwargs, *, random):
+    def _draw(
+        self, ir_type: ChoiceNameT, kwargs: ChoiceKwargsT, *, random: Random
+    ) -> ChoiceT:
         from hypothesis.internal.conjecture.data import draw_choice
 
         value = draw_choice(ir_type, kwargs, random=random)
@@ -835,7 +859,9 @@ class DataTree:
             value = float_to_int(value)
         return value
 
-    def _get_children_cache(self, ir_type, kwargs, *, key):
+    def _get_children_cache(
+        self, ir_type: ChoiceNameT, kwargs: ChoiceKwargsT, *, key: ChoiceT
+    ) -> ChildrenCacheValueT:
         # cache the state of the children generator per node/branch (passed as
         # `key` here), such that we track which children we've already tried
         # for this branch across draws.
@@ -847,13 +873,20 @@ class DataTree:
         # from the generator.
         if key not in self._children_cache:
             generator = all_children(ir_type, kwargs)
-            children = []
-            rejected = set()
+            children: list[ChoiceT] = []
+            rejected: set[ChoiceT] = set()
             self._children_cache[key] = (generator, children, rejected)
 
         return self._children_cache[key]
 
-    def _draw_from_cache(self, ir_type, kwargs, *, key, random):
+    def _draw_from_cache(
+        self,
+        ir_type: ChoiceNameT,
+        kwargs: ChoiceKwargsT,
+        *,
+        key: ChoiceT,
+        random: Random,
+    ) -> ChoiceT:
         (generator, children, rejected) = self._get_children_cache(
             ir_type, kwargs, key=key
         )
@@ -866,6 +899,7 @@ class DataTree:
         if len(children) < 100:  # pragma: no branch
             for v in generator:
                 if ir_type == "float":
+                    assert isinstance(v, float)
                     v = float_to_int(v)
                 if v in rejected:
                     continue
@@ -875,7 +909,14 @@ class DataTree:
 
         return random.choice(children)
 
-    def _reject_child(self, ir_type, kwargs, *, child, key):
+    def _reject_child(
+        self,
+        ir_type: ChoiceNameT,
+        kwargs: ChoiceKwargsT,
+        *,
+        child: ChoiceT,
+        key: ChoiceT,
+    ) -> None:
         (_generator, children, rejected) = self._get_children_cache(
             ir_type, kwargs, key=key
         )
@@ -899,17 +940,17 @@ class DataTree:
         if child in children:
             children.remove(child)
 
-    def _repr_pretty_(self, p, cycle):
+    def _repr_pretty_(self, p: "RepresentationPrinter", cycle: bool) -> None:
         assert cycle is False
-        return p.pretty(self.root)
+        p.pretty(self.root)
 
 
 class TreeRecordingObserver(DataObserver):
-    def __init__(self, tree):
-        self.__current_node = tree.root
-        self.__index_in_current_node = 0
-        self.__trail = [self.__current_node]
-        self.killed = False
+    def __init__(self, tree: DataTree):
+        self.__current_node: TreeNode = tree.root
+        self.__index_in_current_node: int = 0
+        self.__trail: list[TreeNode] = [self.__current_node]
+        self.killed: bool = False
 
     def draw_integer(
         self, value: int, *, was_forced: bool, kwargs: IntegerKWargs
@@ -966,7 +1007,9 @@ class TreeRecordingObserver(DataObserver):
             if value != node.values[i]:
                 node.split_at(i)
                 assert i == len(node.values)
+                assert node.transition is not None
                 new_node = TreeNode()
+                assert isinstance(node.transition, Branch)
                 node.transition.children[value] = new_node
                 self.__current_node = new_node
                 self.__index_in_current_node = 0
@@ -996,6 +1039,7 @@ class TreeRecordingObserver(DataObserver):
                 # children.
                 if compute_max_children(ir_type, kwargs) == 1 and not was_forced:
                     node.split_at(i)
+                    assert isinstance(node.transition, Branch)
                     self.__current_node = node.transition.children[value]
                     self.__index_in_current_node = 0
             elif isinstance(trans, Conclusion):

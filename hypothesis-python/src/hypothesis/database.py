@@ -20,11 +20,11 @@ from collections.abc import Iterable
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 from hashlib import sha384
-from os import getenv
+from os import PathLike, getenv
 from pathlib import Path, PurePath
 from queue import Queue
 from threading import Thread
-from typing import Optional
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 from zipfile import BadZipFile, ZipFile
@@ -32,7 +32,7 @@ from zipfile import BadZipFile, ZipFile
 from hypothesis.configuration import storage_directory
 from hypothesis.errors import HypothesisException, HypothesisWarning
 from hypothesis.internal.conjecture.choice import ChoiceT
-from hypothesis.utils.conventions import not_set
+from hypothesis.utils.conventions import UniqueIdentifier, not_set
 
 __all__ = [
     "DirectoryBasedExampleDatabase",
@@ -43,8 +43,13 @@ __all__ = [
     "ReadOnlyDatabase",
 ]
 
+if TYPE_CHECKING:
+    from typing import TypeAlias
 
-def _usable_dir(path: os.PathLike) -> bool:
+StrPathT: "TypeAlias" = Union[str, PathLike[str]]
+
+
+def _usable_dir(path: StrPathT) -> bool:
     """
     Returns True if the desired path can be used as database path because
     either the directory exists and can be used, or its root directory can
@@ -60,7 +65,9 @@ def _usable_dir(path: os.PathLike) -> bool:
         return False
 
 
-def _db_for_path(path=None):
+def _db_for_path(
+    path: Optional[Union[StrPathT, UniqueIdentifier, Literal[":memory:"]]] = None
+) -> "ExampleDatabase":
     if path is not_set:
         if os.getenv("HYPOTHESIS_DATABASE_FILE") is not None:  # pragma: no cover
             raise HypothesisException(
@@ -81,11 +88,12 @@ def _db_for_path(path=None):
             return InMemoryExampleDatabase()
     if path in (None, ":memory:"):
         return InMemoryExampleDatabase()
+    path = cast(StrPathT, path)
     return DirectoryBasedExampleDatabase(path)
 
 
 class _EDMeta(abc.ABCMeta):
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args: Any, **kwargs: Any) -> "ExampleDatabase":
         if self is ExampleDatabase:
             return _db_for_path(*args, **kwargs)
         return super().__call__(*args, **kwargs)
@@ -160,8 +168,8 @@ class InMemoryExampleDatabase(ExampleDatabase):
     does not persist between runs we do not recommend it for general use.
     """
 
-    def __init__(self):
-        self.data = {}
+    def __init__(self) -> None:
+        self.data: dict[bytes, set[bytes]] = {}
 
     def __repr__(self) -> str:
         return f"InMemoryExampleDatabase({self.data!r})"
@@ -176,7 +184,7 @@ class InMemoryExampleDatabase(ExampleDatabase):
         self.data.get(key, set()).discard(bytes(value))
 
 
-def _hash(key):
+def _hash(key: bytes) -> str:
     return sha384(key).hexdigest()[:16]
 
 
@@ -199,7 +207,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
     the :class:`~hypothesis.database.MultiplexedDatabase` helper.
     """
 
-    def __init__(self, path: os.PathLike) -> None:
+    def __init__(self, path: StrPathT) -> None:
         self.path = Path(path)
         self.keypaths: dict[bytes, Path] = {}
 
@@ -214,7 +222,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
         self.keypaths[key] = self.path / _hash(key)
         return self.keypaths[key]
 
-    def _value_path(self, key, value):
+    def _value_path(self, key: bytes, value: bytes) -> Path:
         return self._key_path(key) / _hash(value)
 
     def fetch(self, key: bytes) -> Iterable[bytes]:
@@ -429,7 +437,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
         repo: str,
         artifact_name: str = "hypothesis-example-db",
         cache_timeout: timedelta = timedelta(days=1),
-        path: Optional[os.PathLike] = None,
+        path: Optional[StrPathT] = None,
     ):
         self.owner = owner
         self.repo = repo

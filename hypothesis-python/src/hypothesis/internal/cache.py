@@ -10,21 +10,25 @@
 
 import threading
 from collections import OrderedDict
+from typing import Any, Generic, TypeVar
 
 import attr
 
 from hypothesis.errors import InvalidArgument
 
+K = TypeVar("K")
+V = TypeVar("V")
+
 
 @attr.s(slots=True)
-class Entry:
-    key = attr.ib()
-    value = attr.ib()
-    score = attr.ib()
-    pins = attr.ib(default=0)
+class Entry(Generic[K, V]):
+    key: K = attr.ib()
+    value: V = attr.ib()
+    score: int = attr.ib()
+    pins: int = attr.ib(default=0)
 
     @property
-    def sort_key(self):
+    def sort_key(self) -> tuple[int, ...]:
         if self.pins == 0:
             # Unpinned entries are sorted by score.
             return (0, self.score)
@@ -34,7 +38,7 @@ class Entry:
             return (1,)
 
 
-class GenericCache:
+class GenericCache(Generic[K, V]):
     """Generic supertype for cache implementations.
 
     Defines a dict-like mapping with a maximum size, where as well as mapping
@@ -59,7 +63,7 @@ class GenericCache:
 
     __slots__ = ("_threadlocal", "max_size")
 
-    def __init__(self, max_size):
+    def __init__(self, max_size: int):
         if max_size <= 0:
             raise InvalidArgument("Cache size must be at least one.")
 
@@ -73,7 +77,7 @@ class GenericCache:
         self._threadlocal = threading.local()
 
     @property
-    def keys_to_indices(self):
+    def keys_to_indices(self) -> dict[K, int]:
         try:
             return self._threadlocal.keys_to_indices
         except AttributeError:
@@ -81,27 +85,27 @@ class GenericCache:
             return self._threadlocal.keys_to_indices
 
     @property
-    def data(self):
+    def data(self) -> list[Entry[K, V]]:
         try:
             return self._threadlocal.data
         except AttributeError:
             self._threadlocal.data = []
             return self._threadlocal.data
 
-    def __len__(self):
+    def __len__(self) -> int:
         assert len(self.keys_to_indices) == len(self.data)
         return len(self.data)
 
-    def __contains__(self, key):
+    def __contains__(self, key: K) -> bool:
         return key in self.keys_to_indices
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: K) -> V:
         i = self.keys_to_indices[key]
         result = self.data[i]
         self.__entry_was_accessed(i)
         return result.value
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: K, value: V) -> None:
         evicted = None
         try:
             i = self.keys_to_indices[key]
@@ -135,7 +139,7 @@ class GenericCache:
     def __iter__(self):
         return iter(self.keys_to_indices)
 
-    def pin(self, key, value):
+    def pin(self, key: K, value: V) -> None:
         """Mark ``key`` as pinned (with the given value). That is, it may not
         be evicted until ``unpin(key)`` has been called. The same key may be
         pinned multiple times, possibly changing its value, and will not be
@@ -149,7 +153,7 @@ class GenericCache:
         if entry.pins == 1:
             self.__balance(i)
 
-    def unpin(self, key):
+    def unpin(self, key: K) -> None:
         """Undo one previous call to ``pin(key)``. The value stays the same.
         Once all calls are undone this key may be evicted as normal."""
         i = self.keys_to_indices[key]
@@ -160,20 +164,20 @@ class GenericCache:
         if entry.pins == 0:
             self.__balance(i)
 
-    def is_pinned(self, key):
+    def is_pinned(self, key: K) -> bool:
         """Returns True if the key is currently pinned."""
         i = self.keys_to_indices[key]
         return self.data[i].pins > 0
 
-    def clear(self):
+    def clear(self) -> None:
         """Remove all keys, regardless of their pinned status."""
         del self.data[:]
         self.keys_to_indices.clear()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "{" + ", ".join(f"{e.key!r}: {e.value!r}" for e in self.data) + "}"
 
-    def new_entry(self, key, value):
+    def new_entry(self, key: K, value: V) -> int:
         """Called when a key is written that does not currently appear in the
         map.
 
@@ -181,7 +185,7 @@ class GenericCache:
         """
         raise NotImplementedError
 
-    def on_access(self, key, value, score):
+    def on_access(self, key: K, value: V, score: Any) -> Any:
         """Called every time a key that is already in the map is read or
         written.
 
@@ -189,11 +193,11 @@ class GenericCache:
         """
         return score
 
-    def on_evict(self, key, value, score):
+    def on_evict(self, key: K, value: V, score: Any) -> Any:
         """Called after a key has been evicted, with the score it had had at
         the point of eviction."""
 
-    def check_valid(self):
+    def check_valid(self) -> None:
         """Debugging method for use in tests.
 
         Asserts that all of the cache's invariants hold. When everything
@@ -206,7 +210,7 @@ class GenericCache:
                 if j < len(self.data):
                     assert e.sort_key <= self.data[j].sort_key, self.data
 
-    def __entry_was_accessed(self, i):
+    def __entry_was_accessed(self, i: int) -> None:
         entry = self.data[i]
         new_score = self.on_access(entry.key, entry.value, entry.score)
         if new_score != entry.score:
@@ -216,14 +220,14 @@ class GenericCache:
             if entry.pins == 0:
                 self.__balance(i)
 
-    def __swap(self, i, j):
+    def __swap(self, i: int, j: int) -> None:
         assert i < j
         assert self.data[j].sort_key < self.data[i].sort_key
         self.data[i], self.data[j] = self.data[j], self.data[i]
         self.keys_to_indices[self.data[i].key] = i
         self.keys_to_indices[self.data[j].key] = j
 
-    def __balance(self, i):
+    def __balance(self, i: int) -> None:
         """When we have made a modification to the heap such that
         the heap property has been violated locally around i but previously
         held for all other indexes (and no other values have been modified),
@@ -244,7 +248,7 @@ class GenericCache:
             else:
                 break
 
-    def __out_of_order(self, i, j):
+    def __out_of_order(self, i: int, j: int) -> bool:
         """Returns True if the indices i, j are in the wrong order.
 
         i must be the parent of j.
@@ -253,7 +257,7 @@ class GenericCache:
         return self.data[j].sort_key < self.data[i].sort_key
 
 
-class LRUReusedCache(GenericCache):
+class LRUReusedCache(GenericCache[K, V]):
     """The only concrete implementation of GenericCache we use outside of tests
     currently.
 
@@ -270,18 +274,18 @@ class LRUReusedCache(GenericCache):
 
     __slots__ = ("__tick",)
 
-    def __init__(self, max_size):
+    def __init__(self, max_size: int):
         super().__init__(max_size)
-        self.__tick = 0
+        self.__tick: int = 0
 
-    def tick(self):
+    def tick(self) -> int:
         self.__tick += 1
         return self.__tick
 
-    def new_entry(self, key, value):
+    def new_entry(self, key: K, value: V) -> Any:
         return (1, self.tick())
 
-    def on_access(self, key, value, score):
+    def on_access(self, key: K, value: V, score: Any) -> Any:
         return (2, self.tick())
 
 
@@ -313,7 +317,7 @@ class LRUCache:
         self._threadlocal = threading.local()
 
     @property
-    def cache(self):
+    def cache(self) -> dict[Any, Any]:
         try:
             return self._threadlocal.cache
         except AttributeError:

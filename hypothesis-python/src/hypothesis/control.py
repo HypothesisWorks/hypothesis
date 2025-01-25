@@ -26,7 +26,7 @@ from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.internal.validation import check_type
 from hypothesis.reporting import report, verbose_report
 from hypothesis.utils.dynamicvariables import DynamicVariable
-from hypothesis.vendor.pretty import IDKey, pretty
+from hypothesis.vendor.pretty import IDKey, PrettyPrintFunction, pretty
 
 
 def _calling_function_location(what: str, frame: Any) -> str:
@@ -136,7 +136,9 @@ class BuildContext:
         # Use defaultdict(list) here to handle the possibility of having multiple
         # functions registered for the same object (due to caching, small ints, etc).
         # The printer will discard duplicates which return different representations.
-        self.known_object_printers = defaultdict(list)
+        self.known_object_printers: dict[IDKey, list[PrettyPrintFunction]] = (
+            defaultdict(list)
+        )
 
     def record_call(self, obj, func, args, kwargs):
         self.known_object_printers[IDKey(obj)].append(
