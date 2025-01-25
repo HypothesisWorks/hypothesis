@@ -26,6 +26,8 @@ from typing import Optional
 from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import utils as cu
+from hypothesis.internal.conjecture.data import ConjectureData
+from hypothesis.strategies import DrawFn
 from hypothesis.strategies._internal.utils import defines_strategy
 
 URL_SAFE_CHARACTERS = frozenset(string.ascii_letters + string.digits + "$-_.+!*'(),~")
@@ -46,7 +48,7 @@ def get_top_level_domains() -> tuple[str, ...]:
 
 
 @st.composite
-def _recase_randomly(draw, tld):
+def _recase_randomly(draw: DrawFn, tld: str) -> str:
     tld = list(tld)
     changes = draw(st.tuples(*(st.booleans() for _ in range(len(tld)))))
     for i, change_case in enumerate(changes):
@@ -128,7 +130,7 @@ class DomainNameStrategy(st.SearchStrategy):
             lambda label: len(label) < 4 or label[2:4] != "--"
         )
 
-    def do_draw(self, data):
+    def do_draw(self, data: ConjectureData) -> str:
         domain = data.draw(self.domain_strategy)
         # The maximum possible number of subdomains is 126,
         # 1 character subdomain + 1 '.' character, * 126 = 252,

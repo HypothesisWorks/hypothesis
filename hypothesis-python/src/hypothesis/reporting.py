@@ -8,48 +8,56 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+from contextlib import AbstractContextManager
+from typing import TYPE_CHECKING, Callable
+
 from hypothesis._settings import Verbosity, settings
 from hypothesis.internal.compat import escape_unicode_characters
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
+if TYPE_CHECKING:
+    from typing import TypeAlias
 
-def default(value):
+
+def default(value: object) -> None:
     try:
         print(value)
     except UnicodeEncodeError:
-        print(escape_unicode_characters(value))
+        print(escape_unicode_characters(str(value)))
 
 
-reporter = DynamicVariable(default)
+ReporterT: "TypeAlias" = Callable[[object], None]
+reporter = DynamicVariable[ReporterT](default)
 
 
-def current_reporter():
+def current_reporter() -> ReporterT:
     return reporter.value
 
 
-def with_reporter(new_reporter):
+def with_reporter(new_reporter: ReporterT) -> AbstractContextManager[None]:
     return reporter.with_value(new_reporter)
 
 
-def current_verbosity():
+def current_verbosity() -> Verbosity:
+    assert settings.default is not None
     return settings.default.verbosity
 
 
-def verbose_report(text):
+def verbose_report(text: str) -> None:
     if current_verbosity() >= Verbosity.verbose:
         base_report(text)
 
 
-def debug_report(text):
+def debug_report(text: str) -> None:
     if current_verbosity() >= Verbosity.debug:
         base_report(text)
 
 
-def report(text):
+def report(text: str) -> None:
     if current_verbosity() >= Verbosity.normal:
         base_report(text)
 
 
-def base_report(text):
+def base_report(text: str) -> None:
     assert isinstance(text, str), f"unexpected non-str {text=}"
     current_reporter()(text)

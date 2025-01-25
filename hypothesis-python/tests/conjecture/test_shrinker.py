@@ -614,14 +614,6 @@ def test_redistribute_numeric_pairs(node1, node2, stop):
         + compute_max_children(node2.ir_type, node2.kwargs)
         > 2
     )
-    # TODO_IR: relax this restriction once choice_permitted isn't restricted by
-    # buffer practicalities like "can only generate 128 bits from min_value or
-    # shrink_towards".
-    assume(abs(node1.value) <= 2**64 and abs(node2.value) <= 2**64)
-    if node1.ir_type == "integer":
-        assume(abs(node1.kwargs["shrink_towards"]) <= 2**64)
-    if node2.ir_type == "integer":
-        assume(abs(node2.kwargs["shrink_towards"]) <= 2**64)
 
     @shrinking_from([node1.value, node2.value])
     def shrinker(data: ConjectureData):

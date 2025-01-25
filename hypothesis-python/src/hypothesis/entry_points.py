@@ -17,11 +17,13 @@ your package.
 
 import importlib.metadata
 import os
+from collections.abc import Generator, Sequence
+from importlib.metadata import EntryPoint
 
 
-def get_entry_points():
+def get_entry_points() -> Generator[EntryPoint, None, None]:
     try:
-        eps = importlib.metadata.entry_points(group="hypothesis")
+        eps: Sequence[EntryPoint] = importlib.metadata.entry_points(group="hypothesis")
     except TypeError:  # pragma: no cover
         # Load-time selection requires Python >= 3.10.  See also
         # https://importlib-metadata.readthedocs.io/en/latest/using.html
@@ -29,7 +31,7 @@ def get_entry_points():
     yield from eps
 
 
-def run():
+def run() -> None:
     if not os.environ.get("HYPOTHESIS_NO_PLUGINS"):
         for entry in get_entry_points():  # pragma: no cover
             hook = entry.load()

@@ -270,7 +270,9 @@ class ConjectureRunner:
         # from running a buffer without recalculating, especially during
         # shrinking where we need to know about the structure of the
         # executed test case.
-        self.__data_cache = LRUReusedCache(CACHE_SIZE)
+        self.__data_cache = LRUReusedCache[
+            tuple[ChoiceKeyT, ...], Union[ConjectureResult, _Overrun]
+        ](CACHE_SIZE)
 
         self.reused_previously_shrunk_test_case = False
 
@@ -1426,15 +1428,15 @@ class ConjectureRunner:
 
     def passing_choice_sequences(
         self, prefix: Sequence[IRNode] = ()
-    ) -> frozenset[bytes]:
+    ) -> frozenset[tuple[IRNode, ...]]:
         """Return a collection of choice sequence nodes which cause the test to pass.
         Optionally restrict this by a certain prefix, which is useful for explain mode.
         """
         return frozenset(
-            result.ir_nodes
+            cast(ConjectureResult, result).ir_nodes
             for key in self.__data_cache
             if (result := self.__data_cache[key]).status is Status.VALID
-            and startswith(result.ir_nodes, prefix)
+            and startswith(cast(ConjectureResult, result).ir_nodes, prefix)
         )
 
 

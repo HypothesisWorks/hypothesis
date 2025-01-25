@@ -12,10 +12,10 @@
 class UniqueIdentifier:
     """A factory for sentinel objects with nice reprs."""
 
-    def __init__(self, identifier):
+    def __init__(self, identifier: str) -> None:
         self.identifier = identifier
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.identifier
 
 

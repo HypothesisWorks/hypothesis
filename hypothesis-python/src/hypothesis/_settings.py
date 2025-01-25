@@ -19,9 +19,18 @@ import datetime
 import inspect
 import os
 import warnings
-from collections.abc import Collection
+from collections.abc import Collection, Generator, Sequence
 from enum import Enum, EnumMeta, IntEnum, unique
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, TypeVar, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    NoReturn,
+    Optional,
+    TypeVar,
+    Union,
+)
 
 import attr
 
@@ -36,17 +45,20 @@ from hypothesis.utils.conventions import not_set
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
 if TYPE_CHECKING:
+    from typing import TypeAlias
+
     from hypothesis.database import ExampleDatabase
 
 __all__ = ["settings"]
 
+ValidatorT: "TypeAlias" = Callable[[Any], object]
 all_settings: dict[str, "Setting"] = {}
 
 T = TypeVar("T")
 
 
 class settingsProperty:
-    def __init__(self, name, show_default):
+    def __init__(self, name: str, *, show_default: bool) -> None:
         self.name = name
         self.show_default = show_default
 
@@ -85,7 +97,7 @@ class settingsProperty:
         return f"{description}\n\ndefault value: ``{default}``"
 
 
-default_variable = DynamicVariable(None)
+default_variable = DynamicVariable[Optional["settings"]](None)
 
 
 class settingsMeta(type):
@@ -93,19 +105,20 @@ class settingsMeta(type):
         super().__init__(*args, **kwargs)
 
     @property
-    def default(cls):
+    def default(cls) -> Optional["settings"]:
         v = default_variable.value
         if v is not None:
             return v
         if getattr(settings, "_current_profile", None) is not None:
+            assert settings._current_profile is not None
             settings.load_profile(settings._current_profile)
             assert default_variable.value is not None
         return default_variable.value
 
-    def _assign_default_internal(cls, value):
+    def _assign_default_internal(cls, value: "settings") -> None:
         default_variable.value = value
 
-    def __setattr__(cls, name, value):
+    def __setattr__(cls, name: str, value: object) -> None:
         if name == "default":
             raise AttributeError(
                 "Cannot assign to the property settings.default - "
@@ -118,7 +131,7 @@ class settingsMeta(type):
                 "settings with settings.load_profile, or use @settings(...) "
                 "to decorate your test instead."
             )
-        return super().__setattr__(name, value)
+        super().__setattr__(name, value)
 
 
 class settings(metaclass=settingsMeta):
@@ -233,14 +246,14 @@ class settings(metaclass=settingsMeta):
     @classmethod
     def _define_setting(
         cls,
-        name,
-        description,
+        name: str,
+        description: str,
         *,
-        default,
-        options=None,
-        validator=None,
-        show_default=True,
-    ):
+        default: object,
+        options: Optional[Sequence[object]] = None,
+        validator: Optional[ValidatorT] = None,
+        show_default: bool = True,
+    ) -> None:
         """Add a new setting.
 
         - name is the name of the property that will be used to access the
@@ -273,16 +286,16 @@ class settings(metaclass=settingsMeta):
             default=default,
             validator=validator,
         )
-        setattr(settings, name, settingsProperty(name, show_default))
+        setattr(settings, name, settingsProperty(name, show_default=show_default))
 
     @classmethod
-    def lock_further_definitions(cls):
+    def lock_further_definitions(cls) -> None:
         settings.__definitions_are_locked = True
 
-    def __setattr__(self, name, value):
+    def __setattr__(self, name: str, value: object) -> NoReturn:
         raise AttributeError("settings objects are immutable")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         from hypothesis.internal.conjecture.data import AVAILABLE_PROVIDERS
 
         bits = sorted(
@@ -292,7 +305,7 @@ class settings(metaclass=settingsMeta):
         )
         return "settings({})".format(", ".join(bits))
 
-    def show_changed(self):
+    def show_changed(self) -> str:
         bits = []
         for name, setting in all_settings.items():
             value = getattr(self, name)
@@ -350,20 +363,20 @@ class settings(metaclass=settingsMeta):
 
 
 @contextlib.contextmanager
-def local_settings(s):
+def local_settings(s: settings) -> Generator[settings, None, None]:
     with default_variable.with_value(s):
         yield s
 
 
 @attr.s()
 class Setting:
-    name = attr.ib()
-    description = attr.ib()
-    default = attr.ib()
-    validator = attr.ib()
+    name: str = attr.ib()
+    description: str = attr.ib()
+    default: object = attr.ib()
+    validator: ValidatorT = attr.ib()
 
 
-def _max_examples_validator(x):
+def _max_examples_validator(x: int) -> int:
     check_type(int, x, name="max_examples")
     if x < 1:
         raise InvalidArgument(
@@ -421,7 +434,7 @@ By default when running on CI, this will be set to True.
 )
 
 
-def _validate_database(db):
+def _validate_database(db: "ExampleDatabase") -> "ExampleDatabase":
     from hypothesis.database import ExampleDatabase
 
     if db is None or isinstance(db, ExampleDatabase):
@@ -459,7 +472,7 @@ class Phase(IntEnum):
     shrink = 4  #: controls whether examples will be shrunk.
     explain = 5  #: controls whether Hypothesis attempts to explain test failures.
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"Phase.{self.name}"
 
 
@@ -476,7 +489,7 @@ class HealthCheck(Enum, metaclass=HealthCheckMeta):
     Each member of this enum is a type of health check to suppress.
     """
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}.{self.name}"
 
     @classmethod
@@ -557,7 +570,7 @@ class Verbosity(IntEnum):
     verbose = 2
     debug = 3
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"Verbosity.{self.name}"
 
 
@@ -569,7 +582,7 @@ settings._define_setting(
 )
 
 
-def _validate_phases(phases):
+def _validate_phases(phases: Sequence[Phase]) -> Sequence[Phase]:
     phases = tuple(phases)
     for a in phases:
         if not isinstance(a, Phase):
@@ -588,7 +601,7 @@ settings._define_setting(
 )
 
 
-def _validate_stateful_step_count(x):
+def _validate_stateful_step_count(x: int) -> int:
     check_type(int, x, name="stateful_step_count")
     if x < 1:
         raise InvalidArgument(f"stateful_step_count={x!r} must be at least one.")
@@ -646,12 +659,14 @@ settings._define_setting(
 class duration(datetime.timedelta):
     """A timedelta specifically measured in milliseconds."""
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         ms = self.total_seconds() * 1000
         return f"timedelta(milliseconds={int(ms) if ms == int(ms) else ms!r})"
 
 
-def _validate_deadline(x):
+def _validate_deadline(
+    x: Union[int, float, datetime.timedelta, None]
+) -> Optional[duration]:
     if x is None:
         return x
     invalid_deadline_error = InvalidArgument(
@@ -715,7 +730,7 @@ If set to ``True``, Hypothesis will print code for failing examples that can be 
 )
 
 
-def _backend_validator(value):
+def _backend_validator(value: str) -> str:
     from hypothesis.internal.conjecture.data import AVAILABLE_PROVIDERS
 
     if value not in AVAILABLE_PROVIDERS:
