@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.124.5:
+
+--------------------
+6.124.5 - 2025-01-25
+--------------------
+
+Internal refactoring to make some stateful internals easier to access.
+
 .. _v6.124.4:
 
 --------------------
