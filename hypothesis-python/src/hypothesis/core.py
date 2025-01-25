@@ -1132,6 +1132,10 @@ class StateForActualGivenExecution:
                 # - there's no need to handle hierarchical groups here, at least if no
                 # such implicit wrapping happens inside hypothesis code (we only care
                 # about the hypothesis-or-not distinction).
+                #
+                # 01-25-2025: this was patched to give the correct
+                # stacktrace in cpython https://github.com/python/cpython/issues/128799.
+                # can remove once python3.11 is EOL.
                 tb = e.exceptions[0].__traceback__ or e.__traceback__
             else:
                 tb = e.__traceback__
