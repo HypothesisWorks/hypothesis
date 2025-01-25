@@ -23,8 +23,7 @@ def default(value: object) -> None:
     try:
         print(value)
     except UnicodeEncodeError:
-        assert isinstance(value, str)
-        print(escape_unicode_characters(value))
+        print(escape_unicode_characters(str(value)))
 
 
 ReporterT: "TypeAlias" = Callable[[object], None]

@@ -11,7 +11,7 @@
 import math
 from collections.abc import Generator
 from random import Random
-from typing import TYPE_CHECKING, AbstractSet, Final, NoReturn, Optional, Union, cast
+from typing import TYPE_CHECKING, AbstractSet, Final, Optional, Union, cast
 
 import attr
 
@@ -56,12 +56,11 @@ class PreviouslyUnseenBehaviour(HypothesisException):
     pass
 
 
-def inconsistent_generation() -> NoReturn:
-    raise FlakyStrategyDefinition(
-        "Inconsistent data generation! Data generation behaved differently "
-        "between different runs. Is your data generation depending on external "
-        "state?"
-    )
+_FLAKY_STRAT_MSG = (
+    "Inconsistent data generation! Data generation behaved differently "
+    "between different runs. Is your data generation depending on external "
+    "state?"
+)
 
 
 EMPTY: frozenset[int] = frozenset()
@@ -439,7 +438,7 @@ class TreeNode:
         """
 
         if i in self.forced:
-            inconsistent_generation()
+            raise FlakyStrategyDefinition(_FLAKY_STRAT_MSG)
 
         assert not self.is_exhausted
 
@@ -995,7 +994,7 @@ class TreeRecordingObserver(DataObserver):
         assert len(node.kwargs) == len(node.values) == len(node.ir_types)
         if i < len(node.values):
             if ir_type != node.ir_types[i] or kwargs != node.kwargs[i]:
-                inconsistent_generation()
+                raise FlakyStrategyDefinition(_FLAKY_STRAT_MSG)
             # Note that we don't check whether a previously
             # forced value is now free. That will be caught
             # if we ever split the node there, but otherwise
@@ -1003,11 +1002,10 @@ class TreeRecordingObserver(DataObserver):
             # means we skip a hash set lookup on every
             # draw and that's a pretty niche failure mode.
             if was_forced and i not in node.forced:
-                inconsistent_generation()
+                raise FlakyStrategyDefinition(_FLAKY_STRAT_MSG)
             if value != node.values[i]:
                 node.split_at(i)
                 assert i == len(node.values)
-                assert node.transition is not None
                 new_node = TreeNode()
                 assert isinstance(node.transition, Branch)
                 node.transition.children[value] = new_node
@@ -1046,11 +1044,11 @@ class TreeRecordingObserver(DataObserver):
                 assert trans.status != Status.OVERRUN
                 # We tried to draw where history says we should have
                 # stopped
-                inconsistent_generation()
+                raise FlakyStrategyDefinition(_FLAKY_STRAT_MSG)
             else:
                 assert isinstance(trans, Branch), trans
                 if ir_type != trans.ir_type or kwargs != trans.kwargs:
-                    inconsistent_generation()
+                    raise FlakyStrategyDefinition(_FLAKY_STRAT_MSG)
                 try:
                     self.__current_node = trans.children[value]
                 except KeyError:
@@ -1070,7 +1068,7 @@ class TreeRecordingObserver(DataObserver):
             self.__current_node.transition is not None
             and not isinstance(self.__current_node.transition, Killed)
         ):
-            inconsistent_generation()
+            raise FlakyStrategyDefinition(_FLAKY_STRAT_MSG)
 
         if self.__current_node.transition is None:
             self.__current_node.transition = Killed(TreeNode())
@@ -1091,7 +1089,7 @@ class TreeRecordingObserver(DataObserver):
         node = self.__current_node
 
         if i < len(node.values) or isinstance(node.transition, Branch):
-            inconsistent_generation()
+            raise FlakyStrategyDefinition(_FLAKY_STRAT_MSG)
 
         new_transition = Conclusion(status, interesting_origin)
 
