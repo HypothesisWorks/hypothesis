@@ -15,7 +15,7 @@ from sortedcontainers import SortedList
 from hypothesis.internal.conjecture.choice import choices_key
 from hypothesis.internal.conjecture.data import ConjectureData, ConjectureResult, Status
 from hypothesis.internal.conjecture.junkdrawer import LazySequenceCopy
-from hypothesis.internal.conjecture.shrinker import sort_key_ir
+from hypothesis.internal.conjecture.shrinker import sort_key
 
 NO_SCORE = float("-inf")
 
@@ -46,8 +46,8 @@ def dominance(left, right):
     more structured or failing tests it can be useful to track, and future work
     will depend on it more."""
 
-    left_key = sort_key_ir(left.ir_nodes)
-    right_key = sort_key_ir(right.ir_nodes)
+    left_key = sort_key(left.nodes)
+    right_key = sort_key(right.nodes)
     if left_key == right_key:
         return DominanceRelation.EQUAL
 
@@ -129,7 +129,7 @@ class ParetoFront:
         self.__random = random
         self.__eviction_listeners = []
 
-        self.front = SortedList(key=lambda d: sort_key_ir(d.ir_nodes))
+        self.front = SortedList(key=lambda d: sort_key(d.nodes))
         self.__pending = None
 
     def add(self, data):

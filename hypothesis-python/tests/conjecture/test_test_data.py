@@ -98,7 +98,7 @@ def test_closes_interval_on_error_in_strategy():
     with pytest.raises(ValueError):
         d.draw(BoomStrategy())
     d.freeze()
-    assert not any(eg.ir_end is None for eg in d.examples)
+    assert not any(eg.end is None for eg in d.examples)
 
 
 class BigStrategy(SearchStrategy):
@@ -111,7 +111,7 @@ def test_does_not_double_freeze_in_interval_close():
     with pytest.raises(StopTest):
         d.draw(BigStrategy())
     assert d.frozen
-    assert not any(eg.ir_end is None for eg in d.examples)
+    assert not any(eg.end is None for eg in d.examples)
 
 
 def test_triviality():
@@ -129,8 +129,8 @@ def test_triviality():
     d.freeze()
 
     def trivial(u, v):
-        ex = next(ex for ex in d.examples if ex.ir_start == u and ex.ir_end == v)
-        return all(node.trivial for node in d.ir_nodes[ex.ir_start : ex.ir_end])
+        ex = next(ex for ex in d.examples if ex.start == u and ex.end == v)
+        return all(node.trivial for node in d.nodes[ex.start : ex.end])
 
     assert not trivial(0, 2)
     assert not trivial(0, 1)
@@ -150,7 +150,7 @@ def test_example_depth_marking():
 
     assert len(d.examples) == 10
 
-    depths = [(ex.ir_length, ex.depth) for ex in d.examples]
+    depths = [(ex.choice_count, ex.depth) for ex in d.examples]
     assert depths == [
         (4, 0),  # top
         (1, 1),  # v1
@@ -182,7 +182,7 @@ def test_has_cached_examples_even_when_overrun():
     except StopTest:
         pass
     assert d.status == Status.OVERRUN
-    assert any(ex.label == 3 and ex.ir_length == 1 for ex in d.examples)
+    assert any(ex.label == 3 and ex.choice_count == 1 for ex in d.examples)
     assert d.examples is d.examples
 
 
@@ -253,7 +253,7 @@ def test_examples_support_negative_indexing():
     d.draw(st.booleans())
     d.draw(st.booleans())
     d.freeze()
-    assert d.examples[-1].ir_length == 1
+    assert d.examples[-1].choice_count == 1
 
 
 def test_examples_out_of_bounds_index():
@@ -323,11 +323,11 @@ def test_trivial_before_force_agrees_with_trivial_after():
     d.draw_boolean(forced=True)
     d.draw_boolean()
 
-    t1 = [d.ir_nodes[i].trivial for i in range(3)]
+    t1 = [d.nodes[i].trivial for i in range(3)]
     d.freeze()
     r = d.as_result()
-    t2 = [n.trivial for n in r.ir_nodes]
-    t3 = [r.ir_nodes[i].trivial for i in range(3)]
+    t2 = [n.trivial for n in r.nodes]
+    t3 = [r.nodes[i].trivial for i in range(3)]
 
     assert t1 == t2 == t3
 
@@ -417,7 +417,7 @@ def test_children_of_discarded_examples_do_not_create_structural_coverage():
 
 def test_overruns_at_exactly_max_length():
     with buffer_size_limit(1):
-        data = ConjectureData(999, ir_prefix=[True], random=None, max_length_ir=1)
+        data = ConjectureData(prefix=[True], random=None, max_choices=1)
         data.draw_boolean()
         try:
             data.draw_boolean()

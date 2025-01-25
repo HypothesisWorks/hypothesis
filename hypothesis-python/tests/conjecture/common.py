@@ -25,7 +25,7 @@ from hypothesis.internal.conjecture.data import (
     IRNode,
     Status,
 )
-from hypothesis.internal.conjecture.engine import BUFFER_SIZE, ConjectureRunner
+from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.internal.escalation import InterestingOrigin
@@ -69,20 +69,17 @@ def run_to_data(f):
 
 
 def run_to_nodes(f):
-    return run_to_data(f).ir_nodes
+    return run_to_data(f).nodes
 
 
 @contextmanager
 def buffer_size_limit(n):
     original = engine_module.BUFFER_SIZE
-    original_ir = engine_module.BUFFER_SIZE_IR
     try:
         engine_module.BUFFER_SIZE = n
-        engine_module.BUFFER_SIZE_IR = n
         yield
     finally:
         engine_module.BUFFER_SIZE = original
-        engine_module.BUFFER_SIZE_IR = original_ir
 
 
 def shrinking_from(start):
@@ -135,11 +132,7 @@ def fresh_data(*, random=None, observer=None) -> ConjectureData:
             else Random(0)
         )
 
-    return ConjectureData(
-        BUFFER_SIZE,
-        random=random,
-        observer=observer,
-    )
+    return ConjectureData(random=random, observer=observer)
 
 
 def clamped_shrink_towards(kwargs):
@@ -387,7 +380,7 @@ def draw_value(ir_type, kwargs):
 
 
 @st.composite
-def ir_nodes(draw, *, was_forced=None, ir_types=None):
+def nodes(draw, *, was_forced=None, ir_types=None):
     if ir_types is None:
         (ir_type, kwargs) = draw(ir_types_and_kwargs())
     else:

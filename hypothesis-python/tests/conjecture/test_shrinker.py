@@ -31,7 +31,7 @@ from tests.conjecture.common import (
     float_kw,
     interesting_origin,
     ir,
-    ir_nodes,
+    nodes,
     run_to_nodes,
     shrinking_from,
 )
@@ -585,7 +585,7 @@ def test_silly_shrinker_subclass():
     assert BadShrinker.shrink(10, lambda _: True) == 10
 
 
-numeric_nodes = ir_nodes(ir_types=["integer", "float"])
+numeric_nodes = nodes(ir_types=["integer", "float"])
 
 
 @given(numeric_nodes, numeric_nodes, st.integers() | st.floats(allow_nan=False))

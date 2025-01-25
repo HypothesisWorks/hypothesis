@@ -29,11 +29,11 @@ from hypothesis.errors import DidNotReproduce, InvalidArgument, UnsatisfiedAssum
 from hypothesis.internal.conjecture.choice import choice_equal
 
 from tests.common.utils import capture_out, no_shrink
-from tests.conjecture.common import ir, ir_nodes
+from tests.conjecture.common import ir, nodes
 
 
 @example(ir("0" * 100))  # shorter compressed than not
-@given(st.lists(ir_nodes()))
+@given(st.lists(nodes()))
 def test_encoding_loop(nodes):
     choices = [n.value for n in nodes]
     looped = decode_failure(encode_failure(choices))

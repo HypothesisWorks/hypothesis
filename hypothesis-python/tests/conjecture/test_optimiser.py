@@ -19,12 +19,7 @@ from hypothesis.internal.conjecture.engine import ConjectureRunner, RunIsComplet
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.internal.intervalsets import IntervalSet
 
-from tests.conjecture.common import (
-    TEST_SETTINGS,
-    buffer_size_limit,
-    integer_kw,
-    ir_nodes,
-)
+from tests.conjecture.common import TEST_SETTINGS, buffer_size_limit, integer_kw, nodes
 
 
 def test_optimises_to_maximum():
@@ -229,7 +224,7 @@ def test_optimiser_when_test_grows_buffer_to_overflow():
             assert runner.best_observed_targets["m"] == 100
 
 
-@given(ir_nodes())
+@given(nodes())
 @example(
     IRNode(
         ir_type="bytes",

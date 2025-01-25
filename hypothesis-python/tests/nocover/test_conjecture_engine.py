@@ -95,7 +95,7 @@ def test_cached_with_masked_byte_agrees_with_results(a, b):
 
     # If the cache found an old result, then it should match the real result.
     # If it did not, then it must be because A and B were different.
-    assert (cached_a is cached_b) == (cached_a.ir_nodes == data_b.ir_nodes)
+    assert (cached_a is cached_b) == (cached_a.nodes == data_b.nodes)
 
 
 def test_node_programs_fail_efficiently(monkeypatch):

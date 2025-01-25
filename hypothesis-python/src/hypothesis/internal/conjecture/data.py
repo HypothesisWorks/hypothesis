@@ -246,12 +246,12 @@ class Example:
         return self.owner.parentage[self.index]
 
     @property
-    def ir_start(self) -> int:
-        return self.owner.ir_starts[self.index]
+    def start(self) -> int:
+        return self.owner.starts[self.index]
 
     @property
-    def ir_end(self) -> int:
-        return self.owner.ir_ends[self.index]
+    def end(self) -> int:
+        return self.owner.ends[self.index]
 
     @property
     def depth(self) -> int:
@@ -269,9 +269,9 @@ class Example:
         return self.index in self.owner.discarded
 
     @property
-    def ir_length(self) -> int:
-        """The number of ir nodes in this example."""
-        return self.ir_end - self.ir_start
+    def choice_count(self) -> int:
+        """The number of choices in this example."""
+        return self.end - self.start
 
     @property
     def children(self) -> "list[Example]":
@@ -388,7 +388,7 @@ class ExampleRecord:
         self.labels: list[int] = []
         self.__index_of_labels: "dict[int, int] | None" = {}
         self.trail = IntList()
-        self.ir_nodes: list[IRNode] = []
+        self.nodes: list[IRNode] = []
 
     def freeze(self) -> None:
         self.__index_of_labels = None
@@ -431,7 +431,7 @@ class Examples:
         ) + record.trail.count(STOP_EXAMPLE_NO_DISCARD_RECORD)
         self.__children: "list[Sequence[int]] | None" = None
 
-    class _ir_starts_and_ends(ExampleProperty):
+    class _starts_and_ends(ExampleProperty):
         def begin(self) -> None:
             self.starts = IntList.of_length(len(self.examples))
             self.ends = IntList.of_length(len(self.examples))
@@ -445,17 +445,17 @@ class Examples:
         def finish(self) -> tuple[IntList, IntList]:
             return (self.starts, self.ends)
 
-    ir_starts_and_ends: "tuple[IntList, IntList]" = calculated_example_property(
-        _ir_starts_and_ends
+    starts_and_ends: "tuple[IntList, IntList]" = calculated_example_property(
+        _starts_and_ends
     )
 
     @property
-    def ir_starts(self) -> IntList:
-        return self.ir_starts_and_ends[0]
+    def starts(self) -> IntList:
+        return self.starts_and_ends[0]
 
     @property
-    def ir_ends(self) -> IntList:
-        return self.ir_starts_and_ends[1]
+    def ends(self) -> IntList:
+        return self.starts_and_ends[1]
 
     class _discarded(ExampleProperty):
         def begin(self) -> None:
@@ -500,7 +500,7 @@ class Examples:
             # TODO should we discard start == end cases? occurs for eg st.data()
             # which is conditionally or never drawn from. arguably swapping
             # nodes with the empty list is a useful mutation enabled by start == end?
-            key = (self.examples[i].ir_start, self.examples[i].ir_end)
+            key = (self.examples[i].start, self.examples[i].end)
             self.groups[label_index].add(key)
 
         def finish(self) -> Iterable[set[tuple[int, int]]]:
@@ -726,8 +726,8 @@ class ConjectureResult:
 
     status: Status = attr.ib()
     interesting_origin: Optional[InterestingOrigin] = attr.ib()
-    ir_nodes: tuple[IRNode, ...] = attr.ib(eq=False, repr=False)
-    length_ir: int = attr.ib()
+    nodes: tuple[IRNode, ...] = attr.ib(eq=False, repr=False)
+    length: int = attr.ib()
     output: str = attr.ib()
     extra_information: Optional[ExtraInformation] = attr.ib()
     has_discards: bool = attr.ib()
@@ -743,7 +743,7 @@ class ConjectureResult:
 
     @property
     def choices(self) -> tuple[ChoiceT, ...]:
-        return tuple(node.value for node in self.ir_nodes)
+        return tuple(node.value for node in self.nodes)
 
 
 # Masks for masking off the first byte of an n-bit buffer.
@@ -1245,29 +1245,27 @@ class ConjectureData:
         provider: Union[type, PrimitiveProvider] = HypothesisProvider,
         random: Optional[Random] = None,
     ) -> "ConjectureData":
-        from hypothesis.internal.conjecture.engine import BUFFER_SIZE, choice_count
+        from hypothesis.internal.conjecture.engine import choice_count
 
         return cls(
-            max_length=BUFFER_SIZE,
-            max_length_ir=choice_count(choices),
+            max_choices=choice_count(choices),
             random=random,
-            ir_prefix=choices,
+            prefix=choices,
             observer=observer,
             provider=provider,
         )
 
     def __init__(
         self,
-        max_length: int,
         *,
         random: Optional[Random],
         observer: Optional[DataObserver] = None,
         provider: Union[type, PrimitiveProvider] = HypothesisProvider,
-        ir_prefix: Optional[Sequence[Union[NodeTemplate, ChoiceT]]] = None,
-        max_length_ir: Optional[int] = None,
+        prefix: Optional[Sequence[Union[NodeTemplate, ChoiceT]]] = None,
+        max_choices: Optional[int] = None,
         provider_kw: Optional[dict[str, Any]] = None,
     ) -> None:
-        from hypothesis.internal.conjecture.engine import BUFFER_SIZE_IR
+        from hypothesis.internal.conjecture.engine import BUFFER_SIZE
 
         if observer is None:
             observer = DataObserver()
@@ -1281,15 +1279,14 @@ class ConjectureData:
 
         assert isinstance(observer, DataObserver)
         self.observer = observer
-        self.max_length = max_length
-        self.max_choices = max_length_ir
-        self.max_length_ir = BUFFER_SIZE_IR
+        self.max_choices = max_choices
+        self.max_length = BUFFER_SIZE
         self.is_find = False
         self.overdraw = 0
         self._random = random
 
-        self.length_ir = 0
-        self.index_ir = 0
+        self.length = 0
+        self.index = 0
         self.output = ""
         self.status = Status.VALID
         self.frozen = False
@@ -1342,21 +1339,21 @@ class ConjectureData:
 
         self.extra_information = ExtraInformation()
 
-        self.ir_prefix = ir_prefix
-        self.ir_nodes: tuple[IRNode, ...] = ()
+        self.prefix = prefix
+        self.nodes: tuple[IRNode, ...] = ()
         self.misaligned_at: Optional[MisalignedAt] = None
         self.start_example(TOP_LABEL)
 
     def __repr__(self) -> str:
         return "ConjectureData(%s, %d choices%s)" % (
             self.status.name,
-            len(self.ir_nodes),
+            len(self.nodes),
             ", frozen" if self.frozen else "",
         )
 
     @property
     def choices(self) -> tuple[ChoiceT, ...]:
-        return tuple(node.value for node in self.ir_nodes)
+        return tuple(node.value for node in self.nodes)
 
     # A bit of explanation of the `observe` and `fake_forced` arguments in our
     # draw_* functions.
@@ -1387,18 +1384,14 @@ class ConjectureData:
         # this is somewhat redundant with the length > max_length check at the
         # end of the function, but avoids trying to use a null self.random when
         # drawing past the node of a ConjectureData.for_choices data.
-        if self.length_ir == self.max_length_ir:
-            debug_report(f"overrun because hit {self.max_length_ir=}")
+        if self.length == self.max_length:
+            debug_report(f"overrun because hit {self.max_length=}")
             self.mark_overrun()
-        if len(self.ir_nodes) == self.max_choices:
+        if len(self.nodes) == self.max_choices:
             debug_report(f"overrun because hit {self.max_choices=}")
             self.mark_overrun()
 
-        if (
-            observe
-            and self.ir_prefix is not None
-            and self.index_ir < len(self.ir_prefix)
-        ):
+        if observe and self.prefix is not None and self.index < len(self.prefix):
             value = self._pop_choice(ir_type, kwargs, forced=forced)
         elif forced is None:
             value = getattr(self.provider, f"draw_{ir_type}")(**kwargs)
@@ -1435,9 +1428,9 @@ class ConjectureData:
                 value, kwargs=kwargs, was_forced=was_forced
             )
             size = 0 if self.provider.avoid_realization else ir_size([value])
-            if self.length_ir + size > self.max_length_ir:
+            if self.length + size > self.max_length:
                 debug_report(
-                    f"overrun because {self.length_ir=} + {size=} > {self.max_length_ir=}"
+                    f"overrun because {self.length=} + {size=} > {self.max_length=}"
                 )
                 self.mark_overrun()
 
@@ -1446,11 +1439,11 @@ class ConjectureData:
                 value=value,
                 kwargs=kwargs,
                 was_forced=was_forced,
-                index=len(self.ir_nodes),
+                index=len(self.nodes),
             )
             self.__example_record.record_ir_draw()
-            self.ir_nodes += (node,)
-            self.length_ir += size
+            self.nodes += (node,)
+            self.length += size
 
         return value
 
@@ -1595,11 +1588,11 @@ class ConjectureData:
     def _pop_choice(
         self, ir_type: ChoiceNameT, kwargs: ChoiceKwargsT, *, forced: Optional[ChoiceT]
     ) -> ChoiceT:
-        assert self.ir_prefix is not None
+        assert self.prefix is not None
         # checked in _draw
-        assert self.index_ir < len(self.ir_prefix)
+        assert self.index < len(self.prefix)
 
-        value = self.ir_prefix[self.index_ir]
+        value = self.prefix[self.index]
         if isinstance(value, NodeTemplate):
             node: NodeTemplate = value
             if node.count is not None:
@@ -1607,7 +1600,7 @@ class ConjectureData:
             # node templates have to be at the end for now, since it's not immediately
             # apparent how to handle overruning a node template while generating a single
             # node if the alternative is not "the entire data is an overrun".
-            assert self.index_ir == len(self.ir_prefix) - 1
+            assert self.index == len(self.prefix) - 1
             if node.type == "simplest":
                 if isinstance(self.provider, HypothesisProvider):
                     try:
@@ -1653,7 +1646,7 @@ class ConjectureData:
         if node_ir_type != ir_type or not choice_permitted(choice, kwargs):
             # only track first misalignment for now.
             if self.misaligned_at is None:
-                self.misaligned_at = (self.index_ir, ir_type, kwargs, forced)
+                self.misaligned_at = (self.index, ir_type, kwargs, forced)
             try:
                 # Fill in any misalignments with index 0 choices. An alternative to
                 # this is using the index of the misaligned choice instead
@@ -1676,7 +1669,7 @@ class ConjectureData:
                 # should really never happen with a 0-index choice, but let's be safe.
                 self.mark_overrun()
 
-        self.index_ir += 1
+        self.index += 1
         return choice
 
     def as_result(self) -> Union[ConjectureResult, _Overrun]:
@@ -1691,8 +1684,8 @@ class ConjectureData:
                 status=self.status,
                 interesting_origin=self.interesting_origin,
                 examples=self.examples,
-                ir_nodes=self.ir_nodes,
-                length_ir=self.length_ir,
+                nodes=self.nodes,
+                length=self.length,
                 output=self.output,
                 extra_information=(
                     self.extra_information
@@ -1914,10 +1907,5 @@ def bits_to_bytes(n: int) -> int:
 
 
 def draw_choice(ir_type, kwargs, *, random):
-    from hypothesis.internal.conjecture.engine import BUFFER_SIZE
-
-    cd = ConjectureData(
-        max_length=BUFFER_SIZE,
-        random=random,
-    )
+    cd = ConjectureData(random=random)
     return getattr(cd.provider, f"draw_{ir_type}")(**kwargs)

@@ -36,8 +36,8 @@ from tests.conjecture.common import (
     fresh_data,
     integer_kwargs,
     interesting_origin,
-    ir_nodes,
     kwargs_strategy,
+    nodes,
     run_to_nodes,
 )
 
@@ -563,7 +563,7 @@ def _draw(data, node, *, forced=None):
     return getattr(data, f"draw_{node.ir_type}")(**node.kwargs, forced=forced)
 
 
-@given(ir_nodes(was_forced=True, ir_types=["float"]))
+@given(nodes(was_forced=True, ir_types=["float"]))
 def test_simulate_forced_floats(node):
     tree = DataTree()
 
@@ -575,4 +575,4 @@ def test_simulate_forced_floats(node):
     data = ConjectureData.for_choices([node.value], observer=tree.new_observer())
     tree.simulate_test_function(data)
     data.freeze()
-    assert data.ir_nodes == (node,)
+    assert data.nodes == (node,)

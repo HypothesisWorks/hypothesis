@@ -16,7 +16,6 @@ from hypothesis.internal.conjecture.choice import (
     choice_permitted,
 )
 from hypothesis.internal.conjecture.data import ConjectureData
-from hypothesis.internal.conjecture.engine import BUFFER_SIZE
 from hypothesis.internal.conjecture.providers import BytestringProvider
 from hypothesis.internal.intervalsets import IntervalSet
 
@@ -38,7 +37,6 @@ from tests.conjecture.common import float_kw, integer_kw, ir_types_and_kwargs, s
 @given(st.binary(min_size=200), st.lists(ir_types_and_kwargs()))
 def test_provider_contract_bytestring(bytestring, ir_type_and_kwargs):
     data = ConjectureData(
-        BUFFER_SIZE,
         random=None,
         observer=None,
         provider=BytestringProvider,
