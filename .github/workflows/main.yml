@@ -45,9 +45,9 @@ jobs:
           - check-py313-cover
           - check-py313-nocover
           - check-py313-niche
-          # - check-py313t-cover
-          # - check-py313t-nocover
-          # - check-py313t-niche
+          - check-py313t-cover
+          - check-py313t-nocover
+          - check-py313t-niche
           # - check-py314-cover
           # - check-py314-nocover
           # - check-py314-niche
