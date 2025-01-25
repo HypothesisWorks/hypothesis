@@ -1131,20 +1131,10 @@ class HypothesisProvider(PrimitiveProvider):
             # choice of unicode characters is uniform but the 32bit distribution is not.
             idx = INT_SIZES_SAMPLER.sample(self._cd)
             cap_bits = min(bits, INT_SIZES[idx])
-            result = self._draw_bounded_integer(
-                lower=lower,
-                upper=min(upper, lower + 2**cap_bits - 1),
-                vary_size=False,
-            )
-            assert lower <= result <= upper
-            return result
+            upper = min(upper, lower + 2**cap_bits - 1)
+            return self._cd._random.randint(lower, upper)
 
-        result = upper + 1
-        while result > upper:
-            result = lower + self._cd._random.getrandbits(bits)
-
-        assert lower <= result <= upper
-        return result
+        return self._cd._random.randint(lower, upper)
 
     @classmethod
     def _draw_float_init_logic(
@@ -1298,7 +1288,6 @@ class ConjectureData:
         self.overdraw = 0
         self._random = random
 
-        self.index = 0
         self.length_ir = 0
         self.index_ir = 0
         self.output = ""
