@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.124.4:
+
+--------------------
+6.124.4 - 2025-01-25
+--------------------
+
+Refactoring of our internal input generation. This shouldn't lead to any changes in the distribution of test inputs. If you notice any, please open an issue!
+
 .. _v6.124.3:
 
 --------------------
