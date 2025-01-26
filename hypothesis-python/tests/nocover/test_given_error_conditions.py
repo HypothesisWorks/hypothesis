@@ -8,18 +8,16 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import pytest
-
 from hypothesis import HealthCheck, given, reject, settings
 from hypothesis.errors import Unsatisfiable
 from hypothesis.strategies import integers
 
+from tests.common.utils import Why, fails_with, xfail_on_crosshair
 
-def test_raises_unsatisfiable_if_all_false():
-    @given(integers())
-    @settings(max_examples=50, suppress_health_check=list(HealthCheck))
-    def test_assume_false(x):
-        reject()
 
-    with pytest.raises(Unsatisfiable):
-        test_assume_false()
+@xfail_on_crosshair(Why.no_unsatisfiable)
+@fails_with(Unsatisfiable)
+@given(integers())
+@settings(max_examples=50, suppress_health_check=list(HealthCheck))
+def test_raises_unsatisfiable_if_all_false(x):
+    reject()

@@ -11,7 +11,10 @@
 from hypothesis import given, settings
 from hypothesis.strategies import integers
 
+from tests.common.utils import Why, xfail_on_crosshair
 
+
+@xfail_on_crosshair(Why.symbolic_outside_context)
 def test_bounded_integers_distribution_of_bit_width_issue_1387_regression():
     values = []
 

@@ -20,6 +20,7 @@ from hypothesis.strategies import data, datetimes, just, sampled_from, times
 from hypothesis.strategies._internal.datetime import datetime_does_not_exist
 
 from tests.common.debug import assert_all_examples, find_any, minimal
+from tests.common.utils import Why, xfail_on_crosshair
 
 with warnings.catch_warnings():
     if sys.version_info[:2] >= (3, 12):
@@ -161,6 +162,7 @@ def test_datetimes_stay_within_naive_bounds(data, lo, hi):
         },
     ],
 )
+@xfail_on_crosshair(Why.symbolic_outside_context, strict=False)
 def test_datetimes_can_exclude_imaginary(kw):
     # Sanity check: fail unless those days contain an imaginary hour to filter out
     find_any(datetimes(**kw, allow_imaginary=True), lambda x: not datetime_exists(x))

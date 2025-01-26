@@ -28,7 +28,7 @@ from hypothesis.core import decode_failure, encode_failure
 from hypothesis.errors import DidNotReproduce, InvalidArgument, UnsatisfiedAssumption
 from hypothesis.internal.conjecture.choice import choice_equal
 
-from tests.common.utils import capture_out, no_shrink
+from tests.common.utils import Why, capture_out, no_shrink, xfail_on_crosshair
 from tests.conjecture.common import ir, nodes
 
 
@@ -124,6 +124,7 @@ def test_errors_with_did_not_reproduce_if_rejected():
         test()
 
 
+@xfail_on_crosshair(Why.symbolic_outside_context)
 def test_prints_reproduction_if_requested():
     failing_example = None
 

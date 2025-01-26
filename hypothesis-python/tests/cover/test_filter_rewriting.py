@@ -32,7 +32,7 @@ from hypothesis.strategies._internal.strategies import FilteredStrategy, MappedS
 from hypothesis.strategies._internal.strings import BytesStrategy, TextStrategy
 
 from tests.common.debug import check_can_generate_examples
-from tests.common.utils import fails_with
+from tests.common.utils import Why, fails_with, xfail_on_crosshair
 
 A_FEW = 15  # speed up massively-parametrized tests
 
@@ -375,9 +375,11 @@ def test_isidentifier_filter_properly_rewritten(al, data):
     assert example.isidentifier()
 
 
-@pytest.mark.parametrize("al", ["¥¦§©"])
-def test_isidentifer_filter_unsatisfiable(al):
-    fs = st.text(alphabet=al).filter(str.isidentifier)
+@xfail_on_crosshair(Why.no_unsatisfiable)  # maybe a bug?
+def test_isidentifer_filter_unsatisfiable():
+    alphabet = "¥¦§©"
+    assert not any(f"_{c}".isidentifier() for c in alphabet)
+    fs = st.text(alphabet=alphabet).filter(str.isidentifier)
     with pytest.raises(Unsatisfiable):
         check_can_generate_examples(fs)
 
@@ -572,6 +574,7 @@ def test_filter_rewriting_lambda_len_unique_elements(
     assert predicate(value)
 
 
+@xfail_on_crosshair(Why.no_unsatisfiable)
 @pytest.mark.parametrize(
     "predicate",
     [
