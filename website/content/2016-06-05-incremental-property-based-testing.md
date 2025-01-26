@@ -146,7 +146,7 @@ def test_checkout_new_branch(self, branch_name):
 Even if we had stopped here, this would have been an improvement. Although the
 Hypothesis version of the test doesn't have any extra power over the vanilla
 version, it is more explicit about what it's testing, and the
-`valid_branch_names()` strategy can be re-used by future tests, giving us a
+`valid_branch_names()` strategy can be reused by future tests, giving us a
 single point for improving the coverage of many tests at once.
 
 Expanding the strategy

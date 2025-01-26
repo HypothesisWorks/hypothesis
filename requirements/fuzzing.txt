@@ -55,13 +55,13 @@ fakeredis==2.26.2
     # via -r requirements/coverage.in
 flask==3.0.3
     # via dash
-hypofuzz==25.1.2
+hypofuzz==25.1.5
     # via -r requirements/fuzzing.in
-hypothesis[cli]==6.124.1
+hypothesis[cli]==6.124.7
     # via hypofuzz
 idna==3.10
     # via requests
-importlib-metadata==8.5.0
+importlib-metadata==8.6.1
     # via dash
 iniconfig==2.0.0
     # via pytest
@@ -169,7 +169,7 @@ typing-extensions==4.12.2
     #   dash
     #   fakeredis
     #   rich
-tzdata==2024.2
+tzdata==2025.1
     # via pandas
 urllib3==2.3.0
     # via requests

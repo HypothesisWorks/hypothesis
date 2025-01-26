@@ -30,7 +30,7 @@ blinker==1.9.0
     # via pelican
 build==1.2.2.post1
     # via pip-tools
-cachetools==5.5.0
+cachetools==5.5.1
     # via tox
 certifi==2024.12.14
     # via requests
@@ -44,7 +44,7 @@ click==8.1.8
     # via
     #   black
     #   pip-tools
-codespell==2.3.0
+codespell==2.4.0
     # via -r requirements/tools.in
 colorama==0.4.6
     # via tox
@@ -81,21 +81,23 @@ exceptiongroup==1.2.2 ; python_version < "3.11"
     #   pytest
 execnet==2.1.1
     # via pytest-xdist
-executing==2.1.0
+executing==2.2.0
     # via stack-data
 feedgenerator==2.1.0
     # via pelican
-filelock==3.16.1
+filelock==3.17.0
     # via
     #   tox
     #   virtualenv
+id==1.5.0
+    # via twine
 idna==3.10
     # via
     #   anyio
     #   requests
 imagesize==1.4.1
     # via sphinx
-importlib-metadata==8.5.0
+importlib-metadata==8.6.1
     # via keyring
 iniconfig==2.0.0
     # via pytest
@@ -178,8 +180,6 @@ pexpect==4.9.0
     #   ipython
 pip-tools==7.4.1
     # via -r requirements/tools.in
-pkginfo==1.12.0
-    # via twine
 platformdirs==4.3.6
     # via
     #   black
@@ -189,7 +189,7 @@ pluggy==1.5.0
     # via
     #   pytest
     #   tox
-prompt-toolkit==3.0.48
+prompt-toolkit==3.0.50
     # via ipython
 ptyprocess==0.7.0
     # via pexpect
@@ -206,7 +206,7 @@ pygments==2.18.0
     #   readme-renderer
     #   rich
     #   sphinx
-pyproject-api==1.8.0
+pyproject-api==1.9.0
     # via tox
 pyproject-hooks==1.2.0
     # via
@@ -237,6 +237,7 @@ readme-renderer==44.0
 requests==2.32.3
     # via
     #   -r requirements/tools.in
+    #   id
     #   requests-toolbelt
     #   sphinx
     #   sphinx-jsonschema
@@ -251,7 +252,7 @@ rich==13.9.4
     # via
     #   pelican
     #   twine
-ruff==0.9.2
+ruff==0.9.3
     # via -r requirements/tools.in
 secretstorage==3.3.3
     # via keyring
@@ -317,13 +318,13 @@ tomli==2.2.1
     #   pytest
     #   sphinx
     #   tox
-tox==4.23.2
+tox==4.24.1
     # via -r requirements/tools.in
 traitlets==5.14.3
     # via
     #   ipython
     #   matplotlib-inline
-twine==6.0.1
+twine==6.1.0
     # via -r requirements/tools.in
 types-cffi==1.16.0.20241221
     # via types-pyopenssl
