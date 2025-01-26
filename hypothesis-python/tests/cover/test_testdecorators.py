@@ -149,6 +149,7 @@ def test_can_be_given_keyword_args(x, name):
     assert len(name) < x
 
 
+@xfail_on_crosshair(Why.undiscovered)
 @fails
 @given(one_of(floats(), booleans()), one_of(floats(), booleans()))
 def test_one_of_produces_different_values(x, y):
@@ -196,6 +197,7 @@ def test_removing_an_element_from_a_unique_list(xs, y):
     assert y not in xs
 
 
+@xfail_on_crosshair(Why.undiscovered)
 @fails
 @given(lists(integers(), min_size=2), data())
 def test_removing_an_element_from_a_non_unique_list(xs, data):
@@ -219,6 +221,7 @@ def test_can_mix_sampling_with_generating(x, y):
     assert type(x) == type(y)
 
 
+@xfail_on_crosshair(Why.undiscovered)
 @fails
 @given(frozensets(integers()))
 def test_can_find_large_sum_frozenset(xs):

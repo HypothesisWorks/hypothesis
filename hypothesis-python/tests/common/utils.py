@@ -265,6 +265,7 @@ class Why(enum.Enum):
 
     # nested_given: https://github.com/pschanely/hypothesis-crosshair/issues/11
     nested_given = "nested @given decorators don't work with crosshair"
+    undiscovered = "crosshair may not find the failing input"
     other = "reasons not elsewhere categorized"
 
 
@@ -276,7 +277,7 @@ def xfail_on_crosshair(why: Why, /, *, strict=True, as_marks=False):
 
     current_backend = settings.get_profile(settings._current_profile).backend
     kw = {
-        "strict": strict,
+        "strict": strict and why != Why.undiscovered,
         "reason": f"Expected failure due to: {why.value}",
         "condition": current_backend == "crosshair",
     }
