@@ -619,6 +619,7 @@ class Tree:
         return f"Tree({self.left}, {self.right})"
 
 
+@pytest.mark.skipif(settings._current_profile == "crosshair", reason="takes ~19 mins")
 @given(tree=st.builds(Tree))
 def test_resolving_recursive_type(tree):
     assert isinstance(tree, Tree)
@@ -979,6 +980,10 @@ def test_no_byteswarning(_):
     pass
 
 
+@pytest.mark.skipif(
+    settings._current_profile == "crosshair",
+    reason="Crosshair doesn't generate the Decimal('snan'), so this runs for hours",
+)
 def test_hashable_type_unhashable_value():
     # Decimal("snan") is not hashable; we should be able to generate it.
     # See https://github.com/HypothesisWorks/hypothesis/issues/2320

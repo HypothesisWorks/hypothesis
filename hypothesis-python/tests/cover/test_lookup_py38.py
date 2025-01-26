@@ -15,7 +15,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from hypothesis import example, given, strategies as st
+from hypothesis import example, given, settings, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.reflection import (
     convert_positional_arguments,
@@ -126,6 +126,7 @@ class Node:
     right: typing.Union["Node", int]
 
 
+@pytest.mark.skipif(settings._current_profile == "crosshair", reason="takes ~11 mins")
 @given(st.builds(Node))
 def test_can_resolve_recursive_dataclass(val):
     assert isinstance(val, Node)

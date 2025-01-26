@@ -329,6 +329,7 @@ def test_randbytes_have_right_length(rnd, n):
     assert len(rnd.randbytes(n)) == n
 
 
+@pytest.mark.skipif(settings._current_profile == "crosshair", reason="takes hours")
 @given(any_random)
 def test_can_manage_very_long_ranges_with_step(rnd):
     i = rnd.randrange(0, 2**256, 3)
