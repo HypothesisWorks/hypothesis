@@ -32,12 +32,15 @@ def test_mypy_passes_on_hypothesis_strict():
 
 
 def get_mypy_output(fname, *extra_args):
-    return subprocess.run(
-        [tool_path("mypy"), *extra_args, str(fname)],
+    proc = subprocess.run(
+        [tool_path("mypy"), "--no-incremental", *extra_args, str(fname)],
         encoding="utf-8",
         capture_output=True,
         text=True,
-    ).stdout
+    )
+    if proc.stderr:
+        raise AssertionError(f"{proc.returncode=}\n\n{proc.stdout}\n\n{proc.stderr}")
+    return proc.stdout
 
 
 def get_mypy_analysed_type(fname):
@@ -334,7 +337,6 @@ def test_stateful_target_params_mutually_exclusive(tmp_path, decorator):
     assert_mypy_errors(f, [(3, "call-overload"), (3, "misc")])
 
 
-@pytest.mark.skip  # annoyingly flaky for hard-to-track reasons
 @pytest.mark.parametrize("decorator", ["rule", "initialize"])
 @pytest.mark.parametrize(
     "target_args", ["", "target=b1", "targets=(b1,)", "targets=(b1, b2)"]
