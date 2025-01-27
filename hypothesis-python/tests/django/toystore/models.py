@@ -100,7 +100,7 @@ class CustomishDefault(models.Model):
 
 
 class FileFields(models.Model):
-    file1 = django.forms.FileField()
+    file1 = models.FileField()
 
 
 class MandatoryComputed(models.Model):
