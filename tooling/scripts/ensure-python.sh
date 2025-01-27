@@ -59,7 +59,7 @@ if [ ! -e "$TARGET/bin/python" ] ; then
     fi
 
     # See if installing all of these will fix our build issues...
-    if [ -n "${GITHUB_ACTIONS-}" ] || [ -n "${CODESPACES-}" ] ; then
+    if (command -v apt-get >/dev/null 2>&1) && { [ -n "${GITHUB_ACTIONS-}" ] || [ -n "${CODESPACES-}" ] ; }; then
       sudo apt-get update
       sudo apt-get install -y \
         build-essential \
