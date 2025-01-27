@@ -26,6 +26,7 @@ from tests.django.toystore.forms import (
     CustomerForm,
     DynamicForm,
     EmailFieldForm,
+    FileFieldsForm,
     InternetProtocolForm,
     ManyMultiValueForm,
     ManyNumericsForm,
@@ -41,7 +42,6 @@ from tests.django.toystore.forms import (
     UsernameForm,
     UUIDFieldForm,
     WithValidatorsForm,
-    FileFieldsForm,
 )
 from tests.django.toystore.models import Company
 

@@ -22,6 +22,7 @@ from tests.django.toystore.models import (
     Company,
     CouldBeCharming,
     Customer,
+    FileFields,
     ManyNumerics,
     ManyTimes,
     OddFields,
