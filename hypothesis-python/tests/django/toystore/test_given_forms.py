@@ -133,7 +133,9 @@ class TestGetsBasicForms(TestCase):
 
     @given(from_form(FileFieldsForm))
     def test_file_fields_form(self, x):
-        self.assertTrue(x.data["file1"])
+        assert x.is_valid()
+        if "file1" in x.data:
+            self.assertTrue(x.data["file1"])
 
     @given(from_form(UsernameForm))
     def test_username_form(self, username_form):
