@@ -28,7 +28,7 @@ from keyword import iskeyword
 from random import _inst as global_random_instance
 from tokenize import COMMENT, detect_encoding, generate_tokens, untokenize
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Callable
+from typing import Any, Callable, TypeVar
 from unittest.mock import _patch as PatchType
 from weakref import WeakKeyDictionary
 
@@ -37,8 +37,7 @@ from hypothesis.internal.compat import is_typed_named_tuple
 from hypothesis.utils.conventions import not_set
 from hypothesis.vendor.pretty import pretty
 
-if TYPE_CHECKING:
-    from hypothesis.strategies._internal.strategies import T
+T = TypeVar("T")
 
 READTHEDOCS = os.environ.get("READTHEDOCS", None) == "True"
 LAMBDA_SOURCE_CACHE: MutableMapping[Callable, str] = WeakKeyDictionary()
@@ -648,7 +647,7 @@ def impersonate(target):
     return accept
 
 
-def proxies(target: "T") -> Callable[[Callable], "T"]:
+def proxies(target: T) -> Callable[[Callable], T]:
     replace_sig = define_function_signature(
         target.__name__.replace("<lambda>", "_lambda_"),  # type: ignore
         target.__doc__,
@@ -661,6 +660,6 @@ def proxies(target: "T") -> Callable[[Callable], "T"]:
     return accept
 
 
-def is_identity_function(f):
+def is_identity_function(f: object) -> bool:
     # TODO: pattern-match the AST to handle `def ...` identity functions too
     return bool(re.fullmatch(r"lambda (\w+): \1", get_pretty_function_description(f)))

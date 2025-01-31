@@ -21,6 +21,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    ClassVar,
     Literal,
     NoReturn,
     Optional,
@@ -82,7 +83,6 @@ if TYPE_CHECKING:
     from hypothesis.strategies import SearchStrategy
     from hypothesis.strategies._internal.strategies import Ex
 else:
-    TypeAlias = object
 
     def dataclass_transform():
         def wrapper(tp):
@@ -97,7 +97,7 @@ TargetObservations = dict[str, Union[int, float]]
 T = TypeVar("T")
 
 # index, ir_type, kwargs, forced
-MisalignedAt: TypeAlias = tuple[int, ChoiceNameT, ChoiceKwargsT, Optional[ChoiceT]]
+MisalignedAt: "TypeAlias" = tuple[int, ChoiceNameT, ChoiceKwargsT, Optional[ChoiceT]]
 
 
 class ExtraInformation:
@@ -290,11 +290,10 @@ class ExampleProperty:
     """
 
     def __init__(self, examples: "Examples"):
-        self.example_stack: "list[int]" = []
+        self.example_stack: list[int] = []
         self.examples = examples
         self.example_count = 0
         self.ir_node_count = 0
-        self.result: Any = None
 
     def run(self) -> Any:
         """Rerun the test case with this visitor and return the
@@ -386,7 +385,7 @@ class ExampleRecord:
 
     def __init__(self) -> None:
         self.labels: list[int] = []
-        self.__index_of_labels: "dict[int, int] | None" = {}
+        self.__index_of_labels: Optional[dict[int, int]] = {}
         self.trail = IntList()
         self.nodes: list[IRNode] = []
 
@@ -751,7 +750,7 @@ class ConjectureResult:
 BYTE_MASKS = [(1 << n) - 1 for n in range(8)]
 BYTE_MASKS[0] = 255
 
-_Lifetime: TypeAlias = Literal["test_case", "test_function"]
+_Lifetime: "TypeAlias" = Literal["test_case", "test_function"]
 
 
 class _BackendInfoMsg(TypedDict):
@@ -785,7 +784,7 @@ class PrimitiveProvider(abc.ABC):
     # lifetime can access the passed ConjectureData object.
     #
     # Non-hypothesis providers probably want to set a lifetime of test_function.
-    lifetime: _Lifetime = "test_function"
+    lifetime: ClassVar[_Lifetime] = "test_function"
 
     # Solver-based backends such as hypothesis-crosshair use symbolic values
     # which record operations performed on them in order to discover new paths.
@@ -796,7 +795,7 @@ class PrimitiveProvider(abc.ABC):
     # Setting this to True disables some hypothesis features, such as
     # DataTree-based deduplication, and some internal optimizations, such as
     # caching kwargs. Only enable this if it is necessary for your backend.
-    avoid_realization = False
+    avoid_realization: ClassVar[bool] = False
 
     def __init__(self, conjecturedata: Optional["ConjectureData"], /) -> None:
         self._cd = conjecturedata
@@ -959,7 +958,7 @@ class HypothesisProvider(PrimitiveProvider):
             # handling forced values when we can force into the unmapped probability
             # mass. We should eventually remove this restriction.
             sampler = Sampler(
-                [1 - sum(weights.values()), *weights.values()], observe=False
+                [1.0 - sum(weights.values()), *weights.values()], observe=False
             )
             # if we're forcing, it's easiest to force into the unmapped probability
             # mass and then force the drawn value after.
@@ -1297,8 +1296,8 @@ class ConjectureData:
         self.gc_start_time = gc_cumulative_time()
         self.events: dict[str, Union[str, int, float]] = {}
         self.interesting_origin: Optional[InterestingOrigin] = None
-        self.draw_times: "dict[str, float]" = {}
-        self._stateful_run_times: "defaultdict[str, float]" = defaultdict(float)
+        self.draw_times: dict[str, float] = {}
+        self._stateful_run_times: dict[str, float] = defaultdict(float)
         self.max_depth = 0
         self.has_discards = False
 
@@ -1307,7 +1306,7 @@ class ConjectureData:
         )
         assert isinstance(self.provider, PrimitiveProvider)
 
-        self.__result: "Optional[ConjectureResult]" = None
+        self.__result: Optional[ConjectureResult] = None
 
         # Observations used for targeted search.  They'll be aggregated in
         # ConjectureRunner.generate_new_examples and fed to TargetSelector.
@@ -1315,13 +1314,13 @@ class ConjectureData:
 
         # Tags which indicate something about which part of the search space
         # this example is in. These are used to guide generation.
-        self.tags: "set[StructuralCoverageTag]" = set()
-        self.labels_for_structure_stack: "list[set[int]]" = []
+        self.tags: set[StructuralCoverageTag] = set()
+        self.labels_for_structure_stack: list[set[int]] = []
 
         # Normally unpopulated but we need this in the niche case
         # that self.as_result() is Overrun but we still want the
         # examples for reporting purposes.
-        self.__examples: "Optional[Examples]" = None
+        self.__examples: Optional[Examples] = None
 
         # We want the top level example to have depth 0, so we start
         # at -1.
