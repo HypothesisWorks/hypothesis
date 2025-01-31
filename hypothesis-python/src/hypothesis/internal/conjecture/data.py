@@ -15,6 +15,7 @@ import time
 from collections import defaultdict
 from collections.abc import Iterable, Iterator, Sequence
 from enum import IntEnum
+from functools import cached_property
 from random import Random
 from sys import float_info
 from typing import (
@@ -298,7 +299,6 @@ class ExampleProperty:
     def run(self) -> Any:
         """Rerun the test case with this visitor and return the
         results of ``self.finish()``."""
-        self.begin()
         for record in self.examples.trail:
             if record == IR_NODE_RECORD:
                 self.ir_node_count += 1
@@ -323,11 +323,6 @@ class ExampleProperty:
         i = self.example_stack.pop()
         self.stop_example(i, discarded=discarded)
 
-    def begin(self) -> None:
-        """Called at the beginning of the run to initialise any
-        relevant state."""
-        self.result = IntList.of_length(len(self.examples))
-
     def start_example(self, i: int, label_index: int) -> None:
         """Called at the start of each example, with ``i`` the
         index of the example and ``label_index`` the index of
@@ -339,30 +334,7 @@ class ExampleProperty:
         was called with ``discard=True``."""
 
     def finish(self) -> Any:
-        return self.result
-
-
-def calculated_example_property(cls: type[ExampleProperty]) -> Any:
-    """Given an ``ExampleProperty`` as above we use this decorator
-    to transform it into a lazy property on the ``Examples`` class,
-    which has as its value the result of calling ``cls.run()``,
-    computed the first time the property is accessed.
-
-    This has the slightly weird result that we are defining nested
-    classes which get turned into properties."""
-    name = cls.__name__
-    cache_name = "__" + name
-
-    def lazy_calculate(self: "Examples") -> Any:
-        result = getattr(self, cache_name, None)
-        if result is None:
-            result = cls(self).run()
-            setattr(self, cache_name, result)
-        return result
-
-    lazy_calculate.__name__ = cls.__name__
-    lazy_calculate.__qualname__ = cls.__qualname__
-    return property(lazy_calculate)
+        raise NotImplementedError
 
 
 STOP_EXAMPLE_DISCARD_RECORD = 1
@@ -411,6 +383,90 @@ class ExampleRecord:
             self.trail.append(STOP_EXAMPLE_NO_DISCARD_RECORD)
 
 
+class _starts_and_ends(ExampleProperty):
+    def __init__(self, examples: "Examples") -> None:
+        super().__init__(examples)
+        self.starts = IntList.of_length(len(self.examples))
+        self.ends = IntList.of_length(len(self.examples))
+
+    def start_example(self, i: int, label_index: int) -> None:
+        self.starts[i] = self.ir_node_count
+
+    def stop_example(self, i: int, *, discarded: bool) -> None:
+        self.ends[i] = self.ir_node_count
+
+    def finish(self) -> tuple[IntList, IntList]:
+        return (self.starts, self.ends)
+
+
+class _discarded(ExampleProperty):
+    def __init__(self, examples: "Examples") -> None:
+        super().__init__(examples)
+        self.result: set[int] = set()
+
+    def finish(self) -> frozenset[int]:
+        return frozenset(self.result)
+
+    def stop_example(self, i: int, *, discarded: bool) -> None:
+        if discarded:
+            self.result.add(i)
+
+
+class _parentage(ExampleProperty):
+    def __init__(self, examples: "Examples") -> None:
+        super().__init__(examples)
+        self.result = IntList.of_length(len(self.examples))
+
+    def stop_example(self, i: int, *, discarded: bool) -> None:
+        if i > 0:
+            self.result[i] = self.example_stack[-1]
+
+    def finish(self) -> IntList:
+        return self.result
+
+
+class _depths(ExampleProperty):
+    def __init__(self, examples: "Examples") -> None:
+        super().__init__(examples)
+        self.result = IntList.of_length(len(self.examples))
+
+    def start_example(self, i: int, label_index: int) -> None:
+        self.result[i] = len(self.example_stack)
+
+    def finish(self) -> IntList:
+        return self.result
+
+
+class _label_indices(ExampleProperty):
+    def __init__(self, examples: "Examples") -> None:
+        super().__init__(examples)
+        self.result = IntList.of_length(len(self.examples))
+
+    def start_example(self, i: int, label_index: int) -> None:
+        self.result[i] = label_index
+
+    def finish(self) -> IntList:
+        return self.result
+
+
+class _mutator_groups(ExampleProperty):
+    def __init__(self, examples: "Examples") -> None:
+        super().__init__(examples)
+        self.groups: dict[int, set[tuple[int, int]]] = defaultdict(set)
+
+    def start_example(self, i: int, label_index: int) -> None:
+        # TODO should we discard start == end cases? occurs for eg st.data()
+        # which is conditionally or never drawn from. arguably swapping
+        # nodes with the empty list is a useful mutation enabled by start == end?
+        key = (self.examples[i].start, self.examples[i].end)
+        self.groups[label_index].add(key)
+
+    def finish(self) -> Iterable[set[tuple[int, int]]]:
+        # Discard groups with only one example, since the mutator can't
+        # do anything useful with them.
+        return [g for g in self.groups.values() if len(g) >= 2]
+
+
 class Examples:
     """A lazy collection of ``Example`` objects, derived from
     the record of recorded behaviour in ``ExampleRecord``.
@@ -428,25 +484,11 @@ class Examples:
         self.__length = self.trail.count(
             STOP_EXAMPLE_DISCARD_RECORD
         ) + record.trail.count(STOP_EXAMPLE_NO_DISCARD_RECORD)
-        self.__children: "list[Sequence[int]] | None" = None
+        self.__children: Optional[list[Sequence[int]]] = None
 
-    class _starts_and_ends(ExampleProperty):
-        def begin(self) -> None:
-            self.starts = IntList.of_length(len(self.examples))
-            self.ends = IntList.of_length(len(self.examples))
-
-        def start_example(self, i: int, label_index: int) -> None:
-            self.starts[i] = self.ir_node_count
-
-        def stop_example(self, i: int, *, discarded: bool) -> None:
-            self.ends[i] = self.ir_node_count
-
-        def finish(self) -> tuple[IntList, IntList]:
-            return (self.starts, self.ends)
-
-    starts_and_ends: "tuple[IntList, IntList]" = calculated_example_property(
-        _starts_and_ends
-    )
+    @cached_property
+    def starts_and_ends(self) -> tuple[IntList, IntList]:
+        return _starts_and_ends(self).run()
 
     @property
     def starts(self) -> IntList:
@@ -456,60 +498,25 @@ class Examples:
     def ends(self) -> IntList:
         return self.starts_and_ends[1]
 
-    class _discarded(ExampleProperty):
-        def begin(self) -> None:
-            self.result: set[int] = set()
+    @cached_property
+    def discarded(self) -> frozenset[int]:
+        return _discarded(self).run()
 
-        def finish(self) -> frozenset[int]:
-            return frozenset(self.result)
+    @cached_property
+    def parentage(self) -> IntList:
+        return _parentage(self).run()
 
-        def stop_example(self, i: int, *, discarded: bool) -> None:
-            if discarded:
-                self.result.add(i)
+    @cached_property
+    def depths(self) -> IntList:
+        return _depths(self).run()
 
-    discarded: frozenset[int] = calculated_example_property(_discarded)
+    @cached_property
+    def label_indices(self) -> IntList:
+        return _label_indices(self).run()
 
-    class _parentage(ExampleProperty):
-        def stop_example(self, i: int, *, discarded: bool) -> None:
-            if i > 0:
-                self.result[i] = self.example_stack[-1]
-
-    parentage: IntList = calculated_example_property(_parentage)
-
-    class _depths(ExampleProperty):
-        def begin(self) -> None:
-            self.result = IntList.of_length(len(self.examples))
-
-        def start_example(self, i: int, label_index: int) -> None:
-            self.result[i] = len(self.example_stack)
-
-    depths: IntList = calculated_example_property(_depths)
-
-    class _label_indices(ExampleProperty):
-        def start_example(self, i: int, label_index: int) -> None:
-            self.result[i] = label_index
-
-    label_indices: IntList = calculated_example_property(_label_indices)
-
-    class _mutator_groups(ExampleProperty):
-        def begin(self) -> None:
-            self.groups: "dict[int, set[tuple[int, int]]]" = defaultdict(set)
-
-        def start_example(self, i: int, label_index: int) -> None:
-            # TODO should we discard start == end cases? occurs for eg st.data()
-            # which is conditionally or never drawn from. arguably swapping
-            # nodes with the empty list is a useful mutation enabled by start == end?
-            key = (self.examples[i].start, self.examples[i].end)
-            self.groups[label_index].add(key)
-
-        def finish(self) -> Iterable[set[tuple[int, int]]]:
-            # Discard groups with only one example, since the mutator can't
-            # do anything useful with them.
-            return [g for g in self.groups.values() if len(g) >= 2]
-
-    mutator_groups: list[set[tuple[int, int]]] = calculated_example_property(
-        _mutator_groups
-    )
+    @cached_property
+    def mutator_groups(self) -> list[set[tuple[int, int]]]:
+        return _mutator_groups(self).run()
 
     @property
     def children(self) -> list[Sequence[int]]:
