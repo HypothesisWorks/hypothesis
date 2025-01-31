@@ -736,6 +736,8 @@ class ConjectureResult:
     length: int = attr.ib()
     output: str = attr.ib()
     extra_information: Optional[ExtraInformation] = attr.ib()
+    expected_exception: Optional[BaseException] = attr.ib()
+    expected_traceback: Optional[str] = attr.ib()
     has_discards: bool = attr.ib()
     target_observations: TargetObservations = attr.ib()
     tags: frozenset[StructuralCoverageTag] = attr.ib()
@@ -1343,6 +1345,8 @@ class ConjectureData:
             lambda: {"satisfied": 0, "unsatisfied": 0}
         )
 
+        self.expected_exception: Optional[BaseException] = None
+        self.expected_traceback: Optional[str] = None
         self.extra_information = ExtraInformation()
 
         self.prefix = prefix
@@ -1693,6 +1697,8 @@ class ConjectureData:
                 nodes=self.nodes,
                 length=self.length,
                 output=self.output,
+                expected_traceback=self.expected_traceback,
+                expected_exception=self.expected_exception,
                 extra_information=(
                     self.extra_information
                     if self.extra_information.has_information()

@@ -75,7 +75,7 @@ def make_testcase(
         },
         "timing": timing,
         "metadata": {
-            "traceback": getattr(data.extra_information, "_expected_traceback", None),
+            "traceback": data.expected_traceback,
             "predicates": dict(data._observability_predicates),
             "backend": backend_metadata or {},
             **_system_metadata(),

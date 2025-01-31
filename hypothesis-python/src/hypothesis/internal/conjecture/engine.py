@@ -556,9 +556,7 @@ class ConjectureRunner:
                 # replay this failure on the hypothesis backend to ensure it still
                 # finds a failure. otherwise, it is flaky.
                 initial_origin = data.interesting_origin
-                initial_traceback = getattr(
-                    data.extra_information, "_expected_traceback", None
-                )
+                initial_traceback = data.expected_traceback
                 data = ConjectureData.for_choices(data.choices)
                 self.__stoppable_test_function(data)
                 data.freeze()
