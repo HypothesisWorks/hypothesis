@@ -9,6 +9,6 @@ from hypothesis import given, strategies as st
 
 @given(items=st.one_of(st.binary(), st.lists(st.one_of(st.floats(), st.integers()))))
 def test_fuzz_union_sequence_parameter(
-    items: collections.abc.Sequence[typing.Union[float, int]]
+    items: collections.abc.Sequence[typing.Union[float, int]],
 ) -> None:
     test_expected_output.union_sequence_parameter(items=items)

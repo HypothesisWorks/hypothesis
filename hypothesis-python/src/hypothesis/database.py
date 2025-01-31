@@ -66,7 +66,7 @@ def _usable_dir(path: StrPathT) -> bool:
 
 
 def _db_for_path(
-    path: Optional[Union[StrPathT, UniqueIdentifier, Literal[":memory:"]]] = None
+    path: Optional[Union[StrPathT, UniqueIdentifier, Literal[":memory:"]]] = None,
 ) -> "ExampleDatabase":
     if path is not_set:
         if os.getenv("HYPOTHESIS_DATABASE_FILE") is not None:  # pragma: no cover

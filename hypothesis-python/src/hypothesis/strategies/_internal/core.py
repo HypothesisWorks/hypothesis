@@ -175,14 +175,14 @@ def sampled_from(elements: type[enum.Enum]) -> SearchStrategy[Any]:  # pragma: n
 
 @overload
 def sampled_from(
-    elements: Union[type[enum.Enum], Sequence[Any]]
+    elements: Union[type[enum.Enum], Sequence[Any]],
 ) -> SearchStrategy[Any]:  # pragma: no cover
     ...
 
 
 @defines_strategy(try_non_lazy=True)
 def sampled_from(
-    elements: Union[type[enum.Enum], Sequence[Any]]
+    elements: Union[type[enum.Enum], Sequence[Any]],
 ) -> SearchStrategy[Any]:
     """Returns a strategy which generates any value present in ``elements``.
 
@@ -1866,7 +1866,7 @@ if typing.TYPE_CHECKING or ParamSpec is not None:
     P = ParamSpec("P")
 
     def composite(
-        f: Callable[Concatenate[DrawFn, P], Ex]
+        f: Callable[Concatenate[DrawFn, P], Ex],
     ) -> Callable[P, SearchStrategy[Ex]]:
         """Defines a strategy that is built out of potentially arbitrarily many
         other strategies.

@@ -24,7 +24,7 @@ backports-tarfile==1.2.0
     # via jaraco-context
 beautifulsoup4==4.12.3
     # via sphinx-codeautolink
-black==24.10.0
+black==25.1.0
     # via shed
 blinker==1.9.0
     # via pelican

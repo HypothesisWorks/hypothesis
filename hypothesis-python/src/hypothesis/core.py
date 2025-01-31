@@ -1862,7 +1862,7 @@ def given(
             minimal_failures: dict = {}
 
             def fuzz_one_input(
-                buffer: Union[bytes, bytearray, memoryview, BinaryIO]
+                buffer: Union[bytes, bytearray, memoryview, BinaryIO],
             ) -> Optional[bytes]:
                 # This inner part is all that the fuzzer will actually run,
                 # so we keep it as small and as fast as possible.

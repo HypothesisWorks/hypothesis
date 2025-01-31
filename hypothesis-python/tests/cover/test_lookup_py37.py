@@ -75,7 +75,7 @@ def test_resolving_standard_deque_as_generic(x: collections.deque[Elem]):
 
 @given(...)
 def test_resolving_standard_defaultdict_as_generic(
-    x: collections.defaultdict[Elem, Value]
+    x: collections.defaultdict[Elem, Value],
 ):
     check(collections.defaultdict, x)
     assert all(isinstance(e, Value) for e in x.values())
@@ -83,7 +83,7 @@ def test_resolving_standard_defaultdict_as_generic(
 
 @given(...)
 def test_resolving_standard_ordered_dict_as_generic(
-    x: collections.OrderedDict[Elem, Value]
+    x: collections.OrderedDict[Elem, Value],
 ):
     check(collections.OrderedDict, x)
     assert all(isinstance(e, Value) for e in x.values())
@@ -113,7 +113,7 @@ def test_resolving_standard_iterator_as_generic(x: collections.abc.Iterator[Elem
 
 @given(...)
 def test_resolving_standard_generator_as_generic(
-    x: collections.abc.Generator[Elem, None, Value]
+    x: collections.abc.Generator[Elem, None, Value],
 ):
     assert isinstance(x, collections.abc.Generator)
     try:
@@ -206,7 +206,7 @@ def test_resolving_standard_keysview_as_generic(x: collections.abc.KeysView[Elem
 
 @given(...)
 def test_resolving_standard_itemsview_as_generic(
-    x: collections.abc.ItemsView[Elem, Value]
+    x: collections.abc.ItemsView[Elem, Value],
 ):
     assert isinstance(x, collections.abc.ItemsView)
     assert all(isinstance(e, Elem) and isinstance(v, Value) for e, v in x)

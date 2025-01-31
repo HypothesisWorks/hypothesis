@@ -12,7 +12,7 @@ attrs==24.1.0
     # via
     #   -r requirements/test.in
     #   hypothesis (hypothesis-python/setup.py)
-black==24.10.0
+black==25.1.0
     # via -r requirements/coverage.in
 click==8.1.8
     # via

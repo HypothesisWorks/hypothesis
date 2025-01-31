@@ -665,7 +665,7 @@ class duration(datetime.timedelta):
 
 
 def _validate_deadline(
-    x: Union[int, float, datetime.timedelta, None]
+    x: Union[int, float, datetime.timedelta, None],
 ) -> Optional[duration]:
     if x is None:
         return x

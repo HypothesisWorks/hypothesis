@@ -541,7 +541,7 @@ class DFA:
 
         alphabet = sorted(set(self.alphabet) | set(other.alphabet))
 
-        queue = deque([((self.start, other.start))])
+        queue = deque([(self.start, other.start)])
         while queue:
             self_state, other_state = queue.popleft()
 
