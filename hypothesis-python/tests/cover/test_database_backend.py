@@ -32,8 +32,8 @@ from hypothesis.database import (
     ReadOnlyDatabase,
     _pack_uleb128,
     _unpack_uleb128,
-    ir_from_bytes,
-    ir_to_bytes,
+    choices_from_bytes,
+    choices_to_bytes,
 )
 from hypothesis.errors import HypothesisWarning
 from hypothesis.internal.compat import WINDOWS
@@ -482,15 +482,15 @@ def test_background_write_database():
 @example(ir(b"a" * 50))
 @example(ir(b"1" * 100_000))  # really long bytes
 def test_nodes_roundtrips(nodes1):
-    s1 = ir_to_bytes([n.value for n in nodes1])
+    s1 = choices_to_bytes([n.value for n in nodes1])
     assert isinstance(s1, bytes)
-    ir2 = ir_from_bytes(s1)
+    ir2 = choices_from_bytes(s1)
     assert len(nodes1) == len(ir2)
 
     for n1, v2 in zip(nodes1, ir2):
         assert choice_equal(n1.value, v2)
 
-    s2 = ir_to_bytes(ir2)
+    s2 = choices_to_bytes(ir2)
     assert s1 == s2
 
 

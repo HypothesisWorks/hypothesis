@@ -19,13 +19,9 @@ from hypothesis.control import current_build_context
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import engine as engine_module
 from hypothesis.internal.conjecture.choice import ChoiceT
-from hypothesis.internal.conjecture.data import (
-    COLLECTION_DEFAULT_MAX_SIZE,
-    ConjectureData,
-    IRNode,
-    Status,
-)
+from hypothesis.internal.conjecture.data import ConjectureData, IRNode, Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner
+from hypothesis.internal.conjecture.providers import COLLECTION_DEFAULT_MAX_SIZE
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.internal.escalation import InterestingOrigin

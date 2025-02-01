@@ -9,7 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 from hypothesis import given, settings, strategies as st
-from hypothesis.database import InMemoryExampleDatabase, ir_from_bytes
+from hypothesis.database import InMemoryExampleDatabase, choices_from_bytes
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.shrinker import Shrinker, node_program
@@ -54,7 +54,7 @@ def test_saves_data_while_shrinking(monkeypatch):
     assert runner.interesting_examples
     assert len(seen) == n
 
-    in_db = {ir_from_bytes(b)[0] for b in non_covering_examples(db)}
+    in_db = {choices_from_bytes(b)[0] for b in non_covering_examples(db)}
     assert in_db.issubset(seen)
     assert in_db == seen
 
