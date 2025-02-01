@@ -11,7 +11,7 @@
 import math
 from collections import defaultdict
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Callable, Optional, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Callable, Optional, Union, cast
 
 import attr
 
@@ -58,7 +58,6 @@ if TYPE_CHECKING:
 
     from hypothesis.internal.conjecture.engine import ConjectureRunner
 
-SortKeyT = TypeVar("SortKeyT", str, bytes)
 ShrinkPredicateT: "TypeAlias" = Callable[[Union[ConjectureResult, _Overrun]], bool]
 
 
