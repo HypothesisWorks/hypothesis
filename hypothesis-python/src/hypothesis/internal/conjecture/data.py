@@ -793,6 +793,9 @@ class ConjectureData:
         self._observability_predicates: defaultdict = defaultdict(
             lambda: {"satisfied": 0, "unsatisfied": 0}
         )
+        self._sampled_from_all_strategies_elements_message: Optional[
+            tuple[str, object]
+        ] = None
 
         self.expected_exception: Optional[BaseException] = None
         self.expected_traceback: Optional[str] = None

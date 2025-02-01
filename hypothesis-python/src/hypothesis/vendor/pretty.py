@@ -70,7 +70,7 @@ import sys
 import types
 import warnings
 from collections import Counter, OrderedDict, defaultdict, deque
-from collections.abc import Generator, Iterable
+from collections.abc import Generator, Iterable, Sequence
 from contextlib import contextmanager, suppress
 from enum import Enum, Flag
 from functools import partial
@@ -409,7 +409,12 @@ class RepresentationPrinter:
         return self.output.getvalue()
 
     def maybe_repr_known_object_as_call(
-        self, obj: object, cycle: bool, name: str, args: Any, kwargs: dict[str, object]
+        self,
+        obj: object,
+        cycle: bool,
+        name: str,
+        args: Sequence[object],
+        kwargs: dict[str, object],
     ) -> None:
         # pprint this object as a call, _unless_ the call would be invalid syntax
         # and the repr would be valid and there are not comments on arguments.
@@ -436,7 +441,7 @@ class RepresentationPrinter:
     def repr_call(
         self,
         func_name: str,
-        args: Any,
+        args: Sequence[object],
         kwargs: dict[str, object],
         *,
         force_split: Optional[bool] = None,

@@ -22,7 +22,7 @@ from copy import copy
 from functools import lru_cache
 from io import StringIO
 from time import perf_counter
-from typing import Any, Callable, ClassVar, Optional, Union, overload
+from typing import Any, Callable, ClassVar, Optional, TypeVar, Union, overload
 from unittest import TestCase
 
 import attr
@@ -54,13 +54,13 @@ from hypothesis.reporting import current_verbosity, report
 from hypothesis.strategies._internal.featureflags import FeatureStrategy
 from hypothesis.strategies._internal.strategies import (
     Ex,
-    Ex_Inv,
     OneOfStrategy,
     SearchStrategy,
     check_strategy,
 )
 from hypothesis.vendor.pretty import RepresentationPrinter
 
+T = TypeVar("T")
 STATE_MACHINE_RUN_LABEL = cu.calc_label_from_name("another state machine step")
 SHOULD_CONTINUE_LABEL = cu.calc_label_from_name("should we continue drawing")
 
@@ -591,9 +591,7 @@ class MultipleResults(Iterable[Ex]):
         return iter(self.values)
 
 
-# We need to use an invariant typevar here to avoid a mypy error, as covariant
-# typevars cannot be used as parameters.
-def multiple(*args: Ex_Inv) -> MultipleResults[Ex_Inv]:
+def multiple(*args: T) -> MultipleResults[T]:
     """This function can be used to pass multiple results to the target(s) of
     a rule. Just use ``return multiple(result1, result2, ...)`` in your rule.
 
