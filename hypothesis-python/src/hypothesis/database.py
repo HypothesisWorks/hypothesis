@@ -775,8 +775,8 @@ def _unpack_uleb128(buffer: bytes) -> tuple[int, int]:
     return (i + 1, value)
 
 
-def ir_to_bytes(ir: Iterable[ChoiceT], /) -> bytes:
-    """Serialize a list of IR elements to a bytestring.  Inverts ir_from_bytes."""
+def choices_to_bytes(ir: Iterable[ChoiceT], /) -> bytes:
+    """Serialize a list of IR elements to a bytestring.  Inverts choices_from_bytes."""
     # We use a custom serialization format for this, which might seem crazy - but our
     # data is a flat sequence of elements, and standard tools like protobuf or msgpack
     # don't deal well with e.g. nonstandard bit-pattern-NaNs, or invalid-utf8 unicode.
@@ -815,7 +815,7 @@ def ir_to_bytes(ir: Iterable[ChoiceT], /) -> bytes:
     return b"".join(parts)
 
 
-def _ir_from_bytes(buffer: bytes, /) -> tuple[ChoiceT, ...]:
+def _choices_from_bytes(buffer: bytes, /) -> tuple[ChoiceT, ...]:
     # See above for an explanation of the format.
     parts: list[ChoiceT] = []
     idx = 0
@@ -846,15 +846,15 @@ def _ir_from_bytes(buffer: bytes, /) -> tuple[ChoiceT, ...]:
     return tuple(parts)
 
 
-def ir_from_bytes(buffer: bytes, /) -> Optional[tuple[ChoiceT, ...]]:
+def choices_from_bytes(buffer: bytes, /) -> Optional[tuple[ChoiceT, ...]]:
     """
-    Deserialize a bytestring to a tuple of choices. Inverts ir_to_bytes.
+    Deserialize a bytestring to a tuple of choices. Inverts choices_to_bytes.
 
     Returns None if the given bytestring is not a valid serialization of choice
     sequences.
     """
     try:
-        return _ir_from_bytes(buffer)
+        return _choices_from_bytes(buffer)
     except Exception:
         # deserialization error, eg because our format changed or someone put junk
         # data in the db.

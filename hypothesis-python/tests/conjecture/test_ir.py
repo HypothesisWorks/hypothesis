@@ -25,6 +25,7 @@ from hypothesis import (
 )
 from hypothesis.errors import StopTest
 from hypothesis.internal.conjecture.choice import (
+    ChoiceTemplate,
     choice_equal,
     choice_from_index,
     choice_permitted,
@@ -35,9 +36,8 @@ from hypothesis.internal.conjecture.data import (
     COLLECTION_DEFAULT_MAX_SIZE,
     ConjectureData,
     IRNode,
-    NodeTemplate,
     Status,
-    ir_size,
+    choices_size,
 )
 from hypothesis.internal.conjecture.datatree import (
     MAX_CHILDREN_EFFECTIVELY_INFINITE,
@@ -674,18 +674,18 @@ def test_ir_node_is_hashable(ir_node):
 
 
 @given(st.lists(nodes()))
-def test_ir_size_positive(nodes):
-    assert ir_size([n.value for n in nodes]) >= 0
+def test_choices_size_positive(nodes):
+    assert choices_size([n.value for n in nodes]) >= 0
 
 
 @given(st.integers(min_value=1))
 def test_node_template_count(n):
-    node = NodeTemplate(type="simplest", count=n)
+    node = ChoiceTemplate(type="simplest", count=n)
     assert choice_count([node]) == n
 
 
 def test_node_template_to_overrun():
-    data = ConjectureData.for_choices([1, NodeTemplate("simplest", count=5)])
+    data = ConjectureData.for_choices([1, ChoiceTemplate("simplest", count=5)])
     data.draw_integer()
     with pytest.raises(StopTest):
         for _ in range(10):
@@ -696,8 +696,8 @@ def test_node_template_to_overrun():
 
 def test_node_template_single_node_overruns():
     # test for when drawing a single node takes more than BUFFER_SIZE, while in
-    # the NodeTemplate case
-    data = ConjectureData.for_choices((NodeTemplate("simplest", count=1),))
+    # the ChoiceTemplate case
+    data = ConjectureData.for_choices((ChoiceTemplate("simplest", count=1),))
     with pytest.raises(StopTest):
         data.draw_bytes(10_000, 10_000)
 
@@ -708,7 +708,7 @@ def test_node_template_single_node_overruns():
 def test_node_template_simplest_is_actually_trivial(node):
     # TODO_IR node.trivial is sound but not complete for floats.
     assume(node.ir_type != "float")
-    data = ConjectureData.for_choices((NodeTemplate("simplest", count=1),))
+    data = ConjectureData.for_choices((ChoiceTemplate("simplest", count=1),))
     getattr(data, f"draw_{node.ir_type}")(**node.kwargs)
     assert len(data.nodes) == 1
     assert data.nodes[0].trivial
@@ -891,10 +891,10 @@ def test_choices_key_distinguishes_weird_cases(choices1, choices2):
 
 
 def test_node_template_overrun():
-    # different code path for overruning the NodeTemplate count, not BUFFER_SIZE.
+    # different code path for overruning the ChoiceTemplate count, not BUFFER_SIZE.
     cd = ConjectureData(
         random=None,
-        prefix=[NodeTemplate("simplest", count=2)],
+        prefix=[ChoiceTemplate("simplest", count=2)],
         max_choices=100,
     )
 

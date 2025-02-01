@@ -13,7 +13,7 @@ from warnings import filterwarnings
 
 from hypothesis import HealthCheck, Phase, Verbosity, settings
 from hypothesis._settings import CI, is_in_ci, not_set
-from hypothesis.internal.conjecture.data import AVAILABLE_PROVIDERS
+from hypothesis.internal.conjecture.providers import AVAILABLE_PROVIDERS
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 
 

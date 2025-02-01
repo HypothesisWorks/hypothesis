@@ -472,3 +472,10 @@ def endswith(l1: Sequence[T], l2: Sequence[T]) -> bool:
     if len(l1) < len(l2):
         return False
     return all(v1 == v2 for v1, v2 in zip(l1[-len(l2) :], l2))
+
+
+def bits_to_bytes(n: int) -> int:
+    """The number of bytes required to represent an n-bit number.
+    Equivalent to (n + 7) // 8, but slightly faster. This really is
+    called enough times that that matters."""
+    return (n + 7) >> 3

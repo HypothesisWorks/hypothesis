@@ -28,8 +28,8 @@ from hypothesis import (
 from hypothesis.database import (
     ExampleDatabase,
     InMemoryExampleDatabase,
-    ir_from_bytes,
-    ir_to_bytes,
+    choices_from_bytes,
+    choices_to_bytes,
 )
 from hypothesis.errors import FailedHealthCheck, FlakyStrategyDefinition
 from hypothesis.internal.compat import PYPY, bit_count, int_from_bytes
@@ -87,7 +87,7 @@ def test_can_load_data_from_a_corpus():
     key = b"hi there"
     db = ExampleDatabase()
     value = b"=\xc3\xe4l\x81\xe1\xc2H\xc9\xfb\x1a\xb6bM\xa8\x7f"
-    db.save(key, ir_to_bytes([value]))
+    db.save(key, choices_to_bytes([value]))
 
     def f(data):
         if data.draw_bytes() == value:
@@ -318,7 +318,7 @@ def test_reuse_phase_runs_for_max_examples_if_generation_is_disabled():
     with deterministic_PRNG():
         db = InMemoryExampleDatabase()
         for i in range(256):
-            db.save(b"key", ir_to_bytes([i]))
+            db.save(b"key", choices_to_bytes([i]))
         seen = set()
 
         def test(data):
@@ -589,11 +589,11 @@ def test_clears_out_its_database_on_shrinking(
 
     for n in range(256):
         if n != 127 or not skip_target:
-            db.save(runner.secondary_key, ir_to_bytes([n]))
+            db.save(runner.secondary_key, choices_to_bytes([n]))
     runner.run()
     assert len(runner.interesting_examples) == 1
     for b in db.fetch(runner.secondary_key):
-        assert ir_from_bytes(b)[0] >= 127
+        assert choices_from_bytes(b)[0] >= 127
     assert len(list(db.fetch(runner.database_key))) == 1
 
 
@@ -751,7 +751,7 @@ def test_database_clears_secondary_key():
     )
 
     for i in range(10):
-        database.save(runner.secondary_key, ir_to_bytes([i]))
+        database.save(runner.secondary_key, choices_to_bytes([i]))
 
     runner.cached_test_function_ir((10,))
     assert runner.interesting_examples
@@ -783,7 +783,7 @@ def test_database_uses_values_from_secondary_key():
         database_key=key,
     )
     for i in range(10):
-        database.save(runner.secondary_key, ir_to_bytes([i]))
+        database.save(runner.secondary_key, choices_to_bytes([i]))
 
     runner.cached_test_function_ir((10,))
     assert runner.interesting_examples
@@ -793,9 +793,9 @@ def test_database_uses_values_from_secondary_key():
     runner.clear_secondary_key()
 
     assert len(set(database.fetch(key))) == 1
-    assert {ir_from_bytes(b)[0] for b in database.fetch(runner.secondary_key)} == set(
-        range(6, 11)
-    )
+    assert {
+        choices_from_bytes(b)[0] for b in database.fetch(runner.secondary_key)
+    } == set(range(6, 11))
 
     (v,) = runner.interesting_examples.values()
     assert v.choices == (5,)
@@ -1659,7 +1659,7 @@ def test_skips_secondary_if_interesting_is_found():
     for i in range(256):
         db.save(
             runner.database_key if i < 10 else runner.secondary_key,
-            ir_to_bytes([i]),
+            choices_to_bytes([i]),
         )
     runner.reuse_existing_examples()
     assert runner.call_count == 10
@@ -1682,12 +1682,12 @@ def test_discards_invalid_db_entries(key_name):
             database_key=b"stuff",
         )
         key = getattr(runner, key_name)
-        valid = ir_to_bytes([1])
+        valid = choices_to_bytes([1])
         db.save(key, valid)
         for n in range(5):
             b = bytes([255, n])
             # save a bunch of invalid entries under the database key
-            assert ir_from_bytes(b) is None
+            assert choices_from_bytes(b) is None
             db.save(key, b)
 
         assert len(set(db.fetch(key))) == 6
@@ -1714,7 +1714,7 @@ def test_discards_invalid_db_entries_pareto():
         )
         for n in range(5):
             b = bytes([255, n])
-            assert ir_from_bytes(b) is None
+            assert choices_from_bytes(b) is None
             db.save(runner.pareto_key, b)
 
         assert len(set(db.fetch(runner.pareto_key))) == 5

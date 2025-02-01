@@ -16,7 +16,7 @@ from typing import Optional
 
 from hypothesis.errors import HypothesisWarning, InvalidArgument
 from hypothesis.internal import charmap
-from hypothesis.internal.conjecture.data import COLLECTION_DEFAULT_MAX_SIZE
+from hypothesis.internal.conjecture.providers import COLLECTION_DEFAULT_MAX_SIZE
 from hypothesis.internal.filtering import max_len, min_len
 from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.internal.reflection import get_pretty_function_description

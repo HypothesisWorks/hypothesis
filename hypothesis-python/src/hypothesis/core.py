@@ -50,7 +50,7 @@ from hypothesis._settings import (
     settings as Settings,
 )
 from hypothesis.control import BuildContext
-from hypothesis.database import ir_from_bytes, ir_to_bytes
+from hypothesis.database import choices_from_bytes, choices_to_bytes
 from hypothesis.errors import (
     BackendCannotProceed,
     DeadlineExceeded,
@@ -77,17 +77,16 @@ from hypothesis.internal.compat import (
     int_from_bytes,
 )
 from hypothesis.internal.conjecture.choice import ChoiceT
-from hypothesis.internal.conjecture.data import (
-    ConjectureData,
-    PrimitiveProvider,
-    Status,
-)
+from hypothesis.internal.conjecture.data import ConjectureData, Status
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE, ConjectureRunner
 from hypothesis.internal.conjecture.junkdrawer import (
     ensure_free_stackframes,
     gc_cumulative_time,
 )
-from hypothesis.internal.conjecture.providers import BytestringProvider
+from hypothesis.internal.conjecture.providers import (
+    BytestringProvider,
+    PrimitiveProvider,
+)
 from hypothesis.internal.conjecture.shrinker import sort_key
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.internal.escalation import (
@@ -323,7 +322,7 @@ def reproduce_failure(version: str, blob: bytes) -> Callable[[TestFunc], TestFun
 
 
 def encode_failure(choices):
-    blob = ir_to_bytes(choices)
+    blob = choices_to_bytes(choices)
     compressed = zlib.compress(blob)
     if len(compressed) < len(blob):
         blob = b"\1" + compressed
@@ -353,7 +352,7 @@ def decode_failure(blob: bytes) -> Sequence[ChoiceT]:
             f"Could not decode blob {blob!r}: Invalid start byte {prefix!r}"
         )
 
-    choices = ir_from_bytes(decoded)
+    choices = choices_from_bytes(decoded)
     if choices is None:
         raise InvalidArgument(f"Invalid serialized choice sequence for blob {blob!r}")
 
@@ -1883,7 +1882,9 @@ def given(
                     if settings.database is not None and (
                         known is None or sort_key(data.nodes) <= sort_key(known)
                     ):
-                        settings.database.save(database_key, ir_to_bytes(data.choices))
+                        settings.database.save(
+                            database_key, choices_to_bytes(data.choices)
+                        )
                         minimal_failures[data.interesting_origin] = data.nodes
                     raise
                 assert isinstance(data.provider, BytestringProvider)

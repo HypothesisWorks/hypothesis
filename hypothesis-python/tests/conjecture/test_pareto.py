@@ -13,7 +13,7 @@ import itertools
 import pytest
 
 from hypothesis import HealthCheck, Phase, settings, strategies as st
-from hypothesis.database import InMemoryExampleDatabase, ir_to_bytes
+from hypothesis.database import InMemoryExampleDatabase, choices_to_bytes
 from hypothesis.internal.conjecture.data import Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner, RunIsComplete
 from hypothesis.internal.entropy import deterministic_PRNG
@@ -134,7 +134,7 @@ def test_clears_defunct_pareto_front():
         )
 
         for i in range(256):
-            db.save(runner.pareto_key, ir_to_bytes((i, 0)))
+            db.save(runner.pareto_key, choices_to_bytes((i, 0)))
 
         runner.run()
 
@@ -162,7 +162,7 @@ def test_down_samples_the_pareto_front():
         )
 
         for n1, n2 in itertools.product(range(256), range(256)):
-            db.save(runner.pareto_key, ir_to_bytes((n1, n2)))
+            db.save(runner.pareto_key, choices_to_bytes((n1, n2)))
 
         with pytest.raises(RunIsComplete):
             runner.reuse_existing_examples()
@@ -192,7 +192,7 @@ def test_stops_loading_pareto_front_if_interesting():
         )
 
         for n1, n2 in itertools.product(range(256), range(256)):
-            db.save(runner.pareto_key, ir_to_bytes((n1, n2)))
+            db.save(runner.pareto_key, choices_to_bytes((n1, n2)))
 
         runner.reuse_existing_examples()
 

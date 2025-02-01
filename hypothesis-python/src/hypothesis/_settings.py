@@ -39,6 +39,7 @@ from hypothesis.errors import (
     InvalidArgument,
     InvalidState,
 )
+from hypothesis.internal.conjecture.providers import AVAILABLE_PROVIDERS
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.internal.validation import check_type, try_convert
 from hypothesis.utils.conventions import not_set
@@ -296,8 +297,6 @@ class settings(metaclass=settingsMeta):
         raise AttributeError("settings objects are immutable")
 
     def __repr__(self) -> str:
-        from hypothesis.internal.conjecture.data import AVAILABLE_PROVIDERS
-
         bits = sorted(
             f"{name}={getattr(self, name)!r}"
             for name in all_settings
@@ -731,8 +730,6 @@ If set to ``True``, Hypothesis will print code for failing examples that can be 
 
 
 def _backend_validator(value: str) -> str:
-    from hypothesis.internal.conjecture.data import AVAILABLE_PROVIDERS
-
     if value not in AVAILABLE_PROVIDERS:
         if value == "crosshair":  # pragma: no cover
             install = '`pip install "hypothesis[crosshair]"` and try again.'

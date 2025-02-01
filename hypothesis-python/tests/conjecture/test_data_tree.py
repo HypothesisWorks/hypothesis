@@ -15,12 +15,8 @@ import pytest
 
 from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.errors import Flaky
-from hypothesis.internal.conjecture.data import (
-    ConjectureData,
-    NodeTemplate,
-    Status,
-    StopTest,
-)
+from hypothesis.internal.conjecture.choice import ChoiceTemplate
+from hypothesis.internal.conjecture.data import ConjectureData, Status, StopTest
 from hypothesis.internal.conjecture.datatree import (
     Branch,
     DataTree,
@@ -128,7 +124,7 @@ def test_novel_prefixes_are_novel():
     runner = ConjectureRunner(tf, settings=TEST_SETTINGS, random=Random(0))
     for _ in range(100):
         prefix = runner.tree.generate_novel_prefix(runner.random)
-        extension = prefix + (NodeTemplate("simplest", count=100),)
+        extension = prefix + (ChoiceTemplate("simplest", count=100),)
         assert runner.tree.rewrite(extension)[1] is None
         result = runner.cached_test_function_ir(extension)
         assert runner.tree.rewrite(extension)[0] == result.choices

@@ -17,7 +17,15 @@ from typing import Optional
 
 import pytest
 
-from hypothesis import HealthCheck, Verbosity, assume, given, settings, strategies as st
+from hypothesis import (
+    HealthCheck,
+    Verbosity,
+    assume,
+    errors,
+    given,
+    settings,
+    strategies as st,
+)
 from hypothesis.control import current_build_context
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.errors import (
@@ -28,13 +36,12 @@ from hypothesis.errors import (
     Unsatisfiable,
 )
 from hypothesis.internal.compat import int_to_bytes
-from hypothesis.internal.conjecture.data import (
+from hypothesis.internal.conjecture.data import ConjectureData, PrimitiveProvider
+from hypothesis.internal.conjecture.engine import ConjectureRunner
+from hypothesis.internal.conjecture.providers import (
     AVAILABLE_PROVIDERS,
     COLLECTION_DEFAULT_MAX_SIZE,
-    ConjectureData,
-    PrimitiveProvider,
 )
-from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.floats import SIGNALING_NAN
 from hypothesis.internal.intervalsets import IntervalSet
 
@@ -581,3 +588,11 @@ def test_invalid_provider_kw():
             provider=TrivialProvider(None),
             provider_kw={"one": "two"},
         )
+
+
+def test_available_providers_deprecation():
+    with pytest.warns(errors.HypothesisDeprecationWarning):
+        from hypothesis.internal.conjecture.data import AVAILABLE_PROVIDERS  # noqa
+
+    with pytest.raises(ImportError):
+        from hypothesis.internal.conjecture.data import does_not_exist  # noqa

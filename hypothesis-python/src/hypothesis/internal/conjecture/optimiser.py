@@ -12,14 +12,9 @@ from typing import Optional, Union
 
 from hypothesis.internal.compat import int_from_bytes, int_to_bytes
 from hypothesis.internal.conjecture.choice import ChoiceT, choice_permitted
-from hypothesis.internal.conjecture.data import (
-    ConjectureResult,
-    Status,
-    _Overrun,
-    bits_to_bytes,
-)
+from hypothesis.internal.conjecture.data import ConjectureResult, Status, _Overrun
 from hypothesis.internal.conjecture.engine import ConjectureRunner
-from hypothesis.internal.conjecture.junkdrawer import find_integer
+from hypothesis.internal.conjecture.junkdrawer import bits_to_bytes, find_integer
 from hypothesis.internal.conjecture.pareto import NO_SCORE
 
 

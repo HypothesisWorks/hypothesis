@@ -9,7 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from typing import (
     TYPE_CHECKING,
     Callable,
@@ -20,6 +20,8 @@ from typing import (
     Union,
     cast,
 )
+
+import attr
 
 from hypothesis.errors import ChoiceTooLarge
 from hypothesis.internal.conjecture.floats import float_to_lex, lex_to_float
@@ -70,6 +72,16 @@ ChoiceNameT: "TypeAlias" = Literal["integer", "string", "boolean", "float", "byt
 ChoiceKeyT: "TypeAlias" = Union[
     int, str, bytes, tuple[Literal["bool"], bool], tuple[Literal["float"], int]
 ]
+
+
+@attr.s(slots=True)
+class ChoiceTemplate:
+    type: Literal["simplest"] = attr.ib()
+    count: Optional[int] = attr.ib()
+
+    def __attrs_post_init__(self) -> None:
+        if self.count is not None:
+            assert self.count > 0
 
 
 def _size_to_index(size: int, *, alphabet_size: int) -> int:
@@ -494,3 +506,9 @@ def choice_kwargs_key(ir_type, kwargs):
             kwargs["shrink_towards"],
         )
     return tuple(kwargs[key] for key in sorted(kwargs))
+
+
+def choices_size(choices: Iterable[ChoiceT]) -> int:
+    from hypothesis.database import choices_to_bytes
+
+    return len(choices_to_bytes(choices))
