@@ -34,6 +34,7 @@ from tests.conjecture.common import float_kw, integer_kw, ir_types_and_kwargs, s
 @example(b"\x00" * 100, [("string", string_kw(IntervalSet.from_string("a")))])
 @example(b"\x00" * 100, [("float", float_kw())])
 @example(b"\x00" * 100, [("bytes", {"min_size": 0, "max_size": 10})])
+@example(b"\x00", [("integer", integer_kw())])
 @given(st.binary(min_size=200), st.lists(ir_types_and_kwargs()))
 def test_provider_contract_bytestring(bytestring, ir_type_and_kwargs):
     data = ConjectureData(
