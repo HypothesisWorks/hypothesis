@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.124.9:
+
+--------------------
+6.124.9 - 2025-02-01
+--------------------
+
+Registration of experimental :ref:`alternative-backends` is now done via ``hypothesis.internal.conjecture.providers.AVAILABLE_PROVIDERS`` instead of ``hypothesis.internal.conjecture.data.AVAILABLE_PROVIDERS``.
+
 .. _v6.124.8:
 
 --------------------
