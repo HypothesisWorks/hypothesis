@@ -13,7 +13,7 @@ import math
 import random
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import Any, NoReturn, Union
+from typing import Any, NoReturn, Optional, Union
 from weakref import WeakKeyDictionary
 
 from hypothesis import Verbosity, settings
@@ -71,7 +71,7 @@ def assume(condition: object) -> bool:
     return True
 
 
-_current_build_context = DynamicVariable(None)
+_current_build_context = DynamicVariable[Optional["BuildContext"]](None)
 
 
 def currently_in_test_context() -> bool:

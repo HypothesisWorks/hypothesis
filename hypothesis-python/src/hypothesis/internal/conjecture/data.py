@@ -15,12 +15,14 @@ import time
 from collections import defaultdict
 from collections.abc import Iterable, Iterator, Sequence
 from enum import IntEnum
+from functools import cached_property
 from random import Random
 from sys import float_info
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    ClassVar,
     Literal,
     NoReturn,
     Optional,
@@ -82,7 +84,6 @@ if TYPE_CHECKING:
     from hypothesis.strategies import SearchStrategy
     from hypothesis.strategies._internal.strategies import Ex
 else:
-    TypeAlias = object
 
     def dataclass_transform():
         def wrapper(tp):
@@ -97,7 +98,7 @@ TargetObservations = dict[str, Union[int, float]]
 T = TypeVar("T")
 
 # index, ir_type, kwargs, forced
-MisalignedAt: TypeAlias = tuple[int, ChoiceNameT, ChoiceKwargsT, Optional[ChoiceT]]
+MisalignedAt: "TypeAlias" = tuple[int, ChoiceNameT, ChoiceKwargsT, Optional[ChoiceT]]
 
 
 class ExtraInformation:
@@ -290,16 +291,14 @@ class ExampleProperty:
     """
 
     def __init__(self, examples: "Examples"):
-        self.example_stack: "list[int]" = []
+        self.example_stack: list[int] = []
         self.examples = examples
         self.example_count = 0
         self.ir_node_count = 0
-        self.result: Any = None
 
     def run(self) -> Any:
         """Rerun the test case with this visitor and return the
         results of ``self.finish()``."""
-        self.begin()
         for record in self.examples.trail:
             if record == IR_NODE_RECORD:
                 self.ir_node_count += 1
@@ -324,11 +323,6 @@ class ExampleProperty:
         i = self.example_stack.pop()
         self.stop_example(i, discarded=discarded)
 
-    def begin(self) -> None:
-        """Called at the beginning of the run to initialise any
-        relevant state."""
-        self.result = IntList.of_length(len(self.examples))
-
     def start_example(self, i: int, label_index: int) -> None:
         """Called at the start of each example, with ``i`` the
         index of the example and ``label_index`` the index of
@@ -340,30 +334,7 @@ class ExampleProperty:
         was called with ``discard=True``."""
 
     def finish(self) -> Any:
-        return self.result
-
-
-def calculated_example_property(cls: type[ExampleProperty]) -> Any:
-    """Given an ``ExampleProperty`` as above we use this decorator
-    to transform it into a lazy property on the ``Examples`` class,
-    which has as its value the result of calling ``cls.run()``,
-    computed the first time the property is accessed.
-
-    This has the slightly weird result that we are defining nested
-    classes which get turned into properties."""
-    name = cls.__name__
-    cache_name = "__" + name
-
-    def lazy_calculate(self: "Examples") -> Any:
-        result = getattr(self, cache_name, None)
-        if result is None:
-            result = cls(self).run()
-            setattr(self, cache_name, result)
-        return result
-
-    lazy_calculate.__name__ = cls.__name__
-    lazy_calculate.__qualname__ = cls.__qualname__
-    return property(lazy_calculate)
+        raise NotImplementedError
 
 
 STOP_EXAMPLE_DISCARD_RECORD = 1
@@ -386,7 +357,7 @@ class ExampleRecord:
 
     def __init__(self) -> None:
         self.labels: list[int] = []
-        self.__index_of_labels: "dict[int, int] | None" = {}
+        self.__index_of_labels: Optional[dict[int, int]] = {}
         self.trail = IntList()
         self.nodes: list[IRNode] = []
 
@@ -412,6 +383,90 @@ class ExampleRecord:
             self.trail.append(STOP_EXAMPLE_NO_DISCARD_RECORD)
 
 
+class _starts_and_ends(ExampleProperty):
+    def __init__(self, examples: "Examples") -> None:
+        super().__init__(examples)
+        self.starts = IntList.of_length(len(self.examples))
+        self.ends = IntList.of_length(len(self.examples))
+
+    def start_example(self, i: int, label_index: int) -> None:
+        self.starts[i] = self.ir_node_count
+
+    def stop_example(self, i: int, *, discarded: bool) -> None:
+        self.ends[i] = self.ir_node_count
+
+    def finish(self) -> tuple[IntList, IntList]:
+        return (self.starts, self.ends)
+
+
+class _discarded(ExampleProperty):
+    def __init__(self, examples: "Examples") -> None:
+        super().__init__(examples)
+        self.result: set[int] = set()
+
+    def finish(self) -> frozenset[int]:
+        return frozenset(self.result)
+
+    def stop_example(self, i: int, *, discarded: bool) -> None:
+        if discarded:
+            self.result.add(i)
+
+
+class _parentage(ExampleProperty):
+    def __init__(self, examples: "Examples") -> None:
+        super().__init__(examples)
+        self.result = IntList.of_length(len(self.examples))
+
+    def stop_example(self, i: int, *, discarded: bool) -> None:
+        if i > 0:
+            self.result[i] = self.example_stack[-1]
+
+    def finish(self) -> IntList:
+        return self.result
+
+
+class _depths(ExampleProperty):
+    def __init__(self, examples: "Examples") -> None:
+        super().__init__(examples)
+        self.result = IntList.of_length(len(self.examples))
+
+    def start_example(self, i: int, label_index: int) -> None:
+        self.result[i] = len(self.example_stack)
+
+    def finish(self) -> IntList:
+        return self.result
+
+
+class _label_indices(ExampleProperty):
+    def __init__(self, examples: "Examples") -> None:
+        super().__init__(examples)
+        self.result = IntList.of_length(len(self.examples))
+
+    def start_example(self, i: int, label_index: int) -> None:
+        self.result[i] = label_index
+
+    def finish(self) -> IntList:
+        return self.result
+
+
+class _mutator_groups(ExampleProperty):
+    def __init__(self, examples: "Examples") -> None:
+        super().__init__(examples)
+        self.groups: dict[int, set[tuple[int, int]]] = defaultdict(set)
+
+    def start_example(self, i: int, label_index: int) -> None:
+        # TODO should we discard start == end cases? occurs for eg st.data()
+        # which is conditionally or never drawn from. arguably swapping
+        # nodes with the empty list is a useful mutation enabled by start == end?
+        key = (self.examples[i].start, self.examples[i].end)
+        self.groups[label_index].add(key)
+
+    def finish(self) -> Iterable[set[tuple[int, int]]]:
+        # Discard groups with only one example, since the mutator can't
+        # do anything useful with them.
+        return [g for g in self.groups.values() if len(g) >= 2]
+
+
 class Examples:
     """A lazy collection of ``Example`` objects, derived from
     the record of recorded behaviour in ``ExampleRecord``.
@@ -429,25 +484,11 @@ class Examples:
         self.__length = self.trail.count(
             STOP_EXAMPLE_DISCARD_RECORD
         ) + record.trail.count(STOP_EXAMPLE_NO_DISCARD_RECORD)
-        self.__children: "list[Sequence[int]] | None" = None
+        self.__children: Optional[list[Sequence[int]]] = None
 
-    class _starts_and_ends(ExampleProperty):
-        def begin(self) -> None:
-            self.starts = IntList.of_length(len(self.examples))
-            self.ends = IntList.of_length(len(self.examples))
-
-        def start_example(self, i: int, label_index: int) -> None:
-            self.starts[i] = self.ir_node_count
-
-        def stop_example(self, i: int, *, discarded: bool) -> None:
-            self.ends[i] = self.ir_node_count
-
-        def finish(self) -> tuple[IntList, IntList]:
-            return (self.starts, self.ends)
-
-    starts_and_ends: "tuple[IntList, IntList]" = calculated_example_property(
-        _starts_and_ends
-    )
+    @cached_property
+    def starts_and_ends(self) -> tuple[IntList, IntList]:
+        return _starts_and_ends(self).run()
 
     @property
     def starts(self) -> IntList:
@@ -457,60 +498,25 @@ class Examples:
     def ends(self) -> IntList:
         return self.starts_and_ends[1]
 
-    class _discarded(ExampleProperty):
-        def begin(self) -> None:
-            self.result: set[int] = set()
+    @cached_property
+    def discarded(self) -> frozenset[int]:
+        return _discarded(self).run()
 
-        def finish(self) -> frozenset[int]:
-            return frozenset(self.result)
+    @cached_property
+    def parentage(self) -> IntList:
+        return _parentage(self).run()
 
-        def stop_example(self, i: int, *, discarded: bool) -> None:
-            if discarded:
-                self.result.add(i)
+    @cached_property
+    def depths(self) -> IntList:
+        return _depths(self).run()
 
-    discarded: frozenset[int] = calculated_example_property(_discarded)
+    @cached_property
+    def label_indices(self) -> IntList:
+        return _label_indices(self).run()
 
-    class _parentage(ExampleProperty):
-        def stop_example(self, i: int, *, discarded: bool) -> None:
-            if i > 0:
-                self.result[i] = self.example_stack[-1]
-
-    parentage: IntList = calculated_example_property(_parentage)
-
-    class _depths(ExampleProperty):
-        def begin(self) -> None:
-            self.result = IntList.of_length(len(self.examples))
-
-        def start_example(self, i: int, label_index: int) -> None:
-            self.result[i] = len(self.example_stack)
-
-    depths: IntList = calculated_example_property(_depths)
-
-    class _label_indices(ExampleProperty):
-        def start_example(self, i: int, label_index: int) -> None:
-            self.result[i] = label_index
-
-    label_indices: IntList = calculated_example_property(_label_indices)
-
-    class _mutator_groups(ExampleProperty):
-        def begin(self) -> None:
-            self.groups: "dict[int, set[tuple[int, int]]]" = defaultdict(set)
-
-        def start_example(self, i: int, label_index: int) -> None:
-            # TODO should we discard start == end cases? occurs for eg st.data()
-            # which is conditionally or never drawn from. arguably swapping
-            # nodes with the empty list is a useful mutation enabled by start == end?
-            key = (self.examples[i].start, self.examples[i].end)
-            self.groups[label_index].add(key)
-
-        def finish(self) -> Iterable[set[tuple[int, int]]]:
-            # Discard groups with only one example, since the mutator can't
-            # do anything useful with them.
-            return [g for g in self.groups.values() if len(g) >= 2]
-
-    mutator_groups: list[set[tuple[int, int]]] = calculated_example_property(
-        _mutator_groups
-    )
+    @cached_property
+    def mutator_groups(self) -> list[set[tuple[int, int]]]:
+        return _mutator_groups(self).run()
 
     @property
     def children(self) -> list[Sequence[int]]:
@@ -730,6 +736,8 @@ class ConjectureResult:
     length: int = attr.ib()
     output: str = attr.ib()
     extra_information: Optional[ExtraInformation] = attr.ib()
+    expected_exception: Optional[BaseException] = attr.ib()
+    expected_traceback: Optional[str] = attr.ib()
     has_discards: bool = attr.ib()
     target_observations: TargetObservations = attr.ib()
     tags: frozenset[StructuralCoverageTag] = attr.ib()
@@ -751,7 +759,7 @@ class ConjectureResult:
 BYTE_MASKS = [(1 << n) - 1 for n in range(8)]
 BYTE_MASKS[0] = 255
 
-_Lifetime: TypeAlias = Literal["test_case", "test_function"]
+_Lifetime: "TypeAlias" = Literal["test_case", "test_function"]
 
 
 class _BackendInfoMsg(TypedDict):
@@ -785,7 +793,7 @@ class PrimitiveProvider(abc.ABC):
     # lifetime can access the passed ConjectureData object.
     #
     # Non-hypothesis providers probably want to set a lifetime of test_function.
-    lifetime: _Lifetime = "test_function"
+    lifetime: ClassVar[_Lifetime] = "test_function"
 
     # Solver-based backends such as hypothesis-crosshair use symbolic values
     # which record operations performed on them in order to discover new paths.
@@ -796,7 +804,7 @@ class PrimitiveProvider(abc.ABC):
     # Setting this to True disables some hypothesis features, such as
     # DataTree-based deduplication, and some internal optimizations, such as
     # caching kwargs. Only enable this if it is necessary for your backend.
-    avoid_realization = False
+    avoid_realization: ClassVar[bool] = False
 
     def __init__(self, conjecturedata: Optional["ConjectureData"], /) -> None:
         self._cd = conjecturedata
@@ -959,7 +967,7 @@ class HypothesisProvider(PrimitiveProvider):
             # handling forced values when we can force into the unmapped probability
             # mass. We should eventually remove this restriction.
             sampler = Sampler(
-                [1 - sum(weights.values()), *weights.values()], observe=False
+                [1.0 - sum(weights.values()), *weights.values()], observe=False
             )
             # if we're forcing, it's easiest to force into the unmapped probability
             # mass and then force the drawn value after.
@@ -1297,8 +1305,8 @@ class ConjectureData:
         self.gc_start_time = gc_cumulative_time()
         self.events: dict[str, Union[str, int, float]] = {}
         self.interesting_origin: Optional[InterestingOrigin] = None
-        self.draw_times: "dict[str, float]" = {}
-        self._stateful_run_times: "defaultdict[str, float]" = defaultdict(float)
+        self.draw_times: dict[str, float] = {}
+        self._stateful_run_times: dict[str, float] = defaultdict(float)
         self.max_depth = 0
         self.has_discards = False
 
@@ -1307,7 +1315,7 @@ class ConjectureData:
         )
         assert isinstance(self.provider, PrimitiveProvider)
 
-        self.__result: "Optional[ConjectureResult]" = None
+        self.__result: Optional[ConjectureResult] = None
 
         # Observations used for targeted search.  They'll be aggregated in
         # ConjectureRunner.generate_new_examples and fed to TargetSelector.
@@ -1315,13 +1323,13 @@ class ConjectureData:
 
         # Tags which indicate something about which part of the search space
         # this example is in. These are used to guide generation.
-        self.tags: "set[StructuralCoverageTag]" = set()
-        self.labels_for_structure_stack: "list[set[int]]" = []
+        self.tags: set[StructuralCoverageTag] = set()
+        self.labels_for_structure_stack: list[set[int]] = []
 
         # Normally unpopulated but we need this in the niche case
         # that self.as_result() is Overrun but we still want the
         # examples for reporting purposes.
-        self.__examples: "Optional[Examples]" = None
+        self.__examples: Optional[Examples] = None
 
         # We want the top level example to have depth 0, so we start
         # at -1.
@@ -1337,6 +1345,8 @@ class ConjectureData:
             lambda: {"satisfied": 0, "unsatisfied": 0}
         )
 
+        self.expected_exception: Optional[BaseException] = None
+        self.expected_traceback: Optional[str] = None
         self.extra_information = ExtraInformation()
 
         self.prefix = prefix
@@ -1687,6 +1697,8 @@ class ConjectureData:
                 nodes=self.nodes,
                 length=self.length,
                 output=self.output,
+                expected_traceback=self.expected_traceback,
+                expected_exception=self.expected_exception,
                 extra_information=(
                     self.extra_information
                     if self.extra_information.has_information()

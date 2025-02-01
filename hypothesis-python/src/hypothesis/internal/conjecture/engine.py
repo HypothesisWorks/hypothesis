@@ -63,7 +63,7 @@ from hypothesis.internal.conjecture.junkdrawer import (
     startswith,
 )
 from hypothesis.internal.conjecture.pareto import NO_SCORE, ParetoFront, ParetoOptimiser
-from hypothesis.internal.conjecture.shrinker import Shrinker, sort_key
+from hypothesis.internal.conjecture.shrinker import Shrinker, ShrinkPredicateT, sort_key
 from hypothesis.internal.escalation import InterestingOrigin
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.reporting import base_report, report
@@ -205,6 +205,12 @@ def choice_count(choices: Sequence[Union[ChoiceT, NodeTemplate]]) -> Optional[in
     return count
 
 
+class DiscardObserver(DataObserver):
+    @override
+    def kill_branch(self) -> NoReturn:
+        raise ContainsDiscard
+
+
 class ConjectureRunner:
     def __init__(
         self,
@@ -222,8 +228,8 @@ class ConjectureRunner:
         self.call_count: int = 0
         self.misaligned_count: int = 0
         self.valid_examples: int = 0
-        self.invalid_examples = 0
-        self.overrun_examples = 0
+        self.invalid_examples: int = 0
+        self.overrun_examples: int = 0
         self.random: Random = random or Random(getrandbits(128))
         self.database_key: Optional[bytes] = database_key
         self.ignore_limits: bool = ignore_limits
@@ -235,7 +241,9 @@ class ConjectureRunner:
         self.stats_per_test_case: list[CallStats] = []
 
         # At runtime, the keys are only ever type `InterestingOrigin`, but can be `None` during tests.
-        self.interesting_examples: dict[InterestingOrigin, ConjectureResult] = {}
+        self.interesting_examples: dict[
+            Optional[InterestingOrigin], ConjectureResult
+        ] = {}
         # We use call_count because there may be few possible valid_examples.
         self.first_bug_found_at: Optional[int] = None
         self.last_bug_found_at: Optional[int] = None
@@ -273,16 +281,17 @@ class ConjectureRunner:
             tuple[ChoiceKeyT, ...], Union[ConjectureResult, _Overrun]
         ](CACHE_SIZE)
 
-        self.reused_previously_shrunk_test_case = False
+        self.reused_previously_shrunk_test_case: bool = False
 
         self.__pending_call_explanation: Optional[str] = None
         self._switch_to_hypothesis_provider: bool = False
 
-        self.__failed_realize_count = 0
-        self._verified_by = None  # note unsound verification by alt backends
+        self.__failed_realize_count: int = 0
+        # note unsound verification by alt backends
+        self._verified_by: Optional[str] = None
 
     @property
-    def using_hypothesis_backend(self):
+    def using_hypothesis_backend(self) -> bool:
         return (
             self.settings.backend == "hypothesis" or self._switch_to_hypothesis_provider
         )
@@ -394,12 +403,6 @@ class ConjectureRunner:
         # TreeRecordingObserver tracking those calls.
         trial_observer: Optional[DataObserver] = DataObserver()
         if error_on_discard:
-
-            class DiscardObserver(DataObserver):
-                @override
-                def kill_branch(self) -> NoReturn:
-                    raise ContainsDiscard
-
             trial_observer = DiscardObserver()
 
         try:
@@ -556,9 +559,7 @@ class ConjectureRunner:
                 # replay this failure on the hypothesis backend to ensure it still
                 # finds a failure. otherwise, it is flaky.
                 initial_origin = data.interesting_origin
-                initial_traceback = getattr(
-                    data.extra_information, "_expected_traceback", None
-                )
+                initial_traceback = data.expected_traceback
                 data = ConjectureData.for_choices(data.choices)
                 self.__stoppable_test_function(data)
                 data.freeze()
@@ -587,7 +588,7 @@ class ConjectureRunner:
             key = data.interesting_origin
             changed = False
             try:
-                existing = self.interesting_examples[key]  # type: ignore
+                existing = self.interesting_examples[key]
             except KeyError:
                 changed = True
                 self.last_bug_found_at = self.call_count
@@ -1355,9 +1356,10 @@ class ConjectureRunner:
                 self.shrink(example, lambda d: d.status == Status.INTERESTING)
                 return
 
-            def predicate(d: ConjectureData) -> bool:
+            def predicate(d: Union[ConjectureResult, _Overrun]) -> bool:
                 if d.status < Status.INTERESTING:
                     return False
+                d = cast(ConjectureResult, d)
                 return d.interesting_origin == target
 
             self.shrink(example, predicate)
@@ -1398,7 +1400,7 @@ class ConjectureRunner:
     def shrink(
         self,
         example: Union[ConjectureData, ConjectureResult],
-        predicate: Optional[Callable[[ConjectureData], bool]] = None,
+        predicate: Optional[ShrinkPredicateT] = None,
         allow_transition: Optional[
             Callable[[Union[ConjectureData, ConjectureResult], ConjectureData], bool]
         ] = None,
@@ -1410,7 +1412,7 @@ class ConjectureRunner:
     def new_shrinker(
         self,
         example: Union[ConjectureData, ConjectureResult],
-        predicate: Optional[Callable[[ConjectureData], bool]] = None,
+        predicate: Optional[ShrinkPredicateT] = None,
         allow_transition: Optional[
             Callable[[Union[ConjectureData, ConjectureResult], ConjectureData], bool]
         ] = None,

@@ -35,7 +35,7 @@ class IntervalSet:
         >>> IntervalSet.from_string('abcdef0123456789')
         ((48, 57), (97, 102))
         """
-        x = cls((ord(c), ord(c)) for c in sorted(s))
+        x = cls([(ord(c), ord(c)) for c in sorted(s)])
         return x.union(x)
 
     def __init__(self, intervals: Iterable[Sequence[int]] = ()) -> None:
@@ -139,9 +139,9 @@ class IntervalSet:
         x = self.intervals
         y = other.intervals
         if not x:
-            return IntervalSet((u, v) for u, v in y)
+            return IntervalSet(y)
         if not y:
-            return IntervalSet((u, v) for u, v in x)
+            return IntervalSet(x)
         intervals = sorted(x + y, reverse=True)
         result = [intervals.pop()]
         while intervals:

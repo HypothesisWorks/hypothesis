@@ -1065,9 +1065,7 @@ class StateForActualGivenExecution:
             for io in err._interesting_origins
             if io in self._runner.interesting_examples
         ]
-        exceptions = [
-            ie.extra_information._expected_exception for ie in interesting_examples
-        ]
+        exceptions = [ie.expected_exception for ie in interesting_examples]
         exceptions.append(context)  # the immediate exception
         return FlakyFailure(err.reason, exceptions)
 
@@ -1153,10 +1151,10 @@ class StateForActualGivenExecution:
                 # engine that this test run was interesting. This is the normal
                 # path for test runs that fail.
                 tb = get_trimmed_traceback()
-                info = data.extra_information
-                info._expected_traceback = format_exception(e, tb)  # type: ignore
-                info._expected_exception = e  # type: ignore
-                verbose_report(info._expected_traceback)  # type: ignore
+                data.expected_traceback = format_exception(e, tb)
+                data.expected_exception = e
+                assert data.expected_traceback is not None  # for mypy
+                verbose_report(data.expected_traceback)
 
                 self.failed_normally = True
 
@@ -1335,7 +1333,6 @@ class StateForActualGivenExecution:
 
         explanations = explanatory_lines(self.explain_traces, self.settings)
         for falsifying_example in self.falsifying_examples:
-            info = falsifying_example.extra_information
             fragments = []
 
             ran_example = runner.new_conjecture_data_ir(
@@ -1344,8 +1341,8 @@ class StateForActualGivenExecution:
             ran_example.slice_comments = falsifying_example.slice_comments
             tb = None
             origin = None
-            assert info is not None
-            assert info._expected_exception is not None
+            assert falsifying_example.expected_exception is not None
+            assert falsifying_example.expected_traceback is not None
             try:
                 with with_reporter(fragments.append):
                     self.execute_once(
@@ -1353,8 +1350,8 @@ class StateForActualGivenExecution:
                         print_example=not self.is_find,
                         is_final=True,
                         expected_failure=(
-                            info._expected_exception,
-                            info._expected_traceback,
+                            falsifying_example.expected_exception,
+                            falsifying_example.expected_traceback,
                         ),
                     )
             except StopTest as e:
@@ -1370,7 +1367,8 @@ class StateForActualGivenExecution:
                     "Inconsistent results: An example failed on the "
                     "first run but now succeeds (or fails with another "
                     "error, or is for some reason not runnable).",
-                    [info._expected_exception or e],  # (note: e is a BaseException)
+                    # (note: e is a BaseException)
+                    [falsifying_example.expected_exception or e],
                 )
                 errors_to_report.append((fragments, err))
             except UnsatisfiedAssumption as e:  # pragma: no cover  # ironically flaky
@@ -1864,7 +1862,7 @@ def given(
             minimal_failures: dict = {}
 
             def fuzz_one_input(
-                buffer: Union[bytes, bytearray, memoryview, BinaryIO]
+                buffer: Union[bytes, bytearray, memoryview, BinaryIO],
             ) -> Optional[bytes]:
                 # This inner part is all that the fuzzer will actually run,
                 # so we keep it as small and as fast as possible.

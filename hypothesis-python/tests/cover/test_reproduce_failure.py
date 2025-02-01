@@ -45,7 +45,7 @@ def test_encoding_loop(nodes):
 @example(base64.b64encode(b"\2\3\4"))
 @example(b"\t")
 @example(base64.b64encode(b"\1\0"))  # zlib error
-@example(base64.b64encode(b"\1" + zlib.compress(b"\xFF")))  # ir_from_bytes error
+@example(base64.b64encode(b"\1" + zlib.compress(b"\xff")))  # ir_from_bytes error
 @given(st.binary())
 def test_decoding_may_fail(t):
     try:

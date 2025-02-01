@@ -13,7 +13,7 @@ attrs==24.1.0
     #   -r requirements/test.in
     #   hypothesis
     #   hypothesis (hypothesis-python/setup.py)
-black==24.10.0
+black==25.1.0
     # via
     #   -r requirements/coverage.in
     #   hypofuzz

@@ -11,11 +11,12 @@
 import math
 from collections import defaultdict
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Callable, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Callable, Optional, Union, cast
 
 import attr
 
 from hypothesis.internal.conjecture.choice import (
+    ChoiceT,
     choice_equal,
     choice_from_index,
     choice_key,
@@ -25,8 +26,10 @@ from hypothesis.internal.conjecture.choice import (
 from hypothesis.internal.conjecture.data import (
     ConjectureData,
     ConjectureResult,
+    Examples,
     IRNode,
     Status,
+    _Overrun,
     draw_choice,
 )
 from hypothesis.internal.conjecture.junkdrawer import (
@@ -51,10 +54,11 @@ from hypothesis.internal.floats import MAX_PRECISE_INTEGER
 
 if TYPE_CHECKING:
     from random import Random
+    from typing import TypeAlias
 
     from hypothesis.internal.conjecture.engine import ConjectureRunner
 
-SortKeyT = TypeVar("SortKeyT", str, bytes)
+ShrinkPredicateT: "TypeAlias" = Callable[[Union[ConjectureResult, _Overrun]], bool]
 
 
 def sort_key(nodes: Sequence[IRNode]) -> tuple[int, tuple[int, ...]]:
@@ -103,10 +107,10 @@ class ShrinkPassDefinition:
     run_with_chooser = attr.ib()
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.run_with_chooser.__name__
 
-    def __attrs_post_init__(self):
+    def __attrs_post_init__(self) -> None:
         assert self.name not in SHRINK_PASS_DEFINITIONS, self.name
         SHRINK_PASS_DEFINITIONS[self.name] = self
 
@@ -283,7 +287,7 @@ class Shrinker:
         self,
         engine: "ConjectureRunner",
         initial: Union[ConjectureData, ConjectureResult],
-        predicate: Optional[Callable[[ConjectureData], bool]],
+        predicate: Optional[ShrinkPredicateT],
         *,
         allow_transition: Optional[
             Callable[[Union[ConjectureData, ConjectureResult], ConjectureData], bool]
@@ -432,7 +436,7 @@ class Shrinker:
     def random(self) -> "Random":
         return self.engine.random
 
-    def shrink(self):
+    def shrink(self) -> None:
         """Run the full set of shrinks and update shrink_target.
 
         This method is "mostly idempotent" - calling it twice is unlikely to
@@ -488,16 +492,16 @@ class Shrinker:
                 self.debug("")
         self.explain()
 
-    def explain(self):
+    def explain(self) -> None:
 
         if not self.should_explain or not self.shrink_target.arg_slices:
             return
 
-        self.max_stall = 1e999
+        self.max_stall = 2**100
         shrink_target = self.shrink_target
         nodes = self.nodes
         choices = self.choices
-        chunks = defaultdict(list)
+        chunks: dict[tuple[int, int], list[tuple[ChoiceT, ...]]] = defaultdict(list)
 
         # Before we start running experiments, let's check for known inputs which would
         # make them redundant.  The shrinking process means that we've already tried many
@@ -548,6 +552,7 @@ class Shrinker:
                 # Turns out this was a variable-length part, so grab the infix...
                 if result.status is Status.OVERRUN:
                     continue  # pragma: no cover  # flakily covered
+                result = cast(ConjectureResult, result)
                 if not (
                     len(attempt) == len(result.choices)
                     and endswith(result.nodes, nodes[end:])
@@ -570,6 +575,7 @@ class Shrinker:
 
                     if result.status is Status.OVERRUN:
                         continue  # pragma: no cover  # flakily covered
+                    result = cast(ConjectureResult, result)
                 else:
                     chunks[(start, end)].append(result.choices[start:end])
 
@@ -596,7 +602,7 @@ class Shrinker:
         chunks_by_start_index = sorted(chunks.items())
         for _ in range(500):  # pragma: no branch
             # no-branch here because we don't coverage-test the abort-at-500 logic.
-            new_choices = []
+            new_choices: list[ChoiceT] = []
             prev_end = 0
             for (start, end), ls in chunks_by_start_index:
                 assert prev_end <= start < end, "these chunks must be nonoverlapping"
@@ -621,7 +627,7 @@ class Shrinker:
                     )
                     break
 
-    def greedy_shrink(self):
+    def greedy_shrink(self) -> None:
         """Run a full set of greedy shrinks (that is, ones that will only ever
         move to a better target) and update shrink_target appropriately.
 
@@ -859,15 +865,15 @@ class Shrinker:
             passes.sort(key=reordering.__getitem__)
 
     @property
-    def nodes(self):
+    def nodes(self) -> tuple[IRNode, ...]:
         return self.shrink_target.nodes
 
     @property
-    def choices(self):
+    def choices(self) -> tuple[ChoiceT, ...]:
         return self.shrink_target.choices
 
     @property
-    def examples(self):
+    def examples(self) -> Examples:
         return self.shrink_target.examples
 
     @derived_value  # type: ignore
@@ -1025,7 +1031,7 @@ class Shrinker:
         self.__changed_nodes.add(i)
 
     @property
-    def __changed_nodes(self):
+    def __changed_nodes(self) -> set[int]:
         if self.__last_checked_changed_at is self.shrink_target:
             return self.__all_changed_nodes
 
