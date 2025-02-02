@@ -55,7 +55,10 @@ from hypothesis.utils.conventions import UniqueIdentifier
 if TYPE_CHECKING:
     from typing import TypeAlias
 
-Ex = TypeVar("Ex", covariant=True)
+    Ex = TypeVar("Ex", covariant=True, default=Any)
+else:
+    Ex = TypeVar("Ex", covariant=True)
+
 T = TypeVar("T")
 T3 = TypeVar("T3")
 T4 = TypeVar("T4")
