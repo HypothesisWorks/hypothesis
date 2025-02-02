@@ -994,6 +994,8 @@ class ConjectureData:
     ) -> str:
         assert forced is None or min_size <= len(forced) <= max_size
         assert min_size >= 0
+        if len(intervals) == 0:
+            assert min_size == 0
 
         kwargs: StringKWargs = self._pooled_kwargs(
             "string",

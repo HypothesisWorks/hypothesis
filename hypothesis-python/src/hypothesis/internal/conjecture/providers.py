@@ -386,6 +386,9 @@ class HypothesisProvider(PrimitiveProvider):
         assert self._cd is not None
         assert self._cd._random is not None
 
+        if len(intervals) == 0:
+            return ""
+
         average_size = min(
             max(min_size * 2, min_size + 5),
             0.5 * (min_size + max_size),
