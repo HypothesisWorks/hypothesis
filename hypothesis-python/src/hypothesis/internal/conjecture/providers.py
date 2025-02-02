@@ -370,7 +370,9 @@ class HypothesisProvider(PrimitiveProvider):
                     clamped = result  # pragma: no cover
                 else:
                     clamped = clamper(result)
-                if clamped != result and not (math.isnan(result) and allow_nan):
+                if float_to_int(clamped) != float_to_int(result) and not (
+                    math.isnan(result) and allow_nan
+                ):
                     result = clamped
             else:
                 result = nasty_floats[i - 1]

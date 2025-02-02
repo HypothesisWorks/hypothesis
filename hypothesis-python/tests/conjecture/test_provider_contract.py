@@ -19,7 +19,13 @@ from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.providers import BytestringProvider
 from hypothesis.internal.intervalsets import IntervalSet
 
-from tests.conjecture.common import float_kw, integer_kw, ir_types_and_kwargs, string_kw
+from tests.conjecture.common import (
+    float_kw,
+    integer_kw,
+    ir_types_and_kwargs,
+    nodes,
+    string_kw,
+)
 
 
 @example(b"\x00" * 100, [("integer", integer_kw())])
@@ -50,20 +56,16 @@ def test_provider_contract_bytestring(bytestring, ir_type_and_kwargs):
         except StopTest:
             return
 
-        # ir_value_permitted is currently restricted to what *could* be generated
-        # by the buffer. once we're fully on the TCS, we can drop this restriction.
-        # until then, the BytestringProvider can theoretically generate values
-        # that aren't forcable to a buffer - but this requires an enormous shrink_towards
-        # value and is such an edge case that I'm just going to bank on nobody hitting
-        # it before we're off the bytestring.
-        integer_edge_case = (
-            ir_type == "integer"
-            and kwargs["shrink_towards"] is not None
-            and kwargs["shrink_towards"].bit_length() > 100
-        )
-        assert choice_permitted(value, kwargs) or integer_edge_case
-
+        assert choice_permitted(value, kwargs)
         kwargs["forced"] = choice_from_index(0, ir_type, kwargs)
         assert choice_equal(
             kwargs["forced"], getattr(data, f"draw_{ir_type}")(**kwargs)
         )
+
+
+@given(st.lists(nodes()), st.randoms())
+def test_provider_contract_hypothesis(nodes, random):
+    data = ConjectureData(random=random)
+    for node in nodes:
+        value = getattr(data, f"draw_{node.ir_type}")(**node.kwargs)
+        assert choice_permitted(value, node.kwargs)
