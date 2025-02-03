@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.125.1:
+
+--------------------
+6.125.1 - 2025-02-03
+--------------------
+
+Fixes a bug since around :ref:`version 6.124.4 <v6.124.4>` where we might have generated ``-0.0`` for ``st.floats(min_value=0.0)``, which is unsound.
+
 .. _v6.125.0:
 
 --------------------
