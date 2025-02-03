@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.125.0:
+
+--------------------
+6.125.0 - 2025-02-03
+--------------------
+
+Add 2024.12 to the list of recognized Array API versions in
+``hypothesis.extra.array_api``.
+
 .. _v6.124.9:
 
 --------------------
