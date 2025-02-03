@@ -12,8 +12,9 @@ import inspect
 import math
 import random
 from collections import defaultdict
+from collections.abc import Sequence
 from contextlib import contextmanager
-from typing import Any, NoReturn, Optional, Union
+from typing import Any, Callable, NoReturn, Optional, Union
 from weakref import WeakKeyDictionary
 
 from hypothesis import Verbosity, settings
@@ -126,10 +127,15 @@ def deprecate_random_in_strategy(fmt, *args):
 
 
 class BuildContext:
-    def __init__(self, data, *, is_final=False, close_on_capture=True):
-        assert isinstance(data, ConjectureData)
+    def __init__(
+        self,
+        data: ConjectureData,
+        *,
+        is_final: bool = False,
+        close_on_capture: bool = True,
+    ) -> None:
         self.data = data
-        self.tasks = []
+        self.tasks: list[Callable[[], Any]] = []
         self.is_final = is_final
         self.close_on_capture = close_on_capture
         self.close_on_del = False
@@ -140,9 +146,17 @@ class BuildContext:
             defaultdict(list)
         )
 
-    def record_call(self, obj, func, args, kwargs):
+    def record_call(
+        self,
+        obj: object,
+        func: object,
+        args: Sequence[object],
+        kwargs: dict[str, object],
+    ) -> None:
         self.known_object_printers[IDKey(obj)].append(
-            lambda obj, p, cycle, *, _func=func: p.maybe_repr_known_object_as_call(
+            # _func=func prevents mypy from inferring lambda type. Would need
+            # paramspec I think - not worth it.
+            lambda obj, p, cycle, *, _func=func: p.maybe_repr_known_object_as_call(  # type: ignore
                 obj, cycle, get_pretty_function_description(_func), args, kwargs
             )
         )

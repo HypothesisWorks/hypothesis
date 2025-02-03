@@ -127,7 +127,6 @@ from hypothesis.strategies._internal.recursive import RecursiveStrategy
 from hypothesis.strategies._internal.shared import SharedStrategy
 from hypothesis.strategies._internal.strategies import (
     Ex,
-    Ex_Inv,
     SampledFromStrategy,
     T,
     one_of,
@@ -360,16 +359,20 @@ def lists(
 
         # UniqueSampledListStrategy offers a substantial performance improvement for
         # unique arrays with few possible elements, e.g. of eight-bit integer types.
+
+        # all of these type: ignores are for a mypy bug, which narrows `elements`
+        # to Never. https://github.com/python/mypy/issues/16494
         if (
             isinstance(elements, IntegersStrategy)
-            and None not in (elements.start, elements.end)
-            and (elements.end - elements.start) <= 255
+            and elements.start is not None  # type: ignore
+            and elements.end is not None  # type: ignore
+            and (elements.end - elements.start) <= 255  # type: ignore
         ):
             elements = SampledFromStrategy(
-                sorted(range(elements.start, elements.end + 1), key=abs)
-                if elements.end < 0 or elements.start > 0
-                else list(range(elements.end + 1))
-                + list(range(-1, elements.start - 1, -1))
+                sorted(range(elements.start, elements.end + 1), key=abs)  # type: ignore
+                if elements.end < 0 or elements.start > 0  # type: ignore
+                else list(range(elements.end + 1))  # type: ignore
+                + list(range(-1, elements.start - 1, -1))  # type: ignore
             )
 
         if isinstance(elements, SampledFromStrategy):
@@ -1106,7 +1109,7 @@ def builds(
 
 @cacheable
 @defines_strategy(never_lazy=True)
-def from_type(thing: type[Ex_Inv]) -> SearchStrategy[Ex_Inv]:
+def from_type(thing: type[T]) -> SearchStrategy[T]:
     """Looks up the appropriate search strategy for the given type.
 
     ``from_type`` is used internally to fill in missing arguments to

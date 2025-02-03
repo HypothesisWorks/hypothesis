@@ -47,8 +47,8 @@ from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 Real = Union[int, float, Fraction, Decimal]
 
 
-class IntegersStrategy(SearchStrategy):
-    def __init__(self, start, end):
+class IntegersStrategy(SearchStrategy[int]):
+    def __init__(self, start: Optional[int], end: Optional[int]) -> None:
         assert isinstance(start, int) or start is None
         assert isinstance(end, int) or end is None
         assert start is None or end is None or start <= end

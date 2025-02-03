@@ -16,7 +16,8 @@ import traceback
 from functools import partial
 from inspect import getframeinfo
 from pathlib import Path
-from typing import NamedTuple, Optional
+from types import ModuleType
+from typing import Callable, NamedTuple, Optional
 
 import hypothesis
 from hypothesis.errors import _Trimmable
@@ -24,14 +25,15 @@ from hypothesis.internal.compat import BaseExceptionGroup
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
 
-def belongs_to(package):
-    if not hasattr(package, "__file__"):  # pragma: no cover
+def belongs_to(package: ModuleType) -> Callable[[str], bool]:
+    if getattr(package, "__file__", None) is None:  # pragma: no cover
         return lambda filepath: False
 
+    assert package.__file__ is not None
     root = Path(package.__file__).resolve().parent
-    cache = {str: {}, bytes: {}}
+    cache: dict[type, dict[str, bool]] = {str: {}, bytes: {}}
 
-    def accept(filepath):
+    def accept(filepath: str) -> bool:
         ftype = type(filepath)
         try:
             return cache[ftype][filepath]

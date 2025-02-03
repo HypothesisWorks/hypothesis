@@ -260,9 +260,7 @@ def _collection_kwargs(draw, *, forced, use_min_size=None, use_max_size=None):
 
 @st.composite
 def string_kwargs(draw, *, use_min_size=None, use_max_size=None, use_forced=False):
-    # TODO also sample empty intervals, ie remove this min_size, once we handle empty
-    # pseudo-choices in the ir
-    interval_set = draw(intervals(min_size=1))
+    interval_set = draw(intervals())
     forced = (
         draw(TextStrategy(OneCharStringStrategy(interval_set))) if use_forced else None
     )
@@ -271,6 +269,10 @@ def string_kwargs(draw, *, use_min_size=None, use_max_size=None, use_forced=Fals
             forced=forced, use_min_size=use_min_size, use_max_size=use_max_size
         )
     )
+    # if the intervalset is empty, then the min size must be zero, because the
+    # only valid value is the empty string.
+    if len(interval_set) == 0:
+        kwargs["min_size"] = 0
 
     return {"intervals": interval_set, "forced": forced, **kwargs}
 
