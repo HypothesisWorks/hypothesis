@@ -14,7 +14,7 @@ import random
 from collections import defaultdict
 from collections.abc import Sequence
 from contextlib import contextmanager
-from typing import Any, NoReturn, Optional, Union
+from typing import Any, Callable, NoReturn, Optional, Union
 from weakref import WeakKeyDictionary
 
 from hypothesis import Verbosity, settings
@@ -127,10 +127,15 @@ def deprecate_random_in_strategy(fmt, *args):
 
 
 class BuildContext:
-    def __init__(self, data, *, is_final=False, close_on_capture=True):
-        assert isinstance(data, ConjectureData)
+    def __init__(
+        self,
+        data: ConjectureData,
+        *,
+        is_final: bool = False,
+        close_on_capture: bool = True,
+    ) -> None:
         self.data = data
-        self.tasks = []
+        self.tasks: list[Callable[[], Any]] = []
         self.is_final = is_final
         self.close_on_capture = close_on_capture
         self.close_on_del = False
