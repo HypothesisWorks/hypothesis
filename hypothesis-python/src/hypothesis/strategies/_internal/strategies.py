@@ -834,7 +834,8 @@ def one_of(
             f"Did you mean st.sampled_from({list(args)!r})?  st.one_of() is used "
             "to combine strategies, but all of the arguments were of other types."
         )
-    # we've handled the case where args is a one-element tuple cont
+    # we've handled the case where args is a one-element sequence [(s1, s2, ...)]
+    # above, so we can assume it's an actual sequence of strategies.
     args = cast(Sequence[SearchStrategy], args)
     return OneOfStrategy(args)
 
