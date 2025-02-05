@@ -72,7 +72,7 @@ def check_sample(
             )
     elif not isinstance(values, (OrderedDict, abc.Sequence, enum.EnumMeta)):
         raise InvalidArgument(
-            f"Cannot sample from {values!r}, not an ordered collection. "
+            f"Cannot sample from {values!r} because it is not an ordered collection. "
             f"Hypothesis goes to some length to ensure that the {strategy_name} "
             "strategy has stable results between runs. To replay a saved "
             "example, the sampled values must have the same iteration order "
