@@ -35,6 +35,7 @@ from typing import (
     TypeVar,
     Union,
     overload,
+    Iterable,
 )
 from unittest import TestCase
 
@@ -321,7 +322,7 @@ def reproduce_failure(version: str, blob: bytes) -> Callable[[TestFunc], TestFun
     return accept
 
 
-def encode_failure(choices):
+def encode_failure(choices: Iterable[ChoiceT]) -> bytes:
     blob = choices_to_bytes(choices)
     compressed = zlib.compress(blob)
     if len(compressed) < len(blob):
@@ -687,7 +688,7 @@ def skip_exceptions_to_reraise():
     return tuple(sorted(exceptions, key=str))
 
 
-def failure_exceptions_to_catch():
+def failure_exceptions_to_catch() -> tuple[type[BaseException], ...]:
     """Return a tuple of exceptions meaning 'this test has failed', to catch.
 
     This is intended to cover most common test runners; if you would
