@@ -492,8 +492,7 @@ class Examples:
         return self.__length
 
     def __getitem__(self, i: int) -> Example:
-        assert isinstance(i, int)
-        n = len(self)
+        n = self.__length
         if i < -n or i >= n:
             raise IndexError(f"Index {i} out of range [-{n}, {n})")
         if i < 0:

@@ -13,6 +13,7 @@ obviously belong anywhere else. If you spot a better home for
 anything that lives here, please move it."""
 
 import array
+from array import ArrayType
 import gc
 import sys
 import time
@@ -22,7 +23,6 @@ from typing import (
     Any,
     Callable,
     Generic,
-    List,
     Literal,
     Optional,
     TypeVar,
@@ -41,7 +41,7 @@ T = TypeVar("T")
 
 def array_or_list(
     code: str, contents: Iterable[int]
-) -> "Union[List[int], array.ArrayType[int]]":
+) -> Union[list[int], "ArrayType[int]"]:
     if code == "O":
         return list(contents)
     return array.array(code, contents)
@@ -82,7 +82,7 @@ class IntList(Sequence[int]):
 
     __slots__ = ("__underlying",)
 
-    __underlying: "Union[List[int], array.ArrayType[int]]"
+    __underlying: Union[list[int], "ArrayType[int]"]
 
     def __init__(self, values: Sequence[int] = ()):
         for code in ARRAY_CODES:
@@ -116,11 +116,13 @@ class IntList(Sequence[int]):
     def __getitem__(self, i: int) -> int: ...  # pragma: no cover
 
     @overload
-    def __getitem__(self, i: slice) -> "IntList": ...  # pragma: no cover
+    def __getitem__(
+        self, i: slice
+    ) -> Union[list[int], "ArrayType[int]"]: ...  # pragma: no cover
 
-    def __getitem__(self, i: Union[int, slice]) -> "Union[int, IntList]":
-        if isinstance(i, slice):
-            return IntList(self.__underlying[i])
+    def __getitem__(
+        self, i: Union[int, slice]
+    ) -> Union[int, list[int], "ArrayType[int]"]:
         return self.__underlying[i]
 
     def __delitem__(self, i: Union[int, slice]) -> None:
