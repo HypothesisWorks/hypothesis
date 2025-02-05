@@ -23,7 +23,7 @@ import unittest
 import warnings
 import zlib
 from collections import defaultdict
-from collections.abc import Coroutine, Generator, Hashable, Sequence
+from collections.abc import Coroutine, Generator, Hashable, Iterable, Sequence
 from functools import partial
 from random import Random
 from typing import (
@@ -35,7 +35,6 @@ from typing import (
     TypeVar,
     Union,
     overload,
-    Iterable,
 )
 from unittest import TestCase
 

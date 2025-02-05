@@ -13,22 +13,13 @@ obviously belong anywhere else. If you spot a better home for
 anything that lives here, please move it."""
 
 import array
-from array import ArrayType
 import gc
 import sys
 import time
 import warnings
+from array import ArrayType
 from collections.abc import Iterable, Iterator, Sequence
-from typing import (
-    Any,
-    Callable,
-    Generic,
-    Literal,
-    Optional,
-    TypeVar,
-    Union,
-    overload,
-)
+from typing import Any, Callable, Generic, Literal, Optional, TypeVar, Union, overload
 
 from sortedcontainers import SortedList
 
