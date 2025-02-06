@@ -68,7 +68,7 @@ ChoiceT: "TypeAlias" = Union[int, str, bool, float, bytes]
 ChoiceKwargsT: "TypeAlias" = Union[
     IntegerKWargs, FloatKWargs, StringKWargs, BytesKWargs, BooleanKWargs
 ]
-ChoiceNameT: "TypeAlias" = Literal["integer", "string", "boolean", "float", "bytes"]
+ChoiceTypeT: "TypeAlias" = Literal["integer", "string", "boolean", "float", "bytes"]
 ChoiceKeyT: "TypeAlias" = Union[
     int, str, bytes, tuple[Literal["bool"], bool], tuple[Literal["float"], int]
 ]
@@ -82,6 +82,100 @@ class ChoiceTemplate:
     def __attrs_post_init__(self) -> None:
         if self.count is not None:
             assert self.count > 0
+
+
+@attr.s(slots=True, repr=False, eq=False)
+class ChoiceNode:
+    type: ChoiceTypeT = attr.ib()
+    value: ChoiceT = attr.ib()
+    kwargs: ChoiceKwargsT = attr.ib()
+    was_forced: bool = attr.ib()
+    index: Optional[int] = attr.ib(default=None)
+
+    def copy(
+        self,
+        *,
+        with_value: Optional[ChoiceT] = None,
+        with_kwargs: Optional[ChoiceKwargsT] = None,
+    ) -> "ChoiceNode":
+        # we may want to allow this combination in the future, but for now it's
+        # a footgun.
+        if self.was_forced:
+            assert with_value is None, "modifying a forced node doesn't make sense"
+        # explicitly not copying index. node indices are only assigned via
+        # ExampleRecord. This prevents footguns with relying on stale indices
+        # after copying.
+        return ChoiceNode(
+            type=self.type,
+            value=self.value if with_value is None else with_value,
+            kwargs=self.kwargs if with_kwargs is None else with_kwargs,
+            was_forced=self.was_forced,
+        )
+
+    @property
+    def trivial(self) -> bool:
+        """
+        A node is trivial if it cannot be simplified any further. This does not
+        mean that modifying a trivial node can't produce simpler test cases when
+        viewing the tree as a whole. Just that when viewing this node in
+        isolation, this is the simplest the node can get.
+        """
+        if self.was_forced:
+            return True
+
+        if self.type != "float":
+            zero_value = choice_from_index(0, self.type, self.kwargs)
+            return choice_equal(self.value, zero_value)
+        else:
+            kwargs = cast(FloatKWargs, self.kwargs)
+            min_value = kwargs["min_value"]
+            max_value = kwargs["max_value"]
+            shrink_towards = 0.0
+
+            if min_value == -math.inf and max_value == math.inf:
+                return choice_equal(self.value, shrink_towards)
+
+            if (
+                not math.isinf(min_value)
+                and not math.isinf(max_value)
+                and math.ceil(min_value) <= math.floor(max_value)
+            ):
+                # the interval contains an integer. the simplest integer is the
+                # one closest to shrink_towards
+                shrink_towards = max(math.ceil(min_value), shrink_towards)
+                shrink_towards = min(math.floor(max_value), shrink_towards)
+                return choice_equal(self.value, float(shrink_towards))
+
+            # the real answer here is "the value in [min_value, max_value] with
+            # the lowest denominator when represented as a fraction".
+            # It would be good to compute this correctly in the future, but it's
+            # also not incorrect to be conservative here.
+            return False
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, ChoiceNode):
+            return NotImplemented
+
+        return (
+            self.type == other.type
+            and choice_equal(self.value, other.value)
+            and choice_kwargs_equal(self.type, self.kwargs, other.kwargs)
+            and self.was_forced == other.was_forced
+        )
+
+    def __hash__(self) -> int:
+        return hash(
+            (
+                self.type,
+                choice_key(self.value),
+                choice_kwargs_key(self.type, self.kwargs),
+                self.was_forced,
+            )
+        )
+
+    def __repr__(self) -> str:
+        forced_marker = " [forced]" if self.was_forced else ""
+        return f"{self.type} {self.value!r}{forced_marker} {self.kwargs!r}"
 
 
 def _size_to_index(size: int, *, alphabet_size: int) -> int:
@@ -330,10 +424,10 @@ def choice_to_index(choice: ChoiceT, kwargs: ChoiceKwargsT) -> int:
 
 
 def choice_from_index(
-    index: int, ir_type: ChoiceNameT, kwargs: ChoiceKwargsT
+    index: int, choice_type: ChoiceTypeT, kwargs: ChoiceKwargsT
 ) -> ChoiceT:
     assert index >= 0
-    if ir_type == "integer":
+    if choice_type == "integer":
         kwargs = cast(IntegerKWargs, kwargs)
         shrink_towards = kwargs["shrink_towards"]
         min_value = kwargs["min_value"]
@@ -375,7 +469,7 @@ def choice_from_index(
                 if index <= zigzag_index(max_value, shrink_towards=shrink_towards):
                     return zigzag_value(index, shrink_towards=shrink_towards)
                 return max_value - index
-    elif ir_type == "boolean":
+    elif choice_type == "boolean":
         kwargs = cast(BooleanKWargs, kwargs)
         # Ordered by [False, True].
         p = kwargs["p"]
@@ -391,13 +485,13 @@ def choice_from_index(
             assert index == 0
             return only
         return bool(index)
-    elif ir_type == "bytes":
+    elif choice_type == "bytes":
         kwargs = cast(BytesKWargs, kwargs)
         value_b = collection_value(
             index, min_size=kwargs["min_size"], alphabet_size=2**8, from_order=identity
         )
         return bytes(value_b)
-    elif ir_type == "string":
+    elif choice_type == "string":
         kwargs = cast(StringKWargs, kwargs)
         intervals = kwargs["intervals"]
         # _s because mypy is unhappy with reusing different-typed names in branches,
@@ -409,7 +503,7 @@ def choice_from_index(
             from_order=intervals.char_in_shrink_order,
         )
         return "".join(value_s)
-    elif ir_type == "float":
+    elif choice_type == "float":
         kwargs = cast(FloatKWargs, kwargs)
         sign = -1 if index >> 64 else 1
         result = sign * lex_to_float(index & ((1 << 64) - 1))
@@ -485,20 +579,22 @@ def choice_equal(choice1: ChoiceT, choice2: ChoiceT) -> bool:
 
 
 def choice_kwargs_equal(
-    ir_type: ChoiceNameT, kwargs1: ChoiceKwargsT, kwargs2: ChoiceKwargsT
+    choice_type: ChoiceTypeT, kwargs1: ChoiceKwargsT, kwargs2: ChoiceKwargsT
 ) -> bool:
-    return choice_kwargs_key(ir_type, kwargs1) == choice_kwargs_key(ir_type, kwargs2)
+    return choice_kwargs_key(choice_type, kwargs1) == choice_kwargs_key(
+        choice_type, kwargs2
+    )
 
 
-def choice_kwargs_key(ir_type, kwargs):
-    if ir_type == "float":
+def choice_kwargs_key(choice_type, kwargs):
+    if choice_type == "float":
         return (
             float_to_int(kwargs["min_value"]),
             float_to_int(kwargs["max_value"]),
             kwargs["allow_nan"],
             kwargs["smallest_nonzero_magnitude"],
         )
-    if ir_type == "integer":
+    if choice_type == "integer":
         return (
             kwargs["min_value"],
             kwargs["max_value"],

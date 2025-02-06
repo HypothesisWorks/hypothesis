@@ -13,7 +13,7 @@ import time
 import pytest
 
 from hypothesis import HealthCheck, assume, example, given, settings, strategies as st
-from hypothesis.internal.conjecture.data import ConjectureData, IRNode
+from hypothesis.internal.conjecture.data import ChoiceNode, ConjectureData
 from hypothesis.internal.conjecture.datatree import compute_max_children
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.shrinker import (
@@ -199,7 +199,7 @@ def test_permits_but_ignores_raising_order(monkeypatch):
         lambda runner: runner.cached_test_function_ir((1,)),
     )
 
-    monkeypatch.setattr(Shrinker, "shrink", lambda self: self.consider_new_tree(ir(2)))
+    monkeypatch.setattr(Shrinker, "shrink", lambda self: self.consider_new_nodes(ir(2)))
 
     @run_to_nodes
     def nodes(data):
@@ -585,19 +585,19 @@ def test_silly_shrinker_subclass():
     assert BadShrinker.shrink(10, lambda _: True) == 10
 
 
-numeric_nodes = nodes(ir_types=["integer", "float"])
+numeric_nodes = nodes(choice_types=["integer", "float"])
 
 
 @given(numeric_nodes, numeric_nodes, st.integers() | st.floats(allow_nan=False))
 @example(
-    IRNode(
-        ir_type="float",
+    ChoiceNode(
+        type="float",
         value=float(MAX_PRECISE_INTEGER - 1),
         kwargs=float_kw(),
         was_forced=False,
     ),
-    IRNode(
-        ir_type="float",
+    ChoiceNode(
+        type="float",
         value=float(MAX_PRECISE_INTEGER - 1),
         kwargs=float_kw(),
         was_forced=False,
@@ -610,15 +610,15 @@ def test_redistribute_numeric_pairs(node1, node2, stop):
     # avoid exhausting the tree while generating, which causes @shrinking_from's
     # runner to raise
     assume(
-        compute_max_children(node1.ir_type, node1.kwargs)
-        + compute_max_children(node2.ir_type, node2.kwargs)
+        compute_max_children(node1.type, node1.kwargs)
+        + compute_max_children(node2.type, node2.kwargs)
         > 2
     )
 
     @shrinking_from([node1.value, node2.value])
     def shrinker(data: ConjectureData):
-        v1 = getattr(data, f"draw_{node1.ir_type}")(**node1.kwargs)
-        v2 = getattr(data, f"draw_{node2.ir_type}")(**node2.kwargs)
+        v1 = getattr(data, f"draw_{node1.type}")(**node1.kwargs)
+        v2 = getattr(data, f"draw_{node2.type}")(**node2.kwargs)
         if v1 + v2 > stop:
             data.mark_interesting()
 

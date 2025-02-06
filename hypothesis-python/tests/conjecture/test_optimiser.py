@@ -13,7 +13,8 @@ import math
 import pytest
 
 from hypothesis import assume, example, given, settings
-from hypothesis.internal.conjecture.data import IRNode, Status
+from hypothesis.internal.conjecture.data import Status
+from hypothesis.internal.conjecture.choice import ChoiceNode
 from hypothesis.internal.conjecture.datatree import compute_max_children
 from hypothesis.internal.conjecture.engine import ConjectureRunner, RunIsComplete
 from hypothesis.internal.entropy import deterministic_PRNG
@@ -226,16 +227,16 @@ def test_optimiser_when_test_grows_buffer_to_overflow():
 
 @given(nodes())
 @example(
-    IRNode(
-        ir_type="bytes",
+    ChoiceNode(
+        type="bytes",
         value=b"\xb1",
         kwargs={"min_size": 1, "max_size": 1},
         was_forced=False,
     )
 )
 @example(
-    IRNode(
-        ir_type="string",
+    ChoiceNode(
+        type="string",
         value="aaaa",
         kwargs={
             "min_size": 0,
@@ -246,10 +247,10 @@ def test_optimiser_when_test_grows_buffer_to_overflow():
     )
 )
 @example(
-    IRNode(ir_type="integer", value=1, kwargs=integer_kw(0, 200), was_forced=False)
+    ChoiceNode(type="integer", value=1, kwargs=integer_kw(0, 200), was_forced=False)
 )
 def test_optimising_all_nodes(node):
-    assume(compute_max_children(node.ir_type, node.kwargs) > 50)
+    assume(compute_max_children(node.type, node.kwargs) > 50)
     size_function = {
         "integer": lambda n: n,
         "float": lambda f: f if math.isfinite(f) else 0,
@@ -260,8 +261,8 @@ def test_optimising_all_nodes(node):
     with deterministic_PRNG():
 
         def test(data):
-            v = getattr(data, f"draw_{node.ir_type}")(**node.kwargs)
-            data.target_observations["v"] = size_function[node.ir_type](v)
+            v = getattr(data, f"draw_{node.type}")(**node.kwargs)
+            data.target_observations["v"] = size_function[node.type](v)
 
         runner = ConjectureRunner(
             test, settings=settings(TEST_SETTINGS, max_examples=50)

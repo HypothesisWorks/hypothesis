@@ -108,14 +108,14 @@ class Optimiser:
             # we can only (sensibly & easily) define hill climbing for
             # numeric-style nodes. It's not clear hill-climbing a string is
             # useful, for instance.
-            if node.ir_type not in {"integer", "float", "bytes", "boolean"}:
+            if node.type not in {"integer", "float", "bytes", "boolean"}:
                 continue
 
             def attempt_replace(k: int) -> bool:
                 """
                 Try replacing the current node in the current best test case
                 with a value which is "k times larger", where the exact notion
-                of "larger" depends on the ir_type.
+                of "larger" depends on the choice_type.
 
                 Note that we use the *current* best and not the one we started with.
                 This helps ensure that if we luck into a good draw when making
@@ -131,10 +131,10 @@ class Optimiser:
                     return False  # pragma: no cover
 
                 new_choice: ChoiceT
-                if node.ir_type in {"integer", "float"}:
+                if node.type in {"integer", "float"}:
                     assert isinstance(node.value, (int, float))
                     new_choice = node.value + k
-                elif node.ir_type == "boolean":
+                elif node.type == "boolean":
                     assert isinstance(node.value, bool)
                     if abs(k) > 1:
                         return False
@@ -145,7 +145,7 @@ class Optimiser:
                     if k == 0:  # pragma: no cover
                         new_choice = node.value
                 else:
-                    assert node.ir_type == "bytes"
+                    assert node.type == "bytes"
                     assert isinstance(node.value, bytes)
                     v = int_from_bytes(node.value)
                     # can't go below zero for bytes

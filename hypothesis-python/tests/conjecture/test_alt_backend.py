@@ -252,9 +252,9 @@ def test_backend_can_shrink_floats():
 # mostly a shoehorned coverage test until the shrinker is migrated to the ir
 # and calls cached_test_function_ir with backends consistently.
 @given(nodes())
-def test_new_conjecture_data_ir_with_backend(node):
+def test_new_conjecture_data_with_backend(node):
     def test(data):
-        getattr(data, f"draw_{node.ir_type}")(**node.kwargs)
+        getattr(data, f"draw_{node.type}")(**node.kwargs)
 
     with temp_register_backend("prng", PrngProvider):
         runner = ConjectureRunner(test, settings=settings(backend="prng"))

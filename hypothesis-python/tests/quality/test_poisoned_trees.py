@@ -87,7 +87,7 @@ def test_can_reduce_poison_from_any_subtree(size, seed):
     nodes = [
         node
         for node in data.nodes
-        if node.ir_type == "integer" and node.kwargs["max_value"] == 2**16 - 1
+        if node.type == "integer" and node.kwargs["max_value"] == 2**16 - 1
     ]
     assert len(nodes) % 2 == 0
 

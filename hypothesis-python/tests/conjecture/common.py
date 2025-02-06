@@ -18,8 +18,8 @@ from hypothesis import HealthCheck, Phase, assume, settings, strategies as st
 from hypothesis.control import current_build_context
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import engine as engine_module
-from hypothesis.internal.conjecture.choice import ChoiceT
-from hypothesis.internal.conjecture.data import ConjectureData, IRNode, Status
+from hypothesis.internal.conjecture.choice import ChoiceNode, ChoiceT
+from hypothesis.internal.conjecture.data import ConjectureData, Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.providers import COLLECTION_DEFAULT_MAX_SIZE
 from hypothesis.internal.conjecture.utils import calc_label_from_name
@@ -349,20 +349,20 @@ def boolean_kwargs(draw, *, use_forced=False):
     return {"p": p, "forced": forced}
 
 
-def kwargs_strategy(ir_type, strategy_kwargs=None, *, use_forced=False):
+def kwargs_strategy(choice_type, strategy_kwargs=None, *, use_forced=False):
     strategy = {
         "boolean": boolean_kwargs,
         "integer": integer_kwargs,
         "float": float_kwargs,
         "bytes": bytes_kwargs,
         "string": string_kwargs,
-    }[ir_type]
+    }[choice_type]
     if strategy_kwargs is None:
         strategy_kwargs = {}
-    return strategy(**strategy_kwargs.get(ir_type, {}), use_forced=use_forced)
+    return strategy(**strategy_kwargs.get(choice_type, {}), use_forced=use_forced)
 
 
-def ir_types_and_kwargs(strategy_kwargs=None, *, use_forced=False):
+def choice_types_kwargs(strategy_kwargs=None, *, use_forced=False):
     options = ["boolean", "integer", "float", "bytes", "string"]
     return st.one_of(
         st.tuples(
@@ -372,30 +372,32 @@ def ir_types_and_kwargs(strategy_kwargs=None, *, use_forced=False):
     )
 
 
-def draw_value(ir_type, kwargs):
+def draw_value(choice_type, kwargs):
     data = fresh_data()
-    return getattr(data, f"draw_{ir_type}")(**kwargs)
+    return getattr(data, f"draw_{choice_type}")(**kwargs)
 
 
 @st.composite
-def nodes(draw, *, was_forced=None, ir_types=None):
-    if ir_types is None:
-        (ir_type, kwargs) = draw(ir_types_and_kwargs())
+def nodes(draw, *, was_forced=None, choice_types=None):
+    if choice_types is None:
+        (choice_type, kwargs) = draw(choice_types_kwargs())
     else:
-        ir_type = draw(st.sampled_from(ir_types))
-        kwargs = draw(kwargs_strategy(ir_type))
+        choice_type = draw(st.sampled_from(choice_types))
+        kwargs = draw(kwargs_strategy(choice_type))
     # ir nodes don't include forced in their kwargs. see was_forced attribute
     del kwargs["forced"]
-    value = draw_value(ir_type, kwargs)
+    value = draw_value(choice_type, kwargs)
     was_forced = draw(st.booleans()) if was_forced is None else was_forced
 
-    return IRNode(ir_type=ir_type, value=value, kwargs=kwargs, was_forced=was_forced)
+    return ChoiceNode(
+        type=choice_type, value=value, kwargs=kwargs, was_forced=was_forced
+    )
 
 
-def ir(*values: list[ChoiceT]) -> list[IRNode]:
+def ir(*values: list[ChoiceT]) -> list[ChoiceNode]:
     """
     For inline-creating an ir node or list of ir nodes, where you don't care about the
-    kwargs. This uses maximally-permissable kwargs and infers the ir_type you meant
+    kwargs. This uses maximally-permissable kwargs and infers the choice_type you meant
     based on the type of the value.
 
     You can optionally pass (value, kwargs) to as an element in order to override
@@ -439,11 +441,11 @@ def ir(*values: list[ChoiceT]) -> list[IRNode]:
             if override_kwargs is None:
                 override_kwargs = {}
 
-        (ir_type, kwargs) = mapping[type(value)]
+        (choice_type, kwargs) = mapping[type(value)]
 
         nodes.append(
-            IRNode(
-                ir_type=ir_type,
+            ChoiceNode(
+                type=choice_type,
                 value=value,
                 kwargs=kwargs | override_kwargs,
                 was_forced=False,

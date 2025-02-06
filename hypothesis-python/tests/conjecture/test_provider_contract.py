@@ -20,9 +20,9 @@ from hypothesis.internal.conjecture.providers import BytestringProvider
 from hypothesis.internal.intervalsets import IntervalSet
 
 from tests.conjecture.common import (
+    choice_types_kwargs,
     float_kw,
     integer_kw,
-    ir_types_and_kwargs,
     nodes,
     string_kw,
 )
@@ -41,8 +41,8 @@ from tests.conjecture.common import (
 @example(b"\x00" * 100, [("float", float_kw())])
 @example(b"\x00" * 100, [("bytes", {"min_size": 0, "max_size": 10})])
 @example(b"\x00", [("integer", integer_kw())])
-@given(st.binary(min_size=200), st.lists(ir_types_and_kwargs()))
-def test_provider_contract_bytestring(bytestring, ir_type_and_kwargs):
+@given(st.binary(min_size=200), st.lists(choice_types_kwargs()))
+def test_provider_contract_bytestring(bytestring, choice_type_and_kwargs):
     data = ConjectureData(
         random=None,
         observer=None,
@@ -50,16 +50,16 @@ def test_provider_contract_bytestring(bytestring, ir_type_and_kwargs):
         provider_kw={"bytestring": bytestring},
     )
 
-    for ir_type, kwargs in ir_type_and_kwargs:
+    for choice_type, kwargs in choice_type_and_kwargs:
         try:
-            value = getattr(data, f"draw_{ir_type}")(**kwargs)
+            value = getattr(data, f"draw_{choice_type}")(**kwargs)
         except StopTest:
             return
 
         assert choice_permitted(value, kwargs)
-        kwargs["forced"] = choice_from_index(0, ir_type, kwargs)
+        kwargs["forced"] = choice_from_index(0, choice_type, kwargs)
         assert choice_equal(
-            kwargs["forced"], getattr(data, f"draw_{ir_type}")(**kwargs)
+            kwargs["forced"], getattr(data, f"draw_{choice_type}")(**kwargs)
         )
 
 
@@ -67,5 +67,5 @@ def test_provider_contract_bytestring(bytestring, ir_type_and_kwargs):
 def test_provider_contract_hypothesis(nodes, random):
     data = ConjectureData(random=random)
     for node in nodes:
-        value = getattr(data, f"draw_{node.ir_type}")(**node.kwargs)
+        value = getattr(data, f"draw_{node.type}")(**node.kwargs)
         assert choice_permitted(value, node.kwargs)
