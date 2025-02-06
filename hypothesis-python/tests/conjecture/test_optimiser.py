@@ -13,8 +13,8 @@ import math
 import pytest
 
 from hypothesis import assume, example, given, settings
-from hypothesis.internal.conjecture.data import Status
 from hypothesis.internal.conjecture.choice import ChoiceNode
+from hypothesis.internal.conjecture.data import Status
 from hypothesis.internal.conjecture.datatree import compute_max_children
 from hypothesis.internal.conjecture.engine import ConjectureRunner, RunIsComplete
 from hypothesis.internal.entropy import deterministic_PRNG

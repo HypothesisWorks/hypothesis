@@ -21,7 +21,7 @@ import sys
 import textwrap
 import types
 import warnings
-from collections.abc import MutableMapping
+from collections.abc import MutableMapping, Sequence
 from functools import partial, wraps
 from io import StringIO
 from keyword import iskeyword
@@ -214,7 +214,9 @@ def convert_keyword_arguments(function, args, kwargs):
     return bound.args, bound.kwargs
 
 
-def convert_positional_arguments(function, args, kwargs):
+def convert_positional_arguments(
+    function: Any, args: Sequence[object], kwargs: dict[str, object]
+) -> tuple[tuple[object, ...], dict[str, object]]:
     """Return a tuple (new_args, new_kwargs) where all possible arguments have
     been moved to kwargs.
 

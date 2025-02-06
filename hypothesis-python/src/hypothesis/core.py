@@ -25,6 +25,7 @@ import zlib
 from collections import defaultdict
 from collections.abc import Coroutine, Generator, Hashable, Iterable, Sequence
 from functools import partial
+from inspect import Parameter
 from random import Random
 from typing import (
     TYPE_CHECKING,
@@ -633,7 +634,13 @@ class Stuff:
     given_kwargs: dict = attr.ib(factory=dict)
 
 
-def process_arguments_to_given(wrapped_test, arguments, kwargs, given_kwargs, params):
+def process_arguments_to_given(
+    wrapped_test: Any,
+    arguments: Sequence[object],
+    kwargs: dict[str, object],
+    given_kwargs: dict[str, SearchStrategy],
+    params: dict[str, Parameter],
+) -> tuple[Sequence[object], dict[str, object], Stuff]:
     selfy = None
     arguments, kwargs = convert_positional_arguments(wrapped_test, arguments, kwargs)
 
