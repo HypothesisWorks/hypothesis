@@ -169,9 +169,9 @@ def test_int_list_extend():
 
 def test_int_list_slice():
     x = IntList([1, 2])
-    assert x[:1] == IntList([1])
-    assert x[0:2] == IntList([1, 2])
-    assert x[1:] == IntList([2])
+    assert list(x[:1]) == [1]
+    assert list(x[0:2]) == [1, 2]
+    assert list(x[1:]) == [2]
 
 
 def test_int_list_del():

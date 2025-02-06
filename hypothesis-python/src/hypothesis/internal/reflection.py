@@ -82,7 +82,7 @@ def _clean_source(src: str) -> bytes:
     return "\n".join(x.rstrip() for x in src.splitlines() if x.rstrip()).encode()
 
 
-def function_digest(function):
+def function_digest(function: Any) -> bytes:
     """Returns a string that is stable across multiple invocations across
     multiple processes and is prone to changing significantly in response to
     minor changes to the function.

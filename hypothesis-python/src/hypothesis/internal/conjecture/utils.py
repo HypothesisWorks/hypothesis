@@ -16,7 +16,7 @@ import sys
 from collections import OrderedDict, abc
 from collections.abc import Sequence
 from functools import lru_cache
-from typing import TYPE_CHECKING, List, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Optional, TypeVar, Union
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import int_from_bytes
@@ -72,7 +72,7 @@ def check_sample(
             )
     elif not isinstance(values, (OrderedDict, abc.Sequence, enum.EnumMeta)):
         raise InvalidArgument(
-            f"Cannot sample from {values!r}, not an ordered collection. "
+            f"Cannot sample from {values!r} because it is not an ordered collection. "
             f"Hypothesis goes to some length to ensure that the {strategy_name} "
             "strategy has stable results between runs. To replay a saved "
             "example, the sampled values must have the same iteration order "
@@ -85,6 +85,73 @@ def check_sample(
     if isinstance(values, range):
         return values
     return tuple(values)
+
+
+@lru_cache(64)
+def compute_sampler_table(weights: tuple[float, ...]) -> list[tuple[int, int, float]]:
+    n = len(weights)
+    table: list[list[int | float | None]] = [[i, None, None] for i in range(n)]
+    total = sum(weights)
+    num_type = type(total)
+
+    zero = num_type(0)  # type: ignore
+    one = num_type(1)  # type: ignore
+
+    small: list[int] = []
+    large: list[int] = []
+
+    probabilities = [w / total for w in weights]
+    scaled_probabilities: list[float] = []
+
+    for i, alternate_chance in enumerate(probabilities):
+        scaled = alternate_chance * n
+        scaled_probabilities.append(scaled)
+        if scaled == 1:
+            table[i][2] = zero
+        elif scaled < 1:
+            small.append(i)
+        else:
+            large.append(i)
+    heapq.heapify(small)
+    heapq.heapify(large)
+
+    while small and large:
+        lo = heapq.heappop(small)
+        hi = heapq.heappop(large)
+
+        assert lo != hi
+        assert scaled_probabilities[hi] > one
+        assert table[lo][1] is None
+        table[lo][1] = hi
+        table[lo][2] = one - scaled_probabilities[lo]
+        scaled_probabilities[hi] = (
+            scaled_probabilities[hi] + scaled_probabilities[lo]
+        ) - one
+
+        if scaled_probabilities[hi] < 1:
+            heapq.heappush(small, hi)
+        elif scaled_probabilities[hi] == 1:
+            table[hi][2] = zero
+        else:
+            heapq.heappush(large, hi)
+    while large:
+        table[large.pop()][2] = zero
+    while small:
+        table[small.pop()][2] = zero
+
+    new_table: list[tuple[int, int, float]] = []
+    for base, alternate, alternate_chance in table:
+        assert isinstance(base, int)
+        assert isinstance(alternate, int) or alternate is None
+        assert alternate_chance is not None
+        if alternate is None:
+            new_table.append((base, base, alternate_chance))
+        elif alternate < base:
+            new_table.append((alternate, base, one - alternate_chance))
+        else:
+            new_table.append((base, alternate, alternate_chance))
+    new_table.sort()
+    return new_table
 
 
 class Sampler:
@@ -109,69 +176,7 @@ class Sampler:
 
     def __init__(self, weights: Sequence[float], *, observe: bool = True):
         self.observe = observe
-
-        n = len(weights)
-        table: "list[list[int | float | None]]" = [[i, None, None] for i in range(n)]
-        total = sum(weights)
-        num_type = type(total)
-
-        zero = num_type(0)  # type: ignore
-        one = num_type(1)  # type: ignore
-
-        small: "List[int]" = []
-        large: "List[int]" = []
-
-        probabilities = [w / total for w in weights]
-        scaled_probabilities: "List[float]" = []
-
-        for i, alternate_chance in enumerate(probabilities):
-            scaled = alternate_chance * n
-            scaled_probabilities.append(scaled)
-            if scaled == 1:
-                table[i][2] = zero
-            elif scaled < 1:
-                small.append(i)
-            else:
-                large.append(i)
-        heapq.heapify(small)
-        heapq.heapify(large)
-
-        while small and large:
-            lo = heapq.heappop(small)
-            hi = heapq.heappop(large)
-
-            assert lo != hi
-            assert scaled_probabilities[hi] > one
-            assert table[lo][1] is None
-            table[lo][1] = hi
-            table[lo][2] = one - scaled_probabilities[lo]
-            scaled_probabilities[hi] = (
-                scaled_probabilities[hi] + scaled_probabilities[lo]
-            ) - one
-
-            if scaled_probabilities[hi] < 1:
-                heapq.heappush(small, hi)
-            elif scaled_probabilities[hi] == 1:
-                table[hi][2] = zero
-            else:
-                heapq.heappush(large, hi)
-        while large:
-            table[large.pop()][2] = zero
-        while small:
-            table[small.pop()][2] = zero
-
-        self.table: "list[tuple[int, int, float]]" = []
-        for base, alternate, alternate_chance in table:
-            assert isinstance(base, int)
-            assert isinstance(alternate, int) or alternate is None
-            assert alternate_chance is not None
-            if alternate is None:
-                self.table.append((base, base, alternate_chance))
-            elif alternate < base:
-                self.table.append((alternate, base, one - alternate_chance))
-            else:
-                self.table.append((base, alternate, alternate_chance))
-        self.table.sort()
+        self.table = compute_sampler_table(tuple(weights))
 
     def sample(
         self,

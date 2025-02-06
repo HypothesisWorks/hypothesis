@@ -16,7 +16,7 @@ import traceback
 from functools import partial
 from inspect import getframeinfo
 from pathlib import Path
-from types import ModuleType
+from types import ModuleType, TracebackType
 from typing import Callable, NamedTuple, Optional
 
 import hypothesis
@@ -57,7 +57,9 @@ FILE_CACHE: dict[bytes, bool] = {}
 is_hypothesis_file = belongs_to(hypothesis)
 
 
-def get_trimmed_traceback(exception=None):
+def get_trimmed_traceback(
+    exception: Optional[BaseException] = None,
+) -> Optional[TracebackType]:
     """Return the current traceback, minus any frames added by Hypothesis."""
     if exception is None:
         _, exception, tb = sys.exc_info()
@@ -67,9 +69,10 @@ def get_trimmed_traceback(exception=None):
     # was raised inside Hypothesis. Additionally, the environment variable
     # HYPOTHESIS_NO_TRACEBACK_TRIM is respected if nonempty, because verbose
     # mode is prohibitively slow when debugging strategy recursion errors.
+    assert hypothesis.settings.default is not None
     if (
         tb is None
-        or os.environ.get("HYPOTHESIS_NO_TRACEBACK_TRIM", None)
+        or os.environ.get("HYPOTHESIS_NO_TRACEBACK_TRIM")
         or hypothesis.settings.default.verbosity >= hypothesis.Verbosity.debug
         or (
             is_hypothesis_file(traceback.extract_tb(tb)[-1][0])
