@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.125.2:
+
+--------------------
+6.125.2 - 2025-02-06
+--------------------
+
+Optimize performance (improves speed by ~5%) and clarify the wording in an error message.
+
 .. _v6.125.1:
 
 --------------------
