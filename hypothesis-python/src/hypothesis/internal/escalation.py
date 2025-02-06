@@ -24,19 +24,20 @@ from hypothesis.errors import _Trimmable
 from hypothesis.internal.compat import BaseExceptionGroup
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
+FILE_CACHE: dict[ModuleType, dict[str, bool]] = {}
+
 
 def belongs_to(package: ModuleType) -> Callable[[str], bool]:
     if getattr(package, "__file__", None) is None:  # pragma: no cover
         return lambda filepath: False
 
     assert package.__file__ is not None
+    FILE_CACHE[package] = {}
     root = Path(package.__file__).resolve().parent
-    cache: dict[type, dict[str, bool]] = {str: {}, bytes: {}}
 
     def accept(filepath: str) -> bool:
-        ftype = type(filepath)
         try:
-            return cache[ftype][filepath]
+            return FILE_CACHE[package][filepath]
         except KeyError:
             pass
         try:
@@ -44,14 +45,11 @@ def belongs_to(package: ModuleType) -> Callable[[str], bool]:
             result = True
         except Exception:
             result = False
-        cache[ftype][filepath] = result
+        FILE_CACHE[package][filepath] = result
         return result
 
     accept.__name__ = f"is_{package.__name__}_file"
     return accept
-
-
-FILE_CACHE: dict[bytes, bool] = {}
 
 
 is_hypothesis_file = belongs_to(hypothesis)
