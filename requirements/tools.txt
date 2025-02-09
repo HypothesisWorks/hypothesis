@@ -18,11 +18,11 @@ attrs==24.1.0
     #   hypothesis (hypothesis-python/setup.py)
 autoflake==2.3.1
     # via shed
-babel==2.16.0
+babel==2.17.0
     # via sphinx
 backports-tarfile==1.2.0
     # via jaraco-context
-beautifulsoup4==4.12.3
+beautifulsoup4==4.13.3
     # via sphinx-codeautolink
 black==25.1.0
     # via shed
@@ -32,7 +32,7 @@ build==1.2.2.post1
     # via pip-tools
 cachetools==5.5.1
     # via tox
-certifi==2024.12.14
+certifi==2025.1.31
     # via requests
 cffi==1.17.1
     # via cryptography
@@ -44,13 +44,13 @@ click==8.1.8
     # via
     #   black
     #   pip-tools
-codespell==2.4.0
+codespell==2.4.1
     # via -r requirements/tools.in
 colorama==0.4.6
     # via tox
 com2ann==0.3.0
     # via shed
-coverage==7.6.10
+coverage==7.6.11
     # via -r requirements/tools.in
 cryptography==44.0.0
     # via
@@ -61,7 +61,7 @@ decorator==5.1.1
     # via ipython
 distlib==0.3.9
     # via virtualenv
-django==5.1.5
+django==5.1.6
     # via -r requirements/tools.in
 docutils==0.21.2
     # via
@@ -101,9 +101,9 @@ importlib-metadata==8.6.1
     # via keyring
 iniconfig==2.0.0
     # via pytest
-ipython==8.31.0
+ipython==8.32.0
     # via -r requirements/tools.in
-isort==5.13.2
+isort==6.0.0
     # via shed
 jaraco-classes==3.4.0
     # via keyring
@@ -145,7 +145,7 @@ more-itertools==10.6.0
     # via
     #   jaraco-classes
     #   jaraco-functools
-mypy==1.14.1
+mypy==1.15.0
     # via -r requirements/tools.in
 mypy-extensions==1.0.0
     # via
@@ -212,7 +212,7 @@ pyproject-hooks==1.2.0
     # via
     #   build
     #   pip-tools
-pyright==1.1.392.post0
+pyright==1.1.393
     # via -r requirements/tools.in
 pytest==8.3.4
     # via
@@ -224,7 +224,7 @@ python-dateutil==2.9.0.post0
     # via
     #   -r requirements/tools.in
     #   pelican
-pytz==2024.2
+pytz==2025.1
     # via feedgenerator
 pyupgrade==3.19.1
     # via shed
@@ -252,7 +252,7 @@ rich==13.9.4
     # via
     #   pelican
     #   twine
-ruff==0.9.3
+ruff==0.9.5
     # via -r requirements/tools.in
 secretstorage==3.3.3
     # via keyring
@@ -332,7 +332,7 @@ types-click==7.1.8
     # via -r requirements/tools.in
 types-pyopenssl==24.1.0.20240722
     # via types-redis
-types-pytz==2024.2.0.20241221
+types-pytz==2025.1.0.20250204
     # via -r requirements/tools.in
 types-redis==4.6.0.20241004
     # via -r requirements/tools.in
@@ -343,6 +343,7 @@ typing-extensions==4.12.2
     #   -r requirements/tools.in
     #   anyio
     #   asgiref
+    #   beautifulsoup4
     #   black
     #   ipython
     #   mypy
@@ -367,7 +368,7 @@ zipp==3.21.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-pip==24.3.1
+pip==25.0
     # via pip-tools
 setuptools==75.8.0
     # via pip-tools
