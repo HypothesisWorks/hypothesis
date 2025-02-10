@@ -391,11 +391,6 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
     def _add_result_to_targets(self, targets, result):
         for target in targets:
             name = self._new_name(target)
-
-            def printer(obj, p, cycle, name=name):
-                return p.text(name)
-
-            self.__printer.singleton_pprinters.setdefault(id(result), printer)
             self.names_to_values[name] = result
             self.bundles.setdefault(target, []).append(VarReference(name))
 
