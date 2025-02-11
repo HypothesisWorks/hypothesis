@@ -10,7 +10,10 @@
 
 from hypothesis import given, settings, strategies as st
 
+from tests.common.utils import Why, xfail_on_crosshair
 
+
+@xfail_on_crosshair(Why.other, strict=False)  # might run fewer
 def test_max_examples_are_respected():
     counter = 0
 
