@@ -32,12 +32,13 @@ def belongs_to(package: ModuleType) -> Callable[[str], bool]:
         return lambda filepath: False
 
     assert package.__file__ is not None
-    FILE_CACHE[package] = {}
+    FILE_CACHE.setdefault(package, {})
+    cache = FILE_CACHE[package]
     root = Path(package.__file__).resolve().parent
 
     def accept(filepath: str) -> bool:
         try:
-            return FILE_CACHE[package][filepath]
+            return cache[filepath]
         except KeyError:
             pass
         try:
@@ -45,7 +46,7 @@ def belongs_to(package: ModuleType) -> Callable[[str], bool]:
             result = True
         except Exception:
             result = False
-        FILE_CACHE[package][filepath] = result
+        cache[filepath] = result
         return result
 
     accept.__name__ = f"is_{package.__name__}_file"
