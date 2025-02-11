@@ -124,4 +124,4 @@ This technique combines especially well with
 [Hypothesis's stateful testing](../rule-based-stateful-testing/), because
 you can use it to then test different implementations of complex APIs. For example, Hypothesis uses this
 property together with stateful testing to [verify that the different implementations of its example database
-behave identically](https://github.com/HypothesisWorks/hypothesis/blob/master/hypothesis-python/tests/nocover/test_database_agreement.py).
+behave identically](https://github.com/HypothesisWorks/hypothesis/blob/main/hypothesis-python/tests/nocover/test_database_agreement.py).

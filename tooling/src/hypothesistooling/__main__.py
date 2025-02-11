@@ -110,13 +110,13 @@ def do_release(package):
 @task()
 def deploy():
     HEAD = tools.hash_for_name("HEAD")
-    MASTER = tools.hash_for_name("origin/master")
+    MAIN = tools.hash_for_name("origin/main")
 
     print("Current head:  ", HEAD)
-    print("Current master:", MASTER)
+    print("Current main:", MAIN)
 
-    if not tools.is_ancestor(HEAD, MASTER):
-        print("Not deploying due to not being on master")
+    if not tools.is_ancestor(HEAD, MAIN):
+        print("Not deploying due to not being on main")
         sys.exit(0)
 
     if "TWINE_PASSWORD" not in os.environ:
