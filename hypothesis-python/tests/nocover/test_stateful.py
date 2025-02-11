@@ -8,11 +8,12 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import inspect
 from collections import namedtuple
 
 import pytest
 
-from hypothesis import settings as Settings
+from hypothesis import Phase, settings as Settings, strategies as st
 from hypothesis.stateful import (
     Bundle,
     RuleBasedStateMachine,
@@ -21,7 +22,25 @@ from hypothesis.stateful import (
     rule,
     run_state_machine_as_test,
 )
-from hypothesis.strategies import booleans, integers, lists
+
+
+def run_to_notes(TestClass):
+    TestCase = TestClass.TestCase
+    # don't add explain phase notes to the error
+    TestCase.settings = Settings(phases=set(Phase) - {Phase.explain})
+    try:
+        TestCase().runTest()
+    except AssertionError as err:
+        return err.__notes__
+
+    raise RuntimeError("Expected an assertion error")
+
+
+def assert_runs_to_output(TestClass, output):
+    # remove the first line, which is always "Falsfying example:"
+    actual = "\n".join(run_to_notes(TestClass)[1:])
+    assert actual == inspect.cleandoc(output.strip())
+
 
 Leaf = namedtuple("Leaf", ("label",))
 Split = namedtuple("Split", ("left", "right"))
@@ -30,7 +49,7 @@ Split = namedtuple("Split", ("left", "right"))
 class BalancedTrees(RuleBasedStateMachine):
     trees = Bundle("BinaryTree")
 
-    @rule(target=trees, x=booleans())
+    @rule(target=trees, x=st.booleans())
     def leaf(self, x):
         return Leaf(x)
 
@@ -81,7 +100,7 @@ class DepthMachine(RuleBasedStateMachine):
 class RoseTreeStateMachine(RuleBasedStateMachine):
     nodes = Bundle("nodes")
 
-    @rule(target=nodes, source=lists(nodes))
+    @rule(target=nodes, source=st.lists(nodes))
     def bunch(self, source):
         return source
 
@@ -149,7 +168,7 @@ class CanSwarm(RuleBasedStateMachine):
     # achieve "swarming" by by just restricting the alphabet for single byte
     # decisions, which is a thing the underlying conjecture engine  will
     # happily do on its own without knowledge of the rule structure.
-    @rule(move=integers(0, 255))
+    @rule(move=st.integers(0, 255))
     def ladder(self, move):
         self.seen.add(move)
         assert len(self.seen) <= 15
@@ -213,29 +232,29 @@ class TestMyStatefulMachine(MyStatefulMachine.TestCase):
 def test_multiple_precondition_bug():
     # See https://github.com/HypothesisWorks/hypothesis/issues/2861
     class MultiplePreconditionMachine(RuleBasedStateMachine):
-        @rule(x=integers())
+        @rule(x=st.integers())
         def good_method(self, x):
             pass
 
         @precondition(lambda self: True)
         @precondition(lambda self: False)
-        @rule(x=integers())
+        @rule(x=st.integers())
         def bad_method_a(self, x):
             raise AssertionError("This rule runs, even though it shouldn't.")
 
         @precondition(lambda self: False)
         @precondition(lambda self: True)
-        @rule(x=integers())
+        @rule(x=st.integers())
         def bad_method_b(self, x):
             raise AssertionError("This rule might be skipped for the wrong reason.")
 
         @precondition(lambda self: True)
-        @rule(x=integers())
+        @rule(x=st.integers())
         @precondition(lambda self: False)
         def bad_method_c(self, x):
             raise AssertionError("This rule runs, even though it shouldn't.")
 
-        @rule(x=integers())
+        @rule(x=st.integers())
         @precondition(lambda self: True)
         @precondition(lambda self: False)
         def bad_method_d(self, x):
@@ -266,3 +285,100 @@ def test_multiple_precondition_bug():
             raise AssertionError("This invariant runs, even though it shouldn't.")
 
     run_state_machine_as_test(MultiplePreconditionMachine)
+
+
+class UnrelatedCall(RuleBasedStateMachine):
+    a = Bundle("a")
+
+    def __init__(self):
+        super().__init__()
+        self.calls = set()
+
+    @rule(target=a, a=st.integers())
+    def add_a(self, a):
+        self.calls.add("add")
+        return a
+
+    @rule(v=a)
+    def f(self, v):
+        self.calls.add("f")
+
+    @precondition(lambda self: "add" in self.calls)
+    @rule(value=st.integers())
+    def unrelated(self, value):
+        self.calls.add("unrelated")
+
+    @rule()
+    def invariant(self):
+        # force all three calls to be made in a particular order (with the
+        # `unrelated` precondition) so we always shrink to a particular counterexample.
+        assert len(self.calls) != 3
+
+
+def test_unrelated_rule_does_not_use_var_reference_repr():
+    # we are specifically looking for state.unrelated(value=0) not being replaced
+    # with state.unrelated(value=a_0). The `unrelated` rule is drawing from
+    # st.integers, not a bundle, so the values should not be conflated even if
+    # they're both 0.
+    assert_runs_to_output(
+        UnrelatedCall,
+        """
+        state = UnrelatedCall()
+        a_0 = state.add_a(a=0)
+        state.f(v=a_0)
+        state.unrelated(value=0)
+        state.invariant()
+        state.teardown()
+        """,
+    )
+
+
+class SourceSameAsTarget(RuleBasedStateMachine):
+    values = Bundle("values")
+
+    @rule(target=values, value=st.lists(values))
+    def f(self, value):
+        assert len(value) == 0
+        return value
+
+
+class SourceSameAsTargetUnclearOrigin(RuleBasedStateMachine):
+    values = Bundle("values")
+
+    def __init__(self):
+        super().__init__()
+        self.called = False
+
+    @rule(target=values, value=st.just([]) | st.lists(values))
+    def f(self, value):
+        assert len(value) == 0 or not self.called
+        # ensure we get two calls: one from st.just([]) as the simplest initial
+        # example, then the second one is the failure from st.lists(values) of
+        # [[]].
+        self.called = True
+        return value
+
+
+@pytest.mark.parametrize(
+    "TestClass", [SourceSameAsTarget, SourceSameAsTargetUnclearOrigin]
+)
+def test_source_same_as_target_doesnt_replace_in_output(TestClass):
+    # one might think that we could track strategies that draw from a bundle and
+    # replace any references to that value with the var reference repr (like values_0).
+    # SourceSameAsTarget shows a case where this might seem desirable.
+    #
+    # The problem is that the strategy may be arbitrarily complicated and use a value
+    # with the same repr as values_0, but from a different source.
+    # SourceSameAsTargetUnclearOrigin shows that this can happen - st.lists(values)
+    # has chosen the value [] from the bundle as a list element, but this could
+    # have also been generated via st.just([]). What we do *not* want to display
+    # here is state.f(value=[values_0]).
+    assert_runs_to_output(
+        TestClass,
+        f"""
+        state = {TestClass.__name__}()
+        values_0 = state.f(value=[])
+        state.f(value=[[]])
+        state.teardown()
+        """,
+    )
