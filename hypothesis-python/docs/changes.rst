@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.125.3:
+
+--------------------
+6.125.3 - 2025-02-11
+--------------------
+
+Improves sharing of some internal cache behavior.
+
 .. _v6.125.2:
 
 --------------------
