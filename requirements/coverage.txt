@@ -18,7 +18,7 @@ click==8.1.8
     # via
     #   -r requirements/coverage.in
     #   black
-coverage[toml]==7.6.10
+coverage[toml]==7.6.11
     # via pytest-cov
 dpcontracts==0.6.0
     # via -r requirements/coverage.in
@@ -73,7 +73,7 @@ python-dateutil==2.9.0.post0
     # via
     #   -r requirements/coverage.in
     #   pandas
-pytz==2024.2
+pytz==2025.1
     # via
     #   -r requirements/coverage.in
     #   pandas
