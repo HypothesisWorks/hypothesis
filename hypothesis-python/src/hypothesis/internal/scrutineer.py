@@ -137,10 +137,15 @@ UNHELPFUL_LOCATIONS = (
     "/warnings.py",
     # Quite rarely, the first AFNP line is in Pytest's internals.
     "/_pytest/_io/saferepr.py",
+    "/_pytest/_io/terminalwriter.py",
     "/_pytest/assertion/*.py",
     "/_pytest/config/__init__.py",
     "/_pytest/pytester.py",
     "/pluggy/_*.py",
+    # used by pytest for failure formatting in the terminal
+    "/pygments/lexer.py",
+    # used by pytest for failure formatting
+    "/difflib.py",
     "/reprlib.py",
     "/typing.py",
     "/conftest.py",
