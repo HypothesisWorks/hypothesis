@@ -405,51 +405,55 @@ def test_low_probabilities_are_still_explored():
     assert prefix[0]
 
 
-def _test_observed_draws_are_recorded_in_tree(ir_type):
-    @given(kwargs_strategy(ir_type))
+def _test_observed_draws_are_recorded_in_tree(choice_type):
+    @given(kwargs_strategy(choice_type))
     def test(kwargs):
         # we currently split pseudo-choices with a single child into their
         # own transition, which clashes with our asserts below. If we ever
         # change this (say, by not writing pseudo choices to the ir at all),
         # this restriction can be relaxed.
-        assume(compute_max_children(ir_type, kwargs) > 1)
+        assume(compute_max_children(choice_type, kwargs) > 1)
 
         tree = DataTree()
         data = fresh_data(observer=tree.new_observer())
-        draw_func = getattr(data, f"draw_{ir_type}")
+        draw_func = getattr(data, f"draw_{choice_type}")
         draw_func(**kwargs)
 
         assert tree.root.transition is None
-        assert tree.root.ir_types == [ir_type]
+        assert tree.root.choice_types == [choice_type]
 
     test()
 
 
-def _test_non_observed_draws_are_not_recorded_in_tree(ir_type):
-    @given(kwargs_strategy(ir_type))
+def _test_non_observed_draws_are_not_recorded_in_tree(choice_type):
+    @given(kwargs_strategy(choice_type))
     def test(kwargs):
-        assume(compute_max_children(ir_type, kwargs) > 1)
+        assume(compute_max_children(choice_type, kwargs) > 1)
 
         tree = DataTree()
         data = fresh_data(observer=tree.new_observer())
-        draw_func = getattr(data, f"draw_{ir_type}")
+        draw_func = getattr(data, f"draw_{choice_type}")
         draw_func(**kwargs, observe=False)
 
         root = tree.root
         assert root.transition is None
-        assert root.kwargs == root.values == root.ir_types == []
+        assert root.kwargs == root.values == root.choice_types == []
 
     test()
 
 
-@pytest.mark.parametrize("ir_type", ["integer", "float", "boolean", "string", "bytes"])
-def test_observed_ir_type_draw(ir_type):
-    _test_observed_draws_are_recorded_in_tree(ir_type)
+@pytest.mark.parametrize(
+    "choice_type", ["integer", "float", "boolean", "string", "bytes"]
+)
+def test_observed_choice_type_draw(choice_type):
+    _test_observed_draws_are_recorded_in_tree(choice_type)
 
 
-@pytest.mark.parametrize("ir_type", ["integer", "float", "boolean", "string", "bytes"])
-def test_non_observed_ir_type_draw(ir_type):
-    _test_non_observed_draws_are_not_recorded_in_tree(ir_type)
+@pytest.mark.parametrize(
+    "choice_type", ["integer", "float", "boolean", "string", "bytes"]
+)
+def test_non_observed_choice_type_draw(choice_type):
+    _test_non_observed_draws_are_not_recorded_in_tree(choice_type)
 
 
 def test_can_generate_hard_values():
@@ -556,10 +560,10 @@ def test_datatree_repr(bool_kwargs, int_kwargs):
 
 
 def _draw(data, node, *, forced=None):
-    return getattr(data, f"draw_{node.ir_type}")(**node.kwargs, forced=forced)
+    return getattr(data, f"draw_{node.type}")(**node.kwargs, forced=forced)
 
 
-@given(nodes(was_forced=True, ir_types=["float"]))
+@given(nodes(was_forced=True, choice_types=["float"]))
 def test_simulate_forced_floats(node):
     tree = DataTree()
 

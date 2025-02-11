@@ -26,8 +26,8 @@ from hypothesis.internal.conjecture.choice import (
     BooleanKWargs,
     BytesKWargs,
     ChoiceKwargsT,
-    ChoiceNameT,
     ChoiceT,
+    ChoiceTypeT,
     FloatKWargs,
     IntegerKWargs,
     StringKWargs,
@@ -81,10 +81,10 @@ class Killed:
 
 
 def _node_pretty(
-    ir_type: ChoiceNameT, value: ChoiceT, kwargs: ChoiceKwargsT, *, forced: bool
+    choice_type: ChoiceTypeT, value: ChoiceT, kwargs: ChoiceKwargsT, *, forced: bool
 ) -> str:
     forced_marker = " [forced]" if forced else ""
-    return f"{ir_type} {value!r}{forced_marker} {kwargs}"
+    return f"{choice_type} {value!r}{forced_marker} {kwargs}"
 
 
 @attr.s(slots=True)
@@ -93,12 +93,12 @@ class Branch:
     to drawn."""
 
     kwargs: ChoiceKwargsT = attr.ib()
-    ir_type: ChoiceNameT = attr.ib()
+    choice_type: ChoiceTypeT = attr.ib()
     children: dict[ChoiceT, "TreeNode"] = attr.ib(repr=False)
 
     @property
     def max_children(self) -> int:
-        max_children = compute_max_children(self.ir_type, self.kwargs)
+        max_children = compute_max_children(self.choice_type, self.kwargs)
         assert max_children > 0
         return max_children
 
@@ -107,7 +107,7 @@ class Branch:
         for i, (value, child) in enumerate(self.children.items()):
             if i > 0:
                 p.break_()
-            p.text(_node_pretty(self.ir_type, value, self.kwargs, forced=False))
+            p.text(_node_pretty(self.choice_type, value, self.kwargs, forced=False))
             with p.indent(2):
                 p.break_()
                 p.pretty(child)
@@ -179,8 +179,8 @@ def _count_distinct_strings(*, alphabet_size: int, min_size: int, max_size: int)
     return sum(alphabet_size**k for k in range(min_size, max_size + 1))
 
 
-def compute_max_children(ir_type: ChoiceNameT, kwargs: ChoiceKwargsT) -> int:
-    if ir_type == "integer":
+def compute_max_children(choice_type: ChoiceTypeT, kwargs: ChoiceKwargsT) -> int:
+    if choice_type == "integer":
         kwargs = cast(IntegerKWargs, kwargs)
         min_value = kwargs["min_value"]
         max_value = kwargs["max_value"]
@@ -198,19 +198,19 @@ def compute_max_children(ir_type: ChoiceNameT, kwargs: ChoiceKwargsT) -> int:
         # direction we want. ((2**128 - 1) // 2) + 1 == 2 ** 127
         assert (min_value is None) ^ (max_value is None)
         return 2**127
-    elif ir_type == "boolean":
+    elif choice_type == "boolean":
         kwargs = cast(BooleanKWargs, kwargs)
         p = kwargs["p"]
         # probabilities of 0 or 1 (or effectively 0 or 1) only have one choice.
         if p <= 2 ** (-64) or p >= (1 - 2 ** (-64)):
             return 1
         return 2
-    elif ir_type == "bytes":
+    elif choice_type == "bytes":
         kwargs = cast(BytesKWargs, kwargs)
         return _count_distinct_strings(
             alphabet_size=2**8, min_size=kwargs["min_size"], max_size=kwargs["max_size"]
         )
-    elif ir_type == "string":
+    elif choice_type == "string":
         kwargs = cast(StringKWargs, kwargs)
         min_size = kwargs["min_size"]
         max_size = kwargs["max_size"]
@@ -229,7 +229,7 @@ def compute_max_children(ir_type: ChoiceNameT, kwargs: ChoiceKwargsT) -> int:
         return _count_distinct_strings(
             alphabet_size=len(intervals), min_size=min_size, max_size=max_size
         )
-    elif ir_type == "float":
+    elif choice_type == "float":
         kwargs = cast(FloatKWargs, kwargs)
         min_value_f = kwargs["min_value"]
         max_value_f = kwargs["max_value"]
@@ -261,12 +261,12 @@ def compute_max_children(ir_type: ChoiceNameT, kwargs: ChoiceKwargsT) -> int:
             count += 1
         return count
 
-    raise NotImplementedError(f"unhandled ir_type {ir_type}")
+    raise NotImplementedError(f"unhandled choice_type {choice_type}")
 
 
 # In theory, this is a strict superset of the functionality of compute_max_children;
 #
-#   assert len(all_children(ir_type, kwargs)) == compute_max_children(ir_type, kwargs)
+#   assert len(all_children(choice_type, kwargs)) == compute_max_children(choice_type, kwargs)
 #
 # In practice, we maintain two distinct implementations for efficiency and space
 # reasons. If you just need the number of children, it is cheaper to use
@@ -278,11 +278,11 @@ def _floats_between(a: float, b: float) -> Generator[float, None, None]:
 
 
 def all_children(
-    ir_type: ChoiceNameT, kwargs: ChoiceKwargsT
+    choice_type: ChoiceTypeT, kwargs: ChoiceKwargsT
 ) -> Generator[ChoiceT, None, None]:
-    if ir_type != "float":
-        for index in range(compute_max_children(ir_type, kwargs)):
-            yield choice_from_index(index, ir_type, kwargs)
+    if choice_type != "float":
+        for index in range(compute_max_children(choice_type, kwargs)):
+            yield choice_from_index(index, choice_type, kwargs)
     else:
         kwargs = cast(FloatKWargs, kwargs)
         # the float ordering is not injective (because of resampling
@@ -331,7 +331,7 @@ class TreeNode:
 
     Conceptually, you can unfold a single TreeNode storing n values in its lists
     into a sequence of n nodes, each a child of the last. In other words,
-    (kwargs[i], values[i], ir_types[i]) corresponds to the single node at index
+    (kwargs[i], values[i], choice_types[i]) corresponds to the single node at index
     i.
 
     Note that if a TreeNode represents a choice (i.e. the nodes cannot be compacted
@@ -384,11 +384,11 @@ class TreeNode:
                   └───┘      └───┘
     """
 
-    # The kwargs, value, and ir_types of the nodes stored here. These always
+    # The kwargs, value, and choice_types of the nodes stored here. These always
     # have the same length. The values at index i belong to node i.
     kwargs: list[ChoiceKwargsT] = attr.ib(factory=list)
     values: list[ChoiceT] = attr.ib(factory=list)
-    ir_types: list[ChoiceNameT] = attr.ib(factory=list)
+    choice_types: list[ChoiceTypeT] = attr.ib(factory=list)
 
     # The indices of nodes which had forced values.
     #
@@ -445,22 +445,24 @@ class TreeNode:
         key = self.values[i]
 
         child = TreeNode(
-            ir_types=self.ir_types[i + 1 :],
+            choice_types=self.choice_types[i + 1 :],
             kwargs=self.kwargs[i + 1 :],
             values=self.values[i + 1 :],
             transition=self.transition,
         )
         self.transition = Branch(
-            kwargs=self.kwargs[i], ir_type=self.ir_types[i], children={key: child}
+            kwargs=self.kwargs[i],
+            choice_type=self.choice_types[i],
+            children={key: child},
         )
         if self.__forced is not None:
             child.__forced = {j - i - 1 for j in self.__forced if j > i}
             self.__forced = {j for j in self.__forced if j < i}
         child.check_exhausted()
-        del self.ir_types[i:]
+        del self.choice_types[i:]
         del self.values[i:]
         del self.kwargs[i:]
-        assert len(self.values) == len(self.kwargs) == len(self.ir_types) == i
+        assert len(self.values) == len(self.kwargs) == len(self.choice_types) == i
 
     def check_exhausted(self) -> bool:
         """
@@ -509,13 +511,15 @@ class TreeNode:
     def _repr_pretty_(self, p: "RepresentationPrinter", cycle: bool) -> None:
         assert cycle is False
         indent = 0
-        for i, (ir_type, kwargs, value) in enumerate(
-            zip(self.ir_types, self.kwargs, self.values)
+        for i, (choice_type, kwargs, value) in enumerate(
+            zip(self.choice_types, self.kwargs, self.values)
         ):
             with p.indent(indent):
                 if i > 0:
                     p.break_()
-                p.text(_node_pretty(ir_type, value, kwargs, forced=i in self.forced))
+                p.text(
+                    _node_pretty(choice_type, value, kwargs, forced=i in self.forced)
+                )
             indent += 2
 
         with p.indent(indent):
@@ -539,7 +543,7 @@ class DataTree:
 
     DataTree tracks the following:
 
-    - Draws, at the ir level (with some ir_type, e.g. "integer")
+    - Drawn choices in the typed choice sequence
       - ConjectureData.draw_integer()
       - ConjectureData.draw_float()
       - ConjectureData.draw_string()
@@ -548,8 +552,8 @@ class DataTree:
     - Test conclusions (with some Status, e.g. Status.VALID)
       - ConjectureData.conclude_test()
 
-    A DataTree is — surprise — a *tree*. A node in this tree is either a draw with
-    some value, a test conclusion with some Status, or a special `Killed` value,
+    A DataTree is — surprise — a *tree*. A node in this tree is either a choice draw
+    with some value, a test conclusion with some Status, or a special `Killed` value,
     which denotes that further draws may exist beyond this node but should not be
     considered worth exploring when generating novel prefixes. A node is a leaf
     iff it is a conclusion or Killed.
@@ -694,8 +698,8 @@ class DataTree:
         assert not self.is_exhausted
         prefix = []
 
-        def append_choice(ir_type: ChoiceNameT, choice: ChoiceT) -> None:
-            if ir_type == "float":
+        def append_choice(choice_type: ChoiceTypeT, choice: ChoiceT) -> None:
+            if choice_type == "float":
                 assert isinstance(choice, int)
                 choice = int_to_float(choice)
             prefix.append(choice)
@@ -703,17 +707,19 @@ class DataTree:
         current_node = self.root
         while True:
             assert not current_node.is_exhausted
-            for i, (ir_type, kwargs, value) in enumerate(
-                zip(current_node.ir_types, current_node.kwargs, current_node.values)
+            for i, (choice_type, kwargs, value) in enumerate(
+                zip(current_node.choice_types, current_node.kwargs, current_node.values)
             ):
                 if i in current_node.forced:
-                    append_choice(ir_type, value)
+                    append_choice(choice_type, value)
                 else:
                     attempts = 0
                     while True:
                         if attempts <= 10:
                             try:
-                                node_value = self._draw(ir_type, kwargs, random=random)
+                                node_value = self._draw(
+                                    choice_type, kwargs, random=random
+                                )
                             except StopTest:  # pragma: no cover
                                 # it is possible that drawing from a fresh data can
                                 # overrun BUFFER_SIZE, due to eg unlucky rejection sampling
@@ -722,15 +728,15 @@ class DataTree:
                                 continue
                         else:
                             node_value = self._draw_from_cache(
-                                ir_type, kwargs, key=id(current_node), random=random
+                                choice_type, kwargs, key=id(current_node), random=random
                             )
 
                         if node_value != value:
-                            append_choice(ir_type, node_value)
+                            append_choice(choice_type, node_value)
                             break
                         attempts += 1
                         self._reject_child(
-                            ir_type, kwargs, child=node_value, key=id(current_node)
+                            choice_type, kwargs, child=node_value, key=id(current_node)
                         )
                     # We've now found a value that is allowed to
                     # vary, so what follows is not fixed.
@@ -747,27 +753,33 @@ class DataTree:
                     if attempts <= 10:
                         try:
                             node_value = self._draw(
-                                branch.ir_type, branch.kwargs, random=random
+                                branch.choice_type, branch.kwargs, random=random
                             )
                         except StopTest:  # pragma: no cover
                             attempts += 1
                             continue
                     else:
                         node_value = self._draw_from_cache(
-                            branch.ir_type, branch.kwargs, key=id(branch), random=random
+                            branch.choice_type,
+                            branch.kwargs,
+                            key=id(branch),
+                            random=random,
                         )
                     try:
                         child = branch.children[node_value]
                     except KeyError:
-                        append_choice(branch.ir_type, node_value)
+                        append_choice(branch.choice_type, node_value)
                         return tuple(prefix)
                     if not child.is_exhausted:
-                        append_choice(branch.ir_type, node_value)
+                        append_choice(branch.choice_type, node_value)
                         current_node = child
                         break
                     attempts += 1
                     self._reject_child(
-                        branch.ir_type, branch.kwargs, child=node_value, key=id(branch)
+                        branch.choice_type,
+                        branch.kwargs,
+                        child=node_value,
+                        key=id(branch),
                     )
 
                     # We don't expect this assertion to ever fire, but coverage
@@ -798,24 +810,26 @@ class DataTree:
         tree. This will likely change in future."""
         node = self.root
 
-        def draw(ir_type, kwargs, *, forced=None, convert_forced=True):
-            if ir_type == "float" and forced is not None and convert_forced:
+        def draw(choice_type, kwargs, *, forced=None, convert_forced=True):
+            if choice_type == "float" and forced is not None and convert_forced:
                 forced = int_to_float(forced)
 
-            draw_func = getattr(data, f"draw_{ir_type}")
+            draw_func = getattr(data, f"draw_{choice_type}")
             value = draw_func(**kwargs, forced=forced)
 
-            if ir_type == "float":
+            if choice_type == "float":
                 value = float_to_int(value)
             return value
 
         try:
             while True:
-                for i, (ir_type, kwargs, previous) in enumerate(
-                    zip(node.ir_types, node.kwargs, node.values)
+                for i, (choice_type, kwargs, previous) in enumerate(
+                    zip(node.choice_types, node.kwargs, node.values)
                 ):
                     v = draw(
-                        ir_type, kwargs, forced=previous if i in node.forced else None
+                        choice_type,
+                        kwargs,
+                        forced=previous if i in node.forced else None,
                     )
                     if v != previous:
                         raise PreviouslyUnseenBehaviour
@@ -825,7 +839,7 @@ class DataTree:
                 elif node.transition is None:
                     raise PreviouslyUnseenBehaviour
                 elif isinstance(node.transition, Branch):
-                    v = draw(node.transition.ir_type, node.transition.kwargs)
+                    v = draw(node.transition.choice_type, node.transition.kwargs)
                     try:
                         node = node.transition.children[v]
                     except KeyError as err:
@@ -841,11 +855,11 @@ class DataTree:
         return TreeRecordingObserver(self)
 
     def _draw(
-        self, ir_type: ChoiceNameT, kwargs: ChoiceKwargsT, *, random: Random
+        self, choice_type: ChoiceTypeT, kwargs: ChoiceKwargsT, *, random: Random
     ) -> ChoiceT:
         from hypothesis.internal.conjecture.data import draw_choice
 
-        value = draw_choice(ir_type, kwargs, random=random)
+        value = draw_choice(choice_type, kwargs, random=random)
         # using floats as keys into branch.children breaks things, because
         # e.g. hash(0.0) == hash(-0.0) would collide as keys when they are
         # in fact distinct child branches.
@@ -854,12 +868,12 @@ class DataTree:
         # float key is in its bits form (as a key into branch.children) and
         # when it is in its float form (as a value we want to write to the
         # buffer), and converting between the two forms as appropriate.
-        if ir_type == "float":
+        if choice_type == "float":
             value = float_to_int(value)
         return value
 
     def _get_children_cache(
-        self, ir_type: ChoiceNameT, kwargs: ChoiceKwargsT, *, key: ChoiceT
+        self, choice_type: ChoiceTypeT, kwargs: ChoiceKwargsT, *, key: ChoiceT
     ) -> ChildrenCacheValueT:
         # cache the state of the children generator per node/branch (passed as
         # `key` here), such that we track which children we've already tried
@@ -871,7 +885,7 @@ class DataTree:
         # with. Whenever we need to top up this list, we will draw a new value
         # from the generator.
         if key not in self._children_cache:
-            generator = all_children(ir_type, kwargs)
+            generator = all_children(choice_type, kwargs)
             children: list[ChoiceT] = []
             rejected: set[ChoiceT] = set()
             self._children_cache[key] = (generator, children, rejected)
@@ -880,14 +894,14 @@ class DataTree:
 
     def _draw_from_cache(
         self,
-        ir_type: ChoiceNameT,
+        choice_type: ChoiceTypeT,
         kwargs: ChoiceKwargsT,
         *,
         key: ChoiceT,
         random: Random,
     ) -> ChoiceT:
         (generator, children, rejected) = self._get_children_cache(
-            ir_type, kwargs, key=key
+            choice_type, kwargs, key=key
         )
         # Keep a stock of 100 potentially-valid children at all times.
         # This number is chosen to balance memory/speed vs randomness. Ideally
@@ -897,7 +911,7 @@ class DataTree:
         # annoying.
         if len(children) < 100:  # pragma: no branch
             for v in generator:
-                if ir_type == "float":
+                if choice_type == "float":
                     assert isinstance(v, float)
                     v = float_to_int(v)
                 if v in rejected:
@@ -910,14 +924,14 @@ class DataTree:
 
     def _reject_child(
         self,
-        ir_type: ChoiceNameT,
+        choice_type: ChoiceTypeT,
         kwargs: ChoiceKwargsT,
         *,
         child: ChoiceT,
         key: ChoiceT,
     ) -> None:
         (_generator, children, rejected) = self._get_children_cache(
-            ir_type, kwargs, key=key
+            choice_type, kwargs, key=key
         )
         rejected.add(child)
         # we remove a child from the list of possible children *only* when it is
@@ -978,7 +992,7 @@ class TreeRecordingObserver(DataObserver):
 
     def draw_value(
         self,
-        ir_type: ChoiceNameT,
+        choice_type: ChoiceTypeT,
         value: ChoiceT,
         *,
         was_forced: bool,
@@ -991,9 +1005,9 @@ class TreeRecordingObserver(DataObserver):
         if isinstance(value, float):
             value = float_to_int(value)
 
-        assert len(node.kwargs) == len(node.values) == len(node.ir_types)
+        assert len(node.kwargs) == len(node.values) == len(node.choice_types)
         if i < len(node.values):
-            if ir_type != node.ir_types[i] or kwargs != node.kwargs[i]:
+            if choice_type != node.choice_types[i] or kwargs != node.kwargs[i]:
                 raise FlakyStrategyDefinition(_FLAKY_STRAT_MSG)
             # Note that we don't check whether a previously
             # forced value is now free. That will be caught
@@ -1014,7 +1028,7 @@ class TreeRecordingObserver(DataObserver):
         else:
             trans = node.transition
             if trans is None:
-                node.ir_types.append(ir_type)
+                node.choice_types.append(choice_type)
                 node.kwargs.append(kwargs)
                 node.values.append(value)
                 if was_forced:
@@ -1035,7 +1049,7 @@ class TreeRecordingObserver(DataObserver):
                 # An alternative is not writing such choices to the tree at
                 # all, and thus guaranteeing that each node has at least 2 max
                 # children.
-                if compute_max_children(ir_type, kwargs) == 1 and not was_forced:
+                if compute_max_children(choice_type, kwargs) == 1 and not was_forced:
                     node.split_at(i)
                     assert isinstance(node.transition, Branch)
                     self.__current_node = node.transition.children[value]
@@ -1047,7 +1061,7 @@ class TreeRecordingObserver(DataObserver):
                 raise FlakyStrategyDefinition(_FLAKY_STRAT_MSG)
             else:
                 assert isinstance(trans, Branch), trans
-                if ir_type != trans.ir_type or kwargs != trans.kwargs:
+                if choice_type != trans.choice_type or kwargs != trans.kwargs:
                     raise FlakyStrategyDefinition(_FLAKY_STRAT_MSG)
                 try:
                     self.__current_node = trans.children[value]

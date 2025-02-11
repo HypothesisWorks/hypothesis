@@ -25,6 +25,7 @@ from hypothesis import (
 )
 from hypothesis.errors import StopTest
 from hypothesis.internal.conjecture.choice import (
+    ChoiceNode,
     ChoiceTemplate,
     choice_equal,
     choice_from_index,
@@ -35,7 +36,6 @@ from hypothesis.internal.conjecture.choice import (
 from hypothesis.internal.conjecture.data import (
     COLLECTION_DEFAULT_MAX_SIZE,
     ConjectureData,
-    IRNode,
     Status,
     choices_size,
 )
@@ -50,13 +50,13 @@ from hypothesis.internal.intervalsets import IntervalSet
 
 from tests.common.debug import minimal
 from tests.conjecture.common import (
+    choice_types_kwargs,
     clamped_shrink_towards,
     draw_value,
     float_kw,
     fresh_data,
     integer_kw,
     integer_kwargs,
-    ir_types_and_kwargs,
     nodes,
 )
 
@@ -67,14 +67,14 @@ from tests.conjecture.common import (
 @example(("integer", integer_kw(max_value=-(2**200))))
 @example(("integer", integer_kw(min_value=2**200)))
 @example(("integer", integer_kw(-(2**200), 2**200)))
-@given(ir_types_and_kwargs())
-def test_compute_max_children_is_positive(ir_type_and_kwargs):
-    (ir_type, kwargs) = ir_type_and_kwargs
-    assert compute_max_children(ir_type, kwargs) >= 0
+@given(choice_types_kwargs())
+def test_compute_max_children_is_positive(choice_type_and_kwargs):
+    (choice_type, kwargs) = choice_type_and_kwargs
+    assert compute_max_children(choice_type, kwargs) >= 0
 
 
 @pytest.mark.parametrize(
-    "ir_type, kwargs, count_children",
+    "choice_type, kwargs, count_children",
     [
         ("integer", {"min_value": 1, "max_value": 2, "weights": {1: 0.1, 2: 0.1}}, 2),
         # only possibility is the empty string
@@ -168,8 +168,8 @@ def test_compute_max_children_is_positive(ir_type_and_kwargs):
         ("float", float_kw(-3, -2, smallest_nonzero_magnitude=4.0), 0),
     ],
 )
-def test_compute_max_children(ir_type, kwargs, count_children):
-    assert compute_max_children(ir_type, kwargs) == count_children
+def test_compute_max_children(choice_type, kwargs, count_children):
+    assert compute_max_children(choice_type, kwargs) == count_children
 
 
 @given(st.text(min_size=1, max_size=1), st.integers(0, 100))
@@ -203,11 +203,11 @@ def test_draw_string_single_interval_with_equal_bounds(s, n):
 # using a smallest_nonzero_magnitude which happens to filter out everything
 @example(("float", float_kw(1.0, 2.0, smallest_nonzero_magnitude=3.0)))
 @example(("integer", integer_kw(1, 2, weights={1: 0.2, 2: 0.4})))
-@given(ir_types_and_kwargs())
+@given(choice_types_kwargs())
 @settings(suppress_health_check=[HealthCheck.filter_too_much])
-def test_compute_max_children_and_all_children_agree(ir_type_and_kwargs):
-    (ir_type, kwargs) = ir_type_and_kwargs
-    max_children = compute_max_children(ir_type, kwargs)
+def test_compute_max_children_and_all_children_agree(choice_type_and_kwargs):
+    (choice_type, kwargs) = choice_type_and_kwargs
+    max_children = compute_max_children(choice_type, kwargs)
 
     # avoid slowdowns / OOM when reifying extremely large all_children generators.
     # We also hard cap at MAX_CHILDREN_EFFECTIVELY_INFINITE, because max_children
@@ -215,7 +215,7 @@ def test_compute_max_children_and_all_children_agree(ir_type_and_kwargs):
     # all_children.
     cap = min(100_000, MAX_CHILDREN_EFFECTIVELY_INFINITE)
     assume(max_children < cap)
-    assert len(list(all_children(ir_type, kwargs))) == max_children
+    assert len(list(all_children(choice_type, kwargs))) == max_children
 
 
 # it's very hard to test that unbounded integer ranges agree with
@@ -246,17 +246,17 @@ def test_nodes(random):
 
     data.freeze()
     expected_tree_nodes = (
-        IRNode(
-            ir_type="float", value=5.0, kwargs=float_kw(-10.0, 10.0), was_forced=True
+        ChoiceNode(
+            type="float", value=5.0, kwargs=float_kw(-10.0, 10.0), was_forced=True
         ),
-        IRNode(
-            ir_type="boolean",
+        ChoiceNode(
+            type="boolean",
             value=True,
             kwargs={"p": 0.5},
             was_forced=True,
         ),
-        IRNode(
-            ir_type="string",
+        ChoiceNode(
+            type="string",
             value="abbcccdddd",
             kwargs={
                 "intervals": IntervalSet.from_string("abcd"),
@@ -265,23 +265,25 @@ def test_nodes(random):
             },
             was_forced=True,
         ),
-        IRNode(
-            ir_type="bytes",
+        ChoiceNode(
+            type="bytes",
             value=bytes(8),
             kwargs={"min_size": 8, "max_size": 8},
             was_forced=True,
         ),
-        IRNode(ir_type="integer", value=50, kwargs=integer_kw(0, 100), was_forced=True),
+        ChoiceNode(
+            type="integer", value=50, kwargs=integer_kw(0, 100), was_forced=True
+        ),
     )
     assert data.nodes == expected_tree_nodes
 
 
 @given(nodes())
-def test_copy_ir_node(node):
+def test_copy_choice_node(node):
     assert node == node
 
     assume(not node.was_forced)
-    new_value = draw_value(node.ir_type, node.kwargs)
+    new_value = draw_value(node.type, node.kwargs)
     # if we drew the same value as before, the node should still be equal
     assert (node.copy(with_value=new_value) == node) is (
         choice_equal(new_value, node.value)
@@ -289,7 +291,7 @@ def test_copy_ir_node(node):
 
 
 @given(nodes())
-def test_ir_node_equality(node):
+def test_choice_node_equality(node):
     assert node == node
     # for coverage on our NotImplemented return, more than anything.
     assert node != 42
@@ -301,7 +303,7 @@ def test_cannot_modify_forced_nodes(node):
         node.copy(with_value=42)
 
 
-def test_data_with_empty_ir_tree_is_overrun():
+def test_data_with_empty_choices_is_overrun():
     data = ConjectureData.for_choices([])
     with pytest.raises(StopTest):
         data.draw_integer()
@@ -320,30 +322,30 @@ def test_data_with_changed_forced_value(node):
 
     data = ConjectureData.for_choices([node.value])
 
-    draw_func = getattr(data, f"draw_{node.ir_type}")
+    draw_func = getattr(data, f"draw_{node.type}")
     kwargs = deepcopy(node.kwargs)
-    kwargs["forced"] = draw_value(node.ir_type, node.kwargs)
+    kwargs["forced"] = draw_value(node.type, node.kwargs)
     assume(not choice_equal(kwargs["forced"], node.value))
 
     assert choice_equal(draw_func(**kwargs), kwargs["forced"])
 
 
 # ensure we hit bare-minimum coverage for all ir types.
-@example(IRNode(ir_type="float", value=0.0, kwargs=float_kw(), was_forced=True))
+@example(ChoiceNode(type="float", value=0.0, kwargs=float_kw(), was_forced=True))
 @example(
-    IRNode(
-        ir_type="boolean",
+    ChoiceNode(
+        type="boolean",
         value=False,
         kwargs={"p": 0.5},
         was_forced=True,
     )
 )
 @example(
-    IRNode(ir_type="integer", value=50, kwargs=integer_kw(50, 100), was_forced=True)
+    ChoiceNode(type="integer", value=50, kwargs=integer_kw(50, 100), was_forced=True)
 )
 @example(
-    IRNode(
-        ir_type="string",
+    ChoiceNode(
+        type="string",
         value="aaaa",
         kwargs={
             "intervals": IntervalSet.from_string("bcda"),
@@ -354,8 +356,8 @@ def test_data_with_changed_forced_value(node):
     )
 )
 @example(
-    IRNode(
-        ir_type="bytes",
+    ChoiceNode(
+        type="bytes",
         value=bytes(8),
         kwargs={"min_size": 8, "max_size": 8},
         was_forced=True,
@@ -368,24 +370,24 @@ def test_data_with_same_forced_value_is_valid(node):
     # ir tree: v1 [was_forced=True]
     # drawing:    [forced=v1]
     data = ConjectureData.for_choices([node.value])
-    draw_func = getattr(data, f"draw_{node.ir_type}")
+    draw_func = getattr(data, f"draw_{node.type}")
 
     kwargs = deepcopy(node.kwargs)
     kwargs["forced"] = node.value
     assert choice_equal(draw_func(**kwargs), kwargs["forced"])
 
 
-@given(ir_types_and_kwargs())
+@given(choice_types_kwargs())
 @settings(suppress_health_check=[HealthCheck.filter_too_much])
-def test_all_children_are_permitted_values(ir_type_and_kwargs):
-    (ir_type, kwargs) = ir_type_and_kwargs
-    max_children = compute_max_children(ir_type, kwargs)
+def test_all_children_are_permitted_values(choice_type_and_kwargs):
+    (choice_type, kwargs) = choice_type_and_kwargs
+    max_children = compute_max_children(choice_type, kwargs)
 
     cap = min(100_000, MAX_CHILDREN_EFFECTIVELY_INFINITE)
     assume(max_children < cap)
 
     # test that all_children -> choice_permitted (but not necessarily the converse.)
-    for value in all_children(ir_type, kwargs):
+    for value in all_children(choice_type, kwargs):
         assert choice_permitted(value, kwargs), value
 
 
@@ -458,18 +460,18 @@ def test_forced_nodes_are_trivial(node):
 @pytest.mark.parametrize(
     "node",
     [
-        IRNode(
-            ir_type="float", value=5.0, kwargs=float_kw(5.0, 10.0), was_forced=False
+        ChoiceNode(
+            type="float", value=5.0, kwargs=float_kw(5.0, 10.0), was_forced=False
         ),
-        IRNode(
-            ir_type="float", value=0.0, kwargs=float_kw(-5.0, 5.0), was_forced=False
+        ChoiceNode(
+            type="float", value=0.0, kwargs=float_kw(-5.0, 5.0), was_forced=False
         ),
-        IRNode(ir_type="float", value=0.0, kwargs=float_kw(), was_forced=False),
-        IRNode(ir_type="boolean", value=False, kwargs={"p": 0.5}, was_forced=False),
-        IRNode(ir_type="boolean", value=True, kwargs={"p": 1.0}, was_forced=False),
-        IRNode(ir_type="boolean", value=False, kwargs={"p": 0.0}, was_forced=False),
-        IRNode(
-            ir_type="string",
+        ChoiceNode(type="float", value=0.0, kwargs=float_kw(), was_forced=False),
+        ChoiceNode(type="boolean", value=False, kwargs={"p": 0.5}, was_forced=False),
+        ChoiceNode(type="boolean", value=True, kwargs={"p": 1.0}, was_forced=False),
+        ChoiceNode(type="boolean", value=False, kwargs={"p": 0.0}, was_forced=False),
+        ChoiceNode(
+            type="string",
             value="",
             kwargs={
                 "intervals": IntervalSet.from_string("abcd"),
@@ -478,8 +480,8 @@ def test_forced_nodes_are_trivial(node):
             },
             was_forced=False,
         ),
-        IRNode(
-            ir_type="string",
+        ChoiceNode(
+            type="string",
             value="aaaa",
             kwargs={
                 "intervals": IntervalSet.from_string("bcda"),
@@ -488,57 +490,57 @@ def test_forced_nodes_are_trivial(node):
             },
             was_forced=False,
         ),
-        IRNode(
-            ir_type="bytes",
+        ChoiceNode(
+            type="bytes",
             value=bytes(8),
             kwargs={"min_size": 8, "max_size": 8},
             was_forced=False,
         ),
-        IRNode(
-            ir_type="bytes",
+        ChoiceNode(
+            type="bytes",
             value=bytes(2),
             kwargs={"min_size": 2, "max_size": COLLECTION_DEFAULT_MAX_SIZE},
             was_forced=False,
         ),
-        IRNode(
-            ir_type="integer", value=50, kwargs=integer_kw(50, 100), was_forced=False
+        ChoiceNode(
+            type="integer", value=50, kwargs=integer_kw(50, 100), was_forced=False
         ),
-        IRNode(
-            ir_type="integer", value=0, kwargs=integer_kw(-10, 10), was_forced=False
+        ChoiceNode(
+            type="integer", value=0, kwargs=integer_kw(-10, 10), was_forced=False
         ),
-        IRNode(
-            ir_type="integer",
+        ChoiceNode(
+            type="integer",
             value=2,
             kwargs=integer_kw(-10, 10, shrink_towards=2),
             was_forced=False,
         ),
-        IRNode(
-            ir_type="integer",
+        ChoiceNode(
+            type="integer",
             value=-10,
             kwargs=integer_kw(-10, 10, shrink_towards=-12),
             was_forced=False,
         ),
-        IRNode(
-            ir_type="integer",
+        ChoiceNode(
+            type="integer",
             value=10,
             kwargs=integer_kw(-10, 10, shrink_towards=12),
             was_forced=False,
         ),
-        IRNode(ir_type="integer", value=0, kwargs=integer_kw(), was_forced=False),
-        IRNode(
-            ir_type="integer",
+        ChoiceNode(type="integer", value=0, kwargs=integer_kw(), was_forced=False),
+        ChoiceNode(
+            type="integer",
             value=1,
             kwargs=integer_kw(min_value=-10, shrink_towards=1),
             was_forced=False,
         ),
-        IRNode(
-            ir_type="integer",
+        ChoiceNode(
+            type="integer",
             value=1,
             kwargs=integer_kw(max_value=10, shrink_towards=1),
             was_forced=False,
         ),
-        IRNode(
-            ir_type="integer",
+        ChoiceNode(
+            type="integer",
             value=1,
             kwargs={
                 "min_value": None,
@@ -556,7 +558,7 @@ def test_trivial_nodes(node):
     @st.composite
     def values(draw):
         data = draw(st.data()).conjecture_data
-        return getattr(data, f"draw_{node.ir_type}")(**node.kwargs)
+        return getattr(data, f"draw_{node.type}")(**node.kwargs)
 
     # if we're trivial, then shrinking should produce the same value.
     assert choice_equal(minimal(values()), node.value)
@@ -565,17 +567,17 @@ def test_trivial_nodes(node):
 @pytest.mark.parametrize(
     "node",
     [
-        IRNode(
-            ir_type="float", value=6.0, kwargs=float_kw(5.0, 10.0), was_forced=False
+        ChoiceNode(
+            type="float", value=6.0, kwargs=float_kw(5.0, 10.0), was_forced=False
         ),
-        IRNode(
-            ir_type="float", value=-5.0, kwargs=float_kw(-5.0, 5.0), was_forced=False
+        ChoiceNode(
+            type="float", value=-5.0, kwargs=float_kw(-5.0, 5.0), was_forced=False
         ),
-        IRNode(ir_type="float", value=1.0, kwargs=float_kw(), was_forced=False),
-        IRNode(ir_type="boolean", value=True, kwargs={"p": 0.5}, was_forced=False),
-        IRNode(ir_type="boolean", value=True, kwargs={"p": 0.99}, was_forced=False),
-        IRNode(
-            ir_type="string",
+        ChoiceNode(type="float", value=1.0, kwargs=float_kw(), was_forced=False),
+        ChoiceNode(type="boolean", value=True, kwargs={"p": 0.5}, was_forced=False),
+        ChoiceNode(type="boolean", value=True, kwargs={"p": 0.99}, was_forced=False),
+        ChoiceNode(
+            type="string",
             value="d",
             kwargs={
                 "intervals": IntervalSet.from_string("abcd"),
@@ -584,28 +586,28 @@ def test_trivial_nodes(node):
             },
             was_forced=False,
         ),
-        IRNode(
-            ir_type="bytes",
+        ChoiceNode(
+            type="bytes",
             value=b"\x01",
             kwargs={"min_size": 1, "max_size": 1},
             was_forced=False,
         ),
-        IRNode(
-            ir_type="bytes",
+        ChoiceNode(
+            type="bytes",
             value=bytes(1),
             kwargs={"min_size": 0, "max_size": COLLECTION_DEFAULT_MAX_SIZE},
             was_forced=False,
         ),
-        IRNode(
-            ir_type="bytes",
+        ChoiceNode(
+            type="bytes",
             value=bytes(2),
             kwargs={"min_size": 1, "max_size": 10},
             was_forced=False,
         ),
-        IRNode(
-            ir_type="integer", value=-10, kwargs=integer_kw(-10, 10), was_forced=False
+        ChoiceNode(
+            type="integer", value=-10, kwargs=integer_kw(-10, 10), was_forced=False
         ),
-        IRNode(ir_type="integer", value=42, kwargs=integer_kw(), was_forced=False),
+        ChoiceNode(type="integer", value=42, kwargs=integer_kw(), was_forced=False),
     ],
 )
 def test_nontrivial_nodes(node):
@@ -614,7 +616,7 @@ def test_nontrivial_nodes(node):
     @st.composite
     def values(draw):
         data = draw(st.data()).conjecture_data
-        return getattr(data, f"draw_{node.ir_type}")(**node.kwargs)
+        return getattr(data, f"draw_{node.type}")(**node.kwargs)
 
     # if we're nontrivial, then shrinking should produce something different.
     assert not choice_equal(minimal(values()), node.value)
@@ -623,32 +625,32 @@ def test_nontrivial_nodes(node):
 @pytest.mark.parametrize(
     "node",
     [
-        IRNode(
-            ir_type="float",
+        ChoiceNode(
+            type="float",
             value=1.5,
             kwargs=float_kw(1.1, 1.6),
             was_forced=False,
         ),
-        IRNode(
-            ir_type="float",
+        ChoiceNode(
+            type="float",
             value=float(math.floor(sys.float_info.max)),
             kwargs=float_kw(sys.float_info.max - 1, math.inf),
             was_forced=False,
         ),
-        IRNode(
-            ir_type="float",
+        ChoiceNode(
+            type="float",
             value=float(math.ceil(-sys.float_info.max)),
             kwargs=float_kw(-math.inf, -sys.float_info.max + 1),
             was_forced=False,
         ),
-        IRNode(
-            ir_type="float",
+        ChoiceNode(
+            type="float",
             value=math.inf,
             kwargs=float_kw(math.inf, math.inf),
             was_forced=False,
         ),
-        IRNode(
-            ir_type="float",
+        ChoiceNode(
+            type="float",
             value=-math.inf,
             kwargs=float_kw(-math.inf, -math.inf),
             was_forced=False,
@@ -663,14 +665,14 @@ def test_conservative_nontrivial_nodes(node):
     @st.composite
     def values(draw):
         data = draw(st.data()).conjecture_data
-        return getattr(data, f"draw_{node.ir_type}")(**node.kwargs)
+        return getattr(data, f"draw_{node.type}")(**node.kwargs)
 
     assert choice_equal(minimal(values()), node.value)
 
 
 @given(nodes())
-def test_ir_node_is_hashable(ir_node):
-    hash(ir_node)
+def test_choice_node_is_hashable(node):
+    hash(node)
 
 
 @given(st.lists(nodes()))
@@ -707,19 +709,19 @@ def test_node_template_single_node_overruns():
 @given(nodes())
 def test_node_template_simplest_is_actually_trivial(node):
     # TODO_IR node.trivial is sound but not complete for floats.
-    assume(node.ir_type != "float")
+    assume(node.type != "float")
     data = ConjectureData.for_choices((ChoiceTemplate("simplest", count=1),))
-    getattr(data, f"draw_{node.ir_type}")(**node.kwargs)
+    getattr(data, f"draw_{node.type}")(**node.kwargs)
     assert len(data.nodes) == 1
     assert data.nodes[0].trivial
 
 
-@given(ir_types_and_kwargs())
+@given(choice_types_kwargs())
 @example(("boolean", {"p": 0}))
 @example(("boolean", {"p": 1}))
-def test_choice_indices_are_positive(ir_type_and_kwargs):
-    (ir_type, kwargs) = ir_type_and_kwargs
-    v = draw_value(ir_type, kwargs)
+def test_choice_indices_are_positive(choice_type_and_kwargs):
+    (choice_type, kwargs) = choice_type_and_kwargs
+    v = draw_value(choice_type, kwargs)
     assert choice_to_index(v, kwargs) >= 0
 
 
@@ -731,17 +733,17 @@ def test_shrink_towards_has_index_0(kwargs):
     assert choice_from_index(0, "integer", kwargs) == shrink_towards
 
 
-@given(ir_types_and_kwargs())
-def test_choice_to_index_injective(ir_type_and_kwargs):
+@given(choice_types_kwargs())
+def test_choice_to_index_injective(choice_type_and_kwargs):
     # ir ordering should be injective both ways.
-    (ir_type, kwargs) = ir_type_and_kwargs
+    (choice_type, kwargs) = choice_type_and_kwargs
     # ...except for floats, which are hard to order bijectively.
-    assume(ir_type != "float")
+    assume(choice_type != "float")
     # cap to 10k so this test finishes in a reasonable amount of time
-    cap = min(compute_max_children(ir_type, kwargs), 10_000)
+    cap = min(compute_max_children(choice_type, kwargs), 10_000)
 
     indices = set()
-    for i, choice in enumerate(all_children(ir_type, kwargs)):
+    for i, choice in enumerate(all_children(choice_type, kwargs)):
         if i >= cap:
             break
         index = choice_to_index(choice, kwargs)
@@ -749,36 +751,36 @@ def test_choice_to_index_injective(ir_type_and_kwargs):
         indices.add(index)
 
 
-@given(ir_types_and_kwargs())
+@given(choice_types_kwargs())
 @example(
     (
         "string",
         {"min_size": 0, "max_size": 10, "intervals": IntervalSet.from_string("a")},
     )
 )
-def test_choice_from_value_injective(ir_type_and_kwargs):
-    (ir_type, kwargs) = ir_type_and_kwargs
-    assume(ir_type != "float")
-    cap = min(compute_max_children(ir_type, kwargs), 10_000)
+def test_choice_from_value_injective(choice_type_and_kwargs):
+    (choice_type, kwargs) = choice_type_and_kwargs
+    assume(choice_type != "float")
+    cap = min(compute_max_children(choice_type, kwargs), 10_000)
 
     choices = set()
     for index in range(cap):
-        choice = choice_from_index(index, ir_type, kwargs)
+        choice = choice_from_index(index, choice_type, kwargs)
         assert choice not in choices
         choices.add(choice)
 
 
-@given(ir_types_and_kwargs())
-def test_choice_index_and_value_are_inverses(ir_type_and_kwargs):
-    (ir_type, kwargs) = ir_type_and_kwargs
-    v = draw_value(ir_type, kwargs)
+@given(choice_types_kwargs())
+def test_choice_index_and_value_are_inverses(choice_type_and_kwargs):
+    (choice_type, kwargs) = choice_type_and_kwargs
+    v = draw_value(choice_type, kwargs)
     index = choice_to_index(v, kwargs)
     note({"v": v, "index": index})
-    choice_equal(choice_from_index(index, ir_type, kwargs), v)
+    choice_equal(choice_from_index(index, choice_type, kwargs), v)
 
 
 @pytest.mark.parametrize(
-    "ir_type, kwargs, choices",
+    "choice_type, kwargs, choices",
     [
         ("boolean", {"p": 1}, [True]),
         ("boolean", {"p": 0}, [False]),
@@ -800,10 +802,10 @@ def test_choice_index_and_value_are_inverses(ir_type_and_kwargs):
         ),
     ],
 )
-def test_choice_index_and_value_are_inverses_explicit(ir_type, kwargs, choices):
+def test_choice_index_and_value_are_inverses_explicit(choice_type, kwargs, choices):
     for choice in choices:
         index = choice_to_index(choice, kwargs)
-        assert choice_equal(choice_from_index(index, ir_type, kwargs), choice)
+        assert choice_equal(choice_from_index(index, choice_type, kwargs), choice)
 
 
 @pytest.mark.parametrize(
@@ -840,7 +842,7 @@ def test_integer_choice_index(kwargs, choices):
 def test_drawing_directly_matches_for_choices(nodes):
     data = ConjectureData.for_choices([n.value for n in nodes])
     for node in nodes:
-        value = getattr(data, f"draw_{node.ir_type}")(**node.kwargs)
+        value = getattr(data, f"draw_{node.type}")(**node.kwargs)
         assert choice_equal(node.value, value)
 
 

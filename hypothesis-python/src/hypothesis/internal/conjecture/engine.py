@@ -37,6 +37,7 @@ from hypothesis.internal.compat import NotRequired, TypeAlias, TypedDict, ceil, 
 from hypothesis.internal.conjecture.choice import (
     ChoiceKeyT,
     ChoiceKwargsT,
+    ChoiceNode,
     ChoiceT,
     ChoiceTemplate,
     choices_key,
@@ -45,7 +46,6 @@ from hypothesis.internal.conjecture.data import (
     ConjectureData,
     ConjectureResult,
     DataObserver,
-    IRNode,
     Overrun,
     Status,
     _Overrun,
@@ -495,7 +495,7 @@ class ConjectureRunner:
                             "integer": int,
                             "boolean": bool,
                             "bytes": bytes,
-                        }[node.ir_type]
+                        }[node.type]
                         if type(value) is not expected_type:
                             raise HypothesisException(
                                 f"expected {expected_type} from "
@@ -1431,8 +1431,8 @@ class ConjectureRunner:
         )
 
     def passing_choice_sequences(
-        self, prefix: Sequence[IRNode] = ()
-    ) -> frozenset[tuple[IRNode, ...]]:
+        self, prefix: Sequence[ChoiceNode] = ()
+    ) -> frozenset[tuple[ChoiceNode, ...]]:
         """Return a collection of choice sequence nodes which cause the test to pass.
         Optionally restrict this by a certain prefix, which is useful for explain mode.
         """
