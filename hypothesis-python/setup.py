@@ -70,6 +70,7 @@ extras = {
     # We also leave the choice of timezone library to the user, since it
     # might be zoneinfo or pytz depending on version and configuration.
     "django": ["django>=4.2"],
+    "watchdog": ["watchdog>=4.0.0"],
 }
 
 extras["all"] = sorted(set(sum(extras.values(), [])))

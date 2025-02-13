@@ -24,7 +24,16 @@ from os import PathLike, getenv
 from pathlib import Path, PurePath
 from queue import Queue
 from threading import Thread
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    Literal,
+    Optional,
+    Union,
+    cast,
+)
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 from zipfile import BadZipFile, ZipFile
@@ -46,7 +55,15 @@ __all__ = [
 if TYPE_CHECKING:
     from typing import TypeAlias
 
+    from watchdog.observers.api import BaseObserver
+
 StrPathT: "TypeAlias" = Union[str, PathLike[str]]
+ListenerEventType: "TypeAlias" = Literal["save", "delete", "move"]
+SaveDataT: "TypeAlias" = tuple[bytes, bytes]  # key, value
+DeleteDataT: "TypeAlias" = tuple[bytes, Optional[bytes]]  # key, value
+MoveDataT: "TypeAlias" = tuple[bytes, bytes, bytes]  # src, dest, value
+ListenerDataT: "TypeAlias" = Union[SaveDataT, DeleteDataT, MoveDataT]
+ListenerT: "TypeAlias" = Callable[[ListenerEventType, ListenerDataT], Any]
 
 
 def _usable_dir(path: StrPathT) -> bool:
@@ -121,8 +138,12 @@ class ExampleDatabase(metaclass=_EDMeta):
     """An abstract base class for storing examples in Hypothesis' internal format.
 
     An ExampleDatabase maps each ``bytes`` key to many distinct ``bytes``
-    values, like a ``Mapping[bytes, AbstractSet[bytes]]``.
+    values, like a ``Mapping[bytes, set[bytes]]``.
     """
+
+    def __init__(self) -> None:
+        self._listeners: list[ListenerT] = []
+        self._listening = False
 
     @abc.abstractmethod
     def save(self, key: bytes, value: bytes) -> None:
@@ -159,6 +180,85 @@ class ExampleDatabase(metaclass=_EDMeta):
         self.delete(src, value)
         self.save(dest, value)
 
+    def add_listener(self, f: ListenerT, /) -> None:
+        """Add a change listener."""
+        self._listeners.append(f)
+        self._update_listening()
+
+    def remove_listener(self, f: ListenerT, /) -> None:
+        """
+        Remove a change listener. If the listener is not present, silently do
+        nothing.
+        """
+        if f not in self._listeners:
+            return
+        self._listeners.remove(f)
+        self._update_listening()
+
+    def clear_listeners(self) -> None:
+        """Remove all change listeners."""
+        self._listeners.clear()
+        self._update_listening()
+
+    def _update_listening(self) -> None:
+        # - start listening if we're moving from zero to some listeners
+        # - stop listening if we're moving from some to zero listeners
+        if not self._listening and self._listeners:
+            self._start_listening()
+            self._listening = True
+        elif self._listening and not self._listeners:
+            self._stop_listening()
+            self._listening = False
+
+    def _broadcast_change(
+        self, event_type: ListenerEventType, data: ListenerDataT
+    ) -> None:
+        """
+        Called when a value has been either added to or deleted from a key in
+        the underlying database store. event_type is one of "save" or "delete".
+
+        ``value`` may be ``None`` for ``event_type == "delete"``, which indicates
+        we don't know what value was deleted from the database.
+
+        Note that you should not assume you are the only reference to the underlying
+        database store. For example, if two DirectoryBasedExampleDatabase reference
+        the same directory, _broadcast_change should be called whenever a file is
+        added or removed from the directory, even if that database was not responsible
+        for changing the file.
+        """
+        for listener in self._listeners:
+            listener(event_type, data)
+
+    def _start_listening(self) -> None:
+        """
+        Called when the database adds a change listener, and did not previously
+        have any change listeners. Intended to allow databases to wait to start
+        expensive listening operations until necessary.
+
+        _start_listening and _stop_listening are guaranteed to alternate, so you
+        do not need to handle the case of multiple consecutive _start_listening
+        calls without an intermediate _stop_listening call.
+        """
+        warnings.warn(
+            f"{self.__class__} does not support listening for changes",
+            HypothesisWarning,
+            stacklevel=4,
+        )
+
+    def _stop_listening(self) -> None:
+        """
+        Called whenever no change listeners remain on the database.
+
+        _stop_listening and _start_listening are guaranteed to alternate, so you
+        do not need to handle the case of multiple consecutive _stop_listening
+        calls without an intermediate _start_listening call.
+        """
+        warnings.warn(
+            f"{self.__class__} does not support stopping listening for changes",
+            HypothesisWarning,
+            stacklevel=4,
+        )
+
 
 class InMemoryExampleDatabase(ExampleDatabase):
     """A non-persistent example database, implemented in terms of a dict of sets.
@@ -169,6 +269,7 @@ class InMemoryExampleDatabase(ExampleDatabase):
     """
 
     def __init__(self) -> None:
+        super().__init__()
         self.data: dict[bytes, set[bytes]] = {}
 
     def __repr__(self) -> str:
@@ -178,10 +279,31 @@ class InMemoryExampleDatabase(ExampleDatabase):
         yield from self.data.get(key, ())
 
     def save(self, key: bytes, value: bytes) -> None:
-        self.data.setdefault(key, set()).add(bytes(value))
+        value = bytes(value)
+        values = self.data.setdefault(key, set())
+        changed = value not in values
+        values.add(value)
+
+        if changed:
+            self._broadcast_change("save", (key, value))
 
     def delete(self, key: bytes, value: bytes) -> None:
-        self.data.get(key, set()).discard(bytes(value))
+        value = bytes(value)
+        values = self.data.get(key, set())
+        changed = value in values
+        values.discard(value)
+
+        if changed:
+            self._broadcast_change("delete", (key, value))
+
+    def _start_listening(self) -> None:
+        # declare compatibility with the listener api, but do the actual
+        # implementation in .delete and .save, since we know we are the only
+        # writer to .data.
+        pass
+
+    def _stop_listening(self) -> None:
+        pass
 
 
 def _hash(key: bytes) -> str:
@@ -207,9 +329,16 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
     the :class:`~hypothesis.database.MultiplexedDatabase` helper.
     """
 
+    # we keep a database entry of the full values of all the database keys.
+    # currently only used for inverse mapping of hash -> key in change listening.
+    _metakeys_name: ClassVar[bytes] = b".hypothesis-keys"
+    _metakeys_hash: ClassVar[str] = _hash(_metakeys_name)
+
     def __init__(self, path: StrPathT) -> None:
+        super().__init__()
         self.path = Path(path)
         self.keypaths: dict[bytes, Path] = {}
+        self._observer: BaseObserver | None = None
 
     def __repr__(self) -> str:
         return f"DirectoryBasedExampleDatabase({self.path!r})"
@@ -236,11 +365,16 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
                 pass
 
     def save(self, key: bytes, value: bytes) -> None:
+        key_path = self._key_path(key)
+        if key_path.name != self._metakeys_hash:
+            # add this key to our meta entry of all keys, avoiding infinite recursion.
+            self.save(self._metakeys_name, key)
+
         # Note: we attempt to create the dir in question now. We
         # already checked for permissions, but there can still be other issues,
         # e.g. the disk is full, or permissions might have been changed.
         try:
-            self._key_path(key).mkdir(exist_ok=True, parents=True)
+            key_path.mkdir(exist_ok=True, parents=True)
             path = self._value_path(key, value)
             if not path.exists():
                 # to mimic an atomic write, create and write in a temporary
@@ -263,11 +397,16 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
         if src == dest:
             self.save(src, value)
             return
+
+        src_path = self._value_path(src, value)
+        dest_path = self._value_path(dest, value)
+        # if the dest key path does not exist, os.renames will create it for us,
+        # and we will never track its creation in the meta keys entry. Do so now.
+        if not self._key_path(dest).exists():
+            self.save(self._metakeys_name, dest)
+
         try:
-            os.renames(
-                self._value_path(src, value),
-                self._value_path(dest, value),
-            )
+            os.renames(src_path, dest_path)
         except OSError:
             self.delete(src, value)
             self.save(dest, value)
@@ -277,6 +416,113 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
             self._value_path(key, value).unlink()
         except OSError:
             pass
+
+    def _start_listening(self) -> None:
+        try:
+            from watchdog.events import (
+                DirCreatedEvent,
+                DirDeletedEvent,
+                DirMovedEvent,
+                FileCreatedEvent,
+                FileDeletedEvent,
+                FileMovedEvent,
+                FileSystemEventHandler,
+            )
+            from watchdog.observers import Observer
+        except ImportError:
+            warnings.warn(
+                f"listening for changes in a {self.__class__.__name__} "
+                "requires the watchdog library. To install, run "
+                "`pip install hypothesis[watchdog]`",
+                HypothesisWarning,
+                stacklevel=4,
+            )
+            return
+
+        hash_to_key = {_hash(key): key for key in self.fetch(self._metakeys_name)}
+        _metakeys_hash = self._metakeys_hash
+        _broadcast_change = self._broadcast_change
+
+        class Handler(FileSystemEventHandler):
+            def on_created(
+                _self, event: Union[FileCreatedEvent, DirCreatedEvent]
+            ) -> None:
+                # we only registered for the file creation event
+                assert not isinstance(event, DirCreatedEvent)
+                # watchdog events are only bytes if we passed a byte path to
+                # .schedule
+                assert isinstance(event.src_path, str)
+
+                value_path = Path(event.src_path)
+                # the parent dir represents the key, and its name is the key hash
+                key_hash = value_path.parent.name
+
+                if key_hash == _metakeys_hash:
+                    hash_to_key[value_path.name] = value_path.read_bytes()
+                    return
+
+                key = hash_to_key.get(key_hash)
+                if key is None:  # pragma: no cover
+                    # we didn't recognize this key. This shouldn't ever happen,
+                    # but some race condition trickery might cause this.
+                    return
+
+                try:
+                    value = value_path.read_bytes()
+                except OSError:  # pragma: no cover
+                    return
+
+                _broadcast_change("save", (key, value))
+
+            def on_deleted(
+                self, event: Union[FileDeletedEvent, DirDeletedEvent]
+            ) -> None:
+                assert not isinstance(event, DirDeletedEvent)
+                assert isinstance(event.src_path, str)
+
+                value_path = Path(event.src_path)
+                key = hash_to_key.get(value_path.parent.name)
+                if key is None:  # pragma: no cover
+                    return
+
+                _broadcast_change("delete", (key, None))
+
+            def on_moved(self, event: Union[FileMovedEvent, DirMovedEvent]) -> None:
+                assert not isinstance(event, DirMovedEvent)
+                assert isinstance(event.src_path, str)
+                assert isinstance(event.dest_path, str)
+
+                src_path = Path(event.src_path)
+                dest_path = Path(event.dest_path)
+                k1 = hash_to_key.get(src_path.parent.name)
+                k2 = hash_to_key.get(dest_path.parent.name)
+
+                if k1 is None or k2 is None:  # pragma: no cover
+                    return
+
+                try:
+                    value = dest_path.read_bytes()
+                except OSError:  # pragma: no cover
+                    return
+
+                _broadcast_change("move", (k1, k2, value))
+
+        self._observer = Observer()
+        self._observer.schedule(
+            Handler(),
+            # remove type: ignore when released
+            # https://github.com/gorakhargosh/watchdog/pull/1096
+            self.path,  # type: ignore
+            recursive=True,
+            event_filter=[FileCreatedEvent, FileDeletedEvent, FileMovedEvent],
+        )
+        self._observer.start()
+
+    def _stop_listening(self) -> None:
+        assert self._observer is not None
+        self._observer.stop()
+        self._observer.join()
+        self._observer = None
 
 
 class ReadOnlyDatabase(ExampleDatabase):
@@ -291,6 +537,7 @@ class ReadOnlyDatabase(ExampleDatabase):
     """
 
     def __init__(self, db: ExampleDatabase) -> None:
+        super().__init__()
         assert isinstance(db, ExampleDatabase)
         self._wrapped = db
 
@@ -304,6 +551,13 @@ class ReadOnlyDatabase(ExampleDatabase):
         pass
 
     def delete(self, key: bytes, value: bytes) -> None:
+        pass
+
+    def _start_listening(self) -> None:
+        # we're read only, so there are no changes to broadcast.
+        pass
+
+    def _stop_listening(self) -> None:
         pass
 
 
@@ -334,6 +588,7 @@ class MultiplexedDatabase(ExampleDatabase):
     """
 
     def __init__(self, *dbs: ExampleDatabase) -> None:
+        super().__init__()
         assert all(isinstance(db, ExampleDatabase) for db in dbs)
         self._wrapped = dbs
 
@@ -359,6 +614,14 @@ class MultiplexedDatabase(ExampleDatabase):
     def move(self, src: bytes, dest: bytes, value: bytes) -> None:
         for db in self._wrapped:
             db.move(src, dest, value)
+
+    def _start_listening(self) -> None:
+        for db in self._wrapped:
+            db.add_listener(self._broadcast_change)
+
+    def _stop_listening(self) -> None:
+        for db in self._wrapped:
+            db.remove_listener(self._broadcast_change)
 
 
 class GitHubArtifactDatabase(ExampleDatabase):
@@ -439,6 +702,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
         cache_timeout: timedelta = timedelta(days=1),
         path: Optional[StrPathT] = None,
     ):
+        super().__init__()
         self.owner = owner
         self.repo = repo
         self.artifact_name = artifact_name
@@ -699,6 +963,7 @@ class BackgroundWriteDatabase(ExampleDatabase):
     """
 
     def __init__(self, db: ExampleDatabase) -> None:
+        super().__init__()
         self._db = db
         self._queue: Queue[tuple[str, tuple[bytes, ...]]] = Queue()
         self._thread = Thread(target=self._worker, daemon=True)
@@ -734,6 +999,12 @@ class BackgroundWriteDatabase(ExampleDatabase):
 
     def move(self, src: bytes, dest: bytes, value: bytes) -> None:
         self._queue.put(("move", (src, dest, value)))
+
+    def _start_listening(self) -> None:
+        self._db.add_listener(self._broadcast_change)
+
+    def _stop_listening(self) -> None:
+        self._db.remove_listener(self._broadcast_change)
 
 
 def _pack_uleb128(value: int) -> bytes:
