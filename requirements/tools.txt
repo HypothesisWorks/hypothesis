@@ -357,6 +357,8 @@ urllib3==2.3.0
     #   twine
 virtualenv==20.29.1
     # via tox
+watchdog==6.0.0
+    # via -r requirements/tools.in
 watchfiles==1.0.4
     # via pelican
 wcwidth==0.2.13

@@ -99,3 +99,5 @@ typing-extensions==4.12.2
     #   fakeredis
 tzdata==2025.1
     # via pandas
+watchdog==6.0.0
+    # via -r requirements/coverage.in
