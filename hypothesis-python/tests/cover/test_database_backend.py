@@ -515,9 +515,7 @@ def _database_conforms_to_listener_api(
     create_db,
     *,
     flush=None,
-    supports_move=False,
     supports_value_delete=True,
-    save_on_no_k1_in_move=False,
     parent_settings=None,
 ):
     # this function is a big mess to support a bunch of different special cases
@@ -529,13 +527,9 @@ def _database_conforms_to_listener_api(
     # * flush is a callable which takes the instantiated db as an argument, and
     #   is called on every step as an invariant. This lets the database do things
     #   like, time.sleep to give time for events to fire.
-    # * supports_move is True if the db fires a "move" event,
-    #   and False if it fires a "delete" followed by a "save" instead.
     # * suports_value_delete is True if the db supports passing
     #   the exact value of a deleted key in "delete" events. The directory database
     #   notably does not support this, and passes None instead.
-    # * save_on_no_k1_in_move is True if the db fires a "save" rather than "move" if
-    #   the value is not present in the source key.
 
     @settings(parent_settings)
     class TestDatabaseListener(RuleBasedStateMachine):
@@ -553,8 +547,8 @@ def _database_conforms_to_listener_api(
             self.expected_events = []
             self.actual_events = []
 
-            def listener(event_type, args):
-                self.actual_events.append((event_type, args))
+            def listener(event):
+                self.actual_events.append(event)
 
             self.listener = listener
             self.active_listeners = []
@@ -571,9 +565,6 @@ def _database_conforms_to_listener_api(
 
         def _expect_save(self, k, v):
             self._expect_event("save", (k, v))
-
-        def _expect_move(self, k1, k2, v):
-            self._expect_event("move", (k1, k2, v))
 
         @rule(target=keys, k=st.binary())
         def k(self, k):
@@ -629,23 +620,12 @@ def _database_conforms_to_listener_api(
             delete_changed = k1 != k2 and in_k1
             self.db.move(k1, k2, v)
 
-            # in database backends that support it, this gets emitted as a move
-            # (*unless* the keys are equal, in which case it is a save).
-            #
-            # otherwise it gets emitted as a delete followed by a save, unless
-            # those did not change the db.
-            if supports_move:
-                if k1 == k2 and save_changed:
-                    self._expect_save(k2, v)
-                elif save_on_no_k1_in_move and not in_k1 and save_changed:
-                    self._expect_save(k2, v)
-                elif delete_changed or save_changed:
-                    self._expect_move(k1, k2, v)
-            else:
-                if delete_changed:
-                    self._expect_delete(k1, v)
-                if save_changed:
-                    self._expect_save(k2, v)
+            # A move gets emitted as a delete followed by a save.  The
+            # delete may be omitted if k1==k2, and the save if v in db.fetch(k2).
+            if delete_changed:
+                self._expect_delete(k1, v)
+            if save_changed:
+                self._expect_save(k2, v)
 
         @invariant()
         def events_agree(self):
@@ -705,7 +685,7 @@ def test_warns_when_listening_not_supported():
 def test_readonly_listener():
     db = ReadOnlyDatabase(InMemoryExampleDatabase())
 
-    def listener(event_type, data):
+    def listener(event):
         raise AssertionError("ReadOnlyDatabase never fires change events")
 
     db.add_listener(listener)

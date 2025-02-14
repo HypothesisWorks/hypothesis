@@ -58,12 +58,12 @@ if TYPE_CHECKING:
     from watchdog.observers.api import BaseObserver
 
 StrPathT: "TypeAlias" = Union[str, PathLike[str]]
-ListenerEventType: "TypeAlias" = Literal["save", "delete", "move"]
+ListenerEventType: "TypeAlias" = Literal["save", "delete"]
 SaveDataT: "TypeAlias" = tuple[bytes, bytes]  # key, value
 DeleteDataT: "TypeAlias" = tuple[bytes, Optional[bytes]]  # key, value
 MoveDataT: "TypeAlias" = tuple[bytes, bytes, bytes]  # src, dest, value
 ListenerDataT: "TypeAlias" = Union[SaveDataT, DeleteDataT, MoveDataT]
-ListenerT: "TypeAlias" = Callable[[ListenerEventType, ListenerDataT], Any]
+ListenerT: "TypeAlias" = Callable[[tuple[ListenerEventType, ListenerDataT]], Any]
 
 
 def _usable_dir(path: StrPathT) -> bool:
@@ -143,7 +143,6 @@ class ExampleDatabase(metaclass=_EDMeta):
 
     def __init__(self) -> None:
         self._listeners: list[ListenerT] = []
-        self._listening = False
 
     @abc.abstractmethod
     def save(self, key: bytes, value: bytes) -> None:
@@ -182,8 +181,10 @@ class ExampleDatabase(metaclass=_EDMeta):
 
     def add_listener(self, f: ListenerT, /) -> None:
         """Add a change listener."""
+        no_listeners = not self._listeners
         self._listeners.append(f)
-        self._update_listening()
+        if no_listeners:
+            self._start_listening()
 
     def remove_listener(self, f: ListenerT, /) -> None:
         """
@@ -193,26 +194,17 @@ class ExampleDatabase(metaclass=_EDMeta):
         if f not in self._listeners:
             return
         self._listeners.remove(f)
-        self._update_listening()
+        if not self._listeners:
+            self._stop_listening()
 
     def clear_listeners(self) -> None:
         """Remove all change listeners."""
+        had_listeners = bool(self._listeners)
         self._listeners.clear()
-        self._update_listening()
-
-    def _update_listening(self) -> None:
-        # - start listening if we're moving from zero to some listeners
-        # - stop listening if we're moving from some to zero listeners
-        if not self._listening and self._listeners:
-            self._start_listening()
-            self._listening = True
-        elif self._listening and not self._listeners:
+        if had_listeners:
             self._stop_listening()
-            self._listening = False
 
-    def _broadcast_change(
-        self, event_type: ListenerEventType, data: ListenerDataT
-    ) -> None:
+    def _broadcast_change(self, event: tuple[ListenerEventType, ListenerDataT]) -> None:
         """
         Called when a value has been either added to or deleted from a key in
         the underlying database store. event_type is one of "save" or "delete".
@@ -227,7 +219,7 @@ class ExampleDatabase(metaclass=_EDMeta):
         for changing the file.
         """
         for listener in self._listeners:
-            listener(event_type, data)
+            listener(event)
 
     def _start_listening(self) -> None:
         """
@@ -285,7 +277,7 @@ class InMemoryExampleDatabase(ExampleDatabase):
         values.add(value)
 
         if changed:
-            self._broadcast_change("save", (key, value))
+            self._broadcast_change(("save", (key, value)))
 
     def delete(self, key: bytes, value: bytes) -> None:
         value = bytes(value)
@@ -294,7 +286,7 @@ class InMemoryExampleDatabase(ExampleDatabase):
         values.discard(value)
 
         if changed:
-            self._broadcast_change("delete", (key, value))
+            self._broadcast_change(("delete", (key, value)))
 
     def _start_listening(self) -> None:
         # declare compatibility with the listener api, but do the actual
@@ -472,7 +464,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
                 except OSError:  # pragma: no cover
                     return
 
-                _broadcast_change("save", (key, value))
+                _broadcast_change(("save", (key, value)))
 
             def on_deleted(
                 self, event: Union[FileDeletedEvent, DirDeletedEvent]
@@ -485,7 +477,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
                 if key is None:  # pragma: no cover
                     return
 
-                _broadcast_change("delete", (key, None))
+                _broadcast_change(("delete", (key, None)))
 
             def on_moved(self, event: Union[FileMovedEvent, DirMovedEvent]) -> None:
                 assert not isinstance(event, DirMovedEvent)
@@ -505,7 +497,8 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
                 except OSError:  # pragma: no cover
                     return
 
-                _broadcast_change("move", (k1, k2, value))
+                _broadcast_change(("delete", (k1, value)))
+                _broadcast_change(("save", (k2, value)))
 
         self._observer = Observer()
         self._observer.schedule(

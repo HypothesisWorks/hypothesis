@@ -71,16 +71,19 @@ class RedisExampleDatabase(ExampleDatabase):
         for key in reset_expire_keys:
             pipe.expire(self._prefix + key, self._expire_after)
         if execute_and_publish:
-            # pipe.execute returns a value for each operation, which includes
-            # whatever we did in the yield as a prefix, and the n operations from
-            # pipe.expire as a suffix. remove that suffix to get just the prefix.
-            values = pipe.execute()
-            values = values[: -len(reset_expire_keys)]
-            if any(value > 0 for value in values):
+            changed = pipe.execute()
+            # pipe.execute returns the rows modified for each operation, which includes
+            # the operations performed during the yield, followed by the n operations
+            # from pipe.exire. Look at just the operations from during the yield.
+            changed = changed[: -len(reset_expire_keys)]
+            if any(count > 0 for count in changed):
                 assert to_publish is not None
                 assert event_type is not None
-                to_publish = (event_type, *(self._encode(v) for v in to_publish))
-                self.redis.publish(self.listener_channel, json.dumps(to_publish))
+                self._publish((event_type, to_publish))
+
+    def _publish(self, event):
+        event = (event[0], tuple(self._encode(v) for v in event[1]))
+        self.redis.publish(self.listener_channel, json.dumps(event))
 
     def _encode(self, value: bytes) -> str:
         return base64.b64encode(value).decode("ascii")
@@ -106,11 +109,15 @@ class RedisExampleDatabase(ExampleDatabase):
             self.save(dest, value)
             return
 
-        with self._pipeline(
-            src, dest, event_type="move", to_publish=(src, dest, value)
-        ) as pipe:
+        with self._pipeline(src, dest, execute_and_publish=False) as pipe:
             pipe.srem(self._prefix + src, value)
             pipe.sadd(self._prefix + dest, value)
+
+        changed = pipe.execute()
+        if changed[0] > 0:
+            self._publish(("delete", (src, value)))
+        if changed[1] > 0:
+            self._publish(("save", (dest, value)))
 
     def _handle_message(self, message: dict) -> None:
         # other message types include "subscribe" and "unsubscribe". these are
@@ -119,7 +126,7 @@ class RedisExampleDatabase(ExampleDatabase):
         data = json.loads(message["data"])
         event_type = data[0]
         self._broadcast_change(
-            event_type, tuple(self._decode(v) for v in data[1:])  # type: ignore
+            (event_type, tuple(self._decode(v) for v in data[1]))  # type: ignore
         )
 
     def _start_listening(self) -> None:

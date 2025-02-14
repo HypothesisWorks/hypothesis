@@ -8,7 +8,6 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import sys
 import time
 
 from hypothesis import Phase, settings
@@ -30,10 +29,7 @@ def test_database_listener_directory():
     _database_conforms_to_listener_api(
         lambda path: DirectoryBasedExampleDatabase(path),
         flush=lambda _db: time_sleep(0.2),
-        supports_move=True,
         supports_value_delete=False,
-        # watchdog fires a save instead of a move if there is nothing to move
-        save_on_no_k1_in_move=True,
         # expensive flush makes shrinking take forever
         parent_settings=settings(
             max_examples=5, stateful_step_count=10, phases=set(Phase) - {Phase.shrink}
@@ -47,8 +43,8 @@ def test_database_listener_multiplexed(tmp_path):
     )
     events = []
 
-    def listener(event_type, data):
-        events.append((event_type, data))
+    def listener(event):
+        events.append(event)
 
     db.add_listener(listener)
 
@@ -81,8 +77,8 @@ def test_database_listener_directory_explicit(tmp_path):
     db = DirectoryBasedExampleDatabase(tmp_path)
     events = []
 
-    def listener(event_type, data):
-        events.append((event_type, data))
+    def listener(event):
+        events.append(event)
 
     db.add_listener(listener)
 
@@ -112,14 +108,9 @@ def test_database_listener_directory_explicit(tmp_path):
     db.move(b"k2", b"k1", b"v3")
     time_sleep(0.2)
 
-    expected = [("move", (b"k1", b"k2", b"v3")), ("move", (b"k2", b"k1", b"v3"))]
-    # watchdog / windows falls back to delete / save events instead of move
-    if sys.platform.startswith("win"):
-        expected = [
-            ("delete", (b"k1", None)),
-            ("save", (b"k2", b"v3")),
-            ("delete", (b"k2", None)),
-            ("save", (b"k1", b"v3")),
-        ]
-
-    assert events[3:] == expected
+    assert events[3:] == [
+        ("delete", (b"k1", b"v3")),
+        ("save", (b"k2", b"v3")),
+        ("delete", (b"k2", b"v3")),
+        ("save", (b"k1", b"v3")),
+    ]
