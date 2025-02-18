@@ -109,14 +109,13 @@ def test_redis_listener():
     _database_conforms_to_listener_api(
         lambda _path: RedisExampleDatabase(FakeRedis()),
         flush=flush_messages,
-        supports_move=True,
     )
 
 
 def test_redis_listener_explicit():
     calls = 0
 
-    def listener(event_type, data):
+    def listener(event):
         nonlocal calls
         calls += 1
 

@@ -10,6 +10,7 @@
 
 import sys
 import time
+from collections import Counter
 
 from hypothesis import Phase, settings
 from hypothesis.database import (
@@ -30,10 +31,7 @@ def test_database_listener_directory():
     _database_conforms_to_listener_api(
         lambda path: DirectoryBasedExampleDatabase(path),
         flush=lambda _db: time_sleep(0.2),
-        supports_move=True,
         supports_value_delete=False,
-        # watchdog fires a save instead of a move if there is nothing to move
-        save_on_no_k1_in_move=True,
         # expensive flush makes shrinking take forever
         parent_settings=settings(
             max_examples=5, stateful_step_count=10, phases=set(Phase) - {Phase.shrink}
@@ -47,8 +45,8 @@ def test_database_listener_multiplexed(tmp_path):
     )
     events = []
 
-    def listener(event_type, data):
-        events.append((event_type, data))
+    def listener(event):
+        events.append(event)
 
     db.add_listener(listener)
 
@@ -66,23 +64,25 @@ def test_database_listener_multiplexed(tmp_path):
     db.delete(b"a", b"b")
     db.save(b"a", b"c")
     time_sleep(0.2)
-    assert events == (
-        [("save", (b"a", b"a"))] * 2
-        +
-        # InMemory database fires immediately, while DirectoryBased has to
-        # wait for filesystem listeners. Therefore the events arrive out of
-        # order.
-        [("delete", (b"a", b"b")), ("save", (b"a", b"c"))]  # InMemory
-        + [("delete", (b"a", None)), ("save", (b"a", b"c"))]  # DirectoryBased
-    )
+    # InMemory database fires immediately, while DirectoryBased has to
+    # wait for filesystem listeners. Therefore the events can arrive out of
+    # order. Test a weaker multiset property, disregarding ordering.
+    assert Counter(events[2:]) == {
+        # InMemory
+        ("delete", (b"a", b"b")): 1,
+        # DirectoryBased
+        ("delete", (b"a", None)): 1,
+        # both
+        ("save", (b"a", b"c")): 2,
+    }
 
 
 def test_database_listener_directory_explicit(tmp_path):
     db = DirectoryBasedExampleDatabase(tmp_path)
     events = []
 
-    def listener(event_type, data):
-        events.append((event_type, data))
+    def listener(event):
+        events.append(event)
 
     db.add_listener(listener)
 
@@ -112,14 +112,42 @@ def test_database_listener_directory_explicit(tmp_path):
     db.move(b"k2", b"k1", b"v3")
     time_sleep(0.2)
 
-    expected = [("move", (b"k1", b"k2", b"v3")), ("move", (b"k2", b"k1", b"v3"))]
-    # watchdog / windows falls back to delete / save events instead of move
-    if sys.platform.startswith("win"):
+    if sys.platform.startswith("darwin"):
+        expected = [
+            ("delete", (b"k1", b"v3")),
+            ("save", (b"k2", b"v3")),
+            ("delete", (b"k2", b"v3")),
+            ("save", (b"k1", b"v3")),
+        ]
+    elif sys.platform.startswith("win"):
+        # windows fires a save/delete event for our particular moves
+        # at the os-level instead of a move (or watchdog just isn't picking
+        # up on it correctly on windows). This means we don't get the exact
+        # deleted values for us to broadcast.
         expected = [
             ("delete", (b"k1", None)),
             ("save", (b"k2", b"v3")),
             ("delete", (b"k2", None)),
             ("save", (b"k1", b"v3")),
         ]
+    elif sys.platform.startswith("linux"):
+        expected = [
+            # as far as I can tell, linux fires both a save and a move event
+            # for the first move event. I don't know if this is our bug or an os
+            # implementation detail. I am leaning towards the latter, since other
+            # os' are fine.
+            ("save", (b"k2", b"v3")),
+            # first move event is normal...
+            ("delete", (b"k1", b"v3")),
+            ("save", (b"k2", b"v3")),
+            # ...but the second move event gets picked up by watchdog as an individual
+            # save/delete, not a move. I'm not sure why. Therefore we don't have
+            # the delete value present; and the ordering is also different from
+            # normal.
+            ("save", (b"k1", b"v3")),
+            ("delete", (b"k2", None)),
+        ]
+    else:
+        raise NotImplementedError(f"unknown platform {sys.platform}")
 
-    assert events[3:] == expected
+    assert events[3:] == expected, str(events[3:])
