@@ -18,6 +18,16 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.126.0:
+
+--------------------
+6.126.0 - 2025-02-18
+--------------------
+
+The :doc:`Hypothesis database <database>` now supports a pub-sub interface to efficiently listen for changes in the database, via ``.add_listener`` and ``.remove_listener``. While all databases that ship with Hypothesis support this interface, implementing it is not required for custom database subclasses. Hypothesis will warn when trying to listen on a database without support.
+
+This feature is currently only used downstream in `hypofuzz <https://github.com/zac-hd/hypofuzz>`_.
+
 .. _v6.125.3:
 
 --------------------
