@@ -19,6 +19,8 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.extra.redis import RedisExampleDatabase
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
 
+from tests.cover.test_database_backend import _database_conforms_to_listener_api
+
 
 @pytest.mark.parametrize(
     "kw",
@@ -26,6 +28,7 @@ from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
         {"redis": "not a redis instance"},
         {"redis": FakeRedis(), "expire_after": 10},  # not a timedelta
         {"redis": FakeRedis(), "key_prefix": "not a bytestring"},
+        {"redis": FakeRedis(), "listener_channel": 2},  # not a str
     ],
 )
 def test_invalid_args_raise(kw):
@@ -90,3 +93,52 @@ class DatabaseComparison(RuleBasedStateMachine):
 
 
 TestDBs = DatabaseComparison.TestCase
+
+
+def flush_messages(db):
+    # fake redis doesn't have the background polling for pubsub that an actual
+    # redis server does, so we have to flush when we want them.
+    if db._pubsub is None:
+        return
+    # arbitrarily high.
+    for _ in range(100):
+        db._pubsub.get_message()
+
+
+def test_redis_listener():
+    _database_conforms_to_listener_api(
+        lambda _path: RedisExampleDatabase(FakeRedis()),
+        flush=flush_messages,
+    )
+
+
+def test_redis_listener_explicit():
+    calls = 0
+
+    def listener(event):
+        nonlocal calls
+        calls += 1
+
+    redis = FakeRedis()
+    db = RedisExampleDatabase(redis)
+    db.add_listener(listener)
+
+    db.save(b"a", b"a")
+    flush_messages(db)
+    assert calls == 1
+
+    db.remove_listener(listener)
+    db.delete(b"a", b"a")
+    db.save(b"a", b"b")
+    flush_messages(db)
+    assert calls == 1
+
+    db.add_listener(listener)
+    db.delete(b"a", b"b")
+    db.save(b"a", b"c")
+    flush_messages(db)
+    assert calls == 3
+
+    db.save(b"a", b"c")
+    flush_messages(db)
+    assert calls == 3

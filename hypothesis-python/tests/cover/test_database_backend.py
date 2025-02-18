@@ -10,9 +10,10 @@
 
 import os
 import re
+import shutil
 import tempfile
 import zipfile
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from contextlib import contextmanager, nullcontext
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -38,18 +39,23 @@ from hypothesis.database import (
 from hypothesis.errors import HypothesisWarning
 from hypothesis.internal.compat import WINDOWS
 from hypothesis.internal.conjecture.choice import choice_equal
-from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
+from hypothesis.stateful import (
+    Bundle,
+    RuleBasedStateMachine,
+    invariant,
+    precondition,
+    rule,
+    run_state_machine_as_test,
+)
 from hypothesis.strategies import binary, lists, tuples
 from hypothesis.utils.conventions import not_set
 
 from tests.common.utils import skipif_emscripten
 from tests.conjecture.common import ir, nodes
 
-small_settings = settings(max_examples=50)
-
 
 @given(lists(tuples(binary(), binary())))
-@small_settings
+@settings(max_examples=50)
 def test_backend_returns_what_you_put_in(xs):
     backend = InMemoryExampleDatabase()
     mapping = {}
@@ -428,6 +434,9 @@ class GitHubArtifactMocks(RuleBasedStateMachine):
 
         assert v1 == v2
 
+    def teardown(self):
+        shutil.rmtree(self.temp_directory)
+
 
 TestGADReads = GitHubArtifactMocks.TestCase
 
@@ -500,3 +509,266 @@ def test_uleb_128_roundtrips(n1):
     idx, n2 = _unpack_uleb128(buffer1)
     assert idx == len(buffer1)
     assert n1 == n2
+
+
+def _database_conforms_to_listener_api(
+    create_db,
+    *,
+    flush=None,
+    supports_value_delete=True,
+    parent_settings=None,
+):
+    # this function is a big mess to support a bunch of different special cases
+    # for different databases, sorry. In return, we get one big stateful test
+    # we can use to test the listener api for all of our databases.
+    #
+    # * create_db is a callable which accepts one argument (a path to a temporary
+    #   directory) and returns a database instance.
+    # * flush is a callable which takes the instantiated db as an argument, and
+    #   is called on every step as an invariant. This lets the database do things
+    #   like, time.sleep to give time for events to fire.
+    # * suports_value_delete is True if the db supports passing
+    #   the exact value of a deleted key in "delete" events. The directory database
+    #   notably does not support this, and passes None instead.
+
+    @settings(parent_settings)
+    class TestDatabaseListener(RuleBasedStateMachine):
+        # this tests that if we call .delete, .save, or .move in a database, and
+        # that operation changes the state of the database, any registered listeners
+        # get called a corresponding number of times.
+        keys = Bundle("keys")
+        values = Bundle("values")
+
+        def __init__(self):
+            super().__init__()
+
+            self.temp_dir = Path(tempfile.mkdtemp())
+            self.db = create_db(self.temp_dir)
+            self.expected_events = []
+            self.actual_events = []
+
+            def listener(event):
+                self.actual_events.append(event)
+
+            self.listener = listener
+            self.active_listeners = []
+            self.add_listener()
+
+        def _expect_event(self, event_type, args):
+            for _ in range(len(self.active_listeners)):
+                self.expected_events.append((event_type, args))
+
+        def _expect_delete(self, k, v):
+            if not supports_value_delete:
+                v = None
+            self._expect_event("delete", (k, v))
+
+        def _expect_save(self, k, v):
+            self._expect_event("save", (k, v))
+
+        @rule(target=keys, k=st.binary())
+        def k(self, k):
+            return k
+
+        @rule(target=values, v=st.binary())
+        def v(self, v):
+            return v
+
+        @precondition(lambda self: not self.active_listeners)
+        @rule()
+        def add_listener(self):
+            self.db.add_listener(self.listener)
+            self.active_listeners.append(self.listener)
+
+        @precondition(lambda self: self.listener in self.active_listeners)
+        @rule()
+        def remove_listener(self):
+            self.db.remove_listener(self.listener)
+            self.active_listeners.remove(self.listener)
+
+        @rule()
+        def clear_listeners(self):
+            self.db.clear_listeners()
+            self.active_listeners.clear()
+
+        @rule(k=keys)
+        def fetch(self, k):
+            # we don't expect this to do anything, but that's the point. if this
+            # fires a listener call then that's bad and will fail.
+            self.db.fetch(k)
+
+        @rule(k=keys, v=values)
+        def save(self, k, v):
+            changed = v not in set(self.db.fetch(k))
+            self.db.save(k, v)
+
+            if changed:
+                self._expect_save(k, v)
+
+        @rule(k=keys, v=values)
+        def delete(self, k, v):
+            changed = v in set(self.db.fetch(k))
+            self.db.delete(k, v)
+
+            if changed:
+                self._expect_delete(k, v)
+
+        @rule(k1=keys, k2=keys, v=values)
+        def move(self, k1, k2, v):
+            in_k1 = v in set(self.db.fetch(k1))
+            save_changed = v not in set(self.db.fetch(k2))
+            delete_changed = k1 != k2 and in_k1
+            self.db.move(k1, k2, v)
+
+            # A move gets emitted as a delete followed by a save.  The
+            # delete may be omitted if k1==k2, and the save if v in db.fetch(k2).
+            if delete_changed:
+                self._expect_delete(k1, v)
+            if save_changed:
+                self._expect_save(k2, v)
+
+        # it would be nice if this was an @rule, but that runs into race condition
+        # failures where an event listener is removed immediately after a
+        # save/delete/move operation, before the listener can fire. This is only
+        # relevant for DirectoryBasedExampleDatabase.
+        @invariant()
+        def events_agree(self):
+            if flush is not None:
+                flush(self.db)
+            assert self.expected_events == self.actual_events
+
+        def teardown(self):
+            shutil.rmtree(self.temp_dir)
+
+    run_state_machine_as_test(TestDatabaseListener)
+
+
+def test_database_listener_memory():
+    _database_conforms_to_listener_api(lambda path: InMemoryExampleDatabase())
+
+
+@skipif_emscripten
+def test_database_listener_background_write():
+    _database_conforms_to_listener_api(
+        lambda path: BackgroundWriteDatabase(InMemoryExampleDatabase()),
+        flush=lambda db: db._join(),
+    )
+
+
+def test_can_remove_nonexistent_listener():
+    db = InMemoryExampleDatabase()
+    db.remove_listener(lambda event: event)
+
+
+class DoesNotSupportListening(ExampleDatabase):
+    def save(self, key: bytes, value: bytes) -> None: ...
+    def fetch(self, key: bytes) -> Iterable[bytes]: ...
+    def delete(self, key: bytes, value: bytes) -> None: ...
+
+
+def test_warns_when_listening_not_supported():
+    db = DoesNotSupportListening()
+    listener = lambda event: event
+
+    with pytest.warns(
+        HypothesisWarning, match="does not support listening for changes"
+    ):
+        db.add_listener(listener)
+
+    with pytest.warns(
+        HypothesisWarning, match="does not support stopping listening for changes"
+    ):
+        db.remove_listener(listener)
+
+
+def test_readonly_listener():
+    db = ReadOnlyDatabase(InMemoryExampleDatabase())
+
+    def listener(event):
+        raise AssertionError("ReadOnlyDatabase never fires change events")
+
+    db.add_listener(listener)
+    db.save(b"a", b"a")
+
+    db.remove_listener(listener)
+    db.save(b"b", b"b")
+
+
+def test_metakeys_move_into_existing_key(tmp_path):
+    db = DirectoryBasedExampleDatabase(tmp_path)
+    db.save(b"k1", b"v1")
+    db.save(b"k1", b"v2")
+    db.save(b"k2", b"v3")
+    assert set(db.fetch(db._metakeys_name)) == {b"k1", b"k2"}
+
+    db.move(b"k1", b"k2", b"v2")
+    assert set(db.fetch(db._metakeys_name)) == {b"k1", b"k2"}
+
+
+def test_metakeys_move_into_nonexistent_key(tmp_path):
+    db = DirectoryBasedExampleDatabase(tmp_path)
+    db.save(b"k1", b"v1")
+    assert set(db.fetch(db._metakeys_name)) == {b"k1"}
+
+    db.move(b"k1", b"k2", b"v1")
+    assert set(db.fetch(db._metakeys_name)) == {b"k1", b"k2"}
+
+
+def test_metakeys(tmp_path):
+    db = DirectoryBasedExampleDatabase(tmp_path)
+
+    db.save(b"k1", b"v1")
+    assert set(db.fetch(db._metakeys_name)) == {b"k1"}
+
+    db.save(b"k1", b"v2")
+    assert set(db.fetch(db._metakeys_name)) == {b"k1"}
+
+    # deleting all the values from a key doesn't (currently?) clean up that key
+    db.delete(b"k1", b"v1")
+    db.delete(b"k1", b"v2")
+    assert set(db.fetch(db._metakeys_name)) == {b"k1"}
+
+    db.save(b"k2", b"v1")
+    assert set(db.fetch(db._metakeys_name)) == {b"k1", b"k2"}
+
+
+class TracksListens(ExampleDatabase):
+    def __init__(self):
+        super().__init__()
+        self.starts = 0
+        self.ends = 0
+
+    def save(self, key: bytes, value: bytes) -> None: ...
+    def fetch(self, key: bytes) -> Iterable[bytes]: ...
+    def delete(self, key: bytes, value: bytes) -> None: ...
+
+    def _start_listening(self):
+        self.starts += 1
+
+    def _stop_listening(self):
+        self.ends += 1
+
+
+def test_start_end_listening():
+    db = TracksListens()
+
+    def listener1(event):
+        pass
+
+    def listener2(event):
+        pass
+
+    assert db.starts == 0
+    db.add_listener(listener1)
+    assert db.starts == 1
+    db.add_listener(listener2)
+    assert db.starts == 1
+
+    assert db.ends == 0
+    db.remove_listener(listener2)
+    assert db.ends == 0
+    db.remove_listener(listener1)
+    assert db.ends == 1
+
+    db.clear_listeners()
+    assert db.ends == 1

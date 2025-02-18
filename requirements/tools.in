@@ -27,4 +27,5 @@ types-click
 types-pytz
 types-redis
 typing-extensions
+watchdog # for typing
 -r test.in
