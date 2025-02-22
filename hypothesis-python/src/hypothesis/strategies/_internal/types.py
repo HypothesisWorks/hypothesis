@@ -272,6 +272,17 @@ def is_a_new_type(thing):
     return isinstance(thing, typing.NewType)
 
 
+def is_a_type_alias_type(thing):  # pragma: no cover # covered by 3.12+ tests
+    # TypeAliasType is new in python 3.12, through the type statement. If we're
+    # before python 3.12 then this can't possibly by a TypeAliasType.
+    #
+    # https://docs.python.org/3/reference/simple_stmts.html#type
+    # https://docs.python.org/3/library/typing.html#typing.TypeAliasType
+    if sys.version_info < (3, 12):
+        return False
+    return isinstance(thing, typing.TypeAliasType)
+
+
 def is_a_union(thing: object) -> bool:
     """Return True if thing is a typing.Union or types.UnionType (in py310)."""
     return isinstance(thing, UnionType) or get_origin(thing) is typing.Union
@@ -279,7 +290,12 @@ def is_a_union(thing: object) -> bool:
 
 def is_a_type(thing: object) -> bool:
     """Return True if thing is a type or a generic type like thing."""
-    return isinstance(thing, type) or is_generic_type(thing) or is_a_new_type(thing)
+    return (
+        isinstance(thing, type)
+        or is_generic_type(thing)
+        or is_a_new_type(thing)
+        or is_a_type_alias_type(thing)
+    )
 
 
 def is_typing_literal(thing: object) -> bool:

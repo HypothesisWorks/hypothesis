@@ -38,6 +38,8 @@ run()
 collect_ignore_glob = ["django/*"]
 if sys.version_info < (3, 10):
     collect_ignore_glob.append("cover/*py310*")
+if sys.version_info < (3, 12):
+    collect_ignore_glob.append("cover/*py312*.py")
 
 if sys.version_info >= (3, 11):
     collect_ignore_glob.append("cover/test_asyncio.py")  # @asyncio.coroutine removed
