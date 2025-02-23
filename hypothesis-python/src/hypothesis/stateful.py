@@ -65,6 +65,20 @@ STATE_MACHINE_RUN_LABEL = cu.calc_label_from_name("another state machine step")
 SHOULD_CONTINUE_LABEL = cu.calc_label_from_name("should we continue drawing")
 
 
+def _is_singleton(obj: object) -> bool:
+    """
+    Returns True if two separately created instances of v will have the same id
+    (due to interning).
+    """
+    # The range [-5, 256] is a cpython implementation detail. This may not work
+    # well on other platforms.
+    if isinstance(obj, int) and -5 <= obj <= 256:
+        return True
+    # cpython also interns compile-time strings, but let's just ignore those for
+    # now.
+    return isinstance(obj, bool) or obj is None
+
+
 class _OmittedArgument:
     """Sentinel class to prevent overlapping overloads in type hints. See comments
     above the overloads of @rule."""
@@ -395,7 +409,10 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
             def printer(obj, p, cycle, name=name):
                 return p.text(name)
 
-            self.__printer.singleton_pprinters.setdefault(id(result), printer)
+            # see
+            # https://github.com/HypothesisWorks/hypothesis/pull/4266#discussion_r1949619102
+            if not _is_singleton(result):
+                self.__printer.singleton_pprinters.setdefault(id(result), printer)
             self.names_to_values[name] = result
             self.bundles.setdefault(target, []).append(VarReference(name))
 
