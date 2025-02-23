@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.127.0:
+
+--------------------
+6.127.0 - 2025-02-23
+--------------------
+
+This releases adds support for type aliases created with the :py:keyword:`type` statement (new in python 3.12) to :func:`~hypothesis.strategies.from_type` and :func:`~hypothesis.strategies.register_type_strategy`.
+
 .. _v6.126.0:
 
 --------------------
