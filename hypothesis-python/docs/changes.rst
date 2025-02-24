@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.127.2:
+
+--------------------
+6.127.2 - 2025-02-24
+--------------------
+
+Adjust type hints for the pub-sub database implementation in :ref:`version 6.126.0 <v6.126.0>`, and remove a remnant debug print in its implementation.
+
 .. _v6.127.1:
 
 --------------------
