@@ -17,7 +17,7 @@ like a nice tidy reusable set of functionality.
 """
 
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 
 import hypothesistooling as tools
 
@@ -30,7 +30,7 @@ def release_date_string():
     through a release."""
     global __RELEASE_DATE_STRING
     if __RELEASE_DATE_STRING is None:
-        __RELEASE_DATE_STRING = datetime.utcnow().strftime("%Y-%m-%d")
+        __RELEASE_DATE_STRING = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     return __RELEASE_DATE_STRING
 
 
