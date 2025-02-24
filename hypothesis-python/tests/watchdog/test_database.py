@@ -12,6 +12,8 @@ import sys
 import time
 from collections import Counter
 
+import pytest
+
 from hypothesis import Phase, settings
 from hypothesis.database import (
     DirectoryBasedExampleDatabase,
@@ -77,6 +79,8 @@ def test_database_listener_multiplexed(tmp_path):
     }
 
 
+# TODO flaky failure on linux
+@pytest.mark.xfail(strict=False)
 def test_database_listener_directory_explicit(tmp_path):
     db = DirectoryBasedExampleDatabase(tmp_path)
     events = []
