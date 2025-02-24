@@ -58,12 +58,12 @@ if TYPE_CHECKING:
     from watchdog.observers.api import BaseObserver
 
 StrPathT: "TypeAlias" = Union[str, PathLike[str]]
-ListenerEventType: "TypeAlias" = Literal["save", "delete"]
 SaveDataT: "TypeAlias" = tuple[bytes, bytes]  # key, value
 DeleteDataT: "TypeAlias" = tuple[bytes, Optional[bytes]]  # key, value
-MoveDataT: "TypeAlias" = tuple[bytes, bytes, bytes]  # src, dest, value
-ListenerDataT: "TypeAlias" = Union[SaveDataT, DeleteDataT, MoveDataT]
-ListenerT: "TypeAlias" = Callable[[tuple[ListenerEventType, ListenerDataT]], Any]
+ListenerEventT: "TypeAlias" = Union[
+    tuple[Literal["save"], SaveDataT], tuple[Literal["delete"], DeleteDataT]
+]
+ListenerT: "TypeAlias" = Callable[[ListenerEventT], Any]
 
 
 def _usable_dir(path: StrPathT) -> bool:
@@ -204,7 +204,7 @@ class ExampleDatabase(metaclass=_EDMeta):
         if had_listeners:
             self._stop_listening()
 
-    def _broadcast_change(self, event: tuple[ListenerEventType, ListenerDataT]) -> None:
+    def _broadcast_change(self, event: ListenerEventT) -> None:
         """
         Called when a value has been either added to or deleted from a key in
         the underlying database store. event_type is one of "save" or "delete".
@@ -440,7 +440,6 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
             def on_created(
                 _self, event: Union[FileCreatedEvent, DirCreatedEvent]
             ) -> None:
-                print("create", event)
                 # we only registered for the file creation event
                 assert not isinstance(event, DirCreatedEvent)
                 # watchdog events are only bytes if we passed a byte path to
@@ -471,7 +470,6 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
             def on_deleted(
                 self, event: Union[FileDeletedEvent, DirDeletedEvent]
             ) -> None:
-                print("delete", event)
                 assert not isinstance(event, DirDeletedEvent)
                 assert isinstance(event.src_path, str)
 
@@ -483,7 +481,6 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
                 _broadcast_change(("delete", (key, None)))
 
             def on_moved(self, event: Union[FileMovedEvent, DirMovedEvent]) -> None:
-                print("move", event)
                 assert not isinstance(event, DirMovedEvent)
                 assert isinstance(event.src_path, str)
                 assert isinstance(event.dest_path, str)
