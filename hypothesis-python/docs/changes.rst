@@ -1891,8 +1891,11 @@ Previously, this did nothing at all.
     class TestMyStatefulMachine(MyStatefulMachine.TestCase):
         settings = settings(max_examples=10000)
 
+
     # the old way still works, but it's more verbose.
     MyStateMachine.TestCase.settings = settings(max_examples=10000)
+
+
     class TestMyStatefulMachine(MyStatefulMachine.TestCase):
         pass
 
@@ -1912,7 +1915,9 @@ This has never had any effect, and it should be used as a decorator instead:
 
     class BadMachine(RuleBasedStateMachine):
         """This doesn't do anything, and is now an error!"""
+
         settings = settings(derandomize=True)
+
 
     @settings(derandomize=True)
     class GoodMachine(RuleBasedStateMachine):
