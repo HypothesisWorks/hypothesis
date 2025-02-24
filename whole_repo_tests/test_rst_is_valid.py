@@ -9,6 +9,8 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import os
+import re
+from pathlib import Path
 
 import hypothesistooling as tools
 from hypothesistooling.projects import hypothesispython as hp
@@ -30,6 +32,17 @@ ALL_RST = [
 
 def test_passes_rst_lint():
     pip_tool("rst-lint", *(f for f in ALL_RST if not is_sphinx(f)))
+
+
+def test_rst_code_blocks():
+    # has bitten us before https://github.com/HypothesisWorks/hypothesis/pull/4273
+    pattern = re.compile(r"^\.\.\s+code-block:\s+", re.MULTILINE)
+    for f in ALL_RST:
+        matches = pattern.search(Path(f).read_text())
+        assert not matches, (
+            f"incorrect code block syntax in {f}. Use `.. code-block::` "
+            "instead of `.. code-block:`"
+        )
 
 
 def disabled_test_passes_flake8():

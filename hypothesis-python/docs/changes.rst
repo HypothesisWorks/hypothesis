@@ -36,14 +36,14 @@ Improve the clarity of printing counterexamples in :doc:`stateful testing <state
 
 For example, we now print:
 
-.. code-block: python
+.. code-block:: python
 
   a_0 = state.add_to_bundle(a=0)
   state.unrelated(value=0)
 
 instead of
 
-.. code-block: python
+.. code-block:: python
 
   a_0 = state.add_to_bundle(a=0)
   state.unrelated(value=a_0)
@@ -1893,14 +1893,17 @@ This patch supports assigning ``settings = settings(...)`` as a class attribute
 on a subclass of a ``.TestCase`` attribute of a :class:`~hypothesis.stateful.RuleBasedStateMachine`.
 Previously, this did nothing at all.
 
-.. code-block: python
+.. code-block:: python
 
     # works as of this release
     class TestMyStatefulMachine(MyStatefulMachine.TestCase):
         settings = settings(max_examples=10000)
 
+
     # the old way still works, but it's more verbose.
     MyStateMachine.TestCase.settings = settings(max_examples=10000)
+
+
     class TestMyStatefulMachine(MyStatefulMachine.TestCase):
         pass
 
@@ -1916,11 +1919,13 @@ This release makes it an error to assign ``settings = settings(...)``
 as a class attribute on a :class:`~hypothesis.stateful.RuleBasedStateMachine`.
 This has never had any effect, and it should be used as a decorator instead:
 
-.. code-block: python
+.. code-block:: python
 
     class BadMachine(RuleBasedStateMachine):
         """This doesn't do anything, and is now an error!"""
+
         settings = settings(derandomize=True)
+
 
     @settings(derandomize=True)
     class GoodMachine(RuleBasedStateMachine):
