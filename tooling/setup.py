@@ -18,7 +18,7 @@ def local_file(name):
 
 
 SOURCE = local_file("src")
-README = local_file("README.rst")
+README = local_file("README.md")
 
 setuptools.setup(
     name="hypothesis-tooling",
