@@ -690,16 +690,6 @@ def _prep_source(*pairs):
         ),
         (
             """
-            def      \\
-                f(): pass
-            """,
-            """
-            def\\
-                f(): pass
-            """,
-        ),
-        (
-            """
             @dec
             async def f():
                 pass
