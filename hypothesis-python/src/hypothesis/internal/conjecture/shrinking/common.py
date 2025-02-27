@@ -107,39 +107,46 @@ class Shrinker:
             self.run_step()
         self.debug("COMPLETE")
 
-    def incorporate(self, value):
+    def consider(self, value):
         """Try using ``value`` as a possible candidate improvement.
 
-        Return True if it works.
+        Return True if self.current is canonically equal to self.current after the call.
         """
         value = self.make_immutable(value)
+        if value == self.current:
+            # shortcut for the simple (non-canonical) equality case, not required for correctness
+            return True
+        self.debug(f"considering {value!r}")
+        canonical = self.make_canonical(value)
+        if canonical in self.__seen:
+            return canonical == self.make_canonical(self.current)
+        self.__seen.add(canonical)
         self.check_invariants(value)
         if not self.left_is_better(value, self.current):
-            if value != self.current and (value == value):
-                self.debug(f"Rejected {value!r} as worse than {self.current=}")
+            self.debug(f"Rejected {value!r} as no better than {self.current=}")
             return False
-        if value in self.__seen:
-            return False
-        self.__seen.add(value)
         if self.__predicate(value):
             self.debug(f"shrinking to {value!r}")
             self.changes += 1
             self.current = value
             return True
-        return False
+        else:
+            self.debug(f"Rejected {value!r} not satisfying predicate")
+            return False
 
-    def consider(self, value):
-        """Returns True if make_immutable(value) == self.current after calling
-        self.incorporate(value)."""
-        self.debug(f"considering {value}")
-        value = self.make_immutable(value)
-        if value == self.current:
-            return True
-        return self.incorporate(value)
+    def make_canonical(self, value):
+        """Convert immutable value into a canonical and hashable, but not necessarily equal,
+        representation of itself.
+
+        This representation is used only for tracking already-seen values, not passed to the
+        shrinker.
+
+        Defaults to just returning the (immutable) input value.
+        """
+        return value
 
     def make_immutable(self, value):
-        """Convert value into an immutable (and hashable) representation of
-        itself.
+        """Convert value into an immutable representation of itself.
 
         It is these immutable versions that the shrinker will work on.
 
