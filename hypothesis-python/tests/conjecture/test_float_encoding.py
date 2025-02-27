@@ -9,7 +9,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
-import struct
 import sys
 
 import pytest
@@ -18,7 +17,7 @@ from hypothesis import HealthCheck, assume, example, given, settings, strategies
 from hypothesis.internal.compat import ceil, extract_bits, floor
 from hypothesis.internal.conjecture import floats as flt
 from hypothesis.internal.conjecture.engine import ConjectureRunner
-from hypothesis.internal.floats import float_to_int
+from hypothesis.internal.floats import SIGNALING_NAN, float_to_int
 
 EXPONENTS = list(range(flt.MAX_EXPONENT + 1))
 assert len(EXPONENTS) == 2**11
@@ -204,9 +203,7 @@ def test_reject_out_of_bounds_floats_while_shrinking():
     assert g == 103.0
 
 
-@pytest.mark.parametrize(
-    "nan", [-math.nan, struct.unpack("d", struct.pack("Q", 0xFFF8000000000001))[0]]
-)
+@pytest.mark.parametrize("nan", [-math.nan, SIGNALING_NAN, -SIGNALING_NAN])
 def test_shrinks_to_canonical_nan(nan):
     shrunk = minimal_from(nan, math.isnan)
     assert float_to_int(shrunk) == float_to_int(math.nan)
