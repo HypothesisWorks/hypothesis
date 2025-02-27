@@ -114,13 +114,12 @@ class Shrinker:
         the value was incorporated as an improvement or because it had that value already.
         """
         value = self.make_immutable(value)
-        if value == self.current:
-            # shortcut for the simple (non-canonical) equality case, not required for correctness
-            return True
         self.debug(f"considering {value!r}")
         canonical = self.make_canonical(value)
+        if canonical == self.make_canonical(self.current):
+            return True
         if canonical in self.__seen:
-            return canonical == self.make_canonical(self.current)
+            return False
         self.__seen.add(canonical)
         self.check_invariants(value)
         if not self.left_is_better(value, self.current):
