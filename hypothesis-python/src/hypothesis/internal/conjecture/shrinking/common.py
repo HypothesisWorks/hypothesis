@@ -34,7 +34,7 @@ class Shrinker:
         self.name = name
 
         self.__predicate = predicate
-        self.__seen = set()
+        self.__seen = {self.make_canonical(self.current)}
         self.debugging_enabled = debug
 
     @property

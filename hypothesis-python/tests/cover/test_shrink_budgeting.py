@@ -20,7 +20,7 @@ from hypothesis.internal.conjecture.shrinking import Integer, Ordering
     [
         (Integer, 2**16),
         (Integer, int(sys.float_info.max)),
-        (Ordering, [[100] * 10]),
+        (Ordering, [(100,) * 10]),
         (Ordering, [i * 100 for i in (range(5))]),
         (Ordering, [i * 100 for i in reversed(range(5))]),
     ],
