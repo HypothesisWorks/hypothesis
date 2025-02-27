@@ -8,12 +8,17 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import math
+import struct
+
 import pytest
 
 from hypothesis import example, given, seed, strategies as st
 from hypothesis.internal.compat import ceil
+from hypothesis.internal.conjecture.data import ConjectureData
 
 from tests.common.debug import minimal
+from tests.conjecture.common import shrinking_from
 
 
 def test_shrinks_to_simple_floats():
@@ -47,21 +52,20 @@ def test_shrinks_downwards_to_integers_when_fractional(b):
     assert g == b + 0.5
 
 
-@pytest.mark.parametrize("s", range(10))
-def test_shrinks_to_canonical_nan(s):
-    # Regression test for #4277. A more reliable and minimal example could probably be found.
-    @given(
-        st.lists(
-            st.just(0) | st.floats().filter(lambda a: a != a), min_size=2, max_size=2
-        )
-    )
-    @seed(s)
-    def sort_is_reversible(l):
-        # fmt: off
-        assert sorted(l, reverse=True) == list(reversed(sorted(l)))  # noqa: C413
-        # fmt: on
+@pytest.mark.parametrize("nan",
+    [
+        math.nan,
+        -math.nan,
+        struct.unpack('d', struct.pack('Q', 0xfff8000000000001))[0]
+    ]
+)
+def test_shrinks_to_canonical_nan(nan):
+    @shrinking_from([nan])
+    def shrinker(data: ConjectureData):
+        value = data.draw_float()
+        if math.isnan(value):
+            data.mark_interesting()
 
-    try:
-        sort_is_reversible()
-    except AssertionError as e:
-        assert "[0, nan]" in e.__notes__[0]
+    shrinker.shrink()
+    assert len(shrinker.choices) == 1
+    assert struct.pack("d", shrinker.choices[0]) == struct.pack("d", math.nan)
