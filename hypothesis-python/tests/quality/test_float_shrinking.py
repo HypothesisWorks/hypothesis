@@ -50,10 +50,17 @@ def test_shrinks_downwards_to_integers_when_fractional(b):
 @pytest.mark.parametrize("s", range(10))
 def test_shrinks_to_canonical_nan(s):
     # Regression test for #4277. A more reliable and minimal example could probably be found.
-    @given(st.lists(st.just(0)|st.floats().filter(lambda a: a != a), min_size=2, max_size=2))
+    @given(
+        st.lists(
+            st.just(0) | st.floats().filter(lambda a: a != a), min_size=2, max_size=2
+        )
+    )
     @seed(s)
     def sort_is_reversible(l):
+        # fmt: off
         assert sorted(l, reverse=True) == list(reversed(sorted(l)))
+        # fmt: on
+
     try:
         sort_is_reversible()
     except AssertionError as e:
