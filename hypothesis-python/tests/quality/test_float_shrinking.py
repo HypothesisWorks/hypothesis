@@ -58,7 +58,7 @@ def test_shrinks_to_canonical_nan(s):
     @seed(s)
     def sort_is_reversible(l):
         # fmt: off
-        assert sorted(l, reverse=True) == list(reversed(sorted(l)))
+        assert sorted(l, reverse=True) == list(reversed(sorted(l)))  # noqa: C413
         # fmt: on
 
     try:
