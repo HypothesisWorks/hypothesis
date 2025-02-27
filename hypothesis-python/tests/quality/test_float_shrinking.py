@@ -10,7 +10,7 @@
 
 import pytest
 
-from hypothesis import example, given, strategies as st
+from hypothesis import example, given, seed, strategies as st
 from hypothesis.internal.compat import ceil
 
 from tests.common.debug import minimal
@@ -45,3 +45,16 @@ def test_shrinks_downwards_to_integers_when_fractional(b):
         ).filter(lambda x: int(x) != x)
     )
     assert g == b + 0.5
+
+
+@pytest.mark.parametrize("s", range(10))
+def test_shrinks_to_canonical_nan(s):
+    # Regression test for #4277. A more reliable and minimal example could probably be found.
+    @given(st.lists(st.just(0)|st.floats().filter(lambda a: a != a), min_size=2, max_size=2))
+    @seed(s)
+    def sort_is_reversible(l):
+        assert sorted(l, reverse=True) == list(reversed(sorted(l)))
+    try:
+        sort_is_reversible()
+    except AssertionError as e:
+        assert "[0, nan]" in e.__notes__[0]
