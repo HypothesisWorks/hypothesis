@@ -417,7 +417,7 @@ def choice_to_index(choice: ChoiceT, kwargs: ChoiceKwargsT) -> int:
             to_order=intervals.index_from_char_in_shrink_order,
         )
     elif isinstance(choice, float):
-        sign = int(sign_aware_lte(choice, -0.0))
+        sign = int(math.copysign(1.0, choice) < 0)
         return (sign << 64) | float_to_lex(abs(choice))
     else:
         raise NotImplementedError
