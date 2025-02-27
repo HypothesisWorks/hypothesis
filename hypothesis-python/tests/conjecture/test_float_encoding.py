@@ -17,11 +17,8 @@ import pytest
 from hypothesis import HealthCheck, assume, example, given, settings, strategies as st
 from hypothesis.internal.compat import ceil, extract_bits, floor
 from hypothesis.internal.conjecture import floats as flt
-from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.floats import float_to_int
-
-from tests.conjecture.common import shrinking_from
 
 EXPONENTS = list(range(flt.MAX_EXPONENT + 1))
 assert len(EXPONENTS) == 2**11
@@ -208,16 +205,8 @@ def test_reject_out_of_bounds_floats_while_shrinking():
 
 
 @pytest.mark.parametrize(
-    "nan",
-    [math.nan, -math.nan, struct.unpack('d', struct.pack('Q', 0xfff8000000000001))[0]]
+    "nan", [-math.nan, struct.unpack("d", struct.pack("Q", 0xFFF8000000000001))[0]]
 )
 def test_shrinks_to_canonical_nan(nan):
-    @shrinking_from([nan])
-    def shrinker(data: ConjectureData):
-        value = data.draw_float()
-        if math.isnan(value):
-            data.mark_interesting()
-
-    shrinker.shrink()
-    assert len(shrinker.choices) == 1
-    assert float_to_int(shrinker.choices[0]) == float_to_int(math.nan)
+    shrunk = minimal_from(nan, math.isnan)
+    assert float_to_int(shrunk) == float_to_int(math.nan)
