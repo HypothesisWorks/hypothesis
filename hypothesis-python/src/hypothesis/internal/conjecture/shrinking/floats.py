@@ -9,13 +9,12 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import math
-import struct
 import sys
 
 from hypothesis.internal.conjecture.floats import float_to_lex
 from hypothesis.internal.conjecture.shrinking.common import Shrinker
 from hypothesis.internal.conjecture.shrinking.integer import Integer
-from hypothesis.internal.floats import MAX_PRECISE_INTEGER
+from hypothesis.internal.floats import MAX_PRECISE_INTEGER, float_to_int
 
 
 class Float(Shrinker):
@@ -25,9 +24,8 @@ class Float(Shrinker):
     def make_canonical(self, f):
         if math.isnan(f):
             # Distinguish different NaN bit patterns, while making each equal to itself.
-            # Returning bytes instead of integer (float_to_int) avoids accidental
-            # equality with valid large floats.
-            return struct.pack("d", f)
+            # Wrap in tuple to avoid potential collision with (huge) finite floats.
+            return ("nan", float_to_int(f))
         return f
 
     def check_invariants(self, value):
