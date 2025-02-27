@@ -659,8 +659,9 @@ def test_param_called_within_defaults_on_error():
 
 def _prep_source(*pairs):
     return [
-        pytest.param(dedent(x).strip(), dedent(y).strip().encode(), id=f"case-{i}")
-        for i, (x, y) in enumerate(pairs)
+        pytest.param(dedent(x).strip(), dedent(y).strip().encode(),
+                     id=f"case-{i}", marks=marks)
+        for i, (x, y, *marks) in enumerate(pairs)
     ]
 
 
@@ -687,6 +688,20 @@ def _prep_source(*pairs):
                 assert x
                 "Had some blank lines above"
             """,
+        ),
+        (
+            """
+            def      \\
+                f(): pass
+            """,
+            """
+            def\\
+                f(): pass
+            """,
+            pytest.mark.skipif(
+                sys.version_info >= (3, 12),
+                reason="untokenize() does not round-trip for code with line breaks, gh-125553",
+            ),
         ),
         (
             """
