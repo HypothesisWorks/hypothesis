@@ -8,6 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import math
+import struct
 import sys
 
 import pytest
@@ -15,8 +17,11 @@ import pytest
 from hypothesis import HealthCheck, assume, example, given, settings, strategies as st
 from hypothesis.internal.compat import ceil, extract_bits, floor
 from hypothesis.internal.conjecture import floats as flt
+from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.floats import float_to_int
+
+from tests.conjecture.common import shrinking_from
 
 EXPONENTS = list(range(flt.MAX_EXPONENT + 1))
 assert len(EXPONENTS) == 2**11
@@ -200,3 +205,19 @@ def test_reject_out_of_bounds_floats_while_shrinking():
     kwargs = {"min_value": 103.0}
     g = minimal_from(103.1, lambda x: x >= 100, kwargs=kwargs)
     assert g == 103.0
+
+
+@pytest.mark.parametrize(
+    "nan",
+    [math.nan, -math.nan, struct.unpack('d', struct.pack('Q', 0xfff8000000000001))[0]]
+)
+def test_shrinks_to_canonical_nan(nan):
+    @shrinking_from([nan])
+    def shrinker(data: ConjectureData):
+        value = data.draw_float()
+        if math.isnan(value):
+            data.mark_interesting()
+
+    shrinker.shrink()
+    assert len(shrinker.choices) == 1
+    assert float_to_int(shrinker.choices[0]) == float_to_int(math.nan)
