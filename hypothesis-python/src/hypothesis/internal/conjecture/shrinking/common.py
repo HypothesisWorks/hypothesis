@@ -110,7 +110,8 @@ class Shrinker:
     def consider(self, value):
         """Try using ``value`` as a possible candidate improvement.
 
-        Return True if self.current is canonically equal to self.current after the call.
+        Return True if self.current is canonically equal to value after the call, either because
+        the value was incorporated as an improvement or because it had that value already.
         """
         value = self.make_immutable(value)
         if value == self.current:
