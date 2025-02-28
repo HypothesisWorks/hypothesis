@@ -24,7 +24,7 @@ from hypothesis.errors import (
 from hypothesis.internal.compat import WINDOWS
 
 from tests.common.debug import find_any
-from tests.common.utils import fails_with, skipif_emscripten
+from tests.common.utils import Why, fails_with, skipif_emscripten, xfail_on_crosshair
 
 pytest_plugins = "pytester"
 
@@ -45,6 +45,7 @@ def test_exception_in_compare_can_still_have_example():
     st.one_of(st.none().map(lambda n: Decimal("snan")), st.just(Decimal(0))).example()
 
 
+@xfail_on_crosshair(Why.symbolic_outside_context)
 def test_does_not_always_give_the_same_example():
     s = st.integers()
     assert len({s.example() for _ in range(100)}) >= 10
