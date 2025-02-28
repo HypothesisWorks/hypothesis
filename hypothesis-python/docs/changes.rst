@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.127.3:
+
+--------------------
+6.127.3 - 2025-02-28
+--------------------
+
+Improve shrinking of non-standard NaN float values (:issue:`4277`).
+
 .. _v6.127.2:
 
 --------------------
