@@ -39,6 +39,7 @@ jobs:
           - check-py311-cover
           - check-py311-nocover
           - check-py311-niche
+          - check-pypy311-cover
           - check-py312-cover
           - check-py312-nocover
           - check-py312-niche
@@ -227,7 +228,7 @@ jobs:
       NODE_VERSION: 18
       # Note that the versions below must be updated in sync; we've automated
       # that with `update_pyodide_versions()` in our weekly cronjob.
-      PYODIDE_VERSION: 0.27.2
+      PYODIDE_VERSION: 0.27.3
       PYTHON_VERSION: 3.12.7
       EMSCRIPTEN_VERSION: 3.1.58
     steps:
