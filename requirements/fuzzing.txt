@@ -6,6 +6,8 @@
 #
 annotated-types==0.7.0
     # via -r requirements/coverage.in
+anyio==4.8.0
+    # via starlette
 async-timeout==5.0.1
     # via redis
 attrs==24.1.0
@@ -13,62 +15,59 @@ attrs==24.1.0
     #   -r requirements/test.in
     #   hypothesis
     #   hypothesis (hypothesis-python/setup.py)
+    #   outcome
+    #   trio
 black==25.1.0
     # via
     #   -r requirements/coverage.in
     #   hypofuzz
     #   hypothesis
-blinker==1.9.0
-    # via flask
-certifi==2024.12.14
-    # via requests
-charset-normalizer==3.4.1
-    # via requests
 click==8.1.8
     # via
     #   -r requirements/coverage.in
     #   black
-    #   flask
     #   hypothesis
-coverage[toml]==7.6.10
+coverage[toml]==7.6.12
     # via
     #   hypofuzz
     #   pytest-cov
-dash==2.18.2
-    # via hypofuzz
-dash-core-components==2.0.0
-    # via dash
-dash-html-components==2.0.0
-    # via dash
-dash-table==5.0.0
-    # via dash
 dpcontracts==0.6.0
     # via -r requirements/coverage.in
 exceptiongroup==1.2.2 ; python_version < "3.11"
     # via
+    #   anyio
+    #   hypercorn
     #   hypothesis
     #   hypothesis (hypothesis-python/setup.py)
     #   pytest
+    #   taskgroup
+    #   trio
 execnet==2.1.1
     # via pytest-xdist
-fakeredis==2.26.2
+fakeredis==2.27.0
     # via -r requirements/coverage.in
-flask==3.0.3
-    # via dash
-hypofuzz==25.1.5
+h11==0.14.0
+    # via
+    #   hypercorn
+    #   wsproto
+h2==4.2.0
+    # via hypercorn
+hpack==4.1.0
+    # via h2
+hypercorn==0.17.3
+    # via hypofuzz
+hyperframe==6.1.0
+    # via h2
+hypofuzz==25.2.5
     # via -r requirements/fuzzing.in
-hypothesis[cli]==6.124.7
+hypothesis[cli,watchdog]==6.127.3
     # via hypofuzz
 idna==3.10
-    # via requests
-importlib-metadata==8.6.1
-    # via dash
+    # via
+    #   anyio
+    #   trio
 iniconfig==2.0.0
     # via pytest
-itsdangerous==2.2.0
-    # via flask
-jinja2==3.1.5
-    # via flask
 lark==1.2.2
     # via -r requirements/coverage.in
 libcst==1.6.0
@@ -77,44 +76,37 @@ libcst==1.6.0
     #   hypofuzz
 markdown-it-py==3.0.0
     # via rich
-markupsafe==3.0.2
-    # via
-    #   jinja2
-    #   werkzeug
 mdurl==0.1.2
     # via markdown-it-py
 mypy-extensions==1.0.0
     # via black
-nest-asyncio==1.6.0
-    # via dash
-numpy==2.2.2
+numpy==2.2.3
     # via
     #   -r requirements/coverage.in
     #   pandas
+outcome==1.3.0.post0
+    # via trio
 packaging==24.2
     # via
     #   black
-    #   plotly
     #   pytest
 pandas==2.2.3
-    # via
-    #   -r requirements/coverage.in
-    #   hypofuzz
+    # via -r requirements/coverage.in
 pathspec==0.12.1
     # via black
 pexpect==4.9.0
     # via -r requirements/test.in
 platformdirs==4.3.6
     # via black
-plotly==5.24.1
-    # via dash
 pluggy==1.5.0
     # via pytest
-psutil==6.1.1
+priority==2.0.0
+    # via hypercorn
+psutil==7.0.0
     # via hypofuzz
 ptyprocess==0.7.0
     # via pexpect
-pyarrow==19.0.0
+pyarrow==19.0.1
     # via -r requirements/coverage.in
 pygments==2.19.1
     # via rich
@@ -132,7 +124,7 @@ python-dateutil==2.9.0.post0
     # via
     #   -r requirements/coverage.in
     #   pandas
-pytz==2024.2
+pytz==2025.1
     # via
     #   -r requirements/coverage.in
     #   pandas
@@ -140,46 +132,46 @@ pyyaml==6.0.2
     # via libcst
 redis==5.2.1
     # via fakeredis
-requests==2.32.3
-    # via dash
-retrying==1.3.4
-    # via dash
 rich==13.9.4
     # via hypothesis
 six==1.17.0
+    # via python-dateutil
+sniffio==1.3.1
     # via
-    #   python-dateutil
-    #   retrying
+    #   anyio
+    #   trio
 sortedcontainers==2.4.0
     # via
     #   fakeredis
     #   hypothesis
     #   hypothesis (hypothesis-python/setup.py)
-tenacity==9.0.0
-    # via plotly
+    #   trio
+starlette==0.46.0
+    # via hypofuzz
+taskgroup==0.2.2
+    # via hypercorn
 tomli==2.2.1
     # via
     #   black
     #   coverage
+    #   hypercorn
     #   pytest
+trio==0.29.0
+    # via hypofuzz
 typing-extensions==4.12.2
     # via
     #   -r requirements/coverage.in
+    #   anyio
     #   black
-    #   dash
     #   fakeredis
+    #   hypercorn
     #   rich
+    #   taskgroup
 tzdata==2025.1
     # via pandas
-urllib3==2.3.0
-    # via requests
-werkzeug==3.0.6
+watchdog==6.0.0
     # via
-    #   dash
-    #   flask
-zipp==3.21.0
-    # via importlib-metadata
-
-# The following packages are considered to be unsafe in a requirements file:
-setuptools==75.8.0
-    # via dash
+    #   -r requirements/coverage.in
+    #   hypothesis
+wsproto==1.2.0
+    # via hypercorn
