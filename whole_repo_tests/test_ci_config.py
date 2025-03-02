@@ -26,4 +26,5 @@ ci_checks = "    ".join(
 @pytest.mark.parametrize("version", sorted(PYTHONS))
 def test_python_versions_are_tested_in_ci(version):
     slug = version.replace("pypy", "py").replace(".", "")
+    print(ci_checks)
     assert f"- check-py{slug}" in ci_checks, f"Add {version} to main.yml and tox.ini"
