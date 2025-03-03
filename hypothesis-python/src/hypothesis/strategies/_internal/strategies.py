@@ -424,7 +424,27 @@ class SearchStrategy(Generic[Ex]):
         """
         if not isinstance(other, SearchStrategy):
             raise ValueError(f"Cannot | a SearchStrategy with {other!r}")
-        return OneOfStrategy((self, other))
+
+        # Unwrap explicitly or'd strategies. This turns the
+        # common case of e.g. st.integers() | st.integers() | st.integers() from
+        #
+        #   one_of(one_of(integers(), integers()), integers())
+        #
+        # into
+        #
+        #   one_of(integers(), integers(), integers())
+        #
+        # This is purely an aesthetic unwrapping, for e.g. reprs. In practice
+        # we use .branches / .element_strategies to get the list of possible
+        # strategies, so this unwrapping is *not* necessary for correctness.
+        strategies: list[SearchStrategy] = []
+        strategies.extend(
+            self.original_strategies if isinstance(self, OneOfStrategy) else [self]
+        )
+        strategies.extend(
+            other.original_strategies if isinstance(other, OneOfStrategy) else [other]
+        )
+        return OneOfStrategy(strategies)
 
     def __bool__(self) -> bool:
         warnings.warn(
@@ -656,8 +676,7 @@ class OneOfStrategy(SearchStrategy[Ex]):
 
     def __init__(self, strategies: Sequence[SearchStrategy[Ex]]):
         super().__init__()
-        strategies = tuple(strategies)
-        self.original_strategies = list(strategies)
+        self.original_strategies = tuple(strategies)
         self.__element_strategies: Optional[Sequence[SearchStrategy[Ex]]] = None
         self.__in_branches = False
 
