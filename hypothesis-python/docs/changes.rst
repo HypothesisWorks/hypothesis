@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.127.5:
+
+--------------------
+6.127.5 - 2025-03-03
+--------------------
+
+This patch fixes a bug where :func:`~hypothesis.strategies.from_type` would error on certain types involving :class:`~python:typing.Protocol` (:issue:`4194`).
+
 .. _v6.127.4:
 
 --------------------
