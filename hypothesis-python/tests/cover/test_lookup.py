@@ -1237,3 +1237,21 @@ def test_from_type_resolves_required_posonly_args(n: CustomInteger):
     # st.builds() does not infer for positional arguments, but st.from_type()
     # does.  See e.g. https://stackoverflow.com/q/79199376/ for motivation.
     assert isinstance(n, CustomInteger)
+
+
+class MyProtocol(typing.Protocol):
+    pass
+
+
+def test_issue_4194_regression():
+    # this was an edge case where we were calling issubclass on something
+    # that was not a type, which errored. I don't have a more principled test
+    # case or name for this.
+    inner = typing.Union[typing.Sequence["A"], MyProtocol]
+    A = typing.Union[typing.Sequence[inner], MyProtocol]
+
+    with (
+        temp_registered(MyProtocol, st.just(b"")),
+        temp_registered(typing.ForwardRef("A"), st.integers()),
+    ):
+        find_any(st.from_type(A))
