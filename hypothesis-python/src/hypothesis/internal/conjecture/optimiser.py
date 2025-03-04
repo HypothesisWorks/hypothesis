@@ -167,7 +167,7 @@ class Optimiser:
                         + (new_choice,)
                         + choices[node.index + 1 :]
                     )
-                    attempt = self.engine.cached_test_function_ir(
+                    attempt = self.engine.cached_test_function(
                         attempt_choices, extend="full"
                     )
 
@@ -191,7 +191,7 @@ class Optimiser:
                             continue  # pragma: no cover
                         replacement = attempt.choices[ex_attempt.start : ex_attempt.end]
                         if self.consider_new_data(
-                            self.engine.cached_test_function_ir(
+                            self.engine.cached_test_function(
                                 choices[: node.index]
                                 + replacement
                                 + self.current_data.choices[ex.end :]

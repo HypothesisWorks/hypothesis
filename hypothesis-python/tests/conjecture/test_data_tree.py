@@ -48,7 +48,7 @@ def runner_for(*examples):
         runner.exit_with = lambda reason: None
         ran_examples = []
         for choices in examples:
-            data = runner.cached_test_function_ir(choices)
+            data = runner.cached_test_function(choices)
             ran_examples.append((choices, data))
         for choices, d in ran_examples:
             rewritten, status = runner.tree.rewrite(choices)
@@ -126,7 +126,7 @@ def test_novel_prefixes_are_novel():
         prefix = runner.tree.generate_novel_prefix(runner.random)
         extension = prefix + (ChoiceTemplate("simplest", count=100),)
         assert runner.tree.rewrite(extension)[1] is None
-        result = runner.cached_test_function_ir(extension)
+        result = runner.cached_test_function(extension)
         assert runner.tree.rewrite(extension)[0] == result.choices
 
 
@@ -136,7 +136,7 @@ def test_overruns_if_prefix():
         settings=TEST_SETTINGS,
         random=Random(0),
     )
-    runner.cached_test_function_ir([False, False])
+    runner.cached_test_function([False, False])
     assert runner.tree.rewrite([False])[1] is Status.OVERRUN
 
 

@@ -89,7 +89,7 @@ def test_avoids_zig_zag_trap(p):
         random=Random(0),
     )
 
-    runner.cached_test_function_ir((m, m + 1, marker))
+    runner.cached_test_function((m, m + 1, marker))
     assert runner.interesting_examples
     runner.run()
     (v,) = runner.interesting_examples.values()

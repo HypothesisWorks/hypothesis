@@ -361,7 +361,7 @@ class ConjectureRunner:
         key = self._cache_key(data.choices)
         self.__data_cache[key] = result
 
-    def cached_test_function_ir(
+    def cached_test_function(
         self,
         choices: Sequence[Union[ChoiceT, ChoiceTemplate]],
         *,
@@ -862,7 +862,7 @@ class ConjectureRunner:
                     # clear out any keys which fail deserialization
                     self.settings.database.delete(self.database_key, existing)
                     continue
-                data = self.cached_test_function_ir(choices, extend="full")
+                data = self.cached_test_function(choices, extend="full")
                 if data.status != Status.INTERESTING:
                     self.settings.database.delete(self.database_key, existing)
                     self.settings.database.delete(self.secondary_key, existing)
@@ -897,7 +897,7 @@ class ConjectureRunner:
                     if choices is None:
                         self.settings.database.delete(self.pareto_key, existing)
                         continue
-                    data = self.cached_test_function_ir(choices, extend="full")
+                    data = self.cached_test_function(choices, extend="full")
                     if data not in self.pareto_front:
                         self.settings.database.delete(self.pareto_key, existing)
                     if data.status == Status.INTERESTING:
@@ -959,9 +959,7 @@ class ConjectureRunner:
         self.debug("Generating new examples")
 
         assert self.should_generate_more()
-        zero_data = self.cached_test_function_ir(
-            (ChoiceTemplate("simplest", count=None),)
-        )
+        zero_data = self.cached_test_function((ChoiceTemplate("simplest", count=None),))
         if zero_data.status > Status.OVERRUN:
             assert isinstance(zero_data, ConjectureResult)
             self.__data_cache.pin(
@@ -1053,7 +1051,7 @@ class ConjectureRunner:
                 and not self.interesting_examples
                 and consecutive_zero_extend_is_invalid < 5
             ):
-                minimal_example = self.cached_test_function_ir(
+                minimal_example = self.cached_test_function(
                     prefix + (ChoiceTemplate("simplest", count=None),)
                 )
 
@@ -1193,7 +1191,7 @@ class ConjectureRunner:
                     # really matter. It may not achieve the desired result,
                     # but it's still a perfectly acceptable choice sequence
                     # to try.
-                    new_data = self.cached_test_function_ir(
+                    new_data = self.cached_test_function(
                         choices[:start1]
                         + replacement
                         + choices[end1:start2]
@@ -1395,7 +1393,7 @@ class ConjectureRunner:
                 if shortlex(c) > cap:
                     break
                 else:
-                    self.cached_test_function_ir(choices)
+                    self.cached_test_function(choices)
                     # We unconditionally remove c from the secondary key as it
                     # is either now primary or worse than our primary example
                     # of this reason for interestingness.

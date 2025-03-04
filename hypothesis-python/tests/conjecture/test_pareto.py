@@ -13,7 +13,11 @@ import itertools
 import pytest
 
 from hypothesis import HealthCheck, Phase, settings, strategies as st
-from hypothesis.database import InMemoryExampleDatabase, choices_to_bytes
+from hypothesis.database import (
+    InMemoryExampleDatabase,
+    choices_from_bytes,
+    choices_to_bytes,
+)
 from hypothesis.internal.conjecture.data import Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner, RunIsComplete
 from hypothesis.internal.entropy import deterministic_PRNG
@@ -230,7 +234,7 @@ def test_optimises_the_pareto_front():
         settings=settings(max_examples=10000, database=InMemoryExampleDatabase()),
         database_key=b"stuff",
     )
-    runner.cached_test_function_ir([255] * 20 + [0])
+    runner.cached_test_function([255] * 20 + [0])
     runner.pareto_optimise()
 
     assert len(runner.pareto_front) == 6
@@ -251,7 +255,7 @@ def test_does_not_optimise_the_pareto_front_if_interesting():
         database_key=b"stuff",
     )
 
-    runner.cached_test_function_ir([0])
+    runner.cached_test_function([0])
     runner.pareto_optimise = None
     runner.optimise_targets()
 
@@ -273,7 +277,7 @@ def test_stops_optimising_once_interesting():
         database_key=b"stuff",
     )
 
-    data = runner.cached_test_function_ir([hi])
+    data = runner.cached_test_function([hi])
     assert data.status == Status.VALID
     runner.pareto_optimise()
     assert runner.call_count <= 20

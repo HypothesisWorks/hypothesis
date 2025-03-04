@@ -39,7 +39,7 @@ def test_saves_data_while_shrinking(monkeypatch):
     monkeypatch.setattr(
         ConjectureRunner,
         "generate_new_examples",
-        lambda runner: runner.cached_test_function_ir([bytes([255] * 10)]),
+        lambda runner: runner.cached_test_function([bytes([255] * 10)]),
     )
 
     def f(data):
@@ -65,7 +65,7 @@ def test_can_discard(monkeypatch):
     monkeypatch.setattr(
         ConjectureRunner,
         "generate_new_examples",
-        lambda runner: runner.cached_test_function_ir(
+        lambda runner: runner.cached_test_function(
             tuple(bytes(v) for i in range(n) for v in [i, i])
         ),
     )
@@ -87,8 +87,8 @@ def test_cached_with_masked_byte_agrees_with_results(a, b):
 
     runner = ConjectureRunner(f)
 
-    cached_a = runner.cached_test_function_ir([a])
-    cached_b = runner.cached_test_function_ir([b])
+    cached_a = runner.cached_test_function([a])
+    cached_b = runner.cached_test_function([b])
 
     data_b = ConjectureData.for_choices([b], observer=runner.tree.new_observer())
     runner.test_function(data_b)

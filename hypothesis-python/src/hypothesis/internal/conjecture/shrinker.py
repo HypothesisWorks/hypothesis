@@ -392,14 +392,14 @@ class Shrinker:
         if self.calls - self.calls_at_last_shrink >= self.max_stall:
             raise StopShrinking
 
-    def cached_test_function_ir(self, nodes):
+    def cached_test_function(self, nodes):
         # sometimes our shrinking passes try obviously invalid things. We handle
         # discarding them in one place here.
         for node in nodes:
             if not choice_permitted(node.value, node.kwargs):
                 return None
 
-        result = self.engine.cached_test_function_ir([n.value for n in nodes])
+        result = self.engine.cached_test_function([n.value for n in nodes])
         self.incorporate_test_data(result)
         self.check_calls()
         return result
@@ -414,7 +414,7 @@ class Shrinker:
             return False
 
         previous = self.shrink_target
-        self.cached_test_function_ir(nodes)
+        self.cached_test_function(nodes)
         return previous is not self.shrink_target
 
     def incorporate_test_data(self, data):
@@ -545,7 +545,7 @@ class Shrinker:
                     replacement.append(node.value)
 
                 attempt = choices[:start] + tuple(replacement) + choices[end:]
-                result = self.engine.cached_test_function_ir(attempt, extend="full")
+                result = self.engine.cached_test_function(attempt, extend="full")
 
                 # Turns out this was a variable-length part, so grab the infix...
                 if result.status is Status.OVERRUN:
@@ -569,7 +569,7 @@ class Shrinker:
                         choices[:start] + result.choices[start:res_end] + choices[end:]
                     )
                     chunks[(start, end)].append(result.choices[start:res_end])
-                    result = self.engine.cached_test_function_ir(attempt)
+                    result = self.engine.cached_test_function(attempt)
 
                     if result.status is Status.OVERRUN:
                         continue  # pragma: no cover  # flakily covered
@@ -608,7 +608,7 @@ class Shrinker:
                 new_choices.extend(self.random.choice(ls))
                 prev_end = end
 
-            result = self.engine.cached_test_function_ir(new_choices)
+            result = self.engine.cached_test_function(new_choices)
 
             # This *can't* be a shrink because none of the components were.
             assert shrink_target is self.shrink_target
@@ -704,7 +704,7 @@ class Shrinker:
                 # shape changes, as measured by either changing the number of subsequent
                 # nodes, or changing the nodes in such a way as to cause one of the
                 # previous values to no longer be valid in its position.
-                zero_attempt = self.cached_test_function_ir(
+                zero_attempt = self.cached_test_function(
                     nodes[:i] + (nodes[i].copy(with_value=0),) + nodes[i + 1 :]
                 )
                 if (
@@ -737,7 +737,7 @@ class Shrinker:
         while rerandomising and attempting to repair any subsequent
         changes to the shape of the test case that this causes."""
         nodes = self.shrink_target.nodes
-        initial_attempt = self.cached_test_function_ir(
+        initial_attempt = self.cached_test_function(
             nodes[:i] + (nodes[i].copy(with_value=v),) + nodes[i + 1 :]
         )
         if initial_attempt is self.shrink_target:
@@ -747,7 +747,7 @@ class Shrinker:
         initial = self.shrink_target
         examples = self.examples_starting_at[i]
         for _ in range(3):
-            random_attempt = self.engine.cached_test_function_ir(
+            random_attempt = self.engine.cached_test_function(
                 [n.value for n in prefix], extend=len(nodes)
             )
             if random_attempt.status < Status.VALID:
@@ -1094,7 +1094,7 @@ class Shrinker:
             [(node.index, node.index + 1, [node.copy(with_value=n)]) for node in nodes],
         )
 
-        attempt = self.cached_test_function_ir(initial_attempt)
+        attempt = self.cached_test_function(initial_attempt)
 
         if attempt is None:
             return False
@@ -1476,7 +1476,7 @@ class Shrinker:
             ]
         )
         suffix = nodes[ex.end :]
-        attempt = self.cached_test_function_ir(prefix + replacement + suffix)
+        attempt = self.cached_test_function(prefix + replacement + suffix)
 
         if self.shrink_target is not prev:
             return
@@ -1540,7 +1540,7 @@ class Shrinker:
             + (node.copy(with_value=node.value - 1),)
             + self.nodes[node.index + 1 :]
         )
-        attempt = self.cached_test_function_ir(lowered)
+        attempt = self.cached_test_function(lowered)
         if (
             attempt is None
             or attempt.status < Status.VALID

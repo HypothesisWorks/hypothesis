@@ -250,7 +250,7 @@ def test_backend_can_shrink_floats():
 
 
 # mostly a shoehorned coverage test until the shrinker is migrated to the ir
-# and calls cached_test_function_ir with backends consistently.
+# and calls cached_test_function with backends consistently.
 @given(nodes())
 def test_new_conjecture_data_with_backend(node):
     def test(data):
@@ -258,7 +258,7 @@ def test_new_conjecture_data_with_backend(node):
 
     with temp_register_backend("prng", PrngProvider):
         runner = ConjectureRunner(test, settings=settings(backend="prng"))
-        runner.cached_test_function_ir([node.value])
+        runner.cached_test_function([node.value])
 
 
 # trivial provider for tests which don't care about drawn distributions.

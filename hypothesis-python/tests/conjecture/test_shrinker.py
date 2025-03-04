@@ -59,7 +59,7 @@ def test_deletion_and_lowering_fails_to_shrink(monkeypatch):
     monkeypatch.setattr(
         ConjectureRunner,
         "generate_new_examples",
-        lambda runner: runner.cached_test_function_ir((b"\0",) * 10),
+        lambda runner: runner.cached_test_function((b"\0",) * 10),
     )
 
     @run_to_nodes
@@ -196,7 +196,7 @@ def test_permits_but_ignores_raising_order(monkeypatch):
     monkeypatch.setattr(
         ConjectureRunner,
         "generate_new_examples",
-        lambda runner: runner.cached_test_function_ir((1,)),
+        lambda runner: runner.cached_test_function((1,)),
     )
 
     monkeypatch.setattr(Shrinker, "shrink", lambda self: self.consider_new_nodes(ir(2)))
