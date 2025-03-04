@@ -719,31 +719,14 @@ class ConjectureData:
     def choices(self) -> tuple[ChoiceT, ...]:
         return tuple(node.value for node in self.nodes)
 
-    # A bit of explanation of the `observe` and `fake_forced` arguments in our
-    # draw_* functions.
+    # draw_* functions might be called in one of two contexts: either "above" or
+    # "below" the choice sequence. For instance, draw_string calls draw_boolean
+    # from ``many`` when calculating the number of characters to return. We do
+    # not want these choices to get written to the choice sequence, because they
+    # are not true choices themselves.
     #
-    # There are two types of draws: sub-ir and super-ir. For instance, some ir
-    # nodes use `many`, which in turn calls draw_boolean. But some strategies
-    # also use many, at the super-ir level. We don't want to write sub-ir draws
-    # to the DataTree (and consequently use them when computing novel prefixes),
-    # since they are fully recorded by writing the ir node itself.
-    # But super-ir draws are not included in the ir node, so we do want to write
-    # these to the tree.
-    #
-    # `observe` formalizes this distinction. The draw will only be written to
-    # the DataTree if observe is True.
-    #
-    # `fake_forced` deals with a different problem. We use `forced=` to convert
-    # ir prefixes, which are potentially from other backends, into our backing
-    # bits representation. This works fine, except using `forced=` in this way
-    # also sets `was_forced=True` for all blocks, even those that weren't forced
-    # in the traditional way. The shrinker chokes on this due to thinking that
-    # nothing can be modified.
-    #
-    # Setting `fake_forced` to true says that yes, we want to force a particular
-    # value to be returned, but we don't want to treat that block as fixed for
-    # e.g. the shrinker.
-
+    # `observe` formalizes this. The choice will only be written to the choice
+    # sequence if observe is True.
     def _draw(self, choice_type, kwargs, *, observe, forced):
         # this is somewhat redundant with the length > max_length check at the
         # end of the function, but avoids trying to use a null self.random when
