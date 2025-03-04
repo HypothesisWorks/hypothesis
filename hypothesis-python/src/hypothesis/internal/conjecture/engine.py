@@ -408,7 +408,7 @@ class ConjectureRunner:
             trial_observer = DiscardObserver()
 
         try:
-            trial_data = self.new_conjecture_data_ir(
+            trial_data = self.new_conjecture_data(
                 choices, observer=trial_observer, max_choices=max_length
             )
             self.tree.simulate_test_function(trial_data)
@@ -433,7 +433,7 @@ class ConjectureRunner:
             except KeyError:
                 pass
 
-        data = self.new_conjecture_data_ir(choices, max_choices=max_length)
+        data = self.new_conjecture_data(choices, max_choices=max_length)
         # note that calling test_function caches `data` for us, for both an ir
         # tree key and a buffer key.
         self.test_function(data)
@@ -1038,7 +1038,7 @@ class ConjectureRunner:
             # not whatever is specified by the backend. We can improve this
             # once more things are on the ir.
             if not self.using_hypothesis_backend:
-                data = self.new_conjecture_data_ir([])
+                data = self.new_conjecture_data([])
                 with suppress(BackendCannotProceed):
                     self.test_function(data)
                 continue
@@ -1074,7 +1074,7 @@ class ConjectureRunner:
                 # running the test function for real here. If however we encounter
                 # some novel behaviour, we try again with the real test function,
                 # starting from the new novel prefix that has discovered.
-                trial_data = self.new_conjecture_data_ir(prefix, max_choices=max_length)
+                trial_data = self.new_conjecture_data(prefix, max_choices=max_length)
                 try:
                     self.tree.simulate_test_function(trial_data)
                     continue
@@ -1096,7 +1096,7 @@ class ConjectureRunner:
             else:
                 max_length = None
 
-            data = self.new_conjecture_data_ir(prefix, max_choices=max_length)
+            data = self.new_conjecture_data(prefix, max_choices=max_length)
             self.test_function(data)
 
             if (
@@ -1294,7 +1294,7 @@ class ConjectureRunner:
             self.shrink_interesting_examples()
         self.exit_with(ExitReason.finished)
 
-    def new_conjecture_data_ir(
+    def new_conjecture_data(
         self,
         prefix: Sequence[Union[ChoiceT, ChoiceTemplate]],
         *,
@@ -1333,7 +1333,7 @@ class ConjectureRunner:
             self.interesting_examples.values(), key=lambda d: sort_key(d.nodes)
         ):
             assert prev_data.status == Status.INTERESTING
-            data = self.new_conjecture_data_ir(prev_data.choices)
+            data = self.new_conjecture_data(prev_data.choices)
             self.test_function(data)
             if data.status != Status.INTERESTING:
                 self.exit_with(ExitReason.flaky)
