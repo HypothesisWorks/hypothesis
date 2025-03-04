@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.127.6:
+
+--------------------
+6.127.6 - 2025-03-04
+--------------------
+
+This patch tweaks the performance of the :ref:`target phase <phases>`, avoiding aborting some test cases when it would be better to finish generating them.
+
 .. _v6.127.5:
 
 --------------------
