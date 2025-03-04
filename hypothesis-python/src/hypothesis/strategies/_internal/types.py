@@ -541,7 +541,9 @@ def from_typing_type(thing):
         else:
             union_elems = ()
         if not any(
-            isinstance(T, type) and issubclass(int, get_origin(T) or T)
+            # see https://github.com/HypothesisWorks/hypothesis/issues/4194 for
+            # try_issubclass.
+            isinstance(T, type) and try_issubclass(int, get_origin(T) or T)
             for T in [*union_elems, elem_type]
         ):
             mapping.pop(bytes, None)
