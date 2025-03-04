@@ -68,10 +68,6 @@ def test_pareto_front_omits_invalid_examples():
         assert len(runner.pareto_front) == 0
 
 
-# at some point this test regressed. It's not clear how long ago, because it
-# happened to pass by chance on deterministic rng with seed 0 for at least
-# some amount of time.
-@pytest.mark.xfail(strict=False)
 def test_database_contains_only_pareto_front():
     with deterministic_PRNG():
 
@@ -105,11 +101,12 @@ def test_database_contains_only_pareto_front():
         assert len(values) == len(runner.pareto_front)
 
         for data in runner.pareto_front:
-            assert data.buffer in values
+            assert choices_to_bytes(data.choices) in values
             assert data in runner.pareto_front
 
-        for k in values:
-            assert runner.cached_test_function(k) in runner.pareto_front
+        for b in values:
+            choices = choices_from_bytes(b)
+            assert runner.cached_test_function(choices) in runner.pareto_front
 
 
 def test_clears_defunct_pareto_front():
