@@ -628,3 +628,30 @@ def test_redistribute_numeric_pairs(node1, node2, stop):
     # - or left the choices the same.
     assert shrinker.choices[0] <= node1.value
     assert shrinker.choices[1] >= node2.value
+
+
+@pytest.mark.parametrize(
+    "start, expected",
+    [
+        (("1" * 5, "1" * 5), ("0" * 5, "0" * 5)),
+        (("1222344", "1222344"), ("0" * 7, "0" * 7)),
+    ],
+)
+@pytest.mark.parametrize("gap", [0, 1, 2, 3])
+def test_lower_duplicated_characters_across_choices(start, expected, gap):
+    # the draws from `gap` are irrelevant and only test that we can still shrink
+    # duplicated characters from nearby choices even when the choices are not
+    # consecutive.
+    @shrinking_from([start[0], *([0] * gap), start[1]])
+    def shrinker(data: ConjectureData):
+        s1 = data.draw(st.text())
+
+        for _ in range(gap):
+            data.draw(st.integers())
+
+        s2 = data.draw(st.text())
+        if s1 == s2:
+            data.mark_interesting()
+
+    shrinker.fixate_shrink_passes(["lower_duplicated_characters"])
+    assert shrinker.choices == (expected[0],) + (0,) * gap + (expected[1],)
