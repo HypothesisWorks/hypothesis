@@ -114,7 +114,6 @@ def assert_mypy_errors(fname, expected, python_version=None):
     "val,expect",
     [
         *REVEALED_TYPES,  # shared with Pyright
-        ("lists(none())", "list[None]"),
         ("data()", "hypothesis.strategies._internal.core.DataObject"),
         ("none() | integers()", "Union[None, int]"),
         ("recursive(integers(), lists)", "Union[list[Any], int]"),
