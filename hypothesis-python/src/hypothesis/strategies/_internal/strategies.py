@@ -66,17 +66,6 @@ T5 = TypeVar("T5")
 MappedFrom = TypeVar("MappedFrom")
 MappedTo = TypeVar("MappedTo")
 RecurT: "TypeAlias" = Callable[["SearchStrategy"], Any]
-# These PackT and PredicateT aliases can only be used when you don't want to
-# specify a relationship between the generic Ts and some other function param
-# / return value. If you do - like the actual map definition in SearchStrategy -
-# you'll need to write Callable[[Ex], T] (replacing Ex/T as appropriate) instead.
-# TypeAlias is *not* simply a macro that inserts the text. it has different semantics.
-PackT: "TypeAlias" = Callable[[T], T3]
-PredicateT: "TypeAlias" = Callable[[T], object]
-TransformationsT: "TypeAlias" = tuple[
-    Union[tuple[Literal["filter"], PredicateT], tuple[Literal["map"], PackT]], ...
-]
-
 calculating = UniqueIdentifier("calculating")
 
 MAPPED_SEARCH_STRATEGY_DO_DRAW_LABEL = calc_label_from_name(
@@ -390,7 +379,15 @@ class SearchStrategy(Generic[Ex]):
 
         return FlatMapStrategy(expand=expand, strategy=self)
 
-    def filter(self, condition: PredicateT) -> "SearchStrategy[Ex]":
+    # Note that we previously had condition extracted to a type alias as
+    # PredicateT. However, that was only useful when not specifying a relationship
+    # between the generic Ts and some other function param / return value.
+    # If we do want to - like here, where we want to say that the Ex arg to condition
+    # is of the same type as the strategy's Ex - then you need to write out the
+    # entire Callable[[Ex], Any] expression rather than use a type alias.
+    # TypeAlias is *not* simply a macro that inserts the text. TypeAlias will not
+    # reference the local TypeVar context.
+    def filter(self, condition: Callable[[Ex], Any]) -> "SearchStrategy[Ex]":
         """Returns a new strategy that generates values from this strategy
         which satisfy the provided condition. Note that if the condition is too
         hard to satisfy this might result in your tests failing with
@@ -400,7 +397,9 @@ class SearchStrategy(Generic[Ex]):
         """
         return FilteredStrategy(conditions=(condition,), strategy=self)
 
-    def _filter_for_filtered_draw(self, condition: PredicateT) -> "SearchStrategy[Ex]":
+    def _filter_for_filtered_draw(
+        self, condition: Callable[[Ex], Any]
+    ) -> "SearchStrategy[Ex]":
         # Hook for parent strategies that want to perform fallible filtering
         # on one of their internal strategies (e.g. UniqueListStrategy).
         # The returned object must have a `.do_filtered_draw(data)` method
@@ -502,7 +501,10 @@ class SampledFromStrategy(SearchStrategy[Ex]):
         self,
         elements: Sequence[Ex],
         repr_: Optional[str] = None,
-        transformations: TransformationsT = (),
+        transformations: tuple[
+            tuple[Literal["filter", "map"], Callable[[Ex], Any]],
+            ...,
+        ] = (),
     ):
         super().__init__()
         self.elements = cu.check_sample(elements, "sampled_from")
@@ -519,7 +521,7 @@ class SampledFromStrategy(SearchStrategy[Ex]):
         # guaranteed by the ("map", pack) transformation
         return cast(SearchStrategy[T], s)
 
-    def filter(self, condition: PredicateT) -> SearchStrategy[Ex]:
+    def filter(self, condition: Callable[[Ex], Any]) -> SearchStrategy[Ex]:
         return type(self)(
             self.elements,
             repr_=self.repr_,
@@ -557,14 +559,12 @@ class SampledFromStrategy(SearchStrategy[Ex]):
         # Used in UniqueSampledListStrategy
         for name, f in self._transformations:
             if name == "map":
-                f = cast(PackT, f)
                 result = f(element)
                 if build_context := _current_build_context.value:
                     build_context.record_call(result, f, [element], {})
                 element = result
             else:
                 assert name == "filter"
-                f = cast(PredicateT, f)
                 if not f(element):
                     return filter_not_satisfied
         return element
@@ -731,7 +731,7 @@ class OneOfStrategy(SearchStrategy[Ex]):
         else:
             return [self]
 
-    def filter(self, condition: PredicateT) -> SearchStrategy[Ex]:
+    def filter(self, condition: Callable[[Ex], Any]) -> SearchStrategy[Ex]:
         return FilteredStrategy(
             OneOfStrategy([s.filter(condition) for s in self.original_strategies]),
             conditions=(),
@@ -960,12 +960,12 @@ filter_not_satisfied = UniqueIdentifier("filter not satisfied")
 
 class FilteredStrategy(SearchStrategy[Ex]):
     def __init__(
-        self, strategy: SearchStrategy[Ex], conditions: tuple[PredicateT, ...]
+        self, strategy: SearchStrategy[Ex], conditions: tuple[Callable[[Ex], Any], ...]
     ):
         super().__init__()
         if isinstance(strategy, FilteredStrategy):
             # Flatten chained filters into a single filter with multiple conditions.
-            self.flat_conditions: tuple[PredicateT, ...] = (
+            self.flat_conditions: tuple[Callable[[Ex], Any], ...] = (
                 strategy.flat_conditions + conditions
             )
             self.filtered_strategy: SearchStrategy[Ex] = strategy.filtered_strategy
@@ -976,7 +976,7 @@ class FilteredStrategy(SearchStrategy[Ex]):
         assert isinstance(self.flat_conditions, tuple)
         assert not isinstance(self.filtered_strategy, FilteredStrategy)
 
-        self.__condition: Optional[PredicateT] = None
+        self.__condition: Optional[Callable[[Ex], Any]] = None
 
     def calc_is_empty(self, recur: RecurT) -> Any:
         return recur(self.filtered_strategy)
@@ -1017,7 +1017,7 @@ class FilteredStrategy(SearchStrategy[Ex]):
             # an in-place method so we still just re-initialize the strategy!
             FilteredStrategy.__init__(self, fresh, ())
 
-    def filter(self, condition: PredicateT) -> "FilteredStrategy[Ex]":
+    def filter(self, condition: Callable[[Ex], Any]) -> "FilteredStrategy[Ex]":
         # If we can, it's more efficient to rewrite our strategy to satisfy the
         # condition.  We therefore exploit the fact that the order of predicates
         # doesn't matter (`f(x) and g(x) == g(x) and f(x)`) by attempting to apply
@@ -1033,16 +1033,16 @@ class FilteredStrategy(SearchStrategy[Ex]):
         return FilteredStrategy(out, self.flat_conditions)
 
     @property
-    def condition(self) -> PredicateT:
+    def condition(self) -> Callable[[Ex], Any]:
         if self.__condition is None:
             if len(self.flat_conditions) == 1:
                 # Avoid an extra indirection in the common case of only one condition.
                 self.__condition = self.flat_conditions[0]
             elif len(self.flat_conditions) == 0:
                 # Possible, if unlikely, due to filter predicate rewriting
-                self.__condition = lambda _: True
+                self.__condition = lambda _: True  # type: ignore # covariant type param
             else:
-                self.__condition = lambda x: all(
+                self.__condition = lambda x: all(  # type: ignore # covariant type param
                     cond(x) for cond in self.flat_conditions
                 )
         return self.__condition
