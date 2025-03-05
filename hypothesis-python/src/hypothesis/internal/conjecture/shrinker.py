@@ -635,8 +635,8 @@ class Shrinker:
                 node_program("X" * 1),
                 "pass_to_descendant",
                 "reorder_examples",
-                "minimize_duplicated_nodes",
-                "minimize_individual_nodes",
+                "minimize_duplicated_choices",
+                "minimize_individual_choices",
                 "redistribute_numeric_pairs",
                 "lower_integers_together",
             ]
@@ -1259,8 +1259,8 @@ class Shrinker:
         return list(duplicates.values())
 
     @defines_shrink_pass()
-    def minimize_duplicated_nodes(self, chooser):
-        """Find blocks that have been duplicated in multiple places and attempt
+    def minimize_duplicated_choices(self, chooser):
+        """Find choices that have been duplicated in multiple places and attempt
         to minimize all of the duplicates simultaneously.
 
         This lets us handle cases where two values can't be shrunk
@@ -1480,8 +1480,8 @@ class Shrinker:
             self.consider_new_nodes(prefix + new_replacement + suffix)
 
     @defines_shrink_pass()
-    def minimize_individual_nodes(self, chooser):
-        """Attempt to minimize each node in sequence.
+    def minimize_individual_choices(self, chooser):
+        """Attempt to minimize each choice in sequence.
 
         This is the pass that ensures that e.g. each integer we draw is a
         minimum value. So it's the part that guarantees that if we e.g. do
@@ -1491,7 +1491,7 @@ class Shrinker:
 
         then in our shrunk example, x = 10 rather than say 97.
 
-        If we are unsuccessful at minimizing a node of interest we then
+        If we are unsuccessful at minimizing a choice of interest we then
         check if that's because it's changing the size of the test case and,
         if so, we also make an attempt to delete parts of the test case to
         see if that fixes it.

@@ -46,7 +46,7 @@ def test_can_shrink_variable_draws_with_just_deletion(n):
         if any(b):
             data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["minimize_individual_nodes"])
+    shrinker.fixate_shrink_passes(["minimize_individual_choices"])
     assert shrinker.choices == (1, 1)
 
 
@@ -54,7 +54,7 @@ def test_deletion_and_lowering_fails_to_shrink(monkeypatch):
     monkeypatch.setattr(
         Shrinker,
         "shrink",
-        lambda self: self.fixate_shrink_passes(["minimize_individual_nodes"]),
+        lambda self: self.fixate_shrink_passes(["minimize_individual_choices"]),
     )
     monkeypatch.setattr(
         ConjectureRunner,
@@ -82,7 +82,7 @@ def test_duplicate_nodes_that_go_away():
         if len(set(b)) <= 1:
             data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["minimize_duplicated_nodes"])
+    shrinker.fixate_shrink_passes(["minimize_duplicated_choices"])
     assert shrinker.shrink_target.choices == (0, 0)
 
 
@@ -99,7 +99,7 @@ def test_accidental_duplication():
         if len(set(b)) == 1:
             data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["minimize_duplicated_nodes"])
+    shrinker.fixate_shrink_passes(["minimize_duplicated_choices"])
     print(shrinker.choices)
     assert shrinker.choices == (5, 5, *([b"\x00"] * 5))
 
@@ -240,7 +240,7 @@ def test_dependent_block_pairs_is_up_to_shrinking_integers():
         if result >= 32768 and cap == 1:
             data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["minimize_individual_nodes"])
+    shrinker.fixate_shrink_passes(["minimize_individual_choices"])
     assert shrinker.choices == (1, True, 65536, 1)
 
 
@@ -331,7 +331,7 @@ def test_zig_zags_quickly():
         if abs(m - n) <= 10:
             data.mark_interesting(interesting_origin(1))
 
-    shrinker.fixate_shrink_passes(["minimize_individual_nodes"])
+    shrinker.fixate_shrink_passes(["minimize_individual_choices"])
     assert shrinker.engine.valid_examples <= 100
     assert shrinker.choices == (1, 1)
 
@@ -364,7 +364,7 @@ def test_zig_zags_quickly_with_shrink_towards(
         if abs(m - n) <= 1:
             data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["minimize_individual_nodes"])
+    shrinker.fixate_shrink_passes(["minimize_individual_choices"])
     assert shrinker.engine.valid_examples <= 40
     assert shrinker.choices == expected
 
@@ -539,7 +539,7 @@ def test_can_quickly_shrink_to_trivial_collection(n):
         if len(b) >= n:
             data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["minimize_individual_nodes"])
+    shrinker.fixate_shrink_passes(["minimize_individual_choices"])
     assert shrinker.choices == (b"\x00" * n,)
     assert shrinker.calls < 10
 
