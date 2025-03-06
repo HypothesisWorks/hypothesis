@@ -361,7 +361,7 @@ class ConjectureRunner:
         key = self._cache_key(data.choices)
         self.__data_cache[key] = result
 
-    def cached_test_function_ir(
+    def cached_test_function(
         self,
         choices: Sequence[Union[ChoiceT, ChoiceTemplate]],
         *,
@@ -408,7 +408,7 @@ class ConjectureRunner:
             trial_observer = DiscardObserver()
 
         try:
-            trial_data = self.new_conjecture_data_ir(
+            trial_data = self.new_conjecture_data(
                 choices, observer=trial_observer, max_choices=max_length
             )
             self.tree.simulate_test_function(trial_data)
@@ -433,7 +433,7 @@ class ConjectureRunner:
             except KeyError:
                 pass
 
-        data = self.new_conjecture_data_ir(choices, max_choices=max_length)
+        data = self.new_conjecture_data(choices, max_choices=max_length)
         # note that calling test_function caches `data` for us, for both an ir
         # tree key and a buffer key.
         self.test_function(data)
@@ -862,7 +862,7 @@ class ConjectureRunner:
                     # clear out any keys which fail deserialization
                     self.settings.database.delete(self.database_key, existing)
                     continue
-                data = self.cached_test_function_ir(choices, extend="full")
+                data = self.cached_test_function(choices, extend="full")
                 if data.status != Status.INTERESTING:
                     self.settings.database.delete(self.database_key, existing)
                     self.settings.database.delete(self.secondary_key, existing)
@@ -897,7 +897,7 @@ class ConjectureRunner:
                     if choices is None:
                         self.settings.database.delete(self.pareto_key, existing)
                         continue
-                    data = self.cached_test_function_ir(choices, extend="full")
+                    data = self.cached_test_function(choices, extend="full")
                     if data not in self.pareto_front:
                         self.settings.database.delete(self.pareto_key, existing)
                     if data.status == Status.INTERESTING:
@@ -959,9 +959,7 @@ class ConjectureRunner:
         self.debug("Generating new examples")
 
         assert self.should_generate_more()
-        zero_data = self.cached_test_function_ir(
-            (ChoiceTemplate("simplest", count=None),)
-        )
+        zero_data = self.cached_test_function((ChoiceTemplate("simplest", count=None),))
         if zero_data.status > Status.OVERRUN:
             assert isinstance(zero_data, ConjectureResult)
             self.__data_cache.pin(
@@ -1040,7 +1038,7 @@ class ConjectureRunner:
             # not whatever is specified by the backend. We can improve this
             # once more things are on the ir.
             if not self.using_hypothesis_backend:
-                data = self.new_conjecture_data_ir([])
+                data = self.new_conjecture_data([])
                 with suppress(BackendCannotProceed):
                     self.test_function(data)
                 continue
@@ -1053,7 +1051,7 @@ class ConjectureRunner:
                 and not self.interesting_examples
                 and consecutive_zero_extend_is_invalid < 5
             ):
-                minimal_example = self.cached_test_function_ir(
+                minimal_example = self.cached_test_function(
                     prefix + (ChoiceTemplate("simplest", count=None),)
                 )
 
@@ -1076,7 +1074,7 @@ class ConjectureRunner:
                 # running the test function for real here. If however we encounter
                 # some novel behaviour, we try again with the real test function,
                 # starting from the new novel prefix that has discovered.
-                trial_data = self.new_conjecture_data_ir(prefix, max_choices=max_length)
+                trial_data = self.new_conjecture_data(prefix, max_choices=max_length)
                 try:
                     self.tree.simulate_test_function(trial_data)
                     continue
@@ -1098,7 +1096,7 @@ class ConjectureRunner:
             else:
                 max_length = None
 
-            data = self.new_conjecture_data_ir(prefix, max_choices=max_length)
+            data = self.new_conjecture_data(prefix, max_choices=max_length)
             self.test_function(data)
 
             if (
@@ -1193,7 +1191,7 @@ class ConjectureRunner:
                     # really matter. It may not achieve the desired result,
                     # but it's still a perfectly acceptable choice sequence
                     # to try.
-                    new_data = self.cached_test_function_ir(
+                    new_data = self.cached_test_function(
                         choices[:start1]
                         + replacement
                         + choices[end1:start2]
@@ -1296,7 +1294,7 @@ class ConjectureRunner:
             self.shrink_interesting_examples()
         self.exit_with(ExitReason.finished)
 
-    def new_conjecture_data_ir(
+    def new_conjecture_data(
         self,
         prefix: Sequence[Union[ChoiceT, ChoiceTemplate]],
         *,
@@ -1335,7 +1333,7 @@ class ConjectureRunner:
             self.interesting_examples.values(), key=lambda d: sort_key(d.nodes)
         ):
             assert prev_data.status == Status.INTERESTING
-            data = self.new_conjecture_data_ir(prev_data.choices)
+            data = self.new_conjecture_data(prev_data.choices)
             self.test_function(data)
             if data.status != Status.INTERESTING:
                 self.exit_with(ExitReason.flaky)
@@ -1395,7 +1393,7 @@ class ConjectureRunner:
                 if shortlex(c) > cap:
                     break
                 else:
-                    self.cached_test_function_ir(choices)
+                    self.cached_test_function(choices)
                     # We unconditionally remove c from the secondary key as it
                     # is either now primary or worse than our primary example
                     # of this reason for interestingness.

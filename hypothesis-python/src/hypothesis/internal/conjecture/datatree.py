@@ -543,7 +543,7 @@ class DataTree:
 
     DataTree tracks the following:
 
-    - Drawn choices in the typed choice sequence
+    - Drawn choices in the choice sequence
       - ConjectureData.draw_integer()
       - ConjectureData.draw_float()
       - ConjectureData.draw_string()

@@ -109,7 +109,7 @@ def test_can_reduce_poison_from_any_subtree(size, seed):
             test_function_with_poison, random=random, settings=TEST_SETTINGS
         )
         # replace n1 and n2 with 2**16 - 1 to insert a poison value here
-        runner.cached_test_function_ir(
+        runner.cached_test_function(
             data.choices[: node.index]
             + (2**16 - 1, 2**16 - 1)
             + (data.choices[node.index + 2 :])
