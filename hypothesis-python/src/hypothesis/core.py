@@ -817,6 +817,38 @@ def unwrap_markers_from_group() -> Generator[None, None, None]:
         raise min(_flatten_group(stoptests), key=lambda s_e: s_e.testcounter)
 
 
+class CustomProxy:
+    """
+    A CustomProxy wraps a user-invoked function, called via the custom_proxy function below.
+    """
+    def __init__(self, proxy_fn):
+        self.proxy_fn = proxy_fn
+
+    def launder(self, proxy_target):
+        @proxies(proxy_target)
+        def inner_proxies(*args, **kwargs):
+            return self.proxy_fn(inner_test=proxy_target, *args, **kwargs)
+        return inner_proxies
+
+_custom_proxy = None 
+
+@contextlib.contextmanager
+def custom_proxy(proxy_fn):
+    """
+    Intercession point for a proxy, a function that is invoked at hypothesis execution time
+    with the test and all args - gives users a chance to intercede and invoke the test as they see fit.
+    """
+    global _custom_proxy
+    current_proxy = _custom_proxy
+    _custom_proxy = CustomProxy(proxy_fn)
+    try:
+        yield
+    finally:
+        _custom_proxy = current_proxy
+
+def get_custom_proxy():
+    return _custom_proxy
+    
 class StateForActualGivenExecution:
     def __init__(self, stuff, test, settings, random, wrapped_test):
         self.test_runner = get_executor(stuff.selfy)
@@ -928,6 +960,11 @@ class StateForActualGivenExecution:
                         )
                 return result
 
+        inner_test = test
+        current_custom_proxy = get_custom_proxy()
+        if current_custom_proxy is not None:
+            test = current_custom_proxy.launder(inner_test)
+            
         def run(data):
             # Set up dynamic context needed by a single test run.
             if self.stuff.selfy is not None:
