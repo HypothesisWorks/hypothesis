@@ -635,10 +635,11 @@ class Shrinker:
                 node_program("X" * 1),
                 "pass_to_descendant",
                 "reorder_examples",
-                "minimize_duplicated_nodes",
-                "minimize_individual_nodes",
+                "minimize_duplicated_choices",
+                "minimize_individual_choices",
                 "redistribute_numeric_pairs",
                 "lower_integers_together",
+                "lower_duplicated_characters",
             ]
         )
 
@@ -1259,8 +1260,8 @@ class Shrinker:
         return list(duplicates.values())
 
     @defines_shrink_pass()
-    def minimize_duplicated_nodes(self, chooser):
-        """Find blocks that have been duplicated in multiple places and attempt
+    def minimize_duplicated_choices(self, chooser):
+        """Find choices that have been duplicated in multiple places and attempt
         to minimize all of the duplicates simultaneously.
 
         This lets us handle cases where two values can't be shrunk
@@ -1387,6 +1388,68 @@ class Shrinker:
         find_integer(lambda n: consider(shrink_towards - n))
         find_integer(lambda n: consider(n - shrink_towards))
 
+    @defines_shrink_pass()
+    def lower_duplicated_characters(self, chooser):
+        """
+        Select two string choices no more than 4 choices apart and simultaneously
+        lower characters which appear in both strings. This helps cases where the
+        same character must appear in two strings, but the actual value of the
+        character is not relevant.
+
+        This shrinking pass currently only tries lowering *all* instances of the
+        duplicated character in both strings. So for instance, given two choices:
+
+            "bbac"
+            "abbb"
+
+        we would try lowering all five of the b characters simultaneously. This
+        may fail to shrink some cases where only certain character indices are
+        correlated, for instance if only the b at index 1 could be lowered
+        simultaneously and the rest did in fact actually have to be a `b`.
+
+        It would be nice to try shrinking that case as well, but we would need good
+        safeguards because it could get very expensive to try all combinations.
+        I expect lowering all duplicates to handle most cases in the meantime.
+        """
+        node1 = chooser.choose(
+            self.nodes, lambda n: n.type == "string" and not n.trivial
+        )
+
+        # limit search to up to 4 choices ahead, to avoid quadratic behavior
+        node2 = self.nodes[
+            chooser.choose(
+                range(node1.index + 1, min(len(self.nodes), node1.index + 1 + 4)),
+                lambda i: self.nodes[i].type == "string" and not self.nodes[i].trivial
+                # select nodes which have at least one of the same character present
+                and set(node1.value) & set(self.nodes[i].value),
+            )
+        ]
+
+        duplicated_characters = set(node1.value) & set(node2.value)
+        # deterministic ordering
+        char = chooser.choose(sorted(duplicated_characters))
+        intervals = node1.kwargs["intervals"]
+
+        def copy_node(node, n):
+            # replace all duplicate characters in each string. This might miss
+            # some shrinks compared to only replacing some, but trying all possible
+            # combinations of indices could get expensive if done without some
+            # thought.
+            return node.copy(
+                with_value=node.value.replace(char, intervals.char_in_shrink_order(n))
+            )
+
+        Integer.shrink(
+            intervals.index_from_char_in_shrink_order(char),
+            lambda n: self.consider_new_nodes(
+                self.nodes[: node1.index]
+                + (copy_node(node1, n),)
+                + self.nodes[node1.index + 1 : node2.index]
+                + (copy_node(node2, n),)
+                + self.nodes[node2.index + 1 :]
+            ),
+        )
+
     def minimize_nodes(self, nodes):
         choice_type = nodes[0].type
         value = nodes[0].value
@@ -1480,8 +1543,8 @@ class Shrinker:
             self.consider_new_nodes(prefix + new_replacement + suffix)
 
     @defines_shrink_pass()
-    def minimize_individual_nodes(self, chooser):
-        """Attempt to minimize each node in sequence.
+    def minimize_individual_choices(self, chooser):
+        """Attempt to minimize each choice in sequence.
 
         This is the pass that ensures that e.g. each integer we draw is a
         minimum value. So it's the part that guarantees that if we e.g. do
@@ -1491,7 +1554,7 @@ class Shrinker:
 
         then in our shrunk example, x = 10 rather than say 97.
 
-        If we are unsuccessful at minimizing a node of interest we then
+        If we are unsuccessful at minimizing a choice of interest we then
         check if that's because it's changing the size of the test case and,
         if so, we also make an attempt to delete parts of the test case to
         see if that fixes it.
