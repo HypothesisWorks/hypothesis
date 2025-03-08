@@ -27,7 +27,7 @@ from hypothesis.internal.conjecture.choice import (
 from hypothesis.internal.conjecture.data import (
     ConjectureData,
     ConjectureResult,
-    Examples,
+    Spans,
     Status,
     _Overrun,
     draw_choice,
@@ -187,7 +187,7 @@ class Shrinker:
     change in the underlying shrink target. It is generally safe
     to assume that the shrink target does not change prior to the
     point of first modification - e.g. if you change no bytes at
-    index ``i``, all examples whose start is ``<= i`` still exist,
+    index ``i``, all spans whose start is ``<= i`` still exist,
     as do all blocks, and the data object is still of length
     ``>= i + 1``. This can only be violated by bad user code which
     relies on an external source of non-determinism.
@@ -548,7 +548,7 @@ class Shrinker:
                     len(attempt) == len(result.choices)
                     and endswith(result.nodes, nodes[end:])
                 ):
-                    for ex, res in zip(shrink_target.examples, result.examples):
+                    for ex, res in zip(shrink_target.spans, result.spans):
                         assert ex.start == res.start
                         assert ex.start <= start
                         assert ex.label == res.label
@@ -627,14 +627,14 @@ class Shrinker:
         """
         self.fixate_shrink_passes(
             [
-                "try_trivial_examples",
+                "try_trivial_spans",
                 node_program("X" * 5),
                 node_program("X" * 4),
                 node_program("X" * 3),
                 node_program("X" * 2),
                 node_program("X" * 1),
                 "pass_to_descendant",
-                "reorder_examples",
+                "reorder_spans",
                 "minimize_duplicated_choices",
                 "minimize_individual_choices",
                 "redistribute_numeric_pairs",
@@ -657,10 +657,10 @@ class Shrinker:
         self.reduce_each_alternative()
 
     @derived_value  # type: ignore
-    def examples_starting_at(self):
+    def spans_starting_at(self):
         result = [[] for _ in self.shrink_target.nodes]
-        for i, ex in enumerate(self.examples):
-            # We can have zero-length examples that start at the end
+        for i, ex in enumerate(self.spans):
+            # We can have zero-length spans that start at the end
             if ex.start < len(result):
                 result[ex.start].append(i)
         return tuple(map(tuple, result))
@@ -739,7 +739,7 @@ class Shrinker:
 
         prefix = nodes[:i] + (nodes[i].copy(with_value=v),)
         initial = self.shrink_target
-        examples = self.examples_starting_at[i]
+        spans = self.spans_starting_at[i]
         for _ in range(3):
             random_attempt = self.engine.cached_test_function(
                 [n.value for n in prefix], extend=len(nodes)
@@ -747,9 +747,9 @@ class Shrinker:
             if random_attempt.status < Status.VALID:
                 continue
             self.incorporate_test_data(random_attempt)
-            for j in examples:
-                initial_ex = initial.examples[j]
-                attempt_ex = random_attempt.examples[j]
+            for j in spans:
+                initial_ex = initial.spans[j]
+                attempt_ex = random_attempt.spans[j]
                 contents = random_attempt.nodes[attempt_ex.start : attempt_ex.end]
                 self.consider_new_nodes(nodes[:i] + contents + nodes[initial_ex.end :])
                 if initial is not self.shrink_target:
@@ -865,26 +865,28 @@ class Shrinker:
         return self.shrink_target.choices
 
     @property
-    def examples(self) -> Examples:
-        return self.shrink_target.examples
+    def spans(self) -> Spans:
+        return self.shrink_target.spans
 
     @derived_value  # type: ignore
-    def examples_by_label(self):
-        """An index of all examples grouped by their label, with
-        the examples stored in their normal index order."""
+    def spans_by_label(self):
+        """
+        An index of all spans grouped by their label, with the spans stored in
+        their normal index order.
+        """
 
-        examples_by_label = defaultdict(list)
-        for ex in self.examples:
-            examples_by_label[ex.label].append(ex)
-        return dict(examples_by_label)
+        spans_by_label = defaultdict(list)
+        for ex in self.spans:
+            spans_by_label[ex.label].append(ex)
+        return dict(spans_by_label)
 
     @derived_value  # type: ignore
     def distinct_labels(self):
-        return sorted(self.examples_by_label, key=str)
+        return sorted(self.spans_by_label, key=str)
 
     @defines_shrink_pass()
     def pass_to_descendant(self, chooser):
-        """Attempt to replace each example with a descendant example.
+        """Attempt to replace each span with a descendant span.
 
         This is designed to deal with strategies that call themselves
         recursively. For example, suppose we had:
@@ -903,10 +905,10 @@ class Shrinker:
         """
 
         label = chooser.choose(
-            self.distinct_labels, lambda l: len(self.examples_by_label[l]) >= 2
+            self.distinct_labels, lambda l: len(self.spans_by_label[l]) >= 2
         )
 
-        ls = self.examples_by_label[label]
+        ls = self.spans_by_label[label]
         i = chooser.choose(range(len(ls) - 1))
         ancestor = ls[i]
 
@@ -1176,23 +1178,23 @@ class Shrinker:
         # try to be more aggressive.
         regions_to_delete = {(end, end + lost_nodes)}
 
-        for ex in self.examples:
+        for ex in self.spans:
             if ex.start > start:
                 continue
             if ex.end <= end:
                 continue
 
-            if ex.index >= len(attempt.examples):
+            if ex.index >= len(attempt.spans):
                 continue  # pragma: no cover
 
-            replacement = attempt.examples[ex.index]
+            replacement = attempt.spans[ex.index]
             in_original = [c for c in ex.children if c.start >= end]
             in_replaced = [c for c in replacement.children if c.start >= end]
 
             if len(in_replaced) >= len(in_original) or not in_replaced:
                 continue
 
-            # We've found an example where some of the children went missing
+            # We've found a span where some of the children went missing
             # as a result of this change, and just replacing it with the data
             # it would have had and removing the spillover didn't work. This
             # means that some of its children towards the right must be
@@ -1228,7 +1230,7 @@ class Shrinker:
         while self.shrink_target.has_discards:
             discarded = []
 
-            for ex in self.shrink_target.examples:
+            for ex in self.shrink_target.spans:
                 if (
                     ex.choice_count > 0
                     and ex.discarded
@@ -1512,12 +1514,12 @@ class Shrinker:
             raise NotImplementedError
 
     @defines_shrink_pass()
-    def try_trivial_examples(self, chooser):
-        i = chooser.choose(range(len(self.examples)))
+    def try_trivial_spans(self, chooser):
+        i = chooser.choose(range(len(self.spans)))
 
         prev = self.shrink_target
         nodes = self.shrink_target.nodes
-        ex = self.examples[i]
+        ex = self.spans[i]
         prefix = nodes[: ex.start]
         replacement = tuple(
             [
@@ -1538,7 +1540,7 @@ class Shrinker:
             return
 
         if isinstance(attempt, ConjectureResult):
-            new_ex = attempt.examples[i]
+            new_ex = attempt.spans[i]
             new_replacement = attempt.nodes[new_ex.start : new_ex.end]
             self.consider_new_nodes(prefix + new_replacement + suffix)
 
@@ -1615,27 +1617,27 @@ class Shrinker:
         assert attempt is not self.shrink_target
 
         @self.cached(node.index)
-        def first_example_after_node():
+        def first_span_after_node():
             lo = 0
-            hi = len(self.examples)
+            hi = len(self.spans)
             while lo + 1 < hi:
                 mid = (lo + hi) // 2
-                ex = self.examples[mid]
+                ex = self.spans[mid]
                 if ex.start >= node.index:
                     hi = mid
                 else:
                     lo = mid
             return hi
 
-        # we try deleting both entire examples, and single nodes.
+        # we try deleting both entire spans, and single nodes.
         # If we wanted to get more aggressive, we could try deleting n
-        # consecutive nodes (that don't cross an example boundary) for say
+        # consecutive nodes (that don't cross a span boundary) for say
         # n <= 2 or n <= 3.
         if chooser.choose([True, False]):
-            ex = self.examples[
+            ex = self.spans[
                 chooser.choose(
-                    range(first_example_after_node, len(self.examples)),
-                    lambda i: self.examples[i].choice_count > 0,
+                    range(first_span_after_node, len(self.spans)),
+                    lambda i: self.spans[i].choice_count > 0,
                 )
             ]
             self.consider_new_nodes(lowered[: ex.start] + lowered[ex.end :])
@@ -1644,8 +1646,8 @@ class Shrinker:
             self.consider_new_nodes(lowered[: node.index] + lowered[node.index + 1 :])
 
     @defines_shrink_pass()
-    def reorder_examples(self, chooser):
-        """This pass allows us to reorder the children of each example.
+    def reorder_spans(self, chooser):
+        """This pass allows us to reorder the children of each span.
 
         For example, consider the following:
 
@@ -1663,17 +1665,17 @@ class Shrinker:
         ``x=""``, ``y="0"``, or the other way around. With reordering it will
         reliably fail with ``x=""``, ``y="0"``.
         """
-        ex = chooser.choose(self.examples)
+        ex = chooser.choose(self.spans)
         label = chooser.choose(ex.children).label
 
-        examples = [c for c in ex.children if c.label == label]
-        if len(examples) <= 1:
+        spans = [c for c in ex.children if c.label == label]
+        if len(spans) <= 1:
             return
         st = self.shrink_target
-        endpoints = [(ex.start, ex.end) for ex in examples]
+        endpoints = [(ex.start, ex.end) for ex in spans]
 
         Ordering.shrink(
-            range(len(examples)),
+            range(len(spans)),
             lambda indices: self.consider_new_nodes(
                 replace_all(
                     st.nodes,
@@ -1681,13 +1683,13 @@ class Shrinker:
                         (
                             u,
                             v,
-                            st.nodes[examples[i].start : examples[i].end],
+                            st.nodes[spans[i].start : spans[i].end],
                         )
                         for (u, v), i in zip(endpoints, indices)
                     ],
                 )
             ),
-            key=lambda i: sort_key(st.nodes[examples[i].start : examples[i].end]),
+            key=lambda i: sort_key(st.nodes[spans[i].start : spans[i].end]),
         )
 
     def run_node_program(self, i, description, original, repeats=1):

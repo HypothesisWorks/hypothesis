@@ -897,14 +897,14 @@ class MappedStrategy(SearchStrategy[MappedTo], Generic[MappedFrom, MappedTo]):
                 warnings.simplefilter("ignore", BytesWarning)
             for _ in range(3):
                 try:
-                    data.start_example(MAPPED_SEARCH_STRATEGY_DO_DRAW_LABEL)
+                    data.start_span(MAPPED_SEARCH_STRATEGY_DO_DRAW_LABEL)
                     x = data.draw(self.mapped_strategy)
                     result = self.pack(x)
-                    data.stop_example()
+                    data.stop_span()
                     current_build_context().record_call(result, self.pack, [x], {})
                     return result
                 except UnsatisfiedAssumption:
-                    data.stop_example(discard=True)
+                    data.stop_span(discard=True)
         raise UnsatisfiedAssumption
 
     @property
@@ -1075,13 +1075,13 @@ class FilteredStrategy(SearchStrategy[Ex]):
 
     def do_filtered_draw(self, data: ConjectureData) -> Union[Ex, UniqueIdentifier]:
         for i in range(3):
-            data.start_example(FILTERED_SEARCH_STRATEGY_DO_DRAW_LABEL)
+            data.start_span(FILTERED_SEARCH_STRATEGY_DO_DRAW_LABEL)
             value = data.draw(self.filtered_strategy)
             if self.condition(value):
-                data.stop_example()
+                data.stop_span()
                 return value
             else:
-                data.stop_example(discard=True)
+                data.stop_span(discard=True)
                 if i == 0:
                     data.events[f"Retried draw from {self!r} to satisfy filter"] = ""
 

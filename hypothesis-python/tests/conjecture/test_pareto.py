@@ -206,9 +206,9 @@ def test_uses_tags_in_calculating_pareto_front():
         def test(data):
             data.target_observations[""] = 1
             if data.draw_boolean():
-                data.start_example(11)
+                data.start_span(11)
                 data.draw_integer(0, 2**8 - 1)
-                data.stop_example()
+                data.stop_span()
 
         runner = ConjectureRunner(
             test,

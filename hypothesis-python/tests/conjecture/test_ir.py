@@ -237,10 +237,10 @@ def test_nodes(random):
     data.draw_float(min_value=-10.0, max_value=10.0, forced=5.0)
     data.draw_boolean(forced=True)
 
-    data.start_example(42)
+    data.start_span(42)
     data.draw_string(IntervalSet.from_string("abcd"), forced="abbcccdddd")
     data.draw_bytes(8, 8, forced=bytes(8))
-    data.stop_example()
+    data.stop_span()
 
     data.draw_integer(0, 100, forced=50)
 

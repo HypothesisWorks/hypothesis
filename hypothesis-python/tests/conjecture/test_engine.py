@@ -178,11 +178,11 @@ def test_variadic_draw():
     def draw_list(data):
         result = []
         while True:
-            data.start_example(SOME_LABEL)
+            data.start_span(SOME_LABEL)
             d = data.draw_integer(0, 2**8 - 1) & 7
             if d:
                 result.append(data.draw_bytes(d, d))
-            data.stop_example()
+            data.stop_span()
             if not d:
                 break
         return result
@@ -513,8 +513,8 @@ def test_debug_data(capsys):
         for choice in choices:
             if data.draw(st.integers(0, 100)) != choice:
                 data.mark_invalid()
-            data.start_example(1)
-            data.stop_example()
+            data.start_span(1)
+            data.stop_span()
         data.mark_interesting()
 
     runner = ConjectureRunner(
@@ -627,11 +627,11 @@ def test_discarding(monkeypatch):
     def nodes(data):
         count = 0
         while count < 10:
-            data.start_example(SOME_LABEL)
+            data.start_span(SOME_LABEL)
             b = data.draw_boolean()
             if b:
                 count += 1
-            data.stop_example(discard=not b)
+            data.stop_span(discard=not b)
         data.mark_interesting()
 
     assert tuple(n.value for n in nodes) == (True,) * 10
@@ -641,9 +641,9 @@ def test_can_remove_discarded_data():
     @shrinking_from((0,) * 10 + (11,))
     def shrinker(data: ConjectureData):
         while True:
-            data.start_example(SOME_LABEL)
+            data.start_span(SOME_LABEL)
             b = data.draw_integer(0, 2**8 - 1)
-            data.stop_example(discard=(b == 0))
+            data.stop_span(discard=(b == 0))
             if b == 11:
                 break
         data.mark_interesting()
@@ -655,9 +655,9 @@ def test_can_remove_discarded_data():
 def test_discarding_iterates_to_fixed_point():
     @shrinking_from(list(range(100, -1, -1)))
     def shrinker(data: ConjectureData):
-        data.start_example(0)
+        data.start_span(0)
         data.draw_integer(0, 2**8 - 1)
-        data.stop_example(discard=True)
+        data.stop_span(discard=True)
         while data.draw_integer(0, 2**8 - 1):
             pass
         data.mark_interesting()
@@ -670,8 +670,8 @@ def test_discarding_is_not_fooled_by_empty_discards():
     @shrinking_from((1, 1))
     def shrinker(data: ConjectureData):
         data.draw_integer(0, 2**1 - 1)
-        data.start_example(0)
-        data.stop_example(discard=True)
+        data.start_span(0)
+        data.stop_span(discard=True)
         data.draw_integer(0, 2**1 - 1)
         data.mark_interesting()
 
@@ -682,15 +682,13 @@ def test_discarding_is_not_fooled_by_empty_discards():
 def test_discarding_can_fail():
     @shrinking_from((1,))
     def shrinker(data: ConjectureData):
-        data.start_example(0)
+        data.start_span(0)
         data.draw_boolean()
-        data.stop_example(discard=True)
+        data.stop_span(discard=True)
         data.mark_interesting()
 
     shrinker.remove_discarded()
-    assert any(
-        e.discarded and e.choice_count > 0 for e in shrinker.shrink_target.examples
-    )
+    assert any(e.discarded and e.choice_count > 0 for e in shrinker.shrink_target.spans)
 
 
 def test_shrinking_from_mostly_zero(monkeypatch):
@@ -720,12 +718,12 @@ def test_handles_nesting_of_discard_correctly(monkeypatch):
     @run_to_nodes
     def nodes(data):
         while True:
-            data.start_example(SOME_LABEL)
+            data.start_span(SOME_LABEL)
             succeeded = data.draw_boolean()
-            data.start_example(SOME_LABEL)
+            data.start_span(SOME_LABEL)
             data.draw_boolean()
-            data.stop_example(discard=not succeeded)
-            data.stop_example(discard=not succeeded)
+            data.stop_span(discard=not succeeded)
+            data.stop_span(discard=not succeeded)
             if succeeded:
                 data.mark_interesting()
 
@@ -1013,9 +1011,9 @@ def test_discards_kill_branches():
     seen = set()
 
     def test(data: ConjectureData):
-        data.start_example(1)
+        data.start_span(1)
         n1 = data.draw_integer(0, 9)
-        data.stop_example(discard=n1 > 0)
+        data.stop_span(discard=n1 > 0)
         n2 = data.draw_integer(0, 9)
         n3 = data.draw_integer(0, 9)
 

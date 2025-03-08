@@ -108,11 +108,11 @@ def test_can_zero_subintervals():
     @shrinking_from((3, 0, 0, 0, 1) * 10)
     def shrinker(data: ConjectureData):
         for _ in range(10):
-            data.start_example(SOME_LABEL)
+            data.start_span(SOME_LABEL)
             n = data.draw_integer(0, 2**8 - 1)
             for _ in range(n):
                 data.draw_integer(0, 2**8 - 1)
-            data.stop_example()
+            data.stop_span()
             if data.draw_integer(0, 2**8 - 1) != 1:
                 return
         data.mark_interesting()
@@ -123,13 +123,13 @@ def test_can_zero_subintervals():
 
 def test_can_pass_to_an_indirect_descendant():
     def tree(data):
-        data.start_example(label=1)
+        data.start_span(label=1)
         n = data.draw_integer(0, 1)
         data.draw_integer(0, 2**8 - 1)
         if n:
             tree(data)
             tree(data)
-        data.stop_example(discard=True)
+        data.stop_span(discard=True)
 
     initial = (1, 10, 0, 0, 1, 0, 0, 10, 0, 0)
     target = (0, 10)
@@ -163,11 +163,11 @@ def test_handle_empty_draws():
     @run_to_nodes
     def nodes(data):
         while True:
-            data.start_example(SOME_LABEL)
+            data.start_span(SOME_LABEL)
             n = data.draw_integer(0, 1)
-            data.start_example(SOME_LABEL)
-            data.stop_example()
-            data.stop_example(discard=n > 0)
+            data.start_span(SOME_LABEL)
+            data.stop_span()
+            data.stop_span(discard=n > 0)
             if not n:
                 break
         data.mark_interesting()
@@ -175,20 +175,20 @@ def test_handle_empty_draws():
     assert tuple(n.value for n in nodes) == (0,)
 
 
-def test_can_reorder_examples():
+def test_can_reorder_spans():
     # grouped by iteration: (1, 1) (1, 1) (0) (0) (0)
     @shrinking_from((1, 1, 1, 1, 0, 0, 0))
     def shrinker(data: ConjectureData):
         total = 0
         for _ in range(5):
-            data.start_example(label=0)
+            data.start_span(label=0)
             if data.draw_integer(0, 2**8 - 1):
                 total += data.draw_integer(0, 2**9 - 1)
-            data.stop_example()
+            data.stop_span()
         if total == 2:
             data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["reorder_examples"])
+    shrinker.fixate_shrink_passes(["reorder_spans"])
     assert shrinker.choices == (0, 0, 0, 1, 1, 1, 1)
 
 
@@ -251,14 +251,14 @@ def test_finding_a_minimal_balanced_binary_tree():
 
     def tree(data):
         # Returns height of a binary tree and whether it is height balanced.
-        data.start_example(label=0)
+        data.start_span(label=0)
         if not data.draw_boolean():
             result = (1, True)
         else:
             h1, b1 = tree(data)
             h2, b2 = tree(data)
             result = (1 + max(h1, h2), b1 and b2 and abs(h1 - h2) <= 1)
-        data.stop_example()
+        data.stop_span()
         return result
 
     # Starting from an unbalanced tree of depth six
@@ -304,13 +304,13 @@ def test_zero_contained_examples():
     @shrinking_from((1,) * 8)
     def shrinker(data: ConjectureData):
         for _ in range(4):
-            data.start_example(1)
+            data.start_span(1)
             if data.draw_integer(0, 2**8 - 1) == 0:
                 data.mark_invalid()
-            data.start_example(1)
+            data.start_span(1)
             data.draw_integer(0, 2**8 - 1)
-            data.stop_example()
-            data.stop_example()
+            data.stop_span()
+            data.stop_span()
         data.mark_interesting()
 
     shrinker.shrink()
@@ -372,15 +372,15 @@ def test_zig_zags_quickly_with_shrink_towards(
 def test_zero_irregular_examples():
     @shrinking_from((255,) * 6)
     def shrinker(data: ConjectureData):
-        data.start_example(1)
+        data.start_span(1)
         data.draw_integer(0, 2**8 - 1)
         data.draw_integer(0, 2**16 - 1)
-        data.stop_example()
-        data.start_example(1)
+        data.stop_span()
+        data.start_span(1)
         interesting = (
             data.draw_integer(0, 2**8 - 1) > 0 and data.draw_integer(0, 2**16 - 1) > 0
         )
-        data.stop_example()
+        data.stop_span()
         if interesting:
             data.mark_interesting()
 
@@ -425,17 +425,17 @@ def test_can_expand_deleted_region():
     @shrinking_from((1, 2, 3, 4, 0, 0))
     def shrinker(data: ConjectureData):
         def t():
-            data.start_example(1)
+            data.start_span(1)
 
-            data.start_example(1)
+            data.start_span(1)
             m = data.draw_integer(0, 2**8 - 1)
-            data.stop_example()
+            data.stop_span()
 
-            data.start_example(1)
+            data.start_span(1)
             n = data.draw_integer(0, 2**8 - 1)
-            data.stop_example()
+            data.stop_span()
 
-            data.stop_example()
+            data.stop_span()
             return (m, n)
 
         v1 = t()

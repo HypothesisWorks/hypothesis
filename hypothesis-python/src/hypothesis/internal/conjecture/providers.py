@@ -244,7 +244,7 @@ class PrimitiveProvider(abc.ABC):
         `label` is an opaque integer, which will be shared by all spans drawn
         from a particular strategy.
 
-        This method is called from ConjectureData.start_example().
+        This method is called from ConjectureData.start_span().
         """
 
     def span_end(self, discard: bool, /) -> None:  # noqa: B027, FBT001
@@ -254,7 +254,7 @@ class PrimitiveProvider(abc.ABC):
         unlikely to contribute to the input data as seen by the user's test.
         Note however that side effects can make this determination unsound.
 
-        This method is called from ConjectureData.stop_example().
+        This method is called from ConjectureData.stop_span().
         """
 
 

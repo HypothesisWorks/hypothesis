@@ -181,12 +181,12 @@ class Optimiser:
                     if len(attempt.nodes) == len(self.current_data.nodes):
                         return False
 
-                    for j, ex in enumerate(self.current_data.examples):
+                    for j, ex in enumerate(self.current_data.spans):
                         if ex.start >= node.index + 1:
                             break  # pragma: no cover
                         if ex.end <= node.index:
                             continue
-                        ex_attempt = attempt.examples[j]
+                        ex_attempt = attempt.spans[j]
                         if ex.choice_count == ex_attempt.choice_count:
                             continue  # pragma: no cover
                         replacement = attempt.choices[ex_attempt.start : ex_attempt.end]

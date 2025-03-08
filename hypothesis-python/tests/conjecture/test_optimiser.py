@@ -71,8 +71,8 @@ def test_optimises_when_last_element_is_empty():
 
         def test(data):
             data.target_observations["n"] = data.draw_integer(0, 2**8 - 1)
-            data.start_example(label=1)
-            data.stop_example()
+            data.start_span(label=1)
+            data.stop_span()
 
         runner = ConjectureRunner(test, settings=TEST_SETTINGS)
         runner.cached_test_function((250,))
@@ -92,8 +92,8 @@ def test_can_optimise_last_with_following_empty():
             for _ in range(100):
                 data.draw_integer(0, 3)
             data.target_observations[""] = data.draw_integer(0, 2**8 - 1)
-            data.start_example(1)
-            data.stop_example()
+            data.start_span(1)
+            data.stop_span()
 
         runner = ConjectureRunner(
             test, settings=settings(TEST_SETTINGS, max_examples=100)
@@ -181,12 +181,12 @@ def test_can_patch_up_examples():
     with deterministic_PRNG():
 
         def test(data):
-            data.start_example(42)
+            data.start_span(42)
             m = data.draw_integer(0, 2**6 - 1)
             data.target_observations["m"] = m
             for _ in range(m):
                 data.draw_boolean()
-            data.stop_example()
+            data.stop_span()
             for i in range(4):
                 if i != data.draw_integer(0, 2**8 - 1):
                     data.mark_invalid()
