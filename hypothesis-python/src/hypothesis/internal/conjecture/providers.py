@@ -26,6 +26,11 @@ from typing import (
 
 from hypothesis.internal.cache import LRUCache
 from hypothesis.internal.compat import int_from_bytes
+from hypothesis.internal.conjecture.choice import (
+    StringKWargs,
+    choice_kwargs_key,
+    choice_permitted,
+)
 from hypothesis.internal.conjecture.floats import float_to_lex, lex_to_float
 from hypothesis.internal.conjecture.junkdrawer import bits_to_bytes
 from hypothesis.internal.conjecture.utils import (
@@ -65,6 +70,7 @@ AVAILABLE_PROVIDERS = {
     "hypothesis": "hypothesis.internal.conjecture.providers.HypothesisProvider",
 }
 FLOAT_INIT_LOGIC_CACHE = LRUCache(4096)
+STRING_SAMPLER_CACHE = LRUCache(64)
 
 NASTY_FLOATS = sorted(
     [
@@ -95,6 +101,85 @@ NASTY_FLOATS = sorted(
 )
 NASTY_FLOATS = list(map(float, NASTY_FLOATS))
 NASTY_FLOATS.extend([-x for x in NASTY_FLOATS])
+
+NASTY_STRINGS = sorted(
+    [
+        # strings which can be interpreted as code / logic
+        "undefined",
+        "null",
+        "NULL",
+        "nil",
+        "NIL",
+        "true",
+        "false",
+        "True",
+        "False",
+        "TRUE",
+        "FALSE",
+        "None",
+        "none",
+        "if",
+        "then",
+        "else",
+        # strings which can be interpreted as a number
+        "0",
+        "1e100",
+        "0..0",
+        "0/0",
+        "1/0",
+        "+0.0",
+        "Infinity",
+        "-Infinity",
+        "Inf",
+        "INF",
+        "NaN",
+        "9" * 30,
+        # common ascii characters
+        ",./;'[]\\-=<>?:\"{}|_+!@#$%^&*()`~",
+        # common unicode characters
+        "Ω≈ç√∫˜µ≤≥÷åß∂ƒ©˙∆˚¬…æœ∑´®†¥¨ˆøπ“‘¡™£¢∞§¶•ªº–≠¸˛Ç◊ı˜Â¯˘¿ÅÍÎÏ˝ÓÔÒÚÆ☃Œ„´‰ˇÁ¨ˆØ∏”’`⁄€‹›ﬁﬂ‡°·‚—±",
+        # characters which increase in length when lowercased
+        "Ⱥ",
+        "Ⱦ",
+        # ligatures
+        "æœÆŒﬀʤʨß"
+        # emoticons
+        "(╯°□°）╯︵ ┻━┻)",
+        # emojis
+        "😍",
+        "🇺🇸",
+        # emoji modifiers
+        "🏻"  # U+1F3FB Light Skin Tone,
+        "👍🏻",  # 👍 followed by U+1F3FB
+        # RTL text
+        "الكل في المجمو عة",
+        # Ogham text, which contains the only character in the Space Separators
+        # unicode category (Zs) that isn't visually blank:  .  # noqa: RUF003
+        "᚛ᚄᚓᚐᚋᚒᚄ ᚑᚄᚂᚑᚏᚅ᚜",
+        # readable variations on text (bolt/italic/script)
+        "𝐓𝐡𝐞 𝐪𝐮𝐢𝐜𝐤 𝐛𝐫𝐨𝐰𝐧 𝐟𝐨𝐱 𝐣𝐮𝐦𝐩𝐬 𝐨𝐯𝐞𝐫 𝐭𝐡𝐞 𝐥𝐚𝐳𝐲 𝐝𝐨𝐠",
+        "𝕿𝖍𝖊 𝖖𝖚𝖎𝖈𝖐 𝖇𝖗𝖔𝖜𝖓 𝖋𝖔𝖝 𝖏𝖚𝖒𝖕𝖘 𝖔𝖛𝖊𝖗 𝖙𝖍𝖊 𝖑𝖆𝖟𝖞 𝖉𝖔𝖌",
+        "𝑻𝒉𝒆 𝒒𝒖𝒊𝒄𝒌 𝒃𝒓𝒐𝒘𝒏 𝒇𝒐𝒙 𝒋𝒖𝒎𝒑𝒔 𝒐𝒗𝒆𝒓 𝒕𝒉𝒆 𝒍𝒂𝒛𝒚 𝒅𝒐𝒈",
+        "𝓣𝓱𝓮 𝓺𝓾𝓲𝓬𝓴 𝓫𝓻𝓸𝔀𝓷 𝓯𝓸𝔁 𝓳𝓾𝓶𝓹𝓼 𝓸𝓿𝓮𝓻 𝓽𝓱𝓮 𝓵𝓪𝔃𝔂 𝓭𝓸𝓰",
+        "𝕋𝕙𝕖 𝕢𝕦𝕚𝕔𝕜 𝕓𝕣𝕠𝕨𝕟 𝕗𝕠𝕩 𝕛𝕦𝕞𝕡𝕤 𝕠𝕧𝕖𝕣 𝕥𝕙𝕖 𝕝𝕒𝕫𝕪 𝕕𝕠𝕘",
+        # upsidown text
+        "ʇǝɯɐ ʇᴉs ɹolop ɯnsdᴉ ɯǝɹo˥",
+        # reserved strings in windows
+        "NUL",
+        "COM1",
+        "LPT1",
+        # scunthorpe problem
+        "Scunthorpe",
+        # zalgo text
+        "Ṱ̺̺̕o͞ ̷i̲̬͇̪͙n̝̗͕v̟̜̘̦͟o̶̙̰̠kè͚̮̺̪̹̱̤ ̖t̝͕̳̣̻̪͞h̼͓̲̦̳̘̲e͇̣̰̦̬͎ ̢̼̻̱̘h͚͎͙̜̣̲ͅi̦̲̣̰̤v̻͍e̺̭̳̪̰-m̢iͅn̖̺̞̲̯̰d̵̼̟͙̩̼̘̳ ̞̥̱̳̭r̛̗̘e͙p͠r̼̞̻̭̗e̺̠̣͟s̘͇̳͍̝͉e͉̥̯̞̲͚̬͜ǹ̬͎͎̟̖͇̤t͍̬̤͓̼̭͘ͅi̪̱n͠g̴͉ ͏͉ͅc̬̟h͡a̫̻̯͘o̫̟̖͍̙̝͉s̗̦̲.̨̹͈̣",
+        #
+        # examples from https://faultlore.com/blah/text-hates-you/
+        "मनीष منش",
+        "पन्ह पन्ह त्र र्च कृकृ ड्ड न्हृे إلا بسم الله",
+        "lorem لا بسم الله ipsum 你好1234你好",
+    ],
+    key=len,
+)
 
 # Masks for masking off the first byte of an n-bit buffer.
 # The appropriate mask is stored at position n % 8.
@@ -391,6 +476,15 @@ class HypothesisProvider(PrimitiveProvider):
         if len(intervals) == 0:
             return ""
 
+        sampler, nasty_strings = self._draw_string_sampler(
+            intervals=intervals,
+            min_size=min_size,
+            max_size=max_size,
+        )
+
+        if sampler is not None and self.draw_boolean(p=0.05):
+            return nasty_strings[sampler.sample(self._cd)]
+
         average_size = min(
             max(min_size * 2, min_size + 5),
             0.5 * (min_size + max_size),
@@ -574,6 +668,33 @@ class HypothesisProvider(PrimitiveProvider):
             allow_nan=allow_nan,
         )
         return (sampler, clamper, nasty_floats)
+
+    @classmethod
+    def _draw_string_sampler(
+        cls,
+        *,
+        intervals: IntervalSet,
+        min_size: int,
+        max_size: int,
+    ) -> tuple[Optional[Sampler], list[str]]:
+        kwargs: StringKWargs = {
+            "intervals": intervals,
+            "min_size": min_size,
+            "max_size": max_size,
+        }
+        key = choice_kwargs_key("string", kwargs)
+        if key in STRING_SAMPLER_CACHE:
+            return STRING_SAMPLER_CACHE[key]
+
+        nasty_strings = [s for s in NASTY_STRINGS if choice_permitted(s, kwargs)]
+        sampler = (
+            Sampler([1 / len(nasty_strings)] * len(nasty_strings), observe=False)
+            if nasty_strings
+            else None
+        )
+        result = (sampler, nasty_strings)
+        STRING_SAMPLER_CACHE[key] = result
+        return result
 
 
 class BytestringProvider(PrimitiveProvider):
