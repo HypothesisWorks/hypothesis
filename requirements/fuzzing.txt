@@ -58,9 +58,9 @@ hypercorn==0.17.3
     # via hypofuzz
 hyperframe==6.1.0
     # via h2
-hypofuzz==25.2.5
+hypofuzz==25.3.1
     # via -r requirements/fuzzing.in
-hypothesis[cli,watchdog]==6.127.3
+hypothesis[cli,watchdog]==6.127.9
     # via hypofuzz
 idna==3.10
     # via
@@ -110,7 +110,7 @@ pyarrow==19.0.1
     # via -r requirements/coverage.in
 pygments==2.19.1
     # via rich
-pytest==8.3.4
+pytest==8.3.5
     # via
     #   -r requirements/test.in
     #   hypofuzz
@@ -146,7 +146,7 @@ sortedcontainers==2.4.0
     #   hypothesis
     #   hypothesis (hypothesis-python/setup.py)
     #   trio
-starlette==0.46.0
+starlette==0.46.1
     # via hypofuzz
 taskgroup==0.2.2
     # via hypercorn
