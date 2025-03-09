@@ -871,8 +871,8 @@ class Shrinker:
     @derived_value  # type: ignore
     def spans_by_label(self):
         """
-        An index of all spans grouped by their label, with the spans stored in
-        their normal index order.
+        A mapping of labels to a list of spans with that label. Spans in the list
+        are ordered by their normal index order.
         """
 
         spans_by_label = defaultdict(list)

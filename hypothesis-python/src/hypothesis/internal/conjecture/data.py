@@ -252,16 +252,16 @@ class SpanProperty:
         """Rerun the test case with this visitor and return the
         results of ``self.finish()``."""
         for record in self.spans.trail:
-            if record == CHOICE_RECORD:
+            if record == TrailType.CHOICE:
                 self.choice_count += 1
-            elif record >= START_SPAN_RECORD:
-                self.__push(record - START_SPAN_RECORD)
+            elif record >= TrailType.START_SPAN:
+                self.__push(record - TrailType.START_SPAN)
             else:
                 assert record in (
-                    STOP_SPAN_DISCARD_RECORD,
-                    STOP_SPAN_NO_DISCARD_RECORD,
+                    TrailType.STOP_SPAN_DISCARD,
+                    TrailType.STOP_SPAN_NO_DISCARD,
                 )
-                self.__pop(discarded=record == STOP_SPAN_DISCARD_RECORD)
+                self.__pop(discarded=record == TrailType.STOP_SPAN_DISCARD)
         return self.finish()
 
     def __push(self, label_index: int) -> None:
@@ -289,11 +289,11 @@ class SpanProperty:
         raise NotImplementedError
 
 
-STOP_SPAN_DISCARD_RECORD = 1
-STOP_SPAN_NO_DISCARD_RECORD = 2
-START_SPAN_RECORD = 3
-
-CHOICE_RECORD = calc_label_from_name("ir draw record")
+class TrailType(IntEnum):
+    STOP_SPAN_DISCARD = 1
+    STOP_SPAN_NO_DISCARD = 2
+    START_SPAN = 3
+    CHOICE = calc_label_from_name("ir draw record")
 
 
 class SpanRecord:
@@ -317,7 +317,7 @@ class SpanRecord:
         self.__index_of_labels = None
 
     def record_choice(self) -> None:
-        self.trail.append(CHOICE_RECORD)
+        self.trail.append(TrailType.CHOICE)
 
     def start_span(self, label: int) -> None:
         assert self.__index_of_labels is not None
@@ -326,13 +326,13 @@ class SpanRecord:
         except KeyError:
             i = self.__index_of_labels.setdefault(label, len(self.labels))
             self.labels.append(label)
-        self.trail.append(START_SPAN_RECORD + i)
+        self.trail.append(TrailType.START_SPAN + i)
 
     def stop_span(self, *, discard: bool) -> None:
         if discard:
-            self.trail.append(STOP_SPAN_DISCARD_RECORD)
+            self.trail.append(TrailType.STOP_SPAN_DISCARD)
         else:
-            self.trail.append(STOP_SPAN_NO_DISCARD_RECORD)
+            self.trail.append(TrailType.STOP_SPAN_NO_DISCARD)
 
 
 class _starts_and_ends(SpanProperty):
@@ -433,9 +433,9 @@ class Spans:
     def __init__(self, record: SpanRecord) -> None:
         self.trail = record.trail
         self.labels = record.labels
-        self.__length = self.trail.count(STOP_SPAN_DISCARD_RECORD) + record.trail.count(
-            STOP_SPAN_NO_DISCARD_RECORD
-        )
+        self.__length = self.trail.count(
+            TrailType.STOP_SPAN_DISCARD
+        ) + record.trail.count(TrailType.STOP_SPAN_NO_DISCARD)
         self.__children: Optional[list[Sequence[int]]] = None
 
     @cached_property
