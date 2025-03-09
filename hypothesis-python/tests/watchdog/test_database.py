@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import math
 import sys
 import time
 from collections import Counter
@@ -79,7 +80,7 @@ def test_database_listener_multiplexed(tmp_path):
 
 
 def wait_for(condition, *, timeout=1, interval=0.01):
-    for _ in range(int(timeout // interval) + 1):
+    for _ in range(math.ceil(timeout / interval)):
         if condition():
             return
         time_sleep(interval)
