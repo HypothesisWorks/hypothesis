@@ -526,3 +526,11 @@ def test_minimize_duplicated_characters_within_a_choice():
         )
         == "0001"
     )
+
+
+def test_nasty_string_shrinks():
+    # failures found via NASTY_STRINGS should shrink like normal
+    assert (
+        minimal(st.text(), lambda s: "𝕿𝖍𝖊" in s, settings=settings(max_examples=10000))
+        == "𝕿𝖍𝖊"
+    )
