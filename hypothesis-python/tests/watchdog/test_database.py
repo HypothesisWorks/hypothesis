@@ -8,11 +8,10 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import math
 import sys
 import time
 from collections import Counter
-
-import pytest
 
 from hypothesis import Phase, settings
 from hypothesis.database import (
@@ -20,6 +19,7 @@ from hypothesis.database import (
     InMemoryExampleDatabase,
     MultiplexedDatabase,
 )
+from hypothesis.internal.reflection import get_pretty_function_description
 
 from tests.cover.test_database_backend import _database_conforms_to_listener_api
 
@@ -79,8 +79,17 @@ def test_database_listener_multiplexed(tmp_path):
     }
 
 
-# TODO flaky failure on linux
-@pytest.mark.xfail(strict=False)
+def wait_for(condition, *, timeout=1, interval=0.01):
+    for _ in range(math.ceil(timeout / interval)):
+        if condition():
+            return
+        time_sleep(interval)
+    raise Exception(
+        f"timing out after waiting {timeout}s for condition "
+        f"{get_pretty_function_description(condition)}"
+    )
+
+
 def test_database_listener_directory_explicit(tmp_path):
     db = DirectoryBasedExampleDatabase(tmp_path)
     events = []
@@ -91,8 +100,7 @@ def test_database_listener_directory_explicit(tmp_path):
     db.add_listener(listener)
 
     db.save(b"k1", b"v1")
-    time_sleep(0.2)
-    assert events == [("save", (b"k1", b"v1"))]
+    wait_for(lambda: events == [("save", (b"k1", b"v1"))])
 
     db.remove_listener(listener)
     db.delete(b"k1", b"v1")
@@ -103,55 +111,76 @@ def test_database_listener_directory_explicit(tmp_path):
     db.add_listener(listener)
     db.delete(b"k1", b"v2")
     db.save(b"k1", b"v3")
-    time_sleep(0.2)
-    assert events[1:] == [
-        ("delete", (b"k1", None)),
-        ("save", (b"k1", b"v3")),
-    ]
+    wait_for(
+        lambda: events[1:]
+        == [
+            ("delete", (b"k1", None)),
+            ("save", (b"k1", b"v3")),
+        ]
+    )
 
     # moving into a nonexistent key
     db.move(b"k1", b"k2", b"v3")
-    time_sleep(0.2)
+    time_sleep(0.5)
     # moving back into an existing key
     db.move(b"k2", b"k1", b"v3")
-    time_sleep(0.2)
+    time_sleep(0.5)
 
     if sys.platform.startswith("darwin"):
-        expected = [
+        assert events[3:] == [
             ("delete", (b"k1", b"v3")),
             ("save", (b"k2", b"v3")),
             ("delete", (b"k2", b"v3")),
             ("save", (b"k1", b"v3")),
-        ]
+        ], str(events[3:])
     elif sys.platform.startswith("win"):
-        # windows fires a save/delete event for our particular moves
-        # at the os-level instead of a move (or watchdog just isn't picking
-        # up on it correctly on windows). This means we don't get the exact
-        # deleted values for us to broadcast.
-        expected = [
+        # watchdog fires save/delete events instead of move events on windows.
+        # This means we don't broadcast the exact deleted value.
+        assert events[3:] == [
             ("delete", (b"k1", None)),
             ("save", (b"k2", b"v3")),
             ("delete", (b"k2", None)),
             ("save", (b"k1", b"v3")),
-        ]
+        ], str(events[3:])
     elif sys.platform.startswith("linux"):
-        expected = [
-            # as far as I can tell, linux fires both a save and a move event
-            # for the first move event. I don't know if this is our bug or an os
-            # implementation detail. I am leaning towards the latter, since other
-            # os' are fine.
-            ("save", (b"k2", b"v3")),
-            # first move event is normal...
-            ("delete", (b"k1", b"v3")),
-            ("save", (b"k2", b"v3")),
-            # ...but the second move event gets picked up by watchdog as an individual
-            # save/delete, not a move. I'm not sure why. Therefore we don't have
-            # the delete value present; and the ordering is also different from
-            # normal.
-            ("save", (b"k1", b"v3")),
-            ("delete", (b"k2", None)),
-        ]
+        # move #1
+        assert ("save", (b"k2", b"v3")) in events
+        # sometimes watchdog fires a move event (= save + delete with value),
+        # and other times it fires separate save and delete events (= delete with
+        # no value). I think this is due to particulars of what happens when
+        # a new directory gets created very close to the time when a file is
+        # saved to that directory.
+        assert any(("delete", (b"k1", val)) in events for val in [b"v3", None])
+
+        # move #2
+        assert ("save", (b"k1", b"v3")) in events
+        assert any(("delete", (b"k2", val)) in events for val in [b"v3", None])
     else:
         raise NotImplementedError(f"unknown platform {sys.platform}")
 
-    assert events[3:] == expected, str(events[3:])
+
+def test_database_listener_directory_move(tmp_path):
+    db = DirectoryBasedExampleDatabase(tmp_path)
+    events = []
+
+    def listener(event):
+        events.append(event)
+
+    # make sure both keys exist and that v1 exists in k1 and not k2
+    db.save(b"k1", b"v1")
+    db.save(b"k2", b"v_unrelated")
+
+    time_sleep(0.1)
+    db.add_listener(listener)
+    time_sleep(0.1)
+
+    db.move(b"k1", b"k2", b"v1")
+    # events might arrive in either order
+    wait_for(
+        lambda: set(events)
+        == {
+            ("save", (b"k2", b"v1")),
+            # windows doesn't fire move events, so value is None
+            ("delete", (b"k1", None if sys.platform.startswith("win") else b"v1")),
+        }
+    )

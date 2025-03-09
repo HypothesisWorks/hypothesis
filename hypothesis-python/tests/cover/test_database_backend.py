@@ -13,6 +13,7 @@ import re
 import shutil
 import tempfile
 import zipfile
+from collections import Counter
 from collections.abc import Iterable, Iterator
 from contextlib import contextmanager, nullcontext
 from datetime import datetime, timedelta, timezone
@@ -635,7 +636,10 @@ def _database_conforms_to_listener_api(
         def events_agree(self):
             if flush is not None:
                 flush(self.db)
-            assert self.expected_events == self.actual_events
+            # events *generally* don't arrive out of order, but we've had
+            # flakes reported here, especially on weirder / older machines.
+            # see https://github.com/HypothesisWorks/hypothesis/issues/4274
+            assert Counter(self.expected_events) == Counter(self.actual_events)
 
         def teardown(self):
             shutil.rmtree(self.temp_dir)
