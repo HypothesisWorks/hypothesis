@@ -185,7 +185,7 @@ class Sampler:
         forced: Optional[int] = None,
     ) -> int:
         if self.observe:
-            data.start_example(SAMPLE_IN_SAMPLER_LABEL)
+            data.start_span(SAMPLE_IN_SAMPLER_LABEL)
         forced_choice = (  # pragma: no branch # https://github.com/nedbat/coveragepy/issues/1617
             None
             if forced is None
@@ -214,7 +214,7 @@ class Sampler:
             observe=self.observe,
         )
         if self.observe:
-            data.stop_example()
+            data.stop_span()
         if use_alternate:
             assert forced is None or alternate == forced, (forced, alternate)
             return alternate
@@ -263,23 +263,23 @@ class many:
         self.rejected = False
         self.observe = observe
 
-    def stop_example(self):
+    def stop_span(self):
         if self.observe:
-            self.data.stop_example()
+            self.data.stop_span()
 
-    def start_example(self, label):
+    def start_span(self, label):
         if self.observe:
-            self.data.start_example(label)
+            self.data.start_span(label)
 
     def more(self) -> bool:
         """Should I draw another element to add to the collection?"""
         if self.drawn:
-            self.stop_example()
+            self.stop_span()
 
         self.drawn = True
         self.rejected = False
 
-        self.start_example(ONE_FROM_MANY_LABEL)
+        self.start_span(ONE_FROM_MANY_LABEL)
         if self.min_size == self.max_size:
             # if we have to hit an exact size, draw unconditionally until that
             # point, and no further.
@@ -307,7 +307,7 @@ class many:
             self.count += 1
             return True
         else:
-            self.stop_example()
+            self.stop_span()
             return False
 
     def reject(self, why: Optional[str] = None) -> None:

@@ -358,18 +358,18 @@ def test_will_generate_novel_prefix_to_avoid_exhausted_branches():
 def test_will_mark_changes_in_discard_as_flaky():
     tree = DataTree()
     data = ConjectureData.for_choices((1, 1), observer=tree.new_observer())
-    data.start_example(10)
+    data.start_span(10)
     data.draw_integer(0, 1)
-    data.stop_example()
+    data.stop_span()
     data.draw_integer(0, 1)
     data.freeze()
 
     data = ConjectureData.for_choices((1, 1), observer=tree.new_observer())
-    data.start_example(10)
+    data.start_span(10)
     data.draw_integer(0, 1)
 
     with pytest.raises(Flaky):
-        data.stop_example(discard=True)
+        data.stop_span(discard=True)
 
 
 def test_is_not_flaky_on_positive_zero_and_negative_zero():

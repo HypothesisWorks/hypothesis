@@ -77,7 +77,7 @@ class FeatureFlags:
 
         data = self.__data
 
-        data.start_example(label=FEATURE_LABEL)
+        data.start_span(label=FEATURE_LABEL)
 
         # If we've already decided on this feature then we don't actually
         # need to draw anything, but we do write the same decision to the
@@ -99,7 +99,7 @@ class FeatureFlags:
         if name in oneof and not is_disabled:
             oneof.clear()
         oneof.discard(name)
-        data.stop_example()
+        data.stop_span()
         return not is_disabled
 
     def __repr__(self):

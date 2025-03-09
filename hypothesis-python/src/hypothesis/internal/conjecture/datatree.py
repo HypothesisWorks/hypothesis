@@ -805,8 +805,8 @@ class DataTree:
 
     def simulate_test_function(self, data: ConjectureData) -> None:
         """Run a simulated version of the test function recorded by
-        this tree. Note that this does not currently call ``stop_example``
-        or ``start_example`` as these are not currently recorded in the
+        this tree. Note that this does not currently call ``stop_span``
+        or ``start_span`` as these are not currently recorded in the
         tree. This will likely change in future."""
         node = self.root
 

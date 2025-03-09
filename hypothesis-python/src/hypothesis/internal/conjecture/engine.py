@@ -1157,7 +1157,7 @@ class ConjectureRunner:
                 and self.call_count <= initial_calls + 5
                 and failed_mutations <= 5
             ):
-                groups = data.examples.mutator_groups
+                groups = data.spans.mutator_groups
                 if not groups:
                     break
 
