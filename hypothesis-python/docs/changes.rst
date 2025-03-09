@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.128.1:
+
+--------------------
+6.128.1 - 2025-03-09
+--------------------
+
+Rename a few internal classes for clarity.
+
 .. _v6.128.0:
 
 --------------------
