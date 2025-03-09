@@ -8,6 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import pytest
 import math
 import sys
 from contextlib import contextmanager
@@ -15,8 +16,7 @@ from random import Random
 from typing import Optional
 
 from hypothesis import HealthCheck, Phase, assume, settings, strategies as st
-from hypothesis.control import current_build_context
-from hypothesis.errors import InvalidArgument
+from hypothesis.control import current_build_context, currently_in_test_context
 from hypothesis.internal.conjecture import engine as engine_module
 from hypothesis.internal.conjecture.choice import ChoiceNode, ChoiceT
 from hypothesis.internal.conjecture.data import ConjectureData, Status
@@ -103,10 +103,21 @@ def shrinking_from(start):
 
 
 def fresh_data(*, random=None, observer=None) -> ConjectureData:
+    context = current_build_context() if currently_in_test_context() else None
+    if context is not None and settings().backend == "crosshair":
+        # we should reeaxmine fresh_data sometime and see if we can replace it
+        # with nicer and higher level hypothesis idioms.
+        #
+        # For now it doesn't work well with crosshair tests. This is no big
+        # loss, because these tests often rely on hypothesis-provider-specific
+        # things.
+        pytest.skip(
+            "Fresh data is too low level (and too much of a hack) to be "
+            "worth supporting when testing with crosshair"
+        )
+
     if random is None:
-        try:
-            context = current_build_context()
-        except InvalidArgument:
+        if context is None:
             # ensure usage of fresh_data() is not flaky outside of property tests.
             raise ValueError(
                 "must pass a seeded Random instance to fresh_data() when "
