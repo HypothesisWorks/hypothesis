@@ -60,7 +60,7 @@ ptyprocess==0.7.0
     # via pexpect
 pyarrow==19.0.1
     # via -r requirements/coverage.in
-pytest==8.3.4
+pytest==8.3.5
     # via
     #   -r requirements/test.in
     #   pytest-cov

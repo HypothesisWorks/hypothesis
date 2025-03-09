@@ -52,7 +52,7 @@ com2ann==0.3.0
     # via shed
 coverage==7.6.12
     # via -r requirements/tools.in
-cryptography==44.0.1
+cryptography==44.0.2
     # via
     #   secretstorage
     #   types-pyopenssl
@@ -61,7 +61,7 @@ decorator==5.2.1
     # via ipython
 distlib==0.3.9
     # via virtualenv
-django==5.1.6
+django==5.1.7
     # via -r requirements/tools.in
 docutils==0.21.2
     # via
@@ -101,7 +101,7 @@ importlib-metadata==8.6.1
     # via keyring
 iniconfig==2.0.0
     # via pytest
-ipython==8.33.0
+ipython==8.34.0
     # via -r requirements/tools.in
 isort==6.0.1
     # via shed
@@ -117,7 +117,7 @@ jeepney==0.9.0
     # via
     #   keyring
     #   secretstorage
-jinja2==3.1.5
+jinja2==3.1.6
     # via
     #   pelican
     #   sphinx
@@ -212,9 +212,9 @@ pyproject-hooks==1.2.0
     # via
     #   build
     #   pip-tools
-pyright==1.1.395
+pyright==1.1.396
     # via -r requirements/tools.in
-pytest==8.3.4
+pytest==8.3.5
     # via
     #   -r requirements/test.in
     #   pytest-xdist
@@ -252,7 +252,7 @@ rich==13.9.4
     # via
     #   pelican
     #   twine
-ruff==0.9.9
+ruff==0.9.10
     # via -r requirements/tools.in
 secretstorage==3.3.3
     # via keyring
@@ -275,7 +275,7 @@ sphinx==8.1.3
     #   sphinx-hoverxref
     #   sphinx-rtd-theme
     #   sphinxcontrib-jquery
-sphinx-codeautolink==0.17.1
+sphinx-codeautolink==0.17.4
     # via -r requirements/tools.in
 sphinx-hoverxref==1.4.2
     # via -r requirements/tools.in
@@ -318,7 +318,7 @@ tomli==2.2.1
     #   pytest
     #   sphinx
     #   tox
-tox==4.24.1
+tox==4.24.2
     # via -r requirements/tools.in
 traitlets==5.14.3
     # via
@@ -326,7 +326,7 @@ traitlets==5.14.3
     #   matplotlib-inline
 twine==6.1.0
     # via -r requirements/tools.in
-types-cffi==1.16.0.20241221
+types-cffi==1.16.0.20250307
     # via types-pyopenssl
 types-click==7.1.8
     # via -r requirements/tools.in
@@ -336,7 +336,7 @@ types-pytz==2025.1.0.20250204
     # via -r requirements/tools.in
 types-redis==4.6.0.20241004
     # via -r requirements/tools.in
-types-setuptools==75.8.2.20250301
+types-setuptools==75.8.2.20250305
     # via types-cffi
 typing-extensions==4.12.2
     # via
@@ -356,7 +356,7 @@ urllib3==2.3.0
     # via
     #   requests
     #   twine
-virtualenv==20.29.2
+virtualenv==20.29.3
     # via tox
 watchdog==6.0.0
     # via -r requirements/tools.in
@@ -373,4 +373,6 @@ zipp==3.21.0
 pip==25.0.1
     # via pip-tools
 setuptools==75.8.2
-    # via pip-tools
+    # via
+    #   pip-tools
+    #   types-setuptools
