@@ -41,6 +41,7 @@ from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.utils import (
     calc_label_from_cls,
+    calc_label_from_hash,
     calc_label_from_name,
     combine_labels,
 )
@@ -501,7 +502,7 @@ class SearchStrategy(Generic[Ex]):
         raise NotImplementedError(f"{type(self).__name__}.do_draw")
 
 
-def is_simple_data(value: object) -> bool:
+def is_hashable(value: object) -> bool:
     try:
         hash(value)
         return True
@@ -559,6 +560,16 @@ class SampledFromStrategy(SearchStrategy[Ex]):
             for name, f in self._transformations
         )
 
+    def calc_label(self):
+        return combine_labels(
+            self.class_label,
+            *(
+                (calc_label_from_hash(self.elements),)
+                if is_hashable(self.elements)
+                else ()
+            ),
+        )
+
     def calc_has_reusable_values(self, recur: RecurT) -> Any:
         # Because our custom .map/.filter implementations skip the normal
         # wrapper strategies (which would automatically return False for us),
@@ -567,7 +578,7 @@ class SampledFromStrategy(SearchStrategy[Ex]):
         return not self._transformations
 
     def calc_is_cacheable(self, recur: RecurT) -> Any:
-        return is_simple_data(self.elements)
+        return is_hashable(self.elements)
 
     def _transform(
         self,

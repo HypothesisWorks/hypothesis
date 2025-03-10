@@ -38,6 +38,10 @@ def calc_label_from_cls(cls: type) -> int:
     return calc_label_from_name(cls.__qualname__)
 
 
+def calc_label_from_hash(obj: object) -> int:
+    return calc_label_from_name(str(hash(obj)))
+
+
 def combine_labels(*labels: int) -> int:
     label = 0
     for l in labels:
