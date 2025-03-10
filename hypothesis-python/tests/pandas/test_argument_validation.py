@@ -78,6 +78,7 @@ BAD_ARGS = [
         marks=pytest.mark.skipif(IntegerDtype, reason="works with integer NA"),
     ),
     e(pdst.indexes, elements=st.text(), dtype=int),
+    e(pdst.indexes, elements=st.just("9" * 30), dtype=int),  # OverflowError handling
     e(pdst.indexes, elements=st.integers(0, 10), dtype=st.sampled_from([int, float])),
     e(pdst.indexes, dtype=int, max_size=0, min_size=1),
     e(pdst.indexes, dtype=int, unique="true"),
