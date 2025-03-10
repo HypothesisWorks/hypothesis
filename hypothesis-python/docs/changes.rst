@@ -18,6 +18,18 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.128.2:
+
+--------------------
+6.128.2 - 2025-03-10
+--------------------
+
+Improves input validation for several strategies in our :ref:`pandas extra
+<hypothesis-pandas>`, so that they raise a helpful ``InvalidArgument`` rather
+than ``OverflowError``.
+
+Discovered by our recent :ref:`string generation upgrade <v6.128.0>`.
+
 .. _v6.128.1:
 
 --------------------
