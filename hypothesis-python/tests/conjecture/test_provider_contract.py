@@ -12,6 +12,7 @@ import pytest
 
 from hypothesis import example, given, strategies as st
 from hypothesis.errors import StopTest
+from hypothesis.internal.compat import WINDOWS
 from hypothesis.internal.conjecture.choice import (
     choice_equal,
     choice_from_index,
@@ -69,7 +70,18 @@ def test_provider_contract_bytestring(bytestring, choice_type_and_kwargs):
         )
 
 
-@pytest.mark.parametrize("provider", [URandomProvider, HypothesisProvider])
+@pytest.mark.parametrize(
+    "provider",
+    [
+        pytest.param(
+            URandomProvider,
+            marks=pytest.mark.skipif(
+                WINDOWS, reason="/dev/urandom not available on windows"
+            ),
+        ),
+        HypothesisProvider,
+    ],
+)
 @given(st.lists(nodes()), st.randoms())
 def test_provider_contract(provider, nodes, random):
     data = ConjectureData(random=random, provider=provider)
