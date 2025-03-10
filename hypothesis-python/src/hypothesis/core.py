@@ -48,9 +48,10 @@ from hypothesis._settings import (
     Verbosity,
     all_settings,
     local_settings,
+    note_deprecation,
     settings as Settings,
 )
-from hypothesis.control import BuildContext
+from hypothesis.control import BuildContext, currently_in_test_context
 from hypothesis.database import choices_from_bytes, choices_to_bytes
 from hypothesis.errors import (
     BackendCannotProceed,
@@ -1575,6 +1576,20 @@ def given(
 
     This is the main entry point to Hypothesis.
     """
+
+    if currently_in_test_context():
+        note_deprecation(
+            "Nesting @given inside @given is deprecated. Nesting @given causes "
+            "quadratic example generation and shrinking behavior, and is outright "
+            "incompatible with some alternative backends "
+            "(https://hypothesis.readthedocs.io/en/latest/strategies.html#alternative-backends). "
+            "We recommend replacing the inner function with st.data() instead. "
+            "See https://github.com/HypothesisWorks/hypothesis/issues/4167 "
+            "for more details.",
+            since="2025-03-03",
+            has_codemod=False,
+            stacklevel=1,
+        )
 
     def run_test_as_given(test):
         if inspect.isclass(test):
