@@ -1162,27 +1162,82 @@ class ConjectureRunner:
                     break
 
                 group = self.random.choice(groups)
-
                 (start1, end1), (start2, end2) = self.random.sample(sorted(group), 2)
-                if (start1 <= start2 <= end2 <= end1) or (
-                    start2 <= start1 <= end1 <= end2
-                ):  # pragma: no cover  # flaky on conjecture-cover tests
-                    # one example entirely contains the other. give up.
-                    # TODO use more intelligent mutation for containment, like
-                    # replacing child with parent or vice versa. Would allow for
-                    # recursive / subtree mutation
-                    failed_mutations += 1
-                    continue
-
                 if start1 > start2:
                     (start1, end1), (start2, end2) = (start2, end2), (start1, end1)
-                assert end1 <= start2
 
-                choices = data.choices
-                (start, end) = self.random.choice([(start1, end1), (start2, end2)])
-                replacement = choices[start:end]
+                if (
+                    start1 <= start2 <= end2 <= end1
+                ):  # pragma: no cover  # flaky on conjecture-cover tests
+                    # One span entirely contains the other. The strategy is very
+                    # likely some kind of tree. e.g. we might have
+                    #
+                    #                   ┌─────┐
+                    #             ┌─────┤  a  ├──────┐
+                    #             │     └─────┘      │
+                    #          ┌──┴──┐            ┌──┴──┐
+                    #       ┌──┤  b  ├──┐      ┌──┤  c  ├──┐
+                    #       │  └──┬──┘  │      │  └──┬──┘  │
+                    #     ┌─┴─┐ ┌─┴─┐ ┌─┴─┐  ┌─┴─┐ ┌─┴─┐ ┌─┴─┐
+                    #     │ d │ │ e │ │ f │  │ g │ │ h │ │ i │
+                    #     └───┘ └───┘ └───┘  └───┘ └───┘ └───┘
+                    #
+                    # where each node is drawn from the same strategy and so
+                    # has the same span label. We might have selected the spans
+                    # corresponding to the a and c nodes, which is the entire
+                    # tree and the subtree of (and including) c respectively.
+                    #
+                    # There are two possible mutations we could apply in this case:
+                    # 1. replace a with c (replace child with parent)
+                    # 2. replace c with a (replace parent with child)
+                    #
+                    # (1) results in multiple partial copies of the
+                    # parent:
+                    #                 ┌─────┐
+                    #           ┌─────┤  a  ├────────────┐
+                    #           │     └─────┘            │
+                    #        ┌──┴──┐                   ┌─┴───┐
+                    #     ┌──┤  b  ├──┐          ┌─────┤  a  ├──────┐
+                    #     │  └──┬──┘  │          │     └─────┘      │
+                    #   ┌─┴─┐ ┌─┴─┐ ┌─┴─┐     ┌──┴──┐            ┌──┴──┐
+                    #   │ d │ │ e │ │ f │  ┌──┤  b  ├──┐      ┌──┤  c  ├──┐
+                    #   └───┘ └───┘ └───┘  │  └──┬──┘  │      │  └──┬──┘  │
+                    #                    ┌─┴─┐ ┌─┴─┐ ┌─┴─┐  ┌─┴─┐ ┌─┴─┐ ┌─┴─┐
+                    #                    │ d │ │ e │ │ f │  │ g │ │ h │ │ i │
+                    #                    └───┘ └───┘ └───┘  └───┘ └───┘ └───┘
+                    #
+                    # While (2) results in truncating part of the parent:
+                    #
+                    #                    ┌─────┐
+                    #                 ┌──┤  c  ├──┐
+                    #                 │  └──┬──┘  │
+                    #               ┌─┴─┐ ┌─┴─┐ ┌─┴─┐
+                    #               │ g │ │ h │ │ i │
+                    #               └───┘ └───┘ └───┘
+                    #
+                    # (1) is the same as Example IV.4. in Nautilus (NDSS '19)
+                    # (https://wcventure.github.io/FuzzingPaper/Paper/NDSS19_Nautilus.pdf),
+                    # except we do not repeat the replacement additional times
+                    # (the paper repeats it once for a total of two copies).
+                    #
+                    # We currently only apply mutation (1), and ignore mutation
+                    # (2). The reason is that the attempt generated from (2) is
+                    # always something that Hypothesis could easily have generated
+                    # itself, by simply not making various choices. Whereas
+                    # duplicating the exact value + structure of particular choices
+                    # in (1) would have been hard for Hypothesis to generate by
+                    # chance.
+                    #
+                    # TODO: an extension of this mutation might repeat (1) on
+                    # a geometric distribution between 0 and ~10 times. We would
+                    # need to find the corresponding span to recurse on in the new
+                    # choices, probably just by using the choices index.
 
-                try:
+                    # case (1): duplicate the choices in start1:start2.
+                    attempt = data.choices[:start2] + data.choices[start1:]
+                else:
+                    (start, end) = self.random.choice([(start1, end1), (start2, end2)])
+                    replacement = data.choices[start:end]
                     # We attempt to replace both the examples with
                     # whichever choice we made. Note that this might end
                     # up messing up and getting the example boundaries
@@ -1191,12 +1246,17 @@ class ConjectureRunner:
                     # really matter. It may not achieve the desired result,
                     # but it's still a perfectly acceptable choice sequence
                     # to try.
+                    attempt = (
+                        data.choices[:start1]
+                        + replacement
+                        + data.choices[end1:start2]
+                        + replacement
+                        + data.choices[end2:]
+                    )
+
+                try:
                     new_data = self.cached_test_function(
-                        choices[:start1]
-                        + replacement
-                        + choices[end1:start2]
-                        + replacement
-                        + choices[end2:],
+                        attempt,
                         # We set error_on_discard so that we don't end up
                         # entering parts of the tree we consider redundant
                         # and not worth exploring.
