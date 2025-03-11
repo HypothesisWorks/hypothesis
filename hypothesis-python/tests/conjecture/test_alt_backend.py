@@ -35,7 +35,7 @@ from hypothesis.errors import (
     InvalidArgument,
     Unsatisfiable,
 )
-from hypothesis.internal.compat import int_to_bytes
+from hypothesis.internal.compat import WINDOWS, int_to_bytes
 from hypothesis.internal.conjecture.data import ConjectureData, PrimitiveProvider
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.providers import (
@@ -596,3 +596,20 @@ def test_available_providers_deprecation():
 
     with pytest.raises(ImportError):
         from hypothesis.internal.conjecture.data import does_not_exist  # noqa
+
+
+@pytest.mark.parametrize("backend", AVAILABLE_PROVIDERS.keys())
+@pytest.mark.parametrize(
+    "strategy", [st.integers(), st.text(), st.floats(), st.booleans(), st.binary()]
+)
+def test_can_generate_from_all_available_providers(backend, strategy):
+    if backend == "hypothesis-urandom" and WINDOWS:
+        pytest.skip("/dev/urandom not available on windows")
+
+    @given(strategy)
+    @settings(backend=backend)
+    def f(x):
+        raise ValueError
+
+    with pytest.raises(ValueError):
+        f()

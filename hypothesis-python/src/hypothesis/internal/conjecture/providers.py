@@ -60,15 +60,19 @@ _Lifetime: "TypeAlias" = Literal["test_case", "test_function"]
 COLLECTION_DEFAULT_MAX_SIZE = 10**10  # "arbitrarily large"
 
 
-# The set of available `PrimitiveProvider`s, by name.  Other libraries, such as
-# crosshair, can implement this interface and add themselves; at which point users
-# can configure which backend to use via settings.   Keys are the name of the library,
-# which doubles as the backend= setting, and values are importable class names.
+# The available `PrimitiveProvider`s, and therefore also the available backends
+# for use by @settings(backend=...). The key is the name to be used in the backend=
+# value, and the value is the importable path to a subclass of PrimitiveProvider.
 #
-# NOTE: this is a temporary interface.  We DO NOT promise to continue supporting it!
-#       (but if you want to experiment and don't mind breakage, here you go)
+# See also
+# https://hypothesis.readthedocs.io/en/latest/strategies.html#alternative-backends-for-hypothesis.
+#
+# NOTE: the PrimitiveProvider interface is not yet stable. We may continue to
+# make breaking changes to it. (but if you want to experiment and don't mind
+# breakage, here you go!)
 AVAILABLE_PROVIDERS = {
     "hypothesis": "hypothesis.internal.conjecture.providers.HypothesisProvider",
+    "hypothesis-urandom": "hypothesis.internal.conjecture.providers.URandomProvider",
 }
 FLOAT_INIT_LOGIC_CACHE = LRUCache(4096)
 STRING_SAMPLER_CACHE = LRUCache(64)
