@@ -258,7 +258,8 @@ hypothesis-urandom
     using `Antithesis <https://antithesis.com/>`_, in which case this enables Antithesis
     mutations to drive Hypothesis generation.
 
-    Not available on windows.
+    ``/dev/urandom`` is not available on Windows, so we emit a warning and fall back to the
+    hypothesis backend there.
 crosshair
     Generates examples using SMT solvers like z3, which is particularly effective at satisfying
     difficult checks in your code, like ``if`` or ``==`` statements.
