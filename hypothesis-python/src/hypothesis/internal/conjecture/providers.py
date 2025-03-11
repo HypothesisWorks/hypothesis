@@ -868,7 +868,7 @@ class URandomProvider(HypothesisProvider):
 
     def __init__(self, conjecturedata: Optional["ConjectureData"], /):
         super().__init__(conjecturedata)
-        if WINDOWS:  # pragma: no branch
+        if WINDOWS:  # pragma: no cover
             warnings.warn(
                 "/dev/urandom is not available on windows. Falling back to "
                 'standard PRNG generation (equivalent to backend="hypothesis").',
