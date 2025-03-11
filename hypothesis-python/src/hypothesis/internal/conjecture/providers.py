@@ -836,13 +836,21 @@ class BytestringProvider(PrimitiveProvider):
 class URandom(Random):
     # we reimplement a Random instance instead of using SystemRandom, because
     # os.urandom is not guaranteed to read from /dev/urandom.
+
+    def _urandom(self, size: int) -> bytes:
+        with open("/dev/urandom", "rb") as f:
+            return f.read(size)
+
     def getrandbits(self, k: int) -> int:
         assert k >= 0
         size = bits_to_bytes(k)
-        with open("/dev/urandom", "rb") as f:
-            n = int_from_bytes(bytearray(f.read(size)))
+        n = int_from_bytes(self._urandom(size))
         # trim excess bits
         return n >> (size * 8 - k)
+
+    def random(self) -> float:
+        # adapted from random.SystemRandom.random
+        return (int_from_bytes(self._urandom(7)) >> 3) * (2**-53)
 
 
 class URandomProvider(HypothesisProvider):
