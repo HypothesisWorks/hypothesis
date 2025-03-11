@@ -106,6 +106,11 @@ def test_combine_labels_is_distinct():
     assert cu.combine_labels(x, y) not in (x, y)
 
 
+@given(st.integers())
+def test_combine_labels_is_identity_for_single_argument(n):
+    assert cu.combine_labels(n) == n
+
+
 @pytest.mark.skipif(np is None, reason="requires Numpy")
 def test_invalid_numpy_sample():
     with pytest.raises(InvalidArgument):
