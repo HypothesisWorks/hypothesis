@@ -11,7 +11,9 @@
 import abc
 import contextlib
 import math
+import warnings
 from collections.abc import Iterable
+from random import Random
 from sys import float_info
 from typing import (
     TYPE_CHECKING,
@@ -24,8 +26,9 @@ from typing import (
     Union,
 )
 
+from hypothesis.errors import HypothesisWarning
 from hypothesis.internal.cache import LRUCache
-from hypothesis.internal.compat import int_from_bytes
+from hypothesis.internal.compat import WINDOWS, int_from_bytes
 from hypothesis.internal.conjecture.choice import (
     StringKWargs,
     choice_kwargs_key,
@@ -59,15 +62,19 @@ _Lifetime: "TypeAlias" = Literal["test_case", "test_function"]
 COLLECTION_DEFAULT_MAX_SIZE = 10**10  # "arbitrarily large"
 
 
-# The set of available `PrimitiveProvider`s, by name.  Other libraries, such as
-# crosshair, can implement this interface and add themselves; at which point users
-# can configure which backend to use via settings.   Keys are the name of the library,
-# which doubles as the backend= setting, and values are importable class names.
+# The available `PrimitiveProvider`s, and therefore also the available backends
+# for use by @settings(backend=...). The key is the name to be used in the backend=
+# value, and the value is the importable path to a subclass of PrimitiveProvider.
 #
-# NOTE: this is a temporary interface.  We DO NOT promise to continue supporting it!
-#       (but if you want to experiment and don't mind breakage, here you go)
+# See also
+# https://hypothesis.readthedocs.io/en/latest/strategies.html#alternative-backends-for-hypothesis.
+#
+# NOTE: the PrimitiveProvider interface is not yet stable. We may continue to
+# make breaking changes to it. (but if you want to experiment and don't mind
+# breakage, here you go!)
 AVAILABLE_PROVIDERS = {
     "hypothesis": "hypothesis.internal.conjecture.providers.HypothesisProvider",
+    "hypothesis-urandom": "hypothesis.internal.conjecture.providers.URandomProvider",
 }
 FLOAT_INIT_LOGIC_CACHE = LRUCache(4096)
 STRING_SAMPLER_CACHE = LRUCache(64)
@@ -348,20 +355,20 @@ class HypothesisProvider(PrimitiveProvider):
 
     def __init__(self, conjecturedata: Optional["ConjectureData"], /):
         super().__init__(conjecturedata)
+        self._random = None if self._cd is None else self._cd._random
 
     def draw_boolean(
         self,
         p: float = 0.5,
     ) -> bool:
-        assert self._cd is not None
-        assert self._cd._random is not None
+        assert self._random is not None
 
         if p <= 0:
             return False
         if p >= 1:
             return True
 
-        return self._cd._random.random() < p
+        return self._random.random() < p
 
     def draw_integer(
         self,
@@ -471,7 +478,7 @@ class HypothesisProvider(PrimitiveProvider):
         max_size: int = COLLECTION_DEFAULT_MAX_SIZE,
     ) -> str:
         assert self._cd is not None
-        assert self._cd._random is not None
+        assert self._random is not None
 
         if len(intervals) == 0:
             return ""
@@ -501,11 +508,11 @@ class HypothesisProvider(PrimitiveProvider):
         while elements.more():
             if len(intervals) > 256:
                 if self.draw_boolean(0.2):
-                    i = self._cd._random.randint(256, len(intervals) - 1)
+                    i = self._random.randint(256, len(intervals) - 1)
                 else:
-                    i = self._cd._random.randint(0, 255)
+                    i = self._random.randint(0, 255)
             else:
-                i = self._cd._random.randint(0, len(intervals) - 1)
+                i = self._random.randint(0, len(intervals) - 1)
 
             chars.append(intervals.char_in_shrink_order(i))
 
@@ -517,7 +524,7 @@ class HypothesisProvider(PrimitiveProvider):
         max_size: int = COLLECTION_DEFAULT_MAX_SIZE,
     ) -> bytes:
         assert self._cd is not None
-        assert self._cd._random is not None
+        assert self._random is not None
 
         buf = bytearray()
         average_size = min(
@@ -532,25 +539,24 @@ class HypothesisProvider(PrimitiveProvider):
             observe=False,
         )
         while elements.more():
-            buf += self._cd._random.randbytes(1)
+            buf += self._random.randbytes(1)
 
         return bytes(buf)
 
     def _draw_float(self) -> float:
-        assert self._cd is not None
-        assert self._cd._random is not None
+        assert self._random is not None
 
-        f = lex_to_float(self._cd._random.getrandbits(64))
-        sign = 1 if self._cd._random.getrandbits(1) else -1
+        f = lex_to_float(self._random.getrandbits(64))
+        sign = 1 if self._random.getrandbits(1) else -1
         return sign * f
 
     def _draw_unbounded_integer(self) -> int:
         assert self._cd is not None
-        assert self._cd._random is not None
+        assert self._random is not None
 
         size = INT_SIZES[INT_SIZES_SAMPLER.sample(self._cd)]
 
-        r = self._cd._random.getrandbits(size)
+        r = self._random.getrandbits(size)
         sign = r & 1
         r >>= 1
         if sign:
@@ -566,22 +572,22 @@ class HypothesisProvider(PrimitiveProvider):
     ) -> int:
         assert lower <= upper
         assert self._cd is not None
-        assert self._cd._random is not None
+        assert self._random is not None
 
         if lower == upper:
             return lower
 
         bits = (upper - lower).bit_length()
-        if bits > 24 and vary_size and self._cd._random.random() < 7 / 8:
+        if bits > 24 and vary_size and self._random.random() < 7 / 8:
             # For large ranges, we combine the uniform random distribution
             # with a weighting scheme with moderate chance.  Cutoff at 2 ** 24 so that our
             # choice of unicode characters is uniform but the 32bit distribution is not.
             idx = INT_SIZES_SAMPLER.sample(self._cd)
             cap_bits = min(bits, INT_SIZES[idx])
             upper = min(upper, lower + 2**cap_bits - 1)
-            return self._cd._random.randint(lower, upper)
+            return self._random.randint(lower, upper)
 
-        return self._cd._random.randint(lower, upper)
+        return self._random.randint(lower, upper)
 
     @classmethod
     def _draw_float_init_logic(
@@ -827,3 +833,49 @@ class BytestringProvider(PrimitiveProvider):
     ) -> bytes:
         values = self._draw_collection(min_size, max_size, alphabet_size=2**8)
         return bytes(values)
+
+
+class URandom(Random):
+    # we reimplement a Random instance instead of using SystemRandom, because
+    # os.urandom is not guaranteed to read from /dev/urandom.
+
+    @staticmethod
+    def _urandom(size: int) -> bytes:
+        with open("/dev/urandom", "rb") as f:
+            return f.read(size)
+
+    def getrandbits(self, k: int) -> int:
+        assert k >= 0
+        size = bits_to_bytes(k)
+        n = int_from_bytes(self._urandom(size))
+        # trim excess bits
+        return n >> (size * 8 - k)
+
+    def random(self) -> float:
+        # adapted from random.SystemRandom.random
+        return (int_from_bytes(self._urandom(7)) >> 3) * (2**-53)
+
+
+class URandomProvider(HypothesisProvider):
+    # A provider which reads directly from /dev/urandom as its source of randomness.
+    # This provider exists to provide better Hypothesis integration with Antithesis
+    # (https://antithesis.com/), which interprets calls to /dev/urandom as the
+    # randomness to mutate. This effectively gives Antithesis control over
+    # the choices made by the URandomProvider.
+    #
+    # If you are not using Antithesis, you probably don't want to use this
+    # provider.
+
+    def __init__(self, conjecturedata: Optional["ConjectureData"], /):
+        super().__init__(conjecturedata)
+        if WINDOWS:  # pragma: no cover
+            warnings.warn(
+                "/dev/urandom is not available on windows. Falling back to "
+                'standard PRNG generation (equivalent to backend="hypothesis").',
+                HypothesisWarning,
+                stacklevel=1,
+            )
+            # don't overwrite the HypothesisProvider self._random attribute in
+            # this case
+        else:
+            self._random = URandom()
