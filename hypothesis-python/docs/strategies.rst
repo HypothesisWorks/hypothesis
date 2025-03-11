@@ -253,10 +253,10 @@ Hypothesis includes the following backends:
 hypothesis
     The default backend.
 hypothesis-urandom
-    The same same as the default backend, but uses ``/dev/urandom`` to back the randomness
-    behind its PRNG. The only reason to use this backend is if you are also using
-    `Antithesis <https://antithesis.com/>`_, in which case this enables Antithesis mutations
-    to drive Hypothesis generation.
+    The same as the default backend, but uses ``/dev/urandom`` to back the randomness
+    behind its PRNG. The only reason to use this backend over the default is if you are also
+    using `Antithesis <https://antithesis.com/>`_, in which case this enables Antithesis
+    mutations to drive Hypothesis generation.
 
     Not available on windows.
 crosshair
