@@ -11,6 +11,7 @@
 import abc
 import contextlib
 import math
+import warnings
 from collections.abc import Iterable
 from random import Random
 from sys import float_info
@@ -25,8 +26,9 @@ from typing import (
     Union,
 )
 
+from hypothesis.errors import HypothesisWarning
 from hypothesis.internal.cache import LRUCache
-from hypothesis.internal.compat import int_from_bytes
+from hypothesis.internal.compat import WINDOWS, int_from_bytes
 from hypothesis.internal.conjecture.choice import (
     StringKWargs,
     choice_kwargs_key,
@@ -837,7 +839,8 @@ class URandom(Random):
     # we reimplement a Random instance instead of using SystemRandom, because
     # os.urandom is not guaranteed to read from /dev/urandom.
 
-    def _urandom(self, size: int) -> bytes:
+    @staticmethod
+    def _urandom(size: int) -> bytes:
         with open("/dev/urandom", "rb") as f:
             return f.read(size)
 
@@ -865,4 +868,14 @@ class URandomProvider(HypothesisProvider):
 
     def __init__(self, conjecturedata: Optional["ConjectureData"], /):
         super().__init__(conjecturedata)
-        self._random = URandom()
+        if WINDOWS:
+            warnings.warn(
+                "/dev/urandom is not available on windows. Falling back to "
+                'standard PRNG generation (equivalent to backend="hypothesis").',
+                HypothesisWarning,
+                stacklevel=1,
+            )
+            # don't overwrite the HypothesisProvider self._random attribute in
+            # this case
+        else:
+            self._random = URandom()

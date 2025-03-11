@@ -11,7 +11,7 @@
 import itertools
 import math
 import sys
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from random import Random
 from typing import Optional
 
@@ -32,6 +32,7 @@ from hypothesis.errors import (
     BackendCannotProceed,
     Flaky,
     HypothesisException,
+    HypothesisWarning,
     InvalidArgument,
     Unsatisfiable,
 )
@@ -606,18 +607,24 @@ def test_can_generate_from_all_available_providers(backend, strategy):
     if backend == "crosshair":
         # TODO running into a 'not in statespace' issue which is fixed in
         # https://github.com/HypothesisWorks/hypothesis/pull/4034. Remove
-        # this skip when that is merged"
+        # this skip when that is merged
         pytest.skip(
             "temp, fixed in https://github.com/HypothesisWorks/hypothesis/pull/4034"
         )
 
-    if backend == "hypothesis-urandom" and WINDOWS:
-        pytest.skip("/dev/urandom not available on windows")
-
     @given(strategy)
-    @settings(backend=backend)
+    @settings(backend=backend, database=None)
     def f(x):
         raise ValueError
 
-    with pytest.raises(ValueError):
+    with (
+        pytest.raises(ValueError),
+        (
+            pytest.warns(
+                HypothesisWarning, match="/dev/urandom is not available on windows"
+            )
+            if backend == "hypothesis-urandom" and WINDOWS
+            else nullcontext()
+        ),
+    ):
         f()

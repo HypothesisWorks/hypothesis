@@ -274,8 +274,7 @@ generate examples with SMT via the :pypi:`hypothesis-crosshair` backend:
     from hypothesis import given, settings, strategies as st
 
 
-    # requires pip install hypothesis[crosshair]
-    @settings(backend="crosshair")
+    @settings(backend="crosshair")  # pip install hypothesis[crosshair]
     @given(st.integers())
     def test_needs_solver(x):
         assert x != 123456789
