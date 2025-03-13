@@ -18,6 +18,15 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.129.1:
+
+--------------------
+6.129.1 - 2025-03-13
+--------------------
+
+:func:`~hypothesis.strategies.randoms` no longer produces ``1.0``, matching
+the exclusive upper bound of :obj:`random.Random.random` (:issue:`4297`).
+
 .. _v6.129.0:
 
 --------------------
