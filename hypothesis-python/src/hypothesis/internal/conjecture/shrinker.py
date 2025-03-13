@@ -11,7 +11,7 @@
 import math
 from collections import defaultdict
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Callable, Optional, Union, cast
+from typing import TYPE_CHECKING, Callable, Literal, Optional, Union, cast
 
 import attr
 
@@ -136,7 +136,7 @@ class Shrinker:
     manage the associated state of a particular shrink problem. That is, we
     have some initial ConjectureData object and some property of interest
     that it satisfies, and we want to find a ConjectureData object with a
-    shortlex (see sort_key above) smaller buffer that exhibits the same
+    shortlex (see sort_key above) smaller choice sequence that exhibits the same
     property.
 
     Currently the only property of interest we use is that the status is
@@ -160,7 +160,7 @@ class Shrinker:
     =======================
 
     Generally a shrink pass is just any function that calls
-    cached_test_function and/or incorporate_new_buffer a number of times,
+    cached_test_function and/or consider_new_nodes a number of times,
     but there are a couple of useful things to bear in mind.
 
     A shrink pass *makes progress* if running it changes self.shrink_target
@@ -202,22 +202,22 @@ class Shrinker:
     are carefully designed to do the right thing in the case that no
     shrinks occurred and try to adapt to any changes to do a reasonable
     job. e.g. say we wanted to write a shrink pass that tried deleting
-    each individual byte (this isn't an especially good choice,
+    each individual choice (this isn't an especially good pass,
     but it leads to a simple illustrative example), we might do it
-    by iterating over the buffer like so:
+    by iterating over the choice sequence like so:
 
     .. code-block:: python
 
         i = 0
-        while i < len(self.shrink_target.buffer):
-            if not self.incorporate_new_buffer(
-                self.shrink_target.buffer[:i] + self.shrink_target.buffer[i + 1 :]
+        while i < len(self.shrink_target.nodes):
+            if not self.consider_new_nodes(
+                self.shrink_target.nodes[:i] + self.shrink_target.nodes[i + 1 :]
             ):
                 i += 1
 
     The reason for writing the loop this way is that i is always a
-    valid index into the current buffer, even if the current buffer
-    changes as a result of our actions. When the buffer changes,
+    valid index into the current choice sequence, even if the current sequence
+    changes as a result of our actions. When the choice sequence changes,
     we leave the index where it is rather than restarting from the
     beginning, and carry on. This means that the number of steps we
     run in this case is always bounded above by the number of steps
@@ -308,10 +308,8 @@ class Shrinker:
         self.__predicate = predicate or (lambda data: True)
         self.__allow_transition = allow_transition or (lambda source, destination: True)
         self.__derived_values: dict = {}
-        self.__pending_shrink_explanation = None
 
         self.initial_size = len(initial.choices)
-
         # We keep track of the current best example on the shrink_target
         # attribute.
         self.shrink_target = initial
@@ -331,7 +329,7 @@ class Shrinker:
 
         # Because the shrinker is also used to `pareto_optimise` in the target phase,
         # we sometimes want to allow extending buffers instead of aborting at the end.
-        self.__extend = "full" if in_target_phase else 0
+        self.__extend: Union[Literal["full"], int] = "full" if in_target_phase else 0
         self.should_explain = explain
 
     @derived_value  # type: ignore
@@ -383,32 +381,32 @@ class Shrinker:
         if self.calls - self.calls_at_last_shrink >= self.max_stall:
             raise StopShrinking
 
-    def cached_test_function(self, nodes):
+    def cached_test_function(
+        self, nodes: Sequence[ChoiceNode]
+    ) -> tuple[bool, Optional[Union[ConjectureResult, _Overrun]]]:
+        nodes = nodes[: len(self.nodes)]
+
+        if startswith(nodes, self.nodes):
+            return (True, None)
+
+        if sort_key(self.nodes) < sort_key(nodes):
+            return (False, None)
+
         # sometimes our shrinking passes try obviously invalid things. We handle
         # discarding them in one place here.
-        for node in nodes:
-            if not choice_permitted(node.value, node.kwargs):
-                return None
+        if any(not choice_permitted(node.value, node.kwargs) for node in nodes):
+            return (False, None)
 
         result = self.engine.cached_test_function(
             [n.value for n in nodes], extend=self.__extend
         )
+        previous = self.shrink_target
         self.incorporate_test_data(result)
         self.check_calls()
-        return result
+        return (previous is not self.shrink_target, result)
 
     def consider_new_nodes(self, nodes: Sequence[ChoiceNode]) -> bool:
-        nodes = nodes[: len(self.nodes)]
-
-        if startswith(nodes, self.nodes):
-            return True
-
-        if sort_key(self.nodes) < sort_key(nodes):
-            return False
-
-        previous = self.shrink_target
-        self.cached_test_function(nodes)
-        return previous is not self.shrink_target
+        return self.cached_test_function(nodes)[0]
 
     def incorporate_test_data(self, data):
         """Takes a ConjectureData or Overrun object updates the current
@@ -458,8 +456,8 @@ class Shrinker:
                     "Shrink pass profiling\n"
                     "---------------------\n\n"
                     f"Shrinking made a total of {calls} call{s(calls)} of which "
-                    f"{self.shrinks} shrank and {misaligned} were misaligned. This deleted {total_deleted} choices out "
-                    f"of {self.initial_size}."
+                    f"{self.shrinks} shrank and {misaligned} were misaligned. This "
+                    f"deleted {total_deleted} choices out of {self.initial_size}."
                 )
                 for useful in [True, False]:
                     self.debug("")
@@ -700,7 +698,7 @@ class Shrinker:
                 # previous values to no longer be valid in its position.
                 zero_attempt = self.cached_test_function(
                     nodes[:i] + (nodes[i].copy(with_value=0),) + nodes[i + 1 :]
-                )
+                )[1]
                 if (
                     zero_attempt is not self.shrink_target
                     and zero_attempt is not None
@@ -731,10 +729,9 @@ class Shrinker:
         while rerandomising and attempting to repair any subsequent
         changes to the shape of the test case that this causes."""
         nodes = self.shrink_target.nodes
-        initial_attempt = self.cached_test_function(
+        if self.consider_new_nodes(
             nodes[:i] + (nodes[i].copy(with_value=v),) + nodes[i + 1 :]
-        )
-        if initial_attempt is self.shrink_target:
+        ):
             return True
 
         prefix = nodes[:i] + (nodes[i].copy(with_value=v),)
@@ -1090,7 +1087,7 @@ class Shrinker:
             [(node.index, node.index + 1, [node.copy(with_value=n)]) for node in nodes],
         )
 
-        attempt = self.cached_test_function(initial_attempt)
+        attempt = self.cached_test_function(initial_attempt)[1]
 
         if attempt is None:
             return False
@@ -1149,8 +1146,7 @@ class Shrinker:
                     # attempts which increase min_size tend to overrun rather than
                     # be misaligned, making a covering case difficult.
                     return False  # pragma: no cover
-                # the size decreased in our attempt. Try again, but replace with
-                # the min_size that we would have gotten, and truncate the value
+                # the size decreased in our attempt. Try again, but truncate the value
                 # to that size by removing any elements past min_size.
                 return self.consider_new_nodes(
                     initial_attempt[: node.index]
@@ -1534,7 +1530,7 @@ class Shrinker:
             ]
         )
         suffix = nodes[ex.end :]
-        attempt = self.cached_test_function(prefix + replacement + suffix)
+        attempt = self.cached_test_function(prefix + replacement + suffix)[1]
 
         if self.shrink_target is not prev:
             return
@@ -1598,7 +1594,7 @@ class Shrinker:
             + (node.copy(with_value=node.value - 1),)
             + self.nodes[node.index + 1 :]
         )
-        attempt = self.cached_test_function(lowered)
+        attempt = self.cached_test_function(lowered)[1]
         if (
             attempt is None
             or attempt.status < Status.VALID
