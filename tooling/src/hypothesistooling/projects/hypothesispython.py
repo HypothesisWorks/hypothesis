@@ -70,10 +70,10 @@ def build_docs(*, builder="html", only=()):
     # (unfortunately most options only have the short flag version)
     tools.scripts.pip_tool(
         "sphinx-build",
-        "-W",
-        "-T",
-        "-E",
-        "-b",
+        "--fail-on-warning",
+        "--show-traceback",
+        "--fresh-env",
+        "--builder",
         builder,
         "docs",
         "docs/_build/" + builder,
@@ -156,7 +156,7 @@ def update_changelog_and_version():
                     f.write(contents.replace(before, after))
 
 
-CHANGELOG_FILE = HYPOTHESIS_PYTHON / "docs" / "changes.rst"
+CHANGELOG_FILE = HYPOTHESIS_PYTHON / "docs" / "changelog.rst"
 DIST = HYPOTHESIS_PYTHON / "dist"
 
 
@@ -189,8 +189,10 @@ def upload_distribution():
 
     # Construct plain-text + markdown version of this changelog entry,
     # with link to canonical source.
-    build_docs(builder="text", only=["docs/changes.rst"])
-    textfile = os.path.join(HYPOTHESIS_PYTHON, "docs", "_build", "text", "changes.txt")
+    build_docs(builder="text", only=["docs/changelog.rst"])
+    textfile = os.path.join(
+        HYPOTHESIS_PYTHON, "docs", "_build", "text", "changelog.txt"
+    )
     with open(textfile, encoding="utf-8") as f:
         lines = f.readlines()
     entries = [i for i, l in enumerate(lines) if CHANGELOG_HEADER.match(l)]
@@ -198,7 +200,7 @@ def upload_distribution():
     changelog_body = (
         "".join(lines[entries[0] + 2 : entries[1]]).strip()
         + "\n\n*[The canonical version of these notes (with links) is on readthedocs.]"
-        f"(https://hypothesis.readthedocs.io/en/latest/changes.html#v{anchor})*"
+        f"(https://hypothesis.readthedocs.io/en/latest/changelog.html#v{anchor})*"
     )
 
     # Create a GitHub release, to trigger Zenodo DOI minting.  See

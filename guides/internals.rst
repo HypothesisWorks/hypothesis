@@ -2,12 +2,6 @@
 How to Work on Hypothesis Internals
 ===================================
 
-Note: Currently this guide is very specific to the *Python* version of Hypothesis.
-Over time the core will be factored out into a small separate set of libraries -
-the current migration plan is to move all of the Python code into Rust and have
-the Python and Ruby versions both depend on this. Eventually we will likely need
-to have more than one core library - e.g. a Java one as well.
-
 This is a guide to how to work on Hypothesis internals,
 with a particular focus on helping people who are new to it.
 Right now it is very rudimentary and is intended primarily for people who are
@@ -45,12 +39,6 @@ length and among those strings of minimal length is lexicographically (i.e. the
 normal order on strings - find the first byte at which they differ and use that
 to decide) smallest.
 
-Ideally we could think of the shrinker as a generic function that takes a
-string satisfying some predicate and returns the shortlex minimal string that
-also satisfies it.
-
-We depart from this ideal in two ways:
-
 * we can only *approximate* such a minimal string. Finding the actual minimum is
   intractable in general.
 * we are only interested in minimizing things where the predicate goes through
@@ -60,14 +48,6 @@ We depart from this ideal in two ways:
 We then use a number of different transformations of the string to try and
 reduce our input. These vary from principled general transformations to shameless
 hacks that special case something we need to work well.
-
-One such example of a hack is the handling of floating point numbers. There are
-a couple of lexicographic shrinks that are always valid but only really make
-sense for our particular encoding of floats. We check if we're working
-on something that is of the right size to be a float and apply those
-transformations regardless of whether it is actually meant to be a float.
-Worst case scenario it's not a float and they don't work, and we've run a few
-extra test cases.
 
 --------------------------
 Useful Files to Know About

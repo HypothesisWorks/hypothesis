@@ -2,11 +2,7 @@
 Projects extending Hypothesis
 =============================
 
-Hypothesis has been eagerly used and extended by the open source community.
-This page lists extensions and applications; you can find more or newer
-packages by searching PyPI `by keyword <https://pypi.org/search/?q=hypothesis>`_
-or `filter by classifier <https://pypi.org/search/?c=Framework+%3A%3A+Hypothesis>`_,
-or search `libraries.io <https://libraries.io/search?languages=Python&q=hypothesis>`_.
+There are a number of open-source community libraries that extend Hypothesis. This page lists some of them; you can find more by searching PyPI `by keyword <https://pypi.org/search/?q=hypothesis>`_ or `by framework classifier <https://pypi.org/search/?c=Framework+%3A%3A+Hypothesis>`_.
 
 If there's something missing which you think should be here, let us know!
 
@@ -93,7 +89,7 @@ fail - by trying all kinds of inputs and reporting whatever happens.
 implement functor, applicative, monad, and other laws; allowing a declarative
 approach to be combined with traditional pythonic code.
 
-:pypi:`icontract-hypothesis` includes a :doc:`ghostwriter <ghostwriter>` for test files
+:pypi:`icontract-hypothesis` includes a :doc:`ghostwriter <reference/ghostwriter>` for test files
 and IDE integrations such as `icontract-hypothesis-vim <https://github.com/mristin/icontract-hypothesis-vim>`_,
 `icontract-hypothesis-pycharm <https://github.com/mristin/icontract-hypothesis-pycharm>`_,
 and
@@ -105,7 +101,9 @@ function, even if it doesn't have any contracts!
 Writing an extension
 --------------------
 
-*See* :gh-file:`CONTRIBUTING.rst` *for more information.*
+.. note::
+
+    See :gh-file:`CONTRIBUTING.rst` for more information.
 
 New strategies can be added to Hypothesis, or published as an external package
 on PyPI - either is fine for most strategies. If in doubt, ask!

@@ -1,6 +1,6 @@
-======================
-Hypothesis development
-======================
+===========
+Development
+===========
 
 Hypothesis development is managed by `David R. MacIver <https://www.drmaciver.com>`_
 and `Zac Hatfield-Dodds <https://zhd.dev>`_, respectively the first author and lead
@@ -33,14 +33,9 @@ Hypothesis releases follow `semantic versioning <https://semver.org/>`_.
 
 We maintain backwards-compatibility wherever possible, and use deprecation
 warnings to mark features that have been superseded by a newer alternative.
-If you want to detect this, you can
-:mod:`upgrade warnings to errors in the usual ways <python:warnings>`.
+If you want to detect this, you can upgrade warnings to errors using the :mod:`warnings <python:warnings>` module.
 
-We use continuous deployment to ensure that you can always use our newest and
-shiniest features - every change to the source tree is automatically built and
-published on PyPI as soon as it's merged onto master, after code review and
-passing our extensive test suite.
-
+We use a rapid release cycle to ensure users get features and bugfixes as soon as possible. Every change to the Hypothesis source is automatically built and published on PyPI as soon as it's merged into master. `We wrote about this process here <https://hypothesis.works/articles/continuous-releases/>`_.
 
 Project roadmap
 ===============

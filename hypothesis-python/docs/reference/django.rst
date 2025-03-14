@@ -1,11 +1,11 @@
 .. _hypothesis-django:
 
-=====================
-Hypothesis for Django
-=====================
+======
+Django
+======
 
 Hypothesis offers a number of features specific for Django testing, available
-in the ``hypothesis[django]`` :doc:`extra </extras>`.  This is tested
+in the ``hypothesis[django]`` :doc:`extra </reference/extras>`.  This is tested
 against each supported series with mainstream or extended support -
 if you're still getting security patches, you can test with Hypothesis.
 

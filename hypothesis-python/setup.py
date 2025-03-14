@@ -87,7 +87,7 @@ setuptools.setup(
     url="https://hypothesis.works",
     project_urls={
         "Source": "https://github.com/HypothesisWorks/hypothesis/tree/master/hypothesis-python",
-        "Changelog": "https://hypothesis.readthedocs.io/en/latest/changes.html",
+        "Changelog": "https://hypothesis.readthedocs.io/en/latest/changelog.html",
         "Documentation": "https://hypothesis.readthedocs.io",
         "Issues": "https://github.com/HypothesisWorks/hypothesis/issues",
     },

@@ -74,7 +74,8 @@ else:  # pragma: no cover
 
 def register_random(r: RandomLike) -> None:
     """Register (a weakref to) the given Random-like instance for management by
-    Hypothesis.
+    Hypothesis. By default, Hypothesis manages the ``random`` and ``numpy.random``
+    objects.
 
     You can pass instances of structural subtypes of ``random.Random``
     (i.e., objects with seed, getstate, and setstate methods) to
