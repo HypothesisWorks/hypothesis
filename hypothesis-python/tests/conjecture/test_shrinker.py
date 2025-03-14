@@ -26,6 +26,7 @@ from hypothesis.internal.conjecture.shrinking.common import Shrinker as Shrinker
 from hypothesis.internal.conjecture.utils import Sampler
 from hypothesis.internal.floats import MAX_PRECISE_INTEGER
 
+from tests.common.debug import minimal
 from tests.conjecture.common import (
     SOME_LABEL,
     float_kw,
@@ -655,3 +656,15 @@ def test_lower_duplicated_characters_across_choices(start, expected, gap):
 
     shrinker.fixate_shrink_passes(["lower_duplicated_characters"])
     assert shrinker.choices == (expected[0],) + (0,) * gap + (expected[1],)
+
+
+def test_shrinking_one_of_with_same_shape():
+    # This is a covering test for our one_of shrinking logic for the case when
+    # the choice sequence *doesn't* change shape in the newly chosen one_of branch.
+    #
+    # There are relatively few tests in our suite that cover this (and previously
+    # none in the covering subset). I chose the simplest one to copy here, but
+    # haven't yet put time into extracting the essence of a test case that
+    # covers this case, which is why we're using st.permutations here instead of
+    # something more fundamental / obviously testing what we want.
+    minimal(st.permutations(list(range(5))), lambda x: x[0] != 0)
