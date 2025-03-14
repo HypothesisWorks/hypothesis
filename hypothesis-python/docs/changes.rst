@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.129.2:
+
+--------------------
+6.129.2 - 2025-03-14
+--------------------
+
+Improve how the shrinker checks for unnecessary work, leading to 10% less time spent shrinking on average, with no reduction in quality.
+
 .. _v6.129.1:
 
 --------------------
