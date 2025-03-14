@@ -1,6 +1,6 @@
-===========================
-Hypothesis for data science
-===========================
+============
+Data science
+============
 
 .. _hypothesis-numpy:
 
@@ -9,7 +9,7 @@ numpy
 -----
 
 Hypothesis offers a number of strategies for `NumPy <https://numpy.org/>`_ testing,
-available in the ``hypothesis[numpy]`` :doc:`extra </extras>`.
+available in the ``hypothesis[numpy]`` :doc:`extra </reference/extras>`.
 It lives in the ``hypothesis.extra.numpy`` package.
 
 The centerpiece is the :func:`~hypothesis.extra.numpy.arrays` strategy, which generates arrays with

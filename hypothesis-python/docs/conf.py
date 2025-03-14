@@ -51,7 +51,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "Hypothesis"
-author = "David R. MacIver"
+author = "the Hypothesis team"
 copyright = f"2013-{datetime.date.today().year}, {author}"
 
 _d = {}
@@ -134,6 +134,83 @@ intersphinx_mapping = {
 
 autodoc_mock_imports = ["numpy", "pandas", "redis", "django", "pytz"]
 
+rst_prolog = """
+.. |given| replace:: :func:`~hypothesis.given`
+.. |@given| replace:: :func:`@given <hypothesis.given>`
+.. |@example| replace:: :func:`@example <hypothesis.example>`
+.. |@example.xfail| replace:: :func:`@example(...).xfail() <hypothesis.example.xfail>`
+.. |@settings| replace:: :func:`@settings <hypothesis.settings>`
+.. |@composite| replace:: :func:`@composite <hypothesis.strategies.composite>`
+.. |assume| replace:: :func:`~hypothesis.assume`
+.. |target| replace:: :func:`~hypothesis.target`
+.. |event| replace:: :func:`~hypothesis.event`
+.. |note| replace:: :func:`~hypothesis.note`
+
+.. |max_examples| replace:: :obj:`~hypothesis.settings.max_examples`
+.. |settings.max_examples| replace:: :obj:`~hypothesis.settings.max_examples`
+.. |settings.database| replace:: :obj:`~hypothesis.settings.database`
+.. |settings.deadline| replace:: :obj:`~hypothesis.settings.deadline`
+.. |settings.derandomize| replace:: :obj:`~hypothesis.settings.derandomize`
+.. |settings.phases| replace:: :obj:`~hypothesis.settings.phases`
+.. |settings.print_blob| replace:: :obj:`~hypothesis.settings.print_blob`
+.. |settings.report_multiple_bugs| replace:: :obj:`~hypothesis.settings.report_multiple_bugs`
+.. |settings.verbosity| replace:: :obj:`~hypothesis.settings.verbosity`
+.. |settings.suppress_health_check| replace:: :obj:`~hypothesis.settings.suppress_health_check`
+
+.. |HealthCheck.data_too_large| replace:: :obj:`HealthCheck.data_too_large <hypothesis.HealthCheck.data_too_large>`
+.. |HealthCheck.filter_too_much| replace:: :obj:`HealthCheck.filter_too_much <hypothesis.HealthCheck.filter_too_much>`
+.. |HealthCheck.too_slow| replace:: :obj:`HealthCheck.too_slow <hypothesis.HealthCheck.too_slow>`
+.. |HealthCheck.function_scoped_fixture| replace:: :obj:`HealthCheck.function_scoped_fixture <hypothesis.HealthCheck.function_scoped_fixture>`
+.. |HealthCheck.differing_executors| replace:: :obj:`HealthCheck.differing_executors <hypothesis.HealthCheck.differing_executors>`
+.. |HealthCheck| replace:: :obj:`~hypothesis.HealthCheck`
+
+.. |Phase.explicit| replace:: :obj:`Phase.explicit <hypothesis.Phase.explicit>`
+.. |Phase.reuse| replace:: :obj:`Phase.reuse <hypothesis.Phase.reuse>`
+.. |Phase.generate| replace:: :obj:`Phase.generate <hypothesis.Phase.generate>`
+.. |Phase.target| replace:: :obj:`Phase.target <hypothesis.Phase.target>`
+.. |Phase.shrink| replace:: :obj:`Phase.shrink <hypothesis.Phase.shrink>`
+.. |Phase.explain| replace:: :obj:`Phase.explain <hypothesis.Phase.explain>`
+
+.. |st.lists| replace:: :func:`~hypothesis.strategies.lists`
+.. |st.integers| replace:: :func:`~hypothesis.strategies.integers`
+.. |st.floats| replace:: :func:`~hypothesis.strategies.floats`
+.. |st.booleans| replace:: :func:`~hypothesis.strategies.booleans`
+.. |st.composite| replace:: :func:`@composite <hypothesis.strategies.composite>`
+.. |st.data| replace:: :func:`~hypothesis.strategies.data`
+.. |st.one_of| replace:: :func:`~hypothesis.strategies.one_of`
+.. |st.text| replace:: :func:`~hypothesis.strategies.text`
+.. |st.tuples| replace:: :func:`~hypothesis.strategies.tuples`
+.. |st.sets| replace:: :func:`~hypothesis.strategies.sets`
+.. |st.dictionaries| replace:: :func:`~hypothesis.strategies.dictionaries`
+.. |st.fixed_dictionaries| replace:: :func:`~hypothesis.strategies.fixed_dictionaries`
+.. |st.datetimes| replace:: :func:`~hypothesis.strategies.datetimes`
+.. |st.builds| replace:: :func:`~hypothesis.strategies.builds`
+.. |st.recursive| replace:: :func:`~hypothesis.strategies.recursive`
+.. |st.deferred| replace:: :func:`~hypothesis.strategies.deferred`
+.. |st.from_type| replace:: :func:`~hypothesis.strategies.from_type`
+.. |st.register_type_strategy| replace:: :func:`~hypothesis.strategies.register_type_strategy`
+
+.. |settings.register_profile| replace:: :func:`~hypothesis.settings.register_profile`
+.. |settings.get_profile| replace:: :func:`~hypothesis.settings.get_profile`
+.. |settings.load_profile| replace:: :func:`~hypothesis.settings.load_profile`
+
+.. |SearchStrategy| replace:: :class:`~hypothesis.strategies.SearchStrategy`
+.. |strategy.filter| replace:: :func:`.filter() <hypothesis.strategies.SearchStrategy.filter>`
+
+.. _database: reference/database
+.. _observability: reference/observability
+.. _ghostwriter: reference/ghostwriter
+.. _stateful: reference/stateful
+
+.. |str| replace:: :obj:`python:str`
+.. |int| replace:: :obj:`python:int`
+.. |bool| replace:: :obj:`python:bool`
+.. |bytes| replace:: :obj:`python:bytes`
+.. |float| replace:: :obj:`python:float`
+.. |assert| replace:: :keyword:`python:assert`
+.. |dataclasses| replace:: :mod:`python:dataclasses`
+"""
+
 codeautolink_autodoc_inject = False
 codeautolink_global_preface = """
 from hypothesis import *
@@ -159,17 +236,14 @@ extlinks = {
 
 # -- Options for HTML output ----------------------------------------------
 
-html_theme = "sphinx_rtd_theme"
-
+html_theme = "furo"
 html_static_path = ["_static"]
-
-html_css_files = ["better-signatures.css", "wrap-in-tables.css"]
-
+html_css_files = ["better-signatures.css", "wrap-in-tables.css", "no-scroll.css"]
 htmlhelp_basename = "Hypothesisdoc"
-
 html_favicon = "../../brand/favicon.ico"
-
 html_logo = "../../brand/dragonfly-rainbow-150w.svg"
+# remove "Hypothesis <version> documentation" from just below logo on the sidebar
+html_theme_options = {"sidebar_hide_name": True}
 
 # -- Options for LaTeX output ---------------------------------------------
 

@@ -2,42 +2,6 @@
 Settings
 ========
 
-Hypothesis tries to have good defaults for its behaviour, but sometimes that's
-not enough and you need to tweak it.
-
-The mechanism for doing this is the :class:`~hypothesis.settings` object.
-You can set up a :func:`@given <hypothesis.given>` based test to use this using a settings
-decorator:
-
-:func:`@given <hypothesis.given>` invocation is as follows:
-
-.. code:: python
-
-    from hypothesis import given, settings
-
-
-    @given(integers())
-    @settings(max_examples=500)
-    def test_this_thoroughly(x):
-        pass
-
-This uses a :class:`~hypothesis.settings` object which causes the test to receive a much larger
-set of examples than normal.
-
-This may be applied either before or after the given and the results are
-the same. The following is exactly equivalent:
-
-
-.. code:: python
-
-    from hypothesis import given, settings
-
-
-    @settings(max_examples=500)
-    @given(integers())
-    def test_this_thoroughly(x):
-        pass
-
 ------------------
 Available settings
 ------------------
@@ -52,15 +16,19 @@ Available settings
 Controlling what runs
 ~~~~~~~~~~~~~~~~~~~~~
 
-Hypothesis divides tests into logically distinct phases:
+Hypothesis divides tests into logically distinct phases.
 
-1. Running explicit examples :ref:`provided with the @example decorator <providing-explicit-examples>`.
-2. Rerunning a selection of previously failing examples to reproduce a previously seen error.
-3. Generating new examples.
-4. Mutating examples for :ref:`targeted property-based testing <targeted-search>` (requires generate phase).
-5. Attempting to shrink an example found in previous phases (other than phase 1 - explicit examples cannot be shrunk).
-   This turns potentially large and complicated examples which may be hard to read into smaller and simpler ones.
-6. Attempting to explain why your test failed (requires shrink phase).
+- |Phase.explicit|: Running explicit examples from |@example|.
+- |Phase.reuse|: Running examples from the database which previously failed.
+- |Phase.generate|: Generating new random examples.
+- |Phase.target|: Mutating examples for :doc:`targeted property-based testing </reference/targeted>`.
+
+  - Requires |Phase.generate|.
+
+- |Phase.shrink|: Shrinking failing examples.
+- |Phase.explain|: Attempting to explain why a failure occurred.
+
+  - Requires |Phase.shrink|.
 
 .. note::
 

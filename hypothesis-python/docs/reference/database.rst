@@ -1,4 +1,3 @@
-========
 Database
 ========
 
@@ -7,7 +6,6 @@ enables you to have a classic testing workflow of find a bug, fix a bug, and be 
 this is actually doing the right thing because Hypothesis will start by retrying the examples that
 broke things last time.
 
------------
 Limitations
 -----------
 
@@ -20,7 +18,6 @@ workflow considerably by making sure that the examples you've just found are rep
 The database also records examples that exercise less-used parts of your
 code, so the database may update even when no failing examples were found.
 
---------------------------------------------
 Upgrading Hypothesis and changing your tests
 --------------------------------------------
 
@@ -29,7 +26,6 @@ and not get wrong behaviour. When you upgrade Hypothesis, old data *might* be in
 this should happen transparently. It can never be the case that e.g. changing the strategy
 that generates an argument gives you data from the old strategy.
 
--------------------------------
 ExampleDatabase implementations
 -------------------------------
 
@@ -49,7 +45,6 @@ Hypothesis provides the following :class:`~hypothesis.database.ExampleDatabase` 
 .. autoclass:: hypothesis.database.BackgroundWriteDatabase
 .. autoclass:: hypothesis.extra.redis.RedisExampleDatabase
 
----------------------------------
 Defining your own ExampleDatabase
 ---------------------------------
 

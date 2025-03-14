@@ -220,6 +220,11 @@ class SearchStrategy(Generic[Ex]):
     """A SearchStrategy is an object that knows how to explore data of a given
     type.
 
+    |SearchStrategy| **should only be used in type hints.**  Please do not
+    inherit from, compare to, or otherwise use it in any way outside of type hints.
+    The only supported way to construct objects of this type is via the
+    :doc:`built-in strategies <strategies>`!
+
     Except where noted otherwise, methods on this class are not part of
     the public API and their behaviour may change significantly between
     minor version releases. They will generally be stable between patch
