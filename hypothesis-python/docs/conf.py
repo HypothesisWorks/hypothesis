@@ -160,8 +160,10 @@ rst_prolog = """
 .. |HealthCheck.data_too_large| replace:: :obj:`HealthCheck.data_too_large <hypothesis.HealthCheck.data_too_large>`
 .. |HealthCheck.filter_too_much| replace:: :obj:`HealthCheck.filter_too_much <hypothesis.HealthCheck.filter_too_much>`
 .. |HealthCheck.too_slow| replace:: :obj:`HealthCheck.too_slow <hypothesis.HealthCheck.too_slow>`
-.. |HealthCheck.function_scoped_fixture| replace:: :obj:`HealthCheck.function_scoped_fixture <hypothesis.HealthCheck.function_scoped_fixture>`
-.. |HealthCheck.differing_executors| replace:: :obj:`HealthCheck.differing_executors <hypothesis.HealthCheck.differing_executors>`
+.. |HealthCheck.function_scoped_fixture| replace:: :obj:`HealthCheck.function_scoped_fixture \
+<hypothesis.HealthCheck.function_scoped_fixture>`
+.. |HealthCheck.differing_executors| replace:: :obj:`HealthCheck.differing_executors \
+<hypothesis.HealthCheck.differing_executors>`
 .. |HealthCheck| replace:: :obj:`~hypothesis.HealthCheck`
 
 .. |Phase.explicit| replace:: :obj:`Phase.explicit <hypothesis.Phase.explicit>`
