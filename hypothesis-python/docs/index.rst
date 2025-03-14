@@ -51,12 +51,10 @@ In a normal unit test, you create test inputs manually. Hypothesis instead lets 
 
     from hypothesis import given, strategies as st
 
-
     @given(st.lists(st.integers() | st.floats()))
     def test_sort_correct(lst):
         # lst is a random list of numbers
         assert my_sort(lst) == sorted(lst)
-
 
     test_sort_correct()
 

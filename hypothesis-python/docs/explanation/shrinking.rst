@@ -136,3 +136,18 @@ Definition of example complexity
 --------------------------------
 
 How does the shrinker know when one example is "simpler" than another? Hypothesis defines a total ordering over the complexity of examples by using the :doc:`choice sequence <choice-sequence>`. Examples are ordered first by the number of choices. If one example makes fewer choices than another, the shrinker will consider it to be simpler, regardless of the type of those choices. If two examples make the same number of choices, the shrinker then orders them by a type-specific notion of complexity for each of the five choice sequence types. For example, the shrinker orders integers as ``0, 1, -1, 2, -2, 3, -3, ...``, with ``0`` being the simplest integer choice.
+
+The shrinker shrinks choices, not examples
+------------------------------------------
+
+A common misconception is that the shrinker directly shrinks the value of an example. Instead, the shrinker actually shrinks the underlying :doc:`choice sequence </explanation/choice-sequence>` of the value. For instance, consider the following strategy:
+
+.. code-block:: python
+
+    @given(st.integers(0, 50) | st.just(100))
+    def test_n(n):
+        assert 0 <= n <= 10
+
+Here, the choice sequence of ``[1]`` (with |st.one_of| choosing to select the second strategy of ``st.just(100)``) corresponds to the value ``100``. It is tempting to think that Hypothesis shrinks the value ``100``, but this is not accurate. Instead, Hypothesis shrinks the underlying choice sequence of ``[1]``.
+
+Because the first branch of |st.one_of| involves two choices (one for |st.one_of| and one for |st.integers|), and the second branch involves only one choice (for |st.one_of|), Hypothesis shrinks to the value ``100``, which involves one fewer choice than the intuitively-simplest ``n=11``.

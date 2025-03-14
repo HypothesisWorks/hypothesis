@@ -68,14 +68,14 @@ Failing examples
 
 If Hypothesis finds a failing example, it stops generation early, and may call the test function additional times during the |Phase.shrink| and |Phase.explain| phases. Sometimes, Hypothesis determines that the initial failing example was already as simple as possible, in which case these phases will not result in additional test executions.
 
-Regardless of whether Hypothesis runs the test during the shrinking and explain phases, it will always run the minimal failing example one additional time to check for flakiness. For instance, the following trivial test runs with ``n=0`` *twice*, even though we disabled shrinking:
+Regardless of whether Hypothesis runs the test during the shrinking and explain phases, it will always run the minimal failing example one additional time to check for flakiness. For instance, the following trivial test runs with ``n=0`` *twice*, even though we're only running the |Phase.generate| phase:
 
 .. code-block:: python
 
     from hypothesis import Phase, given, settings, strategies as st
 
     @given(st.integers())
-    @settings(phases=set(Phase) - {Phase.shrink})
+    @settings(phases=[Phase.generate])
     def test_function(n):
         print(f"called with {n}")
         assert n != 0

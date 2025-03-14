@@ -21,12 +21,10 @@ Create a new file called ``example.py``, containing a simple test:
     # contents of example.py
     from hypothesis import given, strategies as st
 
-
     @given(st.integers())
     def test_integers(n):
         print(f"called with {n}")
         assert isinstance(n, int)
-
 
     test_integers()
 
@@ -55,7 +53,6 @@ A Hypothesis test is still a regular python function, which means pytest or unit
 
     # contents of example.py
     from hypothesis import given, strategies as st
-
 
     @given(st.integers(0, 200))
     def test_integers(n):
@@ -134,7 +131,6 @@ You can do this using the |st.composite| strategy. |st.composite| lets you defin
         n1 = draw(st.integers())
         n2 = draw(st.integers(min_value=n1))
         return (n1, n2)
-
 
     @given(integer_pairs())
     def test_integer_pairs(pair):

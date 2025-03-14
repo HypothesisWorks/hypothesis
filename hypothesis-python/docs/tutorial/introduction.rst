@@ -101,23 +101,10 @@ This is a good start at a test. But ``selection_sort`` should be able to sort li
 
 .. code-block:: python
 
-  # contents of example.py
-  from hypothesis import given, strategies as st
-
-  def selection_sort(lst):
-      result = []
-      while lst:
-          smallest = min(lst)
-          result.append(smallest)
-          lst.remove(smallest)
-      return result
-
-  @given(st.lists(st.integers() | st.floats()))  #  <-- changed
+  # changes to example.py
+  @given(st.lists(st.integers() | st.floats()))
   def test_sort_correct(lst):
-      print(f"called with {lst}")
-      assert selection_sort(lst.copy()) == sorted(lst)
-
-  test_sort_correct()
+      ...
 
 The pipe operator ``|`` takes two strategies, and returns a new strategy which can generate values from either of its strategies. So the strategy ``integers() | floats()`` can generate either an integer, or a float.
 
@@ -131,23 +118,10 @@ The issue is that sorting in the presence of ``nan`` is not well defined. As a r
 
 .. code-block:: python
 
-  # contents of example.py
-  from hypothesis import given, strategies as st
-
-  def selection_sort(lst):
-      result = []
-      while lst:
-          smallest = min(lst)
-          result.append(smallest)
-          lst.remove(smallest)
-      return result
-
-  @given(st.lists(st.integers() | st.floats(allow_nan=False)))  #  <-- changed
+  # changes to example.py
+  @given(st.lists(st.integers() | st.floats(allow_nan=False)))
   def test_sort_correct(lst):
-      print(f"called with {lst}")
-      assert selection_sort(lst.copy()) == sorted(lst)
-
-  test_sort_correct()
+      ...
 
 And now this test passes without issues.
 
