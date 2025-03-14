@@ -655,3 +655,17 @@ def test_lower_duplicated_characters_across_choices(start, expected, gap):
 
     shrinker.fixate_shrink_passes(["lower_duplicated_characters"])
     assert shrinker.choices == (expected[0],) + (0,) * gap + (expected[1],)
+
+
+def test_shrinking_one_of_with_same_shape():
+    # This is a covering test for our one_of shrinking logic for the case when
+    # the choice sequence *doesn't* change shape in the newly chosen one_of branch.
+    @shrinking_from([1, 0])
+    def shrinker(data: ConjectureData):
+        n = data.draw_integer(0, 1)
+        data.draw_integer()
+        if n == 1:
+            data.mark_interesting()
+
+    shrinker.initial_coarse_reduction()
+    assert shrinker.choices == (1, 0)
