@@ -583,3 +583,16 @@ def test_builds_error_messages(data):
         data.draw(st.builds(AnEnum))
     # and sampled_from() does in fact work
     data.draw(st.sampled_from(AnEnum))
+
+
+def test_incompatible_shared_strategies_raises():
+
+    strat1 = st.shared(st.integers(), key="share")
+    strat2 = st.shared(st.integers(0), key="share")
+
+    @given(strat1, strat2)
+    def test_it(a, b):
+        assert a == b
+
+    with pytest.raises(InvalidArgument, match="incompatible strategies"):
+        test_it()

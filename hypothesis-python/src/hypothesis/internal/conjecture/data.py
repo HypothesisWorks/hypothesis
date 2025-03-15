@@ -706,7 +706,7 @@ class ConjectureData:
         self._sampled_from_all_strategies_elements_message: Optional[
             tuple[str, object]
         ] = None
-        self._shared_strategy_draws: dict[Hashable, Any] = {}
+        self._shared_strategy_draws: dict[Hashable, tuple[int, Any]] = {}
 
         self.expected_exception: Optional[BaseException] = None
         self.expected_traceback: Optional[str] = None
