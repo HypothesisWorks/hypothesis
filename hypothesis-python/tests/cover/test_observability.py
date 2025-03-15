@@ -28,7 +28,7 @@ from hypothesis.stateful import (
     run_state_machine_as_test,
 )
 
-from tests.common.utils import capture_observations
+from tests.common.utils import Why, capture_observations, xfail_on_crosshair
 
 
 @seed("deterministic so we don't miss some combination of features")
@@ -46,6 +46,7 @@ def do_it_all(l, a, x, data):
     1 / ((x or 1) % 7)
 
 
+@xfail_on_crosshair(Why.other, strict=False)  # flakey BackendCannotProceed ??
 def test_observability():
     with capture_observations() as ls:
         with pytest.raises(ZeroDivisionError):

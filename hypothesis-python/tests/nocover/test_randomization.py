@@ -12,7 +12,7 @@ import pytest
 
 from hypothesis import Verbosity, core, find, given, settings, strategies as st
 
-from tests.common.utils import no_shrink
+from tests.common.utils import Why, no_shrink, xfail_on_crosshair
 
 
 def test_seeds_off_internal_random():
@@ -24,6 +24,7 @@ def test_seeds_off_internal_random():
     assert x == y
 
 
+@xfail_on_crosshair(Why.nested_given)
 def test_nesting_with_control_passes_health_check():
     @given(st.integers(0, 100), st.random_module())
     @settings(max_examples=5, database=None, deadline=None)
