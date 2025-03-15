@@ -10,8 +10,9 @@
 
 import copy
 from collections.abc import Iterable
-from typing import Any, overload
+from typing import Any, Optional, overload
 
+from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE
@@ -24,7 +25,6 @@ from hypothesis.strategies._internal.strategies import (
     T4,
     T5,
     Ex,
-    MappedStrategy,
     SearchStrategy,
     T,
     check_strategy,
@@ -306,7 +306,7 @@ class UniqueSampledListStrategy(UniqueListStrategy):
         return result
 
 
-class FixedKeysDictStrategy(MappedStrategy):
+class FixedDictStrategy(SearchStrategy):
     """A strategy which produces dicts with a fixed set of keys, given a
     strategy for each of their equivalent values.
 
@@ -314,42 +314,24 @@ class FixedKeysDictStrategy(MappedStrategy):
     key 'foo' mapping to some integer.
     """
 
-    def __init__(self, strategy_dict):
-        dict_type = type(strategy_dict)
-        self.keys = tuple(strategy_dict.keys())
-        super().__init__(
-            strategy=TupleStrategy(strategy_dict[k] for k in self.keys),
-            pack=lambda value: dict_type(zip(self.keys, value)),
+    def __init__(
+        self,
+        mapping: dict[T, SearchStrategy[Ex]],
+        *,
+        optional: Optional[dict[T, SearchStrategy[Ex]]],
+    ):
+        dict_type = type(mapping)
+        keys = tuple(mapping.keys())
+        self.fixed = st.tuples(*[mapping[k] for k in keys]).map(
+            lambda value: dict_type(zip(keys, value))
         )
-
-    def calc_is_empty(self, recur):
-        return recur(self.mapped_strategy)
-
-    def __repr__(self):
-        return f"FixedKeysDictStrategy({self.keys!r}, {self.mapped_strategy!r})"
-
-
-class FixedAndOptionalKeysDictStrategy(SearchStrategy):
-    """A strategy which produces dicts with a fixed set of keys, given a
-    strategy for each of their equivalent values.
-
-    e.g. {'foo' : some_int_strategy} would generate dicts with the single
-    key 'foo' mapping to some integer.
-    """
-
-    def __init__(self, strategy_dict, optional):
-        self.required = strategy_dict
-        self.fixed = FixedKeysDictStrategy(strategy_dict)
         self.optional = optional
 
-    def calc_is_empty(self, recur):
-        return recur(self.fixed)
-
-    def __repr__(self):
-        return f"FixedAndOptionalKeysDictStrategy({self.required!r}, {self.optional!r})"
-
     def do_draw(self, data):
-        result = data.draw(self.fixed)
+        value = data.draw(self.fixed)
+        if self.optional is None:
+            return value
+
         remaining = [k for k, v in self.optional.items() if not v.is_empty]
         should_draw = cu.many(
             data, min_size=0, max_size=len(remaining), average_size=len(remaining) / 2
@@ -358,5 +340,13 @@ class FixedAndOptionalKeysDictStrategy(SearchStrategy):
             j = data.draw_integer(0, len(remaining) - 1)
             remaining[-1], remaining[j] = remaining[j], remaining[-1]
             key = remaining.pop()
-            result[key] = data.draw(self.optional[key])
-        return result
+            value[key] = data.draw(self.optional[key])
+        return value
+
+    def calc_is_empty(self, recur):
+        return recur(self.fixed)
+
+    def __repr__(self):
+        if self.optional is not None:
+            return f"fixed_dictionaries({self.keys!r}, optional={self.optional!r})"
+        return f"fixed_dictionaries({self.keys!r})"

@@ -105,8 +105,7 @@ from hypothesis.internal.validation import (
 )
 from hypothesis.strategies._internal import SearchStrategy, check_strategy
 from hypothesis.strategies._internal.collections import (
-    FixedAndOptionalKeysDictStrategy,
-    FixedKeysDictStrategy,
+    FixedDictStrategy,
     ListStrategy,
     TupleStrategy,
     UniqueListStrategy,
@@ -510,6 +509,7 @@ def fixed_dictionaries(
     check_type(dict, mapping, "mapping")
     for k, v in mapping.items():
         check_strategy(v, f"mapping[{k!r}]")
+
     if optional is not None:
         check_type(dict, optional, "optional")
         for k, v in optional.items():
@@ -524,8 +524,8 @@ def fixed_dictionaries(
                 "The following keys were in both mapping and optional, "
                 f"which is invalid: {set(mapping) & set(optional)!r}"
             )
-        return FixedAndOptionalKeysDictStrategy(mapping, optional)
-    return FixedKeysDictStrategy(mapping)
+
+    return FixedDictStrategy(mapping, optional=optional)
 
 
 @cacheable
