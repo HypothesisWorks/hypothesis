@@ -3,7 +3,7 @@ Shrinking
 
 .. note::
 
-    You may also be interested in David MacIver's 2020 paper about the Hypothesis shrinker\: `Test-Case Reduction via Test-Case Generation: Insights from the Hypothesis Reducer <https://www.doc.ic.ac.uk/~afd/papers/2020/ECOOP_Hypothesis.pdf>`_. Note however that Hypothesis has since moved from the bytestring discussed in this paper to the :doc:`choice sequence <choice-sequence>`, including in the shrinker.
+    You may also be interested in David MacIver's 2020 paper about the Hypothesis shrinker\: `Test-Case Reduction via Test-Case Generation: Insights from the Hypothesis Reducer <https://www.doc.ic.ac.uk/~afd/papers/2020/ECOOP_Hypothesis.pdf>`_. Note however that Hypothesis has since moved from the bytestring discussed in that paper to the :doc:`choice sequence <choice-sequence>`, including in the shrinker.
 
 The shrinker is the part of Hypothesis which takes a failing example and reduces it into a simpler one before reporting it to you. This makes the failures that you get from your tests easier to debug.
 
