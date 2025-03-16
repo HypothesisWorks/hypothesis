@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.129.3:
+
+--------------------
+6.129.3 - 2025-03-16
+--------------------
+
+This patch improves the string representation of :func:`~hypothesis.strategies.fixed_dictionaries`.
+
 .. _v6.129.2:
 
 --------------------
