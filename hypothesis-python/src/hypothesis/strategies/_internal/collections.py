@@ -321,6 +321,7 @@ class FixedDictStrategy(SearchStrategy):
         optional: Optional[dict[T, SearchStrategy[Ex]]],
     ):
         dict_type = type(mapping)
+        self.mapping = mapping
         keys = tuple(mapping.keys())
         self.fixed = st.tuples(*[mapping[k] for k in keys]).map(
             lambda value: dict_type(zip(keys, value))
@@ -348,5 +349,5 @@ class FixedDictStrategy(SearchStrategy):
 
     def __repr__(self):
         if self.optional is not None:
-            return f"fixed_dictionaries({self.keys!r}, optional={self.optional!r})"
-        return f"fixed_dictionaries({self.keys!r})"
+            return f"fixed_dictionaries({self.mapping!r}, optional={self.optional!r})"
+        return f"fixed_dictionaries({self.mapping!r})"
