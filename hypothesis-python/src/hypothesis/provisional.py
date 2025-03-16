@@ -57,7 +57,7 @@ def _recase_randomly(draw: DrawFn, tld: str) -> str:
     return "".join(tld)
 
 
-class DomainNameStrategy(st.SearchStrategy):
+class DomainNameStrategy(st.SearchStrategy[str]):
     @staticmethod
     def clean_inputs(
         minimum: int, maximum: int, value: Optional[int], variable_name: str

@@ -33,7 +33,7 @@ class HypothesisRandom(Random):
     def __deepcopy__(self, table):
         return self.__copy__()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         raise NotImplementedError
 
     def seed(self, seed):
@@ -181,7 +181,7 @@ class ArtificialRandom(HypothesisRandom):
         self.__data = data
         self.__state = RandomState()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "HypothesisRandom(generated data)"
 
     def __copy__(self):
@@ -415,7 +415,7 @@ class TrueRandom(HypothesisRandom):
         result.setstate(self.getstate())
         return result
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"Random({self.__seed!r})"
 
     def seed(self, seed):

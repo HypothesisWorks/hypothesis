@@ -9,12 +9,14 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import copy
+import math
 from collections.abc import Iterable
-from typing import Any, Optional, overload
+from typing import Any, Callable, Optional, Union, overload
 
 from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import utils as cu
+from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE
 from hypothesis.internal.conjecture.junkdrawer import LazySequenceCopy
 from hypothesis.internal.conjecture.utils import combine_labels
@@ -25,15 +27,18 @@ from hypothesis.strategies._internal.strategies import (
     T4,
     T5,
     Ex,
+    RecurT,
+    SampledFromStrategy,
     SearchStrategy,
     T,
     check_strategy,
     filter_not_satisfied,
 )
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
+from hypothesis.utils.conventions import UniqueIdentifier
 
 
-class TupleStrategy(SearchStrategy):
+class TupleStrategy(SearchStrategy[tuple[Ex, ...]]):
     """A strategy responsible for fixed length tuples based on heterogeneous
     strategies for each of their elements."""
 
@@ -41,26 +46,26 @@ class TupleStrategy(SearchStrategy):
         super().__init__()
         self.element_strategies = tuple(strategies)
 
-    def do_validate(self):
+    def do_validate(self) -> None:
         for s in self.element_strategies:
             s.validate()
 
-    def calc_label(self):
+    def calc_label(self) -> int:
         return combine_labels(
             self.class_label, *(s.label for s in self.element_strategies)
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         tuple_string = ", ".join(map(repr, self.element_strategies))
         return f"TupleStrategy(({tuple_string}))"
 
-    def calc_has_reusable_values(self, recur):
+    def calc_has_reusable_values(self, recur: RecurT) -> bool:
         return all(recur(e) for e in self.element_strategies)
 
-    def do_draw(self, data):
+    def do_draw(self, data: ConjectureData) -> tuple[Ex, ...]:
         return tuple(data.draw(e) for e in self.element_strategies)
 
-    def calc_is_empty(self, recur):
+    def calc_is_empty(self, recur: RecurT) -> bool:
         return any(recur(e) for e in self.element_strategies)
 
 
@@ -133,16 +138,21 @@ def tuples(*args: SearchStrategy[Any]) -> SearchStrategy[tuple[Any, ...]]:
     return TupleStrategy(args)
 
 
-class ListStrategy(SearchStrategy):
+class ListStrategy(SearchStrategy[list[Ex]]):
     """A strategy for lists which takes a strategy for its elements and the
     allowed lengths, and generates lists with the correct size and contents."""
 
-    _nonempty_filters: tuple = (bool, len, tuple, list)
+    _nonempty_filters: tuple[Callable[[Any], Any], ...] = (bool, len, tuple, list)
 
-    def __init__(self, elements, min_size=0, max_size=float("inf")):
+    def __init__(
+        self,
+        elements: SearchStrategy[Ex],
+        min_size: int = 0,
+        max_size: Optional[Union[float, int]] = math.inf,
+    ):
         super().__init__()
         self.min_size = min_size or 0
-        self.max_size = max_size if max_size is not None else float("inf")
+        self.max_size = max_size if max_size is not None else math.inf
         assert 0 <= self.min_size <= self.max_size
         self.average_size = min(
             max(self.min_size * 2, self.min_size + 5),
@@ -157,10 +167,10 @@ class ListStrategy(SearchStrategy):
                 "a HealthCheck error."
             )
 
-    def calc_label(self):
+    def calc_label(self) -> int:
         return combine_labels(self.class_label, self.element_strategy.label)
 
-    def do_validate(self):
+    def do_validate(self) -> None:
         self.element_strategy.validate()
         if self.is_empty:
             raise InvalidArgument(
@@ -174,13 +184,13 @@ class ListStrategy(SearchStrategy):
                 f"{self.element_strategy!r}"
             )
 
-    def calc_is_empty(self, recur):
+    def calc_is_empty(self, recur: RecurT) -> bool:
         if self.min_size == 0:
             return False
         else:
             return recur(self.element_strategy)
 
-    def do_draw(self, data):
+    def do_draw(self, data: ConjectureData) -> list[Ex]:
         if self.element_strategy.is_empty:
             assert self.min_size == 0
             return []
@@ -196,13 +206,13 @@ class ListStrategy(SearchStrategy):
             result.append(data.draw(self.element_strategy))
         return result
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}({self.element_strategy!r}, "
             f"min_size={self.min_size:_}, max_size={self.max_size:_})"
         )
 
-    def filter(self, condition):
+    def filter(self, condition: Callable[[list[Ex]], Any]) -> SearchStrategy[list[Ex]]:
         if condition in self._nonempty_filters or is_identity_function(condition):
             assert self.max_size >= 1, "Always-empty is special cased in st.lists()"
             if self.min_size >= 1:
@@ -231,13 +241,22 @@ class ListStrategy(SearchStrategy):
         return SearchStrategy.filter(self, condition)
 
 
-class UniqueListStrategy(ListStrategy):
-    def __init__(self, elements, min_size, max_size, keys, tuple_suffixes):
+class UniqueListStrategy(ListStrategy[Ex]):
+    def __init__(
+        self,
+        elements: SearchStrategy[Ex],
+        min_size: int,
+        max_size: Optional[Union[float, int]],
+        # TODO: keys are guaranteed to be Hashable, not just Any, but this makes
+        # other things harder to type
+        keys: tuple[Callable[[Ex], Any], ...],
+        tuple_suffixes: Optional[SearchStrategy[tuple[Ex, ...]]],
+    ):
         super().__init__(elements, min_size, max_size)
         self.keys = keys
         self.tuple_suffixes = tuple_suffixes
 
-    def do_draw(self, data):
+    def do_draw(self, data: ConjectureData) -> list[Ex]:
         if self.element_strategy.is_empty:
             assert self.min_size == 0
             return []
@@ -248,13 +267,17 @@ class UniqueListStrategy(ListStrategy):
             max_size=self.max_size,
             average_size=self.average_size,
         )
-        seen_sets = tuple(set() for _ in self.keys)
-        result = []
+        seen_sets: tuple[set[Ex], ...] = tuple(set() for _ in self.keys)
+        # actually list[Ex], but if self.tuple_suffixes is present then Ex is a
+        # tuple[T, ...] because self.element_strategy is a TuplesStrategy, and
+        # appending a concrete tuple to `result: list[Ex]` makes mypy unhappy
+        # without knowing that Ex = tuple.
+        result: list[Any] = []
 
         # We construct a filtered strategy here rather than using a check-and-reject
         # approach because some strategies have special logic for generation under a
         # filter, and FilteredStrategy can consolidate multiple filters.
-        def not_yet_in_unique_list(val):
+        def not_yet_in_unique_list(val: Ex) -> bool:  # type: ignore # covariant type param
             return all(key(val) not in seen for key, seen in zip(self.keys, seen_sets))
 
         filtered = self.element_strategy._filter_for_filtered_draw(
@@ -265,25 +288,28 @@ class UniqueListStrategy(ListStrategy):
             if value is filter_not_satisfied:
                 elements.reject(f"Aborted test because unable to satisfy {filtered!r}")
             else:
+                assert not isinstance(value, UniqueIdentifier)
                 for key, seen in zip(self.keys, seen_sets):
                     seen.add(key(value))
                 if self.tuple_suffixes is not None:
-                    value = (value, *data.draw(self.tuple_suffixes))
+                    value = (value, *data.draw(self.tuple_suffixes))  # type: ignore
                 result.append(value)
         assert self.max_size >= len(result) >= self.min_size
         return result
 
 
 class UniqueSampledListStrategy(UniqueListStrategy):
-    def do_draw(self, data):
+    def do_draw(self, data: ConjectureData) -> list[Ex]:
+        assert isinstance(self.element_strategy, SampledFromStrategy)
+
         should_draw = cu.many(
             data,
             min_size=self.min_size,
             max_size=self.max_size,
             average_size=self.average_size,
         )
-        seen_sets = tuple(set() for _ in self.keys)
-        result = []
+        seen_sets: tuple[set[Ex], ...] = tuple(set() for _ in self.keys)
+        result: list[Any] = []
 
         remaining = LazySequenceCopy(self.element_strategy.elements)
 
@@ -306,7 +332,7 @@ class UniqueSampledListStrategy(UniqueListStrategy):
         return result
 
 
-class FixedDictStrategy(SearchStrategy):
+class FixedDictStrategy(SearchStrategy[dict[Any, Any]]):
     """A strategy which produces dicts with a fixed set of keys, given a
     strategy for each of their equivalent values.
 
@@ -316,18 +342,19 @@ class FixedDictStrategy(SearchStrategy):
 
     def __init__(
         self,
-        mapping: dict[T, SearchStrategy[Ex]],
+        mapping: dict[Any, SearchStrategy[Any]],
         *,
-        optional: Optional[dict[T, SearchStrategy[Ex]]],
+        optional: Optional[dict[Any, SearchStrategy[Any]]],
     ):
         dict_type = type(mapping)
+        self.mapping = mapping
         keys = tuple(mapping.keys())
         self.fixed = st.tuples(*[mapping[k] for k in keys]).map(
             lambda value: dict_type(zip(keys, value))
         )
         self.optional = optional
 
-    def do_draw(self, data):
+    def do_draw(self, data: ConjectureData) -> dict[Any, Any]:
         value = data.draw(self.fixed)
         if self.optional is None:
             return value
@@ -343,10 +370,10 @@ class FixedDictStrategy(SearchStrategy):
             value[key] = data.draw(self.optional[key])
         return value
 
-    def calc_is_empty(self, recur):
+    def calc_is_empty(self, recur: RecurT) -> bool:
         return recur(self.fixed)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.optional is not None:
-            return f"fixed_dictionaries({self.keys!r}, optional={self.optional!r})"
-        return f"fixed_dictionaries({self.keys!r})"
+            return f"fixed_dictionaries({self.mapping!r}, optional={self.optional!r})"
+        return f"fixed_dictionaries({self.mapping!r})"
