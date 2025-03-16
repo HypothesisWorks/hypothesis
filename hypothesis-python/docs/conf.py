@@ -40,9 +40,34 @@ extensions = [
     # loading this extension overrides the default -b linkcheck behavior with
     # custom url ignore logic. see hypothesis_linkcheck.py for details.
     "hypothesis_linkcheck",
+    "sphinx_reredirects",
 ]
 
 templates_path = ["_templates"]
+
+redirects = {
+    "details": "reference/index.html",
+    "data": "reference/strategies.html",
+    "database": "reference/database.html",
+    "stateful": "reference/stateful.html",
+    "reproducing": "reference/reproducing-failures.html",
+    "ghostwriter": "reference/ghostwriter.html",
+    "extras": "extensions.html",
+    "django": "reference/django.html",
+    "numpy": "reference/data-science.html",
+    "observability": "reference/observability.html",
+    "supported": "compatibility.html",
+    "changes": "changelog.html",
+    "strategies": "extensions.html",
+    # these pages were removed without replacement
+    "support": "index.html",
+    "manifesto": "index.html",
+    "examples": "index.html",
+}
+# https://github.com/documatt/sphinx-reredirects/issues/11
+# will be part of the default template soon, update sphinx-reredirects and
+# remove this when it is
+redirect_html_template_file = "redirect.html.template"
 
 source_suffix = ".rst"
 

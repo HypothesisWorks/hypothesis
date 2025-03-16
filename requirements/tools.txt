@@ -23,7 +23,9 @@ babel==2.17.0
 backports-tarfile==1.2.0
     # via jaraco-context
 beautifulsoup4==4.13.3
-    # via sphinx-codeautolink
+    # via
+    #   furo
+    #   sphinx-codeautolink
 black==25.1.0
     # via shed
 blinker==1.9.0
@@ -278,6 +280,7 @@ sphinx==8.1.3
     #   sphinx-basic-ng
     #   sphinx-codeautolink
     #   sphinx-hoverxref
+    #   sphinx-reredirects
     #   sphinx-rtd-theme
     #   sphinxcontrib-jquery
 sphinx-basic-ng==1.0.0b2
@@ -287,6 +290,8 @@ sphinx-codeautolink==0.17.4
 sphinx-hoverxref==1.4.2
     # via -r requirements/tools.in
 sphinx-jsonschema==1.19.1
+    # via -r requirements/tools.in
+sphinx-reredirects==0.1.5
     # via -r requirements/tools.in
 sphinx-rtd-theme==3.0.2
     # via -r requirements/tools.in
