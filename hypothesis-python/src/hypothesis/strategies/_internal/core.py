@@ -831,8 +831,8 @@ def text(
     if (max_size == 0 or char_strategy.is_empty) and not min_size:
         return just("")
     # mypy is unhappy with ListStrategy(SearchStrategy[list[Ex]]) and then TextStrategy
-    # setting Ex = str. I think mypy is correct to think that str <: list[str]
-    # is incorrect and we probably do have an LSP violation here.
+    # setting Ex = str. Mypy is correct to complain because we have an LSP violation
+    # here in the TextStrategy.do_draw override. Would need refactoring to resolve.
     return TextStrategy(char_strategy, min_size=min_size, max_size=max_size)  # type: ignore
 
 

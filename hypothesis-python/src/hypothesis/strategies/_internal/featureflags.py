@@ -8,7 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from collections.abc import Iterable, Sequence
+from collections.abc import Hashable, Iterable, Sequence
 from typing import Any, Optional
 
 from hypothesis.internal.conjecture import utils as cu
@@ -40,7 +40,7 @@ class FeatureFlags:
         data: Optional[ConjectureData] = None,
         enabled: Sequence[Any] = (),
         disabled: Sequence[Any] = (),
-        at_least_one_of: Iterable[Any] = (),
+        at_least_one_of: Iterable[Hashable] = (),
     ):
         self.__data = data
         self.__is_disabled = {}
@@ -124,7 +124,7 @@ class FeatureFlags:
 
 
 class FeatureStrategy(SearchStrategy[FeatureFlags]):
-    def __init__(self, at_least_one_of: Sequence[Any] = ()):
+    def __init__(self, at_least_one_of: Sequence[Hashable] = ()):
         super().__init__()
         self._at_least_one_of = frozenset(at_least_one_of)
 

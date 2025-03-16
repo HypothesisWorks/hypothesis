@@ -130,7 +130,7 @@ class LazyStrategy(SearchStrategy[Ex]):
         repr_ = self.__representation
         if repr_:
             repr_ = f"{repr_}.{method}({get_pretty_function_description(fn)})"
-        return type(self)(
+        return LazyStrategy(
             self.function,
             self.__args,
             self.__kwargs,
