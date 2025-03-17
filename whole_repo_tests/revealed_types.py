@@ -37,6 +37,10 @@ REVEALED_TYPES = [
         "tuples(text(), text(), text(), text(), text(), text())",
         "tuple[Any, ...]",
     ),
+    ("lists(none())", "list[None]"),
+    ("integers().filter(lambda x: x > 0)", "int"),
+    ("booleans().filter(lambda x: x)", "bool"),
+    ("integers().map(bool).filter(lambda x: x)", "bool"),
 ]
 
 NUMPY_REVEALED_TYPES = [

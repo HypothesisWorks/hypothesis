@@ -127,7 +127,7 @@ def non_resolvable_arg(x: NotResolvable):
 
 def test_flattens_one_of_repr():
     strat = from_type(Union[int, Sequence[int]])
-    assert repr(strat).count("one_of(") > 1
+    assert repr(strat).count("one_of(") == 2
     assert ghostwriter._valid_syntax_repr(strat)[1].count("one_of(") == 1
 
 

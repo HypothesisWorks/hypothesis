@@ -128,7 +128,7 @@ def elements_and_dtype(elements, dtype, source=None):
             name = f"draw({prefix}elements)"
             try:
                 return np.array([value], dtype=dtype)[0]
-            except (TypeError, ValueError):
+            except (TypeError, ValueError, OverflowError):
                 raise InvalidArgument(
                     "Cannot convert %s=%r of type %s to dtype %s"
                     % (name, value, type(value).__name__, dtype.str)

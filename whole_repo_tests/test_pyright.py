@@ -178,7 +178,6 @@ def test_numpy_arrays_strategy(tmp_path: Path):
     "val,expect",
     [
         *REVEALED_TYPES,  # shared with Mypy
-        ("lists(none())", "list[None]"),
         ("dictionaries(integers(), datetimes())", "dict[int, datetime]"),
         ("data()", "DataObject"),
         ("none() | integers()", "int | None"),

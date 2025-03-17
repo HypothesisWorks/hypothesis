@@ -142,7 +142,7 @@ class DomainNameStrategy(st.SearchStrategy):
             # Generate a new valid subdomain using the regex strategy.
             sub_domain = data.draw(self.elem_strategy)
             if len(domain) + len(sub_domain) >= self.max_length:
-                data.stop_example(discard=True)
+                data.stop_span(discard=True)
                 break
             domain = sub_domain + "." + domain
         return domain

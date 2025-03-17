@@ -98,7 +98,7 @@ def test_closes_interval_on_error_in_strategy():
     with pytest.raises(ValueError):
         d.draw(BoomStrategy())
     d.freeze()
-    assert not any(eg.end is None for eg in d.examples)
+    assert not any(eg.end is None for eg in d.spans)
 
 
 class BigStrategy(SearchStrategy):
@@ -111,25 +111,25 @@ def test_does_not_double_freeze_in_interval_close():
     with pytest.raises(StopTest):
         d.draw(BigStrategy())
     assert d.frozen
-    assert not any(eg.end is None for eg in d.examples)
+    assert not any(eg.end is None for eg in d.spans)
 
 
 def test_triviality():
     d = ConjectureData.for_choices((True, False, b"1"))
 
-    d.start_example(label=1)
+    d.start_span(label=1)
     d.draw(st.booleans())
     d.draw(st.booleans())
-    d.stop_example()
+    d.stop_span()
 
-    d.start_example(label=2)
+    d.start_span(label=2)
     d.draw_bytes(1, 1, forced=bytes([2]))
-    d.stop_example()
+    d.stop_span()
 
     d.freeze()
 
     def trivial(u, v):
-        ex = next(ex for ex in d.examples if ex.start == u and ex.end == v)
+        ex = next(ex for ex in d.spans if ex.start == u and ex.end == v)
         return all(node.trivial for node in d.nodes[ex.start : ex.end])
 
     assert not trivial(0, 2)
@@ -141,16 +141,16 @@ def test_triviality():
 def test_example_depth_marking():
     d = ConjectureData.for_choices((0,) * 6)
     d.draw(st.integers())  # v1
-    d.start_example("inner")
+    d.start_span("inner")
     d.draw(st.integers())  # v2
     d.draw(st.integers())  # v3
-    d.stop_example()
+    d.stop_span()
     d.draw(st.integers())  # v4
     d.freeze()
 
-    assert len(d.examples) == 10
+    assert len(d.spans) == 10
 
-    depths = [(ex.choice_count, ex.depth) for ex in d.examples]
+    depths = [(ex.choice_count, ex.depth) for ex in d.spans]
     assert depths == [
         (4, 0),  # top
         (1, 1),  # v1
@@ -169,21 +169,21 @@ def test_has_examples_even_when_empty():
     d = ConjectureData.for_choices([])
     d.draw(st.just(False))
     d.freeze()
-    assert d.examples
+    assert d.spans
 
 
 def test_has_cached_examples_even_when_overrun():
     d = ConjectureData.for_choices((False,))
-    d.start_example(3)
+    d.start_span(3)
     d.draw_boolean()
-    d.stop_example()
+    d.stop_span()
     try:
         d.draw_boolean()
     except StopTest:
         pass
     assert d.status == Status.OVERRUN
-    assert any(ex.label == 3 and ex.choice_count == 1 for ex in d.examples)
-    assert d.examples is d.examples
+    assert any(ex.label == 3 and ex.choice_count == 1 for ex in d.spans)
+    assert d.spans is d.spans
 
 
 def test_can_observe_draws():
@@ -237,15 +237,15 @@ def test_calls_concluded_implicitly():
 def test_examples_show_up_as_discarded():
     d = ConjectureData.for_choices((True, False, True))
 
-    d.start_example(1)
+    d.start_span(1)
     d.draw_boolean()
-    d.stop_example(discard=True)
-    d.start_example(1)
+    d.stop_span(discard=True)
+    d.start_span(1)
     d.draw_boolean()
-    d.stop_example()
+    d.stop_span()
     d.freeze()
 
-    assert len([ex for ex in d.examples if ex.discarded]) == 1
+    assert len([ex for ex in d.spans if ex.discarded]) == 1
 
 
 def test_examples_support_negative_indexing():
@@ -253,7 +253,7 @@ def test_examples_support_negative_indexing():
     d.draw(st.booleans())
     d.draw(st.booleans())
     d.freeze()
-    assert d.examples[-1].choice_count == 1
+    assert d.spans[-1].choice_count == 1
 
 
 def test_examples_out_of_bounds_index():
@@ -261,14 +261,14 @@ def test_examples_out_of_bounds_index():
     d.draw(st.booleans())
     d.freeze()
     with pytest.raises(IndexError):
-        d.examples[10]
+        d.spans[10]
 
 
 def test_can_override_label():
     d = ConjectureData.for_choices((False,))
     d.draw(st.booleans(), label=7)
     d.freeze()
-    assert any(ex.label == 7 for ex in d.examples)
+    assert any(ex.label == 7 for ex in d.spans)
 
 
 def test_will_mark_too_deep_examples_as_invalid():
@@ -341,37 +341,37 @@ def test_events_are_noted():
 def test_child_indices():
     d = ConjectureData.for_choices((True,) * 4)
 
-    d.start_example(0)  # examples[1]
-    d.start_example(1)  # examples[2]
+    d.start_span(0)  # examples[1]
+    d.start_span(1)  # examples[2]
     d.draw(st.booleans())  # examples[3] (lazystrategy) + examples[4] (st.booleans)
     d.draw(st.booleans())  # examples[4] (lazystrategy) + examples[5] (st.booleans)
-    d.stop_example()
-    d.stop_example()
+    d.stop_span()
+    d.stop_span()
     d.draw(st.booleans())  # examples[7] (lazystrategy) + examples[8] (st.booleans)
     d.draw(st.booleans())  # examples[9] (lazystrategy) + examples[10] (st.booleans)
     d.freeze()
 
-    assert list(d.examples.children[0]) == [1, 7, 9]
-    assert list(d.examples.children[1]) == [2]
-    assert list(d.examples.children[2]) == [3, 5]
+    assert list(d.spans.children[0]) == [1, 7, 9]
+    assert list(d.spans.children[1]) == [2]
+    assert list(d.spans.children[2]) == [3, 5]
 
-    assert d.examples[0].parent is None
-    for ex in list(d.examples)[1:]:
-        assert ex in d.examples[ex.parent].children
+    assert d.spans[0].parent is None
+    for ex in list(d.spans)[1:]:
+        assert ex in d.spans[ex.parent].children
 
 
 def test_example_equality():
     d = ConjectureData.for_choices((False, False))
 
-    d.start_example(0)
+    d.start_span(0)
     d.draw_boolean()
-    d.stop_example()
-    d.start_example(0)
+    d.stop_span()
+    d.start_span(0)
     d.draw_boolean()
-    d.stop_example()
+    d.stop_span()
     d.freeze()
 
-    examples = list(d.examples)
+    examples = list(d.spans)
     for ex1, ex2 in itertools.combinations(examples, 2):
         assert ex1 != ex2
         assert not (ex1 == ex2)  # noqa
@@ -390,26 +390,26 @@ def test_structural_coverage_is_cached():
 
 def test_examples_create_structural_coverage():
     data = ConjectureData.for_choices([])
-    data.start_example(42)
-    data.stop_example()
+    data.start_span(42)
+    data.stop_span()
     data.freeze()
     assert structural_coverage(42) in data.tags
 
 
 def test_discarded_examples_do_not_create_structural_coverage():
     data = ConjectureData.for_choices([])
-    data.start_example(42)
-    data.stop_example(discard=True)
+    data.start_span(42)
+    data.stop_span(discard=True)
     data.freeze()
     assert structural_coverage(42) not in data.tags
 
 
 def test_children_of_discarded_examples_do_not_create_structural_coverage():
     data = ConjectureData.for_choices([])
-    data.start_example(10)
-    data.start_example(42)
-    data.stop_example()
-    data.stop_example(discard=True)
+    data.start_span(10)
+    data.start_span(42)
+    data.stop_span()
+    data.stop_span(discard=True)
     data.freeze()
     assert structural_coverage(42) not in data.tags
     assert structural_coverage(10) not in data.tags

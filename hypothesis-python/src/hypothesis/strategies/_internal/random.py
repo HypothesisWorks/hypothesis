@@ -18,12 +18,7 @@ import attr
 from hypothesis.control import should_note
 from hypothesis.internal.reflection import define_function_signature
 from hypothesis.reporting import report
-from hypothesis.strategies._internal.core import (
-    binary,
-    lists,
-    permutations,
-    sampled_from,
-)
+from hypothesis.strategies._internal.core import lists, permutations, sampled_from
 from hypothesis.strategies._internal.numbers import floats, integers
 from hypothesis.strategies._internal.strategies import SearchStrategy
 
@@ -171,9 +166,6 @@ def state_for_seed(data, seed):
     return state
 
 
-UNIFORM = floats(0, 1)
-
-
 def normalize_zero(f: float) -> float:
     if f == 0.0:
         return 0.0
@@ -233,8 +225,12 @@ class ArtificialRandom(HypothesisRandom):
 
         if method == "_randbelow":
             result = self.__data.draw_integer(0, kwargs["n"] - 1)
-        elif method in ("betavariate", "random"):
-            result = self.__data.draw(UNIFORM)
+        elif method == "random":
+            # See https://github.com/HypothesisWorks/hypothesis/issues/4297
+            # for numerics/bounds of "random" and "betavariate"
+            result = self.__data.draw(floats(0, 1, exclude_max=True))
+        elif method == "betavariate":
+            result = self.__data.draw(floats(0, 1))
         elif method == "uniform":
             a = normalize_zero(kwargs["a"])
             b = normalize_zero(kwargs["b"])
@@ -324,8 +320,8 @@ class ArtificialRandom(HypothesisRandom):
         elif method == "shuffle":
             result = self.__data.draw(permutations(range(len(kwargs["x"]))))
         elif method == "randbytes":
-            n = kwargs["n"]
-            result = self.__data.draw(binary(min_size=n, max_size=n))
+            n = int(kwargs["n"])
+            result = self.__data.draw_bytes(min_size=n, max_size=n)
         else:
             raise NotImplementedError(method)
 

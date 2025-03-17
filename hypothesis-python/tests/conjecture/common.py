@@ -92,7 +92,7 @@ def shrinking_from(start):
                     phases=set(settings.default.phases) - {Phase.explain},
                 ),
             )
-            runner.cached_test_function_ir(start)
+            runner.cached_test_function(start)
             assert runner.interesting_examples
             (last_data,) = runner.interesting_examples.values()
             return runner.new_shrinker(

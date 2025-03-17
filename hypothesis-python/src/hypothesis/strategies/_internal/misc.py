@@ -13,7 +13,7 @@ from hypothesis.strategies._internal.strategies import (
     SampledFromStrategy,
     SearchStrategy,
     T,
-    is_simple_data,
+    is_hashable,
 )
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 
@@ -45,7 +45,7 @@ class JustStrategy(SampledFromStrategy):
         return f"just({get_pretty_function_description(self.value)}){suffix}"
 
     def calc_is_cacheable(self, recur):
-        return is_simple_data(self.value)
+        return is_hashable(self.value)
 
     def do_filtered_draw(self, data):
         # The parent class's `do_draw` implementation delegates directly to

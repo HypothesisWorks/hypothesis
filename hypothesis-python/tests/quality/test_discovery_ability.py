@@ -372,3 +372,7 @@ for i in range(4):
 test_long_duplicates_strings = define_test(
     tuples(text(), text()), lambda s: len(s[0]) >= 5 and s[0] == s[1]
 )
+
+test_can_produce_nasty_strings = define_test(
+    text(), lambda s: s in {"NaN", "Inf", "undefined"}, p=0.01
+)

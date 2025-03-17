@@ -254,7 +254,7 @@ Explicit example boundaries
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 This is almost always handled implicitly, e.g. by ``cu.many``, but *sometimes*
 it can be useful to explicitly insert boundaries around draws that should be
-deleted simultaneously using ``data.start_example``.  This is used to group
+deleted simultaneously using ``data.start_span``.  This is used to group
 the value and sign of floating-point numbers, for example, which we split up
 in order to provide a more natural shrinking order.
 

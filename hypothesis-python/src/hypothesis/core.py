@@ -1342,7 +1342,7 @@ class StateForActualGivenExecution:
         for falsifying_example in self.falsifying_examples:
             fragments = []
 
-            ran_example = runner.new_conjecture_data_ir(
+            ran_example = runner.new_conjecture_data(
                 falsifying_example.choices, max_choices=len(falsifying_example.choices)
             )
             ran_example.slice_comments = falsifying_example.slice_comments

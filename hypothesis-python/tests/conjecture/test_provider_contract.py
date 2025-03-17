@@ -8,15 +8,22 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+import pytest
+
 from hypothesis import example, given, strategies as st
 from hypothesis.errors import StopTest
+from hypothesis.internal.compat import WINDOWS
 from hypothesis.internal.conjecture.choice import (
     choice_equal,
     choice_from_index,
     choice_permitted,
 )
 from hypothesis.internal.conjecture.data import ConjectureData
-from hypothesis.internal.conjecture.providers import BytestringProvider
+from hypothesis.internal.conjecture.providers import (
+    BytestringProvider,
+    HypothesisProvider,
+    URandomProvider,
+)
 from hypothesis.internal.intervalsets import IntervalSet
 
 from tests.conjecture.common import (
@@ -63,9 +70,21 @@ def test_provider_contract_bytestring(bytestring, choice_type_and_kwargs):
         )
 
 
+@pytest.mark.parametrize(
+    "provider",
+    [
+        pytest.param(
+            URandomProvider,
+            marks=pytest.mark.skipif(
+                WINDOWS, reason="/dev/urandom not available on windows"
+            ),
+        ),
+        HypothesisProvider,
+    ],
+)
 @given(st.lists(nodes()), st.randoms())
-def test_provider_contract_hypothesis(nodes, random):
-    data = ConjectureData(random=random)
+def test_provider_contract(provider, nodes, random):
+    data = ConjectureData(random=random, provider=provider)
     for node in nodes:
         value = getattr(data, f"draw_{node.type}")(**node.kwargs)
         assert choice_permitted(value, node.kwargs)

@@ -9,6 +9,8 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import re
+from collections.abc import Sequence
+from typing import Union
 
 import pytest
 
@@ -46,3 +48,18 @@ def test_one_of_without_strategies_suggests_sampled_from():
         match=re.escape("Did you mean st.sampled_from([1, 2, 3])?"),
     ):
         st.one_of(1, 2, 3)
+
+
+@pytest.mark.parametrize(
+    "strategy, count",
+    [
+        (st.one_of(st.integers(), st.integers(), st.integers()), 1),
+        (st.one_of(st.integers(), st.one_of(st.integers(), st.integers())), 2),
+        ((st.integers() | st.integers()) | st.integers(), 1),
+        (st.integers() | (st.integers() | st.integers()), 1),
+        (st.integers() | st.text() | st.booleans(), 1),
+        (st.from_type(Union[int, Sequence[int]]), 2),
+    ],
+)
+def test_one_of_unwrapping(strategy, count):
+    assert repr(strategy).count("one_of(") == count

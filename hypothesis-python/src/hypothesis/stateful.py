@@ -144,7 +144,7 @@ def get_state_machine_test(state_machine_factory, *, settings=None, _min_steps=0
                 # find a failing test case, so we stop with probability of
                 # 2 ** -16 during normal operation but force a stop when we've
                 # generated enough steps.
-                cd.start_example(STATE_MACHINE_RUN_LABEL)
+                cd.start_span(STATE_MACHINE_RUN_LABEL)
                 must_stop = None
                 if steps_run >= max_steps:
                     must_stop = True
@@ -227,7 +227,7 @@ def get_state_machine_test(state_machine_factory, *, settings=None, _min_steps=0
                         # then 'print_step' prints a multi-variable assignment.
                         output(machine._repr_step(rule, data_to_print, result))
                 machine.check_invariants(settings, output, cd._stateful_run_times)
-                cd.stop_example()
+                cd.stop_span()
         finally:
             output("state.teardown()")
             machine.teardown()

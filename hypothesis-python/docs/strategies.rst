@@ -241,18 +241,34 @@ Alternative backends for Hypothesis
 
 .. warning::
 
-   EXPERIMENTAL AND UNSTABLE.
+   Alternative backends are experimental and not yet part of the public API.
+   We may continue to make breaking changes as we finalize the interface.
 
-The importable name of a backend which Hypothesis should use to generate primitive
-types.  We aim to support heuristic-random, solver-based, and fuzzing-based backends.
+Hypothesis supports alternative backends, which tells Hypothesis how to generate primitive
+types. This enables powerful generation techniques which are compatible with all parts of
+Hypothesis, including the database and shrinking.
 
-See :issue:`3086` for details, e.g. if you're interested in writing your own backend.
-(note that there is *no stable interface* for this; you'd be helping us work out
-what that should eventually look like, and we're likely to make regular breaking
-changes for some time to come)
+Hypothesis includes the following backends:
 
-Using the prototype :pypi:`crosshair-tool` backend via :pypi:`hypothesis-crosshair`,
-a solver-backed test might look something like:
+hypothesis
+    The default backend.
+hypothesis-urandom
+    The same as the default backend, but uses ``/dev/urandom`` to back the randomness
+    behind its PRNG. The only reason to use this backend over the default is if you are also
+    using `Antithesis <https://antithesis.com/>`_, in which case this enables Antithesis
+    mutations to drive Hypothesis generation.
+
+    ``/dev/urandom`` is not available on Windows, so we emit a warning and fall back to the
+    hypothesis backend there.
+crosshair
+    Generates examples using SMT solvers like z3, which is particularly effective at satisfying
+    difficult checks in your code, like ``if`` or ``==`` statements.
+
+    Requires ``pip install hypothesis[crosshair]``.
+
+You can change the backend for a test with the ``backend`` setting. For instance, after
+``pip install hypothesis[crosshair]``, you can use :pypi:`crosshair <crosshair-tool>` to
+generate examples with SMT via the :pypi:`hypothesis-crosshair` backend:
 
 .. code-block:: python
 
@@ -263,3 +279,6 @@ a solver-backed test might look something like:
     @given(st.integers())
     def test_needs_solver(x):
         assert x != 123456789
+
+Failures found by alternative backends are saved to the database and shrink just like normally
+generated examples, and in general interact with every feature of Hypothesis as you would expect.
