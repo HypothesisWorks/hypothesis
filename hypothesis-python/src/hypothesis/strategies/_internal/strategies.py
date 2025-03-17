@@ -12,7 +12,7 @@ import sys
 import warnings
 from collections import abc, defaultdict
 from collections.abc import Sequence
-from functools import lru_cache
+from functools import lru_cache, partial
 from random import shuffle
 from typing import (
     TYPE_CHECKING,
@@ -78,7 +78,7 @@ FILTERED_SEARCH_STRATEGY_DO_DRAW_LABEL = calc_label_from_name(
 )
 
 
-def recursive_property(strategy: "SearchStrategy", name: str, default: object) -> Any:
+class RecursiveProperty:
     """Handle properties which may be mutually recursive among a set of
     strategies.
 
@@ -104,116 +104,118 @@ def recursive_property(strategy: "SearchStrategy", name: str, default: object) -
     and performance of parsing with derivatives." ACM SIGPLAN Notices 51.6
     (2016): 224-236.
     """
-    cache_key = "cached_" + name
-    calculation = "calc_" + name
-    force_key = "force_" + name
 
-    def forced_value(target: SearchStrategy) -> Any:
-        try:
-            return getattr(target, force_key)
-        except AttributeError:
-            return getattr(target, cache_key)
-
-    try:
-        return forced_value(strategy)
-    except AttributeError:
-        pass
-
-    mapping: dict[SearchStrategy, Any] = {}
     sentinel = object()
-    hit_recursion = False
 
-    # For a first pass we do a direct recursive calculation of the
-    # property, but we block recursively visiting a value in the
-    # computation of its property: When that happens, we simply
-    # note that it happened and return the default value.
-    def recur(strat: SearchStrategy) -> Any:
-        nonlocal hit_recursion
-        try:
-            return forced_value(strat)
-        except AttributeError:
-            pass
-        result = mapping.get(strat, sentinel)
-        if result is calculating:
-            hit_recursion = True
-            return default
-        elif result is sentinel:
-            mapping[strat] = calculating
-            mapping[strat] = getattr(strat, calculation)(recur)
-            return mapping[strat]
-        return result
+    def __init__(self, strategy: "SearchStrategy", name: str, default: object) -> None:
+        self.strategy = strategy
+        self.default = default
+        self.mapping: dict[SearchStrategy, Any] = {}
+        self.name = name
 
-    recur(strategy)
+        self.cache_key = "cached_" + name
+        self.calculation = "calc_" + name
+        self.force_key = "force_" + name
 
-    # If we hit self-recursion in the computation of any strategy
-    # value, our mapping at the end is imprecise - it may or may
-    # not have the right values in it. We now need to proceed with
-    # a more careful fixed point calculation to get the exact
-    # values. Hopefully our mapping is still pretty good and it
-    # won't take a large number of updates to reach a fixed point.
-    if hit_recursion:
-        needs_update = set(mapping)
-
+        self.hit_recursion = False
+        self.needs_update: set[SearchStrategy] = set()
         # We track which strategies use which in the course of
         # calculating their property value. If A ever uses B in
         # the course of calculating its value, then whenever the
         # value of B changes we might need to update the value of
         # A.
-        listeners: dict[SearchStrategy, set[SearchStrategy]] = defaultdict(set)
-    else:
-        needs_update = None
+        self.listeners: dict[SearchStrategy, set[SearchStrategy]] = defaultdict(set)
 
-    def recur2(strat: SearchStrategy) -> Any:
-        def recur_inner(other: SearchStrategy) -> Any:
-            try:
-                return forced_value(other)
-            except AttributeError:
-                pass
-            listeners[other].add(strat)
-            result = mapping.get(other, sentinel)
-            if result is sentinel:
-                assert needs_update is not None
-                needs_update.add(other)
-                mapping[other] = default
-                return default
-            return result
+    def forced_value(self, strategy: "SearchStrategy") -> Any:
+        try:
+            return getattr(strategy, self.force_key)
+        except AttributeError:
+            return getattr(strategy, self.cache_key)
 
-        return recur_inner
+    def calculate(self) -> Any:
+        try:
+            return self.forced_value(self.strategy)
+        except AttributeError:
+            pass
 
-    count = 0
-    seen = set()
-    while needs_update:
-        count += 1
-        # If we seem to be taking a really long time to stabilize we
-        # start tracking seen values to attempt to detect an infinite
-        # loop. This should be impossible, and most code will never
-        # hit the count, but having an assertion for it means that
-        # testing is easier to debug and we don't just have a hung
-        # test.
-        # Note: This is actually covered, by test_very_deep_deferral
-        # in tests/cover/test_deferred_strategies.py. Unfortunately it
-        # runs into a coverage bug. See
-        # https://github.com/nedbat/coveragepy/issues/605
-        # for details.
-        if count > 50:  # pragma: no cover
-            key = frozenset(mapping.items())
-            assert key not in seen, (key, name)
-            seen.add(key)
-        to_update = needs_update
-        needs_update = set()
-        for strat in to_update:
-            new_value = getattr(strat, calculation)(recur2(strat))
-            if new_value != mapping[strat]:
-                needs_update.update(listeners[strat])
-                mapping[strat] = new_value
+        # For a first pass we do a direct recursive calculation of the
+        # property, but we block recursively visiting a value in the
+        # computation of its property: When that happens, we simply
+        # note that it happened and return the default value.
+        self.recur(self.strategy)
 
-    # We now have a complete and accurate calculation of the
-    # property values for everything we have seen in the course of
-    # running this calculation. We simultaneously update all of
-    # them (not just the strategy we started out with).
-    for k, v in mapping.items():
-        setattr(k, cache_key, v)
-    return getattr(strategy, cache_key)
+        # If we hit self-recursion in the computation of any strategy
+        # value, our mapping at the end is imprecise - it may or may
+        # not have the right values in it. We now need to proceed with
+        # a more careful fixed point calculation to get the exact
+        # values. Hopefully our mapping is still pretty good and it
+        # won't take a large number of updates to reach a fixed point.
+        if self.hit_recursion:
+            self.needs_update = set(self.mapping)
+            count = 0
+            seen = set()
+            while self.needs_update:
+                count += 1
+                # If we seem to be taking a really long time to stabilize we
+                # start tracking seen values to attempt to detect an infinite
+                # loop. This should be impossible, and most code will never
+                # hit the count, but having an assertion for it means that
+                # testing is easier to debug and we don't just have a hung
+                # test.
+                # Note: This is actually covered, by test_very_deep_deferral
+                # in tests/cover/test_deferred_strategies.py. Unfortunately it
+                # runs into a coverage bug. See
+                # https://github.com/nedbat/coveragepy/issues/605
+                # for details.
+                if count > 50:  # pragma: no cover
+                    key = frozenset(self.mapping.items())
+                    assert key not in seen, (key, self.name)
+                    seen.add(key)
+                to_update = self.needs_update
+                self.needs_update = set()
+                for strat in to_update:
+                    recur = partial(self.recur2, strat=strat)
+                    new_value = getattr(strat, self.calculation)(recur)
+                    if new_value != self.mapping[strat]:
+                        self.needs_update.update(self.listeners[strat])
+                        self.mapping[strat] = new_value
+
+        # We now have a complete and accurate calculation of the
+        # property values for everything we have seen in the course of
+        # running this calculation. We simultaneously update all of
+        # them (not just the strategy we started out with).
+        for k, v in self.mapping.items():
+            setattr(k, self.cache_key, v)
+        return getattr(self.strategy, self.cache_key)
+
+    def recur(self, strategy: "SearchStrategy") -> Any:
+        try:
+            return self.forced_value(strategy)
+        except AttributeError:
+            pass
+        result = self.mapping.get(strategy, self.sentinel)
+        if result is calculating:
+            self.hit_recursion = True
+            return self.default
+        elif result is self.sentinel:
+            self.mapping[strategy] = calculating
+            self.mapping[strategy] = getattr(strategy, self.calculation)(self.recur)
+            return self.mapping[strategy]
+        return result
+
+    def recur2(self, other: "SearchStrategy", *, strat: "SearchStrategy") -> Any:
+        try:
+            return self.forced_value(other)
+        except AttributeError:
+            pass
+        self.listeners[other].add(strat)
+        result = self.mapping.get(other, self.sentinel)
+        if result is self.sentinel:
+            assert self.needs_update is not None
+            self.needs_update.add(other)
+            self.mapping[other] = self.default
+            return self.default
+        return result
 
 
 class SearchStrategy(Generic[Ex]):
@@ -250,7 +252,7 @@ class SearchStrategy(Generic[Ex]):
         # The fact that this returns False does not guarantee that a valid value
         # can be drawn - this is not intended to be perfect, and is primarily
         # intended to be an optimisation for some cases.
-        return recursive_property(self, "is_empty", True)
+        return RecursiveProperty(self, "is_empty", True).calculate()
 
     # Returns True if values from this strategy can safely be reused without
     # this causing unexpected behaviour.
@@ -262,12 +264,12 @@ class SearchStrategy(Generic[Ex]):
     # by arbitrary user-provided functions.
     @property
     def has_reusable_values(self) -> Any:
-        return recursive_property(self, "has_reusable_values", True)
+        return RecursiveProperty(self, "has_reusable_values", True).calculate()
 
     # Whether this strategy is suitable for holding onto in a cache.
     @property
     def is_cacheable(self) -> Any:
-        return recursive_property(self, "is_cacheable", True)
+        return RecursiveProperty(self, "is_cacheable", True).calculate()
 
     def calc_is_cacheable(self, recur: RecurT) -> bool:
         return True
