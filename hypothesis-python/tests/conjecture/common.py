@@ -8,12 +8,13 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-import pytest
 import math
 import sys
 from contextlib import contextmanager
 from random import Random
 from typing import Optional
+
+import pytest
 
 from hypothesis import HealthCheck, Phase, assume, settings, strategies as st
 from hypothesis.control import current_build_context, currently_in_test_context

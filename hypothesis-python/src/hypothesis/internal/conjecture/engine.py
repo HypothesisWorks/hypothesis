@@ -476,6 +476,7 @@ class ConjectureRunner:
             # No branch, because if we're interrupted we always raise
             # the KeyboardInterrupt, never continue to the code below.
             if not interrupted:  # pragma: no branch
+                assert data.cannot_proceed_scope is None
                 data.freeze()
                 call_stats: CallStats = {
                     "status": data.status.name.lower(),
@@ -971,7 +972,7 @@ class ConjectureRunner:
             # We don't (yet) rely on the zero data being pinned, and so
             # it's simply a very slight performance loss to simply not pin it
             # if doing so would error.
-            if zero_data.cannot_proceed_scope is None:
+            if zero_data.cannot_proceed_scope is None:  # pragma: no branch
                 self.__data_cache.pin(
                     self._cache_key(zero_data.choices), zero_data.as_result()
                 )  # Pin forever
