@@ -19,7 +19,13 @@ from typing import TYPE_CHECKING, Any, NoReturn, Optional, TypeVar, Union
 
 import attr
 
-from hypothesis.errors import ChoiceTooLarge, Frozen, InvalidArgument, StopTest
+from hypothesis.errors import (
+    CannotProceedScopeT,
+    ChoiceTooLarge,
+    Frozen,
+    InvalidArgument,
+    StopTest,
+)
 from hypothesis.internal.cache import LRUCache
 from hypothesis.internal.compat import add_note
 from hypothesis.internal.conjecture.choice import (
@@ -585,6 +591,7 @@ class ConjectureResult:
     arg_slices: set[tuple[int, int]] = attr.ib(repr=False)
     slice_comments: dict[tuple[int, int], str] = attr.ib(repr=False)
     misaligned_at: Optional[MisalignedAt] = attr.ib(repr=False)
+    cannot_proceed_scope: Optional[CannotProceedScopeT] = attr.ib(repr=False)
 
     def as_result(self) -> "ConjectureResult":
         return self
@@ -706,6 +713,7 @@ class ConjectureData:
         self.prefix = prefix
         self.nodes: tuple[ChoiceNode, ...] = ()
         self.misaligned_at: Optional[MisalignedAt] = None
+        self.cannot_proceed_scope: Optional[CannotProceedScopeT] = None
         self.start_example(TOP_LABEL)
 
     def __repr__(self) -> str:
@@ -1070,6 +1078,7 @@ class ConjectureData:
                 arg_slices=self.arg_slices,
                 slice_comments=self.slice_comments,
                 misaligned_at=self.misaligned_at,
+                cannot_proceed_scope=self.cannot_proceed_scope,
             )
             assert self.__result is not None
         return self.__result
