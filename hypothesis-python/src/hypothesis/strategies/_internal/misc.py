@@ -103,14 +103,14 @@ class Nothing(SearchStrategy["Never"]):
     def __repr__(self) -> str:
         return "nothing()"
 
-    def map(self, pack: Callable[[Ex], T]) -> SearchStrategy["Never"]:
+    def map(self, pack: Callable[[Any], Any]) -> SearchStrategy["Never"]:
         return self
 
-    def filter(self, condition: Callable[[Ex], Any]) -> "SearchStrategy[Never]":
+    def filter(self, condition: Callable[[Any], Any]) -> "SearchStrategy[Never]":
         return self
 
     def flatmap(
-        self, expand: Callable[[Ex], "SearchStrategy[T]"]
+        self, expand: Callable[[Any], "SearchStrategy[Any]"]
     ) -> "SearchStrategy[Never]":
         return self
 
