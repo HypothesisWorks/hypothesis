@@ -23,6 +23,8 @@ from hypothesis.stateful import (
     run_state_machine_as_test,
 )
 
+from tests.common.utils import Why, xfail_on_crosshair
+
 
 def run_to_notes(TestClass):
     TestCase = TestClass.TestCase
@@ -200,6 +202,7 @@ with_cheap_bad_machines = pytest.mark.parametrize(
 )
 
 
+@xfail_on_crosshair(Why.undiscovered)  # for CanSwarm
 @pytest.mark.parametrize(
     "machine", bad_machines, ids=[t.__name__ for t in bad_machines]
 )

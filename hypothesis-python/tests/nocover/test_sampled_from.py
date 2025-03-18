@@ -131,6 +131,7 @@ def test_flags_minimizes_bit_count():
     )
 
 
+@xfail_on_crosshair(Why.undiscovered)
 def test_flags_finds_all_bits_set():
     assert find_any(st.sampled_from(LargeFlag), lambda f: f == ~LargeFlag(0))
 

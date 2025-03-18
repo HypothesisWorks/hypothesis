@@ -256,7 +256,6 @@ class Why(enum.Enum):
     # Use an enum here so it's easier to find and/or exclude some cases later
 
     # things we want to fix
-    flaky_replay = "Inconsistent results from replaying a failing test..."
     symbolic_outside_context = "CrosshairInternal error (using value outside context)"
     floats = "crosshair doesn't reason about signed zero (and other edge cases?)"
     no_unsatisfiable = "doesn't raise Unsatisfiable for some reason"

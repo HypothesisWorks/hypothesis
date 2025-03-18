@@ -15,10 +15,9 @@ from hypothesis._settings import all_settings
 from hypothesis.errors import InvalidArgument, Unsatisfiable
 from hypothesis.strategies import booleans, integers, nothing
 
-from tests.common.utils import Why, fails_with, xfail_on_crosshair
+from tests.common.utils import fails_with
 
 
-@xfail_on_crosshair(Why.no_unsatisfiable)
 @fails_with(Unsatisfiable)
 @given(booleans())
 def test_raises_unsatisfiable_if_all_false_in_finite_set(x):

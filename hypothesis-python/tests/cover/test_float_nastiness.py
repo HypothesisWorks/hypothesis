@@ -26,7 +26,6 @@ from hypothesis.internal.floats import (
 )
 
 from tests.common.debug import find_any, minimal
-from tests.common.utils import Why, xfail_on_crosshair
 
 try:
     import numpy
@@ -67,7 +66,6 @@ def test_does_not_generate_negative_if_right_boundary_is_positive(x):
     assert math.copysign(1, x) == 1
 
 
-@xfail_on_crosshair(Why.floats)
 @given(st.floats(-1.0, -0.0))
 def test_does_not_generate_positive_if_right_boundary_is_negative(x):
     assert math.copysign(1, x) == -1
@@ -78,7 +76,6 @@ def test_half_bounded_generates_zero():
     find_any(st.floats(max_value=1.0), lambda x: x == 0.0)
 
 
-@xfail_on_crosshair(Why.floats)
 @given(st.floats(max_value=-0.0))
 def test_half_bounded_respects_sign_of_upper_bound(x):
     assert math.copysign(1, x) == -1
