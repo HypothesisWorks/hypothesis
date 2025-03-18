@@ -23,7 +23,9 @@ babel==2.17.0
 backports-tarfile==1.2.0
     # via jaraco-context
 beautifulsoup4==4.13.3
-    # via sphinx-codeautolink
+    # via
+    #   furo
+    #   sphinx-codeautolink
 black==25.1.0
     # via shed
 blinker==1.9.0
@@ -70,7 +72,6 @@ docutils==0.21.2
     #   restructuredtext-lint
     #   sphinx
     #   sphinx-jsonschema
-    #   sphinx-rtd-theme
 dpcontracts==0.6.0
     # via -r requirements/tools.in
 exceptiongroup==1.2.2 ; python_version < "3.11"
@@ -89,6 +90,8 @@ filelock==3.18.0
     # via
     #   tox
     #   virtualenv
+furo==2024.8.6
+    # via -r requirements/tools.in
 id==1.5.0
     # via twine
 idna==3.10
@@ -201,6 +204,7 @@ pyflakes==3.2.0
     # via autoflake
 pygments==2.18.0
     # via
+    #   furo
     #   ipython
     #   pelican
     #   readme-renderer
@@ -271,17 +275,18 @@ soupsieve==2.6
 sphinx==8.1.3
     # via
     #   -r requirements/tools.in
+    #   furo
+    #   sphinx-basic-ng
     #   sphinx-codeautolink
     #   sphinx-hoverxref
-    #   sphinx-rtd-theme
     #   sphinxcontrib-jquery
+sphinx-basic-ng==1.0.0b2
+    # via furo
 sphinx-codeautolink==0.17.4
     # via -r requirements/tools.in
 sphinx-hoverxref==1.4.2
     # via -r requirements/tools.in
 sphinx-jsonschema==1.19.1
-    # via -r requirements/tools.in
-sphinx-rtd-theme==3.0.2
     # via -r requirements/tools.in
 sphinx-selective-exclude==1.0.3
     # via -r requirements/tools.in
@@ -292,9 +297,7 @@ sphinxcontrib-devhelp==2.0.0
 sphinxcontrib-htmlhelp==2.1.0
     # via sphinx
 sphinxcontrib-jquery==4.1
-    # via
-    #   sphinx-hoverxref
-    #   sphinx-rtd-theme
+    # via sphinx-hoverxref
 sphinxcontrib-jsmath==1.0.1
     # via sphinx
 sphinxcontrib-qthelp==2.0.0
