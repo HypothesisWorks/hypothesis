@@ -51,7 +51,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "Hypothesis"
-author = "David R. MacIver"
+author = "the Hypothesis team"
 copyright = f"2013-{datetime.date.today().year}, {author}"
 
 _d = {}
@@ -159,28 +159,23 @@ extlinks = {
 
 # -- Options for HTML output ----------------------------------------------
 
-html_theme = "sphinx_rtd_theme"
-
+html_theme = "furo"
+# remove "Hypothesis <version> documentation" from just below logo on the sidebar
+html_theme_options = {"sidebar_hide_name": True}
 html_static_path = ["_static"]
-
-html_css_files = ["better-signatures.css", "wrap-in-tables.css"]
-
+html_css_files = ["better-signatures.css", "wrap-in-tables.css", "no-scroll.css"]
 htmlhelp_basename = "Hypothesisdoc"
-
 html_favicon = "../../brand/favicon.ico"
-
 html_logo = "../../brand/dragonfly-rainbow-150w.svg"
+
 
 # -- Options for LaTeX output ---------------------------------------------
 
 latex_elements = {}
-
 latex_documents = [
     (master_doc, "Hypothesis.tex", "Hypothesis Documentation", author, "manual")
 ]
-
 man_pages = [(master_doc, "hypothesis", "Hypothesis Documentation", [author], 1)]
-
 texinfo_documents = [
     (
         master_doc,
