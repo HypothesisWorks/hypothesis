@@ -488,17 +488,35 @@ def iterables(
     ).map(PrettyIter)
 
 
-# this type definition is not quite correct. It's perfectly acceptable to have
+# this type definition is imprecise, in multiple ways:
+# * mapping and optional can be of different types:
+#      s: dict[str | int, int] = st.fixed_dictionaries(
+#         {"a": st.integers()}, optional={1: st.integers()}
+#     )
+# * the values in either mapping or optional need not all be of the same type:
+#      s: dict[str, int | bool] = st.fixed_dictionaries(
+#         {"a": st.integers(), "b": st.booleans()}
+#     )
+# * the arguments may be of any dict-compatible type, in which case the return
+#  value will be of that type instead of dit
 #
-#    a: dict[str | int, int] = st.fixed_dictionaries(
-#       {"adasdasds": st.integers()}, optional={1: st.integers()}
-#   )
+# Overloads may help here, but I doubt we'll be able to satisfy all these
+# constraints.
 #
-# with mapping and optional being different types. However, this is less common
-# than the types matching, and typing everything as Any or object (which is the
-# strictly correct type) would give less information in that case.
+# Here's some platonic ideal test cases for revealed_types.py, with the understanding
+# that some may not be achievable:
 #
-# TODO: try seeing if an overload helps things here?
+#   ("fixed_dictionaries({'a': booleans()})", "dict[str, bool]"),
+#   ("fixed_dictionaries({'a': booleans(), 'b': integers()})", "dict[str, bool | int]"),
+#   ("fixed_dictionaries({}, optional={'a': booleans()})", "dict[str, bool]"),
+#   (
+#       "fixed_dictionaries({'a': booleans()}, optional={1: booleans()})",
+#       "dict[str | int, bool]",
+#   ),
+#   (
+#       "fixed_dictionaries({'a': booleans()}, optional={1: integers()})",
+#       "dict[str | int, bool | int]",
+#   ),
 
 
 @defines_strategy()
@@ -1522,7 +1540,7 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
             f"Could not resolve {thing!r} to a strategy, because it is an abstract "
             "type without any subclasses. Consider using register_type_strategy"
         )
-    subclass_strategies = nothing()
+    subclass_strategies: SearchStrategy = nothing()
     for sc in subclasses:
         try:
             subclass_strategies |= _from_type(sc)

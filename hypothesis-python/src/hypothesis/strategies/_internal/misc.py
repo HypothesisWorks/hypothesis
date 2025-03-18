@@ -8,7 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from typing import Any, Callable, NoReturn, Union
+from typing import TYPE_CHECKING, Any, Callable, NoReturn, Union
 
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.reflection import get_pretty_function_description
@@ -22,6 +22,9 @@ from hypothesis.strategies._internal.strategies import (
 )
 from hypothesis.strategies._internal.utils import cacheable, defines_strategy
 from hypothesis.utils.conventions import UniqueIdentifier
+
+if TYPE_CHECKING:
+    from typing_extensions import Never
 
 
 class JustStrategy(SampledFromStrategy[Ex]):
@@ -85,7 +88,7 @@ def none() -> SearchStrategy[None]:
     return just(None)
 
 
-class Nothing(SearchStrategy):
+class Nothing(SearchStrategy["Never"]):
     def calc_is_empty(self, recur: RecurT) -> bool:
         return True
 
@@ -100,15 +103,15 @@ class Nothing(SearchStrategy):
     def __repr__(self) -> str:
         return "nothing()"
 
-    def map(self, pack: Callable[[Ex], T]) -> SearchStrategy[T]:
+    def map(self, pack: Callable[[Ex], T]) -> SearchStrategy["Never"]:
         return self
 
-    def filter(self, condition: Callable[[Ex], Any]) -> "SearchStrategy[Ex]":
+    def filter(self, condition: Callable[[Ex], Any]) -> "SearchStrategy[Never]":
         return self
 
     def flatmap(
         self, expand: Callable[[Ex], "SearchStrategy[T]"]
-    ) -> "SearchStrategy[T]":
+    ) -> "SearchStrategy[Never]":
         return self
 
 
@@ -117,7 +120,7 @@ NOTHING = Nothing()
 
 @cacheable
 @defines_strategy(never_lazy=True)
-def nothing() -> SearchStrategy:
+def nothing() -> SearchStrategy["Never"]:
     """This strategy never successfully draws a value and will always reject on
     an attempt to draw.
 
