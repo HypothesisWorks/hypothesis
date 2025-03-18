@@ -116,7 +116,7 @@ class OneCharStringStrategy(SearchStrategy):
             f"{alphabet=} must be a sampled_from() or characters() strategy"
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self._force_repr or f"OneCharStringStrategy({self.intervals!r})"
 
     def do_draw(self, data):
@@ -150,7 +150,7 @@ _nonempty_and_content_names = (
 )
 
 
-class TextStrategy(ListStrategy):
+class TextStrategy(ListStrategy[str]):
     def do_draw(self, data):
         # if our element strategy is OneCharStringStrategy, we can skip the
         # ListStrategy draw and jump right to our nice IR string draw.
@@ -169,7 +169,7 @@ class TextStrategy(ListStrategy):
             )
         return "".join(super().do_draw(data))
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         args = []
         if repr(self.element_strategy) != "characters()":
             args.append(repr(self.element_strategy))
