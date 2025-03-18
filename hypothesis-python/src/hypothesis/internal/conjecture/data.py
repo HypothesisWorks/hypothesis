@@ -962,13 +962,16 @@ class ConjectureData:
             # node if the alternative is not "the entire data is an overrun".
             assert self.index == len(self.prefix) - 1
             if node.type == "simplest":
-                if isinstance(self.provider, HypothesisProvider):
+                if forced is not None:
+                    choice = forced
+                elif isinstance(self.provider, HypothesisProvider):
                     try:
-                        choice: ChoiceT = choice_from_index(0, choice_type, kwargs)
+                        choice = choice_from_index(0, choice_type, kwargs)
                     except ChoiceTooLarge:
                         self.mark_overrun()
                 else:
-                    # give alternative backends control over these draws
+                    # give alternative backends control over ChoiceTemplate draws
+                    # as well
                     choice = getattr(self.provider, f"draw_{choice_type}")(**kwargs)
             else:
                 raise NotImplementedError
