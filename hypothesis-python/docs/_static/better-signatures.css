@@ -1,25 +1,13 @@
-/* don't use italics for param names; looks bad with "|" for unions */
-.rst-content dl .sig-param {
-  font-style: normal;
+/* dl gets used both for defining each top-level `.. autofunc` on a page (where we want vertical margsin)
+   and is wrapped around multiline signatures (where we don't).
+   If a dl is being used inside a .sig, that's a multiline signature; remove its margins. */
+.sig > dl {
+  margin-block-start: 0rem;
+  margin-block-end: 0rem;
 }
 
-/* Take out pointless vertical whitespace in the signatures.
- * See also https://github.com/readthedocs/sphinx_rtd_theme/pull/1450 */
-.rst-content dl .sig dl,
-.rst-content dl .sig dd {
-  margin-bottom: 0;
-}
-
-/* Make signature boxes full-width, with view-source and header links right-aligned. */
-.rst-content dl .sig {
-  width: -webkit-fill-available;
-}
-.rst-content .viewcode-link {
-  display: inline-flex;
-  float: inline-end;
-  margin-right: 1.5em;
-}
-.rst-content .headerlink {
-  position: absolute;
-  right: 0.5em;
+/* with thanks to https://github.com/pradyunsg/furo/discussions/749 */
+.sig:not(.sig-inline) {
+  padding-left: 0.5em;
+  text-indent: 0;
 }
