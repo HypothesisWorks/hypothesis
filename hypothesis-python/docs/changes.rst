@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.129.4:
+
+--------------------
+6.129.4 - 2025-03-18
+--------------------
+
+:func:`~hypothesis.strategies.nothing` is now typed as ``SearchStrategy[Never]``, because no value can ever be drawn from it. This may help type checkers statically determine that some code is not reachable.
+
 .. _v6.129.3:
 
 --------------------
