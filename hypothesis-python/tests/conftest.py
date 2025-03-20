@@ -97,20 +97,9 @@ def warns_or_raises(request):
 
 # crosshair needs actual time for its path timeouts; load it before patching
 try:
-    from crosshair.util import CrossHairInternal
-    from hypothesis_crosshair_provider import crosshair_provider_test
+    import hypothesis_crosshair_provider.crosshair_provider  # noqa: F401
 except ImportError:
     pass
-else:
-    assert crosshair_provider_test  # look, we just wanted the side effects...
-
-    @pytest.fixture(scope="function", autouse=True)
-    def _hack_xfail_crosshair_error():
-        # This is super janky but at least we avoid _other_ regressions...
-        try:
-            yield
-        except CrossHairInternal:
-            pytest.xfail("terrible temporary hack")
 
 
 @pytest.fixture(scope="function", autouse=True)
