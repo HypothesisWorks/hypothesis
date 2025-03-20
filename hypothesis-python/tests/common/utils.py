@@ -258,7 +258,6 @@ class Why(enum.Enum):
     # things we want to fix
     symbolic_outside_context = "CrosshairInternal error (using value outside context)"
     floats = "crosshair doesn't reason about signed zero (and other edge cases?)"
-    no_unsatisfiable = "doesn't raise Unsatisfiable for some reason"
 
     # things that are basically fine to leave alone
 
