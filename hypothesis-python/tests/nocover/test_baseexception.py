@@ -96,7 +96,6 @@ def test_baseexception_in_strategy_no_rerun_no_flaky(e):
             test_do_nothing()
 
         assert runs == interrupt
-
     else:
         # Now SystemExit and GeneratorExit are caught like other exceptions
         with pytest.raises(Flaky):

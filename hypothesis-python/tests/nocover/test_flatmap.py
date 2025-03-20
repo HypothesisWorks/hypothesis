@@ -48,15 +48,13 @@ def test_in_order(x):
     assert x[0] < x[1]
 
 
+# crosshair just generates increasingly-long lists of [0.0]
+@xfail_on_crosshair(Why.undiscovered)
 def test_flatmap_retrieve_from_db():
-    constant_float_lists = floats(0, 1).flatmap(lambda x: lists(just(x)))
-
     track = []
 
-    db = ExampleDatabase()
-
-    @given(constant_float_lists)
-    @settings(database=db)
+    @given(floats(0, 1).flatmap(lambda x: lists(just(x))))
+    @settings(database=ExampleDatabase())
     def record_and_test_size(xs):
         if sum(xs) >= 1:
             track.append(xs)
