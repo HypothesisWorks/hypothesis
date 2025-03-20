@@ -40,9 +40,32 @@ extensions = [
     # loading this extension overrides the default -b linkcheck behavior with
     # custom url ignore logic. see hypothesis_linkcheck.py for details.
     "hypothesis_linkcheck",
+    "hypothesis_redirects",
 ]
 
 templates_path = ["_templates"]
+
+redirects = {
+    "details": "reference/index.html",
+    "data": "reference/strategies.html",
+    "database": "reference/api.html",
+    "stateful": "reference/api.html",
+    "reproducing": "reference/api.html",
+    "ghostwriter": "reference/ghostwriter.html",
+    # "extras": "extensions.html",
+    "django": "reference/strategies.html",
+    "numpy": "reference/strategies.html",
+    "observability": "reference/observability.html",
+    # "supported": "compatibility.html",
+    # TODO enable when we actually rename them
+    # "changes": "changelog.html",
+    # "strategies": "extensions.html",
+    # these pages were removed without replacement
+    # "support": "index.html",
+    # "manifesto": "index.html",
+    # "examples": "index.html",
+}
+redirect_html_template_file = "redirect.html.template"
 
 source_suffix = ".rst"
 
@@ -133,6 +156,85 @@ intersphinx_mapping = {
 }
 
 autodoc_mock_imports = ["numpy", "pandas", "redis", "django", "pytz"]
+
+rst_prolog = """
+.. |given| replace:: :func:`~hypothesis.given`
+.. |@given| replace:: :func:`@given <hypothesis.given>`
+.. |@example| replace:: :func:`@example <hypothesis.example>`
+.. |@example.xfail| replace:: :func:`@example(...).xfail() <hypothesis.example.xfail>`
+.. |@settings| replace:: :func:`@settings <hypothesis.settings>`
+.. |@composite| replace:: :func:`@composite <hypothesis.strategies.composite>`
+.. |assume| replace:: :func:`~hypothesis.assume`
+.. |target| replace:: :func:`~hypothesis.target`
+.. |event| replace:: :func:`~hypothesis.event`
+.. |note| replace:: :func:`~hypothesis.note`
+
+.. |max_examples| replace:: :obj:`~hypothesis.settings.max_examples`
+.. |settings.max_examples| replace:: :obj:`~hypothesis.settings.max_examples`
+.. |settings.database| replace:: :obj:`~hypothesis.settings.database`
+.. |settings.deadline| replace:: :obj:`~hypothesis.settings.deadline`
+.. |settings.derandomize| replace:: :obj:`~hypothesis.settings.derandomize`
+.. |settings.phases| replace:: :obj:`~hypothesis.settings.phases`
+.. |settings.print_blob| replace:: :obj:`~hypothesis.settings.print_blob`
+.. |settings.report_multiple_bugs| replace:: :obj:`~hypothesis.settings.report_multiple_bugs`
+.. |settings.verbosity| replace:: :obj:`~hypothesis.settings.verbosity`
+.. |settings.suppress_health_check| replace:: :obj:`~hypothesis.settings.suppress_health_check`
+
+.. |HealthCheck.data_too_large| replace:: :obj:`HealthCheck.data_too_large <hypothesis.HealthCheck.data_too_large>`
+.. |HealthCheck.filter_too_much| replace:: :obj:`HealthCheck.filter_too_much <hypothesis.HealthCheck.filter_too_much>`
+.. |HealthCheck.too_slow| replace:: :obj:`HealthCheck.too_slow <hypothesis.HealthCheck.too_slow>`
+.. |HealthCheck.function_scoped_fixture| replace:: :obj:`HealthCheck.function_scoped_fixture \
+<hypothesis.HealthCheck.function_scoped_fixture>`
+.. |HealthCheck.differing_executors| replace:: :obj:`HealthCheck.differing_executors \
+<hypothesis.HealthCheck.differing_executors>`
+.. |HealthCheck| replace:: :obj:`~hypothesis.HealthCheck`
+
+.. |Phase.explicit| replace:: :obj:`Phase.explicit <hypothesis.Phase.explicit>`
+.. |Phase.reuse| replace:: :obj:`Phase.reuse <hypothesis.Phase.reuse>`
+.. |Phase.generate| replace:: :obj:`Phase.generate <hypothesis.Phase.generate>`
+.. |Phase.target| replace:: :obj:`Phase.target <hypothesis.Phase.target>`
+.. |Phase.shrink| replace:: :obj:`Phase.shrink <hypothesis.Phase.shrink>`
+.. |Phase.explain| replace:: :obj:`Phase.explain <hypothesis.Phase.explain>`
+
+.. |st.lists| replace:: :func:`~hypothesis.strategies.lists`
+.. |st.integers| replace:: :func:`~hypothesis.strategies.integers`
+.. |st.floats| replace:: :func:`~hypothesis.strategies.floats`
+.. |st.booleans| replace:: :func:`~hypothesis.strategies.booleans`
+.. |st.composite| replace:: :func:`@composite <hypothesis.strategies.composite>`
+.. |st.data| replace:: :func:`~hypothesis.strategies.data`
+.. |st.one_of| replace:: :func:`~hypothesis.strategies.one_of`
+.. |st.text| replace:: :func:`~hypothesis.strategies.text`
+.. |st.tuples| replace:: :func:`~hypothesis.strategies.tuples`
+.. |st.sets| replace:: :func:`~hypothesis.strategies.sets`
+.. |st.dictionaries| replace:: :func:`~hypothesis.strategies.dictionaries`
+.. |st.fixed_dictionaries| replace:: :func:`~hypothesis.strategies.fixed_dictionaries`
+.. |st.datetimes| replace:: :func:`~hypothesis.strategies.datetimes`
+.. |st.builds| replace:: :func:`~hypothesis.strategies.builds`
+.. |st.recursive| replace:: :func:`~hypothesis.strategies.recursive`
+.. |st.deferred| replace:: :func:`~hypothesis.strategies.deferred`
+.. |st.from_type| replace:: :func:`~hypothesis.strategies.from_type`
+.. |st.register_type_strategy| replace:: :func:`~hypothesis.strategies.register_type_strategy`
+
+.. |settings.register_profile| replace:: :func:`~hypothesis.settings.register_profile`
+.. |settings.get_profile| replace:: :func:`~hypothesis.settings.get_profile`
+.. |settings.load_profile| replace:: :func:`~hypothesis.settings.load_profile`
+
+.. |SearchStrategy| replace:: :class:`~hypothesis.strategies.SearchStrategy`
+.. |strategy.filter| replace:: :func:`.filter() <hypothesis.strategies.SearchStrategy.filter>`
+.. |strategy.flatmap| replace:: :func:`.flatmap() <hypothesis.strategies.SearchStrategy.flatmap>`
+.. |strategy.map| replace:: :func:`.map() <hypothesis.strategies.SearchStrategy.map>`
+
+.. _observability: reference/observability
+.. _ghostwriter: reference/ghostwriter
+
+.. |str| replace:: :obj:`python:str`
+.. |int| replace:: :obj:`python:int`
+.. |bool| replace:: :obj:`python:bool`
+.. |bytes| replace:: :obj:`python:bytes`
+.. |float| replace:: :obj:`python:float`
+.. |assert| replace:: :keyword:`python:assert`
+.. |dataclasses| replace:: :mod:`python:dataclasses`
+"""
 
 codeautolink_autodoc_inject = False
 codeautolink_global_preface = """

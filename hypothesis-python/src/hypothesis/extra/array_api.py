@@ -499,9 +499,6 @@ def _arrays(
       >>> xps.arrays(xp, xp.int8, 3, elements={"min_value": 10}).example()
       Array([125, 13, 79], dtype=int8)
 
-    Refer to :doc:`What you can generate and how <data>` for passing
-    your own elements strategy.
-
     .. code-block:: pycon
 
       >>> xps.arrays(xp, xp.float32, 3, elements=floats(0, 1, width=32)).example()

@@ -1,6 +1,6 @@
-===================
-Observability tools
-===================
+=============
+Observability
+=============
 
 .. warning::
 

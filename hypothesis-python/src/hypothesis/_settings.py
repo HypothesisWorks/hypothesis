@@ -455,7 +455,7 @@ An instance of :class:`~hypothesis.database.ExampleDatabase` that will be
 used to save examples to and load previous examples from. May be ``None``
 in which case no storage will be used.
 
-See the :doc:`example database documentation <database>` for a list of built-in
+See the :ref:`example database documentation <database>` for a list of built-in
 example database implementations, and how to define custom implementations.
 """,
     validator=_validate_database,
@@ -514,7 +514,7 @@ class HealthCheck(Enum, metaclass=HealthCheckMeta):
 
     filter_too_much = 2
     """Check for when the test is filtering out too many examples, either
-    through use of :func:`~hypothesis.assume()` or :ref:`filter() <filtering>`,
+    through use of :func:`~hypothesis.assume()` or |strategy.filter|,
     or occasionally for Hypothesis internal reasons."""
 
     too_slow = 3
