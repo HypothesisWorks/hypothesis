@@ -35,7 +35,6 @@ def test_lot_of_dead_nodes():
     assert tuple(n.value for n in nodes) == (0, 1, 2, 3)
 
 
-@xfail_on_crosshair(Why.nested_given)
 def test_saves_data_while_shrinking(monkeypatch):
     key = b"hi there"
     n = 5
@@ -66,7 +65,6 @@ def test_saves_data_while_shrinking(monkeypatch):
     assert in_db == seen
 
 
-@xfail_on_crosshair(Why.nested_given)
 def test_can_discard(monkeypatch):
     n = 8
 
@@ -107,7 +105,6 @@ def test_cached_with_masked_byte_agrees_with_results(a, b):
     assert (cached_a is cached_b) == (cached_a.nodes == data_b.nodes)
 
 
-@xfail_on_crosshair(Why.other)
 def test_node_programs_fail_efficiently(monkeypatch):
     # Create 256 byte-sized nodes. None of the nodes can be deleted, and
     # every deletion attempt produces a different buffer.
