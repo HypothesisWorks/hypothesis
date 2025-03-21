@@ -198,3 +198,94 @@ class ReturningInvariantMachine(RuleBasedStateMachine):
 def test_stateful_returnvalue_healthcheck(cls):
     with pytest.raises(FailedHealthCheck):
         run_state_machine_as_test(cls, settings=settings())
+
+
+def test_nested_given_raises_healthcheck():
+    @given(st.integers())
+    def f(n1):
+        @given(st.integers())
+        def g(n2):
+            pass
+
+        g()
+
+    with pytest.raises(FailedHealthCheck):
+        f()
+
+
+def test_triply_nested_given_raises_healthcheck():
+    @given(st.integers())
+    @settings(max_examples=10)
+    def f(n1):
+
+        @given(st.integers())
+        @settings(max_examples=10)
+        def g(n2):
+
+            @given(st.integers())
+            @settings(max_examples=10)
+            def h(n3):
+                pass
+
+            h()
+
+        g()
+
+    with pytest.raises(FailedHealthCheck):
+        f()
+
+
+def test_can_suppress_nested_given():
+    @given(st.integers())
+    @settings(suppress_health_check=[HealthCheck.nested_given], max_examples=5)
+    def f(n1):
+
+        @given(st.integers())
+        @settings(max_examples=5)
+        def g(n2):
+            pass
+
+        g()
+
+    f()
+
+
+def test_cant_suppress_nested_given_on_inner():
+    # nested_given has to be suppressed at the function right above the nesting.
+    # this isn't a principled design choice, but a limitation of how we access
+    # the current settings.
+    @given(st.integers())
+    @settings(max_examples=5)
+    def f(n1):
+
+        @given(st.integers())
+        @settings(suppress_health_check=[HealthCheck.nested_given], max_examples=5)
+        def g(n2):
+            pass
+
+        g()
+
+    with pytest.raises(FailedHealthCheck):
+        f()
+
+
+def test_suppress_triply_nested_given():
+    # both suppressions are necessary here
+    @given(st.integers())
+    @settings(suppress_health_check=[HealthCheck.nested_given], max_examples=5)
+    def f(n1):
+
+        @given(st.integers())
+        @settings(suppress_health_check=[HealthCheck.nested_given], max_examples=5)
+        def g(n2):
+
+            @given(st.integers())
+            @settings(max_examples=5)
+            def h(n3):
+                pass
+
+            h()
+
+        g()
+
+    f()

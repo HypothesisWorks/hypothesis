@@ -10,14 +10,19 @@
 
 from pytest import raises
 
-from hypothesis import Verbosity, given, settings, strategies as st
+from hypothesis import HealthCheck, Verbosity, given, settings, strategies as st
 
 from tests.common.utils import no_shrink
 
 
 def test_nesting_1():
     @given(st.integers(0, 100))
-    @settings(max_examples=5, database=None, deadline=None)
+    @settings(
+        max_examples=5,
+        database=None,
+        deadline=None,
+        suppress_health_check=[HealthCheck.nested_given],
+    )
     def test_blah(x):
         @given(st.integers())
         @settings(
