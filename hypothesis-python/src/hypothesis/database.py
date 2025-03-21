@@ -661,7 +661,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
     .. code-block:: yaml
 
         - name: Download example database
-          uses: dawidd6/action-download-artifact@v2.24.3
+          uses: dawidd6/action-download-artifact@v9
           with:
             name: hypothesis-example-db
             path: .hypothesis/examples
