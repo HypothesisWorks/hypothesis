@@ -42,7 +42,6 @@ from hypothesis.strategies import (
 from tests.common.utils import (
     assert_falsifying_output,
     capture_out,
-    checks_deprecated_behaviour,
     fails,
     fails_with,
     no_shrink,
@@ -533,15 +532,3 @@ def test_notes_high_overrun_rates_in_unsatisfiable_error():
         ),
     ):
         f()
-
-
-@checks_deprecated_behaviour
-def test_nested_given_is_deprecated():
-    @given(st.integers())
-    def f(n1):
-
-        @given(st.integers())
-        def nested(n2):
-            pass
-
-    f()

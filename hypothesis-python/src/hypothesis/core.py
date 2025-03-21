@@ -48,7 +48,6 @@ from hypothesis._settings import (
     Verbosity,
     all_settings,
     local_settings,
-    note_deprecation,
     settings as Settings,
 )
 from hypothesis.control import BuildContext, currently_in_test_context
@@ -1578,17 +1577,12 @@ def given(
     """
 
     if currently_in_test_context():
-        note_deprecation(
-            "Nesting @given inside @given is deprecated. Nesting @given causes "
-            "quadratic example generation and shrinking behavior, and is outright "
-            "incompatible with some alternative backends "
-            "(https://hypothesis.readthedocs.io/en/latest/strategies.html#alternative-backends). "
-            "We recommend replacing the inner function with st.data() instead. "
-            "See https://github.com/HypothesisWorks/hypothesis/issues/4167 "
-            "for more details.",
-            since="2025-03-03",
-            has_codemod=False,
-            stacklevel=1,
+        fail_health_check(
+            Settings(),
+            "Nesting @given tests results in quadratic generation and shrinking "
+            "behavior and can usually be more cleanly expressed by replacing the "
+            "inner function with an st.data() parameter on the outer @given.",
+            HealthCheck.nested_given,
         )
 
     def run_test_as_given(test):

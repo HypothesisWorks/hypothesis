@@ -1,3 +1,3 @@
-RELEASE_TYPE: patch
+RELEASE_TYPE: minor
 
-This patch deprecates the nesting of :func:`@given <hypothesis.given>` inside :func:`@given <hypothesis.given>`. We recommend using :func:`~hypothesis.strategies.data` to define the inner function instead. (:issue:`4167`)
+Nesting :func:`@given <hypothesis.given>` inside of :func:`@given <hypothesis.given>` is now a :ref:`health check <healthchecks>` failure. Nesting :func:`@given <hypothesis.given>` results in quadratic generation and shrinking behavior, and can usually be more cleanly expressed by replacing the inner function with a :func:`~hypothesis.strategies.data` parameter on the outer given. For more details, see :obj:`~hypothesis.errors.HealthCheck.nested_given`. (:issue:`4167`)
