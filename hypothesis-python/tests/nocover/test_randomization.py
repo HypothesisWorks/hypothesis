@@ -10,7 +10,15 @@
 
 import pytest
 
-from hypothesis import Verbosity, core, find, given, settings, strategies as st
+from hypothesis import (
+    HealthCheck,
+    Verbosity,
+    core,
+    find,
+    given,
+    settings,
+    strategies as st,
+)
 
 from tests.common.utils import no_shrink
 
@@ -26,7 +34,12 @@ def test_seeds_off_internal_random():
 
 def test_nesting_with_control_passes_health_check():
     @given(st.integers(0, 100), st.random_module())
-    @settings(max_examples=5, database=None, deadline=None)
+    @settings(
+        max_examples=5,
+        database=None,
+        deadline=None,
+        suppress_health_check=[HealthCheck.nested_given],
+    )
     def test_blah(x, rnd):
         @given(st.integers())
         @settings(

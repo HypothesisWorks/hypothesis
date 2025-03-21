@@ -15,7 +15,7 @@ from functools import reduce
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import assume, given, settings
+from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.strategies import (
     booleans,
     builds,
@@ -443,7 +443,7 @@ def test_one_of_slip():
 # this limit is only to avoid Unsatisfiable when searching for an initial
 # counterexample in minimal, as we may generate a very large magnitude n.
 @given(st.integers(-(2**32), 2**32))
-@settings(max_examples=3)
+@settings(max_examples=3, suppress_health_check=[HealthCheck.nested_given])
 def test_perfectly_shrinks_integers(n):
     if n >= 0:
         assert minimal(st.integers(), lambda x: x >= n) == n
@@ -452,24 +452,28 @@ def test_perfectly_shrinks_integers(n):
 
 
 @given(st.integers(0, 20))
+@settings(suppress_health_check=[HealthCheck.nested_given])
 def test_lowering_together_positive(gap):
     s = st.tuples(st.integers(0, 20), st.integers(0, 20))
     assert minimal(s, lambda x: x[0] + gap == x[1]) == (0, gap)
 
 
 @given(st.integers(-20, 0))
+@settings(suppress_health_check=[HealthCheck.nested_given])
 def test_lowering_together_negative(gap):
     s = st.tuples(st.integers(-20, 0), st.integers(-20, 0))
     assert minimal(s, lambda x: x[0] + gap == x[1]) == (0, gap)
 
 
 @given(st.integers(-10, 10))
+@settings(suppress_health_check=[HealthCheck.nested_given])
 def test_lowering_together_mixed(gap):
     s = st.tuples(st.integers(-10, 10), st.integers(-10, 10))
     assert minimal(s, lambda x: x[0] + gap == x[1]) == (0, gap)
 
 
 @given(st.integers(-10, 10))
+@settings(suppress_health_check=[HealthCheck.nested_given])
 def test_lowering_together_with_gap(gap):
     s = st.tuples(st.integers(-10, 10), st.text(), st.floats(), st.integers(-10, 10))
     assert minimal(s, lambda x: x[0] + gap == x[3]) == (0, "", 0.0, gap)
