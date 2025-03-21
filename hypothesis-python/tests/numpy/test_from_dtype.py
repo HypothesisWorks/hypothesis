@@ -42,6 +42,7 @@ STANDARD_TYPES = [
         "complex128",
         "datetime64",
         "timedelta64",
+        "void",
         bool,
         str,
         bytes,
@@ -103,6 +104,14 @@ def test_unicode_string_dtypes_generate_unicode_strings(data):
     assert isinstance(result, str)
 
 
+@given(st.data())
+def test_void_dtype_generates_void(data):
+    dtype = data.draw(nps.void_dtypes())
+    value = data.draw(nps.from_dtype(dtype))
+    assert isinstance(value, np.void)
+    assert isinstance(value.tobytes(), bytes)
+
+
 @given(nps.arrays(dtype="U99", shape=(10,)))
 def test_can_unicode_strings_without_decode_error(arr):
     # See https://github.com/numpy/numpy/issues/15363
@@ -129,6 +138,7 @@ def test_byte_string_dtypes_generate_unicode_strings(data):
 
 
 skipif_np2 = pytest.mark.skipif(np_version >= (2, 0), reason="removed in new version")
+skipif_np1 = pytest.mark.skipif(np_version < (2, 0), reason="added in new version")
 
 
 @pytest.mark.parametrize(
@@ -251,6 +261,16 @@ def test_arrays_gives_useful_error_on_inconsistent_time_unit():
         ("U", {"min_size": 1, "max_size": 2}, lambda x: 1 <= len(x) <= 2),
         ("U4", {"min_size": 1, "max_size": 2}, lambda x: 1 <= len(x) <= 2),
         ("U", {"alphabet": "abc"}, lambda x: set(x).issubset("abc")),
+        pytest.param(
+            "T", {"alphabet": "abc"}, lambda x: set(x).issubset("abc"), marks=skipif_np1
+        ),
+        pytest.param(
+            "T",
+            {"min_size": 1, "max_size": 2},
+            lambda x: 1 <= len(x) <= 2,
+            marks=skipif_np1,
+        ),
+        ("V", {"min_size": 1, "max_size": 2}, lambda x: 1 <= len(x.tobytes()) <= 2),
     ],
 )
 @given(data=st.data())
