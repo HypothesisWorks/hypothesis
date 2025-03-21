@@ -49,8 +49,6 @@ def test_documents_all_exported_strategies():
     hp.build_docs()
     undocumented = get_all_exported_names() - {
         "hypothesis.extra.numpy.BroadcastableShapes",
-        # I have no idea why sphinx isn't documenting this one. It should be.
-        "hypothesis.extra.numpy.boolean_dtypes",
     }
 
     # `inventory` looks like:
