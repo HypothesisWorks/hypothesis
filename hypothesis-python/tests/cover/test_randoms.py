@@ -25,7 +25,7 @@ from hypothesis.strategies._internal.random import (
     normalize_zero,
 )
 
-from tests.common.debug import find_any
+from tests.common.debug import assert_all_examples, find_any
 
 
 def test_implements_all_random_methods():
@@ -311,10 +311,6 @@ def test_samples_have_right_length(rnd, sample):
     assert len(rnd.sample(seq, k)) == k
 
 
-@pytest.mark.skipif(
-    "choices" not in RANDOM_METHODS,
-    reason="choices not supported on this Python version",
-)
 @given(st.randoms(use_true_random=False), any_call_of_method("choices"))
 def test_choices_have_right_length(rnd, choices):
     args, kwargs = choices
@@ -384,3 +380,21 @@ def test_can_sample_from_large_subset(rnd):
 @given(st.randoms(use_true_random=False))
 def test_can_draw_empty_from_empty_sequence(rnd):
     assert rnd.sample([], 0) == []
+
+
+def test_random_includes_zero_excludes_one():
+    strat = st.randoms(use_true_random=False).map(lambda r: r.random())
+    assert_all_examples(strat, lambda x: 0 <= x < 1)
+    find_any(strat, lambda x: x == 0)
+
+
+def test_betavariate_includes_zero_and_one():
+    # https://github.com/HypothesisWorks/hypothesis/issues/4297#issuecomment-2720144709
+    strat = st.randoms(use_true_random=False).flatmap(
+        lambda r: st.builds(
+            r.betavariate, alpha=st.just(1.0) | beta_param, beta=beta_param
+        )
+    )
+    assert_all_examples(strat, lambda x: 0 <= x <= 1)
+    find_any(strat, lambda x: x == 0)
+    find_any(strat, lambda x: x == 1)

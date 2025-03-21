@@ -107,7 +107,7 @@ def precisely_shrink(
 
     runner = ConjectureRunner(test_function, random=random)
     try:
-        buf = runner.cached_test_function_ir(initial_choices)
+        buf = runner.cached_test_function(initial_choices)
         assert buf.status == Status.INTERESTING
         assert buf.choices == initial_choices
         assert runner.interesting_examples
@@ -238,7 +238,7 @@ def shrinks(strategy, nodes, *, allow_sloppy=True, seed=0):
             results[data.nodes] = value
 
         runner = ConjectureRunner(test_function, settings=settings(max_examples=10**9))
-        initial = runner.cached_test_function_ir(choices)
+        initial = runner.cached_test_function(choices)
         assert isinstance(initial, ConjectureResult)
         try:
             runner.shrink(initial, lambda x: x.choices == initial.choices)
@@ -260,7 +260,7 @@ def shrinks(strategy, nodes, *, allow_sloppy=True, seed=0):
                 results[key] = value
 
         runner = ConjectureRunner(test_function, settings=settings(max_examples=10**9))
-        initial = runner.cached_test_function_ir(initial_choices)
+        initial = runner.cached_test_function(initial_choices)
         assert len(results) == 1
         try:
             runner.shrink(initial, lambda x: x.choices == initial_choices)

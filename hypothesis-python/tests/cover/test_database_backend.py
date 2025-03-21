@@ -13,6 +13,7 @@ import re
 import shutil
 import tempfile
 import zipfile
+from collections import Counter
 from collections.abc import Iterable, Iterator
 from contextlib import contextmanager, nullcontext
 from datetime import datetime, timedelta, timezone
@@ -22,7 +23,14 @@ from typing import Optional
 
 import pytest
 
-from hypothesis import configuration, example, given, settings, strategies as st
+from hypothesis import (
+    HealthCheck,
+    configuration,
+    example,
+    given,
+    settings,
+    strategies as st,
+)
 from hypothesis.database import (
     BackgroundWriteDatabase,
     DirectoryBasedExampleDatabase,
@@ -635,7 +643,10 @@ def _database_conforms_to_listener_api(
         def events_agree(self):
             if flush is not None:
                 flush(self.db)
-            assert self.expected_events == self.actual_events
+            # events *generally* don't arrive out of order, but we've had
+            # flakes reported here, especially on weirder / older machines.
+            # see https://github.com/HypothesisWorks/hypothesis/issues/4274
+            assert Counter(self.expected_events) == Counter(self.actual_events)
 
         def teardown(self):
             shutil.rmtree(self.temp_dir)
@@ -652,6 +663,7 @@ def test_database_listener_background_write():
     _database_conforms_to_listener_api(
         lambda path: BackgroundWriteDatabase(InMemoryExampleDatabase()),
         flush=lambda db: db._join(),
+        parent_settings=settings(suppress_health_check=[HealthCheck.too_slow]),
     )
 
 

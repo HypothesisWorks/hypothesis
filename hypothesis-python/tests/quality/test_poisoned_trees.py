@@ -36,8 +36,8 @@ class PoisonedTree(SearchStrategy):
             return data.draw(self) + data.draw(self)
         else:
             # We draw n as two separate calls so that it doesn't show up as a
-            # single block. If it did, the heuristics that allow us to move
-            # blocks around would fire and it would move right, which would
+            # single choice. If it did, the heuristics that allow us to move
+            # choices around would fire and it would move right, which would
             # then allow us to shrink it more easily.
             n1 = data.draw_integer(0, 2**16 - 1) << 16
             n2 = data.draw_integer(0, 2**16 - 1)
@@ -109,7 +109,7 @@ def test_can_reduce_poison_from_any_subtree(size, seed):
             test_function_with_poison, random=random, settings=TEST_SETTINGS
         )
         # replace n1 and n2 with 2**16 - 1 to insert a poison value here
-        runner.cached_test_function_ir(
+        runner.cached_test_function(
             data.choices[: node.index]
             + (2**16 - 1, 2**16 - 1)
             + (data.choices[node.index + 2 :])

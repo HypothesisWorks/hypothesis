@@ -35,7 +35,8 @@ def test_sampler_matches_distribution(weights, random):
     # if we ever pull in scipy to our test suite, we should do a chi squared
     # test here instead.
     expected = [w / sum(weights) for w in weights]
-    actual = [counter[i] / counter.total() for i in range(len(weights))]
+    counter_total = sum(counter.values())  # Counter.total() new in py3.10
+    actual = [counter[i] / counter_total for i in range(len(weights))]
     for p1, p2 in zip(expected, actual):
         assert abs(p1 - p2) < 0.05, (expected, actual)
 

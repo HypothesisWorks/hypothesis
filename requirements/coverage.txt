@@ -18,7 +18,7 @@ click==8.1.8
     # via
     #   -r requirements/coverage.in
     #   black
-coverage[toml]==7.6.12
+coverage[toml]==7.7.0
     # via pytest-cov
 dpcontracts==0.6.0
     # via -r requirements/coverage.in
@@ -34,11 +34,11 @@ iniconfig==2.0.0
     # via pytest
 lark==1.2.2
     # via -r requirements/coverage.in
-libcst==1.6.0
+libcst==1.7.0
     # via -r requirements/coverage.in
 mypy-extensions==1.0.0
     # via black
-numpy==2.2.3
+numpy==2.2.4
     # via
     #   -r requirements/coverage.in
     #   pandas
@@ -60,7 +60,7 @@ ptyprocess==0.7.0
     # via pexpect
 pyarrow==19.0.1
     # via -r requirements/coverage.in
-pytest==8.3.4
+pytest==8.3.5
     # via
     #   -r requirements/test.in
     #   pytest-cov

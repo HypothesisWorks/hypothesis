@@ -48,7 +48,7 @@ def runner_for(*examples):
         runner.exit_with = lambda reason: None
         ran_examples = []
         for choices in examples:
-            data = runner.cached_test_function_ir(choices)
+            data = runner.cached_test_function(choices)
             ran_examples.append((choices, data))
         for choices, d in ran_examples:
             rewritten, status = runner.tree.rewrite(choices)
@@ -126,7 +126,7 @@ def test_novel_prefixes_are_novel():
         prefix = runner.tree.generate_novel_prefix(runner.random)
         extension = prefix + (ChoiceTemplate("simplest", count=100),)
         assert runner.tree.rewrite(extension)[1] is None
-        result = runner.cached_test_function_ir(extension)
+        result = runner.cached_test_function(extension)
         assert runner.tree.rewrite(extension)[0] == result.choices
 
 
@@ -136,7 +136,7 @@ def test_overruns_if_prefix():
         settings=TEST_SETTINGS,
         random=Random(0),
     )
-    runner.cached_test_function_ir([False, False])
+    runner.cached_test_function([False, False])
     assert runner.tree.rewrite([False])[1] is Status.OVERRUN
 
 
@@ -358,18 +358,18 @@ def test_will_generate_novel_prefix_to_avoid_exhausted_branches():
 def test_will_mark_changes_in_discard_as_flaky():
     tree = DataTree()
     data = ConjectureData.for_choices((1, 1), observer=tree.new_observer())
-    data.start_example(10)
+    data.start_span(10)
     data.draw_integer(0, 1)
-    data.stop_example()
+    data.stop_span()
     data.draw_integer(0, 1)
     data.freeze()
 
     data = ConjectureData.for_choices((1, 1), observer=tree.new_observer())
-    data.start_example(10)
+    data.start_span(10)
     data.draw_integer(0, 1)
 
     with pytest.raises(Flaky):
-        data.stop_example(discard=True)
+        data.stop_span(discard=True)
 
 
 def test_is_not_flaky_on_positive_zero_and_negative_zero():

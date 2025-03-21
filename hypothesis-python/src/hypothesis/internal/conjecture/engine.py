@@ -361,7 +361,7 @@ class ConjectureRunner:
         key = self._cache_key(data.choices)
         self.__data_cache[key] = result
 
-    def cached_test_function_ir(
+    def cached_test_function(
         self,
         choices: Sequence[Union[ChoiceT, ChoiceTemplate]],
         *,
@@ -408,7 +408,7 @@ class ConjectureRunner:
             trial_observer = DiscardObserver()
 
         try:
-            trial_data = self.new_conjecture_data_ir(
+            trial_data = self.new_conjecture_data(
                 choices, observer=trial_observer, max_choices=max_length
             )
             self.tree.simulate_test_function(trial_data)
@@ -433,7 +433,7 @@ class ConjectureRunner:
             except KeyError:
                 pass
 
-        data = self.new_conjecture_data_ir(choices, max_choices=max_length)
+        data = self.new_conjecture_data(choices, max_choices=max_length)
         # note that calling test_function caches `data` for us, for both an ir
         # tree key and a buffer key.
         self.test_function(data)
@@ -466,6 +466,7 @@ class ConjectureRunner:
                     self._switch_to_hypothesis_provider = True
             # skip the post-test-case tracking; we're pretending this never happened
             interrupted = True
+            data.cannot_proceed_scope = exc.scope
             data.freeze()
             return
         except BaseException:
@@ -475,6 +476,7 @@ class ConjectureRunner:
             # No branch, because if we're interrupted we always raise
             # the KeyboardInterrupt, never continue to the code below.
             if not interrupted:  # pragma: no branch
+                assert data.cannot_proceed_scope is None
                 data.freeze()
                 call_stats: CallStats = {
                     "status": data.status.name.lower(),
@@ -862,7 +864,7 @@ class ConjectureRunner:
                     # clear out any keys which fail deserialization
                     self.settings.database.delete(self.database_key, existing)
                     continue
-                data = self.cached_test_function_ir(choices, extend="full")
+                data = self.cached_test_function(choices, extend="full")
                 if data.status != Status.INTERESTING:
                     self.settings.database.delete(self.database_key, existing)
                     self.settings.database.delete(self.secondary_key, existing)
@@ -897,7 +899,7 @@ class ConjectureRunner:
                     if choices is None:
                         self.settings.database.delete(self.pareto_key, existing)
                         continue
-                    data = self.cached_test_function_ir(choices, extend="full")
+                    data = self.cached_test_function(choices, extend="full")
                     if data not in self.pareto_front:
                         self.settings.database.delete(self.pareto_key, existing)
                     if data.status == Status.INTERESTING:
@@ -959,14 +961,21 @@ class ConjectureRunner:
         self.debug("Generating new examples")
 
         assert self.should_generate_more()
-        zero_data = self.cached_test_function_ir(
-            (ChoiceTemplate("simplest", count=None),)
-        )
+        zero_data = self.cached_test_function((ChoiceTemplate("simplest", count=None),))
         if zero_data.status > Status.OVERRUN:
             assert isinstance(zero_data, ConjectureResult)
-            self.__data_cache.pin(
-                self._cache_key(zero_data.choices), zero_data.as_result()
-            )  # Pin forever
+            # if the crosshair backend cannot proceed, it does not (and cannot)
+            # realize the symbolic values, with the intent that Hypothesis will
+            # throw away this test case. We usually do, but if it's the zero data
+            # then we try to pin it here, which requires realizing the symbolics.
+            #
+            # We don't (yet) rely on the zero data being pinned, and so
+            # it's simply a very slight performance loss to simply not pin it
+            # if doing so would error.
+            if zero_data.cannot_proceed_scope is None:  # pragma: no branch
+                self.__data_cache.pin(
+                    self._cache_key(zero_data.choices), zero_data.as_result()
+                )  # Pin forever
 
         if zero_data.status == Status.OVERRUN or (
             zero_data.status == Status.VALID
@@ -1040,7 +1049,7 @@ class ConjectureRunner:
             # not whatever is specified by the backend. We can improve this
             # once more things are on the ir.
             if not self.using_hypothesis_backend:
-                data = self.new_conjecture_data_ir([])
+                data = self.new_conjecture_data([])
                 with suppress(BackendCannotProceed):
                     self.test_function(data)
                 continue
@@ -1053,7 +1062,7 @@ class ConjectureRunner:
                 and not self.interesting_examples
                 and consecutive_zero_extend_is_invalid < 5
             ):
-                minimal_example = self.cached_test_function_ir(
+                minimal_example = self.cached_test_function(
                     prefix + (ChoiceTemplate("simplest", count=None),)
                 )
 
@@ -1076,7 +1085,7 @@ class ConjectureRunner:
                 # running the test function for real here. If however we encounter
                 # some novel behaviour, we try again with the real test function,
                 # starting from the new novel prefix that has discovered.
-                trial_data = self.new_conjecture_data_ir(prefix, max_choices=max_length)
+                trial_data = self.new_conjecture_data(prefix, max_choices=max_length)
                 try:
                     self.tree.simulate_test_function(trial_data)
                     continue
@@ -1098,7 +1107,7 @@ class ConjectureRunner:
             else:
                 max_length = None
 
-            data = self.new_conjecture_data_ir(prefix, max_choices=max_length)
+            data = self.new_conjecture_data(prefix, max_choices=max_length)
             self.test_function(data)
 
             if (
@@ -1159,32 +1168,87 @@ class ConjectureRunner:
                 and self.call_count <= initial_calls + 5
                 and failed_mutations <= 5
             ):
-                groups = data.examples.mutator_groups
+                groups = data.spans.mutator_groups
                 if not groups:
                     break
 
                 group = self.random.choice(groups)
-
                 (start1, end1), (start2, end2) = self.random.sample(sorted(group), 2)
-                if (start1 <= start2 <= end2 <= end1) or (
-                    start2 <= start1 <= end1 <= end2
-                ):  # pragma: no cover  # flaky on conjecture-cover tests
-                    # one example entirely contains the other. give up.
-                    # TODO use more intelligent mutation for containment, like
-                    # replacing child with parent or vice versa. Would allow for
-                    # recursive / subtree mutation
-                    failed_mutations += 1
-                    continue
-
                 if start1 > start2:
                     (start1, end1), (start2, end2) = (start2, end2), (start1, end1)
-                assert end1 <= start2
 
-                choices = data.choices
-                (start, end) = self.random.choice([(start1, end1), (start2, end2)])
-                replacement = choices[start:end]
+                if (
+                    start1 <= start2 <= end2 <= end1
+                ):  # pragma: no cover  # flaky on conjecture-cover tests
+                    # One span entirely contains the other. The strategy is very
+                    # likely some kind of tree. e.g. we might have
+                    #
+                    #                   ┌─────┐
+                    #             ┌─────┤  a  ├──────┐
+                    #             │     └─────┘      │
+                    #          ┌──┴──┐            ┌──┴──┐
+                    #       ┌──┤  b  ├──┐      ┌──┤  c  ├──┐
+                    #       │  └──┬──┘  │      │  └──┬──┘  │
+                    #     ┌─┴─┐ ┌─┴─┐ ┌─┴─┐  ┌─┴─┐ ┌─┴─┐ ┌─┴─┐
+                    #     │ d │ │ e │ │ f │  │ g │ │ h │ │ i │
+                    #     └───┘ └───┘ └───┘  └───┘ └───┘ └───┘
+                    #
+                    # where each node is drawn from the same strategy and so
+                    # has the same span label. We might have selected the spans
+                    # corresponding to the a and c nodes, which is the entire
+                    # tree and the subtree of (and including) c respectively.
+                    #
+                    # There are two possible mutations we could apply in this case:
+                    # 1. replace a with c (replace child with parent)
+                    # 2. replace c with a (replace parent with child)
+                    #
+                    # (1) results in multiple partial copies of the
+                    # parent:
+                    #                 ┌─────┐
+                    #           ┌─────┤  a  ├────────────┐
+                    #           │     └─────┘            │
+                    #        ┌──┴──┐                   ┌─┴───┐
+                    #     ┌──┤  b  ├──┐          ┌─────┤  a  ├──────┐
+                    #     │  └──┬──┘  │          │     └─────┘      │
+                    #   ┌─┴─┐ ┌─┴─┐ ┌─┴─┐     ┌──┴──┐            ┌──┴──┐
+                    #   │ d │ │ e │ │ f │  ┌──┤  b  ├──┐      ┌──┤  c  ├──┐
+                    #   └───┘ └───┘ └───┘  │  └──┬──┘  │      │  └──┬──┘  │
+                    #                    ┌─┴─┐ ┌─┴─┐ ┌─┴─┐  ┌─┴─┐ ┌─┴─┐ ┌─┴─┐
+                    #                    │ d │ │ e │ │ f │  │ g │ │ h │ │ i │
+                    #                    └───┘ └───┘ └───┘  └───┘ └───┘ └───┘
+                    #
+                    # While (2) results in truncating part of the parent:
+                    #
+                    #                    ┌─────┐
+                    #                 ┌──┤  c  ├──┐
+                    #                 │  └──┬──┘  │
+                    #               ┌─┴─┐ ┌─┴─┐ ┌─┴─┐
+                    #               │ g │ │ h │ │ i │
+                    #               └───┘ └───┘ └───┘
+                    #
+                    # (1) is the same as Example IV.4. in Nautilus (NDSS '19)
+                    # (https://wcventure.github.io/FuzzingPaper/Paper/NDSS19_Nautilus.pdf),
+                    # except we do not repeat the replacement additional times
+                    # (the paper repeats it once for a total of two copies).
+                    #
+                    # We currently only apply mutation (1), and ignore mutation
+                    # (2). The reason is that the attempt generated from (2) is
+                    # always something that Hypothesis could easily have generated
+                    # itself, by simply not making various choices. Whereas
+                    # duplicating the exact value + structure of particular choices
+                    # in (1) would have been hard for Hypothesis to generate by
+                    # chance.
+                    #
+                    # TODO: an extension of this mutation might repeat (1) on
+                    # a geometric distribution between 0 and ~10 times. We would
+                    # need to find the corresponding span to recurse on in the new
+                    # choices, probably just by using the choices index.
 
-                try:
+                    # case (1): duplicate the choices in start1:start2.
+                    attempt = data.choices[:start2] + data.choices[start1:]
+                else:
+                    (start, end) = self.random.choice([(start1, end1), (start2, end2)])
+                    replacement = data.choices[start:end]
                     # We attempt to replace both the examples with
                     # whichever choice we made. Note that this might end
                     # up messing up and getting the example boundaries
@@ -1193,12 +1257,17 @@ class ConjectureRunner:
                     # really matter. It may not achieve the desired result,
                     # but it's still a perfectly acceptable choice sequence
                     # to try.
-                    new_data = self.cached_test_function_ir(
-                        choices[:start1]
+                    attempt = (
+                        data.choices[:start1]
                         + replacement
-                        + choices[end1:start2]
+                        + data.choices[end1:start2]
                         + replacement
-                        + choices[end2:],
+                        + data.choices[end2:]
+                    )
+
+                try:
+                    new_data = self.cached_test_function(
+                        attempt,
                         # We set error_on_discard so that we don't end up
                         # entering parts of the tree we consider redundant
                         # and not worth exploring.
@@ -1296,7 +1365,7 @@ class ConjectureRunner:
             self.shrink_interesting_examples()
         self.exit_with(ExitReason.finished)
 
-    def new_conjecture_data_ir(
+    def new_conjecture_data(
         self,
         prefix: Sequence[Union[ChoiceT, ChoiceTemplate]],
         *,
@@ -1335,7 +1404,7 @@ class ConjectureRunner:
             self.interesting_examples.values(), key=lambda d: sort_key(d.nodes)
         ):
             assert prev_data.status == Status.INTERESTING
-            data = self.new_conjecture_data_ir(prev_data.choices)
+            data = self.new_conjecture_data(prev_data.choices)
             self.test_function(data)
             if data.status != Status.INTERESTING:
                 self.exit_with(ExitReason.flaky)
@@ -1395,7 +1464,7 @@ class ConjectureRunner:
                 if shortlex(c) > cap:
                     break
                 else:
-                    self.cached_test_function_ir(choices)
+                    self.cached_test_function(choices)
                     # We unconditionally remove c from the secondary key as it
                     # is either now primary or worse than our primary example
                     # of this reason for interestingness.

@@ -130,7 +130,7 @@ def float_runner(start, condition, *, kwargs=None):
             data.mark_interesting()
 
     runner = ConjectureRunner(test_function)
-    runner.cached_test_function_ir((float(start),))
+    runner.cached_test_function((float(start),))
     assert runner.interesting_examples
     return runner
 

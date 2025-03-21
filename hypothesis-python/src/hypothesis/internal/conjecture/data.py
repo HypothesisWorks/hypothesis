@@ -19,7 +19,13 @@ from typing import TYPE_CHECKING, Any, NoReturn, Optional, TypeVar, Union
 
 import attr
 
-from hypothesis.errors import ChoiceTooLarge, Frozen, InvalidArgument, StopTest
+from hypothesis.errors import (
+    CannotProceedScopeT,
+    ChoiceTooLarge,
+    Frozen,
+    InvalidArgument,
+    StopTest,
+)
 from hypothesis.internal.cache import LRUCache
 from hypothesis.internal.compat import add_note
 from hypothesis.internal.conjecture.choice import (
@@ -132,69 +138,67 @@ def structural_coverage(label: int) -> StructuralCoverageTag:
 POOLED_KWARGS_CACHE = LRUCache(4096)
 
 
-class Example:
-    """Examples track the hierarchical structure of draws from the byte stream,
-    within a single test run.
+class Span:
+    """A span tracks the hierarchical structure of choices within a single test run.
 
-    Examples are created to mark regions of the byte stream that might be
-    useful to the shrinker, such as:
-    - The bytes used by a single draw from a strategy.
-    - Useful groupings within a strategy, such as individual list elements.
-    - Strategy-like helper functions that aren't first-class strategies.
-    - Each lowest-level draw of bits or bytes from the byte stream.
-    - A single top-level example that spans the entire input.
+    Spans are created to mark regions of the choice sequence that that are
+    logically related to each other. For instance, Hypothesis tracks:
+    - A single top-level span for the entire choice sequence
+    - A span for the choices made by each strategy
+    - Some strategies define additional spans within their choices. For instance,
+      st.lists() tracks the "should add another element" choice and the "add
+      another element" choices as separate spans.
 
-    Example-tracking allows the shrinker to try "high-level" transformations,
-    such as rearranging or deleting the elements of a list, without having
-    to understand their exact representation in the byte stream.
+    Spans provide useful information to the shrinker, mutator, targeted PBT,
+    and other subsystems of Hypothesis.
 
-    Rather than store each ``Example`` as a rich object, it is actually
-    just an index into the ``Examples`` class defined below. This has two
-    purposes: Firstly, for most properties of examples we will never need
+    Rather than store each ``Span`` as a rich object, it is actually
+    just an index into the ``Spans`` class defined below. This has two
+    purposes: Firstly, for most properties of spans we will never need
     to allocate storage at all, because most properties are not used on
-    most examples. Secondly, by storing the properties as compact lists
+    most spans. Secondly, by storing the spans as compact lists
     of integers, we save a considerable amount of space compared to
     Python's normal object size.
 
     This does have the downside that it increases the amount of allocation
     we do, and slows things down as a result, in some usage patterns because
-    we repeatedly allocate the same Example or int objects, but it will
+    we repeatedly allocate the same Span or int objects, but it will
     often dramatically reduce our memory usage, so is worth it.
     """
 
     __slots__ = ("index", "owner")
 
-    def __init__(self, owner: "Examples", index: int) -> None:
+    def __init__(self, owner: "Spans", index: int) -> None:
         self.owner = owner
         self.index = index
 
     def __eq__(self, other: object) -> bool:
         if self is other:
             return True
-        if not isinstance(other, Example):
+        if not isinstance(other, Span):
             return NotImplemented
         return (self.owner is other.owner) and (self.index == other.index)
 
     def __ne__(self, other: object) -> bool:
         if self is other:
             return False
-        if not isinstance(other, Example):
+        if not isinstance(other, Span):
             return NotImplemented
         return (self.owner is not other.owner) or (self.index != other.index)
 
     def __repr__(self) -> str:
-        return f"examples[{self.index}]"
+        return f"spans[{self.index}]"
 
     @property
     def label(self) -> int:
-        """A label is an opaque value that associates each example with its
+        """A label is an opaque value that associates each span with its
         approximate origin, such as a particular strategy class or a particular
         kind of draw."""
         return self.owner.labels[self.owner.label_indices[self.index]]
 
     @property
     def parent(self) -> Optional[int]:
-        """The index of the example that this one is nested directly within."""
+        """The index of the span that this one is nested directly within."""
         if self.index == 0:
             return None
         return self.owner.parentage[self.index]
@@ -209,99 +213,100 @@ class Example:
 
     @property
     def depth(self) -> int:
-        """Depth of this example in the example tree. The top-level example has a
-        depth of 0."""
+        """
+        Depth of this span in the span tree. The top-level span has a depth of 0.
+        """
         return self.owner.depths[self.index]
 
     @property
     def discarded(self) -> bool:
-        """True if this is example's ``stop_example`` call had ``discard`` set to
+        """True if this is span's ``stop_span`` call had ``discard`` set to
         ``True``. This means we believe that the shrinker should be able to delete
-        this example completely, without affecting the value produced by its enclosing
+        this span completely, without affecting the value produced by its enclosing
         strategy. Typically set when a rejection sampler decides to reject a
         generated value and try again."""
         return self.index in self.owner.discarded
 
     @property
     def choice_count(self) -> int:
-        """The number of choices in this example."""
+        """The number of choices in this span."""
         return self.end - self.start
 
     @property
-    def children(self) -> "list[Example]":
-        """The list of all examples with this as a parent, in increasing index
+    def children(self) -> "list[Span]":
+        """The list of all spans with this as a parent, in increasing index
         order."""
         return [self.owner[i] for i in self.owner.children[self.index]]
 
 
-class ExampleProperty:
-    """There are many properties of examples that we calculate by
+class SpanProperty:
+    """There are many properties of spans that we calculate by
     essentially rerunning the test case multiple times based on the
-    calls which we record in ExampleRecord.
+    calls which we record in SpanProperty.
 
     This class defines a visitor, subclasses of which can be used
     to calculate these properties.
     """
 
-    def __init__(self, examples: "Examples"):
-        self.example_stack: list[int] = []
-        self.examples = examples
-        self.example_count = 0
+    def __init__(self, spans: "Spans"):
+        self.span_stack: list[int] = []
+        self.spans = spans
+        self.span_count = 0
         self.choice_count = 0
 
     def run(self) -> Any:
         """Rerun the test case with this visitor and return the
         results of ``self.finish()``."""
-        for record in self.examples.trail:
-            if record == CHOICE_RECORD:
+        for record in self.spans.trail:
+            if record == TrailType.CHOICE:
                 self.choice_count += 1
-            elif record >= START_EXAMPLE_RECORD:
-                self.__push(record - START_EXAMPLE_RECORD)
+            elif record >= TrailType.START_SPAN:
+                self.__push(record - TrailType.START_SPAN)
             else:
                 assert record in (
-                    STOP_EXAMPLE_DISCARD_RECORD,
-                    STOP_EXAMPLE_NO_DISCARD_RECORD,
+                    TrailType.STOP_SPAN_DISCARD,
+                    TrailType.STOP_SPAN_NO_DISCARD,
                 )
-                self.__pop(discarded=record == STOP_EXAMPLE_DISCARD_RECORD)
+                self.__pop(discarded=record == TrailType.STOP_SPAN_DISCARD)
         return self.finish()
 
     def __push(self, label_index: int) -> None:
-        i = self.example_count
-        assert i < len(self.examples)
-        self.start_example(i, label_index=label_index)
-        self.example_count += 1
-        self.example_stack.append(i)
+        i = self.span_count
+        assert i < len(self.spans)
+        self.start_span(i, label_index=label_index)
+        self.span_count += 1
+        self.span_stack.append(i)
 
     def __pop(self, *, discarded: bool) -> None:
-        i = self.example_stack.pop()
-        self.stop_example(i, discarded=discarded)
+        i = self.span_stack.pop()
+        self.stop_span(i, discarded=discarded)
 
-    def start_example(self, i: int, label_index: int) -> None:
-        """Called at the start of each example, with ``i`` the
-        index of the example and ``label_index`` the index of
-        its label in ``self.examples.labels``."""
+    def start_span(self, i: int, label_index: int) -> None:
+        """Called at the start of each span, with ``i`` the
+        index of the span and ``label_index`` the index of
+        its label in ``self.spans.labels``."""
 
-    def stop_example(self, i: int, *, discarded: bool) -> None:
-        """Called at the end of each example, with ``i`` the
-        index of the example and ``discarded`` being ``True`` if ``stop_example``
+    def stop_span(self, i: int, *, discarded: bool) -> None:
+        """Called at the end of each span, with ``i`` the
+        index of the span and ``discarded`` being ``True`` if ``stop_span``
         was called with ``discard=True``."""
 
     def finish(self) -> Any:
         raise NotImplementedError
 
 
-STOP_EXAMPLE_DISCARD_RECORD = 1
-STOP_EXAMPLE_NO_DISCARD_RECORD = 2
-START_EXAMPLE_RECORD = 3
+class TrailType(IntEnum):
+    STOP_SPAN_DISCARD = 1
+    STOP_SPAN_NO_DISCARD = 2
+    START_SPAN = 3
+    CHOICE = calc_label_from_name("ir draw record")
 
-CHOICE_RECORD = calc_label_from_name("ir draw record")
 
-
-class ExampleRecord:
-    """Records the series of ``start_example``, ``stop_example``, and
-    ``draw_bits`` calls so that these may be stored in ``Examples`` and
+class SpanRecord:
+    """Records the series of ``start_span``, ``stop_span``, and
+    ``draw_bits`` calls so that these may be stored in ``Spans`` and
     replayed when we need to know about the structure of individual
-    ``Example`` objects.
+    ``Span`` objects.
 
     Note that there is significant similarity between this class and
     ``DataObserver``, and the plan is to eventually unify them, but
@@ -318,125 +323,125 @@ class ExampleRecord:
         self.__index_of_labels = None
 
     def record_choice(self) -> None:
-        self.trail.append(CHOICE_RECORD)
+        self.trail.append(TrailType.CHOICE)
 
-    def start_example(self, label: int) -> None:
+    def start_span(self, label: int) -> None:
         assert self.__index_of_labels is not None
         try:
             i = self.__index_of_labels[label]
         except KeyError:
             i = self.__index_of_labels.setdefault(label, len(self.labels))
             self.labels.append(label)
-        self.trail.append(START_EXAMPLE_RECORD + i)
+        self.trail.append(TrailType.START_SPAN + i)
 
-    def stop_example(self, *, discard: bool) -> None:
+    def stop_span(self, *, discard: bool) -> None:
         if discard:
-            self.trail.append(STOP_EXAMPLE_DISCARD_RECORD)
+            self.trail.append(TrailType.STOP_SPAN_DISCARD)
         else:
-            self.trail.append(STOP_EXAMPLE_NO_DISCARD_RECORD)
+            self.trail.append(TrailType.STOP_SPAN_NO_DISCARD)
 
 
-class _starts_and_ends(ExampleProperty):
-    def __init__(self, examples: "Examples") -> None:
-        super().__init__(examples)
-        self.starts = IntList.of_length(len(self.examples))
-        self.ends = IntList.of_length(len(self.examples))
+class _starts_and_ends(SpanProperty):
+    def __init__(self, spans: "Spans") -> None:
+        super().__init__(spans)
+        self.starts = IntList.of_length(len(self.spans))
+        self.ends = IntList.of_length(len(self.spans))
 
-    def start_example(self, i: int, label_index: int) -> None:
+    def start_span(self, i: int, label_index: int) -> None:
         self.starts[i] = self.choice_count
 
-    def stop_example(self, i: int, *, discarded: bool) -> None:
+    def stop_span(self, i: int, *, discarded: bool) -> None:
         self.ends[i] = self.choice_count
 
     def finish(self) -> tuple[IntList, IntList]:
         return (self.starts, self.ends)
 
 
-class _discarded(ExampleProperty):
-    def __init__(self, examples: "Examples") -> None:
-        super().__init__(examples)
+class _discarded(SpanProperty):
+    def __init__(self, spans: "Spans") -> None:
+        super().__init__(spans)
         self.result: set[int] = set()
 
     def finish(self) -> frozenset[int]:
         return frozenset(self.result)
 
-    def stop_example(self, i: int, *, discarded: bool) -> None:
+    def stop_span(self, i: int, *, discarded: bool) -> None:
         if discarded:
             self.result.add(i)
 
 
-class _parentage(ExampleProperty):
-    def __init__(self, examples: "Examples") -> None:
-        super().__init__(examples)
-        self.result = IntList.of_length(len(self.examples))
+class _parentage(SpanProperty):
+    def __init__(self, spans: "Spans") -> None:
+        super().__init__(spans)
+        self.result = IntList.of_length(len(self.spans))
 
-    def stop_example(self, i: int, *, discarded: bool) -> None:
+    def stop_span(self, i: int, *, discarded: bool) -> None:
         if i > 0:
-            self.result[i] = self.example_stack[-1]
+            self.result[i] = self.span_stack[-1]
 
     def finish(self) -> IntList:
         return self.result
 
 
-class _depths(ExampleProperty):
-    def __init__(self, examples: "Examples") -> None:
-        super().__init__(examples)
-        self.result = IntList.of_length(len(self.examples))
+class _depths(SpanProperty):
+    def __init__(self, spans: "Spans") -> None:
+        super().__init__(spans)
+        self.result = IntList.of_length(len(self.spans))
 
-    def start_example(self, i: int, label_index: int) -> None:
-        self.result[i] = len(self.example_stack)
+    def start_span(self, i: int, label_index: int) -> None:
+        self.result[i] = len(self.span_stack)
 
     def finish(self) -> IntList:
         return self.result
 
 
-class _label_indices(ExampleProperty):
-    def __init__(self, examples: "Examples") -> None:
-        super().__init__(examples)
-        self.result = IntList.of_length(len(self.examples))
+class _label_indices(SpanProperty):
+    def __init__(self, spans: "Spans") -> None:
+        super().__init__(spans)
+        self.result = IntList.of_length(len(self.spans))
 
-    def start_example(self, i: int, label_index: int) -> None:
+    def start_span(self, i: int, label_index: int) -> None:
         self.result[i] = label_index
 
     def finish(self) -> IntList:
         return self.result
 
 
-class _mutator_groups(ExampleProperty):
-    def __init__(self, examples: "Examples") -> None:
-        super().__init__(examples)
+class _mutator_groups(SpanProperty):
+    def __init__(self, spans: "Spans") -> None:
+        super().__init__(spans)
         self.groups: dict[int, set[tuple[int, int]]] = defaultdict(set)
 
-    def start_example(self, i: int, label_index: int) -> None:
+    def start_span(self, i: int, label_index: int) -> None:
         # TODO should we discard start == end cases? occurs for eg st.data()
         # which is conditionally or never drawn from. arguably swapping
         # nodes with the empty list is a useful mutation enabled by start == end?
-        key = (self.examples[i].start, self.examples[i].end)
+        key = (self.spans[i].start, self.spans[i].end)
         self.groups[label_index].add(key)
 
     def finish(self) -> Iterable[set[tuple[int, int]]]:
-        # Discard groups with only one example, since the mutator can't
+        # Discard groups with only one span, since the mutator can't
         # do anything useful with them.
         return [g for g in self.groups.values() if len(g) >= 2]
 
 
-class Examples:
-    """A lazy collection of ``Example`` objects, derived from
-    the record of recorded behaviour in ``ExampleRecord``.
+class Spans:
+    """A lazy collection of ``Span`` objects, derived from
+    the record of recorded behaviour in ``SpanRecord``.
 
-    Behaves logically as if it were a list of ``Example`` objects,
+    Behaves logically as if it were a list of ``Span`` objects,
     but actually mostly exists as a compact store of information
     for them to reference into. All properties on here are best
-    understood as the backing storage for ``Example`` and are
+    understood as the backing storage for ``Span`` and are
     described there.
     """
 
-    def __init__(self, record: ExampleRecord) -> None:
+    def __init__(self, record: SpanRecord) -> None:
         self.trail = record.trail
         self.labels = record.labels
         self.__length = self.trail.count(
-            STOP_EXAMPLE_DISCARD_RECORD
-        ) + record.trail.count(STOP_EXAMPLE_NO_DISCARD_RECORD)
+            TrailType.STOP_SPAN_DISCARD
+        ) + record.trail.count(TrailType.STOP_SPAN_NO_DISCARD)
         self.__children: Optional[list[Sequence[int]]] = None
 
     @cached_property
@@ -489,17 +494,17 @@ class Examples:
     def __len__(self) -> int:
         return self.__length
 
-    def __getitem__(self, i: int) -> Example:
+    def __getitem__(self, i: int) -> Span:
         n = self.__length
         if i < -n or i >= n:
             raise IndexError(f"Index {i} out of range [-{n}, {n})")
         if i < 0:
             i += n
-        return Example(self, i)
+        return Span(self, i)
 
     # not strictly necessary as we have len/getitem, but required for mypy.
     # https://github.com/python/mypy/issues/9737
-    def __iter__(self) -> Iterator[Example]:
+    def __iter__(self) -> Iterator[Span]:
         for i in range(len(self)):
             yield self[i]
 
@@ -581,10 +586,11 @@ class ConjectureResult:
     has_discards: bool = attr.ib()
     target_observations: TargetObservations = attr.ib()
     tags: frozenset[StructuralCoverageTag] = attr.ib()
-    examples: Examples = attr.ib(repr=False, eq=False)
+    spans: Spans = attr.ib(repr=False, eq=False)
     arg_slices: set[tuple[int, int]] = attr.ib(repr=False)
     slice_comments: dict[tuple[int, int], str] = attr.ib(repr=False)
     misaligned_at: Optional[MisalignedAt] = attr.ib(repr=False)
+    cannot_proceed_scope: Optional[CannotProceedScopeT] = attr.ib(repr=False)
 
     def as_result(self) -> "ConjectureResult":
         return self
@@ -680,12 +686,12 @@ class ConjectureData:
         # Normally unpopulated but we need this in the niche case
         # that self.as_result() is Overrun but we still want the
         # examples for reporting purposes.
-        self.__examples: Optional[Examples] = None
+        self.__spans: Optional[Spans] = None
 
-        # We want the top level example to have depth 0, so we start
+        # We want the top level span to have depth 0, so we start
         # at -1.
         self.depth = -1
-        self.__example_record = ExampleRecord()
+        self.__span_record = SpanRecord()
 
         # Slice indices for discrete reportable parts that which-parts-matter can
         # try varying, to report if the minimal example always fails anyway.
@@ -706,7 +712,8 @@ class ConjectureData:
         self.prefix = prefix
         self.nodes: tuple[ChoiceNode, ...] = ()
         self.misaligned_at: Optional[MisalignedAt] = None
-        self.start_example(TOP_LABEL)
+        self.cannot_proceed_scope: Optional[CannotProceedScopeT] = None
+        self.start_span(TOP_LABEL)
 
     def __repr__(self) -> str:
         return "ConjectureData(%s, %d choices%s)" % (
@@ -719,31 +726,14 @@ class ConjectureData:
     def choices(self) -> tuple[ChoiceT, ...]:
         return tuple(node.value for node in self.nodes)
 
-    # A bit of explanation of the `observe` and `fake_forced` arguments in our
-    # draw_* functions.
+    # draw_* functions might be called in one of two contexts: either "above" or
+    # "below" the choice sequence. For instance, draw_string calls draw_boolean
+    # from ``many`` when calculating the number of characters to return. We do
+    # not want these choices to get written to the choice sequence, because they
+    # are not true choices themselves.
     #
-    # There are two types of draws: sub-ir and super-ir. For instance, some ir
-    # nodes use `many`, which in turn calls draw_boolean. But some strategies
-    # also use many, at the super-ir level. We don't want to write sub-ir draws
-    # to the DataTree (and consequently use them when computing novel prefixes),
-    # since they are fully recorded by writing the ir node itself.
-    # But super-ir draws are not included in the ir node, so we do want to write
-    # these to the tree.
-    #
-    # `observe` formalizes this distinction. The draw will only be written to
-    # the DataTree if observe is True.
-    #
-    # `fake_forced` deals with a different problem. We use `forced=` to convert
-    # ir prefixes, which are potentially from other backends, into our backing
-    # bits representation. This works fine, except using `forced=` in this way
-    # also sets `was_forced=True` for all blocks, even those that weren't forced
-    # in the traditional way. The shrinker chokes on this due to thinking that
-    # nothing can be modified.
-    #
-    # Setting `fake_forced` to true says that yes, we want to force a particular
-    # value to be returned, but we don't want to treat that block as fixed for
-    # e.g. the shrinker.
-
+    # `observe` formalizes this. The choice will only be written to the choice
+    # sequence if observe is True.
     def _draw(self, choice_type, kwargs, *, observe, forced):
         # this is somewhat redundant with the length > max_length check at the
         # end of the function, but avoids trying to use a null self.random when
@@ -805,7 +795,7 @@ class ConjectureData:
                 was_forced=was_forced,
                 index=len(self.nodes),
             )
-            self.__example_record.record_choice()
+            self.__span_record.record_choice()
             self.nodes += (node,)
             self.length += size
 
@@ -972,13 +962,16 @@ class ConjectureData:
             # node if the alternative is not "the entire data is an overrun".
             assert self.index == len(self.prefix) - 1
             if node.type == "simplest":
-                if isinstance(self.provider, HypothesisProvider):
+                if forced is not None:
+                    choice = forced
+                elif isinstance(self.provider, HypothesisProvider):
                     try:
-                        choice: ChoiceT = choice_from_index(0, choice_type, kwargs)
+                        choice = choice_from_index(0, choice_type, kwargs)
                     except ChoiceTooLarge:
                         self.mark_overrun()
                 else:
-                    # give alternative backends control over these draws
+                    # give alternative backends control over ChoiceTemplate draws
+                    # as well
                     choice = getattr(self.provider, f"draw_{choice_type}")(**kwargs)
             else:
                 raise NotImplementedError
@@ -1053,7 +1046,7 @@ class ConjectureData:
             self.__result = ConjectureResult(
                 status=self.status,
                 interesting_origin=self.interesting_origin,
-                examples=self.examples,
+                spans=self.spans,
                 nodes=self.nodes,
                 length=self.length,
                 output=self.output,
@@ -1070,6 +1063,7 @@ class ConjectureData:
                 arg_slices=self.arg_slices,
                 slice_comments=self.slice_comments,
                 misaligned_at=self.misaligned_at,
+                cannot_proceed_scope=self.cannot_proceed_scope,
             )
             assert self.__result is not None
         return self.__result
@@ -1120,7 +1114,7 @@ class ConjectureData:
         if label is None:
             assert isinstance(strategy.label, int)
             label = strategy.label
-        self.start_example(label=label)
+        self.start_span(label=label)
         try:
             if not at_top_level:
                 return strategy.do_draw(self)
@@ -1145,11 +1139,11 @@ class ConjectureData:
                 self._observability_args[key] = to_jsonable(v)
             return v
         finally:
-            self.stop_example()
+            self.stop_span()
 
-    def start_example(self, label: int) -> None:
+    def start_span(self, label: int) -> None:
         self.provider.span_start(label)
-        self.__assert_not_frozen("start_example")
+        self.__assert_not_frozen("start_span")
         self.depth += 1
         # Logically it would make sense for this to just be
         # ``self.depth = max(self.depth, self.max_depth)``, which is what it used to
@@ -1159,10 +1153,10 @@ class ConjectureData:
         # to fix with this check.
         if self.depth > self.max_depth:
             self.max_depth = self.depth
-        self.__example_record.start_example(label)
+        self.__span_record.start_span(label)
         self.labels_for_structure_stack.append({label})
 
-    def stop_example(self, *, discard: bool = False) -> None:
+    def stop_span(self, *, discard: bool = False) -> None:
         self.provider.span_end(discard)
         if self.frozen:
             return
@@ -1170,7 +1164,7 @@ class ConjectureData:
             self.has_discards = True
         self.depth -= 1
         assert self.depth >= -1
-        self.__example_record.stop_example(discard=discard)
+        self.__span_record.stop_span(discard=discard)
 
         labels_for_structure = self.labels_for_structure_stack.pop()
 
@@ -1181,10 +1175,10 @@ class ConjectureData:
                 self.tags.update([structural_coverage(l) for l in labels_for_structure])
 
         if discard:
-            # Once we've discarded an example, every test case starting with
+            # Once we've discarded a span, every test case starting with
             # this prefix contains discards. We prune the tree at that point so
             # as to avoid future test cases bothering with this region, on the
-            # assumption that some example that you could have used instead
+            # assumption that some span that you could have used instead
             # there would *not* trigger the discard. This greatly speeds up
             # test case generation in some cases, because it allows us to
             # ignore large swathes of the search space that are effectively
@@ -1208,11 +1202,11 @@ class ConjectureData:
             self.observer.kill_branch()
 
     @property
-    def examples(self) -> Examples:
+    def spans(self) -> Spans:
         assert self.frozen
-        if self.__examples is None:
-            self.__examples = Examples(record=self.__example_record)
-        return self.__examples
+        if self.__spans is None:
+            self.__spans = Spans(record=self.__span_record)
+        return self.__spans
 
     def freeze(self) -> None:
         if self.frozen:
@@ -1220,12 +1214,11 @@ class ConjectureData:
         self.finish_time = time.perf_counter()
         self.gc_finish_time = gc_cumulative_time()
 
-        # Always finish by closing all remaining examples so that we have a
-        # valid tree.
+        # Always finish by closing all remaining spans so that we have a valid tree.
         while self.depth >= 0:
-            self.stop_example()
+            self.stop_span()
 
-        self.__example_record.freeze()
+        self.__span_record.freeze()
         self.frozen = True
         self.observer.conclude_test(self.status, self.interesting_origin)
 

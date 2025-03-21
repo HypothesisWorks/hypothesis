@@ -11,7 +11,7 @@
 import math
 from collections import defaultdict
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Callable, Optional, Union, cast
+from typing import TYPE_CHECKING, Callable, Literal, Optional, Union, cast
 
 import attr
 
@@ -27,7 +27,7 @@ from hypothesis.internal.conjecture.choice import (
 from hypothesis.internal.conjecture.data import (
     ConjectureData,
     ConjectureResult,
-    Examples,
+    Spans,
     Status,
     _Overrun,
     draw_choice,
@@ -136,7 +136,7 @@ class Shrinker:
     manage the associated state of a particular shrink problem. That is, we
     have some initial ConjectureData object and some property of interest
     that it satisfies, and we want to find a ConjectureData object with a
-    shortlex (see sort_key above) smaller buffer that exhibits the same
+    shortlex (see sort_key above) smaller choice sequence that exhibits the same
     property.
 
     Currently the only property of interest we use is that the status is
@@ -160,7 +160,7 @@ class Shrinker:
     =======================
 
     Generally a shrink pass is just any function that calls
-    cached_test_function and/or incorporate_new_buffer a number of times,
+    cached_test_function and/or consider_new_nodes a number of times,
     but there are a couple of useful things to bear in mind.
 
     A shrink pass *makes progress* if running it changes self.shrink_target
@@ -187,7 +187,7 @@ class Shrinker:
     change in the underlying shrink target. It is generally safe
     to assume that the shrink target does not change prior to the
     point of first modification - e.g. if you change no bytes at
-    index ``i``, all examples whose start is ``<= i`` still exist,
+    index ``i``, all spans whose start is ``<= i`` still exist,
     as do all blocks, and the data object is still of length
     ``>= i + 1``. This can only be violated by bad user code which
     relies on an external source of non-determinism.
@@ -202,22 +202,22 @@ class Shrinker:
     are carefully designed to do the right thing in the case that no
     shrinks occurred and try to adapt to any changes to do a reasonable
     job. e.g. say we wanted to write a shrink pass that tried deleting
-    each individual byte (this isn't an especially good choice,
+    each individual choice (this isn't an especially good pass,
     but it leads to a simple illustrative example), we might do it
-    by iterating over the buffer like so:
+    by iterating over the choice sequence like so:
 
     .. code-block:: python
 
         i = 0
-        while i < len(self.shrink_target.buffer):
-            if not self.incorporate_new_buffer(
-                self.shrink_target.buffer[:i] + self.shrink_target.buffer[i + 1 :]
+        while i < len(self.shrink_target.nodes):
+            if not self.consider_new_nodes(
+                self.shrink_target.nodes[:i] + self.shrink_target.nodes[i + 1 :]
             ):
                 i += 1
 
     The reason for writing the loop this way is that i is always a
-    valid index into the current buffer, even if the current buffer
-    changes as a result of our actions. When the buffer changes,
+    valid index into the current choice sequence, even if the current sequence
+    changes as a result of our actions. When the choice sequence changes,
     we leave the index where it is rather than restarting from the
     beginning, and carry on. This means that the number of steps we
     run in this case is always bounded above by the number of steps
@@ -308,10 +308,8 @@ class Shrinker:
         self.__predicate = predicate or (lambda data: True)
         self.__allow_transition = allow_transition or (lambda source, destination: True)
         self.__derived_values: dict = {}
-        self.__pending_shrink_explanation = None
 
         self.initial_size = len(initial.choices)
-
         # We keep track of the current best example on the shrink_target
         # attribute.
         self.shrink_target = initial
@@ -331,16 +329,7 @@ class Shrinker:
 
         # Because the shrinker is also used to `pareto_optimise` in the target phase,
         # we sometimes want to allow extending buffers instead of aborting at the end.
-        if in_target_phase:  # pragma: no cover
-            # TODO_IR: this is no longer used, but it should be. See
-            # https://github.com/HypothesisWorks/hypothesis/commit/91c63bb76c970effd6cf3c013d8ed98788cf0527
-            # we'll need to adjust for the new notion of size in terms of nodes,
-            # and change self.cached_test_function_ir.
-            from hypothesis.internal.conjecture.engine import BUFFER_SIZE
-
-            self.__extend = BUFFER_SIZE
-        else:
-            self.__extend = 0
+        self.__extend: Union[Literal["full"], int] = "full" if in_target_phase else 0
         self.should_explain = explain
 
     @derived_value  # type: ignore
@@ -392,30 +381,32 @@ class Shrinker:
         if self.calls - self.calls_at_last_shrink >= self.max_stall:
             raise StopShrinking
 
-    def cached_test_function_ir(self, nodes):
-        # sometimes our shrinking passes try obviously invalid things. We handle
-        # discarding them in one place here.
-        for node in nodes:
-            if not choice_permitted(node.value, node.kwargs):
-                return None
-
-        result = self.engine.cached_test_function_ir([n.value for n in nodes])
-        self.incorporate_test_data(result)
-        self.check_calls()
-        return result
-
-    def consider_new_nodes(self, nodes: Sequence[ChoiceNode]) -> bool:
+    def cached_test_function(
+        self, nodes: Sequence[ChoiceNode]
+    ) -> tuple[bool, Optional[Union[ConjectureResult, _Overrun]]]:
         nodes = nodes[: len(self.nodes)]
 
         if startswith(nodes, self.nodes):
-            return True
+            return (True, None)
 
         if sort_key(self.nodes) < sort_key(nodes):
-            return False
+            return (False, None)
 
+        # sometimes our shrinking passes try obviously invalid things. We handle
+        # discarding them in one place here.
+        if any(not choice_permitted(node.value, node.kwargs) for node in nodes):
+            return (False, None)
+
+        result = self.engine.cached_test_function(
+            [n.value for n in nodes], extend=self.__extend
+        )
         previous = self.shrink_target
-        self.cached_test_function_ir(nodes)
-        return previous is not self.shrink_target
+        self.incorporate_test_data(result)
+        self.check_calls()
+        return (previous is not self.shrink_target, result)
+
+    def consider_new_nodes(self, nodes: Sequence[ChoiceNode]) -> bool:
+        return self.cached_test_function(nodes)[0]
 
     def incorporate_test_data(self, data):
         """Takes a ConjectureData or Overrun object updates the current
@@ -465,8 +456,8 @@ class Shrinker:
                     "Shrink pass profiling\n"
                     "---------------------\n\n"
                     f"Shrinking made a total of {calls} call{s(calls)} of which "
-                    f"{self.shrinks} shrank and {misaligned} were misaligned. This deleted {total_deleted} choices out "
-                    f"of {self.initial_size}."
+                    f"{self.shrinks} shrank and {misaligned} were misaligned. This "
+                    f"deleted {total_deleted} choices out of {self.initial_size}."
                 )
                 for useful in [True, False]:
                     self.debug("")
@@ -545,7 +536,7 @@ class Shrinker:
                     replacement.append(node.value)
 
                 attempt = choices[:start] + tuple(replacement) + choices[end:]
-                result = self.engine.cached_test_function_ir(attempt, extend="full")
+                result = self.engine.cached_test_function(attempt, extend="full")
 
                 # Turns out this was a variable-length part, so grab the infix...
                 if result.status is Status.OVERRUN:
@@ -555,7 +546,7 @@ class Shrinker:
                     len(attempt) == len(result.choices)
                     and endswith(result.nodes, nodes[end:])
                 ):
-                    for ex, res in zip(shrink_target.examples, result.examples):
+                    for ex, res in zip(shrink_target.spans, result.spans):
                         assert ex.start == res.start
                         assert ex.start <= start
                         assert ex.label == res.label
@@ -569,7 +560,7 @@ class Shrinker:
                         choices[:start] + result.choices[start:res_end] + choices[end:]
                     )
                     chunks[(start, end)].append(result.choices[start:res_end])
-                    result = self.engine.cached_test_function_ir(attempt)
+                    result = self.engine.cached_test_function(attempt)
 
                     if result.status is Status.OVERRUN:
                         continue  # pragma: no cover  # flakily covered
@@ -608,7 +599,7 @@ class Shrinker:
                 new_choices.extend(self.random.choice(ls))
                 prev_end = end
 
-            result = self.engine.cached_test_function_ir(new_choices)
+            result = self.engine.cached_test_function(new_choices)
 
             # This *can't* be a shrink because none of the components were.
             assert shrink_target is self.shrink_target
@@ -634,18 +625,19 @@ class Shrinker:
         """
         self.fixate_shrink_passes(
             [
-                "try_trivial_examples",
+                "try_trivial_spans",
                 node_program("X" * 5),
                 node_program("X" * 4),
                 node_program("X" * 3),
                 node_program("X" * 2),
                 node_program("X" * 1),
                 "pass_to_descendant",
-                "reorder_examples",
-                "minimize_duplicated_nodes",
-                "minimize_individual_nodes",
+                "reorder_spans",
+                "minimize_duplicated_choices",
+                "minimize_individual_choices",
                 "redistribute_numeric_pairs",
                 "lower_integers_together",
+                "lower_duplicated_characters",
             ]
         )
 
@@ -663,10 +655,10 @@ class Shrinker:
         self.reduce_each_alternative()
 
     @derived_value  # type: ignore
-    def examples_starting_at(self):
+    def spans_starting_at(self):
         result = [[] for _ in self.shrink_target.nodes]
-        for i, ex in enumerate(self.examples):
-            # We can have zero-length examples that start at the end
+        for i, ex in enumerate(self.spans):
+            # We can have zero-length spans that start at the end
             if ex.start < len(result):
                 result[ex.start].append(i)
         return tuple(map(tuple, result))
@@ -704,9 +696,9 @@ class Shrinker:
                 # shape changes, as measured by either changing the number of subsequent
                 # nodes, or changing the nodes in such a way as to cause one of the
                 # previous values to no longer be valid in its position.
-                zero_attempt = self.cached_test_function_ir(
+                zero_attempt = self.cached_test_function(
                     nodes[:i] + (nodes[i].copy(with_value=0),) + nodes[i + 1 :]
-                )
+                )[1]
                 if (
                     zero_attempt is not self.shrink_target
                     and zero_attempt is not None
@@ -737,25 +729,24 @@ class Shrinker:
         while rerandomising and attempting to repair any subsequent
         changes to the shape of the test case that this causes."""
         nodes = self.shrink_target.nodes
-        initial_attempt = self.cached_test_function_ir(
+        if self.consider_new_nodes(
             nodes[:i] + (nodes[i].copy(with_value=v),) + nodes[i + 1 :]
-        )
-        if initial_attempt is self.shrink_target:
+        ):
             return True
 
         prefix = nodes[:i] + (nodes[i].copy(with_value=v),)
         initial = self.shrink_target
-        examples = self.examples_starting_at[i]
+        spans = self.spans_starting_at[i]
         for _ in range(3):
-            random_attempt = self.engine.cached_test_function_ir(
+            random_attempt = self.engine.cached_test_function(
                 [n.value for n in prefix], extend=len(nodes)
             )
             if random_attempt.status < Status.VALID:
                 continue
             self.incorporate_test_data(random_attempt)
-            for j in examples:
-                initial_ex = initial.examples[j]
-                attempt_ex = random_attempt.examples[j]
+            for j in spans:
+                initial_ex = initial.spans[j]
+                attempt_ex = random_attempt.spans[j]
                 contents = random_attempt.nodes[attempt_ex.start : attempt_ex.end]
                 self.consider_new_nodes(nodes[:i] + contents + nodes[initial_ex.end :])
                 if initial is not self.shrink_target:
@@ -871,26 +862,28 @@ class Shrinker:
         return self.shrink_target.choices
 
     @property
-    def examples(self) -> Examples:
-        return self.shrink_target.examples
+    def spans(self) -> Spans:
+        return self.shrink_target.spans
 
     @derived_value  # type: ignore
-    def examples_by_label(self):
-        """An index of all examples grouped by their label, with
-        the examples stored in their normal index order."""
+    def spans_by_label(self):
+        """
+        A mapping of labels to a list of spans with that label. Spans in the list
+        are ordered by their normal index order.
+        """
 
-        examples_by_label = defaultdict(list)
-        for ex in self.examples:
-            examples_by_label[ex.label].append(ex)
-        return dict(examples_by_label)
+        spans_by_label = defaultdict(list)
+        for ex in self.spans:
+            spans_by_label[ex.label].append(ex)
+        return dict(spans_by_label)
 
     @derived_value  # type: ignore
     def distinct_labels(self):
-        return sorted(self.examples_by_label, key=str)
+        return sorted(self.spans_by_label, key=str)
 
     @defines_shrink_pass()
     def pass_to_descendant(self, chooser):
-        """Attempt to replace each example with a descendant example.
+        """Attempt to replace each span with a descendant span.
 
         This is designed to deal with strategies that call themselves
         recursively. For example, suppose we had:
@@ -909,10 +902,10 @@ class Shrinker:
         """
 
         label = chooser.choose(
-            self.distinct_labels, lambda l: len(self.examples_by_label[l]) >= 2
+            self.distinct_labels, lambda l: len(self.spans_by_label[l]) >= 2
         )
 
-        ls = self.examples_by_label[label]
+        ls = self.spans_by_label[label]
         i = chooser.choose(range(len(ls) - 1))
         ancestor = ls[i]
 
@@ -1094,7 +1087,7 @@ class Shrinker:
             [(node.index, node.index + 1, [node.copy(with_value=n)]) for node in nodes],
         )
 
-        attempt = self.cached_test_function_ir(initial_attempt)
+        attempt = self.cached_test_function(initial_attempt)[1]
 
         if attempt is None:
             return False
@@ -1153,8 +1146,7 @@ class Shrinker:
                     # attempts which increase min_size tend to overrun rather than
                     # be misaligned, making a covering case difficult.
                     return False  # pragma: no cover
-                # the size decreased in our attempt. Try again, but replace with
-                # the min_size that we would have gotten, and truncate the value
+                # the size decreased in our attempt. Try again, but truncate the value
                 # to that size by removing any elements past min_size.
                 return self.consider_new_nodes(
                     initial_attempt[: node.index]
@@ -1182,23 +1174,23 @@ class Shrinker:
         # try to be more aggressive.
         regions_to_delete = {(end, end + lost_nodes)}
 
-        for ex in self.examples:
+        for ex in self.spans:
             if ex.start > start:
                 continue
             if ex.end <= end:
                 continue
 
-            if ex.index >= len(attempt.examples):
+            if ex.index >= len(attempt.spans):
                 continue  # pragma: no cover
 
-            replacement = attempt.examples[ex.index]
+            replacement = attempt.spans[ex.index]
             in_original = [c for c in ex.children if c.start >= end]
             in_replaced = [c for c in replacement.children if c.start >= end]
 
             if len(in_replaced) >= len(in_original) or not in_replaced:
                 continue
 
-            # We've found an example where some of the children went missing
+            # We've found a span where some of the children went missing
             # as a result of this change, and just replacing it with the data
             # it would have had and removing the spillover didn't work. This
             # means that some of its children towards the right must be
@@ -1234,7 +1226,7 @@ class Shrinker:
         while self.shrink_target.has_discards:
             discarded = []
 
-            for ex in self.shrink_target.examples:
+            for ex in self.shrink_target.spans:
                 if (
                     ex.choice_count > 0
                     and ex.discarded
@@ -1266,8 +1258,8 @@ class Shrinker:
         return list(duplicates.values())
 
     @defines_shrink_pass()
-    def minimize_duplicated_nodes(self, chooser):
-        """Find blocks that have been duplicated in multiple places and attempt
+    def minimize_duplicated_choices(self, chooser):
+        """Find choices that have been duplicated in multiple places and attempt
         to minimize all of the duplicates simultaneously.
 
         This lets us handle cases where two values can't be shrunk
@@ -1394,6 +1386,68 @@ class Shrinker:
         find_integer(lambda n: consider(shrink_towards - n))
         find_integer(lambda n: consider(n - shrink_towards))
 
+    @defines_shrink_pass()
+    def lower_duplicated_characters(self, chooser):
+        """
+        Select two string choices no more than 4 choices apart and simultaneously
+        lower characters which appear in both strings. This helps cases where the
+        same character must appear in two strings, but the actual value of the
+        character is not relevant.
+
+        This shrinking pass currently only tries lowering *all* instances of the
+        duplicated character in both strings. So for instance, given two choices:
+
+            "bbac"
+            "abbb"
+
+        we would try lowering all five of the b characters simultaneously. This
+        may fail to shrink some cases where only certain character indices are
+        correlated, for instance if only the b at index 1 could be lowered
+        simultaneously and the rest did in fact actually have to be a `b`.
+
+        It would be nice to try shrinking that case as well, but we would need good
+        safeguards because it could get very expensive to try all combinations.
+        I expect lowering all duplicates to handle most cases in the meantime.
+        """
+        node1 = chooser.choose(
+            self.nodes, lambda n: n.type == "string" and not n.trivial
+        )
+
+        # limit search to up to 4 choices ahead, to avoid quadratic behavior
+        node2 = self.nodes[
+            chooser.choose(
+                range(node1.index + 1, min(len(self.nodes), node1.index + 1 + 4)),
+                lambda i: self.nodes[i].type == "string" and not self.nodes[i].trivial
+                # select nodes which have at least one of the same character present
+                and set(node1.value) & set(self.nodes[i].value),
+            )
+        ]
+
+        duplicated_characters = set(node1.value) & set(node2.value)
+        # deterministic ordering
+        char = chooser.choose(sorted(duplicated_characters))
+        intervals = node1.kwargs["intervals"]
+
+        def copy_node(node, n):
+            # replace all duplicate characters in each string. This might miss
+            # some shrinks compared to only replacing some, but trying all possible
+            # combinations of indices could get expensive if done without some
+            # thought.
+            return node.copy(
+                with_value=node.value.replace(char, intervals.char_in_shrink_order(n))
+            )
+
+        Integer.shrink(
+            intervals.index_from_char_in_shrink_order(char),
+            lambda n: self.consider_new_nodes(
+                self.nodes[: node1.index]
+                + (copy_node(node1, n),)
+                + self.nodes[node1.index + 1 : node2.index]
+                + (copy_node(node2, n),)
+                + self.nodes[node2.index + 1 :]
+            ),
+        )
+
     def minimize_nodes(self, nodes):
         choice_type = nodes[0].type
         value = nodes[0].value
@@ -1456,12 +1510,12 @@ class Shrinker:
             raise NotImplementedError
 
     @defines_shrink_pass()
-    def try_trivial_examples(self, chooser):
-        i = chooser.choose(range(len(self.examples)))
+    def try_trivial_spans(self, chooser):
+        i = chooser.choose(range(len(self.spans)))
 
         prev = self.shrink_target
         nodes = self.shrink_target.nodes
-        ex = self.examples[i]
+        ex = self.spans[i]
         prefix = nodes[: ex.start]
         replacement = tuple(
             [
@@ -1476,19 +1530,19 @@ class Shrinker:
             ]
         )
         suffix = nodes[ex.end :]
-        attempt = self.cached_test_function_ir(prefix + replacement + suffix)
+        attempt = self.cached_test_function(prefix + replacement + suffix)[1]
 
         if self.shrink_target is not prev:
             return
 
         if isinstance(attempt, ConjectureResult):
-            new_ex = attempt.examples[i]
+            new_ex = attempt.spans[i]
             new_replacement = attempt.nodes[new_ex.start : new_ex.end]
             self.consider_new_nodes(prefix + new_replacement + suffix)
 
     @defines_shrink_pass()
-    def minimize_individual_nodes(self, chooser):
-        """Attempt to minimize each node in sequence.
+    def minimize_individual_choices(self, chooser):
+        """Attempt to minimize each choice in sequence.
 
         This is the pass that ensures that e.g. each integer we draw is a
         minimum value. So it's the part that guarantees that if we e.g. do
@@ -1498,7 +1552,7 @@ class Shrinker:
 
         then in our shrunk example, x = 10 rather than say 97.
 
-        If we are unsuccessful at minimizing a node of interest we then
+        If we are unsuccessful at minimizing a choice of interest we then
         check if that's because it's changing the size of the test case and,
         if so, we also make an attempt to delete parts of the test case to
         see if that fixes it.
@@ -1540,7 +1594,7 @@ class Shrinker:
             + (node.copy(with_value=node.value - 1),)
             + self.nodes[node.index + 1 :]
         )
-        attempt = self.cached_test_function_ir(lowered)
+        attempt = self.cached_test_function(lowered)[1]
         if (
             attempt is None
             or attempt.status < Status.VALID
@@ -1559,27 +1613,27 @@ class Shrinker:
         assert attempt is not self.shrink_target
 
         @self.cached(node.index)
-        def first_example_after_node():
+        def first_span_after_node():
             lo = 0
-            hi = len(self.examples)
+            hi = len(self.spans)
             while lo + 1 < hi:
                 mid = (lo + hi) // 2
-                ex = self.examples[mid]
+                ex = self.spans[mid]
                 if ex.start >= node.index:
                     hi = mid
                 else:
                     lo = mid
             return hi
 
-        # we try deleting both entire examples, and single nodes.
+        # we try deleting both entire spans, and single nodes.
         # If we wanted to get more aggressive, we could try deleting n
-        # consecutive nodes (that don't cross an example boundary) for say
+        # consecutive nodes (that don't cross a span boundary) for say
         # n <= 2 or n <= 3.
         if chooser.choose([True, False]):
-            ex = self.examples[
+            ex = self.spans[
                 chooser.choose(
-                    range(first_example_after_node, len(self.examples)),
-                    lambda i: self.examples[i].choice_count > 0,
+                    range(first_span_after_node, len(self.spans)),
+                    lambda i: self.spans[i].choice_count > 0,
                 )
             ]
             self.consider_new_nodes(lowered[: ex.start] + lowered[ex.end :])
@@ -1588,8 +1642,8 @@ class Shrinker:
             self.consider_new_nodes(lowered[: node.index] + lowered[node.index + 1 :])
 
     @defines_shrink_pass()
-    def reorder_examples(self, chooser):
-        """This pass allows us to reorder the children of each example.
+    def reorder_spans(self, chooser):
+        """This pass allows us to reorder the children of each span.
 
         For example, consider the following:
 
@@ -1607,17 +1661,17 @@ class Shrinker:
         ``x=""``, ``y="0"``, or the other way around. With reordering it will
         reliably fail with ``x=""``, ``y="0"``.
         """
-        ex = chooser.choose(self.examples)
+        ex = chooser.choose(self.spans)
         label = chooser.choose(ex.children).label
 
-        examples = [c for c in ex.children if c.label == label]
-        if len(examples) <= 1:
+        spans = [c for c in ex.children if c.label == label]
+        if len(spans) <= 1:
             return
         st = self.shrink_target
-        endpoints = [(ex.start, ex.end) for ex in examples]
+        endpoints = [(ex.start, ex.end) for ex in spans]
 
         Ordering.shrink(
-            range(len(examples)),
+            range(len(spans)),
             lambda indices: self.consider_new_nodes(
                 replace_all(
                     st.nodes,
@@ -1625,13 +1679,13 @@ class Shrinker:
                         (
                             u,
                             v,
-                            st.nodes[examples[i].start : examples[i].end],
+                            st.nodes[spans[i].start : spans[i].end],
                         )
                         for (u, v), i in zip(endpoints, indices)
                     ],
                 )
             ),
-            key=lambda i: sort_key(st.nodes[examples[i].start : examples[i].end]),
+            key=lambda i: sort_key(st.nodes[spans[i].start : spans[i].end]),
         )
 
     def run_node_program(self, i, description, original, repeats=1):

@@ -19,7 +19,7 @@ sphinx
 sphinx-codeautolink
 sphinx-hoverxref
 sphinx-jsonschema
-sphinx-rtd-theme
+furo
 sphinx-selective-exclude
 tox
 twine

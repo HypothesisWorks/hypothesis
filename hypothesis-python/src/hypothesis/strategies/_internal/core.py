@@ -32,6 +32,7 @@ from typing import (
     AnyStr,
     Callable,
     Literal,
+    NoReturn,
     Optional,
     Protocol,
     TypeVar,
@@ -105,8 +106,7 @@ from hypothesis.internal.validation import (
 )
 from hypothesis.strategies._internal import SearchStrategy, check_strategy
 from hypothesis.strategies._internal.collections import (
-    FixedAndOptionalKeysDictStrategy,
-    FixedKeysDictStrategy,
+    FixedDictStrategy,
     ListStrategy,
     TupleStrategy,
     UniqueListStrategy,
@@ -331,12 +331,15 @@ def lists(
         # Note that lazy strategies automatically unwrap when passed to a defines_strategy
         # function.
         tuple_suffixes = None
+        # the type: ignores in the TupleStrategy and IntegersStrategy cases are
+        # for a mypy bug, which incorrectly narrows `elements` to Never.
+        # https://github.com/python/mypy/issues/16494
         if (
             # We're generating a list of tuples unique by the first element, perhaps
             # via st.dictionaries(), and this will be more efficient if we rearrange
             # our strategy somewhat to draw the first element then draw add the rest.
             isinstance(elements, TupleStrategy)
-            and len(elements.element_strategies) >= 1
+            and len(elements.element_strategies) >= 1  # type: ignore
             and len(unique_by) == 1
             and (
                 # Introspection for either `itemgetter(0)`, or `lambda x: x[0]`
@@ -354,14 +357,11 @@ def lists(
             )
         ):
             unique_by = (identity,)
-            tuple_suffixes = TupleStrategy(elements.element_strategies[1:])
-            elements = elements.element_strategies[0]
+            tuple_suffixes = TupleStrategy(elements.element_strategies[1:])  # type: ignore
+            elements = elements.element_strategies[0]  # type: ignore
 
         # UniqueSampledListStrategy offers a substantial performance improvement for
         # unique arrays with few possible elements, e.g. of eight-bit integer types.
-
-        # all of these type: ignores are for a mypy bug, which narrows `elements`
-        # to Never. https://github.com/python/mypy/issues/16494
         if (
             isinstance(elements, IntegersStrategy)
             and elements.start is not None  # type: ignore
@@ -455,7 +455,7 @@ class PrettyIter:
     def __next__(self):
         return next(self._iter)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"iter({self._values!r})"
 
 
@@ -488,6 +488,37 @@ def iterables(
     ).map(PrettyIter)
 
 
+# this type definition is imprecise, in multiple ways:
+# * mapping and optional can be of different types:
+#      s: dict[str | int, int] = st.fixed_dictionaries(
+#         {"a": st.integers()}, optional={1: st.integers()}
+#     )
+# * the values in either mapping or optional need not all be of the same type:
+#      s: dict[str, int | bool] = st.fixed_dictionaries(
+#         {"a": st.integers(), "b": st.booleans()}
+#     )
+# * the arguments may be of any dict-compatible type, in which case the return
+#  value will be of that type instead of dit
+#
+# Overloads may help here, but I doubt we'll be able to satisfy all these
+# constraints.
+#
+# Here's some platonic ideal test cases for revealed_types.py, with the understanding
+# that some may not be achievable:
+#
+#   ("fixed_dictionaries({'a': booleans()})", "dict[str, bool]"),
+#   ("fixed_dictionaries({'a': booleans(), 'b': integers()})", "dict[str, bool | int]"),
+#   ("fixed_dictionaries({}, optional={'a': booleans()})", "dict[str, bool]"),
+#   (
+#       "fixed_dictionaries({'a': booleans()}, optional={1: booleans()})",
+#       "dict[str | int, bool]",
+#   ),
+#   (
+#       "fixed_dictionaries({'a': booleans()}, optional={1: integers()})",
+#       "dict[str | int, bool | int]",
+#   ),
+
+
 @defines_strategy()
 def fixed_dictionaries(
     mapping: dict[T, SearchStrategy[Ex]],
@@ -510,6 +541,7 @@ def fixed_dictionaries(
     check_type(dict, mapping, "mapping")
     for k, v in mapping.items():
         check_strategy(v, f"mapping[{k!r}]")
+
     if optional is not None:
         check_type(dict, optional, "optional")
         for k, v in optional.items():
@@ -524,8 +556,8 @@ def fixed_dictionaries(
                 "The following keys were in both mapping and optional, "
                 f"which is invalid: {set(mapping) & set(optional)!r}"
             )
-        return FixedAndOptionalKeysDictStrategy(mapping, optional)
-    return FixedKeysDictStrategy(mapping)
+
+    return FixedDictStrategy(mapping, optional=optional)
 
 
 @cacheable
@@ -816,7 +848,10 @@ def text(
         )
     if (max_size == 0 or char_strategy.is_empty) and not min_size:
         return just("")
-    return TextStrategy(char_strategy, min_size=min_size, max_size=max_size)
+    # mypy is unhappy with ListStrategy(SearchStrategy[list[Ex]]) and then TextStrategy
+    # setting Ex = str. Mypy is correct to complain because we have an LSP violation
+    # here in the TextStrategy.do_draw override. Would need refactoring to resolve.
+    return TextStrategy(char_strategy, min_size=min_size, max_size=max_size)  # type: ignore
 
 
 @overload
@@ -1026,7 +1061,7 @@ class BuildsStrategy(SearchStrategy):
         tuples(*self.args).validate()
         fixed_dictionaries(self.kwargs).validate()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         bits = [get_pretty_function_description(self.target)]
         bits.extend(map(repr, self.args))
         bits.extend(f"{k}={v!r}" for k, v in self.kwargs.items())
@@ -1505,7 +1540,7 @@ def _from_type(thing: type[Ex]) -> SearchStrategy[Ex]:
             f"Could not resolve {thing!r} to a strategy, because it is an abstract "
             "type without any subclasses. Consider using register_type_strategy"
         )
-    subclass_strategies = nothing()
+    subclass_strategies: SearchStrategy = nothing()
     for sc in subclasses:
         try:
             subclass_strategies |= _from_type(sc)
@@ -1785,7 +1820,7 @@ class CompositeStrategy(SearchStrategy):
     def do_draw(self, data):
         return self.definition(data.draw, *self.args, **self.kwargs)
 
-    def calc_label(self):
+    def calc_label(self) -> int:
         return calc_label_from_cls(self.definition)
 
 
@@ -2151,7 +2186,7 @@ class DataObject:
 
     __signature__ = Signature()  # hide internals from Sphinx introspection
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "data(...)"
 
     def draw(self, strategy: SearchStrategy[Ex], label: Any = None) -> Ex:
@@ -2181,22 +2216,22 @@ class DataStrategy(SearchStrategy):
             data.hypothesis_shared_data_strategy = DataObject(data)
         return data.hypothesis_shared_data_strategy
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "data()"
 
     def map(self, f):
         self.__not_a_first_class_strategy("map")
 
-    def filter(self, f):
+    def filter(self, condition: Callable[[Ex], Any]) -> NoReturn:
         self.__not_a_first_class_strategy("filter")
 
     def flatmap(self, f):
         self.__not_a_first_class_strategy("flatmap")
 
-    def example(self):
+    def example(self) -> NoReturn:
         self.__not_a_first_class_strategy("example")
 
-    def __not_a_first_class_strategy(self, name):
+    def __not_a_first_class_strategy(self, name: str) -> NoReturn:
         raise InvalidArgument(
             f"Cannot call {name} on a DataStrategy. You should probably "
             "be using @composite for whatever it is you're trying to do."
@@ -2334,7 +2369,7 @@ def deferred(definition: Callable[[], SearchStrategy[Ex]]) -> SearchStrategy[Ex]
     return DeferredStrategy(definition)
 
 
-def domains():
+def domains() -> SearchStrategy[str]:
     import hypothesis.provisional
 
     return hypothesis.provisional.domains()

@@ -183,12 +183,12 @@ class LarkStrategy(st.SearchStrategy):
             draw_state.append(data.draw(strategy))
         else:
             assert isinstance(symbol, NonTerminal)
-            data.start_example(self.rule_label(symbol.name))
+            data.start_span(self.rule_label(symbol.name))
             expansion = data.draw(self.nonterminal_strategies[symbol.name])
             for e in expansion:
                 self.draw_symbol(data, e, draw_state)
                 self.gen_ignore(data, draw_state)
-            data.stop_example()
+            data.stop_span()
 
     def gen_ignore(self, data: ConjectureData, draw_state: list[str]) -> None:
         if self.ignored_symbols and data.draw_boolean(1 / 4):

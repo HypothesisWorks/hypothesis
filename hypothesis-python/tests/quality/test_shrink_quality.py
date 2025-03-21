@@ -8,7 +8,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from collections import OrderedDict, namedtuple
+from collections import Counter, OrderedDict, namedtuple
 from fractions import Fraction
 from functools import reduce
 
@@ -477,3 +477,64 @@ def test_lowering_together_mixed(gap):
 def test_lowering_together_with_gap(gap):
     s = st.tuples(st.integers(-10, 10), st.text(), st.floats(), st.integers(-10, 10))
     assert minimal(s, lambda x: x[0] + gap == x[3]) == (0, "", 0.0, gap)
+
+
+def test_run_length_encoding():
+    # extracted from https://github.com/HypothesisWorks/hypothesis/issues/4286,
+    # as well as our docs
+
+    def decode(table: list[tuple[int, str]]) -> str:
+        out = ""
+        for count, char in table:
+            out += count * char
+        return out
+
+    def encode(s: str) -> list[tuple[int, str]]:
+        count = 1
+        prev = ""
+        out = []
+
+        if not s:
+            return []
+
+        for char in s:
+            if char != prev:
+                if prev:
+                    entry = (count, prev)
+                    out.append(entry)
+                # BUG:
+                # count = 1
+                prev = char
+            else:
+                count += 1
+
+        entry = (count, char)
+        out.append(entry)
+        return out
+
+    assert minimal(st.text(), lambda s: decode(encode(s)) != s) == "001"
+
+
+def test_minimize_duplicated_characters_within_a_choice():
+    # look for strings which have at least 3 of the same character, and also at
+    # least two different characters (to avoid the trivial shrink of replacing
+    # everything with "0" from working).
+
+    # we should test this for st.binary too, but it's difficult to get it
+    # to satisfy this precondition in the first place (probably worth improving
+    # our generation here to duplicate binary elements in generate_mutations_from)
+    assert (
+        minimal(
+            st.text(min_size=1),
+            lambda v: Counter(v).most_common()[0][1] > 2 and len(set(v)) > 1,
+        )
+        == "0001"
+    )
+
+
+def test_nasty_string_shrinks():
+    # failures found via NASTY_STRINGS should shrink like normal
+    assert (
+        minimal(st.text(), lambda s: "𝕿𝖍𝖊" in s, settings=settings(max_examples=10000))
+        == "𝕿𝖍𝖊"
+    )

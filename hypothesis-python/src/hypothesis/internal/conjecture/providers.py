@@ -11,7 +11,9 @@
 import abc
 import contextlib
 import math
+import warnings
 from collections.abc import Iterable
+from random import Random
 from sys import float_info
 from typing import (
     TYPE_CHECKING,
@@ -24,8 +26,14 @@ from typing import (
     Union,
 )
 
+from hypothesis.errors import HypothesisWarning
 from hypothesis.internal.cache import LRUCache
-from hypothesis.internal.compat import int_from_bytes
+from hypothesis.internal.compat import WINDOWS, int_from_bytes
+from hypothesis.internal.conjecture.choice import (
+    StringKWargs,
+    choice_kwargs_key,
+    choice_permitted,
+)
 from hypothesis.internal.conjecture.floats import float_to_lex, lex_to_float
 from hypothesis.internal.conjecture.junkdrawer import bits_to_bytes
 from hypothesis.internal.conjecture.utils import (
@@ -54,17 +62,22 @@ _Lifetime: "TypeAlias" = Literal["test_case", "test_function"]
 COLLECTION_DEFAULT_MAX_SIZE = 10**10  # "arbitrarily large"
 
 
-# The set of available `PrimitiveProvider`s, by name.  Other libraries, such as
-# crosshair, can implement this interface and add themselves; at which point users
-# can configure which backend to use via settings.   Keys are the name of the library,
-# which doubles as the backend= setting, and values are importable class names.
+# The available `PrimitiveProvider`s, and therefore also the available backends
+# for use by @settings(backend=...). The key is the name to be used in the backend=
+# value, and the value is the importable path to a subclass of PrimitiveProvider.
 #
-# NOTE: this is a temporary interface.  We DO NOT promise to continue supporting it!
-#       (but if you want to experiment and don't mind breakage, here you go)
+# See also
+# https://hypothesis.readthedocs.io/en/latest/strategies.html#alternative-backends-for-hypothesis.
+#
+# NOTE: the PrimitiveProvider interface is not yet stable. We may continue to
+# make breaking changes to it. (but if you want to experiment and don't mind
+# breakage, here you go!)
 AVAILABLE_PROVIDERS = {
     "hypothesis": "hypothesis.internal.conjecture.providers.HypothesisProvider",
+    "hypothesis-urandom": "hypothesis.internal.conjecture.providers.URandomProvider",
 }
 FLOAT_INIT_LOGIC_CACHE = LRUCache(4096)
+STRING_SAMPLER_CACHE = LRUCache(64)
 
 NASTY_FLOATS = sorted(
     [
@@ -95,6 +108,85 @@ NASTY_FLOATS = sorted(
 )
 NASTY_FLOATS = list(map(float, NASTY_FLOATS))
 NASTY_FLOATS.extend([-x for x in NASTY_FLOATS])
+
+NASTY_STRINGS = sorted(
+    [
+        # strings which can be interpreted as code / logic
+        "undefined",
+        "null",
+        "NULL",
+        "nil",
+        "NIL",
+        "true",
+        "false",
+        "True",
+        "False",
+        "TRUE",
+        "FALSE",
+        "None",
+        "none",
+        "if",
+        "then",
+        "else",
+        # strings which can be interpreted as a number
+        "0",
+        "1e100",
+        "0..0",
+        "0/0",
+        "1/0",
+        "+0.0",
+        "Infinity",
+        "-Infinity",
+        "Inf",
+        "INF",
+        "NaN",
+        "9" * 30,
+        # common ascii characters
+        ",./;'[]\\-=<>?:\"{}|_+!@#$%^&*()`~",
+        # common unicode characters
+        "Ω≈ç√∫˜µ≤≥÷åß∂ƒ©˙∆˚¬…æœ∑´®†¥¨ˆøπ“‘¡™£¢∞§¶•ªº–≠¸˛Ç◊ı˜Â¯˘¿ÅÍÎÏ˝ÓÔÒÚÆ☃Œ„´‰ˇÁ¨ˆØ∏”’`⁄€‹›ﬁﬂ‡°·‚—±",
+        # characters which increase in length when lowercased
+        "Ⱥ",
+        "Ⱦ",
+        # ligatures
+        "æœÆŒﬀʤʨß"
+        # emoticons
+        "(╯°□°）╯︵ ┻━┻)",
+        # emojis
+        "😍",
+        "🇺🇸",
+        # emoji modifiers
+        "🏻"  # U+1F3FB Light Skin Tone,
+        "👍🏻",  # 👍 followed by U+1F3FB
+        # RTL text
+        "الكل في المجمو عة",
+        # Ogham text, which contains the only character in the Space Separators
+        # unicode category (Zs) that isn't visually blank:  .  # noqa: RUF003
+        "᚛ᚄᚓᚐᚋᚒᚄ ᚑᚄᚂᚑᚏᚅ᚜",
+        # readable variations on text (bolt/italic/script)
+        "𝐓𝐡𝐞 𝐪𝐮𝐢𝐜𝐤 𝐛𝐫𝐨𝐰𝐧 𝐟𝐨𝐱 𝐣𝐮𝐦𝐩𝐬 𝐨𝐯𝐞𝐫 𝐭𝐡𝐞 𝐥𝐚𝐳𝐲 𝐝𝐨𝐠",
+        "𝕿𝖍𝖊 𝖖𝖚𝖎𝖈𝖐 𝖇𝖗𝖔𝖜𝖓 𝖋𝖔𝖝 𝖏𝖚𝖒𝖕𝖘 𝖔𝖛𝖊𝖗 𝖙𝖍𝖊 𝖑𝖆𝖟𝖞 𝖉𝖔𝖌",
+        "𝑻𝒉𝒆 𝒒𝒖𝒊𝒄𝒌 𝒃𝒓𝒐𝒘𝒏 𝒇𝒐𝒙 𝒋𝒖𝒎𝒑𝒔 𝒐𝒗𝒆𝒓 𝒕𝒉𝒆 𝒍𝒂𝒛𝒚 𝒅𝒐𝒈",
+        "𝓣𝓱𝓮 𝓺𝓾𝓲𝓬𝓴 𝓫𝓻𝓸𝔀𝓷 𝓯𝓸𝔁 𝓳𝓾𝓶𝓹𝓼 𝓸𝓿𝓮𝓻 𝓽𝓱𝓮 𝓵𝓪𝔃𝔂 𝓭𝓸𝓰",
+        "𝕋𝕙𝕖 𝕢𝕦𝕚𝕔𝕜 𝕓𝕣𝕠𝕨𝕟 𝕗𝕠𝕩 𝕛𝕦𝕞𝕡𝕤 𝕠𝕧𝕖𝕣 𝕥𝕙𝕖 𝕝𝕒𝕫𝕪 𝕕𝕠𝕘",
+        # upsidown text
+        "ʇǝɯɐ ʇᴉs ɹolop ɯnsdᴉ ɯǝɹo˥",
+        # reserved strings in windows
+        "NUL",
+        "COM1",
+        "LPT1",
+        # scunthorpe problem
+        "Scunthorpe",
+        # zalgo text
+        "Ṱ̺̺̕o͞ ̷i̲̬͇̪͙n̝̗͕v̟̜̘̦͟o̶̙̰̠kè͚̮̺̪̹̱̤ ̖t̝͕̳̣̻̪͞h̼͓̲̦̳̘̲e͇̣̰̦̬͎ ̢̼̻̱̘h͚͎͙̜̣̲ͅi̦̲̣̰̤v̻͍e̺̭̳̪̰-m̢iͅn̖̺̞̲̯̰d̵̼̟͙̩̼̘̳ ̞̥̱̳̭r̛̗̘e͙p͠r̼̞̻̭̗e̺̠̣͟s̘͇̳͍̝͉e͉̥̯̞̲͚̬͜ǹ̬͎͎̟̖͇̤t͍̬̤͓̼̭͘ͅi̪̱n͠g̴͉ ͏͉ͅc̬̟h͡a̫̻̯͘o̫̟̖͍̙̝͉s̗̦̲.̨̹͈̣",
+        #
+        # examples from https://faultlore.com/blah/text-hates-you/
+        "मनीष منش",
+        "पन्ह पन्ह त्र र्च कृकृ ड्ड न्हृे إلا بسم الله",
+        "lorem لا بسم الله ipsum 你好1234你好",
+    ],
+    key=len,
+)
 
 # Masks for masking off the first byte of an n-bit buffer.
 # The appropriate mask is stored at position n % 8.
@@ -244,7 +336,7 @@ class PrimitiveProvider(abc.ABC):
         `label` is an opaque integer, which will be shared by all spans drawn
         from a particular strategy.
 
-        This method is called from ConjectureData.start_example().
+        This method is called from ConjectureData.start_span().
         """
 
     def span_end(self, discard: bool, /) -> None:  # noqa: B027, FBT001
@@ -254,7 +346,7 @@ class PrimitiveProvider(abc.ABC):
         unlikely to contribute to the input data as seen by the user's test.
         Note however that side effects can make this determination unsound.
 
-        This method is called from ConjectureData.stop_example().
+        This method is called from ConjectureData.stop_span().
         """
 
 
@@ -263,20 +355,20 @@ class HypothesisProvider(PrimitiveProvider):
 
     def __init__(self, conjecturedata: Optional["ConjectureData"], /):
         super().__init__(conjecturedata)
+        self._random = None if self._cd is None else self._cd._random
 
     def draw_boolean(
         self,
         p: float = 0.5,
     ) -> bool:
-        assert self._cd is not None
-        assert self._cd._random is not None
+        assert self._random is not None
 
         if p <= 0:
             return False
         if p >= 1:
             return True
 
-        return self._cd._random.random() < p
+        return self._random.random() < p
 
     def draw_integer(
         self,
@@ -386,10 +478,19 @@ class HypothesisProvider(PrimitiveProvider):
         max_size: int = COLLECTION_DEFAULT_MAX_SIZE,
     ) -> str:
         assert self._cd is not None
-        assert self._cd._random is not None
+        assert self._random is not None
 
         if len(intervals) == 0:
             return ""
+
+        sampler, nasty_strings = self._draw_string_sampler(
+            intervals=intervals,
+            min_size=min_size,
+            max_size=max_size,
+        )
+
+        if sampler is not None and self.draw_boolean(p=0.05):
+            return nasty_strings[sampler.sample(self._cd)]
 
         average_size = min(
             max(min_size * 2, min_size + 5),
@@ -407,11 +508,11 @@ class HypothesisProvider(PrimitiveProvider):
         while elements.more():
             if len(intervals) > 256:
                 if self.draw_boolean(0.2):
-                    i = self._cd._random.randint(256, len(intervals) - 1)
+                    i = self._random.randint(256, len(intervals) - 1)
                 else:
-                    i = self._cd._random.randint(0, 255)
+                    i = self._random.randint(0, 255)
             else:
-                i = self._cd._random.randint(0, len(intervals) - 1)
+                i = self._random.randint(0, len(intervals) - 1)
 
             chars.append(intervals.char_in_shrink_order(i))
 
@@ -423,7 +524,7 @@ class HypothesisProvider(PrimitiveProvider):
         max_size: int = COLLECTION_DEFAULT_MAX_SIZE,
     ) -> bytes:
         assert self._cd is not None
-        assert self._cd._random is not None
+        assert self._random is not None
 
         buf = bytearray()
         average_size = min(
@@ -438,25 +539,24 @@ class HypothesisProvider(PrimitiveProvider):
             observe=False,
         )
         while elements.more():
-            buf += self._cd._random.randbytes(1)
+            buf += self._random.randbytes(1)
 
         return bytes(buf)
 
     def _draw_float(self) -> float:
-        assert self._cd is not None
-        assert self._cd._random is not None
+        assert self._random is not None
 
-        f = lex_to_float(self._cd._random.getrandbits(64))
-        sign = 1 if self._cd._random.getrandbits(1) else -1
+        f = lex_to_float(self._random.getrandbits(64))
+        sign = 1 if self._random.getrandbits(1) else -1
         return sign * f
 
     def _draw_unbounded_integer(self) -> int:
         assert self._cd is not None
-        assert self._cd._random is not None
+        assert self._random is not None
 
         size = INT_SIZES[INT_SIZES_SAMPLER.sample(self._cd)]
 
-        r = self._cd._random.getrandbits(size)
+        r = self._random.getrandbits(size)
         sign = r & 1
         r >>= 1
         if sign:
@@ -472,22 +572,22 @@ class HypothesisProvider(PrimitiveProvider):
     ) -> int:
         assert lower <= upper
         assert self._cd is not None
-        assert self._cd._random is not None
+        assert self._random is not None
 
         if lower == upper:
             return lower
 
         bits = (upper - lower).bit_length()
-        if bits > 24 and vary_size and self._cd._random.random() < 7 / 8:
+        if bits > 24 and vary_size and self._random.random() < 7 / 8:
             # For large ranges, we combine the uniform random distribution
             # with a weighting scheme with moderate chance.  Cutoff at 2 ** 24 so that our
             # choice of unicode characters is uniform but the 32bit distribution is not.
             idx = INT_SIZES_SAMPLER.sample(self._cd)
             cap_bits = min(bits, INT_SIZES[idx])
             upper = min(upper, lower + 2**cap_bits - 1)
-            return self._cd._random.randint(lower, upper)
+            return self._random.randint(lower, upper)
 
-        return self._cd._random.randint(lower, upper)
+        return self._random.randint(lower, upper)
 
     @classmethod
     def _draw_float_init_logic(
@@ -574,6 +674,33 @@ class HypothesisProvider(PrimitiveProvider):
             allow_nan=allow_nan,
         )
         return (sampler, clamper, nasty_floats)
+
+    @classmethod
+    def _draw_string_sampler(
+        cls,
+        *,
+        intervals: IntervalSet,
+        min_size: int,
+        max_size: int,
+    ) -> tuple[Optional[Sampler], list[str]]:
+        kwargs: StringKWargs = {
+            "intervals": intervals,
+            "min_size": min_size,
+            "max_size": max_size,
+        }
+        key = choice_kwargs_key("string", kwargs)
+        if key in STRING_SAMPLER_CACHE:
+            return STRING_SAMPLER_CACHE[key]
+
+        nasty_strings = [s for s in NASTY_STRINGS if choice_permitted(s, kwargs)]
+        sampler = (
+            Sampler([1 / len(nasty_strings)] * len(nasty_strings), observe=False)
+            if nasty_strings
+            else None
+        )
+        result = (sampler, nasty_strings)
+        STRING_SAMPLER_CACHE[key] = result
+        return result
 
 
 class BytestringProvider(PrimitiveProvider):
@@ -706,3 +833,49 @@ class BytestringProvider(PrimitiveProvider):
     ) -> bytes:
         values = self._draw_collection(min_size, max_size, alphabet_size=2**8)
         return bytes(values)
+
+
+class URandom(Random):
+    # we reimplement a Random instance instead of using SystemRandom, because
+    # os.urandom is not guaranteed to read from /dev/urandom.
+
+    @staticmethod
+    def _urandom(size: int) -> bytes:
+        with open("/dev/urandom", "rb") as f:
+            return f.read(size)
+
+    def getrandbits(self, k: int) -> int:
+        assert k >= 0
+        size = bits_to_bytes(k)
+        n = int_from_bytes(self._urandom(size))
+        # trim excess bits
+        return n >> (size * 8 - k)
+
+    def random(self) -> float:
+        # adapted from random.SystemRandom.random
+        return (int_from_bytes(self._urandom(7)) >> 3) * (2**-53)
+
+
+class URandomProvider(HypothesisProvider):
+    # A provider which reads directly from /dev/urandom as its source of randomness.
+    # This provider exists to provide better Hypothesis integration with Antithesis
+    # (https://antithesis.com/), which interprets calls to /dev/urandom as the
+    # randomness to mutate. This effectively gives Antithesis control over
+    # the choices made by the URandomProvider.
+    #
+    # If you are not using Antithesis, you probably don't want to use this
+    # provider.
+
+    def __init__(self, conjecturedata: Optional["ConjectureData"], /):
+        super().__init__(conjecturedata)
+        if WINDOWS:  # pragma: no cover
+            warnings.warn(
+                "/dev/urandom is not available on windows. Falling back to "
+                'standard PRNG generation (equivalent to backend="hypothesis").',
+                HypothesisWarning,
+                stacklevel=1,
+            )
+            # don't overwrite the HypothesisProvider self._random attribute in
+            # this case
+        else:
+            self._random = URandom()

@@ -41,6 +41,7 @@ from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.utils import (
     calc_label_from_cls,
+    calc_label_from_hash,
     calc_label_from_name,
     combine_labels,
 )
@@ -65,18 +66,7 @@ T4 = TypeVar("T4")
 T5 = TypeVar("T5")
 MappedFrom = TypeVar("MappedFrom")
 MappedTo = TypeVar("MappedTo")
-RecurT: "TypeAlias" = Callable[["SearchStrategy"], Any]
-# These PackT and PredicateT aliases can only be used when you don't want to
-# specify a relationship between the generic Ts and some other function param
-# / return value. If you do - like the actual map definition in SearchStrategy -
-# you'll need to write Callable[[Ex], T] (replacing Ex/T as appropriate) instead.
-# TypeAlias is *not* simply a macro that inserts the text. it has different semantics.
-PackT: "TypeAlias" = Callable[[T], T3]
-PredicateT: "TypeAlias" = Callable[[T], object]
-TransformationsT: "TypeAlias" = tuple[
-    Union[tuple[Literal["filter"], PredicateT], tuple[Literal["map"], PackT]], ...
-]
-
+RecurT: "TypeAlias" = Callable[["SearchStrategy"], bool]
 calculating = UniqueIdentifier("calculating")
 
 MAPPED_SEARCH_STRATEGY_DO_DRAW_LABEL = calc_label_from_name(
@@ -236,10 +226,9 @@ class SearchStrategy(Generic[Ex]):
     releases.
     """
 
-    supports_find = True
-    validate_called = False
+    validate_called: bool = False
     __label: Union[int, UniqueIdentifier, None] = None
-    __module__ = "hypothesis.strategies"
+    __module__: str = "hypothesis.strategies"
 
     def available(self, data: ConjectureData) -> bool:
         """Returns whether this strategy can *currently* draw any
@@ -261,6 +250,10 @@ class SearchStrategy(Generic[Ex]):
         # can be drawn - this is not intended to be perfect, and is primarily
         # intended to be an optimisation for some cases.
         return recursive_property(self, "is_empty", True)
+
+    @property
+    def supports_find(self) -> bool:
+        return True
 
     # Returns True if values from this strategy can safely be reused without
     # this causing unexpected behaviour.
@@ -390,7 +383,15 @@ class SearchStrategy(Generic[Ex]):
 
         return FlatMapStrategy(expand=expand, strategy=self)
 
-    def filter(self, condition: PredicateT) -> "SearchStrategy[Ex]":
+    # Note that we previously had condition extracted to a type alias as
+    # PredicateT. However, that was only useful when not specifying a relationship
+    # between the generic Ts and some other function param / return value.
+    # If we do want to - like here, where we want to say that the Ex arg to condition
+    # is of the same type as the strategy's Ex - then you need to write out the
+    # entire Callable[[Ex], Any] expression rather than use a type alias.
+    # TypeAlias is *not* simply a macro that inserts the text. TypeAlias will not
+    # reference the local TypeVar context.
+    def filter(self, condition: Callable[[Ex], Any]) -> "SearchStrategy[Ex]":
         """Returns a new strategy that generates values from this strategy
         which satisfy the provided condition. Note that if the condition is too
         hard to satisfy this might result in your tests failing with
@@ -400,7 +401,9 @@ class SearchStrategy(Generic[Ex]):
         """
         return FilteredStrategy(conditions=(condition,), strategy=self)
 
-    def _filter_for_filtered_draw(self, condition: PredicateT) -> "SearchStrategy[Ex]":
+    def _filter_for_filtered_draw(
+        self, condition: Callable[[Ex], Any]
+    ) -> "FilteredStrategy[Ex]":
         # Hook for parent strategies that want to perform fallible filtering
         # on one of their internal strategies (e.g. UniqueListStrategy).
         # The returned object must have a `.do_filtered_draw(data)` method
@@ -424,7 +427,27 @@ class SearchStrategy(Generic[Ex]):
         """
         if not isinstance(other, SearchStrategy):
             raise ValueError(f"Cannot | a SearchStrategy with {other!r}")
-        return OneOfStrategy((self, other))
+
+        # Unwrap explicitly or'd strategies. This turns the
+        # common case of e.g. st.integers() | st.integers() | st.integers() from
+        #
+        #   one_of(one_of(integers(), integers()), integers())
+        #
+        # into
+        #
+        #   one_of(integers(), integers(), integers())
+        #
+        # This is purely an aesthetic unwrapping, for e.g. reprs. In practice
+        # we use .branches / .element_strategies to get the list of possible
+        # strategies, so this unwrapping is *not* necessary for correctness.
+        strategies: list[SearchStrategy] = []
+        strategies.extend(
+            self.original_strategies if isinstance(self, OneOfStrategy) else [self]
+        )
+        strategies.extend(
+            other.original_strategies if isinstance(other, OneOfStrategy) else [other]
+        )
+        return OneOfStrategy(strategies)
 
     def __bool__(self) -> bool:
         warnings.warn(
@@ -482,7 +505,7 @@ class SearchStrategy(Generic[Ex]):
         raise NotImplementedError(f"{type(self).__name__}.do_draw")
 
 
-def is_simple_data(value: object) -> bool:
+def is_hashable(value: object) -> bool:
     try:
         hash(value)
         return True
@@ -502,7 +525,10 @@ class SampledFromStrategy(SearchStrategy[Ex]):
         self,
         elements: Sequence[Ex],
         repr_: Optional[str] = None,
-        transformations: TransformationsT = (),
+        transformations: tuple[
+            tuple[Literal["filter", "map"], Callable[[Ex], Any]],
+            ...,
+        ] = (),
     ):
         super().__init__()
         self.elements = cu.check_sample(elements, "sampled_from")
@@ -519,7 +545,7 @@ class SampledFromStrategy(SearchStrategy[Ex]):
         # guaranteed by the ("map", pack) transformation
         return cast(SearchStrategy[T], s)
 
-    def filter(self, condition: PredicateT) -> SearchStrategy[Ex]:
+    def filter(self, condition: Callable[[Ex], Any]) -> SearchStrategy[Ex]:
         return type(self)(
             self.elements,
             repr_=self.repr_,
@@ -537,15 +563,25 @@ class SampledFromStrategy(SearchStrategy[Ex]):
             for name, f in self._transformations
         )
 
-    def calc_has_reusable_values(self, recur: RecurT) -> Any:
+    def calc_label(self) -> int:
+        return combine_labels(
+            self.class_label,
+            *(
+                (calc_label_from_hash(self.elements),)
+                if is_hashable(self.elements)
+                else ()
+            ),
+        )
+
+    def calc_has_reusable_values(self, recur: RecurT) -> bool:
         # Because our custom .map/.filter implementations skip the normal
         # wrapper strategies (which would automatically return False for us),
         # we need to manually return False here if any transformations have
         # been applied.
         return not self._transformations
 
-    def calc_is_cacheable(self, recur: RecurT) -> Any:
-        return is_simple_data(self.elements)
+    def calc_is_cacheable(self, recur: RecurT) -> bool:
+        return is_hashable(self.elements)
 
     def _transform(
         self,
@@ -557,14 +593,12 @@ class SampledFromStrategy(SearchStrategy[Ex]):
         # Used in UniqueSampledListStrategy
         for name, f in self._transformations:
             if name == "map":
-                f = cast(PackT, f)
                 result = f(element)
                 if build_context := _current_build_context.value:
                     build_context.record_call(result, f, [element], {})
                 element = result
             else:
                 assert name == "filter"
-                f = cast(PredicateT, f)
                 if not f(element):
                     return filter_not_satisfied
         return element
@@ -656,18 +690,17 @@ class OneOfStrategy(SearchStrategy[Ex]):
 
     def __init__(self, strategies: Sequence[SearchStrategy[Ex]]):
         super().__init__()
-        strategies = tuple(strategies)
-        self.original_strategies = list(strategies)
+        self.original_strategies = tuple(strategies)
         self.__element_strategies: Optional[Sequence[SearchStrategy[Ex]]] = None
         self.__in_branches = False
 
-    def calc_is_empty(self, recur: RecurT) -> Any:
+    def calc_is_empty(self, recur: RecurT) -> bool:
         return all(recur(e) for e in self.original_strategies)
 
-    def calc_has_reusable_values(self, recur: RecurT) -> Any:
+    def calc_has_reusable_values(self, recur: RecurT) -> bool:
         return all(recur(e) for e in self.original_strategies)
 
-    def calc_is_cacheable(self, recur: RecurT) -> Any:
+    def calc_is_cacheable(self, recur: RecurT) -> bool:
         return all(recur(e) for e in self.original_strategies)
 
     @property
@@ -731,7 +764,7 @@ class OneOfStrategy(SearchStrategy[Ex]):
         else:
             return [self]
 
-    def filter(self, condition: PredicateT) -> SearchStrategy[Ex]:
+    def filter(self, condition: Callable[[Ex], Any]) -> SearchStrategy[Ex]:
         return FilteredStrategy(
             OneOfStrategy([s.filter(condition) for s in self.original_strategies]),
             conditions=(),
@@ -856,10 +889,10 @@ class MappedStrategy(SearchStrategy[MappedTo], Generic[MappedFrom, MappedTo]):
         self.mapped_strategy = strategy
         self.pack = pack
 
-    def calc_is_empty(self, recur: RecurT) -> Any:
+    def calc_is_empty(self, recur: RecurT) -> bool:
         return recur(self.mapped_strategy)
 
-    def calc_is_cacheable(self, recur: RecurT) -> Any:
+    def calc_is_cacheable(self, recur: RecurT) -> bool:
         return recur(self.mapped_strategy)
 
     def __repr__(self) -> str:
@@ -878,14 +911,14 @@ class MappedStrategy(SearchStrategy[MappedTo], Generic[MappedFrom, MappedTo]):
                 warnings.simplefilter("ignore", BytesWarning)
             for _ in range(3):
                 try:
-                    data.start_example(MAPPED_SEARCH_STRATEGY_DO_DRAW_LABEL)
+                    data.start_span(MAPPED_SEARCH_STRATEGY_DO_DRAW_LABEL)
                     x = data.draw(self.mapped_strategy)
                     result = self.pack(x)
-                    data.stop_example()
+                    data.stop_span()
                     current_build_context().record_call(result, self.pack, [x], {})
                     return result
                 except UnsatisfiedAssumption:
-                    data.stop_example(discard=True)
+                    data.stop_span(discard=True)
         raise UnsatisfiedAssumption
 
     @property
@@ -960,12 +993,12 @@ filter_not_satisfied = UniqueIdentifier("filter not satisfied")
 
 class FilteredStrategy(SearchStrategy[Ex]):
     def __init__(
-        self, strategy: SearchStrategy[Ex], conditions: tuple[PredicateT, ...]
+        self, strategy: SearchStrategy[Ex], conditions: tuple[Callable[[Ex], Any], ...]
     ):
         super().__init__()
         if isinstance(strategy, FilteredStrategy):
             # Flatten chained filters into a single filter with multiple conditions.
-            self.flat_conditions: tuple[PredicateT, ...] = (
+            self.flat_conditions: tuple[Callable[[Ex], Any], ...] = (
                 strategy.flat_conditions + conditions
             )
             self.filtered_strategy: SearchStrategy[Ex] = strategy.filtered_strategy
@@ -976,12 +1009,12 @@ class FilteredStrategy(SearchStrategy[Ex]):
         assert isinstance(self.flat_conditions, tuple)
         assert not isinstance(self.filtered_strategy, FilteredStrategy)
 
-        self.__condition: Optional[PredicateT] = None
+        self.__condition: Optional[Callable[[Ex], Any]] = None
 
-    def calc_is_empty(self, recur: RecurT) -> Any:
+    def calc_is_empty(self, recur: RecurT) -> bool:
         return recur(self.filtered_strategy)
 
-    def calc_is_cacheable(self, recur: RecurT) -> Any:
+    def calc_is_cacheable(self, recur: RecurT) -> bool:
         return recur(self.filtered_strategy)
 
     def __repr__(self) -> str:
@@ -1017,7 +1050,7 @@ class FilteredStrategy(SearchStrategy[Ex]):
             # an in-place method so we still just re-initialize the strategy!
             FilteredStrategy.__init__(self, fresh, ())
 
-    def filter(self, condition: PredicateT) -> "FilteredStrategy[Ex]":
+    def filter(self, condition: Callable[[Ex], Any]) -> "FilteredStrategy[Ex]":
         # If we can, it's more efficient to rewrite our strategy to satisfy the
         # condition.  We therefore exploit the fact that the order of predicates
         # doesn't matter (`f(x) and g(x) == g(x) and f(x)`) by attempting to apply
@@ -1033,16 +1066,16 @@ class FilteredStrategy(SearchStrategy[Ex]):
         return FilteredStrategy(out, self.flat_conditions)
 
     @property
-    def condition(self) -> PredicateT:
+    def condition(self) -> Callable[[Ex], Any]:
         if self.__condition is None:
             if len(self.flat_conditions) == 1:
                 # Avoid an extra indirection in the common case of only one condition.
                 self.__condition = self.flat_conditions[0]
             elif len(self.flat_conditions) == 0:
                 # Possible, if unlikely, due to filter predicate rewriting
-                self.__condition = lambda _: True
+                self.__condition = lambda _: True  # type: ignore # covariant type param
             else:
-                self.__condition = lambda x: all(
+                self.__condition = lambda x: all(  # type: ignore # covariant type param
                     cond(x) for cond in self.flat_conditions
                 )
         return self.__condition
@@ -1056,13 +1089,13 @@ class FilteredStrategy(SearchStrategy[Ex]):
 
     def do_filtered_draw(self, data: ConjectureData) -> Union[Ex, UniqueIdentifier]:
         for i in range(3):
-            data.start_example(FILTERED_SEARCH_STRATEGY_DO_DRAW_LABEL)
+            data.start_span(FILTERED_SEARCH_STRATEGY_DO_DRAW_LABEL)
             value = data.draw(self.filtered_strategy)
             if self.condition(value):
-                data.stop_example()
+                data.stop_span()
                 return value
             else:
-                data.stop_example(discard=True)
+                data.stop_span(discard=True)
                 if i == 0:
                     data.events[f"Retried draw from {self!r} to satisfy filter"] = ""
 

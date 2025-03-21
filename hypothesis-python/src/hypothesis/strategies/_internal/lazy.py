@@ -8,18 +8,20 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from collections.abc import MutableMapping
+from collections.abc import MutableMapping, Sequence
 from inspect import signature
+from typing import Any, Callable, Optional
 from weakref import WeakKeyDictionary
 
 from hypothesis.configuration import check_sideeffect_during_initialization
+from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.reflection import (
     convert_keyword_arguments,
     convert_positional_arguments,
     get_pretty_function_description,
     repr_call,
 )
-from hypothesis.strategies._internal.strategies import SearchStrategy
+from hypothesis.strategies._internal.strategies import Ex, RecurT, SearchStrategy
 
 unwrap_cache: MutableMapping[SearchStrategy, SearchStrategy] = WeakKeyDictionary()
 unwrap_depth = 0
@@ -61,33 +63,41 @@ def unwrap_strategies(s):
         assert unwrap_depth >= 0
 
 
-class LazyStrategy(SearchStrategy):
+class LazyStrategy(SearchStrategy[Ex]):
     """A strategy which is defined purely by conversion to and from another
     strategy.
 
     Its parameter and distribution come from that other strategy.
     """
 
-    def __init__(self, function, args, kwargs, *, transforms=(), force_repr=None):
+    def __init__(
+        self,
+        function: Callable[..., SearchStrategy[Ex]],
+        args: Sequence[object],
+        kwargs: dict[str, object],
+        *,
+        transforms: tuple[tuple[str, Callable[..., Any]], ...] = (),
+        force_repr: Optional[str] = None,
+    ):
         super().__init__()
-        self.__wrapped_strategy = None
-        self.__representation = force_repr
+        self.__wrapped_strategy: Optional[SearchStrategy[Ex]] = None
+        self.__representation: Optional[str] = force_repr
         self.function = function
         self.__args = args
         self.__kwargs = kwargs
         self._transformations = transforms
 
     @property
-    def supports_find(self):
+    def supports_find(self) -> bool:
         return self.wrapped_strategy.supports_find
 
-    def calc_is_empty(self, recur):
+    def calc_is_empty(self, recur: RecurT) -> bool:
         return recur(self.wrapped_strategy)
 
-    def calc_has_reusable_values(self, recur):
+    def calc_has_reusable_values(self, recur: RecurT) -> bool:
         return recur(self.wrapped_strategy)
 
-    def calc_is_cacheable(self, recur):
+    def calc_is_cacheable(self, recur: RecurT) -> bool:
         for source in (self.__args, self.__kwargs.values()):
             for v in source:
                 if isinstance(v, SearchStrategy) and not v.is_cacheable:
@@ -95,7 +105,7 @@ class LazyStrategy(SearchStrategy):
         return True
 
     @property
-    def wrapped_strategy(self):
+    def wrapped_strategy(self) -> SearchStrategy[Ex]:
         if self.__wrapped_strategy is None:
             check_sideeffect_during_initialization("lazy evaluation of {!r}", self)
 
@@ -113,13 +123,14 @@ class LazyStrategy(SearchStrategy):
                 )
             for method, fn in self._transformations:
                 self.__wrapped_strategy = getattr(self.__wrapped_strategy, method)(fn)
+        assert self.__wrapped_strategy is not None
         return self.__wrapped_strategy
 
     def __with_transform(self, method, fn):
         repr_ = self.__representation
         if repr_:
             repr_ = f"{repr_}.{method}({get_pretty_function_description(fn)})"
-        return type(self)(
+        return LazyStrategy(
             self.function,
             self.__args,
             self.__kwargs,
@@ -133,12 +144,12 @@ class LazyStrategy(SearchStrategy):
     def filter(self, condition):
         return self.__with_transform("filter", condition)
 
-    def do_validate(self):
+    def do_validate(self) -> None:
         w = self.wrapped_strategy
         assert isinstance(w, SearchStrategy), f"{self!r} returned non-strategy {w!r}"
         w.validate()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.__representation is None:
             sig = signature(self.function)
             pos = [p for p in sig.parameters.values() if "POSITIONAL" in p.kind.name]
@@ -163,9 +174,9 @@ class LazyStrategy(SearchStrategy):
             )
         return self.__representation
 
-    def do_draw(self, data):
+    def do_draw(self, data: ConjectureData) -> Ex:
         return data.draw(self.wrapped_strategy)
 
     @property
-    def label(self):
+    def label(self) -> int:
         return self.wrapped_strategy.label

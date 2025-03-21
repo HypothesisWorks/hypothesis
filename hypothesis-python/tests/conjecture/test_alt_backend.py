@@ -11,7 +11,7 @@
 import itertools
 import math
 import sys
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from random import Random
 from typing import Optional
 
@@ -32,10 +32,11 @@ from hypothesis.errors import (
     BackendCannotProceed,
     Flaky,
     HypothesisException,
+    HypothesisWarning,
     InvalidArgument,
     Unsatisfiable,
 )
-from hypothesis.internal.compat import int_to_bytes
+from hypothesis.internal.compat import WINDOWS, int_to_bytes
 from hypothesis.internal.conjecture.data import ConjectureData, PrimitiveProvider
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.providers import (
@@ -250,7 +251,7 @@ def test_backend_can_shrink_floats():
 
 
 # mostly a shoehorned coverage test until the shrinker is migrated to the ir
-# and calls cached_test_function_ir with backends consistently.
+# and calls cached_test_function with backends consistently.
 @given(nodes())
 def test_new_conjecture_data_with_backend(node):
     def test(data):
@@ -258,7 +259,7 @@ def test_new_conjecture_data_with_backend(node):
 
     with temp_register_backend("prng", PrngProvider):
         runner = ConjectureRunner(test, settings=settings(backend="prng"))
-        runner.cached_test_function_ir([node.value])
+        runner.cached_test_function([node.value])
 
 
 # trivial provider for tests which don't care about drawn distributions.
@@ -596,3 +597,34 @@ def test_available_providers_deprecation():
 
     with pytest.raises(ImportError):
         from hypothesis.internal.conjecture.data import does_not_exist  # noqa
+
+
+@pytest.mark.parametrize("backend", AVAILABLE_PROVIDERS.keys())
+@pytest.mark.parametrize(
+    "strategy", [st.integers(), st.text(), st.floats(), st.booleans(), st.binary()]
+)
+def test_can_generate_from_all_available_providers(backend, strategy):
+    if backend == "crosshair":
+        # TODO running into a 'not in statespace' issue which is fixed in
+        # https://github.com/HypothesisWorks/hypothesis/pull/4034. Remove
+        # this skip when that is merged
+        pytest.skip(
+            "temp, fixed in https://github.com/HypothesisWorks/hypothesis/pull/4034"
+        )
+
+    @given(strategy)
+    @settings(backend=backend, database=None)
+    def f(x):
+        raise ValueError
+
+    with (
+        pytest.raises(ValueError),
+        (
+            pytest.warns(
+                HypothesisWarning, match="/dev/urandom is not available on windows"
+            )
+            if backend == "hypothesis-urandom" and WINDOWS
+            else nullcontext()
+        ),
+    ):
+        f()
