@@ -466,6 +466,7 @@ class ConjectureRunner:
                     self._switch_to_hypothesis_provider = True
             # skip the post-test-case tracking; we're pretending this never happened
             interrupted = True
+            data.cannot_proceed_scope = exc.scope
             data.freeze()
             return
         except BaseException:
@@ -475,6 +476,7 @@ class ConjectureRunner:
             # No branch, because if we're interrupted we always raise
             # the KeyboardInterrupt, never continue to the code below.
             if not interrupted:  # pragma: no branch
+                assert data.cannot_proceed_scope is None
                 data.freeze()
                 call_stats: CallStats = {
                     "status": data.status.name.lower(),
@@ -962,9 +964,18 @@ class ConjectureRunner:
         zero_data = self.cached_test_function((ChoiceTemplate("simplest", count=None),))
         if zero_data.status > Status.OVERRUN:
             assert isinstance(zero_data, ConjectureResult)
-            self.__data_cache.pin(
-                self._cache_key(zero_data.choices), zero_data.as_result()
-            )  # Pin forever
+            # if the crosshair backend cannot proceed, it does not (and cannot)
+            # realize the symbolic values, with the intent that Hypothesis will
+            # throw away this test case. We usually do, but if it's the zero data
+            # then we try to pin it here, which requires realizing the symbolics.
+            #
+            # We don't (yet) rely on the zero data being pinned, and so
+            # it's simply a very slight performance loss to simply not pin it
+            # if doing so would error.
+            if zero_data.cannot_proceed_scope is None:  # pragma: no branch
+                self.__data_cache.pin(
+                    self._cache_key(zero_data.choices), zero_data.as_result()
+                )  # Pin forever
 
         if zero_data.status == Status.OVERRUN or (
             zero_data.status == Status.VALID

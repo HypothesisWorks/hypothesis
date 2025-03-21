@@ -248,6 +248,9 @@ class SmallSearchSpaceWarning(HypothesisWarning):
     in a meaningful way, for example by only creating default instances."""
 
 
+CannotProceedScopeT = Literal["verified", "exhausted", "discard_test_case", "other"]
+
+
 class BackendCannotProceed(HypothesisException):
     """UNSTABLE API
 
@@ -273,9 +276,5 @@ class BackendCannotProceed(HypothesisException):
             this backend.
     """
 
-    def __init__(
-        self,
-        scope: Literal["verified", "exhausted", "discard_test_case", "other"] = "other",
-        /,
-    ) -> None:
+    def __init__(self, scope: CannotProceedScopeT = "other", /) -> None:
         self.scope = scope
