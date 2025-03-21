@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.129.5:
+
+--------------------
+6.129.5 - 2025-03-21
+--------------------
+
+Fixes an internal error when certain :ref:`alternative backends <alternative-backends>` find a failure on their very first generated example.
+
 .. _v6.129.4:
 
 --------------------
