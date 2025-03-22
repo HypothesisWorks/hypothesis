@@ -604,14 +604,6 @@ def test_available_providers_deprecation():
     "strategy", [st.integers(), st.text(), st.floats(), st.booleans(), st.binary()]
 )
 def test_can_generate_from_all_available_providers(backend, strategy):
-    if backend == "crosshair":
-        # TODO running into a 'not in statespace' issue which is fixed in
-        # https://github.com/HypothesisWorks/hypothesis/pull/4034. Remove
-        # this skip when that is merged
-        pytest.skip(
-            "temp, fixed in https://github.com/HypothesisWorks/hypothesis/pull/4034"
-        )
-
     @given(strategy)
     @settings(backend=backend, database=None)
     def f(x):

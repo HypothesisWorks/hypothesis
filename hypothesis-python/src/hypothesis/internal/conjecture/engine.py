@@ -213,6 +213,30 @@ class DiscardObserver(DataObserver):
         raise ContainsDiscard
 
 
+def realize_choices(data: ConjectureData) -> None:
+    for node in data.nodes:
+        value = data.provider.realize(node.value)
+        expected_type = {
+            "string": str,
+            "float": float,
+            "integer": int,
+            "boolean": bool,
+            "bytes": bytes,
+        }[node.type]
+        if type(value) is not expected_type:
+            raise HypothesisException(
+                f"expected {expected_type} from "
+                f"{data.provider.realize.__qualname__}, got {type(value)}"
+            )
+
+        kwargs = cast(
+            ChoiceKwargsT,
+            {k: data.provider.realize(v) for k, v in node.kwargs.items()},
+        )
+        node.value = value
+        node.kwargs = kwargs
+
+
 class ConjectureRunner:
     def __init__(
         self,
@@ -440,6 +464,8 @@ class ConjectureRunner:
         return data.as_result()
 
     def test_function(self, data: ConjectureData) -> None:
+        from hypothesis.core import skip_exceptions_to_reraise
+
         if self.__pending_call_explanation is not None:
             self.debug(self.__pending_call_explanation)
             self.__pending_call_explanation = None
@@ -469,7 +495,12 @@ class ConjectureRunner:
             data.cannot_proceed_scope = exc.scope
             data.freeze()
             return
+        except skip_exceptions_to_reraise():
+            raise
         except BaseException:
+            data.freeze()
+            if self.settings.backend != "hypothesis":
+                realize_choices(data)
             self.save_choices(data.choices)
             raise
         finally:
@@ -489,31 +520,7 @@ class ConjectureRunner:
                 }
                 self.stats_per_test_case.append(call_stats)
                 if self.settings.backend != "hypothesis":
-                    for node in data.nodes:
-                        value = data.provider.realize(node.value)
-                        expected_type = {
-                            "string": str,
-                            "float": float,
-                            "integer": int,
-                            "boolean": bool,
-                            "bytes": bytes,
-                        }[node.type]
-                        if type(value) is not expected_type:
-                            raise HypothesisException(
-                                f"expected {expected_type} from "
-                                f"{data.provider.realize.__qualname__}, "
-                                f"got {type(value)}"
-                            )
-
-                        kwargs = cast(
-                            ChoiceKwargsT,
-                            {
-                                k: data.provider.realize(v)
-                                for k, v in node.kwargs.items()
-                            },
-                        )
-                        node.value = value
-                        node.kwargs = kwargs
+                    realize_choices(data)
 
                 self._cache(data)
                 if data.misaligned_at is not None:  # pragma: no branch # coverage bug?

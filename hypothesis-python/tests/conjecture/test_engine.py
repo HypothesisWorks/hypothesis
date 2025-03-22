@@ -391,6 +391,21 @@ def test_does_not_save_on_interrupt():
     assert not db.data
 
 
+def test_does_not_save_on_skip_exceptions_to_reraise():
+    # exception types in skip_exceptions_to_reraise should be reraised, but
+    # not saved to the db
+    def raises(data):
+        pytest.skip()
+
+    db = InMemoryExampleDatabase()
+    runner = ConjectureRunner(
+        raises, settings=settings(database=db), database_key=b"key"
+    )
+    with pytest.raises(pytest.skip.Exception):
+        runner.run()
+    assert not db.data
+
+
 def test_returns_forced():
     value = b"\0\1\2\3"
 
