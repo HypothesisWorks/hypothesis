@@ -221,6 +221,8 @@ rst_prolog = """
 .. |st.ip_addresses| replace:: :func:`~hypothesis.strategies.ip_addresses`
 .. |st.register_type_strategy| replace:: :func:`~hypothesis.strategies.register_type_strategy`
 .. |st.just| replace:: :func:`~hypothesis.strategies.just`
+.. |st.domains| replace:: :func:`~hypothesis.provisional.domains`
+.. |st.urls| replace:: :func:`~hypothesis.provisional.urls`
 
 .. |django.from_form| replace:: :func:`~hypothesis.extra.django.from_form`
 .. |django.from_model| replace:: :func:`~hypothesis.extra.django.from_model`

@@ -43,6 +43,18 @@ Strings
 .. autofunction:: hypothesis.strategies.binary
 .. autofunction:: hypothesis.strategies.emails
 
+.. autofunction:: hypothesis.provisional.domains
+
+.. warning::
+
+  The |st.domains| strategy is provisional. Its interface may be changed in a minor release, without being subject to our :ref:`deprecation policy <deprecation-policy>`. That said, we expect it to be relatively stable.
+
+.. autofunction:: hypothesis.provisional.urls
+
+.. warning::
+
+  The |st.urls| strategy is provisional. Its interface may be changed in a minor release, without being subject to our :ref:`deprecation policy <deprecation-policy>`. That said, we expect it to be relatively stable.
+
 Collections
 -----------
 
@@ -109,13 +121,6 @@ Misc
 
 .. autofunction:: hypothesis.strategies.sampled_from
 .. autofunction:: hypothesis.strategies.permutations
-
-Provisional
------------
-
-.. automodule:: hypothesis.provisional
-  :members:
-  :exclude-members: DomainNameStrategy
 
 Related
 -------
