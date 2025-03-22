@@ -85,8 +85,8 @@ Conceptual explanations of Hypothesis concepts.
 
 .. rst-class:: column column2 bottom-right
 
-:doc:`Reference <reference/index>`
-----------------------------------
+:doc:`API Reference <reference/index>`
+--------------------------------------
 
 Technical API reference.
 
@@ -102,6 +102,7 @@ Technical API reference.
     explanation/index
     reference/index
     Extras <extras>
+    Type hints <typing>
     changelog
 
 .. toctree::

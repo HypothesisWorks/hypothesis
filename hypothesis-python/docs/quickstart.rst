@@ -99,7 +99,7 @@ You can pass multiple parameters to |@given|:
 
 .. note::
 
-    See :doc:`the @given documentation </reference/given>` for details about how |@given| handles different types of parameters.
+    See |@given| for details about how |@given| handles different types of parameters.
 
 |assume|
 --------

@@ -192,7 +192,7 @@ In general, you can think of positional and keyword arguments to |@given| as bei
 
 .. note::
 
-  One exception is that |@given| does not support mixing positional and keyword arguments. Read more about how |@given| handles arguments in :doc:`its documentation </reference/given>`.
+  One exception is that |@given| does not support mixing positional and keyword arguments. See the |@given| documentation for more about how it handles arguments.
 
 When to use property-based testing
 ----------------------------------
