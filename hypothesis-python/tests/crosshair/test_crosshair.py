@@ -13,7 +13,6 @@ import pytest
 from hypothesis import Verbosity, given, settings, strategies as st
 
 
-@pytest.mark.xfail(reason="temporarily ignoring crosshair churn")
 @pytest.mark.parametrize("verbosity", list(Verbosity))
 def test_crosshair_works_for_all_verbosities(verbosity):
     # check that we aren't realizing symbolics early in debug prints and killing
@@ -27,7 +26,6 @@ def test_crosshair_works_for_all_verbosities(verbosity):
         f()
 
 
-@pytest.mark.xfail(reason="temporarily ignoring crosshair churn")
 @pytest.mark.parametrize("verbosity", list(Verbosity))
 def test_crosshair_works_for_all_verbosities_data(verbosity):
     # data draws have their own print path

@@ -9,10 +9,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 """
-----------------
-hypothesis[pytz]
-----------------
-
 This module provides :pypi:`pytz` timezones.
 
 If you are unable to use the stdlib :mod:`zoneinfo` module, e.g. via the

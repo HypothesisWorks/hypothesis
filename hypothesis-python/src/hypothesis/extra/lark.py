@@ -9,10 +9,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 """
-----------------
-hypothesis[lark]
-----------------
-
 This extra can be used to generate strings matching any context-free grammar,
 using the `Lark parser library <https://github.com/lark-parser/lark>`_.
 

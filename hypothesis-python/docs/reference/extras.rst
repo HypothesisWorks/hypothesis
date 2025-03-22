@@ -17,32 +17,13 @@ and even harder to regularly test. Hypothesis is always tested against the lates
 compatible version and each package will note the expected compatibility range. If
 you run into a bug with any of these please specify the dependency version.
 
-There are separate pages for :doc:`django </reference/django>` and :doc:`numpy </reference/data-science>`.
+The following lists the available extras in Hypothesis and their documentation.
 
-
-.. automodule:: hypothesis.extra.cli
-
-.. automodule:: hypothesis.extra.codemods
-
-.. automodule:: hypothesis.extra.dpcontracts
-   :members:
-
-.. tip::
-
-   For new projects, we recommend using either :pypi:`deal` or :pypi:`icontract`
-   and :pypi:`icontract-hypothesis` over :pypi:`dpcontracts`.
-   They're generally more powerful tools for design-by-contract programming,
-   and have substantially nicer Hypothesis integration too!
-
-.. automodule:: hypothesis.extra.lark
-   :members:
-
-Example grammars, which may provide a useful starting point for your tests, can be found
-`in the Lark repository <https://github.com/lark-parser/lark/tree/master/examples>`__
-and in `this third-party collection <https://github.com/ligurio/lark-grammars>`__.
-
-.. automodule:: hypothesis.extra.pytz
-   :members:
-
-.. automodule:: hypothesis.extra.dateutil
-   :members:
+* :ref:`hypothesis[cli] <hypothesis-cli>`
+* :ref:`hypothesis[codemods] <codemods>`
+* :ref:`hypothesis[django] <hypothesis-django>`
+* :ref:`hypothesis[numpy] <hypothesis-numpy>`
+* :ref:`hypothesis[lark] <hypothesis-lark>`
+* :ref:`hypothesis[pytz] <hypothesis-pytz>`
+* :ref:`hypothesis[dateutil] <hypothesis-dateutil>`
+* :ref:`hypothesis[dpcontracts] <hypothesis-dpcontracts>`

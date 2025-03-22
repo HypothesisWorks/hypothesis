@@ -101,6 +101,7 @@ Technical API reference.
     how-to/index
     explanation/index
     reference/index
+    Extras <extras>
     changelog
 
 .. toctree::

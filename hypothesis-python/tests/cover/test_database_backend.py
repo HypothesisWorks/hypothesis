@@ -23,7 +23,14 @@ from typing import Optional
 
 import pytest
 
-from hypothesis import configuration, example, given, settings, strategies as st
+from hypothesis import (
+    HealthCheck,
+    configuration,
+    example,
+    given,
+    settings,
+    strategies as st,
+)
 from hypothesis.database import (
     BackgroundWriteDatabase,
     DirectoryBasedExampleDatabase,
@@ -656,6 +663,7 @@ def test_database_listener_background_write():
     _database_conforms_to_listener_api(
         lambda path: BackgroundWriteDatabase(InMemoryExampleDatabase()),
         flush=lambda db: db._join(),
+        parent_settings=settings(suppress_health_check=[HealthCheck.too_slow]),
     )
 
 

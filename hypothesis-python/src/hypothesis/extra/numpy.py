@@ -590,6 +590,7 @@ def defines_dtype_strategy(strat: T) -> T:
 
 @defines_dtype_strategy
 def boolean_dtypes() -> st.SearchStrategy["np.dtype[np.bool_]"]:
+    """Return a strategy for boolean dtypes."""
     return st.just("?")  # type: ignore[arg-type]
 
 

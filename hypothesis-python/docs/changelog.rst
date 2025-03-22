@@ -18,6 +18,163 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.130.1:
+
+--------------------
+6.130.1 - 2025-03-22
+--------------------
+
+Improve the documentation for some strategies, including |st.composite| and |st.data|.
+
+.. _v6.130.0:
+
+--------------------
+6.130.0 - 2025-03-21
+--------------------
+
+Nesting :func:`@given <hypothesis.given>` inside of :func:`@given <hypothesis.given>` is now a :ref:`health check <healthchecks>` failure. Nesting :func:`@given <hypothesis.given>` results in quadratic generation and shrinking behavior, and can usually be more cleanly expressed by replacing the inner function with a :func:`~hypothesis.strategies.data` parameter on the outer given. For more details, see :obj:`~hypothesis.HealthCheck.nested_given`. (:issue:`4167`)
+
+.. _v6.129.5:
+
+--------------------
+6.129.5 - 2025-03-21
+--------------------
+
+Fixes an internal error when certain :ref:`alternative backends <alternative-backends>` find a failure on their very first generated example.
+
+.. _v6.129.4:
+
+--------------------
+6.129.4 - 2025-03-18
+--------------------
+
+:func:`~hypothesis.strategies.nothing` is now typed as ``SearchStrategy[Never]``, because no value can ever be drawn from it. This may help type checkers statically determine that some code is not reachable.
+
+.. _v6.129.3:
+
+--------------------
+6.129.3 - 2025-03-16
+--------------------
+
+This patch improves the string representation of :func:`~hypothesis.strategies.fixed_dictionaries`.
+
+.. _v6.129.2:
+
+--------------------
+6.129.2 - 2025-03-14
+--------------------
+
+Improve how the shrinker checks for unnecessary work, leading to 10% less time spent shrinking on average, with no reduction in quality.
+
+.. _v6.129.1:
+
+--------------------
+6.129.1 - 2025-03-13
+--------------------
+
+:func:`~hypothesis.strategies.randoms` no longer produces ``1.0``, matching
+the exclusive upper bound of :obj:`random.Random.random` (:issue:`4297`).
+
+.. _v6.129.0:
+
+--------------------
+6.129.0 - 2025-03-11
+--------------------
+
+This release adds a ``"hypothesis-urandom"`` :ref:`backend <alternative-backends>`, which draws randomness from ``/dev/urandom`` instead of Python's PRNG. This is useful for users of `Antithesis <https://antithesis.com/>`_ who also have Hypothesis tests, allowing Antithesis mutation of ``/dev/urandom`` to drive Hypothesis generation. We expect it to be strictly slower than the default backend for everyone else.
+
+It can be enabled with ``@settings(backend="hypothesis-urandom")``.
+
+.. _v6.128.3:
+
+--------------------
+6.128.3 - 2025-03-11
+--------------------
+
+For strategies which draw make recursive draws, including :func:`~hypothesis.strategies.recursive` and :func:`~hypothesis.strategies.deferred`, we now generate examples with duplicated subtrees more often. This tends to uncover interesting behavior in tests.
+
+For instance, we might now generate a tree like this more often (though the details depend on the strategy):
+
+.. code-block:: none
+
+                 ┌─────┐
+          ┌──────┤  a  ├──────┐
+          │      └─────┘      │
+       ┌──┴──┐             ┌──┴──┐
+       │  b  │             │  a  │
+       └──┬──┘             └──┬──┘
+     ┌────┴────┐         ┌────┴────┐
+  ┌──┴──┐   ┌──┴──┐   ┌──┴──┐   ┌──┴──┐
+  │  c  │   │  d  │   │  b  │   │ ... │
+  └─────┘   └─────┘   └──┬──┘   └─────┘
+                    ┌────┴────┐
+                 ┌──┴──┐   ┌──┴──┐
+                 │  c  │   │  d  │
+                 └─────┘   └─────┘
+
+.. _v6.128.2:
+
+--------------------
+6.128.2 - 2025-03-10
+--------------------
+
+Improves input validation for several strategies in our :ref:`pandas extra
+<hypothesis-pandas>`, so that they raise a helpful ``InvalidArgument`` rather
+than ``OverflowError``.
+
+Discovered by our recent :ref:`string generation upgrade <v6.128.0>`.
+
+.. _v6.128.1:
+
+--------------------
+6.128.1 - 2025-03-09
+--------------------
+
+Rename a few internal classes for clarity.
+
+.. _v6.128.0:
+
+--------------------
+6.128.0 - 2025-03-09
+--------------------
+
+:func:`~hypothesis.strategies.text` now occasionally generates from a preselected list of strings which are likely to find bugs. These include ligatures, right-to-left and top-to-bottom text, emojis, emoji modifiers, strings like ``"Infinity"``, ``"None"``, and ``"FALSE"``, and other interesting things. This is especially useful when testing the full unicode range, where the search space is too large for uniform sampling to be very effective.
+
+Of course, examples generated this way shrink just like they normally would. It was always possible for Hypothesis to generate these strings; it is just more likely after this change. From the outside, it is as if Hypothesis generated the example completely randomly.
+
+Many thanks to the `Big List of Naughty Strings <https://github.com/minimaxir/big-list-of-naughty-strings>`_, `Text Rendering Hates You <https://faultlore.com/blah/text-hates-you/>`_, and `Text Editing Hates You Too <https://lord.io/text-editing-hates-you-too/>`_ for forming the basis of this list.
+
+.. _v6.127.9:
+
+--------------------
+6.127.9 - 2025-03-06
+--------------------
+
+We now provide a better string representation for :func:`~hypothesis.strategies.one_of` strategies, by flattening consecutive ``|`` combinations. For instance:
+
+.. code-block:: pycon
+
+    >>> st.integers() | st.text() | st.booleans()
+    # previously: one_of(one_of(integers(), text()), booleans())
+    one_of(integers(), text(), booleans())
+
+Explicit calls to :func:`~hypothesis.strategies.one_of` remain unflattened, in order to make tracking down complicated :func:`~hypothesis.strategies.one_of` constructions easier:
+
+.. code-block:: pycon
+
+    >>> st.one_of(st.integers(), st.one_of(st.text(), st.booleans()))
+    one_of(integers(), one_of(text(), booleans()))
+
+We print ``one_of`` in reprs (rather than ``integers() | text() | ...``) for consistency with reprs containing ``.filter`` or ``.map`` calls, which uses the full ``one_of`` to avoid ambiguity.
+
+.. _v6.127.8:
+
+--------------------
+6.127.8 - 2025-03-06
+--------------------
+
+This patch improves shrinking behavior for values from :func:`~hypothesis.strategies.text` and :func:`~hypothesis.strategies.binary` which contain duplicate elements, like ``"zzzabc"``. It also improves shrinking for  bugs which require the same character to be drawn from two different :func:`~hypothesis.strategies.text` strategies to trigger.
+
 .. _v6.127.7:
 
 --------------------
@@ -78,7 +235,7 @@ Adjust type hints for the pub-sub database implementation in :ref:`version 6.126
 6.127.1 - 2025-02-23
 --------------------
 
-Improve the clarity of printing counterexamples in :doc:`stateful testing <reference/stateful>`, by avoiding confusing :class:`~hypothesis.stateful.Bundle` references with equivalent values drawn from a regular strategy.
+Improve the clarity of printing counterexamples in :ref:`stateful testing <stateful>`, by avoiding confusing :class:`~hypothesis.stateful.Bundle` references with equivalent values drawn from a regular strategy.
 
 For example, we now print:
 
@@ -110,7 +267,7 @@ This releases adds support for type aliases created with the :py:keyword:`type` 
 6.126.0 - 2025-02-18
 --------------------
 
-The :doc:`Hypothesis database <reference/database>` now supports a pub-sub interface to efficiently listen for changes in the database, via ``.add_listener`` and ``.remove_listener``. While all databases that ship with Hypothesis support this interface, implementing it is not required for custom database subclasses. Hypothesis will warn when trying to listen on a database without support.
+The :ref:`Hypothesis database <database>` now supports a pub-sub interface to efficiently listen for changes in the database, via ``.add_listener`` and ``.remove_listener``. While all databases that ship with Hypothesis support this interface, implementing it is not required for custom database subclasses. Hypothesis will warn when trying to listen on a database without support.
 
 This feature is currently only used downstream in `hypofuzz <https://github.com/zac-hd/hypofuzz>`_.
 
@@ -225,7 +382,7 @@ Improves our internal caching logic for test cases.
 6.124.0 - 2025-01-16
 --------------------
 
-The :doc:`Hypothesis example database <reference/database>` now uses a new internal format to store examples. This new format is not compatible with the previous format, so stored entries will not carry over.
+The :ref:`Hypothesis example database <database>` now uses a new internal format to store examples. This new format is not compatible with the previous format, so stored entries will not carry over.
 
 The database is best thought of as a cache that may be invalidated at times. Instead of relying on it for correctness, we recommend using :obj:`@example <hypothesis.example>` to specify explicit examples. When using databases across environments (such as connecting a :class:`~hypothesis.database.GitHubArtifactDatabase` database in CI to your local environment), we recommend using the same version of Hypothesis for each where possible, for maximum reproducibility.
 
@@ -493,7 +650,7 @@ This release adds :class:`~hypothesis.database.BackgroundWriteDatabase`, a new d
 6.119.4 - 2024-11-22
 --------------------
 
-This patch fixes a bug since :ref:`v6.99.13` where only interactively-generated values (via ``data.draw``) would be reported in the ``arguments`` field of our :doc:`observability output <reference/observability>`. Now, all values are reported.
+This patch fixes a bug since :ref:`v6.99.13` where only interactively-generated values (via ``data.draw``) would be reported in the ``arguments`` field of our :ref:`observability output <observability>`. Now, all values are reported.
 
 .. _v6.119.3:
 
@@ -578,7 +735,7 @@ giving a small speedup (part of :issue:`4139`).
 6.118.4 - 2024-11-10
 --------------------
 
-This patch migrates the optimisation algorithm for :doc:`targeted property-based testing <reference/targeted>` to our IR layer (:issue:`3921`). This should result in moderately different (and hopefully improved) exploration behavior in tests which use :func:`hypothesis.target`.
+This patch migrates the optimisation algorithm for :ref:`targeted property-based testing <targeted>` to our IR layer (:issue:`3921`). This should result in moderately different (and hopefully improved) exploration behavior in tests which use :func:`hypothesis.target`.
 
 .. _v6.118.3:
 
@@ -738,7 +895,7 @@ for use by :ref:`alternative-backends`.
 6.112.5 - 2024-10-08
 --------------------
 
-This release fixes a regression where :class:`hypothesis.stateful.Bundle` did not work properly with :ref:`flatmap <flatmap>` functionality (:issue:`4128`).
+This release fixes a regression where :class:`hypothesis.stateful.Bundle` did not work properly with |strategy.flatmap| functionality (:issue:`4128`).
 
 .. _v6.112.4:
 
@@ -808,7 +965,7 @@ This patch also reduces the range of :class:`python:datetime.datetime` generated
 
 :ref:`alternative-backends` can now implement ``.observe_test_case()``
 and ``observe_information_message()`` methods, to record backend-specific
-metadata and messages in our :doc:`observability output <reference/observability>`
+metadata and messages in our :ref:`observability output <observability>`
 (:issue:`3845` and `hypothesis-crosshair#22
 <https://github.com/pschanely/hypothesis-crosshair/issues/22>`__).
 
@@ -1301,7 +1458,7 @@ if passed ``allow_nan=False`` (:issue:`3943`).
 --------------------
 
 This patch includes the :obj:`~hypothesis.settings.backend` setting in the
-``how_generated`` field of our :doc:`observability output <reference/observability>`.
+``how_generated`` field of our :ref:`observability output <observability>`.
 
 .. _v6.99.12:
 
@@ -1516,7 +1673,7 @@ a strategy, to make it easier to tell why your test failed in such cases.
 6.98.9 - 2024-02-20
 -------------------
 
-This patch ensures that :doc:`observability <reference/observability>` outputs include
+This patch ensures that :ref:`observability <observability>` outputs include
 an informative repr for :class:`~hypothesis.stateful.RuleBasedStateMachine`
 stateful tests, along with more detailed timing information.
 
@@ -1526,7 +1683,7 @@ stateful tests, along with more detailed timing information.
 6.98.8 - 2024-02-18
 -------------------
 
-This patch improves :doc:`the Ghostwriter <reference/ghostwriter>` for binary operators.
+This patch improves :ref:`the Ghostwriter <ghostwriter>` for binary operators.
 
 .. _v6.98.7:
 
@@ -1534,7 +1691,7 @@ This patch improves :doc:`the Ghostwriter <reference/ghostwriter>` for binary op
 6.98.7 - 2024-02-18
 -------------------
 
-This patch improves import-detection in :doc:`the Ghostwriter <reference/ghostwriter>`
+This patch improves import-detection in :ref:`the Ghostwriter <ghostwriter>`
 (:issue:`3884`), particularly for :func:`~hypothesis.strategies.from_type`
 and strategies from ``hypothesis.extra.*``.
 
@@ -1552,7 +1709,7 @@ This patch clarifies the documentation on stateful testing (:issue:`3511`).
 6.98.5 - 2024-02-14
 -------------------
 
-This patch improves argument-to-json conversion for :doc:`observability <reference/observability>`
+This patch improves argument-to-json conversion for :ref:`observability <observability>`
 output.  Checking for a ``.to_json()`` method on the object *before* a few other
 options like dataclass support allows better user control of the process (:issue:`3880`).
 
@@ -1571,7 +1728,7 @@ which is used by the provisional :func:`~hypothesis.provisional.domains` strateg
 6.98.3 - 2024-02-08
 -------------------
 
-This patch fixes an error when generating :doc:`observability <reference/observability>` reports involving large (``n > 1e308``) integers.
+This patch fixes an error when generating :ref:`observability <observability>` reports involving large (``n > 1e308``) integers.
 
 .. _v6.98.2:
 
@@ -1625,7 +1782,7 @@ which is used by the provisional :func:`~hypothesis.provisional.domains` strateg
 6.97.5 - 2024-02-03
 -------------------
 
-This patch adds some :doc:`observability information <reference/observability>`
+This patch adds some :ref:`observability information <observability>`
 about how many times predicates in :func:`~hypothesis.assume` or
 :func:`~hypothesis.stateful.precondition` were satisfied, so that
 downstream tools can warn you if some were *never* satisfied by
@@ -1654,7 +1811,7 @@ Internal test refactoring.
 -------------------
 
 This patch slightly changes how we replay examples from
-:doc:`the database <reference/database>`: if the behavior of the saved example has
+:ref:`the database <database>`: if the behavior of the saved example has
 changed, we now keep running the test case instead of aborting at the size
 of the saved example.  While we know it's not the *same* example, we might
 as well continue running the test!
@@ -1758,7 +1915,7 @@ other unintended side-effects.
 6.93.2 - 2024-01-15
 -------------------
 
-This patch improves :doc:`observability <reference/observability>` reports by moving
+This patch improves :ref:`observability <observability>` reports by moving
 timing information from ``metadata`` to a new ``timing`` key, and supporting
 conversion of additional argument types to json rather than string reprs
 via a ``.to_json()`` method (including e.g. Pandas dataframes).
@@ -1812,7 +1969,7 @@ This patch refactors some internals, continuing our work on supporting alternati
 
 This patch adds a :ref:`test statistics <statistics>` event when a generated example is rejected via :func:`assume <hypothesis.assume>`.
 
-This may also help with distinguishing ``gave_up`` examples in :doc:`observability <reference/observability>` (:issue:`3827`).
+This may also help with distinguishing ``gave_up`` examples in :ref:`observability <observability>` (:issue:`3827`).
 
 .. _v6.92.7:
 
@@ -1853,7 +2010,7 @@ Thanks to Carl Friedrich Bolz-Tereick for helping us work out what changed!
 6.92.4 - 2024-01-08
 -------------------
 
-This patch fixes an error when writing :doc:`observability <reference/observability>` reports without a pre-existing ``.hypothesis`` directory.
+This patch fixes an error when writing :ref:`observability <observability>` reports without a pre-existing ``.hypothesis`` directory.
 
 .. _v6.92.3:
 
@@ -1862,7 +2019,7 @@ This patch fixes an error when writing :doc:`observability <reference/observabil
 -------------------
 
 This patch adds a new environment variable ``HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY_NOCOVER``,
-which turns on :doc:`observability <reference/observability>` data collection without collecting
+which turns on :ref:`observability <observability>` data collection without collecting
 code coverage data, which may be faster on Python 3.11 and earlier.
 
 Thanks to Harrison Goldstein for reporting and fixing :issue:`3821`.
@@ -1896,7 +2053,7 @@ in the standard library which `was fixed in 3.12
 -------------------
 
 This release adds an experimental :wikipedia:`observability <Observability_(software)>`
-mode.  :doc:`You can read the docs about it here <reference/observability>`.
+mode.  :ref:`You can read the docs about it here <observability>`.
 
 .. _v6.91.2:
 
@@ -2776,7 +2933,7 @@ which is used by the provisional :func:`~hypothesis.provisional.domains` strateg
 6.68.2 - 2023-02-17
 -------------------
 
-This patch fixes missing imports of the :mod:`re` module, when :doc:`ghostwriting <reference/ghostwriter>`
+This patch fixes missing imports of the :mod:`re` module, when :ref:`ghostwriting <ghostwriter>`
 tests which include compiled patterns or regex flags.
 Thanks to Jens Heinrich for reporting and promptly fixing this bug!
 
@@ -2865,7 +3022,7 @@ Thanks to Felix Divo for the new feature!
 -------------------
 
 This patch fixes invalid annotations detected for the tests generated by
-:doc:`Ghostwritter <reference/ghostwriter>`. It will now correctly generate ``Optional``
+:ref:`Ghostwritter <ghostwriter>`. It will now correctly generate ``Optional``
 types with just one type argument and handle union expressions inside of type
 arguments correctly. Additionally, it now supports code with the
 ``from __future__ import annotations`` marker for Python 3.10 and newer.
@@ -2899,7 +3056,7 @@ For now, we capture calls made via :func:`~hypothesis.strategies.builds`, and vi
 6.64.0 - 2023-01-23
 -------------------
 
-The :doc:`Ghostwritter <reference/ghostwriter>` will now include type annotations on tests
+The :ref:`Ghostwritter <ghostwriter>` will now include type annotations on tests
 for type-annotated code.  If you want to force this to happen (or not happen),
 pass a boolean to the new ``annotate=`` argument to the Python functions, or
 the ``--[no-]annotate`` CLI flag.
@@ -3442,7 +3599,7 @@ This PR was kindly supported by `Ordina Pythoneers
 6.47.0 - 2022-06-07
 -------------------
 
-The :doc:`Ghostwritter <reference/ghostwriter>` can now write tests for
+The :ref:`Ghostwritter <ghostwriter>` can now write tests for
 :obj:`@classmethod <classmethod>` or :obj:`@staticmethod <staticmethod>`
 methods, in addition to the existing support for functions and other callables
 (:issue:`3318`).  Thanks to Cheuk Ting Ho for the patch.
@@ -3575,7 +3732,7 @@ which you can use to... generate the nil UUID.  Thanks to Shlok Gandhi for the p
 6.45.4 - 2022-05-01
 -------------------
 
-This patch fixes some missing imports for certain :doc:`Ghostwritten <reference/ghostwriter>`
+This patch fixes some missing imports for certain :ref:`Ghostwritten <ghostwriter>`
 tests.  Thanks to Mel Seto for fixing :issue:`3316`.
 
 .. _v6.45.3:
@@ -3584,7 +3741,7 @@ tests.  Thanks to Mel Seto for fixing :issue:`3316`.
 6.45.3 - 2022-04-30
 -------------------
 
-This patch teaches :doc:`the Ghostwriter <reference/ghostwriter>` to recognize
+This patch teaches :ref:`the Ghostwriter <ghostwriter>` to recognize
 many more common argument names (:issue:`3311`).
 
 .. _v6.45.2:
@@ -3778,7 +3935,7 @@ Fixed an internal error when ``given()`` was passed a lambda.
 6.40.0 - 2022-03-29
 -------------------
 
-:doc:`The Ghostwriter <reference/ghostwriter>` can now write tests which check that
+:ref:`The Ghostwriter <ghostwriter>` can now write tests which check that
 two or more functions are equivalent on valid inputs, *or* raise the same
 type of exception for invalid inputs (:issue:`3267`).
 
@@ -3789,7 +3946,7 @@ type of exception for invalid inputs (:issue:`3267`).
 -------------------
 
 This patch makes some quality-of-life improvements to the
-:doc:`Ghostwriter <reference/ghostwriter>`: we guess the :func:`~hypothesis.strategies.text`
+:ref:`Ghostwriter <ghostwriter>`: we guess the :func:`~hypothesis.strategies.text`
 strategy for arguments named ``text`` (...obvious in hindsight, eh?);
 and improved the error message if you accidentally left in a
 :func:`~hypothesis.strategies.nothing` or broke your :pypi:`rich` install.
@@ -4466,7 +4623,7 @@ decorators (:issue:`2495` and :issue:`3029`).
 This release introduces strategies for array/tensor libraries adopting the
 `Array API standard <https://data-apis.org/>`__ (:issue:`3037`).
 They are available in :ref:`the hypothesis.extra.array_api extra <array-api>`,
-and work much like the existing :doc:`strategies for NumPy <reference/data-science>`.
+and work much like the existing :ref:`strategies for NumPy <hypothesis-numpy>`.
 
 .. _v6.20.1:
 
@@ -4494,7 +4651,7 @@ in the `Array API standard <https://data-apis.org/>`__ (see :pull:`3065`).
 6.19.0 - 2021-09-08
 -------------------
 
-This release makes :doc:`stateful testing <reference/stateful>` more likely to tell you
+This release makes :ref:`stateful testing <stateful>` more likely to tell you
 if you do something unexpected and unsupported:
 
 - The :obj:`~hypothesis.HealthCheck.return_value` health check now applies to
@@ -4570,7 +4727,7 @@ There is no user-visible change, unless you depended on undocumented internals.
 6.17.0 - 2021-08-27
 -------------------
 
-This release adds type annotations to the :doc:`stateful testing <reference/stateful>` API.
+This release adds type annotations to the :ref:`stateful testing <stateful>` API.
 
 Thanks to Ruben Opdebeeck for this contribution!
 
@@ -4627,7 +4784,7 @@ Unfortunately this fix requires :pep:`560`, meaning Python 3.7 or later.
 -------------------
 
 This patch fixes :issue:`3050`, where :pypi:`attrs` classes could
-cause an internal error in the :doc:`ghostwriter <reference/ghostwriter>`.
+cause an internal error in the :ref:`ghostwriter <ghostwriter>`.
 
 .. _v6.14.6:
 
@@ -4714,7 +4871,7 @@ to :pep:`646` is released, hopefully in Python 3.11.
 6.13.13 - 2021-06-04
 --------------------
 
-This patch teaches :doc:`the Ghostwriter <reference/ghostwriter>` how to find
+This patch teaches :ref:`the Ghostwriter <ghostwriter>` how to find
 :doc:`custom ufuncs <numpy:reference/ufuncs>` from *any* module that defines them,
 and that ``yaml.unsafe_load()`` does not undo ``yaml.safe_load()``.
 
@@ -4799,7 +4956,7 @@ to shrink towards negative values instead of positive values in some cases.
 -------------------
 
 This patch fixes rare cases where ``hypothesis write --binary-op`` could
-print :doc:`reproducing instructions </reference/reproducing-failures>` from the internal
+print :ref:`reproducing instructions <reproducing-failures>` from the internal
 search for an identity element.
 
 .. _v6.13.4:
@@ -4920,7 +5077,7 @@ you don't need to upgrade.
 6.10.0 - 2021-04-17
 -------------------
 
-This release teaches the :doc:`Ghostwriter <reference/ghostwriter>` to read parameter
+This release teaches the :ref:`Ghostwriter <ghostwriter>` to read parameter
 types from Sphinx, Google, or Numpy-style structured docstrings, and improves
 some related heuristics about how to test scientific and numerical programs.
 
@@ -4930,7 +5087,7 @@ some related heuristics about how to test scientific and numerical programs.
 6.9.2 - 2021-04-15
 ------------------
 
-This release improves the :doc:`Ghostwriter's <reference/ghostwriter>` handling
+This release improves the :ref:`Ghostwriter's <ghostwriter>` handling
 of exceptions, by reading ``:raises ...:`` entries in function docstrings
 and ensuring that we don't suppresss the error raised by test assertions.
 
@@ -4959,7 +5116,7 @@ for reporting and fixing :issue:`2919`!
 -------------------
 
 If :pypi:`rich` is installed, the :command:`hypothesis write` command
-will use it to syntax-highlight the :doc:`Ghostwritten <reference/ghostwriter>`
+will use it to syntax-highlight the :ref:`Ghostwritten <ghostwriter>`
 code.
 
 .. _v6.8.11:
@@ -5049,7 +5206,7 @@ to avoid an error when running mypy in strict mode.
 6.8.3 - 2021-03-28
 ------------------
 
-This patch improves the :doc:`Ghostwriter's <reference/ghostwriter>` handling
+This patch improves the :ref:`Ghostwriter's <ghostwriter>` handling
 of strategies to generate various fiddly types including frozensets,
 keysviews, valuesviews, regex matches and patterns, and so on.
 
@@ -5114,7 +5271,7 @@ such as ``Type["int"]`` (:issue:`2565`).
 
 This release makes it an explicit error to apply :func:`~hypothesis.stateful.invariant`
 to a :func:`~hypothesis.stateful.rule` or :func:`~hypothesis.stateful.initialize` rule
-in :doc:`stateful testing <reference/stateful>`.  Such a combination had unclear semantics,
+in :ref:`stateful testing <stateful>`.  Such a combination had unclear semantics,
 especially in combination with :func:`~hypothesis.stateful.precondition`, and was never
 meant to be allowed (:issue:`2681`).
 
@@ -5168,7 +5325,7 @@ Thanks to Ben Anhalt for identifying and fixing this bug.
 6.4.0 - 2021-03-02
 ------------------
 
-This release fixes :doc:`stateful testing methods <reference/stateful>` with multiple
+This release fixes :ref:`stateful testing methods <stateful>` with multiple
 :func:`~hypothesis.stateful.precondition` decorators.  Previously, only the
 outer-most precondition was checked (:issue:`2681`).
 
@@ -5389,7 +5546,7 @@ opt out of the health check error for specific tests.
 
 This release adds :func:`hypothesis.currently_in_test_context`, which can be used
 to check whether the calling code is currently running inside an
-:func:`@given <hypothesis.given>` or :doc:`stateful <reference/stateful>` test.
+:func:`@given <hypothesis.given>` or :ref:`stateful <stateful>` test.
 
 This is most useful for third-party integrations and assertion helpers which may
 wish to use :func:`~hypothesis.assume` or :func:`~hypothesis.target`, without also
@@ -5401,7 +5558,7 @@ requiring that the helper only be used from property-based tests (:issue:`2581`)
 5.47.0 - 2021-01-05
 -------------------
 
-This release upgrades the import logic for :doc:`ghostwritten tests <reference/ghostwriter>`,
+This release upgrades the import logic for :ref:`ghostwritten tests <ghostwriter>`,
 handling many cases where imports would previously be missing or from unexpected
 locations.
 
@@ -5887,7 +6044,7 @@ Thanks to Nikita Sobolev for fixing :issue:`2603`!
 -------------------
 
 This patch improves the error message from the :command:`hypothesis write`
-command if :pypi:`black` (required for the :doc:`ghostwriter <reference/ghostwriter>`)
+command if :pypi:`black` (required for the :ref:`ghostwriter <ghostwriter>`)
 is not installed.
 
 Thanks to Nikita Sobolev for fixing :issue:`2604`!
@@ -5940,7 +6097,7 @@ This was particularly an issue for :pypi:`pydantic` models which use an
 5.30.1 - 2020-09-04
 -------------------
 
-This patch makes the :doc:`ghostwriter <reference/ghostwriter>` much more robust when
+This patch makes the :ref:`ghostwriter <ghostwriter>` much more robust when
 passed unusual modules.
 
 - improved support for non-resolvable type annotations
@@ -5980,7 +6137,7 @@ for user code, so this release has no user visible impact.
 5.29.3 - 2020-08-27
 -------------------
 
-This patch adds type annotations to the :doc:`hypothesis.database <reference/database>`
+This patch adds type annotations to the :ref:`hypothesis.database <database>`
 module.  There is no runtime change, but your typechecker might notice.
 
 .. _v5.29.2:
@@ -6032,7 +6189,7 @@ Thanks to Zac Hatfield-Dodds and Nikita Sobolev for this feature!
 5.27.0 - 2020-08-20
 -------------------
 
-This patch adds two new :doc:`ghostwriters <reference/ghostwriter>` to test
+This patch adds two new :ref:`ghostwriters <ghostwriter>` to test
 :wikipedia:`binary operations <Binary_operation>`, like :func:`python:operator.add`,
 and Numpy :doc:`ufuncs <numpy:reference/ufuncs>` and :doc:`gufuncs
 <numpy:reference/c-api/generalized-ufuncs>` like :data:`np.matmul() <numpy:numpy.matmul>`.
@@ -6072,7 +6229,7 @@ pull request to implement this feature!
 
 Tired of writing tests?  Or new to Hypothesis and not sure where to start?
 
-This release is for you!  With our new :doc:`Ghostwriter functions <reference/ghostwriter>`
+This release is for you!  With our new :ref:`Ghostwriter functions <ghostwriter>`
 and :command:`hypothesis write ...` :ref:`command-line interface <hypothesis-cli>`,
 you can stop writing tests entirely... or take the source code Hypothesis
 writes for you as a starting point.
@@ -6624,7 +6781,7 @@ caused an internal error.  This bug was introduced in :ref:`version 5.8.1 <v5.8.
 5.10.1 - 2020-04-19
 -------------------
 
-This release is a small internal refactoring to how shrinking interacts with :doc:`targeted property-based testing <reference/targeted>` that should have no user user visible impact.
+This release is a small internal refactoring to how shrinking interacts with :ref:`targeted property-based testing <targeted>` that should have no user user visible impact.
 
 .. _v5.10.0:
 
@@ -6692,7 +6849,7 @@ There is no change in runtime behaviour.
 ------------------
 
 This release (potentially very significantly) improves the performance of failing tests in some rare cases,
-mostly only relevant when using :doc:`targeted property-based testing <reference/targeted>`,
+mostly only relevant when using :ref:`targeted property-based testing <targeted>`,
 by stopping further optimisation of unrelated test cases once a failing example is found.
 
 .. _v5.8.4:
@@ -6807,7 +6964,7 @@ Now we detect and warn about the issue at runtime!
 5.5.5 - 2020-02-29
 ------------------
 
-This release cleans up the internal machinery for :doc:`reference/stateful`,
+This release cleans up the internal machinery for :ref:`stateful`,
 after we dropped the legacy APIs in Hypothesis 5.0 (:issue:`2218`).
 There is no user-visible change.
 
@@ -7137,7 +7294,7 @@ Hypothesis 4.x
 -------------------
 
 This patch improves the type hints and documentation for the
-:doc:`django extra. <reference/django>`  There is no runtime change.
+:ref:`django extra. <hypothesis-django>`  There is no runtime change.
 
 .. _v4.57.0:
 
@@ -7189,7 +7346,7 @@ benefit. It is unlikely that there will be any user visible effect.
 4.56.1 - 2019-12-19
 -------------------
 
-This release further improves the optimisation algorithm for :doc:`targeted property-based testing <reference/targeted>`.
+This release further improves the optimisation algorithm for :ref:`targeted property-based testing <targeted>`.
 
 .. _v4.56.0:
 
@@ -7259,7 +7416,7 @@ could incorrectly generate bytestrings when passed a generic
 4.55.0 - 2019-12-16
 -------------------
 
-This release adds database support for :doc:`targeted property-based testing <reference/targeted>`,
+This release adds database support for :ref:`targeted property-based testing <targeted>`,
 so the best examples based on the targeting will be saved and reused between runs.
 This is mostly laying groundwork for future features in this area, but
 will also make targeted property-based tests more useful during development,
@@ -7277,7 +7434,7 @@ This release also adds a dependency on the :pypi:`sortedcontainers` package.
 4.54.2 - 2019-12-16
 -------------------
 
-This release improves the optimisation algorithm for :doc:`targeted property-based testing <reference/targeted>`,
+This release improves the optimisation algorithm for :ref:`targeted property-based testing <targeted>`,
 so that it will find higher quality results more reliably. Specifically, in cases where it would previously have got near a local optimum,
 it will now tend to achieve the locally optimal value.
 
@@ -7297,7 +7454,7 @@ heuristics have changed slightly.
 4.54.0 - 2019-12-15
 -------------------
 
-This release adds a dedicated phase for :doc:`targeted property-based testing <reference/targeted>`,
+This release adds a dedicated phase for :ref:`targeted property-based testing <targeted>`,
 and (somewhat) improves the targeting algorithm so that it will find higher quality results more reliably.
 This comes at a cost of making it more likely to get stuck in a local optimum.
 
@@ -7471,7 +7628,7 @@ to raise ``InvalidArgument`` now that these errors are caught.
 4.49.0 - 2019-11-28
 -------------------
 
-This release significantly improves the data distribution in :doc:`rule based stateful testing <reference/stateful>`,
+This release significantly improves the data distribution in :ref:`rule based stateful testing <stateful>`,
 by using a technique called `Swarm Testing (Groce, Alex, et al. "Swarm testing."
 Proceedings of the 2012 International Symposium on Software Testing and Analysis. ACM, 2012.) <https://agroce.github.io/issta12.pdf>`_
 to select which rules are run in any given test case. This should allow it to find many issues that it would previously have missed.
@@ -7535,7 +7692,7 @@ This release fixes an internal issue where Hypothesis would sometimes generate
 test cases that were above its intended maximum size. This would only have
 happened rarely and probably would not have caused major problems when it did.
 
-Users of the new :doc:`targeted property-based testing <reference/targeted>` might
+Users of the new :ref:`targeted property-based testing <targeted>` might
 see minor impact (possibly slightly faster tests and slightly worse target scores),
 but only in the unlikely event that they were hitting this problem. Other users
 should not see any effect at all.
@@ -7919,7 +8076,7 @@ particular test suites.
 If you see any significant regressions in Hypothesis's ability to find bugs in
 your code as a result of this release, please file an issue to let us know.
 
-Users of the new  :doc:`targeted property-based testing <reference/targeted>`
+Users of the new  :ref:`targeted property-based testing <targeted>`
 functionality are reasonably likely to see *improvements* in data generation,
 as this release changes the search algorithm for targeted property based
 testing to one that is more likely to be productive than the existing approach.
@@ -8089,7 +8246,7 @@ some internal compatibility shims we use to support older Pythons.
 -------------------
 
 This release adds the :func:`hypothesis.target` function, which implements
-:doc:`targeted property-based testing <reference/targeted>`
+:ref:`targeted property-based testing <targeted>`
 (:issue:`1779`).
 
 By calling :func:`~hypothesis.target` in your test function, Hypothesis can
@@ -8854,7 +9011,7 @@ much more efficient when the filter rejects most elements (:issue:`1885`).
 -------------------
 
 This patch improves the error message if the function ``f`` in
-:ref:`s.flatmap(f) <flatmap>` does not return a strategy.
+:func:`s.flatmap(f) <hypothesis.strategies.SearchStrategy.flatmap>` does not return a strategy.
 
 Thanks to Kai Chen for this change!
 
@@ -10814,7 +10971,7 @@ benefits now.
 This release changes how Hypothesis deletes data when shrinking in order to
 better handle deletion of large numbers of contiguous sequences. Most tests
 should see little change, but this will hopefully provide a significant
-speed up for :doc:`stateful testing <reference/stateful>`.
+speed up for :ref:`stateful testing <stateful>`.
 
 .. _v3.66.23:
 
@@ -10913,7 +11070,7 @@ work that it does when minimizing values in its internal representation.
 --------------------
 
 This release expands the deprecation of timeout from :ref:`3.16.0 <v3.16.0>` to
-also emit the deprecation warning in ``find`` or :doc:`stateful testing <reference/stateful>`.
+also emit the deprecation warning in ``find`` or :ref:`stateful testing <stateful>`.
 
 .. _v3.66.13:
 
@@ -10942,7 +11099,7 @@ in improved shrinker performance, especially in stateful testing.
 --------------------
 
 This patch modifies how which rule to run is selected during
-:doc:`rule based stateful testing <reference/stateful>`. This should result in a slight
+:ref:`rule based stateful testing <stateful>`. This should result in a slight
 performance increase during generation and a significant performance and
 quality improvement when shrinking.
 
@@ -11136,7 +11293,7 @@ only allow installation with compatible versions of coverage.
 3.65.1 - 2018-07-03
 -------------------
 
-This patch ensures that :doc:`stateful tests <reference/stateful>` which raise an
+This patch ensures that :ref:`stateful tests <stateful>` which raise an
 error from a :pypi:`pytest` helper still print the sequence of steps
 taken to reach that point (:issue:`1372`).  This reporting was previously
 broken because the helpers inherit directly from :class:`python:BaseException`, and
@@ -11206,7 +11363,7 @@ instances of ``int`` when passed ``long``, or vice-versa.
 
 This release adds :PEP:`484` type hints to Hypothesis on a provisional
 basis, using the comment-based syntax for Python 2 compatibility.  You
-can :doc:`read more about our type hints here </reference/typing>`.
+can :doc:`read more about our type hints here <typing>`.
 
 It *also* adds the ``py.typed`` marker specified in :PEP:`561`.
 After you ``pip install hypothesis``, :pypi:`mypy` 0.590 or later
@@ -11574,7 +11731,7 @@ representation has been shrunken.
 -------------------
 
 This release improves the output of failures with
-:doc:`rule based stateful testing <reference/stateful>` in two ways:
+:ref:`rule based stateful testing <stateful>` in two ways:
 
 * The output from it is now usually valid Python code.
 * When the same value has two different names because it belongs to two different
@@ -11587,7 +11744,7 @@ This release improves the output of failures with
 3.52.1 - 2018-03-29
 -------------------
 
-This release improves the behaviour of  :doc:`stateful testing <reference/stateful>`
+This release improves the behaviour of  :ref:`stateful testing <stateful>`
 in two ways:
 
 * Previously some runs would run no steps (:issue:`376`). This should no longer
@@ -11984,7 +12141,7 @@ substantially faster. If you are not, this will likely have no effect on you.
 
 This is a small refactoring release that changes how Hypothesis detects when
 the structure of data generation depends on earlier values generated (e.g. when
-using :ref:`flatmap <flatmap>` or :func:`~hypothesis.strategies.composite`).
+using |strategy.flatmap| or :func:`~hypothesis.strategies.composite`).
 It should not have any observable effect on behaviour.
 
 .. _v3.44.17:
@@ -12592,7 +12749,7 @@ each group, instead of selecting from the group names.
 
 This patch removes the ``mergedb`` tool, introduced in Hypothesis 1.7.1
 on an experimental basis.  It has never actually worked, and the new
-:doc:`Hypothesis example database <reference/database>` is designed to make such a
+:ref:`Hypothesis example database <database>` is designed to make such a
 tool unnecessary.
 
 .. _v3.32.1:
@@ -12781,7 +12938,7 @@ least-frequently used, least recently used key invalidation policy, and is
 somewhat more conservative about which strategies it caches.
 
 Workloads which create strategies based on dynamic values, e.g. by using
-:ref:`flatmap <flatmap>` or :func:`~hypothesis.strategies.composite`,
+|strategy.flatmap| or :func:`~hypothesis.strategies.composite`,
 will use significantly less memory.
 
 .. _v3.30.1:
@@ -13170,7 +13327,7 @@ handles shrinking.
 
 This should mostly be visible in terms of getting better examples for tests
 which make heavy use of :func:`~hypothesis.strategies.composite`,
-:func:`~hypothesis.strategies.data` or :ref:`flatmap <flatmap>` where the data
+:func:`~hypothesis.strategies.data` or |strategy.flatmap| where the data
 drawn depends a lot on previous choices, especially where size parameters are
 affected. Previously Hypothesis would have struggled to reliably produce
 good examples here. Now it should do much better. Performance should also be
@@ -13785,7 +13942,7 @@ improvements.
 * The distribution of code using nested calls to :func:`~hypothesis.strategies.one_of` or the ``|`` operator for
   combining strategies has been improved, as branches are now flattened to give
   a more uniform distribution.
-* Examples using :func:`~hypothesis.strategies.composite` or ``.flatmap`` should now shrink better. In particular
+* Examples using :func:`~hypothesis.strategies.composite` or |strategy.flatmap| should now shrink better. In particular
   this will affect things which work by first generating a length and then
   generating that many items, which have historically not shrunk very well.
 
@@ -14921,7 +15078,7 @@ Other changes:
 Codename: What a state.
 
 The *big* feature of this release is the new and slightly experimental
-stateful testing API. You can read more about that in :doc:`the appropriate section <reference/stateful>`.
+stateful testing API. You can read more about that in :ref:`the appropriate section <stateful>`.
 
 Two minor features the were driven out in the course of developing this:
 

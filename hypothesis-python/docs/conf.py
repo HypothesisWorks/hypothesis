@@ -40,22 +40,20 @@ extensions = [
     # loading this extension overrides the default -b linkcheck behavior with
     # custom url ignore logic. see hypothesis_linkcheck.py for details.
     "hypothesis_linkcheck",
-    "sphinx_reredirects",
+    "hypothesis_redirects",
 ]
 
 templates_path = ["_templates"]
-
 redirects = {
     "details": "reference/index.html",
     "data": "reference/strategies.html",
-    "database": "reference/database.html",
-    "stateful": "reference/stateful.html",
-    "reproducing": "reference/reproducing-failures.html",
-    "ghostwriter": "reference/ghostwriter.html",
-    "extras": "extensions.html",
-    "django": "reference/django.html",
-    "numpy": "reference/data-science.html",
-    "observability": "reference/observability.html",
+    "database": "reference/api.html#database",
+    "stateful": "reference/api.html#stateful-tests",
+    "reproducing": "reference/api.html",
+    "ghostwriter": "reference/integrations.html#ghostwriter",
+    "django": "reference/strategies.html#django",
+    "numpy": "reference/strategies.html#numpy",
+    "observability": "reference/integrations.html#observability",
     "supported": "compatibility.html",
     "changes": "changelog.html",
     "strategies": "extensions.html",
@@ -64,9 +62,6 @@ redirects = {
     "manifesto": "index.html",
     "examples": "index.html",
 }
-# https://github.com/documatt/sphinx-reredirects/issues/11
-# will be part of the default template soon, update sphinx-reredirects and
-# remove this when it is
 redirect_html_template_file = "redirect.html.template"
 
 source_suffix = ".rst"
@@ -148,13 +143,17 @@ intersphinx_mapping = {
     "numpy": ("https://numpy.org/doc/stable/", None),
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
     "pytest": ("https://docs.pytest.org/en/stable/", None),
-    "django": ("https://django.readthedocs.io/en/stable/", None),
+    "django": (
+        "http://docs.djangoproject.com/en/stable/",
+        "http://docs.djangoproject.com/en/stable/_objects/",
+    ),
     "dateutil": ("https://dateutil.readthedocs.io/en/stable/", None),
     "redis": ("https://redis-py.readthedocs.io/en/stable/", None),
     "attrs": ("https://www.attrs.org/en/stable/", None),
     "sphinx": ("https://www.sphinx-doc.org/en/master/", None),
     "IPython": ("https://ipython.readthedocs.io/en/stable/", None),
     "lark": ("https://lark-parser.readthedocs.io/en/stable/", None),
+    "xarray": ("https://docs.xarray.dev/en/stable/", None),
 }
 
 autodoc_mock_imports = ["numpy", "pandas", "redis", "django", "pytz"]
@@ -215,7 +214,16 @@ rst_prolog = """
 .. |st.recursive| replace:: :func:`~hypothesis.strategies.recursive`
 .. |st.deferred| replace:: :func:`~hypothesis.strategies.deferred`
 .. |st.from_type| replace:: :func:`~hypothesis.strategies.from_type`
+.. |st.uuids| replace:: :func:`~hypothesis.strategies.uuids`
+.. |st.ip_addresses| replace:: :func:`~hypothesis.strategies.ip_addresses`
 .. |st.register_type_strategy| replace:: :func:`~hypothesis.strategies.register_type_strategy`
+.. |st.just| replace:: :func:`~hypothesis.strategies.just`
+.. |st.domains| replace:: :func:`~hypothesis.provisional.domains`
+.. |st.urls| replace:: :func:`~hypothesis.provisional.urls`
+
+.. |django.from_form| replace:: :func:`~hypothesis.extra.django.from_form`
+.. |django.from_model| replace:: :func:`~hypothesis.extra.django.from_model`
+.. |django.from_field| replace:: :func:`~hypothesis.extra.django.from_field`
 
 .. |settings.register_profile| replace:: :func:`~hypothesis.settings.register_profile`
 .. |settings.get_profile| replace:: :func:`~hypothesis.settings.get_profile`
@@ -223,11 +231,8 @@ rst_prolog = """
 
 .. |SearchStrategy| replace:: :class:`~hypothesis.strategies.SearchStrategy`
 .. |strategy.filter| replace:: :func:`.filter() <hypothesis.strategies.SearchStrategy.filter>`
-
-.. _database: reference/database
-.. _observability: reference/observability
-.. _ghostwriter: reference/ghostwriter
-.. _stateful: reference/stateful
+.. |strategy.flatmap| replace:: :func:`.flatmap() <hypothesis.strategies.SearchStrategy.flatmap>`
+.. |strategy.map| replace:: :func:`.map() <hypothesis.strategies.SearchStrategy.map>`
 
 .. |str| replace:: :obj:`python:str`
 .. |int| replace:: :obj:`python:int`
@@ -264,24 +269,22 @@ extlinks = {
 # -- Options for HTML output ----------------------------------------------
 
 html_theme = "furo"
+# remove "Hypothesis <version> documentation" from just below logo on the sidebar
+html_theme_options = {"sidebar_hide_name": True}
 html_static_path = ["_static"]
 html_css_files = ["better-signatures.css", "wrap-in-tables.css", "no-scroll.css"]
 htmlhelp_basename = "Hypothesisdoc"
 html_favicon = "../../brand/favicon.ico"
 html_logo = "../../brand/dragonfly-rainbow-150w.svg"
-# remove "Hypothesis <version> documentation" from just below logo on the sidebar
-html_theme_options = {"sidebar_hide_name": True}
+
 
 # -- Options for LaTeX output ---------------------------------------------
 
 latex_elements = {}
-
 latex_documents = [
     (master_doc, "Hypothesis.tex", "Hypothesis Documentation", author, "manual")
 ]
-
 man_pages = [(master_doc, "hypothesis", "Hypothesis Documentation", [author], 1)]
-
 texinfo_documents = [
     (
         master_doc,

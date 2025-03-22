@@ -455,7 +455,7 @@ An instance of :class:`~hypothesis.database.ExampleDatabase` that will be
 used to save examples to and load previous examples from. May be ``None``
 in which case no storage will be used.
 
-See the :doc:`example database documentation <database>` for a list of built-in
+See the :ref:`example database documentation <database>` for a list of built-in
 example database implementations, and how to define custom implementations.
 """,
     validator=_validate_database,
@@ -560,6 +560,23 @@ class HealthCheck(Enum, metaclass=HealthCheckMeta):
     of hypothesis by explicit parametrization over, or sampling from,
     subclasses, or to refactor so that :func:`@given <hypothesis.given>` is
     specified on leaf subclasses."""
+
+    nested_given = 11
+    """Checks if :func:`@given <hypothesis.given>` is used inside another
+    :func:`@given <hypothesis.given>`. This results in quadratic generation and
+    shrinking behavior, and can usually be expressed more cleanly by using
+    :func:`~hypothesis.strategies.data` to replace the inner
+    :func:`@given <hypothesis.given>`.
+
+    Nesting @given can be appropriate if you set appropriate limits for the
+    quadratic behavior and cannot easily reexpress the inner function with
+    :func:`~hypothesis.strategies.data`. To suppress this health check, set
+    ``suppress_health_check=[HealthCheck.nested_given]`` on the outer
+    :func:`@given <hypothesis.given>`. Setting it on the inner
+    :func:`@given <hypothesis.given>` has no effect. If you have more than one
+    level of nesting, add a suppression for this health check to every
+    :func:`@given <hypothesis.given>` except the innermost one.
+    """
 
 
 @unique
