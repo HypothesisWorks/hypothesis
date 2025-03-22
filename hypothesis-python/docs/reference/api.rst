@@ -1,7 +1,7 @@
 API Reference
 =============
 
-Reference for non-strategy objects that are part of the Hypothesis API. For docuemntation on strategies, see the :doc:`strategies reference </reference/strategies>`.
+Reference for non-strategy objects that are part of the Hypothesis API. For documentation on strategies, see the :doc:`strategies reference </reference/strategies>`.
 
 |@given|
 --------
