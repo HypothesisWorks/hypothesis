@@ -14,6 +14,8 @@ from hypothesis import given
 from hypothesis.errors import Flaky, FlakyFailure
 from hypothesis.strategies import composite, integers, none
 
+from tests.common.utils import Why, xfail_on_crosshair
+
 
 @pytest.mark.parametrize(
     "e", [KeyboardInterrupt, SystemExit, GeneratorExit, ValueError]
@@ -46,6 +48,7 @@ def test_exception_propagates_fine_from_strategy(e):
         test_do_nothing()
 
 
+@xfail_on_crosshair(Why.other, strict=False)  # extra replay from backend switch
 @pytest.mark.parametrize("e", [KeyboardInterrupt, ValueError])
 def test_baseexception_no_rerun_no_flaky(e):
     runs = 0
@@ -93,7 +96,6 @@ def test_baseexception_in_strategy_no_rerun_no_flaky(e):
             test_do_nothing()
 
         assert runs == interrupt
-
     else:
         # Now SystemExit and GeneratorExit are caught like other exceptions
         with pytest.raises(Flaky):

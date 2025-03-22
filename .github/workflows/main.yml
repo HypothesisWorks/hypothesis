@@ -83,12 +83,15 @@ jobs:
           # - check-py39-pandas12
           # - check-py39-pandas11
           ## `-cover` is too slow under crosshair; use a custom split
-          # - check-crosshair-custom-cover/test_[a-d]*
-          # - check-crosshair-custom-cover/test_[e-i]*
-          # - check-crosshair-custom-cover/test_[j-r]*
-          # - check-crosshair-custom-cover/test_[s-z]*
-          # - check-crosshair-custom-pytest/test_*
-          # - check-crosshair-nocover
+          - check-crosshair-custom-cover/test_[a-d]*
+          - check-crosshair-custom-cover/test_[e-i]*
+          - check-crosshair-custom-cover/test_[j-r]*
+          - check-crosshair-custom-cover/test_[s-z]*
+          - check-crosshair-custom-pytest/test_*
+          - check-crosshair-custom-nocover/test_[a-d]*
+          - check-crosshair-custom-nocover/test_[e-i]*
+          - check-crosshair-custom-nocover/test_[j-r]*
+          - check-crosshair-custom-nocover/test_[s-z]*
           # - check-crosshair-niche
           - check-py39-oldestnumpy
           - check-numpy-nightly
