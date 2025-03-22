@@ -235,3 +235,43 @@ Django
 .. autofunction:: hypothesis.extra.django.from_form
 .. autofunction:: hypothesis.extra.django.from_field
 .. autofunction:: hypothesis.extra.django.register_field_strategy
+
+.. _hypothesis-lark:
+
+hypothesis[lark]
+----------------
+
+.. note::
+
+  Strategies in this module require the ``hypothesis[lark]`` :doc:`extra </extras>`, via ``pip install hypothesis[lark]``.
+
+.. automodule:: hypothesis.extra.lark
+   :members:
+
+Example grammars, which may provide a useful starting point for your tests, can be found
+`in the Lark repository <https://github.com/lark-parser/lark/tree/master/examples>`__
+and in `this third-party collection <https://github.com/ligurio/lark-grammars>`__.
+
+.. _hypothesis-pytz:
+
+hypothesis[pytz]
+----------------
+
+.. note::
+
+  Strategies in this module require the ``hypothesis[pytz]`` :doc:`extra </extras>`, via ``pip install hypothesis[pytz]``.
+
+.. automodule:: hypothesis.extra.pytz
+   :members:
+
+.. _hypothesis-dateutil:
+
+hypothesis[dateutil]
+--------------------
+
+.. note::
+
+  Strategies in this module require the ``hypothesis[dateutil]`` :doc:`extra </extras>`, via ``pip install hypothesis[dateutil]``.
+
+.. automodule:: hypothesis.extra.dateutil
+   :members:

@@ -9,12 +9,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 """
-.. _hypothesis-cli:
-
-----------------
-hypothesis[cli]
-----------------
-
 ::
 
     $ hypothesis --help

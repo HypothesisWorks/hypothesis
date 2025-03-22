@@ -240,3 +240,44 @@ You would see something like:
           * 51.79%, Retried draw from integers().filter(lambda x: x % 2 == 0) to satisfy filter
           * 10.71%, Aborted test because unable to satisfy integers().filter(lambda x: x % 2 == 0)
     - Stopped because settings.max_examples=100
+
+.. _hypothesis-cli:
+
+hypothesis[cli]
+----------------
+
+.. note::
+
+  This feature requires the ``hypothesis[cli]`` :doc:`extra </extras>`, via ``pip install hypothesis[cli]``.
+
+.. automodule:: hypothesis.extra.cli
+
+.. _codemods:
+
+hypothesis[codemods]
+--------------------
+
+.. note::
+
+  This feature requires the ``hypothesis[codemods]`` :doc:`extra </extras>`, via ``pip install hypothesis[codemods]``.
+
+.. automodule:: hypothesis.extra.codemods
+
+.. _hypothesis-dpcontracts:
+
+hypothesis[dpcontracts]
+-----------------------
+
+.. note::
+
+  This feature requires the ``hypothesis[dpcontracts]`` :doc:`extra </extras>`, via ``pip install hypothesis[dpcontracts]``.
+
+.. tip::
+
+   For new projects, we recommend using either :pypi:`deal` or :pypi:`icontract`
+   and :pypi:`icontract-hypothesis` over :pypi:`dpcontracts`.
+   They're generally more powerful tools for design-by-contract programming,
+   and have substantially nicer Hypothesis integration too!
+
+.. automodule:: hypothesis.extra.dpcontracts
+   :members:
