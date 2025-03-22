@@ -8,15 +8,15 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
-from hypothesistooling.__main__ import documentation
 import importlib
 import posixpath
 from pathlib import Path
 
 from sphinx.util.inventory import InventoryFile
 
-from hypothesis.strategies import __all__ as STRATEGY_EXPORTS
 import hypothesis.provisional
+from hypothesis.strategies import __all__ as STRATEGY_EXPORTS
+from hypothesistooling.__main__ import documentation
 from hypothesistooling.projects import hypothesispython as hp
 
 
