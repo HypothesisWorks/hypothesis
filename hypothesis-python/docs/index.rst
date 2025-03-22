@@ -60,6 +60,7 @@ check out some of the
   :caption: Hypothesis
 
   quickstart
+  tutorial/index
   reference/index
   Type hints <typing>
   Extras <extras>
