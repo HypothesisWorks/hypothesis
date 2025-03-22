@@ -604,14 +604,6 @@ def test_available_providers_deprecation():
     "strategy", [st.integers(), st.text(), st.floats(), st.booleans(), st.binary()]
 )
 def test_can_generate_from_all_available_providers(backend, strategy):
-    if backend == "crosshair":
-        # TODO running into a 'not in statespace' issue which is fixed in
-        # https://github.com/HypothesisWorks/hypothesis/pull/4034. Remove
-        # this skip when that is merged
-        pytest.skip(
-            "temp, fixed in https://github.com/HypothesisWorks/hypothesis/pull/4034"
-        )
-
     @given(strategy)
     @settings(backend=backend, database=None)
     def f(x):
@@ -628,3 +620,18 @@ def test_can_generate_from_all_available_providers(backend, strategy):
         ),
     ):
         f()
+
+
+def test_saves_on_fatal_error_with_backend():
+    with temp_register_backend("trivial", TrivialProvider):
+        db = InMemoryExampleDatabase()
+
+        @given(st.integers())
+        @settings(backend="trivial", database=db)
+        def test_function(n):
+            raise BaseException("marker")
+
+        with pytest.raises(BaseException, match="marker"):
+            test_function()
+
+        assert len(db.data) == 1
