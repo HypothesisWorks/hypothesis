@@ -391,9 +391,11 @@ def test_does_not_save_on_interrupt():
     assert not db.data
 
 
-def test_does_not_save_on_skip_exceptions_to_reraise():
-    # exception types in skip_exceptions_to_reraise should be reraised, but
-    # not saved to the db
+def test_saves_on_skip_exceptions_to_reraise():
+    # skip exceptions should be saved to the db so we spend as little time as
+    # possible exploring these tests in the future (if eg the skip is guarded
+    # by a conditional that takes some time to hit). see also
+    # https://github.com/HypothesisWorks/hypothesis/pull/4316#discussion_r2008912585
     def raises(data):
         pytest.skip()
 
@@ -403,7 +405,8 @@ def test_does_not_save_on_skip_exceptions_to_reraise():
     )
     with pytest.raises(pytest.skip.Exception):
         runner.run()
-    assert not db.data
+
+    assert len(db.data) == 1
 
 
 def test_returns_forced():

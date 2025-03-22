@@ -464,8 +464,6 @@ class ConjectureRunner:
         return data.as_result()
 
     def test_function(self, data: ConjectureData) -> None:
-        from hypothesis.core import skip_exceptions_to_reraise
-
         if self.__pending_call_explanation is not None:
             self.debug(self.__pending_call_explanation)
             self.__pending_call_explanation = None
@@ -495,8 +493,6 @@ class ConjectureRunner:
             data.cannot_proceed_scope = exc.scope
             data.freeze()
             return
-        except skip_exceptions_to_reraise():
-            raise
         except BaseException:
             data.freeze()
             if self.settings.backend != "hypothesis":
