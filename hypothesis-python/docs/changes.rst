@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.130.2:
+
+--------------------
+6.130.2 - 2025-03-22
+--------------------
+
+Fix an issue with realizing symbolic values provided by :ref:`alternative backends <alternative-backends>` when Hypothesis encounters an internal error in its engine.
+
 .. _v6.130.1:
 
 --------------------
