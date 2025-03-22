@@ -730,7 +730,7 @@ rather than per test function as they would be if you used :func:`@given <hypoth
 django test suite (this is important because your test function will be called
 multiple times and you don't want them to interfere with each other). Test cases
 on these classes that do not use
-:func:`@given <hypothesis.given>` will be run as normal.
+:func:`@given <hypothesis.given>` will be run as normal for :class:`django:django.test.TestCase` or :class:`django:django.test.TransactionTestCase`.
 
 .. autoclass:: hypothesis.extra.django.TransactionTestCase
 .. autoclass:: hypothesis.extra.django.LiveServerTestCase
@@ -738,7 +738,7 @@ on these classes that do not use
 
 We recommend avoiding :class:`~hypothesis.extra.django.TransactionTestCase`
 unless you really have to run each test case in a database transaction.
-Because Hypothesis runs this in a loop, the performance problems ``TransactionTestCase`` normally has
+Because Hypothesis runs this in a loop, the performance problems :class:`django:django.test.TransactionTestCase` normally has
 are significantly exacerbated and your tests will be really slow.
 If you are using :class:`~hypothesis.extra.django.TransactionTestCase`,
 you may need to use ``@settings(suppress_health_check=[HealthCheck.too_slow])``
