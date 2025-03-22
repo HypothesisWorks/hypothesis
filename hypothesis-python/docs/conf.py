@@ -60,10 +60,11 @@ redirects = {
     # "supported": "compatibility.html",
     # "changes": "changelog.html",
     # "strategies": "extensions.html",
+
     # these pages were removed without replacement
     # "support": "index.html",
     # "manifesto": "index.html",
-    # "examples": "index.html",
+    "examples": "index.html",
 }
 redirect_html_template_file = "redirect.html.template"
 
@@ -234,8 +235,11 @@ rst_prolog = """
 
 .. |SearchStrategy| replace:: :class:`~hypothesis.strategies.SearchStrategy`
 .. |strategy.filter| replace:: :func:`.filter() <hypothesis.strategies.SearchStrategy.filter>`
+.. |strategy.filter()| replace:: :func:`.filter() <hypothesis.strategies.SearchStrategy.filter>`
 .. |strategy.flatmap| replace:: :func:`.flatmap() <hypothesis.strategies.SearchStrategy.flatmap>`
+.. |strategy.flatmap()| replace:: :func:`.flatmap() <hypothesis.strategies.SearchStrategy.flatmap>`
 .. |strategy.map| replace:: :func:`.map() <hypothesis.strategies.SearchStrategy.map>`
+.. |strategy.map()| replace:: :func:`.map() <hypothesis.strategies.SearchStrategy.map>`
 
 .. |str| replace:: :obj:`python:str`
 .. |int| replace:: :obj:`python:int`
