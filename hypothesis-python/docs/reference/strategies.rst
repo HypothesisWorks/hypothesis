@@ -3,7 +3,7 @@
 Strategies Reference
 ====================
 
-Strategies are the way Hypothesis describes the values for |@given| to generate.  For instance, passing ``st.lists(st.integers(), min_size=1)`` to |@given| tells Hypothesis to generate lists of integers with at least one element.
+Strategies are the way Hypothesis describes the values for |@given| to generate.  For instance, passing the strategy ``st.lists(st.integers(), min_size=1)`` to |@given| tells Hypothesis to generate lists of integers with at least one element.
 
 This reference page lists all of Hypothesis' first-party functions which return a strategy. There are also many provided by :doc:`third-party libraries </strategies>`.  Note that we often say "strategy" when we mean "function returning a strategy"; it's usually clear from context which one we mean.
 
@@ -22,7 +22,7 @@ Numeric
 
 .. seealso::
 
-  See separate sections for :ref:`Numpy strategies <hypothesis-numpy>`, :ref:`Pandas strategies <hypothesis-pandas>`, and :ref:`Array API strategies <array-api>`.
+  See also the separate sections for :ref:`Numpy strategies <hypothesis-numpy>`, :ref:`Pandas strategies <hypothesis-pandas>`, and :ref:`Array API strategies <array-api>`.
 
 .. autofunction:: hypothesis.strategies.integers
 .. autofunction:: hypothesis.strategies.floats
