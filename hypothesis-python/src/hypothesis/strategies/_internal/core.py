@@ -27,6 +27,7 @@ from inspect import Parameter, Signature, isabstract, isclass
 from re import Pattern
 from types import FunctionType, GenericAlias
 from typing import (
+    TYPE_CHECKING,
     Annotated,
     Any,
     AnyStr,
@@ -143,7 +144,7 @@ from hypothesis.vendor.pretty import RepresentationPrinter
 
 if sys.version_info >= (3, 10):
     from types import EllipsisType as EllipsisType
-elif typing.TYPE_CHECKING:  # pragma: no cover
+elif TYPE_CHECKING:
     from builtins import ellipsis as EllipsisType
 
 else:
@@ -2475,7 +2476,7 @@ def _functions(*, like, returns, pure):
     return FunctionStrategy(like, returns, pure)
 
 
-if typing.TYPE_CHECKING or ParamSpec is not None:
+if TYPE_CHECKING or ParamSpec is not None:
 
     @overload
     def functions(

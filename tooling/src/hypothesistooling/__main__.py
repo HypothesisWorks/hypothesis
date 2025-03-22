@@ -459,7 +459,7 @@ def documentation():
         hp.build_docs()
     finally:
         subprocess.check_call(
-            ["git", "checkout", "docs/changes.rst", "src/hypothesis/version.py"],
+            ["git", "checkout", "docs/changelog.rst", "src/hypothesis/version.py"],
             cwd=hp.HYPOTHESIS_PYTHON,
         )
 

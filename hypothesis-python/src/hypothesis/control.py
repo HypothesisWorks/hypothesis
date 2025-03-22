@@ -53,8 +53,13 @@ def assume(condition: object) -> bool:
     """Calling ``assume`` is like an :ref:`assert <python:assert>` that marks
     the example as bad, rather than failing the test.
 
-    This allows you to specify properties that you *assume* will be
-    true, and let Hypothesis try to avoid similar examples in future.
+    This lets you filter out one-off bad cases from the space of inputs, such
+    as divide-by-zero errors or other tricky assumptions.
+
+    Where possible, it is better to write ``assume`` statements using parameters
+    on a strategy. For instance, ``st.integers(min_value=0)`` will perform
+    much better than ``assume(n >= 0)``, because the former satisfies the condition
+    by construction while the latter uses rejection sampling.
     """
     if _current_build_context.value is None:
         note_deprecation(

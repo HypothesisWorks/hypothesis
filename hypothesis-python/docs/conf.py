@@ -44,7 +44,6 @@ extensions = [
 ]
 
 templates_path = ["_templates"]
-
 redirects = {
     "details": "reference/index.html",
     "data": "reference/strategies.html",
@@ -55,15 +54,13 @@ redirects = {
     "django": "reference/strategies.html#django",
     "numpy": "reference/strategies.html#numpy",
     "observability": "reference/integrations.html#observability",
-    # TODO enable when we actually rename them
-    # "extras": "extensions.html",
-    # "supported": "compatibility.html",
-    # "changes": "changelog.html",
-    # "strategies": "extensions.html",
+    "supported": "compatibility.html",
+    "changes": "changelog.html",
+    "strategies": "extensions.html",
     # these pages were removed without replacement
-    # "support": "index.html",
-    # "manifesto": "index.html",
-    # "examples": "index.html",
+    "support": "index.html",
+    "manifesto": "index.html",
+    "examples": "index.html",
 }
 redirect_html_template_file = "redirect.html.template"
 
