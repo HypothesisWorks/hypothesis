@@ -18,6 +18,14 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.130.1:
+
+--------------------
+6.130.1 - 2025-03-22
+--------------------
+
+Improve the documentation for some strategies, including |st.composite| and |st.data|.
+
 .. _v6.130.0:
 
 --------------------
