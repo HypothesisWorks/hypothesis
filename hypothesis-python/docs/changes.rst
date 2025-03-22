@@ -626,7 +626,7 @@ This release adds :class:`~hypothesis.database.BackgroundWriteDatabase`, a new d
 6.119.4 - 2024-11-22
 --------------------
 
-This patch fixes a bug since :ref:`v6.99.13` where only interactively-generated values (via ``data.draw``) would be reported in the ``arguments`` field of our :doc:`observability output <reference/observability>`. Now, all values are reported.
+This patch fixes a bug since :ref:`v6.99.13` where only interactively-generated values (via ``data.draw``) would be reported in the ``arguments`` field of our :ref:`observability output <observability>`. Now, all values are reported.
 
 .. _v6.119.3:
 
@@ -939,7 +939,7 @@ This patch also reduces the range of :class:`python:datetime.datetime` generated
 
 :ref:`alternative-backends` can now implement ``.observe_test_case()``
 and ``observe_information_message()`` methods, to record backend-specific
-metadata and messages in our :doc:`observability output <reference/observability>`
+metadata and messages in our :ref:`observability output <observability>`
 (:issue:`3845` and `hypothesis-crosshair#22
 <https://github.com/pschanely/hypothesis-crosshair/issues/22>`__).
 
@@ -1430,7 +1430,7 @@ if passed ``allow_nan=False`` (:issue:`3943`).
 --------------------
 
 This patch includes the :obj:`~hypothesis.settings.backend` setting in the
-``how_generated`` field of our :doc:`observability output <reference/observability>`.
+``how_generated`` field of our :ref:`observability output <observability>`.
 
 .. _v6.99.12:
 
@@ -1645,7 +1645,7 @@ a strategy, to make it easier to tell why your test failed in such cases.
 6.98.9 - 2024-02-20
 -------------------
 
-This patch ensures that :doc:`observability <reference/observability>` outputs include
+This patch ensures that :ref:`observability <observability>` outputs include
 an informative repr for :class:`~hypothesis.stateful.RuleBasedStateMachine`
 stateful tests, along with more detailed timing information.
 
@@ -1655,7 +1655,7 @@ stateful tests, along with more detailed timing information.
 6.98.8 - 2024-02-18
 -------------------
 
-This patch improves :doc:`the Ghostwriter <reference/ghostwriter>` for binary operators.
+This patch improves :ref:`the Ghostwriter <ghostwriter>` for binary operators.
 
 .. _v6.98.7:
 
@@ -1663,7 +1663,7 @@ This patch improves :doc:`the Ghostwriter <reference/ghostwriter>` for binary op
 6.98.7 - 2024-02-18
 -------------------
 
-This patch improves import-detection in :doc:`the Ghostwriter <reference/ghostwriter>`
+This patch improves import-detection in :ref:`the Ghostwriter <ghostwriter>`
 (:issue:`3884`), particularly for :func:`~hypothesis.strategies.from_type`
 and strategies from ``hypothesis.extra.*``.
 
@@ -1681,7 +1681,7 @@ This patch clarifies the documentation on stateful testing (:issue:`3511`).
 6.98.5 - 2024-02-14
 -------------------
 
-This patch improves argument-to-json conversion for :doc:`observability <reference/observability>`
+This patch improves argument-to-json conversion for :ref:`observability <observability>`
 output.  Checking for a ``.to_json()`` method on the object *before* a few other
 options like dataclass support allows better user control of the process (:issue:`3880`).
 
@@ -1700,7 +1700,7 @@ which is used by the provisional :func:`~hypothesis.provisional.domains` strateg
 6.98.3 - 2024-02-08
 -------------------
 
-This patch fixes an error when generating :doc:`observability <reference/observability>` reports involving large (``n > 1e308``) integers.
+This patch fixes an error when generating :ref:`observability <observability>` reports involving large (``n > 1e308``) integers.
 
 .. _v6.98.2:
 
@@ -1754,7 +1754,7 @@ which is used by the provisional :func:`~hypothesis.provisional.domains` strateg
 6.97.5 - 2024-02-03
 -------------------
 
-This patch adds some :doc:`observability information <reference/observability>`
+This patch adds some :ref:`observability information <observability>`
 about how many times predicates in :func:`~hypothesis.assume` or
 :func:`~hypothesis.stateful.precondition` were satisfied, so that
 downstream tools can warn you if some were *never* satisfied by
@@ -1887,7 +1887,7 @@ other unintended side-effects.
 6.93.2 - 2024-01-15
 -------------------
 
-This patch improves :doc:`observability <reference/observability>` reports by moving
+This patch improves :ref:`observability <observability>` reports by moving
 timing information from ``metadata`` to a new ``timing`` key, and supporting
 conversion of additional argument types to json rather than string reprs
 via a ``.to_json()`` method (including e.g. Pandas dataframes).
@@ -1941,7 +1941,7 @@ This patch refactors some internals, continuing our work on supporting alternati
 
 This patch adds a :ref:`test statistics <statistics>` event when a generated example is rejected via :func:`assume <hypothesis.assume>`.
 
-This may also help with distinguishing ``gave_up`` examples in :doc:`observability <reference/observability>` (:issue:`3827`).
+This may also help with distinguishing ``gave_up`` examples in :ref:`observability <observability>` (:issue:`3827`).
 
 .. _v6.92.7:
 
@@ -1982,7 +1982,7 @@ Thanks to Carl Friedrich Bolz-Tereick for helping us work out what changed!
 6.92.4 - 2024-01-08
 -------------------
 
-This patch fixes an error when writing :doc:`observability <reference/observability>` reports without a pre-existing ``.hypothesis`` directory.
+This patch fixes an error when writing :ref:`observability <observability>` reports without a pre-existing ``.hypothesis`` directory.
 
 .. _v6.92.3:
 
@@ -1991,7 +1991,7 @@ This patch fixes an error when writing :doc:`observability <reference/observabil
 -------------------
 
 This patch adds a new environment variable ``HYPOTHESIS_EXPERIMENTAL_OBSERVABILITY_NOCOVER``,
-which turns on :doc:`observability <reference/observability>` data collection without collecting
+which turns on :ref:`observability <observability>` data collection without collecting
 code coverage data, which may be faster on Python 3.11 and earlier.
 
 Thanks to Harrison Goldstein for reporting and fixing :issue:`3821`.
@@ -2025,7 +2025,7 @@ in the standard library which `was fixed in 3.12
 -------------------
 
 This release adds an experimental :wikipedia:`observability <Observability_(software)>`
-mode.  :doc:`You can read the docs about it here <reference/observability>`.
+mode.  :ref:`You can read the docs about it here <observability>`.
 
 .. _v6.91.2:
 
@@ -2903,7 +2903,7 @@ which is used by the provisional :func:`~hypothesis.provisional.domains` strateg
 6.68.2 - 2023-02-17
 -------------------
 
-This patch fixes missing imports of the :mod:`re` module, when :doc:`ghostwriting <reference/ghostwriter>`
+This patch fixes missing imports of the :mod:`re` module, when :ref:`ghostwriting <ghostwriter>`
 tests which include compiled patterns or regex flags.
 Thanks to Jens Heinrich for reporting and promptly fixing this bug!
 
@@ -2992,7 +2992,7 @@ Thanks to Felix Divo for the new feature!
 -------------------
 
 This patch fixes invalid annotations detected for the tests generated by
-:doc:`Ghostwritter <reference/ghostwriter>`. It will now correctly generate ``Optional``
+:ref:`Ghostwritter <ghostwriter>`. It will now correctly generate ``Optional``
 types with just one type argument and handle union expressions inside of type
 arguments correctly. Additionally, it now supports code with the
 ``from __future__ import annotations`` marker for Python 3.10 and newer.
@@ -3026,7 +3026,7 @@ For now, we capture calls made via :func:`~hypothesis.strategies.builds`, and vi
 6.64.0 - 2023-01-23
 -------------------
 
-The :doc:`Ghostwritter <reference/ghostwriter>` will now include type annotations on tests
+The :ref:`Ghostwritter <ghostwriter>` will now include type annotations on tests
 for type-annotated code.  If you want to force this to happen (or not happen),
 pass a boolean to the new ``annotate=`` argument to the Python functions, or
 the ``--[no-]annotate`` CLI flag.
@@ -3569,7 +3569,7 @@ This PR was kindly supported by `Ordina Pythoneers
 6.47.0 - 2022-06-07
 -------------------
 
-The :doc:`Ghostwritter <reference/ghostwriter>` can now write tests for
+The :ref:`Ghostwritter <ghostwriter>` can now write tests for
 :obj:`@classmethod <classmethod>` or :obj:`@staticmethod <staticmethod>`
 methods, in addition to the existing support for functions and other callables
 (:issue:`3318`).  Thanks to Cheuk Ting Ho for the patch.
@@ -3702,7 +3702,7 @@ which you can use to... generate the nil UUID.  Thanks to Shlok Gandhi for the p
 6.45.4 - 2022-05-01
 -------------------
 
-This patch fixes some missing imports for certain :doc:`Ghostwritten <reference/ghostwriter>`
+This patch fixes some missing imports for certain :ref:`Ghostwritten <ghostwriter>`
 tests.  Thanks to Mel Seto for fixing :issue:`3316`.
 
 .. _v6.45.3:
@@ -3711,7 +3711,7 @@ tests.  Thanks to Mel Seto for fixing :issue:`3316`.
 6.45.3 - 2022-04-30
 -------------------
 
-This patch teaches :doc:`the Ghostwriter <reference/ghostwriter>` to recognize
+This patch teaches :ref:`the Ghostwriter <ghostwriter>` to recognize
 many more common argument names (:issue:`3311`).
 
 .. _v6.45.2:
@@ -3905,7 +3905,7 @@ Fixed an internal error when :func:`~hypothesis.given` was passed a lambda.
 6.40.0 - 2022-03-29
 -------------------
 
-:doc:`The Ghostwriter <reference/ghostwriter>` can now write tests which check that
+:ref:`The Ghostwriter <ghostwriter>` can now write tests which check that
 two or more functions are equivalent on valid inputs, *or* raise the same
 type of exception for invalid inputs (:issue:`3267`).
 
@@ -3916,7 +3916,7 @@ type of exception for invalid inputs (:issue:`3267`).
 -------------------
 
 This patch makes some quality-of-life improvements to the
-:doc:`Ghostwriter <reference/ghostwriter>`: we guess the :func:`~hypothesis.strategies.text`
+:ref:`Ghostwriter <ghostwriter>`: we guess the :func:`~hypothesis.strategies.text`
 strategy for arguments named ``text`` (...obvious in hindsight, eh?);
 and improved the error message if you accidentally left in a
 :func:`~hypothesis.strategies.nothing` or broke your :pypi:`rich` install.
@@ -4754,7 +4754,7 @@ Unfortunately this fix requires :pep:`560`, meaning Python 3.7 or later.
 -------------------
 
 This patch fixes :issue:`3050`, where :pypi:`attrs` classes could
-cause an internal error in the :doc:`ghostwriter <reference/ghostwriter>`.
+cause an internal error in the :ref:`ghostwriter <ghostwriter>`.
 
 .. _v6.14.6:
 
@@ -4841,7 +4841,7 @@ to :pep:`646` is released, hopefully in Python 3.11.
 6.13.13 - 2021-06-04
 --------------------
 
-This patch teaches :doc:`the Ghostwriter <reference/ghostwriter>` how to find
+This patch teaches :ref:`the Ghostwriter <ghostwriter>` how to find
 :doc:`custom ufuncs <numpy:reference/ufuncs>` from *any* module that defines them,
 and that ``yaml.unsafe_load()`` does not undo ``yaml.safe_load()``.
 
@@ -5047,7 +5047,7 @@ you don't need to upgrade.
 6.10.0 - 2021-04-17
 -------------------
 
-This release teaches the :doc:`Ghostwriter <reference/ghostwriter>` to read parameter
+This release teaches the :ref:`Ghostwriter <ghostwriter>` to read parameter
 types from Sphinx, Google, or Numpy-style structured docstrings, and improves
 some related heuristics about how to test scientific and numerical programs.
 
@@ -5057,7 +5057,7 @@ some related heuristics about how to test scientific and numerical programs.
 6.9.2 - 2021-04-15
 ------------------
 
-This release improves the :doc:`Ghostwriter's <reference/ghostwriter>` handling
+This release improves the :ref:`Ghostwriter's <ghostwriter>` handling
 of exceptions, by reading ``:raises ...:`` entries in function docstrings
 and ensuring that we don't suppresss the error raised by test assertions.
 
@@ -5086,7 +5086,7 @@ for reporting and fixing :issue:`2919`!
 -------------------
 
 If :pypi:`rich` is installed, the :command:`hypothesis write` command
-will use it to syntax-highlight the :doc:`Ghostwritten <reference/ghostwriter>`
+will use it to syntax-highlight the :ref:`Ghostwritten <ghostwriter>`
 code.
 
 .. _v6.8.11:
@@ -5176,7 +5176,7 @@ to avoid an error when running mypy in strict mode.
 6.8.3 - 2021-03-28
 ------------------
 
-This patch improves the :doc:`Ghostwriter's <reference/ghostwriter>` handling
+This patch improves the :ref:`Ghostwriter's <ghostwriter>` handling
 of strategies to generate various fiddly types including frozensets,
 keysviews, valuesviews, regex matches and patterns, and so on.
 
@@ -5528,7 +5528,7 @@ requiring that the helper only be used from property-based tests (:issue:`2581`)
 5.47.0 - 2021-01-05
 -------------------
 
-This release upgrades the import logic for :doc:`ghostwritten tests <reference/ghostwriter>`,
+This release upgrades the import logic for :ref:`ghostwritten tests <ghostwriter>`,
 handling many cases where imports would previously be missing or from unexpected
 locations.
 
@@ -6014,7 +6014,7 @@ Thanks to Nikita Sobolev for fixing :issue:`2603`!
 -------------------
 
 This patch improves the error message from the :command:`hypothesis write`
-command if :pypi:`black` (required for the :doc:`ghostwriter <reference/ghostwriter>`)
+command if :pypi:`black` (required for the :ref:`ghostwriter <ghostwriter>`)
 is not installed.
 
 Thanks to Nikita Sobolev for fixing :issue:`2604`!
@@ -6067,7 +6067,7 @@ This was particularly an issue for :pypi:`pydantic` models which use an
 5.30.1 - 2020-09-04
 -------------------
 
-This patch makes the :doc:`ghostwriter <reference/ghostwriter>` much more robust when
+This patch makes the :ref:`ghostwriter <ghostwriter>` much more robust when
 passed unusual modules.
 
 - improved support for non-resolvable type annotations
@@ -6159,7 +6159,7 @@ Thanks to Zac Hatfield-Dodds and Nikita Sobolev for this feature!
 5.27.0 - 2020-08-20
 -------------------
 
-This patch adds two new :doc:`ghostwriters <reference/ghostwriter>` to test
+This patch adds two new :ref:`ghostwriters <ghostwriter>` to test
 :wikipedia:`binary operations <Binary_operation>`, like :func:`python:operator.add`,
 and Numpy :doc:`ufuncs <numpy:reference/ufuncs>` and :doc:`gufuncs
 <numpy:reference/c-api/generalized-ufuncs>` like :data:`np.matmul() <numpy:numpy.matmul>`.
@@ -6199,7 +6199,7 @@ pull request to implement this feature!
 
 Tired of writing tests?  Or new to Hypothesis and not sure where to start?
 
-This release is for you!  With our new :doc:`Ghostwriter functions <reference/ghostwriter>`
+This release is for you!  With our new :ref:`Ghostwriter functions <ghostwriter>`
 and :command:`hypothesis write ...` :ref:`command-line interface <hypothesis-cli>`,
 you can stop writing tests entirely... or take the source code Hypothesis
 writes for you as a starting point.

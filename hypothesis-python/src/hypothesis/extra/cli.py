@@ -30,7 +30,7 @@ hypothesis[cli]
       write    `hypothesis write` writes property-based tests for you!
 
 This module requires the :pypi:`click` package, and provides Hypothesis' command-line
-interface, for e.g. :doc:`'ghostwriting' tests <reference/ghostwriter>` via the terminal.
+interface, for e.g. :ref:`'ghostwriting' tests <ghostwriter>` via the terminal.
 It's also where `HypoFuzz <https://hypofuzz.com/>`__ adds the :command:`hypothesis fuzz`
 command (`learn more about that here <https://hypofuzz.com/docs/quickstart.html>`__).
 """

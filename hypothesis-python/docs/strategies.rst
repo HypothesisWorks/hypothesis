@@ -93,7 +93,7 @@ fail - by trying all kinds of inputs and reporting whatever happens.
 implement functor, applicative, monad, and other laws; allowing a declarative
 approach to be combined with traditional pythonic code.
 
-:pypi:`icontract-hypothesis` includes a :doc:`ghostwriter <reference/ghostwriter>` for test files
+:pypi:`icontract-hypothesis` includes a :ref:`ghostwriter <ghostwriter>` for test files
 and IDE integrations such as `icontract-hypothesis-vim <https://github.com/mristin/icontract-hypothesis-vim>`_,
 `icontract-hypothesis-pycharm <https://github.com/mristin/icontract-hypothesis-pycharm>`_,
 and

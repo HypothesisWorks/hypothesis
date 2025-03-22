@@ -1,242 +1,7 @@
-API reference
+API Reference
 =============
 
-Control
--------
-
-Functions that can be called from anywhere inside a test, to either modify how Hypothesis treats the current test case, or to give Hypothesis more information about the current test case.
-
-.. autofunction:: hypothesis.assume
-
-.. autofunction:: hypothesis.note
-
-.. autofunction:: hypothesis.event
-
-You can mark custom events in a test using |event|:
-
-.. code:: python
-
-  from hypothesis import event, given, strategies as st
-
-
-  @given(st.integers().filter(lambda x: x % 2 == 0))
-  def test_even_integers(i):
-      event(f"i mod 3 = {i%3}")
-
-
-You will then see output like:
-
-.. code-block:: none
-
-  test_even_integers:
-
-    - during generate phase (0.09 seconds):
-        - Typical runtimes: < 1ms, ~ 59% in data generation
-        - 100 passing examples, 0 failing examples, 32 invalid examples
-        - Events:
-          * 54.55%, Retried draw from integers().filter(lambda x: x % 2 == 0) to satisfy filter
-          * 31.06%, i mod 3 = 2
-          * 28.79%, i mod 3 = 0
-          * 24.24%, Aborted test because unable to satisfy integers().filter(lambda x: x % 2 == 0)
-          * 15.91%, i mod 3 = 1
-    - Stopped because settings.max_examples=100
-
-Arguments to ``event`` can be any hashable type, but two events will be considered the same
-if they are the same when converted to a string with :obj:`python:str`.
-
-
-.. _database:
-
-Database
---------
-
-When Hypothesis finds a bug it stores enough information in its database to reproduce it. This
-enables you to have a classic testing workflow of find a bug, fix a bug, and be confident that
-this is actually doing the right thing because Hypothesis will start by retrying the examples that
-broke things last time.
-
-Limitations
-~~~~~~~~~~~
-
-The database is best thought of as a cache that you never need to invalidate: Information may be
-lost when you upgrade a Hypothesis version or change your test, so you shouldn't rely on it for
-correctness - if there's an example you want to ensure occurs each time then :ref:`there's a feature for
-including them in your source code <providing-explicit-examples>` - but it helps the development
-workflow considerably by making sure that the examples you've just found are reproduced.
-
-The database also records examples that exercise less-used parts of your
-code, so the database may update even when no failing examples were found.
-
-Upgrading Hypothesis and changing your tests
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The design of the Hypothesis database is such that you can put arbitrary data in the database
-and not get wrong behaviour. When you upgrade Hypothesis, old data *might* be invalidated, but
-this should happen transparently. It can never be the case that e.g. changing the strategy
-that generates an argument gives you data from the old strategy.
-
-ExampleDatabase implementations
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Hypothesis' default :obj:`~hypothesis.settings.database` setting creates a
-:class:`~hypothesis.database.DirectoryBasedExampleDatabase` in your current working directory,
-under ``.hypothesis/examples``.  If this location is unusable, e.g. because you do not have
-read or write permissions, Hypothesis will emit a warning and fall back to an
-:class:`~hypothesis.database.InMemoryExampleDatabase`.
-
-Hypothesis provides the following :class:`~hypothesis.database.ExampleDatabase` implementations:
-
-.. autoclass:: hypothesis.database.InMemoryExampleDatabase
-.. autoclass:: hypothesis.database.DirectoryBasedExampleDatabase
-.. autoclass:: hypothesis.database.GitHubArtifactDatabase
-.. autoclass:: hypothesis.database.ReadOnlyDatabase
-.. autoclass:: hypothesis.database.MultiplexedDatabase
-.. autoclass:: hypothesis.database.BackgroundWriteDatabase
-.. autoclass:: hypothesis.extra.redis.RedisExampleDatabase
-
-Defining your own ExampleDatabase
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-You can define your :class:`~hypothesis.database.ExampleDatabase`, for example
-to use a shared datastore, with just a few methods:
-
-.. autoclass:: hypothesis.database.ExampleDatabase
-   :members:
-
-
-.. _custom-function-execution:
-
-Custom function execution
--------------------------
-
-Hypothesis provides you with a hook that lets you control how it runs examples.
-
-This lets you do things like set up and tear down around each example, run examples in a subprocess, transform coroutine tests into normal tests, etc. For example, :class:`~hypothesis.extra.django.TransactionTestCase` in the Django extra runs each example in a separate database transaction.
-
-The way this works is by introducing the concept of an executor. An executor is essentially a function that takes a block of code and run it. The default executor is:
-
-.. code:: python
-
-    def default_executor(function):
-        return function()
-
-You define executors by defining a method ``execute_example`` on a class. Any test methods on that class with :func:`@given <hypothesis.given>` used on them will use ``self.execute_example`` as an executor with which to run tests. For example, the following executor runs all its code twice:
-
-.. code:: python
-
-    from unittest import TestCase
-
-
-    class TestTryReallyHard(TestCase):
-        @given(integers())
-        def test_something(self, i):
-            perform_some_unreliable_operation(i)
-
-        def execute_example(self, f):
-            f()
-            return f()
-
-Note: The functions you use in map, etc. will run *inside* the executor. i.e. they will not be called until you invoke the function passed to ``execute_example``.
-
-An executor must be able to handle being passed a function which returns None, otherwise it won't be able to run normal test cases. So for example the following executor is invalid:
-
-.. code:: python
-
-    from unittest import TestCase
-
-
-    class TestRunTwice(TestCase):
-        def execute_example(self, f):
-            return f()()
-
-and should be rewritten as:
-
-.. code:: python
-
-    from unittest import TestCase
-
-
-    class TestRunTwice(TestCase):
-        def execute_example(self, f):
-            result = f()
-            if callable(result):
-                result = result()
-            return result
-
-
-An alternative hook is provided for use by test runner extensions such as :pypi:`pytest-trio`, which cannot use the ``execute_example`` method. This is **not** recommended for end-users - it is better to write a complete test function directly, perhaps by using a decorator to perform the same transformation before applying :func:`@given <hypothesis.given>`.
-
-.. code:: python
-
-    @given(x=integers())
-    @pytest.mark.trio
-    async def test(x): ...
-
-
-    # Illustrative code, inside the pytest-trio plugin
-    test.hypothesis.inner_test = lambda x: trio.run(test, x)
-
-For authors of test runners however, assigning to the ``inner_test`` attribute of the ``hypothesis`` attribute of the test will replace the interior test.
-
-.. note::
-    The new ``inner_test`` must accept and pass through all the ``*args``
-    and ``**kwargs`` expected by the original test.
-
-If the end user has also specified a custom executor using the ``execute_example`` method, it - and all other execution-time logic - will be applied to the *new* inner test assigned by the test runner.
-
-
-.. _fuzz_one_input:
-
-Use with external fuzzers
--------------------------
-
-.. tip::
-
-    | Want an integrated workflow for your team's local tests, CI, and continuous fuzzing?
-    | Use `HypoFuzz <https://hypofuzz.com/>`__ to fuzz your whole test suite, and find more bugs without more tests!
-
-Sometimes, you might want to point a traditional fuzzer such as `python-afl <https://github.com/jwilk/python-afl>`__, :pypi:`pythonfuzz`, or Google's :pypi:`atheris` (for Python *and* native extensions) at your code. Wouldn't it be nice if you could use any of your |@given| tests as fuzz targets, instead of converting bytestrings into your objects by hand?
-
-.. code:: python
-
-    @given(st.text())
-    def test_foo(s): ...
-
-
-    # This is a traditional fuzz target - call it with a bytestring,
-    # or a binary IO object, and it runs the test once.
-    fuzz_target = test_foo.hypothesis.fuzz_one_input
-
-    # For example:
-    fuzz_target(b"\x00\x00\x00\x00\x00\x00\x00\x00")
-    fuzz_target(io.BytesIO(...))
-
-Depending on the input to ``fuzz_one_input``, one of three things will happen:
-
-- If the bytestring was invalid, for example because it was too short or
-  failed a filter or :func:`~hypothesis.assume` too many times,
-  ``fuzz_one_input`` returns ``None``.
-
-- If the bytestring was valid and the test passed, ``fuzz_one_input`` returns a canonicalised and pruned buffer which will replay that test case.  This is provided as an option to improve the performance of mutating fuzzers, but can safely be ignored.
-
-- If the test *failed*, i.e. raised an exception, ``fuzz_one_input`` will add the pruned buffer to :ref:`the Hypothesis example database <database>` and then re-raise that exception.  All you need to do to reproduce, minimize, and de-duplicate all the failures found via fuzzing is run your test suite!
-
-Note that the interpretation of both input and output bytestrings is specific to the exact version of Hypothesis you are using and the strategies given to the test, just like the :ref:`example database <database>` and :func:`@reproduce_failure <hypothesis.reproduce_failure>` decorator.
-
-.. tip::
-
-  For usages of ``fuzz_one_input`` which expect to discover many failures, consider wrapping your database with :class:`~hypothesis.database.BackgroundWriteDatabase` for low-overhead writes of failures.
-
-Interaction with settings
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-``fuzz_one_input`` uses just enough of Hypothesis' internals to drive your test function with a fuzzer-provided bytestring, and most settings therefore have no effect in this mode.  We recommend running your tests the usual way before fuzzing to get the benefits of healthchecks, as well as afterwards to replay, shrink, deduplicate, and report whatever errors were discovered.
-
-- The :obj:`~hypothesis.settings.database` setting *is* used by fuzzing mode - adding failures to the database to be replayed when you next run your tests is our preferred reporting mechanism and response to `the 'fuzzer taming' problem <https://blog.regehr.org/archives/925>`__.
-- The :obj:`~hypothesis.settings.verbosity` and :obj:`~hypothesis.settings.stateful_step_count` settings work as usual.
-
-The |settings.deadline|, |settings.derandomize|, |settings.max_examples|, |settings.phases|, |settings.print_blob|, |settings.report_multiple_bugs|, and |settings.suppress_health_check| settings do not affect fuzzing mode.
-
+Reference for non-strategy objects that are part of the Hypothesis API. For docuemntation on strategies, see the :doc:`strategies reference </reference/strategies>`.
 
 |@given|
 --------
@@ -376,6 +141,129 @@ Limitations
 Hypothesis does not inspect :pep:`484` type comments at runtime. While |st.from_type| will work as usual, inference in |st.builds| and |@given| will only work if you manually create the ``__annotations__`` attribute (e.g. by using ``@annotations(...)`` and ``@returns(...)`` decorators).
 
 The :mod:`python:typing` module changes between different Python releases, including at minor versions.  These are all supported on a best-effort basis, but you may encounter problems.  Please report them to us, and consider updating to a newer version of Python as a workaround.
+
+
+.. _providing-explicit-examples:
+
+|@example|
+----------
+
+The simplest way to reproduce a failed test is to ask Hypothesis to run the
+failing example it printed.  For example, if ``Falsifying example: test(n=1)``
+was printed you can decorate ``test`` with ``@example(n=1)``.
+
+``@example`` can also be used to ensure a specific example is *always* executed
+as a regression test or to cover some edge case - basically combining a
+Hypothesis test and a traditional parametrized test.
+
+.. autoclass:: hypothesis.example
+
+Hypothesis will run all examples you've asked for first. If any of them fail it
+will not go on to look for more examples.
+
+It doesn't matter whether you put the example decorator before or after given.
+Any permutation of the decorators in the above will do the same thing.
+
+Note that examples can be positional or keyword based. If they're positional then
+they will be filled in from the right when calling, so either of the following
+styles will work as expected:
+
+.. code:: python
+
+  @given(text())
+  @example("Hello world")
+  @example(x="Some very long string")
+  def test_some_code(x):
+      pass
+
+
+  from unittest import TestCase
+
+
+  class TestThings(TestCase):
+      @given(text())
+      @example("Hello world")
+      @example(x="Some very long string")
+      def test_some_code(self, x):
+          pass
+
+As with |@given|, it is not permitted for a single example to be a mix of
+positional and keyword arguments.
+
+.. automethod:: hypothesis.example.xfail
+
+.. automethod:: hypothesis.example.via
+
+
+Control
+-------
+
+Functions that can be called from anywhere inside a test, to either modify how Hypothesis treats the current test case, or to give Hypothesis more information about the current test case.
+
+.. autofunction:: hypothesis.assume
+
+.. autofunction:: hypothesis.note
+
+.. autofunction:: hypothesis.event
+
+You can mark custom events in a test using |event|:
+
+.. code:: python
+
+  from hypothesis import event, given, strategies as st
+
+
+  @given(st.integers().filter(lambda x: x % 2 == 0))
+  def test_even_integers(i):
+      event(f"i mod 3 = {i%3}")
+
+These events appear in :ref:`observability <observability>` output, as well as the output of :ref:`our pytest plugin <pytest-plugin>` when run with ``--hypothesis-show-statistics``.
+
+For instance, in the latter case, you would see output like:
+
+.. code-block:: none
+
+  test_even_integers:
+
+    - during generate phase (0.09 seconds):
+        - Typical runtimes: < 1ms, ~ 59% in data generation
+        - 100 passing examples, 0 failing examples, 32 invalid examples
+        - Events:
+          * 54.55%, Retried draw from integers().filter(lambda x: x % 2 == 0) to satisfy filter
+          * 31.06%, i mod 3 = 2
+          * 28.79%, i mod 3 = 0
+          * 24.24%, Aborted test because unable to satisfy integers().filter(lambda x: x % 2 == 0)
+          * 15.91%, i mod 3 = 1
+    - Stopped because settings.max_examples=100
+
+Arguments to ``event`` can be any hashable type, but two events will be considered the same
+if they are the same when converted to a string with :obj:`python:str`.
+
+.. _targeted:
+
+Targeted property-based testing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Targeted property-based testing combines the advantages of both search-based and property-based testing.  Instead of being completely random, targeted PBT uses a search-based component to guide the input generation towards values that have a higher probability of falsifying a property.  This explores the input space more effectively and requires fewer tests to find a bug or achieve a high confidence in the system being tested than random PBT. (`Löscher and Sagonas <http://proper.softlab.ntua.gr/Publications.html>`__)
+
+This is not *always* a good idea - for example calculating the search metric might take time better spent running more uniformly-random test cases, or your target metric might accidentally lead Hypothesis *away* from bugs - but if there is a natural metric like "floating-point error", "load factor" or "queue length", we encourage you to experiment with targeted testing.
+
+.. code-block:: python
+
+  from hypothesis import given, strategies as st, target
+
+
+  @given(st.floats(0, 1e100), st.floats(0, 1e100), st.floats(0, 1e100))
+  def test_associativity_with_target(a, b, c):
+      ab_c = (a + b) + c
+      a_bc = a + (b + c)
+      difference = abs(ab_c - a_bc)
+      target(difference)  # Without this, the test almost always passes
+      assert difference < 2.0
+
+.. autofunction:: hypothesis.target
+
+We recommend that users also skim the papers introducing targeted PBT; from `ISSTA 2017 <http://proper.softlab.ntua.gr/papers/issta2017.pdf>`__ and `ICST 2018 <http://proper.softlab.ntua.gr/papers/icst2018.pdf>`__. For the curious, the initial implementation in Hypothesis uses hill-climbing search via a mutating fuzzer, with some tactics inspired by simulated annealing to avoid getting stuck and endlessly mutating a local maximum.
 
 
 
@@ -630,6 +518,84 @@ Using a value of ``list(HealthCheck)`` will disable all health checks.
    :inherited-members:
    :exclude-members: all
 
+
+.. _database:
+
+Database
+--------
+
+When Hypothesis finds a bug it stores enough information in its database to reproduce it. This
+enables you to have a classic testing workflow of find a bug, fix a bug, and be confident that
+this is actually doing the right thing because Hypothesis will start by retrying the examples that
+broke things last time.
+
+Limitations
+~~~~~~~~~~~
+
+The database is best thought of as a cache that you never need to invalidate: Information may be
+lost when you upgrade a Hypothesis version or change your test, so you shouldn't rely on it for
+correctness - if there's an example you want to ensure occurs each time then :ref:`there's a feature for
+including them in your source code <providing-explicit-examples>` - but it helps the development
+workflow considerably by making sure that the examples you've just found are reproduced.
+
+The database also records examples that exercise less-used parts of your
+code, so the database may update even when no failing examples were found.
+
+Upgrading Hypothesis and changing your tests
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The design of the Hypothesis database is such that you can put arbitrary data in the database
+and not get wrong behaviour. When you upgrade Hypothesis, old data *might* be invalidated, but
+this should happen transparently. It can never be the case that e.g. changing the strategy
+that generates an argument gives you data from the old strategy.
+
+ExampleDatabase implementations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Hypothesis' default :obj:`~hypothesis.settings.database` setting creates a
+:class:`~hypothesis.database.DirectoryBasedExampleDatabase` in your current working directory,
+under ``.hypothesis/examples``.  If this location is unusable, e.g. because you do not have
+read or write permissions, Hypothesis will emit a warning and fall back to an
+:class:`~hypothesis.database.InMemoryExampleDatabase`.
+
+Hypothesis provides the following :class:`~hypothesis.database.ExampleDatabase` implementations:
+
+.. autoclass:: hypothesis.database.InMemoryExampleDatabase
+.. autoclass:: hypothesis.database.DirectoryBasedExampleDatabase
+.. autoclass:: hypothesis.database.GitHubArtifactDatabase
+.. autoclass:: hypothesis.database.ReadOnlyDatabase
+.. autoclass:: hypothesis.database.MultiplexedDatabase
+.. autoclass:: hypothesis.database.BackgroundWriteDatabase
+.. autoclass:: hypothesis.extra.redis.RedisExampleDatabase
+
+Defining your own ExampleDatabase
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can define your :class:`~hypothesis.database.ExampleDatabase`, for example
+to use a shared datastore, with just a few methods:
+
+.. autoclass:: hypothesis.database.ExampleDatabase
+   :members:
+
+
+.. code:: python
+
+    @given(x=integers())
+    @pytest.mark.trio
+    async def test(x): ...
+
+
+    # Illustrative code, inside the pytest-trio plugin
+    test.hypothesis.inner_test = lambda x: trio.run(test, x)
+
+For authors of test runners however, assigning to the ``inner_test`` attribute of the ``hypothesis`` attribute of the test will replace the interior test.
+
+.. note::
+    The new ``inner_test`` must accept and pass through all the ``*args``
+    and ``**kwargs`` expected by the original test.
+
+If the end user has also specified a custom executor using the ``execute_example`` method, it - and all other execution-time logic - will be applied to the *new* inner test assigned by the test runner.
+
 .. _stateful:
 
 Stateful tests
@@ -664,32 +630,6 @@ If you want to bypass the TestCase infrastructure you can invoke these manually.
 This is not recommended as it bypasses some important internal functions, including reporting of statistics such as runtimes and :func:`~hypothesis.event` calls.  It was originally added to support custom ``__init__`` methods, but you can now use :func:`~hypothesis.stateful.initialize` rules instead.
 
 
-.. _targeted:
-
-Targeted property-based testing
--------------------------------
-
-Targeted property-based testing combines the advantages of both search-based and property-based testing.  Instead of being completely random, targeted PBT uses a search-based component to guide the input generation towards values that have a higher probability of falsifying a property.  This explores the input space more effectively and requires fewer tests to find a bug or achieve a high confidence in the system being tested than random PBT. (`Löscher and Sagonas <http://proper.softlab.ntua.gr/Publications.html>`__)
-
-This is not *always* a good idea - for example calculating the search metric might take time better spent running more uniformly-random test cases, or your target metric might accidentally lead Hypothesis *away* from bugs - but if there is a natural metric like "floating-point error", "load factor" or "queue length", we encourage you to experiment with targeted testing.
-
-.. code-block:: python
-
-  from hypothesis import given, strategies as st, target
-
-
-  @given(st.floats(0, 1e100), st.floats(0, 1e100), st.floats(0, 1e100))
-  def test_associativity_with_target(a, b, c):
-      ab_c = (a + b) + c
-      a_bc = a + (b + c)
-      difference = abs(ab_c - a_bc)
-      target(difference)  # Without this, the test almost always passes
-      assert difference < 2.0
-
-.. autofunction:: hypothesis.target
-
-We recommend that users also skim the papers introducing targeted PBT; from `ISSTA 2017 <http://proper.softlab.ntua.gr/papers/issta2017.pdf>`__ and `ICST 2018 <http://proper.softlab.ntua.gr/papers/icst2018.pdf>`__. For the curious, the initial implementation in Hypothesis uses hill-climbing search via a mutating fuzzer, with some tactics inspired by simulated annealing to avoid getting stuck and endlessly mutating a local maximum.
-
 .. _reproducing-failures:
 
 Reproducing failures
@@ -707,57 +647,6 @@ there currently aren't very good work flows for that, so Hypothesis provides a
 number of ways to make examples reproducible by adding them to the source code
 of your tests. This is particularly useful when e.g. you are trying to run an
 example that has failed on your CI, or otherwise share them between machines.
-
-.. _providing-explicit-examples:
-
-Providing explicit examples
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The simplest way to reproduce a failed test is to ask Hypothesis to run the
-failing example it printed.  For example, if ``Falsifying example: test(n=1)``
-was printed you can decorate ``test`` with ``@example(n=1)``.
-
-``@example`` can also be used to ensure a specific example is *always* executed
-as a regression test or to cover some edge case - basically combining a
-Hypothesis test and a traditional parametrized test.
-
-.. autoclass:: hypothesis.example
-
-Hypothesis will run all examples you've asked for first. If any of them fail it
-will not go on to look for more examples.
-
-It doesn't matter whether you put the example decorator before or after given.
-Any permutation of the decorators in the above will do the same thing.
-
-Note that examples can be positional or keyword based. If they're positional then
-they will be filled in from the right when calling, so either of the following
-styles will work as expected:
-
-.. code:: python
-
-  @given(text())
-  @example("Hello world")
-  @example(x="Some very long string")
-  def test_some_code(x):
-      pass
-
-
-  from unittest import TestCase
-
-
-  class TestThings(TestCase):
-      @given(text())
-      @example("Hello world")
-      @example(x="Some very long string")
-      def test_some_code(self, x):
-          pass
-
-As with |@given|, it is not permitted for a single example to be a mix of
-positional and keyword arguments.
-
-.. automethod:: hypothesis.example.xfail
-
-.. automethod:: hypothesis.example.via
 
 .. _reproducing-with-seed:
 
@@ -830,3 +719,320 @@ each ``@reproduce_failure`` invocation is specific to a Hypothesis version).
 
 By default these messages are not printed.
 If you want to see these you can set the :attr:`~hypothesis.settings.print_blob` setting to ``True``.
+
+
+.. _hypothesis-django:
+
+Django
+------
+
+.. seealso::
+
+    See the :ref:`Django strategies reference <django-strategies>` for documentation on strategies in the ``hypothesis.extra.django`` module.
+
+Hypothesis offers a number of features specific for Django testing, available
+in the ``hypothesis[django]`` :doc:`extra </extras>`.  This is tested
+against each supported series with mainstream or extended support -
+if you're still getting security patches, you can test with Hypothesis.
+
+.. autoclass:: hypothesis.extra.django.TestCase
+
+Using it is quite straightforward: All you need to do is subclass
+:class:`hypothesis.extra.django.TestCase` or
+:class:`hypothesis.extra.django.TransactionTestCase` or
+:class:`~hypothesis.extra.django.LiveServerTestCase` or
+:class:`~hypothesis.extra.django.StaticLiveServerTestCase`
+and you can use :func:`@given <hypothesis.given>` as normal,
+and the transactions will be per example
+rather than per test function as they would be if you used :func:`@given <hypothesis.given>` with a normal
+django test suite (this is important because your test function will be called
+multiple times and you don't want them to interfere with each other). Test cases
+on these classes that do not use
+:func:`@given <hypothesis.given>` will be run as normal.
+
+.. autoclass:: hypothesis.extra.django.TransactionTestCase
+.. autoclass:: hypothesis.extra.django.LiveServerTestCase
+.. autoclass:: hypothesis.extra.django.StaticLiveServerTestCase
+
+We recommend avoiding :class:`~hypothesis.extra.django.TransactionTestCase`
+unless you really have to run each test case in a database transaction.
+Because Hypothesis runs this in a loop, the performance problems it normally has
+are significantly exacerbated and your tests will be really slow.
+If you are using :class:`~hypothesis.extra.django.TransactionTestCase`,
+you may need to use ``@settings(suppress_health_check=[HealthCheck.too_slow])``
+to avoid :ref:`errors due to slow example generation <healthchecks>`.
+
+Having set up a test class, you can now pass :func:`@given <hypothesis.given>`
+a strategy for Django models with |django.from_model|.
+For example, using :gh-file:`the trivial django project we have for testing
+<hypothesis-python/tests/django/toystore/models.py>`:
+
+.. code-block:: pycon
+
+    >>> from hypothesis.extra.django import from_model
+    >>> from toystore.models import Customer
+    >>> c = from_model(Customer).example()
+    >>> c
+    <Customer: Customer object>
+    >>> c.email
+    'jaime.urbina@gmail.com'
+    >>> c.name
+    '\U00109d3d\U000e07be\U000165f8\U0003fabf\U000c12cd\U000f1910\U00059f12\U000519b0\U0003fabf\U000f1910\U000423fb\U000423fb\U00059f12\U000e07be\U000c12cd\U000e07be\U000519b0\U000165f8\U0003fabf\U0007bc31'
+    >>> c.age
+    -873375803
+
+Hypothesis has just created this with whatever the relevant type of data is.
+
+Obviously the customer's age is implausible, which is only possible because
+we have not used (eg) :class:`~django:django.core.validators.MinValueValidator`
+to set the valid range for this field (or used a
+:class:`~django:django.db.models.PositiveSmallIntegerField`, which would only
+need a maximum value validator).
+
+If you *do* have validators attached, Hypothesis will only generate examples
+that pass validation.  Sometimes that will mean that we fail a
+:class:`~hypothesis.HealthCheck` because of the filtering, so let's explicitly
+pass a strategy to skip validation at the strategy level:
+
+.. code-block:: pycon
+
+    >>> from hypothesis.strategies import integers
+    >>> c = from_model(Customer, age=integers(min_value=0, max_value=120)).example()
+    >>> c
+    <Customer: Customer object>
+    >>> c.age
+    5
+
+Custom field types
+~~~~~~~~~~~~~~~~~~
+
+If you have a custom Django field type you can register it with Hypothesis's
+model deriving functionality by registering a default strategy for it:
+
+.. code-block:: pycon
+
+    >>> from toystore.models import CustomishField, Customish
+    >>> from_model(Customish).example()
+    hypothesis.errors.InvalidArgument: Missing arguments for mandatory field
+        customish for model Customish
+    >>> from hypothesis.extra.django import register_field_strategy
+    >>> from hypothesis.strategies import just
+    >>> register_field_strategy(CustomishField, just("hi"))
+    >>> x = from_model(Customish).example()
+    >>> x.customish
+    'hi'
+
+Note that this mapping is on exact type. Subtypes will not inherit it.
+
+Generating child models
+~~~~~~~~~~~~~~~~~~~~~~~
+
+For the moment there's no explicit support in hypothesis-django for generating
+dependent models. i.e. a Company model will generate no Shops. However if you
+want to generate some dependent models as well, you can emulate this by using
+the *flatmap* function as follows:
+
+.. code:: python
+
+  from hypothesis.strategies import just, lists
+
+
+  def generate_with_shops(company):
+      return lists(from_model(Shop, company=just(company))).map(lambda _: company)
+
+
+  company_with_shops_strategy = from_model(Company).flatmap(generate_with_shops)
+
+Let's unpack what this is doing:
+
+The way flatmap works is that we draw a value from the original strategy, then
+apply a function to it which gives us a new strategy. We then draw a value from
+*that* strategy. So in this case we're first drawing a company, and then we're
+drawing a list of shops belonging to that company: The *just* strategy is a
+strategy such that drawing it always produces the individual value, so
+``from_model(Shop, company=just(company))`` is a strategy that generates a Shop belonging
+to the original company.
+
+So the following code would give us a list of shops all belonging to the same
+company:
+
+.. code:: python
+
+  from_model(Company).flatmap(lambda c: lists(from_model(Shop, company=just(c))))
+
+The only difference from this and the above is that we want the company, not
+the shops. This is where the inner map comes in. We build the list of shops
+and then throw it away, instead returning the company we started for. This
+works because the models that Hypothesis generates are saved in the database,
+so we're essentially running the inner strategy purely for the side effect of
+creating those children in the database.
+
+
+.. _django-generating-primary-key:
+
+Generating primary key values
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If your model includes a custom primary key that you want to generate
+using a strategy (rather than a default auto-increment primary key)
+then Hypothesis has to deal with the possibility of a duplicate
+primary key.
+
+If a model strategy generates a value for the primary key field,
+Hypothesis will create the model instance with
+:meth:`~django:django.db.models.query.QuerySet.update_or_create`,
+overwriting any existing instance in the database for this test case
+with the same primary key.
+
+
+On the subject of ``MultiValueField``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Django forms feature the :class:`~django:django.forms.MultiValueField`
+which allows for several fields to be combined under a single named field, the
+default example of this is the :class:`~django:django.forms.SplitDateTimeField`.
+
+.. code:: python
+
+  class CustomerForm(forms.Form):
+      name = forms.CharField()
+      birth_date_time = forms.SplitDateTimeField()
+
+|django.from_form| supports ``MultiValueField`` subclasses directly, however if you
+want to define your own strategy be forewarned that Django binds data for a
+``MultiValueField`` in a peculiar way. Specifically each sub-field is expected
+to have its own entry in ``data`` addressed by the field name
+(e.g. ``birth_date_time``) and the index of the sub-field within the
+``MultiValueField``, so form ``data`` for the example above might look
+like this:
+
+.. code:: python
+
+  {
+      "name": "Samuel John",
+      "birth_date_time_0": "2018-05-19",  # the date, as the first sub-field
+      "birth_date_time_1": "15:18:00",  # the time, as the second sub-field
+  }
+
+Thus, if you want to define your own strategies for such a field you must
+address your sub-fields appropriately:
+
+.. code:: python
+
+  from_form(CustomerForm, birth_date_time_0=just("2018-05-19"))
+
+
+.. _fuzz_one_input:
+
+Use with external fuzzers
+-------------------------
+
+.. tip::
+
+    | Want an integrated workflow for your team's local tests, CI, and continuous fuzzing?
+    | Use `HypoFuzz <https://hypofuzz.com/>`__ to fuzz your whole test suite, and find more bugs without more tests!
+
+Sometimes, you might want to point a traditional fuzzer such as `python-afl <https://github.com/jwilk/python-afl>`__, :pypi:`pythonfuzz`, or Google's :pypi:`atheris` (for Python *and* native extensions) at your code. Wouldn't it be nice if you could use any of your |@given| tests as fuzz targets, instead of converting bytestrings into your objects by hand?
+
+.. code:: python
+
+    @given(st.text())
+    def test_foo(s): ...
+
+
+    # This is a traditional fuzz target - call it with a bytestring,
+    # or a binary IO object, and it runs the test once.
+    fuzz_target = test_foo.hypothesis.fuzz_one_input
+
+    # For example:
+    fuzz_target(b"\x00\x00\x00\x00\x00\x00\x00\x00")
+    fuzz_target(io.BytesIO(...))
+
+Depending on the input to ``fuzz_one_input``, one of three things will happen:
+
+- If the bytestring was invalid, for example because it was too short or
+  failed a filter or :func:`~hypothesis.assume` too many times,
+  ``fuzz_one_input`` returns ``None``.
+
+- If the bytestring was valid and the test passed, ``fuzz_one_input`` returns a canonicalised and pruned buffer which will replay that test case.  This is provided as an option to improve the performance of mutating fuzzers, but can safely be ignored.
+
+- If the test *failed*, i.e. raised an exception, ``fuzz_one_input`` will add the pruned buffer to :ref:`the Hypothesis example database <database>` and then re-raise that exception.  All you need to do to reproduce, minimize, and de-duplicate all the failures found via fuzzing is run your test suite!
+
+Note that the interpretation of both input and output bytestrings is specific to the exact version of Hypothesis you are using and the strategies given to the test, just like the :ref:`example database <database>` and :func:`@reproduce_failure <hypothesis.reproduce_failure>` decorator.
+
+.. tip::
+
+  For usages of ``fuzz_one_input`` which expect to discover many failures, consider wrapping your database with :class:`~hypothesis.database.BackgroundWriteDatabase` for low-overhead writes of failures.
+
+Interaction with settings
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``fuzz_one_input`` uses just enough of Hypothesis' internals to drive your test function with a fuzzer-provided bytestring, and most settings therefore have no effect in this mode.  We recommend running your tests the usual way before fuzzing to get the benefits of healthchecks, as well as afterwards to replay, shrink, deduplicate, and report whatever errors were discovered.
+
+- The :obj:`~hypothesis.settings.database` setting *is* used by fuzzing mode - adding failures to the database to be replayed when you next run your tests is our preferred reporting mechanism and response to `the 'fuzzer taming' problem <https://blog.regehr.org/archives/925>`__.
+- The :obj:`~hypothesis.settings.verbosity` and :obj:`~hypothesis.settings.stateful_step_count` settings work as usual.
+
+The |settings.deadline|, |settings.derandomize|, |settings.max_examples|, |settings.phases|, |settings.print_blob|, |settings.report_multiple_bugs|, and |settings.suppress_health_check| settings do not affect fuzzing mode.
+
+
+.. _custom-function-execution:
+
+Custom function execution
+-------------------------
+
+Hypothesis provides you with a hook that lets you control how it runs examples.
+
+This lets you do things like set up and tear down around each example, run examples in a subprocess, transform coroutine tests into normal tests, etc. For example, :class:`~hypothesis.extra.django.TransactionTestCase` in the Django extra runs each example in a separate database transaction.
+
+The way this works is by introducing the concept of an executor. An executor is essentially a function that takes a block of code and run it. The default executor is:
+
+.. code:: python
+
+    def default_executor(function):
+        return function()
+
+You define executors by defining a method ``execute_example`` on a class. Any test methods on that class with :func:`@given <hypothesis.given>` used on them will use ``self.execute_example`` as an executor with which to run tests. For example, the following executor runs all its code twice:
+
+.. code:: python
+
+    from unittest import TestCase
+
+
+    class TestTryReallyHard(TestCase):
+        @given(integers())
+        def test_something(self, i):
+            perform_some_unreliable_operation(i)
+
+        def execute_example(self, f):
+            f()
+            return f()
+
+Note: The functions you use in map, etc. will run *inside* the executor. i.e. they will not be called until you invoke the function passed to ``execute_example``.
+
+An executor must be able to handle being passed a function which returns None, otherwise it won't be able to run normal test cases. So for example the following executor is invalid:
+
+.. code:: python
+
+    from unittest import TestCase
+
+
+    class TestRunTwice(TestCase):
+        def execute_example(self, f):
+            return f()()
+
+and should be rewritten as:
+
+.. code:: python
+
+    from unittest import TestCase
+
+
+    class TestRunTwice(TestCase):
+        def execute_example(self, f):
+            result = f()
+            if callable(result):
+                result = result()
+            return result
+
+
+An alternative hook is provided for use by test runner extensions such as :pypi:`pytest-trio`, which cannot use the ``execute_example`` method. This is **not** recommended for end-users - it is better to write a complete test function directly, perhaps by using a decorator to perform the same transformation before applying :func:`@given <hypothesis.given>`.

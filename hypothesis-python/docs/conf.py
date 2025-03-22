@@ -48,16 +48,16 @@ templates_path = ["_templates"]
 redirects = {
     "details": "reference/index.html",
     "data": "reference/strategies.html",
-    "database": "reference/api.html",
-    "stateful": "reference/api.html",
+    "database": "reference/api.html#database",
+    "stateful": "reference/api.html#stateful-tests",
     "reproducing": "reference/api.html",
-    "ghostwriter": "reference/ghostwriter.html",
-    # "extras": "extensions.html",
-    "django": "reference/strategies.html",
-    "numpy": "reference/strategies.html",
-    "observability": "reference/observability.html",
-    # "supported": "compatibility.html",
+    "ghostwriter": "reference/integrations.html#ghostwriter",
+    "django": "reference/strategies.html#django",
+    "numpy": "reference/strategies.html#numpy",
+    "observability": "reference/integrations.html#observability",
     # TODO enable when we actually rename them
+    # "extras": "extensions.html",
+    # "supported": "compatibility.html",
     # "changes": "changelog.html",
     # "strategies": "extensions.html",
     # these pages were removed without replacement
@@ -153,6 +153,7 @@ intersphinx_mapping = {
     "sphinx": ("https://www.sphinx-doc.org/en/master/", None),
     "IPython": ("https://ipython.readthedocs.io/en/stable/", None),
     "lark": ("https://lark-parser.readthedocs.io/en/stable/", None),
+    "xarray": ("https://docs.xarray.dev/en/stable/", None),
 }
 
 autodoc_mock_imports = ["numpy", "pandas", "redis", "django", "pytz"]
@@ -213,7 +214,13 @@ rst_prolog = """
 .. |st.recursive| replace:: :func:`~hypothesis.strategies.recursive`
 .. |st.deferred| replace:: :func:`~hypothesis.strategies.deferred`
 .. |st.from_type| replace:: :func:`~hypothesis.strategies.from_type`
+.. |st.uuids| replace:: :func:`~hypothesis.strategies.uuids`
+.. |st.ip_addresses| replace:: :func:`~hypothesis.strategies.ip_addresses`
 .. |st.register_type_strategy| replace:: :func:`~hypothesis.strategies.register_type_strategy`
+
+.. |django.from_form| replace:: :func:`~hypothesis.extra.django.from_form`
+.. |django.from_model| replace:: :func:`~hypothesis.extra.django.from_model`
+.. |django.from_field| replace:: :func:`~hypothesis.extra.django.from_field`
 
 .. |settings.register_profile| replace:: :func:`~hypothesis.settings.register_profile`
 .. |settings.get_profile| replace:: :func:`~hypothesis.settings.get_profile`
@@ -223,9 +230,6 @@ rst_prolog = """
 .. |strategy.filter| replace:: :func:`.filter() <hypothesis.strategies.SearchStrategy.filter>`
 .. |strategy.flatmap| replace:: :func:`.flatmap() <hypothesis.strategies.SearchStrategy.flatmap>`
 .. |strategy.map| replace:: :func:`.map() <hypothesis.strategies.SearchStrategy.map>`
-
-.. _observability: reference/observability
-.. _ghostwriter: reference/ghostwriter
 
 .. |str| replace:: :obj:`python:str`
 .. |int| replace:: :obj:`python:int`

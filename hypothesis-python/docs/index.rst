@@ -63,6 +63,7 @@ check out some of the
   reference/index
   Type hints <typing>
   Extras <extras>
+  Examples <examples>
   supported
   changes
 
