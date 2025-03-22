@@ -308,4 +308,6 @@ jobs:
         TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
         GEM_HOST_API_KEY: ${{ secrets.RUBYGEMS_TOKEN }}
         CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-      run: TASK=${{ matrix.task }} ./build.sh
+      run: |
+        cp README.md hypothesis-python/
+        TASK=${{ matrix.task }} ./build.sh

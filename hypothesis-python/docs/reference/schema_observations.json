@@ -1,0 +1,101 @@
+{
+    "title": "PBT Observations",
+    "description": "PBT Observations define a standard way to communicate what happened when property-based tests were run.  They describe test cases, or general notifications classified as info, alert, or error messages.",
+    "oneOf": [
+        {
+            "title": "Test case",
+            "description": "Describes the inputs to and result of running some test function on a particular input.  The test might have passed, failed, or been abandoned part way through (e.g. because we failed a ``.filter()`` condition).",
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "test_case",
+                    "description": "A tag which labels this observation as data about a specific test case."
+                },
+                "status": {
+                    "enum": ["passed", "failed", "gave_up"],
+                    "description": "Whether the test passed, failed, or was aborted before completion (e.g. due to use of ``.filter()``).  Note that if we gave_up partway, values such as arguments and features may be incomplete."
+                },
+                "status_reason": {
+                    "type": "string",
+                    "description": "If non-empty, the reason for which the test failed or was abandoned.  For Hypothesis, this is usually the exception type and location."
+                },
+                "representation": {
+                    "type": "string",
+                    "description": "The string representation of the input."
+                },
+                "arguments": {
+                    "type": "object",
+                    "description": "A structured json-encoded representation of the input.  Hypothesis provides a dictionary of argument names to json-ified values, including interactive draws from the :func:`~hypothesis.strategies.data` strategy.  If 'status' is 'gave_up', this may be absent or incomplete.  In other libraries this can be any object."
+                },
+                "how_generated": {
+                    "type": ["string", "null"],
+                    "description": "How the input was generated, if known.  In Hypothesis this might be an explicit example, generated during a particular phase with some backend, or by replaying the minimal failing example."
+                },
+                "features": {
+                    "type": "object",
+                    "description": "Runtime observations which might help explain what this test case did.  Hypothesis includes target() scores, tags from event(), and so on."
+                },
+                "coverage": {
+                    "type": ["object", "null"],
+                    "description": "Mapping of filename to list of covered line numbers, if coverage information is available, or None if not.  Hypothesis deliberately omits stdlib and site-packages code.",
+                    "additionalProperties": {
+                        "type": "array",
+                        "items": {"type": "integer", "minimum": 1},
+                        "uniqueItems": true
+                    }
+                },
+                "timing": {
+                    "type": "object",
+                    "description": "The time in seconds taken by non-overlapping parts of this test case.  Hypothesis reports execute:test, overall:gc, and generate:{argname} for each argument.",
+                    "additionalProperties": {
+                        "type": "number",
+                        "minimum": 0
+                    }
+                },
+                "metadata": {
+                    "type": "object",
+                    "description": "Arbitrary metadata which might be of interest, but does not semantically fit in 'features'.  For example, Hypothesis includes the traceback for failing tests here."
+                },
+                "property": {
+                    "type": "string",
+                    "description": "The name or representation of the test function we're running."
+                },
+                "run_start": {
+                    "type": "number",
+                    "description": "unix timestamp at which we started running this test function, so that later analysis can group test cases by run."
+                }
+            },
+            "required": ["type", "status", "status_reason", "representation", "arguments", "how_generated", "features", "coverage", "timing", "metadata", "property", "run_start"],
+            "additionalProperties": false
+        },
+        {
+            "title": "Information message",
+            "description": "Info, alert, and error messages correspond to a group of test cases or the overall run, and are intended for humans rather than machine analysis.",
+            "type": "object",
+            "properties": {
+                "type": {
+                    "enum": ["info", "alert", "error"],
+                    "description": "A tag which labels this observation as general information to show the user.  Hypothesis uses info messages to report statistics; alert or error messages can be provided by plugins."
+                },
+                "title": {
+                    "type": "string",
+                    "description": "The title of this message"
+                },
+                "content": {
+                    "type": ["string", "object"],
+                    "description": "The body of the message.  Strings are presumed to be human-readable messages in markdown format; dictionaries may contain arbitrary information (as for test-case metadata)."
+                },
+                "property": {
+                    "type": "string",
+                    "description": "The name or representation of the test function we're running.  For Hypothesis, usually the Pytest nodeid."
+                },
+                "run_start": {
+                    "type": "number",
+                    "description": "unix timestamp at which we started running this test function, so that later analysis can group test cases by run."
+                }
+            },
+            "required": ["type", "title", "content", "property", "run_start"],
+            "additionalProperties": false
+        }
+    ]
+}

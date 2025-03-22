@@ -60,18 +60,10 @@ check out some of the
   :caption: Hypothesis
 
   quickstart
-  details
-  data
-  settings
-  database
-  stateful
-  reproducing
-  ghostwriter
-  examples
-  extras
-  django
-  numpy
-  observability
+  reference/index
+  Type hints <typing>
+  Extras <extras>
+  Examples <examples>
   supported
   changes
 
