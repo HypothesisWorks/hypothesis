@@ -18,6 +18,30 @@ Hypothesis 6.x
 
     .. include:: ../RELEASE.rst
 
+.. _v6.130.0:
+
+--------------------
+6.130.0 - 2025-03-21
+--------------------
+
+Nesting :func:`@given <hypothesis.given>` inside of :func:`@given <hypothesis.given>` is now a :ref:`health check <healthchecks>` failure. Nesting :func:`@given <hypothesis.given>` results in quadratic generation and shrinking behavior, and can usually be more cleanly expressed by replacing the inner function with a :func:`~hypothesis.strategies.data` parameter on the outer given. For more details, see :obj:`~hypothesis.HealthCheck.nested_given`. (:issue:`4167`)
+
+.. _v6.129.5:
+
+--------------------
+6.129.5 - 2025-03-21
+--------------------
+
+Fixes an internal error when certain :ref:`alternative backends <alternative-backends>` find a failure on their very first generated example.
+
+.. _v6.129.4:
+
+--------------------
+6.129.4 - 2025-03-18
+--------------------
+
+:func:`~hypothesis.strategies.nothing` is now typed as ``SearchStrategy[Never]``, because no value can ever be drawn from it. This may help type checkers statically determine that some code is not reachable.
+
 .. _v6.129.3:
 
 --------------------

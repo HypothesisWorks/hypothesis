@@ -469,7 +469,9 @@ def nicerepr(v):
         return re.sub(r"(\[)~([A-Z][a-z]*\])", r"\g<1>\g<2>", pretty(v))
 
 
-def repr_call(f, args, kwargs, *, reorder=True):
+def repr_call(
+    f: Any, args: Sequence[object], kwargs: dict[str, object], *, reorder: bool = True
+) -> str:
     # Note: for multi-line pretty-printing, see RepresentationPrinter.repr_call()
     if reorder:
         args, kwargs = convert_positional_arguments(f, args, kwargs)

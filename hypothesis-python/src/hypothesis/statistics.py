@@ -55,8 +55,8 @@ def format_ms(times: Iterable[float]) -> str:
     n = len(ordered) - 1
     if n < 0 or any(math.isnan(t) for t in ordered):  # pragma: no cover
         return "NaN ms"
-    lower = int(ordered[int(math.floor(n * 0.05))] * 1000)
-    upper = int(ordered[int(math.ceil(n * 0.95))] * 1000)
+    lower = int(ordered[math.floor(n * 0.05)] * 1000)
+    upper = int(ordered[math.ceil(n * 0.95)] * 1000)
     if upper == 0:
         return "< 1ms"
     elif lower == upper:

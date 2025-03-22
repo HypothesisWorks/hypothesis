@@ -1002,7 +1002,7 @@ class GeneratorStrategy(st.SearchStrategy):
         self.yields = yields
         self.returns = returns
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<generators yields={self.yields!r} returns={self.returns!r}>"
 
     def do_draw(self, data):

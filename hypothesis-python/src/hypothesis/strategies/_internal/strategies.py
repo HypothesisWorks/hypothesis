@@ -66,7 +66,7 @@ T4 = TypeVar("T4")
 T5 = TypeVar("T5")
 MappedFrom = TypeVar("MappedFrom")
 MappedTo = TypeVar("MappedTo")
-RecurT: "TypeAlias" = Callable[["SearchStrategy"], Any]
+RecurT: "TypeAlias" = Callable[["SearchStrategy"], bool]
 calculating = UniqueIdentifier("calculating")
 
 MAPPED_SEARCH_STRATEGY_DO_DRAW_LABEL = calc_label_from_name(
@@ -226,10 +226,9 @@ class SearchStrategy(Generic[Ex]):
     releases.
     """
 
-    supports_find = True
-    validate_called = False
+    validate_called: bool = False
     __label: Union[int, UniqueIdentifier, None] = None
-    __module__ = "hypothesis.strategies"
+    __module__: str = "hypothesis.strategies"
 
     def available(self, data: ConjectureData) -> bool:
         """Returns whether this strategy can *currently* draw any
@@ -251,6 +250,10 @@ class SearchStrategy(Generic[Ex]):
         # can be drawn - this is not intended to be perfect, and is primarily
         # intended to be an optimisation for some cases.
         return recursive_property(self, "is_empty", True)
+
+    @property
+    def supports_find(self) -> bool:
+        return True
 
     # Returns True if values from this strategy can safely be reused without
     # this causing unexpected behaviour.
@@ -400,7 +403,7 @@ class SearchStrategy(Generic[Ex]):
 
     def _filter_for_filtered_draw(
         self, condition: Callable[[Ex], Any]
-    ) -> "SearchStrategy[Ex]":
+    ) -> "FilteredStrategy[Ex]":
         # Hook for parent strategies that want to perform fallible filtering
         # on one of their internal strategies (e.g. UniqueListStrategy).
         # The returned object must have a `.do_filtered_draw(data)` method
@@ -560,7 +563,7 @@ class SampledFromStrategy(SearchStrategy[Ex]):
             for name, f in self._transformations
         )
 
-    def calc_label(self):
+    def calc_label(self) -> int:
         return combine_labels(
             self.class_label,
             *(
@@ -570,14 +573,14 @@ class SampledFromStrategy(SearchStrategy[Ex]):
             ),
         )
 
-    def calc_has_reusable_values(self, recur: RecurT) -> Any:
+    def calc_has_reusable_values(self, recur: RecurT) -> bool:
         # Because our custom .map/.filter implementations skip the normal
         # wrapper strategies (which would automatically return False for us),
         # we need to manually return False here if any transformations have
         # been applied.
         return not self._transformations
 
-    def calc_is_cacheable(self, recur: RecurT) -> Any:
+    def calc_is_cacheable(self, recur: RecurT) -> bool:
         return is_hashable(self.elements)
 
     def _transform(
@@ -691,13 +694,13 @@ class OneOfStrategy(SearchStrategy[Ex]):
         self.__element_strategies: Optional[Sequence[SearchStrategy[Ex]]] = None
         self.__in_branches = False
 
-    def calc_is_empty(self, recur: RecurT) -> Any:
+    def calc_is_empty(self, recur: RecurT) -> bool:
         return all(recur(e) for e in self.original_strategies)
 
-    def calc_has_reusable_values(self, recur: RecurT) -> Any:
+    def calc_has_reusable_values(self, recur: RecurT) -> bool:
         return all(recur(e) for e in self.original_strategies)
 
-    def calc_is_cacheable(self, recur: RecurT) -> Any:
+    def calc_is_cacheable(self, recur: RecurT) -> bool:
         return all(recur(e) for e in self.original_strategies)
 
     @property
@@ -886,10 +889,10 @@ class MappedStrategy(SearchStrategy[MappedTo], Generic[MappedFrom, MappedTo]):
         self.mapped_strategy = strategy
         self.pack = pack
 
-    def calc_is_empty(self, recur: RecurT) -> Any:
+    def calc_is_empty(self, recur: RecurT) -> bool:
         return recur(self.mapped_strategy)
 
-    def calc_is_cacheable(self, recur: RecurT) -> Any:
+    def calc_is_cacheable(self, recur: RecurT) -> bool:
         return recur(self.mapped_strategy)
 
     def __repr__(self) -> str:
@@ -1008,10 +1011,10 @@ class FilteredStrategy(SearchStrategy[Ex]):
 
         self.__condition: Optional[Callable[[Ex], Any]] = None
 
-    def calc_is_empty(self, recur: RecurT) -> Any:
+    def calc_is_empty(self, recur: RecurT) -> bool:
         return recur(self.filtered_strategy)
 
-    def calc_is_cacheable(self, recur: RecurT) -> Any:
+    def calc_is_cacheable(self, recur: RecurT) -> bool:
         return recur(self.filtered_strategy)
 
     def __repr__(self) -> str:

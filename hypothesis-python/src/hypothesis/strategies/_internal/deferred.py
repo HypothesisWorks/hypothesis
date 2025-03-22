@@ -9,24 +9,32 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 import inspect
+from collections.abc import Sequence
+from typing import Callable, Optional
 
 from hypothesis.configuration import check_sideeffect_during_initialization
 from hypothesis.errors import InvalidArgument
+from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.reflection import get_pretty_function_description
-from hypothesis.strategies._internal.strategies import SearchStrategy, check_strategy
+from hypothesis.strategies._internal.strategies import (
+    Ex,
+    RecurT,
+    SearchStrategy,
+    check_strategy,
+)
 
 
-class DeferredStrategy(SearchStrategy):
+class DeferredStrategy(SearchStrategy[Ex]):
     """A strategy which may be used before it is fully defined."""
 
-    def __init__(self, definition):
+    def __init__(self, definition: Callable[[], SearchStrategy[Ex]]):
         super().__init__()
-        self.__wrapped_strategy = None
-        self.__in_repr = False
-        self.__definition = definition
+        self.__wrapped_strategy: Optional[SearchStrategy[Ex]] = None
+        self.__in_repr: bool = False
+        self.__definition: Optional[Callable[[], SearchStrategy[Ex]]] = definition
 
     @property
-    def wrapped_strategy(self):
+    def wrapped_strategy(self) -> SearchStrategy[Ex]:
         if self.__wrapped_strategy is None:
             check_sideeffect_during_initialization("deferred evaluation of {!r}", self)
 
@@ -44,14 +52,14 @@ class DeferredStrategy(SearchStrategy):
         return self.__wrapped_strategy
 
     @property
-    def branches(self):
+    def branches(self) -> Sequence[SearchStrategy[Ex]]:
         return self.wrapped_strategy.branches
 
     @property
-    def supports_find(self):
+    def supports_find(self) -> bool:
         return self.wrapped_strategy.supports_find
 
-    def calc_label(self):
+    def calc_label(self) -> int:
         """Deferred strategies don't have a calculated label, because we would
         end up having to calculate the fixed point of some hash function in
         order to calculate it when they recursively refer to themself!
@@ -64,13 +72,13 @@ class DeferredStrategy(SearchStrategy):
         # deliberate decision.
         return self.class_label
 
-    def calc_is_empty(self, recur):
+    def calc_is_empty(self, recur: RecurT) -> bool:
         return recur(self.wrapped_strategy)
 
-    def calc_has_reusable_values(self, recur):
+    def calc_has_reusable_values(self, recur: RecurT) -> bool:
         return recur(self.wrapped_strategy)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.__wrapped_strategy is not None:
             if self.__in_repr:
                 return f"(deferred@{id(self)!r})"
@@ -83,5 +91,5 @@ class DeferredStrategy(SearchStrategy):
             description = get_pretty_function_description(self.__definition)
             return f"deferred({description})"
 
-    def do_draw(self, data):
+    def do_draw(self, data: ConjectureData) -> Ex:
         return data.draw(self.wrapped_strategy)

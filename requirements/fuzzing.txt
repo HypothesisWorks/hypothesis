@@ -6,7 +6,7 @@
 #
 annotated-types==0.7.0
     # via -r requirements/coverage.in
-anyio==4.8.0
+anyio==4.9.0
     # via starlette
 async-timeout==5.0.1
     # via redis
@@ -27,7 +27,7 @@ click==8.1.8
     #   -r requirements/coverage.in
     #   black
     #   hypothesis
-coverage[toml]==7.6.12
+coverage[toml]==7.7.0
     # via
     #   hypofuzz
     #   pytest-cov
@@ -60,7 +60,7 @@ hyperframe==6.1.0
     # via h2
 hypofuzz==25.3.1
     # via -r requirements/fuzzing.in
-hypothesis[cli,watchdog]==6.127.9
+hypothesis[cli,watchdog]==6.129.3
     # via hypofuzz
 idna==3.10
     # via
@@ -70,7 +70,7 @@ iniconfig==2.0.0
     # via pytest
 lark==1.2.2
     # via -r requirements/coverage.in
-libcst==1.6.0
+libcst==1.7.0
     # via
     #   -r requirements/coverage.in
     #   hypofuzz
@@ -80,7 +80,7 @@ mdurl==0.1.2
     # via markdown-it-py
 mypy-extensions==1.0.0
     # via black
-numpy==2.2.3
+numpy==2.2.4
     # via
     #   -r requirements/coverage.in
     #   pandas

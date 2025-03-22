@@ -50,7 +50,7 @@ from hypothesis._settings import (
     local_settings,
     settings as Settings,
 )
-from hypothesis.control import BuildContext
+from hypothesis.control import BuildContext, currently_in_test_context
 from hypothesis.database import choices_from_bytes, choices_to_bytes
 from hypothesis.errors import (
     BackendCannotProceed,
@@ -1575,6 +1575,15 @@ def given(
 
     This is the main entry point to Hypothesis.
     """
+
+    if currently_in_test_context():
+        fail_health_check(
+            Settings(),
+            "Nesting @given tests results in quadratic generation and shrinking "
+            "behavior and can usually be more cleanly expressed by replacing the "
+            "inner function with an st.data() parameter on the outer @given.",
+            HealthCheck.nested_given,
+        )
 
     def run_test_as_given(test):
         if inspect.isclass(test):

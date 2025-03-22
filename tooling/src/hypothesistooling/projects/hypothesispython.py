@@ -70,10 +70,10 @@ def build_docs(*, builder="html", only=()):
     # (unfortunately most options only have the short flag version)
     tools.scripts.pip_tool(
         "sphinx-build",
-        "-W",
-        "-T",
-        "-E",
-        "-b",
+        "--fail-on-warning",
+        "--show-traceback",
+        "--fresh-env",
+        "--builder",
         builder,
         "docs",
         "docs/_build/" + builder,

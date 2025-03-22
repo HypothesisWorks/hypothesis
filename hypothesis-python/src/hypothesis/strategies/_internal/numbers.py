@@ -55,7 +55,7 @@ class IntegersStrategy(SearchStrategy[int]):
         self.start = start
         self.end = end
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.start is None and self.end is None:
             return "integers()"
         if self.end is None:
@@ -173,7 +173,7 @@ class FloatStrategy(SearchStrategy):
         self.allow_nan = allow_nan
         self.smallest_nonzero_magnitude = smallest_nonzero_magnitude
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}({self.min_value=}, {self.max_value=}, "
             f"{self.allow_nan=}, {self.smallest_nonzero_magnitude=})"

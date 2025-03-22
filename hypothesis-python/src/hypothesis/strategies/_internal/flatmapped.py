@@ -9,7 +9,11 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 from hypothesis.internal.reflection import get_pretty_function_description
-from hypothesis.strategies._internal.strategies import SearchStrategy, check_strategy
+from hypothesis.strategies._internal.strategies import (
+    RecurT,
+    SearchStrategy,
+    check_strategy,
+)
 
 
 class FlatMapStrategy(SearchStrategy):
@@ -18,10 +22,10 @@ class FlatMapStrategy(SearchStrategy):
         self.flatmapped_strategy = strategy
         self.expand = expand
 
-    def calc_is_empty(self, recur):
+    def calc_is_empty(self, recur: RecurT) -> bool:
         return recur(self.flatmapped_strategy)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if not hasattr(self, "_cached_repr"):
             self._cached_repr = f"{self.flatmapped_strategy!r}.flatmap({get_pretty_function_description(self.expand)})"
         return self._cached_repr

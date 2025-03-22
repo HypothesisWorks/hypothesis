@@ -18,7 +18,7 @@ from hypothesis.internal.reflection import (
     proxies,
     repr_call,
 )
-from hypothesis.strategies._internal.strategies import SearchStrategy
+from hypothesis.strategies._internal.strategies import RecurT, SearchStrategy
 
 
 class FunctionStrategy(SearchStrategy):
@@ -33,7 +33,7 @@ class FunctionStrategy(SearchStrategy):
         # garbage-collected at the end of each example, reducing memory use.
         self._cache = WeakKeyDictionary()
 
-    def calc_is_empty(self, recur):
+    def calc_is_empty(self, recur: RecurT) -> bool:
         return recur(self.returns)
 
     def do_draw(self, data):
