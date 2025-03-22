@@ -3,9 +3,11 @@
 Strategies Reference
 ====================
 
-Strategy objects tell Hypothesis what types of inputs to generate. For instance, passing ``st.lists(st.integers(), min_size=1)`` to |@given| tells Hypothesis to generate lists of integers with at least one element.
+Strategies are the way Hypothesis describes the values for |@given| to generate.  For instance, passing ``st.lists(st.integers(), min_size=1)`` to |@given| tells Hypothesis to generate lists of integers with at least one element.
 
-Strategies can be combined using :ref:`combinator strategies <combinators>`, or modified using |strategy.filter|, |strategy.map|, or |strategy.flatmap|.
+This reference page lists all of Hypothesis' first-party functions which return a strategy. There are also many provided by :doc:`third-party libraries </strategies>`.  Note that we often say "strategy" when we mean "function returning a strategy"; it's usually clear from context which one we mean.
+
+Strategies can be passed to other strategies as arguments, combined using :ref:`combinator strategies <combinators>`, or modified using |strategy.filter|, |strategy.map|, or |strategy.flatmap|.
 
 Primitives
 ----------

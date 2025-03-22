@@ -217,6 +217,7 @@ rst_prolog = """
 .. |st.uuids| replace:: :func:`~hypothesis.strategies.uuids`
 .. |st.ip_addresses| replace:: :func:`~hypothesis.strategies.ip_addresses`
 .. |st.register_type_strategy| replace:: :func:`~hypothesis.strategies.register_type_strategy`
+.. |st.just| replace:: :func:`~hypothesis.strategies.just`
 
 .. |django.from_form| replace:: :func:`~hypothesis.extra.django.from_form`
 .. |django.from_model| replace:: :func:`~hypothesis.extra.django.from_model`

@@ -189,8 +189,7 @@ Test statistics
 
 .. note::
 
-  :ref:`Observability <observability>` tools offers
-
+  While test statistics are only available under pytest, you can use the :ref:`observability <observability>` interface to view similar information about your tests.
 
 You can see a number of statistics about executed tests by passing the command line argument ``--hypothesis-show-statistics``. This will include some general statistics about the test:
 

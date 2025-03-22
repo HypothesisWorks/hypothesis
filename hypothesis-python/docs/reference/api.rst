@@ -299,10 +299,11 @@ Hypothesis divides tests into logically distinct phases.
    find a useful explanation, we'll just print the minimal failing example.
 
    Following the first failure, Hypothesis will (:ref:`usually <phases>`) track which
-   lines of code are always run on failing but never on passing inputs.
-   This relies on :func:`python:sys.settrace`, and is therefore automatically disabled on
-   PyPy or if you are using :pypi:`coverage` or a debugger.  If there are no clearly
-   suspicious lines of code, :pep:`we refuse the temptation to guess <20>`.
+   lines of code are always run on failing but never on passing inputs. On 3.12+, this uses
+   :mod:`sys.monitoring`, while 3.11 and earlier uses :func:`python:sys.settrace`. For python 3.11
+   and earlier, we therefore automatically disable the explain phase on PyPy, or if you are using
+   :pypi:`coverage` or a debugger. If there are no clearly suspicious lines of code,
+   :pep:`we refuse the temptation to guess <20>`.
 
    After shrinking to a minimal failing example, Hypothesis will try to find parts of
    the example -- e.g. separate args to :func:`@given() <hypothesis.given>` -- which
@@ -577,25 +578,6 @@ to use a shared datastore, with just a few methods:
 .. autoclass:: hypothesis.database.ExampleDatabase
    :members:
 
-
-.. code:: python
-
-    @given(x=integers())
-    @pytest.mark.trio
-    async def test(x): ...
-
-
-    # Illustrative code, inside the pytest-trio plugin
-    test.hypothesis.inner_test = lambda x: trio.run(test, x)
-
-For authors of test runners however, assigning to the ``inner_test`` attribute of the ``hypothesis`` attribute of the test will replace the interior test.
-
-.. note::
-    The new ``inner_test`` must accept and pass through all the ``*args``
-    and ``**kwargs`` expected by the original test.
-
-If the end user has also specified a custom executor using the ``execute_example`` method, it - and all other execution-time logic - will be applied to the *new* inner test assigned by the test runner.
-
 .. _stateful:
 
 Stateful tests
@@ -756,7 +738,7 @@ on these classes that do not use
 
 We recommend avoiding :class:`~hypothesis.extra.django.TransactionTestCase`
 unless you really have to run each test case in a database transaction.
-Because Hypothesis runs this in a loop, the performance problems it normally has
+Because Hypothesis runs this in a loop, the performance problems ``TransactionTestCase`` normally has
 are significantly exacerbated and your tests will be really slow.
 If you are using :class:`~hypothesis.extra.django.TransactionTestCase`,
 you may need to use ``@settings(suppress_health_check=[HealthCheck.too_slow])``
@@ -830,7 +812,7 @@ Generating child models
 For the moment there's no explicit support in hypothesis-django for generating
 dependent models. i.e. a Company model will generate no Shops. However if you
 want to generate some dependent models as well, you can emulate this by using
-the *flatmap* function as follows:
+the |strategy.flatmap| function as follows:
 
 .. code:: python
 
@@ -848,7 +830,7 @@ Let's unpack what this is doing:
 The way flatmap works is that we draw a value from the original strategy, then
 apply a function to it which gives us a new strategy. We then draw a value from
 *that* strategy. So in this case we're first drawing a company, and then we're
-drawing a list of shops belonging to that company: The *just* strategy is a
+drawing a list of shops belonging to that company: The |st.just| strategy is a
 strategy such that drawing it always produces the individual value, so
 ``from_model(Shop, company=just(company))`` is a strategy that generates a Shop belonging
 to the original company.
@@ -1036,3 +1018,21 @@ and should be rewritten as:
 
 
 An alternative hook is provided for use by test runner extensions such as :pypi:`pytest-trio`, which cannot use the ``execute_example`` method. This is **not** recommended for end-users - it is better to write a complete test function directly, perhaps by using a decorator to perform the same transformation before applying :func:`@given <hypothesis.given>`.
+
+.. code:: python
+
+    @given(x=integers())
+    @pytest.mark.trio
+    async def test(x): ...
+
+
+    # Illustrative code, inside the pytest-trio plugin
+    test.hypothesis.inner_test = lambda x: trio.run(test, x)
+
+For authors of test runners however, assigning to the ``inner_test`` attribute of the ``hypothesis`` attribute of the test will replace the interior test.
+
+.. note::
+    The new ``inner_test`` must accept and pass through all the ``*args``
+    and ``**kwargs`` expected by the original test.
+
+If the end user has also specified a custom executor using the ``execute_example`` method, it - and all other execution-time logic - will be applied to the *new* inner test assigned by the test runner.

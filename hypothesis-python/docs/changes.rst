@@ -959,7 +959,7 @@ in :func:`~hypothesis.strategies.from_type`.
 6.110.1 - 2024-08-08
 --------------------
 
-Add better error message for :obj:`!~python:typing.TypeIs` types
+Add better error message for :obj:`~python:typing.TypeIs` types
 in :func:`~hypothesis.strategies.from_type`.
 
 .. _v6.110.0:
