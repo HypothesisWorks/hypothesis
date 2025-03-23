@@ -26,7 +26,7 @@ from hypothesis import (
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.cache import GenericCache, LRUCache, LRUReusedCache
 
-from tests.common.utils import skipif_emscripten
+from tests.common.utils import Why, skipif_emscripten, xfail_on_crosshair
 
 
 class LRUCacheAlternative(GenericCache):
@@ -116,6 +116,7 @@ def test_behaves_like_a_dict_with_losses(implementation, writes, size):
         assert len(target) <= min(len(model), size)
 
 
+@xfail_on_crosshair(Why.symbolic_outside_context)
 @settings(
     suppress_health_check={HealthCheck.too_slow}
     | set(settings.get_profile(settings._current_profile).suppress_health_check),

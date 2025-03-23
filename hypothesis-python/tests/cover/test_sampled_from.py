@@ -34,7 +34,7 @@ from tests.common.debug import (
     assert_simple_property,
     check_can_generate_examples,
 )
-from tests.common.utils import fails_with
+from tests.common.utils import Why, fails_with, xfail_on_crosshair
 
 an_enum = enum.Enum("A", "a b c")
 a_flag = enum.Flag("A", "a b c")

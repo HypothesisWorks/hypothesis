@@ -52,7 +52,7 @@ from tests.common.debug import (
     find_any,
     minimal,
 )
-from tests.common.utils import fails_with, temp_registered
+from tests.common.utils import Why, fails_with, temp_registered, xfail_on_crosshair
 
 sentinel = object()
 BUILTIN_TYPES = tuple(

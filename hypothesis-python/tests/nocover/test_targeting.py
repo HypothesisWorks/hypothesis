@@ -12,6 +12,8 @@ import pytest
 
 from hypothesis import Phase, given, seed, settings, strategies as st, target
 
+from tests.common.utils import Why, xfail_on_crosshair
+
 pytest_plugins = "pytester"
 
 TESTSUITE = """
@@ -57,6 +59,7 @@ def test_target_returns_value(a, b):
     assert isinstance(difference, int)
 
 
+@xfail_on_crosshair(Why.symbolic_outside_context)
 def test_targeting_can_be_disabled():
     strat = st.lists(st.integers(0, 255))
 

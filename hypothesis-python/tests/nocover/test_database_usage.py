@@ -20,7 +20,12 @@ from hypothesis.database import (
 from hypothesis.errors import NoSuchExample, Unsatisfiable
 from hypothesis.internal.entropy import deterministic_PRNG
 
-from tests.common.utils import all_values, non_covering_examples
+from tests.common.utils import (
+    Why,
+    all_values,
+    non_covering_examples,
+    xfail_on_crosshair,
+)
 
 
 def has_a_non_zero_byte(x):
@@ -39,6 +44,7 @@ def test_saves_incremental_steps_in_database():
     assert len(all_values(database)) > 1
 
 
+@xfail_on_crosshair(Why.symbolic_outside_context, strict=False)
 def test_clears_out_database_as_things_get_boring():
     key = b"a database key"
     database = InMemoryExampleDatabase()
@@ -71,6 +77,7 @@ def test_clears_out_database_as_things_get_boring():
         raise AssertionError
 
 
+@xfail_on_crosshair(Why.other, strict=False)
 def test_trashes_invalid_examples():
     key = b"a database key"
     database = InMemoryExampleDatabase()
