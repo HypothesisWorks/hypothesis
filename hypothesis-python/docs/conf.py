@@ -60,7 +60,6 @@ redirects = {
     # "supported": "compatibility.html",
     # "changes": "changelog.html",
     # "strategies": "extensions.html",
-
     # these pages were removed without replacement
     # "support": "index.html",
     # "manifesto": "index.html",
