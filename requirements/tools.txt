@@ -52,7 +52,7 @@ colorama==0.4.6
     # via tox
 com2ann==0.3.0
     # via shed
-coverage==7.7.0
+coverage==7.7.1
     # via -r requirements/tools.in
 cryptography==44.0.2
     # via
@@ -102,7 +102,7 @@ imagesize==1.4.1
     # via sphinx
 importlib-metadata==8.6.1
     # via keyring
-iniconfig==2.0.0
+iniconfig==2.1.0
     # via pytest
 ipython==8.34.0
     # via -r requirements/tools.in
@@ -183,7 +183,7 @@ pexpect==4.9.0
     #   ipython
 pip-tools==7.4.1
     # via -r requirements/tools.in
-platformdirs==4.3.6
+platformdirs==4.3.7
     # via
     #   black
     #   tox
@@ -216,7 +216,7 @@ pyproject-hooks==1.2.0
     # via
     #   build
     #   pip-tools
-pyright==1.1.396
+pyright==1.1.397
     # via -r requirements/tools.in
 pytest==8.3.5
     # via
@@ -256,7 +256,7 @@ rich==13.9.4
     # via
     #   pelican
     #   twine
-ruff==0.11.0
+ruff==0.11.2
     # via -r requirements/tools.in
 secretstorage==3.3.3
     # via keyring
@@ -329,7 +329,7 @@ traitlets==5.14.3
     #   matplotlib-inline
 twine==6.1.0
     # via -r requirements/tools.in
-types-cffi==1.16.0.20250318
+types-cffi==1.17.0.20250319
     # via types-pyopenssl
 types-click==7.1.8
     # via -r requirements/tools.in
@@ -375,7 +375,7 @@ zipp==3.21.0
 # The following packages are considered to be unsafe in a requirements file:
 pip==25.0.1
     # via pip-tools
-setuptools==76.1.0
+setuptools==77.0.3
     # via
     #   pip-tools
     #   types-setuptools
