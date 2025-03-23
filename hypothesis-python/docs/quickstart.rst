@@ -76,30 +76,23 @@ This test will clearly fail, which can be confirmed by running ``pytest example.
     E       )
 
 
-|@given| parameters
--------------------
+|@given| arguments
+------------------
 
-You can pass multiple parameters to |@given|:
+You can pass multiple arguments to |@given|, or add keyword arguments:
 
 .. code-block:: python
 
-    @given(st.integers(), st.text())
-    def test_integers(n, s):
+    @given(st.integers(), st.text(), b1=st.booleans(), b2=st.booleans())
+    def test_integers(n, s, b1, b2):
         assert isinstance(n, int)
         assert isinstance(s, str)
-
-.. As well as keyword arguments:
-
-.. .. code-block:: python
-
-..     @given(n=st.integers(), s=st.text())
-..     def test_integers(n, s):
-..         assert isinstance(n, int)
-..         assert isinstance(s, str)
+        assert isinstance(b1, bool)
+        assert isinstance(b2, bool)
 
 .. note::
 
-    See |@given| for details about how |@given| handles different types of parameters.
+    See |@given| for details about how |@given| handles different types of arguments.
 
 |assume|
 --------
